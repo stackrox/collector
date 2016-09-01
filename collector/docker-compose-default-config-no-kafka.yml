@@ -1,0 +1,21 @@
+version: '2'
+
+services:
+  collector:
+    image: stackrox/collector:latest
+    privileged: true
+    ports:
+      - 4419:4419
+    volumes:
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - /dev:/host/dev
+      - /proc:/host/proc:ro
+      - /boot:/host/boot:ro
+      - /lib/modules:/host/lib/modules:ro
+      - /usr:/host/usr:ro
+    environment:
+      - MAX_CONTENT_LENGTH_KB=128
+      - CONNECTION_LIMIT=32
+      - CONNECTION_LIMIT_PER_IP=32
+      - CONNECTION_TIMEOUT=4
+      - COLLECTOR_CONFIG={"syscalls":["open","close","read","write"],"output":"stdout","format":"container:container.id,event:evt.type,time:evt.time,rawtime:evt.rawtime,direction:evt.dir,image:container.image,name:container.name"}

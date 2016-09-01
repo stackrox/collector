@@ -1,0 +1,16 @@
+{
+	"Action" : "pull",
+	"Actor" :
+	{
+		"Attributes" :
+		{
+			"name" : "nginx"
+		},
+		"ID" : "nginx:latest"
+	},
+	"Type" : "image",
+	"id" : "nginx:latest",
+	"status" : "pull",
+	"time" : 1463847873,
+	"timeNano" : 1463847873024375089
+}

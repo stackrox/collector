@@ -1,0 +1,461 @@
+#include <string>
+
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+
+#include "CollectorArgs.h"
+
+TEST(CollectorArgs, NoArgs) {
+    using namespace collector;
+    using ::testing::StartsWith;
+
+    int argc = 0;
+    char *argv[0];
+
+    CollectorArgs *args = CollectorArgs::getInstance();
+    int exitCode;
+    EXPECT_EQ(false, args->parse(argc, argv, exitCode));
+    EXPECT_EQ(0, exitCode);
+    EXPECT_THAT(args->Message(), StartsWith("USAGE: collector"));
+}
+
+TEST(CollectorArgs, ProgramNameOnly) {
+    using namespace collector;
+    using ::testing::StartsWith;
+
+    int argc = 1;
+    const char *argv[] = {
+        "collector",
+    };
+
+    CollectorArgs *args = CollectorArgs::getInstance();
+    int exitCode;
+    EXPECT_EQ(false, args->parse(argc, (char **)argv, exitCode));
+    EXPECT_EQ(0, exitCode);
+    EXPECT_THAT(args->Message(), StartsWith("USAGE: collector"));
+}
+
+TEST(CollectorArgs, HelpFlag) {
+    using namespace collector;
+    using ::testing::StartsWith;
+
+    int argc = 2;
+    const char *argv[] = {
+        "collector",
+        "--help",
+    };
+
+    CollectorArgs *args = CollectorArgs::getInstance();
+    int exitCode;
+    EXPECT_EQ(false, args->parse(argc, (char **)argv, exitCode));
+    EXPECT_EQ(0, exitCode);
+    EXPECT_THAT(args->Message(), StartsWith("USAGE: collector"));
+}
+
+struct CollectorArgsTestCase {
+    std::vector<std::string> argv;
+    bool                     expectedResult;
+    int                      expectedExitCode;
+    std::string              expectedMessage;
+    std::string              expectedBrokerList;
+    unsigned long            expectedMaxContentLengthKB;
+    unsigned long            expectedConnectionLimit;
+    unsigned long            expectedConnectionLimitPerIP;
+    unsigned long            expectedConnectionTimeoutSeconds;
+    std::string              expectedServerEndpoint;
+    unsigned long            expectedMapRefreshInterval;
+
+    friend std::ostream& operator<<(std::ostream& os, const CollectorArgsTestCase& obj) {
+        std::string argv;
+        if (obj.argv.size() > 0) {
+            argv = obj.argv[0];
+        }
+        for (size_t i = 1; i < obj.argv.size(); i++) {
+            argv += std::string(" ") + obj.argv[i];
+        }
+
+        return os
+            << "argv: " << argv
+            << " expectedResult: " << obj.expectedResult
+            << " expectedExitCode: " << obj.expectedExitCode
+            << " expectedMessage: " << obj.expectedMessage
+            << " expectedBrokerList " << obj.expectedBrokerList
+            << " expectedMaxContentLengthKB: " << obj.expectedMaxContentLengthKB
+            << " expectedConnectionLimit: " << obj.expectedConnectionLimit
+            << " expectedConnectionLimitPerIP: " << obj.expectedConnectionLimitPerIP
+            << " expectedConnectionTimeoutSeconds: " << obj.expectedConnectionTimeoutSeconds
+            << " expectedServerEndpoint: " << obj.expectedServerEndpoint
+            << " expectedMapRefreshInterval: " << obj.expectedMapRefreshInterval;
+    }
+} testCases[]  = {
+    // Unknown flag
+    {
+        { "collector", "--blargle" },
+        false,
+        1,
+        "Unknown option: --blargle",
+        "",
+        1024,
+        64,
+        64,
+        8,
+        DEFAULT_SERVER_ENDPOINT,
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+    // Broker list with one broker
+    ,{
+        { "collector", "--broker-list=172.16.0.5:9092" },
+        true,
+        0,
+        "",
+        "172.16.0.5:9092",
+        1024,
+        64,
+        64,
+        8,
+        DEFAULT_SERVER_ENDPOINT,
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+    // Broker list without an argument
+    ,{
+        { "collector", "--broker-list" },
+        true,
+        0,
+        "Missing broker list. Cannot configure Kafka client. Reverting to stdout.",
+        "",
+        1024,
+        64,
+        64,
+        8,
+        DEFAULT_SERVER_ENDPOINT,
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+    // Malformed broker list
+    ,{
+        { "collector", "--broker-list=172.16.0.5" },
+        false,
+        1,
+        "Malformed broker",
+        "",
+        1024,
+        64,
+        64,
+        8,
+        DEFAULT_SERVER_ENDPOINT,
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+    // Missing broker host
+    ,{
+        { "collector", "--broker-list=:9092" },
+        false,
+        1,
+        "Missing broker host",
+        "",
+        1024,
+        64,
+        64,
+        8,
+        DEFAULT_SERVER_ENDPOINT,
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+    // Missing broker port
+    ,{
+        { "collector", "--broker-list=172.16.0.5:" },
+        false,
+        1,
+        "Missing broker port",
+        "",
+        1024,
+        64,
+        64,
+        8,
+        DEFAULT_SERVER_ENDPOINT,
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+    // Broker list with multiple brokers
+    ,{
+        { "collector", "--broker-list=\"172.16.0.5:9092,172.16.0.6:9092\"" },
+        false,
+        1,
+        "Multiple brokers not supported currently",
+        "",
+        1024,
+        64,
+        64,
+        8,
+        DEFAULT_SERVER_ENDPOINT,
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+    // Long broker list
+    ,{
+        { "collector", std::string("--broker-list=") + std::string(256, 'e') },
+        false,
+        1,
+        "Broker list too long (> 255)",
+        "",
+        1024,
+        64,
+        64,
+        8,
+        DEFAULT_SERVER_ENDPOINT,
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+    // Max HTTP Content-Length
+    ,{
+        { "collector", "--broker-list=172.16.0.5:9092", "--max-content-length=64" },
+        true,
+        0,
+        "",
+        "172.16.0.5:9092",
+        64,
+        64,
+        64,
+        8,
+        DEFAULT_SERVER_ENDPOINT,
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+    // Max HTTP Content-Length without an argument
+    ,{
+        { "collector", "--broker-list=172.16.0.5:9092", "--max-content-length" },
+        true,
+        0,
+        "",
+        "172.16.0.5:9092",
+        1024,
+        64,
+        64,
+        8,
+        DEFAULT_SERVER_ENDPOINT,
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+    // Max HTTP Content-Length with non-numeric argument
+    ,{
+        { "collector", "--broker-list=172.16.0.5:9092", "--max-content-length=blargle" },
+        false,
+        1,
+        "Malformed max HTTP content-length",
+        "172.16.0.5:9092",
+        1024,
+        64,
+        64,
+        8,
+        DEFAULT_SERVER_ENDPOINT,
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+    // Max concurrent connections
+    ,{
+        { "collector", "--broker-list=172.16.0.5:9092", "--connection-limit=32" },
+        true,
+        0,
+        "",
+        "172.16.0.5:9092",
+        1024,
+        32,
+        64,
+        8,
+        DEFAULT_SERVER_ENDPOINT,
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+    // Max concurrent connections without an argument
+    ,{
+        { "collector", "--broker-list=172.16.0.5:9092", "--connection-limit" },
+        true,
+        0,
+        "",
+        "172.16.0.5:9092",
+        1024,
+        64,
+        64,
+        8,
+        DEFAULT_SERVER_ENDPOINT,
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+    // Max concurrent connections with a non-numeric argument
+    ,{
+        { "collector", "--broker-list=172.16.0.5:9092", "--connection-limit=blargle" },
+        false,
+        1,
+        "Malformed connection limit",
+        "172.16.0.5:9092",
+        1024,
+        64,
+        64,
+        8,
+        DEFAULT_SERVER_ENDPOINT,
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+    // Max concurrent connections per IP
+    ,{
+        { "collector", "--broker-list=172.16.0.5:9092", "--per-ip-connection-limit=32" },
+        true,
+        0,
+        "",
+        "172.16.0.5:9092",
+        1024,
+        64,
+        32,
+        8,
+        DEFAULT_SERVER_ENDPOINT,
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+    // Max concurrent connections per IP without an argument
+    ,{
+        { "collector", "--broker-list=172.16.0.5:9092", "--per-ip-connection-limit" },
+        true,
+        0,
+        "",
+        "172.16.0.5:9092",
+        1024,
+        64,
+        64,
+        8,
+        DEFAULT_SERVER_ENDPOINT,
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+    // Max concurrent connections per IP with a non-numeric argument
+    ,{
+        { "collector", "--broker-list=172.16.0.5:9092", "--per-ip-connection-limit=blargle" },
+        false,
+        1,
+        "Malformed per IP connection limit",
+        "172.16.0.5:9092",
+        1024,
+        64,
+        64,
+        8,
+        DEFAULT_SERVER_ENDPOINT,
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+    // Connection timeout
+    ,{
+        { "collector", "--broker-list=172.16.0.5:9092", "--connection-timeout=4" },
+        true,
+        0,
+        "",
+        "172.16.0.5:9092",
+        1024,
+        64,
+        64,
+        4,
+        DEFAULT_SERVER_ENDPOINT,
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+    // Connection timeout without an argument
+    ,{
+        { "collector", "--broker-list=172.16.0.5:9092", "--connection-timeout" },
+        true,
+        0,
+        "",
+        "172.16.0.5:9092",
+        1024,
+        64,
+        64,
+        8,
+        DEFAULT_SERVER_ENDPOINT,
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+    // Connection timeout with a non-numeric argument
+    ,{
+        { "collector", "--broker-list=172.16.0.5:9092", "--connection-timeout=blargle" },
+        false,
+        1,
+        "Malformed connection timeout",
+        "172.16.0.5:9092",
+        1024,
+        64,
+        64,
+        8,
+        DEFAULT_SERVER_ENDPOINT,
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+    // Non-default RoxD endpoint
+    ,{
+        { "collector", "--broker-list=172.16.0.5:9092", "--server-endpoint=roxd.marathon.mesos:8000" },
+        true,
+        0,
+        "",
+        "172.16.0.5:9092",
+        1024,
+        64,
+        64,
+        8,
+        "roxd.marathon.mesos:8000",
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+    // Too-long RoxD endpoint
+    ,{
+        { "collector", "--broker-list=172.16.0.5:9092", "--server-endpoint=roxd.000000000.1111111111.2222222222.3333333333.4444444444.5555555555.6666666666.7777777777.8888888888.9999999999.000000000.1111111111.2222222222.3333333333.4444444444.5555555555.6666666666.7777777777.8888888888.9999999999.000000000.1111111111.2222222222.3333333333.4444444444.5555555555.6666666666.7777777777.8888888888.9999999999:8000" },
+        false,
+        1,
+        "API endpoint is too long (limit 255 characters)",
+        "172.16.0.5:9092",
+        1024,
+        64,
+        64,
+        8,
+        DEFAULT_SERVER_ENDPOINT,
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+    // Non-default map refresh interval
+    ,{
+        { "collector", "--broker-list=172.16.0.5:9092",  "--map-refresh-interval=5000" },
+        true,
+        0,
+        "",
+        "172.16.0.5:9092",
+        1024,
+        64,
+        64,
+        8,
+        DEFAULT_SERVER_ENDPOINT,
+        5000
+    }
+    // Invalid (non-numeric) map refresh interval
+    ,{
+        { "collector", "--broker-list=172.16.0.5:9092",  "--map-refresh-interval=blargle" },
+        false,
+        1,
+        "Malformed map refresh interval",
+        "172.16.0.5:9092",
+        1024,
+        64,
+        64,
+        8,
+        DEFAULT_SERVER_ENDPOINT,
+        DEFAULT_MAP_REFRESH_INTERVAL_MS
+    }
+};
+
+class CollectorArgsTest : public ::testing::TestWithParam<CollectorArgsTestCase> {
+};
+
+INSTANTIATE_TEST_CASE_P(CollectorArgsTestCases, CollectorArgsTest, ::testing::ValuesIn(testCases));
+
+TEST_P(CollectorArgsTest, Parse) {
+    using namespace collector;
+
+    struct CollectorArgsTestCase testCase = GetParam();
+
+    char** argv = new char*[testCase.argv.size()];
+    for (size_t i = 0; i < testCase.argv.size(); i++) {
+        argv[i] = new char[testCase.argv[i].size() + 1];
+        strcpy(argv[i], testCase.argv[i].c_str());
+    }
+
+    CollectorArgs *args = CollectorArgs::getInstance();
+
+    int exitCode;
+    EXPECT_EQ(testCase.expectedResult, args->parse(testCase.argv.size(), argv, exitCode));
+    EXPECT_EQ(testCase.expectedExitCode, exitCode);
+    EXPECT_EQ(testCase.expectedMessage, args->Message());
+    EXPECT_EQ(testCase.expectedBrokerList, args->BrokerList());
+    EXPECT_EQ(testCase.expectedMaxContentLengthKB, args->MaxContentLengthKB());
+    EXPECT_EQ(testCase.expectedConnectionLimit, args->ConnectionLimit());
+    EXPECT_EQ(testCase.expectedConnectionLimitPerIP, args->ConnectionLimitPerIP());
+    EXPECT_EQ(testCase.expectedConnectionTimeoutSeconds, args->ConnectionTimeoutSeconds());
+    EXPECT_EQ(testCase.expectedServerEndpoint, args->ServerEndpoint());
+    EXPECT_EQ(testCase.expectedMapRefreshInterval, args->MapRefreshInterval());
+
+    args->clear();
+}
+

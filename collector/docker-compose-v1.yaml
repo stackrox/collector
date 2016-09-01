@@ -1,0 +1,39 @@
+zookeeper:
+  image: stackrox/zookeeper:latest
+  ports:
+    - 2181:2181
+  environment:
+    - ZOOKEEPER_ID=1
+
+kafka:
+  image: stackrox/kafka:latest
+  ports:
+    - 9092:9092
+  environment:
+    - CONFIG_KAFKA_BROKER_ID=0
+    - CONFIG_KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+  links:
+    - zookeeper
+
+collector:
+  image: stackrox/collector:latest
+  privileged: true
+  ports:
+    - 4419:4419
+  environment:
+    - BROKER_LIST=kafka:9092
+    - MAX_CONTENT_LENGTH_KB=128
+    - CONNECTION_LIMIT=32
+    - CONNECTION_LIMIT_PER_IP=32
+    - CONNECTION_TIMEOUT=4
+  volumes:
+    - /var/run/docker.sock:/host/var/run/docker.sock
+    - /dev:/host/dev
+    - /proc:/host/proc:ro
+    - /boot:/host/boot:ro
+    - /lib/modules:/host/lib/modules:ro
+    - /usr:/host/usr:ro
+  links:
+    - zookeeper
+    - kafka
+

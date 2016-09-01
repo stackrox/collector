@@ -1,0 +1,16 @@
+{
+  "Action": "already_running",
+  "Actor": {
+    "Attributes": {
+      "image": "ubuntu:latest",
+      "name": "boring_feynman"
+    },
+    "ID": "8dfafdbc3a40"
+  },
+  "Type": "container",
+  "from": "ubuntu:latest",
+  "id": "8dfafdbc3a40",
+  "status": "already_running",
+  "time": 1463856223,
+  "timeNano": 1463856223148850487
+}

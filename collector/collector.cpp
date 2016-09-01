@@ -1,0 +1,305 @@
+#include <fstream>
+#include <iostream>
+#include <cstdio>
+#include <cstdlib>
+#include <csignal>
+#include <string>
+
+extern "C" {
+#include <assert.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <sys/stat.h>
+#include <sys/syscall.h>
+#include <sys/types.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#include <microhttpd.h>
+
+const char* scap_get_host_root();
+}
+
+#include "ContainerMapWatcher.h"
+#include "CollectorArgs.h"
+#include "GetContainers.h"
+#include "GetContainerByID.h"
+#include "GetStatus.h"
+#include "RESTServer.h"
+#include "Router.h"
+#include "SysdigService.h"
+
+#define init_module(mod, len, opts) syscall(__NR_init_module, mod, len, opts)
+#define delete_module(name, flags) syscall(__NR_delete_module, name, flags)
+
+static bool g_terminate;
+
+using namespace collector;
+
+static void
+signal_callback(int signal)
+{
+    std::cerr << "Caught signal " << signal << std::endl;
+    g_terminate = true;
+}
+
+static const std::string
+getHostname()
+{
+    std::string hostname;
+    const std::string file = std::string(scap_get_host_root()) + "/etc/hostname";
+    std::ifstream f(file.c_str());
+    f >> hostname;
+    f.close();
+    return hostname;
+}
+
+static const std::string hostname(getHostname());
+
+// insertModule
+// Method to insert the kernel module. The options to the module are computed
+// from the collector configuration. Specifically, the syscalls that we should
+// extract
+void insertModule(SysdigService& sysdigService, Json::Value collectorConfig) {
+    std::string args = "s_syscallIds=";
+
+    // Iterate over the syscalls that we want and pull each of their ids.
+    // These are stashed into a string that will get passed to init_module
+    // to insert the kernel module
+    for (auto itr: collectorConfig["syscalls"]) {
+        string syscall = itr.asString();
+        std::vector<int> ids;
+        sysdigService.getSyscallIds(syscall, ids);
+        for (unsigned int i = 0; i < ids.size(); i++) {
+            std::string strid = std::to_string(ids[i]);
+            args += (strid + ",");
+        }
+    }
+    args += "-1";
+
+    int fd = open(SysdigService::modulePath.c_str(), O_RDONLY);
+    if (fd < 0) {
+        std::cout << "Cannot open kernel module: " <<
+            SysdigService::modulePath << ". Aborting..." << std::endl;
+        exit(-1);
+    }
+    struct stat st;
+    if (fstat(fd, &st) < 0) {
+        std::cout << "Error inserting kernel module: " <<
+            SysdigService::modulePath << ". Aborting..." << std::endl;
+        exit(-1);
+    }
+    size_t imageSize = st.st_size;
+    char *image = new char[imageSize];
+    read(fd, image, imageSize);
+    close(fd);
+
+    std::cout << "Inserting kernel module " << SysdigService::modulePath <<
+        " with arguments " << args << endl;
+
+    // Attempt to insert the module. If it is already inserted then remove it and
+    // try again
+    int result = init_module(image, imageSize, args.c_str());
+    while (result != 0) {
+        std::cout << "Inserting kernel module " << SysdigService::modulePath <<
+            " failed with code " << result << ". Retrying..." << endl;
+        if (result == EEXIST) {
+            std::cout << "Module is already loaded. Attempting to delete it before re-insertion..." << endl;
+            delete_module(SysdigService::moduleName.c_str(), O_NONBLOCK);
+            sleep(2);    // wait for 5s before trying again
+        }
+    }
+    delete[] image;
+}
+
+static const std::string base64_chars = 
+             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+             "abcdefghijklmnopqrstuvwxyz"
+             "0123456789+/";
+
+static inline bool is_base64(unsigned char c) {
+    return (isalnum(c) || (c == '+') || (c == '/'));
+}
+
+std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_len) {
+    std::string ret;
+    int i = 0;
+    int j = 0;
+    unsigned char char_array_3[3];
+    unsigned char char_array_4[4];
+
+    while (in_len--) {
+        char_array_3[i++] = *(bytes_to_encode++);
+        if (i == 3) {
+            char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
+            char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+            char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+            char_array_4[3] = char_array_3[2] & 0x3f;
+
+            for(i = 0; (i <4) ; i++)
+                ret += base64_chars[char_array_4[i]];
+            i = 0;
+        }
+    }
+
+    if (i)
+    {
+        for(j = i; j < 3; j++)
+            char_array_3[j] = '\0';
+
+        char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
+        char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+        char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+        char_array_4[3] = char_array_3[2] & 0x3f;
+
+        for (j = 0; (j < i + 1); j++)
+            ret += base64_chars[char_array_4[j]];
+
+        while((i++ < 3))
+            ret += '=';
+
+    }
+
+    return ret;
+}
+
+std::string base64_decode(std::string const& encoded_string) {
+    int in_len = encoded_string.size();
+    int i = 0;
+    int j = 0;
+    int in_ = 0;
+    unsigned char char_array_4[4], char_array_3[3];
+    std::string ret;
+
+    while (in_len-- && ( encoded_string[in_] != '=') && is_base64(encoded_string[in_])) {
+        char_array_4[i++] = encoded_string[in_]; in_++;
+        if (i ==4) {
+            for (i = 0; i <4; i++)
+                char_array_4[i] = base64_chars.find(char_array_4[i]);
+
+            char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+            char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+            char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+
+            for (i = 0; (i < 3); i++)
+                ret += char_array_3[i];
+            i = 0;
+        }
+    }
+
+    if (i) {
+        for (j = i; j <4; j++)
+            char_array_4[j] = 0;
+
+        for (j = 0; j <4; j++)
+            char_array_4[j] = base64_chars.find(char_array_4[j]);
+
+        char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+        char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+        char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+
+        for (j = 0; (j < i - 1); j++) ret += char_array_3[j];
+    }
+
+    return ret;
+}
+
+void
+writeChisel(std::string chiselName, std::string chisel64) {
+    std::string chisel = base64_decode(chisel64);
+    cout << "Chisel post decode:\n" << chisel << endl;
+
+    std::ofstream out(chiselName.c_str());
+    out << chisel;
+    out.close();
+}
+
+int
+main(int argc, char **argv)
+{
+    using std::cerr;
+    using std::cout;
+    using std::endl;
+    using std::string;
+    using std::signal;
+
+    CollectorArgs *args = CollectorArgs::getInstance();
+    int exitCode = 0;
+    if (!args->parse(argc, argv, exitCode)) {
+        if (!args->Message().empty()) {
+            cout << args->Message() << endl;
+        }
+        exit(exitCode);
+    }
+
+    cout << "Hostname detected: " << hostname << endl;
+
+    const string chiselName = "default.chisel.lua";
+    const int snapLen = 2048;
+
+    cout << "Starting sysdig with the following parameters: chiselName="
+         << chiselName
+         << ", brokerList="
+         << args->BrokerList()
+         << ", snapLen="
+         << snapLen
+         << endl;
+
+    SysdigService sysdig(g_terminate);
+
+    // insert the kernel module with options from the configuration
+    Json::Value collectorConfig = args->CollectorConfig();
+    insertModule(sysdig, collectorConfig);
+
+    bool useKafka = true;
+    if (collectorConfig["output"].isNull() || collectorConfig["output"] == "stdout") {
+        useKafka = false;
+    }
+    std::string format = "";
+    if (!collectorConfig["format"].isNull()) {
+        format = collectorConfig["format"].asString();
+    }
+    std::string defaultTopic = "sysdig-kafka-topic";
+    if (!collectorConfig["defaultTopic"].isNull()) {
+        defaultTopic = collectorConfig["defaultTopic"].asString();
+    }
+
+    // write out chisel file from incoming chisel
+    writeChisel(chiselName, args->Chisel());
+
+    cout << chiselName << ", " << format << ", " << defaultTopic << endl;
+
+    int code = sysdig.init(chiselName, args->BrokerList(), format, useKafka, defaultTopic, snapLen);
+    if (code != 0) {
+        cerr << "Unable to initialize sysdig" << endl;
+        exit(code);
+    }
+
+    GetStatus getStatus(&sysdig);
+    GetContainers getContainers(&sysdig);
+    GetContainerByID getContainerByID(&sysdig);
+
+    ContainerMapWatcher watcher((Sysdig *)&sysdig, g_terminate, args->MapRefreshInterval(),
+        args->ServerEndpoint(), hostname, defaultTopic);
+    watcher.start();
+
+    Router router;
+    router.addGetHandler("/status", &getStatus);
+    router.addGetHandler("/containers", &getContainers);
+    router.addGetHandler("/containers/([a-zA-Z0-9]{12,64})", &getContainerByID);
+
+    RESTServer server(4419, args->MaxContentLengthKB(), args->ConnectionLimit(),
+        args->ConnectionLimitPerIP(), args->ConnectionTimeoutSeconds(), &router);
+    if (!server.start()) {
+        cerr << "Unable to start HTTP daemon" << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    signal(SIGINT, signal_callback);
+    signal(SIGTERM, signal_callback);
+
+    sysdig.runForever();
+    server.stop();
+    sysdig.cleanup();
+    exit(EXIT_SUCCESS);
+}

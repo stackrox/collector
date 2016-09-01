@@ -1,0 +1,77 @@
+FROM debian:jessie
+MAINTAINER StackRox
+
+# SYSDIG_HOST_ROOT is required by the sysdig kernel module; used as a prefix to
+# paths like /dev/sysdig0, /proc, and /boot. Make sure this matches the volume
+# mount paths used when launching this container.
+#
+# MAX_CONTENT_LENGTH_KB is optional, and it defaults to 1024.
+#
+# CONNECTION_LIMIT is optional, and it defaults to 64.
+#
+# CONNECTION_LIMIT_PER_IP is optional, and it defaults to 64.
+#
+# CONNECTION_TIMEOUT is optional, and it defaults to 8.
+#
+# ROX_DAEMON_ENDPOINT is optional (but highly recommended), and it defaults to roxd.stackrox:8888.
+#
+# MAP_REFRESH_INTERVAL_MS is optional, and it defaults to 1000.
+ENV SYSDIG_HOST_ROOT=/host \
+    MAX_CONTENT_LENGTH_KB=1024 \
+    CONNECTION_LIMIT=64 \
+    CONNECTION_LIMIT_PER_IP=64 \
+    CONNECTION_TIMEOUT=8 \
+    ROX_DAEMON_ENDPOINT=roxd.stackrox:8888 \
+    MAP_REFRESH_INTERVAL_MS=1000
+
+# HTTP API port (4419)
+EXPOSE 4419
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        gcc-4.8 \
+        g++-4.8 \
+        jq \
+        kmod \
+        libboost-regex1.55.0 \
+        libjsoncpp0 \
+        libmicrohttpd10 \
+        libssl1.0.0 \
+        procps \
+    && apt-get clean \
+    ;
+
+COPY chisels /
+COPY bin/curl /usr/local/bin/curl
+COPY bin/extractor /usr/local/bin/extractor
+COPY bin/sysdig /usr/bin/sysdig
+COPY driver/sysdig-probe.ko /usr/bin/sysdig-probe.ko
+COPY libs/librdkafka.so /usr/local/lib/librdkafka.so
+COPY libs/libcurl.so /usr/local/lib/libcurl.so
+COPY libs/libsysdignative.so /usr/local/lib/libsysdignative.so
+COPY driver /driver
+
+# `ldconfig` is required so that `curl` can find its `libcurl.so`.
+RUN ldconfig
+
+WORKDIR /
+
+# update StackRox boot script
+COPY scripts/bootstrap.sh /bootstrap.sh
+RUN chown root.root /bootstrap.sh
+RUN chmod 700 /bootstrap.sh
+
+ENTRYPOINT ["/bootstrap.sh"]
+
+# You must provide a BROKER_LIST environment variable or override the CMD.
+# For information on other variables, see the explanations of these environment variables above.
+CMD extractor \
+        --broker-list=$BROKER_LIST \
+        --max-content-length=$MAX_CONTENT_LENGTH_KB \
+        --connection-limit=$CONNECTION_LIMIT \
+        --per-ip-connection-limit=$CONNECTION_LIMIT_PER_IP \
+        --connection-timeout=$CONNECTION_TIMEOUT \
+        --roxd-endpoint=$ROX_DAEMON_ENDPOINT \
+        --map-refresh-interval=$MAP_REFRESH_INTERVAL_MS

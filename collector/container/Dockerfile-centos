@@ -1,0 +1,86 @@
+FROM centos:7
+MAINTAINER StackRox
+
+# SYSDIG_HOST_ROOT is required by the sysdig kernel module; used as a prefix to
+# paths like /dev/sysdig0, /proc, and /boot. Make sure this matches the volume
+# mount paths used when launching this container.
+#
+# ROX_MAX_CONTENT_LENGTH_KB is optional, and it defaults to 1024.
+#
+# ROX_CONNECTION_LIMIT is optional, and it defaults to 64.
+#
+# ROX_CONNECTION_LIMIT_PER_IP is optional, and it defaults to 64.
+#
+# ROX_CONNECTION_TIMEOUT is optional, and it defaults to 8.
+#
+# ROX_DAEMON_ENDPOINT is optional (but highly recommended), and it defaults to roxd.stackrox:8888.
+#
+# ROX_MAP_REFRESH_INTERVAL_MS is optional, and it defaults to 1000.
+ENV SYSDIG_HOST_ROOT=/host \
+    ROX_MAX_CONTENT_LENGTH_KB=1024 \
+    ROX_CONNECTION_LIMIT=64 \
+    ROX_CONNECTION_LIMIT_PER_IP=64 \
+    ROX_CONNECTION_TIMEOUT=8 \
+    ROX_DAEMON_ENDPOINT=roxd.stackrox:8888 \
+    ROX_MAP_REFRESH_INTERVAL_MS=1000
+
+# HTTP API port (4419)
+EXPOSE 4419
+
+# Install our dependencies
+RUN yum update -y \
+    && yum groupinstall -y "Development Tools" \
+    && yum install -y kernel-devel-$(uname -r) \
+    && yum install -y wget \
+    && wget http://rpms.famillecollet.com/enterprise/7/remi/x86_64/remi-release-7.2-1.el7.remi.noarch.rpm \
+    && wget http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-8.noarch.rpm \
+    && rpm -ivh epel-release-7-8.noarch.rpm \
+    && rpm -Uvh remi-release*rpm \
+    && wget http://stedolan.github.io/jq/download/linux64/jq \
+    && chmod +x ./jq \
+    && cp jq /usr/bin \
+    && yum install -y boost-devel \
+    && yum install -y \
+       jsoncpp-devel \
+       libmicrohttpd-devel \
+       openssl-devel \
+       ;
+
+# link the headers
+RUN mkdir -p /lib/modules/$(uname -r) \
+    && ln -s /usr/src/kernels/$(uname -r) /lib/modules/$(uname -r)/build
+
+COPY chisels /
+COPY bin/curl /usr/local/bin/curl
+COPY bin/extractor /usr/local/bin/extractor
+COPY bin/sysdig /usr/bin/sysdig
+COPY driver/sysdig-probe.ko /usr/bin/sysdig-probe.ko
+COPY libs/librdkafka.so /usr/local/lib/librdkafka.so
+COPY libs/libcurl.so /usr/local/lib/libcurl.so
+COPY libs/libsysdignative.so /usr/local/lib/libsysdignative.so
+COPY driver /driver
+
+# /usr/local/lib is not on the default link path on CentOS.
+RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/usrlocal.conf
+# `ldconfig` is required so that `curl` can find its dependencies.
+RUN ldconfig
+
+WORKDIR /
+
+# update StackRox boot script
+COPY scripts/bootstrap.sh /bootstrap.sh
+RUN chown root.root /bootstrap.sh
+RUN chmod 700 /bootstrap.sh
+
+ENTRYPOINT ["/bootstrap.sh"]
+
+# You must provide a BROKER_LIST environment variable or override the CMD.
+# For information on other variables, see the explanations of these environment variables above.
+CMD extractor \
+        --broker-list=$BROKER_LIST \
+        --max-content-length=$ROX_MAX_CONTENT_LENGTH_KB \
+        --connection-limit=$ROX_CONNECTION_LIMIT \
+        --per-ip-connection-limit=$ROX_CONNECTION_LIMIT_PER_IP \
+        --connection-timeout=$ROX_CONNECTION_TIMEOUT \
+        --roxd-endpoint=$ROX_DAEMON_ENDPOINT \
+        --map-refresh-interval=$ROX_MAP_REFRESH_INTERVAL_MS
