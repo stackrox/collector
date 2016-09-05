@@ -28,8 +28,6 @@ You should have received a copy of the GNU General Public License along with thi
 #define DEFAULT_CONNECTION_LIMIT 64
 #define DEFAULT_CONNECTION_LIMIT_PER_IP 64
 #define DEFAULT_CONNECTION_TIMEOUT_SECONDS 8
-#define DEFAULT_SERVER_ENDPOINT std::string("localhost:8888")
-#define DEFAULT_MAP_REFRESH_INTERVAL_MS 1000
 
 #include <string>
 #include <json/json.h>
@@ -49,7 +47,6 @@ class CollectorArgs {
     option::ArgStatus checkChisel(const option::Option& option, bool msg);
     option::ArgStatus checkBrokerList(const option::Option& option, bool msg);
     option::ArgStatus checkOptionalNumeric(const option::Option& option, bool msg);
-    option::ArgStatus checkServerEndpoint(const option::Option& option, bool msg);
 
     const Json::Value &CollectorConfig() const;
     const std::string &Chisel() const;
@@ -58,8 +55,6 @@ class CollectorArgs {
     unsigned long ConnectionLimit() const;
     unsigned long ConnectionLimitPerIP() const;
     unsigned long ConnectionTimeoutSeconds() const;
-    const std::string &ServerEndpoint() const;
-    unsigned long MapRefreshInterval() const;
     const std::string &Message() const;
 
     private:
@@ -77,8 +72,6 @@ class CollectorArgs {
     unsigned long connectionLimit;
     unsigned long connectionLimitPerIP;
     unsigned long connectionTimeoutSeconds;
-    std::string serverEndpoint;
-    unsigned long mapRefreshInterval;
     std::string message;
 };
 

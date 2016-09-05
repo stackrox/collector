@@ -26,6 +26,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <string>
 #include <map>
+#include <vector>
 
 #include "KafkaClient.h"
 #include "Sysdig.h"
@@ -45,8 +46,6 @@ class SysdigService : public Sysdig {
 
     void getSyscallIds(std::string syscall, std::vector<int>& ids);
 
-    std::map<std::string, std::string> &containers();
-    bool commit();
     bool stats(SysdigStats &s);
     KafkaClient *getKafkaClient();
 
@@ -55,7 +54,6 @@ class SysdigService : public Sysdig {
 
     private:
     bool &terminate;
-    std::map<std::string, std::string> containerMap;
     std::map<std::string, int> syscallsMap;
 };
 

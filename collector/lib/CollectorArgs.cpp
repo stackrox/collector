@@ -44,8 +44,6 @@ enum optionIndex {
     CONNECTION_LIMIT_PER_IP,
     CONNECTION_TIMEOUT,
     MAX_CONTENT_LENGTH,
-    SERVER_ENDPOINT,
-    MAP_REFRESH_INTERVAL,
 };
 
 static option::ArgStatus
@@ -72,12 +70,6 @@ checkOptionalNumeric(const option::Option& option, bool msg)
     return CollectorArgs::getInstance()->checkOptionalNumeric(option, msg);
 }
 
-static option::ArgStatus
-checkServerEndpoint(const option::Option& option, bool msg)
-{
-    return CollectorArgs::getInstance()->checkServerEndpoint(option, msg);
-}
-
 static const option::Descriptor usage[] =
 {
     { UNKNOWN,                 0, "", "",                        option::Arg::None,     "USAGE: collector [options]\n\n"
@@ -90,8 +82,6 @@ static const option::Descriptor usage[] =
     { CONNECTION_LIMIT,        0, "", "connection-limit",        checkOptionalNumeric,  "  --connection-limit    \tOPTIONAL: Maximum number of concurrent connections to accept; default is 64." },
     { CONNECTION_LIMIT_PER_IP, 0, "", "per-ip-connection-limit", checkOptionalNumeric,  "  --per-ip-connection-limit \tOPTIONAL: Limit on the number of (concurrent) connections made to the server from the same IP address; default is 64." },
     { CONNECTION_TIMEOUT,      0, "", "connection-timeout",      checkOptionalNumeric,  "  --connection-timeout \tOPTIONAL: After how many seconds of inactivity should a connection be timed out; default is 8 seconds." },
-    { SERVER_ENDPOINT,           0, "", "server-endpoint",           checkServerEndpoint,     "  --server-endpoint \tOPTIONAL: The address of the API server endpoint; defaults to localhost:8888" },
-    { MAP_REFRESH_INTERVAL,    0, "", "map-refresh-interval",    checkOptionalNumeric,  "  --map-refresh-interval \tOPTIONAL: How often (in milliseconds) to refresh container-to-ML-stack mapping; default is 1000."},
     { UNKNOWN,                 0, "", "",                        option::Arg::None,     "\nExamples:\n"
                                                                                         "  collector --broker-list=\"172.16.0.5:9092\"\n"
                                                                                         "  collector --broker-list=\"172.16.0.5:9092\" --max-content-length=1024\n"
@@ -105,9 +95,7 @@ CollectorArgs::CollectorArgs()
     : maxContentLengthKB(DEFAULT_MAX_HTTP_CONTENT_LENGTH_KB),
       connectionLimit(DEFAULT_CONNECTION_LIMIT),
       connectionLimitPerIP(DEFAULT_CONNECTION_LIMIT_PER_IP),
-      connectionTimeoutSeconds(DEFAULT_CONNECTION_TIMEOUT_SECONDS),
-      serverEndpoint(DEFAULT_SERVER_ENDPOINT),
-      mapRefreshInterval(DEFAULT_MAP_REFRESH_INTERVAL_MS)
+      connectionTimeoutSeconds(DEFAULT_CONNECTION_TIMEOUT_SECONDS)
 {
 }
 
@@ -363,9 +351,6 @@ CollectorArgs::checkOptionalNumeric(const option::Option& option, bool msg)
                 case CONNECTION_TIMEOUT:
                     this->message = "Malformed connection timeout";
                     break;
-                case MAP_REFRESH_INTERVAL:
-                    this->message = "Malformed map refresh interval";
-                    break;
             }
         }
         return ARG_ILLEGAL;
@@ -384,31 +369,7 @@ CollectorArgs::checkOptionalNumeric(const option::Option& option, bool msg)
         case CONNECTION_TIMEOUT:
             this->connectionTimeoutSeconds = tmp;
             break;
-        case MAP_REFRESH_INTERVAL:
-            this->mapRefreshInterval = tmp;
-            break;
     }
-
-    return ARG_OK;
-}
-
-option::ArgStatus
-CollectorArgs::checkServerEndpoint(const option::Option& option, bool msg) {
-    using namespace option;
-    using std::string;
-
-    if (option.arg == NULL) {
-        return ARG_IGNORE;
-    }
-
-    // Parse the string argument
-    if (::strlen(option.arg) > 255) {
-        this->message = "API endpoint is too long (limit 255 characters)";
-        return ARG_ILLEGAL;
-    }
-
-    string arg(option.arg);
-    this->serverEndpoint = option.arg;
 
     return ARG_OK;
 }
@@ -453,18 +414,6 @@ unsigned long
 CollectorArgs::ConnectionTimeoutSeconds() const
 {
     return connectionTimeoutSeconds;
-}
-
-const std::string &
-CollectorArgs::ServerEndpoint() const
-{
-    return serverEndpoint;
-}
-
-unsigned long
-CollectorArgs::MapRefreshInterval() const
-{
-    return mapRefreshInterval;
 }
 
 const std::string &

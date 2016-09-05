@@ -26,7 +26,6 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <json/json.h>
 
-#include "ContainersMessage.h"
 #include "GetStatus.h"
 #include "Request.h"
 #include "Response.h"
@@ -52,12 +51,6 @@ GetStatus::handleRequest(const Request *request, Response &response)
     status["status"] = sysdig->ready() ? "ok" : "not ready";
 
     if (sysdig->ready()) {
-        status["containers"] = ContainersMessage(sysdig->containers()).toJSON();
-    } else {
-        status["containers"] = Json::Value(Json::objectValue);
-    }
-
-    if (sysdig->ready()) {
         SysdigStats stats;
         if (!sysdig->stats(stats)) {
             status["sysdig"] = Json::Value(Json::objectValue);
@@ -70,7 +63,6 @@ GetStatus::handleRequest(const Request *request, Response &response)
             status["sysdig"]["drops"] = Json::UInt64(stats.nDrops);
             status["sysdig"]["preemptions"] = Json::UInt64(stats.nPreemptions);
             status["sysdig"]["m_line_periodocity"] = Json::UInt(stats.mLinePeriodicity);
-            status["sysdig"]["heartbeat_duration"] = Json::UInt(stats.heartbeatDuration);
             status["sysdig"]["events_delta"] = Json::UInt64(stats.nEventsDelta);
             status["sysdig"]["drops_delta"] = Json::UInt64(stats.nDropsDelta);
             status["sysdig"]["preemptions_delta"] = Json::UInt64(stats.nPreemptionsDelta);

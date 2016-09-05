@@ -44,10 +44,7 @@ extern "C" {
 const char* scap_get_host_root();
 }
 
-#include "ContainerMapWatcher.h"
 #include "CollectorArgs.h"
-#include "GetContainers.h"
-#include "GetContainerByID.h"
 #include "GetStatus.h"
 #include "RESTServer.h"
 #include "Router.h"
@@ -325,17 +322,9 @@ main(int argc, char **argv)
     }
 
     GetStatus getStatus(&sysdig);
-    GetContainers getContainers(&sysdig);
-    GetContainerByID getContainerByID(&sysdig);
-
-    ContainerMapWatcher watcher((Sysdig *)&sysdig, g_terminate, args->MapRefreshInterval(),
-        args->ServerEndpoint(), hostname, defaultTopic);
-    watcher.start();
 
     Router router;
     router.addGetHandler("/status", &getStatus);
-    router.addGetHandler("/containers", &getContainers);
-    router.addGetHandler("/containers/([a-zA-Z0-9]{12,64})", &getContainerByID);
 
     RESTServer server(4419, args->MaxContentLengthKB(), args->ConnectionLimit(),
         args->ConnectionLimitPerIP(), args->ConnectionTimeoutSeconds(), &router);

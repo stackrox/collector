@@ -25,7 +25,6 @@ You should have received a copy of the GNU General Public License along with thi
 #define _SYSDIG_
 
 #include <string>
-#include <map>
 
 #include "KafkaClient.h"
 
@@ -41,7 +40,6 @@ struct SysdigStats {
   uint64_t    nDrops;                 // the number of drops
   uint64_t    nPreemptions;           // the number of preemptions
   uint32_t    mLinePeriodicity;       // periodicity of M lines
-  uint32_t    heartbeatDuration;      // heartbeat duration in millis
   uint64_t    nEventsDelta;           // events since last M line
   uint64_t    nDropsDelta;            // drops since last M line
   uint64_t    nPreemptionsDelta;      // preemptions since last M line
@@ -60,8 +58,6 @@ class Sysdig {
     virtual void runForever() = 0;
     virtual void cleanup() = 0;
 
-    virtual std::map<std::string, std::string> &containers() = 0;
-    virtual bool commit() = 0;
     virtual bool stats(SysdigStats &s) = 0;
     virtual KafkaClient *getKafkaClient() = 0;
 };

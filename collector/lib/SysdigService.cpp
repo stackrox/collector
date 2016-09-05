@@ -46,7 +46,6 @@ typedef struct {
   uint64_t    nDrops;                 // the number of drops
   uint64_t    nPreemptions;           // the number of preemptions
   uint32_t    mLinePeriodicity;       // periodicity of M lines
-  uint32_t    heartbeatDuration;      // heartbeat duration in millis
   uint64_t    nEventsDelta;           // events since last M line
   uint64_t    nDropsDelta;            // drops since last M line
   uint64_t    nPreemptionsDelta;      // preemptions since last M line
@@ -57,7 +56,6 @@ typedef struct {
 
 int sysdigInitialize(string chiselName, string brokerList, string format,
                      bool useKafka, string defaultTopic, int snapLen);
-bool sysdigUpdateContainerToTopic(std::map<std::string, std::string>& topicMap);
 void sysdigCleanup();
 void sysdigStartProduction(bool &isInterrupted);
 bool sysdigGetSysdigData(sysdigDataT& sysdigData);
@@ -209,18 +207,6 @@ SysdigService::runForever()
     sysdigStartProduction(terminate);
 }
 
-std::map<std::string, std::string> &
-SysdigService::containers()
-{
-    return containerMap;
-}
-
-bool
-SysdigService::commit()
-{
-    return sysdigUpdateContainerToTopic(containerMap);
-}
-
 bool
 SysdigService::stats(SysdigStats &out)
 {
@@ -234,7 +220,6 @@ SysdigService::stats(SysdigStats &out)
         out.nDrops = sysdigData.nDrops;
         out.nPreemptions = sysdigData.nPreemptions;
         out.mLinePeriodicity = sysdigData.mLinePeriodicity;
-        out.heartbeatDuration = sysdigData.heartbeatDuration;
         out.nEventsDelta = sysdigData.nEventsDelta;
         out.nDropsDelta = sysdigData.nDropsDelta;
         out.nPreemptionsDelta = sysdigData.nPreemptionsDelta;

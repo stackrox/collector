@@ -85,8 +85,6 @@ struct CollectorArgsTestCase {
     unsigned long            expectedConnectionLimit;
     unsigned long            expectedConnectionLimitPerIP;
     unsigned long            expectedConnectionTimeoutSeconds;
-    std::string              expectedServerEndpoint;
-    unsigned long            expectedMapRefreshInterval;
 
     friend std::ostream& operator<<(std::ostream& os, const CollectorArgsTestCase& obj) {
         std::string argv;
@@ -106,9 +104,7 @@ struct CollectorArgsTestCase {
             << " expectedMaxContentLengthKB: " << obj.expectedMaxContentLengthKB
             << " expectedConnectionLimit: " << obj.expectedConnectionLimit
             << " expectedConnectionLimitPerIP: " << obj.expectedConnectionLimitPerIP
-            << " expectedConnectionTimeoutSeconds: " << obj.expectedConnectionTimeoutSeconds
-            << " expectedServerEndpoint: " << obj.expectedServerEndpoint
-            << " expectedMapRefreshInterval: " << obj.expectedMapRefreshInterval;
+            << " expectedConnectionTimeoutSeconds: " << obj.expectedConnectionTimeoutSeconds;
     }
 } testCases[]  = {
     // Unknown flag
@@ -121,9 +117,7 @@ struct CollectorArgsTestCase {
         1024,
         64,
         64,
-        8,
-        DEFAULT_SERVER_ENDPOINT,
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
+        8
     }
     // Broker list with one broker
     ,{
@@ -135,9 +129,7 @@ struct CollectorArgsTestCase {
         1024,
         64,
         64,
-        8,
-        DEFAULT_SERVER_ENDPOINT,
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
+        8
     }
     // Broker list without an argument
     ,{
@@ -149,9 +141,7 @@ struct CollectorArgsTestCase {
         1024,
         64,
         64,
-        8,
-        DEFAULT_SERVER_ENDPOINT,
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
+        8
     }
     // Malformed broker list
     ,{
@@ -163,9 +153,7 @@ struct CollectorArgsTestCase {
         1024,
         64,
         64,
-        8,
-        DEFAULT_SERVER_ENDPOINT,
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
+        8
     }
     // Missing broker host
     ,{
@@ -177,9 +165,7 @@ struct CollectorArgsTestCase {
         1024,
         64,
         64,
-        8,
-        DEFAULT_SERVER_ENDPOINT,
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
+        8
     }
     // Missing broker port
     ,{
@@ -191,9 +177,7 @@ struct CollectorArgsTestCase {
         1024,
         64,
         64,
-        8,
-        DEFAULT_SERVER_ENDPOINT,
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
+        8
     }
     // Broker list with multiple brokers
     ,{
@@ -205,9 +189,7 @@ struct CollectorArgsTestCase {
         1024,
         64,
         64,
-        8,
-        DEFAULT_SERVER_ENDPOINT,
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
+        8
     }
     // Long broker list
     ,{
@@ -219,9 +201,7 @@ struct CollectorArgsTestCase {
         1024,
         64,
         64,
-        8,
-        DEFAULT_SERVER_ENDPOINT,
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
+        8
     }
     // Max HTTP Content-Length
     ,{
@@ -233,9 +213,7 @@ struct CollectorArgsTestCase {
         64,
         64,
         64,
-        8,
-        DEFAULT_SERVER_ENDPOINT,
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
+        8
     }
     // Max HTTP Content-Length without an argument
     ,{
@@ -247,9 +225,7 @@ struct CollectorArgsTestCase {
         1024,
         64,
         64,
-        8,
-        DEFAULT_SERVER_ENDPOINT,
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
+        8
     }
     // Max HTTP Content-Length with non-numeric argument
     ,{
@@ -261,9 +237,7 @@ struct CollectorArgsTestCase {
         1024,
         64,
         64,
-        8,
-        DEFAULT_SERVER_ENDPOINT,
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
+        8
     }
     // Max concurrent connections
     ,{
@@ -275,9 +249,7 @@ struct CollectorArgsTestCase {
         1024,
         32,
         64,
-        8,
-        DEFAULT_SERVER_ENDPOINT,
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
+        8
     }
     // Max concurrent connections without an argument
     ,{
@@ -289,9 +261,7 @@ struct CollectorArgsTestCase {
         1024,
         64,
         64,
-        8,
-        DEFAULT_SERVER_ENDPOINT,
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
+        8
     }
     // Max concurrent connections with a non-numeric argument
     ,{
@@ -303,9 +273,7 @@ struct CollectorArgsTestCase {
         1024,
         64,
         64,
-        8,
-        DEFAULT_SERVER_ENDPOINT,
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
+        8
     }
     // Max concurrent connections per IP
     ,{
@@ -317,9 +285,7 @@ struct CollectorArgsTestCase {
         1024,
         64,
         32,
-        8,
-        DEFAULT_SERVER_ENDPOINT,
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
+        8
     }
     // Max concurrent connections per IP without an argument
     ,{
@@ -331,9 +297,7 @@ struct CollectorArgsTestCase {
         1024,
         64,
         64,
-        8,
-        DEFAULT_SERVER_ENDPOINT,
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
+        8
     }
     // Max concurrent connections per IP with a non-numeric argument
     ,{
@@ -345,9 +309,7 @@ struct CollectorArgsTestCase {
         1024,
         64,
         64,
-        8,
-        DEFAULT_SERVER_ENDPOINT,
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
+        8
     }
     // Connection timeout
     ,{
@@ -359,9 +321,7 @@ struct CollectorArgsTestCase {
         1024,
         64,
         64,
-        4,
-        DEFAULT_SERVER_ENDPOINT,
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
+        4
     }
     // Connection timeout without an argument
     ,{
@@ -373,9 +333,7 @@ struct CollectorArgsTestCase {
         1024,
         64,
         64,
-        8,
-        DEFAULT_SERVER_ENDPOINT,
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
+        8
     }
     // Connection timeout with a non-numeric argument
     ,{
@@ -387,65 +345,7 @@ struct CollectorArgsTestCase {
         1024,
         64,
         64,
-        8,
-        DEFAULT_SERVER_ENDPOINT,
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
-    }
-    // Non-default endpoint
-    ,{
-        { "collector", "--broker-list=172.16.0.5:9092", "--server-endpoint=localhost:8000" },
-        true,
-        0,
-        "",
-        "172.16.0.5:9092",
-        1024,
-        64,
-        64,
-        8,
-        "localhost:8000",
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
-    }
-    // Too-long endpoint
-    ,{
-        { "collector", "--broker-list=172.16.0.5:9092", "--server-endpoint=localhost.000000000.1111111111.2222222222.3333333333.4444444444.5555555555.6666666666.7777777777.8888888888.9999999999.000000000.1111111111.2222222222.3333333333.4444444444.5555555555.6666666666.7777777777.8888888888.9999999999.000000000.1111111111.2222222222.3333333333.4444444444.5555555555.6666666666.7777777777.8888888888.9999999999:8000" },
-        false,
-        1,
-        "API endpoint is too long (limit 255 characters)",
-        "172.16.0.5:9092",
-        1024,
-        64,
-        64,
-        8,
-        DEFAULT_SERVER_ENDPOINT,
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
-    }
-    // Non-default map refresh interval
-    ,{
-        { "collector", "--broker-list=172.16.0.5:9092",  "--map-refresh-interval=5000" },
-        true,
-        0,
-        "",
-        "172.16.0.5:9092",
-        1024,
-        64,
-        64,
-        8,
-        DEFAULT_SERVER_ENDPOINT,
-        5000
-    }
-    // Invalid (non-numeric) map refresh interval
-    ,{
-        { "collector", "--broker-list=172.16.0.5:9092",  "--map-refresh-interval=blargle" },
-        false,
-        1,
-        "Malformed map refresh interval",
-        "172.16.0.5:9092",
-        1024,
-        64,
-        64,
-        8,
-        DEFAULT_SERVER_ENDPOINT,
-        DEFAULT_MAP_REFRESH_INTERVAL_MS
+        8
     }
 };
 
@@ -476,8 +376,6 @@ TEST_P(CollectorArgsTest, Parse) {
     EXPECT_EQ(testCase.expectedConnectionLimit, args->ConnectionLimit());
     EXPECT_EQ(testCase.expectedConnectionLimitPerIP, args->ConnectionLimitPerIP());
     EXPECT_EQ(testCase.expectedConnectionTimeoutSeconds, args->ConnectionTimeoutSeconds());
-    EXPECT_EQ(testCase.expectedServerEndpoint, args->ServerEndpoint());
-    EXPECT_EQ(testCase.expectedMapRefreshInterval, args->MapRefreshInterval());
 
     args->clear();
 }

@@ -16,15 +16,11 @@ MAINTAINER StackRox
 #
 # CONNECTION_TIMEOUT is optional, and it defaults to 8.
 #
-# SERVER_ENDPOINT is optional (but highly recommended), and it defaults to roxd.stackrox:8888.
-#
-# MAP_REFRESH_INTERVAL_MS is optional, and it defaults to 1000.
 ENV SYSDIG_HOST_ROOT=/host \
     MAX_CONTENT_LENGTH_KB=1024 \
     CONNECTION_LIMIT=64 \
     CONNECTION_LIMIT_PER_IP=64 \
     CONNECTION_TIMEOUT=8 \
-    MAP_REFRESH_INTERVAL_MS=1000 \
     CHISEL='LS0gQ2hpc2VsIGRlc2NyaXB0aW9uCmRlc2NyaXB0aW9uID0gIm9ubHkgZGlzcGxheSBldmVudHMgcmVsZXZhbnQgdG8gc2VjdXJpdHkgbW9kZWxpbmcgYW5kIGRldGVjdGlvbiIKc2hvcnRfZGVzY3JpcHRpb24gPSAic2VjdXJpdHkgcmVsZXZhbnQiCmNhdGVnb3J5ID0gIm1pc2MiCgotLSBDaGlzZWwgYXJndW1lbnQgbGlzdAphcmdzID0ge30KCi0tIEV2ZW50IHBhcnNpbmcgY2FsbGJhY2sKZnVuY3Rpb24gb25fZXZlbnQoKQogICAgcmV0dXJuIHRydWUKZW5kCgpmdW5jdGlvbiBvbl9pbml0KCkKICAgIGZpbHRlciA9ICJub3QgY29udGFpbmVyLmlkID0gJ2hvc3QnXG4iCiAgICBjaGlzZWwuc2V0X2ZpbHRlcihmaWx0ZXIpCiAgICByZXR1cm4gdHJ1ZQplbmQK'
 
 # HTTP API port (4419)
@@ -90,7 +86,4 @@ CMD collector \
         --max-content-length=$MAX_CONTENT_LENGTH_KB \
         --connection-limit=$CONNECTION_LIMIT \
         --per-ip-connection-limit=$CONNECTION_LIMIT_PER_IP \
-        --connection-timeout=$CONNECTION_TIMEOUT \
-        --server-endpoint=$SERVER_ENDPOINT \
-        --map-refresh-interval=$MAP_REFRESH_INTERVAL_MS
-
+        --connection-timeout=$CONNECTION_TIMEOUT

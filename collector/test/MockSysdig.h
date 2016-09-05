@@ -25,7 +25,6 @@ You should have received a copy of the GNU General Public License along with thi
 #define _MOCK_SYSDIG_
 
 #include <string>
-#include <map>
 
 #include "Sysdig.h"
 
@@ -41,8 +40,6 @@ class MockSysdig : public Sysdig {
     MOCK_METHOD0(runForever, void());
     MOCK_METHOD0(cleanup, void());
 
-    MOCK_METHOD0(containers, std::map<std::string, std::string> &());
-    MOCK_METHOD0(commit, bool());
     MOCK_METHOD1(stats, bool(SysdigStats &s));
     MOCK_METHOD0(getKafkaClient, KafkaClient*());
 };
