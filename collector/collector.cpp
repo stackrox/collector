@@ -106,7 +106,7 @@ void insertModule(SysdigService& sysdigService, Json::Value collectorConfig) {
         if (result == EEXIST) {
             std::cout << "Module is already loaded. Attempting to delete it before re-insertion..." << endl;
             delete_module(SysdigService::moduleName.c_str(), O_NONBLOCK);
-            sleep(2);    // wait for 5s before trying again
+            sleep(2);    // wait for 2s before trying again
         }
     }
     delete[] image;
