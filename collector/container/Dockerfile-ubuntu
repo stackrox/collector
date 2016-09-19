@@ -75,6 +75,11 @@ COPY scripts/bootstrap.sh /bootstrap.sh
 RUN chown root.root /bootstrap.sh
 RUN chmod 700 /bootstrap.sh
 
+# copy notice and license files
+COPY NOTICE.txt /NOTICE.txt
+COPY COPYING-GPLv2.txt /COPYING-GPLv2.txt
+COPY COPYING-LGPLv2.1.txt /COPYING-LGPLv2.1.txt
+
 ENTRYPOINT ["/bootstrap.sh"]
 
 # You must provide a BROKER_LIST environment variable or override the CMD.
