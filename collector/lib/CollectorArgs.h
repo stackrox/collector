@@ -66,6 +66,8 @@ class CollectorArgs {
     CollectorArgs();
     ~CollectorArgs();
 
+    bool isInvalidFormat(Json::Value);
+
     static CollectorArgs *instance;
 
     Json::Value collectorConfig;

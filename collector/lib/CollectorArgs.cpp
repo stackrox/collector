@@ -30,6 +30,8 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "optionparser.h"
 
+#define MAX_CHISEL_LENGTH 8192
+
 namespace collector {
 
 enum optionIndex {
@@ -179,10 +181,38 @@ CollectorArgs::checkChisel(const option::Option& option, bool msg)
         }
         return ARG_OK;
     }
-
     chisel = option.arg;
+    int chiselEncodedLength = chisel.length();
+    if (chiselEncodedLength > MAX_CHISEL_LENGTH) {
+        if (msg) {
+            this->message = "Chisel encoded length cannot exceed " + std::to_string(MAX_CHISEL_LENGTH) + ".";
+        }
+        return ARG_ILLEGAL;
+    }
+
     std::cout << "Chisel: " << chisel << std::endl;
     return ARG_OK;
+}
+
+bool
+CollectorArgs::isInvalidFormat(Json::Value root) {
+    std::string format = "";
+    if (!collectorConfig["format"].isNull()) {
+        format = collectorConfig["format"].asString();
+    }
+    if (format.length() > 0) {
+        char* str = new char[format.length() + 1];
+        strcpy(str, format.c_str());
+        char* token = strtok(str, ",");
+        if (token == NULL)
+            return true;
+        while (token) {
+            if (strchr(token, ':') < 0)
+                return true;
+            token = strtok(NULL, ",");
+        }
+    }
+    return false;
 }
 
 option::ArgStatus
@@ -206,7 +236,7 @@ CollectorArgs::checkCollectorConfig(const option::Option& option, bool msg)
     bool parsingSuccessful = reader.parse(arg.c_str(), root);
     if (!parsingSuccessful) {
         if (msg) {
-            this->message = "The COLLECTOR_CONFIG is not valid JSON";
+            this->message = "A valid JSON configuration is required to start the collector.";
         }
         return ARG_ILLEGAL;
     }
@@ -221,10 +251,25 @@ CollectorArgs::checkCollectorConfig(const option::Option& option, bool msg)
         if (msg) {
             this->message = "No format. Events will be sent using a default event format.";
         }
+    } else if (isInvalidFormat(root)) {
+        if (msg) {
+            this->message = "Invalid format. The format is expected to be a string of ";
+            this->message += "the form label_1:sysdig_field_1, label_2:sysdig_field_2, ...";
+        }
+        return ARG_ILLEGAL;
     }
+
     if (!root.isMember("output")) {
         if (msg) {
             this->message = "No output. Events will be sent to stdout.";
+        }
+    } else {
+        std::string output = root["output"].asString();
+        if (output != "stdout" && output != "kafka") {
+            if (msg) {
+                this->message = "The output value has to be either stdout|kafka";
+                return ARG_ILLEGAL;
+            }
         }
     }
 
