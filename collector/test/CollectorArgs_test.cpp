@@ -1,4 +1,4 @@
-/** collector, Copyright (c) 2016 StackRox, Inc.
+/** collector
 
 A full notice with attributions is provided along with this source code.
 
@@ -391,9 +391,9 @@ struct CollectorArgsTestCase {
         DEFAULT_SERVER_ENDPOINT,
         DEFAULT_MAP_REFRESH_INTERVAL_MS
     }
-    // Non-default RoxD endpoint
+    // Non-default endpoint
     ,{
-        { "collector", "--broker-list=172.16.0.5:9092", "--server-endpoint=roxd.marathon.mesos:8000" },
+        { "collector", "--broker-list=172.16.0.5:9092", "--server-endpoint=localhost:8000" },
         true,
         0,
         "",
@@ -402,12 +402,12 @@ struct CollectorArgsTestCase {
         64,
         64,
         8,
-        "roxd.marathon.mesos:8000",
+        "localhost:8000",
         DEFAULT_MAP_REFRESH_INTERVAL_MS
     }
-    // Too-long RoxD endpoint
+    // Too-long endpoint
     ,{
-        { "collector", "--broker-list=172.16.0.5:9092", "--server-endpoint=roxd.000000000.1111111111.2222222222.3333333333.4444444444.5555555555.6666666666.7777777777.8888888888.9999999999.000000000.1111111111.2222222222.3333333333.4444444444.5555555555.6666666666.7777777777.8888888888.9999999999.000000000.1111111111.2222222222.3333333333.4444444444.5555555555.6666666666.7777777777.8888888888.9999999999:8000" },
+        { "collector", "--broker-list=172.16.0.5:9092", "--server-endpoint=localhost.000000000.1111111111.2222222222.3333333333.4444444444.5555555555.6666666666.7777777777.8888888888.9999999999.000000000.1111111111.2222222222.3333333333.4444444444.5555555555.6666666666.7777777777.8888888888.9999999999.000000000.1111111111.2222222222.3333333333.4444444444.5555555555.6666666666.7777777777.8888888888.9999999999:8000" },
         false,
         1,
         "API endpoint is too long (limit 255 characters)",

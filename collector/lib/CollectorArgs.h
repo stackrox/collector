@@ -1,4 +1,4 @@
-/** collector, Copyright (c) 2016 StackRox, Inc.
+/** collector
 
 A full notice with attributions is provided along with this source code.
 
@@ -28,7 +28,7 @@ You should have received a copy of the GNU General Public License along with thi
 #define DEFAULT_CONNECTION_LIMIT 64
 #define DEFAULT_CONNECTION_LIMIT_PER_IP 64
 #define DEFAULT_CONNECTION_TIMEOUT_SECONDS 8
-#define DEFAULT_SERVER_ENDPOINT std::string("roxd.stackrox:8888")
+#define DEFAULT_SERVER_ENDPOINT std::string("localhost:8888")
 #define DEFAULT_MAP_REFRESH_INTERVAL_MS 1000
 
 #include <string>

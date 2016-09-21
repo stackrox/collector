@@ -1,4 +1,4 @@
-/** collector, Copyright (c) 2016 StackRox, Inc.
+/** collector
 
 A full notice with attributions is provided along with this source code.
 
@@ -88,7 +88,7 @@ static const option::Descriptor usage[] =
     { CONNECTION_LIMIT,        0, "", "connection-limit",        checkOptionalNumeric,  "  --connection-limit    \tOPTIONAL: Maximum number of concurrent connections to accept; default is 64." },
     { CONNECTION_LIMIT_PER_IP, 0, "", "per-ip-connection-limit", checkOptionalNumeric,  "  --per-ip-connection-limit \tOPTIONAL: Limit on the number of (concurrent) connections made to the server from the same IP address; default is 64." },
     { CONNECTION_TIMEOUT,      0, "", "connection-timeout",      checkOptionalNumeric,  "  --connection-timeout \tOPTIONAL: After how many seconds of inactivity should a connection be timed out; default is 8 seconds." },
-    { SERVER_ENDPOINT,           0, "", "server-endpoint",           checkServerEndpoint,     "  --server-endpoint \tOPTIONAL: The address of the API server endpoint; defaults to roxd.stackrox:8888" },
+    { SERVER_ENDPOINT,           0, "", "server-endpoint",           checkServerEndpoint,     "  --server-endpoint \tOPTIONAL: The address of the API server endpoint; defaults to localhost:8888" },
     { MAP_REFRESH_INTERVAL,    0, "", "map-refresh-interval",    checkOptionalNumeric,  "  --map-refresh-interval \tOPTIONAL: How often (in milliseconds) to refresh container-to-ML-stack mapping; default is 1000."},
     { UNKNOWN,                 0, "", "",                        option::Arg::None,     "\nExamples:\n"
                                                                                         "  collector --broker-list=\"172.16.0.5:9092\"\n"

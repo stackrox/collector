@@ -36,6 +36,6 @@ services:
       - CONNECTION_LIMIT=32
       - CONNECTION_LIMIT_PER_IP=32
       - CONNECTION_TIMEOUT=4
-      - COLLECTOR_CONFIG={"syscalls":["open","close","read","write"],"output":"stdout","format":"container:container.id,event:evt.type,time:evt.time,rawtime:evt.rawtime,direction:evt.dir,image:container.image,name:container.name"}
+      - COLLECTOR_CONFIG={"syscalls":["open","close","read","write"],"output":"kafka","format":"container:container.id,event:evt.type,time:evt.time,rawtime:evt.rawtime,direction:evt.dir,image:container.image,name:container.name"}
     depends_on:
       - kafka

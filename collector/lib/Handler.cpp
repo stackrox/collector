@@ -1,4 +1,4 @@
-/** collector, Copyright (c) 2016 StackRox, Inc.
+/** collector
 
 A full notice with attributions is provided along with this source code.
 
