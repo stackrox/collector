@@ -2,14 +2,6 @@ HDRS := $(shell find . -name '*.h' -not -path './container/*')
 SRCS := $(shell find . -name '*.cpp' -not -path './container/*')
 
 #determine platform
-ifeq (Boot2Docker, $(findstring Boot2Docker, $(shell docker info)))
-  PLATFORM := OSX
-  DOCKERFILE := Dockerfile-b2d
-endif
-ifeq (Debian, $(findstring Debian, $(shell docker info)))
-  PLATFORM := Debian
-  DOCKERFILE := Dockerfile-debian
-endif
 ifeq (Ubuntu, $(findstring Ubuntu, $(shell docker info)))
   PLATFORM := Ubuntu
   DOCKERFILE := Dockerfile-ubuntu
