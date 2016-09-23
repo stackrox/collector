@@ -35,10 +35,10 @@ echo "$HOSTNAME" > /host/etc/hostname
 #sysdig start
 KERNELVERSION=`uname -r`
 OS_DETAILS=$(cat /etc/os-release)
-if echo $OS_DETAILS | grep -q CentOS; then
+if echo $OS_DETAILS | grep -q Ubuntu; then
+    install_kernel_headers_ubuntu
     remove_sysdig_module
 else
-    install_kernel_headers_ubuntu
     remove_sysdig_module
 fi
 #sysdig done

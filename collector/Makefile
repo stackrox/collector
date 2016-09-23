@@ -11,7 +11,7 @@ ifeq (CentOS, $(findstring CentOS, $(shell docker info)))
   DOCKERFILE := Dockerfile-centos
 endif
 ifeq (Red Hat, $(findstring Red Hat, $(shell docker info)))
-  PLATFORM := CentOS
+  PLATFORM := RedHat
   DOCKERFILE := Dockerfile-centos
 endif
 
