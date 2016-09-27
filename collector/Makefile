@@ -20,7 +20,7 @@ endif
 all: container
 
 container: container/bin/collector container/$(DOCKERFILE) container/scripts/
-	cd container && docker build -f $(DOCKERFILE) -t stackrox/collector:latest .
+	cd container && docker build -f $(DOCKERFILE) -t stackroxcollector/collector:latest .
 
 container/include/KafkaClient.h:
 	mkdir -p container/include
