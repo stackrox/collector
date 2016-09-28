@@ -53,7 +53,7 @@ container/libs/libsysdignative.so: ../ext/sysdig/src/
 
 clean:
 	docker rm -fv build_collector || true
-	docker rmi -f stackrox/collector:latest || true
+	docker rmi -f stackroxcollector/collector:latest || true
 	docker rmi -f build_collector:latest || true
 	make -C ../ext/sysdig clean
 	rm -rf container/include

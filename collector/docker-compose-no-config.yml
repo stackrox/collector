@@ -19,7 +19,7 @@ services:
       - zookeeper
 
   collector:
-    image: stackrox/collector:latest
+    image: stackroxcollector/collector:latest
     privileged: true
     ports:
       - 4419:4419
