@@ -30,6 +30,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 extern "C" {
 #include <assert.h>
+#include <execinfo.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <sys/stat.h>
@@ -64,6 +65,27 @@ signal_callback(int signal)
 {
     std::cerr << "Caught signal " << signal << std::endl;
     g_terminate = true;
+}
+
+static void
+sigsegv_handler(int signal) {
+    void* array[32];
+    size_t size;
+    char** strings;
+    unsigned int i = 0;
+
+    size = backtrace(array, 32);
+
+    strings = backtrace_symbols(array, size);
+    FILE* fp = fopen("/host/dev/collector-stacktrace-for-ya.txt", "w");
+    for (i = 0; i < size; i++) {
+        fprintf(fp, "  %s\n", strings[i]);
+        fprintf(stdout, "  %s\n", strings[i]);
+    }
+    fflush(fp);
+    fclose(fp);
+
+    exit(1);
 }
 
 static const std::string
@@ -118,20 +140,24 @@ void insertModule(SysdigService& sysdigService, Json::Value collectorConfig) {
     close(fd);
 
     std::cout << "Inserting kernel module " << SysdigService::modulePath <<
-        " with arguments " << args << endl;
+        " with indefinite removal and retry if required, and with arguments " << args << endl;
 
     // Attempt to insert the module. If it is already inserted then remove it and
     // try again
     int result = init_module(image, imageSize, args.c_str());
     while (result != 0) {
-        std::cout << "Inserting kernel module " << SysdigService::modulePath <<
-            " failed with code " << result << ". Retrying..." << endl;
         if (result == EEXIST) {
-            std::cout << "Module is already loaded. Attempting to delete it before re-insertion..." << endl;
-            delete_module(SysdigService::moduleName.c_str(), O_NONBLOCK);
+            // note that we forcefully remove the kernel module whether or not it has a non-zero
+            // reference count. There is only one container that is ever expected to be using
+            // this kernel module and that is us
+            delete_module(SysdigService::moduleName.c_str(), O_NONBLOCK | O_TRUNC);
             sleep(2);    // wait for 2s before trying again
         }
+        result = init_module(image, imageSize, args.c_str());
     }
+
+    std::cout << "Done inserting kernel module " << SysdigService::modulePath << "!" << endl;
+
     delete[] image;
 }
 
@@ -320,6 +346,7 @@ main(int argc, char **argv)
 
     signal(SIGINT, signal_callback);
     signal(SIGTERM, signal_callback);
+    signal(SIGSEGV, sigsegv_handler);
 
     sysdig.runForever();
     server.stop();
