@@ -55,6 +55,7 @@ class ContainerMapWatcher {
     const bool validContainerID(const std::string &containerID);
     const std::string topicName(const Json::Value &mappings, const std::string &containerID);
 
+
     Sysdig *sysdig;
     bool &terminate;
     unsigned int refreshIntervalMs;

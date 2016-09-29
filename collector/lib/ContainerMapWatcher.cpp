@@ -103,6 +103,27 @@ ContainerMapWatcher::ContainerMapWatcher(Sysdig *sysdigService, bool &terminate_
         throw std::runtime_error(msg);
     }
 
+    // add Authorization header to all CURL requests from this watcher
+    // see https://curl.haxx.se/libcurl/c/CURLOPT_HTTPHEADER.html
+    char* token = std::getenv("ROX_API_TOKEN");
+    if (token == NULL) {
+        std::string msg("Unable to find ROX_API_TOKEN in environment variables. Will be unable to authenticate to RoxD.");
+        throw std::runtime_error(msg);
+    }
+    struct curl_slist *authorizationHeader = NULL;
+    std::string authorization = "Authorization: " + std::string(token);
+    authorizationHeader = curl_slist_append(authorizationHeader, authorization.c_str());
+    if (authorizationHeader == NULL) {
+        std::string msg("Unexpected error setting Authorization header for Container Mapping API handle. Unable to allocate headers list.");
+        throw std::runtime_error(msg);
+    }
+    code = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, authorizationHeader);
+    if (code != CURLE_OK) {
+        std::string msg("Unexpected error setting Authorization header for Container Mapping API handle: ");
+        msg += curl_easy_strerror(code);
+        throw std::runtime_error(msg);
+    }
+
     this->buffer.reserve(CURL_MAX_WRITE_SIZE);
 
     std::cout << "Initialized Container Map Watcher" << std::endl;
