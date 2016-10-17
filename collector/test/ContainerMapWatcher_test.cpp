@@ -43,7 +43,7 @@ class ContainerMapWatcherTest : public testing::Test {
 
         // We need to provide our mocked Sysdig service to the watcher; all other args are dummy values that may be included in tests.
         bool watcherTerminate = false;
-        EXPECT_EQ(setenv("ROX_API_TOKEN", "arbitrary", 0), 0);
+        EXPECT_EQ(setenv("API_TOKEN", "arbitrary", 0), 0);
         watcher = new ContainerMapWatcher((Sysdig *)&sysdig, watcherTerminate, 1000, "test-endpoint/v0.1/api/containers/topic_map", "test-node", "topic-default");
     }
 

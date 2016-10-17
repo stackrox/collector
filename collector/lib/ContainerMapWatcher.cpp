@@ -105,9 +105,9 @@ ContainerMapWatcher::ContainerMapWatcher(Sysdig *sysdigService, bool &terminate_
 
     // add Authorization header to all CURL requests from this watcher
     // see https://curl.haxx.se/libcurl/c/CURLOPT_HTTPHEADER.html
-    char* token = std::getenv("ROX_API_TOKEN");
+    char* token = std::getenv("API_TOKEN");
     if (token == NULL) {
-        std::string msg("Unable to find ROX_API_TOKEN in environment variables. Will be unable to authenticate to RoxD.");
+        std::string msg("Unable to find API_TOKEN in environment variables. Will be unable to authenticate.");
         throw std::runtime_error(msg);
     }
     struct curl_slist *authorizationHeader = NULL;
