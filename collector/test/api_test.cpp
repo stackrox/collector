@@ -86,6 +86,7 @@ class APITest : public ::testing::Test {
 
         // We need to provide our mocked Sysdig service to the watcher; all other args are dummy values.
         bool watcherTerminate = false;
+        EXPECT_EQ(setenv("API_TOKEN", "arbitrary", 0), 0);
         containerMapWatcher = new ContainerMapWatcher((Sysdig *)&sysdig, watcherTerminate, 1000, "not-an-endpoint", "my-node", "topic-default");
     }
 
