@@ -62,5 +62,5 @@ clean:
 	rm -rf container/libs
 
 info:
-	echo "platform : " $(PLATFORM)
-	echo "dockerfile  : " $(DOCKERFILE)
+	echo "platform:   " $(PLATFORM)
+	echo "dockerfile: " $(DOCKERFILE)
