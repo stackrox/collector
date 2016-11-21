@@ -2,14 +2,14 @@ version: '2'
 
 services:
   zookeeper:
-    image: stackrox/zookeeper:latest
+    image: zookeeper:latest
     ports:
       - 2181:2181
     environment:
       - ZOOKEEPER_ID=1
 
   kafka:
-    image: stackrox/kafka:latest
+    image: kafka:latest
     ports:
       - 9092:9092
     environment:
@@ -19,7 +19,7 @@ services:
       - zookeeper
 
   collector:
-    image: stackroxcollector/collector:latest
+    image: collector:latest
     privileged: true
     ports:
       - 4419:4419

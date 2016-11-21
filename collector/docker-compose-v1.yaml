@@ -1,12 +1,12 @@
 zookeeper:
-  image: stackrox/zookeeper:latest
+  image: zookeeper:latest
   ports:
     - 2181:2181
   environment:
     - ZOOKEEPER_ID=1
 
 kafka:
-  image: stackrox/kafka:latest
+  image: kafka:latest
   ports:
     - 9092:9092
   environment:
@@ -16,7 +16,7 @@ kafka:
     - zookeeper
 
 collector:
-  image: stackroxcollector/collector:latest
+  image: collector:latest
   privileged: true
   ports:
     - 4419:4419

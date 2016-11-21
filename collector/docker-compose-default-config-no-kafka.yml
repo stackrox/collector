@@ -2,7 +2,7 @@ version: '2'
 
 services:
   collector:
-    image: stackroxcollector/collector:latest
+    image: collector:latest
     privileged: true
     ports:
       - 4419:4419

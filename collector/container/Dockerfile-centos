@@ -1,5 +1,4 @@
 FROM centos:7
-MAINTAINER StackRox
 
 # SYSDIG_HOST_ROOT is required by the sysdig kernel module; used as a prefix to
 # paths like /dev/sysdig0, /proc, and /boot. Make sure this matches the volume
@@ -65,7 +64,7 @@ RUN ldconfig
 
 WORKDIR /
 
-# update StackRox boot script
+# update boot script
 COPY scripts/bootstrap.sh /bootstrap.sh
 RUN chown root.root /bootstrap.sh
 RUN chmod 700 /bootstrap.sh

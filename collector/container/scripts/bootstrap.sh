@@ -26,9 +26,9 @@ function install_kernel_headers_ubuntu() {
     make KERNELRELEASE=$KERNELVERSION -C /lib/modules/$KERNELVERSION/build M=/driver clean modules
 }
 
-# Get the hostname from Docker so Extractor can use it in its output.
+# Get the hostname from Docker so this container can use it in its output.
 HOSTNAME=$(curl -s --unix-socket /host/var/run/docker.sock http://localhost/info | jq --raw-output .Name)
-echo "Setting this extractor's hostname to $HOSTNAME"
+echo "Setting this container's hostname to $HOSTNAME"
 mkdir -p /host/etc/
 echo "$HOSTNAME" > /host/etc/hostname
 

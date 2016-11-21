@@ -1,5 +1,4 @@
 FROM centos:7
-MAINTAINER StackRox
 
 # Install our dependencies
 # libcurl-devel -> https://ckon.wordpress.com/2015/08/26/curl-broken-centos7-rhel7/
