@@ -23,7 +23,12 @@ function install_kernel_headers_ubuntu() {
 
     apt-get update && apt-get install -y linux-headers-$KERNELVERSION
 
-    make KERNELRELEASE=$KERNELVERSION -C /lib/modules/$KERNELVERSION/build M=/driver clean modules
+    test make KERNELRELEASE=$KERNELVERSION -C /lib/modules/$KERNELVERSION/build M=/driver clean modules
+ }
+
+function install_kernel_headers_centos() {
+	yum install -y kernel-devel-$(uname -r)
+    test make KERNELRELEASE=$KERNELVERSION -C /usr/src/kernels/$KERNELVERSION/ M=/driver clean modules
 }
 
 # Get the hostname from Docker so this container can use it in its output.
@@ -34,12 +39,15 @@ echo "$HOSTNAME" > /host/etc/hostname
 
 #sysdig start
 KERNELVERSION=`uname -r`
-OS_DETAILS=$(cat /etc/os-release)
-if echo $OS_DETAILS | grep -q Ubuntu; then
+OS_DETAILS=$(uname -a)
+if echo $OS_DETAILS | grep -qi Ubuntu; then
     install_kernel_headers_ubuntu
     remove_sysdig_module
-else
+elif echo $OS_DETAILS | grep -qi centos; then
+	install_kernel_headers_centos
     remove_sysdig_module
+else
+	remove_sysdig_module
 fi
 #sysdig done
 
