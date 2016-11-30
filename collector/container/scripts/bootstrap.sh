@@ -44,7 +44,10 @@ if echo $OS_DETAILS | grep -qi Ubuntu; then
     install_kernel_headers_ubuntu
     remove_sysdig_module
 elif echo $OS_DETAILS | grep -qi centos; then
-	install_kernel_headers_centos
+    install_kernel_headers_centos
+    remove_sysdig_module
+elif echo $OS_DETAILS | grep -qi rhel; then
+    install_kernel_headers_centos
     remove_sysdig_module
 else
 	remove_sysdig_module
