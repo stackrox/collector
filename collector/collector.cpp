@@ -127,7 +127,7 @@ void insertModule(SysdigService& sysdigService, Json::Value collectorConfig) {
     }
     struct stat st;
     if (fstat(fd, &st) < 0) {
-        std::cout << "Error inserting kernel module: " <<
+        std::cout << "Error getting file info for kernel module: " <<
             SysdigService::modulePath << ". Aborting..." << std::endl;
         exit(-1);
     }
@@ -149,6 +149,10 @@ void insertModule(SysdigService& sysdigService, Json::Value collectorConfig) {
             // this kernel module and that is us
             delete_module(SysdigService::moduleName.c_str(), O_NONBLOCK | O_TRUNC);
             sleep(2);    // wait for 2s before trying again
+        } else {
+            std::cout << "Error inserting kernel module: " <<
+                SysdigService::modulePath << ": " << strerror(errno) <<". Aborting..." << std::endl;
+            exit(-1);
         }
         result = init_module(image, imageSize, args.c_str());
     }
