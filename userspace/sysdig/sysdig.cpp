@@ -922,7 +922,12 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 		{"snaplen", required_argument, 0, 's' },
 		{"summary", no_argument, 0, 'S' },
 		{"timetype", required_argument, 0, 't' },
-		{"force-tracers-capture", required_argument, 0, 'T'},
+	    // Begin StackRox section
+
+		// Conflicts with option for kafka topic
+		// {"force-tracers-capture", required_argument, 0, 'T'},
+
+		// End StackRox section
 		{"unbuffered", no_argument, 0, 0 },
 		{"verbose", no_argument, 0, 'v' },
 		{"version", no_argument, 0, 0 },
@@ -962,9 +967,18 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
                                         "C:"
                                         "dDEe:F"
                                         "G:"
-                                        "hi:jk:K:lLm:M:n:Pp:qRr:Ss:t:Tv"
+                                        // Begin StackRox section
+                                        /*
+                                        "hi:jk:K:lLm:M:Nn:Pp:qr:Ss:t:Tv"
+                                        */
+                                        "hi:jk:K:lLm:M:Nn:Pp:qr:Ss:t:v"
                                         "W:"
+                                        /*
                                         "w:xXz", long_options, &long_index)) != -1)
+                                        */
+                                        "w:xXzuB:O:T:",
+                                        long_options, &long_index)) != -1)
+	                                    // End StackRox section
 		{
 			switch(op)
 			{
@@ -1242,9 +1256,13 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 					}
 				}
 				break;
+	    	// Begin StackRox section
+			/*
 			case 'T':
 				force_tracers_capture = true;
 				break;
+			*/
+	    	// End StackRox section
 			case 'v':
 				verbose = true;
 				break;
