@@ -1,6 +1,8 @@
 include_directories("${PROJECT_SOURCE_DIR}/common")
 include_directories("${ZLIB_INCLUDE}")
 
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+
 add_library(scap STATIC
 	scap.c
 	scap_event.c
@@ -13,6 +15,8 @@ add_library(scap STATIC
 	dynamic_params_table.c
 	event_table.c
 	syscall_info_table.c)
+
+set_target_properties(scap PROPERTIES COMPILE_FLAGS "-fPIC")
 
 if(USE_BUNDLED_ZLIB)
 	add_dependencies(scap zlib)

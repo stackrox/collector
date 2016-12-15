@@ -1,3 +1,26 @@
+/** collector
+
+A full notice with attributions is provided along with this source code.
+
+This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License version 2 as published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+* In addition, as a special exception, the copyright holders give
+* permission to link the code of portions of this program with the
+* OpenSSL library under certain conditions as described in each
+* individual source file, and distribute linked combinations
+* including the two.
+* You must obey the GNU General Public License in all respects
+* for all of the code used other than OpenSSL.  If you modify
+* file(s) with this exception, you may extend this exception to your
+* version of the file(s), but you are not obligated to do so.  If you
+* do not wish to do so, delete this exception statement from your
+* version.
+*/
+
 /*
 Copyright (C) 2013-2014 Draios inc.
 
@@ -20,17 +43,21 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 #include <iostream>
+#include <fstream>
 #include <time.h>
 #include <signal.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <assert.h>
 #include <algorithm>
+#include <mutex>
 
 #include <sinsp.h>
 #include "chisel.h"
-#include "sysdig.h"
 #include "utils.h"
+#include "sysdig.h"
+
+#include "KafkaClient.h"
 
 #ifdef _WIN32
 #include "win32/getopt.h"
@@ -46,6 +73,15 @@ vector<sinsp_chisel*> g_chisels;
 #endif
 
 static void usage();
+
+// the sysdig data object that keeps track of all the little factoids associated with
+// sysdig production
+static sysdigDataT sysdigData;
+
+// data that we want to be persistent at process scope
+static SysdigPersistentState* persistentState = NULL;
+
+static int s_eventBufferSize = 32767;
 
 //
 // Helper functions
@@ -719,15 +755,89 @@ captureinfo do_inspect(sinsp* inspector,
 		{
 			cout << flush;
 		}
+
 	}
 
 	return retval;
 }
 
 //
+// Event processing call. Get next valid event.
+//
+const char* do_getnext() {
+	int32_t res;
+	sinsp_evt* ev;
+        char* eventBuffer = persistentState->getEventBuffer();
+        sinsp* inspector = persistentState->getInspector();
+        sinsp_evt_formatter* formatter = persistentState->getFormatter();
+        sinsp_chisel* chisel = persistentState->getChisel();
+        int periodicity = persistentState->getPeriodicity();
+
+        eventBuffer[0] = 0;
+	if (inspector == NULL || formatter == NULL || chisel == NULL) {
+		cout << "inspector|formatter|chisel unintialized!" << endl;
+		return eventBuffer;
+	}
+
+	periodicity = (periodicity + 1) % persistentState->getMetricsFrequency();
+        persistentState->setPeriodicity(periodicity);
+	if (periodicity == 0) {
+	    scap_stats cstats;
+	    inspector->get_capture_stats(&cstats);
+
+	    struct timespec ts;
+	    clock_gettime(CLOCK_REALTIME, &ts);
+	    tzset();
+	    struct tm t;
+            char timestamp[64];
+
+	    if (localtime_r(&(ts.tv_sec), &t) != NULL) {
+	        char timestamp[64];
+	        strftime(timestamp, 64, "%T", &t);
+	        sprintf(&timestamp[strlen(timestamp)], ".%.9ld", ts.tv_nsec);
+	    } else {
+	        strcpy(timestamp, "<ts>");
+	    }
+
+	    // populate factoids
+	    sysdigData.nEventsDelta = cstats.n_evts - sysdigData.nEvents;
+	    sysdigData.nDropsDelta = cstats.n_drops - sysdigData.nDrops;
+	    sysdigData.nPreemptionsDelta = cstats.n_preemptions - sysdigData.nPreemptions;
+
+	    sysdigData.nEvents = cstats.n_evts;
+	    sysdigData.nDrops = cstats.n_drops;
+	    sysdigData.nPreemptions = cstats.n_preemptions;
+
+            sprintf(eventBuffer,
+                "M\t%s\tsysdigMetrics\t%s\tE: %" PRIu64 "\tD: %" PRIu64 "\tP: %" PRIu64 ".\tEd: %" PRIu64 "\tDd: %" PRIu64 "\tPd: %" PRIu64 "\tFE: %" PRIu64 "\tnode:%s\n",
+                KafkaClient::getContainerID(),
+                timestamp, sysdigData.nEvents, sysdigData.nDrops, sysdigData.nPreemptions,
+		sysdigData.nEventsDelta, sysdigData.nDropsDelta, sysdigData.nPreemptionsDelta,
+		sysdigData.nFilteredEvents, sysdigData.nodeName.c_str());
+	    return eventBuffer;
+        }
+
+	res = inspector->next(&ev);
+
+	if(res == SCAP_TIMEOUT) {
+		return eventBuffer;
+	}
+	else if(res != SCAP_SUCCESS) {
+		// Log and move on.
+		return eventBuffer;
+	}
+
+	if (chisel->process(ev)) {
+		sysdigData.nFilteredEvents++;
+		formatter->to_sparse_string(ev, eventBuffer, persistentState->getSnapLen());
+	}
+	return eventBuffer;
+}
+
+//
 // ARGUMENT PARSING AND PROGRAM SETUP
 //
-sysdig_init_res sysdig_init(int argc, char **argv)
+sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 {
 	sysdig_init_res res;
 	sinsp* inspector = NULL;
@@ -748,7 +858,7 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 	int duration_to_tot = 0;
 	captureinfo cinfo;
 	string output_format;
-	uint32_t snaplen = 0;
+	uint32_t snaplen = DEFAULT_SNAPLEN;
 	int long_index = 0;
 	int32_t n_filterargs = 0;
 	int cflag = 0;
@@ -762,6 +872,12 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 	string* mesos_api = 0;
 	bool force_tracers_capture = false;
 	bool page_faults = false;
+
+	// Begin StackRox section
+	string brokerList = "";
+	string defaultTopic = "sysdig-default-topic";
+	bool useKafka = false;
+	// End StackRox section
 
 	// These variables are for the cycle_writer engine
 	int duration_seconds = 0;
@@ -815,6 +931,12 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 		{"print-hex", no_argument, 0, 'x'},
 		{"print-hex-ascii", no_argument, 0, 'X'},
 		{"compress", no_argument, 0, 'z' },
+	    // Begin StackRox section
+		{"use-kafka", no_argument, 0, 'u' },
+		{"broker-list", required_argument, 0, 'B' },
+		{"output-format", required_argument, 0, 'O' },
+		{"default-topic", required_argument, 0, 'T' },
+	    // End StackRox section
 		{0, 0, 0, 0}
 	};
 
@@ -824,6 +946,9 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 	{
 		inspector = new sinsp();
 		inspector->set_hostname_and_port_resolution_mode(false);
+		if (setup_only) {
+			persistentState->setInspector(inspector);
+		}
 
 #ifdef HAS_CHISELS
 		add_chisel_dirs(inspector);
@@ -899,6 +1024,8 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 					}
 
 					sinsp_chisel* ch = new sinsp_chisel(inspector, optarg);
+					if (setup_only && !strcmp(optarg, persistentState->getChiselName().c_str()))
+						persistentState->setChisel(ch);
 					parse_chisel_args(ch, inspector, optind, argc, argv, &n_filterargs);
 					g_chisels.push_back(ch);
 				}
@@ -1097,6 +1224,7 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 				break;
 			case 's':
 				snaplen = atoi(optarg);
+                                persistentState->setSnapLen(snaplen);
 				break;
 			case 't':
 				{
@@ -1159,7 +1287,26 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 			case 'z':
 				compress = true;
 				break;
-            // getopt_long : '?' for an ambiguous match or an extraneous parameter 
+			// Begin StackRox section
+			case 'u':
+				cout << "use-kafka is set" << endl;
+				useKafka = true;
+				persistentState->setUseKafka(useKafka);
+				break;
+			case 'B':
+				brokerList = optarg;
+				break;
+			case 'O':
+				cout << "FORMAT: " << optarg << endl;
+				persistentState->setFormatter(new sinsp_evt_formatter(inspector, optarg));
+				break;
+			case 'T':
+				cout << "Default topic: " << optarg << endl;
+				defaultTopic = optarg;
+				break;
+			// End StackRox section
+
+			// getopt_long : '?' for an ambiguous match or an extraneous parameter
 			case '?':
 				delete inspector;
 				return sysdig_init_res(EXIT_FAILURE);
@@ -1291,11 +1438,6 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 			res.m_res = EXIT_FAILURE;
 			goto exit;
 		}
-
-		//
-		// Create the event formatter
-		//
-		sinsp_evt_formatter formatter(inspector, output_format);
 
 		//
 		// Set output buffers len
@@ -1501,6 +1643,53 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 			delete mesos_api;
 			mesos_api = 0;
 
+			// Begin StackRox section
+
+			if (useKafka) {
+				cout << "Kafka client is being setup " << endl;
+				persistentState->setupKafkaClient(brokerList, defaultTopic);
+			}
+
+			// initialize the sysdig factoid object
+			sysdigData.kafkaClient = persistentState->getKafkaClient();
+			sysdigData.mLinePeriodicity = persistentState->getMetricsFrequency();
+			sysdigData.nEvents = 0;
+			sysdigData.nDrops = 0;
+			sysdigData.nPreemptions = 0;
+			sysdigData.nEventsDelta = 0;
+			sysdigData.nDropsDelta = 0;
+			sysdigData.nPreemptionsDelta = 0;
+			sysdigData.nUpdates = 0;
+			sysdigData.nFilteredEvents = 0;
+
+			// Hostname is this node's name represented as a null-terminated
+			// string, and it is emitted in a field called "node" as part of
+			// the "M" (metrics) line. It is also returned as part of the
+			// sysdigData structure.
+			const string file = string(scap_get_host_root()) + "/etc/hostname";
+			std::ifstream f(file);
+			if (!f) {
+				std::cerr << "Unable to get hostname from " << file << std::endl;
+				res.m_res = EXIT_FAILURE;
+				goto exit;
+			}
+			f >> sysdigData.nodeName;
+			f.close();
+			cout << "Hostname: " << sysdigData.nodeName << endl;
+
+			if (setup_only) {
+				// we will loop through events outside of this function
+				// and hence return
+				return res;
+			}
+
+			//
+			// Create the event formatter
+			//
+			sinsp_evt_formatter formatter(inspector, output_format);
+
+			// End StackRox section
+
 			cinfo = do_inspect(inspector,
 				cnt,
 				uint64_t(duration_to_tot*ONE_SECOND_IN_NS),
@@ -1591,14 +1780,24 @@ exit:
 	return res;
 }
 
+// Method to close the inspector and cleanup
+void sysdigCleanup() {
+        sinsp* inspector = persistentState->getInspector();
+	if (inspector)
+		inspector->close();
+	delete inspector;
+        delete persistentState;
+        persistentState = NULL;
+}
+
 //
 // MAIN
 //
-int main(int argc, char **argv)
+int main_bac(int argc, char **argv)
 {
 	sysdig_init_res res;
 
-	res = sysdig_init(argc, argv);
+	res = sysdig_init(argc, argv, NULL);
 
 	//
 	// Check if a second run has been requested
@@ -1619,11 +1818,131 @@ int main(int argc, char **argv)
 			newargv.push_back((char*)res.m_next_run_args[j - 1].c_str());
 		}
 
-		res = sysdig_init(newargc, &(newargv[0]));
+		res = sysdig_init(newargc, &(newargv[0]), NULL);
 	}
 #ifdef _WIN32
 	_CrtDumpMemoryLeaks();
 #endif
 
 	return res.m_res;
+}
+
+static bool isInitialized = false;
+
+bool isSysdigInitialized() {
+    return isInitialized;
+}
+
+void sysdigStartProduction(bool& isInterrupted) {
+    KafkaClient* kafkaClient = persistentState->getKafkaClient();
+    bool useKafka = persistentState->usingKafka();
+    if (useKafka && !kafkaClient) {
+				cerr << "KafkaClient is uninitialized. Cannot start data production" << endl;
+				return;
+    }
+
+    char* line;
+
+    cout << "Starting sysdig production..." << endl;
+
+    while (!isInterrupted) {
+        line = (char*)do_getnext();
+        if (useKafka) {
+            if (line[0] == '\0')
+	            continue;
+	        kafkaClient->send(line);
+        } else {
+            if (line[0] == '\0')
+                continue;
+            cout << line << endl;
+        }
+    }
+}
+
+int sysdigInitialize(string chiselName, string brokerList, string format,
+                     bool useKafka, string defaultTopic, int snapLen) {
+    // if the format is empty then fill in with a default format
+    if (format.length() == 0) {
+        format = "container:container.id,event:evt.type,time:evt.time,rawtime:evt.rawtime,direction:evt.dir,image:container.image,name:container.name";
+    }
+
+    // setup persistent store
+    persistentState = new SysdigPersistentState();
+    persistentState->setMetricsFrequency(2000000);
+    persistentState->setEventBufferSize(s_eventBufferSize);
+
+    vector<string> args;
+    args.push_back("sysdig");
+    args.push_back("--unbuffered");
+    args.push_back("--snaplen");
+    args.push_back(to_string(snapLen));
+    if (chiselName.length() > 0) {
+        args.push_back("-c");
+        args.push_back(chiselName);
+        persistentState->setChiselName(chiselName);
+    }
+    if (brokerList.length() > 0) {
+        args.push_back("-B");
+        args.push_back(brokerList.c_str());
+        if (useKafka) {
+            args.push_back("--use-kafka");
+        }
+        args.push_back("-T");
+        args.push_back(defaultTopic.c_str());
+    }
+    args.push_back("-O");
+    args.push_back(format.c_str());
+
+    int argc = args.size();
+    char* argv[argc];
+    for (int i = 0; i < argc; i++) {
+        argv[i] = (char*)args[i].c_str();
+        cout << i << ": " << argv[i] << endl;
+    }
+
+    sysdig_init(argc, (char**)&argv, true /* setup_only */);
+
+    isInitialized = true;
+
+    return 0;
+}
+
+bool sysdigGetSysdigData(sysdigDataT& data) {
+    KafkaClient* kafkaClient = persistentState->getKafkaClient();
+    if (!kafkaClient)
+        return false;
+
+    // Fields that change
+    data.nEvents = sysdigData.nEvents;
+    data.nDrops = sysdigData.nDrops;
+    data.nPreemptions = sysdigData.nPreemptions;
+    data.nEventsDelta = sysdigData.nEventsDelta;
+    data.nDropsDelta = sysdigData.nDropsDelta;
+    data.nPreemptionsDelta = sysdigData.nPreemptionsDelta;
+    data.nUpdates = sysdigData.nUpdates;
+    data.nFilteredEvents = sysdigData.nFilteredEvents;
+
+    // Fields that are fixed
+    data.mLinePeriodicity = sysdigData.mLinePeriodicity;
+    data.nodeName = sysdigData.nodeName;
+
+    return true;
+}
+
+int main(int argc, char **argv)
+{
+    fprintf(stdout, "Starting sysdig...");
+
+	// setup persistent store
+    persistentState = new SysdigPersistentState();
+    persistentState->setMetricsFrequency(2000000);
+    persistentState->setEventBufferSize(s_eventBufferSize);
+
+    sysdig_init(argc, argv, true /* setup_only */);
+
+    bool isInterrupted = false;
+
+    sysdigStartProduction(isInterrupted);
+
+    return 0;
 }

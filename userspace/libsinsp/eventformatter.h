@@ -1,3 +1,26 @@
+/** collector
+
+A full notice with attributions is provided along with this source code.
+
+This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License version 2 as published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+* In addition, as a special exception, the copyright holders give
+* permission to link the code of portions of this program with the
+* OpenSSL library under certain conditions as described in each
+* individual source file, and distribute linked combinations
+* including the two.
+* You must obey the GNU General Public License in all respects
+* for all of the code used other than OpenSSL.  If you modify
+* file(s) with this exception, you may extend this exception to your
+* version of the file(s), but you are not obligated to do so.  If you
+* do not wish to do so, delete this exception statement from your
+* version.
+*/
+
 /*
 Copyright (C) 2013-2014 Draios inc.
 
@@ -70,6 +93,18 @@ public:
 	bool tostring(sinsp_evt* evt, OUT string* res);
 
 	/*!
+	  \brief Fills res with the string rendering of the event. Variant
+	  to do sparse vector rendering of the event
+
+	  \param evt Pointer to the event to be converted into string.
+	  \param res Pointer to the string that will be filled with the result.
+
+	  \return true if the string should be shown (based on the initial *),
+	   false otherwise.
+	*/
+	void to_sparse_string(sinsp_evt* evt, char* buffer, unsigned int snaplen);
+
+	/*!
 	  \brief Fills res with end of capture string rendering of the event.
 	  \param res Pointer to the string that will be filled with the result.
 
@@ -85,6 +120,9 @@ private:
 	sinsp* m_inspector;
 	bool m_require_all_values;
 	vector<sinsp_filter_check*> m_chks_to_free;
+
+	map<int, string> m_token_to_field_map;
+	map<string, string> m_fields_map;
 
 	Json::Value m_root;
 	Json::FastWriter m_writer;

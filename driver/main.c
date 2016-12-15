@@ -1,3 +1,26 @@
+/** collector
+
+A full notice with attributions is provided along with this source code.
+
+This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License version 2 as published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+* In addition, as a special exception, the copyright holders give
+* permission to link the code of portions of this program with the
+* OpenSSL library under certain conditions as described in each
+* individual source file, and distribute linked combinations
+* including the two.
+* You must obey the GNU General Public License in all respects
+* for all of the code used other than OpenSSL.  If you modify
+* file(s) with this exception, you may extend this exception to your
+* version of the file(s), but you are not obligated to do so.  If you
+* do not wish to do so, delete this exception statement from your
+* version.
+*/
+
 /*
 Copyright (C) 2013-2014 Draios inc.
 
@@ -160,6 +183,20 @@ TRACEPOINT_PROBE(signal_deliver_probe, int sig, struct siginfo *info, struct k_s
 TRACEPOINT_PROBE(page_fault_probe, unsigned long address, struct pt_regs *regs, unsigned long error_code);
 #endif
 
+/* Begin StackRox section */
+
+static int s_syscallIds[270] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                                0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                                0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                                0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                                0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+static int s_syscallIdsCount = 0;
+
+module_param_array(s_syscallIds, int, &s_syscallIdsCount, 0444);
+MODULE_PARM_DESC(s_syscallIds, "An array of integers representing entries from ppm_syscall_code");
+
+/* End StackRox section */
+
 DECLARE_BITMAP(g_events_mask, PPM_EVENT_MAX);
 static struct ppm_device *g_ppm_devs;
 static struct class *g_ppm_class;
@@ -294,6 +331,7 @@ static void check_remove_consumer(struct ppm_consumer_t *consumer, int remove_fr
 static int ppm_open(struct inode *inode, struct file *filp)
 {
 	int ret;
+	int syscallIndex;
 	int in_list = false;
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 20)
 	int ring_no = iminor(filp->f_path.dentry->d_inode);
@@ -419,6 +457,11 @@ static int ppm_open(struct inode *inode, struct file *filp)
 
 	vpr_info("opening ring %d, consumer %p\n", ring_no, consumer->consumer_id);
 
+        /* In the following section we process the incoming syscall Ids, if any, and set the set
+           syscalls we want to extract based on in
+        */
+
+
 	/*
 	 * ring->preempt_count is not reset to 0 on purpose, to prevent a race condition:
 	 * if the same device is quickly closed and then reopened, record_event() might still be executing
@@ -434,9 +477,33 @@ static int ppm_open(struct inode *inode, struct file *filp)
 	consumer->do_dynamic_snaplen = false;
 	consumer->need_to_insert_drop_e = 0;
 	consumer->need_to_insert_drop_x = 0;
-	bitmap_fill(g_events_mask, PPM_EVENT_MAX); /* Enable all syscall to be passed to userspace */
+	/* Begin StackRox section */
+	/* Commenting out the following line that is in sysdig open-source driver */
+	//bitmap_fill(g_events_mask, PPM_EVENT_MAX); /* Enable all syscall to be passed to userspace */
+	/* End StackRox section */
 	reset_ring_buffer(ring);
 	ring->open = true;
+
+	/* Begin StackRox section */
+	if (s_syscallIdsCount > 1) {
+		bitmap_zero(g_events_mask, PPM_EVENT_MAX); /* Zero out so that no syscall squeaks past us */
+		vpr_info("Number of syscall Ids = %d\n", s_syscallIdsCount);
+		for (syscallIndex = 0; syscallIndex < s_syscallIdsCount; syscallIndex++) {
+			int id = s_syscallIds[syscallIndex];
+			if (id >= 0 && id < PPM_EVENT_MAX) {
+				u32 idToSet = (u32)id;
+				vpr_info("%d: Syscall Id to include = %d\n", syscallIndex, idToSet);
+				set_bit(idToSet, g_events_mask);
+			}
+		}
+		set_bit(PPME_DROP_X, g_events_mask);
+		set_bit(PPME_SYSDIGEVENT_E, g_events_mask);
+		set_bit(PPME_CONTAINER_E, g_events_mask);
+		set_bit(PPME_CONTAINER_X, g_events_mask);
+	} else {
+		bitmap_fill(g_events_mask, PPM_EVENT_MAX); /* Enable all syscall to be passed to userspace */
+	}
+	/* End StackRox section */
 
 	if (!g_tracepoint_registered) {
 		pr_info("starting capture\n");
@@ -1779,6 +1846,7 @@ static int record_event_consumer(struct ppm_consumer_t *consumer,
 			ring_info->n_drops_pf++;
 		} else if (cbres == PPM_FAILURE_BUFFER_FULL) {
 			ring_info->n_drops_buffer++;
+//			pr_err("Dropped event %d\n", event_type);
 		} else {
 			ASSERT(false);
 		}

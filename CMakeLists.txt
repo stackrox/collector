@@ -40,14 +40,14 @@ if(NOT WIN32)
 
 	set(SYSDIG_DEBUG_FLAGS "-D_DEBUG")
 
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -ggdb")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -ggdb --std=c++0x")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Wall -ggdb")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -ggdb --std=c++0x")
 
-	set(CMAKE_C_FLAGS_DEBUG "${SYSDIG_DEBUG_FLAGS}")
-	set(CMAKE_CXX_FLAGS_DEBUG "${SYSDIG_DEBUG_FLAGS}")
+	set(CMAKE_C_FLAGS_DEBUG "${SYSDIG_DEBUG_FLAGS} -fPIC")
+	set(CMAKE_CXX_FLAGS_DEBUG "${SYSDIG_DEBUG_FLAGS} -fPIC")
 
-	set(CMAKE_C_FLAGS_RELEASE "-O3 -fno-strict-aliasing -DNDEBUG")
-	set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-strict-aliasing -DNDEBUG")
+	set(CMAKE_C_FLAGS_RELEASE "-O3 -fPIC -fno-strict-aliasing -DNDEBUG")
+	set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fPIC -fno-strict-aliasing -DNDEBUG")
 
 	if(CMAKE_SYSTEM_NAME MATCHES "Linux")
 		if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -127,7 +127,7 @@ else()
 			URL "http://download.draios.com/dependencies/LuaJIT-2.0.3.tar.gz"
 			URL_MD5 "f14e9104be513913810cd59c8c658dc0"
 			CONFIGURE_COMMAND ""
-			BUILD_COMMAND ${CMD_MAKE}
+			BUILD_COMMAND ${CMD_MAKE} "CC=gcc -fPIC"
 			BUILD_IN_SOURCE 1
 			BUILD_BYPRODUCTS ${LUAJIT_LIB}
 			INSTALL_COMMAND "")
@@ -188,7 +188,7 @@ else()
 			URL "http://download.draios.com/dependencies/zlib-1.2.11.tar.gz"
 			URL_MD5 "1c9f62f0778697a09d36121ead88e08e"
 			CONFIGURE_COMMAND "./configure"
-			BUILD_COMMAND ${CMD_MAKE}
+			BUILD_COMMAND ${CMD_MAKE} "CFLAGS=-O3 -fPIC -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN' SFLAGS='-O3  -fPIC -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN"
 			BUILD_IN_SOURCE 1
 			BUILD_BYPRODUCTS ${ZLIB_LIB}
 			INSTALL_COMMAND "")
@@ -227,7 +227,8 @@ if(NOT WIN32 AND NOT APPLE)
 		URL "http://download.draios.com/dependencies/jq-1.5.tar.gz"
 		URL_MD5 "0933532b086bd8b6a41c1b162b1731f9"
 		CONFIGURE_COMMAND ./configure --disable-maintainer-mode --enable-all-static --disable-dependency-tracking
-		BUILD_COMMAND ${CMD_MAKE} LDFLAGS=-all-static
+#		BUILD_COMMAND ${CMD_MAKE} LDFLAGS=-all-static
+		BUILD_COMMAND ${CMD_MAKE} LDFLAGS=-all-static CFLAGS=-fPIC
 		BUILD_IN_SOURCE 1
 		BUILD_BYPRODUCTS ${JQ_LIB}
 		PATCH_COMMAND wget -O jq-1.5-fix-tokenadd.patch https://github.com/stedolan/jq/commit/8eb1367ca44e772963e704a700ef72ae2e12babd.patch && patch -i jq-1.5-fix-tokenadd.patch
@@ -256,7 +257,7 @@ if(NOT WIN32)
 			URL "http://download.draios.com/dependencies/ncurses-6.0-20150725.tgz"
 			URL_MD5 "32b8913312e738d707ae68da439ca1f4"
 			CONFIGURE_COMMAND ./configure --without-cxx --without-cxx-binding --without-ada --without-manpages --without-progs --without-tests --with-terminfo-dirs=/etc/terminfo:/lib/terminfo:/usr/share/terminfo
-			BUILD_COMMAND ${CMD_MAKE}
+			BUILD_COMMAND ${CMD_MAKE} "CFLAGS=-O2 --param max-inline-insns-single=1200 -fPIC"
 			BUILD_IN_SOURCE 1
 			BUILD_BYPRODUCTS ${CURSES_LIBRARIES}
 			INSTALL_COMMAND "")
@@ -264,33 +265,34 @@ if(NOT WIN32)
 endif()
 
 if(NOT WIN32 AND NOT APPLE)
-	#
-	# libb64
-	#
-	option(USE_BUNDLED_B64 "Enable building of the bundled b64" ${USE_BUNDLED_DEPS})
-
-	if(NOT USE_BUNDLED_B64)
-		find_path(B64_INCLUDE NAMES b64/encode.h)
-		find_library(B64_LIB NAMES b64)
-		if(B64_INCLUDE AND B64_LIB)
-			message(STATUS "Found b64: include: ${B64_INCLUDE}, lib: ${B64_LIB}")
-		else()
-			message(FATAL_ERROR "Couldn't find system b64")
-		endif()
-	else()
-		set(B64_SRC "${PROJECT_BINARY_DIR}/b64-prefix/src/b64")
-		message(STATUS "Using bundled b64 in '${B64_SRC}'")
-		set(B64_INCLUDE "${B64_SRC}/include")
-		set(B64_LIB "${B64_SRC}/src/libb64.a")
-		ExternalProject_Add(b64
-			URL "http://download.draios.com/dependencies/libb64-1.2.src.zip"
-			URL_MD5 "a609809408327117e2c643bed91b76c5"
-			CONFIGURE_COMMAND ""
-			BUILD_COMMAND ${CMD_MAKE}
-			BUILD_IN_SOURCE 1
-			BUILD_BYPRODUCTS ${B64_LIB}
-			INSTALL_COMMAND "")
-	endif()
+#	#
+#	# libb64
+#	#
+#	option(USE_BUNDLED_B64 "Enable building of the bundled b64" ${USE_BUNDLED_DEPS})
+#
+#	if(NOT USE_BUNDLED_B64)
+#		find_path(B64_INCLUDE NAMES b64/encode.h)
+#		find_library(B64_LIB NAMES b64)
+#		if(B64_INCLUDE AND B64_LIB)
+#			message(STATUS "Found b64: include: ${B64_INCLUDE}, lib: ${B64_LIB}")
+#		else()
+#			message(FATAL_ERROR "Couldn't find system b64")
+#		endif()
+#	else()
+#		set(B64_SRC "${PROJECT_BINARY_DIR}/b64-prefix/src/b64")
+#		message(STATUS "Using bundled b64 in '${B64_SRC}'")
+#		set(B64_INCLUDE "${B64_SRC}/include")
+#		set(B64_LIB "${B64_SRC}/src/libb64.a")
+#		set(CFLAGS "-fPIC")
+#		ExternalProject_Add(b64
+#			URL "http://download.draios.com/dependencies/libb64-1.2.src.zip"
+#			URL_MD5 "a609809408327117e2c643bed91b76c5"
+#			CONFIGURE_COMMAND ""
+#			BUILD_COMMAND ${CMD_MAKE}
+#			BUILD_IN_SOURCE 1
+#			BUILD_BYPRODUCTS ${B64_LIB}
+#			INSTALL_COMMAND "")
+#	endif()
 
 	#
 	# OpenSSL
@@ -313,7 +315,7 @@ if(NOT WIN32 AND NOT APPLE)
 			URL "http://download.draios.com/dependencies/openssl-1.0.2n.tar.gz"
 			URL_MD5 "13bdc1b1d1ff39b6fd42a255e74676a4"
 			CONFIGURE_COMMAND ./config shared --prefix=${OPENSSL_INSTALL_DIR}
-			BUILD_COMMAND ${CMD_MAKE}
+			BUILD_COMMAND ${CMD_MAKE} "CFLAG=-fPIC -DOPENSSL_PIC -DOPENSSL_THREADS -D_REENTRANT -DDSO_DLFCN -DHAVE_DLFCN_H -Wa,--noexecstack -m64 -DL_ENDIAN -O3 -Wall -DOPENSSL_IA32_SSE2 -DOPENSSL_BN_ASM_MONT -DOPENSSL_BN_ASM_MONT5 -DOPENSSL_BN_ASM_GF2m -DSHA1_ASM -DSHA256_ASM -DSHA512_ASM -DMD5_ASM -DAES_ASM -DVPAES_ASM -DBSAES_ASM -DWHIRLPOOL_ASM -DGHASH_ASM -DECP_NISTZ256_ASM"
 			BUILD_IN_SOURCE 1
 			BUILD_BYPRODUCTS ${OPENSSL_LIBRARY_SSL} ${OPENSSL_LIBRARY_CRYPTO}
 			INSTALL_COMMAND ${CMD_MAKE} install)

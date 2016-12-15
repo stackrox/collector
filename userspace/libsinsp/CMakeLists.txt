@@ -4,8 +4,10 @@ include_directories(../libscap)
 include_directories("${JSONCPP_INCLUDE}")
 include_directories("${LUAJIT_INCLUDE}")
 
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+
 if(NOT WIN32 AND NOT APPLE)
-	include_directories("${B64_INCLUDE}")
+	include_directories("b64")
 	include_directories("${CURL_INCLUDE_DIR}")
 	include_directories("${CURSES_INCLUDE_DIR}")
 	include_directories("${JQ_INCLUDE}")
@@ -13,6 +15,8 @@ if(NOT WIN32 AND NOT APPLE)
 endif()
 
 add_library(sinsp STATIC
+	cencode.c
+	cdecode.c
 	chisel.cpp
 	chisel_api.cpp
 	container.cpp
@@ -86,6 +90,8 @@ add_library(sinsp STATIC
 	value_parser.cpp
 	viewinfo.cpp)
 
+set_target_properties(sinsp PROPERTIES COMPILE_FLAGS "-fPIC")
+
 target_link_libraries(sinsp 
 	scap
 	"${JSONCPP_LIB}")
@@ -105,7 +111,7 @@ if(NOT WIN32)
 	if(NOT APPLE)
 		target_link_libraries(sinsp
 			"${JQ_LIB}"
-			"${B64_LIB}"
+#			"${B64_LIB}"
 			"${CURL_LIBRARIES}"
 			rt
 			anl)
