@@ -46,6 +46,7 @@ const char* scap_get_host_root();
 
 #include "CollectorArgs.h"
 #include "GetStatus.h"
+#include "LogLevel.h"
 #include "RESTServer.h"
 #include "Router.h"
 #include "SysdigService.h"
@@ -273,6 +274,13 @@ main(int argc, char **argv)
     using std::string;
     using std::signal;
 
+    LogLevel setLogLevel;
+    setLogLevel.stdBuf = std::cout.rdbuf();
+    ofstream nullStream("/dev/null");
+    setLogLevel.nullBuf = nullStream.rdbuf();
+
+    std::cout.rdbuf(setLogLevel.nullBuf);
+
     CollectorArgs *args = CollectorArgs::getInstance();
     int exitCode = 0;
     if (!args->parse(argc, argv, exitCode)) {
@@ -329,6 +337,7 @@ main(int argc, char **argv)
 
     Router router;
     router.addGetHandler("/status", &getStatus);
+    router.addPostHandler("/loglevel", &setLogLevel);
 
     RESTServer server(4419, args->MaxContentLengthKB(), args->ConnectionLimit(),
         args->ConnectionLimitPerIP(), args->ConnectionTimeoutSeconds(), &router);
