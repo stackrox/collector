@@ -47,9 +47,7 @@ container/libs/libsysdignative.so: ../ext/sysdig/src/
 	mkdir -p container/libs
 	make -C ../ext/sysdig
 	docker cp build_sysdig:/src/build/userspace/sysdig/sysdig container/bin/
-	docker cp build_sysdig:/src/driver container/
 	docker cp build_sysdig:/src/build/userspace/sysdig/libsysdignative.so container/libs/
-	docker cp build_sysdig:/src/driver/sysdig-probe.ko container/bin/
 
 clean:
 	docker rm -fv build_collector || true
