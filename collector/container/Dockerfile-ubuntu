@@ -39,7 +39,6 @@ RUN apt-get update \
         procps \
         debian-keyring \
         debian-archive-keyring \
-        wget \
     && apt-get clean \
     ;
 
@@ -53,9 +52,12 @@ RUN cp /etc/apt/sources.list /etc/apt/sources.list.bak && \
 
 COPY bin/curl /usr/local/bin/curl
 COPY bin/collector /usr/local/bin/collector
+COPY bin/sysdig /usr/bin/sysdig
+COPY driver/sysdig-probe.ko /usr/bin/sysdig-probe.ko
 COPY libs/librdkafka.so /usr/local/lib/librdkafka.so
 COPY libs/libcurl.so /usr/local/lib/libcurl.so
 COPY libs/libsysdignative.so /usr/local/lib/libsysdignative.so
+COPY driver /driver
 
 # `ldconfig` is required so that `curl` can find its `libcurl.so`.
 RUN ldconfig

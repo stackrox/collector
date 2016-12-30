@@ -17,16 +17,18 @@ function remove_sysdig_module() {
     fi
 }
 
-function download_kernel_module() {
-    KERNEL_MODULE=$KERNELVERSION-$DISTRO-probe.ko
-    wget -O sysdig-probe.ko https://storage.googleapis.com/stackrox-collector/$KERNEL_MODULE
-    if [ $? -ne 0 ]; then
-      echo "Error downloading $KERNEL_MODULE from remote stackrox repository." >&2
-      exit $status
-    fi
-    mkdir -p /driver/
-    cp sysdig-probe.ko /driver/sysdig-probe.ko
-  	chmod 777 /driver/sysdig-probe.ko
+function install_kernel_headers_ubuntu() {
+    echo "deb http://security.ubuntu.com/ubuntu trusty-security main" > /etc/apt/sources.list
+    echo "deb http://ftp.us.debian.org/debian jessie main" >> /etc/apt/sources.list
+
+    apt-get update && apt-get install -y linux-headers-$KERNELVERSION
+
+    test make KERNELRELEASE=$KERNELVERSION -C /lib/modules/$KERNELVERSION/build M=/driver clean modules
+ }
+
+function install_kernel_headers_centos() {
+	yum install -y kernel-devel-$(uname -r)
+    test make KERNELRELEASE=$KERNELVERSION -C /usr/src/kernels/$KERNELVERSION/ M=/driver clean modules
 }
 
 # Get the hostname from Docker so this container can use it in its output.
@@ -37,20 +39,19 @@ echo "$HOSTNAME" > /host/etc/hostname
 
 #sysdig start
 KERNELVERSION=`uname -r`
-OS_DETAILS=$(curl -s --unix-socket /host/var/run/docker.sock http://localhost/info | jq --raw-output .OperatingSystem)
+OS_DETAILS=$(uname -a)
 if echo $OS_DETAILS | grep -qi Ubuntu; then
-	DISTRO="ubuntu"
+    install_kernel_headers_ubuntu
+    remove_sysdig_module
 elif echo $OS_DETAILS | grep -qi centos; then
-	DISTRO="centos"
-elif echo $OS_DETAILS | grep -qi "Red Hat"; then
-	DISTRO="rhel"
+    install_kernel_headers_centos
+    remove_sysdig_module
+elif echo $OS_DETAILS | grep -qi rhel; then
+    install_kernel_headers_centos
+    remove_sysdig_module
 else
-	echo "Distribution $OS_DETAILS not supported by stackrox. Please contact Stackrox for support."
-	exit 1
+	remove_sysdig_module
 fi
-
-download_kernel_module
-remove_sysdig_module
 #sysdig done
 
 echo "COLLECTOR_CONFIG = $COLLECTOR_CONFIG"

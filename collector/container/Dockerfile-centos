@@ -28,6 +28,7 @@ EXPOSE 4419
 # Install our dependencies
 RUN yum update -y \
     && yum groupinstall -y "Development Tools" \
+    && yum install -y kernel-devel-$(uname -r) \
     && yum install -y wget \
     && wget http://rpms.famillecollet.com/enterprise/7/remi/x86_64/remi-release-7.2-1.el7.remi.noarch.rpm \
     && wget http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-8.noarch.rpm \
@@ -37,10 +38,10 @@ RUN yum update -y \
     && chmod +x ./jq \
     && cp jq /usr/bin \
     && yum install -y boost-devel \
-    && yum install -y  \
+    && yum install -y \
        jsoncpp-devel \
        libmicrohttpd-devel \
-       openssl-devel --skip-broken\
+       openssl-devel \
        ;
 
 # link the headers
@@ -49,9 +50,12 @@ RUN mkdir -p /lib/modules/$(uname -r) \
 
 COPY bin/curl /usr/local/bin/curl
 COPY bin/collector /usr/local/bin/collector
+COPY bin/sysdig /usr/bin/sysdig
+COPY driver/sysdig-probe.ko /usr/bin/sysdig-probe.ko
 COPY libs/librdkafka.so /usr/local/lib/librdkafka.so
 COPY libs/libcurl.so /usr/local/lib/libcurl.so
 COPY libs/libsysdignative.so /usr/local/lib/libsysdignative.so
+COPY driver /driver
 
 # /usr/local/lib is not on the default link path on CentOS.
 RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/usrlocal.conf
@@ -82,3 +86,4 @@ CMD collector \
         --connection-limit=$CONNECTION_LIMIT \
         --per-ip-connection-limit=$CONNECTION_LIMIT_PER_IP \
         --connection-timeout=$CONNECTION_TIMEOUT
+
