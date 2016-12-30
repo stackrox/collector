@@ -12,7 +12,7 @@ ifeq (CentOS, $(findstring CentOS, $(shell docker info)))
 endif
 ifeq (Red Hat, $(findstring Red Hat, $(shell docker info)))
   PLATFORM := RedHat
-  DOCKERFILE := Dockerfile-centos
+  DOCKERFILE := Dockerfile-rhel
 endif
 
 .PHONY: all clean container info
@@ -49,7 +49,6 @@ container/libs/libsysdignative.so: ../ext/sysdig/src/
 	docker cp build_sysdig:/src/build/userspace/sysdig/sysdig container/bin/
 	docker cp build_sysdig:/src/driver container/
 	docker cp build_sysdig:/src/build/userspace/sysdig/libsysdignative.so container/libs/
-	docker cp build_sysdig:/src/driver/sysdig-probe.ko container/bin/
 
 clean:
 	docker rm -fv build_collector || true
