@@ -64,6 +64,15 @@ RUN ldconfig
 
 WORKDIR /
 
+# Uncomment below when Address Sanitizer needs to be enabled for collector
+
+# RUN apt-get update && apt-get install -y --no-install-recommends llvm && apt-get clean
+# ENV ASAN_SYMBOLIZER_PATH /usr/bin/llvm-symbolizer-3.4
+# ENV ASAN_OPTIONS symbolize=1:disable_core=0:abort_on_error=1:unmap_shadow_on_exit=1
+
+# Uncomment below line when volume needs to created for extracting the Collector core
+# VOLUME ["/core"]
+
 # update boot script
 COPY scripts/bootstrap.sh /bootstrap.sh
 RUN chown root.root /bootstrap.sh

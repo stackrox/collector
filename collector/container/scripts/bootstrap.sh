@@ -57,6 +57,9 @@ else
 fi
 #sysdig done
 
+# Uncomment this to enable generation of core for Collector
+# echo '/core/core.%e.%p.%t' | sudo tee /proc/sys/kernel/core_pattern
+
 echo "COLLECTOR_CONFIG = $COLLECTOR_CONFIG"
 echo "CHISEL = $CHISEL"
 

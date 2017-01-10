@@ -40,6 +40,7 @@ extern "C" {
 #include <unistd.h>
 
 #include <microhttpd.h>
+#include <sys/resource.h>
 
 const char* scap_get_host_root();
 }
@@ -290,6 +291,20 @@ main(int argc, char **argv)
         exit(exitCode);
     }
 
+#ifdef COLLECTOR_CORE
+    struct rlimit limit;
+    limit.rlim_cur = RLIM_INFINITY;
+    limit.rlim_max = RLIM_INFINITY;
+    if (setrlimit(RLIMIT_CORE, &limit) != 0) {
+        cout << "setrlimit() failed: " << strerror(errno) << std::endl;
+        exit(-1);
+    }
+#else
+    signal(SIGINT, signal_callback);
+    signal(SIGTERM, signal_callback);
+    signal(SIGSEGV, sigsegv_handler);
+#endif
+
     cout << "Hostname detected: " << hostname << endl;
 
     const string chiselName = "default.chisel.lua";
@@ -346,9 +361,6 @@ main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    signal(SIGINT, signal_callback);
-    signal(SIGTERM, signal_callback);
-    signal(SIGSEGV, sigsegv_handler);
 
     sysdig.runForever();
     server.stop();
