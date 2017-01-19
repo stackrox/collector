@@ -1,4 +1,4 @@
-FROM centos:7
+FROM rhel7
 
 # Install our dependencies
 # libcurl-devel -> https://ckon.wordpress.com/2015/08/26/curl-broken-centos7-rhel7/
