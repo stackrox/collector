@@ -66,6 +66,7 @@ signal_callback(int signal)
     g_terminate = true;
 }
 
+
 static void
 sigsegv_handler(int signal) {
     void* array[32];
