@@ -7,8 +7,8 @@ RUN yum update -y \
     && yum install -y kernel-devel-$(uname -r) \
     && yum install -y wget \
     && wget http://rpms.famillecollet.com/enterprise/7/remi/x86_64/remi-release-7.2-1.el7.remi.noarch.rpm \
-    && wget http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-8.noarch.rpm \
-    && rpm -ivh epel-release-7-8.noarch.rpm \
+    && wget http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-9.noarch.rpm \
+    && rpm -ivh epel-release-7-9.noarch.rpm \
     && rpm -Uvh remi-release*rpm \
     && yum --enablerepo=remi install -y cmake3 \
     && ln -s /usr/bin/cmake3 /usr/bin/cmake \

@@ -17,6 +17,7 @@ include_directories(${PROJECT_SOURCE_DIR}/../ext/sysdig/src/userspace/sysdig)
 include_directories(/usr/local/include)
 include_directories(/usr/include/librdkafka)
 include_directories(/usr/include/jsoncpp)
+include_directories(/usr/include/microhttpd)
 
 file(GLOB COLLECTOR_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/lib/*.cpp)
 add_library(collector_lib ${COLLECTOR_LIB_SRC_FILES})
