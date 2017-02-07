@@ -113,5 +113,17 @@ fi
 echo "COLLECTOR_CONFIG = $COLLECTOR_CONFIG"
 echo "CHISEL = $CHISEL"
 
+clean_up() {
+    echo "collector pid to be stopped is $PID"
+    kill -TERM $PID; wait $PID
+}
+
+# Remove "/bin/sh -c" from arguments
+shift;shift
 echo "Exec $@"
-exec "$@"
+# Signal handler for SIGTERM
+trap 'clean_up' TERM QUIT INT
+eval "exec $@" &
+PID=$!
+wait $PID
+remove_sysdig_module

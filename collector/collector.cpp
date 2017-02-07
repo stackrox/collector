@@ -64,6 +64,7 @@ signal_callback(int signal)
 {
     std::cerr << "Caught signal " << signal << std::endl;
     g_terminate = true;
+    exit(EXIT_SUCCESS);
 }
 
 
@@ -124,13 +125,13 @@ void insertModule(SysdigService& sysdigService, Json::Value collectorConfig) {
 
     int fd = open(SysdigService::modulePath.c_str(), O_RDONLY);
     if (fd < 0) {
-        std::cout << "Cannot open kernel module: " <<
+        std::cerr << "Cannot open kernel module: " <<
             SysdigService::modulePath << ". Aborting..." << std::endl;
         exit(-1);
     }
     struct stat st;
     if (fstat(fd, &st) < 0) {
-        std::cout << "Error getting file info for kernel module: " <<
+        std::cerr << "Error getting file info for kernel module: " <<
             SysdigService::modulePath << ". Aborting..." << std::endl;
         exit(-1);
     }
@@ -153,7 +154,7 @@ void insertModule(SysdigService& sysdigService, Json::Value collectorConfig) {
             delete_module(SysdigService::moduleName.c_str(), O_NONBLOCK | O_TRUNC);
             sleep(2);    // wait for 2s before trying again
         } else {
-            std::cout << "Error inserting kernel module: " <<
+            std::cerr << "Error inserting kernel module: " <<
                 SysdigService::modulePath << ": " << strerror(errno) <<". Aborting..." << std::endl;
             exit(-1);
         }
@@ -287,7 +288,7 @@ main(int argc, char **argv)
     int exitCode = 0;
     if (!args->parse(argc, argv, exitCode)) {
         if (!args->Message().empty()) {
-            cout << args->Message() << endl;
+            cerr << args->Message() << endl;
         }
         exit(exitCode);
     }
@@ -297,13 +298,9 @@ main(int argc, char **argv)
     limit.rlim_cur = RLIM_INFINITY;
     limit.rlim_max = RLIM_INFINITY;
     if (setrlimit(RLIMIT_CORE, &limit) != 0) {
-        cout << "setrlimit() failed: " << strerror(errno) << std::endl;
+        cerr << "setrlimit() failed: " << strerror(errno) << std::endl;
         exit(-1);
     }
-#else
-    signal(SIGINT, signal_callback);
-    signal(SIGTERM, signal_callback);
-    signal(SIGSEGV, sigsegv_handler);
 #endif
 
     cout << "Hostname detected: " << hostname << endl;
@@ -348,6 +345,14 @@ main(int argc, char **argv)
         cerr << "Unable to initialize sysdig" << endl;
         exit(code);
     }
+
+#ifndef COLLECTOR_CORE
+    // Register signal handlers only after sysdig initialization since sysdig also registers for
+    // these signals which prevents exiting when SIGTERM is received.
+    signal(SIGINT, signal_callback);
+    signal(SIGTERM, signal_callback);
+    signal(SIGSEGV, sigsegv_handler);
+#endif
 
     GetStatus getStatus(&sysdig);
 
