@@ -29,21 +29,20 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <json/json.h>
 
-#include "Handler.h"
-#include "Request.h"
-#include "Response.h"
+#include "civetweb/CivetServer.h"
+
 #include "Sysdig.h"
 
 namespace collector {
 
-class GetStatus : public Handler {
+class GetStatus : public CivetHandler {
     private:
     Sysdig *sysdig;
 
     public:
     GetStatus(Sysdig *sysdig);
     virtual ~GetStatus();
-    void handleRequest(const Request *request, Response &response);
+    bool handleGet(CivetServer *server, struct mg_connection *conn);
 };
 
 }   /* namespace collector */

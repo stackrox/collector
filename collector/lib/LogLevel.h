@@ -30,15 +30,11 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <json/json.h>
 
-#include "Handler.h"
-#include "Request.h"
-#include "Response.h"
+#include "civetweb/CivetServer.h"
 
 namespace collector {
 
-
-
-class LogLevel : public Handler {
+class LogLevel : public CivetHandler {
 
     public:
     std::streambuf* stdBuf;
@@ -46,7 +42,7 @@ class LogLevel : public Handler {
 
     LogLevel();
     virtual ~LogLevel();
-    void handleRequest(const Request *request, Response &response);
+    bool handlePost(CivetServer *server, struct mg_connection *conn);
 
 };
 

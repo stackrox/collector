@@ -41,6 +41,9 @@ container/bin/collector: $(HDRS) $(SRCS) container/libs/libsysdignative.so conta
 	docker cp build_collector:/usr/local/lib/libcurl.so container/libs/
 	docker cp build_collector:/usr/local/bin/curl container/bin/
 	docker cp -L build_collector:/usr/local/lib/librdkafka.so container/libs/
+	docker cp build_collector:/usr/local/lib/x86_64-linux-gnu/libprometheus-cpp.a container/libs/ || true
+	docker cp build_collector:/usr/local/lib64/libprometheus-cpp.a container/libs/ || true
+	docker cp build_collector:/usr/local/lib/libprotobuf.a container/libs/
 
 container/libs/libsysdignative.so: ../ext/sysdig/src/
 	mkdir -p container/bin

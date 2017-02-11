@@ -40,7 +40,6 @@ RUN yum update -y \
     && yum install -y boost-devel \
     && yum install -y \
        jsoncpp-devel \
-       libmicrohttpd-devel \
        openssl-devel --skip-broken \
        ;
 
@@ -49,10 +48,11 @@ RUN mkdir -p /lib/modules/$(uname -r) \
     && ln -s /usr/src/kernels/$(uname -r) /lib/modules/$(uname -r)/build
 
 COPY bin/curl /usr/local/bin/curl
-COPY bin/collector /usr/local/bin/collector
 COPY libs/librdkafka.so /usr/local/lib/librdkafka.so
 COPY libs/libcurl.so /usr/local/lib/libcurl.so
 COPY libs/libsysdignative.so /usr/local/lib/libsysdignative.so
+COPY libs/libprometheus-cpp.a /usr/local/lib/x86_64-linux-gnu/libprometheus-cpp.a
+COPY libs/libprotobuf.a /usr/local/lib/libprotobuf.a
 COPY driver /driver
 
 # /usr/local/lib is not on the default link path on CentOS.
@@ -79,9 +79,7 @@ ENTRYPOINT ["/bootstrap.sh"]
 CMD collector \
         --collector-config=$COLLECTOR_CONFIG \
         --chisel=$CHISEL \
-        --broker-list=$BROKER_LIST \
-        --max-content-length=$MAX_CONTENT_LENGTH_KB \
-        --connection-limit=$CONNECTION_LIMIT \
-        --per-ip-connection-limit=$CONNECTION_LIMIT_PER_IP \
-        --connection-timeout=$CONNECTION_TIMEOUT
+        --broker-list=$BROKER_LIST
+
+COPY bin/collector /usr/local/bin/collector
 

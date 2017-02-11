@@ -28,6 +28,10 @@ You should have received a copy of the GNU General Public License along with thi
 #include <csignal>
 #include <string>
 
+#include "civetweb/CivetServer.h"
+#include "prometheus/exposer.h"
+#include "prometheus/registry.h"
+
 extern "C" {
 #include <assert.h>
 #include <execinfo.h>
@@ -39,7 +43,6 @@ extern "C" {
 #include <stdlib.h>
 #include <unistd.h>
 
-#include <microhttpd.h>
 #include <sys/resource.h>
 
 const char* scap_get_host_root();
@@ -48,9 +51,8 @@ const char* scap_get_host_root();
 #include "CollectorArgs.h"
 #include "GetStatus.h"
 #include "LogLevel.h"
-#include "RESTServer.h"
-#include "Router.h"
 #include "SysdigService.h"
+#include "SysdigStatsExporter.h"
 
 #define init_module(mod, len, opts) syscall(__NR_init_module, mod, len, opts)
 #define delete_module(name, flags) syscall(__NR_delete_module, name, flags)
@@ -354,22 +356,24 @@ main(int argc, char **argv)
     signal(SIGSEGV, sigsegv_handler);
 #endif
 
+    const char *options[] = { "listening_ports", "4419", 0};
+    CivetServer server(options);
+
     GetStatus getStatus(&sysdig);
+    server.addHandler("/status", getStatus);
+    server.addHandler("/loglevel", setLogLevel);
 
-    Router router;
-    router.addGetHandler("/status", &getStatus);
-    router.addPostHandler("/loglevel", &setLogLevel);
+    prometheus::Exposer exposer("4418");
+    std::shared_ptr<prometheus::Registry> registry = std::make_shared<prometheus::Registry>();
+    exposer.RegisterCollectable(registry);
 
-    RESTServer server(4419, args->MaxContentLengthKB(), args->ConnectionLimit(),
-        args->ConnectionLimitPerIP(), args->ConnectionTimeoutSeconds(), &router);
-    if (!server.start()) {
-        cerr << "Unable to start HTTP daemon" << endl;
+    SysdigStatsExporter exporter(registry, &sysdig);
+    if (!exporter.start()) {
+        cerr << "Unable to start sysdig stats exporter" << endl;
         exit(EXIT_FAILURE);
     }
 
-
     sysdig.runForever();
-    server.stop();
     sysdig.cleanup();
     exit(EXIT_SUCCESS);
 }

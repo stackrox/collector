@@ -23,7 +23,7 @@ ENV SYSDIG_HOST_ROOT=/host \
     CHISEL='LS0gQ2hpc2VsIGRlc2NyaXB0aW9uCmRlc2NyaXB0aW9uID0gIm9ubHkgZGlzcGxheSBldmVudHMgcmVsZXZhbnQgdG8gc2VjdXJpdHkgbW9kZWxpbmcgYW5kIGRldGVjdGlvbiIKc2hvcnRfZGVzY3JpcHRpb24gPSAic2VjdXJpdHkgcmVsZXZhbnQiCmNhdGVnb3J5ID0gIm1pc2MiCgotLSBDaGlzZWwgYXJndW1lbnQgbGlzdAphcmdzID0ge30KCi0tIEV2ZW50IHBhcnNpbmcgY2FsbGJhY2sKZnVuY3Rpb24gb25fZXZlbnQoKQogICAgcmV0dXJuIHRydWUKZW5kCgpmdW5jdGlvbiBvbl9pbml0KCkKICAgIGZpbHRlciA9ICJub3QgY29udGFpbmVyLmlkID0gJ2hvc3QnXG4iCiAgICBjaGlzZWwuc2V0X2ZpbHRlcihmaWx0ZXIpCiAgICByZXR1cm4gdHJ1ZQplbmQK'
 
 # HTTP API port (4419)
-EXPOSE 4419
+EXPOSE 4418 4419
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -34,7 +34,6 @@ RUN apt-get update \
         jq \
         libboost-regex-dev \
         libjsoncpp0 \
-        libmicrohttpd10 \
         libssl1.0.0 \
         procps \
         debian-keyring \
@@ -52,10 +51,11 @@ RUN cp /etc/apt/sources.list /etc/apt/sources.list.bak && \
   mv /etc/apt/sources.list.bak /etc/apt/sources.list
 
 COPY bin/curl /usr/local/bin/curl
-COPY bin/collector /usr/local/bin/collector
 COPY libs/librdkafka.so /usr/local/lib/librdkafka.so
 COPY libs/libcurl.so /usr/local/lib/libcurl.so
 COPY libs/libsysdignative.so /usr/local/lib/libsysdignative.so
+COPY libs/libprometheus-cpp.a /usr/local/lib/x86_64-linux-gnu/libprometheus-cpp.a
+COPY libs/libprotobuf.a /usr/local/lib/libprotobuf.a
 COPY driver /driver
 
 # `ldconfig` is required so that `curl` can find its `libcurl.so`.
@@ -89,8 +89,7 @@ ENTRYPOINT ["/bootstrap.sh"]
 CMD collector \
         --collector-config=$COLLECTOR_CONFIG \
         --chisel=$CHISEL \
-        --broker-list=$BROKER_LIST \
-        --max-content-length=$MAX_CONTENT_LENGTH_KB \
-        --connection-limit=$CONNECTION_LIMIT \
-        --per-ip-connection-limit=$CONNECTION_LIMIT_PER_IP \
-        --connection-timeout=$CONNECTION_TIMEOUT
+        --broker-list=$BROKER_LIST
+
+COPY bin/collector /usr/local/bin/collector
+

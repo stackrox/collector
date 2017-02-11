@@ -19,8 +19,11 @@ RUN yum update -y \
        http://dl.fedoraproject.org/pub/archive/fedora/linux/updates/19/x86_64/libcurl-devel-7.29.0-27.fc19.x86_64.rpm \
     && yum install -y *.fc19.x86_64.rpm \
        jsoncpp-devel \
-       libmicrohttpd-devel \
        openssl-devel --skip-broken \
+       autoconf \
+       automake \
+       libtool \
+       unzip \
        ;
 
 # We want to fail if the destination directory is there, hence mkdir (not -p).
@@ -39,6 +42,10 @@ RUN cd ~ \
     && cp googlemock/libgmock*.a /usr/lib \
     && cp googlemock/gtest/libgtest*.a /usr/lib \
      ;
+
+# prometheus-cpp
+COPY build/install_prometheus.sh build/install_prometheus.sh
+RUN build/install_prometheus.sh
 
 # cURL 7.42 or higher is required for UNIX socket access
 ARG CURL_REVISION=curl-7_49_1

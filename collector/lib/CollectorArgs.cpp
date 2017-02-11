@@ -38,12 +38,8 @@ enum optionIndex {
     UNKNOWN,
     HELP,
     COLLECTOR_CONFIG,
-    CHISEL,
     BROKER_LIST,
-    CONNECTION_LIMIT,
-    CONNECTION_LIMIT_PER_IP,
-    CONNECTION_TIMEOUT,
-    MAX_CONTENT_LENGTH,
+    CHISEL
 };
 
 static option::ArgStatus
@@ -64,12 +60,6 @@ checkBrokerList(const option::Option& option, bool msg)
     return CollectorArgs::getInstance()->checkBrokerList(option, msg);
 }
 
-static option::ArgStatus
-checkOptionalNumeric(const option::Option& option, bool msg)
-{
-    return CollectorArgs::getInstance()->checkOptionalNumeric(option, msg);
-}
-
 static const option::Descriptor usage[] =
 {
     { UNKNOWN,                 0, "", "",                        option::Arg::None,     "USAGE: collector [options]\n\n"
@@ -78,24 +68,12 @@ static const option::Descriptor usage[] =
     { COLLECTOR_CONFIG,        0, "", "collector-config",        checkCollectorConfig,  "  --collector-config    \tREQUIRED: Collector config as a JSON string. Please refer to documentation on the valid JSON format." },
     { CHISEL,                  0, "", "chisel",                  checkChisel,           "  --chisel              \tREQUIRED: Chisel is a base64 encoded string." },
     { BROKER_LIST,             0, "", "broker-list",             checkBrokerList,       "  --broker-list         \tREQUIRED: Broker list string in the form HOST1:PORT1,HOST2:PORT2." },
-    { MAX_CONTENT_LENGTH,      0, "", "max-content-length",      checkOptionalNumeric,  "  --max-content-length  \tOPTIONAL: Maximum allowed HTTP content-length in KB; default is 1024." },
-    { CONNECTION_LIMIT,        0, "", "connection-limit",        checkOptionalNumeric,  "  --connection-limit    \tOPTIONAL: Maximum number of concurrent connections to accept; default is 64." },
-    { CONNECTION_LIMIT_PER_IP, 0, "", "per-ip-connection-limit", checkOptionalNumeric,  "  --per-ip-connection-limit \tOPTIONAL: Limit on the number of (concurrent) connections made to the server from the same IP address; default is 64." },
-    { CONNECTION_TIMEOUT,      0, "", "connection-timeout",      checkOptionalNumeric,  "  --connection-timeout \tOPTIONAL: After how many seconds of inactivity should a connection be timed out; default is 8 seconds." },
     { UNKNOWN,                 0, "", "",                        option::Arg::None,     "\nExamples:\n"
-                                                                                        "  collector --broker-list=\"172.16.0.5:9092\"\n"
-                                                                                        "  collector --broker-list=\"172.16.0.5:9092\" --max-content-length=1024\n"
-                                                                                        "  collector --broker-list=\"172.16.0.5:9092\" --connection-limit=64\n"
-                                                                                        "  collector --broker-list=\"172.16.0.5:9092\" --per-ip-connection-limit=64\n"
-                                                                                        "  collector --broker-list=\"172.16.0.5:9092\" --connection-timeout=8\n" },
+                                                                                        "  collector --broker-list=\"172.16.0.5:9092\"\n" },
     { 0, 0, 0, 0, 0, 0 },
 };
 
 CollectorArgs::CollectorArgs()
-    : maxContentLengthKB(DEFAULT_MAX_HTTP_CONTENT_LENGTH_KB),
-      connectionLimit(DEFAULT_CONNECTION_LIMIT),
-      connectionLimitPerIP(DEFAULT_CONNECTION_LIMIT_PER_IP),
-      connectionTimeoutSeconds(DEFAULT_CONNECTION_TIMEOUT_SECONDS)
 {
 }
 
@@ -315,57 +293,6 @@ CollectorArgs::checkBrokerList(const option::Option& option, bool msg)
     return ARG_OK;
 }
 
-option::ArgStatus
-CollectorArgs::checkOptionalNumeric(const option::Option& option, bool msg)
-{
-    using namespace option;
-    using std::string;
-
-    if (option.arg == NULL) {
-        return ARG_IGNORE;
-    }
-
-    // Parse the numeric argument
-    char *endptr = NULL;
-    unsigned long tmp = strtoul(option.arg, &endptr, 10);
-    if (*endptr != '\0') {
-        if (msg) {
-            switch (option.index()) {
-                case MAX_CONTENT_LENGTH:
-                    this->message = "Malformed max HTTP content-length";
-                    break;
-                case CONNECTION_LIMIT:
-                    this->message = "Malformed connection limit";
-                    break;
-                case CONNECTION_LIMIT_PER_IP:
-                    this->message = "Malformed per IP connection limit";
-                    break;
-                case CONNECTION_TIMEOUT:
-                    this->message = "Malformed connection timeout";
-                    break;
-            }
-        }
-        return ARG_ILLEGAL;
-    }
-
-    switch (option.index()) {
-        case MAX_CONTENT_LENGTH:
-            this->maxContentLengthKB = tmp;
-            break;
-        case CONNECTION_LIMIT:
-            this->connectionLimit = tmp;
-            break;
-        case CONNECTION_LIMIT_PER_IP:
-            this->connectionLimitPerIP = tmp;
-            break;
-        case CONNECTION_TIMEOUT:
-            this->connectionTimeoutSeconds = tmp;
-            break;
-    }
-
-    return ARG_OK;
-}
-
 const Json::Value &
 CollectorArgs::CollectorConfig()  const
 {
@@ -382,30 +309,6 @@ const std::string &
 CollectorArgs::BrokerList() const
 {
     return brokerList;
-}
-
-unsigned long
-CollectorArgs::MaxContentLengthKB() const
-{
-    return maxContentLengthKB;
-}
-
-unsigned long
-CollectorArgs::ConnectionLimit() const
-{
-    return connectionLimit;
-}
-
-unsigned long
-CollectorArgs::ConnectionLimitPerIP() const
-{
-    return connectionLimitPerIP;
-}
-
-unsigned long
-CollectorArgs::ConnectionTimeoutSeconds() const
-{
-    return connectionTimeoutSeconds;
 }
 
 const std::string &

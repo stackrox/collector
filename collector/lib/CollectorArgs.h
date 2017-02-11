@@ -24,11 +24,6 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _COLLECTOR_ARGS_H_
 #define _COLLECTOR_ARGS_H_
 
-#define DEFAULT_MAX_HTTP_CONTENT_LENGTH_KB 1024
-#define DEFAULT_CONNECTION_LIMIT 64
-#define DEFAULT_CONNECTION_LIMIT_PER_IP 64
-#define DEFAULT_CONNECTION_TIMEOUT_SECONDS 8
-
 #include <string>
 #include <json/json.h>
 
@@ -51,10 +46,6 @@ class CollectorArgs {
     const Json::Value &CollectorConfig() const;
     const std::string &Chisel() const;
     const std::string &BrokerList() const;
-    unsigned long MaxContentLengthKB() const;
-    unsigned long ConnectionLimit() const;
-    unsigned long ConnectionLimitPerIP() const;
-    unsigned long ConnectionTimeoutSeconds() const;
     const std::string &Message() const;
 
     private:
@@ -68,10 +59,6 @@ class CollectorArgs {
     Json::Value collectorConfig;
     std::string chisel;
     std::string brokerList;
-    unsigned long maxContentLengthKB;
-    unsigned long connectionLimit;
-    unsigned long connectionLimitPerIP;
-    unsigned long connectionTimeoutSeconds;
     std::string message;
 };
 

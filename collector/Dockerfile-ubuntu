@@ -4,20 +4,28 @@ FROM ubuntu:14.04
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         apt-transport-https \
+        autoconf \
+        automake \
         build-essential \
         ca-certificates \
         cmake \
+        curl \
         git \
         g++-4.8 \
         google-mock \
         libboost-regex-dev \
         libjsoncpp-dev \
-        libmicrohttpd-dev \
         libssl-dev \
+        libtool \
+        unzip \
         ;
 
 # We want to fail if the destination directory is there, hence mkdir (not -p).
 RUN mkdir build
+
+# prometheus-cpp
+COPY build/install_prometheus.sh build/install_prometheus.sh
+RUN build/install_prometheus.sh
 
 # GoogleMock (and GoogleTest) are opinionated about how to install the library
 RUN cd /usr/src/gmock \

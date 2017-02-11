@@ -23,12 +23,13 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <map>
 #include <string>
+#include <sstream>
 
 #include <json/json.h>
 
+#include "civetweb/CivetServer.h"
+
 #include "GetStatus.h"
-#include "Request.h"
-#include "Response.h"
 #include "Sysdig.h"
 
 namespace collector {
@@ -42,8 +43,8 @@ GetStatus::~GetStatus()
 {
 }
 
-void
-GetStatus::handleRequest(const Request *request, Response &response)
+bool
+GetStatus::handleGet(CivetServer *server, struct mg_connection *conn)
 {
     using namespace std;
 
@@ -71,8 +72,14 @@ GetStatus::handleRequest(const Request *request, Response &response)
         }
     }
 
-    response.statusCode = 200;
-    response.body = status;
+    Json::StyledStreamWriter writer;
+    stringstream out;
+    writer.write(out, status);
+    const std::string document = out.str();
+
+    mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n");
+    mg_printf(conn, "%s\n", document.c_str());
+    return true;
 }
 
 }   /* namespace collector */

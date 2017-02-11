@@ -21,73 +21,35 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#include <map>
-#include <string>
+#ifndef _SYSDIG_STATS_EXPORTER_H_
+#define _SYSDIG_STATS_EXPORTER_H_
 
-#include <boost/regex.hpp>
+#include "SysdigService.h"
 
-#include "Handler.h"
-#include "Router.h"
+#include "prometheus/registry.h"
+
+extern "C" {
+    #include <pthread.h>
+}
 
 namespace collector {
 
-Router::Router()
+class SysdigStatsExporter
 {
-}
+    public:
+    SysdigStatsExporter(std::shared_ptr<prometheus::Registry> registry, SysdigService *sysdig);
+    virtual ~SysdigStatsExporter();
 
-Router::~Router()
-{
-}
+    bool start();
+    void run();
 
-void
-Router::addGetHandler(const std::string& path, Handler *handler)
-{
-    boost::regex expr(path);
-    getHandlers[expr] = handler;
-}
-
-void
-Router::addPostHandler(const std::string& path, Handler *handler)
-{
-    postHandlers[path] = handler;
-}
-
-Handler *
-Router::lookupGetHandler(const std::string &url, std::vector<std::string> &params) const
-{
-    using namespace std;
-
-    Handler *handler = NULL;
-
-    for (map<boost::regex, Handler*>::const_iterator i = getHandlers.begin();
-        i != getHandlers.end(); ++i) {
-        boost::regex re = i->first;
-
-        boost::smatch result;
-        if (boost::regex_match(url, result, re)) {
-            handler = i->second;
-            params = vector<string>(result.begin() + 1, result.end());
-            break;
-        }
-    }
-
-    return handler;
-}
-
-Handler *
-Router::lookupPostHandler(const std::string &url) const
-{
-    using namespace std;
-
-    Handler *handler = NULL;
-
-    map<string, Handler *>::const_iterator it = postHandlers.find(url);
-    if (it != postHandlers.end()) {
-        handler = it->second;
-    }
-
-    return handler;
-}
+    private:
+        std::shared_ptr<prometheus::Registry> registry;
+        SysdigService *sysdig;
+        pthread_t thread;
+};
 
 }   /* namespace collector */
+
+#endif  /* _SYSDIG_STATS_EXPORTER_H_ */
 

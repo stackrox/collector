@@ -81,10 +81,6 @@ struct CollectorArgsTestCase {
     int                      expectedExitCode;
     std::string              expectedMessage;
     std::string              expectedBrokerList;
-    unsigned long            expectedMaxContentLengthKB;
-    unsigned long            expectedConnectionLimit;
-    unsigned long            expectedConnectionLimitPerIP;
-    unsigned long            expectedConnectionTimeoutSeconds;
 
     friend std::ostream& operator<<(std::ostream& os, const CollectorArgsTestCase& obj) {
         std::string argv;
@@ -100,11 +96,7 @@ struct CollectorArgsTestCase {
             << " expectedResult: " << obj.expectedResult
             << " expectedExitCode: " << obj.expectedExitCode
             << " expectedMessage: " << obj.expectedMessage
-            << " expectedBrokerList " << obj.expectedBrokerList
-            << " expectedMaxContentLengthKB: " << obj.expectedMaxContentLengthKB
-            << " expectedConnectionLimit: " << obj.expectedConnectionLimit
-            << " expectedConnectionLimitPerIP: " << obj.expectedConnectionLimitPerIP
-            << " expectedConnectionTimeoutSeconds: " << obj.expectedConnectionTimeoutSeconds;
+            << " expectedBrokerList " << obj.expectedBrokerList;
     }
 } testCases[]  = {
     // Unknown flag
@@ -113,11 +105,7 @@ struct CollectorArgsTestCase {
         false,
         1,
         "Unknown option: --blargle",
-        "",
-        1024,
-        64,
-        64,
-        8
+        ""
     }
     // Broker list with one broker
     ,{
@@ -125,11 +113,7 @@ struct CollectorArgsTestCase {
         true,
         0,
         "",
-        "172.16.0.5:9092",
-        1024,
-        64,
-        64,
-        8
+        "172.16.0.5:9092"
     }
     // Broker list without an argument
     ,{
@@ -137,11 +121,7 @@ struct CollectorArgsTestCase {
         true,
         0,
         "Missing broker list. Cannot configure Kafka client. Reverting to stdout.",
-        "",
-        1024,
-        64,
-        64,
-        8
+        ""
     }
     // Malformed broker list
     ,{
@@ -149,11 +129,7 @@ struct CollectorArgsTestCase {
         false,
         1,
         "Malformed broker",
-        "",
-        1024,
-        64,
-        64,
-        8
+        ""
     }
     // Missing broker host
     ,{
@@ -161,11 +137,7 @@ struct CollectorArgsTestCase {
         false,
         1,
         "Missing broker host",
-        "",
-        1024,
-        64,
-        64,
-        8
+        ""
     }
     // Missing broker port
     ,{
@@ -173,11 +145,7 @@ struct CollectorArgsTestCase {
         false,
         1,
         "Missing broker port",
-        "",
-        1024,
-        64,
-        64,
-        8
+        ""
     }
     // Broker list with multiple brokers
     ,{
@@ -185,11 +153,7 @@ struct CollectorArgsTestCase {
         true,
         0,
         "",
-        "172.16.0.5:9092,172.16.0.6:9092",
-        1024,
-        64,
-        64,
-        8
+        "172.16.0.5:9092,172.16.0.6:9092"
     }
     // Long broker list
     ,{
@@ -197,155 +161,7 @@ struct CollectorArgsTestCase {
         false,
         1,
         "Broker list too long (> 255)",
-        "",
-        1024,
-        64,
-        64,
-        8
-    }
-    // Max HTTP Content-Length
-    ,{
-        { "collector", "--broker-list=172.16.0.5:9092", "--max-content-length=64" },
-        true,
-        0,
-        "",
-        "172.16.0.5:9092",
-        64,
-        64,
-        64,
-        8
-    }
-    // Max HTTP Content-Length without an argument
-    ,{
-        { "collector", "--broker-list=172.16.0.5:9092", "--max-content-length" },
-        true,
-        0,
-        "",
-        "172.16.0.5:9092",
-        1024,
-        64,
-        64,
-        8
-    }
-    // Max HTTP Content-Length with non-numeric argument
-    ,{
-        { "collector", "--broker-list=172.16.0.5:9092", "--max-content-length=blargle" },
-        false,
-        1,
-        "Malformed max HTTP content-length",
-        "172.16.0.5:9092",
-        1024,
-        64,
-        64,
-        8
-    }
-    // Max concurrent connections
-    ,{
-        { "collector", "--broker-list=172.16.0.5:9092", "--connection-limit=32" },
-        true,
-        0,
-        "",
-        "172.16.0.5:9092",
-        1024,
-        32,
-        64,
-        8
-    }
-    // Max concurrent connections without an argument
-    ,{
-        { "collector", "--broker-list=172.16.0.5:9092", "--connection-limit" },
-        true,
-        0,
-        "",
-        "172.16.0.5:9092",
-        1024,
-        64,
-        64,
-        8
-    }
-    // Max concurrent connections with a non-numeric argument
-    ,{
-        { "collector", "--broker-list=172.16.0.5:9092", "--connection-limit=blargle" },
-        false,
-        1,
-        "Malformed connection limit",
-        "172.16.0.5:9092",
-        1024,
-        64,
-        64,
-        8
-    }
-    // Max concurrent connections per IP
-    ,{
-        { "collector", "--broker-list=172.16.0.5:9092", "--per-ip-connection-limit=32" },
-        true,
-        0,
-        "",
-        "172.16.0.5:9092",
-        1024,
-        64,
-        32,
-        8
-    }
-    // Max concurrent connections per IP without an argument
-    ,{
-        { "collector", "--broker-list=172.16.0.5:9092", "--per-ip-connection-limit" },
-        true,
-        0,
-        "",
-        "172.16.0.5:9092",
-        1024,
-        64,
-        64,
-        8
-    }
-    // Max concurrent connections per IP with a non-numeric argument
-    ,{
-        { "collector", "--broker-list=172.16.0.5:9092", "--per-ip-connection-limit=blargle" },
-        false,
-        1,
-        "Malformed per IP connection limit",
-        "172.16.0.5:9092",
-        1024,
-        64,
-        64,
-        8
-    }
-    // Connection timeout
-    ,{
-        { "collector", "--broker-list=172.16.0.5:9092", "--connection-timeout=4" },
-        true,
-        0,
-        "",
-        "172.16.0.5:9092",
-        1024,
-        64,
-        64,
-        4
-    }
-    // Connection timeout without an argument
-    ,{
-        { "collector", "--broker-list=172.16.0.5:9092", "--connection-timeout" },
-        true,
-        0,
-        "",
-        "172.16.0.5:9092",
-        1024,
-        64,
-        64,
-        8
-    }
-    // Connection timeout with a non-numeric argument
-    ,{
-        { "collector", "--broker-list=172.16.0.5:9092", "--connection-timeout=blargle" },
-        false,
-        1,
-        "Malformed connection timeout",
-        "172.16.0.5:9092",
-        1024,
-        64,
-        64,
-        8
+        ""
     }
 };
 
@@ -372,10 +188,6 @@ TEST_P(CollectorArgsTest, Parse) {
     EXPECT_EQ(testCase.expectedExitCode, exitCode);
     EXPECT_EQ(testCase.expectedMessage, args->Message());
     EXPECT_EQ(testCase.expectedBrokerList, args->BrokerList());
-    EXPECT_EQ(testCase.expectedMaxContentLengthKB, args->MaxContentLengthKB());
-    EXPECT_EQ(testCase.expectedConnectionLimit, args->ConnectionLimit());
-    EXPECT_EQ(testCase.expectedConnectionLimitPerIP, args->ConnectionLimitPerIP());
-    EXPECT_EQ(testCase.expectedConnectionTimeoutSeconds, args->ConnectionTimeoutSeconds());
 
     args->clear();
 }

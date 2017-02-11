@@ -23,16 +23,17 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <map>
 #include <string>
-
-#include <json/json.h>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string>
+#include <cstring>
+
+#include <json/json.h>
+
+#include "civetweb/CivetServer.h"
 
 #include "LogLevel.h"
-#include "Request.h"
-#include "Response.h"
-
 
 namespace collector {
 
@@ -44,21 +45,37 @@ LogLevel::~LogLevel()
 {
 }
 
-void
-LogLevel::handleRequest(const Request *request, Response &response)
+bool
+LogLevel::handlePost(CivetServer *server, struct mg_connection *conn)
 {
+    using namespace std;
+
     Json::Value status(Json::objectValue);
     status["status"] = "Ok";
 
-    if (request->body == "\"Debug\"")
+    long long len = 0;
+    char buf[strlen("Debug")+1] = { '\0' };
+
+    len = mg_read(conn, buf, (size_t)strlen("Debug"));
+    buf[len] = '\0';
+
+    if (strcmp(buf, "Debug") == 0) {
         std::cout.rdbuf(stdBuf);
-    else
+    } else {
         std::cout.rdbuf(nullBuf);
+    }
 
     std::cout << "Log Level updated" << std::endl;
 
-    response.statusCode = 200;
-    response.body = status;
+    Json::StyledStreamWriter writer;
+    stringstream out;
+    writer.write(out, status);
+    const std::string document = out.str();
+                    
+    mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n");
+    mg_printf(conn, "%s\n", document.c_str());
+    return true;
 }
+
 }   /* namespace collector */
 

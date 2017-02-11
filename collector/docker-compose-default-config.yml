@@ -18,10 +18,19 @@ services:
     depends_on:
       - zookeeper
 
+  prometheus:
+    image: prometheus:latest
+    ports:
+      - 9089:9089
+      - 9090:9090
+    depends_on:
+      - collector
+
   collector:
     image: collector:latest
     privileged: true
     ports:
+      - 4418:4418
       - 4419:4419
     volumes:
       - /var/run/docker.sock:/host/var/run/docker.sock
