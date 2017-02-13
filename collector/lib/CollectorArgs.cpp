@@ -287,15 +287,7 @@ CollectorArgs::checkBrokerList(const option::Option& option, bool msg)
     }
 
     string arg(option.arg);
-    string::size_type j = arg.find(',');
-    if (j != string::npos) {
-        if (msg) {
-            this->message = "Multiple brokers not supported currently";
-        }
-        return ARG_ILLEGAL;
-    }
-
-    j = arg.find(':');
+    string::size_type j = arg.find(':');
     if (j == string::npos) {
         if (msg) {
             this->message = "Malformed broker";

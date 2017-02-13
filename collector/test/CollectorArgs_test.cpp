@@ -181,11 +181,11 @@ struct CollectorArgsTestCase {
     }
     // Broker list with multiple brokers
     ,{
-        { "collector", "--broker-list=\"172.16.0.5:9092,172.16.0.6:9092\"" },
-        false,
-        1,
-        "Multiple brokers not supported currently",
+        { "collector", "--broker-list=172.16.0.5:9092,172.16.0.6:9092" },
+        true,
+        0,
         "",
+        "172.16.0.5:9092,172.16.0.6:9092",
         1024,
         64,
         64,
