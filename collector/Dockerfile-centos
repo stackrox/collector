@@ -8,15 +8,12 @@ RUN yum update -y \
     && yum install -y wget \
     && wget http://rpms.famillecollet.com/enterprise/7/remi/x86_64/remi-release-7.2-1.el7.remi.noarch.rpm \
     && wget http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-9.noarch.rpm \
+    && wget http://dl.fedoraproject.org/pub/archive/fedora/linux/updates/19/x86_64/curl-7.29.0-27.fc19.x86_64.rpm \
     && rpm -ivh epel-release-7-9.noarch.rpm \
     && rpm -Uvh remi-release*rpm \
     && yum --enablerepo=remi install -y cmake3 \
     && ln -s /usr/bin/cmake3 /usr/bin/cmake \
     && yum install -y gmock \
-    && yum install -y boost-devel \
-    && wget http://dl.fedoraproject.org/pub/archive/fedora/linux/updates/19/x86_64/curl-7.29.0-27.fc19.x86_64.rpm \
-       http://dl.fedoraproject.org/pub/archive/fedora/linux/updates/19/x86_64/libcurl-7.29.0-27.fc19.x86_64.rpm \
-       http://dl.fedoraproject.org/pub/archive/fedora/linux/updates/19/x86_64/libcurl-devel-7.29.0-27.fc19.x86_64.rpm \
     && yum install -y *.fc19.x86_64.rpm \
        jsoncpp-devel \
        openssl-devel --skip-broken \

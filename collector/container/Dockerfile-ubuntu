@@ -32,7 +32,6 @@ RUN apt-get update \
         gcc-4.8 \
         g++-4.8 \
         jq \
-        libboost-regex-dev \
         libjsoncpp0 \
         libssl1.0.0 \
         procps \

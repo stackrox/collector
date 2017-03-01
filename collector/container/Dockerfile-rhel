@@ -32,12 +32,12 @@ RUN yum update -y \
     && yum install -y wget \
     && wget http://rpms.famillecollet.com/enterprise/7/remi/x86_64/remi-release-7.2-1.el7.remi.noarch.rpm \
     && wget http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-9.noarch.rpm \
+    && wget http://dl.fedoraproject.org/pub/archive/fedora/linux/updates/19/x86_64/curl-7.29.0-27.fc19.x86_64.rpm \
     && rpm -ivh epel-release-7-9.noarch.rpm \
     && rpm -Uvh remi-release*rpm \
     && wget http://stedolan.github.io/jq/download/linux64/jq \
     && chmod +x ./jq \
     && cp jq /usr/bin \
-    && yum install -y boost-devel \
     && yum install -y \
        jsoncpp-devel \
        openssl-devel --skip-broken \
@@ -47,9 +47,7 @@ RUN yum update -y \
 RUN mkdir -p /lib/modules/$(uname -r) \
     && ln -s /usr/src/kernels/$(uname -r) /lib/modules/$(uname -r)/build
 
-COPY bin/curl /usr/local/bin/curl
 COPY libs/librdkafka.so /usr/local/lib/librdkafka.so
-COPY libs/libcurl.so /usr/local/lib/libcurl.so
 COPY libs/libsysdignative.so /usr/local/lib/libsysdignative.so
 COPY libs/libprometheus-cpp.a /usr/local/lib/x86_64-linux-gnu/libprometheus-cpp.a
 COPY libs/libprotobuf.a /usr/local/lib/libprotobuf.a
@@ -57,7 +55,7 @@ COPY driver /driver
 
 # /usr/local/lib is not on the default link path on CentOS.
 RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/usrlocal.conf
-# `ldconfig` is required so that `curl` can find its dependencies.
+# `ldconfig` is required in order to search /usr/local/lib
 RUN ldconfig
 
 WORKDIR /
