@@ -51,6 +51,9 @@ container/libs/libsysdignative.so: ../ext/sysdig/src/
 	make -C ../ext/sysdig
 	docker cp build_sysdig:/src/build/userspace/sysdig/sysdig container/bin/
 	docker cp build_sysdig:/src/driver container/
+	# Remove generated files from container/driver
+	find container/driver -type f -iname '*.cmd' -o -iname '*.o'  -o -iname '*.order' -o -iname '*.ko' | xargs rm -f
+	rm -rf container/driver/.tmp_versions
 	docker cp build_sysdig:/src/build/userspace/sysdig/libsysdignative.so container/libs/
 
 clean:
