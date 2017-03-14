@@ -20,15 +20,17 @@ endif
 all: container
 
 container: container/bin/collector container/$(DOCKERFILE) container/scripts/
+	cp NOTICE.txt container/
+	cp COPYING.txt container/
 	cd container && docker build -f $(DOCKERFILE) -t stackroxcollector/collector:latest .
 
 container/include/KafkaClient.h:
 	mkdir -p container/include
-	cp ../ext/sysdig/src/userspace/sysdig/KafkaClient.h container/include/KafkaClient.h
+	cp sysdig/src/userspace/sysdig/KafkaClient.h container/include/KafkaClient.h
 
 container/include/ppm_events_public.h:
 	mkdir -p container/include
-	cp ../ext/sysdig/src/driver/ppm_events_public.h container/include/ppm_events_public.h
+	cp sysdig/src/driver/ppm_events_public.h container/include/ppm_events_public.h
 
 container/bin/collector: $(HDRS) $(SRCS) container/libs/libsysdignative.so container/include/KafkaClient.h container/include/ppm_events_public.h $(DOCKERFILE)
 	mkdir -p container/bin
@@ -45,10 +47,10 @@ container/bin/collector: $(HDRS) $(SRCS) container/libs/libsysdignative.so conta
 	docker cp build_collector:/usr/local/lib64/libprometheus-cpp.a container/libs/ || true
 	docker cp build_collector:/usr/local/lib/libprotobuf.a container/libs/
 
-container/libs/libsysdignative.so: ../ext/sysdig/src/
+container/libs/libsysdignative.so: sysdig/src/
 	mkdir -p container/bin
 	mkdir -p container/libs
-	make -C ../ext/sysdig
+	make -C sysdig
 	docker cp build_sysdig:/src/build/userspace/sysdig/sysdig container/bin/
 	docker cp build_sysdig:/src/driver container/
 	# Remove generated files from container/driver
@@ -56,16 +58,34 @@ container/libs/libsysdignative.so: ../ext/sysdig/src/
 	rm -rf container/driver/.tmp_versions
 	docker cp build_sysdig:/src/build/userspace/sysdig/libsysdignative.so container/libs/
 
+.PHONY: clean
 clean:
 	docker rm -fv build_collector || true
 	docker rmi -f stackroxcollector/collector:latest || true
 	docker rmi -f build_collector:latest || true
-	make -C ../ext/sysdig clean
+	make -C sysdig clean
 	rm -rf container/include
 	rm -rf container/bin
 	rm -rf container/driver
 	rm -rf container/libs
+	rm -f container/COPYING*.txt
+	rm -f container/NOTICE.txt
 
 info:
 	echo "platform:   " $(PLATFORM)
 	echo "dockerfile: " $(DOCKERFILE)
+
+.PHONY: distribution
+distribution: clean
+# Remove user-specific files but archive the rest of the repository for easy open-source distribution.
+# Makefile has references to StackRox. If you remove it from --exclude, first clean it up.
+	tar --dereference \
+			--exclude '.idea' \
+			--exclude '*.iml' \
+			--exclude '*.yml' \
+			--exclude '.git' \
+			--exclude '.DS_Store' \
+			--exclude 'Makefile' \
+			--exclude-from=.gitignore \
+			-czvf \
+			collector.tar.gz ./

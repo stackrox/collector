@@ -78,8 +78,7 @@ RUN chmod 700 /bootstrap.sh
 
 # copy notice and license files
 COPY NOTICE.txt /NOTICE.txt
-COPY COPYING-GPLv2.txt /COPYING-GPLv2.txt
-COPY COPYING-LGPLv2.1.txt /COPYING-LGPLv2.1.txt
+COPY COPYING.txt /COPYING.txt
 
 ENTRYPOINT ["/bootstrap.sh"]
 
@@ -91,4 +90,3 @@ CMD collector \
         --broker-list=$BROKER_LIST
 
 COPY bin/collector /usr/local/bin/collector
-

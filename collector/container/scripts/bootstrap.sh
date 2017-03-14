@@ -46,7 +46,7 @@ function download_kernel_module() {
     KERNEL_MODULE=$KERNELVERSION-$DISTRO-probe.ko
     wget -O sysdig-probe.ko https://$MODULE_URL/$KERNEL_MODULE
     if [ $? -ne 0 ]; then
-      echo "Error downloading $KERNEL_MODULE from remote stackrox repository." >&2
+      echo "Error downloading $KERNEL_MODULE from remote repository." >&2
       return 1
     fi
     mkdir -p /driver/
@@ -101,7 +101,7 @@ elif echo $OS_DETAILS | grep -qi "Red Hat"; then
     fi
     remove_sysdig_module
 else
-    echo "Distribution $OS_DETAILS not supported by stackrox. Please contact Stackrox for support."
+    echo "Distribution $OS_DETAILS not supported."
     exit 1
 fi
 
