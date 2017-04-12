@@ -18,7 +18,7 @@ The Collector kernel module monitors system calls from every container and every
 We enable configuring the event format that is emitted by the kernel module. The configuration specifies the sequence of fields that need to be emitted together with the label for each field. The latter enables us to override field names. The order in which fields should be emitted, the event format can be specified in a JSON formatted configuration using the following format:
 
 ~~~
-{ "format":"container:container.id,event:evt.type,time:evt.time,rawtime:evt.rawtime,direction:evt.dir,image:container.image,name:container.name" }
+{ "--output-format":"container:container.id,event:evt.type,time:evt.time,rawtime:evt.rawtime,direction:evt.dir,image:container.image,name:container.name" }
 ~~~
 
 #### Using Kafka
@@ -26,7 +26,7 @@ We enable configuring the event format that is emitted by the kernel module. The
 Collector enables sending events using Kafka. The functionality is enabled using the following configuration option:
 
 ~~~
-{ "output":"kafka" }
+{ "--use-kafka, --default-topic:"topic-signals", --network-topic:"topic-network" }
 ~~~
 
 The broker list for Kafka based event production is expected to be in an environment variable covered in the section on environment variables.
