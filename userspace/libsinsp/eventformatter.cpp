@@ -371,12 +371,14 @@ bool sinsp_evt_formatter::tostring(sinsp_evt* evt, OUT string* res)
 }
 
 // Begin StackRox section
-void sinsp_evt_formatter::to_sparse_string(sinsp_evt* evt, char* buffer, unsigned int snaplen)
+void sinsp_evt_formatter::to_sparse_string(sinsp_evt* evt, char* buffer, unsigned int snaplen,
+											string& network_key)
 {
 	uint32_t j = 0;
 
 	ASSERT(m_tokenlens.size() == m_tokens.size());
 
+	network_key.clear();
 	buffer[0] = 'S';
     buffer[1] = '\0';
 	char* ptr = &buffer[1];
@@ -407,6 +409,9 @@ void sinsp_evt_formatter::to_sparse_string(sinsp_evt* evt, char* buffer, unsigne
 					buffer[0] = 'N';
 			}
     		if (past_fixed_format) {
+				if (!strcmp(field, "fd.cip") || !strcmp(field, "fd.cport")) {
+					network_key += str;
+				}
 				if (!strcmp(field, "proc.args") || !strcmp(field, "proc.cmdline") || !strcmp(field, "proc.exeline")) {
 					// if there are tabs in proc.args, proc.cmdline, or proc.exeline,
 					// then replace them with periods

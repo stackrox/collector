@@ -764,16 +764,16 @@ captureinfo do_inspect(sinsp* inspector,
 //
 // Event processing call. Get next valid event.
 //
-const char* do_getnext() {
+const char* do_getnext(const char* selfContainerID, string& networkKey) {
 	int32_t res;
 	sinsp_evt* ev;
-        char* eventBuffer = persistentState->getEventBuffer();
-        sinsp* inspector = persistentState->getInspector();
-        sinsp_evt_formatter* formatter = persistentState->getFormatter();
-        sinsp_chisel* chisel = persistentState->getChisel();
-        int periodicity = persistentState->getPeriodicity();
+	char* eventBuffer = persistentState->getEventBuffer();
+	sinsp* inspector = persistentState->getInspector();
+	sinsp_evt_formatter* formatter = persistentState->getFormatter();
+	sinsp_chisel* chisel = persistentState->getChisel();
+	int periodicity = persistentState->getPeriodicity();
 
-        eventBuffer[0] = 0;
+	eventBuffer[0] = 0;
 	if (inspector == NULL || formatter == NULL || chisel == NULL) {
 		cout << "inspector|formatter|chisel unintialized!" << endl;
 		return eventBuffer;
@@ -810,12 +810,12 @@ const char* do_getnext() {
 
             sprintf(eventBuffer,
                 "M\t%s\tsysdigMetrics\t%s\tE: %" PRIu64 "\tD: %" PRIu64 "\tP: %" PRIu64 ".\tEd: %" PRIu64 "\tDd: %" PRIu64 "\tPd: %" PRIu64 "\tFE: %" PRIu64 "\tnode:%s\n",
-                KafkaClient::getContainerID(),
+                selfContainerID,
                 timestamp, sysdigData.nEvents, sysdigData.nDrops, sysdigData.nPreemptions,
 		sysdigData.nEventsDelta, sysdigData.nDropsDelta, sysdigData.nPreemptionsDelta,
 		sysdigData.nFilteredEvents, sysdigData.nodeName.c_str());
 	    return eventBuffer;
-        }
+    }
 
 	res = inspector->next(&ev);
 
@@ -829,7 +829,7 @@ const char* do_getnext() {
 
 	if (chisel->process(ev)) {
 		sysdigData.nFilteredEvents++;
-		formatter->to_sparse_string(ev, eventBuffer, persistentState->getSnapLen());
+		formatter->to_sparse_string(ev, eventBuffer, persistentState->getSnapLen(), networkKey);
 	}
 	return eventBuffer;
 }
@@ -876,6 +876,7 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 	// Begin StackRox section
 	string brokerList = "";
 	string defaultTopic = "sysdig-default-topic";
+	string networkTopic;
 	bool useKafka = false;
 	// End StackRox section
 
@@ -884,6 +885,12 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 	int rollover_mb = 0;
 	int file_limit = 0;
 	unsigned long event_limit = 0L;
+
+#define USE_KAFKA_VAL               1024
+#define KAFKA_BROKER_LIST_VAL       1025
+#define OUTPUT_FORMAT_VAL           1026
+#define KAFKA_DEFAULT_TOPIC_VAL     1027
+#define KAFKA_NETWORK_TOPIC_VAL     1028
 
 	static struct option long_options[] =
 	{
@@ -922,12 +929,7 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 		{"snaplen", required_argument, 0, 's' },
 		{"summary", no_argument, 0, 'S' },
 		{"timetype", required_argument, 0, 't' },
-	    // Begin StackRox section
-
-		// Conflicts with option for kafka topic
-		// {"force-tracers-capture", required_argument, 0, 'T'},
-
-		// End StackRox section
+		{"force-tracers-capture", required_argument, 0, 'T'},
 		{"unbuffered", no_argument, 0, 0 },
 		{"verbose", no_argument, 0, 'v' },
 		{"version", no_argument, 0, 0 },
@@ -937,10 +939,11 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 		{"print-hex-ascii", no_argument, 0, 'X'},
 		{"compress", no_argument, 0, 'z' },
 	    // Begin StackRox section
-		{"use-kafka", no_argument, 0, 'u' },
-		{"broker-list", required_argument, 0, 'B' },
-		{"output-format", required_argument, 0, 'O' },
-		{"default-topic", required_argument, 0, 'T' },
+		{"use-kafka", no_argument, 0, USE_KAFKA_VAL },
+		{"broker-list", required_argument, 0, KAFKA_BROKER_LIST_VAL },
+		{"output-format", required_argument, 0, OUTPUT_FORMAT_VAL },
+		{"default-topic", required_argument, 0, KAFKA_DEFAULT_TOPIC_VAL },
+		{"network-topic", required_argument, 0, KAFKA_NETWORK_TOPIC_VAL },
 	    // End StackRox section
 		{0, 0, 0, 0}
 	};
@@ -967,18 +970,9 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
                                         "C:"
                                         "dDEe:F"
                                         "G:"
-                                        // Begin StackRox section
-                                        /*
                                         "hi:jk:K:lLm:M:Nn:Pp:qr:Ss:t:Tv"
-                                        */
-                                        "hi:jk:K:lLm:M:Nn:Pp:qr:Ss:t:v"
                                         "W:"
-                                        /*
                                         "w:xXz", long_options, &long_index)) != -1)
-                                        */
-                                        "w:xXzuB:O:T:",
-                                        long_options, &long_index)) != -1)
-	                                    // End StackRox section
 		{
 			switch(op)
 			{
@@ -1256,13 +1250,9 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 					}
 				}
 				break;
-	    	// Begin StackRox section
-			/*
 			case 'T':
 				force_tracers_capture = true;
 				break;
-			*/
-	    	// End StackRox section
 			case 'v':
 				verbose = true;
 				break;
@@ -1306,21 +1296,25 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 				compress = true;
 				break;
 			// Begin StackRox section
-			case 'u':
-				cout << "use-kafka is set" << endl;
+			case USE_KAFKA_VAL:
+				cout << "use-kafka is set" << endl; 
 				useKafka = true;
 				persistentState->setUseKafka(useKafka);
 				break;
-			case 'B':
+			case KAFKA_BROKER_LIST_VAL:
 				brokerList = optarg;
 				break;
-			case 'O':
+			case OUTPUT_FORMAT_VAL:
 				cout << "FORMAT: " << optarg << endl;
 				persistentState->setFormatter(new sinsp_evt_formatter(inspector, optarg));
 				break;
-			case 'T':
+			case KAFKA_DEFAULT_TOPIC_VAL:
 				cout << "Default topic: " << optarg << endl;
 				defaultTopic = optarg;
+				break;
+			case KAFKA_NETWORK_TOPIC_VAL:
+				cout << "Network topic: " << optarg << endl;
+				networkTopic = optarg;
 				break;
 			// End StackRox section
 
@@ -1665,7 +1659,7 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 
 			if (useKafka) {
 				cout << "Kafka client is being setup " << endl;
-				persistentState->setupKafkaClient(brokerList, defaultTopic);
+				persistentState->setupKafkaClient(brokerList, defaultTopic, networkTopic);
 			}
 
 			// initialize the sysdig factoid object
@@ -1863,12 +1857,13 @@ void sysdigStartProduction(bool& isInterrupted) {
 
     cout << "Starting sysdig production..." << endl;
 
+    string networkKey;
     while (!isInterrupted) {
-        line = (char*)do_getnext();
+        line = (char*)do_getnext(kafkaClient->getContainerID(), networkKey);
         if (useKafka) {
             if (line[0] == '\0')
-	            continue;
-	        kafkaClient->send(line);
+                continue;
+            kafkaClient->send(line, networkKey);
         } else {
             if (line[0] == '\0')
                 continue;
@@ -1878,7 +1873,8 @@ void sysdigStartProduction(bool& isInterrupted) {
 }
 
 int sysdigInitialize(string chiselName, string brokerList, string format,
-                     bool useKafka, string defaultTopic, int snapLen) {
+                     bool useKafka, string defaultTopic, string networkTopic,
+                     int snapLen) {
     // if the format is empty then fill in with a default format
     if (format.length() == 0) {
         format = "container:container.id,event:evt.type,time:evt.time,rawtime:evt.rawtime,direction:evt.dir,image:container.image,name:container.name";
@@ -1900,15 +1896,17 @@ int sysdigInitialize(string chiselName, string brokerList, string format,
         persistentState->setChiselName(chiselName);
     }
     if (brokerList.length() > 0) {
-        args.push_back("-B");
+        args.push_back("--broker-list");
         args.push_back(brokerList.c_str());
         if (useKafka) {
             args.push_back("--use-kafka");
         }
-        args.push_back("-T");
+        args.push_back("--default-topic");
         args.push_back(defaultTopic.c_str());
+        args.push_back("--network-topic");
+        args.push_back(networkTopic.c_str());
     }
-    args.push_back("-O");
+    args.push_back("--output-format");
     args.push_back(format.c_str());
 
     int argc = args.size();

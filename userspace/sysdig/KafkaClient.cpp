@@ -35,18 +35,15 @@ extern "C" {
 
 #include "KafkaClient.h"
 
-rd_kafka_t* KafkaClient::kafka = NULL;
-rd_kafka_topic_t* KafkaClient::topic = NULL;
-char* KafkaClient::containerID = NULL;
-
 // construction
-KafkaClient::KafkaClient(char* brokerList, char* _defaultTopic) {
+KafkaClient::KafkaClient(std::string brokerList, std::string _defaultTopic, std::string _networkTopic) {
   char errstr[1024];
   brokers = brokerList;
-  if (_defaultTopic != NULL)
-    defaultTopic = _defaultTopic;
-  else
-    defaultTopic = "topic-default";
+  defaultTopic = _defaultTopic;
+  networkTopic = _networkTopic;
+  kafka = NULL;
+  defaultTopicHandle = NULL;
+  networkTopicHandle = NULL;
 
   // Get the hostname of this container.
   const string file = "/etc/hostname";
@@ -101,12 +98,18 @@ KafkaClient::KafkaClient(char* brokerList, char* _defaultTopic) {
     return;
   }
 
-  topic = createTopic((char*)defaultTopic.c_str());
+  defaultTopicHandle = createTopic((char*)defaultTopic.c_str());
+  if (!networkTopic.empty()) {
+    networkTopicHandle = createTopic((char*)networkTopic.c_str());
+  }
 }
 
 KafkaClient::~KafkaClient() {
-  if (topic != NULL) {
-    rd_kafka_topic_destroy(topic);
+  if (defaultTopicHandle != NULL) {
+    rd_kafka_topic_destroy(defaultTopicHandle);
+  }
+  if (networkTopicHandle != NULL) {
+    rd_kafka_topic_destroy(networkTopicHandle);
   }
 
   if (kafka != NULL)
@@ -132,16 +135,19 @@ rd_kafka_topic_t* KafkaClient::createTopic(const char* topic) {
   return kafkaTopic;
 }
 
-void KafkaClient::send(char* line) {
-  return sendMessage(topic, line);
-}
-
-void KafkaClient::sendMessage(rd_kafka_topic_t* kafkaTopic, char* line) {
+void KafkaClient::send(char* line, const std::string& networkKey) {
   char cidKey[SHORT_CONTAINER_ID_LENGTH];
   strncpy(cidKey, &line[SHORT_CONTAINER_ID_OFFSET], sizeof(cidKey));
+  sendMessage(defaultTopicHandle, line, cidKey, sizeof(cidKey));
+  if (networkTopicHandle && line[0] == 'N' && networkKey[0] != '\0') {
+    sendMessage(networkTopicHandle, line, (char*)networkKey.c_str(), networkKey.size());
+  }
+}
+
+void KafkaClient::sendMessage(rd_kafka_topic_t* kafkaTopic, char* line, char* key, int keyLen) {
 
   int rv = rd_kafka_produce(kafkaTopic, RD_KAFKA_PARTITION_UA, RD_KAFKA_MSG_F_COPY,
-       line, strlen(line), cidKey, sizeof(cidKey), NULL);
+       line, strlen(line), key, keyLen, NULL);
   if (rv == -1) {
     fprintf(stderr, "Failed to produce to topic %s: %s\n",
                     rd_kafka_topic_name(kafkaTopic),

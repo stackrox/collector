@@ -44,31 +44,33 @@ class KafkaClient {
   rd_kafka_conf_res_t res;
   string brokers;
   string defaultTopic;
+  string networkTopic;
 
-  static rd_kafka_t* kafka;
-  static rd_kafka_topic_t* topic;
-  static char * containerID;
+  rd_kafka_t* kafka;
+  rd_kafka_topic_t* defaultTopicHandle;
+  rd_kafka_topic_t* networkTopicHandle;
+  char* containerID;
 
   // method to create a topic
-  static rd_kafka_topic_t* createTopic(const char* topic);
+  rd_kafka_topic_t* createTopic(const char* topic);
 
   // method to send to a specific topic
-  static void sendMessage(rd_kafka_topic_t* kafkaTopic, char* line);
+  void sendMessage(rd_kafka_topic_t* kafkaTopic, char* line, char* key, int keyLen);
 
  public:
   // construction
-  KafkaClient(char* brokerList, char* defaultTopic);
+  KafkaClient(string brokerList, string defaultTopic, string networkTopic);
   virtual ~KafkaClient();
 
   rd_kafka_t* getClient() {
     return kafka;
   }
 
-  static const char* const getContainerID() {
+  const char* const getContainerID() {
       return containerID;
   }
 
-  static void send(char* line);
+  void send(char* line, const string& networkKey);
 };
 
 #endif // __KAFKACLIENT_H

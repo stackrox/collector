@@ -102,7 +102,7 @@ public:
 	  \return true if the string should be shown (based on the initial *),
 	   false otherwise.
 	*/
-	void to_sparse_string(sinsp_evt* evt, char* buffer, unsigned int snaplen);
+	void to_sparse_string(sinsp_evt* evt, char* buffer, unsigned int snaplen, string& network_key);
 
 	/*!
 	  \brief Fills res with end of capture string rendering of the event.
