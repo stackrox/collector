@@ -53,7 +53,8 @@ class Sysdig {
     virtual ~Sysdig() {};
 
     virtual int init(std::string chiselName, std::string brokerList, std::string format,
-                     bool useKafka, std::string defaultTopic, int snapLen) = 0;
+                     bool useKafka, std::string defaultTopic, std::string networkTopic,
+                     int snapLen) = 0;
     virtual bool ready() = 0;
     virtual void runForever() = 0;
     virtual void cleanup() = 0;

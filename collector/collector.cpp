@@ -336,13 +336,19 @@ main(int argc, char **argv)
     if (!collectorConfig["defaultTopic"].isNull()) {
         defaultTopic = collectorConfig["defaultTopic"].asString();
     }
+    std::string networkTopic = collectorConfig["networkTopic"].asString();
+    if (networkTopic.empty()) {
+        cerr << "Network topic not specified" << endl;
+        exit(-1);
+    }
 
     // write out chisel file from incoming chisel
     writeChisel(chiselName, args->Chisel());
 
-    cout << chiselName << ", " << format << ", " << defaultTopic << endl;
+    cout << chiselName << ", " << format << ", " << defaultTopic << ", "  << networkTopic << endl;
 
-    int code = sysdig.init(chiselName, args->BrokerList(), format, useKafka, defaultTopic, snapLen);
+    int code = sysdig.init(chiselName, args->BrokerList(), format, useKafka, defaultTopic,
+                            networkTopic, snapLen);
     if (code != 0) {
         cerr << "Unable to initialize sysdig" << endl;
         exit(code);
