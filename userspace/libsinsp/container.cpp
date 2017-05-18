@@ -437,7 +437,7 @@ bool sinsp_container_manager::resolve_container(sinsp_threadinfo* tinfo, bool qu
 				{
 					is_rkt_pod_id_valid = (access(image_manifest_path, F_OK) == 0);
 				}
-#endif			
+#endif
 				if(is_rkt_pod_id_valid)
 				{
 					container_info.m_type = CT_RKT;

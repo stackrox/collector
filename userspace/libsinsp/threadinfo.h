@@ -126,6 +126,11 @@ public:
 	}
 
 	/*!
+	  \brief Resets local fd cache
+	*/
+	void reset_fd_cache();
+
+	/*!
 	  \brief Get the main thread of the process containing this thread.
 	*/
 #ifndef _WIN32
@@ -449,7 +454,7 @@ public:
 
 private:
 	void remove_thread(threadinfo_map_iterator_t it, bool force);
-	void increment_mainthread_childcount(sinsp_threadinfo* threadinfo);
+	void increment_mainthread_childcount(sinsp_threadinfo* threadinfo, bool create_if_needed);
 	inline void clear_thread_pointers(threadinfo_map_iterator_t it);
 	void free_dump_fdinfos(vector<scap_fdinfo*>* fdinfos_to_free);
 	void thread_to_scap(sinsp_threadinfo& tinfo, scap_threadinfo* sctinfo);

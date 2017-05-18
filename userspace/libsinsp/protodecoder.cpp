@@ -330,7 +330,7 @@ void sinsp_decoder_syslog::decode_message(char *data, uint32_t len, char* pristr
 
 	bool res = sinsp_numparser::tryparsed32_fast(pristr, pristrlen, &m_priority);
 
-	if(!res)
+	if(!res || ((len - pristrlen) <= 2))
 	{
 		m_priority = -1;
 		return;

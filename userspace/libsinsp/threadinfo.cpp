@@ -883,6 +883,11 @@ void sinsp_threadinfo::traverse_parent_state(visitor_func_t &visitor)
 	}
 }
 
+void sinsp_threadinfo::reset_fd_cache()
+{
+	m_fdtable.reset_cache();
+}
+
 sinsp_threadinfo* sinsp_threadinfo::lookup_thread()
 {
 	return m_inspector->get_thread(m_pid, true, true);
@@ -1140,7 +1145,13 @@ void sinsp_thread_manager::set_listener(sinsp_threadtable_listener* listener)
 	m_listener = listener;
 }
 
-void sinsp_thread_manager::increment_mainthread_childcount(sinsp_threadinfo* threadinfo)
+/*
+ * When a main thread goes away, we do not want to query OS for its pid since it could have been
+ * allocated to some other process. Caller is expected to pass false for 'create_if_needed' for
+ * such cases. This function will set pid same as tid in case main thread is not found in such case
+ * i.e. make the passed thread itself as main thread.
+ */
+void sinsp_thread_manager::increment_mainthread_childcount(sinsp_threadinfo* threadinfo, bool create_if_needed)
 {
 	if(threadinfo->m_flags & PPM_CL_CLONE_THREAD)
 	{
@@ -1150,14 +1161,21 @@ void sinsp_thread_manager::increment_mainthread_childcount(sinsp_threadinfo* thr
 		//
 		ASSERT(threadinfo->m_pid != threadinfo->m_tid);
 
-		sinsp_threadinfo* main_thread = m_inspector->get_thread(threadinfo->m_pid, true, true);
+		sinsp_threadinfo* main_thread = m_inspector->get_thread(threadinfo->m_pid, create_if_needed, true);
 		if(main_thread)
 		{
 			++main_thread->m_nchilds;
 		}
 		else
 		{
-			ASSERT(false);
+			if (create_if_needed)
+			{
+				ASSERT(false);
+			}
+			else
+			{
+				threadinfo->m_pid = threadinfo->m_tid;
+			}
 		}
 	}
 }
@@ -1182,7 +1200,7 @@ void sinsp_thread_manager::add_thread(sinsp_threadinfo& threadinfo, bool from_sc
 
 	if(!from_scap_proctable)
 	{
-		increment_mainthread_childcount(&threadinfo);
+		increment_mainthread_childcount(&threadinfo, true);
 	}
 
 	threadinfo.compute_program_hash();
@@ -1314,11 +1332,20 @@ void sinsp_thread_manager::clear_thread_pointers(threadinfo_map_iterator_t it)
 {
 	it->second.m_main_thread = NULL;
 
+	/*
 	sinsp_fdtable* fdt = it->second.get_fd_table();
 	if(fdt != NULL)
 	{
 		fdt->reset_cache();
 	}
+	*/
+
+	/*
+	 * get_fd_table can end up creating main thread if not present where as goal
+	 * here is just to reset fd cache for called thread. Main thread's fd cache
+	 * will be reset when this function is called for main thread.
+	 */
+	it->second.reset_fd_cache();
 }
 
 /*
@@ -1351,7 +1378,7 @@ void sinsp_thread_manager::create_child_dependencies()
 
 	for(it = m_threadtable.begin(); it != m_threadtable.end(); ++it)
 	{
-		increment_mainthread_childcount(&it->second);
+		increment_mainthread_childcount(&it->second, false);
 	}
 }
 

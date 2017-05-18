@@ -1634,7 +1634,7 @@ void sinsp_parser::parse_execve_exit(sinsp_evt *evt)
 		// because at container startup docker spawn a process with vpid=1
 		// outside of container cgroup and correct cgroups are
 		// assigned just before doing execve:
-		// 
+		//
 		// 1. docker-runc calls fork() and created process with vpid=1
 		// 2. docker-runc changes cgroup hierarchy of it
 		// 3. vpid=1 execve to the real process the user wants to run inside the container
