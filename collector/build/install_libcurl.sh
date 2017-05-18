@@ -7,6 +7,6 @@ mkdir -p /tmp/src/build \
     && cd .. \
     && cd build \
     && cmake ../curl \
-    && make \
+    && make -j 6 \
     && make install \
     ;

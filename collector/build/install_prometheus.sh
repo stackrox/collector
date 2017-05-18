@@ -6,7 +6,7 @@ cd protobuf
 git checkout v3.2.0
 ./autogen.sh
 sh ./configure
-make
+make -j 6
 make install
 ldconfig
 
@@ -37,7 +37,7 @@ cd ../
 mkdir build
 cd build
 cmake ../
-make
+make -j 6
 make install
 ldconfig
 

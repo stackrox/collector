@@ -3,6 +3,6 @@ git clone https://github.com/edenhill/librdkafka.git \
     && cd librdkafka \
     && git checkout $RDKAFKA_REVISION \
     && ./configure \
-    && make \
+    && make -j 6 \
     && make install \
     ;

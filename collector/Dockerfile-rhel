@@ -30,7 +30,7 @@ RUN cd ~ \
     && git clone https://github.com/google/googletest.git \
     && cd googletest \
     && cmake CmakeLists.txt \
-    && make \
+    && make -j 6 \
     && mkdir -p /usr/include/gmock/ \
     && cp -rf ~/googletest/googlemock/include/gmock/* /usr/include/gmock/ \
     && mkdir -p  /usr/include/gtest \

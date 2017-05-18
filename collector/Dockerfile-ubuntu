@@ -29,7 +29,7 @@ RUN build/install_prometheus.sh
 # GoogleMock (and GoogleTest) are opinionated about how to install the library
 RUN cd /usr/src/gmock \
         && cmake CmakeLists.txt \
-        && make \
+        && make -j 6 \
         && cp -R /usr/src/gmock/gtest/include/gtest /usr/local/include/gtest \
         && cp libgmock*.a /usr/lib \
         && cp gtest/libgtest*.a /usr/lib \
