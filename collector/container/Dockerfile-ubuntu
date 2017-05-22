@@ -1,4 +1,4 @@
-FROM ubuntu:14.04
+FROM ubuntu:16.04
 
 # SYSDIG_HOST_ROOT is required by the sysdig kernel module; used as a prefix to
 # paths like /dev/sysdig0, /proc, and /boot. Make sure this matches the volume
@@ -31,8 +31,10 @@ RUN apt-get update \
         ca-certificates \
         gcc-4.8 \
         g++-4.8 \
+        kmod \
         jq \
-        libjsoncpp0 \
+        libjsoncpp-dev \
+        libjsoncpp1 \
         libssl1.0.0 \
         procps \
         debian-keyring \
@@ -53,7 +55,7 @@ COPY bin/curl /usr/local/bin/curl
 COPY libs/librdkafka.so /usr/local/lib/librdkafka.so
 COPY libs/libcurl.so /usr/local/lib/libcurl.so
 COPY libs/libsysdignative.so /usr/local/lib/libsysdignative.so
-COPY libs/libprometheus-cpp.a /usr/local/lib/x86_64-linux-gnu/libprometheus-cpp.a
+COPY libs/libprometheus-cpp.a /usr/local/lib/libprometheus-cpp.a
 COPY libs/libprotobuf.a /usr/local/lib/libprotobuf.a
 COPY driver /driver
 

@@ -20,7 +20,7 @@ function remove_sysdig_module() {
 function build_kernel_module_ubuntu() {
     echo "Attempting to build the kernel module for $KERNELVERSION-$DISTRO"
 
-    echo "deb http://security.ubuntu.com/ubuntu trusty-security main" > /etc/apt/sources.list
+    echo "deb http://security.ubuntu.com/ubuntu trusty-security main" >> /etc/apt/sources.list
     echo "deb http://ftp.us.debian.org/debian jessie main" >> /etc/apt/sources.list
 
     apt-get update && apt-get install -y linux-headers-$KERNELVERSION
