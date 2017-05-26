@@ -13,7 +13,7 @@ function test {
 function remove_sysdig_module() {
     if lsmod | grep -q sysdig_probe; then
         echo "sysdig-probe has already been loaded. Removing and relegating the task to the collector..."
-        test rmmod sysdig-probe.ko
+        test rmmod sysdig-probe
     fi
 }
 
@@ -26,6 +26,8 @@ function build_kernel_module_ubuntu() {
     apt-get update && apt-get install -y linux-headers-$KERNELVERSION
 
     test make KERNELRELEASE=$KERNELVERSION -C /lib/modules/$KERNELVERSION/build M=/driver clean modules
+    test make KERNELRELEASE=$KERNELVERSION -C /lib/modules/$KERNELVERSION/build M=/sysblock clean modules
+    insert_sysblock_module
 }
 
 function build_kernel_module_centos() {
@@ -33,6 +35,8 @@ function build_kernel_module_centos() {
 
     yum install -y kernel-devel-$KERNELVERSION
     test make KERNELRELEASE=$KERNELVERSION -C /usr/src/kernels/$KERNELVERSION/ M=/driver clean modules
+    test make KERNELRELEASE=$KERNELVERSION -C /usr/src/kernels/$KERNELVERSION/ M=/sysblock clean modules
+    insert_sysblock_module
 }
 
 function build_kernel_module_rhel() {
@@ -40,6 +44,8 @@ function build_kernel_module_rhel() {
 
     yum install -y kernel-devel-$KERNELVERSION
     test make KERNELRELEASE=$KERNELVERSION -C /usr/src/kernels/$KERNELVERSION/ M=/driver clean modules
+    test make KERNELRELEASE=$KERNELVERSION -C /usr/src/kernels/$KERNELVERSION/ M=/sysblock clean modules
+    insert_sysblock_module
 }
 
 function download_kernel_module() {
@@ -53,6 +59,12 @@ function download_kernel_module() {
     cp sysdig-probe.ko /driver/sysdig-probe.ko
     chmod 777 /driver/sysdig-probe.ko
     return 0
+}
+
+function insert_sysblock_module() {
+    if [ "$ROX_SYSBLOCK_ENABLE" == "true" ]; then
+      insmod sysblock/sysblock.ko
+    fi
 }
 
 # Get the hostname from Docker so this container can use it in its output.

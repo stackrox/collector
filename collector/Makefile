@@ -20,8 +20,10 @@ endif
 all: container
 
 container: container/bin/collector container/$(DOCKERFILE) container/scripts/
+	rm -rf container/sysblock
 	cp NOTICE.txt container/
 	cp COPYING.txt container/
+	cp -r sysblock/src container/sysblock
 	cd container && docker build -f $(DOCKERFILE) -t stackroxcollector/collector:latest .
 
 container/include/KafkaClient.h:
@@ -67,6 +69,7 @@ clean:
 	rm -rf container/include
 	rm -rf container/bin
 	rm -rf container/driver
+	rm -rf container/sysblock
 	rm -rf container/libs
 	rm -f container/COPYING*.txt
 	rm -f container/NOTICE.txt

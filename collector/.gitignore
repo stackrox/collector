@@ -2,5 +2,6 @@ container/bin
 container/driver
 container/libs
 container/include
+container/sysblock
 tags
 collector.tar.gz

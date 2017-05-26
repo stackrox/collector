@@ -58,6 +58,7 @@ COPY libs/libsysdignative.so /usr/local/lib/libsysdignative.so
 COPY libs/libprometheus-cpp.a /usr/local/lib/libprometheus-cpp.a
 COPY libs/libprotobuf.a /usr/local/lib/libprotobuf.a
 COPY driver /driver
+COPY sysblock /sysblock
 
 # `ldconfig` is required so that `curl` can find its `libcurl.so`.
 RUN ldconfig

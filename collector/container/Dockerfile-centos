@@ -52,7 +52,7 @@ COPY libs/libsysdignative.so /usr/local/lib/libsysdignative.so
 COPY libs/libprometheus-cpp.a /usr/local/lib/x86_64-linux-gnu/libprometheus-cpp.a
 COPY libs/libprotobuf.a /usr/local/lib/libprotobuf.a
 COPY driver /driver
-
+COPY sysblock /sysblock
 # /usr/local/lib is not on the default link path on CentOS.
 RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/usrlocal.conf
 # `ldconfig` is required in order to search /usr/local/lib

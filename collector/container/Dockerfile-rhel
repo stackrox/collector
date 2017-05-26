@@ -68,6 +68,7 @@ RUN chmod 700 /bootstrap.sh
 # copy notice and license files
 COPY NOTICE.txt /NOTICE.txt
 COPY COPYING.txt /COPYING.txt
+COPY sysblock /sysblock
 
 ENTRYPOINT ["/bootstrap.sh"]
 
