@@ -369,7 +369,7 @@ main(int argc, char **argv)
     server.addHandler("/status", getStatus);
     server.addHandler("/loglevel", setLogLevel);
 
-    prometheus::Exposer exposer("4418");
+    prometheus::Exposer exposer("9090");
     std::shared_ptr<prometheus::Registry> registry = std::make_shared<prometheus::Registry>();
     exposer.RegisterCollectable(registry);
 

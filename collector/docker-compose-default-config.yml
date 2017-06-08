@@ -30,7 +30,7 @@ services:
     image: collector:latest
     privileged: true
     ports:
-      - 4418:4418
+      - 9090:9090
       - 4419:4419
     volumes:
       - /var/run/docker.sock:/host/var/run/docker.sock
