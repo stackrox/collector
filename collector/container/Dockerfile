@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM stackrox/kernel-modules:latest
 
 # SYSDIG_HOST_ROOT is required by the sysdig kernel module; used as a prefix to
 # paths like /dev/sysdig0, /proc, and /boot. Make sure this matches the volume
@@ -26,42 +26,25 @@ ENV SYSDIG_HOST_ROOT=/host \
 EXPOSE 4419 9090
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        build-essential \
+ && apt-get install -y --no-install-recommends \
         ca-certificates \
-        gcc-4.8 \
-        g++-4.8 \
-        kmod \
         jq \
+        kmod \
         libjsoncpp-dev \
-        libjsoncpp1 \
-        libssl1.0.0 \
-        procps \
-        debian-keyring \
-        debian-archive-keyring \
-	wget \
-    && apt-get clean \
-    ;
-
-# Update Debian signing keys, which are required to get old kernels from Jessie.
-RUN cp /etc/apt/sources.list /etc/apt/sources.list.bak && \
-  echo "deb http://ftp.us.debian.org/debian jessie main" > /etc/apt/sources.list && \
-  apt-get update && \
-  apt-get install -y debian-keyring debian-archive-keyring && \
-  rm /etc/apt/sources.list && \
-  mv /etc/apt/sources.list.bak /etc/apt/sources.list
+        libssl-dev \
+        wget \
+ ;
 
 COPY bin/curl /usr/local/bin/curl
-COPY libs/librdkafka.so /usr/local/lib/librdkafka.so
-COPY libs/libcurl.so /usr/local/lib/libcurl.so
-COPY libs/libsysdignative.so /usr/local/lib/libsysdignative.so
-COPY libs/libprometheus-cpp.a /usr/local/lib/libprometheus-cpp.a
-COPY libs/libprotobuf.a /usr/local/lib/libprotobuf.a
-COPY driver /driver
-COPY sysblock /sysblock
+COPY libs/librdkafka.so \
+     libs/libcurl.so \
+     libs/libsysdignative.so \
+     libs/libprometheus-cpp.a \
+     libs/libprotobuf.a \
+     /usr/local/lib/
 
 # `ldconfig` is required so that `curl` can find its `libcurl.so`.
-RUN ldconfig
+RUN ldconfig -v
 
 WORKDIR /
 

@@ -10,114 +10,108 @@ function test {
     return $status
 }
 
-function remove_sysdig_module() {
-    if lsmod | grep -q sysdig_probe; then
-        echo "sysdig-probe has already been loaded. Removing and relegating the task to the collector..."
-        test rmmod sysdig-probe
+function remove_collector_module() {
+    if lsmod | grep -q collector; then
+        echo "Collector kernel module has already been loaded."
+        echo "Removing so that collector can insert it at startup."
+        test rmmod collector
     fi
-}
-
-function build_kernel_module_ubuntu() {
-    echo "Attempting to build the kernel module for $KERNELVERSION-$DISTRO"
-
-    echo "deb http://security.ubuntu.com/ubuntu trusty-security main" >> /etc/apt/sources.list
-    echo "deb http://ftp.us.debian.org/debian jessie main" >> /etc/apt/sources.list
-
-    apt-get update && apt-get install -y linux-headers-$KERNELVERSION
-
-    test make KERNELRELEASE=$KERNELVERSION -C /lib/modules/$KERNELVERSION/build M=/driver clean modules
-    test make KERNELRELEASE=$KERNELVERSION -C /lib/modules/$KERNELVERSION/build M=/sysblock clean modules
-    insert_sysblock_module
-}
-
-function build_kernel_module_centos() {
-    echo "Attempting to build the kernel module for $KERNELVERSION-$DISTRO"
-
-    yum install -y kernel-devel-$KERNELVERSION
-    test make KERNELRELEASE=$KERNELVERSION -C /usr/src/kernels/$KERNELVERSION/ M=/driver clean modules
-    test make KERNELRELEASE=$KERNELVERSION -C /usr/src/kernels/$KERNELVERSION/ M=/sysblock clean modules
-    insert_sysblock_module
-}
-
-function build_kernel_module_rhel() {
-    echo "Attempting to build the kernel module for $KERNELVERSION-$DISTRO"
-
-    yum install -y kernel-devel-$KERNELVERSION
-    test make KERNELRELEASE=$KERNELVERSION -C /usr/src/kernels/$KERNELVERSION/ M=/driver clean modules
-    test make KERNELRELEASE=$KERNELVERSION -C /usr/src/kernels/$KERNELVERSION/ M=/sysblock clean modules
-    insert_sysblock_module
 }
 
 function download_kernel_module() {
-    KERNEL_MODULE=$KERNELVERSION-$DISTRO-probe.ko
-    wget -O sysdig-probe.ko https://$MODULE_URL/$KERNEL_MODULE
+    MODULE_NAME="$1"
+    KERNEL_MODULE=$MODULE_NAME-$KERNELVERSION.ko
+    echo >&2
+    echo "Attempting to download $KERNEL_MODULE.ko." >&2
+    wget -O $MODULE_NAME.ko $MODULE_URL/$DISTRO/$KERNEL_MODULE
     if [ $? -ne 0 ]; then
-      echo "Error downloading $KERNEL_MODULE from remote repository." >&2
+      echo "Error downloading $DISTRO/$KERNEL_MODULE from remote repository." >&2
       return 1
     fi
-    mkdir -p /driver/
-    cp sysdig-probe.ko /driver/sysdig-probe.ko
-    chmod 777 /driver/sysdig-probe.ko
+    mkdir -p /module/
+    cp $MODULE_NAME.ko /module/$MODULE_NAME.ko
+    chmod 777 /module/$MODULE_NAME.ko
+    echo "Using $DISTRO/$KERNEL_MODULE downloaded from remote repository." >&2
     return 0
 }
 
-function insert_sysblock_module() {
-    if [ "$ROX_SYSBLOCK_ENABLE" == "true" ]; then
-      insmod sysblock/sysblock.ko
+function find_kernel_module() {
+    MODULE_NAME="$1"
+    KERNEL_MODULE=$MODULE_NAME-$KERNELVERSION.ko
+    echo >&2
+    echo "Attempting to find built-in $KERNEL_MODULE.ko." >&2
+    EXPECTED_PATH="/kernel-modules/$DISTRO/$KERNEL_MODULE"
+    if [ -f "$EXPECTED_PATH" ]; then
+      mkdir -p /module/
+      cp "$EXPECTED_PATH" /module/$MODULE_NAME.ko
+      chmod 777 /module/$MODULE_NAME.ko
+      echo "Using built-in $EXPECTED_PATH." >&2
+      return 0
     fi
+    echo "Didn't find $KERNEL_MODULE built-in." >&2
+    return 1
+}
+
+function insert_sysblock_module() {
+    echo "Inserting sysblock module."
+    insmod /module/sysblock.ko
 }
 
 # Get the hostname from Docker so this container can use it in its output.
 HOSTNAME=$(curl -s --unix-socket /host/var/run/docker.sock http://localhost/info | jq --raw-output .Name)
-echo "Setting this container's hostname to $HOSTNAME"
+echo "Setting this container's node name to $HOSTNAME."
 mkdir -p /host/etc/
 echo "$HOSTNAME" > /host/etc/hostname
 
 # kernel module download/build
 KERNELVERSION=`uname -r`
-if [ -z ${KERNEL_VERSION+x} ];
-    then echo "KERNELVERSION set to $KERNELVERSION";
+if [ -z ${KERNEL_VERSION+x} ]; then
+    echo "KERNELVERSION set to $KERNELVERSION.";
 else
     KERNELVERSION=$KERNEL_VERSION
-    echo "KERNELVERSION is set to '$KERNEL_VERSION'";
+    echo "KERNELVERSION is set to '$KERNEL_VERSION'.";
 fi
 
 OS_DETAILS=$(curl -s --unix-socket /host/var/run/docker.sock http://localhost/info | jq --raw-output .OperatingSystem)
 
 if echo $OS_DETAILS | grep -qi Ubuntu; then
-    DISTRO="ubuntu"
-    download_kernel_module
-    if [ $? -ne 0 ]; then
-        build_kernel_module_ubuntu
-    fi
-    remove_sysdig_module
+    DISTRO="Ubuntu"
 elif echo $OS_DETAILS | grep -qi debian; then
-    DISTRO="ubuntu"
-    download_kernel_module
-    if [ $? -ne 0 ]; then
-        build_kernel_module_ubuntu
-    fi
-    remove_sysdig_module
+    DISTRO="Debian"
 elif echo $OS_DETAILS | grep -qi centos; then
-    DISTRO="centos"
-    download_kernel_module
-    if [ $? -ne 0 ]; then
-        build_kernel_module_centos
-    fi
-    remove_sysdig_module
+    DISTRO="RedHat"
 elif echo $OS_DETAILS | grep -qi "Red Hat"; then
-    DISTRO="redhat"
-    download_kernel_module
-    if [ $? -ne 0 ]; then
-        build_kernel_module_rhel
-    fi
-    remove_sysdig_module
+    DISTRO="RedHat"
 else
-    echo "Distribution $OS_DETAILS not supported."
+    echo "Distribution '$OS_DETAILS' is not supported."
     exit 1
 fi
 
-# kernel module download/build
+find_kernel_module collector
+if [ $? -ne 0 ]; then
+  download_kernel_module collector
+  if [ $? -ne 0 ]; then
+    echo "Could not find or download a collector module."
+    exit 1
+  fi
+fi
+
+if [ "$ROX_SYSBLOCK_ENABLE" == "true" ]; then
+  find_kernel_module sysblock
+  if [ $? -ne 0 ]; then
+    download_kernel_module sysblock
+    if [ $? -ne 0 ]; then
+      echo "Could not find or download a sysblock module."
+      exit 1
+    fi
+  fi
+  insert_sysblock_module
+else
+  echo "Sysblock is not enabled."
+fi
+
+# The collector binary will insert the collector module.
+remove_collector_module
 
 # Uncomment this to enable generation of core for Collector
 # echo '/core/core.%e.%p.%t' | sudo tee /proc/sys/kernel/core_pattern
@@ -138,4 +132,4 @@ trap 'clean_up' TERM QUIT INT
 eval "exec $@" &
 PID=$!
 wait $PID
-remove_sysdig_module
+remove_collector_module

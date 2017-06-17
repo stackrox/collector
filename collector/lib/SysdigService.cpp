@@ -66,8 +66,8 @@ bool isSysdigInitialized();
 
 namespace collector {
 
-std::string SysdigService::modulePath = "/driver/sysdig-probe.ko";
-std::string SysdigService::moduleName = "sysdig-probe";
+std::string SysdigService::modulePath = "/module/collector.ko";
+std::string SysdigService::moduleName = "collector";
 
 SysdigService::SysdigService(bool &terminateFlag)
     : terminate(terminateFlag)
@@ -674,4 +674,3 @@ SysdigService::getSyscallIds(string syscall, std::vector<int>& ids) {
 }
 
 }   /* namespace collector */
-

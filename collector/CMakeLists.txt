@@ -31,6 +31,7 @@ target_link_libraries(collector rdkafka)
 target_link_libraries(collector sysdignative)
 target_link_libraries(collector libprometheus-cpp.a)
 target_link_libraries(collector libprotobuf.a)
+target_link_libraries(collector -static-libgcc -static-libstdc++)
 
 # Setup testing
 enable_testing()
@@ -47,4 +48,3 @@ target_link_libraries(runUnitTests libgmock.a)
 target_link_libraries(runUnitTests libgmock_main.a)
 target_link_libraries(runUnitTests sysdignative)
 add_test(collector-tests runUnitTests)
-

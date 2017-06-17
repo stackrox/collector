@@ -1,4 +1,8 @@
-FROM ubuntu:16.04
+FROM stackrox/kernel-modules:latest
+# This is the same base image as the collector image itself.
+# Inheriting from it ensures that we will have the same version of Debian,
+# including packages, which is especially important for dynamically-linked
+# libraries.
 
 # Install our dependencies
 RUN apt-get update \
@@ -35,7 +39,7 @@ RUN cd /usr/src/gmock \
         ;
 
 # cURL 7.42 or higher is required for UNIX socket access
-ARG CURL_REVISION=curl-7_49_1
+ARG CURL_REVISION=curl-7_54_0
 COPY build/install_libcurl.sh build/install_libcurl.sh
 RUN build/install_libcurl.sh
 
@@ -52,4 +56,5 @@ RUN mkdir -p /src/build
 COPY container/libs/libsysdignative.so /usr/local/lib/libsysdignative.so
 COPY . /src
 WORKDIR /src/build
+RUN ldconfig -v
 CMD rm -f CMakeCache.txt && cmake .. && make clean all && ./runUnitTests
