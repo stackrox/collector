@@ -91,7 +91,7 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("sysdig inc");
+MODULE_AUTHOR("StackRox, Inc.");
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35))
     #define TRACEPOINT_PROBE_REGISTER(p1, p2) tracepoint_probe_register(p1, p2)

@@ -56,6 +56,7 @@ if(NOT WIN32)
 
 	target_link_libraries(sysdignative
 		-Wl,--start-group ${NATIVELIBS} -Wl,--end-group)
+	target_link_libraries(sysdignative -static-libgcc -static-libstdc++)
 
 	if(USE_BUNDLED_NCURSES)
 		add_dependencies(csysdig ncurses)
@@ -67,13 +68,13 @@ if(NOT WIN32)
 
 	add_subdirectory(man)
 
-	install(TARGETS sysdig 
+	install(TARGETS sysdig
 		DESTINATION bin)
 
 	install(TARGETS sysdignative
 		DESTINATION bin)
 
-	install(TARGETS csysdig 
+	install(TARGETS csysdig
 		DESTINATION bin)
 
 	install(DIRECTORY chisels

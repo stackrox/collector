@@ -23,6 +23,10 @@ if(NOT DEFINED SYSDIG_VERSION)
 	set(SYSDIG_VERSION "0.1.1dev")
 endif()
 
+if(NOT DEFINED PROBE_NAME)
+	set(PROBE_NAME "sysdig-probe")
+endif()
+
 if(NOT DEFINED DIR_ETC)
 	set(DIR_ETC "${CMAKE_INSTALL_PREFIX}/etc")
 endif()
@@ -57,7 +61,7 @@ if(NOT WIN32)
 		endif()
 
 		set(PROBE_VERSION "${SYSDIG_VERSION}")
-		set(PROBE_NAME "sysdig-probe")
+		set(PROBE_NAME "${PROBE_NAME}")
 		set(PROBE_DEVICE_NAME "sysdig")
 
 		add_subdirectory(driver)
@@ -355,10 +359,13 @@ if(NOT WIN32 AND NOT APPLE)
 	endif()
 endif() # NOT WIN32 AND NOT APPLE
 
-add_subdirectory(userspace/sysdig)
-add_subdirectory(userspace/libscap)
-add_subdirectory(userspace/libsinsp)
-#add_subdirectory(userspace/falcobl)
+option(BUILD_USERSPACE "Build userspace libraries" ON)
+if(BUILD_USERSPACE)
+	add_subdirectory(userspace/sysdig)
+	add_subdirectory(userspace/libscap)
+	add_subdirectory(userspace/libsinsp)
+	#add_subdirectory(userspace/falcobl)
+endif() # BUILD_USERSPACE
 
 set(CPACK_PACKAGE_NAME "${PACKAGE_NAME}")
 set(CPACK_PACKAGE_VENDOR "Sysdig Inc.")
