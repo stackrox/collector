@@ -52,7 +52,7 @@ const char* scap_get_host_root();
 #include "GetStatus.h"
 #include "LogLevel.h"
 #include "SysdigService.h"
-#include "SysdigStatsExporter.h"
+#include "CollectorStatsExporter.h"
 
 #define init_module(mod, len, opts) syscall(__NR_init_module, mod, len, opts)
 #define delete_module(name, flags) syscall(__NR_delete_module, name, flags)
@@ -373,7 +373,7 @@ main(int argc, char **argv)
     std::shared_ptr<prometheus::Registry> registry = std::make_shared<prometheus::Registry>();
     exposer.RegisterCollectable(registry);
 
-    SysdigStatsExporter exporter(registry, &sysdig);
+    CollectorStatsExporter exporter(registry, &sysdig);
     if (!exporter.start()) {
         cerr << "Unable to start sysdig stats exporter" << endl;
         exit(EXIT_FAILURE);

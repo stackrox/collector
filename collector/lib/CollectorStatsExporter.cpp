@@ -27,7 +27,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <thread>
 
 #include "SysdigService.h"
-#include "SysdigStatsExporter.h"
+#include "CollectorStatsExporter.h"
 
 #include "prometheus/registry.h"
 
@@ -40,21 +40,21 @@ namespace collector {
 
 void * callback(void * arg)
 {
-    SysdigStatsExporter *exporter = (SysdigStatsExporter *) arg;
+    CollectorStatsExporter *exporter = (CollectorStatsExporter *) arg;
     exporter->run();
     return NULL;
 }
 
-SysdigStatsExporter::SysdigStatsExporter(std::shared_ptr<prometheus::Registry> aRegistry, SysdigService *theSysdig)
+CollectorStatsExporter::CollectorStatsExporter(std::shared_ptr<prometheus::Registry> aRegistry, SysdigService *theSysdig)
     : registry(aRegistry), sysdig(theSysdig)
 {
 }
 
-SysdigStatsExporter::~SysdigStatsExporter(){
+CollectorStatsExporter::~CollectorStatsExporter(){
 }
 
 bool
-SysdigStatsExporter::start()
+CollectorStatsExporter::start()
 {
     int rv = pthread_create(&this->thread, NULL, callback, this);
     if (rv != 0) {
@@ -65,17 +65,17 @@ SysdigStatsExporter::start()
 }
 
 void
-SysdigStatsExporter::run()
+CollectorStatsExporter::run()
 {
-    auto& sysdigCounters = prometheus::BuildGauge()
-        .Name("sysdig_events")
-        .Help("Sysdig events")
+    auto& collectorEventCounters = prometheus::BuildGauge()
+        .Name("rox_collector_events")
+        .Help("Collector events")
         .Register(*this->registry);
 
-    auto& kernel = sysdigCounters.Add({{"type", "kernel"}});
-    auto& drops = sysdigCounters.Add({{"type", "drops"}});
-    auto& preemptions = sysdigCounters.Add({{"type", "preemptions"}});
-    auto& filtered = sysdigCounters.Add({{"type", "filtered"}});
+    auto& kernel = collectorEventCounters.Add({{"type", "kernel"}});
+    auto& drops = collectorEventCounters.Add({{"type", "drops"}});
+    auto& preemptions = collectorEventCounters.Add({{"type", "preemptions"}});
+    auto& filtered = collectorEventCounters.Add({{"type", "filtered"}});
 
     for (;;) {
         std::this_thread::sleep_for(std::chrono::seconds(1));

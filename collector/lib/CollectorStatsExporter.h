@@ -21,8 +21,8 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef _SYSDIG_STATS_EXPORTER_H_
-#define _SYSDIG_STATS_EXPORTER_H_
+#ifndef _COLLECTOR_STATS_EXPORTER_H_
+#define _COLLECTOR_STATS_EXPORTER_H_
 
 #include "SysdigService.h"
 
@@ -34,11 +34,11 @@ extern "C" {
 
 namespace collector {
 
-class SysdigStatsExporter
+class CollectorStatsExporter
 {
     public:
-    SysdigStatsExporter(std::shared_ptr<prometheus::Registry> registry, SysdigService *sysdig);
-    virtual ~SysdigStatsExporter();
+    CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, SysdigService *sysdig);
+    virtual ~CollectorStatsExporter();
 
     bool start();
     void run();
