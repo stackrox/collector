@@ -6,7 +6,8 @@ all: image
 
 .PHONY: image
 image: container/bin/collector container/Dockerfile container/scripts/
-	cp NOTICE.txt container/
+	cp NOTICE-collector.txt container/
+	cp NOTICE-sysblock.txt container/
 	cp COPYING.txt container/
 	cd container && docker build -f Dockerfile -t stackroxcollector/collector:latest .
 

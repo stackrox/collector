@@ -3,5 +3,7 @@ container/driver
 container/libs
 container/include
 container/sysblock
+container/COPYING.txt
+container/NOTICE-*.txt
 tags
 collector.tar.gz
