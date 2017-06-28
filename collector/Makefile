@@ -70,6 +70,7 @@ distribution: clean
 			--exclude '.git' \
 			--exclude '.DS_Store' \
 			--exclude 'Makefile' \
+			--exclude 'sysblock' \
 			--exclude-from=.gitignore \
 			-czvf \
 			collector.tar.gz ./
