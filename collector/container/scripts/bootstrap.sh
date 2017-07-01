@@ -22,7 +22,7 @@ function download_kernel_module() {
     MODULE_NAME="$1"
     KERNEL_MODULE=$MODULE_NAME-$KERNELVERSION.ko
     echo >&2
-    echo "Attempting to download $KERNEL_MODULE.ko." >&2
+    echo "Attempting to download $KERNEL_MODULE." >&2
     wget -O $MODULE_NAME.ko $MODULE_URL/$DISTRO/$KERNEL_MODULE
     if [ $? -ne 0 ]; then
       echo "Error downloading $DISTRO/$KERNEL_MODULE from remote repository." >&2
@@ -114,7 +114,7 @@ fi
 remove_collector_module
 
 # Uncomment this to enable generation of core for Collector
-# echo '/core/core.%e.%p.%t' | sudo tee /proc/sys/kernel/core_pattern
+# echo '/core/core.%e.%p.%t' > /proc/sys/kernel/core_pattern
 
 echo "COLLECTOR_CONFIG = $COLLECTOR_CONFIG"
 echo "CHISEL = $CHISEL"

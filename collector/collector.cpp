@@ -23,10 +23,13 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <fstream>
 #include <iostream>
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <csignal>
 #include <string>
+#include <sys/wait.h>
+#include <thread>
 
 #include "civetweb/CivetServer.h"
 #include "prometheus/exposer.h"
@@ -48,6 +51,7 @@ extern "C" {
 const char* scap_get_host_root();
 }
 
+#include "ChiselConsumer.h"
 #include "CollectorArgs.h"
 #include "GetStatus.h"
 #include "LogLevel.h"
@@ -57,7 +61,12 @@ const char* scap_get_host_root();
 #define init_module(mod, len, opts) syscall(__NR_init_module, mod, len, opts)
 #define delete_module(name, flags) syscall(__NR_delete_module, name, flags)
 
+// Set g_terminate to terminate the entire program.
 static bool g_terminate;
+// Set g_interrupt_sysdig to reload the sysdig configuration, or to terminate if g_terminate is also set.
+static bool g_interrupt_sysdig;
+// Store the current copy of the chisel.
+static std::string g_chiselContents;
 
 using namespace collector;
 
@@ -66,7 +75,7 @@ signal_callback(int signal)
 {
     std::cerr << "Caught signal " << signal << std::endl;
     g_terminate = true;
-    exit(EXIT_SUCCESS);
+    g_interrupt_sysdig = true;
 }
 
 
@@ -88,7 +97,7 @@ sigsegv_handler(int signal) {
     fflush(fp);
     fclose(fp);
 
-    exit(1);
+    exit(EXIT_FAILURE);
 }
 
 static const std::string
@@ -127,48 +136,49 @@ void insertModule(SysdigService& sysdigService, Json::Value collectorConfig) {
 
     int fd = open(SysdigService::modulePath.c_str(), O_RDONLY);
     if (fd < 0) {
-        std::cerr << "Cannot open kernel module: " <<
+        std::cerr << "[Child]  Cannot open kernel module: " <<
             SysdigService::modulePath << ". Aborting..." << std::endl;
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
     struct stat st;
     if (fstat(fd, &st) < 0) {
-        std::cerr << "Error getting file info for kernel module: " <<
+        std::cerr << "[Child]  Error getting file info for kernel module: " <<
             SysdigService::modulePath << ". Aborting..." << std::endl;
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
     size_t imageSize = st.st_size;
     char *image = new char[imageSize];
     read(fd, image, imageSize);
     close(fd);
 
-    std::cout << "Inserting kernel module " << SysdigService::modulePath <<
-        " with indefinite removal and retry if required, and with arguments " << args << endl;
+    std::cerr << "[Child]  Inserting kernel module " << SysdigService::modulePath <<
+        " with indefinite removal and retry if required." << std::endl;
+    std::cout << "[Child]  Kernel module arguments: " << args << std::endl;
 
     // Attempt to insert the module. If it is already inserted then remove it and
     // try again
     int result = init_module(image, imageSize, args.c_str());
     while (result != 0) {
-        if (result == EEXIST) {
+        if (errno == EEXIST) {
             // note that we forcefully remove the kernel module whether or not it has a non-zero
             // reference count. There is only one container that is ever expected to be using
             // this kernel module and that is us
             delete_module(SysdigService::moduleName.c_str(), O_NONBLOCK | O_TRUNC);
             sleep(2);    // wait for 2s before trying again
         } else {
-            std::cerr << "Error inserting kernel module: " <<
+            std::cerr << "[Child]  Error inserting kernel module: " <<
                 SysdigService::modulePath << ": " << strerror(errno) <<". Aborting..." << std::endl;
-            exit(-1);
+            exit(EXIT_FAILURE);
         }
         result = init_module(image, imageSize, args.c_str());
     }
 
-    std::cout << "Done inserting kernel module " << SysdigService::modulePath << "!" << endl;
+    std::cerr << "[Child]  Done inserting kernel module " << SysdigService::modulePath << "." << endl;
 
     delete[] image;
 }
 
-static const std::string base64_chars = 
+static const std::string base64_chars =
              "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
              "abcdefghijklmnopqrstuvwxyz"
              "0123456789+/";
@@ -261,13 +271,95 @@ std::string base64_decode(std::string const& encoded_string) {
 }
 
 void
-writeChisel(std::string chiselName, std::string chisel64) {
-    std::string chisel = base64_decode(chisel64);
-    cout << "Chisel post decode:\n" << chisel << endl;
-
+writeChisel(std::string chiselName, std::string chiselContents) {
     std::ofstream out(chiselName.c_str());
-    out << chisel;
+    out << chiselContents;
     out.close();
+}
+
+void
+registerSignalHandlers() {
+    // Register signal handlers only after sysdig initialization, since sysdig also registers for
+    // these signals, which prevents exiting when SIGTERM is received.
+    signal(SIGINT, signal_callback);
+    signal(SIGTERM, signal_callback);
+    signal(SIGSEGV, sigsegv_handler);
+}
+
+void
+handleNewChisel(std::string newChisel) {
+    cerr << "Processing new chisel." << endl;
+    g_chiselContents = newChisel;
+    g_interrupt_sysdig = true;
+}
+
+void
+startChiselConsumer(std::string initialChisel, bool *g_terminate, std::string topic, std::string hostname, std::string brokers) {
+  ChiselConsumer chiselConsumer(initialChisel, g_terminate);
+  chiselConsumer.setCallback(handleNewChisel);
+  chiselConsumer.runForever(brokers, topic, hostname);
+}
+
+void
+startChild(std::string chiselName, std::string brokerList,
+           std::string format, bool useKafka, std::string defaultTopic,
+           std::string networkTopic, int snapLen, Json::Value collectorConfig) {
+    SysdigService sysdig(g_interrupt_sysdig);
+
+    insertModule(sysdig, collectorConfig);
+
+    LogLevel setLogLevel;
+    setLogLevel.stdBuf = std::cout.rdbuf();
+    ofstream nullStream("/dev/null");
+    setLogLevel.nullBuf = nullStream.rdbuf();
+
+    std::cout.rdbuf(setLogLevel.nullBuf);
+
+    // Start monitoring services.
+    // Some of these variables must remain in scope, so
+    // be cautious if decomposing to a separate function.
+    const char *options[] = { "listening_ports", "4419", 0};
+    CivetServer server(options);
+
+    GetStatus getStatus(&sysdig);
+    server.addHandler("/status", getStatus);
+    server.addHandler("/loglevel", setLogLevel);
+    // TODO(cg): Can we expose chisel contents here?
+
+    // TODO(cg): Implement a way to not have these disappear after child restart.
+    prometheus::Exposer exposer("9090");
+    std::shared_ptr<prometheus::Registry> registry = std::make_shared<prometheus::Registry>();
+    exposer.RegisterCollectable(registry);
+
+    CollectorStatsExporter exporter(registry, &sysdig);
+    if (!exporter.start()) {
+        cerr << "[Child]  Unable to start sysdig stats exporter" << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    cerr << "[Child]  Initializing signal reader..." << endl;
+    // write out chisel file from incoming chisel
+    writeChisel(chiselName, g_chiselContents);
+    cerr << "[Child]  " << chiselName << " contents set to: " << g_chiselContents << endl;
+
+    int code = sysdig.init(chiselName, brokerList, format, useKafka, defaultTopic,
+                            networkTopic, snapLen);
+    if (code != 0) {
+        cerr << "[Child]  Unable to initialize sysdig" << endl;
+        exit(code);
+    }
+
+  #ifndef COLLECTOR_CORE
+    registerSignalHandlers();
+  #endif /* COLLECTOR_CORE */
+
+    cerr << "[Child]  Starting signal reader..." << endl;
+    sysdig.runForever();
+    cerr << "[Child]  Interrupted signal reader; cleaning up..." << endl;
+    sysdig.cleanup();
+    cerr << "[Child]  Cleaned up signal reader; terminating..." << endl;
+
+    exit(EXIT_SUCCESS);
 }
 
 int
@@ -278,13 +370,6 @@ main(int argc, char **argv)
     using std::endl;
     using std::string;
     using std::signal;
-
-    LogLevel setLogLevel;
-    setLogLevel.stdBuf = std::cout.rdbuf();
-    ofstream nullStream("/dev/null");
-    setLogLevel.nullBuf = nullStream.rdbuf();
-
-    std::cout.rdbuf(setLogLevel.nullBuf);
 
     CollectorArgs *args = CollectorArgs::getInstance();
     int exitCode = 0;
@@ -305,12 +390,10 @@ main(int argc, char **argv)
     }
 #endif
 
-    cout << "Hostname detected: " << hostname << endl;
-
     const string chiselName = "default.chisel.lua";
     const int snapLen = 2048;
 
-    cout << "Starting sysdig with the following parameters: chiselName="
+    cerr << "Starting sysdig with the following parameters: chiselName="
          << chiselName
          << ", brokerList="
          << args->BrokerList()
@@ -318,68 +401,86 @@ main(int argc, char **argv)
          << snapLen
          << endl;
 
-    SysdigService sysdig(g_terminate);
-
     // insert the kernel module with options from the configuration
     Json::Value collectorConfig = args->CollectorConfig();
-    insertModule(sysdig, collectorConfig);
 
     bool useKafka = true;
     if (collectorConfig["output"].isNull() || collectorConfig["output"] == "stdout") {
+        cerr << "Kafka is disabled." << endl;
         useKafka = false;
     }
     std::string format = "";
     if (!collectorConfig["format"].isNull()) {
         format = collectorConfig["format"].asString();
     }
-    std::string defaultTopic = "sysdig-kafka-topic";
+    std::string defaultTopic = "collector-kafka-topic";
     if (!collectorConfig["defaultTopic"].isNull()) {
         defaultTopic = collectorConfig["defaultTopic"].asString();
     }
-    std::string networkTopic = collectorConfig["networkTopic"].asString();
-    if (networkTopic.empty()) {
-        cerr << "Network topic not specified" << endl;
-        exit(-1);
+    std::string networkTopic = "collector-network-kafka-topic";
+    if (!collectorConfig["networkTopic"].isNull()) {
+        networkTopic = collectorConfig["networkTopic"].asString();
+    }
+    std::string chiselsTopic = "collector-chisels-kafka-topic";
+    if (!collectorConfig["chiselsTopic"].isNull()) {
+        chiselsTopic = collectorConfig["chiselsTopic"].asString();
     }
 
-    // write out chisel file from incoming chisel
-    writeChisel(chiselName, args->Chisel());
+    cerr << "Output topics set to: default=" << defaultTopic << ", network=" << networkTopic << endl;
+    cerr << "Chisels topic set to: " << chiselsTopic << endl;
 
-    cout << chiselName << ", " << format << ", " << defaultTopic << ", "  << networkTopic << endl;
+    std::string chiselB64 = args->Chisel();
+    g_chiselContents = base64_decode(chiselB64);
 
-    int code = sysdig.init(chiselName, args->BrokerList(), format, useKafka, defaultTopic,
-                            networkTopic, snapLen);
-    if (code != 0) {
-        cerr << "Unable to initialize sysdig" << endl;
-        exit(code);
+    // Handle updates to the chisel, which can be sent to us on Kafka.
+    if (useKafka) {
+        std::thread chiselThread(startChiselConsumer, g_chiselContents, &g_terminate, chiselsTopic, hostname, args->BrokerList());
+        chiselThread.detach();
     }
 
-#ifndef COLLECTOR_CORE
-    // Register signal handlers only after sysdig initialization since sysdig also registers for
-    // these signals which prevents exiting when SIGTERM is received.
-    signal(SIGINT, signal_callback);
-    signal(SIGTERM, signal_callback);
-    signal(SIGSEGV, sigsegv_handler);
-#endif
-
-    const char *options[] = { "listening_ports", "4419", 0};
-    CivetServer server(options);
-
-    GetStatus getStatus(&sysdig);
-    server.addHandler("/status", getStatus);
-    server.addHandler("/loglevel", setLogLevel);
-
-    prometheus::Exposer exposer("9090");
-    std::shared_ptr<prometheus::Registry> registry = std::make_shared<prometheus::Registry>();
-    exposer.RegisterCollectable(registry);
-
-    CollectorStatsExporter exporter(registry, &sysdig);
-    if (!exporter.start()) {
-        cerr << "Unable to start sysdig stats exporter" << endl;
-        exit(EXIT_FAILURE);
+    for (;!g_terminate;) {
+        int pid = fork();
+        if (pid < 0) {
+            cerr << "Failed to fork." << endl;
+            exit(EXIT_FAILURE);
+        } else if (pid == 0) {
+            cerr << "[Child]  Signal reader started." << endl;
+            startChild(chiselName, args->BrokerList(), format, useKafka, defaultTopic,
+                       networkTopic, snapLen, collectorConfig);
+        } else {
+            cerr << "[Parent] Monitoring child process " << pid << endl;
+            for (;;) {
+                if (g_interrupt_sysdig) {
+                    bool killed = false;
+                    cerr << "[Parent] Sending SIGTERM to " << pid << endl;
+                    kill(pid, SIGTERM);
+                    for (int i = 0; i < 10; i++) {
+                        std::this_thread::sleep_for(std::chrono::seconds(1));
+                        cerr << "[Parent] Checking if process has stopped after SIGTERM (" << pid << ")" << endl;
+                        pid_t killed_pid = waitpid(pid, NULL, WNOHANG);
+                        if (killed_pid == pid) {
+                            cerr << "[Parent] Process has stopped (" << pid << ")" << endl;
+                            killed = true;
+                            break;
+                        }
+                    }
+                    if (!killed) {
+                        cerr << "[Parent] Process has not stopped after SIGTERM; killing (" << pid << ")" << endl;
+                        kill(pid, SIGKILL);
+                        cerr << "[Parent] Waiting for process " << pid << " to exit after SIGKILL" << endl;
+                        wait(NULL);
+                    }
+                    g_interrupt_sysdig = false;
+                    break;
+                }
+                pid_t killed_pid = waitpid(pid, NULL, WNOHANG);
+                if (killed_pid == pid) {
+                    cerr << "[Parent] Process has stopped unexpectedly (" << pid << "); restarting" << endl;
+                    break;
+                }
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
+        }
     }
-
-    sysdig.runForever();
-    sysdig.cleanup();
     exit(EXIT_SUCCESS);
 }

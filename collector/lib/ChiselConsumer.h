@@ -21,43 +21,54 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef _SYSDIG_SERVICE_H_
-#define _SYSDIG_SERVICE_H_
+#ifndef _CHISEL_CONSUMER_H_
+#define _CHISEL_CONSUMER_H_
 
-#include <string>
-#include <map>
-#include <vector>
+#include <mutex>
+#include <sstream>
 
-#include "KafkaClient.h"
-#include "Sysdig.h"
+#include "librdkafka/rdkafkacpp.h"
+
+typedef void (*ChiselProcessor)(std::string);
 
 namespace collector {
 
-class SysdigService : public Sysdig {
+class ChiselConsumer {
     public:
-    SysdigService(bool &terminateFlag);
-    virtual ~SysdigService();
+        ChiselConsumer(std::string initial, bool *terminate);
+        void setCallback(ChiselProcessor);
+        void runForever(std::string brokerList, std::string topic, std::string uniqueName);
+        void consumeChiselMsg(RdKafka::Message* message, void* opaque);
 
-    int init(std::string chiselName, std::string brokerList, std::string format,
-             bool useKafka, std::string defaultTopic, std::string networkTopic,
-             int snapLen);
-    bool ready();
-    void runForever();
-    void cleanup();
-
-    void getSyscallIds(std::string syscall, std::vector<int>& ids);
-
-    bool stats(SysdigStats &s);
-    KafkaClient *getKafkaClient();
-
-    static std::string modulePath;
-    static std::string moduleName;
+        int getChiselsReceived();
+        int getChiselUpdates();
 
     private:
-    bool &terminate;
-    std::map<std::string, int> syscallsMap;
+        std::mutex contents_mutex;
+        std::string contents;
+
+        std::mutex callback_mutex;
+        ChiselProcessor callback;
+
+        int chisels_received = 0;
+        int chisel_updates = 0;
+
+        bool *terminate;
+
+        bool updateChisel(std::string newContents);
+        void handleChisel(RdKafka::Message* message);
+};
+
+class ChiselConsumeCb : public RdKafka::ConsumeCb {
+    public:
+        ChiselConsumeCb(ChiselConsumer *chiselConsumer);
+
+        void consume_cb(RdKafka::Message &msg, void *opaque);
+
+    private:
+        ChiselConsumer *chiselConsumer;
 };
 
 }   /* namespace collector */
 
-#endif  /* _SYSDIG_SERVICE_H_ */
+#endif /* _CHISEL_CONSUMER_H_ */
