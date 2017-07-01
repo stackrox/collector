@@ -965,6 +965,8 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 		//
 		// Parse the args
 		//
+		// getopt cannot be called multiple times unless we reset this global state.
+		optind = 1;
 		while((op = getopt_long(argc, argv,
                                         "Abc:"
                                         "C:"
@@ -1792,14 +1794,21 @@ exit:
 	return res;
 }
 
+static bool isInitialized = false;
+
+bool isSysdigInitialized() {
+    return isInitialized;
+}
+
 // Method to close the inspector and cleanup
 void sysdigCleanup() {
-        sinsp* inspector = persistentState->getInspector();
+	sinsp* inspector = persistentState->getInspector();
 	if (inspector)
 		inspector->close();
 	delete inspector;
-        delete persistentState;
-        persistentState = NULL;
+	delete persistentState;
+	persistentState = NULL;
+	isInitialized = false;
 }
 
 //
@@ -1839,12 +1848,6 @@ int main_bac(int argc, char **argv)
 	return res.m_res;
 }
 
-static bool isInitialized = false;
-
-bool isSysdigInitialized() {
-    return isInitialized;
-}
-
 void sysdigStartProduction(bool& isInterrupted) {
     KafkaClient* kafkaClient = persistentState->getKafkaClient();
     bool useKafka = persistentState->usingKafka();
@@ -1855,21 +1858,29 @@ void sysdigStartProduction(bool& isInterrupted) {
 
     char* line;
 
-    cout << "Starting sysdig production..." << endl;
+    cerr << "Starting sysdig production ";
+    if (useKafka) {
+        cerr << "using Kafka" << endl;
+    } else {
+        cerr << "without using Kafka" << endl;
+    }
 
     string networkKey;
     while (!isInterrupted) {
-        line = (char*)do_getnext(kafkaClient->getContainerID(), networkKey);
         if (useKafka) {
+            line = (char*)do_getnext(kafkaClient->getContainerID(), networkKey);
             if (line[0] == '\0')
                 continue;
             kafkaClient->send(line, networkKey);
         } else {
+            line = (char*)do_getnext("unknown-container", networkKey);
             if (line[0] == '\0')
                 continue;
             cout << line << endl;
         }
     }
+
+    cerr << "Stopping sysdig production..." << endl;
 }
 
 int sysdigInitialize(string chiselName, string brokerList, string format,
