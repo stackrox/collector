@@ -2,6 +2,7 @@ BASE_PATH ?= $(CURDIR)/..
 VERSION_FILE ?= $(BASE_PATH)"/ROX_VERSION"
 VERSION ?= `cat $(VERSION_FILE) | xargs echo -n`
 KO_GCS_PATH ?= "gs://collector-modules/aafeb6857323bbb8addf736c1fa9d93a7cdf968f2f0caca10a7b66bee29b665e"
+PKG_GCS_PATH ?= "gs://kernel-package-cache"
 
 .DEFAULT_GOAL = all
 
@@ -13,6 +14,7 @@ clean:
 	rm -rf container/kernel-modules
 	rm -rf sysblock
 	rm -rf sysdig
+	rm -rf packages
 
 .PHONY: build-crawl-container
 build-crawl-container: crawl/Dockerfile crawl/kernel-crawler.py
@@ -30,34 +32,52 @@ crawl: build-crawl-container
 
 # TODO: This isn't _really_ a phony target.
 .PHONY: container/kernel-modules
-container/kernel-modules: $(CURDIR)/../ext/sysdig/ $(CURDIR)/../sysblock/ supported-kernels/ build/Dockerfile build/build-kos
+container/kernel-modules: $(CURDIR)/../ext/sysdig/ $(CURDIR)/../sysblock/ supported-kernels/ build/Dockerfile build/build-kos download-packages
 	mkdir -p container/kernel-modules
 	rm -rf ./sysdig/ || true
 	rm -rf ./sysblock/ || true
 	cp -r $(CURDIR)/../ext/sysdig ./sysdig/
 	cp -r $(CURDIR)/../sysblock ./sysblock/
 	docker build -t build-kernel-modules -f build/Dockerfile .
+
+	docker volume rm ko-debian || true
+	docker volume create ko-debian
 	docker run \
 		--rm \
 		-i \
 		-v $(CURDIR)/container/kernel-modules:/output \
+		-v $(CURDIR)/packages:/packages \
+		-v ko-debian:/scratch \
 		build-kernel-modules \
 		Debian \
 		< supported-kernels/debian.txt
+	docker volume rm ko-debian
+
+	docker volume rm ko-centos || true
+	docker volume create ko-centos
 	docker run \
 		--rm \
 		-i \
 		-v $(CURDIR)/container/kernel-modules:/output \
+		-v $(CURDIR)/packages:/packages \
+		-v ko-centos:/scratch \
 		build-kernel-modules \
 		RedHat \
 		< supported-kernels/centos.txt
+	docker volume rm ko-centos
+
+	docker volume rm ko-ubuntu || true
+	docker volume create ko-ubuntu
 	docker run \
 		--rm \
 		-i \
 		-v $(CURDIR)/container/kernel-modules:/output \
+		-v $(CURDIR)/packages:/packages \
+		-v ko-ubuntu:/scratch \
 		build-kernel-modules \
 		Ubuntu \
 		< supported-kernels/ubuntu.txt
+	docker volume rm ko-ubuntu
 
 .PHONY: image
 image: container/kernel-modules
@@ -65,4 +85,13 @@ image: container/kernel-modules
 
 .PHONY: upload
 upload:
-	gsutil -m cp -r container/kernel-modules/* ${KO_GCS_PATH}/${VERSION}/
+	gsutil -m rsync -r container/kernel-modules/ ${KO_GCS_PATH}/${VERSION}/
+
+.PHONY: upload-packages
+upload-packages:
+	gsutil -m rsync -r packages/ ${PKG_GCS_PATH}/
+
+.PHONY: download-packages
+download-packages:
+	mkdir -p ./packages
+	gsutil -m rsync -r ${PKG_GCS_PATH}/ ./packages

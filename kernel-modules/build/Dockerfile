@@ -31,5 +31,5 @@ RUN mkdir -p /output
 COPY sysdig/src /sysdig-src
 COPY sysblock/src /sysblock-src
 COPY build/build-kos /
-WORKDIR /sysdig-src
+WORKDIR /scratch
 ENTRYPOINT [ "/build-kos" ]

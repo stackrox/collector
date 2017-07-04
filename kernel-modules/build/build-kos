@@ -20,7 +20,7 @@ set -euo pipefail
 # at runtime.
 #
 
-BASEDIR=$(pwd)
+BASEDIR=/scratch
 ARCH=$(uname -m)
 URL_TIMEOUT=300
 RETRY=10
@@ -40,6 +40,7 @@ function build_modules {
 
 		echo Building modules for $KERNEL_RELEASE [${FUNCNAME[1]}]
 
+		cd /sysdig-src
 		export PROBE_NAME=collector
 		SYSDIG_KO=driver/$PROBE_NAME.ko
 		make -C driver clean || true
@@ -47,7 +48,7 @@ function build_modules {
 		mkdir build
 		cd build
 		cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-fno-pie" -DPROBE_NAME=$PROBE_NAME -DBUILD_USERSPACE=OFF ..
-		make driver
+		make -j 6 driver
 		strip -g $SYSDIG_KO
 
 		KO_VERSION=$(/sbin/modinfo $SYSDIG_KO | grep vermagic | tr -s " " | cut -d " " -f 2)
@@ -61,7 +62,7 @@ function build_modules {
 		SYSBLOCK_KO=/sysblock-src/sysblock.ko
 		rm -f $SYSBLOCK_KO
 		make -C $KERNELDIR M=/sysblock-src clean
-		make -C $KERNELDIR M=/sysblock-src
+		make -C $KERNELDIR M=/sysblock-src -j 6
 		strip -g $SYSBLOCK_KO
 
 		KO_VERSION=$(/sbin/modinfo $SYSBLOCK_KO | grep vermagic | tr -s " " | cut -d " " -f 2)
@@ -87,6 +88,8 @@ function ubuntu_build {
 	KERNEL_RELEASE=$(echo $KERNEL_RELEASE_FULL | grep -E -o "[0-9]{1}\.[0-9]+\.[0-9]+-[0-9]+")	# ex. 3.13.0-24
 	KERNEL_UPDATE=$(echo $KERNEL_RELEASE_FULL | grep -E -o "[0-9]+$")							# ex. 47
 
+	cd ${BASEDIR}
+
 	if [ ! -d $KERNEL_RELEASE ]; then
 		mkdir $KERNEL_RELEASE
 	fi
@@ -101,7 +104,7 @@ function ubuntu_build {
 
 	if [ ! -f $DEB ]; then
 		echo Downloading $DEB [Ubuntu]
-		wget --no-verbose --timeout=${URL_TIMEOUT} --tries=${RETRY} $URL
+		get_or_download $URL ./
 		dpkg -x $DEB ./
 	fi
 
@@ -120,6 +123,9 @@ function ubuntu_build {
 		export KERNELDIR=$BASEDIR/$KERNEL_FOLDER/$KERNEL_UPDATE/usr/src/linux-headers-$KERNEL_RELEASE
 		build_modules
 		rm -rf $KERNEL_RELEASE
+		# Clean up unpacked packages:
+		rm -rf $BASEDIR/$KERNEL_FOLDER/$KERNEL_UPDATE
+		echo
 	fi
 
 	cd $BASEDIR
@@ -136,6 +142,8 @@ function rhel_build {
 	RPM=$(echo $URL | grep -o '[^/]*$')
 	KERNEL_RELEASE=$(echo $RPM | awk 'match($0, /[^kernel\-(core\-|devel\-)?].*[^(\.rpm)]/){ print substr($0, RSTART, RLENGTH) }')
 
+	cd ${BASEDIR}
+
 	if [ ! -d $KERNEL_RELEASE ]; then
 		mkdir $KERNEL_RELEASE
 	fi
@@ -144,7 +152,7 @@ function rhel_build {
 
 	if [ ! -f $RPM ]; then
 		echo Downloading $RPM [RHEL and CentOS]
-		wget --no-verbose --timeout=${URL_TIMEOUT} --tries=${RETRY} $URL
+		get_or_download $URL ./
 		rpm2cpio $RPM | cpio -idm
 	fi
 
@@ -166,6 +174,9 @@ function rhel_build {
 
 		export KERNELDIR=$BASEDIR/$KERNEL_RELEASE/usr/src/kernels/$KERNEL_RELEASE
 		build_modules
+		# Clean up unpacked packages:
+		rm -rf $BASEDIR/$KERNEL_RELEASE
+		echo
 	fi
 
 	cd $BASEDIR
@@ -177,13 +188,15 @@ function debian_build {
 	DEB="$(echo ${URL} | grep -o '[^/]*$')"
 	echo "$URL -> $DEB"
 
+	cd ${BASEDIR}
+
 	if [[ "${DEB}" == *"kbuild"* ]]; then
 		if [[ ! -d ${BASEDIR}/common-dependencies/debian/kbuild/ ]]; then
 			mkdir -p ${BASEDIR}/common-dependencies/debian/kbuild
 		fi
 		if [ ! -f ${BASEDIR}/common-dependencies/debian/kbuild/${DEB} ]; then
 			echo "Downloading ${DEB} [Debian]"
-			wget --no-verbose --timeout=${URL_TIMEOUT} -q --tries=${RETRY} -P ${BASEDIR}/common-dependencies/debian/kbuild ${URL}
+			get_or_download ${URL} ${BASEDIR}/common-dependencies/debian/kbuild/
 		fi
 		return
 	else
@@ -205,7 +218,7 @@ function debian_build {
 
 		if [ ! -f "${DEB}" ]; then
 			echo "Downloading ${DEB} [Debian]"
-			wget --no-verbose --timeout=${URL_TIMEOUT} --tries=${RETRY} ${URL}
+			get_or_download ${URL} ./
 			dpkg -x "${DEB}" ./
 		fi
 	fi
@@ -244,10 +257,28 @@ function debian_build {
 			cd ${BASEDIR}
 
 			build_modules
+
+			# Clean up unpacked packages:
+			rm -rf ${BASEDIR}/${KERNEL_FOLDER}
+			echo
 		fi
 	fi
 
 	cd ${BASEDIR}
+}
+
+function get_or_download() {
+	URL="$1"
+	DIR="$2"
+
+	CACHE_PATH="/packages/${URL}"
+	if [ -f "${CACHE_PATH}" ]; then
+		echo "Using cached ${URL}"
+	else
+		wget --no-verbose --timeout=${URL_TIMEOUT} --tries=${RETRY} -P "$(dirname ${CACHE_PATH})" ${URL}
+	fi
+
+	cp ${CACHE_PATH} ${DIR}
 }
 
 INPUT="${2:-/dev/stdin}"

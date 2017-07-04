@@ -102,7 +102,7 @@ def get_debian_deb_urls(version, arch, pkg):
     download_url = "https://packages.debian.org/%s/%s/%s/download" % (version, arch, pkg)
     sys.stderr.write("Looking for download URLs for pkg: "+pkg+" at "+download_url+"\n")
     download_page = requests.get(download_url)
-    html_pattern = "/html/body//a[regex:test(@href, '^(http://http.us.debian.org/debian)')]/@href"
+    html_pattern = "/html/body//a[regex:test(@href, '^(http://(http.us|security).debian.org/debian)')]/@href"
     pkg_urls = html.fromstring(download_page.text).xpath(html_pattern, namespaces = {"regex": "http://exslt.org/regular-expressions"})
     if len(pkg_urls) == 0:
         sys.stderr.write("WARN: Zero packages returned for version " + version + " arch " + arch + " pkg " + pkg + "\n")
@@ -125,6 +125,8 @@ if distro == "Ubuntu":
 
     pattern = re.compile(r"linux-headers-([0-9\.-]+)$")
 
+    kernels_handled = dict()
+
     for version in versions:
         try:
             sys.stderr.write("** Processing packages for Ubuntu version: "+version+"\n")
@@ -138,7 +140,7 @@ if distro == "Ubuntu":
                 data = response.read()
             for pkg in data.split('\n'):
                 pkg = pkg.split(' ')[0]
-                sys.stderr.write("Considering pkg: "+pkg+"\n")
+                # sys.stderr.write("Considering pkg: "+pkg+"\n")
                 match = pattern.match(pkg)
                 if match:
                     kernel_rev = match.group(1)
@@ -148,6 +150,13 @@ if distro == "Ubuntu":
                         if int(kernel_parts[0]) == 4 and int(kernel_parts[1]) > 8:
                             sys.stderr.write("Ignoring kernel >4.8: ("+kernel_rev+") in package "+pkg+"\n")
                             continue
+
+                    kernel_rev_abi = kernel_rev.split("_")[0]
+                    if kernels_handled.get(kernel_rev_abi):
+                        sys.stderr.write("Ignoring kernel release "+kernel_rev_abi+" that is already handled\n")
+                        continue
+
+                    kernels_handled[kernel_rev_abi] = True
 
                     # The headers-all package
                     print_ubuntu_deb_urls(version, "all", pkg)
@@ -192,7 +201,7 @@ elif distro == "Debian":
                 data = response.read()
             for pkg in data.split('\n'):
                 pkg = pkg.split(' ')[0]
-                sys.stderr.write("Considering pkg: "+pkg+"\n")
+                # sys.stderr.write("Considering pkg: "+pkg+"\n")
 
                 match = kbuild_pattern.match(pkg)
                 if match:
