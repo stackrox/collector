@@ -6,6 +6,7 @@ http://mirrors.kernel.org/centos/7.3.1611/updates/x86_64/Packages/kernel-3.10.0-
 http://mirrors.kernel.org/centos/7.3.1611/updates/x86_64/Packages/kernel-3.10.0-514.21.2.el7.x86_64.rpm
 http://mirrors.kernel.org/centos/7.3.1611/updates/x86_64/Packages/kernel-3.10.0-514.2.2.el7.x86_64.rpm
 http://mirrors.kernel.org/centos/7.3.1611/updates/x86_64/Packages/kernel-3.10.0-514.26.1.el7.x86_64.rpm
+http://mirrors.kernel.org/centos/7.3.1611/updates/x86_64/Packages/kernel-3.10.0-514.26.2.el7.x86_64.rpm
 http://mirrors.kernel.org/centos/7.3.1611/updates/x86_64/Packages/kernel-3.10.0-514.6.1.el7.x86_64.rpm
 http://mirrors.kernel.org/centos/7.3.1611/updates/x86_64/Packages/kernel-3.10.0-514.6.2.el7.x86_64.rpm
 http://mirrors.kernel.org/centos/7.3.1611/updates/x86_64/Packages/kernel-devel-3.10.0-514.10.2.el7.x86_64.rpm
@@ -14,6 +15,7 @@ http://mirrors.kernel.org/centos/7.3.1611/updates/x86_64/Packages/kernel-devel-3
 http://mirrors.kernel.org/centos/7.3.1611/updates/x86_64/Packages/kernel-devel-3.10.0-514.21.2.el7.x86_64.rpm
 http://mirrors.kernel.org/centos/7.3.1611/updates/x86_64/Packages/kernel-devel-3.10.0-514.2.2.el7.x86_64.rpm
 http://mirrors.kernel.org/centos/7.3.1611/updates/x86_64/Packages/kernel-devel-3.10.0-514.26.1.el7.x86_64.rpm
+http://mirrors.kernel.org/centos/7.3.1611/updates/x86_64/Packages/kernel-devel-3.10.0-514.26.2.el7.x86_64.rpm
 http://mirrors.kernel.org/centos/7.3.1611/updates/x86_64/Packages/kernel-devel-3.10.0-514.6.1.el7.x86_64.rpm
 http://mirrors.kernel.org/centos/7.3.1611/updates/x86_64/Packages/kernel-devel-3.10.0-514.6.2.el7.x86_64.rpm
 http://mirrors.kernel.org/centos/7/os/x86_64/Packages/kernel-3.10.0-514.el7.x86_64.rpm
@@ -24,6 +26,7 @@ http://mirrors.kernel.org/centos/7/updates/x86_64/Packages/kernel-3.10.0-514.21.
 http://mirrors.kernel.org/centos/7/updates/x86_64/Packages/kernel-3.10.0-514.21.2.el7.x86_64.rpm
 http://mirrors.kernel.org/centos/7/updates/x86_64/Packages/kernel-3.10.0-514.2.2.el7.x86_64.rpm
 http://mirrors.kernel.org/centos/7/updates/x86_64/Packages/kernel-3.10.0-514.26.1.el7.x86_64.rpm
+http://mirrors.kernel.org/centos/7/updates/x86_64/Packages/kernel-3.10.0-514.26.2.el7.x86_64.rpm
 http://mirrors.kernel.org/centos/7/updates/x86_64/Packages/kernel-3.10.0-514.6.1.el7.x86_64.rpm
 http://mirrors.kernel.org/centos/7/updates/x86_64/Packages/kernel-3.10.0-514.6.2.el7.x86_64.rpm
 http://mirrors.kernel.org/centos/7/updates/x86_64/Packages/kernel-devel-3.10.0-514.10.2.el7.x86_64.rpm
@@ -32,6 +35,7 @@ http://mirrors.kernel.org/centos/7/updates/x86_64/Packages/kernel-devel-3.10.0-5
 http://mirrors.kernel.org/centos/7/updates/x86_64/Packages/kernel-devel-3.10.0-514.21.2.el7.x86_64.rpm
 http://mirrors.kernel.org/centos/7/updates/x86_64/Packages/kernel-devel-3.10.0-514.2.2.el7.x86_64.rpm
 http://mirrors.kernel.org/centos/7/updates/x86_64/Packages/kernel-devel-3.10.0-514.26.1.el7.x86_64.rpm
+http://mirrors.kernel.org/centos/7/updates/x86_64/Packages/kernel-devel-3.10.0-514.26.2.el7.x86_64.rpm
 http://mirrors.kernel.org/centos/7/updates/x86_64/Packages/kernel-devel-3.10.0-514.6.1.el7.x86_64.rpm
 http://mirrors.kernel.org/centos/7/updates/x86_64/Packages/kernel-devel-3.10.0-514.6.2.el7.x86_64.rpm
 http://vault.centos.org/7.0.1406/os/x86_64/Packages/kernel-3.10.0-123.el7.x86_64.rpm
