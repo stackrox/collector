@@ -48,7 +48,6 @@ class SysdigService : public Sysdig {
     void getSyscallIds(std::string syscall, std::vector<int>& ids);
 
     bool stats(SysdigStats &s);
-    KafkaClient *getKafkaClient();
 
     static std::string modulePath;
     static std::string moduleName;

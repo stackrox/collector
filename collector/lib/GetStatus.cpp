@@ -58,16 +58,10 @@ GetStatus::handleGet(CivetServer *server, struct mg_connection *conn)
             status["sysdig"]["status"] = "stats unavailable";
         } else {
             status["sysdig"] = Json::Value(Json::objectValue);
-            status["sysdig"]["status"] = "ok";
             status["sysdig"]["node"] = stats.nodeName;
             status["sysdig"]["events"] = Json::UInt64(stats.nEvents);
             status["sysdig"]["drops"] = Json::UInt64(stats.nDrops);
             status["sysdig"]["preemptions"] = Json::UInt64(stats.nPreemptions);
-            status["sysdig"]["m_line_periodocity"] = Json::UInt(stats.mLinePeriodicity);
-            status["sysdig"]["events_delta"] = Json::UInt64(stats.nEventsDelta);
-            status["sysdig"]["drops_delta"] = Json::UInt64(stats.nDropsDelta);
-            status["sysdig"]["preemptions_delta"] = Json::UInt64(stats.nPreemptionsDelta);
-            status["sysdig"]["updates"] = Json::UInt(stats.nUpdates);
             status["sysdig"]["filtered_events"] = Json::UInt64(stats.nFilteredEvents);
         }
     }
