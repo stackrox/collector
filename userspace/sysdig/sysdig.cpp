@@ -780,41 +780,15 @@ const char* do_getnext(const char* selfContainerID, string& networkKey) {
 	}
 
 	periodicity = (periodicity + 1) % persistentState->getMetricsFrequency();
-        persistentState->setPeriodicity(periodicity);
+	persistentState->setPeriodicity(periodicity);
 	if (periodicity == 0) {
 	    scap_stats cstats;
 	    inspector->get_capture_stats(&cstats);
 
-	    struct timespec ts;
-	    clock_gettime(CLOCK_REALTIME, &ts);
-	    tzset();
-	    struct tm t;
-            char timestamp[64];
-
-	    if (localtime_r(&(ts.tv_sec), &t) != NULL) {
-	        char timestamp[64];
-	        strftime(timestamp, 64, "%T", &t);
-	        sprintf(&timestamp[strlen(timestamp)], ".%.9ld", ts.tv_nsec);
-	    } else {
-	        strcpy(timestamp, "<ts>");
-	    }
-
 	    // populate factoids
-	    sysdigData.nEventsDelta = cstats.n_evts - sysdigData.nEvents;
-	    sysdigData.nDropsDelta = cstats.n_drops - sysdigData.nDrops;
-	    sysdigData.nPreemptionsDelta = cstats.n_preemptions - sysdigData.nPreemptions;
-
 	    sysdigData.nEvents = cstats.n_evts;
 	    sysdigData.nDrops = cstats.n_drops;
 	    sysdigData.nPreemptions = cstats.n_preemptions;
-
-            sprintf(eventBuffer,
-                "M\t%s\tsysdigMetrics\t%s\tE: %" PRIu64 "\tD: %" PRIu64 "\tP: %" PRIu64 ".\tEd: %" PRIu64 "\tDd: %" PRIu64 "\tPd: %" PRIu64 "\tFE: %" PRIu64 "\tnode:%s\n",
-                selfContainerID,
-                timestamp, sysdigData.nEvents, sysdigData.nDrops, sysdigData.nPreemptions,
-		sysdigData.nEventsDelta, sysdigData.nDropsDelta, sysdigData.nPreemptionsDelta,
-		sysdigData.nFilteredEvents, sysdigData.nodeName.c_str());
-	    return eventBuffer;
     }
 
 	res = inspector->next(&ev);
@@ -1665,20 +1639,12 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 			}
 
 			// initialize the sysdig factoid object
-			sysdigData.kafkaClient = persistentState->getKafkaClient();
-			sysdigData.mLinePeriodicity = persistentState->getMetricsFrequency();
 			sysdigData.nEvents = 0;
 			sysdigData.nDrops = 0;
-			sysdigData.nPreemptions = 0;
-			sysdigData.nEventsDelta = 0;
-			sysdigData.nDropsDelta = 0;
-			sysdigData.nPreemptionsDelta = 0;
-			sysdigData.nUpdates = 0;
 			sysdigData.nFilteredEvents = 0;
 
 			// Hostname is this node's name represented as a null-terminated
-			// string, and it is emitted in a field called "node" as part of
-			// the "M" (metrics) line. It is also returned as part of the
+			// string. It is returned as part of the
 			// sysdigData structure.
 			const string file = string(scap_get_host_root()) + "/etc/hostname";
 			std::ifstream f(file);
@@ -1893,7 +1859,7 @@ int sysdigInitialize(string chiselName, string brokerList, string format,
 
     // setup persistent store
     persistentState = new SysdigPersistentState();
-    persistentState->setMetricsFrequency(2000000);
+    persistentState->setMetricsFrequency(DEFAULT_METRICS_PERIODICITY);
     persistentState->setEventBufferSize(s_eventBufferSize);
 
     vector<string> args;
@@ -1935,22 +1901,12 @@ int sysdigInitialize(string chiselName, string brokerList, string format,
 }
 
 bool sysdigGetSysdigData(sysdigDataT& data) {
-    KafkaClient* kafkaClient = persistentState->getKafkaClient();
-    if (!kafkaClient)
-        return false;
-
     // Fields that change
     data.nEvents = sysdigData.nEvents;
     data.nDrops = sysdigData.nDrops;
     data.nPreemptions = sysdigData.nPreemptions;
-    data.nEventsDelta = sysdigData.nEventsDelta;
-    data.nDropsDelta = sysdigData.nDropsDelta;
-    data.nPreemptionsDelta = sysdigData.nPreemptionsDelta;
-    data.nUpdates = sysdigData.nUpdates;
     data.nFilteredEvents = sysdigData.nFilteredEvents;
 
-    // Fields that are fixed
-    data.mLinePeriodicity = sysdigData.mLinePeriodicity;
     data.nodeName = sysdigData.nodeName;
 
     return true;
@@ -1962,7 +1918,7 @@ int main(int argc, char **argv)
 
 	// setup persistent store
     persistentState = new SysdigPersistentState();
-    persistentState->setMetricsFrequency(2000000);
+    persistentState->setMetricsFrequency(DEFAULT_METRICS_PERIODICITY);
     persistentState->setEventBufferSize(s_eventBufferSize);
 
     sysdig_init(argc, argv, true /* setup_only */);
