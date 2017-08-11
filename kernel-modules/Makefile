@@ -30,29 +30,8 @@ crawl: build-crawl-container
 
 	docker run -i kernel-crawler Ubuntu > supported-kernels/ubuntu.txt
 
-# TODO: This isn't _really_ a phony target.
-.PHONY: container/kernel-modules
-container/kernel-modules: $(CURDIR)/../ext/sysdig/ $(CURDIR)/../sysblock/ supported-kernels/ build/Dockerfile build/build-kos download-packages
-	mkdir -p container/kernel-modules
-	rm -rf ./sysdig/ || true
-	rm -rf ./sysblock/ || true
-	cp -r $(CURDIR)/../ext/sysdig ./sysdig/
-	cp -r $(CURDIR)/../sysblock ./sysblock/
-	docker build -t build-kernel-modules -f build/Dockerfile .
-
-	docker volume rm ko-debian || true
-	docker volume create ko-debian
-	docker run \
-		--rm \
-		-i \
-		-v $(CURDIR)/container/kernel-modules:/output \
-		-v $(CURDIR)/packages:/packages \
-		-v ko-debian:/scratch \
-		build-kernel-modules \
-		Debian \
-		< supported-kernels/debian.txt
-	docker volume rm ko-debian
-
+.PHONY: build-centos
+build-centos:
 	docker volume rm ko-centos || true
 	docker volume create ko-centos
 	docker run \
@@ -66,6 +45,24 @@ container/kernel-modules: $(CURDIR)/../ext/sysdig/ $(CURDIR)/../sysblock/ suppor
 		< supported-kernels/centos.txt
 	docker volume rm ko-centos
 
+
+.PHONY: build-debian
+build-debian:
+	docker volume rm ko-debian || true
+	docker volume create ko-debian
+	docker run \
+		--rm \
+		-i \
+		-v $(CURDIR)/container/kernel-modules:/output \
+		-v $(CURDIR)/packages:/packages \
+		-v ko-debian:/scratch \
+		build-kernel-modules \
+		Debian \
+		< supported-kernels/debian.txt
+	docker volume rm ko-debian
+
+.PHONY: build-ubuntu
+build-ubuntu:
 	docker volume rm ko-ubuntu || true
 	docker volume create ko-ubuntu
 	docker run \
@@ -78,6 +75,26 @@ container/kernel-modules: $(CURDIR)/../ext/sysdig/ $(CURDIR)/../sysblock/ suppor
 		Ubuntu \
 		< supported-kernels/ubuntu.txt
 	docker volume rm ko-ubuntu
+
+.PHONY: build
+build: build-centos build-debian build-ubuntu
+
+.PHONY: build-container
+build-container:
+	mkdir -p container/kernel-modules
+	docker build -t build-kernel-modules -f build/Dockerfile .
+
+sysdig/: $(CURDIR)/../ext/sysdig
+	rm -rf ./sysdig || true
+	cp -r $(CURDIR)/../ext/sysdig ./sysdig/
+
+sysblock/: $(CURDIR)/../sysblock
+	rm -rf ./sysblock/ || true
+	cp -r $(CURDIR)/../sysblock ./sysblock/
+
+# TODO: This isn't _really_ a phony target.
+.PHONY: container/kernel-modules
+container/kernel-modules: sysdig/ sysblock/ supported-kernels/ build/Dockerfile build/build-kos download-packages build-container build
 
 .PHONY: image
 image: container/kernel-modules
