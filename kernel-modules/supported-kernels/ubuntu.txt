@@ -88,6 +88,9 @@ http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-image-4.4.0-87-generic
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-89_4.4.0-89.112_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-89-generic_4.4.0-89.112_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-image-4.4.0-89-generic_4.4.0-89.112_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-91_4.4.0-91.114_all.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-91-generic_4.4.0-91.114_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-image-4.4.0-91-generic_4.4.0-91.114_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe-edge/linux-headers-4.8.0-34_4.8.0-34.36~16.04.1_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe-edge/linux-headers-4.8.0-34-generic_4.8.0-34.36~16.04.1_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe-edge/linux-image-4.8.0-34-generic_4.8.0-34.36~16.04.1_amd64.deb
@@ -190,6 +193,12 @@ http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-image-3.13.0-123-gener
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-3.13.0-125_3.13.0-125.174_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-3.13.0-125-generic_3.13.0-125.174_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-image-3.13.0-125-generic_3.13.0-125.174_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-3.13.0-126_3.13.0-126.175_all.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-3.13.0-126-generic_3.13.0-126.175_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-image-3.13.0-126-generic_3.13.0-126.175_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-3.13.0-128_3.13.0-128.177_all.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-3.13.0-128-generic_3.13.0-128.177_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-image-3.13.0-128-generic_3.13.0-128.177_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-3.13.0-24_3.13.0-24.47_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-3.13.0-24-generic_3.13.0-24.47_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-image-3.13.0-24-generic_3.13.0-24.47_amd64.deb
