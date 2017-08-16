@@ -57,8 +57,6 @@ CONNECTION_LIMIT_PER_IP is optional, and it defaults to 64.
 
 CONNECTION_TIMEOUT is optional, and it defaults to 8.
 
-SERVER_ENDPOINT is optional (but highly recommended), and it defaults to localhost:8888
-
 #### Running Collector with default configuration
 
 ~~~
