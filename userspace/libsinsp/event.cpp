@@ -385,7 +385,11 @@ uint32_t binary_buffer_to_string_dots(char *dst, char *src, uint32_t dstlen, uin
 			return dstlen;
 		}
 
-		if(isprint((int)(uint8_t)src[j]))
+		// Preserving newlines and carriage returns is important for downstream
+		// parsing. However, in sparse-string output format, tabs still need to be
+		// replaced, and there is little utility from including other unprintable
+		// characters.
+		if(isprint((int)(uint8_t)src[j]) || src[j] == '\n' || src[j] == '\r')
 		{
 			// switch(src[j])
 			// {
