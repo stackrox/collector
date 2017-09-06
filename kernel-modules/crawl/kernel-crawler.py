@@ -86,6 +86,16 @@ if len(sys.argv) < 2 or not (sys.argv[1] in repos or sys.argv[1] in ["Ubuntu", "
 
 distro = sys.argv[1]
 
+def get_gzipped_data(url):
+    response = urllib2.urlopen(url, timeout=URL_TIMEOUT)
+    if response.info().get('Content-Encoding') == 'x-gzip' or response.info().get('Content-Encoding') == 'gzip':
+        buf = StringIO(response.read())
+        f = gzip.GzipFile(fileobj=buf)
+        data = f.read()
+    else:
+        data = response.read()
+    return data
+
 def print_ubuntu_deb_urls(version, arch, pkg):
     download_url = "https://packages.ubuntu.com/%s/%s/%s/download" % (version, arch, pkg)
     sys.stderr.write("Looking for download URLs for pkg: "+pkg+" at "+download_url+"\n")
@@ -110,6 +120,47 @@ def get_debian_deb_urls(version, arch, pkg):
         sys.stderr.write("pkg: "+pkg+" got URL: "+url+"\n")
     return pkg_urls
 
+def get_ubuntu_kernels(pkg, pattern, kernels_handled, get_fn):
+    match = pattern.match(pkg)
+    if match:
+        kernel_rev = match.group(1)
+
+        kernel_parts = kernel_rev.split(".")
+        if len(kernel_parts) >= 2:
+            if int(kernel_parts[0]) == 4 and int(kernel_parts[1]) > 8:
+                sys.stderr.write("Ignoring kernel >4.8: ("+kernel_rev+") in package "+pkg+"\n")
+                return
+
+        kernel_rev_abi = kernel_rev.split("_")[0]
+        if kernels_handled.get(kernel_rev_abi):
+            sys.stderr.write("Ignoring kernel release "+kernel_rev_abi+" that is already handled\n")
+            return
+
+        kernels_handled[kernel_rev_abi] = True
+
+        get_fn(pkg, kernel_rev)
+
+def print_ubuntu_standard_packages(pkg, kernel_rev):
+    # The headers-all package
+    print_ubuntu_deb_urls(version, "all", pkg)
+
+    # The headers-generic package
+    print_ubuntu_deb_urls(version, "amd64", pkg+"-generic")
+
+    # The image package
+    print_ubuntu_deb_urls(version, "amd64", pkg.replace('headers', 'image')+"-generic")
+
+def print_ubuntu_gke_packages(pkg, kernel_rev):
+    # The headers-all package
+    print_ubuntu_deb_urls(version, "all", "linux-gke-headers-" + kernel_rev)
+
+    # The headers-generic package
+    print_ubuntu_deb_urls(version, "amd64", pkg)
+
+    # The image package
+    print_ubuntu_deb_urls(version, "amd64", pkg.replace('headers', 'image'))
+
+
 if distro == "Ubuntu":
     # Ubuntu's package mirrors have packages from a large number of Ubuntu
     # versions. Since we only want to build kernel modules for versions we
@@ -124,6 +175,7 @@ if distro == "Ubuntu":
     ]
 
     pattern = re.compile(r"linux-headers-([0-9\.-]+)$")
+    gke_pattern = re.compile(r"linux-headers-([0-9\.-]+)-gke$")
 
     kernels_handled = dict()
 
@@ -131,41 +183,12 @@ if distro == "Ubuntu":
         try:
             sys.stderr.write("** Processing packages for Ubuntu version: "+version+"\n")
             pkg_url = "https://packages.ubuntu.com/%s/allpackages?format=txt.gz" % version
-            response = urllib2.urlopen(pkg_url, timeout=URL_TIMEOUT)
-            if response.info().get('Content-Encoding') == 'x-gzip' or response.info().get('Content-Encoding') == 'gzip':
-                buf = StringIO(response.read())
-                f = gzip.GzipFile(fileobj=buf)
-                data = f.read()
-            else:
-                data = response.read()
+            data = get_gzipped_data(pkg_url)
             for pkg in data.split('\n'):
                 pkg = pkg.split(' ')[0]
                 # sys.stderr.write("Considering pkg: "+pkg+"\n")
-                match = pattern.match(pkg)
-                if match:
-                    kernel_rev = match.group(1)
-
-                    kernel_parts = kernel_rev.split(".")
-                    if len(kernel_parts) >= 2:
-                        if int(kernel_parts[0]) == 4 and int(kernel_parts[1]) > 8:
-                            sys.stderr.write("Ignoring kernel >4.8: ("+kernel_rev+") in package "+pkg+"\n")
-                            continue
-
-                    kernel_rev_abi = kernel_rev.split("_")[0]
-                    if kernels_handled.get(kernel_rev_abi):
-                        sys.stderr.write("Ignoring kernel release "+kernel_rev_abi+" that is already handled\n")
-                        continue
-
-                    kernels_handled[kernel_rev_abi] = True
-
-                    # The headers-all package
-                    print_ubuntu_deb_urls(version, "all", pkg)
-
-                    # The headers-generic package
-                    print_ubuntu_deb_urls(version, "amd64", pkg+"-generic")
-
-                    # The image package
-                    print_ubuntu_deb_urls(version, "amd64", pkg.replace('headers', 'image')+"-generic")
+                get_ubuntu_kernels(pkg, pattern, kernels_handled, print_ubuntu_standard_packages)
+                get_ubuntu_kernels(pkg, gke_pattern, kernels_handled, print_ubuntu_gke_packages)
         except Exception as e:
             sys.stderr.write("ERROR: "+str(e)+"\n")
             traceback.print_exc()
@@ -192,13 +215,7 @@ elif distro == "Debian":
         try:
             sys.stderr.write("** Processing packages for Debian version: "+version+"\n")
             pkg_url = "https://packages.debian.org/%s/allpackages?format=txt.gz" % version
-            response = urllib2.urlopen(pkg_url, timeout=URL_TIMEOUT)
-            if response.info().get('Content-Encoding') == 'x-gzip' or response.info().get('Content-Encoding') == 'gzip':
-                buf = StringIO(response.read())
-                f = gzip.GzipFile(fileobj=buf)
-                data = f.read()
-            else:
-                data = response.read()
+            data = get_gzipped_data(pkg_url)
             for pkg in data.split('\n'):
                 pkg = pkg.split(' ')[0]
                 # sys.stderr.write("Considering pkg: "+pkg+"\n")

@@ -39,7 +39,7 @@ function find_kernel_module() {
     MODULE_NAME="$1"
     KERNEL_MODULE=$MODULE_NAME-$KERNELVERSION.ko
     echo >&2
-    echo "Attempting to find built-in $KERNEL_MODULE.ko." >&2
+    echo "Attempting to find built-in $KERNEL_MODULE." >&2
     EXPECTED_PATH="/kernel-modules/$DISTRO/$KERNEL_MODULE"
     if [ -f "$EXPECTED_PATH" ]; then
       mkdir -p /module/
