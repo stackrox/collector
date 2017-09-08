@@ -49,9 +49,15 @@ GetStatus::handleGet(CivetServer *server, struct mg_connection *conn)
     using namespace std;
 
     Json::Value status(Json::objectValue);
-    status["status"] = sysdig->ready() ? "ok" : "not ready";
+    Json::StyledStreamWriter writer;
+    stringstream out;
+    writer.write(out, status);
+    const std::string document = out.str();
 
-    if (sysdig->ready()) {
+    bool ready = sysdig->ready();
+
+    if (ready) {
+        status["status"] = "ok";
         SysdigStats stats;
         if (!sysdig->stats(stats)) {
             status["sysdig"] = Json::Value(Json::objectValue);
@@ -64,15 +70,14 @@ GetStatus::handleGet(CivetServer *server, struct mg_connection *conn)
             status["sysdig"]["preemptions"] = Json::UInt64(stats.nPreemptions);
             status["sysdig"]["filtered_events"] = Json::UInt64(stats.nFilteredEvents);
         }
+
+        mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n");
+        mg_printf(conn, "%s\n", document.c_str());
+    } else {
+        mg_printf(conn, "HTTP/1.1 503 Service Unavailable\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n");
+        mg_printf(conn, "%s\n", document.c_str());
     }
 
-    Json::StyledStreamWriter writer;
-    stringstream out;
-    writer.write(out, status);
-    const std::string document = out.str();
-
-    mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n");
-    mg_printf(conn, "%s\n", document.c_str());
     return true;
 }
 

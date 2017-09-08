@@ -318,11 +318,11 @@ startChild(std::string chiselName, std::string brokerList,
     // Start monitoring services.
     // Some of these variables must remain in scope, so
     // be cautious if decomposing to a separate function.
-    const char *options[] = { "listening_ports", "4419", 0};
+    const char *options[] = { "listening_ports", "8080", 0};
     CivetServer server(options);
 
     GetStatus getStatus(&sysdig);
-    server.addHandler("/status", getStatus);
+    server.addHandler("/ready", getStatus);
     server.addHandler("/loglevel", setLogLevel);
     // TODO(cg): Can we expose chisel contents here?
 

@@ -19,7 +19,7 @@ collector:
   image: collector:latest
   privileged: true
   ports:
-    - 4419:4419
+    - 8080:8080
   environment:
     - BROKER_LIST=kafka:9092
     - MAX_CONTENT_LENGTH_KB=128
