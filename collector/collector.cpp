@@ -53,6 +53,7 @@ const char* scap_get_host_root();
 
 #include "ChiselConsumer.h"
 #include "CollectorArgs.h"
+#include "GetNetworkHealthStatus.h"
 #include "GetStatus.h"
 #include "LogLevel.h"
 #include "SysdigService.h"
@@ -322,7 +323,9 @@ startChild(std::string chiselName, std::string brokerList,
     CivetServer server(options);
 
     GetStatus getStatus(&sysdig);
+    GetNetworkHealthStatus getNetworkHealthStatus(g_terminate);
     server.addHandler("/ready", getStatus);
+    server.addHandler("/networkHealth", getNetworkHealthStatus);
     server.addHandler("/loglevel", setLogLevel);
     // TODO(cg): Can we expose chisel contents here?
 
@@ -330,6 +333,8 @@ startChild(std::string chiselName, std::string brokerList,
     prometheus::Exposer exposer("9090");
     std::shared_ptr<prometheus::Registry> registry = std::make_shared<prometheus::Registry>();
     exposer.RegisterCollectable(registry);
+
+    getNetworkHealthStatus.start();
 
     CollectorStatsExporter exporter(registry, &sysdig);
     if (!exporter.start()) {
@@ -358,6 +363,8 @@ startChild(std::string chiselName, std::string brokerList,
     cerr << "[Child]  Interrupted signal reader; cleaning up..." << endl;
     sysdig.cleanup();
     cerr << "[Child]  Cleaned up signal reader; terminating..." << endl;
+
+    getNetworkHealthStatus.stop();
 
     exit(EXIT_SUCCESS);
 }
