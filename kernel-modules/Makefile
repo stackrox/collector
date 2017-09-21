@@ -22,8 +22,6 @@ build-crawl-container: crawl/Dockerfile crawl/kernel-crawler.py
 
 .PHONY: crawl
 crawl: build-crawl-container
-	docker run -i kernel-crawler Debian > supported-kernels/debian.txt
-
 	docker run -i kernel-crawler CentOS > supported-kernels/centos_unsorted.txt
 	sort supported-kernels/centos_unsorted.txt > supported-kernels/centos.txt
 	rm supported-kernels/centos_unsorted.txt
@@ -45,22 +43,6 @@ build-centos:
 		< supported-kernels/centos.txt
 	docker volume rm ko-centos
 
-
-.PHONY: build-debian
-build-debian:
-	docker volume rm ko-debian || true
-	docker volume create ko-debian
-	docker run \
-		--rm \
-		-i \
-		-v $(CURDIR)/container/kernel-modules:/output \
-		-v $(CURDIR)/packages:/packages \
-		-v ko-debian:/scratch \
-		build-kernel-modules \
-		Debian \
-		< supported-kernels/debian.txt
-	docker volume rm ko-debian
-
 .PHONY: build-ubuntu
 build-ubuntu:
 	docker volume rm ko-ubuntu || true
@@ -77,7 +59,7 @@ build-ubuntu:
 	docker volume rm ko-ubuntu
 
 .PHONY: build
-build: build-centos build-debian build-ubuntu
+build: build-centos build-ubuntu
 
 .PHONY: build-container
 build-container:
