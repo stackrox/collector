@@ -127,8 +127,8 @@ def get_ubuntu_kernels(pkg, pattern, kernels_handled, get_fn):
 
         kernel_parts = kernel_rev.split(".")
         if len(kernel_parts) >= 2:
-            if int(kernel_parts[0]) == 4 and int(kernel_parts[1]) > 8:
-                sys.stderr.write("Ignoring kernel >4.8: ("+kernel_rev+") in package "+pkg+"\n")
+            if int(kernel_parts[0]) == 4 and int(kernel_parts[1]) > 11:
+                sys.stderr.write("Ignoring kernel >4.11: ("+kernel_rev+") in package "+pkg+"\n")
                 return
 
         kernel_rev_abi = kernel_rev.split("_")[0]
@@ -160,6 +160,15 @@ def print_ubuntu_gke_packages(pkg, kernel_rev):
     # The image package
     print_ubuntu_deb_urls(version, "amd64", pkg.replace('headers', 'image'))
 
+def print_ubuntu_azure_packages(pkg, kernel_rev):
+    # The headers-all package
+    print_ubuntu_deb_urls(version, "all", "linux-azure-headers-" + kernel_rev)
+
+    # The headers-generic package
+    print_ubuntu_deb_urls(version, "amd64", pkg)
+
+    # The image package
+    print_ubuntu_deb_urls(version, "amd64", pkg.replace('headers', 'image'))
 
 if distro == "Ubuntu":
     # Ubuntu's package mirrors have packages from a large number of Ubuntu
@@ -176,6 +185,7 @@ if distro == "Ubuntu":
 
     pattern = re.compile(r"linux-headers-([0-9\.-]+)$")
     gke_pattern = re.compile(r"linux-headers-([0-9\.-]+)-gke$")
+    azure_pattern = re.compile(r"linux-headers-([0-9\.-]+)-azure$")
 
     kernels_handled = dict()
 
@@ -189,6 +199,7 @@ if distro == "Ubuntu":
                 # sys.stderr.write("Considering pkg: "+pkg+"\n")
                 get_ubuntu_kernels(pkg, pattern, kernels_handled, print_ubuntu_standard_packages)
                 get_ubuntu_kernels(pkg, gke_pattern, kernels_handled, print_ubuntu_gke_packages)
+                get_ubuntu_kernels(pkg, azure_pattern, kernels_handled, print_ubuntu_azure_packages)
         except Exception as e:
             sys.stderr.write("ERROR: "+str(e)+"\n")
             traceback.print_exc()
@@ -231,8 +242,8 @@ elif distro == "Debian":
 
                     kernel_parts = kernel_rev.split(".")
                     if len(kernel_parts) >= 2:
-                        if int(kernel_parts[0]) == 4 and int(kernel_parts[1]) > 8:
-                            sys.stderr.write("Ignoring kernel >4.8: ("+kernel_rev+") in package "+pkg+"\n")
+                        if int(kernel_parts[0]) == 4 and int(kernel_parts[1]) > 11:
+                            sys.stderr.write("Ignoring kernel >4.11: ("+kernel_rev+") in package "+pkg+"\n")
                             continue
 
                     # The headers-amd64 package
