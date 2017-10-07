@@ -1,4 +1,5 @@
 FROM stackrox/kernel-modules:latest
+MAINTAINER StackRox <support@stackrox.com>
 
 # SYSDIG_HOST_ROOT is required by the sysdig kernel module; used as a prefix to
 # paths like /dev/sysdig0, /proc, and /boot. Make sure this matches the volume
