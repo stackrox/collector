@@ -82,6 +82,8 @@ elif echo $OS_DETAILS | grep -qi centos; then
     DISTRO="RedHat"
 elif echo $OS_DETAILS | grep -qi "Red Hat"; then
     DISTRO="RedHat"
+elif echo $OS_DETAILS | grep -qi OpenShift; then
+    DISTRO="RedHat"
 else
     echo "Distribution '$OS_DETAILS' is not supported."
     exit 1
