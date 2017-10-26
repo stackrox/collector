@@ -373,8 +373,10 @@ bool sinsp_evt_formatter::tostring(sinsp_evt* evt, OUT string* res)
 }
 
 // Begin StackRox section
-void sinsp_evt_formatter::to_sparse_string(sinsp_evt* evt, char* buffer, unsigned int snaplen, string& network_key)
+SignalType sinsp_evt_formatter::to_sparse_string(sinsp_evt* evt, char* buffer, unsigned int snaplen, string& network_key)
 {
+	SignalType signalType = SIGNAL_TYPE_DEFAULT;
+
 	uint32_t j = 0;
 
 	ASSERT(m_tokenlens.size() == m_tokens.size());
@@ -418,11 +420,21 @@ void sinsp_evt_formatter::to_sparse_string(sinsp_evt* evt, char* buffer, unsigne
 				if (!strcmp(field, "evt.category") && !strcmp(str, "net"))
 				{
 					buffer[0] = 'N';
+                    			signalType = SIGNAL_TYPE_NETWORK;
 				}
 				else if (!strcmp(field, "fd.type") &&
 					(!strcmp(str, "ipv4") || !strcmp(str, "ipv6") || !strcmp(str, "unix")))
 				{
 					buffer[0] = 'N';
+                   			signalType = SIGNAL_TYPE_NETWORK;
+				}
+			}
+            
+			if (!strcmp(field, "evt.type"))
+			{
+				if (m_process_evttypes.end() != m_process_evttypes.find(str))
+				{
+					signalType = SIGNAL_TYPE_PROCESS;
 				}
 			}
 
@@ -483,10 +495,22 @@ void sinsp_evt_formatter::to_sparse_string(sinsp_evt* evt, char* buffer, unsigne
 		else if (!strcmp(field, "container.name") || !strcmp(field, "container.image"))
 		{
 			buffer[0] = '\0';
-			return;
+			return signalType;
 		}
 	}
+
+	return signalType;
 }
+
+void sinsp_evt_formatter::init_process_syscalls(const string& process_syscalls) {
+    istringstream is(process_syscalls);
+    string syscall;
+    while (getline(is, syscall, ','))
+    {
+        m_process_evttypes.insert(syscall);
+    }
+}
+
 // End StackRox section
 
 #else  // HAS_FILTERING

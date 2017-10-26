@@ -136,7 +136,7 @@ class SysdigPersistentState {
         SysdigPersistentState(long _metricsFrequency, sinsp* _inspector, string _chiselName, sinsp_chisel* _chisel,
                               sinsp_evt_formatter* _formatter, int _periodicity, int _snapLen,
                               int eventBufferSize, bool _useKafka, string brokerList, string defaultTopic,
-                              string networkTopic) :
+                              string networkTopic, string processTopic, string processSyscalls) :
             metricsFrequency(_metricsFrequency),
             inspector(_inspector),
             chiselName(_chiselName),
@@ -147,7 +147,7 @@ class SysdigPersistentState {
             useKafka(_useKafka) {
             kafkaClient = NULL;
             if (_useKafka) {
-                kafkaClient = new KafkaClient(brokerList, defaultTopic, networkTopic);
+                kafkaClient = new KafkaClient(brokerList, defaultTopic, networkTopic, processTopic);
             }
             if (eventBufferSize > 0) {
                 eventBuffer = new char[eventBufferSize];
@@ -156,11 +156,11 @@ class SysdigPersistentState {
             }
         }
         SysdigPersistentState(int eventBufferSize, bool _useKafka, string brokerList, string defaultTopic,
-                              string networkTopic) {
+                              string networkTopic, string processTopic, string processSyscalls) {
             useKafka = _useKafka;
             kafkaClient = NULL;
             if (_useKafka) {
-                kafkaClient = new KafkaClient(brokerList, defaultTopic, networkTopic);
+                kafkaClient = new KafkaClient(brokerList, defaultTopic, networkTopic, processTopic);
             }
             if (eventBufferSize > 0) {
                 eventBuffer = new char[eventBufferSize];
@@ -202,8 +202,9 @@ class SysdigPersistentState {
             delete[] eventBuffer;
             eventBuffer = new char[eventBufferSize];
         }
-        inline void setupKafkaClient(string brokerList, string defaultTopic, string networkTopic) {
-            kafkaClient = new KafkaClient(brokerList, defaultTopic, networkTopic);
+        inline void setupKafkaClient(string brokerList, string defaultTopic, string networkTopic,
+                                     string processTopic) {
+            kafkaClient = new KafkaClient(brokerList, defaultTopic, networkTopic, processTopic);
         }
 };
 
@@ -217,8 +218,8 @@ typedef struct {
     std::string nodeName;               // the name of this node (hostname)
 } sysdigDataT;
 
-int sysdigInitialize(string chiselName, string brokerList, string format,
-                     bool useKafka, string defaultTopic, string networkTopic, int snapLen);
+int sysdigInitialize(string chiselName, string brokerList, string format, bool useKafka,
+                     string defaultTopic, string networkTopic, string processTopic, string processSyscalls, int snapLen);
 void sysdigCleanup();
 void sysdigStartProduction(bool& isInterrupted);
 bool sysdigGetSysdigData(sysdigDataT& sysdigData);

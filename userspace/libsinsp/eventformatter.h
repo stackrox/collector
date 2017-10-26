@@ -44,6 +44,12 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 
 class sinsp_filter_check;
 
+typedef enum signalType {
+    SIGNAL_TYPE_DEFAULT = 0,
+    SIGNAL_TYPE_NETWORK = 1,
+    SIGNAL_TYPE_PROCESS = 2
+} SignalType;
+
 /** @defgroup event Event manipulation
  *  @{
  */
@@ -64,6 +70,8 @@ public:
 	  \param fmt The printf-like format to use. The accepted format is the same
 	   as the one of the sysdig '-p' command line flag, so refer to the sysdig
 	   manual for details.
+      \param processSyscalls a comma-delimited set of event types that represent
+       process syscalls
 	*/
 	sinsp_evt_formatter(sinsp* inspector, const string& fmt);
 
@@ -102,7 +110,7 @@ public:
 	  \return true if the string should be shown (based on the initial *),
 	   false otherwise.
 	*/
-	void to_sparse_string(sinsp_evt* evt, char* buffer, unsigned int snaplen, string& network_key);
+	SignalType to_sparse_string(sinsp_evt* evt, char* buffer, unsigned int snaplen, string& network_key);
 
 	/*!
 	  \brief Fills res with end of capture string rendering of the event.
@@ -112,6 +120,14 @@ public:
 	   false otherwise.
 	*/
 	bool on_capture_end(OUT string* res);
+
+    /*!
+     \brief Initializes event types that represent process syscalls.
+
+     \param processSyscalls a comma-delimited set of event types that represent
+     process syscalls
+     */
+    void init_process_syscalls(const string& process_syscalls);
 
 private:
 	void set_format(const string& fmt);
@@ -123,6 +139,7 @@ private:
 
 	map<int, string> m_token_to_field_map;
 	map<string, string> m_fields_map;
+    unordered_set<string> m_process_evttypes;
 
 	Json::Value m_root;
 	Json::FastWriter m_writer;

@@ -33,17 +33,22 @@ extern "C" {
   #include <unistd.h>
 }
 
+#include "sinsp.h"
+#include "eventformatter.h"
 #include "KafkaClient.h"
 
 // construction
-KafkaClient::KafkaClient(std::string brokerList, std::string _defaultTopic, std::string _networkTopic) {
+KafkaClient::KafkaClient(std::string brokerList, std::string _defaultTopic, std::string _networkTopic,
+                         std::string _processTopic) {
   char errstr[1024];
   brokers = brokerList;
   defaultTopic = _defaultTopic;
   networkTopic = _networkTopic;
+  processTopic = _processTopic;
   kafka = NULL;
   defaultTopicHandle = NULL;
   networkTopicHandle = NULL;
+  processTopicHandle = NULL;
 
   // Get the hostname of this container.
   const string file = "/etc/hostname";
@@ -102,6 +107,10 @@ KafkaClient::KafkaClient(std::string brokerList, std::string _defaultTopic, std:
   if (!networkTopic.empty()) {
     networkTopicHandle = createTopic((char*)networkTopic.c_str());
   }
+
+  if (!processTopic.empty()) {
+    processTopicHandle = createTopic((char*)processTopic.c_str());
+  }
 }
 
 KafkaClient::~KafkaClient() {
@@ -110,6 +119,9 @@ KafkaClient::~KafkaClient() {
   }
   if (networkTopicHandle != NULL) {
     rd_kafka_topic_destroy(networkTopicHandle);
+  }
+  if (processTopicHandle != NULL) {
+    rd_kafka_topic_destroy(processTopicHandle);
   }
 
   if (kafka != NULL)
@@ -135,12 +147,20 @@ rd_kafka_topic_t* KafkaClient::createTopic(const char* topic) {
   return kafkaTopic;
 }
 
-void KafkaClient::send(char* line, const std::string& networkKey) {
+void KafkaClient::send(char* line, bool isNetwork, bool isProcess, const std::string& networkKey) {
   char cidKey[SHORT_CONTAINER_ID_LENGTH];
   strncpy(cidKey, &line[SHORT_CONTAINER_ID_OFFSET], sizeof(cidKey));
+
+  // TODO: @jay stop sending process signals on default topic when filters are retired
   sendMessage(defaultTopicHandle, line, cidKey, sizeof(cidKey));
-  if (networkTopicHandle && line[0] == 'N' && networkKey[0] != '\0') {
-    sendMessage(networkTopicHandle, line, (char*)networkKey.c_str(), networkKey.size());
+  if (isNetwork) {
+    if (networkKey[0] != '\0' && networkTopicHandle) {
+    	sendMessage(networkTopicHandle, line, (char*)networkKey.c_str(), networkKey.size());
+    }
+  } else if (isProcess) {
+      if (processTopicHandle) {
+      	sendMessage(processTopicHandle, line, cidKey, sizeof(cidKey));
+      }
   }
 }
 
