@@ -50,7 +50,7 @@ typedef struct {
 
 int sysdigInitialize(string chiselName, string brokerList, string format,
                      bool useKafka, string defaultTopic, string networkTopic,
-                     int snapLen);
+                     string processTopic, string processSyscalls, int snapLen);
 void sysdigCleanup();
 void sysdigStartProduction(bool &isInterrupted);
 bool sysdigGetSysdigData(sysdigDataT& sysdigData);
@@ -169,10 +169,11 @@ SysdigService::~SysdigService(){
 
 int
 SysdigService::init(std::string chiselName, std::string brokerList, std::string format,
-    bool useKafka, std::string defaultTopic, std::string networkTopic, int snapLen)
+    bool useKafka, std::string defaultTopic, std::string networkTopic,
+                    std::string processTopic, std::string processSyscalls, int snapLen)
 {
     return sysdigInitialize(chiselName, brokerList, format, useKafka, defaultTopic,
-                            networkTopic, snapLen);
+                            networkTopic, processTopic, processSyscalls, snapLen);
 }
 
 void

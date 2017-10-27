@@ -26,7 +26,7 @@ We enable configuring the event format that is emitted by the kernel module. The
 Collector enables sending events using Kafka. The functionality is enabled using the following configuration option:
 
 ~~~
-{ "--use-kafka, --default-topic:"topic-signals", --network-topic:"topic-network" }
+{ "--use-kafka, --default-topic:"topic-signals", --network-topic:"topic-network", --process-topic:"rox-process-signals" }
 ~~~
 
 The broker list for Kafka based event production is expected to be in an environment variable covered in the section on environment variables.
