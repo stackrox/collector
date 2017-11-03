@@ -23,7 +23,7 @@ build-crawl-container: crawl/Dockerfile crawl/kernel-crawler.py
 .PHONY: crawl
 crawl: build-crawl-container
 	docker run -i kernel-crawler CentOS > supported-kernels/centos_unsorted.txt
-	sort supported-kernels/centos_unsorted.txt > supported-kernels/centos.txt
+	cat supported-kernels/centos_unsorted.txt | rev | sort | rev > supported-kernels/centos.txt
 	rm supported-kernels/centos_unsorted.txt
 
 	docker run -i kernel-crawler Ubuntu > supported-kernels/ubuntu.txt

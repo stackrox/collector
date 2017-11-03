@@ -140,7 +140,7 @@ function rhel_build {
 	# Get all the parameters needed
 	URL=$1
 	RPM=$(echo $URL | grep -o '[^/]*$')
-	KERNEL_RELEASE=$(echo $RPM | awk 'match($0, /[^kernel\-(core\-|devel\-)?].*[^(\.rpm)]/){ print substr($0, RSTART, RLENGTH) }')
+	KERNEL_RELEASE=$(echo $RPM | awk 'match($0, /[^kernel(\-lt|\-ml)?\-(core\-|devel\-)?].*[^(\.rpm)]/){ print substr($0, RSTART, RLENGTH) }')
 
 	cd ${BASEDIR}
 

@@ -68,6 +68,22 @@ repos = {
                 "updates/x86_64/Packages/"
             ],
             "page_pattern" : "//body//table/tr/td/a[regex:test(@href, '^kernel-(devel-)?[0-9].*\.rpm$')]/@href"
+        },
+        {
+            "root" : "http://ftp.utexas.edu/elrepo/kernel/",
+            "discovery_pattern" : "//body//table/tr/td/a[regex:test(@href, '^el7.*$')]/@href",
+            "subdirs" : [
+                "x86_64/RPMS/"
+            ],
+            "page_pattern" : "//body//table/tr/td/a[regex:test(@href, '^kernel-lt-(devel-)?[0-9].*\.rpm$')]/@href"
+        },
+        {
+            "root" : "http://ftp.utexas.edu/elrepo/archive/kernel/",
+            "discovery_pattern" : "//body//table/tr/td/a[regex:test(@href, '^el7.*$')]/@href",
+            "subdirs" : [
+                "x86_64/RPMS/"
+            ],
+            "page_pattern" : "//body//table/tr/td/a[regex:test(@href, '^kernel-lt-(devel-)?[0-9].*\.rpm$')]/@href"
         }
     ],
 }
