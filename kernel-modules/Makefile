@@ -28,6 +28,21 @@ crawl: build-crawl-container
 
 	docker run -i kernel-crawler Ubuntu > supported-kernels/ubuntu.txt
 
+.PHONY: build-centos-uncrawled
+build-centos-uncrawled:
+	docker volume rm ko-centos-uncrawled || true
+	docker volume create ko-centos-uncrawled
+	docker run \
+		--rm \
+		-i \
+		-v $(CURDIR)/container/kernel-modules:/output \
+		-v $(CURDIR)/packages:/packages \
+		-v ko-centos-uncrawled:/scratch \
+		build-kernel-modules \
+		RedHat \
+		< supported-kernels/centos-uncrawled.txt
+	docker volume rm ko-centos-uncrawled
+
 .PHONY: build-centos
 build-centos:
 	docker volume rm ko-centos || true
@@ -59,7 +74,7 @@ build-ubuntu:
 	docker volume rm ko-ubuntu
 
 .PHONY: build
-build: build-centos build-ubuntu
+build: build-centos build-centos-uncrawled build-ubuntu
 
 .PHONY: build-container
 build-container:
@@ -76,21 +91,21 @@ sysblock/: $(CURDIR)/../sysblock
 
 # TODO: This isn't _really_ a phony target.
 .PHONY: container/kernel-modules
-container/kernel-modules: sysdig/ sysblock/ supported-kernels/ build/Dockerfile build/build-kos download-packages build-container build
+container/kernel-modules: sysdig/ sysblock/ supported-kernels/ build/Dockerfile build/build-kos download-package-cache build-container build
 
 .PHONY: image
 image: container/kernel-modules
 	cd container && docker build -t stackrox/kernel-modules:latest .
 
-.PHONY: upload
-upload:
+.PHONY: upload-modules
+upload-modules:
 	gsutil -m rsync -r container/kernel-modules/ ${KO_GCS_PATH}/${VERSION}/
 
-.PHONY: upload-packages
-upload-packages:
+.PHONY: upload-package-cache
+upload-package-cache:
 	gsutil -m rsync -r packages/ ${PKG_GCS_PATH}/
 
-.PHONY: download-packages
-download-packages:
+.PHONY: download-package-cache
+download-package-cache:
 	mkdir -p ./packages
 	gsutil -m rsync -r ${PKG_GCS_PATH}/ ./packages
