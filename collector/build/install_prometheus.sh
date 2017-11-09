@@ -12,7 +12,7 @@ ldconfig
 
 git clone https://github.com/jupp0r/prometheus-cpp.git
 cd prometheus-cpp
-git checkout cb5d500
+git checkout 871a7673772b266135cc8422490578da1cf63004
 
 cd 3rdparty
 
