@@ -2,6 +2,6 @@
 ======================
 
 This image exists to pipe kernel modules and related libraries
-into the Collector build.
+into the Collector build. It is the base image of the collector.
 
 This image contains both Sysblock and Sysdig kernel modules.
