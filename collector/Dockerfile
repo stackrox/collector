@@ -43,8 +43,7 @@ ARG CURL_REVISION=curl-7_54_0
 COPY build/install_libcurl.sh build/install_libcurl.sh
 RUN build/install_libcurl.sh
 
-# librdkafka v0.9.0 introduced a consistent hash message partitioner.
-ARG RDKAFKA_REVISION=v0.9.5
+ARG RDKAFKA_REVISION=v0.11.3
 COPY build/install_rdkafka.sh build/install_rdkafka.sh
 RUN build/install_rdkafka.sh
 
