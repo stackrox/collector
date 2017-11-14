@@ -163,6 +163,7 @@ SysdigService::SysdigService(bool &terminateFlag)
     syscallsMap["umount"] = 	PPME_SYSCALL_UMOUNT_E;
     syscallsMap["chroot"] = 	PPME_SYSCALL_CHROOT_E;
     syscallsMap["init_module"] = PPME_SYSCALL_INIT_MODULE_E;
+    syscallsMap["finit_module"] = PPME_SYSCALL_FINIT_MODULE_E;
 }
 
 SysdigService::~SysdigService(){
@@ -274,9 +275,13 @@ SysdigService::getSyscallIds(string syscall, std::vector<int>& ids) {
             ids.push_back(PPME_SYSCALL_CLONE_20_E);
             ids.push_back(PPME_SYSCALL_CLONE_20_X);
             break;
-	case PPME_SYSCALL_INIT_MODULE_E:
+	    case PPME_SYSCALL_INIT_MODULE_E:
             ids.push_back(PPME_SYSCALL_INIT_MODULE_E);
             ids.push_back(PPME_SYSCALL_INIT_MODULE_X);
+            break;
+        case PPME_SYSCALL_FINIT_MODULE_E:
+            ids.push_back(PPME_SYSCALL_FINIT_MODULE_E);
+            ids.push_back(PPME_SYSCALL_FINIT_MODULE_X);
             break;
         case PPME_PROCEXIT_E:
             ids.push_back(PPME_PROCEXIT_E);
