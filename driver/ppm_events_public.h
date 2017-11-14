@@ -174,9 +174,9 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 #define PPM_CL_ACTIVE (1 << 19)			/* libsinsp-specific flag. Set in the first non-clone event for
 										   this thread. */
 #define PPM_CL_CLONE_NEWUSER (1 << 20)
-#define PPM_CL_PIPE_SRC (1 << 21)			/* libsinsp-specific flag. Set if this thread has been 
+#define PPM_CL_PIPE_SRC (1 << 21)			/* libsinsp-specific flag. Set if this thread has been
 										       detected to be the source in a shell pipe. */
-#define PPM_CL_PIPE_DST (1 << 22)			/* libsinsp-specific flag. Set if this thread has been 
+#define PPM_CL_PIPE_DST (1 << 22)			/* libsinsp-specific flag. Set if this thread has been
 										       detected to be the destination in a shell pipe. */
 #define PPM_CL_CLONE_CHILD_CLEARTID (1 << 23)
 #define PPM_CL_CLONE_CHILD_SETTID (1 << 24)
@@ -856,7 +856,9 @@ enum ppm_event_type {
 	PPME_SYSCALL_BPF_X = 293,
 	PPME_SYSCALL_SECCOMP_E = 294,
 	PPME_SYSCALL_SECCOMP_X = 295,
-	PPM_EVENT_MAX = 296
+	PPME_SYSCALL_INIT_MODULE_E = 296,
+	PPME_SYSCALL_INIT_MODULE_X = 297,
+	PPM_EVENT_MAX = 298
 };
 /*@}*/
 

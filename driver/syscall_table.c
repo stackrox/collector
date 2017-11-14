@@ -287,6 +287,9 @@ const struct syscall_evt_pair g_syscall_table[SYSCALL_TABLE_SIZE] = {
 #ifdef __NR_unshare
 	[__NR_unshare - SYSCALL_TABLE_ID0] =                    {UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_UNSHARE_E, PPME_SYSCALL_UNSHARE_X},
 #endif
+#ifdef __NR_init_module
+	[__NR_init_module - SYSCALL_TABLE_ID0] =                {UF_USED, PPME_SYSCALL_INIT_MODULE_E, PPME_SYSCALL_INIT_MODULE_X},
+#endif
 	[__NR_flock - SYSCALL_TABLE_ID0] =			{UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_FLOCK_E, PPME_SYSCALL_FLOCK_X},
 #ifdef __NR_semop
 	[__NR_semop - SYSCALL_TABLE_ID0] =                      {UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_SEMOP_E, PPME_SYSCALL_SEMOP_X},
@@ -615,6 +618,9 @@ const enum ppm_syscall_code g_syscall_code_routing_table[SYSCALL_TABLE_SIZE] = {
 #endif
 #ifdef __NR_setns
 	[__NR_setns - SYSCALL_TABLE_ID0] = PPM_SC_SETNS,
+#endif
+#ifdef __NR_init_module
+	[__NR_init_module - SYSCALL_TABLE_ID0] = PPM_SC_INIT_MODULE,
 #endif
 	[__NR_getdents64 - SYSCALL_TABLE_ID0] =  PPM_SC_GETDENTS64,
 #ifndef __NR_socketcall

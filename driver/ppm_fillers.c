@@ -422,7 +422,9 @@ const struct ppm_event_entry g_ppm_events[PPM_EVENT_MAX] = {
 	[PPME_SYSCALL_BPF_E] = {PPM_AUTOFILL, 1, APT_REG, {{0} } },
 	[PPME_SYSCALL_BPF_X] = {f_sys_bpf_x},
 	[PPME_SYSCALL_SECCOMP_E] = {PPM_AUTOFILL, 1, APT_REG, {{0}, {1} } },
-	[PPME_SYSCALL_SECCOMP_X] = {PPM_AUTOFILL, 1, APT_REG, {{AF_ID_RETVAL} } }
+	[PPME_SYSCALL_SECCOMP_X] = {PPM_AUTOFILL, 1, APT_REG, {{AF_ID_RETVAL} } },
+	[PPME_SYSCALL_INIT_MODULE_E] = {PPM_AUTOFILL, 3, APT_SOCK, {{0}, {1}, {2} } },
+	[PPME_SYSCALL_INIT_MODULE_X] = {PPM_AUTOFILL, 1, APT_REG, {{AF_ID_RETVAL} } },
 };
 
 #define merge_64(hi, lo) ((((unsigned long long)(hi)) << 32) + ((lo) & 0xffffffffUL))
@@ -577,7 +579,7 @@ static inline u32 open_modes_to_scap(unsigned long modes)
 		res |= PPM_S_IXUSR;
 
 	/*
-	* PPM_S_IRWXU == S_IRUSR | S_IWUSR | S_IXUSR 
+	* PPM_S_IRWXU == S_IRUSR | S_IWUSR | S_IXUSR
 	*/
 
 	if (modes & S_IRGRP)
@@ -590,7 +592,7 @@ static inline u32 open_modes_to_scap(unsigned long modes)
 		res |= PPM_S_IXGRP;
 
 	/*
-	* PPM_S_IRWXG == S_IRGRP | S_IWGRP | S_IXGRP 
+	* PPM_S_IRWXG == S_IRGRP | S_IWGRP | S_IXGRP
 	*/
 
 	if (modes & S_IROTH)
@@ -601,11 +603,11 @@ static inline u32 open_modes_to_scap(unsigned long modes)
 
 	if (modes & S_IXOTH)
 		res |= PPM_S_IXOTH;
-	
+
 	/*
 	* PPM_S_IRWXO == S_IROTH | S_IWOTH | S_IXOTH
 	*/
-	
+
 	if (modes & S_ISUID)
 		res |= PPM_S_ISUID;
 
