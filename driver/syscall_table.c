@@ -290,6 +290,10 @@ const struct syscall_evt_pair g_syscall_table[SYSCALL_TABLE_SIZE] = {
 #ifdef __NR_init_module
 	[__NR_init_module - SYSCALL_TABLE_ID0] =                {UF_USED, PPME_SYSCALL_INIT_MODULE_E, PPME_SYSCALL_INIT_MODULE_X},
 #endif
+#ifdef __NR_finit_module
+        [__NR_finit_module - SYSCALL_TABLE_ID0] =                      {UF_USED, PPME_SYSCALL_FINIT_MODULE_E, PPME_SYSCALL_FINIT_MODULE_X},
+#endif
+
 	[__NR_flock - SYSCALL_TABLE_ID0] =			{UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_FLOCK_E, PPME_SYSCALL_FLOCK_X},
 #ifdef __NR_semop
 	[__NR_semop - SYSCALL_TABLE_ID0] =                      {UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_SEMOP_E, PPME_SYSCALL_SEMOP_X},
@@ -423,6 +427,7 @@ const enum ppm_syscall_code g_syscall_code_routing_table[SYSCALL_TABLE_SIZE] = {
 	[__NR_adjtimex - SYSCALL_TABLE_ID0] = PPM_SC_ADJTIMEX,
 	[__NR_mprotect - SYSCALL_TABLE_ID0] = PPM_SC_MPROTECT,
 	[__NR_init_module - SYSCALL_TABLE_ID0] = PPM_SC_INIT_MODULE,
+	[__NR_finit_module - SYSCALL_TABLE_ID0] = PPM_SC_FINIT_MODULE,
 	[__NR_delete_module - SYSCALL_TABLE_ID0] = PPM_SC_DELETE_MODULE,
 	[__NR_quotactl - SYSCALL_TABLE_ID0] = PPM_SC_QUOTACTL,
 	[__NR_getpgid - SYSCALL_TABLE_ID0] = PPM_SC_GETPGID,
@@ -1204,6 +1209,9 @@ const enum ppm_syscall_code g_syscall_ia32_code_routing_table[SYSCALL_TABLE_SIZE
 	[__NR_ia32_adjtimex - SYSCALL_TABLE_ID0] = PPM_SC_ADJTIMEX,
 	[__NR_ia32_mprotect - SYSCALL_TABLE_ID0] = PPM_SC_MPROTECT,
 	[__NR_ia32_init_module - SYSCALL_TABLE_ID0] = PPM_SC_INIT_MODULE,
+#ifdef __NR_ia32_finit_module
+	[__NR_ia32_finit_module - SYSCALL_TABLE_ID0] = PPM_SC_FINIT_MODULE,
+#endif
 	[__NR_ia32_delete_module - SYSCALL_TABLE_ID0] = PPM_SC_DELETE_MODULE,
 	[__NR_ia32_quotactl - SYSCALL_TABLE_ID0] = PPM_SC_QUOTACTL,
 	[__NR_ia32_getpgid - SYSCALL_TABLE_ID0] = PPM_SC_GETPGID,
