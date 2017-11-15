@@ -161,7 +161,11 @@ SysdigService::SysdigService(bool &terminateFlag)
     syscallsMap["ppoll"] = 	PPME_SYSCALL_PPOLL_E;
     syscallsMap["mount"] = 	PPME_SYSCALL_MOUNT_E;
     syscallsMap["umount"] = 	PPME_SYSCALL_UMOUNT_E;
+    syscallsMap["semget"] = 	PPME_SYSCALL_SEMGET_E;
+    syscallsMap["access"] = 	PPME_SYSCALL_ACCESS_E;
     syscallsMap["chroot"] = 	PPME_SYSCALL_CHROOT_E;
+    syscallsMap["setsid"] = 	PPME_SYSCALL_SETSID_E;
+    syscallsMap["unshare"] = 	PPME_SYSCALL_UNSHARE_E;
     syscallsMap["init_module"] = PPME_SYSCALL_INIT_MODULE_E;
     syscallsMap["finit_module"] = PPME_SYSCALL_FINIT_MODULE_E;
 }
@@ -264,6 +268,10 @@ SysdigService::getSyscallIds(string syscall, std::vector<int>& ids) {
             ids.push_back(PPME_SYSCALL_EXECVE_15_X);
             ids.push_back(PPME_SYSCALL_EXECVE_16_E);
             ids.push_back(PPME_SYSCALL_EXECVE_16_X);
+            ids.push_back(PPME_SYSCALL_EXECVE_17_E);
+            ids.push_back(PPME_SYSCALL_EXECVE_17_X);
+            ids.push_back(PPME_SYSCALL_EXECVE_18_E);
+            ids.push_back(PPME_SYSCALL_EXECVE_18_X);
             break;
         case PPME_SYSCALL_CLONE_11_E:
             ids.push_back(PPME_SYSCALL_CLONE_11_E);
@@ -458,10 +466,14 @@ SysdigService::getSyscallIds(string syscall, std::vector<int>& ids) {
         case PPME_SYSCALL_MKDIR_E:
             ids.push_back(PPME_SYSCALL_MKDIR_E);
             ids.push_back(PPME_SYSCALL_MKDIR_X);
+            ids.push_back(PPME_SYSCALL_MKDIR_2_E);
+            ids.push_back(PPME_SYSCALL_MKDIR_2_X);
             break;
         case PPME_SYSCALL_RMDIR_E:
             ids.push_back(PPME_SYSCALL_RMDIR_E);
             ids.push_back(PPME_SYSCALL_RMDIR_X);
+            ids.push_back(PPME_SYSCALL_RMDIR_2_E);
+            ids.push_back(PPME_SYSCALL_RMDIR_2_X);
             break;
         case PPME_SYSCALL_OPENAT_E:
             ids.push_back(PPME_SYSCALL_OPENAT_E);
@@ -653,9 +665,25 @@ SysdigService::getSyscallIds(string syscall, std::vector<int>& ids) {
             ids.push_back(PPME_SYSCALL_UMOUNT_E);
             ids.push_back(PPME_SYSCALL_UMOUNT_X);
             break;
+        case PPME_SYSCALL_SEMGET_E:
+            ids.push_back(PPME_SYSCALL_SEMGET_E);
+            ids.push_back(PPME_SYSCALL_SEMGET_X);
+            break;
+        case PPME_SYSCALL_ACCESS_E:
+            ids.push_back(PPME_SYSCALL_ACCESS_E);
+            ids.push_back(PPME_SYSCALL_ACCESS_X);
+            break;
         case PPME_SYSCALL_CHROOT_E:
             ids.push_back(PPME_SYSCALL_CHROOT_E);
             ids.push_back(PPME_SYSCALL_CHROOT_X);
+            break;
+        case PPME_SYSCALL_SETSID_E:
+            ids.push_back(PPME_SYSCALL_SETSID_E);
+            ids.push_back(PPME_SYSCALL_SETSID_X);
+            break;
+        case PPME_SYSCALL_UNSHARE_E:
+            ids.push_back(PPME_SYSCALL_UNSHARE_E);
+            ids.push_back(PPME_SYSCALL_UNSHARE_X);
             break;
     }
 }
