@@ -2,3 +2,9 @@ https://access.cdn.redhat.com//content/origin/rpms/kernel-devel/3.10.0/514.28.1.
 https://access.cdn.redhat.com//content/origin/rpms/kernel/3.10.0/514.28.1.el7/fd431d51/kernel-3.10.0-514.28.1.el7.x86_64.rpm
 https://access.cdn.redhat.com//content/origin/rpms/kernel/3.10.0/514.28.2.el7/fd431d51/kernel-3.10.0-514.28.2.el7.x86_64.rpm
 https://access.cdn.redhat.com//content/origin/rpms/kernel-devel/3.10.0/514.28.2.el7/fd431d51/kernel-devel-3.10.0-514.28.2.el7.x86_64.rpm
+http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.76-1.el7.elrepo.x86_64.rpm
+http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-4.4.76-1.el7.elrepo.x86_64.rpm
+http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.77-1.el7.elrepo.x86_64.rpm
+http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-4.4.77-1.el7.elrepo.x86_64.rpm
+http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.78-1.el7.elrepo.x86_64.rpm
+http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-4.4.78-1.el7.elrepo.x86_64.rpm

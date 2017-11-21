@@ -43,6 +43,12 @@ http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-image-4.10.0-37-ge
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-headers-4.10.0-38_4.10.0-38.42~16.04.1_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-headers-4.10.0-38-generic_4.10.0-38.42~16.04.1_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-image-4.10.0-38-generic_4.10.0-38.42~16.04.1_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-headers-4.10.0-40_4.10.0-40.44~16.04.1_all.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-headers-4.10.0-40-generic_4.10.0-40.44~16.04.1_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-image-4.10.0-40-generic_4.10.0-40.44~16.04.1_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.11.0-1015_4.11.0-1015.15_all.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.11.0-1015-azure_4.11.0-1015.15_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-image-4.11.0-1015-azure_4.11.0-1015.15_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe-edge/linux-headers-4.11.0-13_4.11.0-13.19~16.04.1_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe-edge/linux-headers-4.11.0-13-generic_4.11.0-13.19~16.04.1_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe-edge/linux-image-4.11.0-13-generic_4.11.0-13.19~16.04.1_amd64.deb
@@ -61,6 +67,9 @@ http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gke/linux-image-4.4.0-10
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gke/linux-gke-headers-4.4.0-1009_4.4.0-1009.9_all.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gke/linux-headers-4.4.0-1009-gke_4.4.0-1009.9_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gke/linux-image-4.4.0-1009-gke_4.4.0-1009.9_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-101_4.4.0-101.124_all.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-101-generic_4.4.0-101.124_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-image-4.4.0-101-generic_4.4.0-101.124_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gke/linux-gke-headers-4.4.0-1010_4.4.0-1010.10_all.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gke/linux-headers-4.4.0-1010-gke_4.4.0-1010.10_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gke/linux-image-4.4.0-1010-gke_4.4.0-1010.10_amd64.deb
@@ -103,6 +112,9 @@ http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gke/linux-image-4.4.0-10
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gke/linux-gke-headers-4.4.0-1033_4.4.0-1033.33_all.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gke/linux-headers-4.4.0-1033-gke_4.4.0-1033.33_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gke/linux-image-4.4.0-1033-gke_4.4.0-1033.33_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gke/linux-gke-headers-4.4.0-1034_4.4.0-1034.34_all.deb
+http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gke/linux-headers-4.4.0-1034-gke_4.4.0-1034.34_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gke/linux-image-4.4.0-1034-gke_4.4.0-1034.34_amd64.deb
 http://mirrors.kernel.org/ubuntu/pool/main/l/linux/linux-headers-4.4.0-21_4.4.0-21.37_all.deb
 http://mirrors.kernel.org/ubuntu/pool/main/l/linux/linux-headers-4.4.0-21-generic_4.4.0-21.37_amd64.deb
 http://mirrors.kernel.org/ubuntu/pool/main/l/linux/linux-image-4.4.0-21-generic_4.4.0-21.37_amd64.deb
