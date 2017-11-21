@@ -184,6 +184,16 @@ def print_ubuntu_gke_packages(pkg, kernel_rev):
     # The image package
     print_ubuntu_deb_urls(version, "amd64", pkg.replace('headers', 'image'))
 
+def print_ubuntu_aws_packages(pkg, kernel_rev):
+    # The headers-all package
+    print_ubuntu_deb_urls(version, "all", "linux-aws-headers-" + kernel_rev)
+
+    # The headers-generic package
+    print_ubuntu_deb_urls(version, "amd64", pkg)
+
+    # The image package
+    print_ubuntu_deb_urls(version, "amd64", pkg.replace('headers', 'image'))
+
 def print_ubuntu_azure_packages(pkg, kernel_rev):
     # The headers-all package
     print_ubuntu_deb_urls(version, "all", "linux-azure-headers-" + kernel_rev)
@@ -207,11 +217,15 @@ if distro == "Ubuntu":
         "trusty-updates"
     ]
 
-    pattern = re.compile(r"linux-headers-([0-9\.-]+)$")
-    gke_pattern = re.compile(r"linux-headers-([0-9\.-]+)-gke$")
+    std_pattern = re.compile(r"linux-headers-([0-9\.-]+)$")
+    aws_pattern = re.compile(r"linux-headers-([0-9\.-]+)-aws$")
     azure_pattern = re.compile(r"linux-headers-([0-9\.-]+)-azure$")
+    gke_pattern = re.compile(r"linux-headers-([0-9\.-]+)-gke$")
 
-    kernels_handled = dict()
+    std_kernels_handled = dict()
+    aws_kernels_handled = dict()
+    azure_kernels_handled = dict()
+    gke_kernels_handled = dict()
 
     for version in versions:
         try:
@@ -221,9 +235,10 @@ if distro == "Ubuntu":
             for pkg in data.split('\n'):
                 pkg = pkg.split(' ')[0]
                 # sys.stderr.write("Considering pkg: "+pkg+"\n")
-                get_ubuntu_kernels(pkg, pattern, kernels_handled, print_ubuntu_standard_packages)
-                get_ubuntu_kernels(pkg, gke_pattern, kernels_handled, print_ubuntu_gke_packages)
-                get_ubuntu_kernels(pkg, azure_pattern, kernels_handled, print_ubuntu_azure_packages)
+                get_ubuntu_kernels(pkg, std_pattern, std_kernels_handled, print_ubuntu_standard_packages)
+                get_ubuntu_kernels(pkg, aws_pattern, aws_kernels_handled, print_ubuntu_aws_packages)
+                get_ubuntu_kernels(pkg, azure_pattern, azure_kernels_handled, print_ubuntu_azure_packages)
+                get_ubuntu_kernels(pkg, gke_pattern, gke_kernels_handled, print_ubuntu_gke_packages)
         except Exception as e:
             sys.stderr.write("ERROR: "+str(e)+"\n")
             traceback.print_exc()
