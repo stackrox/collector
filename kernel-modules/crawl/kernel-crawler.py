@@ -78,14 +78,6 @@ repos = {
             "page_pattern" : "//body//table/tr/td/a[regex:test(@href, '^kernel-lt-(devel-)?[0-9].*\.rpm$')]/@href"
         },
         {
-            "root" : "http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/",
-            "discovery_pattern" : "//body//table/tr/td/a[regex:test(@href, '^el7.*$')]/@href",
-            "subdirs" : [
-                "x86_64/RPMS/"
-            ],
-            "page_pattern" : "//body//table/tr/td/a[regex:test(@href, '^kernel-lt-(devel-)?[0-9].*\.rpm$')]/@href"
-        },
-        {
             "root" : "http://ftp.utexas.edu/elrepo/archive/kernel/",
             "discovery_pattern" : "//body//table/tr/td/a[regex:test(@href, '^el7.*$')]/@href",
             "subdirs" : [
