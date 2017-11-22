@@ -25,6 +25,7 @@ import traceback
 # hunting packages. When adding repos or so be sure to respect the same data
 # structure
 #
+centos_excludes = ["3.10.0-123", "3.10.0-229"]
 repos = {
     "CentOS" : [
         {
@@ -47,7 +48,10 @@ repos = {
             # Finally, we need to inspect every page for packages we need.
             # Again, this is a XPath + Regex query so use the regex if you want
             # to limit the number of packages reported.
-            "page_pattern" : "/html/body//a[regex:test(@href, '^kernel-(devel-)?[0-9].*\.rpm$')]/@href"
+            "page_pattern" : "/html/body//a[regex:test(@href, '^kernel-(devel-)?[0-9].*\.rpm$')]/@href",
+
+            # Exclude old versions we choose not to support.
+            "exclude_patterns": centos_excludes
         },
 
         {
@@ -57,7 +61,8 @@ repos = {
                 "os/x86_64/Packages/",
                 "updates/x86_64/Packages/"
             ],
-            "page_pattern" : "//body//table/tr/td/a[regex:test(@href, '^kernel-(devel-)?[0-9].*\.rpm$')]/@href"
+            "page_pattern" : "//body//table/tr/td/a[regex:test(@href, '^kernel-(devel-)?[0-9].*\.rpm$')]/@href",
+            "exclude_patterns": centos_excludes
         },
 
         {
@@ -67,7 +72,8 @@ repos = {
                 "os/x86_64/Packages/",
                 "updates/x86_64/Packages/"
             ],
-            "page_pattern" : "//body//table/tr/td/a[regex:test(@href, '^kernel-(devel-)?[0-9].*\.rpm$')]/@href"
+            "page_pattern" : "//body//table/tr/td/a[regex:test(@href, '^kernel-(devel-)?[0-9].*\.rpm$')]/@href",
+            "exclude_patterns": centos_excludes
         },
         {
             "root" : "http://ftp.utexas.edu/elrepo/kernel/",
@@ -145,6 +151,9 @@ def get_ubuntu_kernels(pkg, pattern, kernels_handled, get_fn):
         if len(kernel_parts) >= 2:
             if int(kernel_parts[0]) == 4 and int(kernel_parts[1]) > 11:
                 sys.stderr.write("Ignoring kernel >4.11: ("+kernel_rev+") in package "+pkg+"\n")
+                return
+            if int(kernel_parts[0]) < 4 or (int(kernel_parts[0]) == 4 and int(kernel_parts[1]) < 4):
+                sys.stderr.write("Ignoring kernel before 4.4: ("+kernel_rev+") in package "+pkg+"\n")
                 return
 
         kernel_rev_abi = kernel_rev.split("_")[0]
