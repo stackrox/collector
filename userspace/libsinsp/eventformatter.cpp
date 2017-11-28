@@ -415,7 +415,7 @@ SignalType sinsp_evt_formatter::to_sparse_string(sinsp_evt* evt, char* buffer, u
 				continue;
 			}
 
-			if (buffer[0] != 'N')
+			if (buffer[0] != 'N' && signalType == SIGNAL_TYPE_DEFAULT)
 			{
 				if (!strcmp(field, "evt.category") && !strcmp(str, "net"))
 				{
