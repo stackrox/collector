@@ -294,6 +294,10 @@ const struct syscall_evt_pair g_syscall_table[SYSCALL_TABLE_SIZE] = {
         [__NR_finit_module - SYSCALL_TABLE_ID0] =                      {UF_USED, PPME_SYSCALL_FINIT_MODULE_E, PPME_SYSCALL_FINIT_MODULE_X},
 #endif
 
+#ifdef __NR_delete_module
+        [__NR_delete_module - SYSCALL_TABLE_ID0] =                      {UF_USED, PPME_SYSCALL_DELETE_MODULE_E, PPME_SYSCALL_DELETE_MODULE_X},
+#endif
+
 	[__NR_flock - SYSCALL_TABLE_ID0] =			{UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_FLOCK_E, PPME_SYSCALL_FLOCK_X},
 #ifdef __NR_semop
 	[__NR_semop - SYSCALL_TABLE_ID0] =                      {UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_SEMOP_E, PPME_SYSCALL_SEMOP_X},

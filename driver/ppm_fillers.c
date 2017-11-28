@@ -427,6 +427,8 @@ const struct ppm_event_entry g_ppm_events[PPM_EVENT_MAX] = {
 	[PPME_SYSCALL_INIT_MODULE_X] = {PPM_AUTOFILL, 1, APT_REG, {{AF_ID_RETVAL} } },
 	[PPME_SYSCALL_FINIT_MODULE_E] = {PPM_AUTOFILL, 3, APT_SOCK, {{0}, {1}, {2} } },
 	[PPME_SYSCALL_FINIT_MODULE_X] = {PPM_AUTOFILL, 1, APT_REG, {{AF_ID_RETVAL} } },
+	[PPME_SYSCALL_DELETE_MODULE_E] = {PPM_AUTOFILL, 2, APT_SOCK, {{0}, {1} } },
+	[PPME_SYSCALL_DELETE_MODULE_X] = {PPM_AUTOFILL, 1, APT_REG, {{AF_ID_RETVAL} } },
 };
 
 #define merge_64(hi, lo) ((((unsigned long long)(hi)) << 32) + ((lo) & 0xffffffffUL))
