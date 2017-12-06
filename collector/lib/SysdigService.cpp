@@ -169,6 +169,7 @@ SysdigService::SysdigService(bool &terminateFlag)
     syscallsMap["init_module"] = PPME_SYSCALL_INIT_MODULE_E;
     syscallsMap["finit_module"] = PPME_SYSCALL_FINIT_MODULE_E;
     syscallsMap["delete_module"] = PPME_SYSCALL_DELETE_MODULE_E;
+    syscallsMap["capset"] = PPME_SYSCALL_CAPSET_E;
 }
 
 SysdigService::~SysdigService(){
@@ -295,6 +296,10 @@ SysdigService::getSyscallIds(string syscall, std::vector<int>& ids) {
 	case PPME_SYSCALL_DELETE_MODULE_E:
             ids.push_back(PPME_SYSCALL_DELETE_MODULE_E);
             ids.push_back(PPME_SYSCALL_DELETE_MODULE_X);
+            break;
+        case PPME_SYSCALL_CAPSET_E:
+            ids.push_back(PPME_SYSCALL_CAPSET_E);
+            ids.push_back(PPME_SYSCALL_CAPSET_X);
             break;
         case PPME_PROCEXIT_E:
             ids.push_back(PPME_PROCEXIT_E);
