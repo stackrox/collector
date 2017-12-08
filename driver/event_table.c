@@ -346,6 +346,7 @@ const struct ppm_event_info g_event_info[PPM_EVENT_MAX] = {
 	/* PPME_SYSCALL_FINIT_MODULE_E */{"finit_module", EC_PROCESS, EF_MODIFIES_STATE, 3, {{"fd", PT_FD, PF_DEC}, {"param_values", PT_CHARBUF, PF_NA}, {"flags", PT_FLAGS32, PF_HEX} }},
 	/* PPME_SYSCALL_FINIT_MODULE_X */{"finit_module", EC_PROCESS, EF_MODIFIES_STATE, 1, {{"res", PT_ERRNO, PF_DEC} } },
 	/* PPME_SYSCALL_DELETE_MODULE_E */{"delete_module", EC_PROCESS, EF_MODIFIES_STATE, 2, {{"name", PT_CHARBUF, PF_NA}, {"flags", PT_FLAGS32, PF_HEX} }},
-	/* PPME_SYSCALL_DELETE_MODULE_X */{"delete_module", EC_PROCESS, EF_MODIFIES_STATE, 1, {{"res", PT_ERRNO, PF_DEC} } }
-
+	/* PPME_SYSCALL_DELETE_MODULE_X */{"delete_module", EC_PROCESS, EF_MODIFIES_STATE, 1, {{"res", PT_ERRNO, PF_DEC} } },
+	/* PPME_SYSCALL_CAPSET_E */{"capset", EC_PROCESS, EF_MODIFIES_STATE, 2, {{"hdrp", PT_UINT64, PF_HEX}, {"datap", PT_UINT64, PF_HEX} }},
+        /* PPME_SYSCALL_CAPSET_X */{"capset", EC_PROCESS, EF_MODIFIES_STATE, 1, {{"res", PT_ERRNO, PF_DEC} } }
 };
