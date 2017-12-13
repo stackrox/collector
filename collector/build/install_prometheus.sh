@@ -3,7 +3,7 @@ set -eux
 
 git clone https://github.com/google/protobuf.git
 cd protobuf
-git checkout v3.2.0
+git checkout v3.5.0
 ./autogen.sh
 sh ./configure
 make -j 6
