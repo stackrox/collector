@@ -170,6 +170,13 @@ SysdigService::SysdigService(bool &terminateFlag)
     syscallsMap["finit_module"] = PPME_SYSCALL_FINIT_MODULE_E;
     syscallsMap["delete_module"] = PPME_SYSCALL_DELETE_MODULE_E;
     syscallsMap["capset"] = PPME_SYSCALL_CAPSET_E;
+    syscallsMap["chown"] = PPME_SYSCALL_CHOWN_E;
+    syscallsMap["lchown"] = PPME_SYSCALL_LCHOWN_E;
+    syscallsMap["fchown"] = PPME_SYSCALL_FCHOWN_E;
+    syscallsMap["fchownat"] = PPME_SYSCALL_FCHOWNAT_E;
+    syscallsMap["chmod"] = PPME_SYSCALL_CHMOD_E;
+    syscallsMap["fchmod"] = PPME_SYSCALL_FCHMOD_E;
+    syscallsMap["fchmodat"] = PPME_SYSCALL_FCHMODAT_E;
 }
 
 SysdigService::~SysdigService(){
@@ -694,6 +701,34 @@ SysdigService::getSyscallIds(string syscall, std::vector<int>& ids) {
         case PPME_SYSCALL_UNSHARE_E:
             ids.push_back(PPME_SYSCALL_UNSHARE_E);
             ids.push_back(PPME_SYSCALL_UNSHARE_X);
+            break;
+        case PPME_SYSCALL_CHOWN_E:
+            ids.push_back(PPME_SYSCALL_CHOWN_E);
+            ids.push_back(PPME_SYSCALL_CHOWN_X);
+            break;
+        case PPME_SYSCALL_LCHOWN_E:
+            ids.push_back(PPME_SYSCALL_LCHOWN_E);
+            ids.push_back(PPME_SYSCALL_LCHOWN_X);
+            break;
+        case PPME_SYSCALL_FCHOWN_E:
+            ids.push_back(PPME_SYSCALL_FCHOWN_E);
+            ids.push_back(PPME_SYSCALL_FCHOWN_X);
+            break;
+        case PPME_SYSCALL_FCHOWNAT_E:
+            ids.push_back(PPME_SYSCALL_FCHOWNAT_E);
+            ids.push_back(PPME_SYSCALL_FCHOWNAT_X);
+            break;
+        case PPME_SYSCALL_CHMOD_E:
+            ids.push_back(PPME_SYSCALL_CHMOD_E);
+            ids.push_back(PPME_SYSCALL_CHMOD_X);
+            break;
+        case PPME_SYSCALL_FCHMOD_E:
+            ids.push_back(PPME_SYSCALL_FCHMOD_E);
+            ids.push_back(PPME_SYSCALL_FCHMOD_X);
+            break;
+        case PPME_SYSCALL_FCHMODAT_E:
+            ids.push_back(PPME_SYSCALL_FCHMODAT_E);
+            ids.push_back(PPME_SYSCALL_FCHMODAT_X);
             break;
     }
 }
