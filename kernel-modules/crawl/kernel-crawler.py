@@ -26,6 +26,7 @@ import traceback
 # structure
 #
 centos_excludes = ["3.10.0-123", "3.10.0-229"]
+ubuntu_excludes = ["-4.13.0-"] # TODO(cg): Compilation fails in netlink on 4.13.
 repos = {
     "CentOS" : [
         {
@@ -76,14 +77,10 @@ repos = {
             "exclude_patterns": centos_excludes
         },
         {
-            "root" : "http://ftp.utexas.edu/elrepo/kernel/",
-            "discovery_pattern" : "//body//table/tr/td/a[regex:test(@href, '^el7.*$')]/@href",
-            "subdirs" : [
-                "x86_64/RPMS/"
-            ],
-            "page_pattern" : "//body//table/tr/td/a[regex:test(@href, '^kernel-lt-(devel-)?[0-9].*\.rpm$')]/@href"
-        },
-        {
+            # All kernels released to the main ELRepo repo also end up in the
+            # archive, so it's OK just to crawl the archive.
+            # However, archives do eventually drop packages; track those in
+            # centos-uncrawled.txt.
             "root" : "http://ftp.utexas.edu/elrepo/archive/kernel/",
             "discovery_pattern" : "//body//table/tr/td/a[regex:test(@href, '^el7.*$')]/@href",
             "subdirs" : [
@@ -92,252 +89,177 @@ repos = {
             "page_pattern" : "//body//table/tr/td/a[regex:test(@href, '^kernel-lt-(devel-)?[0-9].*\.rpm$')]/@href"
         }
     ],
+    "Ubuntu": [
+        # Generic Linux AMD64 image and headers, distributed from main
+        {
+            "root" : "http://security.ubuntu.com/ubuntu/pool/main/l/",
+            "discovery_pattern" : "/html/body//a[@href = 'linux/']/@href",
+            "subdirs" : [""],
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-(image|headers)-[4-9].*-generic.*amd64.deb$')]/@href",
+            "exclude_patterns": ubuntu_excludes
+        },
+
+        # Generic Linux "all" headers, distributed from main
+        {
+            "root" : "http://security.ubuntu.com/ubuntu/pool/main/l/",
+            "discovery_pattern" : "/html/body//a[@href = 'linux/']/@href",
+            "subdirs" : [""],
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-headers-[4-9].*_all.deb$')]/@href",
+            "exclude_patterns": ubuntu_excludes
+        }
+    ],
+    "Ubuntu-HWE": [
+        # linux-hwe AMD64 image and headers, distributed from main
+        {
+            "root" : "http://security.ubuntu.com/ubuntu/pool/main/l/",
+            "discovery_pattern" : "/html/body//a[@href = 'linux-hwe/']/@href",
+            "subdirs" : [""],
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-(image|headers)-[4-9].*-generic.*amd64.deb$')]/@href",
+            "exclude_patterns": ubuntu_excludes
+        },
+
+        # linux-hwe "all" headers, distributed from main
+        {
+            "root" : "http://security.ubuntu.com/ubuntu/pool/main/l/",
+            "discovery_pattern" : "/html/body//a[@href = 'linux-hwe/']/@href",
+            "subdirs" : [""],
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-headers-[4-9].*_all.deb$')]/@href",
+            "exclude_patterns": ubuntu_excludes
+        },
+
+        # linux-hwe-edge AMD64 image and headers, distributed from main
+        {
+            "root" : "http://security.ubuntu.com/ubuntu/pool/main/l/",
+            "discovery_pattern" : "/html/body//a[@href = 'linux-hwe-edge/']/@href",
+            "subdirs" : [""],
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-(image|headers)-[4-9].*-generic.*amd64.deb$')]/@href",
+            "exclude_patterns": ubuntu_excludes
+        },
+
+        # linux-hwe-edge "all" headers, distributed from main
+        {
+            "root" : "http://security.ubuntu.com/ubuntu/pool/main/l/",
+            "discovery_pattern" : "/html/body//a[@href = 'linux-hwe-edge/']/@href",
+            "subdirs" : [""],
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-headers-[4-9].*_all.deb$')]/@href",
+            "exclude_patterns": ubuntu_excludes
+        }
+    ],
+    "Ubuntu-Azure": [
+        # linux-azure AMD64 image and headers, distributed from main
+        {
+            "root" : "http://security.ubuntu.com/ubuntu/pool/main/l/",
+            "discovery_pattern" : "/html/body//a[@href = 'linux-azure/']/@href",
+            "subdirs" : [""],
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-(image|headers)-[4-9].*-azure.*amd64.deb$')]/@href",
+            "exclude_patterns": ubuntu_excludes
+        },
+
+        # linux-azure "all" headers, distributed from main
+        {
+            "root" : "http://security.ubuntu.com/ubuntu/pool/main/l/",
+            "discovery_pattern" : "/html/body//a[@href = 'linux-azure/']/@href",
+            "subdirs" : [""],
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-azure-headers-[4-9].*_all.deb$')]/@href",
+            "exclude_patterns": ubuntu_excludes
+        },
+    ],
+    "Ubuntu-AWS": [
+        # linux-aws AMD64 image and headers, distributed from universe (older versions only)
+        {
+            "root" : "http://security.ubuntu.com/ubuntu/pool/universe/l/",
+            "discovery_pattern" : "/html/body//a[@href = 'linux-aws/']/@href",
+            "subdirs" : [""],
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-(image|headers)-[4-9].*-aws.*amd64.deb$')]/@href",
+            "exclude_patterns": ubuntu_excludes
+        },
+
+        # linux-aws "all" headers, distributed from universe (older versions only)
+        {
+            "root" : "http://security.ubuntu.com/ubuntu/pool/universe/l/",
+            "discovery_pattern" : "/html/body//a[@href = 'linux-aws/']/@href",
+            "subdirs" : [""],
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-aws-headers-[4-9].*_all.deb$')]/@href",
+            "exclude_patterns": ubuntu_excludes
+        },
+
+        # linux-aws AMD64 image and headers, distributed from main (newer versions only)
+        {
+            "root" : "http://security.ubuntu.com/ubuntu/pool/main/l/",
+            "discovery_pattern" : "/html/body//a[@href = 'linux-aws/']/@href",
+            "subdirs" : [""],
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-(image|headers)-[4-9].*-aws.*amd64.deb$')]/@href",
+            "exclude_patterns": ubuntu_excludes
+        },
+
+        # linux-aws "all" headers, distributed from main (newer versions only)
+        {
+            "root" : "http://security.ubuntu.com/ubuntu/pool/main/l/",
+            "discovery_pattern" : "/html/body//a[@href = 'linux-aws/']/@href",
+            "subdirs" : [""],
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-aws-headers-[4-9].*_all.deb$')]/@href",
+            "exclude_patterns": ubuntu_excludes
+        }
+    ],
+    "Ubuntu-GKE": [
+        # linux-gke AMD64 image and headers, distributed from universe
+        {
+            "root" : "http://security.ubuntu.com/ubuntu/pool/universe/l/",
+            "discovery_pattern" : "/html/body//a[@href = 'linux-gke/']/@href",
+            "subdirs" : [""],
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-(image|headers)-[4-9].*-gke.*amd64.deb$')]/@href",
+            "exclude_patterns": ubuntu_excludes
+        },
+
+        # linux-gke "all" headers, distributed from universe
+        {
+            "root" : "http://security.ubuntu.com/ubuntu/pool/universe/l/",
+            "discovery_pattern" : "/html/body//a[@href = 'linux-gke/']/@href",
+            "subdirs" : [""],
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-gke-headers-[4-9].*_all.deb$')]/@href",
+            "exclude_patterns": ubuntu_excludes
+        },
+    ]
 }
 
-#
-# In our design you are not supposed to modify the code. The whole script is
-# created so that you just have to add entry to the `repos` array and new
-# links will be found automagically without needing to write any single line of
-# code.
-#
 URL_TIMEOUT=30
 
-if len(sys.argv) < 2 or not (sys.argv[1] in repos or sys.argv[1] in ["Ubuntu", "Debian"]):
+if len(sys.argv) < 2 or not (sys.argv[1] in repos):
     sys.stderr.write("Usage: " + sys.argv[0] + " <distro>\n")
     sys.exit(1)
 
 distro = sys.argv[1]
 
-def get_gzipped_data(url):
-    response = urllib2.urlopen(url, timeout=URL_TIMEOUT)
-    if response.info().get('Content-Encoding') == 'x-gzip' or response.info().get('Content-Encoding') == 'gzip':
-        buf = StringIO(response.read())
-        f = gzip.GzipFile(fileobj=buf)
-        data = f.read()
-    else:
-        data = response.read()
-    return data
-
-def print_ubuntu_deb_urls(version, arch, pkg):
-    download_url = "https://packages.ubuntu.com/%s/%s/%s/download" % (version, arch, pkg)
-    sys.stderr.write("Looking for download URLs for pkg: "+pkg+" at "+download_url+"\n")
-    download_page = requests.get(download_url)
-    html_pattern = "/html/body//a[regex:test(@href, '^(http://mirrors.kernel.org/ubuntu|http://security.ubuntu.com)')]/@href"
-    pkg_urls = html.fromstring(download_page.text).xpath(html_pattern, namespaces = {"regex": "http://exslt.org/regular-expressions"})
-    if len(pkg_urls) == 0:
-        sys.stderr.write("WARN: Zero packages returned for version " + version + " arch " + arch + " pkg " + pkg + "\n")
-    for url in pkg_urls:
-        sys.stderr.write("pkg: "+pkg+" got URL: "+url+"\n")
-        print url
-
-def get_debian_deb_urls(version, arch, pkg):
-    download_url = "https://packages.debian.org/%s/%s/%s/download" % (version, arch, pkg)
-    sys.stderr.write("Looking for download URLs for pkg: "+pkg+" at "+download_url+"\n")
-    download_page = requests.get(download_url)
-    html_pattern = "/html/body//a[regex:test(@href, '^(http://(http.us|security).debian.org/debian)')]/@href"
-    pkg_urls = html.fromstring(download_page.text).xpath(html_pattern, namespaces = {"regex": "http://exslt.org/regular-expressions"})
-    if len(pkg_urls) == 0:
-        sys.stderr.write("WARN: Zero packages returned for version " + version + " arch " + arch + " pkg " + pkg + "\n")
-    for url in pkg_urls:
-        sys.stderr.write("pkg: "+pkg+" got URL: "+url+"\n")
-    return pkg_urls
-
-def get_ubuntu_kernels(pkg, pattern, kernels_handled, get_fn):
-    match = pattern.match(pkg)
-    if match:
-        kernel_rev = match.group(1)
-
-        kernel_parts = kernel_rev.split(".")
-        if len(kernel_parts) >= 2:
-            if int(kernel_parts[0]) == 4 and int(kernel_parts[1]) > 11:
-                sys.stderr.write("Ignoring kernel >4.11: ("+kernel_rev+") in package "+pkg+"\n")
-                return
-            if int(kernel_parts[0]) < 4 or (int(kernel_parts[0]) == 4 and int(kernel_parts[1]) < 4):
-                sys.stderr.write("Ignoring kernel before 4.4: ("+kernel_rev+") in package "+pkg+"\n")
-                return
-
-        kernel_rev_abi = kernel_rev.split("_")[0]
-        if kernels_handled.get(kernel_rev_abi):
-            sys.stderr.write("Ignoring kernel release "+kernel_rev_abi+" that is already handled\n")
-            return
-
-        kernels_handled[kernel_rev_abi] = True
-
-        get_fn(pkg, kernel_rev)
-
-def print_ubuntu_standard_packages(pkg, kernel_rev):
-    # The headers-all package
-    print_ubuntu_deb_urls(version, "all", pkg)
-
-    # The headers-generic package
-    print_ubuntu_deb_urls(version, "amd64", pkg+"-generic")
-
-    # The image package
-    print_ubuntu_deb_urls(version, "amd64", pkg.replace('headers', 'image')+"-generic")
-
-def print_ubuntu_gke_packages(pkg, kernel_rev):
-    # The headers-all package
-    print_ubuntu_deb_urls(version, "all", "linux-gke-headers-" + kernel_rev)
-
-    # The headers-generic package
-    print_ubuntu_deb_urls(version, "amd64", pkg)
-
-    # The image package
-    print_ubuntu_deb_urls(version, "amd64", pkg.replace('headers', 'image'))
-
-def print_ubuntu_aws_packages(pkg, kernel_rev):
-    # The headers-all package
-    print_ubuntu_deb_urls(version, "all", "linux-aws-headers-" + kernel_rev)
-
-    # The headers-generic package
-    print_ubuntu_deb_urls(version, "amd64", pkg)
-
-    # The image package
-    print_ubuntu_deb_urls(version, "amd64", pkg.replace('headers', 'image'))
-
-def print_ubuntu_azure_packages(pkg, kernel_rev):
-    # The headers-all package
-    print_ubuntu_deb_urls(version, "all", "linux-azure-headers-" + kernel_rev)
-
-    # The headers-generic package
-    print_ubuntu_deb_urls(version, "amd64", pkg)
-
-    # The image package
-    print_ubuntu_deb_urls(version, "amd64", pkg.replace('headers', 'image'))
-
-if distro == "Ubuntu":
-    # Ubuntu's package mirrors have packages from a large number of Ubuntu
-    # versions. Since we only want to build kernel modules for versions we
-    # have to support, we have to be a little more judicious. We do that by
-    # checking the packages lists for the supported versions and then
-    # getting the relevant .deb download URLs.
-    versions = [
-        "xenial",
-        "xenial-updates",
-        "trusty",
-        "trusty-updates"
-    ]
-
-    std_pattern = re.compile(r"linux-headers-([0-9\.-]+)$")
-    aws_pattern = re.compile(r"linux-headers-([0-9\.-]+)-aws$")
-    azure_pattern = re.compile(r"linux-headers-([0-9\.-]+)-azure$")
-    gke_pattern = re.compile(r"linux-headers-([0-9\.-]+)-gke$")
-
-    std_kernels_handled = dict()
-    aws_kernels_handled = dict()
-    azure_kernels_handled = dict()
-    gke_kernels_handled = dict()
-
-    for version in versions:
-        try:
-            sys.stderr.write("** Processing packages for Ubuntu version: "+version+"\n")
-            pkg_url = "https://packages.ubuntu.com/%s/allpackages?format=txt.gz" % version
-            data = get_gzipped_data(pkg_url)
-            for pkg in data.split('\n'):
-                pkg = pkg.split(' ')[0]
-                # sys.stderr.write("Considering pkg: "+pkg+"\n")
-                get_ubuntu_kernels(pkg, std_pattern, std_kernels_handled, print_ubuntu_standard_packages)
-                get_ubuntu_kernels(pkg, aws_pattern, aws_kernels_handled, print_ubuntu_aws_packages)
-                get_ubuntu_kernels(pkg, azure_pattern, azure_kernels_handled, print_ubuntu_azure_packages)
-                get_ubuntu_kernels(pkg, gke_pattern, gke_kernels_handled, print_ubuntu_gke_packages)
-        except Exception as e:
-            sys.stderr.write("ERROR: "+str(e)+"\n")
-            traceback.print_exc()
-            sys.exit(1)
-
-elif distro == "Debian":
-    # Debian's package mirrors have packages from a large number of Debian
-    # versions. Since we only want to build kernel modules for versions we
-    # have to support, we have to be a little more judicious. We do that by
-    # checking the packages lists for the supported versions and then
-    # getting the relevant .deb download URLs.
-    versions = [
-        "jessie",
-        "jessie-updates"
-    ]
-
-    pattern = re.compile(r"linux-headers-([0-9\.-]+)-amd64$")
-    kbuild_pattern = re.compile(r"linux-kbuild-([0-9\.-]+)$")
-
-    kbuilds = set()
-    kernels = set()
-
-    for version in versions:
-        try:
-            sys.stderr.write("** Processing packages for Debian version: "+version+"\n")
-            pkg_url = "https://packages.debian.org/%s/allpackages?format=txt.gz" % version
-            data = get_gzipped_data(pkg_url)
-            for pkg in data.split('\n'):
-                pkg = pkg.split(' ')[0]
-                # sys.stderr.write("Considering pkg: "+pkg+"\n")
-
-                match = kbuild_pattern.match(pkg)
-                if match:
-                    kbuilds.update(get_debian_deb_urls(version, "amd64", pkg))
-                    continue
-
-                match = pattern.match(pkg)
-                if match:
-                    kernel_rev = match.group(1)
-
-                    kernel_parts = kernel_rev.split(".")
-                    if len(kernel_parts) >= 2:
-                        if int(kernel_parts[0]) == 4 and int(kernel_parts[1]) > 11:
-                            sys.stderr.write("Ignoring kernel >4.11: ("+kernel_rev+") in package "+pkg+"\n")
+#
+# Navigate the `repos` tree and look for packages we need that match the
+# patterns given.
+#
+urls = set()
+for repo in repos[distro]:
+    try:
+        root = urllib2.urlopen(repo["root"],timeout=URL_TIMEOUT).read()
+        versions = html.fromstring(root).xpath(repo["discovery_pattern"], namespaces = {"regex": "http://exslt.org/regular-expressions"})
+        for version in versions:
+            sys.stderr.write("Considering version "+version+"\n")
+            for subdir in repo["subdirs"]:
+                try:
+                    sys.stderr.write("Considering version " + version + " subdir " + subdir + "\n")
+                    source = repo["root"] + version + subdir
+                    page = urllib2.urlopen(source,timeout=URL_TIMEOUT).read()
+                    rpms = html.fromstring(page).xpath(repo["page_pattern"], namespaces = {"regex": "http://exslt.org/regular-expressions"})
+                    if len(rpms) == 0:
+                        sys.stderr.write("WARN: Zero packages returned for version " + version + " subdir " + subdir + "\n")
+                    for rpm in rpms:
+                        sys.stderr.write("Considering package " + rpm + "\n")
+                        if "exclude_patterns" in repo and any(x in rpm for x in repo["exclude_patterns"]):
                             continue
-
-                    # The headers-amd64 package
-                    kernels.update(get_debian_deb_urls(version, "amd64", pkg))
-
-                    # The headers-common package
-                    kernels.update(get_debian_deb_urls(version, "amd64", pkg.replace('-amd64', '-common')))
-
-                    # The image package
-                    kernels.update(get_debian_deb_urls(version, "amd64", pkg.replace('headers', 'image')))
-        except Exception as e:
-            sys.stderr.write("ERROR: "+str(e)+"\n")
-            traceback.print_exc()
-            sys.exit(1)
-
-        # The Debian build requires that kbuild packages be present
-        # before the other packages for a given kernel, otherwise
-        # the build is skipped.
-        for kbuild in kbuilds:
-            print kbuild
-        for kernel in kernels:
-            print kernel
-
-else:
-    #
-    # Navigate the `repos` tree and look for packages we need that match the
-    # patterns given.
-    #
-    urls = set()
-    for repo in repos[distro]:
-        try:
-            root = urllib2.urlopen(repo["root"],timeout=URL_TIMEOUT).read()
-            versions = html.fromstring(root).xpath(repo["discovery_pattern"], namespaces = {"regex": "http://exslt.org/regular-expressions"})
-            for version in versions:
-                sys.stderr.write("Considering version "+version+"\n")
-                for subdir in repo["subdirs"]:
-                    try:
-                        sys.stderr.write("Considering version " + version + " subdir " + subdir + "\n")
-                        source = repo["root"] + version + subdir
-                        page = urllib2.urlopen(source,timeout=URL_TIMEOUT).read()
-                        rpms = html.fromstring(page).xpath(repo["page_pattern"], namespaces = {"regex": "http://exslt.org/regular-expressions"})
-                        if len(rpms) == 0:
-                            sys.stderr.write("WARN: Zero packages returned for version " + version + " subdir " + subdir + "\n")
-                        for rpm in rpms:
-                            sys.stderr.write("Considering package " + rpm + "\n")
-                            if "exclude_patterns" in repo and any(x in rpm for x in repo["exclude_patterns"]):
-                                continue
-                            else:
-                                sys.stderr.write("Adding package " + rpm + "\n")
-                                print source + str(urllib2.unquote(rpm))
-                    except urllib2.HTTPError as e:
-                        if e.code == 404:
-                            sys.stderr.write("WARN: "+str(e)+"\n")
-        except Exception as e:
-            sys.stderr.write("ERROR: "+str(type(e))+str(e)+"\n")
-            traceback.print_exc()
-            sys.exit(1)
+                        else:
+                            sys.stderr.write("Adding package " + rpm + "\n")
+                            print source + str(urllib2.unquote(rpm))
+                except urllib2.HTTPError as e:
+                    if e.code == 404:
+                        sys.stderr.write("WARN: "+str(e)+"\n")
+    except Exception as e:
+        sys.stderr.write("ERROR: "+str(type(e))+str(e)+"\n")
+        traceback.print_exc()
+        sys.exit(1)

@@ -22,11 +22,12 @@ build-crawl-container: crawl/Dockerfile crawl/kernel-crawler.py
 
 .PHONY: crawl
 crawl: build-crawl-container
-	docker run -i kernel-crawler CentOS > supported-kernels/centos_unsorted.txt
-	cat supported-kernels/centos_unsorted.txt | rev | sort | rev > supported-kernels/centos.txt
-	rm supported-kernels/centos_unsorted.txt
-
-	docker run -i kernel-crawler Ubuntu > supported-kernels/ubuntu.txt
+	docker run -i kernel-crawler CentOS > supported-kernels/centos.txt
+	docker run -i kernel-crawler Ubuntu > supported-kernels/ubuntu-standard.txt
+	docker run -i kernel-crawler Ubuntu-HWE > supported-kernels/ubuntu-hwe.txt
+	docker run -i kernel-crawler Ubuntu-AWS > supported-kernels/ubuntu-aws.txt
+	docker run -i kernel-crawler Ubuntu-Azure > supported-kernels/ubuntu-azure.txt
+	docker run -i kernel-crawler Ubuntu-GKE > supported-kernels/ubuntu-gke.txt
 
 .PHONY: build-centos-uncrawled
 build-centos-uncrawled:
@@ -58,8 +59,12 @@ build-centos:
 		< supported-kernels/centos.txt
 	docker volume rm ko-centos
 
+UBUNTU_SOURCES = $(shell ls supported-kernels/ubuntu-*)
+supported-kernels/ubuntu.txt: $(UBUNTU_SOURCES)
+	@cat $(UBUNTU_SOURCES) > supported-kernels/ubuntu.txt
+
 .PHONY: build-ubuntu
-build-ubuntu:
+build-ubuntu: supported-kernels/ubuntu.txt
 	docker volume rm ko-ubuntu || true
 	docker volume create ko-ubuntu
 	docker run \

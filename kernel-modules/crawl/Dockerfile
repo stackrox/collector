@@ -8,5 +8,6 @@ RUN apt-get update \
     ;
 
 COPY ./kernel-crawler.py /
+COPY ./crawl-and-sort.sh /
 
-ENTRYPOINT ["/kernel-crawler.py"]
+ENTRYPOINT ["/crawl-and-sort.sh"]
