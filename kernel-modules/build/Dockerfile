@@ -10,6 +10,7 @@ RUN apt-get update \
       # Some of the Debian builds require exactly g++-4.8, by name.
       gcc-4.8 \
       g++-4.8 \
+      libelf-dev \
       kmod \
       wget \
       # For RedHat-family builds:

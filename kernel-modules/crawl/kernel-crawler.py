@@ -26,7 +26,7 @@ import traceback
 # structure
 #
 centos_excludes = ["3.10.0-123", "3.10.0-229"]
-ubuntu_excludes = ["-4.13.0-"] # TODO(cg): Compilation fails in netlink on 4.13.
+ubuntu_excludes = []
 repos = {
     "CentOS" : [
         {
