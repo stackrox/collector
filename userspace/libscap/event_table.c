@@ -348,6 +348,19 @@ const struct ppm_event_info g_event_info[PPM_EVENT_MAX] = {
 	/* PPME_SYSCALL_DELETE_MODULE_E */{"delete_module", EC_PROCESS, EF_MODIFIES_STATE, 2, {{"name", PT_CHARBUF, PF_NA}, {"flags", PT_FLAGS32, PF_HEX} }},
 	/* PPME_SYSCALL_DELETE_MODULE_X */{"delete_module", EC_PROCESS, EF_MODIFIES_STATE, 1, {{"res", PT_ERRNO, PF_DEC} } },
 	/* PPME_SYSCALL_CAPSET_E */{"capset", EC_PROCESS, EF_MODIFIES_STATE, 2, {{"hdrp", PT_UINT64, PF_HEX}, {"datap", PT_UINT64, PF_HEX} }},
-        /* PPME_SYSCALL_CAPSET_X */{"capset", EC_PROCESS, EF_MODIFIES_STATE, 1, {{"res", PT_ERRNO, PF_DEC} } }
-
+        /* PPME_SYSCALL_CAPSET_X */{"capset", EC_PROCESS, EF_MODIFIES_STATE, 1, {{"res", PT_ERRNO, PF_DEC} } },
+	/* PPME_SYSCALL_CHOWN_E */{"chown", EC_FILE, EF_NONE, 2, {{"owner", PT_UID, PF_DEC}, {"group", PT_GID, PF_DEC} } },
+	/* PPME_SYSCALL_CHOWN_X */{"chown", EC_FILE, EF_NONE, 2, {{"res", PT_ERRNO, PF_DEC}, {"pathname", PT_FSPATH, PF_NA} } },
+	/* PPME_SYSCALL_LCHOWN_E */{"lchown", EC_FILE, EF_NONE, 2, {{"owner", PT_UID, PF_DEC}, {"group", PT_GID, PF_DEC} } },
+	/* PPME_SYSCALL_LCHOWN_X */{"lchown", EC_FILE, EF_NONE, 2, {{"res", PT_ERRNO, PF_DEC}, {"pathname", PT_FSPATH, PF_NA} } },
+	/* PPME_SYSCALL_FCHOWN_E */{"fchown", EC_FILE, EF_USES_FD, 3, {{"fd", PT_FD, PF_DEC}, {"owner", PT_UID, PF_DEC}, {"group", PT_GID, PF_DEC} } },
+	/* PPME_SYSCALL_FCHOWN_X */{"fchown", EC_FILE, EF_USES_FD, 1, {{"res", PT_ERRNO, PF_DEC} } },
+	/* PPME_SYSCALL_FCHOWNAT_E */{"fchownat", EC_FILE, EF_USES_FD, 4, {{"dirfd", PT_FD, PF_DEC}, {"owner", PT_UID, PF_DEC}, {"group", PT_GID, PF_DEC}, {"flags", PT_FLAGS32, PF_HEX, chown_chmod_flags} } },
+	/* PPME_SYSCALL_FCHOWNAT_X */{"fchownat", EC_FILE, EF_USES_FD, 2, {{"res", PT_ERRNO, PF_DEC}, {"pathname", PT_FSPATH, PF_NA} } },
+	/* PPME_SYSCALL_CHMOD_E */{"chmod", EC_FILE, EF_NONE, 1, {{"mode", PT_UINT32, PF_OCT} } },
+	/* PPME_SYSCALL_CHMOD_X */{"chmod", EC_FILE, EF_NONE, 2, {{"res", PT_ERRNO, PF_DEC}, {"pathname", PT_FSPATH, PF_NA} } },
+	/* PPME_SYSCALL_FCHMOD_E */{"fchmod", EC_FILE, EF_USES_FD, 2, {{"fd", PT_FD, PF_DEC}, {"mode", PT_UINT32, PF_OCT} } },
+	/* PPME_SYSCALL_FCHMOD_X */{"fchmod", EC_FILE, EF_USES_FD, 1, {{"res", PT_ERRNO, PF_DEC} } },
+	/* PPME_SYSCALL_FCHMODAT_E */{"fchmodat", EC_FILE, EF_USES_FD, 3, {{"dirfd", PT_FD, PF_DEC}, {"mode", PT_UINT32, PF_OCT}, {"flags", PT_FLAGS32, PF_HEX, chown_chmod_flags} } },
+	/* PPME_SYSCALL_FCHMODAT_X */{"fchmodat", EC_FILE, EF_USES_FD, 2, {{"res", PT_ERRNO, PF_DEC}, {"pathname", PT_FSPATH, PF_NA} } }
 };
