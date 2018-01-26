@@ -2,8 +2,11 @@ cmake_minimum_required(VERSION 2.8)
 project (collector)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
-set(CMAKE_CXX_FLAGS "-g -Wall -pthread")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -ggdb --std=c++0x")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -ggdb --std=c++0x -pthread")
+
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-strict-aliasing -DNDEBUG")
 
 if(ADDRESS_SANITIZER)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
@@ -12,8 +15,6 @@ endif()
 link_directories(/usr/local/lib)
 
 include_directories(${PROJECT_SOURCE_DIR}/lib)
-include_directories(${PROJECT_SOURCE_DIR}/container/include)
-include_directories(${PROJECT_SOURCE_DIR}/../ext/sysdig/src/userspace/sysdig)
 include_directories(/usr/local/include)
 include_directories(/usr/include/librdkafka)
 include_directories(/usr/include/jsoncpp)

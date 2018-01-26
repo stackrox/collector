@@ -41,8 +41,6 @@ COPY libs/librdkafka.so \
      libs/librdkafka++.so \
      libs/libcurl.so \
      libs/libsysdignative.so \
-     libs/libprometheus-cpp.a \
-     libs/libprotobuf.a \
      /usr/local/lib/
 
 # `ldconfig` is required so that `curl` can find its `libcurl.so`.
