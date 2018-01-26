@@ -40,6 +40,8 @@ http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-image-4.8.0-41-gen
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-headers-4.8.0-41-generic_4.8.0-41.44~16.04.1_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-image-4.8.0-51-generic_4.8.0-51.54~16.04.1_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-headers-4.8.0-51-generic_4.8.0-51.54~16.04.1_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-image-4.13.0-32-generic_4.13.0-32.35~16.04.1_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-headers-4.13.0-32-generic_4.13.0-32.35~16.04.1_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-image-4.8.0-42-generic_4.8.0-42.45~16.04.1_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-headers-4.8.0-42-generic_4.8.0-42.45~16.04.1_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-image-4.8.0-52-generic_4.8.0-52.55~16.04.1_amd64.deb
@@ -105,6 +107,7 @@ http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-headers-4.13.0-31_
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-headers-4.10.0-40_4.10.0-40.44~16.04.1_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-headers-4.8.0-41_4.8.0-41.44~16.04.1_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-headers-4.8.0-51_4.8.0-51.54~16.04.1_all.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-headers-4.13.0-32_4.13.0-32.35~16.04.1_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-headers-4.8.0-42_4.8.0-42.45~16.04.1_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe/linux-headers-4.8.0-52_4.8.0-52.55~16.04.1_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe-edge/linux-headers-4.10.0-14_4.10.0-14.16~16.04.1_all.deb
