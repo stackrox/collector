@@ -42,6 +42,8 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include <json/json.h>
 
+#include "safe_buffer.h"
+
 class sinsp_filter_check;
 
 typedef enum signalType {
@@ -110,7 +112,7 @@ public:
 	  \return true if the string should be shown (based on the initial *),
 	   false otherwise.
 	*/
-	SignalType to_sparse_string(sinsp_evt* evt, char* buffer, unsigned int snaplen, string& network_key);
+	SignalType to_sparse_string(sinsp_evt* evt, SafeBuffer& buffer, unsigned int snaplen, string& network_key);
 
 	/*!
 	  \brief Fills res with end of capture string rendering of the event.

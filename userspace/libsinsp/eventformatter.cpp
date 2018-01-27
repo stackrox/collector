@@ -373,7 +373,7 @@ bool sinsp_evt_formatter::tostring(sinsp_evt* evt, OUT string* res)
 }
 
 // Begin StackRox section
-SignalType sinsp_evt_formatter::to_sparse_string(sinsp_evt* evt, char* buffer, unsigned int snaplen, string& network_key)
+SignalType sinsp_evt_formatter::to_sparse_string(sinsp_evt* evt, SafeBuffer& buffer, unsigned int snaplen, string& network_key)
 {
 	SignalType signalType = SIGNAL_TYPE_DEFAULT;
 
@@ -382,9 +382,8 @@ SignalType sinsp_evt_formatter::to_sparse_string(sinsp_evt* evt, char* buffer, u
 	ASSERT(m_tokenlens.size() == m_tokens.size());
 
 	network_key.clear();
-	buffer[0] = 'S';
-	buffer[1] = '\0';
-	char* ptr = &buffer[1];
+	buffer.clear();
+	buffer.Append('S');
 	bool past_fixed_format = false;
 
 	// m_token_to_field_map has [index in m_tokens] -> [field name]
@@ -479,13 +478,11 @@ SignalType sinsp_evt_formatter::to_sparse_string(sinsp_evt* evt, char* buffer, u
 				{
 					str[snaplen] = '\0';
 				}
-				sprintf(ptr, "\t%s:%s", mapped_value.c_str(), str);
-				ptr += strlen(ptr);
+				buffer.AppendFWhole("\t%s:%s", mapped_value.c_str(), str);
 			}
 			else
 			{
-				sprintf(ptr, "\t%s", str);
-				ptr += strlen(ptr);
+			    buffer.AppendFWhole("\t%s", str);
 				if (!strcmp(field, "evt.time"))
 				{
 					past_fixed_format = true;
@@ -494,7 +491,7 @@ SignalType sinsp_evt_formatter::to_sparse_string(sinsp_evt* evt, char* buffer, u
 		}
 		else if (!strcmp(field, "container.name") || !strcmp(field, "container.image"))
 		{
-			buffer[0] = '\0';
+			buffer.clear();
 			return signalType;
 		}
 	}

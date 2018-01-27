@@ -24,6 +24,7 @@ You should have received a copy of the GNU General Public License along with thi
 // KafkaClient.cpp
 // The KafkaClient implementation file
 
+#include <algorithm>
 #include <string>
 #include <cstring>
 #include <iostream>
@@ -147,27 +148,34 @@ rd_kafka_topic_t* KafkaClient::createTopic(const char* topic) {
   return kafkaTopic;
 }
 
-void KafkaClient::send(char* line, bool isNetwork, bool isProcess, const std::string& networkKey) {
+void KafkaClient::send(const void* msg, int msgLen, bool isNetwork, bool isProcess, const std::string& networkKey) {
   char cidKey[SHORT_CONTAINER_ID_LENGTH];
-  strncpy(cidKey, &line[SHORT_CONTAINER_ID_OFFSET], sizeof(cidKey));
+  int cidKeyLen = std::min(static_cast<int>(sizeof(cidKey)), msgLen - SHORT_CONTAINER_ID_OFFSET);
+  if (cidKeyLen < 0) {
+    std::cerr << "Invalid message payload: size " << msgLen << " less than " << SHORT_CONTAINER_ID_OFFSET
+              << ", could not determine a short container ID" << std::endl;
+    return;  // Invalid payload
+  }
+  strncpy(cidKey, (const char*)msg + SHORT_CONTAINER_ID_OFFSET, cidKeyLen);
 
   // TODO: @jay stop sending process signals on default topic when filters are retired
-  sendMessage(defaultTopicHandle, line, cidKey, sizeof(cidKey));
+  sendMessage(defaultTopicHandle, msg, msgLen, cidKey, cidKeyLen);
   if (isNetwork) {
     if (networkKey[0] != '\0' && networkTopicHandle) {
-    	sendMessage(networkTopicHandle, line, (char*)networkKey.c_str(), networkKey.size());
+    	sendMessage(networkTopicHandle, msg, msgLen, (char*)networkKey.c_str(), networkKey.size());
     }
   } else if (isProcess) {
       if (processTopicHandle) {
-      	sendMessage(processTopicHandle, line, cidKey, sizeof(cidKey));
+      	sendMessage(processTopicHandle, msg, msgLen, cidKey, cidKeyLen);
       }
   }
 }
 
-void KafkaClient::sendMessage(rd_kafka_topic_t* kafkaTopic, char* line, char* key, int keyLen) {
+void KafkaClient::sendMessage(rd_kafka_topic_t* kafkaTopic, const void* msg, int msgLen, char* key, int keyLen) {
 
+  // rd_kafka_produce doesn't modify the payload if RD_KAFKA_MSG_F_COPY is specified, so the const_cast is safe.
   int rv = rd_kafka_produce(kafkaTopic, RD_KAFKA_PARTITION_UA, RD_KAFKA_MSG_F_COPY,
-       line, strlen(line), key, keyLen, NULL);
+       const_cast<void*>(msg), msgLen, key, keyLen, NULL);
   if (rv == -1) {
     fprintf(stderr, "Failed to produce to topic %s: %s\n",
                     rd_kafka_topic_name(kafkaTopic),

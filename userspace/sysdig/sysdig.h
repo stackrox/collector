@@ -56,6 +56,7 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 #endif // _DEBUG
 
 #include "KafkaClient.h"
+#include "safe_buffer.h"
 
 //
 // Capture results
@@ -128,7 +129,7 @@ class SysdigPersistentState {
         sinsp_evt_formatter* formatter;
         int periodicity;
         int snapLen;
-        char* eventBuffer;
+        SafeBuffer eventBuffer;
         bool useKafka;
         KafkaClient* kafkaClient;
 
@@ -144,39 +145,30 @@ class SysdigPersistentState {
             formatter(_formatter),
             periodicity(_periodicity),
             snapLen(_snapLen),
-            useKafka(_useKafka) {
+            eventBuffer(eventBufferSize <= 0 ? DEFAULT_BUFFER_SIZE : eventBufferSize),
+            useKafka(_useKafka)
+            {
             kafkaClient = NULL;
             if (_useKafka) {
                 kafkaClient = new KafkaClient(brokerList, defaultTopic, networkTopic, processTopic);
             }
-            if (eventBufferSize > 0) {
-                eventBuffer = new char[eventBufferSize];
-            } else {
-                eventBuffer = new char[DEFAULT_BUFFER_SIZE];
-            }
         }
         SysdigPersistentState(int eventBufferSize, bool _useKafka, string brokerList, string defaultTopic,
-                              string networkTopic, string processTopic, string processSyscalls) {
+                              string networkTopic, string processTopic, string processSyscalls)
+                : eventBuffer(eventBufferSize <= 0 ? DEFAULT_BUFFER_SIZE : eventBufferSize) {
             useKafka = _useKafka;
             kafkaClient = NULL;
             if (_useKafka) {
                 kafkaClient = new KafkaClient(brokerList, defaultTopic, networkTopic, processTopic);
             }
-            if (eventBufferSize > 0) {
-                eventBuffer = new char[eventBufferSize];
-            } else {
-                eventBuffer = new char[DEFAULT_BUFFER_SIZE];
-            }
         }
-        SysdigPersistentState() {
+        SysdigPersistentState() : eventBuffer(DEFAULT_BUFFER_SIZE) {
             useKafka = false;
             kafkaClient = NULL;
-            eventBuffer = new char[DEFAULT_BUFFER_SIZE];
         }
 
         virtual ~SysdigPersistentState() {
             delete kafkaClient;
-            delete[] eventBuffer;
         }
 
         inline long getMetricsFrequency() { return metricsFrequency; }
@@ -186,7 +178,7 @@ class SysdigPersistentState {
         inline sinsp_evt_formatter* getFormatter() { return formatter; }
         inline int getPeriodicity() { return periodicity; }
         inline int getSnapLen() { return snapLen; }
-        inline char* getEventBuffer() { return eventBuffer; }
+        inline SafeBuffer& getEventBuffer() { return eventBuffer; }
         inline bool usingKafka() { return useKafka; }
         inline KafkaClient* getKafkaClient() { return kafkaClient; }
 
@@ -199,8 +191,7 @@ class SysdigPersistentState {
         inline void setSnapLen(int _snapLen) { snapLen = _snapLen; }
         inline void setUseKafka(bool _useKafka) { useKafka = _useKafka; }
         inline void setEventBufferSize(int eventBufferSize) {
-            delete[] eventBuffer;
-            eventBuffer = new char[eventBufferSize];
+            eventBuffer.reset(eventBufferSize <= 0 ? DEFAULT_BUFFER_SIZE : eventBufferSize);
         }
         inline void setupKafkaClient(string brokerList, string defaultTopic, string networkTopic,
                                      string processTopic) {
@@ -227,7 +218,6 @@ bool isSysdigInitialized();
 
 }
 
-const char* do_getnext();
 sysdig_init_res sysdig_init(int argc, char** argv, bool setupOnly = false);
 
 //

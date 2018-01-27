@@ -57,7 +57,7 @@ class KafkaClient {
   rd_kafka_topic_t* createTopic(const char* topic);
 
   // method to send to a specific topic
-  void sendMessage(rd_kafka_topic_t* kafkaTopic, char* line, char* key, int keyLen);
+  void sendMessage(rd_kafka_topic_t* kafkaTopic, const void* msg, int msgLen, char* key, int keyLen);
 
  public:
   // construction
@@ -72,7 +72,7 @@ class KafkaClient {
       return containerID;
   }
 
-    void send(char* line, bool isNetwork, bool isProcess, const string& networkKey);
+    void send(const void* msg, int msgLen, bool isNetwork, bool isProcess, const string& networkKey);
 };
 
 #endif // __KAFKACLIENT_H

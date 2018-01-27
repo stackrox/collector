@@ -57,6 +57,7 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 #include "chisel.h"
 #include "utils.h"
 #include "sysdig.h"
+#include "safe_buffer.h"
 
 #include "KafkaClient.h"
 
@@ -765,16 +766,16 @@ captureinfo do_inspect(sinsp* inspector,
 //
 // Event processing call. Get next valid event.
 //
-const char* do_getnext(const char* selfContainerID, SignalType& signalType, string& networkKey) {
+const SafeBuffer& do_getnext(SignalType& signalType, string& networkKey) {
 	int32_t res;
 	sinsp_evt* ev;
-	char* eventBuffer = persistentState->getEventBuffer();
+	SafeBuffer& eventBuffer = persistentState->getEventBuffer();
 	sinsp* inspector = persistentState->getInspector();
 	sinsp_evt_formatter* formatter = persistentState->getFormatter();
 	sinsp_chisel* chisel = persistentState->getChisel();
 	int periodicity = persistentState->getPeriodicity();
 
-	eventBuffer[0] = 0;
+	eventBuffer.clear();
 	if (inspector == NULL || formatter == NULL || chisel == NULL) {
 		cout << "inspector|formatter|chisel unintialized!" << endl;
 		return eventBuffer;
@@ -1857,16 +1858,14 @@ void sysdigStartProduction(bool& isInterrupted) {
     SignalType signalType;
     string networkKey;
     while (!isInterrupted) {
+        const SafeBuffer& buffer = do_getnext(signalType, networkKey);
+        if (buffer.empty()) {
+            continue;
+        }
         if (useKafka) {
-            line = (char*)do_getnext(kafkaClient->getContainerID(), signalType, networkKey);
-            if (line[0] == '\0')
-                continue;
-            kafkaClient->send(line, SIGNAL_TYPE_NETWORK == signalType, SIGNAL_TYPE_PROCESS == signalType, networkKey);
+            kafkaClient->send(buffer.buffer(), buffer.size(), SIGNAL_TYPE_NETWORK == signalType, SIGNAL_TYPE_PROCESS == signalType, networkKey);
         } else {
-            line = (char*)do_getnext("unknown-container", signalType, networkKey);
-            if (line[0] == '\0')
-                continue;
-            cout << line << endl;
+            cout << buffer.str() << endl;
         }
     }
 
