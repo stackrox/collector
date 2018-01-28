@@ -40,7 +40,7 @@ class SysdigService : public Sysdig {
 
     int init(std::string chiselName, std::string brokerList, std::string format,
              bool useKafka, std::string defaultTopic, std::string networkTopic,
-             std::string processTopic, std::string processSyscalls,int snapLen);
+             std::string processTopic, std::string fileTopic, std::string processSyscalls,int snapLen);
     bool ready();
     void runForever();
     void cleanup();

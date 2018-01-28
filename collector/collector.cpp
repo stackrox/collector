@@ -304,8 +304,8 @@ startChiselConsumer(std::string initialChisel, bool *g_terminate, std::string to
 void
 startChild(std::string chiselName, std::string brokerList,
            std::string format, bool useKafka, std::string defaultTopic,
-           std::string networkTopic, std::string processTopic, std::string processSyscalls,
-           int snapLen, Json::Value collectorConfig) {
+           std::string networkTopic, std::string processTopic, std::string fileTopic,
+           std::string processSyscalls, int snapLen, Json::Value collectorConfig) {
     SysdigService sysdig(g_interrupt_sysdig);
 
     insertModule(sysdig, collectorConfig);
@@ -349,7 +349,7 @@ startChild(std::string chiselName, std::string brokerList,
     cerr << "[Child]  " << chiselName << " contents set to: " << g_chiselContents << endl;
 
     int code = sysdig.init(chiselName, brokerList, format, useKafka, defaultTopic,
-                            networkTopic, processTopic, processSyscalls, snapLen);
+                            networkTopic, processTopic, fileTopic, processSyscalls, snapLen);
     if (code != 0) {
         cerr << "[Child]  Unable to initialize sysdig" << endl;
         exit(code);
@@ -433,6 +433,10 @@ main(int argc, char **argv)
     if (!collectorConfig["processTopic"].isNull()) {
         processTopic = collectorConfig["processTopic"].asString();
     }
+    std::string fileTopic = "collector-file-kafka-topic";
+    if (!collectorConfig["fileTopic"].isNull()) {
+        fileTopic = collectorConfig["fileTopic"].asString();
+    }
     std::string chiselsTopic = "collector-chisels-kafka-topic";
     if (!collectorConfig["chiselsTopic"].isNull()) {
         chiselsTopic = collectorConfig["chiselsTopic"].asString();
@@ -448,7 +452,8 @@ main(int argc, char **argv)
         processSyscalls += itr.asString();
     }
 
-    cerr << "Output topics set to: default=" << defaultTopic << ", network=" << networkTopic << ", process=" << processTopic << endl;
+    cerr << "Output topics set to: default=" << defaultTopic << ", network=" << networkTopic
+         << ", process=" << processTopic << ", file=" << fileTopic << endl;
     cerr << "Chisels topic set to: " << chiselsTopic << endl;
 
     std::string chiselB64 = args->Chisel();
@@ -468,7 +473,7 @@ main(int argc, char **argv)
         } else if (pid == 0) {
             cerr << "[Child]  Signal reader started." << endl;
             startChild(chiselName, args->BrokerList(), format, useKafka, defaultTopic,
-                       networkTopic, processTopic, processSyscalls, snapLen, collectorConfig);
+                       networkTopic, processTopic, fileTopic, processSyscalls, snapLen, collectorConfig);
         } else {
             cerr << "[Parent] Monitoring child process " << pid << endl;
             for (;;) {
