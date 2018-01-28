@@ -40,16 +40,18 @@ extern "C" {
 
 // construction
 KafkaClient::KafkaClient(std::string brokerList, std::string _defaultTopic, std::string _networkTopic,
-                         std::string _processTopic) {
+                         std::string _processTopic, std::string _fileTopic) {
   char errstr[1024];
   brokers = brokerList;
   defaultTopic = _defaultTopic;
   networkTopic = _networkTopic;
   processTopic = _processTopic;
+  fileTopic = _fileTopic;
   kafka = NULL;
   defaultTopicHandle = NULL;
   networkTopicHandle = NULL;
   processTopicHandle = NULL;
+  fileTopicHandle = NULL;
 
   // Get the hostname of this container.
   const string file = "/etc/hostname";
@@ -104,13 +106,17 @@ KafkaClient::KafkaClient(std::string brokerList, std::string _defaultTopic, std:
     return;
   }
 
-  defaultTopicHandle = createTopic((char*)defaultTopic.c_str());
-  if (!networkTopic.empty()) {
-    networkTopicHandle = createTopic((char*)networkTopic.c_str());
+  if (!defaultTopic.empty()) {
+    defaultTopicHandle = createTopic(defaultTopic.c_str());
   }
-
+  if (!networkTopic.empty()) {
+    networkTopicHandle = createTopic(networkTopic.c_str());
+  }
   if (!processTopic.empty()) {
-    processTopicHandle = createTopic((char*)processTopic.c_str());
+    processTopicHandle = createTopic(processTopic.c_str());
+  }
+  if (!fileTopic.empty()) {
+    fileTopicHandle = createTopic(fileTopic.c_str());
   }
 }
 
@@ -123,6 +129,9 @@ KafkaClient::~KafkaClient() {
   }
   if (processTopicHandle != NULL) {
     rd_kafka_topic_destroy(processTopicHandle);
+  }
+  if (fileTopicHandle) {
+    rd_kafka_topic_destroy(fileTopicHandle);
   }
 
   if (kafka != NULL)
@@ -148,7 +157,8 @@ rd_kafka_topic_t* KafkaClient::createTopic(const char* topic) {
   return kafkaTopic;
 }
 
-void KafkaClient::send(const void* msg, int msgLen, bool isNetwork, bool isProcess, const std::string& networkKey) {
+void KafkaClient::send(const void* msg, int msgLen, const std::string& networkKey,
+                       bool onNetworkTopic, bool onProcessTopic, bool onFileTopic) {
   char cidKey[SHORT_CONTAINER_ID_LENGTH];
   int cidKeyLen = std::min(static_cast<int>(sizeof(cidKey)), msgLen - SHORT_CONTAINER_ID_OFFSET);
   if (cidKeyLen < 0) {
@@ -159,15 +169,17 @@ void KafkaClient::send(const void* msg, int msgLen, bool isNetwork, bool isProce
   strncpy(cidKey, (const char*)msg + SHORT_CONTAINER_ID_OFFSET, cidKeyLen);
 
   // TODO: @jay stop sending process signals on default topic when filters are retired
-  sendMessage(defaultTopicHandle, msg, msgLen, cidKey, cidKeyLen);
-  if (isNetwork) {
-    if (networkKey[0] != '\0' && networkTopicHandle) {
-    	sendMessage(networkTopicHandle, msg, msgLen, (char*)networkKey.c_str(), networkKey.size());
-    }
-  } else if (isProcess) {
-      if (processTopicHandle) {
-      	sendMessage(processTopicHandle, msg, msgLen, cidKey, cidKeyLen);
-      }
+  if (defaultTopicHandle) {
+    sendMessage(defaultTopicHandle, msg, msgLen, cidKey, cidKeyLen);
+  }
+  if (onNetworkTopic && networkTopicHandle && !networkKey.empty()) {
+    sendMessage(networkTopicHandle, msg, msgLen, (char*)networkKey.c_str(), networkKey.size());
+  }
+  if (onProcessTopic && processTopicHandle) {
+    sendMessage(processTopicHandle, msg, msgLen, cidKey, cidKeyLen);
+  }
+  if (onFileTopic && fileTopicHandle) {
+    sendMessage(fileTopicHandle, msg, msgLen, cidKey, cidKeyLen);
   }
 }
 

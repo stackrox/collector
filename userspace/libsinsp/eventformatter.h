@@ -46,11 +46,12 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 
 class sinsp_filter_check;
 
-typedef enum signalType {
-    SIGNAL_TYPE_DEFAULT = 0,
+enum SignalType {
+    SIGNAL_TYPE_UNKNOWN = 0,
     SIGNAL_TYPE_NETWORK = 1,
-    SIGNAL_TYPE_PROCESS = 2
-} SignalType;
+    SIGNAL_TYPE_PROCESS = 2,
+    SIGNAL_TYPE_FILE = 3,
+};
 
 /** @defgroup event Event manipulation
  *  @{

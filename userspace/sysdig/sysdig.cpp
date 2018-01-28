@@ -766,7 +766,7 @@ captureinfo do_inspect(sinsp* inspector,
 //
 // Event processing call. Get next valid event.
 //
-const SafeBuffer& do_getnext(SignalType& signalType, string& networkKey) {
+const SafeBuffer& do_getnext(SignalType* signalType, string* networkKey) {
 	int32_t res;
 	sinsp_evt* ev;
 	SafeBuffer& eventBuffer = persistentState->getEventBuffer();
@@ -805,7 +805,7 @@ const SafeBuffer& do_getnext(SignalType& signalType, string& networkKey) {
 
 	if (chisel->process(ev)) {
 		sysdigData.nFilteredEvents++;
-		signalType = formatter->to_sparse_string(ev, eventBuffer, persistentState->getSnapLen(), networkKey);
+		*signalType = formatter->to_sparse_string(ev, eventBuffer, persistentState->getSnapLen(), *networkKey);
 	}
 	return eventBuffer;
 }
@@ -854,6 +854,7 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 	string defaultTopic = "sysdig-default-topic";
 	string networkTopic;
     string processTopic;
+    string fileTopic;
     string processSyscalls;
 	bool useKafka = false;
 	// End StackRox section
@@ -870,7 +871,8 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 #define KAFKA_DEFAULT_TOPIC_VAL     1027
 #define KAFKA_NETWORK_TOPIC_VAL     1028
 #define KAFKA_PROCESS_TOPIC_VAL     1029
-#define PROCESS_SYSCALLS_VAL        1030
+#define KAFKA_FILE_TOPIC_VAL        1030
+#define PROCESS_SYSCALLS_VAL        1031
 
 	static struct option long_options[] =
 	{
@@ -925,6 +927,7 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 		{"default-topic", required_argument, 0, KAFKA_DEFAULT_TOPIC_VAL },
 		{"network-topic", required_argument, 0, KAFKA_NETWORK_TOPIC_VAL },
         {"process-topic", required_argument, 0, KAFKA_PROCESS_TOPIC_VAL },
+        {"file-topic", required_argument, 0, KAFKA_FILE_TOPIC_VAL },
         {"process-syscalls", required_argument, 0, PROCESS_SYSCALLS_VAL },
 	    // End StackRox section
 		{0, 0, 0, 0}
@@ -1304,6 +1307,10 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
                 cout << "Process topic: " << optarg << endl;
                 processTopic = optarg;
                 break;
+            case KAFKA_FILE_TOPIC_VAL:
+                cout << "File topic: " << optarg << endl;
+                fileTopic = optarg;
+                break;
             case PROCESS_SYSCALLS_VAL:
                 cout << "Process syscalls: " << optarg << endl;
                  processSyscalls = optarg;
@@ -1659,7 +1666,7 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 
 			if (useKafka) {
 				cout << "Kafka client is being setup " << endl;
-				persistentState->setupKafkaClient(brokerList, defaultTopic, networkTopic, processTopic);
+				persistentState->setupKafkaClient(brokerList, defaultTopic, networkTopic, processTopic, fileTopic);
 			}
 
 			// initialize the sysdig factoid object
@@ -1846,8 +1853,6 @@ void sysdigStartProduction(bool& isInterrupted) {
 				return;
     }
 
-    char* line;
-
     cerr << "Starting sysdig production ";
     if (useKafka) {
         cerr << "using Kafka" << endl;
@@ -1855,15 +1860,17 @@ void sysdigStartProduction(bool& isInterrupted) {
         cerr << "without using Kafka" << endl;
     }
 
-    SignalType signalType;
     string networkKey;
+    SignalType signalType;
     while (!isInterrupted) {
-        const SafeBuffer& buffer = do_getnext(signalType, networkKey);
+        const SafeBuffer& buffer = do_getnext(&signalType, &networkKey);
         if (buffer.empty()) {
             continue;
         }
         if (useKafka) {
-            kafkaClient->send(buffer.buffer(), buffer.size(), SIGNAL_TYPE_NETWORK == signalType, SIGNAL_TYPE_PROCESS == signalType, networkKey);
+            kafkaClient->send(
+                buffer.buffer(), buffer.size(), networkKey, signalType == SIGNAL_TYPE_NETWORK,
+                signalType == SIGNAL_TYPE_PROCESS, signalType == SIGNAL_TYPE_FILE);
         } else {
             cout << buffer.str() << endl;
         }
@@ -1874,7 +1881,8 @@ void sysdigStartProduction(bool& isInterrupted) {
 
 int sysdigInitialize(string chiselName, string brokerList, string format,
                      bool useKafka, string defaultTopic, string networkTopic,
-                     string processTopic, string processSyscalls, int snapLen) {
+                     string processTopic, string fileTopic, string processSyscalls,
+                     int snapLen) {
     // if the format is empty then fill in with a default format
     if (format.length() == 0) {
         format = "container:container.id,event:evt.type,time:evt.time,rawtime:evt.rawtime,direction:evt.dir,image:container.image,name:container.name";
@@ -1897,21 +1905,23 @@ int sysdigInitialize(string chiselName, string brokerList, string format,
     }
     if (brokerList.length() > 0) {
         args.push_back("--broker-list");
-        args.push_back(brokerList.c_str());
+        args.push_back(brokerList);
         if (useKafka) {
             args.push_back("--use-kafka");
         }
         args.push_back("--default-topic");
-        args.push_back(defaultTopic.c_str());
+        args.push_back(defaultTopic);
         args.push_back("--network-topic");
-        args.push_back(networkTopic.c_str());
+        args.push_back(networkTopic);
         args.push_back("--process-topic");
-        args.push_back(processTopic.c_str());
+        args.push_back(processTopic);
+        args.push_back("--file-topic");
+        args.push_back(fileTopic);
         args.push_back("--process-syscalls");
-        args.push_back(processSyscalls.c_str());
+        args.push_back(processSyscalls);
     }
     args.push_back("--output-format");
-    args.push_back(format.c_str());
+    args.push_back(format);
 
     int argc = args.size();
     char* argv[argc];

@@ -46,11 +46,13 @@ class KafkaClient {
   string defaultTopic;
   string networkTopic;
   string processTopic;
+  string fileTopic;
 
   rd_kafka_t* kafka;
   rd_kafka_topic_t* defaultTopicHandle;
   rd_kafka_topic_t* networkTopicHandle;
   rd_kafka_topic_t* processTopicHandle;
+  rd_kafka_topic_t* fileTopicHandle;
   char* containerID;
 
   // method to create a topic
@@ -61,7 +63,7 @@ class KafkaClient {
 
  public:
   // construction
-  KafkaClient(string brokerList, string defaultTopic, string networkTopic, string processTopic);
+  KafkaClient(string brokerList, string defaultTopic, string networkTopic, string processTopic, string fileTopic);
   virtual ~KafkaClient();
 
   rd_kafka_t* getClient() {
@@ -72,7 +74,8 @@ class KafkaClient {
       return containerID;
   }
 
-    void send(const void* msg, int msgLen, bool isNetwork, bool isProcess, const string& networkKey);
+  void send(const void* msg, int msgLen, const string& networkKey,
+            bool onNetworkTopic, bool onProcessTopic, bool onFileTopic);
 };
 
 #endif // __KAFKACLIENT_H

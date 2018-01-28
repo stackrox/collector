@@ -375,7 +375,7 @@ bool sinsp_evt_formatter::tostring(sinsp_evt* evt, OUT string* res)
 // Begin StackRox section
 SignalType sinsp_evt_formatter::to_sparse_string(sinsp_evt* evt, SafeBuffer& buffer, unsigned int snaplen, string& network_key)
 {
-	SignalType signalType = SIGNAL_TYPE_DEFAULT;
+	SignalType signalType = SIGNAL_TYPE_UNKNOWN;
 
 	uint32_t j = 0;
 
@@ -414,18 +414,18 @@ SignalType sinsp_evt_formatter::to_sparse_string(sinsp_evt* evt, SafeBuffer& buf
 				continue;
 			}
 
-			if (buffer[0] != 'N' && signalType == SIGNAL_TYPE_DEFAULT)
+			if (buffer[0] != 'N' && signalType == SIGNAL_TYPE_UNKNOWN)
 			{
 				if (!strcmp(field, "evt.category") && !strcmp(str, "net"))
 				{
 					buffer[0] = 'N';
-                    			signalType = SIGNAL_TYPE_NETWORK;
+					signalType = SIGNAL_TYPE_NETWORK;
 				}
 				else if (!strcmp(field, "fd.type") &&
 					(!strcmp(str, "ipv4") || !strcmp(str, "ipv6") || !strcmp(str, "unix")))
 				{
 					buffer[0] = 'N';
-                   			signalType = SIGNAL_TYPE_NETWORK;
+					signalType = SIGNAL_TYPE_NETWORK;
 				}
 			}
             
@@ -433,6 +433,7 @@ SignalType sinsp_evt_formatter::to_sparse_string(sinsp_evt* evt, SafeBuffer& buf
 			{
 				if (m_process_evttypes.end() != m_process_evttypes.find(str))
 				{
+					buffer[0] = 'S';
 					signalType = SIGNAL_TYPE_PROCESS;
 				}
 			}
@@ -496,7 +497,11 @@ SignalType sinsp_evt_formatter::to_sparse_string(sinsp_evt* evt, SafeBuffer& buf
 		}
 	}
 
-	return signalType;
+    if (signalType == SIGNAL_TYPE_UNKNOWN) {
+        // If it's no other signal type, assume file
+        signalType = SIGNAL_TYPE_FILE;
+    }
+    return signalType;
 }
 
 void sinsp_evt_formatter::init_process_syscalls(const string& process_syscalls) {
