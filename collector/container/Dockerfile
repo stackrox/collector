@@ -27,6 +27,7 @@ ENV SYSDIG_HOST_ROOT=/host \
 EXPOSE 8080 9090
 
 RUN apt-get update \
+ && apt-get upgrade -y \
  && apt-get install -y --no-install-recommends \
         ca-certificates \
         jq \

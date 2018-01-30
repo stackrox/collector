@@ -39,7 +39,7 @@ RUN cd /usr/src/gmock \
         ;
 
 # cURL 7.42 or higher is required for UNIX socket access
-ARG CURL_REVISION=curl-7_54_0
+ARG CURL_REVISION=curl-7_57_0
 COPY build/install_libcurl.sh build-tmp/install_libcurl.sh
 RUN build-tmp/install_libcurl.sh
 
