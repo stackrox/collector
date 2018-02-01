@@ -285,6 +285,7 @@ registerSignalHandlers() {
     signal(SIGINT, signal_callback);
     signal(SIGTERM, signal_callback);
     signal(SIGSEGV, sigsegv_handler);
+    signal(SIGABRT, sigsegv_handler);
 }
 
 void
@@ -326,7 +327,8 @@ startChild(std::string chiselName, std::string brokerList,
     GetStatus getStatus(&sysdig);
 
     std::shared_ptr<prometheus::Registry> registry = std::make_shared<prometheus::Registry>();
-    GetNetworkHealthStatus getNetworkHealthStatus(registry, g_terminate);
+    GetNetworkHealthStatus getNetworkHealthStatus(brokerList, registry);
+
     server.addHandler("/ready", getStatus);
     server.addHandler("/networkHealth", getNetworkHealthStatus);
     server.addHandler("/loglevel", setLogLevel);
@@ -335,14 +337,6 @@ startChild(std::string chiselName, std::string brokerList,
     // TODO(cg): Implement a way to not have these disappear after child restart.
     prometheus::Exposer exposer("9090");
     exposer.RegisterCollectable(registry);
-
-    getNetworkHealthStatus.start();
-
-    CollectorStatsExporter exporter(registry, &sysdig);
-    if (!exporter.start()) {
-        cerr << "[Child]  Unable to start sysdig stats exporter" << endl;
-        exit(EXIT_FAILURE);
-    }
 
     cerr << "[Child]  Initializing signal reader..." << endl;
     // write out chisel file from incoming chisel
@@ -356,6 +350,17 @@ startChild(std::string chiselName, std::string brokerList,
         exit(code);
     }
 
+    if (!getNetworkHealthStatus.start()) {
+        cerr << "[Child]  Unable to start network health status" << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    CollectorStatsExporter exporter(registry, &sysdig);
+    if (!exporter.start()) {
+        cerr << "[Child]  Unable to start sysdig stats exporter" << endl;
+        exit(EXIT_FAILURE);
+    }
+
   #ifndef COLLECTOR_CORE
     registerSignalHandlers();
   #endif /* COLLECTOR_CORE */
@@ -363,10 +368,11 @@ startChild(std::string chiselName, std::string brokerList,
     cerr << "[Child]  Starting signal reader..." << endl;
     sysdig.runForever();
     cerr << "[Child]  Interrupted signal reader; cleaning up..." << endl;
+    exporter.stop();
+    server.close();
+    getNetworkHealthStatus.stop();
     sysdig.cleanup();
     cerr << "[Child]  Cleaned up signal reader; terminating..." << endl;
-
-    getNetworkHealthStatus.stop();
 
     exit(EXIT_SUCCESS);
 }

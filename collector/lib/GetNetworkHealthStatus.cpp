@@ -25,62 +25,68 @@ You should have received a copy of the GNU General Public License along with thi
 #include <fcntl.h>
 #include <iostream>
 #include <json/json.h>
-#include <map>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <string>
+#include <string.h>
+#include <stdio.h>
 #include <sstream>
 #include <sys/ioctl.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <poll.h>
 
 #include "civetweb/CivetServer.h"
 
 #include "GetNetworkHealthStatus.h"
+#include "Utility.h"
 
 namespace collector {
 
-void closeSock(int sock) {
-    int rv = close(sock);
-    if (rv != 0) {
-        perror("close");
+class AutoCloser {
+ public:
+  AutoCloser(int* fd) : m_fd(fd) {}
+  ~AutoCloser() {
+    if (m_fd && *m_fd > 0) {
+      int rv = close(*m_fd);
+      if (rv != 0) {
+        std::cerr << "Error closing file descriptor " << *m_fd << ": " << StrError() << std::endl;
+      }
     }
-}
+  }
 
-bool connectTimeout(const char* host, int port, int timeout)
-{
-    struct sockaddr_in address;  /* the libc network address data structure */
-    short int sock = -1;         /* file descriptor for the network socket */
-    fd_set fdset;
-    struct timeval tv;
+ private:
+  int* m_fd;
+};
 
-    hostent *record = gethostbyname(host);
+bool GetNetworkHealthStatus::checkEndpointStatus(const NetworkHealthStatus& status, std::chrono::milliseconds timeout) {
+    const std::string& host = status.host;
+    hostent *record = gethostbyname(host.c_str());
     if(record == NULL) {
-        std::cerr << "network health check: cannot resolve " << host << std::endl;
+        std::cerr << "network health check: error resolving " << host << ": " << hstrerror(h_errno) << std::endl;
         return false;
     }
-    in_addr *addr = (in_addr *)record->h_addr;
-    std::string ip_address = inet_ntoa(*addr);
 
+    struct sockaddr_in address;
+    memcpy(&address.sin_addr.s_addr, record->h_addr, sizeof(in_addr));
     address.sin_family = AF_INET;
-    address.sin_addr.s_addr = inet_addr(ip_address.c_str()); /* assign the address */
-    address.sin_port = htons(port);            /* translate int2port num */
+    address.sin_port = htons(status.port);
 
-    sock = socket(AF_INET, SOCK_STREAM, 0);
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == -1) {
         perror("socket");
         std::cerr << "network health check: cannot open socket when connecting to " << host << std::endl;
         return false;
     }
 
+    AutoCloser closer(&sock);
     int rv = fcntl(sock, F_SETFL, O_NONBLOCK);
     if (rv == -1) {
         perror("fcntl");
         std::cerr << "network health check: cannot set nonblocking socket when connecting to " << host << std::endl;
-        closeSock(sock);
         return false;
     }
 
@@ -88,27 +94,42 @@ bool connectTimeout(const char* host, int port, int timeout)
     if (rv != 0 && errno != EINPROGRESS) {
         perror("connect");
         std::cerr << "network health check: error connecting to " << host << std::endl;
-        closeSock(sock);
         return false;
     }
 
-    for (;;) {
-        FD_ZERO(&fdset);
-        FD_SET(sock, &fdset);
-        tv.tv_sec = timeout;
-        tv.tv_usec = 0;
+    constexpr int num_fds = 2;
+    struct pollfd poll_fds[num_fds] = {
+        { sock, POLLIN | POLLOUT, 0 },
+        { thread_.stop_fd(), POLLIN, 0 },
+    };
 
-        rv = select(sock + 1, NULL, &fdset, NULL, &tv);
-
-        if (errno == EAGAIN) {
-            std::cout << "network health check: interrupted... trying again" << std::endl;
-            continue;
+    auto deadline = std::chrono::steady_clock::now() + timeout;
+    while (!thread_.should_stop()) {
+        long msec_timeout = std::chrono::duration_cast<std::chrono::milliseconds>(deadline - std::chrono::steady_clock::now()).count();
+        if (msec_timeout <= 0) {
+            return false;
         }
 
-        if (rv != 1) {
-            perror("select");
-            std::cerr << "network health check: error selecting socket when connecting to " << host << std::endl;
-            closeSock(sock);
+        for (auto& pollfd : poll_fds) {
+            pollfd.revents = 0;
+        }
+        rv = poll(poll_fds, num_fds, msec_timeout);
+        if (rv == 0) {  // timeout
+            return false;
+        }
+        if (rv == -1) {
+            if (errno == EAGAIN) {
+                std::cout << "network health check: interrupted... trying again" << std::endl;
+                continue;
+            }
+
+            perror("poll");
+            std::cerr << "network health check: error polling socket when connecting to " << host << std::endl;
+            return false;
+        }
+
+        // Stop signal
+        if (poll_fds[1].revents != 0) {
             return false;
         }
 
@@ -119,181 +140,95 @@ bool connectTimeout(const char* host, int port, int timeout)
         if (rv != 0) {
             perror("getsockopt");
             std::cerr << "network health check: error getting socket error when connecting to " << host << std::endl;
-            closeSock(sock);
             return false;
         }
 
         if (so_error != 0) {
-            std::cerr << "network health check: error on socket when connecting to " << host << std::endl;
-            closeSock(sock);
+            std::cerr << "network health check: error on socket when connecting to " << host << ": " << StrError(so_error) << std::endl;
             return false;
         }
 
-        closeSock(sock);
-        return true;
+        // Return true if we can either read from or write to the socket, false otherwise.
+        return (poll_fds[0].revents & (POLLIN | POLLOUT)) != 0;
     }
 
     return false;
 }
 
-static void *health_check_loop(void *arg)
-{
-    GetNetworkHealthStatus *getNetworkHealthStatus = (GetNetworkHealthStatus *)arg;
-    getNetworkHealthStatus->run();
-    return NULL;
-}
+GetNetworkHealthStatus::GetNetworkHealthStatus(const std::string& brokerList, std::shared_ptr<prometheus::Registry> registry)
+        : registry_(std::move(registry)) {
+    auto& family = prometheus::BuildGauge()
+        .Name("rox_network_reachability")
+        .Help("Reachability report for every dependency service")
+        .Register(*registry_);
 
-GetNetworkHealthStatus::GetNetworkHealthStatus(std::shared_ptr<prometheus::Registry> registry, bool &terminate_flag)
-  : terminate(terminate_flag),
-      tid(0),
-      lock(PTHREAD_MUTEX_INITIALIZER),
-      registry(registry),
-      family(prometheus::BuildGauge().Name("rox_network_reachability").Help("Reachability report for every dependency service").Register(*registry)),
-      networkHealthEndpoints(std::map<std::string, NetworkHealthStatus*>())
-{
-    // read the Kafka broker list from the env, split the commas.
-    const char* brokerList = ::getenv("BROKER_LIST");
     std::stringstream ss;
-    ss.str(std::string(brokerList));
+    ss.str(brokerList);
     std::string token;
     while (std::getline(ss, token, ',')) {
-        auto& gauge = this->family.Add({{"endpoint", token}, {"name", "kafka"}});
-        networkHealthEndpoints[token] = new NetworkHealthStatus("kafka", token, gauge);
+        auto delimPos = token.find(':');
+        if (delimPos == std::string::npos) {
+            std::cerr << "Broker endpoint " << token << " is not of form <host>:<port>" << std::endl;
+            continue;
+        }
+        std::string host = token.substr(0, delimPos);
+        std::string portStr = token.substr(delimPos + 1);
+        int port = atoi(portStr.c_str());
+        if (port <= 0 || port > 65535) {
+            std::cerr << "Invalid port number: " << portStr << std::endl;
+            continue;
+        }
+        prometheus::Gauge* gauge = &family.Add({{"endpoint", token}, {"name", "kafka"}});
+        network_statuses_.emplace_back("kafka", host, port, gauge);
     }
 }
 
-GetNetworkHealthStatus::~GetNetworkHealthStatus()
-{
-}
-
-void
-GetNetworkHealthStatus::run()
-{
+void GetNetworkHealthStatus::run() {
     using namespace std;
 
-    do {
-        for (auto it = networkHealthEndpoints.begin(); it != networkHealthEndpoints.end(); ++it) {
-
-            int rv = pthread_mutex_lock(&lock);
-            if (rv != 0) {
-                perror("pthread_mutex_lock");
-                throw std::runtime_error("Unexpected error locking mutex for endpoint");
+    while (thread_.Pause(std::chrono::seconds(5))) {
+        for (auto& healthEndpoint : network_statuses_) {
+            if (thread_.should_stop()) {
+                break;
             }
-
-            string endpoint = it->first;
-            NetworkHealthStatus* value = it->second;
-
-            std::stringstream ss;
-            ss.str(endpoint);
-            std::string token;
-            std::string host;
-            int port;
-            for (int i = 0; std::getline(ss, token, ':'); i++) {
-                if (i == 0) {
-                    host = token;
-                } else if (i == 1) {
-                    port = atoi(token.c_str());
-                }
-            }
-
-            value->connected = connectTimeout(host.c_str(), port, 1);
-	    value->gauge.Set(1.0d*value->connected);
-
-            rv = pthread_mutex_unlock(&lock);
-            if (rv != 0) {
-                perror("pthread_mutex_unlock");
-                throw std::runtime_error("Unexpected error unlocking mutex for endpoint");
-            }
+            healthEndpoint.connected = checkEndpointStatus(healthEndpoint, std::chrono::seconds(1));
+            healthEndpoint.gauge->Set(healthEndpoint.connected ? 1.0 : 0.0);
         }
-        sleep(5);
-    } while (!terminate);
+    }
 
-    std::cerr << "Stopping network health check listening thread" << endl;
+    std::cerr << "Stopping network health check listening thread" << std::endl;
 }
 
-bool
-GetNetworkHealthStatus::handleGet(CivetServer *server, struct mg_connection *conn)
-{
-    using namespace std;
-
+bool GetNetworkHealthStatus::handleGet(CivetServer *server, struct mg_connection *conn) {
     Json::Value endpoints(Json::objectValue);
 
-    for (auto it = networkHealthEndpoints.begin(); it != networkHealthEndpoints.end(); ++it) {
-        int rv = pthread_mutex_lock(&lock);
-        if (rv != 0) {
-            perror("pthread_mutex_lock");
-            throw std::runtime_error("Unexpected error locking mutex for endpoint");
-        }
-
-        string endpoint = it->first;
-        NetworkHealthStatus* value = it->second;
-
+    for (const auto& healthEndpoint : network_statuses_) {
         Json::Value endpointJson(Json::objectValue);
-        endpointJson["Name"] = value->name;
-        endpointJson["Endpoint"] = value->endpoint;
-        endpointJson["Connected"] = value->connected;
+        std::string endpoint = healthEndpoint.endpoint();
+        endpointJson["Name"] = healthEndpoint.name;
+        endpointJson["Endpoint"] = endpoint;
+        endpointJson["Connected"] = healthEndpoint.connected;
 
         endpoints[endpoint] = endpointJson;
-
-        rv = pthread_mutex_unlock(&lock);
-        if (rv != 0) {
-            perror("pthread_mutex_unlock");
-            throw std::runtime_error("Unexpected error unlocking mutex for endpoint");
-        }
     }
 
-    Json::StyledStreamWriter writer;
-    stringstream out;
-    writer.write(out, endpoints);
-    const std::string document = out.str();
-
     mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n");
-    mg_printf(conn, "%s\n", document.c_str());
+    mg_printf(conn, "%s\n", endpoints.toStyledString().c_str());
     return true;
 }
 
-void
-GetNetworkHealthStatus::start()
-{
-    int rv = 0;
-    terminate = false;
-    pthread_attr_t attr, *attrptr = nullptr;
-
-    rv = pthread_attr_init(&attr);
-    if (rv != 0) {
-        perror("pthread_attr_init");
-        throw std::runtime_error("Unexpected error creating network health check loop thread");
+bool GetNetworkHealthStatus::start() {
+    if (!thread_.Start(&GetNetworkHealthStatus::run, this)) {
+        std::cerr << "Failed to start network health status thread" << std::endl;
+        return false;
     }
-
-    rv = pthread_attr_setstacksize(&attr, 1024*1024);
-    if (rv != 0) {
-        perror("pthread_attr_setstacksize");
-        throw std::runtime_error("Unexpected error creating network health check loop thread");
-    }
-
-    std::cerr << "Stack size for network health check thread set to 1MB" << std::endl;
-    attrptr = &attr;
-
-    rv = pthread_create(&tid, attrptr, &health_check_loop, (void *)this);
-    if (rv != 0) {
-        perror("pthread_create");
-        throw std::runtime_error("Unexpected error creating network health check loop thread");
-    }
+    return true;
 }
 
-void
-GetNetworkHealthStatus::stop()
-{
-    terminate = true;
-    if (tid) {
-        int err = pthread_join(tid, NULL);
-        if (err != 0) {
-            perror("pthread_create");
-            throw std::runtime_error("Unexpected error creating network health check loop thread");
-        }
-    }
+void GetNetworkHealthStatus::stop() {
+    if (!thread_.running()) return;
+    thread_.Stop();
     std::cerr << "Network health check stopped" << std::endl;
 }
 
-}   /* namespace listener */
-
+}  // namespace collector

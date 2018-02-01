@@ -21,32 +21,58 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef _COLLECTOR_STATS_EXPORTER_H_
-#define _COLLECTOR_STATS_EXPORTER_H_
+#include <unistd.h>
 
-#include <memory>
+#include <iostream>
 
 #include "StoppableThread.h"
-#include "SysdigService.h"
-
-#include "prometheus/registry.h"
+#include "Utility.h"
 
 namespace collector {
 
-class CollectorStatsExporter {
-  public:
-    CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, SysdigService *sysdig);
+bool StoppableThread::prepareStart() {
+  if (running()) {
+    std::cerr << "Could not start thread: already running" << std::endl;
+    return false;
+  }
+  should_stop_.store(false, std::memory_order_relaxed);
+  if (pipe(stop_pipe_) != 0) {
+    std::cerr << "Could not create pipe for stop signals: " << StrError(errno) << std::endl;
+    return false;
+  }
+  return true;
+}
 
-    bool start();
-    void run();
-    void stop();
+bool StoppableThread::doStart(std::thread* thread) {
+  thread_.reset(thread);
+  return true;
+}
 
-  private:
-    std::shared_ptr<prometheus::Registry> registry_;
-    SysdigService *sysdig_;
-    StoppableThread thread_;
-};
+bool StoppableThread::Pause(std::chrono::nanoseconds duration) {
+  std::unique_lock<std::mutex> lock(stop_mutex_);
+  return !stop_cond_.wait_for(lock, duration, [this]() { return should_stop(); });
+}
+
+void StoppableThread::Stop() {
+  should_stop_.store(true, std::memory_order_relaxed);
+  stop_cond_.notify_all();
+  for (;;) {
+    int rv = close(stop_pipe_[1]);
+    if (rv != 0) {
+      std::cerr << "Failed to close writing end of pipe: " << StrError(errno) << std::endl;
+      if (errno == EINTR) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        continue;
+      }
+    }
+    break;
+  }
+  thread_->join();
+  thread_.reset();
+  int rv = close(stop_pipe_[0]);
+  if (rv != 0) {
+    std::cerr << "Failed to close reading end of pipe: " << StrError(errno) << std::endl;
+  }
+}
 
 }  // namespace collector
-
-#endif  // _COLLECTOR_STATS_EXPORTER_H_

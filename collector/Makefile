@@ -1,4 +1,5 @@
 HDRS := $(wildcard lib/*.h) \
+    sysdig/src/userspace/sysdig/sysdig_api.h \
     sysdig/src/userspace/sysdig/KafkaClient.h \
     sysdig/src/driver/ppm_events_public.h
 
@@ -27,6 +28,7 @@ container/bin/collector: $(HDRS) $(SRCS) container/libs/libsysdignative.so build
 	  -v $(CURDIR):/src \
 	  -v $(CURDIR)/sysdig/src/userspace/sysdig/KafkaClient.h:/usr/local/include/KafkaClient.h \
 	  -v $(CURDIR)/sysdig/src/driver/ppm_events_public.h:/usr/local/include/ppm_events_public.h \
+	  -v $(CURDIR)/sysdig/src/userspace/sysdig/sysdig_api.h:/usr/local/include/sysdig_api.h \
 	  --name build_collector build_collector
 	cp cmake-build/collector container/bin/
 	docker cp build_collector:/usr/local/lib/libcurl.so container/libs/

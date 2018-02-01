@@ -26,22 +26,18 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <string>
 
-#include "KafkaClient.h"
-
 extern "C" {
-    #include <sys/types.h>
-    #include <inttypes.h>
+#include <sys/types.h>
+#include <inttypes.h>
 }
+
+#include "sysdig_api.h"
+
+#include "KafkaClient.h"
 
 namespace collector {
 
-struct SysdigStats {
-  uint64_t    nEvents;                // the number of kernel events
-  uint64_t    nDrops;                 // the number of drops
-  uint64_t    nPreemptions;           // the number of preemptions
-  uint64_t    nFilteredEvents;        // events post chisel filter
-  std::string nodeName;               // the name of this node (hostname)
-};
+using SysdigStats = ::sysdigStatsT;
 
 class Sysdig {
     public:
@@ -56,6 +52,7 @@ class Sysdig {
     virtual void cleanup() = 0;
 
     virtual bool stats(SysdigStats &s) = 0;
+    virtual const std::string& nodeName() const = 0;
 };
 
 }   /* namespace collector */

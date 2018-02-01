@@ -21,7 +21,6 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#include <iostream>
 #include <map>
 #include <string>
 #include <vector>
@@ -38,25 +37,7 @@ extern "C" {
 #include "KafkaClient.h"
 #include "SysdigService.h"
 
-extern "C" {
-
-typedef struct {
-  uint64_t    nEvents;                // the number of kernel events
-  uint64_t    nDrops;                 // the number of drops
-  uint64_t    nPreemptions;           // the number of preemptions
-  uint64_t    nFilteredEvents;        // events post chisel filter
-  std::string nodeName;               // the name of this node (hostname)
-} sysdigDataT;
-
-int sysdigInitialize(string chiselName, string brokerList, string format,
-                     bool useKafka, string defaultTopic, string networkTopic,
-                     string processTopic, string fileTopic, string processSyscalls, int snapLen);
-void sysdigCleanup();
-void sysdigStartProduction(bool &isInterrupted);
-bool sysdigGetSysdigData(sysdigDataT& sysdigData);
-bool isSysdigInitialized();
-
-}
+#include "sysdig_api.h"
 
 namespace collector {
 
@@ -224,17 +205,11 @@ SysdigService::stats(SysdigStats &out)
 {
     using namespace std;
 
-    sysdigDataT sysdigData;
+    return sysdigGetSysdigStats(out);
+}
 
-    bool result = sysdigGetSysdigData(sysdigData);
-    if (result) {
-        out.nEvents = sysdigData.nEvents;
-        out.nDrops = sysdigData.nDrops;
-        out.nPreemptions = sysdigData.nPreemptions;
-        out.nFilteredEvents = sysdigData.nFilteredEvents;
-        out.nodeName = sysdigData.nodeName;
-    }
-    return result;
+const std::string& SysdigService::nodeName() const {
+  return sysdigGetNodeName();
 }
 
 void

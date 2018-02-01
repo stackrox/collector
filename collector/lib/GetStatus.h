@@ -41,7 +41,6 @@ class GetStatus : public CivetHandler {
 
     public:
     GetStatus(Sysdig *sysdig);
-    virtual ~GetStatus();
     bool handleGet(CivetServer *server, struct mg_connection *conn);
 };
 

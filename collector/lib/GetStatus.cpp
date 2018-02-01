@@ -21,9 +21,7 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#include <map>
 #include <string>
-#include <sstream>
 
 #include <json/json.h>
 
@@ -39,20 +37,12 @@ GetStatus::GetStatus(Sysdig *sysdigService)
 {
 }
 
-GetStatus::~GetStatus()
-{
-}
-
 bool
 GetStatus::handleGet(CivetServer *server, struct mg_connection *conn)
 {
     using namespace std;
 
     Json::Value status(Json::objectValue);
-    Json::StyledStreamWriter writer;
-    stringstream out;
-    writer.write(out, status);
-    const std::string document = out.str();
 
     bool ready = sysdig->ready();
 
@@ -64,7 +54,7 @@ GetStatus::handleGet(CivetServer *server, struct mg_connection *conn)
             status["sysdig"]["status"] = "stats unavailable";
         } else {
             status["sysdig"] = Json::Value(Json::objectValue);
-            status["sysdig"]["node"] = stats.nodeName;
+            status["sysdig"]["node"] = sysdig->nodeName();
             status["sysdig"]["events"] = Json::UInt64(stats.nEvents);
             status["sysdig"]["drops"] = Json::UInt64(stats.nDrops);
             status["sysdig"]["preemptions"] = Json::UInt64(stats.nPreemptions);
@@ -72,10 +62,10 @@ GetStatus::handleGet(CivetServer *server, struct mg_connection *conn)
         }
 
         mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n");
-        mg_printf(conn, "%s\n", document.c_str());
+        mg_printf(conn, "%s\n", status.toStyledString().c_str());
     } else {
         mg_printf(conn, "HTTP/1.1 503 Service Unavailable\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n");
-        mg_printf(conn, "%s\n", document.c_str());
+        mg_printf(conn, "%s\n", "{}");
     }
 
     return true;

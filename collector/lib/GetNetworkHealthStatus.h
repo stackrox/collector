@@ -24,43 +24,49 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _GET_NETWORK_HEALTH_STATUS_H_
 #define _GET_NETWORK_HEALTH_STATUS_H_
 
-#include <map>
+#include <memory>
 #include <string>
+#include <vector>
 
-#include <json/json.h>
 #include "civetweb/CivetServer.h"
 #include "prometheus/registry.h"
+
+#include "StoppableThread.h"
 
 namespace collector {
 
 class GetNetworkHealthStatus : public CivetHandler {
-    public:
-    GetNetworkHealthStatus(std::shared_ptr<prometheus::Registry> registry, bool &terminate);
+ public:
+  GetNetworkHealthStatus(const std::string& brokerList, std::shared_ptr<prometheus::Registry> registry);
 
-    void start();
-    void stop();
-    void run();
+  bool start();
+  void stop();
+  void run();
 
-    virtual ~GetNetworkHealthStatus();
-    bool handleGet(CivetServer *server, struct mg_connection *conn);
+  bool handleGet(CivetServer *server, struct mg_connection *conn) override;
 
-    private:
-    bool &terminate;
-    pthread_t tid;
-    pthread_mutex_t lock;
-    std::shared_ptr<prometheus::Registry> registry;
-    prometheus::Family<prometheus::Gauge>& family;
+ private:
+  struct NetworkHealthStatus {
+    std::string name;
+    std::string host;
+    int port;
+    prometheus::Gauge* gauge;
+    volatile bool connected;
+    NetworkHealthStatus(std::string name, std::string host, int port, prometheus::Gauge* gauge)
+        : name(name), host(host), port(port), gauge(gauge), connected(false) {}
 
-    struct NetworkHealthStatus {
-        std::string name;
-        std::string endpoint;
-        prometheus::Gauge& gauge;
-        bool connected;
-      NetworkHealthStatus(std::string n, std::string e, prometheus::Gauge& g) : name(n), endpoint(e), gauge(g), connected(false) {}
-    };
-    std::map<std::string, NetworkHealthStatus*> networkHealthEndpoints;
+    std::string endpoint() const {
+      return host + ":" + std::to_string(port);
+    }
+  };
+
+  bool checkEndpointStatus(const NetworkHealthStatus& status, std::chrono::milliseconds timeout);
+    
+  StoppableThread thread_;
+  std::vector<NetworkHealthStatus> network_statuses_;
+  std::shared_ptr<prometheus::Registry> registry_;
 };
 
-}   /* namespace listener */
+}  // namespace collector
 
-#endif  /* _GET_NETWORK_HEALTH_STATUS_H_ */
+#endif  // _GET_NETWORK_HEALTH_STATUS_H_

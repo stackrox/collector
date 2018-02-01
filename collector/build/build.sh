@@ -4,6 +4,6 @@ set -eux
 ldconfig -v
 mkdir -p /src/cmake-build
 cd /src/cmake-build
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make all
 ./runUnitTests

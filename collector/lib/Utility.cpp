@@ -21,43 +21,27 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef _SYSDIG_SERVICE_H_
-#define _SYSDIG_SERVICE_H_
+extern "C" {
 
-#include <string>
-#include <map>
-#include <vector>
+#include <errno.h>
+#include <string.h>
 
-#include "KafkaClient.h"
-#include "Sysdig.h"
+}
+
+#include "Utility.h"
 
 namespace collector {
 
-class SysdigService : public Sysdig {
-    public:
-    SysdigService(bool &terminateFlag);
-    virtual ~SysdigService();
+static constexpr int kMsgBufSize = 4096;
 
-    int init(std::string chiselName, std::string brokerList, std::string format,
-             bool useKafka, std::string defaultTopic, std::string networkTopic,
-             std::string processTopic, std::string fileTopic, std::string processSyscalls,int snapLen);
-    bool ready();
-    void runForever();
-    void cleanup();
+const char* StrError(int errnum) {
+  thread_local char msg_buffer[kMsgBufSize];
+  strerror_r(errnum, msg_buffer, kMsgBufSize);
+  return msg_buffer;
+}
 
-    void getSyscallIds(std::string syscall, std::vector<int>& ids);
+const char* StrError() {
+  return StrError(errno);
+}
 
-    bool stats(SysdigStats &s);
-    const std::string& nodeName() const;
-
-    static std::string modulePath;
-    static std::string moduleName;
-
-    private:
-    bool &terminate;
-    std::map<std::string, int> syscallsMap;
-};
-
-}   /* namespace collector */
-
-#endif  /* _SYSDIG_SERVICE_H_ */
+}  // namespace collector

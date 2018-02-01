@@ -24,7 +24,6 @@ You should have received a copy of the GNU General Public License along with thi
 #include <iostream>
 #include <chrono>
 #include <string>
-#include <thread>
 
 #include "SysdigService.h"
 #include "CollectorStatsExporter.h"
@@ -38,59 +37,32 @@ extern "C" {
 
 namespace collector {
 
-void * callback(void * arg)
-{
-    CollectorStatsExporter *exporter = (CollectorStatsExporter *) arg;
-    exporter->run();
-    return NULL;
-}
+CollectorStatsExporter::CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, SysdigService* sysdig)
+    : registry_(std::move(registry)), sysdig_(sysdig)
+{}
 
-CollectorStatsExporter::CollectorStatsExporter(std::shared_ptr<prometheus::Registry> aRegistry, SysdigService *theSysdig)
-    : registry(aRegistry), sysdig(theSysdig)
-{
-}
-
-CollectorStatsExporter::~CollectorStatsExporter(){
-}
-
-bool
-CollectorStatsExporter::start()
-{
-    int rv = pthread_create(&this->thread, NULL, callback, this);
-    if (rv != 0) {
-        std::cerr << "Error creating sysdig stats exporter: " << strerror(rv) << std::endl;
+bool CollectorStatsExporter::start() {
+    if (!thread_.Start(&CollectorStatsExporter::run, this)) {
+        std::cerr << "Could not start sysdig stats exporter: already running" << std::endl;
         return false;
     }
     return true;
 }
 
-void
-CollectorStatsExporter::run()
-{
+void CollectorStatsExporter::run() {
     auto& collectorEventCounters = prometheus::BuildGauge()
         .Name("rox_collector_events")
         .Help("Collector events")
-        .Register(*this->registry);
-
-    auto& collectorNetworkReachability = prometheus::BuildGauge()
-        .Name("rox_network_reachability")
-        .Help("Reachability report for every dependency service")
-        .Register(*this->registry);
+        .Register(*registry_);
 
     auto& kernel = collectorEventCounters.Add({{"type", "kernel"}});
     auto& drops = collectorEventCounters.Add({{"type", "drops"}});
     auto& preemptions = collectorEventCounters.Add({{"type", "preemptions"}});
     auto& filtered = collectorEventCounters.Add({{"type", "filtered"}});
 
-    for (;;) {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-
-        if (!sysdig->ready()) {
-            continue;
-        }
-
+    while (thread_.Pause(std::chrono::seconds(1))) {
         SysdigStats stats;
-        if (!sysdig->stats(stats)) {
+        if (!sysdig_->stats(stats)) {
             continue;
         }
 
@@ -101,5 +73,11 @@ CollectorStatsExporter::run()
     }
 }
 
-}   /* namespace collector */
+void CollectorStatsExporter::stop()
+{
+    thread_.Stop();
+}
+
+
+}  // namespace collector
 

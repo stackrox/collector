@@ -20,44 +20,15 @@ You should have received a copy of the GNU General Public License along with thi
 * do not wish to do so, delete this exception statement from your
 * version.
 */
-
-#ifndef _SYSDIG_SERVICE_H_
-#define _SYSDIG_SERVICE_H_
-
-#include <string>
-#include <map>
-#include <vector>
-
-#include "KafkaClient.h"
-#include "Sysdig.h"
+#ifndef _UTILITY_H_
+#define _UTILITY_H_
 
 namespace collector {
 
-class SysdigService : public Sysdig {
-    public:
-    SysdigService(bool &terminateFlag);
-    virtual ~SysdigService();
+// The following functions are thread-safe versions of strerror, which are more convenient to use than strerror_r.
+const char* StrError();
+const char* StrError(int errnum);
 
-    int init(std::string chiselName, std::string brokerList, std::string format,
-             bool useKafka, std::string defaultTopic, std::string networkTopic,
-             std::string processTopic, std::string fileTopic, std::string processSyscalls,int snapLen);
-    bool ready();
-    void runForever();
-    void cleanup();
+}  // namespace collector
 
-    void getSyscallIds(std::string syscall, std::vector<int>& ids);
-
-    bool stats(SysdigStats &s);
-    const std::string& nodeName() const;
-
-    static std::string modulePath;
-    static std::string moduleName;
-
-    private:
-    bool &terminate;
-    std::map<std::string, int> syscallsMap;
-};
-
-}   /* namespace collector */
-
-#endif  /* _SYSDIG_SERVICE_H_ */
+#endif  // _UTILITY_H_

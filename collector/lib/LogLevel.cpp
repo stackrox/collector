@@ -25,8 +25,6 @@ You should have received a copy of the GNU General Public License along with thi
 #include <string>
 #include <iostream>
 #include <fstream>
-#include <sstream>
-#include <string>
 #include <cstring>
 
 #include <json/json.h>
@@ -66,14 +64,9 @@ LogLevel::handlePost(CivetServer *server, struct mg_connection *conn)
     }
 
     std::cout << "Log Level updated" << std::endl;
-
-    Json::StyledStreamWriter writer;
-    stringstream out;
-    writer.write(out, status);
-    const std::string document = out.str();
                     
     mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n");
-    mg_printf(conn, "%s\n", document.c_str());
+    mg_printf(conn, "%s\n", status.toStyledString().c_str());
     return true;
 }
 

@@ -20,44 +20,45 @@ You should have received a copy of the GNU General Public License along with thi
 * do not wish to do so, delete this exception statement from your
 * version.
 */
+#ifndef _STOPPABLE_THREAD_H_
+#define _STOPPABLE_THREAD_H_
 
-#ifndef _SYSDIG_SERVICE_H_
-#define _SYSDIG_SERVICE_H_
-
-#include <string>
-#include <map>
-#include <vector>
-
-#include "KafkaClient.h"
-#include "Sysdig.h"
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <memory>
+#include <mutex>
+#include <thread>
+#include <utility>
 
 namespace collector {
 
-class SysdigService : public Sysdig {
-    public:
-    SysdigService(bool &terminateFlag);
-    virtual ~SysdigService();
+class StoppableThread {
+ public:
+  template <typename... Args>
+  bool Start(Args&&... args) {
+    if (!prepareStart()) return false;
+    return doStart(new std::thread(std::forward<Args>(args)...));
+  }
+  void Stop();
+  bool Pause(std::chrono::nanoseconds duration);
 
-    int init(std::string chiselName, std::string brokerList, std::string format,
-             bool useKafka, std::string defaultTopic, std::string networkTopic,
-             std::string processTopic, std::string fileTopic, std::string processSyscalls,int snapLen);
-    bool ready();
-    void runForever();
-    void cleanup();
+  bool should_stop() const { return should_stop_.load(std::memory_order_relaxed); }
+  int stop_fd() const { return stop_pipe_[0]; }
 
-    void getSyscallIds(std::string syscall, std::vector<int>& ids);
+  bool running() const { return thread_ != nullptr; }
 
-    bool stats(SysdigStats &s);
-    const std::string& nodeName() const;
+ private:
+  bool prepareStart();
+  bool doStart(std::thread* thread);
 
-    static std::string modulePath;
-    static std::string moduleName;
-
-    private:
-    bool &terminate;
-    std::map<std::string, int> syscallsMap;
+  std::unique_ptr<std::thread> thread_;
+  std::mutex stop_mutex_;
+  std::condition_variable stop_cond_;
+  std::atomic<bool> should_stop_;
+  int stop_pipe_[2];
 };
 
-}   /* namespace collector */
+}  // namespace collector
 
-#endif  /* _SYSDIG_SERVICE_H_ */
+#endif  // _STOPPABLE_THREAD_H_
