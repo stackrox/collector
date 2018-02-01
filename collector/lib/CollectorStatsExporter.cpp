@@ -72,6 +72,11 @@ CollectorStatsExporter::run()
         .Help("Collector events")
         .Register(*this->registry);
 
+    auto& collectorNetworkReachability = prometheus::BuildGauge()
+        .Name("rox_network_reachability")
+        .Help("Reachability report for every dependency service")
+        .Register(*this->registry);
+
     auto& kernel = collectorEventCounters.Add({{"type", "kernel"}});
     auto& drops = collectorEventCounters.Add({{"type", "drops"}});
     auto& preemptions = collectorEventCounters.Add({{"type", "preemptions"}});

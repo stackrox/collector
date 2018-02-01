@@ -28,14 +28,14 @@ You should have received a copy of the GNU General Public License along with thi
 #include <string>
 
 #include <json/json.h>
-
 #include "civetweb/CivetServer.h"
+#include "prometheus/registry.h"
 
 namespace collector {
 
 class GetNetworkHealthStatus : public CivetHandler {
     public:
-    GetNetworkHealthStatus(bool &terminate);
+    GetNetworkHealthStatus(std::shared_ptr<prometheus::Registry> registry, bool &terminate);
 
     void start();
     void stop();
@@ -48,15 +48,15 @@ class GetNetworkHealthStatus : public CivetHandler {
     bool &terminate;
     pthread_t tid;
     pthread_mutex_t lock;
+    std::shared_ptr<prometheus::Registry> registry;
+    prometheus::Family<prometheus::Gauge>& family;
 
     struct NetworkHealthStatus {
         std::string name;
         std::string endpoint;
+        prometheus::Gauge& gauge;
         bool connected;
-        NetworkHealthStatus(std::string n, std::string e) : connected(false) {
-            name = n;
-            endpoint = e;
-        }
+      NetworkHealthStatus(std::string n, std::string e, prometheus::Gauge& g) : name(n), endpoint(e), gauge(g), connected(false) {}
     };
     std::map<std::string, NetworkHealthStatus*> networkHealthEndpoints;
 };

@@ -143,10 +143,12 @@ static void *health_check_loop(void *arg)
     return NULL;
 }
 
-GetNetworkHealthStatus::GetNetworkHealthStatus(bool &terminate_flag)
-    : terminate(terminate_flag),
+GetNetworkHealthStatus::GetNetworkHealthStatus(std::shared_ptr<prometheus::Registry> registry, bool &terminate_flag)
+  : terminate(terminate_flag),
       tid(0),
       lock(PTHREAD_MUTEX_INITIALIZER),
+      registry(registry),
+      family(prometheus::BuildGauge().Name("rox_network_reachability").Help("Reachability report for every dependency service").Register(*registry)),
       networkHealthEndpoints(std::map<std::string, NetworkHealthStatus*>())
 {
     // read the Kafka broker list from the env, split the commas.
@@ -155,7 +157,8 @@ GetNetworkHealthStatus::GetNetworkHealthStatus(bool &terminate_flag)
     ss.str(std::string(brokerList));
     std::string token;
     while (std::getline(ss, token, ',')) {
-        networkHealthEndpoints[token] = new NetworkHealthStatus("kafka", token);
+        auto& gauge = this->family.Add({{"endpoint", token}, {"name", "kafka"}});
+        networkHealthEndpoints[token] = new NetworkHealthStatus("kafka", token, gauge);
     }
 }
 
@@ -194,6 +197,7 @@ GetNetworkHealthStatus::run()
             }
 
             value->connected = connectTimeout(host.c_str(), port, 1);
+	    value->gauge.Set(1.0d*value->connected);
 
             rv = pthread_mutex_unlock(&lock);
             if (rv != 0) {

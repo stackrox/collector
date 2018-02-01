@@ -324,7 +324,9 @@ startChild(std::string chiselName, std::string brokerList,
     CivetServer server(options);
 
     GetStatus getStatus(&sysdig);
-    GetNetworkHealthStatus getNetworkHealthStatus(g_terminate);
+
+    std::shared_ptr<prometheus::Registry> registry = std::make_shared<prometheus::Registry>();
+    GetNetworkHealthStatus getNetworkHealthStatus(registry, g_terminate);
     server.addHandler("/ready", getStatus);
     server.addHandler("/networkHealth", getNetworkHealthStatus);
     server.addHandler("/loglevel", setLogLevel);
@@ -332,7 +334,6 @@ startChild(std::string chiselName, std::string brokerList,
 
     // TODO(cg): Implement a way to not have these disappear after child restart.
     prometheus::Exposer exposer("9090");
-    std::shared_ptr<prometheus::Registry> registry = std::make_shared<prometheus::Registry>();
     exposer.RegisterCollectable(registry);
 
     getNetworkHealthStatus.start();
