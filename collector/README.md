@@ -1,7 +1,7 @@
 Collector
 =========
 
-Welcome to **Collector**!!
+Welcome to **Collector**!
 
 **Collector** is a system visibility docker container.
 
