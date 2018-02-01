@@ -388,7 +388,7 @@ SignalType sinsp_evt_formatter::to_sparse_string(sinsp_evt* evt, SafeBuffer& buf
 
 	// m_token_to_field_map has [index in m_tokens] -> [field name]
 	for(map<int, string>::iterator it = m_token_to_field_map.begin();
-			it != m_token_to_field_map.end(); it++)
+			it != m_token_to_field_map.end() && buffer.remaining() > 3; it++)
 	{
 		j = it->first;
 		if (j >= m_tokens.size())

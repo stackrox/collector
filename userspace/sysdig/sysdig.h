@@ -57,6 +57,7 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "KafkaClient.h"
 #include "safe_buffer.h"
+#include "sysdig_api.h"
 
 //
 // Capture results
@@ -118,32 +119,27 @@ struct summary_table_entry_rsort_comparer
 };
 
 #define DEFAULT_BUFFER_SIZE 4096
-#define DEFAULT_METRICS_PERIODICITY 2000000
 
 class SysdigPersistentState {
     private:
-        long metricsFrequency;
         sinsp* inspector;
         string chiselName;
         sinsp_chisel* chisel;
         sinsp_evt_formatter* formatter;
-        int periodicity;
         int snapLen;
         SafeBuffer eventBuffer;
         bool useKafka;
         KafkaClient* kafkaClient;
 
     public:
-        SysdigPersistentState(long _metricsFrequency, sinsp* _inspector, string _chiselName, sinsp_chisel* _chisel,
-                              sinsp_evt_formatter* _formatter, int _periodicity, int _snapLen,
-                              int eventBufferSize, bool _useKafka, string brokerList, string defaultTopic,
-                              string networkTopic, string processTopic, string fileTopic, string processSyscalls) :
-            metricsFrequency(_metricsFrequency),
+        SysdigPersistentState(sinsp* _inspector, string _chiselName, sinsp_chisel* _chisel,
+                              sinsp_evt_formatter* _formatter, int _snapLen, int eventBufferSize, bool _useKafka,
+                              string brokerList, string defaultTopic, string networkTopic, string processTopic,
+                              string fileTopic, string processSyscalls) :
             inspector(_inspector),
             chiselName(_chiselName),
             chisel(_chisel),
             formatter(_formatter),
-            periodicity(_periodicity),
             snapLen(_snapLen),
             eventBuffer(eventBufferSize <= 0 ? DEFAULT_BUFFER_SIZE : eventBufferSize),
             useKafka(_useKafka)
@@ -171,23 +167,19 @@ class SysdigPersistentState {
             delete kafkaClient;
         }
 
-        inline long getMetricsFrequency() { return metricsFrequency; }
         inline sinsp* getInspector() { return inspector; }
         inline string getChiselName() { return chiselName; }
         inline sinsp_chisel* getChisel() { return chisel; }
         inline sinsp_evt_formatter* getFormatter() { return formatter; }
-        inline int getPeriodicity() { return periodicity; }
         inline int getSnapLen() { return snapLen; }
         inline SafeBuffer& getEventBuffer() { return eventBuffer; }
         inline bool usingKafka() { return useKafka; }
         inline KafkaClient* getKafkaClient() { return kafkaClient; }
 
-        inline void setMetricsFrequency(long _metricsFrequency) { metricsFrequency = _metricsFrequency; }
         inline void setInspector(sinsp* _inspector) { inspector = _inspector; }
         inline void setChiselName(string _chiselName) { chiselName = _chiselName; }
         inline void setChisel(sinsp_chisel* _chisel) { chisel = _chisel; }
         inline void setFormatter(sinsp_evt_formatter* _formatter) { formatter = _formatter; }
-        inline void setPeriodicity(int _periodicity) { periodicity = _periodicity; }
         inline void setSnapLen(int _snapLen) { snapLen = _snapLen; }
         inline void setUseKafka(bool _useKafka) { useKafka = _useKafka; }
         inline void setEventBufferSize(int eventBufferSize) {
@@ -198,26 +190,6 @@ class SysdigPersistentState {
             kafkaClient = new KafkaClient(brokerList, defaultTopic, networkTopic, processTopic, fileTopic);
         }
 };
-
-extern "C" {
-
-typedef struct {
-    uint64_t    nEvents;                // the number of kernel events
-    uint64_t    nDrops;                 // the number of drops
-    uint64_t    nPreemptions;           // the number of preemptions
-    uint64_t    nFilteredEvents;        // events post chisel filter
-    std::string nodeName;               // the name of this node (hostname)
-} sysdigDataT;
-
-int sysdigInitialize(string chiselName, string brokerList, string format, bool useKafka,
-                     string defaultTopic, string networkTopic, string processTopic, string fileTopic,
-                     string processSyscalls, int snapLen);
-void sysdigCleanup();
-void sysdigStartProduction(bool& isInterrupted);
-bool sysdigGetSysdigData(sysdigDataT& sysdigData);
-bool isSysdigInitialized();
-
-}
 
 sysdig_init_res sysdig_init(int argc, char** argv, bool setupOnly = false);
 

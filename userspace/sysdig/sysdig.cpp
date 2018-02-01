@@ -50,6 +50,7 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/stat.h>
 #include <assert.h>
 #include <algorithm>
+#include <atomic>
 #include <mutex>
 #include <sstream>
 
@@ -78,7 +79,10 @@ static void usage();
 
 // the sysdig data object that keeps track of all the little factoids associated with
 // sysdig production
-static sysdigDataT sysdigData;
+static struct {
+  std::atomic<uint64_t> nFilteredEvents;
+  std::string           nodeName;
+} sysdigData;
 
 // data that we want to be persistent at process scope
 static SysdigPersistentState* persistentState = NULL;
@@ -773,25 +777,12 @@ const SafeBuffer& do_getnext(SignalType* signalType, string* networkKey) {
 	sinsp* inspector = persistentState->getInspector();
 	sinsp_evt_formatter* formatter = persistentState->getFormatter();
 	sinsp_chisel* chisel = persistentState->getChisel();
-	int periodicity = persistentState->getPeriodicity();
 
 	eventBuffer.clear();
 	if (inspector == NULL || formatter == NULL || chisel == NULL) {
 		cout << "inspector|formatter|chisel unintialized!" << endl;
 		return eventBuffer;
 	}
-
-	periodicity = (periodicity + 1) % persistentState->getMetricsFrequency();
-	persistentState->setPeriodicity(periodicity);
-	if (periodicity == 0) {
-	    scap_stats cstats;
-	    inspector->get_capture_stats(&cstats);
-
-	    // populate factoids
-	    sysdigData.nEvents = cstats.n_evts;
-	    sysdigData.nDrops = cstats.n_drops;
-	    sysdigData.nPreemptions = cstats.n_preemptions;
-    }
 
 	res = inspector->next(&ev);
 
@@ -804,8 +795,8 @@ const SafeBuffer& do_getnext(SignalType* signalType, string* networkKey) {
 	}
 
 	if (chisel->process(ev)) {
-		sysdigData.nFilteredEvents++;
-		*signalType = formatter->to_sparse_string(ev, eventBuffer, persistentState->getSnapLen(), *networkKey);
+		sysdigData.nFilteredEvents.fetch_add(1, std::memory_order_relaxed);
+        *signalType = formatter->to_sparse_string(ev, eventBuffer, persistentState->getSnapLen(), *networkKey);
 	}
 	return eventBuffer;
 }
@@ -1670,9 +1661,7 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 			}
 
 			// initialize the sysdig factoid object
-			sysdigData.nEvents = 0;
-			sysdigData.nDrops = 0;
-			sysdigData.nFilteredEvents = 0;
+			sysdigData.nFilteredEvents.store(0, std::memory_order_relaxed);
 
 			// Hostname is this node's name represented as a null-terminated
 			// string. It is returned as part of the
@@ -1791,21 +1780,26 @@ exit:
 	return res;
 }
 
-static bool isInitialized = false;
+static std::atomic<bool> isInitialized(false);
 
 bool isSysdigInitialized() {
-    return isInitialized;
+    bool initialized = isInitialized.load(std::memory_order_relaxed);
+    if (initialized) {
+        std::atomic_thread_fence(std::memory_order_acquire);
+    }
+    return initialized;
 }
 
 // Method to close the inspector and cleanup
 void sysdigCleanup() {
+    isInitialized.store(false, std::memory_order_release);
+
 	sinsp* inspector = persistentState->getInspector();
 	if (inspector)
 		inspector->close();
 	delete inspector;
 	delete persistentState;
 	persistentState = NULL;
-	isInitialized = false;
 }
 
 //
@@ -1890,8 +1884,6 @@ int sysdigInitialize(string chiselName, string brokerList, string format,
 
     // setup persistent store
     persistentState = new SysdigPersistentState();
-    persistentState->setMetricsFrequency(DEFAULT_METRICS_PERIODICITY);
-    persistentState->setEventBufferSize(s_eventBufferSize);
 
     vector<string> args;
     args.push_back("sysdig");
@@ -1932,21 +1924,33 @@ int sysdigInitialize(string chiselName, string brokerList, string format,
 
     sysdig_init(argc, (char**)&argv, true /* setup_only */);
 
-    isInitialized = true;
+    isInitialized.store(true, std::memory_order_release);
 
     return 0;
 }
 
-bool sysdigGetSysdigData(sysdigDataT& data) {
-    // Fields that change
-    data.nEvents = sysdigData.nEvents;
-    data.nDrops = sysdigData.nDrops;
-    data.nPreemptions = sysdigData.nPreemptions;
-    data.nFilteredEvents = sysdigData.nFilteredEvents;
+bool sysdigGetSysdigStats(sysdigStatsT& stats) {
+    if (!isInitialized.load(std::memory_order_relaxed)) {
+        return false;
+    }
 
-    data.nodeName = sysdigData.nodeName;
+    std::atomic_thread_fence(std::memory_order_acquire);
+
+	sinsp* inspector = persistentState->getInspector();
+	scap_stats cstats;
+    inspector->get_capture_stats(&cstats);
+
+    // Fields that change
+    stats.nEvents = cstats.n_evts;
+    stats.nDrops = cstats.n_drops;
+    stats.nPreemptions = cstats.n_preemptions;
+    stats.nFilteredEvents = sysdigData.nFilteredEvents.load(std::memory_order_relaxed);
 
     return true;
+}
+
+const std::string& sysdigGetNodeName() {
+    return sysdigData.nodeName;
 }
 
 int main(int argc, char **argv)
@@ -1955,7 +1959,6 @@ int main(int argc, char **argv)
 
 	// setup persistent store
     persistentState = new SysdigPersistentState();
-    persistentState->setMetricsFrequency(DEFAULT_METRICS_PERIODICITY);
     persistentState->setEventBufferSize(s_eventBufferSize);
 
     sysdig_init(argc, argv, true /* setup_only */);
