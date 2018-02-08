@@ -1,5 +1,9 @@
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-image-4.11.0-1011-azure_4.11.0-1011.11_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.11.0-1011-azure_4.11.0-1011.11_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-image-4.13.0-1009-azure_4.13.0-1009.12_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.13.0-1009-azure_4.13.0-1009.12_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-image-4.13.0-1010-azure_4.13.0-1010.13_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.13.0-1010-azure_4.13.0-1010.13_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-image-4.11.0-1013-azure_4.11.0-1013.13_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.11.0-1013-azure_4.11.0-1013.13_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-image-4.11.0-1014-azure_4.11.0-1014.14_amd64.deb
@@ -17,6 +21,8 @@ http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.13.0-1
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-image-4.11.0-1009-azure_4.11.0-1009.9_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.11.0-1009-azure_4.11.0-1009.9_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.11.0-1011_4.11.0-1011.11_all.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.13.0-1009_4.13.0-1009.12_all.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.13.0-1010_4.13.0-1010.13_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.11.0-1013_4.11.0-1013.13_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.11.0-1014_4.11.0-1014.14_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.11.0-1015_4.11.0-1015.15_all.deb

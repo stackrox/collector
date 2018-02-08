@@ -74,6 +74,10 @@ http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-image-4.4.0-93-generic
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-93-generic_4.4.0-93.116_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-image-4.4.0-103-generic_4.4.0-103.126_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-103-generic_4.4.0-103.126_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-image-4.13.0-33-generic_4.13.0-33.36_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.13.0-33-generic_4.13.0-33.36_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-image-4.4.0-113-generic_4.4.0-113.136_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-113-generic_4.4.0-113.136_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-image-4.4.0-45-generic_4.4.0-45.66_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-45-generic_4.4.0-45.66_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-image-4.4.0-75-generic_4.4.0-75.96_amd64.deb
@@ -142,6 +146,8 @@ http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-64_4.4.0
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-83_4.4.0-83.106_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-93_4.4.0-93.116_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-103_4.4.0-103.126_all.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.13.0-33_4.13.0-33.36_all.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-113_4.4.0-113.136_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-45_4.4.0-45.66_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-75_4.4.0-75.96_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-104_4.4.0-104.127_all.deb

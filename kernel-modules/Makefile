@@ -28,6 +28,7 @@ crawl: build-crawl-container
 	docker run -i kernel-crawler Ubuntu-AWS > supported-kernels/ubuntu-aws.txt
 	docker run -i kernel-crawler Ubuntu-Azure > supported-kernels/ubuntu-azure.txt
 	docker run -i kernel-crawler Ubuntu-GKE > supported-kernels/ubuntu-gke.txt
+	docker run -i kernel-crawler Ubuntu-GCP > supported-kernels/ubuntu-gcp.txt
 
 .PHONY: build-centos-uncrawled
 build-centos-uncrawled:

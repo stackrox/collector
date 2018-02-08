@@ -201,6 +201,25 @@ repos = {
             "exclude_patterns": ubuntu_excludes
         }
     ],
+    "Ubuntu-GCP": [
+        # linux-gcp AMD64 image and headers, distributed from universe
+        {
+            "root" : "http://security.ubuntu.com/ubuntu/pool/universe/l/",
+            "discovery_pattern" : "/html/body//a[@href = 'linux-gcp/']/@href",
+            "subdirs" : [""],
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-(image|headers)-[4-9].*-gcp.*amd64.deb$')]/@href",
+            "exclude_patterns": ubuntu_excludes
+        },
+
+        # linux-gcp "all" headers, distributed from universe
+        {
+            "root" : "http://security.ubuntu.com/ubuntu/pool/universe/l/",
+            "discovery_pattern" : "/html/body//a[@href = 'linux-gcp/']/@href",
+            "subdirs" : [""],
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-gcp-headers-[4-9].*_all.deb$')]/@href",
+            "exclude_patterns": ubuntu_excludes
+        },
+    ],
     "Ubuntu-GKE": [
         # linux-gke AMD64 image and headers, distributed from universe
         {
