@@ -52,6 +52,10 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <linux/time.h>
 
+/* Begin StackRox Section */
+#include <linux/pid_namespace.h>
+/* End StackRox Section */
+
 /*
  * Global defines
  */
@@ -109,6 +113,9 @@ struct ppm_ring_buffer_context {
 
 struct ppm_consumer_t {
 	struct task_struct *consumer_id;
+	/* Begin StackRox Section */
+	struct pid_namespace *excluded_pid_ns;
+	/* End StackRox Section */
 #ifdef __percpu
 	struct ppm_ring_buffer_context __percpu *ring_buffers;
 #else

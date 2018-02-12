@@ -72,6 +72,11 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 #include <linux/tracepoint.h>
 #include <linux/cpu.h>
 #include <linux/jiffies.h>
+
+/* Begin StackRox section */
+#include <linux/pid_namespace.h>
+/* End StackRox section */
+
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26))
 #include <linux/file.h>
 #else
@@ -190,6 +195,16 @@ static int s_syscallIdsCount = 0;
 
 module_param_array(s_syscallIds, int, &s_syscallIdsCount, 0444);
 MODULE_PARM_DESC(s_syscallIds, "An array of integers representing entries from ppm_syscall_code");
+
+static int exclude_initns = 0;
+module_param(exclude_initns, int, 0);
+MODULE_PARM_DESC(exclude_initns, "Exclude events from processes in the init namespace if nonzero");
+
+static int exclude_selfns = 0;
+module_param(exclude_selfns, int, 0);
+MODULE_PARM_DESC(exclude_selfns, "Exclude events from processes in the same namespace as the consumer");
+
+static struct pid_namespace *global_excluded_pid_ns = NULL;
 
 /* End StackRox section */
 
@@ -374,6 +389,14 @@ static int ppm_open(struct inode *inode, struct file *filp)
 		}
 
 		consumer->consumer_id = consumer_id;
+
+		/* Begin StackRox section */
+		if (exclude_selfns) {
+			consumer->excluded_pid_ns = task_active_pid_ns(consumer_id);
+		} else {
+			consumer->excluded_pid_ns = NULL;
+		}
+		/* End StackRox section */
 
 		/*
 		 * Initialize the ring buffers array
@@ -1562,6 +1585,12 @@ static int record_event_consumer(struct ppm_consumer_t *consumer,
 	if (!test_bit(event_type, g_events_mask))
 		return res;
 
+	/* Begin StackRox section */
+	if (task_active_pid_ns(current) == consumer->excluded_pid_ns) {
+	    return res;
+	}
+	/* End StackRox section */
+
 	if (event_type != PPME_DROP_E && event_type != PPME_DROP_X) {
 		if (consumer->need_to_insert_drop_e == 1)
 			record_drop_e(consumer, ts);
@@ -1896,6 +1925,15 @@ TRACEPOINT_PROBE(syscall_enter_probe, struct pt_regs *regs, long id)
 	int socketcall_syscall = -1;
 #endif
 
+	/* Begin StackRox section */
+	/*
+	 * Exclude event as early on as possible.
+	 */
+	if (task_active_pid_ns(current) == global_excluded_pid_ns) {
+		return;
+	}
+	/* End StackRox section */
+
 #if defined(CONFIG_X86_64) && defined(CONFIG_IA32_EMULATION)
 	/*
 	 * If this is a 32bit process running on a 64bit kernel (see the CONFIG_IA32_EMULATION
@@ -1968,6 +2006,15 @@ TRACEPOINT_PROBE(syscall_exit_probe, struct pt_regs *regs, long ret)
 #else
 	int socketcall_syscall = -1;
 #endif
+
+	/* Begin StackRox section */
+	/*
+	 * Exclude event as early on as possible.
+	 */
+	if (task_active_pid_ns(current) == global_excluded_pid_ns) {
+		return;
+	}
+	/* End StackRox section */
 
 	id = syscall_get_nr(current, regs);
 
@@ -2042,6 +2089,15 @@ TRACEPOINT_PROBE(syscall_procexit_probe, struct task_struct *p)
 {
 	struct event_data_t event_data;
 
+	/* Begin StackRox section */
+	/*
+	 * Exclude event as early on as possible.
+	 */
+	if (task_active_pid_ns(current) == global_excluded_pid_ns) {
+		return;
+	}
+	/* End StackRox section */
+
 	g_n_tracepoint_hit_inc();
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 20)
@@ -2107,6 +2163,15 @@ TRACEPOINT_PROBE(signal_deliver_probe, int sig, struct siginfo *info, struct k_s
 TRACEPOINT_PROBE(page_fault_probe, unsigned long address, struct pt_regs *regs, unsigned long error_code)
 {
 	struct event_data_t event_data;
+
+	/* Begin StackRox section */
+	/*
+	 * Exclude event as early on as possible.
+	 */
+	if (task_active_pid_ns(current) == global_excluded_pid_ns) {
+		return;
+	}
+	/* End StackRox section */
 
 	/* We register both tracepoints under the same probe and
 	 * sysdig event since there's little reason to expose this
@@ -2413,6 +2478,16 @@ int sysdig_init(void)
 	struct class_device *device = NULL;
 #endif
 	pr_info("driver loading, " PROBE_NAME " " PROBE_VERSION "\n");
+
+	/* Begin StackRox Section */
+	if (exclude_initns) {
+		pr_info("excluding processes from the init pid namespace\n");
+		global_excluded_pid_ns = &init_pid_ns;
+	}
+	if (exclude_selfns) {
+		pr_info("excluding processes from the consumer's pid namespace\n");
+	}
+	/* End StackRox Section */
 
 	ret = get_tracepoint_handles();
 	if (ret < 0)
