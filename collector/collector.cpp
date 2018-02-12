@@ -135,6 +135,8 @@ void insertModule(SysdigService& sysdigService, Json::Value collectorConfig) {
     }
     args += "-1";
 
+    args += " exclude_initns=1 exclude_selfns=1";
+
     int fd = open(SysdigService::modulePath.c_str(), O_RDONLY);
     if (fd < 0) {
         std::cerr << "[Child]  Cannot open kernel module: " <<
