@@ -54,37 +54,7 @@ extern sinsp_filter_check_list g_filterlist;
 sinsp_evt_formatter::sinsp_evt_formatter(sinsp* inspector, const string& fmt)
 {
 	m_inspector = inspector;
-
-	string sysdigFormat = "*";
-	string prefix = "%";
-	vector<string> fields;
-	char* str = new char[fmt.length() + 1];
-	strcpy(str, fmt.c_str());
-	char* token = strtok(str, ",");
-	while (token != NULL) {
-		fields.push_back(token);
-		token = strtok(NULL, ",");
-	}
-	delete[] str;
-	for (vector<string>::iterator it = fields.begin();
-	     it != fields.end(); it++)
-	{
-		token = strtok((char*)(*it).c_str(), ":");
-		string mappedValue = token;
-		token = strtok(NULL, ":");
-		string field = token;
-		sysdigFormat += (prefix + field + " ");
-		m_fields_map[field] = mappedValue;
-	}
-
-	cout << "sysdig format: " << sysdigFormat << endl;
-	for (map<string, string>::iterator it = m_fields_map.begin();
-	     it != m_fields_map.end(); it++)
-	{
-		cout << it->first << " -> " << it->second << endl;
-	}
-
-	set_format(sysdigFormat);
+	set_format(fmt);
 }
 
 sinsp_evt_formatter::~sinsp_evt_formatter()
@@ -142,7 +112,6 @@ void sinsp_evt_formatter::set_format(const string& fmt)
 				m_tokens.push_back(newtkn);
 				m_tokenlens.push_back(0);
 				m_chks_to_free.push_back(newtkn);
-				// cout << "New token: " << lfmt.substr(last_nontoken_str_start, j - last_nontoken_str_start) << ", nTokens = " << to_string(m_tokens.size()) << endl;
 			}
 
 			if(j == lfmtlen - 1)
@@ -184,23 +153,6 @@ void sinsp_evt_formatter::set_format(const string& fmt)
 			sinsp_filter_check* chk = g_filterlist.new_filter_check_from_fldname(string(cfmt + j + 1),
 				m_inspector,
 				false);
-			// Begin StackRox section
-			// cout << "Parsing: " << string(cfmt + j + 1) << ", nTokens = " << to_string(m_tokens.size()) << endl;
-			char field_name[64] = "<Unknown>";
-			const char* cptr = cfmt + j + 1;
-			for (unsigned int i = 0; i < strlen(cfmt + j + 1); i++) {
-				if (cptr[i] != ' ')
-				{
-					field_name[i] = cptr[i];
-				}
-				else {
-					field_name[i] = '\0';
-					break;
-				}
-			}
-
-			m_token_to_field_map[m_tokens.size()] = field_name;
-			// End StackRox section
 
 			if(chk == NULL)
 			{
@@ -225,7 +177,6 @@ void sinsp_evt_formatter::set_format(const string& fmt)
 		m_tokens.push_back(chk);
 		m_chks_to_free.push_back(chk);
 		m_tokenlens.push_back(0);
-		// cout << "Final new token: " << lfmt.substr(last_nontoken_str_start, j - last_nontoken_str_start) << ", nTokens = " << to_string(m_tokens.size()) << endl;
 	}
 }
 
@@ -274,10 +225,7 @@ bool sinsp_evt_formatter::resolve_tokens(sinsp_evt *evt, map<string,string>& val
 bool sinsp_evt_formatter::tostring(sinsp_evt* evt, OUT string* res)
 {
 	bool retval = true;
-	// Begin StackRox section
-	/*
 	const filtercheck_field_info* fi;
-	*/
 
 	uint32_t j = 0;
 	vector<sinsp_filter_check*>::iterator it;
@@ -287,8 +235,6 @@ bool sinsp_evt_formatter::tostring(sinsp_evt* evt, OUT string* res)
 
 	for(j = 0; j < m_tokens.size(); j++)
 	{
-		// Begin StackRox section
-		/*
 		if(m_inspector->get_buffer_format() == sinsp_evt::PF_JSON
 		   || m_inspector->get_buffer_format() == sinsp_evt::PF_JSONEOLS
 		   || m_inspector->get_buffer_format() == sinsp_evt::PF_JSONHEX
@@ -317,8 +263,6 @@ bool sinsp_evt_formatter::tostring(sinsp_evt* evt, OUT string* res)
 		}
 		else
 		{
-		*/
-		// End StackRox section
 			char* str = m_tokens[j]->tostring(evt);
 
 			if(retval == false)
@@ -351,11 +295,9 @@ bool sinsp_evt_formatter::tostring(sinsp_evt* evt, OUT string* res)
 			{
 				(*res) += str;
 			}
-		//}
+		}
 	}
 
-	// Begin StackRox section
-	/*
 	if(m_inspector->get_buffer_format() == sinsp_evt::PF_JSON
 	   || m_inspector->get_buffer_format() == sinsp_evt::PF_JSONEOLS
 	   || m_inspector->get_buffer_format() == sinsp_evt::PF_JSONHEX
@@ -366,154 +308,9 @@ bool sinsp_evt_formatter::tostring(sinsp_evt* evt, OUT string* res)
 		(*res) += m_writer.write(m_root);
 		(*res) = res->substr(0, res->size() - 1);
 	}
-	*/
-	// End StackRox section
 
 	return retval;
 }
-
-// Begin StackRox section
-SignalType sinsp_evt_formatter::to_sparse_string(sinsp_evt* evt, SafeBuffer& buffer, unsigned int snaplen, string& network_key)
-{
-	SignalType signalType = SIGNAL_TYPE_UNKNOWN;
-
-	uint32_t j = 0;
-
-	ASSERT(m_tokenlens.size() == m_tokens.size());
-
-	network_key.clear();
-	buffer.clear();
-	buffer.Append('S');
-	bool past_fixed_format = false;
-
-	// m_token_to_field_map has [index in m_tokens] -> [field name]
-	for(map<int, string>::iterator it = m_token_to_field_map.begin();
-			it != m_token_to_field_map.end() && buffer.remaining() > 3; it++)
-	{
-		j = it->first;
-		if (j >= m_tokens.size())
-		{
-			continue;
-		}
-
-		// m_fields_map is set via the format string n:evt.field1,n+1:evt.field2...
-		// keys are field names; values are integer codes
-		map<string, string>::iterator f = m_fields_map.find(it->second);
-		if (f == m_fields_map.end())
-		{
-			continue;
-		}
-		string mapped_value = f->second; // output format code
-
-		char* str = m_tokens[j]->tostring(evt); // the field value
-		char* field = (char*)it->second.c_str(); // the field name
-		if (str != NULL)
-		{
-			if (str[0] == '\0')
-			{
-				continue;
-			}
-
-			if (buffer[0] != 'N' && signalType == SIGNAL_TYPE_UNKNOWN)
-			{
-				if (!strcmp(field, "evt.category") && !strcmp(str, "net"))
-				{
-					buffer[0] = 'N';
-					signalType = SIGNAL_TYPE_NETWORK;
-				}
-				else if (!strcmp(field, "fd.type") &&
-					(!strcmp(str, "ipv4") || !strcmp(str, "ipv6") || !strcmp(str, "unix")))
-				{
-					buffer[0] = 'N';
-					signalType = SIGNAL_TYPE_NETWORK;
-				}
-			}
-            
-			if (!strcmp(field, "evt.type"))
-			{
-				if (m_process_evttypes.end() != m_process_evttypes.find(str))
-				{
-					buffer[0] = 'S';
-					signalType = SIGNAL_TYPE_PROCESS;
-				}
-			}
-
-			if (past_fixed_format)
-			{
-				if (!strcmp(field, "fd.cip") || !strcmp(field, "fd.cport"))
-				{
-					network_key += str;
-				}
-
-				if (!strcmp(field, "proc.args") || !strcmp(field, "proc.cmdline") || !strcmp(field, "proc.exeline"))
-				{
-					// if there are tabs in proc.args, proc.cmdline, or proc.exeline,
-					// then replace them with periods
-					char* t = str;
-					while (*t != '\0')
-					{
-						if (*t == 9)
-						{
-							*t = 46;
-						}
-						t++;
-					}
-				}
-				else if (!strcmp(field, "evt.args") && buffer[0] == 'N')
-				{
-					// for network data remove anything that comes after "data=" as this is
-					// already part of the buffer
-					char* t = str;
-					while (*t != '\0')
-					{
-						if (*t == 'd' && *(t + 1) == 'a' && *(t + 2) == 't' && *(t + 3) == 'a' && *(t + 4) == '=')
-						{
-							*t = '\0';
-							break;
-						}
-						t++;
-					}
-				}
-				// truncate to snaplen if over
-				if (strlen(str) > snaplen)
-				{
-					str[snaplen] = '\0';
-				}
-				buffer.AppendFWhole("\t%s:%s", mapped_value.c_str(), str);
-			}
-			else
-			{
-			    buffer.AppendFWhole("\t%s", str);
-				if (!strcmp(field, "evt.time"))
-				{
-					past_fixed_format = true;
-				}
-			}
-		}
-		else if (!strcmp(field, "container.name") || !strcmp(field, "container.image"))
-		{
-			buffer.clear();
-			return signalType;
-		}
-	}
-
-    if (signalType == SIGNAL_TYPE_UNKNOWN) {
-        // If it's no other signal type, assume file
-        signalType = SIGNAL_TYPE_FILE;
-    }
-    return signalType;
-}
-
-void sinsp_evt_formatter::init_process_syscalls(const string& process_syscalls) {
-    istringstream is(process_syscalls);
-    string syscall;
-    while (getline(is, syscall, ','))
-    {
-        m_process_evttypes.insert(syscall);
-    }
-}
-
-// End StackRox section
 
 #else  // HAS_FILTERING
 

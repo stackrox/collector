@@ -55,10 +55,6 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 #define ASSERT(X)
 #endif // _DEBUG
 
-#include "KafkaClient.h"
-#include "safe_buffer.h"
-#include "sysdig_api.h"
-
 //
 // Capture results
 //
@@ -107,7 +103,7 @@ public:
 
 	uint64_t m_ncalls;
 	uint16_t m_id;
-	bool m_is_unsupported_syscall;	
+	bool m_is_unsupported_syscall;
 };
 
 struct summary_table_entry_rsort_comparer
@@ -117,81 +113,6 @@ struct summary_table_entry_rsort_comparer
 		return first.m_ncalls > second.m_ncalls;
 	}
 };
-
-#define DEFAULT_BUFFER_SIZE 4096
-
-class SysdigPersistentState {
-    private:
-        sinsp* inspector;
-        string chiselName;
-        sinsp_chisel* chisel;
-        sinsp_evt_formatter* formatter;
-        int snapLen;
-        SafeBuffer eventBuffer;
-        bool useKafka;
-        KafkaClient* kafkaClient;
-
-    public:
-        SysdigPersistentState(sinsp* _inspector, string _chiselName, sinsp_chisel* _chisel,
-                              sinsp_evt_formatter* _formatter, int _snapLen, int eventBufferSize, bool _useKafka,
-                              string brokerList, string defaultTopic, string networkTopic, string processTopic,
-                              string fileTopic, string processSyscalls) :
-            inspector(_inspector),
-            chiselName(_chiselName),
-            chisel(_chisel),
-            formatter(_formatter),
-            snapLen(_snapLen),
-            eventBuffer(eventBufferSize <= 0 ? DEFAULT_BUFFER_SIZE : eventBufferSize),
-            useKafka(_useKafka)
-            {
-            kafkaClient = NULL;
-            if (_useKafka) {
-                kafkaClient = new KafkaClient(brokerList, defaultTopic, networkTopic, processTopic, fileTopic);
-            }
-        }
-        SysdigPersistentState(int eventBufferSize, bool _useKafka, string brokerList, string defaultTopic,
-                              string networkTopic, string processTopic, string fileTopic, string processSyscalls)
-                : eventBuffer(eventBufferSize <= 0 ? DEFAULT_BUFFER_SIZE : eventBufferSize) {
-            useKafka = _useKafka;
-            kafkaClient = NULL;
-            if (_useKafka) {
-                kafkaClient = new KafkaClient(brokerList, defaultTopic, networkTopic, processTopic, fileTopic);
-            }
-        }
-        SysdigPersistentState() : eventBuffer(DEFAULT_BUFFER_SIZE) {
-            useKafka = false;
-            kafkaClient = NULL;
-        }
-
-        virtual ~SysdigPersistentState() {
-            delete kafkaClient;
-        }
-
-        inline sinsp* getInspector() { return inspector; }
-        inline string getChiselName() { return chiselName; }
-        inline sinsp_chisel* getChisel() { return chisel; }
-        inline sinsp_evt_formatter* getFormatter() { return formatter; }
-        inline int getSnapLen() { return snapLen; }
-        inline SafeBuffer& getEventBuffer() { return eventBuffer; }
-        inline bool usingKafka() { return useKafka; }
-        inline KafkaClient* getKafkaClient() { return kafkaClient; }
-
-        inline void setInspector(sinsp* _inspector) { inspector = _inspector; }
-        inline void setChiselName(string _chiselName) { chiselName = _chiselName; }
-        inline void setChisel(sinsp_chisel* _chisel) { chisel = _chisel; }
-        inline void setFormatter(sinsp_evt_formatter* _formatter) { formatter = _formatter; }
-        inline void setSnapLen(int _snapLen) { snapLen = _snapLen; }
-        inline void setUseKafka(bool _useKafka) { useKafka = _useKafka; }
-        inline void setEventBufferSize(int eventBufferSize) {
-            eventBuffer.reset(eventBufferSize <= 0 ? DEFAULT_BUFFER_SIZE : eventBufferSize);
-        }
-        inline void setupKafkaClient(string brokerList, string defaultTopic, string networkTopic,
-                                     string processTopic, string fileTopic) {
-            kafkaClient = new KafkaClient(brokerList, defaultTopic, networkTopic, processTopic, fileTopic);
-        }
-};
-
-sysdig_init_res sysdig_init(int argc, char** argv, bool setupOnly = false);
 
 //
 // Printer functions

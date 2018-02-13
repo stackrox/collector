@@ -134,3 +134,7 @@ else()
 	target_link_libraries(sinsp
 		"${LUAJIT_LIB}")
 endif()
+
+
+add_library(sinsp-wrapper SHARED wrapper.cpp)
+target_link_libraries(sinsp-wrapper sinsp)

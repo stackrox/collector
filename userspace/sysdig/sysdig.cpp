@@ -43,24 +43,17 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 #include <iostream>
-#include <fstream>
 #include <time.h>
 #include <signal.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <assert.h>
 #include <algorithm>
-#include <atomic>
-#include <mutex>
-#include <sstream>
 
 #include <sinsp.h>
 #include "chisel.h"
-#include "utils.h"
 #include "sysdig.h"
-#include "safe_buffer.h"
-
-#include "KafkaClient.h"
+#include "utils.h"
 
 #ifdef _WIN32
 #include "win32/getopt.h"
@@ -76,18 +69,6 @@ vector<sinsp_chisel*> g_chisels;
 #endif
 
 static void usage();
-
-// the sysdig data object that keeps track of all the little factoids associated with
-// sysdig production
-static struct {
-  std::atomic<uint64_t> nFilteredEvents;
-  std::string           nodeName;
-} sysdigData;
-
-// data that we want to be persistent at process scope
-static SysdigPersistentState* persistentState = NULL;
-
-static int s_eventBufferSize = 32767;
 
 //
 // Helper functions
@@ -761,50 +742,15 @@ captureinfo do_inspect(sinsp* inspector,
 		{
 			cout << flush;
 		}
-
 	}
 
 	return retval;
 }
 
 //
-// Event processing call. Get next valid event.
-//
-const SafeBuffer& do_getnext(SignalType* signalType, string* networkKey) {
-	int32_t res;
-	sinsp_evt* ev;
-	SafeBuffer& eventBuffer = persistentState->getEventBuffer();
-	sinsp* inspector = persistentState->getInspector();
-	sinsp_evt_formatter* formatter = persistentState->getFormatter();
-	sinsp_chisel* chisel = persistentState->getChisel();
-
-	eventBuffer.clear();
-	if (inspector == NULL || formatter == NULL || chisel == NULL) {
-		cout << "inspector|formatter|chisel unintialized!" << endl;
-		return eventBuffer;
-	}
-
-	res = inspector->next(&ev);
-
-	if(res == SCAP_TIMEOUT) {
-		return eventBuffer;
-	}
-	else if(res != SCAP_SUCCESS) {
-		// Log and move on.
-		return eventBuffer;
-	}
-
-	if (chisel->process(ev)) {
-		sysdigData.nFilteredEvents.fetch_add(1, std::memory_order_relaxed);
-        *signalType = formatter->to_sparse_string(ev, eventBuffer, persistentState->getSnapLen(), *networkKey);
-	}
-	return eventBuffer;
-}
-
-//
 // ARGUMENT PARSING AND PROGRAM SETUP
 //
-sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
+sysdig_init_res sysdig_init(int argc, char **argv)
 {
 	sysdig_init_res res;
 	sinsp* inspector = NULL;
@@ -825,7 +771,7 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 	int duration_to_tot = 0;
 	captureinfo cinfo;
 	string output_format;
-	uint32_t snaplen = DEFAULT_SNAPLEN;
+	uint32_t snaplen = 0;
 	int long_index = 0;
 	int32_t n_filterargs = 0;
 	int cflag = 0;
@@ -840,30 +786,11 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 	bool force_tracers_capture = false;
 	bool page_faults = false;
 
-	// Begin StackRox section
-	string brokerList = "";
-	string defaultTopic = "sysdig-default-topic";
-	string networkTopic;
-    string processTopic;
-    string fileTopic;
-    string processSyscalls;
-	bool useKafka = false;
-	// End StackRox section
-
 	// These variables are for the cycle_writer engine
 	int duration_seconds = 0;
 	int rollover_mb = 0;
 	int file_limit = 0;
 	unsigned long event_limit = 0L;
-
-#define USE_KAFKA_VAL               1024
-#define KAFKA_BROKER_LIST_VAL       1025
-#define OUTPUT_FORMAT_VAL           1026
-#define KAFKA_DEFAULT_TOPIC_VAL     1027
-#define KAFKA_NETWORK_TOPIC_VAL     1028
-#define KAFKA_PROCESS_TOPIC_VAL     1029
-#define KAFKA_FILE_TOPIC_VAL        1030
-#define PROCESS_SYSCALLS_VAL        1031
 
 	static struct option long_options[] =
 	{
@@ -911,16 +838,6 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 		{"print-hex", no_argument, 0, 'x'},
 		{"print-hex-ascii", no_argument, 0, 'X'},
 		{"compress", no_argument, 0, 'z' },
-	    // Begin StackRox section
-		{"use-kafka", no_argument, 0, USE_KAFKA_VAL },
-		{"broker-list", required_argument, 0, KAFKA_BROKER_LIST_VAL },
-		{"output-format", required_argument, 0, OUTPUT_FORMAT_VAL },
-		{"default-topic", required_argument, 0, KAFKA_DEFAULT_TOPIC_VAL },
-		{"network-topic", required_argument, 0, KAFKA_NETWORK_TOPIC_VAL },
-        {"process-topic", required_argument, 0, KAFKA_PROCESS_TOPIC_VAL },
-        {"file-topic", required_argument, 0, KAFKA_FILE_TOPIC_VAL },
-        {"process-syscalls", required_argument, 0, PROCESS_SYSCALLS_VAL },
-	    // End StackRox section
 		{0, 0, 0, 0}
 	};
 
@@ -930,9 +847,6 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 	{
 		inspector = new sinsp();
 		inspector->set_hostname_and_port_resolution_mode(false);
-		if (setup_only) {
-			persistentState->setInspector(inspector);
-		}
 
 #ifdef HAS_CHISELS
 		add_chisel_dirs(inspector);
@@ -941,17 +855,15 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 		//
 		// Parse the args
 		//
-		// getopt cannot be called multiple times unless we reset this global state.
-		optind = 1;
 		while((op = getopt_long(argc, argv,
                                         "Abc:"
                                         "C:"
                                         "dDEe:F"
                                         "G:"
-                                        "hi:jk:K:lLm:M:Nn:Pp:qr:Ss:t:Tv"
+                                        "hi:jk:K:lLm:M:n:Pp:qRr:Ss:t:Tv"
                                         "W:"
                                         "w:xXz", long_options, &long_index)) != -1)
-		{ 
+		{
 			switch(op)
 			{
 			case 'A':
@@ -1010,8 +922,6 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 					}
 
 					sinsp_chisel* ch = new sinsp_chisel(inspector, optarg);
-					if (setup_only && !strcmp(optarg, persistentState->getChiselName().c_str()))
-						persistentState->setChisel(ch);
 					parse_chisel_args(ch, inspector, optind, argc, argv, &n_filterargs);
 					g_chisels.push_back(ch);
 				}
@@ -1210,7 +1120,6 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 				break;
 			case 's':
 				snaplen = atoi(optarg);
-                                persistentState->setSnapLen(snaplen);
 				break;
 			case 't':
 				{
@@ -1273,42 +1182,7 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 			case 'z':
 				compress = true;
 				break;
-			// Begin StackRox section
-			case USE_KAFKA_VAL:
-				cout << "use-kafka is set" << endl; 
-				useKafka = true;
-				persistentState->setUseKafka(useKafka);
-				break;
-			case KAFKA_BROKER_LIST_VAL:
-				brokerList = optarg;
-				break;
-			case OUTPUT_FORMAT_VAL:
-				cout << "FORMAT: " << optarg << endl;
-				persistentState->setFormatter(new sinsp_evt_formatter(inspector, optarg));
-				break;
-			case KAFKA_DEFAULT_TOPIC_VAL:
-				cout << "Default topic: " << optarg << endl;
-				defaultTopic = optarg;
-				break;
-			case KAFKA_NETWORK_TOPIC_VAL:
-				cout << "Network topic: " << optarg << endl;
-				networkTopic = optarg;
-				break;
-            case KAFKA_PROCESS_TOPIC_VAL:
-                cout << "Process topic: " << optarg << endl;
-                processTopic = optarg;
-                break;
-            case KAFKA_FILE_TOPIC_VAL:
-                cout << "File topic: " << optarg << endl;
-                fileTopic = optarg;
-                break;
-            case PROCESS_SYSCALLS_VAL:
-                cout << "Process syscalls: " << optarg << endl;
-                 processSyscalls = optarg;
-                 break;
-			// End StackRox section
-
-			// getopt_long : '?' for an ambiguous match or an extraneous parameter
+            // getopt_long : '?' for an ambiguous match or an extraneous parameter
 			case '?':
 				delete inspector;
 				return sysdig_init_res(EXIT_FAILURE);
@@ -1345,14 +1219,6 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 				page_faults = true;
 			}
 		}
-
-		// Begin StackRox section
-		sinsp_evt_formatter* formatter = persistentState->getFormatter();
-		if (NULL != formatter)
-		{
-			formatter->init_process_syscalls(processSyscalls);
-		}
-		// End StackRox section
 
 		//
 		// If -j was specified the event_buffer_format must be rewritten to account for it
@@ -1450,6 +1316,11 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 		}
 
 		//
+		// Create the event formatter
+		//
+		sinsp_evt_formatter formatter(inspector, output_format);
+
+		//
 		// Set output buffers len
 		//
 		if(!verbose && g_chisels.size() == 0)
@@ -1516,7 +1387,7 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 				//
 #if defined(HAS_CAPTURE)
 				bool open_success = true;
-				
+
 				if(print_progress)
 				{
 					fprintf(stderr, "the -P flag cannot be used with live captures.\n");
@@ -1653,43 +1524,6 @@ sysdig_init_res sysdig_init(int argc, char **argv, bool setup_only)
 			delete mesos_api;
 			mesos_api = 0;
 
-			// Begin StackRox section
-
-			if (useKafka) {
-				cout << "Kafka client is being setup " << endl;
-				persistentState->setupKafkaClient(brokerList, defaultTopic, networkTopic, processTopic, fileTopic);
-			}
-
-			// initialize the sysdig factoid object
-			sysdigData.nFilteredEvents.store(0, std::memory_order_relaxed);
-
-			// Hostname is this node's name represented as a null-terminated
-			// string. It is returned as part of the
-			// sysdigData structure.
-			const string file = string(scap_get_host_root()) + "/etc/hostname";
-			std::ifstream f(file);
-			if (!f) {
-				std::cerr << "Unable to get hostname from " << file << std::endl;
-				res.m_res = EXIT_FAILURE;
-				goto exit;
-			}
-			f >> sysdigData.nodeName;
-			f.close();
-			cout << "Hostname: " << sysdigData.nodeName << endl;
-
-			if (setup_only) {
-				// we will loop through events outside of this function
-				// and hence return
-				return res;
-			}
-
-			//
-			// Create the event formatter
-			//
-			sinsp_evt_formatter formatter(inspector, output_format);
-
-			// End StackRox section
-
 			cinfo = do_inspect(inspector,
 				cnt,
 				uint64_t(duration_to_tot*ONE_SECOND_IN_NS),
@@ -1780,36 +1614,14 @@ exit:
 	return res;
 }
 
-static std::atomic<bool> isInitialized(false);
-
-bool isSysdigInitialized() {
-    bool initialized = isInitialized.load(std::memory_order_relaxed);
-    if (initialized) {
-        std::atomic_thread_fence(std::memory_order_acquire);
-    }
-    return initialized;
-}
-
-// Method to close the inspector and cleanup
-void sysdigCleanup() {
-    isInitialized.store(false, std::memory_order_release);
-
-	sinsp* inspector = persistentState->getInspector();
-	if (inspector)
-		inspector->close();
-	delete inspector;
-	delete persistentState;
-	persistentState = NULL;
-}
-
 //
 // MAIN
 //
-int main_bac(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	sysdig_init_res res;
 
-	res = sysdig_init(argc, argv, NULL);
+	res = sysdig_init(argc, argv);
 
 	//
 	// Check if a second run has been requested
@@ -1830,142 +1642,11 @@ int main_bac(int argc, char **argv)
 			newargv.push_back((char*)res.m_next_run_args[j - 1].c_str());
 		}
 
-		res = sysdig_init(newargc, &(newargv[0]), NULL);
+		res = sysdig_init(newargc, &(newargv[0]));
 	}
 #ifdef _WIN32
 	_CrtDumpMemoryLeaks();
 #endif
 
 	return res.m_res;
-}
-
-void sysdigStartProduction(bool& isInterrupted) {
-    KafkaClient* kafkaClient = persistentState->getKafkaClient();
-    bool useKafka = persistentState->usingKafka();
-    if (useKafka && !kafkaClient) {
-				cerr << "KafkaClient is uninitialized. Cannot start data production" << endl;
-				return;
-    }
-
-    cerr << "Starting sysdig production ";
-    if (useKafka) {
-        cerr << "using Kafka" << endl;
-    } else {
-        cerr << "without using Kafka" << endl;
-    }
-
-    string networkKey;
-    SignalType signalType;
-    while (!isInterrupted) {
-        const SafeBuffer& buffer = do_getnext(&signalType, &networkKey);
-        if (buffer.empty()) {
-            continue;
-        }
-        if (useKafka) {
-            kafkaClient->send(
-                buffer.buffer(), buffer.size(), networkKey, signalType == SIGNAL_TYPE_NETWORK,
-                signalType == SIGNAL_TYPE_PROCESS, signalType == SIGNAL_TYPE_FILE);
-        } else {
-            cout << buffer.str() << endl;
-        }
-    }
-
-    cerr << "Stopping sysdig production..." << endl;
-}
-
-int sysdigInitialize(string chiselName, string brokerList, string format,
-                     bool useKafka, string defaultTopic, string networkTopic,
-                     string processTopic, string fileTopic, string processSyscalls,
-                     int snapLen) {
-    // if the format is empty then fill in with a default format
-    if (format.length() == 0) {
-        format = "container:container.id,event:evt.type,time:evt.time,rawtime:evt.rawtime,direction:evt.dir,image:container.image,name:container.name";
-    }
-
-    // setup persistent store
-    persistentState = new SysdigPersistentState();
-
-    vector<string> args;
-    args.push_back("sysdig");
-    args.push_back("--unbuffered");
-    args.push_back("--snaplen");
-    args.push_back(to_string(snapLen));
-    if (chiselName.length() > 0) {
-        args.push_back("-c");
-        args.push_back(chiselName);
-        persistentState->setChiselName(chiselName);
-    }
-    if (brokerList.length() > 0) {
-        args.push_back("--broker-list");
-        args.push_back(brokerList);
-        if (useKafka) {
-            args.push_back("--use-kafka");
-        }
-        args.push_back("--default-topic");
-        args.push_back(defaultTopic);
-        args.push_back("--network-topic");
-        args.push_back(networkTopic);
-        args.push_back("--process-topic");
-        args.push_back(processTopic);
-        args.push_back("--file-topic");
-        args.push_back(fileTopic);
-        args.push_back("--process-syscalls");
-        args.push_back(processSyscalls);
-    }
-    args.push_back("--output-format");
-    args.push_back(format);
-
-    int argc = args.size();
-    char* argv[argc];
-    for (int i = 0; i < argc; i++) {
-        argv[i] = (char*)args[i].c_str();
-        cout << i << ": " << argv[i] << endl;
-    }
-
-    sysdig_init(argc, (char**)&argv, true /* setup_only */);
-
-    isInitialized.store(true, std::memory_order_release);
-
-    return 0;
-}
-
-bool sysdigGetSysdigStats(sysdigStatsT& stats) {
-    if (!isInitialized.load(std::memory_order_relaxed)) {
-        return false;
-    }
-
-    std::atomic_thread_fence(std::memory_order_acquire);
-
-	sinsp* inspector = persistentState->getInspector();
-	scap_stats cstats;
-    inspector->get_capture_stats(&cstats);
-
-    // Fields that change
-    stats.nEvents = cstats.n_evts;
-    stats.nDrops = cstats.n_drops;
-    stats.nPreemptions = cstats.n_preemptions;
-    stats.nFilteredEvents = sysdigData.nFilteredEvents.load(std::memory_order_relaxed);
-
-    return true;
-}
-
-const std::string& sysdigGetNodeName() {
-    return sysdigData.nodeName;
-}
-
-int main(int argc, char **argv)
-{
-    fprintf(stdout, "Starting sysdig...");
-
-	// setup persistent store
-    persistentState = new SysdigPersistentState();
-    persistentState->setEventBufferSize(s_eventBufferSize);
-
-    sysdig_init(argc, argv, true /* setup_only */);
-
-    bool isInterrupted = false;
-
-    sysdigStartProduction(isInterrupted);
-
-    return 0;
 }

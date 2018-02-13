@@ -74,6 +74,9 @@ public:
 //       it and then add it to new_filter_check_from_name.
 ///////////////////////////////////////////////////////////////////////////////
 class sinsp_filter_check
+// Begin StackRox
+    : public sinsp_filter_check_iface
+// End StackRox
 {
 public:
 	sinsp_filter_check();

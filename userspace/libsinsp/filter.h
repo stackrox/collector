@@ -274,4 +274,22 @@ private:
 
 /*@}*/
 
+
+// Begin StackRox
+
+class sinsp;
+class sinsp_evt;
+
+class SINSP_PUBLIC sinsp_filter_check_iface {
+ public:
+  virtual ~sinsp_filter_check_iface() = default;
+
+  virtual char* tostring(sinsp_evt* event) = 0;
+
+  static sinsp_filter_check_iface* get(const std::string& field_name, sinsp* inspector);
+};
+
+// End StackRox
+
+
 #endif // HAS_FILTERING

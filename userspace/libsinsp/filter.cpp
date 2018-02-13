@@ -2245,4 +2245,14 @@ void sinsp_evttype_filter::evttypes_for_ruleset(std::vector<bool> &evttypes, uin
 		}
 	}
 }
+
+// Begin StackRox
+extern sinsp_filter_check_list g_filterlist;
+sinsp_filter_check_iface* sinsp_filter_check_iface::get(const std::string& field_name, sinsp* inspector) {
+  sinsp_filter_check* check = g_filterlist.new_filter_check_from_fldname(field_name, inspector, true);
+  check->parse_field_name(field_name.c_str(), true, false);
+  return check;
+}
+// End StackRox
+
 #endif // HAS_FILTERING
