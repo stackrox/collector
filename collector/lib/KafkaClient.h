@@ -21,42 +21,47 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#include "GetStatus.h"
+#ifndef __KAFKACLIENT_H
+#define __KAFKACLIENT_H
+
+// KafkaClient.h
+// This class defines our Kafka abstraction
 
 #include <string>
 
-#include <json/json.h>
-
-namespace collector {
-
-bool
-GetStatus::handleGet(CivetServer *server, struct mg_connection *conn)
-{
-    using namespace std;
-
-    Json::Value status(Json::objectValue);
-
-    SysdigStats stats;
-    bool ready = sysdig_->GetStats(&stats);
-
-    if (ready) {
-        status["status"] = "ok";
-        status["sysdig"] = Json::Value(Json::objectValue);
-        status["sysdig"]["node"] = node_name_;
-        status["sysdig"]["events"] = Json::UInt64(stats.nEvents);
-        status["sysdig"]["drops"] = Json::UInt64(stats.nDrops);
-        status["sysdig"]["preemptions"] = Json::UInt64(stats.nPreemptions);
-        status["sysdig"]["filtered_events"] = Json::UInt64(stats.nFilteredEvents);
-
-        mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n");
-        mg_printf(conn, "%s\n", status.toStyledString().c_str());
-    } else {
-        mg_printf(conn, "HTTP/1.1 503 Service Unavailable\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n");
-        mg_printf(conn, "%s\n", "{}");
-    }
-
-    return true;
+extern "C" {
+#include "librdkafka/rdkafka.h"
 }
 
-}   /* namespace collector */
+class KafkaException : public std::exception {
+ public:
+  KafkaException(std::string message) : message_(std::move(message)) {}
+  const char* what() const noexcept override { return message_.c_str(); }
 
+ private:
+  std::string message_;
+};
+
+class KafkaClient {
+ public:
+  KafkaClient(const std::string& brokerList, const std::string& networkTopic, const std::string& processTopic,
+              const std::string& fileTopic);
+  ~KafkaClient();
+
+  bool send(const void* msg, int msgLen, const void* key, int keyLen,
+            bool onNetworkTopic, bool onProcessTopic, bool onFileTopic);
+
+ private:
+  // method to create a topic
+  rd_kafka_topic_t* createTopic(const char* topic);
+
+  // method to send to a specific topic
+  static bool sendMessage(rd_kafka_topic_t* kafkaTopic, const void* msg, int msgLen, const void* key, int keyLen);
+
+  rd_kafka_t* kafka_;
+  rd_kafka_topic_t* networkTopicHandle_ = nullptr;
+  rd_kafka_topic_t* processTopicHandle_ = nullptr;
+  rd_kafka_topic_t* fileTopicHandle_ = nullptr;
+};
+
+#endif // __KAFKACLIENT_H

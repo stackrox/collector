@@ -21,56 +21,48 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef _SYSDIG_SERVICE_H_
-#define _SYSDIG_SERVICE_H_
+#ifndef _EVENT_NAMES_H_
+#define _EVENT_NAMES_H_
 
-#include <atomic>
-#include <memory>
-#include <mutex>
+#include <array>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
-#include "libsinsp/sinsp.h"
-#include "libsinsp/chisel.h"
+#include "ppm_events_public.h"
 
-#include "EventClassifier.h"
-#include "EventFormatter.h"
-#include "KafkaClient.h"
-#include "SafeBuffer.h"
-#include "Sysdig.h"
+#include "CollectorException.h"
 
 namespace collector {
 
-class SysdigService : public Sysdig {
+class EventNames {
  public:
-  static constexpr char kModulePath[] = "/module/collector.ko";
-  static constexpr char kModuleName[] = "collector";
-  static constexpr int kMessageBufferSize = 8192;
-  static constexpr int kKeyBufferSize = 24;
+  using EventIDVector = std::vector<ppm_event_type>;
 
-  SysdigService() = default;
+  static const EventNames& GetInstance();
 
-  void Init(const std::string& chisel_name, const std::string& broker_list, const std::string& format,
-            const std::string& network_topic, const std::string& process_topic, const std::string& file_topic,
-            const std::string& process_syscalls, int snaplen) override;
-  void RunForever(const std::atomic_bool& interrupt) override;
-  void CleanUp() override;
+  const EventIDVector& GetEventIDs(const std::string& name) const {
+    auto it = events_by_name_.find(name);
+    if (it == events_by_name_.end()) {
+      throw CollectorException("Invalid event name '" + name + "'");
+    }
+    return it->second;
+  }
 
-  bool GetStats(SysdigStats* stats) const override;
+  const std::string& GetEventName(ppm_event_type id) const {
+    if (id < 0 || id >= names_by_id_.size()) {
+      throw CollectorException("Invalid event id " + std::to_string(id));
+    }
+    return names_by_id_[id];
+  }
 
  private:
-  SignalType GetNext(SafeBuffer* message_buffer, SafeBuffer* key_buffer);
+  EventNames();
 
-  std::unique_ptr<sinsp> inspector_;
-  std::unique_ptr<sinsp_chisel> chisel_;
-  std::unique_ptr<KafkaClient> kafka_client_;
-  EventClassifier classifier_;
-  EventFormatter formatter_;
-  SysdigStats userspace_stats_;
-
-  mutable std::mutex running_mutex_;
-  bool running_ = false;
+  std::unordered_map<std::string, EventIDVector> events_by_name_;
+  std::array<std::string, PPM_EVENT_MAX> names_by_id_;
 };
 
 }  // namespace collector
 
-#endif  // _SYSDIG_SERVICE_H_
+#endif  // _EVENT_NAMES_H_

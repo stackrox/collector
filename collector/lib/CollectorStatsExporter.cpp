@@ -62,7 +62,7 @@ void CollectorStatsExporter::run() {
 
     while (thread_.Pause(std::chrono::seconds(1))) {
         SysdigStats stats;
-        if (!sysdig_->stats(stats)) {
+        if (!sysdig_->GetStats(&stats)) {
             continue;
         }
 

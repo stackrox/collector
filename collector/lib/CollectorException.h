@@ -21,56 +21,26 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef _SYSDIG_SERVICE_H_
-#define _SYSDIG_SERVICE_H_
+#ifndef _COLLECTOR_EXCEPTION_H_
+#define _COLLECTOR_EXCEPTION_H_
 
-#include <atomic>
-#include <memory>
-#include <mutex>
+#include <exception>
 #include <string>
-
-#include "libsinsp/sinsp.h"
-#include "libsinsp/chisel.h"
-
-#include "EventClassifier.h"
-#include "EventFormatter.h"
-#include "KafkaClient.h"
-#include "SafeBuffer.h"
-#include "Sysdig.h"
+#include <utility>
 
 namespace collector {
 
-class SysdigService : public Sysdig {
+class CollectorException : public std::exception {
  public:
-  static constexpr char kModulePath[] = "/module/collector.ko";
-  static constexpr char kModuleName[] = "collector";
-  static constexpr int kMessageBufferSize = 8192;
-  static constexpr int kKeyBufferSize = 24;
+  CollectorException() : CollectorException("Unknown collector exception") {}
+  CollectorException(std::string message) : message_(std::move(message)) {}
 
-  SysdigService() = default;
-
-  void Init(const std::string& chisel_name, const std::string& broker_list, const std::string& format,
-            const std::string& network_topic, const std::string& process_topic, const std::string& file_topic,
-            const std::string& process_syscalls, int snaplen) override;
-  void RunForever(const std::atomic_bool& interrupt) override;
-  void CleanUp() override;
-
-  bool GetStats(SysdigStats* stats) const override;
+  const char* what() const noexcept override { return message_.c_str(); }
 
  private:
-  SignalType GetNext(SafeBuffer* message_buffer, SafeBuffer* key_buffer);
-
-  std::unique_ptr<sinsp> inspector_;
-  std::unique_ptr<sinsp_chisel> chisel_;
-  std::unique_ptr<KafkaClient> kafka_client_;
-  EventClassifier classifier_;
-  EventFormatter formatter_;
-  SysdigStats userspace_stats_;
-
-  mutable std::mutex running_mutex_;
-  bool running_ = false;
+  std::string message_;
 };
 
 }  // namespace collector
 
-#endif  // _SYSDIG_SERVICE_H_
+#endif  // _COLLECTOR_EXCEPTION_H_

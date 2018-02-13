@@ -24,38 +24,35 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _SYSDIG_
 #define _SYSDIG_
 
+#include <atomic>
 #include <string>
 
 extern "C" {
-#include <sys/types.h>
-#include <inttypes.h>
+#include <stdint.h>
 }
-
-#include "sysdig_api.h"
-
-#include "KafkaClient.h"
 
 namespace collector {
 
-using SysdigStats = ::sysdigStatsT;
+struct SysdigStats {
+  volatile uint64_t nEvents;          // the number of kernel events
+  volatile uint64_t nDrops;           // the number of drops
+  volatile uint64_t nPreemptions;     // the number of preemptions
+  volatile uint64_t nFilteredEvents;  // events post chisel filter
+};
 
 class Sysdig {
-    public:
-    virtual ~Sysdig() {};
+ public:
+  virtual ~Sysdig() = default;
 
-    virtual int init(std::string chiselName, std::string brokerList, std::string format,
-                     bool useKafka, std::string defaultTopic, std::string networkTopic,
-                     std::string processTopic, std::string fileTopic, std::string processSyscalls,
-                     int snapLen) = 0;
-    virtual bool ready() = 0;
-    virtual void runForever() = 0;
-    virtual void cleanup() = 0;
+  virtual void Init(const std::string& chiselName, const std::string& brokerList, const std::string& format,
+                    const std::string& networkTopic, const std::string& processTopic, const std::string& fileTopic,
+                    const std::string& processSyscalls, int snaplen) = 0;
+  virtual void RunForever(const std::atomic_bool& interrupt) = 0;
+  virtual void CleanUp() = 0;
 
-    virtual bool stats(SysdigStats &s) = 0;
-    virtual const std::string& nodeName() const = 0;
+  virtual bool GetStats(SysdigStats* stats) const = 0;
 };
 
 }   /* namespace collector */
 
 #endif  /* _SYSDIG_ */
-

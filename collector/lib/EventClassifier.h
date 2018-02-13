@@ -21,56 +21,39 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef _SYSDIG_SERVICE_H_
-#define _SYSDIG_SERVICE_H_
+#ifndef _EVENT_CLASSIFIER_H_
+#define _EVENT_CLASSIFIER_H_
 
-#include <atomic>
-#include <memory>
-#include <mutex>
-#include <string>
+#include <bitset>
 
 #include "libsinsp/sinsp.h"
-#include "libsinsp/chisel.h"
+#include "ppm_events_public.h"
 
-#include "EventClassifier.h"
-#include "EventFormatter.h"
-#include "KafkaClient.h"
 #include "SafeBuffer.h"
-#include "Sysdig.h"
 
 namespace collector {
 
-class SysdigService : public Sysdig {
+enum SignalType {
+    SIGNAL_TYPE_UNKNOWN = 0,
+    SIGNAL_TYPE_NETWORK = 1,
+    SIGNAL_TYPE_PROCESS = 2,
+    SIGNAL_TYPE_FILE = 3,
+};
+
+class EventClassifier {
  public:
-  static constexpr char kModulePath[] = "/module/collector.ko";
-  static constexpr char kModuleName[] = "collector";
-  static constexpr int kMessageBufferSize = 8192;
-  static constexpr int kKeyBufferSize = 24;
+  void Init(const std::string& process_syscalls_str);
 
-  SysdigService() = default;
-
-  void Init(const std::string& chisel_name, const std::string& broker_list, const std::string& format,
-            const std::string& network_topic, const std::string& process_topic, const std::string& file_topic,
-            const std::string& process_syscalls, int snaplen) override;
-  void RunForever(const std::atomic_bool& interrupt) override;
-  void CleanUp() override;
-
-  bool GetStats(SysdigStats* stats) const override;
+  SignalType Classify(SafeBuffer* key_buf, sinsp_evt* event) const;
 
  private:
-  SignalType GetNext(SafeBuffer* message_buffer, SafeBuffer* key_buffer);
+  static void ExtractProcessSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
+  static void ExtractNetworkSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
+  static void ExtractFileSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
 
-  std::unique_ptr<sinsp> inspector_;
-  std::unique_ptr<sinsp_chisel> chisel_;
-  std::unique_ptr<KafkaClient> kafka_client_;
-  EventClassifier classifier_;
-  EventFormatter formatter_;
-  SysdigStats userspace_stats_;
-
-  mutable std::mutex running_mutex_;
-  bool running_ = false;
+  std::bitset<PPM_EVENT_MAX> process_syscalls_;
 };
 
 }  // namespace collector
 
-#endif  // _SYSDIG_SERVICE_H_
+#endif  // _EVENT_CLASSIFIER_H_

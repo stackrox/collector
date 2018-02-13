@@ -21,42 +21,23 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#include "GetStatus.h"
+#include "EventNames.h"
 
-#include <string>
-
-#include <json/json.h>
+extern const struct ppm_event_info g_event_info[];  // defined in libscap
 
 namespace collector {
 
-bool
-GetStatus::handleGet(CivetServer *server, struct mg_connection *conn)
-{
-    using namespace std;
-
-    Json::Value status(Json::objectValue);
-
-    SysdigStats stats;
-    bool ready = sysdig_->GetStats(&stats);
-
-    if (ready) {
-        status["status"] = "ok";
-        status["sysdig"] = Json::Value(Json::objectValue);
-        status["sysdig"]["node"] = node_name_;
-        status["sysdig"]["events"] = Json::UInt64(stats.nEvents);
-        status["sysdig"]["drops"] = Json::UInt64(stats.nDrops);
-        status["sysdig"]["preemptions"] = Json::UInt64(stats.nPreemptions);
-        status["sysdig"]["filtered_events"] = Json::UInt64(stats.nFilteredEvents);
-
-        mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n");
-        mg_printf(conn, "%s\n", status.toStyledString().c_str());
-    } else {
-        mg_printf(conn, "HTTP/1.1 503 Service Unavailable\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n");
-        mg_printf(conn, "%s\n", "{}");
-    }
-
-    return true;
+const EventNames& EventNames::GetInstance() {
+  static EventNames* event_names = new EventNames;
+  return *event_names;
 }
 
-}   /* namespace collector */
+EventNames::EventNames() {
+  for (int i = 0; i < PPM_EVENT_MAX; i++) {
+    std::string name(g_event_info[i].name);
+    names_by_id_[i] = name;
+    events_by_name_[name].push_back(static_cast<ppm_event_type>(i));
+  }
+}
 
+}  // namespace collector

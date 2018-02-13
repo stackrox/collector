@@ -41,7 +41,7 @@ COPY bin/curl /usr/local/bin/curl
 COPY libs/librdkafka.so \
      libs/librdkafka++.so \
      libs/libcurl.so \
-     libs/libsysdignative.so \
+     libs/libsinsp-wrapper.so \
      /usr/local/lib/
 
 # `ldconfig` is required so that `curl` can find its `libcurl.so`.

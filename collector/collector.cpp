@@ -53,11 +53,13 @@ const char* scap_get_host_root();
 
 #include "ChiselConsumer.h"
 #include "CollectorArgs.h"
+#include "EventNames.h"
 #include "GetNetworkHealthStatus.h"
 #include "GetStatus.h"
 #include "LogLevel.h"
 #include "SysdigService.h"
 #include "CollectorStatsExporter.h"
+#include "Utility.h"
 
 #define init_module(mod, len, opts) syscall(__NR_init_module, mod, len, opts)
 #define delete_module(name, flags) syscall(__NR_delete_module, name, flags)
@@ -65,7 +67,7 @@ const char* scap_get_host_root();
 // Set g_terminate to terminate the entire program.
 static bool g_terminate;
 // Set g_interrupt_sysdig to reload the sysdig configuration, or to terminate if g_terminate is also set.
-static bool g_interrupt_sysdig;
+static std::atomic_bool g_interrupt_sysdig;
 // Store the current copy of the chisel.
 static std::string g_chiselContents;
 
@@ -76,7 +78,7 @@ signal_callback(int signal)
 {
     std::cerr << "Caught signal " << signal << std::endl;
     g_terminate = true;
-    g_interrupt_sysdig = true;
+    g_interrupt_sysdig.store(true);
 }
 
 
@@ -91,6 +93,8 @@ sigsegv_handler(int signal) {
 
     strings = backtrace_symbols(array, size);
     FILE* fp = fopen("/host/dev/collector-stacktrace-for-ya.txt", "w");
+    fprintf(stdout, "%s\n", strsignal(signal));
+    fprintf(fp, "%s\n", strsignal(signal));
     for (i = 0; i < size; i++) {
         fprintf(fp, "  %s\n", strings[i]);
         fprintf(stdout, "  %s\n", strings[i]);
@@ -118,67 +122,63 @@ static const std::string hostname(getHostname());
 // Method to insert the kernel module. The options to the module are computed
 // from the collector configuration. Specifically, the syscalls that we should
 // extract
-void insertModule(SysdigService& sysdigService, Json::Value collectorConfig) {
+void insertModule(Json::Value collectorConfig) {
     std::string args = "s_syscallIds=";
 
     // Iterate over the syscalls that we want and pull each of their ids.
     // These are stashed into a string that will get passed to init_module
     // to insert the kernel module
+    const EventNames& event_names = EventNames::GetInstance();
     for (auto itr: collectorConfig["syscalls"]) {
         string syscall = itr.asString();
-        std::vector<int> ids;
-        sysdigService.getSyscallIds(syscall, ids);
-        for (unsigned int i = 0; i < ids.size(); i++) {
-            std::string strid = std::to_string(ids[i]);
-            args += (strid + ",");
+        for (ppm_event_type id : event_names.GetEventIDs(syscall)) {
+            args += std::to_string(id) + ",";
         }
     }
     args += "-1";
 
     args += " exclude_initns=1 exclude_selfns=1";
 
-    int fd = open(SysdigService::modulePath.c_str(), O_RDONLY);
+    int fd = open(SysdigService::kModulePath, O_RDONLY);
     if (fd < 0) {
         std::cerr << "[Child]  Cannot open kernel module: " <<
-            SysdigService::modulePath << ". Aborting..." << std::endl;
+            SysdigService::kModulePath << ". Aborting..." << std::endl;
         exit(EXIT_FAILURE);
     }
     struct stat st;
     if (fstat(fd, &st) < 0) {
         std::cerr << "[Child]  Error getting file info for kernel module: " <<
-            SysdigService::modulePath << ". Aborting..." << std::endl;
+            SysdigService::kModulePath << ". Aborting..." << std::endl;
         exit(EXIT_FAILURE);
     }
     size_t imageSize = st.st_size;
-    char *image = new char[imageSize];
-    read(fd, image, imageSize);
+    std::unique_ptr<char[]> image(new char[imageSize]);
+    read(fd, image.get(), imageSize);
     close(fd);
 
-    std::cerr << "[Child]  Inserting kernel module " << SysdigService::modulePath <<
-        " with indefinite removal and retry if required." << std::endl;
+    std::cerr << "[Child]  Inserting kernel module " << SysdigService::kModulePath
+              << " with indefinite removal and retry if required." << std::endl;
     std::cout << "[Child]  Kernel module arguments: " << args << std::endl;
 
     // Attempt to insert the module. If it is already inserted then remove it and
     // try again
-    int result = init_module(image, imageSize, args.c_str());
+    int result = init_module(image.get(), imageSize, args.c_str());
     while (result != 0) {
         if (errno == EEXIST) {
             // note that we forcefully remove the kernel module whether or not it has a non-zero
             // reference count. There is only one container that is ever expected to be using
             // this kernel module and that is us
-            delete_module(SysdigService::moduleName.c_str(), O_NONBLOCK | O_TRUNC);
+            delete_module(SysdigService::kModuleName, O_NONBLOCK | O_TRUNC);
             sleep(2);    // wait for 2s before trying again
         } else {
             std::cerr << "[Child]  Error inserting kernel module: " <<
-                SysdigService::modulePath << ": " << strerror(errno) <<". Aborting..." << std::endl;
+                SysdigService::kModulePath  << ": " << StrError(errno) << ". Aborting..." << std::endl;
             exit(EXIT_FAILURE);
         }
-        result = init_module(image, imageSize, args.c_str());
+        result = init_module(image.get(), imageSize, args.c_str());
     }
 
-    std::cerr << "[Child]  Done inserting kernel module " << SysdigService::modulePath << "." << endl;
-
-    delete[] image;
+    std::cerr << "[Child]  Done inserting kernel module " << SysdigService::kModulePath << "." << endl;
 }
 
 static const std::string base64_chars =
@@ -294,7 +294,23 @@ void
 handleNewChisel(std::string newChisel) {
     cerr << "Processing new chisel." << endl;
     g_chiselContents = newChisel;
-    g_interrupt_sysdig = true;
+    g_interrupt_sysdig.store(true);
+}
+
+std::string GetHostname() {
+    const char* host_root = getenv("SYSDIG_HOST_ROOT");
+    if (!host_root) host_root = "";
+    std::string hostname_file(host_root);
+    hostname_file += "/etc/hostname";
+
+    std::ifstream is(hostname_file);
+    if (!is.is_open()) {
+      std::cerr << "Failed to open " << hostname_file << " to read hostname" << std::endl;
+      return "unknown";
+    }
+    std::string hostname;
+    is >> hostname;
+    return hostname;
 }
 
 void
@@ -306,12 +322,9 @@ startChiselConsumer(std::string initialChisel, bool *g_terminate, std::string to
 
 void
 startChild(std::string chiselName, std::string brokerList,
-           std::string format, bool useKafka, std::string defaultTopic,
-           std::string networkTopic, std::string processTopic, std::string fileTopic,
+           std::string format, std::string networkTopic, std::string processTopic, std::string fileTopic,
            std::string processSyscalls, int snapLen, Json::Value collectorConfig) {
-    SysdigService sysdig(g_interrupt_sysdig);
-
-    insertModule(sysdig, collectorConfig);
+    insertModule(collectorConfig);
 
     LogLevel setLogLevel;
     setLogLevel.stdBuf = std::cout.rdbuf();
@@ -326,9 +339,11 @@ startChild(std::string chiselName, std::string brokerList,
     const char *options[] = { "listening_ports", "8080", 0};
     CivetServer server(options);
 
-    GetStatus getStatus(&sysdig);
+    SysdigService sysdig;
+    GetStatus getStatus(GetHostname(), &sysdig);
 
     std::shared_ptr<prometheus::Registry> registry = std::make_shared<prometheus::Registry>();
+
     GetNetworkHealthStatus getNetworkHealthStatus(brokerList, registry);
 
     server.addHandler("/ready", getStatus);
@@ -345,12 +360,7 @@ startChild(std::string chiselName, std::string brokerList,
     writeChisel(chiselName, g_chiselContents);
     cerr << "[Child]  " << chiselName << " contents set to: " << g_chiselContents << endl;
 
-    int code = sysdig.init(chiselName, brokerList, format, useKafka, defaultTopic,
-                            networkTopic, processTopic, fileTopic, processSyscalls, snapLen);
-    if (code != 0) {
-        cerr << "[Child]  Unable to initialize sysdig" << endl;
-        exit(code);
-    }
+    sysdig.Init(chiselName, brokerList, format, networkTopic, processTopic, fileTopic, processSyscalls, snapLen);
 
     if (!getNetworkHealthStatus.start()) {
         cerr << "[Child]  Unable to start network health status" << endl;
@@ -368,12 +378,12 @@ startChild(std::string chiselName, std::string brokerList,
   #endif /* COLLECTOR_CORE */
 
     cerr << "[Child]  Starting signal reader..." << endl;
-    sysdig.runForever();
+    sysdig.RunForever(g_interrupt_sysdig);
     cerr << "[Child]  Interrupted signal reader; cleaning up..." << endl;
     exporter.stop();
     server.close();
     getNetworkHealthStatus.stop();
-    sysdig.cleanup();
+    sysdig.CleanUp();
     cerr << "[Child]  Cleaned up signal reader; terminating..." << endl;
 
     exit(EXIT_SUCCESS);
@@ -430,10 +440,6 @@ main(int argc, char **argv)
     if (!collectorConfig["format"].isNull()) {
         format = collectorConfig["format"].asString();
     }
-    std::string defaultTopic = "collector-kafka-topic";
-    if (!collectorConfig["defaultTopic"].isNull()) {
-        defaultTopic = collectorConfig["defaultTopic"].asString();
-    }
     std::string networkTopic = "collector-network-kafka-topic";
     if (!collectorConfig["networkTopic"].isNull()) {
         networkTopic = collectorConfig["networkTopic"].asString();
@@ -461,7 +467,7 @@ main(int argc, char **argv)
         processSyscalls += itr.asString();
     }
 
-    cerr << "Output topics set to: default=" << defaultTopic << ", network=" << networkTopic
+    cerr << "Output topics set to: network=" << networkTopic
          << ", process=" << processTopic << ", file=" << fileTopic << endl;
     cerr << "Chisels topic set to: " << chiselsTopic << endl;
 
@@ -481,12 +487,12 @@ main(int argc, char **argv)
             exit(EXIT_FAILURE);
         } else if (pid == 0) {
             cerr << "[Child]  Signal reader started." << endl;
-            startChild(chiselName, args->BrokerList(), format, useKafka, defaultTopic,
+            startChild(chiselName, args->BrokerList(), format,
                        networkTopic, processTopic, fileTopic, processSyscalls, snapLen, collectorConfig);
         } else {
             cerr << "[Parent] Monitoring child process " << pid << endl;
             for (;;) {
-                if (g_interrupt_sysdig) {
+                if (g_interrupt_sysdig.load()) {
                     bool killed = false;
                     cerr << "[Parent] Sending SIGTERM to " << pid << endl;
                     kill(pid, SIGTERM);
@@ -506,7 +512,7 @@ main(int argc, char **argv)
                         cerr << "[Parent] Waiting for process " << pid << " to exit after SIGKILL" << endl;
                         wait(NULL);
                     }
-                    g_interrupt_sysdig = false;
+                    g_interrupt_sysdig.store(false);
                     break;
                 }
                 pid_t killed_pid = waitpid(pid, NULL, WNOHANG);

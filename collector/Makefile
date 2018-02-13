@@ -1,7 +1,4 @@
-HDRS := $(wildcard lib/*.h) \
-    sysdig/src/userspace/sysdig/sysdig_api.h \
-    sysdig/src/userspace/sysdig/KafkaClient.h \
-    sysdig/src/driver/ppm_events_public.h
+HDRS := $(wildcard lib/*.h) $(shell find sysdig/src/userspace -name '*.h')
 
 SRCS := $(wildcard lib/*.cpp) collector.cpp
 
@@ -19,16 +16,14 @@ image: container/bin/collector container/Dockerfile container/scripts/
 build_collector:
 	( docker images --format "{{.Repository}}" | grep '^build_collector$$') || docker build -t build_collector -f Dockerfile .
 
-container/bin/collector: $(HDRS) $(SRCS) container/libs/libsysdignative.so build_collector Dockerfile
+container/bin/collector: $(HDRS) $(SRCS) container/libs/libsinsp-wrapper.so build_collector Dockerfile
 	mkdir -p container/bin
-	mkdir -p container/libs
 	docker rm -f build_collector || true
 	docker run \
-	  -v $(CURDIR)/container/libs/libsysdignative.so:/usr/local/lib/libsysdignative.so \
+	  -v $(CURDIR)/container/libs/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so \
 	  -v $(CURDIR):/src \
-	  -v $(CURDIR)/sysdig/src/userspace/sysdig/KafkaClient.h:/usr/local/include/KafkaClient.h \
+	  -v $(CURDIR)/sysdig/src:/usr/local/sysdig \
 	  -v $(CURDIR)/sysdig/src/driver/ppm_events_public.h:/usr/local/include/ppm_events_public.h \
-	  -v $(CURDIR)/sysdig/src/userspace/sysdig/sysdig_api.h:/usr/local/include/sysdig_api.h \
 	  --name build_collector build_collector
 	cp cmake-build/collector container/bin/
 	docker cp build_collector:/usr/local/lib/libcurl.so container/libs/
@@ -36,10 +31,10 @@ container/bin/collector: $(HDRS) $(SRCS) container/libs/libsysdignative.so build
 	docker cp -L build_collector:/usr/local/lib/librdkafka.so container/libs/
 	docker cp -L build_collector:/usr/local/lib/librdkafka++.so container/libs/
 
-container/libs/libsysdignative.so: $(shell find sysdig -name '*.h' -o -name '*.cpp')
-	mkdir -p container/libs
+container/libs/libsinsp-wrapper.so: $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp')
 	make -C sysdig
-	cp sysdig/src/build/userspace/sysdig/libsysdignative.so container/libs/
+	mkdir -p container/libs/
+	cp sysdig/src/build/userspace/libsinsp/libsinsp-wrapper.so container/libs/
 
 .PHONY: clean
 clean:
