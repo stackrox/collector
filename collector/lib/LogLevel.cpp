@@ -52,12 +52,12 @@ LogLevel::handlePost(CivetServer *server, struct mg_connection *conn)
     status["status"] = "Ok";
 
     long long len = 0;
-    char buf[strlen("Debug")+1] = { '\0' };
+    char buf[strlen("debug")+1] = { '\0' };
 
-    len = mg_read(conn, buf, (size_t)strlen("Debug"));
+    len = mg_read(conn, buf, (size_t)strlen("debug"));
     buf[len] = '\0';
 
-    if (strcmp(buf, "Debug") == 0) {
+    if (strcmp(buf, "debug") == 0) {
         std::cout.rdbuf(stdBuf);
     } else {
         std::cout.rdbuf(nullBuf);
