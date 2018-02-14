@@ -347,6 +347,10 @@ startChild(std::string chiselName, std::string brokerList,
 
     std::cout.rdbuf(setLogLevel.nullBuf);
 
+    // Extract configuration options
+    bool useChiselCache = collectorConfig["useChiselCache"].asBool();
+    cerr << "[Child]  useChiselCache=" << useChiselCache << endl;
+
     // Start monitoring services.
     // Some of these variables must remain in scope, so
     // be cautious if decomposing to a separate function.
@@ -374,7 +378,7 @@ startChild(std::string chiselName, std::string brokerList,
     writeChisel(chiselName, g_chiselContents);
     cerr << "[Child]  " << chiselName << " contents set to: " << g_chiselContents << endl;
 
-    sysdig.Init(chiselName, brokerList, format, networkTopic, processTopic, fileTopic, processSyscalls, snapLen);
+    sysdig.Init(chiselName, brokerList, format, networkTopic, processTopic, fileTopic, processSyscalls, snapLen, useChiselCache);
 
     if (!getNetworkHealthStatus.start()) {
         cerr << "[Child]  Unable to start network health status" << endl;
@@ -470,7 +474,7 @@ main(int argc, char **argv)
     if (!collectorConfig["chiselsTopic"].isNull()) {
         chiselsTopic = collectorConfig["chiselsTopic"].asString();
     }
-    
+
     // Iterate over the process syscalls
     std::string processSyscalls;
     for (auto itr: collectorConfig["process_syscalls"]) {

@@ -42,6 +42,7 @@ struct SysdigStats {
   // stats gathered in user space
   volatile uint64_t nFilteredEvents = 0;    // events post chisel filter
   volatile uint64_t nUserspaceEvents = 0;   // events pre chisel filter, should be (nEvents - nDrops)
+  volatile uint64_t nChiselCacheHits = 0;   // number of events that hit the filter cache
   volatile uint64_t nKafkaSendFailures = 0; // number of signals that were not sent
 };
 
@@ -51,7 +52,7 @@ class Sysdig {
 
   virtual void Init(const std::string& chiselName, const std::string& brokerList, const std::string& format,
                     const std::string& networkTopic, const std::string& processTopic, const std::string& fileTopic,
-                    const std::string& processSyscalls, int snaplen) = 0;
+                    const std::string& processSyscalls, int snaplen, bool useChiselCache) = 0;
   virtual void RunForever(const std::atomic_bool& interrupt) = 0;
   virtual void CleanUp() = 0;
 

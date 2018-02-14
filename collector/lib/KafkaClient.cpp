@@ -127,6 +127,6 @@ bool KafkaClient::sendMessage(rd_kafka_topic_t* kafkaTopic, const void* msg, int
        const_cast<void*>(msg), msgLen, key, keyLen, nullptr);
   if (rv != -1) return true;
   std::cerr << "Failed to produce to topic " << rd_kafka_topic_name(kafkaTopic) << ": "
-            << rd_kafka_err2str(rd_kafka_errno2err(errno)) << std::endl;
+            << rd_kafka_err2str(rd_kafka_last_error()) << std::endl;
   return false;
 }

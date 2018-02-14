@@ -36,7 +36,7 @@ constexpr char SysdigService::kModuleName[];
 void SysdigService::Init(
     const std::string& chisel, const std::string& broker_list, const std::string& format,
     const std::string& network_topic, const std::string& process_topic, const std::string& file_topic,
-    const std::string& process_signals, int snaplen) {
+    const std::string& process_signals, int snaplen, bool use_chisel_cache) {
   if (inspector_ || kafka_client_ || chisel_) {
     throw CollectorException("Invalid state: SysdigService was already initialized");
   }
@@ -48,6 +48,35 @@ void SysdigService::Init(
 
   classifier_.Init(process_signals);
   formatter_.Init(inspector_.get(), format);
+  use_chisel_cache_ = use_chisel_cache;
+}
+
+bool SysdigService::FilterEvent(sinsp_evt* event) {
+  if (!use_chisel_cache_) {
+    return chisel_->process(event);
+  }
+
+  sinsp_threadinfo* tinfo = event->get_thread_info();
+  if (tinfo == NULL) {
+    return false;
+  }
+
+  auto pair = chisel_cache_.emplace(tinfo->m_container_id, false); 
+  bool& chisel_result = pair.first->second;
+
+  if (pair.second) {  // was newly inserted
+    bool res = chisel_->process(event);
+    if (chisel_cache_.size() > 1024) {
+      std::cerr << "Flushing chisel cache" << std::endl;
+      chisel_cache_.clear();
+      return res;
+    }
+    chisel_result = res;
+  } else {
+    ++userspace_stats_.nChiselCacheHits;
+  }
+
+  return chisel_result;
 }
 
 SignalType SysdigService::GetNext(SafeBuffer* message_buffer, SafeBuffer* key_buffer) {
@@ -58,7 +87,7 @@ SignalType SysdigService::GetNext(SafeBuffer* message_buffer, SafeBuffer* key_bu
   if (event->get_category() & EC_INTERNAL) return SIGNAL_TYPE_UNKNOWN;
 
   ++userspace_stats_.nUserspaceEvents;
-  if (!chisel_->process(event)) {
+  if (!FilterEvent(event)) {
     return SIGNAL_TYPE_UNKNOWN;
   }
 
