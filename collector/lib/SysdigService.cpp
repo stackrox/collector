@@ -55,6 +55,8 @@ SignalType SysdigService::GetNext(SafeBuffer* message_buffer, SafeBuffer* key_bu
   auto res = inspector_->next(&event);
   if (res != SCAP_SUCCESS) return SIGNAL_TYPE_UNKNOWN;
 
+  if (event->get_category() & EC_INTERNAL) return SIGNAL_TYPE_UNKNOWN;
+
   if (!chisel_->process(event)) {
     return SIGNAL_TYPE_UNKNOWN;
   }
