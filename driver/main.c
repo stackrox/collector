@@ -197,11 +197,11 @@ module_param_array(s_syscallIds, int, &s_syscallIdsCount, 0444);
 MODULE_PARM_DESC(s_syscallIds, "An array of integers representing entries from ppm_syscall_code");
 
 static int exclude_initns = 0;
-module_param(exclude_initns, int, 0);
+module_param(exclude_initns, int, 0444);
 MODULE_PARM_DESC(exclude_initns, "Exclude events from processes in the init namespace if nonzero");
 
 static int exclude_selfns = 0;
-module_param(exclude_selfns, int, 0);
+module_param(exclude_selfns, int, 0444);
 MODULE_PARM_DESC(exclude_selfns, "Exclude events from processes in the same namespace as the consumer");
 
 static struct pid_namespace *global_excluded_pid_ns = NULL;
