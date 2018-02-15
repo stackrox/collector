@@ -40,8 +40,4 @@ const char* StrError(int errnum) {
   return msg_buffer;
 }
 
-const char* StrError() {
-  return StrError(errno);
-}
-
 }  // namespace collector

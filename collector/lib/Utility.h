@@ -23,11 +23,14 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _UTILITY_H_
 #define _UTILITY_H_
 
+extern "C" {
+#include <errno.h>
+}
+
 namespace collector {
 
 // The following functions are thread-safe versions of strerror, which are more convenient to use than strerror_r.
-const char* StrError();
-const char* StrError(int errnum);
+const char* StrError(int errnum = errno);
 
 }  // namespace collector
 

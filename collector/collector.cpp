@@ -47,8 +47,6 @@ extern "C" {
 #include <unistd.h>
     
 #include <sys/resource.h>
-
-const char* scap_get_host_root();
 }
 
 #include "ChiselConsumer.h"
@@ -61,7 +59,7 @@ const char* scap_get_host_root();
 #include "CollectorStatsExporter.h"
 #include "Utility.h"
 
-#define init_module(mod, len, opts) syscall(__NR_init_module, mod, len, opts)
+#define finit_module(fd, opts, flags) syscall(__NR_finit_module, fd, opts, flags)
 #define delete_module(name, flags) syscall(__NR_delete_module, name, flags)
 
 // Set g_terminate to terminate the entire program.
@@ -105,26 +103,55 @@ sigsegv_handler(int signal) {
     exit(EXIT_FAILURE);
 }
 
-static const std::string
-getHostname()
-{
-    std::string hostname;
-    const std::string file = std::string(scap_get_host_root()) + "/etc/hostname";
-    std::ifstream f(file.c_str());
-    f >> hostname;
-    f.close();
-    return hostname;
+std::string GetHostPath(const std::string& file) {
+    const char* host_root = getenv("SYSDIG_HOST_ROOT");
+    if (!host_root) host_root = "";
+    std::string host_file(host_root);
+    host_file += file;
+    return host_file;
 }
 
-static const std::string hostname(getHostname());
+int InsertModule(int fd, const std::unordered_map<std::string, std::string>& args) {
+  std::string args_str;
+  bool first = true;
+  for (auto& entry : args) {
+    if (first) first = false;
+    else args_str += " ";
+    args_str += entry.first + "=" + entry.second;
+  }
+  std::cout << "[Child]  Kernel module arguments: " << args_str << std::endl;
+  int res = finit_module(fd, args_str.c_str(), 0);
+  if (res != 0) return res;
+  struct stat st;
+  std::string param_dir = GetHostPath(std::string("/sys/module/") + SysdigService::kModuleName + "/parameters/");
+  res = stat(param_dir.c_str(), &st);
+  if (res != 0) {
+    // This is not optimal, but don't fail hard on systems where for whatever reason the above directory does not exist.
+    std::cerr << "[Child]  Could not stat " << param_dir << ": " << StrError()
+              << ". No parameter verification can be performed." << std::endl;
+    return 0;
+  }
+  for (const auto& entry : args) {
+    std::string param_file = param_dir + entry.first;
+    res = stat(param_file.c_str(), &st);
+    if (res != 0) {
+      std::cerr << "[Child]  Could not stat " << param_file << ": " << StrError() << ". Parameter " << entry.first
+                << " is unsupported, suspecting module version mismatch." << std::endl;
+      errno = EINVAL;
+      return -1;
+    }
+  }
+  return 0;
+}
 
 // insertModule
 // Method to insert the kernel module. The options to the module are computed
 // from the collector configuration. Specifically, the syscalls that we should
 // extract
 void insertModule(Json::Value collectorConfig) {
-    std::string args = "s_syscallIds=";
+    std::unordered_map<std::string, std::string> module_args;
 
+    std::string& syscall_ids = module_args["s_syscallIds"];
     // Iterate over the syscalls that we want and pull each of their ids.
     // These are stashed into a string that will get passed to init_module
     // to insert the kernel module
@@ -132,12 +159,13 @@ void insertModule(Json::Value collectorConfig) {
     for (auto itr: collectorConfig["syscalls"]) {
         string syscall = itr.asString();
         for (ppm_event_type id : event_names.GetEventIDs(syscall)) {
-            args += std::to_string(id) + ",";
+            syscall_ids += std::to_string(id) + ",";
         }
     }
-    args += "-1";
+    syscall_ids += "-1";
 
-    args += " exclude_initns=1 exclude_selfns=1";
+    module_args["exclude_initns"] = "1";
+    module_args["exclude_selfns"] = "1";
 
     int fd = open(SysdigService::kModulePath, O_RDONLY);
     if (fd < 0) {
@@ -145,24 +173,13 @@ void insertModule(Json::Value collectorConfig) {
             SysdigService::kModulePath << ". Aborting..." << std::endl;
         exit(EXIT_FAILURE);
     }
-    struct stat st;
-    if (fstat(fd, &st) < 0) {
-        std::cerr << "[Child]  Error getting file info for kernel module: " <<
-            SysdigService::kModulePath << ". Aborting..." << std::endl;
-        exit(EXIT_FAILURE);
-    }
-    size_t imageSize = st.st_size;
-    std::unique_ptr<char[]> image(new char[imageSize]);
-    read(fd, image.get(), imageSize);
-    close(fd);
 
     std::cerr << "[Child]  Inserting kernel module " << SysdigService::kModulePath
               << " with indefinite removal and retry if required." << std::endl;
-    std::cout << "[Child]  Kernel module arguments: " << args << std::endl;
 
     // Attempt to insert the module. If it is already inserted then remove it and
     // try again
-    int result = init_module(image.get(), imageSize, args.c_str());
+    int result = InsertModule(fd, module_args);
     while (result != 0) {
         if (errno == EEXIST) {
             // note that we forcefully remove the kernel module whether or not it has a non-zero
@@ -172,11 +189,12 @@ void insertModule(Json::Value collectorConfig) {
             sleep(2);    // wait for 2s before trying again
         } else {
             std::cerr << "[Child]  Error inserting kernel module: " <<
-                SysdigService::kModulePath  << ": " << StrError(errno) << ". Aborting..." << std::endl;
+                SysdigService::kModulePath  << ": " << StrError() << ". Aborting..." << std::endl;
             exit(EXIT_FAILURE);
         }
-        result = init_module(image.get(), imageSize, args.c_str());
+        result = InsertModule(fd, module_args);
     }
+    close(fd);
 
     std::cerr << "[Child]  Done inserting kernel module " << SysdigService::kModulePath << "." << endl;
 }
@@ -298,11 +316,7 @@ handleNewChisel(std::string newChisel) {
 }
 
 std::string GetHostname() {
-    const char* host_root = getenv("SYSDIG_HOST_ROOT");
-    if (!host_root) host_root = "";
-    std::string hostname_file(host_root);
-    hostname_file += "/etc/hostname";
-
+    std::string hostname_file(GetHostPath("/etc/hostname"));
     std::ifstream is(hostname_file);
     if (!is.is_open()) {
       std::cerr << "Failed to open " << hostname_file << " to read hostname" << std::endl;
@@ -476,7 +490,7 @@ main(int argc, char **argv)
 
     // Handle updates to the chisel, which can be sent to us on Kafka.
     if (useKafka) {
-        std::thread chiselThread(startChiselConsumer, g_chiselContents, &g_terminate, chiselsTopic, hostname, args->BrokerList());
+        std::thread chiselThread(startChiselConsumer, g_chiselContents, &g_terminate, chiselsTopic, GetHostname(), args->BrokerList());
         chiselThread.detach();
     }
 
