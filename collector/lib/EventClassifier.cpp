@@ -99,7 +99,9 @@ void EventClassifier::ExtractProcessSignalKey(SafeBuffer* key_buf, sinsp_evt* ev
 void EventClassifier::ExtractFileSignalKey(SafeBuffer* key_buf, sinsp_evt* event) {
   const sinsp_threadinfo* tinfo = event->get_thread_info();
   if (!tinfo) return;
-  key_buf->AppendTrunc(tinfo->m_container_id);
+  // Use "<pid>,<fd>,<container-id>" as the key. We place the container ID last to make sure the pid and fd don't get
+  // truncated.
+  key_buf->AppendFTrunc("%" PRId64 ",%" PRId64 ",%s", tinfo->m_pid, event->get_fd_num(), tinfo->m_container_id.c_str());
 }
 
 }  // namespace collector
