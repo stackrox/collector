@@ -85,7 +85,7 @@ void EventClassifier::ExtractNetworkSignalKey(SafeBuffer* key_buf, sinsp_evt* ev
     memcpy(client_addr, &ipv4_fields.m_sip, sizeof(client_addr));
     uint16_t client_port = ipv4_fields.m_sport;
     key_buf->AppendFTrunc(
-        PRIu8 "." PRIu8 "." PRIu8 "." PRIu8 ":" PRIu16,
+        "%" PRIu8 ".%" PRIu8 ".%" PRIu8 ".%" PRIu8 ":%" PRIu16,
         client_addr[0], client_addr[1], client_addr[2], client_addr[3], client_port);
   }
 }
