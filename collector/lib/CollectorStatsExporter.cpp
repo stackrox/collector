@@ -59,6 +59,8 @@ void CollectorStatsExporter::run() {
     auto& drops = collectorEventCounters.Add({{"type", "drops"}});
     auto& preemptions = collectorEventCounters.Add({{"type", "preemptions"}});
     auto& filtered = collectorEventCounters.Add({{"type", "filtered"}});
+    auto& userspaceEvents = collectorEventCounters.Add({{"type", "userspace"}});
+    auto& kafkaSendFailures = collectorEventCounters.Add({{"type", "kafkaSendFailures"}});
 
     while (thread_.Pause(std::chrono::seconds(1))) {
         SysdigStats stats;
@@ -70,6 +72,8 @@ void CollectorStatsExporter::run() {
         drops.Set(stats.nDrops);
         preemptions.Set(stats.nPreemptions);
         filtered.Set(stats.nFilteredEvents);
+        userspaceEvents.Set(stats.nUserspaceEvents);
+        kafkaSendFailures.Set(stats.nKafkaSendFailures);
     }
 }
 

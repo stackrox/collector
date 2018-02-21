@@ -37,7 +37,7 @@ KafkaClient::KafkaClient(const std::string& brokerList, const std::string& netwo
   std::cout << "Building Kafka client with brokers: " << brokerList << std::endl;
 
   rd_kafka_conf_t* conf = rd_kafka_conf_new();
-  rd_kafka_conf_res_t res = rd_kafka_conf_set(conf, "batch.num.messages", "1000", errstr, sizeof(errstr));
+  rd_kafka_conf_res_t res = rd_kafka_conf_set(conf, "batch.num.messages", "10000", errstr, sizeof(errstr));
   if (res != RD_KAFKA_CONF_OK) {
     throw KafkaException(std::string("Error setting up Kafka config: ") + errstr);
   }
@@ -115,7 +115,9 @@ bool KafkaClient::send(const void* msg, int msgLen, const void* key, int keyLen,
   if (onFileTopic && fileTopicHandle_) {
     result &= sendMessage(fileTopicHandle_, msg, msgLen, key, keyLen);
   }
-  rd_kafka_poll(kafka_, 0);
+  if (++send_count_ % 10000 == 0) {
+    rd_kafka_poll(kafka_, 0);
+  }
   return result;
 }
 

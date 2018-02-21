@@ -62,6 +62,8 @@ class KafkaClient {
   rd_kafka_topic_t* networkTopicHandle_ = nullptr;
   rd_kafka_topic_t* processTopicHandle_ = nullptr;
   rd_kafka_topic_t* fileTopicHandle_ = nullptr;
+
+  uint64_t send_count_ = 0;
 };
 
 #endif // __KAFKACLIENT_H

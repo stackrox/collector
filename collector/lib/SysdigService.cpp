@@ -57,6 +57,7 @@ SignalType SysdigService::GetNext(SafeBuffer* message_buffer, SafeBuffer* key_bu
 
   if (event->get_category() & EC_INTERNAL) return SIGNAL_TYPE_UNKNOWN;
 
+  ++userspace_stats_.nUserspaceEvents;
   if (!chisel_->process(event)) {
     return SIGNAL_TYPE_UNKNOWN;
   }
@@ -93,9 +94,12 @@ void SysdigService::RunForever(const std::atomic_bool& interrupt) {
       continue;
     }
     ++userspace_stats_.nFilteredEvents;
-    kafka_client_->send(
+    bool success = kafka_client_->send(
         message_buffer.buffer(), message_buffer.size(), key_buffer.buffer(), key_buffer.size(),
         signal_type == SIGNAL_TYPE_NETWORK, signal_type == SIGNAL_TYPE_PROCESS, signal_type == SIGNAL_TYPE_FILE);
+    if (!success) {
+      ++userspace_stats_.nKafkaSendFailures;
+    }
   }
   chisel_->on_capture_end();
 }
