@@ -34,10 +34,10 @@ extern "C" {
 namespace collector {
 
 struct SysdigStats {
-  volatile uint64_t nEvents;          // the number of kernel events
-  volatile uint64_t nDrops;           // the number of drops
-  volatile uint64_t nPreemptions;     // the number of preemptions
-  volatile uint64_t nFilteredEvents;  // events post chisel filter
+  volatile uint64_t nEvents = 0;          // the number of kernel events
+  volatile uint64_t nDrops = 0;           // the number of drops
+  volatile uint64_t nPreemptions = 0;     // the number of preemptions
+  volatile uint64_t nFilteredEvents = 0;  // events post chisel filter
 };
 
 class Sysdig {

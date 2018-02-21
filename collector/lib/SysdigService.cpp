@@ -92,6 +92,7 @@ void SysdigService::RunForever(const std::atomic_bool& interrupt) {
     if (signal_type == SIGNAL_TYPE_UNKNOWN) {
       continue;
     }
+    ++userspace_stats_.nFilteredEvents;
     kafka_client_->send(
         message_buffer.buffer(), message_buffer.size(), key_buffer.buffer(), key_buffer.size(),
         signal_type == SIGNAL_TYPE_NETWORK, signal_type == SIGNAL_TYPE_PROCESS, signal_type == SIGNAL_TYPE_FILE);
