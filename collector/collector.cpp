@@ -337,7 +337,7 @@ startChiselConsumer(std::string initialChisel, bool *g_terminate, std::string to
 void
 startChild(std::string chiselName, std::string brokerList,
            std::string format, std::string networkTopic, std::string processTopic, std::string fileTopic,
-           std::string processSyscalls, int snapLen, Json::Value collectorConfig, bool useKafka) {
+           std::string processSyscalls, Json::Value collectorConfig, bool useKafka) {
     insertModule(collectorConfig);
 
     LogLevel setLogLevel;
@@ -351,6 +351,12 @@ startChild(std::string chiselName, std::string brokerList,
     bool useChiselCache = collectorConfig["useChiselCache"].asBool();
     cerr << "[Child]  useChiselCache=" << useChiselCache << endl;
 
+    int snapLen = 2048;
+    if (!collectorConfig["signalBufferSize"].isNull() && collectorConfig["signalBufferSize"].asInt() >= 0) {
+        snapLen = collectorConfig["signalBufferSize"].asInt();
+    }
+    cerr << "[Child]  signalBufferSize=" << snapLen << endl;
+ 
     // Start monitoring services.
     // Some of these variables must remain in scope, so
     // be cautious if decomposing to a separate function.
@@ -437,14 +443,11 @@ main(int argc, char **argv)
 #endif
 
     const string chiselName = "default.chisel.lua";
-    const int snapLen = 2048;
 
     cerr << "Starting sysdig with the following parameters: chiselName="
          << chiselName
          << ", brokerList="
          << args->BrokerList()
-         << ", snapLen="
-         << snapLen
          << endl;
 
     // insert the kernel module with options from the configuration
@@ -507,7 +510,7 @@ main(int argc, char **argv)
         } else if (pid == 0) {
             cerr << "[Child]  Signal reader started." << endl;
             startChild(chiselName, args->BrokerList(), format,
-                       networkTopic, processTopic, fileTopic, processSyscalls, snapLen, collectorConfig, useKafka);
+                       networkTopic, processTopic, fileTopic, processSyscalls, collectorConfig, useKafka);
         } else {
             cerr << "[Parent] Monitoring child process " << pid << endl;
             for (;;) {
