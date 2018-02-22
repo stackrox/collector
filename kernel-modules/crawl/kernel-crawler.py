@@ -89,6 +89,39 @@ repos = {
             "page_pattern" : "//body//table/tr/td/a[regex:test(@href, '^kernel-lt-(devel-)?[0-9].*\.rpm$')]/@href"
         }
     ],
+
+    "CoreOS" : [
+        # {
+        #     "root" : "http://alpha.release.core-os.net/",
+        #     "discovery_pattern": "/html/body//a[regex:test(@href, 'amd64-usr')]/@href",
+        #     "subdirs" : [
+        #         ""
+        #     ],
+        #     "page_pattern" : "/html/body//a[regex:test(@href, '^[5-9][0-9][0-9]|current|[1][0-9]{3}')]/@href"
+        # Note: ^[5-9][0-9][0-9] is excluded because versions under 1000 are so old.
+        # },
+
+        # {
+        #     "root" : "http://beta.release.core-os.net/",
+        #     "discovery_pattern": "/html/body//a[regex:test(@href, 'amd64-usr')]/@href",
+        #     "subdirs" : [
+        #         ""
+        #     ],
+        #     "page_pattern" : "/html/body//a[regex:test(@href, '^[1][0-9]{3}')]/@href"
+        #     # Note: ^[5-9][0-9][0-9] is excluded because versions under 1000 are so old.
+        # },
+
+        {
+            "root" : "http://stable.release.core-os.net/",
+            "discovery_pattern": "/html/body//a[regex:test(@href, 'amd64-usr')]/@href",
+            "subdirs" : [
+                ""
+            ],
+            "page_pattern" : "/html/body//a[regex:test(@href, '^1185|1[2-9][0-9]{2}')]/@href"
+            # Note: ^[4-9][0-9][0-9] is excluded because versions under 1000 are so old.
+        }
+    ],
+
     "Ubuntu": [
         # Generic Linux AMD64 image and headers, distributed from main
         {

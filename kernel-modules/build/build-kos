@@ -267,6 +267,67 @@ function debian_build {
 	cd ${BASEDIR}
 }
 
+function coreos_build {
+	BASE_URL="$1"
+
+	get_or_download ${BASE_URL}version.txt ./
+	eval $(cat ./version.txt)
+
+	COREOS_DIR="coreos-$COREOS_VERSION_ID"
+
+	if [ ! -d $COREOS_DIR ]; then
+		mkdir $COREOS_DIR
+	fi
+
+	cd $COREOS_DIR
+
+	if [ ! -f coreos_developer_container.bin ]; then
+		get_or_download ${BASE_URL}coreos_developer_container.bin.bz2 ./
+		echo "Unzipping developer container"
+		bunzip2 coreos_developer_container.bin.bz2
+	fi
+
+	if [ ! -f config_orig ]; then
+		echo "Obtaining config_orig"
+		# mount developer container is a very stateful part of this script
+		# the section between mount/unmounting should be kept very small
+		# otherwise if something fails there are many inconsistencies that can happen
+		kpartx -asv coreos_developer_container.bin
+		LOOPDEV=$(kpartx -asv coreos_developer_container.bin | cut -d\  -f 3)
+		mkdir -p /tmp/loop
+		mount /dev/mapper/$LOOPDEV /tmp/loop
+
+		# Copy kernel headers
+		cp -r /tmp/loop/lib/modules .
+
+		# Copy kernel config
+		rm config* || true
+		cp /tmp/loop/usr/boot/config-* .
+		cp config-* config_orig
+		cp config_orig config
+
+		# umount and remove the developer container
+		umount /tmp/loop
+		kpartx -dv coreos_developer_container.bin
+	fi
+
+	echo "Building"
+	# https://groups.google.com/forum/#!topic/coreos-dev/Z8Q7sIy6YwE
+	sed -i 's/CONFIG_INITRAMFS_SOURCE=""/CONFIG_INITRAMFS_SOURCE="bootengine.cpio"\nCONFIG_INITRAMFS_ROOT_UID=0\nCONFIG_INITRAMFS_ROOT_GID=0/' config
+	sed -i 'N;s/\(CONFIG_RD_LZ4=.\)\n\(CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=\)/\1\nCONFIG_INITRAMFS_COMPRESSION=".gz"\n\2/' config
+	KERNEL_RELEASE=$(ls config-* | sed s/config-//)
+	HASH_ORIG=$(md5sum config_orig | cut -d' ' -f1)
+	HASH=$(md5sum config | cut -d' ' -f1)
+
+	export KERNELDIR=$PWD/modules/$KERNEL_RELEASE/build
+	build_modules
+	cd $BASEDIR
+	# Clean up unpacked packages:
+	rm -rf $BASEDIR/$COREOS_DIR
+
+	return
+}
+
 function get_or_download() {
 	URL="$1"
 	DIR="$2"
@@ -275,7 +336,9 @@ function get_or_download() {
 	if [ -f "${CACHE_PATH}" ]; then
 		echo "Using cached ${URL}"
 	else
+		echo "Downloading ${URL}"
 		wget --no-verbose --timeout=${URL_TIMEOUT} --tries=${RETRY} -P "$(dirname ${CACHE_PATH})" ${URL}
+		echo "Done downloading"
 	fi
 
 	cp ${CACHE_PATH} ${DIR}
@@ -290,7 +353,7 @@ case "$DISTRO" in
 
 		while read URL
 		do
-			echo "Downloading package $URL"
+			echo "Processing package $URL"
 			ubuntu_build "$(echo $URL | tr -d '\r')"
 		done < $INPUT
 	;;
@@ -300,7 +363,7 @@ case "$DISTRO" in
 
 		while read URL
 		do
-			echo "Downloading package $URL"
+			echo "Processing package $URL"
 			rhel_build "$(echo $URL | tr -d '\r')"
 		done < $INPUT
 	;;
@@ -310,7 +373,7 @@ case "$DISTRO" in
 
 		while read URL
 		do
-			echo "Downloading package $URL"
+			echo "Processing package $URL"
 			rhel_build "$(echo $URL | tr -d '\r')"
 		done < $INPUT
 	;;
@@ -320,8 +383,18 @@ case "$DISTRO" in
 
 		while read URL
 		do
-			echo "Downloading package $URL"
+			echo "Processing package $URL"
 			debian_build "$(echo $URL | tr -d '\r')"
+		done < $INPUT
+	;;
+
+	CoreOS)
+		echo Building CoreOS
+
+		while read URL
+		do
+			echo "Processing version $URL"
+			coreos_build "$(echo $URL | tr -d '\r')"
 		done < $INPUT
 	;;
 

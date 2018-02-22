@@ -1,6 +1,7 @@
 FROM debian:jessie-slim
 
 RUN apt-get update \
+ && apt-get upgrade -y \
  && apt-get install -y \
       binutils \
       cmake \
@@ -15,6 +16,9 @@ RUN apt-get update \
       wget \
       # For RedHat-family builds:
       rpm2cpio cpio \
+      # For CoreOS builds:
+      bzip2 \
+      kpartx \
  ;
 
 # See https://github.com/draios/sysdig/blob/dev/docker/stable/Dockerfile.

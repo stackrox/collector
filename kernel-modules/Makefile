@@ -23,6 +23,7 @@ build-crawl-container: crawl/Dockerfile crawl/kernel-crawler.py
 .PHONY: crawl
 crawl: build-crawl-container
 	docker run -i kernel-crawler CentOS > supported-kernels/centos.txt
+	docker run -i kernel-crawler CoreOS > supported-kernels/coreos.txt
 	docker run -i kernel-crawler Ubuntu > supported-kernels/ubuntu-standard.txt
 	docker run -i kernel-crawler Ubuntu-HWE > supported-kernels/ubuntu-hwe.txt
 	docker run -i kernel-crawler Ubuntu-AWS > supported-kernels/ubuntu-aws.txt
@@ -79,8 +80,24 @@ build-ubuntu: supported-kernels/ubuntu.txt
 		< supported-kernels/ubuntu.txt
 	docker volume rm ko-ubuntu
 
+.PHONY: build-coreos
+build-coreos:
+	docker volume rm ko-coreos || true
+	docker volume create ko-coreos
+	docker run \
+		--rm \
+		-i \
+		-v $(CURDIR)/container/kernel-modules:/output \
+		-v $(CURDIR)/packages:/packages \
+		-v ko-coreos:/scratch \
+		--privileged \
+		build-kernel-modules \
+		CoreOS \
+		< supported-kernels/coreos.txt
+	docker volume rm ko-coreos
+
 .PHONY: build
-build: build-centos build-centos-uncrawled build-ubuntu
+build: build-centos build-centos-uncrawled build-ubuntu build-coreos
 
 .PHONY: build-container
 build-container:
