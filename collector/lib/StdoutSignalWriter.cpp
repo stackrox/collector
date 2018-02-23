@@ -20,45 +20,18 @@ You should have received a copy of the GNU General Public License along with thi
 * do not wish to do so, delete this exception statement from your
 * version.
 */
+#include "StdoutSignalWriter.h"
 
-#ifndef _SYSDIG_
-#define _SYSDIG_
-
-#include <atomic>
-#include <string>
-
-extern "C" {
-#include <stdint.h>
-}
+#include <iostream>
 
 namespace collector {
 
-struct SysdigStats {
-  // stats gathered in kernel space
-  volatile uint64_t nEvents = 0;      // the number of kernel events
-  volatile uint64_t nDrops = 0;       // the number of drops
-  volatile uint64_t nPreemptions = 0; // the number of preemptions
+bool StdoutSignalWriter::WriteSignal(const SafeBuffer& msg, const SafeBuffer& key, SignalType signal_type) {
+    // XXX: cerr is being used for info's
+    // SROX-11349 will fix this
+    std::cerr.write(msg.buffer(), msg.size());
+    std::cerr << std::endl;
+    return true;
+}
 
-  // stats gathered in user space
-  volatile uint64_t nFilteredEvents = 0;    // events post chisel filter
-  volatile uint64_t nUserspaceEvents = 0;   // events pre chisel filter, should be (nEvents - nDrops)
-  volatile uint64_t nChiselCacheHits = 0;   // number of events that hit the filter cache
-  volatile uint64_t nKafkaSendFailures = 0; // number of signals that were not sent
-};
-
-class Sysdig {
- public:
-  virtual ~Sysdig() = default;
-
-  virtual void Init(const std::string& chiselName, const std::string& brokerList, const std::string& format,
-                    const std::string& networkTopic, const std::string& processTopic, const std::string& fileTopic,
-                    const std::string& processSyscalls, int snaplen, bool useChiselCache, bool useKafka) = 0;
-  virtual void RunForever(const std::atomic_bool& interrupt) = 0;
-  virtual void CleanUp() = 0;
-
-  virtual bool GetStats(SysdigStats* stats) const = 0;
-};
-
-}   /* namespace collector */
-
-#endif  /* _SYSDIG_ */
+}  // namespace collector

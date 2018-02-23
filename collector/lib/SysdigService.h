@@ -51,7 +51,7 @@ class SysdigService : public Sysdig {
 
   void Init(const std::string& chisel_name, const std::string& broker_list, const std::string& format,
             const std::string& network_topic, const std::string& process_topic, const std::string& file_topic,
-            const std::string& process_syscalls, int snaplen, bool use_chisel_cache) override;
+            const std::string& process_syscalls, int snaplen, bool use_chisel_cache, bool useKafka) override;
   void RunForever(const std::atomic_bool& interrupt) override;
   void CleanUp() override;
 
@@ -64,7 +64,7 @@ class SysdigService : public Sysdig {
 
   std::unique_ptr<sinsp> inspector_;
   std::unique_ptr<sinsp_chisel> chisel_;
-  std::unique_ptr<KafkaClient> kafka_client_;
+  std::unique_ptr<SignalWriter> signal_writer_;
   EventClassifier classifier_;
   EventFormatter formatter_;
   SysdigStats userspace_stats_;

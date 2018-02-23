@@ -30,6 +30,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include <string>
 #include <iostream>
 
+namespace collector {
+
 // construction
 KafkaClient::KafkaClient(const std::string& brokerList, const std::string& networkTopic,
                          const std::string& processTopic, const std::string& fileTopic) {
@@ -103,6 +105,12 @@ rd_kafka_topic_t* KafkaClient::createTopic(const char* topic) {
   return kafkaTopic;
 }
 
+bool KafkaClient::WriteSignal(const SafeBuffer& msg, const SafeBuffer& key, SignalType signal_type) {
+  return send(msg.buffer(), msg.size(), key.buffer(), key.size(),
+              signal_type == SIGNAL_TYPE_NETWORK, signal_type == SIGNAL_TYPE_PROCESS,
+              signal_type == SIGNAL_TYPE_FILE);
+}
+
 bool KafkaClient::send(const void* msg, int msgLen, const void* key, int keyLen,
                        bool onNetworkTopic, bool onProcessTopic, bool onFileTopic) {
   bool result = true;
@@ -130,3 +138,5 @@ bool KafkaClient::sendMessage(rd_kafka_topic_t* kafkaTopic, const void* msg, int
             << rd_kafka_err2str(rd_kafka_last_error()) << std::endl;
   return false;
 }
+
+}  // namespace collector

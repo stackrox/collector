@@ -26,6 +26,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "libsinsp/wrapper.h"
 
 #include "CollectorException.h"
+#include "StdoutSignalWriter.h"
 
 namespace collector {
 
@@ -36,14 +37,18 @@ constexpr char SysdigService::kModuleName[];
 void SysdigService::Init(
     const std::string& chisel, const std::string& broker_list, const std::string& format,
     const std::string& network_topic, const std::string& process_topic, const std::string& file_topic,
-    const std::string& process_signals, int snaplen, bool use_chisel_cache) {
-  if (inspector_ || kafka_client_ || chisel_) {
+    const std::string& process_signals, int snaplen, bool use_chisel_cache, bool useKafka) {
+  if (inspector_ || signal_writer_ || chisel_) {
     throw CollectorException("Invalid state: SysdigService was already initialized");
   }
 
   inspector_.reset(new_inspector());
   inspector_->set_snaplen(snaplen);
-  kafka_client_.reset(new KafkaClient(broker_list, network_topic, process_topic, file_topic));
+  if (useKafka) {
+    signal_writer_.reset(new KafkaClient(broker_list, network_topic, process_topic, file_topic));
+  } else {
+    signal_writer_.reset(new StdoutSignalWriter);
+  }
   chisel_.reset(new_chisel(inspector_.get(), chisel.c_str()));
 
   classifier_.Init(process_signals);
@@ -101,7 +106,7 @@ SignalType SysdigService::GetNext(SafeBuffer* message_buffer, SafeBuffer* key_bu
 }
 
 void SysdigService::RunForever(const std::atomic_bool& interrupt) {
-  if (!inspector_ || !kafka_client_ || !chisel_) {
+  if (!inspector_ || !signal_writer_ || !chisel_) {
     throw CollectorException("Invalid state: SysdigService was not initialized");
   }
 
@@ -123,9 +128,8 @@ void SysdigService::RunForever(const std::atomic_bool& interrupt) {
       continue;
     }
     ++userspace_stats_.nFilteredEvents;
-    bool success = kafka_client_->send(
-        message_buffer.buffer(), message_buffer.size(), key_buffer.buffer(), key_buffer.size(),
-        signal_type == SIGNAL_TYPE_NETWORK, signal_type == SIGNAL_TYPE_PROCESS, signal_type == SIGNAL_TYPE_FILE);
+
+    bool success = signal_writer_->WriteSignal(message_buffer, key_buffer, signal_type);
     if (!success) {
       ++userspace_stats_.nKafkaSendFailures;
     }
@@ -139,7 +143,7 @@ void SysdigService::CleanUp() {
   inspector_->close();
   chisel_.reset();
   inspector_.reset();
-  kafka_client_.reset();
+  signal_writer_.reset();
 }
 
 bool SysdigService::GetStats(SysdigStats* stats) const {

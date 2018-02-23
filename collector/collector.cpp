@@ -337,7 +337,7 @@ startChiselConsumer(std::string initialChisel, bool *g_terminate, std::string to
 void
 startChild(std::string chiselName, std::string brokerList,
            std::string format, std::string networkTopic, std::string processTopic, std::string fileTopic,
-           std::string processSyscalls, int snapLen, Json::Value collectorConfig) {
+           std::string processSyscalls, int snapLen, Json::Value collectorConfig, bool useKafka) {
     insertModule(collectorConfig);
 
     LogLevel setLogLevel;
@@ -378,7 +378,8 @@ startChild(std::string chiselName, std::string brokerList,
     writeChisel(chiselName, g_chiselContents);
     cerr << "[Child]  " << chiselName << " contents set to: " << g_chiselContents << endl;
 
-    sysdig.Init(chiselName, brokerList, format, networkTopic, processTopic, fileTopic, processSyscalls, snapLen, useChiselCache);
+
+    sysdig.Init(chiselName, brokerList, format, networkTopic, processTopic, fileTopic, processSyscalls, snapLen, useChiselCache, useKafka);
 
     if (!getNetworkHealthStatus.start()) {
         cerr << "[Child]  Unable to start network health status" << endl;
@@ -506,7 +507,7 @@ main(int argc, char **argv)
         } else if (pid == 0) {
             cerr << "[Child]  Signal reader started." << endl;
             startChild(chiselName, args->BrokerList(), format,
-                       networkTopic, processTopic, fileTopic, processSyscalls, snapLen, collectorConfig);
+                       networkTopic, processTopic, fileTopic, processSyscalls, snapLen, collectorConfig, useKafka);
         } else {
             cerr << "[Parent] Monitoring child process " << pid << endl;
             for (;;) {

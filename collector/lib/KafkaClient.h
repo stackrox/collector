@@ -33,6 +33,10 @@ extern "C" {
 #include "librdkafka/rdkafka.h"
 }
 
+#include "SignalWriter.h"
+
+namespace collector {
+
 class KafkaException : public std::exception {
  public:
   KafkaException(std::string message) : message_(std::move(message)) {}
@@ -42,18 +46,20 @@ class KafkaException : public std::exception {
   std::string message_;
 };
 
-class KafkaClient {
+class KafkaClient : public SignalWriter {
  public:
   KafkaClient(const std::string& brokerList, const std::string& networkTopic, const std::string& processTopic,
               const std::string& fileTopic);
   ~KafkaClient();
 
-  bool send(const void* msg, int msgLen, const void* key, int keyLen,
-            bool onNetworkTopic, bool onProcessTopic, bool onFileTopic);
+  bool WriteSignal(const SafeBuffer& msg, const SafeBuffer& key, SignalType signal_type) override;
 
  private:
   // method to create a topic
   rd_kafka_topic_t* createTopic(const char* topic);
+
+  bool send(const void* msg, int msgLen, const void* key, int keyLen,
+            bool onNetworkTopic, bool onProcessTopic, bool onFileTopic);
 
   // method to send to a specific topic
   static bool sendMessage(rd_kafka_topic_t* kafkaTopic, const void* msg, int msgLen, const void* key, int keyLen);
@@ -65,5 +71,7 @@ class KafkaClient {
 
   uint64_t send_count_ = 0;
 };
+
+}  // namespace collector
 
 #endif // __KAFKACLIENT_H
