@@ -34,9 +34,8 @@ fi
 
 function build_modules {
 	SYSDIG_OUTPUT_KO=$OUTPUT_DIR/collector-$KERNEL_RELEASE.ko
-	SYSBLOCK_OUTPUT_KO=$OUTPUT_DIR/sysblock-$KERNEL_RELEASE.ko
 
-	if [ ! -f $SYSDIG_OUTPUT_KO ] || [ ! -f $SYSBLOCK_OUTPUT_KO ]; then
+	if [ ! -f $SYSDIG_OUTPUT_KO ]; then
 
 		echo Building modules for $KERNEL_RELEASE [${FUNCNAME[1]}]
 
@@ -58,21 +57,6 @@ function build_modules {
 		fi
 
 		cp $SYSDIG_KO $SYSDIG_OUTPUT_KO
-
-		SYSBLOCK_KO=/sysblock-src/sysblock.ko
-		rm -f $SYSBLOCK_KO
-		make -C $KERNELDIR M=/sysblock-src clean
-		make -C $KERNELDIR M=/sysblock-src -j 6
-		strip -g $SYSBLOCK_KO
-
-		KO_VERSION=$(/sbin/modinfo $SYSBLOCK_KO | grep vermagic | tr -s " " | cut -d " " -f 2)
-		if [ "$KO_VERSION" != "$KERNEL_RELEASE" ]; then
-			echo "Corrupted sysblock module, KO_VERSION " $KO_VERSION ", KERNEL_RELEASE " $KERNEL_RELEASE
-			exit 1
-		fi
-
-		cp $SYSBLOCK_KO $SYSBLOCK_OUTPUT_KO
-
 	else
 		echo Skipping $KERNEL_RELEASE.ko \(already built\)
 	fi

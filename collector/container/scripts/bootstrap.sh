@@ -52,11 +52,6 @@ function find_kernel_module() {
     return 1
 }
 
-function insert_sysblock_module() {
-    echo "Inserting sysblock module."
-    insmod /module/sysblock.ko
-}
-
 # Get the hostname from Docker so this container can use it in its output.
 HOSTNAME=$(curl -s --unix-socket /host/var/run/docker.sock http://localhost/info | jq --raw-output .Name)
 echo "Setting this container's node name to $HOSTNAME."
@@ -98,20 +93,6 @@ if [ $? -ne 0 ]; then
     echo "Could not find or download a collector module."
     exit 1
   fi
-fi
-
-if [ "$ROX_SYSBLOCK_ENABLE" == "true" ]; then
-  find_kernel_module sysblock
-  if [ $? -ne 0 ]; then
-    download_kernel_module sysblock
-    if [ $? -ne 0 ]; then
-      echo "Could not find or download a sysblock module."
-      exit 1
-    fi
-  fi
-  insert_sysblock_module
-else
-  echo "Sysblock is not enabled."
 fi
 
 # The collector binary will insert the collector module.

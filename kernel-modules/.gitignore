@@ -1,6 +1,5 @@
 *.ko
 packages/
-sysblock/
 sysdig/
 
 # Old file -- don't accidentally commit it.

@@ -65,7 +65,6 @@ RUN chmod 700 /bootstrap.sh
 
 # copy notice and license files
 COPY NOTICE-collector.txt \
-     NOTICE-sysblock.txt \
      COPYING.txt \
      /
 

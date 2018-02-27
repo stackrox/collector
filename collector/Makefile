@@ -8,7 +8,6 @@ all: image
 .PHONY: image
 image: container/bin/collector container/Dockerfile container/scripts/
 	cp NOTICE-collector.txt container/
-	cp NOTICE-sysblock.txt container/
 	cp COPYING.txt container/
 	cd container && docker build -f Dockerfile -t stackroxcollector/collector:latest .
 
@@ -44,7 +43,6 @@ clean:
 	make -C sysdig clean
 	rm -rf container/bin
 	rm -rf container/driver
-	rm -rf container/sysblock
 	rm -rf container/libs
 	rm -f container/COPYING*.txt
 	rm -f container/NOTICE.txt
@@ -60,7 +58,6 @@ distribution: clean
 			--exclude '.git' \
 			--exclude '.DS_Store' \
 			--exclude 'Makefile' \
-			--exclude 'sysblock' \
 			--exclude-from=.gitignore \
 			-czvf \
 			collector.tar.gz ./

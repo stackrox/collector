@@ -12,7 +12,6 @@ all: image
 .PHONY: clean
 clean:
 	rm -rf container/kernel-modules
-	rm -rf sysblock
 	rm -rf sysdig
 	rm -rf packages
 
@@ -108,13 +107,9 @@ sysdig/: $(CURDIR)/../ext/sysdig
 	rm -rf ./sysdig || true
 	cp -r $(CURDIR)/../ext/sysdig ./sysdig/
 
-sysblock/: $(CURDIR)/../sysblock
-	rm -rf ./sysblock/ || true
-	cp -r $(CURDIR)/../sysblock ./sysblock/
-
 # TODO: This isn't _really_ a phony target.
 .PHONY: container/kernel-modules
-container/kernel-modules: sysdig/ sysblock/ supported-kernels/ build/Dockerfile build/build-kos download-package-cache build-container build
+container/kernel-modules: sysdig/ supported-kernels/ build/Dockerfile build/build-kos download-package-cache build-container build
 
 .PHONY: image
 image: container/kernel-modules
