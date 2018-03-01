@@ -29,6 +29,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "CollectorArgs.h"
 
 #include "optionparser.h"
+#include "Logging.h"
 
 #define MAX_CHISEL_LENGTH 8192
 
@@ -156,7 +157,7 @@ CollectorArgs::checkChisel(const option::Option& option, bool msg)
         return ARG_ILLEGAL;
     }
 
-    std::cout << "Chisel: " << chisel << std::endl;
+    CLOG(INFO) << "Chisel: " << chisel;
     return ARG_OK;
 }
 
@@ -195,7 +196,7 @@ CollectorArgs::checkCollectorConfig(const option::Option& option, bool msg)
     }
 
     string arg(option.arg);
-    std::cout << "Incoming: " << arg << std::endl;
+    CLOG(DEBUG) << "Incoming: " << arg;
 
     Json::Value root;
     Json::Reader reader;
@@ -240,7 +241,7 @@ CollectorArgs::checkCollectorConfig(const option::Option& option, bool msg)
     }
 
     collectorConfig = root;
-    std::cout << "Collector config: " << collectorConfig.toStyledString() << std::endl;
+    CLOG(INFO) << "Collector config: " << collectorConfig.toStyledString();
     return ARG_OK;
 }
 

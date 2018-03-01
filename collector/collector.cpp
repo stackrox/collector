@@ -55,6 +55,7 @@ extern "C" {
 #include "GetNetworkHealthStatus.h"
 #include "GetStatus.h"
 #include "LogLevel.h"
+#include "Logging.h"
 #include "SysdigService.h"
 #include "CollectorStatsExporter.h"
 #include "Utility.h"
@@ -74,7 +75,7 @@ using namespace collector;
 static void
 signal_callback(int signal)
 {
-    std::cerr << "Caught signal " << signal << std::endl;
+    CLOG(WARNING) << "Caught signal " << signal;
     g_terminate = true;
     g_interrupt_sysdig.store(true);
 }
@@ -119,7 +120,7 @@ int InsertModule(int fd, const std::unordered_map<std::string, std::string>& arg
     else args_str += " ";
     args_str += entry.first + "=" + entry.second;
   }
-  std::cout << "[Child]  Kernel module arguments: " << args_str << std::endl;
+  CLOG(DEBUG) << "Kernel module arguments: " << args_str;
   int res = finit_module(fd, args_str.c_str(), 0);
   if (res != 0) return res;
   struct stat st;
@@ -127,16 +128,16 @@ int InsertModule(int fd, const std::unordered_map<std::string, std::string>& arg
   res = stat(param_dir.c_str(), &st);
   if (res != 0) {
     // This is not optimal, but don't fail hard on systems where for whatever reason the above directory does not exist.
-    std::cerr << "[Child]  Could not stat " << param_dir << ": " << StrError()
-              << ". No parameter verification can be performed." << std::endl;
+    CLOG(WARNING) << "Could not stat " << param_dir << ": " << StrError()
+                  << ". No parameter verification can be performed.";
     return 0;
   }
   for (const auto& entry : args) {
     std::string param_file = param_dir + entry.first;
     res = stat(param_file.c_str(), &st);
     if (res != 0) {
-      std::cerr << "[Child]  Could not stat " << param_file << ": " << StrError() << ". Parameter " << entry.first
-                << " is unsupported, suspecting module version mismatch." << std::endl;
+      CLOG(ERROR) << "Could not stat " << param_file << ": " << StrError() << ". Parameter " << entry.first
+                  << " is unsupported, suspecting module version mismatch.";
       errno = EINVAL;
       return -1;
     }
@@ -169,13 +170,11 @@ void insertModule(Json::Value collectorConfig) {
 
     int fd = open(SysdigService::kModulePath, O_RDONLY);
     if (fd < 0) {
-        std::cerr << "[Child]  Cannot open kernel module: " <<
-            SysdigService::kModulePath << ". Aborting..." << std::endl;
-        exit(EXIT_FAILURE);
+        CLOG(FATAL) << "Cannot open kernel module: " << SysdigService::kModulePath << ". Aborting...";
     }
 
-    std::cerr << "[Child]  Inserting kernel module " << SysdigService::kModulePath
-              << " with indefinite removal and retry if required." << std::endl;
+    CLOG(INFO) << "Inserting kernel module " << SysdigService::kModulePath
+               << " with indefinite removal and retry if required.";
 
     // Attempt to insert the module. If it is already inserted then remove it and
     // try again
@@ -188,15 +187,14 @@ void insertModule(Json::Value collectorConfig) {
             delete_module(SysdigService::kModuleName, O_NONBLOCK | O_TRUNC);
             sleep(2);    // wait for 2s before trying again
         } else {
-            std::cerr << "[Child]  Error inserting kernel module: " <<
-                SysdigService::kModulePath  << ": " << StrError() << ". Aborting..." << std::endl;
-            exit(EXIT_FAILURE);
+            CLOG(FATAL) << "Error inserting kernel module: " << SysdigService::kModulePath  << ": " << StrError()
+                        << ". Aborting...";
         }
         result = InsertModule(fd, module_args);
     }
     close(fd);
 
-    std::cerr << "[Child]  Done inserting kernel module " << SysdigService::kModulePath << "." << endl;
+    CLOG(INFO) << "Done inserting kernel module " << SysdigService::kModulePath << ".";
 }
 
 static const std::string base64_chars =
@@ -310,7 +308,7 @@ registerSignalHandlers() {
 
 void
 handleNewChisel(std::string newChisel) {
-    cerr << "Processing new chisel." << endl;
+    CLOG(INFO) << "Processing new chisel.";
     g_chiselContents = newChisel;
     g_interrupt_sysdig.store(true);
 }
@@ -319,7 +317,7 @@ std::string GetHostname() {
     std::string hostname_file(GetHostPath("/etc/hostname"));
     std::ifstream is(hostname_file);
     if (!is.is_open()) {
-      std::cerr << "Failed to open " << hostname_file << " to read hostname" << std::endl;
+      CLOG(ERROR) << "Failed to open " << hostname_file << " to read hostname";
       return "unknown";
     }
     std::string hostname;
@@ -340,22 +338,15 @@ startChild(std::string chiselName, std::string brokerList,
            std::string processSyscalls, Json::Value collectorConfig, bool useKafka) {
     insertModule(collectorConfig);
 
-    LogLevel setLogLevel;
-    setLogLevel.stdBuf = std::cout.rdbuf();
-    ofstream nullStream("/dev/null");
-    setLogLevel.nullBuf = nullStream.rdbuf();
-
-    std::cout.rdbuf(setLogLevel.nullBuf);
-
     // Extract configuration options
     bool useChiselCache = collectorConfig["useChiselCache"].asBool();
-    cerr << "[Child]  useChiselCache=" << useChiselCache << endl;
+    CLOG(INFO) << "useChiselCache=" << useChiselCache;
 
     int snapLen = 2048;
     if (!collectorConfig["signalBufferSize"].isNull() && collectorConfig["signalBufferSize"].asInt() >= 0) {
         snapLen = collectorConfig["signalBufferSize"].asInt();
     }
-    cerr << "[Child]  signalBufferSize=" << snapLen << endl;
+    CLOG(INFO) << "[Child]  signalBufferSize=" << snapLen;
  
     // Start monitoring services.
     // Some of these variables must remain in scope, so
@@ -372,6 +363,7 @@ startChild(std::string chiselName, std::string brokerList,
 
     server.addHandler("/ready", getStatus);
     server.addHandler("/networkHealth", getNetworkHealthStatus);
+    LogLevel setLogLevel;
     server.addHandler("/loglevel", setLogLevel);
     // TODO(cg): Can we expose chisel contents here?
 
@@ -379,37 +371,35 @@ startChild(std::string chiselName, std::string brokerList,
     prometheus::Exposer exposer("9090");
     exposer.RegisterCollectable(registry);
 
-    cerr << "[Child]  Initializing signal reader..." << endl;
+    CLOG(INFO) << "Initializing signal reader...";
     // write out chisel file from incoming chisel
     writeChisel(chiselName, g_chiselContents);
-    cerr << "[Child]  " << chiselName << " contents set to: " << g_chiselContents << endl;
+    CLOG(INFO) << chiselName << " contents set to: " << g_chiselContents;
 
 
     sysdig.Init(chiselName, brokerList, format, networkTopic, processTopic, fileTopic, processSyscalls, snapLen, useChiselCache, useKafka);
 
     if (!getNetworkHealthStatus.start()) {
-        cerr << "[Child]  Unable to start network health status" << endl;
-        exit(EXIT_FAILURE);
+        CLOG(FATAL) << "Unable to start network health status";
     }
 
     CollectorStatsExporter exporter(registry, &sysdig);
     if (!exporter.start()) {
-        cerr << "[Child]  Unable to start sysdig stats exporter" << endl;
-        exit(EXIT_FAILURE);
+        CLOG(FATAL) << "Unable to start sysdig stats exporter";
     }
 
   #ifndef COLLECTOR_CORE
     registerSignalHandlers();
   #endif /* COLLECTOR_CORE */
 
-    cerr << "[Child]  Starting signal reader..." << endl;
+    CLOG(INFO) << "Starting signal reader...";
     sysdig.RunForever(g_interrupt_sysdig);
-    cerr << "[Child]  Interrupted signal reader; cleaning up..." << endl;
+    CLOG(INFO) << "Interrupted signal reader; cleaning up...";
     exporter.stop();
     server.close();
     getNetworkHealthStatus.stop();
     sysdig.CleanUp();
-    cerr << "[Child]  Cleaned up signal reader; terminating..." << endl;
+    CLOG(INFO) << "Cleaned up signal reader; terminating...";
 
     exit(EXIT_SUCCESS);
 }
@@ -417,19 +407,18 @@ startChild(std::string chiselName, std::string brokerList,
 int
 main(int argc, char **argv)
 {
-    using std::cerr;
-    using std::cout;
-    using std::endl;
     using std::string;
     using std::signal;
+
+    collector::logging::SetGlobalLogPrefix("[Parent] ");
 
     CollectorArgs *args = CollectorArgs::getInstance();
     int exitCode = 0;
     if (!args->parse(argc, argv, exitCode)) {
         if (!args->Message().empty()) {
-            cerr << args->Message() << endl;
+            CLOG(FATAL) << args->Message();
         }
-        exit(exitCode);
+        CLOG(FATAL) << "Error parsing arguments";
     }
 
 #ifdef COLLECTOR_CORE
@@ -437,25 +426,23 @@ main(int argc, char **argv)
     limit.rlim_cur = RLIM_INFINITY;
     limit.rlim_max = RLIM_INFINITY;
     if (setrlimit(RLIMIT_CORE, &limit) != 0) {
-        cerr << "setrlimit() failed: " << strerror(errno) << std::endl;
-        exit(-1);
+        CLOG(FATAL) << "setrlimit() failed: " << strerror(errno);
     }
 #endif
 
     const string chiselName = "default.chisel.lua";
 
-    cerr << "Starting sysdig with the following parameters: chiselName="
+    CLOG(INFO) << "Starting sysdig with the following parameters: chiselName="
          << chiselName
          << ", brokerList="
-         << args->BrokerList()
-         << endl;
+         << args->BrokerList();
 
     // insert the kernel module with options from the configuration
     Json::Value collectorConfig = args->CollectorConfig();
 
     bool useKafka = true;
     if (collectorConfig["output"].isNull() || collectorConfig["output"] == "stdout") {
-        cerr << "Kafka is disabled." << endl;
+        CLOG(INFO) << "Kafka is disabled.";
         useKafka = false;
     }
     std::string format = "";
@@ -489,9 +476,9 @@ main(int argc, char **argv)
         processSyscalls += itr.asString();
     }
 
-    cerr << "Output topics set to: network=" << networkTopic
-         << ", process=" << processTopic << ", file=" << fileTopic << endl;
-    cerr << "Chisels topic set to: " << chiselsTopic << endl;
+    CLOG(INFO) << "Output topics set to: network=" << networkTopic << ", process="
+               << processTopic << ", file=" << fileTopic;
+    CLOG(INFO) << "Chisels topic set to: " << chiselsTopic;
 
     std::string chiselB64 = args->Chisel();
     g_chiselContents = base64_decode(chiselB64);
@@ -505,33 +492,33 @@ main(int argc, char **argv)
     for (;!g_terminate;) {
         int pid = fork();
         if (pid < 0) {
-            cerr << "Failed to fork." << endl;
-            exit(EXIT_FAILURE);
+            CLOG(FATAL) << "Failed to fork.";
         } else if (pid == 0) {
-            cerr << "[Child]  Signal reader started." << endl;
+            collector::logging::SetGlobalLogPrefix("[Child]  ");
+            CLOG(INFO) << "Signal reader started.";
             startChild(chiselName, args->BrokerList(), format,
                        networkTopic, processTopic, fileTopic, processSyscalls, collectorConfig, useKafka);
         } else {
-            cerr << "[Parent] Monitoring child process " << pid << endl;
+            CLOG(INFO) << "Monitoring child process " << pid;
             for (;;) {
                 if (g_interrupt_sysdig.load()) {
                     bool killed = false;
-                    cerr << "[Parent] Sending SIGTERM to " << pid << endl;
+                    CLOG(INFO) << "Sending SIGTERM to " << pid;
                     kill(pid, SIGTERM);
                     for (int i = 0; i < 10; i++) {
                         std::this_thread::sleep_for(std::chrono::seconds(1));
-                        cerr << "[Parent] Checking if process has stopped after SIGTERM (" << pid << ")" << endl;
+                        CLOG(INFO) << "Checking if process has stopped after SIGTERM (" << pid << ")";
                         pid_t killed_pid = waitpid(pid, NULL, WNOHANG);
                         if (killed_pid == pid) {
-                            cerr << "[Parent] Process has stopped (" << pid << ")" << endl;
+                            CLOG(INFO) << "Process has stopped (" << pid << ")";
                             killed = true;
                             break;
                         }
                     }
                     if (!killed) {
-                        cerr << "[Parent] Process has not stopped after SIGTERM; killing (" << pid << ")" << endl;
+                        CLOG(WARNING) << "Process has not stopped after SIGTERM; killing (" << pid << ")";
                         kill(pid, SIGKILL);
-                        cerr << "[Parent] Waiting for process " << pid << " to exit after SIGKILL" << endl;
+                        CLOG(INFO) << "Waiting for process " << pid << " to exit after SIGKILL";
                         wait(NULL);
                     }
                     g_interrupt_sysdig.store(false);
@@ -539,7 +526,7 @@ main(int argc, char **argv)
                 }
                 pid_t killed_pid = waitpid(pid, NULL, WNOHANG);
                 if (killed_pid == pid) {
-                    cerr << "[Parent] Process has stopped unexpectedly (" << pid << "); restarting" << endl;
+                    CLOG(ERROR) << "Process has stopped unexpectedly (" << pid << "); restarting";
                     break;
                 }
                 std::this_thread::sleep_for(std::chrono::seconds(1));

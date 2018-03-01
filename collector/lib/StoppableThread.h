@@ -31,6 +31,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include <thread>
 #include <utility>
 
+#include "Logging.h"
+
 namespace collector {
 
 class StoppableThread {

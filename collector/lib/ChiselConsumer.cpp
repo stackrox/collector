@@ -21,13 +21,15 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
+#include "ChiselConsumer.h"
+
 #include <iostream>
 #include <mutex>
 #include <sstream>
 
 #include "librdkafka/rdkafkacpp.h"
 
-#include "ChiselConsumer.h"
+#include "Logging.h"
 
 typedef void (*ChiselProcessor)(std::string);
 
@@ -59,7 +61,7 @@ ChiselConsumer::consumeChiselMsg(RdKafka::Message* message, void* opaque) {
             break;
 
         default:
-            std::cerr << "Consume failed: " << message->errstr() << std::endl;
+            CLOG(ERROR) << "Consume failed: " << message->errstr();
     }
 }
 
@@ -79,7 +81,7 @@ ChiselConsumer::updateChisel(std::string newContents) {
     this->chisel_updates++;
     std::lock_guard<std::mutex> callback_guard(this->callback_mutex);
     if (this->callback != NULL) {
-        std::cerr << "Notifying callback of new chisel" << std::endl;
+        CLOG(INFO) << "Notifying callback of new chisel";
         (*this->callback)(contents);
     }
 
@@ -115,32 +117,28 @@ ChiselConsumer::runForever(std::string brokerList, std::string topic, std::strin
     RdKafka::Conf::ConfResult res;
     res =conf->set("metadata.broker.list", brokerList, errstr);
     if (res != RdKafka::Conf::ConfResult::CONF_OK) {
-        std::cerr << "Failed to set chisel consumer brokers: " << errstr << std::endl;
-        exit(1);
+        CLOG(FATAL) << "Failed to set chisel consumer brokers: " << errstr;
     }
     conf->set("consume_cb", &consume_cb, errstr);
     if (res != RdKafka::Conf::ConfResult::CONF_OK) {
-        std::cerr << "Failed to set chisel consumer callback: " << errstr << std::endl;
-        exit(1);
+        CLOG(FATAL) << "Failed to set chisel consumer callback: " << errstr;
     }
     std::time_t result = std::time(nullptr);
     std::stringstream ss;
     ss << uniqueName << "-" << result;
     conf->set("group.id", ss.str(), errstr);
     if (res != RdKafka::Conf::ConfResult::CONF_OK) {
-        std::cerr << "Failed to set chisel consumer group ID: " << errstr << std::endl;
-        exit(1);
+        CLOG(FATAL) << "Failed to set chisel consumer group ID: " << errstr;
     }
 
     RdKafka::KafkaConsumer *consumer = RdKafka::KafkaConsumer::create(conf, errstr);
     if (!consumer) {
-        std::cerr << "Failed to create chisel consumer: " << errstr << std::endl;
-        exit(1);
+        CLOG(FATAL) << "Failed to create chisel consumer: " << errstr;
     }
 
     delete conf;
 
-    std::cerr << "% Created chisel consumer " << consumer->name() << std::endl;
+    CLOG(INFO) << "% Created chisel consumer " << consumer->name();
 
     /*
      * Subscribe to topics
@@ -148,9 +146,8 @@ ChiselConsumer::runForever(std::string brokerList, std::string topic, std::strin
     std::vector<std::string> topics = {topic};
     RdKafka::ErrorCode err = consumer->subscribe(topics);
     if (err) {
-        std::cerr << "Failed to subscribe to " << topics.size() << " topic(s) for chisel consumer: "
-                  << RdKafka::err2str(err) << std::endl;
-        exit(1);
+        CLOG(FATAL) << "Failed to subscribe to " << topics.size() << " topic(s) for chisel consumer: "
+                    << RdKafka::err2str(err);
     }
 
     /*

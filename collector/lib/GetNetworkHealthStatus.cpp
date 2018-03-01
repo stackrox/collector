@@ -42,6 +42,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "civetweb/CivetServer.h"
 
 #include "GetNetworkHealthStatus.h"
+#include "Logging.h"
 #include "Utility.h"
 
 namespace collector {
@@ -53,7 +54,7 @@ class AutoCloser {
     if (m_fd && *m_fd > 0) {
       int rv = close(*m_fd);
       if (rv != 0) {
-        std::cerr << "Error closing file descriptor " << *m_fd << ": " << StrError() << std::endl;
+        CLOG(WARNING) << "Error closing file descriptor " << *m_fd << ": " << StrError();
       }
     }
   }
@@ -66,7 +67,7 @@ bool GetNetworkHealthStatus::checkEndpointStatus(const NetworkHealthStatus& stat
     const std::string& host = status.host;
     hostent *record = gethostbyname(host.c_str());
     if(record == NULL) {
-        std::cerr << "network health check: error resolving " << host << ": " << hstrerror(h_errno) << std::endl;
+        CLOG(ERROR) << "network health check: error resolving " << host << ": " << hstrerror(h_errno);
         return false;
     }
 
@@ -78,7 +79,7 @@ bool GetNetworkHealthStatus::checkEndpointStatus(const NetworkHealthStatus& stat
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == -1) {
         perror("socket");
-        std::cerr << "network health check: cannot open socket when connecting to " << host << std::endl;
+        CLOG(ERROR) << "network health check: cannot open socket when connecting to " << host;
         return false;
     }
 
@@ -86,14 +87,13 @@ bool GetNetworkHealthStatus::checkEndpointStatus(const NetworkHealthStatus& stat
     int rv = fcntl(sock, F_SETFL, O_NONBLOCK);
     if (rv == -1) {
         perror("fcntl");
-        std::cerr << "network health check: cannot set nonblocking socket when connecting to " << host << std::endl;
+        CLOG(ERROR) << "network health check: cannot set nonblocking socket when connecting to " << host;
         return false;
     }
 
     rv = connect(sock, (struct sockaddr *)&address, sizeof(address));
     if (rv != 0 && errno != EINPROGRESS) {
-        perror("connect");
-        std::cerr << "network health check: error connecting to " << host << std::endl;
+        CLOG(ERROR) << "network health check: error connecting to " << host << ": " << StrError();
         return false;
     }
 
@@ -119,12 +119,12 @@ bool GetNetworkHealthStatus::checkEndpointStatus(const NetworkHealthStatus& stat
         }
         if (rv == -1) {
             if (errno == EAGAIN) {
-                std::cout << "network health check: interrupted... trying again" << std::endl;
+                CLOG(WARNING) << "network health check: interrupted... trying again";
                 continue;
             }
 
             perror("poll");
-            std::cerr << "network health check: error polling socket when connecting to " << host << std::endl;
+            CLOG(ERROR) << "network health check: error polling socket when connecting to " << host;
             return false;
         }
 
@@ -138,13 +138,12 @@ bool GetNetworkHealthStatus::checkEndpointStatus(const NetworkHealthStatus& stat
 
         rv = getsockopt(sock, SOL_SOCKET, SO_ERROR, &so_error, &len);
         if (rv != 0) {
-            perror("getsockopt");
-            std::cerr << "network health check: error getting socket error when connecting to " << host << std::endl;
+            CLOG(ERROR) << "network health check: error getting socket error when connecting to " << host << ": " << StrError();
             return false;
         }
 
         if (so_error != 0) {
-            std::cerr << "network health check: error on socket when connecting to " << host << ": " << StrError(so_error) << std::endl;
+            CLOG(ERROR) << "network health check: error on socket when connecting to " << host << ": " << StrError(so_error);
             return false;
         }
 
@@ -168,14 +167,14 @@ GetNetworkHealthStatus::GetNetworkHealthStatus(const std::string& brokerList, st
     while (std::getline(ss, token, ',')) {
         auto delimPos = token.find(':');
         if (delimPos == std::string::npos) {
-            std::cerr << "Broker endpoint " << token << " is not of form <host>:<port>" << std::endl;
+            CLOG(ERROR) << "Broker endpoint " << token << " is not of form <host>:<port>";
             continue;
         }
         std::string host = token.substr(0, delimPos);
         std::string portStr = token.substr(delimPos + 1);
         int port = atoi(portStr.c_str());
         if (port <= 0 || port > 65535) {
-            std::cerr << "Invalid port number: " << portStr << std::endl;
+            CLOG(ERROR) << "Invalid port number: " << portStr;
             continue;
         }
         prometheus::Gauge* gauge = &family.Add({{"endpoint", token}, {"name", "kafka"}});
@@ -196,7 +195,7 @@ void GetNetworkHealthStatus::run() {
         }
     }
 
-    std::cerr << "Stopping network health check listening thread" << std::endl;
+    CLOG(INFO) << "Stopping network health check listening thread";
 }
 
 bool GetNetworkHealthStatus::handleGet(CivetServer *server, struct mg_connection *conn) {
@@ -219,7 +218,7 @@ bool GetNetworkHealthStatus::handleGet(CivetServer *server, struct mg_connection
 
 bool GetNetworkHealthStatus::start() {
     if (!thread_.Start(&GetNetworkHealthStatus::run, this)) {
-        std::cerr << "Failed to start network health status thread" << std::endl;
+        CLOG(ERROR) << "Failed to start network health status thread";
         return false;
     }
     return true;
@@ -228,7 +227,7 @@ bool GetNetworkHealthStatus::start() {
 void GetNetworkHealthStatus::stop() {
     if (!thread_.running()) return;
     thread_.Stop();
-    std::cerr << "Network health check stopped" << std::endl;
+    CLOG(INFO) << "Network health check stopped";
 }
 
 }  // namespace collector

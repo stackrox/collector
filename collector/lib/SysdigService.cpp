@@ -26,6 +26,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "libsinsp/wrapper.h"
 
 #include "CollectorException.h"
+#include "Logging.h"
 #include "StdoutSignalWriter.h"
 
 namespace collector {
@@ -72,7 +73,7 @@ bool SysdigService::FilterEvent(sinsp_evt* event) {
   if (pair.second) {  // was newly inserted
     bool res = chisel_->process(event);
     if (chisel_cache_.size() > 1024) {
-      std::cerr << "Flushing chisel cache" << std::endl;
+      CLOG(INFO) << "Flushing chisel cache";
       chisel_cache_.clear();
       return res;
     }

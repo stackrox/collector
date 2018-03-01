@@ -27,10 +27,8 @@ You should have received a copy of the GNU General Public License along with thi
 namespace collector {
 
 bool StdoutSignalWriter::WriteSignal(const SafeBuffer& msg, const SafeBuffer& key, SignalType signal_type) {
-    // XXX: cerr is being used for info's
-    // SROX-11349 will fix this
-    std::cerr.write(msg.buffer(), msg.size());
-    std::cerr << std::endl;
+    std::cout.write(msg.buffer(), msg.size());
+    std::cout << std::endl;
     return true;
 }
 

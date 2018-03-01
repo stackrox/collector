@@ -24,29 +24,15 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _LOG_LEVEL_H_
 #define _LOG_LEVEL_H_
 
-#include <map>
-#include <string>
-#include <fstream>
-
-#include <json/json.h>
-
 #include "civetweb/CivetServer.h"
 
 namespace collector {
 
 class LogLevel : public CivetHandler {
-
-    public:
-    std::streambuf* stdBuf;
-    std::streambuf* nullBuf;
-
-    LogLevel();
-    virtual ~LogLevel();
-    bool handlePost(CivetServer *server, struct mg_connection *conn);
-
+ public:
+  bool handlePost(CivetServer *server, struct mg_connection *conn);
 };
 
-}   /* namespace collector */
+}  // namespace collector
 
-#endif  /* _LOG_LEVEL_H_ */
-
+#endif  // _LOG_LEVEL_H_

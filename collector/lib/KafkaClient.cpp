@@ -30,13 +30,15 @@ You should have received a copy of the GNU General Public License along with thi
 #include <string>
 #include <iostream>
 
+#include "Logging.h"
+
 namespace collector {
 
 // construction
 KafkaClient::KafkaClient(const std::string& brokerList, const std::string& networkTopic,
                          const std::string& processTopic, const std::string& fileTopic) {
   char errstr[1024];
-  std::cout << "Building Kafka client with brokers: " << brokerList << std::endl;
+  CLOG(INFO) << "Building Kafka client with brokers: " << brokerList;
 
   rd_kafka_conf_t* conf = rd_kafka_conf_new();
   rd_kafka_conf_res_t res = rd_kafka_conf_set(conf, "batch.num.messages", "10000", errstr, sizeof(errstr));
@@ -134,8 +136,8 @@ bool KafkaClient::sendMessage(rd_kafka_topic_t* kafkaTopic, const void* msg, int
   int rv = rd_kafka_produce(kafkaTopic, RD_KAFKA_PARTITION_UA, RD_KAFKA_MSG_F_COPY,
        const_cast<void*>(msg), msgLen, key, keyLen, nullptr);
   if (rv != -1) return true;
-  std::cerr << "Failed to produce to topic " << rd_kafka_topic_name(kafkaTopic) << ": "
-            << rd_kafka_err2str(rd_kafka_last_error()) << std::endl;
+  CLOG(ERROR) << "Failed to produce to topic " << rd_kafka_topic_name(kafkaTopic) << ": "
+            << rd_kafka_err2str(rd_kafka_last_error());
   return false;
 }
 

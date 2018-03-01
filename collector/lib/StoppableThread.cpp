@@ -32,12 +32,12 @@ namespace collector {
 
 bool StoppableThread::prepareStart() {
   if (running()) {
-    std::cerr << "Could not start thread: already running" << std::endl;
+    CLOG(ERROR) << "Could not start thread: already running";
     return false;
   }
   should_stop_.store(false, std::memory_order_relaxed);
   if (pipe(stop_pipe_) != 0) {
-    std::cerr << "Could not create pipe for stop signals: " << StrError(errno) << std::endl;
+    CLOG(ERROR) << "Could not create pipe for stop signals: " << StrError(errno);
     return false;
   }
   return true;
@@ -59,7 +59,7 @@ void StoppableThread::Stop() {
   for (;;) {
     int rv = close(stop_pipe_[1]);
     if (rv != 0) {
-      std::cerr << "Failed to close writing end of pipe: " << StrError(errno) << std::endl;
+      CLOG(ERROR) << "Failed to close writing end of pipe: " << StrError(errno);
       if (errno == EINTR) {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
         continue;
@@ -71,7 +71,7 @@ void StoppableThread::Stop() {
   thread_.reset();
   int rv = close(stop_pipe_[0]);
   if (rv != 0) {
-    std::cerr << "Failed to close reading end of pipe: " << StrError(errno) << std::endl;
+    CLOG(ERROR) << "Failed to close reading end of pipe: " << StrError(errno);
   }
 }
 

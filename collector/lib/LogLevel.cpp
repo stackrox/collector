@@ -21,54 +21,47 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#include <map>
+#include "LogLevel.h"
+
 #include <string>
-#include <iostream>
-#include <fstream>
-#include <cstring>
 
 #include <json/json.h>
 
-#include "civetweb/CivetServer.h"
-
-#include "LogLevel.h"
+#include "Logging.h"
 
 namespace collector {
 
-LogLevel::LogLevel()
-{
-}
+bool LogLevel::handlePost(CivetServer *server, struct mg_connection *conn) {
+  using namespace std;
 
-LogLevel::~LogLevel()
-{
-}
+  Json::Value response(Json::objectValue);
 
-bool
-LogLevel::handlePost(CivetServer *server, struct mg_connection *conn)
-{
-    using namespace std;
+  char buf[4096];
+  int bytes = mg_read(conn, buf, sizeof(buf));
+  std::string request(buf, std::max(bytes, 0));
 
-    Json::Value status(Json::objectValue);
-    status["status"] = "Ok";
-
-    long long len = 0;
-    char buf[strlen("debug")+1] = { '\0' };
-
-    len = mg_read(conn, buf, (size_t)strlen("debug"));
-    buf[len] = '\0';
-
-    if (strcmp(buf, "debug") == 0) {
-        std::cout.rdbuf(stdBuf);
+  if (request.empty()) {
+    response["status"] = "Ok";
+    response["level"] = logging::GetLogLevelName(logging::GetLogLevel());
+  } else {
+    logging::LogLevel level;
+    if (logging::ParseLogLevelName(request, &level)) {
+      logging::SetLogLevel(level);
+      response["status"] = "Ok";
     } else {
-        std::cout.rdbuf(nullBuf);
+      response["status"] = "Error";
+      response["error"] = "Invalid log level '" + request + "'";
     }
+  }
 
-    std::cout << "Log Level updated" << std::endl;
-                    
-    mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n");
-    mg_printf(conn, "%s\n", status.toStyledString().c_str());
-    return true;
+  if (response["status"] == "Ok") {
+    mg_printf(conn, "HTTP/1.1 200 OK\r\n");
+  } else {
+    mg_printf(conn, "HTTP/1.1 400 Bad Request\r\n");
+  }
+  mg_printf(conn, "Content-Type: application/json\r\nConnection: close\r\n\r\n");
+  mg_printf(conn, "%s\n", response.toStyledString().c_str());
+  return true;
 }
 
-}   /* namespace collector */
-
+}  // namespace collector

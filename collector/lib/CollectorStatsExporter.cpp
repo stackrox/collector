@@ -27,6 +27,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "SysdigService.h"
 #include "CollectorStatsExporter.h"
+#include "Logging.h"
 
 #include "prometheus/registry.h"
 
@@ -43,7 +44,7 @@ CollectorStatsExporter::CollectorStatsExporter(std::shared_ptr<prometheus::Regis
 
 bool CollectorStatsExporter::start() {
     if (!thread_.Start(&CollectorStatsExporter::run, this)) {
-        std::cerr << "Could not start sysdig stats exporter: already running" << std::endl;
+        CLOG(ERROR) << "Could not start sysdig stats exporter: already running";
         return false;
     }
     return true;
