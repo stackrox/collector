@@ -36,7 +36,13 @@ EventNames::EventNames() {
   for (int i = 0; i < PPM_EVENT_MAX; i++) {
     std::string name(g_event_info[i].name);
     names_by_id_[i] = name;
-    events_by_name_[name].push_back(static_cast<ppm_event_type>(i));
+    ppm_event_type event_type(static_cast<ppm_event_type>(i));
+    events_by_name_[name].push_back(event_type);
+    if (PPME_IS_ENTER(event_type)) {
+      events_by_name_[name + ">"].push_back(event_type);
+    } else {
+      events_by_name_[name + "<"].push_back(event_type);
+    }
   }
 }
 
