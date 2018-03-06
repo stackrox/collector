@@ -1,5 +1,10 @@
+FROM stackrox/jq:bf88c73c20ff1642aa2566ae67df18ca5b4b63ab
+
 FROM stackrox/kernel-modules:latest
 MAINTAINER StackRox <support@stackrox.com>
+
+# Add jq
+COPY --from=0 /jq /usr/bin/jq
 
 # SYSDIG_HOST_ROOT is required by the sysdig kernel module; used as a prefix to
 # paths like /dev/sysdig0, /proc, and /boot. Make sure this matches the volume
@@ -30,7 +35,6 @@ RUN apt-get update \
  && apt-get upgrade -y \
  && apt-get install -y --no-install-recommends \
         ca-certificates \
-        jq \
         kmod \
         libjsoncpp-dev \
         libssl-dev \
