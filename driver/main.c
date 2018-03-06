@@ -1549,6 +1549,10 @@ static void record_event_all_consumers(enum ppm_event_type event_type,
 	struct ppm_consumer_t *consumer;
 	struct timespec ts;
 
+	/* Begin StackRox section */
+	if (!test_bit(event_type, g_events_mask)) return;
+	/* End StackRox section */
+
 	getnstimeofday(&ts);
 
 	rcu_read_lock();
@@ -1582,10 +1586,14 @@ static int record_event_consumer(struct ppm_consumer_t *consumer,
 	int32_t cbres = PPM_SUCCESS;
 	int cpu;
 
+	/* Begin StackRox section */
+	/*
+	 * Moved this to record_event_all_consumers.
+
 	if (!test_bit(event_type, g_events_mask))
 		return res;
+	*/
 
-	/* Begin StackRox section */
 	if (task_active_pid_ns(current) == consumer->excluded_pid_ns) {
 	    return res;
 	}
