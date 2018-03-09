@@ -333,21 +333,9 @@ startChiselConsumer(std::string initialChisel, bool *g_terminate, std::string to
 }
 
 void
-startChild(std::string chiselName, std::string brokerList,
-           std::string format, std::string networkTopic, std::string processTopic, std::string fileTopic,
-           std::string processSyscalls, Json::Value collectorConfig, bool useKafka) {
-    insertModule(collectorConfig);
+startChild(const CollectorConfig& config) {
+    insertModule(config.collectorConfig);
 
-    // Extract configuration options
-    bool useChiselCache = collectorConfig["useChiselCache"].asBool();
-    CLOG(INFO) << "useChiselCache=" << useChiselCache;
-
-    int snapLen = 2048;
-    if (!collectorConfig["signalBufferSize"].isNull() && collectorConfig["signalBufferSize"].asInt() >= 0) {
-        snapLen = collectorConfig["signalBufferSize"].asInt();
-    }
-    CLOG(INFO) << "[Child]  signalBufferSize=" << snapLen;
- 
     // Start monitoring services.
     // Some of these variables must remain in scope, so
     // be cautious if decomposing to a separate function.
@@ -359,7 +347,7 @@ startChild(std::string chiselName, std::string brokerList,
 
     std::shared_ptr<prometheus::Registry> registry = std::make_shared<prometheus::Registry>();
 
-    GetNetworkHealthStatus getNetworkHealthStatus(brokerList, registry);
+    GetNetworkHealthStatus getNetworkHealthStatus(config.brokerList, registry);
 
     server.addHandler("/ready", getStatus);
     server.addHandler("/networkHealth", getNetworkHealthStatus);
@@ -373,11 +361,10 @@ startChild(std::string chiselName, std::string brokerList,
 
     CLOG(INFO) << "Initializing signal reader...";
     // write out chisel file from incoming chisel
-    writeChisel(chiselName, g_chiselContents);
-    CLOG(INFO) << chiselName << " contents set to: " << g_chiselContents;
+    writeChisel(config.chiselName, g_chiselContents);
+    CLOG(INFO) << config.chiselName << " contents set to: " << g_chiselContents;
 
-
-    sysdig.Init(chiselName, brokerList, format, networkTopic, processTopic, fileTopic, processSyscalls, snapLen, useChiselCache, useKafka);
+    sysdig.Init(config);
 
     if (!getNetworkHealthStatus.start()) {
         CLOG(FATAL) << "Unable to start network health status";
@@ -471,7 +458,7 @@ main(int argc, char **argv)
     for (auto itr: collectorConfig["process_syscalls"]) {
         if (!processSyscalls.empty()) {
             processSyscalls += ",";
-	}
+	    }
 
         processSyscalls += itr.asString();
     }
@@ -489,6 +476,28 @@ main(int argc, char **argv)
         chiselThread.detach();
     }
 
+    // Extract configuration options
+    bool useChiselCache = collectorConfig["useChiselCache"].asBool();
+    CLOG(INFO) << "useChiselCache=" << useChiselCache;
+
+    int snapLen = 2048;
+    if (!collectorConfig["signalBufferSize"].isNull() && collectorConfig["signalBufferSize"].asInt() >= 0) {
+        snapLen = collectorConfig["signalBufferSize"].asInt();
+    }
+    CLOG(INFO) << "signalBufferSize=" << snapLen;
+
+    CollectorConfig config;
+    config.useKafka = useKafka;
+    config.snapLen = snapLen;
+    config.useChiselCache = useChiselCache;
+    config.chiselName = chiselName;
+    config.brokerList = args->BrokerList();
+    config.format = format;
+    config.networkTopic = networkTopic;
+    config.processTopic = processTopic;
+    config.fileTopic = fileTopic;
+    config.processSyscalls = processSyscalls;
+
     for (;!g_terminate;) {
         int pid = fork();
         if (pid < 0) {
@@ -496,8 +505,7 @@ main(int argc, char **argv)
         } else if (pid == 0) {
             collector::logging::SetGlobalLogPrefix("[Child]  ");
             CLOG(INFO) << "Signal reader started.";
-            startChild(chiselName, args->BrokerList(), format,
-                       networkTopic, processTopic, fileTopic, processSyscalls, collectorConfig, useKafka);
+            startChild(config);
         } else {
             CLOG(INFO) << "Monitoring child process " << pid;
             for (;;) {

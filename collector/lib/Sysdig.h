@@ -26,6 +26,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <atomic>
 #include <string>
+#include <json/json.h>
 
 extern "C" {
 #include <stdint.h>
@@ -46,13 +47,25 @@ struct SysdigStats {
   volatile uint64_t nKafkaSendFailures = 0; // number of signals that were not sent
 };
 
+struct CollectorConfig {
+  bool useChiselCache = true;
+  bool useKafka = true;
+  int snapLen = 2048;
+  Json::Value collectorConfig;
+  std::string chiselName;
+  std::string brokerList;
+  std::string format;
+  std::string networkTopic;
+  std::string processTopic;
+  std::string fileTopic;
+  std::string processSyscalls;
+};
+
 class Sysdig {
  public:
   virtual ~Sysdig() = default;
 
-  virtual void Init(const std::string& chiselName, const std::string& brokerList, const std::string& format,
-                    const std::string& networkTopic, const std::string& processTopic, const std::string& fileTopic,
-                    const std::string& processSyscalls, int snaplen, bool useChiselCache, bool useKafka) = 0;
+  virtual void Init(const CollectorConfig& config) = 0;
   virtual void RunForever(const std::atomic_bool& interrupt) = 0;
   virtual void CleanUp() = 0;
 

@@ -49,9 +49,7 @@ class SysdigService : public Sysdig {
 
   SysdigService() = default;
 
-  void Init(const std::string& chisel_name, const std::string& broker_list, const std::string& format,
-            const std::string& network_topic, const std::string& process_topic, const std::string& file_topic,
-            const std::string& process_syscalls, int snaplen, bool use_chisel_cache, bool useKafka) override;
+  void Init(const CollectorConfig& config) override;
   void RunForever(const std::atomic_bool& interrupt) override;
   void CleanUp() override;
 

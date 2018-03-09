@@ -35,26 +35,23 @@ constexpr char SysdigService::kModulePath[];
 constexpr char SysdigService::kModuleName[];
 
 
-void SysdigService::Init(
-    const std::string& chisel, const std::string& broker_list, const std::string& format,
-    const std::string& network_topic, const std::string& process_topic, const std::string& file_topic,
-    const std::string& process_signals, int snaplen, bool use_chisel_cache, bool useKafka) {
+void SysdigService::Init(const CollectorConfig& config) {
   if (inspector_ || signal_writer_ || chisel_) {
     throw CollectorException("Invalid state: SysdigService was already initialized");
   }
 
   inspector_.reset(new_inspector());
-  inspector_->set_snaplen(snaplen);
-  if (useKafka) {
-    signal_writer_.reset(new KafkaClient(broker_list, network_topic, process_topic, file_topic));
+  inspector_->set_snaplen(config.snapLen);
+  if (config.useKafka) {
+    signal_writer_.reset(new KafkaClient(config.brokerList, config.networkTopic, config.processTopic, config.fileTopic));
   } else {
     signal_writer_.reset(new StdoutSignalWriter);
   }
-  chisel_.reset(new_chisel(inspector_.get(), chisel.c_str()));
+  chisel_.reset(new_chisel(inspector_.get(), config.chiselName.c_str()));
 
-  classifier_.Init(process_signals);
-  formatter_.Init(inspector_.get(), format);
-  use_chisel_cache_ = use_chisel_cache;
+  classifier_.Init(config.processSyscalls);
+  formatter_.Init(inspector_.get(), config.format);
+  use_chisel_cache_ = config.useChiselCache;
 }
 
 bool SysdigService::FilterEvent(sinsp_evt* event) {
