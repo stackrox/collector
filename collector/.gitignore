@@ -7,3 +7,4 @@ container/NOTICE-*.txt
 tags
 collector.tar.gz
 cmake-build/
+generated/

@@ -14,6 +14,7 @@ endif()
 link_directories(/usr/local/lib)
 
 include_directories(${PROJECT_SOURCE_DIR}/lib)
+include_directories(${PROJECT_SOURCE_DIR}/generated)
 include_directories(/usr/local/include)
 include_directories(/usr/local/sysdig/userspace)
 include_directories(/usr/local/sysdig/userspace/libscap)
@@ -24,7 +25,8 @@ include_directories(/usr/include/prometheus)
 include_directories(/usr/include/google/protobuf)
 
 file(GLOB COLLECTOR_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/lib/*.cpp)
-add_library(collector_lib ${COLLECTOR_LIB_SRC_FILES})
+file(GLOB_RECURSE PROTO_SRC_FILES ${PROJECT_SOURCE_DIR}/generated/*.cc)
+add_library(collector_lib ${COLLECTOR_LIB_SRC_FILES} ${PROTO_SRC_FILES})
 target_link_libraries(collector_lib sinsp-wrapper)
 
 add_executable(collector collector.cpp)

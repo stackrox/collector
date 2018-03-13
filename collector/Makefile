@@ -2,6 +2,8 @@ HDRS := $(wildcard lib/*.h) $(shell find sysdig/src/userspace -name '*.h')
 
 SRCS := $(wildcard lib/*.cpp) collector.cpp
 
+GENERATED_SRCS := $(GENERATED_CPP_DATA_SRCS)
+
 .PHONY: all
 all: image
 
@@ -15,7 +17,7 @@ image: container/bin/collector container/Dockerfile container/scripts/
 build_collector:
 	( docker images --format "{{.Repository}}" | grep '^build_collector$$') || docker build -t build_collector -f Dockerfile .
 
-container/bin/collector: $(HDRS) $(SRCS) container/libs/libsinsp-wrapper.so build_collector Dockerfile
+container/bin/collector: $(HDRS) $(SRCS) generated-srcs container/libs/libsinsp-wrapper.so build_collector Dockerfile
 	mkdir -p container/bin
 	docker rm -f build_collector || true
 	docker run \
@@ -36,7 +38,7 @@ container/libs/libsinsp-wrapper.so: $(shell find sysdig/src/ -name '*.h' -o -nam
 	cp sysdig/src/build/userspace/libsinsp/libsinsp-wrapper.so container/libs/
 
 .PHONY: clean
-clean:
+clean: clean-generated-srcs
 	docker rm -fv build_collector || true
 	docker rmi -f stackroxcollector/collector:latest || true
 	docker rmi -f build_collector:latest || true
@@ -46,6 +48,10 @@ clean:
 	rm -rf container/libs
 	rm -f container/COPYING*.txt
 	rm -f container/NOTICE.txt
+
+.PHONY: clean-generated-srcs
+clean-generated-srcs:
+	rm -rf $(GENERATED_CPP_BASE_PATH)
 
 .PHONY: distribution
 distribution: clean
@@ -61,3 +67,9 @@ distribution: clean
 			--exclude-from=.gitignore \
 			-czvf \
 			collector.tar.gz ./
+
+GENERATED_CPP_BASE_PATH := $(CURDIR)/generated
+
+include ../build/protogen.mk
+
+generated-srcs: $(GENERATED_CPP_DATA_SRCS)
