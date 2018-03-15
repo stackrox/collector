@@ -36,8 +36,15 @@ static constexpr int kMsgBufSize = 4096;
 
 const char* StrError(int errnum) {
   thread_local char msg_buffer[kMsgBufSize];
+  // If _GNU_SOURCE is defined, strerror_r is not the POSIX-compliant version returning an int and always storing
+  // in the supplied buffer, but a thread-safe version returning a const char* (which may or may not alias with the
+  // supplied buffer).
+#if defined(_GNU_SOURCE) && _GNU_SOURCE
+  return strerror_r(errnum, msg_buffer, kMsgBufSize);
+#else
   strerror_r(errnum, msg_buffer, kMsgBufSize);
   return msg_buffer;
+#endif
 }
 
 }  // namespace collector
