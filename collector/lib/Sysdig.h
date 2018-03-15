@@ -55,9 +55,9 @@ struct CollectorConfig {
   std::string chiselName;
   std::string brokerList;
   std::string format;
-  std::string networkTopic;
-  std::string processTopic;
-  std::string fileTopic;
+  std::string networkSignalOutput;
+  std::string processSignalOutput;
+  std::string fileSignalOutput;
   std::string processSyscalls;
 };
 

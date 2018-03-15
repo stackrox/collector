@@ -31,8 +31,13 @@ You should have received a copy of the GNU General Public License along with thi
 namespace collector {
 
 class StdoutSignalWriter : public SignalWriter {
-  public:
-    bool WriteSignal(const SafeBuffer& msg, const SafeBuffer& key, SignalType signal_type) override;
+ public:
+  StdoutSignalWriter(std::string prefix = "") : prefix_(std::move(prefix)) {}
+
+  bool WriteSignal(const SafeBuffer& msg, const SafeBuffer& key) override;
+
+ private:
+  std::string prefix_;
 };
 
 }  // namespace collector

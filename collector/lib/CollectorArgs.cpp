@@ -226,20 +226,6 @@ CollectorArgs::checkCollectorConfig(const option::Option& option, bool msg)
         return ARG_ILLEGAL;
     }
 
-    if (!root.isMember("output")) {
-        if (msg) {
-            this->message = "No output. Events will be sent to stdout.";
-        }
-    } else {
-        std::string output = root["output"].asString();
-        if (output != "stdout" && output != "kafka") {
-            if (msg) {
-                this->message = "The output value has to be either stdout|kafka";
-                return ARG_ILLEGAL;
-            }
-        }
-    }
-
     collectorConfig = root;
     CLOG(INFO) << "Collector config: " << collectorConfig.toStyledString();
     return ARG_OK;

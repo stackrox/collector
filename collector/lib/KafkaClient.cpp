@@ -35,8 +35,7 @@ You should have received a copy of the GNU General Public License along with thi
 namespace collector {
 
 // construction
-KafkaClient::KafkaClient(const std::string& brokerList, const std::string& networkTopic,
-                         const std::string& processTopic, const std::string& fileTopic) {
+KafkaClient::KafkaClient(const std::string& brokerList) {
   char errstr[1024];
   CLOG(INFO) << "Building Kafka client with brokers: " << brokerList;
 
@@ -66,32 +65,10 @@ KafkaClient::KafkaClient(const std::string& brokerList, const std::string& netwo
   if (rv < 1) {
     throw KafkaException("No valid Kafka brokers specified: '" + brokerList + "'");
   }
-
-  if (!networkTopic.empty()) {
-    networkTopicHandle_ = createTopic(networkTopic.c_str());
-  }
-  if (!processTopic.empty()) {
-    processTopicHandle_ = createTopic(processTopic.c_str());
-  }
-  if (!fileTopic.empty()) {
-    fileTopicHandle_ = createTopic(fileTopic.c_str());
-  }
 }
 
 KafkaClient::~KafkaClient() {
-  if (networkTopicHandle_) {
-    rd_kafka_topic_destroy(networkTopicHandle_);
-  }
-  if (processTopicHandle_) {
-    rd_kafka_topic_destroy(processTopicHandle_);
-  }
-  if (fileTopicHandle_) {
-    rd_kafka_topic_destroy(fileTopicHandle_);
-  }
-
-  if (kafka_) {
-    rd_kafka_destroy(kafka_);
-  }
+  rd_kafka_destroy(kafka_);
 }
 
 rd_kafka_topic_t* KafkaClient::createTopic(const char* topic) {
@@ -107,38 +84,33 @@ rd_kafka_topic_t* KafkaClient::createTopic(const char* topic) {
   return kafkaTopic;
 }
 
-bool KafkaClient::WriteSignal(const SafeBuffer& msg, const SafeBuffer& key, SignalType signal_type) {
-  return send(msg.buffer(), msg.size(), key.buffer(), key.size(),
-              signal_type == SIGNAL_TYPE_NETWORK, signal_type == SIGNAL_TYPE_PROCESS,
-              signal_type == SIGNAL_TYPE_FILE);
-}
-
-bool KafkaClient::send(const void* msg, int msgLen, const void* key, int keyLen,
-                       bool onNetworkTopic, bool onProcessTopic, bool onFileTopic) {
-  bool result = true;
-  if (onNetworkTopic && networkTopicHandle_) {
-    result &= sendMessage(networkTopicHandle_, msg, msgLen, key, keyLen);
-  }
-  if (onProcessTopic && processTopicHandle_) {
-    result &= sendMessage(processTopicHandle_, msg, msgLen, key, keyLen);
-  }
-  if (onFileTopic && fileTopicHandle_) {
-    result &= sendMessage(fileTopicHandle_, msg, msgLen, key, keyLen);
-  }
-  if (++send_count_ % 10000 == 0) {
-    rd_kafka_poll(kafka_, 0);
-  }
-  return result;
-}
-
 bool KafkaClient::sendMessage(rd_kafka_topic_t* kafkaTopic, const void* msg, int msgLen, const void* key, int keyLen) {
   // rd_kafka_produce doesn't modify the payload if RD_KAFKA_MSG_F_COPY is specified, so the const_cast is safe.
   int rv = rd_kafka_produce(kafkaTopic, RD_KAFKA_PARTITION_UA, RD_KAFKA_MSG_F_COPY,
        const_cast<void*>(msg), msgLen, key, keyLen, nullptr);
-  if (rv != -1) return true;
-  CLOG(ERROR) << "Failed to produce to topic " << rd_kafka_topic_name(kafkaTopic) << ": "
-            << rd_kafka_err2str(rd_kafka_last_error());
-  return false;
+
+  if (rv == -1) {
+    CLOG(ERROR) << "Failed to produce to topic " << rd_kafka_topic_name(kafkaTopic) << ": "
+                << rd_kafka_err2str(rd_kafka_last_error());
+  }
+
+  if (++send_count_ % 10000 == 0) {
+    rd_kafka_poll(kafka_, 0);
+  }
+
+  return rv != -1;
+}
+
+KafkaClient::TopicHandle::TopicHandle(const std::string& topic_name, std::shared_ptr<KafkaClient> client)
+    : client_(std::move(client)), topic_(client_->createTopic(topic_name.c_str())) {
+}
+
+KafkaClient::TopicHandle::~TopicHandle() {
+  rd_kafka_topic_destroy(topic_);
+}
+
+bool KafkaClient::TopicHandle::Send(const void* msg, int msg_len, const void* key, int key_len) {
+  return client_->sendMessage(topic_, msg, msg_len, key, key_len);
 }
 
 }  // namespace collector

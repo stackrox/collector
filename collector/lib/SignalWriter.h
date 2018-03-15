@@ -24,15 +24,29 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _SIGNAL_WRITER_H_
 #define _SIGNAL_WRITER_H_
 
-#include "SafeBuffer.h"
 #include "EventClassifier.h"
+#include "KafkaClient.h"
+#include "SafeBuffer.h"
 
 namespace collector {
 
 class SignalWriter {
   public:
-    virtual bool WriteSignal(const SafeBuffer& msg, const SafeBuffer& key, SignalType signal_type) = 0;
+    virtual bool WriteSignal(const SafeBuffer& msg, const SafeBuffer& key) = 0;
     virtual ~SignalWriter() = default;
+};
+
+class SignalWriterFactory {
+ public:
+  std::unique_ptr<SignalWriter> CreateSignalWriter(const std::string& output_spec);
+
+  void SetupKafka(const std::string& broker_list);
+
+ private:
+  std::unique_ptr<SignalWriter> CreateStdoutSignalWriter(const std::string& spec);
+  std::unique_ptr<SignalWriter> CreateKafkaSignalWriter(const std::string& spec);
+
+  std::shared_ptr<KafkaClient> kafka_client_;
 };
 
 }  // namespace collector

@@ -36,6 +36,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "EventFormatter.h"
 #include "KafkaClient.h"
 #include "SafeBuffer.h"
+#include "SignalWriter.h"
 #include "Sysdig.h"
 
 namespace collector {
@@ -62,7 +63,7 @@ class SysdigService : public Sysdig {
 
   std::unique_ptr<sinsp> inspector_;
   std::unique_ptr<sinsp_chisel> chisel_;
-  std::unique_ptr<SignalWriter> signal_writer_;
+  std::unique_ptr<SignalWriter> signal_writers_[SIGNAL_TYPE_MAX + 1];
   EventClassifier classifier_;
   EventFormatter formatter_;
   SysdigStats userspace_stats_;

@@ -36,17 +36,23 @@ constexpr char SysdigService::kModuleName[];
 
 
 void SysdigService::Init(const CollectorConfig& config) {
-  if (inspector_ || signal_writer_ || chisel_) {
+  if (inspector_ || chisel_) {
     throw CollectorException("Invalid state: SysdigService was already initialized");
   }
 
+
   inspector_.reset(new_inspector());
   inspector_->set_snaplen(config.snapLen);
+
+  SignalWriterFactory factory;
+
   if (config.useKafka) {
-    signal_writer_.reset(new KafkaClient(config.brokerList, config.networkTopic, config.processTopic, config.fileTopic));
-  } else {
-    signal_writer_.reset(new StdoutSignalWriter);
+    factory.SetupKafka(config.brokerList);
   }
+  signal_writers_[SIGNAL_TYPE_FILE] = factory.CreateSignalWriter(config.fileSignalOutput);
+  signal_writers_[SIGNAL_TYPE_PROCESS] = factory.CreateSignalWriter(config.processSignalOutput);
+  signal_writers_[SIGNAL_TYPE_NETWORK] = factory.CreateSignalWriter(config.networkSignalOutput);
+
   chisel_.reset(new_chisel(inspector_.get(), config.chiselName.c_str()));
 
   classifier_.Init(config.processSyscalls);
@@ -104,7 +110,7 @@ SignalType SysdigService::GetNext(SafeBuffer* message_buffer, SafeBuffer* key_bu
 }
 
 void SysdigService::RunForever(const std::atomic_bool& interrupt) {
-  if (!inspector_ || !signal_writer_ || !chisel_) {
+  if (!inspector_ || !chisel_) {
     throw CollectorException("Invalid state: SysdigService was not initialized");
   }
 
@@ -122,12 +128,14 @@ void SysdigService::RunForever(const std::atomic_bool& interrupt) {
 
   while (!interrupt.load(std::memory_order_relaxed)) {
     SignalType signal_type = GetNext(&message_buffer, &key_buffer);
-    if (signal_type == SIGNAL_TYPE_UNKNOWN) {
+    auto& signal_writer = signal_writers_[signal_type];
+
+    if (!signal_writer) {
       continue;
     }
     ++userspace_stats_.nFilteredEvents;
 
-    bool success = signal_writer_->WriteSignal(message_buffer, key_buffer, signal_type);
+    bool success = signal_writer->WriteSignal(message_buffer, key_buffer);
     if (!success) {
       ++userspace_stats_.nKafkaSendFailures;
     }
@@ -141,7 +149,9 @@ void SysdigService::CleanUp() {
   inspector_->close();
   chisel_.reset();
   inspector_.reset();
-  signal_writer_.reset();
+  for (auto& signal_writer : signal_writers_) {
+    signal_writer.reset();
+  }
 }
 
 bool SysdigService::GetStats(SysdigStats* stats) const {

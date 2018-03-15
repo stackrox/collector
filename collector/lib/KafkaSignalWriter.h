@@ -21,40 +21,30 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef _EVENT_CLASSIFIER_H_
-#define _EVENT_CLASSIFIER_H_
+#ifndef _KAFKA_SIGNAL_WRITER_H_
+#define _KAFKA_SIGNAL_WRITER_H_
 
-#include <bitset>
+#include <memory>
+#include <string>
 
-#include "libsinsp/sinsp.h"
-#include "ppm_events_public.h"
-
-#include "SafeBuffer.h"
+#include "KafkaClient.h"
+#include "SignalWriter.h"
 
 namespace collector {
 
-enum SignalType {
-    SIGNAL_TYPE_UNKNOWN = 0,
-    SIGNAL_TYPE_NETWORK,
-    SIGNAL_TYPE_PROCESS,
-    SIGNAL_TYPE_FILE,
-    SIGNAL_TYPE_MAX = SIGNAL_TYPE_FILE,
-};
-
-class EventClassifier {
+class KafkaSignalWriter : public SignalWriter {
  public:
-  void Init(const std::string& process_syscalls_str);
+  KafkaSignalWriter(const std::string& topic_name, std::shared_ptr<KafkaClient> client)
+      : topic_handle_(topic_name, std::move(client)) {}
 
-  SignalType Classify(SafeBuffer* key_buf, sinsp_evt* event) const;
+  bool WriteSignal(const SafeBuffer& msg, const SafeBuffer& key) override {
+    return topic_handle_.Send(msg.buffer(), msg.size(), key.buffer(), key.size());
+  }
 
  private:
-  static void ExtractProcessSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
-  static void ExtractNetworkSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
-  static void ExtractFileSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
-
-  std::bitset<PPM_EVENT_MAX> process_syscalls_;
+  KafkaClient::TopicHandle topic_handle_;
 };
 
 }  // namespace collector
 
-#endif  // _EVENT_CLASSIFIER_H_
+#endif // _KAFKA_SIGNAL_WRITER_H_

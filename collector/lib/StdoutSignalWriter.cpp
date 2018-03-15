@@ -26,7 +26,8 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-bool StdoutSignalWriter::WriteSignal(const SafeBuffer& msg, const SafeBuffer& key, SignalType signal_type) {
+bool StdoutSignalWriter::WriteSignal(const SafeBuffer& msg, const SafeBuffer& key) {
+    std::cout << prefix_;
     std::cout.write(msg.buffer(), msg.size());
     std::cout << std::endl;
     return true;

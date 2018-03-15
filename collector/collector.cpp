@@ -427,26 +427,25 @@ main(int argc, char **argv)
     // insert the kernel module with options from the configuration
     Json::Value collectorConfig = args->CollectorConfig();
 
-    bool useKafka = true;
-    if (collectorConfig["output"].isNull() || collectorConfig["output"] == "stdout") {
+    bool useKafka = !args->BrokerList().empty();
+    if (!useKafka) {
         CLOG(INFO) << "Kafka is disabled.";
-        useKafka = false;
     }
     std::string format = "";
     if (!collectorConfig["format"].isNull()) {
         format = collectorConfig["format"].asString();
     }
-    std::string networkTopic = "collector-network-kafka-topic";
-    if (!collectorConfig["networkTopic"].isNull()) {
-        networkTopic = collectorConfig["networkTopic"].asString();
+    std::string networkSignalOutput = "stdout:NET :";
+    if (!collectorConfig["networkSignalOutput"].isNull()) {
+        networkSignalOutput = collectorConfig["networkSignalOutput"].asString();
     }
-    std::string processTopic = "collector-process-kafka-topic";
-    if (!collectorConfig["processTopic"].isNull()) {
-        processTopic = collectorConfig["processTopic"].asString();
+    std::string processSignalOutput = "stdout:PROC:";
+    if (!collectorConfig["processSignalOutput"].isNull()) {
+        processSignalOutput = collectorConfig["processSignalOutput"].asString();
     }
-    std::string fileTopic = "collector-file-kafka-topic";
-    if (!collectorConfig["fileTopic"].isNull()) {
-        fileTopic = collectorConfig["fileTopic"].asString();
+    std::string fileSignalOutput = "stdout:FILE:";
+    if (!collectorConfig["fileSignalOutput"].isNull()) {
+        fileSignalOutput = collectorConfig["fileSignalOutput"].asString();
     }
     std::string chiselsTopic = "collector-chisels-kafka-topic";
     if (!collectorConfig["chiselsTopic"].isNull()) {
@@ -463,8 +462,8 @@ main(int argc, char **argv)
         processSyscalls += itr.asString();
     }
 
-    CLOG(INFO) << "Output topics set to: network=" << networkTopic << ", process="
-               << processTopic << ", file=" << fileTopic;
+    CLOG(INFO) << "Output specs set to: network='" << networkSignalOutput << "', process='"
+               << processSignalOutput << "', file='" << fileSignalOutput << "'";
     CLOG(INFO) << "Chisels topic set to: " << chiselsTopic;
 
     std::string chiselB64 = args->Chisel();
@@ -493,9 +492,9 @@ main(int argc, char **argv)
     config.chiselName = chiselName;
     config.brokerList = args->BrokerList();
     config.format = format;
-    config.networkTopic = networkTopic;
-    config.processTopic = processTopic;
-    config.fileTopic = fileTopic;
+    config.networkSignalOutput = networkSignalOutput;
+    config.processSignalOutput = processSignalOutput;
+    config.fileSignalOutput = fileSignalOutput;
     config.processSyscalls = processSyscalls;
 
     for (;!g_terminate;) {

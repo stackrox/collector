@@ -27,13 +27,12 @@ You should have received a copy of the GNU General Public License along with thi
 // KafkaClient.h
 // This class defines our Kafka abstraction
 
+#include <memory>
 #include <string>
 
 extern "C" {
 #include "librdkafka/rdkafka.h"
 }
-
-#include "SignalWriter.h"
 
 namespace collector {
 
@@ -46,23 +45,19 @@ class KafkaException : public std::exception {
   std::string message_;
 };
 
-class KafkaClient : public SignalWriter {
+class KafkaClient {
  public:
-  KafkaClient(const std::string& brokerList, const std::string& networkTopic, const std::string& processTopic,
-              const std::string& fileTopic);
+  KafkaClient(const std::string& brokerList);
   ~KafkaClient();
 
-  bool WriteSignal(const SafeBuffer& msg, const SafeBuffer& key, SignalType signal_type) override;
+  class TopicHandle;
 
  private:
   // method to create a topic
   rd_kafka_topic_t* createTopic(const char* topic);
 
-  bool send(const void* msg, int msgLen, const void* key, int keyLen,
-            bool onNetworkTopic, bool onProcessTopic, bool onFileTopic);
-
   // method to send to a specific topic
-  static bool sendMessage(rd_kafka_topic_t* kafkaTopic, const void* msg, int msgLen, const void* key, int keyLen);
+  bool sendMessage(rd_kafka_topic_t* kafkaTopic, const void* msg, int msgLen, const void* key, int keyLen);
 
   rd_kafka_t* kafka_;
   rd_kafka_topic_t* networkTopicHandle_ = nullptr;
@@ -70,6 +65,18 @@ class KafkaClient : public SignalWriter {
   rd_kafka_topic_t* fileTopicHandle_ = nullptr;
 
   uint64_t send_count_ = 0;
+};
+
+class KafkaClient::TopicHandle {
+ public:
+  TopicHandle(const std::string& topic, std::shared_ptr<KafkaClient> kafka);
+  ~TopicHandle();
+
+  bool Send(const void* msg, int msg_len, const void* key, int key_len);
+
+ private:
+  std::shared_ptr<KafkaClient> client_;
+  rd_kafka_topic_t* topic_;
 };
 
 }  // namespace collector
