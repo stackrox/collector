@@ -486,6 +486,7 @@ main(int argc, char **argv)
     CLOG(INFO) << "signalBufferSize=" << snapLen;
 
     CollectorConfig config;
+    config.collectorConfig = collectorConfig;
     config.useKafka = useKafka;
     config.snapLen = snapLen;
     config.useChiselCache = useChiselCache;
