@@ -828,6 +828,16 @@ public:
 	vector<long> get_n_tracepoint_hit();
 
 	static unsigned num_possible_cpus();
+
+	/* Begin StackRox Section */
+	bool ioctl(int devnum, unsigned long request, void* arg) {
+		bool success = scap_ioctl(m_h, devnum, request, arg) == SCAP_SUCCESS;
+		if (!success) {
+		  m_lasterr = scap_getlasterr(m_h);
+		}
+		return success;
+	}
+	/* End StackRox Section */
 VISIBILITY_PRIVATE
 
 // Doxygen doesn't understand VISIBILITY_PRIVATE

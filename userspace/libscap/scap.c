@@ -1595,3 +1595,23 @@ int32_t scap_get_n_tracepoint_hit(scap_t* handle, long* ret)
 	return SCAP_SUCCESS;
 #endif
 }
+
+/* Begin StackRox Section */
+int scap_ioctl(scap_t* handle, int devnum, unsigned long request, void* arg) {
+	int ioctl_ret = 0;
+
+	if (devnum >= handle->m_ndevs) {
+		snprintf(handle->m_lasterr, SCAP_LASTERR_SIZE, "scap_ioctl failed, invalid device number %d", devnum);
+		ASSERT(false);
+		return SCAP_FAILURE;
+	}
+
+	ioctl_ret = ioctl(handle->m_devs[devnum].m_fd, request, arg);
+	if (ioctl_ret != 0) {
+		snprintf(handle->m_lasterr, SCAP_LASTERR_SIZE, "scap_ioctl failed due to ioctl error (%s)", strerror(errno));
+		return SCAP_FAILURE;
+	}
+
+	return SCAP_SUCCESS;
+}
+/* End StackRox Section */

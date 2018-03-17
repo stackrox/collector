@@ -969,6 +969,10 @@ int32_t scap_write_proclist_entry(scap_t *handle, scap_dumper_t *d, struct scap_
 int32_t scap_enable_simpledriver_mode(scap_t* handle);
 int32_t scap_get_n_tracepoint_hit(scap_t* handle, long* ret);
 
+/* Begin StackRox Section */
+int32_t scap_ioctl(scap_t* handle, int devnum, unsigned long request, void* arg);
+/* End StackRox Section */
+
 #ifdef __cplusplus
 }
 #endif

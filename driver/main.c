@@ -74,6 +74,7 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 #include <linux/jiffies.h>
 
 /* Begin StackRox section */
+#include <linux/hash.h>
 #include <linux/pid_namespace.h>
 /* End StackRox section */
 
@@ -269,6 +270,226 @@ do {								\
 	if (verbose)						\
 		pr_info(fmt, ##__VA_ARGS__);			\
 } while (0)
+
+/* Begin StackRox Section */
+
+// A hashtable for storing a set of pointers. Used for storing the set of excluded PID namespaces.
+struct ptr_table {
+	int log_capacity;  // actual capacity is 1 << log_capacity
+	int size;
+	int used_slots;
+	void* table[];
+};
+
+#define PTR_TABLE_FREEAGAIN ((void *) 0x1)
+#define PTR_TABLE_IS_FREE(p) (p <= PTR_TABLE_FREEAGAIN)
+
+static struct ptr_table* g_excluded_pid_ns_table = NULL;
+static DEFINE_SPINLOCK(g_excluded_pid_ns_table_lock);
+
+#define EXCLUDED_PID_NS_TABLE_INITIAL_CAPACITY 32
+
+static inline int ptr_table_capacity(struct ptr_table* table) {
+	return 1 << table->log_capacity;
+}
+
+// Finds a value in a pointer hashtable. The return value is the pointer to the element if the value was found,
+// otherwise it is the pointer to the first free slot (or NULL if there are no free slots in the table).
+static inline void** ptr_table_find(struct ptr_table* table, void* ptr) {
+	int hash_index;
+	void** p, **startp, **endp, **firstfree = NULL;
+
+	hash_index = (int) hash_ptr(ptr, table->log_capacity);
+	startp = &table->table[hash_index];
+	endp = table->table + ptr_table_capacity(table);
+
+	p = startp;
+	for (p = startp; p != endp; ++p) {
+		if (!*p || *p == ptr) return p;
+		if (!firstfree && PTR_TABLE_IS_FREE(*p)) firstfree = p;
+		++p;
+	}
+	for (p = table->table; p != startp; ++p) {
+		if (!*p || *p == ptr) return p;
+		if (!firstfree && PTR_TABLE_IS_FREE(*p)) firstfree = p;
+		++p;
+	}
+	return firstfree;
+}
+
+// Removes a value from a pointer hashtable. Returns true if the value was removed, false otherwise.
+static inline bool ptr_table_remove(struct ptr_table* table, void* ptr) {
+	void** p;
+
+	p = ptr_table_find(table, ptr);
+	if (p && *p == ptr) {
+		*p = PTR_TABLE_FREEAGAIN;
+		--table->size;
+		vpr_info("Table stats after removing: capacity = %d, used_slots = %d, size = %d\n",
+		         ptr_table_capacity(table), table->used_slots, table->size);
+		return true;
+	}
+	return false;
+}
+
+// Adds a value to a pointer hashtable. Returns true if the value was inserted, false otherwise. Note that this does
+// NOT trigger an automatic rehashing; rather, the caller must ensure that the table has sufficient capacity.
+static inline bool ptr_table_add(struct ptr_table* table, void* ptr) {
+	void** p;
+
+	p = ptr_table_find(table, ptr);
+	if (!p) return false;  // no more space
+	if (*p == ptr) return false;  // element already present
+	if (!*p) ++table->used_slots;  // only increment used_slots if the slot is really free, not "free again".
+	*p = ptr;
+	++table->size;
+
+	vpr_info("Table stats after adding: capacity = %d, used_slots = %d, size = %d\n",
+	         ptr_table_capacity(table), table->used_slots, table->size);
+	return true;
+}
+
+// Creates a new pointer hashtable, populating it with the contents of old_table (if any).
+static struct ptr_table* ptr_table_create(int new_capacity, struct ptr_table* old_table) {
+	struct ptr_table* new_table;
+	void** oldp, **oldendp, **newp;
+	void* ptr;
+	int new_log_capacity;
+
+	// Make sure the new capacity is a power of 2.
+	new_log_capacity = ilog2(new_capacity - 1) + 1;
+	new_capacity = 1 << new_log_capacity;
+	if (old_table && new_capacity < old_table->size) return NULL;
+	new_table = (struct ptr_table *) kmalloc(sizeof(struct ptr_table) + new_capacity * sizeof(void*), GFP_KERNEL);
+	if (!new_table) return NULL;
+	new_table->log_capacity = new_log_capacity;
+	new_table->size = 0;
+	new_table->used_slots = 0;
+	memset(new_table->table, 0, new_capacity * sizeof(void*));
+
+	if (!old_table) return new_table;
+
+	for (oldp = old_table->table, oldendp = oldp + ptr_table_capacity(old_table); oldp != oldendp; ++oldp) {
+		ptr = *oldp;
+		if (PTR_TABLE_IS_FREE(ptr)) {
+			continue;
+		}
+		newp = ptr_table_find(new_table, ptr);
+		ASSERT(newp && !*newp);
+		*newp = ptr;
+		++new_table->size;
+		++new_table->used_slots;
+	}
+
+	return new_table;
+}
+
+// Checks if the given PID namespace is in the set of excluded namespaces.
+static inline bool is_excluded_pid_ns(struct pid_namespace* pid_ns) {
+	struct ptr_table* table;
+	void** p;
+
+	rcu_read_lock();
+	table = rcu_dereference(g_excluded_pid_ns_table);
+	if (!table) goto notfound;
+	p = ptr_table_find(table, pid_ns);
+
+	if (p && *p == pid_ns) goto found;
+
+notfound:
+	rcu_read_unlock();
+	return false;
+
+found:
+	rcu_read_unlock();
+	return true;
+}
+
+// Removes the given PID namespace from the set of excluded namespaces.
+static void remove_excluded_pid_ns(struct pid_namespace* pid_ns) {
+	struct ptr_table* table;
+
+	vpr_info("Un-excluding PID namespace %p\n", pid_ns);
+	spin_lock(&g_excluded_pid_ns_table_lock);
+	smp_wmb();
+
+	table = g_excluded_pid_ns_table;
+	if (!table) goto exit;
+
+	ptr_table_remove(table, pid_ns);
+
+exit:
+	smp_wmb();
+	spin_unlock(&g_excluded_pid_ns_table_lock);
+}
+
+// Adds the given PID namespace to the set of excluded namespaces.
+static int add_excluded_pid_ns(struct pid_namespace* pid_ns) {
+	struct ptr_table* table, *new_table = NULL;
+	int ret = 0, new_capacity;
+
+	vpr_info("Excluding PID namespace %p\n", pid_ns);
+	spin_lock(&g_excluded_pid_ns_table_lock);
+	smp_wmb();
+	table = g_excluded_pid_ns_table;
+	if (!table) {
+		table = ptr_table_create(EXCLUDED_PID_NS_TABLE_INITIAL_CAPACITY, NULL);
+		ptr_table_add(table, pid_ns);
+		rcu_assign_pointer(g_excluded_pid_ns_table, table);
+		goto exit;
+	}
+	ptr_table_add(table, pid_ns);
+	if (table->used_slots * 2 < ptr_table_capacity(table)) goto exit;
+	new_capacity = (table->size << 2) + 3;
+	if (new_capacity < EXCLUDED_PID_NS_TABLE_INITIAL_CAPACITY) new_capacity = EXCLUDED_PID_NS_TABLE_INITIAL_CAPACITY;
+	vpr_info("Rehashing excluded PID namespace table (old capacity = %d, new capacity = %d)\n",
+	         ptr_table_capacity(table), new_capacity);
+	new_table = ptr_table_create(new_capacity, table);
+	if (!new_table) {
+		ret = -ENOMEM;
+		goto exit;
+    }
+    rcu_assign_pointer(g_excluded_pid_ns_table, new_table);
+
+exit:
+	smp_wmb();
+	spin_unlock(&g_excluded_pid_ns_table_lock);
+	if (new_table) {
+		synchronize_rcu();
+		kfree(table);
+	}
+	return ret;
+}
+
+// Checks if the given task should be ignored globally.
+static bool exclude_task_globally(struct task_struct* task) {
+	struct pid_namespace* pid_ns;
+
+	pid_ns = task_active_pid_ns(task);
+	if (pid_ns == global_excluded_pid_ns) return true;
+	return is_excluded_pid_ns(pid_ns);
+}
+
+// Handle the PPM_IOCTL_EXCLUDE_NS_OF_PID ioctl. The argument is the PID whose namespace to exclude.
+static int handle_exclude_namespace_ioctl(unsigned long arg) {
+	pid_t pid_nr;
+	struct pid* pid;
+	struct pid_namespace* pid_ns;
+
+	pid_nr = (pid_t) arg;
+	vpr_info("Excluding PID namespace of PID %d\n", pid_nr);
+	rcu_read_lock();
+	pid = find_pid_ns(pid_nr, &init_pid_ns);
+	pid_ns = ns_of_pid(pid);
+	rcu_read_unlock();
+
+	if (!pid_ns) {
+		vpr_info("Couldn't find valid PID namespace for PID %d\n", pid_nr);
+		return -EINVAL;
+	}
+	return add_excluded_pid_ns(pid_ns);
+}
+/* End StackRox Section */
 
 /* compat tracepoint functions */
 static int compat_register_trace(void *func, const char *probename, struct tracepoint *tp)
@@ -1029,6 +1250,13 @@ cleanup_ioctl_procinfo:
 		ret = 0;
 		goto cleanup_ioctl;
 	}
+	/* Begin StackRox Section */
+	case PPM_IOCTL_EXCLUDE_NS_OF_PID:
+	{
+		ret = handle_exclude_namespace_ioctl(arg);
+		goto cleanup_ioctl;
+	}
+	/* End StackRox Section */
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 20)
 	case PPM_IOCTL_GET_VTID:
 	case PPM_IOCTL_GET_VPID:
@@ -1937,7 +2165,7 @@ TRACEPOINT_PROBE(syscall_enter_probe, struct pt_regs *regs, long id)
 	/*
 	 * Exclude event as early on as possible.
 	 */
-	if (task_active_pid_ns(current) == global_excluded_pid_ns) {
+	if (exclude_task_globally(current)) {
 		return;
 	}
 	/* End StackRox section */
@@ -2019,7 +2247,7 @@ TRACEPOINT_PROBE(syscall_exit_probe, struct pt_regs *regs, long ret)
 	/*
 	 * Exclude event as early on as possible.
 	 */
-	if (task_active_pid_ns(current) == global_excluded_pid_ns) {
+	if (exclude_task_globally(current)) {
 		return;
 	}
 	/* End StackRox section */
@@ -2098,11 +2326,12 @@ TRACEPOINT_PROBE(syscall_procexit_probe, struct task_struct *p)
 	struct event_data_t event_data;
 
 	/* Begin StackRox section */
-	/*
-	 * Exclude event as early on as possible.
-	 */
-	if (task_active_pid_ns(current) == global_excluded_pid_ns) {
-		return;
+	if (exclude_task_globally(current)) {
+		if (is_child_reaper(task_pid(current))) {
+			remove_excluded_pid_ns(task_active_pid_ns(current));
+		}
+		// Do NOT exclude this event. Sysdig needs to see processes going away to clean up the userspace data
+		// structures.
 	}
 	/* End StackRox section */
 
@@ -2670,6 +2899,12 @@ void sysdig_exit(void)
 #else
 	unregister_cpu_notifier(&cpu_notifier);
 #endif
+
+	/* Begin StackRox Section */
+	if (g_excluded_pid_ns_table) {
+		kfree(g_excluded_pid_ns_table);
+	}
+	/* End StackRox Section */
 }
 
 module_init(sysdig_init);
