@@ -40,6 +40,7 @@ build-centos-uncrawled:
 		-v $(CURDIR)/container/kernel-modules:/output \
 		-v $(CURDIR)/packages:/packages \
 		-v ko-centos-uncrawled:/scratch \
+		-v $(CURDIR)/../ext/sysdig/src:/sysdig-src \
 		build-kernel-modules \
 		RedHat \
 		< supported-kernels/centos-uncrawled.txt
@@ -55,6 +56,7 @@ build-centos:
 		-v $(CURDIR)/container/kernel-modules:/output \
 		-v $(CURDIR)/packages:/packages \
 		-v ko-centos:/scratch \
+		-v $(CURDIR)/../ext/sysdig/src:/sysdig-src \
 		build-kernel-modules \
 		RedHat \
 		< supported-kernels/centos.txt
@@ -74,6 +76,7 @@ build-ubuntu: supported-kernels/ubuntu.txt
 		-v $(CURDIR)/container/kernel-modules:/output \
 		-v $(CURDIR)/packages:/packages \
 		-v ko-ubuntu:/scratch \
+		-v $(CURDIR)/../ext/sysdig/src:/sysdig-src \
 		build-kernel-modules \
 		Ubuntu \
 		< supported-kernels/ubuntu.txt
@@ -89,6 +92,7 @@ build-coreos:
 		-v $(CURDIR)/container/kernel-modules:/output \
 		-v $(CURDIR)/packages:/packages \
 		-v ko-coreos:/scratch \
+		-v $(CURDIR)/../ext/sysdig/src:/sysdig-src \
 		--privileged \
 		build-kernel-modules \
 		CoreOS \
@@ -103,13 +107,9 @@ build-container:
 	mkdir -p container/kernel-modules
 	docker build -t build-kernel-modules -f build/Dockerfile .
 
-sysdig/: $(CURDIR)/../ext/sysdig
-	rm -rf ./sysdig || true
-	cp -r $(CURDIR)/../ext/sysdig ./sysdig/
-
 # TODO: This isn't _really_ a phony target.
 .PHONY: container/kernel-modules
-container/kernel-modules: sysdig/ supported-kernels/ build/Dockerfile build/build-kos download-package-cache build-container build
+container/kernel-modules: supported-kernels/ build/Dockerfile build/build-kos download-package-cache build-container build
 
 .PHONY: image
 image: container/kernel-modules

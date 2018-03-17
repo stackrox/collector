@@ -43,9 +43,9 @@ function build_modules {
 		export PROBE_NAME=collector
 		SYSDIG_KO=driver/$PROBE_NAME.ko
 		make -C driver clean || true
-		rm -rf build || true
-		mkdir build
-		cd build
+		rm -rf ko-build || true
+		mkdir ko-build
+		cd ko-build
 		cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-fno-pie" -DPROBE_NAME=$PROBE_NAME -DBUILD_USERSPACE=OFF ..
 		make -j 6 driver
 		strip -g $SYSDIG_KO

@@ -23,6 +23,8 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "SysdigService.h"
 
+#include <linux/ioctl.h>
+
 #include "libsinsp/wrapper.h"
 
 #include "CollectorException.h"
@@ -81,6 +83,12 @@ bool SysdigService::FilterEvent(sinsp_evt* event) {
       return res;
     }
     chisel_result = res;
+    if (!res && event->get_type() != PPME_PROCEXIT_1_E) {
+      // Exclude container for this process at the kernel level, but do not issue an ioctl at process exit.
+      if (!inspector_->ioctl(0, PPM_IOCTL_EXCLUDE_NS_OF_PID, reinterpret_cast<void*>(tinfo->m_pid))) {
+        CLOG(WARNING) << "Failed ioctl: " << inspector_->getlasterr();
+      }
+    }
   } else {
     ++userspace_stats_.nChiselCacheHits;
   }

@@ -33,7 +33,6 @@ RUN ln -s /usr/bin/gcc-4.8 /usr/bin/gcc-4.7 \
  ;
 
 RUN mkdir -p /output
-COPY sysdig/src /sysdig-src
 COPY build/build-kos /
 WORKDIR /scratch
 ENTRYPOINT [ "/build-kos" ]
