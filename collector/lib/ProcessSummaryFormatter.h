@@ -21,40 +21,22 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef _EVENT_CLASSIFIER_H_
-#define _EVENT_CLASSIFIER_H_
+#ifndef _PROCESS_SUMMARY_FORMATTER_H_
+#define _PROCESS_SUMMARY_FORMATTER_H_
 
-#include <bitset>
-
-#include "libsinsp/sinsp.h"
-#include "ppm_events_public.h"
-
+#include "SignalFormatter.h"
 #include "SafeBuffer.h"
+#include "EventClassifier.h"
 
 namespace collector {
 
-enum SignalType {
-    SIGNAL_TYPE_UNKNOWN = 0,
-    SIGNAL_TYPE_NETWORK,
-    SIGNAL_TYPE_PROCESS,
-    SIGNAL_TYPE_FILE,
-    SIGNAL_TYPE_MAX = SIGNAL_TYPE_FILE
-};
-
-class EventClassifier {
+class ProcessSummaryFormatter : public SignalFormatter {
  public:
-  void Init(const std::string& process_syscalls_str);
+   ProcessSummaryFormatter() {}
 
-  SignalType Classify(SafeBuffer* key_buf, sinsp_evt* event) const;
-
- private:
-  static void ExtractProcessSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
-  static void ExtractNetworkSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
-  static void ExtractFileSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
-
-  std::bitset<PPM_EVENT_MAX> process_syscalls_;
+   bool FormatSignal(SafeBuffer* buf, sinsp_evt* event);
 };
 
 }  // namespace collector
 
-#endif  // _EVENT_CLASSIFIER_H_
+#endif  // _PROCESS_SUMMARY_FORMATTER_H_

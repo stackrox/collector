@@ -21,40 +21,42 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef _EVENT_CLASSIFIER_H_
-#define _EVENT_CLASSIFIER_H_
-
-#include <bitset>
+#ifndef _SUMMARY_FORMATTER_FACTORY_H_
+#define _SUMMARY_FORMATTER_FACTORY_H_
 
 #include "libsinsp/sinsp.h"
-#include "ppm_events_public.h"
 
 #include "SafeBuffer.h"
 
 namespace collector {
 
-enum SignalType {
-    SIGNAL_TYPE_UNKNOWN = 0,
-    SIGNAL_TYPE_NETWORK,
-    SIGNAL_TYPE_PROCESS,
-    SIGNAL_TYPE_FILE,
-    SIGNAL_TYPE_MAX = SIGNAL_TYPE_FILE
+class SignalFormatter {
+  public:
+    virtual bool FormatSignal(SafeBuffer* buf, sinsp_evt* event) = 0;
+    virtual ~SignalFormatter() = default;
 };
 
-class EventClassifier {
+class SignalFormatterFactory {
  public:
-  void Init(const std::string& process_syscalls_str);
-
-  SignalType Classify(SafeBuffer* key_buf, sinsp_evt* event) const;
+  std::unique_ptr<SignalFormatter> CreateSignalFormatter(const std::string& output_spec, sinsp* inspector, const std::string& format_string, int field_trunc_len = 0);
 
  private:
-  static void ExtractProcessSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
-  static void ExtractNetworkSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
-  static void ExtractFileSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
+  // methods to convert from sysdig event to summaries
+  std::unique_ptr<SignalFormatter> CreateFileSummaryFormatter();
+  std::unique_ptr<SignalFormatter> CreateProcessSummaryFormatter();
+  std::unique_ptr<SignalFormatter> CreateNetworkSummaryFormatter();
 
-  std::bitset<PPM_EVENT_MAX> process_syscalls_;
+  // methods to convert from sysdig event to signal proto
+  std::unique_ptr<SignalFormatter> CreateFileSignalFormatter();
+  std::unique_ptr<SignalFormatter> CreateProcessSignalFormatter();
+  std::unique_ptr<SignalFormatter> CreateNetworkSignalFormatter();
+
+  // methods to support legacy formatting
+  std::unique_ptr<SignalFormatter> CreateFileLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len);
+  std::unique_ptr<SignalFormatter> CreateProcessLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len);
+  std::unique_ptr<SignalFormatter> CreateNetworkLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len);
 };
 
 }  // namespace collector
 
-#endif  // _EVENT_CLASSIFIER_H_
+#endif  // _SUMMARY_FORMATTER_FACTORY_H_

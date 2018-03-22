@@ -20,41 +20,27 @@ You should have received a copy of the GNU General Public License along with thi
 * do not wish to do so, delete this exception statement from your
 * version.
 */
+#include "ProcessSummaryFormatter.h"
 
-#ifndef _EVENT_CLASSIFIER_H_
-#define _EVENT_CLASSIFIER_H_
-
-#include <bitset>
-
-#include "libsinsp/sinsp.h"
-#include "ppm_events_public.h"
-
-#include "SafeBuffer.h"
+#include "Logging.h"
+#include "SysdigEventWrapper.h"
+#include "proto/data/process_summary.pb.h"
 
 namespace collector {
 
-enum SignalType {
-    SIGNAL_TYPE_UNKNOWN = 0,
-    SIGNAL_TYPE_NETWORK,
-    SIGNAL_TYPE_PROCESS,
-    SIGNAL_TYPE_FILE,
-    SIGNAL_TYPE_MAX = SIGNAL_TYPE_FILE
-};
+bool ProcessSummaryFormatter::FormatSignal(SafeBuffer* buf, sinsp_evt* event) {
+  SysdigEventWrapper event_wrapper = SysdigEventWrapper(event);
+  data::ProcessSummary process_summary;
+  data::ProcessSummary::Container container;
 
-class EventClassifier {
- public:
-  void Init(const std::string& process_syscalls_str);
+  container.set_id(event_wrapper.GetContainerID());
+  container.set_privileged(true);
 
-  SignalType Classify(SafeBuffer* key_buf, sinsp_evt* event) const;
-
- private:
-  static void ExtractProcessSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
-  static void ExtractNetworkSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
-  static void ExtractFileSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
-
-  std::bitset<PPM_EVENT_MAX> process_syscalls_;
-};
+  process_summary.set_allocated_container(&container);
+  if (!process_summary.SerializeToArray(buf->buffer(), buf->size())) {
+    CLOG(ERROR) << "Failed to format process summary";
+  }
+  return true;
+}
 
 }  // namespace collector
-
-#endif  // _EVENT_CLASSIFIER_H_

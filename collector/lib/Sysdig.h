@@ -59,6 +59,9 @@ struct CollectorConfig {
   std::string processSignalOutput;
   std::string fileSignalOutput;
   std::string processSyscalls;
+  std::string fileSignalFormat;
+  std::string processSignalFormat;
+  std::string networkSignalFormat;
 };
 
 class Sysdig {

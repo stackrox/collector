@@ -38,6 +38,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "SafeBuffer.h"
 #include "SignalWriter.h"
 #include "Sysdig.h"
+#include "SignalFormatter.h"
 
 namespace collector {
 
@@ -64,8 +65,8 @@ class SysdigService : public Sysdig {
   std::unique_ptr<sinsp> inspector_;
   std::unique_ptr<sinsp_chisel> chisel_;
   std::unique_ptr<SignalWriter> signal_writers_[SIGNAL_TYPE_MAX + 1];
+  std::unique_ptr<SignalFormatter> signal_formatter_[SIGNAL_TYPE_MAX + 1];
   EventClassifier classifier_;
-  EventFormatter formatter_;
   SysdigStats userspace_stats_;
 
   std::unordered_map<string, bool> chisel_cache_;

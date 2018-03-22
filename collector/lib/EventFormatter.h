@@ -32,6 +32,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "EventClassifier.h"
 #include "SafeBuffer.h"
+#include "SignalFormatter.h"
 
 namespace collector {
 
@@ -43,10 +44,10 @@ class FieldFormatter {
     bool replace_tabs = false;
   };
 
-  FieldFormatter(std::string field, std::unique_ptr<sinsp_filter_check_iface> filter_check, std::string prefix, const FormatOptions& options)
+  FieldFormatter(std::string field, std::unique_ptr<sinsp_filter_check_iface> filter_check, std::string prefix, const FormatOptions& options, bool is_network)
       : field_(std::move(field)), filter_check_(std::move(filter_check)), prefix_(std::move(prefix)), options_(options) {}
 
-  bool Format(SafeBuffer* buffer, sinsp_evt* event, SignalType signal_type) const;
+  bool Format(SafeBuffer* buffer, sinsp_evt* event) const;
 
   int PrefixLength() const { return prefix_.length(); }
 
@@ -55,15 +56,16 @@ class FieldFormatter {
   std::unique_ptr<sinsp_filter_check_iface> filter_check_;
   std::string prefix_;
   FormatOptions options_;
+  bool is_network_;
 };
 
-class EventFormatter {
+class EventFormatter : public SignalFormatter {
  public:
-  EventFormatter();
+  EventFormatter(bool is_network);
 
   void Init(sinsp* inspector, const std::string& format_string, int field_trunc_len = 0);
 
-  void Format(SafeBuffer* buffer, sinsp_evt* event, SignalType signal_type) const;
+  bool FormatSignal(SafeBuffer* buffer, sinsp_evt* event);
 
  private:
   void AddFieldFormatter(sinsp* inspector, const std::string& field, const std::string& prefix);
@@ -71,6 +73,7 @@ class EventFormatter {
   std::unordered_map<std::string, FieldFormatter::FormatOptions> field_format_options_;
   std::vector<FieldFormatter> field_formatters_;
   int field_trunc_len_;
+  bool is_network_;
 };
 
 }  // namespace collector

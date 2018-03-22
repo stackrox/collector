@@ -25,7 +25,15 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-bool FieldFormatter::Format(SafeBuffer* buffer, sinsp_evt* event, SignalType signal_type) const {
+EventFormatter::EventFormatter(bool is_network) {
+  field_format_options_["proc.args"].replace_tabs = true;
+  field_format_options_["proc.cmdline"].replace_tabs = true;
+  field_format_options_["proc.exeline"].replace_tabs = true;
+  field_format_options_["evt.args"].trunc_data = true;
+  is_network_ = is_network;
+}
+
+bool FieldFormatter::Format(SafeBuffer* buffer, sinsp_evt* event) const {
   char* str = filter_check_->tostring(event);
   if (!str || !*str) {
     return false;
@@ -37,7 +45,7 @@ bool FieldFormatter::Format(SafeBuffer* buffer, sinsp_evt* event, SignalType sig
       *p++ = '.';
     }
   }
-  if (options_.trunc_data && signal_type == SIGNAL_TYPE_NETWORK) {
+  if (options_.trunc_data && is_network_) {
     // For network data, remove anything that comes after "data=" as this is already part of the buffer.
     char* p = static_cast<char*>(memmem(str, len, "data=", 5));
     if (p) {
@@ -54,13 +62,6 @@ bool FieldFormatter::Format(SafeBuffer* buffer, sinsp_evt* event, SignalType sig
   if (!buffer->AppendWhole(prefix_)) return false;
   buffer->AppendTrunc(str, len);
   return true;
-}
-
-EventFormatter::EventFormatter() {
-  field_format_options_["proc.args"].replace_tabs = true;
-  field_format_options_["proc.cmdline"].replace_tabs = true;
-  field_format_options_["proc.exeline"].replace_tabs = true;
-  field_format_options_["evt.args"].trunc_data = true;
 }
 
 void EventFormatter::Init(sinsp* inspector, const std::string& format_string, int field_trunc_len) {
@@ -91,17 +92,19 @@ void EventFormatter::AddFieldFormatter(
   if (opts.trunc_len == 0 && field_trunc_len_ > 0) {
     opts.trunc_len = field_trunc_len_;
   }
-  field_formatters_.emplace_back(field, std::move(filter_check), prefix, opts);
+  field_formatters_.emplace_back(field, std::move(filter_check), prefix, opts, is_network_);
 }
 
-void EventFormatter::Format(SafeBuffer* buffer, sinsp_evt* event, SignalType signal_type) const {
+bool EventFormatter::FormatSignal(SafeBuffer* buffer, sinsp_evt* event) {
+  buffer->Append(is_network_ ? 'N' : 'S');
   for (auto& field_formatter : field_formatters_) {
     buffer->Append('\t');
-    if (!field_formatter.Format(buffer, event, signal_type) && field_formatter.PrefixLength() > 0) {
+    if (!field_formatter.Format(buffer, event) && field_formatter.PrefixLength() > 0) {
       buffer->Truncate(-1);
       if (buffer->remaining() < 16) break;
     }
   }
+  return true;
 }
 
 }  // namespace collector

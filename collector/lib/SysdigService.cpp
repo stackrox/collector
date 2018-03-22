@@ -30,6 +30,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "CollectorException.h"
 #include "Logging.h"
 #include "StdoutSignalWriter.h"
+#include "SignalFormatter.h"
 
 namespace collector {
 
@@ -41,7 +42,6 @@ void SysdigService::Init(const CollectorConfig& config) {
   if (inspector_ || chisel_) {
     throw CollectorException("Invalid state: SysdigService was already initialized");
   }
-
 
   inspector_.reset(new_inspector());
   inspector_->set_snaplen(config.snapLen);
@@ -55,10 +55,14 @@ void SysdigService::Init(const CollectorConfig& config) {
   signal_writers_[SIGNAL_TYPE_PROCESS] = factory.CreateSignalWriter(config.processSignalOutput);
   signal_writers_[SIGNAL_TYPE_NETWORK] = factory.CreateSignalWriter(config.networkSignalOutput);
 
+  SignalFormatterFactory fmtFactory;
+  signal_formatter_[SIGNAL_TYPE_FILE] = fmtFactory.CreateSignalFormatter(config.fileSignalFormat, inspector_.get(), config.format);
+  signal_formatter_[SIGNAL_TYPE_PROCESS] = fmtFactory.CreateSignalFormatter(config.processSignalFormat, inspector_.get(), config.format);
+  signal_formatter_[SIGNAL_TYPE_NETWORK] = fmtFactory.CreateSignalFormatter(config.networkSignalFormat, inspector_.get(), config.format);
+
   chisel_.reset(new_chisel(inspector_.get(), config.chiselName.c_str()));
 
   classifier_.Init(config.processSyscalls);
-  formatter_.Init(inspector_.get(), config.format);
   use_chisel_cache_ = config.useChiselCache;
 }
 
@@ -112,8 +116,7 @@ SignalType SysdigService::GetNext(SafeBuffer* message_buffer, SafeBuffer* key_bu
   SignalType signal_type = classifier_.Classify(key_buffer, event);
   if (signal_type == SIGNAL_TYPE_UNKNOWN) return SIGNAL_TYPE_UNKNOWN;
   message_buffer->clear();
-  message_buffer->Append(signal_type == SIGNAL_TYPE_NETWORK ? 'N' : 'S');
-  formatter_.Format(message_buffer, event, signal_type);
+  signal_formatter_[signal_type]->FormatSignal(message_buffer, event);
   return signal_type;
 }
 

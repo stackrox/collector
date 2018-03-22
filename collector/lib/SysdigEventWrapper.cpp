@@ -20,41 +20,62 @@ You should have received a copy of the GNU General Public License along with thi
 * do not wish to do so, delete this exception statement from your
 * version.
 */
-
-#ifndef _EVENT_CLASSIFIER_H_
-#define _EVENT_CLASSIFIER_H_
-
-#include <bitset>
-
-#include "libsinsp/sinsp.h"
-#include "ppm_events_public.h"
-
-#include "SafeBuffer.h"
+#include "SysdigEventWrapper.h"
 
 namespace collector {
 
-enum SignalType {
-    SIGNAL_TYPE_UNKNOWN = 0,
-    SIGNAL_TYPE_NETWORK,
-    SIGNAL_TYPE_PROCESS,
-    SIGNAL_TYPE_FILE,
-    SIGNAL_TYPE_MAX = SIGNAL_TYPE_FILE
-};
+/*
+ * Process related methods
+ */
 
-class EventClassifier {
- public:
-  void Init(const std::string& process_syscalls_str);
+int64_t SysdigEventWrapper::GetPid() {
+  const sinsp_threadinfo* tinfo = event_->get_thread_info();
+  if (!tinfo) return -1;
+  return tinfo->m_pid;
+}
 
-  SignalType Classify(SafeBuffer* key_buf, sinsp_evt* event) const;
+int64_t SysdigEventWrapper::GetTid() {
+  const sinsp_threadinfo* tinfo = event_->get_thread_info();
+  if (!tinfo) return -1;
+  return tinfo->m_tid;
+}
 
- private:
-  static void ExtractProcessSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
-  static void ExtractNetworkSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
-  static void ExtractFileSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
+std::string SysdigEventWrapper::GetComm() {
+  const sinsp_threadinfo* tinfo = event_->get_thread_info();
+  if (!tinfo) return std::string("");;
+  return tinfo->m_comm;
+}
 
-  std::bitset<PPM_EVENT_MAX> process_syscalls_;
-};
+std::string SysdigEventWrapper::GetExe() {
+  const sinsp_threadinfo* tinfo = event_->get_thread_info();
+  if (!tinfo) return std::string("");;
+  return tinfo->m_exe;
+}
+
+std::string SysdigEventWrapper::GetExePath() {
+  const sinsp_threadinfo* tinfo = event_->get_thread_info();
+  if (!tinfo) return std::string("");;
+  return tinfo->m_exepath;
+}
+
+std::string SysdigEventWrapper::GetCwd() {
+  sinsp_threadinfo* tinfo = event_->get_thread_info();
+  if (!tinfo) return std::string("");;
+  return std::string(tinfo->get_cwd());
+}
+
+/*
+ * Container related methods
+ */
+bool SysdigEventWrapper::IsContainerPrivileged() {
+  // XXX fill me
+  return true;
+}
+
+std::string SysdigEventWrapper::GetContainerID() {
+  const sinsp_threadinfo* tinfo = event_->get_thread_info();
+  if (!tinfo) return std::string("");
+  return tinfo->m_container_id;
+}
 
 }  // namespace collector
-
-#endif  // _EVENT_CLASSIFIER_H_

@@ -452,6 +452,20 @@ main(int argc, char **argv)
         chiselsTopic = collectorConfig["chiselsTopic"].asString();
     }
 
+    // formatters
+    std::string networkSignalFormat = "network_legacy";
+    if (!collectorConfig["networkSignalFormat"].isNull()) {
+        networkSignalFormat = collectorConfig["networkSignalFormat"].asString();
+    }
+    std::string processSignalFormat = "process_legacy";
+    if (!collectorConfig["processSignalFormat"].isNull()) {
+        processSignalFormat = collectorConfig["processSignalFormat"].asString();
+    }
+    std::string fileSignalFormat = "file_legacy";
+    if (!collectorConfig["fileSignalFormat"].isNull()) {
+        fileSignalFormat = collectorConfig["fileSignalFormat"].asString();
+    }
+
     // Iterate over the process syscalls
     std::string processSyscalls;
     for (auto itr: collectorConfig["process_syscalls"]) {
@@ -497,6 +511,9 @@ main(int argc, char **argv)
     config.processSignalOutput = processSignalOutput;
     config.fileSignalOutput = fileSignalOutput;
     config.processSyscalls = processSyscalls;
+    config.networkSignalFormat = networkSignalFormat;
+    config.processSignalFormat = processSignalFormat;
+    config.fileSignalFormat = fileSignalFormat;
 
     for (;!g_terminate;) {
         int pid = fork();
