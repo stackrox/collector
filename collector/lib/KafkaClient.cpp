@@ -90,8 +90,9 @@ bool KafkaClient::sendMessage(rd_kafka_topic_t* kafkaTopic, const void* msg, int
        const_cast<void*>(msg), msgLen, key, keyLen, nullptr);
 
   if (rv == -1) {
-    CLOG(ERROR) << "Failed to produce to topic " << rd_kafka_topic_name(kafkaTopic) << ": "
-                << rd_kafka_err2str(rd_kafka_last_error());
+    CLOG_THROTTLED(ERROR, std::chrono::seconds(5))
+        << "Failed to produce to topic " << rd_kafka_topic_name(kafkaTopic) << ": "
+        << rd_kafka_err2str(rd_kafka_last_error());
   }
 
   if (++send_count_ % 10000 == 0) {

@@ -33,6 +33,11 @@ void SignalWriterFactory::SetupKafka(const std::string& broker_list) {
 }
 
 std::unique_ptr<SignalWriter> SignalWriterFactory::CreateSignalWriter(const std::string& output_spec) {
+  // An explicitly empty spec means to suppress the output.
+  if (output_spec.empty()) {
+    return nullptr;
+  }
+
   auto delim_pos = output_spec.find(':');
   std::string output_type = output_spec.substr(0, delim_pos);
   std::string spec;

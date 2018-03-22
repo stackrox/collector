@@ -29,6 +29,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <cstdint>
 #include <iostream>
 #include <sstream>
+#include <chrono>
 
 namespace collector {
 
@@ -94,6 +95,15 @@ class LogMessage {
     collector::logging::LogMessage(__FILE__, __LINE__, collector::logging::LogLevel::lvl)
 
 #define CLOG(lvl) CLOG_IF(true, lvl)
+
+#define CLOG_THROTTLED_IF(cond, lvl, interval) \
+  static std::chrono::steady_clock::time_point _clog_lastlog_ ## __LINE__; \
+  if (collector::logging::CheckLogLevel(collector::logging::LogLevel::lvl) && (cond) && \
+      (std::chrono::steady_clock::now() - _clog_lastlog_ ## __LINE__ >= interval)) \
+    _clog_lastlog_ ## __LINE__ = std::chrono::steady_clock::now(), \
+        collector::logging::LogMessage(__FILE__, __LINE__, collector::logging::LogLevel::lvl)
+
+#define CLOG_THROTTLED(lvl, interval) CLOG_THROTTLED_IF(true, lvl, interval)
 
 #endif  /* _LOG_LEVEL_H_ */
 
