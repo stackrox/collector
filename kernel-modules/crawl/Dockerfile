@@ -1,13 +1,7 @@
-FROM ubuntu:16.04
+FROM python:2.7-slim
 
-RUN apt-get update \
- && apt-get install -y --no-install-recommends \
-      python \
-      python-lxml \
-      python-requests \
-    ;
+RUN pip install --no-cache-dir lxml
 
 COPY ./kernel-crawler.py /
-COPY ./crawl-and-sort.sh /
 
-ENTRYPOINT ["/crawl-and-sort.sh"]
+ENTRYPOINT ["python", "kernel-crawler.py"]

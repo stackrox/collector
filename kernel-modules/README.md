@@ -57,7 +57,8 @@ There is one exception: Kernels from [ELRepo](https://elrepo.org) need to be
 moved from the `supported-kernels/centos.txt` list to
 `supported-kernels/centos-uncrawled.txt` instead of deleted. This is because
 the ELRepo mirrors (even archive mirrors) only keep 25 recent versions,
-but customers run older ones than that.
+but customers run older ones than that. (Running `make crawl` will automatically
+do this, but verify before merging that it did the right thing.)
 
 Submit a pull request with the modifications and commit it.
 

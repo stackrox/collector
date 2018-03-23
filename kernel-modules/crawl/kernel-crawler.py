@@ -11,13 +11,11 @@
 # Date: August 17th, 2015
 #### END LICENSING
 
+import argparse
+import json
 import sys
 import urllib2
 from lxml import html
-import requests
-import gzip
-from StringIO import StringIO
-import re
 import traceback
 
 #
@@ -274,44 +272,107 @@ repos = {
     ]
 }
 
-URL_TIMEOUT=30
 
-if len(sys.argv) < 2 or not (sys.argv[1] in repos):
-    sys.stderr.write("Usage: " + sys.argv[0] + " <distro>\n")
-    sys.exit(1)
+def crawl(distro):
+    """
+    Navigate the `repos` tree and look for packages we need that match the
+    patterns given.
+    """
+    URL_TIMEOUT = 30
 
-distro = sys.argv[1]
+    kernel_urls = []
+    for repo in repos[distro]:
+        sys.stderr.write("Considering repo " + repo["root"] + "\n")
+        try:
+            root = urllib2.urlopen(repo["root"], timeout=URL_TIMEOUT).read()
+            versions = html.fromstring(root).xpath(repo["discovery_pattern"],
+                                                   namespaces={"regex": "http://exslt.org/regular-expressions"})
+            for version in versions:
+                sys.stderr.write("Considering version "+version+"\n")
+                for subdir in repo["subdirs"]:
+                    try:
+                        sys.stderr.write("Considering version " + version + " subdir " + subdir + "\n")
+                        source = repo["root"] + version + subdir
+                        page = urllib2.urlopen(source, timeout=URL_TIMEOUT).read()
+                        rpms = html.fromstring(page).xpath(repo["page_pattern"],
+                                                           namespaces={"regex": "http://exslt.org/regular-expressions"})
+                        if len(rpms) == 0:
+                            sys.stderr.write("WARN: Zero packages returned for version " + version + " subdir " + subdir + "\n")
+                        for rpm in rpms:
+                            sys.stderr.write("Considering package " + rpm + "\n")
+                            if "exclude_patterns" in repo and any(x in rpm for x in repo["exclude_patterns"]):
+                                continue
+                            else:
+                                sys.stderr.write("Adding package " + rpm + "\n")
+                                kernel_urls.append("{}{}".format(source, urllib2.unquote(rpm)))
+                    except urllib2.HTTPError as e:
+                        sys.stderr.write("WARN: Error for source: {}: {}\n".format(source, e))
 
-#
-# Navigate the `repos` tree and look for packages we need that match the
-# patterns given.
-#
-urls = set()
-for repo in repos[distro]:
-    try:
-        root = urllib2.urlopen(repo["root"],timeout=URL_TIMEOUT).read()
-        versions = html.fromstring(root).xpath(repo["discovery_pattern"], namespaces = {"regex": "http://exslt.org/regular-expressions"})
-        for version in versions:
-            sys.stderr.write("Considering version "+version+"\n")
-            for subdir in repo["subdirs"]:
-                try:
-                    sys.stderr.write("Considering version " + version + " subdir " + subdir + "\n")
-                    source = repo["root"] + version + subdir
-                    page = urllib2.urlopen(source,timeout=URL_TIMEOUT).read()
-                    rpms = html.fromstring(page).xpath(repo["page_pattern"], namespaces = {"regex": "http://exslt.org/regular-expressions"})
-                    if len(rpms) == 0:
-                        sys.stderr.write("WARN: Zero packages returned for version " + version + " subdir " + subdir + "\n")
-                    for rpm in rpms:
-                        sys.stderr.write("Considering package " + rpm + "\n")
-                        if "exclude_patterns" in repo and any(x in rpm for x in repo["exclude_patterns"]):
-                            continue
-                        else:
-                            sys.stderr.write("Adding package " + rpm + "\n")
-                            print source + str(urllib2.unquote(rpm))
-                except urllib2.HTTPError as e:
-                    if e.code == 404:
-                        sys.stderr.write("WARN: "+str(e)+"\n")
-    except Exception as e:
-        sys.stderr.write("ERROR: "+str(type(e))+str(e)+"\n")
-        traceback.print_exc()
-        sys.exit(1)
+        except Exception as e:
+            sys.stderr.write("ERROR: "+str(type(e))+str(e)+"\n")
+            traceback.print_exc()
+            sys.exit(1)
+
+    return kernel_urls
+
+
+def read_kernel_urls_from_stdin():
+    input_urls = []
+    for line in sys.stdin:
+        input_urls.append(line.strip())
+
+    return input_urls
+
+
+def sort_and_output(urls):
+    # For consistency with what was done before, sort URLs based on their alphabetical order
+    #  _after_ reversing each of them.
+    sorted_urls = sorted(urls, key=lambda s: s[::-1])
+    print "\n".join(sorted_urls)
+
+
+def handle_crawl(args):
+    crawled_urls = crawl(args.distro)
+    if not args.preserve_removed_urls:
+        sort_and_output(crawled_urls)
+        return
+
+    input_urls = read_kernel_urls_from_stdin()
+    if len(input_urls) == 0:
+        raise Exception("Preserve removed urls was selected, but we couldn't read any urls from stdin!")
+
+    removed_urls = [url for url in input_urls if url not in set(crawled_urls)]
+    urls_dict = {
+        "removed": removed_urls,
+        "crawled": crawled_urls,
+    }
+    print json.dumps(urls_dict)
+
+
+def handle_output_from_json(args):
+    urls_dict = json.loads(sys.stdin.read())
+    sort_and_output(urls_dict[args.mode])
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Kernel module crawler.")
+
+    subparsers = parser.add_subparsers()
+
+    parser_crawl = subparsers.add_parser("crawl", help="Crawl modules")
+    parser_crawl.add_argument("distro", choices=repos.keys(), help="The distro you want to crawl for.")
+    parser_crawl.add_argument("--preserve-removed-urls", action="store_true",
+                              help="Use this option to pass the old list of kernels via stdin, and get a JSON "
+                                   "with both new kernels and old kernels")
+    parser_crawl.set_defaults(func=handle_crawl)
+
+    parser_output_from_json = subparsers.add_parser("output-from-json",
+                                                    help="Output url files based on a stored JSON from a previous "
+                                                         "invocation of crawl.")
+    parser_output_from_json.add_argument(
+        "mode", choices=["crawled", "removed"],
+        help="Do you want to print the newly crawled files, or update the 'uncrawled' file?")
+    parser_output_from_json.set_defaults(func=handle_output_from_json)
+
+    args = parser.parse_args()
+    args.func(args)

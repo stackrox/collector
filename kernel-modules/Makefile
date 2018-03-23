@@ -18,16 +18,25 @@ clean:
 build-crawl-container: crawl/Dockerfile crawl/kernel-crawler.py
 	docker build -t kernel-crawler crawl/
 
+.PHONY: crawl-centos
+crawl-centos: build-crawl-container
+	docker run --rm -i kernel-crawler crawl CentOS --preserve-removed-urls < supported-kernels/centos.txt > centos_urls_tmp.json
+	docker run --rm -i kernel-crawler output-from-json crawled < centos_urls_tmp.json > supported-kernels/centos.txt
+	docker run --rm -i kernel-crawler output-from-json removed < centos_urls_tmp.json >> supported-kernels/centos-uncrawled.txt
+# The following sed removes multiple trailing newlines at the end of the file
+# (since the above line will append an extra newline if there are no new uncrawled kernels).
+	sed -e :a -e '/^\n*$$/{$$d;N;ba' -e '}' -i '' supported-kernels/centos-uncrawled.txt
+	rm centos_urls_tmp.json
+
 .PHONY: crawl
-crawl: build-crawl-container
-	docker run -i kernel-crawler CentOS > supported-kernels/centos.txt
-	docker run -i kernel-crawler CoreOS > supported-kernels/coreos.txt
-	docker run -i kernel-crawler Ubuntu > supported-kernels/ubuntu-standard.txt
-	docker run -i kernel-crawler Ubuntu-HWE > supported-kernels/ubuntu-hwe.txt
-	docker run -i kernel-crawler Ubuntu-AWS > supported-kernels/ubuntu-aws.txt
-	docker run -i kernel-crawler Ubuntu-Azure > supported-kernels/ubuntu-azure.txt
-	docker run -i kernel-crawler Ubuntu-GKE > supported-kernels/ubuntu-gke.txt
-	docker run -i kernel-crawler Ubuntu-GCP > supported-kernels/ubuntu-gcp.txt
+crawl: build-crawl-container crawl-centos
+	docker run --rm -i kernel-crawler crawl CoreOS > supported-kernels/coreos.txt
+	docker run --rm -i kernel-crawler crawl Ubuntu > supported-kernels/ubuntu-standard.txt
+	docker run --rm -i kernel-crawler crawl Ubuntu-HWE > supported-kernels/ubuntu-hwe.txt
+	docker run --rm -i kernel-crawler crawl Ubuntu-AWS > supported-kernels/ubuntu-aws.txt
+	docker run --rm -i kernel-crawler crawl Ubuntu-Azure > supported-kernels/ubuntu-azure.txt
+	docker run --rm -i kernel-crawler crawl Ubuntu-GKE > supported-kernels/ubuntu-gke.txt
+	docker run --rm -i kernel-crawler crawl Ubuntu-GCP > supported-kernels/ubuntu-gcp.txt
 
 .PHONY: build-centos-uncrawled
 build-centos-uncrawled:

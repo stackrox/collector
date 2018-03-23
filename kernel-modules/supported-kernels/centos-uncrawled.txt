@@ -184,3 +184,13 @@ http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.
 http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-4.4.96-1.el7.elrepo.x86_64.rpm
 http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.97-1.el7.elrepo.x86_64.rpm
 http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-4.4.97-1.el7.elrepo.x86_64.rpm
+http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.98-1.el7.elrepo.x86_64.rpm
+http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-4.4.98-1.el7.elrepo.x86_64.rpm
+http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.99-1.el7.elrepo.x86_64.rpm
+http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-4.4.99-1.el7.elrepo.x86_64.rpm
+http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.101-1.el7.elrepo.x86_64.rpm
+http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-4.4.101-1.el7.elrepo.x86_64.rpm
+http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.102-1.el7.elrepo.x86_64.rpm
+http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-4.4.102-1.el7.elrepo.x86_64.rpm
+http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.103-1.el7.elrepo.x86_64.rpm
+http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-4.4.103-1.el7.elrepo.x86_64.rpm
