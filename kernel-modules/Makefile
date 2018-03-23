@@ -13,7 +13,6 @@ all: image
 clean:
 	rm -rf container/kernel-modules
 	rm -rf sysdig
-	rm -rf packages
 
 .PHONY: build-crawl-container
 build-crawl-container: crawl/Dockerfile crawl/kernel-crawler.py
@@ -127,3 +126,7 @@ upload-package-cache:
 download-package-cache:
 	mkdir -p ./packages
 	gsutil -m rsync -r ${PKG_GCS_PATH}/ ./packages
+
+.PHONY: delete-package-cache
+delete-package-cache:
+	rm -rf ./packages
