@@ -29,8 +29,11 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateSignalFormatter(const std::string& format_type, sinsp* inspector, const std::string& format_string, int field_trunc_len) {
+SignalFormatterFactory::SignalFormatterFactory(sinsp* inspector) {
+  extractor_.Init(inspector);
+}
 
+std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateSignalFormatter(const std::string& format_type, sinsp* inspector, const std::string& format_string, int field_trunc_len) {
   if (format_type == "file_summary") {
     return CreateFileSummaryFormatter();
   }

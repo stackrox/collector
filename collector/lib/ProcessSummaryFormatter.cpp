@@ -23,24 +23,13 @@ You should have received a copy of the GNU General Public License along with thi
 #include "ProcessSummaryFormatter.h"
 
 #include "Logging.h"
-#include "SysdigEventWrapper.h"
-#include "proto/data/process_summary.pb.h"
+#include "SysdigEventExtractor.h"
 
 namespace collector {
 
 bool ProcessSummaryFormatter::FormatSignal(SafeBuffer* buf, sinsp_evt* event) {
-  SysdigEventWrapper event_wrapper = SysdigEventWrapper(event);
-  data::ProcessSummary process_summary;
-  data::ProcessSummary::Container container;
-
-  container.set_id(event_wrapper.GetContainerID());
-  container.set_privileged(true);
-
-  process_summary.set_allocated_container(&container);
-  if (!process_summary.SerializeToArray(buf->buffer(), buf->size())) {
-    CLOG(ERROR) << "Failed to format process summary";
-  }
-  return true;
+  CLOG(ERROR) << "Process summarizer not yet implemented";
+  return false;
 }
 
 }  // namespace collector

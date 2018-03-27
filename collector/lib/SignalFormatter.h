@@ -24,9 +24,8 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _SUMMARY_FORMATTER_FACTORY_H_
 #define _SUMMARY_FORMATTER_FACTORY_H_
 
-#include "libsinsp/sinsp.h"
-
 #include "SafeBuffer.h"
+#include "SysdigEventExtractor.h"
 
 namespace collector {
 
@@ -37,24 +36,27 @@ class SignalFormatter {
 };
 
 class SignalFormatterFactory {
- public:
-  std::unique_ptr<SignalFormatter> CreateSignalFormatter(const std::string& output_spec, sinsp* inspector, const std::string& format_string, int field_trunc_len = 0);
+  public:
+    SignalFormatterFactory(sinsp* inspector);
+    std::unique_ptr<SignalFormatter> CreateSignalFormatter(const std::string& output_spec, sinsp* inspector, const std::string& format_string, int field_trunc_len = 0);
 
- private:
-  // methods to convert from sysdig event to summaries
-  std::unique_ptr<SignalFormatter> CreateFileSummaryFormatter();
-  std::unique_ptr<SignalFormatter> CreateProcessSummaryFormatter();
-  std::unique_ptr<SignalFormatter> CreateNetworkSummaryFormatter();
+  private:
+    // methods to convert from sysdig event to summaries
+    std::unique_ptr<SignalFormatter> CreateFileSummaryFormatter();
+    std::unique_ptr<SignalFormatter> CreateProcessSummaryFormatter();
+    std::unique_ptr<SignalFormatter> CreateNetworkSummaryFormatter();
 
-  // methods to convert from sysdig event to signal proto
-  std::unique_ptr<SignalFormatter> CreateFileSignalFormatter();
-  std::unique_ptr<SignalFormatter> CreateProcessSignalFormatter();
-  std::unique_ptr<SignalFormatter> CreateNetworkSignalFormatter();
+    // methods to convert from sysdig event to signal proto
+    std::unique_ptr<SignalFormatter> CreateFileSignalFormatter();
+    std::unique_ptr<SignalFormatter> CreateProcessSignalFormatter();
+    std::unique_ptr<SignalFormatter> CreateNetworkSignalFormatter();
 
-  // methods to support legacy formatting
-  std::unique_ptr<SignalFormatter> CreateFileLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len);
-  std::unique_ptr<SignalFormatter> CreateProcessLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len);
-  std::unique_ptr<SignalFormatter> CreateNetworkLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len);
+    // methods to support legacy formatting
+    std::unique_ptr<SignalFormatter> CreateFileLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len);
+    std::unique_ptr<SignalFormatter> CreateProcessLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len);
+    std::unique_ptr<SignalFormatter> CreateNetworkLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len);
+
+    SysdigEventExtractor extractor_;
 };
 
 }  // namespace collector

@@ -25,15 +25,15 @@ You should have received a copy of the GNU General Public License along with thi
 #define _PROCESS_SUMMARY_FORMATTER_H_
 
 #include "SignalFormatter.h"
+
 #include "SafeBuffer.h"
 #include "EventClassifier.h"
+#include "proto/data/process_summary.pb.h"
 
 namespace collector {
 
 class ProcessSummaryFormatter : public SignalFormatter {
  public:
-   ProcessSummaryFormatter() {}
-
    bool FormatSignal(SafeBuffer* buf, sinsp_evt* event);
 };
 
