@@ -31,9 +31,9 @@ You should have received a copy of the GNU General Public License along with thi
 namespace collector {
 
 class SignalWriter {
-  public:
-    virtual bool WriteSignal(const SafeBuffer& msg, const SafeBuffer& key) = 0;
-    virtual ~SignalWriter() = default;
+ public:
+  virtual bool WriteSignal(const SafeBuffer& msg, const SafeBuffer& key) = 0;
+  virtual ~SignalWriter() = default;
 };
 
 class SignalWriterFactory {

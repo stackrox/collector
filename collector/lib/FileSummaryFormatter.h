@@ -32,9 +32,8 @@ namespace collector {
 
 class FileSummaryFormatter : public SignalFormatter {
  public:
-   FileSummaryFormatter() {}
-
-   bool FormatSignal(SafeBuffer* buf, sinsp_evt* event);
+  FileSummaryFormatter() {}
+  bool FormatSignal(SafeBuffer* buf, sinsp_evt* event);
 };
 
 }  // namespace collector

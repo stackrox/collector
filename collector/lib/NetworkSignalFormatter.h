@@ -21,41 +21,22 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef _SUMMARY_FORMATTER_FACTORY_H_
-#define _SUMMARY_FORMATTER_FACTORY_H_
+#ifndef _NETWORK_SIGNAL_FORMATTER_H_
+#define _NETWORK_SIGNAL_FORMATTER_H_
 
+#include "SignalFormatter.h"
 #include "SafeBuffer.h"
-#include "SysdigEventExtractor.h"
+#include "EventClassifier.h"
 
 namespace collector {
 
-class SignalFormatter {
+class NetworkSignalFormatter : public SignalFormatter {
  public:
-  virtual bool FormatSignal(SafeBuffer* buf, sinsp_evt* event) = 0;
-  virtual ~SignalFormatter() = default;
-};
-
-class SignalFormatterFactory {
- public:
-  SignalFormatterFactory(sinsp* inspector);
-  std::unique_ptr<SignalFormatter> CreateSignalFormatter(const std::string& output_spec, sinsp* inspector, const std::string& format_string, int field_trunc_len = 0);
-
- private:
-  // methods to convert from sysdig event to summaries
-  std::unique_ptr<SignalFormatter> CreateFileSummaryFormatter();
-  std::unique_ptr<SignalFormatter> CreateProcessSummaryFormatter();
-
-  // methods to convert from sysdig event to signal proto
-  std::unique_ptr<SignalFormatter> CreateNetworkSignalFormatter();
-
-  // methods to support legacy formatting
-  std::unique_ptr<SignalFormatter> CreateFileLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len);
-  std::unique_ptr<SignalFormatter> CreateProcessLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len);
-  std::unique_ptr<SignalFormatter> CreateNetworkLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len);
-
-  SysdigEventExtractor extractor_;
+  NetworkSignalFormatter() {}
+  bool FormatSignal(SafeBuffer* buf, sinsp_evt* event);
 };
 
 }  // namespace collector
 
-#endif  // _SUMMARY_FORMATTER_FACTORY_H_
+#endif  // _NETWORK_SIGNAL_FORMATTER_H_
+

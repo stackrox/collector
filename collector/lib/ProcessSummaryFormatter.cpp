@@ -23,13 +23,12 @@ You should have received a copy of the GNU General Public License along with thi
 #include "ProcessSummaryFormatter.h"
 
 #include "Logging.h"
-#include "SysdigEventExtractor.h"
 
 namespace collector {
 
 bool ProcessSummaryFormatter::FormatSignal(SafeBuffer* buf, sinsp_evt* event) {
-  CLOG(ERROR) << "Process summarizer not yet implemented";
-  return false;
+  CLOG_THROTTLED(ERROR, std::chrono::seconds(30)) << "Not outputting process summaries, no implemention";
+  return true;
 }
 
 }  // namespace collector

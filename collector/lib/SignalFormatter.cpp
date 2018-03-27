@@ -25,6 +25,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "CollectorException.h"
 #include "FileSummaryFormatter.h"
 #include "ProcessSummaryFormatter.h"
+#include "NetworkSignalFormatter.h"
 #include "EventFormatter.h"
 
 namespace collector {
@@ -40,18 +41,9 @@ std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateSignalFormatter(c
   if (format_type == "process_summary") {
     return CreateProcessSummaryFormatter();
   }
-//  if (format_type == "network_summary") {
-//    return CreateNetworkSummaryFormatter();
-//  }
-//  if (format_type == "file_proto") {
-//    return CreateFileSignalFormatter();
-//  }
-//  if (format_type == "process_proto") {
-//    return CreateProcessSignalFormatter();
-//  }
-//  if (format_type == "network_proto") {
-//    return CreateNetworkSignalFormatter();
-//  }
+  if (format_type == "network_signal") {
+    return CreateNetworkSignalFormatter();
+  }
   if (format_type == "file_legacy") {
     return CreateFileLegacyFormatter(inspector, format_string, field_trunc_len);
   }
@@ -71,22 +63,10 @@ std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateFileSummaryFormat
 std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateProcessSummaryFormatter() {
   return std::unique_ptr<SignalFormatter>(new ProcessSummaryFormatter());
 }
-//
-//std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateNetworkSummaryFormatter() {
-//  return std::unique_ptr<SignalFormatter>(new NetworkSummaryFormatter());
-//}
-//
-//std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateFileSignalFormatter() {
-//  return std::unique_ptr<SignalFormatter>(new FileSignalFormatter());
-//}
-//
-//std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateProcessSignalFormatter() {
-//  return std::unique_ptr<SignalFormatter>(new ProcessSignalFormatter());
-//}
-//
-//std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateNetworkSignalFormatter() {
-//  return std::unique_ptr<SignalFormatter>(new NetworkSignalFormatter());
-//}
+
+std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateNetworkSignalFormatter() {
+  return std::unique_ptr<SignalFormatter>(new NetworkSignalFormatter());
+}
 
 std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateFileLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len)  {
   EventFormatter *f = new EventFormatter(false);

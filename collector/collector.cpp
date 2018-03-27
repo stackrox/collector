@@ -479,6 +479,8 @@ main(int argc, char **argv)
     CLOG(INFO) << "Output specs set to: network='" << networkSignalOutput << "', process='"
                << processSignalOutput << "', file='" << fileSignalOutput << "'";
     CLOG(INFO) << "Chisels topic set to: " << chiselsTopic;
+    CLOG(INFO) << "Format specs set to: network='" << networkSignalFormat << "', process='"
+               << processSignalFormat << "', file='" << fileSignalFormat << "'";
 
     std::string chiselB64 = args->Chisel();
     g_chiselContents = base64_decode(chiselB64);

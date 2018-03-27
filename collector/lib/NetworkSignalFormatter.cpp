@@ -20,23 +20,15 @@ You should have received a copy of the GNU General Public License along with thi
 * do not wish to do so, delete this exception statement from your
 * version.
 */
+#include "NetworkSignalFormatter.h"
 
-#ifndef _PROCESS_SUMMARY_FORMATTER_H_
-#define _PROCESS_SUMMARY_FORMATTER_H_
-
-#include "SignalFormatter.h"
-
-#include "SafeBuffer.h"
-#include "EventClassifier.h"
-#include "proto/data/process_summary.pb.h"
+#include "Logging.h"
 
 namespace collector {
 
-class ProcessSummaryFormatter : public SignalFormatter {
- public:
-  bool FormatSignal(SafeBuffer* buf, sinsp_evt* event);
-};
+bool NetworkSignalFormatter::FormatSignal(SafeBuffer* buf, sinsp_evt* event) {
+  CLOG_THROTTLED(ERROR, std::chrono::seconds(30)) << "Not outputting network signals, no implemention";
+  return true;
+}
 
 }  // namespace collector
-
-#endif  // _PROCESS_SUMMARY_FORMATTER_H_

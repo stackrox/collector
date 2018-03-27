@@ -22,10 +22,12 @@ You should have received a copy of the GNU General Public License along with thi
 */
 
 #include "FileSummaryFormatter.h"
+#include "Logging.h"
 
 namespace collector {
 
 bool FileSummaryFormatter::FormatSignal(SafeBuffer* buf, sinsp_evt* event) {
+  CLOG_THROTTLED(ERROR, std::chrono::seconds(30)) << "Not outputting file summaries, no implemention";
   return true;
 }
 
