@@ -286,6 +286,8 @@ class SINSP_PUBLIC sinsp_filter_check_iface {
 
   virtual char* tostring(sinsp_evt* event) = 0;
 
+  virtual uint8_t* extract(sinsp_evt* evt, OUT uint32_t* len, bool sanitize_strings = true) = 0;
+
   static sinsp_filter_check_iface* get(const std::string& field_name, sinsp* inspector);
 };
 
