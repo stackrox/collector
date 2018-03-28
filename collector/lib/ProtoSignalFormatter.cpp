@@ -21,15 +21,24 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#include "ProcessSummaryFormatter.h"
+#include "ProtoSignalFormatter.h"
 
-#include "Logging.h"
+#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 
 namespace collector {
 
-const data::ProcessSummary* ProcessSummaryFormatter::ToProtoMessage(sinsp_evt* event) {
-  CLOG_THROTTLED(ERROR, std::chrono::seconds(30)) << "Not outputting process summaries, no implemention";
-  return nullptr;
+bool ProtoSignalFormatter::FormatSignal(SafeBuffer* buf, sinsp_evt* event) {
+  const google::protobuf::MessageLite* msg = ToProtoMessage(event);
+  if (!msg) return false;
+
+  int bufsize;
+  char* outbuf = buf->Claim(&bufsize);
+  google::protobuf::io::ArrayOutputStream output_stream(outbuf, bufsize);
+  if (!msg->SerializeToZeroCopyStream(&output_stream)) {
+    return false;
+  }
+  buf->Advance(output_stream.ByteCount());
+  return true;
 }
 
 }  // namespace collector

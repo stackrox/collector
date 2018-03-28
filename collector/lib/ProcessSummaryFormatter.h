@@ -24,17 +24,15 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _PROCESS_SUMMARY_FORMATTER_H_
 #define _PROCESS_SUMMARY_FORMATTER_H_
 
-#include "SignalFormatter.h"
+#include "ProtoSignalFormatter.h"
 
-#include "SafeBuffer.h"
-#include "EventClassifier.h"
 #include "proto/data/process_summary.pb.h"
 
 namespace collector {
 
-class ProcessSummaryFormatter : public SignalFormatter {
- public:
-  bool FormatSignal(SafeBuffer* buf, sinsp_evt* event);
+class ProcessSummaryFormatter : public ProtoSignalFormatter {
+ protected:
+  const data::ProcessSummary* ToProtoMessage(sinsp_evt* event) override;
 };
 
 }  // namespace collector

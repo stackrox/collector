@@ -24,16 +24,15 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _FILE_SUMMARY_FORMATTER_H_
 #define _FILE_SUMMARY_FORMATTER_H_
 
-#include "SignalFormatter.h"
-#include "SafeBuffer.h"
-#include "EventClassifier.h"
+#include "ProtoSignalFormatter.h"
+
+#include "proto/data/file_summary.pb.h"
 
 namespace collector {
 
-class FileSummaryFormatter : public SignalFormatter {
- public:
-  FileSummaryFormatter() {}
-  bool FormatSignal(SafeBuffer* buf, sinsp_evt* event);
+class FileSummaryFormatter : public ProtoSignalFormatter {
+ protected:
+  const data::FileSummary* ToProtoMessage(sinsp_evt* event);
 };
 
 }  // namespace collector

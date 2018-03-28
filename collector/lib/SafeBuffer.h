@@ -216,6 +216,22 @@ class SafeBuffer {
     return std::string(m_buffer, size());
   }
 
+  char* Claim(int* size) {
+    *size = remaining();
+    return m_currp;
+  }
+
+  bool Advance(int bytes) {
+    bool notrunc = true;
+    int nRemaining = remaining();
+    if (nRemaining < bytes) {
+      bytes = nRemaining;
+      notrunc = false;
+    }
+    m_currp += bytes;
+    return notrunc;
+  }
+
  private:
   char* m_buffer;
   char* m_currp;

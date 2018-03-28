@@ -117,7 +117,9 @@ SignalType SysdigService::GetNext(SafeBuffer* message_buffer, SafeBuffer* key_bu
   SignalType signal_type = classifier_.Classify(key_buffer, event);
   if (signal_type == SIGNAL_TYPE_UNKNOWN) return SIGNAL_TYPE_UNKNOWN;
   message_buffer->clear();
-  signal_formatter_[signal_type]->FormatSignal(message_buffer, event);
+  if (!signal_formatter_[signal_type]->FormatSignal(message_buffer, event)) {
+    return SIGNAL_TYPE_UNKNOWN;
+  }
   return signal_type;
 }
 
