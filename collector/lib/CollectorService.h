@@ -21,64 +21,64 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef __KAFKACLIENT_H
-#define __KAFKACLIENT_H
+#ifndef _COLLECTOR_SERVICE_H_
+#define _COLLECTOR_SERVICE_H_
 
-// KafkaClient.h
-// This class defines our Kafka abstraction
-
-#include <memory>
-#include <string>
-
-extern "C" {
+#include <json/json.h>
 #include "librdkafka/rdkafka.h"
-}
+
+#include "ChiselConsumer.h"
+#include "GetNetworkHealthStatus.h"
 
 namespace collector {
 
-class KafkaException : public std::exception {
- public:
-  KafkaException(std::string message) : message_(std::move(message)) {}
-  const char* what() const noexcept override { return message_.c_str(); }
+struct CollectorConfig {
+  bool useChiselCache = true;
+  bool useKafka = true;
+  const rd_kafka_conf_t* kafkaConfigTemplate = nullptr;
+  int snapLen = 2048;
 
- private:
-  std::string message_;
+  std::string hostname;
+  std::string chisel;
+
+  std::string brokerList;
+  std::string chiselsTopic;
+
+  std::string format;
+  std::string networkSignalOutput;
+  std::string processSignalOutput;
+  std::string fileSignalOutput;
+  std::vector<std::string> processSyscalls;
+  std::string fileSignalFormat;
+  std::string processSignalFormat;
+  std::string networkSignalFormat;
 };
 
-class KafkaClient {
+class CollectorService {
  public:
-  KafkaClient(const rd_kafka_conf_t* conf_template);
-  ~KafkaClient();
+  enum ControlValue {
+    RUN = 0,  // Keep running
+    INTERRUPT_SYSDIG,  // Stop running sysdig, but resume collector operation (e.g., for chisel update)
+    STOP_COLLECTOR,  // Stop the collector (e.g., SIGINT or SIGTERM received).
+  };
 
-  class TopicHandle;
+  CollectorService(const CollectorConfig& config, std::atomic<ControlValue>* control, const std::atomic<int>* signum);
+
+  void RunForever();
 
  private:
-  // method to create a topic
-  rd_kafka_topic_t* createTopic(const char* topic);
+  void OnChiselReceived(const std::string& chisel);
 
-  // method to send to a specific topic
-  bool sendMessage(rd_kafka_topic_t* kafkaTopic, const void* msg, int msgLen, const void* key, int keyLen);
+  CollectorConfig config_;
 
-  rd_kafka_t* kafka_;
-  rd_kafka_topic_t* networkTopicHandle_ = nullptr;
-  rd_kafka_topic_t* processTopicHandle_ = nullptr;
-  rd_kafka_topic_t* fileTopicHandle_ = nullptr;
+  std::string chisel_;
+  bool update_chisel_ = false;
+  std::mutex chisel_mutex_;
 
-  uint64_t send_count_ = 0;
-};
-
-class KafkaClient::TopicHandle {
- public:
-  TopicHandle(const std::string& topic, std::shared_ptr<KafkaClient> kafka);
-  ~TopicHandle();
-
-  bool Send(const void* msg, int msg_len, const void* key, int key_len);
-
- private:
-  std::shared_ptr<KafkaClient> client_;
-  rd_kafka_topic_t* topic_;
+  std::atomic<ControlValue>* control_;
+  const std::atomic<int>& signum_;
 };
 
 }  // namespace collector
 
-#endif // __KAFKACLIENT_H
+#endif  // _COLLECTOR_SERVICE_H_

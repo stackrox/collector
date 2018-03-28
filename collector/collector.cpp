@@ -21,6 +21,7 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
+#include <atomic>
 #include <fstream>
 #include <iostream>
 #include <chrono>
@@ -30,10 +31,6 @@ You should have received a copy of the GNU General Public License along with thi
 #include <string>
 #include <sys/wait.h>
 #include <thread>
-
-#include "civetweb/CivetServer.h"
-#include "prometheus/exposer.h"
-#include "prometheus/registry.h"
 
 extern "C" {
 #include <assert.h>
@@ -51,6 +48,7 @@ extern "C" {
 
 #include "ChiselConsumer.h"
 #include "CollectorArgs.h"
+#include "CollectorService.h"
 #include "EventNames.h"
 #include "GetNetworkHealthStatus.h"
 #include "GetStatus.h"
@@ -63,45 +61,32 @@ extern "C" {
 #define finit_module(fd, opts, flags) syscall(__NR_finit_module, fd, opts, flags)
 #define delete_module(name, flags) syscall(__NR_delete_module, name, flags)
 
-// Set g_terminate to terminate the entire program.
-static bool g_terminate;
-// Set g_interrupt_sysdig to reload the sysdig configuration, or to terminate if g_terminate is also set.
-static std::atomic_bool g_interrupt_sysdig;
-// Store the current copy of the chisel.
-static std::string g_chiselContents;
-
 using namespace collector;
 
-static void
-signal_callback(int signal)
-{
-    CLOG(WARNING) << "Caught signal " << signal;
-    g_terminate = true;
-    g_interrupt_sysdig.store(true);
+static std::atomic<CollectorService::ControlValue> g_control(CollectorService::RUN);
+static std::atomic<int> g_signum(0);
+
+static void ShutdownHandler(int signum) {
+  // Only set the control variable; the collector service will take care of the rest.
+  g_signum.store(signum);
+  g_control.store(CollectorService::STOP_COLLECTOR);
 }
 
+static void AbortHandler(int signum) {
+  // Write a stacktrace to stderr
+  void* buffer[32];
+  size_t size = backtrace(buffer, 32);
+  backtrace_symbols_fd(buffer, size, STDERR_FILENO);
 
-static void
-sigsegv_handler(int signal) {
-    void* array[32];
-    size_t size;
-    char** strings;
-    unsigned int i = 0;
+  // Write a message to stderr using only reentrant functions.
+  char message_buffer[256];
+  int num_bytes = snprintf(message_buffer, sizeof(message_buffer), "Caught signal %d (%s): %s\n",
+                           signum, SignalName(signum), strsignal(signum));
+  write(STDERR_FILENO, message_buffer, num_bytes);
 
-    size = backtrace(array, 32);
-
-    strings = backtrace_symbols(array, size);
-    FILE* fp = fopen("/host/dev/collector-stacktrace-for-ya.txt", "w");
-    fprintf(stdout, "%s\n", strsignal(signal));
-    fprintf(fp, "%s\n", strsignal(signal));
-    for (i = 0; i < size; i++) {
-        fprintf(fp, "  %s\n", strings[i]);
-        fprintf(stdout, "  %s\n", strings[i]);
-    }
-    fflush(fp);
-    fclose(fp);
-
-    exit(EXIT_FAILURE);
+  // Re-raise the signal (this time routing it to the default handler) to make sure we get the correct exit code.
+  signal(signum, SIG_DFL);
+  raise(signum);
 }
 
 std::string GetHostPath(const std::string& file) {
@@ -149,7 +134,7 @@ int InsertModule(int fd, const std::unordered_map<std::string, std::string>& arg
 // Method to insert the kernel module. The options to the module are computed
 // from the collector configuration. Specifically, the syscalls that we should
 // extract
-void insertModule(Json::Value collectorConfig) {
+void insertModule(const Json::Value& syscall_list) {
     std::unordered_map<std::string, std::string> module_args;
 
     std::string& syscall_ids = module_args["s_syscallIds"];
@@ -157,9 +142,11 @@ void insertModule(Json::Value collectorConfig) {
     // These are stashed into a string that will get passed to init_module
     // to insert the kernel module
     const EventNames& event_names = EventNames::GetInstance();
-    for (auto itr: collectorConfig["syscalls"]) {
-        string syscall = itr.asString();
-        for (ppm_event_type id : event_names.GetEventIDs(syscall)) {
+    if (!syscall_list.isArray()) {
+      CLOG(FATAL) << "Syscall list JSON is not an array: " << syscall_list.toStyledString();
+    }
+    for (const auto& syscall_json : syscall_list) {
+        for (ppm_event_type id : event_names.GetEventIDs(syscall_json.asString())) {
             syscall_ids += std::to_string(id) + ",";
         }
     }
@@ -206,48 +193,6 @@ static inline bool is_base64(unsigned char c) {
     return (isalnum(c) || (c == '+') || (c == '/'));
 }
 
-std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_len) {
-    std::string ret;
-    int i = 0;
-    int j = 0;
-    unsigned char char_array_3[3];
-    unsigned char char_array_4[4];
-
-    while (in_len--) {
-        char_array_3[i++] = *(bytes_to_encode++);
-        if (i == 3) {
-            char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
-            char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
-            char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
-            char_array_4[3] = char_array_3[2] & 0x3f;
-
-            for(i = 0; (i <4) ; i++)
-                ret += base64_chars[char_array_4[i]];
-            i = 0;
-        }
-    }
-
-    if (i)
-    {
-        for(j = i; j < 3; j++)
-            char_array_3[j] = '\0';
-
-        char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
-        char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
-        char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
-        char_array_4[3] = char_array_3[2] & 0x3f;
-
-        for (j = 0; (j < i + 1); j++)
-            ret += base64_chars[char_array_4[j]];
-
-        while((i++ < 3))
-            ret += '=';
-
-    }
-
-    return ret;
-}
-
 std::string base64_decode(std::string const& encoded_string) {
     int in_len = encoded_string.size();
     int i = 0;
@@ -289,30 +234,6 @@ std::string base64_decode(std::string const& encoded_string) {
     return ret;
 }
 
-void
-writeChisel(std::string chiselName, std::string chiselContents) {
-    std::ofstream out(chiselName.c_str());
-    out << chiselContents;
-    out.close();
-}
-
-void
-registerSignalHandlers() {
-    // Register signal handlers only after sysdig initialization, since sysdig also registers for
-    // these signals, which prevents exiting when SIGTERM is received.
-    signal(SIGINT, signal_callback);
-    signal(SIGTERM, signal_callback);
-    signal(SIGSEGV, sigsegv_handler);
-    signal(SIGABRT, sigsegv_handler);
-}
-
-void
-handleNewChisel(std::string newChisel) {
-    CLOG(INFO) << "Processing new chisel.";
-    g_chiselContents = newChisel;
-    g_interrupt_sysdig.store(true);
-}
-
 std::string GetHostname() {
     std::string hostname_file(GetHostPath("/etc/hostname"));
     std::ifstream is(hostname_file);
@@ -325,104 +246,35 @@ std::string GetHostname() {
     return hostname;
 }
 
-void
-startChiselConsumer(std::string initialChisel, bool *g_terminate, std::string topic, std::string hostname, std::string brokers) {
-  ChiselConsumer chiselConsumer(initialChisel, g_terminate);
-  chiselConsumer.setCallback(handleNewChisel);
-  chiselConsumer.runForever(brokers, topic, hostname);
+void OnKafkaError(rd_kafka_t* rk, int err, const char* reason, void* opaque) {
+  CLOG(ERROR) << "Kafka error for " << rd_kafka_name(rk) << ": "
+              << rd_kafka_err2str(static_cast<rd_kafka_resp_err_t>(err)) << " (" << reason << ")";
 }
 
-void
-startChild(const CollectorConfig& config) {
-    insertModule(config.collectorConfig);
+int main(int argc, char **argv) {
+  if (!g_control.is_lock_free()) {
+    CLOG(FATAL) << "Could not create a lock-free control variable!";
+  }
 
-    // Start monitoring services.
-    // Some of these variables must remain in scope, so
-    // be cautious if decomposing to a separate function.
-    const char *options[] = { "listening_ports", "8080", 0};
-    CivetServer server(options);
-
-    SysdigService sysdig;
-    GetStatus getStatus(GetHostname(), &sysdig);
-
-    std::shared_ptr<prometheus::Registry> registry = std::make_shared<prometheus::Registry>();
-
-    GetNetworkHealthStatus getNetworkHealthStatus(config.brokerList, registry);
-
-    server.addHandler("/ready", getStatus);
-    server.addHandler("/networkHealth", getNetworkHealthStatus);
-    LogLevel setLogLevel;
-    server.addHandler("/loglevel", setLogLevel);
-    // TODO(cg): Can we expose chisel contents here?
-
-    // TODO(cg): Implement a way to not have these disappear after child restart.
-    prometheus::Exposer exposer("9090");
-    exposer.RegisterCollectable(registry);
-
-    CLOG(INFO) << "Initializing signal reader...";
-    // write out chisel file from incoming chisel
-    writeChisel(config.chiselName, g_chiselContents);
-    CLOG(INFO) << config.chiselName << " contents set to: " << g_chiselContents;
-
-    sysdig.Init(config);
-
-    if (!getNetworkHealthStatus.start()) {
-        CLOG(FATAL) << "Unable to start network health status";
-    }
-
-    CollectorStatsExporter exporter(registry, &sysdig);
-    if (!exporter.start()) {
-        CLOG(FATAL) << "Unable to start sysdig stats exporter";
-    }
-
-  #ifndef COLLECTOR_CORE
-    registerSignalHandlers();
-  #endif /* COLLECTOR_CORE */
-
-    CLOG(INFO) << "Starting signal reader...";
-    sysdig.RunForever(g_interrupt_sysdig);
-    CLOG(INFO) << "Interrupted signal reader; cleaning up...";
-    exporter.stop();
-    server.close();
-    getNetworkHealthStatus.stop();
-    sysdig.CleanUp();
-    CLOG(INFO) << "Cleaned up signal reader; terminating...";
-
-    exit(EXIT_SUCCESS);
-}
-
-int
-main(int argc, char **argv)
-{
-    using std::string;
-    using std::signal;
-
-    collector::logging::SetGlobalLogPrefix("[Parent] ");
-
-    CollectorArgs *args = CollectorArgs::getInstance();
-    int exitCode = 0;
-    if (!args->parse(argc, argv, exitCode)) {
-        if (!args->Message().empty()) {
-            CLOG(FATAL) << args->Message();
-        }
-        CLOG(FATAL) << "Error parsing arguments";
-    }
+  CollectorArgs *args = CollectorArgs::getInstance();
+  int exitCode = 0;
+  if (!args->parse(argc, argv, exitCode)) {
+      if (!args->Message().empty()) {
+          CLOG(FATAL) << args->Message();
+      }
+      CLOG(FATAL) << "Error parsing arguments";
+  }
 
 #ifdef COLLECTOR_CORE
-    struct rlimit limit;
-    limit.rlim_cur = RLIM_INFINITY;
-    limit.rlim_max = RLIM_INFINITY;
-    if (setrlimit(RLIMIT_CORE, &limit) != 0) {
-        CLOG(FATAL) << "setrlimit() failed: " << strerror(errno);
-    }
+  struct rlimit limit;
+  limit.rlim_cur = RLIM_INFINITY;
+  limit.rlim_max = RLIM_INFINITY;
+  if (setrlimit(RLIMIT_CORE, &limit) != 0) {
+    CLOG(ERROR) << "setrlimit() failed: " << StrError();
+  }
 #endif
 
-    const string chiselName = "default.chisel.lua";
-
-    CLOG(INFO) << "Starting sysdig with the following parameters: chiselName="
-         << chiselName
-         << ", brokerList="
-         << args->BrokerList();
+  CLOG(INFO) << "Starting collector with the following parameters: brokerList=" << args->BrokerList();
 
     // insert the kernel module with options from the configuration
     Json::Value collectorConfig = args->CollectorConfig();
@@ -467,14 +319,12 @@ main(int argc, char **argv)
     }
 
     // Iterate over the process syscalls
-    std::string processSyscalls;
-    for (auto itr: collectorConfig["process_syscalls"]) {
-        if (!processSyscalls.empty()) {
-            processSyscalls += ",";
-	    }
-
-        processSyscalls += itr.asString();
+    std::vector<std::string> process_syscalls;
+    for (auto itr : collectorConfig["process_syscalls"]) {
+        process_syscalls.push_back(itr.asString());
     }
+
+    insertModule(collectorConfig["syscalls"]);
 
     CLOG(INFO) << "Output specs set to: network='" << networkSignalOutput << "', process='"
                << processSignalOutput << "', file='" << fileSignalOutput << "'";
@@ -483,13 +333,7 @@ main(int argc, char **argv)
                << processSignalFormat << "', file='" << fileSignalFormat << "'";
 
     std::string chiselB64 = args->Chisel();
-    g_chiselContents = base64_decode(chiselB64);
-
-    // Handle updates to the chisel, which can be sent to us on Kafka.
-    if (useKafka) {
-        std::thread chiselThread(startChiselConsumer, g_chiselContents, &g_terminate, chiselsTopic, GetHostname(), args->BrokerList());
-        chiselThread.detach();
-    }
+    std::string chisel = base64_decode(chiselB64);
 
     // Extract configuration options
     bool useChiselCache = collectorConfig["useChiselCache"].asBool();
@@ -501,64 +345,54 @@ main(int argc, char **argv)
     }
     CLOG(INFO) << "signalBufferSize=" << snapLen;
 
+    rd_kafka_conf_t* conf_template = nullptr;
+
+    if (useKafka) {
+        conf_template = rd_kafka_conf_new();
+        char errstr[256];
+        rd_kafka_conf_res_t res = rd_kafka_conf_set(conf_template, "metadata.broker.list", args->BrokerList().c_str(),
+                                                    errstr, sizeof(errstr));
+        if (res != RD_KAFKA_CONF_OK) {
+            CLOG(FATAL) << "Failed to set brokers in Kafka config: " << errstr;
+        }
+        rd_kafka_conf_set_error_cb(conf_template, OnKafkaError);
+    }
+
+
     CollectorConfig config;
-    config.collectorConfig = collectorConfig;
+    config.hostname = GetHostname();
     config.useKafka = useKafka;
+    config.kafkaConfigTemplate = conf_template;
+    config.chiselsTopic = chiselsTopic;
     config.snapLen = snapLen;
     config.useChiselCache = useChiselCache;
-    config.chiselName = chiselName;
+    config.chisel = chisel;
     config.brokerList = args->BrokerList();
     config.format = format;
     config.networkSignalOutput = networkSignalOutput;
     config.processSignalOutput = processSignalOutput;
     config.fileSignalOutput = fileSignalOutput;
-    config.processSyscalls = processSyscalls;
+    config.processSyscalls = process_syscalls;
     config.networkSignalFormat = networkSignalFormat;
     config.processSignalFormat = processSignalFormat;
     config.fileSignalFormat = fileSignalFormat;
 
-    for (;!g_terminate;) {
-        int pid = fork();
-        if (pid < 0) {
-            CLOG(FATAL) << "Failed to fork.";
-        } else if (pid == 0) {
-            collector::logging::SetGlobalLogPrefix("[Child]  ");
-            CLOG(INFO) << "Signal reader started.";
-            startChild(config);
-        } else {
-            CLOG(INFO) << "Monitoring child process " << pid;
-            for (;;) {
-                if (g_interrupt_sysdig.load()) {
-                    bool killed = false;
-                    CLOG(INFO) << "Sending SIGTERM to " << pid;
-                    kill(pid, SIGTERM);
-                    for (int i = 0; i < 10; i++) {
-                        std::this_thread::sleep_for(std::chrono::seconds(1));
-                        CLOG(INFO) << "Checking if process has stopped after SIGTERM (" << pid << ")";
-                        pid_t killed_pid = waitpid(pid, NULL, WNOHANG);
-                        if (killed_pid == pid) {
-                            CLOG(INFO) << "Process has stopped (" << pid << ")";
-                            killed = true;
-                            break;
-                        }
-                    }
-                    if (!killed) {
-                        CLOG(WARNING) << "Process has not stopped after SIGTERM; killing (" << pid << ")";
-                        kill(pid, SIGKILL);
-                        CLOG(INFO) << "Waiting for process " << pid << " to exit after SIGKILL";
-                        wait(NULL);
-                    }
-                    g_interrupt_sysdig.store(false);
-                    break;
-                }
-                pid_t killed_pid = waitpid(pid, NULL, WNOHANG);
-                if (killed_pid == pid) {
-                    CLOG(ERROR) << "Process has stopped unexpectedly (" << pid << "); restarting";
-                    break;
-                }
-                std::this_thread::sleep_for(std::chrono::seconds(1));
-            }
-        }
+    // Register signal handlers
+    signal(SIGABRT, AbortHandler);
+    signal(SIGSEGV, AbortHandler);
+    signal(SIGTERM, ShutdownHandler);
+    signal(SIGINT, ShutdownHandler);
+
+    CollectorService collector(config, &g_control, &g_signum);
+    collector.RunForever();
+
+    if (useKafka) {
+      CLOG(INFO) << "Shutting down Kafka ...";
+      rd_kafka_conf_destroy(conf_template);
+      rd_kafka_wait_destroyed(5000);
     }
-    exit(EXIT_SUCCESS);
+
+    CLOG(INFO) << "Collector exiting successfully!";
+
+    return 0;
 }

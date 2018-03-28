@@ -36,7 +36,7 @@ namespace logging {
 namespace {
 
 std::atomic<uint32_t> g_level(static_cast<uint32_t>(LogLevel::INFO));
-std::atomic<const char*> g_log_prefix;
+std::atomic<const char*> g_log_prefix("");
 
 LogLevel all_levels[] = {
     LogLevel::DEBUG,

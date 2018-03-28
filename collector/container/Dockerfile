@@ -43,7 +43,6 @@ RUN apt-get update \
 
 COPY bin/curl /usr/local/bin/curl
 COPY libs/librdkafka.so \
-     libs/librdkafka++.so \
      libs/libcurl.so \
      libs/libsinsp-wrapper.so \
      /usr/local/lib/

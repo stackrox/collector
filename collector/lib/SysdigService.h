@@ -32,6 +32,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "libsinsp/sinsp.h"
 #include "libsinsp/chisel.h"
 
+#include "CollectorService.h"
 #include "EventClassifier.h"
 #include "EventFormatter.h"
 #include "KafkaClient.h"
@@ -52,7 +53,9 @@ class SysdigService : public Sysdig {
   SysdigService() = default;
 
   void Init(const CollectorConfig& config) override;
-  void RunForever(const std::atomic_bool& interrupt) override;
+  void Start() override;
+  void Run(const std::atomic<CollectorService::ControlValue>& control) override;
+  void SetChisel(const std::string& new_chisel);
   void CleanUp() override;
 
   bool GetStats(SysdigStats* stats) const override;

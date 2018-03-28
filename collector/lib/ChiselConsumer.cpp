@@ -27,161 +27,90 @@ You should have received a copy of the GNU General Public License along with thi
 #include <mutex>
 #include <sstream>
 
-#include "librdkafka/rdkafkacpp.h"
+#include "librdkafka/rdkafka.h"
 
 #include "Logging.h"
 
-typedef void (*ChiselProcessor)(std::string);
-
 namespace collector {
 
-void
-ChiselConsumer::handleChisel(RdKafka::Message* message) {
-    this->chisels_received++;
-    this->updateChisel(std::string((char *)message->payload()));
+void ChiselConsumer::handleChisel(const rd_kafka_message_t* message) {
+  chisel_update_cb_(std::string((const char *)message->payload, message->len));
 }
 
-void
-ChiselConsumer::consumeChiselMsg(RdKafka::Message* message, void* opaque) {
-    switch (message->err()) {
-        case RdKafka::ERR__TIMED_OUT:
+void ChiselConsumer::processMessage(const rd_kafka_message_t* message) {
+    rd_kafka_resp_err_t err = message ? message->err : rd_kafka_last_error();
+    switch (err) {
+        case RD_KAFKA_RESP_ERR__TIMED_OUT:
             // "Operation timed out", an internal rdkafka error.
             // This seems to occur whenever a consume() returns
             // at the configured timeout.
             break;
 
-        case RdKafka::ERR_NO_ERROR:
+        case RD_KAFKA_RESP_ERR_NO_ERROR:
             /* Real message */
             handleChisel(message);
             break;
 
-        case RdKafka::ERR__PARTITION_EOF:
+        case RD_KAFKA_RESP_ERR__PARTITION_EOF:
             // "Reached the end of the topic+partition queue on the broker. Not really an error."
             //    - rdkafkacpp.h
             break;
 
         default:
-            CLOG(ERROR) << "Consume failed: " << message->errstr();
+            CLOG(ERROR) << "Consume failed: " << rd_kafka_err2str(err);
     }
 }
 
-ChiselConsumer::ChiselConsumer(std::string initial, bool *terminate)
-    : contents(initial), terminate(terminate) {
+void ChiselConsumer::Start() {
+  StoppableThread::Start([this]{runForever();});
 }
 
-bool
-ChiselConsumer::updateChisel(std::string newContents) {
-    std::lock_guard<std::mutex> contents_guard(this->contents_mutex);
-
-    if (newContents == this->contents) {
-        return false;
-    }
-
-    this->contents = newContents;
-    this->chisel_updates++;
-    std::lock_guard<std::mutex> callback_guard(this->callback_mutex);
-    if (this->callback != NULL) {
-        CLOG(INFO) << "Notifying callback of new chisel";
-        (*this->callback)(contents);
-    }
-
-    return true;
-}
-
-int
-ChiselConsumer::getChiselsReceived() {
-    return this->chisels_received;
-}
-
-int
-ChiselConsumer::getChiselUpdates() {
-    return this->chisel_updates;
-}
-
-void
-ChiselConsumer::setCallback(ChiselProcessor cb) {
-    std::lock_guard<std::mutex> guard(callback_mutex);
-    callback = cb;
-}
-
-void
-ChiselConsumer::runForever(std::string brokerList, std::string topic, std::string uniqueName) {
+void ChiselConsumer::runForever() {
     // See https://github.com/edenhill/librdkafka/blob/master/examples/rdkafka_consumer_example.cpp
     // for an example of how to use the rdkafka C++ library.
 
-    std::string errstr;
+    char errstr[256];
 
-    RdKafka::Conf *conf = RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL);
+    rd_kafka_conf_t* conf = rd_kafka_conf_dup(conf_template_);
 
-    ChiselConsumeCb consume_cb(this);
-    RdKafka::Conf::ConfResult res;
-    res =conf->set("metadata.broker.list", brokerList, errstr);
-    if (res != RdKafka::Conf::ConfResult::CONF_OK) {
-        CLOG(FATAL) << "Failed to set chisel consumer brokers: " << errstr;
-    }
-    conf->set("consume_cb", &consume_cb, errstr);
-    if (res != RdKafka::Conf::ConfResult::CONF_OK) {
-        CLOG(FATAL) << "Failed to set chisel consumer callback: " << errstr;
-    }
-    std::time_t result = std::time(nullptr);
     std::stringstream ss;
-    ss << uniqueName << "-" << result;
-    conf->set("group.id", ss.str(), errstr);
-    if (res != RdKafka::Conf::ConfResult::CONF_OK) {
+    ss << unique_name_ << "-" << std::time(nullptr);
+    rd_kafka_conf_res_t res = rd_kafka_conf_set(conf, "group.id", ss.str().c_str(), errstr, sizeof(errstr));
+    if (res != RD_KAFKA_CONF_OK) {
         CLOG(FATAL) << "Failed to set chisel consumer group ID: " << errstr;
     }
 
-    RdKafka::KafkaConsumer *consumer = RdKafka::KafkaConsumer::create(conf, errstr);
+    rd_kafka_t* consumer = rd_kafka_new(RD_KAFKA_CONSUMER, conf, errstr, sizeof(errstr));
     if (!consumer) {
         CLOG(FATAL) << "Failed to create chisel consumer: " << errstr;
     }
 
-    delete conf;
+    CLOG(INFO) << "% Created chisel consumer " << rd_kafka_name(consumer);
 
-    CLOG(INFO) << "% Created chisel consumer " << consumer->name();
+    // Subscribe to topic
+    rd_kafka_topic_partition_list_t* topics = rd_kafka_topic_partition_list_new(1);
+    rd_kafka_topic_partition_list_add(topics, topic_.c_str(), RD_KAFKA_PARTITION_UA);
+    rd_kafka_resp_err_t err = rd_kafka_subscribe(consumer, topics);
+    rd_kafka_topic_partition_list_destroy(topics);
 
-    /*
-     * Subscribe to topics
-     */
-    std::vector<std::string> topics = {topic};
-    RdKafka::ErrorCode err = consumer->subscribe(topics);
     if (err) {
-        CLOG(FATAL) << "Failed to subscribe to " << topics.size() << " topic(s) for chisel consumer: "
-                    << RdKafka::err2str(err);
+        CLOG(FATAL) << "Failed to subscribe to topic '" << topic_ << "' for chisel consumer: "
+                    << rd_kafka_err2str(err);
     }
 
-    /*
-     * Consume messages
-     */
-    while (!*this->terminate) {
-        RdKafka::Message *msg = consumer->consume(1000);
-        this->consumeChiselMsg(msg, NULL);
-        delete msg;
+    // Consume messages
+    while (!should_stop()) {
+        rd_kafka_message_t* msg = rd_kafka_consumer_poll(consumer, 1000);
+        processMessage(msg);
+        if (msg) rd_kafka_message_destroy(msg);
     }
 
-    /*
-     * Stop consumer
-     */
-    consumer->close();
-    delete consumer;
-
-    /*
-     * Wait for RdKafka to decommission.
-     * This is not strictly needed (with check outq_len() above), but
-     * allows RdKafka to clean up all its resources before the application
-     * exits so that memory profilers such as valgrind wont complain about
-     * memory leaks.
-     */
-    RdKafka::wait_destroyed(5000);
+    // Stop consumer
+    err = rd_kafka_consumer_close(consumer);
+    if (err) {
+        CLOG(ERROR) << "Failed to close chisel consumer: " << rd_kafka_err2str(err);
+    }
+    rd_kafka_destroy(consumer);
 }
 
-ChiselConsumeCb::ChiselConsumeCb(ChiselConsumer *chiselConsumer)
-    : chiselConsumer(chiselConsumer) {
-}
-
-void
-ChiselConsumeCb::consume_cb(RdKafka::Message &msg, void *opaque) {
-    chiselConsumer->consumeChiselMsg(&msg, opaque);
-}
-
-}   /* namespace collector */
+}  // namespace collector

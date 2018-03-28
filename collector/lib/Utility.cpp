@@ -24,6 +24,7 @@ You should have received a copy of the GNU General Public License along with thi
 extern "C" {
 
 #include <errno.h>
+#include <signal.h>
 #include <string.h>
 
 }
@@ -45,6 +46,19 @@ const char* StrError(int errnum) {
   strerror_r(errnum, msg_buffer, kMsgBufSize);
   return msg_buffer;
 #endif
+}
+
+const char* SignalName(int signum) {
+  switch (signum) {
+#define SIG(name) case SIG ## name: return "SIG" #name
+    SIG(ABRT);
+    SIG(SEGV);
+    SIG(TERM);
+    SIG(INT);
+#undef SIG
+    default:
+      return "<unknown>";
+  }
 }
 
 }  // namespace collector

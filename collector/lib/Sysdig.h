@@ -32,6 +32,8 @@ extern "C" {
 #include <stdint.h>
 }
 
+#include "CollectorService.h"
+
 namespace collector {
 
 struct SysdigStats {
@@ -47,29 +49,13 @@ struct SysdigStats {
   volatile uint64_t nKafkaSendFailures = 0; // number of signals that were not sent
 };
 
-struct CollectorConfig {
-  bool useChiselCache = true;
-  bool useKafka = true;
-  int snapLen = 2048;
-  Json::Value collectorConfig;
-  std::string chiselName;
-  std::string brokerList;
-  std::string format;
-  std::string networkSignalOutput;
-  std::string processSignalOutput;
-  std::string fileSignalOutput;
-  std::string processSyscalls;
-  std::string fileSignalFormat;
-  std::string processSignalFormat;
-  std::string networkSignalFormat;
-};
-
 class Sysdig {
  public:
   virtual ~Sysdig() = default;
 
   virtual void Init(const CollectorConfig& config) = 0;
-  virtual void RunForever(const std::atomic_bool& interrupt) = 0;
+  virtual void Start() = 0;
+  virtual void Run(const std::atomic<CollectorService::ControlValue>& control) = 0;
   virtual void CleanUp() = 0;
 
   virtual bool GetStats(SysdigStats* stats) const = 0;

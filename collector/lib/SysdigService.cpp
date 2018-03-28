@@ -49,7 +49,7 @@ void SysdigService::Init(const CollectorConfig& config) {
   SignalWriterFactory factory;
 
   if (config.useKafka) {
-    factory.SetupKafka(config.brokerList);
+    factory.SetupKafka(config.kafkaConfigTemplate);
   }
   signal_writers_[SIGNAL_TYPE_FILE] = factory.CreateSignalWriter(config.fileSignalOutput);
   signal_writers_[SIGNAL_TYPE_PROCESS] = factory.CreateSignalWriter(config.processSignalOutput);
@@ -61,7 +61,7 @@ void SysdigService::Init(const CollectorConfig& config) {
   signal_formatter_[SIGNAL_TYPE_PROCESS] = fmtFactory.CreateSignalFormatter(config.processSignalFormat, inspector_.get(), config.format);
   signal_formatter_[SIGNAL_TYPE_NETWORK] = fmtFactory.CreateSignalFormatter(config.networkSignalFormat, inspector_.get(), config.format);
 
-  chisel_.reset(new_chisel(inspector_.get(), config.chiselName.c_str()));
+  SetChisel(config.chisel);
 
   classifier_.Init(config.processSyscalls);
   use_chisel_cache_ = config.useChiselCache;
@@ -123,7 +123,18 @@ SignalType SysdigService::GetNext(SafeBuffer* message_buffer, SafeBuffer* key_bu
   return signal_type;
 }
 
-void SysdigService::RunForever(const std::atomic_bool& interrupt) {
+void SysdigService::Start() {
+  if (!inspector_ || !chisel_) {
+    throw CollectorException("Invalid state: SysdigService was not initialized");
+  }
+
+  inspector_->open("");
+
+  std::lock_guard<std::mutex> lock(running_mutex_);
+  running_ = true;
+}
+
+void SysdigService::Run(const std::atomic<CollectorService::ControlValue>& control) {
   if (!inspector_ || !chisel_) {
     throw CollectorException("Invalid state: SysdigService was not initialized");
   }
@@ -131,16 +142,7 @@ void SysdigService::RunForever(const std::atomic_bool& interrupt) {
   SafeBuffer message_buffer(kMessageBufferSize);
   SafeBuffer key_buffer(kKeyBufferSize);
 
-  chisel_->on_init();
-  inspector_->open("");
-  chisel_->on_capture_start();
-
-  {
-    std::lock_guard<std::mutex> lock(running_mutex_);
-    running_ = true;
-  }
-
-  while (!interrupt.load(std::memory_order_relaxed)) {
+  while (control.load(std::memory_order_relaxed) == CollectorService::RUN) {
     SignalType signal_type = GetNext(&message_buffer, &key_buffer);
     auto& signal_writer = signal_writers_[signal_type];
 
@@ -154,7 +156,6 @@ void SysdigService::RunForever(const std::atomic_bool& interrupt) {
       ++userspace_stats_.nKafkaSendFailures;
     }
   }
-  chisel_->on_capture_end();
 }
 
 void SysdigService::CleanUp() {
@@ -180,6 +181,23 @@ bool SysdigService::GetStats(SysdigStats* stats) const {
   stats->nPreemptions = kernel_stats.n_preemptions;
 
   return true;
+}
+
+void SysdigService::SetChisel(const std::string& chisel) {
+  CLOG(INFO) << "Updating chisel and flushing chisel cache";
+  CLOG(DEBUG) << "New chisel: " << chisel;
+  chisel_.reset(new_chisel(inspector_.get(), chisel, false));
+  chisel_->on_init();
+  chisel_cache_.clear();
+
+  std::lock_guard<std::mutex> lock(running_mutex_);
+  if (running_) {
+    // Reset kernel-level exclusion table.
+    if (!inspector_->ioctl(0, PPM_IOCTL_EXCLUDE_NS_OF_PID, 0)) {
+      CLOG(WARNING)
+          << "Failed to reset the kernel-level PID namespace exclusion table via ioctl(): " << inspector_->getlasterr();
+    }
+  }
 }
 
 }  // namespace collector

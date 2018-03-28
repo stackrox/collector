@@ -24,6 +24,8 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _SIGNAL_WRITER_H_
 #define _SIGNAL_WRITER_H_
 
+#include "librdkafka/rdkafka.h"
+
 #include "EventClassifier.h"
 #include "KafkaClient.h"
 #include "SafeBuffer.h"
@@ -40,7 +42,7 @@ class SignalWriterFactory {
  public:
   std::unique_ptr<SignalWriter> CreateSignalWriter(const std::string& output_spec);
 
-  void SetupKafka(const std::string& broker_list);
+  void SetupKafka(const rd_kafka_conf_t* conf_template);
 
  private:
   std::unique_ptr<SignalWriter> CreateStdoutSignalWriter(const std::string& spec);

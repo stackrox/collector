@@ -44,11 +44,10 @@ constexpr uint64_t kNetFdTypes =
 
 }  // namespace
 
-void EventClassifier::Init(const std::string& process_syscalls_str) {
-  std::istringstream is(process_syscalls_str);
+void EventClassifier::Init(const std::vector<std::string>& process_syscalls) {
   process_syscalls_.reset();
   const EventNames& event_names = EventNames::GetInstance();
-  for (std::string syscall_name; std::getline(is, syscall_name, ','); ) {
+  for (const std::string& syscall_name : process_syscalls) {
     for (ppm_event_type event_type : event_names.GetEventIDs(syscall_name)) {
       process_syscalls_.set(event_type);
     }

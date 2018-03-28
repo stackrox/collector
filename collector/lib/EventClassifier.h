@@ -43,7 +43,7 @@ enum SignalType {
 
 class EventClassifier {
  public:
-  void Init(const std::string& process_syscalls_str);
+  void Init(const std::vector<std::string>& process_syscalls);
 
   SignalType Classify(SafeBuffer* key_buf, sinsp_evt* event) const;
 

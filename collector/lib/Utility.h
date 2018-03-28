@@ -32,6 +32,9 @@ namespace collector {
 // The following functions are thread-safe versions of strerror, which are more convenient to use than strerror_r.
 const char* StrError(int errnum = errno);
 
+// Return the name of a signal. This function is reentrant.
+const char* SignalName(int signum);
+
 }  // namespace collector
 
 #endif  // _UTILITY_H_

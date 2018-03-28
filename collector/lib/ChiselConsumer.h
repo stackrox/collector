@@ -24,51 +24,37 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _CHISEL_CONSUMER_H_
 #define _CHISEL_CONSUMER_H_
 
-#include <mutex>
-#include <sstream>
+#include <functional>
+#include <string>
 
-#include "librdkafka/rdkafkacpp.h"
+#include "librdkafka/rdkafka.h"
 
-typedef void (*ChiselProcessor)(std::string);
+#include "StoppableThread.h"
 
 namespace collector {
 
-class ChiselConsumer {
-    public:
-        ChiselConsumer(std::string initial, bool *terminate);
-        void setCallback(ChiselProcessor);
-        void runForever(std::string brokerList, std::string topic, std::string uniqueName);
-        void consumeChiselMsg(RdKafka::Message* message, void* opaque);
+class ChiselConsumer : private StoppableThread {
+ public:
+  using ChiselUpdateCb = std::function<void (const std::string&)>;
+  ChiselConsumer(const rd_kafka_conf_t* conf_template, std::string topic, std::string unique_name,
+                 ChiselUpdateCb chisel_update_cb)
+      : conf_template_(conf_template), unique_name_(std::move(unique_name)), topic_(std::move(topic)),
+        chisel_update_cb_(std::move(chisel_update_cb)) {}
 
-        int getChiselsReceived();
-        int getChiselUpdates();
+  void Start();
+  void Stop() { StoppableThread::Stop(); }
 
-    private:
-        std::mutex contents_mutex;
-        std::string contents;
+ private:
+  void runForever();
+  void processMessage(const rd_kafka_message_t* message);
+  void handleChisel(const rd_kafka_message_t* message);
 
-        std::mutex callback_mutex;
-        ChiselProcessor callback;
-
-        int chisels_received = 0;
-        int chisel_updates = 0;
-
-        bool *terminate;
-
-        bool updateChisel(std::string newContents);
-        void handleChisel(RdKafka::Message* message);
+  const rd_kafka_conf_t* conf_template_;
+  std::string unique_name_;
+  std::string topic_;
+  ChiselUpdateCb chisel_update_cb_;
 };
 
-class ChiselConsumeCb : public RdKafka::ConsumeCb {
-    public:
-        ChiselConsumeCb(ChiselConsumer *chiselConsumer);
+}  // namespace collector
 
-        void consume_cb(RdKafka::Message &msg, void *opaque);
-
-    private:
-        ChiselConsumer *chiselConsumer;
-};
-
-}   /* namespace collector */
-
-#endif /* _CHISEL_CONSUMER_H_ */
+#endif // _CHISEL_CONSUMER_H_

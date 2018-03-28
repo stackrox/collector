@@ -30,7 +30,6 @@ container/bin/collector: $(HDRS) $(SRCS) generated-srcs container/libs/libsinsp-
 	docker cp build_collector:/usr/local/lib/libcurl.so container/libs/
 	docker cp build_collector:/usr/local/bin/curl container/bin/
 	docker cp -L build_collector:/usr/local/lib/librdkafka.so container/libs/
-	docker cp -L build_collector:/usr/local/lib/librdkafka++.so container/libs/
 
 container/libs/libsinsp-wrapper.so: $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp')
 	make -C sysdig

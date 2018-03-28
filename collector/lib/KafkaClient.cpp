@@ -35,11 +35,10 @@ You should have received a copy of the GNU General Public License along with thi
 namespace collector {
 
 // construction
-KafkaClient::KafkaClient(const std::string& brokerList) {
+KafkaClient::KafkaClient(const rd_kafka_conf_t* conf_template) {
   char errstr[1024];
-  CLOG(INFO) << "Building Kafka client with brokers: " << brokerList;
 
-  rd_kafka_conf_t* conf = rd_kafka_conf_new();
+  rd_kafka_conf_t* conf = rd_kafka_conf_dup(conf_template);
   rd_kafka_conf_res_t res = rd_kafka_conf_set(conf, "batch.num.messages", "10000", errstr, sizeof(errstr));
   if (res != RD_KAFKA_CONF_OK) {
     throw KafkaException(std::string("Error setting up Kafka config: ") + errstr);
@@ -59,11 +58,6 @@ KafkaClient::KafkaClient(const std::string& brokerList) {
   kafka_ = rd_kafka_new(RD_KAFKA_PRODUCER, conf, errstr, sizeof(errstr));
   if (!kafka_) {
     throw KafkaException(std::string("Error creating Kafka producer: ") + errstr);
-  }
-
-  int rv = rd_kafka_brokers_add(kafka_, brokerList.c_str());
-  if (rv < 1) {
-    throw KafkaException("No valid Kafka brokers specified: '" + brokerList + "'");
   }
 }
 

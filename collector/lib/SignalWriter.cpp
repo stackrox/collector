@@ -28,8 +28,8 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-void SignalWriterFactory::SetupKafka(const std::string& broker_list) {
-  kafka_client_ = std::make_shared<KafkaClient>(broker_list);
+void SignalWriterFactory::SetupKafka(const rd_kafka_conf_t* conf_template) {
+  kafka_client_ = std::make_shared<KafkaClient>(conf_template);
 }
 
 std::unique_ptr<SignalWriter> SignalWriterFactory::CreateSignalWriter(const std::string& output_spec) {
