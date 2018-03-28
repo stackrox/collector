@@ -269,7 +269,9 @@ void chiselinfo::set_callback_precise_interval(uint64_t interval)
 ///////////////////////////////////////////////////////////////////////////////
 // chisel implementation
 ///////////////////////////////////////////////////////////////////////////////
-sinsp_chisel::sinsp_chisel(sinsp* inspector, string filename)
+/* Begin StackRox Section */
+sinsp_chisel::sinsp_chisel(sinsp* inspector, string cmdstr, bool is_file)
+/* End StackRox Section */
 {
 	m_inspector = inspector;
 	m_ls = NULL;
@@ -280,7 +282,9 @@ sinsp_chisel::sinsp_chisel(sinsp* inspector, string filename)
 	m_lua_last_interval_ts = 0;
 	m_udp_socket = 0;
 
-	load(filename);
+	/* Begin StackRox Section */
+	load(cmdstr, is_file);
+	/* End StackRox Section */
 }
 
 sinsp_chisel::~sinsp_chisel()
@@ -1194,33 +1198,44 @@ bool sinsp_chisel::openfile(string filename, OUT ifstream* is)
 	return false;
 }
 
-void sinsp_chisel::load(string cmdstr)
+void sinsp_chisel::load(string cmdstr, bool is_file)
 {
-	m_filename = cmdstr;
-	trim(cmdstr);
-
-	ifstream is;
-
-	//
-	// Try to open the file with lua extension
-	//
-	if(!openfile(m_filename + ".lua", &is))
-	{
-		//
-		// Try to open the file as is
-		//
-		if(!openfile(m_filename, &is))
-		{
-			throw sinsp_exception("can't open file " + m_filename);
-		}
+	/* Begin StackRox Section */
+	if (is_file) {
+		m_filename = cmdstr;
+		trim(cmdstr);
+	} else {
+		m_filename = "<in-memory-string>";
 	}
 
+	ifstream is;
+	std::string scriptstr;
+
+	if (is_file) {
+		//
+		// Try to open the file with lua extension
+		//
+		if(!openfile(m_filename + ".lua", &is))
+		{
+			//
+			// Try to open the file as is
+			//
+			if(!openfile(m_filename, &is))
+			{
+				throw sinsp_exception("can't open file " + m_filename);
+			}
+		}
+
 #ifdef HAS_LUA_CHISELS
-	//
-	// Load the file
-	//
-	std::istreambuf_iterator<char> eos;
-	std::string scriptstr(std::istreambuf_iterator<char>(is), eos);
+		//
+		// Load the file
+		//
+		std::istreambuf_iterator<char> eos;
+		scriptstr = std::string(std::istreambuf_iterator<char>(is), eos);
+	} else {
+		scriptstr = cmdstr;
+	}
+	/* End StackRox Section */
 
 	//
 	// Open the script

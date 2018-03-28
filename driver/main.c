@@ -461,6 +461,25 @@ exit:
 	return ret;
 }
 
+static void reset_excluded_pid_namespaces(void) {
+	struct ptr_table* table;
+	vpr_info("Resetting excluded PID namespace table\n");
+
+	spin_lock(&g_excluded_pid_ns_table_lock);
+	smp_wmb();
+	table = g_excluded_pid_ns_table;
+
+	rcu_assign_pointer(g_excluded_pid_ns_table, NULL);
+
+	smp_wmb();
+	spin_unlock(&g_excluded_pid_ns_table_lock);
+
+	if (table) {
+		synchronize_rcu();
+		kfree(table);
+	}
+}
+
 // Checks if the given task should be ignored globally.
 static bool exclude_task_globally(struct task_struct* task) {
 	struct pid_namespace* pid_ns;
@@ -477,6 +496,11 @@ static int handle_exclude_namespace_ioctl(unsigned long arg) {
 	struct pid_namespace* pid_ns;
 
 	pid_nr = (pid_t) arg;
+	if (!pid_nr) {
+		reset_excluded_pid_namespaces();
+		return 0;
+	}
+
 	vpr_info("Excluding PID namespace of PID %d\n", pid_nr);
 	rcu_read_lock();
 	pid = find_pid_ns(pid_nr, &init_pid_ns);
