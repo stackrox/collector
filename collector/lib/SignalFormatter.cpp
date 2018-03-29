@@ -23,10 +23,11 @@ You should have received a copy of the GNU General Public License along with thi
 #include "SignalFormatter.h"
 
 #include "CollectorException.h"
-#include "FileSummaryFormatter.h"
-#include "ProcessSummaryFormatter.h"
-#include "NetworkSignalFormatter.h"
 #include "EventFormatter.h"
+#include "FileSummaryFormatter.h"
+#include "NetworkSignalFormatter.h"
+#include "ProcessSummaryFormatter.h"
+#include "Utility.h"
 
 namespace collector {
 
@@ -39,7 +40,10 @@ std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateSignalFormatter(c
     return CreateFileSummaryFormatter();
   }
   if (format_type == "process_summary") {
-    return CreateProcessSummaryFormatter();
+    return CreateProcessSummaryFormatter(inspector, false);
+  }
+  if (format_type == "process_summary_text") {
+    return CreateProcessSummaryFormatter(inspector, true);
   }
   if (format_type == "network_signal") {
     return CreateNetworkSignalFormatter();
@@ -57,15 +61,15 @@ std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateSignalFormatter(c
 }
 
 std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateFileSummaryFormatter() {
-  return std::unique_ptr<SignalFormatter>(new FileSummaryFormatter());
+  return MakeUnique<FileSummaryFormatter>();
 }
 
-std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateProcessSummaryFormatter() {
-  return std::unique_ptr<SignalFormatter>(new ProcessSummaryFormatter());
+std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateProcessSummaryFormatter(sinsp* inspector, bool text_format) {
+  return MakeUnique<ProcessSummaryFormatter>(inspector, text_format);
 }
 
 std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateNetworkSignalFormatter() {
-  return std::unique_ptr<SignalFormatter>(new NetworkSignalFormatter());
+  return MakeUnique<NetworkSignalFormatter>();
 }
 
 std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateFileLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len)  {

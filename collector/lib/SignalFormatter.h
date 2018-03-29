@@ -43,7 +43,7 @@ class SignalFormatterFactory {
  private:
   // methods to convert from sysdig event to summaries
   std::unique_ptr<SignalFormatter> CreateFileSummaryFormatter();
-  std::unique_ptr<SignalFormatter> CreateProcessSummaryFormatter();
+  std::unique_ptr<SignalFormatter> CreateProcessSummaryFormatter(sinsp* inspector, bool text_format = false);
 
   // methods to convert from sysdig event to signal proto
   std::unique_ptr<SignalFormatter> CreateNetworkSignalFormatter();

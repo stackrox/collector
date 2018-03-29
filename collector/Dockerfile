@@ -21,6 +21,7 @@ RUN apt-get update \
         libssl-dev \
         libtool \
         unzip \
+        uuid-dev \
         ;
 
 # We want to fail if the destination directory is there, hence mkdir (not -p).

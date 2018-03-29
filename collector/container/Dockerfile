@@ -39,6 +39,7 @@ RUN apt-get update \
         libjsoncpp-dev \
         libssl-dev \
         wget \
+        uuid-dev \
  ;
 
 COPY bin/curl /usr/local/bin/curl

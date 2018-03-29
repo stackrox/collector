@@ -23,21 +23,30 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "ProtoSignalFormatter.h"
 
+#include <google/protobuf/text_format.h>
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 
 namespace collector {
 
-bool ProtoSignalFormatter::FormatSignal(SafeBuffer* buf, sinsp_evt* event) {
-  const google::protobuf::MessageLite* msg = ToProtoMessage(event);
+bool BaseProtoSignalFormatter::FormatSignal(SafeBuffer* buf, sinsp_evt* event) {
+  const google::protobuf::Message* msg = ToProtoMessage(event);
   if (!msg) return false;
 
   int bufsize;
   char* outbuf = buf->Claim(&bufsize);
   google::protobuf::io::ArrayOutputStream output_stream(outbuf, bufsize);
-  if (!msg->SerializeToZeroCopyStream(&output_stream)) {
-    return false;
+  if (text_format_) {
+    if (!google::protobuf::TextFormat::Print(*msg, &output_stream)) {
+      return false;
+    }
+    buf->Advance(output_stream.ByteCount());
+    buf->Append('\n');
+  } else {
+    if (!msg->SerializeToZeroCopyStream(&output_stream)) {
+      return false;
+    }
+    buf->Advance(output_stream.ByteCount());
   }
-  buf->Advance(output_stream.ByteCount());
   return true;
 }
 

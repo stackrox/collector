@@ -24,15 +24,45 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _PROCESS_SUMMARY_FORMATTER_H_
 #define _PROCESS_SUMMARY_FORMATTER_H_
 
+#include "EventNames.h"
 #include "ProtoSignalFormatter.h"
+#include "SysdigEventExtractor.h"
 
 #include "proto/data/process_summary.pb.h"
 
 namespace collector {
 
-class ProcessSummaryFormatter : public ProtoSignalFormatter {
+class ProcessSummaryFormatter : public ProtoSignalFormatter<data::ProcessSummary> {
+ public:
+  ProcessSummaryFormatter(sinsp* inspector, bool text_format = false)
+      : ProtoSignalFormatter(text_format), event_names_(EventNames::GetInstance()) {
+    event_extractor_.Init(inspector);
+  }
+
+  using ProcessSummary = data::ProcessSummary;
+  using ProcessOp = ProcessSummary::ProcessOp;
+  using ProcessOperation = ProcessSummary::ProcessOperation;
+  using ProcessOperationDetails = ProcessOperation::Details;
+  using SocketDetails = ProcessOperationDetails::Socket;
+  using ModuleDetails = ProcessOperationDetails::Module;
+  using PermissionChangeDetails = ProcessOperationDetails::PermissionChange;
+  using ProcessContainer = ProcessSummary::Container;
+  using ProcessDetails = data::Process;
+
  protected:
   const data::ProcessSummary* ToProtoMessage(sinsp_evt* event) override;
+
+ private:
+  ProcessOperation* CreateProcessOperation(sinsp_evt* event, ProcessOp op);
+  ProcessOperationDetails* CreateProcessOperationDetails(sinsp_evt* event, ProcessOp op);
+  SocketDetails* CreateSocketDetails(sinsp_evt* event);
+  ModuleDetails* CreateModuleDetails(sinsp_evt* event);
+  PermissionChangeDetails* CreatePermissionChangeDetails(sinsp_evt* event);
+  ProcessContainer* CreateProcessContainer(sinsp_evt* event);
+  ProcessDetails* CreateProcessDetails(sinsp_evt* event);
+
+  const EventNames& event_names_;
+  SysdigEventExtractor event_extractor_;
 };
 
 }  // namespace collector

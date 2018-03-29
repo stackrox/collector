@@ -20,16 +20,58 @@ You should have received a copy of the GNU General Public License along with thi
 * do not wish to do so, delete this exception statement from your
 * version.
 */
-#include "SysdigEventExtractor.h"
 
-#include "Logging.h"
+#ifndef _EVENT_MAP_H_
+#define _EVENT_MAP_H_
+
+#include <array>
+#include <string>
+#include <utility>
+
+#include "ppm_events_public.h"
+
+#include "EventNames.h"
 
 namespace collector {
 
-void SysdigEventExtractor::Init(sinsp* inspector) {
-  for (auto* wrapper : wrappers_) {
-    wrapper->filter_check.reset(sinsp_filter_check_iface::get(wrapper->event_name, inspector));
+template <typename T>
+class EventMap {
+ public:
+  EventMap() : EventMap(T()) {}
+  EventMap(const T& initVal) : event_names_(EventNames::GetInstance()) {
+    values_.fill(initVal);
   }
-}
+  EventMap(std::initializer_list<std::pair<std::string, T>> init, const T& initVal = T()) : EventMap(initVal) {
+    for (const auto& pair : init) {
+      Set(pair.first, pair.second);
+    }
+  }
+
+  T& operator[](uint16_t id) {
+    if (id < 0 || id >= values_.size()) {
+      throw CollectorException("Invalid event id " + std::to_string(id));
+    }
+    return values_[id];
+  }
+
+  const T& operator[](uint16_t id) const {
+    if (id < 0 || id >= values_.size()) {
+      throw CollectorException("Invalid event id " + std::to_string(id));
+    }
+    return values_[id];
+  }
+
+  void Set(const std::string& name, const T& value) {
+    for (auto event_id : event_names_.GetEventIDs(name)) {
+      values_[event_id] = value;
+    }
+  }
+
+ private:
+  const EventNames& event_names_;
+  std::array<T, PPM_EVENT_MAX> values_;
+};
 
 }  // namespace collector
+
+#endif  // _EVENT_MAP_H_

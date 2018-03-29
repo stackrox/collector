@@ -35,6 +35,7 @@ target_link_libraries(collector jsoncpp)
 target_link_libraries(collector rdkafka)
 target_link_libraries(collector libprometheus-cpp.a)
 target_link_libraries(collector libprotobuf.a)
+target_link_libraries(collector uuid)
 target_link_libraries(collector -static-libgcc -static-libstdc++)
 
 # Setup testing

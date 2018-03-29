@@ -24,93 +24,122 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _SYSDIG_EVENT_EXTRACTOR_H_
 #define _SYSDIG_EVENT_EXTRACTOR_H_
 
+#include <string>
+#include <vector>
+
 #include "libsinsp/sinsp.h"
+
+#include "Logging.h"
 
 namespace collector {
 
+// This class allows extracting a predefined set of Sysdig event fields in an efficient manner.
 class SysdigEventExtractor {
-  public:
-    void Init(sinsp* inspector);
-    /*
-     * General methods for events
-     */
-    const char* event_type(sinsp_evt* evt);
-    const char* event_args(sinsp_evt* evt);
-    const char* event_res(sinsp_evt* evt);
+ public:
+  void Init(sinsp* inspector);
 
-    /*
-     * Process related extraction methods
-     */
-    // PID
-    const int64_t* get_pid(sinsp_evt* evt);
+ private:
+  struct FilterCheckWrapper {
+    FilterCheckWrapper(SysdigEventExtractor* extractor, const char* event_name) : event_name(event_name) {
+      extractor->wrappers_.push_back(this);
+    }
 
-    // TID
-    const int64_t* get_tid(sinsp_evt* evt);
+    sinsp_filter_check_iface* operator->() { return filter_check.get(); }
 
-    // Command line
-    const std::string* get_comm(sinsp_evt* evt);
+    const char* event_name;
+    std::unique_ptr<sinsp_filter_check_iface> filter_check;
+  };
 
-    // Exe name
-    const std::string* get_exe(sinsp_evt* evt);
+  std::vector<FilterCheckWrapper*> wrappers_;
 
-    // Exe path
-    const std::string* get_exepath(sinsp_evt* evt);
+#define DECLARE_FILTER_CHECK(id, fieldname) \
+  FilterCheckWrapper filter_check_ ## id ## _ = { this, fieldname }
 
-    // Current working dir
-    const char* get_cwd(sinsp_evt* evt);
+#define FIELD_RAW(id, fieldname, type) \
+ public: \
+  const type* get_ ## id (sinsp_evt* event) { \
+    uint32_t len; \
+    auto buf = filter_check_ ## id ## _->extract(event, &len); \
+    if (!buf) return nullptr; \
+    if (len != sizeof(type)) { \
+      CLOG_THROTTLED(WARNING, std::chrono::seconds(30)) \
+          << "Failed to extract value for field " << fieldname << ": expected type " << #type << " (size " \
+          << sizeof(type) << "), but returned value has size " << len; \
+      return nullptr; \
+    } \
+    return reinterpret_cast<const type*>(buf); \
+  } \
+ private: \
+  DECLARE_FILTER_CHECK(id, fieldname)
 
-    /*
-     * File related extraction methods
-     */
+#define FIELD_CSTR(id, fieldname) \
+ public: \
+  const char* get_ ## id(sinsp_evt* event) { \
+    uint32_t len; \
+    auto buf = filter_check_ ## id ## _->extract(event, &len); \
+    if (!buf) return nullptr; \
+    return reinterpret_cast<const char*>(buf); \
+  } \
+ private: \
+  DECLARE_FILTER_CHECK(id, fieldname)
 
+#define EVT_ARG(name) FIELD_CSTR(evt_arg_ ## name, "evt.arg." #name)
+#define EVT_ARG_RAW(name, type) FIELD_RAW(evt_arg_ ## name, "evt.rawarg." #name, type)
 
-    /*
-     * Network related extraction methods
-     */
+#define TINFO_FIELD(id) \
+ public: \
+  const decltype(std::declval<sinsp_threadinfo>().m_ ## id)* get_ ## id(sinsp_evt* event) { \
+    if (!event) return nullptr; \
+    sinsp_threadinfo* tinfo = event->get_thread_info(); \
+    if (!tinfo) return nullptr; \
+    return &tinfo->m_ ## id; \
+  }
 
-    /*
-     * Container related extraction methods
-     */
-    const std::string* container_id(sinsp_evt* evt);
+  // Fields can be made available for querying by using a number of macros:
+  // - TINFO_FIELD(name): exposes the m_<name> field of threadinfo via get_<name>()
+  // - FIELD_CSTR(id, fieldname): exposes the sysdig field <fieldname> via get_<id>(), returning a null-terminated
+  //   const char*.
+  // - FIELD_RAW(id, fieldname, type): exposes the sysdig field <fieldname> via get_<id>(), returning a const <type>*.
+  // - EVT_ARG(argname): shorthand for FIELD_CSTR(evt_arg_<argname>, "evt.arg.<argname>")
+  // - EVT_ARG_RAW(argname, type): shorthand for FIELD_RAW(evt_arg_<argname>, "evt.rawarg.<argname>", <type>)
+  //
+  // ADD ANY NEW FIELDS BELOW THIS LINE
 
-    bool container_privileged(sinsp_evt* evt);
+  // Container related fields
+  TINFO_FIELD(container_id);
+  FIELD_RAW(container_privileged, "container.privileged", uint32_t);
 
-  private:
-    // extractor objects
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_container_id_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_container_privileged_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_evt_type_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_evt_time_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_evt_rawtime_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_evt_dir_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_evt_buflen_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_evt_io_dir_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_evt_res_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_fd_cip_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_fd_cport_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_fd_l4proto_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_fd_lproto_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_fd_name_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_fd_rip_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_fd_rproto_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_fd_sip_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_fd_sockfamily_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_fd_sport_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_fd_type_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_group_gid_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_proc_cmdline_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_proc_cwd_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_proc_exe_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_proc_exeline_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_proc_name_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_proc_pname_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_user_name_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_user_shell_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_user_uid_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_evt_args_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_proc_pid_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_fd_num_;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check_proc_aname_;
+  // Process related fields
+  TINFO_FIELD(comm);
+  TINFO_FIELD(exe);
+  TINFO_FIELD(exepath);
+  TINFO_FIELD(pid);
+  TINFO_FIELD(tid);
+  TINFO_FIELD(uid);
+  FIELD_CSTR(proc_name, "proc.name");
+  FIELD_CSTR(proc_pname, "proc.pname");
+  FIELD_CSTR(exeline, "proc.exeline");
+  FIELD_CSTR(user_name, "user.name");
+  FIELD_CSTR(cwd, "proc.cwd");
+
+  // General event information
+  FIELD_RAW(event_rawres, "evt.rawres", int64_t);
+  EVT_ARG(pathname);
+  EVT_ARG(name);
+  EVT_ARG(module_image);
+  EVT_ARG_RAW(fd, int64_t);
+
+  // File/network related
+  FIELD_RAW(client_port, "fd.cport", uint16_t);
+  FIELD_RAW(server_port, "fd.sport", uint16_t);
+  FIELD_CSTR(fd_name, "fd.name");
+
+#undef TINFO_FIELD
+#undef FIELD_RAW
+#undef FIELD_CSTR
+#undef EVT_ARG
+#undef EVT_ARG_RAW
+#undef DECLARE_FILTER_CHECK
 };
 
 }  // namespace collector

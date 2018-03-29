@@ -49,7 +49,7 @@ class EventNames {
     return it->second;
   }
 
-  const std::string& GetEventName(ppm_event_type id) const {
+  const std::string& GetEventName(uint16_t id) const {
     if (id < 0 || id >= names_by_id_.size()) {
       throw CollectorException("Invalid event id " + std::to_string(id));
     }

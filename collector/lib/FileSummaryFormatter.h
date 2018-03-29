@@ -30,7 +30,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-class FileSummaryFormatter : public ProtoSignalFormatter {
+class FileSummaryFormatter : public ProtoSignalFormatter<data::FileSummary> {
  protected:
   const data::FileSummary* ToProtoMessage(sinsp_evt* event);
 };
