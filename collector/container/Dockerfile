@@ -61,6 +61,12 @@ WORKDIR /
 # Uncomment below line when volume needs to created for extracting the Collector core
 # VOLUME ["/core"]
 
+# needed for container reentrancy on swarm:
+RUN curl -o docker-1.13.0.tgz https://get.docker.com/builds/Linux/x86_64/docker-1.13.0.tgz && \
+    tar -xvzf docker-1.13.0.tgz && cp docker/docker /usr/local/bin/docker && \
+    rm -r docker-1.13.0.tgz docker
+COPY scripts/swarm_entrypoint.sh /swarm_entrypoint.sh
+
 # update boot script
 COPY scripts/bootstrap.sh /bootstrap.sh
 RUN chown root.root /bootstrap.sh

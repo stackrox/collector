@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 function test {
     "$@"
     local status=$?
@@ -51,6 +53,11 @@ function find_kernel_module() {
     echo "Didn't find $KERNEL_MODULE built-in." >&2
     return 1
 }
+
+if [ "$ROX_PLATFORM" = "swarm" ]; then
+    ## swap to reentrant container strategy to gain privileged mode
+    exec /swarm_entrypoint.sh
+fi
 
 # Get the hostname from Docker so this container can use it in its output.
 HOSTNAME=$(curl -s --unix-socket /host/var/run/docker.sock http://localhost/info | jq --raw-output .Name)
