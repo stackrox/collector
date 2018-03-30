@@ -23,7 +23,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "NetworkSignalFormatter.h"
 
-#include <endian.h>
+#include <arpa/inet.h>
 
 #include "EventMap.h"
 #include "Logging.h"
@@ -45,7 +45,7 @@ using LocalNetworkAddress = data::LocalNetworkAddress;
 namespace {
 
 uint64_t make_net_int64(uint32_t net_low, uint32_t net_high) {
-  return htobe64(static_cast<uint64_t>(ntohl(net_high)) << 32 | static_cast<uint64_t>(ntohl(net_low)));
+  return static_cast<uint64_t>(ntohl(net_high)) << 32 | static_cast<uint64_t>(ntohl(net_low));
 }
 
 EventMap<NetworkSignalType> network_signals = {
@@ -217,7 +217,7 @@ NetworkAddress* NetworkSignalFormatter::CreateIPv4Address(uint32_t ip, uint16_t 
   if (!ip) return nullptr;
   auto addr = Allocate<NetworkAddress>();
   IPV4NetworkAddress* ipv4_addr = addr->mutable_ipv4_address();
-  ipv4_addr->set_address(ip);
+  ipv4_addr->set_address(ntohl(ip));
   ipv4_addr->set_port(port);
   return addr;
 }
