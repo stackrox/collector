@@ -116,18 +116,33 @@ class SysdigEventExtractor {
   TINFO_FIELD(pid);
   TINFO_FIELD(tid);
   TINFO_FIELD(uid);
+  TINFO_FIELD(gid);
   FIELD_CSTR(proc_name, "proc.name");
   FIELD_CSTR(proc_pname, "proc.pname");
   FIELD_CSTR(exeline, "proc.exeline");
+  FIELD_CSTR(cmdline, "proc.cmdline");
   FIELD_CSTR(user_name, "user.name");
   FIELD_CSTR(cwd, "proc.cwd");
+  FIELD_CSTR(evt_args, "evt.args");
 
   // General event information
   FIELD_RAW(event_rawres, "evt.rawres", int64_t);
   EVT_ARG(pathname);
   EVT_ARG(name);
   EVT_ARG(module_image);
+  EVT_ARG(newpath);
+  EVT_ARG(oldpath);
+  EVT_ARG(path);
+  EVT_ARG(target);
+  EVT_ARG(linkpath);
   EVT_ARG_RAW(fd, int64_t);
+  EVT_ARG_RAW(flags, int32_t);
+  EVT_ARG_RAW(olddir, int64_t);
+  EVT_ARG_RAW(newdir, int64_t);
+  EVT_ARG_RAW(olddirfd, int64_t);
+  EVT_ARG_RAW(newdirfd, int64_t);
+  EVT_ARG_RAW(linkdirfd, int64_t);
+  EVT_ARG_RAW(dirfd, int64_t);
 
   // File/network related
   FIELD_RAW(client_port, "fd.cport", uint16_t);

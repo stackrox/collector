@@ -25,14 +25,39 @@ You should have received a copy of the GNU General Public License along with thi
 #define _FILE_SUMMARY_FORMATTER_H_
 
 #include "ProtoSignalFormatter.h"
+#include "EventNames.h"
 
 #include "proto/data/file_summary.pb.h"
 
 namespace collector {
 
 class FileSummaryFormatter : public ProtoSignalFormatter<data::FileSummary> {
+ public:
+  FileSummaryFormatter(sinsp* inspector, bool text_format = false)
+      : ProtoSignalFormatter(text_format), event_names_(EventNames::GetInstance()) {
+    event_extractor_.Init(inspector);
+  }
+
+  using FileContainer = data::FileSummary::Container;
+  using FileDetails = data::FileSummary::File;
+  using FileOp = data::FileSummary::FileOp;
+  using FileOperation = data::FileSummary::FileOperation;
+  using FileProcess = data::FileSummary::Process;
+  using FileSummary = data::FileSummary;
+
  protected:
   const data::FileSummary* ToProtoMessage(sinsp_evt* event);
+
+ private:
+  FileOperation* CreateFileOperation(sinsp_evt* event, FileOp op);
+  FileContainer* CreateFileContainer(sinsp_evt* event);
+  FileProcess* CreateFileProcess(sinsp_evt* event);
+  FileDetails* CreateFileDetails(sinsp_evt* event);
+  void AddFileOperations(sinsp_evt* event, FileSummary* file_summary, FileOp op);
+  std::string GetPathAtFD(sinsp_evt* event, const int64_t* fd, const char* path);
+
+  const EventNames& event_names_;
+  SysdigEventExtractor event_extractor_;
 };
 
 }  // namespace collector

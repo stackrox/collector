@@ -37,7 +37,10 @@ SignalFormatterFactory::SignalFormatterFactory(sinsp* inspector) {
 
 std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateSignalFormatter(const std::string& format_type, sinsp* inspector, const std::string& format_string, int field_trunc_len) {
   if (format_type == "file_summary") {
-    return CreateFileSummaryFormatter();
+    return CreateFileSummaryFormatter(inspector, false);
+  }
+  if (format_type == "file_summary_text") {
+    return CreateFileSummaryFormatter(inspector, true);
   }
   if (format_type == "process_summary") {
     return CreateProcessSummaryFormatter(inspector, false);
@@ -60,8 +63,8 @@ std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateSignalFormatter(c
   throw CollectorException("Invalid format type '" + format_type);
 }
 
-std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateFileSummaryFormatter() {
-  return MakeUnique<FileSummaryFormatter>();
+std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateFileSummaryFormatter(sinsp* inspector, bool text_format) {
+  return MakeUnique<FileSummaryFormatter>(inspector, text_format);
 }
 
 std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateProcessSummaryFormatter(sinsp* inspector, bool text_format) {
