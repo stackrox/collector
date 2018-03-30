@@ -28,6 +28,10 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <google/protobuf/message.h>
 
+#ifdef USE_PROTO_ARENAS
+#include <google/protobuf/arena.h>
+#endif
+
 #include "SignalFormatter.h"
 
 namespace collector {
@@ -55,8 +59,14 @@ class BaseProtoSignalFormatter : public SignalFormatter {
 template <typename Message>
 class ProtoSignalFormatter : public BaseProtoSignalFormatter {
  public:
-  using BaseProtoSignalFormatter::BaseProtoSignalFormatter;
+  ProtoSignalFormatter(bool text_format = false)
+      : BaseProtoSignalFormatter(text_format)
+#ifdef USE_PROTO_ARENAS
+      , arena_(ArenaOptionsForInitialBlock(arena_storage_, kArenaStorageSize))
+#endif
+  {}
 
+#ifndef USE_PROTO_ARENAS
  protected:
   template <typename T, typename... Args>
   T* Allocate(Args&&... args) { return new T(std::forward<Args>(args)...); }
@@ -68,6 +78,44 @@ class ProtoSignalFormatter : public BaseProtoSignalFormatter {
 
  private:
   Message message_;
+
+#else
+ protected:
+  template <typename T, typename... Args>
+  T* Allocate(Args&&... args) {
+    return google::protobuf::Arena::CreateMessage<T>(&arena_, std::forward<Args>(args)...);
+  }
+
+  Message* AllocateRoot() {
+    google::protobuf::uint64 bytes_used = arena_.Reset();
+    if (bytes_used > kArenaStorageSize) {
+      CLOG_THROTTLED(WARNING, std::chrono::seconds(5))
+          << "Used " << bytes_used << " bytes in the arena, which is more than the pre-allocated "
+          << kArenaStorageSize << "bytes. Consider increasing the pre-allocated size";
+    }
+    return google::protobuf::Arena::CreateMessage<Message>(&arena_);
+  }
+
+ private:
+  static constexpr int kArenaStorageSize = 32768;
+
+  static void* BlockAlloc(size_t size) {
+    static void* (*default_block_alloc)(size_t) = google::protobuf::ArenaOptions().block_alloc;
+    CLOG(WARNING) << "Allocating a memory block on the heap for the arena, this is inefficient and usually avoidable";
+    return (*default_block_alloc)(size);
+  }
+
+  static google::protobuf::ArenaOptions ArenaOptionsForInitialBlock(char* storage, int size) {
+    google::protobuf::ArenaOptions opts;
+    opts.initial_block = storage;
+    opts.initial_block_size = size;
+    opts.block_alloc = &BlockAlloc;
+    return opts;
+  }
+
+  google::protobuf::Arena arena_;
+  char arena_storage_[kArenaStorageSize];
+#endif
 };
 
 }  // namespace collector
