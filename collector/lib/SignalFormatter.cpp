@@ -49,8 +49,11 @@ std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateSignalFormatter(c
     return CreateProcessSummaryFormatter(inspector, true);
   }
   if (format_type == "network_signal") {
-    return CreateNetworkSignalFormatter();
+    return MakeUnique<NetworkSignalFormatter>(inspector, false);
   }
+  if (format_type == "network_signal_text") {
+      return MakeUnique<NetworkSignalFormatter>(inspector, true);
+    }
   if (format_type == "file_legacy") {
     return CreateFileLegacyFormatter(inspector, format_string, field_trunc_len);
   }
@@ -69,10 +72,6 @@ std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateFileSummaryFormat
 
 std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateProcessSummaryFormatter(sinsp* inspector, bool text_format) {
   return MakeUnique<ProcessSummaryFormatter>(inspector, text_format);
-}
-
-std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateNetworkSignalFormatter() {
-  return MakeUnique<NetworkSignalFormatter>();
 }
 
 std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateFileLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len)  {

@@ -29,6 +29,7 @@ You should have received a copy of the GNU General Public License along with thi
 namespace collector {
 
 bool BaseProtoSignalFormatter::FormatSignal(SafeBuffer* buf, sinsp_evt* event) {
+  Reset();
   const google::protobuf::Message* msg = ToProtoMessage(event);
   if (!msg) return false;
 

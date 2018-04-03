@@ -45,9 +45,6 @@ class SignalFormatterFactory {
   std::unique_ptr<SignalFormatter> CreateFileSummaryFormatter(sinsp* inspector, bool text_format = false);
   std::unique_ptr<SignalFormatter> CreateProcessSummaryFormatter(sinsp* inspector, bool text_format = false);
 
-  // methods to convert from sysdig event to signal proto
-  std::unique_ptr<SignalFormatter> CreateNetworkSignalFormatter();
-
   // methods to support legacy formatting
   std::unique_ptr<SignalFormatter> CreateFileLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len);
   std::unique_ptr<SignalFormatter> CreateProcessLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len);

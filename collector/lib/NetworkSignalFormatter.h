@@ -24,19 +24,42 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _NETWORK_SIGNAL_FORMATTER_H_
 #define _NETWORK_SIGNAL_FORMATTER_H_
 
-#include "SignalFormatter.h"
-#include "SafeBuffer.h"
-#include "EventClassifier.h"
+#include "ProtoSignalFormatter.h"
+#include "SysdigEventExtractor.h"
+
+#include "proto/data/signal.pb.h"
 
 namespace collector {
 
-class NetworkSignalFormatter : public SignalFormatter {
+class NetworkSignalFormatter : public ProtoSignalFormatter<data::Signal> {
  public:
-  NetworkSignalFormatter() {}
-  bool FormatSignal(SafeBuffer* buf, sinsp_evt* event);
+  using Signal = data::Signal;
+  using KernelSignal = data::KernelSignal;
+  using NetworkSignal = data::NetworkSignal;
+  using NetworkSignalType = NetworkSignal::NetworkSignalType;
+  using ConnectionInfo = data::ConnectionInfo;
+  using NetworkAddress = data::NetworkAddress;
+  using ProcessDetails = data::ProcessDetails;
+
+  NetworkSignalFormatter(sinsp* inspector, bool text_format = false) : ProtoSignalFormatter(text_format) {
+    event_extractor_.Init(inspector);
+  }
+
+ protected:
+  Signal* ToProtoMessage(sinsp_evt* event) override;
+
+ private:
+  KernelSignal* CreateKernelSignal(sinsp_evt* event);
+  ProcessDetails* CreateProcessDetails(sinsp_evt* event);
+  NetworkSignal* CreateNetworkSignal(sinsp_evt* event, NetworkSignalType signal_type);
+  ConnectionInfo* CreateConnectionInfo(sinsp_fdinfo_t* fd_info);
+  NetworkAddress* CreateIPv4Address(uint32_t ip, uint16_t port);
+  NetworkAddress* CreateIPv6Address(const uint32_t (&ip)[4], uint16_t port);
+  NetworkAddress* CreateUnixAddress(uint64_t id, const sinsp_fdinfo_t* fd_info);
+
+  SysdigEventExtractor event_extractor_;
 };
 
 }  // namespace collector
 
 #endif  // _NETWORK_SIGNAL_FORMATTER_H_
-

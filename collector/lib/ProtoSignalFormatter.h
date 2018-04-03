@@ -47,6 +47,7 @@ class BaseProtoSignalFormatter : public SignalFormatter {
   // Returns a pointer to the proto message derived from this event, or nullptr if no message should be output.
   // Note: The caller does not assume ownership of the returned message. To avoid an additional heap allocation, the
   // implementing class should maintain an instance-level message whose address is returned by this method.
+  virtual void Reset() {}
   virtual const google::protobuf::Message* ToProtoMessage(sinsp_evt* event) = 0;
 
   template <typename T, typename... Args>
@@ -81,18 +82,21 @@ class ProtoSignalFormatter : public BaseProtoSignalFormatter {
 
 #else
  protected:
-  template <typename T, typename... Args>
-  T* Allocate(Args&&... args) {
-    return google::protobuf::Arena::CreateMessage<T>(&arena_, std::forward<Args>(args)...);
-  }
-
-  Message* AllocateRoot() {
+  void Reset() override {
     google::protobuf::uint64 bytes_used = arena_.Reset();
     if (bytes_used > kArenaStorageSize) {
       CLOG_THROTTLED(WARNING, std::chrono::seconds(5))
           << "Used " << bytes_used << " bytes in the arena, which is more than the pre-allocated "
           << kArenaStorageSize << "bytes. Consider increasing the pre-allocated size";
     }
+  }
+
+  template <typename T, typename... Args>
+  T* Allocate(Args&&... args) {
+    return google::protobuf::Arena::CreateMessage<T>(&arena_, std::forward<Args>(args)...);
+  }
+
+  Message* AllocateRoot() {
     return google::protobuf::Arena::CreateMessage<Message>(&arena_);
   }
 
