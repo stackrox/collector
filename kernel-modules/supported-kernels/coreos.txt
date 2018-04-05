@@ -31,3 +31,4 @@ http://stable.release.core-os.net/amd64-usr/1520.9.0/
 http://stable.release.core-os.net/amd64-usr/1235.9.0/
 http://stable.release.core-os.net/amd64-usr/1409.9.0/
 http://stable.release.core-os.net/amd64-usr/1632.2.1/
+http://stable.release.core-os.net/amd64-usr/1688.5.3/

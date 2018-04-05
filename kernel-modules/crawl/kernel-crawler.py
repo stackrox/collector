@@ -24,7 +24,7 @@ import traceback
 # structure
 #
 centos_excludes = ["3.10.0-123", "3.10.0-229"]
-ubuntu_excludes = []
+ubuntu_excludes = ["4.15.0-14"] # SROX-11665 will remove this exclusion
 repos = {
     "CentOS" : [
         {
