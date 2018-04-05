@@ -94,14 +94,10 @@ const ProcessSummary* ProcessSummaryFormatter::ToProtoMessage(sinsp_evt* event) 
   // Set timestamp
   process_summary->set_timestamp(event->get_ts());
 
-  // Set the UUID
+  // UUID is stored as raw bytes, not in string format.
   uuid_t uuid;
   uuid_generate(uuid);
-
-  constexpr int kUuidStringLength = 36;  // uuid_unparse manpage says so. Feeling slightly uneasy still ...
-  char uuid_str[kUuidStringLength + 1];
-  uuid_unparse_lower(uuid, uuid_str);
-  process_summary->mutable_id()->set_value(uuid_str, kUuidStringLength);
+  process_summary->mutable_id()->set_value(&uuid, sizeof(uuid));
 
   return process_summary;
 }

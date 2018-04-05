@@ -120,13 +120,10 @@ const data::FileSummary* FileSummaryFormatter::ToProtoMessage(sinsp_evt* event) 
   file_summary->set_start_time(event->get_ts());
   file_summary->set_end_time(event->get_ts());
 
+  // UUID is stored as raw bytes, not in string format.
   uuid_t uuid;
   uuid_generate(uuid);
-
-  constexpr int kUuidStringLength = 36;
-  char uuid_str[kUuidStringLength + 1];
-  uuid_unparse_lower(uuid, uuid_str);
-  file_summary->mutable_id()->set_value(uuid_str, kUuidStringLength);
+  file_summary->mutable_id()->set_value(&uuid, sizeof(uuid));
 
   return file_summary;
 }
