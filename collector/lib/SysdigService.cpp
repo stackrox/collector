@@ -63,7 +63,7 @@ void SysdigService::Init(const CollectorConfig& config) {
 
   SetChisel(config.chisel);
 
-  classifier_.Init(config.processSyscalls);
+  classifier_.Init(config.hostname, config.processSyscalls);
   use_chisel_cache_ = config.useChiselCache;
 }
 
@@ -116,6 +116,10 @@ SignalType SysdigService::GetNext(SafeBuffer* message_buffer, SafeBuffer* key_bu
   key_buffer->clear();
   SignalType signal_type = classifier_.Classify(key_buffer, event);
   if (signal_type == SIGNAL_TYPE_UNKNOWN) return SIGNAL_TYPE_UNKNOWN;
+  if (key_buffer->empty()) {
+    CLOG_THROTTLED(WARNING, std::chrono::seconds(5)) << "Empty key for signal of type " << signal_type;
+    return SIGNAL_TYPE_UNKNOWN;
+  }
   message_buffer->clear();
   if (!signal_formatter_[signal_type]->FormatSignal(message_buffer, event)) {
     return SIGNAL_TYPE_UNKNOWN;

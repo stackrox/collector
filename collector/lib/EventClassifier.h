@@ -43,15 +43,16 @@ enum SignalType {
 
 class EventClassifier {
  public:
-  void Init(const std::vector<std::string>& process_syscalls);
+  void Init(const std::string& hostname, const std::vector<std::string>& process_syscalls);
 
   SignalType Classify(SafeBuffer* key_buf, sinsp_evt* event) const;
 
  private:
-  static void ExtractProcessSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
-  static void ExtractNetworkSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
-  static void ExtractFileSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
+  static bool ExtractProcessSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
+  bool ExtractNetworkSignalKey(SafeBuffer* key_buf, sinsp_evt* event) const;
+  static bool ExtractFileSignalKey(SafeBuffer* key_buf, sinsp_evt* event);
 
+  uint64_t hostname_hash_;
   std::bitset<PPM_EVENT_MAX> process_syscalls_;
 };
 

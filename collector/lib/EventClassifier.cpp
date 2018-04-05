@@ -27,6 +27,7 @@ extern "C" {
 #include <string.h>
 }
 
+#include <functional>
 #include <sstream>
 
 #include "EventNames.h"
@@ -44,7 +45,8 @@ constexpr uint64_t kNetFdTypes =
 
 }  // namespace
 
-void EventClassifier::Init(const std::vector<std::string>& process_syscalls) {
+void EventClassifier::Init(const std::string& hostname, const std::vector<std::string>& process_syscalls) {
+  hostname_hash_ = std::hash<std::string>()(hostname);
   process_syscalls_.reset();
   const EventNames& event_names = EventNames::GetInstance();
   for (const std::string& syscall_name : process_syscalls) {
@@ -57,50 +59,68 @@ void EventClassifier::Init(const std::vector<std::string>& process_syscalls) {
 SignalType EventClassifier::Classify(SafeBuffer* key_buf, sinsp_evt* event) const {
   key_buf->clear();
   if (process_syscalls_.test(event->get_type())) {
-    ExtractProcessSignalKey(key_buf, event);
+    if (!ExtractProcessSignalKey(key_buf, event)) return SIGNAL_TYPE_UNKNOWN;
     return SIGNAL_TYPE_PROCESS;
   }
   sinsp_evt::category cat;
   event->get_category(&cat);
   if (cat.m_category == EC_NET || ((cat.m_category & EC_IO_BASE) && cat.m_subcategory == sinsp_evt::SC_NET)) {
-    ExtractNetworkSignalKey(key_buf, event);
+    if (!ExtractNetworkSignalKey(key_buf, event)) return SIGNAL_TYPE_UNKNOWN;
     return SIGNAL_TYPE_NETWORK;
   }
   sinsp_fdinfo_t* fd_info = event->get_fd_info();
   if (fd_info && ((1 << fd_info->m_type) & kNetFdTypes)) {
-    ExtractNetworkSignalKey(key_buf, event);
+    if (!ExtractNetworkSignalKey(key_buf, event)) return SIGNAL_TYPE_UNKNOWN;
     return SIGNAL_TYPE_NETWORK;
   }
-  ExtractFileSignalKey(key_buf, event);
+  if (!ExtractFileSignalKey(key_buf, event)) return SIGNAL_TYPE_UNKNOWN;
   return SIGNAL_TYPE_FILE;
 }
 
-void EventClassifier::ExtractNetworkSignalKey(SafeBuffer* key_buf, sinsp_evt* event) {
+bool EventClassifier::ExtractNetworkSignalKey(SafeBuffer* key_buf, sinsp_evt* event) const {
   sinsp_fdinfo_t* fd_info = event->get_fd_info();
-  if (!fd_info) return;
+  if (!fd_info) return false;
   if (fd_info->m_type == SCAP_FD_IPV4_SOCK) {
     const auto& ipv4_fields = fd_info->m_sockinfo.m_ipv4info.m_fields;
-    uint8_t client_addr[4];
-    memcpy(client_addr, &ipv4_fields.m_sip, sizeof(client_addr));
-    uint16_t client_port = ipv4_fields.m_sport;
-    key_buf->AppendFTrunc(
-        "%" PRIu8 ".%" PRIu8 ".%" PRIu8 ".%" PRIu8 ":%" PRIu16,
-        client_addr[0], client_addr[1], client_addr[2], client_addr[3], client_port);
+    if (!ipv4_fields.m_sip) return false;
+    key_buf->AppendFTrunc("%" PRIx32 "%" PRIx16, ipv4_fields.m_sip, ipv4_fields.m_sport);
+    return true;
   }
+
+  if (fd_info->m_type == SCAP_FD_IPV6_SOCK) {
+    const auto& ipv6_fields = fd_info->m_sockinfo.m_ipv6info.m_fields;
+    if (!ipv6_fields.m_sip[0] && !ipv6_fields.m_sip[1] && !ipv6_fields.m_sip[2] && !ipv6_fields.m_sip[3]) return false;
+    key_buf->AppendFTrunc(
+        "%" PRIx32 "%" PRIx32 "%" PRIx32 "%" PRIx32 "%" PRIx16,
+        ipv6_fields.m_sip[0], ipv6_fields.m_sip[1], ipv6_fields.m_sip[2], ipv6_fields.m_sip[3], ipv6_fields.m_sport);
+    return true;
+  }
+
+  if (fd_info->m_type == SCAP_FD_UNIX_SOCK) {
+    const auto& unix_fields = fd_info->m_sockinfo.m_unixinfo.m_fields;
+    key_buf->AppendFTrunc(
+        "%" PRIx64 "%" PRIx32 "%" PRIx32,
+        hostname_hash_, static_cast<int32_t>(unix_fields.m_source >> 3), static_cast<int32_t>(unix_fields.m_dest >> 3));
+    return true;
+  }
+
+  return false;
 }
 
-void EventClassifier::ExtractProcessSignalKey(SafeBuffer* key_buf, sinsp_evt* event) {
+bool EventClassifier::ExtractProcessSignalKey(SafeBuffer* key_buf, sinsp_evt* event) {
   const sinsp_threadinfo* tinfo = event->get_thread_info();
-  if (!tinfo) return;
+  if (!tinfo) return false;
   key_buf->AppendTrunc(tinfo->m_container_id);
+  return true;
 }
 
-void EventClassifier::ExtractFileSignalKey(SafeBuffer* key_buf, sinsp_evt* event) {
+bool EventClassifier::ExtractFileSignalKey(SafeBuffer* key_buf, sinsp_evt* event) {
   const sinsp_threadinfo* tinfo = event->get_thread_info();
-  if (!tinfo) return;
+  if (!tinfo) return false;
   // Use "<pid>,<fd>,<container-id>" as the key. We place the container ID last to make sure the pid and fd don't get
   // truncated.
   key_buf->AppendFTrunc("%" PRId64 ",%" PRId64 ",%s", tinfo->m_pid, event->get_fd_num(), tinfo->m_container_id.c_str());
+  return true;
 }
 
 }  // namespace collector

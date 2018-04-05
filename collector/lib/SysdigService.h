@@ -48,7 +48,7 @@ class SysdigService : public Sysdig {
   static constexpr char kModulePath[] = "/module/collector.ko";
   static constexpr char kModuleName[] = "collector";
   static constexpr int kMessageBufferSize = 8192;
-  static constexpr int kKeyBufferSize = 24;
+  static constexpr int kKeyBufferSize = 48;
 
   SysdigService() = default;
 
