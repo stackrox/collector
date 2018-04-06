@@ -234,16 +234,12 @@ std::string base64_decode(std::string const& encoded_string) {
     return ret;
 }
 
-std::string GetHostname() {
-    std::string hostname_file(GetHostPath("/etc/hostname"));
-    std::ifstream is(hostname_file);
-    if (!is.is_open()) {
-      CLOG(ERROR) << "Failed to open " << hostname_file << " to read hostname";
-      return "unknown";
-    }
-    std::string hostname;
-    is >> hostname;
-    return hostname;
+const char* GetHostname() {
+  const char* hostname = getenv("NODE_HOSTNAME");
+  if (hostname && *hostname) return hostname;
+
+  CLOG(ERROR) << "Failed to determine hostname, environment variable NODE_HOSTNAME not set";
+  return "unknown";
 }
 
 void OnKafkaError(rd_kafka_t* rk, int err, const char* reason, void* opaque) {

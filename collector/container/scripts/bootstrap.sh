@@ -60,10 +60,7 @@ if [ "$ROX_PLATFORM" = "swarm" ]; then
 fi
 
 # Get the hostname from Docker so this container can use it in its output.
-HOSTNAME=$(curl -s --unix-socket /host/var/run/docker.sock http://localhost/info | jq --raw-output .Name)
-echo "Setting this container's node name to $HOSTNAME."
-mkdir -p /host/etc/
-echo "$HOSTNAME" > /host/etc/hostname
+export NODE_HOSTNAME=$(curl -s --unix-socket /host/var/run/docker.sock http://localhost/info | jq --raw-output .Name)
 
 # kernel module download/build
 KERNELVERSION=`uname -r`
