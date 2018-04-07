@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DOCKER_SOCK='unix:///host/var/run/docker.sock'
-DOCKER=(/usr/local/bin/docker -H "$DOCKER_SOCK")
+DOCKER=(/usr/local/bin/docker)
 CONTAINER_ID=$("${DOCKER[@]}" inspect --format '{{.Id}}' $HOSTNAME)
 NODE=$("${DOCKER[@]}" info -f '{{.Name}}')
 NAME="${COLLECTOR_NAME}-${NODE}-priv"
