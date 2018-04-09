@@ -290,7 +290,11 @@ std::string FileSummaryFormatter::GetPathAtFD(sinsp_evt* event, const int64_t* a
       }
     }
   }
+  // Handle case where FD path doesn't have trailing separator
   if (!result.empty() && result.back() != '/') result.push_back('/');
+  // Handle case where FD path has trailing sep *and* relative path has leading sep
+  if (!result.empty() && result.back() == '/' && path[0] == '/') result.pop_back();
+  // Append relative path to FD path
   result.append(path);
   return result;
 }
