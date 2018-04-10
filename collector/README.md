@@ -62,3 +62,4 @@ CONNECTION_TIMEOUT is optional, and it defaults to 8.
 ~~~
 docker run --name collector -d --privileged -v /var/run/docker.sock:/host/var/run/docker.sock -v /dev:/host/dev -v /proc:/host/proc:ro -v /boot:/host/boot:ro -v /lib/modules:/host/lib/modules:ro -v /usr:/host/usr:ro -e COLLECTOR_CONFIG='{"syscalls":["open","close","read","write"],"output":"stdout","format":"container:container.id,event:evt.type,time:evt.time,rawtime:evt.rawtime,direction:evt.dir,image:container.image,name:container.name"}' collector
 ~~~
+
