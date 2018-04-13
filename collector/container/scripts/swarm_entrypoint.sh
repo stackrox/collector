@@ -1,6 +1,5 @@
 #!/bin/bash
 
-DOCKER_SOCK='unix:///host/var/run/docker.sock'
 DOCKER=(/usr/local/bin/docker)
 CONTAINER_ID=$("${DOCKER[@]}" inspect --format '{{.Id}}' $HOSTNAME)
 NODE=$("${DOCKER[@]}" info -f '{{.Name}}')
@@ -21,9 +20,10 @@ if [ -n "$EXISTING" ]; then
     "${DOCKER[@]}" rm -fv "$EXISTING" || true
 fi
 
-"${DOCKER[@]}" run --privileged --rm --name $NAME \
+"${DOCKER[@]}" run --read-only --privileged --rm --name $NAME \
         $COLLECTOR_ENVS --network=container:$CONTAINER_ID \
         $COLLECTOR_MOUNTS $COLLECTOR_LABELS \
+        --tmpfs /module \
         --log-driver='json-file' --log-opt='max-size=1m' --log-opt='max-file=10' \
         --cpu-period=100000 --cpu-quota=$ROX_COLLECTOR_CPU_QUOTA \
         --restart=no $IMAGE

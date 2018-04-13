@@ -30,6 +30,8 @@ file(GLOB COLLECTOR_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/lib/*.cpp)
 file(GLOB_RECURSE PROTO_SRC_FILES ${PROJECT_SOURCE_DIR}/generated/*.cc)
 add_library(collector_lib ${COLLECTOR_LIB_SRC_FILES} ${PROTO_SRC_FILES})
 target_link_libraries(collector_lib sinsp-wrapper)
+target_link_libraries(collector_lib cap-ng)
+target_link_libraries(collector_lib uuid)
 
 add_executable(collector collector.cpp)
 target_link_libraries(collector collector_lib)
@@ -37,7 +39,6 @@ target_link_libraries(collector jsoncpp)
 target_link_libraries(collector rdkafka)
 target_link_libraries(collector libprometheus-cpp.a)
 target_link_libraries(collector libprotobuf.a)
-target_link_libraries(collector uuid)
 target_link_libraries(collector -static-libgcc -static-libstdc++)
 
 # Setup testing

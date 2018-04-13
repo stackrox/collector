@@ -40,6 +40,7 @@ RUN apt-get update \
         libssl-dev \
         wget \
         uuid-dev \
+        libcap-ng0 \
  ;
 
 COPY bin/curl /usr/local/bin/curl

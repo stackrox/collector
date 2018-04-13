@@ -22,6 +22,7 @@ RUN apt-get update \
         libtool \
         unzip \
         uuid-dev \
+        libcap-ng-dev \
         ;
 
 # We want to fail if the destination directory is there, hence mkdir (not -p).

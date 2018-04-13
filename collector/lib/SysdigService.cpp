@@ -24,6 +24,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "SysdigService.h"
 
 #include <linux/ioctl.h>
+#include <cap-ng.h>
 
 #include "libsinsp/wrapper.h"
 
@@ -31,6 +32,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "Logging.h"
 #include "StdoutSignalWriter.h"
 #include "SignalFormatter.h"
+#include "Utility.h"
 
 namespace collector {
 
@@ -133,6 +135,12 @@ void SysdigService::Start() {
   }
 
   inspector_->open("");
+
+  // Drop DAC_OVERRIDE capability after opening the device files.
+  capng_updatev(CAPNG_DROP, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_DAC_OVERRIDE, -1);
+  if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
+    CLOG(WARNING) << "Failed to drop DAC_OVERRIDE capability: " << StrError();
+  }
 
   std::lock_guard<std::mutex> lock(running_mutex_);
   running_ = true;

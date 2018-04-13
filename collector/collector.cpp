@@ -44,6 +44,8 @@ extern "C" {
 #include <unistd.h>
     
 #include <sys/resource.h>
+
+#include <cap-ng.h>
 }
 
 #include "ChiselConsumer.h"
@@ -248,6 +250,15 @@ void OnKafkaError(rd_kafka_t* rk, int err, const char* reason, void* opaque) {
 }
 
 int main(int argc, char **argv) {
+  // First action: drop all capabilities except for SYS_MODULE (inserting the module), SYS_PTRACE (reading from /proc),
+  // and DAC_OVERRIDE (opening the device files with O_RDWR regardless of actual permissions).
+  capng_clear(CAPNG_SELECT_BOTH);
+  capng_updatev(CAPNG_ADD, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED),
+                CAP_SYS_MODULE, CAP_DAC_OVERRIDE, CAP_SYS_PTRACE, -1);
+  if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
+    CLOG(WARNING) << "Failed to drop capabilities: " << StrError();
+  }
+
   if (!g_control.is_lock_free()) {
     CLOG(FATAL) << "Could not create a lock-free control variable!";
   }
@@ -272,8 +283,16 @@ int main(int argc, char **argv) {
 
   CLOG(INFO) << "Starting collector with the following parameters: brokerList=" << args->BrokerList();
 
-    // insert the kernel module with options from the configuration
-    Json::Value collectorConfig = args->CollectorConfig();
+  // insert the kernel module with options from the configuration
+  Json::Value collectorConfig = args->CollectorConfig();
+
+  insertModule(collectorConfig["syscalls"]);
+
+  // Drop SYS_MODULE capability after successfully inserting module.
+  capng_updatev(CAPNG_DROP, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_SYS_MODULE, -1);
+  if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
+    CLOG(WARNING) << "Failed to drop SYS_MODULE capability: " << StrError();
+  }
 
     bool useKafka = !args->BrokerList().empty();
     if (!useKafka) {
@@ -319,8 +338,6 @@ int main(int argc, char **argv) {
     for (auto itr : collectorConfig["process_syscalls"]) {
         process_syscalls.push_back(itr.asString());
     }
-
-    insertModule(collectorConfig["syscalls"]);
 
     CLOG(INFO) << "Output specs set to: network='" << networkSignalOutput << "', process='"
                << processSignalOutput << "', file='" << fileSignalOutput << "'";
