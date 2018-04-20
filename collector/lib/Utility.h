@@ -27,7 +27,10 @@ extern "C" {
 #include <errno.h>
 }
 
+#include <chrono>
+#include <functional>
 #include <memory>
+#include <sstream>
 #include <utility>
 
 namespace collector {
@@ -41,6 +44,25 @@ const char* SignalName(int signum);
 template <typename T, typename... Args>
 std::unique_ptr<T> MakeUnique(Args&&... args) {
   return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
+namespace impl {
+
+inline void StrAppend(std::ostringstream* os) {}
+
+template <typename Arg1, typename... Args>
+void StrAppend(std::ostringstream* os, Arg1&& arg1, Args&&... args) {
+  *os << std::forward<Arg1>(arg1);
+  StrAppend(os, std::forward<Args>(args)...);
+}
+
+}  // namespace impl
+
+template <typename... Args>
+std::string Str(Args&&... args) {
+  std::ostringstream string_stream;
+  impl::StrAppend(&string_stream, std::forward<Args>(args)...);
+  return string_stream.str();
 }
 
 }  // namespace collector

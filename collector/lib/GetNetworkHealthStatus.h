@@ -31,37 +31,35 @@ You should have received a copy of the GNU General Public License along with thi
 #include "civetweb/CivetServer.h"
 #include "prometheus/registry.h"
 
+#include "Network.h"
 #include "StoppableThread.h"
 
 namespace collector {
 
 class GetNetworkHealthStatus : public CivetHandler {
  public:
-  GetNetworkHealthStatus(const std::string& brokerList, std::shared_ptr<prometheus::Registry> registry);
+  GetNetworkHealthStatus(const std::vector<Address>& kafka_brokers, std::shared_ptr<prometheus::Registry> registry);
 
   bool start();
   void stop();
   void run();
 
-  bool handleGet(CivetServer *server, struct mg_connection *conn) override;
+  bool handleGet(CivetServer* server, struct mg_connection* conn) override;
 
  private:
   struct NetworkHealthStatus {
     std::string name;
-    std::string host;
-    int port;
+    Address address;
     prometheus::Gauge* gauge;
     volatile bool connected;
-    NetworkHealthStatus(std::string name, std::string host, int port, prometheus::Gauge* gauge)
-        : name(name), host(host), port(port), gauge(gauge), connected(false) {}
+    NetworkHealthStatus(std::string name, Address address, prometheus::Gauge* gauge)
+        : name(name), address(std::move(address)), gauge(gauge), connected(false) {}
 
     std::string endpoint() const {
-      return host + ":" + std::to_string(port);
+      return address.str();
     }
   };
 
-  bool checkEndpointStatus(const NetworkHealthStatus& status, std::chrono::milliseconds timeout);
-    
   StoppableThread thread_;
   std::vector<NetworkHealthStatus> network_statuses_;
   std::shared_ptr<prometheus::Registry> registry_;

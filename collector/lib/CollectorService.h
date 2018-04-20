@@ -24,11 +24,14 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _COLLECTOR_SERVICE_H_
 #define _COLLECTOR_SERVICE_H_
 
+#include <vector>
+
 #include <json/json.h>
 #include "librdkafka/rdkafka.h"
 
 #include "ChiselConsumer.h"
 #include "GetNetworkHealthStatus.h"
+#include "Network.h"
 
 namespace collector {
 
@@ -41,7 +44,7 @@ struct CollectorConfig {
   std::string hostname;
   std::string chisel;
 
-  std::string brokerList;
+  std::vector<Address> kafkaBrokers;
   std::string chiselsTopic;
 
   std::string format;
@@ -67,6 +70,7 @@ class CollectorService {
   void RunForever();
 
  private:
+  bool WaitForKafka();
   void OnChiselReceived(const std::string& chisel);
 
   CollectorConfig config_;

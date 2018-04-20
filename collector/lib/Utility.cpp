@@ -23,6 +23,15 @@ You should have received a copy of the GNU General Public License along with thi
 
 extern "C" {
 
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <poll.h>
+#include <unistd.h>
+
 #include <errno.h>
 #include <signal.h>
 #include <string.h>

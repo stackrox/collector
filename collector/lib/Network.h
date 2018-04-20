@@ -20,43 +20,39 @@ You should have received a copy of the GNU General Public License along with thi
 * do not wish to do so, delete this exception statement from your
 * version.
 */
-
-#ifndef _CHISEL_CONSUMER_H_
-#define _CHISEL_CONSUMER_H_
+#ifndef _NETWORK_H_
+#define _NETWORK_H_
 
 #include <chrono>
 #include <functional>
 #include <string>
-
-#include "librdkafka/rdkafka.h"
-
-#include "StoppableThread.h"
+#include <vector>
 
 namespace collector {
 
-class ChiselConsumer : private StoppableThread {
- public:
-  using ChiselUpdateCb = std::function<void (const std::string&)>;
-  ChiselConsumer(const rd_kafka_conf_t* conf_template, std::string topic, std::string unique_name,
-                 ChiselUpdateCb chisel_update_cb)
-      : conf_template_(conf_template), unique_name_(std::move(unique_name)), topic_(std::move(topic)),
-        chisel_update_cb_(std::move(chisel_update_cb)) {}
+struct Address {
+  std::string host;
+  uint16_t port;
 
-  void Start();
-  void Stop() { StoppableThread::Stop(); }
-
- private:
-  void runForever();
-  void processMessage(const rd_kafka_message_t* message);
-  void handleChisel(const rd_kafka_message_t* message);
-
-  const rd_kafka_conf_t* conf_template_;
-  std::string unique_name_;
-  std::string topic_;
-  ChiselUpdateCb chisel_update_cb_;
-  std::chrono::time_point<std::chrono::steady_clock> start_time_;
+  Address() = default;
+  Address(std::string host, uint16_t port) : host(std::move(host)), port(port) {}
+  std::string str() const { return host + ":" + std::to_string(port); }
 };
+
+bool ParseAddress(const std::string& address_str, Address* addr, std::string* error_str);
+bool ParseAddressList(const std::string& address_list_str, std::vector<Address>* addresses, std::string* error_str);
+
+enum class ConnectivityStatus {
+  OK,
+  ERROR,
+  INTERRUPTED,
+};
+
+ConnectivityStatus CheckConnectivity(const Address& address, const std::chrono::milliseconds& timeout,
+                                     std::string* error_str,
+                                     const std::function<bool()>& interrupt = []{ return false; },
+                                     int interrupt_fd = -1);
 
 }  // namespace collector
 
-#endif // _CHISEL_CONSUMER_H_
+#endif  // _NETWORK_H_

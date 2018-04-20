@@ -56,8 +56,20 @@ void ChiselConsumer::processMessage(const rd_kafka_message_t* message) {
             //    - rdkafkacpp.h
             break;
 
+        // These errors might occur when the brokers have just started. Suppress them if they happen within a minute
+        // of startup.
+        case RD_KAFKA_RESP_ERR_NOT_LEADER_FOR_PARTITION:
+        case RD_KAFKA_RESP_ERR_UNKNOWN_TOPIC_OR_PART:
+            if (std::chrono::steady_clock::now() - start_time_ <= std::chrono::minutes(1)) {
+              break;
+            }
+            // fallthrough intended
+
         default:
             CLOG(ERROR) << "Consume failed: " << rd_kafka_err2str(err);
+            // A lot of the errors are caused by a bad broker state, so they will occur at a high frequency. Sleep for
+            // 5 seconds to prevent excessive log flooding.
+            std::this_thread::sleep_for(std::chrono::seconds(2));
     }
 }
 
@@ -97,6 +109,8 @@ void ChiselConsumer::runForever() {
         CLOG(FATAL) << "Failed to subscribe to topic '" << topic_ << "' for chisel consumer: "
                     << rd_kafka_err2str(err);
     }
+
+    start_time_ = std::chrono::steady_clock::now();
 
     // Consume messages
     while (!should_stop()) {

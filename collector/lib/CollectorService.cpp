@@ -60,7 +60,7 @@ void CollectorService::RunForever() {
 
   std::shared_ptr<prometheus::Registry> registry = std::make_shared<prometheus::Registry>();
 
-  GetNetworkHealthStatus getNetworkHealthStatus(config_.brokerList, registry);
+  GetNetworkHealthStatus getNetworkHealthStatus(config_.kafkaBrokers, registry);
 
   server.addHandler("/ready", getStatus);
   server.addHandler("/networkHealth", getNetworkHealthStatus);
@@ -84,6 +84,13 @@ void CollectorService::RunForever() {
   std::unique_ptr<ChiselConsumer> chisel_consumer;
 
   if (config_.useKafka) {
+    CLOG(INFO) << "Waiting for all Kafka brokers to become ready ...";
+    if (!WaitForKafka()) {
+      CLOG(INFO) << "Interrupted while waiting for Kafka to become ready ...";
+      return;
+    }
+    CLOG(INFO) << "Kafka is ready";
+
     chisel_consumer.reset(new ChiselConsumer(
         config_.kafkaConfigTemplate, config_.chiselsTopic, config_.hostname,
         [this](const std::string& chisel) { OnChiselReceived(chisel); }));
@@ -127,6 +134,33 @@ void CollectorService::RunForever() {
   getNetworkHealthStatus.stop();
 
   sysdig.CleanUp();
+}
+
+bool CollectorService::WaitForKafka() {
+  const int num_brokers = config_.kafkaBrokers.size();
+
+  auto interrupt = [this] { return control_->load(std::memory_order_relaxed) == STOP_COLLECTOR; };
+  while (!interrupt()) {
+    int ready_brokers = 0;
+    for (const auto& broker_addr : config_.kafkaBrokers) {
+      std::string error_str;
+      ConnectivityStatus conn_status = CheckConnectivity(broker_addr, std::chrono::seconds(1), &error_str, interrupt);
+      if (conn_status == ConnectivityStatus::INTERRUPTED) return false;
+      else if (conn_status == ConnectivityStatus::ERROR) {
+        CLOG(ERROR) << "Error connecting to " << broker_addr.str() << ": " << error_str;
+      } else {
+        ++ready_brokers;
+      }
+    }
+
+    if (ready_brokers == num_brokers) {
+      CLOG(INFO) << ready_brokers << "/" << num_brokers << " brokers are ready.";
+      return true;
+    }
+    CLOG(ERROR) << ready_brokers << "/" << num_brokers << " brokers are ready. Sleeping for 5 seconds ...";
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+  }
+  return false;
 }
 
 void CollectorService::OnChiselReceived(const std::string& new_chisel) {

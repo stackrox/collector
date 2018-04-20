@@ -360,17 +360,23 @@ int main(int argc, char **argv) {
 
     rd_kafka_conf_t* conf_template = nullptr;
 
-    if (useKafka) {
-        conf_template = rd_kafka_conf_new();
-        char errstr[256];
-        rd_kafka_conf_res_t res = rd_kafka_conf_set(conf_template, "metadata.broker.list", args->BrokerList().c_str(),
-                                                    errstr, sizeof(errstr));
-        if (res != RD_KAFKA_CONF_OK) {
-            CLOG(FATAL) << "Failed to set brokers in Kafka config: " << errstr;
-        }
-        rd_kafka_conf_set_error_cb(conf_template, OnKafkaError);
-    }
+    std::vector<Address> broker_endpoints;
 
+    if (useKafka) {
+      std::string error_str;
+      if (!ParseAddressList(args->BrokerList(), &broker_endpoints, &error_str)) {
+        CLOG(FATAL) << "Failed to parse Kafka broker list: " << error_str;
+      }
+
+      conf_template = rd_kafka_conf_new();
+      char errstr[256];
+      rd_kafka_conf_res_t res = rd_kafka_conf_set(conf_template, "metadata.broker.list", args->BrokerList().c_str(),
+                                                  errstr, sizeof(errstr));
+      if (res != RD_KAFKA_CONF_OK) {
+        CLOG(FATAL) << "Failed to set brokers in Kafka config: " << errstr;
+      }
+      rd_kafka_conf_set_error_cb(conf_template, OnKafkaError);
+    }
 
     CollectorConfig config;
     config.hostname = GetHostname();
@@ -380,7 +386,7 @@ int main(int argc, char **argv) {
     config.snapLen = snapLen;
     config.useChiselCache = useChiselCache;
     config.chisel = chisel;
-    config.brokerList = args->BrokerList();
+    config.kafkaBrokers = std::move(broker_endpoints);
     config.format = format;
     config.networkSignalOutput = networkSignalOutput;
     config.processSignalOutput = processSignalOutput;
