@@ -280,6 +280,8 @@ FileProcess* FileSummaryFormatter::CreateFileProcess(sinsp_evt* event) {
 std::string FileSummaryFormatter::GetPathAtFD(sinsp_evt* event, const int64_t* at_fd, const char* path) {
   std::string result;
   if (!path) return result;
+  // Ignore at_fd when path is absolute
+  if (path[0] == '/') return std::string(path);
   if (at_fd) {
     if (sinsp_threadinfo* tinfo = event->get_thread_info()) {
       // in some cases fd contains a flag value (AT_FDCWD=-100), and is not properly sign-extended
