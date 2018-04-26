@@ -56,7 +56,7 @@ function find_kernel_module() {
 
 if [ "$ROX_PLATFORM" = "swarm" ]; then
     ## swap to reentrant container strategy to gain privileged mode
-    exec /swarm_entrypoint.sh
+    exec /swarm_entrypoint.sh "$@"
 fi
 
 # Get the hostname from Docker so this container can use it in its output.

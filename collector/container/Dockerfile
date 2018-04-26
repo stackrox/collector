@@ -74,6 +74,10 @@ COPY scripts/bootstrap.sh /bootstrap.sh
 RUN chown root.root /bootstrap.sh
 RUN chmod 700 /bootstrap.sh
 
+COPY scripts/extract_secrets.sh /extract_secrets.sh
+RUN chown root.root /extract_secrets.sh
+RUN chmod 700 /extract_secrets.sh
+
 # copy notice and license files
 COPY NOTICE-collector.txt \
      COPYING.txt \

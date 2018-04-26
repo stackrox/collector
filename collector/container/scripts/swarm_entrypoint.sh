@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 DOCKER=(/usr/local/bin/docker)
 CONTAINER_ID=$("${DOCKER[@]}" inspect --format '{{.Id}}' $HOSTNAME)
 NODE=$("${DOCKER[@]}" info -f '{{.Name}}')
@@ -20,10 +22,16 @@ if [ -n "$EXISTING" ]; then
     "${DOCKER[@]}" rm -fv "$EXISTING" || true
 fi
 
+# Pipe everything in /run/secrets to the new container via stdin to prevent it from ever touching the disk.
+
+(cd /run/secrets; find . -type f -print0 | xargs -0 tar c) | \
 "${DOCKER[@]}" run --read-only --privileged --rm --name $NAME \
         $COLLECTOR_ENVS --network=container:$CONTAINER_ID \
         $COLLECTOR_MOUNTS $COLLECTOR_LABELS \
         --tmpfs /module \
+        --tmpfs /run/secrets \
         --log-driver='json-file' --log-opt='max-size=1m' --log-opt='max-file=10' \
         --cpu-period=100000 --cpu-quota=$ROX_COLLECTOR_CPU_QUOTA \
-        --restart=no $IMAGE
+        --entrypoint /extract_secrets.sh \
+        --interactive \
+        --restart=no $IMAGE "$@"
