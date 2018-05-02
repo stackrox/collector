@@ -376,6 +376,38 @@ int main(int argc, char **argv) {
         CLOG(FATAL) << "Failed to set brokers in Kafka config: " << errstr;
       }
       rd_kafka_conf_set_error_cb(conf_template, OnKafkaError);
+
+      const auto& tlsConfig = collectorConfig["tlsConfig"];
+      if (!tlsConfig.isNull()) {
+        std::string caCertPath = tlsConfig["caCertPath"].asString();
+        std::string clientCertPath = tlsConfig["clientCertPath"].asString();
+        std::string clientKeyPath = tlsConfig["clientKeyPath"].asString();
+
+        if (!caCertPath.empty() && !clientCertPath.empty() && !clientKeyPath.empty()) {
+          res = rd_kafka_conf_set(conf_template, "security.protocol", "ssl", errstr, sizeof(errstr));
+          if (res != RD_KAFKA_CONF_OK) {
+            CLOG(FATAL) << "Failed to set security protocol to SSL: " << errstr;
+          }
+          res = rd_kafka_conf_set(conf_template, "ssl.ca.location", caCertPath.c_str(), errstr, sizeof(errstr));
+          if (res != RD_KAFKA_CONF_OK) {
+            CLOG(FATAL) << "Failed to set CA location: " << errstr;
+          }
+          res = rd_kafka_conf_set(conf_template, "ssl.certificate.location", clientCertPath.c_str(),
+                                  errstr, sizeof(errstr));
+          if (res != RD_KAFKA_CONF_OK) {
+            CLOG(FATAL) << "Failed to set CA location: " << errstr;
+          }
+          res = rd_kafka_conf_set(conf_template, "ssl.key.location", clientKeyPath.c_str(),
+                                            errstr, sizeof(errstr));
+          if (res != RD_KAFKA_CONF_OK) {
+            CLOG(FATAL) << "Failed to set CA location: " << errstr;
+          }
+        } else {
+          CLOG(ERROR)
+              << "Partial TLS config: CACertPath=" << caCertPath << ", ClientCertPath=" << clientCertPath
+              << ", ClientKeyPath=" << clientKeyPath << "; will not use TLS";
+        }
+      }
     }
 
     CollectorConfig config;
