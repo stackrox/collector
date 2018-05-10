@@ -1,5 +1,7 @@
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-image-4.13.0-1007-gcp_4.13.0-1007.10_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-headers-4.13.0-1007-gcp_4.13.0-1007.10_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-image-4.13.0-1016-gcp_4.13.0-1016.20_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-headers-4.13.0-1016-gcp_4.13.0-1016.20_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-image-4.13.0-1008-gcp_4.13.0-1008.11_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-headers-4.13.0-1008-gcp_4.13.0-1008.11_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-image-4.10.0-1004-gcp_4.10.0-1004.4_amd64.deb
@@ -24,7 +26,10 @@ http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-image-4.13.0-1
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-headers-4.13.0-1006-gcp_4.13.0-1006.9_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-image-4.10.0-1009-gcp_4.10.0-1009.9_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-headers-4.10.0-1009-gcp_4.10.0-1009.9_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-image-4.13.0-1015-gcp_4.13.0-1015.19_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-headers-4.13.0-1015-gcp_4.13.0-1015.19_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.13.0-1007_4.13.0-1007.10_all.deb
+http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.13.0-1016_4.13.0-1016.20_all.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.13.0-1008_4.13.0-1008.11_all.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.10.0-1004_4.10.0-1004.4_all.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.13.0-1002_4.13.0-1002.5_all.deb
@@ -37,3 +42,4 @@ http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.13.0-1014_4.13.0-1014.18_all.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.13.0-1006_4.13.0-1006.9_all.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.10.0-1009_4.10.0-1009.9_all.deb
+http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.13.0-1015_4.13.0-1015.19_all.deb
