@@ -23,7 +23,11 @@ import traceback
 # hunting packages. When adding repos or so be sure to respect the same data
 # structure
 #
-centos_excludes = ["3.10.0-123", "3.10.0-229"]
+centos_excludes = [
+    "3.10.0-123", # 7.0.1406
+    "3.10.0-229", # 7.1.1503
+    "3.10.0-327", # 7.2.1511
+]
 ubuntu_excludes = [
     "4.15.0-14", # SROX-11665 will remove this exclusion
     "4.15.0-20", "4.15.0-21", # linux-image was never uploaded to ubuntu.com for amd64 for these versions.
@@ -33,12 +37,14 @@ repos = {
         {
             # This is the root path of the repository in which the script will
             # look for distros (HTML page)
-            "root" : "http://mirrors.kernel.org/centos/",
+            "root" : "https://mirrors.kernel.org/centos/",
 
             # This is the XPath + Regex (optional) for analyzing the `root`
             # page and discover possible distro versions. Use the regex if you
-            # want to limit the version release
-            "discovery_pattern" : "/html/body//pre/a[regex:test(@href, '^7.*$')]/@href",
+            # want to limit the version release.
+            # Here, we want subpaths like /7.5.1804/. The path /7/ is always
+            # an alias to the latest release, so there is no use crawling it.
+            "discovery_pattern" : "/html/body//pre/a[regex:test(@href, '^7\..*$')]/@href",
 
             # Once we have found every version available, we need to know were
             # to go inside the tree to find packages we need (HTML pages)
@@ -57,8 +63,15 @@ repos = {
         },
 
         {
+            # CentOS Vault hosts packages that are no longer available on
+            # the up-to-date mirrors.
+            # Sysdig also crawls http://vault.centos.org/centos/, but that
+            # appears to be completely redundant.
             "root" : "http://vault.centos.org/",
-            "discovery_pattern" : "//body//table/tr/td/a[regex:test(@href, '^7.*$')]/@href",
+            # Here, we want subpaths like /7.5.1804/. The path /7/ is always
+            # an alias to the latest release, so there is no use crawling it.
+            "discovery_pattern" : "//body//table/tr/td/a[regex:test(@href, '^7\..*$')]/@href",
+
             "subdirs" : [
                 "os/x86_64/Packages/",
                 "updates/x86_64/Packages/"
@@ -67,16 +80,6 @@ repos = {
             "exclude_patterns": centos_excludes
         },
 
-        {
-            "root" : "http://vault.centos.org/centos/",
-            "discovery_pattern" : "//body//table/tr/td/a[regex:test(@href, '^7.*$')]/@href",
-            "subdirs" : [
-                "os/x86_64/Packages/",
-                "updates/x86_64/Packages/"
-            ],
-            "page_pattern" : "//body//table/tr/td/a[regex:test(@href, '^kernel-(devel-)?[0-9].*\.rpm$')]/@href",
-            "exclude_patterns": centos_excludes
-        },
         {
             # All kernels released to the main ELRepo repo also end up in the
             # archive, so it's OK just to crawl the archive.
