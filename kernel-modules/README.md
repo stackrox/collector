@@ -74,6 +74,10 @@ which may not be compatible.)
 the time since the release happened. Any files that do not have any edits
 should be changed to have a single valid URL line (due to build difficulties
 with empty files).
+This list can be ascertained using a command like:
+```bash
+git diff HEAD develop -- kernel-modules/supported-kernels/ | grep + | grep -v '@' | cut -c 2-
+```
 1. Run `make all upload-modules`. Note that your Google Cloud identity must
 have permissions in the stackrox-collector project to do this. Consult a cloud
 admin if you need permissions and do not have them.
@@ -101,4 +105,3 @@ script function and adding it to `build/build-kos`.
 
 Then, add the requisite targets to the Makefile and commit the list of kernel
 package URLs.
-

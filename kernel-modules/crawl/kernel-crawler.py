@@ -30,7 +30,10 @@ centos_excludes = [
 ]
 ubuntu_excludes = [
     "4.15.0-14", # SROX-11665 will remove this exclusion
-    "4.15.0-20", "4.15.0-21", # linux-image was never uploaded to ubuntu.com for amd64 for these versions.
+    "4.15.0-20", # linux-image was never uploaded to ubuntu.com for amd64 for this version.
+    "4.15.0-21", # linux-image was never uploaded to ubuntu.com for amd64 for this version.
+    "4.15.0-22", # linux-image was never uploaded to ubuntu.com for amd64 for this version.
+    "4.15.0-1012", # linux-image was never uploaded to ubuntu.com for amd64 for this version.
 ]
 repos = {
     "CentOS" : [
