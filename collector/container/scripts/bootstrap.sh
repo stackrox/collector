@@ -25,14 +25,16 @@ function download_kernel_module() {
     KERNEL_MODULE=$MODULE_NAME-$KERNELVERSION.ko
     echo >&2
     echo "Attempting to download $KERNEL_MODULE." >&2
-    wget -O $MODULE_NAME.ko $MODULE_URL/$DISTRO/$KERNEL_MODULE
+    if [[ ! -d /module ]]; then
+      echo >&2 "/module directory does not exist."
+      return 1
+    fi
+    wget -O /module/$MODULE_NAME.ko $MODULE_URL/$DISTRO/$KERNEL_MODULE
     if [ $? -ne 0 ]; then
       echo "Error downloading $DISTRO/$KERNEL_MODULE from remote repository." >&2
       return 1
     fi
-    mkdir -p /module/
-    cp $MODULE_NAME.ko /module/$MODULE_NAME.ko
-    chmod 777 /module/$MODULE_NAME.ko
+    chmod 0444 /module/$MODULE_NAME.ko
     echo "Using $DISTRO/$KERNEL_MODULE downloaded from remote repository." >&2
     return 0
 }
