@@ -11,7 +11,7 @@ all: image
 image: container/bin/collector container/Dockerfile container/scripts/
 	cp NOTICE-collector.txt container/
 	cp COPYING.txt container/
-	cd container && docker build -f Dockerfile -t stackroxcollector/collector:latest .
+	cd container && docker build -f Dockerfile -t stackrox/collector:latest .
 
 .PHONY: build_collector
 build_collector:
@@ -39,7 +39,7 @@ container/libs/libsinsp-wrapper.so: $(shell find sysdig/src/ -name '*.h' -o -nam
 .PHONY: clean
 clean: clean-generated-srcs
 	docker rm -fv build_collector || true
-	docker rmi -f stackroxcollector/collector:latest || true
+	docker rmi -f stackrox/collector:latest || true
 	docker rmi -f build_collector:latest || true
 	make -C sysdig clean
 	rm -rf container/bin
