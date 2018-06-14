@@ -78,6 +78,10 @@ Signal* NetworkSignalFormatter::ToProtoMessage(sinsp_evt* event) {
   Signal* signal = AllocateRoot();
   signal->set_time_nanos(event->get_ts());
 
+  if (cluster_id_) {
+    signal->mutable_cluster_id()->set_value(*cluster_id_, sizeof(*cluster_id_));
+  }
+
   KernelSignal* kernel_signal = CreateKernelSignal(event);
   kernel_signal->set_allocated_network_signal(network_signal);
 

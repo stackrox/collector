@@ -29,6 +29,10 @@ You should have received a copy of the GNU General Public License along with thi
 #include <json/json.h>
 #include "librdkafka/rdkafka.h"
 
+extern "C" {
+#include <uuid/uuid.h>
+}
+
 #include "ChiselConsumer.h"
 #include "GetNetworkHealthStatus.h"
 #include "Network.h"
@@ -55,6 +59,8 @@ struct CollectorConfig {
   std::string fileSignalFormat;
   std::string processSignalFormat;
   std::string networkSignalFormat;
+
+  const uuid_t* clusterID = nullptr;
 };
 
 class CollectorService {

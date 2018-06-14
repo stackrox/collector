@@ -20,6 +20,11 @@ You should have received a copy of the GNU General Public License along with thi
 * do not wish to do so, delete this exception statement from your
 * version.
 */
+
+extern "C" {
+#include <uuid/uuid.h>
+}
+
 #include "SignalFormatter.h"
 
 #include "CollectorException.h"
@@ -31,9 +36,11 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-SignalFormatterFactory::SignalFormatterFactory(sinsp* inspector) {
+SignalFormatterFactory::SignalFormatterFactory(sinsp* inspector, const uuid_t* cluster_id)
+  : cluster_id_(cluster_id)
+{
   extractor_.Init(inspector);
-}
+} 
 
 std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateSignalFormatter(const std::string& format_type, sinsp* inspector, const std::string& format_string, int field_trunc_len) {
   if (format_type == "file_summary") {
@@ -49,11 +56,11 @@ std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateSignalFormatter(c
     return CreateProcessSummaryFormatter(inspector, true);
   }
   if (format_type == "network_signal") {
-    return MakeUnique<NetworkSignalFormatter>(inspector, false);
+    return MakeUnique<NetworkSignalFormatter>(inspector, cluster_id_, false);
   }
   if (format_type == "network_signal_text") {
-      return MakeUnique<NetworkSignalFormatter>(inspector, true);
-    }
+      return MakeUnique<NetworkSignalFormatter>(inspector, cluster_id_, true);
+  }
   if (format_type == "file_legacy") {
     return CreateFileLegacyFormatter(inspector, format_string, field_trunc_len);
   }

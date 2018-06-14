@@ -26,6 +26,10 @@ You should have received a copy of the GNU General Public License along with thi
 #include <linux/ioctl.h>
 #include <cap-ng.h>
 
+extern "C" {
+#include <uuid/uuid.h>
+}
+
 #include "libsinsp/wrapper.h"
 
 #include "CollectorException.h"
@@ -57,7 +61,7 @@ void SysdigService::Init(const CollectorConfig& config) {
   signal_writers_[SIGNAL_TYPE_PROCESS] = factory.CreateSignalWriter(config.processSignalOutput);
   signal_writers_[SIGNAL_TYPE_NETWORK] = factory.CreateSignalWriter(config.networkSignalOutput);
 
-  SignalFormatterFactory fmtFactory(inspector_.get());
+  SignalFormatterFactory fmtFactory(inspector_.get(), config.clusterID);
 
   signal_formatter_[SIGNAL_TYPE_FILE] = fmtFactory.CreateSignalFormatter(config.fileSignalFormat, inspector_.get(), config.format);
   signal_formatter_[SIGNAL_TYPE_PROCESS] = fmtFactory.CreateSignalFormatter(config.processSignalFormat, inspector_.get(), config.format);

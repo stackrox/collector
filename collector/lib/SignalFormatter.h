@@ -24,6 +24,10 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _SUMMARY_FORMATTER_FACTORY_H_
 #define _SUMMARY_FORMATTER_FACTORY_H_
 
+extern "C" {
+#include <uuid/uuid.h>
+}
+
 #include "SafeBuffer.h"
 #include "SysdigEventExtractor.h"
 
@@ -37,7 +41,7 @@ class SignalFormatter {
 
 class SignalFormatterFactory {
  public:
-  SignalFormatterFactory(sinsp* inspector);
+  SignalFormatterFactory(sinsp* inspector, const uuid_t* cluster_id);
   std::unique_ptr<SignalFormatter> CreateSignalFormatter(const std::string& output_spec, sinsp* inspector, const std::string& format_string, int field_trunc_len = 0);
 
  private:
@@ -51,6 +55,7 @@ class SignalFormatterFactory {
   std::unique_ptr<SignalFormatter> CreateNetworkLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len);
 
   SysdigEventExtractor extractor_;
+  const uuid_t* cluster_id_;
 };
 
 }  // namespace collector

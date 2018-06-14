@@ -44,6 +44,7 @@ extern "C" {
 #include <unistd.h>
     
 #include <sys/resource.h>
+#include <uuid/uuid.h>
 
 #include <cap-ng.h>
 }
@@ -234,6 +235,21 @@ std::string base64_decode(std::string const& encoded_string) {
     }
 
     return ret;
+}
+
+bool GetClusterID(uuid_t* result) {
+  const char* clusterID = std::getenv("ROX_CLUSTER_ID");
+  if (!clusterID || !*clusterID) {
+    return false;
+  }
+
+  // UUID is stored as raw bytes, not in string format.
+  if (uuid_parse(clusterID, *result) == -1) {
+    CLOG(ERROR) << "Failed to parse cluster ID, environment variable ROX_CLUSTER_ID is invalid";
+    return false;
+  }
+
+  return true;
 }
 
 const char* GetHostname() {
@@ -427,6 +443,12 @@ int main(int argc, char **argv) {
     config.networkSignalFormat = networkSignalFormat;
     config.processSignalFormat = processSignalFormat;
     config.fileSignalFormat = fileSignalFormat;
+
+    // Set the cluster ID from the environment, leaving it a nullptr if it wasn't passed in.
+    uuid_t clusterID;
+    if (GetClusterID(&clusterID)) {
+        config.clusterID = &clusterID;
+    }
 
     // Register signal handlers
     signal(SIGABRT, AbortHandler);

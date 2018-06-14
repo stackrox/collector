@@ -24,6 +24,10 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _NETWORK_SIGNAL_FORMATTER_H_
 #define _NETWORK_SIGNAL_FORMATTER_H_
 
+extern "C" {
+#include <uuid/uuid.h>
+}
+
 #include "ProtoSignalFormatter.h"
 #include "SysdigEventExtractor.h"
 
@@ -41,7 +45,9 @@ class NetworkSignalFormatter : public ProtoSignalFormatter<data::Signal> {
   using NetworkAddress = data::NetworkAddress;
   using ProcessDetails = data::ProcessDetails;
 
-  NetworkSignalFormatter(sinsp* inspector, bool text_format = false) : ProtoSignalFormatter(text_format) {
+  NetworkSignalFormatter(sinsp* inspector, const uuid_t* cluster_id, bool text_format = false)
+    : ProtoSignalFormatter(text_format),
+      cluster_id_(cluster_id) {
     event_extractor_.Init(inspector);
   }
 
@@ -58,6 +64,8 @@ class NetworkSignalFormatter : public ProtoSignalFormatter<data::Signal> {
   NetworkAddress* CreateUnixAddress(uint64_t id, const sinsp_fdinfo_t* fd_info);
 
   SysdigEventExtractor event_extractor_;
+
+  const uuid_t* cluster_id_;
 };
 
 }  // namespace collector
