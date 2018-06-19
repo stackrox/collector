@@ -34,8 +34,10 @@ ubuntu_excludes = [
     "4.15.0-21", # linux-image was never uploaded to ubuntu.com for amd64 for this version.
     "4.15.0-22", # linux-image was never uploaded to ubuntu.com for amd64 for this version.
     "4.15.0-23", # linux-image was never uploaded to ubuntu.com for amd64 for this version.
+    "4.15.0-24", # linux-image was never uploaded to ubuntu.com for amd64 for this version.
     "4.15.0-1012", # linux-image was never uploaded to ubuntu.com for amd64 for this version.
     "4.15.0-1013", # linux-image was never uploaded to ubuntu.com for amd64 for this version.
+    "4.15.0-1014", # linux-image was never uploaded to ubuntu.com for amd64 for this version.
 ]
 repos = {
     "CentOS" : [
