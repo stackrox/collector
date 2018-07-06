@@ -113,7 +113,6 @@ function ubuntu_build {
 }
 
 function rhel_build {
-
 	#
 	# The function just requires the rpm url
 	#
@@ -137,20 +136,13 @@ function rhel_build {
 		rpm2cpio $RPM | cpio -idm
 	fi
 
-	NUM_RPM=$(ls kernel-*.rpm -1 | wc -l)
+	cd $BASEDIR
 
-	if [ $NUM_RPM -eq 2 ]; then
-
-		#echo Building $KERNEL_RELEASE
-
-		cd $BASEDIR
-
-		export KERNELDIR=$BASEDIR/$KERNEL_RELEASE/usr/src/kernels/$KERNEL_RELEASE
-		build_modules
-		# Clean up unpacked packages:
-		rm -rf $BASEDIR/$KERNEL_RELEASE
-		echo
-	fi
+	export KERNELDIR=$BASEDIR/$KERNEL_RELEASE/usr/src/kernels/$KERNEL_RELEASE
+	build_modules
+	# Clean up unpacked packages:
+	rm -rf $BASEDIR/$KERNEL_RELEASE
+	echo
 
 	cd $BASEDIR
 }

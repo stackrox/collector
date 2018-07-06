@@ -63,7 +63,7 @@ repos = {
             # Finally, we need to inspect every page for packages we need.
             # Again, this is a XPath + Regex query so use the regex if you want
             # to limit the number of packages reported.
-            "page_pattern" : "/html/body//a[regex:test(@href, '^kernel-(devel-)?[0-9].*\.rpm$')]/@href",
+            "page_pattern" : "/html/body//a[regex:test(@href, '^kernel-devel-?[0-9].*\.rpm$')]/@href",
 
             # Exclude old versions we choose not to support.
             "exclude_patterns": centos_excludes
@@ -83,7 +83,7 @@ repos = {
                 "os/x86_64/Packages/",
                 "updates/x86_64/Packages/"
             ],
-            "page_pattern" : "//body//table/tr/td/a[regex:test(@href, '^kernel-(devel-)?[0-9].*\.rpm$')]/@href",
+            "page_pattern" : "//body//table/tr/td/a[regex:test(@href, '^kernel-devel-?[0-9].*\.rpm$')]/@href",
             "exclude_patterns": centos_excludes
         },
 
@@ -97,7 +97,7 @@ repos = {
             "subdirs" : [
                 "x86_64/RPMS/"
             ],
-            "page_pattern" : "//body//table/tr/td/a[regex:test(@href, '^kernel-lt-(devel-)?[0-9].*\.rpm$')]/@href"
+            "page_pattern" : "//body//table/tr/td/a[regex:test(@href, '^kernel-lt-devel-?[0-9].*\.rpm$')]/@href"
         }
     ],
 
