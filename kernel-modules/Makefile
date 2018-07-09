@@ -32,7 +32,6 @@ crawl-centos: build-crawl-container
 crawl: build-crawl-container crawl-centos
 	docker run --rm -i kernel-crawler crawl CoreOS > supported-kernels/coreos.txt
 	docker run --rm -i kernel-crawler crawl Ubuntu > supported-kernels/ubuntu-standard.txt
-	docker run --rm -i kernel-crawler crawl Ubuntu-HWE > supported-kernels/ubuntu-hwe.txt
 	docker run --rm -i kernel-crawler crawl Ubuntu-AWS > supported-kernels/ubuntu-aws.txt
 	docker run --rm -i kernel-crawler crawl Ubuntu-Azure > supported-kernels/ubuntu-azure.txt
 	docker run --rm -i kernel-crawler crawl Ubuntu-GKE > supported-kernels/ubuntu-gke.txt

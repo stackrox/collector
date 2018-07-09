@@ -30,14 +30,8 @@ centos_excludes = [
 ]
 ubuntu_excludes = [
     "4.15.0-14", # SROX-11665 will remove this exclusion
-    "4.15.0-20", # linux-image was never uploaded to ubuntu.com for amd64 for this version.
-    "4.15.0-21", # linux-image was never uploaded to ubuntu.com for amd64 for this version.
-    "4.15.0-22", # linux-image was never uploaded to ubuntu.com for amd64 for this version.
-    "4.15.0-23", # linux-image was never uploaded to ubuntu.com for amd64 for this version.
-    "4.15.0-24", # linux-image was never uploaded to ubuntu.com for amd64 for this version.
-    "4.15.0-1012", # linux-image was never uploaded to ubuntu.com for amd64 for this version.
-    "4.15.0-1013", # linux-image was never uploaded to ubuntu.com for amd64 for this version.
-    "4.15.0-1014", # linux-image was never uploaded to ubuntu.com for amd64 for this version.
+    "4.17.0", # The module does not compile on 4.17 yet.
+    "~", # prevent duplicate backports from cluttering the list
 ]
 repos = {
     "CentOS" : [
@@ -134,12 +128,12 @@ repos = {
     ],
 
     "Ubuntu": [
-        # Generic Linux AMD64 image and headers, distributed from main
+        # Generic Linux AMD64 headers, distributed from main
         {
             "root" : "http://security.ubuntu.com/ubuntu/pool/main/l/",
             "discovery_pattern" : "/html/body//a[@href = 'linux/']/@href",
             "subdirs" : [""],
-            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-(image|headers)-[4-9].*-generic.*amd64.deb$')]/@href",
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-headers-[4-9].*-generic.*amd64.deb$')]/@href",
             "exclude_patterns": ubuntu_excludes
         },
 
@@ -152,50 +146,13 @@ repos = {
             "exclude_patterns": ubuntu_excludes
         }
     ],
-    "Ubuntu-HWE": [
-        # linux-hwe AMD64 image and headers, distributed from main
-        {
-            "root" : "http://security.ubuntu.com/ubuntu/pool/main/l/",
-            "discovery_pattern" : "/html/body//a[@href = 'linux-hwe/']/@href",
-            "subdirs" : [""],
-            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-(image|headers)-[4-9].*-generic.*amd64.deb$')]/@href",
-            "exclude_patterns": ubuntu_excludes
-        },
-
-        # linux-hwe "all" headers, distributed from main
-        {
-            "root" : "http://security.ubuntu.com/ubuntu/pool/main/l/",
-            "discovery_pattern" : "/html/body//a[@href = 'linux-hwe/']/@href",
-            "subdirs" : [""],
-            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-headers-[4-9].*_all.deb$')]/@href",
-            "exclude_patterns": ubuntu_excludes
-        },
-
-        # linux-hwe-edge AMD64 image and headers, distributed from main
-        {
-            "root" : "http://security.ubuntu.com/ubuntu/pool/main/l/",
-            "discovery_pattern" : "/html/body//a[@href = 'linux-hwe-edge/']/@href",
-            "subdirs" : [""],
-            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-(image|headers)-[4-9].*-generic.*amd64.deb$')]/@href",
-            "exclude_patterns": ubuntu_excludes
-        },
-
-        # linux-hwe-edge "all" headers, distributed from main
-        {
-            "root" : "http://security.ubuntu.com/ubuntu/pool/main/l/",
-            "discovery_pattern" : "/html/body//a[@href = 'linux-hwe-edge/']/@href",
-            "subdirs" : [""],
-            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-headers-[4-9].*_all.deb$')]/@href",
-            "exclude_patterns": ubuntu_excludes
-        }
-    ],
     "Ubuntu-Azure": [
-        # linux-azure AMD64 image and headers, distributed from main
+        # linux-azure AMD64 headers, distributed from main
         {
             "root" : "http://security.ubuntu.com/ubuntu/pool/main/l/",
             "discovery_pattern" : "/html/body//a[@href = 'linux-azure/']/@href",
             "subdirs" : [""],
-            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-(image|headers)-[4-9].*-azure.*amd64.deb$')]/@href",
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-headers-[4-9].*-azure.*amd64.deb$')]/@href",
             "exclude_patterns": ubuntu_excludes
         },
 
@@ -209,12 +166,12 @@ repos = {
         },
     ],
     "Ubuntu-AWS": [
-        # linux-aws AMD64 image and headers, distributed from universe (older versions only)
+        # linux-aws AMD64 headers, distributed from universe (older versions only)
         {
             "root" : "http://security.ubuntu.com/ubuntu/pool/universe/l/",
             "discovery_pattern" : "/html/body//a[@href = 'linux-aws/']/@href",
             "subdirs" : [""],
-            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-(image|headers)-[4-9].*-aws.*amd64.deb$')]/@href",
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-headers-[4-9].*-aws.*amd64.deb$')]/@href",
             "exclude_patterns": ubuntu_excludes
         },
 
@@ -227,12 +184,12 @@ repos = {
             "exclude_patterns": ubuntu_excludes
         },
 
-        # linux-aws AMD64 image and headers, distributed from main (newer versions only)
+        # linux-aws AMD64 headers, distributed from main (newer versions only)
         {
             "root" : "http://security.ubuntu.com/ubuntu/pool/main/l/",
             "discovery_pattern" : "/html/body//a[@href = 'linux-aws/']/@href",
             "subdirs" : [""],
-            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-(image|headers)-[4-9].*-aws.*amd64.deb$')]/@href",
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-headers-[4-9].*-aws.*amd64.deb$')]/@href",
             "exclude_patterns": ubuntu_excludes
         },
 
@@ -246,12 +203,12 @@ repos = {
         }
     ],
     "Ubuntu-GCP": [
-        # linux-gcp AMD64 image and headers, distributed from universe
+        # linux-gcp AMD64 headers, distributed from universe
         {
             "root" : "http://security.ubuntu.com/ubuntu/pool/universe/l/",
             "discovery_pattern" : "/html/body//a[@href = 'linux-gcp/']/@href",
             "subdirs" : [""],
-            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-(image|headers)-[4-9].*-gcp.*amd64.deb$')]/@href",
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-headers-[4-9].*-gcp.*amd64.deb$')]/@href",
             "exclude_patterns": ubuntu_excludes
         },
 
@@ -265,12 +222,12 @@ repos = {
         },
     ],
     "Ubuntu-GKE": [
-        # linux-gke AMD64 image and headers, distributed from universe
+        # linux-gke AMD64 headers, distributed from universe
         {
             "root" : "http://security.ubuntu.com/ubuntu/pool/universe/l/",
             "discovery_pattern" : "/html/body//a[@href = 'linux-gke/']/@href",
             "subdirs" : [""],
-            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-(image|headers)-[4-9].*-gke.*amd64.deb$')]/@href",
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-headers-[4-9].*-gke.*amd64.deb$')]/@href",
             "exclude_patterns": ubuntu_excludes
         },
 

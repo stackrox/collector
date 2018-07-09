@@ -21,7 +21,6 @@ set -euo pipefail
 #
 
 BASEDIR=/scratch
-ARCH=$(uname -m)
 URL_TIMEOUT=300
 RETRY=10
 
@@ -65,25 +64,29 @@ function build_modules {
 }
 
 function ubuntu_build {
-
-	URL=$1
+	local URL=$1
+	local DEB
 	DEB=$(echo $URL | grep -o '[^/]*$')
-	KERNEL_RELEASE_FULL=$(echo $DEB | grep -E -o "[0-9]{1}\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+")		# ex. 3.13.0-24.47
-	KERNEL_RELEASE=$(echo $KERNEL_RELEASE_FULL | grep -E -o "[0-9]{1}\.[0-9]+\.[0-9]+-[0-9]+")	# ex. 3.13.0-24
-	KERNEL_UPDATE=$(echo $KERNEL_RELEASE_FULL | grep -E -o "[0-9]+$")							# ex. 47
 
-	cd ${BASEDIR}
+	# Find out the kernel version number; this does _not_ include
+	# platform modifiers like "-generic", "-azure", etc.
+	local KERNEL_VERSION_FULL
+	KERNEL_VERSION_FULL=$(echo $DEB | grep -E -o "[0-9]{1}\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+")		# ex. 3.13.0-24.47
+	local KERNEL_VERSION
+	KERNEL_VERSION=$(echo $KERNEL_VERSION_FULL | grep -E -o "[0-9]{1}\.[0-9]+\.[0-9]+-[0-9]+")	# ex. 3.13.0-24
+	local KERNEL_UPDATE
+	KERNEL_UPDATE=$(echo $KERNEL_VERSION_FULL | grep -E -o "[0-9]+$")							# ex. 47
 
-	if [ ! -d $KERNEL_RELEASE ]; then
-		mkdir $KERNEL_RELEASE
+	cd $BASEDIR
+
+	if [ ! -d $KERNEL_VERSION ]; then
+		mkdir $KERNEL_VERSION
 	fi
-
-	cd $KERNEL_RELEASE
+	cd $KERNEL_VERSION
 
 	if [ ! -d $KERNEL_UPDATE ]; then
 		mkdir $KERNEL_UPDATE
 	fi
-
 	cd $KERNEL_UPDATE
 
 	if [ ! -f $DEB ]; then
@@ -94,18 +97,26 @@ function ubuntu_build {
 
 	NUM_DEB=$(ls linux-*.deb -1 | wc -l)
 
-	if [ $NUM_DEB -eq 3 ]; then
-
-		local KERNEL_FOLDER=$KERNEL_RELEASE
-		KERNEL_RELEASE=$(ls -1 linux-image-* | grep -E -o "[0-9]{1}\.[0-9]+\.[0-9]+-[0-9]+-[a-z]+")
+	if [ $NUM_DEB -eq 2 ]; then
+		# Find out the kernel version that will be returned from `uname -r` on a
+		# machine running this kernel.
+		# This can be found in the name of the AMD64 linux-headers package.
+		# For example:
+		#    linux-headers-4.4.0-22-generic_4.4.0-22.40_amd64.deb
+		#    linux-headers-4.13.0-1011-gcp_4.13.0-1011.15_amd64.deb
+		# yield:
+		#    4.4.0-22-generic
+		#    4.13.0-1011-gcp
+		local KERNEL_RELEASE
+		KERNEL_RELEASE=$(ls -1 linux-headers-*_amd64* | head -n 1 | grep -P -o "(?<=linux-headers-)([0-9]{1}\.[0-9]+\.[0-9]+(-[0-9a-z]+)+)(?=_)")
 
 		cd $BASEDIR
 
-		export KERNELDIR=$BASEDIR/$KERNEL_FOLDER/$KERNEL_UPDATE/usr/src/linux-headers-$KERNEL_RELEASE
+		export KERNELDIR=$BASEDIR/$KERNEL_VERSION/$KERNEL_UPDATE/usr/src/linux-headers-$KERNEL_RELEASE
 		build_modules
 		rm -rf $KERNEL_RELEASE
 		# Clean up unpacked packages:
-		rm -rf $BASEDIR/$KERNEL_FOLDER/$KERNEL_UPDATE
+		rm -rf ${BASEDIR:?}/$KERNEL_VERSION/$KERNEL_UPDATE
 		echo
 	fi
 
