@@ -2,7 +2,7 @@ BASE_PATH ?= $(CURDIR)/..
 VERSION_FILE ?= $(BASE_PATH)"/ROX_VERSION"
 VERSION ?= `cat $(VERSION_FILE) | xargs echo -n`
 KO_GCS_PATH ?= "gs://collector-modules/aafeb6857323bbb8addf736c1fa9d93a7cdf968f2f0caca10a7b66bee29b665e"
-PKG_GCS_PATH ?= "gs://kernel-package-cache"
+PKG_GCS_PATH ?= "gs://kernel-headers-cache"
 
 .DEFAULT_GOAL = all
 
@@ -133,7 +133,7 @@ upload-package-cache:
 .PHONY: download-package-cache
 download-package-cache:
 	mkdir -p ./packages
-	gsutil -m rsync -r ${PKG_GCS_PATH}/ ./packages
+	gsutil -m rsync -r -d ${PKG_GCS_PATH}/ ./packages
 
 .PHONY: delete-package-cache
 delete-package-cache:
