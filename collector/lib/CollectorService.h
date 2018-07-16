@@ -42,6 +42,7 @@ namespace collector {
 struct CollectorConfig {
   bool useChiselCache = true;
   bool useKafka = true;
+  bool getNetworkHealth = true;
   const rd_kafka_conf_t* kafkaConfigTemplate = nullptr;
   int snapLen = 2048;
 

@@ -60,10 +60,13 @@ void CollectorService::RunForever() {
 
   std::shared_ptr<prometheus::Registry> registry = std::make_shared<prometheus::Registry>();
 
-  GetNetworkHealthStatus getNetworkHealthStatus(config_.kafkaBrokers, registry);
+  std::unique_ptr<GetNetworkHealthStatus> getNetworkHealthStatus;
 
   server.addHandler("/ready", getStatus);
-  server.addHandler("/networkHealth", getNetworkHealthStatus);
+  if (config_.getNetworkHealth) {
+    getNetworkHealthStatus.reset(new GetNetworkHealthStatus(config_.kafkaBrokers, registry));
+    server.addHandler("/networkHealth", getNetworkHealthStatus.get());
+  }
   LogLevel setLogLevel;
   server.addHandler("/loglevel", setLogLevel);
 
@@ -72,7 +75,7 @@ void CollectorService::RunForever() {
 
   sysdig.Init(config_);
 
-  if (!getNetworkHealthStatus.start()) {
+  if (getNetworkHealthStatus && !getNetworkHealthStatus->start()) {
     CLOG(FATAL) << "Unable to start network health status";
   }
 
@@ -131,7 +134,9 @@ void CollectorService::RunForever() {
   }
   exporter.stop();
   server.close();
-  getNetworkHealthStatus.stop();
+  if (getNetworkHealthStatus) {
+    getNetworkHealthStatus->stop();
+  }
 
   sysdig.CleanUp();
 }

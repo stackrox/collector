@@ -367,6 +367,7 @@ int main(int argc, char **argv) {
     // Extract configuration options
     bool useChiselCache = collectorConfig["useChiselCache"].asBool();
     CLOG(INFO) << "useChiselCache=" << useChiselCache;
+    bool getNetworkHealth = collectorConfig["getNetworkHealth"].asBool();
 
     int snapLen = 2048;
     if (!collectorConfig["signalBufferSize"].isNull() && collectorConfig["signalBufferSize"].asInt() >= 0) {
@@ -433,6 +434,7 @@ int main(int argc, char **argv) {
     config.chiselsTopic = chiselsTopic;
     config.snapLen = snapLen;
     config.useChiselCache = useChiselCache;
+    config.getNetworkHealth = getNetworkHealth;
     config.chisel = chisel;
     config.kafkaBrokers = std::move(broker_endpoints);
     config.format = format;
