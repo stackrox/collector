@@ -243,19 +243,12 @@ function debian_build {
 function coreos_build {
 	BASE_URL="$1"
 
-	get_or_download ${BASE_URL}version.txt ./
-	eval $(cat ./version.txt)
+	TEMP_DIR="$(mktemp --dir -p /scratch)"
 
-	COREOS_DIR="coreos-$COREOS_VERSION_ID"
-
-	if [ ! -d $COREOS_DIR ]; then
-		mkdir $COREOS_DIR
-	fi
-
-	cd $COREOS_DIR
+	cd "$TEMP_DIR"
 
 	if [ ! -f coreos_developer_container.bin ]; then
-		get_or_download ${BASE_URL}coreos_developer_container.bin.bz2 ./
+		get_or_download "$BASE_URL" ./
 		echo "Unzipping developer container"
 		bunzip2 coreos_developer_container.bin.bz2
 	fi
@@ -294,7 +287,7 @@ function coreos_build {
 	build_modules
 	cd $BASEDIR
 	# Clean up unpacked packages:
-	rm -rf $BASEDIR/$COREOS_DIR
+	rm -rf "$TEMP_DIR"
 
 	return
 }
@@ -364,7 +357,7 @@ case "$DISTRO" in
 
 		while read URL
 		do
-			echo "Processing version $URL"
+			echo "Processing package $URL"
 			coreos_build "$(echo $URL | tr -d '\r')"
 		done < $INPUT
 	;;
