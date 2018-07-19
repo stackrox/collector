@@ -42,7 +42,7 @@ extern "C" {
 #include <sys/types.h>
 #include <stdlib.h>
 #include <unistd.h>
-    
+
 #include <sys/resource.h>
 #include <uuid/uuid.h>
 
@@ -369,12 +369,6 @@ int main(int argc, char **argv) {
     CLOG(INFO) << "useChiselCache=" << useChiselCache;
     bool getNetworkHealth = collectorConfig["getNetworkHealth"].asBool();
 
-    int snapLen = 2048;
-    if (!collectorConfig["signalBufferSize"].isNull() && collectorConfig["signalBufferSize"].asInt() >= 0) {
-        snapLen = collectorConfig["signalBufferSize"].asInt();
-    }
-    CLOG(INFO) << "signalBufferSize=" << snapLen;
-
     rd_kafka_conf_t* conf_template = nullptr;
 
     std::vector<Address> broker_endpoints;
@@ -432,7 +426,7 @@ int main(int argc, char **argv) {
     config.useKafka = useKafka;
     config.kafkaConfigTemplate = conf_template;
     config.chiselsTopic = chiselsTopic;
-    config.snapLen = snapLen;
+    config.snapLen = 0;
     config.useChiselCache = useChiselCache;
     config.getNetworkHealth = getNetworkHealth;
     config.chisel = chisel;
