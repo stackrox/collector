@@ -111,3 +111,5 @@ http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.
 http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.116-1.el7.elrepo.x86_64.rpm
 http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.119-1.el7.elrepo.x86_64.rpm
 http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.120-1.el7.elrepo.x86_64.rpm
+http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.121-1.el7.elrepo.x86_64.rpm
+http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.122-1.el7.elrepo.x86_64.rpm
