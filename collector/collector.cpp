@@ -336,7 +336,7 @@ int main(int argc, char **argv) {
     }
 
     // formatters
-    std::string networkSignalFormat = "network_legacy";
+    std::string networkSignalFormat = "network_signal";
     if (!collectorConfig["networkSignalFormat"].isNull()) {
         networkSignalFormat = collectorConfig["networkSignalFormat"].asString();
     }

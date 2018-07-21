@@ -52,7 +52,6 @@ class SignalFormatterFactory {
   // methods to support legacy formatting
   std::unique_ptr<SignalFormatter> CreateFileLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len);
   std::unique_ptr<SignalFormatter> CreateProcessLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len);
-  std::unique_ptr<SignalFormatter> CreateNetworkLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len);
 
   SysdigEventExtractor extractor_;
   const uuid_t* cluster_id_;

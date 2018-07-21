@@ -67,9 +67,6 @@ std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateSignalFormatter(c
   if (format_type == "process_legacy") {
     return CreateProcessLegacyFormatter(inspector, format_string, field_trunc_len);
   }
-  if (format_type == "network_legacy") {
-    return CreateNetworkLegacyFormatter(inspector, format_string, field_trunc_len);
-  }
   throw CollectorException("Invalid format type '" + format_type);
 }
 
@@ -89,12 +86,6 @@ std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateFileLegacyFormatt
 
 std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateProcessLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len) {
   EventFormatter *f = new EventFormatter(false);
-  f->Init(inspector, format_string, field_trunc_len);
-  return std::unique_ptr<SignalFormatter>(f);
-}
-
-std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateNetworkLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len) {
-  EventFormatter *f = new EventFormatter(true);
   f->Init(inspector, format_string, field_trunc_len);
   return std::unique_ptr<SignalFormatter>(f);
 }
