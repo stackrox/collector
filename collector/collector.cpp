@@ -344,7 +344,7 @@ int main(int argc, char **argv) {
     if (!collectorConfig["processSignalFormat"].isNull()) {
         processSignalFormat = collectorConfig["processSignalFormat"].asString();
     }
-    std::string fileSignalFormat = "file_legacy";
+    std::string fileSignalFormat = "file_summary";
     if (!collectorConfig["fileSignalFormat"].isNull()) {
         fileSignalFormat = collectorConfig["fileSignalFormat"].asString();
     }

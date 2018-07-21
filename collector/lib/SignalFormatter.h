@@ -50,7 +50,6 @@ class SignalFormatterFactory {
   std::unique_ptr<SignalFormatter> CreateProcessSummaryFormatter(sinsp* inspector, bool text_format = false);
 
   // methods to support legacy formatting
-  std::unique_ptr<SignalFormatter> CreateFileLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len);
   std::unique_ptr<SignalFormatter> CreateProcessLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len);
 
   SysdigEventExtractor extractor_;
