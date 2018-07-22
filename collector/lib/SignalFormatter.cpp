@@ -28,7 +28,6 @@ extern "C" {
 #include "SignalFormatter.h"
 
 #include "CollectorException.h"
-#include "EventFormatter.h"
 #include "FileSummaryFormatter.h"
 #include "NetworkSignalFormatter.h"
 #include "ProcessSummaryFormatter.h"
@@ -42,7 +41,7 @@ SignalFormatterFactory::SignalFormatterFactory(sinsp* inspector, const uuid_t* c
   extractor_.Init(inspector);
 } 
 
-std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateSignalFormatter(const std::string& format_type, sinsp* inspector, const std::string& format_string, int field_trunc_len) {
+std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateSignalFormatter(const std::string& format_type, sinsp* inspector) {
   if (format_type == "file_summary") {
     return CreateFileSummaryFormatter(inspector, false);
   }
@@ -61,9 +60,6 @@ std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateSignalFormatter(c
   if (format_type == "network_signal_text") {
       return MakeUnique<NetworkSignalFormatter>(inspector, cluster_id_, true);
   }
-  if (format_type == "process_legacy") {
-    return CreateProcessLegacyFormatter(inspector, format_string, field_trunc_len);
-  }
   throw CollectorException("Invalid format type '" + format_type);
 }
 
@@ -73,12 +69,6 @@ std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateFileSummaryFormat
 
 std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateProcessSummaryFormatter(sinsp* inspector, bool text_format) {
   return MakeUnique<ProcessSummaryFormatter>(inspector, text_format);
-}
-
-std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateProcessLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len) {
-  EventFormatter *f = new EventFormatter(false);
-  f->Init(inspector, format_string, field_trunc_len);
-  return std::unique_ptr<SignalFormatter>(f);
 }
 
 }  // namespace collector

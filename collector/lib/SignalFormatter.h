@@ -42,15 +42,12 @@ class SignalFormatter {
 class SignalFormatterFactory {
  public:
   SignalFormatterFactory(sinsp* inspector, const uuid_t* cluster_id);
-  std::unique_ptr<SignalFormatter> CreateSignalFormatter(const std::string& output_spec, sinsp* inspector, const std::string& format_string, int field_trunc_len = 0);
+  std::unique_ptr<SignalFormatter> CreateSignalFormatter(const std::string& output_spec, sinsp* inspector);
 
  private:
   // methods to convert from sysdig event to summaries
   std::unique_ptr<SignalFormatter> CreateFileSummaryFormatter(sinsp* inspector, bool text_format = false);
   std::unique_ptr<SignalFormatter> CreateProcessSummaryFormatter(sinsp* inspector, bool text_format = false);
-
-  // methods to support legacy formatting
-  std::unique_ptr<SignalFormatter> CreateProcessLegacyFormatter(sinsp* inspector, const std::string& format_string, int field_trunc_len);
 
   SysdigEventExtractor extractor_;
   const uuid_t* cluster_id_;

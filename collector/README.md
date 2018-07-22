@@ -15,11 +15,10 @@ The Collector kernel module monitors system calls from every container and every
 
 #### Event formatter configurability
 
-We enable configuring the event format that is emitted by the kernel module. The configuration specifies the sequence of fields that need to be emitted together with the label for each field. The latter enables us to override field names. The order in which fields should be emitted, the event format can be specified in a JSON formatted configuration using the following format:
+We enable configuring the event format that is emitted by the program.
 
-~~~
-{ "--output-format":"container:container.id,event:evt.type,time:evt.time,rawtime:evt.rawtime,direction:evt.dir,image:container.image,name:container.name" }
-~~~
+The format can be changed by setting the `fileSignalFormat`, `networkSignalFormat`, and `processSignalFormat` keys in the configuration.
+Allowed non-default values include `file_summary_text`, `network_signal_text`, and `process_summary_text`.
 
 #### Using Kafka
 
@@ -46,7 +45,7 @@ SYSDIG_HOST_ROOT is required by the kernel module; used as a prefix to paths lik
 COLLECTOR_CONFIG is the required json config string. A default Collector config that can be used to bring up the Collector and generate events to stdout is as follows:
 
 ~~~
-{"syscalls":["open","close","read","write"],"output":"stdout","format":"container:container.id,event:evt.type,time:evt.time,rawtime:evt.rawtime,direction:evt.dir,image:container.image,name:container.name"}
+{"syscalls":["open","close","read","write"],"output":"stdout"}
 ~~~
 
 MAX_CONTENT_LENGTH_KB is optional, and it defaults to 1024.
@@ -60,6 +59,5 @@ CONNECTION_TIMEOUT is optional, and it defaults to 8.
 #### Running Collector with default configuration
 
 ~~~
-docker run --name collector -d --privileged -v /var/run/docker.sock:/host/var/run/docker.sock -v /dev:/host/dev -v /proc:/host/proc:ro -v /boot:/host/boot:ro -v /lib/modules:/host/lib/modules:ro -v /usr:/host/usr:ro -e COLLECTOR_CONFIG='{"syscalls":["open","close","read","write"],"output":"stdout","format":"container:container.id,event:evt.type,time:evt.time,rawtime:evt.rawtime,direction:evt.dir,image:container.image,name:container.name"}' collector
+docker run --name collector -d --privileged -v /var/run/docker.sock:/host/var/run/docker.sock -v /dev:/host/dev -v /proc:/host/proc:ro -v /boot:/host/boot:ro -v /lib/modules:/host/lib/modules:ro -v /usr:/host/usr:ro -e COLLECTOR_CONFIG='{"syscalls":["open","close","read","write"],"output":"stdout","fileSignalFormat":"file_summary_text","networkSignalFormat":"network_signal_text","processSignalFormat":"process_summary_text"}' collector
 ~~~
-

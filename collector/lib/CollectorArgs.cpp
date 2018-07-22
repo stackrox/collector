@@ -161,27 +161,6 @@ CollectorArgs::checkChisel(const option::Option& option, bool msg)
     return ARG_OK;
 }
 
-bool
-CollectorArgs::isInvalidFormat(Json::Value root) {
-    std::string format = "";
-    if (!collectorConfig["format"].isNull()) {
-        format = collectorConfig["format"].asString();
-    }
-    if (format.length() > 0) {
-        char* str = new char[format.length() + 1];
-        strcpy(str, format.c_str());
-        char* token = strtok(str, ",");
-        if (token == NULL)
-            return true;
-        while (token) {
-            if (strchr(token, ':') < 0)
-                return true;
-            token = strtok(NULL, ",");
-        }
-    }
-    return false;
-}
-
 option::ArgStatus
 CollectorArgs::checkCollectorConfig(const option::Option& option, bool msg)
 {
@@ -213,17 +192,6 @@ CollectorArgs::checkCollectorConfig(const option::Option& option, bool msg)
         if (msg) {
             this->message = "No syscalls key. Will extract on the complete syscall set.";
         }
-    }
-    if (!root.isMember("format")) {
-        if (msg) {
-            this->message = "No format. Events will be sent using a default event format.";
-        }
-    } else if (isInvalidFormat(root)) {
-        if (msg) {
-            this->message = "Invalid format. The format is expected to be a string of ";
-            this->message += "the form label_1:sysdig_field_1, label_2:sysdig_field_2, ...";
-        }
-        return ARG_ILLEGAL;
     }
 
     collectorConfig = root;

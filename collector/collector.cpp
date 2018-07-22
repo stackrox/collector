@@ -314,10 +314,6 @@ int main(int argc, char **argv) {
     if (!useKafka) {
         CLOG(INFO) << "Kafka is disabled.";
     }
-    std::string format = "";
-    if (!collectorConfig["format"].isNull()) {
-        format = collectorConfig["format"].asString();
-    }
     std::string networkSignalOutput = "stdout:NET :";
     if (!collectorConfig["networkSignalOutput"].isNull()) {
         networkSignalOutput = collectorConfig["networkSignalOutput"].asString();
@@ -340,7 +336,7 @@ int main(int argc, char **argv) {
     if (!collectorConfig["networkSignalFormat"].isNull()) {
         networkSignalFormat = collectorConfig["networkSignalFormat"].asString();
     }
-    std::string processSignalFormat = "process_legacy";
+    std::string processSignalFormat = "process_summary";
     if (!collectorConfig["processSignalFormat"].isNull()) {
         processSignalFormat = collectorConfig["processSignalFormat"].asString();
     }
@@ -431,7 +427,6 @@ int main(int argc, char **argv) {
     config.getNetworkHealth = getNetworkHealth;
     config.chisel = chisel;
     config.kafkaBrokers = std::move(broker_endpoints);
-    config.format = format;
     config.networkSignalOutput = networkSignalOutput;
     config.processSignalOutput = processSignalOutput;
     config.fileSignalOutput = fileSignalOutput;

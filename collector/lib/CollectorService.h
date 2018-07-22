@@ -52,7 +52,6 @@ struct CollectorConfig {
   std::vector<Address> kafkaBrokers;
   std::string chiselsTopic;
 
-  std::string format;
   std::string networkSignalOutput;
   std::string processSignalOutput;
   std::string fileSignalOutput;

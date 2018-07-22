@@ -34,7 +34,6 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "CollectorService.h"
 #include "EventClassifier.h"
-#include "EventFormatter.h"
 #include "KafkaClient.h"
 #include "SafeBuffer.h"
 #include "SignalWriter.h"
