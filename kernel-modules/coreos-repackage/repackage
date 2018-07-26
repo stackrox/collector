@@ -1,0 +1,52 @@
+#!/bin/sh
+set -e
+
+die() {
+    echo "repackage: $*" 1>&2
+    exit 1
+}
+
+abs() {
+    printf '%s/%s' "$(cd "$(dirname "$1")"; pwd)" "$(basename "$1")"
+}
+
+log() {
+    printf '%s | %s\n' "$(date)" "$*"
+}
+
+main() {
+    [ -n "$1" ] || die "no input bundle file given"
+    input_bundle="$(abs "$1")"
+
+    [ -f "$input_bundle" ] || die "input bundle file $input_bundle missing"
+
+    [ -n "$2" ] || die "no output bundle file given"
+    output_bundle="$(abs "$2")"
+
+    [ -d "$output_bundle" ] && die "output bundle $output_bundle is a directory"
+
+    output_dir="$(dirname "$output_bundle")"
+    inflated_bundle="${output_dir}/.extracted"
+
+    log "Repackaging ${input_bundle} into ${output_bundle}."
+
+    log "Inflating archive"
+    lbzip2 -dck "$input_bundle" > "$inflated_bundle"
+
+    log "Mounting image"
+    loop_device="$(kpartx -asvr "$inflated_bundle" | cut -d\  -f 3)"
+    mount -r "/dev/mapper/${loop_device}" /tmp/mount
+
+    log "Bundling files"
+    tar -C /tmp/mount -cf - usr/boot/config lib/modules | pigz --best > "$output_bundle"
+
+    log "Unmounting image"
+    umount /tmp/mount
+    kpartx -dv "$inflated_bundle"
+
+    log "Cleaning image"
+    rm -f "$inflated_bundle"
+}
+
+main "$@"
+

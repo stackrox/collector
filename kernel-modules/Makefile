@@ -116,7 +116,7 @@ build-container:
 
 # TODO: This isn't _really_ a phony target.
 .PHONY: container/kernel-modules
-container/kernel-modules: supported-kernels/ build/Dockerfile build/build-kos download-package-cache build-container build
+container/kernel-modules: supported-kernels/ build/Dockerfile build/build-kos download-package-cache build-container build-coreos-repackage build
 
 .PHONY: image
 image: container/kernel-modules
@@ -138,3 +138,7 @@ download-package-cache:
 .PHONY: delete-package-cache
 delete-package-cache:
 	rm -rf ./packages
+
+.PHONY: build-coreos-repackage
+build-coreos-repackage:
+	docker build -t stackrox/coreos-repackage coreos-repackage
