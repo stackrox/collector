@@ -164,6 +164,20 @@ static void reset_ring_buffer(struct ppm_ring_buffer_context *ring);
 void ppm_task_cputime_adjusted(struct task_struct *p, cputime_t *ut, cputime_t *st);
 #endif
 
+/* Begin StackRox Section */
+static int record_event_consumer_for(struct task_struct *task,
+	struct ppm_consumer_t *consumer,
+	enum ppm_event_type event_type,
+	enum syscall_flags drop_flags,
+	struct timespec *ts,
+	struct event_data_t *event_datap);
+
+static void record_event_all_consumers_for(struct task_struct* task,
+	enum ppm_event_type event_type,
+	enum syscall_flags drop_flags,
+	struct event_data_t *event_datap);
+/* End StackRox Section */
+
 #ifndef CONFIG_HAVE_SYSCALL_TRACEPOINTS
  #error The kernel must have HAVE_SYSCALL_TRACEPOINTS in order for sysdig to be useful
 #endif
@@ -489,11 +503,52 @@ static bool exclude_task_globally(struct task_struct* task) {
 	return is_excluded_pid_ns(pid_ns);
 }
 
+static void emit_procexit(struct task_struct* p) {
+	struct event_data_t event_data;
+
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 20)
+	if (unlikely(p->flags & PF_KTHREAD)) {
+#else
+	if (unlikely(p->flags & PF_BORROWED_MM)) {
+#endif
+		/*
+		 * We are not interested in kernel threads
+		 */
+		return;
+	}
+
+	event_data.category = PPMC_CONTEXT_SWITCH;
+	event_data.event_info.context_data.sched_prev = p;
+	event_data.event_info.context_data.sched_next = p;
+
+	record_event_all_consumers_for(p, PPME_PROCEXIT_1_E, UF_NEVER_DROP, &event_data);
+}
+
+// Sends a procexit event for all processes in the given pid namespace to the consumers. This is required to notify
+// consumers that they no longer need to maintain any information about the respective processes.
+static void simulate_procexits(struct pid_namespace* pid_ns) {
+	struct task_struct* p;
+
+	rcu_read_lock();
+	for_each_process(p) {
+		task_lock(p);
+
+		if (task_active_pid_ns(p) != pid_ns) goto next;
+		emit_procexit(p);
+
+next:
+		task_unlock(p);
+	}
+
+	rcu_read_unlock();
+}
+
 // Handle the PPM_IOCTL_EXCLUDE_NS_OF_PID ioctl. The argument is the PID whose namespace to exclude.
 static int handle_exclude_namespace_ioctl(unsigned long arg) {
 	pid_t pid_nr;
 	struct pid* pid;
 	struct pid_namespace* pid_ns;
+	int ret;
 
 	pid_nr = (pid_t) arg;
 	if (!pid_nr) {
@@ -511,7 +566,12 @@ static int handle_exclude_namespace_ioctl(unsigned long arg) {
 		vpr_info("Couldn't find valid PID namespace for PID %d\n", pid_nr);
 		return -EINVAL;
 	}
-	return add_excluded_pid_ns(pid_ns);
+	ret = add_excluded_pid_ns(pid_ns);
+	if (ret != 0) {
+		return ret;
+	}
+	simulate_procexits(pid_ns);
+	return 0;
 }
 /* End StackRox Section */
 
@@ -1601,13 +1661,17 @@ static const unsigned char compat_nas[21] = {
 
 
 #ifdef _HAS_SOCKETCALL
-static enum ppm_event_type parse_socketcall(struct event_filler_arguments *filler_args, struct pt_regs *regs)
+/* Begin StackRox Section */
+static enum ppm_event_type parse_socketcall_for(struct task_struct* task, struct event_filler_arguments *filler_args, struct pt_regs *regs)
+/* End StackRox Section */
 {
 	unsigned long __user args[2];
 	unsigned long __user *scargs;
 	int socketcall_id;
 
-	syscall_get_arguments(current, regs, 0, 2, args);
+	/* Begin StackRox Section */
+	syscall_get_arguments(task, regs, 0, 2, args);
+	/* End StackRox Section */
 	socketcall_id = args[0];
 	scargs = (unsigned long __user *)args[1];
 
@@ -1690,11 +1754,12 @@ static enum ppm_event_type parse_socketcall(struct event_filler_arguments *fille
 }
 #endif /* _HAS_SOCKETCALL */
 
-static inline void record_drop_e(struct ppm_consumer_t *consumer, struct timespec *ts)
+/* Begin StackRox Section */
+static inline void record_drop_e_for(struct task_struct* task, struct ppm_consumer_t *consumer, struct timespec *ts)
 {
 	struct event_data_t event_data = {0};
 
-	if (record_event_consumer(consumer, PPME_DROP_E, UF_NEVER_DROP, ts, &event_data) == 0) {
+	if (record_event_consumer_for(task, consumer, PPME_DROP_E, UF_NEVER_DROP, ts, &event_data) == 0) {
 		consumer->need_to_insert_drop_e = 1;
 	} else {
 		if (consumer->need_to_insert_drop_e == 1)
@@ -1704,11 +1769,11 @@ static inline void record_drop_e(struct ppm_consumer_t *consumer, struct timespe
 	}
 }
 
-static inline void record_drop_x(struct ppm_consumer_t *consumer, struct timespec *ts)
+static inline void record_drop_x_for(struct task_struct* task, struct ppm_consumer_t *consumer, struct timespec *ts)
 {
 	struct event_data_t event_data = {0};
 
-	if (record_event_consumer(consumer, PPME_DROP_X, UF_NEVER_DROP, ts, &event_data) == 0) {
+	if (record_event_consumer_for(task, consumer, PPME_DROP_X, UF_NEVER_DROP, ts, &event_data) == 0) {
 		consumer->need_to_insert_drop_x = 1;
 	} else {
 		if (consumer->need_to_insert_drop_x == 1)
@@ -1718,7 +1783,8 @@ static inline void record_drop_x(struct ppm_consumer_t *consumer, struct timespe
 	}
 }
 
-static inline int drop_event(struct ppm_consumer_t *consumer,
+static inline int drop_event_for(struct task_struct* task,
+			     struct ppm_consumer_t *consumer,
 			     enum ppm_event_type event_type,
 			     enum syscall_flags drop_flags,
 			     struct timespec *ts,
@@ -1740,13 +1806,13 @@ static inline int drop_event(struct ppm_consumer_t *consumer,
 	 */
 	if (consumer->dropping_mode) {
 		if (event_type == PPME_SYSCALL_CLOSE_X) {
-			if (syscall_get_return_value(current, regs) < 0)
+			if (syscall_get_return_value(task, regs) < 0)
 				close_return = true;
 		} else if (event_type == PPME_SYSCALL_CLOSE_E) {
-			syscall_get_arguments(current, regs, 0, 1, &close_arg);
+			syscall_get_arguments(task, regs, 0, 1, &close_arg);
 			close_fd = (int)close_arg;
 
-			files = current->files;
+			files = task->files;
 			spin_lock(&files->file_lock);
 			fdt = files_fdtable(files);
 			if (close_fd < 0 || close_fd >= fdt->max_fds ||
@@ -1779,7 +1845,7 @@ static inline int drop_event(struct ppm_consumer_t *consumer,
 		if (ts->tv_nsec >= consumer->sampling_interval) {
 			if (consumer->is_dropping == 0) {
 				consumer->is_dropping = 1;
-				record_drop_e(consumer, ts);
+				record_drop_e_for(task, consumer, ts);
 			}
 
 			return 1;
@@ -1787,37 +1853,43 @@ static inline int drop_event(struct ppm_consumer_t *consumer,
 
 		if (consumer->is_dropping == 1) {
 			consumer->is_dropping = 0;
-			record_drop_x(consumer, ts);
+			record_drop_x_for(task, consumer, ts);
 		}
 	}
 
 	return 0;
 }
 
-static void record_event_all_consumers(enum ppm_event_type event_type,
+static void record_event_all_consumers_for(struct task_struct* task, enum ppm_event_type event_type,
 	enum syscall_flags drop_flags,
 	struct event_data_t *event_datap)
 {
 	struct ppm_consumer_t *consumer;
 	struct timespec ts;
 
-	/* Begin StackRox section */
 	if (!test_bit(event_type, g_events_mask)) return;
-	/* End StackRox section */
 
 	getnstimeofday(&ts);
 
 	rcu_read_lock();
 	list_for_each_entry_rcu(consumer, &g_consumer_list, node) {
-		record_event_consumer(consumer, event_type, drop_flags, &ts, event_datap);
+		record_event_consumer_for(task, consumer, event_type, drop_flags, &ts, event_datap);
 	}
 	rcu_read_unlock();
+}
+
+static void record_event_all_consumers(enum ppm_event_type event_type,
+	enum syscall_flags drop_flags,
+	struct event_data_t *event_datap)
+{
+	record_event_all_consumers_for(current, event_type, drop_flags, event_datap);
 }
 
 /*
  * Returns 0 if the event is dropped
  */
-static int record_event_consumer(struct ppm_consumer_t *consumer,
+static int record_event_consumer_for(struct task_struct* task,
+	struct ppm_consumer_t *consumer,
 	enum ppm_event_type event_type,
 	enum syscall_flags drop_flags,
 	struct timespec *ts,
@@ -1846,18 +1918,18 @@ static int record_event_consumer(struct ppm_consumer_t *consumer,
 		return res;
 	*/
 
-	if (task_active_pid_ns(current) == consumer->excluded_pid_ns) {
+	if (task_active_pid_ns(task) == consumer->excluded_pid_ns) {
 	    return res;
 	}
 	/* End StackRox section */
 
 	if (event_type != PPME_DROP_E && event_type != PPME_DROP_X) {
 		if (consumer->need_to_insert_drop_e == 1)
-			record_drop_e(consumer, ts);
+			record_drop_e_for(task, consumer, ts);
 		else if (consumer->need_to_insert_drop_x == 1)
-			record_drop_x(consumer, ts);
+			record_drop_x_for(task, consumer, ts);
 
-		if (drop_event(consumer, event_type, drop_flags, ts,
+		if (drop_event_for(task, consumer, event_type, drop_flags, ts,
 			       event_datap->event_info.syscall_data.regs))
 			return res;
 	}
@@ -1948,7 +2020,7 @@ static int record_event_consumer(struct ppm_consumer_t *consumer,
 
 		args.is_socketcall = true;
 		args.compat = event_datap->compat;
-		tet = parse_socketcall(&args, event_datap->event_info.syscall_data.regs);
+		tet = parse_socketcall_for(task, &args, event_datap->event_info.syscall_data.regs);
 
 		if (event_type == PPME_GENERIC_E)
 			event_type = tet;
@@ -1985,7 +2057,7 @@ static int record_event_consumer(struct ppm_consumer_t *consumer,
 		hdr->sentinel_begin = ring->nevents;
 #endif
 		hdr->ts = timespec_to_ns(ts);
-		hdr->tid = current->pid;
+		hdr->tid = task->pid;
 		hdr->type = event_type;
 
 		/*
@@ -2042,7 +2114,7 @@ static int record_event_consumer(struct ppm_consumer_t *consumer,
 			args.signo = 0;
 			args.spid = (__kernel_pid_t) 0;
 		}
-		args.dpid = current->pid;
+		args.dpid = task->pid;
 
 		if (event_datap->category == PPMC_PAGE_FAULT)
 			args.fault_data = event_datap->event_info.fault_data;
@@ -2156,6 +2228,17 @@ static int record_event_consumer(struct ppm_consumer_t *consumer,
 
 	return res;
 }
+
+static int record_event_consumer(struct ppm_consumer_t *consumer,
+	enum ppm_event_type event_type,
+	enum syscall_flags drop_flags,
+	struct timespec *ts,
+	struct event_data_t *event_datap)
+{
+	return record_event_consumer_for(current, consumer, event_type, drop_flags, ts, event_datap);
+}
+
+/* End StackRox Section */
 
 static inline void g_n_tracepoint_hit_inc(void)
 {
@@ -2347,36 +2430,24 @@ int __access_remote_vm(struct task_struct *t, struct mm_struct *mm, unsigned lon
 
 TRACEPOINT_PROBE(syscall_procexit_probe, struct task_struct *p)
 {
-	struct event_data_t event_data;
-
 	/* Begin StackRox section */
-	if (exclude_task_globally(current)) {
-		if (is_child_reaper(task_pid(current))) {
-			remove_excluded_pid_ns(task_active_pid_ns(current));
-		}
-		// Do NOT exclude this event. Sysdig needs to see processes going away to clean up the userspace data
-		// structures.
+	struct pid_namespace* pid_ns;
+
+	pid_ns = task_active_pid_ns(p);
+	if (pid_ns == global_excluded_pid_ns) {
+		return;
 	}
-	/* End StackRox section */
-
-	g_n_tracepoint_hit_inc();
-
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 20)
-	if (unlikely(current->flags & PF_KTHREAD)) {
-#else
-	if (unlikely(current->flags & PF_BORROWED_MM)) {
-#endif
-		/*
-		 * We are not interested in kernel threads
-		 */
+	if (is_excluded_pid_ns(pid_ns)) {
+		if (is_child_reaper(task_pid(p))) {
+			remove_excluded_pid_ns(pid_ns);
+		}
 		return;
 	}
 
-	event_data.category = PPMC_CONTEXT_SWITCH;
-	event_data.event_info.context_data.sched_prev = p;
-	event_data.event_info.context_data.sched_next = p;
+	g_n_tracepoint_hit_inc();
 
-	record_event_all_consumers(PPME_PROCEXIT_1_E, UF_NEVER_DROP, &event_data);
+	emit_procexit(p);
+	/* End StackRox Section */
 }
 
 #include <linux/ip.h>
