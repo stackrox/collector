@@ -83,28 +83,37 @@ bool SysdigService::FilterEvent(sinsp_evt* event) {
     return false;
   }
 
-  auto pair = chisel_cache_.emplace(tinfo->m_container_id, false); 
-  bool& chisel_result = pair.first->second;
+  auto pair = chisel_cache_.emplace(tinfo->m_container_id, ACCEPTED);
+  ChiselCacheStatus& cache_status = pair.first->second;
+  bool res;
 
   if (pair.second) {  // was newly inserted
-    bool res = chisel_->process(event);
+    res = chisel_->process(event);
     if (chisel_cache_.size() > 1024) {
       CLOG(INFO) << "Flushing chisel cache";
       chisel_cache_.clear();
       return res;
     }
-    chisel_result = res;
-    if (!res && event->get_type() != PPME_PROCEXIT_1_E) {
-      // Exclude container for this process at the kernel level, but do not issue an ioctl at process exit.
-      if (!inspector_->ioctl(0, PPM_IOCTL_EXCLUDE_NS_OF_PID, reinterpret_cast<void*>(tinfo->m_pid))) {
-        CLOG(WARNING) << "Failed ioctl: " << inspector_->getlasterr();
-      }
-    }
+    cache_status = res ? ACCEPTED : BLOCKED_USERSPACE;
   } else {
-    ++userspace_stats_.nChiselCacheHits;
+    res = (cache_status == ACCEPTED);
+
+    if (res) {
+      ++userspace_stats_.nChiselCacheHitsAccept;
+    } else {
+      ++userspace_stats_.nChiselCacheHitsReject;
+    }
   }
 
-  return chisel_result;
+  if (cache_status == BLOCKED_USERSPACE && event->get_type() != PPME_PROCEXIT_1_E) {
+    if (!inspector_->ioctl(0, PPM_IOCTL_EXCLUDE_NS_OF_PID, reinterpret_cast<void*>(tinfo->m_pid))) {
+      CLOG(WARNING) << "Failed ioctl: " << inspector_->getlasterr();
+    } else {
+      cache_status = BLOCKED_KERNEL;
+    }
+  }
+
+  return res;
 }
 
 SignalType SysdigService::GetNext(SafeBuffer* message_buffer, SafeBuffer* key_buffer) {

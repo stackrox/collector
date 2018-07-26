@@ -61,7 +61,8 @@ void CollectorStatsExporter::run() {
     auto& preemptions = collectorEventCounters.Add({{"type", "preemptions"}});
     auto& filtered = collectorEventCounters.Add({{"type", "filtered"}});
     auto& userspaceEvents = collectorEventCounters.Add({{"type", "userspace"}});
-    auto& chiselCacheHits = collectorEventCounters.Add({{"type", "chiselCacheHits"}});
+    auto& chiselCacheHitsAccept = collectorEventCounters.Add({{"type", "chiselCacheHitsAccept"}});
+    auto& chiselCacheHitsReject = collectorEventCounters.Add({{"type", "chiselCacheHitsReject"}});
     auto& kafkaSendFailures = collectorEventCounters.Add({{"type", "kafkaSendFailures"}});
 
     while (thread_.Pause(std::chrono::seconds(1))) {
@@ -75,7 +76,8 @@ void CollectorStatsExporter::run() {
         preemptions.Set(stats.nPreemptions);
         filtered.Set(stats.nFilteredEvents);
         userspaceEvents.Set(stats.nUserspaceEvents);
-        chiselCacheHits.Set(stats.nChiselCacheHits);
+        chiselCacheHitsAccept.Set(stats.nChiselCacheHitsAccept);
+        chiselCacheHitsReject.Set(stats.nChiselCacheHitsReject);
         kafkaSendFailures.Set(stats.nKafkaSendFailures);
     }
 }

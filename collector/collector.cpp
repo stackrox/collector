@@ -157,6 +157,7 @@ void insertModule(const Json::Value& syscall_list) {
 
     module_args["exclude_initns"] = "1";
     module_args["exclude_selfns"] = "1";
+    module_args["verbose"] = "1";
 
     int fd = open(SysdigService::kModulePath, O_RDONLY);
     if (fd < 0) {

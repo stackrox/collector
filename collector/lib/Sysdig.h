@@ -45,8 +45,9 @@ struct SysdigStats {
   // stats gathered in user space
   volatile uint64_t nFilteredEvents = 0;    // events post chisel filter
   volatile uint64_t nUserspaceEvents = 0;   // events pre chisel filter, should be (nEvents - nDrops)
-  volatile uint64_t nChiselCacheHits = 0;   // number of events that hit the filter cache
-  volatile uint64_t nKafkaSendFailures = 0; // number of signals that were not sent
+  volatile uint64_t nChiselCacheHitsAccept = 0;   // number of events that hit the filter cache
+  volatile uint64_t nChiselCacheHitsReject = 0;   // number of events that hit the filter cache
+    volatile uint64_t nKafkaSendFailures = 0; // number of signals that were not sent
 };
 
 class Sysdig {

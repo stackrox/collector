@@ -60,6 +60,12 @@ class SysdigService : public Sysdig {
   bool GetStats(SysdigStats* stats) const override;
 
  private:
+  enum ChiselCacheStatus : int {
+    BLOCKED_USERSPACE,
+    BLOCKED_KERNEL,
+    ACCEPTED,
+  };
+
   SignalType GetNext(SafeBuffer* message_buffer, SafeBuffer* key_buffer);
 
   bool FilterEvent(sinsp_evt* event);
@@ -71,7 +77,7 @@ class SysdigService : public Sysdig {
   EventClassifier classifier_;
   SysdigStats userspace_stats_;
 
-  std::unordered_map<string, bool> chisel_cache_;
+  std::unordered_map<string, ChiselCacheStatus> chisel_cache_;
   bool use_chisel_cache_;
 
   mutable std::mutex running_mutex_;
