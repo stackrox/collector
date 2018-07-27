@@ -174,6 +174,9 @@ FileContainer* FileSummaryFormatter::CreateFileContainer(sinsp_evt* event) {
   if (const uint32_t* privileged = event_extractor_.get_container_privileged(event)) {
     file_container->set_privileged(*privileged != 0);
   }
+  if (cluster_id_) {
+    file_container->mutable_cluster_id()->set_value(*cluster_id_, sizeof(*cluster_id_));
+  }
   return file_container;
 }
 

@@ -116,6 +116,9 @@ ProcessContainer* ProcessSummaryFormatter::CreateProcessContainer(sinsp_evt* eve
   if (const uint32_t* privileged = event_extractor_.get_container_privileged(event)) {
     container->set_privileged(*privileged != 0);
   }
+  if (cluster_id_) {
+    container->mutable_cluster_id()->set_value(*cluster_id_, sizeof(*cluster_id_));
+  }
 
   return container;
 }

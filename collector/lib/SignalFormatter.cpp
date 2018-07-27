@@ -64,11 +64,11 @@ std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateSignalFormatter(c
 }
 
 std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateFileSummaryFormatter(sinsp* inspector, bool text_format) {
-  return MakeUnique<FileSummaryFormatter>(inspector, text_format);
+  return MakeUnique<FileSummaryFormatter>(inspector, cluster_id_, text_format);
 }
 
 std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateProcessSummaryFormatter(sinsp* inspector, bool text_format) {
-  return MakeUnique<ProcessSummaryFormatter>(inspector, text_format);
+  return MakeUnique<ProcessSummaryFormatter>(inspector, cluster_id_, text_format);
 }
 
 }  // namespace collector

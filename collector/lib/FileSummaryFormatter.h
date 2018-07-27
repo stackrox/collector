@@ -33,8 +33,9 @@ namespace collector {
 
 class FileSummaryFormatter : public ProtoSignalFormatter<data::FileSummary> {
  public:
-  FileSummaryFormatter(sinsp* inspector, bool text_format = false)
-      : ProtoSignalFormatter(text_format), event_names_(EventNames::GetInstance()) {
+  FileSummaryFormatter(sinsp* inspector, const uuid_t* cluster_id, bool text_format = false)
+      : ProtoSignalFormatter(text_format), event_names_(EventNames::GetInstance()),
+        cluster_id_(cluster_id) {
     event_extractor_.Init(inspector);
   }
 
@@ -58,6 +59,7 @@ class FileSummaryFormatter : public ProtoSignalFormatter<data::FileSummary> {
 
   const EventNames& event_names_;
   SysdigEventExtractor event_extractor_;
+  const uuid_t* cluster_id_;
 };
 
 }  // namespace collector
