@@ -34,7 +34,7 @@ $ tree
 
   1 directory, 1 file
 
-$ file input/coreos_developer_container.bin.bz2 
+$ file input/coreos_developer_container.bin.bz2
   input/coreos_developer_container.bin.bz2: bzip2 compressed data
 ```
 
@@ -72,7 +72,7 @@ $ tree
 
   2 directories, 2 files
 
-$ file output/bundle.tgz 
+$ file output/bundle.tgz
   output/bundle.tgz: gzip compressed data, max compression
 
 $ tar -tf output/bundle.tgz
@@ -87,3 +87,19 @@ $ tar -tf output/bundle.tgz
   lib/modules/4.11.6-coreos/source/scripts/cleanfile
   lib/modules/4.11.6-coreos/source/scripts/decodecode
 ```
+
+#### Uploading to GCS
+
+In order for this bundle to be used in future CI builds, you must upload it to
+Google Cloud Storage.
+
+To find the path, run `make print-package-cache-path` in the parent directory
+(`kernel-modules`).
+
+Then, construct your output path by taking the input URL, changing the
+filename to `bundle.tgz`, and removing repeated slashes. For instance,
+`http://stable.release.core-os.net/amd64-usr/1688.5.3/coreos_developer_container.bin.bz2`
+becomes
+`gs://kernel-headers-cache/http:/stable.release.core-os.net/amd64-usr/1688.5.3/bundle.tgz`
+
+Then, upload: `gsutil cp output/bundle.tgz FINAL_FILENAME`.

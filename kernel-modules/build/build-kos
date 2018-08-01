@@ -241,41 +241,15 @@ function debian_build {
 }
 
 function coreos_build {
-	BASE_URL="$1"
-
+	BASE_URL="$1/bundle.tgz"
 	TEMP_DIR="$(mktemp --dir -p /scratch)"
 
 	cd "$TEMP_DIR"
 
-	if [ ! -f coreos_developer_container.bin ]; then
-		get_or_download "$BASE_URL" ./
-		echo "Unzipping developer container"
-		bunzip2 coreos_developer_container.bin.bz2
-	fi
+	get_or_download "$BASE_URL" ./
 
-	if [ ! -f config_orig ]; then
-		echo "Obtaining config_orig"
-		# mount developer container is a very stateful part of this script
-		# the section between mount/unmounting should be kept very small
-		# otherwise if something fails there are many inconsistencies that can happen
-		kpartx -asv coreos_developer_container.bin
-		LOOPDEV=$(kpartx -asv coreos_developer_container.bin | cut -d\  -f 3)
-		mkdir -p /tmp/loop
-		mount /dev/mapper/$LOOPDEV /tmp/loop
-
-		# Copy kernel headers
-		cp -r /tmp/loop/lib/modules .
-
-		# Copy kernel config
-		rm config* || true
-		cp /tmp/loop/usr/boot/config-* .
-		cp config-* config_orig
-		cp config_orig config
-
-		# umount and remove the developer container
-		umount /tmp/loop
-		kpartx -dv coreos_developer_container.bin
-	fi
+	tar --strip-components=2 -xf bundle.tgz --wildcards 'usr/boot/config*'
+	tar --strip-components=1 -xf bundle.tgz 'lib/modules'
 
 	echo "Building"
 	# https://groups.google.com/forum/#!topic/coreos-dev/Z8Q7sIy6YwE
@@ -288,8 +262,6 @@ function coreos_build {
 	cd $BASEDIR
 	# Clean up unpacked packages:
 	rm -rf "$TEMP_DIR"
-
-	return
 }
 
 function get_or_download() {

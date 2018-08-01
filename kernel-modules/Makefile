@@ -100,14 +100,13 @@ build-coreos:
 		-v $(CURDIR)/packages:/packages \
 		-v ko-coreos:/scratch \
 		-v $(CURDIR)/../ext/sysdig/src:/sysdig-src \
-		--privileged \
 		build-kernel-modules \
 		CoreOS \
 		< supported-kernels/coreos.txt
 	docker volume rm ko-coreos
 
 .PHONY: build
-build: build-centos build-centos-uncrawled build-ubuntu build-coreos
+build: build-coreos build-centos build-centos-uncrawled build-ubuntu
 
 .PHONY: build-container
 build-container:
@@ -142,3 +141,7 @@ delete-package-cache:
 .PHONY: build-coreos-repackage
 build-coreos-repackage:
 	docker build -t stackrox/coreos-repackage coreos-repackage
+
+.PHONY: print-package-cache-path
+print-package-cache-path:
+	@echo ${PKG_GCS_PATH}
