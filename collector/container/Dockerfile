@@ -88,8 +88,8 @@ ENTRYPOINT ["/bootstrap.sh"]
 # You must provide a BROKER_LIST environment variable or override the CMD.
 # For information on other variables, see the explanations of these environment variables above.
 CMD collector \
-        --collector-config=$COLLECTOR_CONFIG \
-        --chisel=$CHISEL \
-        --broker-list=$BROKER_LIST
+    --collector-config=$COLLECTOR_CONFIG \
+    --chisel=$CHISEL \
+    --broker-list=$BROKER_LIST
 
 COPY bin/collector /usr/local/bin/collector
