@@ -31,6 +31,8 @@ centos_excludes = [
 ubuntu_excludes = [
     "4.15.0-14", # SROX-11665 will remove this exclusion
     "4.17.0", # The module does not compile on 4.17 yet.
+]
+ubuntu_backport_excludes = [
     "~", # prevent duplicate backports from cluttering the list
 ]
 repos = {
@@ -153,7 +155,7 @@ repos = {
             "discovery_pattern" : "/html/body//a[@href = 'linux-azure/']/@href",
             "subdirs" : [""],
             "page_pattern" : "/html/body//a[regex:test(@href, '^linux-headers-[4-9].*-azure.*amd64.deb$')]/@href",
-            "exclude_patterns": ubuntu_excludes
+            "exclude_patterns": ubuntu_excludes + ubuntu_backport_excludes
         },
 
         # linux-azure "all" headers, distributed from main
@@ -162,7 +164,7 @@ repos = {
             "discovery_pattern" : "/html/body//a[@href = 'linux-azure/']/@href",
             "subdirs" : [""],
             "page_pattern" : "/html/body//a[regex:test(@href, '^linux-azure-headers-[4-9].*_all.deb$')]/@href",
-            "exclude_patterns": ubuntu_excludes
+            "exclude_patterns": ubuntu_excludes + ubuntu_backport_excludes
         },
     ],
     "Ubuntu-AWS": [
@@ -212,12 +214,13 @@ repos = {
             "exclude_patterns": ubuntu_excludes
         },
 
-        # linux-gcp "all" headers, distributed from universe
+        # linux-gcp "all" headers, distributed from universe.
+        # As of 4.15.0-1014, "all" is not uploaded, but "amd64" is.
         {
             "root" : "http://security.ubuntu.com/ubuntu/pool/universe/l/",
             "discovery_pattern" : "/html/body//a[@href = 'linux-gcp/']/@href",
             "subdirs" : [""],
-            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-gcp-headers-[4-9].*_all.deb$')]/@href",
+            "page_pattern" : "/html/body//a[regex:test(@href, '^linux-gcp-headers-[4-9].*_(all|amd64).deb$')]/@href",
             "exclude_patterns": ubuntu_excludes
         },
     ],
