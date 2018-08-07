@@ -1,0 +1,4 @@
+protoc-*.zip
+protoc-tmp
+
+.idea/

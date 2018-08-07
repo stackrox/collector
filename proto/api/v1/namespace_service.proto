@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "proto/api/v1/pagination.proto";
+
+package v1;
+
+message NamespacesRequest {
+    repeated bool stackrox = 1;
+    repeated bool inactive = 2;
+    PaginationRequest pagination = 15;
+}
+
+message NamespacesResponse {
+    repeated NamespaceResponse results = 1;
+    PaginationResponse pagination = 2;
+}
+
+// Next available tag: 5
+message NamespaceResponse {
+    string namespace = 1;
+    string cluster_id = 4;
+    int32 applications_count = 2;
+    int32 services_count = 3;
+}
+
+// APIs for managing namespaces for user services.
+service NamespaceService {
+
+    // GetNamespaces returns namespaces with pagination options.
+    rpc GetNamespaces (NamespacesRequest) returns (NamespacesResponse) {
+        option (google.api.http) = {
+            get: "/v1/namespaces"
+        };
+    }
+}

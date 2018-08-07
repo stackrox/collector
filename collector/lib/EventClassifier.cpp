@@ -45,19 +45,30 @@ constexpr uint64_t kNetFdTypes =
 
 }  // namespace
 
-void EventClassifier::Init(const std::string& hostname, const std::vector<std::string>& process_syscalls) {
+void EventClassifier::Init(const std::string& hostname, const std::vector<std::string>& process_syscalls,
+    const std::vector<std::string>& generic_syscalls) {
   hostname_hash_ = std::hash<std::string>()(hostname);
   process_syscalls_.reset();
+  generic_syscalls_.reset();
   const EventNames& event_names = EventNames::GetInstance();
   for (const std::string& syscall_name : process_syscalls) {
     for (ppm_event_type event_type : event_names.GetEventIDs(syscall_name)) {
       process_syscalls_.set(event_type);
     }
   }
+  for (const std::string& syscall_name : generic_syscalls) {
+    for (ppm_event_type event_type : event_names.GetEventIDs(syscall_name)) {
+      generic_syscalls_.set(event_type);
+    }
+  }
 }
 
 SignalType EventClassifier::Classify(SafeBuffer* key_buf, sinsp_evt* event) const {
   key_buf->clear();
+  if (generic_syscalls_.test(event->get_type())) {
+    if (!ExtractProcessSignalKey(key_buf, event)) return SIGNAL_TYPE_UNKNOWN;
+    return SIGNAL_TYPE_GENERIC;
+  }
   if (process_syscalls_.test(event->get_type())) {
     if (!ExtractProcessSignalKey(key_buf, event)) return SIGNAL_TYPE_UNKNOWN;
     return SIGNAL_TYPE_PROCESS;

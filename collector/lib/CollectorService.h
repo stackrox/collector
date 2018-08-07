@@ -42,6 +42,7 @@ namespace collector {
 struct CollectorConfig {
   bool useChiselCache = true;
   bool useKafka = true;
+  bool useGRPC = false;
   bool getNetworkHealth = true;
   const rd_kafka_conf_t* kafkaConfigTemplate = nullptr;
   int snapLen = 2048;
@@ -52,13 +53,19 @@ struct CollectorConfig {
   std::vector<Address> kafkaBrokers;
   std::string chiselsTopic;
 
+  // @todo: Add ssl/tls config options for gRPC
+  Address gRPCServer;
+
   std::string networkSignalOutput;
   std::string processSignalOutput;
   std::string fileSignalOutput;
+  std::string signalOutput;
   std::vector<std::string> processSyscalls;
+  std::vector<std::string> genericSyscalls;
   std::string fileSignalFormat;
   std::string processSignalFormat;
   std::string networkSignalFormat;
+  std::string signalFormat;
 
   const uuid_t* clusterID = nullptr;
 };
@@ -78,6 +85,7 @@ class CollectorService {
  private:
   bool WaitForKafka();
   void OnChiselReceived(const std::string& chisel);
+  bool WaitForGRPCServer();
 
   CollectorConfig config_;
 

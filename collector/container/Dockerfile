@@ -46,6 +46,7 @@ RUN apt-get update \
 COPY bin/curl /usr/local/bin/curl
 COPY libs/librdkafka.so \
      libs/libcurl.so \
+     libs/libgrpc.so \	
      libs/libsinsp-wrapper.so \
      /usr/local/lib/
 
@@ -90,6 +91,7 @@ ENTRYPOINT ["/bootstrap.sh"]
 CMD collector \
     --collector-config=$COLLECTOR_CONFIG \
     --chisel=$CHISEL \
-    --broker-list=$BROKER_LIST
+    --broker-list=$BROKER_LIST \
+    --grpc-server=$GRPC_SERVER
 
 COPY bin/collector /usr/local/bin/collector

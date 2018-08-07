@@ -1,0 +1,117 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "github.com/mwitkow/go-proto-validators/validator.proto";
+import "proto/api/v1/pagination.proto";
+
+package v1;
+
+message ContainerRequest {
+    // id is actually the short container id.
+    string id = 1 [(validator.field) = {regex: "^[0-9a-f]{12}$"}];
+}
+
+message ContainersRequest {
+    repeated string id                                  = 1;
+    repeated string short_id                            = 2;
+    repeated string name                                = 3;
+    repeated string node                                = 4;
+    repeated string service_id                          = 5;
+    repeated string service_name                        = 6;
+    repeated string application                         = 7;
+    repeated string namespace                           = 8;
+    repeated string image_id                            = 9;
+    repeated string image_name                          = 10;
+    repeated bool stackrox_container                    = 11;
+    repeated bool inactive                              = 12;
+    repeated bool rogue                                 = 13;
+    repeated bool infected                              = 14;
+    google.protobuf.Timestamp createdAt                 = 15;
+    google.protobuf.Timestamp startedAt                 = 16;
+    google.protobuf.Timestamp stoppedAt                 = 17;
+    google.protobuf.Timestamp destroyedAt               = 18;
+    repeated string admin_state                         = 19;
+    repeated string oper_state                          = 20;
+
+    PaginationRequest pagination                        = 24;
+}
+
+// Next available tag: 35
+message Container {
+    string id                                           = 1;
+    string short_id                                     = 2;
+    string name                                         = 3;
+    string node                                         = 4;
+
+    string service_id                                   = 5;
+    string service_name                                 = 6;
+    string application_name                             = 7;
+    string namespace                                    = 8;
+    string cluster_id                                   = 34;
+
+    string image_id                                     = 9;
+    string image_name                                   = 10;
+
+    repeated string command                             = 11;
+    repeated string entrypoint                          = 12;
+    repeated string exposed_ports                       = 13;
+    repeated string labels                              = 14;
+
+    bool stackrox_container                             = 15;
+    bool inactive                                       = 16;
+    bool rogue                                          = 17;
+    bool infected                                       = 18;
+    google.protobuf.Timestamp infect_timestamp          = 19;
+    double severity                                     = 20;
+    int64 events                                        = 21;
+    int64 new_alerts                                    = 22;
+    int64 resolved_alerts                               = 23;
+    int64 acknowledged_alerts                           = 24;
+
+    google.protobuf.Timestamp create_timestamp          = 25;
+    google.protobuf.Timestamp start_timestamp           = 26;
+    google.protobuf.Timestamp stop_timestamp            = 27;
+    google.protobuf.Timestamp destroy_timestamp         = 28;
+    google.protobuf.Timestamp update_timestamp          = 29;
+
+    string admin_state                                  = 30;
+    string oper_state                                   = 31;
+
+    reserved 32, 33; // Formerly quarantine_state, quarantine_networks
+}
+
+message ContainersResponse {
+    repeated Container results = 1;
+    PaginationResponse pagination = 2;
+}
+
+message ContainersCountResponse {
+    int64 total_in_range = 1;
+}
+
+// APIs for accessing and managing containers.
+service ContainerService {
+    // Get a Container by short container id.
+    rpc GetContainer(ContainerRequest) returns (Container) {
+        option (google.api.http) = {
+            get: "/v1/containers/{id}"
+        };
+    }
+
+    // Get the containers matching the specified criteria.
+    rpc GetContainers(ContainersRequest) returns (ContainersResponse) {
+        option (google.api.http) = {
+            get: "/v1/containers"
+        };
+    }
+
+    // Returns number of containers matching the specified criteria.
+    rpc CountContainers(ContainersRequest) returns (ContainersCountResponse) {
+        option (google.api.http) = {
+            get: "/v1/containersCount"
+        };
+    }
+}

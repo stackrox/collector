@@ -44,6 +44,10 @@ ARG RDKAFKA_REVISION=v0.11.3
 COPY build/install_rdkafka.sh build-tmp/install_rdkafka.sh
 RUN build-tmp/install_rdkafka.sh
 
+ARG GRPC_REVISION=v1.14.1
+COPY build/install_grpc.sh build-tmp/install_grpc.sh
+RUN build-tmp/install_grpc.sh
+
 # Clean up the build directory we created.
 RUN rm -rf build-tmp
 

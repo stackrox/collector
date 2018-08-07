@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "proto/data/common.proto";
+import "proto/data/container_summary.proto";
+
+package director;
+
+option go_package = "director";
+
+message ContainersState {
+    // The data about all containers that dockerd is currently aware of.
+    repeated data.ContainerSummary.Container containers = 1;
+    // The data about all images that dockerd is currently aware of.
+    repeated data.ContainerSummary.Image images = 3;
+    // Containers whose state could not be obtained. These should be included from the update (i.e., they should not
+    // be marked as inactive, nor should anything else about their state change).
+    repeated string unknown_state_containers = 2;
+}
+
+message PushContainerStatesRequest {
+    // The hostname on which the container summarizer is running.
+    string hostname = 1;
+    // In a multi-cluster setting, this is the cluster in which the container summarizer is deployed.
+    data.UUID cluster_id = 3;
+
+    // The state of the container summarizer sending this message. If not set, no state update should be performed (this
+    // is different from a set but empty ContainersState message).
+    ContainersState containers_state = 2;
+}
+
+// A single message sent in the container events stream from container summarizer to director.
+message ContainerEventsStreamMessage {
+    oneof msg {
+        // The state of all containers in a node. This will be the first message in every stream.
+        PushContainerStatesRequest container_states = 1;
+        // A summary of a container event.
+        data.ContainerSummary container_summary = 2;
+    }
+}
+
+// A director service that allows the container summarizer to push its entire state to the director. This is required
+// to inform the director of containers that have been fully removed during a container summarizer outage.
+service ContainerStateService {
+    // Pushes the state from the given node to the director.
+    rpc PushContainerStates(PushContainerStatesRequest) returns (google.protobuf.Empty);
+
+    // Registers a container summarizer with the director, and streams container events/state updates to the director.
+    rpc PushContainerEvents(stream ContainerEventsStreamMessage) returns (google.protobuf.Empty);
+}

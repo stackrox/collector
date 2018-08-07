@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+
+package v1;
+
+message ContainerInfo {
+    string id = 1;
+    string short_id = 2;
+    string name = 3;
+    string image = 4;
+    string image_id = 5;
+    string application_name = 6;
+    string service_name = 7;
+    double severity = 8;
+    bool stackrox_container = 9;
+    reserved 10; // Formerly used for `fingerprint`.
+    string service_id = 11;
+    repeated string labels = 12;
+    int32 oper_state = 13;
+    string namespace = 14;
+    string cluster_id = 15;  // UUID
+}
+
+message ContainerCacheResponse {
+    map<string, ContainerInfo> results = 1;
+    int64 seq_num = 2;
+}
+
+message ContainerCacheRequest {
+    int64 seq_num = 1;
+}
+
+service ContainerCacheService {
+    // Get container cache
+    rpc GetContainersCache(ContainerCacheRequest) returns (stream ContainerCacheResponse) {
+        option (google.api.http) = {
+            get: "/v1/containercache"
+        };
+    }
+}

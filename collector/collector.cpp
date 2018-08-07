@@ -157,7 +157,7 @@ void insertModule(const Json::Value& syscall_list) {
 
     module_args["exclude_initns"] = "1";
     module_args["exclude_selfns"] = "1";
-    module_args["verbose"] = "1";
+    module_args["verbose"] = "0";
 
     int fd = open(SysdigService::kModulePath, O_RDONLY);
     if (fd < 0) {
@@ -311,153 +311,187 @@ int main(int argc, char **argv) {
     CLOG(WARNING) << "Failed to drop SYS_MODULE capability: " << StrError();
   }
 
-    bool useKafka = !args->BrokerList().empty();
-    if (!useKafka) {
-        CLOG(INFO) << "Kafka is disabled.";
+  bool useKafka = !args->BrokerList().empty();
+  if (!useKafka) {
+      CLOG(INFO) << "Kafka is disabled.";
+  }
+  bool useGRPC = !args->GRPCServer().empty();
+  if (!useGRPC) {
+      CLOG(INFO) << "GRPC is disabled.";
+  }
+  std::string networkSignalOutput = "stdout:NET :";
+  if (!collectorConfig["networkSignalOutput"].isNull()) {
+      networkSignalOutput = collectorConfig["networkSignalOutput"].asString();
+  }
+  std::string processSignalOutput = "stdout:PROC:";
+  if (!collectorConfig["processSignalOutput"].isNull()) {
+      processSignalOutput = collectorConfig["processSignalOutput"].asString();
+  }
+  std::string fileSignalOutput = "stdout:FILE:";
+  if (!collectorConfig["fileSignalOutput"].isNull()) {
+      fileSignalOutput = collectorConfig["fileSignalOutput"].asString();
+  }
+  std::string signalOutput = "stdout:SIGNAL:";
+  if (!collectorConfig["signalOutput"].isNull()) {
+      signalOutput = collectorConfig["signalOutput"].asString();
+  }
+  std::string chiselsTopic = "collector-chisels-kafka-topic";
+  if (!collectorConfig["chiselsTopic"].isNull()) {
+      chiselsTopic = collectorConfig["chiselsTopic"].asString();
+  }
+
+  // formatters
+  std::string networkSignalFormat = "network_signal";
+  if (!collectorConfig["networkSignalFormat"].isNull()) {
+      networkSignalFormat = collectorConfig["networkSignalFormat"].asString();
+  }
+  std::string processSignalFormat = "process_summary";
+  if (!collectorConfig["processSignalFormat"].isNull()) {
+      processSignalFormat = collectorConfig["processSignalFormat"].asString();
+  }
+  std::string fileSignalFormat = "file_summary";
+  if (!collectorConfig["fileSignalFormat"].isNull()) {
+      fileSignalFormat = collectorConfig["fileSignalFormat"].asString();
+  }
+  std::string signalFormat = "signal_summary";
+  if (!collectorConfig["signalFormat"].isNull()) {
+      signalFormat = collectorConfig["signalFormat"].asString();
+  }
+
+  // Iterate over the process syscalls
+  std::vector<std::string> process_syscalls;
+  for (auto itr : collectorConfig["process_syscalls"]) {
+      process_syscalls.push_back(itr.asString());
+  }
+
+  // Iterate over the generic syscalls
+  std::vector<std::string> generic_syscalls;
+  for (auto itr : collectorConfig["generic_syscalls"]) {
+      generic_syscalls.push_back(itr.asString());
+  }
+
+  CLOG(INFO) << "Output specs set to: network='" << networkSignalOutput << "', process='"
+             << processSignalOutput << "', file='" << fileSignalOutput << "', signal='"
+             << signalOutput << "'";
+  CLOG(INFO) << "Chisels topic set to: " << chiselsTopic;
+  CLOG(INFO) << "Format specs set to: network='" << networkSignalFormat << "', process='"
+             << processSignalFormat << "', file='" << fileSignalFormat << "', signal='"
+             << signalFormat << "'";
+
+  std::string chiselB64 = args->Chisel();
+  std::string chisel = base64_decode(chiselB64);
+
+  // Extract configuration options
+  bool useChiselCache = collectorConfig["useChiselCache"].asBool();
+  CLOG(INFO) << "useChiselCache=" << useChiselCache;
+  bool getNetworkHealth = collectorConfig["getNetworkHealth"].asBool();
+
+  rd_kafka_conf_t* conf_template = nullptr;
+
+  std::vector<Address> broker_endpoints;
+
+  if (useKafka) {
+    std::string error_str;
+    if (!ParseAddressList(args->BrokerList(), &broker_endpoints, &error_str)) {
+      CLOG(FATAL) << "Failed to parse Kafka broker list: " << error_str;
     }
-    std::string networkSignalOutput = "stdout:NET :";
-    if (!collectorConfig["networkSignalOutput"].isNull()) {
-        networkSignalOutput = collectorConfig["networkSignalOutput"].asString();
+
+    conf_template = rd_kafka_conf_new();
+    char errstr[256];
+    rd_kafka_conf_res_t res = rd_kafka_conf_set(conf_template, "metadata.broker.list", args->BrokerList().c_str(),
+                                                errstr, sizeof(errstr));
+    if (res != RD_KAFKA_CONF_OK) {
+      CLOG(FATAL) << "Failed to set brokers in Kafka config: " << errstr;
     }
-    std::string processSignalOutput = "stdout:PROC:";
-    if (!collectorConfig["processSignalOutput"].isNull()) {
-        processSignalOutput = collectorConfig["processSignalOutput"].asString();
-    }
-    std::string fileSignalOutput = "stdout:FILE:";
-    if (!collectorConfig["fileSignalOutput"].isNull()) {
-        fileSignalOutput = collectorConfig["fileSignalOutput"].asString();
-    }
-    std::string chiselsTopic = "collector-chisels-kafka-topic";
-    if (!collectorConfig["chiselsTopic"].isNull()) {
-        chiselsTopic = collectorConfig["chiselsTopic"].asString();
-    }
+    rd_kafka_conf_set_error_cb(conf_template, OnKafkaError);
 
-    // formatters
-    std::string networkSignalFormat = "network_signal";
-    if (!collectorConfig["networkSignalFormat"].isNull()) {
-        networkSignalFormat = collectorConfig["networkSignalFormat"].asString();
-    }
-    std::string processSignalFormat = "process_summary";
-    if (!collectorConfig["processSignalFormat"].isNull()) {
-        processSignalFormat = collectorConfig["processSignalFormat"].asString();
-    }
-    std::string fileSignalFormat = "file_summary";
-    if (!collectorConfig["fileSignalFormat"].isNull()) {
-        fileSignalFormat = collectorConfig["fileSignalFormat"].asString();
-    }
+    const auto& tlsConfig = collectorConfig["tlsConfig"];
+    if (!tlsConfig.isNull()) {
+      std::string caCertPath = tlsConfig["caCertPath"].asString();
+      std::string clientCertPath = tlsConfig["clientCertPath"].asString();
+      std::string clientKeyPath = tlsConfig["clientKeyPath"].asString();
 
-    // Iterate over the process syscalls
-    std::vector<std::string> process_syscalls;
-    for (auto itr : collectorConfig["process_syscalls"]) {
-        process_syscalls.push_back(itr.asString());
-    }
-
-    CLOG(INFO) << "Output specs set to: network='" << networkSignalOutput << "', process='"
-               << processSignalOutput << "', file='" << fileSignalOutput << "'";
-    CLOG(INFO) << "Chisels topic set to: " << chiselsTopic;
-    CLOG(INFO) << "Format specs set to: network='" << networkSignalFormat << "', process='"
-               << processSignalFormat << "', file='" << fileSignalFormat << "'";
-
-    std::string chiselB64 = args->Chisel();
-    std::string chisel = base64_decode(chiselB64);
-
-    // Extract configuration options
-    bool useChiselCache = collectorConfig["useChiselCache"].asBool();
-    CLOG(INFO) << "useChiselCache=" << useChiselCache;
-    bool getNetworkHealth = collectorConfig["getNetworkHealth"].asBool();
-
-    rd_kafka_conf_t* conf_template = nullptr;
-
-    std::vector<Address> broker_endpoints;
-
-    if (useKafka) {
-      std::string error_str;
-      if (!ParseAddressList(args->BrokerList(), &broker_endpoints, &error_str)) {
-        CLOG(FATAL) << "Failed to parse Kafka broker list: " << error_str;
-      }
-
-      conf_template = rd_kafka_conf_new();
-      char errstr[256];
-      rd_kafka_conf_res_t res = rd_kafka_conf_set(conf_template, "metadata.broker.list", args->BrokerList().c_str(),
-                                                  errstr, sizeof(errstr));
-      if (res != RD_KAFKA_CONF_OK) {
-        CLOG(FATAL) << "Failed to set brokers in Kafka config: " << errstr;
-      }
-      rd_kafka_conf_set_error_cb(conf_template, OnKafkaError);
-
-      const auto& tlsConfig = collectorConfig["tlsConfig"];
-      if (!tlsConfig.isNull()) {
-        std::string caCertPath = tlsConfig["caCertPath"].asString();
-        std::string clientCertPath = tlsConfig["clientCertPath"].asString();
-        std::string clientKeyPath = tlsConfig["clientKeyPath"].asString();
-
-        if (!caCertPath.empty() && !clientCertPath.empty() && !clientKeyPath.empty()) {
-          res = rd_kafka_conf_set(conf_template, "security.protocol", "ssl", errstr, sizeof(errstr));
-          if (res != RD_KAFKA_CONF_OK) {
-            CLOG(FATAL) << "Failed to set security protocol to SSL: " << errstr;
-          }
-          res = rd_kafka_conf_set(conf_template, "ssl.ca.location", caCertPath.c_str(), errstr, sizeof(errstr));
-          if (res != RD_KAFKA_CONF_OK) {
-            CLOG(FATAL) << "Failed to set CA location: " << errstr;
-          }
-          res = rd_kafka_conf_set(conf_template, "ssl.certificate.location", clientCertPath.c_str(),
-                                  errstr, sizeof(errstr));
-          if (res != RD_KAFKA_CONF_OK) {
-            CLOG(FATAL) << "Failed to set CA location: " << errstr;
-          }
-          res = rd_kafka_conf_set(conf_template, "ssl.key.location", clientKeyPath.c_str(),
-                                            errstr, sizeof(errstr));
-          if (res != RD_KAFKA_CONF_OK) {
-            CLOG(FATAL) << "Failed to set CA location: " << errstr;
-          }
-        } else {
-          CLOG(ERROR)
-              << "Partial TLS config: CACertPath=" << caCertPath << ", ClientCertPath=" << clientCertPath
-              << ", ClientKeyPath=" << clientKeyPath << "; will not use TLS";
+      if (!caCertPath.empty() && !clientCertPath.empty() && !clientKeyPath.empty()) {
+        res = rd_kafka_conf_set(conf_template, "security.protocol", "ssl", errstr, sizeof(errstr));
+        if (res != RD_KAFKA_CONF_OK) {
+          CLOG(FATAL) << "Failed to set security protocol to SSL: " << errstr;
         }
+        res = rd_kafka_conf_set(conf_template, "ssl.ca.location", caCertPath.c_str(), errstr, sizeof(errstr));
+        if (res != RD_KAFKA_CONF_OK) {
+          CLOG(FATAL) << "Failed to set CA location: " << errstr;
+        }
+        res = rd_kafka_conf_set(conf_template, "ssl.certificate.location", clientCertPath.c_str(),
+                                errstr, sizeof(errstr));
+        if (res != RD_KAFKA_CONF_OK) {
+          CLOG(FATAL) << "Failed to set CA location: " << errstr;
+        }
+        res = rd_kafka_conf_set(conf_template, "ssl.key.location", clientKeyPath.c_str(),
+                                          errstr, sizeof(errstr));
+        if (res != RD_KAFKA_CONF_OK) {
+          CLOG(FATAL) << "Failed to set CA location: " << errstr;
+        }
+      } else {
+        CLOG(ERROR)
+            << "Partial TLS config: CACertPath=" << caCertPath << ", ClientCertPath=" << clientCertPath
+            << ", ClientKeyPath=" << clientKeyPath << "; will not use TLS";
       }
     }
+  }
 
-    CollectorConfig config;
-    config.hostname = GetHostname();
-    config.useKafka = useKafka;
-    config.kafkaConfigTemplate = conf_template;
-    config.chiselsTopic = chiselsTopic;
-    config.snapLen = 0;
-    config.useChiselCache = useChiselCache;
-    config.getNetworkHealth = getNetworkHealth;
-    config.chisel = chisel;
-    config.kafkaBrokers = std::move(broker_endpoints);
-    config.networkSignalOutput = networkSignalOutput;
-    config.processSignalOutput = processSignalOutput;
-    config.fileSignalOutput = fileSignalOutput;
-    config.processSyscalls = process_syscalls;
-    config.networkSignalFormat = networkSignalFormat;
-    config.processSignalFormat = processSignalFormat;
-    config.fileSignalFormat = fileSignalFormat;
+  Address grpc_server_endpoint;
+  if (useGRPC) {
+      std::string error_str;
+      CLOG(INFO) << "gRPC server=" << args->GRPCServer();
+      if (!ParseAddress(args->GRPCServer(), &grpc_server_endpoint, &error_str)) {
+          CLOG(FATAL) << "Failed to parse GRPC server address: " << error_str;
+      }
+  }
 
-    // Set the cluster ID from the environment, leaving it a nullptr if it wasn't passed in.
-    uuid_t clusterID;
-    if (GetClusterID(&clusterID)) {
-        config.clusterID = &clusterID;
-    }
+  CollectorConfig config;
+  config.hostname = GetHostname();
+  config.useKafka = useKafka;
+  config.useGRPC = useGRPC;
+  config.kafkaConfigTemplate = conf_template;
+  config.chiselsTopic = chiselsTopic;
+  config.snapLen = 0;
+  config.useChiselCache = useChiselCache;
+  config.getNetworkHealth = getNetworkHealth;
+  config.chisel = chisel;
+  config.kafkaBrokers = std::move(broker_endpoints);
+  config.gRPCServer = std::move(grpc_server_endpoint);
+  config.networkSignalOutput = networkSignalOutput;
+  config.processSignalOutput = processSignalOutput;
+  config.fileSignalOutput = fileSignalOutput;
+  config.signalOutput = signalOutput;
+  config.processSyscalls = process_syscalls;
+  config.genericSyscalls = generic_syscalls;
+  config.networkSignalFormat = networkSignalFormat;
+  config.processSignalFormat = processSignalFormat;
+  config.fileSignalFormat = fileSignalFormat;
+  config.signalFormat = signalFormat;
 
-    // Register signal handlers
-    signal(SIGABRT, AbortHandler);
-    signal(SIGSEGV, AbortHandler);
-    signal(SIGTERM, ShutdownHandler);
-    signal(SIGINT, ShutdownHandler);
+  // Set the cluster ID from the environment, leaving it a nullptr if it wasn't passed in.
+  uuid_t clusterID;
+  if (GetClusterID(&clusterID)) {
+      config.clusterID = &clusterID;
+  }
 
-    CollectorService collector(config, &g_control, &g_signum);
-    collector.RunForever();
+  // Register signal handlers
+  signal(SIGABRT, AbortHandler);
+  signal(SIGSEGV, AbortHandler);
+  signal(SIGTERM, ShutdownHandler);
+  signal(SIGINT, ShutdownHandler);
 
-    if (useKafka) {
-      CLOG(INFO) << "Shutting down Kafka ...";
-      rd_kafka_conf_destroy(conf_template);
-      rd_kafka_wait_destroyed(5000);
-    }
+  CollectorService collector(config, &g_control, &g_signum);
+  collector.RunForever();
 
-    CLOG(INFO) << "Collector exiting successfully!";
+  if (useKafka) {
+    CLOG(INFO) << "Shutting down Kafka ...";
+    rd_kafka_conf_destroy(conf_template);
+    rd_kafka_wait_destroyed(5000);
+  }
 
-    return 0;
+  CLOG(INFO) << "Collector exiting successfully!";
+
+  return 0;
 }

@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package data;
+
+import "proto/data/container_summary.proto";
+import "proto/data/file_summary.proto";
+import "proto/data/flow_summary.proto";
+import "proto/data/process_summary.proto";
+import "proto/data/labelled_summary.proto";
+
+option java_outer_classname = "MLSummaryProtos";
+
+message MLSummary {
+    oneof summary_oneof {
+        LabelledSummary labeled_summary = 2;
+        FileSummary file_summary = 3;
+        FlowSummary flow_summary = 4;
+        ProcessSummary process_summary = 5;
+        ContainerSummary container_summary = 6;
+    }
+}

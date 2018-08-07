@@ -38,12 +38,13 @@ enum SignalType {
     SIGNAL_TYPE_NETWORK,
     SIGNAL_TYPE_PROCESS,
     SIGNAL_TYPE_FILE,
-    SIGNAL_TYPE_MAX = SIGNAL_TYPE_FILE
+    SIGNAL_TYPE_GENERIC,
+    SIGNAL_TYPE_MAX = SIGNAL_TYPE_GENERIC
 };
 
 class EventClassifier {
  public:
-  void Init(const std::string& hostname, const std::vector<std::string>& process_syscalls);
+  void Init(const std::string& hostname, const std::vector<std::string>& process_syscalls, const std::vector<std::string>& generic_syscalls);
 
   SignalType Classify(SafeBuffer* key_buf, sinsp_evt* event) const;
 
@@ -54,6 +55,7 @@ class EventClassifier {
 
   uint64_t hostname_hash_;
   std::bitset<PPM_EVENT_MAX> process_syscalls_;
+  std::bitset<PPM_EVENT_MAX> generic_syscalls_;
 };
 
 }  // namespace collector

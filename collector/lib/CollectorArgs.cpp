@@ -40,6 +40,7 @@ enum optionIndex {
     HELP,
     COLLECTOR_CONFIG,
     BROKER_LIST,
+    GRPC_SERVER,
     CHISEL
 };
 
@@ -61,6 +62,12 @@ checkBrokerList(const option::Option& option, bool msg)
     return CollectorArgs::getInstance()->checkBrokerList(option, msg);
 }
 
+static option::ArgStatus
+checkGRPCServer(const option::Option& option, bool msg)
+{
+    return CollectorArgs::getInstance()->checkGRPCServer(option, msg);
+}
+
 static const option::Descriptor usage[] =
 {
     { UNKNOWN,                 0, "", "",                        option::Arg::None,     "USAGE: collector [options]\n\n"
@@ -69,6 +76,7 @@ static const option::Descriptor usage[] =
     { COLLECTOR_CONFIG,        0, "", "collector-config",        checkCollectorConfig,  "  --collector-config    \tREQUIRED: Collector config as a JSON string. Please refer to documentation on the valid JSON format." },
     { CHISEL,                  0, "", "chisel",                  checkChisel,           "  --chisel              \tREQUIRED: Chisel is a base64 encoded string." },
     { BROKER_LIST,             0, "", "broker-list",             checkBrokerList,       "  --broker-list         \tREQUIRED: Broker list string in the form HOST1:PORT1,HOST2:PORT2." },
+    { GRPC_SERVER,             0, "", "grpc-server",             checkGRPCServer,       "  --grpc-server         \tREQUIRED: GRPC server endpoint string in the form HOST1:PORT1." },
     { UNKNOWN,                 0, "", "",                        option::Arg::None,     "\nExamples:\n"
                                                                                         "  collector --broker-list=\"172.16.0.5:9092\"\n" },
     { 0, 0, 0, 0, 0, 0 },
@@ -125,6 +133,11 @@ CollectorArgs::parse(int argc, char **argv, int &exitCode)
     }
 
     if (options[BROKER_LIST]) {
+        exitCode = 0;
+        return true;
+    }
+
+    if (options[GRPC_SERVER]) {
         exitCode = 0;
         return true;
     }
@@ -248,6 +261,55 @@ CollectorArgs::checkBrokerList(const option::Option& option, bool msg)
     return ARG_OK;
 }
 
+option::ArgStatus
+CollectorArgs::checkGRPCServer(const option::Option& option, bool msg)
+{
+    using namespace option;
+    using std::string;
+
+    if (option.arg == NULL || ::strlen(option.arg) == 0) {
+        if (msg) {
+            this->message = "Missing grpc list. Cannot configure GRPC client. Reverting to stdout.";
+        }
+        return ARG_OK;
+    }
+
+    if (::strlen(option.arg) > 255) {
+        if (msg) {
+            this->message = "GRPC Server addr too long (> 255)";
+        }
+        return ARG_ILLEGAL;
+    }
+
+    string arg(option.arg);
+    string::size_type j = arg.find(':');
+    if (j == string::npos) {
+        if (msg) {
+            this->message = "Malformed grpc server addr";
+        }
+        return ARG_ILLEGAL;
+    }
+
+    string host = arg.substr(0, j);
+    if (host.empty()) {
+        if (msg) {
+            this->message = "Missing grpc host";
+        }
+        return ARG_ILLEGAL;
+    }
+
+    string port = arg.substr(j+1, arg.length());
+    if (port.empty()) {
+        if (msg) {
+            this->message = "Missing grpc port";
+        }
+        return ARG_ILLEGAL;
+    }
+
+    grpcServer = arg;
+    return ARG_OK;
+}
+
 const Json::Value &
 CollectorArgs::CollectorConfig()  const
 {
@@ -264,6 +326,12 @@ const std::string &
 CollectorArgs::BrokerList() const
 {
     return brokerList;
+}
+
+const std::string &
+CollectorArgs::GRPCServer() const
+{
+    return grpcServer;
 }
 
 const std::string &

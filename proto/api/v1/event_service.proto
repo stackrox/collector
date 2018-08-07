@@ -1,0 +1,156 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "github.com/mwitkow/go-proto-validators/validator.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "proto/api/v1/pagination.proto";
+
+package v1;
+
+message Event {
+    message Service {
+        string id = 1;
+        string name = 2;
+        string application = 3;
+        string orchestrator_id = 4;
+        string version = 5;
+        string namespace = 6;
+        repeated string labels = 7;
+        string cluster_id = 8;  // UUID
+    };
+
+    message Container {
+        string id = 1;
+        string short_id = 2;
+        string name = 3;
+        string image_id = 4;
+        string image_name = 5;
+        repeated string labels = 6;
+    };
+
+    message Values {
+        double baseline = 1;
+        double observed = 2;
+        string raw_value = 3;
+    };
+
+    message Details {
+        map<string, string> details = 1;
+    };
+
+    message Evidence {
+        oneof evidence_oneof {
+            Values values = 1;
+            Details details = 2;
+        };
+    };
+
+    message Rule {
+        string id = 1;
+        string name = 2;
+        string category = 3;
+        string description = 4;
+        string severity = 5;
+        string detector = 6;
+        string template_id = 7;
+        map<string, string> settings = 8;
+    };
+
+    string id = 1;
+    google.protobuf.Timestamp creation_timestamp = 2;
+    string namespace = 3;
+    string name = 4;
+    string category = 5;
+    string severity = 6;
+    double confidence = 7;
+    string ml_model = 8;
+    string report = 9;
+    repeated string alert_ids = 10;
+    repeated string alert_ml_models = 11;
+    Service service = 12;
+    Container container = 13;
+    string detection_context_id = 14;
+    Evidence evidence = 15;
+    Rule rule = 16;
+    string signal_source = 17;
+    string source_category = 18;
+    google.protobuf.Timestamp timestamp = 19;
+    map<string, string> context = 50;
+}
+
+message FindOneEventRequest {
+    string event_id = 1 [(validator.field) = {regex: "^[a-fA-F0-9\\-]{36}"}];
+}
+
+message FindOneEventResponse {
+    Event event = 1;
+}
+
+message FindEventsRequest {
+    message EventPaginationRequest {
+        oneof set_limit {
+            int32 limit = 1 [(validator.field) = {int_gt: -1 int_lt: 101}];
+        }
+        int32 offset = 2 [(validator.field) = {int_gt: -1}];
+        string sort_by = 3 [(validator.field) = {regex: "^((timestamp|severity|name|category|source_category)(-|\\+|)){0,1}$"}];
+    };
+
+    repeated string severity = 1 [(validator.field) = {repeated_count_max: 10}];
+    repeated string source_category = 2 [(validator.field) = {repeated_count_max: 10}];
+    google.protobuf.Timestamp start_timestamp = 3;
+    google.protobuf.Timestamp end_timestamp = 4;
+    repeated string name = 5 [(validator.field) = {repeated_count_max: 10}];
+    repeated string category = 6 [(validator.field) = {repeated_count_max: 10}];
+    repeated string container_name = 7 [(validator.field) = {repeated_count_max: 10}];
+    repeated string image_name = 8 [(validator.field) = {repeated_count_max: 10}];
+    repeated string namespace = 9 [(validator.field) = {repeated_count_max: 10}];
+    EventPaginationRequest pagination = 100;
+}
+
+message FindEventsResponse {
+    repeated Event events = 1;
+    PaginationResponse pagination = 100;
+}
+
+message FindAllCategoriesResponse {
+    repeated string categories = 1;
+}
+
+message FindAllNamesResponse {
+    repeated string names = 1;
+}
+
+// API for access Events.
+service EventService {
+
+    // Find all of the unique event categories.
+    rpc FindAllCategories (google.protobuf.Empty) returns (FindAllCategoriesResponse) {
+        option (google.api.http) = {
+            get: "/v1/events/categories"
+        };
+    }
+
+    // Find all of the unique event names.
+    rpc FindAllNames (google.protobuf.Empty) returns (FindAllNamesResponse) {
+        option (google.api.http) = {
+            get: "/v1/events/names"
+        };
+    }
+
+    // Find any events matching a query.
+    rpc FindWhere (FindEventsRequest) returns (FindEventsResponse) {
+        option (google.api.http) = {
+            get: "/v1/events"
+        };
+    }
+
+    // Find one event by ID.
+    rpc Find (FindOneEventRequest) returns (FindOneEventResponse) {
+        option (google.api.http) = {
+            get: "/v1/events/{event_id}"
+        };
+    }
+}

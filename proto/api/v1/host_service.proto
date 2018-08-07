@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "proto/api/v1/pagination.proto";
+
+package v1;
+
+message HostsResponse {
+    repeated Host results = 1;
+    PaginationResponse pagination = 2;
+}
+
+message Host {
+    string name = 1;
+}
+
+// APIs for getting information about hosts in the monitored cluster(s).
+service HostService {
+
+    // GetHosts returns hosts with pagination options.
+    rpc GetHosts (google.protobuf.Empty) returns (HostsResponse) {
+        option (google.api.http) = {
+            get: "/v1/hosts"
+        };
+    }
+}

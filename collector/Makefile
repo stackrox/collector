@@ -4,6 +4,8 @@ SRCS := $(wildcard lib/*.cpp) collector.cpp
 
 GENERATED_SRCS := $(GENERATED_CPP_DATA_SRCS)
 
+BASE_PATH ?= $(CURDIR)/..
+
 .PHONY: all
 all: image
 
@@ -30,6 +32,7 @@ container/bin/collector: $(HDRS) $(SRCS) generated-srcs container/libs/libsinsp-
 	docker cp build_collector:/usr/local/lib/libcurl.so container/libs/
 	docker cp build_collector:/usr/local/bin/curl container/bin/
 	docker cp -L build_collector:/usr/local/lib/librdkafka.so container/libs/
+	docker cp -L build_collector:/usr/local/lib/libgrpc.so container/libs/
 
 container/libs/libsinsp-wrapper.so: $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp')
 	make -C sysdig
@@ -69,6 +72,10 @@ distribution: clean
 
 GENERATED_CPP_BASE_PATH := $(CURDIR)/generated
 
-#include ../build/protogen.mk
+install-grpc:
+	@$(BASE_PATH)/build/scripts/install-grpc-cpp-plugin.sh
 
-generated-srcs: $(GENERATED_CPP_DATA_SRCS)
+include ../build/protogen.mk
+
+generated-srcs: install-grpc $(GENERATED_CPP_DATA_SRCS) clean-protogen-artifacts
+
