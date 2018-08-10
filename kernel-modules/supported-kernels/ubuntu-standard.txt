@@ -17,6 +17,7 @@ http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-109-gene
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-42-generic_4.4.0-42.62_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-51-generic_4.4.0-51.72_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-71-generic_4.4.0-71.92_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-31-generic_4.15.0-31.33_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-24-generic_4.4.0-24.43_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-119-generic_4.4.0-119.143_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-34-generic_4.4.0-34.53_amd64.deb
@@ -80,6 +81,7 @@ http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-109_4.4.
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-42_4.4.0-42.62_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-51_4.4.0-51.72_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-71_4.4.0-71.92_all.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-31_4.15.0-31.33_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-24_4.4.0-24.43_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-119_4.4.0-119.143_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-34_4.4.0-34.53_all.deb
