@@ -1,0 +1,71 @@
+version: 2
+
+jobs:
+  build:
+    docker:
+    - image: google/cloud-sdk:206.0.0-alpine
+    working_directory: /go/src/github.com/stackrox/collector
+
+    steps:
+    - run:
+        name: Google Authenticate
+        working_directory: /root/.config/gcloud
+        command: |
+          echo "$GOOGLE_CREDENTIALS_KERNEL_CACHE" > auth.json
+          gcloud config set core/project stackrox-ci
+          gcloud config set compute/region us-east1
+          gcloud config set compute/zone us-east1-d
+          gcloud auth activate-service-account --key-file auth.json
+          gcloud auth list
+
+    - run:
+        name: Install Build Dependencies
+        working_directory: /tmp
+        command: |
+          wget --quiet https://download.docker.com/linux/static/stable/x86_64/docker-18.06.0-ce.tgz
+          tar -xf docker-18.06.0-ce.tgz
+          install docker/docker /usr/bin
+          rm -f docker-18.06.0-ce.tgz
+          apk add --no-cache make
+
+    - setup_remote_docker
+    - run:
+        name: Login to Docker Hub
+        command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+
+    - checkout
+
+    - run:
+        name: Download Package Cache
+        command: |
+          make -C kernel-modules download-package-cache
+          find /packages
+          du -h /packages
+
+    - run:
+        name: Pack Docker Volumes
+        command: |
+          docker create -v /packages --name packages alpine:3.8 /bin/true
+          echo 'Packing packages volume'
+          time docker cp /packages/. packages:/packages
+          docker create -v /sysdig-src --name sysdig alpine:3.8 /bin/true
+          echo 'Packing sysdig volume'
+          time docker cp sysdig/src/. sysdig:/sysdig-src
+          docker create -v /output --name output alpine:3.8 /bin/true
+
+    - run:
+        name: Build all Modules
+        command: make -C kernel-modules
+
+    - run:
+        name: Sanity Check Kernel Modules Docker Image
+        command: docker run --rm -it --entrypoint find stackrox/kernel-modules:latest /kernel-modules
+
+workflows:
+  version: 2
+  build:
+    jobs:
+    - build:
+        filters:
+          tags:
+            only: /.*/
