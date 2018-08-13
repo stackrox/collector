@@ -1,8 +1,6 @@
-BASE_PATH ?= $(CURDIR)/..
-VERSION_FILE ?= $(BASE_PATH)"/ROX_VERSION"
-VERSION ?= `cat $(VERSION_FILE) | xargs echo -n`
 KO_GCS_PATH ?= "gs://collector-modules/aafeb6857323bbb8addf736c1fa9d93a7cdf968f2f0caca10a7b66bee29b665e"
 PKG_GCS_PATH ?= "gs://kernel-headers-cache"
+PKG_CACHE_DIR = /packages
 
 .DEFAULT_GOAL = all
 
@@ -12,7 +10,6 @@ all: image
 .PHONY: clean
 clean:
 	rm -rf container/kernel-modules
-	rm -rf sysdig
 
 .PHONY: build-crawl-container
 build-crawl-container: crawl/Dockerfile crawl/kernel-crawler.py
@@ -39,35 +36,27 @@ crawl: build-crawl-container crawl-centos
 
 .PHONY: build-centos-uncrawled
 build-centos-uncrawled:
-	docker volume rm ko-centos-uncrawled || true
-	docker volume create ko-centos-uncrawled
 	docker run \
 		--rm \
 		-i \
-		-v $(CURDIR)/container/kernel-modules:/output \
-		-v $(CURDIR)/packages:/packages \
-		-v ko-centos-uncrawled:/scratch \
-		-v $(CURDIR)/../ext/sysdig/src:/sysdig-src \
+		--volumes-from output \
+		--volumes-from packages \
+		--volumes-from sysdig \
 		build-kernel-modules \
 		RedHat \
 		< supported-kernels/centos-uncrawled.txt
-	docker volume rm ko-centos-uncrawled
 
 .PHONY: build-centos
 build-centos:
-	docker volume rm ko-centos || true
-	docker volume create ko-centos
 	docker run \
 		--rm \
 		-i \
-		-v $(CURDIR)/container/kernel-modules:/output \
-		-v $(CURDIR)/packages:/packages \
-		-v ko-centos:/scratch \
-		-v $(CURDIR)/../ext/sysdig/src:/sysdig-src \
+		--volumes-from output \
+		--volumes-from packages \
+		--volumes-from sysdig \
 		build-kernel-modules \
 		RedHat \
 		< supported-kernels/centos.txt
-	docker volume rm ko-centos
 
 UBUNTU_SOURCES = $(shell ls supported-kernels/ubuntu-*)
 supported-kernels/ubuntu.txt: $(UBUNTU_SOURCES)
@@ -75,42 +64,33 @@ supported-kernels/ubuntu.txt: $(UBUNTU_SOURCES)
 
 .PHONY: build-ubuntu
 build-ubuntu: supported-kernels/ubuntu.txt
-	docker volume rm ko-ubuntu || true
-	docker volume create ko-ubuntu
 	docker run \
 		--rm \
 		-i \
-		-v $(CURDIR)/container/kernel-modules:/output \
-		-v $(CURDIR)/packages:/packages \
-		-v ko-ubuntu:/scratch \
-		-v $(CURDIR)/../ext/sysdig/src:/sysdig-src \
+		--volumes-from output \
+		--volumes-from packages \
+		--volumes-from sysdig \
 		build-kernel-modules \
 		Ubuntu \
 		< supported-kernels/ubuntu.txt
-	docker volume rm ko-ubuntu
 
 .PHONY: build-coreos
 build-coreos:
-	docker volume rm ko-coreos || true
-	docker volume create ko-coreos
 	docker run \
 		--rm \
 		-i \
-		-v $(CURDIR)/container/kernel-modules:/output \
-		-v $(CURDIR)/packages:/packages \
-		-v ko-coreos:/scratch \
-		-v $(CURDIR)/../ext/sysdig/src:/sysdig-src \
+		--volumes-from output \
+		--volumes-from packages \
+		--volumes-from sysdig \
 		build-kernel-modules \
 		CoreOS \
 		< supported-kernels/coreos.txt
-	docker volume rm ko-coreos
 
 .PHONY: build
 build: build-coreos build-centos build-centos-uncrawled build-ubuntu
 
 .PHONY: build-container
 build-container:
-	mkdir -p container/kernel-modules
 	docker build -t build-kernel-modules -f build/Dockerfile .
 
 # TODO: This isn't _really_ a phony target.
@@ -119,6 +99,7 @@ container/kernel-modules: supported-kernels/ build/Dockerfile build/build-kos do
 
 .PHONY: image
 image: container/kernel-modules
+	docker cp output:/output/. container/kernel-modules/
 	cd container && docker build -t stackrox/kernel-modules:latest .
 
 .PHONY: upload-modules
@@ -127,16 +108,16 @@ upload-modules:
 
 .PHONY: upload-package-cache
 upload-package-cache:
-	gsutil -m rsync -r packages/ ${PKG_GCS_PATH}/
+	gsutil -m rsync -r $(PKG_CACHE_DIR)/ ${PKG_GCS_PATH}/
 
 .PHONY: download-package-cache
 download-package-cache:
-	mkdir -p ./packages
-	gsutil -m rsync -r -d ${PKG_GCS_PATH}/ ./packages
+	mkdir -p $(PKG_CACHE_DIR)
+	gsutil -m rsync -r -d -x '.*coreos_developer_container.bin.bz2$\|.*version.txt$\' ${PKG_GCS_PATH} $(PKG_CACHE_DIR)
 
 .PHONY: delete-package-cache
 delete-package-cache:
-	rm -rf ./packages
+	rm -rf $(PKG_CACHE_DIR)
 
 .PHONY: build-coreos-repackage
 build-coreos-repackage:
