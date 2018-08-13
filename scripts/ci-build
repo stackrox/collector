@@ -1,0 +1,37 @@
+#!/bin/sh
+set -e
+
+fatal() {
+    echo "Fatal: $*" 1>&2
+    exit 1
+}
+
+[ -n "$CIRCLE_NODE_TOTAL" ] || fatal "No parallelism."
+
+[ -n "$CIRCLE_NODE_INDEX" ] || fatal "No parallelism."
+
+[ "$CIRCLE_NODE_TOTAL" -eq 4 ] || fatal "Bad parallelism node count."
+
+if [ "$CIRCLE_NODE_INDEX" -eq 0 ]; then
+    echo "Running parallel job as node 1/4."
+    echo "Building CoreOS kernel modules."
+    exec make -C kernel-modules build-coreos
+
+elif [ "$CIRCLE_NODE_INDEX" -eq 1 ]; then
+    echo "Running parallel job as node 2/4."
+    echo "Building CentOS kernel modules."
+    exec make -C kernel-modules build-centos
+
+elif [ "$CIRCLE_NODE_INDEX" -eq 2 ]; then
+    echo "Running parallel job as node 3/4."
+    echo "Building CentOS (uncrawled) kernel modules."
+    exec make -C kernel-modules build-centos-uncrawled
+
+elif [ "$CIRCLE_NODE_INDEX" -eq 3 ]; then
+    echo "Running parallel job as node 4/4."
+    echo "Building Ubuntu kernel modules."
+    exec make -C kernel-modules build-ubuntu
+
+fi
+
+fatal "Bad parallelism node index."

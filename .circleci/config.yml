@@ -4,6 +4,7 @@ jobs:
   build:
     docker:
     - image: google/cloud-sdk:206.0.0-alpine
+    parallelism: 4
     working_directory: /go/src/github.com/stackrox/collector
 
     steps:
@@ -54,8 +55,51 @@ jobs:
           docker create -v /output --name output alpine:3.8 /bin/true
 
     - run:
-        name: Build all Modules
-        command: make -C kernel-modules
+        name: Build Builder Image
+        command: |
+          make -C kernel-modules build-container
+
+    - run:
+        name: Build all
+        command: ./scripts/ci-build
+
+    - run:
+        name: Copy Built Modules to Workspace
+        working_directory: kernel-modules
+        command: |
+          mkdir -p container/kernel-modules/
+          docker cp output:/output/. container/kernel-modules/
+          find container/kernel-modules
+
+    - persist_to_workspace:
+        root: kernel-modules/container
+        paths:
+        - kernel-modules
+
+  image:
+    docker:
+    - image: circleci/golang:1.10.3
+    working_directory: /go/src/github.com/stackrox/collector
+
+    steps:
+    - setup_remote_docker
+    - run:
+        name: Login to Docker Hub
+        command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+
+    - checkout
+
+    - attach_workspace:
+        at: kernel-modules/container
+
+    - run:
+        name: Sanity Check
+        command: find kernel-modules/container
+
+    - run:
+        name: Build kernel-modules Docker Image
+        working_directory: /go/src/github.com/stackrox/collector/kernel-modules/container
+        command: docker build -t stackrox/kernel-modules:latest .
 
     - run:
         name: Sanity Check Kernel Modules Docker Image
@@ -66,6 +110,12 @@ workflows:
   build:
     jobs:
     - build:
+        filters:
+          tags:
+            only: /.*/
+    - image:
+        requires:
+        - build
         filters:
           tags:
             only: /.*/
