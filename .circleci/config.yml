@@ -65,15 +65,16 @@ jobs:
 
     - run:
         name: Copy Built Modules to Workspace
+        working_directory: kernel-modules
         command: |
-          mkdir -p /modules
-          docker cp output:/output/. /modules/
-          find /modules
+          mkdir -p container/kernel-modules/
+          docker cp output:/output/. container/kernel-modules/
+          find container/kernel-modules
 
     - persist_to_workspace:
-        root: /
+        root: kernel-modules/container
         paths:
-        - modules
+        - kernel-modules
 
 #    - run:
 #        name: Sanity Check Kernel Modules Docker Image
