@@ -107,12 +107,10 @@ jobs:
 
 
   collector:
-    docker:
-    - image: circleci/golang:1.10.3
+    machine: true
     working_directory: /go/src/github.com/stackrox/collector
 
     steps:
-    - setup_remote_docker
     - run:
         name: Login to Docker Hub
         command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
