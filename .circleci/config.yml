@@ -106,8 +106,8 @@ jobs:
         command: docker run --rm -it --entrypoint find stackrox/kernel-modules:latest /kernel-modules
 
 
-  image:
-    collector:
+  collector:
+    docker:
     - image: circleci/golang:1.10.3
     working_directory: /go/src/github.com/stackrox/collector
 
