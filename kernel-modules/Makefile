@@ -63,7 +63,7 @@ supported-kernels/ubuntu.txt: $(UBUNTU_SOURCES)
 	@cat $(UBUNTU_SOURCES) > supported-kernels/ubuntu.txt
 
 .PHONY: build-ubuntu
-build-ubuntu: supported-kernels/ubuntu.txt
+build-ubuntu:
 	docker run \
 		--rm \
 		-i \

@@ -10,28 +10,59 @@ fatal() {
 
 [ -n "$CIRCLE_NODE_INDEX" ] || fatal "No parallelism."
 
-[ "$CIRCLE_NODE_TOTAL" -eq 4 ] || fatal "Bad parallelism node count."
+[ "$CIRCLE_NODE_TOTAL" -eq 7 ] || fatal "Bad parallelism node count."
 
-if [ "$CIRCLE_NODE_INDEX" -eq 0 ]; then
-    echo "Running parallel job as node 1/4."
-    echo "Building CoreOS kernel modules."
-    exec make -C kernel-modules build-coreos
+case "$CIRCLE_NODE_INDEX" in
+    0)
+        echo "Running parallel job as node 1/7."
+        echo "Building CoreOS kernel modules."
+        exec make -C kernel-modules build-coreos
+        ;;
 
-elif [ "$CIRCLE_NODE_INDEX" -eq 1 ]; then
-    echo "Running parallel job as node 2/4."
-    echo "Building CentOS kernel modules."
-    exec make -C kernel-modules build-centos
+    1)
+        echo "Running parallel job as node 2/7."
+        echo "Building CentOS kernel modules."
+        exec make -C kernel-modules build-centos
+        ;;
 
-elif [ "$CIRCLE_NODE_INDEX" -eq 2 ]; then
-    echo "Running parallel job as node 3/4."
-    echo "Building CentOS (uncrawled) kernel modules."
-    exec make -C kernel-modules build-centos-uncrawled
+    2)
+        echo "Running parallel job as node 3/7."
+        echo "Building CentOS (uncrawled) kernel modules, 1/2."
+        ./scripts/partition kernel-modules/supported-kernels/centos-uncrawled.txt 2 0
+        exec make -C kernel-modules build-centos-uncrawled
+        ;;
 
-elif [ "$CIRCLE_NODE_INDEX" -eq 3 ]; then
-    echo "Running parallel job as node 4/4."
-    echo "Building Ubuntu kernel modules."
-    exec make -C kernel-modules build-ubuntu
+    3)
+        echo "Running parallel job as node 4/7."
+        echo "Building CentOS (uncrawled) kernel modules, 2/2."
+        ./scripts/partition kernel-modules/supported-kernels/centos-uncrawled.txt 2 1
+        exec make -C kernel-modules build-centos-uncrawled
+        ;;
 
-fi
+    4)
+        echo "Running parallel job as node 5/7."
+        echo "Building Ubuntu kernel modules, 1/3."
+        make -C kernel-modules supported-kernels/ubuntu.txt
+        ./scripts/partition kernel-modules/supported-kernels/ubuntu.txt 3 0
+        exec make -C kernel-modules build-ubuntu
+        ;;
+
+    5)
+        echo "Running parallel job as node 6/7."
+        echo "Building Ubuntu kernel modules, 2/3."
+        make -C kernel-modules supported-kernels/ubuntu.txt
+        ./scripts/partition kernel-modules/supported-kernels/ubuntu.txt 3 1
+        exec make -C kernel-modules build-ubuntu
+        ;;
+
+    6)
+        echo "Running parallel job as node 7/7."
+        echo "Building Ubuntu kernel modules, 3/3."
+        make -C kernel-modules supported-kernels/ubuntu.txt
+        ./scripts/partition kernel-modules/supported-kernels/ubuntu.txt 3 2
+        exec make -C kernel-modules build-ubuntu
+        ;;
+
+esac
 
 fatal "Bad parallelism node index."
