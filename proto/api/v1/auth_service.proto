@@ -1,0 +1,315 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "github.com/mwitkow/go-proto-validators/validator.proto";
+
+package v1;
+
+enum AccessType {
+    VIEW = 0;
+    MODIFY = 1;
+}
+
+message AuthEndpointsMessage {
+    map<string, AuthPermissionMessage> endpoints = 1;
+}
+
+message AuthPermissionMessage {
+    repeated AccessType access = 1;
+    string name = 2;
+    string description = 3;
+    string category = 4;
+}
+
+message AuthPermissionsMessage {
+    repeated AuthPermissionMessage permissions = 1;
+}
+
+message GetStatusRequest {
+    string permissions = 1;
+}
+
+message TokenSubjectMessage {
+    string key = 1;
+    string value = 2;
+}
+
+message TokenSummaryMessage {
+    TokenSubjectMessage subject = 1;
+    string provider = 2;
+    repeated AuthPermissionMessage permissions = 3;
+    bool all_applications = 4;
+}
+
+message GetRolesRequest {
+    repeated AccessType access = 1;
+    repeated string category = 2;
+    repeated string role = 3;
+}
+
+message GetRolesMessage {
+    repeated RoleMessage roles = 1;
+    uint32 result_size = 2;
+    uint32 total_in_range = 3;
+}
+
+message RoleMessage {
+    string role = 1;
+    repeated AuthPermissionMessage permissions = 2;
+    string description = 3;
+    bool enabled = 4;
+}
+
+message PostRolesRequest {
+    string role = 1 [(validator.field) = {regex: "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$"}];
+    repeated AuthPermissionMessage permissions = 2;
+    google.protobuf.StringValue description = 3;
+    google.protobuf.BoolValue enabled = 4;
+}
+
+message PostRolesPermissionRequest {
+    string role = 1 [(validator.field) = {regex: "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$"}];
+    AuthPermissionMessage permission = 2;
+}
+
+message DeleteRoleRequest {
+    string role = 1 [(validator.field) = {regex: "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$"}];
+    string category = 2;
+}
+
+message JWTSummaryMessage {
+    string token = 1;
+}
+
+message AttributeMessage {
+    string attribute = 1;
+    string value = 2;
+    repeated string roles = 3;
+    repeated string domains = 4;
+}
+
+message AttributeDomainMessage {
+    string attribute = 1;
+    string value = 2;
+    string domain = 3;
+}
+
+message AttributeRoleMessage {
+    string attribute = 1;
+    string value = 2;
+    string role = 3;
+}
+
+message AttributesRequest {
+    string role = 1;
+    string domain = 2;
+}
+
+message GetAttributesMessage {
+    uint64 results_count = 1;
+    uint64 total_count = 2;
+    uint64 offset = 3;
+    repeated AttributeMessage results = 4;
+}
+
+message DeleteAttributeRequest {
+    string attribute = 1;
+    string value = 2;
+    string domain = 3;
+    string role = 4;
+}
+
+message DomainMemberMessage {
+    string category = 1;
+    string member = 2;
+}
+
+message DomainMessage {
+    string domain = 1;
+    repeated DomainMemberMessage members = 2;
+    string description = 3;
+}
+
+message DomainsRequest {
+    string domain = 1;
+}
+
+message GetDomainsMessage {
+    uint64 results_count = 1;
+    uint64 total_count = 2;
+    repeated DomainMessage results = 3;
+}
+
+message PostDomainMemberRequest {
+    string domain = 1;
+    string member_category = 2;
+    DomainMemberMessage member = 3;
+}
+
+message DeleteDomainRequest {
+    string domain = 1;
+    string member_category = 2;
+    string member_name = 3;
+}
+
+message MemberOptionsRequest {
+    string member_category = 1;
+}
+
+message MemberOptionsResponse {
+    repeated string members = 1;
+}
+
+service AuthService {
+    rpc GetEndpoints(google.protobuf.Empty) returns (AuthEndpointsMessage) {
+        option (google.api.http) = {
+            get: "/v1/auth/endpoints"
+        };
+    }
+
+    rpc GetEndpointsForUser(google.protobuf.Empty) returns (AuthEndpointsMessage) {
+        option (google.api.http) = {
+            get: "/v1/auth/endpoints/current"
+        };
+    }
+
+    rpc GetPermissions(google.protobuf.Empty) returns (AuthPermissionsMessage) {
+        option (google.api.http) = {
+            get: "/v1/auth/permissions"
+        };
+    }
+
+    rpc GetPermissionsForUser(google.protobuf.Empty) returns (AuthPermissionsMessage) {
+        option (google.api.http) = {
+            get: "/v1/auth/permissions/current"
+        };
+    }
+
+    rpc GetAuthStatus(GetStatusRequest) returns (TokenSummaryMessage) {
+        option (google.api.http) = {
+            get: "/v1/auth/status"
+        };
+    }
+
+    rpc GetRoles(GetRolesRequest) returns (GetRolesMessage) {
+        option (google.api.http) = {
+            get: "/v1/auth/roles"
+        };
+    }
+
+    rpc PostRoles(PostRolesRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/v1/auth/roles"
+            body: "*"
+        };
+    }
+
+    rpc PostRolesPermission(PostRolesPermissionRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/v1/auth/roles/permission"
+            body: "*"
+        };
+    }
+
+    rpc DeleteRole(DeleteRoleRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            delete: "/v1/auth/roles/{role}"
+        };
+    }
+
+    rpc DeleteRoleCategory(DeleteRoleRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            delete: "/v1/auth/roles/{role}/{category}"
+        };
+    }
+
+    rpc GetInstall(google.protobuf.Empty) returns (JWTSummaryMessage) {
+        option (google.api.http) = {
+            get: "/v1/auth/install"
+        };
+    }
+
+    rpc GetAttributes(AttributesRequest) returns (GetAttributesMessage) {
+        option (google.api.http) = {
+            get: "/v1/auth/attributes"
+        };
+    }
+
+    rpc PostAttribute(AttributeMessage) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/v1/auth/attributes"
+            body: "*"
+        };
+    }
+
+    rpc DeleteAttribute(DeleteAttributeRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            delete: "/v1/auth/attributes"
+            additional_bindings {
+                delete: "/v1/auth/attributes/{attribute}/{value}"
+            }
+            additional_bindings {
+                delete: "/v1/auth/attributes/domain/{attribute}/{value}/{domain}"
+            }
+            additional_bindings {
+                delete: "/v1/auth/attributes/role/{attribute}/{value}/{role}"
+            }
+        };
+    }
+
+    rpc PostAttributeDomain(AttributeDomainMessage) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/v1/auth/attributes/domain"
+            body: "*"
+        };
+    }
+
+    rpc PostAttributeRole(AttributeRoleMessage) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/v1/auth/attributes/role"
+            body: "*"
+        };
+    }
+
+    rpc GetDomains(DomainsRequest) returns (GetDomainsMessage) {
+        option (google.api.http) = {
+            get: "/v1/auth/domains"
+        };
+    }
+
+    rpc PostDomain(DomainMessage) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/v1/auth/domains"
+            body: "*"
+        };
+    }
+
+    rpc PostDomainMember(PostDomainMemberRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/v1/auth/domains/{domain}/{member_category}"
+            body: "member"
+        };
+    }
+
+    rpc DeleteDomain(DeleteDomainRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            delete: "/v1/auth/domains/{domain}"
+            additional_bindings {
+                delete: "/v1/auth/domains/{domain}/{member_category}/{member_name}"
+            }
+        };
+    }
+
+    rpc GetMemberOptions(MemberOptionsRequest) returns (MemberOptionsResponse) {
+        option (google.api.http) = {
+            custom: {
+                kind: "OPTIONS",
+                path: "/v1/auth/members/{member_category}",
+            }
+        };
+    }
+}

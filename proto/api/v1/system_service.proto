@@ -1,0 +1,126 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "github.com/mwitkow/go-proto-validators/validator.proto";
+
+package v1;
+
+message SystemStatusRequest {
+    bool now = 1;
+    bool summary = 2;
+    bool all_clusters = 3;
+}
+
+message SystemStatusResponse {
+    reserved 1;
+    reserved 2;
+
+    HealthCondition health = 3;
+    repeated ServiceStatus services = 4;
+}
+
+enum HealthCondition {
+    UNSET = 0;
+    HEALTHY = 1;
+    DEGRADED = 2;
+    UNHEALTHY = 3;
+}
+
+message ServiceStatus {
+    string service_name = 1;
+    string friendly_name = 2;
+    HealthCondition health = 3;
+
+    int32 expected_replicas = 4;
+    repeated ContainerStatus containers = 5;
+
+    string description = 6;
+    string address = 7;
+}
+
+message ContainerStatus {
+    string id = 1;
+
+    string address = 2;
+    repeated string endpoints = 3;
+    repeated uint32 ports = 4;
+
+    string image_id = 5;
+    string image_name = 6;
+    string node = 7;
+    google.protobuf.Timestamp created_timestamp = 8;
+
+    string state = 9;
+    string details = 10;
+
+    bool scheduled = 11;
+    bool up = 12;
+    bool ready = 13;
+
+    repeated NetworkHealthStatus network_health = 14;
+}
+
+message NetworkHealthStatus {
+    string service_name = 1;
+    string endpoint = 2;
+    bool connected = 3;
+}
+
+message SystemServiceRequest {
+    string service_name = 1 [(validator.field) = {regex: "^[\\w-]+$"}];
+    string cluster_id = 2;
+}
+
+message SystemServiceExecuteRequest {
+    string service_name = 1 [(validator.field) = {regex: "^[\\w-]+$"}];
+    enum Action {
+        NO_OP = 0;
+        START = 1;
+        STOP = 2;
+        RESTART = 3;
+    }
+    Action action = 2;
+}
+
+message SystemServiceScaleRequest {
+    string service_name = 1 [(validator.field) = {regex: "^[\\w-]+$"}];
+    uint32 replica = 2;
+}
+
+// APIs for managing the StackRox System.
+service SystemService {
+
+    // Get StackRox System status.
+    rpc GetStatus (SystemStatusRequest) returns (SystemStatusResponse) {
+        option (google.api.http) = {
+            get: "/v1/system/status"
+        };
+    }
+
+    // Get Status for specified service.
+    rpc GetServiceStatus (SystemServiceRequest) returns (SystemStatusResponse) {
+        option (google.api.http) = {
+            get: "/v1/system/service/{service_name}"
+        };
+    }
+
+    // Control the lifecycle for specified service.
+    rpc ExecuteService (SystemServiceExecuteRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/v1/system/service/{service_name}"
+            body: "*"
+        };
+    }
+
+    // Scale the number of replicas for specified service.
+    rpc ScaleService (SystemServiceScaleRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            patch: "/v1/system/service/{service_name}"
+            body: "*"
+        };
+    }
+}
