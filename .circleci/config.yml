@@ -76,15 +76,46 @@ jobs:
         paths:
         - kernel-modules
 
-#    - run:
-#        name: Sanity Check Kernel Modules Docker Image
-#        command: docker run --rm -it --entrypoint find stackrox/kernel-modules:latest /kernel-modules
+  image:
+    docker:
+    - image: google/cloud-sdk:206.0.0-alpine
+    working_directory: /go/src/github.com/stackrox/collector
+
+    steps:
+    - setup_remote_docker
+    - run:
+        name: Login to Docker Hub
+        command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+
+    - checkout
+
+    - attach_workspace:
+        at: kernel-modules/container
+
+    - run:
+        name: Sanity Check
+        command: find kernel-modules/container
+
+    - run:
+        name: Build kernel-modules Docker Image
+        working_directory: /go/src/github.com/stackrox/collector/kernel-modules/container
+        command: docker build -t stackrox/kernel-modules:latest .
+
+    - run:
+        name: Sanity Check Kernel Modules Docker Image
+        command: docker run --rm -it --entrypoint find stackrox/kernel-modules:latest /kernel-modules
 
 workflows:
   version: 2
   build:
     jobs:
     - build:
+        filters:
+          tags:
+            only: /.*/
+    - image:
+        requires:
+        - build
         filters:
           tags:
             only: /.*/
