@@ -78,20 +78,10 @@ jobs:
 
   image:
     docker:
-    - image: google/cloud-sdk:206.0.0-alpine
+    - image: circleci/golang:1.10.3
     working_directory: /go/src/github.com/stackrox/collector
 
     steps:
-    - run:
-        name: Install Build Dependencies
-        working_directory: /tmp
-        command: |
-          wget --quiet https://download.docker.com/linux/static/stable/x86_64/docker-18.06.0-ce.tgz
-          tar -xf docker-18.06.0-ce.tgz
-          install docker/docker /usr/bin
-          rm -f docker-18.06.0-ce.tgz
-          apk add --no-cache make
-
     - setup_remote_docker
     - run:
         name: Login to Docker Hub
