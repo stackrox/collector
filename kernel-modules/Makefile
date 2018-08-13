@@ -36,27 +36,11 @@ crawl: build-crawl-container crawl-centos
 
 .PHONY: build-centos-uncrawled
 build-centos-uncrawled:
-	docker run \
-		--rm \
-		-i \
-		--volumes-from output \
-		--volumes-from packages \
-		--volumes-from sysdig \
-		build-kernel-modules \
-		RedHat \
-		< supported-kernels/centos-uncrawled.txt
+	./build-modules RedHat supported-kernels/centos-uncrawled.txt
 
 .PHONY: build-centos
 build-centos:
-	docker run \
-		--rm \
-		-i \
-		--volumes-from output \
-		--volumes-from packages \
-		--volumes-from sysdig \
-		build-kernel-modules \
-		RedHat \
-		< supported-kernels/centos.txt
+	./build-modules RedHat supported-kernels/centos.txt
 
 UBUNTU_SOURCES = $(shell ls supported-kernels/ubuntu-*)
 supported-kernels/ubuntu.txt: $(UBUNTU_SOURCES)
@@ -64,27 +48,31 @@ supported-kernels/ubuntu.txt: $(UBUNTU_SOURCES)
 
 .PHONY: build-ubuntu
 build-ubuntu: supported-kernels/ubuntu.txt
-	docker run \
-		--rm \
-		-i \
-		--volumes-from output \
-		--volumes-from packages \
-		--volumes-from sysdig \
-		build-kernel-modules \
-		Ubuntu \
-		< supported-kernels/ubuntu.txt
+	./build-modules Ubuntu supported-kernels/ubuntu.txt
+
+.PHONY: build-ubuntu-aws
+build-ubuntu-aws:
+	./build-modules Ubuntu supported-kernels/ubuntu-aws.txt
+
+.PHONY: build-ubuntu-azure
+build-ubuntu-azure:
+	./build-modules Ubuntu supported-kernels/ubuntu-azure.txt
+
+.PHONY: build-ubuntu-gcp
+build-ubuntu-gcp:
+	./build-modules Ubuntu supported-kernels/ubuntu-gcp.txt
+
+.PHONY: build-ubuntu-gke
+build-ubuntu-gke:
+	./build-modules Ubuntu supported-kernels/ubuntu-gke.txt
+
+.PHONY: build-ubuntu-standard
+build-ubuntu-standard:
+	./build-modules Ubuntu supported-kernels/ubuntu-standard.txt
 
 .PHONY: build-coreos
 build-coreos:
-	docker run \
-		--rm \
-		-i \
-		--volumes-from output \
-		--volumes-from packages \
-		--volumes-from sysdig \
-		build-kernel-modules \
-		CoreOS \
-		< supported-kernels/coreos.txt
+	./build-modules CoreOS supported-kernels/coreos.txt
 
 .PHONY: build
 build: build-coreos build-centos build-centos-uncrawled build-ubuntu

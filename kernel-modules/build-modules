@@ -1,0 +1,23 @@
+#!/bin/sh
+set -e
+
+fatal() {
+    echo "Fatal: $*" 1>&2
+    exit 1
+}
+
+kind="$1"
+file="$2"
+
+[ -n "$kind" ] || fatal "No kind given."
+[ -n "$file" ] || fatal "No file given."
+
+exec docker run \
+    --rm \
+    -i \
+    --volumes-from output \
+    --volumes-from packages \
+    --volumes-from sysdig \
+    build-kernel-modules \
+    "$kind" \
+    < "$file"

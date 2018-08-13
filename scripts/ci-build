@@ -10,28 +10,65 @@ fatal() {
 
 [ -n "$CIRCLE_NODE_INDEX" ] || fatal "No parallelism."
 
-[ "$CIRCLE_NODE_TOTAL" -eq 4 ] || fatal "Bad parallelism node count."
+[ "$CIRCLE_NODE_TOTAL" -eq 9 ] || fatal "Bad parallelism node count."
 
-if [ "$CIRCLE_NODE_INDEX" -eq 0 ]; then
-    echo "Running parallel job as node 1/4."
-    echo "Building CoreOS kernel modules."
-    exec make -C kernel-modules build-coreos
+case "$CIRCLE_NODE_INDEX" in
+    0)
+        echo "Running parallel job as node 1/9."
+        echo "Building CoreOS kernel modules."
+        exec make -C kernel-modules build-coreos
+        ;;
 
-elif [ "$CIRCLE_NODE_INDEX" -eq 1 ]; then
-    echo "Running parallel job as node 2/4."
-    echo "Building CentOS kernel modules."
-    exec make -C kernel-modules build-centos
+    1)
+        echo "Running parallel job as node 2/9."
+        echo "Building CentOS kernel modules."
+        exec make -C kernel-modules build-centos
+        ;;
 
-elif [ "$CIRCLE_NODE_INDEX" -eq 2 ]; then
-    echo "Running parallel job as node 3/4."
-    echo "Building CentOS (uncrawled) kernel modules."
-    exec make -C kernel-modules build-centos-uncrawled
+    2)
+        echo "Running parallel job as node 3/9."
+        echo "Building CentOS (uncrawled) kernel modules, 1/2."
+        ./scripts/partition kernel-modules/supported-kernels/centos-uncrawled.txt 2 0
+        exec make -C kernel-modules build-centos-uncrawled
+        ;;
 
-elif [ "$CIRCLE_NODE_INDEX" -eq 3 ]; then
-    echo "Running parallel job as node 4/4."
-    echo "Building Ubuntu kernel modules."
-    exec make -C kernel-modules build-ubuntu
+    3)
+        echo "Running parallel job as node 4/9."
+        echo "Building CentOS (uncrawled) kernel modules, 2/2."
+        ./scripts/partition kernel-modules/supported-kernels/centos-uncrawled.txt 2 1
+        exec make -C kernel-modules build-centos-uncrawled
+        ;;
 
-fi
+    4)
+        echo "Running parallel job as node 5/9."
+        echo "Building Ubuntu (AWS) kernel modules."
+        exec make -C kernel-modules build-ubuntu-aws
+        ;;
+
+    5)
+        echo "Running parallel job as node 6/9."
+        echo "Building Ubuntu (Azure) kernel modules."
+        exec make -C kernel-modules build-ubuntu-azure
+        ;;
+
+    6)
+        echo "Running parallel job as node 7/9."
+        echo "Building Ubuntu (GCP) kernel modules."
+        exec make -C kernel-modules build-ubuntu-gcp
+        ;;
+
+    7)
+        echo "Running parallel job as node 8/9."
+        echo "Building Ubuntu (GKE) kernel modules."
+        exec make -C kernel-modules build-ubuntu-gke
+        ;;
+
+    8)
+        echo "Running parallel job as node 9/9."
+        echo "Building Ubuntu (Standard) kernel modules."
+        exec make -C kernel-modules build-ubuntu-standard
+        ;;
+
+esac
 
 fatal "Bad parallelism node index."
