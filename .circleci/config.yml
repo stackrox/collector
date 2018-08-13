@@ -105,17 +105,45 @@ jobs:
         name: Sanity Check Kernel Modules Docker Image
         command: docker run --rm -it --entrypoint find stackrox/kernel-modules:latest /kernel-modules
 
+
+  image:
+    collector:
+    - image: circleci/golang:1.10.3
+    working_directory: /go/src/github.com/stackrox/collector
+
+    steps:
+    - setup_remote_docker
+    - run:
+        name: Login to Docker Hub
+        command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+
+    - checkout
+
+    - run:
+        name: Generate Protobuf Definitions
+        working_directory: /go/src/github.com/stackrox/collector/collector
+        command: make generated-srcs
+
+    - run:
+        name: Build libsinsp Wrapper
+        working_directory: /go/src/github.com/stackrox/collector/collector
+        command: make container/libs/libsinsp-wrapper.so
+
 workflows:
   version: 2
   build:
     jobs:
-    - build:
+    - collector:
         filters:
           tags:
             only: /.*/
-    - image:
-        requires:
-        - build
-        filters:
-          tags:
-            only: /.*/
+#    - build:
+#        filters:
+#          tags:
+#            only: /.*/
+#    - image:
+#        requires:
+#        - build
+#        filters:
+#          tags:
+#            only: /.*/
