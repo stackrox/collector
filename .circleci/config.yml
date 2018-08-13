@@ -108,13 +108,15 @@ jobs:
 
   collector:
     machine: true
+    environment:
+    - GOPATH: /go
 #    working_directory: /go/src/github.com/stackrox/collector
 
     steps:
     - run:
         name: Create Directory
         command: |
-          sudo mkdir -m 0777 -p /go/src /go/bin
+          sudo mkdir -m 0777 -p /go/src /go/bin /go/pkg
           mkdir -p /go/src/github.com/stackrox/collector
 
     - run:
