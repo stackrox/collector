@@ -4,8 +4,8 @@ set -e
 kind="$1"
 file="$2"
 
-[ -n "$kind" ]   || fatal "No kind given."
-[ -n "$file" ]  || fatal "No file given."
+[ -n "$kind" ] || fatal "No kind given."
+[ -n "$file" ] || fatal "No file given."
 
 exec docker run \
     --rm \
