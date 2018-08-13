@@ -108,14 +108,21 @@ jobs:
 
   collector:
     machine: true
-    working_directory: /go/src/github.com/stackrox/collector
+#    working_directory: /go/src/github.com/stackrox/collector
 
     steps:
+    - run:
+        name: Create Directory
+        command: |
+          sudo mkdir -m 0777 -p /go/src /go/bin
+          mkdir -p /go/src/github.com/stackrox/collector
+
     - run:
         name: Login to Docker Hub
         command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
 
-    - checkout
+    - checkout:
+        path: /go/src/github.com/stackrox/collector
 
     - run:
         name: Generate Protobuf Definitions
