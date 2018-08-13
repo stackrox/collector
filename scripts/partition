@@ -20,7 +20,7 @@ index=0
 
 echo "$contents" | while IFS='' read -r line || [ -n "$line" ]; do
     if [ "$index" -eq "$target" ]; then
-        echo "$line" >> "$file"
+        echo "$line"
     fi
 
     index=$((index+1))
@@ -28,4 +28,4 @@ echo "$contents" | while IFS='' read -r line || [ -n "$line" ]; do
     if [ "$index" -eq "$count" ]; then
         index=0
     fi
-done
+done > "$file"
