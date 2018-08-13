@@ -4,6 +4,7 @@ jobs:
   build:
     docker:
     - image: google/cloud-sdk:206.0.0-alpine
+    parallelism: 4
     working_directory: /go/src/github.com/stackrox/collector
 
     steps:
@@ -54,12 +55,29 @@ jobs:
           docker create -v /output --name output alpine:3.8 /bin/true
 
     - run:
-        name: Build all Modules
-        command: make -C kernel-modules
+        name: Build Builder Image
+        command: |
+          make -C kernel-modules build-container
 
     - run:
-        name: Sanity Check Kernel Modules Docker Image
-        command: docker run --rm -it --entrypoint find stackrox/kernel-modules:latest /kernel-modules
+        name: Build all
+        command: ./scripts/ci-build
+
+    - run:
+        name: Copy Built Modules to Workspace
+        command: |
+          mkdir -p /modules
+          docker cp output:/output/. /modules/
+          find /modules
+
+    - persist_to_workspace:
+        root: /
+        paths:
+        - modules
+
+#    - run:
+#        name: Sanity Check Kernel Modules Docker Image
+#        command: docker run --rm -it --entrypoint find stackrox/kernel-modules:latest /kernel-modules
 
 workflows:
   version: 2
