@@ -137,7 +137,7 @@ jobs:
         command: make container/libs/libsinsp-wrapper.so
 
     - persist_to_workspace:
-        root: collector/container/libs/
+        root: /go/src/github.com/stackrox/collector/collector/container/libs
         paths:
         - libsinsp-wrapper.so
 
