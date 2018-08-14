@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package data;
+
+option cc_enable_arenas = true;
+option java_outer_classname = "CommonProtos";
+
+message UUID {
+    // The 16 raw bytes constituting the UUID (*not* in string form).
+    bytes value = 1;
+}
+
+message Process {
+    string cwd         = 1;  // proc_cwd
+    string exe         = 2;  // proc_exe
+    string exeline     = 3;  // proc_exeline
+    string name        = 4;  // proc_name
+    string parent_name = 5;  // proc_pname
+    uint64 pid         = 6;  // proc_pid
+    oneof set_uid {          // oneof since zero value has special meaning
+        uint64 uid     = 7;  // user_uid
+    }
+    string user_name   = 8;  // user_name
+    double cpu_usage   = 9;  // cpu_usage
+    double mem_usage   = 10; // mem_usage
+}
+
+enum Status {
+    UNSET_STATUS = 0;
+    ACTIVE = 1;
+    TIMEOUT = 2;
+    COMPLETED = 3;
+}

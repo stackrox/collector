@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+import "proto/data/common.proto";
+
+package data;
+
+option java_outer_classname = "FlowSummaryProtos";
+
+message FlowSummary {
+    UUID id = 1;
+    int64 start_timestamp = 2;
+    int64 previous_timestamp = 3;
+    int64 end_timestamp = 4;
+
+    string l4_protocol = 5;
+
+    Status status = 6;
+
+    uint64 request_bytes = 7;
+    uint64 response_bytes = 8;
+
+    message Metadata {
+        string ip = 1;
+        uint32 port = 2;
+        string container_short_id = 3;
+        string container_name = 4;
+        repeated string container_labels = 5;
+        string image_id = 6;
+        string image_name = 7;
+        // Field 8 was formerly the long fingerprint.
+        reserved 8;
+        string service_name = 9;
+        string application = 10;
+        string node_name = 11;
+        string unix_socket_path = 12;
+        string service_id = 13;
+        string namespace = 14;
+    }
+    Metadata server = 9;
+    Metadata client = 10;
+
+    reserved 11, 12, 13, 14, 15; // Previously used for HTTP requests and responses, sensitive contents, and DDL/DML SQL.
+
+    bool flow_valid = 16;
+
+    UUID cluster_id = 17;
+}

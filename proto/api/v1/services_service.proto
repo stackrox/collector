@@ -1,0 +1,104 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "github.com/mwitkow/go-proto-validators/validator.proto";
+import "proto/api/v1/pagination.proto";
+
+package v1;
+
+message GetServicesRequest {
+    reserved 1;                     // Previously used for label; was renamed to application.
+    PaginationRequest pagination = 2;
+    repeated string application = 3;
+    repeated string namespace = 4;
+    repeated bool stackrox = 5;
+    repeated bool inactive = 6;
+    repeated string id = 7;
+}
+
+message FieldMessage {
+    repeated string command = 1;
+    repeated string entrypoint = 2;
+    repeated string exposed_ports = 3;
+    string image_id = 4 [(validator.field) = {regex: "^sha256:[0-9a-fA-F]{64}$"}];
+}
+
+message ServiceMessage {
+    string id = 1 [(validator.field) = {regex: "^[0-9a-f]{12}$"}];
+    string name = 2;
+    reserved 3;                     // Previously used for label; was renamed to application.
+    bool infected = 4;
+    reserved 5; // Formerly used for the service fingerprint.
+    FieldMessage fields = 6;
+    reserved 7;                     // Previously used for active.
+    reserved 8;                     // Previously used for YAML.
+    reserved 9;                     // Previously used for ml state id.
+    uint64 created_at = 10;
+    uint64 updated_at = 11;
+    uint64 infected_at = 12;
+    double severity = 13;
+    uint64 new_alerts = 14;
+    uint64 res_alerts = 15;
+    uint64 ack_alerts = 16;
+    uint64 events = 17;
+    uint64 containers = 18;
+    uint64 infected_containers = 19;
+    string image_name = 20;
+    uint64 services = 21;
+    uint64 infected_services = 22;
+    string application = 23;
+    string orchestrator_id = 24;
+    string version = 25;
+    string namespace = 26;
+    string type = 27;
+    repeated string labels = 28;
+    bool inactive = 29;
+    string cluster_id = 30;  // UUID
+}
+
+message GetServicesResponse {
+    repeated ServiceMessage results = 1;
+    PaginationResponse pagination = 2;
+}
+
+message ServiceApplicationOverrideRequest {
+    string id = 1 [(validator.field) = {regex: "^[0-9a-f]{12}$"}];
+    string application = 2 [(validator.field) = {regex: "^[a-zA-Z0-9_.-]*$"}];
+}
+
+message ServiceAggregatedLabelsResponse {
+    repeated ServiceAggregatedLabel labels = 1;
+}
+
+message ServiceAggregatedLabel {
+    string key = 1;
+    repeated string values = 2;
+}
+
+// APIs for managing services.
+service ServicesService {
+    // Get the information for specified service.
+    rpc GetServices(GetServicesRequest) returns (GetServicesResponse) {
+        option (google.api.http) = {
+            get: "/v1/services"
+        };
+    }
+
+    // Manually override the application grouping for specified service.
+    rpc SetServiceApplicationOverride(ServiceApplicationOverrideRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            patch: "/v1/services/{id}/override"
+            body: "*"
+        };
+    }
+
+    // Get aggregated labels from all services.
+    rpc GetAllLabels(google.protobuf.Empty) returns (ServiceAggregatedLabelsResponse) {
+        option (google.api.http) = {
+            get: "/v1/services/labels"
+        };
+    }
+}
