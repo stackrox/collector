@@ -1,5 +1,6 @@
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.15.0-1020-azure_4.15.0-1020.20_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.11.0-1011-azure_4.11.0-1011.11_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.15.0-1021-azure_4.15.0-1021.21_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.13.0-1018-azure_4.13.0-1018.21_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.15.0-1012-azure_4.15.0-1012.12_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.13.0-1009-azure_4.13.0-1009.12_amd64.deb
@@ -22,6 +23,7 @@ http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.13.0-1
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.15.0-1019-azure_4.15.0-1019.19_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.15.0-1020_4.15.0-1020.20_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.11.0-1011_4.11.0-1011.11_all.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.15.0-1021_4.15.0-1021.21_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.13.0-1018_4.13.0-1018.21_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.15.0-1012_4.15.0-1012.12_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.13.0-1009_4.13.0-1009.12_all.deb

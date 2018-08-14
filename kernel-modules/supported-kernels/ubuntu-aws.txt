@@ -2,6 +2,7 @@ http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.15.0-1010-aws_4.15.0-1010.10_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1001-aws_4.4.0-1001.10_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1011-aws_4.4.0-1011.20_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1027-aws_4.4.0-1027.30_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1031-aws_4.4.0-1031.40_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1041-aws_4.4.0-1041.50_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1061-aws_4.4.0-1061.70_amd64.deb
@@ -32,6 +33,7 @@ http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1024-aws_4.4.0-1024.25_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1016-aws_4.4.0-1016.25_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1026-aws_4.4.0-1026.35_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1065-aws_4.4.0-1065.75_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1006-aws_4.4.0-1006.6_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1016-aws_4.4.0-1016.16_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.15.0-1016-aws_4.15.0-1016.16_amd64.deb
@@ -55,6 +57,7 @@ http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1049
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1009-aws_4.4.0-1009.9_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.15.0-1009-aws_4.15.0-1009.9_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1019-aws_4.4.0-1019.19_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.15.0-1019-aws_4.15.0-1019.19_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1020-aws_4.4.0-1020.29_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1026-aws_4.4.0-1026.29_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1030-aws_4.4.0-1030.39_amd64.deb
@@ -64,6 +67,7 @@ http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.15.0-1010_4.15.0-1010.10_all.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1001_4.4.0-1001.10_all.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1011_4.4.0-1011.20_all.deb
+http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1027_4.4.0-1027.30_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1031_4.4.0-1031.40_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1041_4.4.0-1041.50_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1061_4.4.0-1061.70_all.deb
@@ -94,6 +98,7 @@ http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1024_4.4.0-1024.25_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1016_4.4.0-1016.25_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1026_4.4.0-1026.35_all.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1065_4.4.0-1065.75_all.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1006_4.4.0-1006.6_all.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1016_4.4.0-1016.16_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.15.0-1016_4.15.0-1016.16_all.deb
@@ -117,6 +122,7 @@ http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1009_4.4.0-1009.9_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.15.0-1009_4.15.0-1009.9_all.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1019_4.4.0-1019.19_all.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.15.0-1019_4.15.0-1019.19_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1020_4.4.0-1020.29_all.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1026_4.4.0-1026.29_all.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1030_4.4.0-1030.39_all.deb
