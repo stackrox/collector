@@ -136,6 +136,11 @@ jobs:
         working_directory: /go/src/github.com/stackrox/collector/collector
         command: make container/libs/libsinsp-wrapper.so
 
+    - persist_to_workspace:
+        root: collector/container/libs/
+        paths:
+        - libsinsp-wrapper.so
+
 workflows:
   version: 2
   build:
