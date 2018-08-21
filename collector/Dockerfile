@@ -1,8 +1,4 @@
-FROM stackrox/kernel-modules:latest
-# This is the same base image as the collector image itself.
-# Inheriting from it ensures that we will have the same version of Debian,
-# including packages, which is especially important for dynamically-linked
-# libraries.
+FROM debian:jessie-slim
 
 # Install our dependencies
 RUN apt-get update \
@@ -34,11 +30,10 @@ RUN build-tmp/install_prometheus.sh
 
 # GoogleMock (and GoogleTest) are opinionated about how to install the library
 RUN cd /usr/src/gmock \
-        && cmake CMakeLists.txt \
-        && make -j 6 \
-        && cp libgmock*.a /usr/lib \
-        && cp gtest/libgtest*.a /usr/lib \
-        ;
+ && cmake CMakeLists.txt \
+ && make -j 6 \
+ && cp libgmock*.a /usr/lib \
+ && cp gtest/libgtest*.a /usr/lib
 
 # cURL 7.42 or higher is required for UNIX socket access
 ARG CURL_REVISION=curl-7_57_0
