@@ -1,6 +1,35 @@
 version: 2
 
 jobs:
+  builder:
+    machine: true
+    steps:
+    - run:
+        name: Create Directory
+        command: |
+          sudo mkdir -m 0777 -p /go/src
+          mkdir -p /go/src/github.com/stackrox/collector
+
+    - checkout:
+        path: /go/src/github.com/stackrox/collector
+
+    - run:
+        name: Build collector builder Docker image
+        working_directory: /go/src/github.com/stackrox/collector/collector
+        command: docker build -t build_collector -f Dockerfile .
+
+    - run:
+        name: Save Docker image
+        working_directory: /go/src/github.com/stackrox/collector
+        command: |
+          mkdir -p docker-cache
+          docker save -o docker-cache/build_collector.tar build_collector:latest
+
+    - persist_to_workspace:
+        root: /go/src/github.com/stackrox/collector
+        paths:
+        - docker-cache
+
   kernels:
     docker:
     - image: google/cloud-sdk:206.0.0-alpine
@@ -72,9 +101,9 @@ jobs:
           find container/kernel-modules
 
     - persist_to_workspace:
-        root: kernel-modules/container
+        root: .
         paths:
-        - kernel-modules
+        - kernel-modules/container/kernel-modules
 
   libsinsp:
     machine: true
@@ -97,9 +126,9 @@ jobs:
         command: make container/libs/libsinsp-wrapper.so
 
     - persist_to_workspace:
-        root: /go/src/github.com/stackrox/collector/collector/container/libs
+        root: /go/src/github.com/stackrox/collector
         paths:
-        - libsinsp-wrapper.so
+        - collector/container/libs/libsinsp-wrapper.so
 
   image:
     docker:
@@ -115,11 +144,17 @@ jobs:
     - checkout
 
     - attach_workspace:
-        at: kernel-modules/container
+        at: .
 
     - run:
         name: Sanity Check
-        command: find kernel-modules/container
+        command: |
+          echo '>>> Kernel Modules:'
+          find kernel-modules/container
+          echo '>>> Userspace lib:'
+          find collector/container/libs
+          echo '>>> Docker tarballs:'
+          find docker-cache
 
     - run:
         name: Build kernel-modules Docker Image
@@ -134,6 +169,10 @@ workflows:
   version: 2
   build:
     jobs:
+    - builder:
+        filters:
+          tags:
+            only: /.*/
     - kernels:
         filters:
           tags:
@@ -144,6 +183,7 @@ workflows:
             only: /.*/
     - image:
         requires:
+        - builder
         - kernels
         - libsinsp
         filters:
