@@ -19,7 +19,7 @@ jobs:
         command: docker build -t build_collector -f Dockerfile .
 
     - run:
-        name: Save Docker image
+        name: Save collector builder Docker image
         working_directory: /go/src/github.com/stackrox/collector
         command: |
           mkdir -p docker-cache
@@ -147,6 +147,10 @@ jobs:
         at: .
 
     - run:
+        name: Load collector builder Docker image
+        command: docker load < docker-cache/build_collector.tar
+
+    - run:
         name: Sanity Check
         command: |
           echo '>>> Kernel Modules:'
@@ -155,6 +159,8 @@ jobs:
           find collector/container/libs
           echo '>>> Docker tarballs:'
           find docker-cache
+          echo '>>> Docker images:'
+          docker images | grep collector
 
     - run:
         name: Build kernel-modules Docker Image
