@@ -130,18 +130,17 @@ jobs:
         paths:
         - collector/container/libs/libsinsp-wrapper.so
 
-  image:
-    docker:
-    - image: circleci/golang:1.10.3
-    working_directory: /go/src/github.com/stackrox/collector
-
+  collector:
+    machine: true
     steps:
-    - setup_remote_docker
     - run:
-        name: Login to Docker Hub
-        command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+        name: Create Directory
+        command: |
+          sudo mkdir -m 0777 -p /go/src
+          mkdir -p /go/src/github.com/stackrox/collector
 
-    - checkout
+    - checkout:
+        path: /go/src/github.com/stackrox/collector
 
     - attach_workspace:
         at: .
@@ -163,13 +162,36 @@ jobs:
           docker images | grep collector
 
     - run:
-        name: Build kernel-modules Docker Image
-        working_directory: /go/src/github.com/stackrox/collector/kernel-modules/container
-        command: docker build -t stackrox/kernel-modules:latest .
+        name: Build collector
+        working_directory: /go/src/github.com/stackrox/collector/collector
+        command: |
+          mkdir -p container/bin
+          docker run \
+            -v $PWD:/src \
+            -v $PWD/sysdig/src:/usr/local/sysdig \
+            -v $PWD/container/libs/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so \
+            -v $PWD/sysdig/src/driver/ppm_events_public.h:/usr/local/include/ppm_events_public.h \
+            --name build build_collector
 
     - run:
-        name: Sanity Check Kernel Modules Docker Image
-        command: docker run --rm -it --entrypoint find stackrox/kernel-modules:latest /kernel-modules
+        name: Extract collector files
+        working_directory: /go/src/github.com/stackrox/collector/collector
+        command: |
+          cp cmake-build/collector                                  container/bin/
+          docker cp build_collector:/usr/local/bin/curl             container/bin/
+          docker cp build_collector:/usr/local/lib/libcurl.so       container/libs/
+          docker cp -L build_collector:/usr/local/lib/librdkafka.so container/libs/
+          ls -lh container/bin/
+          ls -lh container/libs/
+
+#    - run:
+#        name: Build kernel-modules Docker Image
+#        working_directory: /go/src/github.com/stackrox/collector/kernel-modules/container
+#        command: docker build -t stackrox/kernel-modules:latest .
+#
+#    - run:
+#        name: Sanity Check Kernel Modules Docker Image
+#        command: docker run --rm -it --entrypoint find stackrox/kernel-modules:latest /kernel-modules
 
 workflows:
   version: 2
@@ -187,7 +209,7 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - image:
+    - collector:
         requires:
         - builder
         - kernels
