@@ -163,8 +163,6 @@ jobs:
         working_directory: /go/src/github.com/stackrox/collector
         command: |
           pwd
-          echo '>>> Kernel Modules:'
-          find /go/src/github.com/stackrox/collector/kernel-modules/container
           echo '>>> Userspace lib:'
           ls -lh /go/src/github.com/stackrox/collector/collector/container/libs
           file   /go/src/github.com/stackrox/collector/collector/container/libs/libsinsp-wrapper.so
