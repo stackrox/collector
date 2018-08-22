@@ -262,7 +262,6 @@ workflows:
         filters:
           tags:
             only: /.*/
-
     - collector:
         filters:
           tags:
@@ -270,12 +269,10 @@ workflows:
         requires:
         - builder
         - libsinsp
-
     - kernels:
         filters:
           tags:
             only: /.*/
-
     - images:
         filters:
           tags:
