@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+package v1;
+
+message SearchRequest {
+    string query = 1;
+    google.protobuf.UInt32Value limit = 2;
+    string groups = 3;
+}
+
+message SearchResponse {
+    repeated SearchResult results = 1;
+}
+
+message SearchResult {
+    string group_name = 1;
+    repeated SearchGroupResult content = 2;
+}
+
+message SearchGroupResult {
+    string desc = 1;
+    reserved 2; // Formerly used for link_url.
+    string summary = 3;
+    repeated string label = 4;
+    SearchLink link = 5;
+}
+
+message SearchLink {
+    string type = 1;
+    string identifier = 2;
+}
+
+message SearchGroupsResponse {
+    repeated string groups = 1;
+}
+
+service SearchService {
+    // Search StackRox for just about anything.
+    rpc Search(SearchRequest) returns (SearchResponse) {
+        option (google.api.http) = {
+            get: "/v1/search"
+        };
+    }
+
+    // SearchGroups returns all the valid search group names.
+    rpc SearchGroups(google.protobuf.Empty) returns (SearchGroupsResponse) {
+        option (google.api.http) = {
+            get: "/v1/search/groups"
+        };
+    }
+}

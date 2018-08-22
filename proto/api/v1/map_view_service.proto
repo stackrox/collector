@@ -1,0 +1,162 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "github.com/mwitkow/go-proto-validators/validator.proto";
+
+package v1;
+
+enum MapViewRequestType {
+    INFECTED = 0;
+    ALL      = 1;
+}
+
+message MapViewApplicationsRequest {
+    MapViewRequestType        type       = 1;
+    // List of namespaces from which to return applications. If empty, applications from all namespaces are returned.
+    repeated string           namespaces = 2;
+}
+
+message MapViewServicesRequest {
+    MapViewRequestType        type           = 1;
+    string                    application_id = 2;
+}
+
+message MapViewContainersRequest {
+    MapViewRequestType        type       = 1;
+    string                    service_id = 2;
+}
+
+enum MapViewResponseType {
+    UNKNOWN_TYPE = 0;
+    APPLICATION  = 1;
+    SERVICE      = 2;
+    CONTAINER    = 3;
+    ENDPOINT     = 4;
+    LINK         = 5;
+}
+
+enum MapViewResponseAction {
+    NO_ACTION = 0;
+    ADD       = 1;
+    DELETE    = 2;
+}
+
+message MapViewResponse {
+    MapViewResponseAction  action      = 1;
+    MapViewResponseType    type        = 2;
+    MapViewApplicationNode application = 3;
+    MapViewServiceNode     service     = 4;
+    MapViewContainerNode   container   = 5;
+    MapViewEndpointNode    endpoint    = 6;
+    MapViewLink            link        = 7;
+}
+
+message MapViewApplicationNode {
+    MapViewNodeCommon common              = 1;
+    int64             services            = 2;
+    int64             infected_services   = 3;
+    int64             containers          = 4;
+    int64             infected_containers = 5;
+}
+
+message MapViewServiceNode {
+    MapViewNodeCommon common              = 1;
+    string            application_id      = 2;
+    string            application_name    = 3;
+    int64             containers          = 4;
+    int64             infected_containers = 5;
+    string            image_id            = 6;
+    string            image_name          = 7;
+    string            process             = 8;
+    string            service_type        = 9;
+}
+
+message MapViewContainerNode {
+    MapViewNodeCommon         common           = 1;
+    string                    application_id   = 2;
+    string                    application_name = 3;
+    string                    service_id       = 4;
+    string                    service_name     = 5;
+    string                    hostname         = 6;
+    string                    image_id         = 7;
+    string                    image_name       = 8;
+    string                    process          = 9;
+    google.protobuf.Timestamp last_started_at  = 10;
+    bool                      inactive         = 11;
+    string                    oper_state       = 12;
+    reserved 13;                                    // Formerly quarantine_state
+    google.protobuf.Timestamp last_stopped_at  = 14;
+    google.protobuf.Timestamp created_at       = 15;
+    repeated string           labels           = 16;
+}
+
+message MapViewEndpointNode {
+    MapViewNodeCommon common         = 1;
+    string            classification = 2;
+}
+
+message MapViewNodeCommon {
+    string                      id          = 1;
+    string                      name        = 2;
+    bool                        infected    = 3;
+    google.protobuf.Timestamp   infected_at = 4;
+    string                      severity    = 5;
+    MapViewAlertSummary         summary     = 6;
+    repeated MapViewConnection  connections = 7;
+    google.protobuf.Timestamp   updated_at  = 8;
+    string                      namespace   = 9;
+}
+
+message MapViewAlertSummary {
+    int64 new          = 1;
+    int64 acknowledged = 2;
+    int64 resolved     = 3;
+    int64 events       = 4;
+}
+
+message MapViewConnection {
+    string remote_id   = 1;
+    string remote_name = 2;
+    string direction   = 3;
+    string l4_protocol = 4;
+    uint32 server_port = 5;
+    int64  connections = 6;
+}
+
+message MapViewLink {
+    string source  = 1;
+    string target  = 2;
+    // The transport layer protocol
+    string l4proto = 3;
+    // The server port
+    uint32 port    = 4;
+}
+
+// WebSocket endpoint for streaming applications, services, and containers to the Map View.
+service MapViewService {
+
+    // Streams all applications.
+    rpc GetMapViewApplications (MapViewApplicationsRequest) returns (stream MapViewResponse) {
+        option (google.api.http) = {
+            get: "/ws/v1/mapview/applications"
+        };
+    }
+
+    // Streams the services for a given application.
+    rpc GetMapViewServices (MapViewServicesRequest) returns (stream MapViewResponse) {
+        option (google.api.http) = {
+            get: "/ws/v1/mapview/services"
+        };
+    }
+
+    // Streams the containers for a given service.
+    rpc GetMapViewContainers (MapViewContainersRequest) returns (stream MapViewResponse) {
+        option (google.api.http) = {
+            get: "/ws/v1/mapview/containers"
+        };
+    }
+
+}

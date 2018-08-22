@@ -69,6 +69,6 @@ distribution: clean
 
 GENERATED_CPP_BASE_PATH := $(CURDIR)/generated
 
-#include ../build/protogen.mk
+include ../build/protogen.mk
 
 generated-srcs: $(GENERATED_CPP_DATA_SRCS)

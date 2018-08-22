@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package detector;
+
+option go_package = "detector";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+message DetectRequest {
+    repeated string stack_ids = 1;
+}
+
+message LogLevelRequest {
+    string level = 1;
+}
+
+// The service that handles all internal communication between the ML detector and the director
+service DetectorService {
+    rpc HandleDetectRequest (DetectRequest) returns (google.protobuf.Empty);
+    rpc SetLogLevel(LogLevelRequest) returns (google.protobuf.Empty);
+}
