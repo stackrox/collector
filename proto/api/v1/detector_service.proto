@@ -1,0 +1,155 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "github.com/mwitkow/go-proto-validators/validator.proto";
+import "proto/api/v1/pagination.proto";
+
+package v1;
+
+message DetectorRuleKey {
+    string name = 1;
+    string description = 2;
+    string type = 3; // This may become an enumeration but would still be emitted as a string in JSON.
+}
+
+message DetectorRuleTemplate {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    repeated DetectorRuleKey keys = 4;
+}
+
+message DetectorServiceInfo {
+    string detector = 1;
+    string description = 2;
+    repeated DetectorRuleTemplate templates = 3;
+}
+
+message DetectorServiceList {
+    repeated DetectorServiceInfo infos = 1;
+}
+
+message DetectorServiceRuleSetting {
+    string key = 1;
+    string value = 2;
+}
+
+message DetectorServiceRule {
+    string id = 1; // UUID
+    string name = 2;
+    string description = 3;
+    string detector = 4;
+    string template = 5;
+    string severity = 6;
+    string category = 7;
+    bool disabled = 8;
+    bool labels_ml = 10;
+    repeated DetectorServiceRuleSetting settings = 9;
+}
+
+message DetectorServiceRuleList {
+    repeated DetectorServiceRule list = 1;
+    // pagination
+    PaginationResponse pagination = 15;
+}
+
+message ModifyDetectorServiceRule {
+    string id = 1;
+    oneof set_description {
+        string description = 2;
+    }
+    oneof set_severity {
+        string severity = 3;
+    }
+    oneof set_category {
+        string category = 4;
+    }
+    oneof set_disabled {
+        bool disabled = 5;
+    }
+    repeated DetectorServiceRuleSetting settings = 6;
+}
+
+message DetectorServiceRuleID {
+    string id = 1;
+}
+
+message DetectorServiceRuleRequest {
+    // unique rule ID
+    repeated string id = 1;
+    // rule name
+    repeated string name = 2;
+    // detector service
+    repeated string detector = 3;
+    // template
+    repeated string template = 4;
+    // severity
+    repeated string severity = 5;
+    // categories
+    repeated string category = 6;
+    // is disabled
+    repeated bool disabled = 7;
+    // pagination
+    PaginationRequest pagination = 15;
+}
+
+message DetectorRulesByCategory {
+    message RulesByCategory {
+        string category = 1;
+        repeated string names = 2;
+    }
+    message DetectorRulesGroup {
+        string detector = 1;
+        repeated RulesByCategory rules = 2;
+    }
+    repeated DetectorRulesGroup list = 1;
+}
+
+service DetectorConfigurationService {
+    rpc GetServiceList (google.protobuf.Empty) returns (DetectorServiceList) {
+        option (google.api.http) = {
+            get: "/v1/detectors/info"
+        };
+    }
+
+    rpc GetRulesByCategory (google.protobuf.Empty) returns (DetectorRulesByCategory) {
+        option (google.api.http) = {
+            get: "/v1/detectors/categoryGroups"
+        };
+    }
+
+    rpc GetDetectorServiceRule (DetectorServiceRuleID) returns (DetectorServiceRule) {
+        option (google.api.http) = {
+            get: "/v1/detectors/rules/{id}"
+        };
+    }
+
+    rpc GetDetectorServiceRules (DetectorServiceRuleRequest) returns (DetectorServiceRuleList) {
+        option (google.api.http) = {
+            get: "/v1/detectors/rules"
+        };
+    }
+
+    rpc AddServiceRule (DetectorServiceRule) returns (DetectorServiceRule) {
+        option (google.api.http) = {
+            post: "/v1/detectors/rules"
+            body: "*"
+        };
+    }
+
+    rpc ModifyServiceRule (ModifyDetectorServiceRule) returns (DetectorServiceRule) {
+        option (google.api.http) = {
+            patch: "/v1/detectors/rules/{id}"
+            body: "*"
+        };
+    }
+
+    rpc DeleteServiceRule (DetectorServiceRuleID) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            delete: "/v1/detectors/rules/{id}"
+        };
+    }
+}

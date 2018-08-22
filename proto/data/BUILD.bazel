@@ -1,0 +1,11 @@
+proto_library(
+    name = "data",
+    srcs = glob(["*.proto"]),
+    visibility = ["//visibility:public"],
+)
+
+java_proto_library(
+    name = "data_java",
+    visibility = ["//visibility:public"],
+    deps = [":data"],
+)

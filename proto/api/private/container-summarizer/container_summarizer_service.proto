@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+import "proto/data/container_summary.proto";
+
+package container_summarizer;
+
+option go_package = "container-summarizer";
+
+message GetContainerStatesRequest {
+    repeated string container_ids = 1;
+}
+
+message GetContainerStatesResponse {
+    message RetrievalError {
+        string container_id = 1;
+        string message = 2;
+    }
+
+    string hostname = 1;
+    repeated data.ContainerSummary.Container containers = 2;
+    repeated RetrievalError retrieval_errors = 3;
+}
+
+// A director service that allows the container summarizer to push its entire state to the director. This is required
+// to inform the director of containers that have been fully removed during a container summarizer outage.
+service ContainerSummarizerService {
+    // Pushes the state from the given node to the director.
+    rpc GetContainerStates(GetContainerStatesRequest) returns (GetContainerStatesResponse);
+}

@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+package director;
+
+option go_package = "director";
+
+// ServiceMessage is a translation from the message previously used by the
+// HTTP+JSON API. It includes an additional field for the cluster ID.
+message ServiceMessage {
+    string id = 1;
+    string name = 2;
+    string version = 3;
+    string namespace = 4;
+    reserved 5;  // was cluster_id
+    string type = 6;
+    map<string, string> labels = 7;
+    bool inactive = 8; // Whether all containers in this service are inactive
+    // Application name prescribed by the orchestrator (irrespective of
+    // labels). Only used for orchestrator internal services.
+    string forced_app_name = 9;
+    bool deleted = 10;
+}
+
+// ContainerMessage is a translation from the message previously used by the
+// HTTP+JSON API. It includes an additional field for the cluster ID.
+message ContainerMessage {
+    string id = 1;
+    string node_id = 2;
+    string image_ref = 3;
+    string service_id = 4;
+    reserved 5;  // was cluster_id
+    bool deleted = 6;
+    bool is_stackrox = 7;
+}
+
+// OrchestratorResourceStreamMessage is a message used to push orchestrator
+// resources to Director. It may be either a service or a container.
+message OrchestratorResourceStreamMessage {
+    oneof msg {
+        ServiceMessage service = 1;
+        ContainerMessage container = 2;
+    }
+}
