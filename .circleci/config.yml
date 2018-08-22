@@ -201,6 +201,55 @@ jobs:
           ls -lh container/bin/
           ls -lh container/libs/
 
+    - persist_to_workspace:
+        root: /go/src/github.com/stackrox/collector
+        paths:
+        - collector/container/bin
+        - collector/container/libs
+
+  images:
+    machine: true
+    steps:
+    - run:
+        name: Create Directory
+        command: |
+          sudo mkdir -m 0777 -p /go/src
+          mkdir -p /go/src/github.com/stackrox/collector
+
+    - checkout:
+        path: /go/src/github.com/stackrox/collector
+
+    - attach_workspace:
+        at: /go/src/github.com/stackrox/collector
+
+    - run:
+        name: Sanity check
+        working_directory: /go/src/github.com/stackrox/collector
+        command: |
+          echo '>>> Collector Artifacts:'
+          find collector/container
+          echo '>>> Kernel Modules:'
+          find kernel-modules/container
+
+    - run:
+        name: Build kernel-modules Docker image
+        working_directory: /go/src/github.com/stackrox/collector/kernel-modules/container
+        command: docker build -t stackrox/kernel-modules:latest .
+
+    - run:
+        name: Build collector Docker image
+        working_directory: /go/src/github.com/stackrox/collector/collector
+        command: |
+          cp NOTICE-collector.txt container/
+          cp COPYING.txt container/
+          docker build -t stackrox/collector:latest container
+
+    - run:
+        name: Sanity check images
+        command: |
+          docker images | grep kernel
+          docker images | grep collector
+
 workflows:
   version: 2
   build:
@@ -209,19 +258,28 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - kernels:
-        filters:
-          tags:
-            only: /.*/
     - libsinsp:
         filters:
           tags:
             only: /.*/
+
     - collector:
         filters:
           tags:
             only: /.*/
         requires:
         - builder
-        - kernels
         - libsinsp
+
+    - kernels:
+        filters:
+          tags:
+            only: /.*/
+
+    - images:
+        filters:
+          tags:
+            only: /.*/
+        requires:
+        - collector
+        - kernels
