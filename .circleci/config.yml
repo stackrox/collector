@@ -101,6 +101,34 @@ jobs:
         paths:
         - kernel-modules/container/kernel-modules
 
+  grpc:
+    docker:
+    - image: ubuntu:trusty
+    working_directory: /go/src/github.com/stackrox/collector
+
+    steps:
+    - checkout
+
+    - run:
+        name: Install dependencies
+        command: |
+          apt-get update -y
+          apt-get install -y build-essential
+
+    - run:
+        name: Build grpc plugin
+        working_directory: /go/src/github.com/stackrox/collector/collector
+        command: make install-grpc
+
+    - run:
+        name: Prep grpc plugin
+        command: cp -v /usr/local/bin/grpc_cpp_plugin .
+
+    - persist_to_workspace:
+        root: /go/src/github.com/stackrox/collector
+        paths:
+        - grpc_cpp_plugin
+
   libsinsp:
     machine: true
     environment:
@@ -150,6 +178,14 @@ jobs:
         at: /go/src/github.com/stackrox/collector
 
     - run:
+        name: Install grpc plugin
+        working_directory: /go/src/github.com/stackrox/collector
+        command: |
+          sudo install grpc_cpp_plugin /usr/local/bin/
+          rm grpc_cpp_plugin
+          which grpc_cpp_plugin
+
+    - run:
         name: Load collector builder Docker image
         working_directory: /go/src/github.com/stackrox/collector
         command: docker load < /go/src/github.com/stackrox/collector/docker-cache/build_collector.tar
@@ -166,6 +202,8 @@ jobs:
           find /go/src/github.com/stackrox/collector/docker-cache
           echo '>>> Docker images:'
           docker images | grep collector
+          echo '>>> gRPC plugin:'
+          which grpc_cpp_plugin
 
     - run:
         name: Generate Protobuf Definitions
@@ -276,6 +314,10 @@ workflows:
         filters:
           tags:
             only: /.*/
+    - grpc:
+        filters:
+          tags:
+            only: /.*/
     - libsinsp:
         filters:
           tags:
@@ -286,6 +328,7 @@ workflows:
             only: /.*/
         requires:
         - builder
+        - grpc
         - libsinsp
     - kernels:
         filters:
