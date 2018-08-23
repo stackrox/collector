@@ -1,8 +1,9 @@
 BASE_PATH ?= $(CURDIR)/..
+PATH ?= $(PATH):/go/bin
 
 # Automatically locate all API and data protos.
 PROTO_BASE_PATH := $(BASE_PATH)/proto
-API_SERVICE_PROTOS := $(shell find $(PROTO_BASE_PATH)/api -name '*.proto')
+API_SERVICE_PROTOS := $(shell find $(PROTO_BASE_PATH)/api/private/signal-service -name '*.proto')
 DATA_PROTOS := $(shell find $(PROTO_BASE_PATH)/data -name '*.proto')
 PRIVATE_RPC_PROTOS := $(shell find $(PROTO_BASE_PATH)/api/private/signal-service -name '*.proto')
 
@@ -11,8 +12,7 @@ DATA_PROTOS_REL := $(DATA_PROTOS:$(BASE_PATH)/%=%)
 
 # GENERATED_API_XXX and PROTO_API_XXX variables contain standard paths used to
 # generate gRPC proto messages, services, and gateways for the API.
-GENERATED_BASE_PATH ?= $(BASE_PATH)/pkg/generated
-GENERATED_CPP_BASE_PATH ?= $(BASE_PATH)/pkg/generated-cpp
+GENERATED_BASE_PATH ?= $(BASE_PATH)/go-proto-generated
 
 # Files generated from DATA_PROTOS
 GENERATED_DATA_SRCS := $(DATA_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_BASE_PATH)/%.pb.go)
@@ -32,7 +32,7 @@ GENERATED_API_VALIDATOR_SRCS := $(API_SERVICE_PROTOS:$(BASE_PATH)/%.proto=$(GENE
 # The --go_out=M... argument specifies the go package to use for an imported proto file. Here, we instruct protoc-gen-go
 # to import the go source for proto file $(BASE_PATH)/<path>/*.proto to
 # "bitbucket.org/stack-rox/stackrox/pkg/generated/<path>".
-M_ARGS = $(foreach proto,$(DATA_PROTOS_REL),M$(proto)=bitbucket.org/stack-rox/stackrox/pkg/generated/$(patsubst %/,%,$(dir $(proto))))
+M_ARGS = $(foreach proto,$(DATA_PROTOS_REL),M$(proto)=github.com/stackrox/collector/collector/generated/$(patsubst %/,%,$(dir $(proto))))
 
 # Hack: there's no straightforward way to escape a comma in a $(subst ...) command, so we have to resort to this little
 # trick.
@@ -125,14 +125,6 @@ PROTO_DEPS=$(PROTOC_GEN_GO) $(PROTO_DEPS_CPP)
 ###############
 ## Utilities ##
 ###############
-
-.PHONY: printdocs
-printdocs:
-	@echo $(GENERATED_API_DOCS)
-
-.PHONY: printswaggers
-printswaggers:
-	@echo $(GENERATED_V1_API_SWAGGER_SPECS)
 
 .PHONY: printsrcs
 printsrcs:
@@ -247,35 +239,6 @@ $(GENERATED_BASE_PATH)/%.validator.pb.go: $(BASE_PATH)/%.proto $(GENERATED_BASE_
 	@for f in $(patsubst $(dir $<)/%.proto, $(dir $@)/%.validator.pb.go, $(wildcard $(dir $<)/*.proto)); do \
 		test -f $$f || echo package $(subst -,_,$(notdir $(patsubst %/, %, $(dir $<)))) >$$f; \
 	done
-
-# Generate all of the swagger specifications with one invocation of protoc
-# when any of the .swagger.json sources don't exist or when any of the
-# .proto files change.
-$(GENERATED_DOC_BASE_PATH)/%.swagger.json: $(BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GOVALIDATORS) $(GENERATED_DOC_BASE_PATH) $(API_SERVICE_PROTOS)
-	@echo "+ $@"
-	@$(PROTOC) \
-		-I$(PROTOC_INCLUDES) \
-		-I$(GOPATH)/src \
-		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
-		--proto_path=$(BASE_PATH) \
-		--swagger_out=logtostderr=true:$(GENERATED_DOC_BASE_PATH) \
-		$(dir $<)/*.proto
-
-$(SWAGGER_PATH):
-	@echo "+ $@"
-	@go get -u github.com/go-swagger/go-swagger/cmd/swagger
-
-# Generate the docs from the merged swagger specs.
-$(MERGED_V1_API_SWAGGER_SPEC): $(SWAGGER_PATH) $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_V1_API_SWAGGER_SPECS)
-	@echo "+ $@"
-	$(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_V1_DOC_PATH)
-	@$(SWAGGER_PATH) validate $@
-
-# Generate the docs from the merged swagger specs.
-$(GENERATED_V1_API_DOCS): $(MERGED_V1_API_SWAGGER_SPEC)
-	@echo "+ $@"
-	docker run --user $(shell id -u) --rm -v $(CURDIR)/docs:/tmp/docs swaggerapi/swagger-codegen-cli generate -l html2 -i /tmp/$< -o /tmp/$@
-
 
 # Clean things that we use to generate protobufs
 .PHONY: clean-protogen-artifacts

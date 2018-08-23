@@ -2,3 +2,5 @@ protoc-*.zip
 protoc-tmp
 
 .idea/
+
+go-proto-generated

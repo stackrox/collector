@@ -235,7 +235,9 @@ jobs:
     - run:
         name: Generate Protobuf Definitions
         working_directory: /go/src/github.com/stackrox/collector/collector
-        command: make generated-srcs
+        command: |
+          PATH=$PATH:/go/bin
+          make generated-srcs
 
     - run:
         name: Build collector

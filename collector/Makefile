@@ -2,9 +2,11 @@ HDRS := $(wildcard lib/*.h) $(shell find sysdig/src/userspace -name '*.h')
 
 SRCS := $(wildcard lib/*.cpp) collector.cpp
 
-GENERATED_SRCS := $(GENERATED_CPP_DATA_SRCS)
+GENERATED_SRCS := $(GENERATED_DATA_SRCS) $(GENERATED_API_SRCS) $(GENERATED_CPP_DATA_SRCS)
 
 BASE_PATH ?= $(CURDIR)/..
+
+PATH ?= $(PATH):/go/bin
 
 .PHONY: all
 all: image
@@ -54,6 +56,7 @@ clean: clean-generated-srcs
 .PHONY: clean-generated-srcs
 clean-generated-srcs:
 	rm -rf $(GENERATED_CPP_BASE_PATH)
+	rm -rf $(GENERATED_GO_BASE_PATH)
 
 .PHONY: distribution
 distribution: clean
@@ -71,11 +74,13 @@ distribution: clean
 			collector.tar.gz ./
 
 GENERATED_CPP_BASE_PATH := $(CURDIR)/generated
+GENERATED_GO_BASE_PATH := $(CURDIR)/../go-proto-generated
 
 install-grpc:
 	@$(BASE_PATH)/build/scripts/install-grpc-cpp-plugin.sh
 
 include ../build/protogen.mk
 
-generated-srcs: install-grpc $(GENERATED_CPP_DATA_SRCS) clean-protogen-artifacts
+# Generating go protos too for testing purpose
+generated-srcs: install-grpc $(GENERATED_DATA_SRCS) $(GENERATED_API_SRCS) $(GENERATED_CPP_DATA_SRCS) clean-protogen-artifacts
 

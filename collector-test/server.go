@@ -4,20 +4,14 @@ import (
 	"flag"
 	"net"
 	"fmt"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/testdata"
-	"google.golang.org/grpc/credentials"
-
-	pb "bitbucket.org/stack-rox/stackrox/pkg/generated/proto/api/private/signal-service"
 	"log"
+	"google.golang.org/grpc"
+	"strconv"
+
+	pb "github.com/stackrox/collector/go-proto-generated/proto/api/private/signal-service"
 )
 
-var (
-	tls        = flag.Bool("tls", false, "Connection uses TLS if true, else plain TCP")
-	certFile   = flag.String("cert_file", "", "The TLS cert file")
-	keyFile    = flag.String("key_file", "", "The TLS key file")
-	port       = flag.Int("port", 9092, "The server port")
-)
+var port       = flag.Int("port", 9092, "The server port")
 
 type signalServer struct {
 
@@ -28,18 +22,29 @@ func newServer() *signalServer {
 }
 
 func (s *signalServer) PushSignals(stream pb.SignalService_PushSignalsServer) error {
-	count := 0
 	for {
 		signal, err := stream.Recv()
 		if err != nil {
 			return err
 		}
-		fmt.Println("%v", signal)
-		count++
-		if count % 10 == 0 {
-			fmt.Println(count)
+		fmt.Printf("%v\n", signal)
+		if signal.GetSignal().GetNetworkSignal() != nil {
+			if  signal.GetSignal().GetNetworkSignal().GetClientAddress().GetIpv4Address() != nil {
+				fmt.Printf("client endpoint: %s:%d\n", InttoIP4(signal.GetSignal().GetNetworkSignal().GetClientAddress().GetIpv4Address().GetAddress()), signal.GetSignal().GetNetworkSignal().GetClientAddress().GetIpv4Address().Port)
+				fmt.Printf("server endpoint: %s:%d\n", InttoIP4(signal.GetSignal().GetNetworkSignal().GetServerAddress().GetIpv4Address().GetAddress()), signal.GetSignal().GetNetworkSignal().GetServerAddress().GetIpv4Address().Port)
+			}
 		}
 	}
+}
+
+func InttoIP4(ipInt uint32) string {
+	ipAddr := int64(ipInt)
+	// need to do two bit shifting and “0xff” masking
+	b0 := strconv.FormatInt((ipAddr>>24)&0xff, 10)
+	b1 := strconv.FormatInt((ipAddr>>16)&0xff, 10)
+	b2 := strconv.FormatInt((ipAddr>>8)&0xff, 10)
+	b3 := strconv.FormatInt((ipAddr & 0xff), 10)
+	return b0 + "." + b1 + "." + b2 + "." + b3
 }
 
 func main() {
@@ -48,21 +53,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	var opts []grpc.ServerOption
-	if *tls {
-		if *certFile == "" {
-			*certFile = testdata.Path("server1.pem")
-		}
-		if *keyFile == "" {
-			*keyFile = testdata.Path("server1.key")
-		}
-		creds, err := credentials.NewServerTLSFromFile(*certFile, *keyFile)
-		if err != nil {
-			log.Fatalf("Failed to generate credentials %v", err)
-		}
-		opts = []grpc.ServerOption{grpc.Creds(creds)}
-	}
-	grpcServer := grpc.NewServer(opts...)
+	grpcServer := grpc.NewServer()
 	pb.RegisterSignalServiceServer(grpcServer, newServer())
 	grpcServer.Serve(lis)
 }
