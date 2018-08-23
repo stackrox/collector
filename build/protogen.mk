@@ -4,10 +4,7 @@ BASE_PATH ?= $(CURDIR)/..
 PROTO_BASE_PATH := $(BASE_PATH)/proto
 API_SERVICE_PROTOS := $(shell find $(PROTO_BASE_PATH)/api -name '*.proto')
 DATA_PROTOS := $(shell find $(PROTO_BASE_PATH)/data -name '*.proto')
-<<<<<<< HEAD
 PRIVATE_RPC_PROTOS := $(shell find $(PROTO_BASE_PATH)/api/private/signal-service -name '*.proto')
-=======
->>>>>>> 8964a68a3... Mass import of proto files
 
 # DATA_PROTOS, relative to $(BASE_PATH)
 DATA_PROTOS_REL := $(DATA_PROTOS:$(BASE_PATH)/%=%)
@@ -21,37 +18,17 @@ GENERATED_CPP_BASE_PATH ?= $(BASE_PATH)/pkg/generated-cpp
 GENERATED_DATA_SRCS := $(DATA_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_BASE_PATH)/%.pb.go)
 GENERATED_CPP_DATA_SRCS := \
 	$(DATA_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_CPP_BASE_PATH)/%.pb.cc) \
-<<<<<<< HEAD
 	$(DATA_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_CPP_BASE_PATH)/%.pb.h) \
 	$(PRIVATE_RPC_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_CPP_BASE_PATH)/%.pb.cc) \
 	$(PRIVATE_RPC_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_CPP_BASE_PATH)/%.pb.h) \
 	$(PRIVATE_RPC_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_CPP_BASE_PATH)/%.grpc.pb.cc) \
 	$(PRIVATE_RPC_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_CPP_BASE_PATH)/%.grpc.pb.h)
-=======
-	$(DATA_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_CPP_BASE_PATH)/%.pb.h)
->>>>>>> 8964a68a3... Mass import of proto files
 
 # Files generated from API_PROTOS
 GENERATED_API_SRCS := $(API_SERVICE_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_BASE_PATH)/%.pb.go)
 GENERATED_API_GW_SRCS := $(API_SERVICE_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_BASE_PATH)/%.pb.gw.go)
 GENERATED_API_VALIDATOR_SRCS := $(API_SERVICE_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_BASE_PATH)/%.validator.pb.go)
 
-<<<<<<< HEAD
-=======
-# Docs/Swagger
-GENERATED_DOC_BASE_PATH := docs/generated
-V1_DOC_API_SERVICES ?=
-V1_DOC_API_SERVICE_PROTOS = $(V1_DOC_API_SERVICES:%=$(PROTO_BASE_PATH)/api/v1/%.proto)
-
-GENERATED_V1_API_SWAGGER_SPECS = $(V1_DOC_API_SERVICE_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_DOC_BASE_PATH)/%.swagger.json)
-SWAGGER_PATH := $(GOPATH)/bin/swagger
-
-# Generated API docs - this is fixed to api/v1, we don't generated docs for anything else.
-GENERATED_V1_DOC_PATH = $(GENERATED_DOC_BASE_PATH)/proto/api/v1
-MERGED_V1_API_SWAGGER_SPEC = $(GENERATED_V1_DOC_PATH)/swagger.json
-GENERATED_V1_API_DOCS = $(GENERATED_V1_DOC_PATH)/reference
-
->>>>>>> 8964a68a3... Mass import of proto files
 # The --go_out=M... argument specifies the go package to use for an imported proto file. Here, we instruct protoc-gen-go
 # to import the go source for proto file $(BASE_PATH)/<path>/*.proto to
 # "bitbucket.org/stack-rox/stackrox/pkg/generated/<path>".
@@ -89,13 +66,11 @@ PROTOC_INCLUDES := $(PROTOC_TMP)/include/google
 
 PROTOC_GEN_GO := $(GOPATH)/src/github.com/golang/protobuf/protoc-gen-go
 
-<<<<<<< HEAD
+
 GRPC_CPP_PLUGIN := grpc_cpp_plugin
 
 GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`
 
-=======
->>>>>>> 8964a68a3... Mass import of proto files
 PROTOC_GEN_GO_BIN := $(GOPATH)/bin/protoc-gen-gofast
 
 $(GOPATH)/src/github.com/gogo/protobuf/types:
@@ -212,11 +187,7 @@ $(GENERATED_DOC_BASE_PATH):
 # Generate all of the proto messages and gRPC services with one invocation of
 # protoc when any of the .pb.go sources don't exist or when any of the .proto
 # files change.
-<<<<<<< HEAD
 $(GENERATED_BASE_PATH)/%.pb.go: $(BASE_PATH)/%.proto $(GENERATED_BASE_PATH) $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GOVALIDATORS) $(API_SERVICE_PROTOS) $(DATA_PROTOS) $(PRIVATE_RPC_PROTOS) $(PROTOC_GEN_GO_BIN)
-=======
-$(GENERATED_BASE_PATH)/%.pb.go: $(BASE_PATH)/%.proto $(GENERATED_BASE_PATH) $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GOVALIDATORS) $(API_SERVICE_PROTOS) $(DATA_PROTOS) $(PROTOC_GEN_GO_BIN)
->>>>>>> 8964a68a3... Mass import of proto files
 	@echo "+ $@"
 	@$(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
@@ -234,7 +205,6 @@ $(GENERATED_CPP_BASE_PATH)/%.pb.cc $(GENERATED_CPP_BASE_PATH)/%.pb.h: $(BASE_PAT
 		--cpp_out=$(GENERATED_CPP_BASE_PATH) \
 		$<
 
-<<<<<<< HEAD
 $(GENERATED_CPP_BASE_PATH)/%.grpc.pb.cc $(GENERATED_CPP_BASE_PATH)/%.grpc.pb.h: $(BASE_PATH)/%.proto $(GENERATED_CPP_BASE_PATH) $(PROTO_DEPS)
 	@echo "+ $@"
 	@$(PROTOC) \
@@ -244,8 +214,6 @@ $(GENERATED_CPP_BASE_PATH)/%.grpc.pb.cc $(GENERATED_CPP_BASE_PATH)/%.grpc.pb.h: 
 		--plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN_PATH) \
 		$<
 
-=======
->>>>>>> 8964a68a3... Mass import of proto files
 # Generate all of the reverse-proxies (gRPC-Gateways) with one invocation of
 # protoc when any of the .pb.gw.go sources don't exist or when any of the
 # .proto files change.
