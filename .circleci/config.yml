@@ -241,15 +241,31 @@ jobs:
         name: Build collector Docker image
         working_directory: /go/src/github.com/stackrox/collector/collector
         command: |
+          VERSION=$(git describe --tags)
           cp NOTICE-collector.txt container/
           cp COPYING.txt container/
-          docker build -t stackrox/collector:latest container
+          docker build \
+            -t stackrox/collector:snapshot-$VERSION \
+            -t stackrox/collector:$VERSION \
+            container
 
     - run:
         name: Sanity check images
         command: |
           docker images | grep kernel
           docker images | grep collector
+
+    - run:
+        name: Push images
+        command: |
+          VERSION=$(git describe --tags)
+          if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
+            echo Pushing release images
+            docker push stackrox/collector:$VERSION
+          else
+            echo Pushing snapshot images
+            docker push stackrox/collector:snapshot-$VERSION
+          fi
 
 workflows:
   version: 2
