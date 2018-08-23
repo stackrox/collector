@@ -25,11 +25,18 @@ You should have received a copy of the GNU General Public License along with thi
 #include "CollectorException.h"
 #include "KafkaSignalWriter.h"
 #include "StdoutSignalWriter.h"
+#include "GRPCSignalWriter.h"
 
 namespace collector {
 
 void SignalWriterFactory::SetupKafka(const rd_kafka_conf_t* conf_template) {
   kafka_client_ = std::make_shared<KafkaClient>(conf_template);
+}
+
+// todo: pass in a struct with ssl options
+void SignalWriterFactory::SetupGRPC(std::string gRPCServer) {
+  grpc_client_ = std::make_shared<SignalServiceClient>();
+  grpc_client_->CreateGRPCStub(gRPCServer);
 }
 
 std::unique_ptr<SignalWriter> SignalWriterFactory::CreateSignalWriter(const std::string& output_spec) {
@@ -51,6 +58,9 @@ std::unique_ptr<SignalWriter> SignalWriterFactory::CreateSignalWriter(const std:
   if (output_type == "kafka") {
     return CreateKafkaSignalWriter(spec);
   }
+  if (output_type == "grpc") {
+    return CreateGRPCSignalWriter(spec);
+  }
   throw CollectorException("Invalid output type '" + output_type + "' in output spec '" + output_spec + "'");
 }
 
@@ -68,6 +78,14 @@ std::unique_ptr<SignalWriter> SignalWriterFactory::CreateKafkaSignalWriter(const
   }
 
   return std::unique_ptr<SignalWriter>(new KafkaSignalWriter(spec, kafka_client_));
+}
+
+std::unique_ptr<SignalWriter> SignalWriterFactory::CreateGRPCSignalWriter(const std::string& spec) {
+  if (!grpc_client_) {
+    throw CollectorException("Output type 'grpc' specified, but collector was not set up to use GRPC");
+  }
+
+  return std::unique_ptr<SignalWriter>(new GRPCSignalWriter(grpc_client_));
 }
 
 }  // namespace collector

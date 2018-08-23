@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package learner;
+
+option go_package = "learner";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+// This is the message format that gets proxied to the learner. Values have already been converted to integers
+message ModelDebugRequest {
+    string id = 1;
+    string type = 2;
+    repeated uint32 values = 3;
+}
+
+// This is the message format that is returned by the learner to the director
+message ModelDebugResponse {
+    string id = 1;
+    string type = 2;
+    map<uint32, double> contents = 3;
+    map<string, string> stats = 4;
+}
+
+message LearnerJobs {
+    repeated string jobs = 1;
+    bool available = 2;
+}
+
+message LearnRequest {
+    string id = 1;
+    string type = 2;
+}
+
+message LogLevelRequest {
+    string level = 1;
+}
+
+// The service that handles all internal communication between the director and learner
+service LearnerService {
+    rpc HandleModelDebugRequest (ModelDebugRequest) returns (ModelDebugResponse);
+    rpc GetJobs (google.protobuf.Empty) returns (LearnerJobs);
+    rpc RequestLearning (LearnRequest) returns (google.protobuf.Empty);
+    rpc SetLogLevel(LogLevelRequest) returns (google.protobuf.Empty);
+}

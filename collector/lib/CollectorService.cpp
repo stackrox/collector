@@ -73,6 +73,15 @@ void CollectorService::RunForever() {
   prometheus::Exposer exposer("9090");
   exposer.RegisterCollectable(registry);
 
+  if (config_.useGRPC) {
+    CLOG(INFO) << "Waiting for GRPC server to become ready ...";
+    if (!WaitForGRPCServer()) {
+      CLOG(INFO) << "Interrupted while waiting for GRPC server to become ready ...";
+      return;
+    }
+    CLOG(INFO) << "GRPC server is ready";
+  }
+
   sysdig.Init(config_);
 
   if (getNetworkHealthStatus && !getNetworkHealthStatus->start()) {
@@ -163,6 +172,23 @@ bool CollectorService::WaitForKafka() {
       return true;
     }
     CLOG(ERROR) << ready_brokers << "/" << num_brokers << " brokers are ready. Sleeping for 5 seconds ...";
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+  }
+  return false;
+}
+
+bool CollectorService::WaitForGRPCServer() {
+  std::string error_str;
+  auto interrupt = [this] { return control_->load(std::memory_order_relaxed) == STOP_COLLECTOR; };
+  while (!interrupt()) {
+    ConnectivityStatus conn_status = CheckConnectivity(config_.gRPCServer, std::chrono::seconds(1), &error_str, interrupt);
+    if (conn_status == ConnectivityStatus::INTERRUPTED) return false;
+    else if (conn_status == ConnectivityStatus::ERROR) {
+      CLOG(ERROR) << "Error connecting to gRPC server: " << config_.gRPCServer.str() << ": " << error_str;
+    } else {
+        return true;
+    }
+    CLOG(ERROR) << "gRPC server not ready. Sleeping for 5 seconds ...";
     std::this_thread::sleep_for(std::chrono::seconds(5));
   }
   return false;

@@ -57,19 +57,25 @@ void SysdigService::Init(const CollectorConfig& config) {
   if (config.useKafka) {
     factory.SetupKafka(config.kafkaConfigTemplate);
   }
+  if (config.useGRPC) {
+    // todo: pass a gRPC config struct with ssl options
+    factory.SetupGRPC(config.gRPCServer.str());
+  }
   signal_writers_[SIGNAL_TYPE_FILE] = factory.CreateSignalWriter(config.fileSignalOutput);
   signal_writers_[SIGNAL_TYPE_PROCESS] = factory.CreateSignalWriter(config.processSignalOutput);
   signal_writers_[SIGNAL_TYPE_NETWORK] = factory.CreateSignalWriter(config.networkSignalOutput);
+  signal_writers_[SIGNAL_TYPE_GENERIC] = factory.CreateSignalWriter(config.signalOutput);
 
   SignalFormatterFactory fmtFactory(inspector_.get(), config.clusterID);
 
   signal_formatter_[SIGNAL_TYPE_FILE] = fmtFactory.CreateSignalFormatter(config.fileSignalFormat, inspector_.get());
   signal_formatter_[SIGNAL_TYPE_PROCESS] = fmtFactory.CreateSignalFormatter(config.processSignalFormat, inspector_.get());
   signal_formatter_[SIGNAL_TYPE_NETWORK] = fmtFactory.CreateSignalFormatter(config.networkSignalFormat, inspector_.get());
+  signal_formatter_[SIGNAL_TYPE_GENERIC] = fmtFactory.CreateSignalFormatter(config.signalFormat, inspector_.get());
 
   SetChisel(config.chisel);
 
-  classifier_.Init(config.hostname, config.processSyscalls);
+  classifier_.Init(config.hostname, config.processSyscalls, config.genericSyscalls);
   use_chisel_cache_ = config.useChiselCache;
 }
 
@@ -79,7 +85,7 @@ bool SysdigService::FilterEvent(sinsp_evt* event) {
   }
 
   sinsp_threadinfo* tinfo = event->get_thread_info();
-  if (tinfo == NULL) {
+  if (tinfo == NULL || tinfo->m_container_id.empty()) {
     return false;
   }
 

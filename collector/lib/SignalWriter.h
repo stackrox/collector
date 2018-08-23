@@ -29,6 +29,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "EventClassifier.h"
 #include "KafkaClient.h"
 #include "SafeBuffer.h"
+#include "SignalServiceClient.h"
 
 namespace collector {
 
@@ -43,12 +44,15 @@ class SignalWriterFactory {
   std::unique_ptr<SignalWriter> CreateSignalWriter(const std::string& output_spec);
 
   void SetupKafka(const rd_kafka_conf_t* conf_template);
+  void SetupGRPC(std::string gRPCServer);
 
  private:
   std::unique_ptr<SignalWriter> CreateStdoutSignalWriter(const std::string& spec);
   std::unique_ptr<SignalWriter> CreateKafkaSignalWriter(const std::string& spec);
+  std::unique_ptr<SignalWriter> CreateGRPCSignalWriter(const std::string& spec);
 
   std::shared_ptr<KafkaClient> kafka_client_;
+  std::shared_ptr<SignalServiceClient> grpc_client_;
 };
 
 }  // namespace collector

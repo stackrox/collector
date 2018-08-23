@@ -41,11 +41,13 @@ class CollectorArgs {
     option::ArgStatus checkCollectorConfig(const option::Option& option, bool msg);
     option::ArgStatus checkChisel(const option::Option& option, bool msg);
     option::ArgStatus checkBrokerList(const option::Option& option, bool msg);
+    option::ArgStatus checkGRPCServer(const option::Option& option, bool msg);
     option::ArgStatus checkOptionalNumeric(const option::Option& option, bool msg);
 
     const Json::Value &CollectorConfig() const;
     const std::string &Chisel() const;
     const std::string &BrokerList() const;
+    const std::string &GRPCServer() const;
     const std::string &Message() const;
 
     private:
@@ -58,6 +60,7 @@ class CollectorArgs {
     std::string chisel;
     std::string brokerList;
     std::string message;
+    std::string grpcServer;
 };
 
 }   /* namespace collector */

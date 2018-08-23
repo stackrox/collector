@@ -8,3 +8,4 @@ tags
 collector.tar.gz
 cmake-build/
 generated/
+collector/protoc-*

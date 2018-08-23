@@ -27,10 +27,12 @@ extern "C" {
 
 #include "SignalFormatter.h"
 
+#include "Logging.h"
 #include "CollectorException.h"
 #include "FileSummaryFormatter.h"
 #include "NetworkSignalFormatter.h"
 #include "ProcessSummaryFormatter.h"
+#include "CollectorSignalFormatter.h"
 #include "Utility.h"
 
 namespace collector {
@@ -58,7 +60,13 @@ std::unique_ptr<SignalFormatter> SignalFormatterFactory::CreateSignalFormatter(c
     return MakeUnique<NetworkSignalFormatter>(inspector, cluster_id_, false);
   }
   if (format_type == "network_signal_text") {
-      return MakeUnique<NetworkSignalFormatter>(inspector, cluster_id_, true);
+    return MakeUnique<NetworkSignalFormatter>(inspector, cluster_id_, true);
+  }
+  if (format_type == "signal_summary") {
+    return MakeUnique<CollectorSignalFormatter>(inspector, cluster_id_, false);
+  }
+  if (format_type == "signal_summary_text") {
+    return MakeUnique<CollectorSignalFormatter>(inspector, cluster_id_, true);
   }
   throw CollectorException("Invalid format type '" + format_type);
 }
