@@ -74,6 +74,8 @@ elif echo $OS_DETAILS | grep -qi "Red Hat"; then
     DISTRO="RedHat"
 elif echo $OS_DETAILS | grep -qi OpenShift; then
     DISTRO="RedHat"
+elif echo $OS_DETAILS | grep -qi "Amazon Linux"; then
+    DISTRO="RedHat"
 elif echo $OS_DETAILS | grep -qi coreos; then
     DISTRO="CoreOS"
 else
