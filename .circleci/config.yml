@@ -191,7 +191,7 @@ jobs:
           cp cmake-build/collector                        container/bin/
           docker cp build:/usr/local/bin/curl             container/bin/
           docker cp build:/usr/local/lib/libcurl.so       container/libs/
-          docker cp build:/usr/local/lib/libgrpc.so       container/libs/
+          docker cp -L build:/usr/local/lib/libgrpc.so    container/libs/
           docker cp -L build:/usr/local/lib/librdkafka.so container/libs/
           ls -lh container/bin/
           ls -lh container/libs/
