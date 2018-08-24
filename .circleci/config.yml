@@ -109,6 +109,12 @@ jobs:
     steps:
     - checkout
 
+    - run:
+        name: Install dependencies
+        command: |
+          apt-get update -y
+          apt-get install -y build-essential ca-certificates
+
     - restore_cache:
         key: grpc-cpp-plugin-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
 
@@ -119,12 +125,6 @@ jobs:
             echo "The file /usr/local/bin/grpc_cpp_plugin exists, skipping build."
             circleci step halt
           fi
-
-    - run:
-        name: Install dependencies
-        command: |
-          apt-get update -y
-          apt-get install -y build-essential
 
     - run:
         name: Build grpc plugin
