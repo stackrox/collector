@@ -10,25 +10,28 @@ jobs:
           sudo mkdir -m 0777 -p /go/src
           mkdir -p /go/src/github.com/stackrox/collector
 
+    - run:
+        name: Login to Docker Hub
+        command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+
     - checkout:
         path: /go/src/github.com/stackrox/collector
 
     - run:
-        name: Build collector builder Docker image
-        working_directory: /go/src/github.com/stackrox/collector/collector
-        command: docker build -t build_collector -f Dockerfile .
+        name: Restore collector-builder cache image
+        command: docker pull stackrox/collector-builder:cache || true
 
     - run:
-        name: Save collector builder Docker image
-        working_directory: /go/src/github.com/stackrox/collector
+        name: Build collector builder Docker image
+        working_directory: /go/src/github.com/stackrox/collector/collector
         command: |
-          mkdir -p docker-cache
-          docker save -o docker-cache/build_collector.tar build_collector:latest
+          docker build \
+            --cache-from stackrox/collector-builder:cache \
+            -t stackrox/collector-builder:cache .
 
-    - persist_to_workspace:
-        root: /go/src/github.com/stackrox/collector
-        paths:
-        - docker-cache
+    - run:
+        name: Save collector-builder cache image
+        command: docker push stackrox/collector-builder:cache
 
   kernels:
     docker:
@@ -182,6 +185,10 @@ jobs:
           sudo mkdir -m 0777 -p /go/src /go/bin /go/pkg
           mkdir -p /go/src/github.com/stackrox/collector
 
+    - run:
+        name: Login to Docker Hub
+        command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+
     - checkout:
         path: /go/src/github.com/stackrox/collector
 
@@ -196,9 +203,8 @@ jobs:
         command: sudo install /tmp/grpc_cpp_plugin /usr/local/bin/
 
     - run:
-        name: Load collector builder Docker image
-        working_directory: /go/src/github.com/stackrox/collector
-        command: docker load < /go/src/github.com/stackrox/collector/docker-cache/build_collector.tar
+        name: Restore collector-builder cache image
+        command: docker pull stackrox/collector-builder:cache
 
     - run:
         name: Sanity Check
@@ -208,8 +214,6 @@ jobs:
           echo '>>> Userspace lib:'
           ls -lh /go/src/github.com/stackrox/collector/collector/container/libs
           file   /go/src/github.com/stackrox/collector/collector/container/libs/libsinsp-wrapper.so
-          echo '>>> Docker tarballs:'
-          find /go/src/github.com/stackrox/collector/docker-cache
           echo '>>> Docker images:'
           docker images | grep collector
           echo '>>> gRPC plugin:'
@@ -230,7 +234,7 @@ jobs:
             -v $PWD/sysdig/src:/usr/local/sysdig \
             -v $PWD/container/libs/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so \
             -v $PWD/sysdig/src/driver/ppm_events_public.h:/usr/local/include/ppm_events_public.h \
-            --name build build_collector
+            --name build stackrox/collector-builder:cache
 
     - run:
         name: Extract collector files
