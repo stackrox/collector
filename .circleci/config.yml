@@ -121,8 +121,8 @@ jobs:
     - run:
         name: Install dependencies
         command: |
-          if [[ -x /usr/local/bin/grpc_cpp_plugin ]]; then
-            echo "The file /usr/local/bin/grpc_cpp_plugin exists, skipping build."
+          if [[ -x /tmp/grpc_cpp_plugin ]]; then
+            echo "The cached grpc_cpp_plugin was found, skipping build."
             circleci step halt
           fi
 
@@ -131,10 +131,14 @@ jobs:
         working_directory: /go/src/github.com/stackrox/collector/collector
         command: make install-grpc
 
+    - run:
+        name: Prep grpc plugin
+        command: cp -v /usr/local/bin/grpc_cpp_plugin /tmp/
+
     - save_cache:
         key: grpc-cpp-plugin-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
         paths:
-          - /usr/local/bin/grpc_cpp_plugin
+          - /tmp/grpc_cpp_plugin
 
   libsinsp:
     machine: true
@@ -186,6 +190,10 @@ jobs:
 
     - restore_cache:
         key: grpc-cpp-plugin-{{ checksum "/go/src/github.com/stackrox/collector/build/scripts/install-grpc-cpp-plugin.sh" }}
+
+    - run:
+        name: Prep grpc plugin
+        command: sudo install /tmp/grpc_cpp_plugin /usr/local/bin/
 
     - run:
         name: Load collector builder Docker image
