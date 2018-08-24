@@ -24,7 +24,10 @@ jobs:
     - run:
         name: Build collector builder Docker image
         working_directory: /go/src/github.com/stackrox/collector/collector
-        command: docker build -t stackrox/collector-builder:cache .
+        command: |
+          docker build \
+            --cache-from stackrox/collector-builder:cache \
+            -t stackrox/collector-builder:cache .
 
     - run:
         name: Save collector-builder cache image
