@@ -113,7 +113,18 @@ jobs:
         name: Install dependencies
         command: |
           apt-get update -y
-          apt-get install -y build-essential
+          apt-get install -y build-essential ca-certificates
+
+    - restore_cache:
+        key: grpc-cpp-plugin-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
+
+    - run:
+        name: Install dependencies
+        command: |
+          if [[ -x /tmp/grpc_cpp_plugin ]]; then
+            echo "The cached grpc_cpp_plugin was found, skipping build."
+            circleci step halt
+          fi
 
     - run:
         name: Build grpc plugin
@@ -122,12 +133,12 @@ jobs:
 
     - run:
         name: Prep grpc plugin
-        command: cp -v /usr/local/bin/grpc_cpp_plugin .
+        command: cp -v /usr/local/bin/grpc_cpp_plugin /tmp/
 
-    - persist_to_workspace:
-        root: /go/src/github.com/stackrox/collector
+    - save_cache:
+        key: grpc-cpp-plugin-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
         paths:
-        - grpc_cpp_plugin
+          - /tmp/grpc_cpp_plugin
 
   libsinsp:
     machine: true
@@ -177,13 +188,12 @@ jobs:
     - attach_workspace:
         at: /go/src/github.com/stackrox/collector
 
+    - restore_cache:
+        key: grpc-cpp-plugin-{{ checksum "/go/src/github.com/stackrox/collector/build/scripts/install-grpc-cpp-plugin.sh" }}
+
     - run:
-        name: Install grpc plugin
-        working_directory: /go/src/github.com/stackrox/collector
-        command: |
-          sudo install grpc_cpp_plugin /usr/local/bin/
-          rm grpc_cpp_plugin
-          which grpc_cpp_plugin
+        name: Prep grpc plugin
+        command: sudo install /tmp/grpc_cpp_plugin /usr/local/bin/
 
     - run:
         name: Load collector builder Docker image
