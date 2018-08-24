@@ -29,11 +29,8 @@ COPY build/install_prometheus.sh build-tmp/install_prometheus.sh
 RUN build-tmp/install_prometheus.sh
 
 # GoogleMock (and GoogleTest) are opinionated about how to install the library
-RUN cd /usr/src/gmock \
- && cmake CMakeLists.txt \
- && make -j 6 \
- && cp libgmock*.a /usr/lib \
- && cp gtest/libgtest*.a /usr/lib
+COPY build/build_gmock.sh build-tmp/build_gmock.sh
+RUN build-tmp/build_gmock.sh
 
 # cURL 7.42 or higher is required for UNIX socket access
 ARG CURL_REVISION=curl-7_57_0
