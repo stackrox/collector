@@ -155,8 +155,16 @@ jobs:
           sudo mkdir -m 0777 -p /go/src /go/bin /go/pkg
           mkdir -p /go/src/github.com/stackrox/collector
 
+    - run:
+        name: Login to Docker Hub
+        command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+
     - checkout:
         path: /go/src/github.com/stackrox/collector
+
+    - run:
+        name: Restore sysdig builder cache image
+        command: docker pull stackrox/collector-builder:sysdig || true
 
     - run:
         name: Build libsinsp Wrapper
@@ -168,6 +176,11 @@ jobs:
         command: |
           ls -lh /go/src/github.com/stackrox/collector/collector/container/libs
           file   /go/src/github.com/stackrox/collector/collector/container/libs/libsinsp-wrapper.so
+          docker images | grep collector
+
+    - run:
+        name: Save sysdig builder cache image
+        command: docker push stackrox/collector-builder:sysdig
 
     - persist_to_workspace:
         root: /go/src/github.com/stackrox/collector
