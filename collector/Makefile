@@ -19,9 +19,9 @@ image: container/bin/collector container/Dockerfile container/scripts/
 
 .PHONY: build_collector
 build_collector:
-	( docker images --format "{{.Repository}}" | grep '^build_collector$$') || docker build -t build_collector -f Dockerfile .
+	( docker images --format "{{.Repository}}" | grep '^build_collector$$' ) || ( cd $(BASE_PATH)/builder && docker build -t build_collector -f Dockerfile . )
 
-container/bin/collector: $(HDRS) $(SRCS) generated-srcs container/libs/libsinsp-wrapper.so build_collector Dockerfile
+container/bin/collector: $(HDRS) $(SRCS) generated-srcs container/libs/libsinsp-wrapper.so build_collector
 	mkdir -p container/bin
 	docker rm -f build_collector || true
 	docker run \
