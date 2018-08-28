@@ -25,8 +25,20 @@ crawl-centos: build-crawl-container
 	sed -e :a -e '/^\n*$$/{$$d;N;ba' -e '}' -i '' supported-kernels/centos-uncrawled.txt
 	rm centos_urls_tmp.json
 
+.PHONY: crawl-kops
+crawl-kops: build-crawl-container
+	# kbuild tools are required for each major version of the kernel for Debian.
+	echo 'http://http.us.debian.org/debian/pool/main/l/linux-tools/linux-kbuild-4.4_4.4-4~bpo8+1_amd64.deb' > supported-kernels/kops.txt
+	docker run --rm -i --entrypoint python3 kernel-crawler repo-crawler.py --print apt http://dist.kope.io/apt jessie main --match-prefix=Package=linux-headers-4 1>> supported-kernels/kops.txt
+
+.PHONY: crawl-amazon
+crawl-amazon: build-crawl-container
+# amazon doesn't actually publish a GPG signature for the package manifest, so
+# we don't actually supply that argument here.
+	docker run --rm -i --entrypoint python3 kernel-crawler repo-crawler.py --print yum http://amazonlinux.us-west-2.amazonaws.com/2017.12/core/latest/x86_64/mirror.list --match-exact=name=kernel-devel > supported-kernels/amazon.txt
+
 .PHONY: crawl
-crawl: build-crawl-container crawl-centos
+crawl: build-crawl-container crawl-centos crawl-kops crawl-amazon
 	docker run --rm -i kernel-crawler crawl CoreOS > supported-kernels/coreos.txt
 	docker run --rm -i kernel-crawler crawl Ubuntu > supported-kernels/ubuntu-standard.txt
 	docker run --rm -i kernel-crawler crawl Ubuntu-AWS > supported-kernels/ubuntu-aws.txt
@@ -36,6 +48,10 @@ crawl: build-crawl-container crawl-centos
 	# kbuild tools are required for each major version of the kernel for Debian.
 	echo 'http://http.us.debian.org/debian/pool/main/l/linux-tools/linux-kbuild-4.4_4.4-4~bpo8+1_amd64.deb' > supported-kernels/kops.txt
 	docker run --rm -i --entrypoint python3 kernel-crawler apt-crawler.py /tmp 1>> supported-kernels/kops.txt
+
+.PHONY: build-amazon
+build-amazon:
+	./build-modules RedHat supported-kernels/amazon.txt
 
 .PHONY: build-centos-uncrawled
 build-centos-uncrawled:
@@ -79,22 +95,10 @@ build-coreos:
 
 .PHONY: build-kops
 build-kops:
-	docker volume rm ko-kops || true
-	docker volume create ko-kops
-	docker run \
-		--rm \
-		-i \
-		-v $(CURDIR)/container/kernel-modules:/output \
-		-v $(CURDIR)/packages:/packages \
-		-v ko-kops:/scratch \
-		-v $(CURDIR)/../ext/sysdig/src:/sysdig-src \
-		build-kernel-modules \
-		Debian \
-		< supported-kernels/kops.txt
-	docker volume rm ko-kops
+	./build-modules Debian supported-kernels/kops.txt
 
 .PHONY: build
-build: build-kops build-coreos build-centos build-centos-uncrawled build-ubuntu
+build: build-kops build-coreos build-amazon build-centos build-centos-uncrawled build-ubuntu
 
 .PHONY: build-container
 build-container:

@@ -10,65 +10,76 @@ fatal() {
 
 [ -n "$CIRCLE_NODE_INDEX" ] || fatal "No parallelism."
 
-[ "$CIRCLE_NODE_TOTAL" -eq 9 ] || fatal "Bad parallelism node count."
+[ "$CIRCLE_NODE_TOTAL" -eq 11 ] || fatal "Bad parallelism node count."
 
 case "$CIRCLE_NODE_INDEX" in
     0)
-        echo "Running parallel job as node 1/9."
+        echo "Running parallel job as node 1/11."
         echo "Building CoreOS kernel modules."
         exec make -C kernel-modules build-coreos
         ;;
 
     1)
-        echo "Running parallel job as node 2/9."
+        echo "Running parallel job as node 2/11."
         echo "Building CentOS kernel modules."
         exec make -C kernel-modules build-centos
         ;;
 
     2)
-        echo "Running parallel job as node 3/9."
+        echo "Running parallel job as node 3/11."
         echo "Building CentOS (uncrawled) kernel modules, 1/2."
         ./scripts/partition kernel-modules/supported-kernels/centos-uncrawled.txt 2 0
         exec make -C kernel-modules build-centos-uncrawled
         ;;
 
     3)
-        echo "Running parallel job as node 4/9."
+        echo "Running parallel job as node 4/11."
         echo "Building CentOS (uncrawled) kernel modules, 2/2."
         ./scripts/partition kernel-modules/supported-kernels/centos-uncrawled.txt 2 1
         exec make -C kernel-modules build-centos-uncrawled
         ;;
 
     4)
-        echo "Running parallel job as node 5/9."
+        echo "Running parallel job as node 5/11."
         echo "Building Ubuntu (AWS) kernel modules."
         exec make -C kernel-modules build-ubuntu-aws
         ;;
 
     5)
-        echo "Running parallel job as node 6/9."
+        echo "Running parallel job as node 6/11."
         echo "Building Ubuntu (Azure) kernel modules."
         exec make -C kernel-modules build-ubuntu-azure
         ;;
 
     6)
-        echo "Running parallel job as node 7/9."
+        echo "Running parallel job as node 7/11."
         echo "Building Ubuntu (GCP) kernel modules."
         exec make -C kernel-modules build-ubuntu-gcp
         ;;
 
     7)
-        echo "Running parallel job as node 8/9."
+        echo "Running parallel job as node 8/11."
         echo "Building Ubuntu (GKE) kernel modules."
         exec make -C kernel-modules build-ubuntu-gke
         ;;
 
     8)
-        echo "Running parallel job as node 9/9."
+        echo "Running parallel job as node 9/11."
         echo "Building Ubuntu (Standard) kernel modules."
         exec make -C kernel-modules build-ubuntu-standard
         ;;
 
+    9)
+        echo "Running parallel job as node 10/11."
+        echo "Building Debian (kops) kernel modules."
+        exec make -C kernel-modules build-kops
+        ;;
+
+    10)
+        echo "Running parallel job as node 11/11."
+        echo "Building RedHat (Amazon) kernel modules."
+        exec make -C kernel-modules build-amazon
+        ;;
 esac
 
 fatal "Bad parallelism node index."
