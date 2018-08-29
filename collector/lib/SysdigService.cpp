@@ -173,6 +173,14 @@ void SysdigService::Run(const std::atomic<CollectorService::ControlValue>& contr
   SafeBuffer message_buffer(kMessageBufferSize);
   SafeBuffer key_buffer(kKeyBufferSize);
 
+  auto threads = inspector_->m_thread_manager->get_threads();
+  for (auto &kv : *threads) {
+    auto tinfo = &(kv.second);
+    if (tinfo != NULL && tinfo->is_main_thread() && tinfo->m_container_id != "") {
+      CLOG(INFO) << "Bootstrap Existing Process: containerid=" << tinfo->m_container_id << " exe=" << tinfo->m_exe << " pid=" << tinfo->m_pid;
+    }
+  }
+
   while (control.load(std::memory_order_relaxed) == CollectorService::RUN) {
     SignalType signal_type = GetNext(&message_buffer, &key_buffer);
     auto& signal_writer = signal_writers_[signal_type];
