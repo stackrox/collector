@@ -24,6 +24,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "SignalServiceClient.h"
 #include "Logging.h"
 
+#include <fstream>
 #include <google/protobuf/message.h>
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 
@@ -37,9 +38,21 @@ void SignalServiceClient::CreateGRPCStub(const gRPCConfig& config) {
   std::shared_ptr<grpc::ChannelCredentials> channel_creds;
   if (!config.ca_cert.empty() && !config.client_cert.empty() && !config.client_key.empty()) {
     grpc::SslCredentialsOptions sslOptions;
-    sslOptions.pem_root_certs = config.ca_cert;
-    sslOptions.pem_private_key = config.client_key;
-    sslOptions.pem_cert_chain = config.client_cert;
+
+    std::ifstream cafs(config.ca_cert);
+    std::stringstream buffer;
+    buffer << cafs.rdbuf();
+    sslOptions.pem_root_certs = buffer.str();
+    buffer.str(std::string());
+
+    std::ifstream keyfs(config.client_key);
+    buffer << keyfs.rdbuf();
+    sslOptions.pem_private_key = buffer.str();
+    buffer.str(std::string());
+
+    std::ifstream certfs(config.client_cert);
+    buffer << certfs.rdbuf();
+    sslOptions.pem_cert_chain = buffer.str();
 
     channel_creds = grpc::SslCredentials(sslOptions);
   }
