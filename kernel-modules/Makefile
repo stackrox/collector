@@ -102,7 +102,7 @@ build: build-kops build-coreos build-amazon build-centos build-centos-uncrawled 
 
 .PHONY: build-container
 build-container:
-	docker build -t build-kernel-modules -f build/Dockerfile .
+	docker build -t build-kernel-modules ./build
 
 # TODO: This isn't _really_ a phony target.
 .PHONY: container/kernel-modules

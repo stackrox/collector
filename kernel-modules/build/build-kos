@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 #### LICENSING:
 #### This file is derived from sysdig, in scripts/build-probe-binaries.
@@ -12,334 +13,185 @@
 # The precompiled binary is then obtained at runtime by sysdig-probe-loader
 # Ideally, the community should expand this stuff with better support
 #
-set -euo pipefail
 
-#
-# For continuous integration log purposes, wget prints its own output to stderr
-# so it can be convenient to redirect it to a file. This can be done directly
-# at runtime.
-#
+build_modules() {
+    kernel_directory="$1"
+    kernel_release="$2"
+    output_module="$3"
 
-BASEDIR=/scratch
-URL_TIMEOUT=300
-RETRY=10
+    echo "Building modules for ${kernel_release}"
 
-DISTRO="$1"
+    cd /sysdig-src
+    KERNELDIR="$kernel_directory" \
+        make -C driver clean || true
 
-OUTPUT_DIR=/output/$DISTRO/
-if [ ! -d $OUTPUT_DIR ]; then
-	mkdir -p $OUTPUT_DIR
-fi
+    rm -rf ko-build || true
+    mkdir ko-build
+    cd ko-build
 
-function build_modules {
-	SYSDIG_OUTPUT_KO=$OUTPUT_DIR/collector-$KERNEL_RELEASE.ko
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-fno-pie" -DPROBE_NAME=collector -DBUILD_USERSPACE=OFF ..
+    KERNELDIR="$kernel_directory" \
+        make -j 6 driver
 
-	if [ ! -f $SYSDIG_OUTPUT_KO ]; then
+    sysdig_ko=driver/collector.ko
+    strip -g "$sysdig_ko"
 
-		echo Building modules for $KERNEL_RELEASE [${FUNCNAME[1]}]
+    ko_version=$(/sbin/modinfo "$sysdig_ko" | grep vermagic | tr -s " " | cut -d " " -f 2)
+    if [ "$ko_version" != "$kernel_release" ]; then
+        echo "Corrupted probe, KO_VERSION=$ko_version, KERNEL_RELEASE=$kernel_release"
+        return 1
+    fi
 
-		cd /sysdig-src
-		export PROBE_NAME=collector
-		SYSDIG_KO=driver/$PROBE_NAME.ko
-		make -C driver clean || true
-		rm -rf ko-build || true
-		mkdir ko-build
-		cd ko-build
-		cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-fno-pie" -DPROBE_NAME=$PROBE_NAME -DBUILD_USERSPACE=OFF ..
-		make -j 6 driver
-		strip -g $SYSDIG_KO
-
-		KO_VERSION=$(/sbin/modinfo $SYSDIG_KO | grep vermagic | tr -s " " | cut -d " " -f 2)
-		if [ "$KO_VERSION" != "$KERNEL_RELEASE" ]; then
-			echo "Corrupted probe, KO_VERSION " $KO_VERSION ", KERNEL_RELEASE " $KERNEL_RELEASE
-			exit 1
-		fi
-
-		cp $SYSDIG_KO $SYSDIG_OUTPUT_KO
-	else
-		echo Skipping $KERNEL_RELEASE.ko \(already built\)
-	fi
-
-	cd $BASEDIR
+    cp -v "$sysdig_ko" "$output_module"
 }
 
-function ubuntu_build {
-	local URL=$1
-	local DEB
-	DEB=$(echo $URL | grep -o '[^/]*$')
+ubuntu_build() {
+    if [[ $# -ne 3 ]]; then
+        echo "Incorrect arguments to ubuntu_build() ($* given)"
+        return 1
+    fi
 
-	# Find out the kernel version number; this does _not_ include
-	# platform modifiers like "-generic", "-azure", etc.
-	local KERNEL_VERSION_FULL
-	KERNEL_VERSION_FULL=$(echo $DEB | grep -E -o "[0-9]{1}\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+")		# ex. 3.13.0-24.47
-	local KERNEL_VERSION
-	KERNEL_VERSION=$(echo $KERNEL_VERSION_FULL | grep -E -o "[0-9]{1}\.[0-9]+\.[0-9]+-[0-9]+")	# ex. 3.13.0-24
-	local KERNEL_UPDATE
-	KERNEL_UPDATE=$(echo $KERNEL_VERSION_FULL | grep -E -o "[0-9]+$")							# ex. 47
+    local release="$1"
+    local specific_deb_file="/packages/$2"
+    local all_deb_file="/packages/$3"
+    local module_file="/output/Ubuntu/collector-${release}.ko"
 
-	cd $BASEDIR
+    echo "Running an Ubuntu build"
+    echo "  release           | $release"
+    echo "  specific_deb_file | $specific_deb_file"
+    echo "  all_deb_file      | $all_deb_file"
+    echo "  module_file       | $module_file"
 
-	if [ ! -d $KERNEL_VERSION ]; then
-		mkdir $KERNEL_VERSION
-	fi
-	cd $KERNEL_VERSION
+    dpkg -x "$specific_deb_file" ./
+    dpkg -x "$all_deb_file" ./
 
-	if [ ! -d $KERNEL_UPDATE ]; then
-		mkdir $KERNEL_UPDATE
-	fi
-	cd $KERNEL_UPDATE
-
-	if [ ! -f $DEB ]; then
-		echo Downloading $DEB [Ubuntu]
-		get_or_download $URL ./
-		dpkg -x $DEB ./
-	fi
-
-	NUM_DEB=$(ls linux-*.deb -1 | wc -l)
-
-	if [ $NUM_DEB -eq 2 ]; then
-		# Find out the kernel version that will be returned from `uname -r` on a
-		# machine running this kernel.
-		# This can be found in the name of the AMD64 linux-headers package.
-		# For example:
-		#    linux-headers-4.4.0-22-generic_4.4.0-22.40_amd64.deb
-		#    linux-headers-4.13.0-1011-gcp_4.13.0-1011.15_amd64.deb
-		# yield:
-		#    4.4.0-22-generic
-		#    4.13.0-1011-gcp
-		local KERNEL_RELEASE
-		KERNEL_RELEASE=$(ls -1 linux-headers-*_amd64* | head -n 1 | grep -P -o "(?<=linux-headers-)([0-9]{1}\.[0-9]+\.[0-9]+(-[0-9a-z]+)+)(?=_)")
-
-		cd $BASEDIR
-
-		export KERNELDIR=$BASEDIR/$KERNEL_VERSION/$KERNEL_UPDATE/usr/src/linux-headers-$KERNEL_RELEASE
-		build_modules
-		rm -rf $KERNEL_RELEASE
-		# Clean up unpacked packages:
-		rm -rf ${BASEDIR:?}/$KERNEL_VERSION/$KERNEL_UPDATE
-		echo
-	fi
-
-	cd $BASEDIR
+    build_modules "$PWD/usr/src/linux-headers-${release}" "$release" "$module_file"
 }
 
-function rhel_build {
-	#
-	# The function just requires the rpm url
-	#
+rhel_build() {
+    if [[ $# -ne 2 ]]; then
+        echo "Incorrect arguments to rhel_build() ($* given)"
+        return 1
+    fi
 
-	# Get all the parameters needed
-	URL=$1
-	RPM=$(echo $URL | grep -o '[^/]*$')
-	KERNEL_RELEASE=$(echo $RPM | awk 'match($0, /[^kernel(\-lt|\-ml)?\-(core\-|devel\-)?].*[^(\.rpm)]/){ print substr($0, RSTART, RLENGTH) }')
+    local release="$1"
+    local rpm_file="/packages/$2"
+    local module_file="/output/RedHat/collector-${release}.ko"
 
-	cd ${BASEDIR}
+    echo "Running a RedHat build"
+    echo "  release     | $release"
+    echo "  rpm_file    | $rpm_file"
+    echo "  module_file | $module_file"
 
-	if [ ! -d $KERNEL_RELEASE ]; then
-		mkdir $KERNEL_RELEASE
-	fi
+    rpm2cpio "$rpm_file" | cpio -idm
 
-	cd $KERNEL_RELEASE
-
-	if [ ! -f $RPM ]; then
-		echo Downloading $RPM [RHEL and CentOS]
-		get_or_download $URL ./
-		rpm2cpio $RPM | cpio -idm
-	fi
-
-	cd $BASEDIR
-
-	export KERNELDIR=$BASEDIR/$KERNEL_RELEASE/usr/src/kernels/$KERNEL_RELEASE
-	build_modules
-	# Clean up unpacked packages:
-	rm -rf $BASEDIR/$KERNEL_RELEASE
-	echo
-
-	cd $BASEDIR
+    build_modules "$PWD/usr/src/kernels/${release}" "$release" "$module_file"
 }
 
-function debian_build {
+debian_build() {
+    if [[ $# -ne 3 ]]; then
+        echo "Incorrect arguments to debian_build() ($* given)"
+        return 1
+    fi
 
-	URL="${1}"
-	DEB="$(echo ${URL} | grep -o '[^/]*$')"
-	echo "$URL -> $DEB"
+    local release="$1"
+    local kbuild_deb_file="/packages/$2"
+    local header_deb_file="/packages/$3"
+    local module_file="/output/Debian/collector-${release}.ko"
 
-	cd ${BASEDIR}
+    echo "Running a Debian build"
+    echo "  release         | $release"
+    echo "  kbuild_deb_file | $kbuild_deb_file"
+    echo "  header_deb_file | $header_deb_file"
+    echo "  module_file     | $module_file"
 
-	if [[ "${DEB}" == *"kbuild"* ]]; then
-		if [[ ! -d ${BASEDIR}/common-dependencies/debian/kbuild/ ]]; then
-			mkdir -p ${BASEDIR}/common-dependencies/debian/kbuild
-		fi
-		if [ ! -f ${BASEDIR}/common-dependencies/debian/kbuild/${DEB} ]; then
-			echo "Downloading ${DEB} [Debian]"
-			get_or_download ${URL} ${BASEDIR}/common-dependencies/debian/kbuild/
-		fi
-		return
-	else
-		KERNEL_RELEASE=$(echo ${DEB} | grep -E -o "[0-9]{1}\.[0-9]+\.[0-9]+(-[0-9]+)?"| head -1)
-		KERNEL_MAJOR=$(echo ${KERNEL_RELEASE} | grep -E -o "[0-9]{1}\.[0-9]+")
-		PACKAGE=$(echo ${DEB} | grep -E -o "(common_[0-9]{1}\.[0-9]+.*amd64|amd64_[0-9]{1}\.[0-9]+.*amd64|k8s_[0-9]{1}\.[0-9]+.*amd64)" | sed -E 's/(common_|amd64_|_amd64)//g')
+    dpkg -x "$header_deb_file" ./
+    dpkg -x "$kbuild_deb_file" ./
 
-		if [[ ! -d ${KERNEL_RELEASE} ]]; then
-			mkdir ${KERNEL_RELEASE}
-		fi
+    # Fix symbolic links
+    unlink "lib/modules/${release}/build"
+    ln -s "usr/src/linux-headers-${release}" "lib/modules/${release}/build"
 
-		cd ${KERNEL_RELEASE}
+    # Hack Makefile
+    sed -i 's/@://' "usr/src/linux-headers-${release}/Makefile"
+    sed -i 's|$(cmd) %.*$|$(cmd) : all|' "usr/src/linux-headers-${release}/Makefile"
 
-		if [ ! -d ${PACKAGE} ]; then
-			mkdir ${PACKAGE}
-		fi
-
-		cd ${PACKAGE}
-
-		if [ ! -f "${DEB}" ]; then
-			echo "Downloading ${DEB} [Debian]"
-			get_or_download ${URL} ./
-			dpkg -x "${DEB}" ./
-		fi
-	fi
-
-	NUM_DEB=$(ls linux-*.deb -1| grep -v kbuild | wc -l)
-
-	if [[ ${NUM_DEB} -eq 1 ]]; then
-		set +e
-			KBUILD_PACKAGE=$(ls -t ${BASEDIR}/common-dependencies/debian/kbuild | grep  "kbuild\-${KERNEL_MAJOR}" | head -1)
-		set -e
-		if [[ ! -z ${KBUILD_PACKAGE} ]]; then
-			cp ${BASEDIR}/common-dependencies/debian/kbuild/${KBUILD_PACKAGE} .
-			dpkg -x ${KBUILD_PACKAGE} ./
-
-			local KERNEL_FOLDER=${KERNEL_RELEASE}
-			# KERNEL_RELEASE=$(ls boot/config-* | sed 's|boot/config-||')
-			KERNEL_RELEASE=$(ls -1 linux-headers-*_amd64* | head -n 1 | grep -P -o "(?<=linux-headers-)([0-9]{1}\.[0-9]+\.[0-9]+(-[0-9a-z]+)+)(?=_)")
-
-			export KERNELDIR=${BASEDIR}/${KERNEL_FOLDER}/${PACKAGE}/usr/src/linux-headers-${KERNEL_RELEASE}
-
-			#fix symbolic links
-			unlink ${BASEDIR}/${KERNEL_FOLDER}/${PACKAGE}/lib/modules/${KERNEL_RELEASE}/build
-			ln -s ${BASEDIR}/${KERNEL_FOLDER}/${PACKAGE}/usr/src/linux-headers-${KERNEL_RELEASE} ${BASEDIR}/${KERNEL_FOLDER}/${PACKAGE}/lib/modules/${KERNEL_RELEASE}/build
-
-			# common_folder=$(ls ${BASEDIR}/${KERNEL_FOLDER}/${PACKAGE}/usr/src/ | egrep '*common')
-			# unlink ${BASEDIR}/${KERNEL_FOLDER}/${PACKAGE}/lib/modules/${KERNEL_RELEASE}/source
-			# ln -s ${BASEDIR}/${KERNEL_FOLDER}/${PACKAGE}/usr/src/${common_folder}  ${BASEDIR}/${KERNEL_FOLDER}/${PACKAGE}/lib/modules/${KERNEL_RELEASE}/source
-
-			#hack Makefile
-			# sed -i '0,/MAKEARGS.*$/s||MAKEARGS := -C '"${BASEDIR}/${KERNEL_FOLDER}/${PACKAGE}/usr/src/${common_folder}"' O='"${BASEDIR}/${KERNEL_FOLDER}/${PACKAGE}/usr/src/linux-headers-${KERNEL_RELEASE}"'|' ${BASEDIR}/${KERNEL_FOLDER}/${PACKAGE}/usr/src/linux-headers-${KERNEL_RELEASE}/Makefile
-			sed -i 's/@://' ${BASEDIR}/${KERNEL_FOLDER}/${PACKAGE}/usr/src/linux-headers-${KERNEL_RELEASE}/Makefile
-			sed -i 's|$(cmd) %.*$|$(cmd) : all|' ${BASEDIR}/${KERNEL_FOLDER}/${PACKAGE}/usr/src/linux-headers-${KERNEL_RELEASE}/Makefile
-
-			cd ${BASEDIR}
-
-			build_modules
-
-			# Clean up unpacked packages:
-			rm -rf ${BASEDIR}/${KERNEL_FOLDER}
-			echo
-		fi
-	fi
-
-	cd ${BASEDIR}
+    build_modules "$PWD/usr/src/linux-headers-${release}" "$release" "$module_file"
 }
 
-function coreos_build {
-	BASE_URL="$1/bundle.tgz"
-	TEMP_DIR="$(mktemp --dir -p /scratch)"
+coreos_build() {
+    if [[ $# -ne 2 ]]; then
+        echo "Incorrect arguments to coreos_build() ($* given)"
+        return 1
+    fi
 
-	cd "$TEMP_DIR"
+    local release="$1"
+    local bundle_file="/packages/$2"
+    local module_file="/output/CoreOS/collector-${release}.ko"
 
-	get_or_download "$BASE_URL" ./
+    echo "Running a CoreOS build"
+    echo "  release     | $release"
+    echo "  bundle_file | $bundle_file"
+    echo "  module_file | $module_file"
 
-	tar --strip-components=2 -xf bundle.tgz --wildcards 'usr/boot/config*'
-	tar --strip-components=1 -xf bundle.tgz 'lib/modules'
+    tar --strip-components=2 -xf "$bundle_file" --wildcards 'usr/boot/config*'
+    tar --strip-components=1 -xf "$bundle_file" 'lib/modules'
 
-	echo "Building"
-	# https://groups.google.com/forum/#!topic/coreos-dev/Z8Q7sIy6YwE
-	sed -i 's/CONFIG_INITRAMFS_SOURCE=""/CONFIG_INITRAMFS_SOURCE="bootengine.cpio"\nCONFIG_INITRAMFS_ROOT_UID=0\nCONFIG_INITRAMFS_ROOT_GID=0/' config
-	sed -i 'N;s/\(CONFIG_RD_LZ4=.\)\n\(CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=\)/\1\nCONFIG_INITRAMFS_COMPRESSION=".gz"\n\2/' config
-	KERNEL_RELEASE=$(ls config-* | sed s/config-//)
+    # https://groups.google.com/forum/#!topic/coreos-dev/Z8Q7sIy6YwE
+    sed -i 's/CONFIG_INITRAMFS_SOURCE=""/CONFIG_INITRAMFS_SOURCE="bootengine.cpio"\nCONFIG_INITRAMFS_ROOT_UID=0\nCONFIG_INITRAMFS_ROOT_GID=0/' config
+    sed -i 'N;s/\(CONFIG_RD_LZ4=.\)\n\(CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=\)/\1\nCONFIG_INITRAMFS_COMPRESSION=".gz"\n\2/' config
 
-	export KERNELDIR=$PWD/modules/$KERNEL_RELEASE/build
-	build_modules
-	cd $BASEDIR
-	# Clean up unpacked packages:
-	rm -rf "$TEMP_DIR"
+    build_modules "$PWD/modules/${release}/build" "$release" "$module_file"
 }
 
-function get_or_download() {
-	URL="$1"
-	DIR="$2"
+main() {
+    if [[ $# -lt 4 ]]; then
+        echo "Insufficient arguments"
+        return 1
+    fi
 
-	CACHE_PATH="/packages/${URL}"
-	if [ -f "${CACHE_PATH}" ]; then
-		echo "Using cached ${URL}"
-	else
-		echo "Downloading ${URL}"
-		wget --no-verbose --timeout=${URL_TIMEOUT} --tries=${RETRY} -P "$(dirname ${CACHE_PATH})" ${URL}
-		echo "Done downloading"
-	fi
+    distro="$1"
+    version="$2"
+    flavor="$3"
+    shift 3
+    files="$@"
 
-	cp ${CACHE_PATH} ${DIR}
+    rm -rf /scratch/tmp || true
+    mkdir -p /scratch/tmp
+    cd /scratch/tmp
+
+    mkdir -p \
+        /output/Ubuntu \
+        /output/RedHat \
+        /output/Debian \
+        /output/CoreOS
+
+    case "$distro" in
+        Ubuntu)
+            echo Building Ubuntu
+            ubuntu_build "${version}-${flavor}" $files
+        ;;
+
+        RedHat)
+            echo Building RHEL
+            rhel_build "${version}.${flavor}" $files
+        ;;
+
+        Debian)
+            echo Building Debian
+            debian_build "${version}-${flavor}" $files
+        ;;
+
+        CoreOS)
+            echo Building CoreOS
+            coreos_build "${version}-${flavor}" $files
+        ;;
+
+        *)
+            echo Unknown distro.
+            return 1
+        ;;
+    esac
 }
 
-INPUT="${2:-/dev/stdin}"
-echo "Reading package URLs from $INPUT"
-
-case "$DISTRO" in
-	Ubuntu)
-		echo Building Ubuntu
-
-		while read URL
-		do
-			echo "Processing package $URL"
-			ubuntu_build "$(echo $URL | tr -d '\r')"
-		done < $INPUT
-	;;
-
-	RedHat)
-		echo Building RHEL
-
-		while read URL
-		do
-			echo "Processing package $URL"
-			rhel_build "$(echo $URL | tr -d '\r')"
-		done < $INPUT
-	;;
-
-	Fedora)
-		echo Building Fedora
-
-		while read URL
-		do
-			echo "Processing package $URL"
-			rhel_build "$(echo $URL | tr -d '\r')"
-		done < $INPUT
-	;;
-
-	Debian)
-		echo Building Debian
-
-		while read URL
-		do
-			echo "Processing package $URL"
-			debian_build "$(echo $URL | tr -d '\r')"
-		done < $INPUT
-	;;
-
-	CoreOS)
-		echo Building CoreOS
-
-		while read URL
-		do
-			echo "Processing package $URL"
-			coreos_build "$(echo $URL | tr -d '\r')"
-		done < $INPUT
-	;;
-
-	*)
-		echo Unknown distro.
-		rm -rf $OUTPUT_DIR || true
-		exit 1
-	;;
-esac
-
-echo 'Done!'
+main "$@"

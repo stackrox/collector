@@ -1,3 +1,11 @@
+FROM golang:1.10.3-alpine3.8 as builder
+
+COPY kobuild /go/src/github.com/stackrox/collector/kernel-modules/build/kobuild
+
+WORKDIR /go/src/github.com/stackrox/collector/kernel-modules/build/kobuild
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o /tmp/kobuild .
+
 FROM debian:jessie-slim
 
 RUN apt-get update \
@@ -32,7 +40,10 @@ RUN ln -s /usr/bin/gcc-4.8 /usr/bin/gcc-4.7 \
  && ln -s /usr/bin/gcc-4.8 /usr/bin/gcc-4.6 \
  ;
 
+COPY --from=builder /tmp/kobuild /usr/bin/
+
 RUN mkdir -p /output
-COPY build/build-kos /
+COPY build-kos /usr/bin/
+
 WORKDIR /scratch
-ENTRYPOINT [ "/build-kos" ]
+ENTRYPOINT [ "/usr/bin/kobuild" ]
