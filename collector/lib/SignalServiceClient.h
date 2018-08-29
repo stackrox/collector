@@ -28,6 +28,7 @@ You should have received a copy of the GNU General Public License along with thi
 // This class defines our GRPC client abstraction
 
 #include "SafeBuffer.h"
+#include "CollectorService.h"
 
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
@@ -59,8 +60,7 @@ struct GRPCServerOptions {
 
 class SignalServiceClient {
  public:
-  // todo: Use struct GRPCServerOptions options; Plum ssl config options.
-  void CreateGRPCStub(std::string gRPCServer);
+  void CreateGRPCStub(const gRPCConfig& config);
   ~SignalServiceClient() {};
 
   bool PushSignals(const SafeBuffer& buffer);

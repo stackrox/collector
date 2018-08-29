@@ -33,10 +33,9 @@ void SignalWriterFactory::SetupKafka(const rd_kafka_conf_t* conf_template) {
   kafka_client_ = std::make_shared<KafkaClient>(conf_template);
 }
 
-// todo: pass in a struct with ssl options
-void SignalWriterFactory::SetupGRPC(std::string gRPCServer) {
+void SignalWriterFactory::SetupGRPC(const gRPCConfig& config) {
   grpc_client_ = std::make_shared<SignalServiceClient>();
-  grpc_client_->CreateGRPCStub(gRPCServer);
+  grpc_client_->CreateGRPCStub(config);
 }
 
 std::unique_ptr<SignalWriter> SignalWriterFactory::CreateSignalWriter(const std::string& output_spec) {

@@ -29,20 +29,27 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-void SignalServiceClient::CreateGRPCStub(std::string gRPCServer) {
-  // Create a default SSL ChannelCredentials object.
-  // For advanced use cases such as modifying the root CA
-  // or using client certs, the corresponding options can be
-  // set in the SslCredentialsOptions parameter passed to the factory method.
-  // https://grpc.io/docs/guides/auth.html
-
+void SignalServiceClient::CreateGRPCStub(const gRPCConfig& config) {
   // Warning: When using static grpc libs, we have to explicitly call grpc_init()
   // https://github.com/grpc/grpc/issues/11366
   grpc_init();
-  
-  //auto channel_creds = grpc::SslCredentials(grpc::SslCredentialsOptions());
-  // Create a channel using the credentials created in the previous step.
-  auto channel = grpc::CreateChannel(gRPCServer, grpc::InsecureChannelCredentials());
+
+  std::shared_ptr<grpc::ChannelCredentials> channel_creds;
+  if (!config.ca_cert.empty() && !config.client_cert.empty() && !config.client_key.empty()) {
+    grpc::SslCredentialsOptions sslOptions;
+    sslOptions.pem_root_certs = config.ca_cert;
+    sslOptions.pem_private_key = config.client_key;
+    sslOptions.pem_cert_chain = config.client_cert;
+
+    channel_creds = grpc::SslCredentials(sslOptions);
+  }
+
+  std::shared_ptr<grpc::Channel> channel;
+  if (!channel_creds) {
+    channel = grpc::CreateChannel(config.grpc_server.str(), grpc::InsecureChannelCredentials());
+  } else {
+    channel = grpc::CreateChannel(config.grpc_server.str(), channel_creds);
+  }
 
   // Create a stub on the channel.
   stub_ = SignalService::NewStub(channel);
