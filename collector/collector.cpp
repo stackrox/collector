@@ -438,13 +438,29 @@ int main(int argc, char **argv) {
     }
   }
 
-  Address grpc_server_endpoint;
+  gRPCConfig grpc_config;
   if (useGRPC) {
-      std::string error_str;
-      CLOG(INFO) << "gRPC server=" << args->GRPCServer();
-      if (!ParseAddress(args->GRPCServer(), &grpc_server_endpoint, &error_str)) {
-          CLOG(FATAL) << "Failed to parse GRPC server address: " << error_str;
+    std::string error_str;
+    CLOG(INFO) << "gRPC server=" << args->GRPCServer();
+    if (!ParseAddress(args->GRPCServer(), &grpc_config.grpc_server, &error_str)) {
+        CLOG(FATAL) << "Failed to parse GRPC server address: " << error_str;
+    }
+    const auto& tlsConfig = collectorConfig["tlsConfig"];
+    if (!tlsConfig.isNull()) {
+      std::string caCertPath = tlsConfig["caCertPath"].asString();
+      std::string clientCertPath = tlsConfig["clientCertPath"].asString();
+      std::string clientKeyPath = tlsConfig["clientKeyPath"].asString();
+
+      if (!caCertPath.empty() && !clientCertPath.empty() && !clientKeyPath.empty()) {
+        grpc_config.ca_cert = caCertPath;
+        grpc_config.client_cert = clientCertPath;
+        grpc_config.client_key = clientKeyPath;
+      } else {
+        CLOG(ERROR)
+           << "Partial TLS config: CACertPath=" << caCertPath << ", ClientCertPath=" << clientCertPath
+           << ", ClientKeyPath=" << clientKeyPath << "; will not use TLS";
       }
+    }
   }
 
   CollectorConfig config;
@@ -458,7 +474,7 @@ int main(int argc, char **argv) {
   config.getNetworkHealth = getNetworkHealth;
   config.chisel = chisel;
   config.kafkaBrokers = std::move(broker_endpoints);
-  config.gRPCServer = std::move(grpc_server_endpoint);
+  config.grpc_config = std::move(grpc_config);
   config.networkSignalOutput = networkSignalOutput;
   config.processSignalOutput = processSignalOutput;
   config.fileSignalOutput = fileSignalOutput;

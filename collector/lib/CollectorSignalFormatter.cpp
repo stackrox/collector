@@ -159,6 +159,7 @@ ProcessCredentials* CollectorSignalFormatter::CreateProcessCreds(sinsp_evt* even
 NetworkSignal* CollectorSignalFormatter::CreateNetworkSignal(sinsp_evt* event) {
   sinsp_fdinfo_t*  fd_info = event->get_fd_info();
   if (!fd_info) return nullptr;
+  if (fd_info->is_role_none()) return nullptr;
 
   auto signal = Allocate<NetworkSignal>();
 

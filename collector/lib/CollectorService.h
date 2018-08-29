@@ -39,6 +39,13 @@ extern "C" {
 
 namespace collector {
 
+struct gRPCConfig {
+  Address grpc_server;
+  std::string ca_cert;
+  std::string client_cert;
+  std::string client_key;
+};
+
 struct CollectorConfig {
   bool useChiselCache = true;
   bool useKafka = true;
@@ -53,8 +60,7 @@ struct CollectorConfig {
   std::vector<Address> kafkaBrokers;
   std::string chiselsTopic;
 
-  // @todo: Add ssl/tls config options for gRPC
-  Address gRPCServer;
+  gRPCConfig grpc_config;
 
   std::string networkSignalOutput;
   std::string processSignalOutput;

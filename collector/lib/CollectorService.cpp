@@ -181,10 +181,10 @@ bool CollectorService::WaitForGRPCServer() {
   std::string error_str;
   auto interrupt = [this] { return control_->load(std::memory_order_relaxed) == STOP_COLLECTOR; };
   while (!interrupt()) {
-    ConnectivityStatus conn_status = CheckConnectivity(config_.gRPCServer, std::chrono::seconds(1), &error_str, interrupt);
+    ConnectivityStatus conn_status = CheckConnectivity(config_.grpc_config.grpc_server, std::chrono::seconds(1), &error_str, interrupt);
     if (conn_status == ConnectivityStatus::INTERRUPTED) return false;
     else if (conn_status == ConnectivityStatus::ERROR) {
-      CLOG(ERROR) << "Error connecting to gRPC server: " << config_.gRPCServer.str() << ": " << error_str;
+      CLOG(ERROR) << "Error connecting to gRPC server: " << config_.grpc_config.grpc_server.str() << ": " << error_str;
     } else {
         return true;
     }
