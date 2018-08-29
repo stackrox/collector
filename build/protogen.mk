@@ -3,9 +3,9 @@ PATH ?= $(PATH):/go/bin
 
 # Automatically locate all API and data protos.
 PROTO_BASE_PATH := $(BASE_PATH)/proto
-API_SERVICE_PROTOS := $(shell find $(PROTO_BASE_PATH)/api/private/signal-service -name '*.proto')
+API_SERVICE_PROTOS := $(shell find $(PROTO_BASE_PATH)/api/v1 -name '*.proto')
 DATA_PROTOS := $(shell find $(PROTO_BASE_PATH)/data -name '*.proto')
-PRIVATE_RPC_PROTOS := $(shell find $(PROTO_BASE_PATH)/api/private/signal-service -name '*.proto')
+PRIVATE_RPC_PROTOS := $(shell find $(PROTO_BASE_PATH)/api/v1 -name '*.proto')
 
 # DATA_PROTOS, relative to $(BASE_PATH)
 DATA_PROTOS_REL := $(DATA_PROTOS:$(BASE_PATH)/%=%)

@@ -59,7 +59,7 @@ void SysdigService::Init(const CollectorConfig& config) {
   }
   if (config.useGRPC) {
     // todo: pass a gRPC config struct with ssl options
-    factory.SetupGRPC(config.gRPCServer.str());
+    factory.SetupGRPC(config.grpc_config);
   }
   signal_writers_[SIGNAL_TYPE_FILE] = factory.CreateSignalWriter(config.fileSignalOutput);
   signal_writers_[SIGNAL_TYPE_PROCESS] = factory.CreateSignalWriter(config.processSignalOutput);

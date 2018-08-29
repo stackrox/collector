@@ -44,7 +44,7 @@ class SignalWriterFactory {
   std::unique_ptr<SignalWriter> CreateSignalWriter(const std::string& output_spec);
 
   void SetupKafka(const rd_kafka_conf_t* conf_template);
-  void SetupGRPC(std::string gRPCServer);
+  void SetupGRPC(const gRPCConfig& config);
 
  private:
   std::unique_ptr<SignalWriter> CreateStdoutSignalWriter(const std::string& spec);

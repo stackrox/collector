@@ -28,16 +28,16 @@ You should have received a copy of the GNU General Public License along with thi
 // This class defines our GRPC client abstraction
 
 #include "SafeBuffer.h"
+#include "CollectorService.h"
 
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
-#include <google/protobuf/empty.pb.h>
 
-#include "../generated/proto/api/private/signal-service/signal_service.pb.h"
-#include "../generated/proto/api/private/signal-service/signal_service.grpc.pb.h"
+#include "../generated/proto/api/v1/signal.pb.h"
+#include "../generated/proto/api/v1/signal.grpc.pb.h"
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -45,8 +45,8 @@ using grpc::ClientReader;
 using grpc::ClientReaderWriter;
 using grpc::ClientWriter;
 using grpc::Status;
-using google::protobuf::Empty;
-using signal_service::SignalService;
+using v1::Empty;
+using v1::SignalService;
 
 namespace collector {
 
@@ -59,8 +59,7 @@ struct GRPCServerOptions {
 
 class SignalServiceClient {
  public:
-  // todo: Use struct GRPCServerOptions options; Plum ssl config options.
-  void CreateGRPCStub(std::string gRPCServer);
+  void CreateGRPCStub(const gRPCConfig& config);
   ~SignalServiceClient() {};
 
   bool PushSignals(const SafeBuffer& buffer);
@@ -69,8 +68,8 @@ class SignalServiceClient {
   ClientContext context;
 
   std::unique_ptr<SignalService::Stub> stub_;
-  signal_service::SignalStreamMessage signal_stream_;
-  std::unique_ptr<ClientWriter<signal_service::SignalStreamMessage> > grpc_writer_;
+  v1::SignalStreamMessage signal_stream_;
+  std::unique_ptr<ClientWriter<v1::SignalStreamMessage> > grpc_writer_;
 };
 
 

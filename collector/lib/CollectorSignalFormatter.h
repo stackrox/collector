@@ -28,11 +28,11 @@ You should have received a copy of the GNU General Public License along with thi
 #include "ProtoSignalFormatter.h"
 #include "SysdigEventExtractor.h"
 
-#include "../generated/proto/api/private/signal-service/signal_service.pb.h"
+#include "../generated/proto/api/v1/signal.pb.h"
 
 namespace collector {
 
-class CollectorSignalFormatter : public ProtoSignalFormatter<signal_service::SignalStreamMessage> {
+class CollectorSignalFormatter : public ProtoSignalFormatter<v1::SignalStreamMessage> {
  public:
   CollectorSignalFormatter(sinsp* inspector, const uuid_t* cluster_id, bool text_format = false)
       : ProtoSignalFormatter(text_format), event_names_(EventNames::GetInstance()), 
@@ -40,18 +40,18 @@ class CollectorSignalFormatter : public ProtoSignalFormatter<signal_service::Sig
     event_extractor_.Init(inspector);
   }
 
-  using Signal = signal_service::Signal;
-  using ProcessSignal = signal_service::ProcessSignal;
-  using ProcessCredentials = signal_service::ProcessSignal_Credentials;
+  using Signal = v1::Signal;
+  using ProcessSignal = v1::ProcessSignal;
+  using ProcessCredentials = v1::ProcessSignal_Credentials;
 
-  using NetworkSignal = signal_service::NetworkSignal;
-  using NetworkAddress = signal_service::NetworkAddress;
-  using L4Protocol = signal_service::L4Protocol;
-  using IPV4NetworkAddress = signal_service::IPV4NetworkAddress;
-  using IPV6NetworkAddress = signal_service::IPV6NetworkAddress;
+  using NetworkSignal = v1::NetworkSignal;
+  using NetworkAddress = v1::NetworkAddress;
+  using L4Protocol = v1::L4Protocol;
+  using IPV4NetworkAddress = v1::IPV4NetworkAddress;
+  using IPV6NetworkAddress = v1::IPV6NetworkAddress;
 
  protected:
-  const signal_service::SignalStreamMessage* ToProtoMessage(sinsp_evt* event) override;
+  const v1::SignalStreamMessage* ToProtoMessage(sinsp_evt* event) override;
 
  private:
   Signal* CreateSignal(sinsp_evt* event);

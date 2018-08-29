@@ -30,15 +30,15 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-using SignalStreamMessage = signal_service::SignalStreamMessage;
+using SignalStreamMessage = v1::SignalStreamMessage;
 using Signal = CollectorSignalFormatter::Signal;
 using ProcessSignal = CollectorSignalFormatter::ProcessSignal;
 using ProcessCredentials = ProcessSignal::Credentials;
 
 using NetworkSignal = CollectorSignalFormatter::NetworkSignal;
 using NetworkAddress = CollectorSignalFormatter::NetworkAddress;
-using L4Protocol = signal_service::L4Protocol;
-using SocketFamily = signal_service::SocketFamily;
+using L4Protocol = v1::L4Protocol;
+using SocketFamily = v1::SocketFamily;
 using IPV4NetworkAddress = CollectorSignalFormatter::IPV4NetworkAddress;
 using IPV6NetworkAddress = CollectorSignalFormatter::IPV6NetworkAddress;
 
@@ -112,7 +112,8 @@ const SignalStreamMessage* CollectorSignalFormatter::ToProtoMessage(sinsp_evt* e
 
 
   // set time
-  signal->set_time_nanos(event->get_ts());
+  // Fix this to proto.timestamp
+  //signal->set_time_nanos(event->get_ts());
 
   // set container_id
   if (const std::string* container_id = event_extractor_.get_container_id(event)) {
@@ -159,6 +160,7 @@ ProcessCredentials* CollectorSignalFormatter::CreateProcessCreds(sinsp_evt* even
 NetworkSignal* CollectorSignalFormatter::CreateNetworkSignal(sinsp_evt* event) {
   sinsp_fdinfo_t*  fd_info = event->get_fd_info();
   if (!fd_info) return nullptr;
+  if (fd_info->is_role_none()) return nullptr;
 
   auto signal = Allocate<NetworkSignal>();
 
