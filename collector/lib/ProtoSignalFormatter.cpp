@@ -31,6 +31,18 @@ namespace collector {
 bool BaseProtoSignalFormatter::FormatSignal(SafeBuffer* buf, sinsp_evt* event) {
   Reset();
   const google::protobuf::Message* msg = ToProtoMessage(event);
+
+  return MessageToBuf(buf, msg);
+}
+
+bool BaseProtoSignalFormatter::FormatSignal(SafeBuffer* buf, sinsp_threadinfo* tinfo) {
+  Reset();
+  const google::protobuf::Message* msg = ToProtoMessage(tinfo);
+
+  return MessageToBuf(buf, msg);
+}
+
+bool BaseProtoSignalFormatter::MessageToBuf(SafeBuffer* buf, const google::protobuf::Message *msg) {
   if (!msg) return false;
 
   int bufsize;

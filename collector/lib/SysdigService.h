@@ -69,6 +69,7 @@ class SysdigService : public Sysdig {
   SignalType GetNext(SafeBuffer* message_buffer, SafeBuffer* key_buffer);
 
   bool FilterEvent(sinsp_evt* event);
+  bool SendExistingProcesses();
 
   std::unique_ptr<sinsp> inspector_;
   std::unique_ptr<sinsp_chisel> chisel_;

@@ -42,6 +42,7 @@ class BaseProtoSignalFormatter : public SignalFormatter {
   BaseProtoSignalFormatter(bool text_format = false) : text_format_(text_format) {}
 
   bool FormatSignal(SafeBuffer* buf, sinsp_evt* event) override;
+  bool FormatSignal(SafeBuffer* buf, sinsp_threadinfo* tinfo) override;
 
  protected:
   // Returns a pointer to the proto message derived from this event, or nullptr if no message should be output.
@@ -49,11 +50,13 @@ class BaseProtoSignalFormatter : public SignalFormatter {
   // implementing class should maintain an instance-level message whose address is returned by this method.
   virtual void Reset() {}
   virtual const google::protobuf::Message* ToProtoMessage(sinsp_evt* event) = 0;
+  virtual const google::protobuf::Message* ToProtoMessage(sinsp_threadinfo* tinfo) { return NULL; }
 
   template <typename T, typename... Args>
   T* Allocate(Args&&... args) { return new T(std::forward<Args>(args)...); }
 
  private:
+  bool MessageToBuf(SafeBuffer* buf,  const google::protobuf::Message* msg);
   bool text_format_;
 };
 
