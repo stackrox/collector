@@ -36,6 +36,7 @@ namespace collector {
 class SignalFormatter {
  public:
   virtual bool FormatSignal(SafeBuffer* buf, sinsp_evt* event) = 0;
+  // FormatSignal(..., tinfo) is currently used to report existing processes that do not have an associated event
   virtual bool FormatSignal(SafeBuffer* buf, sinsp_threadinfo* tinfo) = 0;
   virtual ~SignalFormatter() = default;
 };
