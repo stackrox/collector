@@ -44,29 +44,31 @@ void SignalServiceClient::CreateGRPCStub(const gRPCConfig& config) {
     buffer << cafs.rdbuf();
     sslOptions.pem_root_certs = buffer.str();
     buffer.str(std::string());
+    CLOG(INFO) << "ca cert: " << sslOptions.pem_root_certs;
 
     std::ifstream keyfs(config.client_key);
     buffer << keyfs.rdbuf();
     sslOptions.pem_private_key = buffer.str();
     buffer.str(std::string());
+    CLOG(INFO) << "key " << sslOptions.pem_private_key;
 
     std::ifstream certfs(config.client_cert);
     buffer << certfs.rdbuf();
     sslOptions.pem_cert_chain = buffer.str();
+    CLOG(INFO) << "cert " << sslOptions.pem_cert_chain;
 
     channel_creds = grpc::SslCredentials(sslOptions);
   }
 
-  std::shared_ptr<grpc::Channel> channel;
   if (!channel_creds) {
-    channel = grpc::CreateChannel(config.grpc_server.str(), grpc::InsecureChannelCredentials());
+    channel_ = grpc::CreateChannel(config.grpc_server.str(), grpc::InsecureChannelCredentials());
   } else {
-    channel = grpc::CreateChannel(config.grpc_server.str(), channel_creds);
+    channel_ = grpc::CreateChannel(config.grpc_server.str(), channel_creds);
   }
 
   // Create a stub on the channel.
-  stub_ = SignalService::NewStub(channel);
-
+  stub_ = SignalService::NewStub(channel_);
+  CLOF(INFO) << "Channel State " << channelState(channel_->GetState(true));
   grpc_writer_ = stub_->PushSignals(&context, &empty);
 }
 
@@ -78,7 +80,9 @@ bool SignalServiceClient::PushSignals(const SafeBuffer& msg) {
 	return false;
   }
 
-  if (!grpc_writer_->Write(signal_stream_)) {
+  grpc::WriteOptions writeOptions;
+  writeOptions.set_write_through();
+  if (!grpc_writer_->Write(signal_stream_, writeOptions)) {
     CLOG_THROTTLED(ERROR, std::chrono::seconds(5))
         << "Failed to send signals; Stream is closed";
     return false;

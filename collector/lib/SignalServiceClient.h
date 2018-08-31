@@ -65,9 +65,10 @@ class SignalServiceClient {
 
   bool PushSignals(const SafeBuffer& buffer);
  private:
-  Empty empty;
+  signal_service::Empty empty;
   ClientContext context;
 
+  std::shared_ptr<grpc::Channel> channel_;
   std::unique_ptr<SignalService::Stub> stub_;
   signal_service::SignalStreamMessage signal_stream_;
   std::unique_ptr<ClientWriter<signal_service::SignalStreamMessage> > grpc_writer_;
