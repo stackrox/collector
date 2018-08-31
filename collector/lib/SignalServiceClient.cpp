@@ -68,7 +68,7 @@ void SignalServiceClient::CreateGRPCStub(const gRPCConfig& config) {
 
   // Create a stub on the channel.
   stub_ = SignalService::NewStub(channel_);
-  CLOF(INFO) << "Channel State " << channelState(channel_->GetState(true));
+  CLOG(INFO) << "Channel State " << channel_->GetState(true);
   grpc_writer_ = stub_->PushSignals(&context, &empty);
 }
 

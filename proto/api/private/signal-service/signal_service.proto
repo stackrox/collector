@@ -7,8 +7,6 @@ import "google/protobuf/timestamp.proto";
 package signal_service;
 option cc_enable_arenas = true;
 
-message Empty{}
-
 message Empty {}
 
 // A single message in the event stream between Collector and Sensor.
