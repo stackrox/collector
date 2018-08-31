@@ -121,11 +121,7 @@ const SignalStreamMessage* CollectorSignalFormatter::ToProtoMessage(sinsp_evt* e
 
   // set container_id
   if (const std::string* container_id = event_extractor_.get_container_id(event)) {
-    if (container_id->length() <= 12) {
-      signal->set_container_id(*container_id);
-    } else {
-      signal->set_container_id(container_id->substr(0, 12));
-    }
+    signal->set_container_id(*container_id);
   }
 
   SignalStreamMessage* signal_stream_message = AllocateRoot();
@@ -158,11 +154,7 @@ const SignalStreamMessage* CollectorSignalFormatter::ToProtoMessage(sinsp_thread
   signal->set_allocated_time(timestamp);
 
   // set container_id
-  if (tinfo->m_container_id.length() <= 12) {
-    signal->set_container_id(tinfo->m_container_id);
-  } else {
-    signal->set_container_id(tinfo->m_container_id.substr(0, 12));
-  }
+  signal->set_container_id(tinfo->m_container_id);
 
   SignalStreamMessage* signal_stream_message = AllocateRoot();
   signal_stream_message->clear_collector_register_request();
