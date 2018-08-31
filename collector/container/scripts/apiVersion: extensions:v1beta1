@@ -1,0 +1,62 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  labels:
+    service: collector
+  name: collector
+  namespace: stackrox
+spec:
+  selector:
+    matchLabels:
+      service: collector
+  template:
+    metadata:
+      labels:
+        service: collector
+      namespace: stackrox
+    spec:
+      containers:
+      - env:
+        image: stackrox/rox-collector:latest
+        name: collector
+        resources:
+          limits:
+            cpu: 750m
+            memory: 1Gi
+          requests:
+            cpu: 250m
+            memory: 320Mi
+        securityContext:
+          capabilities:
+            drop:
+            - NET_RAW
+          privileged: true
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /host/var/run/docker.sock
+          name: var-run-docker-sock
+        - mountPath: /host/dev
+          name: dev-ro
+          readOnly: true
+        - mountPath: /host/proc
+          name: proc-ro
+          readOnly: true
+        - mountPath: /host/sys/module
+          name: sys-module-ro
+          readOnly: true
+      imagePullSecrets:
+      - name: stackrox
+      - name: stackrox-collector
+      volumes:
+      - hostPath:
+          path: /var/run/docker.sock
+        name: var-run-docker-sock
+      - hostPath:
+          path: /dev
+        name: dev-ro
+      - hostPath:
+          path: /proc
+        name: proc-ro
+      - hostPath:
+          path: /sys/module
+        name: sys-module-ro

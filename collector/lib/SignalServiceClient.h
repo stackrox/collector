@@ -35,7 +35,6 @@ You should have received a copy of the GNU General Public License along with thi
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
-#include <google/protobuf/empty.pb.h>
 
 #include "../generated/proto/api/private/signal-service/signal_service.pb.h"
 #include "../generated/proto/api/private/signal-service/signal_service.grpc.pb.h"
@@ -46,8 +45,8 @@ using grpc::ClientReader;
 using grpc::ClientReaderWriter;
 using grpc::ClientWriter;
 using grpc::Status;
-using google::protobuf::Empty;
 using signal_service::SignalService;
+using signal_service::Empty;
 
 namespace collector {
 
