@@ -22,6 +22,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 
 #include "CollectorSignalFormatter.h"
+#include <google/protobuf/util/time_util.h>
 
 #include <uuid/uuid.h>
 
@@ -41,6 +42,9 @@ using L4Protocol = v1::L4Protocol;
 using SocketFamily = v1::SocketFamily;
 using IPV4NetworkAddress = CollectorSignalFormatter::IPV4NetworkAddress;
 using IPV6NetworkAddress = CollectorSignalFormatter::IPV6NetworkAddress;
+
+using Timestamp = google::protobuf::Timestamp;
+using TimeUtil = google::protobuf::util::TimeUtil;
 
 namespace {
 
@@ -111,8 +115,9 @@ const SignalStreamMessage* CollectorSignalFormatter::ToProtoMessage(sinsp_evt* e
   signal->set_id(id);
 
   // set time
-  // Fix this to proto.timestamp
-  //signal->set_time_nanos(event->get_ts());
+  auto timestamp = Allocate<Timestamp>();
+  *timestamp = TimeUtil::NanosecondsToTimestamp(event->get_ts());
+  signal->set_allocated_time(timestamp);
 
   // set container_id
   if (const std::string* container_id = event_extractor_.get_container_id(event)) {
@@ -148,7 +153,9 @@ const SignalStreamMessage* CollectorSignalFormatter::ToProtoMessage(sinsp_thread
   signal->set_id(id);
 
   // set time
-  signal->set_time_nanos(tinfo->m_clone_ts);
+  auto timestamp = Allocate<Timestamp>();
+  *timestamp = TimeUtil::NanosecondsToTimestamp(tinfo->m_clone_ts);
+  signal->set_allocated_time(timestamp);
 
   // set container_id
   if (tinfo->m_container_id.length() <= 12) {
