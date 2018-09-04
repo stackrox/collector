@@ -107,11 +107,7 @@ ProcessContainer* ProcessSummaryFormatter::CreateProcessContainer(sinsp_evt* eve
   if (!container_id) return nullptr;
 
   auto container = Allocate<ProcessContainer>();
-  if (container_id->length() <= 12) {
-    container->set_id(*container_id);
-  } else {
-    container->set_id(container_id->substr(0, 12));
-  }
+  container->set_id(container_id);
 
   if (const uint32_t* privileged = event_extractor_.get_container_privileged(event)) {
     container->set_privileged(*privileged != 0);
