@@ -79,7 +79,7 @@ void CollectorService::RunForever() {
       CLOG(INFO) << "Interrupted while waiting for GRPC server to become ready ...";
       return;
     }
-    CLOG(INFO) << "GRPC server is ready";
+    CLOG(INFO) << "GRPC server connectivity is successful";
   }
 
   sysdig.Init(config_);

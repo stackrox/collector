@@ -30,12 +30,11 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-void SignalServiceClient::CreateGRPCStub(const gRPCConfig& config) {
+SignalServiceClient::SignalServiceClient(const gRPCConfig& config) {
   // Warning: When using static grpc libs, we have to explicitly call grpc_init()
   // https://github.com/grpc/grpc/issues/11366
   grpc_init();
 
-  std::shared_ptr<grpc::ChannelCredentials> channel_creds;
   if (!config.ca_cert.empty() && !config.client_cert.empty() && !config.client_key.empty()) {
     grpc::SslCredentialsOptions sslOptions;
 
@@ -54,23 +53,81 @@ void SignalServiceClient::CreateGRPCStub(const gRPCConfig& config) {
     buffer << certfs.rdbuf();
     sslOptions.pem_cert_chain = buffer.str();
 
-    channel_creds = grpc::SslCredentials(sslOptions);
+    channel_creds_ = grpc::SslCredentials(sslOptions);
   }
 
-  std::shared_ptr<grpc::Channel> channel;
-  if (!channel_creds) {
-    channel = grpc::CreateChannel(config.grpc_server.str(), grpc::InsecureChannelCredentials());
-  } else {
-    channel = grpc::CreateChannel(config.grpc_server.str(), channel_creds);
-  }
+  grpc_server_ = config.grpc_server.str();
+  channel_up_.store(false, std::memory_order_relaxed);
+}
 
-  // Create a stub on the channel.
-  stub_ = SignalService::NewStub(channel);
-  CLOG(INFO) << "Channel State " << channel->GetState(true);
-  grpc_writer_ = stub_->PushSignals(&context, &empty);
+void SignalServiceClient::establishGRPCChannel() {
+  const int connect_deadline = 60;
+  do {
+    std::mutex mtx;
+    std::unique_lock<std::mutex> lock(mtx);
+    channel_cond_.wait(lock, [this]() { return !channel_up_.load(std::memory_order_relaxed); });
+    CLOG(INFO) << "Re-establishing GRPC channel";
+
+    std::shared_ptr<grpc::Channel> channel;
+    grpc::string key0("GRPC_ARG_KEEPALIVE_TIME_MS");
+
+    grpc_arg arg;
+    arg.type = GRPC_ARG_INTEGER;
+    arg.key = const_cast<char*>(key0.c_str());
+    arg.value.integer = 5000;
+
+    grpc_channel_args channel_args;
+    channel_args.num_args = 1;
+    channel_args.args = &arg;
+
+    const grpc::ChannelArguments chan_args;
+    chan_args.SetChannelArgs(&channel_args);
+
+    if (!channel_creds_) {
+      CLOG(WARNING) << "GRPC channel is insecure. Use SSL option for encrypting traffic.";
+      channel = grpc::CreateCustomChannel(grpc_server_, grpc::InsecureChannelCredentials(), chan_args);
+    } else {
+      channel = grpc::CreateCustomChannel(grpc_server_, channel_creds_, chan_args);
+    }
+
+    auto state = channel->GetState(true);
+    while (state != GRPC_CHANNEL_CONNECTING) {
+      auto connected = channel->WaitForConnected(gpr_time_add(
+                          gpr_now(GPR_CLOCK_REALTIME),
+                          gpr_time_from_seconds(connect_deadline, GPR_TIMESPAN)));
+      if (connected) {
+        CLOG(INFO) << "GRPC channel connecting";
+        break;
+      }
+      state = channel->GetState(true);
+    }
+
+    // Create a stub on the channel.
+    stub_.reset();
+    stub_ = SignalService::NewStub(channel);
+
+    channel_up_.store(true, std::memory_order_relaxed);
+    CLOG(INFO) << "GRPC channel is established";
+  } while(true);
+}
+
+void SignalServiceClient::Start() {
+  thread_.Start([this]{establishGRPCChannel();});
 }
 
 bool SignalServiceClient::PushSignals(const SafeBuffer& msg) {
+  if (!channel_up_.load(std::memory_order_relaxed)) {
+  	CLOG_THROTTLED(ERROR, std::chrono::seconds(10))
+		  << "GRPC channel is not established";
+    return false;
+  }
+
+  Empty empty;
+  ClientContext context;
+  std::unique_ptr<ClientWriter<v1::SignalStreamMessage> > grpc_writer;
+  grpc_writer.reset();
+  grpc_writer = stub_->PushSignals(&context, &empty);
+
   google::protobuf::io::ArrayInputStream input_stream(msg.buffer(), msg.size());
   if (!signal_stream_.ParseFromZeroCopyStream(&input_stream)) {
   	CLOG_THROTTLED(ERROR, std::chrono::seconds(5))
@@ -78,12 +135,16 @@ bool SignalServiceClient::PushSignals(const SafeBuffer& msg) {
 	  return false;
   }
 
-  if (!grpc_writer_->Write(signal_stream_)) {
-    CLOG_THROTTLED(ERROR, std::chrono::seconds(5))
-      << "Failed to send signals; Stream is closed";
+  if (!grpc_writer->Write(signal_stream_)) {
+    Status status = grpc_writer->Finish();
+    if (!status.ok()) {
+      CLOG(ERROR) << "GRPC writes failed: " << status.error_message();
+    }
+
+    channel_up_.store(false, std::memory_order_relaxed);
+    CLOG(ERROR) << "GRPC channel is down";
+    channel_cond_.notify_one();
     return false;
-  } else {
-    CLOG(INFO) << "PushSignals wrote successfully";
   }
 
   return true;

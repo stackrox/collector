@@ -34,8 +34,8 @@ void SignalWriterFactory::SetupKafka(const rd_kafka_conf_t* conf_template) {
 }
 
 void SignalWriterFactory::SetupGRPC(const gRPCConfig& config) {
-  grpc_client_ = std::make_shared<SignalServiceClient>();
-  grpc_client_->CreateGRPCStub(config);
+  grpc_client_ = std::make_shared<SignalServiceClient>(config);
+  grpc_client_->Start();
 }
 
 std::unique_ptr<SignalWriter> SignalWriterFactory::CreateSignalWriter(const std::string& output_spec) {

@@ -27,9 +27,11 @@ You should have received a copy of the GNU General Public License along with thi
 // SIGNAL_SERVICE_CLIENT.h
 // This class defines our GRPC client abstraction
 
-#include "SafeBuffer.h"
 #include "CollectorService.h"
+#include "SafeBuffer.h"
+#include "StoppableThread.h"
 
+#include <mutex>
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -45,8 +47,8 @@ using grpc::ClientReader;
 using grpc::ClientReaderWriter;
 using grpc::ClientWriter;
 using grpc::Status;
-using v1::Empty;
 using v1::SignalService;
+using v1::Empty;
 
 namespace collector {
 
@@ -59,17 +61,21 @@ struct GRPCServerOptions {
 
 class SignalServiceClient {
  public:
-  void CreateGRPCStub(const gRPCConfig& config);
+  SignalServiceClient(const gRPCConfig& config);
+  void Start();
   ~SignalServiceClient() {};
 
   bool PushSignals(const SafeBuffer& buffer);
  private:
-  Empty empty;
-  ClientContext context;
-
+  std::string grpc_server_;
+  std::shared_ptr<grpc::ChannelCredentials> channel_creds_;
   std::unique_ptr<SignalService::Stub> stub_;
   v1::SignalStreamMessage signal_stream_;
-  std::unique_ptr<ClientWriter<v1::SignalStreamMessage> > grpc_writer_;
+  StoppableThread thread_;
+  std::atomic<bool> channel_up_;
+  std::condition_variable channel_cond_;
+
+  void establishGRPCChannel();
 };
 
 

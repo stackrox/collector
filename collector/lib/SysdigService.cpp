@@ -187,7 +187,9 @@ void SysdigService::Run(const std::atomic<CollectorService::ControlValue>& contr
     ++userspace_stats_.nFilteredEvents;
 
     bool success = signal_writer->WriteSignal(message_buffer, key_buffer);
-    if (!success) {
+    if (!success && signal_type == SIGNAL_TYPE_GENERIC) {
+      ++userspace_stats_.nGRPCSendFailures;
+    } else if (!success) {
       ++userspace_stats_.nKafkaSendFailures;
     }
   }
