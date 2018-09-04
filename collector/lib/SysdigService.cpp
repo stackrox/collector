@@ -227,20 +227,22 @@ bool SysdigService::SendExistingProcesses() {
            CLOG(WARNING) << "Failed to write existing process signal: " << tinfo;
            return false;
         }
-        CLOG(WARNING) << "Existing Process: " << tinfo;
+        // TODO(rc) remove debug output
+        CLOG(INFO) << "Existing Process: " << tinfo;
       }
     } else {
+      // TODO(rc) remove debug output
       if (tinfo) {
-        CLOG(WARNING) << "Skipping process: "<< tinfo;
+        CLOG(INFO) << "Skipping process: "<< tinfo;
       } else {
-        CLOG(WARNING) << "Skipping process: NULL";
+        CLOG(INFO) << "Skipping process: NULL";
       }
     }
   }
   return true;
 }
 
-// debug print sinsp_threadinfo
+// TODO(rc) remove debug output
 std::ostream& operator<<(ostream& os, const sinsp_threadinfo *t) {
   if (t) {
         os << "CID: \"" << t->m_container_id << "\", Name: " << t->m_comm << ", PID: " << t->m_pid << ", TID: " << t->m_tid << ", NChild: " << t->m_nchilds << ", Args: " << t->m_exe;
