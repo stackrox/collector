@@ -170,6 +170,10 @@ void SysdigService::Run(const std::atomic<CollectorService::ControlValue>& contr
     throw CollectorException("Invalid state: SysdigService was not initialized");
   }
 
+  if (!SendExistingProcesses()) {
+    CLOG(WARNING) << "Failure sending existing processes";
+  }
+
   SafeBuffer message_buffer(kMessageBufferSize);
   SafeBuffer key_buffer(kKeyBufferSize);
 
@@ -187,6 +191,46 @@ void SysdigService::Run(const std::atomic<CollectorService::ControlValue>& contr
       ++userspace_stats_.nKafkaSendFailures;
     }
   }
+}
+
+bool SysdigService::SendExistingProcesses() {
+  if (!inspector_ || !chisel_) {
+    throw CollectorException("Invalid state: SysdigService was not initialized");
+  }
+
+  SafeBuffer message_buffer(kMessageBufferSize);
+  SafeBuffer key_buffer(kKeyBufferSize);
+
+  auto& signal_writer = signal_writers_[SIGNAL_TYPE_GENERIC];
+  if (!signal_writer) {
+    CLOG(WARNING) << "Null signal writer for sending existing processes";
+    return false;
+  }
+
+  auto& formatter = signal_formatter_[SIGNAL_TYPE_GENERIC];
+  if (!formatter) {
+    CLOG(WARNING) << "Null signal formatter for sending existing processes";
+    return false;
+  }
+
+  auto threads = inspector_->m_thread_manager->get_threads();
+  if (!threads) {
+    CLOG(WARNING) << "Null thread manager";
+    return false;
+  }
+  for (auto &thread : *threads) {
+    auto tinfo = &(thread.second);
+    if (tinfo != NULL && tinfo->is_main_thread() && tinfo->m_container_id != "") {
+      message_buffer.clear();
+      if (formatter->FormatSignal(&message_buffer, tinfo)) {
+        if (!signal_writer->WriteSignal(message_buffer, key_buffer)) {
+           CLOG(WARNING) << "Failed to write existing process signal";
+           return false;
+        }
+      }
+    }
+  }
+  return true;
 }
 
 void SysdigService::CleanUp() {
