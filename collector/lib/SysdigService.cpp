@@ -218,9 +218,10 @@ bool SysdigService::SendExistingProcesses() {
     CLOG(WARNING) << "Null thread manager";
     return false;
   }
+
   for (auto &thread : *threads) {
     auto tinfo = &(thread.second);
-    if (tinfo != NULL && tinfo->m_container_id != "") {
+    if (tinfo != NULL && tinfo->m_container_id != "" && tinfo->is_main_thread()) {
       message_buffer.clear();
       if (formatter->FormatSignal(&message_buffer, tinfo)) {
         if (!signal_writer->WriteSignal(message_buffer, key_buffer)) {
@@ -240,16 +241,6 @@ bool SysdigService::SendExistingProcesses() {
     }
   }
   return true;
-}
-
-// TODO(rc) remove debug output
-std::ostream& operator<<(ostream& os, const sinsp_threadinfo *t) {
-  if (t) {
-        os << "CID: \"" << t->m_container_id << "\", Name: " << t->m_comm << ", PID: " << t->m_pid << ", TID: " << t->m_tid << ", NChild: " << t->m_nchilds << ", Args: " << t->m_exe;
-  } else {
-        os << "NULL\n";
-  }
-  return os;
 }
 
 void SysdigService::CleanUp() {
