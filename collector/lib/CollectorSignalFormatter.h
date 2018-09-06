@@ -52,6 +52,7 @@ class CollectorSignalFormatter : public ProtoSignalFormatter<v1::SignalStreamMes
 
  protected:
   const v1::SignalStreamMessage* ToProtoMessage(sinsp_evt* event) override;
+  const v1::SignalStreamMessage* ToProtoMessage(sinsp_threadinfo* tinfo) override;
 
  private:
   Signal* CreateSignal(sinsp_evt* event);
@@ -62,6 +63,11 @@ class CollectorSignalFormatter : public ProtoSignalFormatter<v1::SignalStreamMes
   NetworkAddress* CreateIPv4Address(uint32_t ip, uint16_t port);
   NetworkAddress* CreateIPv6Address(const uint32_t (&ip)[4], uint16_t port);
   NetworkAddress* CreateUnixAddress(uint64_t id, const sinsp_fdinfo_t* fd_info);
+
+
+  Signal* CreateSignal(sinsp_threadinfo* tinfo);
+  ProcessSignal* CreateProcessSignal(sinsp_threadinfo* tinfo);
+  ProcessCredentials* CreateProcessCreds(sinsp_threadinfo* tinfo);
 
   const EventNames& event_names_;
   SysdigEventExtractor event_extractor_;
