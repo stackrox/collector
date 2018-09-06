@@ -70,6 +70,9 @@ std::string Str(Args&&... args) {
 
 std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo *t);
 
+// UUIDStr returns UUID in string format.
+const char* UUIDStr();
+
 }  // namespace collector
 
 #endif  // _UTILITY_H_

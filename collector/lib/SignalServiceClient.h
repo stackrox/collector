@@ -74,7 +74,9 @@ class SignalServiceClient {
   StoppableThread thread_;
   std::atomic<bool> channel_up_;
   std::condition_variable channel_cond_;
-
+  std::unique_ptr<ClientWriter<v1::SignalStreamMessage> > grpc_writer_;
+  Empty *empty_;
+  ClientContext *context_;
   void establishGRPCChannel();
 };
 

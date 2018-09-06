@@ -28,6 +28,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "EventMap.h"
 #include "Logging.h"
+#include "Utility.h"
 
 namespace collector {
 
@@ -105,25 +106,6 @@ const SignalStreamMessage* CollectorSignalFormatter::ToProtoMessage(sinsp_evt* e
     signal->set_allocated_network_signal(network_signal);
   }
 
-  // set id
-  uuid_t uuid;
-  constexpr int kUuidStringLength = 36;  // uuid_unparse manpage says so. Feeling slightly uneasy still ...
-  char uuid_str[kUuidStringLength + 1];
-  uuid_generate_time_safe(uuid);
-  uuid_unparse_lower(uuid, uuid_str);
-  std::string id(uuid_str);
-  signal->set_id(id);
-
-  // set time
-  auto timestamp = Allocate<Timestamp>();
-  *timestamp = TimeUtil::NanosecondsToTimestamp(event->get_ts());
-  signal->set_allocated_time(timestamp);
-
-  // set container_id
-  if (const std::string* container_id = event_extractor_.get_container_id(event)) {
-    signal->set_container_id(*container_id);
-  }
-
   SignalStreamMessage* signal_stream_message = AllocateRoot();
   signal_stream_message->clear_collector_register_request();
   signal_stream_message->set_allocated_signal(signal);
@@ -139,23 +121,6 @@ const SignalStreamMessage* CollectorSignalFormatter::ToProtoMessage(sinsp_thread
   signal = Allocate<Signal>();
   signal->set_allocated_process_signal(process_signal);
 
-  // set id
-  uuid_t uuid;
-  constexpr int kUuidStringLength = 36;  // uuid_unparse manpage says so. Feeling slightly uneasy still ...
-  char uuid_str[kUuidStringLength + 1];
-  uuid_generate_time_safe(uuid);
-  uuid_unparse_lower(uuid, uuid_str);
-  std::string id(uuid_str);
-  signal->set_id(id);
-
-  // set time
-  auto timestamp = Allocate<Timestamp>();
-  *timestamp = TimeUtil::NanosecondsToTimestamp(tinfo->m_clone_ts);
-  signal->set_allocated_time(timestamp);
-
-  // set container_id
-  signal->set_container_id(tinfo->m_container_id);
-
   SignalStreamMessage* signal_stream_message = AllocateRoot();
   signal_stream_message->clear_collector_register_request();
   signal_stream_message->set_allocated_signal(signal);
@@ -166,6 +131,8 @@ const SignalStreamMessage* CollectorSignalFormatter::ToProtoMessage(sinsp_thread
 ProcessSignal* CollectorSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   auto signal = Allocate<ProcessSignal>();
 
+  // set id
+  signal->set_id(UUIDStr());
   // set name
   if (const char* name = event_extractor_.get_proc_name(event)) signal->set_name(name);
   // set command_line
@@ -177,16 +144,24 @@ ProcessSignal* CollectorSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   // set creds
   ProcessCredentials* process_creds = CreateProcessCreds(event);
   signal->set_allocated_credentials(process_creds);
-
+  //set time
+  auto timestamp = Allocate<Timestamp>();
+  *timestamp = TimeUtil::NanosecondsToTimestamp(event->get_ts());
+  signal->set_allocated_time(timestamp);
+  // set container_id
+  if (const std::string* container_id = event_extractor_.get_container_id(event)) {
+    signal->set_container_id(*container_id);
+  }
   return signal;
 }
 
 ProcessSignal* CollectorSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tinfo) {
   auto signal = Allocate<ProcessSignal>();
 
+  // set id
+  signal->set_id(UUIDStr());
   // set name
   signal->set_name(tinfo->get_comm());
-
   // set command_line
   if (tinfo->m_args.size() > 0) {
     std::ostringstream command_line;
@@ -196,24 +171,24 @@ ProcessSignal* CollectorSignalFormatter::CreateProcessSignal(sinsp_threadinfo* t
     }
     signal->set_command_line(command_line.str());
   }
-
   // set pid
   signal->set_pid(tinfo->m_pid);
-
   // set exec_file_path
   signal->set_exec_file_path(tinfo->m_exepath);
-
   // set creds
   ProcessCredentials* process_creds = CreateProcessCreds(tinfo);
   signal->set_allocated_credentials(process_creds);
-
+  //set time
+  auto timestamp = Allocate<Timestamp>();
+  *timestamp = TimeUtil::NanosecondsToTimestamp(tinfo->m_clone_ts);
+  signal->set_allocated_time(timestamp);
+  // set container_id
+  signal->set_container_id(tinfo->m_container_id);
   return signal;
 }
 
-
 ProcessCredentials* CollectorSignalFormatter::CreateProcessCreds(sinsp_evt* event) {
   auto creds = Allocate<ProcessCredentials>();
-
   if (const uint32_t* uid = event_extractor_.get_uid(event)) creds->set_uid(*uid);
   if (const uint32_t* gid = event_extractor_.get_gid(event)) creds->set_gid(*gid);
   // fill in remaining
@@ -222,13 +197,11 @@ ProcessCredentials* CollectorSignalFormatter::CreateProcessCreds(sinsp_evt* even
 
 ProcessCredentials* CollectorSignalFormatter::CreateProcessCreds(sinsp_threadinfo* tinfo) {
   auto creds = Allocate<ProcessCredentials>();
-
   creds->set_uid(tinfo->m_uid);
   creds->set_gid(tinfo->m_gid);
   // fill in remaining
   return creds;
 }
-
 
 NetworkSignal* CollectorSignalFormatter::CreateNetworkSignal(sinsp_evt* event) {
   sinsp_fdinfo_t*  fd_info = event->get_fd_info();
@@ -295,7 +268,16 @@ NetworkSignal* CollectorSignalFormatter::CreateNetworkSignal(sinsp_evt* event) {
     default:
       break;
   }
-
+  // set id
+  signal->set_id(UUIDStr());
+  //set time
+  auto timestamp = Allocate<Timestamp>();
+  *timestamp = TimeUtil::NanosecondsToTimestamp(event->get_ts());
+  signal->set_allocated_time(timestamp);
+  // set container_id
+  if (const std::string* container_id = event_extractor_.get_container_id(event)) {
+    signal->set_container_id(*container_id);
+  }
   return signal;
 }
 
