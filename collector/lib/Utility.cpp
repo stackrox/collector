@@ -38,10 +38,6 @@ extern "C" {
 
 }
 
-#include <iostream>
-
-#include "libsinsp/sinsp.h"
-
 #include "Utility.h"
 
 namespace collector {

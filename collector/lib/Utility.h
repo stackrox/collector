@@ -29,9 +29,12 @@ extern "C" {
 
 #include <chrono>
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <sstream>
 #include <utility>
+
+#include "libsinsp/sinsp.h"
 
 namespace collector {
 
@@ -64,6 +67,8 @@ std::string Str(Args&&... args) {
   impl::StrAppend(&string_stream, std::forward<Args>(args)...);
   return string_stream.str();
 }
+
+std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo *t);
 
 }  // namespace collector
 
