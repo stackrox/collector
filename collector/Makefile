@@ -19,7 +19,8 @@ image: container/bin/collector container/Dockerfile container/scripts/
 
 .PHONY: build_collector
 build_collector:
-	( docker images --format "{{.Repository}}" | grep '^build_collector$$' ) || ( cd $(BASE_PATH)/builder && docker build -t build_collector -f Dockerfile . )
+    docker pull stackrox/collector-builder:cache
+    ( cd $(BASE_PATH)/builder && docker build -t stackrox/collector-builder:cache -f Dockerfile . )
 
 container/bin/collector: $(HDRS) $(SRCS) generated-srcs container/libs/libsinsp-wrapper.so
 	mkdir -p container/bin
@@ -45,7 +46,7 @@ container/libs/libsinsp-wrapper.so: $(shell find sysdig/src/ -name '*.h' -o -nam
 clean: clean-generated-srcs
 	docker rm -fv build_collector || true
 	docker rmi -f stackrox/collector:latest || true
-	docker rmi -f build_collector:latest || true
+	docker rmi -f stackrox/collector-builder:cache || true
 	make -C sysdig clean
 	rm -rf container/bin
 	rm -rf container/driver

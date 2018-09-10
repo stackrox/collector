@@ -30,6 +30,17 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
+namespace {
+
+std::string ReadFileContents(const std::string& filename) {
+  std::stringstream buffer;
+  std::ifstream ifs(filename);
+  buffer << ifs.rdbuf();
+  return buffer.str();
+}
+
+}
+
 SignalServiceClient::SignalServiceClient(const gRPCConfig& config) {
   // Warning: When using static grpc libs, we have to explicitly call grpc_init()
   // https://github.com/grpc/grpc/issues/11366
@@ -38,9 +49,9 @@ SignalServiceClient::SignalServiceClient(const gRPCConfig& config) {
   if (!config.ca_cert.empty() && !config.client_cert.empty() && !config.client_key.empty()) {
     grpc::SslCredentialsOptions sslOptions;
 
-    sslOptions.pem_root_certs = config.ca_cert;
-    sslOptions.pem_private_key = config.client_key;
-    sslOptions.pem_cert_chain = config.client_cert;
+    sslOptions.pem_root_certs = ReadFileContents(config.ca_cert);
+    sslOptions.pem_private_key = ReadFileContents(config.client_key);
+    sslOptions.pem_cert_chain = ReadFileContents(config.client_cert);
 
     channel_creds_ = grpc::SslCredentials(sslOptions);
   } else {
