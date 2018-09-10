@@ -22,12 +22,11 @@ You should have received a copy of the GNU General Public License along with thi
 */
 
 #include "SignalServiceClient.h"
+#include "GRPCUtil.h"
 #include "Logging.h"
 #include "Utility.h"
 
 #include <fstream>
-#include <google/protobuf/message.h>
-#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 
 namespace collector {
 
@@ -108,12 +107,7 @@ bool SignalServiceClient::PushSignals(const SafeBuffer& msg) {
     return false;
   }
 
-  grpc::Slice slice(msg.buffer(), msg.size(), grpc::Slice::STATIC_SLICE);
-  grpc::ByteBuffer buf(&slice, 1);
-
-  grpc::ClientWriter<grpc::ByteBuffer>* raw_writer = reinterpret_cast<grpc::ClientWriter<grpc::ByteBuffer>*>(grpc_writer_.get());
-
-  if (!raw_writer->Write(buf)) {
+  if (!GRPCWriteRaw(grpc_writer_.get(), msg)) {
     Status status = grpc_writer_->Finish();
     if (!status.ok()) {
       CLOG(ERROR) << "GRPC writes failed: " << status.error_message();
