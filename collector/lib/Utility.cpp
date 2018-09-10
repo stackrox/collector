@@ -31,6 +31,7 @@ extern "C" {
 #include <sys/socket.h>
 #include <poll.h>
 #include <unistd.h>
+#include <uuid/uuid.h>
 
 #include <errno.h>
 #include <signal.h>
@@ -77,6 +78,16 @@ std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo *t) {
         os << "NULL\n";
   }
   return os;
+}
+
+const char* UUIDStr() {
+  uuid_t uuid;
+  constexpr int kUuidStringLength = 36;  // uuid_unparse manpage says so.
+  thread_local char uuid_str[kUuidStringLength + 1];
+  uuid_generate_time_safe(uuid);
+  uuid_unparse_lower(uuid, uuid_str);
+
+  return uuid_str;
 }
 
 }  // namespace collector

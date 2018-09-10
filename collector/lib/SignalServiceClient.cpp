@@ -68,21 +68,16 @@ void SignalServiceClient::establishGRPCChannel() {
     channel_cond_.wait(lock, [this]() { return !channel_up_.load(std::memory_order_relaxed); });
     CLOG(INFO) << "Re-establishing GRPC channel";
 
+    grpc::ChannelArguments chan_args;
+    chan_args.SetInt("GRPC_ARG_KEEPALIVE_TIME_MS", 10000);
+    chan_args.SetInt("GRPC_ARG_KEEPALIVE_TIMEOUT_MS", 10000);
+    chan_args.SetInt("GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS", 1);
+    chan_args.SetInt("GRPC_ARG_HTTP2_BDP_PROBE", 1);
+    chan_args.SetInt("GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS", 5000);
+    chan_args.SetInt("GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS", 10000);
+    chan_args.SetInt("GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA", 0);
+
     std::shared_ptr<grpc::Channel> channel;
-    grpc::string key0("GRPC_ARG_KEEPALIVE_TIME_MS");
-
-    grpc_arg arg;
-    arg.type = GRPC_ARG_INTEGER;
-    arg.key = const_cast<char*>(key0.c_str());
-    arg.value.integer = 5000;
-
-    grpc_channel_args channel_args;
-    channel_args.num_args = 1;
-    channel_args.args = &arg;
-
-    const grpc::ChannelArguments chan_args;
-    chan_args.SetChannelArgs(&channel_args);
-
     if (!channel_creds_) {
       CLOG(WARNING) << "GRPC channel is insecure. Use SSL option for encrypting traffic.";
       channel = grpc::CreateCustomChannel(grpc_server_, grpc::InsecureChannelCredentials(), chan_args);
@@ -106,6 +101,12 @@ void SignalServiceClient::establishGRPCChannel() {
     stub_.reset();
     stub_ = SignalService::NewStub(channel);
 
+    // stream writer
+    grpc_writer_.reset();
+    empty_ = new(Empty);
+    context_ = new(ClientContext);
+    grpc_writer_ = stub_->PushSignals(context_, empty_);
+
     channel_up_.store(true, std::memory_order_relaxed);
     CLOG(INFO) << "GRPC channel is established";
   } while(true);
@@ -122,12 +123,6 @@ bool SignalServiceClient::PushSignals(const SafeBuffer& msg) {
     return false;
   }
 
-  Empty empty;
-  ClientContext context;
-  std::unique_ptr<ClientWriter<v1::SignalStreamMessage> > grpc_writer;
-  grpc_writer.reset();
-  grpc_writer = stub_->PushSignals(&context, &empty);
-
   google::protobuf::io::ArrayInputStream input_stream(msg.buffer(), msg.size());
   if (!signal_stream_.ParseFromZeroCopyStream(&input_stream)) {
   	CLOG_THROTTLED(ERROR, std::chrono::seconds(5))
@@ -135,12 +130,14 @@ bool SignalServiceClient::PushSignals(const SafeBuffer& msg) {
 	  return false;
   }
 
-  if (!grpc_writer->Write(signal_stream_)) {
-    Status status = grpc_writer->Finish();
+  if (!grpc_writer_->Write(signal_stream_)) {
+    Status status = grpc_writer_->Finish();
     if (!status.ok()) {
       CLOG(ERROR) << "GRPC writes failed: " << status.error_message();
     }
-
+    context_->TryCancel();
+    delete(context_);
+    delete(empty_);
     channel_up_.store(false, std::memory_order_relaxed);
     CLOG(ERROR) << "GRPC channel is down";
     channel_cond_.notify_one();
