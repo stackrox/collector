@@ -48,7 +48,6 @@ using grpc::ClientReaderWriter;
 using grpc::ClientWriter;
 using grpc::Status;
 using v1::SignalService;
-using v1::Empty;
 
 namespace collector {
 
@@ -75,8 +74,7 @@ class SignalServiceClient {
   std::atomic<bool> channel_up_;
   std::condition_variable channel_cond_;
   std::unique_ptr<ClientWriter<v1::SignalStreamMessage> > grpc_writer_;
-  Empty *empty_;
-  ClientContext *context_;
+  std::unique_ptr<ClientContext> context_;
   void establishGRPCChannel();
 };
 

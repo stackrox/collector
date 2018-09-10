@@ -21,15 +21,15 @@ image: container/bin/collector container/Dockerfile container/scripts/
 build_collector:
 	( docker images --format "{{.Repository}}" | grep '^build_collector$$' ) || ( cd $(BASE_PATH)/builder && docker build -t build_collector -f Dockerfile . )
 
-container/bin/collector: $(HDRS) $(SRCS) generated-srcs container/libs/libsinsp-wrapper.so build_collector
+container/bin/collector: $(HDRS) $(SRCS) generated-srcs container/libs/libsinsp-wrapper.so
 	mkdir -p container/bin
-	docker rm -f build_collector || true
+	docker rm -fv build_collector || true
 	docker run \
 	  -v $(CURDIR)/container/libs/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so \
 	  -v $(CURDIR):/src \
 	  -v $(CURDIR)/sysdig/src:/usr/local/sysdig \
 	  -v $(CURDIR)/sysdig/src/driver/ppm_events_public.h:/usr/local/include/ppm_events_public.h \
-	  --name build_collector build_collector
+	  --name build_collector stackrox/collector-builder:cache
 	cp cmake-build/collector container/bin/
 	docker cp build_collector:/usr/local/lib/libcurl.so container/libs/
 	docker cp build_collector:/usr/local/bin/curl container/bin/
