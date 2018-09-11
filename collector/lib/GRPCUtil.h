@@ -34,7 +34,7 @@ namespace collector {
 template <typename M>
 bool GRPCWriteRaw(grpc::ClientWriter<M>* writer, const SafeBuffer& buffer) {
   // not really a static slice, but this is sufficient to tell GRPC to not try to deallocate the buffer.
-  grpc::Slice slice(buffer.buffer(), buffer.size(), grpc::Slice::STATIC_SLICE);
+  grpc::Slice slice(buffer.buffer(), buffer.size());
   grpc::ByteBuffer grpc_buf(&slice, 1);
 
   // The following reinterpret_cast is safe because all `grpc::ClientWriter<...>` have the same layout - the effect
