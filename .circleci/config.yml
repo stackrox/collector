@@ -44,6 +44,14 @@ jobs:
         name: Google Authenticate
         working_directory: /root/.config/gcloud
         command: |
+          if [[ $CIRCLE_NODE_INDEX -ne 0 ]]; then
+            circleci step halt
+          fi
+
+    - run:
+        name: Google Authenticate
+        working_directory: /root/.config/gcloud
+        command: |
           echo "$GOOGLE_CREDENTIALS_KERNEL_CACHE" > auth.json
           gcloud config set core/project stackrox-ci
           gcloud config set compute/region us-east1
@@ -370,34 +378,34 @@ workflows:
   version: 2
   build:
     jobs:
-    - builder:
-        filters:
-          tags:
-            only: /.*/
-    - grpc:
-        filters:
-          tags:
-            only: /.*/
-    - libsinsp:
-        filters:
-          tags:
-            only: /.*/
-    - collector:
-        filters:
-          tags:
-            only: /.*/
-        requires:
-        - builder
-        - grpc
-        - libsinsp
+#    - builder:
+#        filters:
+#          tags:
+#            only: /.*/
+#    - grpc:
+#        filters:
+#          tags:
+#            only: /.*/
+#    - libsinsp:
+#        filters:
+#          tags:
+#            only: /.*/
+#    - collector:
+#        filters:
+#          tags:
+#            only: /.*/
+#        requires:
+#        - builder
+#        - grpc
+#        - libsinsp
     - kernels:
         filters:
           tags:
             only: /.*/
-    - images:
-        filters:
-          tags:
-            only: /.*/
-        requires:
-        - collector
-        - kernels
+#    - images:
+#        filters:
+#          tags:
+#            only: /.*/
+#        requires:
+#        - collector
+#        - kernels
