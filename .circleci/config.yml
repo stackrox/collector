@@ -110,6 +110,9 @@ jobs:
           find /packages
           du -h /packages
 
+    - store_artifacts:
+        path: /packages/gsutil.log
+
     - run:
         name: Pack Docker Volumes
         command: |

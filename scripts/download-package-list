@@ -4,12 +4,10 @@ set -eu
 copy() {
     source_file="$1"
     destination_file="$2"
+    log_file="$3"
 
     echo "START copying [$source_file] to [$destination_file]"
-
-    logfile="/packages/$(basename "$source_file").log"
-
-    gsutil cp -L "$logfile" "$source_file" "$destination_file"
+    gsutil cp -L "$log_file" "$source_file" "$destination_file"
     echo "DONE copying [$source_file] to [$destination_file]"
 }
 
@@ -18,14 +16,13 @@ main() {
     directory_prefix="$2"
     list_file="$3"
 
-    echo "list stored in: $list_file"
-
     while IFS="" read -r line; do
         source_file="${bucket_prefix}/${line}"
         destination_file="${directory_prefix}/${line}"
+        log_file="${directory_prefix}/gsutil.log"
 
         echo "Copying $source_file to $destination_file"
-        copy "$source_file" "$destination_file" &
+        copy "$source_file" "$destination_file" "$log_file" &
     done < "$list_file"
 
     wait
