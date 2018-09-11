@@ -6,6 +6,9 @@ import (
 	"os"
 	"strconv"
 
+	"errors"
+	"sort"
+
 	"github.com/stackrox/collector/kernel-modules/build/kobuild/command"
 	"github.com/stackrox/collector/kernel-modules/build/kobuild/config"
 )
@@ -23,7 +26,11 @@ func main() {
 }
 
 func mainCmd() error {
-	configFlag := flag.String("config", "kernel-manifest.yml", "Config file containing build manifest")
+	var (
+		configFlag   = flag.String("config", "kernel-manifest.yml", "Config file containing build manifest")
+		buildFlag    = flag.Bool("build", false, "Build modules")
+		packagesFlag = flag.Bool("packages", false, "List packages")
+	)
 	flag.Parse()
 
 	builders, err := config.Load(*configFlag)
@@ -33,7 +40,16 @@ func mainCmd() error {
 
 	manifests := builders.Manifests()
 	markManifests(manifests)
-	return buildManifests(manifests)
+
+	switch {
+	case *buildFlag:
+		return buildManifests(manifests)
+	case *packagesFlag:
+		listPackages(manifests)
+		return nil
+	default:
+		return errors.New("no action given")
+	}
 }
 
 // markManifests examines each manifest and marks if a given manifest should be
@@ -82,6 +98,35 @@ func buildManifests(manifests []*config.Manifest) error {
 	}
 
 	return nil
+}
+
+func listPackages(manifests []*config.Manifest) {
+	var (
+		packageSet  = make(map[string]struct{}, len(manifests))
+		packageList = make([]string, 0, len(manifests))
+	)
+
+	// Add each package for every (relevant) manifest to the package set
+	for _, manifest := range manifests {
+		if manifest.Build == false {
+			continue
+		}
+		for _, pkg := range manifest.Packages {
+			packageSet[pkg] = struct{}{}
+		}
+	}
+
+	// Transform the package set into a list of (unordered) packages
+	for pkg := range packageSet {
+		packageList = append(packageList, pkg)
+	}
+
+	// Sort the list of unordered packages
+	sort.Strings(packageList)
+
+	for _, pkg := range packageList {
+		fmt.Println(pkg)
+	}
 }
 
 // getEnvVar looks up the variable named by key in the current environment and

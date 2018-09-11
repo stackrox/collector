@@ -65,14 +65,12 @@ jobs:
     - checkout
 
     - run:
-        name: Download Package Cache
+        name: Build Builder Image
         command: |
-          make -C kernel-modules download-package-cache
-          find /packages
-          du -h /packages
+          make -C kernel-modules build-container
 
     - run:
-        name: Pack Docker Volumes
+        name: Pre-pack Docker Volume
         command: |
           docker create \
             --name data \
@@ -81,17 +79,35 @@ jobs:
             -v /output \
             -v /config \
             alpine:3.8 /bin/true
+          docker cp kernel-modules/supported-kernels/kernel-manifest.yml data:/config
+
+    - run:
+        name: Generate Package List
+        command: |
+          echo "Nodes total: $CIRCLE_NODE_TOTAL"
+          echo "Node index:  $CIRCLE_NODE_INDEX"
+          docker run --rm -it \
+            --volumes-from data \
+            -e CIRCLE_NODE_TOTAL \
+            -e CIRCLE_NODE_INDEX \
+            build-kernel-modules:latest \
+              --config /config/kernel-manifest.yml \
+              --packages | tee /tmp/package-list.txt
+
+    - run:
+        name: Download Package Cache
+        command: |
+          ./scripts/download-package-list gs://kernel-headers-cache /packages /tmp/package-list.txt
+          find /packages
+          du -h /packages
+
+    - run:
+        name: Pack Docker Volumes
+        command: |
           echo 'Packing packages volume'
           time docker cp /packages/. data:/packages
           echo 'Packing sysdig volume'
           time docker cp sysdig/src/. data:/sysdig-src
-          echo 'Packing config volume'
-          time docker cp kernel-modules/supported-kernels/kernel-manifest.yml data:/config
-
-    - run:
-        name: Build Builder Image
-        command: |
-          make -C kernel-modules build-container
 
     - run:
         name: Build all
@@ -103,7 +119,8 @@ jobs:
             -e CIRCLE_NODE_TOTAL \
             -e CIRCLE_NODE_INDEX \
             build-kernel-modules:latest \
-              --config /config/kernel-manifest.yml
+              --config /config/kernel-manifest.yml \
+              --build
 
     - run:
         name: Copy Built Modules to Workspace

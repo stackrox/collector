@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+
+main() {
+    bucket_prefix="$1"
+    directory_prefix="$2"
+    list_file="$3"
+
+    echo "list stored in: $list_file"
+
+    while IFS="" read -r line; do
+        printf 'line [%s]\n' "$line"
+        source_file="${bucket_prefix}/${line}"
+        destination_file="${directory_prefix}/${line}"
+        echo "Copying $source_file to $destination_file"
+        gsutil cp "$source_file" "$destination_file"
+    done < "$list_file"
+}
+
+main "$@"
