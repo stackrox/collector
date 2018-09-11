@@ -25,6 +25,7 @@ You should have received a copy of the GNU General Public License along with thi
 #define _GRPC_UTIL_H_
 
 #include <grpc/grpc.h>
+#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 
 #include "SafeBuffer.h"
 
@@ -33,14 +34,16 @@ namespace collector {
 // GRPCWriteRaw can be used to write a raw byte buffer to a GRPC stream.
 template <typename M>
 bool GRPCWriteRaw(grpc::ClientWriter<M>* writer, const SafeBuffer& buffer) {
-  // not really a static slice, but this is sufficient to tell GRPC to not try to deallocate the buffer.
-  grpc::Slice slice(buffer.buffer(), buffer.size());
-  grpc::ByteBuffer grpc_buf(&slice, 1);
+  // TODO(mi): The buffer is already a serialized proto; this adds another (unnecessary)
+  // serialization-deserialization round-trip.
+  google::protobuf::io::ArrayInputStream input_stream(buffer.buffer(), buffer.size());
+  M msg;
+  if (!msg.ParseFromZeroCopyStream(&input_stream)) {
+    CLOG_THROTTLED(ERROR, std::chrono::seconds(5)) << "Failed to send signals; Parsing failed";
+    return false;
+  }
 
-  // The following reinterpret_cast is safe because all `grpc::ClientWriter<...>` have the same layout - the effect
-  // of the template parameter is constrained to the write method only.
-  auto raw_writer = reinterpret_cast<grpc::ClientWriter<grpc::ByteBuffer>*>(writer);
-  return raw_writer->Write(grpc_buf);
+  return writer->Write(msg);
 }
 
 }  // namespace collector
