@@ -45,9 +45,6 @@ crawl: build-crawl-container crawl-centos crawl-kops crawl-amazon
 	docker run --rm -i kernel-crawler crawl Ubuntu-Azure > supported-kernels/ubuntu-azure.txt
 	docker run --rm -i kernel-crawler crawl Ubuntu-GKE > supported-kernels/ubuntu-gke.txt
 	docker run --rm -i kernel-crawler crawl Ubuntu-GCP > supported-kernels/ubuntu-gcp.txt
-	# kbuild tools are required for each major version of the kernel for Debian.
-	echo 'http://http.us.debian.org/debian/pool/main/l/linux-tools/linux-kbuild-4.4_4.4-4~bpo8+1_amd64.deb' > supported-kernels/kops.txt
-	docker run --rm -i --entrypoint python3 kernel-crawler apt-crawler.py /tmp 1>> supported-kernels/kops.txt
 
 .PHONY: build-amazon
 build-amazon:
