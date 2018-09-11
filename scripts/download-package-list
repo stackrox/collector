@@ -7,7 +7,7 @@ copy() {
 
     echo "START copying [$source_file] to [$destination_file]"
 
-    logfile="/tmp/packages/$(basename "$source_file").log"
+    logfile="/packages/$(basename "$source_file").log"
 
     gsutil cp -L "$logfile" "$source_file" "$destination_file"
     echo "DONE copying [$source_file] to [$destination_file]"

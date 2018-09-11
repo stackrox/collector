@@ -105,6 +105,7 @@ jobs:
     - run:
         name: Download Package Cache
         command: |
+          mkdir /packages
           ./scripts/download-package-list gs://kernel-headers-cache /packages /tmp/package-list.txt
           find /packages
           du -h /packages
