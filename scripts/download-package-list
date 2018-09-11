@@ -1,6 +1,15 @@
 #!/bin/sh
 set -eu
 
+copy() {
+    source_file="$1"
+    destination_file="$2"
+
+    echo "START copying [$source_file] to [$destination_file]"
+    gsutil cp "$source_file" "$destination_file"
+    echo "DONE copying [$source_file] to [$destination_file]"
+}
+
 main() {
     bucket_prefix="$1"
     directory_prefix="$2"
@@ -13,7 +22,7 @@ main() {
         destination_file="${directory_prefix}/${line}"
 
         echo "Copying $source_file to $destination_file"
-        gsutil cp "$source_file" "$destination_file" &
+        copy "$source_file" "$destination_file" &
     done < "$list_file"
 
     wait
