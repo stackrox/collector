@@ -86,7 +86,7 @@ jobs:
         command: |
           echo "Nodes total: $CIRCLE_NODE_TOTAL"
           echo "Node index:  $CIRCLE_NODE_INDEX"
-          docker run --rm -t \
+          docker run --rm \
             --volumes-from data \
             -e CIRCLE_NODE_TOTAL \
             -e CIRCLE_NODE_INDEX \
@@ -114,7 +114,7 @@ jobs:
         command: |
           echo "Nodes total: $CIRCLE_NODE_TOTAL"
           echo "Node index:  $CIRCLE_NODE_INDEX"
-          docker run --rm -t \
+          docker run --rm \
             --volumes-from data \
             -e CIRCLE_NODE_TOTAL \
             -e CIRCLE_NODE_INDEX \
