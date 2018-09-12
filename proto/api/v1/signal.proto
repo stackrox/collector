@@ -4,7 +4,7 @@ option go_package = "v1";
 option cc_enable_arenas = true;
 
 import "google/protobuf/timestamp.proto";
-import "proto/api/v1/empty.proto";
+import "api/v1/empty.proto";
 
 package v1;
 
@@ -15,14 +15,14 @@ message SignalStreamMessage {
         CollectorRegisterRequest collector_register_request = 1;
 
         // A signal event observed by Collector.
-        Signal signal = 2;
+        Signal signal                                       = 2;
     }
 }
 
 // A request message sent by collector to register with Sensor.
 message CollectorRegisterRequest {
     // The hostname on which collector is running.
-    string hostname = 1;
+    string hostname    = 1;
 
     // A unique identifier for an instance of collector.
     string instance_id = 2;
@@ -42,35 +42,37 @@ message ProcessSignal {
     // We have this here instead of at the top level
     // because we want to have each message to be
     // self contained.
-    string id = 1;
+    string id                      = 1;
 
     // ID of container associated with this process
-    string container_id = 2;
+    string container_id            = 2;
 
     // Process creation time
     google.protobuf.Timestamp time = 3;
 
     // Process name
-    string name = 4;
+    string name                    = 4;
 
     // Process arguments
-    string args = 5;
+    string args                    = 5;
 
     // Host process ID
-    uint32 pid = 6;
+    uint32 pid                     = 6;
 
     // Host parent process ID
-    uint32 parent_pid = 7;
+    uint32 parent_pid              = 7;
 
     // Process executable file path
-    string exec_file_path = 8;
+    string exec_file_path          = 8;
 
     // Process user and group identifiers (e.g., man 7 credentials)
-    Credentials credentials = 9;
+    Credentials credentials        = 9;
 
     message Credentials {
-        uint32 uid  = 1; // real user ID
-        uint32 gid  = 2; // real group ID
+        // real user ID
+        uint32 uid                 = 1;
+        // real group ID
+        uint32 gid                 = 2;
     }
 }
 

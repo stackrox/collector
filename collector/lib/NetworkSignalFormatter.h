@@ -29,7 +29,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "ProtoSignalFormatter.h"
 #include "SysdigEventExtractor.h"
 
-#include "proto/data/signal.pb.h"
+#include "data/signal.pb.h"
 
 namespace collector {
 

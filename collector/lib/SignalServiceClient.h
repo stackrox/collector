@@ -38,8 +38,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 
-#include "../generated/proto/api/v1/signal.pb.h"
-#include "../generated/proto/api/v1/signal.grpc.pb.h"
+#include "../generated/api/v1/signal.pb.h"
+#include "../generated/api/v1/signal.grpc.pb.h"
 
 using grpc::Channel;
 using grpc::ClientContext;

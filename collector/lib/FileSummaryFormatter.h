@@ -27,7 +27,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "ProtoSignalFormatter.h"
 #include "EventNames.h"
 
-#include "proto/data/file_summary.pb.h"
+#include "data/file_summary.pb.h"
 
 namespace collector {
 
