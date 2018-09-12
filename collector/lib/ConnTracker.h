@@ -24,10 +24,15 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef COLLECTOR_CONNTRACKER_H
 #define COLLECTOR_CONNTRACKER_H
 
+#include <arpa/inet.h>
+
 #include <array>
 #include <mutex>
+#include <ostream>
 #include <string>
 #include <vector>
+
+#include <cstring>
 
 #include "Hash.h"
 
@@ -37,10 +42,32 @@ constexpr size_t kMaxAddrLen = 16;
 
 class Address {
  public:
-  size_t Hash() const { return CombineHashes(data_, port_); }
+  enum class Family : unsigned char {
+    IPV4,
+    IPV6,
+  };
+
+  Address(unsigned char a, unsigned char b, unsigned char c, unsigned char d)
+    : Address(htonl(static_cast<uint32_t>(a) << 24 |
+                    static_cast<uint32_t>(b) << 16 |
+                    static_cast<uint32_t>(c) << 8 |
+                    static_cast<uint32_t>(d))) {}
+
+  Address(uint32_t ipv4) : Address(Family::IPV4) {
+    std::memcpy(data_.data(), &ipv4, sizeof(ipv4));
+  }
+
+  Address(uint64_t ipv6_low, uint64_t ipv6_high, unsigned short port) : Address(Family::IPV6) {
+    std::memcpy(data_.data(), &ipv6_low, sizeof(ipv6_low));
+    std::memcpy(data_.data() + sizeof(ipv6_low), &ipv6_high, sizeof(ipv6_high));
+  }
+
+  Family family() const { return family_; }
+
+  size_t Hash() const { return HashAll(data_, family_); }
 
   bool operator==(const Address& other) const {
-    return data_ == other.data_ && port_ == other.port_;
+    return family_ == other.family_ && data_ == other.data_;
   }
 
   bool operator!=(const Address& other) const {
@@ -48,25 +75,69 @@ class Address {
   }
 
  private:
+  friend std::ostream& operator<<(std::ostream& os, const Address& addr) {
+    int af = (addr.family_ == Family::IPV4) ? AF_INET : AF_INET6;
+    char addr_str[INET6_ADDRSTRLEN];
+    if (!inet_ntop(af, addr.data_.data(), addr_str, sizeof(addr_str))) {
+      return os << "<invalid address>";
+    }
+    return os << addr_str;
+  }
+
+  Address(Family family) : family_(family) {
+    std::memset(data_.data(), 0, data_.size());
+  }
+
   std::array<unsigned char, kMaxAddrLen> data_;
-  unsigned short port_;
+  Family family_;
+};
+
+class Endpoint {
+ public:
+  Endpoint(const Address& address, unsigned short port) : address_(address), port_(port) {}
+
+  size_t Hash() const {
+    return HashAll(address_, port_);
+  }
+
+  bool operator==(const Endpoint& other) const {
+    return port_ == other.port_ && address_ == other.address_;
+  }
+
+  bool operator!=(const Endpoint& other) const {
+    return !(*this == other);
+  }
+
+ private:
+  friend std::ostream& operator<<(std::ostream& os, const Endpoint& ep) {
+    if (ep.address_.family() == Address::Family::IPV6) {
+      os << "[" << ep.address_ << "]";
+    } else {
+      os << ep.address_;
+    }
+    return os << ":" << ep.port_;
+  }
+
+  Address address_;
+  uint16_t port_;
 };
 
 enum class L4Proto : uint8_t {
   UNKNOWN = 0,
   TCP = 1,
-  TCP6 = 2,
-  UDP = 3,
-  UDP6 = 4,
-  ICMP = 5,
-  ICMP6 = 6,
+  UDP = 2,
+  ICMP = 3,
 };
 
 class Connection {
  public:
+  Connection(std::string container, const Endpoint& server, const Endpoint& client, L4Proto l4proto, bool is_server)
+    : container_(std::move(container)), server_(server), client_(client), flags_(static_cast<uint8_t>(l4proto) << 1 | (is_server) ? 1 : 0)
+  {}
+
   const std::string& container() const { return container_; }
-  const Address& server() const { return server_; }
-  const Address& client() const { return client_; }
+  const Endpoint& server() const { return server_; }
+  const Endpoint& client() const { return client_; }
   bool IsServer() const { return flags_ & 0x1; }
   L4Proto l4proto() const { return static_cast<L4Proto>(flags_ >> 1); }
 
@@ -78,33 +149,40 @@ class Connection {
     return !(*this == other);
   }
 
-  size_t Hash() const { return CombineHashes(container_, server_, client_, flags_); }
+  size_t Hash() const { return HashAll(container_, server_, client_, flags_); }
 
  private:
   std::string container_;
-  Address server_;
-  Address client_;
+  Endpoint server_;
+  Endpoint client_;
   uint8_t flags_;
 };
 
+// We store the connection state as an int64_t microtimestamp, with the least significant bit used as an indicator
+// whether the connection is active (1) or not (0).
 using ConnMap = UnorderedMap<Connection, int64_t>;
 
 class ConnectionTracker {
  public:
-  void AddConnection(const Connection& conn);
-  void RemoveConnection(const Connection& conn);
+  void AddConnection(const Connection& conn, int64_t timestamp);
+  void RemoveConnection(const Connection& conn, int64_t timestamp);
 
-  void Update(const std::vector<Connection>& all_conns);
+  void Update(const std::vector<Connection>& all_conns, int64_t timestamp);
 
+  // Atomically fetch a snapshot of the current state, removing all inactive connections if requested.
   ConnMap FetchState(bool clear_inactive = true);
 
+  // ComputeDelta computes a diff between new_state and *old_state, and stores the diff in *old_state.
   static void ComputeDelta(const ConnMap& new_state, ConnMap* old_state);
 
- private:
+  // Timestamp + active-flag manipulation functions.
   static bool IsActive(int64_t ts) { return ts & 0x1; }
   static void MakeInactive(int64_t* ts) { *ts &= ~0x1; }
   static int64_t MakeActive(int64_t ts) { return ts | 0x1; }
   static int64_t MakeInactive(int64_t ts) { return ts & ~0x1; }
+
+ private:
+  void EmplaceOrUpdate(const Connection& conn, int64_t ts);
 
   std::mutex mutex_;
   ConnMap state_;

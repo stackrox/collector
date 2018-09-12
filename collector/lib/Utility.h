@@ -31,6 +31,7 @@ extern "C" {
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <mutex>
 #include <sstream>
 #include <utility>
 
@@ -72,6 +73,15 @@ std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo *t);
 
 // UUIDStr returns UUID in string format.
 const char* UUIDStr();
+
+// Lock allows locking any mutex without having to explictly specify the type of the mutex, e.g.,
+// auto lock = Lock(mutex_);
+template <typename Mutex>
+std::unique_lock<Mutex> Lock(Mutex& mutex) {
+  return std::unique_lock<Mutex>(mutex);
+}
+
+#define SCOPED_LOCK(m) auto __scoped_lock_ ## __LINE__ = Lock(m)
 
 }  // namespace collector
 

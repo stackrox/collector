@@ -21,18 +21,18 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef COLLECTOR_TIME_H
-#define COLLECTOR_TIME_H
+#ifndef COLLECTOR_TIME_UTIL_H
+#define COLLECTOR_TIME_UTIL_H
 
 #include <chrono>
 
 namespace collector {
 
-// Now returns the current timestamp in microseconds since epoch.
-inline int64_t Now() {
+// NowMicros returns the current timestamp in microseconds since epoch.
+inline int64_t NowMicros() {
   return std::chrono::system_clock::now().time_since_epoch() / std::chrono::microseconds(1);
 }
 
 }  // namespace collector
 
-#endif //COLLECTOR_TIME_H
+#endif  // COLLECTOR_TIME_UTIL_H
