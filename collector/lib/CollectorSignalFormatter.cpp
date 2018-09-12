@@ -37,21 +37,10 @@ using Signal = CollectorSignalFormatter::Signal;
 using ProcessSignal = CollectorSignalFormatter::ProcessSignal;
 using ProcessCredentials = ProcessSignal::Credentials;
 
-using NetworkSignal = CollectorSignalFormatter::NetworkSignal;
-using NetworkAddress = CollectorSignalFormatter::NetworkAddress;
-using L4Protocol = v1::L4Protocol;
-using SocketFamily = v1::SocketFamily;
-using IPV4NetworkAddress = CollectorSignalFormatter::IPV4NetworkAddress;
-using IPV6NetworkAddress = CollectorSignalFormatter::IPV6NetworkAddress;
-
 using Timestamp = google::protobuf::Timestamp;
 using TimeUtil = google::protobuf::util::TimeUtil;
 
 namespace {
-
-uint64_t make_net_int64(uint32_t net_low, uint32_t net_high) {
-  return static_cast<uint64_t>(ntohl(net_high)) << 32 | static_cast<uint64_t>(ntohl(net_low));
-}
 
 enum ProcessSignalType {
 	EXECVE,
@@ -65,46 +54,20 @@ static EventMap<ProcessSignalType> process_signals = {
   ProcessSignalType::UNKNOWN_PROCESS_TYPE,
 };
 
-enum NetworkSignalType {
-	CONNECT,
-	ACCEPT,
-	UNKNOWN_NETWORK_TYPE
-};
-
-EventMap<NetworkSignalType> network_signals = {
-  {
-    { "connect<", NetworkSignalType::CONNECT },
-    { "accept<", NetworkSignalType::ACCEPT },
-  },
-  NetworkSignalType::UNKNOWN_NETWORK_TYPE,
-};
-
 }
 
 const SignalStreamMessage* CollectorSignalFormatter::ToProtoMessage(sinsp_evt* event) {
-  if (!process_signals[event->get_type()] && !network_signals[event->get_type()]) {
+  Signal* signal;
+  ProcessSignal* process_signal;
+
+  if (process_signals[event->get_type()] == ProcessSignalType::UNKNOWN_PROCESS_TYPE) {
     return nullptr;
   }
 
-  Signal* signal;
-  ProcessSignal* process_signal;
-  NetworkSignal* network_signal;
-
-  // set process info
-  if (process_signals[event->get_type()]) {
-    process_signal = CreateProcessSignal(event);
-    if (!process_signal) return nullptr;
-    signal = Allocate<Signal>();
-    signal->set_allocated_process_signal(process_signal);
-  }
-
-  // set network info
-  if (network_signals[event->get_type()]) {
-    network_signal = CreateNetworkSignal(event);
-    if (!network_signal) return nullptr;
-    signal = Allocate<Signal>();
-    signal->set_allocated_network_signal(network_signal);
-  }
+  process_signal = CreateProcessSignal(event);
+  if (!process_signal) return nullptr;
+  signal = Allocate<Signal>();
+  signal->set_allocated_process_signal(process_signal);
 
   SignalStreamMessage* signal_stream_message = AllocateRoot();
   signal_stream_message->clear_collector_register_request();
@@ -135,12 +98,14 @@ ProcessSignal* CollectorSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   signal->set_id(UUIDStr());
   // set name
   if (const char* name = event_extractor_.get_proc_name(event)) signal->set_name(name);
-  // set command_line
-  if (const char* command_line = event_extractor_.get_exeline(event)) signal->set_command_line(command_line);
+  // set process arguments
+  if (const char* args = event_extractor_.get_proc_args(event)) signal->set_args(args);
   // set pid
   if (const int64_t* pid = event_extractor_.get_pid(event)) signal->set_pid(*pid);
+  // set parent pid
+  if (const int64_t* ppid = event_extractor_.get_ppid(event)) signal->set_parent_pid(*ppid);
   // set exec_file_path
-  if (const std::string* exe = event_extractor_.get_exe(event)) signal->set_exec_file_path(*exe);
+  if (const std::string* exepath = event_extractor_.get_exepath(event)) signal->set_exec_file_path(*exepath);
   // set creds
   ProcessCredentials* process_creds = CreateProcessCreds(event);
   signal->set_allocated_credentials(process_creds);
@@ -162,17 +127,19 @@ ProcessSignal* CollectorSignalFormatter::CreateProcessSignal(sinsp_threadinfo* t
   signal->set_id(UUIDStr());
   // set name
   signal->set_name(tinfo->get_comm());
-  // set command_line
+  // set process arguments
   if (tinfo->m_args.size() > 0) {
-    std::ostringstream command_line;
+    std::ostringstream args;
     for (auto it = tinfo->m_args.begin(); it != tinfo->m_args.end();) {
-      command_line << *it++;
-      if (it != tinfo->m_args.end()) command_line << " ";
+      args << *it++;
+      if (it != tinfo->m_args.end()) args << " ";
     }
-    signal->set_command_line(command_line.str());
+    signal->set_args(args.str());
   }
   // set pid
   signal->set_pid(tinfo->m_pid);
+  // set ppid
+  signal->set_parent_pid(tinfo->m_ptid);
   // set exec_file_path
   signal->set_exec_file_path(tinfo->m_exepath);
   // set creds
@@ -189,9 +156,8 @@ ProcessSignal* CollectorSignalFormatter::CreateProcessSignal(sinsp_threadinfo* t
 
 ProcessCredentials* CollectorSignalFormatter::CreateProcessCreds(sinsp_evt* event) {
   auto creds = Allocate<ProcessCredentials>();
-  if (const uint32_t* uid = event_extractor_.get_uid(event)) creds->set_uid(*uid);
-  if (const uint32_t* gid = event_extractor_.get_gid(event)) creds->set_gid(*gid);
-  // fill in remaining
+  if (const uint32_t* uid = event_extractor_.get_user_uid(event)) creds->set_uid(*uid);
+  if (const uint64_t* gid = event_extractor_.get_group_gid(event)) creds->set_gid(*gid);
   return creds;
 }
 
@@ -199,108 +165,7 @@ ProcessCredentials* CollectorSignalFormatter::CreateProcessCreds(sinsp_threadinf
   auto creds = Allocate<ProcessCredentials>();
   creds->set_uid(tinfo->m_uid);
   creds->set_gid(tinfo->m_gid);
-  // fill in remaining
   return creds;
-}
-
-NetworkSignal* CollectorSignalFormatter::CreateNetworkSignal(sinsp_evt* event) {
-  sinsp_fdinfo_t*  fd_info = event->get_fd_info();
-  if (!fd_info) return nullptr;
-  if (fd_info->is_role_none()) return nullptr;
-
-  auto signal = Allocate<NetworkSignal>();
-
-  if (!fd_info->is_role_none()) {
-    signal->set_role(fd_info->is_role_server() ? NetworkSignal::ROLE_SERVER : NetworkSignal::ROLE_CLIENT);
-  }
-
-  L4Protocol l4proto = L4Protocol::L4_PROTOCOL_UNKNOWN;
-  switch (fd_info->get_l4proto()) {
-    case SCAP_L4_TCP:
-      l4proto = L4Protocol::L4_PROTOCOL_TCP;
-      break;
-    case SCAP_L4_UDP:
-      l4proto = L4Protocol::L4_PROTOCOL_UDP;
-      break;
-    case SCAP_L4_ICMP:
-      l4proto = L4Protocol::L4_PROTOCOL_ICMP;
-      break;
-    case SCAP_L4_RAW:
-      l4proto = L4Protocol::L4_PROTOCOL_RAW;
-      break;
-    default:
-      break;
-  }
-
-  if (l4proto != L4Protocol::L4_PROTOCOL_UNKNOWN) {
-    signal->set_protocol(l4proto);
-  }
-
-  switch (fd_info->m_type) {
-    case SCAP_FD_IPV4_SOCK: {
-      const auto& ipv4_fields = fd_info->m_sockinfo.m_ipv4info.m_fields;
-      signal->set_socket_family(SocketFamily::SOCKET_FAMILY_IPV4);
-      signal->set_allocated_client_address(CreateIPv4Address(ipv4_fields.m_sip, ipv4_fields.m_sport));
-      signal->set_allocated_server_address(CreateIPv4Address(ipv4_fields.m_dip, ipv4_fields.m_dport));
-      break;
-    }
-    case SCAP_FD_IPV4_SERVSOCK: {
-      const auto& ipv4_server_info = fd_info->m_sockinfo.m_ipv4serverinfo;
-      signal->set_socket_family(SocketFamily::SOCKET_FAMILY_IPV4);
-      signal->set_role(NetworkSignal::ROLE_SERVER);
-      signal->set_allocated_server_address(CreateIPv4Address(ipv4_server_info.m_ip, ipv4_server_info.m_port));
-      break;
-    }
-    case SCAP_FD_IPV6_SOCK: {
-      const auto& ipv6_fields = fd_info->m_sockinfo.m_ipv6info.m_fields;
-      signal->set_socket_family(SocketFamily::SOCKET_FAMILY_IPV6);
-      signal->set_allocated_client_address(CreateIPv6Address(ipv6_fields.m_sip, ipv6_fields.m_sport));
-      signal->set_allocated_server_address(CreateIPv6Address(ipv6_fields.m_dip, ipv6_fields.m_dport));
-      break;
-    }
-    case SCAP_FD_IPV6_SERVSOCK: {
-      const auto& ipv6_server_info = fd_info->m_sockinfo.m_ipv6serverinfo;
-      signal->set_socket_family(SocketFamily::SOCKET_FAMILY_IPV6);
-      signal->set_role(NetworkSignal::ROLE_SERVER);
-      signal->set_allocated_server_address(CreateIPv6Address(ipv6_server_info.m_ip, ipv6_server_info.m_port));
-      break;
-    }
-    default:
-      break;
-  }
-  // set id
-  signal->set_id(UUIDStr());
-  //set time
-  auto timestamp = Allocate<Timestamp>();
-  *timestamp = TimeUtil::NanosecondsToTimestamp(event->get_ts());
-  signal->set_allocated_time(timestamp);
-  // set container_id
-  if (const std::string* container_id = event_extractor_.get_container_id(event)) {
-    signal->set_container_id(*container_id);
-  }
-  return signal;
-}
-
-NetworkAddress* CollectorSignalFormatter::CreateIPv4Address(uint32_t ip, uint16_t port) {
-  if (!ip) return nullptr;
-  auto addr = Allocate<NetworkAddress>();
-  IPV4NetworkAddress* ipv4_addr = addr->mutable_ipv4_address();
-  ipv4_addr->set_address(ntohl(ip));
-  ipv4_addr->set_port(port);
-  return addr;
-}
-
-NetworkAddress* CollectorSignalFormatter::CreateIPv6Address(const uint32_t (&ip)[4], uint16_t port) {
-  if (!ip[0] && !ip[1] && !ip[2] && !ip[3]) return nullptr;
-  auto addr = Allocate<NetworkAddress>();
-  IPV6NetworkAddress* ipv6_addr = addr->mutable_ipv6_address();
-  // Not sure if this is well-defined at all, but I'm assuming that ip is in network order (big endian), hence
-  // ip[1]/ip[3] is low and ip[0]/ip[2] is high.
-  ipv6_addr->set_address_high(make_net_int64(ip[1], ip[0]));
-  ipv6_addr->set_address_low(make_net_int64(ip[3], ip[2]));
-  ipv6_addr->set_port(port);
-
-  return addr;
 }
 
 }  // namespace collector

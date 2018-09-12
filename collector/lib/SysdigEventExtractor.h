@@ -119,11 +119,15 @@ class SysdigEventExtractor {
   TINFO_FIELD(gid);
   FIELD_CSTR(proc_name, "proc.name");
   FIELD_CSTR(proc_pname, "proc.pname");
+  FIELD_CSTR(proc_args, "proc.args");
   FIELD_CSTR(exeline, "proc.exeline");
   FIELD_CSTR(cmdline, "proc.cmdline");
   FIELD_CSTR(user_name, "user.name");
   FIELD_CSTR(cwd, "proc.cwd");
   FIELD_CSTR(evt_args, "evt.args");
+  FIELD_RAW(ppid, "proc.ppid", int64_t);
+  FIELD_RAW(user_uid, "user.uid", uint32_t);
+  FIELD_RAW(group_gid, "group.gid", uint64_t);
 
   // General event information
   FIELD_RAW(event_rawres, "evt.rawres", int64_t);

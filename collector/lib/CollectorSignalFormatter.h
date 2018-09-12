@@ -44,12 +44,6 @@ class CollectorSignalFormatter : public ProtoSignalFormatter<v1::SignalStreamMes
   using ProcessSignal = v1::ProcessSignal;
   using ProcessCredentials = v1::ProcessSignal_Credentials;
 
-  using NetworkSignal = v1::NetworkSignal;
-  using NetworkAddress = v1::NetworkAddress;
-  using L4Protocol = v1::L4Protocol;
-  using IPV4NetworkAddress = v1::IPV4NetworkAddress;
-  using IPV6NetworkAddress = v1::IPV6NetworkAddress;
-
  protected:
   const v1::SignalStreamMessage* ToProtoMessage(sinsp_evt* event) override;
   const v1::SignalStreamMessage* ToProtoMessage(sinsp_threadinfo* tinfo) override;
@@ -58,12 +52,6 @@ class CollectorSignalFormatter : public ProtoSignalFormatter<v1::SignalStreamMes
   Signal* CreateSignal(sinsp_evt* event);
   ProcessSignal* CreateProcessSignal(sinsp_evt* event);
   ProcessCredentials* CreateProcessCreds(sinsp_evt* event);
-
-  NetworkSignal* CreateNetworkSignal(sinsp_evt* event);
-  NetworkAddress* CreateIPv4Address(uint32_t ip, uint16_t port);
-  NetworkAddress* CreateIPv6Address(const uint32_t (&ip)[4], uint16_t port);
-  NetworkAddress* CreateUnixAddress(uint64_t id, const sinsp_fdinfo_t* fd_info);
-
 
   Signal* CreateSignal(sinsp_threadinfo* tinfo);
   ProcessSignal* CreateProcessSignal(sinsp_threadinfo* tinfo);
