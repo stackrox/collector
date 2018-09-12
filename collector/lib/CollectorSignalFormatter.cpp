@@ -108,7 +108,7 @@ ProcessSignal* CollectorSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   if (const std::string* exepath = event_extractor_.get_exepath(event)) signal->set_exec_file_path(*exepath);
   // set creds
   ProcessCredentials* process_creds = CreateProcessCreds(event);
-  signal->set_allocated_credentials(process_creds);
+  if (process_creds) signal->set_allocated_credentials(process_creds);
   //set time
   auto timestamp = Allocate<Timestamp>();
   *timestamp = TimeUtil::NanosecondsToTimestamp(event->get_ts());
@@ -144,7 +144,7 @@ ProcessSignal* CollectorSignalFormatter::CreateProcessSignal(sinsp_threadinfo* t
   signal->set_exec_file_path(tinfo->m_exepath);
   // set creds
   ProcessCredentials* process_creds = CreateProcessCreds(tinfo);
-  signal->set_allocated_credentials(process_creds);
+  if (process_creds) signal->set_allocated_credentials(process_creds);
   //set time
   auto timestamp = Allocate<Timestamp>();
   *timestamp = TimeUtil::NanosecondsToTimestamp(tinfo->m_clone_ts);
@@ -155,13 +155,22 @@ ProcessSignal* CollectorSignalFormatter::CreateProcessSignal(sinsp_threadinfo* t
 }
 
 ProcessCredentials* CollectorSignalFormatter::CreateProcessCreds(sinsp_evt* event) {
+  const uint32_t* uid = event_extractor_.get_uid(event);
+  const uint32_t* gid = event_extractor_.get_gid(event);
+
+  if (!uid || !gid) return nullptr;
+  if (*uid == 0xffffffff && *gid == 0xffffffff) return nullptr;
+
   auto creds = Allocate<ProcessCredentials>();
-  if (const uint32_t* uid = event_extractor_.get_user_uid(event)) creds->set_uid(*uid);
-  if (const uint64_t* gid = event_extractor_.get_group_gid(event)) creds->set_gid(*gid);
+  if (uid) creds->set_uid(*uid);
+  if (gid) creds->set_gid(*gid);
   return creds;
 }
 
 ProcessCredentials* CollectorSignalFormatter::CreateProcessCreds(sinsp_threadinfo* tinfo) {
+  if (!tinfo) return nullptr;
+  if (tinfo->m_uid == 0xffffffff || tinfo->m_gid == 0xffffffff) return nullptr;
+
   auto creds = Allocate<ProcessCredentials>();
   creds->set_uid(tinfo->m_uid);
   creds->set_gid(tinfo->m_gid);

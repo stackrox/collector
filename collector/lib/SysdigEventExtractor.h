@@ -126,8 +126,6 @@ class SysdigEventExtractor {
   FIELD_CSTR(cwd, "proc.cwd");
   FIELD_CSTR(evt_args, "evt.args");
   FIELD_RAW(ppid, "proc.ppid", int64_t);
-  FIELD_RAW(user_uid, "user.uid", uint32_t);
-  FIELD_RAW(group_gid, "group.gid", uint64_t);
 
   // General event information
   FIELD_RAW(event_rawres, "evt.rawres", int64_t);
