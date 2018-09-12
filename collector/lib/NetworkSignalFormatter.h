@@ -24,9 +24,7 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _NETWORK_SIGNAL_FORMATTER_H_
 #define _NETWORK_SIGNAL_FORMATTER_H_
 
-extern "C" {
 #include <uuid/uuid.h>
-}
 
 #include "ProtoSignalFormatter.h"
 #include "SysdigEventExtractor.h"
