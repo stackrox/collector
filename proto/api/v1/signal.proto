@@ -56,24 +56,20 @@ message ProcessSignal {
     // Process arguments
     string args                    = 5;
 
+    // Process executable file path
+    string exec_file_path          = 6;
+
     // Host process ID
-    uint32 pid                     = 6;
+    uint32 pid                     = 7;
 
     // Host parent process ID
-    uint32 parent_pid              = 7;
+    uint32 parent_pid              = 8;
 
-    // Process executable file path
-    string exec_file_path          = 8;
+    // Real user ID
+    uint32 uid                     = 9;
 
-    // Process user and group identifiers (e.g., man 7 credentials)
-    Credentials credentials        = 9;
-
-    message Credentials {
-        // real user ID
-        uint32 uid                 = 1;
-        // real group ID
-        uint32 gid                 = 2;
-    }
+    // Real group ID
+    uint32 gid                     = 10;
 }
 
 // A Sensor service that allows Collector to push Signal messages

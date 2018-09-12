@@ -90,7 +90,7 @@ class SysdigEventExtractor {
  public: \
   const decltype(std::declval<sinsp_threadinfo>().m_ ## id)* get_ ## id(sinsp_evt* event) { \
     if (!event) return nullptr; \
-    sinsp_threadinfo* tinfo = event->get_thread_info(); \
+    sinsp_threadinfo* tinfo = event->get_thread_info(true); \
     if (!tinfo) return nullptr; \
     return &tinfo->m_ ## id; \
   }

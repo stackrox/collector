@@ -42,7 +42,6 @@ class CollectorSignalFormatter : public ProtoSignalFormatter<v1::SignalStreamMes
 
   using Signal = v1::Signal;
   using ProcessSignal = v1::ProcessSignal;
-  using ProcessCredentials = v1::ProcessSignal_Credentials;
 
  protected:
   const v1::SignalStreamMessage* ToProtoMessage(sinsp_evt* event) override;
@@ -51,11 +50,9 @@ class CollectorSignalFormatter : public ProtoSignalFormatter<v1::SignalStreamMes
  private:
   Signal* CreateSignal(sinsp_evt* event);
   ProcessSignal* CreateProcessSignal(sinsp_evt* event);
-  ProcessCredentials* CreateProcessCreds(sinsp_evt* event);
 
   Signal* CreateSignal(sinsp_threadinfo* tinfo);
   ProcessSignal* CreateProcessSignal(sinsp_threadinfo* tinfo);
-  ProcessCredentials* CreateProcessCreds(sinsp_threadinfo* tinfo);
 
   const EventNames& event_names_;
   SysdigEventExtractor event_extractor_;
