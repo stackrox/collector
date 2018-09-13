@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-import "proto/data/common.proto";
+import "data/common.proto";
 
 option cc_enable_arenas = true;
 

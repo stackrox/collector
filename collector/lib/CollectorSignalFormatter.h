@@ -28,7 +28,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "ProtoSignalFormatter.h"
 #include "SysdigEventExtractor.h"
 
-#include "../generated/proto/api/v1/signal.pb.h"
+#include "../generated/api/v1/signal.pb.h"
 
 namespace collector {
 
@@ -42,13 +42,6 @@ class CollectorSignalFormatter : public ProtoSignalFormatter<v1::SignalStreamMes
 
   using Signal = v1::Signal;
   using ProcessSignal = v1::ProcessSignal;
-  using ProcessCredentials = v1::ProcessSignal_Credentials;
-
-  using NetworkSignal = v1::NetworkSignal;
-  using NetworkAddress = v1::NetworkAddress;
-  using L4Protocol = v1::L4Protocol;
-  using IPV4NetworkAddress = v1::IPV4NetworkAddress;
-  using IPV6NetworkAddress = v1::IPV6NetworkAddress;
 
  protected:
   const v1::SignalStreamMessage* ToProtoMessage(sinsp_evt* event) override;
@@ -57,17 +50,9 @@ class CollectorSignalFormatter : public ProtoSignalFormatter<v1::SignalStreamMes
  private:
   Signal* CreateSignal(sinsp_evt* event);
   ProcessSignal* CreateProcessSignal(sinsp_evt* event);
-  ProcessCredentials* CreateProcessCreds(sinsp_evt* event);
-
-  NetworkSignal* CreateNetworkSignal(sinsp_evt* event);
-  NetworkAddress* CreateIPv4Address(uint32_t ip, uint16_t port);
-  NetworkAddress* CreateIPv6Address(const uint32_t (&ip)[4], uint16_t port);
-  NetworkAddress* CreateUnixAddress(uint64_t id, const sinsp_fdinfo_t* fd_info);
-
 
   Signal* CreateSignal(sinsp_threadinfo* tinfo);
   ProcessSignal* CreateProcessSignal(sinsp_threadinfo* tinfo);
-  ProcessCredentials* CreateProcessCreds(sinsp_threadinfo* tinfo);
 
   const EventNames& event_names_;
   SysdigEventExtractor event_extractor_;

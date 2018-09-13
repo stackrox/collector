@@ -230,15 +230,7 @@ bool SysdigService::SendExistingProcesses() {
            CLOG(WARNING) << "Failed to write existing process signal: " << tinfo;
            return false;
         }
-        // TODO(rc) remove debug output
-        CLOG(INFO) << "Existing Process: " << tinfo;
-      }
-    } else {
-      // TODO(rc) remove debug output
-      if (tinfo) {
-        CLOG(INFO) << "Skipping process: "<< tinfo;
-      } else {
-        CLOG(INFO) << "Skipping process: NULL";
+        CLOG(DEBUG) << "Found existing process: " << tinfo;
       }
     }
   }

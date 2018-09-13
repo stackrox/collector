@@ -107,7 +107,7 @@ proto-fmt:
 	@go get github.com/ckaznocha/protoc-gen-lint
 	@echo "Checking for proto style errors"
 	@$(PROTOC) \
-		--proto_path=$(BASE_PATH) \
+		--proto_path=$(PROTO_BASE_PATH) \
 		--lint_out=. \
 		$(DATA_PROTOS)
 	@$(PROTOC) \
@@ -116,7 +116,7 @@ proto-fmt:
 		-I$(GOPATH)/src/github.com/gogo/protobuf/protobuf \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
 		--lint_out=. \
-		--proto_path=$(BASE_PATH) \
+		--proto_path=$(PROTO_BASE_PATH) \
 		$(API_SERVICE_PROTOS)
 
 PROTO_DEPS_CPP=$(PROTOC) $(PROTOC_INCLUDES)
@@ -185,7 +185,7 @@ $(GENERATED_BASE_PATH)/%.pb.go: $(BASE_PATH)/%.proto $(GENERATED_BASE_PATH) $(PR
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOPATH)/src \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
-		--proto_path=$(BASE_PATH) \
+		--proto_path=$(PROTO_BASE_PATH) \
 		--gofast_out=$(GOGO_M_STR),$(M_ARGS_STR),plugins=grpc:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
 
@@ -193,7 +193,7 @@ $(GENERATED_CPP_BASE_PATH)/%.pb.cc $(GENERATED_CPP_BASE_PATH)/%.pb.h: $(BASE_PAT
 	@echo "+ $@"
 	@$(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
-		-I$(BASE_PATH) \
+		-I$(PROTO_BASE_PATH) \
 		--cpp_out=$(GENERATED_CPP_BASE_PATH) \
 		$<
 
@@ -201,7 +201,7 @@ $(GENERATED_CPP_BASE_PATH)/%.grpc.pb.cc $(GENERATED_CPP_BASE_PATH)/%.grpc.pb.h: 
 	@echo "+ $@"
 	@$(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
-		-I$(BASE_PATH) \
+		-I$(PROTO_BASE_PATH) \
 		--grpc_out=$(GENERATED_CPP_BASE_PATH) \
 		--plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN_PATH) \
 		$<
@@ -216,7 +216,7 @@ $(GENERATED_BASE_PATH)/%.pb.gw.go: $(BASE_PATH)/%.proto $(GENERATED_BASE_PATH)/%
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOPATH)/src \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
-		--proto_path=$(BASE_PATH) \
+		--proto_path=$(PROTO_BASE_PATH) \
 		--grpc-gateway_out=logtostderr=true:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
 	@for f in $(patsubst $(dir $<)/%.proto, $(dir $@)/%.pb.gw.go, $(wildcard $(dir $<)/*.proto)); do \
@@ -233,7 +233,7 @@ $(GENERATED_BASE_PATH)/%.validator.pb.go: $(BASE_PATH)/%.proto $(GENERATED_BASE_
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOPATH)/src \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
-		--proto_path=$(BASE_PATH) \
+		--proto_path=$(PROTO_BASE_PATH) \
 		--govalidators_out=$(M_ARGS_STR):$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
 	@for f in $(patsubst $(dir $<)/%.proto, $(dir $@)/%.validator.pb.go, $(wildcard $(dir $<)/*.proto)); do \

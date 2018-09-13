@@ -4,7 +4,7 @@ option go_package = "v1";
 option cc_enable_arenas = true;
 
 import "google/protobuf/timestamp.proto";
-import "proto/api/v1/empty.proto";
+import "api/v1/empty.proto";
 
 package v1;
 
@@ -22,18 +22,17 @@ message SignalStreamMessage {
 // A request message sent by collector to register with Sensor.
 message CollectorRegisterRequest {
     // The hostname on which collector is running.
-    string hostname         = 1;
+    string hostname    = 1;
 
     // A unique identifier for an instance of collector.
-    string instance_id      = 2;
+    string instance_id = 2;
 }
 
 // Signal message tracks process and network activity.
 // Specifically, process launches and network connects/accepts.
 message Signal {
     oneof signal {
-        ProcessSignal process_signal       = 1;
-        NetworkSignal network_signal       = 2;
+        ProcessSignal process_signal = 1;
     }
 }
 
@@ -43,95 +42,31 @@ message ProcessSignal {
     // We have this here instead of at the top level
     // because we want to have each message to be
     // self contained.
-    string id                               = 1;
+    string id                      = 1;
+
+    // ID of container associated with this process
+    string container_id            = 2;
+
+    // Process creation time
+    google.protobuf.Timestamp time = 3;
 
     // Process name
-    string name                             = 2;
+    string name                    = 4;
 
-    // Process command line arguments
-    string command_line                     = 3;
-
-    // Host process ID
-    uint32 pid                              = 4;
-
-    // Host parent process ID
-    uint32 parent_pid                       = 5;
+    // Process arguments
+    string args                    = 5;
 
     // Process executable file path
-    string exec_file_path                   = 6;
+    string exec_file_path          = 6;
 
-    // Process user and group identifiers (e.g., man 7 credentials)
-    Credentials credentials                 = 7;
+    // Host process ID
+    uint32 pid                     = 7;
 
-    message Credentials {
-        uint32 uid  = 1; // real user ID
-        uint32 gid  = 2; // real group ID
-        uint32 euid = 3; // effective user ID
-        uint32 egid = 4; // effective group ID
-        uint32 suid = 5; // saved set-user ID
-        uint32 sgid = 6; // saved set-group ID
-    }
+    // Real user ID
+    uint32 uid                     = 8;
 
-    google.protobuf.Timestamp time         = 11;
-    string                    container_id = 12;
-}
-
-// NetworkSignal tracks connection information
-// about client and server.
-message NetworkSignal {
-    // A unique UUID for identifying the message
-    string id                               = 1;
-
-    SocketFamily socket_family              = 2;
-
-    NetworkAddress client_address           = 3;
-    NetworkAddress server_address           = 4;
-
-    L4Protocol protocol                     = 5;
-
-    Role role                               = 6;
-
-    enum Role {
-        ROLE_UNKNOWN = 0;
-        ROLE_SERVER  = 1;
-        ROLE_CLIENT  = 2;
-    }
-
-    google.protobuf.Timestamp time         = 11;
-    string                    container_id = 12;
-}
-
-// Note: We currently don't report local unix sockets.
-message NetworkAddress {
-    oneof network_address {
-        IPV4NetworkAddress ipv4_address   = 1;
-        IPV6NetworkAddress ipv6_address   = 2;
-    }
-}
-
-message IPV4NetworkAddress {
-    fixed32 address     = 1;
-    uint32 port         = 2;
-}
-
-message IPV6NetworkAddress {
-    fixed64 address_high = 1;
-    fixed64 address_low  = 2;
-    uint32 port          = 3;
-}
-
-enum SocketFamily {
-    SOCKET_FAMILY_UNKNOWN = 0;
-    SOCKET_FAMILY_IPV4    = 1;
-    SOCKET_FAMILY_IPV6    = 2;
-}
-
-enum L4Protocol {
-    L4_PROTOCOL_UNKNOWN = 0;
-    L4_PROTOCOL_TCP     = 1;
-    L4_PROTOCOL_UDP     = 2;
-    L4_PROTOCOL_ICMP    = 3;
-    L4_PROTOCOL_RAW     = 4;
+    // Real group ID
+    uint32 gid                     = 9;
 }
 
 // A Sensor service that allows Collector to push Signal messages
