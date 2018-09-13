@@ -129,4 +129,20 @@ void ConnectionTracker::ComputeDelta(const ConnMap& new_state, ConnMap* old_stat
   }
 }
 
+int IsEphemeralPort(uint16_t port) {
+  if (port >= 49152) return 4;  // IANA range
+  if (port >= 32768) return 3;  // Modern Linux kernel range
+  if (port >= 1025 && port <= 5000) return 2;  // FreeBSD (partial) + Windows <=XP range
+  if (port == 1024) return 1;  // FreeBSD
+  return 0;  // not ephemeral according to any range
+}
+
+bool DetermineRole(const Endpoint& local, const Endpoint& remote, const EndpointSet& listen_endpoints) {
+  if (listen_endpoints.find(local) != listen_endpoints.end()) return true;
+  Endpoint local_all(Address(), local.port());
+  if (listen_endpoints.find(local_all) != listen_endpoints.end()) return true;
+
+  return IsEphemeralPort(remote.port()) > IsEphemeralPort(local.port());
+}
+
 }  // namespace collector

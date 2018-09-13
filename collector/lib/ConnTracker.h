@@ -38,20 +38,27 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-constexpr size_t kMaxAddrLen = 16;
-
 class Address {
  public:
   enum class Family : unsigned char {
+    UNKNOWN = 0,
     IPV4,
     IPV6,
   };
+
+  static constexpr size_t kMaxLen = 16;
+
+  Address() : Address(Family::UNKNOWN) {}
 
   Address(unsigned char a, unsigned char b, unsigned char c, unsigned char d)
     : Address(htonl(static_cast<uint32_t>(a) << 24 |
                     static_cast<uint32_t>(b) << 16 |
                     static_cast<uint32_t>(c) << 8 |
                     static_cast<uint32_t>(d))) {}
+
+  Address(Family family, const std::array<uint8_t, kMaxLen>& data) : Address(family) {
+    std::memcpy(data_.data(), data.data(), Length(family));
+  }
 
   Address(uint32_t ipv4) : Address(Family::IPV4) {
     std::memcpy(data_.data(), &ipv4, sizeof(ipv4));
@@ -74,6 +81,16 @@ class Address {
     return !(*this == other);
   }
 
+  static int Length(Family family) {
+    switch (family) {
+      case Family::IPV4:
+        return 4;
+      case Family::IPV6:
+        return 16;
+    }
+    return 0;
+  }
+
  private:
   friend std::ostream& operator<<(std::ostream& os, const Address& addr) {
     int af = (addr.family_ == Family::IPV4) ? AF_INET : AF_INET6;
@@ -88,12 +105,13 @@ class Address {
     std::memset(data_.data(), 0, data_.size());
   }
 
-  std::array<unsigned char, kMaxAddrLen> data_;
+  std::array<unsigned char, kMaxLen> data_;
   Family family_;
 };
 
 class Endpoint {
  public:
+  Endpoint() : port_(0) {}
   Endpoint(const Address& address, unsigned short port) : address_(address), port_(port) {}
 
   size_t Hash() const {
@@ -107,6 +125,8 @@ class Endpoint {
   bool operator!=(const Endpoint& other) const {
     return !(*this == other);
   }
+
+  uint16_t port() const { return port_; }
 
  private:
   friend std::ostream& operator<<(std::ostream& os, const Endpoint& ep) {
@@ -122,11 +142,13 @@ class Endpoint {
   uint16_t port_;
 };
 
+using EndpointSet = UnorderedSet<Endpoint>;
+
 enum class L4Proto : uint8_t {
   UNKNOWN = 0,
-  TCP = 1,
-  UDP = 2,
-  ICMP = 3,
+  TCP,
+  UDP,
+  ICMP,
 };
 
 // ConnStatus encapsulates the status of a connection, comprised of the timestamp when the connection was last seen
@@ -167,6 +189,7 @@ class ConnStatus {
 
 class Connection {
  public:
+  Connection() : flags_(0) {}
   Connection(std::string container, const Endpoint& server, const Endpoint& client, L4Proto l4proto, bool is_server)
     : container_(std::move(container)), server_(server), client_(client), flags_(static_cast<uint8_t>(l4proto) << 1 | (is_server) ? 1 : 0)
   {}
@@ -217,6 +240,8 @@ class ConnectionTracker {
   std::mutex mutex_;
   ConnMap state_;
 };
+
+int IsEphemeralPort(uint16_t port);
 
 }  // namespace collector
 

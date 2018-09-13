@@ -26,6 +26,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <algorithm>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace collector {
 
@@ -111,6 +112,9 @@ template <typename FirstArg, typename... RestArgs>
 size_t HashAll(const FirstArg& first, const RestArgs&... rest) {
   return CombineHashes(Hasher()(first), HashAll(rest...));
 }
+
+template <typename E>
+using UnorderedSet = std::unordered_set<E, Hasher>;
 
 template <typename K, typename V>
 using UnorderedMap = std::unordered_map<K, V, Hasher>;
