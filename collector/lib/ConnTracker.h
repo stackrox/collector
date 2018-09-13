@@ -182,7 +182,9 @@ class ConnectionTracker {
   static int64_t MakeInactive(int64_t ts) { return ts & ~0x1; }
 
  private:
-  void EmplaceOrUpdate(const Connection& conn, int64_t ts);
+  // Emplace a connection into the state ConnMap, or update its timestamp if the supplied timestamp is more recent
+  // than the stored one.
+  void EmplaceOrUpdateNoLock(const Connection& conn, int64_t ts);
 
   std::mutex mutex_;
   ConnMap state_;

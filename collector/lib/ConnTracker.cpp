@@ -30,36 +30,36 @@ You should have received a copy of the GNU General Public License along with thi
 namespace collector {
 
 void ConnectionTracker::AddConnection(const Connection &conn, int64_t timestamp) {
-  SCOPED_LOCK(mutex_);
-
-  EmplaceOrUpdate(conn, MakeActive(timestamp));
+  WITH_LOCK(mutex_) {
+    EmplaceOrUpdateNoLock(conn, MakeActive(timestamp));
+  }
 }
 
 void ConnectionTracker::RemoveConnection(const Connection &conn, int64_t timestamp) {
-  SCOPED_LOCK(mutex_);
-
-  // Even if a connection is not present, record its closing timestamp, so that we don't discard any potentially
-  // useful information.
-  EmplaceOrUpdate(conn, MakeInactive(timestamp));
+  WITH_LOCK(mutex_) {
+    // Even if a connection is not present, record its closing timestamp, so that we don't discard any potentially
+    // useful information.
+    EmplaceOrUpdateNoLock(conn, MakeInactive(timestamp));
+  }
 }
 
 void ConnectionTracker::Update(const std::vector<Connection> &all_conns, int64_t timestamp) {
-  SCOPED_LOCK(mutex_);
+  WITH_LOCK(mutex_) {
+    // Mark all existing connections as inactive
+    for (auto &prev_conn : state_) {
+      MakeInactive(&prev_conn.second);
+    }
 
-  // Mark all existing connections as inactive
-  for (auto& prev_conn : state_) {
-    MakeInactive(&prev_conn.second);
-  }
+    int64_t ts = MakeActive(timestamp);
 
-  int64_t ts = MakeActive(timestamp);
-
-  // Insert (or mark as active) all current connections.
-  for (const auto& curr_conn : all_conns) {
-    EmplaceOrUpdate(curr_conn, ts);
+    // Insert (or mark as active) all current connections.
+    for (const auto &curr_conn : all_conns) {
+      EmplaceOrUpdateNoLock(curr_conn, ts);
+    }
   }
 }
 
-void ConnectionTracker::EmplaceOrUpdate(const Connection& conn, int64_t ts) {
+void ConnectionTracker::EmplaceOrUpdateNoLock(const Connection& conn, int64_t ts) {
   auto emplace_res = state_.emplace(conn, ts);
   if (!emplace_res.second && ts > emplace_res.first->second) {
     emplace_res.first->second = ts;
@@ -67,23 +67,23 @@ void ConnectionTracker::EmplaceOrUpdate(const Connection& conn, int64_t ts) {
 }
 
 ConnMap ConnectionTracker::FetchState(bool clear_inactive) {
-  SCOPED_LOCK(mutex_);
-
-  if (!clear_inactive) {
-    return state_;
-  }
-
   ConnMap new_state;
-  for (const auto& conn : state_) {
-    if (IsActive(conn.second)) {
-      new_state.insert(conn);
+
+  WITH_LOCK(mutex_) {
+    if (!clear_inactive) {
+      return state_;
     }
+
+    for (const auto &conn : state_) {
+      if (IsActive(conn.second)) {
+        new_state.insert(conn);
+      }
+    }
+
+    state_.swap(new_state);
   }
 
-  using std::swap;
-  swap(state_, new_state);
-
-  return std::move(new_state);
+  return new_state;
 }
 
 /* static */

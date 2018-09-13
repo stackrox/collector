@@ -74,14 +74,31 @@ std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo *t);
 // UUIDStr returns UUID in string format.
 const char* UUIDStr();
 
-// Lock allows locking any mutex without having to explictly specify the type of the mutex, e.g.,
-// auto lock = Lock(mutex_);
-template <typename Mutex>
-std::unique_lock<Mutex> Lock(Mutex& mutex) {
-  return std::unique_lock<Mutex>(mutex);
+namespace internal {
+
+// ScopedLock just wraps a `std::unique_lock`. In addition, its operator bool() is marked constexpr and always returns
+// true, such that it can be used in an assignment in an `if` condition (see WITH_LOCK below).
+template<typename Mutex>
+class ScopedLock {
+ public:
+  ScopedLock(Mutex &m) : lock_(m) {}
+
+  constexpr operator bool() const { return true; }
+
+ private:
+  std::unique_lock<Mutex> lock_;
+};
+
+// Lock allows locking any mutex without having to explictly specify the type of the mutex, such that its return value
+// can just be assigned to an auto-typed variable.
+template<typename Mutex>
+ScopedLock<Mutex> Lock(Mutex &mutex) {
+  return ScopedLock<Mutex>(mutex);
 }
 
-#define SCOPED_LOCK(m) auto __scoped_lock_ ## __LINE__ = Lock(m)
+}  // namespace internal
+
+#define WITH_LOCK(m) if (auto __scoped_lock_ ## __LINE__ = internal::Lock(m))
 
 }  // namespace collector
 
