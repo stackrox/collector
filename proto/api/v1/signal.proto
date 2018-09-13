@@ -62,14 +62,11 @@ message ProcessSignal {
     // Host process ID
     uint32 pid                     = 7;
 
-    // Host parent process ID
-    uint32 parent_pid              = 8;
-
     // Real user ID
-    uint32 uid                     = 9;
+    uint32 uid                     = 8;
 
     // Real group ID
-    uint32 gid                     = 10;
+    uint32 gid                     = 9;
 }
 
 // A Sensor service that allows Collector to push Signal messages

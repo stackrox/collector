@@ -53,26 +53,14 @@ static EventMap<ProcessSignalType> process_signals = {
   ProcessSignalType::UNKNOWN_PROCESS_TYPE,
 };
 
-int64_t extract_ppid(sinsp_threadinfo *tinfo) {
-  if (!tinfo) return -1;
-  if (tinfo->is_main_thread()) return tinfo->m_ptid;
-  if (sinsp_threadinfo* mt = tinfo->get_main_thread()) {
-    return mt->m_ptid;
-  }
-  return -1;
-}
-
 string extract_proc_args(sinsp_threadinfo *tinfo) {
-  string res;
-  if (tinfo->m_args.size() > 0) {
-    std::ostringstream args;
-    for (auto it = tinfo->m_args.begin(); it != tinfo->m_args.end();) {
-      args << *it++;
-      if (it != tinfo->m_args.end()) args << " ";
-    }
-    res = args.str();
+  if (tinfo->m_args.empty()) return "";
+  std::ostringstream args;
+  for (auto it = tinfo->m_args.begin(); it != tinfo->m_args.end();) {
+    args << *it++;
+    if (it != tinfo->m_args.end()) args << " ";
   }
-  return res;
+  return args.str();
 }
 
 }
@@ -115,16 +103,13 @@ ProcessSignal* CollectorSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   signal->set_id(UUIDStr());
 
   // set name
-  if (const char* name = event_extractor_.get_proc_name(event)) signal->set_name(name);
+  if (const std::string* name = event_extractor_.get_comm(event)) signal->set_name(*name);
 
   // set process arguments
   if (const char* args = event_extractor_.get_proc_args(event)) signal->set_args(args);
 
   // set pid
   if (const int64_t* pid = event_extractor_.get_pid(event)) signal->set_pid(*pid);
-
-  // set parent pid
-  if (const int64_t* ppid = event_extractor_.get_ppid(event)) signal->set_parent_pid(*ppid);
 
   // set exec_file_path
   if (const std::string* exepath = event_extractor_.get_exepath(event)) signal->set_exec_file_path(*exepath);
@@ -160,9 +145,6 @@ ProcessSignal* CollectorSignalFormatter::CreateProcessSignal(sinsp_threadinfo* t
 
   // set pid
   signal->set_pid(tinfo->m_pid);
-
-  // set ppid
-  signal->set_parent_pid(extract_ppid(tinfo));
 
   // set exec_file_path
   signal->set_exec_file_path(tinfo->m_exepath);
