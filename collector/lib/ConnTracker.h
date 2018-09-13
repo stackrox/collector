@@ -151,7 +151,13 @@ class ConnStatus {
     return ConnStatus(new_data);
   }
 
-  operator int64_t() const { return LastActiveTime(); }
+  bool operator==(const ConnStatus& other) const {
+    return data_ == other.data_;
+  }
+
+  bool operator!=(const ConnStatus& other) const {
+    return !(*this == other);
+  }
 
  private:
   explicit ConnStatus(int64_t data) : data_(data) {}
