@@ -31,7 +31,7 @@ namespace collector {
 
 void ConnectionTracker::AddConnection(const Connection &conn, int64_t timestamp) {
   WITH_LOCK(mutex_) {
-    EmplaceOrUpdateNoLock(conn, MakeActive(timestamp));
+    EmplaceOrUpdateNoLock(conn, ConnStatus(timestamp, true));
   }
 }
 
@@ -39,7 +39,7 @@ void ConnectionTracker::RemoveConnection(const Connection &conn, int64_t timesta
   WITH_LOCK(mutex_) {
     // Even if a connection is not present, record its closing timestamp, so that we don't discard any potentially
     // useful information.
-    EmplaceOrUpdateNoLock(conn, MakeInactive(timestamp));
+    EmplaceOrUpdateNoLock(conn, ConnStatus(timestamp, false));
   }
 }
 
@@ -47,22 +47,22 @@ void ConnectionTracker::Update(const std::vector<Connection> &all_conns, int64_t
   WITH_LOCK(mutex_) {
     // Mark all existing connections as inactive
     for (auto &prev_conn : state_) {
-      MakeInactive(&prev_conn.second);
+      prev_conn.second.SetActive(false);
     }
 
-    int64_t ts = MakeActive(timestamp);
+    ConnStatus new_status(timestamp, true);
 
     // Insert (or mark as active) all current connections.
     for (const auto &curr_conn : all_conns) {
-      EmplaceOrUpdateNoLock(curr_conn, ts);
+      EmplaceOrUpdateNoLock(curr_conn, new_status);
     }
   }
 }
 
-void ConnectionTracker::EmplaceOrUpdateNoLock(const Connection& conn, int64_t ts) {
-  auto emplace_res = state_.emplace(conn, ts);
-  if (!emplace_res.second && ts > emplace_res.first->second) {
-    emplace_res.first->second = ts;
+void ConnectionTracker::EmplaceOrUpdateNoLock(const Connection& conn, ConnStatus status) {
+  auto emplace_res = state_.emplace(conn, status);
+  if (!emplace_res.second && status.LastActiveTime() > emplace_res.first->second.LastActiveTime()) {
+    emplace_res.first->second = status;
   }
 }
 
@@ -74,8 +74,8 @@ ConnMap ConnectionTracker::FetchState(bool clear_inactive) {
       return state_;
     }
 
-    for (const auto &conn : state_) {
-      if (IsActive(conn.second)) {
+    for (const auto& conn : state_) {
+      if (conn.second.IsActive()) {
         new_state.insert(conn);
       }
     }
@@ -93,15 +93,15 @@ void ConnectionTracker::ComputeDelta(const ConnMap& new_state, ConnMap* old_stat
     auto insert_res = old_state->insert(conn);
     auto &old_conn = *insert_res.first;
     if (!insert_res.second) {  // was already present
-      if (IsActive(conn.second) != IsActive(old_conn.second)) {
+      if (conn.second.IsActive() != old_conn.second.IsActive()) {
         // Connection was either resurrected or newly closed. Update in either case.
         old_conn.second = conn.second;
-      } else if (IsActive(conn.second)) {
+      } else if (conn.second.IsActive()) {
         // Both connections are active. Not part of the delta.
         old_state->erase(insert_res.first);
       } else {
         // Both connections are inactive. Update the timestamp if applicable, otherwise omit from delta.
-        if (old_conn.second < conn.second) {
+        if (old_conn.second.LastActiveTime() < conn.second.LastActiveTime()) {
           old_conn.second = conn.second;
         } else {
           old_state->erase(insert_res.first);
@@ -120,8 +120,8 @@ void ConnectionTracker::ComputeDelta(const ConnMap& new_state, ConnMap* old_stat
       continue;
     }
 
-    if (IsActive(old_conn.second)) {
-      MakeInactive(&old_conn.second);
+    if (old_conn.second.IsActive()) {
+      old_conn.second.SetActive(false);
       ++it;
     } else {
       it = old_state->erase(it);

@@ -129,6 +129,36 @@ enum class L4Proto : uint8_t {
   ICMP = 3,
 };
 
+// ConnStatus encapsulates the status of a connection, comprised of the timestamp when the connection was last seen
+// alive (in microseconds since epoch), and a flag indicating whether the connection is currently active.
+class ConnStatus {
+ public:
+  ConnStatus() : data_(0UL) {}
+  ConnStatus(int64_t microtimestamp, bool active) : data_((microtimestamp & ~0x1UL) | ((active) ? 0x1 : 0x0)) {}
+
+  int64_t LastActiveTime() const { return data_ & ~0x1UL; }
+  bool IsActive() const { return data_ & 0x1UL; }
+
+  void SetActive(bool active) {
+    if (active) data_ |= 0x1UL;
+    else data_ &= ~0x1UL;
+  }
+
+  ConnStatus WithStatus(bool active) const {
+    int64_t new_data = data_;
+    if (active) new_data |= 0x1UL;
+    else new_data &= ~0x1UL;
+    return ConnStatus(new_data);
+  }
+
+  operator int64_t() const { return LastActiveTime(); }
+
+ private:
+  explicit ConnStatus(int64_t data) : data_(data) {}
+
+  int64_t data_;
+};
+
 class Connection {
  public:
   Connection(std::string container, const Endpoint& server, const Endpoint& client, L4Proto l4proto, bool is_server)
@@ -158,9 +188,7 @@ class Connection {
   uint8_t flags_;
 };
 
-// We store the connection state as an int64_t microtimestamp, with the least significant bit used as an indicator
-// whether the connection is active (1) or not (0).
-using ConnMap = UnorderedMap<Connection, int64_t>;
+using ConnMap = UnorderedMap<Connection, ConnStatus>;
 
 class ConnectionTracker {
  public:
@@ -175,16 +203,10 @@ class ConnectionTracker {
   // ComputeDelta computes a diff between new_state and *old_state, and stores the diff in *old_state.
   static void ComputeDelta(const ConnMap& new_state, ConnMap* old_state);
 
-  // Timestamp + active-flag manipulation functions.
-  static bool IsActive(int64_t ts) { return ts & 0x1; }
-  static void MakeInactive(int64_t* ts) { *ts &= ~0x1; }
-  static int64_t MakeActive(int64_t ts) { return ts | 0x1; }
-  static int64_t MakeInactive(int64_t ts) { return ts & ~0x1; }
-
  private:
   // Emplace a connection into the state ConnMap, or update its timestamp if the supplied timestamp is more recent
   // than the stored one.
-  void EmplaceOrUpdateNoLock(const Connection& conn, int64_t ts);
+  void EmplaceOrUpdateNoLock(const Connection& conn, ConnStatus status);
 
   std::mutex mutex_;
   ConnMap state_;

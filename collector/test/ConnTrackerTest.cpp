@@ -52,7 +52,7 @@ TEST(ConnTrackerTest, TestAddRemove) {
   tracker.AddConnection(conn2, now);
 
   auto state = tracker.FetchState();
-  EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn1, CT::MakeActive(now)), std::make_pair(conn2, CT::MakeActive(now))));
+  EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now, true)), std::make_pair(conn2, ConnStatus(now, true))));
 
   auto state2 = tracker.FetchState();
   EXPECT_EQ(state, state2);
@@ -60,10 +60,10 @@ TEST(ConnTrackerTest, TestAddRemove) {
   int64_t now2 = NowMicros();
   tracker.RemoveConnection(conn1, now2);
   state = tracker.FetchState();
-  EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn1, CT::MakeInactive(now2)), std::make_pair(conn2, CT::MakeActive(now))));
+  EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now2, false)), std::make_pair(conn2, ConnStatus(now, true))));
 
   state = tracker.FetchState();
-  EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn2, CT::MakeActive(now))));
+  EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn2, ConnStatus(now, true))));
 }
 
 
@@ -80,7 +80,7 @@ TEST(ConnTrackerTest, TestUpdate) {
   tracker.Update({conn1, conn2}, now);
 
   auto state = tracker.FetchState();
-  EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn1, CT::MakeActive(now)), std::make_pair(conn2, CT::MakeActive(now))));
+  EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now, true)), std::make_pair(conn2, ConnStatus(now, true))));
 
   auto state2 = tracker.FetchState();
   EXPECT_EQ(state, state2);
@@ -88,10 +88,10 @@ TEST(ConnTrackerTest, TestUpdate) {
   int64_t now2 = NowMicros();
   tracker.Update({conn1}, now2);
   state = tracker.FetchState();
-  EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn1, CT::MakeActive(now2)), std::make_pair(conn2, CT::MakeInactive(now))));
+  EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now2, true)), std::make_pair(conn2, ConnStatus(now, false))));
 
   state = tracker.FetchState();
-  EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn1, CT::MakeActive(now2))));
+  EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now2, true))));
 }
 
 TEST(ConnTrackerTest, TestComputeDelta) {
@@ -103,7 +103,7 @@ TEST(ConnTrackerTest, TestComputeDelta) {
 
   int64_t now = NowMicros();
 
-  ConnMap orig_state = {{conn1, CT::MakeActive(now)}, {conn2, CT::MakeActive(now)}};
+  ConnMap orig_state = {{conn1, ConnStatus(now, true)}, {conn2, ConnStatus(now, true)}};
   ConnMap state1 = orig_state;
   ConnMap state2;
 
@@ -120,24 +120,24 @@ TEST(ConnTrackerTest, TestComputeDelta) {
   state2 = state1;
   state1.erase(conn1);
   CT::ComputeDelta(state1, &state2);
-  EXPECT_THAT(state2, UnorderedElementsAre(std::make_pair(conn1, CT::MakeInactive(now))));
+  EXPECT_THAT(state2, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now, false))));
 
   // Just updating the timestamp of an active connection should not make it appear in the delta.
   state1 = state2 = orig_state;
-  state1[conn1] = CT::MakeActive(NowMicros());
+  state1[conn1] = ConnStatus(NowMicros(), true);
   CT::ComputeDelta(state1, &state2);
   EXPECT_THAT(state2, IsEmpty());
 
   // Marking a connection as inactive should make it appear as inactive in the delta.
   state1 = state2 = orig_state;
   int64_t now2 = NowMicros();
-  state1[conn1] = CT::MakeInactive(now2);
+  state1[conn1] = ConnStatus(now2, false);
   CT::ComputeDelta(state1, &state2);
-  EXPECT_THAT(state2, UnorderedElementsAre(std::make_pair(conn1, CT::MakeInactive(now2))));
+  EXPECT_THAT(state2, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now2, false))));
 
   // A connection that was already inactive no longer showing up at all in the new state should not appear in the delta.
   state1 = state2 = orig_state;
-  CT::MakeInactive(&state2[conn1]);
+  state2[conn1].SetActive(false);
   state1.erase(conn1);
   CT::ComputeDelta(state1, &state2);
   EXPECT_THAT(state2, IsEmpty());
