@@ -29,6 +29,33 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
+std::ostream& operator<<(std::ostream& os, L4Proto l4proto) {
+  switch (l4proto) {
+    case L4Proto::TCP:
+      return os << "tcp";
+    case L4Proto::UDP:
+      return os << "udp";
+    case L4Proto::ICMP:
+      return os << "icmp";
+    default:
+      return os << "unknown(" << static_cast<uint8_t>(l4proto) << ")";
+  }
+}
+
+std::ostream& operator<<(std::ostream& os, const Connection& conn) {
+  os << conn.container() << ": " << conn.local();
+  if (conn.is_server()) {
+    os << " <- ";
+  } else {
+    os << " -> ";
+  }
+  os << conn.remote() << " [" << conn.l4proto();
+  if (conn.local().address().family() == Address::Family::IPV6) {
+    os << "6";
+  }
+  return os << "]";
+}
+
 void ConnectionTracker::AddConnection(const Connection &conn, int64_t timestamp) {
   WITH_LOCK(mutex_) {
     EmplaceOrUpdateNoLock(conn, ConnStatus(timestamp, true));
@@ -127,22 +154,6 @@ void ConnectionTracker::ComputeDelta(const ConnMap& new_state, ConnMap* old_stat
       it = old_state->erase(it);
     }
   }
-}
-
-int IsEphemeralPort(uint16_t port) {
-  if (port >= 49152) return 4;  // IANA range
-  if (port >= 32768) return 3;  // Modern Linux kernel range
-  if (port >= 1025 && port <= 5000) return 2;  // FreeBSD (partial) + Windows <=XP range
-  if (port == 1024) return 1;  // FreeBSD
-  return 0;  // not ephemeral according to any range
-}
-
-bool DetermineRole(const Endpoint& local, const Endpoint& remote, const EndpointSet& listen_endpoints) {
-  if (listen_endpoints.find(local) != listen_endpoints.end()) return true;
-  Endpoint local_all(Address(), local.port());
-  if (listen_endpoints.find(local_all) != listen_endpoints.end()) return true;
-
-  return IsEphemeralPort(remote.port()) > IsEphemeralPort(local.port());
 }
 
 }  // namespace collector

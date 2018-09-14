@@ -38,6 +38,7 @@ extern "C" {
 
 #include "Network.h"
 
+#include "FileSystem.h"
 #include "Logging.h"
 #include "Utility.h"
 
@@ -77,26 +78,6 @@ bool ParseAddressList(const std::string& address_list_str, std::vector<Address>*
   return true;
 }
 
-namespace {
-
-class AutoCloser {
- public:
-  AutoCloser(int* fd) : m_fd(fd) {}
-  ~AutoCloser() {
-    if (m_fd && *m_fd > 0) {
-      int rv = close(*m_fd);
-      if (rv != 0) {
-        CLOG(WARNING) << "Error closing file descriptor " << *m_fd << ": " << StrError();
-      }
-    }
-  }
-
- private:
-  int* m_fd;
-};
-
-}  // namespace
-
 ConnectivityStatus CheckConnectivity(const Address& addr, const std::chrono::milliseconds& timeout,
                                      std::string* error_str, const std::function<bool()>& interrupt, int interrupt_fd) {
   hostent *record = gethostbyname(addr.host.c_str());
@@ -110,13 +91,12 @@ ConnectivityStatus CheckConnectivity(const Address& addr, const std::chrono::mil
   address.sin_family = AF_INET;
   address.sin_port = htons(addr.port);
 
-  int sock = socket(AF_INET, SOCK_STREAM, 0);
-  if (sock == -1) {
+  FDHandle sock = socket(AF_INET, SOCK_STREAM, 0);
+  if (!sock.valid()) {
     *error_str = Str("cannot open socket: ", StrError());
     return ConnectivityStatus::ERROR;
   }
 
-  AutoCloser closer(&sock);
   int rv = fcntl(sock, F_SETFL, O_NONBLOCK);
   if (rv == -1) {
     *error_str = Str("cannot set socket to nonblocking: ", StrError());

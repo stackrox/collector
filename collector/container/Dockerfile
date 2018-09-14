@@ -89,4 +89,4 @@ CMD collector \
     --broker-list=$BROKER_LIST \
     --grpc-server=$GRPC_SERVER
 
-COPY bin/collector /usr/local/bin/collector
+COPY bin/ /usr/local/bin/

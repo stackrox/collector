@@ -48,6 +48,9 @@ target_link_libraries(collector libprometheus-cpp-pull.a)
 target_link_libraries(collector libprometheus-cpp-core.a)
 target_link_libraries(collector libprotobuf.a)
 
+add_executable(connscrape connscrape.cpp)
+target_link_libraries(connscrape collector_lib)
+
 # Setup testing
 enable_testing()
 

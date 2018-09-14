@@ -32,6 +32,7 @@ container/bin/collector: $(HDRS) $(SRCS) generated-srcs container/libs/libsinsp-
 	  -v $(CURDIR)/sysdig/src/driver/ppm_events_public.h:/usr/local/include/ppm_events_public.h \
 	  --name build_collector stackrox/collector-builder:cache
 	cp cmake-build/collector container/bin/
+	cp cmake-build/connscrape container/bin/
 
 container/libs/libsinsp-wrapper.so: $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
 	make -C sysdig

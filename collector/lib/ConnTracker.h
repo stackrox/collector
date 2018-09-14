@@ -48,6 +48,8 @@ class Address {
 
   static constexpr size_t kMaxLen = 16;
 
+  static Address Any(Family family) { return Address(family); }
+
   Address() : Address(Family::UNKNOWN) {}
 
   Address(unsigned char a, unsigned char b, unsigned char c, unsigned char d)
@@ -81,14 +83,19 @@ class Address {
     return !(*this == other);
   }
 
+  bool IsNull() const {
+    return std::all_of(data_.begin(), data_.end(), [](uint8_t b) { return b == 0; });
+  }
+
   static int Length(Family family) {
     switch (family) {
       case Family::IPV4:
         return 4;
       case Family::IPV6:
         return 16;
+      default:
+        return 0;
     }
-    return 0;
   }
 
  private:
@@ -126,7 +133,10 @@ class Endpoint {
     return !(*this == other);
   }
 
+  const Address& address() const { return address_; }
   uint16_t port() const { return port_; }
+
+  bool IsNull() const { return port_ == 0 && address_.IsNull(); }
 
  private:
   friend std::ostream& operator<<(std::ostream& os, const Endpoint& ep) {
@@ -150,6 +160,8 @@ enum class L4Proto : uint8_t {
   UDP,
   ICMP,
 };
+
+std::ostream& operator<<(std::ostream& os, L4Proto l4proto);
 
 // ConnStatus encapsulates the status of a connection, comprised of the timestamp when the connection was last seen
 // alive (in microseconds since epoch), and a flag indicating whether the connection is currently active.
@@ -190,32 +202,34 @@ class ConnStatus {
 class Connection {
  public:
   Connection() : flags_(0) {}
-  Connection(std::string container, const Endpoint& server, const Endpoint& client, L4Proto l4proto, bool is_server)
-    : container_(std::move(container)), server_(server), client_(client), flags_(static_cast<uint8_t>(l4proto) << 1 | (is_server) ? 1 : 0)
+  Connection(std::string container, const Endpoint& local, const Endpoint& remote, L4Proto l4proto, bool is_server)
+    : container_(std::move(container)), local_(local), remote_(remote), flags_((static_cast<uint8_t>(l4proto) << 1) | ((is_server) ? 1 : 0))
   {}
 
   const std::string& container() const { return container_; }
-  const Endpoint& server() const { return server_; }
-  const Endpoint& client() const { return client_; }
-  bool IsServer() const { return flags_ & 0x1; }
+  const Endpoint& local() const { return local_; }
+  const Endpoint& remote() const { return remote_; }
+  bool is_server() const { return (flags_ & 0x1) != 0; }
   L4Proto l4proto() const { return static_cast<L4Proto>(flags_ >> 1); }
 
   bool operator==(const Connection& other) const {
-    return container_ == other.container_ && server_ == other.server_ && client_ == other.client_ && flags_ == other.flags_;
+    return container_ == other.container_ && local_ == other.local_ && remote_ == other.remote_ && flags_ == other.flags_;
   }
 
   bool operator!=(const Connection& other) const {
     return !(*this == other);
   }
 
-  size_t Hash() const { return HashAll(container_, server_, client_, flags_); }
+  size_t Hash() const { return HashAll(container_, local_, remote_, flags_); }
 
  private:
   std::string container_;
-  Endpoint server_;
-  Endpoint client_;
+  Endpoint local_;
+  Endpoint remote_;
   uint8_t flags_;
 };
+
+std::ostream& operator<<(std::ostream& os, const Connection& conn);
 
 using ConnMap = UnorderedMap<Connection, ConnStatus>;
 

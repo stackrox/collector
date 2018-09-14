@@ -6,137 +6,104 @@
 #define COLLECTOR_FILESYSTEM_H
 
 #include <dirent.h>
+#include <fcntl.h>
 #include <unistd.h>
 
 #include <cstdio>
 
 namespace collector {
 
-class FDHandle {
+// ResourceWrapper wraps an operating system resource to provide RAII-style lifetime management. T is the type of the
+// resource being wrapped (e.g., int for file descriptors), and Derived is the type extending this class. The latter
+// has to provide static methods `T Invalid()`, returning the value of T for an invalid resource, and `bool Close(T)`
+// to close the resource.
+template <typename T, typename Derived>
+class ResourceWrapper {
  public:
-  FDHandle() : fd_(-1) {}
-  FDHandle(int&& fd) : fd_(fd) {
-    fd = -1;
-  }
-
-  FDHandle(FDHandle&& other) : fd_(other.fd_) {
-    other.fd_ = -1;
-  }
-
-  ~FDHandle() {
-    if (valid()) {
-      close(fd_);
-    }
-  }
-
-  int release() {
-    int fd = fd_;
-    fd_ = -1;
-    return fd;
-  }
-
-  bool valid() const {
-    return fd_ >= 0;
-  }
-
-  operator int() const {
-    return fd_;
-  }
-
-  FDHandle& operator=(FDHandle&& other) {
-    if (valid()) {
-      close(fd_);
-    }
-    fd_ = other.fd_;
-    other.fd_ = -1;
-
-    return *this;
-  }
-
- private:
-  int fd_;
-};
-
-class FileHandle {
- public:
-  FileHandle() : f_(nullptr) {}
-  FileHandle(FILE*&& f) : f_(f) {
-    f = nullptr;
-  }
-  FileHandle(FileHandle&& other) : f_(other.f_) {
-    other.f_ = nullptr;
-  }
-
-  FileHandle(FDHandle&& fd_handle, const char* mode) : f_(fdopen(fd_handle.release(), mode)) {}
-
-  ~FileHandle() {
+  ResourceWrapper() : resource_(Derived::Invalid()) {}
+  ResourceWrapper(T&& resource) : resource_(resource) {}
+  ~ResourceWrapper() {
     close();
+  }
+
+  bool valid() const { return resource_ != Derived::Invalid(); }
+
+  const T& get() const { return resource_; }
+  T release() {
+    T result = resource_;
+    resource_ = Derived::Invalid();
+    return result;
   }
 
   bool close() {
-    if (!f_) return true;
-    bool status = (fclose(f_) == 0);
-    f_ = nullptr;
-    return status;
+    if (resource_ == Derived::Invalid()) {
+      return true;
+    }
+    bool success = Derived::Close(resource_);
+    resource_ = Derived::Invalid();
+    return success;
   }
 
-  operator std::FILE*() const { return f_; }
-
-  FileHandle& operator=(FileHandle&& other) {
+  Derived& operator=(T&& resource) {
     close();
-    f_ = other.f_;
-    other.f_ = nullptr;
-    return *this;
+    resource_ = resource;
+    return *static_cast<Derived*>(this);
   }
 
- private:
-  std::FILE* f_;
-};
-
-class DirHandle {
- public:
-  DirHandle() : dir_(nullptr) {}
-  DirHandle(DIR*&& dir) : dir_(dir) {
-    dir = nullptr;
-  }
-  DirHandle(FDHandle&& fd) : dir_(fdopendir(fd.release())) {}
-  DirHandle(const char* path) : dir_(opendir(path)) {}
-
-  DirHandle(DirHandle&& other) : dir_(other.dir_) {
-    other.dir_ = nullptr;
+  Derived& operator=(Derived&& other) {
+    close();
+    resource_ = other.resource_;
+    other.resource_ = Derived::Invalid();
+    return *static_cast<Derived*>(this);
   }
 
-  ~DirHandle() {
-    closedir(dir_);
-  }
-
-  struct dirent* read() {
-    if (!dir_) return nullptr;
-    return readdir(dir_);
-  }
-
-  DIR* release() {
-    DIR* dir = dir_;
-    dir_ = nullptr;
-    return dir;
-  }
-
-  operator DIR*() const { return dir_; }
-
-  bool valid() const { return dir_ != nullptr; }
+  operator T() const& { return get(); }
+  operator T() && { return release(); }
   explicit operator bool() const { return valid(); }
 
-  DirHandle& operator=(DirHandle&& other) {
-    if (valid()) {
-      closedir(dir_);
-    }
-    dir_ = other.dir_;
-    other.dir_ = nullptr;
-    return *this;
+ private:
+  T resource_;
+};
+
+class FDHandle : public ResourceWrapper<int, FDHandle> {
+ public:
+  using ResourceWrapper::ResourceWrapper;
+  FDHandle(FDHandle&& other) : ResourceWrapper(other.release()) {}
+
+  static constexpr int Invalid() { return -1; }
+  static bool Close(int fd) { return (::close(fd) == 0); }
+};
+
+class FileHandle : public ResourceWrapper<std::FILE*, FileHandle> {
+ public:
+  using ResourceWrapper::ResourceWrapper;
+  FileHandle(FileHandle &&other) : ResourceWrapper(other.release()) {}
+  FileHandle(FDHandle&& fd, const char* mode) : ResourceWrapper(fdopen(fd.release(), mode)) {}
+
+  static constexpr std::FILE* Invalid() { return nullptr; }
+  static bool Close(std::FILE* f) { return (fclose(f) == 0); }
+};
+
+class DirHandle : public ResourceWrapper<DIR*, DirHandle> {
+ public:
+  using ResourceWrapper::ResourceWrapper;
+  DirHandle(DirHandle&& other) : ResourceWrapper(other.release()) {}
+  DirHandle(FDHandle&& fd) : ResourceWrapper(fdopendir(fd.release())) {}
+
+  FDHandle openat(const char* path, int mode) const {
+    if (!valid()) return -1;
+    return ::openat(dirfd(get()), path, mode);
   }
 
- private:
-  DIR* dir_;
+  int fd() const { return ::dirfd(get()); }
+
+  struct dirent* read() {
+    if (!valid()) return nullptr;
+    return readdir(get());
+  }
+
+  static constexpr DIR* Invalid() { return nullptr; }
+  static bool Close(DIR* dir) { return (closedir(dir) == 0); }
 };
 
 }  // namespace collector

@@ -100,6 +100,9 @@ ScopedLock<Mutex> Lock(Mutex &mutex) {
 
 #define WITH_LOCK(m) if (auto __scoped_lock_ ## __LINE__ = internal::Lock(m))
 
+// ssizeof(x) returns the same value as sizeof(x), but as a signed integer.
+#define ssizeof(x) static_cast<ssize_t>(sizeof(x))
+
 }  // namespace collector
 
 #endif  // _UTILITY_H_
