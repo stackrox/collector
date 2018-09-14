@@ -315,10 +315,7 @@ int main(int argc, char **argv) {
   if (!useKafka) {
       CLOG(INFO) << "Kafka is disabled.";
   }
-  bool useGRPC = !args->GRPCServer().empty();
-  if (!useGRPC) {
-      CLOG(INFO) << "GRPC is disabled.";
-  }
+
   std::string networkSignalOutput = "stdout:NET :";
   if (!collectorConfig["networkSignalOutput"].isNull()) {
       networkSignalOutput = collectorConfig["networkSignalOutput"].asString();
@@ -356,6 +353,15 @@ int main(int argc, char **argv) {
   std::string signalFormat = "signal_summary";
   if (!collectorConfig["signalFormat"].isNull()) {
       signalFormat = collectorConfig["signalFormat"].asString();
+  }
+
+  bool useGRPC = false;
+  if (!args->GRPCServer().empty() && (signalOutput == "grpc") &&  (signalFormat == "signal_summary")) {
+    useGRPC = true;
+  }
+
+  if (!useGRPC) {
+      CLOG(INFO) << "GRPC is disabled. Specify GRPC_SERVER='server addr' env and signalFormat = 'signal_summary' and  signalOutput = 'grpc'";
   }
 
   // Iterate over the process syscalls
