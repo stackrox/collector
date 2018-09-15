@@ -49,9 +49,6 @@ RUN apt-get update \
 COPY libs/libsinsp-wrapper.so \
      /usr/local/lib/
 
-# `ldconfig` is required so that `curl` can find its `libcurl.so`.
-RUN ldconfig -v
-
 WORKDIR /
 
 # Uncomment below when Address Sanitizer needs to be enabled for collector
