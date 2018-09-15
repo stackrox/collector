@@ -39,6 +39,8 @@ RUN ( cd install-tmp/ ; for f in *.sh; do ./"$f" ; done; )
 # Clean up the build directory we created.
 RUN rm -rf install-tmp
 
+RUN ldconfig
+
 # Prepare everything, build, and run tests
 COPY build/build.sh /build.sh
 

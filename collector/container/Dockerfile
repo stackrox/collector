@@ -37,7 +37,7 @@ RUN apt-get update \
         ca-certificates \
         kmod \
         curl \
-        libcurl4-openssl \
+        libcurl3 \
         openssl \
         wget \
         libuuid1 \
