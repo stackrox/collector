@@ -46,7 +46,7 @@ M_ARGS_STR := $(subst $(space),$(comma),$(strip $(M_ARGS)))
 ## Protobuf ##
 ##############
 # Set some platform variables for protoc.
-PROTOC_VERSION := 3.5.0
+PROTOC_VERSION := 3.6.1
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 PROTOC_ARCH = linux
