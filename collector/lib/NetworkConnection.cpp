@@ -21,30 +21,35 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef COLLECTOR_CONNSCRAPER_H
-#define COLLECTOR_CONNSCRAPER_H
-
-#include <string>
-#include <vector>
-
-#include "FileSystem.h"
-#include "Hash.h"
 #include "NetworkConnection.h"
 
 namespace collector {
 
-// ConnScraper is a class that allows scraping a `/proc`-like directory structure for active network connections.
-class ConnScraper {
- public:
-  ConnScraper(std::string proc_path) : proc_path_(std::move(proc_path)) {}
+std::ostream& operator<<(std::ostream& os, L4Proto l4proto) {
+  switch (l4proto) {
+    case L4Proto::TCP:
+      return os << "tcp";
+    case L4Proto::UDP:
+      return os << "udp";
+    case L4Proto::ICMP:
+      return os << "icmp";
+    default:
+      return os << "unknown(" << static_cast<uint8_t>(l4proto) << ")";
+  }
+}
 
-  // Scrape returns a snapshot of all active network connections in the given vector.
-  bool Scrape(std::vector<Connection>* connections);
-
- private:
-  std::string proc_path_;
-};
+std::ostream& operator<<(std::ostream& os, const Connection& conn) {
+  os << conn.container() << ": " << conn.local();
+  if (conn.is_server()) {
+    os << " <- ";
+  } else {
+    os << " -> ";
+  }
+  os << conn.remote() << " [" << conn.l4proto();
+  if (conn.local().address().family() == Address::Family::IPV6) {
+    os << "6";
+  }
+  return os << "]";
+}
 
 }  // namespace collector
-
-#endif //COLLECTOR_CONNSCRAPER_H

@@ -25,7 +25,9 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <fcntl.h>
 
+#include <cctype>
 #include <cinttypes>
+#include <cstring>
 
 #include "Containers.h"
 #include "Logging.h"
@@ -38,27 +40,25 @@ namespace {
 // String parsing helper functions
 
 // rep_strchr applies strchr n times, always advancing past the found character in each subsequent application.
-const char *rep_strchr(int n, const char *str, char c) {
+const char *rep_strchr(int n, const char* str, char c) {
   if (!str) return nullptr;
 
   str -= 1;
   while (n-- > 0 && str) {
-    str = strchr(str + 1, c);
+    str = std::strchr(str + 1, c);
   }
   return str;
 }
 
-
-
 // nextfield advances to the next field in a space-delimited string.
-const char *nextfield(const char *p, const char *endp) {
+const char *nextfield(const char* p, const char* endp) {
   while (p < endp && *p && !std::isspace(*p)) p++;
   while (p < endp && *p && std::isspace(*++p));
   return (p < endp && *p) ? p : nullptr;
 }
 
 // rep_nextfield repeatedly applies nextfield n times.
-const char *rep_nextfield(int n, const char *p, const char *endp) {
+const char *rep_nextfield(int n, const char* p, const char* endp) {
   while (n-- > 0 && p) {
     p = nextfield(p, endp);
   }
@@ -67,19 +67,21 @@ const char *rep_nextfield(int n, const char *p, const char *endp) {
 
 // General functions for reading data from /proc
 
-// ReadINode reads the inode from the symlink of the given path. If an error is encountered or the inode symlink
-// doesn't have the correct prefix, false is returned.
-bool ReadINode(int dirfd, const char *path, const char *prefix, ino_t *inode) {
+// ReadINode reads the inode from the symlink of form '<prefix>:[<inode>]' of the given path. If an error is encountered
+// or the inode symlink doesn't have the correct prefix, false is returned.
+bool ReadINode(int dirfd, const char* path, const char* prefix, ino_t* inode) {
   char linkbuf[64];
-  int nread = readlinkat(dirfd, path, linkbuf, sizeof(linkbuf));
+  ssize_t nread = readlinkat(dirfd, path, linkbuf, sizeof(linkbuf));
   if (nread <= 0 || nread >= ssizeof(linkbuf) - 1) return false;
   linkbuf[nread] = '\0';
   if (linkbuf[nread - 1] != ']') return false;
 
-  int prefix_len = std::strlen(prefix);
+  size_t prefix_len = std::strlen(prefix);
   if (std::strncmp(linkbuf, prefix, prefix_len) != 0) return false;
   if (std::strncmp(linkbuf + prefix_len, ":[", 2) != 0) return false;
-  char *endp;
+
+  // Parse inode value as decimal
+  char* endp;
   uintmax_t parsed = std::strtoumax(linkbuf + prefix_len + 2, &endp, 10);
   if (*endp != ']') return false;
   *inode = static_cast<ino_t>(parsed);
@@ -88,13 +90,13 @@ bool ReadINode(int dirfd, const char *path, const char *prefix, ino_t *inode) {
 
 // GetNetworkNamespace returns the inode of the network namespace of the process represented by the given proc
 // directory.
-bool GetNetworkNamespace(int dirfd, ino_t *inode) {
+bool GetNetworkNamespace(int dirfd, ino_t* inode) {
   return ReadINode(dirfd, "ns/net", "net", inode);
 }
 
 // GetSocketINodes returns a list of all socket inodes associated with open file descriptors of the process represented
 // by dirfd.
-bool GetSocketINodes(int dirfd, UnorderedSet<ino_t> *sock_inodes) {
+bool GetSocketINodes(int dirfd, UnorderedSet<ino_t>* sock_inodes) {
   DirHandle fd_dir = FDHandle(openat(dirfd, "fd", O_RDONLY));
   if (!fd_dir.valid()) {
     CLOG(ERROR) << "could not open fd directory";
@@ -102,25 +104,29 @@ bool GetSocketINodes(int dirfd, UnorderedSet<ino_t> *sock_inodes) {
   }
 
   while (auto curr = fd_dir.read()) {
-    if (!std::isdigit(curr->d_name[0])) continue;  // only look at fd symlinks, ignore '.' and '..'.
-    uint64_t inode;
-    if (!ReadINode(fd_dir.fd(), curr->d_name, "socket", &inode)) continue;
+    if (!std::isdigit(curr->d_name[0])) continue;  // only look at fd entries, ignore '.' and '..'.
+
+    ino_t inode;
+    if (!ReadINode(fd_dir.fd(), curr->d_name, "socket", &inode)) continue;  // ignore non-socket fds
     sock_inodes->insert(inode);
   }
+
   return true;
 }
 
-// GetContainerID retrieves the container ID of the process represented by dirfd.
-bool GetContainerID(int dirfd, std::string *container_id) {
+// GetContainerID retrieves the container ID of the process represented by dirfd. The container ID is extracted from
+// the cgroup.
+bool GetContainerID(int dirfd, std::string* container_id) {
   FDHandle cgroups_fd = openat(dirfd, "cgroup", O_RDONLY);
   if (!cgroups_fd.valid()) return false;
 
   char buf[512];
-  int nread = read(cgroups_fd, buf, sizeof(buf) - 1);
+  ssize_t nread = read(cgroups_fd, buf, sizeof(buf) - 1);
   if (nread < 0) return false;
 
   buf[nread] = '\0';
-  const char *p = rep_strchr(2, buf, ':');
+  // Format is <id>:<name>:<cgroup-id>
+  const char*p = rep_strchr(2, buf, ':');
   if (!p) return false;
 
   if (strncmp(++p, "/docker/", 8) != 0) return false;
@@ -132,17 +138,23 @@ bool GetContainerID(int dirfd, std::string *container_id) {
 
 // Functions for parsing `net/tcp[6]` files
 
+// IsHexChar checks if the given character is an (uppercase) hexadecimal character.
 bool IsHexChar(char c) {
   if (std::isdigit(c)) return true;
   return c >= 'A' && c <= 'F';
 }
 
+// HexCharToVal returns the numeric value of a single (uppercase) hexadecimal digit.
 unsigned char HexCharToVal(char c) {
   if (std::isdigit(c)) return c - '0';
   return 10 + (c - 'A');
 }
 
-int ReadHexBytes(const char *p, const char *endp, void *buf, int chunk_size, int num_chunks, bool reverse) {
+// ReadHexBytes reads bytes in (uppercase) hexadecimal representation into buf. It does so in chunks of size chunk_size.
+// If reverse is true, the individual chunks are reversed (however, not the entire sequence of bytes). The return value
+// is the number of *bytes* read from the input (i.e., to correctly advance p after reading, it has to be incremented
+// by twice the return value).
+int ReadHexBytes(const char* p, const char* endp, void* buf, int chunk_size, int num_chunks, bool reverse) {
   int i = 0;
   int num_bytes = chunk_size * num_chunks;
   auto bbuf = static_cast<uint8_t*>(buf);
@@ -177,13 +189,13 @@ struct ConnInfo {
   bool is_server;
 };
 
-// ParseEndpoint parses an endpoint listed in the
-const char *ParseEndpoint(const char *p, const char *endp, Address::Family family, Endpoint *endpoint) {
+// ParseEndpoint parses an endpoint listed in the `net/tcp[6]` file.
+const char *ParseEndpoint(const char* p, const char* endp, Address::Family family, Endpoint* endpoint) {
   static bool needs_byteorder_swap = (htons(42) != 42);
 
-  std::array<uint8_t, Address::kMaxLen> addr_data;
-  int addr_len = Address::Length(family);
+  std::array<uint8_t, Address::kMaxLen> addr_data = {};
 
+  int addr_len = Address::Length(family);
   int nread = ReadHexBytes(p, endp, addr_data.data(), 4, addr_len/4, needs_byteorder_swap);
   if (nread != addr_len) return nullptr;
   p += nread * 2;
@@ -198,7 +210,9 @@ const char *ParseEndpoint(const char *p, const char *endp, Address::Family famil
   return p;
 }
 
-bool ParseConnLine(const char *p, const char *endp, Address::Family family, ConnLineData *data) {
+// ParseConnLine parses an entire line in the `net/tcp[6]` file.
+bool ParseConnLine(const char* p, const char* endp, Address::Family family, ConnLineData* data) {
+  // Strip leading spaces.
   while (std::isspace(*p)) p++;
 
   // 0: sl
@@ -218,7 +232,7 @@ bool ParseConnLine(const char *p, const char *endp, Address::Family family, Conn
   p = rep_nextfield(7, p, endp);
   if (!p) return false;
   // 9: inode
-  char *parse_endp;
+  char* parse_endp;
   uintmax_t inode = strtoumax(p, &parse_endp, 10);
   if (*parse_endp && !std::isspace(*parse_endp)) return false;
   data->inode = static_cast<ino_t>(inode);
@@ -239,23 +253,25 @@ int IsEphemeralPort(uint16_t port) {
 
 // LocalIsServer returns true if the connection between local and remote looks like the local end is the server (taking
 // the set of listening endpoints into account), and false otherwise.
-bool LocalIsServer(const Endpoint &local, const Endpoint &remote, const UnorderedSet<Endpoint> &listen_endpoints) {
+bool LocalIsServer(const Endpoint& local, const Endpoint& remote, const UnorderedSet<Endpoint>& listen_endpoints) {
   if (Contains(listen_endpoints, local)) return true;
 
+  // Check if we are listening on the given port on any interface.
   Endpoint local_any(Address::Any(local.address().family()), local.port());
   if (Contains(listen_endpoints, local_any)) return true;
 
   // We didn't find an entry for listening on this address, but closing a listen socket does not terminate established
-  // connections. We hence have to resort to inspecting the port number to see which one looks ephemeral.
+  // connections. We hence have to resort to inspecting the port number to see which one seems more likely to be
+  // ephemeral.
   return IsEphemeralPort(remote.port()) > IsEphemeralPort(local.port());
 }
 
 // ReadConnectionsFromFile reads all connections from a `net/tcp[6]` file and stores them by inode in the given map.
-bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE *f,
-                             UnorderedMap<ino_t, ConnInfo> *connections) {
+bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE* f,
+                             UnorderedMap<ino_t, ConnInfo>* connections) {
   char line[512];
 
-  if (!std::fgets(line, sizeof(line), f)) return false;
+  if (!std::fgets(line, sizeof(line), f)) return false;  // ignore the first *header) line.
 
   UnorderedSet<Endpoint> listen_endpoints;
 
@@ -268,19 +284,21 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE 
     }
 
     if (!data.inode) continue;  // socket was closed or otherwise unavailable
-    auto &conn_info = (*connections)[data.inode];
+    auto& conn_info = (*connections)[data.inode];
     conn_info.local = data.local;
     conn_info.remote = data.remote;
     conn_info.l4proto = l4proto;
     // Note that the layout of net/tcp guarantees that all listen sockets will be listed before all active or closed
-    // connections.
+    // connections, hence we can assume listen_endpoint to have its final value at this point.
     conn_info.is_server = LocalIsServer(data.local, data.remote, listen_endpoints);
   }
 
   return true;
 }
 
-bool GetConnections(int dirfd, UnorderedMap<ino_t, ConnInfo> *connections) {
+// GetConnections reads all active connections (inode -> connection info mapping) for a given network NS, addressed by
+// the dir FD for a proc entry of a process in that network namespace.
+bool GetConnections(int dirfd, UnorderedMap<ino_t, ConnInfo>* connections) {
   {
     FDHandle net_tcp_fd = openat(dirfd, "net/tcp", O_RDONLY);
     if (!net_tcp_fd.valid()) return false;
@@ -305,6 +323,9 @@ using ConnsByNS = UnorderedMap<ino_t, UnorderedMap<ino_t, ConnInfo>>;
 // container id -> (netns -> socket inodes) mapping
 using SocketsByContainer = UnorderedMap<std::string, UnorderedMap<ino_t, UnorderedSet<ino_t>>>;
 
+// ResolveSocketInodes takes a netns -> (inode -> connection info) mapping and a
+// container id -> (netns -> socket inodes) mapping, and synthesizes this to a list of (container id, connection info)
+// tuples.
 void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const ConnsByNS& conns_by_ns,
                          std::vector<Connection>* connections) {
   for (const auto& container_sockets : sockets_by_container) {
@@ -321,6 +342,8 @@ void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const C
   }
 }
 
+// ReadContainerConnections reads all container connection info from the given `/proc`-like directory. All connections
+// from non-container processes are ignored.
 bool ReadContainerConnections(const char* proc_path, std::vector<Connection>* connections) {
   DirHandle procdir = opendir(proc_path);
   if (!procdir.valid()) {

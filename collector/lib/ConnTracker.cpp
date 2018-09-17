@@ -29,33 +29,6 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-std::ostream& operator<<(std::ostream& os, L4Proto l4proto) {
-  switch (l4proto) {
-    case L4Proto::TCP:
-      return os << "tcp";
-    case L4Proto::UDP:
-      return os << "udp";
-    case L4Proto::ICMP:
-      return os << "icmp";
-    default:
-      return os << "unknown(" << static_cast<uint8_t>(l4proto) << ")";
-  }
-}
-
-std::ostream& operator<<(std::ostream& os, const Connection& conn) {
-  os << conn.container() << ": " << conn.local();
-  if (conn.is_server()) {
-    os << " <- ";
-  } else {
-    os << " -> ";
-  }
-  os << conn.remote() << " [" << conn.l4proto();
-  if (conn.local().address().family() == Address::Family::IPV6) {
-    os << "6";
-  }
-  return os << "]";
-}
-
 void ConnectionTracker::AddConnection(const Connection &conn, int64_t timestamp) {
   WITH_LOCK(mutex_) {
     EmplaceOrUpdateNoLock(conn, ConnStatus(timestamp, true));
