@@ -12,4 +12,4 @@ cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_DRIVER=OFF \
     -DUSE_BUNDLED_LUAJIT=OFF \
     ..
 make
-strip --strip-unneeded ./libsinsp-wrapper.so
+strip --strip-unneeded ./userspace/libsinsp/libsinsp-wrapper.so
