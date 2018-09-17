@@ -47,7 +47,6 @@ target_link_libraries(collector libgrpc++_unsecure.a)
 target_link_libraries(collector libprometheus-cpp-pull.a)
 target_link_libraries(collector libprometheus-cpp-core.a)
 target_link_libraries(collector libprotobuf.a)
-target_link_libraries(collector -static-libgcc -static-libstdc++)
 
 # Setup testing
 enable_testing()

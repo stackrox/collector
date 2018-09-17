@@ -10,7 +10,7 @@ FROM debian:jessie-slim
 
 RUN apt-get update \
  && apt-get upgrade -y \
- && apt-get install -y \
+ && apt-get install --no-install-recommends -y \
       binutils \
       cmake \
       make \

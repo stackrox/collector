@@ -1,5 +1,17 @@
 #!/bin/bash
+
+if [[ "$ROX_PLATFORM" == "swarm" ]]; then
+    ## swap to reentrant container strategy to gain privileged mode
+    exec /swarm_entrypoint.sh "$@"
+fi
+
 MODULE_NAME="collector"
+MODULE_PATH="/module/${MODULE_NAME}.ko"
+
+KERNEL_VERSION=$(uname -r)
+echo "Kernel version detected: $KERNEL_VERSION."
+
+KERNEL_MODULE="${MODULE_NAME}-${KERNEL_VERSION}.ko"
 
 function test {
     "$@"
@@ -20,47 +32,35 @@ function remove_module() {
 }
 
 function download_kernel_module() {
-    KERNEL_MODULE=$MODULE_NAME-$KERNEL_VERSION.ko
-    if [[ ! -d /module ]]; then
-      echo >&2 "/module directory does not exist."
-      return 1
-    fi
     local URL="$MODULE_URL/$DISTRO/$KERNEL_MODULE"
-    curl -L -s -o "/module/$MODULE_NAME.ko" "$URL"
-    if [ $? -ne 0 ]; then
+    if curl -L -s -o "${MODULE_PATH}.gz" "${URL}.gz"; then
+        gunzip "${MODULE_PATH}.gz"
+    elif ! curl -L -s -o "$MODULE_PATH" "$URL"; then
       echo "Error downloading $MODULE_NAME module for $DISTRO kernel version $KERNEL_VERSION." >&2
       return 1
     fi
-    chmod 0444 /module/$MODULE_NAME.ko
     echo "Using downloaded $MODULE_NAME module for $DISTRO kernel version $KERNEL_MODULE." >&2
     return 0
 }
 
 function find_kernel_module() {
-    KERNEL_MODULE=$MODULE_NAME-$KERNEL_VERSION.ko
     EXPECTED_PATH="/kernel-modules/$DISTRO/$KERNEL_MODULE"
-    if [ -f "$EXPECTED_PATH" ]; then
-      mkdir -p /module/
-      cp "$EXPECTED_PATH" /module/$MODULE_NAME.ko
-      chmod 777 /module/$MODULE_NAME.ko
-      echo "Using built-in $MODULE_NAME module for $DISTRO kernel version $KERNEL_VERSION." >&2
-      return 0
+    if [[ -f "${EXPECTED_PATH}.gz" ]]; then
+      gunzip -c "${EXPECTED_PATH}.gz" >"$MODULE_PATH"
+    elif [ -f "$EXPECTED_PATH" ]; then
+      cp "$EXPECTED_PATH" "$MODULE_PATH"
+    else
+      echo "Didn't find $KERNEL_MODULE built-in." >&2
+      return 1
     fi
-    echo "Didn't find $KERNEL_MODULE built-in." >&2
-    return 1
+    echo "Using built-in $MODULE_NAME module for $DISTRO kernel version $KERNEL_VERSION." >&2
+    return 0
 }
 
-if [ "$ROX_PLATFORM" = "swarm" ]; then
-    ## swap to reentrant container strategy to gain privileged mode
-    exec /swarm_entrypoint.sh "$@"
-fi
 
 # Get the hostname from Docker so this container can use it in its output.
 export NODE_HOSTNAME=""
 NODE_HOSTNAME=$(curl -s --unix-socket /host/var/run/docker.sock http://localhost/info | jq --raw-output .Name)
-
-KERNEL_VERSION=`uname -r`
-echo "Kernel version detected: $KERNEL_VERSION.";
 
 OS_DETAILS=$(curl -s --unix-socket /host/var/run/docker.sock http://localhost/info | jq --raw-output .OperatingSystem)
 
@@ -83,10 +83,9 @@ else
     exit 1
 fi
 
-find_kernel_module
-if [ $? -ne 0 ]; then
-  download_kernel_module
-  if [ $? -ne 0 ]; then
+mkdir -p /module/
+if ! find_kernel_module ; then
+  if ! download_kernel_module || [[ ! -f "$MODULE_PATH" ]]; then
     echo "The $MODULE_NAME module may not have been compiled for this version yet." >&2
     echo "Please provide this complete error message to StackRox support." >&2
     echo "This program will now exit and retry when it is next restarted." >&2
@@ -94,6 +93,8 @@ if [ $? -ne 0 ]; then
     exit 1
   fi
 fi
+
+chmod 0444 "$MODULE_PATH"
 
 # The collector program will insert the kernel module upon startup.
 remove_module
