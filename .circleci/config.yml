@@ -308,7 +308,9 @@ jobs:
     - run:
         name: Build kernel-modules Docker image
         working_directory: /go/src/github.com/stackrox/collector/kernel-modules/container
-        command: docker build -t stackrox/kernel-modules:latest .
+        command: |
+          VERSION=$(git describe --tags)
+          docker build -t "stackrox/kernel-modules:$VERSION" .
 
     - run:
         name: Build collector Docker image
@@ -320,6 +322,7 @@ jobs:
           docker build \
             -t stackrox/collector:snapshot-$VERSION \
             -t stackrox/collector:$VERSION \
+            --build-arg base="$VERSION" \
             container
 
     - run:
@@ -336,6 +339,8 @@ jobs:
           if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
             echo Pushing release images
             docker push stackrox/collector:$VERSION
+            echo "Pushing kernel modules"
+            docker push "stackrox/kernel-modules:$VERSION"
           else
             echo Pushing snapshot images
             docker push stackrox/collector:snapshot-$VERSION
