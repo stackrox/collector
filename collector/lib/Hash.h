@@ -45,6 +45,19 @@ class HasHash {
   enum { value = sizeof(test<T>(0)) == sizeof(YesType) };
 };
 
+template <typename T>
+class HasStdHashSpecialization {
+ private:
+  typedef char YesType[1];
+  typedef char NoType[2];
+
+  template <typename C> static YesType& test(std::integral_constant<size_t, sizeof(std::hash<C>)>*) ;
+  template <typename C> static NoType& test(...);
+
+ public:
+  enum { value = sizeof(test<T>(0)) == sizeof(YesType) };
+};
+
 }  // namespace internal
 
 // Hash specialization for types that define a `Hash()` method.
@@ -61,7 +74,7 @@ auto Hash(const T& val, typename std::enable_if<!internal::HasHash<T>::value>::t
 
 // Hash specialization for enums (defer to underlying type hash).
 template <typename T>
-size_t Hash(const T& val, typename std::enable_if<std::is_enum<T>::value>::type* = 0) {
+size_t Hash(const T& val, typename std::enable_if<std::is_enum<T>::value && !internal::HasStdHashSpecialization<T>::value>::type* = 0) {
   return Hash(static_cast<typename std::underlying_type<T>::type>(val));
 }
 

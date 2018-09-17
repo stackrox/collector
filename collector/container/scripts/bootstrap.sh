@@ -26,7 +26,7 @@ function download_kernel_module() {
       return 1
     fi
     local URL="$MODULE_URL/$DISTRO/$KERNEL_MODULE"
-    wget --no-verbose -O /module/$MODULE_NAME.ko "$URL"
+    curl -L -s -o "/module/$MODULE_NAME.ko" "$URL"
     if [ $? -ne 0 ]; then
       echo "Error downloading $MODULE_NAME module for $DISTRO kernel version $KERNEL_VERSION." >&2
       return 1

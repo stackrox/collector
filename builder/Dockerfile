@@ -1,52 +1,44 @@
-FROM debian:jessie-slim
+FROM debian:stretch-slim
 
 # Install our dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        apt-transport-https \
         autoconf \
         automake \
         build-essential \
+        g++ \
         ca-certificates \
         cmake \
         curl \
+        python \
+        libcurl4-openssl-dev \
         git \
-        g++-4.8 \
-        google-mock \
-        libjsoncpp-dev \
+        libz-dev \
         libssl-dev \
         libtool \
         unzip \
         uuid-dev \
         libcap-ng-dev \
+        libluajit-5.1 \
         ;
 
 # We want to fail if the destination directory is there, hence mkdir (not -p).
-RUN mkdir build-tmp
+RUN mkdir install-tmp
 
-# prometheus-cpp
-COPY build/install_prometheus.sh build-tmp/install_prometheus.sh
-RUN build-tmp/install_prometheus.sh
+ARG GOOGLETEST_REVISION=release-1.8.1
+ARG PROTOBUF_VERSION=3.6.1
+ARG RDKAFKA_REVISION=v0.11.5
+ARG GRPC_REVISION=v1.15.0
+ARG PROMETHEUS_CPP_REVISION=v0.4.2
+ARG JSONCPP_REVISION=1.8.4
 
-# GoogleMock (and GoogleTest) are opinionated about how to install the library
-COPY build/build_gmock.sh build-tmp/build_gmock.sh
-RUN build-tmp/build_gmock.sh
-
-# cURL 7.42 or higher is required for UNIX socket access
-ARG CURL_REVISION=curl-7_57_0
-COPY build/install_libcurl.sh build-tmp/install_libcurl.sh
-RUN build-tmp/install_libcurl.sh
-
-ARG RDKAFKA_REVISION=v0.11.3
-COPY build/install_rdkafka.sh build-tmp/install_rdkafka.sh
-RUN build-tmp/install_rdkafka.sh
-
-ARG GRPC_REVISION=v1.14.1
-COPY build/install_grpc.sh build-tmp/install_grpc.sh
-RUN build-tmp/install_grpc.sh
+COPY install/*.sh install-tmp/
+RUN ( cd install-tmp/ ; for f in *.sh; do ./"$f" ; done; )
 
 # Clean up the build directory we created.
-RUN rm -rf build-tmp
+RUN rm -rf install-tmp
+
+RUN ldconfig
 
 # Prepare everything, build, and run tests
 COPY build/build.sh /build.sh

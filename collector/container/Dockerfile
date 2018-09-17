@@ -1,10 +1,10 @@
-FROM stackrox/jq:bf88c73c20ff1642aa2566ae67df18ca5b4b63ab
+FROM stackrox/kernel-modules:latest AS kernel_modules
 
-FROM stackrox/kernel-modules:latest
+FROM debian:stretch-slim
 MAINTAINER StackRox <support@stackrox.com>
 
-# Add jq
-COPY --from=0 /jq /usr/bin/jq
+# Add kernel modules
+COPY --from=kernel_modules /kernel-modules /kernel-modules
 
 # SYSDIG_HOST_ROOT is required by the sysdig kernel module; used as a prefix to
 # paths like /dev/sysdig0, /proc, and /boot. Make sure this matches the volume
@@ -36,20 +36,17 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends \
         ca-certificates \
         kmod \
-        libjsoncpp-dev \
-        libssl-dev \
-        wget \
-        uuid-dev \
+        curl \
+        libcurl3 \
+        openssl \
+        libuuid1 \
         libcap-ng0 \
+        jq \
+        libluajit-5.1 \
  ;
 
-COPY bin/curl /usr/local/bin/curl
-COPY libs/libcurl.so \
-     libs/libsinsp-wrapper.so \
+COPY libs/libsinsp-wrapper.so \
      /usr/local/lib/
-
-# `ldconfig` is required so that `curl` can find its `libcurl.so`.
-RUN ldconfig -v
 
 WORKDIR /
 
@@ -63,9 +60,9 @@ WORKDIR /
 # VOLUME ["/core"]
 
 # needed for container reentrancy on swarm:
-RUN curl -o docker-1.13.0.tgz https://get.docker.com/builds/Linux/x86_64/docker-1.13.0.tgz && \
-    tar -xvzf docker-1.13.0.tgz && cp docker/docker /usr/local/bin/docker && \
-    rm -r docker-1.13.0.tgz docker
+RUN curl -o docker-18.06.1-ce.tgz https://download.docker.com/linux/static/stable/x86_64/docker-18.06.1-ce.tgz && \
+    tar -xvzf docker-18.06.1-ce.tgz && cp docker/docker /usr/local/bin/docker && \
+    rm -r docker-18.06.1-ce.tgz docker
 COPY scripts/swarm_entrypoint.sh /swarm_entrypoint.sh
 
 # update boot script

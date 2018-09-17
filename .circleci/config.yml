@@ -270,18 +270,12 @@ jobs:
         working_directory: /go/src/github.com/stackrox/collector/collector
         command: |
           cp cmake-build/collector                        container/bin/
-          docker cp build:/usr/local/bin/curl             container/bin/
-          docker cp build:/usr/local/lib/libcurl.so       container/libs/
-          docker cp -L build:/usr/local/lib/libgrpc.so    container/libs/
-          docker cp -L build:/usr/local/lib/librdkafka.so container/libs/
           ls -lh container/bin/
-          ls -lh container/libs/
 
     - persist_to_workspace:
         root: /go/src/github.com/stackrox/collector
         paths:
         - collector/container/bin
-        - collector/container/libs
 
   images:
     machine: true
@@ -310,8 +304,6 @@ jobs:
           find collector/container
           echo '>>> Kernel Modules:'
           find kernel-modules/container
-          echo '>>> Docker Dependency:'
-          docker pull stackrox/jq:bf88c73c20ff1642aa2566ae67df18ca5b4b63ab
 
     - run:
         name: Build kernel-modules Docker image
