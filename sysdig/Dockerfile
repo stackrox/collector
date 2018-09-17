@@ -3,6 +3,7 @@ FROM debian:stretch-slim
 # Install our dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
+        binutils \
         build-essential \
         libssl-dev \
         libcurl4-openssl-dev \

@@ -5,6 +5,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         autoconf \
         automake \
+        binutils \
         build-essential \
         g++ \
         ca-certificates \
