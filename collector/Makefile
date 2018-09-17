@@ -8,8 +8,12 @@ BASE_PATH ?= $(CURDIR)/..
 
 PATH ?= $(PATH):/go/bin
 
+ifeq ($(COLLECTOR_TAG),)
+	export COLLECTOR_TAG=$(shell git describe --tags)
+endif
+
 .PHONY: all
-all: image
+all: image integration-tests integration-test-report
 
 .SUFFIXES:
 
@@ -77,6 +81,28 @@ distribution: clean
 			--exclude-from=.gitignore \
 			-czvf \
 			collector.tar.gz ./
+
+.PHONY: integration-tests
+integration-tests:
+	@echo "+ $@"
+	make -C ../integration-tests clean-deps deps
+	@go test -v ../integration-tests/... 2>&1 | tee integration-test.log
+
+.PHONY: integration-test-report
+integration-test-report:
+	@echo "+ $@"
+	@cat integration-test.log | go-junit-report > integration-test-report.xml
+	@echo
+	@echo "Test coverage summary:"
+	@grep "^coverage: " -A1 integration-test.log | grep -v -e '--' | paste -d " "  - -
+	@echo
+	@echo "Test pass/fail summary:"
+	@grep failures integration-test-report.xml | column -t
+	@echo
+	@echo "`grep 'FAIL  github.com/stackrox/collector' integration-test.log | wc -l` package(s) detected with compilation or test failures."
+	@-grep 'FAIL    github.com/stackrox/collector' integration-test.log || true
+	@echo
+	@testerror="$$(grep -e 'Unable to deploy' -e 'FAIL:' integration-test.log | wc -l)" && test $$testerror -eq 0
 
 GENERATED_CPP_BASE_PATH := $(CURDIR)/generated
 

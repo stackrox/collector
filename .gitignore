@@ -4,7 +4,11 @@ protoc-tmp
 .idea/
 
 go-proto-generated
+
 /.protogen-tmp/
 /.rox/
 /googleapis/
 
+collector/integration-test.log
+integration-tests/deps
+integration-tests/vendor/
