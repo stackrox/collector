@@ -39,7 +39,6 @@ RUN apt-get update \
         curl \
         libcurl3 \
         openssl \
-        wget \
         libuuid1 \
         libcap-ng0 \
         jq \

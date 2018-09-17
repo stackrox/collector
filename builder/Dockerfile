@@ -3,7 +3,6 @@ FROM debian:stretch-slim
 # Install our dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        apt-transport-https \
         autoconf \
         automake \
         build-essential \
