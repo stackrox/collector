@@ -344,6 +344,8 @@ jobs:
           else
             echo Pushing snapshot images
             docker push stackrox/collector:snapshot-$VERSION
+            echo "Pushing kernel modules"
+            docker push "stackrox/kernel-modules:snapshot-$VERSION"
           fi
 
 workflows:
