@@ -1,6 +1,12 @@
-FROM stackrox/kernel-modules:latest AS kernel_modules
+ARG base=latest
+# This is a hack because the argument to FROM must be either a hardcoded string or a variable expansion, but not a
+# mix of both.
+ARG base_image=stackrox/kernel-modules:${base}
+
+FROM ${base_image} AS kernel_modules
 
 FROM debian:stretch-slim
+
 MAINTAINER StackRox <support@stackrox.com>
 
 # Add kernel modules

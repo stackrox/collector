@@ -56,6 +56,11 @@ clean-generated-srcs:
 	rm -rf $(GENERATED_CPP_BASE_PATH)
 	rm -rf $(GENERATED_GO_BASE_PATH)
 
+.PHONY: pull-modules
+pull-modules:
+	docker pull stackrox/kernel-modules:$(shell git describe --tags $(git merge-base HEAD master))
+	docker tag stackrox/kernel-modules:$(shell git describe --tags $(git merge-base HEAD master)) stackrox/kernel-modules:latest
+
 .PHONY: distribution
 distribution: clean
 # Remove user-specific files but archive the rest of the repository for easy open-source distribution.
