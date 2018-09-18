@@ -28,11 +28,12 @@ You should have received a copy of the GNU General Public License along with thi
 #include "ProtoSignalFormatter.h"
 #include "SysdigEventExtractor.h"
 
-#include "../generated/api/v1/signal.pb.h"
+#include "api/v1/signal.pb.h"
+#include "internalapi/sensor/signal_service.pb.h"
 
 namespace collector {
 
-class CollectorSignalFormatter : public ProtoSignalFormatter<v1::SignalStreamMessage> {
+class CollectorSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamMessage> {
  public:
   CollectorSignalFormatter(sinsp* inspector, const uuid_t* cluster_id, bool text_format = false)
       : ProtoSignalFormatter(text_format), event_names_(EventNames::GetInstance()), 
@@ -44,8 +45,8 @@ class CollectorSignalFormatter : public ProtoSignalFormatter<v1::SignalStreamMes
   using ProcessSignal = v1::ProcessSignal;
 
  protected:
-  const v1::SignalStreamMessage* ToProtoMessage(sinsp_evt* event) override;
-  const v1::SignalStreamMessage* ToProtoMessage(sinsp_threadinfo* tinfo) override;
+  const sensor::SignalStreamMessage* ToProtoMessage(sinsp_evt* event) override;
+  const sensor::SignalStreamMessage* ToProtoMessage(sinsp_threadinfo* tinfo) override;
 
  private:
   Signal* CreateSignal(sinsp_evt* event);

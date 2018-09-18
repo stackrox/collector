@@ -2,45 +2,22 @@ BASE_PATH ?= $(CURDIR)/..
 PATH ?= $(PATH):/go/bin
 
 # Automatically locate all API and data protos.
-PROTO_BASE_PATH := $(BASE_PATH)/proto
-API_SERVICE_PROTOS := $(shell find $(PROTO_BASE_PATH)/api/v1 -name '*.proto')
-DATA_PROTOS := $(shell find $(PROTO_BASE_PATH)/data -name '*.proto')
-PRIVATE_RPC_PROTOS := $(shell find $(PROTO_BASE_PATH)/api/v1 -name '*.proto')
-
-# DATA_PROTOS, relative to $(BASE_PATH)
-DATA_PROTOS_REL := $(DATA_PROTOS:$(BASE_PATH)/%=%)
-
 # GENERATED_API_XXX and PROTO_API_XXX variables contain standard paths used to
 # generate gRPC proto messages, services, and gateways for the API.
-GENERATED_BASE_PATH ?= $(BASE_PATH)/go-proto-generated
+PROTO_BASE_PATHS = $(BASE_PATH)/proto/ $(BASE_PATH)/rox-proto/
+ALL_PROTOS = $(shell find $(PROTO_BASE_PATHS) -name '*.proto' 2>/dev/null) \
+	$(GOOGLEAPIS_DIR)/google/api/annotations.proto \
+	$(GOOGLEAPIS_DIR)/google/api/http.proto
+SERVICE_PROTOS = $(filter %_service.proto,$(ALL_PROTOS))
 
-# Files generated from DATA_PROTOS
-GENERATED_DATA_SRCS := $(DATA_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_BASE_PATH)/%.pb.go)
-GENERATED_CPP_DATA_SRCS := \
-	$(DATA_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_CPP_BASE_PATH)/%.pb.cc) \
-	$(DATA_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_CPP_BASE_PATH)/%.pb.h) \
-	$(PRIVATE_RPC_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_CPP_BASE_PATH)/%.pb.cc) \
-	$(PRIVATE_RPC_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_CPP_BASE_PATH)/%.pb.h) \
-	$(PRIVATE_RPC_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_CPP_BASE_PATH)/%.grpc.pb.cc) \
-	$(PRIVATE_RPC_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_CPP_BASE_PATH)/%.grpc.pb.h)
+ALL_PROTOS_REL = $(ALL_PROTOS:$(BASE_PATH)/%=%)
+SERVICE_PROTOS_REL = $(SERVICE_PROTOS:$(BASE_PATH)/%=%)
 
-# Files generated from API_PROTOS
-GENERATED_API_SRCS := $(API_SERVICE_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_BASE_PATH)/%.pb.go)
-GENERATED_API_GW_SRCS := $(API_SERVICE_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_BASE_PATH)/%.pb.gw.go)
-GENERATED_API_VALIDATOR_SRCS := $(API_SERVICE_PROTOS:$(BASE_PATH)/%.proto=$(GENERATED_BASE_PATH)/%.validator.pb.go)
-
-# The --go_out=M... argument specifies the go package to use for an imported proto file. Here, we instruct protoc-gen-go
-# to import the go source for proto file $(BASE_PATH)/<path>/*.proto to
-# "bitbucket.org/stack-rox/stackrox/pkg/generated/<path>".
-M_ARGS = $(foreach proto,$(DATA_PROTOS_REL),M$(proto)=github.com/stackrox/collector/collector/generated/$(patsubst %/,%,$(dir $(proto))))
-
-# Hack: there's no straightforward way to escape a comma in a $(subst ...) command, so we have to resort to this little
-# trick.
-null :=
-space := $(null) $(null)
-comma := ,
-
-M_ARGS_STR := $(subst $(space),$(comma),$(strip $(M_ARGS)))
+GENERATED_CPP_SRCS = \
+    $(ALL_PROTOS_REL:%.proto=$(GENERATED_CPP_BASE_PATH)/%.pb.cc) \
+    $(ALL_PROTOS_REL:%.proto=$(GENERATED_CPP_BASE_PATH)/%.pb.h) \
+    $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_CPP_BASE_PATH)/%.grpc.pb.cc) \
+    $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_CPP_BASE_PATH)/%.grpc.pb.h)
 
 ##############
 ## Protobuf ##
@@ -55,201 +32,88 @@ ifeq ($(UNAME_S),Darwin)
 PROTOC_ARCH = osx
 endif
 
-PROTOC_ZIP := protoc-$(PROTOC_VERSION)-$(PROTOC_ARCH)-x86_64.zip
-PROTOC_FILE := $(BASE_PATH)/$(PROTOC_ZIP)
+TMP_PATH := $(BASE_PATH)/.protogen-tmp/
 
-PROTOC_TMP := $(BASE_PATH)/protoc-tmp
+PROTOC_ZIP := protoc-$(PROTOC_VERSION)-$(PROTOC_ARCH)-x86_64.zip
+PROTOC_FILE := $(TMP_PATH)/$(PROTOC_ZIP)
+
+PROTOC_TMP := $(TMP_PATH)/protoc-tmp/
+
+GOOGLEAPIS_FILE := $(TMP_PATH)/googleapis.zip
+
+GOOGLEAPIS_DIR := $(BASE_PATH)/googleapis/
 
 PROTOC := $(PROTOC_TMP)/bin/protoc
 
-PROTOC_INCLUDES := $(PROTOC_TMP)/include/google
-
-PROTOC_GEN_GO := $(GOPATH)/src/github.com/golang/protobuf/protoc-gen-go
-
+PROTOC_INCLUDES := $(PROTOC_TMP)/include $(GOOGLEAPIS_DIR)
 
 GRPC_CPP_PLUGIN := grpc_cpp_plugin
 
 GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`
 
-PROTOC_GEN_GO_BIN := $(GOPATH)/bin/protoc-gen-gofast
-
-$(GOPATH)/src/github.com/gogo/protobuf/types:
+$(TMP_PATH):
 	@echo "+ $@"
-	@$(BASE_PATH)/scripts/go-get-version.sh github.com/gogo/protobuf/types v1.0.0
+	@mkdir -p $@
 
-$(PROTOC_GEN_GO_BIN): $(GOPATH)/src/github.com/gogo/protobuf/types
+$(PROTOC_FILE): $(TMP_PATH)
 	@echo "+ $@"
-	@$(BASE_PATH)/scripts/go-get-version.sh github.com/gogo/protobuf/protoc-gen-gofast v1.0.0
+	@wget --no-use-server-timestamps -q https://github.com/google/protobuf/releases/download/v$(PROTOC_VERSION)/$(PROTOC_ZIP) -O $@
 
-GOGO_M_STR := Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/struct.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types
-
-$(GOPATH)/src/github.com/golang/protobuf/protoc-gen-go:
+$(GOOGLEAPIS_FILE): $(TMP_PATH)
 	@echo "+ $@"
-	@$(BASE_PATH)/scripts/go-get-version.sh github.com/golang/protobuf/protoc-gen-go v1.1.0
+	@wget --no-use-server-timestamps -q https://github.com/googleapis/googleapis/archive/master.zip -O $@
 
-$(PROTOC_FILE):
+$(GOOGLEAPIS_DIR): $(GOOGLEAPIS_FILE)
 	@echo "+ $@"
-	@wget -q https://github.com/google/protobuf/releases/download/v$(PROTOC_VERSION)/$(PROTOC_ZIP) -O $(PROTOC_FILE)
+	@unzip -q -o -DD -d $(TMP_PATH) $<
+	@rm -rf $@
+	@mv $(TMP_PATH)/googleapis-master $@
 
-$(PROTOC_INCLUDES): $(PROTOC_TMP)
-	@echo "+ $@"
+$(PROTOC_TMP)/include: $(PROTOC_TMP)
 
 $(PROTOC): $(PROTOC_TMP)
 	@echo "+ $@"
+	@chmod a+rx $@
 
-$(PROTOC_TMP): $(PROTOC_FILE)
+$(PROTOC_TMP): $(PROTOC_FILE) $(TMP_PATH)
 	@echo "+ $@"
-	@mkdir $(PROTOC_TMP)
-	@unzip -q -d $(PROTOC_TMP) $(PROTOC_FILE)
-
-.PHONY: proto-fmt
-proto-fmt:
-	@go get github.com/ckaznocha/protoc-gen-lint
-	@echo "Checking for proto style errors"
-	@$(PROTOC) \
-		--proto_path=$(PROTO_BASE_PATH) \
-		--lint_out=. \
-		$(DATA_PROTOS)
-	@$(PROTOC) \
-		-I$(PROTOC_INCLUDES) \
-		-I$(GOPATH)/src \
-		-I$(GOPATH)/src/github.com/gogo/protobuf/protobuf \
-		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
-		--lint_out=. \
-		--proto_path=$(PROTO_BASE_PATH) \
-		$(API_SERVICE_PROTOS)
+	@mkdir -p $@
+	@unzip -q -o -DD -d $@ $<
 
 PROTO_DEPS_CPP=$(PROTOC) $(PROTOC_INCLUDES)
-PROTO_DEPS=$(PROTOC_GEN_GO) $(PROTO_DEPS_CPP)
-
-###############
-## Utilities ##
-###############
-
-.PHONY: printsrcs
-printsrcs:
-	@echo $(GENERATED_SRCS)
-
-.PHONY: printapisrcs
-printapisrcs:
-	@echo $(GENERATED_API_SRCS)
-
-.PHONY: printgwsrcs
-printgwsrcs:
-	@echo $(GENERATED_API_GW_SRCS)
-
-.PHONY: printvalidatorsrcs
-printvalidatorsrcs:
-	@echo $(GENERATED_API_VALIDATOR_SRCS)
-
-.PHONY: printprotos
-printprotos:
-	@echo $(API_SERVICE_PROTOS)
 
 #######################################################################
 ## Generate gRPC proto messages, services, and gateways for the API. ##
 #######################################################################
 
-PROTOC_GEN_GRPC_GATEWAY := $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway
-
-PROTOC_GEN_GOVALIDATORS := $(GOPATH)/src/github.com/mwitkow/go-proto-validators
-
-$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway:
-	@echo "+ $@"
-	@$(BASE_PATH)/scripts/go-get-version.sh google.golang.org/genproto/googleapis 7bb2a897381c9c5ab2aeb8614f758d7766af68ff --skip-install
-	@$(BASE_PATH)/scripts/go-get-version.sh github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/... c2b051dd2f71ce445909aab7b28479fd84d00086
-	@$(BASE_PATH)/scripts/go-get-version.sh github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger/... c2b051dd2f71ce445909aab7b28479fd84d00086
-
-$(GOPATH)/src/github.com/mwitkow/go-proto-validators:
-	@echo "+ $@"
-	@go get -u github.com/mwitkow/go-proto-validators/protoc-gen-govalidators
-
-$(GENERATED_BASE_PATH):
-	@echo "+ $@"
-	@mkdir -p "$@"
-
 $(GENERATED_CPP_BASE_PATH):
 	@echo "+ $@"
 	@mkdir -p "$@"
 
-$(GENERATED_DOC_BASE_PATH):
-	@echo "+ $@"
-	@mkdir -p "$@"
+SUBDIR = $(firstword $(subst /, ,$(subst $(BASE_PATH)/,,$<)))
 
-# Generate all of the proto messages and gRPC services with one invocation of
-# protoc when any of the .pb.go sources don't exist or when any of the .proto
-# files change.
-$(GENERATED_BASE_PATH)/%.pb.go: $(BASE_PATH)/%.proto $(GENERATED_BASE_PATH) $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GOVALIDATORS) $(API_SERVICE_PROTOS) $(DATA_PROTOS) $(PRIVATE_RPC_PROTOS) $(PROTOC_GEN_GO_BIN)
+$(GENERATED_CPP_BASE_PATH)/%.pb.cc $(GENERATED_CPP_BASE_PATH)/%.pb.h: $(BASE_PATH)/%.proto $(GENERATED_CPP_BASE_PATH) $(PROTO_DEPS_CPP)
 	@echo "+ $@"
+	@mkdir -p $(GENERATED_CPP_BASE_PATH)/$(SUBDIR)
 	@$(PROTOC) \
-		-I$(PROTOC_INCLUDES) \
-		-I$(GOPATH)/src \
-		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
-		--proto_path=$(PROTO_BASE_PATH) \
-		--gofast_out=$(GOGO_M_STR),$(M_ARGS_STR),plugins=grpc:$(GENERATED_BASE_PATH) \
-		$(dir $<)/*.proto
+		$(PROTOC_INCLUDES:%=-I%) \
+		$(PROTO_BASE_PATHS:%=-I%) \
+		--cpp_out=$(GENERATED_CPP_BASE_PATH)/$(SUBDIR) \
+		$(filter $(BASE_PATH)/$(SUBDIR)/%, $(ALL_PROTOS))
 
-$(GENERATED_CPP_BASE_PATH)/%.pb.cc $(GENERATED_CPP_BASE_PATH)/%.pb.h: $(BASE_PATH)/%.proto $(GENERATED_CPP_BASE_PATH) $(PROTO_DEPS)
+$(GENERATED_CPP_BASE_PATH)/%.grpc.pb.cc $(GENERATED_CPP_BASE_PATH)/%.grpc.pb.h: $(BASE_PATH)/%.proto $(GENERATED_CPP_BASE_PATH) $(PROTO_DEPS_CPP)
 	@echo "+ $@"
+	@mkdir -p $(GENERATED_CPP_BASE_PATH)/$(SUBDIR)
 	@$(PROTOC) \
-		-I$(PROTOC_INCLUDES) \
-		-I$(PROTO_BASE_PATH) \
-		--cpp_out=$(GENERATED_CPP_BASE_PATH) \
-		$<
-
-$(GENERATED_CPP_BASE_PATH)/%.grpc.pb.cc $(GENERATED_CPP_BASE_PATH)/%.grpc.pb.h: $(BASE_PATH)/%.proto $(GENERATED_CPP_BASE_PATH) $(PROTO_DEPS)
-	@echo "+ $@"
-	@$(PROTOC) \
-		-I$(PROTOC_INCLUDES) \
-		-I$(PROTO_BASE_PATH) \
-		--grpc_out=$(GENERATED_CPP_BASE_PATH) \
+		$(PROTOC_INCLUDES:%=-I%) \
+		$(PROTO_BASE_PATHS:%=-I%) \
+		--grpc_out=$(GENERATED_CPP_BASE_PATH)/$(SUBDIR) \
 		--plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN_PATH) \
-		$<
+		$(filter $(BASE_PATH)/$(SUBDIR)/%, $(ALL_PROTOS))
 
-# Generate all of the reverse-proxies (gRPC-Gateways) with one invocation of
-# protoc when any of the .pb.gw.go sources don't exist or when any of the
-# .proto files change.
-$(GENERATED_BASE_PATH)/%.pb.gw.go: $(BASE_PATH)/%.proto $(GENERATED_BASE_PATH)/%.pb.go
-	@echo "+ $@"
-	@mkdir -p $(dir $@)
-	@$(PROTOC) \
-		-I$(PROTOC_INCLUDES) \
-		-I$(GOPATH)/src \
-		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
-		--proto_path=$(PROTO_BASE_PATH) \
-		--grpc-gateway_out=logtostderr=true:$(GENERATED_BASE_PATH) \
-		$(dir $<)/*.proto
-	@for f in $(patsubst $(dir $<)/%.proto, $(dir $@)/%.pb.gw.go, $(wildcard $(dir $<)/*.proto)); do \
-    	test -f $$f || echo package $(subst -,_,$(notdir $(patsubst %/, %, $(dir $<)))) >$$f; \
-    done
-
-# Generate all of the validator sources with one invocation of protoc
-# when any of the .validator.pb.go sources don't exist or when any of the
-# .proto files change.
-$(GENERATED_BASE_PATH)/%.validator.pb.go: $(BASE_PATH)/%.proto $(GENERATED_BASE_PATH)/%.pb.go
-	@echo "+ $@"
-	@mkdir -p $(dir $@)
-	@$(PROTOC) \
-		-I$(PROTOC_INCLUDES) \
-		-I$(GOPATH)/src \
-		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
-		--proto_path=$(PROTO_BASE_PATH) \
-		--govalidators_out=$(M_ARGS_STR):$(GENERATED_BASE_PATH) \
-		$(dir $<)/*.proto
-	@for f in $(patsubst $(dir $<)/%.proto, $(dir $@)/%.validator.pb.go, $(wildcard $(dir $<)/*.proto)); do \
-		test -f $$f || echo package $(subst -,_,$(notdir $(patsubst %/, %, $(dir $<)))) >$$f; \
-	done
 
 # Clean things that we use to generate protobufs
 .PHONY: clean-protogen-artifacts
 clean-protogen-artifacts:
 	@echo "+ $@"
-	@rm -rf $(GOPATH)/src/github.com/grpc-ecosystem
-	@rm -rf $(GOPATH)/src/github.com/golang/protobuf
-	@rm -rf $(GOPATH)/src/google.golang.org/genproto
-	@rm -f $(GOPATH)/bin/protoc-gen-grpc-gateway
-	@rm -f $(GOPATH)/bin/protoc-gen-go
-	@rm -f $(GOPATH)/bin/protoc-gen-gofast
-	@rm -rf $(GOPATH)/src/github.com/gogo/protobuf
-	@rm -rf $(PROTOC_TMP)
-	@rm -f $(PROTOC_FILE)
+	@rm -rf $(TMP_PATH)

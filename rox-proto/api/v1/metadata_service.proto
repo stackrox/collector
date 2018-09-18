@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/empty.proto";
+
+package v1;
+
+message Metadata {
+    string version = 1;
+}
+
+service MetadataService {
+
+    rpc GetMetadata(Empty) returns (Metadata) {
+        option (google.api.http) = {
+            get: "/v1/metadata"
+        };
+    }
+
+}

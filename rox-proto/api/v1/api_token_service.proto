@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+option java_package = "stackrox.generated";
+
+import weak "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+import "api/v1/common.proto";
+import "api/v1/empty.proto";
+
+package v1;
+
+message GenerateTokenRequest {
+    string name = 1;
+    string role = 2;
+}
+
+message TokenMetadata {
+    string id                            = 1;
+    string name                          = 2;
+    string role                          = 3;
+    google.protobuf.Timestamp issued_at  = 4;
+    google.protobuf.Timestamp expiration = 5;
+    bool revoked                         = 6;
+}
+
+message GenerateTokenResponse {
+    string token           = 1;
+    TokenMetadata metadata = 2;
+}
+
+message GetAPITokensRequest {
+    oneof revoked_oneof {
+        bool revoked = 1;
+    }
+}
+
+message GetAPITokensResponse {
+    repeated TokenMetadata tokens = 1;
+}
+
+service APITokenService {
+
+    rpc GetAPIToken (ResourceByID) returns (TokenMetadata) {
+        option (google.api.http) = {
+            get: "/v1/apitokens/{id}"
+        };
+    }
+
+    rpc GetAPITokens (GetAPITokensRequest) returns (GetAPITokensResponse) {
+        option (google.api.http) = {
+            get: "/v1/apitokens"
+        };
+    }
+
+    rpc GenerateToken (GenerateTokenRequest) returns (GenerateTokenResponse) {
+        option (google.api.http) = {
+            post: "/v1/apitokens/generate"
+            body: "*"
+        };
+    }
+
+    rpc RevokeToken (ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/apitokens/revoke/{id}"
+        };
+    }
+}

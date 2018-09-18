@@ -38,8 +38,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 
-#include "../generated/api/v1/signal.pb.h"
-#include "../generated/api/v1/signal.grpc.pb.h"
+#include "api/v1/signal.pb.h"
+#include "internalapi/sensor/signal_service.grpc.pb.h"
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -47,7 +47,7 @@ using grpc::ClientReader;
 using grpc::ClientReaderWriter;
 using grpc::ClientWriter;
 using grpc::Status;
-using v1::SignalService;
+using sensor::SignalService;
 
 namespace collector {
 
@@ -69,11 +69,11 @@ class SignalServiceClient {
   std::string grpc_server_;
   std::shared_ptr<grpc::ChannelCredentials> channel_creds_;
   std::unique_ptr<SignalService::Stub> stub_;
-  v1::SignalStreamMessage signal_stream_;
+  sensor::SignalStreamMessage signal_stream_;
   StoppableThread thread_;
   std::atomic<bool> channel_up_;
   std::condition_variable channel_cond_;
-  std::unique_ptr<ClientWriter<v1::SignalStreamMessage> > grpc_writer_;
+  std::unique_ptr<ClientWriter<sensor::SignalStreamMessage> > grpc_writer_;
   std::unique_ptr<ClientContext> context_;
   void establishGRPCChannel();
 };

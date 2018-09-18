@@ -4,3 +4,7 @@ protoc-tmp
 .idea/
 
 go-proto-generated
+/.protogen-tmp/
+/.rox/
+/googleapis/
+

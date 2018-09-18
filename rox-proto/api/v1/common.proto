@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "stackrox.generated";
+
+import weak "google/api/annotations.proto";
+
+package v1;
+
+enum Severity {
+    UNSET_SEVERITY    = 0;
+    LOW_SEVERITY      = 1;
+    MEDIUM_SEVERITY   = 2;
+    HIGH_SEVERITY     = 3;
+    CRITICAL_SEVERITY = 4;
+}
+
+message ResourceByID {
+    string id = 1;
+}
+
+message Scope {
+    string cluster      = 1;
+    string namespace    = 2;
+    message Label {
+        string key   = 1;
+        string value = 2;
+    }
+    Label label         = 3;
+}
