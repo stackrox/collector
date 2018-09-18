@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 project (collector)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -ggdb --std=c++11 -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -ggdb --std=c++11 -pthread -Wno-deprecated-declarations")
 
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-strict-aliasing -DNDEBUG")
@@ -47,6 +47,9 @@ target_link_libraries(collector libgrpc++_unsecure.a)
 target_link_libraries(collector libprometheus-cpp-pull.a)
 target_link_libraries(collector libprometheus-cpp-core.a)
 target_link_libraries(collector libprotobuf.a)
+
+add_executable(connscrape connscrape.cpp)
+target_link_libraries(connscrape collector_lib)
 
 # Setup testing
 enable_testing()
