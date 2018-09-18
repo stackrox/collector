@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "stackrox.generated";
+
+import weak "google/api/annotations.proto";
+import "api/v1/common.proto";
+import "api/v1/empty.proto";
+
+package v1;
+
+// Next Tag: 9
+message AuthProvider {
+    string id                   = 1;
+    string name                 = 2;
+    string type                 = 3;
+    string ui_endpoint          = 4;
+    bool enabled                = 5;
+    map<string, string> config  = 6;
+    // The login URL will be provided by the backend, and may not be specified in a request.
+    string login_url            = 7;
+    bool validated              = 8;
+}
+
+message GetAuthProvidersRequest {
+    string name = 1;
+    string type = 2;
+}
+
+message GetAuthProvidersResponse {
+    repeated AuthProvider auth_providers = 1;
+}
+
+service AuthProviderService {
+    rpc GetAuthProvider (ResourceByID) returns (AuthProvider) {
+        option (google.api.http) = {
+            get: "/v1/authProviders/{id}"
+        };
+    }
+
+    rpc GetAuthProviders (GetAuthProvidersRequest) returns (GetAuthProvidersResponse) {
+        option (google.api.http) = {
+            get: "/v1/authProviders"
+        };
+    }
+
+    rpc PostAuthProvider (AuthProvider) returns (AuthProvider) {
+        option (google.api.http) = {
+            post: "/v1/authProviders"
+            body: "*"
+        };
+    }
+
+    rpc PutAuthProvider (AuthProvider) returns (Empty) {
+        option (google.api.http) = {
+            put: "/v1/authProviders/{id}"
+            body: "*"
+        };
+    }
+
+    rpc DeleteAuthProvider (ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v1/authProviders/{id}"
+        };
+    }
+}

@@ -1,0 +1,132 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "stackrox.generated";
+
+import weak "google/api/annotations.proto";
+import "api/v1/common.proto";
+
+package v1;
+
+enum SearchCategory {
+    SEARCH_UNSET = 0;
+    ALERTS       = 1;
+    IMAGES       = 2;
+    POLICIES     = 3;
+    DEPLOYMENTS  = 4;
+    SECRETS      = 5;
+    PROCESS_INDICATORS = 6;
+}
+
+enum SearchDataType {
+    SEARCH_BOOL     = 0;
+    SEARCH_NUMERIC  = 1;
+    SEARCH_STRING   = 2;
+    SEARCH_DATETIME = 3;
+
+    // Enums must be accounted for because they will all be handled on an individual basis
+    SEARCH_ENFORCEMENT = 4;
+    SEARCH_SEVERITY    = 5;
+    SEARCH_MAP         = 6;
+    SEARCH_SECRET_TYPE = 7;
+}
+
+message RawQuery {
+    string query = 1; // A query is a formatted string like Cluster:dev+Namespace:stackrox+Image Name:nginx
+}
+
+message RawSearchRequest {
+    string query                       = 1;
+    repeated SearchCategory categories = 2;
+}
+
+message SearchField {
+    string field_path       = 1;
+    SearchDataType type     = 2;
+    bool store              = 3;
+    bool hidden             = 4;
+    SearchCategory category = 5;
+}
+
+message Query {
+    oneof query {
+        ConjunctionQuery conjunction = 1;
+        DisjunctionQuery disjunction = 2;
+        BaseQuery        base_query  = 3;
+    }
+}
+
+// StringQuery represents a query that matches documents that contain the
+// query text in _any_ of their fields.
+message StringQuery {
+    string query = 1;
+}
+
+// MatchFieldQuery represents a query that matches documents containing the
+// query text in the provided field.
+message MatchFieldQuery {
+    string field = 1;
+    string value = 2;
+    bool highlight = 3;
+}
+
+message BaseQuery {
+    oneof query {
+        StringQuery string_query = 1;
+        MatchFieldQuery match_field_query = 2;
+    }
+}
+
+message ConjunctionQuery {
+    repeated Query queries = 1;
+}
+
+message DisjunctionQuery {
+    repeated Query queries = 1;
+}
+
+message SearchResult {
+    string id                             = 1;
+    string name                           = 2;
+    SearchCategory category               = 3;
+    message Matches {
+        repeated string values = 1;
+    }
+    map<string, Matches> field_to_matches = 4;
+    double score                          = 5;
+    string location                       = 6;
+}
+
+message SearchResponse {
+    repeated SearchResult results = 1;
+    message Count {
+        SearchCategory category = 1;
+        int64 count             = 2;
+    }
+    repeated Count counts         = 2;
+}
+
+message SearchOptionsRequest {
+    repeated SearchCategory categories = 1;
+}
+
+message SearchOptionsResponse {
+    repeated string options = 1;
+}
+
+service SearchService {
+
+    rpc Search (RawSearchRequest) returns (SearchResponse) {
+        option (google.api.http) = {
+            get: "/v1/search"
+        };
+    }
+
+
+    rpc Options (SearchOptionsRequest) returns (SearchOptionsResponse) {
+        option (google.api.http) = {
+            get: "/v1/search/metadata/options"
+        };
+    }
+
+}

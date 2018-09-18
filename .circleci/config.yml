@@ -18,11 +18,6 @@ jobs:
         path: /go/src/github.com/stackrox/collector
 
     - run:
-        name: Update submodules
-        working_directory: /go/src/github.com/stackrox/collector
-        command: git submodule update --init
-
-    - run:
         name: Restore collector-builder cache image
         command: docker pull stackrox/collector-builder:cache || true
 

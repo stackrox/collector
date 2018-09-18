@@ -5,13 +5,15 @@ PATH ?= $(PATH):/go/bin
 # GENERATED_API_XXX and PROTO_API_XXX variables contain standard paths used to
 # generate gRPC proto messages, services, and gateways for the API.
 PROTO_BASE_PATHS = $(BASE_PATH)/proto/ $(BASE_PATH)/rox-proto/
-ALL_PROTOS = $(shell find $(PROTO_BASE_PATHS) -name '*.proto')
-SERVICE_PROTOS = $(filter %_service.proto,$(ALL_PROTOS)) $(filter %/api/v1/signal.proto,$(ALL_PROTOS))
+ALL_PROTOS = $(shell find $(PROTO_BASE_PATHS) -name '*.proto' 2>/dev/null) \
+	$(GOOGLEAPIS_DIR)/google/api/annotations.proto \
+	$(GOOGLEAPIS_DIR)/google/api/http.proto
+SERVICE_PROTOS = $(filter %_service.proto,$(ALL_PROTOS))
 
 ALL_PROTOS_REL = $(ALL_PROTOS:$(BASE_PATH)/%=%)
 SERVICE_PROTOS_REL = $(SERVICE_PROTOS:$(BASE_PATH)/%=%)
 
-GENERATED_CPP_SRCS := \
+GENERATED_CPP_SRCS = \
     $(ALL_PROTOS_REL:%.proto=$(GENERATED_CPP_BASE_PATH)/%.pb.cc) \
     $(ALL_PROTOS_REL:%.proto=$(GENERATED_CPP_BASE_PATH)/%.pb.h) \
     $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_CPP_BASE_PATH)/%.grpc.pb.cc) \
@@ -39,7 +41,7 @@ PROTOC_TMP := $(TMP_PATH)/protoc-tmp/
 
 GOOGLEAPIS_FILE := $(TMP_PATH)/googleapis.zip
 
-GOOGLEAPIS_DIR := $(TMP_PATH)/googleapis-master/
+GOOGLEAPIS_DIR := $(BASE_PATH)/googleapis/
 
 PROTOC := $(PROTOC_TMP)/bin/protoc
 
@@ -64,6 +66,7 @@ $(GOOGLEAPIS_FILE): $(TMP_PATH)
 $(GOOGLEAPIS_DIR): $(GOOGLEAPIS_FILE)
 	@echo "+ $@"
 	@unzip -q -o -d $(TMP_PATH) $<
+	@mv $(TMP_PATH)/googleapis-master $@
 
 $(PROTOC_INCLUDES): $(PROTOC_TMP)
 
@@ -86,24 +89,27 @@ $(GENERATED_CPP_BASE_PATH):
 	@echo "+ $@"
 	@mkdir -p "$@"
 
+SUBDIR = $(firstword $(subst /, ,$(subst $(BASE_PATH)/,,$<)))
+
 $(GENERATED_CPP_BASE_PATH)/%.pb.cc $(GENERATED_CPP_BASE_PATH)/%.pb.h: $(BASE_PATH)/%.proto $(GENERATED_CPP_BASE_PATH) $(PROTO_DEPS_CPP)
 	@echo "+ $@"
-	@mkdir -p $(GENERATED_CPP_BASE_PATH)/$(firstword $(subst /, ,$(subst $(BASE_PATH)/,,$<)))
+	@mkdir -p $(GENERATED_CPP_BASE_PATH)/$(SUBDIR)
 	@$(PROTOC) \
 		$(PROTOC_INCLUDES:%=-I%) \
 		$(PROTO_BASE_PATHS:%=-I%) \
-		--cpp_out=$(GENERATED_CPP_BASE_PATH)/$(firstword $(subst /, ,$(subst $(BASE_PATH)/,,$<))) \
-		$<
+		--cpp_out=$(GENERATED_CPP_BASE_PATH)/$(SUBDIR) \
+		$(filter $(BASE_PATH)/$(SUBDIR)/%, $(ALL_PROTOS))
 
 $(GENERATED_CPP_BASE_PATH)/%.grpc.pb.cc $(GENERATED_CPP_BASE_PATH)/%.grpc.pb.h: $(BASE_PATH)/%.proto $(GENERATED_CPP_BASE_PATH) $(PROTO_DEPS_CPP)
 	@echo "+ $@"
-	@mkdir -p $(GENERATED_CPP_BASE_PATH)/$(firstword $(subst /, ,$(subst $(BASE_PATH)/,,$<)))
+	@mkdir -p $(GENERATED_CPP_BASE_PATH)/$(SUBDIR)
 	@$(PROTOC) \
 		$(PROTOC_INCLUDES:%=-I%) \
 		$(PROTO_BASE_PATHS:%=-I%) \
-		--grpc_out=$(GENERATED_CPP_BASE_PATH)/$(firstword $(subst /, ,$(subst $(BASE_PATH)/,,$<))) \
+		--grpc_out=$(GENERATED_CPP_BASE_PATH)/$(SUBDIR) \
 		--plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN_PATH) \
-		$<
+		$(filter $(BASE_PATH)/$(SUBDIR)/%, $(ALL_PROTOS))
+
 
 # Clean things that we use to generate protobufs
 .PHONY: clean-protogen-artifacts

@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "stackrox.generated";
+
+import weak "google/api/annotations.proto";
+import "api/v1/deployment_service.proto";
+import "api/v1/indicator.proto";
+import "api/v1/network_policy_service.proto";
+import "api/v1/policy_service.proto";
+import "api/v1/secret_service.proto";
+
+
+package v1;
+
+enum ResourceAction {
+    UNSET_ACTION_RESOURCE   = 0;
+    CREATE_RESOURCE         = 1;
+    REMOVE_RESOURCE         = 2;
+    UPDATE_RESOURCE         = 3;
+}
+
+message SensorEvent {
+    // These fields may be duplicated in the individual events, but avoid the need to branch all the time
+    string         id                           = 1;
+    ResourceAction action                       = 2;
+    string         cluster_id                   = 3;
+
+    oneof resource {
+        NetworkPolicy    network_policy    = 4;
+        Deployment       deployment        = 5;
+        Namespace        namespace         = 6;
+        Secret           secret            = 7;
+
+        // Indicators
+        ProcessIndicator process_indicator = 8;
+    }
+}
+
+message SensorEnforcement {
+    EnforcementAction enforcement = 1;
+
+    oneof resource {
+        DeploymentEnforcement       deployment         = 2;
+        ContainerInstanceEnforcement container_instance = 3;
+    }
+}
+
+message DeploymentEnforcement {
+    string deployment_id   = 1;
+    string deployment_name = 2;
+    string deployment_type = 3;
+    string namespace       = 4;
+    string alert_id        = 5;
+}
+
+message ContainerInstanceEnforcement {
+    string container_instance_id = 1;
+    string pod_id                = 2;
+    string namespace             = 3;
+}
+
+service SensorEventService {
+
+    rpc RecordEvent(stream SensorEvent) returns (stream SensorEnforcement) {
+        option (google.api.http) = {
+            post: "/v1/sensor/events"
+            body: "*"
+        };
+    }
+
+}

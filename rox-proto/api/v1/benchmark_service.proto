@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "stackrox.generated";
+
+import weak "google/api/annotations.proto";
+import "api/v1/cluster_service.proto";
+import "api/v1/common.proto";
+import "api/v1/empty.proto";
+
+package v1;
+
+message CheckDefinition {
+    string name        = 1;
+    string description = 2;
+}
+
+message GetChecksResponse {
+    repeated CheckDefinition checks = 1;
+}
+
+message Benchmark {
+    string id                               = 1;
+    string name                             = 2;
+    bool editable                           = 3;
+    repeated string checks                  = 4;
+    repeated ClusterType cluster_types      = 5;
+}
+
+message GetBenchmarkRequest {
+    string name = 1;
+}
+
+message GetBenchmarksRequest {
+    string name = 1;
+}
+
+message GetBenchmarksResponse {
+    repeated Benchmark benchmarks = 1;
+}
+
+message DeleteBenchmarkRequest {
+    string name = 1;
+}
+
+service BenchmarkService {
+
+    rpc GetChecks (Empty) returns (GetChecksResponse) {
+        option (google.api.http) = {
+            get: "/v1/benchmarks/checks"
+        };
+    }
+
+    rpc GetBenchmark (ResourceByID) returns (Benchmark) {
+        option (google.api.http) = {
+            get: "/v1/benchmarks/configs/{id}"
+        };
+    }
+
+    rpc GetBenchmarks (GetBenchmarksRequest) returns (GetBenchmarksResponse) {
+        option (google.api.http) = {
+            get: "/v1/benchmarks/configs"
+        };
+    }
+
+    rpc PostBenchmark (Benchmark) returns (Benchmark) {
+        option (google.api.http) = {
+            post: "/v1/benchmarks/configs"
+            body: "*"
+        };
+    }
+
+    rpc PutBenchmark (Benchmark) returns (Empty) {
+        option (google.api.http) = {
+            put: "/v1/benchmarks/configs/{id}"
+            body: "*"
+        };
+    }
+
+    rpc DeleteBenchmark (ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v1/benchmarks/configs/{id}"
+        };
+    }
+
+}

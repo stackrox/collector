@@ -78,10 +78,21 @@ distribution: clean
 
 GENERATED_CPP_BASE_PATH := $(CURDIR)/generated
 
+ROX_URL := git@github.com:stackrox/rox.git
+ROX_WORKTREE := $(BASE_PATH)/.rox
+ROX_GITDIR := $(ROX_WORKTREE)/.git
+
 .PHONY: pull-protos
 pull-protos:
 	@echo Fetching protobufs from rox ...
-	@git submodule update --init --remote $(BASE_PATH)/.rox
+	@test -d $(ROX_WORKTREE) || git clone $(ROX_URL) $(ROX_WORKTREE)
+	@test $(shell git --git-dir $(ROX_GITDIR) remote get-url origin) == $(ROX_URL) || \
+		( echo >&2 "Your .rox git repo is not setup correctly (pointing to origin '$(shell git --git-dir $(ROX_GITDIR) remote get-url origin)')" ; exit 1 ; )
+	@git --git-dir $(ROX_GITDIR) fetch && git --git-dir $(ROX_GITDIR) --work-tree $(ROX_WORKTREE) checkout origin/master
+	@rm -rf $(BASE_PATH)/rox-proto/
+	@cp -r $(ROX_WORKTREE)/proto/ $(BASE_PATH)/rox-proto
+	@git --git-dir $(BASE_PATH)/.git --work-tree $(BASE_PATH) add $(BASE_PATH)/rox-proto/
+	@echo "Copied protos to $(BASE_PATH)/rox-proto and added to git index"
 
 install-grpc:
 	@$(BASE_PATH)/build/scripts/install-grpc-cpp-plugin.sh

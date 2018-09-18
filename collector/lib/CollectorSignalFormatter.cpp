@@ -32,7 +32,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-using SignalStreamMessage = v1::SignalStreamMessage;
+using SignalStreamMessage = sensor::SignalStreamMessage;
 using Signal = CollectorSignalFormatter::Signal;
 using ProcessSignal = CollectorSignalFormatter::ProcessSignal;
 
