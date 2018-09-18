@@ -11,6 +11,8 @@ PATH ?= $(PATH):/go/bin
 .PHONY: all
 all: image
 
+.SUFFIXES:
+
 .PHONY: image
 image: container/bin/collector container/Dockerfile container/scripts/
 	cp NOTICE-collector.txt container/

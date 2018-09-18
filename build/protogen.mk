@@ -65,10 +65,11 @@ $(GOOGLEAPIS_FILE): $(TMP_PATH)
 
 $(GOOGLEAPIS_DIR): $(GOOGLEAPIS_FILE)
 	@echo "+ $@"
-	@unzip -q -o -d $(TMP_PATH) $<
+	@unzip -q -o -DD -d $(TMP_PATH) $<
+	@rm -rf $@
 	@mv $(TMP_PATH)/googleapis-master $@
 
-$(PROTOC_INCLUDES): $(PROTOC_TMP)
+$(PROTOC_TMP)/include: $(PROTOC_TMP)
 
 $(PROTOC): $(PROTOC_TMP)
 	@echo "+ $@"
@@ -77,7 +78,7 @@ $(PROTOC): $(PROTOC_TMP)
 $(PROTOC_TMP): $(PROTOC_FILE) $(TMP_PATH)
 	@echo "+ $@"
 	@mkdir -p $@
-	@unzip -q -o -d $@ $<
+	@unzip -q -o -DD -d $@ $<
 
 PROTO_DEPS_CPP=$(PROTOC) $(PROTOC_INCLUDES)
 
