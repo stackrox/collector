@@ -1,4 +1,3 @@
 [submodule "rox"]
 	path = .rox
 	url = git@github.com:stackrox/rox.git
-	branch = master

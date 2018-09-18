@@ -81,7 +81,7 @@ GENERATED_CPP_BASE_PATH := $(CURDIR)/generated
 .PHONY: pull-protos
 pull-protos:
 	@echo Fetching protobufs from rox ...
-	@git submodule update --init $(BASE_PATH)/.rox
+	@git submodule update --init --remote $(BASE_PATH)/.rox
 
 install-grpc:
 	@$(BASE_PATH)/build/scripts/install-grpc-cpp-plugin.sh
