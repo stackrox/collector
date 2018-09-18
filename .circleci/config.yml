@@ -310,7 +310,10 @@ jobs:
         working_directory: /go/src/github.com/stackrox/collector/kernel-modules/container
         command: |
           VERSION=$(git describe --tags)
-          docker build -t "stackrox/kernel-modules:$VERSION" .
+          docker build \
+            -t "stackrox/kernel-modules:$VERSION" \
+            -t "stackrox/kernel-modules:snapshot-$VERSION" \
+            .
 
     - run:
         name: Build collector Docker image
