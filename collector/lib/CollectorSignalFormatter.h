@@ -28,7 +28,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "ProtoSignalFormatter.h"
 #include "SysdigEventExtractor.h"
 
-#include "../generated/api/v1/signal.pb.h"
+#include "api/v1/signal.pb.h"
 
 namespace collector {
 

@@ -77,7 +77,11 @@ distribution: clean
 			collector.tar.gz ./
 
 GENERATED_CPP_BASE_PATH := $(CURDIR)/generated
-GENERATED_GO_BASE_PATH := $(CURDIR)/../go-proto-generated
+
+.PHONY: pull-protos
+pull-protos:
+	@echo Fetching protobufs from rox ...
+	@git submodule update --init $(BASE_PATH)/.rox
 
 install-grpc:
 	@$(BASE_PATH)/build/scripts/install-grpc-cpp-plugin.sh
@@ -85,5 +89,5 @@ install-grpc:
 include ../build/protogen.mk
 
 # Generating go protos too for testing purpose
-generated-srcs: install-grpc $(GENERATED_DATA_SRCS) $(GENERATED_API_SRCS) $(GENERATED_CPP_DATA_SRCS)
+generated-srcs: install-grpc $(GENERATED_CPP_SRCS)
 
