@@ -18,9 +18,9 @@ jobs:
         path: /go/src/github.com/stackrox/collector
 
     - run:
-        name: Fetch protos from rox
-        working_directory: /go/src/github.com/stackrox/collector/collector
-        command: make pull-protos
+        name: Update submodules
+        working_directory: /go/src/github.com/stackrox/collector
+        command: git submodule update --init
 
     - run:
         name: Restore collector-builder cache image
