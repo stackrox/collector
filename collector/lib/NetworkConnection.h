@@ -70,6 +70,8 @@ class Address {
   }
 
   Family family() const { return family_; }
+  size_t length() const { return Length(family_); }
+  const uint8_t* data() const { return data_.data(); }
 
   size_t Hash() const { return HashAll(data_, family_); }
 
@@ -110,7 +112,7 @@ class Address {
     std::memset(data_.data(), 0, data_.size());
   }
 
-  std::array<unsigned char, kMaxLen> data_;
+  std::array<uint8_t, kMaxLen> data_;
   Family family_;
 };
 
