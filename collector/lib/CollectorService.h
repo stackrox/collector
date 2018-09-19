@@ -40,13 +40,6 @@ extern "C" {
 
 namespace collector {
 
-struct gRPCConfig {
-  Address grpc_server;
-  std::string ca_cert;
-  std::string client_cert;
-  std::string client_key;
-};
-
 struct CollectorConfig {
   bool useChiselCache = true;
   bool useKafka = true;

@@ -52,7 +52,6 @@ bool SignalServiceClient::EstablishGRPCStreamSingle() {
   // stream writer
   v1::Empty empty;
   grpc_writer_ = stub_->PushSignals(&context_, &empty);
-  grpc_writer_->WaitForInitialMetadata();
 
   stream_active_.store(true, std::memory_order_release);
   return true;
