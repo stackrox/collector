@@ -35,49 +35,39 @@ You should have received a copy of the GNU General Public License along with thi
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
-#include <grpcpp/create_channel.h>
-#include <grpcpp/security/credentials.h>
 
 #include "api/v1/signal.pb.h"
 #include "internalapi/sensor/signal_service.grpc.pb.h"
 
-using grpc::Channel;
-using grpc::ClientContext;
-using grpc::ClientReader;
-using grpc::ClientReaderWriter;
-using grpc::ClientWriter;
-using grpc::Status;
-using sensor::SignalService;
-
 namespace collector {
-
-struct GRPCServerOptions {
-  std::string server_endpoint = ""; // localhost:10000
-  grpc::string pem_cert_chain = "";
-  grpc::string pem_private_key = "";
-  grpc::string pem_root_certs = "";
-};
 
 class SignalServiceClient {
  public:
-  SignalServiceClient(const gRPCConfig& config);
+  using SignalService = sensor::SignalService;
+  using SignalStreamMessage = sensor::SignalStreamMessage;
+
+  explicit SignalServiceClient(std::shared_ptr<grpc::Channel> channel)
+      : channel_(std::move(channel)), stub_(SignalService::NewStub(channel_)), stream_active_(false) {}
+
   void Start();
-  ~SignalServiceClient() {};
+  void Stop();
 
   bool PushSignals(const SafeBuffer& buffer);
- private:
-  std::string grpc_server_;
-  std::shared_ptr<grpc::ChannelCredentials> channel_creds_;
-  std::unique_ptr<SignalService::Stub> stub_;
-  sensor::SignalStreamMessage signal_stream_;
-  StoppableThread thread_;
-  std::atomic<bool> channel_up_;
-  std::condition_variable channel_cond_;
-  std::unique_ptr<ClientWriter<sensor::SignalStreamMessage> > grpc_writer_;
-  std::unique_ptr<ClientContext> context_;
-  void establishGRPCChannel();
-};
 
+ private:
+  void EstablishGRPCStream();
+  bool EstablishGRPCStreamSingle();
+
+  std::shared_ptr<grpc::Channel> channel_;
+  std::unique_ptr<SignalService::Stub> stub_;
+  grpc::ClientContext context_;
+
+  StoppableThread thread_;
+  std::atomic<bool> stream_active_;
+  std::condition_variable stream_interrupted_;
+
+  std::unique_ptr<grpc::ClientWriter<SignalStreamMessage> > grpc_writer_;
+};
 
 }  // namespace collector
 

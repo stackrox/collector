@@ -37,6 +37,7 @@ extern "C" {
 #include "CollectorStatsExporter.h"
 #include "GetNetworkHealthStatus.h"
 #include "GetStatus.h"
+#include "GRPCUtil.h"
 #include "LogLevel.h"
 #include "SysdigService.h"
 #include "Utility.h"
@@ -180,18 +181,7 @@ bool CollectorService::WaitForKafka() {
 bool CollectorService::WaitForGRPCServer() {
   std::string error_str;
   auto interrupt = [this] { return control_->load(std::memory_order_relaxed) == STOP_COLLECTOR; };
-  while (!interrupt()) {
-    ConnectivityStatus conn_status = CheckConnectivity(config_.grpc_config.grpc_server, std::chrono::seconds(1), &error_str, interrupt);
-    if (conn_status == ConnectivityStatus::INTERRUPTED) return false;
-    else if (conn_status == ConnectivityStatus::ERROR) {
-      CLOG(ERROR) << "Error connecting to gRPC server: " << config_.grpc_config.grpc_server.str() << ": " << error_str;
-    } else {
-        return true;
-    }
-    CLOG(ERROR) << "gRPC server not ready. Sleeping for 5 seconds ...";
-    std::this_thread::sleep_for(std::chrono::seconds(5));
-  }
-  return false;
+  return WaitForChannelReady(config_.grpc_channel, interrupt);
 }
 
 void CollectorService::OnChiselReceived(const std::string& new_chisel) {

@@ -28,6 +28,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <cstdio>
 #include <cstdlib>
 #include <csignal>
+#include <cctype>
 #include <string>
 #include <sys/wait.h>
 #include <thread>
@@ -55,6 +56,7 @@ extern "C" {
 #include "EventNames.h"
 #include "GetNetworkHealthStatus.h"
 #include "GetStatus.h"
+#include "GRPC.h"
 #include "LogLevel.h"
 #include "Logging.h"
 #include "SysdigService.h"
@@ -93,7 +95,7 @@ static void AbortHandler(int signum) {
 }
 
 std::string GetHostPath(const std::string& file) {
-    const char* host_root = getenv("SYSDIG_HOST_ROOT");
+    const char* host_root = std::getenv("SYSDIG_HOST_ROOT");
     if (!host_root) host_root = "";
     std::string host_file(host_root);
     host_file += file;
@@ -194,7 +196,7 @@ static const std::string base64_chars =
              "0123456789+/";
 
 static inline bool is_base64(unsigned char c) {
-    return (isalnum(c) || (c == '+') || (c == '/'));
+    return (std::isalnum(c) || (c == '+') || (c == '/'));
 }
 
 std::string base64_decode(std::string const& encoded_string) {
@@ -254,7 +256,7 @@ bool GetClusterID(uuid_t* result) {
 }
 
 const char* GetHostname() {
-  const char* hostname = getenv("NODE_HOSTNAME");
+  const char* hostname = std::getenv("NODE_HOSTNAME");
   if (hostname && *hostname) return hostname;
 
   CLOG(ERROR) << "Failed to determine hostname, environment variable NODE_HOSTNAME not set";
@@ -360,8 +362,10 @@ int main(int argc, char **argv) {
     useGRPC = true;
   }
 
-  if (!useGRPC) {
-      CLOG(INFO) << "GRPC is disabled. Specify GRPC_SERVER='server addr' env and signalFormat = 'signal_summary' and  signalOutput = 'grpc'";
+  if (useGRPC) {
+    grpc_init();
+  } else {
+    CLOG(INFO) << "GRPC is disabled. Specify GRPC_SERVER='server addr' env and signalFormat = 'signal_summary' and  signalOutput = 'grpc'";
   }
 
   // Iterate over the process syscalls
@@ -444,29 +448,28 @@ int main(int argc, char **argv) {
     }
   }
 
-  gRPCConfig grpc_config;
+  std::shared_ptr<grpc::Channel> grpc_channel;
   if (useGRPC) {
-    std::string error_str;
     CLOG(INFO) << "gRPC server=" << args->GRPCServer();
-    if (!ParseAddress(args->GRPCServer(), &grpc_config.grpc_server, &error_str)) {
-        CLOG(FATAL) << "Failed to parse GRPC server address: " << error_str;
-    }
-    const auto& tlsConfig = collectorConfig["tlsConfig"];
-    if (!tlsConfig.isNull()) {
-      std::string caCertPath = tlsConfig["caCertPath"].asString();
-      std::string clientCertPath = tlsConfig["clientCertPath"].asString();
-      std::string clientKeyPath = tlsConfig["clientKeyPath"].asString();
 
-      if (!caCertPath.empty() && !clientCertPath.empty() && !clientKeyPath.empty()) {
-        grpc_config.ca_cert = caCertPath;
-        grpc_config.client_cert = clientCertPath;
-        grpc_config.client_key = clientKeyPath;
+    const auto& tls_config = collectorConfig["tlsConfig"];
+
+    std::shared_ptr<grpc::ChannelCredentials> creds = grpc::InsecureChannelCredentials();
+    if (!tls_config.isNull()) {
+      std::string ca_cert_path = tls_config["caCertPath"].asString();
+      std::string client_cert_path = tls_config["clientCertPath"].asString();
+      std::string client_key_path = tls_config["clientKeyPath"].asString();
+
+      if (!ca_cert_path.empty() && !client_cert_path.empty() && !client_key_path.empty()) {
+        creds = collector::TLSCredentialsFromFiles(ca_cert_path, client_cert_path, client_key_path);
       } else {
         CLOG(ERROR)
-           << "Partial TLS config: CACertPath=" << caCertPath << ", ClientCertPath=" << clientCertPath
-           << ", ClientKeyPath=" << clientKeyPath << "; will not use TLS";
+           << "Partial TLS config: CACertPath=" << ca_cert_path << ", ClientCertPath=" << client_cert_path
+           << ", ClientKeyPath=" << client_key_path << "; will not use TLS";
       }
     }
+
+    grpc_channel = collector::CreateChannel(args->GRPCServer(), creds);
   }
 
   CollectorConfig config;
@@ -480,7 +483,7 @@ int main(int argc, char **argv) {
   config.getNetworkHealth = getNetworkHealth;
   config.chisel = chisel;
   config.kafkaBrokers = std::move(broker_endpoints);
-  config.grpc_config = std::move(grpc_config);
+  config.grpc_channel = std::move(grpc_channel);
   config.networkSignalOutput = networkSignalOutput;
   config.processSignalOutput = processSignalOutput;
   config.fileSignalOutput = fileSignalOutput;
