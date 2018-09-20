@@ -26,6 +26,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <vector>
 
+#include <grpcpp/channel.h>
 #include <json/json.h>
 #include "librdkafka/rdkafka.h"
 
@@ -38,13 +39,6 @@ extern "C" {
 #include "Network.h"
 
 namespace collector {
-
-struct gRPCConfig {
-  Address grpc_server;
-  std::string ca_cert;
-  std::string client_cert;
-  std::string client_key;
-};
 
 struct CollectorConfig {
   bool useChiselCache = true;
@@ -60,7 +54,7 @@ struct CollectorConfig {
   std::vector<Address> kafkaBrokers;
   std::string chiselsTopic;
 
-  gRPCConfig grpc_config;
+  std::shared_ptr<grpc::Channel> grpc_channel;
 
   std::string networkSignalOutput;
   std::string processSignalOutput;

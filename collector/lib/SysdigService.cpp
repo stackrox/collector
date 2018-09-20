@@ -58,8 +58,7 @@ void SysdigService::Init(const CollectorConfig& config) {
     factory.SetupKafka(config.kafkaConfigTemplate);
   }
   if (config.useGRPC) {
-    // todo: pass a gRPC config struct with ssl options
-    factory.SetupGRPC(config.grpc_config);
+    factory.SetupGRPC(config.grpc_channel);
   }
   signal_writers_[SIGNAL_TYPE_FILE] = factory.CreateSignalWriter(config.fileSignalOutput);
   signal_writers_[SIGNAL_TYPE_PROCESS] = factory.CreateSignalWriter(config.processSignalOutput);

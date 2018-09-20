@@ -28,10 +28,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <google/protobuf/message.h>
 
-#ifdef USE_PROTO_ARENAS
-#include <google/protobuf/arena.h>
-#endif
-
+#include "ProtoAllocator.h"
 #include "SignalFormatter.h"
 
 namespace collector {
@@ -48,12 +45,10 @@ class BaseProtoSignalFormatter : public SignalFormatter {
   // Returns a pointer to the proto message derived from this event, or nullptr if no message should be output.
   // Note: The caller does not assume ownership of the returned message. To avoid an additional heap allocation, the
   // implementing class should maintain an instance-level message whose address is returned by this method.
-  virtual void Reset() {}
   virtual const google::protobuf::Message* ToProtoMessage(sinsp_evt* event) = 0;
   virtual const google::protobuf::Message* ToProtoMessage(sinsp_threadinfo* tinfo) { return NULL; }
 
-  template <typename T, typename... Args>
-  T* Allocate(Args&&... args) { return new T(std::forward<Args>(args)...); }
+  virtual void Reset() = 0;
 
  private:
   bool MessageToBuf(SafeBuffer* buf,  const google::protobuf::Message* msg);
@@ -61,68 +56,13 @@ class BaseProtoSignalFormatter : public SignalFormatter {
 };
 
 template <typename Message>
-class ProtoSignalFormatter : public BaseProtoSignalFormatter {
+class ProtoSignalFormatter : public BaseProtoSignalFormatter, protected ProtoAllocator<Message> {
  public:
   ProtoSignalFormatter(bool text_format = false)
-      : BaseProtoSignalFormatter(text_format)
-#ifdef USE_PROTO_ARENAS
-      , arena_(ArenaOptionsForInitialBlock(arena_storage_, kArenaStorageSize))
-#endif
-  {}
+      : BaseProtoSignalFormatter(text_format) {}
 
-#ifndef USE_PROTO_ARENAS
  protected:
-  template <typename T, typename... Args>
-  T* Allocate(Args&&... args) { return new T(std::forward<Args>(args)...); }
-
-  Message* AllocateRoot() {
-    message_.Clear();
-    return &message_;
-  }
-
- private:
-  Message message_;
-
-#else
- protected:
-  void Reset() override {
-    google::protobuf::uint64 bytes_used = arena_.Reset();
-    if (bytes_used > kArenaStorageSize) {
-      CLOG_THROTTLED(WARNING, std::chrono::seconds(5))
-          << "Used " << bytes_used << " bytes in the arena, which is more than the pre-allocated "
-          << kArenaStorageSize << "bytes. Consider increasing the pre-allocated size";
-    }
-  }
-
-  template <typename T, typename... Args>
-  T* Allocate(Args&&... args) {
-    return google::protobuf::Arena::CreateMessage<T>(&arena_, std::forward<Args>(args)...);
-  }
-
-  Message* AllocateRoot() {
-    return google::protobuf::Arena::CreateMessage<Message>(&arena_);
-  }
-
- private:
-  static constexpr int kArenaStorageSize = 32768;
-
-  static void* BlockAlloc(size_t size) {
-    static void* (*default_block_alloc)(size_t) = google::protobuf::ArenaOptions().block_alloc;
-    CLOG(WARNING) << "Allocating a memory block on the heap for the arena, this is inefficient and usually avoidable";
-    return (*default_block_alloc)(size);
-  }
-
-  static google::protobuf::ArenaOptions ArenaOptionsForInitialBlock(char* storage, int size) {
-    google::protobuf::ArenaOptions opts;
-    opts.initial_block = storage;
-    opts.initial_block_size = size;
-    opts.block_alloc = &BlockAlloc;
-    return opts;
-  }
-
-  google::protobuf::Arena arena_;
-  char arena_storage_[kArenaStorageSize];
-#endif
+  void Reset() override { ProtoAllocator<Message>::Reset(); }
 };
 
 }  // namespace collector
