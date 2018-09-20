@@ -44,7 +44,7 @@ extern "C" {
 
 namespace collector {
 
-bool ParseAddress(const std::string& address_str, Address* addr, std::string* error_str) {
+bool ParseAddress(const std::string& address_str, EndpointSpec* addr, std::string* error_str) {
   auto delim_pos = address_str.find(':');
   if (delim_pos == std::string::npos) {
     *error_str = "address is not of form <host>:<port>";
@@ -66,19 +66,19 @@ bool ParseAddress(const std::string& address_str, Address* addr, std::string* er
   return true;
 }
 
-bool ParseAddressList(const std::string& address_list_str, std::vector<Address>* addresses, std::string* error_str) {
+bool ParseAddressList(const std::string& address_list_str, std::vector<EndpointSpec>* addresses, std::string* error_str) {
   std::stringstream ss;
   ss.str(address_list_str);
   std::string token;
   while (std::getline(ss, token, ',')) {
-    Address addr;
+    EndpointSpec addr;
     if (!ParseAddress(token, &addr, error_str)) return false;
     addresses->push_back(std::move(addr));
   }
   return true;
 }
 
-ConnectivityStatus CheckConnectivity(const Address& addr, const std::chrono::milliseconds& timeout,
+ConnectivityStatus CheckConnectivity(const EndpointSpec& addr, const std::chrono::milliseconds& timeout,
                                      std::string* error_str, const std::function<bool()>& interrupt, int interrupt_fd) {
   hostent *record = gethostbyname(addr.host.c_str());
   if(record == NULL) {

@@ -4,6 +4,10 @@
 
 #include "NetworkStatusNotifier.h"
 
+#include "GRPCUtil.h"
+#include "TimeUtil.h"
+#include "Utility.h"
+
 #include <google/protobuf/util/time_util.h>
 
 namespace collector {
@@ -41,14 +45,26 @@ void NetworkStatusNotifier::Run() {
   initial_message.mutable_register_()->set_hostname(hostname_);
 
   while (!thread_.should_stop()) {
+    WITH_LOCK(context_mutex_) {
+      context_ = MakeUnique<grpc::ClientContext>();
+    }
     v1::Empty empty;
-    auto client_writer = stub_->PushNetworkConnectionInfo(&context_, &empty);
+
+
+    if (!WaitForChannelReady(channel_, [this] { return thread_.should_stop(); })) {
+      break;
+    }
+
+    bool WaitForChannelReady(const std::shared_ptr<grpc::Channel>& channel,
+                             const std::function<bool()>& check_interrupted = []() { return false; },
+                             const std::chrono::nanoseconds& poll_interval = std::chrono::seconds(1));
+    auto client_writer = stub_->PushNetworkConnectionInfo(context_.get(), &empty);
 
     if (!client_writer->Write(initial_message)) {
       auto status = client_writer->Finish();
       CLOG(ERROR) << "Failed to send collector registration request: " << status.error_message();
       CLOG(ERROR) << "Sleeping for 5 seconds";
-      thread_.Pause(std::chrono::seconds(5));
+      thread_.Pause(std::chrono::seconds(5));  // no need to check return value as loop condition does that.
       continue;
     }
 
@@ -60,18 +76,29 @@ void NetworkStatusNotifier::Run() {
 
 void NetworkStatusNotifier::Start() {
   thread_.Start([this]{ Run(); });
+  CLOG(INFO) << "Started network status notifier.";
 }
 
 void NetworkStatusNotifier::Stop() {
+  WITH_LOCK(context_mutex_) {
+    if (context_) context_->TryCancel();
+  }
   thread_.Stop();
-  context_.TryCancel();
 }
 
 bool NetworkStatusNotifier::RunSingle(grpc::ClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
   ConnMap old_state;
 
   do {
-    auto new_state = this->conn_tracker_->FetchState(true);
+    int64_t ts = NowMicros();
+    std::vector<Connection> all_conns;
+    if (conn_scraper_.Scrape(&all_conns)) {
+      conn_tracker_->Update(all_conns, ts);
+    } else {
+      CLOG(ERROR) << "Failed to scrape connections";
+    }
+
+    auto new_state = conn_tracker_->FetchState(true);
     ConnectionTracker::ComputeDelta(new_state, &old_state);
 
     const auto* msg = CreateInfoMessage(old_state);
@@ -125,12 +152,15 @@ sensor::NetworkConnection* NetworkStatusNotifier::ConnToProto(const Connection& 
   conn_proto->set_socket_family(TranslateAddressFamily(conn.local().address().family()));
   conn_proto->set_allocated_local_address(EndpointToProto(conn.local()));
   conn_proto->set_allocated_remote_address(EndpointToProto(conn.remote()));
+
+  return conn_proto;
 }
 
 sensor::NetworkAddress* NetworkStatusNotifier::EndpointToProto(const collector::Endpoint& endpoint) {
   auto* addr_proto = Allocate<sensor::NetworkAddress>();
   addr_proto->set_address_data(endpoint.address().data(), endpoint.address().length());
   addr_proto->set_port(endpoint.port());
+
   return addr_proto;
 }
 

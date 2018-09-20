@@ -15,6 +15,7 @@
 
 #include "internalapi/sensor/network_connection_service.grpc.pb.h"
 
+#include "ConnScraper.h"
 #include "ConnTracker.h"
 #include "ProtoAllocator.h"
 #include "StoppableThread.h"
@@ -25,10 +26,11 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
  public:
   using Stub = sensor::NetworkConnectionInfoService::Stub;
 
-  NetworkStatusNotifier(std::string hostname, std::string proc_dir, std::shared_ptr<ConnectionTracker> conn_tracker)
-      : hostname_(std::move(hostname)), conn_tracker_(std::move(conn_tracker)) {}
-
-  void Run();
+  NetworkStatusNotifier(std::string hostname, std::string proc_dir, std::shared_ptr<ConnectionTracker> conn_tracker,
+                        std::shared_ptr<grpc::Channel> channel)
+      : hostname_(std::move(hostname)), conn_scraper_(std::move(proc_dir)), conn_tracker_(std::move(conn_tracker)),
+        channel_(std::move(channel)), stub_(sensor::NetworkConnectionInfoService::NewStub(channel))
+  {}
 
   void Start();
   void Stop();
@@ -38,17 +40,21 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   sensor::NetworkConnection* ConnToProto(const Connection& conn);
   sensor::NetworkAddress* EndpointToProto(const Endpoint& endpoint);
 
+  void Run();
   bool RunSingle(grpc::ClientWriter<sensor::NetworkConnectionInfoMessage>* writer);
 
   std::string hostname_;
 
-  grpc::ClientContext context_;
-
   StoppableThread thread_;
-  std::unique_ptr<Stub> stub_;
 
+  std::unique_ptr<grpc::ClientContext> context_;
+  std::mutex context_mutex_;
 
+  ConnScraper conn_scraper_;
   std::shared_ptr<ConnectionTracker> conn_tracker_;
+
+  std::shared_ptr<grpc::Channel> channel_;
+  std::unique_ptr<Stub> stub_;
 };
 
 }  // namespace collector

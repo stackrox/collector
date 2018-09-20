@@ -34,7 +34,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-GetNetworkHealthStatus::GetNetworkHealthStatus(const std::vector<Address>& kafka_brokers,
+GetNetworkHealthStatus::GetNetworkHealthStatus(const std::vector<EndpointSpec>& kafka_brokers,
                                                std::shared_ptr<prometheus::Registry> registry)
         : registry_(std::move(registry)) {
     auto& family = prometheus::BuildGauge()

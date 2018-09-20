@@ -38,7 +38,7 @@ namespace collector {
 
 class GetNetworkHealthStatus : public CivetHandler {
  public:
-  GetNetworkHealthStatus(const std::vector<Address>& kafka_brokers, std::shared_ptr<prometheus::Registry> registry);
+  GetNetworkHealthStatus(const std::vector<EndpointSpec>& kafka_brokers, std::shared_ptr<prometheus::Registry> registry);
 
   bool start();
   void stop();
@@ -49,10 +49,10 @@ class GetNetworkHealthStatus : public CivetHandler {
  private:
   struct NetworkHealthStatus {
     std::string name;
-    Address address;
+    EndpointSpec address;
     prometheus::Gauge* gauge;
     volatile bool connected;
-    NetworkHealthStatus(std::string name, Address address, prometheus::Gauge* gauge)
+    NetworkHealthStatus(std::string name, EndpointSpec address, prometheus::Gauge* gauge)
         : name(name), address(std::move(address)), gauge(gauge), connected(false) {}
 
     std::string endpoint() const {
