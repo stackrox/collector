@@ -60,12 +60,14 @@ class SignalServiceClient {
 
   std::shared_ptr<grpc::Channel> channel_;
   std::unique_ptr<SignalService::Stub> stub_;
-  grpc::ClientContext context_;
 
   StoppableThread thread_;
   std::atomic<bool> stream_active_;
   std::condition_variable stream_interrupted_;
 
+  // This needs to have the same lifetime as the class.
+  v1::Empty empty_;
+  std::unique_ptr<grpc::ClientContext> context_;
   std::unique_ptr<grpc::ClientWriter<SignalStreamMessage> > grpc_writer_;
 };
 

@@ -50,8 +50,8 @@ bool SignalServiceClient::EstablishGRPCStreamSingle() {
   CLOG(INFO) << "Successfully established GRPC stream for signals.";
 
   // stream writer
-  v1::Empty empty;
-  grpc_writer_ = stub_->PushSignals(&context_, &empty);
+  context_ = MakeUnique<grpc::ClientContext>();
+  grpc_writer_ = stub_->PushSignals(context_.get(), &empty_);
 
   stream_active_.store(true, std::memory_order_release);
   return true;
@@ -68,7 +68,7 @@ void SignalServiceClient::Start() {
 
 void SignalServiceClient::Stop() {
   thread_.Stop();
-  context_.TryCancel();
+  context_->TryCancel();
   stream_interrupted_.notify_one();
 }
 
