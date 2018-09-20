@@ -25,7 +25,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
  public:
   using Stub = sensor::NetworkConnectionInfoService::Stub;
 
-  explicit NetworkStatusNotifier(std::string hostname, std::shared_ptr<ConnectionTracker> conn_tracker)
+  NetworkStatusNotifier(std::string hostname, std::string proc_dir, std::shared_ptr<ConnectionTracker> conn_tracker)
       : hostname_(std::move(hostname)), conn_tracker_(std::move(conn_tracker)) {}
 
   void Run();
@@ -45,9 +45,8 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   grpc::ClientContext context_;
 
   StoppableThread thread_;
-
   std::unique_ptr<Stub> stub_;
-  std::unique_ptr<grpc::ClientWriter<sensor::NetworkConnectionInfoMessage>> writer_;
+
 
   std::shared_ptr<ConnectionTracker> conn_tracker_;
 };
