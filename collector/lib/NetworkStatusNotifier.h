@@ -29,7 +29,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   NetworkStatusNotifier(std::string hostname, std::string proc_dir, std::shared_ptr<ConnectionTracker> conn_tracker,
                         std::shared_ptr<grpc::Channel> channel)
       : hostname_(std::move(hostname)), conn_scraper_(std::move(proc_dir)), conn_tracker_(std::move(conn_tracker)),
-        channel_(std::move(channel)), stub_(sensor::NetworkConnectionInfoService::NewStub(channel))
+        channel_(std::move(channel)), stub_(sensor::NetworkConnectionInfoService::NewStub(channel_))
   {}
 
   void Start();
