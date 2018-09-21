@@ -128,5 +128,5 @@ install-grpc:
 include ../build/protogen.mk
 
 # Generating go protos too for testing purpose
-generated-srcs: install-grpc $(GENERATED_CPP_SRCS)
+generated-srcs: install-grpc generated-proto-srcs
 

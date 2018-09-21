@@ -44,19 +44,24 @@ void NetworkStatusNotifier::Run() {
   sensor::NetworkConnectionInfoMessage initial_message;
   initial_message.mutable_register_()->set_hostname(hostname_);
 
+  CLOG(INFO) << "Starting ...";
+
   while (!thread_.should_stop()) {
     WITH_LOCK(context_mutex_) {
       context_ = MakeUnique<grpc::ClientContext>();
     }
     v1::Empty empty;
 
-
+    CLOG(INFO) << "Waiting for channel to become ready";
     if (!WaitForChannelReady(channel_, [this] { return thread_.should_stop(); })) {
       break;
     }
 
+    CLOG(INFO) << "Channel is ready";
+
     auto client_writer = stub_->PushNetworkConnectionInfo(context_.get(), &empty);
 
+    CLOG(INFO) << "Trying to write";
     if (!client_writer->Write(initial_message)) {
       auto status = client_writer->Finish();
       CLOG(ERROR) << "Failed to send collector registration request: " << status.error_message();
@@ -65,10 +70,14 @@ void NetworkStatusNotifier::Run() {
       continue;
     }
 
+    CLOG(INFO) << "Successfully wrote etc pp";
+
     if (!RunSingle(client_writer.get())) {
       break;
     }
   }
+
+  CLOG(INFO) << "Stopped network status notifier.";
 }
 
 void NetworkStatusNotifier::Start() {
