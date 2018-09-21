@@ -279,12 +279,21 @@ jobs:
 
   images:
     machine: true
+    environment:
+    - GOPATH: /go
+    - GOBIN: /usr/local/go/bin
+    - INSTALL_DIRECTORY: /tmp
+
     steps:
     - run:
         name: Create Directory
         command: |
+          sudo mkdir -m 0777 -p /go
           sudo mkdir -m 0777 -p /go/src
+          sudo mkdir -m 0777 -p /go/pkg
           mkdir -p /go/src/github.com/stackrox/collector
+          sudo chown circleci -R /go/*
+          sudo chown circleci -R /usr/local/go/*
 
     - checkout:
         path: /go/src/github.com/stackrox/collector
@@ -350,6 +359,18 @@ jobs:
             echo "Pushing kernel modules"
             docker push "stackrox/kernel-modules:snapshot-$VERSION"
           fi
+
+    - run:
+        name: Integration tests
+        working_directory: /go/src/github.com/stackrox/collector/collector
+        command: |
+          go get -u github.com/jstemmer/go-junit-report
+          curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+          sudo mv /tmp/dep /usr/local/bin/dep
+          export COLLECTOR_TAG=$(git describe --tags)
+          sudo curl -L "https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+          make integration-tests integration-test-report
 
 workflows:
   version: 2
