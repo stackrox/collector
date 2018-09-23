@@ -18,5 +18,5 @@ message NetworkConnectionInfoMessage {
 
 // A Sensor service that allows Collector to send NetworkConnectionInfo messages
 service NetworkConnectionInfoService {
-    rpc PushNetworkConnectionInfo (stream NetworkConnectionInfoMessage) returns (v1.Empty);
+    rpc PushNetworkConnectionInfo (stream NetworkConnectionInfoMessage) returns (stream v1.Empty);
 }

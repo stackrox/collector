@@ -21,4 +21,10 @@ bool WaitForChannelReady(const std::shared_ptr<grpc::Channel>& channel,
   return false;
 }
 
+void Drain(grpc::CompletionQueue* cq) {
+  void* tag;
+  bool ok;
+  while (cq->Next(&tag, &ok));
+}
+
 }  // namespace collector

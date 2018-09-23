@@ -48,9 +48,9 @@ bool StoppableThread::doStart(std::thread* thread) {
   return true;
 }
 
-bool StoppableThread::Pause(std::chrono::nanoseconds duration) {
+bool StoppableThread::PauseUntil(const std::chrono::system_clock::time_point& time_point) {
   std::unique_lock<std::mutex> lock(stop_mutex_);
-  return !stop_cond_.wait_for(lock, duration, [this]() { return should_stop(); });
+  return !stop_cond_.wait_until(lock, time_point, [this]() { return should_stop(); });
 }
 
 void StoppableThread::Stop() {

@@ -53,6 +53,16 @@ bool SignalServiceClient::EstablishGRPCStreamSingle() {
   context_ = MakeUnique<grpc::ClientContext>();
   grpc_writer_ = stub_->PushSignals(context_.get(), &empty_);
 
+  CLOG(INFO) << "waiting for md";
+  grpc_writer_->WaitForInitialMetadata();
+  CLOG(INFO) << "received md";
+
+  CLOG(INFO) << "printing md";
+  for (const auto& entry : context_->GetServerInitialMetadata()) {
+    CLOG(INFO) << entry.first << ": " << entry.second;
+  }
+  CLOG(INFO) << "done printing md";
+
   stream_active_.store(true, std::memory_order_release);
   return true;
 }
@@ -67,9 +77,9 @@ void SignalServiceClient::Start() {
 }
 
 void SignalServiceClient::Stop() {
+  stream_interrupted_.notify_one();
   thread_.Stop();
   context_->TryCancel();
-  stream_interrupted_.notify_one();
 }
 
 bool SignalServiceClient::PushSignals(const SafeBuffer& msg) {

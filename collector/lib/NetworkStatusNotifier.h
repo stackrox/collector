@@ -41,7 +41,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   sensor::NetworkAddress* EndpointToProto(const Endpoint& endpoint);
 
   void Run();
-  bool RunSingle(grpc::ClientWriter<sensor::NetworkConnectionInfoMessage>* writer);
+  void RunSingle(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer, grpc::CompletionQueue* cq);
 
   std::string hostname_;
 

@@ -120,20 +120,33 @@ bool GetContainerID(int dirfd, std::string* container_id) {
   FDHandle cgroups_fd = openat(dirfd, "cgroup", O_RDONLY);
   if (!cgroups_fd.valid()) return false;
 
-  char buf[512];
+  char buf[2048];
   ssize_t nread = read(cgroups_fd, buf, sizeof(buf) - 1);
   if (nread < 0) return false;
 
   buf[nread] = '\0';
   // Format is <id>:<name>:<cgroup-id>
-  const char*p = rep_strchr(2, buf, ':');
+  const char* p = rep_strchr(2, buf, ':');
   if (!p) return false;
 
-  if (strncmp(++p, "/docker/", 8) != 0) return false;
-  p += 8;
-  if (buf + sizeof(buf) - p < 32) return false;
-  *container_id = std::string(p, 32);
-  return true;
+  ++p;
+  if (strncmp(p, "/docker/", 8) == 0) {
+    p += 8;
+    if (buf + sizeof(buf) - p < 32) return false;
+    *container_id = std::string(p, 32);
+    return true;
+  }
+  if (strncmp(p, "/kubepods/", 10) == 0) {
+    // format is `/kubepods/<service-class>/<pod-id>/<docker-container-id>`
+    p = rep_strchr(4, p, '/');
+    if (!p) return false;
+    ++p;
+    if (buf + sizeof(buf) - p < 32) return false;
+    *container_id = std::string(p, 32);
+    return true;
+  }
+
+  return false;
 }
 
 // Functions for parsing `net/tcp[6]` files

@@ -43,7 +43,8 @@ class StoppableThread {
     return doStart(new std::thread(std::forward<Args>(args)...));
   }
   void Stop();
-  bool Pause(std::chrono::nanoseconds duration);
+  bool Pause(const std::chrono::system_clock::duration& duration) { return PauseUntil(std::chrono::system_clock::now() + duration); }
+  bool PauseUntil(const std::chrono::system_clock::time_point& time_point);
 
   bool should_stop() const { return should_stop_.load(std::memory_order_relaxed); }
   int stop_fd() const { return stop_pipe_[0]; }

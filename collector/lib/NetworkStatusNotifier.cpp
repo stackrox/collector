@@ -4,6 +4,7 @@
 
 #include "NetworkStatusNotifier.h"
 
+#include "Containers.h"
 #include "GRPCUtil.h"
 #include "TimeUtil.h"
 #include "Utility.h"
@@ -13,6 +14,11 @@
 namespace collector {
 
 namespace {
+
+void* const INIT_TAG = (void*)0x1;
+void* const READ_TAG = (void*)0x2;
+void* const WRITE_TAG = (void*)0x3;
+void* const FINISH_TAG = (void*)0x4;
 
 sensor::L4Protocol TranslateL4Protocol(L4Proto proto) {
   switch (proto) {
@@ -44,37 +50,32 @@ void NetworkStatusNotifier::Run() {
   sensor::NetworkConnectionInfoMessage initial_message;
   initial_message.mutable_register_()->set_hostname(hostname_);
 
-  CLOG(INFO) << "Starting ...";
+  auto next_attempt = std::chrono::system_clock::now();
 
-  while (!thread_.should_stop()) {
+  while (thread_.PauseUntil(next_attempt)) {
     WITH_LOCK(context_mutex_) {
       context_ = MakeUnique<grpc::ClientContext>();
     }
-    v1::Empty empty;
 
-    CLOG(INFO) << "Waiting for channel to become ready";
     if (!WaitForChannelReady(channel_, [this] { return thread_.should_stop(); })) {
       break;
     }
 
-    CLOG(INFO) << "Channel is ready";
+    auto client_writer = DuplexClient::CreateWithReadsIgnored(
+        &sensor::NetworkConnectionInfoService::Stub::AsyncPushNetworkConnectionInfo,
+        channel_, context_.get());
 
-    auto client_writer = stub_->PushNetworkConnectionInfo(context_.get(), &empty);
-
-    CLOG(INFO) << "Trying to write";
-    if (!client_writer->Write(initial_message)) {
-      auto status = client_writer->Finish();
-      CLOG(ERROR) << "Failed to send collector registration request: " << status.error_message();
-      CLOG(ERROR) << "Sleeping for 5 seconds";
-      thread_.Pause(std::chrono::seconds(5));  // no need to check return value as loop condition does that.
-      continue;
+    RunSingle(client_writer.get());
+    if (thread_.should_stop()) {
+      return;
     }
-
-    CLOG(INFO) << "Successfully wrote etc pp";
-
-    if (!RunSingle(client_writer.get())) {
-      break;
+    auto status = client_writer->GetStatus(std::chrono::seconds(5));
+    if (status.ok()) {
+      CLOG(ERROR) << "Error streaming network connection info: server hung up unexpectedly";
+    } else {
+      CLOG(ERROR) << "Error streaming network connection info: " << status.error_message();
     }
+    next_attempt = std::chrono::system_clock::now() + std::chrono::seconds(10);
   }
 
   CLOG(INFO) << "Stopped network status notifier.";
@@ -92,43 +93,56 @@ void NetworkStatusNotifier::Stop() {
   thread_.Stop();
 }
 
-bool NetworkStatusNotifier::RunSingle(grpc::ClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
-  ConnMap old_state;
+void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
+  if (!writer->WaitForInit(std::chrono::seconds(10))) {
+    CLOG(ERROR) << "Failed to establish network connection info stream.";
+    return;
+  }
 
-  do {
+  sensor::NetworkConnectionInfoMessage initial_message;
+  initial_message.mutable_register_()->set_hostname(hostname_);
+  if (!writer->Write(initial_message, std::chrono::seconds(10))) {
+    CLOG(ERROR) << "Failed to write registration message";
+    return;
+  }
+
+  ConnMap old_state;
+  auto next_scrape = std::chrono::system_clock::now();
+
+  while (writer->Sleep(next_scrape)) {
     int64_t ts = NowMicros();
     std::vector<Connection> all_conns;
-    if (conn_scraper_.Scrape(&all_conns)) {
-      conn_tracker_->Update(all_conns, ts);
-    } else {
+
+    bool success = conn_scraper_.Scrape(&all_conns);
+    next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(30);
+
+    if (!success) {
       CLOG(ERROR) << "Failed to scrape connections";
+      continue;
     }
 
+    conn_tracker_->Update(all_conns, ts);
     auto new_state = conn_tracker_->FetchState(true);
     ConnectionTracker::ComputeDelta(new_state, &old_state);
 
     const auto* msg = CreateInfoMessage(old_state);
     old_state = std::move(new_state);
 
-    if (!msg) continue;
-
-    if (!writer->Write(*msg)) {
-      break;
+    if (!msg) {
+      continue;
     }
-  } while (thread_.Pause(std::chrono::seconds(30)));
 
-  auto status = writer->Finish();
-  if (!status.ok()) {
-    CLOG(ERROR) << "Failed to write network connection info: " << status.error_message();
+    if (!writer->Write(*msg, next_scrape)) {
+      CLOG(ERROR) << "Failed to write network connection info";
+      return;
+    }
   }
-
-  return !thread_.should_stop();
 }
 
 sensor::NetworkConnectionInfoMessage* NetworkStatusNotifier::CreateInfoMessage(const ConnMap& delta) {
-  if (delta.empty()) {
-    return nullptr;
-  }
+//  if (delta.empty()) {
+//    return nullptr;
+//  }
 
   Reset();
   auto* msg = AllocateRoot();
