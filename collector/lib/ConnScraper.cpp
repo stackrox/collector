@@ -127,13 +127,13 @@ bool GetContainerID(int dirfd, std::string* container_id) {
     if (!p) continue;
 
     ++p;
-    if (strncmp(p, "/docker/", 8) == 0) {
-      p += 8;
+    if (std::strncmp(p, "/docker/", StrLen("/docker/")) == 0) {
+      p += StrLen("/docker/");
       if (line + sizeof(line) - p < 32) continue;
       *container_id = std::string(p, 32);
       return true;
     }
-    if (strncmp(p, "/kubepods/", 10) == 0) {
+    if (std::strncmp(p, "/kubepods/", StrLen("/kubepods/")) == 0) {
       // format is `/kubepods/<service-class>/<pod-id>/<docker-container-id>`
       p = rep_strchr(4, p, '/');
       if (!p) continue;

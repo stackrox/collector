@@ -1,7 +1,25 @@
+/** collector
 
-//
-// Created by Malte Isberner on 9/22/18.
-//
+A full notice with attributions is provided along with this source code.
+
+This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License version 2 as published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+* In addition, as a special exception, the copyright holders give
+* permission to link the code of portions of this program with the
+* OpenSSL library under certain conditions as described in each
+* individual source file, and distribute linked combinations
+* including the two.
+* You must obey the GNU General Public License in all respects
+* for all of the code used other than OpenSSL.  If you modify
+* file(s) with this exception, you may extend this exception to your
+* version of the file(s), but you are not obligated to do so.  If you
+* do not wish to do so, delete this exception statement from your
+* version.
+*/
 
 #ifndef COLLECTOR_DUPLEXGRPC_H
 #define COLLECTOR_DUPLEXGRPC_H
@@ -11,26 +29,52 @@
 
 #include <grpcpp/grpcpp.h>
 
+// This file defines an alternative client interface for bidirectional GRPC streams. The interface supports:
+// - simultaneous reading and writing without multithreading or low-level completion queue/tag work.
+// - both sync and async operations can be used at the same time.
+// - all sync operations accept a deadline.
+// - (limited) state checking to prevent the entire application from crashing due to a misuse of GRPC APIs.
+// - poll()-style event driven interface.
+//
+// To instantiate a duplex client, assume that `MyService` is your service class, and `MyMethod` is the bidirectional
+// streaming method. There are three options for instantiating the client:
+// 1. auto client = DuplexClient::Create(&MyService::Stub::AsyncMyMethod, channel, context).
+//    This allows you a client on which you can use synchronous and asynchronous reads and writes, e.g.,
+//    if (client->PollAny(CAN_READ)) {
+//      client->TryRead(&my_msg);   // non-blocking read, since we've polled for the event.
+//      client->Write(my_response);  // blocking write
+//      auto result = client->Read(&my_other_msg);  // blocking read
+//    }
+// 2. auto client = DuplexClient::CreateWithReadCallback(&MyService::Stub::AsyncMyMethod, channel, context, read_callback).
+//    This gives a client that can only be used for writing. Read messages are passed to the specified `read_callback`,
+//    which accepts a `const R*` that is non-null for any actual message that was read, and `nullptr` to indicate that
+//    no more reads will happen. Note that `read_callback` is executed synchronously during event processing.
+// 3. auto client = DuplexClient::CreateWithReadsIgnored(&MyService::Stub::MyAsyncMethod, channel, context);
+//    This is a convenience variant of (2) with a `read_callback` that does nothing.
+
 namespace collector {
+
+// Internal namespace including all common definitions without polluting the surrounding namespace. Having them in a
+// base class is inconvenient due to templating, which would force us to explicit import every definition from the
+// templated base class via `using X = typename Base::X`.
 
 namespace grpc_duplex_impl {
 
 // Forward declarations
-
 class DuplexClient;
-
 template <typename W>
 class DuplexClientWriter;
-
 template <typename W, typename R>
 class DuplexClientReaderWriter;
+
+// Time-related functionality
 
 using clock = std::chrono::system_clock;
 using time_point = clock::time_point;
 using duration = clock::duration;
 
-
-// Timespec -> deadline conversion functions.
+// Timespec -> deadline conversion functions. Transparently handles `gpr_timespec`s, `std::chrono::time_point`s,
+// and `std::chrono::duration`s.
 
 template <typename TS>
 inline gpr_timespec ToDeadline(const TS& time_spec) {
@@ -46,8 +90,7 @@ inline const gpr_timespec& ToDeadline(const gpr_timespec& time_spec) {
   return time_spec;
 }
 
-using Flags = std::uint32_t;
-
+// Operations that can be performed on the stream.
 enum class Op : std::uint8_t {
   START = 0,
   READ,
@@ -59,7 +102,7 @@ enum class Op : std::uint8_t {
   MAX,
 };
 
-
+constexpr std::size_t kNumOps = static_cast<std::size_t>(Op::MAX);
 
 inline void* OpToTag(Op op) {
   auto ptr_val = static_cast<std::uintptr_t>(op);
@@ -71,70 +114,82 @@ inline Op TagToOp(void* tag) {
   return static_cast<Op>(ptr_val);
 }
 
+// Flags store the status of the client. Bit <op-index> is used to store that operation `op` is done, whereas bit
+// <op-index> + kNumOps is used to store that operation `op` is pending. Additional statuses might be stored in the
+// remaining bits.
+using Flags = std::uint32_t;
+
 inline constexpr Flags Done(Op op) {
   return static_cast<Flags>(1) << static_cast<std::uint8_t>(op);
 }
 
 inline constexpr Flags Pending(Op op) {
-  return static_cast<Flags>(1) << (static_cast<std::uint8_t>(op) + static_cast<uint8_t>(Op::MAX));
+  return static_cast<Flags>(1) << (static_cast<std::uint8_t>(op) + kNumOps);
 }
 
+// Errors that can occur when attempting an *asynchronous* operation (i.e., the statuses do not indicate whether the
+// operation *completed* successfully).
 enum class OpError : std::uint8_t {
-  OK = 0,
-  ALREADY_PENDING,
-  ALREADY_DONE,
-  ILLEGAL_STATE,
-  SHUTDOWN,
+  OK = 0,           // Async operation could be performed.
+  ALREADY_PENDING,  // The operation is already pending.
+  ALREADY_DONE,     // The operation was already done. Idempotent operations only.
+  ILLEGAL_STATE,    // The operation couldn't be performed due to the current state of the client.
+  SHUTDOWN,         // The client was shutdown.
 };
 
+// Describes the outcome of starting an asynchronous operation.
 struct OpDescriptor {
-  Op op;
-  OpError op_error;
+  Op op;             // The operation that was requested.
+  OpError op_error;  // The error when attempting the asynchronous operation, if any.
 };
 
+// Describes the outcome of *completing* an operation.
 struct OpResult {
   Op op;
   bool ok;
 };
 
+// Helper struct to determine if a parameter pack is empty. We use this to determine whether an operation is idempotent.
 template <typename... Args>
 struct is_empty : std::false_type {};
-
 template <>
 struct is_empty<> : std::true_type {};
 
+// Status codes
 enum class Status {
-  OK,
-  ALREADY_PENDING,
-  ALREADY_DONE,
+  OK,                // Operation started at GRPC level (async) / completed successfully (sync).
+  ALREADY_PENDING,   // Operation is already pending.
+  ALREADY_DONE,      // Operation was already done (idempotent operations only).
 
-  ERROR,
-  TIMEOUT,           // timed out waiting for operation to finish
-  INVALID_ARGUMENT,  // an invalid value was specified for the operation
-  ILLEGAL_STATE,     // the operation is not valid in the current state
-  SHUTDOWN,          // the client was shutdown
+  ERROR,             // The operation failed (sync only).
+  TIMEOUT,           // Timed out waiting for the desired condition (sync only).
+  ILLEGAL_STATE,     // The operation is not valid in the current state.
+  SHUTDOWN,          // The client was shutdown.
 
-  INTERNAL_ERROR,
+  INTERNAL_ERROR,    // An internal error in the duplex client library.
 };
 
+// Convenience wrapper around a `Status`.
 class Result final {
  public:
   explicit operator bool() const {
     return ok();
   }
 
+  // Checks if the operation was successful.
   bool ok() const {
     return status_ == Status::OK;
   }
 
+  // Checks if the requested operation was done (not necessarily in this call).
   bool done() const {
     return status_ == Status::OK || status_ == Status::ALREADY_DONE;
   }
 
+  // Checks if the operation timed out.
   bool IsTimeout() const {
     return status_ == Status::TIMEOUT;
   }
-
 
  private:
   explicit Result(bool ok) : status_(ok ? Status::OK : Status::ERROR) {}
@@ -187,8 +242,10 @@ class Result final {
   friend class DuplexClientReaderWriter;
 };
 
+// Base class for duplex clients.
 class DuplexClient {
  public:
+  // Status flags. These are the only valid bits that may be checked for in a call to `Poll`.
   enum FlagValues : Flags {
     STARTED = Done(Op::START),
     CAN_READ = Done(Op::READ),
@@ -200,7 +257,19 @@ class DuplexClient {
     STREAM_ERROR = static_cast<Flags>(1) << (sizeof(Flags) * 8 - 1),
   };
 
+  // Make these accessible to the user in an easy manner, without having to export them at namespace level.
+  using Status = grpc_duplex_impl::Status;
+  using Result = grpc_duplex_impl::Result;
+
   virtual ~DuplexClient() = default;
+
+  // Disallow moves and copies.
+
+  DuplexClient(const DuplexClient&) = delete;
+  DuplexClient(DuplexClient&&) = delete;
+
+  DuplexClient& operator=(const DuplexClient&) = delete;
+  DuplexClient& operator=(DuplexClient&&) = delete;
 
   // Wait for the specified time for the stream to become ready.
   template <typename TS = time_point>
@@ -259,10 +328,10 @@ class DuplexClient {
     return grpc::Status(grpc::StatusCode::UNKNOWN, "unknown error retrieving status");
   }
 
+  // Finish immediately (note that the status might indicate a timeout).
   grpc::Status FinishNow() {
     return Finish(time_point::min());
   }
-
 
   // Poll waits until the given time for the status flag to match flags_checker.
   template <typename FlagsChecker, typename TS = time_point>
@@ -289,6 +358,24 @@ class DuplexClient {
     return Poll([desired](Flags fl) { return (fl & desired) == desired; }, time_spec);
   }
 
+  // Try cancelling the underlying context.
+  void TryCancel() {
+    context_->TryCancel();
+  }
+
+  // Shutdown the client.
+  Result Shutdown() {
+    context_->TryCancel();
+    if (CheckFlags(Done(Op::SHUTDOWN))) {
+      return Result(Status::ALREADY_DONE);
+    }
+    if (!SetFlags(Pending(Op::SHUTDOWN))) {
+      return Result(Status::ALREADY_PENDING);
+    }
+    cq_.Shutdown();
+    return Result(Status::OK);
+  }
+
   // Static creation methods.
 
   template <typename Stub, typename W, typename R>
@@ -298,9 +385,21 @@ class DuplexClient {
           grpc::CompletionQueue* cq,
           void* tag),
       const std::shared_ptr<grpc::Channel>& channel,
-      grpc::ClientContext* context,
-      std::function<void(const R*)> read_callback = nullptr) {
+      grpc::ClientContext* context) {
     return std::unique_ptr<DuplexClientReaderWriter<W, R>>(
+        new DuplexClientReaderWriter<W, R>(create_method, channel, context, nullptr));
+  }
+
+  template <typename Stub, typename W, typename R>
+  static std::unique_ptr<DuplexClientWriter<W>> CreateWithReadCallback(
+      std::unique_ptr<grpc::ClientAsyncReaderWriter<W, R>> (Stub::*create_method)(
+          grpc::ClientContext* context,
+          grpc::CompletionQueue* cq,
+          void* tag),
+      const std::shared_ptr<grpc::Channel>& channel,
+      grpc::ClientContext* context,
+      std::function<void(const R*)> read_callback) {
+    return std::unique_ptr<DuplexClientWriter<W>>(
         new DuplexClientReaderWriter<W, R>(create_method, channel, context, std::move(read_callback)));
   }
 
@@ -313,17 +412,20 @@ class DuplexClient {
       const std::shared_ptr<grpc::Channel>& channel,
       grpc::ClientContext* context) {
     std::function<void(const R*)> read_callback = [](const R*) {};
-    return Create(create_method, channel, context, std::move(read_callback));
+    return CreateWithReadCallback(create_method, channel, context, std::move(read_callback));
   }
 
  protected:
-  // SetFlags sets the given flags, and returns the flags that were newly set.
+  DuplexClient(grpc::ClientContext* context) : context_(context) {}
+
+  // SetFlags sets the given flags, and returns the newly set flags.
   Flags SetFlags(Flags fl) {
     Flags new_flags = fl & ~flags_;
     flags_ |= fl;
     return new_flags;
   }
 
+  // ClearFlags clears the given flags, and returns the flags that were newly cleared.
   Flags ClearFlags(Flags fl) {
     Flags cleared_flags = fl & flags_;
     flags_ &= ~fl;
@@ -335,6 +437,7 @@ class DuplexClient {
     return flags_ & fl;
   }
 
+  // Perform the asynchronous operation specified by async_method in a synchronous manner.
   template <typename... Args, typename TS, typename D>
   Result DoSync(OpDescriptor (D::*async_method)(Args...), Args... args, const TS& time_spec) {
     constexpr bool idempotent = is_empty<Args...>::value;
@@ -360,19 +463,21 @@ class DuplexClient {
   }
 
   virtual Result ProcessSingle(Flags* flags_out, const gpr_timespec& deadline, OpResult* op_res_out) = 0;
-
   virtual OpDescriptor WritesDoneAsyncInternal() = 0;
-
   virtual OpDescriptor FinishAsyncInternal() = 0;
 
   Flags flags_ = 0;
   grpc::Status status_;
+  grpc::CompletionQueue cq_;
+  grpc::ClientContext* context_;
 };
 
 template <typename W>
 class DuplexClientWriter : public DuplexClient {
  public:
   ~DuplexClientWriter() override = default;
+
+  // Write methods.
 
   template <typename TS = time_point>
   Result Write(const W& obj, const TS& time_spec = time_point::max()) {
@@ -384,6 +489,8 @@ class DuplexClientWriter : public DuplexClient {
   }
 
  protected:
+  DuplexClientWriter(grpc::ClientContext* context) : DuplexClient(context) {}
+
   virtual OpDescriptor WriteAsyncInternal(const W& obj) = 0;
 };
 
@@ -391,7 +498,10 @@ template <typename W, typename R>
 class DuplexClientReaderWriter : public DuplexClientWriter<W> {
  public:
   ~DuplexClientReaderWriter() override {
-    Drain();
+    // Shutdown the client and drain the queue.
+    this->Shutdown();  // ignore errors
+    auto now = ToDeadline(time_point::min());
+    while (ProcessSingle(nullptr, now, nullptr));
   }
 
   template <typename TS = time_point>
@@ -420,26 +530,8 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
     return Read(obj, time_point::min());
   }
 
-  Result Shutdown() {
-    context_->TryCancel();
-    if (this->CheckFlags(Done(Op::SHUTDOWN))) {
-      return Result(Status::ALREADY_DONE);
-    }
-    if (!this->SetFlags(Pending(Op::SHUTDOWN))) {
-      return Result(Status::ALREADY_PENDING);
-    }
-    cq_.Shutdown();
-    return Result(Status::OK);
-  }
-
  private:
   using RW = grpc::ClientAsyncReaderWriter<W, R>;
-
-  void Drain() {
-    Shutdown();  // ignore errors
-    auto no_deadline = ToDeadline(time_point::min());
-    while (ProcessSingle(nullptr, no_deadline, nullptr));
-  }
 
   template <typename Stub>
   DuplexClientReaderWriter(
@@ -447,16 +539,17 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
       const std::shared_ptr<grpc::Channel>& channel,
       grpc::ClientContext* context,
       std::function<void(const R*)>&& read_callback)
-      : context_(context), read_callback_(std::move(read_callback)) {
+      : DuplexClientWriter<W>(context), read_callback_(std::move(read_callback)) {
     Stub stub(channel);
-    rw_ = (stub.*create_method)(context, &cq_, OpToTag(Op::START));
+    rw_ = (stub.*create_method)(context, &this->cq_, OpToTag(Op::START));
     this->SetFlags(Pending(Op::START));
     ReadNext();
   }
 
+  // Perform the next read operation.
   void ReadNext() {
     read_buf_valid_ = false;
-    OpDescriptor op_desc = DoAsync<R*>(&RW::Read, &read_buf_, Op::READ);
+    OpDescriptor op_desc = ReadAsyncInternal();
     if (op_desc.op_error != OpError::OK) {
       return;
     }
@@ -491,6 +584,7 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
     return {op, OpError::OK};
   }
 
+  // Async operation implementations. These wrap DoAsync around the corresponding GRPC AsyncClientReaderWriter methods.
   OpDescriptor WriteAsyncInternal(const W& obj) override {
     return DoAsync<const W&>(&RW::Write, obj, Op::WRITE);
   }
@@ -507,11 +601,12 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
     return DoAsync<R*>(&RW::Read, &read_buf_, Op::READ);
   }
 
+  // Process a single event.
   Result ProcessSingle(Flags* flags_out, const gpr_timespec& deadline, OpResult* op_res_out) override {
     void* raw_tag;
     bool ok;
 
-    auto next_status = cq_.AsyncNext(&raw_tag, &ok, deadline);
+    auto next_status = this->cq_.AsyncNext(&raw_tag, &ok, deadline);
     if (next_status == grpc::CompletionQueue::GOT_EVENT) {
       Op op = TagToOp(raw_tag);
       ProcessEvent(op, ok);
@@ -565,8 +660,6 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
   }
 
   std::unique_ptr<grpc::ClientAsyncReaderWriter<W, R>> rw_;
-  grpc::ClientContext* context_;
-  grpc::CompletionQueue cq_;
   std::function<void(const R*)> read_callback_;
   R read_buf_;
   bool read_buf_valid_ = false;
@@ -576,13 +669,13 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
 
 }  // namespace grpc_duplex_impl
 
+// Export public definitions.
+
 using DuplexClient = grpc_duplex_impl::DuplexClient;
 template <typename W>
 using DuplexClientWriter = grpc_duplex_impl::DuplexClientWriter<W>;
 template <typename W, typename R>
 using DuplexClientReaderWriter = grpc_duplex_impl::DuplexClientReaderWriter<W, R>;
-
-using Result = grpc_duplex_impl::Result;
 
 }  // namespace collector
 

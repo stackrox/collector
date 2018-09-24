@@ -23,9 +23,8 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _UTILITY_H_
 #define _UTILITY_H_
 
-extern "C" {
-#include <errno.h>
-}
+#include <cerrno>
+#include <cinttypes>
 
 #include <chrono>
 #include <functional>
@@ -61,6 +60,12 @@ void StrAppend(std::ostringstream* os, Arg1&& arg1, Args&&... args) {
 }
 
 }  // namespace impl
+
+// Static variant of strlen
+template <std::size_t N>
+constexpr std::size_t StrLen(const char (&static_str)[N]) {
+  return N - 1;
+}
 
 template <typename... Args>
 std::string Str(Args&&... args) {

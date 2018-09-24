@@ -36,21 +36,6 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-// GRPCWriteRaw can be used to write a raw byte buffer to a GRPC stream.
-template <typename M>
-bool GRPCWriteRaw(grpc::ClientWriter<M>* writer, const SafeBuffer& buffer) {
-  // TODO(mi): The buffer is already a serialized proto; this adds another (unnecessary)
-  // serialization-deserialization round-trip.
-  google::protobuf::io::ArrayInputStream input_stream(buffer.buffer(), buffer.size());
-  M msg;
-  if (!msg.ParseFromZeroCopyStream(&input_stream)) {
-    CLOG_THROTTLED(ERROR, std::chrono::seconds(5)) << "Failed to send signals; Parsing failed";
-    return false;
-  }
-
-  return writer->Write(msg);
-}
-
 bool WaitForChannelReady(const std::shared_ptr<grpc::Channel>& channel,
     const std::function<bool()>& check_interrupted = []() { return false; },
     const std::chrono::nanoseconds& poll_interval = std::chrono::seconds(1));
