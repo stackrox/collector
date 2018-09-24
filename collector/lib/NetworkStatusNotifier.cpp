@@ -26,6 +26,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "Containers.h"
 #include "DuplexGRPC.h"
 #include "GRPCUtil.h"
+#include "ProtoUtil.h"
 #include "TimeUtil.h"
 #include "Utility.h"
 
