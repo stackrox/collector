@@ -5,6 +5,7 @@
 #include "NetworkStatusNotifier.h"
 
 #include "Containers.h"
+#include "DuplexGRPC.h"
 #include "GRPCUtil.h"
 #include "TimeUtil.h"
 #include "Utility.h"
@@ -14,11 +15,6 @@
 namespace collector {
 
 namespace {
-
-void* const INIT_TAG = (void*)0x1;
-void* const READ_TAG = (void*)0x2;
-void* const WRITE_TAG = (void*)0x3;
-void* const FINISH_TAG = (void*)0x4;
 
 sensor::L4Protocol TranslateL4Protocol(L4Proto proto) {
   switch (proto) {
@@ -69,7 +65,7 @@ void NetworkStatusNotifier::Run() {
     if (thread_.should_stop()) {
       return;
     }
-    auto status = client_writer->GetStatus(std::chrono::seconds(5));
+    auto status = client_writer->Finish(std::chrono::seconds(5));
     if (status.ok()) {
       CLOG(ERROR) << "Error streaming network connection info: server hung up unexpectedly";
     } else {
@@ -94,7 +90,7 @@ void NetworkStatusNotifier::Stop() {
 }
 
 void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
-  if (!writer->WaitForInit(std::chrono::seconds(10))) {
+  if (!writer->WaitUntilStarted(std::chrono::seconds(10))) {
     CLOG(ERROR) << "Failed to establish network connection info stream.";
     return;
   }

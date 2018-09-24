@@ -17,6 +17,7 @@
 
 #include "ConnScraper.h"
 #include "ConnTracker.h"
+#include "DuplexGRPC.h"
 #include "ProtoAllocator.h"
 #include "StoppableThread.h"
 
@@ -41,7 +42,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   sensor::NetworkAddress* EndpointToProto(const Endpoint& endpoint);
 
   void Run();
-  void RunSingle(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer, grpc::CompletionQueue* cq);
+  void RunSingle(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer);
 
   std::string hostname_;
 

@@ -55,49 +55,6 @@ bool WaitForChannelReady(const std::shared_ptr<grpc::Channel>& channel,
     const std::function<bool()>& check_interrupted = []() { return false; },
     const std::chrono::nanoseconds& poll_interval = std::chrono::seconds(1));
 
-// Fully drains a completion queue.
-// NOTE: The completion queue must be shutdown, otherwise this function will deadlock.
-void Drain(grpc::CompletionQueue* cq);
-
-
-struct WaitStatus {
-  grpc::CompletionQueue::NextStatus next_status;
-
-  WaitStatus(grpc::CompletionQueue::NextStatus next_status) : next_status(next_status) {}
-
-  operator bool() const { return next_status == grpc::CompletionQueue::GOT_EVENT; }
-
-  bool IsShutdown() const { return next_status == grpc::CompletionQueue::SHUTDOWN; }
-  bool IsTimeout() const { return next_status == grpc::CompletionQueue::TIMEOUT; }
-};
-
-inline WaitStatus WaitForTag(grpc::CompletionQueue* cq, void** tag, bool* ok, const std::chrono::system_clock::time_point& deadline,
-                      const std::function<bool(void*,bool)>& handler = [](void*, bool) { return true; }) {
-  void* fallback_tag;
-  bool fallback_ok;
-  if (!tag) tag = &fallback_tag;
-  if (!ok) ok = &fallback_ok;
-
-  while (std::chrono::system_clock::now() < deadline) {
-    auto result = cq->AsyncNext(tag, ok, deadline);
-    if (result != grpc::CompletionQueue::GOT_EVENT) {
-      return {result};
-    }
-
-    if (handler(*tag, *ok)) {
-      return {grpc::CompletionQueue::GOT_EVENT};
-    }
-  }
-
-  return {grpc::CompletionQueue::TIMEOUT};
-}
-
-inline bool WaitForTag(grpc::CompletionQueue* cq, void** tag, bool* ok, const std::chrono::system_clock::duration& timeout,
-                       const std::function<bool(void*,bool)>& handler = [](void*, bool) { return true; }) {
-  return WaitForTag(cq, tag, ok, std::chrono::system_clock::now() + timeout, handler);
-}
-
-
 
 }  // namespace collector
 
