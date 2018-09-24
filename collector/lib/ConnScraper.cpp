@@ -117,33 +117,31 @@ bool GetSocketINodes(int dirfd, UnorderedSet<ino_t>* sock_inodes) {
 // GetContainerID retrieves the container ID of the process represented by dirfd. The container ID is extracted from
 // the cgroup.
 bool GetContainerID(int dirfd, std::string* container_id) {
-  FDHandle cgroups_fd = openat(dirfd, "cgroup", O_RDONLY);
-  if (!cgroups_fd.valid()) return false;
+  FileHandle cgroups_file(FDHandle(openat(dirfd, "cgroup", O_RDONLY)), "r");
+  if (!cgroups_file.valid()) return false;
 
-  char buf[2048];
-  ssize_t nread = read(cgroups_fd, buf, sizeof(buf) - 1);
-  if (nread < 0) return false;
+  char line[512];
+  while (fgets(line, sizeof(line), cgroups_file.get())) {
+    // Format is <id>:<name>:<cgroup-id>
+    const char* p = rep_strchr(2, line, ':');
+    if (!p) continue;
 
-  buf[nread] = '\0';
-  // Format is <id>:<name>:<cgroup-id>
-  const char* p = rep_strchr(2, buf, ':');
-  if (!p) return false;
-
-  ++p;
-  if (strncmp(p, "/docker/", 8) == 0) {
-    p += 8;
-    if (buf + sizeof(buf) - p < 32) return false;
-    *container_id = std::string(p, 32);
-    return true;
-  }
-  if (strncmp(p, "/kubepods/", 10) == 0) {
-    // format is `/kubepods/<service-class>/<pod-id>/<docker-container-id>`
-    p = rep_strchr(4, p, '/');
-    if (!p) return false;
     ++p;
-    if (buf + sizeof(buf) - p < 32) return false;
-    *container_id = std::string(p, 32);
-    return true;
+    if (strncmp(p, "/docker/", 8) == 0) {
+      p += 8;
+      if (line + sizeof(line) - p < 32) continue;
+      *container_id = std::string(p, 32);
+      return true;
+    }
+    if (strncmp(p, "/kubepods/", 10) == 0) {
+      // format is `/kubepods/<service-class>/<pod-id>/<docker-container-id>`
+      p = rep_strchr(4, p, '/');
+      if (!p) continue;
+      ++p;
+      if (line + sizeof(line) - p < 32) continue;
+      *container_id = std::string(p, 32);
+      return true;
+    }
   }
 
   return false;

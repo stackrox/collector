@@ -25,6 +25,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "GRPCUtil.h"
 #include "Logging.h"
 #include "Utility.h"
+#include "ProtoUtil.h"
 
 #include <fstream>
 
@@ -47,21 +48,16 @@ bool SignalServiceClient::EstablishGRPCStreamSingle() {
     return false;
   }
 
-  CLOG(INFO) << "Successfully established GRPC stream for signals.";
-
   // stream writer
   context_ = MakeUnique<grpc::ClientContext>();
-  grpc_writer_ = stub_->PushSignals(context_.get(), &empty_);
-
-  CLOG(INFO) << "waiting for md";
-  grpc_writer_->WaitForInitialMetadata();
-  CLOG(INFO) << "received md";
-
-  CLOG(INFO) << "printing md";
-  for (const auto& entry : context_->GetServerInitialMetadata()) {
-    CLOG(INFO) << entry.first << ": " << entry.second;
+  writer_ = DuplexClient::CreateWithReadsIgnored(&SignalService::Stub::AsyncPushSignals, channel_, context_.get());
+  if (!writer_->WaitUntilStarted(std::chrono::seconds(30))) {
+    CLOG(ERROR) << "Signal stream not ready after 30 seconds. Retrying ...";
+    CLOG(ERROR) << "Error message: " << writer_->FinishNow().error_message();
+    writer_.reset();
+    return true;
   }
-  CLOG(INFO) << "done printing md";
+  CLOG(INFO) << "Successfully established GRPC stream for signals.";
 
   stream_active_.store(true, std::memory_order_release);
   return true;
@@ -89,12 +85,12 @@ bool SignalServiceClient::PushSignals(const SafeBuffer& msg) {
     return false;
   }
 
-  if (!GRPCWriteRaw(grpc_writer_.get(), msg)) {
-    auto status = grpc_writer_->Finish();
+  if (!writer_->Write(ProtoFromBuffer<SignalStreamMessage>(msg))) {
+    auto status = writer_->FinishNow();
     if (!status.ok()) {
       CLOG(ERROR) << "GRPC writes failed: " << status.error_message();
     }
-    grpc_writer_.reset();
+    writer_.reset();
 
     stream_active_.store(false, std::memory_order_release);
     CLOG(ERROR) << "GRPC stream interrupted";

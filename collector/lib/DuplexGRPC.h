@@ -200,6 +200,8 @@ class DuplexClient {
     STREAM_ERROR = static_cast<Flags>(1) << (sizeof(Flags) * 8 - 1),
   };
 
+  virtual ~DuplexClient() = default;
+
   // Wait for the specified time for the stream to become ready.
   template <typename TS = time_point>
   Result WaitUntilStarted(const TS& time_spec = time_point::max()) {
@@ -210,7 +212,7 @@ class DuplexClient {
   // error occurred during the given time.
   template <typename TS = time_point>
   bool Sleep(const TS& time_spec = time_point::max()) {
-    auto res = PollAny(STREAM_ERROR | FINISHED);
+    auto res = PollAny(STREAM_ERROR | FINISHED, time_spec);
     return res.IsTimeout();
   }
 
@@ -255,6 +257,10 @@ class DuplexClient {
       return grpc::Status(grpc::StatusCode::DEADLINE_EXCEEDED, "timed out waiting for operation status");
     }
     return grpc::Status(grpc::StatusCode::UNKNOWN, "unknown error retrieving status");
+  }
+
+  grpc::Status FinishNow() {
+    return Finish(time_point::min());
   }
 
 
@@ -319,7 +325,7 @@ class DuplexClient {
   }
 
   Flags ClearFlags(Flags fl) {
-    Flags cleared_flags = fl & ~flags_;
+    Flags cleared_flags = fl & flags_;
     flags_ &= ~fl;
     return cleared_flags;
   }
@@ -331,12 +337,13 @@ class DuplexClient {
 
   template <typename... Args, typename TS, typename D>
   Result DoSync(OpDescriptor (D::*async_method)(Args...), Args... args, const TS& time_spec) {
+    constexpr bool idempotent = is_empty<Args...>::value;
     auto deadline = ToDeadline(time_spec);
 
     OpDescriptor op_desc = (static_cast<D*>(this)->*async_method)(std::forward<Args>(args)...);
     // If an operation is already pending, we act as if it had just been sent in case the operation is idempotent (i.e.,
     // does not depend on a parameter).
-    if (is_empty<Args...>::value && op_desc.op_error == OpError::ALREADY_PENDING) {
+    if (idempotent && op_desc.op_error == OpError::ALREADY_PENDING) {
       op_desc.op_error = OpError::OK;
     }
     if (op_desc.op_error != OpError::OK) {
@@ -365,6 +372,8 @@ class DuplexClient {
 template <typename W>
 class DuplexClientWriter : public DuplexClient {
  public:
+  ~DuplexClientWriter() override = default;
+
   template <typename TS = time_point>
   Result Write(const W& obj, const TS& time_spec = time_point::max()) {
     return DoSync<const W&>(&DuplexClientWriter::WriteAsyncInternal, obj, time_spec);
@@ -381,6 +390,10 @@ class DuplexClientWriter : public DuplexClient {
 template <typename W, typename R>
 class DuplexClientReaderWriter : public DuplexClientWriter<W> {
  public:
+  ~DuplexClientReaderWriter() override {
+    Drain();
+  }
+
   template <typename TS = time_point>
   Result Read(R* obj, const TS& time_spec = time_point::max()) {
     if (read_callback_) {
@@ -407,8 +420,26 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
     return Read(obj, time_point::min());
   }
 
+  Result Shutdown() {
+    context_->TryCancel();
+    if (this->CheckFlags(Done(Op::SHUTDOWN))) {
+      return Result(Status::ALREADY_DONE);
+    }
+    if (!this->SetFlags(Pending(Op::SHUTDOWN))) {
+      return Result(Status::ALREADY_PENDING);
+    }
+    cq_.Shutdown();
+    return Result(Status::OK);
+  }
+
  private:
   using RW = grpc::ClientAsyncReaderWriter<W, R>;
+
+  void Drain() {
+    Shutdown();  // ignore errors
+    auto no_deadline = ToDeadline(time_point::min());
+    while (ProcessSingle(nullptr, no_deadline, nullptr));
+  }
 
   template <typename Stub>
   DuplexClientReaderWriter(
@@ -416,7 +447,7 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
       const std::shared_ptr<grpc::Channel>& channel,
       grpc::ClientContext* context,
       std::function<void(const R*)>&& read_callback)
-      : read_callback_(std::move(read_callback)) {
+      : context_(context), read_callback_(std::move(read_callback)) {
     Stub stub(channel);
     rw_ = (stub.*create_method)(context, &cq_, OpToTag(Op::START));
     this->SetFlags(Pending(Op::START));
@@ -437,7 +468,7 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
     constexpr bool idempotent = is_empty<Args...>::value;
 
     // For non-idempotent operations, we are ok with them being already done.
-    if (!idempotent && this->CheckFlags(Done(op))) {
+    if (idempotent && this->CheckFlags(Done(op))) {
       return {op, OpError::ALREADY_DONE};
     }
     if (this->CheckFlags(Pending(op))) {
@@ -488,6 +519,8 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
         op_res_out->op = op;
         op_res_out->ok = ok;
       }
+    } else if (next_status == grpc::CompletionQueue::SHUTDOWN) {
+      this->SetFlags(Done(Op::SHUTDOWN));
     }
     if (flags_out) *flags_out = this->flags_;
     return Result(next_status);
@@ -532,6 +565,7 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
   }
 
   std::unique_ptr<grpc::ClientAsyncReaderWriter<W, R>> rw_;
+  grpc::ClientContext* context_;
   grpc::CompletionQueue cq_;
   std::function<void(const R*)> read_callback_;
   R read_buf_;

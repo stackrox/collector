@@ -28,6 +28,7 @@ You should have received a copy of the GNU General Public License along with thi
 // This class defines our GRPC client abstraction
 
 #include "CollectorService.h"
+#include "DuplexGRPC.h"
 #include "SafeBuffer.h"
 #include "StoppableThread.h"
 
@@ -47,7 +48,7 @@ class SignalServiceClient {
   using SignalStreamMessage = sensor::SignalStreamMessage;
 
   explicit SignalServiceClient(std::shared_ptr<grpc::Channel> channel)
-      : channel_(std::move(channel)), stub_(SignalService::NewStub(channel_)), stream_active_(false) {}
+      : channel_(std::move(channel)), stream_active_(false) {}
 
   void Start();
   void Stop();
@@ -59,16 +60,14 @@ class SignalServiceClient {
   bool EstablishGRPCStreamSingle();
 
   std::shared_ptr<grpc::Channel> channel_;
-  std::unique_ptr<SignalService::Stub> stub_;
 
   StoppableThread thread_;
   std::atomic<bool> stream_active_;
   std::condition_variable stream_interrupted_;
 
   // This needs to have the same lifetime as the class.
-  v1::Empty empty_;
   std::unique_ptr<grpc::ClientContext> context_;
-  std::unique_ptr<grpc::ClientWriter<SignalStreamMessage> > grpc_writer_;
+  std::unique_ptr<DuplexClientWriter<SignalStreamMessage>> writer_;
 };
 
 }  // namespace collector
