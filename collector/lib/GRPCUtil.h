@@ -40,7 +40,6 @@ bool WaitForChannelReady(const std::shared_ptr<grpc::Channel>& channel,
     const std::function<bool()>& check_interrupted = []() { return false; },
     const std::chrono::nanoseconds& poll_interval = std::chrono::seconds(1));
 
-
 }  // namespace collector
 
 #endif  // _GRPC_UTIL_H_
