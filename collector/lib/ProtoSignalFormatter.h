@@ -26,43 +26,31 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <utility>
 
+#include "libsinsp/sinsp.h"
+
 #include <google/protobuf/message.h>
 
 #include "ProtoAllocator.h"
-#include "SignalFormatter.h"
 
 namespace collector {
 
 // Base class for all signal formatters that output protobuf messages.
-class BaseProtoSignalFormatter : public SignalFormatter {
+class BaseProtoSignalFormatter {
  public:
-  BaseProtoSignalFormatter(bool text_format = false) : text_format_(text_format) {}
+  BaseProtoSignalFormatter() = default;
 
-  bool FormatSignal(SafeBuffer* buf, sinsp_evt* event) override;
-  bool FormatSignal(SafeBuffer* buf, sinsp_threadinfo* tinfo) override;
-
- protected:
   // Returns a pointer to the proto message derived from this event, or nullptr if no message should be output.
   // Note: The caller does not assume ownership of the returned message. To avoid an additional heap allocation, the
   // implementing class should maintain an instance-level message whose address is returned by this method.
   virtual const google::protobuf::Message* ToProtoMessage(sinsp_evt* event) = 0;
-  virtual const google::protobuf::Message* ToProtoMessage(sinsp_threadinfo* tinfo) { return NULL; }
-
-  virtual void Reset() = 0;
-
- private:
-  bool MessageToBuf(SafeBuffer* buf,  const google::protobuf::Message* msg);
-  bool text_format_;
 };
 
 template <typename Message>
 class ProtoSignalFormatter : public BaseProtoSignalFormatter, protected ProtoAllocator<Message> {
  public:
-  ProtoSignalFormatter(bool text_format = false)
-      : BaseProtoSignalFormatter(text_format) {}
+  ProtoSignalFormatter() = default;
 
- protected:
-  void Reset() override { ProtoAllocator<Message>::Reset(); }
+  const Message* ToProtoMessage(sinsp_evt* event) override = 0;
 };
 
 }  // namespace collector

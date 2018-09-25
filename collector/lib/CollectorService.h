@@ -27,25 +27,11 @@ You should have received a copy of the GNU General Public License along with thi
 #include <vector>
 
 #include <grpcpp/channel.h>
-#include <json/json.h>
-#include "librdkafka/rdkafka.h"
-
-extern "C" {
-#include <uuid/uuid.h>
-}
-
-#include "ChiselConsumer.h"
-#include "GetNetworkHealthStatus.h"
-#include "Network.h"
 
 namespace collector {
 
 struct CollectorConfig {
   bool useChiselCache = true;
-  bool useKafka = true;
-  bool useGRPC = false;
-  bool getNetworkHealth = true;
-  const rd_kafka_conf_t* kafkaConfigTemplate = nullptr;
   int snapLen = 2048;
 
   std::string hostname;
@@ -53,23 +39,7 @@ struct CollectorConfig {
 
   std::string host_proc;
 
-  std::vector<EndpointSpec> kafkaBrokers;
-  std::string chiselsTopic;
-
   std::shared_ptr<grpc::Channel> grpc_channel;
-
-  std::string networkSignalOutput;
-  std::string processSignalOutput;
-  std::string fileSignalOutput;
-  std::string signalOutput;
-  std::vector<std::string> processSyscalls;
-  std::vector<std::string> genericSyscalls;
-  std::string fileSignalFormat;
-  std::string processSignalFormat;
-  std::string networkSignalFormat;
-  std::string signalFormat;
-
-  const uuid_t* clusterID = nullptr;
 };
 
 class CollectorService {
@@ -85,7 +55,6 @@ class CollectorService {
   void RunForever();
 
  private:
-  bool WaitForKafka();
   void OnChiselReceived(const std::string& chisel);
   bool WaitForGRPCServer();
 

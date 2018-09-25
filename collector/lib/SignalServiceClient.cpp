@@ -59,6 +59,7 @@ bool SignalServiceClient::EstablishGRPCStreamSingle() {
   }
   CLOG(INFO) << "Successfully established GRPC stream for signals.";
 
+  first_write_ = true;
   stream_active_.store(true, std::memory_order_release);
   return true;
 }
@@ -78,14 +79,19 @@ void SignalServiceClient::Stop() {
   context_->TryCancel();
 }
 
-bool SignalServiceClient::PushSignals(const SafeBuffer& msg) {
+SignalHandler::Result SignalServiceClient::PushSignals(const SignalStreamMessage& msg) {
   if (!stream_active_.load(std::memory_order_acquire)) {
   	CLOG_THROTTLED(ERROR, std::chrono::seconds(10))
 		  << "GRPC stream is not established";
-    return false;
+    return SignalHandler::ERROR;
   }
 
-  if (!writer_->Write(ProtoFromBuffer<SignalStreamMessage>(msg))) {
+  if (first_write_) {
+    first_write_ = false;
+    return SignalHandler::NEEDS_REFRESH;
+  }
+
+  if (!writer_->Write(msg)) {
     auto status = writer_->FinishNow();
     if (!status.ok()) {
       CLOG(ERROR) << "GRPC writes failed: " << status.error_message();
@@ -95,10 +101,10 @@ bool SignalServiceClient::PushSignals(const SafeBuffer& msg) {
     stream_active_.store(false, std::memory_order_release);
     CLOG(ERROR) << "GRPC stream interrupted";
     stream_interrupted_.notify_one();
-    return false;
+    return SignalHandler::ERROR;
   }
 
-  return true;
+  return SignalHandler::PROCESSED;
 }
 
 } // namespace collector

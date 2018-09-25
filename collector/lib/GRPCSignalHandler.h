@@ -21,44 +21,62 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef _SIGNAL_WRITER_H_
-#define _SIGNAL_WRITER_H_
+#ifndef _GRPC_SIGNAL_HANDLER_H_
+#define _GRPC_SIGNAL_HANDLER_H_
 
 #include <memory>
 
+#include "libsinsp/sinsp.h"
+
 #include <grpcpp/channel.h>
 
-#include "librdkafka/rdkafka.h"
-
-#include "EventClassifier.h"
-#include "KafkaClient.h"
-#include "SafeBuffer.h"
+#include "CollectorSignalFormatter.h"
+#include "SignalHandler.h"
 #include "SignalServiceClient.h"
 
 namespace collector {
 
-class SignalWriter {
+class GRPCSignalHandler : public SignalHandler {
  public:
-  virtual bool WriteSignal(const SafeBuffer& msg, const SafeBuffer& key) = 0;
-  virtual ~SignalWriter() = default;
-};
+  GRPCSignalHandler(sinsp* inspector, std::shared_ptr<grpc::Channel> channel)
+      : client_(std::move(channel)), formatter_(inspector) {}
 
-class SignalWriterFactory {
- public:
-  std::unique_ptr<SignalWriter> CreateSignalWriter(const std::string& output_spec);
+  std::string GetName() override {
+    return "GRPCSignalHandler";
+  }
 
-  void SetupKafka(const rd_kafka_conf_t* conf_template);
-  void SetupGRPC(std::shared_ptr<grpc::Channel> config);
+  bool Start() override {
+    client_.Start();
+    return true;
+  }
+
+  Result HandleSignal(sinsp_evt* evt) override {
+    const auto* signal_msg = formatter_.ToProtoMessage(evt);
+    if (!signal_msg) {
+      return IGNORED;
+    }
+
+    return client_.PushSignals(*signal_msg);
+  }
+
+  Result HandleExistingProcess(sinsp_threadinfo* tinfo) override {
+    const auto* signal_msg = formatter_.ToProtoMessage(tinfo);
+    if (!signal_msg) {
+      return IGNORED;
+    }
+
+    return client_.PushSignals(*signal_msg);
+  }
+
+  std::vector<std::string> GetRelevantEvents() override {
+    return {"execve<"};
+  }
 
  private:
-  std::unique_ptr<SignalWriter> CreateStdoutSignalWriter(const std::string& spec);
-  std::unique_ptr<SignalWriter> CreateKafkaSignalWriter(const std::string& spec);
-  std::unique_ptr<SignalWriter> CreateGRPCSignalWriter(const std::string& spec);
-
-  std::shared_ptr<KafkaClient> kafka_client_;
-  std::shared_ptr<SignalServiceClient> grpc_client_;
+  SignalServiceClient client_;
+  CollectorSignalFormatter formatter_;
 };
 
 }  // namespace collector
 
-#endif  // _SIGNAL_WRITER_H_
+#endif  // _GRPC_SIGNAL_HANDLER_H_

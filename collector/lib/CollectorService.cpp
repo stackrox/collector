@@ -33,10 +33,8 @@ extern "C" {
 #include "prometheus/exposer.h"
 #include "prometheus/registry.h"
 
-#include "ChiselConsumer.h"
 #include "ConnTracker.h"
 #include "CollectorStatsExporter.h"
-#include "GetNetworkHealthStatus.h"
 #include "GetStatus.h"
 #include "GRPCUtil.h"
 #include "LogLevel.h"
@@ -58,20 +56,14 @@ void CollectorService::RunForever() {
   const char *options[] = { "listening_ports", "8080", 0};
   CivetServer server(options);
 
-  auto conn_tracker = std::make_shared<ConnectionTracker>();
+  std::shared_ptr<ConnectionTracker> conn_tracker;
 
   SysdigService sysdig;
   GetStatus getStatus(config_.hostname, &sysdig);
 
   std::shared_ptr<prometheus::Registry> registry = std::make_shared<prometheus::Registry>();
 
-  std::unique_ptr<GetNetworkHealthStatus> getNetworkHealthStatus;
-
   server.addHandler("/ready", getStatus);
-  if (config_.getNetworkHealth) {
-    getNetworkHealthStatus.reset(new GetNetworkHealthStatus(config_.kafkaBrokers, registry));
-    server.addHandler("/networkHealth", getNetworkHealthStatus.get());
-  }
   LogLevel setLogLevel;
   server.addHandler("/loglevel", setLogLevel);
 
@@ -80,7 +72,7 @@ void CollectorService::RunForever() {
 
   std::unique_ptr<NetworkStatusNotifier> net_status_notifier;
 
-  if (config_.useGRPC) {
+  if (config_.grpc_channel) {
     CLOG(INFO) << "Waiting for GRPC server to become ready ...";
     if (!WaitForGRPCServer()) {
       CLOG(INFO) << "Interrupted while waiting for GRPC server to become ready ...";
@@ -88,35 +80,16 @@ void CollectorService::RunForever() {
     }
     CLOG(INFO) << "GRPC server connectivity is successful";
 
+    conn_tracker = std::make_shared<ConnectionTracker>();
     net_status_notifier = MakeUnique<NetworkStatusNotifier>(config_.hostname, config_.host_proc, conn_tracker, config_.grpc_channel);
     net_status_notifier->Start();
   }
 
-  sysdig.Init(config_);
-
-  if (getNetworkHealthStatus && !getNetworkHealthStatus->start()) {
-    CLOG(FATAL) << "Unable to start network health status";
-  }
+  sysdig.Init(config_, conn_tracker);
 
   CollectorStatsExporter exporter(registry, &sysdig);
   if (!exporter.start()) {
     CLOG(FATAL) << "Unable to start sysdig stats exporter";
-  }
-
-  std::unique_ptr<ChiselConsumer> chisel_consumer;
-
-  if (config_.useKafka) {
-    CLOG(INFO) << "Waiting for all Kafka brokers to become ready ...";
-    if (!WaitForKafka()) {
-      CLOG(INFO) << "Interrupted while waiting for Kafka to become ready ...";
-      return;
-    }
-    CLOG(INFO) << "Kafka is ready";
-
-    chisel_consumer.reset(new ChiselConsumer(
-        config_.kafkaConfigTemplate, config_.chiselsTopic, config_.hostname,
-        [this](const std::string& chisel) { OnChiselReceived(chisel); }));
-    chisel_consumer->Start();
   }
 
   sysdig.Start();
@@ -147,45 +120,12 @@ void CollectorService::RunForever() {
 
   CLOG(INFO) << "Shutting down collector.";
 
-  // Shut down these first since they access the sysdig object.
-  if (chisel_consumer) {
-    chisel_consumer->Stop();
-  }
   if (net_status_notifier) net_status_notifier->Stop();
+  // Shut down these first since they access the sysdig object.
   exporter.stop();
   server.close();
-  if (getNetworkHealthStatus) {
-    getNetworkHealthStatus->stop();
-  }
 
   sysdig.CleanUp();
-}
-
-bool CollectorService::WaitForKafka() {
-  const int num_brokers = config_.kafkaBrokers.size();
-
-  auto interrupt = [this] { return control_->load(std::memory_order_relaxed) == STOP_COLLECTOR; };
-  while (!interrupt()) {
-    int ready_brokers = 0;
-    for (const auto& broker_addr : config_.kafkaBrokers) {
-      std::string error_str;
-      ConnectivityStatus conn_status = CheckConnectivity(broker_addr, std::chrono::seconds(1), &error_str, interrupt);
-      if (conn_status == ConnectivityStatus::INTERRUPTED) return false;
-      else if (conn_status == ConnectivityStatus::ERROR) {
-        CLOG(ERROR) << "Error connecting to " << broker_addr.str() << ": " << error_str;
-      } else {
-        ++ready_brokers;
-      }
-    }
-
-    if (ready_brokers == num_brokers) {
-      CLOG(INFO) << ready_brokers << "/" << num_brokers << " brokers are ready.";
-      return true;
-    }
-    CLOG(ERROR) << ready_brokers << "/" << num_brokers << " brokers are ready. Sleeping for 5 seconds ...";
-    std::this_thread::sleep_for(std::chrono::seconds(5));
-  }
-  return false;
 }
 
 bool CollectorService::WaitForGRPCServer() {

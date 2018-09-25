@@ -21,64 +21,33 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef __KAFKACLIENT_H
-#define __KAFKACLIENT_H
+#ifndef COLLECTOR_NETWORKSIGNALHANDLER_H
+#define COLLECTOR_NETWORKSIGNALHANDLER_H
 
-// KafkaClient.h
-// This class defines our Kafka abstraction
-
-#include <memory>
-#include <string>
-
-extern "C" {
-#include "librdkafka/rdkafka.h"
-}
+#include "ConnTracker.h"
+#include "SignalHandler.h"
+#include "SysdigEventExtractor.h"
 
 namespace collector {
 
-class KafkaException : public std::exception {
+class NetworkSignalHandler final : public SignalHandler {
  public:
-  KafkaException(std::string message) : message_(std::move(message)) {}
-  const char* what() const noexcept override { return message_.c_str(); }
+  explicit NetworkSignalHandler(sinsp* inspector, std::shared_ptr<ConnectionTracker> conn_tracker)
+      : conn_tracker_(std::move(conn_tracker)) {
+    event_extractor_.Init(inspector);
+  }
+
+  std::string GetName() override { return "NetworkSignalHandler"; }
+  Result HandleSignal(sinsp_evt* evt) override;
+  std::vector<std::string> GetRelevantEvents() override;
 
  private:
-  std::string message_;
-};
+  std::pair<Connection, bool> GetConnection(sinsp_evt* evt);
 
-class KafkaClient {
- public:
-  KafkaClient(const rd_kafka_conf_t* conf_template);
-  ~KafkaClient();
-
-  class TopicHandle;
-
- private:
-  // method to create a topic
-  rd_kafka_topic_t* createTopic(const char* topic);
-
-  // method to send to a specific topic
-  bool sendMessage(rd_kafka_topic_t* kafkaTopic, const void* msg, int msgLen, const void* key, int keyLen);
-
-  rd_kafka_t* kafka_;
-  rd_kafka_topic_t* networkTopicHandle_ = nullptr;
-  rd_kafka_topic_t* processTopicHandle_ = nullptr;
-  rd_kafka_topic_t* fileTopicHandle_ = nullptr;
-
-  uint64_t send_count_ = 0;
-};
-
-class KafkaClient::TopicHandle {
- public:
-  TopicHandle(const std::string& topic, std::shared_ptr<KafkaClient> kafka);
-  ~TopicHandle();
-
-  bool Send(const void* msg, int msg_len, const void* key, int key_len);
-
- private:
-  std::shared_ptr<KafkaClient> client_;
-  rd_kafka_topic_t* topic_;
+  SysdigEventExtractor event_extractor_;
+  std::shared_ptr<ConnectionTracker> conn_tracker_;
 };
 
 }  // namespace collector
 
-#endif // __KAFKACLIENT_H
+#endif  //COLLECTOR_NETWORKSIGNALHANDLER_H
