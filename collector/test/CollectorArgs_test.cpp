@@ -80,7 +80,7 @@ struct CollectorArgsTestCase {
     bool                     expectedResult;
     int                      expectedExitCode;
     std::string              expectedMessage;
-    std::string              expectedBrokerList;
+    std::string              expectedGRPCServer;
 
     friend std::ostream& operator<<(std::ostream& os, const CollectorArgsTestCase& obj) {
         std::string argv;
@@ -95,8 +95,7 @@ struct CollectorArgsTestCase {
             << "argv: " << argv
             << " expectedResult: " << obj.expectedResult
             << " expectedExitCode: " << obj.expectedExitCode
-            << " expectedMessage: " << obj.expectedMessage
-            << " expectedBrokerList " << obj.expectedBrokerList;
+            << " expectedMessage: " << obj.expectedMessage;
     }
 } testCases[]  = {
     // Unknown flag
@@ -105,62 +104,53 @@ struct CollectorArgsTestCase {
         false,
         1,
         "Unknown option: --blargle",
-        ""
     }
-    // Broker list with one broker
+    // GRPC server
     ,{
-        { "collector", "--broker-list=172.16.0.5:9092" },
+        { "collector", "--grpc-server=172.16.0.5:9092" },
         true,
         0,
         "",
         "172.16.0.5:9092"
     }
-    // Broker list without an argument
+    // GRPC server without an argument
     ,{
-        { "collector", "--broker-list" },
+        { "collector", "--grpc-server" },
         true,
         0,
-        "Missing broker list. Cannot configure Kafka client. Reverting to stdout.",
+        "Missing grpc list. Cannot configure GRPC client. Reverting to stdout.",
         ""
     }
-    // Malformed broker list
+    // Malformed GRPC server
     ,{
-        { "collector", "--broker-list=172.16.0.5" },
+        { "collector", "--grpc-server=172.16.0.5" },
         false,
         1,
-        "Malformed broker",
+        "Malformed grpc server addr",
         ""
     }
-    // Missing broker host
+    // Missing GRPC server host
     ,{
-        { "collector", "--broker-list=:9092" },
+        { "collector", "--grpc-server=:9092" },
         false,
         1,
-        "Missing broker host",
+        "Missing grpc host",
         ""
     }
-    // Missing broker port
+    // Missing GRPC server port
     ,{
-        { "collector", "--broker-list=172.16.0.5:" },
+        { "collector", "--grpc-server=172.16.0.5:" },
         false,
         1,
-        "Missing broker port",
+        "Missing grpc port",
         ""
     }
-    // Broker list with multiple brokers
+    // Long GRPC server
     ,{
-        { "collector", "--broker-list=172.16.0.5:9092,172.16.0.6:9092" },
-        true,
-        0,
-        "",
-        "172.16.0.5:9092,172.16.0.6:9092"
-    }
-    // Long broker list
-    ,{
-        { "collector", std::string("--broker-list=") + std::string(256, 'e') },
+        { "collector", std::string("--grpc-server=") + std::string(256, 'e') },
         false,
         1,
-        "Broker list too long (> 255)",
+        "GRPC Server addr too long (> 255)",
         ""
     }
 };
@@ -187,7 +177,7 @@ TEST_P(CollectorArgsTest, Parse) {
     EXPECT_EQ(testCase.expectedResult, args->parse(testCase.argv.size(), argv, exitCode));
     EXPECT_EQ(testCase.expectedExitCode, exitCode);
     EXPECT_EQ(testCase.expectedMessage, args->Message());
-    EXPECT_EQ(testCase.expectedBrokerList, args->BrokerList());
+    EXPECT_EQ(testCase.expectedGRPCServer, args->GRPCServer());
 
     args->clear();
 }

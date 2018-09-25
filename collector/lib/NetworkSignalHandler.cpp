@@ -45,8 +45,10 @@ EventMap<Modifier> modifiers = {
     Modifier::INVALID,
 };
 
-std::pair<Connection, bool> GetConnection(sinsp_evt* evt) {
-  const auto* fd_info = evt->get_fd_info();
+}  // namespace
+
+std::pair<Connection, bool> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
+  auto* fd_info = evt->get_fd_info();
   if (!fd_info) return {{}, false};
 
   bool is_server = fd_info->is_role_server();
@@ -87,22 +89,22 @@ std::pair<Connection, bool> GetConnection(sinsp_evt* evt) {
   const Endpoint* local = is_server ? &server : &client;
   const Endpoint* remote = is_server ? &client : &server;
 
-  const std::string* container_id = event_extractor_.get_container_id(event);
+  const std::string* container_id = event_extractor_.get_container_id(evt);
   if (!container_id) return {{}, false};
-  return {Connection(*container_id, *local, *remote, l4proto, *is_server), true};
+  return {Connection(*container_id, *local, *remote, l4proto, is_server), true};
 }
 
-}  // namespace
-
-bool NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
+SignalHandler::Result NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
   auto modifier = modifiers[evt->get_type()];
-  if (modifier == Modifier::INVALID) return true;
+  if (modifier == Modifier::INVALID) return SignalHandler::IGNORED;
 
   auto result = GetConnection(evt);
-  if (result.second) {
-    conn_tracker_->UpdateConnection(result.first, evt->get_ts() / 1000UL, modifier == Modifier::ADDED);
+  if (!result.second) {
+    return SignalHandler::IGNORED;
   }
-  return true;
+
+  conn_tracker_->UpdateConnection(result.first, evt->get_ts() / 1000UL, modifier == Modifier::ADD);
+  return SignalHandler::PROCESSED;
 }
 
 std::vector<string> NetworkSignalHandler::GetRelevantEvents() {

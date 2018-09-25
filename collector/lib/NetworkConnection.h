@@ -64,7 +64,7 @@ class Address {
     std::memcpy(data_.data(), &ipv4, sizeof(ipv4));
   }
 
-  Address(uint32_t (&ipv6)[4]) : Address(Family::IPV6) {
+  Address(const uint32_t (&ipv6)[4]) : Address(Family::IPV6) {
     std::memcpy(data_.data(), &ipv6, sizeof(ipv6));
   }
 

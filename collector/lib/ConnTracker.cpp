@@ -29,17 +29,9 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-void ConnectionTracker::AddConnection(const Connection &conn, int64_t timestamp) {
+void ConnectionTracker::UpdateConnection(const Connection &conn, int64_t timestamp, bool added) {
   WITH_LOCK(mutex_) {
-    EmplaceOrUpdateNoLock(conn, ConnStatus(timestamp, true));
-  }
-}
-
-void ConnectionTracker::RemoveConnection(const Connection &conn, int64_t timestamp) {
-  WITH_LOCK(mutex_) {
-    // Even if a connection is not present, record its closing timestamp, so that we don't discard any potentially
-    // useful information.
-    EmplaceOrUpdateNoLock(conn, ConnStatus(timestamp, false));
+    EmplaceOrUpdateNoLock(conn, ConnStatus(timestamp, added));
   }
 }
 

@@ -25,6 +25,7 @@ You should have received a copy of the GNU General Public License along with thi
 #define _SYSDIG_SERVICE_H_
 
 #include <atomic>
+#include <bitset>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -33,11 +34,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include "libsinsp/chisel.h"
 
 #include "CollectorService.h"
-#include "SafeBuffer.h"
 #include "SignalHandler.h"
-#include "SignalWriter.h"
 #include "Sysdig.h"
-#include "SignalFormatter.h"
 
 namespace collector {
 
@@ -80,7 +78,7 @@ class SysdigService : public Sysdig {
   sinsp_evt* GetNext();
 
   bool FilterEvent(sinsp_evt* event);
-  bool SendExistingProcesses();
+  bool SendExistingProcesses(SignalHandler* handler);
 
   void AddSignalHandler(std::unique_ptr<SignalHandler> signal_handler);
 

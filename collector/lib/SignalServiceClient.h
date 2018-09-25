@@ -29,7 +29,6 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "CollectorService.h"
 #include "DuplexGRPC.h"
-#include "SafeBuffer.h"
 #include "SignalHandler.h"
 #include "StoppableThread.h"
 
@@ -45,12 +44,6 @@ namespace collector {
 
 class SignalServiceClient {
  public:
-  enum class Status {
-    OK,
-    ERROR,
-    NEEDS_REFRESH,
-  };
-
   using SignalService = sensor::SignalService;
   using SignalStreamMessage = sensor::SignalStreamMessage;
 

@@ -24,13 +24,10 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _SYSDIG_
 #define _SYSDIG_
 
+#include <cstdint>
+
 #include <atomic>
 #include <string>
-#include <json/json.h>
-
-extern "C" {
-#include <stdint.h>
-}
 
 #include "CollectorService.h"
 #include "ConnTracker.h"
@@ -38,6 +35,8 @@ extern "C" {
 namespace collector {
 
 struct SysdigStats {
+  using uint64_t = std::uint64_t;
+
   // stats gathered in kernel space
   volatile uint64_t nEvents = 0;      // the number of kernel events
   volatile uint64_t nDrops = 0;       // the number of drops

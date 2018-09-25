@@ -43,7 +43,7 @@ class CollectorSignalFormatter : public ProtoSignalFormatter<sensor::SignalStrea
   using ProcessSignal = v1::ProcessSignal;
 
   const sensor::SignalStreamMessage* ToProtoMessage(sinsp_evt* event) override;
-  const sensor::SignalStreamMessage* ToProtoMessage(sinsp_threadinfo* tinfo) override;
+  const sensor::SignalStreamMessage* ToProtoMessage(sinsp_threadinfo* tinfo);
 
  private:
   Signal* CreateSignal(sinsp_evt* event);

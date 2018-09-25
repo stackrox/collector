@@ -40,8 +40,12 @@ class SignalHandler {
     NEEDS_REFRESH,
   };
 
+  virtual std::string GetName() = 0;
+  virtual bool Start() { return true; }
   virtual Result HandleSignal(sinsp_evt* evt) = 0;
-  virtual void HandleExistingProcess(sinsp_threadinfo* tinfo) {}
+  virtual Result HandleExistingProcess(sinsp_threadinfo* tinfo) {
+    return IGNORED;
+  }
   virtual std::vector<std::string> GetRelevantEvents() = 0;
 };
 

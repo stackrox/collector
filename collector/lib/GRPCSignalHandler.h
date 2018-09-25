@@ -41,6 +41,15 @@ class GRPCSignalHandler : public SignalHandler {
   GRPCSignalHandler(sinsp* inspector, std::shared_ptr<grpc::Channel> channel)
       : client_(std::move(channel)), formatter_(inspector) {}
 
+  std::string GetName() override {
+    return "GRPCSignalHandler";
+  }
+
+  bool Start() override {
+    client_.Start();
+    return true;
+  }
+
   Result HandleSignal(sinsp_evt* evt) override {
     const auto* signal_msg = formatter_.ToProtoMessage(evt);
     if (!signal_msg) {
@@ -57,6 +66,10 @@ class GRPCSignalHandler : public SignalHandler {
     }
 
     return client_.PushSignals(*signal_msg);
+  }
+
+  std::vector<std::string> GetRelevantEvents() override {
+    return {"execve<"};
   }
 
  private:

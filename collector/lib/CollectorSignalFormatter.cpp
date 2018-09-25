@@ -70,6 +70,7 @@ const SignalStreamMessage* CollectorSignalFormatter::ToProtoMessage(sinsp_evt* e
     return nullptr;
   }
 
+  Reset();
   ProcessSignal* process_signal = CreateProcessSignal(event);
   if (!process_signal) return nullptr;
 
@@ -83,6 +84,7 @@ const SignalStreamMessage* CollectorSignalFormatter::ToProtoMessage(sinsp_evt* e
 }
 
 const SignalStreamMessage* CollectorSignalFormatter::ToProtoMessage(sinsp_threadinfo* tinfo) {
+  Reset();
   ProcessSignal* process_signal = CreateProcessSignal(tinfo);
   if (!process_signal) return nullptr;
 

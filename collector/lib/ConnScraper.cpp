@@ -130,7 +130,7 @@ bool GetContainerID(int dirfd, std::string* container_id) {
     if (std::strncmp(p, "/docker/", StrLen("/docker/")) == 0) {
       p += StrLen("/docker/");
       if (line + sizeof(line) - p < 32) continue;
-      *container_id = std::string(p, 32);
+      *container_id = std::string(p, 12);  // *short* container ID to match sysdig
       return true;
     }
     if (std::strncmp(p, "/kubepods/", StrLen("/kubepods/")) == 0) {
@@ -139,7 +139,7 @@ bool GetContainerID(int dirfd, std::string* container_id) {
       if (!p) continue;
       ++p;
       if (line + sizeof(line) - p < 32) continue;
-      *container_id = std::string(p, 32);
+      *container_id = std::string(p, 12);  // *short* container ID to match sysdig
       return true;
     }
   }

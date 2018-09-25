@@ -120,11 +120,8 @@ void CollectorService::RunForever() {
 
   CLOG(INFO) << "Shutting down collector.";
 
-  // Shut down these first since they access the sysdig object.
-  if (chisel_consumer) {
-    chisel_consumer->Stop();
-  }
   if (net_status_notifier) net_status_notifier->Stop();
+  // Shut down these first since they access the sysdig object.
   exporter.stop();
   server.close();
 

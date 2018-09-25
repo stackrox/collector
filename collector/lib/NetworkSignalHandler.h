@@ -26,17 +26,25 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "ConnTracker.h"
 #include "SignalHandler.h"
+#include "SysdigEventExtractor.h"
 
 namespace collector {
 
 class NetworkSignalHandler final : public SignalHandler {
  public:
-  NetworkSignalHandler(std::shared_ptr<ConnectionTracker> conn_tracker) : conn_tracker_(std::move(conn_tracker)) {}
+  explicit NetworkSignalHandler(sinsp* inspector, std::shared_ptr<ConnectionTracker> conn_tracker)
+      : conn_tracker_(std::move(conn_tracker)) {
+    event_extractor_.Init(inspector);
+  }
 
-  bool HandleSignal(sinsp_evt* evt) override;
-  std::vector<std::string> RelevantSyscalls() override;
+  std::string GetName() override { return "NetworkSignalHandler"; }
+  Result HandleSignal(sinsp_evt* evt) override;
+  std::vector<std::string> GetRelevantEvents() override;
 
  private:
+  std::pair<Connection, bool> GetConnection(sinsp_evt* evt);
+
+  SysdigEventExtractor event_extractor_;
   std::shared_ptr<ConnectionTracker> conn_tracker_;
 };
 

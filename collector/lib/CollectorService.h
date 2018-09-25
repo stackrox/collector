@@ -40,17 +40,6 @@ struct CollectorConfig {
   std::string host_proc;
 
   std::shared_ptr<grpc::Channel> grpc_channel;
-
-  std::string networkSignalOutput;
-  std::string processSignalOutput;
-  std::string fileSignalOutput;
-  std::string signalOutput;
-  std::vector<std::string> processSyscalls;
-  std::vector<std::string> genericSyscalls;
-  std::string fileSignalFormat;
-  std::string processSignalFormat;
-  std::string networkSignalFormat;
-  std::string signalFormat;
 };
 
 class CollectorService {

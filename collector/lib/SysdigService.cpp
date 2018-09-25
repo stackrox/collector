@@ -26,10 +26,6 @@ You should have received a copy of the GNU General Public License along with thi
 #include <linux/ioctl.h>
 #include <cap-ng.h>
 
-extern "C" {
-#include <uuid/uuid.h>
-}
-
 #include "libsinsp/wrapper.h"
 
 #include "CollectorException.h"
@@ -37,8 +33,6 @@ extern "C" {
 #include "GRPCSignalHandler.h"
 #include "Logging.h"
 #include "NetworkSignalHandler.h"
-#include "StdoutSignalWriter.h"
-#include "SignalFormatter.h"
 #include "Utility.h"
 
 namespace collector {
@@ -56,11 +50,15 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
   inspector_->set_snaplen(config.snapLen);
 
   if (conn_tracker) {
-    AddSignalHandler(MakeUnique<NetworkSignalHandler>(conn_tracker));
+    AddSignalHandler(MakeUnique<NetworkSignalHandler>(inspector_.get(), conn_tracker));
   }
 
   if (config.grpc_channel) {
-    AddSignalHandler(MakeUnique<GRPCSignalHandler>(config.grpc_channel, inspector_.get()));
+    AddSignalHandler(MakeUnique<GRPCSignalHandler>(inspector_.get(), config.grpc_channel));
+  }
+
+  if (signal_handlers_.empty()) {
+    CLOG(FATAL) << "There are no signal handlers";
   }
 
   SetChisel(config.chisel);
@@ -132,6 +130,12 @@ void SysdigService::Start() {
     throw CollectorException("Invalid state: SysdigService was not initialized");
   }
 
+  for (auto& signal_handler : signal_handlers_) {
+    if (!signal_handler.handler->Start()) {
+      CLOG(FATAL) << "Error starting signal handler " << signal_handler.handler->GetName();
+    }
+  }
+
   inspector_->open("");
 
   // Drop DAC_OVERRIDE capability after opening the device files.
@@ -149,41 +153,26 @@ void SysdigService::Run(const std::atomic<CollectorService::ControlValue>& contr
     throw CollectorException("Invalid state: SysdigService was not initialized");
   }
 
-  if (!SendExistingProcesses()) {
-    CLOG(WARNING) << "Failure sending existing processes";
-  }
-
   while (control.load(std::memory_order_relaxed) == CollectorService::RUN) {
     sinsp_evt* evt = GetNext();
     if (!evt) continue;
 
     for (auto& signal_handler : signal_handlers_) {
       if (!signal_handler.ShouldHandle(evt)) continue;
-      if (!signal_handler.handler->HandleSignal(evt)) {
-        break;
+      auto result = signal_handler.handler->HandleSignal(evt);
+      if (result == SignalHandler::NEEDS_REFRESH) {
+        if (!SendExistingProcesses(signal_handler.handler.get())) {
+          continue;
+        }
+        result = signal_handler.handler->HandleSignal(evt);
       }
     }
   }
 }
 
-bool SysdigService::SendExistingProcesses() {
+bool SysdigService::SendExistingProcesses(SignalHandler* handler) {
   if (!inspector_ || !chisel_) {
     throw CollectorException("Invalid state: SysdigService was not initialized");
-  }
-
-  SafeBuffer message_buffer(kMessageBufferSize);
-  SafeBuffer key_buffer(kKeyBufferSize);
-
-  auto& signal_writer = signal_writers_[SIGNAL_TYPE_GENERIC];
-  if (!signal_writer) {
-    CLOG(WARNING) << "Null signal writer for sending existing processes";
-    return false;
-  }
-
-  auto& formatter = signal_formatter_[SIGNAL_TYPE_GENERIC];
-  if (!formatter) {
-    CLOG(WARNING) << "Null signal formatter for sending existing processes";
-    return false;
   }
 
   auto threads = inspector_->m_thread_manager->get_threads();
@@ -195,14 +184,12 @@ bool SysdigService::SendExistingProcesses() {
   for (auto &thread : *threads) {
     auto tinfo = &(thread.second);
     if (!tinfo->m_container_id.empty() && tinfo->is_main_thread()) {
-      message_buffer.clear();
-      if (formatter->FormatSignal(&message_buffer, tinfo)) {
-        if (!signal_writer->WriteSignal(message_buffer, key_buffer)) {
-           CLOG(WARNING) << "Failed to write existing process signal: " << tinfo;
-           return false;
-        }
-        CLOG(DEBUG) << "Found existing process: " << tinfo;
+      auto result = handler->HandleExistingProcess(tinfo);
+      if (result == SignalHandler::ERROR || result == SignalHandler::NEEDS_REFRESH) {
+        CLOG(WARNING) << "Failed to write existing process signal: " << tinfo;
+        return false;
       }
+      CLOG(DEBUG) << "Found existing process: " << tinfo;
     }
   }
   return true;
@@ -214,7 +201,7 @@ void SysdigService::CleanUp() {
   inspector_->close();
   chisel_.reset();
   inspector_.reset();
-  signal_handlers_.close();
+  signal_handlers_.clear();
 }
 
 bool SysdigService::GetStats(SysdigStats* stats) const {
@@ -255,6 +242,11 @@ void SysdigService::AddSignalHandler(std::unique_ptr<SignalHandler> signal_handl
     event_filter.set();
   } else {
     const EventNames& event_names = EventNames::GetInstance();
+    for (const auto& event_name : relevant_events) {
+      for (ppm_event_type event_id : event_names.GetEventIDs(event_name)) {
+        event_filter.set(event_id);
+      }
+    }
   }
 
   signal_handlers_.emplace_back(std::move(signal_handler), event_filter);

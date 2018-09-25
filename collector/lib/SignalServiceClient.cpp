@@ -104,7 +104,7 @@ SignalHandler::Result SignalServiceClient::PushSignals(const SignalStreamMessage
     return SignalHandler::ERROR;
   }
 
-  return SignalHandler::OK;
+  return SignalHandler::PROCESSED;
 }
 
 } // namespace collector

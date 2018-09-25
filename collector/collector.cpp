@@ -45,7 +45,6 @@ extern "C" {
 #include <unistd.h>
 
 #include <sys/resource.h>
-#include <uuid/uuid.h>
 
 #include <cap-ng.h>
 }
@@ -238,21 +237,6 @@ std::string base64_decode(std::string const& encoded_string) {
     return ret;
 }
 
-bool GetClusterID(uuid_t* result) {
-  const char* clusterID = std::getenv("ROX_CLUSTER_ID");
-  if (!clusterID || !*clusterID) {
-    return false;
-  }
-
-  // UUID is stored as raw bytes, not in string format.
-  if (uuid_parse(clusterID, *result) == -1) {
-    CLOG(ERROR) << "Failed to parse cluster ID, environment variable ROX_CLUSTER_ID is invalid";
-    return false;
-  }
-
-  return true;
-}
-
 const char* GetHostname() {
   const char* hostname = std::getenv("NODE_HOSTNAME");
   if (hostname && *hostname) return hostname;
@@ -293,8 +277,6 @@ int main(int argc, char **argv) {
   }
 #endif
 
-  CLOG(INFO) << "Starting collector with the following parameters: brokerList=" << args->BrokerList();
-
   // insert the kernel module with options from the configuration
   Json::Value collectorConfig = args->CollectorConfig();
 
@@ -306,43 +288,8 @@ int main(int argc, char **argv) {
     CLOG(WARNING) << "Failed to drop SYS_MODULE capability: " << StrError();
   }
 
-  std::string networkSignalOutput = "stdout:NET :";
-  if (!collectorConfig["networkSignalOutput"].isNull()) {
-      networkSignalOutput = collectorConfig["networkSignalOutput"].asString();
-  }
-  std::string processSignalOutput = "stdout:PROC:";
-  if (!collectorConfig["processSignalOutput"].isNull()) {
-      processSignalOutput = collectorConfig["processSignalOutput"].asString();
-  }
-  std::string fileSignalOutput = "stdout:FILE:";
-  if (!collectorConfig["fileSignalOutput"].isNull()) {
-      fileSignalOutput = collectorConfig["fileSignalOutput"].asString();
-  }
-  std::string signalOutput = "stdout:SIGNAL:";
-  if (!collectorConfig["signalOutput"].isNull()) {
-      signalOutput = collectorConfig["signalOutput"].asString();
-  }
-
-  // formatters
-  std::string networkSignalFormat = "network_signal";
-  if (!collectorConfig["networkSignalFormat"].isNull()) {
-      networkSignalFormat = collectorConfig["networkSignalFormat"].asString();
-  }
-  std::string processSignalFormat = "process_summary";
-  if (!collectorConfig["processSignalFormat"].isNull()) {
-      processSignalFormat = collectorConfig["processSignalFormat"].asString();
-  }
-  std::string fileSignalFormat = "file_summary";
-  if (!collectorConfig["fileSignalFormat"].isNull()) {
-      fileSignalFormat = collectorConfig["fileSignalFormat"].asString();
-  }
-  std::string signalFormat = "signal_summary";
-  if (!collectorConfig["signalFormat"].isNull()) {
-      signalFormat = collectorConfig["signalFormat"].asString();
-  }
-
   bool useGRPC = false;
-  if (!args->GRPCServer().empty() && (signalOutput == "grpc") &&  (signalFormat == "signal_summary")) {
+  if (!args->GRPCServer().empty()) {
     useGRPC = true;
   }
 
@@ -351,25 +298,6 @@ int main(int argc, char **argv) {
   } else {
     CLOG(INFO) << "GRPC is disabled. Specify GRPC_SERVER='server addr' env and signalFormat = 'signal_summary' and  signalOutput = 'grpc'";
   }
-
-  // Iterate over the process syscalls
-  std::vector<std::string> process_syscalls;
-  for (auto itr : collectorConfig["process_syscalls"]) {
-      process_syscalls.push_back(itr.asString());
-  }
-
-  // Iterate over the generic syscalls
-  std::vector<std::string> generic_syscalls;
-  for (auto itr : collectorConfig["generic_syscalls"]) {
-      generic_syscalls.push_back(itr.asString());
-  }
-
-  CLOG(INFO) << "Output specs set to: network='" << networkSignalOutput << "', process='"
-             << processSignalOutput << "', file='" << fileSignalOutput << "', signal='"
-             << signalOutput << "'";
-  CLOG(INFO) << "Format specs set to: network='" << networkSignalFormat << "', process='"
-             << processSignalFormat << "', file='" << fileSignalFormat << "', signal='"
-             << signalFormat << "'";
 
   std::string chiselB64 = args->Chisel();
   std::string chisel = base64_decode(chiselB64);
@@ -409,16 +337,6 @@ int main(int argc, char **argv) {
   config.useChiselCache = useChiselCache;
   config.chisel = chisel;
   config.grpc_channel = std::move(grpc_channel);
-  config.networkSignalOutput = networkSignalOutput;
-  config.processSignalOutput = processSignalOutput;
-  config.fileSignalOutput = fileSignalOutput;
-  config.signalOutput = signalOutput;
-  config.processSyscalls = process_syscalls;
-  config.genericSyscalls = generic_syscalls;
-  config.networkSignalFormat = networkSignalFormat;
-  config.processSignalFormat = processSignalFormat;
-  config.fileSignalFormat = fileSignalFormat;
-  config.signalFormat = signalFormat;
 
   // Register signal handlers
   signal(SIGABRT, AbortHandler);

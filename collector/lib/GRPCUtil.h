@@ -32,7 +32,6 @@ You should have received a copy of the GNU General Public License along with thi
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 
 #include "Logging.h"
-#include "SafeBuffer.h"
 
 namespace collector {
 
