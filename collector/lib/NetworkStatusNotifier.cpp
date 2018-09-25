@@ -156,9 +156,9 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
 }
 
 sensor::NetworkConnectionInfoMessage* NetworkStatusNotifier::CreateInfoMessage(const ConnMap& delta) {
-//  if (delta.empty()) {
-//    return nullptr;
-//  }
+  if (delta.empty()) {
+    return nullptr;
+  }
 
   Reset();
   auto* msg = AllocateRoot();
