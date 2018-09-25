@@ -25,6 +25,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "GRPCUtil.h"
 #include "Logging.h"
 #include "Utility.h"
+#include "ProtoUtil.h"
 
 #include <fstream>
 
@@ -47,11 +48,16 @@ bool SignalServiceClient::EstablishGRPCStreamSingle() {
     return false;
   }
 
-  CLOG(INFO) << "Successfully established GRPC stream for signals.";
-
   // stream writer
   context_ = MakeUnique<grpc::ClientContext>();
-  grpc_writer_ = stub_->PushSignals(context_.get(), &empty_);
+  writer_ = DuplexClient::CreateWithReadsIgnored(&SignalService::Stub::AsyncPushSignals, channel_, context_.get());
+  if (!writer_->WaitUntilStarted(std::chrono::seconds(30))) {
+    CLOG(ERROR) << "Signal stream not ready after 30 seconds. Retrying ...";
+    CLOG(ERROR) << "Error message: " << writer_->FinishNow().error_message();
+    writer_.reset();
+    return true;
+  }
+  CLOG(INFO) << "Successfully established GRPC stream for signals.";
 
   stream_active_.store(true, std::memory_order_release);
   return true;
@@ -67,9 +73,9 @@ void SignalServiceClient::Start() {
 }
 
 void SignalServiceClient::Stop() {
+  stream_interrupted_.notify_one();
   thread_.Stop();
   context_->TryCancel();
-  stream_interrupted_.notify_one();
 }
 
 bool SignalServiceClient::PushSignals(const SafeBuffer& msg) {
@@ -79,12 +85,12 @@ bool SignalServiceClient::PushSignals(const SafeBuffer& msg) {
     return false;
   }
 
-  if (!GRPCWriteRaw(grpc_writer_.get(), msg)) {
-    auto status = grpc_writer_->Finish();
+  if (!writer_->Write(ProtoFromBuffer<SignalStreamMessage>(msg))) {
+    auto status = writer_->FinishNow();
     if (!status.ok()) {
       CLOG(ERROR) << "GRPC writes failed: " << status.error_message();
     }
-    grpc_writer_.reset();
+    writer_.reset();
 
     stream_active_.store(false, std::memory_order_release);
     CLOG(ERROR) << "GRPC stream interrupted";

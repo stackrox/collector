@@ -51,7 +51,9 @@ struct CollectorConfig {
   std::string hostname;
   std::string chisel;
 
-  std::vector<Address> kafkaBrokers;
+  std::string host_proc;
+
+  std::vector<EndpointSpec> kafkaBrokers;
   std::string chiselsTopic;
 
   std::shared_ptr<grpc::Channel> grpc_channel;

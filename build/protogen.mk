@@ -111,6 +111,7 @@ $(GENERATED_CPP_BASE_PATH)/%.grpc.pb.cc $(GENERATED_CPP_BASE_PATH)/%.grpc.pb.h: 
 		--plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN_PATH) \
 		$(filter $(BASE_PATH)/$(SUBDIR)/%, $(ALL_PROTOS))
 
+generated-proto-srcs: $(GENERATED_CPP_SRCS)
 
 # Clean things that we use to generate protobufs
 .PHONY: clean-protogen-artifacts

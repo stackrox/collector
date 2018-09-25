@@ -21,55 +21,62 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef __SIGNAL_SERVICE_CLIENT_H
-#define __SIGNAL_SERVICE_CLIENT_H
+#ifndef COLLECTOR_NETWORKSTATUSNOTIFIER_H
+#define COLLECTOR_NETWORKSTATUSNOTIFIER_H
 
-// SIGNAL_SERVICE_CLIENT.h
-// This class defines our GRPC client abstraction
+#include <memory>
 
-#include "CollectorService.h"
-#include "DuplexGRPC.h"
-#include "SafeBuffer.h"
-#include "StoppableThread.h"
-
-#include <mutex>
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/security/credentials.h>
 
-#include "api/v1/signal.pb.h"
-#include "internalapi/sensor/signal_service.grpc.pb.h"
+#include "internalapi/sensor/network_connection_service.grpc.pb.h"
+
+#include "ConnScraper.h"
+#include "ConnTracker.h"
+#include "DuplexGRPC.h"
+#include "ProtoAllocator.h"
+#include "StoppableThread.h"
 
 namespace collector {
 
-class SignalServiceClient {
+class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnectionInfoMessage> {
  public:
-  using SignalService = sensor::SignalService;
-  using SignalStreamMessage = sensor::SignalStreamMessage;
+  using Stub = sensor::NetworkConnectionInfoService::Stub;
 
-  explicit SignalServiceClient(std::shared_ptr<grpc::Channel> channel)
-      : channel_(std::move(channel)), stream_active_(false) {}
+  NetworkStatusNotifier(std::string hostname, std::string proc_dir, std::shared_ptr<ConnectionTracker> conn_tracker,
+                        std::shared_ptr<grpc::Channel> channel)
+      : hostname_(std::move(hostname)), conn_scraper_(std::move(proc_dir)), conn_tracker_(std::move(conn_tracker)),
+        channel_(std::move(channel)), stub_(sensor::NetworkConnectionInfoService::NewStub(channel_))
+  {}
 
   void Start();
   void Stop();
 
-  bool PushSignals(const SafeBuffer& buffer);
-
  private:
-  void EstablishGRPCStream();
-  bool EstablishGRPCStreamSingle();
+  sensor::NetworkConnectionInfoMessage* CreateInfoMessage(const ConnMap& conn_delta);
+  sensor::NetworkConnection* ConnToProto(const Connection& conn);
+  sensor::NetworkAddress* EndpointToProto(const Endpoint& endpoint);
 
-  std::shared_ptr<grpc::Channel> channel_;
+  void Run();
+  void RunSingle(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer);
+
+  std::string hostname_;
 
   StoppableThread thread_;
-  std::atomic<bool> stream_active_;
-  std::condition_variable stream_interrupted_;
 
-  // This needs to have the same lifetime as the class.
   std::unique_ptr<grpc::ClientContext> context_;
-  std::unique_ptr<DuplexClientWriter<SignalStreamMessage>> writer_;
+  std::mutex context_mutex_;
+
+  ConnScraper conn_scraper_;
+  std::shared_ptr<ConnectionTracker> conn_tracker_;
+
+  std::shared_ptr<grpc::Channel> channel_;
+  std::unique_ptr<Stub> stub_;
 };
 
 }  // namespace collector
 
-#endif // __SIGNAL_SERVICE_CLIENT_H
+#endif //COLLECTOR_NETWORKSTATUSNOTIFIER_H

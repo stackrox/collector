@@ -398,7 +398,7 @@ int main(int argc, char **argv) {
 
   rd_kafka_conf_t* conf_template = nullptr;
 
-  std::vector<Address> broker_endpoints;
+  std::vector<EndpointSpec> broker_endpoints;
 
   if (useKafka) {
     std::string error_str;
@@ -474,6 +474,7 @@ int main(int argc, char **argv) {
 
   CollectorConfig config;
   config.hostname = GetHostname();
+  config.host_proc = GetHostPath("/proc");
   config.useKafka = useKafka;
   config.useGRPC = useGRPC;
   config.kafkaConfigTemplate = conf_template;

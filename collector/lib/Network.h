@@ -30,17 +30,17 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-struct Address {
+struct EndpointSpec {
   std::string host;
   uint16_t port;
 
-  Address() = default;
-  Address(std::string host, uint16_t port) : host(std::move(host)), port(port) {}
+  EndpointSpec() = default;
+  EndpointSpec(std::string host, uint16_t port) : host(std::move(host)), port(port) {}
   std::string str() const { return host + ":" + std::to_string(port); }
 };
 
-bool ParseAddress(const std::string& address_str, Address* addr, std::string* error_str);
-bool ParseAddressList(const std::string& address_list_str, std::vector<Address>* addresses, std::string* error_str);
+bool ParseAddress(const std::string& address_str, EndpointSpec* addr, std::string* error_str);
+bool ParseAddressList(const std::string& address_list_str, std::vector<EndpointSpec>* addresses, std::string* error_str);
 
 enum class ConnectivityStatus {
   OK,
@@ -48,7 +48,7 @@ enum class ConnectivityStatus {
   INTERRUPTED,
 };
 
-ConnectivityStatus CheckConnectivity(const Address& address, const std::chrono::milliseconds& timeout,
+ConnectivityStatus CheckConnectivity(const EndpointSpec& address, const std::chrono::milliseconds& timeout,
                                      std::string* error_str,
                                      const std::function<bool()>& interrupt = []{ return false; },
                                      int interrupt_fd = -1);

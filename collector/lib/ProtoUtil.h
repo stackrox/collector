@@ -21,58 +21,36 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#include <unistd.h>
+#ifndef COLLECTOR_PROTOUTIL_H
+#define COLLECTOR_PROTOUTIL_H
 
-#include <iostream>
+#include <google/protobuf/timestamp.pb.h>
+#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 
-#include "StoppableThread.h"
-#include "Utility.h"
+#include "SafeBuffer.h"
 
 namespace collector {
 
-bool StoppableThread::prepareStart() {
-  if (running()) {
-    CLOG(ERROR) << "Could not start thread: already running";
-    return false;
+template <typename Msg>
+Msg ProtoFromBuffer(const void* buffer, size_t size) {
+  google::protobuf::io::ArrayInputStream input_stream(buffer, size);
+  Msg msg;
+  if (!msg.ParseFromZeroCopyStream(&input_stream)) {
+    // ignore for now
   }
-  should_stop_.store(false, std::memory_order_relaxed);
-  if (pipe(stop_pipe_) != 0) {
-    CLOG(ERROR) << "Could not create pipe for stop signals: " << StrError(errno);
-    return false;
-  }
-  return true;
+  return msg;
 }
 
-bool StoppableThread::doStart(std::thread* thread) {
-  thread_.reset(thread);
-  return true;
+template <typename Msg>
+Msg ProtoFromBuffer(const SafeBuffer& buf) {
+  return ProtoFromBuffer<Msg>(buf.buffer(), buf.size());
 }
 
-bool StoppableThread::PauseUntil(const std::chrono::system_clock::time_point& time_point) {
-  std::unique_lock<std::mutex> lock(stop_mutex_);
-  return !stop_cond_.wait_until(lock, time_point, [this]() { return should_stop(); });
-}
-
-void StoppableThread::Stop() {
-  should_stop_.store(true, std::memory_order_relaxed);
-  stop_cond_.notify_all();
-  for (;;) {
-    int rv = close(stop_pipe_[1]);
-    if (rv != 0) {
-      CLOG(ERROR) << "Failed to close writing end of pipe: " << StrError(errno);
-      if (errno == EINTR) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        continue;
-      }
-    }
-    break;
-  }
-  thread_->join();
-  thread_.reset();
-  int rv = close(stop_pipe_[0]);
-  if (rv != 0) {
-    CLOG(ERROR) << "Failed to close reading end of pipe: " << StrError(errno);
-  }
-}
+// Returns the current time as a timestamp proto.
+// Note: the protobuf library provides a function for the same task, which however only reports the time at second
+// granularity.
+google::protobuf::Timestamp CurrentTimeProto();
 
 }  // namespace collector
+
+#endif //COLLECTOR_PROTOUTIL_H

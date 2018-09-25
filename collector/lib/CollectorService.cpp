@@ -34,11 +34,13 @@ extern "C" {
 #include "prometheus/registry.h"
 
 #include "ChiselConsumer.h"
+#include "ConnTracker.h"
 #include "CollectorStatsExporter.h"
 #include "GetNetworkHealthStatus.h"
 #include "GetStatus.h"
 #include "GRPCUtil.h"
 #include "LogLevel.h"
+#include "NetworkStatusNotifier.h"
 #include "SysdigService.h"
 #include "Utility.h"
 
@@ -55,6 +57,8 @@ void CollectorService::RunForever() {
   // be cautious if decomposing to a separate function.
   const char *options[] = { "listening_ports", "8080", 0};
   CivetServer server(options);
+
+  auto conn_tracker = std::make_shared<ConnectionTracker>();
 
   SysdigService sysdig;
   GetStatus getStatus(config_.hostname, &sysdig);
@@ -74,6 +78,8 @@ void CollectorService::RunForever() {
   prometheus::Exposer exposer("9090");
   exposer.RegisterCollectable(registry);
 
+  std::unique_ptr<NetworkStatusNotifier> net_status_notifier;
+
   if (config_.useGRPC) {
     CLOG(INFO) << "Waiting for GRPC server to become ready ...";
     if (!WaitForGRPCServer()) {
@@ -81,6 +87,9 @@ void CollectorService::RunForever() {
       return;
     }
     CLOG(INFO) << "GRPC server connectivity is successful";
+
+    net_status_notifier = MakeUnique<NetworkStatusNotifier>(config_.hostname, config_.host_proc, conn_tracker, config_.grpc_channel);
+    net_status_notifier->Start();
   }
 
   sysdig.Init(config_);
@@ -142,6 +151,7 @@ void CollectorService::RunForever() {
   if (chisel_consumer) {
     chisel_consumer->Stop();
   }
+  if (net_status_notifier) net_status_notifier->Stop();
   exporter.stop();
   server.close();
   if (getNetworkHealthStatus) {
