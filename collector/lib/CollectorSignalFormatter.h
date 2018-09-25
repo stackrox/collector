@@ -35,16 +35,13 @@ namespace collector {
 
 class CollectorSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamMessage> {
  public:
-  CollectorSignalFormatter(sinsp* inspector, const uuid_t* cluster_id, bool text_format = false)
-      : ProtoSignalFormatter(text_format), event_names_(EventNames::GetInstance()), 
-          cluster_id_(cluster_id) {
+  CollectorSignalFormatter(sinsp* inspector) : event_names_(EventNames::GetInstance()) {
     event_extractor_.Init(inspector);
   }
 
   using Signal = v1::Signal;
   using ProcessSignal = v1::ProcessSignal;
 
- protected:
   const sensor::SignalStreamMessage* ToProtoMessage(sinsp_evt* event) override;
   const sensor::SignalStreamMessage* ToProtoMessage(sinsp_threadinfo* tinfo) override;
 
@@ -57,7 +54,6 @@ class CollectorSignalFormatter : public ProtoSignalFormatter<sensor::SignalStrea
 
   const EventNames& event_names_;
   SysdigEventExtractor event_extractor_;
-  const uuid_t* cluster_id_;
 };
 
 }  // namespace collector

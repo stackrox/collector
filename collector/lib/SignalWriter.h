@@ -28,10 +28,6 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <grpcpp/channel.h>
 
-#include "librdkafka/rdkafka.h"
-
-#include "EventClassifier.h"
-#include "KafkaClient.h"
 #include "SafeBuffer.h"
 #include "SignalServiceClient.h"
 
@@ -47,15 +43,12 @@ class SignalWriterFactory {
  public:
   std::unique_ptr<SignalWriter> CreateSignalWriter(const std::string& output_spec);
 
-  void SetupKafka(const rd_kafka_conf_t* conf_template);
   void SetupGRPC(std::shared_ptr<grpc::Channel> config);
 
  private:
   std::unique_ptr<SignalWriter> CreateStdoutSignalWriter(const std::string& spec);
-  std::unique_ptr<SignalWriter> CreateKafkaSignalWriter(const std::string& spec);
   std::unique_ptr<SignalWriter> CreateGRPCSignalWriter(const std::string& spec);
 
-  std::shared_ptr<KafkaClient> kafka_client_;
   std::shared_ptr<SignalServiceClient> grpc_client_;
 };
 

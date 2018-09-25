@@ -33,9 +33,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include "libsinsp/chisel.h"
 
 #include "CollectorService.h"
-#include "EventClassifier.h"
-#include "KafkaClient.h"
 #include "SafeBuffer.h"
+#include "SignalHandler.h"
 #include "SignalWriter.h"
 #include "Sysdig.h"
 #include "SignalFormatter.h"
@@ -51,7 +50,7 @@ class SysdigService : public Sysdig {
 
   SysdigService() = default;
 
-  void Init(const CollectorConfig& config) override;
+  void Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) override;
   void Start() override;
   void Run(const std::atomic<CollectorService::ControlValue>& control) override;
   void SetChisel(const std::string& new_chisel);
@@ -66,16 +65,28 @@ class SysdigService : public Sysdig {
     ACCEPTED,
   };
 
-  SignalType GetNext(SafeBuffer* message_buffer, SafeBuffer* key_buffer);
+  struct SignalHandlerEntry {
+    std::unique_ptr<SignalHandler> handler;
+    std::bitset<PPM_EVENT_MAX> event_filter;
+
+    SignalHandlerEntry(std::unique_ptr<SignalHandler> handler, std::bitset<PPM_EVENT_MAX> event_filter)
+        : handler(std::move(handler)), event_filter(event_filter) {}
+
+    bool ShouldHandle(sinsp_evt* evt) const {
+      return event_filter[evt->get_type()];
+    }
+  };
+
+  sinsp_evt* GetNext();
 
   bool FilterEvent(sinsp_evt* event);
   bool SendExistingProcesses();
 
+  void AddSignalHandler(std::unique_ptr<SignalHandler> signal_handler);
+
   std::unique_ptr<sinsp> inspector_;
   std::unique_ptr<sinsp_chisel> chisel_;
-  std::unique_ptr<SignalWriter> signal_writers_[SIGNAL_TYPE_MAX + 1];
-  std::unique_ptr<SignalFormatter> signal_formatter_[SIGNAL_TYPE_MAX + 1];
-  EventClassifier classifier_;
+  std::vector<SignalHandlerEntry> signal_handlers_;
   SysdigStats userspace_stats_;
 
   std::unordered_map<string, ChiselCacheStatus> chisel_cache_;

@@ -74,6 +74,7 @@ class ConnectionTracker {
  public:
   void AddConnection(const Connection& conn, int64_t timestamp);
   void RemoveConnection(const Connection& conn, int64_t timestamp);
+  void UpdateConnection(const Connection& conn, int64_t timestamp, bool added);
 
   void Update(const std::vector<Connection>& all_conns, int64_t timestamp);
 

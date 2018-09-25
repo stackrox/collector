@@ -33,6 +33,7 @@ extern "C" {
 }
 
 #include "CollectorService.h"
+#include "ConnTracker.h"
 
 namespace collector {
 
@@ -47,7 +48,6 @@ struct SysdigStats {
   volatile uint64_t nUserspaceEvents = 0;   // events pre chisel filter, should be (nEvents - nDrops)
   volatile uint64_t nChiselCacheHitsAccept = 0;   // number of events that hit the filter cache
   volatile uint64_t nChiselCacheHitsReject = 0;   // number of events that hit the filter cache
-  volatile uint64_t nKafkaSendFailures = 0; // number of signals that were not sent
   volatile uint64_t nGRPCSendFailures = 0; // number of signals that were not sent on GRPC
 };
 
@@ -55,7 +55,7 @@ class Sysdig {
  public:
   virtual ~Sysdig() = default;
 
-  virtual void Init(const CollectorConfig& config) = 0;
+  virtual void Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) = 0;
   virtual void Start() = 0;
   virtual void Run(const std::atomic<CollectorService::ControlValue>& control) = 0;
   virtual void CleanUp() = 0;

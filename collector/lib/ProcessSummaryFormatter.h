@@ -50,7 +50,6 @@ class ProcessSummaryFormatter : public ProtoSignalFormatter<data::ProcessSummary
   using ProcessContainer = ProcessSummary::Container;
   using ProcessDetails = data::Process;
 
- protected:
   const data::ProcessSummary* ToProtoMessage(sinsp_evt* event) override;
 
  private:

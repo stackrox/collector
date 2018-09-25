@@ -23,15 +23,10 @@ You should have received a copy of the GNU General Public License along with thi
 #include "SignalWriter.h"
 
 #include "CollectorException.h"
-#include "KafkaSignalWriter.h"
 #include "StdoutSignalWriter.h"
-#include "GRPCSignalWriter.h"
+#include "GRPCSignalHandler.h"
 
 namespace collector {
-
-void SignalWriterFactory::SetupKafka(const rd_kafka_conf_t* conf_template) {
-  kafka_client_ = std::make_shared<KafkaClient>(conf_template);
-}
 
 void SignalWriterFactory::SetupGRPC(std::shared_ptr<grpc::Channel> channel) {
   grpc_client_ = std::make_shared<SignalServiceClient>(std::move(channel));
@@ -54,9 +49,6 @@ std::unique_ptr<SignalWriter> SignalWriterFactory::CreateSignalWriter(const std:
   if (output_type == "stdout") {
     return CreateStdoutSignalWriter(spec);
   }
-  if (output_type == "kafka") {
-    return CreateKafkaSignalWriter(spec);
-  }
   if (output_type == "grpc") {
     return CreateGRPCSignalWriter(spec);
   }
@@ -67,24 +59,12 @@ std::unique_ptr<SignalWriter> SignalWriterFactory::CreateStdoutSignalWriter(cons
   return std::unique_ptr<SignalWriter>(new StdoutSignalWriter(spec));
 }
 
-std::unique_ptr<SignalWriter> SignalWriterFactory::CreateKafkaSignalWriter(const std::string& spec) {
-  if (spec.empty()) {
-    throw CollectorException("When using output type 'kafka', a non-empty topic must be supplied (i.e., "
-                             "'kafka:<topic>')");
-  }
-  if (!kafka_client_) {
-    throw CollectorException("Output type 'kafka' specified, but collector was not set up to use Kafka");
-  }
-
-  return std::unique_ptr<SignalWriter>(new KafkaSignalWriter(spec, kafka_client_));
-}
-
 std::unique_ptr<SignalWriter> SignalWriterFactory::CreateGRPCSignalWriter(const std::string& spec) {
   if (!grpc_client_) {
     throw CollectorException("Output type 'grpc' specified, but collector was not set up to use GRPC");
   }
 
-  return std::unique_ptr<SignalWriter>(new GRPCSignalWriter(grpc_client_));
+  return std::unique_ptr<SignalWriter>(new GRPCSignalHandler(grpc_client_));
 }
 
 }  // namespace collector

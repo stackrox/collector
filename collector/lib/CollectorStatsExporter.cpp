@@ -63,7 +63,6 @@ void CollectorStatsExporter::run() {
     auto& userspaceEvents = collectorEventCounters.Add({{"type", "userspace"}});
     auto& chiselCacheHitsAccept = collectorEventCounters.Add({{"type", "chiselCacheHitsAccept"}});
     auto& chiselCacheHitsReject = collectorEventCounters.Add({{"type", "chiselCacheHitsReject"}});
-    auto& kafkaSendFailures = collectorEventCounters.Add({{"type", "kafkaSendFailures"}});
     auto& grpcSendFailures = collectorEventCounters.Add({{"type", "grpcSendFailures"}});
 
     while (thread_.Pause(std::chrono::seconds(1))) {
@@ -79,7 +78,6 @@ void CollectorStatsExporter::run() {
         userspaceEvents.Set(stats.nUserspaceEvents);
         chiselCacheHitsAccept.Set(stats.nChiselCacheHitsAccept);
         chiselCacheHitsReject.Set(stats.nChiselCacheHitsReject);
-        kafkaSendFailures.Set(stats.nKafkaSendFailures);
         grpcSendFailures.Set(stats.nGRPCSendFailures);
     }
 }

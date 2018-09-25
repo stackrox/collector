@@ -21,27 +21,30 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef _GRPC_SIGNAL_WRITER_H_
-#define _GRPC_SIGNAL_WRITER_H_
+#ifndef COLLECTOR_SIGNALHANDLER_H
+#define COLLECTOR_SIGNALHANDLER_H
 
-#include "EventClassifier.h"
-#include "SafeBuffer.h"
-#include "SignalWriter.h"
-#include "SignalServiceClient.h"
+#include <string>
+#include <vector>
+
+#include "libsinsp/sinsp.h"
 
 namespace collector {
 
-class GRPCSignalWriter : public SignalWriter {
+class SignalHandler {
  public:
-  GRPCSignalWriter(std::shared_ptr<SignalServiceClient> client) : client_(std::move(client)) {}
+  enum Result {
+    PROCESSED = 0,
+    IGNORED,
+    ERROR,
+    NEEDS_REFRESH,
+  };
 
-  bool WriteSignal(const SafeBuffer& msg, const SafeBuffer& key) override {
-    return client_->PushSignals(msg);
-  }
- private:
-  std::shared_ptr<SignalServiceClient> client_;
+  virtual Result HandleSignal(sinsp_evt* evt) = 0;
+  virtual void HandleExistingProcess(sinsp_threadinfo* tinfo) {}
+  virtual std::vector<std::string> GetRelevantEvents() = 0;
 };
 
 }  // namespace collector
 
-#endif  // _GRPC_SIGNAL_WRITER_H_
+#endif //COLLECTOR_SIGNALHANDLER_H

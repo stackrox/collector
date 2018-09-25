@@ -26,7 +26,6 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "SignalWriter.h"
 #include "SafeBuffer.h"
-#include "EventClassifier.h"
 
 namespace collector {
 

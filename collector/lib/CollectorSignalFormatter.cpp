@@ -164,5 +164,4 @@ ProcessSignal* CollectorSignalFormatter::CreateProcessSignal(sinsp_threadinfo* t
   return signal;
 }
 
-
 }  // namespace collector

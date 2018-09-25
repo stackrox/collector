@@ -21,42 +21,49 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef _CHISEL_CONSUMER_H_
-#define _CHISEL_CONSUMER_H_
+#ifndef _GRPC_SIGNAL_HANDLER_H_
+#define _GRPC_SIGNAL_HANDLER_H_
 
-#include <chrono>
-#include <functional>
-#include <string>
+#include <memory>
 
-#include "librdkafka/rdkafka.h"
+#include "libsinsp/sinsp.h"
 
-#include "StoppableThread.h"
+#include <grpcpp/channel.h>
+
+#include "CollectorSignalFormatter.h"
+#include "SignalHandler.h"
+#include "SignalServiceClient.h"
 
 namespace collector {
 
-class ChiselConsumer : private StoppableThread {
+class GRPCSignalHandler : public SignalHandler {
  public:
-  using ChiselUpdateCb = std::function<void (const std::string&)>;
-  ChiselConsumer(const rd_kafka_conf_t* conf_template, std::string topic, std::string unique_name,
-                 ChiselUpdateCb chisel_update_cb)
-      : conf_template_(conf_template), unique_name_(std::move(unique_name)), topic_(std::move(topic)),
-        chisel_update_cb_(std::move(chisel_update_cb)) {}
+  GRPCSignalHandler(sinsp* inspector, std::shared_ptr<grpc::Channel> channel)
+      : client_(std::move(channel)), formatter_(inspector) {}
 
-  void Start();
-  void Stop() { StoppableThread::Stop(); }
+  Result HandleSignal(sinsp_evt* evt) override {
+    const auto* signal_msg = formatter_.ToProtoMessage(evt);
+    if (!signal_msg) {
+      return IGNORED;
+    }
+
+    return client_.PushSignals(*signal_msg);
+  }
+
+  Result HandleExistingProcess(sinsp_threadinfo* tinfo) override {
+    const auto* signal_msg = formatter_.ToProtoMessage(tinfo);
+    if (!signal_msg) {
+      return IGNORED;
+    }
+
+    return client_.PushSignals(*signal_msg);
+  }
 
  private:
-  void runForever();
-  void processMessage(const rd_kafka_message_t* message);
-  void handleChisel(const rd_kafka_message_t* message);
-
-  const rd_kafka_conf_t* conf_template_;
-  std::string unique_name_;
-  std::string topic_;
-  ChiselUpdateCb chisel_update_cb_;
-  std::chrono::time_point<std::chrono::steady_clock> start_time_;
+  SignalServiceClient client_;
+  CollectorSignalFormatter formatter_;
 };
 
 }  // namespace collector
 
-#endif // _CHISEL_CONSUMER_H_
+#endif  // _GRPC_SIGNAL_HANDLER_H_

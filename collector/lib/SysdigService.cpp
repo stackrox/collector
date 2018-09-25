@@ -33,7 +33,10 @@ extern "C" {
 #include "libsinsp/wrapper.h"
 
 #include "CollectorException.h"
+#include "EventNames.h"
+#include "GRPCSignalHandler.h"
 #include "Logging.h"
+#include "NetworkSignalHandler.h"
 #include "StdoutSignalWriter.h"
 #include "SignalFormatter.h"
 #include "Utility.h"
@@ -44,7 +47,7 @@ constexpr char SysdigService::kModulePath[];
 constexpr char SysdigService::kModuleName[];
 
 
-void SysdigService::Init(const CollectorConfig& config) {
+void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) {
   if (inspector_ || chisel_) {
     throw CollectorException("Invalid state: SysdigService was already initialized");
   }
@@ -52,29 +55,16 @@ void SysdigService::Init(const CollectorConfig& config) {
   inspector_.reset(new_inspector());
   inspector_->set_snaplen(config.snapLen);
 
-  SignalWriterFactory factory;
-
-  if (config.useKafka) {
-    factory.SetupKafka(config.kafkaConfigTemplate);
+  if (conn_tracker) {
+    AddSignalHandler(MakeUnique<NetworkSignalHandler>(conn_tracker));
   }
-  if (config.useGRPC) {
-    factory.SetupGRPC(config.grpc_channel);
+
+  if (config.grpc_channel) {
+    AddSignalHandler(MakeUnique<GRPCSignalHandler>(config.grpc_channel, inspector_.get()));
   }
-  signal_writers_[SIGNAL_TYPE_FILE] = factory.CreateSignalWriter(config.fileSignalOutput);
-  signal_writers_[SIGNAL_TYPE_PROCESS] = factory.CreateSignalWriter(config.processSignalOutput);
-  signal_writers_[SIGNAL_TYPE_NETWORK] = factory.CreateSignalWriter(config.networkSignalOutput);
-  signal_writers_[SIGNAL_TYPE_GENERIC] = factory.CreateSignalWriter(config.signalOutput);
-
-  SignalFormatterFactory fmtFactory(inspector_.get(), config.clusterID);
-
-  signal_formatter_[SIGNAL_TYPE_FILE] = fmtFactory.CreateSignalFormatter(config.fileSignalFormat, inspector_.get());
-  signal_formatter_[SIGNAL_TYPE_PROCESS] = fmtFactory.CreateSignalFormatter(config.processSignalFormat, inspector_.get());
-  signal_formatter_[SIGNAL_TYPE_NETWORK] = fmtFactory.CreateSignalFormatter(config.networkSignalFormat, inspector_.get());
-  signal_formatter_[SIGNAL_TYPE_GENERIC] = fmtFactory.CreateSignalFormatter(config.signalFormat, inspector_.get());
 
   SetChisel(config.chisel);
 
-  classifier_.Init(config.hostname, config.processSyscalls, config.genericSyscalls);
   use_chisel_cache_ = config.useChiselCache;
 }
 
@@ -84,7 +74,7 @@ bool SysdigService::FilterEvent(sinsp_evt* event) {
   }
 
   sinsp_threadinfo* tinfo = event->get_thread_info();
-  if (tinfo == NULL || tinfo->m_container_id.empty()) {
+  if (!tinfo || tinfo->m_container_id.empty()) {
     return false;
   }
 
@@ -121,30 +111,20 @@ bool SysdigService::FilterEvent(sinsp_evt* event) {
   return res;
 }
 
-SignalType SysdigService::GetNext(SafeBuffer* message_buffer, SafeBuffer* key_buffer) {
+sinsp_evt* SysdigService::GetNext() {
   sinsp_evt* event;
   auto res = inspector_->next(&event);
-  if (res != SCAP_SUCCESS) return SIGNAL_TYPE_UNKNOWN;
+  if (res != SCAP_SUCCESS) return nullptr;
 
-  if (event->get_category() & EC_INTERNAL) return SIGNAL_TYPE_UNKNOWN;
+  if (event->get_category() & EC_INTERNAL) return nullptr;
 
   ++userspace_stats_.nUserspaceEvents;
   if (!FilterEvent(event)) {
-    return SIGNAL_TYPE_UNKNOWN;
+    return nullptr;
   }
+  ++userspace_stats_.nFilteredEvents;
 
-  key_buffer->clear();
-  SignalType signal_type = classifier_.Classify(key_buffer, event);
-  if (signal_type == SIGNAL_TYPE_UNKNOWN) return SIGNAL_TYPE_UNKNOWN;
-  if (key_buffer->empty()) {
-    CLOG_THROTTLED(WARNING, std::chrono::seconds(5)) << "Empty key for signal of type " << signal_type;
-    return SIGNAL_TYPE_UNKNOWN;
-  }
-  message_buffer->clear();
-  if (!signal_formatter_[signal_type]->FormatSignal(message_buffer, event)) {
-    return SIGNAL_TYPE_UNKNOWN;
-  }
-  return signal_type;
+  return event;
 }
 
 void SysdigService::Start() {
@@ -173,23 +153,15 @@ void SysdigService::Run(const std::atomic<CollectorService::ControlValue>& contr
     CLOG(WARNING) << "Failure sending existing processes";
   }
 
-  SafeBuffer message_buffer(kMessageBufferSize);
-  SafeBuffer key_buffer(kKeyBufferSize);
-
   while (control.load(std::memory_order_relaxed) == CollectorService::RUN) {
-    SignalType signal_type = GetNext(&message_buffer, &key_buffer);
-    auto& signal_writer = signal_writers_[signal_type];
+    sinsp_evt* evt = GetNext();
+    if (!evt) continue;
 
-    if (!signal_writer) {
-      continue;
-    }
-    ++userspace_stats_.nFilteredEvents;
-
-    bool success = signal_writer->WriteSignal(message_buffer, key_buffer);
-    if (!success && signal_type == SIGNAL_TYPE_GENERIC) {
-      ++userspace_stats_.nGRPCSendFailures;
-    } else if (!success) {
-      ++userspace_stats_.nKafkaSendFailures;
+    for (auto& signal_handler : signal_handlers_) {
+      if (!signal_handler.ShouldHandle(evt)) continue;
+      if (!signal_handler.handler->HandleSignal(evt)) {
+        break;
+      }
     }
   }
 }
@@ -222,7 +194,7 @@ bool SysdigService::SendExistingProcesses() {
 
   for (auto &thread : *threads) {
     auto tinfo = &(thread.second);
-    if (tinfo != NULL && tinfo->m_container_id != "" && tinfo->is_main_thread()) {
+    if (!tinfo->m_container_id.empty() && tinfo->is_main_thread()) {
       message_buffer.clear();
       if (formatter->FormatSignal(&message_buffer, tinfo)) {
         if (!signal_writer->WriteSignal(message_buffer, key_buffer)) {
@@ -242,9 +214,7 @@ void SysdigService::CleanUp() {
   inspector_->close();
   chisel_.reset();
   inspector_.reset();
-  for (auto& signal_writer : signal_writers_) {
-    signal_writer.reset();
-  }
+  signal_handlers_.close();
 }
 
 bool SysdigService::GetStats(SysdigStats* stats) const {
@@ -276,6 +246,18 @@ void SysdigService::SetChisel(const std::string& chisel) {
           << "Failed to reset the kernel-level PID namespace exclusion table via ioctl(): " << inspector_->getlasterr();
     }
   }
+}
+
+void SysdigService::AddSignalHandler(std::unique_ptr<SignalHandler> signal_handler) {
+  std::bitset<PPM_EVENT_MAX> event_filter;
+  const auto& relevant_events = signal_handler->GetRelevantEvents();
+  if (relevant_events.empty()) {
+    event_filter.set();
+  } else {
+    const EventNames& event_names = EventNames::GetInstance();
+  }
+
+  signal_handlers_.emplace_back(std::move(signal_handler), event_filter);
 }
 
 }  // namespace collector

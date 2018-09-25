@@ -30,6 +30,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "CollectorService.h"
 #include "DuplexGRPC.h"
 #include "SafeBuffer.h"
+#include "SignalHandler.h"
 #include "StoppableThread.h"
 
 #include <mutex>
@@ -44,6 +45,12 @@ namespace collector {
 
 class SignalServiceClient {
  public:
+  enum class Status {
+    OK,
+    ERROR,
+    NEEDS_REFRESH,
+  };
+
   using SignalService = sensor::SignalService;
   using SignalStreamMessage = sensor::SignalStreamMessage;
 
@@ -53,7 +60,7 @@ class SignalServiceClient {
   void Start();
   void Stop();
 
-  bool PushSignals(const SafeBuffer& buffer);
+  SignalHandler::Result PushSignals(const SignalStreamMessage& msg);
 
  private:
   void EstablishGRPCStream();
@@ -68,6 +75,8 @@ class SignalServiceClient {
   // This needs to have the same lifetime as the class.
   std::unique_ptr<grpc::ClientContext> context_;
   std::unique_ptr<DuplexClientWriter<SignalStreamMessage>> writer_;
+
+  bool first_write_;
 };
 
 }  // namespace collector
