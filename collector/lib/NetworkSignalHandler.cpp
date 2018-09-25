@@ -48,6 +48,12 @@ EventMap<Modifier> modifiers = {
 }  // namespace
 
 std::pair<Connection, bool> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
+  const uint64_t* res = event_extractor_.get_event_rawres(evt);
+  if (!res || *res < 0) {
+    // ignore unsuccessful events for now.
+    return {{}, false};
+  }
+
   auto* fd_info = evt->get_fd_info();
   if (!fd_info) return {{}, false};
 
