@@ -41,7 +41,6 @@ RUN apt-get update \
  && apt-get upgrade -y \
  && apt-get install -y --no-install-recommends \
         ca-certificates \
-        kmod \
         curl \
         libcurl3 \
         openssl \
@@ -49,6 +48,7 @@ RUN apt-get update \
         libcap-ng0 \
         jq \
         libluajit-5.1 \
+        upx-ucl \
  ;
 
 COPY libs/libsinsp-wrapper.so \
@@ -68,7 +68,8 @@ WORKDIR /
 # needed for container reentrancy on swarm:
 RUN curl -o docker-18.06.1-ce.tgz https://download.docker.com/linux/static/stable/x86_64/docker-18.06.1-ce.tgz && \
     tar -xvzf docker-18.06.1-ce.tgz && cp docker/docker /usr/local/bin/docker && \
-    rm -r docker-18.06.1-ce.tgz docker
+    rm -r docker-18.06.1-ce.tgz docker && \
+    upx -9 /usr/local/bin/docker
 COPY scripts/swarm_entrypoint.sh /swarm_entrypoint.sh
 
 # update boot script
@@ -85,6 +86,12 @@ COPY NOTICE-collector.txt \
      COPYING.txt \
      /
 
+COPY bin/ /usr/local/bin/
+
+RUN upx /usr/local/bin/collector
+
+RUN apt-get remove -y upx-ucl && apt-get autoremove
+
 ENTRYPOINT ["/bootstrap.sh"]
 
 # You must provide a BROKER_LIST environment variable or override the CMD.
@@ -94,5 +101,3 @@ CMD collector \
     --chisel=$CHISEL \
     --broker-list=$BROKER_LIST \
     --grpc-server=$GRPC_SERVER
-
-COPY bin/ /usr/local/bin/

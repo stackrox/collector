@@ -27,7 +27,7 @@ function remove_module() {
     if lsmod | grep -q "$MODULE_NAME"; then
         echo "Collector kernel module has already been loaded."
         echo "Removing so that collector can insert it at startup."
-        test rmmod "$MODULE_NAME"
+        test collector cleanup
     fi
 }
 

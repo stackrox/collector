@@ -29,6 +29,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <cstdlib>
 #include <csignal>
 #include <cctype>
+#include <cstring>
 #include <string>
 #include <sys/wait.h>
 #include <thread>
@@ -74,6 +75,10 @@ static void ShutdownHandler(int signum) {
   g_control.store(CollectorService::STOP_COLLECTOR);
 }
 
+static void RemoveModule() {
+  delete_module(SysdigService::kModuleName, O_NONBLOCK | O_TRUNC);
+}
+
 static void AbortHandler(int signum) {
   // Write a stacktrace to stderr
   void* buffer[32];
@@ -85,6 +90,8 @@ static void AbortHandler(int signum) {
   int num_bytes = snprintf(message_buffer, sizeof(message_buffer), "Caught signal %d (%s): %s\n",
                            signum, SignalName(signum), strsignal(signum));
   write(STDERR_FILENO, message_buffer, num_bytes);
+
+  RemoveModule();
 
   // Re-raise the signal (this time routing it to the default handler) to make sure we get the correct exit code.
   signal(signum, SIG_DFL);
@@ -174,7 +181,7 @@ void insertModule(const Json::Value& syscall_list) {
             // note that we forcefully remove the kernel module whether or not it has a non-zero
             // reference count. There is only one container that is ever expected to be using
             // this kernel module and that is us
-            delete_module(SysdigService::kModuleName, O_NONBLOCK | O_TRUNC);
+            RemoveModule();
             sleep(2);    // wait for 2s before trying again
         } else {
             CLOG(FATAL) << "Error inserting kernel module: " << SysdigService::kModulePath  << ": " << StrError()
@@ -183,6 +190,7 @@ void insertModule(const Json::Value& syscall_list) {
         result = InsertModule(fd, module_args);
     }
     close(fd);
+    std::atexit(&RemoveModule);
 
     CLOG(INFO) << "Done inserting kernel module " << SysdigService::kModulePath << ".";
 }
@@ -246,6 +254,12 @@ const char* GetHostname() {
 }
 
 int main(int argc, char **argv) {
+  // Check if we should simply remove the kernel module.
+  if (argc == 2 && !std::strcmp(argv[1], "cleanup")) {
+    RemoveModule();
+    return 0;
+  }
+
   // First action: drop all capabilities except for SYS_MODULE (inserting the module), SYS_PTRACE (reading from /proc),
   // and DAC_OVERRIDE (opening the device files with O_RDWR regardless of actual permissions).
   capng_clear(CAPNG_SELECT_BOTH);
