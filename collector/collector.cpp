@@ -75,8 +75,9 @@ static void ShutdownHandler(int signum) {
   g_control.store(CollectorService::STOP_COLLECTOR);
 }
 
-static void RemoveModule() {
-  delete_module(SysdigService::kModuleName, O_NONBLOCK | O_TRUNC);
+template <bool force = true>
+static int RemoveModule() {
+  return delete_module(SysdigService::kModuleName, force ? (O_NONBLOCK | O_TRUNC) : 0);
 }
 
 static void AbortHandler(int signum) {
@@ -256,8 +257,7 @@ const char* GetHostname() {
 int main(int argc, char **argv) {
   // Check if we should simply remove the kernel module.
   if (argc == 2 && !std::strcmp(argv[1], "cleanup")) {
-    RemoveModule();
-    return 0;
+    return RemoveModule<false>();
   }
 
   // First action: drop all capabilities except for SYS_MODULE (inserting the module), SYS_PTRACE (reading from /proc),
