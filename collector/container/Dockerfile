@@ -90,7 +90,7 @@ COPY bin/ /usr/local/bin/
 
 RUN upx /usr/local/bin/collector
 
-RUN apt-get remove -y upx-ucl && apt-get autoremove
+RUN apt-get remove -y upx-ucl && apt-get -y autoremove
 
 ENTRYPOINT ["/bootstrap.sh"]
 
