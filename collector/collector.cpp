@@ -75,9 +75,12 @@ static void ShutdownHandler(int signum) {
   g_control.store(CollectorService::STOP_COLLECTOR);
 }
 
-template <bool force = true>
-static int RemoveModule() {
-  return delete_module(SysdigService::kModuleName, force ? (O_NONBLOCK | O_TRUNC) : 0);
+static bool RemoveModule(bool force) {
+  return delete_module(SysdigService::kModuleName, force ? (O_NONBLOCK | O_TRUNC) : 0) != 0;
+}
+
+static void ForceRemoveModule() {
+  RemoveModule(true);
 }
 
 static void AbortHandler(int signum) {
@@ -92,7 +95,7 @@ static void AbortHandler(int signum) {
                            signum, SignalName(signum), strsignal(signum));
   write(STDERR_FILENO, message_buffer, num_bytes);
 
-  RemoveModule();
+  ForceRemoveModule();
 
   // Re-raise the signal (this time routing it to the default handler) to make sure we get the correct exit code.
   signal(signum, SIG_DFL);
@@ -191,7 +194,7 @@ void insertModule(const Json::Value& syscall_list) {
         result = InsertModule(fd, module_args);
     }
     close(fd);
-    std::atexit(&RemoveModule);
+    std::atexit(&ForceRemoveModule);
 
     CLOG(INFO) << "Done inserting kernel module " << SysdigService::kModulePath << ".";
 }
@@ -257,7 +260,10 @@ const char* GetHostname() {
 int main(int argc, char **argv) {
   // Check if we should simply remove the kernel module.
   if (argc == 2 && !std::strcmp(argv[1], "cleanup")) {
-    return RemoveModule<false>();
+    if (!RemoveModule(false)) {
+      CLOG(FATAL) << "Could not remove kernel module: " << StrError();
+    }
+    return 0;
   }
 
   // First action: drop all capabilities except for SYS_MODULE (inserting the module), SYS_PTRACE (reading from /proc),
