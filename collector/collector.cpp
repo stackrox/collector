@@ -185,7 +185,7 @@ void insertModule(const Json::Value& syscall_list) {
             // note that we forcefully remove the kernel module whether or not it has a non-zero
             // reference count. There is only one container that is ever expected to be using
             // this kernel module and that is us
-            RemoveModule();
+            ForceRemoveModule();
             sleep(2);    // wait for 2s before trying again
         } else {
             CLOG(FATAL) << "Error inserting kernel module: " << SysdigService::kModulePath  << ": " << StrError()
