@@ -105,7 +105,7 @@ SignalHandler::Result NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
   if (modifier == Modifier::INVALID) return SignalHandler::IGNORED;
 
   auto result = GetConnection(evt);
-  if (!result.second) {
+  if (!result.second || !IsRelevantConnection(result.first)) {
     return SignalHandler::IGNORED;
   }
 

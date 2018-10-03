@@ -29,13 +29,13 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-void ConnectionTracker::UpdateConnection(const Connection &conn, int64_t timestamp, bool added) {
+void ConnectionTracker::UpdateConnection(const Connection& conn, int64_t timestamp, bool added) {
   WITH_LOCK(mutex_) {
     EmplaceOrUpdateNoLock(conn, ConnStatus(timestamp, added));
   }
 }
 
-void ConnectionTracker::Update(const std::vector<Connection> &all_conns, int64_t timestamp) {
+void ConnectionTracker::Update(const std::vector<Connection>& all_conns, int64_t timestamp) {
   WITH_LOCK(mutex_) {
     // Mark all existing connections as inactive
     for (auto &prev_conn : state_) {
