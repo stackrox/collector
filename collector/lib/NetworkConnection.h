@@ -92,11 +92,10 @@ class Address {
   }
 
   bool IsLocal() const {
-    static const uint8_t ipv4_loopback_prefix[3] = {127, 0, 0};
     static const uint8_t ipv6_loopback_addr[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
     switch (family_) {
       case Family::IPV4:
-        return std::memcmp(data_.data(), ipv4_loopback_prefix, sizeof(ipv4_loopback_prefix)) == 0;
+        return data_[0] == 127;
       case Family::IPV6:
         return std::memcmp(data_.data(), ipv6_loopback_addr, sizeof(ipv6_loopback_addr)) == 0;
       default:
