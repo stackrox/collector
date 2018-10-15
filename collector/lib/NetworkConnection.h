@@ -91,6 +91,18 @@ class Address {
     return std::all_of(data_.begin(), data_.end(), [](uint8_t b) { return b == 0; });
   }
 
+  bool IsLocal() const {
+    static const uint8_t ipv6_loopback_addr[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+    switch (family_) {
+      case Family::IPV4:
+        return data_[0] == 127;
+      case Family::IPV6:
+        return std::memcmp(data_.data(), ipv6_loopback_addr, sizeof(ipv6_loopback_addr)) == 0;
+      default:
+        return false;
+    }
+  }
+
   static int Length(Family family) {
     switch (family) {
       case Family::IPV4:
@@ -196,6 +208,12 @@ class Connection {
 };
 
 std::ostream& operator<<(std::ostream& os, const Connection& conn);
+
+// Checks if the given connection is relevant (i.e., it is a client-initiated connection with a remote address that is
+// not a local loopback address).
+inline bool IsRelevantConnection(const Connection& conn) {
+  return !conn.is_server() && !conn.remote().address().IsLocal();
+}
 
 }  // namespace collector
 
