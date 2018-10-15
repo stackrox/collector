@@ -70,6 +70,11 @@ const SignalStreamMessage* CollectorSignalFormatter::ToProtoMessage(sinsp_evt* e
     return nullptr;
   }
 
+  if (!ValidateProcessDetails(event)) {
+    CLOG(INFO) << "Dropping process event: invalid details";
+    return nullptr;
+  }
+
   Reset();
   ProcessSignal* process_signal = CreateProcessSignal(event);
   if (!process_signal) return nullptr;
@@ -84,6 +89,11 @@ const SignalStreamMessage* CollectorSignalFormatter::ToProtoMessage(sinsp_evt* e
 }
 
 const SignalStreamMessage* CollectorSignalFormatter::ToProtoMessage(sinsp_threadinfo* tinfo) {
+  if (!ValidateProcessDetails(tinfo)) {
+    CLOG(INFO) << "Dropping process event: invalid details";
+    return nullptr;
+  }
+
   Reset();
   ProcessSignal* process_signal = CreateProcessSignal(tinfo);
   if (!process_signal) return nullptr;
@@ -164,6 +174,24 @@ ProcessSignal* CollectorSignalFormatter::CreateProcessSignal(sinsp_threadinfo* t
   signal->set_container_id(tinfo->m_container_id);
 
   return signal;
+}
+
+bool CollectorSignalFormatter::ValidateProcessDetails(sinsp_threadinfo* tinfo) {
+  if (tinfo->m_exepath == "<NA>") return false;
+  if (tinfo->get_comm() == "<NA>") return false;
+
+  return true;
+}
+
+bool CollectorSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
+  const std::string* path = event_extractor_.get_exepath(event);
+  if (path == nullptr || *path == "<NA>") return false;
+
+  // missing exe path, replace with command
+  const std::string* name = event_extractor_.get_comm(event);
+  if (name == nullptr || *name == "<NA>") return false;
+
+  return true;
 }
 
 }  // namespace collector

@@ -48,9 +48,11 @@ class CollectorSignalFormatter : public ProtoSignalFormatter<sensor::SignalStrea
  private:
   Signal* CreateSignal(sinsp_evt* event);
   ProcessSignal* CreateProcessSignal(sinsp_evt* event);
+  bool ValidateProcessDetails(sinsp_evt* event);
 
   Signal* CreateSignal(sinsp_threadinfo* tinfo);
   ProcessSignal* CreateProcessSignal(sinsp_threadinfo* tinfo);
+  bool ValidateProcessDetails(sinsp_threadinfo* tinfo);
 
   const EventNames& event_names_;
   SysdigEventExtractor event_extractor_;
