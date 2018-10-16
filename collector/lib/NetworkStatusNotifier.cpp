@@ -69,9 +69,6 @@ std::unique_ptr<grpc::ClientContext> NetworkStatusNotifier::CreateClientContext(
 }
 
 void NetworkStatusNotifier::Run() {
-  sensor::NetworkConnectionInfoMessage initial_message;
-  initial_message.mutable_register_()->set_hostname(hostname_);
-
   auto next_attempt = std::chrono::system_clock::now();
 
   while (thread_.PauseUntil(next_attempt)) {
@@ -118,13 +115,6 @@ void NetworkStatusNotifier::Stop() {
 void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
   if (!writer->WaitUntilStarted(std::chrono::seconds(10))) {
     CLOG(ERROR) << "Failed to establish network connection info stream.";
-    return;
-  }
-
-  sensor::NetworkConnectionInfoMessage initial_message;
-  initial_message.mutable_register_()->set_hostname(hostname_);
-  if (!writer->Write(initial_message, std::chrono::seconds(10))) {
-    CLOG(ERROR) << "Failed to write registration message";
     return;
   }
 
