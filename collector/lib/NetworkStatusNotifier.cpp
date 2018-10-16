@@ -62,15 +62,18 @@ sensor::SocketFamily TranslateAddressFamily(Address::Family family) {
 
 }  // namespace
 
-void NetworkStatusNotifier::Run() {
-  sensor::NetworkConnectionInfoMessage initial_message;
-  initial_message.mutable_register_()->set_hostname(hostname_);
+std::unique_ptr<grpc::ClientContext> NetworkStatusNotifier::CreateClientContext() const {
+  auto ctx = MakeUnique<grpc::ClientContext>();
+  ctx->AddMetadata("rox-collector-hostname", hostname_);
+  return ctx;
+}
 
+void NetworkStatusNotifier::Run() {
   auto next_attempt = std::chrono::system_clock::now();
 
   while (thread_.PauseUntil(next_attempt)) {
     WITH_LOCK(context_mutex_) {
-      context_ = MakeUnique<grpc::ClientContext>();
+      context_ = CreateClientContext();
     }
 
     if (!WaitForChannelReady(channel_, [this] { return thread_.should_stop(); })) {
@@ -112,13 +115,6 @@ void NetworkStatusNotifier::Stop() {
 void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
   if (!writer->WaitUntilStarted(std::chrono::seconds(10))) {
     CLOG(ERROR) << "Failed to establish network connection info stream.";
-    return;
-  }
-
-  sensor::NetworkConnectionInfoMessage initial_message;
-  initial_message.mutable_register_()->set_hostname(hostname_);
-  if (!writer->Write(initial_message, std::chrono::seconds(10))) {
-    CLOG(ERROR) << "Failed to write registration message";
     return;
   }
 
