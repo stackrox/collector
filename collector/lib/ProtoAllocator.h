@@ -53,7 +53,7 @@ inline google::protobuf::ArenaOptions ArenaOptionsForInitialBlock(char* storage,
 template <typename Message>
 class ArenaProtoAllocator {
  public:
-  static constexpr size_t kDefaultPoolSize = 32768;
+  static constexpr size_t kDefaultPoolSize = 65536; // used to be 32768
 
   ArenaProtoAllocator() : ArenaProtoAllocator(kDefaultPoolSize) {}
 
