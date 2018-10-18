@@ -30,7 +30,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "CollectorException.h"
 #include "EventNames.h"
-#include "GRPCSignalHandler.h"
+#include "ProcessSignalHandler.h"
 #include "Logging.h"
 #include "NetworkSignalHandler.h"
 #include "Utility.h"
@@ -53,8 +53,8 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
     AddSignalHandler(MakeUnique<NetworkSignalHandler>(inspector_.get(), conn_tracker));
   }
 
-  if (config.grpc_channel) {
-    AddSignalHandler(MakeUnique<GRPCSignalHandler>(inspector_.get(), config.grpc_channel));
+  if (config.grpc_channel) { // wish we could better :(
+    AddSignalHandler(MakeUnique<ProcessSignalHandler>(inspector_.get(), config.grpc_channel));
   }
 
   if (signal_handlers_.empty()) {
@@ -165,6 +165,14 @@ void SysdigService::Run(const std::atomic<CollectorService::ControlValue>& contr
           continue;
         }
         result = signal_handler.handler->HandleSignal(evt);
+      }
+      // increment relevant metrics
+      if (signal_handler.handler->GetName() == "ProcessSignalHandler") {
+        if (result == SignalHandler::PROCESSED) {
+          ++userspace_stats_.nProcessSent;
+        } else if (result == SignalHandler::ERROR) {
+          ++userspace_stats_.nProcessSendFailures;
+        }
       }
     }
   }

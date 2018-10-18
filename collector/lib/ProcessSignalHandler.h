@@ -36,13 +36,13 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-class GRPCSignalHandler : public SignalHandler {
+class ProcessSignalHandler : public SignalHandler {
  public:
-  GRPCSignalHandler(sinsp* inspector, std::shared_ptr<grpc::Channel> channel)
+  ProcessSignalHandler(sinsp* inspector, std::shared_ptr<grpc::Channel> channel)
       : client_(std::move(channel)), formatter_(inspector) {}
 
   std::string GetName() override {
-    return "GRPCSignalHandler";
+    return "ProcessSignalHandler";
   }
 
   bool Start() override {
