@@ -24,6 +24,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "ConnScraper.h"
 
 #include <fcntl.h>
+#include <netinet/tcp.h>
 
 #include <cctype>
 #include <cinttypes>
@@ -201,6 +202,7 @@ int ReadHexBytes(const char* p, const char* endp, void* buf, int chunk_size, int
 struct ConnLineData {
   Endpoint local;
   Endpoint remote;
+  uint8_t state;
   ino_t inode;
 };
 
@@ -251,7 +253,14 @@ bool ParseConnLine(const char* p, const char* endp, Address::Family family, Conn
   p = ParseEndpoint(p, endp, family, &data->remote);
   if (!p) return false;
 
-  p = rep_nextfield(7, p, endp);
+  p = nextfield(p, endp);
+  if (!p) return false;
+  // 3: st
+  int nread = ReadHexBytes(p, endp, &data->state, 1, 1, false);
+  if (nread != 1) return false;
+  p += nread * 2;
+
+  p = rep_nextfield(6, p, endp);
   if (!p) return false;
   // 9: inode
   char* parse_endp;
@@ -300,8 +309,11 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE*
   while (std::fgets(line, sizeof(line), f)) {
     ConnLineData data;
     if (!ParseConnLine(line, line + sizeof(line), family, &data)) continue;
-    if (data.remote.IsNull()) {  // listen socket
+    if (data.state == TCP_LISTEN) {  // listen socket
       listen_endpoints.insert(data.local);
+      continue;
+    }
+    if (data.state != TCP_ESTABLISHED) {
       continue;
     }
 
