@@ -166,14 +166,6 @@ void SysdigService::Run(const std::atomic<CollectorService::ControlValue>& contr
         }
         result = signal_handler.handler->HandleSignal(evt);
       }
-      // increment relevant metrics
-      if (signal_handler.handler->GetName() == "ProcessSignalHandler") {
-        if (result == SignalHandler::PROCESSED) {
-          ++userspace_stats_.nProcessSent;
-        } else if (result == SignalHandler::ERROR) {
-          ++userspace_stats_.nProcessSendFailures;
-        }
-      }
     }
   }
 }

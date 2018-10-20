@@ -54,7 +54,7 @@ class ProcessSignalHandler : public SignalHandler {
   Result HandleSignal(sinsp_evt* evt) override {
     const auto* signal_msg = formatter_.ToProtoMessage(evt);
     if (!signal_msg) {
-      ++(stats_->nProcessResolutionFailed);
+      ++(stats_->nProcessResolutionFailures);
       return IGNORED;
     }
 
@@ -71,7 +71,7 @@ class ProcessSignalHandler : public SignalHandler {
   Result HandleExistingProcess(sinsp_threadinfo* tinfo) override {
     const auto* signal_msg = formatter_.ToProtoMessage(tinfo);
     if (!signal_msg) {
-      ++(stats_->nProcessResolutionFailed);
+      ++(stats_->nProcessResolutionFailures);
       return IGNORED;
     }
 
