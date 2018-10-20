@@ -33,13 +33,14 @@ You should have received a copy of the GNU General Public License along with thi
 #include "CollectorSignalFormatter.h"
 #include "SignalHandler.h"
 #include "SignalServiceClient.h"
+#include "SysdigService.h"
 
 namespace collector {
 
 class ProcessSignalHandler : public SignalHandler {
  public:
-  ProcessSignalHandler(sinsp* inspector, std::shared_ptr<grpc::Channel> channel)
-      : client_(std::move(channel)), formatter_(inspector) {}
+  ProcessSignalHandler(sinsp* inspector, std::shared_ptr<grpc::Channel> channel, SysdigStats* stats)
+      : client_(std::move(channel)), formatter_(inspector), stats_(std::move(stats)) {}
 
   std::string GetName() override {
     return "ProcessSignalHandler";
@@ -53,19 +54,35 @@ class ProcessSignalHandler : public SignalHandler {
   Result HandleSignal(sinsp_evt* evt) override {
     const auto* signal_msg = formatter_.ToProtoMessage(evt);
     if (!signal_msg) {
+      ++(stats_->nProcessResolutionFailed);
       return IGNORED;
     }
 
-    return client_.PushSignals(*signal_msg);
+    auto result = client_.PushSignals(*signal_msg);
+    if (result == SignalHandler::PROCESSED) {
+      ++(stats_->nProcessSent);
+    } else if (result == SignalHandler::ERROR) {
+      ++(stats_->nProcessSendFailures);
+    }
+
+    return result;
   }
 
   Result HandleExistingProcess(sinsp_threadinfo* tinfo) override {
     const auto* signal_msg = formatter_.ToProtoMessage(tinfo);
     if (!signal_msg) {
+      ++(stats_->nProcessResolutionFailed);
       return IGNORED;
     }
 
-    return client_.PushSignals(*signal_msg);
+    auto result = client_.PushSignals(*signal_msg);
+    if (result == SignalHandler::PROCESSED) {
+      ++(stats_->nProcessSent);
+    } else if (result == SignalHandler::ERROR) {
+      ++(stats_->nProcessSendFailures);
+    }
+
+    return result;
   }
 
   std::vector<std::string> GetRelevantEvents() override {
@@ -75,6 +92,7 @@ class ProcessSignalHandler : public SignalHandler {
  private:
   SignalServiceClient client_;
   CollectorSignalFormatter formatter_;
+  SysdigStats* stats_;
 };
 
 }  // namespace collector

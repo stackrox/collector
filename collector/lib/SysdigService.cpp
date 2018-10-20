@@ -50,11 +50,11 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
   inspector_->set_snaplen(config.snapLen);
 
   if (conn_tracker) {
-    AddSignalHandler(MakeUnique<NetworkSignalHandler>(inspector_.get(), conn_tracker));
+    AddSignalHandler(MakeUnique<NetworkSignalHandler>(inspector_.get(), conn_tracker, &userspace_stats_));
   }
 
   if (config.grpc_channel) { // wish we could better :(
-    AddSignalHandler(MakeUnique<ProcessSignalHandler>(inspector_.get(), config.grpc_channel));
+    AddSignalHandler(MakeUnique<ProcessSignalHandler>(inspector_.get(), config.grpc_channel, &userspace_stats_));
   }
 
   if (signal_handlers_.empty()) {

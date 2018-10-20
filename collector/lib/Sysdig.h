@@ -52,6 +52,7 @@ struct SysdigStats {
   // process related metrics
   volatile uint64_t nProcessSent = 0;                 // number of process signals sent
   volatile uint64_t nProcessSendFailures = 0;         // number of process signals failed to send
+  volatile uint64_t nProcessResolutionFailed = 0;     // number of process signals failed to resolve
 };
 
 class Sysdig {
