@@ -43,11 +43,16 @@ struct SysdigStats {
   volatile uint64_t nPreemptions = 0; // the number of preemptions
 
   // stats gathered in user space
-  volatile uint64_t nFilteredEvents = 0;    // events post chisel filter
-  volatile uint64_t nUserspaceEvents = 0;   // events pre chisel filter, should be (nEvents - nDrops)
-  volatile uint64_t nChiselCacheHitsAccept = 0;   // number of events that hit the filter cache
-  volatile uint64_t nChiselCacheHitsReject = 0;   // number of events that hit the filter cache
-  volatile uint64_t nGRPCSendFailures = 0; // number of signals that were not sent on GRPC
+  volatile uint64_t nFilteredEvents = 0;              // events post chisel filter
+  volatile uint64_t nUserspaceEvents = 0;             // events pre chisel filter, should be (nEvents - nDrops)
+  volatile uint64_t nChiselCacheHitsAccept = 0;       // number of events that hit the filter cache
+  volatile uint64_t nChiselCacheHitsReject = 0;       // number of events that hit the filter cache
+  volatile uint64_t nGRPCSendFailures = 0;            // number of signals that were not sent on GRPC
+
+  // process related metrics
+  volatile uint64_t nProcessSent = 0;                 // number of process signals sent
+  volatile uint64_t nProcessSendFailures = 0;         // number of process signals failed to send
+  volatile uint64_t nProcessResolutionFailures = 0;   // number of process signals failed to resolve
 };
 
 class Sysdig {

@@ -65,6 +65,10 @@ void CollectorStatsExporter::run() {
     auto& chiselCacheHitsReject = collectorEventCounters.Add({{"type", "chiselCacheHitsReject"}});
     auto& grpcSendFailures = collectorEventCounters.Add({{"type", "grpcSendFailures"}});
 
+    auto& processSent = collectorEventCounters.Add({{"type", "processSent"}});
+    auto& processSendFailures = collectorEventCounters.Add({{"type", "processSendFailures"}});
+    auto& processResolutionFailures = collectorEventCounters.Add({{"type", "processResolutionFailures"}});
+
     while (thread_.Pause(std::chrono::seconds(1))) {
         SysdigStats stats;
         if (!sysdig_->GetStats(&stats)) {
@@ -79,6 +83,11 @@ void CollectorStatsExporter::run() {
         chiselCacheHitsAccept.Set(stats.nChiselCacheHitsAccept);
         chiselCacheHitsReject.Set(stats.nChiselCacheHitsReject);
         grpcSendFailures.Set(stats.nGRPCSendFailures);
+
+        // process related metrics
+        processSent.Set(stats.nProcessSent);
+        processSendFailures.Set(stats.nProcessSendFailures);
+        processResolutionFailures.Set(stats.nProcessResolutionFailures);
     }
 }
 
