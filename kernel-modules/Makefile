@@ -19,23 +19,21 @@ build-crawl-container: crawl/Dockerfile crawl/kernel-crawler.py
 crawl-centos: build-crawl-container
 	docker run --rm -i kernel-crawler crawl CentOS --preserve-removed-urls < supported-kernels/centos.txt > centos_urls_tmp.json
 	docker run --rm -i kernel-crawler output-from-json crawled < centos_urls_tmp.json > supported-kernels/centos.txt
-	docker run --rm -i kernel-crawler output-from-json removed < centos_urls_tmp.json >> supported-kernels/centos-uncrawled.txt
-# The following sed removes multiple trailing newlines at the end of the file
-# (since the above line will append an extra newline if there are no new uncrawled kernels).
-	sed -e :a -e '/^\n*$$/{$$d;N;ba' -e '}' -i '' supported-kernels/centos-uncrawled.txt
+# inline sed is there to remove spurious blank lines
+	docker run --rm -i kernel-crawler output-from-json removed < centos_urls_tmp.json | sed -e '/^$$/d' >> supported-kernels/centos-uncrawled.txt
 	rm centos_urls_tmp.json
 
 .PHONY: crawl-kops
 crawl-kops: build-crawl-container
-	# kbuild tools are required for each major version of the kernel for Debian.
+# kbuild tools are required for each major version of the kernel for Debian.
 	echo 'http://http.us.debian.org/debian/pool/main/l/linux-tools/linux-kbuild-4.4_4.4-4~bpo8+1_amd64.deb' > supported-kernels/kops.txt
-	docker run --rm -i --entrypoint python3 kernel-crawler repo-crawler.py --print apt http://dist.kope.io/apt jessie main --match-prefix=Package=linux-headers-4 1>> supported-kernels/kops.txt
+	docker run --rm -i --entrypoint python3 kernel-crawler repo-crawler.py --print apt http://dist.kope.io/apt jessie main --match-prefix=Package=linux-headers-4 | sort >> supported-kernels/kops.txt
 
 .PHONY: crawl-amazon
 crawl-amazon: build-crawl-container
 # amazon doesn't actually publish a GPG signature for the package manifest, so
 # we don't actually supply that argument here.
-	docker run --rm -i --entrypoint python3 kernel-crawler repo-crawler.py --print yum http://amazonlinux.us-west-2.amazonaws.com/2017.12/core/latest/x86_64/mirror.list --match-exact=name=kernel-devel > supported-kernels/amazon.txt
+	docker run --rm -i --entrypoint python3 kernel-crawler repo-crawler.py --print yum http://amazonlinux.us-west-2.amazonaws.com/2017.12/core/latest/x86_64/mirror.list --match-exact=name=kernel-devel | sort > supported-kernels/amazon.txt
 
 .PHONY: crawl
 crawl: build-crawl-container crawl-centos crawl-kops crawl-amazon
