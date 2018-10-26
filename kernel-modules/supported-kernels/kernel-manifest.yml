@@ -780,6 +780,15 @@ ubuntu-azure:
       4.15.0-1022:
       - http:/security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.15.0-1022_4.15.0-1022.23_all.deb
       - http:/security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.15.0-1022-azure_4.15.0-1022.23_amd64.deb
+      4.15.0-1023:
+      - http:/security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.15.0-1023_4.15.0-1023.24_all.deb
+      - http:/security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.15.0-1023-azure_4.15.0-1023.24_amd64.deb
+      4.15.0-1025:
+      - http:/security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.15.0-1025_4.15.0-1025.26_all.deb
+      - http:/security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.15.0-1025-azure_4.15.0-1025.26_amd64.deb
+      4.15.0-1028:
+      - http:/security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.15.0-1028_4.15.0-1028.29_all.deb
+      - http:/security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.15.0-1028-azure_4.15.0-1028.29_amd64.deb
 
 ubuntu-gcp:
   description: Ubuntu GCP Kernels
