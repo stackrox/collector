@@ -8,7 +8,7 @@ import (
 
 	"github.com/stackrox/collector/kernel-modules/build/kobuild/command"
 	"github.com/stackrox/collector/kernel-modules/build/kobuild/config"
-)
+	)
 
 var (
 	circleNodeTotal = getEnvVar("CIRCLE_NODE_TOTAL", 1)
@@ -23,10 +23,17 @@ func main() {
 }
 
 func mainCmd() error {
-	configFlag := flag.String("config", "kernel-manifest.yml", "Config file containing build manifest")
+	configFlag := flag.String("config", "", "Config file containing build manifest")
+
 	flag.Parse()
 
-	builders, err := config.Load(*configFlag)
+	var builders config.Builders
+	var err error
+	if *configFlag != "" {
+		builders, err = config.Load(*configFlag)
+	} else {
+		builders, err = config.Generate()
+	}
 	if err != nil {
 		return err
 	}
