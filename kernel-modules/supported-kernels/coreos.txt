@@ -5,12 +5,14 @@ http://stable.release.core-os.net/amd64-usr/1185.3.0/
 http://stable.release.core-os.net/amd64-usr/1800.4.0/
 http://stable.release.core-os.net/amd64-usr/1235.4.0/
 http://stable.release.core-os.net/amd64-usr/1745.4.0/
+http://stable.release.core-os.net/amd64-usr/1855.4.0/
 http://stable.release.core-os.net/amd64-usr/1576.4.0/
 http://stable.release.core-os.net/amd64-usr/1688.4.0/
 http://stable.release.core-os.net/amd64-usr/1800.5.0/
 http://stable.release.core-os.net/amd64-usr/1520.5.0/
 http://stable.release.core-os.net/amd64-usr/1235.5.0/
 http://stable.release.core-os.net/amd64-usr/1745.5.0/
+http://stable.release.core-os.net/amd64-usr/1855.5.0/
 http://stable.release.core-os.net/amd64-usr/1185.5.0/
 http://stable.release.core-os.net/amd64-usr/1576.5.0/
 http://stable.release.core-os.net/amd64-usr/1298.5.0/
