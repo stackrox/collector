@@ -44,6 +44,10 @@ crawl: build-crawl-container crawl-centos crawl-kops crawl-amazon
 	docker run --rm -i kernel-crawler crawl Ubuntu-GKE > supported-kernels/ubuntu-gke.txt
 	docker run --rm -i kernel-crawler crawl Ubuntu-GCP > supported-kernels/ubuntu-gcp.txt
 
+.PHONY: sync
+sync:
+	./sync.sh $(PKG_GCS_PATH) supported-kernels/*.txt
+
 .PHONY: build-amazon
 build-amazon:
 	./build-modules RedHat supported-kernels/amazon.txt
