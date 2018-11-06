@@ -29,6 +29,7 @@ You should have received a copy of the GNU General Public License along with thi
 namespace collector {
 
 struct TokenBucket {
+  TokenBucket() : tokens(0), last_time(0) {}
   int64_t tokens;    // number of tokens in this bucket
   int64_t last_time; // amount of time since the bucket last updated in microseconds
 };
@@ -42,7 +43,7 @@ public:
 
 private:
   void fill_bucket(TokenBucket *b);
-  int64_t time_delta(TokenBucket *b);
+  int64_t refill_count(TokenBucket *b);
 
   int64_t burst_size_; // max number of tokens per bucket and the number added each refill
   int64_t refill_time_; // amount of time between refill in microseconds

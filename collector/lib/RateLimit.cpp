@@ -39,14 +39,15 @@ bool Limiter::Allow(TokenBucket *b) {
 }
 
 int64_t Limiter::Tokens(TokenBucket *b) {
-  int64_t tokens = b->tokens + (time_delta(b) / refill_time_) * burst_size_;
-  return std::min(burst_size_, tokens);
+  return std::min(burst_size_, b->tokens + (refill_count(b) * burst_size_));
 }
 
 bool Limiter::AllowN(TokenBucket *b, int64_t n) {
-  int64_t delta = time_delta(b);
-  b->tokens += (delta / refill_time_) * burst_size_;
-  b->last_time += delta;
+  if (!b->last_time) fill_bucket(b);
+
+  int64_t refill = refill_count(b);
+  b->tokens += refill * burst_size_;
+  b->last_time += refill * refill_time_;
 
   if (b->tokens >= burst_size_) fill_bucket(b);
 
@@ -57,8 +58,8 @@ bool Limiter::AllowN(TokenBucket *b, int64_t n) {
   return true;
 }
 
-int64_t Limiter::time_delta(TokenBucket *b) {
-  return NowMicros() - b->last_time;
+int64_t Limiter::refill_count(TokenBucket *b) {
+  return (NowMicros() - b->last_time) / refill_time_;
 }
 
 void Limiter::fill_bucket(TokenBucket *b) {
