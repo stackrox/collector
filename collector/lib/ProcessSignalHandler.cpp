@@ -48,11 +48,8 @@ SignalHandler::Result ProcessSignalHandler::HandleSignal(sinsp_evt* evt) {
   }
 
   if (!rate_limiter_.Allow(compute_process_key(signal_msg->signal().process_signal()))) {
-    CLOG(INFO) << "Limiting KEY: " << compute_process_key(signal_msg->signal().process_signal()); // TODO remove me
     ++(stats_->nProcessRateLimitCount);
     return IGNORED;
-  } else {
-    CLOG(INFO) << "Allowing KEY: " << compute_process_key(signal_msg->signal().process_signal()); // TODO remove me
   }
 
 
@@ -74,11 +71,8 @@ SignalHandler::Result ProcessSignalHandler::HandleExistingProcess(sinsp_threadin
   }
   
   if (!rate_limiter_.Allow(compute_process_key(signal_msg->signal().process_signal()))) {
-    CLOG(INFO) << "Limiting KEY: " << compute_process_key(signal_msg->signal().process_signal()); // TODO remove me
     ++(stats_->nProcessRateLimitCount);
     return IGNORED;
-  } else {
-    CLOG(INFO) << "Allowing KEY: " << compute_process_key(signal_msg->signal().process_signal()); // TODO remove me
   }
 
   auto result = client_.PushSignals(*signal_msg);
