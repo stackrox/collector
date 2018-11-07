@@ -140,6 +140,11 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
     signal->set_container_id(*container_id);
   }
 
+  // set process lineage
+  std::vector<std::string> lineage;
+  GetProcessLineage(event->get_thread_info(), lineage);
+  for (const auto &p : lineage) signal->add_lineage(p);
+
   return signal;
 }
 
@@ -173,6 +178,11 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   // set container_id
   signal->set_container_id(tinfo->m_container_id);
 
+  // set process lineage
+  std::vector<std::string> lineage;
+  GetProcessLineage(tinfo, lineage);
+  for (const auto &p : lineage) signal->add_lineage(p);
+
   return signal;
 }
 
@@ -192,6 +202,67 @@ bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
   if (name == nullptr || *name == "<NA>") return false;
 
   return true;
+}
+
+sinsp_threadinfo* get_parent_thread(sinsp_threadinfo *ti) {
+  return ti->m_inspector->get_thread(ti->m_ptid, true, true);
+}
+
+// modified version using different impl of get_parent_thread (sysdig/src/userspace/libsinsp/threadinfo.cpp)
+void traverse_parent_state(sinsp_threadinfo *ti, sinsp_threadinfo::visitor_func_t &visitor) {
+  // Use two pointers starting at this, traversing the parent
+  // state, at different rates. If they ever equal each other
+  // before slow is NULL there's a loop.
+  sinsp_threadinfo *slow = get_parent_thread(ti);
+  sinsp_threadinfo *fast = slow;
+
+  // Move fast to its parent
+  fast = (fast ? get_parent_thread(fast) : fast);
+  while (slow) {
+    if (!visitor(slow)) break;
+    // Advance slow one step and advance fast two steps
+    slow = get_parent_thread(slow);
+    // advance fast 2 steps, checking to see if we meet
+    // slow after each step.
+    for (uint32_t i = 0; i < 2; i++) {
+      fast = (fast ?  get_parent_thread(fast) : fast);
+      // If not at the end but fast == slow, there's a loop
+      // in the thread state.
+      if (slow && (slow == fast)) return;
+    }
+  }
+}
+
+void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo, 
+    std::vector<std::string>& lineage) {
+  if (tinfo == NULL) return;
+  sinsp_threadinfo* mt = NULL;
+  if (tinfo->is_main_thread()) {
+    mt = tinfo;
+  } else {
+    mt = tinfo->get_main_thread();
+    if (mt == NULL) return;
+  }
+  sinsp_threadinfo::visitor_func_t visitor = [this, &lineage] (sinsp_threadinfo *pt)
+  {
+    if (pt == NULL) return false;
+    if (pt->m_pid == 0) return false;
+
+    // Only print lineage within the container
+    if (pt->m_pid == pt->m_vpid) return false;
+    if (pt->m_vpid == -1) return false;
+
+    // Collapse parent child processes that have the same path
+    if (lineage.empty() || (lineage.back() != pt->m_exepath)) {
+      lineage.push_back(pt->m_exepath);
+    }
+
+    // Limit max number of ancestors
+    if (lineage.size() >= 20) return false;
+
+    return true;
+  };
+  traverse_parent_state(mt, visitor);
 }
 
 }  // namespace collector
