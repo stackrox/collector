@@ -21,41 +21,45 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef _GRPC_SIGNAL_HANDLER_H_
-#define _GRPC_SIGNAL_HANDLER_H_
+#ifndef _RATE_LIMIT_H_
+#define _RATE_LIMIT_H_
 
-#include <memory>
-
-#include "libsinsp/sinsp.h"
-
-#include <grpcpp/channel.h>
-
-#include "CollectorSignalFormatter.h"
-#include "RateLimit.h"
-#include "SignalHandler.h"
-#include "SignalServiceClient.h"
-#include "SysdigService.h"
+#include "Utility.h"
 
 namespace collector {
 
-class ProcessSignalHandler : public SignalHandler {
- public:
-  ProcessSignalHandler(sinsp* inspector, std::shared_ptr<grpc::Channel> channel, SysdigStats* stats)
-      : client_(std::move(channel)), formatter_(inspector), stats_(stats) {}
+struct TokenBucket {
+  TokenBucket() : tokens(0), last_time(0) {}
+  int64_t tokens;    // number of tokens in this bucket
+  int64_t last_time; // amount of time since the bucket last updated in microseconds
+};
+ 
+class Limiter {
+public: 
+  Limiter(int64_t burst_size, int64_t refill_time);
+  bool Allow(TokenBucket *b);
+  bool AllowN(TokenBucket *b, int64_t n);
+  int64_t Tokens(TokenBucket *b);
 
-  bool Start() override;
-  Result HandleSignal(sinsp_evt* evt) override;
-  Result HandleExistingProcess(sinsp_threadinfo* tinfo) override;
-  std::string GetName() override { return "ProcessSignalHandler"; }
-  std::vector<std::string> GetRelevantEvents() override;
+private:
+  void fill_bucket(TokenBucket *b);
+  int64_t refill_count(TokenBucket *b);
 
- private:
-  SignalServiceClient client_;
-  CollectorSignalFormatter formatter_;
-  SysdigStats* stats_;
-  RateLimitCache rate_limiter_;
+  int64_t burst_size_; // max number of tokens per bucket and the number added each refill
+  int64_t refill_time_; // amount of time between refill in microseconds
 };
 
+class RateLimitCache {
+public: 
+  RateLimitCache();
+  RateLimitCache(size_t capacity, int64_t burst_size, int64_t refill_time);
+  bool Allow(std::string key);
+
+private:
+  size_t capacity_;
+  std::unique_ptr<Limiter> limiter_;
+  unordered_map<std::string, TokenBucket> cache_;
+};
 }  // namespace collector
 
-#endif  // _GRPC_SIGNAL_HANDLER_H_
+#endif  // _RATE_LIMIT_H_

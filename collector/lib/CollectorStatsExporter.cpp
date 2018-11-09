@@ -68,6 +68,7 @@ void CollectorStatsExporter::run() {
     auto& processSent = collectorEventCounters.Add({{"type", "processSent"}});
     auto& processSendFailures = collectorEventCounters.Add({{"type", "processSendFailures"}});
     auto& processResolutionFailures = collectorEventCounters.Add({{"type", "processResolutionFailures"}});
+    auto& processRateLimitCount = collectorEventCounters.Add({{"type", "processRateLimitCount"}});
 
     while (thread_.Pause(std::chrono::seconds(1))) {
         SysdigStats stats;
@@ -88,6 +89,7 @@ void CollectorStatsExporter::run() {
         processSent.Set(stats.nProcessSent);
         processSendFailures.Set(stats.nProcessSendFailures);
         processResolutionFailures.Set(stats.nProcessResolutionFailures);
+        processRateLimitCount.Set(stats.nProcessRateLimitCount);
     }
 }
 
