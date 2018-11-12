@@ -33,9 +33,9 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-class CollectorSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamMessage> {
+class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamMessage> {
  public:
-  CollectorSignalFormatter(sinsp* inspector) : event_names_(EventNames::GetInstance()) {
+  ProcessSignalFormatter(sinsp* inspector) : event_names_(EventNames::GetInstance()) {
     event_extractor_.Init(inspector);
   }
 
