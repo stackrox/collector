@@ -36,7 +36,7 @@ jobs:
   kernels:
     docker:
     - image: google/cloud-sdk:206.0.0-alpine
-    parallelism: 4
+    parallelism: 1
     working_directory: /go/src/github.com/stackrox/collector
 
     steps:
