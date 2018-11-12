@@ -21,8 +21,8 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef _COLLECTOR_SIGNAL_FORMATTER_H_
-#define _COLLECTOR_SIGNAL_FORMATTER_H_
+#ifndef _PROCESS_SIGNAL_FORMATTER_H_
+#define _PROCESS_SIGNAL_FORMATTER_H_
 
 #include "EventNames.h"
 #include "ProtoSignalFormatter.h"
@@ -60,4 +60,4 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
 
 }  // namespace collector
 
-#endif  // _COLLECTOR_SIGNAL_FORMATTER_H_
+#endif  // _PROCESS_SIGNAL_FORMATTER_H_

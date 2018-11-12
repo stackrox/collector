@@ -30,7 +30,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <grpcpp/channel.h>
 
-#include "CollectorSignalFormatter.h"
+#include "ProcessSignalFormatter.h"
 #include "RateLimit.h"
 #include "SignalHandler.h"
 #include "SignalServiceClient.h"
@@ -51,7 +51,7 @@ class ProcessSignalHandler : public SignalHandler {
 
  private:
   SignalServiceClient client_;
-  CollectorSignalFormatter formatter_;
+  ProcessSignalFormatter formatter_;
   SysdigStats* stats_;
   RateLimitCache rate_limiter_;
 };
