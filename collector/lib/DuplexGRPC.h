@@ -609,7 +609,7 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
     auto next_status = this->cq_.AsyncNext(&raw_tag, &ok, deadline);
     if (next_status == grpc::CompletionQueue::GOT_EVENT) {
       Op op = TagToOp(raw_tag);
-      ProcessEvent(op, ok);
+      ProcessSignalMessage(op, ok);
       if (op_res_out) {
         op_res_out->op = op;
         op_res_out->ok = ok;
@@ -636,7 +636,7 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
     }
   }
 
-  void ProcessEvent(Op op, bool ok) {
+  void ProcessSignalMessage(Op op, bool ok) {
     switch (op) {
       case Op::READ:
         HandleRead(ok);

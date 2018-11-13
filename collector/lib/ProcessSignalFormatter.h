@@ -28,29 +28,26 @@ You should have received a copy of the GNU General Public License along with thi
 #include "ProtoSignalFormatter.h"
 #include "SysdigEventExtractor.h"
 
-#include "api/v1/signal.pb.h"
+#include "api/v1/process_signal.pb.h"
 #include "internalapi/sensor/signal_service.pb.h"
 
 namespace collector {
 
-class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamMessage> {
+class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::ProcessSignalMessage> {
  public:
   ProcessSignalFormatter(sinsp* inspector) : event_names_(EventNames::GetInstance()) {
     event_extractor_.Init(inspector);
   }
 
-  using Signal = v1::Signal;
   using ProcessSignal = v1::ProcessSignal;
 
-  const sensor::SignalStreamMessage* ToProtoMessage(sinsp_evt* event) override;
-  const sensor::SignalStreamMessage* ToProtoMessage(sinsp_threadinfo* tinfo);
+  const sensor::ProcessSignalMessage* ToProtoMessage(sinsp_evt* event) override;
+  const sensor::ProcessSignalMessage* ToProtoMessage(sinsp_threadinfo* tinfo);
 
  private:
-  Signal* CreateSignal(sinsp_evt* event);
   ProcessSignal* CreateProcessSignal(sinsp_evt* event);
   bool ValidateProcessDetails(sinsp_evt* event);
 
-  Signal* CreateSignal(sinsp_threadinfo* tinfo);
   ProcessSignal* CreateProcessSignal(sinsp_threadinfo* tinfo);
   bool ValidateProcessDetails(sinsp_threadinfo* tinfo);
 

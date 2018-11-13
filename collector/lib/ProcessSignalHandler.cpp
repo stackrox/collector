@@ -24,7 +24,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "ProcessSignalHandler.h"
 #include "RateLimit.h"
 
-#include "api/v1/signal.pb.h"
+#include "api/v1/process_signal.pb.h"
 #include <sstream>
 
 namespace collector {
@@ -47,7 +47,7 @@ SignalHandler::Result ProcessSignalHandler::HandleSignal(sinsp_evt* evt) {
     return IGNORED;
   }
 
-  if (!rate_limiter_.Allow(compute_process_key(signal_msg->signal().process_signal()))) {
+  if (!rate_limiter_.Allow(compute_process_key(signal_msg->process_signal()))) {
     ++(stats_->nProcessRateLimitCount);
     return IGNORED;
   }
@@ -70,7 +70,7 @@ SignalHandler::Result ProcessSignalHandler::HandleExistingProcess(sinsp_threadin
     return IGNORED;
   }
   
-  if (!rate_limiter_.Allow(compute_process_key(signal_msg->signal().process_signal()))) {
+  if (!rate_limiter_.Allow(compute_process_key(signal_msg->process_signal()))) {
     ++(stats_->nProcessRateLimitCount);
     return IGNORED;
   }

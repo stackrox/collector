@@ -32,8 +32,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-using SignalStreamMessage = sensor::SignalStreamMessage;
-using Signal = ProcessSignalFormatter::Signal;
+using ProcessSignalMessage = sensor::ProcessSignalMessage;
 using ProcessSignal = ProcessSignalFormatter::ProcessSignal;
 
 using Timestamp = google::protobuf::Timestamp;
@@ -65,7 +64,7 @@ string extract_proc_args(sinsp_threadinfo *tinfo) {
 
 }
 
-const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* event) {
+const ProcessSignalMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* event) {
   if (process_signals[event->get_type()] == ProcessSignalType::UNKNOWN_PROCESS_TYPE) {
     return nullptr;
   }
@@ -79,16 +78,13 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* eve
   ProcessSignal* process_signal = CreateProcessSignal(event);
   if (!process_signal) return nullptr;
 
-  Signal* signal = Allocate<Signal>();
-  signal->set_allocated_process_signal(process_signal);
-
-  SignalStreamMessage* signal_stream_message = AllocateRoot();
-  signal_stream_message->clear_collector_register_request();
-  signal_stream_message->set_allocated_signal(signal);
-  return signal_stream_message;
+  ProcessSignalMessage* process_message = AllocateRoot();
+  process_message->clear_collector_register_request();
+  process_message->set_allocated_process_signal(process_signal);
+  return process_message;
 }
 
-const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_threadinfo* tinfo) {
+const ProcessSignalMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_threadinfo* tinfo) {
   if (!ValidateProcessDetails(tinfo)) {
     CLOG(INFO) << "Dropping process event: invalid details";
     return nullptr;
@@ -98,13 +94,10 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_threadin
   ProcessSignal* process_signal = CreateProcessSignal(tinfo);
   if (!process_signal) return nullptr;
 
-  Signal* signal = Allocate<Signal>();
-  signal->set_allocated_process_signal(process_signal);
-
-  SignalStreamMessage* signal_stream_message = AllocateRoot();
-  signal_stream_message->clear_collector_register_request();
-  signal_stream_message->set_allocated_signal(signal);
-  return signal_stream_message;
+  ProcessSignalMessage* process_message = AllocateRoot();
+  process_message->clear_collector_register_request();
+  process_message->set_allocated_process_signal(process_signal);
+  return process_message;
 }
 
 

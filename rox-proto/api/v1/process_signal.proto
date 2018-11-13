@@ -7,14 +7,6 @@ import "google/protobuf/timestamp.proto";
 
 package v1;
 
-// Signal message tracks process and network activity.
-// Specifically, process launches and network connects/accepts.
-message Signal {
-    oneof signal {
-        ProcessSignal process_signal = 1;
-    }
-}
-
 // ProcessSignal tracks process launches.
 message ProcessSignal {
     // A unique UUID for identifying the message

@@ -37,7 +37,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 
-#include "api/v1/signal.pb.h"
+#include "api/v1/process_signal.pb.h"
 #include "internalapi/sensor/signal_service.grpc.pb.h"
 
 namespace collector {
@@ -45,7 +45,7 @@ namespace collector {
 class SignalServiceClient {
  public:
   using SignalService = sensor::SignalService;
-  using SignalStreamMessage = sensor::SignalStreamMessage;
+  using ProcessSignalMessage = sensor::ProcessSignalMessage;
 
   explicit SignalServiceClient(std::shared_ptr<grpc::Channel> channel)
       : channel_(std::move(channel)), stream_active_(false) {}
@@ -53,7 +53,7 @@ class SignalServiceClient {
   void Start();
   void Stop();
 
-  SignalHandler::Result PushSignals(const SignalStreamMessage& msg);
+  SignalHandler::Result PushSignals(const ProcessSignalMessage& msg);
 
  private:
   void EstablishGRPCStream();
@@ -67,7 +67,7 @@ class SignalServiceClient {
 
   // This needs to have the same lifetime as the class.
   std::unique_ptr<grpc::ClientContext> context_;
-  std::unique_ptr<DuplexClientWriter<SignalStreamMessage>> writer_;
+  std::unique_ptr<DuplexClientWriter<ProcessSignalMessage>> writer_;
 
   bool first_write_;
 };

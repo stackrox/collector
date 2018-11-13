@@ -4,19 +4,19 @@ option go_package = "sensor";
 option cc_enable_arenas = true;
 
 import "internalapi/sensor/collector.proto";
-import "api/v1/signal.proto";
+import "api/v1/process_signal.proto";
 import "api/v1/empty.proto";
 
 package sensor;
 
-// A single message in the event stream between Collector and Sensor.
-message SignalStreamMessage {
+// A process signal message in the event stream between Collector and Sensor.
+message ProcessSignalMessage {
     oneof msg {
         // The first message in every stream that registers Collector with Sensor.
         CollectorRegisterRequest collector_register_request = 1;
 
-        // A signal event observed by Collector.
-        v1.Signal signal                                       = 2;
+        // A process event observed by Collector.
+        v1.ProcessSignal process_signal                     = 2;
     }
 }
 
@@ -24,5 +24,5 @@ message SignalStreamMessage {
 service SignalService {
     // Note: the response is a stream due to a bug in the C++ GRPC client library. The server is not expected to
     // send anything via this stream.
-    rpc PushSignals (stream SignalStreamMessage) returns (stream v1.Empty);
+    rpc PushSignals (stream ProcessSignalMessage) returns (stream v1.Empty);
 }

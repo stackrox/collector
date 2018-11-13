@@ -79,7 +79,7 @@ void SignalServiceClient::Stop() {
   context_->TryCancel();
 }
 
-SignalHandler::Result SignalServiceClient::PushSignals(const SignalStreamMessage& msg) {
+SignalHandler::Result SignalServiceClient::PushSignals(const ProcessSignalMessage& msg) {
   if (!stream_active_.load(std::memory_order_acquire)) {
   	CLOG_THROTTLED(ERROR, std::chrono::seconds(10))
 		  << "GRPC stream is not established";
