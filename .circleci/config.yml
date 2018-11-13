@@ -34,17 +34,18 @@ jobs:
         command: docker push stackrox/collector-builder:cache
 
   kernels:
-    docker:
-    - image: google/cloud-sdk:206.0.0-alpine
-    parallelism: 2
-    working_directory: /go/src/github.com/stackrox/collector
+    machine: true
+    parallelism: 16
+    environment:
+    - GOPATH: /go
 
     steps:
     - run:
         name: Google Authenticate
-        working_directory: /root/.config/gcloud
+        working_directory: /home/circleci/.config/gcloud
         command: |
           echo "$GOOGLE_CREDENTIALS_KERNEL_CACHE" > auth.json
+          pip install google_compute_engine
           gcloud config set core/project stackrox-ci
           gcloud config set compute/region us-east1
           gcloud config set compute/zone us-east1-d
@@ -52,69 +53,47 @@ jobs:
           gcloud auth list
 
     - run:
-        name: Install Build Dependencies
-        working_directory: /tmp
+        name: Create Directory
         command: |
-          wget --quiet https://download.docker.com/linux/static/stable/x86_64/docker-18.06.0-ce.tgz
-          tar -xf docker-18.06.0-ce.tgz
-          install docker/docker /usr/bin
-          rm -f docker-18.06.0-ce.tgz
-          apk add --no-cache make
+          sudo mkdir -m 0777 -p /go/src /go/bin /go/pkg /packages
+          mkdir -p /go/src/github.com/stackrox/collector
 
-    - setup_remote_docker
-    - checkout
+    - checkout:
+        path: /go/src/github.com/stackrox/collector
 
     - run:
         name: Download Package Cache
+        working_directory: /go/src/github.com/stackrox/collector
         command: |
           make -C kernel-modules download-package-cache
           find /packages
           du -h /packages
 
     - run:
-        name: Pack Docker Volumes
-        command: |
-          docker create \
-            --name data \
-            -v /packages \
-            -v /sysdig-src \
-            -v /output \
-            -v /config \
-            alpine:3.8 /bin/true
-          echo 'Packing packages volume'
-          time docker cp /packages/. data:/packages
-          echo 'Packing sysdig volume'
-          time docker cp sysdig/src/. data:/sysdig-src
-          echo 'Packing config volume'
-          time docker cp kernel-modules/supported-kernels/kernel-manifest.yml data:/config
-
-    - run:
         name: Build Builder Image
+        working_directory: /go/src/github.com/stackrox/collector
         command: |
           make -C kernel-modules build-container
 
     - run:
         name: Build all
+        working_directory: /go/src/github.com/stackrox/collector
         command: |
           echo "Nodes total: $CIRCLE_NODE_TOTAL"
           echo "Node index:  $CIRCLE_NODE_INDEX"
           docker run --rm -it \
-            --volumes-from data \
+            -v /packages:/packages \
+            -v $PWD/sysdig/src:/sysdig-src \
+            -v $PWD/kernel-modules/supported-kernels:/config \
+            -v $PWD/kernel-modules/container/kernel-modules:/output \
             -e CIRCLE_NODE_TOTAL \
             -e CIRCLE_NODE_INDEX \
             build-kernel-modules:latest \
               --config /config/kernel-manifest.yml
-
-    - run:
-        name: Copy Built Modules to Workspace
-        working_directory: kernel-modules
-        command: |
-          mkdir -p container/kernel-modules/
-          docker cp data:/output/. container/kernel-modules/
-          find container/kernel-modules
+          find kernel-modules/container/kernel-modules
 
     - persist_to_workspace:
-        root: .
+        root: /go/src/github.com/stackrox/collector
         paths:
         - kernel-modules/container/kernel-modules
 
