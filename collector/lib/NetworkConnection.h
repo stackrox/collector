@@ -209,10 +209,10 @@ class Connection {
 
 std::ostream& operator<<(std::ostream& os, const Connection& conn);
 
-// Checks if the given connection is relevant (i.e., it is a client-initiated connection with a remote address that is
+// Checks if the given connection is relevant (i.e., it is a connection with a remote address that is
 // not a local loopback address).
 inline bool IsRelevantConnection(const Connection& conn) {
-  return !conn.is_server() && !conn.remote().address().IsLocal();
+  return !conn.remote().address().IsLocal();
 }
 
 }  // namespace collector
