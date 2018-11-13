@@ -21,8 +21,8 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef _GRPC_SIGNAL_HANDLER_H_
-#define _GRPC_SIGNAL_HANDLER_H_
+#ifndef __PROCESS_SIGNAL_HANDLER_H__
+#define __PROCESS_SIGNAL_HANDLER_H__
 
 #include <memory>
 
@@ -58,4 +58,4 @@ class ProcessSignalHandler : public SignalHandler {
 
 }  // namespace collector
 
-#endif  // _GRPC_SIGNAL_HANDLER_H_
+#endif  // __PROCESS_SIGNAL_HANDLER_H__
