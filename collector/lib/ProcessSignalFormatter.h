@@ -21,8 +21,8 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef _COLLECTOR_SIGNAL_FORMATTER_H_
-#define _COLLECTOR_SIGNAL_FORMATTER_H_
+#ifndef _PROCESS_SIGNAL_FORMATTER_H_
+#define _PROCESS_SIGNAL_FORMATTER_H_
 
 #include "EventNames.h"
 #include "ProtoSignalFormatter.h"
@@ -33,9 +33,9 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-class CollectorSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamMessage> {
+class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamMessage> {
  public:
-  CollectorSignalFormatter(sinsp* inspector) : event_names_(EventNames::GetInstance()) {
+  ProcessSignalFormatter(sinsp* inspector) : event_names_(EventNames::GetInstance()) {
     event_extractor_.Init(inspector);
   }
 
@@ -60,4 +60,4 @@ class CollectorSignalFormatter : public ProtoSignalFormatter<sensor::SignalStrea
 
 }  // namespace collector
 
-#endif  // _COLLECTOR_SIGNAL_FORMATTER_H_
+#endif  // _PROCESS_SIGNAL_FORMATTER_H_

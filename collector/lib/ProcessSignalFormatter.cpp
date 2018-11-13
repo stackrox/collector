@@ -21,7 +21,7 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#include "CollectorSignalFormatter.h"
+#include "ProcessSignalFormatter.h"
 #include <google/protobuf/util/time_util.h>
 
 #include <uuid/uuid.h>
@@ -33,8 +33,8 @@ You should have received a copy of the GNU General Public License along with thi
 namespace collector {
 
 using SignalStreamMessage = sensor::SignalStreamMessage;
-using Signal = CollectorSignalFormatter::Signal;
-using ProcessSignal = CollectorSignalFormatter::ProcessSignal;
+using Signal = ProcessSignalFormatter::Signal;
+using ProcessSignal = ProcessSignalFormatter::ProcessSignal;
 
 using Timestamp = google::protobuf::Timestamp;
 using TimeUtil = google::protobuf::util::TimeUtil;
@@ -65,7 +65,7 @@ string extract_proc_args(sinsp_threadinfo *tinfo) {
 
 }
 
-const SignalStreamMessage* CollectorSignalFormatter::ToProtoMessage(sinsp_evt* event) {
+const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* event) {
   if (process_signals[event->get_type()] == ProcessSignalType::UNKNOWN_PROCESS_TYPE) {
     return nullptr;
   }
@@ -88,7 +88,7 @@ const SignalStreamMessage* CollectorSignalFormatter::ToProtoMessage(sinsp_evt* e
   return signal_stream_message;
 }
 
-const SignalStreamMessage* CollectorSignalFormatter::ToProtoMessage(sinsp_threadinfo* tinfo) {
+const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_threadinfo* tinfo) {
   if (!ValidateProcessDetails(tinfo)) {
     CLOG(INFO) << "Dropping process event: invalid details";
     return nullptr;
@@ -108,7 +108,7 @@ const SignalStreamMessage* CollectorSignalFormatter::ToProtoMessage(sinsp_thread
 }
 
 
-ProcessSignal* CollectorSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
+ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   auto signal = Allocate<ProcessSignal>();
 
   // set id
@@ -143,7 +143,7 @@ ProcessSignal* CollectorSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   return signal;
 }
 
-ProcessSignal* CollectorSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tinfo) {
+ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tinfo) {
   auto signal = Allocate<ProcessSignal>();
 
   // set id
@@ -176,14 +176,14 @@ ProcessSignal* CollectorSignalFormatter::CreateProcessSignal(sinsp_threadinfo* t
   return signal;
 }
 
-bool CollectorSignalFormatter::ValidateProcessDetails(sinsp_threadinfo* tinfo) {
+bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_threadinfo* tinfo) {
   if (tinfo->m_exepath == "<NA>") return false;
   if (tinfo->get_comm() == "<NA>") return false;
 
   return true;
 }
 
-bool CollectorSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
+bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
   const std::string* path = event_extractor_.get_exepath(event);
   if (path == nullptr || *path == "<NA>") return false;
 
