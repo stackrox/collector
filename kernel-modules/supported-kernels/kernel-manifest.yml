@@ -389,6 +389,8 @@ coreos:
   type: CoreOS
   versions:
     coreos:
+      4.9.24:
+      - http:/stable.release.core-os.net/amd64-usr/1353.8.0/bundle.tgz
       4.11.11:
       - http:/stable.release.core-os.net/amd64-usr/1409.7.0/bundle.tgz
       4.11.6:
@@ -421,8 +423,12 @@ coreos:
       - http:/stable.release.core-os.net/amd64-usr/1800.5.0/bundle.tgz
       4.14.63:
       - http:/stable.release.core-os.net/amd64-usr/1800.7.0/bundle.tgz
-      4.9.24:
-      - http:/stable.release.core-os.net/amd64-usr/1353.8.0/bundle.tgz
+      4.14.67:
+      - http:/stable.release.core-os.net/amd64-usr/1855.4.0/bundle.tgz
+      4.14.74:
+      - http:/stable.release.core-os.net/amd64-usr/1855.5.0/bundle.tgz
+      4.14.78:
+      - http:/stable.release.core-os.net/amd64-usr/1911.3.0/bundle.tgz
     coreos-r1:
       4.11.12:
       - http:/stable.release.core-os.net/amd64-usr/1409.9.0/bundle.tgz
