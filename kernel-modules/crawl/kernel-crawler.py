@@ -36,6 +36,12 @@ ubuntu_excludes = [
 ubuntu_backport_excludes = [
     "~", # prevent duplicate backports from cluttering the list
 ]
+debian_excludes = [
+    "4.17.0", # 4.17+ are not supported yet
+    "4.18.0",
+    "4.19.0",
+    "3.2.0", "3.16.0" # legacy
+]
 repos = {
     "CentOS" : [
         {
@@ -128,6 +134,15 @@ repos = {
             ],
             "page_pattern" : "/html/body//a[regex:test(@href, '^1185|1[2-9][0-9]{2}')]/@href"
         }
+    ],
+    "Debian": [
+        {
+            "root": "http://ftp.us.debian.org/debian/pool/main/l/",
+            "discovery_pattern": "/html/body//a[regex:test(@href, '^linux/')]/@href",
+            "subdirs": [""],
+            "page_pattern": "/html/body//a[regex:test(@href, '^linux-(?:headers-[0-9.]+-[^-]+-(?:amd64|common_)|kbuild-.*_4.9.130).*(?:amd64|all).deb$')]/@href",
+            "exclude_patterns": debian_excludes,
+        },
     ],
 
     "Ubuntu": [

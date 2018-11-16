@@ -1,0 +1,5 @@
+http://ftp.us.debian.org/debian/pool/main/l/linux/linux-kbuild-4.9_4.9.130-2_amd64.deb
+http://ftp.us.debian.org/debian/pool/main/l/linux/linux-headers-4.9.0-8-common_4.9.130-2_all.deb
+http://ftp.us.debian.org/debian/pool/main/l/linux/linux-headers-4.9.0-8-amd64_4.9.130-2_amd64.deb
+http://ftp.us.debian.org/debian/pool/main/l/linux/linux-headers-4.9.0-0.bpo.6-common_4.9.88-1+deb9u1~bpo8+1_all.deb
+http://ftp.us.debian.org/debian/pool/main/l/linux/linux-headers-4.9.0-0.bpo.6-amd64_4.9.88-1+deb9u1~bpo8+1_amd64.deb
