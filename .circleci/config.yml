@@ -35,7 +35,7 @@ jobs:
 
   kernels:
     machine: true
-    parallelism: 16
+    parallelism: 12
     environment:
     - GOPATH: /go
 

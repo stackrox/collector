@@ -31,7 +31,11 @@ func mainCmd() error {
 		return err
 	}
 
-	manifests := builders.Manifests()
+	manifests, err := builders.Manifests()
+	if err != nil {
+		return err
+	}
+
 	markManifests(manifests)
 	return buildManifests(manifests)
 }
@@ -57,14 +61,13 @@ func buildManifests(manifests []*config.Manifest) error {
 		}
 
 		fmt.Printf("Starting build of manifest %d/%d\n", index+1, len(manifests))
-		fmt.Printf("%s version %s-%s (%s)\n", manifest.Builder, manifest.Version, manifest.Flavor, manifest.Kind)
-		fmt.Printf("  %s\n", manifest.Description)
+		fmt.Printf("%s.%s (%s)\n", manifest.Kind, manifest.Builder, manifest.Description)
 		fmt.Printf("Files:\n")
 		for _, pkg := range manifest.Packages {
 			fmt.Printf("  - %s\n", pkg)
 		}
 		args := []string{
-			manifest.Kind, manifest.Version, manifest.Flavor,
+			manifest.Kind,
 		}
 		args = append(args, manifest.Packages...)
 		fmt.Printf("Command:\n")
