@@ -88,8 +88,13 @@ rhel_build() {
     build_modules "$PWD/usr/src/kernels/${release}" "$release" "$module_file"
 }
 
+extract() {
+    echo "Extracting $1"
+    dpkg -x "$1" ./
+}
+
 debian_build() {
-    if [[ $# -ne 3 ]]; then
+    if [[ $# -lt 3 ]] || [[ $# -gt 4 ]]; then
         echo "Incorrect arguments to debian_build() ($* given)"
         return 1
     fi
@@ -97,25 +102,42 @@ debian_build() {
     local release="$1"
     local kbuild_deb_file="/packages/$2"
     local header_deb_file="/packages/$3"
+    local common_deb_file=""
+    if [[ $# -eq 4 ]]; then
+	local common_deb_file="/packages/$4"
+    fi
     local module_file="/output/Debian/collector-${release}.ko"
+    local src_dir="${PWD}/usr/src/linux-headers-${release}"
 
     echo "Running a Debian build"
     echo "  release         | $release"
     echo "  kbuild_deb_file | $kbuild_deb_file"
     echo "  header_deb_file | $header_deb_file"
+    echo "  common_deb_file | $common_deb_file"
     echo "  module_file     | $module_file"
 
-    dpkg -x "$header_deb_file" ./
-    dpkg -x "$kbuild_deb_file" ./
+    extract "$header_deb_file"
+    extract "$kbuild_deb_file"
+    [[ -n "${common_deb_file}" ]] && extract "${common_deb_file}"
+
 
     # Fix symbolic links
     unlink "lib/modules/${release}/build"
-    ln -s "usr/src/linux-headers-${release}" "lib/modules/${release}/build"
-
+    ln -sr "${PWD}/usr/src/linux-headers-${release}" "lib/modules/${release}/build"
+    if [[ -n "${common_deb_file}" ]]; then
+	local commons_dir="${PWD}/usr/src/linux-headers-${release/amd64/common}"
+	unlink "lib/modules/${release}/source"
+	ln -s "${commons_dir}" "lib/modules/${release}/source"
+    fi
+    
     # Hack Makefile
-    sed -i 's/@://' "usr/src/linux-headers-${release}/Makefile"
-    sed -i 's|$(cmd) %.*$|$(cmd) : all|' "usr/src/linux-headers-${release}/Makefile"
-
+    sed -i -e 's/@://' \
+	-e 's|$(cmd) %.*$|$(cmd) : all|' \
+	"${src_dir}/Makefile"
+    if [[ -n "${common_deb_file}" ]]; then
+	sed -i -e '0,/MAKEARGS.*$/s__MAKEARGS := -C '"${commons_dir} O=${src_dir}"_ \
+	"${src_dir}/Makefile"
+    fi
     build_modules "$PWD/usr/src/linux-headers-${release}" "$release" "$module_file"
 }
 
