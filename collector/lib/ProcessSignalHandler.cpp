@@ -52,7 +52,6 @@ SignalHandler::Result ProcessSignalHandler::HandleSignal(sinsp_evt* evt) {
     return IGNORED;
   }
 
-
   auto result = client_.PushSignals(*signal_msg);
   if (result == SignalHandler::PROCESSED) {
     ++(stats_->nProcessSent);
