@@ -173,7 +173,7 @@ jobs:
         command: |
           mkdir -p "${WORKSPACE_ROOT}/docker-images"
           docker image save build-kernel-modules \
-          | gzip -c >"{WORKSPACE_ROOT}/docker-images/build-kernel-modules.tgz"
+          | gzip -c >"${WORKSPACE_ROOT}/docker-images/build-kernel-modules.tgz"
 
     - persist_to_workspace:
         root: ~/workspace
