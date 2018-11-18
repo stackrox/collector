@@ -222,7 +222,7 @@ jobs:
 
   grpc:
     docker:
-    - image: circleci/golang:1.11.2-stretch
+    - image: ubuntu:trusty
     working_directory: /go/src/github.com/stackrox/collector
 
     steps:
