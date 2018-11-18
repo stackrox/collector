@@ -3,7 +3,7 @@ version: 2
 jobs:
   init:
     docker:
-      image: circleci/golang:1.11.2-stretch
+    - image: circleci/golang:1.11.2-stretch
 
     working_directory: ~/workspace
 
