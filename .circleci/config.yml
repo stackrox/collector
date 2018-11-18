@@ -54,7 +54,7 @@ jobs:
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
-    - MODULE_BUCKET_BASE: gs://kernel-modules/97f2d0644df7d292009b2dbdea0bb4860995fa064ba0e9f74b8e82cf3b4601eb
+    - MODULE_BUCKET_BASE: gs://collector-modules/97f2d0644df7d292009b2dbdea0bb4860995fa064ba0e9f74b8e82cf3b4601eb
     - SOURCE_ROOT: /home/circleci/workspace/go/src/github.com/stackrox/collector
 
     steps:
@@ -161,7 +161,7 @@ jobs:
     machine: true
     parallelism: 8
     environment:
-      - MODULE_BUCKET_BASE: gs://kernel-modules/97f2d0644df7d292009b2dbdea0bb4860995fa064ba0e9f74b8e82cf3b4601eb
+      - MODULE_BUCKET_BASE: gs://collector-modules/97f2d0644df7d292009b2dbdea0bb4860995fa064ba0e9f74b8e82cf3b4601eb
       - SOURCE_ROOT: /home/circleci/workspace/go/src/github.com/stackrox/collector
 
     steps:
