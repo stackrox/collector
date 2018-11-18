@@ -56,7 +56,7 @@ function download_kernel_module() {
 }
 
 function find_kernel_module() {
-    EXPECTED_PATH="/kernel-modules/$DISTRO/$KERNEL_MODULE"
+    EXPECTED_PATH="/kernel-modules/$KERNEL_MODULE"
     if [[ -f "${EXPECTED_PATH}.gz" ]]; then
       gunzip -c "${EXPECTED_PATH}.gz" >"$MODULE_PATH"
     elif [ -f "$EXPECTED_PATH" ]; then
@@ -65,7 +65,7 @@ function find_kernel_module() {
       echo "Didn't find $KERNEL_MODULE built-in." >&2
       return 1
     fi
-    echo "Using built-in $MODULE_NAME module for $DISTRO kernel version $KERNEL_VERSION." >&2
+    echo "Using built-in $MODULE_NAME module for kernel version $KERNEL_VERSION." >&2
     return 0
 }
 
@@ -74,26 +74,6 @@ function find_kernel_module() {
 export NODE_HOSTNAME=""
 NODE_HOSTNAME=$(curl -s --unix-socket /host/var/run/docker.sock http://localhost/info | jq --raw-output .Name)
 
-OS_DETAILS=$(curl -s --unix-socket /host/var/run/docker.sock http://localhost/info | jq --raw-output .OperatingSystem)
-
-if echo $OS_DETAILS | grep -qi Ubuntu; then
-    DISTRO="Ubuntu"
-elif echo $OS_DETAILS | grep -qi debian; then
-    DISTRO="Debian"
-elif echo $OS_DETAILS | grep -qi centos; then
-    DISTRO="RedHat"
-elif echo $OS_DETAILS | grep -qi "Red Hat"; then
-    DISTRO="RedHat"
-elif echo $OS_DETAILS | grep -qi OpenShift; then
-    DISTRO="RedHat"
-elif echo $OS_DETAILS | grep -qi "Amazon Linux"; then
-    DISTRO="RedHat"
-elif echo $OS_DETAILS | grep -qi coreos; then
-    DISTRO="CoreOS"
-else
-    echo "Distribution '$OS_DETAILS' is not supported."
-    exit 1
-fi
 
 mkdir -p /module/
 if ! find_kernel_module ; then
