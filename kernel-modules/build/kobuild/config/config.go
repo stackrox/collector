@@ -42,7 +42,11 @@ func (m *Manifest) Fullname() string {
 // KernelVersion returns the kernel version for the given manifest to match
 // the output of `uname -r`.
 func (m *Manifest) KernelVersion() string {
-	return fmt.Sprintf("%s-%s", m.Version, m.Flavor)
+	sep := "-"
+	if m.Kind == "RedHat" {
+		sep = "."
+	}
+	return fmt.Sprintf("%s%s%s", m.Version, sep, m.Flavor)
 }
 
 // Load reads the given filename as yaml and parses the content into a list of
