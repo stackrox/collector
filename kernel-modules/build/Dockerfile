@@ -16,13 +16,12 @@ RUN apt-get update \
       make \
       gcc \
       g++ \
-      # Some of the Debian builds require exactly g++-4.8, by name.
       libelf-dev \
       kmod \
       wget \
-      # For RedHat-family builds:
+      `# For RedHat-family builds:` \
       rpm2cpio cpio \
-      # For CoreOS builds:
+      `# For CoreOS builds:` \
       bzip2 \
       kpartx \
  ;
@@ -59,6 +58,7 @@ COPY --from=builder /tmp/kobuild /usr/bin/
 
 RUN mkdir -p /output
 COPY build-kos /usr/bin/
+COPY prepare-src /usr/bin
 
 WORKDIR /scratch
 ENTRYPOINT [ "/usr/bin/kobuild" ]

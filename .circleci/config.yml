@@ -1,21 +1,34 @@
 version: 2
 
 jobs:
+  init:
+    machine: true
+    working_directory: ~/workspace
+
+    steps:
+    - run:
+        name: Create Workspace
+        working_directory: ~
+        command: |
+          mkdir -p workspace/go/src/github.com/stackrox/collector
+
+    - checkout:
+        path: ~/workspace/go/src/github.com/stackrox/collector
+
+    - persist_to_workspace:
+        root: ~/workspace
+        paths:
+        - go/src/github.com/stackrox/collector
+
   builder:
     machine: true
     steps:
     - run:
-        name: Create Directory
-        command: |
-          sudo mkdir -m 0777 -p /go/src
-          mkdir -p /go/src/github.com/stackrox/collector
-
-    - run:
         name: Login to Docker Hub
         command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
 
-    - checkout:
-        path: /go/src/github.com/stackrox/collector
+    - attach_workspace:
+        at: ~/workspace
 
     - run:
         name: Restore collector-builder cache image
@@ -23,7 +36,7 @@ jobs:
 
     - run:
         name: Build collector builder Docker image
-        working_directory: /go/src/github.com/stackrox/collector/builder
+        working_directory: ~/workspace/go/src/github.com/stackrox/collector/builder
         command: |
           docker build \
             --cache-from stackrox/collector-builder:cache \
@@ -33,16 +46,22 @@ jobs:
         name: Save collector-builder cache image
         command: docker push stackrox/collector-builder:cache
 
-  kernels:
+  prepare-kernels:
     machine: true
-    parallelism: 16
+    working_directory: ~/workspace
     environment:
-    - GOPATH: /go
+    - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
+    - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
+    - MODULE_BUCKET_BASE: gs://kernel-modules/97f2d0644df7d292009b2dbdea0bb4860995fa064ba0e9f74b8e82cf3b4601eb
+    - SOURCE_ROOT: /home/circleci/workspace/go/src/github.com/stackrox/collector
 
     steps:
+    - attach_workspace:
+        at: ~/workspace
+
     - run:
         name: Google Authenticate
-        working_directory: /home/circleci/.config/gcloud
+        working_directory: ~/.config/gcloud
         command: |
           echo "$GOOGLE_CREDENTIALS_KERNEL_CACHE" > auth.json
           pip install -U crcmod google_compute_engine
@@ -53,49 +72,139 @@ jobs:
           gcloud auth list
 
     - run:
-        name: Create Directory
-        command: |
-          sudo mkdir -m 0777 -p /go/src /go/bin /go/pkg /packages
-          mkdir -p /go/src/github.com/stackrox/collector
-
-    - checkout:
-        path: /go/src/github.com/stackrox/collector
+        name: Login to Docker Hub
+        command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
 
     - run:
-        name: Download Package Cache
-        working_directory: /go/src/github.com/stackrox/collector
-        command: |
-          make -C kernel-modules download-package-cache
-          find /packages
-          du -h /packages
+        name: Restore builder cache image(s)
+        command: docker pull $BUILD_CONTAINER_CACHE_IMAGES || true
 
     - run:
-        name: Build Builder Image
-        working_directory: /go/src/github.com/stackrox/collector
+        name: Build builder image
+        working_directory: ~/workspace/go/src/github.com/stackrox/collector/kernel-modules
         command: |
-          make -C kernel-modules build-container
+          make build-container
+          docker tag "$BUILD_CONTAINER_TAG" build-kernel-modules
 
     - run:
-        name: Build all
-        working_directory: /go/src/github.com/stackrox/collector
+        name: Upload builder cache image
+        command: |
+          [[ "$CIRCLE_BRANCH" == "master" ]] || exit 0
+          docker push "$BUILD_CONTAINER_TAG"
+        background: true
+
+    - run:
+        name: Prepare source
+        command: |
+          mkdir ~/versions-src
+          docker run \
+            -v "${SOURCE_ROOT}/sysdig/src:/sysdig-src:ro" \
+            -v "${HOME}/versions-src:/output" \
+            --tmpfs /scratch \
+            --entrypoint prepare-src \
+            build-kernel-modules
+          versions=(~/versions-src/*)
+          [[ "${#versions[@]}" == 1 ]]
+          version="$(basename "${versions[0]}")"
+          version="${version#.tgz}"
+          mkdir ko-build
+          echo "$version" >ko-build/primary-version
+
+    - run:
+        name: Generate list of existing modules
+        working_directory: ~/workspace/ko-build
+        command: |
+          mkdir existing-modules
+          mkdir build-tasks
+          for i in ~/versions-src/*.tgz; do
+            filename="$(basename "$i")"
+            version="${filename%.tgz}"
+            mkdir -p "build-tasks/${version}/source"
+            tar -C "build-tasks/${version}/source" -xvzf "$i"
+            ( gsutil -m ls "${MODULE_BUCKET_BASE}/${VERSION}"/'*.ko'{,.gz} || true) \
+              | sed -ne 's@^.*/collector-\([^/]+\)\.ko\(.gz\)$@\1@p' \
+                >"build-tasks/${version}/existing-modules"
+          done
+
+    - run:
+        name: Generate list of build steps
+        working_directory: ~/workspace/ko-build/build-tasks
+        command: |
+          for i in *; do
+            version="$(basename "$i")"
+            docker run \
+                -v "${SOURCE_ROOT}/sysdig/src:/sysdig-src:ro" \
+                -v "${SOURCE_ROOT}/kernel-modules/supported-kernels/kernel-manifest.yml:/config/kernel-manifest.yml:ro" \
+                -v "${PWD}/${version}/existing-versions:/config/existing-versions:ro" \
+                build-kernel-modules \
+                --config /config/kernel-manifest.yml \
+                --existing-versions /config/existing-versions \
+                --print-commands-only \
+            | sed -e 's@^@SOURCE_VERSION="'"$version"'" @' >>all-tasks
+          done
+
+    - run:
+        name: Save builder image
+        working_directory: ~/workspace/docker-images
+        command: |
+          docker image save build-kernel-modules >build-kernel-modules.tar
+
+    - persist_to_workspace:
+        root: ~/workspace
+        paths:
+          - ko-build
+          - docker-images
+
+  kernels:
+    machine: true
+    parallelism: 8
+    environment:
+      - MODULE_BUCKET_BASE: gs://kernel-modules/97f2d0644df7d292009b2dbdea0bb4860995fa064ba0e9f74b8e82cf3b4601eb
+
+    steps:
+    - attach_workspace:
+        at: ~/workspace
+
+    - run:
+        name: Load builder image
+        working_directory: ~/workspace/docker-images
+        command: |
+          docker image load -i build-kernel-modules.tar
+
+    - run:
+        name: Download packages
+        working_directory: ~/packages
+        command: |
+          PKG_CACHE_DIR="${PWD}" make -C "${SOURCE_ROOT}/kernel-modules" download-package-cache
+
+    - run:
+        name: Build shard
+        working_directory: ~/workspace/ko-build
         command: |
           echo "Nodes total: $CIRCLE_NODE_TOTAL"
           echo "Node index:  $CIRCLE_NODE_INDEX"
-          docker run --rm -it \
-            -v /packages:/packages \
-            -v $PWD/sysdig/src:/sysdig-src \
-            -v $PWD/kernel-modules/supported-kernels:/config \
-            -v $PWD/kernel-modules/container/kernel-modules:/output \
-            -e CIRCLE_NODE_TOTAL \
-            -e CIRCLE_NODE_INDEX \
-            build-kernel-modules:latest \
-              --config /config/kernel-manifest.yml
-          find kernel-modules/container/kernel-modules
+          num_tasks=$(wc -l <build-tasks/all-tasks)
+          shard_size=$((num_tasks / CIRCLE_NODE_TOTAL)
+          split -d -l "$shard_size" build-tasks/all-tasks task-shard-
 
-    - persist_to_workspace:
-        root: /go/src/github.com/stackrox/collector
-        paths:
-        - kernel-modules/container/kernel-modules
+          OUTPUT_DIR="${HOME}/build-output"
+          mkdir -p "$OUTPUT_DIR"
+          docker run --rm -i \
+              -v "${HOME}/packages:/packages:ro" \
+              -v "${PWD}/build-tasks:/build-tasks:ro" \
+              -v "${OUTPUT_DIR}:/output" \
+              --tmpfs /scratch \
+              --entrypoint /bin/sh \
+              build-kernel-modules \
+              - < <( echo 'set -e' ; cat task-shard-"$CIRCLE_NODE_INDEX" )
+          ( cd "$OUTPUT_DIR" ; find . )
+
+    - run:
+        name: Upload modules to GCloud bucket
+        working_directory: ~/build-output
+        command: |
+          gsutil -m rsync -r . "$MODULE_BUCKET_BASE"
+
 
   grpc:
     docker:
@@ -138,22 +247,17 @@ jobs:
 
   libsinsp:
     machine: true
+    working_directory: ~/workspace
     environment:
-    - GOPATH: /go
+    - GOPATH: /home/circleci/workspace/go
 
     steps:
-    - run:
-        name: Create Directory
-        command: |
-          sudo mkdir -m 0777 -p /go/src /go/bin /go/pkg
-          mkdir -p /go/src/github.com/stackrox/collector
+    - attach_workspace:
+        at: ~/workspace
 
     - run:
         name: Login to Docker Hub
         command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
-
-    - checkout:
-        path: /go/src/github.com/stackrox/collector
 
     - run:
         name: Restore sysdig builder cache image
@@ -161,14 +265,14 @@ jobs:
 
     - run:
         name: Build libsinsp Wrapper
-        working_directory: /go/src/github.com/stackrox/collector/collector
+        working_directory: ~/workspace/go/src/github.com/stackrox/collector/collector
         command: make container/libs/libsinsp-wrapper.so
 
     - run:
         name: Sanity check
         command: |
-          ls -lh /go/src/github.com/stackrox/collector/collector/container/libs
-          file   /go/src/github.com/stackrox/collector/collector/container/libs/libsinsp-wrapper.so
+          ls -lh ~/workspace/go/src/github.com/stackrox/collector/collector/container/libs
+          file   ~/workspace/go/src/github.com/stackrox/collector/collector/container/libs/libsinsp-wrapper.so
           docker images | grep collector
 
     - run:
@@ -176,33 +280,23 @@ jobs:
         command: docker push stackrox/collector-builder:sysdig
 
     - persist_to_workspace:
-        root: /go/src/github.com/stackrox/collector
+        root: ~/workspace
         paths:
-        - collector/container/libs
+        - go/src/github.com/stackrox/collector/collector/container/libs
 
   collector:
     machine: true
     environment:
-    - GOPATH: /go
+    - GOPATH: /home/circleci/workspace/go
+
+    working_directory: ~/workspace
+
     steps:
-    - run:
-        name: Create Directory
-        command: |
-          sudo mkdir -m 0777 -p /go/src /go/bin /go/pkg
-          mkdir -p /go/src/github.com/stackrox/collector
-
-    - run:
-        name: Login to Docker Hub
-        command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
-
-    - checkout:
-        path: /go/src/github.com/stackrox/collector
-
     - attach_workspace:
-        at: /go/src/github.com/stackrox/collector
+        at: ~/workspace
 
     - restore_cache:
-        key: grpc-cpp-plugin-{{ checksum "/go/src/github.com/stackrox/collector/build/scripts/install-grpc-cpp-plugin.sh" }}
+        key: grpc-cpp-plugin-{{ checksum "/home/circleci/workspace/go/src/github.com/stackrox/collector/build/scripts/install-grpc-cpp-plugin.sh" }}
 
     - run:
         name: Prep grpc plugin
@@ -214,7 +308,7 @@ jobs:
 
     - run:
         name: Sanity Check
-        working_directory: /go/src/github.com/stackrox/collector
+        working_directory: ~/workspace/go/src/github.com/stackrox/collector
         command: |
           pwd
           echo '>>> Userspace lib:'
@@ -227,14 +321,14 @@ jobs:
 
     - run:
         name: Generate Protobuf Definitions
-        working_directory: /go/src/github.com/stackrox/collector/collector
+        working_directory: ~/workspace/go/src/github.com/stackrox/collector/collector
         command: |
-          PATH=$PATH:/go/bin
+          PATH=$PATH:$HOME/workspace/go/bin
           make generated-srcs
 
     - run:
         name: Build collector
-        working_directory: /go/src/github.com/stackrox/collector/collector
+        working_directory: ~/workspace/go/src/github.com/stackrox/collector/collector
         command: |
           mkdir -p container/bin
           docker run \
@@ -246,47 +340,48 @@ jobs:
 
     - run:
         name: Extract collector files
-        working_directory: /go/src/github.com/stackrox/collector/collector
+        working_directory: ~/workspace/go/src/github.com/stackrox/collector/collector
         command: |
-          cp cmake-build/collector                        container/bin/
+          cp cmake-build/collector container/bin/
           ls -lh container/bin/
 
     - persist_to_workspace:
-        root: /go/src/github.com/stackrox/collector
+        root: ~/workspace
         paths:
-        - collector/container/bin
+        - go/src/github.com/stackrox/collector/collector/container/bin
 
   images:
     machine: true
     environment:
-    - GOPATH: /go
-    - GOBIN: /usr/local/go/bin
+    - GOPATH: /home/circleci/workspace/go
     - INSTALL_DIRECTORY: /tmp
+    working_directory: ~/workspace
 
     steps:
-    - run:
-        name: Create Directory
-        command: |
-          sudo mkdir -m 0777 -p /go
-          sudo mkdir -m 0777 -p /go/src
-          sudo mkdir -m 0777 -p /go/pkg
-          mkdir -p /go/src/github.com/stackrox/collector
-          sudo chown circleci -R /go/*
-          sudo chown circleci -R /usr/local/go/*
-
-    - checkout:
-        path: /go/src/github.com/stackrox/collector
-
     - attach_workspace:
-        at: /go/src/github.com/stackrox/collector
+        at: ~/workspace
 
     - run:
         name: Login to Docker Hub
         command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
 
     - run:
+        name: Merge build results
+        working_directory: ~/workspace/ko-build/build-output
+        command: |
+          base_modver="$(cat 0/MODULE_VERSION.txt)"
+          for i in build-output/* ; do
+            modver="$(cat "$i"/MODULE_VERSION.txt)"
+            if [[ "$modver" != "$base_modver" ]]; then
+              echo >&2 "Build result subdirectory $i has invalid module version $modver (expected: $base_modver)"
+              exit 1
+            fi
+            cp -rln "$i"/. container/kernel-modules
+          done
+
+    - run:
         name: Sanity check
-        working_directory: /go/src/github.com/stackrox/collector
+        working_directory: ~/workspace/go/src/github.com/stackrox/collector
         command: |
           echo '>>> Collector Artifacts:'
           find collector/container
@@ -295,7 +390,7 @@ jobs:
 
     - run:
         name: Build kernel-modules Docker image
-        working_directory: /go/src/github.com/stackrox/collector/kernel-modules/container
+        working_directory: ~/workspace/go/src/github.com/stackrox/collector/kernel-modules/container
         command: |
           VERSION=$(git describe --tags)
           docker build \
@@ -305,7 +400,7 @@ jobs:
 
     - run:
         name: Build collector Docker image
-        working_directory: /go/src/github.com/stackrox/collector/collector
+        working_directory: ~/workspace/go/src/github.com/stackrox/collector/collector
         command: |
           VERSION=$(git describe --tags)
           cp NOTICE-collector.txt container/
@@ -355,10 +450,16 @@ workflows:
   version: 2
   build:
     jobs:
+    - init:
+        filters:
+          tags:
+            only: /.*/
     - builder:
         filters:
           tags:
             only: /.*/
+        requires:
+        - init
     - grpc:
         filters:
           tags:
@@ -367,6 +468,8 @@ workflows:
         filters:
           tags:
             only: /.*/
+        requires:
+        - init
     - collector:
         filters:
           tags:
@@ -375,10 +478,18 @@ workflows:
         - builder
         - grpc
         - libsinsp
+    - prepare-kernels:
+        filters:
+          tags:
+            only: /.*/
+        requires:
+        - init
     - kernels:
         filters:
           tags:
             only: /.*/
+        requires:
+        - prepare-kernels
     - images:
         filters:
           tags:

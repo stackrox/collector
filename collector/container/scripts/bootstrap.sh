@@ -11,6 +11,14 @@ MODULE_PATH="/module/${MODULE_NAME}.ko"
 KERNEL_VERSION=$(uname -r)
 echo "Kernel version detected: $KERNEL_VERSION."
 
+MODULE_VERSION="$(cat /kernel-modules/MODULE_VERSION.txt)"
+if [[ -n "$MODULE_VERSION" ]]; then
+    echo "Module version detected: $MODULE_VERSION"
+    if [[ -n "$MODULE_DOWNLOAD_BASE_URL" ]]; then
+        MODULE_URL="${MODULE_DOWNLOAD_BASE_URL}/${MODULE_VERSION}"
+    fi
+fi
+
 KERNEL_MODULE="${MODULE_NAME}-${KERNEL_VERSION}.ko"
 
 function test {
@@ -32,6 +40,10 @@ function remove_module() {
 }
 
 function download_kernel_module() {
+    if [[ -z "$MODULE_URL" ]]; then
+        echo "Downloading modules not supported."
+        return 1
+    fi
     local URL="$MODULE_URL/$DISTRO/$KERNEL_MODULE"
     if curl -L -s -o "${MODULE_PATH}.gz" "${URL}.gz"; then
         gunzip "${MODULE_PATH}.gz"

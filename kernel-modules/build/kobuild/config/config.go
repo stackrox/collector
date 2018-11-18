@@ -39,6 +39,12 @@ func (m *Manifest) Fullname() string {
 	return fmt.Sprintf("%s-%s-%s", m.Builder, m.Flavor, m.Version)
 }
 
+// KernelVersion returns the kernel version for the given manifest to match
+// the output of `uname -r`.
+func (m *Manifest) KernelVersion() string {
+	return fmt.Sprintf("%s-%s", m.Version, m.Flavor)
+}
+
 // Load reads the given filename as yaml and parses the content into a list of
 // Builders.
 func Load(filename string) (Builders, error) {

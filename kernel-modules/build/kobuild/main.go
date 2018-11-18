@@ -15,15 +15,23 @@ var (
 	circleNodeIndex = getEnvVar("CIRCLE_NODE_INDEX", 0)
 )
 
+func log(format string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, format, args...)
+	fmt.Fprintln(os.Stderr)
+}
+
 func main() {
 	if err := mainCmd(); err != nil {
-		fmt.Fprintf(os.Stderr, "kobuild: %s\n", err.Error())
+		log("kobuild: %v", err)
 		os.Exit(1)
 	}
 }
 
 func mainCmd() error {
 	configFlag := flag.String("config", "kernel-manifest.yml", "Config file containing build manifest")
+	printPackagesFlag := flag.Bool("print-pkgs-only", false, "Only print required packages and exit")
+	printCmdOnlyFlag := flag.Bool("print-commands-only", false, "Only print commands that need to be executed")
+	existingVersionsFlag := flag.String("existing-versions", "", "File containing Kernel versions for which a module is already available")
 	flag.Parse()
 
 	builders, err := config.Load(*configFlag)
@@ -32,53 +40,93 @@ func mainCmd() error {
 	}
 
 	manifests := builders.Manifests()
-	markManifests(manifests)
-	return buildManifests(manifests)
+	var existingVersions map[string]struct{}
+	if existingVersionsFlag != nil && *existingVersionsFlag != "" {
+		existingVersions, err = config.LoadExistingVersions(*existingVersionsFlag)
+		if err != nil {
+			return err
+		}
+	}
+	markManifestsForMissingVersions(manifests, existingVersions)
+	markManifestsForShardedBuild(manifests)
+
+	if printPackagesFlag != nil && *printPackagesFlag {
+		return printPackages(manifests)
+	}
+	printCmdOnly := false
+	if printCmdOnlyFlag != nil {
+		printCmdOnly = *printCmdOnlyFlag
+	}
+	return buildManifests(manifests, printCmdOnly)
+}
+
+func markManifestsForMissingVersions(manifests []*config.Manifest, existingVersions map[string]struct{}) {
+	for _, manifest := range manifests {
+		_, exists := existingVersions[manifest.KernelVersion()]
+		manifest.Build = !exists
+	}
 }
 
 // markManifests examines each manifest and marks if a given manifest should be
 // built on the current CircleCI node.
-func markManifests(manifests []*config.Manifest) {
-	for index, manifest := range manifests {
-		if index%circleNodeTotal == circleNodeIndex {
+func markManifestsForShardedBuild(manifests []*config.Manifest) {
+	i := 0
+	for _, manifest := range manifests {
+		if !manifest.Build {
+			continue
+		}
+		if i%circleNodeTotal == circleNodeIndex {
 			manifest.Build = true
 		} else {
 			manifest.Build = false
 		}
+		i++
 	}
 }
 
-func buildManifests(manifests []*config.Manifest) error {
+func printPackages(manifests []*config.Manifest) error {
+	for _, manifest := range manifests {
+		if !manifest.Build {
+			continue
+		}
+		for _, pkg := range manifest.Packages {
+			fmt.Println(pkg)
+		}
+	}
+	return nil
+}
 
+
+func buildManifests(manifests []*config.Manifest, printCmdOnly bool) error {
 	for index, manifest := range manifests {
 		if manifest.Build == false {
-			fmt.Printf("Skipping build of manifest %d/%d\n\n", index+1, len(manifests))
 			continue
 		}
 
-		fmt.Printf("Starting build of manifest %d/%d\n", index+1, len(manifests))
-		fmt.Printf("%s version %s-%s (%s)\n", manifest.Builder, manifest.Version, manifest.Flavor, manifest.Kind)
-		fmt.Printf("  %s\n", manifest.Description)
-		fmt.Printf("Files:\n")
+
+		log("Starting build of manifest %d/%d", index+1, len(manifests))
+		log("%s version %s-%s (%s)", manifest.Builder, manifest.Version, manifest.Flavor, manifest.Kind)
+		log("  %s", manifest.Description)
+		log("Files:")
 		for _, pkg := range manifest.Packages {
-			fmt.Printf("  - %s\n", pkg)
+			log("  - %s", pkg)
 		}
 		args := []string{
 			manifest.Kind, manifest.Version, manifest.Flavor,
 		}
 		args = append(args, manifest.Packages...)
-		fmt.Printf("Command:\n")
-		fmt.Println("  ./build-kos")
+		log("Command:")
+		log("  ./build-kos")
 		for _, arg := range args {
-			fmt.Printf("    %s\n", arg)
+			log("    %s", arg)
 		}
 
-		if err := command.Run("build-kos", args...); err != nil {
-			fmt.Printf("Failed build of manifest %d/%d\n\n", index+1, len(manifests))
+		if err := command.Run(printCmdOnly, "build-kos", args...); err != nil {
+			log("Failed build of manifest %d/%d\n", index+1, len(manifests))
 			return err
 		}
 
-		fmt.Printf("Finished build of manifest %d/%d\n\n", index+1, len(manifests))
+		log("Finished build of manifest %d/%d\n", index+1, len(manifests))
 	}
 
 	return nil

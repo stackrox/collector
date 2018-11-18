@@ -1,6 +1,9 @@
 KO_GCS_PATH ?= "gs://collector-modules/aafeb6857323bbb8addf736c1fa9d93a7cdf968f2f0caca10a7b66bee29b665e"
 PKG_GCS_PATH ?= "gs://kernel-headers-cache"
-PKG_CACHE_DIR = /packages
+PKG_CACHE_DIR ?= /packages
+
+BUILD_CONTAINER_TAG ?= build-kernel-modules
+BUILD_CONTAINER_CACHE_IMAGES ?=
 
 .DEFAULT_GOAL = all
 
@@ -97,7 +100,7 @@ build: build-kops build-coreos build-amazon build-centos build-centos-uncrawled 
 
 .PHONY: build-container
 build-container:
-	docker build -t build-kernel-modules ./build
+	docker build $(BUILD_CONTAINER_CACHE_IMAGES:%=--cache-from=%) -t $(BUILD_CONTAINER_TAG) ./build
 
 # TODO: This isn't _really_ a phony target.
 .PHONY: container/kernel-modules
