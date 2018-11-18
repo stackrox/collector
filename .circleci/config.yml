@@ -129,6 +129,7 @@ jobs:
               | sed -ne 's@^.*/collector-\([^/]\{1,\}\)\.ko\(\.gz\)\{0,1\}$@\1@p' \
                 >"build-tasks/${version}/existing-versions"
           done
+          cat "build-tasks/${version}/existing-versions" || true
 
     - run:
         name: Generate list of build steps
@@ -136,6 +137,7 @@ jobs:
         command: |
           for i in *; do
             version="$(basename "$i")"
+            cat "${PWD}/${version}/existing-versions" || true
             docker run \
                 -v "${SOURCE_ROOT}/sysdig/src:/sysdig-src:ro" \
                 -v "${SOURCE_ROOT}/kernel-modules/supported-kernels/kernel-manifest.yml:/config/kernel-manifest.yml:ro" \
