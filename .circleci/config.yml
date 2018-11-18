@@ -45,7 +45,7 @@ jobs:
         working_directory: /home/circleci/.config/gcloud
         command: |
           echo "$GOOGLE_CREDENTIALS_KERNEL_CACHE" > auth.json
-          pip install google_compute_engine
+          pip install -U crcmod google_compute_engine
           gcloud config set core/project stackrox-ci
           gcloud config set compute/region us-east1
           gcloud config set compute/zone us-east1-d
