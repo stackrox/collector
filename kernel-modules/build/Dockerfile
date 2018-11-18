@@ -15,7 +15,6 @@ RUN apt-get update \
       cmake \
       make \
       gcc \
-      g++ \
       libelf-dev \
       kmod \
       wget \
@@ -29,11 +28,11 @@ RUN apt-get update \
 RUN sed s_unstable_jessie_g < /etc/apt/sources.list > /etc/apt/sources.list.d/jessie.list && \
     apt-get update && apt-get install --no-install-recommends -y \
       gcc-4.9 \
-      g++-4.9 \
-;      
+;
 
 RUN apt-get install --no-install-recommends -y \
-    gcc-6 g++-6 gcc-5 g++-5
+    gcc-6 gcc-5 \
+    ;
 
 
 # Since our base Debian image ships with GCC 7 which breaks older kernels, revert the
