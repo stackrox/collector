@@ -437,6 +437,8 @@ workflows:
         filters:
           tags:
             only: /.*/
+        requires:
+        - init
     - libsinsp:
         filters:
           tags:
@@ -940,6 +942,8 @@ workflows:
 #         filters:
 #           tags:
 #             only: /.*/
+#         requires:
+#         - init
 #     - libsinsp:
 #         filters:
 #           tags:
