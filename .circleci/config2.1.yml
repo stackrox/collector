@@ -154,7 +154,7 @@ jobs:
     - run:
         name: Generate list of build steps
         command: |
-          cd "${WORKSPACE_ROOT}/ko-build/tasks"
+          cd "${WORKSPACE_ROOT}/ko-build/build-tasks"
           for i in *; do
             version="$(basename "$i")"
             docker run \
@@ -239,9 +239,10 @@ jobs:
   grpc:
     docker:
     - image: ubuntu:trusty
+    working_directory: /go/src/github.com/stackrox/collector
 
     steps:
-    - init
+    - checkout
 
     - run:
         name: Install dependencies
@@ -262,7 +263,7 @@ jobs:
 
     - run:
         name: Build grpc plugin
-        command: make -C "$COLLECTOR_SOURCE_ROOT" install-grpc
+        command: make -C collector install-grpc
 
     - run:
         name: Prep grpc plugin
@@ -466,8 +467,6 @@ workflows:
         filters:
           tags:
             only: /.*/
-        requires:
-        - init
     - libsinsp:
         filters:
           tags:

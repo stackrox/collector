@@ -49,14 +49,9 @@ jobs:
   grpc:
     docker:
     - image: ubuntu:trusty
+    working_directory: /go/src/github.com/stackrox/collector
     steps:
-    - attach_workspace:
-        at: ~/workspace
-    - run:
-        name: Set up environment
-        command: "cat >>\"$BASH_ENV\" <<-EOF\n\texport WORKSPACE_ROOT=\"${HOME}/workspace\"\
-          \nEOF\n[[ -f ~/workspace/shared-env ]] && cat ~/workspace/shared-env >>\"\
-          $BASH_ENV\"\n"
+    - checkout
     - run:
         name: Install dependencies
         command: |
@@ -74,7 +69,7 @@ jobs:
           fi
     - run:
         name: Build grpc plugin
-        command: make -C "$COLLECTOR_SOURCE_ROOT" install-grpc
+        command: make -C collector install-grpc
     - run:
         name: Prep grpc plugin
         command: cp -v /usr/local/bin/grpc_cpp_plugin /tmp/
@@ -246,7 +241,7 @@ jobs:
     - run:
         name: Generate list of build steps
         command: |
-          cd "${WORKSPACE_ROOT}/ko-build/tasks"
+          cd "${WORKSPACE_ROOT}/ko-build/build-tasks"
           for i in *; do
             version="$(basename "$i")"
             docker run \
@@ -437,8 +432,6 @@ workflows:
         filters:
           tags:
             only: /.*/
-        requires:
-        - init
     - libsinsp:
         filters:
           tags:
@@ -630,7 +623,7 @@ workflows:
 #     - run:
 #         name: Generate list of build steps
 #         command: |
-#           cd \"${WORKSPACE_ROOT}/ko-build/tasks\"
+#           cd \"${WORKSPACE_ROOT}/ko-build/build-tasks\"
 #           for i in *; do
 #             version=\"$(basename \"$i\")\"
 #             docker run \\
@@ -715,9 +708,10 @@ workflows:
 #   grpc:
 #     docker:
 #     - image: ubuntu:trusty
+#     working_directory: /go/src/github.com/stackrox/collector
 # 
 #     steps:
-#     - init
+#     - checkout
 # 
 #     - run:
 #         name: Install dependencies
@@ -738,7 +732,7 @@ workflows:
 # 
 #     - run:
 #         name: Build grpc plugin
-#         command: make -C \"$COLLECTOR_SOURCE_ROOT\" install-grpc
+#         command: make -C collector install-grpc
 # 
 #     - run:
 #         name: Prep grpc plugin
@@ -942,8 +936,6 @@ workflows:
 #         filters:
 #           tags:
 #             only: /.*/
-#         requires:
-#         - init
 #     - libsinsp:
 #         filters:
 #           tags:
