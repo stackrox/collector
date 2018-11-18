@@ -124,6 +124,7 @@ jobs:
             version="${filename%.tgz}"
             mkdir -p "build-tasks/${version}/source"
             tar -C "build-tasks/${version}/source" -xvzf "$i"
+            echo "Accessing bucket(s)" "${MODULE_BUCKET_BASE}/${version}"/'collector-*.ko'{,.gz}
             ( gsutil -m ls "${MODULE_BUCKET_BASE}/${version}"/'collector-*.ko'{,.gz} || true) \
               | sed -ne 's@^.*/collector-\([^/]+\)\.ko\(.gz\)$@\1@p' \
                 >"build-tasks/${version}/existing-modules"
