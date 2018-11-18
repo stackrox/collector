@@ -108,7 +108,7 @@ jobs:
           versions=(~/versions-src/*)
           [[ "${#versions[@]}" == 1 ]]
           version="$(basename "${versions[0]}")"
-          version="${version#.tgz}"
+          version="${version%.tgz}"
           mkdir ko-build
           echo "$version" >ko-build/primary-version
 
