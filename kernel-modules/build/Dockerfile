@@ -46,6 +46,8 @@ RUN rm -rf /usr/bin/clang \
  && ln -s /usr/bin/clang-7 /usr/bin/clang \
  && ln -s /usr/bin/llc-7 /usr/bin/llc
 
+RUN apt-get autoremove -y
+
 # debian:unstable head contains binutils 2.31, which generates
 # binaries that are incompatible with kernels < 4.16. So manually
 # forcibly install binutils 2.30-22 instead.

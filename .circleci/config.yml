@@ -127,8 +127,7 @@ jobs:
         name: Login to Docker Hub
         command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
     - restore_cache:
-        working_directory: ~/workspace/go/src/github.com/stackrox/collector
-        key: grpc-cpp-plugin-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh"
+        key: grpc-cpp-plugin-{{ checksum "go/src/github.com/stackrox/collector/build/scripts/install-grpc-cpp-plugin.sh"
           }}
     - run:
         name: Prep grpc plugin
@@ -786,8 +785,7 @@ workflows:
 #     - docker-login
 # 
 #     - restore_cache:
-#         working_directory: ~/workspace/go/src/github.com/stackrox/collector
-#         key: grpc-cpp-plugin-{{ checksum \"build/scripts/install-grpc-cpp-plugin.sh\" }}
+#         key: grpc-cpp-plugin-{{ checksum \"go/src/github.com/stackrox/collector/build/scripts/install-grpc-cpp-plugin.sh\" }}
 # 
 #     - run:
 #         name: Prep grpc plugin
