@@ -127,7 +127,7 @@ install-grpc:
 
 .PHONY: tag
 tag:
-	git describe --tags --abbrev=10 --dirty
+	@git describe --tags --abbrev=10 --dirty
 
 include ../build/protogen.mk
 
