@@ -209,7 +209,7 @@ jobs:
                 -v "${HOME}/packages:/packages:ro" \
                 -v "${PWD}/build-tasks:/build-tasks:ro" \
                 -v "${OUTPUT_DIR}:/output" \
-                --tmpfs /scratch \
+                --tmpfs /scratch:exec \
                 --entrypoint /bin/sh \
                 build-kernel-modules \
                 -
