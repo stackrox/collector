@@ -118,12 +118,13 @@ jobs:
         command: |
           mkdir existing-modules
           mkdir build-tasks
+          gcloud config set project stackrox-collector
           for i in ~/versions-src/*.tgz; do
             filename="$(basename "$i")"
             version="${filename%.tgz}"
             mkdir -p "build-tasks/${version}/source"
             tar -C "build-tasks/${version}/source" -xvzf "$i"
-            ( gsutil -m ls -p stackrox-collector "${MODULE_BUCKET_BASE}/${VERSION}"/'*.ko'{,.gz} || true) \
+            ( gsutil -m ls "${MODULE_BUCKET_BASE}/${VERSION}"/'*.ko'{,.gz} || true) \
               | sed -ne 's@^.*/collector-\([^/]+\)\.ko\(.gz\)$@\1@p' \
                 >"build-tasks/${version}/existing-modules"
           done
