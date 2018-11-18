@@ -375,6 +375,7 @@ jobs:
     environment:
     - GOPATH: /home/circleci/workspace/go
     - INSTALL_DIRECTORY: /tmp
+    - MODULE_BUCKET_BASE: gs://collector-modules/97f2d0644df7d292009b2dbdea0bb4860995fa064ba0e9f74b8e82cf3b4601eb
     working_directory: ~/workspace
 
     steps:
@@ -386,17 +387,24 @@ jobs:
         command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
 
     - run:
-        name: Merge build results
-        working_directory: ~/workspace/ko-build/build-output
+        name: Google Authenticate
+        working_directory: ~/.config/gcloud
         command: |
-          base_modver="$(cat 0/MODULE_VERSION.txt)"
-          for i in build-output/* ; do
-            modver="$(cat "$i"/MODULE_VERSION.txt)"
-            if [[ "$modver" != "$base_modver" ]]; then
-              echo >&2 "Build result subdirectory $i has invalid module version $modver (expected: $base_modver)"
-              exit 1
-            fi
-            cp -rln "$i"/. container/kernel-modules
+          echo "$GOOGLE_CREDENTIALS_KERNEL_CACHE" > auth.json
+          pip install -U crcmod google_compute_engine
+          gcloud config set core/project stackrox-collector
+          gcloud config set compute/region us-east1
+          gcloud config set compute/zone us-east1-d
+          gcloud auth activate-service-account --key-file auth.json
+          gcloud auth list
+
+    - run:
+        name: Download kernel modules
+        working_directory: ~/workspace/go/src/github.com/stackrox/collector/kernel-modules/container/kernel-modules
+        command: |
+          modver="$(cat ~/workspace/ko-build/primary-version)"
+          echo "$modver" >MODULE_VERSION.txt
+          gsutil -m rsync -r "${MODULE_BUCKET_BASE}/${modver}" .
           done
 
     - run:
@@ -456,7 +464,7 @@ jobs:
 
     - run:
         name: Integration tests
-        working_directory: /go/src/github.com/stackrox/collector/collector
+        working_directory: ~/workspace/go/src/github.com/stackrox/collector/collector
         command: |
           go get -u github.com/jstemmer/go-junit-report
           curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
