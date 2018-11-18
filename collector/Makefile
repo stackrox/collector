@@ -125,6 +125,10 @@ pull-protos:
 install-grpc:
 	@$(BASE_PATH)/build/scripts/install-grpc-cpp-plugin.sh
 
+.PHONY: tag
+tag:
+	git describe --tags --abbrev=10 --dirty
+
 include ../build/protogen.mk
 
 # Generating go protos too for testing purpose
