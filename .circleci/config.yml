@@ -204,14 +204,15 @@ jobs:
 
           OUTPUT_DIR="${HOME}/build-output"
           mkdir -p "$OUTPUT_DIR"
-          docker run --rm -i \
-              -v "${HOME}/packages:/packages:ro" \
-              -v "${PWD}/build-tasks:/build-tasks:ro" \
-              -v "${OUTPUT_DIR}:/output" \
-              --tmpfs /scratch \
-              --entrypoint /bin/sh \
-              build-kernel-modules \
-              - < <( echo 'set -e' ; cat task-shard-"$CIRCLE_NODE_INDEX" )
+          ( echo 'set -e' ; cat task-shard-"$(printf '%02d\n' "$CIRCLE_NODE_INDEX")" ) \
+            | docker run --rm -i \
+                -v "${HOME}/packages:/packages:ro" \
+                -v "${PWD}/build-tasks:/build-tasks:ro" \
+                -v "${OUTPUT_DIR}:/output" \
+                --tmpfs /scratch \
+                --entrypoint /bin/sh \
+                build-kernel-modules \
+                -
           ( cd "$OUTPUT_DIR" ; find . )
 
     - run:
