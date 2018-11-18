@@ -219,7 +219,8 @@ jobs:
         name: Upload modules to GCloud bucket
         working_directory: ~/build-output
         command: |
-          gsutil -m rsync -p stackrox-collector -r . "$MODULE_BUCKET_BASE"
+          gcloud config set project stackrox-collector
+          gsutil -m rsync -r . "$MODULE_BUCKET_BASE"
 
   grpc:
     docker:
