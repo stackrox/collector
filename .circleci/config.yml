@@ -126,7 +126,7 @@ jobs:
             tar -C "build-tasks/${version}/source" -xvzf "$i"
             echo "Accessing bucket(s)" "${MODULE_BUCKET_BASE}/${version}"/'collector-*.ko'{,.gz}
             ( gsutil -m ls "${MODULE_BUCKET_BASE}/${version}"/'collector-*.ko'{,.gz} || true) \
-              | sed -ne 's@^.*/collector-\([^/]+\)\.ko\(.gz\)$@\1@p' \
+              | sed -ne 's@^.*/collector-\([^/]\{1,\}\)\.ko\(\.gz\)\{0,1\}$@\1@p' \
                 >"build-tasks/${version}/existing-modules"
           done
 
@@ -407,7 +407,6 @@ jobs:
           modver="$(cat ~/workspace/ko-build/primary-version)"
           echo "$modver" >MODULE_VERSION.txt
           gsutil -m rsync -r "${MODULE_BUCKET_BASE}/${modver}" .
-          done
 
     - run:
         name: Sanity check
