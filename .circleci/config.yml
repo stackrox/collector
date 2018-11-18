@@ -2,7 +2,9 @@ version: 2
 
 jobs:
   init:
-    machine: true
+    docker:
+      image: circleci/golang:1.11.2-stretch
+
     working_directory: ~/workspace
 
     steps:
@@ -147,7 +149,7 @@ jobs:
         name: Save builder image
         working_directory: ~/workspace/docker-images
         command: |
-          docker image save build-kernel-modules >build-kernel-modules.tar
+          docker image save build-kernel-modules | gzip -c >build-kernel-modules.tgz
 
     - persist_to_workspace:
         root: ~/workspace
@@ -160,16 +162,29 @@ jobs:
     parallelism: 8
     environment:
       - MODULE_BUCKET_BASE: gs://kernel-modules/97f2d0644df7d292009b2dbdea0bb4860995fa064ba0e9f74b8e82cf3b4601eb
+      - SOURCE_ROOT: /home/circleci/workspace/go/src/github.com/stackrox/collector
 
     steps:
     - attach_workspace:
         at: ~/workspace
 
     - run:
+        name: Google Authenticate
+        working_directory: ~/.config/gcloud
+        command: |
+          echo "$GOOGLE_CREDENTIALS_KERNEL_CACHE" > auth.json
+          pip install -U crcmod google_compute_engine
+          gcloud config set core/project stackrox-ci
+          gcloud config set compute/region us-east1
+          gcloud config set compute/zone us-east1-d
+          gcloud auth activate-service-account --key-file auth.json
+          gcloud auth list
+
+    - run:
         name: Load builder image
         working_directory: ~/workspace/docker-images
         command: |
-          docker image load -i build-kernel-modules.tar
+          docker image load < <(gunzip -c build-kernel-modules.tgz)
 
     - run:
         name: Download packages
@@ -301,6 +316,10 @@ jobs:
     - run:
         name: Prep grpc plugin
         command: sudo install /tmp/grpc_cpp_plugin /usr/local/bin/
+
+    - run:
+        name: Login to Docker Hub
+        command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
 
     - run:
         name: Restore collector-builder cache image
