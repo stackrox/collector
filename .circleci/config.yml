@@ -330,8 +330,8 @@ jobs:
         command: |
           pwd
           echo '>>> Userspace lib:'
-          ls -lh /go/src/github.com/stackrox/collector/collector/container/libs
-          file   /go/src/github.com/stackrox/collector/collector/container/libs/libsinsp-wrapper.so
+          ls -lh collector/container/libs
+          file   collector/container/libs/libsinsp-wrapper.so
           echo '>>> Docker images:'
           docker images | grep collector
           echo '>>> gRPC plugin:'
