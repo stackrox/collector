@@ -199,7 +199,7 @@ jobs:
           echo "Nodes total: $CIRCLE_NODE_TOTAL"
           echo "Node index:  $CIRCLE_NODE_INDEX"
           num_tasks=$(wc -l <build-tasks/all-tasks)
-          shard_size=$((num_tasks / CIRCLE_NODE_TOTAL)
+          shard_size=$((num_tasks / CIRCLE_NODE_TOTAL))
           split -d -l "$shard_size" build-tasks/all-tasks task-shard-
 
           OUTPUT_DIR="${HOME}/build-output"
