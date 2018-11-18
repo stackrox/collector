@@ -450,7 +450,7 @@ jobs:
 
     - run:
         name: Push images
-        working_directory: /go/src/github.com/stackrox/collector
+        working_directory: ~/workspace/go/src/github.com/stackrox/collector
         command: |
           VERSION=$(git describe --tags)
           if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
