@@ -15,6 +15,7 @@ RUN apt-get update \
       cmake \
       make \
       gcc \
+      g++ \
       libelf-dev \
       kmod \
       wget \
