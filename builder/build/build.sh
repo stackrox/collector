@@ -2,9 +2,8 @@
 set -eux
 
 ldconfig -v
-mkdir -p /src/cmake-build
-cd /src/cmake-build
-cmake -DCMAKE_BUILD_TYPE=Release ..
+cd /build-output
+cmake -DCMAKE_BUILD_TYPE=Release /src
 make -j6 all
 strip --strip-unneeded ./collector
 ./runUnitTests
