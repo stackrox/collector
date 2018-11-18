@@ -47,6 +47,7 @@ func mainCmd() error {
 			return err
 		}
 	}
+	log("existing versions: %+v", existingVersions)
 	markManifestsForMissingVersions(manifests, existingVersions)
 	markManifestsForShardedBuild(manifests)
 
