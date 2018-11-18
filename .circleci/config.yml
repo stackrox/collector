@@ -127,7 +127,8 @@ jobs:
         name: Login to Docker Hub
         command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
     - restore_cache:
-        key: grpc-cpp-plugin-{{ checksum "${SOURCE_ROOT}/build/scripts/install-grpc-cpp-plugin.sh"
+        working_directory: ~/workspace/go/src/github.com/stackrox/collector
+        key: grpc-cpp-plugin-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh"
           }}
     - run:
         name: Prep grpc plugin
@@ -288,7 +289,7 @@ jobs:
     - run:
         name: Load builder image
         command: |
-          gunzip -c "${WORKSPACE_ROOT}/docker-images/build-kernel-modules.tgz \
+          gunzip -c "${WORKSPACE_ROOT}/docker-images/build-kernel-modules.tgz" \
           | docker image load
     - run:
         name: Download packages
@@ -662,7 +663,7 @@ workflows:
 #     - run:
 #         name: Load builder image
 #         command: |
-#           gunzip -c \"${WORKSPACE_ROOT}/docker-images/build-kernel-modules.tgz \\
+#           gunzip -c \"${WORKSPACE_ROOT}/docker-images/build-kernel-modules.tgz\" \\
 #           | docker image load
 # 
 #     - run:
@@ -785,7 +786,8 @@ workflows:
 #     - docker-login
 # 
 #     - restore_cache:
-#         key: grpc-cpp-plugin-{{ checksum \"${SOURCE_ROOT}/build/scripts/install-grpc-cpp-plugin.sh\" }}
+#         working_directory: ~/workspace/go/src/github.com/stackrox/collector
+#         key: grpc-cpp-plugin-{{ checksum \"build/scripts/install-grpc-cpp-plugin.sh\" }}
 # 
 #     - run:
 #         name: Prep grpc plugin

@@ -1,11 +1,3 @@
-FROM golang:1.10.3-alpine3.8 as builder
-
-COPY kobuild /go/src/github.com/stackrox/collector/kernel-modules/build/kobuild
-
-WORKDIR /go/src/github.com/stackrox/collector/kernel-modules/build/kobuild
-
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o /tmp/kobuild .
-
 FROM debian:unstable-slim
 
 RUN apt-get update \
@@ -24,7 +16,16 @@ RUN apt-get update \
       `# For CoreOS builds:` \
       bzip2 \
       kpartx \
+      golang-go \
  ;
+
+COPY kobuild /go/src/github.com/stackrox/collector/kernel-modules/build/kobuild
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOPATH=/go go build -a -o /usr/bin/kobuild \
+	github.com/stackrox/collector/kernel-modules/build/kobuild && \
+	rm -rf /go && \
+	apt-get remove -y golang-go \
+;
 
 RUN sed s_unstable_jessie_g < /etc/apt/sources.list > /etc/apt/sources.list.d/jessie.list && \
     apt-get update && apt-get install --no-install-recommends -y \
@@ -53,8 +54,6 @@ RUN apt-get install -y --no-install-recommends curl && curl -s -o binutils_2.30-
  && curl -s -o binutils-x86-64-linux-gnu_2.30-22_amd64.deb http://snapshot.debian.org/archive/debian/20180622T211149Z/pool/main/b/binutils/binutils-x86-64-linux-gnu_2.30-22_amd64.deb \
  && curl -s -o binutils-common_2.30-22_amd64.deb http://snapshot.debian.org/archive/debian/20180622T211149Z/pool/main/b/binutils/binutils-common_2.30-22_amd64.deb \
  && dpkg -i *binutils*.deb
-
-COPY --from=builder /tmp/kobuild /usr/bin/
 
 RUN mkdir -p /output
 COPY build-kos /usr/bin/

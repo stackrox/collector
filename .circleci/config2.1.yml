@@ -193,7 +193,7 @@ jobs:
     - run:
         name: Load builder image
         command: |
-          gunzip -c "${WORKSPACE_ROOT}/docker-images/build-kernel-modules.tgz \
+          gunzip -c "${WORKSPACE_ROOT}/docker-images/build-kernel-modules.tgz" \
           | docker image load
 
     - run:
@@ -316,7 +316,8 @@ jobs:
     - docker-login
 
     - restore_cache:
-        key: grpc-cpp-plugin-{{ checksum "${SOURCE_ROOT}/build/scripts/install-grpc-cpp-plugin.sh" }}
+        working_directory: ~/workspace/go/src/github.com/stackrox/collector
+        key: grpc-cpp-plugin-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
 
     - run:
         name: Prep grpc plugin
