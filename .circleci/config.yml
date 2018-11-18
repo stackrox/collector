@@ -14,7 +14,7 @@ jobs:
           \  export COLLECTOR_SOURCE_ROOT=\"${SOURCE_ROOT}/collector\"\n\texport PATH=\"\
           ${PATH}:${GOPATH}/bin\"\n\texport MODULE_BUCKET_BASE='gs://collector-modules/97f2d0644df7d292009b2dbdea0bb4860995fa064ba0e9f74b8e82cf3b4601eb'\n\
           EOF\nCOLLECTOR_VERSION=\"$(make -C ~/workspace/go/src/github.com/stackrox/collector/collector\
-          \ tag)\"\ncat >~/workspace/shared-env <<-EOF\n\texport COLLECTOR_VERSION=\"\
+          \ tag)\"\ncat >>~/workspace/shared-env <<-EOF\n\texport COLLECTOR_VERSION=\"\
           $COLLECTOR_VERSION\"\nEOF\n"
     - persist_to_workspace:
         root: ~/workspace
@@ -527,7 +527,7 @@ workflows:
 #           \texport MODULE_BUCKET_BASE='gs://collector-modules/97f2d0644df7d292009b2dbdea0bb4860995fa064ba0e9f74b8e82cf3b4601eb'
 #           EOF
 #           COLLECTOR_VERSION=\"$(make -C ~/workspace/go/src/github.com/stackrox/collector/collector tag)\"
-#           cat >~/workspace/shared-env \\<<-EOF
+#           cat >>~/workspace/shared-env \\<<-EOF
 #           \texport COLLECTOR_VERSION=\"$COLLECTOR_VERSION\"
 #           EOF
 # 

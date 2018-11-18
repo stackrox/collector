@@ -51,7 +51,7 @@ jobs:
           	export MODULE_BUCKET_BASE='gs://collector-modules/97f2d0644df7d292009b2dbdea0bb4860995fa064ba0e9f74b8e82cf3b4601eb'
           EOF
           COLLECTOR_VERSION="$(make -C ~/workspace/go/src/github.com/stackrox/collector/collector tag)"
-          cat >~/workspace/shared-env \<<-EOF
+          cat >>~/workspace/shared-env \<<-EOF
           	export COLLECTOR_VERSION="$COLLECTOR_VERSION"
           EOF
 
