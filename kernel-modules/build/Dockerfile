@@ -19,14 +19,6 @@ RUN apt-get update \
       golang-go \
  ;
 
-COPY kobuild /go/src/github.com/stackrox/collector/kernel-modules/build/kobuild
-
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOPATH=/go go build -a -o /usr/bin/kobuild \
-	github.com/stackrox/collector/kernel-modules/build/kobuild && \
-	rm -rf /go && \
-	apt-get remove -y golang-go \
-;
-
 RUN sed s_unstable_jessie_g < /etc/apt/sources.list > /etc/apt/sources.list.d/jessie.list && \
     apt-get update && apt-get install --no-install-recommends -y \
       gcc-4.9 \
@@ -35,7 +27,6 @@ RUN sed s_unstable_jessie_g < /etc/apt/sources.list > /etc/apt/sources.list.d/je
 RUN apt-get install --no-install-recommends -y \
     gcc-6 gcc-5 \
     ;
-
 
 # Since our base Debian image ships with GCC 7 which breaks older kernels, revert the
 # default to gcc-5.
@@ -62,4 +53,4 @@ COPY build-kos /usr/bin/
 COPY prepare-src /usr/bin
 
 WORKDIR /scratch
-ENTRYPOINT [ "/usr/bin/kobuild" ]
+ENTRYPOINT [ "/bin/bash", "-c" ]

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"text/template"
 
 	"github.com/stackrox/collector/kernel-modules/build/kobuild/command"
 	"github.com/stackrox/collector/kernel-modules/build/kobuild/config"
@@ -29,9 +30,9 @@ func main() {
 
 func mainCmd() error {
 	configFlag := flag.String("config", "kernel-manifest.yml", "Config file containing build manifest")
-	printPackagesFlag := flag.Bool("print-pkgs-only", false, "Only print required packages and exit")
-	printCmdOnlyFlag := flag.Bool("print-commands-only", false, "Only print commands that need to be executed")
-	existingVersionsFlag := flag.String("existing-versions", "", "File containing Kernel versions for which a module is already available")
+	kernelVersionsFlag := flag.String("kernel-versions-file", "", "File containing kernel versions for which a module should be built")
+	excludeFlag := flag.Bool("exclude", true, "If used in conjunction with -kernel-versions-file, treat the file as a list of excluded kernel versions")
+	outputFlag := flag.String("output", "", "Go template string to use as output for each build")
 	flag.Parse()
 
 	builders, err := config.Load(*configFlag)
@@ -40,31 +41,44 @@ func mainCmd() error {
 	}
 
 	manifests := builders.Manifests()
-	var existingVersions map[string]struct{}
-	if existingVersionsFlag != nil && *existingVersionsFlag != "" {
-		existingVersions, err = config.LoadExistingVersions(*existingVersionsFlag)
+	var kernelVersions map[string]struct{}
+	if kernelVersionsFlag != nil && *kernelVersionsFlag != "" {
+		kernelVersions, err = config.LoadKernelVersions(*kernelVersionsFlag)
 		if err != nil {
 			return err
 		}
 	}
-	log("existing versions: %+v", existingVersions)
-	markManifestsForMissingVersions(manifests, existingVersions)
+	exclude := false
+	if excludeFlag != nil {
+		exclude = *excludeFlag
+	}
+
+	if kernelVersions == nil {
+		markAllManifests(manifests)
+	} else {
+		markManifestsForKernelVersions(manifests, kernelVersions, exclude)
+	}
 	markManifestsForShardedBuild(manifests)
 
-	if printPackagesFlag != nil && *printPackagesFlag {
-		return printPackages(manifests)
+	manifestAction := buildManifest
+	if outputFlag != nil {
+		t := template.Must(template.New("").Parse(*outputFlag))
+		manifestAction = createPrintAction(t)
 	}
-	printCmdOnly := false
-	if printCmdOnlyFlag != nil {
-		printCmdOnly = *printCmdOnlyFlag
-	}
-	return buildManifests(manifests, printCmdOnly)
+
+	return processManifests(manifests, manifestAction)
 }
 
-func markManifestsForMissingVersions(manifests []*config.Manifest, existingVersions map[string]struct{}) {
+func markAllManifests(manifests []*config.Manifest) {
 	for _, manifest := range manifests {
-		_, exists := existingVersions[manifest.KernelVersion()]
-		manifest.Build = !exists
+		manifest.Build = true
+	}
+}
+
+func markManifestsForKernelVersions(manifests []*config.Manifest, kernelVersions map[string]struct{}, exclude bool) {
+	for _, manifest := range manifests {
+		_, exists := kernelVersions[manifest.KernelVersion()]
+		manifest.Build = exclude != exists
 	}
 }
 
@@ -85,49 +99,49 @@ func markManifestsForShardedBuild(manifests []*config.Manifest) {
 	}
 }
 
-func printPackages(manifests []*config.Manifest) error {
-	for _, manifest := range manifests {
-		if !manifest.Build {
-			continue
-		}
-		for _, pkg := range manifest.Packages {
-			fmt.Println(pkg)
-		}
-	}
-	return nil
+func printManifest(manifest *config.Manifest, t *template.Template) error {
+	err := t.Execute(os.Stdout, manifest)
+	fmt.Println()
+	return err
 }
 
+func createPrintAction(t *template.Template) func(*config.Manifest) error {
+	return func(manifest *config.Manifest) error {
+		return printManifest(manifest, t)
+	}
+}
 
-func buildManifests(manifests []*config.Manifest, printCmdOnly bool) error {
+func buildManifest(manifest *config.Manifest) error {
+	log("%s version %s-%s (%s)", manifest.Builder, manifest.Version, manifest.Flavor, manifest.Kind)
+	log("  %s", manifest.Description)
+	log("Files:")
+	for _, pkg := range manifest.Packages {
+		log("  - %s", pkg)
+	}
+
+	args := manifest.BuildArgs()
+	log("Command:")
+	log("  ./build-kos")
+	for _, arg := range args {
+		log("    %s", arg)
+	}
+
+	return command.Run("build-kos", args...)
+}
+
+func processManifests(manifests []*config.Manifest, action func(*config.Manifest) error) error {
 	for index, manifest := range manifests {
 		if manifest.Build == false {
 			continue
 		}
 
-
-		log("Starting build of manifest %d/%d", index+1, len(manifests))
-		log("%s version %s-%s (%s)", manifest.Builder, manifest.Version, manifest.Flavor, manifest.Kind)
-		log("  %s", manifest.Description)
-		log("Files:")
-		for _, pkg := range manifest.Packages {
-			log("  - %s", pkg)
-		}
-		args := []string{
-			manifest.Kind, manifest.Version, manifest.Flavor,
-		}
-		args = append(args, manifest.Packages...)
-		log("Command:")
-		log("  ./build-kos")
-		for _, arg := range args {
-			log("    %s", arg)
-		}
-
-		if err := command.Run(printCmdOnly, "build-kos", args...); err != nil {
-			log("Failed build of manifest %d/%d\n", index+1, len(manifests))
+		log("Processing manifest %d/%d", index+1, len(manifests))
+		if err := action(manifest); err != nil {
+			log("Failed processing manifest %d/%d: %v", index+1, len(manifests), err)
 			return err
 		}
 
-		log("Finished build of manifest %d/%d\n", index+1, len(manifests))
+		log("Finished processing manifest %d/%d\n", index+1, len(manifests))
 	}
 
 	return nil

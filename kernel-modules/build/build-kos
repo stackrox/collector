@@ -178,7 +178,7 @@ main() {
     files="$@"
 
     mkdir -p /scratch/src
-    [[ -d "/scratch/src/${SOURCE_VERSION}" ]] || cp -r "/build-tasks/${SOURCE_VERSION}/source" "/scratch/src/${SOURCE_VERSION}"
+    [[ -d "/scratch/src/${SOURCE_VERSION}" ]] || cp -r "/sources/${SOURCE_VERSION}" "/scratch/src/${SOURCE_VERSION}"
 
     rm -rf /scratch/tmp || true
     mkdir -p /scratch/tmp

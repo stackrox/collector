@@ -1,11 +1,12 @@
 package config
 
 import (
+	"fmt"
 	"io/ioutil"
 	"sort"
+	"strings"
 
-	"fmt"
-
+	"github.com/kballard/go-shellquote"
 	"gopkg.in/yaml.v2"
 )
 
@@ -92,4 +93,29 @@ func (b *Builders) Manifests() []*Manifest {
 	})
 
 	return manifests
+}
+
+// BuildArgs returns the arguments passed to the ko builder as a string slice.
+func (m *Manifest) BuildArgs() []string {
+	args := []string{
+		m.Kind, m.Version, m.Flavor,
+	}
+	args = append(args, m.Packages...)
+	return args
+}
+
+// BuildCommand returns the shell-escaped build command for the ko build, using the given
+// builder (base) command.
+func (m *Manifest) BuildCommand(cmdName string) string {
+	args := m.BuildArgs()
+	allArgs := make([]string, len(args) + 1)
+	allArgs[0] = cmdName
+	copy(allArgs[1:], args)
+	return shellquote.Join(allArgs...)
+}
+
+// PackageList returns the newline-separted list of packages required for the build as a
+// single string.
+func (m *Manifest) PackageList() string {
+	return strings.Join(m.Packages, "\n")
 }
