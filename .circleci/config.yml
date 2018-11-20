@@ -420,18 +420,30 @@ jobs:
             "gs://stackrox-kernel-modules/collector/${MODULE_VERSION}"
 
     - run:
-        name: Adding Kernel module version file
-        command: |
-          mkdir -p "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
-          echo "$MODULE_VERSION" \
-            >>"${SOURCE_ROOT}/kernel-modules/container/kernel-modules/MODULE_VERSION.txt"
-
-    - run:
         name: Download missing kernel modules
         command: |
           cd "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
           echo "Downloading missing Kernel images ..."
           gsutil -m rsync -r "gs://stackrox-kernel-modules/collector/${MODULE_VERSION}" .
+
+    - run:
+        name: Preparing Kernel modules build cache
+        command: |
+          mkdir -p "/tmp/cache/kernel-modules/${MODULE_VERSION}/"
+          cp -rl "${SOURCE_ROOT}/kernel-modules/container/kernel-modules/." \
+            "/tmp/cache/${MODULE_VERSION}/"
+          echo "$MODULE_VERSION" >/tmp/cache/kernel-modules/module-version.txt
+
+    - save_cache:
+        name: Saving Kernel module build cache
+        key: kernel-module-cache-v0-{{ checksum "/tmp/cache/kernel-modules/module-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+
+    - run:
+        name: Adding Kernel module version file
+        command: |
+          mkdir -p "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
+          echo "$MODULE_VERSION" \
+            >>"${SOURCE_ROOT}/kernel-modules/container/kernel-modules/MODULE_VERSION.txt"
 
     - run:
         name: Sanity check
