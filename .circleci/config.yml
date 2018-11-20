@@ -318,6 +318,11 @@ jobs:
         paths:
           - ~/workspace/bin/grpc_cpp_plugin
 
+    - persist_to_workspace:
+        root: ~/workspace
+        paths:
+          - bin/grpc_cpp_plugin
+
   libsinsp:
     machine: true
     working_directory: ~/workspace
