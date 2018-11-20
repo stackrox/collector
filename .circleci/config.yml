@@ -326,6 +326,13 @@ jobs:
         name: Restore sysdig builder cache image
         command: docker pull stackrox/collector-builder:sysdig || true
 
+    - restore_cache:
+        name: Restore sysdig build CMake cache
+        keys:
+          - sysdig-cmake-build-{{ .Branch }}-{{ .Revision }}
+          - sysdig-cmake-build-{{ .Branch }}-
+          - sysdig-cmake-build-master-
+
     - run:
         name: Build libsinsp Wrapper
         command: make -C "${COLLECTOR_SOURCE_ROOT}" container/libs/libsinsp-wrapper.so
@@ -341,6 +348,11 @@ jobs:
     - run:
         name: Save sysdig builder cache image
         command: docker push stackrox/collector-builder:sysdig
+
+    - save_cache:
+        key: sysdig-cmake-build-{{ .Branch }}-{{ .Revision }}
+        paths:
+          - "${SOURCE_ROOT}/sysdig/src/build"
 
     - persist_to_workspace:
         root: ~/workspace
