@@ -86,6 +86,9 @@ jobs:
   prepare-kernels:
     docker:
     - image: docker.io/stackrox/apollo-ci:0.1.11-16-gc3bded220a
+      auth:
+        username: $DOCKER_USER
+        password: $DOCKER_PASS
 
     working_directory: ~/workspace
 
