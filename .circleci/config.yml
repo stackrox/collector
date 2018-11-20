@@ -226,7 +226,7 @@ jobs:
               --config "${SOURCE_ROOT}/kernel-modules/supported-kernels/kernel-manifest.yml" \
               --kernel-versions-file ~/kobuild-tmp/all-kernel-versions \
               --output '{{.PackageListURLEncoded}}' \
-            | sort | uniq | \
+            | sort | uniq \
             | sed -e 's@^@gs://stackrox-kernel-headers-mirror/packages/@' \
               >~/kobuild-tmp/all-package-objects
           cat ~/kobuild-tmp/all-package-objects
