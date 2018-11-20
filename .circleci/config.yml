@@ -586,6 +586,9 @@ workflows:
     - prepare-kernels:
         requires:
         - init
+        filters:
+          tags:
+            only: /.*/
     - kernels:
         requires:
         - prepare-kernels
