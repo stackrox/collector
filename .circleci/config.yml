@@ -85,7 +85,7 @@ jobs:
 
   prepare-kernels:
     docker:
-    - image: docker.io/stackrox/apollo-ci:0.1.11-16-gc3bded220a
+    - image: docker.io/stackrox/apollo-ci:snapshot-0.1.11-20-gd41340a28d
       auth:
         username: $DOCKER_USER
         password: $DOCKER_PASS
@@ -105,10 +105,6 @@ jobs:
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
             go build -a -o "${WORKSPACE_ROOT}/bin/kobuild" \
             github.com/stackrox/collector/kernel-modules/build/kobuild
-
-    - run:
-        name: Install CMake
-        command: sudo apt-get update && sudo apt-get install cmake
 
     - run:
         name: Prepare source
