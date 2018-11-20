@@ -368,6 +368,7 @@ jobs:
     - docker-login
 
     - restore_cache:
+        name: Restoring GRPC plugin from cache
         key: grpc-cpp-plugin-{{ checksum "go/src/github.com/stackrox/collector/build/scripts/install-grpc-cpp-plugin.sh" }}
 
     - run:
@@ -377,6 +378,13 @@ jobs:
     - run:
         name: Restore collector-builder cache image
         command: docker pull stackrox/collector-builder:cache
+
+    - restore_cache:
+        name: Restore collector build output from cache
+        keys:
+          - collector-build-{{ .Branch }}-{{ .Revision}}
+          - collector-build-{{ .Branch }}-
+          - collector-build-master-
 
     - run:
         name: Sanity Check
@@ -407,6 +415,12 @@ jobs:
             -v "$PWD/sysdig/src/driver/ppm_events_public.h:/usr/local/include/ppm_events_public.h:ro" \
             -v "$PWD/cmake-build:/build-output" \
             --name build stackrox/collector-builder:cache
+
+    - save_cache:
+        key: collector-build-{{ .Branch }}-{{ .Revision }}
+        paths:
+          - "${COLLECTOR_SOURCE_ROOT}/cmake-build"
+          - "${COLLECTOR_SOURCE_ROOT}/generated"
 
     - run:
         name: Extract collector files

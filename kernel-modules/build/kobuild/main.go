@@ -31,7 +31,7 @@ func main() {
 func mainCmd() error {
 	configFlag := flag.String("config", "kernel-manifest.yml", "Config file containing build manifest")
 	kernelVersionsFlag := flag.String("kernel-versions-file", "", "File containing kernel versions for which a module should be built")
-	excludeFlag := flag.Bool("exclude", true, "If used in conjunction with -kernel-versions-file, treat the file as a list of excluded kernel versions")
+	excludeFlag := flag.Bool("exclude", false, "If used in conjunction with -kernel-versions-file, treat the file as a list of excluded kernel versions")
 	outputFlag := flag.String("output", "", "Go template string to use as output for each build")
 	flag.Parse()
 
@@ -76,8 +76,12 @@ func markAllManifests(manifests []*config.Manifest) {
 }
 
 func markManifestsForKernelVersions(manifests []*config.Manifest, kernelVersions map[string]struct{}, exclude bool) {
+	fmt.Fprintf(os.Stderr, "exclude: %v\n", exclude)
 	for _, manifest := range manifests {
 		_, exists := kernelVersions[manifest.KernelVersion()]
+		if exclude != exists {
+			log("Excluding %s since it does not exist (%v != %v)", manifest.KernelVersion(), exclude, exists)
+		}
 		manifest.Build = exclude != exists
 	}
 }
@@ -131,7 +135,7 @@ func buildManifest(manifest *config.Manifest) error {
 
 func processManifests(manifests []*config.Manifest, action func(*config.Manifest) error) error {
 	for index, manifest := range manifests {
-		if manifest.Build == false {
+		if !manifest.Build {
 			continue
 		}
 
