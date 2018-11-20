@@ -231,6 +231,8 @@ jobs:
               >~/kobuild-tmp/all-package-objects
           cat ~/kobuild-tmp/all-package-objects
 
+          cat ~/kobuild-tmp/all-package-objects
+
           mkdir -p ~/kobuild-tmp/packages
           gsutil -m cp -I ~/kobuild-tmp/packages/ <~/kobuild-tmp/all-package-objects
 
