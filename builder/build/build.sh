@@ -4,6 +4,6 @@ set -eux
 ldconfig -v
 cd /build-output
 cmake -DCMAKE_BUILD_TYPE=Release /src
-make -j6 all
+make -j6 all --debug=bm
 strip --strip-unneeded ./collector
 ./runUnitTests
