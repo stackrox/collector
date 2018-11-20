@@ -524,7 +524,7 @@ jobs:
 
   push-release:
     docker:
-      image: docker.io/stackrox/apollo-ci:snapshot-0.1.11-20-gd41340a28d
+    - image: docker.io/stackrox/apollo-ci:snapshot-0.1.11-20-gd41340a28d
       auth:
         username: $DOCKER_USER
         password: $DOCKER_PASS
