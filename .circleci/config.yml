@@ -555,29 +555,50 @@ workflows:
   version: 2
   build:
     jobs:
-    - init
+    - init:
+        filters:
+          tags:
+            only: /.*/
     - builder:
         requires:
         - init
-    - grpc
+        filters:
+          tags:
+            only: /.*/
+    - grpc:
+        filters:
+          tags:
+            only: /.*/
     - libsinsp:
         requires:
         - init
+        filters:
+          tags:
+            only: /.*/
     - collector:
         requires:
         - builder
         - grpc
         - libsinsp
+        filters:
+          tags:
+            only: /.*/
     - prepare-kernels:
         requires:
         - init
     - kernels:
         requires:
         - prepare-kernels
+        filters:
+          tags:
+            only: /.*/
     - images:
         requires:
         - collector
         - kernels
+        filters:
+          tags:
+            only: /.*/
     - push-release:
         requires:
         - images
