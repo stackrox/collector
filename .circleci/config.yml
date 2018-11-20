@@ -175,6 +175,7 @@ jobs:
     steps:
     - init
     - gcloud-init
+    - docker-login
 
     - run:
         name: Restore builder cache image(s)
