@@ -232,7 +232,7 @@ jobs:
             echo -n 'gs://stackrox-kernel-headers-mirror/packages/'
             { curl -Gso /dev/null -w %{url_effective} --data-urlencode "$url" "" || true ; } \
               | cut -c 3-
-          done <~/kobuild-tmp/all-package-urls ~/kobuild-tmp/all-package-objects
+          done <~/kobuild-tmp/all-package-urls >~/kobuild-tmp/all-package-objects
           cat ~/kobuild-tmp/all-package-objects
 
           mkdir -p ~/kobuild-tmp/packages
