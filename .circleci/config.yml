@@ -298,7 +298,7 @@ jobs:
     - run:
         name: Install dependencies
         command: |
-          if [[ -x "${WORKSPACE_ROOT}/bin/grpc_cpp_plugin" ]]; then
+          if [[ -x /usr/local/bin/grpc_cpp_plugin ]]; then
             echo "The cached grpc_cpp_plugin was found, skipping build."
             circleci step halt
           fi
@@ -307,19 +307,13 @@ jobs:
         name: Build grpc plugin
         command: make -C collector install-grpc
 
-    - run:
-        name: Prep grpc plugin
-        command: |
-          mkdir -p "${WORKSPACE_ROOT}/bin"
-          cp -v /usr/local/bin/grpc_cpp_plugin "${WORKSPACE_ROOT}/bin"
-
     - save_cache:
         key: grpc-cpp-plugin-v0-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
         paths:
-          - ~/workspace/bin/grpc_cpp_plugin
+          - /usr/local/bin/grpc_cpp_plugin
 
     - persist_to_workspace:
-        root: ~/workspace
+        root: /usr/local
         paths:
           - bin/grpc_cpp_plugin
 
