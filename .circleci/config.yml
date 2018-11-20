@@ -296,7 +296,7 @@ jobs:
     - run:
         name: Install dependencies
         command: |
-          if [[ -x /tmp/grpc_cpp_plugin ]]; then
+          if [[ -x "${WORKSPACE_ROOT}/bin/grpc_cpp_plugin" ]]; then
             echo "The cached grpc_cpp_plugin was found, skipping build."
             circleci step halt
           fi
@@ -307,12 +307,14 @@ jobs:
 
     - run:
         name: Prep grpc plugin
-        command: cp -v /usr/local/bin/grpc_cpp_plugin /tmp/
+        command: |
+          mkdir -p "${WORKSPACE_ROOT}/bin"
+          cp -v /usr/local/bin/grpc_cpp_plugin "${WORKSPACE_ROOT}/bin"
 
     - save_cache:
         key: grpc-cpp-plugin-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
         paths:
-          - /tmp/grpc_cpp_plugin
+          - ~/workspace/bin/grpc_cpp_plugin
 
   libsinsp:
     machine: true
@@ -352,7 +354,7 @@ jobs:
     - save_cache:
         key: sysdig-cmake-build-{{ .Branch }}-{{ .Revision }}
         paths:
-          - "${SOURCE_ROOT}/sysdig/src/build"
+          - ~/workspace/go/src/github.com/stackrox/collector/sysdig/src/build
 
     - persist_to_workspace:
         root: ~/workspace
@@ -366,14 +368,6 @@ jobs:
     steps:
     - init
     - docker-login
-
-    - restore_cache:
-        name: Restoring GRPC plugin from cache
-        key: grpc-cpp-plugin-{{ checksum "go/src/github.com/stackrox/collector/build/scripts/install-grpc-cpp-plugin.sh" }}
-
-    - run:
-        name: Prep grpc plugin
-        command: sudo install /tmp/grpc_cpp_plugin /usr/local/bin/
 
     - run:
         name: Restore collector-builder cache image
@@ -419,8 +413,8 @@ jobs:
     - save_cache:
         key: collector-build-{{ .Branch }}-{{ .Revision }}
         paths:
-          - "${COLLECTOR_SOURCE_ROOT}/cmake-build"
-          - "${COLLECTOR_SOURCE_ROOT}/generated"
+          - ~/workspace/go/src/github.com/stackrox/collector/collector/cmake-build
+          - ~/workspace/go/src/github.com/stackrox/collector/collector/generated
 
     - run:
         name: Extract collector files
