@@ -19,7 +19,6 @@ commands:
         name: Install and configure gcloud
         working_directory: ~/.config/gcloud
         command: |
-          if command -v
           pip install -U crcmod google_compute_engine
           gcloud auth activate-service-account --key-file <(echo "$GOOGLE_CREDENTIALS_KERNEL_CACHE")
           gcloud auth list
