@@ -69,10 +69,6 @@ jobs:
     - docker-login
 
     - run:
-        name: Restore collector-builder cache image
-        command: docker pull stackrox/collector-builder:cache || true
-
-    - run:
         name: Build collector builder Docker image
         command: |
           docker build \
@@ -81,7 +77,10 @@ jobs:
 
     - run:
         name: Save collector-builder cache image
-        command: docker push stackrox/collector-builder:cache
+        command: |
+          docker push stackrox/collector-builder:cache
+          docker tag stackrox/collector-builder:cache "stackrox/collector-builder:circle-build-${CIRCLE_BUILD_NUM}"
+          docker push "stackrox/collector-builder:circle-build-${CIRCLE_BUILD_NUM}"
 
   prepare-kernels:
     docker:
@@ -367,7 +366,7 @@ jobs:
 
     - run:
         name: Restore collector-builder cache image
-        command: docker pull stackrox/collector-builder:cache
+        command: docker pull "stackrox/collector-builder:circle-build-${CIRCLE_BUILD_NUM}"
 
     - restore_cache:
         name: Restore collector build output from cache
@@ -404,7 +403,7 @@ jobs:
             -v "$PWD/container/libs/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
             -v "$PWD/sysdig/src/driver/ppm_events_public.h:/usr/local/include/ppm_events_public.h:ro" \
             -v "$PWD/cmake-build:/build-output" \
-            --name build stackrox/collector-builder:cache
+            --name build "stackrox/collector-builder:circle-build-${CIRCLE_BUILD_NUM}"
 
     - save_cache:
         key: collector-build-v0-{{ .Branch }}-{{ .Revision }}
