@@ -210,7 +210,7 @@ jobs:
 
           mkdir -p ~/kobuild-tmp
           cd ~/kobuild-tmp
-          split -d -l "$shard_size" "${WORKSPACE_ROOT}/build-tasks" task-shard-
+          split -d -l "$shard_size" "${WORKSPACE_ROOT}/ko-build/build-tasks" task-shard-
 
           this_shard_file=~/kobuild-tmp/task-shard-"$CIRCLE_NODE_INDEX"
           if [[ ! -s "$this_shard_file" ]]; then
