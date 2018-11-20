@@ -49,8 +49,8 @@ jobs:
           	export SOURCE_ROOT="${GOPATH}/src/github.com/stackrox/collector"
             export COLLECTOR_SOURCE_ROOT="${SOURCE_ROOT}/collector"
           	export PATH="${PATH}:${GOPATH}/bin:${WORKSPACE_ROOT}/bin"
-          	export MODULE_BUCKET_BASE='gs://collector-modules/97f2d0644df7d292009b2dbdea0bb4860995fa064ba0e9f74b8e82cf3b4601eb'
           EOF
+
           COLLECTOR_VERSION="$(make -s -C ~/workspace/go/src/github.com/stackrox/collector/collector tag)"
           cat >>~/workspace/shared-env \<<-EOF
           	export COLLECTOR_VERSION="$COLLECTOR_VERSION"
@@ -327,13 +327,6 @@ jobs:
         name: Restore sysdig builder cache image
         command: docker pull stackrox/collector-builder:sysdig || true
 
-    - restore_cache:
-        name: Restore sysdig build CMake cache
-        keys:
-          - sysdig-cmake-build-v1-{{ .Branch }}-{{ .Revision }}
-          - sysdig-cmake-build-v1-{{ .Branch }}-
-          - sysdig-cmake-build-v1-master-
-
     - run:
         name: Build libsinsp Wrapper
         command: make -C "${COLLECTOR_SOURCE_ROOT}" container/libs/libsinsp-wrapper.so
@@ -349,11 +342,6 @@ jobs:
     - run:
         name: Save sysdig builder cache image
         command: docker push stackrox/collector-builder:sysdig
-
-    - save_cache:
-        key: sysdig-cmake-build-v1-{{ .Branch }}-{{ .Revision }}
-        paths:
-          - ~/workspace/go/src/github.com/stackrox/collector/sysdig/build-output
 
     - persist_to_workspace:
         root: ~/workspace
@@ -371,13 +359,6 @@ jobs:
     - run:
         name: Restore collector-builder cache image
         command: docker pull "stackrox/collector-builder:circle-build-${CIRCLE_WORKFLOW_ID}"
-
-    - restore_cache:
-        name: Restore collector build output from cache
-        keys:
-          - collector-build-v0-{{ .Branch }}-{{ .Revision}}
-          - collector-build-v0-{{ .Branch }}-
-          - collector-build-v0-master-
 
     - run:
         name: Sanity Check
@@ -408,12 +389,6 @@ jobs:
             -v "$PWD/sysdig/src/driver/ppm_events_public.h:/usr/local/include/ppm_events_public.h:ro" \
             -v "$PWD/cmake-build:/build-output" \
             --name build "stackrox/collector-builder:circle-build-${CIRCLE_WORKFLOW_ID}"
-
-    - save_cache:
-        key: collector-build-v0-{{ .Branch }}-{{ .Revision }}
-        paths:
-          - ~/workspace/go/src/github.com/stackrox/collector/collector/cmake-build
-          - ~/workspace/go/src/github.com/stackrox/collector/collector/generated
 
     - run:
         name: Extract collector files
@@ -520,38 +495,6 @@ jobs:
           sudo chmod +x /usr/local/bin/docker-compose
           make integration-tests integration-test-report
 
-  push-release:
-    docker:
-    - image: docker.io/stackrox/apollo-ci:snapshot-0.1.11-20-gd41340a28d
-      auth:
-        username: $DOCKER_USER
-        password: $DOCKER_PASS
-    environment:
-      ROX_CI_IMAGE: "true"
-
-    steps:
-      - init
-      - gcloud-init
-      - run:
-          name: Upload module source tarball
-          command: |
-            tar -C "${WORKSPACE_ROOT}/ko-build/module-versions/${MODULE_VERSION}" -cvzf - . \
-              | gsutil cp - "gs://stackrox-kernel-modules-source/collector/${MODULE_VERSION}.tgz"
-
-      - checkout:
-          path: ~/workflow/go/src/github.com/stackrox/collector
-
-      - run:
-          name: Push released version info
-          command: |
-            cd "$SOURCE_ROOT"
-            git checkout master
-            git pull
-            git checkout -b test-released-versions
-            mkdir -p released-versions
-            echo "$MODULE_VERSION" >"released-versions/${CIRCLE_TAG}"
-            git push -u origin test-released-versions
-
 workflows:
   version: 2
   build:
@@ -601,13 +544,5 @@ workflows:
         - collector
         - kernels
         filters:
-          tags:
-            only: /.*/
-    - push-release:
-        requires:
-        - images
-        filters:
-          branches:
-            ignore: /.*/
           tags:
             only: /.*/
