@@ -69,6 +69,10 @@ jobs:
     - docker-login
 
     - run:
+        name: Restore collector-builder cache image
+        command: docker pull stackrox/collector-builder:cache || true
+
+    - run:
         name: Build collector builder Docker image
         command: |
           docker build \
