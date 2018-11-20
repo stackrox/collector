@@ -265,6 +265,13 @@ jobs:
             build-kernel-modules \
             sh - <~/kobuild-tmp/all-build-commands
 
+    - run:
+        name: Upload modules to gcloud bucket
+        command: |
+          gsutil -m rsync -r \
+            "${WORKSPACE_ROOT}/ko-build/build-output" \
+            'gs://stackrox-kernel-modules/collector/'
+
     - persist_to_workspace:
         root: ~/workspace
         paths:
