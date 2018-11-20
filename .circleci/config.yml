@@ -291,7 +291,7 @@ jobs:
           apt-get install -y build-essential ca-certificates
 
     - restore_cache:
-        key: grpc-cpp-plugin-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
+        key: grpc-cpp-plugin-v0-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
 
     - run:
         name: Install dependencies
@@ -312,7 +312,7 @@ jobs:
           cp -v /usr/local/bin/grpc_cpp_plugin "${WORKSPACE_ROOT}/bin"
 
     - save_cache:
-        key: grpc-cpp-plugin-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
+        key: grpc-cpp-plugin-v0-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
         paths:
           - ~/workspace/bin/grpc_cpp_plugin
 
@@ -331,9 +331,9 @@ jobs:
     - restore_cache:
         name: Restore sysdig build CMake cache
         keys:
-          - sysdig-cmake-build-{{ .Branch }}-{{ .Revision }}
-          - sysdig-cmake-build-{{ .Branch }}-
-          - sysdig-cmake-build-master-
+          - sysdig-cmake-build-v0-{{ .Branch }}-{{ .Revision }}
+          - sysdig-cmake-build-v0-{{ .Branch }}-
+          - sysdig-cmake-build-v0-master-
 
     - run:
         name: Build libsinsp Wrapper
@@ -352,7 +352,7 @@ jobs:
         command: docker push stackrox/collector-builder:sysdig
 
     - save_cache:
-        key: sysdig-cmake-build-{{ .Branch }}-{{ .Revision }}
+        key: sysdig-cmake-build-v0-{{ .Branch }}-{{ .Revision }}
         paths:
           - ~/workspace/go/src/github.com/stackrox/collector/sysdig/src/build
 
@@ -376,9 +376,9 @@ jobs:
     - restore_cache:
         name: Restore collector build output from cache
         keys:
-          - collector-build-{{ .Branch }}-{{ .Revision}}
-          - collector-build-{{ .Branch }}-
-          - collector-build-master-
+          - collector-build-v0-{{ .Branch }}-{{ .Revision}}
+          - collector-build-v0-{{ .Branch }}-
+          - collector-build-v0-master-
 
     - run:
         name: Sanity Check
@@ -411,7 +411,7 @@ jobs:
             --name build stackrox/collector-builder:cache
 
     - save_cache:
-        key: collector-build-{{ .Branch }}-{{ .Revision }}
+        key: collector-build-v0-{{ .Branch }}-{{ .Revision }}
         paths:
           - ~/workspace/go/src/github.com/stackrox/collector/collector/cmake-build
           - ~/workspace/go/src/github.com/stackrox/collector/collector/generated
