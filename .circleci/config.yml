@@ -296,16 +296,11 @@ jobs:
         key: grpc-cpp-plugin-v1-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
 
     - run:
-        name: Install dependencies
-        command: |
-          if [[ -x /usr/local/bin/grpc_cpp_plugin ]]; then
-            echo "The cached grpc_cpp_plugin was found, skipping build."
-            circleci step halt
-          fi
-
-    - run:
         name: Build grpc plugin
-        command: make -C collector install-grpc
+        command: |
+          if [[ ! -x /usr/local/bin/grpc_cpp_plugin ]]; then
+            make -C collector install-grpc
+          fi
 
     - save_cache:
         key: grpc-cpp-plugin-v1-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
