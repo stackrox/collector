@@ -197,6 +197,7 @@ jobs:
           if [[ ! -s "$this_shard_file" ]]; then
             echo "Nothing to be done for this shard."
             circleci step halt
+            exit 0
           fi
 
           while read -a line || [[ "${#line[@]}" > 0 ]]; do
