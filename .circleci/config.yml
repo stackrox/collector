@@ -85,7 +85,7 @@ jobs:
 
   prepare-kernels:
     docker:
-    - image: stackrox/sandbox:collector-ci-image
+    - image: docker.io/stackrox/sandbox:collector-ci-image
 
     working_directory: ~/workspace
 
