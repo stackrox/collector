@@ -19,9 +19,9 @@ commands:
         name: Install and configure gcloud
         working_directory: ~/.config/gcloud
         command: |
-          echo "$GOOGLE_CREDENTIALS_KERNEL_CACHE" > auth.json
+          if command -v
           pip install -U crcmod google_compute_engine
-          gcloud auth activate-service-account --key-file auth.json
+          gcloud auth activate-service-account --key-file <(echo "$GOOGLE_CREDENTIALS_KERNEL_CACHE")
           gcloud auth list
 
   docker-login:
@@ -90,6 +90,9 @@ jobs:
 
     steps:
     - init
+    - run:
+        name: Install pip
+        command: sudo apt-get install python-pip
     - gcloud-init
 
     - run:
