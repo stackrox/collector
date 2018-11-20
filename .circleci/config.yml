@@ -531,7 +531,7 @@ jobs:
     environment:
       ROX_CI_IMAGE: "true"
 
-    step:
+    steps:
       - init
 
       - run:
