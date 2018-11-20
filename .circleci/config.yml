@@ -531,11 +531,11 @@ jobs:
 
     steps:
       - init
-
+      - gcloud-init
       - run:
           name: Upload module source tarball
           command: |
-            tar -C "${WORKSPACE_ROOT}/ko-build/module-versions/${MODULE_VERSION}" -cvzf - \
+            tar -C "${WORKSPACE_ROOT}/ko-build/module-versions/${MODULE_VERSION}" -cvzf - . \
               | gsutil cp - "gs://stackrox-kernel-modules-source/collector/${MODULE_VERSION}.tgz"
 
       - run:
