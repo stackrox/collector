@@ -4,16 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strconv"
 	"text/template"
 
 	"github.com/stackrox/collector/kernel-modules/build/kobuild/command"
 	"github.com/stackrox/collector/kernel-modules/build/kobuild/config"
-)
-
-var (
-	circleNodeTotal = getEnvVar("CIRCLE_NODE_TOTAL", 1)
-	circleNodeIndex = getEnvVar("CIRCLE_NODE_INDEX", 0)
 )
 
 func log(format string, args ...interface{}) {
@@ -54,11 +48,9 @@ func mainCmd() error {
 	}
 
 	if kernelVersions == nil {
-		markAllManifests(manifests)
-	} else {
-		markManifestsForKernelVersions(manifests, kernelVersions, exclude)
+		exclude = true
 	}
-	markManifestsForShardedBuild(manifests)
+	markManifestsForKernelVersions(manifests, kernelVersions, exclude)
 
 	manifestAction := buildManifest
 	if outputFlag != nil {
@@ -69,37 +61,10 @@ func mainCmd() error {
 	return processManifests(manifests, manifestAction)
 }
 
-func markAllManifests(manifests []*config.Manifest) {
-	for _, manifest := range manifests {
-		manifest.Build = true
-	}
-}
-
 func markManifestsForKernelVersions(manifests []*config.Manifest, kernelVersions map[string]struct{}, exclude bool) {
-	fmt.Fprintf(os.Stderr, "exclude: %v\n", exclude)
 	for _, manifest := range manifests {
 		_, exists := kernelVersions[manifest.KernelVersion()]
-		if exclude != exists {
-			log("Excluding %s since it does not exist (%v != %v)", manifest.KernelVersion(), exclude, exists)
-		}
 		manifest.Build = exclude != exists
-	}
-}
-
-// markManifests examines each manifest and marks if a given manifest should be
-// built on the current CircleCI node.
-func markManifestsForShardedBuild(manifests []*config.Manifest) {
-	i := 0
-	for _, manifest := range manifests {
-		if !manifest.Build {
-			continue
-		}
-		if i%circleNodeTotal == circleNodeIndex {
-			manifest.Build = true
-		} else {
-			manifest.Build = false
-		}
-		i++
 	}
 }
 
@@ -149,21 +114,4 @@ func processManifests(manifests []*config.Manifest, action func(*config.Manifest
 	}
 
 	return nil
-}
-
-// getEnvVar looks up the variable named by key in the current environment and
-// converts it into an integer. If the variable is not found or cannot be
-// converted, the fallback value is returned instead.
-func getEnvVar(key string, fallback int) int {
-	value, found := os.LookupEnv(key)
-	if !found {
-		return fallback
-	}
-
-	parsed, err := strconv.Atoi(value)
-	if err != nil {
-		return fallback
-	}
-
-	return parsed
 }
