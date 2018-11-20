@@ -12,5 +12,6 @@ cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_DRIVER=OFF \
     -DUSE_BUNDLED_CURL=OFF \
     -DUSE_BUNDLED_LUAJIT=OFF \
     ..
+find .
 make --debug=bm
 strip --strip-unneeded ./userspace/libsinsp/libsinsp-wrapper.so
