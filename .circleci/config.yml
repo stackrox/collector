@@ -174,7 +174,6 @@ jobs:
 
     steps:
     - init
-    - gcloud-init
 
     - run:
         name: Determine tasks for current shard
@@ -218,6 +217,7 @@ jobs:
                 \>> ~/kobuild-tmp/all-build-commands
           done
 
+    - gcloud-init
     - run:
         name: Download required packages
         command: |
@@ -450,7 +450,7 @@ jobs:
         name: Copying Kernel modules build output
         command: |
           mv "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}/"* \
-            "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
+            "${SOURCE_ROOT}/kernel-modules/container/kernel-modules" || true
 
     - run:
         name: Download missing kernel modules
