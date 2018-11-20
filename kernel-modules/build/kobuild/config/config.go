@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"sort"
 	"strings"
 
@@ -100,8 +101,16 @@ func (m *Manifest) BuildArgs() []string {
 	args := []string{
 		m.Kind, m.Version, m.Flavor,
 	}
-	args = append(args, m.Packages...)
+	args = append(args, m.URLEncodedPackages()...)
 	return args
+}
+
+func (m *Manifest) URLEncodedPackages() []string {
+	urlEncodedPackages := make([]string, len(m.Packages))
+	for i, pkgUrl := range m.Packages {
+		urlEncodedPackages[i] = url.PathEscape(pkgUrl)
+	}
+	return urlEncodedPackages
 }
 
 // BuildCommand returns the shell-escaped build command for the ko build, using the given
@@ -118,4 +127,8 @@ func (m *Manifest) BuildCommand(cmdName string) string {
 // single string.
 func (m *Manifest) PackageList() string {
 	return strings.Join(m.Packages, "\n")
+}
+
+func (m *Manifest) PackageListURLEncoded() string {
+	return strings.Join(m.URLEncodedPackages(), "\n")
 }
