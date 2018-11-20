@@ -270,13 +270,6 @@ jobs:
             build-kernel-modules \
             sh - <~/kobuild-tmp/all-build-commands
 
-    - run:
-        name: Upload modules to gcloud bucket
-        command: |
-          gsutil -m rsync -r \
-            "${WORKSPACE_ROOT}/ko-build/build-output" \
-            'gs://stackrox-kernel-modules/collector/'
-
     - persist_to_workspace:
         root: ~/workspace
         paths:
@@ -413,17 +406,25 @@ jobs:
     - gcloud-init
 
     - run:
+        name: Copying Kernel modules build output
+        command: |
+          mkdir -p "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
+          mv "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}/"* \
+            "${SOURCE_ROOT}/kernel-modules/container/kernel-modules" || true
+
+    - run:
+        name: Upload modules to gcloud bucket
+        command: |
+          gsutil -m rsync -r \
+            "${SOURCE_ROOT}/kernel-modules/container/kernel-modules" \
+            "gs://stackrox-kernel-modules/collector/${MODULE_VERSION}"
+
+    - run:
         name: Adding Kernel module version file
         command: |
           mkdir -p "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
           echo "$MODULE_VERSION" \
             >>"${SOURCE_ROOT}/kernel-modules/container/kernel-modules/MODULE_VERSION.txt"
-
-    - run:
-        name: Copying Kernel modules build output
-        command: |
-          mv "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}/"* \
-            "${SOURCE_ROOT}/kernel-modules/container/kernel-modules" || true
 
     - run:
         name: Download missing kernel modules
