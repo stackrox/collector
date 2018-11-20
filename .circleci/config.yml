@@ -140,7 +140,7 @@ jobs:
             version="${filename%.tgz}"
             mkdir -p "module-versions/${version}"
             tar -C "module-versions/${version}" -xvzf "$i"
-            ( gsutil -m ls -r 'gs://stackrox-kernel-modules/collector/collector-*.ko'{,.gz} || true ) \
+            ( gsutil -m ls -r 'gs://stackrox-kernel-modules/collector/'"$version"'/collector-*.ko'{,.gz} || true ) \
               | sed -ne 's@^.*/collector-\([^/]\{1,\}\)\.ko\(\.gz\)\{0,1\}$@\1@p' \
               >~/kobuild-tmp/existing-modules-"${version}"
           done
@@ -419,17 +419,24 @@ jobs:
     - gcloud-init
 
     - run:
+        name: Adding Kernel module version file
+        command: |
+          mkdir -p "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
+          echo "$MODULE_VERSION" \
+            >>"${SOURCE_ROOT}/kernel-modules/container/kernel-modules/MODULE_VERSION.txt"
+
+    - run:
+        name: Copying Kernel modules build output
+        command: |
+          mv "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}/"* \
+            "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
+
+    - run:
         name: Download missing kernel modules
         command: |
           cd "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"
           echo "Downloading missing Kernel images ..."
           gsutil -m rsync -r "gs://stackrox-kernel-modules/collector/${MODULE_VERSION}" .
-
-    - run:
-        name: Copying Kernel modules
-        command:
-          mv "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}/"* \
-            "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
 
     - run:
         name: Sanity check
