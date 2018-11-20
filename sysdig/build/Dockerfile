@@ -12,19 +12,13 @@ RUN apt-get update \
         libz-dev \
         libjsoncpp-dev \
         cmake \
-        # For proper HTTPS validation in git clone:
+        `# For proper HTTPS validation in git clone:` \
         ca-certificates \
-        # For sysdig to pull a `jq` patch:
+        `# For sysdig to pull a `jq` patch:` \
         wget \
         ;
 
-# We want to fail if the destination directory is there, hence mkdir (not -p).
-RUN mkdir build-tmp
-
-# Clean up the build directory we created.
-RUN rm -rf build-tmp
-
-COPY build/build.sh /build.sh
+COPY build.sh /build.sh
 
 RUN chmod 700 /build.sh
 

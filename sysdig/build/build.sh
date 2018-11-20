@@ -3,6 +3,7 @@ set -eux
 
 mkdir -p /sysdig-src/build
 cd /sysdig-src/build
+find .
 cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_DRIVER=OFF \
     -DUSE_BUNDLED_DEPS=ON \
     -DUSE_BUNDLED_ZLIB=OFF \
