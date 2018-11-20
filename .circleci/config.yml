@@ -85,7 +85,7 @@ jobs:
 
   prepare-kernels:
     docker:
-    - image: docker.io/stackrox/sandbox:collector-ci-image
+    - image: docker.io/stackrox/apollo-ci:0.1.11-16-gc3bded220a
 
     working_directory: ~/workspace
 
