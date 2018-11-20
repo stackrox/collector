@@ -522,6 +522,35 @@ jobs:
           sudo chmod +x /usr/local/bin/docker-compose
           make integration-tests integration-test-report
 
+  push-release:
+    docker:
+      image: docker.io/stackrox/apollo-ci:snapshot-0.1.11-20-gd41340a28d
+      auth:
+        username: $DOCKER_USER
+        password: $DOCKER_PASS
+    environment:
+      ROX_CI_IMAGE: "true"
+
+    step:
+      - init
+
+      - run:
+          name: Upload module source tarball
+          command: |
+            tar -C "${WORKSPACE_ROOT}/ko-build/module-versions/${MODULE_VERSION}" -cvzf - \
+              | gsutil cp - "gs://stackrox-kernel-modules-source/collector/${MODULE_VERSION}.tgz"
+
+      - run:
+          name: Push released version info
+          command: |
+            cd "$SOURCE_ROOT"
+            git checkout master
+            git pull
+            git checkout -b test-released-versions
+            mkdir -p released-versions
+            echo "$MODULE_VERSION" >"released-versions/${CIRCLE_TAG}"
+            git push -u origin test-released-versions
+
 workflows:
   version: 2
   build:
@@ -549,3 +578,11 @@ workflows:
         requires:
         - collector
         - kernels
+    - push-release:
+        requires:
+        - images
+        filters:
+          branches:
+            ignore: /.*/
+          tags:
+            only: /.*/

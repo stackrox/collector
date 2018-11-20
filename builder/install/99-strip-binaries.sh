@@ -7,4 +7,4 @@ while read f; do
 	fi
 
 	strip --strip-unneeded "$f"
-fi < <(find /usr/local -type f)
+done < <(find /usr/local -type f)
