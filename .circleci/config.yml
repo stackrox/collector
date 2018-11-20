@@ -538,6 +538,9 @@ jobs:
             tar -C "${WORKSPACE_ROOT}/ko-build/module-versions/${MODULE_VERSION}" -cvzf - . \
               | gsutil cp - "gs://stackrox-kernel-modules-source/collector/${MODULE_VERSION}.tgz"
 
+      - checkout:
+          path: ~/workflow/go/src/github.com/stackrox/collector
+
       - run:
           name: Push released version info
           command: |
