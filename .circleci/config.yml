@@ -455,7 +455,7 @@ jobs:
     - run:
         name: Download missing kernel modules
         command: |
-          cd "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"
+          cd "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
           echo "Downloading missing Kernel images ..."
           gsutil -m rsync -r "gs://stackrox-kernel-modules/collector/${MODULE_VERSION}" .
 
