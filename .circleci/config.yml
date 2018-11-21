@@ -545,6 +545,8 @@ jobs:
         command: |
           cd "${SOURCE_ROOT}"
           git checkout master && git pull
+          git config user.email 'mi+robotrox@stackrox.com'
+          git config user.name 'Robot Rox'
           git checkout -b test-master || git checkout test-master
           version_file="released-versions/${CIRCLE_TAG}"
           mkdir -p "$(dirname "$version_file")"
