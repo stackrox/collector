@@ -548,12 +548,48 @@ jobs:
           git config user.email 'mi+robotrox@stackrox.com'
           git config user.name 'Robot Rox'
           git checkout -b test-master || git checkout test-master
-          version_file="released-versions/${CIRCLE_TAG}"
+          version_file="released-versions/list/${CIRCLE_TAG}"
           mkdir -p "$(dirname "$version_file")"
           echo "$MODULE_VERSION" >"$version_file"
           git add "$version_file"
           git commit -m "Marking version ${CIRCLE_TAG} as released."
           git push -u origin test-master
+
+  publish-modules:
+    docker:
+    - image: docker.io/stackrox/apollo-ci:collector-0.1.11-18-g3ecb0861c9
+      auth:
+        username: $DOCKER_USER
+        password: $DOCKER_PASS
+    environment:
+      ROX_CI_IMAGE: "true"
+
+    steps:
+    - init
+    - gcloud-init
+
+    - run:
+        name: Prepare synchronization state
+        command: |
+          mkdir -p /tmp/publish-modules
+          for dir in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
+            if [[ ! -f "${dir}/release" ]]; then
+              continue
+            fi
+            version="$(basename "$dir")"
+            if [[ ! -d "${WORKSPACE_ROOT}/ko-build/build-output/${version}" ]]; then
+              continue
+            fi
+            mkdir -p "/tmp/publish-modules/${version}"
+            cp -rlv \
+              "${WORKSPACE_ROOT}/ko-build/build-output/${version}"/* \
+              "/tmp/publish-modules/${version}/"
+          done
+
+    - run:
+        name: Upload modules to GCS bucket
+        command: |
+          gsutil -m rsync -r /tmp/publish-modules "$PUBLISHED_MODULES_BUCKET"
 
 workflows:
   version: 2
@@ -614,3 +650,9 @@ workflows:
             only: /.*/
           branches:
             ignore: /.*/
+    - publish-modules:
+        requires:
+          - images
+        filters:
+          branches:
+            only: master
