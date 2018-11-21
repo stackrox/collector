@@ -133,6 +133,7 @@ jobs:
     - run:
         name: Prepare Kernel module build cache lookup
         command: |
+          mkdir -p /tmp/cache
           echo "$MODULE_VERSION" >/tmp/cache/kernel-modules-version.txt
 
     - restore_cache:
