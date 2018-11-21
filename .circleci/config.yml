@@ -151,10 +151,9 @@ jobs:
         name: Copy cached modules to build output
         command: |
           [[ -d "/tmp/cache/kernel-modules/${MODULE_VERSION}/" ]] || exit 0
-          find /tmp/cache
           mkdir -p "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"
           mv -v \
-              "/tmp/cache/kernel-modules/${MODULE_VERSION}/*" \
+              "/tmp/cache/kernel-modules/${MODULE_VERSION}"/* \
               "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}/" \
             || true
 
