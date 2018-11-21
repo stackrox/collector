@@ -99,7 +99,6 @@ jobs:
 
     steps:
     - init
-    - gcloud-init
 
     - run:
         name: Compile kobuild
@@ -132,7 +131,30 @@ jobs:
           EOF
 
     - run:
-        name: Retrieve list of existing modules
+        name: Prepare Kernel module build cache lookup
+        command: |
+          echo "$MODULE_VERSION" >/tmp/cache/kernel-modules-version.txt
+
+    - restore_cache:
+        name: Restore Kernel module build cache
+        keys:
+          - kernel-module-cache-v1-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+          - kernel-module-cache-v1-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
+          - kernel-module-cache-v1-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
+          - kernel-module-cache-v1-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-
+
+    - run:
+        name: Copy cached modules to build output
+        command: |
+          [[ -d "/tmp/cache/kernel-modules/${MODULE_VERSION}/" ]] || exit 0
+          mkdir -p "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"
+          mv -v \
+              "/tmp/cache/kernel-modules/${MODULE_VERSION}/*" \
+              "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}/" \
+            || true
+
+    - run:
+        name: Compile list of cached modules
         command: |
           mkdir -p "${WORKSPACE_ROOT}/ko-build"
           cd "${WORKSPACE_ROOT}/ko-build"
@@ -143,7 +165,7 @@ jobs:
             version="${filename%.tgz}"
             mkdir -p "module-versions/${version}"
             tar -C "module-versions/${version}" -xvzf "$i"
-            ( gsutil -m ls -r 'gs://stackrox-kernel-modules/collector/'"$version"'/collector-*.ko'{,.gz} || true ) \
+            ( ls "${WORKSPACE_ROOT}/ko-build/build-output/${version}"/*.ko{,.gz} || true ) \
               | sed -ne 's@^.*/collector-\([^/]\{1,\}\)\.ko\(\.gz\)\{0,1\}$@\1@p' \
               >~/kobuild-tmp/existing-modules-"${version}"
           done
@@ -411,20 +433,6 @@ jobs:
           mkdir -p "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
           mv "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}/"* \
             "${SOURCE_ROOT}/kernel-modules/container/kernel-modules" || true
-
-    - run:
-        name: Upload modules to gcloud bucket
-        command: |
-          gsutil -m rsync -r \
-            "${SOURCE_ROOT}/kernel-modules/container/kernel-modules" \
-            "gs://stackrox-kernel-modules/collector/${MODULE_VERSION}"
-
-    - run:
-        name: Download missing kernel modules
-        command: |
-          cd "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
-          echo "Downloading missing Kernel images ..."
-          gsutil -m rsync -r "gs://stackrox-kernel-modules/collector/${MODULE_VERSION}" .
 
     - run:
         name: Preparing Kernel modules build cache
