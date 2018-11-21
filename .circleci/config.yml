@@ -129,12 +129,14 @@ jobs:
           cat >>"${WORKSPACE_ROOT}/shared-env" \<<-EOF
           	export MODULE_VERSION="${MODULE_VERSION}"
           EOF
+          cat >>"$BASH_ENV" \<<-EOF
+          	export MODULE_VERSION="${MODULE_VERSION}"
+          EOF
 
     - run:
         name: Prepare Kernel module build cache lookup
         command: |
           mkdir -p /tmp/cache
-          source "${WORKSPACE_ROOT}/shared-env"
           echo "$MODULE_VERSION" >/tmp/cache/kernel-modules-version.txt
 
     - restore_cache:
@@ -149,6 +151,7 @@ jobs:
         name: Copy cached modules to build output
         command: |
           [[ -d "/tmp/cache/kernel-modules/${MODULE_VERSION}/" ]] || exit 0
+          find /tmp/cache
           mkdir -p "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"
           mv -v \
               "/tmp/cache/kernel-modules/${MODULE_VERSION}/*" \
