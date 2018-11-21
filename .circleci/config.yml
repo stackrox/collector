@@ -522,6 +522,36 @@ jobs:
           sudo chmod +x /usr/local/bin/docker-compose
           make integration-tests integration-test-report
 
+
+  push-release-info:
+    docker:
+      image: circleci/golang:1.11.2-stretch
+
+    steps:
+    - run:
+        name: Verify that we are actually in a release build
+        command: [[ -n "$CIRCLE_TAG" ]]
+
+    - init
+    - checkout:
+        path: ~/workspace/go/src/github.com/stackrox/collector
+    - add_ssh_keys:
+        fingerprints:
+          - "df:30:53:b4:a5:91:49:a8:48:ec:d8:3d:b0:95:8a:db"
+
+    - run:
+        name: Mark version as released
+        command: |
+          cd "${SOURCE_ROOT}"
+          git checkout master && git pull
+          git checkout -b test-master || git checkout test-master
+          version_file="released-versions/${CIRCLE_TAG}"
+          mkdir -p "$(dirname "$version_file")"
+          echo "$MODULE_VERSION" >"$version_file"
+          git add "$version_file"
+          git commit -m "Marking version ${CIRCLE_TAG} as released."
+          git push -u origin test-master
+
 workflows:
   version: 2
   build:
@@ -573,3 +603,11 @@ workflows:
         filters:
           tags:
             only: /.*/
+    - push-release-info:
+        requires:
+          - images
+        filters:
+          tags:
+            only: /.*/
+          branches:
+            ignore: /.*/
