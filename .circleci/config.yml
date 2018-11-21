@@ -525,12 +525,13 @@ jobs:
 
   push-release-info:
     docker:
-      image: circleci/golang:1.11.2-stretch
+    - image: circleci/golang:1.11.2-stretch
 
     steps:
     - run:
         name: Verify that we are actually in a release build
-        command: [[ -n "$CIRCLE_TAG" ]]
+        command: |
+          [[ -n "$CIRCLE_TAG" ]]
 
     - init
     - checkout:
