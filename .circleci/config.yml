@@ -134,6 +134,7 @@ jobs:
         name: Prepare Kernel module build cache lookup
         command: |
           mkdir -p /tmp/cache
+          source "${WORKSPACE_ROOT}/shared-env"
           echo "$MODULE_VERSION" >/tmp/cache/kernel-modules-version.txt
 
     - restore_cache:
