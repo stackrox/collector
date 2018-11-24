@@ -1,5 +1,15 @@
 version: 2.1
 
+executors:
+  collector-ci-image:
+    docker:
+      - image: docker.io/stackrox/apollo-ci:collector-0.1.11-18-g3ecb0861c9
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASS
+    environment:
+      ROX_CI_IMAGE: "true"
+
 commands:
   init:
     steps:
@@ -8,10 +18,10 @@ commands:
     - run:
         name: Set up environment
         command: |
-          cat >>"$BASH_ENV" \<<-EOF
+          cat >>"$BASH_ENV" \<<-"EOF"
           	export WORKSPACE_ROOT="${HOME}/workspace"
+            [[ -f "${WORKSPACE_ROOT}/shared-env" ]] && source "${WORKSPACE_ROOT}/shared-env"
           EOF
-          [[ -f ~/workspace/shared-env ]] && cat ~/workspace/shared-env >>"$BASH_ENV"
 
   gcloud-init:
     steps:
@@ -19,7 +29,7 @@ commands:
         name: Install and configure gcloud
         working_directory: ~/.config/gcloud
         command: |
-          if [[ -z "$ROX_CI_IMAGE" ]]; then
+          if [[ "$ROX_CI_IMAGE" != "true" ]]; then
             pip install -U crcmod google_compute_engine
           fi
           gcloud auth activate-service-account --key-file <(echo "$GOOGLE_CREDENTIALS_KERNEL_CACHE")
@@ -38,6 +48,7 @@ jobs:
     working_directory: ~/workspace
 
     steps:
+
     - checkout:
         path: ~/workspace/go/src/github.com/stackrox/collector
 
@@ -87,14 +98,7 @@ jobs:
           docker push "stackrox/collector-builder:circle-build-${CIRCLE_WORKFLOW_ID}"
 
   prepare-kernels:
-    docker:
-    - image: docker.io/stackrox/apollo-ci:collector-0.1.11-18-g3ecb0861c9
-      auth:
-        username: $DOCKER_USER
-        password: $DOCKER_PASS
-    environment:
-      ROX_CI_IMAGE: "true"
-
+    executor: collector-ci-image
     working_directory: ~/workspace
 
     steps:
@@ -111,49 +115,46 @@ jobs:
     - run:
         name: Prepare source
         command: |
-          mkdir -p ~/kobuild-tmp/versions-src
+          mkdir -p /tmp/ko-build/versions-src
           SYSDIG_DIR="${SOURCE_ROOT}/sysdig/src" \
-              SCRATCH_DIR="${HOME}/scratch" \
-              OUTPUT_DIR="${HOME}/kobuild-tmp/versions-src" \
+              SCRATCH_DIR=/tmp/ko-build/scratch \
+              OUTPUT_DIR=/tmp/ko-build/versions-src \
             "${SOURCE_ROOT}/kernel-modules/build/prepare-src"
 
-          versions=(~/kobuild-tmp/versions-src/*)
-          [[ "${#versions[@]}" == 1 ]] || {
-            echo >&2 "Expected a unique kernel module source version, got:"
-            printf >&2 '- %s\n' "${versions[@]}"
+          source_archives=(/tmp/ko-build/versions-src/*)
+          [[ "${#source_archives[@]}" == 1 ]] || {
+            echo >&2 "Expected a single kernel module source version, got:"
+            printf >&2 '- %s\n' "${source_archives[@]}"
             exit 1
           }
 
-          version="$(basename "${versions[0]}")"
-          MODULE_VERSION="${version%.tgz}"
+          version="$(basename "${source_archives[0]}" '.tgz')"
           cat >>"${WORKSPACE_ROOT}/shared-env" \<<-EOF
-          	export MODULE_VERSION="${MODULE_VERSION}"
-          EOF
-          cat >>"$BASH_ENV" \<<-EOF
-          	export MODULE_VERSION="${MODULE_VERSION}"
+          	export MODULE_VERSION=$(printf '%q' "$version")
           EOF
 
     - run:
         name: Prepare Kernel module build cache lookup
         command: |
-          mkdir -p /tmp/cache
-          echo "$MODULE_VERSION" >/tmp/cache/kernel-modules-version.txt
+          mkdir -p /tmp/ko-build
+          echo "$MODULE_VERSION" >/tmp/ko-build/kernel-module-version.txt
 
     - restore_cache:
         name: Restore Kernel module build cache
         keys:
-          - kernel-module-cache-v1-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
-          - kernel-module-cache-v1-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
-          - kernel-module-cache-v1-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
-          - kernel-module-cache-v1-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-
+          - kernel-module-cache-v2-{{ checksum "/tmp/ko-build/kernel-module-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+          - kernel-module-cache-v2-{{ checksum "/tmp/ko-build/kernel-module-version.txt" }}-{{ .Branch }}-
+          - kernel-module-cache-v2-{{ checksum "/tmp/ko-build/kernel-module-version.txt" }}-master-
+          - kernel-module-cache-v2-{{ checksum "/tmp/ko-build/kernel-module-version.txt" }}-
 
     - run:
         name: Copy cached modules to build output
         command: |
-          [[ -d "/tmp/cache/kernel-modules/${MODULE_VERSION}/" ]] || exit 0
+          CACHE_DIR="/tmp/ko-build/cache/kernel-modules/${MODULE_VERSION}/"
+          [[ -d "$CACHE_DIR" ]] || exit 0
           mkdir -p "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"
           mv -v \
-              "/tmp/cache/kernel-modules/${MODULE_VERSION}"/* \
+              "$CACHE_DIR"/* \
               "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}/" \
             || true
 
@@ -194,66 +195,185 @@ jobs:
           - bin
           - shared-env
 
+    - run:
+        name: Check if we need to rebuild any other modules
+        command: |
+          [[ "$CIRCLE_BRANCH" == "master" ]] || circleci step halt
+          if git diff --quiet HEAD^ -- "${SOURCE_ROOT}/kernel-modules/supported-kernels/kernel-manifest.yml"; then
+            exit 0
+          elif git diff --quiet HEAD^ -- "${SOURCE_ROOT}/released-versions/"; then
+            exit 0
+          fi
+          circleci step halt
+
+    - run:
+        name: Determining all kernel module versions for live releases
+        command: |
+          cd "${SOURCE_ROOT}"
+          IFS=$'\n' read -d'' -r -a released_version_files < <(
+            find 'released-versions/list' -name '.version' -printf '%P\n')
+
+          for version_file in "${released_version_files[@]}"; do
+            release_version="$(dirname "$version_file")"
+            git checkout "$release_version"
+
+            SYSDIG_DIR="${PWD}/sysdig/src" \
+                SCRATCH_DIR=/tmp/scratch \
+                OUTPUT_DIR=/tmp/ko-build/legacy-versions-src \
+              ./kernel-modules/build/prepare-src"
+          done
+
+          cd "${WORKSPACE_ROOT}/ko-build"
+
+          echo >publish-list
+          if rm -f "/tmp/ko-build/legacy-versions-src/${MODULE_VERSION}.tgz"; then
+            echo "current/${MODULE_VERSION}" >>publish-list
+          fi
+
+          for archive in "/tmp/ko-build/legacy-versions-src"/*.tgz; then
+            filename="$(basename "$archive")"
+            version="${filename%.tgz}"
+            mkdir -p "module-versions/legacy/${version}"
+            tar -C module-versions/legacy/${version}" -xvzf "$archive"
+            echo "legacy/${version}" >>publish-list
+          fi
+
+
+  prepare-kernels-legacy:
+    executor: collector-ci-image
+
+    working_directory: ~/workspace
+
+    steps:
+    - init
+    - gcloud-init
+
+    - run:
+        name: Check if we need to rebuild any other modules
+        command: |
+          if git diff --quiet HEAD^ -- "${SOURCE_ROOT}/kernel-modules/supported-kernels/kernel-manifest.yml"; then
+            echo "Detected change in kernel manifest file."
+            exit 0
+          elif git diff --quiet HEAD^ -- "${SOURCE_ROOT}/released-versions/list/"; then
+            echo "Detected change in released version list."
+            exit 0
+          fi
+          echo "No relevant changes detected."
+          circleci step halt
+
+    - run:
+        name: Building kernel module source archives for released versions
+        command: |
+          cd "${SOURCE_ROOT}"
+          IFS=$'\n' read -d'' -r -a released_version_files < <(
+            find 'released-versions/list' -name '.version' -printf '%P\n')
+
+          for version_file in "${released_version_files[@]}"; do
+            release_version="$(dirname "$version_file")"
+            git checkout "$release_version"
+
+            echo " - ${release_version}"
+            SYSDIG_DIR="${PWD}/sysdig/src" \
+                SCRATCH_DIR=/tmp/scratch \
+                OUTPUT_DIR=/tmp/ko-build/legacy-versions-src \
+              ./kernel-modules/build/prepare-src"
+          done
+
+    - run:
+        name: Preparing module build
+        command: |
+          cd "${WORKSPACE_ROOT}/ko-build"
+
+          echo >publish-list
+          if rm -f "/tmp/ko-build/legacy-versions-src/${MODULE_VERSION}.tgz"; then
+            echo "current/${MODULE_VERSION}" >>publish-list
+          fi
+
+          for archive in "/tmp/ko-build/legacy-versions-src"/*.tgz; then
+            filename="$(basename "$archive")"
+            version="${filename%.tgz}"
+            mkdir -p "module-versions/legacy/${version}"
+            tar -C module-versions/legacy/${version}" -xvzf "$archive"
+            echo "legacy/${version}" >>publish-list
+          fi
+
   kernels:
+    parameters:
+      type:
+        description: "Build current or legacy kernel modules?"
+        default: current
+        type: string
+      parallelism:
+        description: "How many concurrent builds to run"
+        type: integer
+        default: 8
+
     machine: true
-    parallelism: 8
+    parallelism: << parameters.parallelism >>
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
 
     steps:
     - init
+    - run:
+        name: Set up environment
+        command: |
+          echo "export KOBUILD_ROOT=${WORKSPACE_ROOT}/ko-build/<< parameters.type >>" >>"$BASH_ENV"
 
     - run:
         name: Determine tasks for current shard
         command: |
+          cd "$KOBUILD_ROOT"
+
           echo "Nodes total: $CIRCLE_NODE_TOTAL"
           echo "Node index:  $CIRCLE_NODE_INDEX"
 
-          cd "${WORKSPACE_ROOT}/ko-build"
           num_tasks=$(wc -l <build-tasks)
           shard_size=$(((num_tasks - 1) / CIRCLE_NODE_TOTAL + 1))
 
           echo "Total number of tasks: ${num_tasks}"
           echo "Tasks per shard: ${shard_size}"
 
-          mkdir -p ~/kobuild-tmp
-          cd ~/kobuild-tmp
-          split -d -l "$shard_size" "${WORKSPACE_ROOT}/ko-build/build-tasks" task-shard-
+          mkdir -p /tmp/ko-build
+          split -d -l "$shard_size" build-tasks /tmp/ko-build/task-shard-
 
-          this_shard_file=~/kobuild-tmp/task-shard-"$(printf '%02d' "$CIRCLE_NODE_INDEX")"
+          this_shard_file=/tmp/ko-build/task-shard-"$(printf '%02d' "$CIRCLE_NODE_INDEX")"
           if [[ ! -s "$this_shard_file" ]]; then
             echo "Nothing to be done for this shard."
             circleci step halt
             exit 0
           fi
 
+          # Create build-output directories for modules, and write all kernel versions to
+          # /tmp/ko-build/kernel-versions-<modver>
           while read -a line || [[ "${#line[@]}" > 0 ]]; do
-            module_version="${line[1]}"
-            mkdir -p "${WORKSPACE_ROOT}/ko-build/build-output/${module_version}"
-            mkdir -p ~/kobuild-tmp/build-versions/"${module_version}"
             kernel_version="${line[0]}"
-            echo "$kernel_version" >>~/kobuild-tmp/kernel-versions-"${module_version}"
+            module_version="${line[1]}"
+
+            mkdir -p "build-output/${module_version}"
+            echo "$kernel_version" >>/tmp/ko-build/kernel-versions-"${module_version}"
           done <"$this_shard_file"
 
-          echo >~/kobuild-tmp/all-build-commands
-          for i in "${WORKSPACE_ROOT}/ko-build/build-output"/*/; do
+          # Write all build commands to /tmp/ko-build/all-build-commands
+          echo >/tmp/ko-build/all-build-commands
+          for i in build-output/*/; do
             module_version="$(basename "$i")"
-            "${WORKSPACE_ROOT}/bin/kobuild" \
+            kobuild \
                 --config "${SOURCE_ROOT}/kernel-modules/supported-kernels/kernel-manifest.yml" \
-                --kernel-versions-file ~/kobuild-tmp/kernel-versions-"${module_version}" \
-                --output 'SOURCE_VERSION="'"${module_version}"'" {{.BuildCommand "build-kos"}}' \
-                \>> ~/kobuild-tmp/all-build-commands
+                --kernel-versions-file "/tmp/ko-build/kernel-versions-${module_version}" \
+                --output 'SOURCE_VERSION='"$(printf '%q' "$module_version")"' {{.BuildCommand "build-kos"}}' \
+                \>> /tmp/ko-build/all-build-commands
           done
 
     - gcloud-init
     - run:
         name: Download required packages
         command: |
-          cat ~/kobuild-tmp/kernel-versions-* | sort | uniq >~/kobuild-tmp/all-kernel-versions
-          "${WORKSPACE_ROOT}/bin/kobuild" \
+          cat /tmp/ko-build/kernel-versions-* | sort | uniq >/tmp/ko-build/all-kernel-versions
+          kobuild \
               --config "${SOURCE_ROOT}/kernel-modules/supported-kernels/kernel-manifest.yml" \
-              --kernel-versions-file ~/kobuild-tmp/all-kernel-versions \
+              --kernel-versions-file /tmp/ko-build/all-kernel-versions \
               --output '{{.PackageListURLEncoded}}' \
             | sort | uniq \
             | sed -e 's@^@gs://stackrox-kernel-headers-mirror/packages/@' \
@@ -280,7 +400,7 @@ jobs:
     - run:
         name: Upload builder cache image
         command: |
-          # [[ "$CIRCLE_BRANCH" == "master" ]] || exit 0
+          [[ "$CIRCLE_BRANCH" == "master" ]] || exit 0
           (( CIRCLE_NODE_INDEX == 0 )) || exit 0
           docker push "$BUILD_CONTAINER_TAG"
         background: true
@@ -290,7 +410,7 @@ jobs:
         command: |
           docker run --rm -i \
             -v "${HOME}/kobuild-tmp/packages:/packages:ro" \
-            -v "${WORKSPACE_ROOT}/ko-build/module-versions:/sources:ro" \
+            -v "${WORKSPACE_ROOT}/ko-build/<< parameters.subdir >>/module-versions:/sources:ro" \
             -v "${WORKSPACE_ROOT}/ko-build/build-output:/output" \
             --tmpfs /scratch:exec \
             build-kernel-modules \
@@ -536,6 +656,8 @@ jobs:
     - init
     - checkout:
         path: ~/workspace/go/src/github.com/stackrox/collector
+
+    # Add the SSH key which will allow pushing to the repo.
     - add_ssh_keys:
         fingerprints:
           - "df:30:53:b4:a5:91:49:a8:48:ec:d8:3d:b0:95:8a:db"
@@ -548,21 +670,16 @@ jobs:
           git config user.email 'mi+robotrox@stackrox.com'
           git config user.name 'Robot Rox'
           git checkout -b test-master || git checkout test-master
-          version_file="released-versions/list/${CIRCLE_TAG}"
-          mkdir -p "$(dirname "$version_file")"
-          echo "$MODULE_VERSION" >"$version_file"
-          git add "$version_file"
+          version_dir="released-versions/list/${CIRCLE_TAG}"
+          mkdir -p "$version_dir"
+          touch "${version_dir}/.version"
+          echo "$MODULE_VERSION" >"${version_dir}/collector-module-version"
+          git add "${version_dir}/.version" "${version_dir}"
           git commit -m "Marking version ${CIRCLE_TAG} as released."
           git push -u origin test-master
 
   publish-modules:
-    docker:
-    - image: docker.io/stackrox/apollo-ci:collector-0.1.11-18-g3ecb0861c9
-      auth:
-        username: $DOCKER_USER
-        password: $DOCKER_PASS
-    environment:
-      ROX_CI_IMAGE: "true"
+    executor: collector-ci-image
 
     steps:
     - init
@@ -572,19 +689,14 @@ jobs:
         name: Prepare synchronization state
         command: |
           mkdir -p /tmp/publish-modules
-          for dir in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
-            if [[ ! -f "${dir}/release" ]]; then
-              continue
+
+          cd "${WORKSPACE_ROOT}/ko-build"
+          while read -r version; do
+            if [[ -d "build-output/${version}" ]]; then
+              echo >&2 "Version ${version} not found in build output."
             fi
-            version="$(basename "$dir")"
-            if [[ ! -d "${WORKSPACE_ROOT}/ko-build/build-output/${version}" ]]; then
-              continue
-            fi
-            mkdir -p "/tmp/publish-modules/${version}"
-            cp -rlv \
-              "${WORKSPACE_ROOT}/ko-build/build-output/${version}"/* \
-              "/tmp/publish-modules/${version}/"
-          done
+            cp -rlv "build-output/${version}" /tmp/publish-modules/
+          done <./publish-list
 
     - run:
         name: Upload modules to GCS bucket
@@ -629,12 +741,26 @@ workflows:
         filters:
           tags:
             only: /.*/
+    - prepare-kernels-legacy:
+        requires:
+          - prepare-kernels
+        filters:
+          branches:
+            only: master
     - kernels:
         requires:
-        - prepare-kernels
+          - prepare-kernels
         filters:
           tags:
             only: /.*/
+    - kernels:
+        name: kernels-legacy
+        legacy: true
+        requires:
+          - prepare-kernels-legacy
+        filters:
+          branches:
+            only: master
     - images:
         requires:
         - collector
@@ -652,7 +778,8 @@ workflows:
             ignore: /.*/
     - publish-modules:
         requires:
-          - images
+          - kernels
+          - kernels-legacy
         filters:
           branches:
             only: master
