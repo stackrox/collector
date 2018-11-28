@@ -1,8 +1,8 @@
 #! /bin/sh
 set -eux
 
-mkdir -p /sysdig-src/build
-cd /sysdig-src/build
+mkdir -p /sysdig-build
+cd /sysdig-build
 cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_DRIVER=OFF \
     -DUSE_BUNDLED_DEPS=ON \
     -DUSE_BUNDLED_ZLIB=OFF \
@@ -10,6 +10,6 @@ cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_DRIVER=OFF \
     -DUSE_BUNDLED_OPENSSL=OFF \
     -DUSE_BUNDLED_CURL=OFF \
     -DUSE_BUNDLED_LUAJIT=OFF \
-    ..
-make
+    /sysdig-src
+make -j6
 strip --strip-unneeded ./userspace/libsinsp/libsinsp-wrapper.so

@@ -17,23 +17,15 @@ set -euo pipefail
 build_modules() {
     kernel_directory="$1"
     kernel_release="$2"
-    output_module="$3"
+    output_module="collector-${kernel_release}.ko"
 
     echo "Building modules for ${kernel_release}"
 
-    cd /sysdig-src
-    KERNELDIR="$kernel_directory" \
-        make -C driver clean || true
-
-    rm -rf ko-build || true
-    mkdir ko-build
-    cd ko-build
-
-    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-fno-pie" -DPROBE_NAME=collector -DBUILD_USERSPACE=OFF ..
-    KERNELDIR="$kernel_directory" \
-        make -j 6 driver
-
-    sysdig_ko=driver/collector.ko
+    cd "/scratch/src/${SOURCE_VERSION}"
+    KERNELDIR="$kernel_directory" make clean
+    KERNELDIR="$kernel_directory" make -j 6 all
+    
+    sysdig_ko=collector.ko
     strip -g "$sysdig_ko"
 
     ko_version=$(/sbin/modinfo "$sysdig_ko" | grep vermagic | tr -s " " | cut -d " " -f 2)
@@ -42,7 +34,9 @@ build_modules() {
         return 1
     fi
 
-    cp -v "$sysdig_ko" "$output_module"
+    mv "$sysdig_ko" "$output_module"
+    gzip "$output_module"
+    mv "${output_module}.gz" "/output/${SOURCE_VERSION}"
 }
 
 ubuntu_build() {
@@ -172,21 +166,25 @@ main() {
         return 1
     fi
 
+    [[ -n "$SOURCE_VERSION" ]] || {
+    	echo >&2 "Source version is not set!"
+    	exit 1
+    }
+
     distro="$1"
     version="$2"
     flavor="$3"
     shift 3
     files="$@"
 
+    mkdir -p /scratch/src
+    [[ -d "/scratch/src/${SOURCE_VERSION}" ]] || cp -r "/sources/${SOURCE_VERSION}" "/scratch/src/${SOURCE_VERSION}"
+
     rm -rf /scratch/tmp || true
     mkdir -p /scratch/tmp
     cd /scratch/tmp
 
-    mkdir -p \
-        /output/Ubuntu \
-        /output/RedHat \
-        /output/Debian \
-        /output/CoreOS
+    mkdir -p "/output/${SOURCE_VERSION}"
 
     case "$distro" in
         Ubuntu)

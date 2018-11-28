@@ -1,11 +1,13 @@
 package config
 
 import (
-	"io/ioutil"
-	"sort"
-
 	"fmt"
+	"io/ioutil"
+	"net/url"
+	"sort"
+	"strings"
 
+	"github.com/kballard/go-shellquote"
 	"gopkg.in/yaml.v2"
 )
 
@@ -37,6 +39,16 @@ type Manifest struct {
 // intended to be used for lexicographically sorting multiple manifests.
 func (m *Manifest) Fullname() string {
 	return fmt.Sprintf("%s-%s-%s", m.Builder, m.Flavor, m.Version)
+}
+
+// KernelVersion returns the kernel version for the given manifest to match
+// the output of `uname -r`.
+func (m *Manifest) KernelVersion() string {
+	sep := "-"
+	if m.Kind == "RedHat" {
+		sep = "."
+	}
+	return fmt.Sprintf("%s%s%s", m.Version, sep, m.Flavor)
 }
 
 // Load reads the given filename as yaml and parses the content into a list of
@@ -82,4 +94,41 @@ func (b *Builders) Manifests() []*Manifest {
 	})
 
 	return manifests
+}
+
+// BuildArgs returns the arguments passed to the ko builder as a string slice.
+func (m *Manifest) BuildArgs() []string {
+	args := []string{
+		m.Kind, m.Version, m.Flavor,
+	}
+	args = append(args, m.URLEncodedPackages()...)
+	return args
+}
+
+func (m *Manifest) URLEncodedPackages() []string {
+	urlEncodedPackages := make([]string, len(m.Packages))
+	for i, pkgUrl := range m.Packages {
+		urlEncodedPackages[i] = url.PathEscape(pkgUrl)
+	}
+	return urlEncodedPackages
+}
+
+// BuildCommand returns the shell-escaped build command for the ko build, using the given
+// builder (base) command.
+func (m *Manifest) BuildCommand(cmdName string) string {
+	args := m.BuildArgs()
+	allArgs := make([]string, len(args) + 1)
+	allArgs[0] = cmdName
+	copy(allArgs[1:], args)
+	return shellquote.Join(allArgs...)
+}
+
+// PackageList returns the newline-separted list of packages required for the build as a
+// single string.
+func (m *Manifest) PackageList() string {
+	return strings.Join(m.Packages, "\n")
+}
+
+func (m *Manifest) PackageListURLEncoded() string {
+	return strings.Join(m.URLEncodedPackages(), "\n")
 }

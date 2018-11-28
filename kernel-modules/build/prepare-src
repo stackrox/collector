@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+[[ -n "$SCRATCH_DIR" && -n "$SYSDIG_DIR" && -n "$OUTPUT_DIR" ]] || {
+	echo >&2 "SCRATCH_DIR, SYSDIG_DIR and OUTPUT_DIR all need to be set"
+	exit 1
+}
+
+SYSDIG_SCRATCH="${SCRATCH_DIR}/sysdig-src"
+BUILD_SCRATCH="${SCRATCH_DIR}/cmake-build"
+
+mkdir -p "$SYSDIG_SCRATCH" "$BUILD_SCRATCH"
+
+cp -r "${SYSDIG_DIR}/." "${SYSDIG_SCRATCH}"
+
+modfiles0() (
+	local dir="${1:-${SYSDIG_SCRATCH}/driver}"
+    cd "$dir"
+    find . -type f \( -name 'Makefile' -o -name '*.c' -o -name '*.h' \) -print0 | \
+    	sort -z
+)
+
+get_module_version() (
+	modfiles0 "$@" | \
+		xargs -0 sha256sum | \
+		awk '{print$1 " " $2}' | \
+		sha256sum | \
+		awk '{print$1}'
+)
+
+cd "$BUILD_SCRATCH"
+cmake \
+	-DCMAKE_BUILD_TYPE=Release \
+	-DCMAKE_C_FLAGS="-fno-pie" \
+	-DPROBE_NAME=collector \
+	-DBUILD_USERSPACE=OFF \
+	-DENABLE_DKMS=OFF \
+	"$SYSDIG_SCRATCH"
+KERNELDIR=/dev/null make driver/fast || true
+
+cd "${SYSDIG_SCRATCH}/driver"
+module_version="$(get_module_version .)"
+
+source_archive="${OUTPUT_DIR}/${module_version}.tgz"
+if [[ -s "$source_archive" ]]; then
+	exit 0
+fi
+modfiles0 . | xargs -0 tar cfvz "$source_archive"

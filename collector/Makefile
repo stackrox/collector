@@ -43,7 +43,7 @@ container/bin/collector: $(HDRS) $(SRCS) generated-srcs container/libs/libsinsp-
 container/libs/libsinsp-wrapper.so: $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
 	make -C sysdig
 	mkdir -p container/libs/
-	cp sysdig/src/build/userspace/libsinsp/libsinsp-wrapper.so container/libs/
+	cp sysdig/build-output/userspace/libsinsp/libsinsp-wrapper.so container/libs/
 
 .PHONY: clean
 clean: clean-generated-srcs
@@ -124,6 +124,10 @@ pull-protos:
 
 install-grpc:
 	@$(BASE_PATH)/build/scripts/install-grpc-cpp-plugin.sh
+
+.PHONY: tag
+tag:
+	@git describe --tags --abbrev=10 --dirty
 
 include ../build/protogen.mk
 

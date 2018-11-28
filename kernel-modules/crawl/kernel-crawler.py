@@ -14,7 +14,7 @@
 import argparse
 import json
 import sys
-import urllib2
+import urllib.request as urllib2
 from lxml import html
 import traceback
 
@@ -336,7 +336,7 @@ def sort_and_output(urls):
     # For consistency with what was done before, sort URLs based on their alphabetical order
     #  _after_ reversing each of them.
     sorted_urls = sorted(urls, key=lambda s: s[::-1])
-    print "\n".join(sorted_urls)
+    print("\n".join(sorted_urls))
 
 
 def handle_crawl(args):
@@ -354,7 +354,7 @@ def handle_crawl(args):
         "removed": removed_urls,
         "crawled": crawled_urls,
     }
-    print json.dumps(urls_dict)
+    print(json.dumps(urls_dict))
 
 
 def handle_output_from_json(args):
