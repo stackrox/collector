@@ -44,14 +44,14 @@ function download_kernel_module() {
         echo "Downloading modules not supported."
         return 1
     fi
-    local URL="$MODULE_URL/$DISTRO/$KERNEL_MODULE"
+    local URL="$MODULE_URL/$KERNEL_MODULE"
     if curl -L -s -o "${MODULE_PATH}.gz" "${URL}.gz"; then
         gunzip "${MODULE_PATH}.gz"
     elif ! curl -L -s -o "$MODULE_PATH" "$URL"; then
-      echo "Error downloading $MODULE_NAME module for $DISTRO kernel version $KERNEL_VERSION." >&2
+      echo "Error downloading $MODULE_NAME module for kernel version $KERNEL_VERSION." >&2
       return 1
     fi
-    echo "Using downloaded $MODULE_NAME module for $DISTRO kernel version $KERNEL_MODULE." >&2
+    echo "Using downloaded $MODULE_NAME module for kernel version $KERNEL_MODULE." >&2
     return 0
 }
 
