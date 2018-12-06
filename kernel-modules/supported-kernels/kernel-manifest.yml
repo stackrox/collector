@@ -47,11 +47,66 @@ amazon:
       - http://amazonlinux.us-west-2.amazonaws.com/blobstore/2d755914f9f54c12d4b3fef793a1bb7b19c357c8c01d1817da10137bcc2c00b0/kernel-devel-4.14.72-73.55.amzn2.x86_64.rpm
       4.14.77-80.57:
       - http://amazonlinux.us-west-2.amazonaws.com/blobstore/5d873815f1dd6d7cc1daf1e7beac5f0272fea77f7a4cd6668e930311a1265cd3/kernel-devel-4.14.77-80.57.amzn2.x86_64.rpm
+      4.14.77-81.59:
+      - http://amazonlinux.us-west-2.amazonaws.com/blobstore/b73a5a824bd1eb23522128573839e862d4d89ef8d544371b7c2bc3ae4730125b/kernel-devel-4.14.77-81.59.amzn2.x86_64.rpm
+
 centos:
   description: CentOS kernels
   type: RedHat
   versions:
     el7.elrepo.x86_64:
+      4.4.101-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.101-1.el7.elrepo.x86_64.rpm
+      4.4.102-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.102-1.el7.elrepo.x86_64.rpm
+      4.4.103-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.103-1.el7.elrepo.x86_64.rpm
+      4.4.104-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.104-1.el7.elrepo.x86_64.rpm
+      4.4.105-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.105-1.el7.elrepo.x86_64.rpm
+      4.4.106-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.106-1.el7.elrepo.x86_64.rpm
+      4.4.107-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.107-1.el7.elrepo.x86_64.rpm
+      4.4.108-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.108-1.el7.elrepo.x86_64.rpm
+      4.4.109-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.109-1.el7.elrepo.x86_64.rpm
+      4.4.110-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.110-1.el7.elrepo.x86_64.rpm
+      4.4.111-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.111-1.el7.elrepo.x86_64.rpm
+      4.4.112-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.112-1.el7.elrepo.x86_64.rpm
+      4.4.113-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.113-1.el7.elrepo.x86_64.rpm
+      4.4.114-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.114-1.el7.elrepo.x86_64.rpm
+      4.4.115-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.115-1.el7.elrepo.x86_64.rpm
+      4.4.116-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.116-1.el7.elrepo.x86_64.rpm
+      4.4.119-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.119-1.el7.elrepo.x86_64.rpm
+      4.4.120-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.120-1.el7.elrepo.x86_64.rpm
+      4.4.121-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.121-1.el7.elrepo.x86_64.rpm
+      4.4.122-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.122-1.el7.elrepo.x86_64.rpm
+      4.4.123-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.123-1.el7.elrepo.x86_64.rpm
+      4.4.124-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.124-1.el7.elrepo.x86_64.rpm
+      4.4.125-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.125-1.el7.elrepo.x86_64.rpm
+      4.4.126-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.126-1.el7.elrepo.x86_64.rpm
+      4.4.127-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.127-1.el7.elrepo.x86_64.rpm
+      4.4.128-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.128-1.el7.elrepo.x86_64.rpm
       4.4.129-1:
       - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.129-1.el7.elrepo.x86_64.rpm
       4.4.130-1:
@@ -86,63 +141,470 @@ centos:
       - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.145-1.el7.elrepo.x86_64.rpm
       4.4.146-1:
       - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.146-1.el7.elrepo.x86_64.rpm
-      4.4.147-1:
-      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.147-1.el7.elrepo.x86_64.rpm
+      4.4.76-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.76-1.el7.elrepo.x86_64.rpm
+      4.4.77-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.77-1.el7.elrepo.x86_64.rpm
+      4.4.78-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.78-1.el7.elrepo.x86_64.rpm
+      4.4.79-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.79-1.el7.elrepo.x86_64.rpm
+      4.4.80-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.80-1.el7.elrepo.x86_64.rpm
+      4.4.81-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.81-1.el7.elrepo.x86_64.rpm
+      4.4.82-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.82-1.el7.elrepo.x86_64.rpm
+      4.4.83-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.83-1.el7.elrepo.x86_64.rpm
+      4.4.84-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.84-1.el7.elrepo.x86_64.rpm
+      4.4.85-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.85-1.el7.elrepo.x86_64.rpm
+      4.4.86-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.86-1.el7.elrepo.x86_64.rpm
+      4.4.87-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.87-1.el7.elrepo.x86_64.rpm
+      4.4.88-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.88-1.el7.elrepo.x86_64.rpm
+      4.4.89-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.89-1.el7.elrepo.x86_64.rpm
+      4.4.90-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.90-1.el7.elrepo.x86_64.rpm
+      4.4.91-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.91-1.el7.elrepo.x86_64.rpm
+      4.4.92-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.92-1.el7.elrepo.x86_64.rpm
+      4.4.93-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.93-1.el7.elrepo.x86_64.rpm
+      4.4.94-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.94-1.el7.elrepo.x86_64.rpm
+      4.4.95-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.95-1.el7.elrepo.x86_64.rpm
+      4.4.96-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.96-1.el7.elrepo.x86_64.rpm
+      4.4.97-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.97-1.el7.elrepo.x86_64.rpm
+      4.4.98-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.98-1.el7.elrepo.x86_64.rpm
+      4.4.99-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.99-1.el7.elrepo.x86_64.rpm
+      4.4.10-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.10-1.el7.elrepo.x86_64.rpm
+      4.4.11-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.11-1.el7.elrepo.x86_64.rpm
+      4.4.12-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.12-1.el7.elrepo.x86_64.rpm
+      4.4.13-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.13-1.el7.elrepo.x86_64.rpm
+      4.4.14-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.14-1.el7.elrepo.x86_64.rpm
+      4.4.15-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.15-1.el7.elrepo.x86_64.rpm
+      4.4.16-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.16-1.el7.elrepo.x86_64.rpm
+      4.4.18-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.18-1.el7.elrepo.x86_64.rpm
+      4.4.19-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.19-1.el7.elrepo.x86_64.rpm
+      4.4.20-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.20-1.el7.elrepo.x86_64.rpm
+      4.4.21-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.21-1.el7.elrepo.x86_64.rpm
+      4.4.22-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.22-1.el7.elrepo.x86_64.rpm
+      4.4.23-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.23-1.el7.elrepo.x86_64.rpm
+      4.4.24-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.24-1.el7.elrepo.x86_64.rpm
+      4.4.25-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.25-1.el7.elrepo.x86_64.rpm
+      4.4.26-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.26-1.el7.elrepo.x86_64.rpm
+      4.4.27-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.27-1.el7.elrepo.x86_64.rpm
+      4.4.28-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.28-1.el7.elrepo.x86_64.rpm
+      4.4.29-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.29-1.el7.elrepo.x86_64.rpm
+      4.4.30-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.30-1.el7.elrepo.x86_64.rpm
+      4.4.31-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.31-1.el7.elrepo.x86_64.rpm
+      4.4.32-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.32-1.el7.elrepo.x86_64.rpm
+      4.4.33-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.33-1.el7.elrepo.x86_64.rpm
+      4.4.34-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.34-1.el7.elrepo.x86_64.rpm
+      4.4.35-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.35-1.el7.elrepo.x86_64.rpm
+      4.4.36-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.36-1.el7.elrepo.x86_64.rpm
+      4.4.37-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.37-1.el7.elrepo.x86_64.rpm
+      4.4.38-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.38-1.el7.elrepo.x86_64.rpm
+      4.4.39-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.39-1.el7.elrepo.x86_64.rpm
+      4.4.40-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.40-1.el7.elrepo.x86_64.rpm
+      4.4.41-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.41-1.el7.elrepo.x86_64.rpm
+      4.4.42-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.42-1.el7.elrepo.x86_64.rpm
+      4.4.43-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.43-1.el7.elrepo.x86_64.rpm
+      4.4.44-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.44-1.el7.elrepo.x86_64.rpm
+      4.4.45-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.45-1.el7.elrepo.x86_64.rpm
+      4.4.46-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.46-1.el7.elrepo.x86_64.rpm
+      4.4.47-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.47-1.el7.elrepo.x86_64.rpm
+      4.4.48-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.48-1.el7.elrepo.x86_64.rpm
+      4.4.49-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.49-1.el7.elrepo.x86_64.rpm
+      4.4.50-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.50-1.el7.elrepo.x86_64.rpm
+      4.4.51-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.51-1.el7.elrepo.x86_64.rpm
+      4.4.52-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.52-1.el7.elrepo.x86_64.rpm
+      4.4.53-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.53-1.el7.elrepo.x86_64.rpm
+      4.4.54-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.54-1.el7.elrepo.x86_64.rpm
+      4.4.55-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.55-1.el7.elrepo.x86_64.rpm
+      4.4.56-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.56-1.el7.elrepo.x86_64.rpm
+      4.4.57-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.57-1.el7.elrepo.x86_64.rpm
+      4.4.58-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.58-1.el7.elrepo.x86_64.rpm
+      4.4.59-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.59-1.el7.elrepo.x86_64.rpm
+      4.4.6-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.6-1.el7.elrepo.x86_64.rpm
+      4.4.60-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.60-1.el7.elrepo.x86_64.rpm
+      4.4.61-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.61-1.el7.elrepo.x86_64.rpm
+      4.4.62-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.62-1.el7.elrepo.x86_64.rpm
+      4.4.63-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.63-1.el7.elrepo.x86_64.rpm
+      4.4.64-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.64-1.el7.elrepo.x86_64.rpm
+      4.4.65-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.65-1.el7.elrepo.x86_64.rpm
+      4.4.66-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.66-1.el7.elrepo.x86_64.rpm
+      4.4.67-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.67-1.el7.elrepo.x86_64.rpm
+      4.4.68-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.68-1.el7.elrepo.x86_64.rpm
+      4.4.69-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.69-1.el7.elrepo.x86_64.rpm
+      4.4.7-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.7-1.el7.elrepo.x86_64.rpm
+      4.4.70-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.70-1.el7.elrepo.x86_64.rpm
+      4.4.71-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.71-1.el7.elrepo.x86_64.rpm
+      4.4.72-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.72-1.el7.elrepo.x86_64.rpm
+      4.4.73-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.73-1.el7.elrepo.x86_64.rpm
+      4.4.74-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.74-1.el7.elrepo.x86_64.rpm
+      4.4.75-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.75-1.el7.elrepo.x86_64.rpm
+      4.4.8-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.8-1.el7.elrepo.x86_64.rpm
+      4.4.9-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.9-1.el7.elrepo.x86_64.rpm
     el7.x86_64:
-      3.10.0-514:
-      - http://vault.centos.org/7.3.1611/os/x86_64/Packages/kernel-devel-3.10.0-514.el7.x86_64.rpm
-      3.10.0-514.10.2:
-      - http://vault.centos.org/7.3.1611/updates/x86_64/Packages/kernel-devel-3.10.0-514.10.2.el7.x86_64.rpm
-      3.10.0-514.16.1:
-      - http://vault.centos.org/7.3.1611/updates/x86_64/Packages/kernel-devel-3.10.0-514.16.1.el7.x86_64.rpm
-      3.10.0-514.2.2:
-      - http://vault.centos.org/7.3.1611/updates/x86_64/Packages/kernel-devel-3.10.0-514.2.2.el7.x86_64.rpm
-      3.10.0-514.21.1:
-      - http://vault.centos.org/7.3.1611/updates/x86_64/Packages/kernel-devel-3.10.0-514.21.1.el7.x86_64.rpm
-      3.10.0-514.21.2:
-      - http://vault.centos.org/7.3.1611/updates/x86_64/Packages/kernel-devel-3.10.0-514.21.2.el7.x86_64.rpm
-      3.10.0-514.26.1:
-      - http://vault.centos.org/7.3.1611/updates/x86_64/Packages/kernel-devel-3.10.0-514.26.1.el7.x86_64.rpm
-      3.10.0-514.26.2:
-      - http://vault.centos.org/7.3.1611/updates/x86_64/Packages/kernel-devel-3.10.0-514.26.2.el7.x86_64.rpm
-      3.10.0-514.6.1:
-      - http://vault.centos.org/7.3.1611/updates/x86_64/Packages/kernel-devel-3.10.0-514.6.1.el7.x86_64.rpm
-      3.10.0-514.6.2:
-      - http://vault.centos.org/7.3.1611/updates/x86_64/Packages/kernel-devel-3.10.0-514.6.2.el7.x86_64.rpm
-      3.10.0-693:
-      - http://vault.centos.org/7.4.1708/os/x86_64/Packages/kernel-devel-3.10.0-693.el7.x86_64.rpm
-      3.10.0-693.1.1:
-      - http://vault.centos.org/7.4.1708/updates/x86_64/Packages/kernel-devel-3.10.0-693.1.1.el7.x86_64.rpm
-      3.10.0-693.11.1:
-      - http://vault.centos.org/7.4.1708/updates/x86_64/Packages/kernel-devel-3.10.0-693.11.1.el7.x86_64.rpm
-      3.10.0-693.11.6:
-      - http://vault.centos.org/7.4.1708/updates/x86_64/Packages/kernel-devel-3.10.0-693.11.6.el7.x86_64.rpm
-      3.10.0-693.17.1:
-      - http://vault.centos.org/7.4.1708/updates/x86_64/Packages/kernel-devel-3.10.0-693.17.1.el7.x86_64.rpm
-      3.10.0-693.2.1:
-      - http://vault.centos.org/7.4.1708/updates/x86_64/Packages/kernel-devel-3.10.0-693.2.1.el7.x86_64.rpm
-      3.10.0-693.2.2:
-      - http://vault.centos.org/7.4.1708/updates/x86_64/Packages/kernel-devel-3.10.0-693.2.2.el7.x86_64.rpm
-      3.10.0-693.21.1:
-      - http://vault.centos.org/7.4.1708/updates/x86_64/Packages/kernel-devel-3.10.0-693.21.1.el7.x86_64.rpm
-      3.10.0-693.5.2:
-      - http://vault.centos.org/7.4.1708/updates/x86_64/Packages/kernel-devel-3.10.0-693.5.2.el7.x86_64.rpm
-      3.10.0-862:
-      - https://mirrors.kernel.org/centos/7.5.1804/os/x86_64/Packages/kernel-devel-3.10.0-862.el7.x86_64.rpm
-      3.10.0-862.11.6:
-      - https://mirrors.kernel.org/centos/7.5.1804/updates/x86_64/Packages/kernel-devel-3.10.0-862.11.6.el7.x86_64.rpm
-      3.10.0-862.2.3:
-      - https://mirrors.kernel.org/centos/7.5.1804/updates/x86_64/Packages/kernel-devel-3.10.0-862.2.3.el7.x86_64.rpm
-      3.10.0-862.3.2:
-      - https://mirrors.kernel.org/centos/7.5.1804/updates/x86_64/Packages/kernel-devel-3.10.0-862.3.2.el7.x86_64.rpm
-      3.10.0-862.3.3:
-      - https://mirrors.kernel.org/centos/7.5.1804/updates/x86_64/Packages/kernel-devel-3.10.0-862.3.3.el7.x86_64.rpm
-      3.10.0-862.6.3:
-      - https://mirrors.kernel.org/centos/7.5.1804/updates/x86_64/Packages/kernel-devel-3.10.0-862.6.3.el7.x86_64.rpm
-      3.10.0-862.9.1:
-      - https://mirrors.kernel.org/centos/7.5.1804/updates/x86_64/Packages/kernel-devel-3.10.0-862.9.1.el7.x86_64.rpm
-      3.10.0-862.14.4:
-      - https://mirrors.kernel.org/centos/7.5.1804/updates/x86_64/Packages/kernel-devel-3.10.0-862.14.4.el7.x86_64.rpm
+      4.4.101-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.101-1.el7.elrepo.x86_64.rpm
+      4.4.102-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.102-1.el7.elrepo.x86_64.rpm
+      4.4.103-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.103-1.el7.elrepo.x86_64.rpm
+      4.4.104-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.104-1.el7.elrepo.x86_64.rpm
+      4.4.105-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.105-1.el7.elrepo.x86_64.rpm
+      4.4.106-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.106-1.el7.elrepo.x86_64.rpm
+      4.4.107-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.107-1.el7.elrepo.x86_64.rpm
+      4.4.108-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.108-1.el7.elrepo.x86_64.rpm
+      4.4.109-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.109-1.el7.elrepo.x86_64.rpm
+      4.4.110-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.110-1.el7.elrepo.x86_64.rpm
+      4.4.111-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.111-1.el7.elrepo.x86_64.rpm
+      4.4.112-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.112-1.el7.elrepo.x86_64.rpm
+      4.4.113-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.113-1.el7.elrepo.x86_64.rpm
+      4.4.114-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.114-1.el7.elrepo.x86_64.rpm
+      4.4.115-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.115-1.el7.elrepo.x86_64.rpm
+      4.4.116-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.116-1.el7.elrepo.x86_64.rpm
+      4.4.119-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.119-1.el7.elrepo.x86_64.rpm
+      4.4.120-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.120-1.el7.elrepo.x86_64.rpm
+      4.4.121-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.121-1.el7.elrepo.x86_64.rpm
+      4.4.122-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.122-1.el7.elrepo.x86_64.rpm
+      4.4.123-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.123-1.el7.elrepo.x86_64.rpm
+      4.4.124-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.124-1.el7.elrepo.x86_64.rpm
+      4.4.125-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.125-1.el7.elrepo.x86_64.rpm
+      4.4.126-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.126-1.el7.elrepo.x86_64.rpm
+      4.4.127-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.127-1.el7.elrepo.x86_64.rpm
+      4.4.128-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.128-1.el7.elrepo.x86_64.rpm
+      4.4.129-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.129-1.el7.elrepo.x86_64.rpm
+      4.4.130-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.130-1.el7.elrepo.x86_64.rpm
+      4.4.131-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.131-1.el7.elrepo.x86_64.rpm
+      4.4.132-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.132-1.el7.elrepo.x86_64.rpm
+      4.4.133-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.133-1.el7.elrepo.x86_64.rpm
+      4.4.134-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.134-1.el7.elrepo.x86_64.rpm
+      4.4.135-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.135-1.el7.elrepo.x86_64.rpm
+      4.4.136-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.136-1.el7.elrepo.x86_64.rpm
+      4.4.137-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.137-1.el7.elrepo.x86_64.rpm
+      4.4.138-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.138-1.el7.elrepo.x86_64.rpm
+      4.4.139-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.139-1.el7.elrepo.x86_64.rpm
+      4.4.140-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.140-1.el7.elrepo.x86_64.rpm
+      4.4.142-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.142-1.el7.elrepo.x86_64.rpm
+      4.4.143-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.143-1.el7.elrepo.x86_64.rpm
+      4.4.144-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.144-1.el7.elrepo.x86_64.rpm
+      4.4.145-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.145-1.el7.elrepo.x86_64.rpm
+      4.4.146-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.146-1.el7.elrepo.x86_64.rpm
+      4.4.76-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.76-1.el7.elrepo.x86_64.rpm
+      4.4.77-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.77-1.el7.elrepo.x86_64.rpm
+      4.4.78-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.78-1.el7.elrepo.x86_64.rpm
+      4.4.79-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.79-1.el7.elrepo.x86_64.rpm
+      4.4.80-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.80-1.el7.elrepo.x86_64.rpm
+      4.4.81-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.81-1.el7.elrepo.x86_64.rpm
+      4.4.82-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.82-1.el7.elrepo.x86_64.rpm
+      4.4.83-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.83-1.el7.elrepo.x86_64.rpm
+      4.4.84-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.84-1.el7.elrepo.x86_64.rpm
+      4.4.85-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.85-1.el7.elrepo.x86_64.rpm
+      4.4.86-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.86-1.el7.elrepo.x86_64.rpm
+      4.4.87-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.87-1.el7.elrepo.x86_64.rpm
+      4.4.88-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.88-1.el7.elrepo.x86_64.rpm
+      4.4.89-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.89-1.el7.elrepo.x86_64.rpm
+      4.4.90-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.90-1.el7.elrepo.x86_64.rpm
+      4.4.91-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.91-1.el7.elrepo.x86_64.rpm
+      4.4.92-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.92-1.el7.elrepo.x86_64.rpm
+      4.4.93-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.93-1.el7.elrepo.x86_64.rpm
+      4.4.94-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.94-1.el7.elrepo.x86_64.rpm
+      4.4.95-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.95-1.el7.elrepo.x86_64.rpm
+      4.4.96-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.96-1.el7.elrepo.x86_64.rpm
+      4.4.97-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.97-1.el7.elrepo.x86_64.rpm
+      4.4.98-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.98-1.el7.elrepo.x86_64.rpm
+      4.4.99-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.99-1.el7.elrepo.x86_64.rpm
+      4.4.10-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.10-1.el7.elrepo.x86_64.rpm
+      4.4.11-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.11-1.el7.elrepo.x86_64.rpm
+      4.4.12-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.12-1.el7.elrepo.x86_64.rpm
+      4.4.13-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.13-1.el7.elrepo.x86_64.rpm
+      4.4.14-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.14-1.el7.elrepo.x86_64.rpm
+      4.4.15-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.15-1.el7.elrepo.x86_64.rpm
+      4.4.16-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.16-1.el7.elrepo.x86_64.rpm
+      4.4.18-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.18-1.el7.elrepo.x86_64.rpm
+      4.4.19-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.19-1.el7.elrepo.x86_64.rpm
+      4.4.20-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.20-1.el7.elrepo.x86_64.rpm
+      4.4.21-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.21-1.el7.elrepo.x86_64.rpm
+      4.4.22-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.22-1.el7.elrepo.x86_64.rpm
+      4.4.23-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.23-1.el7.elrepo.x86_64.rpm
+      4.4.24-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.24-1.el7.elrepo.x86_64.rpm
+      4.4.25-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.25-1.el7.elrepo.x86_64.rpm
+      4.4.26-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.26-1.el7.elrepo.x86_64.rpm
+      4.4.27-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.27-1.el7.elrepo.x86_64.rpm
+      4.4.28-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.28-1.el7.elrepo.x86_64.rpm
+      4.4.29-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.29-1.el7.elrepo.x86_64.rpm
+      4.4.30-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.30-1.el7.elrepo.x86_64.rpm
+      4.4.31-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.31-1.el7.elrepo.x86_64.rpm
+      4.4.32-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.32-1.el7.elrepo.x86_64.rpm
+      4.4.33-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.33-1.el7.elrepo.x86_64.rpm
+      4.4.34-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.34-1.el7.elrepo.x86_64.rpm
+      4.4.35-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.35-1.el7.elrepo.x86_64.rpm
+      4.4.36-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.36-1.el7.elrepo.x86_64.rpm
+      4.4.37-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.37-1.el7.elrepo.x86_64.rpm
+      4.4.38-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.38-1.el7.elrepo.x86_64.rpm
+      4.4.39-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.39-1.el7.elrepo.x86_64.rpm
+      4.4.40-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.40-1.el7.elrepo.x86_64.rpm
+      4.4.41-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.41-1.el7.elrepo.x86_64.rpm
+      4.4.42-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.42-1.el7.elrepo.x86_64.rpm
+      4.4.43-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.43-1.el7.elrepo.x86_64.rpm
+      4.4.44-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.44-1.el7.elrepo.x86_64.rpm
+      4.4.45-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.45-1.el7.elrepo.x86_64.rpm
+      4.4.46-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.46-1.el7.elrepo.x86_64.rpm
+      4.4.47-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.47-1.el7.elrepo.x86_64.rpm
+      4.4.48-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.48-1.el7.elrepo.x86_64.rpm
+      4.4.49-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.49-1.el7.elrepo.x86_64.rpm
+      4.4.50-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.50-1.el7.elrepo.x86_64.rpm
+      4.4.51-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.51-1.el7.elrepo.x86_64.rpm
+      4.4.52-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.52-1.el7.elrepo.x86_64.rpm
+      4.4.53-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.53-1.el7.elrepo.x86_64.rpm
+      4.4.54-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.54-1.el7.elrepo.x86_64.rpm
+      4.4.55-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.55-1.el7.elrepo.x86_64.rpm
+      4.4.56-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.56-1.el7.elrepo.x86_64.rpm
+      4.4.57-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.57-1.el7.elrepo.x86_64.rpm
+      4.4.58-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.58-1.el7.elrepo.x86_64.rpm
+      4.4.59-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.59-1.el7.elrepo.x86_64.rpm
+      4.4.6-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.6-1.el7.elrepo.x86_64.rpm
+      4.4.60-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.60-1.el7.elrepo.x86_64.rpm
+      4.4.61-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.61-1.el7.elrepo.x86_64.rpm
+      4.4.62-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.62-1.el7.elrepo.x86_64.rpm
+      4.4.63-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.63-1.el7.elrepo.x86_64.rpm
+      4.4.64-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.64-1.el7.elrepo.x86_64.rpm
+      4.4.65-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.65-1.el7.elrepo.x86_64.rpm
+      4.4.66-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.66-1.el7.elrepo.x86_64.rpm
+      4.4.67-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.67-1.el7.elrepo.x86_64.rpm
+      4.4.68-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.68-1.el7.elrepo.x86_64.rpm
+      4.4.69-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.69-1.el7.elrepo.x86_64.rpm
+      4.4.7-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.7-1.el7.elrepo.x86_64.rpm
+      4.4.70-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.70-1.el7.elrepo.x86_64.rpm
+      4.4.71-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.71-1.el7.elrepo.x86_64.rpm
+      4.4.72-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.72-1.el7.elrepo.x86_64.rpm
+      4.4.73-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.73-1.el7.elrepo.x86_64.rpm
+      4.4.74-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.74-1.el7.elrepo.x86_64.rpm
+      4.4.75-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.75-1.el7.elrepo.x86_64.rpm
+      4.4.8-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.8-1.el7.elrepo.x86_64.rpm
+      4.4.9-1:
+      - http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.9-1.el7.elrepo.x86_64.rpm
+      3.10.0-514.28.1:
+      - https://access.cdn.redhat.com//content/origin/rpms/kernel-devel/3.10.0/514.28.1.el7/fd431d51/kernel-devel-3.10.0-514.28.1.el7.x86_64.rpm
+      3.10.0-514.28.2:
+      - https://access.cdn.redhat.com//content/origin/rpms/kernel-devel/3.10.0/514.28.2.el7/fd431d51/kernel-devel-3.10.0-514.28.2.el7.x86_64.rpm
+
 
 centos-uncrawled:
   description: CentOS uncrawled kernels
@@ -387,6 +849,20 @@ centos-uncrawled:
       - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.98-1.el7.elrepo.x86_64.rpm
       4.4.99-1:
       - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.99-1.el7.elrepo.x86_64.rpm
+      4.4.139-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.139-1.el7.elrepo.x86_64.rpm
+      4.4.140-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.140-1.el7.elrepo.x86_64.rpm
+      4.4.142-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.142-1.el7.elrepo.x86_64.rpm
+      4.4.143-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.143-1.el7.elrepo.x86_64.rpm
+      4.4.144-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.144-1.el7.elrepo.x86_64.rpm
+      4.4.145-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.145-1.el7.elrepo.x86_64.rpm
+      4.4.146-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.146-1.el7.elrepo.x86_64.rpm
     el7.x86_64:
       3.10.0-514.28.1:
       - https://access.cdn.redhat.com/content/origin/rpms/kernel-devel/3.10.0/514.28.1.el7/fd431d51/kernel-devel-3.10.0-514.28.1.el7.x86_64.rpm
@@ -438,6 +914,8 @@ coreos:
       - http://stable.release.core-os.net/amd64-usr/1855.5.0/bundle.tgz
       4.14.78:
       - http://stable.release.core-os.net/amd64-usr/1911.3.0/bundle.tgz
+      1.2.3: # This should fail the first time as we don't know what the actual version is
+      - http://stable.release.core-os.net/amd64-usr/1911.4.0/bundle.tgz
     coreos-r1:
       4.11.12:
       - http://stable.release.core-os.net/amd64-usr/1409.9.0/bundle.tgz
@@ -556,7 +1034,6 @@ ubuntu-aws:
   description: Ubuntu AWS Kernels
   type: Ubuntu
   versions:
-    aws:
       4.15.0-1007:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.15.0-1007_4.15.0-1007.7_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.15.0-1007-aws_4.15.0-1007.7_amd64.deb
@@ -575,51 +1052,30 @@ ubuntu-aws:
       4.15.0-1017:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.15.0-1017_4.15.0-1017.17_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.15.0-1017-aws_4.15.0-1017.17_amd64.deb
-      4.15.0-1018:
-      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.15.0-1018_4.15.0-1018.18_all.deb
-      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.15.0-1018-aws_4.15.0-1018.18_amd64.deb
       4.15.0-1019:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.15.0-1019_4.15.0-1019.19_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.15.0-1019-aws_4.15.0-1019.19_amd64.deb
-      4.4.0-1001:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1001_4.4.0-1001.10_all.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1001-aws_4.4.0-1001.10_amd64.deb
-      4.4.0-1002:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1002_4.4.0-1002.2_all.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1002-aws_4.4.0-1002.2_amd64.deb
-      4.4.0-1003:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1003_4.4.0-1003.12_all.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1003-aws_4.4.0-1003.12_amd64.deb
-      4.4.0-1004:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1004_4.4.0-1004.13_all.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1004-aws_4.4.0-1004.13_amd64.deb
-      4.4.0-1005:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1005_4.4.0-1005.5_all.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1005-aws_4.4.0-1005.5_amd64.deb
-      4.4.0-1006:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1006_4.4.0-1006.6_all.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1006-aws_4.4.0-1006.6_amd64.deb
-      4.4.0-1007:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1007_4.4.0-1007.16_all.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1007-aws_4.4.0-1007.16_amd64.deb
-      4.4.0-1009:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1009_4.4.0-1009.18_all.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1009-aws_4.4.0-1009.18_amd64.deb
-      4.4.0-1010:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1010_4.4.0-1010.10_all.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1010-aws_4.4.0-1010.10_amd64.deb
-      4.4.0-1011:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1011_4.4.0-1011.20_all.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1011-aws_4.4.0-1011.20_amd64.deb
-      4.4.0-1012:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1012_4.4.0-1012.21_all.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1012-aws_4.4.0-1012.21_amd64.deb
+      4.15.0-1020:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.15.0-1020_4.15.0-1020.20_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.15.0-1020-aws_4.15.0-1020.20_amd64.deb
+      4.15.0-1021:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.15.0-1021_4.15.0-1021.21_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.15.0-1021-aws_4.15.0-1021.21_amd64.deb
+      4.15.0-1023:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.15.0-1023_4.15.0-1023.23_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.15.0-1023-aws_4.15.0-1023.23_amd64.deb
+      4.15.0-1025:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.15.0-1025_4.15.0-1025.25_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.15.0-1025-aws_4.15.0-1025.25_amd64.deb
+      4.15.0-1027:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.15.0-1027_4.15.0-1027.27_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.15.0-1027-aws_4.15.0-1027.27_amd64.deb
+      4.15.0-1029:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.15.0-1029_4.15.0-1029.30_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.15.0-1029-aws_4.15.0-1029.30_amd64.deb
       4.4.0-1013:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1013_4.4.0-1013.22_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1013-aws_4.4.0-1013.22_amd64.deb
-      4.4.0-1014:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1014_4.4.0-1014.14_all.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1014-aws_4.4.0-1014.14_amd64.deb
       4.4.0-1016:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1016_4.4.0-1016.25_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1016-aws_4.4.0-1016.25_amd64.deb
@@ -629,30 +1085,15 @@ ubuntu-aws:
       4.4.0-1018:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1018_4.4.0-1018.27_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1018-aws_4.4.0-1018.27_amd64.deb
-      4.4.0-1019:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1019_4.4.0-1019.19_all.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1019-aws_4.4.0-1019.19_amd64.deb
       4.4.0-1020:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1020_4.4.0-1020.29_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1020-aws_4.4.0-1020.29_amd64.deb
       4.4.0-1022:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1022_4.4.0-1022.31_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1022-aws_4.4.0-1022.31_amd64.deb
-      4.4.0-1023:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1023_4.4.0-1023.23_all.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1023-aws_4.4.0-1023.23_amd64.deb
-      4.4.0-1024:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1024_4.4.0-1024.25_all.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1024-aws_4.4.0-1024.25_amd64.deb
-      4.4.0-1025:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1025_4.4.0-1025.26_all.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1025-aws_4.4.0-1025.26_amd64.deb
       4.4.0-1026:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1026_4.4.0-1026.35_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1026-aws_4.4.0-1026.35_amd64.deb
-      4.4.0-1027:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1027_4.4.0-1027.30_all.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1027-aws_4.4.0-1027.30_amd64.deb
       4.4.0-1028:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1028_4.4.0-1028.37_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1028-aws_4.4.0-1028.37_amd64.deb
@@ -722,21 +1163,92 @@ ubuntu-aws:
       4.4.0-1063:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1063_4.4.0-1063.72_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1063-aws_4.4.0-1063.72_amd64.deb
-      4.4.0-1064:
-      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1064_4.4.0-1064.74_all.deb
-      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1064-aws_4.4.0-1064.74_amd64.deb
       4.4.0-1065:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1065_4.4.0-1065.75_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1065-aws_4.4.0-1065.75_amd64.deb
       4.4.0-1066:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1066_4.4.0-1066.76_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1066-aws_4.4.0-1066.76_amd64.deb
+      4.4.0-1067:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1067_4.4.0-1067.77_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1067-aws_4.4.0-1067.77_amd64.deb
+      4.4.0-1069:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1069_4.4.0-1069.79_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1069-aws_4.4.0-1069.79_amd64.deb
+      4.4.0-1070:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1070_4.4.0-1070.80_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1070-aws_4.4.0-1070.80_amd64.deb
+      4.4.0-1072:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1072_4.4.0-1072.82_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1072-aws_4.4.0-1072.82_amd64.deb
+      4.4.0-1073:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1073_4.4.0-1073.83_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1073-aws_4.4.0-1073.83_amd64.deb
+      4.4.0-1074:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1074_4.4.0-1074.84_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1074-aws_4.4.0-1074.84_amd64.deb
+      4.4.0-1001:
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1001_4.4.0-1001.10_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1001-aws_4.4.0-1001.10_amd64.deb
+      4.4.0-1002:
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1002_4.4.0-1002.2_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1002-aws_4.4.0-1002.2_amd64.deb
+      4.4.0-1003:
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1003_4.4.0-1003.12_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1003-aws_4.4.0-1003.12_amd64.deb
+      4.4.0-1004:
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1004_4.4.0-1004.13_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1004-aws_4.4.0-1004.13_amd64.deb
+      4.4.0-1005:
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1005_4.4.0-1005.5_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1005-aws_4.4.0-1005.5_amd64.deb
+      4.4.0-1006:
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1006_4.4.0-1006.6_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1006-aws_4.4.0-1006.6_amd64.deb
+      4.4.0-1007:
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1007_4.4.0-1007.16_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1007-aws_4.4.0-1007.16_amd64.deb
+      4.4.0-1009:
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1009_4.4.0-1009.18_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1009-aws_4.4.0-1009.18_amd64.deb
+      4.4.0-1010:
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1010_4.4.0-1010.10_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1010-aws_4.4.0-1010.10_amd64.deb
+      4.4.0-1011:
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1011_4.4.0-1011.20_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1011-aws_4.4.0-1011.20_amd64.deb
+      4.4.0-1012:
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1012_4.4.0-1012.21_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1012-aws_4.4.0-1012.21_amd64.deb
+      4.4.0-1014:
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1014_4.4.0-1014.14_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1014-aws_4.4.0-1014.14_amd64.deb
+      4.4.0-1019:
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1019_4.4.0-1019.19_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1019-aws_4.4.0-1019.19_amd64.deb
+      4.4.0-1023:
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1023_4.4.0-1023.23_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1023-aws_4.4.0-1023.23_amd64.deb
+      4.4.0-1024:
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1024_4.4.0-1024.25_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1024-aws_4.4.0-1024.25_amd64.deb
+      4.4.0-1025:
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1025_4.4.0-1025.26_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1025-aws_4.4.0-1025.26_amd64.deb
+      4.4.0-1027:
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1027_4.4.0-1027.30_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1027-aws_4.4.0-1027.30_amd64.deb
+      4.4.0-1029:
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1029_4.4.0-1029.32_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1029-aws_4.4.0-1029.32_amd64.deb
+      4.4.0-1034:
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1034_4.4.0-1034.37_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1034-aws_4.4.0-1034.37_amd64.deb
 
 ubuntu-azure:
   description: Ubuntu Azure Kernels
   type: Ubuntu
   versions:
-    azure:
       4.11.0-1009:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.11.0-1009_4.11.0-1009.9_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.11.0-1009-azure_4.11.0-1009.9_amd64.deb
@@ -800,9 +1312,6 @@ ubuntu-azure:
       4.15.0-1019:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.15.0-1019_4.15.0-1019.19_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.15.0-1019-azure_4.15.0-1019.19_amd64.deb
-      4.15.0-1020:
-      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.15.0-1020_4.15.0-1020.20_all.deb
-      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.15.0-1020-azure_4.15.0-1020.20_amd64.deb
       4.15.0-1021:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.15.0-1021_4.15.0-1021.21_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.15.0-1021-azure_4.15.0-1021.21_amd64.deb
@@ -818,12 +1327,59 @@ ubuntu-azure:
       4.15.0-1028:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.15.0-1028_4.15.0-1028.29_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.15.0-1028-azure_4.15.0-1028.29_amd64.deb
+      4.15.0-1030:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.15.0-1030_4.15.0-1030.31_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.15.0-1030-azure_4.15.0-1030.31_amd64.deb
+      4.15.0-1031:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.15.0-1031_4.15.0-1031.32_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.15.0-1031-azure_4.15.0-1031.32_amd64.deb
+      4.15.0-1032:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.15.0-1032_4.15.0-1032.33_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.15.0-1032-azure_4.15.0-1032.33_amd64.deb
 
 ubuntu-gcp:
   description: Ubuntu GCP Kernels
   type: Ubuntu
   versions:
-    gcp:
+      4.15.0-1006:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-gcp-headers-4.15.0-1006_4.15.0-1006.6_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-headers-4.15.0-1006-gcp_4.15.0-1006.6_amd64.deb
+      4.15.0-1008:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-gcp-headers-4.15.0-1008_4.15.0-1008.8_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-headers-4.15.0-1008-gcp_4.15.0-1008.8_amd64.deb
+      4.15.0-1009:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-gcp-headers-4.15.0-1009_4.15.0-1009.9_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-headers-4.15.0-1009-gcp_4.15.0-1009.9_amd64.deb
+      4.15.0-1010:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-gcp-headers-4.15.0-1010_4.15.0-1010.10_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-headers-4.15.0-1010-gcp_4.15.0-1010.10_amd64.deb
+      4.15.0-1014:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-gcp-headers-4.15.0-1014_4.15.0-1014.14_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-headers-4.15.0-1014-gcp_4.15.0-1014.14_amd64.deb
+      4.15.0-1015:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-gcp-headers-4.15.0-1015_4.15.0-1015.15_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-headers-4.15.0-1015-gcp_4.15.0-1015.15_amd64.deb
+      4.15.0-1017:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-gcp-headers-4.15.0-1017_4.15.0-1017.18_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-headers-4.15.0-1017-gcp_4.15.0-1017.18_amd64.deb
+      4.15.0-1018:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-gcp-headers-4.15.0-1018_4.15.0-1018.19_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-headers-4.15.0-1018-gcp_4.15.0-1018.19_amd64.deb
+      4.15.0-1019:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-gcp-headers-4.15.0-1019_4.15.0-1019.20_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-headers-4.15.0-1019-gcp_4.15.0-1019.20_amd64.deb
+      4.15.0-1021:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-gcp-headers-4.15.0-1021_4.15.0-1021.22_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-headers-4.15.0-1021-gcp_4.15.0-1021.22_amd64.deb
+      4.15.0-1023:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-gcp-headers-4.15.0-1023_4.15.0-1023.24_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-headers-4.15.0-1023-gcp_4.15.0-1023.24_amd64.deb
+      4.15.0-1024:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-gcp-headers-4.15.0-1024_4.15.0-1024.25_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-headers-4.15.0-1024-gcp_4.15.0-1024.25_amd64.deb
+      4.15.0-1025:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-gcp-headers-4.15.0-1025_4.15.0-1025.26_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-headers-4.15.0-1025-gcp_4.15.0-1025.26_amd64.deb
       4.10.0-1004:
       - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.10.0-1004_4.10.0-1004.4_all.deb
       - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-headers-4.10.0-1004-gcp_4.10.0-1004.4_amd64.deb
@@ -866,27 +1422,11 @@ ubuntu-gcp:
       4.13.0-1017:
       - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.13.0-1017_4.13.0-1017.21_all.deb
       - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-headers-4.13.0-1017-gcp_4.13.0-1017.21_amd64.deb
-      4.13.0-1019:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.13.0-1019_4.13.0-1019.23_all.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-headers-4.13.0-1019-gcp_4.13.0-1019.23_amd64.deb
-      4.15.0-1014:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.15.0-1014_4.15.0-1014.14~16.04.1_amd64.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-headers-4.15.0-1014-gcp_4.15.0-1014.14~16.04.1_amd64.deb
-      4.15.0-1015:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.15.0-1015_4.15.0-1015.15~16.04.1_amd64.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-headers-4.15.0-1015-gcp_4.15.0-1015.15~16.04.1_amd64.deb
-      4.15.0-1016:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.15.0-1016_4.15.0-1016.17~16.04.1_amd64.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-headers-4.15.0-1016-gcp_4.15.0-1016.17~16.04.1_amd64.deb
-      4.15.0-1017:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.15.0-1017_4.15.0-1017.18~16.04.1_amd64.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-headers-4.15.0-1017-gcp_4.15.0-1017.18~16.04.1_amd64.deb
 
 ubuntu-gke:
   description: Ubuntu GKE Kernels
   type: Ubuntu
   versions:
-    gke:
       4.4.0-1003:
       - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gke/linux-gke-headers-4.4.0-1003_4.4.0-1003.3_all.deb
       - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gke/linux-headers-4.4.0-1003-gke_4.4.0-1003.3_amd64.deb
@@ -944,15 +1484,11 @@ ubuntu-gke:
       4.4.0-1033:
       - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gke/linux-gke-headers-4.4.0-1033_4.4.0-1033.33_all.deb
       - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gke/linux-headers-4.4.0-1033-gke_4.4.0-1033.33_amd64.deb
-      4.4.0-1034:
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gke/linux-gke-headers-4.4.0-1034_4.4.0-1034.34_all.deb
-      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gke/linux-headers-4.4.0-1034-gke_4.4.0-1034.34_amd64.deb
 
 ubuntu-standard:
   description: Ubuntu Standard Kernels
   type: Ubuntu
   versions:
-    generic:
       4.13.0-16:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.13.0-16-generic_4.13.0-16.19_amd64.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.13.0-16_4.13.0-16.19_all.deb
@@ -980,15 +1516,33 @@ ubuntu-standard:
       4.15.0-30:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-30-generic_4.15.0-30.32_amd64.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-30_4.15.0-30.32_all.deb
-      4.15.0-31:
-      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-31-generic_4.15.0-31.33_amd64.deb
-      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-31_4.15.0-31.33_all.deb
       4.15.0-32:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-32-generic_4.15.0-32.35_amd64.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-32_4.15.0-32.35_all.deb
       4.15.0-33:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-33-generic_4.15.0-33.36_amd64.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-33_4.15.0-33.36_all.deb
+      4.15.0-34:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-34-generic_4.15.0-34.37_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-34_4.15.0-34.37_all.deb
+      4.15.0-36:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-36-generic_4.15.0-36.39_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-36_4.15.0-36.39_all.deb
+      4.15.0-38:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-38-generic_4.15.0-38.41_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-38_4.15.0-38.41_all.deb
+      4.15.0-39:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-39-generic_4.15.0-39.42_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-39_4.15.0-39.42_all.deb
+      4.15.0-42:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-42-generic_4.15.0-42.45_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-42_4.15.0-42.45_all.deb
+      4.19.0-7:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.19.0-7-generic_4.19.0-7.8_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.19.0-7_4.19.0-7.8_all.deb
+      4.19.0-8:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.19.0-8-generic_4.19.0-8.9_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.19.0-8_4.19.0-8.9_all.deb
       4.4.0-101:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-101-generic_4.4.0-101.124_amd64.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-101_4.4.0-101.124_all.deb
@@ -1034,15 +1588,30 @@ ubuntu-standard:
       4.4.0-131:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-131-generic_4.4.0-131.157_amd64.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-131_4.4.0-131.157_all.deb
-      4.4.0-132:
-      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-132-generic_4.4.0-132.158_amd64.deb
-      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-132_4.4.0-132.158_all.deb
       4.4.0-133:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-133-generic_4.4.0-133.159_amd64.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-133_4.4.0-133.159_all.deb
       4.4.0-134:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-134-generic_4.4.0-134.160_amd64.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-134_4.4.0-134.160_all.deb
+      4.4.0-135:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-135-generic_4.4.0-135.161_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-135_4.4.0-135.161_all.deb
+      4.4.0-137:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-137-generic_4.4.0-137.163_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-137_4.4.0-137.163_all.deb
+      4.4.0-138:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-138-generic_4.4.0-138.164_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-138_4.4.0-138.164_all.deb
+      4.4.0-139:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-139-generic_4.4.0-139.165_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-139_4.4.0-139.165_all.deb
+      4.4.0-140:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-140-generic_4.4.0-140.166_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-140_4.4.0-140.166_all.deb
+      4.4.0-141:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-141-generic_4.4.0-141.167_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-141_4.4.0-141.167_all.deb
       4.4.0-21:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-21-generic_4.4.0-21.37_amd64.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-21_4.4.0-21.37_all.deb
@@ -1154,6 +1723,4 @@ ubuntu-standard:
       4.4.0-97:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-97-generic_4.4.0-97.120_amd64.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-97_4.4.0-97.120_all.deb
-      4.4.0-98:
-      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-98-generic_4.4.0-98.121_amd64.deb
-      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-98_4.4.0-98.121_all.deb
+
