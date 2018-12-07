@@ -481,7 +481,7 @@ coreos:
       - http://stable.release.core-os.net/amd64-usr/1855.5.0/bundle.tgz
       4.14.78:
       - http://stable.release.core-os.net/amd64-usr/1911.3.0/bundle.tgz
-      1.2.3: # This should fail the first time as we don't know what the actual version is
+      4.14.81:
       - http://stable.release.core-os.net/amd64-usr/1911.4.0/bundle.tgz
     coreos-r1:
       4.11.12:
