@@ -50,10 +50,11 @@ struct SysdigStats {
   volatile uint64_t nGRPCSendFailures = 0;            // number of signals that were not sent on GRPC
 
   // process related metrics
-  volatile uint64_t nProcessSent = 0;                 // number of process signals sent
-  volatile uint64_t nProcessSendFailures = 0;         // number of process signals failed to send
-  volatile uint64_t nProcessResolutionFailures = 0;   // number of process signals failed to resolve
-  volatile uint64_t nProcessRateLimitCount = 0;       // number of process signals rate limited
+  volatile uint64_t nProcessSent = 0;                         // number of process signals sent
+  volatile uint64_t nProcessSendFailures = 0;                 // number of process signals failed to send
+  volatile uint64_t nProcessResolutionFailuresByEvt = 0;      // number of process signals failed to resolve by event*
+  volatile uint64_t nProcessResolutionFailuresByTinfo = 0;    // number of process signals failed to resolve by tinfo*
+  volatile uint64_t nProcessRateLimitCount = 0;               // number of process signals rate limited
 };
 
 class Sysdig {

@@ -88,7 +88,8 @@ void CollectorStatsExporter::run() {
         // process related metrics
         processSent.Set(stats.nProcessSent);
         processSendFailures.Set(stats.nProcessSendFailures);
-        processResolutionFailures.Set(stats.nProcessResolutionFailures);
+        processResolutionFailures.Set(stats.nProcessResolutionFailuresByEvt);
+        processResolutionFailures.Set(stats.nProcessResolutionFailuresByTinfo);
         processRateLimitCount.Set(stats.nProcessRateLimitCount);
     }
 }
