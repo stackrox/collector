@@ -67,7 +67,8 @@ void CollectorStatsExporter::run() {
 
     auto& processSent = collectorEventCounters.Add({{"type", "processSent"}});
     auto& processSendFailures = collectorEventCounters.Add({{"type", "processSendFailures"}});
-    auto& processResolutionFailures = collectorEventCounters.Add({{"type", "processResolutionFailures"}});
+    auto& processResolutionFailuresByEvt = collectorEventCounters.Add({{"type", "processResolutionFailuresByEvt"}});
+    auto& processResolutionFailuresByTinfo = collectorEventCounters.Add({{"type", "processResolutionFailuresByTinfo"}});
     auto& processRateLimitCount = collectorEventCounters.Add({{"type", "processRateLimitCount"}});
 
     while (thread_.Pause(std::chrono::seconds(1))) {
@@ -88,8 +89,8 @@ void CollectorStatsExporter::run() {
         // process related metrics
         processSent.Set(stats.nProcessSent);
         processSendFailures.Set(stats.nProcessSendFailures);
-        processResolutionFailures.Set(stats.nProcessResolutionFailuresByEvt);
-        processResolutionFailures.Set(stats.nProcessResolutionFailuresByTinfo);
+        processResolutionFailuresByEvt.Set(stats.nProcessResolutionFailuresByEvt);
+        processResolutionFailuresByTinfo.Set(stats.nProcessResolutionFailuresByTinfo);
         processRateLimitCount.Set(stats.nProcessRateLimitCount);
     }
 }
