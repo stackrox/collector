@@ -43,7 +43,7 @@ bool ProcessSignalHandler::Start() {
 SignalHandler::Result ProcessSignalHandler::HandleSignal(sinsp_evt* evt) {
   const auto* signal_msg = formatter_.ToProtoMessage(evt);
   if (!signal_msg) {
-    ++(stats_->nProcessResolutionFailures);
+    ++(stats_->nProcessResolutionFailuresByEvt);
     return IGNORED;
   }
 
@@ -65,7 +65,7 @@ SignalHandler::Result ProcessSignalHandler::HandleSignal(sinsp_evt* evt) {
 SignalHandler::Result ProcessSignalHandler::HandleExistingProcess(sinsp_threadinfo* tinfo) {
   const auto* signal_msg = formatter_.ToProtoMessage(tinfo);
   if (!signal_msg) {
-    ++(stats_->nProcessResolutionFailures);
+    ++(stats_->nProcessResolutionFailuresByTinfo);
     return IGNORED;
   }
   
