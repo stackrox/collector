@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 option go_package = "v1";
-option java_package = "stackrox.generated";
+option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
 import "api/v1/common.proto";
@@ -25,10 +25,12 @@ enum SearchDataType {
     SEARCH_DATETIME = 3;
 
     // Enums must be accounted for because they will all be handled on an individual basis
-    SEARCH_ENFORCEMENT = 4;
-    SEARCH_SEVERITY    = 5;
-    SEARCH_MAP         = 6;
-    SEARCH_SECRET_TYPE = 7;
+    SEARCH_ENFORCEMENT     = 4;
+    SEARCH_SEVERITY        = 5;
+    SEARCH_MAP             = 6;
+    SEARCH_SECRET_TYPE     = 7;
+    SEARCH_VIOLATION_STATE = 8;
+    SEARCH_LIFECYCLE_STAGE = 9;
 }
 
 message RawQuery {
@@ -76,11 +78,16 @@ message MatchLinkedFieldsQuery {
     repeated MatchFieldQuery query = 1;
 }
 
+// DocIDQuery represents a query that matches documents with the provided ids.
+message DocIDQuery {
+    repeated string ids = 1;
+}
+
 message BaseQuery {
     oneof query {
-        StringQuery string_query = 1;
         MatchFieldQuery match_field_query = 2;
         MatchLinkedFieldsQuery match_linked_fields_query = 3;
+        DocIDQuery doc_id_query = 4;
     }
 }
 

@@ -32,7 +32,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 
-#include "internalapi/sensor/network_connection_service.grpc.pb.h"
+#include "internalapi/sensor/network_connection_iservice.grpc.pb.h"
 
 #include "ConnScraper.h"
 #include "ConnTracker.h"

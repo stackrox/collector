@@ -1,31 +1,23 @@
 syntax = "proto3";
 
 option go_package = "v1";
-option java_package = "stackrox.generated";
+option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
-import "api/v1/alert_service.proto";
-import "api/v1/deployment_service.proto";
-import "api/v1/image_service.proto";
+import "storage/image.proto";
+import "storage/alert.proto";
 
 package v1;
 
 message DetectionResponse {
-    repeated Alert alerts = 1;
+    repeated storage.Alert alerts = 1;
 }
 
 service DetectionService {
 
-    rpc DetectBuildTime(Image) returns (DetectionResponse) {
+    rpc DetectBuildTime(storage.Image) returns (DetectionResponse) {
         option (google.api.http) = {
             post: "/v1/detect/build"
-            body: "*"
-        };
-    }
-
-    rpc DetectRunTime(Container) returns (DetectionResponse) {
-        option (google.api.http) = {
-            post: "/v1/detect/run"
             body: "*"
         };
     }

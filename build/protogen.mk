@@ -4,7 +4,7 @@ PATH ?= $(PATH):/go/bin
 # Automatically locate all API and data protos.
 # GENERATED_API_XXX and PROTO_API_XXX variables contain standard paths used to
 # generate gRPC proto messages, services, and gateways for the API.
-PROTO_BASE_PATHS = $(BASE_PATH)/proto/ $(BASE_PATH)/rox-proto/
+PROTO_BASE_PATHS = $(BASE_PATH)/rox-proto/
 ALL_PROTOS = $(shell find $(PROTO_BASE_PATHS) -name '*.proto' 2>/dev/null) \
 	$(GOOGLEAPIS_DIR)/google/api/annotations.proto \
 	$(GOOGLEAPIS_DIR)/google/api/http.proto

@@ -1,73 +1,33 @@
 syntax = "proto3";
 
 option go_package = "v1";
-option java_package = "stackrox.generated";
+option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
-import "google/protobuf/timestamp.proto";
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
+import "storage/cluster.proto";
 
 package v1;
 
-enum ClusterType {
-    GENERIC_CLUSTER    = 0;
-    KUBERNETES_CLUSTER = 1;
-    OPENSHIFT_CLUSTER  = 2;
-    SWARM_CLUSTER      = 3;
-    DOCKER_EE_CLUSTER  = 4;
+enum DeploymentFormat {
+    KUBECTL = 0;
+    HELM    = 1;
 }
 
-message CommonKubernetesParams {
-    string namespace = 1;
-}
-
-message KubernetesParams {
-    CommonKubernetesParams params = 1;
-    string image_pull_secret      = 2;
-}
-
-message OpenshiftParams {
-    CommonKubernetesParams params = 1;
-}
-
-message SwarmParams {
-    bool disable_swarm_tls = 1;
-}
-
-message Cluster {
-    string                    id                   = 1;
-    string                    name                 = 2;
-    ClusterType               type                 = 3;
-    string                    prevent_image        = 4;
-    string                    central_api_endpoint = 5;
-    google.protobuf.Timestamp last_contact         = 6;
-    bool                      runtime_support      = 7;
-
-    oneof orchestrator_params {
-        KubernetesParams kubernetes = 9;
-        SwarmParams      swarm      = 10;
-        OpenshiftParams  openshift  = 11;
-    }
-}
-
-message File {
-    string name     = 1;
-    string content  = 2;
-    bool executable = 3;
+enum LoadBalancerType {
+    NONE          = 0;
+    LOAD_BALANCER = 1;
+    NODE_PORT     = 2;
+    ROUTE         = 3;
 }
 
 message ClusterResponse {
-    Cluster cluster            = 1;
-    repeated File files        = 2;
+    storage.Cluster cluster            = 1;
 }
 
 message ClustersList {
-    repeated Cluster clusters = 1;
-}
-
-message ClusterStatus {
-    google.protobuf.Timestamp last_contact = 1;
+    repeated storage.Cluster clusters = 1;
 }
 
 service ClustersService {
@@ -84,14 +44,14 @@ service ClustersService {
         };
     }
 
-    rpc PostCluster (Cluster) returns (ClusterResponse) {
+    rpc PostCluster (storage.Cluster) returns (ClusterResponse) {
         option (google.api.http) = {
             post: "/v1/clusters"
             body: "*"
         };
     }
 
-    rpc PutCluster (Cluster) returns (ClusterResponse) {
+    rpc PutCluster (storage.Cluster) returns (ClusterResponse) {
         option (google.api.http) = {
             put: "/v1/clusters/{id}"
             body: "*"

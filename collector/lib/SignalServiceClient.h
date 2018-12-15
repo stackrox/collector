@@ -38,7 +38,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <grpcpp/client_context.h>
 
 #include "api/v1/signal.pb.h"
-#include "internalapi/sensor/signal_service.grpc.pb.h"
+#include "internalapi/sensor/signal_iservice.grpc.pb.h"
 
 namespace collector {
 
