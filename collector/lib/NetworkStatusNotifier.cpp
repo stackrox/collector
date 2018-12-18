@@ -49,14 +49,14 @@ storage::L4Protocol TranslateL4Protocol(L4Proto proto) {
   }
 }
 
-v1::SocketFamily TranslateAddressFamily(Address::Family family) {
+sensor::SocketFamily TranslateAddressFamily(Address::Family family) {
   switch (family) {
     case Address::Family::IPV4:
-      return v1::SOCKET_FAMILY_IPV4;
+      return sensor::SOCKET_FAMILY_IPV4;
     case Address::Family::IPV6:
-      return v1::SOCKET_FAMILY_IPV6;
+      return sensor::SOCKET_FAMILY_IPV6;
     default:
-      return v1::SOCKET_FAMILY_UNKNOWN;
+      return sensor::SOCKET_FAMILY_UNKNOWN;
   }
 }
 
@@ -179,7 +179,7 @@ sensor::NetworkConnectionInfoMessage* NetworkStatusNotifier::CreateInfoMessage(c
 sensor::NetworkConnection* NetworkStatusNotifier::ConnToProto(const Connection& conn) {
   auto* conn_proto = Allocate<sensor::NetworkConnection>();
   conn_proto->set_container_id(conn.container());
-  conn_proto->set_role(conn.is_server() ? v1::ROLE_SERVER : v1::ROLE_CLIENT);
+  conn_proto->set_role(conn.is_server() ? sensor::ROLE_SERVER : sensor::ROLE_CLIENT);
   conn_proto->set_protocol(TranslateL4Protocol(conn.l4proto()));
   conn_proto->set_socket_family(TranslateAddressFamily(conn.local().address().family()));
   conn_proto->set_allocated_local_address(EndpointToProto(conn.local()));
