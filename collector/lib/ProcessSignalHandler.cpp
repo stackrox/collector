@@ -24,12 +24,12 @@ You should have received a copy of the GNU General Public License along with thi
 #include "ProcessSignalHandler.h"
 #include "RateLimit.h"
 
-#include "api/v1/signal.pb.h"
+#include "storage/process_indicator.pb.h"
 #include <sstream>
 
 namespace collector {
 
-std::string compute_process_key(const ::v1::ProcessSignal& s) {
+std::string compute_process_key(const ::storage::ProcessSignal& s) {
   std::stringstream ss;
   ss << s.container_id() << " " << s.name() << " " << s.args() << " " << s.exec_file_path();
   return ss.str();

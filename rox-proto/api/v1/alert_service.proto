@@ -2,76 +2,38 @@ syntax = "proto3";
 
 option go_package = "v1";
 
-option java_package = "stackrox.generated";
+option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "api/v1/common.proto";
-import "api/v1/policy_service.proto";
-import "api/v1/deployment_service.proto";
-import "api/v1/indicator.proto";
+import "api/v1/empty.proto";
+import "storage/policy.proto";
+import "storage/alert.proto";
 
 package v1;
-
-message Alert {
-    string id                                = 1;
-    Policy policy                            = 2;
-    Deployment deployment                    = 3;
-    message Violation {
-        string message                       = 1;
-        string link                          = 2;
-        repeated ProcessIndicator processes  = 3;
-    }
-    repeated Violation violations            = 4;
-    message Enforcement {
-        EnforcementAction action = 1;
-        string message           = 2;
-    }
-    Enforcement enforcement                  = 5;
-    google.protobuf.Timestamp time           = 6;
-    bool stale                               = 7;
-    google.protobuf.Timestamp marked_stale   = 8;
-    google.protobuf.Timestamp first_occurred = 9;
-}
 
 message ListAlertsRequest {
     reserved 1 to 9; // Removed individual filtered fields and moved towards querying
     string query = 10;
 }
 
-message ListAlertPolicy {
-    string id                                   = 1;
-    string name                                 = 2;
-    Severity severity                           = 3;
-    string description                          = 4;
-    repeated string categories                  = 5;
-    LifecycleStage lifecycle_stage              = 6;
+message ResolveAlertRequest {
+    string id = 1;
 }
 
-message ListAlertDeployment {
-    string id                                  = 1;
-    string name                                = 2;
-    google.protobuf.Timestamp updated_at       = 3;
-    string cluster_name                        = 4;
-    string namespace                           = 5;
-}
-
-message ListAlert {
-    string id                               = 1;
-    google.protobuf.Timestamp time          = 2;
-    ListAlertPolicy policy                  = 3;
-    ListAlertDeployment deployment          = 4;
-    bool stale                              = 5;
-    google.protobuf.Timestamp marked_stale  = 6;
+message SnoozeAlertRequest {
+    string id = 1;
+    google.protobuf.Timestamp snooze_till = 2;
 }
 
 message ListAlertsResponse {
-    repeated ListAlert alerts = 1;
+    repeated storage.ListAlert alerts = 1;
 }
 
 message GetAlertsGroupResponse {
     message PolicyGroup {
-        ListAlertPolicy policy = 1;
+        storage.ListAlertPolicy policy = 1;
         int64 num_alerts = 2;
     }
 
@@ -92,7 +54,7 @@ message GetAlertsCountsResponse {
     message AlertGroup {
         string group                    = 1;
         message AlertCounts {
-            Severity severity   = 1;
+            storage.Severity severity   = 1;
             int64 count         = 2;
         }
         repeated AlertCounts counts     = 2;
@@ -115,7 +77,7 @@ message GetAlertTimeseriesResponse {
     message ClusterAlerts {
         string cluster                   = 1;
         message AlertEvents {
-            Severity severity          = 1;
+            storage.Severity severity          = 1;
             repeated AlertEvent events = 2;
         }
         repeated AlertEvents severities  = 2;
@@ -125,7 +87,7 @@ message GetAlertTimeseriesResponse {
 
 service AlertService {
 
-    rpc GetAlert (ResourceByID) returns (Alert) {
+    rpc GetAlert (ResourceByID) returns (storage.Alert) {
         option (google.api.http) = {
             get: "/v1/alerts/{id}"
         };
@@ -154,7 +116,20 @@ service AlertService {
             get: "/v1/alerts/summary/timeseries"
         };
     }
-    // No post/put API for alerts
+
+    rpc ResolveAlert (ResolveAlertRequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/alerts/{id}/resolve"
+            body: "*"
+        };
+    }
+
+    rpc SnoozeAlert (SnoozeAlertRequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/alerts/{id}/snooze"
+            body: "*"
+        };
+    }
 
     // No deletion of alerts
 

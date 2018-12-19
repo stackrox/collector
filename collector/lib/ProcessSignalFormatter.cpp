@@ -30,6 +30,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include "Logging.h"
 #include "Utility.h"
 
+#include "internalapi/sensor/signal_iservice.pb.h"
+
 namespace collector {
 
 using SignalStreamMessage = sensor::SignalStreamMessage;

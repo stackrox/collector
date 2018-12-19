@@ -36,16 +36,16 @@ namespace collector {
 
 namespace {
 
-sensor::L4Protocol TranslateL4Protocol(L4Proto proto) {
+storage::L4Protocol TranslateL4Protocol(L4Proto proto) {
   switch (proto) {
     case L4Proto::TCP:
-      return sensor::L4_PROTOCOL_TCP;
+      return storage::L4_PROTOCOL_TCP;
     case L4Proto::UDP:
-      return sensor::L4_PROTOCOL_UDP;
+      return storage::L4_PROTOCOL_UDP;
     case L4Proto::ICMP:
-      return sensor::L4_PROTOCOL_ICMP;
+      return storage::L4_PROTOCOL_ICMP;
     default:
-      return sensor::L4_PROTOCOL_UNKNOWN;
+      return storage::L4_PROTOCOL_UNKNOWN;
   }
 }
 
@@ -179,7 +179,7 @@ sensor::NetworkConnectionInfoMessage* NetworkStatusNotifier::CreateInfoMessage(c
 sensor::NetworkConnection* NetworkStatusNotifier::ConnToProto(const Connection& conn) {
   auto* conn_proto = Allocate<sensor::NetworkConnection>();
   conn_proto->set_container_id(conn.container());
-  conn_proto->set_role(conn.is_server() ? sensor::NetworkConnection::ROLE_SERVER : sensor ::NetworkConnection::ROLE_CLIENT);
+  conn_proto->set_role(conn.is_server() ? sensor::ROLE_SERVER : sensor::ROLE_CLIENT);
   conn_proto->set_protocol(TranslateL4Protocol(conn.l4proto()));
   conn_proto->set_socket_family(TranslateAddressFamily(conn.local().address().family()));
   conn_proto->set_allocated_local_address(EndpointToProto(conn.local()));

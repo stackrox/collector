@@ -18,27 +18,26 @@ all: image integration-tests integration-test-report
 .SUFFIXES:
 
 .PHONY: image
-image: container/bin/collector container/Dockerfile container/scripts/
+image: build_collector container/bin/collector container/Dockerfile container/scripts/
 	cp NOTICE-collector.txt container/
 	cp COPYING.txt container/
 	cd container && docker build -f Dockerfile -t stackrox/collector:latest .
 
 .PHONY: build_collector
 build_collector:
-    docker pull stackrox/collector-builder:cache
-    ( cd $(BASE_PATH)/builder && docker build -t stackrox/collector-builder:cache -f Dockerfile . )
+	docker pull stackrox/collector-builder:cache || ( docker build -t stackrox/collector-builder:cache "${BASE_PATH}/builder" )
 
 container/bin/collector: $(HDRS) $(SRCS) generated-srcs container/libs/libsinsp-wrapper.so
 	mkdir -p container/bin
 	docker rm -fv build_collector || true
 	docker run \
-	  -v $(CURDIR)/container/libs/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so \
-	  -v $(CURDIR):/src \
-	  -v $(CURDIR)/sysdig/src:/usr/local/sysdig \
-	  -v $(CURDIR)/sysdig/src/driver/ppm_events_public.h:/usr/local/include/ppm_events_public.h \
+          -v "$(CURDIR):/src:ro" \
+          -v "$(CURDIR)/sysdig/src:/usr/local/sysdig:ro" \
+          -v "$(CURDIR)/container/libs/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
+          -v "$(CURDIR)/sysdig/src/driver/ppm_events_public.h:/usr/local/include/ppm_events_public.h:ro" \
+          -v "$(CURDIR)/cmake-build:/build-output" \
 	  --name build_collector stackrox/collector-builder:cache
 	cp cmake-build/collector container/bin/
-	cp cmake-build/connscrape container/bin/
 
 container/libs/libsinsp-wrapper.so: $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
 	make -C sysdig

@@ -29,7 +29,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include "SysdigEventExtractor.h"
 
 #include "api/v1/signal.pb.h"
-#include "internalapi/sensor/signal_service.pb.h"
+#include "internalapi/sensor/signal_iservice.pb.h"
+#include "storage/process_indicator.pb.h"
 
 namespace collector {
 
@@ -40,7 +41,7 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
   }
 
   using Signal = v1::Signal;
-  using ProcessSignal = v1::ProcessSignal;
+  using ProcessSignal = storage::ProcessSignal;
 
   const sensor::SignalStreamMessage* ToProtoMessage(sinsp_evt* event) override;
   const sensor::SignalStreamMessage* ToProtoMessage(sinsp_threadinfo* tinfo);
