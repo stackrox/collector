@@ -11,4 +11,4 @@ COPY ./kernel-crawler.py \
      ./kope.io.asc \
      /
 
-ENTRYPOINT ["python", "kernel-crawler.py"]
+ENTRYPOINT ["python3", "kernel-crawler.py"]

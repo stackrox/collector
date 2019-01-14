@@ -15,6 +15,7 @@ http://amazonlinux.us-west-2.amazonaws.com/blobstore/75e5e9ac4e840b4400380247e97
 http://amazonlinux.us-west-2.amazonaws.com/blobstore/8cc01ea526bd05bbb937fbb21bd734de49255d8a9853943ee901ccdf487ee23b/kernel-devel-4.14.33-59.34.amzn2.x86_64.rpm
 http://amazonlinux.us-west-2.amazonaws.com/blobstore/961c3f208e61435f3d35f02115e3b2a94a42b5f264fac75d71ccabfa76dc947d/kernel-devel-4.9.76-38.79.amzn2.x86_64.rpm
 http://amazonlinux.us-west-2.amazonaws.com/blobstore/ae757f139e69f930fe9f703974265e913367cc2c798b69d5dd5cf062992c80e4/kernel-devel-4.9.75-1.56.amzn2.x86_64.rpm
+http://amazonlinux.us-west-2.amazonaws.com/blobstore/b73a5a824bd1eb23522128573839e862d4d89ef8d544371b7c2bc3ae4730125b/kernel-devel-4.14.77-81.59.amzn2.x86_64.rpm
 http://amazonlinux.us-west-2.amazonaws.com/blobstore/b7c31d392e4b09503950d7d4c6590000cd7b7111d304e02e01b6b884a5882baf/kernel-devel-4.9.77-41.59.amzn2.x86_64.rpm
 http://amazonlinux.us-west-2.amazonaws.com/blobstore/c6d10fb9a508d39c236f87146686f5649d6d6837153c1f1ad2f2de201304c19d/kernel-devel-4.14.70-72.55.amzn2.x86_64.rpm
 http://amazonlinux.us-west-2.amazonaws.com/blobstore/cef1b3782083c7a0a1ab863a64977257aafbc59f95fe76ccddfefcb5098720e8/kernel-devel-4.14.59-68.43.amzn2.x86_64.rpm

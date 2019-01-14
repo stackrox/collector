@@ -81,6 +81,7 @@ func createPrintAction(t *template.Template) func(*config.Manifest) error {
 }
 
 func buildManifest(manifest *config.Manifest) error {
+	log("")
 	log("%s version %s-%s (%s)", manifest.Builder, manifest.Version, manifest.Flavor, manifest.Kind)
 	log("  %s", manifest.Description)
 	log("Files:")
