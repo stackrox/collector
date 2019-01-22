@@ -6,8 +6,8 @@ import (
 	"os"
 	"text/template"
 
-	"github.com/stackrox/collector/kernel-modules/build/kobuild/command"
-	"github.com/stackrox/collector/kernel-modules/build/kobuild/config"
+	"github.com/stackrox/collector/kernel-modules/build/kotools/kobuild/command"
+	"github.com/stackrox/collector/kernel-modules/build/kotools/kobuild/config"
 )
 
 func log(format string, args ...interface{}) {
@@ -63,7 +63,7 @@ func mainCmd() error {
 
 func markManifestsForKernelVersions(manifests []*config.Manifest, kernelVersions map[string]struct{}, exclude bool) {
 	for _, manifest := range manifests {
-		_, exists := kernelVersions[manifest.KernelVersion()]
+		_, exists := kernelVersions[manifest.Fullname()]
 		manifest.Build = exclude != exists
 	}
 }
@@ -82,7 +82,7 @@ func createPrintAction(t *template.Template) func(*config.Manifest) error {
 
 func buildManifest(manifest *config.Manifest) error {
 	log("")
-	log("%s version %s-%s (%s)", manifest.Builder, manifest.Version, manifest.Flavor, manifest.Kind)
+	log("%s %s (%s)", manifest.Builder, manifest.Kind, manifest.Fullname())
 	log("  %s", manifest.Description)
 	log("Files:")
 	for _, pkg := range manifest.Packages {

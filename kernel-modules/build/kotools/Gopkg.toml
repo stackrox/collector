@@ -1,0 +1,11 @@
+[[constraint]]
+  branch = "master"
+  name = "github.com/kballard/go-shellquote"
+
+[[constraint]]
+  name = "gopkg.in/yaml.v2"
+  version = "2.2.2"
+
+[prune]
+  go-tests = true
+  unused-packages = true

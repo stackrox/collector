@@ -16,10 +16,6 @@ set -euo pipefail
 
 build_modules() {
     kernel_directory="$1"
-    kernel_release="$2"
-    output_module="collector-${kernel_release}.ko"
-
-    echo "Building modules for ${kernel_release}"
 
     cd "/scratch/src/${SOURCE_VERSION}"
     KERNELDIR="$kernel_directory" make clean
@@ -29,126 +25,150 @@ build_modules() {
     strip -g "$sysdig_ko"
 
     ko_version=$(/sbin/modinfo "$sysdig_ko" | grep vermagic | tr -s " " | cut -d " " -f 2)
-    if [ "$ko_version" != "$kernel_release" ]; then
-        echo "Corrupted probe, KO_VERSION=$ko_version, KERNEL_RELEASE=$kernel_release"
-        return 1
-    fi
+    output_module="collector-${ko_version}.ko"
 
     mv "$sysdig_ko" "$output_module"
     gzip "$output_module"
-    mv "${output_module}.gz" "/output/${SOURCE_VERSION}"
+    mv "${output_module}.gz" "/output/${SOURCE_VERSION}/${output_module}.gz"
+    echo "Built kernel module /output/${SOURCE_VERSION}/${output_module}.gz"
 }
 
 ubuntu_build() {
-    if [[ $# -ne 3 ]]; then
+    if [[ $# -ne 2 ]]; then
         echo "Incorrect arguments to ubuntu_build() ($* given)"
         return 1
     fi
 
-    local release="$1"
-    local specific_deb_file="/packages/$2"
-    local all_deb_file="/packages/$3"
-    local module_file="/output/Ubuntu/collector-${release}.ko"
+    local specific_deb_file="/packages/$1"
+    local all_deb_file="/packages/$2"
+    local module_dir="/output/Ubuntu"
 
     echo "Running an Ubuntu build"
-    echo "  release           | $release"
     echo "  specific_deb_file | $specific_deb_file"
     echo "  all_deb_file      | $all_deb_file"
-    echo "  module_file       | $module_file"
+    echo "  module_dir        | $module_dir"
 
     dpkg -x "$specific_deb_file" ./
     dpkg -x "$all_deb_file" ./
 
-    build_modules "$PWD/usr/src/linux-headers-${release}" "$release" "$module_file"
+    local kernel_dir="$(ls -1 "$PWD/usr/src" | grep '^linux-headers-.*-[a-z]\+$' | head -n1)"
+    echo "  kernel_dir        | $kernel_dir"
+
+    if [[ -z "$kernel_dir" ]]; then
+        echo "Blank kernel dir"
+        return 1
+    fi
+
+    build_modules "$PWD/usr/src/${kernel_dir}"
 }
 
 rhel_build() {
-    if [[ $# -ne 2 ]]; then
+    if [[ $# -ne 1 ]]; then
         echo "Incorrect arguments to rhel_build() ($* given)"
         return 1
     fi
 
-    local release="$1"
-    local rpm_file="/packages/$2"
-    local module_file="/output/RedHat/collector-${release}.ko"
+    local rpm_file="/packages/$1"
+    local module_dir="/output/RedHat"
 
     echo "Running a RedHat build"
-    echo "  release     | $release"
-    echo "  rpm_file    | $rpm_file"
-    echo "  module_file | $module_file"
+    echo "  rpm_file   | $rpm_file"
+    echo "  module_dir | $module_dir"
 
     rpm2cpio "$rpm_file" | cpio -idm
 
-    build_modules "$PWD/usr/src/kernels/${release}" "$release" "$module_file"
-}
+    local kernel_dir="$(ls -1 "$PWD/usr/src/kernels" | head -n1)"
+    echo "  kernel_dir | $kernel_dir"
 
-extract() {
-    echo "Extracting $1"
-    dpkg -x "$1" ./
+    if [[ -z "$kernel_dir" ]]; then
+        echo "Blank kernel dir"
+        return 1
+    fi
+
+    build_modules "$PWD/usr/src/kernels/${kernel_dir}"
 }
 
 debian_build() {
-    if [[ $# -lt 3 ]] || [[ $# -gt 4 ]]; then
+    if [[ $# -lt 2 ]] || [[ $# -gt 3 ]]; then
         echo "Incorrect arguments to debian_build() ($* given)"
         return 1
     fi
 
-    local release="$1"
-    local kbuild_deb_file="/packages/$2"
-    local header_deb_file="/packages/$3"
+    local kbuild_deb_file="/packages/$1"
+    local header_deb_file="/packages/$2"
     local common_deb_file=""
-    if [[ $# -eq 4 ]]; then
-	local common_deb_file="/packages/$4"
+    if [[ $# -eq 3 ]]; then
+	    common_deb_file="/packages/$3"
     fi
-    local module_file="/output/Debian/collector-${release}.ko"
-    local src_dir="${PWD}/usr/src/linux-headers-${release}"
+    local module_dir="/output/Debian"
 
     echo "Running a Debian build"
-    echo "  release         | $release"
     echo "  kbuild_deb_file | $kbuild_deb_file"
     echo "  header_deb_file | $header_deb_file"
     echo "  common_deb_file | $common_deb_file"
-    echo "  module_file     | $module_file"
+    echo "  module_dir      | $module_dir"
 
-    extract "$header_deb_file"
-    extract "$kbuild_deb_file"
-    [[ -n "${common_deb_file}" ]] && extract "${common_deb_file}"
+    dpkg -x "$header_deb_file" .
+    dpkg -x "$kbuild_deb_file" .
+    if [[ -n "$common_deb_file" ]]; then
+        dpkg -x "$common_deb_file" .
+    fi
 
+    local kernel_dir="$(ls -1 "$PWD/usr/src"  | grep '^linux-headers-' | grep -v common | head -n1)"
+    local commons_dir="$(ls -1 "$PWD/usr/src" | grep '^linux-headers-' | grep    common | head -n1)"
+
+    echo "  kernel_dir       | $kernel_dir"
+    echo "  commons_dir      | $commons_dir"
+
+    if [[ -z "$kernel_dir" ]]; then
+        echo "Blank kernel dir"
+        return 1
+    fi
+
+    if [[ -n "$common_deb_file" && -z "$kernel_dir" ]]; then
+        echo "Blank common dir"
+        return 1
+    fi
+
+    build_dir="$(find  lib/modules -name build  -type l)"
+    source_dir="$(find lib/modules -name source -type l)"
 
     # Fix symbolic links
-    unlink "lib/modules/${release}/build"
-    ln -sr "${PWD}/usr/src/linux-headers-${release}" "lib/modules/${release}/build"
-    if [[ -n "${common_deb_file}" ]]; then
-	local commons_dir="${PWD}/usr/src/linux-headers-${release/amd64/common}"
-	unlink "lib/modules/${release}/source"
-	ln -s "${commons_dir}" "lib/modules/${release}/source"
+    unlink "$build_dir"
+    ln -sr "${PWD}/usr/src/${kernel_dir}" "$build_dir"
+
+    # Fix symbolic links for common
+    if [[ -n "$common_deb_file" ]]; then
+        unlink "$source_dir"
+        ln -sr "${PWD}/usr/src/${commons_dir}" "$source_dir"
     fi
-    
+
     # Hack Makefile
     sed -i -e 's/@://' \
-	-e 's|$(cmd) %.*$|$(cmd) : all|' \
-	"${src_dir}/Makefile"
-    if [[ -n "${common_deb_file}" ]]; then
-	sed -i -e '0,/MAKEARGS.*$/s__MAKEARGS := -C '"${commons_dir} O=${src_dir}"_ \
-	"${src_dir}/Makefile"
+	    -e 's|$(cmd) %.*$|$(cmd) : all|' \
+	    "${PWD}/usr/src/${kernel_dir}/Makefile"
+
+    # Hack Makefile for common
+    if [[ -n "$common_deb_file" ]]; then
+        sed -i -e '0,/MAKEARGS.*$/s__MAKEARGS := -C '"${PWD}/usr/src/${commons_dir} O=${PWD}/usr/src/${kernel_dir}"_ \
+            "${PWD}/usr/src/${kernel_dir}/Makefile"
     fi
-    build_modules "$PWD/usr/src/linux-headers-${release}" "$release" "$module_file"
+
+    build_modules "$PWD/usr/src/${kernel_dir}"
 }
 
 coreos_build() {
-    if [[ $# -ne 2 ]]; then
+    if [[ $# -ne 1 ]]; then
         echo "Incorrect arguments to coreos_build() ($* given)"
         return 1
     fi
 
-    local release="$1"
-    local bundle_file="/packages/$2"
-    local module_file="/output/CoreOS/collector-${release}.ko"
+    local bundle_file="/packages/$1"
+    local module_dir="/output/CoreOS"
 
     echo "Running a CoreOS build"
-    echo "  release     | $release"
     echo "  bundle_file | $bundle_file"
-    echo "  module_file | $module_file"
+    echo "  module_dir  | $module_dir"
 
     tar --strip-components=2 -xf "$bundle_file" --wildcards 'usr/boot/config*'
     tar --strip-components=1 -xf "$bundle_file" 'lib/modules'
@@ -157,24 +177,30 @@ coreos_build() {
     sed -i 's/CONFIG_INITRAMFS_SOURCE=""/CONFIG_INITRAMFS_SOURCE="bootengine.cpio"\nCONFIG_INITRAMFS_ROOT_UID=0\nCONFIG_INITRAMFS_ROOT_GID=0/' config
     sed -i 'N;s/\(CONFIG_RD_LZ4=.\)\n\(CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=\)/\1\nCONFIG_INITRAMFS_COMPRESSION=".gz"\n\2/' config
 
-    build_modules "$PWD/modules/${release}/build" "$release" "$module_file"
+    local kernel_dir="$(ls -1 "$PWD/modules" | head -n1)"
+    echo "  kernel_dir  | $kernel_dir"
+
+    if [[ -z "$kernel_dir" ]]; then
+        echo "Blank kernel dir"
+        return 1
+    fi
+
+    build_modules "$PWD/modules/${kernel_dir}/build"
 }
 
 main() {
-    if [[ $# -lt 4 ]]; then
+    if [[ $# -lt 2 ]]; then
         echo "Insufficient arguments"
         return 1
     fi
 
-    [[ -n "$SOURCE_VERSION" ]] || {
-    	echo >&2 "Source version is not set!"
-    	exit 1
-    }
+    if [[ -z "$SOURCE_VERSION" ]]; then
+        echo >&2 "Source version is not set!"
+        exit 1
+    fi
 
     distro="$1"
-    version="$2"
-    flavor="$3"
-    shift 3
+    shift
     files="$@"
 
     mkdir -p /scratch/src
@@ -189,22 +215,22 @@ main() {
     case "$distro" in
         Ubuntu)
             echo Building Ubuntu
-            ubuntu_build "${version}-${flavor}" $files
+            ubuntu_build $files
         ;;
 
         RedHat)
             echo Building RHEL
-            rhel_build "${version}.${flavor}" $files
+            rhel_build $files
         ;;
 
         Debian)
             echo Building Debian
-            debian_build "${version}-${flavor}" $files
+            debian_build $files
         ;;
 
         CoreOS)
             echo Building CoreOS
-            coreos_build "${version}-${flavor}" $files
+            coreos_build $files
         ;;
 
         *)

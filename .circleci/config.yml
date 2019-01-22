@@ -101,12 +101,25 @@ jobs:
     - init
 
     - run:
+        name: Compile komanifest
+        command: |
+          mkdir -p bin
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+            go build -a -o "${WORKSPACE_ROOT}/bin/komanifest" \
+            github.com/stackrox/collector/kernel-modules/build/kotools/komanifest
+
+    - run:
         name: Compile kobuild
         command: |
-          mkdir bin
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
             go build -a -o "${WORKSPACE_ROOT}/bin/kobuild" \
-            github.com/stackrox/collector/kernel-modules/build/kobuild
+            github.com/stackrox/collector/kernel-modules/build/kotools/kobuild
+
+    - run:
+        name: Generate kernel build manifest
+        command: |
+          komanifest -config "${SOURCE_ROOT}/kernel-modules/supported-kernels/reformat.yml" \
+          | tee "${WORKSPACE_ROOT}/kernel-manifest.yml"
 
     - run:
         name: Prepare source
@@ -181,10 +194,10 @@ jobs:
           for i in module-versions/*/; do
             version="$(basename "$i")"
             "${WORKSPACE_ROOT}/bin/kobuild" \
-              --config "${SOURCE_ROOT}/kernel-modules/supported-kernels/kernel-manifest.yml" \
+              --config "${WORKSPACE_ROOT}/kernel-manifest.yml" \
               --kernel-versions-file ~/kobuild-tmp/existing-modules-"${version}" \
               --exclude \
-              --output "{{.KernelVersion}} ${version}"
+              --output "{{.Fullname}} ${version}"
           done | sort | uniq >build-tasks
 
     - persist_to_workspace:
@@ -193,6 +206,7 @@ jobs:
           - ko-build
           - bin
           - shared-env
+          - kernel-manifest.yml
 
   kernels:
     machine: true
@@ -240,7 +254,7 @@ jobs:
           for i in "${WORKSPACE_ROOT}/ko-build/build-output"/*/; do
             module_version="$(basename "$i")"
             "${WORKSPACE_ROOT}/bin/kobuild" \
-                --config "${SOURCE_ROOT}/kernel-modules/supported-kernels/kernel-manifest.yml" \
+                --config "${WORKSPACE_ROOT}/kernel-manifest.yml" \
                 --kernel-versions-file ~/kobuild-tmp/kernel-versions-"${module_version}" \
                 --output 'SOURCE_VERSION="'"${module_version}"'" {{.BuildCommand "build-kos"}}' \
                 \>> ~/kobuild-tmp/all-build-commands
@@ -252,7 +266,7 @@ jobs:
         command: |
           cat ~/kobuild-tmp/kernel-versions-* | sort | uniq >~/kobuild-tmp/all-kernel-versions
           "${WORKSPACE_ROOT}/bin/kobuild" \
-              --config "${SOURCE_ROOT}/kernel-modules/supported-kernels/kernel-manifest.yml" \
+              --config "${WORKSPACE_ROOT}/kernel-manifest.yml" \
               --kernel-versions-file ~/kobuild-tmp/all-kernel-versions \
               --output '{{.PackageListURLEncoded}}' \
             | sort | uniq \
