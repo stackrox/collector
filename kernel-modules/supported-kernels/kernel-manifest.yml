@@ -483,6 +483,8 @@ coreos:
       - http://stable.release.core-os.net/amd64-usr/1911.3.0/bundle.tgz
       4.14.81:
       - http://stable.release.core-os.net/amd64-usr/1911.4.0/bundle.tgz
+      4.14.88:
+      - http://stable.release.core-os.net/amd64-usr/1967.3.0/bundle.tgz
     coreos-r1:
       4.11.12:
       - http://stable.release.core-os.net/amd64-usr/1409.9.0/bundle.tgz
