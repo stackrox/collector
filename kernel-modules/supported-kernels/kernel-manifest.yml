@@ -604,6 +604,9 @@ ubuntu-aws:
   type: Ubuntu
   versions:
     aws:
+      4.15.0-1031:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.15.0-1031_4.15.0-1031.33_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.15.0-1031-aws_4.15.0-1031.33_amd64.deb
       4.15.0-1007:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.15.0-1007_4.15.0-1007.7_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.15.0-1007-aws_4.15.0-1007.7_amd64.deb
