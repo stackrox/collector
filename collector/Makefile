@@ -9,7 +9,7 @@ BASE_PATH ?= $(CURDIR)/..
 PATH ?= $(PATH):/go/bin
 
 ifeq ($(COLLECTOR_TAG),)
-	export COLLECTOR_TAG=$(shell git describe --tags)
+	export COLLECTOR_TAG=$(shell git describe --tags --abbrev=10 --dirty)
 endif
 
 .PHONY: all
