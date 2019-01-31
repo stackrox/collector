@@ -2,7 +2,7 @@
 set -e
 date
 apt update -y
-apt install -y \
+apt install -y --no-install-recommends \
 apt-utils \
 autoconf \
 automake \
@@ -21,7 +21,11 @@ libc-ares-dev \
 libcurl4-openssl-dev \
 libelf-dev \
 libgoogle-perftools-dev \
+libjq-dev \
+libjsoncpp-dev \
 libluajit-5.1 \
+libluajit-5.1-dev \
+libncurses5-dev \
 libssl1.0-dev \
 libtool \
 libz-dev \
