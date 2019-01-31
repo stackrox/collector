@@ -7,6 +7,9 @@ RUN apt install -y apt-transport-https dirmngr
 RUN echo 'deb http://apt.dockerproject.org/repo debian-stretch main' >> /etc/apt/sources.list
 
 COPY docker-gpg-key.asc /
+
+COPY builder/ /builder
+
 RUN apt-key add /docker-gpg-key.asc
 
 RUN apt update -y && apt install -y docker-engine
