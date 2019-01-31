@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+date
+echo "Building..."
+make -C testaptgetter
+docker-compose rm -f
+docker-compose build
+time docker-compose up --abort-on-container-exit
+date
+exit 0
