@@ -18,5 +18,7 @@ for i in /builder/install/* ; do
 done
 sudo chmod a+rwX -R /builder/sysdig/src
 PATH=/usr/lib/ccache:$PATH HOME=/home/srbuser sudo -E -u srbuser /builder/sysdig/build/build.sh
+cp -a /usr/lib/x86_64-linux-gnu/ /sysdig-build/ul-x86_64-linux-gnu/
+cp -a     /lib/x86_64-linux-gnu/ /sysdig-build/l-x86_64-linux-gnu/
 docker images
 echo "FINISHED"
