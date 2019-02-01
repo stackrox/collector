@@ -16,7 +16,7 @@ for i in /builder/install/* ; do
 	PATH=/usr/lib/ccache:$PATH HOME=/home/srbuser sudo -E -u srbuser $i
 	echo "Succeeded $i ."
 done
+sudo chmod a+rwX -R /builder/sysdig/src
+PATH=/usr/lib/ccache:$PATH HOME=/home/srbuser sudo -E -u srbuser /builder/sysdig/build/build.sh
 docker images
-ls -lRh /builder
-ls -lhF /
 echo "FINISHED"

@@ -2,6 +2,11 @@
 set -e
 date
 echo "Building..."
+sudo rm -rf  testaptgetter/sysdig-build
+if test ! -d testaptgetter/sysdig-build ; then
+       mkdir testaptgetter/sysdig-build
+   chmod 777 testaptgetter/sysdig-build
+fi
 make -C testaptgetter
 docker-compose rm -f
 docker-compose build

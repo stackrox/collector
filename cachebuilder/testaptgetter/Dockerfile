@@ -22,6 +22,7 @@ RUN groupadd -g 987 srbuser \
  && mkdir -p /home/srbuser/.ccache \
  && chown -R srbuser:srbuser /home/srbuser
 
+
 ENV PATH /usr/lib/ccache:/usr/local/bin:/usr/local/sbin:$PATH
 
 ENTRYPOINT ["/builder/entrypoint.sh"]

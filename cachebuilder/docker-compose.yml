@@ -16,4 +16,5 @@ services:
       - ~/.srbcache:/mnt/srbcache
       - ~/.srbcache/nonroot/ccache:/home/srbuser/.ccache
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./build-output:/sysdig-build
 
