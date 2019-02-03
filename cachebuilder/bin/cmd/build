@@ -2,11 +2,18 @@
 set -e
 date
 echo "Building..."
+if test "$(uname)" = Darwin ; then
+	echo "Building on Darwin is not supported. Please use Debian or Ubuntu"
+	exit 0
+fi
+
 sudo rm -rf  testaptgetter/build-output
 if test ! -d testaptgetter/build-output ; then
        mkdir testaptgetter/build-output
    chmod 777 testaptgetter/build-output
 fi
+
+make -C testaptgetter/builder/sysdig
 make -C testaptgetter
 docker-compose rm -f
 docker-compose build
