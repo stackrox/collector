@@ -13,8 +13,8 @@ if test ! -d testaptgetter/build-output ; then
    chmod 777 testaptgetter/build-output
 fi
 
-make -C testaptgetter/builder/sysdig
-make -C testaptgetter
+(cd testaptgetter/builder/sysdig && make)
+(cd testaptgetter && make)
 docker-compose rm -f
 docker-compose build
 time docker-compose up --abort-on-container-exit

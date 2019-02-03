@@ -1,5 +1,2 @@
-linksrc:
-	ln -s $(PWD)/../../../../sysdig/src .
-
 copysrc:
-	cp -a $(PWD)/../../../../sysdig/src .
+	rm -rf src && cp -a $(PWD)/../../../../sysdig/src .
