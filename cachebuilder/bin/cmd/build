@@ -7,14 +7,14 @@ if test "$(uname)" = Darwin ; then
 	exit 0
 fi
 
-sudo rm -rf  testaptgetter/build-output
-if test ! -d testaptgetter/build-output ; then
-       mkdir testaptgetter/build-output
-   chmod 777 testaptgetter/build-output
+sudo rm -rf  fastcompile/build-output
+if test ! -d fastcompile/build-output ; then
+       mkdir fastcompile/build-output
+   chmod 777 fastcompile/build-output
 fi
 
-(cd testaptgetter/builder/sysdig && make)
-(cd testaptgetter && make)
+(cd fastcompile/builder/sysdig && make)
+(cd fastcompile && make)
 docker-compose rm -f
 docker-compose build
 time docker-compose up --abort-on-container-exit

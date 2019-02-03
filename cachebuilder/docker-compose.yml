@@ -8,8 +8,8 @@ services:
       - "3142:3142"
     volumes:
       - ~/.srbcache/root/apt-cacher-ng:/var/cache/apt-cacher-ng
-  testaptgetter:
-    build: testaptgetter
+  fastcompile:
+    build: fastcompile
     depends_on:
       - apt-cacher-ng
     volumes:
