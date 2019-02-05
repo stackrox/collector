@@ -9,8 +9,8 @@ fi
 
 sudo rm -rf  fastcompile/build-output
 if test ! -d fastcompile/build-output ; then
-       mkdir fastcompile/build-output
-   chmod 777 fastcompile/build-output
+	mkdir fastcompile/build-output
+	chmod 777 fastcompile/build-output
 fi
 
 (cd fastcompile/builder/sysdig && make)
