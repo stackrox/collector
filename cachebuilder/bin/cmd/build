@@ -4,7 +4,7 @@ date
 echo "Building..."
 if test "$(uname)" = Darwin ; then
 	echo "Building on Darwin is not supported. Please use Debian or Ubuntu"
-	exit 0
+	exit 1
 fi
 
 sudo rm -rf  fastcompile/build-output
