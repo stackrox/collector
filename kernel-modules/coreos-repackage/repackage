@@ -2,50 +2,51 @@
 set -e
 
 die() {
-    echo "repackage: $*" 1>&2
+    echo "repackage: $*" >&2
     exit 1
 }
 
-abs() {
-    printf '%s/%s' "$(cd "$(dirname "$1")"; pwd)" "$(basename "$1")"
-}
-
 log() {
-    printf '%s | %s\n' "$(date)" "$*"
+    printf '%s | %s\n' "$(date)" "$*" >&2
 }
 
 main() {
-    [ -n "$1" ] || die "no input bundle file given"
-    input_bundle="$(abs "$1")"
+	input_bundle="$1"
+    [ -n "$input_bundle" ] || die "no input bundle file given"
 
-    [ -f "$input_bundle" ] || die "input bundle file $input_bundle missing"
+	output_dir="$2"
+    [ -n "$output_dir" ] || die "no output directory given"
 
-    [ -n "$2" ] || die "no output bundle file given"
-    output_bundle="$(abs "$2")"
+    if [ ! -d "$output_dir" ]; then
+    	mkdir -p "$output_dir" || die "Could not create output directory ${output_dir}"
+    fi
 
-    [ -d "$output_bundle" ] && die "output bundle $output_bundle is a directory"
+    image_file="/tmp/image.bin"
 
-    output_dir="$(dirname "$output_bundle")"
-    inflated_bundle="${output_dir}/.extracted"
+    log "Extracting ${input_bundle} to ${image_file}"
+    lbunzip2 -dck "$input_bundle" > "${image_file}"
 
-    log "Repackaging ${input_bundle} into ${output_bundle}."
+	mount_dir="/tmp/mount"
 
-    log "Inflating archive"
-    lbzip2 -dck "$input_bundle" > "$inflated_bundle"
+    log "Mounting image ${image_file} at ${mount_dir}"
+    loop_device="$(kpartx -asvr "$image_file" | cut -d' ' -f 3)"
+    mkdir -p "$mount_dir" || die "Cannot create temporary mount directory"
+    mount -r "/dev/mapper/${loop_device}" "$mount_dir" || die "Cannot mount image file"
 
-    log "Mounting image"
-    loop_device="$(kpartx -asvr "$inflated_bundle" | cut -d\  -f 3)"
-    mount -r "/dev/mapper/${loop_device}" /tmp/mount
-
-    log "Bundling files"
-    (cd /tmp/mount && tar -chf - lib/modules usr/boot/config*) | pigz --best > "$output_bundle"
+    log "Bundling files ..."
+    for dir in "${mount_dir}"/lib/modules/*; do
+    	[ -d "$dir/build" ] || continue
+    	version="$(basename "$dir")"
+    	( chroot "$mount_dir" tar -czh -f - -C "/lib/modules/${version}/build" . ) >"${output_dir}/kbuild-${version}.tgz" \
+    		&& echo "$version"
+    done
 
     log "Unmounting image"
-    umount /tmp/mount
-    kpartx -dv "$inflated_bundle"
+    umount "$mount_dir"
+    kpartx -dv "$image_file"
 
-    log "Cleaning image"
-    rm -f "$inflated_bundle"
+    log "Removing image"
+    rm -f "$image_file"
 }
 
 main "$@"
