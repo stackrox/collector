@@ -97,9 +97,9 @@ To find the path, run `make print-package-cache-path` in the parent directory
 (`kernel-modules`).
 
 Then, construct your output path by taking the input URL, changing the
-filename to `bundle.tgz`, and removing repeated slashes. For instance,
+filename to `bundle.tgz`, and URL-encoding the URL. For instance,
 `http://stable.release.core-os.net/amd64-usr/1688.5.3/coreos_developer_container.bin.bz2`
 becomes
-`gs://kernel-headers-cache/http:/stable.release.core-os.net/amd64-usr/1688.5.3/bundle.tgz`
+`gs://stackrox-kernel-headers-mirror/packages/http:%2F%2Fstable.release.core-os.net%2Famd64-usr%2F1688.5.3%2Fbundle.tgz`
 
 Then, upload: `gsutil cp output/bundle.tgz FINAL_FILENAME`.
