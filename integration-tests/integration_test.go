@@ -94,7 +94,7 @@ func (s *IntegrationTestSuite) execContainer() (string, error) {
 
 func (s *IntegrationTestSuite) cleanupContainer() {
 	exec.Command("docker", "kill", "cowabunga").Run()
-//	exec.Command("docker", "rm", "cowabunga").Run()
+	exec.Command("docker", "rm", "cowabunga").Run()
 }
 
 func (s *IntegrationTestSuite) dockerComposeUp() error {

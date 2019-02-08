@@ -8,6 +8,8 @@ services:
     - "GRPC_SERVER=grpc-server:9999"
     - 'COLLECTOR_CONFIG={"syscalls":["execve"],"generic_syscalls":["execve"],"useChiselCache":true,"signalOutput":"grpc","signalFormat":"signal_summary"}'
     restart: always
+    logging:
+      driver: syslog
     privileged: true
     networks:
     - collector
