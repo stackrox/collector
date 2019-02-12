@@ -51,10 +51,10 @@ if(NOT WIN32)
 
 	add_subdirectory(man)
 
-	install(TARGETS sysdig
+	install(TARGETS sysdig 
 		DESTINATION bin)
 
-	install(TARGETS csysdig
+	install(TARGETS csysdig 
 		DESTINATION bin)
 
 	install(DIRECTORY chisels
