@@ -14,6 +14,7 @@ RUN apt-get update \
         python \
         libcurl4-openssl-dev \
         git \
+        libb64-dev \
         libz-dev \
         libssl-dev \
         libtool \
