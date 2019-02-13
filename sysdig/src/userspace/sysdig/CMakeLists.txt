@@ -39,6 +39,7 @@ add_executable(csysdig ${SOURCE_FILES_CSYSDIG})
 if(NOT WIN32)
 
 	target_link_libraries(sysdig
+                b64
 		sinsp)
 
 	if(USE_BUNDLED_NCURSES)
@@ -47,6 +48,7 @@ if(NOT WIN32)
 
 	target_link_libraries(csysdig
 		sinsp
+                b64
 		"${CURSES_LIBRARIES}")
 
 	add_subdirectory(man)
