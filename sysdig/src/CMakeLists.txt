@@ -359,10 +359,13 @@ if(NOT WIN32 AND NOT APPLE)
 	endif()
 endif() # NOT WIN32 AND NOT APPLE
 
+option(BUILD_USERSPACE "Build userspace libraries" ON)
+if(BUILD_USERSPACE)
 add_subdirectory(userspace/sysdig)
 add_subdirectory(userspace/libscap)
 add_subdirectory(userspace/libsinsp)
 #add_subdirectory(userspace/falcobl)
+endif() # BUILD_USERSPACE
 
 set(CPACK_PACKAGE_NAME "${PACKAGE_NAME}")
 set(CPACK_PACKAGE_VENDOR "Sysdig Inc.")
