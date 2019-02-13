@@ -11,6 +11,8 @@ RUN apt-get update \
         libncurses5-dev \
         libz-dev \
         libjsoncpp-dev \
+        libb64-0d \
+        libb64-dev \
         cmake \
         `# For proper HTTPS validation in git clone:` \
         ca-certificates \
