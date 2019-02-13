@@ -6,6 +6,8 @@ include_directories("${LUAJIT_INCLUDE}")
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 if(NOT WIN32 AND NOT APPLE)
 	include_directories("b64")
 	include_directories("${CURL_INCLUDE_DIR}")
