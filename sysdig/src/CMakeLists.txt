@@ -233,7 +233,7 @@ if(NOT WIN32 AND NOT APPLE)
 		URL "http://download.draios.com/dependencies/jq-1.5.tar.gz"
 		URL_MD5 "0933532b086bd8b6a41c1b162b1731f9"
 		CONFIGURE_COMMAND ./configure --disable-maintainer-mode --enable-all-static --disable-dependency-tracking
-		BUILD_COMMAND ${CMD_MAKE} LDFLAGS=-all-static
+		BUILD_COMMAND ${CMD_MAKE} LDFLAGS=-all-static CFLAGS=-fPIC
 		BUILD_IN_SOURCE 1
 		BUILD_BYPRODUCTS ${JQ_LIB}
 		PATCH_COMMAND wget -O jq-1.5-fix-tokenadd.patch https://github.com/stedolan/jq/commit/8eb1367ca44e772963e704a700ef72ae2e12babd.patch && patch -i jq-1.5-fix-tokenadd.patch
