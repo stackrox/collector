@@ -121,6 +121,8 @@ const struct syscall_evt_pair g_syscall_table[SYSCALL_TABLE_SIZE] = {
 	[__NR_sched_setparam - SYSCALL_TABLE_ID0] =             {UF_USED | UF_ALWAYS_DROP, PPME_GENERIC_E, PPME_GENERIC_X},
 	[__NR_sched_getparam - SYSCALL_TABLE_ID0] =             {UF_USED | UF_ALWAYS_DROP, PPME_GENERIC_E, PPME_GENERIC_X},
 	[__NR_syslog - SYSCALL_TABLE_ID0] =                     {UF_USED | UF_ALWAYS_DROP, PPME_GENERIC_E, PPME_GENERIC_X},
+	[__NR_chmod - SYSCALL_TABLE_ID0] =                      {UF_USED | UF_ALWAYS_DROP, PPME_GENERIC_E, PPME_GENERIC_X},
+	[__NR_lchown - SYSCALL_TABLE_ID0] =                     {UF_USED | UF_ALWAYS_DROP, PPME_GENERIC_E, PPME_GENERIC_X},
 #ifdef __NR_utime
 	[__NR_utime - SYSCALL_TABLE_ID0] =                      {UF_USED | UF_ALWAYS_DROP, PPME_GENERIC_E, PPME_GENERIC_X},
 #endif
@@ -262,21 +264,6 @@ const struct syscall_evt_pair g_syscall_table[SYSCALL_TABLE_SIZE] = {
 #ifdef __NR_unshare
 	[__NR_unshare - SYSCALL_TABLE_ID0] =                    {UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_UNSHARE_E, PPME_SYSCALL_UNSHARE_X},
 #endif
-#ifdef __NR_init_module
-	[__NR_init_module - SYSCALL_TABLE_ID0] =                {UF_USED, PPME_SYSCALL_INIT_MODULE_E, PPME_SYSCALL_INIT_MODULE_X},
-#endif
-#ifdef __NR_finit_module
-        [__NR_finit_module - SYSCALL_TABLE_ID0] =                      {UF_USED, PPME_SYSCALL_FINIT_MODULE_E, PPME_SYSCALL_FINIT_MODULE_X},
-#endif
-
-#ifdef __NR_delete_module
-        [__NR_delete_module - SYSCALL_TABLE_ID0] =                      {UF_USED, PPME_SYSCALL_DELETE_MODULE_E, PPME_SYSCALL_DELETE_MODULE_X},
-#endif
-
-#ifdef __NR_capset
-        [__NR_capset - SYSCALL_TABLE_ID0] =                      {UF_USED, PPME_SYSCALL_CAPSET_E, PPME_SYSCALL_CAPSET_X},
-#endif
-
 	[__NR_flock - SYSCALL_TABLE_ID0] =			{UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_FLOCK_E, PPME_SYSCALL_FLOCK_X},
 #ifdef __NR_semop
 	[__NR_semop - SYSCALL_TABLE_ID0] =                      {UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_SEMOP_E, PPME_SYSCALL_SEMOP_X},
@@ -301,13 +288,6 @@ const struct syscall_evt_pair g_syscall_table[SYSCALL_TABLE_SIZE] = {
 #ifdef __NR_seccomp
 	[__NR_seccomp - SYSCALL_TABLE_ID0] =                    {UF_USED, PPME_SYSCALL_SECCOMP_E, PPME_SYSCALL_SECCOMP_X},
 #endif
-	[__NR_chown - SYSCALL_TABLE_ID0] =                      {UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_CHOWN_E, PPME_SYSCALL_CHOWN_X},
-	[__NR_lchown - SYSCALL_TABLE_ID0] =                     {UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_LCHOWN_E, PPME_SYSCALL_LCHOWN_X},
-	[__NR_fchown - SYSCALL_TABLE_ID0] =                     {UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_FCHOWN_E, PPME_SYSCALL_FCHOWN_X},
-	[__NR_fchownat - SYSCALL_TABLE_ID0] =                   {UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_FCHOWNAT_E, PPME_SYSCALL_FCHOWNAT_X},
-	[__NR_chmod - SYSCALL_TABLE_ID0] =                      {UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_CHMOD_E, PPME_SYSCALL_CHMOD_X},
-	[__NR_fchmod - SYSCALL_TABLE_ID0] =                     {UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_FCHMOD_E, PPME_SYSCALL_FCHMOD_X},
-	[__NR_fchmodat - SYSCALL_TABLE_ID0] =                   {UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_FCHMODAT_E, PPME_SYSCALL_FCHMODAT_X}
 };
 
 /*
@@ -417,7 +397,6 @@ const enum ppm_syscall_code g_syscall_code_routing_table[SYSCALL_TABLE_SIZE] = {
 	[__NR_adjtimex - SYSCALL_TABLE_ID0] = PPM_SC_ADJTIMEX,
 	[__NR_mprotect - SYSCALL_TABLE_ID0] = PPM_SC_MPROTECT,
 	[__NR_init_module - SYSCALL_TABLE_ID0] = PPM_SC_INIT_MODULE,
-	[__NR_finit_module - SYSCALL_TABLE_ID0] = PPM_SC_FINIT_MODULE,
 	[__NR_delete_module - SYSCALL_TABLE_ID0] = PPM_SC_DELETE_MODULE,
 	[__NR_quotactl - SYSCALL_TABLE_ID0] = PPM_SC_QUOTACTL,
 	[__NR_getpgid - SYSCALL_TABLE_ID0] = PPM_SC_GETPGID,
@@ -613,9 +592,6 @@ const enum ppm_syscall_code g_syscall_code_routing_table[SYSCALL_TABLE_SIZE] = {
 #endif
 #ifdef __NR_setns
 	[__NR_setns - SYSCALL_TABLE_ID0] = PPM_SC_SETNS,
-#endif
-#ifdef __NR_init_module
-	[__NR_init_module - SYSCALL_TABLE_ID0] = PPM_SC_INIT_MODULE,
 #endif
 	[__NR_getdents64 - SYSCALL_TABLE_ID0] =  PPM_SC_GETDENTS64,
 #ifndef __NR_socketcall
@@ -947,6 +923,8 @@ const struct syscall_evt_pair g_syscall_ia32_table[SYSCALL_TABLE_SIZE] = {
 	[__NR_ia32_sched_setparam - SYSCALL_TABLE_ID0] =             {UF_USED | UF_ALWAYS_DROP, PPME_GENERIC_E, PPME_GENERIC_X},
 	[__NR_ia32_sched_getparam - SYSCALL_TABLE_ID0] =             {UF_USED | UF_ALWAYS_DROP, PPME_GENERIC_E, PPME_GENERIC_X},
 	[__NR_ia32_syslog - SYSCALL_TABLE_ID0] =                     {UF_USED | UF_ALWAYS_DROP, PPME_GENERIC_E, PPME_GENERIC_X},
+	[__NR_ia32_chmod - SYSCALL_TABLE_ID0] =                      {UF_USED | UF_ALWAYS_DROP, PPME_GENERIC_E, PPME_GENERIC_X},
+	[__NR_ia32_lchown - SYSCALL_TABLE_ID0] =                     {UF_USED | UF_ALWAYS_DROP, PPME_GENERIC_E, PPME_GENERIC_X},
 	[__NR_ia32_utime - SYSCALL_TABLE_ID0] =                      {UF_USED | UF_ALWAYS_DROP, PPME_GENERIC_E, PPME_GENERIC_X},
 	[__NR_ia32_mount - SYSCALL_TABLE_ID0] =                      {UF_USED | UF_ALWAYS_DROP, PPME_GENERIC_E, PPME_GENERIC_X},
 	[__NR_ia32_umount2 - SYSCALL_TABLE_ID0] =                    {UF_USED | UF_ALWAYS_DROP, PPME_GENERIC_E, PPME_GENERIC_X},
@@ -1096,13 +1074,6 @@ const struct syscall_evt_pair g_syscall_ia32_table[SYSCALL_TABLE_SIZE] = {
 #ifdef __NR_ia32_seccomp
 	[__NR_ia32_seccomp - SYSCALL_TABLE_ID0] =                    {UF_USED, PPME_SYSCALL_SECCOMP_E, PPME_SYSCALL_SECCOMP_X},
 #endif
-	[__NR_ia32_chown - SYSCALL_TABLE_ID0] =                      {UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_CHOWN_E, PPME_SYSCALL_CHOWN_X},
-	[__NR_ia32_lchown - SYSCALL_TABLE_ID0] =                     {UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_LCHOWN_E, PPME_SYSCALL_LCHOWN_X},
-	[__NR_ia32_fchown - SYSCALL_TABLE_ID0] =                     {UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_FCHOWN_E, PPME_SYSCALL_FCHOWN_X},
-	[__NR_ia32_fchownat - SYSCALL_TABLE_ID0] =                   {UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_FCHOWNAT_E, PPME_SYSCALL_FCHOWNAT_X},
-	[__NR_ia32_chmod - SYSCALL_TABLE_ID0] =                      {UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_CHMOD_E, PPME_SYSCALL_CHMOD_X},
-	[__NR_ia32_fchmod - SYSCALL_TABLE_ID0] =                     {UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_FCHMOD_E, PPME_SYSCALL_FCHMOD_X},
-	[__NR_ia32_fchmodat - SYSCALL_TABLE_ID0] =                   {UF_USED | UF_ALWAYS_DROP, PPME_SYSCALL_FCHMODAT_E, PPME_SYSCALL_FCHMODAT_X}
 };
 
 /*
@@ -1204,9 +1175,6 @@ const enum ppm_syscall_code g_syscall_ia32_code_routing_table[SYSCALL_TABLE_SIZE
 	[__NR_ia32_adjtimex - SYSCALL_TABLE_ID0] = PPM_SC_ADJTIMEX,
 	[__NR_ia32_mprotect - SYSCALL_TABLE_ID0] = PPM_SC_MPROTECT,
 	[__NR_ia32_init_module - SYSCALL_TABLE_ID0] = PPM_SC_INIT_MODULE,
-#ifdef __NR_ia32_finit_module
-	[__NR_ia32_finit_module - SYSCALL_TABLE_ID0] = PPM_SC_FINIT_MODULE,
-#endif
 	[__NR_ia32_delete_module - SYSCALL_TABLE_ID0] = PPM_SC_DELETE_MODULE,
 	[__NR_ia32_quotactl - SYSCALL_TABLE_ID0] = PPM_SC_QUOTACTL,
 	[__NR_ia32_getpgid - SYSCALL_TABLE_ID0] = PPM_SC_GETPGID,

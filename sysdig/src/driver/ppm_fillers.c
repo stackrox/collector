@@ -153,8 +153,6 @@ static int f_sys_mount_e(struct event_filler_arguments *args);
 static int f_sys_access_e(struct event_filler_arguments *args);
 static int f_sys_access_x(struct event_filler_arguments *args);
 static int f_sys_bpf_x(struct event_filler_arguments *args);
-static int f_sys_fchownat_e(struct event_filler_arguments *args);
-static int f_sys_fchmodat_e(struct event_filler_arguments *args);
 
 /*
  * Note, this is not part of g_event_info because we want to share g_event_info with userland.
@@ -401,29 +399,7 @@ const struct ppm_event_entry g_ppm_events[PPM_EVENT_MAX] = {
 	[PPME_SYSCALL_BPF_E] = {PPM_AUTOFILL, 1, APT_REG, {{0} } },
 	[PPME_SYSCALL_BPF_X] = {f_sys_bpf_x},
 	[PPME_SYSCALL_SECCOMP_E] = {PPM_AUTOFILL, 1, APT_REG, {{0}, {1} } },
-	[PPME_SYSCALL_SECCOMP_X] = {PPM_AUTOFILL, 1, APT_REG, {{AF_ID_RETVAL} } },
-	[PPME_SYSCALL_INIT_MODULE_E] = {PPM_AUTOFILL, 3, APT_SOCK, {{0}, {1}, {2} } },
-	[PPME_SYSCALL_INIT_MODULE_X] = {PPM_AUTOFILL, 1, APT_REG, {{AF_ID_RETVAL} } },
-	[PPME_SYSCALL_FINIT_MODULE_E] = {PPM_AUTOFILL, 3, APT_SOCK, {{0}, {1}, {2} } },
-	[PPME_SYSCALL_FINIT_MODULE_X] = {PPM_AUTOFILL, 1, APT_REG, {{AF_ID_RETVAL} } },
-	[PPME_SYSCALL_DELETE_MODULE_E] = {PPM_AUTOFILL, 2, APT_SOCK, {{0}, {1} } },
-	[PPME_SYSCALL_DELETE_MODULE_X] = {PPM_AUTOFILL, 1, APT_REG, {{AF_ID_RETVAL} } },
-	[PPME_SYSCALL_CAPSET_E] = {PPM_AUTOFILL, 2, APT_SOCK, {{0}, {1} } },
-	[PPME_SYSCALL_CAPSET_X] = {PPM_AUTOFILL, 1, APT_REG, {{AF_ID_RETVAL} } },
-	[PPME_SYSCALL_CHOWN_E] = {PPM_AUTOFILL, 2, APT_REG, {{1}, {2} } },
-	[PPME_SYSCALL_CHOWN_X] = {PPM_AUTOFILL, 2, APT_REG, {{AF_ID_RETVAL}, {0} } },
-	[PPME_SYSCALL_LCHOWN_E] = {PPM_AUTOFILL, 2, APT_REG, {{1}, {2} } },
-	[PPME_SYSCALL_LCHOWN_X] = {PPM_AUTOFILL, 2, APT_REG, {{AF_ID_RETVAL}, {0} } },
-	[PPME_SYSCALL_FCHOWN_E] = {PPM_AUTOFILL, 3, APT_REG, {{0}, {1}, {2} } },
-	[PPME_SYSCALL_FCHOWN_X] = {PPM_AUTOFILL, 1, APT_REG, {{AF_ID_RETVAL} } },
-	[PPME_SYSCALL_FCHOWNAT_E] = {f_sys_fchownat_e},
-	[PPME_SYSCALL_FCHOWNAT_X] = {PPM_AUTOFILL, 2, APT_REG, {{AF_ID_RETVAL}, {1} } },
-	[PPME_SYSCALL_CHMOD_E] = {PPM_AUTOFILL, 1, APT_REG, {{1} } },
-	[PPME_SYSCALL_CHMOD_X] = {PPM_AUTOFILL, 2, APT_REG, {{AF_ID_RETVAL}, {0} } },
-	[PPME_SYSCALL_FCHMOD_E] = {PPM_AUTOFILL, 2, APT_REG, {{0}, {1} } },
-	[PPME_SYSCALL_FCHMOD_X] = {PPM_AUTOFILL, 1, APT_REG, {{AF_ID_RETVAL} } },
-	[PPME_SYSCALL_FCHMODAT_E] = {f_sys_fchmodat_e},
-	[PPME_SYSCALL_FCHMODAT_X] = {PPM_AUTOFILL, 2, APT_REG, {{AF_ID_RETVAL}, {1} } }
+	[PPME_SYSCALL_SECCOMP_X] = {PPM_AUTOFILL, 1, APT_REG, {{AF_ID_RETVAL} } }
 };
 
 #define merge_64(hi, lo) ((((unsigned long long)(hi)) << 32) + ((lo) & 0xffffffffUL))
@@ -578,7 +554,7 @@ static inline u32 open_modes_to_scap(unsigned long modes)
 		res |= PPM_S_IXUSR;
 
 	/*
-	* PPM_S_IRWXU == S_IRUSR | S_IWUSR | S_IXUSR
+	* PPM_S_IRWXU == S_IRUSR | S_IWUSR | S_IXUSR 
 	*/
 
 	if (modes & S_IRGRP)
@@ -591,7 +567,7 @@ static inline u32 open_modes_to_scap(unsigned long modes)
 		res |= PPM_S_IXGRP;
 
 	/*
-	* PPM_S_IRWXG == S_IRGRP | S_IWGRP | S_IXGRP
+	* PPM_S_IRWXG == S_IRGRP | S_IWGRP | S_IXGRP 
 	*/
 
 	if (modes & S_IROTH)
@@ -602,11 +578,11 @@ static inline u32 open_modes_to_scap(unsigned long modes)
 
 	if (modes & S_IXOTH)
 		res |= PPM_S_IXOTH;
-
+	
 	/*
 	* PPM_S_IRWXO == S_IROTH | S_IWOTH | S_IXOTH
 	*/
-
+	
 	if (modes & S_ISUID)
 		res |= PPM_S_ISUID;
 
@@ -5665,97 +5641,6 @@ static int f_sys_bpf_x(struct event_filler_arguments *args)
 	{
 		res = val_to_ring(args, retval, 0, false, PPM_BPF_IDX_RES);
 	}
-	if (unlikely(res != PPM_SUCCESS))
-		return res;
-
-	return add_sentinel(args);
-}
-
-static inline u32 chown_chmod_flags_to_scap(unsigned flags)
-{
-	u32 res = 0;
-
-	if (flags & PPM_AT_EMPTY_PATH)
-		res |= PPM_AT_EMPTY_PATH;
-
-	if (flags & PPM_AT_SYMLINK_NOFOLLOW)
-		res |= PPM_AT_SYMLINK_NOFOLLOW;
-
-	return res;
-}
-
-static int f_sys_fchownat_e(struct event_filler_arguments *args)
-{
-	unsigned long val;
-	int res;
-
-	/*
-	 * dirfd
-	 */
-	syscall_get_arguments(current, args->regs, 0, 1, &val);
-	if ((int)val == AT_FDCWD)
-		val = PPM_AT_FDCWD;
-
-	res = val_to_ring(args, val, 0, false, 0);
-	if (unlikely(res != PPM_SUCCESS))
-		return res;
-
-	/*
-	 * owner
- 	*/
-	syscall_get_arguments(current, args->regs, 2, 1, &val);
-	res = val_to_ring(args, val, 0, false, 0);
-	if (unlikely(res != PPM_SUCCESS))
-		return res;
-
-	/*
- 	* group
- 	*/
-	syscall_get_arguments(current, args->regs, 3, 1, &val);
-	res = val_to_ring(args, val, 0, false, 0);
-	if (unlikely(res != PPM_SUCCESS))
-		return res;
-
-	/*
- 	* flags
- 	*/
-	syscall_get_arguments(current, args->regs, 4, 1, &val);
-	res = val_to_ring(args, chown_chmod_flags_to_scap(val), 0, false, 0);
-	if (unlikely(res != PPM_SUCCESS))
-		return res;
-
-	return add_sentinel(args);
-}
-
-static int f_sys_fchmodat_e(struct event_filler_arguments *args)
-{
-	unsigned long val;
-	int res;
-
-	/*
-	 * dirfd
-	 */
-	syscall_get_arguments(current, args->regs, 0, 1, &val);
-	if ((int)val == AT_FDCWD)
-		val = PPM_AT_FDCWD;
-
-	res = val_to_ring(args, val, 0, false, 0);
-	if (unlikely(res != PPM_SUCCESS))
-		return res;
-
-	/*
- 	* mode
- 	*/
-	syscall_get_arguments(current, args->regs, 2, 1, &val);
-	res = val_to_ring(args, val, 0, false, 0);
-	if (unlikely(res != PPM_SUCCESS))
-		return res;
-
-	/*
- 	* flags
- 	*/
-	syscall_get_arguments(current, args->regs, 3, 1, &val);
-	res = val_to_ring(args, chown_chmod_flags_to_scap(val), 0, false, 0);
 	if (unlikely(res != PPM_SUCCESS))
 		return res;
 
