@@ -24,13 +24,9 @@ RUN sed s_unstable_jessie_g < /etc/apt/sources.list > /etc/apt/sources.list.d/je
       gcc-4.9 \
 ;
 
-RUN apt-get install --no-install-recommends -y \
-    gcc-6 gcc-5 \
-    ;
-
 # Since our base Debian image ships with GCC 7 which breaks older kernels, revert the
-# default to gcc-5.
-RUN rm -rf /usr/bin/gcc && ln -s /usr/bin/gcc-5 /usr/bin/gcc
+# default to gcc-4.9.
+RUN rm -rf /usr/bin/gcc && ln -s /usr/bin/gcc-4.9 /usr/bin/gcc
 
 RUN rm -rf /usr/bin/clang \
  && rm -rf /usr/bin/llc \
