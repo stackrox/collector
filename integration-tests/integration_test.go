@@ -47,11 +47,11 @@ func (s *IntegrationTestSuite) SetupSuite() {
 
 	logs, err := s.containerLogs("test_collector_1")
 	assert.NoError(s.T(), err)
-	err = ioutil.WriteFile("collector_logs", []byte(logs), 0644)
+	err = ioutil.WriteFile("collector.logs", []byte(logs), 0644)
 	assert.NoError(s.T(), err)
 
 	logs, err = s.containerLogs("test_grpc-server_1")
-	err = ioutil.WriteFile("grpc_server_logs", []byte(logs), 0644)
+	err = ioutil.WriteFile("grpc_server.logs", []byte(logs), 0644)
 	assert.NoError(s.T(), err)
 
 	// bring down server
