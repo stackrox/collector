@@ -12,3 +12,5 @@ go-proto-generated
 collector/integration-test.log
 integration-tests/deps
 integration-tests/vendor/
+integration-tests/collector.logs
+integration-tests/grpc_server.logs

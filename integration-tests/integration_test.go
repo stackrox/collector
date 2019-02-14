@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/stretchr/testify/assert"
 	"github.com/boltdb/bolt"
+	"io/ioutil"
 )
 
 const (
@@ -25,7 +26,7 @@ func TestCollectorGRPC(t *testing.T) {
 type IntegrationTestSuite struct {
 	suite.Suite
 	dbpath string
-	db *bolt.DB
+	db     *bolt.DB
 }
 
 // Launches collector
@@ -43,6 +44,15 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	// invokes "sh"
 	_, err = s.execContainer()
 	assert.Nil(s.T(), err)
+
+	logs, err := s.containerLogs("test_collector_1")
+	assert.NoError(s.T(), err)
+	err = ioutil.WriteFile("collector.logs", []byte(logs), 0644)
+	assert.NoError(s.T(), err)
+
+	logs, err = s.containerLogs("test_grpc-server_1")
+	err = ioutil.WriteFile("grpc_server.logs", []byte(logs), 0644)
+	assert.NoError(s.T(), err)
 
 	// bring down server
 	s.dockerComposeDown()
@@ -108,6 +118,12 @@ func (s *IntegrationTestSuite) dockerComposeUp() error {
 	return err
 }
 
+func (s *IntegrationTestSuite) containerLogs(name string) (string, error) {
+	cmd := exec.Command("docker", "logs", name)
+	stdoutStderr, err := cmd.CombinedOutput()
+	return strings.Trim(string(stdoutStderr), "\n"), err
+}
+
 func (s *IntegrationTestSuite) dockerComposeDown() error {
 	err := s.dockerCompose("docker-compose", "--project-name", "test", "--file", "docker-compose.yml", "down", "--volumes")
 	if err != nil {
@@ -146,7 +162,7 @@ func (s *IntegrationTestSuite) dockerComposeStdout(name string, arg ...string) (
 func (s *IntegrationTestSuite) BoltDB() (db *bolt.DB, err error) {
 	opts := &bolt.Options{ReadOnly: true}
 	db, err = bolt.Open(s.dbpath, 0600, opts)
-	if err != nil  {
+	if err != nil {
 		fmt.Printf("Permission error. %v\n", err)
 	}
 	return db, err
