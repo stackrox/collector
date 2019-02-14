@@ -4,6 +4,8 @@ include_directories(../libscap)
 include_directories("${JSONCPP_INCLUDE}")
 include_directories("${LUAJIT_INCLUDE}")
 
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+
 if(NOT WIN32 AND NOT APPLE)
 	include_directories("${B64_INCLUDE}")
 	include_directories("${CURL_INCLUDE_DIR}")
@@ -85,6 +87,8 @@ add_library(sinsp STATIC
 	user_event.cpp
 	value_parser.cpp
 	viewinfo.cpp)
+
+set_target_properties(sinsp PROPERTIES COMPILE_FLAGS "-fPIC")
 
 target_link_libraries(sinsp 
 	scap
