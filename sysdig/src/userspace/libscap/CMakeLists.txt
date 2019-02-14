@@ -1,6 +1,8 @@
 include_directories("${PROJECT_SOURCE_DIR}/common")
 include_directories("${ZLIB_INCLUDE}")
 
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+
 add_library(scap STATIC
 	scap.c
 	scap_event.c
@@ -26,6 +28,8 @@ elseif (WIN32)
 	target_link_libraries(scap
 		Ws2_32.lib)
 endif()
+
+set_target_properties(scap PROPERTIES COMPILE_FLAGS "-fPIC")
 
 target_link_libraries(scap
 	"${ZLIB_LIB}")
