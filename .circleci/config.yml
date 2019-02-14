@@ -522,7 +522,7 @@ jobs:
           sudo chmod +x /usr/local/bin/docker-compose
           make integration-tests integration-test-report
 
-    -run:
+    - run:
         name: Collect test logs
         command: |
           cd "$SOURCE_ROOT"
