@@ -522,6 +522,13 @@ jobs:
           sudo chmod +x /usr/local/bin/docker-compose
           make integration-tests integration-test-report
 
+    - store_artifacts:
+        path: integration-tests/collector_logs
+        destination: collector_logs
+    - store_artifacts:
+        path: integration-tests/grpc_server_logs
+        destination: grpc_server_logs
+
   upload-modules:
     docker:
     - image: docker.io/stackrox/apollo-ci:collector-0.1.11-18-g3ecb0861c9

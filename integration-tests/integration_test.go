@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/stretchr/testify/assert"
 	"github.com/boltdb/bolt"
+	"io/ioutil"
 )
 
 const (
@@ -26,6 +27,7 @@ type IntegrationTestSuite struct {
 	suite.Suite
 	dbpath string
 	db *bolt.DB
+	logPath *os.File
 }
 
 // Launches collector
@@ -33,16 +35,29 @@ type IntegrationTestSuite struct {
 // Launches nginx container
 // Execs into nginx and does a sleep
 func (s *IntegrationTestSuite) SetupSuite() {
+	file, err := os.Create("collector-logs")
+	assert.NoError(s.T(), err)
+	s.logPath = file
+
 	s.dockerComposeUp()
 	s.dbpath = "/tmp/collector-test.db"
 
 	// invokes default nginx
-	_, err := s.launchContainer()
+	_, err = s.launchContainer()
 	assert.Nil(s.T(), err)
 
 	// invokes "sh"
 	_, err = s.execContainer()
 	assert.Nil(s.T(), err)
+
+	logs, err := s.containerLogs("test_collector_1")
+	assert.NoError(s.T(), err)
+	err = ioutil.WriteFile("collector_logs", []byte(logs), 0644)
+	assert.NoError(s.T(), err)
+
+	logs, err = s.containerLogs("test_grpc-server_1")
+	err = ioutil.WriteFile("grpc_server_logs", []byte(logs), 0644)
+	assert.NoError(s.T(), err)
 
 	// bring down server
 	s.dockerComposeDown()
@@ -106,6 +121,12 @@ func (s *IntegrationTestSuite) dockerComposeUp() error {
 	time.Sleep(10 * time.Second)
 
 	return err
+}
+
+func (s *IntegrationTestSuite) containerLogs(name string) (string, error) {
+	cmd := exec.Command("docker", "logs", "-f", name)
+	stdoutStderr, err := cmd.CombinedOutput()
+	return strings.Trim(string(stdoutStderr), "\n"), err
 }
 
 func (s *IntegrationTestSuite) dockerComposeDown() error {
