@@ -44,14 +44,14 @@ if(NOT WIN32)
 
 	set(SYSDIG_DEBUG_FLAGS "-D_DEBUG")
 
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -ggdb")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -ggdb --std=c++0x")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Wall -ggdb")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -ggdb --std=c++0x")
 
-	set(CMAKE_C_FLAGS_DEBUG "${SYSDIG_DEBUG_FLAGS}")
-	set(CMAKE_CXX_FLAGS_DEBUG "${SYSDIG_DEBUG_FLAGS}")
+	set(CMAKE_C_FLAGS_DEBUG "${SYSDIG_DEBUG_FLAGS} -fPIC")
+	set(CMAKE_CXX_FLAGS_DEBUG "${SYSDIG_DEBUG_FLAGS} -fPIC")
 
-	set(CMAKE_C_FLAGS_RELEASE "-O3 -fno-strict-aliasing -DNDEBUG")
-	set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-strict-aliasing -DNDEBUG")
+	set(CMAKE_C_FLAGS_RELEASE "-O3 -fPIC -fno-strict-aliasing -DNDEBUG")
+	set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fPIC -fno-strict-aliasing -DNDEBUG")
 
 	if(CMAKE_SYSTEM_NAME MATCHES "Linux")
 		if(CMAKE_BUILD_TYPE STREQUAL "Debug")
