@@ -26,8 +26,7 @@ func TestCollectorGRPC(t *testing.T) {
 type IntegrationTestSuite struct {
 	suite.Suite
 	dbpath string
-	db *bolt.DB
-	logPath *os.File
+	db     *bolt.DB
 }
 
 // Launches collector
@@ -35,15 +34,11 @@ type IntegrationTestSuite struct {
 // Launches nginx container
 // Execs into nginx and does a sleep
 func (s *IntegrationTestSuite) SetupSuite() {
-	file, err := os.Create("collector-logs")
-	assert.NoError(s.T(), err)
-	s.logPath = file
-
 	s.dockerComposeUp()
 	s.dbpath = "/tmp/collector-test.db"
 
 	// invokes default nginx
-	_, err = s.launchContainer()
+	_, err := s.launchContainer()
 	assert.Nil(s.T(), err)
 
 	// invokes "sh"
@@ -124,7 +119,7 @@ func (s *IntegrationTestSuite) dockerComposeUp() error {
 }
 
 func (s *IntegrationTestSuite) containerLogs(name string) (string, error) {
-	cmd := exec.Command("docker", "logs", "-f", name)
+	cmd := exec.Command("docker", "logs", name)
 	stdoutStderr, err := cmd.CombinedOutput()
 	return strings.Trim(string(stdoutStderr), "\n"), err
 }
@@ -167,7 +162,7 @@ func (s *IntegrationTestSuite) dockerComposeStdout(name string, arg ...string) (
 func (s *IntegrationTestSuite) BoltDB() (db *bolt.DB, err error) {
 	opts := &bolt.Options{ReadOnly: true}
 	db, err = bolt.Open(s.dbpath, 0600, opts)
-	if err != nil  {
+	if err != nil {
 		fmt.Printf("Permission error. %v\n", err)
 	}
 	return db, err

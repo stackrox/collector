@@ -523,10 +523,10 @@ jobs:
           make integration-tests integration-test-report
 
     - store_artifacts:
-        path: integration-tests/collector_logs
+        path: "$SOURCE_ROOT"/integration-tests/collector_logs
         destination: collector_logs
     - store_artifacts:
-        path: integration-tests/grpc_server_logs
+        path: "$SOURCE_ROOT"/integration-tests/grpc_server_logs
         destination: grpc_server_logs
 
   upload-modules:
