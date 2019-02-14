@@ -47,8 +47,8 @@ if(NOT WIN32)
 	endif()
 
 	target_link_libraries(csysdig
-		sinsp
                 b64
+		sinsp
 		"${CURSES_LIBRARIES}")
 
 	add_subdirectory(man)
