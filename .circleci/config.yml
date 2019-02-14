@@ -521,6 +521,10 @@ jobs:
           sudo curl -L "https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
           make integration-tests integration-test-report
+
+    -run:
+        name: Collect test logs
+        command: |
           cd "$SOURCE_ROOT"
           cp integration-tests/collector.logs /tmp/collector.logs
           cp integration-tests/grpc_server.logs /tmp/grpc_server.logs
