@@ -530,11 +530,9 @@ jobs:
           cp integration-tests/grpc_server.logs /tmp/grpc_server.logs
 
     - store_artifacts:
-        path: integration-tests/collector.logs
-        destination: collector_logs
+        path: $SOURCE_ROOT/integration-tests/collector.logs
     - store_artifacts:
-        path: integration-tests/grpc_server.logs
-        destination: grpc_server_logs
+        path: $SOURCE_ROOT/integration-tests/grpc_server.logs
 
   upload-modules:
     docker:
