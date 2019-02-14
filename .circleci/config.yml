@@ -521,12 +521,15 @@ jobs:
           sudo curl -L "https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
           make integration-tests integration-test-report
+          cd "$SOURCE_ROOT"
+          cp integration-tests/collector.logs /tmp/integration-tests
+          cp integration-tests/grpc_server.logs /tmp/grpc_server.logs
 
     - store_artifacts:
-        path: "${SOURCE_ROOT}/integration-tests/collector.logs"
+        path: /tmp/collector.logs
         destination: collector_logs
     - store_artifacts:
-        path: "${SOURCE_ROOT}/integration-tests/grpc_server.logs"
+        path: /tmp/grpc_server.logs
         destination: grpc_server_logs
 
   upload-modules:
