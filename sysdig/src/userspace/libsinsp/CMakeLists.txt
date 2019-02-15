@@ -15,8 +15,6 @@ if(NOT WIN32 AND NOT APPLE)
 endif()
 
 add_library(sinsp STATIC
-	cencode.c
-	cdecode.c
 	chisel.cpp
 	chisel_api.cpp
 	container.cpp
