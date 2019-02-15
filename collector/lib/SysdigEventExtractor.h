@@ -129,9 +129,7 @@ class SysdigEventExtractor {
 
   // General event information
   FIELD_RAW(event_rawres, "evt.rawres", int64_t);
-  EVT_ARG(pathname);
   EVT_ARG(name);
-  EVT_ARG(module_image);
   EVT_ARG(newpath);
   EVT_ARG(oldpath);
   EVT_ARG(path);
