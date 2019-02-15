@@ -39,6 +39,7 @@ add_executable(csysdig ${SOURCE_FILES_CSYSDIG})
 if(NOT WIN32)
 
 	target_link_libraries(sysdig
+                b64
 		sinsp)
 
 	if(USE_BUNDLED_NCURSES)
@@ -46,6 +47,7 @@ if(NOT WIN32)
 	endif()
 
 	target_link_libraries(csysdig
+                b64
 		sinsp
 		"${CURSES_LIBRARIES}")
 
