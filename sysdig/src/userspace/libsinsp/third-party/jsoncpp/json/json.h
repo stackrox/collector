@@ -362,7 +362,6 @@ public:
 #include <string>
 #include <vector>
 #include <exception>
-#include <unordered_set>
 
 #ifndef JSON_USE_CPPTL_SMALLMAP
 #include <map>
