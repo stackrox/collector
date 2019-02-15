@@ -47,6 +47,7 @@ RUN apt-get update \
         openssl \
         libuuid1 \
         libcap-ng0 \
+        libb64-0d \
         jq \
         libluajit-5.1 \
  ;
