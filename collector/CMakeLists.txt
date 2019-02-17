@@ -35,6 +35,7 @@ target_link_libraries(collector_lib sinsp-wrapper)
 target_link_libraries(collector_lib libcap-ng.a)
 target_link_libraries(collector_lib libuuid.a)
 target_link_libraries(collector_lib b64)
+target_link_libraries(collector_lib elf)
 
 add_executable(collector collector.cpp)
 target_link_libraries(collector collector_lib)

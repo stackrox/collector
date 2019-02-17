@@ -24,6 +24,7 @@ RUN apt-get update \
         libluajit-5.1 \
         libtbb-dev \
         libelf-dev \
+        libelf1 \
         ;
 
 # We want to fail if the destination directory is there, hence mkdir (not -p).

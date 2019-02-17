@@ -52,6 +52,7 @@ RUN apt-get update \
         libluajit-5.1 \
         libtbb-dev \
         libelf-dev \
+        libelf1 \
  ;
 
 COPY libs/libsinsp-wrapper.so \
