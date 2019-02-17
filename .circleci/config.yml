@@ -80,11 +80,11 @@ jobs:
             -t stackrox/collector-builder:cache "${SOURCE_ROOT}/builder"
 
     - run:
-    -   name: Save collector-builder cache image
-    -   command: |
-    -     docker push stackrox/collector-builder:cache
-    -     docker tag stackrox/collector-builder:cache "stackrox/collector-builder:circle-build-${CIRCLE_WORKFLOW_ID}"
-    -     docker push "stackrox/collector-builder:circle-build-${CIRCLE_WORKFLOW_ID}"
+        name: Save collector-builder cache image
+        command: |
+          docker push stackrox/collector-builder:cache
+          docker tag stackrox/collector-builder:cache "stackrox/collector-builder:circle-build-${CIRCLE_WORKFLOW_ID}"
+          docker push "stackrox/collector-builder:circle-build-${CIRCLE_WORKFLOW_ID}"
 
   prepare-kernels:
     docker:
