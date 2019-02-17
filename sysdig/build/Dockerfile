@@ -18,7 +18,6 @@ RUN apt-get update \
         `# For sysdig to pull a `jq` patch:` \
         wget \
         curl \
-        protobuf-compiler \
         libtbb-dev \
         libelf-dev \
         ;
