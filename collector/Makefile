@@ -35,6 +35,8 @@ container/bin/collector: $(HDRS) $(SRCS) generated-srcs container/libs/libsinsp-
           -v "$(CURDIR)/sysdig/src:/usr/local/sysdig:ro" \
           -v "$(CURDIR)/container/libs/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
           -v "$(CURDIR)/sysdig/src/driver/ppm_events_public.h:/usr/local/include/ppm_events_public.h:ro" \
+          -v "$(CURDIR)/sysdig/src/driver/ppm_fillers.h:/usr/local/include/ppm_fillers.h:ro" \
+          -v "$(CURDIR)/sysdig/src/userspace/libsinsp/tuples.h:/usr/local/include/tuples.h:ro" \
           -v "$(CURDIR)/cmake-build:/build-output" \
 	  --name build_collector stackrox/collector-builder:cache
 	cp cmake-build/collector container/bin/

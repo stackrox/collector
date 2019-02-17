@@ -277,13 +277,13 @@ jobs:
           make -C "${SOURCE_ROOT}/kernel-modules" build-container
           docker tag "$BUILD_CONTAINER_TAG" build-kernel-modules
 
-    - run:
-        name: Upload builder cache image
-        command: |
-          # [[ "$CIRCLE_BRANCH" == "master" ]] || exit 0
-          (( CIRCLE_NODE_INDEX == 0 )) || exit 0
-          docker push "$BUILD_CONTAINER_TAG"
-        background: true
+      #- run:
+      #-   name: Upload builder cache image
+      #-   command: |
+      #-     # [[ "$CIRCLE_BRANCH" == "master" ]] || exit 0
+      #-     (( CIRCLE_NODE_INDEX == 0 )) || exit 0
+      #-     docker push "$BUILD_CONTAINER_TAG"
+      #-   background: true
 
     - run:
         name: Build modules
@@ -358,9 +358,9 @@ jobs:
           file   container/libs/libsinsp-wrapper.so
           docker images | grep collector
 
-    - run:
-        name: Save sysdig builder cache image
-        command: docker push stackrox/collector-builder:sysdig
+      #- run:
+      #-   name: Save sysdig builder cache image
+      #-   command: docker push stackrox/collector-builder:sysdig
 
     - persist_to_workspace:
         root: ~/workspace
@@ -406,6 +406,8 @@ jobs:
             -v "$PWD/sysdig/src:/usr/local/sysdig:ro" \
             -v "$PWD/container/libs/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
             -v "$PWD/sysdig/src/driver/ppm_events_public.h:/usr/local/include/ppm_events_public.h:ro" \
+            -v "$PWD/sysdig/src/driver/ppm_fillers.h:/usr/local/include/ppm_fillers.h:ro" \
+            -v "$PWD/sysdig/src/userspace/libsinsp/tuples.h:/usr/local/include/tuples.h:ro" \
             -v "$PWD/cmake-build:/build-output" \
             --name build "stackrox/collector-builder:circle-build-${CIRCLE_WORKFLOW_ID}"
 

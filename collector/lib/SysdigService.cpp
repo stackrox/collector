@@ -181,18 +181,17 @@ bool SysdigService::SendExistingProcesses(SignalHandler* handler) {
     return false;
   }
 
-  for (auto &thread : *threads) {
-    auto tinfo = &(thread.second);
-    if (!tinfo->m_container_id.empty() && tinfo->is_main_thread()) {
-      auto result = handler->HandleExistingProcess(tinfo);
+  return threads->loop([&] (sinsp_threadinfo& tinfo) {
+    if (!tinfo.m_container_id.empty() && tinfo.is_main_thread()) {
+      auto result = handler->HandleExistingProcess(&tinfo);
       if (result == SignalHandler::ERROR || result == SignalHandler::NEEDS_REFRESH) {
-        CLOG(WARNING) << "Failed to write existing process signal: " << tinfo;
+        CLOG(WARNING) << "Failed to write existing process signal: " << &tinfo;
         return false;
       }
-      CLOG(DEBUG) << "Found existing process: " << tinfo;
+      CLOG(DEBUG) << "Found existing process: " << &tinfo;
     }
-  }
-  return true;
+    return true;
+  });
 }
 
 void SysdigService::CleanUp() {

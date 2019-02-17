@@ -22,6 +22,10 @@ RUN apt-get update \
         uuid-dev \
         libcap-ng-dev \
         libluajit-5.1 \
+        libtbb-dev \
+        libelf-dev \
+        libelf1 \
+        libjsoncpp-dev \
         ;
 
 # We want to fail if the destination directory is there, hence mkdir (not -p).

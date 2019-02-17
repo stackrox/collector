@@ -992,6 +992,9 @@ ubuntu-gcp:
       4.13.0-1017:
       - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.13.0-1017_4.13.0-1017.21_all.deb
       - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-headers-4.13.0-1017-gcp_4.13.0-1017.21_amd64.deb
+      4.13.0-1019:
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.13.0-1019_4.13.0-1019.23_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-headers-4.13.0-1019-gcp_4.13.0-1019.23_amd64.deb
 
 ubuntu-gke:
   description: Ubuntu GKE Kernels
