@@ -175,6 +175,7 @@ bool sinsp_container_engine_docker::parse_docker(sinsp_container_manager* manage
 	bool parsingSuccessful = reader.parse(json, root);
 	if(!parsingSuccessful)
 	{
+		g_logger.log("JSON Parsing Failed: " + json, sinsp_logger::SEV_INFO);
 		ASSERT(false);
 		return false;
 	}
