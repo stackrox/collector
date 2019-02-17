@@ -84,8 +84,8 @@ std::pair<Connection, bool> NetworkSignalHandler::GetConnection(sinsp_evt* evt) 
     }
     case SCAP_FD_IPV6_SOCK: {
       const auto& ipv6_fields = fd_info->m_sockinfo.m_ipv6info.m_fields;
-      client = Endpoint(Address(ipv6_fields.m_sip), ipv6_fields.m_sport);
-      server = Endpoint(Address(ipv6_fields.m_dip), ipv6_fields.m_dport);
+      client = Endpoint(Address(ipv6_fields.m_sip.m_b), ipv6_fields.m_sport);
+      server = Endpoint(Address(ipv6_fields.m_dip.m_b), ipv6_fields.m_dport);
       break;
     }
     default:
