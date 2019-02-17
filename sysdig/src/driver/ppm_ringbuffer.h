@@ -1,52 +1,20 @@
-/** collector
-
-A full notice with attributions is provided along with this source code.
-
-This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License version 2 as published by the Free Software Foundation.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-* In addition, as a special exception, the copyright holders give
-* permission to link the code of portions of this program with the
-* OpenSSL library under certain conditions as described in each
-* individual source file, and distribute linked combinations
-* including the two.
-* You must obey the GNU General Public License in all respects
-* for all of the code used other than OpenSSL.  If you modify
-* file(s) with this exception, you may extend this exception to your
-* version of the file(s), but you are not obligated to do so.  If you
-* do not wish to do so, delete this exception statement from your
-* version.
-*/
-
 /*
-Copyright (C) 2013-2014 Draios inc.
 
-This file is part of sysdig.
+Copyright (c) 2013-2018 Draios Inc. dba Sysdig.
 
-sysdig is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 2 as
-published by the Free Software Foundation.
+This file is dual licensed under either the MIT or GPL 2. See MIT.txt
+or GPL2.txt for full copies of the license.
 
-sysdig is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef PPM_H_
-#define PPM_H_
+#ifndef PPM_RINGBUFFER_H_
+#define PPM_RINGBUFFER_H_
 
 #ifdef __KERNEL__
 #include <linux/types.h>
 #endif
 
-static const __u32 RING_BUF_SIZE = 16 * 1024 * 1024;
+static const __u32 RING_BUF_SIZE = 8 * 1024 * 1024;
 static const __u32 MIN_USERSPACE_READ_SIZE = 128 * 1024;
 
 /*
@@ -62,4 +30,4 @@ struct ppm_ring_buffer_info {
 	volatile __u64 n_context_switches;	/* Number of received context switch events. */
 };
 
-#endif /* PPM_H_ */
+#endif /* PPM_RINGBUFFER_H_ */

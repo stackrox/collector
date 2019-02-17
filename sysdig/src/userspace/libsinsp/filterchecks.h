@@ -1,42 +1,20 @@
-/** collector
-
-A full notice with attributions is provided along with this source code.
-
-This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License version 2 as published by the Free Software Foundation.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-* In addition, as a special exception, the copyright holders give
-* permission to link the code of portions of this program with the
-* OpenSSL library under certain conditions as described in each
-* individual source file, and distribute linked combinations
-* including the two.
-* You must obey the GNU General Public License in all respects
-* for all of the code used other than OpenSSL.  If you modify
-* file(s) with this exception, you may extend this exception to your
-* version of the file(s), but you are not obligated to do so.  If you
-* do not wish to do so, delete this exception statement from your
-* version.
-*/
-
 /*
-Copyright (C) 2013-2014 Draios inc.
+Copyright (C) 2013-2018 Draios Inc dba Sysdig.
 
 This file is part of sysdig.
 
-sysdig is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 2 as
-published by the Free Software Foundation.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-sysdig is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-You should have received a copy of the GNU General Public License
-along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
 */
 
 #pragma once
@@ -44,20 +22,23 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 #include <json/json.h>
 #include "filter_value.h"
 #include "prefix_search.h"
+#ifndef CYGWING_AGENT
 #include "k8s.h"
 #include "mesos.h"
+#endif
 
 #ifdef HAS_FILTERING
+#include "gen_filter.h"
 
 class sinsp_filter_check_reference;
 
 bool flt_compare(cmpop op, ppm_param_type type, void* operand1, void* operand2, uint32_t op1_len = 0, uint32_t op2_len = 0);
 bool flt_compare_avg(cmpop op, ppm_param_type type, void* operand1, void* operand2, uint32_t op1_len, uint32_t op2_len, uint32_t cnt1, uint32_t cnt2);
 bool flt_compare_ipv4net(cmpop op, uint64_t operand1, ipv4net* operand2);
+bool flt_compare_ipv6net(cmpop op, ipv6addr *operand1, ipv6addr* operand2);
 
 char* flt_to_string(uint8_t* rawval, filtercheck_field_info* finfo);
 int32_t gmt2local(time_t t);
-void ts_to_string(uint64_t ts, OUT string* res, bool full, bool ns);
 
 class operand_info
 {
@@ -73,9 +54,10 @@ public:
 // NOTE: in order to add a new type of filter check, you need to add a class for
 //       it and then add it to new_filter_check_from_name.
 ///////////////////////////////////////////////////////////////////////////////
-class sinsp_filter_check
+
+class sinsp_filter_check : public gen_event_filter_check,
 // Begin StackRox
-    : public sinsp_filter_check_iface
+    public sinsp_filter_check_iface
 // End StackRox
 {
 public:
@@ -111,7 +93,7 @@ public:
 	// Doesn't return the field length because the filtering engine can calculate it.
 	//
 	void add_filter_value(const char* str, uint32_t len, uint32_t i = 0 );
-	virtual void parse_filter_value(const char* str, uint32_t len, uint8_t *storage, uint32_t storage_len);
+	virtual size_t parse_filter_value(const char* str, uint32_t len, uint8_t *storage, uint32_t storage_len);
 
 	//
 	// Called after parsing for optional validation of the filter value
@@ -127,6 +109,7 @@ public:
 	// Extract the field from the event. In sanitize_strings is true, any
 	// string values are sanitized to remove nonprintable characters.
 	//
+	uint8_t* extract(gen_event *evt, OUT uint32_t* len, bool sanitize_strings = true);
 	virtual uint8_t* extract(sinsp_evt *evt, OUT uint32_t* len, bool sanitize_strings = true) = 0;
 
 	//
@@ -141,6 +124,7 @@ public:
 	//
 	// Compare the field with the constant value obtained from parse_filter_value()
 	//
+	bool compare(gen_event *evt);
 	virtual bool compare(sinsp_evt *evt);
 
 	//
@@ -154,24 +138,19 @@ public:
 	//
 	virtual Json::Value tojson(sinsp_evt* evt);
 
-	//
-	// Configure numeric id to be set on events that match this filter
-	//
-	void set_check_id(int32_t id);
-	virtual int32_t get_check_id();
-
 	sinsp* m_inspector;
 	bool m_needs_state_tracking = false;
-	boolop m_boolop;
-	cmpop m_cmpop;
 	sinsp_field_aggregation m_aggregation;
 	sinsp_field_aggregation m_merge_aggregation;
 
 protected:
 	bool flt_compare(cmpop op, ppm_param_type type, void* operand1, uint32_t op1_len = 0, uint32_t op2_len = 0);
 
-	char* rawval_to_string(uint8_t* rawval, const filtercheck_field_info* finfo, uint32_t len);
-	Json::Value rawval_to_json(uint8_t* rawval, const filtercheck_field_info* finfo, uint32_t len);
+	char* rawval_to_string(uint8_t* rawval,
+			       ppm_param_type ptype,
+			       ppm_print_format print_format,
+			       uint32_t len);
+	Json::Value rawval_to_json(uint8_t* rawval, ppm_param_type ptype, ppm_print_format print_format, uint32_t len);
 	void string_to_rawval(const char* str, uint32_t len, ppm_param_type ptype);
 
 	char m_getpropertystr_storage[1024];
@@ -196,7 +175,6 @@ protected:
 
 private:
 	void set_inspector(sinsp* inspector);
-	int32_t m_check_id = 0;
 
 friend class sinsp_filter_check_list;
 };
@@ -217,50 +195,6 @@ public:
 
 private:
 	vector<sinsp_filter_check*> m_check_list;
-};
-
-///////////////////////////////////////////////////////////////////////////////
-// Filter expression class
-// A filter expression contains multiple filters connected by boolean expressions,
-// e.g. "check or check", "check and check and check", "not check"
-///////////////////////////////////////////////////////////////////////////////
-class sinsp_filter_expression : public sinsp_filter_check
-{
-public:
-	sinsp_filter_expression();
-	~sinsp_filter_expression();
-	sinsp_filter_check* allocate_new();
-	void add_check(sinsp_filter_check* chk);
-	// does nothing for sinsp_filter_expression
-	void parse(string expr);
-	bool compare(sinsp_evt *evt);
-
-	//
-	// The following methods are part of the filter check interface but are irrelevant
-	// for this class, because they are used only for the leaves of the filtering tree.
-	//
-	int32_t parse_field_name(const char* str, bool alloc_state, bool needed_for_filtering)
-	{
-		ASSERT(false);
-		return 0;
-	}
-
-	const filtercheck_field_info* get_field_info()
-	{
-		ASSERT(false);
-		return NULL;
-	}
-
-	uint8_t* extract(sinsp_evt *evt, OUT uint32_t* len, bool sanitize_strings = true)
-	{
-		ASSERT(false);
-		return NULL;
-	}
-
-	int32_t get_check_id();
-
-	sinsp_filter_expression* m_parent;
-	vector<sinsp_filter_check*> m_checks;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -306,7 +240,13 @@ public:
 		TYPE_CNET = 28,
 		TYPE_SNET = 29,
 		TYPE_LNET = 30,
-		TYPE_RNET = 31
+		TYPE_RNET = 31,
+		TYPE_IS_CONNECTED = 32,
+		TYPE_NAME_CHANGED = 33,
+		TYPE_CLIENTIP_NAME = 34,
+		TYPE_SERVERIP_NAME = 35,
+		TYPE_LIP_NAME = 36,
+		TYPE_RIP_NAME = 37
 	};
 
 	enum fd_type
@@ -331,6 +271,7 @@ public:
 	bool compare_ip(sinsp_evt *evt);
 	bool compare_net(sinsp_evt *evt);
 	bool compare_port(sinsp_evt *evt);
+	bool compare_domain(sinsp_evt *evt);
 	bool compare(sinsp_evt *evt);
 
 	sinsp_threadinfo* m_tinfo;
@@ -399,6 +340,7 @@ public:
 		TYPE_TTY = 42,
 		TYPE_EXEPATH = 43,
 		TYPE_NAMETID = 44,
+		TYPE_VPGID = 45,
 	};
 
 	sinsp_filter_check_thread();
@@ -506,7 +448,7 @@ public:
 	~sinsp_filter_check_event();
 	sinsp_filter_check* allocate_new();
 	int32_t parse_field_name(const char* str, bool alloc_state, bool needed_for_filtering);
-	void parse_filter_value(const char* str, uint32_t len, uint8_t *storage, uint32_t storage_len);
+	size_t parse_filter_value(const char* str, uint32_t len, uint8_t *storage, uint32_t storage_len);
 	void validate_filter_value(const char* str, uint32_t len);
 	const filtercheck_field_info* get_field_info();
 	uint8_t* extract(sinsp_evt *evt, OUT uint32_t* len, bool sanitize_strings = true);
@@ -555,6 +497,8 @@ public:
 		TYPE_NAME = 1,
 		TYPE_HOMEDIR = 2,
 		TYPE_SHELL = 3,
+		TYPE_LOGINUID = 4,
+		TYPE_LOGINNAME = 5,
 	};
 
 	sinsp_filter_check_user();
@@ -777,7 +721,10 @@ public:
 		TYPE_CONTAINER_MOUNT_DEST,
 		TYPE_CONTAINER_MOUNT_MODE,
 		TYPE_CONTAINER_MOUNT_RDWR,
-		TYPE_CONTAINER_MOUNT_PROPAGATION
+		TYPE_CONTAINER_MOUNT_PROPAGATION,
+		TYPE_CONTAINER_IMAGE_REPOSITORY,
+		TYPE_CONTAINER_IMAGE_TAG,
+		TYPE_CONTAINER_IMAGE_DIGEST,
 	};
 
 	sinsp_filter_check_container();
@@ -880,7 +827,7 @@ private:
 	char m_addrbuff[100];
 };
 
-#ifndef HAS_ANALYZER
+#ifndef CYGWING_AGENT
 
 class sinsp_filter_check_k8s : public sinsp_filter_check
 {
@@ -933,8 +880,9 @@ private:
 	string m_tstr;
 };
 
-#endif // HAS_ANALYZER
+#endif // CYGWING_AGENT
 
+#ifndef CYGWING_AGENT
 class sinsp_filter_check_mesos : public sinsp_filter_check
 {
 public:
@@ -972,5 +920,6 @@ private:
 	string m_argname;
 	string m_tstr;
 };
+#endif // CYGWING_AGENT
 
 #endif // HAS_FILTERING

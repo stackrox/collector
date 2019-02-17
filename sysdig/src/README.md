@@ -3,8 +3,6 @@ sysdig
 
 [![Build Status](https://travis-ci.org/draios/sysdig.png?branch=master)](https://travis-ci.org/draios/sysdig)
 
-[![Join the chat at https://gitter.im/draios/sysdig](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/draios/sysdig?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
 # Welcome to **sysdig**!
 
 **Sysdig** is a universal system visibility tool with native support for containers:  
@@ -44,7 +42,9 @@ Join the Community
 
 License Terms
 ---
-Sysdig is licensed to you under the [GPL 2.0](https://github.com/draios/sysdig/blob/dev/COPYING) open source license.
+The sysdig userspace programs and supporting code are licensed to you under the [Apache 2.0](./COPYING) open source license.
+
+The sysdig kernel module, which is in the `driver` subdirectory, is licensed to you under both the [MIT](https://github.com/draios/sysdig/blob/dev/driver/MIT.txt) and [GPLv2](https://github.com/draios/sysdig/blob/dev/driver/GPL2.txt) open source licenses.
 
 Contributor License Agreements
 ---

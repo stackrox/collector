@@ -1,3 +1,10 @@
+#
+# Copyright (c) 2013-2018 Draios Inc. dba Sysdig.
+#
+# This file is dual licensed under either the MIT or GPL 2. See
+# MIT.txt or GPL.txt for full copies of the license.
+#
+
 option(BUILD_DRIVER "Build the driver on Linux" ON)
 option(ENABLE_DKMS "Enable DKMS on Linux" ON)
 
@@ -56,13 +63,14 @@ if(ENABLE_DKMS)
 	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Makefile.dkms
 		RENAME Makefile
 		DESTINATION "src/${PACKAGE_NAME}-${PROBE_VERSION}"
-		COMPONENT agent)
+		COMPONENT agent-kmodule)
 
 	install(FILES
 		${CMAKE_CURRENT_BINARY_DIR}/dkms.conf
 		dynamic_params_table.c
 		driver_config.h
 		event_table.c
+		fillers_table.c
 		flags_table.c
 		main.c
 		ppm.h
@@ -70,11 +78,16 @@ if(ENABLE_DKMS)
 		ppm_events.h
 		ppm_events_public.h
 		ppm_fillers.c
+		ppm_fillers.h
+		ppm_flag_helpers.h
 		ppm_ringbuffer.h
 		ppm_syscall.h
 		syscall_table.c
 		ppm_cputime.c
 		ppm_compat_unistd_32.h
 		DESTINATION "src/${PACKAGE_NAME}-${PROBE_VERSION}"
-		COMPONENT agent)
+		COMPONENT agent-kmodule)
+
 endif()
+
+add_subdirectory(bpf)
