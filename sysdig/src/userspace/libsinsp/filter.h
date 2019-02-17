@@ -1,42 +1,20 @@
-/** collector
-
-A full notice with attributions is provided along with this source code.
-
-This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License version 2 as published by the Free Software Foundation.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-* In addition, as a special exception, the copyright holders give
-* permission to link the code of portions of this program with the
-* OpenSSL library under certain conditions as described in each
-* individual source file, and distribute linked combinations
-* including the two.
-* You must obey the GNU General Public License in all respects
-* for all of the code used other than OpenSSL.  If you modify
-* file(s) with this exception, you may extend this exception to your
-* version of the file(s), but you are not obligated to do so.  If you
-* do not wish to do so, delete this exception statement from your
-* version.
-*/
-
 /*
-Copyright (C) 2013-2014 Draios inc.
+Copyright (C) 2013-2018 Draios Inc dba Sysdig.
 
 This file is part of sysdig.
 
-sysdig is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 2 as
-published by the Free Software Foundation.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-sysdig is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-You should have received a copy of the GNU General Public License
-along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
 */
 
 #pragma once
@@ -46,40 +24,7 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifdef HAS_FILTERING
 
-class sinsp_filter_expression;
-class sinsp_filter_check;
-
-/*
- * Operators to compare events
- */
-enum cmpop {
-	CO_NONE = 0,
-	CO_EQ = 1,
-	CO_NE = 2,
-	CO_LT = 3,
-	CO_LE = 4,
-	CO_GT = 5,
-	CO_GE = 6,
-	CO_CONTAINS = 7,
-	CO_IN = 8,
-	CO_EXISTS = 9,
-	CO_ICONTAINS = 10,
-	CO_STARTSWITH = 11,
-	CO_GLOB = 12,
-	CO_PMATCH = 13
-};
-
-enum boolop
-{
-	BO_NONE = 0,
-	BO_NOT = 1,
-	BO_OR = 2,
-	BO_AND = 4,
-
-	// obtained by bitwise OR'ing with one of above ops
-	BO_ORNOT = 3,
-	BO_ANDNOT = 5,
-};
+#include "gen_filter.h"
 
 /** @defgroup filter Filtering events
  * Filtering infrastructure.
@@ -89,39 +34,14 @@ enum boolop
 /*!
   \brief This is the class that runs sysdig-type filters.
 */
-class SINSP_PUBLIC sinsp_filter
+class SINSP_PUBLIC sinsp_filter : public gen_event_filter
 {
 public:
-	/*!
-	  \brief Constructs the filter.
-
-	  \param inspector Pointer to the inspector instance that will generate the
-	   events to be filtered.
-	*/
 	sinsp_filter(sinsp* inspector);
-
 	~sinsp_filter();
 
-	/*!
-	  \brief Applies the filter to the given event.
-
-	  \param evt Pointer that needs to be filtered.
-	  \return true if the event is accepted by the filter, false if it's rejected.
-	*/
-	bool run(sinsp_evt *evt);
-	void push_expression(boolop op);
-	void pop_expression();
-	void add_check(sinsp_filter_check* chk);
-
 private:
-
-	void parse_check(sinsp_filter_expression* parent_expr, boolop op);
-
-
 	sinsp* m_inspector;
-
-	sinsp_filter_expression* m_curexpr;
-	sinsp_filter_expression* m_filter;
 
 	friend class sinsp_evt_formatter;
 };
@@ -198,6 +118,7 @@ public:
 
 	void add(std::string &name,
 		 std::set<uint32_t> &evttypes,
+		 std::set<uint32_t> &syscalls,
 		 std::set<string> &tags,
 		 sinsp_filter* filter);
 
@@ -228,52 +149,75 @@ public:
 	// relates to event type 10.
 	void evttypes_for_ruleset(std::vector<bool> &evttypes, uint16_t ruleset);
 
+	// Populate the provided vector, indexed by syscall code, of the
+	// syscall codes associated with the given ruleset id. For
+	// example, syscalls[10] = true would mean that this ruleset
+	// relates to syscall code 10.
+	void syscalls_for_ruleset(std::vector<bool> &syscalls, uint16_t ruleset);
+
 private:
 
-	class filter_wrapper {
-	public:
-		filter_wrapper();
-		virtual ~filter_wrapper();
-
+	struct filter_wrapper {
 		sinsp_filter *filter;
 
 		// Indexes from event type to enabled/disabled.
 		std::vector<bool> evttypes;
 
-		// Indexes from ruleset to enabled/disabled. Unlike
-		// m_filter_by_evttype, this is managed as a vector as we're
-		// expecting ruleset ids that are small and grouped in the range
-		// 0..k, as compared to all possible event types.
-		std::vector<bool> enabled;
+		// Indexes from syscall code to enabled/disabled.
+		std::vector<bool> syscalls;
 	};
 
-        // Solely used for code sharing in evttypes_for_rulset
-	void check_filter_wrappers(std::vector<bool> &evttypes,
-				   uint32_t etype,
-				   std::list<filter_wrapper *> &filters,
-				   uint16_t ruleset);
+	// A group of filters all having the same ruleset
+	class ruleset_filters {
+	public:
+		ruleset_filters();
 
-	// Maps from event type to filter. There can be multiple
-	// filters per event type.
-	std::list<filter_wrapper *> *m_filter_by_evttype[PPM_EVENT_MAX];
+		virtual ~ruleset_filters();
 
-	// It's possible to add an event type filter with an empty
-	// list of event types, meaning it should run for all event
-	// types.
-	std::list<filter_wrapper *> m_catchall_evttype_filters;
+		void add_filter(filter_wrapper *wrap);
+		void remove_filter(filter_wrapper *wrap);
+
+		bool run(sinsp_evt *evt);
+
+		void evttypes_for_ruleset(std::vector<bool> &evttypes);
+
+		void syscalls_for_ruleset(std::vector<bool> &syscalls);
+
+	private:
+		// Maps from event type to filter. There can be multiple
+		// filters per event type.
+		std::list<filter_wrapper *> *m_filter_by_evttype[PPM_EVENT_MAX];
+
+		// Maps from syscall number to filter. There can be multiple
+		// filters per syscall number
+		std::list<filter_wrapper *> *m_filter_by_syscall[PPM_SC_MAX];
+	};
+
+	std::vector<ruleset_filters *> m_rulesets;
 
 	// Maps from tag to list of filters having that tag.
 	std::map<std::string, std::list<filter_wrapper *>> m_filter_by_tag;
 
-	// This holds all the filters in
-	// m_filter_by_evttype/m_catchall_evttype_filters, so they can
+	// This holds all the filters passed to add(), so they can
 	// be cleaned up.
-
-	map<std::string,filter_wrapper *> m_evttype_filters;
+	map<std::string,filter_wrapper *> m_filters;
 };
 
 /*@}*/
 
+class sinsp_filter_factory : public gen_event_filter_factory
+{
+public:
+	sinsp_filter_factory(sinsp *inspector);
+	virtual ~sinsp_filter_factory();
+
+	gen_event_filter *new_filter();
+
+	gen_event_filter_check *new_filtercheck(const char *fldname);
+
+protected:
+	sinsp *m_inspector;
+};
 
 // Begin StackRox
 
@@ -292,6 +236,5 @@ class SINSP_PUBLIC sinsp_filter_check_iface {
 };
 
 // End StackRox
-
 
 #endif // HAS_FILTERING

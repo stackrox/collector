@@ -1,3 +1,20 @@
+#
+# Copyright (C) 2013-2018 Draios Inc dba Sysdig.
+#
+# This file is part of sysdig .
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 include_directories(./)
 include_directories(../../common)
 include_directories(../libscap)
@@ -7,16 +24,15 @@ include_directories("${LUAJIT_INCLUDE}")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 
 if(NOT WIN32 AND NOT APPLE)
-	include_directories("b64")
+	include_directories("${B64_INCLUDE}")
 	include_directories("${CURL_INCLUDE_DIR}")
 	include_directories("${CURSES_INCLUDE_DIR}")
 	include_directories("${JQ_INCLUDE}")
 	include_directories("${OPENSSL_INCLUDE_DIR}")
+	include_directories("${TBB_INCLUDE}")
 endif()
 
 add_library(sinsp STATIC
-	cencode.c
-	cdecode.c
 	chisel.cpp
 	chisel_api.cpp
 	container.cpp
@@ -28,11 +44,13 @@ add_library(sinsp STATIC
 	cursesui.cpp
 	event.cpp
 	eventformatter.cpp
+	dns_manager.cpp
 	docker.cpp
 	dumper.cpp
 	fdinfo.cpp
 	filter.cpp
 	filterchecks.cpp
+	gen_filter.cpp
 	http_parser.c
 	http_reason.cpp
 	ifinfo.cpp
@@ -76,6 +94,7 @@ add_library(sinsp STATIC
 	prefix_search.cpp
 	protodecoder.cpp
 	threadinfo.cpp
+	tuples.cpp
 	sinsp.cpp
 	stats.cpp
 	table.cpp
@@ -107,12 +126,16 @@ if(NOT WIN32)
 	if(USE_BUNDLED_CURL)
 		add_dependencies(sinsp curl)
 	endif()
+	if(USE_BUNDLED_TBB)
+		add_dependencies(sinsp tbb)
+	endif()
 
 	if(NOT APPLE)
 		target_link_libraries(sinsp
 			"${JQ_LIB}"
-#			"${B64_LIB}"
+			"${B64_LIB}"
 			"${CURL_LIBRARIES}"
+			"${TBB_LIB}"
 			rt
 			anl)
 	endif()

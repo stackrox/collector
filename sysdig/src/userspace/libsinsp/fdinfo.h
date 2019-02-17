@@ -1,42 +1,20 @@
-/** collector
-
-A full notice with attributions is provided along with this source code.
-
-This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License version 2 as published by the Free Software Foundation.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-* In addition, as a special exception, the copyright holders give
-* permission to link the code of portions of this program with the
-* OpenSSL library under certain conditions as described in each
-* individual source file, and distribute linked combinations
-* including the two.
-* You must obey the GNU General Public License in all respects
-* for all of the code used other than OpenSSL.  If you modify
-* file(s) with this exception, you may extend this exception to your
-* version of the file(s), but you are not obligated to do so.  If you
-* do not wish to do so, delete this exception statement from your
-* version.
-*/
-
 /*
-Copyright (C) 2013-2014 Draios inc.
+Copyright (C) 2013-2018 Draios Inc dba Sysdig.
 
 This file is part of sysdig.
 
-sysdig is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 2 as
-published by the Free Software Foundation.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-sysdig is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-You should have received a copy of the GNU General Public License
-along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
 */
 
 #pragma once
@@ -54,8 +32,8 @@ class sinsp_protodecoder;
 #define CHAR_FD_IPV4_SOCK		'4'
 #define CHAR_FD_IPV6_SOCK		'6'
 #define CHAR_FD_DIRECTORY		'd'
-#define CHAR_FD_IPV4_SERVSOCK	'2'
-#define CHAR_FD_IPV6_SERVSOCK	'3'
+#define CHAR_FD_IPV4_SERVSOCK	'4'
+#define CHAR_FD_IPV6_SERVSOCK	'6'
 #define CHAR_FD_FIFO			'p'
 #define CHAR_FD_UNIX_SOCK		'u'
 #define CHAR_FD_EVENT			'e'
@@ -134,6 +112,7 @@ public:
 		m_openflags = other.m_openflags;	
 		m_sockinfo = other.m_sockinfo;
 		m_name = other.m_name;
+		m_oldname = other.m_oldname;
 		m_flags = other.m_flags;
 		m_ino = other.m_ino;
 		
@@ -308,6 +287,26 @@ public:
 		return (m_flags & (FLAGS_ROLE_CLIENT | FLAGS_ROLE_SERVER)) == 0;
 	}
 
+	inline bool is_socket_connected()
+	{
+		return (m_flags & FLAGS_SOCKET_CONNECTED) == FLAGS_SOCKET_CONNECTED;
+	}
+
+	inline bool is_socket_pending()
+	{
+		return (m_flags & FLAGS_CONNECTION_PENDING) == FLAGS_CONNECTION_PENDING;
+	}
+
+	inline bool is_socket_failed()
+	{
+		return (m_flags & FLAGS_CONNECTION_FAILED) == FLAGS_CONNECTION_FAILED;
+	}
+
+	inline bool is_cloned()
+	{
+		return (m_flags & FLAGS_IS_CLONED) == FLAGS_IS_CLONED;
+	}
+
 	scap_fd_type m_type; ///< The fd type, e.g. file, directory, IPv4 socket...
 	uint32_t m_openflags; ///< If this FD is a file, the flags that were used when opening it. See the PPM_O_* definitions in driver/ppm_events_public.h.
 	
@@ -318,6 +317,7 @@ public:
 	sinsp_sockinfo m_sockinfo;
 
 	string m_name; ///< Human readable rendering of this FD. For files, this is the full file name. For sockets, this is the tuple. And so on.
+	string m_oldname; // The name of this fd at the beginning of event parsing. Used to detect name changes that result from parsing an event.
 
 	inline bool has_decoder_callbacks()
 	{
@@ -350,6 +350,10 @@ private:
 		FLAGS_IN_BASELINE_R = (1 << 10),
 		FLAGS_IN_BASELINE_RW = (1 << 11),
 		FLAGS_IN_BASELINE_OTHER = (1 << 12),
+		FLAGS_SOCKET_CONNECTED = (1 << 13),
+		FLAGS_IS_CLONED = (1 << 14),
+		FLAGS_CONNECTION_PENDING = (1 << 15),
+		FLAGS_CONNECTION_FAILED = (1 << 16),
 	};
 
 	void add_filename(const char* fullpath);
@@ -429,6 +433,29 @@ private:
 	inline bool is_inpipeline_other()
 	{
 		return (m_flags & FLAGS_IN_BASELINE_OTHER) == FLAGS_IN_BASELINE_OTHER; 
+	}
+
+	inline void set_socket_connected()
+	{
+		m_flags &= ~(FLAGS_CONNECTION_PENDING | FLAGS_CONNECTION_FAILED);
+		m_flags |= FLAGS_SOCKET_CONNECTED;
+	}
+
+	inline void set_socket_pending()
+	{
+		m_flags &= ~(FLAGS_SOCKET_CONNECTED | FLAGS_CONNECTION_FAILED);
+		m_flags |= FLAGS_CONNECTION_PENDING;
+	}
+
+	inline void set_socket_failed()
+	{
+		m_flags &= ~(FLAGS_SOCKET_CONNECTED | FLAGS_CONNECTION_PENDING);
+		m_flags |= FLAGS_CONNECTION_FAILED;
+	}
+
+	inline void set_is_cloned()
+	{
+		m_flags |= FLAGS_IS_CLONED;
 	}
 
 	T* m_usrstate;

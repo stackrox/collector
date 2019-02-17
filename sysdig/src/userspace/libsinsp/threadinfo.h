@@ -1,48 +1,35 @@
-/** collector
-
-A full notice with attributions is provided along with this source code.
-
-This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License version 2 as published by the Free Software Foundation.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-* In addition, as a special exception, the copyright holders give
-* permission to link the code of portions of this program with the
-* OpenSSL library under certain conditions as described in each
-* individual source file, and distribute linked combinations
-* including the two.
-* You must obey the GNU General Public License in all respects
-* for all of the code used other than OpenSSL.  If you modify
-* file(s) with this exception, you may extend this exception to your
-* version of the file(s), but you are not obligated to do so.  If you
-* do not wish to do so, delete this exception statement from your
-* version.
-*/
-
 /*
-Copyright (C) 2013-2014 Draios inc.
+Copyright (C) 2013-2018 Draios Inc dba Sysdig.
 
 This file is part of sysdig.
 
-sysdig is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 2 as
-published by the Free Software Foundation.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-sysdig is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-You should have received a copy of the GNU General Public License
-along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
 */
 
 #pragma once
 
 #ifndef VISIBILITY_PRIVATE
 #define VISIBILITY_PRIVATE private:
+#endif
+
+#ifdef _WIN32
+struct iovec {
+	void  *iov_base;    /* Starting address */
+	size_t iov_len;     /* Number of bytes to transfer */
+};
+#else
+#include <sys/uio.h>
 #endif
 
 #include <functional>
@@ -136,7 +123,8 @@ public:
 #ifndef _WIN32
 	inline sinsp_threadinfo* get_main_thread()
 	{
-		if(m_main_thread == NULL)
+		auto main_thread = m_main_thread.lock();
+		if(!main_thread)
 		{
 			//
 			// Is this a child thread?
@@ -157,17 +145,17 @@ public:
 				//
 				// Yes, this is a child thread. Find the process root thread.
 				//
-				sinsp_threadinfo* ptinfo = lookup_thread();
-				if(NULL == ptinfo)
+				auto ptinfo = lookup_thread();
+				if (!ptinfo)
 				{
 					return NULL;
 				}
-
 				m_main_thread = ptinfo;
+				return &*ptinfo;
 			}
 		}
 
-		return m_main_thread;
+		return &*main_thread;
 	}
 #else
 	sinsp_threadinfo* get_main_thread();
@@ -197,7 +185,15 @@ public:
 
 		if(fdt)
 		{
-			return fdt->find(fd);
+			sinsp_fdinfo_t *fdinfo = fdt->find(fd);
+			if(fdinfo)
+			{
+				// Its current name is now its old
+				// name. The name might change as a
+				// result of parsing.
+				fdinfo->m_oldname = fdinfo->m_name;
+				return fdinfo;
+			}
 		}
 
 		return NULL;
@@ -265,10 +261,12 @@ public:
 	uint64_t m_pfminor; ///< number of minor page faults since start.
 	int64_t m_vtid;  ///< The virtual id of this thread.
 	int64_t m_vpid; ///< The virtual id of the process containing this thread. In single thread threads, this is equal to vtid.
+	int64_t m_vpgid; // The virtual process group id, as seen from its pid namespace
 	string m_root;
 	size_t m_program_hash;
 	size_t m_program_hash_falco;
 	int32_t m_tty;
+	int32_t m_loginuid; ///< loginuid (auid)
 
 	//
 	// State for multi-event processing
@@ -285,6 +283,19 @@ public:
 	sinsp_tracerparser* m_tracer_parser;
 
 	thread_analyzer_info* m_ainfo;
+
+	size_t args_len() const;
+	size_t env_len() const;
+	size_t cgroups_len() const;
+
+	void args_to_iovec(struct iovec **iov, int *iovcnt,
+			   std::string &rem) const;
+
+	void env_to_iovec(struct iovec **iov, int *iovcnt,
+			  std::string &rem) const;
+
+	void cgroups_to_iovec(struct iovec **iov, int *iovcnt,
+			      std::string &rem) const;
 
 #ifdef HAS_FILTERING
 	//
@@ -330,6 +341,7 @@ VISIBILITY_PRIVATE
 	sinsp_threadinfo* get_cwd_root();
 	void set_args(const char* args, size_t len);
 	void set_env(const char* env, size_t len);
+	bool set_env_from_proc();
 	void set_cgroups(const char* cgroups, size_t len);
 	bool is_lastevent_data_valid();
 	inline void set_lastevent_data_validity(bool isvalid)
@@ -345,10 +357,19 @@ VISIBILITY_PRIVATE
 	}
 	void allocate_private_state();
 	void compute_program_hash();
-	sinsp_threadinfo* lookup_thread();
-	inline void args_to_scap(scap_threadinfo* sctinfo);
-	inline void env_to_scap(scap_threadinfo* sctinfo);
-	inline void cgroups_to_scap(scap_threadinfo* sctinfo);
+	shared_ptr<sinsp_threadinfo> lookup_thread();
+
+	size_t strvec_len(const vector<string> &strs) const;
+	void strvec_to_iovec(const vector<string> &strs,
+			     struct iovec **iov, int *iovcnt,
+			     std::string &rem) const;
+
+	void add_to_iovec(const string &str,
+			  const bool include_trailing_null,
+			  struct iovec &iov,
+			  uint32_t &alen,
+			  std::string &rem) const;
+
 	void fd_to_scap(scap_fdinfo *dst, sinsp_fdinfo_t* src);
 
 	//  void push_fdop(sinsp_fdop* op);
@@ -361,7 +382,7 @@ VISIBILITY_PRIVATE
 	//
 	sinsp_fdtable m_fdtable; // The fd table of this thread
 	string m_cwd; // current working directory
-	sinsp_threadinfo* m_main_thread;
+	weak_ptr<sinsp_threadinfo> m_main_thread;
 	uint8_t* m_lastevent_data; // Used by some event parsers to store the last enter event
 	vector<void*> m_private_state;
 
@@ -386,8 +407,67 @@ VISIBILITY_PRIVATE
 
 /*@}*/
 
-typedef unordered_map<int64_t, sinsp_threadinfo> threadinfo_map_t;
-typedef threadinfo_map_t::iterator threadinfo_map_iterator_t;
+class threadinfo_map_t
+{
+public:
+	typedef std::function<bool(sinsp_threadinfo&)> visitor_t;
+	typedef std::shared_ptr<sinsp_threadinfo> ptr_t;
+
+	inline void put(sinsp_threadinfo* tinfo)
+	{
+		m_threads[tinfo->m_tid] = ptr_t(tinfo);
+	}
+
+	inline sinsp_threadinfo* get(uint64_t tid)
+	{
+		auto it = m_threads.find(tid);
+		if (it == m_threads.end())
+		{
+			return  nullptr;
+		}
+		return it->second.get();
+	}
+
+	inline ptr_t get_ref(uint64_t tid)
+	{
+		auto it = m_threads.find(tid);
+		if (it == m_threads.end())
+		{
+			return  nullptr;
+		}
+		return it->second;
+	}
+
+	inline void erase(uint64_t tid)
+	{
+		m_threads.erase(tid);
+	}
+
+	inline void clear()
+	{
+		m_threads.clear();
+	}
+
+	bool loop(visitor_t callback)
+	{
+		for (auto& it : m_threads)
+		{
+			if (!callback(*it.second.get()))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	inline size_t size() const
+	{
+		return m_threads.size();
+	}
+
+protected:
+	unordered_map<int64_t, ptr_t> m_threads;
+};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -426,7 +506,7 @@ public:
 	void clear();
 
 	void set_listener(sinsp_threadtable_listener* listener);
-	void add_thread(sinsp_threadinfo& threadinfo, bool from_scap_proctable);
+	bool add_thread(sinsp_threadinfo *threadinfo, bool from_scap_proctable);
 	void remove_thread(int64_t tid, bool force);
 	// Returns true if the table is actually scanned
 	// NOTE: this is implemented in sinsp.cpp so we can inline it from there
@@ -453,19 +533,17 @@ public:
 	set<uint16_t> m_server_ports;
 
 private:
-	void remove_thread(threadinfo_map_iterator_t it, bool force);
 	void increment_mainthread_childcount(sinsp_threadinfo* threadinfo, bool create_if_needed);
-	inline void clear_thread_pointers(threadinfo_map_iterator_t it);
+	inline void clear_thread_pointers(sinsp_threadinfo& threadinfo);
 	void free_dump_fdinfos(vector<scap_fdinfo*>* fdinfos_to_free);
 	void thread_to_scap(sinsp_threadinfo& tinfo, scap_threadinfo* sctinfo);
 
 	sinsp* m_inspector;
 	threadinfo_map_t m_threadtable;
 	int64_t m_last_tid;
-	sinsp_threadinfo* m_last_tinfo;
+	std::weak_ptr<sinsp_threadinfo> m_last_tinfo;
 	uint64_t m_last_flush_time_ns;
 	uint32_t m_n_drops;
-	uint32_t m_n_proc_lookups;
 
 	sinsp_threadtable_listener* m_listener;
 

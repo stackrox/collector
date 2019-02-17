@@ -1,42 +1,20 @@
-/** collector
-
-A full notice with attributions is provided along with this source code.
-
-This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License version 2 as published by the Free Software Foundation.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-* In addition, as a special exception, the copyright holders give
-* permission to link the code of portions of this program with the
-* OpenSSL library under certain conditions as described in each
-* individual source file, and distribute linked combinations
-* including the two.
-* You must obey the GNU General Public License in all respects
-* for all of the code used other than OpenSSL.  If you modify
-* file(s) with this exception, you may extend this exception to your
-* version of the file(s), but you are not obligated to do so.  If you
-* do not wish to do so, delete this exception statement from your
-* version.
-*/
-
 /*
-Copyright (C) 2013-2014 Draios inc.
+Copyright (C) 2013-2018 Draios Inc dba Sysdig.
 
 This file is part of sysdig.
 
-sysdig is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 2 as
-published by the Free Software Foundation.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-sysdig is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-You should have received a copy of the GNU General Public License
-along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
 */
 
 #ifndef _WIN32
@@ -108,18 +86,6 @@ sinsp_evt::sinsp_evt(sinsp *inspector) :
 
 sinsp_evt::~sinsp_evt()
 {
-}
-
-void sinsp_evt::set_check_id(int32_t id)
-{
-	if (id) {
-		m_check_id = id;
-	}
-}
-
-int32_t sinsp_evt::get_check_id()
-{
-	return m_check_id;
 }
 
 uint32_t sinsp_evt::get_dump_flags()
@@ -385,11 +351,7 @@ uint32_t binary_buffer_to_string_dots(char *dst, char *src, uint32_t dstlen, uin
 			return dstlen;
 		}
 
-		// Preserving newlines and carriage returns is important for downstream
-		// parsing. However, in sparse-string output format, tabs still need to be
-		// replaced, and there is little utility from including other unprintable
-		// characters.
-		if(isprint((int)(uint8_t)src[j]) || src[j] == '\n' || src[j] == '\r')
+		if(isprint((int)(uint8_t)src[j]))
 		{
 			// switch(src[j])
 			// {
@@ -620,6 +582,13 @@ int sinsp_evt::render_fd_json(Json::Value *ret, int64_t fd, const char** resolve
 			(*ret)["name"] = sanitized_str;
 		}
 	}
+	else if(fd == PPM_AT_FDCWD)
+	{
+		//
+		// `fd` can be AT_FDCWD on all *at syscalls
+		//
+		(*ret)["name"] = "AT_FDCWD";
+	}
 	else
 	{
 		//
@@ -730,19 +699,14 @@ char* sinsp_evt::render_fd(int64_t fd, const char** resolved_str, sinsp_evt::par
 */
 		}
 	}
-        // StackRox: This handles the special case where a system call
-        // parameter uses a AT_FDCWD flag instead of an actual directory file
-        // descriptor value. We check if the fd is PPM_AT_FDCWD, this is an
-        // enter event (direction) and this is a file event. AT_FDCWD can
-        // only be used with systemcalls that accept a directory fd -- socket
-        // system calls can't use this. Known system calls that allow AT_FDCWD
-        // include: fchmodat, fchownat, openat, renameat, symlinkat.
-        else if (fd == PPM_AT_FDCWD && this->get_direction() == SCAP_ED_IN && this->get_info_category() == EC_FILE)
+	else if(fd == PPM_AT_FDCWD)
 	{
-		char* fdcwd_str = "AT_FDCWD";
+		//
+		// `fd` can be AT_FDCWD on all *at syscalls
+		//
 		snprintf(&m_resolved_paramstr_storage[0],
-				m_resolved_paramstr_storage.size(),
-				"%s", fdcwd_str);
+				 m_resolved_paramstr_storage.size(),
+				 "AT_FDCWD");
 	}
 	else
 	{
@@ -763,7 +727,6 @@ char* sinsp_evt::render_fd(int64_t fd, const char** resolved_str, sinsp_evt::par
 
 Json::Value sinsp_evt::get_param_as_json(uint32_t id, OUT const char** resolved_str, sinsp_evt::param_fmt fmt)
 {
-	ASSERT(id < m_info->nparams);
 	const ppm_param_info* param_info;
 	char* payload;
 	uint16_t payload_len;
@@ -777,6 +740,8 @@ Json::Value sinsp_evt::get_param_as_json(uint32_t id, OUT const char** resolved_
 		load_params();
 		m_flags |= (uint32_t)sinsp_evt::SINSP_EF_PARAMS_LOADED;
 	}
+
+	ASSERT(id < get_num_params());
 
 	//
 	// Reset the resolved string
@@ -1399,7 +1364,6 @@ const char* sinsp_evt::get_param_as_str(uint32_t id, OUT const char** resolved_s
 	char* payload;
 	uint32_t j;
 	uint16_t payload_len;
-	ASSERT(id < m_info->nparams);
 
 	//
 	// Make sure the params are actually loaded
@@ -1409,6 +1373,8 @@ const char* sinsp_evt::get_param_as_str(uint32_t id, OUT const char** resolved_s
 		load_params();
 		m_flags |= (uint32_t)sinsp_evt::SINSP_EF_PARAMS_LOADED;
 	}
+
+	ASSERT(id < get_num_params());
 
 	//
 	// Reset the resolved string
@@ -1721,6 +1687,28 @@ const char* sinsp_evt::get_param_as_str(uint32_t id, OUT const char** resolved_s
 				snprintf(&m_paramstr_storage[0],
 				         m_paramstr_storage.size(),
 				         "INVALID IPv4");
+			}
+		}
+		else if(payload[0] == PPM_AF_INET6)
+		{
+			if(payload_len == 1 + 16 + 2)
+			{
+				ipv6serverinfo addr;
+				memcpy((uint8_t *) addr.m_ip.m_b, (uint8_t *) payload+1, sizeof(addr.m_ip.m_b));
+				addr.m_port = *(uint16_t*)(payload+17);
+				addr.m_l4proto = (m_fdinfo != NULL) ? m_fdinfo->get_l4proto() : SCAP_L4_UNKNOWN;
+				string straddr = ipv6serveraddr_to_string(&addr, m_inspector->m_hostname_and_port_resolution_enabled);
+				snprintf(&m_paramstr_storage[0],
+					   	 m_paramstr_storage.size(),
+					   	 "%s",
+					   	 straddr.c_str());
+			}
+			else
+			{
+				ASSERT(false);
+				snprintf(&m_paramstr_storage[0],
+				         m_paramstr_storage.size(),
+				         "INVALID IPv6");
 			}
 		}
 		else
@@ -2499,3 +2487,19 @@ scap_dump_flags sinsp_evt::get_dump_flags(OUT bool* should_drop)
 	return (scap_dump_flags)dflags;
 }
 #endif
+
+bool sinsp_evt::falco_consider()
+{
+	uint16_t etype = get_type();
+
+	if(etype == PPME_GENERIC_E || etype == PPME_GENERIC_X)
+	{
+		sinsp_evt_param *parinfo = get_param(0);
+		ASSERT(parinfo->m_len == sizeof(uint16_t));
+		uint16_t scid = *(uint16_t *)parinfo->m_val;
+
+		return sinsp::falco_consider_syscallid(scid);
+	}
+
+	return sinsp::falco_consider_evtnum(etype);
+}

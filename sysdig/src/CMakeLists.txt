@@ -1,3 +1,21 @@
+#
+# Copyright (C) 2013-2018 Draios Inc dba Sysdig.
+#
+# This file is part of sysdig .
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
 # Prior to doing anything, we make sure that we aren't trying to
 # run cmake in-tree. (see Issue 71: https://github.com/draios/sysdig/issues/71)
 if(EXISTS CMakeLists.txt)
@@ -40,18 +58,26 @@ set(PACKAGE_NAME "sysdig")
 add_definitions(-DPLATFORM_NAME="${CMAKE_SYSTEM_NAME}")
 add_definitions(-DK8S_DISABLE_THREAD)
 
+option(BUILD_WARNINGS_AS_ERRORS "Enable building with -Wextra -Werror flags")
+
 if(NOT WIN32)
 
 	set(SYSDIG_DEBUG_FLAGS "-D_DEBUG")
+	set(CMAKE_COMMON_FLAGS "-Wall -ggdb")
 
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Wall -ggdb")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -ggdb --std=c++0x")
+	if(BUILD_WARNINGS_AS_ERRORS)
+		set(CMAKE_SUPPRESSED_WARNINGS "-Wno-unused-parameter -Wno-missing-field-initializers -Wno-sign-compare -Wno-type-limits -Wno-implicit-fallthrough -Wno-format-truncation")
+		set(CMAKE_COMMON_FLAGS "${CMAKE_COMMON_FLAGS} -Wextra -Werror ${CMAKE_SUPPRESSED_WARNINGS}")
+	endif()
 
-	set(CMAKE_C_FLAGS_DEBUG "${SYSDIG_DEBUG_FLAGS} -fPIC")
-	set(CMAKE_CXX_FLAGS_DEBUG "${SYSDIG_DEBUG_FLAGS} -fPIC")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_COMMON_FLAGS}")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_COMMON_FLAGS} -std=c++0x")
 
-	set(CMAKE_C_FLAGS_RELEASE "-O3 -fPIC -fno-strict-aliasing -DNDEBUG")
-	set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fPIC -fno-strict-aliasing -DNDEBUG")
+	set(CMAKE_C_FLAGS_DEBUG "${SYSDIG_DEBUG_FLAGS}")
+	set(CMAKE_CXX_FLAGS_DEBUG "${SYSDIG_DEBUG_FLAGS}")
+
+	set(CMAKE_C_FLAGS_RELEASE "-O3 -fno-strict-aliasing -DNDEBUG")
+	set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-strict-aliasing -DNDEBUG")
 
 	if(CMAKE_SYSTEM_NAME MATCHES "Linux")
 		if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -60,9 +86,17 @@ if(NOT WIN32)
 			set(KBUILD_FLAGS "${SYSDIG_FEATURE_FLAGS}")
 		endif()
 
-		set(PROBE_VERSION "${SYSDIG_VERSION}")
-		set(PROBE_NAME "${PROBE_NAME}")
-		set(PROBE_DEVICE_NAME "sysdig")
+		if(NOT DEFINED PROBE_VERSION)
+			set(PROBE_VERSION "${SYSDIG_VERSION}")
+		endif()
+		if(NOT DEFINED PROBE_NAME)
+			set(PROBE_NAME "sysdig-probe")
+		        set(PROBE_NAME "${PROBE_NAME}")
+		endif()
+
+		if(NOT DEFINED PROBE_DEVICE_NAME)
+			set(PROBE_DEVICE_NAME "sysdig")
+		endif()
 
 		add_subdirectory(driver)
 		add_definitions(-DHAS_CAPTURE)
@@ -131,7 +165,7 @@ else()
 			URL "http://download.draios.com/dependencies/LuaJIT-2.0.3.tar.gz"
 			URL_MD5 "f14e9104be513913810cd59c8c658dc0"
 			CONFIGURE_COMMAND ""
-			BUILD_COMMAND ${CMD_MAKE} "CC=gcc -fPIC"
+			BUILD_COMMAND ${CMD_MAKE}
 			BUILD_IN_SOURCE 1
 			BUILD_BYPRODUCTS ${LUAJIT_LIB}
 			INSTALL_COMMAND "")
@@ -192,7 +226,7 @@ else()
 			URL "http://download.draios.com/dependencies/zlib-1.2.11.tar.gz"
 			URL_MD5 "1c9f62f0778697a09d36121ead88e08e"
 			CONFIGURE_COMMAND "./configure"
-			BUILD_COMMAND ${CMD_MAKE} "CFLAGS=-O3 -fPIC -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN' SFLAGS='-O3  -fPIC -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN"
+			BUILD_COMMAND ${CMD_MAKE}
 			BUILD_IN_SOURCE 1
 			BUILD_BYPRODUCTS ${ZLIB_LIB}
 			INSTALL_COMMAND "")
@@ -205,6 +239,37 @@ else()
 			BUILD_COMMAND nmake -f win32/Makefile.msc
 			BUILD_IN_SOURCE 1
 			BUILD_BYPRODUCTS ${ZLIB_LIB}
+			INSTALL_COMMAND "")
+	endif()
+endif()
+
+#
+# Intel tbb
+#
+if(NOT WIN32 AND NOT APPLE)
+	option(USE_BUNDLED_TBB "Enable building of the bundled tbb" ${USE_BUNDLED_DEPS})
+	if(NOT USE_BUNDLED_TBB)
+		find_path(TBB_INCLUDE tbb.h PATH_SUFFIXES tbb)
+		find_library(TBB_LIB NAMES tbb)
+		if(TBB_INCLUDE AND TBB_LIB)
+			message(STATUS "Found tbb: include: ${TBB_INCLUDE}, lib: ${TBB_LIB}")
+		else()
+			message(FATAL_ERROR "Couldn't find system tbb")
+		endif()
+	else()
+		set(TBB_SRC "${PROJECT_BINARY_DIR}/tbb-prefix/src/tbb")
+
+		message(STATUS "Using bundled tbb in '${TBB_SRC}'")
+
+		set(TBB_INCLUDE "${TBB_SRC}/include/")
+		set(TBB_LIB "${TBB_SRC}/build/lib_release/libtbb.a")
+		ExternalProject_Add(tbb
+			URL "http://s3.amazonaws.com/download.draios.com/dependencies/tbb-2018_U5.tar.gz"
+			URL_MD5 "ff3ae09f8c23892fbc3008c39f78288f"
+			CONFIGURE_COMMAND ""
+			BUILD_COMMAND ${CMD_MAKE} tbb_build_dir=${TBB_SRC}/build tbb_build_prefix=lib extra_inc=big_iron.inc
+			BUILD_IN_SOURCE 1
+			BUILD_BYPRODUCTS ${TBB_LIB}
 			INSTALL_COMMAND "")
 	endif()
 endif()
@@ -231,7 +296,6 @@ if(NOT WIN32 AND NOT APPLE)
 		URL "http://download.draios.com/dependencies/jq-1.5.tar.gz"
 		URL_MD5 "0933532b086bd8b6a41c1b162b1731f9"
 		CONFIGURE_COMMAND ./configure --disable-maintainer-mode --enable-all-static --disable-dependency-tracking
-#		BUILD_COMMAND ${CMD_MAKE} LDFLAGS=-all-static
 		BUILD_COMMAND ${CMD_MAKE} LDFLAGS=-all-static CFLAGS=-fPIC
 		BUILD_IN_SOURCE 1
 		BUILD_BYPRODUCTS ${JQ_LIB}
@@ -261,7 +325,7 @@ if(NOT WIN32)
 			URL "http://download.draios.com/dependencies/ncurses-6.0-20150725.tgz"
 			URL_MD5 "32b8913312e738d707ae68da439ca1f4"
 			CONFIGURE_COMMAND ./configure --without-cxx --without-cxx-binding --without-ada --without-manpages --without-progs --without-tests --with-terminfo-dirs=/etc/terminfo:/lib/terminfo:/usr/share/terminfo
-			BUILD_COMMAND ${CMD_MAKE} "CFLAGS=-O2 --param max-inline-insns-single=1200 -fPIC"
+			BUILD_COMMAND ${CMD_MAKE}
 			BUILD_IN_SOURCE 1
 			BUILD_BYPRODUCTS ${CURSES_LIBRARIES}
 			INSTALL_COMMAND "")
@@ -269,34 +333,33 @@ if(NOT WIN32)
 endif()
 
 if(NOT WIN32 AND NOT APPLE)
-#	#
-#	# libb64
-#	#
-#	option(USE_BUNDLED_B64 "Enable building of the bundled b64" ${USE_BUNDLED_DEPS})
-#
-#	if(NOT USE_BUNDLED_B64)
-#		find_path(B64_INCLUDE NAMES b64/encode.h)
-#		find_library(B64_LIB NAMES b64)
-#		if(B64_INCLUDE AND B64_LIB)
-#			message(STATUS "Found b64: include: ${B64_INCLUDE}, lib: ${B64_LIB}")
-#		else()
-#			message(FATAL_ERROR "Couldn't find system b64")
-#		endif()
-#	else()
-#		set(B64_SRC "${PROJECT_BINARY_DIR}/b64-prefix/src/b64")
-#		message(STATUS "Using bundled b64 in '${B64_SRC}'")
-#		set(B64_INCLUDE "${B64_SRC}/include")
-#		set(B64_LIB "${B64_SRC}/src/libb64.a")
-#		set(CFLAGS "-fPIC")
-#		ExternalProject_Add(b64
-#			URL "http://download.draios.com/dependencies/libb64-1.2.src.zip"
-#			URL_MD5 "a609809408327117e2c643bed91b76c5"
-#			CONFIGURE_COMMAND ""
-#			BUILD_COMMAND ${CMD_MAKE}
-#			BUILD_IN_SOURCE 1
-#			BUILD_BYPRODUCTS ${B64_LIB}
-#			INSTALL_COMMAND "")
-#	endif()
+	#
+	# libb64
+	#
+	option(USE_BUNDLED_B64 "Enable building of the bundled b64" ${USE_BUNDLED_DEPS})
+
+	if(NOT USE_BUNDLED_B64)
+		find_path(B64_INCLUDE NAMES b64/encode.h)
+		find_library(B64_LIB NAMES b64)
+		if(B64_INCLUDE AND B64_LIB)
+			message(STATUS "Found b64: include: ${B64_INCLUDE}, lib: ${B64_LIB}")
+		else()
+			message(FATAL_ERROR "Couldn't find system b64")
+		endif()
+	else()
+		set(B64_SRC "${PROJECT_BINARY_DIR}/b64-prefix/src/b64")
+		message(STATUS "Using bundled b64 in '${B64_SRC}'")
+		set(B64_INCLUDE "${B64_SRC}/include")
+		set(B64_LIB "${B64_SRC}/src/libb64.a")
+		ExternalProject_Add(b64
+			URL "http://download.draios.com/dependencies/libb64-1.2.src.zip"
+			URL_MD5 "a609809408327117e2c643bed91b76c5"
+			CONFIGURE_COMMAND ""
+			BUILD_COMMAND ${CMD_MAKE}
+			BUILD_IN_SOURCE 1
+			BUILD_BYPRODUCTS ${B64_LIB}
+			INSTALL_COMMAND "")
+	endif()
 
 	#
 	# OpenSSL
@@ -319,7 +382,7 @@ if(NOT WIN32 AND NOT APPLE)
 			URL "http://download.draios.com/dependencies/openssl-1.0.2n.tar.gz"
 			URL_MD5 "13bdc1b1d1ff39b6fd42a255e74676a4"
 			CONFIGURE_COMMAND ./config shared --prefix=${OPENSSL_INSTALL_DIR}
-			BUILD_COMMAND ${CMD_MAKE} "CFLAG=-fPIC -DOPENSSL_PIC -DOPENSSL_THREADS -D_REENTRANT -DDSO_DLFCN -DHAVE_DLFCN_H -Wa,--noexecstack -m64 -DL_ENDIAN -O3 -Wall -DOPENSSL_IA32_SSE2 -DOPENSSL_BN_ASM_MONT -DOPENSSL_BN_ASM_MONT5 -DOPENSSL_BN_ASM_GF2m -DSHA1_ASM -DSHA256_ASM -DSHA512_ASM -DMD5_ASM -DAES_ASM -DVPAES_ASM -DBSAES_ASM -DWHIRLPOOL_ASM -DGHASH_ASM -DECP_NISTZ256_ASM"
+			BUILD_COMMAND ${CMD_MAKE}
 			BUILD_IN_SOURCE 1
 			BUILD_BYPRODUCTS ${OPENSSL_LIBRARY_SSL} ${OPENSSL_LIBRARY_CRYPTO}
 			INSTALL_COMMAND ${CMD_MAKE} install)
@@ -342,15 +405,15 @@ if(NOT WIN32 AND NOT APPLE)
 			set(CURL_SSL_OPTION "--with-ssl")
 		else()
 			set(CURL_SSL_OPTION "--with-ssl=${OPENSSL_INSTALL_DIR}")
-                        message(STATUS "Using bundled curl in '${CURL_BUNDLE_DIR}'")
-                        message(STATUS "Using SSL for curl in '${CURL_SSL_OPTION}'")
+			message(STATUS "Using bundled curl in '${CURL_BUNDLE_DIR}'")
+			message(STATUS "Using SSL for curl in '${CURL_SSL_OPTION}'")
 		endif()
 
 
 		ExternalProject_Add(curl
 			DEPENDS openssl
-			URL "http://download.draios.com/dependencies/curl-7.57.0.tar.bz2"
-			URL_MD5 "dd3e22e923be17663e67f721c2aec054"
+			URL "http://download.draios.com/dependencies/curl-7.61.0.tar.bz2"
+			URL_MD5 "31d0a9f48dc796a7db351898a1e5058a"
 			CONFIGURE_COMMAND ./configure ${CURL_SSL_OPTION} --disable-threaded-resolver --disable-shared --enable-optimize --disable-curldebug --disable-rt --enable-http --disable-ftp --disable-file --disable-ldap --disable-ldaps --disable-rtsp --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp --disable-gopher --disable-sspi --disable-ntlm-wb --disable-tls-srp --without-winssl --without-darwinssl --without-polarssl --without-cyassl --without-nss --without-axtls --without-ca-path --without-ca-bundle --without-libmetalink --without-librtmp --without-winidn --without-libidn --without-nghttp2 --without-libssh2
 			BUILD_COMMAND ${CMD_MAKE}
 			BUILD_IN_SOURCE 1
@@ -361,10 +424,10 @@ endif() # NOT WIN32 AND NOT APPLE
 
 option(BUILD_USERSPACE "Build userspace libraries" ON)
 if(BUILD_USERSPACE)
-	add_subdirectory(userspace/sysdig)
-	add_subdirectory(userspace/libscap)
-	add_subdirectory(userspace/libsinsp)
-	#add_subdirectory(userspace/falcobl)
+add_subdirectory(userspace/sysdig)
+add_subdirectory(userspace/libscap)
+add_subdirectory(userspace/libsinsp)
+#add_subdirectory(userspace/falcobl)
 endif() # BUILD_USERSPACE
 
 set(CPACK_PACKAGE_NAME "${PACKAGE_NAME}")
@@ -384,7 +447,7 @@ set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://www.sysdig.org")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "dkms (>= 2.1.0.0)")
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_BINARY_DIR}/scripts/debian/postinst;${CMAKE_BINARY_DIR}/scripts/debian/prerm")
 
-set(CPACK_RPM_PACKAGE_LICENSE "GPLv2")
+set(CPACK_RPM_PACKAGE_LICENSE "Apache v2.0")
 set(CPACK_RPM_PACKAGE_URL "http://www.sysdig.org")
 set(CPACK_RPM_PACKAGE_REQUIRES "dkms, gcc, make, kernel-devel, perl")
 set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE "${PROJECT_SOURCE_DIR}/scripts/rpm/postinstall")

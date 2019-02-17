@@ -1,42 +1,20 @@
-/** collector
-
-A full notice with attributions is provided along with this source code.
-
-This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License version 2 as published by the Free Software Foundation.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-* In addition, as a special exception, the copyright holders give
-* permission to link the code of portions of this program with the
-* OpenSSL library under certain conditions as described in each
-* individual source file, and distribute linked combinations
-* including the two.
-* You must obey the GNU General Public License in all respects
-* for all of the code used other than OpenSSL.  If you modify
-* file(s) with this exception, you may extend this exception to your
-* version of the file(s), but you are not obligated to do so.  If you
-* do not wish to do so, delete this exception statement from your
-* version.
-*/
-
 /*
-Copyright (C) 2013-2014 Draios inc.
+Copyright (C) 2013-2018 Draios Inc dba Sysdig.
 
 This file is part of sysdig.
 
-sysdig is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 2 as
-published by the Free Software Foundation.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-sysdig is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-You should have received a copy of the GNU General Public License
-along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
 */
 
 #include <stdio.h>
@@ -57,7 +35,7 @@ size_t g_get_event_size(enum ppm_event_type event_type, uint16_t* lens)
 	int32_t res = 0;
 
 	for(j = 0; j < g_event_info[event_type].nparams; j++)
-	{	
+	{
 		res += lens[j];
 	}
 
@@ -124,7 +102,7 @@ int32_t g_check_integrity(uint32_t* cur_event, char* copy_buffer, int buf_len, O
 #ifdef PPM_ENABLE_SENTINEL
 		sentinel_begin = ((struct ppm_evt_hdr*)(copy_buffer + offset))->sentinel_begin;
 		sentinel_end = *(uint32_t*)(copy_buffer + offset + event_size - sizeof(uint32_t));
-		
+
 		if(sentinel_begin != sentinel_end)
 		{
 			fprintf(stderr, "Error: sentinel begin %d, sentinel end %d, evt_type %u, evt_size %zu, cnt %u, offset %x, remaining %u\n",
@@ -191,11 +169,11 @@ int main()
 			&new_mask);
 	*/
 
-	scap_t* h = scap_open_live(error);
+	scap_t* h = scap_open_live(error, &ret);
 	if(h == NULL)
 	{
-		fprintf(stderr, "%s\n", error);
-		return -1;
+		fprintf(stderr, "%s (%d)\n", error, ret);
+		return ret;
 	}
 
 	ndevs = scap_get_ndevs(h);
@@ -220,7 +198,7 @@ int main()
 		{
 			uint32_t nevents;
 
-			ret = scap_readbuf(h, j, false, &buf, &buflen);
+			ret = scap_readbuf(h, j, &buf, &buflen);
 
 			if(ret != SCAP_SUCCESS)
 			{
@@ -276,7 +254,7 @@ int main()
 			{
 				fprintf(stderr, "%s\n", scap_getlasterr(h));
 				scap_close(h);
-				return -1;				
+				return -1;
 			}
 
 			printf("bps:%" PRIu64 " totbytes:%" PRIu64 " - evts/s:%" PRIu64 " totevs:%" PRIu64 " drops:%" PRIu64 "\n",
