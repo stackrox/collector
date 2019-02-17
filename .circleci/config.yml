@@ -406,6 +406,8 @@ jobs:
             -v "$PWD/sysdig/src:/usr/local/sysdig:ro" \
             -v "$PWD/container/libs/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
             -v "$PWD/sysdig/src/driver/ppm_events_public.h:/usr/local/include/ppm_events_public.h:ro" \
+            -v "$PWD/sysdig/src/driver/ppm_fillers.h:/usr/local/include/ppm_fillers.h:ro" \
+            -v "$PWD/sysdig/src/userspace/libsinsp/tuples.h:/usr/local/include/tuples.h:ro" \
             -v "$PWD/cmake-build:/build-output" \
             --name build "stackrox/collector-builder:circle-build-${CIRCLE_WORKFLOW_ID}"
 
