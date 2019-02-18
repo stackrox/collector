@@ -53,6 +53,7 @@ RUN apt-get update \
         libtbb-dev \
         libelf-dev \
         libelf1 \
+        libjsoncpp-dev \
  ;
 
 COPY libs/libsinsp-wrapper.so \

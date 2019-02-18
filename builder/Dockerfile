@@ -25,6 +25,7 @@ RUN apt-get update \
         libtbb-dev \
         libelf-dev \
         libelf1 \
+        libjsoncpp-dev \
         ;
 
 # We want to fail if the destination directory is there, hence mkdir (not -p).
