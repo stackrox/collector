@@ -493,6 +493,8 @@ coreos:
       - http://stable.release.core-os.net/amd64-usr/1745.5.0/bundle.tgz
       4.14.48:
       - http://stable.release.core-os.net/amd64-usr/1745.6.0/bundle.tgz
+      4.14.96:
+      - http://stable.release.core-os.net/amd64-usr/1967.6.0/bundle.tgz
       4.7.3:
       - http://stable.release.core-os.net/amd64-usr/1235.4.0/bundle.tgz
       4.9.16:
