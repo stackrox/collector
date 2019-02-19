@@ -59,6 +59,9 @@ RUN apt-get update \
 COPY libs/libsinsp-wrapper.so \
      /usr/local/lib/
 
+COPY libs/probe.o \
+     /usr/local/lib/
+
 WORKDIR /
 
 # Uncomment below when Address Sanitizer needs to be enabled for collector

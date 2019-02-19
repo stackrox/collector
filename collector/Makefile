@@ -43,8 +43,14 @@ container/bin/collector: $(HDRS) $(SRCS) generated-srcs container/libs/libsinsp-
 
 container/libs/libsinsp-wrapper.so: $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
 	make -C sysdig
+	CLANG=clang-7 LLC=llc-7 MAKE=make make -C sysdig/src/driver/bpf all
 	mkdir -p container/libs/
 	cp sysdig/build-output/userspace/libsinsp/libsinsp-wrapper.so container/libs/
+
+container/libs/probe.o: $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
+	CLANG=clang-7 LLC=llc-7 MAKE=make make -C sysdig/src/driver/bpf all
+	mkdir -p container/libs/
+	cp sysdig/src/driver/bpf/probe.o container/libs/
 
 .PHONY: clean
 clean: clean-generated-srcs

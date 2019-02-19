@@ -48,6 +48,7 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
 
   inspector_.reset(new_inspector());
   inspector_->set_snaplen(config.snapLen);
+  inspector_->set_bpf_probe("/usr/local/lib/probe.o");
 
   if (conn_tracker) {
     AddSignalHandler(MakeUnique<NetworkSignalHandler>(inspector_.get(), conn_tracker, &userspace_stats_));
@@ -138,11 +139,11 @@ void SysdigService::Start() {
 
   inspector_->open("");
 
-  // Drop DAC_OVERRIDE capability after opening the device files.
-  capng_updatev(CAPNG_DROP, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_DAC_OVERRIDE, -1);
-  if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
-    CLOG(WARNING) << "Failed to drop DAC_OVERRIDE capability: " << StrError();
-  }
+  //// Drop DAC_OVERRIDE capability after opening the device files.
+  //capng_updatev(CAPNG_DROP, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_DAC_OVERRIDE, -1);
+  //if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
+  //  CLOG(WARNING) << "Failed to drop DAC_OVERRIDE capability: " << StrError();
+  //}
 
   std::lock_guard<std::mutex> lock(running_mutex_);
   running_ = true;

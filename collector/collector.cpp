@@ -248,12 +248,12 @@ const char* GetHostname() {
 int main(int argc, char **argv) {
   // First action: drop all capabilities except for SYS_MODULE (inserting the module), SYS_PTRACE (reading from /proc),
   // and DAC_OVERRIDE (opening the device files with O_RDWR regardless of actual permissions).
-  capng_clear(CAPNG_SELECT_BOTH);
-  capng_updatev(CAPNG_ADD, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED),
-                CAP_SYS_MODULE, CAP_DAC_OVERRIDE, CAP_SYS_PTRACE, -1);
-  if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
-    CLOG(WARNING) << "Failed to drop capabilities: " << StrError();
-  }
+  //capng_clear(CAPNG_SELECT_BOTH);
+  //capng_updatev(CAPNG_ADD, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED),
+  //              CAP_SYS_MODULE, CAP_DAC_OVERRIDE, CAP_SYS_PTRACE, -1);
+  //if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
+  //  CLOG(WARNING) << "Failed to drop capabilities: " << StrError();
+  //}
 
   if (!g_control.is_lock_free()) {
     CLOG(FATAL) << "Could not create a lock-free control variable!";
@@ -280,13 +280,13 @@ int main(int argc, char **argv) {
   // insert the kernel module with options from the configuration
   Json::Value collectorConfig = args->CollectorConfig();
 
-  insertModule(collectorConfig["syscalls"]);
+  //insertModule(collectorConfig["syscalls"]);
 
-  // Drop SYS_MODULE capability after successfully inserting module.
-  capng_updatev(CAPNG_DROP, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_SYS_MODULE, -1);
-  if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
-    CLOG(WARNING) << "Failed to drop SYS_MODULE capability: " << StrError();
-  }
+  //// Drop SYS_MODULE capability after successfully inserting module.
+  //capng_updatev(CAPNG_DROP, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_SYS_MODULE, -1);
+  //if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
+  //  CLOG(WARNING) << "Failed to drop SYS_MODULE capability: " << StrError();
+  //}
 
   bool useGRPC = false;
   if (!args->GRPCServer().empty()) {
