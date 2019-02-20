@@ -38,8 +38,14 @@ crawl-amazon: build-crawl-container
 # we don't actually supply that argument here.
 	docker run --rm -i --entrypoint python3 kernel-crawler repo-crawler.py --print yum http://amazonlinux.us-west-2.amazonaws.com/2017.12/core/latest/x86_64/mirror.list --match-exact=name=kernel-devel | sort > supported-kernels/amazon.txt
 
+.PHONY: crawl-debian
+crawl-debian: build-crawl-container
+# kbuild tools are required for each major version of the kernel for Debian.
+	echo 'http://ftp.us.debian.org/debian/pool/main/l/linux/linux-kbuild-4.9_4.9.130-2_amd64.deb' > supported-kernels/debian.txt
+	docker run --rm -i kernel-crawler crawl Debian >> supported-kernels/debian.txt
+
 .PHONY: crawl
-crawl: build-crawl-container crawl-centos crawl-kops crawl-amazon
+crawl: build-crawl-container crawl-centos crawl-debian crawl-kops crawl-amazon
 	docker run --rm -i kernel-crawler crawl CoreOS > supported-kernels/coreos.txt
 	docker run --rm -i kernel-crawler crawl Ubuntu > supported-kernels/ubuntu-standard.txt
 	docker run --rm -i kernel-crawler crawl Ubuntu-AWS > supported-kernels/ubuntu-aws.txt

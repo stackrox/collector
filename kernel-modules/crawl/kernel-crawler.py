@@ -40,6 +40,8 @@ debian_excludes = [
     "4.17.0", # 4.17+ are not supported yet
     "4.18.0",
     "4.19.0",
+    "4.1", # excludes 4.10+
+    "4.2", # excludes 4.20+
     "3.2.0", "3.16.0" # legacy
 ]
 repos = {
@@ -143,6 +145,13 @@ repos = {
             "page_pattern": "/html/body//a[regex:test(@href, '^linux-(?:headers-[0-9.]+-[^-]+-(?:amd64|common_)|kbuild-.*_4.9.130).*(?:amd64|all).deb$')]/@href",
             "exclude_patterns": debian_excludes,
         },
+        {
+            "root": "http://security.debian.org/debian-security/pool/updates/main/l/",
+            "discovery_pattern": "/html/body//a[regex:test(@href, '^linux/')]/@href",
+            "subdirs": [""],
+            "page_pattern": "/html/body//a[regex:test(@href, '^linux-(?:headers-[0-9.]+-[^-]+-(?:amd64|common_)|kbuild-.*_4.9.130).*(?:amd64|all).deb$')]/@href",
+            "exclude_patterns": debian_excludes,
+        }
     ],
 
     "Ubuntu": [
