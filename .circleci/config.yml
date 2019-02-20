@@ -145,10 +145,10 @@ jobs:
             [[ -n "$line" ]] || continue
 
             collector_ref="$line"
-            echo "Preparing module source archive for collector version "$collector_ref"
+            echo "Preparing module source archive for collector version ${collector_ref}"
 
             mkdir -p /tmp/old-sysdig
-            git checkout --work-tree /tmp/old-sysdig "$collector_ref" -- sysdig/src
+            git checkout --work-tree /tmp/old-sysdig "${collector_ref}" -- sysdig/src
             SYSDIG_DIR="/tmp/old-sysdig/sysdig/src" \
                 SCRATCH_DIR="${HOME}/scratch" \
                 OUTPUT_DIR="${HOME}/kobuild-tmp/versions-src" \
