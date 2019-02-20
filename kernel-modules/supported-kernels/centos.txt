@@ -3,6 +3,7 @@ http://vault.centos.org/7.4.1708/updates/x86_64/Packages/kernel-devel-3.10.0-693
 http://vault.centos.org/7.4.1708/updates/x86_64/Packages/kernel-devel-3.10.0-693.21.1.el7.x86_64.rpm
 http://vault.centos.org/7.3.1611/updates/x86_64/Packages/kernel-devel-3.10.0-514.21.1.el7.x86_64.rpm
 http://vault.centos.org/7.4.1708/updates/x86_64/Packages/kernel-devel-3.10.0-693.2.1.el7.x86_64.rpm
+https://mirrors.kernel.org/centos/7.6.1810/updates/x86_64/Packages/kernel-devel-3.10.0-957.5.1.el7.x86_64.rpm
 http://vault.centos.org/7.3.1611/updates/x86_64/Packages/kernel-devel-3.10.0-514.6.1.el7.x86_64.rpm
 http://vault.centos.org/7.3.1611/updates/x86_64/Packages/kernel-devel-3.10.0-514.16.1.el7.x86_64.rpm
 http://vault.centos.org/7.3.1611/updates/x86_64/Packages/kernel-devel-3.10.0-514.26.1.el7.x86_64.rpm
@@ -27,16 +28,16 @@ http://vault.centos.org/7.3.1611/os/x86_64/Packages/kernel-devel-3.10.0-514.el7.
 http://vault.centos.org/7.5.1804/updates/x86_64/Packages/kernel-devel-3.10.0-862.11.6.el7.x86_64.rpm
 http://vault.centos.org/7.4.1708/updates/x86_64/Packages/kernel-devel-3.10.0-693.11.6.el7.x86_64.rpm
 https://mirrors.kernel.org/centos/7.6.1810/os/x86_64/Packages/kernel-devel-3.10.0-957.el7.x86_64.rpm
-http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.160-1.el7.elrepo.x86_64.rpm
 http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.170-1.el7.elrepo.x86_64.rpm
-http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.161-1.el7.elrepo.x86_64.rpm
 http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.171-1.el7.elrepo.x86_64.rpm
 http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.162-1.el7.elrepo.x86_64.rpm
+http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.172-1.el7.elrepo.x86_64.rpm
 http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.163-1.el7.elrepo.x86_64.rpm
+http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.173-1.el7.elrepo.x86_64.rpm
 http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.164-1.el7.elrepo.x86_64.rpm
+http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.174-1.el7.elrepo.x86_64.rpm
 http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.165-1.el7.elrepo.x86_64.rpm
 http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.166-1.el7.elrepo.x86_64.rpm
 http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.167-1.el7.elrepo.x86_64.rpm
 http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.168-1.el7.elrepo.x86_64.rpm
-http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.159-1.el7.elrepo.x86_64.rpm
 http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.169-1.el7.elrepo.x86_64.rpm

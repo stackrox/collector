@@ -43,6 +43,8 @@ http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-headers-4.15.0-100
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-headers-4.13.0-1015-gcp_4.13.0-1015.19_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-gcp-headers-4.15.0-1018_4.15.0-1018.19_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-headers-4.15.0-1018-gcp_4.15.0-1018.19_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-gcp-headers-4.15.0-1028_4.15.0-1028.29_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-headers-4.15.0-1028-gcp_4.15.0-1028.29_amd64.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.13.0-1007_4.13.0-1007.10_all.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.13.0-1008_4.13.0-1008.11_all.deb
 http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.13.0-1017_4.13.0-1017.21_all.deb
