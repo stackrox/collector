@@ -223,6 +223,10 @@ jobs:
             gsutil ls "${COLLECTOR_MODULES_BUCKET}/${version}/" \
               | sed -ne 's@^.*/collector-\([^/]\{1,\}\)\.ko\(\.gz\)\{0,1\}$@\1@p' \
                 >~/kobuild-tmp/existing-modules-"${version}"
+
+            echo "Existing modules vor version ${version}:"
+            cat ~/kobuild-tmp/existing-modules-"${version}"
+            echo
           done
 
     - run:
