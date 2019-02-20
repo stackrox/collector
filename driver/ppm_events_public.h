@@ -1,26 +1,3 @@
-/** collector
-
-A full notice with attributions is provided along with this source code.
-
-This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License version 2 as published by the Free Software Foundation.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-* In addition, as a special exception, the copyright holders give
-* permission to link the code of portions of this program with the
-* OpenSSL library under certain conditions as described in each
-* individual source file, and distribute linked combinations
-* including the two.
-* You must obey the GNU General Public License in all respects
-* for all of the code used other than OpenSSL.  If you modify
-* file(s) with this exception, you may extend this exception to your
-* version of the file(s), but you are not obligated to do so.  If you
-* do not wish to do so, delete this exception statement from your
-* version.
-*/
-
 /*
 Copyright (C) 2013-2014 Draios inc.
 
@@ -174,9 +151,9 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 #define PPM_CL_ACTIVE (1 << 19)			/* libsinsp-specific flag. Set in the first non-clone event for
 										   this thread. */
 #define PPM_CL_CLONE_NEWUSER (1 << 20)
-#define PPM_CL_PIPE_SRC (1 << 21)			/* libsinsp-specific flag. Set if this thread has been
+#define PPM_CL_PIPE_SRC (1 << 21)			/* libsinsp-specific flag. Set if this thread has been 
 										       detected to be the source in a shell pipe. */
-#define PPM_CL_PIPE_DST (1 << 22)			/* libsinsp-specific flag. Set if this thread has been
+#define PPM_CL_PIPE_DST (1 << 22)			/* libsinsp-specific flag. Set if this thread has been 
 										       detected to be the destination in a shell pipe. */
 #define PPM_CL_CLONE_CHILD_CLEARTID (1 << 23)
 #define PPM_CL_CLONE_CHILD_SETTID (1 << 24)
@@ -515,12 +492,6 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 #define PPM_PF_SUPERVISOR_FAULT		(1 << 5)
 #define PPM_PF_RESERVED_PAGE		(1 << 6)
 #define PPM_PF_INSTRUCTION_FETCH	(1 << 7)
-
-/*
- * chown/chmod flags
- */
-#define PPM_AT_EMPTY_PATH		(1 << 0)
-#define PPM_AT_SYMLINK_NOFOLLOW 	(1 << 1)
 
 /*
  * SuS says limits have to be unsigned.
@@ -862,29 +833,7 @@ enum ppm_event_type {
 	PPME_SYSCALL_BPF_X = 293,
 	PPME_SYSCALL_SECCOMP_E = 294,
 	PPME_SYSCALL_SECCOMP_X = 295,
-	PPME_SYSCALL_INIT_MODULE_E = 296,
-	PPME_SYSCALL_INIT_MODULE_X = 297,
-	PPME_SYSCALL_FINIT_MODULE_E = 298,
-	PPME_SYSCALL_FINIT_MODULE_X = 299,
-	PPME_SYSCALL_DELETE_MODULE_E = 300,
-	PPME_SYSCALL_DELETE_MODULE_X = 301,
-	PPME_SYSCALL_CAPSET_E = 302,
-	PPME_SYSCALL_CAPSET_X = 303,
-	PPME_SYSCALL_CHOWN_E = 304,
-	PPME_SYSCALL_CHOWN_X = 305,
-	PPME_SYSCALL_LCHOWN_E = 306,
-	PPME_SYSCALL_LCHOWN_X = 307,
-	PPME_SYSCALL_FCHOWN_E = 308,
-	PPME_SYSCALL_FCHOWN_X = 309,
-	PPME_SYSCALL_FCHOWNAT_E = 310,
-	PPME_SYSCALL_FCHOWNAT_X = 311,
-	PPME_SYSCALL_CHMOD_E = 312,
-	PPME_SYSCALL_CHMOD_X = 313,
-	PPME_SYSCALL_FCHMOD_E = 314,
-	PPME_SYSCALL_FCHMOD_X = 315,
-	PPME_SYSCALL_FCHMODAT_E = 316,
-	PPME_SYSCALL_FCHMODAT_X = 317,
-	PPM_EVENT_MAX = 318
+	PPM_EVENT_MAX = 296
 };
 /*@}*/
 
@@ -1419,7 +1368,6 @@ extern const struct ppm_name_value semget_flags[];
 extern const struct ppm_name_value semctl_commands[];
 extern const struct ppm_name_value access_flags[];
 extern const struct ppm_name_value pf_flags[];
-extern const struct ppm_name_value chown_chmod_flags[];
 
 extern const struct ppm_param_info ptrace_dynamic_param[];
 extern const struct ppm_param_info bpf_dynamic_param[];
