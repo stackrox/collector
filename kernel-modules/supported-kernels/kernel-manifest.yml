@@ -1173,16 +1173,12 @@ ubuntu-standard:
       4.15.0-46:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-46-generic_4.15.0-46.49_amd64.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-46_4.15.0-46.49_all.deb
-
-
 #      4.19.0-7:
 #      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.19.0-7-generic_4.19.0-7.8_amd64.deb
 #      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.19.0-7_4.19.0-7.8_all.deb
 #      4.19.0-8:
 #      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.19.0-8-generic_4.19.0-8.9_amd64.deb
 #      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.19.0-8_4.19.0-8.9_all.deb
-      4.19.0-11:
-        -
       4.19.0-13:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.19.0-13-generic_4.19.0-13.14_amd64.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.19.0-13_4.19.0-13.14_all.deb
