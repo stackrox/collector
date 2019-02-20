@@ -138,7 +138,7 @@ jobs:
         command: |
           cd "$SOURCE_ROOT"
           if [[ ! -f RELEASED_VERSIONS ]]; then
-            echo "RELEASED_VERSIONS" file does not exist, nothing to do here!"
+            echo "RELEASED_VERSIONS file does not exist, nothing to do here!"
           fi
 
           while IFS='' read -r line || [[ -n "$line" ]]; do
