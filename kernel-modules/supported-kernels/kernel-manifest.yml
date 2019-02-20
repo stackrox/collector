@@ -974,6 +974,9 @@ ubuntu-gcp:
       4.15.0-1025:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-gcp-headers-4.15.0-1025_4.15.0-1025.26_amd64.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-headers-4.15.0-1025-gcp_4.15.0-1025.26_amd64.deb
+      4.15.0-1026:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-gcp-headers-4.15.0-1026_4.15.0-1026.27_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-headers-4.15.0-1026-gcp_4.15.0-1026.27_amd64.deb
       4.10.0-1004:
       - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.10.0-1004_4.10.0-1004.4_all.deb
       - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-headers-4.10.0-1004-gcp_4.10.0-1004.4_amd64.deb
