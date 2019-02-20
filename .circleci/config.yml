@@ -156,7 +156,7 @@ jobs:
               ./kernel-modules/build/prepare-src
 
             rm -rf /tmp/old-sysdig
-          done < <(grep -v '^#' <RELEASED_VERSIONS | awk '{print$1}')
+          done < <(grep -v '^#' <RELEASED_VERSIONS | awk '{print$1}' | sort | uniq)
 
           for i in "${HOME}/kobuild-tmp/versions-src"/*.tgz; do
             filename="$(basename "$i")"
