@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# This script reads a list of kernel module file names, one per line, and outputs the respective kernel versions
+# according to the default naming scheme (i.e., `.../collector-$(uname -r).ko`, with an optional `.gz` suffix).
+
+sed -ne 's@^.*/collector-\([^/]\{1,\}\)\.ko\(\.gz\)\{0,1\}$@\1@p'

@@ -1,1 +1,6 @@
-1.6.0-78-g96039fd8  # Test for Proof of concept - this `stackrox-changes-tag-0.20.0`
+# This file contains the collector versions that are used in Rox releases.
+# Lines starting with a # character are ignored. In general, only the first token in each line is taken into account.
+# Still, it is good practice to prefix any comments with a # character.
+# IMPORTANT: THIS FILE ALWAYS NEEDS TO END WITH A NEWLINE CHARACTER
+
+1.6.0-61-g3470d501f8  # Manual entry created for release 2.3.16.1 (Feb 20, 2019)
