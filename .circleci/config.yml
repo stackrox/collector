@@ -134,6 +134,37 @@ jobs:
           EOF
 
     - run:
+        name: Prepare legacy sources
+        command: |
+          cd "$SOURCE_ROOT"
+          if [[ ! -f RELEASED_VERSIONS ]]; then
+            echo "RELEASED_VERSIONS" file does not exist, nothing to do here!"
+          fi
+
+          while IFS='' read -r line || [[ -n "$line" ]]; do
+            [[ -n "$line" ]] || continue
+
+            collector_ref="$line"
+            echo "Preparing module source archive for collector version "$collector_ref"
+
+            mkdir -p /tmp/old-sysdig
+            git checkout --work-tree /tmp/old-sysdig "$collector_ref" -- sysdig/src
+            SYSDIG_DIR="/tmp/old-sysdig/sysdig/src" \
+                SCRATCH_DIR="${HOME}/scratch" \
+                OUTPUT_DIR="${HOME}/kobuild-tmp/versions-src" \
+              ./kernel-modules/build/prepare-src
+
+            rm -rf /tmp/old-sysdig
+          done < <(grep -v '^#' <RELEASED_VERSIONS | awk '{print$1}')
+
+          for i in "${HOME}/kobuild-tmp/versions-src"/*.tgz; do
+            filename="$(basename "$i")"
+            version="${i%.tgz}"
+            [[ "$version" != "$MODULE_VERSION" ]] || continue
+            echo "Building modules for legacy module version $version"
+          done
+
+    - run:
         name: Prepare Kernel module build cache lookup
         command: |
           mkdir -p /tmp/cache
@@ -158,7 +189,7 @@ jobs:
             || true
 
     - run:
-        name: Compile list of cached modules
+        name: Unpack module sources
         command: |
           mkdir -p "${WORKSPACE_ROOT}/ko-build"
           cd "${WORKSPACE_ROOT}/ko-build"
@@ -172,6 +203,23 @@ jobs:
             ( ls "${WORKSPACE_ROOT}/ko-build/build-output/${version}"/*.ko{,.gz} || true ) \
               | sed -ne 's@^.*/collector-\([^/]\{1,\}\)\.ko\(\.gz\)\{0,1\}$@\1@p' \
               >~/kobuild-tmp/existing-modules-"${version}"
+          done
+
+    - run:
+        name: Compile list of cached modules for CURRENT module version
+        command: |
+          ( ls "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/*.ko{,.gz} || true ) \
+            | sed -ne 's@^.*/collector-\([^/]\{1,\}\)\.ko\(\.gz\)\{0,1\}$@\1@p' \
+            >~/kobuild-tmp/existing-modules-"${MODULE_VERSION}"
+
+    - run:
+        name: Compile list of existing modules for LEGACY module versions
+        command: |
+          for i in "${WORKSPACE_ROOT}/ko-build/build-output"/*/; do
+            version="$(basename "$i")"
+            gsutil ls "${COLLECTOR_MODULES_BUCKET}/${version}/" \
+              | sed -ne 's@^.*/collector-\([^/]\{1,\}\)\.ko\(\.gz\)\{0,1\}$@\1@p' \
+                >~/kobuild-tmp/existing-modules-"${version}"
           done
 
     - run:
@@ -548,8 +596,8 @@ jobs:
           name: Uploading Kernel modules
           command: |
             gsutil -m rsync -r \
-              "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}/" \
-              "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/"
+              "${WORKSPACE_ROOT}/ko-build/build-output/" \
+              "${COLLECTOR_MODULES_BUCKET}/"
 
       - run:
           name: Sanity check
