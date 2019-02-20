@@ -1,26 +1,3 @@
-/** collector
-
-A full notice with attributions is provided along with this source code.
-
-This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License version 2 as published by the Free Software Foundation.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-* In addition, as a special exception, the copyright holders give
-* permission to link the code of portions of this program with the
-* OpenSSL library under certain conditions as described in each
-* individual source file, and distribute linked combinations
-* including the two.
-* You must obey the GNU General Public License in all respects
-* for all of the code used other than OpenSSL.  If you modify
-* file(s) with this exception, you may extend this exception to your
-* version of the file(s), but you are not obligated to do so.  If you
-* do not wish to do so, delete this exception statement from your
-* version.
-*/
-
 /*
 Copyright (C) 2013-2014 Draios inc.
 
@@ -340,27 +317,5 @@ const struct ppm_event_info g_event_info[PPM_EVENT_MAX] = {
 	/* PPME_SYSCALL_BPF_E */{"bpf", EC_OTHER, EF_CREATES_FD, 1, {{"cmd", PT_INT64, PF_DEC} } },
 	/* PPME_SYSCALL_BPF_X */{"bpf", EC_OTHER, EF_CREATES_FD, 1, {{"res", PT_DYN, PF_DEC, bpf_dynamic_param, PPM_BPF_IDX_MAX} }},
 	/* PPME_SYSCALL_SECCOMP_E */{"seccomp", EC_OTHER, EF_NONE, 1, {{"op", PT_UINT64, PF_DEC}, {"flags", PT_UINT64, PF_HEX} } },
-	/* PPME_SYSCALL_SECCOMP_X */{"seccomp", EC_OTHER, EF_NONE, 1, {{"res", PT_ERRNO, PF_DEC} } },
-	/* PPME_SYSCALL_INIT_MODULE_E */{"init_module", EC_PROCESS, EF_MODIFIES_STATE, 3, {{"module_image", PT_UINT64, PF_HEX}, {"len", PT_UINT64, PF_DEC}, {"param_values", PT_CHARBUF, PF_NA} }},
-	/* PPME_SYSCALL_INIT_MODULE_X */{"init_module", EC_PROCESS, EF_MODIFIES_STATE, 1, {{"res", PT_ERRNO, PF_DEC} } },
-	/* PPME_SYSCALL_FINIT_MODULE_E */{"finit_module", EC_PROCESS, EF_MODIFIES_STATE, 3, {{"fd", PT_FD, PF_DEC}, {"param_values", PT_CHARBUF, PF_NA}, {"flags", PT_FLAGS32, PF_HEX} }},
-	/* PPME_SYSCALL_FINIT_MODULE_X */{"finit_module", EC_PROCESS, EF_MODIFIES_STATE, 1, {{"res", PT_ERRNO, PF_DEC} } },
-	/* PPME_SYSCALL_DELETE_MODULE_E */{"delete_module", EC_PROCESS, EF_MODIFIES_STATE, 2, {{"name", PT_CHARBUF, PF_NA}, {"flags", PT_FLAGS32, PF_HEX} }},
-	/* PPME_SYSCALL_DELETE_MODULE_X */{"delete_module", EC_PROCESS, EF_MODIFIES_STATE, 1, {{"res", PT_ERRNO, PF_DEC} } },
-	/* PPME_SYSCALL_CAPSET_E */{"capset", EC_PROCESS, EF_MODIFIES_STATE, 2, {{"hdrp", PT_UINT64, PF_HEX}, {"datap", PT_UINT64, PF_HEX} }},
-        /* PPME_SYSCALL_CAPSET_X */{"capset", EC_PROCESS, EF_MODIFIES_STATE, 1, {{"res", PT_ERRNO, PF_DEC} } },
-	/* PPME_SYSCALL_CHOWN_E */{"chown", EC_FILE, EF_NONE, 2, {{"owner", PT_UID, PF_DEC}, {"group", PT_GID, PF_DEC} } },
-	/* PPME_SYSCALL_CHOWN_X */{"chown", EC_FILE, EF_NONE, 2, {{"res", PT_ERRNO, PF_DEC}, {"pathname", PT_FSPATH, PF_NA} } },
-	/* PPME_SYSCALL_LCHOWN_E */{"lchown", EC_FILE, EF_NONE, 2, {{"owner", PT_UID, PF_DEC}, {"group", PT_GID, PF_DEC} } },
-	/* PPME_SYSCALL_LCHOWN_X */{"lchown", EC_FILE, EF_NONE, 2, {{"res", PT_ERRNO, PF_DEC}, {"pathname", PT_FSPATH, PF_NA} } },
-	/* PPME_SYSCALL_FCHOWN_E */{"fchown", EC_FILE, EF_USES_FD, 3, {{"fd", PT_FD, PF_DEC}, {"owner", PT_UID, PF_DEC}, {"group", PT_GID, PF_DEC} } },
-	/* PPME_SYSCALL_FCHOWN_X */{"fchown", EC_FILE, EF_USES_FD, 1, {{"res", PT_ERRNO, PF_DEC} } },
-	/* PPME_SYSCALL_FCHOWNAT_E */{"fchownat", EC_FILE, EF_USES_FD, 4, {{"dirfd", PT_FD, PF_DEC}, {"owner", PT_UID, PF_DEC}, {"group", PT_GID, PF_DEC}, {"flags", PT_FLAGS32, PF_HEX, chown_chmod_flags} } },
-	/* PPME_SYSCALL_FCHOWNAT_X */{"fchownat", EC_FILE, EF_USES_FD, 2, {{"res", PT_ERRNO, PF_DEC}, {"pathname", PT_FSPATH, PF_NA} } },
-	/* PPME_SYSCALL_CHMOD_E */{"chmod", EC_FILE, EF_NONE, 1, {{"mode", PT_UINT32, PF_OCT} } },
-	/* PPME_SYSCALL_CHMOD_X */{"chmod", EC_FILE, EF_NONE, 2, {{"res", PT_ERRNO, PF_DEC}, {"pathname", PT_FSPATH, PF_NA} } },
-	/* PPME_SYSCALL_FCHMOD_E */{"fchmod", EC_FILE, EF_USES_FD, 2, {{"fd", PT_FD, PF_DEC}, {"mode", PT_UINT32, PF_OCT} } },
-	/* PPME_SYSCALL_FCHMOD_X */{"fchmod", EC_FILE, EF_USES_FD, 1, {{"res", PT_ERRNO, PF_DEC} } },
-	/* PPME_SYSCALL_FCHMODAT_E */{"fchmodat", EC_FILE, EF_USES_FD, 3, {{"dirfd", PT_FD, PF_DEC}, {"mode", PT_UINT32, PF_OCT}, {"flags", PT_FLAGS32, PF_HEX, chown_chmod_flags} } },
-	/* PPME_SYSCALL_FCHMODAT_X */{"fchmodat", EC_FILE, EF_USES_FD, 2, {{"res", PT_ERRNO, PF_DEC}, {"pathname", PT_FSPATH, PF_NA} } }
+	/* PPME_SYSCALL_SECCOMP_X */{"seccomp", EC_OTHER, EF_NONE, 1, {{"res", PT_ERRNO, PF_DEC} } }
 };
