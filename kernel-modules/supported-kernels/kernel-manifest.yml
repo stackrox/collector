@@ -49,6 +49,8 @@ amazon:
       - http://amazonlinux.us-west-2.amazonaws.com/blobstore/5d873815f1dd6d7cc1daf1e7beac5f0272fea77f7a4cd6668e930311a1265cd3/kernel-devel-4.14.77-80.57.amzn2.x86_64.rpm
       4.14.77-81.59:
       - http://amazonlinux.us-west-2.amazonaws.com/blobstore/b73a5a824bd1eb23522128573839e862d4d89ef8d544371b7c2bc3ae4730125b/kernel-devel-4.14.77-81.59.amzn2.x86_64.rpm
+      4.14.97-90.72:
+      - http://amazonlinux.us-west-2.amazonaws.com/blobstore/346eda9496f9685e6faf173f13b05b91f9939ad5e0cdec4bddd5fa781304fa78/kernel-devel-4.14.97-90.72.amzn2.x86_64.rpm
 
 centos:
   description: CentOS kernels
@@ -93,6 +95,12 @@ centos:
       - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.165-1.el7.elrepo.x86_64.rpm
       4.4.166-1:
       - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.166-1.el7.elrepo.x86_64.rpm
+      4.4.172-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.172-1.el7.elrepo.x86_64.rpm
+      4.4.173-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.173-1.el7.elrepo.x86_64.rpm
+      4.4.174-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.174-1.el7.elrepo.x86_64.rpm
     el7.x86_64:
       3.10.0-514:
       - http://vault.centos.org/7.3.1611/os/x86_64/Packages/kernel-devel-3.10.0-514.el7.x86_64.rpm
@@ -152,6 +160,8 @@ centos:
       - https://mirrors.kernel.org/centos/7.6.1810/os/x86_64/Packages/kernel-devel-3.10.0-957.el7.x86_64.rpm
       3.10.0-957.1.3:
       - https://mirrors.kernel.org/centos/7.6.1810/updates/x86_64/Packages/kernel-devel-3.10.0-957.1.3.el7.x86_64.rpm
+      3.10.0-957.5.1:
+      - https://mirrors.kernel.org/centos/7.6.1810/updates/x86_64/Packages/kernel-devel-3.10.0-957.5.1.el7.x86_64.rpm
 
 centos-uncrawled:
   description: CentOS uncrawled kernels
@@ -244,6 +254,12 @@ centos-uncrawled:
       - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.145-1.el7.elrepo.x86_64.rpm
       4.4.146-1:
       - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.146-1.el7.elrepo.x86_64.rpm
+      4.4.160-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.160-1.el7.elrepo.x86_64.rpm
+      4.4.161-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.161-1.el7.elrepo.x86_64.rpm
+      4.4.159-1:
+      - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.159-1.el7.elrepo.x86_64.rpm
       4.4.76-1:
       - http://ftp.utexas.edu/elrepo/archive/kernel/el7/x86_64/RPMS/kernel-lt-devel-4.4.76-1.el7.elrepo.x86_64.rpm
       4.4.77-1:
@@ -665,6 +681,9 @@ ubuntu-aws:
       4.15.0-1029:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.15.0-1029_4.15.0-1029.30_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.15.0-1029-aws_4.15.0-1029.30_amd64.deb
+      4.15.0-1033:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.15.0-1033_4.15.0-1033.35_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.15.0-1033-aws_4.15.0-1033.35_amd64.deb
       4.4.0-1013:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1013_4.4.0-1013.22_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1013-aws_4.4.0-1013.22_amd64.deb
@@ -779,6 +798,9 @@ ubuntu-aws:
       4.4.0-1074:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1074_4.4.0-1074.84_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1074-aws_4.4.0-1074.84_amd64.deb
+      4.4.0-1076:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1076_4.4.0-1076.86_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1076-aws_4.4.0-1076.86_amd64.deb
       4.4.0-1001:
       - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-aws-headers-4.4.0-1001_4.4.0-1001.10_all.deb
       - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-aws/linux-headers-4.4.0-1001-aws_4.4.0-1001.10_amd64.deb
@@ -929,6 +951,9 @@ ubuntu-azure:
       4.15.0-1032:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.15.0-1032_4.15.0-1032.33_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.15.0-1032-azure_4.15.0-1032.33_amd64.deb
+      4.15.0-1039:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-headers-4.15.0-1039-azure_4.15.0-1039.43_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-azure/linux-azure-headers-4.15.0-1039_4.15.0-1039.43_all.deb
 
 ubuntu-gcp:
   description: Ubuntu GCP Kernels
@@ -977,6 +1002,9 @@ ubuntu-gcp:
       4.15.0-1026:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-gcp-headers-4.15.0-1026_4.15.0-1026.27_amd64.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-headers-4.15.0-1026-gcp_4.15.0-1026.27_amd64.deb
+      4.15.0-1028:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-gcp-headers-4.15.0-1028_4.15.0-1028.29_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-gcp/linux-headers-4.15.0-1028-gcp_4.15.0-1028.29_amd64.deb
       4.10.0-1004:
       - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-gcp-headers-4.10.0-1004_4.10.0-1004.4_all.deb
       - http://security.ubuntu.com/ubuntu/pool/universe/l/linux-gcp/linux-headers-4.10.0-1004-gcp_4.10.0-1004.4_amd64.deb
@@ -1139,12 +1167,25 @@ ubuntu-standard:
       4.15.0-43:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-43-generic_4.15.0-43.46_amd64.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-43_4.15.0-43.46_all.deb
+      4.15.0-45:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-45-generic_4.15.0-45.48_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-45_4.15.0-45.48_all.deb
+      4.15.0-46:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-46-generic_4.15.0-46.49_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-46_4.15.0-46.49_all.deb
+
+
 #      4.19.0-7:
 #      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.19.0-7-generic_4.19.0-7.8_amd64.deb
 #      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.19.0-7_4.19.0-7.8_all.deb
 #      4.19.0-8:
 #      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.19.0-8-generic_4.19.0-8.9_amd64.deb
 #      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.19.0-8_4.19.0-8.9_all.deb
+      4.19.0-11:
+        -
+      4.19.0-13:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.19.0-13-generic_4.19.0-13.14_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.19.0-13_4.19.0-13.14_all.deb
       4.4.0-101:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-101-generic_4.4.0-101.124_amd64.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-101_4.4.0-101.124_all.deb
@@ -1214,6 +1255,9 @@ ubuntu-standard:
       4.4.0-141:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-141-generic_4.4.0-141.167_amd64.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-141_4.4.0-141.167_all.deb
+      4.4.0-143:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-143-generic_4.4.0-143.169_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-143_4.4.0-143.169_all.deb
       4.4.0-21:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-21-generic_4.4.0-21.37_amd64.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.4.0-21_4.4.0-21.37_all.deb
