@@ -212,6 +212,7 @@ jobs:
             | sed -ne 's@^.*/collector-\([^/]\{1,\}\)\.ko\(\.gz\)\{0,1\}$@\1@p' \
             >~/kobuild-tmp/existing-modules-"${MODULE_VERSION}"
 
+    - gcloud-init
     - run:
         name: Compile list of existing modules for LEGACY module versions
         command: |
