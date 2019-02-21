@@ -51,6 +51,14 @@ amazon:
       - http://amazonlinux.us-west-2.amazonaws.com/blobstore/b73a5a824bd1eb23522128573839e862d4d89ef8d544371b7c2bc3ae4730125b/kernel-devel-4.14.77-81.59.amzn2.x86_64.rpm
       4.14.97-90.72:
       - http://amazonlinux.us-west-2.amazonaws.com/blobstore/346eda9496f9685e6faf173f13b05b91f9939ad5e0cdec4bddd5fa781304fa78/kernel-devel-4.14.97-90.72.amzn2.x86_64.rpm
+      4.14.88-88.76:
+      - http://amazonlinux.us-west-2.amazonaws.com/blobstore/6eba5df81c75bbf2615acc62a5738f22f20af51dfc775f24dea82d8dd7848270/kernel-devel-4.14.88-88.76.amzn2.x86_64.rpm
+      4.14.94-89.73:
+      - http://amazonlinux.us-west-2.amazonaws.com/blobstore/1d59b2e7fcf853883167dde06fad6267cce308b8f2f33124cdb4b747a518ac5c/kernel-devel-4.14.94-89.73.amzn2.x86_64.rpm
+      4.14.88-88.73:
+      - http://amazonlinux.us-west-2.amazonaws.com/blobstore/553e60923b1173b225de6618cf7625b197f2a69dbec3c4dea19b2e64a6b93b5c/kernel-devel-4.14.88-88.73.amzn2.x86_64.rpm
+      4.14.77-86.82:
+      - http://amazonlinux.us-west-2.amazonaws.com/blobstore/9f388164ea775e7a6c36c8628bb9a66a47d9fe27c99e732a210f357e1213dda7/kernel-devel-4.14.77-86.82.amzn2.x86_64.rpm
 
 centos:
   description: CentOS kernels
