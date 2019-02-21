@@ -33,6 +33,7 @@ namespace collector {
 struct CollectorConfig {
   bool useChiselCache = true;
   int snapLen = 2048;
+  int scrape_interval;
 
   std::string hostname;
   std::string chisel;

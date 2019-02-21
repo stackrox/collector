@@ -72,6 +72,11 @@ void CollectorService::RunForever() {
 
   std::unique_ptr<NetworkStatusNotifier> net_status_notifier;
 
+  if (config_.scrape_interval == 0) {
+    config_.scrape_interval = 30;
+  }
+  CLOG(INFO) << "Network scrape interval set to " << config_.scrape_interval << " seconds";
+
   if (config_.grpc_channel) {
     CLOG(INFO) << "Waiting for GRPC server to become ready ...";
     if (!WaitForGRPCServer()) {
@@ -81,7 +86,7 @@ void CollectorService::RunForever() {
     CLOG(INFO) << "GRPC server connectivity is successful";
 
     conn_tracker = std::make_shared<ConnectionTracker>();
-    net_status_notifier = MakeUnique<NetworkStatusNotifier>(config_.hostname, config_.host_proc, conn_tracker, config_.grpc_channel);
+    net_status_notifier = MakeUnique<NetworkStatusNotifier>(config_.hostname, config_.host_proc, config_.scrape_interval, conn_tracker, config_.grpc_channel);
     net_status_notifier->Start();
   }
 

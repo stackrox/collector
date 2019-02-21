@@ -333,6 +333,7 @@ int main(int argc, char **argv) {
   CollectorConfig config;
   config.hostname = GetHostname();
   config.host_proc = GetHostPath("/proc");
+  config.scrape_interval = collectorConfig["scrapeInterval"].asInt();
   config.snapLen = 0;
   config.useChiselCache = useChiselCache;
   config.chisel = chisel;

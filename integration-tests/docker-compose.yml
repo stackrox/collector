@@ -6,7 +6,7 @@ services:
     image: "stackrox/collector:${COLLECTOR_TAG}"
     environment:
     - "GRPC_SERVER=grpc-server:9999"
-    - 'COLLECTOR_CONFIG={"syscalls":["execve"],"generic_syscalls":["execve"],"useChiselCache":true,"signalOutput":"grpc","signalFormat":"signal_summary"}'
+    - 'COLLECTOR_CONFIG={"syscalls":["execve"],"generic_syscalls":["execve"],"useChiselCache":true,"signalOutput":"grpc","signalFormat":"signal_summary","scrapeInterval":"3000"}'
     restart: always
     privileged: true
     networks:
