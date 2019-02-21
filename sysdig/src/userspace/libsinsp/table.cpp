@@ -1,19 +1,20 @@
 /*
-Copyright (C) 2013-2014 Draios inc.
+Copyright (C) 2013-2018 Draios Inc dba Sysdig.
 
 This file is part of sysdig.
 
-sysdig is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 2 as
-published by the Free Software Foundation.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-sysdig is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-You should have received a copy of the GNU General Public License
-along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
 */
 
 #include <algorithm>
@@ -517,6 +518,7 @@ void sinsp_table::process_proctable(sinsp_evt* evt)
 	//
 	tscapevt.type = PPME_SYSDIGEVENT_X;
 	tscapevt.len = 0;
+	tscapevt.nparams = 0;
 
 	tevt.m_inspector = m_inspector;
 	tevt.m_info = &(g_infotables.m_event_info[PPME_SYSDIGEVENT_X]);
@@ -526,21 +528,21 @@ void sinsp_table::process_proctable(sinsp_evt* evt)
 	tevt.m_pevt = &tscapevt;
 	tevt.m_fdinfo = NULL;
 
-	for(auto it = threadtable->begin(); it != threadtable->end(); ++it)
-	{
-		tevt.m_tinfo = &it->second;
+	threadtable->loop([&] (sinsp_threadinfo& tinfo) {
+		tevt.m_tinfo = &tinfo;
 		tscapevt.tid = tevt.m_tinfo->m_tid;
 
 		if(m_filter)
 		{
 			if(!m_filter->run(&tevt))
 			{
-				continue;
+				return true;
 			}
 		}
 
 		process_event(&tevt);
-	}
+		return true;
+	});
 }
 
 void sinsp_table::flush(sinsp_evt* evt)
@@ -739,6 +741,7 @@ void sinsp_table::filter_sample()
 
 			if(type == PT_CHARBUF || type == PT_BYTEBUF || type == PT_SYSCALLID ||
 				type == PT_PORT || type == PT_L4PROTO || type == PT_SOCKFAMILY || type == PT_IPV4ADDR ||
+			        type == PT_IPV6ADDR ||
 				type == PT_UID || type == PT_GID)
 			{
 				m_printer->set_val(type, 
@@ -785,6 +788,7 @@ sinsp_table_field* sinsp_table::search_in_sample(string text)
 
 			if(type == PT_CHARBUF || type == PT_BYTEBUF || type == PT_SYSCALLID ||
 				type == PT_PORT || type == PT_L4PROTO || type == PT_SOCKFAMILY || type == PT_IPV4ADDR ||
+			        type == PT_IPV6ADDR ||
 				type == PT_UID || type == PT_GID)
 			{
 				m_printer->set_val(type,
@@ -1434,6 +1438,18 @@ uint32_t sinsp_table::get_field_len(uint32_t id)
 		return fld->m_len;
 	case PT_DOUBLE:
 		return sizeof(double);
+	case PT_IPV6ADDR:
+		return sizeof(ipv6addr);
+	case PT_IPADDR:
+	case PT_IPNET:
+		if(fld->m_len == sizeof(struct in_addr))
+		{
+			return 4;
+		}
+		else
+		{
+			return sizeof(ipv6addr);
+		}
 	case PT_SOCKADDR:
 	case PT_SOCKTUPLE:
 	case PT_FDLIST:
@@ -1473,6 +1489,7 @@ uint8_t* sinsp_table::get_default_val(filtercheck_field_info* fld)
 			return (uint8_t*)&m_zero_u64;
 	case PT_PORT:
 	case PT_IPV4ADDR:
+	case PT_IPV6ADDR:
 		return NULL;
 	default:
 		ASSERT(false);

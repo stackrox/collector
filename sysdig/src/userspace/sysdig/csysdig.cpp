@@ -1,19 +1,20 @@
 /*
-Copyright (C) 2013-2014 Draios inc.
+Copyright (C) 2013-2018 Draios Inc dba Sysdig.
 
 This file is part of sysdig.
 
-sysdig is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 2 as
-published by the Free Software Foundation.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-sysdig is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-You should have received a copy of the GNU General Public License
-along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
 */
 
 #define __STDC_FORMAT_MACROS
@@ -72,6 +73,11 @@ static void usage()
 " -A, --print-ascii  When emitting JSON, only print the text portion of data buffers, and echo\n"
 "                    end-of-lines. This is useful to only display human-readable\n"
 "                    data.\n"
+" -B<bpf_probe>, --bpf=<bpf_probe>\n"
+"                    Enable live capture using the specified BPF probe instead of the kernel module.\n"
+"                    The BPF probe can also be specified via the environment variable\n"
+"                    SYSDIG_BPF_PROBE. If <bpf_probe> is left empty, sysdig will\n"
+"                    try to load one from the sysdig-probe-loader script.\n"
 " -d <period>, --delay=<period>\n"
 "                    Set the delay between updates, in milliseconds. This works\n"
 "                    similarly to the -d option in top.\n"
@@ -106,6 +112,12 @@ static void usage()
 "                    ':' or '#' characters in the file name.\n"
 "                    Option can also be provided via the environment variable SYSDIG_K8S_API_CERT.\n"
 " -l, --list         List all the fields that can be used in views.\n"
+" --large-environment\n"
+"                    Support environments larger than 4KiB\n"
+"                    When the environment is larger than 4KiB, load the whole\n"
+"                    environment from /proc instead of truncating to the first 4KiB\n"
+"                    This may fail for short-lived processes and in that case\n"
+"                    the truncated environment is used instead.\n"
 " --logfile=<file>\n"
 "                    Print program logs into the given file.\n"
 " -n <num>, --numevents=<num>\n"
@@ -299,6 +311,8 @@ sysdig_init_res csysdig_init(int argc, char **argv)
 	int32_t json_last_row = 0;
 	int32_t sorting_col = -1;
 	bool list_views = false;
+	bool bpf = false;
+	string bpf_probe;
 
 #ifndef _WIN32
 	sinsp_table::output_type output_type = sinsp_table::OT_CURSES;
@@ -313,10 +327,11 @@ sysdig_init_res csysdig_init(int argc, char **argv)
 	bool force_term_compat = false;
 	sinsp_evt::param_fmt event_buffer_format = sinsp_evt::PF_NORMAL;
 	bool page_faults = false;
-	
+
 	static struct option long_options[] =
 	{
 		{"print-ascii", no_argument, 0, 'A' },
+		{"bpf", optional_argument, 0, 'B' },
 		{"delay", required_argument, 0, 'd' },
 		{"exclude-users", no_argument, 0, 'E' },
 		{"from", required_argument, 0, 0 },
@@ -325,6 +340,7 @@ sysdig_init_res csysdig_init(int argc, char **argv)
 		{"k8s-api-cert", required_argument, 0, 'K' },
 		{"json", no_argument, 0, 'j' },
 		{"interactive", optional_argument, 0, 0 },
+		{"large-environment", no_argument, 0, 0 },
 		{"list", optional_argument, 0, 'l' },
 		{"list-views", no_argument, 0, 0},
 		{"mesos-api", required_argument, 0, 'm'},
@@ -361,13 +377,13 @@ sysdig_init_res csysdig_init(int argc, char **argv)
 		// Parse the args
 		//
 		while((op = getopt_long(argc, argv,
-			"Ad:Ehk:K:jlm:n:p:Rr:s:Tv:X", long_options, &long_index)) != -1)
+			"AB::d:Ehk:K:jlm:n:p:Rr:s:Tv:X", long_options, &long_index)) != -1)
 		{
 			switch(op)
 			{
 			case '?':
 				//
-				// Command line error 
+				// Command line error
 				//
 				throw sinsp_exception("command line error");
 				break;
@@ -381,6 +397,15 @@ sysdig_init_res csysdig_init(int argc, char **argv)
 
 				event_buffer_format = sinsp_evt::PF_EOLS_COMPACT;
 				break;
+			case 'B':
+			{
+				bpf = true;
+				if(optarg)
+				{
+					bpf_probe = optarg;
+				}
+				break;
+			}
 			case 'd':
 				try
 				{
@@ -490,6 +515,10 @@ sysdig_init_res csysdig_init(int argc, char **argv)
 						is_interactive = true;
 						output_type = sinsp_table::OT_JSON;
 					}
+					else if(optname == "large-environment")
+					{
+						inspector->set_large_envs(true);
+					}
 					else if(optname == "logfile")
 					{
 						inspector->set_log_file(optarg);
@@ -561,6 +590,21 @@ sysdig_init_res csysdig_init(int argc, char **argv)
 			res.m_res = EXIT_FAILURE;
 			goto exit;
 #endif
+		}
+
+		if(!bpf)
+		{
+			const char *probe = scap_get_bpf_probe_from_env();
+			if(probe)
+			{
+				bpf = true;
+				bpf_probe = probe;
+			}
+		}
+
+		if(bpf)
+		{
+			inspector->set_bpf_probe(bpf_probe);
 		}
 
 		if(signal(SIGINT, signal_callback) == SIG_ERR)
@@ -658,8 +702,8 @@ sysdig_init_res csysdig_init(int argc, char **argv)
 
 				if(output_type != sinsp_table::OT_JSON)
 				{
-					if(std::find(it.m_viewinfo.m_tags.begin(), 
-						it.m_viewinfo.m_tags.end(), 
+					if(std::find(it.m_viewinfo.m_tags.begin(),
+						it.m_viewinfo.m_tags.end(),
 						"nocsysdig") != it.m_viewinfo.m_tags.end())
 					{
 						continue;
@@ -689,14 +733,14 @@ sysdig_init_res csysdig_init(int argc, char **argv)
 			//
 			// Initialize the UI
 			//
-			sinsp_cursesui ui(inspector, 
+			sinsp_cursesui ui(inspector,
 				(infiles.size() != 0)? infiles[0] : "",
 				(filter.size() != 0)? filter : "",
 				refresh_interval_ns,
 				print_containers,
 				output_type,
 				terminal_with_mouse,
-				json_first_row, 
+				json_first_row,
 				json_last_row,
 				sorting_col,
 				event_buffer_format);
@@ -750,7 +794,7 @@ sysdig_init_res csysdig_init(int argc, char **argv)
 				//
 #if defined(HAS_CAPTURE)
 				bool open_success = true;
-				
+
 				try
 				{
 					inspector->open("");
@@ -768,9 +812,22 @@ sysdig_init_res csysdig_init(int argc, char **argv)
 				{
 					open_success = true;
 
-					if(system("modprobe " PROBE_NAME " > /dev/null 2> /dev/null"))
+					if(bpf)
 					{
-						fprintf(stderr, "Unable to load the driver\n");
+						if(bpf_probe.empty())
+						{
+							if(system("sysdig-probe-loader bpf"))
+							{
+								fprintf(stderr, "Unable to load the BPF probe\n");
+							}
+						}
+					}
+					else
+					{
+						if(system("modprobe " PROBE_NAME " > /dev/null 2> /dev/null"))
+						{
+							fprintf(stderr, "Unable to load the driver\n");
+						}
 					}
 
 					inspector->open("");
@@ -897,6 +954,11 @@ sysdig_init_res csysdig_init(int argc, char **argv)
 	}
 	catch(sinsp_capture_interrupt_exception&)
 	{
+	}
+	catch(sinsp_exception& e)
+	{
+		errorstr = e.what();
+		res.m_res = e.scap_rc();
 	}
 	catch(std::exception& e)
 	{

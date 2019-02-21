@@ -1,19 +1,20 @@
 /*
-Copyright (C) 2013-2014 Draios inc.
+Copyright (C) 2013-2018 Draios Inc dba Sysdig.
 
 This file is part of sysdig.
 
-sysdig is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 2 as
-published by the Free Software Foundation.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-sysdig is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-You should have received a copy of the GNU General Public License
-along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
 */
 
 /*!
@@ -108,7 +109,9 @@ class sinsp_analyzer;
 class sinsp_filter;
 class cycle_writer;
 class sinsp_protodecoder;
+#ifndef CYGWING_AGENT
 class k8s;
+#endif
 class sinsp_partial_tracer;
 class mesos;
 
@@ -175,12 +178,24 @@ struct sinsp_exception : std::exception
 		m_error_str = error_str;
 	}
 
+	sinsp_exception(string error_str, int32_t scap_rc)
+	{
+		m_error_str = error_str;
+		m_scap_rc = scap_rc;
+	}
+
 	char const* what() const throw()
 	{
 		return m_error_str.c_str();
 	}
 
+	int32_t scap_rc()
+	{
+		return m_scap_rc;
+	}
+
 	string m_error_str;
+	int32_t m_scap_rc;
 };
 
 /*!
@@ -377,6 +392,7 @@ public:
 
 	void add_evttype_filter(std::string &name,
 				std::set<uint32_t> &evttypes,
+				std::set<uint32_t> &syscalls,
 				std::set<std::string> &tags,
 				sinsp_filter* filter);
 
@@ -493,6 +509,7 @@ public:
 	   of failure.
 	*/
 	sinsp_threadinfo* get_thread(int64_t tid, bool query_os_if_not_found, bool lookup_only);
+	threadinfo_map_t::ptr_t get_thread_ref(int64_t tid, bool query_os_if_not_found, bool lookup_only);
 
 	/*!
 	  \brief Return the table with all the machine users.
@@ -505,6 +522,18 @@ public:
 	   user list is the one of the machine where the capture happened.
 	*/
 	const unordered_map<uint32_t, scap_userinfo*>* get_userlist();
+
+	/*!
+	  \brief Lookup for user in the user table.
+
+ 	  \return the \ref scap_userinfo object containing full user information,
+ 	   if user not found, returns NULL.
+
+ 	  \note this call works with file captures as well, because the user
+	   table is stored in the trace files. In that case, the returned
+	   user list is the one of the machine where the capture happened.
+	*/
+	scap_userinfo* get_user(uint32_t uid);
 
 	/*!
 	  \brief Return the table with all the machine user groups.
@@ -526,6 +555,7 @@ public:
 	*/
 	void get_capture_stats(scap_stats* stats);
 
+	void set_max_thread_table_size(uint32_t value);
 
 #ifdef GATHER_INTERNAL_STATS
 	sinsp_stats get_stats();
@@ -564,7 +594,7 @@ public:
 	/*!
 	  \brief Get the list of machine network interfaces.
 
-	  \return Pointer to the iterface list manager.
+	  \return Pointer to the interface list manager.
 	*/
 	sinsp_network_interfaces* get_ifaddr_list();
 
@@ -602,12 +632,29 @@ public:
 	}
 
 	/*!
-	  \brief Returns true if the current capture is live
+	  \brief Returns true if the sysdig module is not loaded
 	*/
 	inline bool is_nodriver()
 	{
 		return m_mode == SCAP_MODE_NODRIVER;
 	}
+
+	/*!
+	  \brief Returns true if truncated environments should be loaded from /proc
+	*/
+	inline bool large_envs_enabled()
+	{
+		return is_live() && m_large_envs_enabled;
+	}
+
+	/*!
+	  \brief Enable/disable large environment support
+
+	  \param enable when it is true and the current capture is live
+	  environments larger than SCAP_MAX_ENV_SIZE will be loaded
+	  from /proc/<pid>/environ (if possible)
+	*/
+	void set_large_envs(bool enable);
 
 	/*!
 	  \brief Set the debugging mode of the inspector.
@@ -666,7 +713,7 @@ public:
 	/*!
 	  \brief Sets the max length of event argument strings.
 
-	  \param len Max length after which an avent argument string is truncated.
+	  \param len Max length after which an event argument string is truncated.
 	   0 means no limit. Use this to reduce verbosity when printing event info
 	   on screen.
 	*/
@@ -683,7 +730,7 @@ public:
 	/*!
 	  \brief Set a flag indicating if the command line requested to show container information.
 
-	  \param set true if the command line arugment is set to show container information
+	  \param set true if the command line argument is set to show container information
 	*/
 	void set_print_container_data(bool print_container_data);
 
@@ -722,7 +769,7 @@ public:
 	/*!
 	  \brief If this is an online capture, set event_id.
 	  \param event type to set
-	  \return SCAP_SUCCESS if the call is succesful
+	  \return SCAP_SUCCESS if the call is successful
 	   On Failure, SCAP_FAILURE is returned and getlasterr() can be used to
 	   obtain the cause of the error.
 
@@ -733,7 +780,7 @@ public:
 	/*!
 	  \brief If this is an online capture, unset event_id.
 	  \param event type to unset
-	  \return SCAP_SUCCESS if the call is succesful
+	  \return SCAP_SUCCESS if the call is successful
 	   On Failure, SCAP_FAILURE is returned and getlasterr() can be used to
 	   obtain the cause of the error.
 
@@ -747,6 +794,7 @@ public:
 	*/
 	double get_read_progress();
 
+#ifndef CYGWING_AGENT
 	void init_k8s_ssl(const string *ssl_cert);
 	void init_k8s_client(string* api_server, string* ssl_cert, bool verbose = false);
 	void make_k8s_client();
@@ -754,14 +802,15 @@ public:
 
 	void init_mesos_client(string* api_server, bool verbose = false);
 	mesos* get_mesos_client() const { return m_mesos_client; }
+#endif
 
 	//
 	// Misc internal stuff
 	//
 	void stop_dropping_mode();
 	void start_dropping_mode(uint32_t sampling_ratio);
-	void on_new_entry_from_proc(void* context, int64_t tid, scap_threadinfo* tinfo,
-		scap_fdinfo* fdinfo, scap_t* newhandle);
+	void on_new_entry_from_proc(void* context, scap_t* handle, int64_t tid, scap_threadinfo* tinfo,
+		scap_fdinfo* fdinfo);
 	void set_get_procs_cpu_from_driver(bool get_procs_cpu_from_driver)
 	{
 		m_get_procs_cpu_from_driver = get_procs_cpu_from_driver;
@@ -803,8 +852,40 @@ public:
 	}
 	void set_simpledriver_mode();
 	vector<long> get_n_tracepoint_hit();
+	void set_bpf_probe(const string& bpf_probe);
 
 	static unsigned num_possible_cpus();
+
+#ifdef CYGWING_AGENT
+	wh_t* get_wmi_handle()
+	{
+		return scap_get_wmi_handle(m_h);
+	}
+#endif
+
+	static inline bool falco_consider_evtnum(uint16_t etype)
+	{
+		enum ppm_event_flags flags = g_infotables.m_event_info[etype].flags;
+
+		return ! (flags & sinsp::falco_skip_flags());
+	}
+
+	static inline bool falco_consider_syscallid(uint16_t scid)
+	{
+		enum ppm_event_flags flags = g_infotables.m_syscall_info_table[scid].flags;
+
+		return ! (flags & sinsp::falco_skip_flags());
+	}
+
+	// Add comm to the list of comms for which the inspector
+	// should not return events.
+	bool suppress_events_comm(const std::string &comm);
+
+	bool check_suppressed(int64_t tid);
+
+	void set_query_docker_image_info(bool query_image_info);
+
+	void set_fullcapture_port_range(uint16_t range_start, uint16_t range_end);
 
 	/* Begin StackRox Section */
 	bool ioctl(int devnum, unsigned long request, void* arg) {
@@ -815,8 +896,13 @@ public:
 		return success;
 	}
 	/* End StackRox Section */
+
 VISIBILITY_PRIVATE
 
+        static inline ppm_event_flags falco_skip_flags()
+        {
+		return (ppm_event_flags) (EF_SKIPPARSERESET | EF_UNUSED | EF_DROP_FALCO);
+        }
 // Doxygen doesn't understand VISIBILITY_PRIVATE
 #ifdef _DOXYGEN
 private:
@@ -829,36 +915,40 @@ private:
 	void import_user_list();
 	void add_protodecoders();
 
-	void add_thread(const sinsp_threadinfo& ptinfo);
+	bool add_thread(const sinsp_threadinfo *ptinfo);
 	void remove_thread(int64_t tid, bool force);
+
 	//
 	// Note: lookup_only should be used when the query for the thread is made
 	//       not as a consequence of an event for that thread arriving, but
 	//       just for lookup reason. In that case, m_lastaccess_ts is not updated
 	//       and m_last_tinfo is not set.
 	//
-	inline sinsp_threadinfo* find_thread(int64_t tid, bool lookup_only)
+	inline threadinfo_map_t::ptr_t find_thread(int64_t tid, bool lookup_only)
 	{
-		threadinfo_map_iterator_t it;
-
+		threadinfo_map_t::ptr_t thr;
 		//
 		// Try looking up in our simple cache
 		//
-		if(m_thread_manager->m_last_tinfo && tid == m_thread_manager->m_last_tid)
+		if(tid == m_thread_manager->m_last_tid)
 		{
+			thr = m_thread_manager->m_last_tinfo.lock();
+			if (thr)
+			{
 	#ifdef GATHER_INTERNAL_STATS
-			m_thread_manager->m_cached_lookups->increment();
+				m_thread_manager->m_cached_lookups->increment();
 	#endif
-			m_thread_manager->m_last_tinfo->m_lastaccess_ts = m_lastevent_ts;
-			return m_thread_manager->m_last_tinfo;
+				thr->m_lastaccess_ts = m_lastevent_ts;
+				return thr;
+			}
 		}
 
 		//
 		// Caching failed, do a real lookup
 		//
-		it = m_thread_manager->m_threadtable.find(tid);
+		thr = m_thread_manager->m_threadtable.get_ref(tid);
 
-		if(it != m_thread_manager->m_threadtable.end())
+		if(thr)
 		{
 	#ifdef GATHER_INTERNAL_STATS
 			m_thread_manager->m_non_cached_lookups->increment();
@@ -866,10 +956,10 @@ private:
 			if(!lookup_only)
 			{
 				m_thread_manager->m_last_tid = tid;
-				m_thread_manager->m_last_tinfo = &(it->second);
-				m_thread_manager->m_last_tinfo->m_lastaccess_ts = m_lastevent_ts;
+				m_thread_manager->m_last_tinfo = thr;
+				thr->m_lastaccess_ts = m_lastevent_ts;
 			}
-			return &(it->second);
+			return thr;
 		}
 		else
 		{
@@ -883,11 +973,13 @@ private:
 	sinsp_threadinfo* find_thread_test(int64_t tid, bool lookup_only);
 	bool remove_inactive_threads();
 
+#ifndef CYGWING_AGENT
 	void k8s_discover_ext();
 	void collect_k8s();
 	void update_k8s_state();
 	void update_mesos_state();
 	bool get_mesos_data();
+#endif
 
 	static int64_t get_file_size(const std::string& fname, char *error);
 	static std::string get_error_desc(const std::string& msg = "");
@@ -899,16 +991,20 @@ private:
 		scap_fseek(m_h, filepos);
 	}
 
+	void add_suppressed_comms(scap_open_args &oargs);
+
 	scap_t* m_h;
 	uint32_t m_nevts;
 	int64_t m_filesize;
 
 	scap_mode_t m_mode;
 
-        // If non-zero, reading from this fd and m_input_filename contains "fd
-        // <m_input_fd>". Otherwise, reading from m_input_filename.
+	// If non-zero, reading from this fd and m_input_filename contains "fd
+	// <m_input_fd>". Otherwise, reading from m_input_filename.
 	int m_input_fd;
 	string m_input_filename;
+	bool m_bpf;
+	string m_bpf_probe;
 	bool m_isdebug_enabled;
 	bool m_isfatfile_enabled;
 	bool m_isinternal_events_enabled;
@@ -936,6 +1032,7 @@ private:
 	// restart in the middle of the file.
 	uint64_t m_file_start_offset;
 	bool m_flush_memory_dump;
+	bool m_large_envs_enabled;
 
 	sinsp_network_interfaces* m_network_interfaces;
 public:
@@ -946,6 +1043,7 @@ public:
 	//
 	// Kubernetes
 	//
+#ifndef CYGWING_AGENT
 	string* m_k8s_api_server;
 	string* m_k8s_api_cert;
 #ifdef HAS_CAPTURE
@@ -960,6 +1058,7 @@ public:
 #endif // HAS_CAPTURE
 	k8s* m_k8s_client;
 	uint64_t m_k8s_last_watch_time_ns;
+#endif // CYGWING_AGENT
 
 	//
 	// Mesos/Marathon
@@ -977,7 +1076,7 @@ public:
 
 	//
 	// True if the command line argument is set to show container information
-	// The deafult is false set within the constructor
+	// The default is false set within the constructor
 	//
 	bool m_print_container_data;
 
@@ -995,10 +1094,10 @@ public:
 #ifdef GATHER_INTERNAL_STATS
 	sinsp_stats m_stats;
 #endif
-	uint32_t m_n_proc_lookups;
+	int32_t m_n_proc_lookups;
 	uint64_t m_n_proc_lookups_duration_ns;
-	uint32_t m_max_n_proc_lookups;
-	uint32_t m_max_n_proc_socket_lookups;
+	int32_t m_max_n_proc_lookups = -1;
+	int32_t m_max_n_proc_socket_lookups = -1;
 #ifdef HAS_ANALYZER
 	vector<uint64_t> m_tid_collisions;
 #endif
@@ -1082,11 +1181,16 @@ public:
 	uint64_t m_next_flush_time_ns;
 	uint64_t m_last_procrequest_tod;
 	sinsp_proc_metainfo m_meinfo;
+	uint64_t m_next_stats_print_time_ns;
 
 	static unsigned int m_num_possible_cpus;
 #if defined(HAS_CAPTURE)
 	int64_t m_sysdig_pid;
 #endif
+
+	// Any thread with a comm in this set will not have its events
+	// returned in sinsp::next()
+	std::set<std::string> m_suppressed_comms;
 
 	friend class sinsp_parser;
 	friend class sinsp_analyzer;
@@ -1113,13 +1217,8 @@ public:
 	friend class sinsp_filter_check_evtin;
 	friend class sinsp_baseliner;
 	friend class sinsp_memory_dumper;
-
 	friend class sinsp_network_interfaces;
-	friend class k8s_delegator;
 
-#ifdef HAS_ANALYZER
-	friend class thread_analyzer_info;
-#endif
 	template<class TKey,class THash,class TCompare> friend class sinsp_connection_manager;
 };
 

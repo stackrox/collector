@@ -1,19 +1,10 @@
 /*
-Copyright (C) 2013-2014 Draios inc.
 
-This file is part of sysdig.
+Copyright (c) 2013-2018 Draios Inc. dba Sysdig.
 
-sysdig is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 2 as
-published by the Free Software Foundation.
+This file is dual licensed under either the MIT or GPL 2. See MIT.txt
+or GPL2.txt for full copies of the license.
 
-sysdig is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef EVENTS_PUBLIC_H_
@@ -25,12 +16,23 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifdef __KERNEL__
 #include <linux/types.h>
+#else
+#include "../userspace/common/sysdig_types.h"
+#endif
+
+/*
+ * Macros for packing in different build environments
+ */
+#if !defined(CYGWING_AGENT) && (defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32))
+#define _packed __pragma(pack(push, 1)); __pragma(pack(pop))
+#else
+#define _packed __attribute__((packed))
 #endif
 
 /*
  * Limits
  */
-#define PPM_MAX_EVENT_PARAMS 20	/* Max number of parameters an event can have */
+#define PPM_MAX_EVENT_PARAMS (1 << 5)	/* Max number of parameters an event can have */
 #define PPM_MAX_PATH_SIZE 256	/* Max size that an event parameter can have in the circular buffer, in bytes */
 #define PPM_MAX_NAME_LEN 32
 
@@ -151,9 +153,9 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 #define PPM_CL_ACTIVE (1 << 19)			/* libsinsp-specific flag. Set in the first non-clone event for
 										   this thread. */
 #define PPM_CL_CLONE_NEWUSER (1 << 20)
-#define PPM_CL_PIPE_SRC (1 << 21)			/* libsinsp-specific flag. Set if this thread has been 
+#define PPM_CL_PIPE_SRC (1 << 21)			/* libsinsp-specific flag. Set if this thread has been
 										       detected to be the source in a shell pipe. */
-#define PPM_CL_PIPE_DST (1 << 22)			/* libsinsp-specific flag. Set if this thread has been 
+#define PPM_CL_PIPE_DST (1 << 22)			/* libsinsp-specific flag. Set if this thread has been
 										       detected to be the destination in a shell pipe. */
 #define PPM_CL_CLONE_CHILD_CLEARTID (1 << 23)
 #define PPM_CL_CLONE_CHILD_SETTID (1 << 24)
@@ -253,9 +255,20 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 #define PPM_SHUT_RDWR 2
 
 /*
- * openat() flags
+ * fs *at() flags
  */
 #define PPM_AT_FDCWD -100
+
+/*
+ * unlinkat() flags
+ */
+#define PPM_AT_REMOVEDIR 0x200
+
+/*
+ * linkat() flags
+ */
+#define PPM_AT_SYMLINK_FOLLOW	0x400
+#define PPM_AT_EMPTY_PATH       0x1000
 
 /*
  * rlimit resources
@@ -311,6 +324,82 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 #define PPM_FCNTL_F_OFD_GETLK 30
 #define PPM_FCNTL_F_OFD_SETLK 31
 #define PPM_FCNTL_F_OFD_SETLKW 32
+
+/*
+ * getsockopt/setsockopt levels
+ */
+#define PPM_SOCKOPT_LEVEL_UNKNOWN 0
+#define PPM_SOCKOPT_LEVEL_SOL_SOCKET 1
+#define PPM_SOCKOPT_LEVEL_SOL_TCP 2
+
+/*
+ * getsockopt/setsockopt options
+ * SOL_SOCKET only currently
+ */
+#define PPM_SOCKOPT_UNKNOWN	0
+#define PPM_SOCKOPT_SO_DEBUG	1
+#define PPM_SOCKOPT_SO_REUSEADDR	2
+#define PPM_SOCKOPT_SO_TYPE		3
+#define PPM_SOCKOPT_SO_ERROR	4
+#define PPM_SOCKOPT_SO_DONTROUTE	5
+#define PPM_SOCKOPT_SO_BROADCAST	6
+#define PPM_SOCKOPT_SO_SNDBUF	7
+#define PPM_SOCKOPT_SO_RCVBUF	8
+#define PPM_SOCKOPT_SO_SNDBUFFORCE	32
+#define PPM_SOCKOPT_SO_RCVBUFFORCE	33
+#define PPM_SOCKOPT_SO_KEEPALIVE	9
+#define PPM_SOCKOPT_SO_OOBINLINE	10
+#define PPM_SOCKOPT_SO_NO_CHECK	11
+#define PPM_SOCKOPT_SO_PRIORITY	12
+#define PPM_SOCKOPT_SO_LINGER	13
+#define PPM_SOCKOPT_SO_BSDCOMPAT	14
+#define PPM_SOCKOPT_SO_REUSEPORT	15
+#define PPM_SOCKOPT_SO_PASSCRED	16
+#define PPM_SOCKOPT_SO_PEERCRED	17
+#define PPM_SOCKOPT_SO_RCVLOWAT	18
+#define PPM_SOCKOPT_SO_SNDLOWAT	19
+#define PPM_SOCKOPT_SO_RCVTIMEO	20
+#define PPM_SOCKOPT_SO_SNDTIMEO	21
+#define PPM_SOCKOPT_SO_SECURITY_AUTHENTICATION		22
+#define PPM_SOCKOPT_SO_SECURITY_ENCRYPTION_TRANSPORT	23
+#define PPM_SOCKOPT_SO_SECURITY_ENCRYPTION_NETWORK		24
+#define PPM_SOCKOPT_SO_BINDTODEVICE	25
+#define PPM_SOCKOPT_SO_ATTACH_FILTER	26
+#define PPM_SOCKOPT_SO_DETACH_FILTER	27
+#define PPM_SOCKOPT_SO_PEERNAME		28
+#define PPM_SOCKOPT_SO_TIMESTAMP		29
+#define PPM_SOCKOPT_SO_ACCEPTCONN		30
+#define PPM_SOCKOPT_SO_PEERSEC		31
+#define PPM_SOCKOPT_SO_PASSSEC		34
+#define PPM_SOCKOPT_SO_TIMESTAMPNS		35
+#define PPM_SOCKOPT_SO_MARK			36
+#define PPM_SOCKOPT_SO_TIMESTAMPING		37
+#define PPM_SOCKOPT_SO_PROTOCOL		38
+#define PPM_SOCKOPT_SO_DOMAIN		39
+#define PPM_SOCKOPT_SO_RXQ_OVFL             40
+#define PPM_SOCKOPT_SO_WIFI_STATUS		41
+#define PPM_SOCKOPT_SO_PEEK_OFF		42
+#define PPM_SOCKOPT_SO_NOFCS		43
+#define PPM_SOCKOPT_SO_LOCK_FILTER		44
+#define PPM_SOCKOPT_SO_SELECT_ERR_QUEUE	45
+#define PPM_SOCKOPT_SO_BUSY_POLL		46
+#define PPM_SOCKOPT_SO_MAX_PACING_RATE	47
+#define PPM_SOCKOPT_SO_BPF_EXTENSIONS	48
+#define PPM_SOCKOPT_SO_INCOMING_CPU		49
+#define PPM_SOCKOPT_SO_ATTACH_BPF		50
+#define PPM_SOCKOPT_SO_PEERGROUPS		51
+#define PPM_SOCKOPT_SO_MEMINFO		52
+#define PPM_SOCKOPT_SO_COOKIE		53
+
+/*
+ * getsockopt/setsockopt dynamic params
+ */
+#define PPM_SOCKOPT_IDX_UNKNOWN 0
+#define PPM_SOCKOPT_IDX_ERRNO 1
+#define PPM_SOCKOPT_IDX_UINT32 2
+#define PPM_SOCKOPT_IDX_UINT64 3
+#define PPM_SOCKOPT_IDX_TIMEVAL 4
+#define PPM_SOCKOPT_IDX_MAX 5
 
  /*
  * ptrace requests
@@ -829,11 +918,27 @@ enum ppm_event_type {
 	PPME_SYSCALL_EXECVE_18_X = 289,
 	PPME_PAGE_FAULT_E = 290,
 	PPME_PAGE_FAULT_X = 291,
-	PPME_SYSCALL_BPF_E = 292,
-	PPME_SYSCALL_BPF_X = 293,
-	PPME_SYSCALL_SECCOMP_E = 294,
-	PPME_SYSCALL_SECCOMP_X = 295,
-	PPM_EVENT_MAX = 296
+	PPME_SYSCALL_EXECVE_19_E = 292,
+	PPME_SYSCALL_EXECVE_19_X = 293,
+	PPME_SYSCALL_SETPGID_E = 294,
+	PPME_SYSCALL_SETPGID_X = 295,
+	PPME_SYSCALL_BPF_E = 296,
+	PPME_SYSCALL_BPF_X = 297,
+	PPME_SYSCALL_SECCOMP_E = 298,
+	PPME_SYSCALL_SECCOMP_X = 299,
+	PPME_SYSCALL_UNLINK_2_E = 300,
+	PPME_SYSCALL_UNLINK_2_X = 301,
+	PPME_SYSCALL_UNLINKAT_2_E = 302,
+	PPME_SYSCALL_UNLINKAT_2_X = 303,
+	PPME_SYSCALL_MKDIRAT_E = 304,
+	PPME_SYSCALL_MKDIRAT_X = 305,
+	PPME_SYSCALL_OPENAT_2_E = 306,
+	PPME_SYSCALL_OPENAT_2_X = 307,
+	PPME_SYSCALL_LINK_2_E = 308,
+	PPME_SYSCALL_LINK_2_X = 309,
+	PPME_SYSCALL_LINKAT_2_E = 310,
+	PPME_SYSCALL_LINKAT_2_X = 311,
+	PPM_EVENT_MAX = 312
 };
 /*@}*/
 
@@ -1158,7 +1263,10 @@ enum ppm_syscall_code {
 	PPM_SC_FINIT_MODULE = 314,
 	PPM_SC_BPF = 315,
 	PPM_SC_SECCOMP = 316,
-	PPM_SC_MAX = 317,
+	PPM_SC_SIGALTSTACK = 317,
+	PPM_SC_GETRANDOM = 318,
+	PPM_SC_FADVISE64 = 319,
+	PPM_SC_MAX = 320,
 };
 
 /*
@@ -1244,7 +1352,11 @@ enum ppm_param_type {
 	PT_CHARBUFARRAY = 35,	/* Pointer to an array of strings, exported by the user events decoder. 64bit. For internal use only. */
 	PT_CHARBUF_PAIR_ARRAY = 36,	/* Pointer to an array of string pairs, exported by the user events decoder. 64bit. For internal use only. */
 	PT_IPV4NET = 37, /* An IPv4 network. */
-	PT_MAX = 38 /* array size */
+	PT_IPV6ADDR = 38, /* A 16 byte raw IPv6 address. */
+	PT_IPV6NET = 39, /* An IPv6 network. */
+	PT_IPADDR = 40,  /* Either an IPv4 or IPv6 address. The length indicates which one it is. */
+	PT_IPNET = 41,  /* Either an IPv4 or IPv6 network. The length indicates which one it is. */
+	PT_MAX = 42 /* array size */
 };
 
 enum ppm_print_format {
@@ -1275,7 +1387,7 @@ struct ppm_param_info {
 	const void *info; /**< If this is a flags parameter, it points to an array of ppm_name_value,
 			       else if this is a dynamic parameter it points to an array of ppm_param_info */
 	uint8_t ninfo; /**< Number of entry in the info array. */
-};
+} _packed;
 
 /*!
   \brief Event information.
@@ -1287,9 +1399,8 @@ struct ppm_event_info {
 	enum ppm_event_category category; /**< Event category, e.g. 'file', 'net', etc. */
 	enum ppm_event_flags flags; /**< flags for this event. */
 	uint32_t nparams; /**< Number of parameter in the params array. */
-	/* XXX this 16 limit comes out of my ass. Determine something that makes sense or use a dynamic array. */
 	struct ppm_param_info params[PPM_MAX_EVENT_PARAMS]; /**< parameters descriptions. */
-};
+} _packed;
 
 #if defined _MSC_VER
 #pragma pack(push)
@@ -1307,6 +1418,7 @@ struct ppm_evt_hdr {
 	uint64_t tid; /* the tid of the thread that generated this event */
 	uint32_t len; /* the event len, including the header */
 	uint16_t type; /* the event type */
+	uint32_t nparams; /* the number of parameters of the event */
 };
 #if defined __sun
 #pragma pack()
@@ -1317,6 +1429,7 @@ struct ppm_evt_hdr {
 /*
  * IOCTL codes
  */
+#ifndef CYGWING_AGENT
 #define PPM_IOCTL_MAGIC	's'
 #define PPM_IOCTL_DISABLE_CAPTURE _IO(PPM_IOCTL_MAGIC, 0)
 #define PPM_IOCTL_ENABLE_CAPTURE _IO(PPM_IOCTL_MAGIC, 1)
@@ -1339,9 +1452,12 @@ struct ppm_evt_hdr {
 #define PPM_IOCTL_SET_SIMPLE_MODE _IO(PPM_IOCTL_MAGIC, 18)
 #define PPM_IOCTL_ENABLE_PAGE_FAULTS _IO(PPM_IOCTL_MAGIC, 19)
 #define PPM_IOCTL_GET_N_TRACEPOINT_HIT _IO(PPM_IOCTL_MAGIC, 20)
+#define PPM_IOCTL_GET_PROBE_VERSION _IO(PPM_IOCTL_MAGIC, 21)
+#define PPM_IOCTL_SET_FULLCAPTURE_PORT_RANGE _IO(PPM_IOCTL_MAGIC, 22)
 /* Begin StackRox Section */
 #define PPM_IOCTL_EXCLUDE_NS_OF_PID _IO(PPM_IOCTL_MAGIC, 40)
 /* End StackRox Section */
+#endif // CYGWING_AGENT
 
 extern const struct ppm_name_value socket_families[];
 extern const struct ppm_name_value file_flags[];
@@ -1355,6 +1471,8 @@ extern const struct ppm_name_value umount_flags[];
 extern const struct ppm_name_value shutdown_how[];
 extern const struct ppm_name_value rlimit_resources[];
 extern const struct ppm_name_value fcntl_commands[];
+extern const struct ppm_name_value sockopt_levels[];
+extern const struct ppm_name_value sockopt_options[];
 extern const struct ppm_name_value ptrace_requests[];
 extern const struct ppm_name_value prot_flags[];
 extern const struct ppm_name_value mmap_flags[];
@@ -1368,7 +1486,10 @@ extern const struct ppm_name_value semget_flags[];
 extern const struct ppm_name_value semctl_commands[];
 extern const struct ppm_name_value access_flags[];
 extern const struct ppm_name_value pf_flags[];
+extern const struct ppm_name_value unlinkat_flags[];
+extern const struct ppm_name_value linkat_flags[];
 
+extern const struct ppm_param_info sockopt_dynamic_param[];
 extern const struct ppm_param_info ptrace_dynamic_param[];
 extern const struct ppm_param_info bpf_dynamic_param[];
 
@@ -1395,5 +1516,84 @@ struct ppm_proclist_info {
 	int64_t max_entries;
 	struct ppm_proc_info entries[0];
 };
+
+enum syscall_flags {
+	UF_NONE = 0,
+	UF_USED = (1 << 0),
+	UF_NEVER_DROP = (1 << 1),
+	UF_ALWAYS_DROP = (1 << 2),
+	UF_SIMPLEDRIVER_KEEP = (1 << 3),
+};
+
+struct syscall_evt_pair {
+	int flags;
+	enum ppm_event_type enter_event_type;
+	enum ppm_event_type exit_event_type;
+} _packed;
+
+#define SYSCALL_TABLE_SIZE 512
+
+/*
+ * Filler table-related definitions
+ */
+
+#define PPM_MAX_AUTOFILL_ARGS (1 << 2)
+
+/*
+ * Max size of a parameter in the kernel module is u16, so no point
+ * in going beyond 0xffff. However, in BPF the limit is more stringent
+ * because the entire perf event must fit in u16, so make this
+ * a more conservative 65k so we have some room for the other
+ * parameters in the event. It shouldn't cause issues since typically
+ * snaplen is much lower than this.
+ */
+#define PPM_MAX_ARG_SIZE 65000
+
+struct event_filler_arguments;
+
+#include "ppm_fillers.h"
+
+struct ppm_autofill_arg {
+#define AF_ID_RETVAL -1
+#define AF_ID_USEDEFAULT -2
+	int16_t id;
+	long default_val;
+} _packed;
+
+enum autofill_paramtype {
+	APT_REG,
+	APT_SOCK,
+};
+
+typedef int (*filler_callback_t) (struct event_filler_arguments *args);
+
+struct ppm_event_entry {
+	filler_callback_t filler_callback;
+	enum ppm_filler_id filler_id;
+	uint16_t n_autofill_args;
+	enum autofill_paramtype paramtype;
+	struct ppm_autofill_arg autofill_args[PPM_MAX_AUTOFILL_ARGS];
+} _packed;
+
+/*
+ * parse_readv_writev_bufs flags
+ */
+#define PRB_FLAG_PUSH_SIZE	1
+#define PRB_FLAG_PUSH_DATA	2
+#define PRB_FLAG_PUSH_ALL	(PRB_FLAG_PUSH_SIZE | PRB_FLAG_PUSH_DATA)
+#define PRB_FLAG_IS_WRITE	4
+
+/*
+ * Return codes
+ */
+#define PPM_SUCCESS 0
+#define PPM_FAILURE_BUFFER_FULL -1
+#define PPM_FAILURE_INVALID_USER_MEMORY -2
+#define PPM_FAILURE_BUG -3
+#define PPM_SKIP_EVENT -4
+
+#define RW_SNAPLEN 80
+#define RW_MAX_SNAPLEN PPM_MAX_ARG_SIZE
+#define RW_MAX_FULLCAPTURE_PORT_SNAPLEN 16000
 
 #endif /* EVENTS_PUBLIC_H_ */

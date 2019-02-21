@@ -1,23 +1,14 @@
 /*
-Copyright (C) 2013-2014 Draios inc.
 
-This file is part of sysdig.
+Copyright (c) 2013-2018 Draios Inc. dba Sysdig.
 
-sysdig is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 2 as
-published by the Free Software Foundation.
+This file is dual licensed under either the MIT or GPL 2. See MIT.txt
+or GPL2.txt for full copies of the license.
 
-sysdig is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef PPM_H_
-#define PPM_H_
+#ifndef PPM_RINGBUFFER_H_
+#define PPM_RINGBUFFER_H_
 
 #ifdef __KERNEL__
 #include <linux/types.h>
@@ -39,4 +30,4 @@ struct ppm_ring_buffer_info {
 	volatile __u64 n_context_switches;	/* Number of received context switch events. */
 };
 
-#endif /* PPM_H_ */
+#endif /* PPM_RINGBUFFER_H_ */

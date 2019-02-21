@@ -1,19 +1,20 @@
 /*
-Copyright (C) 2013-2014 Draios inc.
+Copyright (C) 2013-2018 Draios Inc dba Sysdig.
 
 This file is part of sysdig.
 
-sysdig is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 2 as
-published by the Free Software Foundation.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-sysdig is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-You should have received a copy of the GNU General Public License
-along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
 */
 
 // Force struct alignment
@@ -44,9 +45,14 @@ typedef struct _block_header
 // Used to recognize if a section is in host byte order or not.
 #define SHB_MAGIC		0x1A2B3C4D
 // Major version of the file format supported by this library.
+// Must be increased only when if the new version of the software
+// is not able anymore to read older captures
 #define CURRENT_MAJOR_VERSION	1
 // Minor version of the file format supported by this library.
-#define CURRENT_MINOR_VERSION	0
+// Must be increased every time we change the capture format
+// (e.g. most of the changes in the event table, like adding
+// a syscall)
+#define CURRENT_MINOR_VERSION	2
 
 typedef struct _section_header_block
 {
@@ -55,6 +61,13 @@ typedef struct _section_header_block
 	uint16_t minor_version;
 	uint64_t section_length;
 }section_header_block;
+
+// NB:
+// Starting from scap version 1.2, block versions will no longer be changed.
+// New block fields must be appended and, instead of using the version, the
+// lengths of the sub blocks will be used to differentiate between versions.
+// For more infomation, look at the comments inside the various scap_read_*
+// functions.
 
 ///////////////////////////////////////////////////////////////////////////////
 // MACHINE INFO BLOCK
@@ -90,6 +103,10 @@ typedef struct _section_header_block
 
 #define PL_BLOCK_TYPE_V7		0x213
 
+#define PL_BLOCK_TYPE_V8		0x214
+
+#define PL_BLOCK_TYPE_V9		0x215
+
 ///////////////////////////////////////////////////////////////////////////////
 // FD LIST BLOCK
 ///////////////////////////////////////////////////////////////////////////////
@@ -97,6 +114,7 @@ typedef struct _section_header_block
 #define FDL_BLOCK_TYPE_INT		0x8001ABCD	// This is the unofficial number used before the
 											// library release. We'll keep him for a while for
 											// backward compatibility
+#define FDL_BLOCK_TYPE_V2		0x218
 
 ///////////////////////////////////////////////////////////////////////////////
 // EVENT BLOCK
@@ -105,6 +123,7 @@ typedef struct _section_header_block
 #define EV_BLOCK_TYPE_INT		0x8010ABCD	// This is the unofficial number used before the
 											// library release. We'll keep him for a while for
 											// backward compatibility
+#define EV_BLOCK_TYPE_V2		0x216
 
 ///////////////////////////////////////////////////////////////////////////////
 // INTERFACE LIST BLOCK
@@ -113,6 +132,7 @@ typedef struct _section_header_block
 #define IL_BLOCK_TYPE_INT		0x8011ABCD	// This is the unofficial number used before the
 											// library release. We'll keep him for a while for
 											// backward compatibility
+#define IL_BLOCK_TYPE_V2		0x219
 
 ///////////////////////////////////////////////////////////////////////////////
 // USER LIST BLOCK
@@ -121,11 +141,14 @@ typedef struct _section_header_block
 #define UL_BLOCK_TYPE_INT		0x8012ABCD	// This is the unofficial number used before the
 											// library release. We'll keep him for a while for
 											// backward compatibility
+#define UL_BLOCK_TYPE_V2		0x220
 
 ///////////////////////////////////////////////////////////////////////////////
 // EVENT BLOCK WITH FLAGS
 ///////////////////////////////////////////////////////////////////////////////
-#define EVF_BLOCK_TYPE	0x208
+#define EVF_BLOCK_TYPE		0x208
+
+#define EVF_BLOCK_TYPE_V2	0x217
 
 #if defined __sun
 #pragma pack()

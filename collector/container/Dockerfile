@@ -50,6 +50,9 @@ RUN apt-get update \
         libb64-0d \
         jq \
         libluajit-5.1 \
+        libtbb2 \
+        libelf1 \
+        libjsoncpp1 \
  ;
 
 COPY libs/libsinsp-wrapper.so \

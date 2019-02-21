@@ -1,19 +1,20 @@
 /*
-Copyright (C) 2013-2014 Draios inc.
+Copyright (C) 2013-2018 Draios Inc dba Sysdig.
 
 This file is part of sysdig.
 
-sysdig is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 2 as
-published by the Free Software Foundation.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-sysdig is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-You should have received a copy of the GNU General Public License
-along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
 */
 
 ////////////////////////////////////////////////////////////////////////////
@@ -135,22 +136,26 @@ private:
 	inline uint32_t parse_tracer(sinsp_evt *evt, int64_t retval);
 	void parse_cpu_hotplug_enter(sinsp_evt* evt);
 	int get_k8s_version(const std::string& json);
+#ifndef CYGWING_AGENT
 	void parse_k8s_evt(sinsp_evt *evt);
-	void parse_chroot_exit(sinsp_evt *evt);
 	void parse_mesos_evt(sinsp_evt *evt);
+#endif
+	void parse_chroot_exit(sinsp_evt *evt);
 	void parse_setsid_exit(sinsp_evt *evt);
+	void parse_getsockopt_exit(sinsp_evt *evt);
 
 	inline void add_socket(sinsp_evt* evt, int64_t fd, uint32_t domain, uint32_t type, uint32_t protocol);
 	inline void add_pipe(sinsp_evt *evt, int64_t tid, int64_t fd, uint64_t ino);
 	// Return false if the update didn't happen (for example because the tuple is NULL)
 	bool update_fd(sinsp_evt *evt, sinsp_evt_param* parinfo);
-	// Return false if the update didn't happen because the tuple is identical to the given address
+
+	// Next 4 return false if the update didn't happen because the tuple is identical to the given address
 	bool set_ipv4_addresses_and_ports(sinsp_fdinfo_t* fdinfo, uint8_t* packed_data);
-	// Return false if the update didn't happen because the tuple is identical to the given address
 	bool set_ipv4_mapped_ipv6_addresses_and_ports(sinsp_fdinfo_t* fdinfo, uint8_t* packed_data);
-	// Return false if the update didn't happen because the tuple is identical to the given address
+	bool set_ipv6_addresses_and_ports(sinsp_fdinfo_t* fdinfo, uint8_t* packed_data);
 	bool set_unix_info(sinsp_fdinfo_t* fdinfo, uint8_t* packed_data);
-	void swap_ipv4_addresses(sinsp_fdinfo_t* fdinfo);
+
+	void swap_addresses(sinsp_fdinfo_t* fdinfo);
 	uint8_t* reserve_event_buffer();
 	void free_event_buffer(uint8_t*);
 
@@ -166,6 +171,8 @@ private:
 	uint8_t m_fake_userevt_storage[4096];
 	scap_evt* m_fake_userevt;
 	string m_tracer_error_string;
+
+	bool m_track_connection_status = false;
 
 	// FD listener callback
 	sinsp_fd_listener* m_fd_listener;

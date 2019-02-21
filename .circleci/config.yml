@@ -226,7 +226,7 @@ jobs:
           for i in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
             version="$(basename "$i")"
             [[ "$version" != "$MODULE_VERSION" ]] || continue
-            gsutil ls "${COLLECTOR_MODULES_BUCKET}/${version}/" \
+            ( gsutil ls "${COLLECTOR_MODULES_BUCKET}/${version}/" || true)  \
               | "${SOURCE_ROOT}/kernel-modules/build/extract-kernel-versions-from-module-files" \
                 >~/kobuild-tmp/existing-modules-"${version}"
 
@@ -468,6 +468,7 @@ jobs:
             -v "$PWD/sysdig/src:/usr/local/sysdig:ro" \
             -v "$PWD/container/libs/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
             -v "$PWD/sysdig/src/driver/ppm_events_public.h:/usr/local/include/ppm_events_public.h:ro" \
+            -v "$PWD/sysdig/src/driver/ppm_fillers.h:/usr/local/include/ppm_fillers.h:ro" \
             -v "$PWD/cmake-build:/build-output" \
             --name build "stackrox/collector-builder:circle-build-${CIRCLE_WORKFLOW_ID}"
 

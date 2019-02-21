@@ -1,19 +1,20 @@
 /*
-Copyright (C) 2013-2014 Draios inc.
+Copyright (C) 2013-2018 Draios Inc dba Sysdig.
 
 This file is part of sysdig.
 
-sysdig is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 2 as
-published by the Free Software Foundation.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-sysdig is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-You should have received a copy of the GNU General Public License
-along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
 */
 
 #pragma once
@@ -26,16 +27,15 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 #include <locale>
 #include <sstream>
 
+#include <tuples.h>
 #include <scap.h>
 #include "json/json.h"
 
 class sinsp_evttables;
 typedef union _sinsp_sockinfo sinsp_sockinfo;
-typedef union _ipv4tuple ipv4tuple;
-typedef union _ipv6tuple ipv6tuple;
-typedef struct ipv4serverinfo ipv4serverinfo;
-typedef struct ipv6serverinfo ipv6serverinfo;
 class filter_check_info;
+
+extern sinsp_evttables g_infotables;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Initializer class.
@@ -72,6 +72,12 @@ public:
 	static bool sockinfo_to_str(sinsp_sockinfo* sinfo, scap_fd_type stype, char* targetbuf, uint32_t targetbuf_size, bool resolve = false);
 
 	//
+	// Check if string ends with another 
+	//
+	static bool endswith(const std::string& str, const std::string& ending);
+	static bool endswith(const char *str, const char *ending, uint32_t lstr, uint32_t lend);
+
+	//
 	// Concatenate two paths and puts the result in "target".
 	// If path2 is relative, the concatenation happens and the result is true.
 	// If path2 is absolute, the concatenation does not happen, target contains path2 and the result is false.
@@ -104,6 +110,29 @@ public:
 	//
 	static void bt(void);
 #endif // _WIN32
+
+	static bool find_first_env(std::string &out, const std::vector<std::string> &env, const std::vector<std::string> &keys);
+	static bool find_env(std::string &out, const std::vector<std::string> &env, const std::string &key);
+
+	static void split_container_image(const std::string &image,
+					  std::string &hostname,
+					  std::string &port,
+					  std::string &name,
+					  std::string &tag,
+					  std::string &digest,
+					  bool split_repo = true);
+
+	static void parse_suppressed_types(const std::vector<std::string> &supp_strs,
+					   std::vector<uint16_t> *supp_ids);
+
+	static const char* event_name_by_id(uint16_t id);
+
+	static void ts_to_string(uint64_t ts, OUT std::string* res, bool date, bool ns);
+
+        // Limited version of iso 8601 time string parsing, that assumes a
+        // timezone of Z for UTC, but does support parsing fractional seconds,
+        // unlike get_epoch_utc_seconds_* below.
+	static bool parse_iso_8601_utc_string(const std::string& time_str, uint64_t &ns);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -165,7 +194,7 @@ std::string sinsp_gethostname();
 // each of these functions uses values in network byte order
 
 std::string ipv4tuple_to_string(ipv4tuple* tuple, bool resolve);
-std::string ipv6tuple_to_string(_ipv6tuple* tuple, bool resolve);
+std::string ipv6tuple_to_string(ipv6tuple* tuple, bool resolve);
 std::string ipv4serveraddr_to_string(ipv4serverinfo* addr, bool resolve);
 std::string ipv6serveraddr_to_string(ipv6serverinfo* addr, bool resolve);
 
@@ -352,3 +381,14 @@ struct ci_compare
 bool set_socket_blocking(int sock, bool block);
 
 unsigned int read_num_possible_cpus(void);
+
+///////////////////////////////////////////////////////////////////////////////
+// hashing helpers
+///////////////////////////////////////////////////////////////////////////////
+
+// http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n3876.pdf
+template <typename T>
+inline void hash_combine(std::size_t &seed, const T& val)
+{
+	seed ^= std::hash<T>()(val) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+}

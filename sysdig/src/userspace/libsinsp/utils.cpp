@@ -1,19 +1,20 @@
 /*
-Copyright (C) 2013-2014 Draios inc.
+Copyright (C) 2013-2018 Draios Inc dba Sysdig.
 
 This file is part of sysdig.
 
-sysdig is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 2 as
-published by the Free Software Foundation.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-sysdig is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-You should have received a copy of the GNU General Public License
-along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
 */
 
 #ifndef _WIN32
@@ -21,7 +22,9 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
 #include <limits.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#ifndef CYGWING_AGENT
 #include <execinfo.h>
+#endif
 #include <unistd.h>
 #include <sys/time.h>
 #include <netdb.h>
@@ -434,10 +437,10 @@ bool sinsp_utils::sockinfo_to_str(sinsp_sockinfo* sinfo, scap_fd_type stype, cha
 	}
 	else if(stype == SCAP_FD_IPV6_SOCK)
 	{
-		uint8_t* sip6 = (uint8_t*)sinfo->m_ipv6info.m_fields.m_sip;
-		uint8_t* dip6 = (uint8_t*)sinfo->m_ipv6info.m_fields.m_dip;
-		uint8_t* sip = ((uint8_t*)(sinfo->m_ipv6info.m_fields.m_sip)) + 12;
-		uint8_t* dip = ((uint8_t*)(sinfo->m_ipv6info.m_fields.m_dip)) + 12;
+		uint8_t* sip6 = (uint8_t*)sinfo->m_ipv6info.m_fields.m_sip.m_b;
+		uint8_t* dip6 = (uint8_t*)sinfo->m_ipv6info.m_fields.m_dip.m_b;
+		uint8_t* sip = ((uint8_t*)(sinfo->m_ipv6info.m_fields.m_sip.m_b)) + 12;
+		uint8_t* dip = ((uint8_t*)(sinfo->m_ipv6info.m_fields.m_dip.m_b)) + 12;
 
 		if(sinfo->m_ipv6info.m_fields.m_l4proto == SCAP_L4_TCP ||
 			sinfo->m_ipv6info.m_fields.m_l4proto == SCAP_L4_UDP)
@@ -468,9 +471,9 @@ bool sinsp_utils::sockinfo_to_str(sinsp_sockinfo* sinfo, scap_fd_type stype, cha
 								targetbuf_size,
 								"%s:%s->%s:%s",
 								srcstr,
-								port_to_string(sinfo->m_ipv4info.m_fields.m_sport, sinfo->m_ipv6info.m_fields.m_l4proto, resolve).c_str(),
+								port_to_string(sinfo->m_ipv6info.m_fields.m_sport, sinfo->m_ipv6info.m_fields.m_l4proto, resolve).c_str(),
 								dststr,
-								port_to_string(sinfo->m_ipv4info.m_fields.m_dport, sinfo->m_ipv6info.m_fields.m_l4proto, resolve).c_str());
+								port_to_string(sinfo->m_ipv6info.m_fields.m_dport, sinfo->m_ipv6info.m_fields.m_l4proto, resolve).c_str());
 					return true;
 				}
 			}
@@ -676,7 +679,6 @@ bool sinsp_utils::concatenate_paths(char* target,
 {
 	if(targetlen < (len1 + len2 + 1))
 	{
-		ASSERT(false);
 		strcpy(target, "/PATH_TOO_LONG");
 		return false;
 	}
@@ -768,6 +770,7 @@ bool sinsp_utils::glob_match(const char *pattern, const char *string)
 #endif
 }
 
+#ifndef CYGWING_AGENT
 #ifndef _WIN32
 void sinsp_utils::bt(void)
 {
@@ -791,10 +794,191 @@ void sinsp_utils::bt(void)
 	free(bt_syms);
 }
 #endif // _WIN32
+#endif // CYGWING_AGENT
+
+bool sinsp_utils::find_first_env(std::string &out, const vector<std::string> &env, const vector<std::string> &keys)
+{
+	for (const string key : keys)
+	{
+		for(const auto& env_var : env)
+		{
+			if((env_var.size() > key.size()) && !env_var.compare(0, key.size(), key) && (env_var[key.size()] == '='))
+			{
+				out = env_var.substr(key.size()+1);
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+bool sinsp_utils::find_env(std::string &out, const vector<std::string> &env, const std::string &key)
+{
+	const vector<std::string> keys = { key };
+	return find_first_env(out, env, keys);
+}
+
+void sinsp_utils::split_container_image(const std::string &image,
+					std::string &hostname,
+					std::string &port,
+					std::string &name,
+					std::string &tag,
+					std::string &digest,
+					bool split_repo)
+{
+	auto split = [](const std::string &src, std::string &part1, std::string &part2, const std::string sep)
+	{
+		size_t pos = src.find(sep);
+		if(pos != std::string::npos)
+		{
+			part1 = src.substr(0, pos);
+			part2 = src.substr(pos+1);
+			return true;
+		}
+		return false;
+	};
+
+	std::string hostport, rem, rem2, repo;
+
+	hostname = port = name = tag = digest = "";
+
+	if(split(image, hostport, rem, "/"))
+	{
+		repo = hostport + "/";
+		if(!split(hostport, hostname, port, ":"))
+		{
+			hostname = hostport;
+			port = "";
+		}
+	}
+	else
+	{
+		hostname = "";
+		port = "";
+		rem = image;
+	}
+
+	if(split(rem, rem2, digest, "@"))
+	{
+		if(!split(rem2, name, tag, ":"))
+		{
+			name = rem2;
+			tag = "";
+		}
+	}
+	else
+	{
+		digest = "";
+		if(!split(rem, name, tag, ":"))
+		{
+			name = rem;
+			tag = "";
+		}
+	}
+
+	if(!split_repo)
+	{
+		name = repo + name;
+	}
+}
+
+void sinsp_utils::parse_suppressed_types(const std::vector<std::string> &supp_strs,
+					 std::vector<uint16_t> *supp_ids)
+{
+	for (auto ii = 0; ii < PPM_EVENT_MAX; ii++)
+	{
+		auto iter = std::find(supp_strs.begin(), supp_strs.end(),
+				      event_name_by_id(ii));
+		if (iter != supp_strs.end())
+		{
+			supp_ids->push_back(ii);
+		}
+	}
+}
+
+const char* sinsp_utils::event_name_by_id(uint16_t id)
+{
+	if (id >= PPM_EVENT_MAX)
+	{
+		ASSERT(false);
+		return "NA";
+	}
+	return g_infotables.m_event_info[id].name;
+}
+
+void sinsp_utils::ts_to_string(uint64_t ts, OUT string* res, bool date, bool ns)
+{
+	struct tm *tm;
+	time_t Time;
+	uint64_t sec = ts / ONE_SECOND_IN_NS;
+	uint64_t nsec = ts % ONE_SECOND_IN_NS;
+	int32_t thiszone = gmt2local(0);
+	int32_t s = (sec + thiszone) % 86400;
+	int32_t bufsize = 0;
+	char buf[256];
+
+	if(date)
+	{
+		Time = (sec + thiszone) - s;
+		tm = gmtime (&Time);
+		if(!tm)
+		{
+			bufsize = sprintf(buf, "<date error> ");
+		}
+		else
+		{
+			bufsize = sprintf(buf, "%04d-%02d-%02d ",
+				   tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
+		}
+	}
+
+	if(ns)
+	{
+		sprintf(buf + bufsize, "%02d:%02d:%02d.%09u",
+				s / 3600, (s % 3600) / 60, s % 60, (unsigned)nsec);
+	}
+	else
+	{
+		sprintf(buf + bufsize, "%02d:%02d:%02d",
+				s / 3600, (s % 3600) / 60, s % 60);
+	}
+
+	*res = buf;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Time utility functions.
 ///////////////////////////////////////////////////////////////////////////////
+
+bool sinsp_utils::parse_iso_8601_utc_string(const std::string& time_str, uint64_t &ns)
+{
+#ifndef _WIN32
+	char *rem;
+
+	struct tm tm_time = {0};
+	rem = strptime(time_str.c_str(), "%Y-%m-%dT%H:%M:", &tm_time);
+	if(rem == NULL || *rem == '\0')
+	{
+		return false;
+	}
+	tm_time.tm_isdst = -1; // strptime does not set this, signal timegm to determine DST
+	ns = timegm(&tm_time) * ONE_SECOND_IN_NS;
+
+	// Handle the possibly fractional seconds now. Also verify
+	// that the string ends with Z.
+	double fractional_secs;
+	if(sscanf(rem, "%lfZ", &fractional_secs) != 1)
+	{
+		return false;
+	}
+
+	ns += (fractional_secs * ONE_SECOND_IN_NS);
+
+	return true;
+#else
+	throw sinsp_exception("parse_iso_8601_utc_string() not implemented on Windows");
+#endif
+}
 
 time_t get_epoch_utc_seconds(const std::string& time_str, const std::string& fmt)
 {
@@ -966,7 +1150,7 @@ string ipv6serveraddr_to_string(ipv6serverinfo* addr, bool resolve)
 	char address[100];
 	char buf[200];
 
-	if(NULL == inet_ntop(AF_INET6, addr->m_ip, address, 100))
+	if(NULL == inet_ntop(AF_INET6, addr->m_ip.m_b, address, 100))
 	{
 		return string();
 	}
@@ -984,12 +1168,12 @@ string ipv6tuple_to_string(_ipv6tuple* tuple, bool resolve)
 	char destination_address[100];
 	char buf[200];
 
-	if(NULL == inet_ntop(AF_INET6, tuple->m_fields.m_sip, source_address, 100))
+	if(NULL == inet_ntop(AF_INET6, tuple->m_fields.m_sip.m_b, source_address, 100))
 	{
 		return string();
 	}
 
-	if(NULL == inet_ntop(AF_INET6, tuple->m_fields.m_dip, destination_address, 100))
+	if(NULL == inet_ntop(AF_INET6, tuple->m_fields.m_dip.m_b, destination_address, 100))
 	{
 		return string();
 	}
@@ -1179,6 +1363,27 @@ string replace(const string& str, const string& search, const string& replacemen
 	replace_in_place(s, search, replacement);
 	return s;
 }
+
+
+bool sinsp_utils::endswith(const string& str, const string& ending)
+{
+	if (ending.size() <= str.size())
+	{
+		return (0 == str.compare(str.length() - ending.length(), ending.length(), ending));
+	}
+	return false;
+}
+
+
+bool sinsp_utils::endswith(const char *str, const char *ending, uint32_t lstr, uint32_t lend)
+{
+	if (lstr >= lend)
+	{
+		return (0 == memcmp(ending, str + (lstr - lend), lend));
+	}
+	return 0;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // sinsp_numparser implementation

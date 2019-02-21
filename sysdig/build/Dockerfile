@@ -17,6 +17,9 @@ RUN apt-get update \
         ca-certificates \
         `# For sysdig to pull a `jq` patch:` \
         wget \
+        curl \
+        libtbb-dev \
+        libelf-dev \
         ;
 
 COPY build.sh /build.sh

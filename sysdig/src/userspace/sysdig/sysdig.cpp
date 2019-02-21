@@ -1,19 +1,20 @@
 /*
-Copyright (C) 2013-2014 Draios inc.
+Copyright (C) 2013-2018 Draios Inc dba Sysdig.
 
 This file is part of sysdig.
 
-sysdig is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 2 as
-published by the Free Software Foundation.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-sysdig is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-You should have received a copy of the GNU General Public License
-along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
 */
 
 #define __STDC_FORMAT_MACROS
@@ -70,8 +71,13 @@ static void usage()
 " -b, --print-base64 Print data buffers in base64. This is useful for encoding\n"
 "                    binary data that needs to be used over media designed to\n"
 "                    handle textual data (i.e., terminal or json).\n"
+" -B<bpf_probe>, --bpf=<bpf_probe>\n"
+"                    Enable live capture using the specified BPF probe instead of the kernel module.\n"
+"                    The BPF probe can also be specified via the environment variable\n"
+"                    SYSDIG_BPF_PROBE. If <bpf_probe> is left empty, sysdig will\n"
+"                    try to load one from the sysdig-probe-loader script.\n"
 #ifdef HAS_CHISELS
-" -c <chiselname> <chiselargs>, --chisel  <chiselname> <chiselargs>\n"
+" -c <chiselname> <chiselargs>, --chisel <chiselname> <chiselargs>\n"
 "                    run the specified chisel. If the chisel require arguments,\n"
 "                    they must be specified in the command line after the name.\n"
 " -cl, --list-chisels\n"
@@ -160,6 +166,12 @@ static void usage()
 " -l, --list         List the fields that can be used for filtering and output\n"
 "                    formatting. Use -lv to get additional information for each\n"
 "                    field.\n"
+" --large-environment\n"
+"                    Support environments larger than 4KiB\n"
+"                    When the environment is larger than 4KiB, load the whole\n"
+"                    environment from /proc instead of truncating to the first 4KiB\n"
+"                    This may fail for short-lived processes and in that case\n"
+"                    the truncated environment is used instead.\n"
 " --list-markdown    like -l, but produces markdown output\n"
 " -m <url[,marathon_url]>, --mesos-api=<url[,marathon_url]>\n"
 "                    Enable Mesos support by connecting to the API server\n"
@@ -207,6 +219,8 @@ static void usage()
 "                    emitted by sysdig to be flushed, which generates higher CPU\n"
 "                    usage but is useful when piping sysdig's output into another\n"
 "                    process or into a script.\n"
+" -U, --suppress-comm\n"
+"                    Ignore all events from processes having the provided comm.\n"
 " -v, --verbose      Verbose output.\n"
 "                    This flag will cause the full content of text and binary\n"
 "                    buffers to be printed on screen, instead of being truncated\n"
@@ -707,11 +721,7 @@ captureinfo do_inspect(sinsp* inspector,
 					}
 				}
 
-				cout << line;
-				if(!json)
-				{
-					cout << endl;
-				}
+				cout << line << endl;
 			}
 		}
 
@@ -762,6 +772,9 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 	string* mesos_api = 0;
 	bool force_tracers_capture = false;
 	bool page_faults = false;
+	bool bpf = false;
+	string bpf_probe;
+	std::set<std::string> suppress_comms;
 
 	// These variables are for the cycle_writer engine
 	int duration_seconds = 0;
@@ -773,6 +786,7 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 	{
 		{"print-ascii", no_argument, 0, 'A' },
 		{"print-base64", no_argument, 0, 'b' },
+		{"bpf", optional_argument, 0, 'B' },
 #ifdef HAS_CHISELS
 		{"chisel", required_argument, 0, 'c' },
 		{"list-chisels", no_argument, &cflag, 1 },
@@ -792,6 +806,7 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 		{"json", no_argument, 0, 'j' },
 		{"k8s-api", required_argument, 0, 'k'},
 		{"k8s-api-cert", required_argument, 0, 'K' },
+		{"large-environment", no_argument, 0, 0 },
 		{"list", no_argument, 0, 'l' },
 		{"list-events", no_argument, 0, 'L' },
 		{"list-markdown", no_argument, 0, 0 },
@@ -805,6 +820,7 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 		{"readfile", required_argument, 0, 'r' },
 		{"snaplen", required_argument, 0, 's' },
 		{"summary", no_argument, 0, 'S' },
+		{"suppress-comm", required_argument, 0, 'U' },
 		{"timetype", required_argument, 0, 't' },
 		{"force-tracers-capture", required_argument, 0, 'T'},
 		{"unbuffered", no_argument, 0, 0 },
@@ -833,11 +849,11 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 		// Parse the args
 		//
 		while((op = getopt_long(argc, argv,
-                                        "Abc:"
+                                        "AbB::c:"
                                         "C:"
                                         "dDEe:F"
                                         "G:"
-                                        "hi:jk:K:lLm:M:n:Pp:qRr:Ss:t:Tv"
+                                        "hi:jk:K:lLm:M:n:Pp:qRr:Ss:t:TU:v"
                                         "W:"
                                         "w:xXz", long_options, &long_index)) != -1)
 		{
@@ -863,6 +879,15 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 
 				event_buffer_format = sinsp_evt::PF_BASE64;
 				break;
+			case 'B':
+			{
+				bpf = true;
+				if(optarg)
+				{
+					bpf_probe = optarg;
+				}
+				break;
+			}
 			case 0:
 				if(cflag != 1 && cflag != 2)
 				{
@@ -1117,6 +1142,10 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 			case 'T':
 				force_tracers_capture = true;
 				break;
+
+			case 'U':
+				suppress_comms.insert(string(optarg));
+				break;
 			case 'v':
 				verbose = true;
 				break;
@@ -1159,7 +1188,7 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 			case 'z':
 				compress = true;
 				break;
-            // getopt_long : '?' for an ambiguous match or an extraneous parameter 
+            // getopt_long : '?' for an ambiguous match or an extraneous parameter
 			case '?':
 				delete inspector;
 				return sysdig_init_res(EXIT_FAILURE);
@@ -1185,6 +1214,11 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 				filter_proclist_flag = true;
 			}
 
+			if(string(long_options[long_index].name) == "large-environment")
+			{
+				inspector->set_large_envs(true);
+			}
+
 			if(string(long_options[long_index].name) == "list-markdown")
 			{
 				list_flds = true;
@@ -1195,6 +1229,21 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 			{
 				page_faults = true;
 			}
+		}
+
+		if(!bpf)
+		{
+			const char *probe = scap_get_bpf_probe_from_env();
+			if(probe)
+			{
+				bpf = true;
+				bpf_probe = probe;
+			}
+		}
+
+		if(bpf)
+		{
+			inspector->set_bpf_probe(bpf_probe);
 		}
 
 		//
@@ -1338,6 +1387,21 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 			}
 #endif
 
+			// Suppress any comms specified via -U. We
+			// need to do this *before* opening the
+			// inspector, as that reads the process list.
+			for(auto &comm : suppress_comms)
+			{
+				if (!inspector->suppress_events_comm(comm.c_str()))
+				{
+					fprintf(stderr, "Could not add %s to the set of suppressed comms--did you specify more than %d values?\n",
+						comm.c_str(),
+						SCAP_MAX_SUPPRESSED_COMMS);
+					res.m_res = EXIT_FAILURE;
+					goto exit;
+				}
+			}
+
 			//
 			// Launch the capture
 			//
@@ -1364,7 +1428,7 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 				//
 #if defined(HAS_CAPTURE)
 				bool open_success = true;
-				
+
 				if(print_progress)
 				{
 					fprintf(stderr, "the -P flag cannot be used with live captures.\n");
@@ -1389,9 +1453,22 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 				{
 					open_success = true;
 
-					if(system("modprobe " PROBE_NAME " > /dev/null 2> /dev/null"))
+					if(bpf)
 					{
-						fprintf(stderr, "Unable to load the driver\n");
+						if(bpf_probe.empty())
+						{
+							if(system("sysdig-probe-loader bpf"))
+							{
+								fprintf(stderr, "Unable to load the BPF probe\n");
+							}
+						}
+					}
+					else
+					{
+						if(system("modprobe " PROBE_NAME " > /dev/null 2> /dev/null"))
+						{
+							fprintf(stderr, "Unable to load the driver\n");
+						}
 					}
 
 					inspector->open("");
@@ -1519,9 +1596,10 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 
 			if(verbose)
 			{
-				fprintf(stderr, "Driver Events:%" PRIu64 "\nDriver Drops:%" PRIu64 "\n",
+				fprintf(stderr, "Driver Events:%" PRIu64 "\nDriver Drops:%" PRIu64 "\nSuppressed by Comm:%" PRIu64 "\n",
 					cstats.n_evts,
-					cstats.n_drops);
+					cstats.n_drops,
+					cstats.n_suppressed);
 
 				fprintf(stderr, "Elapsed time: %.3lf, Captured Events: %" PRIu64 ", %.2lf eps\n",
 					duration,
@@ -1543,7 +1621,7 @@ sysdig_init_res sysdig_init(int argc, char **argv)
 	{
 		cerr << e.what() << endl;
 		handle_end_of_file(print_progress);
-		res.m_res = EXIT_FAILURE;
+		res.m_res = e.scap_rc();
 	}
 	catch(...)
 	{

@@ -1,3 +1,21 @@
+#
+# Copyright (C) 2013-2018 Draios Inc dba Sysdig.
+#
+# This file is part of sysdig .
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
 # Prior to doing anything, we make sure that we aren't trying to
 # run cmake in-tree. (see Issue 71: https://github.com/draios/sysdig/issues/71)
 if(EXISTS CMakeLists.txt)
@@ -40,12 +58,20 @@ set(PACKAGE_NAME "sysdig")
 add_definitions(-DPLATFORM_NAME="${CMAKE_SYSTEM_NAME}")
 add_definitions(-DK8S_DISABLE_THREAD)
 
+option(BUILD_WARNINGS_AS_ERRORS "Enable building with -Wextra -Werror flags")
+
 if(NOT WIN32)
 
 	set(SYSDIG_DEBUG_FLAGS "-D_DEBUG")
+	set(CMAKE_COMMON_FLAGS "-Wall -ggdb")
 
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -ggdb")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -ggdb --std=c++0x")
+	if(BUILD_WARNINGS_AS_ERRORS)
+		set(CMAKE_SUPPRESSED_WARNINGS "-Wno-unused-parameter -Wno-missing-field-initializers -Wno-sign-compare -Wno-type-limits -Wno-implicit-fallthrough -Wno-format-truncation")
+		set(CMAKE_COMMON_FLAGS "${CMAKE_COMMON_FLAGS} -Wextra -Werror ${CMAKE_SUPPRESSED_WARNINGS}")
+	endif()
+
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_COMMON_FLAGS}")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_COMMON_FLAGS} -std=c++0x")
 
 	set(CMAKE_C_FLAGS_DEBUG "${SYSDIG_DEBUG_FLAGS}")
 	set(CMAKE_CXX_FLAGS_DEBUG "${SYSDIG_DEBUG_FLAGS}")
@@ -60,9 +86,17 @@ if(NOT WIN32)
 			set(KBUILD_FLAGS "${SYSDIG_FEATURE_FLAGS}")
 		endif()
 
-		set(PROBE_VERSION "${SYSDIG_VERSION}")
-		set(PROBE_NAME "${PROBE_NAME}")
-		set(PROBE_DEVICE_NAME "sysdig")
+		if(NOT DEFINED PROBE_VERSION)
+			set(PROBE_VERSION "${SYSDIG_VERSION}")
+		endif()
+		if(NOT DEFINED PROBE_NAME)
+			set(PROBE_NAME "sysdig-probe")
+		        set(PROBE_NAME "${PROBE_NAME}")
+		endif()
+
+		if(NOT DEFINED PROBE_DEVICE_NAME)
+			set(PROBE_DEVICE_NAME "sysdig")
+		endif()
 
 		add_subdirectory(driver)
 		add_definitions(-DHAS_CAPTURE)
@@ -210,6 +244,37 @@ else()
 endif()
 
 #
+# Intel tbb
+#
+if(NOT WIN32 AND NOT APPLE)
+	option(USE_BUNDLED_TBB "Enable building of the bundled tbb" ${USE_BUNDLED_DEPS})
+	if(NOT USE_BUNDLED_TBB)
+		find_path(TBB_INCLUDE tbb.h PATH_SUFFIXES tbb)
+		find_library(TBB_LIB NAMES tbb)
+		if(TBB_INCLUDE AND TBB_LIB)
+			message(STATUS "Found tbb: include: ${TBB_INCLUDE}, lib: ${TBB_LIB}")
+		else()
+			message(FATAL_ERROR "Couldn't find system tbb")
+		endif()
+	else()
+		set(TBB_SRC "${PROJECT_BINARY_DIR}/tbb-prefix/src/tbb")
+
+		message(STATUS "Using bundled tbb in '${TBB_SRC}'")
+
+		set(TBB_INCLUDE "${TBB_SRC}/include/")
+		set(TBB_LIB "${TBB_SRC}/build/lib_release/libtbb.a")
+		ExternalProject_Add(tbb
+			URL "http://s3.amazonaws.com/download.draios.com/dependencies/tbb-2018_U5.tar.gz"
+			URL_MD5 "ff3ae09f8c23892fbc3008c39f78288f"
+			CONFIGURE_COMMAND ""
+			BUILD_COMMAND ${CMD_MAKE} tbb_build_dir=${TBB_SRC}/build tbb_build_prefix=lib extra_inc=big_iron.inc
+			BUILD_IN_SOURCE 1
+			BUILD_BYPRODUCTS ${TBB_LIB}
+			INSTALL_COMMAND "")
+	endif()
+endif()
+
+#
 # jq
 #
 if(NOT WIN32 AND NOT APPLE)
@@ -340,15 +405,15 @@ if(NOT WIN32 AND NOT APPLE)
 			set(CURL_SSL_OPTION "--with-ssl")
 		else()
 			set(CURL_SSL_OPTION "--with-ssl=${OPENSSL_INSTALL_DIR}")
-                        message(STATUS "Using bundled curl in '${CURL_BUNDLE_DIR}'")
-                        message(STATUS "Using SSL for curl in '${CURL_SSL_OPTION}'")
+			message(STATUS "Using bundled curl in '${CURL_BUNDLE_DIR}'")
+			message(STATUS "Using SSL for curl in '${CURL_SSL_OPTION}'")
 		endif()
 
 
 		ExternalProject_Add(curl
 			DEPENDS openssl
-			URL "http://download.draios.com/dependencies/curl-7.57.0.tar.bz2"
-			URL_MD5 "dd3e22e923be17663e67f721c2aec054"
+			URL "http://download.draios.com/dependencies/curl-7.61.0.tar.bz2"
+			URL_MD5 "31d0a9f48dc796a7db351898a1e5058a"
 			CONFIGURE_COMMAND ./configure ${CURL_SSL_OPTION} --disable-threaded-resolver --disable-shared --enable-optimize --disable-curldebug --disable-rt --enable-http --disable-ftp --disable-file --disable-ldap --disable-ldaps --disable-rtsp --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp --disable-gopher --disable-sspi --disable-ntlm-wb --disable-tls-srp --without-winssl --without-darwinssl --without-polarssl --without-cyassl --without-nss --without-axtls --without-ca-path --without-ca-bundle --without-libmetalink --without-librtmp --without-winidn --without-libidn --without-nghttp2 --without-libssh2
 			BUILD_COMMAND ${CMD_MAKE}
 			BUILD_IN_SOURCE 1
@@ -382,7 +447,7 @@ set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://www.sysdig.org")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "dkms (>= 2.1.0.0)")
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_BINARY_DIR}/scripts/debian/postinst;${CMAKE_BINARY_DIR}/scripts/debian/prerm")
 
-set(CPACK_RPM_PACKAGE_LICENSE "GPLv2")
+set(CPACK_RPM_PACKAGE_LICENSE "Apache v2.0")
 set(CPACK_RPM_PACKAGE_URL "http://www.sysdig.org")
 set(CPACK_RPM_PACKAGE_REQUIRES "dkms, gcc, make, kernel-devel, perl")
 set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE "${PROJECT_SOURCE_DIR}/scripts/rpm/postinstall")
