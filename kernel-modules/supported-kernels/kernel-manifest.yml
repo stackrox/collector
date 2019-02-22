@@ -1136,6 +1136,9 @@ ubuntu-standard:
       4.13.0-46:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.13.0-46-generic_4.13.0-46.51_amd64.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.13.0-46_4.13.0-46.51_all.deb
+      4.15.0-15:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe-edge/linux-headers-4.15.0-15-generic_4.15.0-15.16~16.04.1_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-hwe-edge/linux-headers-4.15.0-15_4.15.0-15.16~16.04.1_all.deb
       4.15.0-20:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-20-generic_4.15.0-20.21_amd64.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux/linux-headers-4.15.0-20_4.15.0-20.21_all.deb
