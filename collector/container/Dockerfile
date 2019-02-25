@@ -69,20 +69,10 @@ WORKDIR /
 # Uncomment below line when volume needs to created for extracting the Collector core
 # VOLUME ["/core"]
 
-# needed for container reentrancy on swarm:
-RUN curl -o docker-18.06.1-ce.tgz https://download.docker.com/linux/static/stable/x86_64/docker-18.06.1-ce.tgz && \
-    tar -xvzf docker-18.06.1-ce.tgz && cp docker/docker /usr/local/bin/docker && \
-    rm -r docker-18.06.1-ce.tgz docker
-COPY scripts/swarm_entrypoint.sh /swarm_entrypoint.sh
-
 # update boot script
 COPY scripts/bootstrap.sh /bootstrap.sh
 RUN chown root.root /bootstrap.sh
 RUN chmod 700 /bootstrap.sh
-
-COPY scripts/extract_secrets.sh /extract_secrets.sh
-RUN chown root.root /extract_secrets.sh
-RUN chmod 700 /extract_secrets.sh
 
 # copy notice and license files
 COPY NOTICE-collector.txt \

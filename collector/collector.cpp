@@ -187,6 +187,43 @@ void insertModule(const Json::Value& syscall_list) {
     CLOG(INFO) << "Done inserting kernel module " << SysdigService::kModulePath << ".";
 }
 
+bool verifyProbeConfiguration() {
+    int fd = open(SysdigService::kProbePath, O_RDONLY);
+    if (fd < 0) {
+        CLOG(ERROR) << "Cannot open kernel probe:" << SysdigService::kProbePath;
+        return false;
+    }
+    close(fd);
+
+    char *endptr = 0;
+    const char* major_str = std::getenv("KERNEL_MAJOR");
+    const char* minor_str = std::getenv("KERNEL_MINOR");
+    if (!major_str || !minor_str) {
+        CLOG(ERROR) << "Failed to read environment variables KERNEL_MAJOR and/or KERNEL_MINOR";
+        return false;
+    }
+
+    long major_num = strtol(major_str, &endptr, 10);
+    if (endptr == major_str || (endptr && *endptr != 0)) {
+        CLOG(ERROR) << "Failed to parse environment variable KERNEL_MAJOR";
+        return false;
+    }
+
+    endptr = 0;
+    long minor_num = strtol(minor_str, &endptr, 10);
+    if (endptr == minor_str || (endptr && *endptr != 0)) {
+        CLOG(ERROR) << "Failed to parse environment variable KERNEL_MINOR";
+        return false;
+    }
+
+    if (major_num < 4 || (major_num == 4 && minor_num < 14)) {
+        CLOG(ERROR) << "eBPF not supported on kernel version " << major_num << "." << minor_num;
+        return false;
+    }
+    CLOG(INFO) << "eBPF supported on kernel version " << major_num << "." << minor_num;
+    return true;
+}
+
 static const std::string base64_chars =
              "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
              "abcdefghijklmnopqrstuvwxyz"
@@ -251,15 +288,6 @@ int GetScrapeInterval(Json::Value collectorConfig) {
 }
 
 int main(int argc, char **argv) {
-  // First action: drop all capabilities except for SYS_MODULE (inserting the module), SYS_PTRACE (reading from /proc),
-  // and DAC_OVERRIDE (opening the device files with O_RDWR regardless of actual permissions).
-  capng_clear(CAPNG_SELECT_BOTH);
-  capng_updatev(CAPNG_ADD, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED),
-                CAP_SYS_MODULE, CAP_DAC_OVERRIDE, CAP_SYS_PTRACE, -1);
-  if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
-    CLOG(WARNING) << "Failed to drop capabilities: " << StrError();
-  }
-
   if (!g_control.is_lock_free()) {
     CLOG(FATAL) << "Could not create a lock-free control variable!";
   }
@@ -285,17 +313,39 @@ int main(int argc, char **argv) {
   // insert the kernel module with options from the configuration
   Json::Value collectorConfig = args->CollectorConfig();
 
-  insertModule(collectorConfig["syscalls"]);
-
-  // Drop SYS_MODULE capability after successfully inserting module.
-  capng_updatev(CAPNG_DROP, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_SYS_MODULE, -1);
-  if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
-    CLOG(WARNING) << "Failed to drop SYS_MODULE capability: " << StrError();
-  }
+  // Extract configuration options
+  bool useChiselCache = collectorConfig["useChiselCache"].asBool();
+  CLOG(INFO) << "useChiselCache=" << useChiselCache;
 
   bool useGRPC = false;
   if (!args->GRPCServer().empty()) {
     useGRPC = true;
+  }
+
+  bool useEbpf = collectorConfig["useEbpf"].asBool();
+  CLOG(INFO) << "useEbpf=" << useEbpf;
+
+  if (useEbpf) {
+    if (!verifyProbeConfiguration()) {
+      CLOG(FATAL) << "Error verifying ebpf configuration. Aborting...";
+    }
+  } else {
+    // First action: drop all capabilities except for SYS_MODULE (inserting the module), SYS_PTRACE (reading from /proc),
+    // and DAC_OVERRIDE (opening the device files with O_RDWR regardless of actual permissions).
+    capng_clear(CAPNG_SELECT_BOTH);
+    capng_updatev(CAPNG_ADD, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED),
+                  CAP_SYS_MODULE, CAP_DAC_OVERRIDE, CAP_SYS_PTRACE, -1);
+    if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
+      CLOG(WARNING) << "Failed to drop capabilities: " << StrError();
+    }
+
+    insertModule(collectorConfig["syscalls"]);
+
+    // Drop SYS_MODULE capability after successfully inserting module.
+    capng_updatev(CAPNG_DROP, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_SYS_MODULE, -1);
+    if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
+      CLOG(WARNING) << "Failed to drop SYS_MODULE capability: " << StrError();
+    }
   }
 
   if (useGRPC) {
@@ -306,10 +356,6 @@ int main(int argc, char **argv) {
 
   std::string chiselB64 = args->Chisel();
   std::string chisel = base64_decode(chiselB64);
-
-  // Extract configuration options
-  bool useChiselCache = collectorConfig["useChiselCache"].asBool();
-  CLOG(INFO) << "useChiselCache=" << useChiselCache;
 
   std::shared_ptr<grpc::Channel> grpc_channel;
   if (useGRPC) {
@@ -341,6 +387,7 @@ int main(int argc, char **argv) {
   config.scrape_interval = GetScrapeInterval(collectorConfig);
   config.snapLen = 0;
   config.useChiselCache = useChiselCache;
+  config.useEbpf = useEbpf;
   config.chisel = chisel;
   config.grpc_channel = std::move(grpc_channel);
 

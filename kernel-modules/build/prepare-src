@@ -36,6 +36,7 @@ cmake \
 	-DPROBE_NAME=collector \
 	-DBUILD_USERSPACE=OFF \
 	-DENABLE_DKMS=OFF \
+	-DBUILD_BPF=ON \
 	"$SYSDIG_SCRATCH"
 KERNELDIR=/dev/null make driver/fast || true
 

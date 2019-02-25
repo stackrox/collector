@@ -31,6 +31,7 @@ You should have received a copy of the GNU General Public License along with thi
 namespace collector {
 
 struct CollectorConfig {
+  bool useEbpf = false;
   bool useChiselCache = true;
   int snapLen = 2048;
   int scrape_interval;

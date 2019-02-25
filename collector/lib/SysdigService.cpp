@@ -39,6 +39,7 @@ namespace collector {
 
 constexpr char SysdigService::kModulePath[];
 constexpr char SysdigService::kModuleName[];
+constexpr char SysdigService::kProbePath[];
 
 
 void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) {
@@ -48,6 +49,11 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
 
   inspector_.reset(new_inspector());
   inspector_->set_snaplen(config.snapLen);
+
+  if (config.useEbpf) {
+    useEbpf = true;
+    inspector_->set_bpf_probe(kProbePath);
+  }
 
   if (conn_tracker) {
     AddSignalHandler(MakeUnique<NetworkSignalHandler>(inspector_.get(), conn_tracker, &userspace_stats_));
@@ -98,11 +104,13 @@ bool SysdigService::FilterEvent(sinsp_evt* event) {
     }
   }
 
-  if (cache_status == BLOCKED_USERSPACE && event->get_type() != PPME_PROCEXIT_1_E) {
-    if (!inspector_->ioctl(0, PPM_IOCTL_EXCLUDE_NS_OF_PID, reinterpret_cast<void*>(tinfo->m_pid))) {
-      CLOG(WARNING) << "Failed ioctl: " << inspector_->getlasterr();
-    } else {
-      cache_status = BLOCKED_KERNEL;
+  if (!useEbpf) {
+    if (cache_status == BLOCKED_USERSPACE && event->get_type() != PPME_PROCEXIT_1_E) {
+      if (!inspector_->ioctl(0, PPM_IOCTL_EXCLUDE_NS_OF_PID, reinterpret_cast<void*>(tinfo->m_pid))) {
+        CLOG(WARNING) << "Failed ioctl: " << inspector_->getlasterr();
+      } else {
+        cache_status = BLOCKED_KERNEL;
+      }
     }
   }
 
@@ -138,10 +146,12 @@ void SysdigService::Start() {
 
   inspector_->open("");
 
-  // Drop DAC_OVERRIDE capability after opening the device files.
-  capng_updatev(CAPNG_DROP, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_DAC_OVERRIDE, -1);
-  if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
-    CLOG(WARNING) << "Failed to drop DAC_OVERRIDE capability: " << StrError();
+  if (!useEbpf) {
+    // Drop DAC_OVERRIDE capability after opening the device files.
+    capng_updatev(CAPNG_DROP, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_DAC_OVERRIDE, -1);
+    if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
+      CLOG(WARNING) << "Failed to drop DAC_OVERRIDE capability: " << StrError();
+    }
   }
 
   std::lock_guard<std::mutex> lock(running_mutex_);
@@ -224,12 +234,14 @@ void SysdigService::SetChisel(const std::string& chisel) {
   chisel_->on_init();
   chisel_cache_.clear();
 
-  std::lock_guard<std::mutex> lock(running_mutex_);
-  if (running_) {
-    // Reset kernel-level exclusion table.
-    if (!inspector_->ioctl(0, PPM_IOCTL_EXCLUDE_NS_OF_PID, 0)) {
-      CLOG(WARNING)
-          << "Failed to reset the kernel-level PID namespace exclusion table via ioctl(): " << inspector_->getlasterr();
+  if (!useEbpf) {
+    std::lock_guard<std::mutex> lock(running_mutex_);
+    if (running_) {
+      // Reset kernel-level exclusion table.
+      if (!inspector_->ioctl(0, PPM_IOCTL_EXCLUDE_NS_OF_PID, 0)) {
+        CLOG(WARNING)
+            << "Failed to reset the kernel-level PID namespace exclusion table via ioctl(): " << inspector_->getlasterr();
+      }
     }
   }
 }
