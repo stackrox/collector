@@ -1,217 +1,69 @@
 #!/usr/bin/env bash
-set -euo pipefail
-
+#
 #### LICENSING:
 #### This file is derived from sysdig, in scripts/build-probe-binaries.
 #### Sysdig is licensed under the GNU General Public License v2.
 #### This file is not distributed with StackRox code, and is only
 #### used during compilation.
 #### This file is heavily modified from the original.
-
 #
 # This script builds a precompiled version of sysdig-probe for a bunch of kernels
 # The precompiled binary is then obtained at runtime by sysdig-probe-loader
 # Ideally, the community should expand this stuff with better support
 #
 
-build_modules() {
-    kernel_directory="$1"
-    kernel_release="$2"
-    output_module="collector-${kernel_release}.ko"
-
-    echo "Building modules for ${kernel_release}"
-
-    cd "/scratch/src/${SOURCE_VERSION}"
-    KERNELDIR="$kernel_directory" make clean
-    KERNELDIR="$kernel_directory" make -j 6 all
-    
-    sysdig_ko=collector.ko
-    strip -g "$sysdig_ko"
-
-    ko_version=$(/sbin/modinfo "$sysdig_ko" | grep vermagic | tr -s " " | cut -d " " -f 2)
-    if [ "$ko_version" != "$kernel_release" ]; then
-        echo "Corrupted probe, KO_VERSION=$ko_version, KERNEL_RELEASE=$kernel_release"
-        return 1
-    fi
-
-    mv "$sysdig_ko" "$output_module"
-    gzip "$output_module"
-    mv "${output_module}.gz" "/output/${SOURCE_VERSION}"
-}
-
-ubuntu_build() {
-    if [[ $# -ne 3 ]]; then
-        echo "Incorrect arguments to ubuntu_build() ($* given)"
-        return 1
-    fi
-
-    local release="$1"
-    local specific_deb_file="/packages/$2"
-    local all_deb_file="/packages/$3"
-    local module_file="/output/Ubuntu/collector-${release}.ko"
-
-    echo "Running an Ubuntu build"
-    echo "  release           | $release"
-    echo "  specific_deb_file | $specific_deb_file"
-    echo "  all_deb_file      | $all_deb_file"
-    echo "  module_file       | $module_file"
-
-    dpkg -x "$specific_deb_file" ./
-    dpkg -x "$all_deb_file" ./
-
-    build_modules "$PWD/usr/src/linux-headers-${release}" "$release" "$module_file"
-}
-
-rhel_build() {
-    if [[ $# -ne 2 ]]; then
-        echo "Incorrect arguments to rhel_build() ($* given)"
-        return 1
-    fi
-
-    local release="$1"
-    local rpm_file="/packages/$2"
-    local module_file="/output/RedHat/collector-${release}.ko"
-
-    echo "Running a RedHat build"
-    echo "  release     | $release"
-    echo "  rpm_file    | $rpm_file"
-    echo "  module_file | $module_file"
-
-    rpm2cpio "$rpm_file" | cpio -idm
-
-    build_modules "$PWD/usr/src/kernels/${release}" "$release" "$module_file"
-}
-
-extract() {
-    echo "Extracting $1"
-    dpkg -x "$1" ./
-}
-
-debian_build() {
-    if [[ $# -lt 3 ]] || [[ $# -gt 4 ]]; then
-        echo "Incorrect arguments to debian_build() ($* given)"
-        return 1
-    fi
-
-    local release="$1"
-    local kbuild_deb_file="/packages/$2"
-    local header_deb_file="/packages/$3"
-    local common_deb_file=""
-    if [[ $# -eq 4 ]]; then
-	local common_deb_file="/packages/$4"
-    fi
-    local module_file="/output/Debian/collector-${release}.ko"
-    local src_dir="${PWD}/usr/src/linux-headers-${release}"
-
-    echo "Running a Debian build"
-    echo "  release         | $release"
-    echo "  kbuild_deb_file | $kbuild_deb_file"
-    echo "  header_deb_file | $header_deb_file"
-    echo "  common_deb_file | $common_deb_file"
-    echo "  module_file     | $module_file"
-
-    extract "$header_deb_file"
-    extract "$kbuild_deb_file"
-    [[ -n "${common_deb_file}" ]] && extract "${common_deb_file}"
-
-
-    # Fix symbolic links
-    unlink "lib/modules/${release}/build"
-    ln -sr "${PWD}/usr/src/linux-headers-${release}" "lib/modules/${release}/build"
-    if [[ -n "${common_deb_file}" ]]; then
-	local commons_dir="${PWD}/usr/src/linux-headers-${release/amd64/common}"
-	unlink "lib/modules/${release}/source"
-	ln -s "${commons_dir}" "lib/modules/${release}/source"
-    fi
-    
-    # Hack Makefile
-    sed -i -e 's/@://' \
-	-e 's|$(cmd) %.*$|$(cmd) : all|' \
-	"${src_dir}/Makefile"
-    if [[ -n "${common_deb_file}" ]]; then
-	sed -i -e '0,/MAKEARGS.*$/s__MAKEARGS := -C '"${commons_dir} O=${src_dir}"_ \
-	"${src_dir}/Makefile"
-    fi
-    build_modules "$PWD/usr/src/linux-headers-${release}" "$release" "$module_file"
-}
-
-coreos_build() {
-    if [[ $# -ne 2 ]]; then
-        echo "Incorrect arguments to coreos_build() ($* given)"
-        return 1
-    fi
-
-    local release="$1"
-    local bundle_file="/packages/$2"
-    local module_file="/output/CoreOS/collector-${release}.ko"
-
-    echo "Running a CoreOS build"
-    echo "  release     | $release"
-    echo "  bundle_file | $bundle_file"
-    echo "  module_file | $module_file"
-
-    tar --strip-components=2 -xf "$bundle_file" --wildcards 'usr/boot/config*'
-    tar --strip-components=1 -xf "$bundle_file" 'lib/modules'
-
-    # https://groups.google.com/forum/#!topic/coreos-dev/Z8Q7sIy6YwE
-    sed -i 's/CONFIG_INITRAMFS_SOURCE=""/CONFIG_INITRAMFS_SOURCE="bootengine.cpio"\nCONFIG_INITRAMFS_ROOT_UID=0\nCONFIG_INITRAMFS_ROOT_GID=0/' config
-    sed -i 'N;s/\(CONFIG_RD_LZ4=.\)\n\(CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=\)/\1\nCONFIG_INITRAMFS_COMPRESSION=".gz"\n\2/' config
-
-    build_modules "$PWD/modules/${release}/build" "$release" "$module_file"
-}
+set -euo pipefail
+IFS=$'\n\t'
 
 main() {
-    if [[ $# -lt 4 ]]; then
-        echo "Insufficient arguments"
+    local input_kernal_bundle="$1"
+    local input_sysdig_bundle="$2"
+    local output_dir="$3"
+
+    local kernel_version="$(basename "$input_kernal_bundle" | sed 's|bundle-||' | sed 's|.tgz||')"
+    local output_module="${output_dir}/collector-${kernel_version}.ko"
+
+    local kernel_dir="$(mktemp -d)"
+    local sysdig_dir="$(mktemp -d)"
+
+    # Extract the kernel bundle.
+    tar -C "$kernel_dir" -xf "$input_kernal_bundle"
+
+    # Sanity check that a file named BUNDLE_BUILD_DIR was extracted from the
+    # bundle archive.
+    if [[ ! -f "${kernel_dir}/BUNDLE_BUILD_DIR" ]]; then
+        echo "no BUNDLE_BUILD_DIR file inside of bundle archive"
         return 1
     fi
 
-    [[ -n "$SOURCE_VERSION" ]] || {
-    	echo >&2 "Source version is not set!"
-    	exit 1
-    }
+    # Build up the kernel directory for building.
+    kernel_build_dir="$(cat "${kernel_dir}/BUNDLE_BUILD_DIR")"
+    echo "kernel_build_dir is $kernel_build_dir"
+    kernel_build_dir="$(cd "$kernel_dir" && cd "$kernel_build_dir" && pwd)"
+    echo "kernel_build_dir is $kernel_build_dir"
 
-    distro="$1"
-    version="$2"
-    flavor="$3"
-    shift 3
-    files="$@"
+    # Extract the sysdig bundle.
+    tar -C "$sysdig_dir" -xf "$input_sysdig_bundle"
 
-    mkdir -p /scratch/src
-    [[ -d "/scratch/src/${SOURCE_VERSION}" ]] || cp -r "/sources/${SOURCE_VERSION}" "/scratch/src/${SOURCE_VERSION}"
+    # Perform the actual kernel module build.
+    cd "$sysdig_dir"
+    KERNELDIR="${kernel_build_dir}" make -j 6 all
 
-    rm -rf /scratch/tmp || true
-    mkdir -p /scratch/tmp
-    cd /scratch/tmp
+    # Strip symbols from the build module.
+    local sysdig_ko=collector.ko
+    strip -g "$sysdig_ko"
 
-    mkdir -p "/output/${SOURCE_VERSION}"
+    # Sanity check the kernel version. Verify that the version in the bundle
+    # filename exactly matches the version given by the kernel module itself.
+    local ko_version=$(/sbin/modinfo "$sysdig_ko" | grep vermagic | tr -s " " | cut -d " " -f 2)
+    if [[ "$ko_version" != "$kernel_version" ]]; then
+        echo "Corrupted probe: Expected '$kernel_version' but actual was '$ko_version'"
+        return 1
+    fi
 
-    case "$distro" in
-        Ubuntu)
-            echo Building Ubuntu
-            ubuntu_build "${version}-${flavor}" $files
-        ;;
-
-        RedHat)
-            echo Building RHEL
-            rhel_build "${version}.${flavor}" $files
-        ;;
-
-        Debian)
-            echo Building Debian
-            debian_build "${version}-${flavor}" $files
-        ;;
-
-        CoreOS)
-            echo Building CoreOS
-            coreos_build "${version}-${flavor}" $files
-        ;;
-
-        *)
-            echo Unknown distro.
-            return 1
-        ;;
-    esac
+    # Move kernel module into the correct location and compress.
+    mv -f "$sysdig_ko" "$output_module"
+    pigz -f -9 "$output_module"
 }
 
 main "$@"

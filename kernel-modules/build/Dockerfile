@@ -18,6 +18,7 @@ RUN apt-get update \
       bzip2 \
       kpartx \
       golang-go \
+      pigz \
  ;
 
 RUN sed s_stretch_jessie_g < /etc/apt/sources.list > /etc/apt/sources.list.d/jessie.list && \
@@ -41,4 +42,5 @@ COPY build-kos /usr/bin/
 COPY prepare-src /usr/bin
 
 WORKDIR /scratch
-ENTRYPOINT [ "/bin/bash", "-c" ]
+
+ENTRYPOINT ["/usr/bin/build-kos"]
