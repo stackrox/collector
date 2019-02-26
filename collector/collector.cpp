@@ -246,7 +246,7 @@ const char* GetHostname() {
 }
 
 int GetScrapeInterval(Json::Value collectorConfig) {
-  std::string scrape_interval = collectorConfig["scrapeInterval"].asString();
+  std::string scrape_interval = collectorConfig.get("scrapeInterval", "30").asString();
   return std::stoi(scrape_interval);
 }
 
