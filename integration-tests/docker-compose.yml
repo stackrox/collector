@@ -6,7 +6,7 @@ services:
     image: "stackrox/collector:${COLLECTOR_TAG}"
     environment:
     - "GRPC_SERVER=grpc-server:9999"
-    - 'COLLECTOR_CONFIG={"syscalls":["execve"],"generic_syscalls":["execve"],"useChiselCache":true,"signalOutput":"grpc","signalFormat":"signal_summary"}'
+    - 'COLLECTOR_CONFIG={"syscalls":["accept", "connect", "execve", "fork", "clone", "close", "shutdown", "socket"]}'
     restart: always
     privileged: true
     networks:
@@ -14,10 +14,7 @@ services:
     volumes:
     - /var/run/docker.sock:/host/var/run/docker.sock:ro
     - /proc:/host/proc:ro
-    - /boot:/host/boot:ro
     - /sys/module:/host/sys/module:ro
-    - /lib/modules:/host/lib/modules:ro
-    - /usr:/host/usr:ro
     - /dev:/host/dev:ro
 
   grpc-server:
