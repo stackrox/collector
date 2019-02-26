@@ -6,7 +6,7 @@ services:
     image: "stackrox/collector:${COLLECTOR_TAG}"
     environment:
     - "GRPC_SERVER=grpc-server:9999"
-    - 'COLLECTOR_CONFIG={"syscalls":["accept", "connect", "execve", "fork", "clone", "close", "shutdown", "socket"]}'
+    - 'COLLECTOR_CONFIG={"syscalls":["accept","connect","execve","fork","clone","close","shutdown","socket"]}'
     restart: always
     privileged: true
     networks:
