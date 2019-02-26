@@ -126,7 +126,7 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
     std::vector<Connection> all_conns;
 
     bool success = conn_scraper_.Scrape(&all_conns);
-    next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(30);
+    next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(scrape_interval_);
 
     if (!success) {
       CLOG(ERROR) << "Failed to scrape connections";

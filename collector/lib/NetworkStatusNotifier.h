@@ -46,10 +46,12 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
  public:
   using Stub = sensor::NetworkConnectionInfoService::Stub;
 
-  NetworkStatusNotifier(std::string hostname, std::string proc_dir, std::shared_ptr<ConnectionTracker> conn_tracker,
+  NetworkStatusNotifier(std::string hostname, std::string proc_dir, int scrape_interval,
+                        std::shared_ptr<ConnectionTracker> conn_tracker,
                         std::shared_ptr<grpc::Channel> channel)
-      : hostname_(std::move(hostname)), conn_scraper_(std::move(proc_dir)), conn_tracker_(std::move(conn_tracker)),
-        channel_(std::move(channel)), stub_(sensor::NetworkConnectionInfoService::NewStub(channel_))
+      : hostname_(std::move(hostname)), conn_scraper_(std::move(proc_dir)), scrape_interval_(scrape_interval),
+        conn_tracker_(std::move(conn_tracker)), channel_(std::move(channel)),
+        stub_(sensor::NetworkConnectionInfoService::NewStub(channel_))
   {}
 
   void Start();
@@ -73,6 +75,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   std::mutex context_mutex_;
 
   ConnScraper conn_scraper_;
+  int scrape_interval_;
   std::shared_ptr<ConnectionTracker> conn_tracker_;
 
   std::shared_ptr<grpc::Channel> channel_;

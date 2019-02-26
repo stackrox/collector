@@ -245,6 +245,11 @@ const char* GetHostname() {
   return "unknown";
 }
 
+int GetScrapeInterval(Json::Value collectorConfig) {
+  std::string scrape_interval = collectorConfig.get("scrapeInterval", "30").asString();
+  return std::stoi(scrape_interval);
+}
+
 int main(int argc, char **argv) {
   // First action: drop all capabilities except for SYS_MODULE (inserting the module), SYS_PTRACE (reading from /proc),
   // and DAC_OVERRIDE (opening the device files with O_RDWR regardless of actual permissions).
@@ -333,6 +338,7 @@ int main(int argc, char **argv) {
   CollectorConfig config;
   config.hostname = GetHostname();
   config.host_proc = GetHostPath("/proc");
+  config.scrape_interval = GetScrapeInterval(collectorConfig);
   config.snapLen = 0;
   config.useChiselCache = useChiselCache;
   config.chisel = chisel;
