@@ -13,10 +13,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/boltdb/bolt"
 	"io/ioutil"
+	"encoding/json"
 )
 
 const (
 	processBucket = "Process"
+	networkBucket = "Network"
 )
 
 func TestCollectorGRPC(t *testing.T) {
@@ -25,8 +27,11 @@ func TestCollectorGRPC(t *testing.T) {
 
 type IntegrationTestSuite struct {
 	suite.Suite
-	dbpath string
-	db     *bolt.DB
+	dbpath      string
+	db          *bolt.DB
+	containerID string
+	ipAddress   string
+	port        string
 }
 
 // Launches collector
@@ -38,11 +43,28 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.dbpath = "/tmp/collector-test.db"
 
 	// invokes default nginx
-	_, err := s.launchContainer()
+	_, err := s.launchContainer("nginx", "nginx:1.14-alpine")
 	assert.Nil(s.T(), err)
 
-	// invokes "sh"
-	_, err = s.execContainer()
+	// invokes "sleep"
+	_, err = s.execContainer("nginx", []string{"sh", "-c", "sleep 5"})
+	assert.Nil(s.T(), err)
+
+	// invokes another container
+	containerID, err := s.launchContainer("busybox", "busybox:1")
+	assert.Nil(s.T(), err)
+	s.containerID = containerID[0:12]
+
+	ip, err := s.getIPAddress("nginx")
+	assert.Nil(s.T(), err)
+	s.ipAddress = ip
+
+	port, err := s.getPort("nginx")
+	assert.Nil(s.T(), err)
+	s.port = port
+
+	// invokes "wget ip from busybox"
+	_, err = s.execContainer("busybox", []string{"wget", ip})
 	assert.Nil(s.T(), err)
 
 	logs, err := s.containerLogs("test_collector_1")
@@ -68,43 +90,82 @@ func (s *IntegrationTestSuite) SetupSuite() {
 func (s *IntegrationTestSuite) TestProcessViz() {
 	processName := "nginx"
 	exeFilePath := "/usr/sbin/nginx"
+	expectedProcessInfo := fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 666, 666)
 	val, err := s.Get(processName, processBucket)
 	assert.Nil(s.T(), err)
-	assert.Equal(s.T(), exeFilePath, val)
+	assert.Equal(s.T(), expectedProcessInfo, val)
 
 	processName = "sh"
 	exeFilePath = "/bin/sh"
+	expectedProcessInfo = fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 666, 666)
 	val, err = s.Get(processName, processBucket)
 	assert.Nil(s.T(), err)
-	assert.Equal(s.T(), exeFilePath, val)
+	assert.Equal(s.T(), expectedProcessInfo, val)
 
 	processName = "sleep"
 	exeFilePath = "/bin/sleep"
+	expectedProcessInfo = fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 666, 666)
 	val, err = s.Get(processName, processBucket)
 	assert.Nil(s.T(), err)
-	assert.Equal(s.T(), exeFilePath, val)
+	assert.Equal(s.T(), expectedProcessInfo, val)
+}
+
+func (s *IntegrationTestSuite) TestNetworkFlows() {
+	val, err := s.Get(s.containerID, networkBucket)
+	assert.Nil(s.T(), err)
+	fmt.Printf("from db: %s\n", string(val))
+	fmt.Printf("from test IP: %s, Port: %s\n", s.ipAddress, s.port)
 }
 
 func (s *IntegrationTestSuite) TearDownSuite() {
 	s.dockerComposeDown()
-	s.cleanupContainer()
+	s.cleanupContainer([]string{"foo"})
 }
 
-func (s *IntegrationTestSuite) launchContainer() (string, error) {
-	cmd := exec.Command("docker", "run", "-d", "--name", "cowabunga", "nginx:1.14-alpine")
+func (s *IntegrationTestSuite) launchContainer(containerName, imageName string) (string, error) {
+	cmd := exec.Command("docker", "run", "-u", "666:666", "-d", "--name", containerName, imageName)
 	stdoutStderr, err := cmd.CombinedOutput()
 	return strings.Trim(string(stdoutStderr), "\n"), err
 }
 
-func (s *IntegrationTestSuite) execContainer() (string, error) {
-	cmd := exec.Command("docker", "exec", "cowabunga", "sh", "-c", "sleep 5")
+func (s *IntegrationTestSuite) execContainer(containerName string, command []string) (string, error) {
+	args := fmt.Sprintf("exec %s", containerName, strings.Join(command, " "))
+	cmd := exec.Command("docker", args)
 	stdoutStderr, err := cmd.CombinedOutput()
 	return strings.Trim(string(stdoutStderr), "\n"), err
 }
 
-func (s *IntegrationTestSuite) cleanupContainer() {
-	exec.Command("docker", "kill", "cowabunga").Run()
-	exec.Command("docker", "rm", "cowabunga").Run()
+func (s *IntegrationTestSuite) getIPAddress(containerName string) (string, error) {
+	cmd := exec.Command("docker", "inspect", "--format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'", containerName)
+	stdoutStderr, err := cmd.CombinedOutput()
+	return strings.Trim(string(stdoutStderr), "\n"), err
+}
+
+func (s *IntegrationTestSuite) getPort(containerName string) (string, error) {
+	cmd := exec.Command("docker", "inspect", "--format='--format='{{json .NetworkSettings.Ports}}''", containerName)
+	stdoutStderr, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", err
+	}
+	rawString := strings.Trim(string(stdoutStderr), "\n")
+	var portMap map[string]interface{}
+	err = json.Unmarshal([]byte(rawString), &portMap)
+	if err != nil {
+		return "", err
+	}
+
+	for k := range portMap {
+		return strings.Split(k, "/")[0], nil
+	}
+
+	return "", fmt.Errorf("no port mapping found: %v %v", rawString, portMap)
+}
+
+func (s *IntegrationTestSuite) cleanupContainer(containers []string) {
+	for _, container := range containers {
+		exec.Command("docker", "kill", container).Run()
+		exec.Command("docker", "rm", container).Run()
+	}
 }
 
 func (s *IntegrationTestSuite) dockerComposeUp() error {
@@ -118,8 +179,8 @@ func (s *IntegrationTestSuite) dockerComposeUp() error {
 	return err
 }
 
-func (s *IntegrationTestSuite) containerLogs(name string) (string, error) {
-	cmd := exec.Command("docker", "logs", name)
+func (s *IntegrationTestSuite) containerLogs(containerName string) (string, error) {
+	cmd := exec.Command("docker", "logs", containerName)
 	stdoutStderr, err := cmd.CombinedOutput()
 	return strings.Trim(string(stdoutStderr), "\n"), err
 }
