@@ -43,6 +43,7 @@ class SysdigService : public Sysdig {
  public:
   static constexpr char kModulePath[] = "/module/collector.ko";
   static constexpr char kModuleName[] = "collector";
+  static constexpr char kProbePath[] = "/module/collector-ebpf.o";
   static constexpr int kMessageBufferSize = 8192;
   static constexpr int kKeyBufferSize = 48;
 
@@ -92,6 +93,7 @@ class SysdigService : public Sysdig {
 
   mutable std::mutex running_mutex_;
   bool running_ = false;
+  bool useEbpf = false;
 };
 
 }  // namespace collector

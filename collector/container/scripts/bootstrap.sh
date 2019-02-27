@@ -1,15 +1,17 @@
 #!/bin/bash
 
-if [[ "$ROX_PLATFORM" == "swarm" ]]; then
-    ## swap to reentrant container strategy to gain privileged mode
-    exec /swarm_entrypoint.sh "$@"
-fi
-
 MODULE_NAME="collector"
 MODULE_PATH="/module/${MODULE_NAME}.ko"
+PROBE_NAME="collector-ebpf"
+PROBE_PATH="/module/${PROBE_NAME}.o"
 
 KERNEL_VERSION=$(uname -r)
 echo "Kernel version detected: $KERNEL_VERSION."
+
+export KERNEL_MAJOR=""
+export KERNEL_MINOR=""
+KERNEL_MAJOR=$(echo ${KERNEL_VERSION} | cut -d. -f1)
+KERNEL_MINOR=$(echo ${KERNEL_VERSION} | cut -d. -f2)
 
 MODULE_VERSION="$(cat /kernel-modules/MODULE_VERSION.txt)"
 if [[ -n "$MODULE_VERSION" ]]; then
@@ -20,6 +22,7 @@ if [[ -n "$MODULE_VERSION" ]]; then
 fi
 
 KERNEL_MODULE="${MODULE_NAME}-${KERNEL_VERSION}.ko"
+KERNEL_PROBE="${PROBE_NAME}-${KERNEL_VERSION}.o"
 
 function test {
     "$@"
@@ -39,36 +42,47 @@ function remove_module() {
     fi
 }
 
-function download_kernel_module() {
+function download_kernel_object() {
+    local KERNEL_OBJECT="$1"
+    local OBJECT_PATH="$2"
     if [[ -z "$MODULE_URL" ]]; then
         echo "Downloading modules not supported."
         return 1
     fi
-    local URL="$MODULE_URL/$KERNEL_MODULE"
-    if curl -L -s -o "${MODULE_PATH}.gz" "${URL}.gz"; then
-        gunzip "${MODULE_PATH}.gz"
-    elif ! curl -L -s -o "$MODULE_PATH" "$URL"; then
-      echo "Error downloading $MODULE_NAME module for kernel version $KERNEL_VERSION." >&2
+    local URL="$MODULE_URL/$KERNEL_OBJECT"
+    if curl -L -s -o "$OBJECT_PATH.gz" "${URL}.gz"; then
+        gunzip "$OBJECT_PATH.gz"
+    elif ! curl -L -s -o "$OBJECT_PATH" "$URL"; then
+      echo "Error downloading $KERNEL_OBJECT for kernel version $KERNEL_VERSION." >&2
       return 1
     fi
-    echo "Using downloaded $MODULE_NAME module for kernel version $KERNEL_MODULE." >&2
+    echo "Using downloaded $KERNEL_OBJECT for kernel version $KERNEL_VERSION." >&2
     return 0
 }
 
-function find_kernel_module() {
-    EXPECTED_PATH="/kernel-modules/$KERNEL_MODULE"
+function find_kernel_object() {
+    local KERNEL_OBJECT="$1"
+    local OBJECT_PATH="$2"
+    EXPECTED_PATH="/kernel-modules/$KERNEL_OBJECT"
     if [[ -f "${EXPECTED_PATH}.gz" ]]; then
-      gunzip -c "${EXPECTED_PATH}.gz" >"$MODULE_PATH"
+      gunzip -c "${EXPECTED_PATH}.gz" >"$OBJECT_PATH"
     elif [ -f "$EXPECTED_PATH" ]; then
-      cp "$EXPECTED_PATH" "$MODULE_PATH"
+      cp "$EXPECTED_PATH" "$OBJECT_PATH"
     else
-      echo "Didn't find $KERNEL_MODULE built-in." >&2
+      echo "Didn't find $KERNEL_OBJECT built-in." >&2
       return 1
     fi
-    echo "Using built-in $MODULE_NAME module for kernel version $KERNEL_VERSION." >&2
+    echo "Using built-in $KERNEL_OBJECT for kernel version $KERNEL_VERSION." >&2
     return 0
 }
 
+function kernel_supports_ebpf() {
+    # Kernel version >= 4.14
+    if [[ $KERNEL_MAJOR -lt 4 || ( $KERNEL_MAJOR -eq 4 && $KERNEL_MINOR -lt 14 ) ]]; then
+        return 1
+    fi
+    return 0
+}
 
 # Get the hostname from Docker so this container can use it in its output.
 export NODE_HOSTNAME=""
@@ -76,13 +90,9 @@ NODE_HOSTNAME=$(curl -s --unix-socket /host/var/run/docker.sock http://localhost
 
 
 mkdir -p /module/
-if ! find_kernel_module ; then
-  if ! download_kernel_module || [[ ! -f "$MODULE_PATH" ]]; then
+if ! find_kernel_object "${KERNEL_MODULE}" "${MODULE_PATH}"; then
+  if ! download_kernel_object "${KERNEL_MODULE}" "${MODULE_PATH}" || [[ ! -f "$MODULE_PATH" ]]; then
     echo "The $MODULE_NAME module may not have been compiled for this version yet." >&2
-    echo "Please provide this complete error message to StackRox support." >&2
-    echo "This program will now exit and retry when it is next restarted." >&2
-    echo "" >&2
-    exit 1
   fi
 fi
 
@@ -90,6 +100,25 @@ chmod 0444 "$MODULE_PATH"
 
 # The collector program will insert the kernel module upon startup.
 remove_module
+
+if kernel_supports_ebpf; then
+  if ! find_kernel_object "${KERNEL_PROBE}" "${PROBE_PATH}"; then
+    if ! download_kernel_object "${KERNEL_PROBE}" "${PROBE_PATH}" || [[ ! -f "$PROBE_PATH" ]]; then
+      echo "The $PROBE_NAME probe may not have been compiled for this version yet." >&2
+    fi
+  fi
+  if [[ -f "$PROBE_PATH" ]]; then
+    chmod 0444 "$PROBE_PATH"
+  fi
+fi
+
+if [[ ! -f "$PROBE_PATH" ]] && [[ ! -f "$MODULE_PATH" ]]; then
+    echo "No module or probe found for kernel version $KERNEL_VERSION." >&2
+    echo "Please provide this complete error message to StackRox support." >&2
+    echo "This program will now exit and retry when it is next restarted." >&2
+    echo "" >&2
+    exit 1
+fi
 
 # Uncomment this to enable generation of core for Collector
 # echo '/core/core.%e.%p.%t' > /proc/sys/kernel/core_pattern

@@ -174,10 +174,10 @@ jobs:
     - restore_cache:
         name: Restore Kernel module build cache
         keys:
-          - kernel-module-cache-v1-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
-          - kernel-module-cache-v1-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
-          - kernel-module-cache-v1-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
-          - kernel-module-cache-v1-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-
+          - kernel-module-cache-v2-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+          - kernel-module-cache-v2-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
+          - kernel-module-cache-v2-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
+          - kernel-module-cache-v2-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-
 
     - run:
         name: Copy cached modules to build output
@@ -247,6 +247,11 @@ jobs:
               --exclude \
               --output "{{.KernelVersion}} ${version}"
           done | sort | uniq >build-tasks
+
+    - run:
+        name: Print list of all (source, kernel version) build combinations
+        command:
+          cat "${WORKSPACE_ROOT}/ko-build/build-tasks"
 
     - persist_to_workspace:
         root: ~/workspace
@@ -511,7 +516,7 @@ jobs:
 
     - save_cache:
         name: Saving Kernel module build cache
-        key: kernel-module-cache-v1-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+        key: kernel-module-cache-v2-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
         paths:
           - /tmp/cache/
 
