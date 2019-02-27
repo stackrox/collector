@@ -1,0 +1,13 @@
+#! /bin/bash
+
+# CPU speed test results to output_cpu.prof after 10-100 seconds usually.
+
+# from https://hub.docker.com/r/ljishen/sysbench
+
+docker run --rm \
+    -v `pwd`:/root/results \
+    ljishen/sysbench \
+    /root/results/output_cpu.prof \
+    --test=cpu \
+    --cpu-max-prime=20000 \
+    run
