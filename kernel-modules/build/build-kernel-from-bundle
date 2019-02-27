@@ -3,9 +3,9 @@
 # Example Usage
 #
 # $ ./kernel-modules/build/build-kernel-from-bundle \
-#     ./input/bundle-4.4.35-1.el7.elrepo.x86_64.tgz \
+#     ./output \
 #     ./input/607532d18ca57eaa35a598ed270be37b9c91ae2ac6a0ed8a38858a320983dd00.tgz \
-#     ./output
+#     ./input/bundle-4.4.35-1.el7.elrepo.x86_64.tgz
 #
 # $ ls ./output
 # collector-4.4.35-1.el7.elrepo.x86_64.ko.gz
@@ -14,14 +14,14 @@ set -euo pipefail
 IFS=$'\n\t'
 
 main() {
-    local input_kernal_bundle="$(realpath "$1")"
+    local output_dir="$(realpath "$1")"
     local input_sysdig_bundle="$(realpath "$2")"
-    local output_dir="$(realpath "$3")"
+    local input_kernal_bundle="$(realpath "$3")"
 
     local alias_kernal_bundle="/input/$(basename "$input_kernal_bundle")"
     local alias_sysdig_bundle="/input/$(basename "$input_sysdig_bundle")"
 
-    docker run --rm -it \
+    docker run --rm -t \
         -v "${input_kernal_bundle}:${alias_kernal_bundle}:ro" \
         -v "${input_sysdig_bundle}:${alias_sysdig_bundle}:ro" \
         -v "${output_dir}:/output" \
