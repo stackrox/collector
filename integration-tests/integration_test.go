@@ -43,15 +43,15 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.dbpath = "/tmp/collector-test.db"
 
 	// invokes default nginx
-	_, err := s.launchContainer("nginx", "nginx:1.14-alpine", "0:0")
+	_, err := s.launchContainer("nginx", "nginx:1.14-alpine", "")
 	assert.Nil(s.T(), err)
 
 	// invokes "sleep"
-	_, err = s.execContainer("nginx", []string{"sh", "-c", "sleep 5"}, "0:0")
+	_, err = s.execContainer("nginx", []string{"sh", "-c", "sleep 5"})
 	assert.Nil(s.T(), err)
 
 	// invokes another container
-	containerID, err := s.launchContainer("busybox", "busybox:1", "666:666")
+	containerID, err := s.launchContainer("nginx-curl", "ewoutp/docker-nginx-curl", "sleep 300")
 	assert.Nil(s.T(), err)
 	s.containerID = containerID[0:12]
 
@@ -64,7 +64,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.port = port
 
 	// invokes "wget ip from busybox"
-	_, err = s.execContainer("busybox", []string{"wget", ip}, "666:666")
+	_, err = s.execContainer("nginx-curl", []string{"curl", ip})
 	assert.Nil(s.T(), err)
 
 	logs, err := s.containerLogs("test_collector_1")
@@ -97,7 +97,7 @@ func (s *IntegrationTestSuite) TestProcessViz() {
 
 	processName = "sh"
 	exeFilePath = "/bin/sh"
-	expectedProcessInfo = fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 666, 666)
+	expectedProcessInfo = fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
 	val, err = s.Get(processName, processBucket)
 	assert.Nil(s.T(), err)
 	assert.Equal(s.T(), expectedProcessInfo, val)
@@ -122,14 +122,19 @@ func (s *IntegrationTestSuite) TearDownSuite() {
 	s.cleanupContainer([]string{"foo"})
 }
 
-func (s *IntegrationTestSuite) launchContainer(containerName, imageName, id string) (string, error) {
-	cmd := exec.Command("docker", "run", "-u", id, "-d", "--name", containerName, imageName)
+func (s *IntegrationTestSuite) launchContainer(containerName, imageName, command string) (string, error) {
+	var cmd *exec.Cmd
+	if command != "" {
+		cmd = exec.Command("docker", "run", "-d", "--name", containerName, imageName, command)
+	} else {
+		cmd = exec.Command("docker", "run", "-d", "--name", containerName, imageName)
+	}
 	stdoutStderr, err := cmd.CombinedOutput()
 	return strings.Trim(string(stdoutStderr), "\n"), err
 }
 
-func (s *IntegrationTestSuite) execContainer(containerName string, command []string, id string) (string, error) {
-	args := fmt.Sprintf("exec -u %s %s %s", id, containerName, strings.Join(command, " "))
+func (s *IntegrationTestSuite) execContainer(containerName string, command []string) (string, error) {
+	args := fmt.Sprintf("exec %s %s", containerName, strings.Join(command, " "))
 	cmd := exec.Command("docker", args)
 	stdoutStderr, err := cmd.CombinedOutput()
 	return strings.Trim(string(stdoutStderr), "\n"), err
