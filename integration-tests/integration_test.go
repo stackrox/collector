@@ -129,7 +129,7 @@ func (s *IntegrationTestSuite) launchContainer(containerName, imageName string) 
 }
 
 func (s *IntegrationTestSuite) execContainer(containerName string, command []string) (string, error) {
-	args := fmt.Sprintf("exec %s", containerName, strings.Join(command, " "))
+	args := fmt.Sprintf("exec %s %s", containerName, strings.Join(command, " "))
 	cmd := exec.Command("docker", args)
 	stdoutStderr, err := cmd.CombinedOutput()
 	return strings.Trim(string(stdoutStderr), "\n"), err
