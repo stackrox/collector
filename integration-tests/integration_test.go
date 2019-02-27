@@ -123,7 +123,7 @@ func (s *IntegrationTestSuite) TearDownSuite() {
 }
 
 func (s *IntegrationTestSuite) launchContainer(containerName, imageName, id string) (string, error) {
-	cmd := exec.Command("docker", "run", "-u", "666:666", "-d", "--name", containerName, imageName)
+	cmd := exec.Command("docker", "run", "-u", id, "-d", "--name", containerName, imageName)
 	stdoutStderr, err := cmd.CombinedOutput()
 	return strings.Trim(string(stdoutStderr), "\n"), err
 }
