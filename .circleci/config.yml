@@ -633,53 +633,53 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - builder:
-        requires:
-        - init
-        filters:
-          tags:
-            only: /.*/
-    - grpc:
-        filters:
-          tags:
-            only: /.*/
-    - libsinsp:
-        requires:
-        - init
-        filters:
-          tags:
-            only: /.*/
-    - collector:
-        requires:
-        - builder
-        - grpc
-        - libsinsp
-        filters:
-          tags:
-            only: /.*/
+#    - builder:
+#        requires:
+#        - init
+#        filters:
+#          tags:
+#            only: /.*/
+#    - grpc:
+#        filters:
+#          tags:
+#            only: /.*/
+#    - libsinsp:
+#        requires:
+#        - init
+#        filters:
+#          tags:
+#            only: /.*/
+#    - collector:
+#        requires:
+#        - builder
+#        - grpc
+#        - libsinsp
+#        filters:
+#          tags:
+#            only: /.*/
     - prepare-kernels:
         requires:
         - init
         filters:
           tags:
             only: /.*/
-    - kernels:
-        requires:
-        - prepare-kernels
-        filters:
-          tags:
-            only: /.*/
-    - images:
-        requires:
-        - collector
-        - kernels
-        filters:
-          tags:
-            only: /.*/
-    - upload-modules:
-        requires:
-          - kernels
-        filters:
-          tags:
-            only: /.*/
+#    - kernels:
+#        requires:
+#        - prepare-kernels
+#        filters:
+#          tags:
+#            only: /.*/
+#    - images:
+#        requires:
+#        - collector
+#        - kernels
+#        filters:
+#          tags:
+#            only: /.*/
+#    - upload-modules:
+#        requires:
+#          - kernels
+#        filters:
+#          tags:
+#            only: /.*/
 
