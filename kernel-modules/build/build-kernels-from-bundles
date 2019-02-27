@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+#
+# Example Usage
+#
+# $ ./kernel-modules/build/build-kernels-from-bundles \
+#     ./input/607532d18ca57eaa35a598ed270be37b9c91ae2ac6a0ed8a38858a320983dd00.tgz \
+#     ./output
+#     ./input/bundles \
+
+set -euo pipefail
+IFS=$'\n\t'
+
+main() {
+    local output_dir="$1"
+    local input_sysdig_bundle="$2"
+    local input_kernal_bundle_dir="$3"
+
+    find "$input_kernal_bundle_dir" -type f -name "bundle-*.tgz" -print0 | while IFS= read -r -d $'\0' line; do
+        echo "Building $line"
+        ./kernel-modules/build/build-kernel-from-bundle "$output_dir" "$input_sysdig_bundle" "$line"
+    done
+}
+
+main "$@"
