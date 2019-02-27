@@ -5,7 +5,7 @@ set -e
 if docker ps -q >/dev/null ; then
 	echo -n
 else
-	echo "Cannot get docker to work, better install it as in the 020/Dockerfile"
+	echo "Cannot get docker to work, better install it"
 	exit 2
 fi
 

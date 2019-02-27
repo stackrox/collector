@@ -8,7 +8,7 @@
 if test "x$1" = "xinit" ; then
   set -e
   FNAME=${2:-flmodule}
-  SCR=$(tail -n +36 "$0" | grep -vE '^\s+#' | gzip | base64)  # HEADERLINES
+  SCR=$(tail -n +35 "$0" | grep -vE '^\s+#' | gzip --no-name | base64)  # HEADERLINES
   cat >"$FNAME" <<EOF
 #! /bin/bash
 # flmodule header auto-generated from $(basename "$0")

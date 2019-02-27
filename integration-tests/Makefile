@@ -1,4 +1,4 @@
-.PHONY: clean-deps
+.PHONY: deps
 deps:
 	@bash run_target deps
 
