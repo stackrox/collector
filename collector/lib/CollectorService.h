@@ -35,6 +35,7 @@ struct CollectorConfig {
   bool useChiselCache = true;
   int snapLen = 2048;
   int scrape_interval;
+  bool turn_off_scrape = false;
 
   std::string hostname;
   std::string chisel;

@@ -357,6 +357,9 @@ int main(int argc, char **argv) {
   std::string chiselB64 = args->Chisel();
   std::string chisel = base64_decode(chiselB64);
 
+  bool turnOffScrape = collectorConfig["turnOffScrape"].asBool();
+  CLOG(INFO) << "turnOffScrape=" << turnOffScrape;
+
   std::shared_ptr<grpc::Channel> grpc_channel;
   if (useGRPC) {
     CLOG(INFO) << "gRPC server=" << args->GRPCServer();
@@ -385,6 +388,7 @@ int main(int argc, char **argv) {
   config.hostname = GetHostname();
   config.host_proc = GetHostPath("/proc");
   config.scrape_interval = GetScrapeInterval(collectorConfig);
+  config.turn_off_scrape = turnOffScrape;
   config.snapLen = 0;
   config.useChiselCache = useChiselCache;
   config.useEbpf = useEbpf;

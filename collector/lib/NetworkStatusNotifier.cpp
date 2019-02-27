@@ -122,18 +122,20 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
   auto next_scrape = std::chrono::system_clock::now();
 
   while (writer->Sleep(next_scrape)) {
-    int64_t ts = NowMicros();
-    std::vector<Connection> all_conns;
-
-    bool success = conn_scraper_.Scrape(&all_conns);
     next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(scrape_interval_);
 
-    if (!success) {
-      CLOG(ERROR) << "Failed to scrape connections";
-      continue;
+    if (!turn_off_scraping_) {
+      int64_t ts = NowMicros();
+      std::vector<Connection> all_conns;
+      bool success = conn_scraper_.Scrape(&all_conns);
+
+      if (!success) {
+        CLOG(ERROR) << "Failed to scrape connections and no pending connections to send";
+        continue;
+      }
+      conn_tracker_->Update(all_conns, ts);
     }
 
-    conn_tracker_->Update(all_conns, ts);
     auto new_state = conn_tracker_->FetchState(true);
     ConnectionTracker::ComputeDelta(new_state, &old_state);
 
