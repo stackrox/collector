@@ -806,6 +806,9 @@ ubuntu-aws:
       4.4.0-1074:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1074_4.4.0-1074.84_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1074-aws_4.4.0-1074.84_amd64.deb
+      4.4.0-1075:
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1075_4.4.0-1075.85_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1075-aws_4.4.0-1075.85_amd64.deb
       4.4.0-1076:
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-aws-headers-4.4.0-1076_4.4.0-1076.86_all.deb
       - http://security.ubuntu.com/ubuntu/pool/main/l/linux-aws/linux-headers-4.4.0-1076-aws_4.4.0-1076.86_amd64.deb
