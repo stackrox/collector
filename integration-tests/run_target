@@ -1,0 +1,34 @@
+#! /bin/bash
+# flmodule header auto-generated from flake
+set -e
+# shellcheck disable=SC2086
+cd "$(dirname $0)"
+base64 -d > /tmp/.s-$$.run.gz <<EOZ
+H4sIAAkBd1wAA5VSS27CMBDd5xSDRRFUctI9osteAqEqxGPFIrWj2C5qgbt3PEkgqB+pK9vjN+/j
+sTZWSR/K6iB9DcsVnDKAtgz1Zr5sj2pFp2NtGoTtFsQ8XQiYbUAIWCxgBhKHatGYvW7KAxZMlnvC
+7XZrUI4YRsZTWh6KxwvVlLNIC1a1+50iu2Texa5CGdt/mZtIGw0BfQCpR52XJKKpT8AaQo2WcQAs
++9pGegj24b83MFKbvzP1nkIXEa4uem5vPnHkTvs7g2KeSgI28PSTL0WYzn0M7cPVvsPyMDU1ZHDt
+KMMLnM/sp/dNARVICzk8FwrfCxubhm8qRSZO3JES8Yz796c6l/sHIHp138vJL1nWRSsZKD2G2A4j
+Y1O+blxFg9PTH5dGeFW4wZJMIBHTUQO7WtLelm8IE9SqyPM0wuEr9NEtHsfot9DXT0QevwDnJlF/
+8gIAAA==
+EOZ
+# shellcheck disable=SC1090
+gunzip /tmp/.s-$$.run.gz && source /tmp/.s-$$.run
+rm -f /tmp/.s-$$.run && run-flake-setup
+# flmodule header end
+COMMAND=${1-deps}
+if test "$COMMAND" = "deps" ; then
+  do_target_deps
+  exit 0
+fi
+
+if test "$COMMAND" = "clean-deps" ; then
+  do_target_clean_deps
+  exit 0
+fi
+
+echo "Unknown command: $COMMAND"
+echo "Commands are:"
+echo "clean-deps"
+echo "deps"
+exit 1

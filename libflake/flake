@@ -1,0 +1,74 @@
+#! /bin/bash
+# flake is the function library bash module system. use as:
+# bash libflake/flake init [filename]
+# if unspecified, filename defaults to "flmodule"
+# produces a Bash module header useful for including enclosing Flakefile
+# up to some topmost one and executing in root-first order
+
+if test "x$1" = "xinit" ; then
+  set -e
+  FNAME=${2:-flmodule}
+  SCR=$(tail -n +36 "$0" | grep -vE '^\s+#' | gzip | base64)  # HEADERLINES
+  cat >"$FNAME" <<EOF
+#! /bin/bash
+# flmodule header auto-generated from $(basename "$0")
+set -e
+# shellcheck disable=SC2086
+cd "\$(dirname \$0)"
+base64 -d > /tmp/.s-\$\$.run.gz <<EOZ
+$SCR
+EOZ
+# shellcheck disable=SC1090
+gunzip /tmp/.s-\$\$.run.gz && source /tmp/.s-\$\$.run
+rm -f /tmp/.s-\$\$.run && run-flake-setup
+# flmodule header end
+# shellcheck disable=SC2154
+pwd && echo "\$topdir" # edit on this line and below
+EOF
+  chmod a+rx "$FNAME"
+  echo "edit and run"
+  echo "$FNAME"
+  exit 0
+fi
+
+# if you add or remove lines above, update the count in HEADERLINES ~ line 11
+
+find-stack-sh () {
+  path=$(pwd)
+  while [[ "$path" != "" && ! -e "$path/libflake/stack.sh" ]]; do
+    path=${path%/*}
+  done
+  echo "$path/libflake/stack.sh"
+}
+source-up () {
+  path=$(pwd)
+  while [[ "$path" != "" ]]; do
+    if test -f "$path/Flakefile" ; then
+      stack_push flakes "$path/Flakefile"
+    fi
+    path=${path%/*}
+  done
+  while true ; do
+    stack_size flakes size
+    # shellcheck disable=SC2154
+    if test "$size" = 0 ; then
+      stack_destroy flakes
+      break
+    fi
+    stack_pop flakes flake || true
+    pushd -n . >/dev/null
+    # shellcheck disable=SC1090,SC2154
+    cd "${flake%/*}" && source "$flake"
+    popd >/dev/null
+  done
+}
+
+run-flake-setup() {
+  stackshloc=$(find-stack-sh)
+  # shellcheck disable=SC1090
+  source "$stackshloc"
+  # shellcheck disable=SC2034,SC2086
+  topdir=$(cd "$(dirname $stackshloc)/.." ; pwd)
+  stack_new flakes || true
+  source-up
+}

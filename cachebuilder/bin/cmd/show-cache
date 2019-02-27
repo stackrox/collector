@@ -1,6 +1,0 @@
-#!/bin/bash
-set -e
-touch $SRBCACHEDIR/nonroot/___________
-du -sh $SRBCACHEDIR/*/*
-rm    $SRBCACHEDIR/nonroot/___________
-exit 0
