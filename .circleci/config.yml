@@ -22,6 +22,7 @@ commands:
           if [[ -z "$ROX_CI_IMAGE" ]]; then
             pip install -U crcmod google_compute_engine
           fi
+          gsutil version -l | grep crcmod
           gcloud auth activate-service-account --key-file <(echo "$GOOGLE_CREDENTIALS_KERNEL_CACHE")
           gcloud auth list
 
