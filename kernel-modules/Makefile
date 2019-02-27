@@ -141,3 +141,7 @@ build-coreos-repackage:
 .PHONY: print-package-cache-path
 print-package-cache-path:
 	@echo ${PKG_GCS_PATH}
+
+.PHONY: prepare-source-bundles
+prepare-source-bundles: build-container
+	@./build/prepare-source-bundles .. ../output

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+main() {
+    local source_dir="$(realpath "$1")"
+    local output_dir="$(realpath "$2")"
+
+    docker run --rm -it \
+        -v "${source_dir}:/source" \
+        -v "${source_dir}/RELEASED_VERSIONS:/RELEASED_VERSIONS:ro" \
+        -v "${output_dir}:/output" \
+        --entrypoint /usr/bin/prepare-all-src \
+            build-kernel-modules:latest \
+                /source /output /RELEASED_VERSIONS
+}
+
+main "$@"

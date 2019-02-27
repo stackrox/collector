@@ -19,6 +19,7 @@ RUN apt-get update \
       kpartx \
       golang-go \
       pigz \
+      git \
  ;
 
 RUN sed s_stretch_jessie_g < /etc/apt/sources.list > /etc/apt/sources.list.d/jessie.list && \
@@ -38,8 +39,9 @@ RUN rm -rf /usr/bin/clang \
 RUN apt-get autoremove -y
 
 RUN mkdir -p /output
-COPY build-kos /usr/bin/
+COPY build-kos /usr/bin
 COPY prepare-src /usr/bin
+COPY prepare-all-src /usr/bin
 
 WORKDIR /scratch
 

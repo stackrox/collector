@@ -2,48 +2,72 @@
 
 set -eo pipefail
 
-[[ -n "$SCRATCH_DIR" && -n "$SYSDIG_DIR" && -n "$OUTPUT_DIR" ]] || {
-	echo >&2 "SCRATCH_DIR, SYSDIG_DIR and OUTPUT_DIR all need to be set"
-	exit 1
+
+main() {
+    local sysdig_src="$(realpath "$1")"
+    local output_dir="$(realpath "$2")"
+    local scratch_dir="$(realpath "$3")"
+
+    if [[ -z "$scratch_dir" || -z "$sysdig_src" || -z "$output_dir" ]]; then
+        echo >&2 "SCRATCH_DIR, SYSDIG_DIR and OUTPUT_DIR all need to be set"
+        return 1
+    fi
+
+    local SYSDIG_SCRATCH="${scratch_dir}/sysdig-src"
+    local BUILD_SCRATCH="${scratch_dir}/cmake-build"
+
+    mkdir -p "$SYSDIG_SCRATCH" "$BUILD_SCRATCH"
+    cp -r "${sysdig_src}/." "${SYSDIG_SCRATCH}"
+
+    cd "$BUILD_SCRATCH"
+    cmake \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_C_FLAGS="-fno-pie" \
+        -DPROBE_NAME=collector \
+        -DBUILD_USERSPACE=OFF \
+        -DENABLE_DKMS=OFF \
+        "$SYSDIG_SCRATCH"
+
+    generate_makefile
+    if [[ ! -s "${SYSDIG_SCRATCH}/driver/Makefile" ]]; then
+        echo "No makefile"
+        return 1
+    fi
+
+    cd "${SYSDIG_SCRATCH}/driver"
+    module_version="$(get_module_version .)"
+
+    mkdir -p "$output_dir"
+    source_archive="${output_dir}/${module_version}.tgz"
+    if [[ -s "$source_archive" ]]; then
+        exit 0
+    fi
+
+    modfiles0 . | xargs -0 tar cfvz "$source_archive"
+    info "Generated module source archive ${source_archive}"
 }
 
-SYSDIG_SCRATCH="${SCRATCH_DIR}/sysdig-src"
-BUILD_SCRATCH="${SCRATCH_DIR}/cmake-build"
-
-mkdir -p "$SYSDIG_SCRATCH" "$BUILD_SCRATCH"
-
-cp -r "${SYSDIG_DIR}/." "${SYSDIG_SCRATCH}"
+generate_makefile() {
+    KERNELDIR=/dev/null make driver/fast 1>/dev/null 2>&1 \
+    || true
+}
 
 modfiles0() (
-	local dir="${1:-${SYSDIG_SCRATCH}/driver}"
-    cd "$dir"
-    find . -type f \( -name 'Makefile' -o -name '*.c' -o -name '*.h' \) -print0 | \
-    	sort -z
+    cd "$1"
+    find . -type f \( -name 'Makefile' -o -name '*.c' -o -name '*.h' \) -print0 \
+    | sort -z
 )
 
 get_module_version() (
-	modfiles0 "$@" | \
-		xargs -0 sha256sum | \
-		awk '{print$1 " " $2}' | \
-		sha256sum | \
-		awk '{print$1}'
+	modfiles0 "$1" \
+    | xargs -0 sha256sum \
+    | awk '{print$1 " " $2}' \
+    | sha256sum \
+    | awk '{print$1}'
 )
 
-cd "$BUILD_SCRATCH"
-cmake \
-	-DCMAKE_BUILD_TYPE=Release \
-	-DCMAKE_C_FLAGS="-fno-pie" \
-	-DPROBE_NAME=collector \
-	-DBUILD_USERSPACE=OFF \
-	-DENABLE_DKMS=OFF \
-	"$SYSDIG_SCRATCH"
-KERNELDIR=/dev/null make driver/fast || true
+info() {
+    printf "[INFO] %s\n" "$*"
+}
 
-cd "${SYSDIG_SCRATCH}/driver"
-module_version="$(get_module_version .)"
-
-source_archive="${OUTPUT_DIR}/${module_version}.tgz"
-if [[ -s "$source_archive" ]]; then
-	exit 0
-fi
-modfiles0 . | xargs -0 tar cfvz "$source_archive"
+main "$@"

@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+
+main() {
+    local source="$(realpath "$1")"
+    local output_dir="$(realpath "$2")"
+    local released_versions_txt="$(realpath "$3")"
+
+    info "Preparing module source archive for HEAD..."
+
+    local scratch_dir="$(mktemp -d)"
+    prepare-src "${source}/sysdig/src" "$output_dir" "$scratch_dir"
+    rm -rf "$scratch_dir"
+
+    while IFS='' read -r line || [[ -n "$line" ]]; do
+        [[ -n "$line" ]] || continue
+
+        local collector_ref="$line"
+        info "Preparing module source archive for ${collector_ref}..."
+
+        local scratch_dir="$(mktemp -d)"
+        local git_tmp="$(mktemp -d)"
+
+        cd "${source}"
+        git --work-tree "$git_tmp" checkout "${collector_ref}" -- "sysdig/src"
+        ./kernel-modules/build/prepare-src "$git_tmp/sysdig/src" "$output_dir" "$scratch_dir"
+
+        rm -rf "$scratch_dir"
+        rm -rf "$git_tmp"
+    done < <(grep -v '^#' < "$released_versions_txt" | awk '{print $1}' | sort | uniq)
+}
+
+info() {
+    printf "[INFO] %s\n" "$*"
+}
+
+main "$@"

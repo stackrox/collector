@@ -109,6 +109,12 @@ jobs:
             github.com/stackrox/collector/kernel-modules/build/kobuild
 
     - run:
+        name: Prepare source test
+        command: |
+          make -C kernel-modules prepare-source-bundles
+          ls -hl output
+
+    - run:
         name: Prepare source
         command: |
           mkdir -p ~/kobuild-tmp/versions-src
