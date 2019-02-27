@@ -53,13 +53,16 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	// invokes another container
 	containerID, err := s.launchContainer("nginx-curl", "ewoutp/docker-nginx-curl", "sleep 300")
 	assert.Nil(s.T(), err)
+	fmt.Printf("second launch %s %s\n", containerID, err)
 	s.containerID = containerID[0:12]
 
 	ip, err := s.getIPAddress("nginx")
+	fmt.Println(err)
 	assert.Nil(s.T(), err)
 	s.ipAddress = ip
 
 	port, err := s.getPort("nginx")
+	fmt.Println(err)
 	assert.Nil(s.T(), err)
 	s.port = port
 
@@ -76,6 +79,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	err = ioutil.WriteFile("grpc_server.logs", []byte(logs), 0644)
 	assert.NoError(s.T(), err)
 
+	time.Sleep(20 * time.Second)
 	// bring down server
 	s.dockerComposeDown()
 	// sleep for few
@@ -119,7 +123,7 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 
 func (s *IntegrationTestSuite) TearDownSuite() {
 	s.dockerComposeDown()
-	s.cleanupContainer([]string{"foo"})
+	s.cleanupContainer([]string{"nginx", "nginx-curl"})
 }
 
 func (s *IntegrationTestSuite) launchContainer(containerName, imageName, command string) (string, error) {
@@ -135,27 +139,32 @@ func (s *IntegrationTestSuite) launchContainer(containerName, imageName, command
 
 func (s *IntegrationTestSuite) execContainer(containerName string, command []string) (string, error) {
 	args := fmt.Sprintf("exec %s %s", containerName, strings.Join(command, " "))
+	fmt.Println(args)
 	cmd := exec.Command("docker", args)
 	stdoutStderr, err := cmd.CombinedOutput()
+	fmt.Printf("command err: %v\n", err)
 	return strings.Trim(string(stdoutStderr), "\n"), err
 }
 
 func (s *IntegrationTestSuite) getIPAddress(containerName string) (string, error) {
 	cmd := exec.Command("docker", "inspect", "--format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'", containerName)
 	stdoutStderr, err := cmd.CombinedOutput()
-	return strings.Trim(string(stdoutStderr), "\n"), err
+	return strings.Trim(strings.Replace(string(stdoutStderr), "'", "", -1), "\n"), err
 }
 
 func (s *IntegrationTestSuite) getPort(containerName string) (string, error) {
-	cmd := exec.Command("docker", "inspect", "--format='--format='{{json .NetworkSettings.Ports}}''", containerName)
+	cmd := exec.Command("docker", "inspect", "--format={{json .NetworkSettings.Ports}}", containerName)
 	stdoutStderr, err := cmd.CombinedOutput()
 	if err != nil {
+		fmt.Println(err)
 		return "", err
 	}
 	rawString := strings.Trim(string(stdoutStderr), "\n")
+	fmt.Println(rawString)
 	var portMap map[string]interface{}
 	err = json.Unmarshal([]byte(rawString), &portMap)
 	if err != nil {
+		fmt.Println(err)
 		return "", err
 	}
 
