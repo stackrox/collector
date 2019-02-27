@@ -12,7 +12,7 @@ function do_target_deps {
 }
 
 function do_target_clean_deps {
-	echo "+ clean-deps"
-	rm -f deps
-	sudo rm -f /tmp/collector-test.db
+  echo "+ clean-deps"
+  rm -f deps
+  sudo rm -f /tmp/collector-test.db
 }
