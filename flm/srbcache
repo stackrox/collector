@@ -28,6 +28,22 @@ function ensure_dir_srbcache_dist {
   check_dir_srbcache_dist || mkdir -p "$DISTCACHE" -m 777
 }
 
+function load_srbcache_from_google_storage_bucket {
+  ensure_dir_home_srbcache
+  cd
+  rm -f srbcache.tar srbcache.tar.gz
+  gsutil -m cp gs://collector-build-cache/colfb/v1/srbcache.tar.gz ~/srbcache.tar.gz || gsutil -m cp gs://collector-build-cache/colfb/v1/srbcache.tar ~/srbcache.tar || true
+  if test -f srbcache.tar -o -f srbcache.tar.gz ; then
+    echo "extracting tar from storage bucket"
+    tar xafz srbcache.tar.gz || tar xaf srbcache.tar || echo "error restoring tar"
+    rm -f srbcache.tar srbcache.tar.gz
+  fi
+  ls -F  ~/.srbcache
+  touch  ~/.srbcache/o
+  du -sh ~/.srbcache/*
+  rm     ~/.srbcache/o
+}
+
 function save_srbcache_to_google_storage_bucket {
   ensure_dir_home_srbcache
   cd

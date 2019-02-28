@@ -24,5 +24,6 @@ ensure_dir_srbcache_dist
 
 docker ps
 
+load_srbcache_from_google_storage_bucket
 save_srbcache_to_google_storage_bucket
 
