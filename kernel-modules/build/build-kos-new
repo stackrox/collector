@@ -62,7 +62,7 @@ build_ko() {
     KERNELDIR="$kernel_build_dir" make -j 6 bpf
 
     collector_probe="bpf/probe.o"
-    gzip -c "$collector_probe" >"/output/${module_version}/collector-${kernel_version}.o.gz"
+    gzip -c "$collector_probe" >"/output/${module_version}/collector-ebpf-${kernel_version}.o.gz"
     rm "$collector_probe"
 }
 
