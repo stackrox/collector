@@ -88,6 +88,13 @@ commands:
           gsutil version -l | grep crcmod
           gcloud auth activate-service-account --key-file <(echo "$GOOGLE_CREDENTIALS_KERNEL_CACHE")
           gcloud auth list
+    - run:
+        name: Start GCP builder node (Ubuntu 18.04)
+        command: |
+          if test -d ~/workspace/go/src/github.com/stackrox/collector ; then
+            cd ~/workspace/go/src/github.com/stackrox/collector/gcpbuild
+            bash boot-gcp.sh
+          fi
 
   docker-login:
     steps:
