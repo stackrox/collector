@@ -92,7 +92,6 @@ commands:
         name: Start GCP builder node (Ubuntu 18.04)
         command: |
           if true ; then
-            cd ~/workspace/go/src/github.com/stackrox/collector/gcpbuild
             REGION=us-west1
             MACHINE_NAME=build-01
 
