@@ -287,7 +287,7 @@ jobs:
 
     - run:
         name: Print list of all (source, kernel version) build combinations
-        command:
+        command: |
           cd "${WORKSPACE_ROOT}/ko-build"
 
           num_build_tasks="$(wc -l build-tasks | awk '{print $1}')"
