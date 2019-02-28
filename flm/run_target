@@ -1,0 +1,21 @@
+#! /bin/bash
+# flmodule header auto-generated from flake
+set -e
+# shellcheck disable=SC2086
+cd "$(dirname $0)"
+base64 -d > /tmp/.s-$$.run.gz <<EOZ
+H4sIAAAAAAAAA5VSyW6DMBC98xUTK42SSobeI3rsT0RRRfAgrFAbYbtRS/j3jgfIoi5ST7bHb97i
+cVJpo6TzRXmUrob1BvoEoC18nS/X7Ult6HSqdYOw24FYxgsBixyEgNUKFiBxqmaNPlRNccSMyVJH
+uP1+C8oSw8zYx+UhexyopqxBWrCs7e8UyZA4G7oSZWj/Ze5GWlfg0XmQ1azzEkUq6hOwBV+jYRwA
+y762gR6CfbjvDYys9N+ZRk++CwgXFyO30584c8f9nUGxjCUBOTz95EsRprMfU/t0deiwON6amjLY
+dpbhBc5n9jP6poAKpIEUnjOF75kJTcM3pSITPXfERDzj8f2pzuXxAYhe3fdy8iFJumAkA6VDH9pp
+ZGzK1Y0taXB3Py6O8KJwhUUZTyK6owZ2taa9Kd4QblCbLE3jCKevMEY3eJqjX0NfPhF5/AJ4el2c
+8wIAAA==
+EOZ
+# shellcheck disable=SC1090
+gunzip /tmp/.s-$$.run.gz && source /tmp/.s-$$.run
+rm -f /tmp/.s-$$.run && run-flake-setup
+# flmodule header end
+do_preflight_check
+ensure_dir_home_srbcache
+ensure_dir_srbcache_dist

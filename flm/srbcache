@@ -1,0 +1,30 @@
+function activate_env_srbcache {
+  TOPCACHE="$HOME/.srbcache"
+  DISTCACHE="$TOPCACHE/dist"
+}
+
+function check_dir_home_srbcache {
+  activate_env_srbcache
+  test -d "$TOPCACHE"
+}
+
+function check_dir_srbcache_dist {
+  activate_env_srbcache
+  test -d "$DISTCACHE"
+}
+
+function ensure_dir_home_srbcache {
+  if test "x$USER" = "x" ; then
+    echo "ERROR: Cannot create srbcache directory as root"
+    exit 1
+  fi
+  activate_env_srbcache
+  check_dir_home_srbcache || mkdir -p "$TOPCACHE" -m 777
+  sudo chown -R $USER "$TOPCACHE" && chmod -R a+rwX "$TOPCACHE"
+}
+
+function ensure_dir_srbcache_dist {
+  activate_env_srbcache
+  check_dir_srbcache_dist || mkdir -p "$DISTCACHE" -m 777
+}
+

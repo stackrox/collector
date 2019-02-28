@@ -575,6 +575,11 @@ jobs:
           fi
 
     - run:
+        name: SRBCache tests
+        workdir: "$COLLECTOR_SOURCE_ROOT/../flm"
+        command: bash run_target
+
+    - run:
         name: Integration tests
         command: |
           cd "$COLLECTOR_SOURCE_ROOT"
