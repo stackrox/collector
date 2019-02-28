@@ -83,7 +83,7 @@ void CollectorService::RunForever() {
     CLOG(INFO) << "GRPC server connectivity is successful";
 
     conn_tracker = std::make_shared<ConnectionTracker>();
-    net_status_notifier = MakeUnique<NetworkStatusNotifier>(config_.hostname, config_.host_proc, config_.scrape_interval, conn_tracker, config_.grpc_channel);
+    net_status_notifier = MakeUnique<NetworkStatusNotifier>(config_.hostname, config_.host_proc, config_.scrape_interval, config_.turn_off_scrape, conn_tracker, config_.grpc_channel);
     net_status_notifier->Start();
   }
 
