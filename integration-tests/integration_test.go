@@ -29,9 +29,12 @@ type IntegrationTestSuite struct {
 	suite.Suite
 	dbpath      string
 	db          *bolt.DB
-	containerID string
-	ipAddress   string
-	port        string
+	serverIP   string
+	serverPort        string
+	clientIP string
+	clientPort string
+	serverContainer string
+	clientContainer string
 }
 
 // Launches collector
@@ -43,32 +46,43 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.dbpath = "/tmp/collector-test.db"
 
 	// invokes default nginx
-	_, err := s.launchContainer("nginx", "nginx:1.14-alpine", "")
+	containerID, err := s.launchContainer("nginx", "nginx:1.14-alpine", "")
 	assert.Nil(s.T(), err)
+	s.serverContainer = containerID[0:12]
 
 	// invokes "sleep"
 	_, err = s.execContainer("nginx", []string{"sh", "-c", "sleep 5"})
 	assert.Nil(s.T(), err)
 
 	// invokes another container
-	containerID, err := s.launchContainer("nginx-curl", "ewoutp/docker-nginx-curl", "sleep 300")
+	containerID, err = s.launchContainer("nginx-curl", "ewoutp/docker-nginx-curl", "")
 	assert.Nil(s.T(), err)
-	fmt.Printf("second launch %s %s\n", containerID, err)
-	s.containerID = containerID[0:12]
+	s.clientContainer = containerID[0:12]
 
 	ip, err := s.getIPAddress("nginx")
 	fmt.Println(err)
 	assert.Nil(s.T(), err)
-	s.ipAddress = ip
+	s.serverIP = ip
 
 	port, err := s.getPort("nginx")
 	fmt.Println(err)
 	assert.Nil(s.T(), err)
-	s.port = port
+	s.serverPort = port
 
-	// invokes "wget ip from busybox"
 	_, err = s.execContainer("nginx-curl", []string{"curl", ip})
 	assert.Nil(s.T(), err)
+
+        ip, err = s.getIPAddress("nginx-curl")
+        fmt.Println(err)
+        assert.Nil(s.T(), err)
+        s.clientIP = ip
+
+        port, err = s.getPort("nginx-curl")
+        fmt.Println(err)
+        assert.Nil(s.T(), err)
+        s.clientPort = port
+
+	time.Sleep(20 * time.Second)
 
 	logs, err := s.containerLogs("test_collector_1")
 	assert.NoError(s.T(), err)
@@ -79,7 +93,6 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	err = ioutil.WriteFile("grpc_server.logs", []byte(logs), 0644)
 	assert.NoError(s.T(), err)
 
-	time.Sleep(20 * time.Second)
 	// bring down server
 	s.dockerComposeDown()
 	// sleep for few
@@ -93,7 +106,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 
 func (s *IntegrationTestSuite) TestProcessViz() {
 	processName := "nginx"
-	exeFilePath := "/usr/sbin/nginx"
+	exeFilePath := "/usr/local/sbin/nginx"
 	expectedProcessInfo := fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
 	val, err := s.Get(processName, processBucket)
 	assert.Nil(s.T(), err)
@@ -115,10 +128,19 @@ func (s *IntegrationTestSuite) TestProcessViz() {
 }
 
 func (s *IntegrationTestSuite) TestNetworkFlows() {
-	val, err := s.Get(s.containerID, networkBucket)
+	val, err := s.Get(s.serverContainer, networkBucket)
 	assert.Nil(s.T(), err)
-	fmt.Printf("from db: %s\n", string(val))
-	fmt.Printf("from test IP: %s, Port: %s\n", s.ipAddress, s.port)
+	expectedNetworkInfo := fmt.Sprintf("%s:%s:%s:%s:ROLE_SERVER:SOCKET_FAMILY_IPV4", s.serverIP, s.serverPort, s.clientIP, s.clientPort)
+	assert.Equal(s.T(), expectedNetworkInfo, string(val))
+	fmt.Printf("from db server: %s %s\n", s.serverContainer, string(val))
+	fmt.Printf("from test IP server: %s %s, Port: %s\n", s.serverContainer, s.serverIP, s.serverPort)
+
+	val, err = s.Get(s.clientContainer, networkBucket)
+	assert.Nil(s.T(), err)
+	expectedNetworkInfo = fmt.Sprintf("%s:%s:%s:%s:ROLE_CLIENT:SOCKET_FAMILY_IPV4", s.clientIP, s.clientPort, s.serverIP, s.serverPort)
+	assert.Equal(s.T(), expectedNetworkInfo, string(val))
+	fmt.Printf("from db client: %s %s\n", s.clientContainer, string(val))
+	fmt.Printf("from test IP client: %s %s, Port: %s\n", s.clientContainer, s.clientIP, s.clientPort)
 }
 
 func (s *IntegrationTestSuite) TearDownSuite() {
@@ -129,7 +151,7 @@ func (s *IntegrationTestSuite) TearDownSuite() {
 func (s *IntegrationTestSuite) launchContainer(containerName, imageName, command string) (string, error) {
 	var cmd *exec.Cmd
 	if command != "" {
-		cmd = exec.Command("docker", "run", "-d", "--name", containerName, imageName, command)
+		cmd = exec.Command("docker", "run", "-d", "--name", containerName, imageName, "/bin/sleep 300")
 	} else {
 		cmd = exec.Command("docker", "run", "-d", "--name", containerName, imageName)
 	}
@@ -138,9 +160,9 @@ func (s *IntegrationTestSuite) launchContainer(containerName, imageName, command
 }
 
 func (s *IntegrationTestSuite) execContainer(containerName string, command []string) (string, error) {
-	args := fmt.Sprintf("exec %s %s", containerName, strings.Join(command, " "))
-	fmt.Println(args)
-	cmd := exec.Command("docker", args)
+	args := []string{"exec", containerName}
+	args = append(args, command...)
+	cmd := exec.Command("docker", args...)
 	stdoutStderr, err := cmd.CombinedOutput()
 	fmt.Printf("command err: %v\n", err)
 	return strings.Trim(string(stdoutStderr), "\n"), err
