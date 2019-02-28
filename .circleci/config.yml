@@ -91,7 +91,7 @@ commands:
     - run:
         name: Start GCP builder node (Ubuntu 18.04)
         command: |
-          if true ; then    # easily reconfigure with flag
+          if true ; then
             cd ~/workspace/go/src/github.com/stackrox/collector/gcpbuild
             REGION=us-west1
             MACHINE_NAME=build-01
@@ -112,7 +112,6 @@ commands:
         #       gcloud compute instances delete "collector-ci-${MACHINE_NAME}"
             fi
           fi
-
   docker-login:
     steps:
     - run:
