@@ -124,6 +124,8 @@ func (s *IntegrationTestSuite) TestProcessViz() {
 }
 
 func (s *IntegrationTestSuite) TestNetworkFlows() {
+
+	// Server side checks
 	val, err := s.Get(s.serverContainer, networkBucket)
 	assert.Nil(s.T(), err)
 	actualValues := strings.Split(string(val), ":")
@@ -140,10 +142,9 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 	fmt.Printf("ServerDetails from Bolt: %s %s\n", s.serverContainer, string(val))
 	fmt.Printf("ServerDetails from test: %s %s, Port: %s\n", s.serverContainer, s.serverIP, s.serverPort)
 
+	// client side checks
 	val, err = s.Get(s.clientContainer, networkBucket)
 	assert.Nil(s.T(), err)
-	expectedNetworkInfo = fmt.Sprintf("%s:%s:%s:%s:ROLE_CLIENT:SOCKET_FAMILY_IPV4", s.clientIP, s.clientPort, s.serverIP, s.serverPort)
-
 	expectedClientIP = actualValues[0]
 	expectedServerIP = actualValues[2]
 	expectedServerPort = actualValues[3]
