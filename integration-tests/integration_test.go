@@ -32,7 +32,6 @@ type IntegrationTestSuite struct {
 	serverIP        string
 	serverPort      string
 	clientIP        string
-	clientPort      string
 	serverContainer string
 	clientContainer string
 }
@@ -73,10 +72,6 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	ip, err = s.getIPAddress("nginx-curl")
 	assert.Nil(s.T(), err)
 	s.clientIP = ip
-
-	port, err = s.getPort("nginx-curl")
-	assert.Nil(s.T(), err)
-	s.clientPort = port
 
 	time.Sleep(20 * time.Second)
 
@@ -161,7 +156,7 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 	assert.Equal(s.T(), expectedClientIP, expectedClientIP)
 
 	fmt.Printf("ClientDetails from Bolt: %s %s\n", s.clientContainer, string(val))
-	fmt.Printf("ClientDetails from test: %s %s, Port: %s\n", s.clientContainer, s.clientIP, s.clientPort)
+	fmt.Printf("ClientDetails from test: %s %s, Port: (random)\n", s.clientContainer, s.clientIP)
 }
 
 func (s *IntegrationTestSuite) TearDownSuite() {
