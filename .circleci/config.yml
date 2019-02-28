@@ -59,7 +59,7 @@ jobs:
 
     - run:
         name: Set up SRBCache directory
-        command: bash -c 'cd "${SOURCE_ROOT}/flm" && exec bash run_target'
+        command: bash -c 'source ~/workspace/shared-env && cd "${SOURCE_ROOT}/flm" && exec bash run_target'
 
     - persist_to_workspace:
         root: ~/workspace
