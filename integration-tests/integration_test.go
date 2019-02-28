@@ -132,9 +132,6 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 	if len(actualValues) < 6 {
 		s.T().Fatalf("Incomplete server details from Bolt: %v", actualValues)
 	}
-	if assert.Empty(s.T(), actualValues) {
-		s.T().Fatalf("Unable to find server details from Bolt: %s", string(val))
-	}
 
 	expectedServerIP := actualValues[0]
 	expectedServerPort := actualValues[1]
@@ -154,9 +151,6 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 	assert.Nil(s.T(), err)
 	if len(actualValues) < 6 {
 		s.T().Fatalf("Incomplete client details from Bolt: %v", actualValues)
-	}
-	if assert.Empty(s.T(), actualValues) {
-		s.T().Fatalf("Unable to find client details from Bolt: %s", string(val))
 	}
 
 	expectedClientIP = actualValues[0]
