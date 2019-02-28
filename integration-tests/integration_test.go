@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/suite"
-	"github.com/stretchr/testify/assert"
-	"github.com/boltdb/bolt"
-	"io/ioutil"
 	"encoding/json"
+	"github.com/boltdb/bolt"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+	"io/ioutil"
 )
 
 const (
@@ -27,12 +27,12 @@ func TestCollectorGRPC(t *testing.T) {
 
 type IntegrationTestSuite struct {
 	suite.Suite
-	dbpath      string
-	db          *bolt.DB
-	serverIP   string
-	serverPort        string
-	clientIP string
-	clientPort string
+	dbpath          string
+	db              *bolt.DB
+	serverIP        string
+	serverPort      string
+	clientIP        string
+	clientPort      string
 	serverContainer string
 	clientContainer string
 }
@@ -72,15 +72,15 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	_, err = s.execContainer("nginx-curl", []string{"curl", ip})
 	assert.Nil(s.T(), err)
 
-        ip, err = s.getIPAddress("nginx-curl")
-        fmt.Println(err)
-        assert.Nil(s.T(), err)
-        s.clientIP = ip
+	ip, err = s.getIPAddress("nginx-curl")
+	fmt.Println(err)
+	assert.Nil(s.T(), err)
+	s.clientIP = ip
 
-        port, err = s.getPort("nginx-curl")
-        fmt.Println(err)
-        assert.Nil(s.T(), err)
-        s.clientPort = port
+	port, err = s.getPort("nginx-curl")
+	fmt.Println(err)
+	assert.Nil(s.T(), err)
+	s.clientPort = port
 
 	time.Sleep(20 * time.Second)
 
@@ -130,15 +130,33 @@ func (s *IntegrationTestSuite) TestProcessViz() {
 func (s *IntegrationTestSuite) TestNetworkFlows() {
 	val, err := s.Get(s.serverContainer, networkBucket)
 	assert.Nil(s.T(), err)
+	actualValues := strings.Split(string(val), ":")
+
 	expectedNetworkInfo := fmt.Sprintf("%s:%s:%s:%s:ROLE_SERVER:SOCKET_FAMILY_IPV4", s.serverIP, s.serverPort, s.clientIP, s.clientPort)
-	assert.Equal(s.T(), expectedNetworkInfo, string(val))
+
+	expectedServerIP := actualValues[0]
+	expectedServerPort := actualValues[1]
+	expectedClientIP := actualValues[2]
+	// client port are chosen at random so not checking that
+
+	assert.Equal(s.T(), expectedNetworkInfo, expectedServerIP)
+	assert.Equal(s.T(), expectedNetworkInfo, expectedServerPort)
+	assert.Equal(s.T(), expectedNetworkInfo, expectedClientIP)
+
 	fmt.Printf("from db server: %s %s\n", s.serverContainer, string(val))
 	fmt.Printf("from test IP server: %s %s, Port: %s\n", s.serverContainer, s.serverIP, s.serverPort)
 
 	val, err = s.Get(s.clientContainer, networkBucket)
 	assert.Nil(s.T(), err)
 	expectedNetworkInfo = fmt.Sprintf("%s:%s:%s:%s:ROLE_CLIENT:SOCKET_FAMILY_IPV4", s.clientIP, s.clientPort, s.serverIP, s.serverPort)
-	assert.Equal(s.T(), expectedNetworkInfo, string(val))
+
+	expectedClientIP = actualValues[0]
+	expectedServerIP = actualValues[2]
+	expectedServerPort = actualValues[3]
+	assert.Equal(s.T(), expectedNetworkInfo, expectedServerIP)
+	assert.Equal(s.T(), expectedNetworkInfo, expectedServerPort)
+	assert.Equal(s.T(), expectedNetworkInfo, expectedClientIP)
+
 	fmt.Printf("from db client: %s %s\n", s.clientContainer, string(val))
 	fmt.Printf("from test IP client: %s %s, Port: %s\n", s.clientContainer, s.clientIP, s.clientPort)
 }
@@ -164,7 +182,6 @@ func (s *IntegrationTestSuite) execContainer(containerName string, command []str
 	args = append(args, command...)
 	cmd := exec.Command("docker", args...)
 	stdoutStderr, err := cmd.CombinedOutput()
-	fmt.Printf("command err: %v\n", err)
 	return strings.Trim(string(stdoutStderr), "\n"), err
 }
 
