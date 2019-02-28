@@ -12,6 +12,10 @@ commands:
           	export WORKSPACE_ROOT="${HOME}/workspace"
           EOF
           [[ -f ~/workspace/shared-env ]] && cat ~/workspace/shared-env >>"$BASH_ENV"
+    - run:
+        name: Set up SRBCache directory
+        command: cd "${SOURCE_ROOT}/flm" && exec bash run_target
+
 
   gcloud-init:
     steps:
@@ -56,10 +60,6 @@ jobs:
           cat >>~/workspace/shared-env \<<-EOF
           	export COLLECTOR_VERSION="$COLLECTOR_VERSION"
           EOF
-
-    - run:
-        name: Set up SRBCache directory
-        command: bash -c 'source ~/workspace/shared-env && cd "${SOURCE_ROOT}/flm" && exec bash run_target'
 
     - persist_to_workspace:
         root: ~/workspace
