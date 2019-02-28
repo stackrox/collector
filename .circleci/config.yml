@@ -260,10 +260,10 @@ jobs:
     machine: true
     steps:
     - checkout:
-        path: ~/workspace/go/src/github.com/stackrox/collector
+        path: ~/go/src/github.com/stackrox/collector
     - run:
         name: Set up SRBCache directory
-        working_directory: ~/workspace/go/src/github.com/stackrox/collector/flm
+        working_directory: ~/go/src/github.com/stackrox/collector/flm
         command: pwd && ls -F && ls .. && ./run_target && ls -lhF ~/.srbcache
 
   kernels:
