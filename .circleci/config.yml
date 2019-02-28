@@ -89,7 +89,7 @@ jobs:
 
   prepare-kernels:
     docker:
-    - image: docker.io/stackrox/apollo-ci:snapshot-collector-0.1.11-26-g6bb45828d3
+    - image: docker.io/stackrox/apollo-ci:collector-0.1.11-18-g3ecb0861c9
       auth:
         username: $DOCKER_USER
         password: $DOCKER_PASS
@@ -606,7 +606,7 @@ jobs:
 
   upload-modules:
     docker:
-    - image: docker.io/stackrox/apollo-ci:snapshot-collector-0.1.11-26-g6bb45828d3
+    - image: docker.io/stackrox/apollo-ci:collector-0.1.11-18-g3ecb0861c9
       auth:
         username: $DOCKER_USER
         password: $DOCKER_PASS
