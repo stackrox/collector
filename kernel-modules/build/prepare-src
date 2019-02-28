@@ -26,29 +26,27 @@ get_module_version() (
 		awk '{print$1}'
 )
 
-for bpf_opt in ON OFF; do
-    rm -rf "$SYSDIG_SCRATCH" "$BUILD_SCRATCH" 2>/dev/null || true
-    mkdir -p "$SYSDIG_SCRATCH" "$BUILD_SCRATCH"
-    cp -r "${SYSDIG_DIR}/." "${SYSDIG_SCRATCH}"
+rm -rf "$SYSDIG_SCRATCH" "$BUILD_SCRATCH" 2>/dev/null || true
+mkdir -p "$SYSDIG_SCRATCH" "$BUILD_SCRATCH"
+cp -r "${SYSDIG_DIR}/." "${SYSDIG_SCRATCH}"
 
-    cd "$BUILD_SCRATCH"
-    cmake \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_C_FLAGS="-fno-pie" \
-        -DPROBE_NAME=collector \
-        -DBUILD_USERSPACE=OFF \
-        -DENABLE_DKMS=OFF \
-        -DBUILD_BPF="$bpf_opt" \
-        "$SYSDIG_SCRATCH"
-    KERNELDIR=/dev/null make driver/fast || true
+cd "$BUILD_SCRATCH"
+cmake \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_C_FLAGS="-fno-pie" \
+    -DPROBE_NAME=collector \
+    -DBUILD_USERSPACE=OFF \
+    -DENABLE_DKMS=OFF \
+    -DBUILD_BPF=ON \
+    "$SYSDIG_SCRATCH"
+KERNELDIR=/dev/null make driver/fast || true
 
-    cd "${SYSDIG_SCRATCH}/driver"
-    module_version="$(get_module_version .)"
+cd "${SYSDIG_SCRATCH}/driver"
+module_version="$(get_module_version .)"
 
-    source_archive="${OUTPUT_DIR}/${module_version}.tgz"
-    if [[ -s "$source_archive" ]]; then
-        continue
-    fi
+source_archive="${OUTPUT_DIR}/${module_version}.tgz"
+if [[ -s "$source_archive" ]]; then
+    exit 0
+fi
 
-    modfiles0 . | xargs -0 tar cfvz "$source_archive"
-done
+modfiles0 . | xargs -0 tar cfvz "$source_archive"
