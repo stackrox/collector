@@ -22,3 +22,5 @@ rm -f /tmp/.s-$$.run && run-flake-setup
 cat /etc/passwd
 ensure_dir_home_srbcache
 ensure_dir_srbcache_dist
+
+docker ps

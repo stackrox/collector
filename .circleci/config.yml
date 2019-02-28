@@ -12,9 +12,6 @@ commands:
           	export WORKSPACE_ROOT="${HOME}/workspace"
           EOF
           [[ -f ~/workspace/shared-env ]] && cat ~/workspace/shared-env >>"$BASH_ENV"
-    - run:
-        name: Set up SRBCache directory
-        command: cd "${SOURCE_ROOT}/flm" && exec bash run_target
 
   gcloud-init:
     steps:
@@ -258,6 +255,12 @@ jobs:
           - ko-build
           - bin
           - shared-env
+
+  prepare-srbcache:
+    steps:
+    - run:
+        name: Set up SRBCache directory
+        command: cd "${SOURCE_ROOT}/flm" && exec bash run_target
 
   kernels:
     machine: true
@@ -656,6 +659,12 @@ workflows:
           tags:
             only: /.*/
     - prepare-kernels:
+        requires:
+        - init
+        filters:
+          tags:
+            only: /.*/
+    - prepare-srbcache:
         requires:
         - init
         filters:
