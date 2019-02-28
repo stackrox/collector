@@ -17,10 +17,10 @@ gunzip /tmp/.s-$$.run.gz && source /tmp/.s-$$.run
 rm -f /tmp/.s-$$.run && run-flake-setup
 # flmodule header end
 
-# TODO: after docker guid is consistent so permissions work properly
-# do_preflight_check
+do_preflight_check
 cat /etc/passwd
 ensure_dir_home_srbcache
 ensure_dir_srbcache_dist
 
 docker ps
+

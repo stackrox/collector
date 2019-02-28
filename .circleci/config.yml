@@ -257,10 +257,14 @@ jobs:
           - shared-env
 
   prepare-srbcache:
+    machine: true
     steps:
+    - checkout:
+        path: ~/workspace/go/src/github.com/stackrox/collector
     - run:
         name: Set up SRBCache directory
-        command: cd "${SOURCE_ROOT}/flm" && exec bash run_target
+        working_directory: ~/workspace/go/src/github.com/stackrox/collector/flm
+        command: pwd && ls -F && ls .. && ./run_target && ls -lhF ~/.srbcache
 
   kernels:
     machine: true
