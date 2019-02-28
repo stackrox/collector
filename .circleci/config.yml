@@ -22,7 +22,7 @@ commands:
           if [[ -z "$ROX_CI_IMAGE" ]]; then
             pip install -U crcmod google_compute_engine
           fi
-          gcloud auth activate-service-account --key-file <(echo "$GOOGLE_CREDENTIALS_KERNEL_CACHE")
+          gcloud auth activate-service-account --key-file <(echo "$GOOGLE_CREDENTIALS_CIRCLECI_COLLECTOR")
           gcloud auth list
 
   docker-login:
@@ -101,14 +101,6 @@ jobs:
     - init
 
     - run:
-        name: Compile kobuild
-        command: |
-          mkdir bin
-          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-            go build -a -o "${WORKSPACE_ROOT}/bin/kobuild" \
-            github.com/stackrox/collector/kernel-modules/build/kobuild
-
-    - run:
         name: Prepare source
         command: |
           mkdir -p ~/kobuild-tmp/versions-src
@@ -156,7 +148,7 @@ jobs:
               ./kernel-modules/build/prepare-src
 
             rm -rf /tmp/old-sysdig
-          done < <(grep -v '^#' <RELEASED_VERSIONS | awk '{print$1}' | sort | uniq)
+          done < <(grep -v '^#' <RELEASED_VERSIONS | awk '{print $1}' | sort | uniq)
 
           for i in "${HOME}/kobuild-tmp/versions-src"/*.tgz; do
             filename="$(basename "$i")"
@@ -236,22 +228,72 @@ jobs:
           done
 
     - run:
+        name: Determine list of all kernel versions
+        command: |
+          gsutil ls "${KERNEL_BUNDLES_BUCKET}/" \
+            | sed -e 's@^.*/bundle-\(.*\)\.tgz$@\1@g' \
+            | sort | uniq >~/kobuild-tmp/all-kernel-versions
+
+          num_kernel_versions="$(wc -l ~/kobuild-tmp/all-kernel-versions | awk '{print $1}')"
+
+          (( num_kernel_versions > 0 )) || {
+            echo "No kernel bundles found!"
+            exit 1
+          }
+          echo "Found ${num_kernel_versions} kernel bundles."
+
+    - run:
         name: Generate list of all (source, kernel version) build combinations
         command: |
+          # all-build-tasks will contain all potentially possible build tasks, i.e., the cross
+          # product between the set of kernel versions and the set of module versions
+          echo >~/kobuild-tmp/all-build-tasks
+
+          # redundant-build-tasks will contain all build tasks for which we already have the resulting
+          # module.
+          echo >~/kobuild-tmp/redundant-build-tasks
+
           cd "${WORKSPACE_ROOT}/ko-build"
+          echo >~/kobuild-tmp/all-module-versions
+
           for i in module-versions/*/; do
             version="$(basename "$i")"
-            "${WORKSPACE_ROOT}/bin/kobuild" \
-              --config "${SOURCE_ROOT}/kernel-modules/supported-kernels/kernel-manifest.yml" \
-              --kernel-versions-file ~/kobuild-tmp/existing-modules-"${version}" \
-              --exclude \
-              --output "{{.KernelVersion}} ${version}"
-          done | sort | uniq >build-tasks
+            echo "$version" >>~/kobuild-tmp/all-module-versions
+
+            awk -v modver="$version" '{print $1 " " modver}' <~/kobuild-tmp/all-kernel-versions >>~/kobuild-tmp/all-build-tasks
+            awk -v modver="$version" '{print $1 " " modver}' <~/kobuild-tmp/existing-modules-"${version}" >>~/kobuild-tmp/redundant-build-tasks
+          done
+
+          # blacklisted-build-tasks is populated from the BLACKLIST file to exclude build tasks which would fail.
+          echo >~/kobuild-tmp/blacklisted-build-tasks
+
+          while read -a line || [[ "${#line[@]}" -gt 0 ]]; do
+            [[ "${#line[@]}" -gt 0 ]] || continue
+            kernel_version="${line[0]}"
+            if [[ "${#line[@]}" -eq 1 ]]; then
+              awk -v kernelver="${kernel_version}" '{print kernelver " " $1}' <~/kobuild-tmp/all-module-versions >>~/kobuild-tmp/blacklisted-build-tasks
+            else
+              module_version="${line[1]}"
+              echo "${kernel_version} ${module_version}" >>~/kobuild-tmp/blacklisted-build-tasks
+            fi
+          done < <(sed -e 's@[[:space:]]*#.*$@@g' <"${SOURCE_ROOT}/kernel-modules/BLACKLIST")
+
+          # Create the set of build tasks as the contents of `all-build-tasks` minus the redundant and blacklisted
+          # build tasks.
+          cat ~/kobuild-tmp/all-build-tasks \
+              ~/kobuild-tmp/redundant-build-tasks ~/kobuild-tmp/redundant-build-tasks \
+              ~/kobuild-tmp/blacklisted-build-tasks ~/kobuild-tmp/blacklisted-build-tasks \
+            | sort | uniq -u >build-tasks
 
     - run:
         name: Print list of all (source, kernel version) build combinations
-        command:
-          cat "${WORKSPACE_ROOT}/ko-build/build-tasks"
+        command: |
+          cd "${WORKSPACE_ROOT}/ko-build"
+
+          num_build_tasks="$(wc -l build-tasks | awk '{print $1}')"
+          echo "Building kernel modules for the following kernel/module version combinations:"
+          sed -e 's@^@  @' <build-tasks
+          echo "Total: ${num_build_tasks} kernel/module version combinations."
 
     - persist_to_workspace:
         root: ~/workspace
@@ -288,49 +330,36 @@ jobs:
           split -d -l "$shard_size" "${WORKSPACE_ROOT}/ko-build/build-tasks" task-shard-
 
           this_shard_file=~/kobuild-tmp/task-shard-"$(printf '%02d' "$CIRCLE_NODE_INDEX")"
+
           if [[ ! -s "$this_shard_file" ]]; then
             echo "Nothing to be done for this shard."
             circleci step halt
             exit 0
           fi
 
-          while read -a line || [[ "${#line[@]}" > 0 ]]; do
-            module_version="${line[1]}"
-            mkdir -p "${WORKSPACE_ROOT}/ko-build/build-output/${module_version}"
-            mkdir -p ~/kobuild-tmp/build-versions/"${module_version}"
-            kernel_version="${line[0]}"
-            echo "$kernel_version" >>~/kobuild-tmp/kernel-versions-"${module_version}"
-          done <"$this_shard_file"
+          mv "$this_shard_file" ~/kobuild-tmp/local-build-tasks
 
-          echo >~/kobuild-tmp/all-build-commands
-          for i in "${WORKSPACE_ROOT}/ko-build/build-output"/*/; do
-            module_version="$(basename "$i")"
-            [[ -f ~/kobuild-tmp/kernel-versions-"${module_version}" ]] || continue
-            "${WORKSPACE_ROOT}/bin/kobuild" \
-                --config "${SOURCE_ROOT}/kernel-modules/supported-kernels/kernel-manifest.yml" \
-                --kernel-versions-file ~/kobuild-tmp/kernel-versions-"${module_version}" \
-                --output 'SOURCE_VERSION="'"${module_version}"'" {{.BuildCommand "build-kos"}}' \
-                \>> ~/kobuild-tmp/all-build-commands
-          done
+          num_build_tasks="$(wc -l ~/kobuild-tmp/local-build-tasks | awk '{print $1}')"
+          echo "Building kernel modules for the following kernel/module version combinations:"
+          sed -e 's@^@  @' <~/kobuild-tmp/local-build-tasks
+          echo "Total: ${num_build_tasks} kernel/module version combinations."
+
+          awk '{print $1}' <~/kobuild-tmp/local-build-tasks | sort | uniq >~/kobuild-tmp/all-kernel-versions
+          awk '{print $2}' <~/kobuild-tmp/local-build-tasks | sort | uniq >~/kobuild-tmp/all-module-versions
+
+          cd "${WORKSPACE_ROOT}/ko-build/build-output"
+          xargs <~/kobuild-tmp/all-module-versions mkdir -p
 
     - gcloud-init
     - run:
         name: Download required packages
         command: |
-          cat ~/kobuild-tmp/kernel-versions-* | sort | uniq >~/kobuild-tmp/all-kernel-versions
-          "${WORKSPACE_ROOT}/bin/kobuild" \
-              --config "${SOURCE_ROOT}/kernel-modules/supported-kernels/kernel-manifest.yml" \
-              --kernel-versions-file ~/kobuild-tmp/all-kernel-versions \
-              --output '{{.PackageListURLEncoded}}' \
-            | sort | uniq \
-            | sed -e 's@^@gs://stackrox-kernel-headers-mirror/packages/@' \
-              >~/kobuild-tmp/all-package-objects
-          cat ~/kobuild-tmp/all-package-objects
+          mkdir -p ~/kobuild-tmp/bundles
 
-          cat ~/kobuild-tmp/all-package-objects
+          awk -v bucket="$KERNEL_BUNDLES_BUCKET" '{print bucket "/bundle-" $1 ".tgz"}' <~/kobuild-tmp/all-kernel-versions \
+            | gsutil -m cp -I ~/kobuild-tmp/bundles/
 
-          mkdir -p ~/kobuild-tmp/packages
-          gsutil -m cp -I ~/kobuild-tmp/packages/ <~/kobuild-tmp/all-package-objects
+          ls ~/kobuild-tmp/bundles/
 
     - docker-login
 
@@ -356,12 +385,12 @@ jobs:
         name: Build modules
         command: |
           docker run --rm -i \
-            -v "${HOME}/kobuild-tmp/packages:/packages:ro" \
+            -v "${HOME}/kobuild-tmp/bundles:/bundles:ro" \
             -v "${WORKSPACE_ROOT}/ko-build/module-versions:/sources:ro" \
             -v "${WORKSPACE_ROOT}/ko-build/build-output:/output" \
             --tmpfs /scratch:exec \
             build-kernel-modules \
-            sh - <~/kobuild-tmp/all-build-commands
+            build-kos-new <~/kobuild-tmp/local-build-tasks
 
     - persist_to_workspace:
         root: ~/workspace

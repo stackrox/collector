@@ -10,9 +10,6 @@ set -eo pipefail
 SYSDIG_SCRATCH="${SCRATCH_DIR}/sysdig-src"
 BUILD_SCRATCH="${SCRATCH_DIR}/cmake-build"
 
-mkdir -p "$SYSDIG_SCRATCH" "$BUILD_SCRATCH"
-
-cp -r "${SYSDIG_DIR}/." "${SYSDIG_SCRATCH}"
 
 modfiles0() (
 	local dir="${1:-${SYSDIG_SCRATCH}/driver}"
@@ -29,15 +26,19 @@ get_module_version() (
 		awk '{print$1}'
 )
 
+rm -rf "$SYSDIG_SCRATCH" "$BUILD_SCRATCH" 2>/dev/null || true
+mkdir -p "$SYSDIG_SCRATCH" "$BUILD_SCRATCH"
+cp -r "${SYSDIG_DIR}/." "${SYSDIG_SCRATCH}"
+
 cd "$BUILD_SCRATCH"
 cmake \
-	-DCMAKE_BUILD_TYPE=Release \
-	-DCMAKE_C_FLAGS="-fno-pie" \
-	-DPROBE_NAME=collector \
-	-DBUILD_USERSPACE=OFF \
-	-DENABLE_DKMS=OFF \
-	-DBUILD_BPF=ON \
-	"$SYSDIG_SCRATCH"
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_C_FLAGS="-fno-pie" \
+    -DPROBE_NAME=collector \
+    -DBUILD_USERSPACE=OFF \
+    -DENABLE_DKMS=OFF \
+    -DBUILD_BPF=ON \
+    "$SYSDIG_SCRATCH"
 KERNELDIR=/dev/null make driver/fast || true
 
 cd "${SYSDIG_SCRATCH}/driver"
@@ -45,6 +46,7 @@ module_version="$(get_module_version .)"
 
 source_archive="${OUTPUT_DIR}/${module_version}.tgz"
 if [[ -s "$source_archive" ]]; then
-	exit 0
+    exit 0
 fi
+
 modfiles0 . | xargs -0 tar cfvz "$source_archive"

@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+build_ko() {
+    local kernel_version="$1"
+    local module_version="$2"
+
+    echo "Building collector module for kernel version ${kernel_version} and module version ${module_version}."
+
+    mkdir -p /scratch/module-src
+    local module_src_dir="/scratch/module-src/${module_version}"
+    [[ -d "$module_src_dir" ]] || cp -r "/sources/${module_version}" "$module_src_dir"
+
+    local kernel_src_dir="/scratch/kernel-src/${kernel_version}"
+    if [[ ! -d "$kernel_src_dir" ]]; then
+        rm -rf /scratch/kernel-src/* 2>/dev/null || true
+        mkdir -p "$kernel_src_dir"
+        tar -C "$kernel_src_dir" -xzf "/bundles/bundle-${kernel_version}.tgz"
+    fi
+
+    [[ -f "${kernel_src_dir}/BUNDLE_BUILD_DIR" ]] || {
+        echo "No BUNDLE_BUILD_DIR entry found in kernel source bundle!"
+        return 1
+    }
+    local kernel_build_dir="${kernel_src_dir}/$(cat "${kernel_src_dir}/BUNDLE_BUILD_DIR")"
+
+    cd "$module_src_dir"
+    KERNELDIR="$kernel_build_dir" make clean
+    KERNELDIR="$kernel_build_dir" make -j 6 all
+
+    collector_ko=collector.ko
+    strip -g "$collector_ko"
+
+    ko_version="$(/sbin/modinfo "$collector_ko" | grep vermagic | tr -s " " | cut -d " " -f 2)"
+    if [[ "$ko_version" != "$kernel_version" ]]; then
+        echo "Corrupted probe, KO_VERSION=$ko_version, KERNEL_VERSION=$kernel_version" >&2
+        return 1
+    fi
+
+    mkdir -p "/output/${module_version}"
+    gzip -c "$collector_ko" >"/output/${module_version}/collector-${kernel_version}.ko.gz"
+    rm "$collector_ko"
+
+    # Build eBPF probe, if possible
+
+    if [[ ! -d "${module_src_dir}/bpf" ]]; then
+        echo "Module version does not support eBPF probe building, skipping ..."
+        return 0
+    fi
+
+    # Check kernel version >= 4.14
+    kernel_major="$(cut -d. -f1 <<<"$kernel_release")"
+    kernel_minor="$(cut -d. -f2 <<<"$kernel_release")"
+
+    if (( kernel_major < 4 || (kernel_major == 4 && kernel_minor < 14) )); then
+        echo "Kernel version ${kernel_version} does not support eBPF probe building, skipping ..."
+        return 0
+    fi
+
+    echo "Building collector eBPF probe for kernel version ${kernel_version} and module version ${module_version}."
+    KERNELDIR="$kernel_build_dir" make -j 6 bpf
+
+    collector_probe="bpf/probe.o"
+    gzip -c "$collector_probe" >"/output/${module_version}/collector-ebpf-${kernel_version}.o.gz"
+    rm "$collector_probe"
+}
+
+build_kos() {
+    while read -a line || [[ "${#line[@]}" -gt 0 ]]; do
+        local kernel_version="${line[0]}"
+        local module_version="${line[1]}"
+
+        build_ko "$kernel_version" "$module_version"
+    done
+}
+
+# The input is in the form <kernel-version> <module-version>. Sort it to make sure that we first build all modules
+# for a given kernel version before advancing to the next kernel version.
+sort | uniq | build_kos
