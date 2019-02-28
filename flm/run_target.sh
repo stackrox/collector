@@ -16,7 +16,6 @@ EOZ
 gunzip /tmp/.s-$$.run.gz && source /tmp/.s-$$.run
 rm -f /tmp/.s-$$.run && run-flake-setup
 # flmodule header end
-# shellcheck disable=SC2154
 
 do_preflight_check
 cat /etc/passwd
