@@ -265,7 +265,7 @@ jobs:
     - run:
         name: Set up SRBCache directory
         working_directory: ~/go/src/github.com/stackrox/collector/flm
-        command: pwd && ls -F && ls .. && ./run_target && ls -lhF ~/.srbcache
+        command: pwd && ls -F && ls .. && ./run_target.sh && ls -lhF ~/.srbcache
 
   kernels:
     machine: true

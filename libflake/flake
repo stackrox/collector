@@ -2,7 +2,7 @@
 # flake is the function library bash module system. use as:
 # bash libflake/flake init [filename]
 # if unspecified, filename defaults to "flmodule"
-# produces a Bash module header useful for including enclosing Flakefile
+# produces a Bash module header useful for including enclosing Flakefile.sh
 # up to some topmost one and executing in root-first order
 
 if test "x$1" = "xinit" ; then
@@ -43,8 +43,8 @@ find-stack-sh () {
 source-up () {
   path=$(pwd)
   while [[ "$path" != "" ]]; do
-    if test -f "$path/Flakefile" ; then
-      stack_push flakes "$path/Flakefile"
+    if test -f "$path/Flakefile.sh" ; then
+      stack_push flakes "$path/Flakefile.sh"
     fi
     path=${path%/*}
   done
