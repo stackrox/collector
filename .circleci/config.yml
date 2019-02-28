@@ -57,6 +57,10 @@ jobs:
           	export COLLECTOR_VERSION="$COLLECTOR_VERSION"
           EOF
 
+    - run:
+        name: Set up SRBCache directory
+        command: cd "${SOURCE_ROOT}/flm" && bash run_target
+
     - persist_to_workspace:
         root: ~/workspace
         paths:
@@ -573,11 +577,6 @@ jobs:
             echo "Pushing kernel modules"
             docker push "stackrox/kernel-modules:snapshot-${COLLECTOR_VERSION}"
           fi
-
-    - run:
-        name: SRBCache tests
-        workdir: "$COLLECTOR_SOURCE_ROOT/../flm"
-        command: bash run_target
 
     - run:
         name: Integration tests
