@@ -129,6 +129,9 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 	val, err := s.Get(s.serverContainer, networkBucket)
 	assert.Nil(s.T(), err)
 	actualValues := strings.Split(string(val), ":")
+	if len(actualValues) < 6 {
+		s.T().Fatalf("Incomplete server details from Bolt: %v", actualValues)
+	}
 	if assert.Empty(s.T(), actualValues) {
 		s.T().Fatalf("Unable to find server details from Bolt: %s", string(val))
 	}
@@ -149,6 +152,9 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 	val, err = s.Get(s.clientContainer, networkBucket)
 	actualValues = strings.Split(string(val), ":")
 	assert.Nil(s.T(), err)
+	if len(actualValues) < 6 {
+		s.T().Fatalf("Incomplete client details from Bolt: %v", actualValues)
+	}
 	if assert.Empty(s.T(), actualValues) {
 		s.T().Fatalf("Unable to find client details from Bolt: %s", string(val))
 	}
