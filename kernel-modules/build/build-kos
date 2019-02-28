@@ -1,252 +1,80 @@
 #!/usr/bin/env bash
+
 set -euo pipefail
 
-#### LICENSING:
-#### This file is derived from sysdig, in scripts/build-probe-binaries.
-#### Sysdig is licensed under the GNU General Public License v2.
-#### This file is not distributed with StackRox code, and is only
-#### used during compilation.
-#### This file is heavily modified from the original.
+build_ko() {
+    local kernel_version="$1"
+    local module_version="$2"
 
-#
-# This script builds a precompiled version of sysdig-probe for a bunch of kernels
-# The precompiled binary is then obtained at runtime by sysdig-probe-loader
-# Ideally, the community should expand this stuff with better support
-#
+    echo "Building collector module for kernel version ${kernel_version} and module version ${module_version}."
 
-build_epbf() {
-    kernel_directory="$1"
-    kernel_release="$2"
+    mkdir -p /scratch/module-src
+    local module_src_dir="/scratch/module-src/${module_version}"
+    [[ -d "$module_src_dir" ]] || cp -r "/sources/${module_version}" "$module_src_dir"
 
-    # Legacy builds may not support bpf
-    if [[ ! -d "/scratch/src/${SOURCE_VERSION}/bpf" ]]; then
-        echo "Building ebpf not suppored for ${SOURCE_VERSION}"
-        return
+    local kernel_src_dir="/scratch/kernel-src/${kernel_version}"
+    if [[ ! -d "$kernel_src_dir" ]]; then
+        rm -rf /scratch/kernel-src/* 2>/dev/null || true
+        mkdir -p "$kernel_src_dir"
+        tar -C "$kernel_src_dir" -xzf "/bundles/bundle-${kernel_version}.tgz"
     fi
 
-    # Kernel version >= 4.14
-    kernel_major=$(echo ${kernel_release} | cut -d. -f1)
-    kernel_minor=$(echo ${kernel_release} | cut -d. -f2)
-    if [[ $kernel_major -lt 4 || ( $kernel_major -eq 4 && $kernel_minor -lt 14 ) ]]; then
-        echo "Building ebpf not supported for ${kernel_release}"
-        return
-    fi
-    echo "Building ebpf probe for ${kernel_release}"
-
-    output_module="collector-ebpf-${kernel_release}.o"
-    cd "/scratch/src/${SOURCE_VERSION}"
-    KERNELDIR="$kernel_directory" make -C bpf
-    
-    sysdig_probe="bpf/probe.o"
-
-    mv "$sysdig_probe" "$output_module"
-    gzip "$output_module"
-    mv "${output_module}.gz" "/output/${SOURCE_VERSION}"
-}
-
-build_modules() {
-    kernel_directory="$1"
-    kernel_release="$2"
-    output_module="collector-${kernel_release}.ko"
-
-    echo "Building modules for ${kernel_release}"
-
-    cd "/scratch/src/${SOURCE_VERSION}"
-    KERNELDIR="$kernel_directory" make clean
-    KERNELDIR="$kernel_directory" make -j 6 all
-    
-    sysdig_ko=collector.ko
-    strip -g "$sysdig_ko"
-
-    ko_version=$(/sbin/modinfo "$sysdig_ko" | grep vermagic | tr -s " " | cut -d " " -f 2)
-    if [ "$ko_version" != "$kernel_release" ]; then
-        echo "Corrupted probe, KO_VERSION=$ko_version, KERNEL_RELEASE=$kernel_release"
+    [[ -f "${kernel_src_dir}/BUNDLE_BUILD_DIR" ]] || {
+        echo "No BUNDLE_BUILD_DIR entry found in kernel source bundle!"
         return 1
-    fi
-
-    mv "$sysdig_ko" "$output_module"
-    gzip "$output_module"
-    mv "${output_module}.gz" "/output/${SOURCE_VERSION}"
-}
-
-build_kernel_objects() {
-    build_ebpf "$1" "$2"
-    build_modules "$1" "$2"
-}
-
-ubuntu_build() {
-    if [[ $# -ne 3 ]]; then
-        echo "Incorrect arguments to ubuntu_build() ($* given)"
-        return 1
-    fi
-
-    local release="$1"
-    local specific_deb_file="/packages/$2"
-    local all_deb_file="/packages/$3"
-    local module_file="/output/Ubuntu/collector-${release}.ko"
-
-    echo "Running an Ubuntu build"
-    echo "  release           | $release"
-    echo "  specific_deb_file | $specific_deb_file"
-    echo "  all_deb_file      | $all_deb_file"
-    echo "  module_file       | $module_file"
-
-    dpkg -x "$specific_deb_file" ./
-    dpkg -x "$all_deb_file" ./
-
-    build_kernel_objects "$PWD/usr/src/linux-headers-${release}" "$release" "$module_file"
-}
-
-rhel_build() {
-    if [[ $# -ne 2 ]]; then
-        echo "Incorrect arguments to rhel_build() ($* given)"
-        return 1
-    fi
-
-    local release="$1"
-    local rpm_file="/packages/$2"
-    local module_file="/output/RedHat/collector-${release}.ko"
-
-    echo "Running a RedHat build"
-    echo "  release     | $release"
-    echo "  rpm_file    | $rpm_file"
-    echo "  module_file | $module_file"
-
-    rpm2cpio "$rpm_file" | cpio -idm
-
-    build_kernel_objects "$PWD/usr/src/kernels/${release}" "$release" "$module_file"
-}
-
-extract() {
-    echo "Extracting $1"
-    dpkg -x "$1" ./
-}
-
-debian_build() {
-    if [[ $# -lt 3 ]] || [[ $# -gt 4 ]]; then
-        echo "Incorrect arguments to debian_build() ($* given)"
-        return 1
-    fi
-
-    local release="$1"
-    local kbuild_deb_file="/packages/$2"
-    local header_deb_file="/packages/$3"
-    local common_deb_file=""
-    if [[ $# -eq 4 ]]; then
-	local common_deb_file="/packages/$4"
-    fi
-    local module_file="/output/Debian/collector-${release}.ko"
-    local src_dir="${PWD}/usr/src/linux-headers-${release}"
-
-    echo "Running a Debian build"
-    echo "  release         | $release"
-    echo "  kbuild_deb_file | $kbuild_deb_file"
-    echo "  header_deb_file | $header_deb_file"
-    echo "  common_deb_file | $common_deb_file"
-    echo "  module_file     | $module_file"
-
-    extract "$header_deb_file"
-    extract "$kbuild_deb_file"
-    [[ -n "${common_deb_file}" ]] && extract "${common_deb_file}"
-
-
-    # Fix symbolic links
-    unlink "lib/modules/${release}/build"
-    ln -sr "${PWD}/usr/src/linux-headers-${release}" "lib/modules/${release}/build"
-    if [[ -n "${common_deb_file}" ]]; then
-	local commons_dir="${PWD}/usr/src/linux-headers-${release/amd64/common}"
-	unlink "lib/modules/${release}/source"
-	ln -s "${commons_dir}" "lib/modules/${release}/source"
-    fi
-    
-    # Hack Makefile
-    sed -i -e 's/@://' \
-	-e 's|$(cmd) %.*$|$(cmd) : all|' \
-	"${src_dir}/Makefile"
-    if [[ -n "${common_deb_file}" ]]; then
-	sed -i -e '0,/MAKEARGS.*$/s__MAKEARGS := -C '"${commons_dir} O=${src_dir}"_ \
-	"${src_dir}/Makefile"
-    fi
-    build_kernel_objects "$PWD/usr/src/linux-headers-${release}" "$release" "$module_file"
-}
-
-coreos_build() {
-    if [[ $# -ne 2 ]]; then
-        echo "Incorrect arguments to coreos_build() ($* given)"
-        return 1
-    fi
-
-    local release="$1"
-    local bundle_file="/packages/$2"
-    local module_file="/output/CoreOS/collector-${release}.ko"
-
-    echo "Running a CoreOS build"
-    echo "  release     | $release"
-    echo "  bundle_file | $bundle_file"
-    echo "  module_file | $module_file"
-
-    tar --strip-components=2 -xf "$bundle_file" --wildcards 'usr/boot/config*'
-    tar --strip-components=1 -xf "$bundle_file" 'lib/modules'
-
-    # https://groups.google.com/forum/#!topic/coreos-dev/Z8Q7sIy6YwE
-    sed -i 's/CONFIG_INITRAMFS_SOURCE=""/CONFIG_INITRAMFS_SOURCE="bootengine.cpio"\nCONFIG_INITRAMFS_ROOT_UID=0\nCONFIG_INITRAMFS_ROOT_GID=0/' config
-    sed -i 'N;s/\(CONFIG_RD_LZ4=.\)\n\(CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=\)/\1\nCONFIG_INITRAMFS_COMPRESSION=".gz"\n\2/' config
-
-    build_kernel_objects "$PWD/modules/${release}/build" "$release" "$module_file"
-}
-
-main() {
-    if [[ $# -lt 4 ]]; then
-        echo "Insufficient arguments"
-        return 1
-    fi
-
-    [[ -n "$SOURCE_VERSION" ]] || {
-    	echo >&2 "Source version is not set!"
-    	exit 1
     }
+    local kernel_build_dir="${kernel_src_dir}/$(cat "${kernel_src_dir}/BUNDLE_BUILD_DIR")"
 
-    distro="$1"
-    version="$2"
-    flavor="$3"
-    shift 3
-    files="$@"
+    cd "$module_src_dir"
+    KERNELDIR="$kernel_build_dir" make clean
+    KERNELDIR="$kernel_build_dir" make -j 6 all
 
-    mkdir -p /scratch/src
-    [[ -d "/scratch/src/${SOURCE_VERSION}" ]] || cp -r "/sources/${SOURCE_VERSION}" "/scratch/src/${SOURCE_VERSION}"
+    collector_ko=collector.ko
+    strip -g "$collector_ko"
 
-    rm -rf /scratch/tmp || true
-    mkdir -p /scratch/tmp
-    cd /scratch/tmp
+    ko_version="$(/sbin/modinfo "$collector_ko" | grep vermagic | tr -s " " | cut -d " " -f 2)"
+    if [[ "$ko_version" != "$kernel_version" ]]; then
+        echo "Corrupted probe, KO_VERSION=$ko_version, KERNEL_VERSION=$kernel_version" >&2
+        return 1
+    fi
 
-    mkdir -p "/output/${SOURCE_VERSION}"
+    mkdir -p "/output/${module_version}"
+    gzip -c "$collector_ko" >"/output/${module_version}/collector-${kernel_version}.ko.gz"
+    rm "$collector_ko"
 
-    case "$distro" in
-        Ubuntu)
-            echo Building Ubuntu
-            ubuntu_build "${version}-${flavor}" $files
-        ;;
+    # Build eBPF probe, if possible
 
-        RedHat)
-            echo Building RHEL
-            rhel_build "${version}.${flavor}" $files
-        ;;
+    if [[ ! -d "${module_src_dir}/bpf" ]]; then
+        echo "Module version does not support eBPF probe building, skipping ..."
+        return 0
+    fi
 
-        Debian)
-            echo Building Debian
-            debian_build "${version}-${flavor}" $files
-        ;;
+    # Check kernel version >= 4.14
+    kernel_major="$(cut -d. -f1 <<<"$kernel_release")"
+    kernel_minor="$(cut -d. -f2 <<<"$kernel_release")"
 
-        CoreOS)
-            echo Building CoreOS
-            coreos_build "${version}-${flavor}" $files
-        ;;
+    if (( kernel_major < 4 || (kernel_major == 4 && kernel_minor < 14) )); then
+        echo "Kernel version ${kernel_version} does not support eBPF probe building, skipping ..."
+        return 0
+    fi
 
-        *)
-            echo Unknown distro.
-            return 1
-        ;;
-    esac
+    echo "Building collector eBPF probe for kernel version ${kernel_version} and module version ${module_version}."
+    KERNELDIR="$kernel_build_dir" make -j 6 bpf
+
+    collector_probe="bpf/probe.o"
+    gzip -c "$collector_probe" >"/output/${module_version}/collector-ebpf-${kernel_version}.o.gz"
+    rm "$collector_probe"
 }
 
-main "$@"
+build_kos() {
+    while read -a line || [[ "${#line[@]}" -gt 0 ]]; do
+        local kernel_version="${line[0]}"
+        local module_version="${line[1]}"
+
+        build_ko "$kernel_version" "$module_version"
+    done
+}
+
+# The input is in the form <kernel-version> <module-version>. Sort it to make sure that we first build all modules
+# for a given kernel version before advancing to the next kernel version.
+sort | uniq | build_kos

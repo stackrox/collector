@@ -390,7 +390,7 @@ jobs:
             -v "${WORKSPACE_ROOT}/ko-build/build-output:/output" \
             --tmpfs /scratch:exec \
             build-kernel-modules \
-            build-kos-new <~/kobuild-tmp/local-build-tasks
+            build-kos <~/kobuild-tmp/local-build-tasks
 
     - persist_to_workspace:
         root: ~/workspace

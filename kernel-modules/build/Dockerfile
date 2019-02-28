@@ -50,7 +50,7 @@ RUN curl -s -o binutils_2.30-22_amd64.deb http://snapshot.debian.org/archive/deb
  && dpkg -i *binutils*.deb
 
 RUN mkdir -p /output
-COPY build-kos build-kos-new /usr/bin/
+COPY build-kos /usr/bin/
 COPY prepare-src /usr/bin
 
 WORKDIR /scratch
