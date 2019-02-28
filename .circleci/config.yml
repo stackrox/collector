@@ -285,6 +285,10 @@ jobs:
               ~/kobuild-tmp/blacklisted-build-tasks ~/kobuild-tmp/blacklisted-build-tasks \
             | sort | uniq -u >build-tasks
 
+
+          echo "Redundant build tasks:"
+          sort <~/kobuild-tmp/redundant-build-tasks | uniq | sed -e 's@^@  @'
+
     - run:
         name: Print list of all (source, kernel version) build combinations
         command: |
