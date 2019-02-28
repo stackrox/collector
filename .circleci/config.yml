@@ -261,6 +261,7 @@ jobs:
     steps:
     - checkout:
         path: ~/go/src/github.com/stackrox/collector
+    - gcloud-init
     - run:
         name: Set up SRBCache directory
         working_directory: ~/go/src/github.com/stackrox/collector/flm

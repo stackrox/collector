@@ -28,3 +28,10 @@ function ensure_dir_srbcache_dist {
   check_dir_srbcache_dist || mkdir -p "$DISTCACHE" -m 777
 }
 
+function save_srbcache_to_google_storage_bucket {
+  ensure_dir_home_srbcache
+  cd
+  tar cafz srbcache.tar.gz .srbcache
+  gsutil -m cp ~/srbcache.tar.gz gs://collector-build-cache/colfb/v1/srbcache.tar.gz
+  rm srbcache.tar.gz
+}
