@@ -109,7 +109,7 @@ commands:
                 echo "started instance collector-nb-${MACHINE_NAME} in $zone"
             else
                 echo "error creating   collector-nb-${MACHINE_NAME} in $zone"
-        #       gcloud compute instances delete "collector-ci-${MACHINE_NAME}"
+          #     gcloud compute instances delete "collector-ci-${MACHINE_NAME}"
             fi
           fi
   docker-login:
