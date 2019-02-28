@@ -1,7 +1,7 @@
 .PHONY: deps
 deps:
-	@bash run_target deps
+	@bash run_target.sh deps
 
 .PHONY: clean-deps
 clean-deps:
-	@bash run_target clean-deps
+	@bash run_target.sh clean-deps
