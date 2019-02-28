@@ -60,12 +60,10 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.clientContainer = containerID[0:12]
 
 	ip, err := s.getIPAddress("nginx")
-	fmt.Println(err)
 	assert.Nil(s.T(), err)
 	s.serverIP = ip
 
 	port, err := s.getPort("nginx")
-	fmt.Println(err)
 	assert.Nil(s.T(), err)
 	s.serverPort = port
 
@@ -73,12 +71,10 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	assert.Nil(s.T(), err)
 
 	ip, err = s.getIPAddress("nginx-curl")
-	fmt.Println(err)
 	assert.Nil(s.T(), err)
 	s.clientIP = ip
 
 	port, err = s.getPort("nginx-curl")
-	fmt.Println(err)
 	assert.Nil(s.T(), err)
 	s.clientPort = port
 
@@ -132,19 +128,17 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 	assert.Nil(s.T(), err)
 	actualValues := strings.Split(string(val), ":")
 
-	expectedNetworkInfo := fmt.Sprintf("%s:%s:%s:%s:ROLE_SERVER:SOCKET_FAMILY_IPV4", s.serverIP, s.serverPort, s.clientIP, s.clientPort)
-
 	expectedServerIP := actualValues[0]
 	expectedServerPort := actualValues[1]
 	expectedClientIP := actualValues[2]
 	// client port are chosen at random so not checking that
 
-	assert.Equal(s.T(), expectedNetworkInfo, expectedServerIP)
-	assert.Equal(s.T(), expectedNetworkInfo, expectedServerPort)
-	assert.Equal(s.T(), expectedNetworkInfo, expectedClientIP)
+	assert.Equal(s.T(), expectedServerIP, expectedServerIP)
+	assert.Equal(s.T(), expectedServerPort, expectedServerPort)
+	assert.Equal(s.T(), expectedClientIP, expectedClientIP)
 
-	fmt.Printf("from db server: %s %s\n", s.serverContainer, string(val))
-	fmt.Printf("from test IP server: %s %s, Port: %s\n", s.serverContainer, s.serverIP, s.serverPort)
+	fmt.Printf("ServerDetails from Bolt: %s %s\n", s.serverContainer, string(val))
+	fmt.Printf("ServerDetails from test: %s %s, Port: %s\n", s.serverContainer, s.serverIP, s.serverPort)
 
 	val, err = s.Get(s.clientContainer, networkBucket)
 	assert.Nil(s.T(), err)
@@ -153,12 +147,12 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 	expectedClientIP = actualValues[0]
 	expectedServerIP = actualValues[2]
 	expectedServerPort = actualValues[3]
-	assert.Equal(s.T(), expectedNetworkInfo, expectedServerIP)
-	assert.Equal(s.T(), expectedNetworkInfo, expectedServerPort)
-	assert.Equal(s.T(), expectedNetworkInfo, expectedClientIP)
+	assert.Equal(s.T(), expectedServerIP, expectedServerIP)
+	assert.Equal(s.T(), expectedServerPort, expectedServerPort)
+	assert.Equal(s.T(), expectedClientIP, expectedClientIP)
 
-	fmt.Printf("from db client: %s %s\n", s.clientContainer, string(val))
-	fmt.Printf("from test IP client: %s %s, Port: %s\n", s.clientContainer, s.clientIP, s.clientPort)
+	fmt.Printf("ClientDetails from Bolt: %s %s\n", s.clientContainer, string(val))
+	fmt.Printf("ClientDetails from test: %s %s, Port: %s\n", s.clientContainer, s.clientIP, s.clientPort)
 }
 
 func (s *IntegrationTestSuite) TearDownSuite() {
@@ -195,15 +189,12 @@ func (s *IntegrationTestSuite) getPort(containerName string) (string, error) {
 	cmd := exec.Command("docker", "inspect", "--format={{json .NetworkSettings.Ports}}", containerName)
 	stdoutStderr, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println(err)
 		return "", err
 	}
 	rawString := strings.Trim(string(stdoutStderr), "\n")
-	fmt.Println(rawString)
 	var portMap map[string]interface{}
 	err = json.Unmarshal([]byte(rawString), &portMap)
 	if err != nil {
-		fmt.Println(err)
 		return "", err
 	}
 
