@@ -16,7 +16,6 @@ commands:
         name: Set up SRBCache directory
         command: cd "${SOURCE_ROOT}/flm" && exec bash run_target
 
-
   gcloud-init:
     steps:
     - run:
