@@ -91,9 +91,26 @@ commands:
     - run:
         name: Start GCP builder node (Ubuntu 18.04)
         command: |
-          if test -d ~/workspace/go/src/github.com/stackrox/collector ; then
+          if true ; then    # easily reconfigure with flag
             cd ~/workspace/go/src/github.com/stackrox/collector/gcpbuild
-            bash boot-gcp.sh
+            REGION=us-west1
+            MACHINE_NAME=build-01
+
+            zone=us-west1-a
+            if gcloud compute instances create \
+                --zone $zone \
+                --project stackrox-ci \
+                --boot-disk-size 40 \
+                --image-family ubuntu-1804-lts \
+                --image-project ubuntu-os-cloud \
+                --service-account=ebpf-minion@stackrox-ci.iam.gserviceaccount.com \
+                "collector-nb-${MACHINE_NAME}"
+            then
+                echo "started instance collector-nb-${MACHINE_NAME} in $zone"
+            else
+                echo "error creating   collector-nb-${MACHINE_NAME} in $zone"
+        #       gcloud compute instances delete "collector-ci-${MACHINE_NAME}"
+            fi
           fi
 
   docker-login:
