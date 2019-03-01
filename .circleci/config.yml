@@ -124,6 +124,7 @@ jobs:
           cat >>"$BASH_ENV" \<<-EOF
           	export MODULE_VERSION="${MODULE_VERSION}"
           EOF
+          echo "Building modules for module version $version"
 
     - run:
         name: Prepare legacy sources

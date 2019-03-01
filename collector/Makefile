@@ -18,14 +18,17 @@ all: image integration-tests integration-test-report
 .SUFFIXES:
 
 .PHONY: image
-image: build_collector container/bin/collector container/Dockerfile container/scripts/
+image: build_collector container/bin/collector container/Dockerfile container/scripts/ pull-modules
 	cp NOTICE-collector.txt container/
 	cp COPYING.txt container/
-	cd container && docker build -f Dockerfile -t stackrox/collector:latest .
+	cd container && docker build -f Dockerfile -t stackrox/collector:$(COLLECTOR_TAG) .
 
-.PHONY: build_collector
-build_collector:
-	docker pull stackrox/collector-builder:cache || ( docker build -t stackrox/collector-builder:cache "${BASE_PATH}/builder" )
+build_collector: 
+	@echo "Build collector builder docker image"
+	docker build \
+	  --cache-from stackrox/collector-builder:cache-local \
+	  -t stackrox/collector-builder:cache-local \
+	  "${BASE_PATH}/builder"
 
 container/bin/collector: $(HDRS) $(SRCS) generated-srcs container/libs/libsinsp-wrapper.so
 	mkdir -p container/bin
@@ -37,7 +40,7 @@ container/bin/collector: $(HDRS) $(SRCS) generated-srcs container/libs/libsinsp-
           -v "$(CURDIR)/sysdig/src/driver/ppm_events_public.h:/usr/local/include/ppm_events_public.h:ro" \
           -v "$(CURDIR)/sysdig/src/driver/ppm_fillers.h:/usr/local/include/ppm_fillers.h:ro" \
           -v "$(CURDIR)/cmake-build:/build-output" \
-	  --name build_collector stackrox/collector-builder:cache
+	  --name build_collector stackrox/collector-builder:cache-local
 	cp cmake-build/collector container/bin/
 
 container/libs/libsinsp-wrapper.so: $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
@@ -49,7 +52,7 @@ container/libs/libsinsp-wrapper.so: $(shell find sysdig/src/ -name '*.h' -o -nam
 clean: clean-generated-srcs
 	docker rm -fv build_collector || true
 	docker rmi -f stackrox/collector:latest || true
-	docker rmi -f stackrox/collector-builder:cache || true
+	docker rmi -f stackrox/collector-builder:cache-local || true
 	make -C sysdig clean
 	rm -rf container/bin
 	rm -rf container/driver
@@ -62,10 +65,22 @@ clean-generated-srcs:
 	rm -rf $(GENERATED_CPP_BASE_PATH)
 	rm -rf $(GENERATED_GO_BASE_PATH)
 
-.PHONY: pull-modules
-pull-modules:
-	docker pull stackrox/kernel-modules:$(shell git describe --tags $(git merge-base HEAD master))
-	docker tag stackrox/kernel-modules:$(shell git describe --tags $(git merge-base HEAD master)) stackrox/kernel-modules:latest
+prepare-src:
+	rm -rf ${BASE_PATH}/kernel-modules/kobuild-tmp/
+	mkdir -p ${BASE_PATH}/kernel-modules/kobuild-tmp/versions-src
+	SYSDIG_DIR="${BASE_PATH}/sysdig/src" \
+	  SCRATCH_DIR="${BASE_PATH}/kernel-modules/kobuild-tmp/scratch" \
+	  OUTPUT_DIR="${BASE_PATH}/kernel-modules/kobuild-tmp/versions-src" \
+	  "${BASE_PATH}/kernel-modules/build/prepare-src"
+
+module-version: prepare-src
+	$(eval VERSIONS = $$(wildcard ${BASE_PATH}/kernel-modules/kobuild-tmp/versions-src/*.tgz))
+	$(eval MODULE_VERSION := $(shell basename -s .tgz $(word 1,$(VERSIONS))))
+	@echo "MODULE VERSION is $(MODULE_VERSION)"
+
+pull-modules: module-version
+	( docker pull stackrox/kernel-modules:$(MODULE_VERSION) && \
+	docker tag stackrox/kernel-modules:$(MODULE_VERSION) stackrox/kernel-modules:latest )
 
 .PHONY: distribution
 distribution: clean
