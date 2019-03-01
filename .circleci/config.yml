@@ -19,6 +19,7 @@ setupGCP: &setupGCP
       gcloud config unset compute/zone
       gcloud config set core/disable_prompts True
       gcloud auth list
+      gsutil ls gs://collector-build-cache/ || echo "ERROR: Could not ls bucket"
 createGCP: &createGCP
   run:
     name: Create GCP VM
