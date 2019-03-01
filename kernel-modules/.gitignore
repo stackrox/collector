@@ -1,6 +1,2 @@
 *.ko
-packages/
 sysdig/
-
-# Old file -- don't accidentally commit it.
-supported-kernels/ubuntu.txt

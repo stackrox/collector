@@ -15,11 +15,6 @@ RUN apt-get update \
       libelf-dev \
       kmod \
       wget \
-      `# For RedHat-family builds:` \
-      rpm2cpio cpio \
-      `# For CoreOS builds:` \
-      bzip2 \
-      kpartx \
       golang-go \
  ;
 
