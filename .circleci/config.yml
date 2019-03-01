@@ -24,7 +24,7 @@ createGCP: &createGCP
     name: Create GCP VM
     command: |
       $SOURCE_ROOT/.circleci/create-gcp-vm.sh
-    background: true
+    background: false
 teardownGCP: &teardownGCP
   run:
     name: Tear down GCP VM
