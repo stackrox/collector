@@ -9,7 +9,7 @@ commands:
         name: Set up environment
         command: |
           cat >>"$BASH_ENV" \<<-EOF
-          	export WORKSPACE_ROOT="${HOME}/workspace"
+            export WORKSPACE_ROOT="${HOME}/workspace"
           EOF
           [[ -f ~/workspace/shared-env ]] && cat ~/workspace/shared-env >>"$BASH_ENV"
 
@@ -30,20 +30,20 @@ commands:
     - run:
         name: Login to Docker Hub
         command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
-	createGCP: &createGCP
-		run:
-			name: Create GCP VM
-			command: |
-				.circleci/create-gcp-vm.sh
-			background: true
+  createGCP: &createGCP
+    run:
+      name: Create GCP VM
+      command: |
+        .circleci/create-gcp-vm.sh
+      background: true
 
-	teardownGCP: &teardownGCP
-		run:
-			name: Tear down GCP VM
-			command: |
-				gcloud compute instances delete "collector-nb-${CIRCLE_BUILD_NUM}"
-			when: always
-			background: true
+  teardownGCP: &teardownGCP
+    run:
+      name: Tear down GCP VM
+      command: |
+        gcloud compute instances delete "collector-nb-${CIRCLE_BUILD_NUM}"
+      when: always
+      background: true
 jobs:
   init:
     docker:
@@ -58,15 +58,15 @@ jobs:
         name: Set up shared environment
         command: |
           cat >~/workspace/shared-env \<<-"EOF"
-          	export GOPATH="${WORKSPACE_ROOT}/go"
-          	export SOURCE_ROOT="${GOPATH}/src/github.com/stackrox/collector"
+            export GOPATH="${WORKSPACE_ROOT}/go"
+            export SOURCE_ROOT="${GOPATH}/src/github.com/stackrox/collector"
             export COLLECTOR_SOURCE_ROOT="${SOURCE_ROOT}/collector"
-          	export PATH="${PATH}:${GOPATH}/bin:${WORKSPACE_ROOT}/bin"
+            export PATH="${PATH}:${GOPATH}/bin:${WORKSPACE_ROOT}/bin"
           EOF
 
           COLLECTOR_VERSION="$(make -s -C ~/workspace/go/src/github.com/stackrox/collector/collector tag)"
           cat >>~/workspace/shared-env \<<-EOF
-          	export COLLECTOR_VERSION="$COLLECTOR_VERSION"
+            export COLLECTOR_VERSION="$COLLECTOR_VERSION"
           EOF
 
     - persist_to_workspace:
@@ -132,10 +132,10 @@ jobs:
           version="$(basename "${versions[0]}")"
           MODULE_VERSION="${version%.tgz}"
           cat >>"${WORKSPACE_ROOT}/shared-env" \<<-EOF
-          	export MODULE_VERSION="${MODULE_VERSION}"
+            export MODULE_VERSION="${MODULE_VERSION}"
           EOF
           cat >>"$BASH_ENV" \<<-EOF
-          	export MODULE_VERSION="${MODULE_VERSION}"
+            export MODULE_VERSION="${MODULE_VERSION}"
           EOF
           echo "Building modules for module version $version"
 
