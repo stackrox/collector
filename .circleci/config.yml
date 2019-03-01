@@ -1,5 +1,25 @@
 version: 2.1
 
+setupGCP: &setupGCP
+  run:
+    name: Setup GCP env
+    command: |
+      which gcloud
+      which gsutil
+      gsutil ver
+      gsutil ver -l | grep crcmod
+      gcloud version
+      cat ~/.boto || true
+      echo '[Credentials]' >~/.boto
+      echo 'gs_service_key_file = /tmp/gcp.json' >>~/.boto
+      echo $GOOGLE_CREDENTIALS_CIRCLECI_COLLECTOR > /tmp/gcp.json
+      gcloud auth activate-service-account --key-file /tmp/gcp.json
+      gcloud config set project stackrox-ci
+      gcloud config set compute/region us-central1
+      gcloud config unset compute/zone
+      gcloud config set core/disable_prompts True
+      gsutil ls gs://collector-build-cache/
+      gcloud auth list
 createGCP: &createGCP
   run:
     name: Create GCP VM
@@ -35,8 +55,7 @@ commands:
           if [[ -z "$ROX_CI_IMAGE" ]]; then
             pip install -U crcmod google_compute_engine
           fi
-          gcloud auth activate-service-account --key-file <(echo "$GOOGLE_CREDENTIALS_CIRCLECI_COLLECTOR")
-          gcloud auth list
+    - *setupGCP
 
   docker-login:
     steps:
@@ -195,6 +214,8 @@ jobs:
             || true
 
     - gcloud-init
+    - *setupGCP
+    - *createGCP
 
     - run:
         name: Download missing modules for current version from gcloud bucket
