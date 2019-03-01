@@ -228,21 +228,6 @@ jobs:
           done
 
     - run:
-        name: Determine list of all kernel versions
-        command: |
-          gsutil ls "${KERNEL_BUNDLES_BUCKET}/" \
-            | sed -e 's@^.*/bundle-\(.*\)\.tgz$@\1@g' \
-            | sort | uniq >~/kobuild-tmp/all-kernel-versions
-
-          num_kernel_versions="$(wc -l ~/kobuild-tmp/all-kernel-versions | awk '{print $1}')"
-
-          (( num_kernel_versions > 0 )) || {
-            echo "No kernel bundles found!"
-            exit 1
-          }
-          echo "Found ${num_kernel_versions} kernel bundles."
-
-    - run:
         name: Generate list of all (source, kernel version) build combinations
         command: |
           # all-build-tasks will contain all potentially possible build tasks, i.e., the cross
@@ -260,7 +245,7 @@ jobs:
             version="$(basename "$i")"
             echo "$version" >>~/kobuild-tmp/all-module-versions
 
-            awk -v modver="$version" '{print $1 " " modver}' <~/kobuild-tmp/all-kernel-versions >>~/kobuild-tmp/all-build-tasks
+            awk -v modver="$version" '{print $1 " " modver}' <"${SOURCE_ROOT}/kernel-modules/KERNEL_VERSIONS" >>~/kobuild-tmp/all-build-tasks
             awk -v modver="$version" '{print $1 " " modver}' <~/kobuild-tmp/existing-modules-"${version}" >>~/kobuild-tmp/redundant-build-tasks
           done
 
