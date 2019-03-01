@@ -213,8 +213,6 @@ jobs:
             || true
 
     - gcloud-init
-    - *setupGCP
-    - *createGCP
 
     - run:
         name: Download missing modules for current version from gcloud bucket
@@ -545,6 +543,7 @@ jobs:
     - init
     - docker-login
     - gcloud-init
+    - *createGCP
 
     - run:
         name: Copying Kernel modules build output
