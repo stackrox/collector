@@ -1,5 +1,18 @@
 version: 2.1
 
+createGCP: &createGCP
+  run:
+    name: Create GCP VM
+    command: |
+      .circleci/create-gcp-vm.sh
+    background: true
+teardownGCP: &teardownGCP
+  run:
+    name: Tear down GCP VM
+    command: |
+      gcloud compute instances delete "collector-nb-${CIRCLE_BUILD_NUM}"
+    when: always
+    background: true
 commands:
   init:
     steps:
@@ -30,20 +43,6 @@ commands:
     - run:
         name: Login to Docker Hub
         command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
-  createGCP: &createGCP
-    run:
-      name: Create GCP VM
-      command: |
-        .circleci/create-gcp-vm.sh
-      background: true
-
-  teardownGCP: &teardownGCP
-    run:
-      name: Tear down GCP VM
-      command: |
-        gcloud compute instances delete "collector-nb-${CIRCLE_BUILD_NUM}"
-      when: always
-      background: true
 jobs:
   init:
     docker:
