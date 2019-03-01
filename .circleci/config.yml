@@ -263,6 +263,8 @@ jobs:
             fi
           done < <(sed -e 's@[[:space:]]*#.*$@@g' <"${SOURCE_ROOT}/kernel-modules/BLACKLIST")
 
+          echo >~/kobuild-tmp/redundant-build-tasks
+
           # Create the set of build tasks as the contents of `all-build-tasks` minus the redundant and blacklisted
           # build tasks.
           cat ~/kobuild-tmp/all-build-tasks \
@@ -629,6 +631,8 @@ jobs:
       - run:
           name: Uploading Kernel modules
           command: |
+            circleci step halt
+            exit 0
             gsutil -m rsync -r \
               "${WORKSPACE_ROOT}/ko-build/build-output/" \
               "${COLLECTOR_MODULES_BUCKET}/"
