@@ -124,14 +124,12 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 	val, err := s.Get(s.serverContainer, networkBucket)
 	assert.Nil(s.T(), err)
 	actualValues := strings.Split(string(val), ":")
-	if len(actualValues) < 6 {
-		s.T().Fatalf("Incomplete server details from Bolt: %v", actualValues)
-	}
-
 	expectedServerIP := actualValues[0]
 	expectedServerPort := actualValues[1]
 	expectedClientIP := actualValues[2]
-	// client port are chosen at random so not checking that
+	if len(actualValues) < 6 {
+		s.T().Fatalf("Incomplete server details from Bolt: %v", actualValues)
+	}
 
 	assert.Equal(s.T(), expectedServerIP, expectedServerIP)
 	assert.Equal(s.T(), expectedServerPort, expectedServerPort)
@@ -141,6 +139,7 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 	fmt.Printf("ServerDetails from test: %s %s, Port: %s\n", s.serverContainer, s.serverIP, s.serverPort)
 
 	// client side checks
+	// client port are chosen at random so not checking that
 	val, err = s.Get(s.clientContainer, networkBucket)
 	actualValues = strings.Split(string(val), ":")
 	assert.Nil(s.T(), err)
