@@ -3,9 +3,9 @@
 set -e
 REGION=us-central1
 
-zones=$(gcloud compute zones list --filter="region=$REGION" | grep UP | cut -f1 -d' ')
+#zones=$(gcloud compute zones list --filter="region=$REGION" | grep UP | cut -f1 -d' ')
 success=false
-for zone in $zones; do
+for zone in us-central1-a us-central1-b ; do
     echo "Trying zone $zone"
     gcloud config set compute/zone "${zone}"
     if gcloud compute instances create \
