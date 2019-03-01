@@ -6,7 +6,7 @@ services:
     image: "stackrox/collector:${COLLECTOR_TAG}"
     environment:
     - "GRPC_SERVER=grpc-server:9999"
-    - 'COLLECTOR_CONFIG={"turnOffScrape":true,"syscalls":["accept","connect","execve","fork","clone","close","shutdown","socket"],"scrapeInterval":"2"}'
+    - 'COLLECTOR_CONFIG={"turnOffScrape":true,"syscalls":["accept","connect","execve","fork","clone","close","shutdown","socket"],"scrapeInterval":"1"}'
     restart: always
     privileged: true
     networks:
