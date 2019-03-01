@@ -94,7 +94,6 @@ commands:
           if true ; then
             REGION=us-west1
             MACHINE_NAME=build-01
-
             zone=us-west1-a
             if gcloud compute instances create \
                 --zone $zone \
