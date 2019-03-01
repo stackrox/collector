@@ -73,7 +73,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	assert.Nil(s.T(), err)
 	s.clientIP = ip
 
-	time.Sleep(20 * time.Second)
+	time.Sleep(30 * time.Second)
 
 	logs, err := s.containerLogs("test_collector_1")
 	assert.NoError(s.T(), err)
