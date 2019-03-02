@@ -32,7 +32,7 @@ createGCP: &createGCP
         IMAGE_COLLECTOR="stackrox/collector:snapshot-${COLLECTOR_VERSION}"
         IMAGE_KERNEL_MODULES="stackrox/kernel-modules:snapshot-${COLLECTOR_VERSION}"
       fi
-      $SOURCE_ROOT/.circleci/create-gcp-vm.sh "${IMAGE_COLLECTOR}" "${IMAGE_KERNEL_MODULES}"
+      $SOURCE_ROOT/.circleci/create-gcp-vm.sh "${IMAGE_COLLECTOR}" "${IMAGE_KERNEL_MODULES}" "$DOCKER_USER" "$DOCKER_PASS"
     background: false
 teardownGCP: &teardownGCP
   run:
