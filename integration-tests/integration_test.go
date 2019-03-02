@@ -66,7 +66,6 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	containerID, err := s.launchContainer("nginx", "nginx:1.14-alpine", "")
 	assert.Nil(s.T(), err)
 	s.serverContainer = containerID[0:12]
-	fmt.Println("Server Container: %s", containerID)
 
 	// invokes "sleep"
 	_, err = s.execContainer("nginx", []string{"sh", "-c", "sleep 5"})
@@ -76,7 +75,6 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	containerID, err = s.launchContainer("nginx-curl", "ewoutp/docker-nginx-curl", "")
 	assert.Nil(s.T(), err)
 	s.clientContainer = containerID[0:12]
-	fmt.Println("Client Container: %s", containerID)
 
 	ip, err := s.getIPAddress("nginx")
 	assert.Nil(s.T(), err)
@@ -149,11 +147,8 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 	assert.Nil(s.T(), err)
 	actualValues := strings.Split(string(val), ":")
 
-	fmt.Printf("ServerDetails from Bolt: %s %s\n", s.serverContainer, string(val))
-	fmt.Printf("ServerDetails from test: %s %s, Port: %s\n", s.serverContainer, s.serverIP, s.serverPort)
-
 	if len(actualValues) < 3 {
-		assert.FailNow(s.T(), "serverContainer networkBucket was missing data. ", "serverContainer=%s, val=\"%s\"", s.serverContainer, val)
+		assert.FailNow(s.T(), "serverContainer networkBucket was missing data. ", "val=\"%s\"", val)
 	}
 	expectedServerIP := actualValues[0]
 	expectedServerPort := actualValues[1]
@@ -163,6 +158,9 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 	assert.Equal(s.T(), expectedServerIP, expectedServerIP)
 	assert.Equal(s.T(), expectedServerPort, expectedServerPort)
 	assert.Equal(s.T(), expectedClientIP, expectedClientIP)
+
+	fmt.Printf("ServerDetails from Bolt: %s %s\n", s.serverContainer, string(val))
+	fmt.Printf("ServerDetails from test: %s %s, Port: %s\n", s.serverContainer, s.serverIP, s.serverPort)
 
 	// client side checks
 	val, err = s.Get(s.clientContainer, networkBucket)
@@ -289,34 +287,12 @@ func (s *IntegrationTestSuite) dockerComposeStdout(name string, arg ...string) (
 	return &stdout, err
 }
 
-func dumpCursor(tx *bolt.Tx, c *bolt.Cursor, indent int) {
-	for k, v := c.First(); k != nil; k, v = c.Next() {
-		if v == nil {
-			fmt.Printf(strings.Repeat("\t", indent)+"[%s]\n", k)
-			newBucket := c.Bucket().Bucket(k)
-			if newBucket == nil {
-				newBucket = tx.Bucket(k)
-			}
-			newCursor := newBucket.Cursor()
-			dumpCursor(tx, newCursor, indent+1)
-		} else {
-			fmt.Printf(strings.Repeat("\t", indent)+"%s\n", k)
-			fmt.Printf(strings.Repeat("\t", indent+1)+"%s\n", v)
-		}
-	}
-}
-
 func (s *IntegrationTestSuite) BoltDB() (db *bolt.DB, err error) {
 	opts := &bolt.Options{ReadOnly: true}
 	db, err = bolt.Open(s.dbpath, 0600, opts)
 	if err != nil {
 		fmt.Printf("Permission error. %v\n", err)
 	}
-	err = db.View(func(tx *bolt.Tx) error {
-		c := tx.Cursor()
-		dumpCursor(tx, c, 0)
-		return nil
-	})
 	return db, err
 }
 

@@ -1,7 +1,6 @@
 export COLLECTOR_VERSION="$1"
 shift
 
-pushd .
 source make-golang-dist
 cat >/tmp/roottodo.$$ <<EOF
 cd /usr/local
