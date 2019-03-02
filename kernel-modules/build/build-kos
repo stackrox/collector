@@ -50,8 +50,8 @@ build_ko() {
     fi
 
     # Check kernel version >= 4.14
-    kernel_major="$(cat "${kernel_src_dir}/BUNDLE_MAJOR")"
-    kernel_minor="$(cat "${kernel_src_dir}/BUNDLE_MINOR")"
+    kernel_major="$(cat "${kernel_src_dir}/BUNDLE_VERSION")"
+    kernel_minor="$(cat "${kernel_src_dir}/BUNDLE_MAJOR")"
 
     [[ -n "$kernel_major" && -n "$kernel_minor" ]] || {
         echo >&2 "Bundle does not contain major/minor version information!"
