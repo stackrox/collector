@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+IMAGE_COLLECTOR=$1
+shift
+IMAGE_KERNEL_MODULES=$1
+shift
+
 set -e
 REGION=us-central1
 
@@ -31,22 +36,10 @@ sleep 30  # give it time to boot
 cd /tmp
 echo "A001"
 gitdir=${SOURCE_ROOT}
-git clone $gitdir shipdir
-echo "A002"
-rm -rf shipdir/.git
-echo $CIRCLE_BUILD_NUM > shipdir/buildnum.txt
-echo "A003"
-mkdir s2
-mv shipdir s2/collector
-echo "A004"
-cd s2
-tar cvfz collector.tar.gz collector/
 cd ..
-mv s2/collector.tar.gz .
 echo "A005"
 rm -rf s2
-gcloud compute scp collector.tar.gz "collector-nb-${CIRCLE_BUILD_NUM}":
 echo "A007"
-gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "pwd && ls -Fh"
+gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "pwd && whoami && docker ps && docker version && which docker && docker pull ${IMAGE_COLLECTOR}"
 echo "A008"
 exit 0
