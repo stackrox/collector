@@ -1,7 +1,21 @@
+COLLECTOR_VERSION="$1"
+shift
+
 pushd .
 source make-golang-dist
+cat >/tmp/roottodo.$$ <<EOF
+cd /usr/local
+mkdir tmpdir
+cd tmpdir
+tar xfz /home/circleci/.srbcache/dist/go1.11.5.linux-amd64.tar.gz
+chown -R root:root go && mv go .. && cd .. && rm -rf tmpdir
+EOF
+sudo bash -c "bash /tmp/roottodo.$$ && rm /tmp/roottodo.$$"
+
+export GOPATH=/go
+export PATH="/usr/local/go/bin:$GOPATH/bin:/usr/local/bin$PATH"
 popd
-cd "../collector/collector"
+cd "../collector"
 go get -u github.com/jstemmer/go-junit-report
 curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 sudo mv /tmp/dep /usr/local/bin/dep
