@@ -24,15 +24,7 @@ createGCP: &createGCP
   run:
     name: Create GCP VM
     command: |
-      if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
-        echo Pushing release images
-        IMAGE_COLLECTOR="stackrox/collector:${COLLECTOR_VERSION}"
-        IMAGE_KERNEL_MODULES="stackrox/kernel-modules:${MODULE_VERSION}"
-      else
-        IMAGE_COLLECTOR="stackrox/collector:snapshot-${COLLECTOR_VERSION}"
-        IMAGE_KERNEL_MODULES="stackrox/kernel-modules:snapshot-${COLLECTOR_VERSION}"
-      fi
-      $SOURCE_ROOT/.circleci/create-gcp-vm.sh "${IMAGE_COLLECTOR}" "${IMAGE_KERNEL_MODULES}" "$DOCKER_USER" "$DOCKER_PASS"
+      $SOURCE_ROOT/.circleci/create-gcp-vm.sh "$DOCKER_USER" "$DOCKER_PASS"
     background: false
 teardownGCP: &teardownGCP
   run:
@@ -553,7 +545,6 @@ jobs:
     - docker-login
     - gcloud-init
     - *createGCP
-    - *teardownGCP
 
     - run:
         name: Copying Kernel modules build output
@@ -624,15 +615,22 @@ jobs:
         command: |
           if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
             echo Pushing release images
-            docker push "stackrox/collector:${COLLECTOR_VERSION}"
+            IMAGE_COLLECTOR="stackrox/collector:${COLLECTOR_VERSION}"
+            IMAGE_KERNEL_MODULES="stackrox/kernel-modules:${MODULE_VERSION}"
+            docker push "${IMAGE_COLLECTOR}"
             echo "Pushing kernel modules"
-            docker push "stackrox/kernel-modules:${MODULE_VERSION}"
+            docker push "${IMAGE_KERNEL_MODULES}"
           else
             echo Pushing snapshot images
-            docker push "stackrox/collector:snapshot-${COLLECTOR_VERSION}"
+            IMAGE_COLLECTOR="stackrox/collector:snapshot-${COLLECTOR_VERSION}"
+            IMAGE_KERNEL_MODULES="stackrox/kernel-modules:snapshot-${COLLECTOR_VERSION}"
+            docker push "${IMAGE_COLLECTOR}"
             echo "Pushing kernel modules"
-            docker push "stackrox/kernel-modules:snapshot-${COLLECTOR_VERSION}"
+            docker push "${IMAGE_KERNEL_MODULES}"
           fi
+          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_COLLECTOR}"
+          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_KERNEL_MODULES}"
+    - *teardownGCP
 
     - run:
         name: Integration tests
