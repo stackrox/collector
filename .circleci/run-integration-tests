@@ -1,4 +1,4 @@
-COLLECTOR_VERSION="$1"
+export COLLECTOR_VERSION="$1"
 shift
 
 pushd .
@@ -19,7 +19,6 @@ popd
 cd "../collector"
 go get -u github.com/jstemmer/go-junit-report
 curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-sudo mv /tmp/dep /usr/local/bin/dep
 export COLLECTOR_TAG="$COLLECTOR_VERSION"
 sudo curl -L "https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
