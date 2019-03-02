@@ -40,6 +40,6 @@ cd ..
 echo "A005"
 rm -rf s2
 echo "A007"
-gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "pwd && whoami && docker ps && docker version && which docker && docker pull ${IMAGE_COLLECTOR}"
+gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "(which docker || DEBIAN_FRONTEND=noninteractive sudo apt install -y make cmake g++ gcc apt-transport-https ca-certificates curl gnupg-agent wget software-properties-common && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - && sudo add-apt-repository 'deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable' && sudo apt update -y && DEBIAN_FRONTEND=noninteractive sudo apt install -y docker-ce && sudo adduser $(id -un) docker) && docker pull ${IMAGE_COLLECTOR}"
 echo "A008"
 exit 0
