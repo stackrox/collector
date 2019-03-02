@@ -631,8 +631,6 @@ jobs:
       - run:
           name: Uploading Kernel modules
           command: |
-            circleci step halt
-            exit 0
             gsutil -m rsync -r \
               "${WORKSPACE_ROOT}/ko-build/build-output/" \
               "${COLLECTOR_MODULES_BUCKET}/"
