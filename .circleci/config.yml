@@ -24,7 +24,15 @@ createGCP: &createGCP
   run:
     name: Create GCP VM
     command: |
-      $SOURCE_ROOT/.circleci/create-gcp-vm.sh
+      if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
+        echo Pushing release images
+        IMAGE_COLLECTOR="stackrox/collector:${COLLECTOR_VERSION}"
+        IMAGE_KERNEL_MODULES="stackrox/kernel-modules:${MODULE_VERSION}"
+      else
+        IMAGE_COLLECTOR="stackrox/collector:snapshot-${COLLECTOR_VERSION}"
+        IMAGE_KERNEL_MODULES="stackrox/kernel-modules:snapshot-${COLLECTOR_VERSION}"
+      fi
+      $SOURCE_ROOT/.circleci/create-gcp-vm.sh "${IMAGE_COLLECTOR}" "${IMAGE_KERNEL_MODULES}"
     background: false
 teardownGCP: &teardownGCP
   run:
@@ -32,7 +40,7 @@ teardownGCP: &teardownGCP
     command: |
       gcloud compute instances delete "collector-nb-${CIRCLE_BUILD_NUM}"
     when: always
-    background: true
+    background: false
 commands:
   init:
     steps:
@@ -545,6 +553,7 @@ jobs:
     - docker-login
     - gcloud-init
     - *createGCP
+    - *teardownGCP
 
     - run:
         name: Copying Kernel modules build output
