@@ -16,7 +16,7 @@ sudo bash -c "bash /tmp/roottodo.$$ && rm /tmp/roottodo.$$"
 export GOPATH=/go
 export PATH="/usr/local/go/bin:$GOPATH/bin:/usr/local/bin:$PATH"
 cd
-DN=$GOPATH/src/github.com/stackrox && mkdir $DN && mv collector $DN
+DN=$GOPATH/src/github.com/stackrox && mkdir -p $DN && mv collector $DN
 cd $DN/collector/collector
 go get -u github.com/jstemmer/go-junit-report
 curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
