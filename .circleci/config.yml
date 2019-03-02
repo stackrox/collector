@@ -628,10 +628,15 @@ jobs:
             echo "Pushing kernel modules"
             docker push "${IMAGE_KERNEL_MODULES}"
           fi
+          set -e
           gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_COLLECTOR}"
           gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_KERNEL_MODULES}"
           gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "cd /home/circleci/collector/.circleci && bash run-integration-tests ${COLLECTOR_VERSION}"
+          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/collector/integration-test-report.xml" "$COLLECTOR_SOURCE_ROOT"/integration-test-report-gcp.xml
     - *teardownGCP
+    - store_artifacts:
+        path: "$COLLECTOR_SOURCE_ROOT"/integration-test-report-gcp.xml
+        destination: integration-test-report-gcp.xml
 
     - run:
         name: Integration tests
