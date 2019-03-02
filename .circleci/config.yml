@@ -635,7 +635,7 @@ jobs:
           gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/collector/integration-test-report.xml" "$COLLECTOR_SOURCE_ROOT"/integration-test-report-gcp.xml
     - *teardownGCP
     - store_artifacts:
-        path: "$COLLECTOR_SOURCE_ROOT"/integration-test-report-gcp.xml
+        path: ${COLLECTOR_SOURCE_ROOT}/integration-test-report-gcp.xml
         destination: integration-test-report-gcp.xml
 
     - run:
