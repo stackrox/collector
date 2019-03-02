@@ -13,6 +13,7 @@ mkdir /go -m 777
 EOF
 sudo bash -c "bash /tmp/roottodo.$$ && rm /tmp/roottodo.$$"
 
+set -e
 export GOPATH=/go
 export PATH="/usr/local/go/bin:$GOPATH/bin:/usr/local/bin:$PATH"
 cd
