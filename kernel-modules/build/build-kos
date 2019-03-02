@@ -50,8 +50,13 @@ build_ko() {
     fi
 
     # Check kernel version >= 4.14
-    kernel_major="$(cut -d. -f1 <<<"$kernel_release")"
-    kernel_minor="$(cut -d. -f2 <<<"$kernel_release")"
+    kernel_major="$(cat "${kernel_src_dir}/BUNDLE_VERSION")"
+    kernel_minor="$(cat "${kernel_src_dir}/BUNDLE_MAJOR")"
+
+    [[ -n "$kernel_major" && -n "$kernel_minor" ]] || {
+        echo >&2 "Bundle does not contain major/minor version information!"
+        return 1
+    }
 
     if (( kernel_major < 4 || (kernel_major == 4 && kernel_minor < 14) )); then
         echo "Kernel version ${kernel_version} does not support eBPF probe building, skipping ..."
@@ -59,7 +64,7 @@ build_ko() {
     fi
 
     echo "Building collector eBPF probe for kernel version ${kernel_version} and module version ${module_version}."
-    KERNELDIR="$kernel_build_dir" make -j 6 bpf
+    KERNELDIR="$kernel_build_dir" make -j 6 -C bpf
 
     collector_probe="bpf/probe.o"
     gzip -c "$collector_probe" >"/output/${module_version}/collector-ebpf-${kernel_version}.o.gz"
