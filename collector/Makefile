@@ -99,10 +99,10 @@ integration-test-report:
 	@echo "Test pass/fail summary:"
 	@grep failures integration-test-report.xml | column -t
 	@echo
-	@echo "`grep 'FAIL  github.com/stackrox/collector' integration-test.log | wc -l` package(s) detected with compilation or test failures."
-	@-grep 'FAIL    github.com/stackrox/collector' integration-test.log || true
+	@echo "`grep 'FAIL' integration-test.log | wc -l` package(s) detected with compilation or test failures."
+	@-grep 'FAIL' integration-test.log || true
 	@echo
-	@testerror="$$(grep -e 'Unable to deploy' -e 'FAIL:' integration-test.log | wc -l)" && test $$testerror -eq 0
+	@testerror="$$(grep -e 'Unable to deploy' -e 'FAIL' integration-test.log | wc -l)" && test $$testerror -eq 0
 
 GENERATED_CPP_BASE_PATH := $(CURDIR)/generated
 
