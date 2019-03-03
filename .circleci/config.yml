@@ -610,6 +610,9 @@ jobs:
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs
         destination: grpc_server_logs
+    - store_artifacts:
+        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test.log
+        destination: integration-test.log
 
   upload-modules:
     docker:
