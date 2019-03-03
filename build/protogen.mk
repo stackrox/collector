@@ -57,17 +57,16 @@ $(TMP_PATH):
 
 $(PROTOC_FILE): $(TMP_PATH)
 	@echo "+ $@"
-	@wget --no-use-server-timestamps -q https://github.com/google/protobuf/releases/download/v$(PROTOC_VERSION)/$(PROTOC_ZIP) -O $@
+	@wget -q https://github.com/google/protobuf/releases/download/v$(PROTOC_VERSION)/$(PROTOC_ZIP) -O $@
 
 $(GOOGLEAPIS_FILE): $(TMP_PATH)
 	@echo "+ $@"
-	@wget --no-use-server-timestamps -q https://github.com/googleapis/googleapis/archive/master.zip -O $@
+	@wget -q https://github.com/googleapis/googleapis/archive/master.zip -O $@
 
 $(GOOGLEAPIS_DIR): $(GOOGLEAPIS_FILE)
 	@echo "+ $@"
-	@unzip -q -o -DD -d $(TMP_PATH) $<
-	@rm -rf $@
-	@mv $(TMP_PATH)/googleapis-master $@
+	@unzip -q -u -d $(TMP_PATH) $<
+	@cp -pr $(TMP_PATH)/googleapis-master $@
 
 $(PROTOC_TMP)/include: $(PROTOC_TMP)
 
@@ -78,7 +77,7 @@ $(PROTOC): $(PROTOC_TMP)
 $(PROTOC_TMP): $(PROTOC_FILE) $(TMP_PATH)
 	@echo "+ $@"
 	@mkdir -p $@
-	@unzip -q -o -DD -d $@ $<
+	@unzip -q -o -d $@ $<
 
 PROTO_DEPS_CPP=$(PROTOC) $(PROTOC_INCLUDES)
 
