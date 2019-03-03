@@ -18,7 +18,7 @@ services:
     - /dev:/host/dev:ro
 
   grpc-server:
-    image: stackrox/grpc-server:2.3.16.0-84-g3a6e81d06e
+    image: stackrox/grpc-server:2.3.16.0-99-g0b961f9515
     ports:
     - "9999"
     networks:
