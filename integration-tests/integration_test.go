@@ -128,8 +128,10 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 	// Server side checks
 	val, err := s.Get(s.serverContainer, networkBucket)
 	assert.Nil(s.T(), err)
-	actualValues := strings.Split(string(val), ":")
+	fmt.Printf("ServerDetails from Bolt: %s %s\n", s.serverContainer, string(val))
+	fmt.Printf("ServerDetails from test: %s %s, Port: %s\n", s.serverContainer, s.serverIP, s.serverPort)
 
+	actualValues := strings.Split(string(val), ":")
 	expectedServerIP := actualValues[0]
 	expectedServerPort := actualValues[1]
 	expectedClientIP := actualValues[2]
@@ -139,21 +141,19 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 	assert.Equal(s.T(), expectedServerPort, expectedServerPort)
 	assert.Equal(s.T(), expectedClientIP, expectedClientIP)
 
-	fmt.Printf("ServerDetails from Bolt: %s %s\n", s.serverContainer, string(val))
-	fmt.Printf("ServerDetails from test: %s %s, Port: %s\n", s.serverContainer, s.serverIP, s.serverPort)
 
 	// client side checks
 	val, err = s.Get(s.clientContainer, networkBucket)
 	assert.Nil(s.T(), err)
+	fmt.Printf("ClientDetails from Bolt: %s %s\n", s.clientContainer, string(val))
+	fmt.Printf("ClientDetails from test: %s %s, Port: %s\n", s.clientContainer, s.clientIP, s.clientPort)
+
 	expectedClientIP = actualValues[0]
 	expectedServerIP = actualValues[2]
 	expectedServerPort = actualValues[3]
 	assert.Equal(s.T(), expectedServerIP, expectedServerIP)
 	assert.Equal(s.T(), expectedServerPort, expectedServerPort)
 	assert.Equal(s.T(), expectedClientIP, expectedClientIP)
-
-	fmt.Printf("ClientDetails from Bolt: %s %s\n", s.clientContainer, string(val))
-	fmt.Printf("ClientDetails from test: %s %s, Port: %s\n", s.clientContainer, s.clientIP, s.clientPort)
 }
 
 func (s *IntegrationTestSuite) TearDownSuite() {
