@@ -5,15 +5,17 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"encoding/json"
+	"io/ioutil"
+
 	"github.com/boltdb/bolt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"io/ioutil"
 )
 
 const (
@@ -35,6 +37,8 @@ type IntegrationTestSuite struct {
 	clientPort      string
 	serverContainer string
 	clientContainer string
+	useEbpf         bool
+	composeFile     string
 }
 
 // Launches collector
@@ -42,6 +46,19 @@ type IntegrationTestSuite struct {
 // Launches nginx container
 // Execs into nginx and does a sleep
 func (s *IntegrationTestSuite) SetupSuite() {
+
+	s.composeFile = "docker-compose.yml"
+	s.useEbpf = false
+
+	useEbpfEnvVar := "ROX_COLLECTOR_EBPF"
+	if e, ok := os.LookupEnv(useEbpfEnvVar); ok {
+		s.useEbpf, _ = strconv.ParseBool(e)
+	}
+
+	if s.useEbpf {
+		s.composeFile = "docker-compose-ebpf.yml"
+	}
+
 	s.dockerComposeUp()
 	s.dbpath = "/tmp/collector-test.db"
 
@@ -130,6 +147,9 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 	assert.Nil(s.T(), err)
 	actualValues := strings.Split(string(val), ":")
 
+	if len(actualValues) < 3 {
+		assert.FailNow(s.T(), "serverContainer networkBucket was missing data. ", "val=\"%s\"", val)
+	}
 	expectedServerIP := actualValues[0]
 	expectedServerPort := actualValues[1]
 	expectedClientIP := actualValues[2]
@@ -214,7 +234,7 @@ func (s *IntegrationTestSuite) cleanupContainer(containers []string) {
 }
 
 func (s *IntegrationTestSuite) dockerComposeUp() error {
-	err := s.dockerCompose("docker-compose", "--project-name", "test", "--file", "docker-compose.yml", "up", "-d")
+	err := s.dockerCompose("docker-compose", "--project-name", "test", "--file", s.composeFile, "up", "-d")
 	if err != nil {
 		s.T().Fatal("Unable to deploy the stack", err.Error())
 	}
@@ -231,7 +251,7 @@ func (s *IntegrationTestSuite) containerLogs(containerName string) (string, erro
 }
 
 func (s *IntegrationTestSuite) dockerComposeDown() error {
-	err := s.dockerCompose("docker-compose", "--project-name", "test", "--file", "docker-compose.yml", "down", "--volumes")
+	err := s.dockerCompose("docker-compose", "--project-name", "test", "--file", s.composeFile, "down", "--volumes")
 	if err != nil {
 		s.T().Fatal("Unable to tear down the stack", err.Error())
 	}
@@ -240,7 +260,7 @@ func (s *IntegrationTestSuite) dockerComposeDown() error {
 }
 
 func (s *IntegrationTestSuite) dockerComposePorts(serviceName, containerPort string) (*bytes.Buffer, error) {
-	return s.dockerComposeStdout("docker-compose", "--project-name", "test", "--file", "docker-compose.yml", "port", serviceName, containerPort)
+	return s.dockerComposeStdout("docker-compose", "--project-name", "test", "--file", s.composeFile, "port", serviceName, containerPort)
 }
 
 func (s *IntegrationTestSuite) dockerCompose(name string, arg ...string) error {

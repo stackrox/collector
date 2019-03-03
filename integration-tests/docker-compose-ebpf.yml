@@ -1,0 +1,30 @@
+version: '3.2'
+
+services:
+
+  collector:
+    image: "stackrox/collector:${COLLECTOR_TAG}"
+    environment:
+    - "GRPC_SERVER=grpc-server:9999"
+    - 'COLLECTOR_CONFIG={"useEbpf":true,"turnOffScrape":true,"syscalls":["accept","connect","execve","fork","clone","close","shutdown","socket"],"scrapeInterval":"2"}'
+    restart: always
+    privileged: true
+    networks:
+    - collector
+    volumes:
+    - /var/run/docker.sock:/host/var/run/docker.sock:ro
+    - /proc:/host/proc:ro
+    - /sys/kernel/debug/tracing/events:/host/sys/kernel/debug/tracing/events:ro
+    - /sys/devices/system/cpu:/host/sys/devices/system/cpu:ro
+
+  grpc-server:
+    image: stackrox/grpc-server:2.3.16.0-99-g0b961f9515
+    ports:
+    - "9999"
+    networks:
+    - collector
+    volumes:
+    - /tmp:/tmp:rw
+
+networks:
+  collector:
