@@ -285,12 +285,34 @@ func (s *IntegrationTestSuite) dockerComposeStdout(name string, arg ...string) (
 	return &stdout, err
 }
 
+func dumpCursor(tx *bolt.Tx, c *bolt.Cursor, indent int) {
+	for k, v := c.First(); k != nil; k, v = c.Next() {
+		if v == nil {
+			fmt.Printf(strings.Repeat("\t", indent)+"[%s]\n", k)
+			newBucket := c.Bucket().Bucket(k)
+			if newBucket == nil {
+				newBucket = tx.Bucket(k)
+			}
+			newCursor := newBucket.Cursor()
+			dumpCursor(tx, newCursor, indent+1)
+		} else {
+			fmt.Printf(strings.Repeat("\t", indent)+"%s\n", k)
+			fmt.Printf(strings.Repeat("\t", indent+1)+"%s\n", v)
+		}
+	}
+}
+
 func (s *IntegrationTestSuite) BoltDB() (db *bolt.DB, err error) {
 	opts := &bolt.Options{ReadOnly: true}
 	db, err = bolt.Open(s.dbpath, 0600, opts)
 	if err != nil {
 		fmt.Printf("Permission error. %v\n", err)
 	}
+	err = db.View(func(tx *bolt.Tx) error {
+		c := tx.Cursor()
+		dumpCursor(tx, c, 0)
+		return nil
+	})
 	return db, err
 }
 
