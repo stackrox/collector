@@ -632,7 +632,17 @@ jobs:
             echo "Pushing kernel modules"
             docker push "${IMAGE_KERNEL_MODULES}"
           fi
+    - run:
+        name: GCP Integration tests
+        command: |
           set -e
+          if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
+            IMAGE_COLLECTOR="stackrox/collector:${COLLECTOR_VERSION}"
+            IMAGE_KERNEL_MODULES="stackrox/kernel-modules:${MODULE_VERSION}"
+          else
+            IMAGE_COLLECTOR="stackrox/collector:snapshot-${COLLECTOR_VERSION}"
+            IMAGE_KERNEL_MODULES="stackrox/kernel-modules:snapshot-${COLLECTOR_VERSION}"
+          fi
           gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_COLLECTOR}"
           gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_KERNEL_MODULES}"
           gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "cd /home/circleci/collector/.circleci && bash run-integration-tests ${COLLECTOR_VERSION}"
