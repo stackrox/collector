@@ -66,6 +66,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	containerID, err := s.launchContainer("nginx", "nginx:1.14-alpine", "")
 	assert.Nil(s.T(), err)
 	s.serverContainer = containerID[0:12]
+	fmt.Println("Server Container: %s", s.serverContainer)
 
 	// invokes "sleep"
 	_, err = s.execContainer("nginx", []string{"sh", "-c", "sleep 5"})
@@ -75,6 +76,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	containerID, err = s.launchContainer("nginx-curl", "ewoutp/docker-nginx-curl", "")
 	assert.Nil(s.T(), err)
 	s.clientContainer = containerID[0:12]
+	fmt.Println("Client Container: %s", s.clientContainer)
 
 	ip, err := s.getIPAddress("nginx")
 	assert.Nil(s.T(), err)
