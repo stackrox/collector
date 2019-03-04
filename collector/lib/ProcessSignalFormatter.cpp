@@ -260,7 +260,7 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
     }
 
     // Limit max number of ancestors
-    if (lineage.size() >= 20) return false;
+    if (lineage.size() >= 10) return false;
 
     return true;
   };

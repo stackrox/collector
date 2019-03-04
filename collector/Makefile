@@ -101,7 +101,13 @@ distribution: clean
 integration-tests:
 	@echo "+ $@"
 	make -C ../integration-tests clean-deps deps
-	@go test -v ../integration-tests/... 2>&1 | tee integration-test.log
+	ROX_COLLECTOR_EBPF=false go test -count=1 -v ../integration-tests/... 2>&1 | tee integration-test.log
+
+.PHONY: integration-tests-ebpf
+integration-tests-ebpf:
+	@echo "+ $@"
+	make -C ../integration-tests clean-deps deps
+	ROX_COLLECTOR_EBPF=true go test -count=1 -v ../integration-tests/... 2>&1 | tee integration-test.log
 
 .PHONY: integration-test-report
 integration-test-report:
