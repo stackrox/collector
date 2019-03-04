@@ -632,6 +632,9 @@ jobs:
             echo "Pushing kernel modules"
             docker push "${IMAGE_KERNEL_MODULES}"
           fi
+    - run:
+        name: GCP Integration tests
+        command: |
           set -e
           gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_COLLECTOR}"
           gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_KERNEL_MODULES}"
