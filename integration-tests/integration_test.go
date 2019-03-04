@@ -169,7 +169,9 @@ func (s *IntegrationTestSuite) launchContainer(containerName, imageName, command
 		cmd = exec.Command("docker", "run", "-d", "--name", containerName, imageName)
 	}
 	stdoutStderr, err := cmd.CombinedOutput()
-	return strings.Trim(string(stdoutStderr), "\n"), err
+	trimmed := strings.Trim(string(stdoutStderr), "\n")
+	outLines := strings.Split(trimmed, "\n")
+	return outLines[len(outLines)-1], err
 }
 
 func (s *IntegrationTestSuite) execContainer(containerName string, command []string) (string, error) {
