@@ -370,7 +370,7 @@ static int32_t load_tracepoint(scap_t* handle, const char *event, struct bpf_ins
 	struct perf_event_attr attr = {};
 	enum bpf_prog_type program_type;
 	size_t insns_cnt;
-	char buf[256];
+	char buf[SCAP_MAX_PATH_SIZE];
 	bool raw_tp;
 	int efd;
 	int err;
@@ -464,7 +464,7 @@ static int32_t load_tracepoint(scap_t* handle, const char *event, struct bpf_ins
 	}
 	else
 	{
-		strcpy(buf, "/sys/kernel/debug/tracing/events/");
+	        snprintf(buf, sizeof(buf), "%s/sys/kernel/debug/tracing/events/", scap_get_host_root());
 		strcat(buf, event);
 		strcat(buf, "/id");
 
@@ -1296,7 +1296,7 @@ int32_t scap_bpf_load(scap_t *handle, const char *bpf_probe)
 			int online;
 			FILE *fp;
 
-			snprintf(filename, sizeof(filename), "/sys/devices/system/cpu/cpu%d/online", j);
+			snprintf(filename, sizeof(filename), "%s/sys/devices/system/cpu/cpu%d/online", scap_get_host_root(), j);
 
 			fp = fopen(filename, "r");
 			if(fp == NULL)
