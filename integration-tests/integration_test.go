@@ -147,8 +147,11 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 	assert.Nil(s.T(), err)
 	actualValues := strings.Split(string(val), ":")
 
+	fmt.Printf("ServerDetails from Bolt: %s %s\n", s.serverContainer, string(val))
+	fmt.Printf("ServerDetails from test: %s %s, Port: %s\n", s.serverContainer, s.serverIP, s.serverPort)
+
 	if len(actualValues) < 3 {
-		assert.FailNow(s.T(), "serverContainer networkBucket was missing data. ", "val=\"%s\"", val)
+		assert.FailNow(s.T(), "serverContainer networkBucket was missing data. ", "serverContainer=%s, val=\"%s\"", s.serverContainer, val)
 	}
 	expectedServerIP := actualValues[0]
 	expectedServerPort := actualValues[1]
@@ -158,9 +161,6 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 	assert.Equal(s.T(), expectedServerIP, expectedServerIP)
 	assert.Equal(s.T(), expectedServerPort, expectedServerPort)
 	assert.Equal(s.T(), expectedClientIP, expectedClientIP)
-
-	fmt.Printf("ServerDetails from Bolt: %s %s\n", s.serverContainer, string(val))
-	fmt.Printf("ServerDetails from test: %s %s, Port: %s\n", s.serverContainer, s.serverIP, s.serverPort)
 
 	// client side checks
 	val, err = s.Get(s.clientContainer, networkBucket)
