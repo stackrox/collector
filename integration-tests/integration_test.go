@@ -136,6 +136,9 @@ func (s *IntegrationTestSuite) SetupSuite() {
 }
 
 func (s *IntegrationTestSuite) TestProcessViz() {
+  if (s.noCollector) {
+    return;
+  }
 	processName := "nginx"
 	exeFilePath := "/usr/local/sbin/nginx"
 	expectedProcessInfo := fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
@@ -153,12 +156,16 @@ func (s *IntegrationTestSuite) TestProcessViz() {
 	processName = "sleep"
 	exeFilePath = "/bin/sleep"
 	expectedProcessInfo = fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
-	val, err = s.Get(processName, processBucket)
-	assert.Nil(s.T(), err)
-	assert.Equal(s.T(), expectedProcessInfo, val)
+  val, err = s.Get(processName, processBucket)
+  assert.Nil(s.T(), err)
+  assert.Equal(s.T(), expectedProcessInfo, val)
 }
 
 func (s *IntegrationTestSuite) TestNetworkFlows() {
+
+  if (s.noCollector) {
+    return;
+  }
 
 	// Server side checks
 	val, err := s.Get(s.serverContainer, networkBucket)
