@@ -38,7 +38,7 @@ type IntegrationTestSuite struct {
 	serverContainer string
 	clientContainer string
 	useEbpf         bool
-  noCollector     bool
+	noCollector     bool
 	composeFile     string
 }
 
@@ -57,20 +57,20 @@ func (s *IntegrationTestSuite) SetupSuite() {
 		s.useEbpf, _ = strconv.ParseBool(e)
 	}
 
-  noCollectorEnvVar := "ROX_COLLECTOR_NO_COLLECTOR"
-  if e, ok := os.LookupEnv(noCollectorEnvVar); ok {
-    s.noCollector, _ = strconv.ParseBool(e)
-  }
+	noCollectorEnvVar := "ROX_COLLECTOR_NO_COLLECTOR"
+	if e, ok := os.LookupEnv(noCollectorEnvVar); ok {
+		s.noCollector, _ = strconv.ParseBool(e)
+	}
 	if s.useEbpf {
 		s.composeFile = "docker-compose-ebpf.yml"
 	}
 
-  if s.noCollector {
-    time.Sleep(30 * time.Second)
-  } else {
-    s.dockerComposeUp()
-    s.dbpath = "/tmp/collector-test.db"
-  }
+	if s.noCollector {
+		time.Sleep(30 * time.Second)
+	} else {
+		s.dockerComposeUp()
+		s.dbpath = "/tmp/collector-test.db"
+	}
 
 	// invokes default nginx
 	containerID, err := s.launchContainer("nginx", "nginx:1.14-alpine", "")
@@ -81,8 +81,8 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	_, err = s.execContainer("nginx", []string{"sh", "-c", "sleep 5"})
 	assert.Nil(s.T(), err)
 
-  // start performance container
-  _, err = s.launchPerformanceContainer();
+	// start performance container
+	_, err = s.launchPerformanceContainer()
 	assert.Nil(s.T(), err)
 
 	// invokes another container
@@ -111,9 +111,9 @@ func (s *IntegrationTestSuite) SetupSuite() {
 
 	time.Sleep(20 * time.Second)
 
-  if (s.noCollector) {
-    return;
-  }
+	if s.noCollector {
+		return
+	}
 
 	logs, err := s.containerLogs("test_collector_1")
 	assert.NoError(s.T(), err)
@@ -136,9 +136,9 @@ func (s *IntegrationTestSuite) SetupSuite() {
 }
 
 func (s *IntegrationTestSuite) TestProcessViz() {
-  if (s.noCollector) {
-    return;
-  }
+	if s.noCollector {
+		return
+	}
 	processName := "nginx"
 	exeFilePath := "/usr/local/sbin/nginx"
 	expectedProcessInfo := fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
@@ -156,16 +156,16 @@ func (s *IntegrationTestSuite) TestProcessViz() {
 	processName = "sleep"
 	exeFilePath = "/bin/sleep"
 	expectedProcessInfo = fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
-  val, err = s.Get(processName, processBucket)
-  assert.Nil(s.T(), err)
-  assert.Equal(s.T(), expectedProcessInfo, val)
+	val, err = s.Get(processName, processBucket)
+	assert.Nil(s.T(), err)
+	assert.Equal(s.T(), expectedProcessInfo, val)
 }
 
 func (s *IntegrationTestSuite) TestNetworkFlows() {
 
-  if (s.noCollector) {
-    return;
-  }
+	if s.noCollector {
+		return
+	}
 
 	// Server side checks
 	val, err := s.Get(s.serverContainer, networkBucket)
@@ -208,13 +208,13 @@ func (s *IntegrationTestSuite) TearDownSuite() {
 
 func (s *IntegrationTestSuite) launchPerformanceContainer() (string, error) {
 	var cmd *exec.Cmd
-  cmd = exec.Command("docker", "run", "-d", "--rm",
-    "-v",  "/tmp:/root/results", "ljishen/sysbench",
-    "/root/results/output_cpu.prof", "--test=cpu",
-    "--cpu-max-prime=10000", "run")
+	cmd = exec.Command("docker", "run", "-d", "--rm",
+		"-v", "/tmp:/root/results", "ljishen/sysbench",
+		"/root/results/output_cpu.prof", "--test=cpu",
+		"--cpu-max-prime=10000", "run")
 	stdoutStderr, err := cmd.CombinedOutput()
 	trimmed := strings.Trim(string(stdoutStderr), "\n")
-  return trimmed, err
+	return trimmed, err
 }
 
 func (s *IntegrationTestSuite) launchContainer(containerName, imageName, command string) (string, error) {
