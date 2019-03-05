@@ -185,7 +185,7 @@ func (s *IntegrationTestSuite) TearDownSuite() {
 	s.cleanupContainer([]string{"nginx", "nginx-curl"})
 }
 
-func (s *IntegrationTestSuite) launchPerformanceContainer() {
+func (s *IntegrationTestSuite) launchPerformanceContainer() (string, error) {
 	var cmd *exec.Cmd
   cmd = exec.Command("docker", "run", "-d", "--rm",
     "-v",  "/tmp:/root/results", "ljishen/sysbench",
@@ -193,8 +193,7 @@ func (s *IntegrationTestSuite) launchPerformanceContainer() {
     "--cpu-max-prime=10000", "run")
 	stdoutStderr, err := cmd.CombinedOutput()
 	trimmed := strings.Trim(string(stdoutStderr), "\n")
-	outLines := strings.Split(trimmed, "\n")
-	return outLines[len(outLines)-1], err
+  return trimmed, err
 }
 
 func (s *IntegrationTestSuite) launchContainer(containerName, imageName, command string) (string, error) {
