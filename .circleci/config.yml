@@ -647,8 +647,8 @@ jobs:
           gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_KERNEL_MODULES}"
           gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "cd /home/circleci/collector/.circleci && bash run-integration-tests ${COLLECTOR_VERSION}"
           gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/collector/integration-test-report.xml" /tmp/integration-test-report-gcp.xml
-          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs" /tmp/grpc_server_gcp.logs
-          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/collector.logs" /tmp/collector_gcp.logs
+          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs" /tmp/grpc_server_gcp.logs || true
+          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/collector.logs" /tmp/collector_gcp.logs || true
           gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/tmp/output_cpu.prof" /tmp/output_cpu_gcp.prof
     - store_artifacts:
         path: /tmp/integration-test-report-gcp.xml
