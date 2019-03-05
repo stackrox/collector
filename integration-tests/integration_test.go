@@ -38,6 +38,7 @@ type IntegrationTestSuite struct {
 	serverContainer string
 	clientContainer string
 	useEbpf         bool
+  noCollector     bool
 	composeFile     string
 }
 
@@ -49,18 +50,25 @@ func (s *IntegrationTestSuite) SetupSuite() {
 
 	s.composeFile = "docker-compose.yml"
 	s.useEbpf = false
+	s.noCollector = false
 
 	useEbpfEnvVar := "ROX_COLLECTOR_EBPF"
 	if e, ok := os.LookupEnv(useEbpfEnvVar); ok {
 		s.useEbpf, _ = strconv.ParseBool(e)
 	}
 
+  noCollectorEnvVar := "ROX_COLLECTOR_NO_COLLECTOR"
+  if e, ok := os.LookupEnv(noCollectorEnvVar); ok {
+    s.noCollector, _ = strconv.ParseBool(e)
+  }
 	if s.useEbpf {
 		s.composeFile = "docker-compose-ebpf.yml"
 	}
 
-	s.dockerComposeUp()
-	s.dbpath = "/tmp/collector-test.db"
+  if !s.noCollector {
+    s.dockerComposeUp()
+    s.dbpath = "/tmp/collector-test.db"
+  }
 
 	// invokes default nginx
 	containerID, err := s.launchContainer("nginx", "nginx:1.14-alpine", "")
@@ -100,6 +108,10 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.clientPort = port
 
 	time.Sleep(20 * time.Second)
+
+  if (s.noCollector) {
+    return;
+  }
 
 	logs, err := s.containerLogs("test_collector_1")
 	assert.NoError(s.T(), err)
