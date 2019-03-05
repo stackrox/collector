@@ -132,6 +132,11 @@ jobs:
     - init
 
     - run:
+        name: Install patch utility
+        command: |
+          sudo apt-get install patch
+
+    - run:
         name: Prepare source
         command: |
           mkdir -p ~/kobuild-tmp/versions-src
@@ -242,9 +247,9 @@ jobs:
         command: |
           cd "${WORKSPACE_ROOT}/ko-build/module-versions"
           for version in *; do
-            [[ -f "${SOURCE_ROOT}/kernel-modules/patches/${version}.patch.gz" ]] || continue
+            [[ -f "${SOURCE_ROOT}/kernel-modules/patches/${version}.patch" ]] || continue
             echo "Applying patch for module version ${version} ..."
-            gunzip -c "${SOURCE_ROOT}/kernel-modules/patches/${version}.patch.gz" | patch -d "$version"
+            patch -d "$version" <"${SOURCE_ROOT}/kernel-modules/patches/${version}.patch"
           done
 
     - run:
