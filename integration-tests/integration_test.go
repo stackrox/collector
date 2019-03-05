@@ -65,7 +65,9 @@ func (s *IntegrationTestSuite) SetupSuite() {
 		s.composeFile = "docker-compose-ebpf.yml"
 	}
 
-  if !s.noCollector {
+  if s.noCollector {
+    time.Sleep(30 * time.Second)
+  } else {
     s.dockerComposeUp()
     s.dbpath = "/tmp/collector-test.db"
   }
