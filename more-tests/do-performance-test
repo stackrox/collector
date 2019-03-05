@@ -4,6 +4,8 @@
 
 # from https://hub.docker.com/r/ljishen/sysbench
 
+cd /tmp
+
 docker run --rm \
     -v `pwd`:/root/results \
     ljishen/sysbench \

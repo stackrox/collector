@@ -71,6 +71,10 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	_, err = s.execContainer("nginx", []string{"sh", "-c", "sleep 5"})
 	assert.Nil(s.T(), err)
 
+  // start performance container
+  _, err = s.launchPerformanceContainer();
+	assert.Nil(s.T(), err)
+
 	// invokes another container
 	containerID, err = s.launchContainer("nginx-curl", "ewoutp/docker-nginx-curl", "")
 	assert.Nil(s.T(), err)
@@ -179,6 +183,18 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 func (s *IntegrationTestSuite) TearDownSuite() {
 	s.dockerComposeDown()
 	s.cleanupContainer([]string{"nginx", "nginx-curl"})
+}
+
+func (s *IntegrationTestSuite) launchPerformanceContainer() {
+	var cmd *exec.Cmd
+  cmd = exec.Command("docker", "run", "-d", "--rm",
+    "-v",  "/tmp:/root/results", "ljishen/sysbench",
+    "/root/results/output_cpu.prof", "--test=cpu",
+    "--cpu-max-prime=10000", "run")
+	stdoutStderr, err := cmd.CombinedOutput()
+	trimmed := strings.Trim(string(stdoutStderr), "\n")
+	outLines := strings.Split(trimmed, "\n")
+	return outLines[len(outLines)-1], err
 }
 
 func (s *IntegrationTestSuite) launchContainer(containerName, imageName, command string) (string, error) {
