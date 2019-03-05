@@ -238,6 +238,16 @@ jobs:
           done
 
     - run:
+        name: Patch module sources
+        command: |
+          cd "${WORKSPACE_ROOT}/ko-build/module-versions"
+          for version in *; do
+            [[ -f "${SOURCE_ROOT}/kernel-modules/patches/${version}.patch.gz" ]] || continue
+            echo "Applying patch for module version ${version} ..."
+            gunzip -c "${SOURCE_ROOT}/kernel-modules/patches/${version}.patch.gz" | patch -d "$version"
+          done
+
+    - run:
         name: Compile list of cached modules for CURRENT module version
         command: |
           ( ls "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/*.ko{,.gz} || true ) \
@@ -704,6 +714,7 @@ jobs:
       - run:
           name: Uploading Kernel modules
           command: |
+            circleci step halt
             gsutil -m rsync -r \
               "${WORKSPACE_ROOT}/ko-build/build-output/" \
               "${COLLECTOR_MODULES_BUCKET}/"
