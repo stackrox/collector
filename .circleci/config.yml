@@ -649,15 +649,19 @@ jobs:
           gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/collector/integration-test-report.xml" /tmp/integration-test-report-gcp.xml
           gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs" /tmp/grpc_server_gcp.logs
           gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/collector.logs" /tmp/collector_gcp.logs
+          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/tmp/output_cpu.prof" /tmp/output_cpu_gcp.prof
     - store_artifacts:
         path: /tmp/integration-test-report-gcp.xml
-        destination: integration-test-report-gcp.xml/tmp
+        destination: integration-test-report-gcp.xml
     - store_artifacts:
         path: /tmp/grpc_server_gcp.logs
         destination: grpc_server_gcp.logs
     - store_artifacts:
         path: /tmp/collector_gcp.logs
         destination: collector_gcp.logs
+    - store_artifacts:
+        path: /tmp/output_cpu_gcp.prof
+        destination: output_cpu_gcp.prof
     - *teardownGCP
 
     - run:
@@ -678,6 +682,9 @@ jobs:
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs
         destination: grpc_server_logs
+    - store_artifacts:
+        path: /tmp/output_cpu.prof
+        destination: output_cpu.prof
 
   upload-modules:
     docker:
