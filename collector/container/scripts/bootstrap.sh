@@ -50,9 +50,11 @@ function download_kernel_object() {
         return 1
     fi
     local URL="$MODULE_URL/$KERNEL_OBJECT"
-    if curl -L -s -o "$OBJECT_PATH.gz" "${URL}.gz"; then
+    local FILENAME_GZ="$OBJECT_PATH.gz"
+    local    FILENAME="$OBJECT_PATH"
+    if curl -L -s -o "$FILENAME_GZ" "${URL}.gz" && FILESIZE=$(stat -c%s "$FILENAME_GZ") && (( $FILESIZE > 1000 )) ; then
         gunzip "$OBJECT_PATH.gz"
-    elif ! curl -L -s -o "$OBJECT_PATH" "$URL"; then
+    elif ! curl -L -s -o "$FILENAME" "$URL" && FILESIZE=$(stat -c%s "$FILENAME") && (( $FILESIZE > 1000 )) ; then
       echo "Error downloading $KERNEL_OBJECT for kernel version $KERNEL_VERSION." >&2
       return 1
     fi
