@@ -94,7 +94,7 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* eve
 const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_threadinfo* tinfo) {
   Reset();
   if (!ValidateProcessDetails(tinfo)) {
-    CLOG(INFO) << "Dropping process event: invalid details";
+    CLOG(INFO) << "Dropping process event: " << tinfo;
     return nullptr;
   }
 
@@ -240,16 +240,13 @@ bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
   const std::string* path = event_extractor_.get_exepath(event);
   const std::string* name = event_extractor_.get_comm(event);
 
-  if (path == nullptr || name == nullptr) {
-    return false;
-  }
-
-  if (*path == "<NA>" && *name == "<NA>") {
+  if ((path == nullptr || *path == "<NA>") && (name == nullptr || *name == "<NA>")) {
     return false;
   }
 
   return true;
 }
+
 
 void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo, 
     std::vector<std::string>& lineage) {
