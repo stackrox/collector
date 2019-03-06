@@ -77,4 +77,14 @@ static int (*bpf_skb_under_cgroup)(void *ctx, void *map, int index) =
 static int (*bpf_skb_change_head)(void *, int len, int flags) =
 	(void *)BPF_FUNC_skb_change_head;
 
+/* Begin StackRox patch */
+
+// See https://github.com/iovisor/bcc/commit/a753e5725234c041b772577cddd21b7a39b815a1
+
+#ifdef asm_volatile_goto
+#undef asm_volatile_goto
+#define asm_volatile_goto(x...) asm volatile("invalid use of asm_volatile_goto")
+#endif
+/* End StackRox patch */
+
 #endif
