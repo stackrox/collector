@@ -72,12 +72,13 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* eve
     return nullptr;
   }
 
+  Reset();
+
   if (!ValidateProcessDetails(event)) {
-    CLOG(INFO) << "Dropping process event: invalid details";
+    CLOG(INFO) << "Dropping process event: " << ProcessDetails(event);
     return nullptr;
   }
 
-  Reset();
   ProcessSignal* process_signal = CreateProcessSignal(event);
   if (!process_signal) return nullptr;
 
@@ -91,12 +92,12 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* eve
 }
 
 const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_threadinfo* tinfo) {
+  Reset();
   if (!ValidateProcessDetails(tinfo)) {
-    CLOG(INFO) << "Dropping process event: invalid details";
+    CLOG(INFO) << "Dropping process event: " << tinfo;
     return nullptr;
   }
 
-  Reset();
   ProcessSignal* process_signal = CreateProcessSignal(tinfo);
   if (!process_signal) return nullptr;
 
@@ -116,17 +117,28 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   // set id
   signal->set_id(UUIDStr());
 
-  // set name
-  if (const std::string* name = event_extractor_.get_comm(event)) signal->set_name(*name);
+  const std::string* name = event_extractor_.get_comm(event);
+  const std::string* exepath = event_extractor_.get_exepath(event);
+
+  // set name (if name is missing, try to use exec_file_path)
+  if (name && *name != "<NA>") {
+    signal->set_name(*name); 
+  } else if (exepath && *exepath != "<NA>") {
+    signal->set_name(*exepath); 
+  }
+
+  // set exec_file_path (if exec_file_path is missing, try to use name)
+  if (exepath && *exepath != "<NA>") {
+    signal->set_exec_file_path(*exepath); 
+  } else if (name && *name != "<NA>") {
+    signal->set_exec_file_path(*name); 
+  }
 
   // set process arguments
   if (const char* args = event_extractor_.get_proc_args(event)) signal->set_args(args);
 
   // set pid
   if (const int64_t* pid = event_extractor_.get_pid(event)) signal->set_pid(*pid);
-
-  // set exec_file_path
-  if (const std::string* exepath = event_extractor_.get_exepath(event)) signal->set_exec_file_path(*exepath);
 
   // set user and group id credentials
   if (const uint32_t* uid = event_extractor_.get_uid(event)) signal->set_uid(*uid);
@@ -156,17 +168,28 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   // set id
   signal->set_id(UUIDStr());
 
-  // set name
-  signal->set_name(tinfo->get_comm());
+  auto name = tinfo->get_comm();
+  auto exepath = tinfo->m_exepath;
+
+  // set name (if name is missing, try to use exec_file_path)
+  if (name != "<NA>") {
+    signal->set_name(name);
+  } else if (exepath != "<NA>") {
+    signal->set_name(exepath); 
+  }
+
+  // set exec_file_path (if exec_file_path is missing, try to use name)
+  if (exepath != "<NA>") {
+    signal->set_exec_file_path(exepath); 
+  } else if (name != "<NA>") {
+    signal->set_exec_file_path(name); 
+  }
 
   // set process arguments
   signal->set_args(extract_proc_args(tinfo));
 
   // set pid
   signal->set_pid(tinfo->m_pid);
-
-  // set exec_file_path
-  signal->set_exec_file_path(tinfo->m_exepath);
 
   // set user and group id credentials
   signal->set_uid(tinfo->m_uid);
@@ -189,51 +212,41 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
 }
 
 bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_threadinfo* tinfo) {
-  if (tinfo->m_exepath == "<NA>") return false;
-  if (tinfo->get_comm() == "<NA>") return false;
+  if (tinfo->m_exepath == "<NA>" && tinfo->get_comm() == "<NA>") {
+    return false;
+  }
 
   return true;
+}
+
+std::string ProcessSignalFormatter::ProcessDetails(sinsp_evt* event) {
+  std::stringstream ss;
+  const std::string* path = event_extractor_.get_exepath(event);
+  const std::string* name = event_extractor_.get_comm(event);
+  const std::string* container_id = event_extractor_.get_container_id(event);
+  const char* args = event_extractor_.get_proc_args(event);
+  const int64_t* pid = event_extractor_.get_pid(event);
+
+  ss << "Container: " << (container_id ? *container_id : "null")
+    << ", Name: " << (name ? *name : "null")
+    << ", PID: " << (pid ? *pid : -1)
+    << ", Path: " << (path ? *path : "null") 
+    << ", Args: "<< (args ? args : "null");
+
+  return ss.str();
 }
 
 bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
   const std::string* path = event_extractor_.get_exepath(event);
-  if (path == nullptr || *path == "<NA>") return false;
-
-  // missing exe path, replace with command
   const std::string* name = event_extractor_.get_comm(event);
-  if (name == nullptr || *name == "<NA>") return false;
+
+  if ((path == nullptr || *path == "<NA>") && (name == nullptr || *name == "<NA>")) {
+    return false;
+  }
 
   return true;
 }
 
-sinsp_threadinfo* get_parent_thread(sinsp_threadinfo *ti) {
-  return ti->m_inspector->get_thread(ti->m_ptid, true, true);
-}
-
-// modified version using different impl of get_parent_thread (sysdig/src/userspace/libsinsp/threadinfo.cpp)
-void traverse_parent_state(sinsp_threadinfo *ti, sinsp_threadinfo::visitor_func_t &visitor) {
-  // Use two pointers starting at this, traversing the parent
-  // state, at different rates. If they ever equal each other
-  // before slow is NULL there's a loop.
-  sinsp_threadinfo *slow = get_parent_thread(ti);
-  sinsp_threadinfo *fast = slow;
-
-  // Move fast to its parent
-  fast = (fast ? get_parent_thread(fast) : fast);
-  while (slow) {
-    if (!visitor(slow)) break;
-    // Advance slow one step and advance fast two steps
-    slow = get_parent_thread(slow);
-    // advance fast 2 steps, checking to see if we meet
-    // slow after each step.
-    for (uint32_t i = 0; i < 2; i++) {
-      fast = (fast ?  get_parent_thread(fast) : fast);
-      // If not at the end but fast == slow, there's a loop
-      // in the thread state.
-      if (slow && (slow == fast)) return;
-    }
-  }
-}
 
 void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo, 
     std::vector<std::string>& lineage) {
@@ -264,7 +277,7 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
 
     return true;
   };
-  traverse_parent_state(mt, visitor);
+  mt->traverse_parent_state(visitor);
 }
 
 }  // namespace collector
