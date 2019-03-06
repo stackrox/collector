@@ -51,13 +51,21 @@ function download_kernel_object() {
     fi
     local URL="$MODULE_URL/$KERNEL_OBJECT"
     local FILENAME_GZ="$OBJECT_PATH.gz"
-    local    FILENAME="$OBJECT_PATH"
-    if curl -L -s -o "$FILENAME_GZ" "${URL}.gz" && FILESIZE=$(stat -c%s "$FILENAME_GZ") && (( $FILESIZE > 1000 )) ; then
-        gunzip "$OBJECT_PATH.gz"
-    elif ! curl -L -s -o "$FILENAME" "$URL" && FILESIZE=$(stat -c%s "$FILENAME") && (( $FILESIZE > 1000 )) ; then
-      echo "Error downloading $KERNEL_OBJECT for kernel version $KERNEL_VERSION." >&2
-      return 1
+    if ! curl -w "%{http_code}" -L -s -o "$FILENAME_GZ" "${URL}.gz" >/tmp/curlret.log 2>/tmp/curlret.err ; then
+        echo "ERROR: curl exit code $?" >&2
+        echo "Error downloading $KERNEL_OBJECT for kernel version $KERNEL_VERSION." >&2
+        cat /tmp/curlret.err >&2
+        rm /tmp/curlret.err /tmp/curlret.log
+        return 1
     fi
+    if test $(cat /tmp/curlret.log) != "200" ; then
+        echo "ERROR: HTTP STATUS CODE $(cat /tmp/curlret.log)" >&2
+        echo "Error downloading $KERNEL_OBJECT for kernel version $KERNEL_VERSION." >&2
+        rm /tmp/curlret.err /tmp/curlret.log
+        return 1
+    fi
+    rm /tmp/curlret.err /tmp/curlret.log
+    gunzip "$FILENAME_GZ"
     echo "Using downloaded $KERNEL_OBJECT for kernel version $KERNEL_VERSION." >&2
     return 0
 }
