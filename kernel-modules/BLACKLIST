@@ -2,8 +2,3 @@
 # Format:
 # <kernel-version> [<module-version>]
 # If <module-version> is omitted, this blacklist entry applies to all module versions.
-
-4.19.0-12-generic
-4.19.0-13-generic
-4.19.23-coreos-r1 612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656
-5.0.0-7-generic

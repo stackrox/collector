@@ -8,13 +8,15 @@ or GPL2.txt for full copies of the license.
 */
 #include "quirks.h"
 
-#include <generated/utsrelease.h>
+#include <linux/compiler.h>
 #include <uapi/linux/bpf.h>
+#include "bpf_helpers.h"
+
+#include <generated/utsrelease.h>
 #include <linux/sched.h>
 
 #include "../driver_config.h"
 #include "../ppm_events_public.h"
-#include "bpf_helpers.h"
 #include "types.h"
 #include "maps.h"
 #include "plumbing_helpers.h"
