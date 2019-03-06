@@ -1,12 +1,26 @@
 diff --git a/ppm_events.c b/ppm_events.c
-index 087223e6..5d6d8a0d 100644
+index 278b74d7..38867687 100644
 --- a/ppm_events.c
 +++ b/ppm_events.c
-@@ -59,6 +59,21 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
- #define ppm_access_ok access_ok
+@@ -77,11 +77,34 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
+  * might_sleep(), so if present we use the one defined by them
+  */
+ #ifdef access_ok_noprefault
+-#define ppm_access_ok access_ok_noprefault
++#define ppm_access_ok_raw access_ok_noprefault
+ #else
+-#define ppm_access_ok access_ok
++#define ppm_access_ok_raw access_ok
  #endif
  
 +/* Begin StackRox patch */
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
++#define ppm_access_ok(type, addr, size) ppm_access_ok_raw(addr, size)
++#else
++#define ppm_access_ok(type, addr, size) ppm_access_ok_raw(type, addr, size)
++#endif
++
 +int sock_getname(struct socket *sock, struct sockaddr *sock_address, int peer)
 +{
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 17, 0)
@@ -19,12 +33,13 @@ index 087223e6..5d6d8a0d 100644
 +    return sock->ops->getname(sock, sock_address, &sockaddr_len, peer);
 +#endif
 +}
++
 +/* End StackRox patch */
 +
  extern bool g_tracers_enabled;
  
  static void memory_dump(char *p, size_t size)
-@@ -183,8 +198,6 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
+@@ -206,8 +229,6 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
  	sa_family_t family;
  	struct sockaddr_storage sock_address;
  	struct sockaddr_storage peer_address;
@@ -33,7 +48,7 @@ index 087223e6..5d6d8a0d 100644
  	u16 sport, dport;
  
  	if (g_tracers_enabled && args->event_type == PPME_SYSCALL_WRITE_X) {
-@@ -234,7 +247,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
+@@ -257,7 +278,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
  	if (sock) {
  
  		if (sock->sk) {
@@ -42,7 +57,7 @@ index 087223e6..5d6d8a0d 100644
  
  			if (err == 0) {
  				if(args->event_type == PPME_SOCKET_SENDTO_X)
-@@ -255,7 +268,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
+@@ -278,7 +299,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
  						/*
  						 * Suppose is a connected socket, fall back to fd
  						 */
@@ -51,7 +66,7 @@ index 087223e6..5d6d8a0d 100644
  					} else {
  						/*
  						 * Get the address len
-@@ -266,7 +279,6 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
+@@ -289,7 +310,6 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
  							val = args->socketcall_args[5];
  
  						if (val != 0) {
@@ -59,7 +74,7 @@ index 087223e6..5d6d8a0d 100644
  							/*
  							 * Copy the address
  							 */
-@@ -275,7 +287,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
+@@ -298,7 +318,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
  							/*
  							 * This case should be very rare, fallback again to sock
  							 */
@@ -68,7 +83,7 @@ index 087223e6..5d6d8a0d 100644
  						}
  					}
  				} else if (args->event_type == PPME_SOCKET_SENDMSG_X) {
-@@ -319,18 +331,17 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
+@@ -342,18 +362,17 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
  #endif
  
  					if (usrsockaddr != NULL && addrlen != 0) {
@@ -90,7 +105,7 @@ index 087223e6..5d6d8a0d 100644
  
  				if (err == 0) {
  					family = sock->sk->sk_family;
-@@ -963,8 +974,6 @@ u16 fd_to_socktuple(int fd,
+@@ -986,8 +1005,6 @@ u16 fd_to_socktuple(int fd,
  	char *dest;
  	struct sockaddr_storage sock_address;
  	struct sockaddr_storage peer_address;
@@ -99,7 +114,7 @@ index 087223e6..5d6d8a0d 100644
  
  	/*
  	 * Get the socket from the fd
-@@ -982,7 +991,7 @@ u16 fd_to_socktuple(int fd,
+@@ -1005,7 +1022,7 @@ u16 fd_to_socktuple(int fd,
  		return 0;
  	}
  
@@ -108,7 +123,7 @@ index 087223e6..5d6d8a0d 100644
  	ASSERT(err == 0);
  
  	family = sock->sk->sk_family;
-@@ -993,7 +1002,7 @@ u16 fd_to_socktuple(int fd,
+@@ -1016,7 +1033,7 @@ u16 fd_to_socktuple(int fd,
  	switch (family) {
  	case AF_INET:
  		if (!use_userdata) {
@@ -117,7 +132,7 @@ index 087223e6..5d6d8a0d 100644
  			if (err == 0) {
  				if (is_inbound) {
  					sip = ((struct sockaddr_in *) &peer_address)->sin_addr.s_addr;
-@@ -1045,7 +1054,7 @@ u16 fd_to_socktuple(int fd,
+@@ -1068,7 +1085,7 @@ u16 fd_to_socktuple(int fd,
  		break;
  	case AF_INET6:
  		if (!use_userdata) {
@@ -126,7 +141,7 @@ index 087223e6..5d6d8a0d 100644
  			ASSERT(err == 0);
  
  			if (is_inbound) {
-@@ -1120,7 +1129,7 @@ u16 fd_to_socktuple(int fd,
+@@ -1143,7 +1160,7 @@ u16 fd_to_socktuple(int fd,
  			if (is_inbound) {
  				us_name = ((struct sockaddr_un *) &sock_address)->sun_path;
  			} else {
