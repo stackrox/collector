@@ -52,15 +52,13 @@ function download_kernel_object() {
     local URL="$MODULE_URL/$KERNEL_OBJECT"
     local FILENAME_GZ="$OBJECT_PATH.gz"
     if ! curl -w "%{http_code}" -L -s -o "$FILENAME_GZ" "${URL}.gz" >/tmp/curlret.log 2>/tmp/curlret.err ; then
-        echo "ERROR: curl exit code $?" >&2
-        echo "Error downloading $KERNEL_OBJECT for kernel version $KERNEL_VERSION." >&2
+        echo "Error downloading $KERNEL_OBJECT for kernel version $KERNEL_VERSION. curl exit code $?" >&2
         cat /tmp/curlret.err >&2
         rm /tmp/curlret.err /tmp/curlret.log
         return 1
     fi
     if test $(cat /tmp/curlret.log) != "200" ; then
-        echo "ERROR: HTTP STATUS CODE $(cat /tmp/curlret.log)" >&2
-        echo "Error downloading $KERNEL_OBJECT for kernel version $KERNEL_VERSION." >&2
+        echo "Error downloading $KERNEL_OBJECT for kernel version $KERNEL_VERSION. http status code $(cat /tmp/curlret.log)" >&2
         rm /tmp/curlret.err /tmp/curlret.log
         return 1
     fi
