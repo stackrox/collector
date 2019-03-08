@@ -699,7 +699,7 @@ jobs:
           make integration-tests integration-test-report
 
     - store_test_results:
-        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml
+        path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/collector.logs
         destination: collector_logs
