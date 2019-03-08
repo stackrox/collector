@@ -673,6 +673,8 @@ jobs:
     - store_artifacts:
         path: /tmp/integration-test-report-gcp.xml
         destination: integration-test-report-gcp.xml
+    - store_test_results:
+        path: /tmp/integration-test-report-gcp.xml
     - store_artifacts:
         path: /tmp/grpc_server_gcp.logs
         destination: grpc_server_gcp.logs
@@ -696,6 +698,8 @@ jobs:
           sudo chmod +x /usr/local/bin/docker-compose
           make integration-tests integration-test-report
 
+    - store_test_results:
+        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/collector.logs
         destination: collector_logs
