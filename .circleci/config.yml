@@ -701,6 +701,9 @@ jobs:
     - store_test_results:
         path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
     - store_artifacts:
+        path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
+        destination: integration-test-report.xml
+    - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/collector.logs
         destination: collector_logs
     - store_artifacts:
