@@ -53,6 +53,8 @@ RUN apt-get update \
         libtbb2 \
         libelf1 \
         libjsoncpp1 \
+ && dpkg -r --force-all e2fslibs e2fsprogs apt debconf dpkg \
+ && rm -rf /var/lib/apt /var/lib/dpkg \
  ;
 
 COPY libs/libsinsp-wrapper.so \
