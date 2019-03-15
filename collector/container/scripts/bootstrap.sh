@@ -21,6 +21,18 @@ if [[ -n "$MODULE_VERSION" ]]; then
     fi
 fi
 
+if [ -f "/host/etc/os-release" ]; then
+    # Source the contents of /etc/os-release to determine if on COS
+    . "/host/etc/os-release"
+    
+    if [ ! -z ${ID+x} ] && [ "${ID}" == "cos" ]; then
+        # check that last char of KERNEL_VERSION is '+' and BUILD_ID is defined/non-empty.
+        if [ "${KERNEL_VERSION: -1}" = "+" ] && [ ! -z ${BUILD_ID+x} ]; then
+            KERNEL_VERSION="$(echo ${KERNEL_VERSION} | sed 's/.$//')-${BUILD_ID}-${ID}"
+        fi 
+    fi
+fi
+
 KERNEL_MODULE="${MODULE_NAME}-${KERNEL_VERSION}.ko"
 KERNEL_PROBE="${PROBE_NAME}-${KERNEL_VERSION}.o"
 
