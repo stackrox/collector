@@ -23,12 +23,15 @@ fi
 
 if [ -f "/host/etc/os-release" ]; then
     # Source the contents of /etc/os-release to determine if on COS
+    echo "Sourcing /host/etc/os-release"
     . "/host/etc/os-release"
+    cat /host/etc/os-release
     
-    if [ ! -z ${ID+x} ] && [ "${ID}" == "cos" ]; then
+    if [ ! -z "${ID}" ] && [ "${ID}" == "cos" ]; then
         # check that last char of KERNEL_VERSION is '+' and BUILD_ID is defined/non-empty.
-        if [ "${KERNEL_VERSION: -1}" = "+" ] && [ ! -z ${BUILD_ID+x} ]; then
+        if [ "${KERNEL_VERSION: -1}" = "+" ] && [ ! -z "${BUILD_ID+x}" ]; then
             KERNEL_VERSION="$(echo ${KERNEL_VERSION} | sed 's/.$//')-${BUILD_ID}-${ID}"
+        else
         fi 
     fi
 fi
