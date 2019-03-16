@@ -252,7 +252,7 @@ jobs:
           for version in *; do
             [[ -f "${SOURCE_ROOT}/kernel-modules/patches/${version}.patch" ]] || continue
             echo "Applying patch for module version ${version} ..."
-            patch -d "$version" <"${SOURCE_ROOT}/kernel-modules/patches/${version}.patch"
+            patch -p1 -d "$version" <"${SOURCE_ROOT}/kernel-modules/patches/${version}.patch"
           done
 
     - run:
