@@ -6,7 +6,6 @@ PROBE_NAME="collector-ebpf"
 PROBE_PATH="/module/${PROBE_NAME}.o"
 
 KERNEL_VERSION=$(uname -r)
-echo "Kernel version detected: $KERNEL_VERSION."
 
 export KERNEL_MAJOR=""
 export KERNEL_MINOR=""
@@ -15,7 +14,7 @@ KERNEL_MINOR=$(echo ${KERNEL_VERSION} | cut -d. -f2)
 
 MODULE_VERSION="$(cat /kernel-modules/MODULE_VERSION.txt)"
 if [[ -n "$MODULE_VERSION" ]]; then
-    echo "Module version detected: $MODULE_VERSION"
+    echo "StackRox kernel object version: $MODULE_VERSION"
     if [[ -n "$MODULE_DOWNLOAD_BASE_URL" ]]; then
         MODULE_URL="${MODULE_DOWNLOAD_BASE_URL}/${MODULE_VERSION}"
     fi
@@ -23,18 +22,16 @@ fi
 
 if [ -f "/host/etc/os-release" ]; then
     # Source the contents of /etc/os-release to determine if on COS
-    echo "Sourcing /host/etc/os-release"
     . "/host/etc/os-release"
-    cat /host/etc/os-release
     
     if [ ! -z "${ID}" ] && [ "${ID}" == "cos" ]; then
         # check that last char of KERNEL_VERSION is '+' and BUILD_ID is defined/non-empty.
         if [ "${KERNEL_VERSION: -1}" = "+" ] && [ ! -z "${BUILD_ID+x}" ]; then
             KERNEL_VERSION="$(echo ${KERNEL_VERSION} | sed 's/.$//')-${BUILD_ID}-${ID}"
-        else
         fi 
     fi
 fi
+echo "Linux kernel version: $KERNEL_VERSION."
 
 KERNEL_MODULE="${MODULE_NAME}-${KERNEL_VERSION}.ko"
 KERNEL_PROBE="${PROBE_NAME}-${KERNEL_VERSION}.o"
@@ -66,18 +63,15 @@ function download_kernel_object() {
     fi
     local URL="$MODULE_URL/$KERNEL_OBJECT"
     local FILENAME_GZ="$OBJECT_PATH.gz"
-    if ! curl -w "%{http_code}" -L -s -o "$FILENAME_GZ" "${URL}.gz" >/tmp/curlret.log 2>/tmp/curlret.err ; then
-        echo "Error downloading $KERNEL_OBJECT for kernel version $KERNEL_VERSION. curl exit code $?" >&2
-        cat /tmp/curlret.err >&2
-        rm /tmp/curlret.err /tmp/curlret.log
+
+    # Attempt to download kernel object
+    local HTTP_CODE=$(curl -w "%{http_code}" -L -s -o "$FILENAME_GZ" "${URL}.gz" 2>/dev/null)
+
+    if [ "$HTTP_CODE" != "200" ] ; then
+        echo "Error downloading $KERNEL_OBJECT for kernel version $KERNEL_VERSION (Error code: $HTTP_CODE)" >&2
         return 1
     fi
-    if test $(cat /tmp/curlret.log) != "200" ; then
-        echo "Error downloading $KERNEL_OBJECT for kernel version $KERNEL_VERSION. http status code $(cat /tmp/curlret.log)" >&2
-        rm /tmp/curlret.err /tmp/curlret.log
-        return 1
-    fi
-    rm /tmp/curlret.err /tmp/curlret.log
+
     gunzip "$FILENAME_GZ"
     echo "Using downloaded $KERNEL_OBJECT for kernel version $KERNEL_VERSION." >&2
     return 0
