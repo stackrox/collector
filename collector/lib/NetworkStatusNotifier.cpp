@@ -133,6 +133,7 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
         CLOG(ERROR) << "Failed to scrape connections and no pending connections to send";
         continue;
       }
+      CLOG(INFO) << "Scraped " << all_conns.size() << " connections";
       conn_tracker_->Update(all_conns, ts);
     }
 

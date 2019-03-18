@@ -296,7 +296,9 @@ scap_t* scap_open_live_int(char *error, int32_t *rc,
 			snprintf(error, SCAP_LASTERR_SIZE, "%s", handle->m_lasterr);
 			scap_close(handle);
 			return NULL;
-		}
+		} else {
+			printf("\nscap_bpf_load: successfully loaded bpf probe\n\n");
+                }
 	}
 	else
 	{

@@ -198,7 +198,7 @@ bool SysdigService::SendExistingProcesses(SignalHandler* handler) {
         CLOG(WARNING) << "Failed to write existing process signal: " << &tinfo;
         return false;
       }
-      CLOG(DEBUG) << "Found existing process: " << &tinfo;
+      CLOG(INFO) << "Found existing process: " << &tinfo;
     }
     return true;
   });
