@@ -628,10 +628,10 @@ jobs:
           docker images | grep kernel | grep "$MODULE_VERSION"
           docker images | grep collector | grep "$COLLECTOR_VERSION"
 
-    - run:
-        name: Check remote host GCP kernel version
-        command: |
-          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "uname -r && uname -a"
+#    - run:
+#        name: Check remote host GCP kernel version
+#        command: |
+#          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "uname -r && uname -a"
     - run:
         name: Push images
         command: |
