@@ -532,18 +532,21 @@ static int32_t load_bpf_file(scap_t *handle, const char *path)
 	struct utsname osname;
 	int32_t res = SCAP_FAILURE;
 
+        printf("\nuname\n\n");
 	if(uname(&osname))
 	{
 		snprintf(handle->m_lasterr, SCAP_LASTERR_SIZE, "can't call uname()");
 		return SCAP_FAILURE;
 	}
 
+        printf("\nelf version\n\n");
 	if(elf_version(EV_CURRENT) == EV_NONE)
 	{
 		snprintf(handle->m_lasterr, SCAP_LASTERR_SIZE, "invalid ELF version");
 		return SCAP_FAILURE;
 	}
 
+        printf("\nopen bpf path\n\n");
 	int program_fd = open(path, O_RDONLY, 0);
 	if(program_fd < 0)
 	{
@@ -551,6 +554,7 @@ static int32_t load_bpf_file(scap_t *handle, const char *path)
 		return SCAP_FAILURE;
 	}
 
+        printf("\nelf begin\n\n");
 	Elf *elf = elf_begin(program_fd, ELF_C_READ, NULL);
 	if(!elf)
 	{
@@ -558,6 +562,7 @@ static int32_t load_bpf_file(scap_t *handle, const char *path)
 		goto cleanup;
 	}
 
+        printf("\nget ehdr\n\n");
 	GElf_Ehdr ehdr;
 	if(gelf_getehdr(elf, &ehdr) != &ehdr)
 	{
@@ -618,6 +623,7 @@ static int32_t load_bpf_file(scap_t *handle, const char *path)
 		}
 	}
 
+        printf("\nget elf section 1\n\n");
 	for(j = 0; j < ehdr.e_shnum; ++j)
 	{
 		if(get_elf_section(elf, j, &ehdr, &shname, &shdr, &data) != SCAP_SUCCESS)
@@ -642,6 +648,7 @@ static int32_t load_bpf_file(scap_t *handle, const char *path)
 			}
 		}
 	}
+        printf("\nget elf section 2\n\n");
 
 	for(j = 0; j < ehdr.e_shnum; ++j)
 	{
@@ -1201,6 +1208,7 @@ static int32_t set_runtime_params(scap_t *handle)
 
 	fclose(f);
 
+	printf("\nset_runtime_params success\n\n");
 	return SCAP_SUCCESS;
 }
 
@@ -1252,31 +1260,37 @@ int32_t scap_bpf_load(scap_t *handle, const char *bpf_probe)
 		return SCAP_FAILURE;
 	}
 
+        printf("\nload_bpf_file: begin...\n\n");
 	if(load_bpf_file(handle, bpf_probe) != SCAP_SUCCESS)
 	{
 		return SCAP_FAILURE;
 	}
 
+        printf("\npopulate syscall routing table\n\n");
 	if(populate_syscall_routing_table_map(handle) != SCAP_SUCCESS)
 	{
 		return SCAP_FAILURE;
 	}
+        printf("\npopulate syscall table map\n\n");
 
 	if(populate_syscall_table_map(handle) != SCAP_SUCCESS)
 	{
 		return SCAP_FAILURE;
 	}
+        printf("\npopulate event table map\n\n");
 
 	if(populate_event_table_map(handle) != SCAP_SUCCESS)
 	{
 		return SCAP_FAILURE;
 	}
 
+        printf("\npopulate fillers table\n\n");
 	if(populate_fillers_table_map(handle) != SCAP_SUCCESS)
 	{
 		return SCAP_FAILURE;
 	}
 
+        printf("\nopen and init devices\n\n");
 	//
 	// Open and initialize all the devices
 	//

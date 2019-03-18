@@ -2003,8 +2003,9 @@ FILLER(proc_startupdate_3, true)
 		 * loginuid
 		 */
 		/* TODO: implement user namespace support */
-		loginuid = _READ(task->loginuid);
-		res = bpf_val_to_ring_type(data, loginuid.val, PT_INT32);
+		//loginuid = _READ(task->loginuid);
+		//res = bpf_val_to_ring_type(data, loginuid.val, PT_INT32);
+		res = bpf_val_to_ring_type(data, -1, PT_INT32);
 		if (res != PPM_SUCCESS)
 			return res;
 	}

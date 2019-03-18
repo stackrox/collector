@@ -68,7 +68,16 @@ string extract_proc_args(sinsp_threadinfo *tinfo) {
 }
 
 const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* event) {
-  if (process_signals[event->get_type()] == ProcessSignalType::UNKNOWN_PROCESS_TYPE) {
+
+  if (event->get_type() == PPME_GENERIC_E || event->get_type() == PPME_GENERIC_X) {
+    sinsp_evt_param *parinfo = event->get_param(0);
+    uint16_t id = *(uint16_t *)parinfo->m_val;
+    std::string syscall(scap_get_syscall_info_table()[id].name);
+    CLOG(INFO) << "Generic process event: " << syscall;
+    if (syscall != "execve") {
+      return nullptr;
+    }
+  } else if (process_signals[event->get_type()] == ProcessSignalType::UNKNOWN_PROCESS_TYPE) {
     return nullptr;
   }
 

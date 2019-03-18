@@ -159,13 +159,28 @@ void SysdigService::Start() {
 }
 
 void SysdigService::Run(const std::atomic<CollectorService::ControlValue>& control) {
+  CLOG(INFO) << "SysdigService::Run: begin";
   if (!inspector_ || !chisel_) {
     throw CollectorException("Invalid state: SysdigService was not initialized");
   }
 
+  std::map<string, int64_t> event_map;
+  std::chrono::steady_clock::time_point last_print_event_map;
+  CLOG(INFO) << "SysdigService::Run: entering main while";
   while (control.load(std::memory_order_relaxed) == CollectorService::RUN) {
     sinsp_evt* evt = GetNext();
     if (!evt) continue;
+    //CLOG(INFO) << "SysdigService::Run: event type: " << EventNames::GetInstance().GetEventName(evt->get_type());
+    auto& event_name = EventNames::GetInstance().GetEventName(evt->get_type());
+    event_map[event_name]++;
+    if (std::chrono::steady_clock::now() - last_print_event_map >= std::chrono::seconds(30)) {
+      last_print_event_map = std::chrono::steady_clock::now();
+      CLOG(INFO) << "Events in the last 30 seconds -- begin \n\n";
+      for (auto& kv : event_map) {
+        CLOG(INFO) << "syscall event: " << kv.first << " : " << kv.second;
+      }
+      CLOG(INFO) << "Events in the last 30 seconds -- end \n\n";
+    }
 
     for (auto& signal_handler : signal_handlers_) {
       if (!signal_handler.ShouldHandle(evt)) continue;
@@ -181,11 +196,13 @@ void SysdigService::Run(const std::atomic<CollectorService::ControlValue>& contr
 }
 
 bool SysdigService::SendExistingProcesses(SignalHandler* handler) {
+  CLOG(INFO) << "SendExistingProcesses: begin";
   if (!inspector_ || !chisel_) {
     throw CollectorException("Invalid state: SysdigService was not initialized");
   }
 
   auto threads = inspector_->m_thread_manager->get_threads();
+  CLOG(INFO) << "SendExistingProcesses: threads.size: " << threads->size();
   if (!threads) {
     CLOG(WARNING) << "Null thread manager";
     return false;

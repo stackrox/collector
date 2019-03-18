@@ -562,7 +562,7 @@ jobs:
     - init
     - docker-login
     - gcloud-init
-    - *createGCP
+#    - *createGCP
 
     - run:
         name: Copying Kernel modules build output
@@ -650,42 +650,42 @@ jobs:
             echo "Pushing kernel modules"
             docker push "${IMAGE_KERNEL_MODULES}"
           fi
-    - run:
-        name: GCP Integration tests
-        command: |
-          set -e
-          if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
-            IMAGE_COLLECTOR="stackrox/collector:${COLLECTOR_VERSION}"
-            IMAGE_KERNEL_MODULES="stackrox/kernel-modules:${MODULE_VERSION}"
-            COLLECTOR_TAG="${COLLECTOR_VERSION}"
-          else
-            IMAGE_COLLECTOR="stackrox/collector:snapshot-${COLLECTOR_VERSION}"
-            IMAGE_KERNEL_MODULES="stackrox/kernel-modules:snapshot-${COLLECTOR_VERSION}"
-            COLLECTOR_TAG="snapshot-${COLLECTOR_VERSION}"
-          fi
-          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_COLLECTOR}"
-          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_KERNEL_MODULES}"
-          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "cd /home/circleci/collector/.circleci && bash run-integration-tests ${COLLECTOR_TAG}"
-          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/collector/integration-test-report.xml" /tmp/integration-test-report-gcp.xml
-          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp /tmp/integration-test-report-gcp.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
-          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs" /tmp/grpc_server_gcp.logs
-          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/collector.logs" /tmp/collector_gcp.logs
-          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/tmp/output_cpu.prof" /tmp/output_cpu_gcp.prof
-    - store_artifacts:
-        path: /tmp/integration-test-report-gcp.xml
-        destination: integration-test-report-gcp.xml
-    - store_test_results:
-        path: /tmp/integration-test-report-gcp.xml
-    - store_artifacts:
-        path: /tmp/grpc_server_gcp.logs
-        destination: grpc_server_gcp.logs
-    - store_artifacts:
-        path: /tmp/collector_gcp.logs
-        destination: collector_gcp.logs
-    - store_artifacts:
-        path: /tmp/output_cpu_gcp.prof
-        destination: output_cpu_gcp.prof
-    - *teardownGCP
+#    - run:
+#        name: GCP Integration tests
+#        command: |
+#          set -e
+#          if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
+#            IMAGE_COLLECTOR="stackrox/collector:${COLLECTOR_VERSION}"
+#            IMAGE_KERNEL_MODULES="stackrox/kernel-modules:${MODULE_VERSION}"
+#            COLLECTOR_TAG="${COLLECTOR_VERSION}"
+#          else
+#            IMAGE_COLLECTOR="stackrox/collector:snapshot-${COLLECTOR_VERSION}"
+#            IMAGE_KERNEL_MODULES="stackrox/kernel-modules:snapshot-${COLLECTOR_VERSION}"
+#            COLLECTOR_TAG="snapshot-${COLLECTOR_VERSION}"
+#          fi
+#          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_COLLECTOR}"
+#          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_KERNEL_MODULES}"
+#          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "cd /home/circleci/collector/.circleci && bash run-integration-tests ${COLLECTOR_TAG}"
+#          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/collector/integration-test-report.xml" /tmp/integration-test-report-gcp.xml
+#          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp /tmp/integration-test-report-gcp.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
+#          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs" /tmp/grpc_server_gcp.logs
+#          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/collector.logs" /tmp/collector_gcp.logs
+#          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/tmp/output_cpu.prof" /tmp/output_cpu_gcp.prof
+#    - store_artifacts:
+#        path: /tmp/integration-test-report-gcp.xml
+#        destination: integration-test-report-gcp.xml
+#    - store_test_results:
+#        path: /tmp/integration-test-report-gcp.xml
+#    - store_artifacts:
+#        path: /tmp/grpc_server_gcp.logs
+#        destination: grpc_server_gcp.logs
+#    - store_artifacts:
+#        path: /tmp/collector_gcp.logs
+#        destination: collector_gcp.logs
+#    - store_artifacts:
+#        path: /tmp/output_cpu_gcp.prof
+#        destination: output_cpu_gcp.prof
+#    - *teardownGCP
 
     - run:
         name: Integration tests
