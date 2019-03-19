@@ -171,11 +171,18 @@ void SysdigService::Run(const std::atomic<CollectorService::ControlValue>& contr
     sinsp_evt* evt = GetNext();
     if (!evt) continue;
     //CLOG(INFO) << "SysdigService::Run: event type: " << EventNames::GetInstance().GetEventName(evt->get_type());
-    auto& event_name = EventNames::GetInstance().GetEventName(evt->get_type());
+    auto event_name = EventNames::GetInstance().GetEventName(evt->get_type());
+
+    if (evt->get_type() == PPME_GENERIC_E || evt->get_type() == PPME_GENERIC_X) {
+      sinsp_evt_param *parinfo = evt->get_param(0);
+      uint16_t id = *(uint16_t *)parinfo->m_val;
+      event_name = std::string(scap_get_syscall_info_table()[id].name) + "+";
+    }
+
     event_map[event_name]++;
     if (std::chrono::steady_clock::now() - last_print_event_map >= std::chrono::seconds(30)) {
       last_print_event_map = std::chrono::steady_clock::now();
-      CLOG(INFO) << "Events in the last 30 seconds -- begin \n\n";
+      CLOG(INFO) << "Event Map Update -- begin \n\n";
       for (auto& kv : event_map) {
         CLOG(INFO) << "syscall event: " << kv.first << " : " << kv.second;
       }
