@@ -665,7 +665,7 @@ jobs:
           fi
           gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_COLLECTOR}"
           gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_KERNEL_MODULES}"
-          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "cd /home/circleci/collector/.circleci && bash run-integration-tests ${COLLECTOR_TAG}"
+          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "cd /home/circleci/collector/.circleci && bash run-integration-tests ${COLLECTOR_TAG}" || true
           gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/collector/integration-test-report.xml" /tmp/integration-test-report-gcp.xml
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp /tmp/integration-test-report-gcp.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
           gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs" /tmp/grpc_server_gcp.logs
