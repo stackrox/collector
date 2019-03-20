@@ -28,6 +28,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <cstdint>
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <chrono>
 
@@ -67,7 +68,10 @@ class LogMessage {
       ++basename;
     }
     const char* lvlName = GetLogLevelName(level_);
-    std::cerr << GetGlobalLogPrefix() << "(" << lvlName << "|" << basename << ":" << line_ << ") " << buf_.str() << std::endl;
+    auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    auto nowTm = gmtime(&now);
+    auto nowStr = std::put_time(nowTm, "%Y-%m-%d %H:%M:%S");
+    std::cerr << GetGlobalLogPrefix() << "(" << nowStr << "|" << lvlName << "|" << basename << ":" << line_ << ") " << buf_.str() << std::endl;
     if (level_ == LogLevel::FATAL) {
       exit(1);
     }
