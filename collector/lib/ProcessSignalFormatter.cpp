@@ -78,6 +78,7 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* eve
     CLOG(INFO) << "Dropping process event: " << ProcessDetails(event);
     return nullptr;
   }
+  CLOG(DEBUG) << "Formatting process event: " << ProcessDetails(event);
 
   ProcessSignal* process_signal = CreateProcessSignal(event);
   if (!process_signal) return nullptr;
