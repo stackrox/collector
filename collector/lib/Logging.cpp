@@ -74,17 +74,17 @@ bool CheckLogLevel(LogLevel level) {
 const char* GetLogLevelName(LogLevel level) {
   switch (level) {
   case LogLevel::TRACE:
-    return "TRACE";
+    return "T";
   case LogLevel::DEBUG:
-    return "DEBUG";
+    return "D";
   case LogLevel::INFO:
-    return "INFO";
+    return "I";
   case LogLevel::WARNING:
-    return "WARNING";
+    return "W";
   case LogLevel::ERROR:
-    return "ERROR";
+    return "E";
   case LogLevel::FATAL:
-    return "FATAL";
+    return "F";
   default:
     return "UNKNOWN";
   };
