@@ -2,3 +2,12 @@
 # Format:
 # <kernel-version> [<module-version>]
 # If <module-version> is omitted, this blacklist entry applies to all module versions.
+4.14.94-11636.0.0-cos
+4.14.94-11647.18.0-cos
+4.14.94-11647.29.0-cos
+4.14.94-11647.35.0-cos
+4.14.94-11647.46.0-cos
+4.14.94-11647.64.0-cos
+4.14.98-11758.0.0-cos
+4.14.99-11800.0.0-cos
+4.14.102-11836.0.0-cos
