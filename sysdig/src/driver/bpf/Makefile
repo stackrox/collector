@@ -14,6 +14,10 @@ KERNELDIR ?= /lib/modules/$(shell uname -r)/build
 
 # DEBUG = -DBPF_DEBUG
 
+ifeq ($(shell grep -sq "^\s*struct\s\+audit_task_info\s\+\*audit;\s*$$" $(KERNELDIR)/include/linux/sched.h ; echo $$? ), 0)
+	KBUILD_CPPFLAGS+= -DAUDIT_TASK_INFO
+endif
+
 all:
 	$(MAKE) -C $(KERNELDIR) M=$$PWD
 
