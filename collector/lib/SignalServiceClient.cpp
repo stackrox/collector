@@ -88,8 +88,7 @@ SignalHandler::Result SignalServiceClient::PushSignals(const SignalStreamMessage
 
   if (first_write_) {
     first_write_ = false;
-    CLOG(INFO) << "Existing process lookup disabled";
-    //return SignalHandler::NEEDS_REFRESH;
+    return SignalHandler::NEEDS_REFRESH;
   }
 
   if (!writer_->Write(msg)) {

@@ -12,6 +12,9 @@ or GPL2.txt for full copies of the license.
 #include "../ppm_flag_helpers.h"
 
 #include <linux/tty.h>
+#ifdef AUDIT_TASK_INFO
+#include <linux/audit.h>
+#endif
 
 #define FILLER_RAW(x)							\
 static __always_inline int __bpf_##x(struct filler_data *data);		\
@@ -1934,7 +1937,7 @@ FILLER(proc_startupdate_3, true)
 		 * execve-only parameters
 		 */
 		long env_len = 0;
-		kuid_t loginuid;
+		kuid_t loginuid = INVALID_UID;
 		int tty;
 
 		/*
@@ -2003,7 +2006,14 @@ FILLER(proc_startupdate_3, true)
 		 * loginuid
 		 */
 		/* TODO: implement user namespace support */
+#ifdef AUDIT_TASK_INFO
+                struct audit_task_info *audit = _READ(task->audit);
+                if (audit != NULL) {
+		        loginuid = _READ(audit->loginuid);
+                }
+#else
 		loginuid = _READ(task->loginuid);
+#endif
 		res = bpf_val_to_ring_type(data, loginuid.val, PT_INT32);
 		if (res != PPM_SUCCESS)
 			return res;

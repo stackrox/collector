@@ -132,6 +132,11 @@ jobs:
     - init
 
     - run:
+        name: Install patch utility
+        command: |
+          sudo apt-get install patch
+
+    - run:
         name: Prepare source
         command: |
           mkdir -p ~/kobuild-tmp/versions-src
@@ -198,10 +203,27 @@ jobs:
     - restore_cache:
         name: Restore Kernel module build cache
         keys:
-          - kernel-module-cache-v2-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
-          - kernel-module-cache-v2-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
-          - kernel-module-cache-v2-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
-          - kernel-module-cache-v2-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-
+          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
+          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
+          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-
+
+    - run:
+        name: Unpack module sources
+        command: |
+          mkdir -p "${WORKSPACE_ROOT}/ko-build"
+          cd "${WORKSPACE_ROOT}/ko-build"
+
+          echo >build-tasks
+          mkdir build-output
+
+          for i in ~/kobuild-tmp/versions-src/*.tgz; do
+            filename="$(basename "$i")"
+            version="${filename%.tgz}"
+            mkdir -p "module-versions/${version}"
+            tar -C "module-versions/${version}" -xvzf "$i"
+            mkdir -p "build-output/${MODULE_VERSION}"
+          done
 
     - run:
         name: Copy cached modules to build output
@@ -224,17 +246,13 @@ jobs:
             || true
 
     - run:
-        name: Unpack module sources
+        name: Patch module sources
         command: |
-          mkdir -p "${WORKSPACE_ROOT}/ko-build"
-          cd "${WORKSPACE_ROOT}/ko-build"
-
-          echo >build-tasks
-          for i in ~/kobuild-tmp/versions-src/*.tgz; do
-            filename="$(basename "$i")"
-            version="${filename%.tgz}"
-            mkdir -p "module-versions/${version}"
-            tar -C "module-versions/${version}" -xvzf "$i"
+          cd "${WORKSPACE_ROOT}/ko-build/module-versions"
+          for version in *; do
+            [[ -f "${SOURCE_ROOT}/kernel-modules/patches/${version}.patch" ]] || continue
+            echo "Applying patch for module version ${version} ..."
+            patch -p1 -d "$version" <"${SOURCE_ROOT}/kernel-modules/patches/${version}.patch"
           done
 
     - run:
@@ -563,7 +581,7 @@ jobs:
 
     - save_cache:
         name: Saving Kernel module build cache
-        key: kernel-module-cache-v2-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+        key: kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
         paths:
           - /tmp/cache/
 
@@ -639,20 +657,30 @@ jobs:
           if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
             IMAGE_COLLECTOR="stackrox/collector:${COLLECTOR_VERSION}"
             IMAGE_KERNEL_MODULES="stackrox/kernel-modules:${MODULE_VERSION}"
+            COLLECTOR_TAG="${COLLECTOR_VERSION}"
           else
             IMAGE_COLLECTOR="stackrox/collector:snapshot-${COLLECTOR_VERSION}"
             IMAGE_KERNEL_MODULES="stackrox/kernel-modules:snapshot-${COLLECTOR_VERSION}"
+            COLLECTOR_TAG="snapshot-${COLLECTOR_VERSION}"
           fi
           gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_COLLECTOR}"
           gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_KERNEL_MODULES}"
-          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "cd /home/circleci/collector/.circleci && bash run-integration-tests ${COLLECTOR_VERSION}"
+          if gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "cd /home/circleci/collector/.circleci && bash run-integration-tests ${COLLECTOR_TAG}" ; then
+            RESULT=0
+          else
+            RESULT=1
+          fi
           gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/collector/integration-test-report.xml" /tmp/integration-test-report-gcp.xml
+          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp /tmp/integration-test-report-gcp.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
           gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs" /tmp/grpc_server_gcp.logs || true
           gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/collector.logs" /tmp/collector_gcp.logs || true
           gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/tmp/output_cpu.prof" /tmp/output_cpu_gcp.prof
+          exit ${RESULT}
     - store_artifacts:
         path: /tmp/integration-test-report-gcp.xml
         destination: integration-test-report-gcp.xml
+    - store_test_results:
+        path: /tmp/integration-test-report-gcp.xml
     - store_artifacts:
         path: /tmp/grpc_server_gcp.logs
         destination: grpc_server_gcp.logs
@@ -675,7 +703,13 @@ jobs:
           sudo curl -L "https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
           make integration-tests integration-test-report
+          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
+    - store_test_results:
+        path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
+    - store_artifacts:
+        path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
+        destination: integration-test-report.xml
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/collector.logs
         destination: collector_logs

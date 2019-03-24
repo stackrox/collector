@@ -44,10 +44,20 @@ or GPL2.txt for full copies of the license.
  * might_sleep(), so if present we use the one defined by them
  */
 #ifdef access_ok_noprefault
-#define ppm_access_ok access_ok_noprefault
+#define ppm_access_ok_raw access_ok_noprefault
 #else
-#define ppm_access_ok access_ok
+#define ppm_access_ok_raw access_ok
 #endif
+
+/* Begin StackRox patch */
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+#define ppm_access_ok(type, addr, size) ppm_access_ok_raw(addr, size)
+#else
+#define ppm_access_ok(type, addr, size) ppm_access_ok_raw(type, addr, size)
+#endif
+
+/* End StackRox patch */
 
 extern bool g_tracers_enabled;
 
