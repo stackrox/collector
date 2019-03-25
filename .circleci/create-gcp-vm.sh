@@ -47,9 +47,11 @@ tar cvfz collector.tar.gz collector/
 cd ..
 mv s2/collector.tar.gz .
 rm -rf s2
+TOOLBOX=toolbox
+
 gcloud compute scp collector.tar.gz "collector-nb-${CIRCLE_BUILD_NUM}":
-gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "(which docker || export DEBIAN_FRONTEND=noninteractive ; sudo apt update -y && sudo apt install -y make cmake g++ gcc apt-transport-https ca-certificates curl gnupg-agent wget software-properties-common && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - && sudo add-apt-repository 'deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable' && sudo apt update -y && DEBIAN_FRONTEND=noninteractive sudo apt install -y docker-ce && sudo adduser $(id -un) docker)"
+gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "(which docker || export DEBIAN_FRONTEND=noninteractive ; sudo $TOOLBOX apt update -y && sudo $TOOLBOX apt install -y make cmake g++ gcc apt-transport-https ca-certificates curl gnupg-agent wget software-properties-common && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo $TOOLBOX apt-key add - && sudo $TOOLBOX add-apt-repository 'deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable' && sudo $TOOLBOX apt update -y && DEBIAN_FRONTEND=noninteractive sudo $TOOLBOX apt install -y docker-ce && sudo $TOOLBOX adduser $(id -un) docker)"
 gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker login -u '$DOCKER_USER' -p '$DOCKER_PASS'"
-gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "tar xvpfz collector.tar.gz && rm collector.tar.gz"
+gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "$TOOLBOX tar xvpfz collector.tar.gz && rm collector.tar.gz"
 echo "A008"
 exit 0
