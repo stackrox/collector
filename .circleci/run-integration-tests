@@ -3,17 +3,17 @@ shift
 
 source make-golang-dist
 cat >/tmp/roottodo.$$ <<EOF
-cd /usr/local
+cd /tmp
 mkdir tmpdir
 cd tmpdir
 tar xfz /home/circleci/.srbcache/dist/golang/go1.11.5.linux-amd64.tar.gz
 chown -R root:root go && mv go .. && cd .. && rm -rf tmpdir
-mkdir /go -m 777
+mkdir /tmp/go -m 777
 EOF
 sudo bash -c "bash /tmp/roottodo.$$ && rm /tmp/roottodo.$$"
 
 set -e
-export GOPATH=/go
+export GOPATH=/tmp/go
 export PATH="/usr/local/go/bin:$GOPATH/bin:/usr/local/bin:$PATH"
 cd
 DN=$GOPATH/src/github.com/stackrox && mkdir -p $DN && mv collector $DN
