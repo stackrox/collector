@@ -7,14 +7,14 @@ cd /tmp
 mkdir tmpdir
 cd tmpdir
 tar xfz /home/circleci/.srbcache/dist/golang/go1.11.5.linux-amd64.tar.gz
-chown -R root:root go && mv go .. && cd .. && rm -rf tmpdir
-mkdir /tmp/go -m 777
+chown -R root:root go && mv go ../gosys && cd .. && rm -rf tmpdir
+mkdir -m 777 /tmp/go
 EOF
 sudo bash -c "bash /tmp/roottodo.$$ && rm /tmp/roottodo.$$"
 
 set -e
 export GOPATH=/tmp/go
-export PATH="/usr/local/go/bin:$GOPATH/bin:/usr/local/bin:$PATH"
+export PATH="/tmp/gosys/bin:$GOPATH/bin:/usr/local/bin:$PATH"
 cd
 DN=$GOPATH/src/github.com/stackrox && mkdir -p $DN && mv collector $DN
 cd $DN/collector/collector
