@@ -48,10 +48,11 @@ cd ..
 mv s2/collector.tar.gz .
 rm -rf s2
 TOOLBOX=toolbox
+MACHINENAME="collector-nb-${CIRCLE_BUILD_NUM}"
 
 gcloud compute scp collector.tar.gz "collector-nb-${CIRCLE_BUILD_NUM}":
-gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "set -x ; export DEBIAN_FRONTEND=noninteractive ; sudo $TOOLBOX apt update -y && sudo $TOOLBOX apt install -y make cmake g++ gcc apt-transport-https ca-certificates curl gnupg-agent wget software-properties-common ca-certificates procps"
-gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "set -x ; docker login -u '$DOCKER_USER' -p '$DOCKER_PASS'"
-gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "set -x ; $TOOLBOX tar xvpfz collector.tar.gz && rm collector.tar.gz"
+gcloud compute ssh "$MACHINENAME" --command "set -x ; export DEBIAN_FRONTEND=noninteractive ; sudo $TOOLBOX apt update -y && sudo $TOOLBOX apt install -y make cmake g++ gcc apt-transport-https ca-certificates curl gnupg-agent wget software-properties-common ca-certificates procps &&
+set -x ; docker login -u '$DOCKER_USER' -p '$DOCKER_PASS' &&
+set -x ; $TOOLBOX tar xvpfz collector.tar.gz && rm collector.tar.gz"
 echo "A008"
 exit 0
