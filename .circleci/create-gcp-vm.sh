@@ -16,8 +16,8 @@ for zone in us-central1-a us-central1-b ; do
     echo "Trying zone $zone"
     gcloud config set compute/zone "${zone}"
     if gcloud compute instances create \
-      --image-family ubuntu-1804-lts \
-      --image-project ubuntu-os-cloud \
+      --image-family cos-stable \
+      --image-project cos-cloud \
       --service-account=circleci-collector@stackrox-ci.iam.gserviceaccount.com \
         "collector-nb-${CIRCLE_BUILD_NUM}"
     then
