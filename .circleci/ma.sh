@@ -55,7 +55,7 @@ buildSourceTarball() {
 # to $1 : destination instancename for GCP.
 scpSourceTarballToGcpHost() {
   GCP_VM_NAME="$1"
-  gcloud compute scp collector.tar.gz "$GCP_VM_NAME"
+  gcloud compute scp collector.tar.gz "$GCP_VM_NAME":
 }
 
 # TODO: fix function name
