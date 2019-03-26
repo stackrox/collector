@@ -72,6 +72,15 @@ jobs:
     - checkout:
         path: ~/workspace/go/src/github.com/stackrox/collector
 
+    - add_ssh_keys:
+        fingerprints:
+        - "32:e2:6d:de:c3:bb:b8:a4:62:89:a1:df:7a:30:37:f2"
+
+    - run:
+        name: "Pull git submodule"
+        command: |
+          git -C ~/workspace/go/src/github.com/stackrox/collector submodule update --init
+
     - run:
         name: Set up shared environment
         command: |
@@ -82,6 +91,9 @@ jobs:
             export PATH="${PATH}:${GOPATH}/bin:${WORKSPACE_ROOT}/bin"
           EOF
 
+    - run:
+        name: Set COLLECTOR_VERSION
+        command: |
           COLLECTOR_VERSION="$(make -s -C ~/workspace/go/src/github.com/stackrox/collector/collector tag)"
           cat >>~/workspace/shared-env \<<-EOF
             export COLLECTOR_VERSION="$COLLECTOR_VERSION"
@@ -177,8 +189,9 @@ jobs:
             collector_ref="$line"
             echo "Preparing module source archive for collector version ${collector_ref}"
 
-            mkdir -p /tmp/old-sysdig
-            git --work-tree /tmp/old-sysdig checkout "${collector_ref}" -- sysdig/src
+            git clone git@github.com:stackrox/collector /tmp/old-sysdig
+            git -C /tmp/old-sysdig checkout "${collector_ref}"
+            git -C /tmp/old-sysdig submodule update --init
             SYSDIG_DIR="/tmp/old-sysdig/sysdig/src" \
                 SCRATCH_DIR="${HOME}/scratch" \
                 OUTPUT_DIR="${HOME}/kobuild-tmp/versions-src" \
@@ -200,13 +213,13 @@ jobs:
           mkdir -p /tmp/cache
           echo "$MODULE_VERSION" >/tmp/cache/kernel-modules-version.txt
 
-    - restore_cache:
-        name: Restore Kernel module build cache
-        keys:
-          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
-          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
-          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
-          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-
+#    - restore_cache:
+#        name: Restore Kernel module build cache
+#        keys:
+#          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+#          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
+#          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
+#          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-
 
     - run:
         name: Unpack module sources
@@ -579,11 +592,11 @@ jobs:
             "/tmp/cache/kernel-modules/${MODULE_VERSION}/"
           echo "$MODULE_VERSION" >/tmp/cache/kernel-modules-version.txt
 
-    - save_cache:
-        name: Saving Kernel module build cache
-        key: kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
-        paths:
-          - /tmp/cache/
+#    - save_cache:
+#        name: Saving Kernel module build cache
+#        key: kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+#        paths:
+#          - /tmp/cache/
 
     - run:
         name: Adding Kernel module version file
@@ -798,10 +811,10 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - upload-modules:
-        requires:
-          - kernels
-        filters:
-          tags:
-            only: /.*/
-
+#    - upload-modules:
+#        requires:
+#          - kernels
+#        filters:
+#          tags:
+#            only: /.*/
+#
