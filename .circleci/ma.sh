@@ -1,5 +1,8 @@
 createGCPVMUbuntu() {
+  GCP_VM_NAME="$1"
+  shift
   SOURCE_ROOT="$1"
+  shift
 
   REGION=us-central1
 
@@ -12,12 +15,12 @@ createGCPVMUbuntu() {
         --image-family ubuntu-1804-lts \
         --image-project ubuntu-os-cloud \
         --service-account=circleci-collector@stackrox-ci.iam.gserviceaccount.com \
-          "collector-nb-${CIRCLE_BUILD_NUM}"
+          "$GCP_VM_NAME"
       then
           success=true
           break
       else
-          gcloud compute instances delete "collector-nb-${CIRCLE_BUILD_NUM}"
+          gcloud compute instances delete "$GCP_VM_NAME"
       fi
   done
 
@@ -28,7 +31,7 @@ createGCPVMUbuntu() {
   echo "A000"
   sleep 30  # give it time to boot
   buildSourceTarball "$SOURCE_ROOT"
-  scpSourceTarballToGcpHost "collector-nb-${CIRCLE_BUILD_NUM}":
+  scpSourceTarballToGcpHost "$GCP_VM_NAME"
   return 0
 }
 
@@ -58,7 +61,7 @@ scpSourceTarballToGcpHost() {
 # TODO: fix function name
 installVariousAptDepsViaGCPSSH() {
   GCP_VM_NAME="$1"
-  gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "(which docker || export DEBIAN_FRONTEND=noninteractive ; sudo apt update -y && sudo apt install -y make cmake g++ gcc apt-transport-https ca-certificates curl gnupg-agent wget software-properties-common && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - && sudo add-apt-repository 'deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable' && sudo apt update -y && DEBIAN_FRONTEND=noninteractive sudo apt install -y docker-ce && sudo adduser $(id -un) docker)"
+  gcloud compute ssh "$GCP_VM_NAME" --command "(which docker || export DEBIAN_FRONTEND=noninteractive ; sudo apt update -y && sudo apt install -y make cmake g++ gcc apt-transport-https ca-certificates curl gnupg-agent wget software-properties-common && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - && sudo add-apt-repository 'deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable' && sudo apt update -y && DEBIAN_FRONTEND=noninteractive sudo apt install -y docker-ce && sudo adduser $(id -un) docker)"
 }
 # parameters GCPVMName dockerUsername dockerPassword
 loginDockerViaGCPSSH() {
