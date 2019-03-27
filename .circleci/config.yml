@@ -188,11 +188,12 @@ jobs:
           GH_FINGERPRINT="$(echo ${GH_KEY} | ssh-keygen -lf - | cut -d" " -f2)"
           # Verify from: https://help.github.com/en/articles/githubs-ssh-key-fingerprints
           GH_FINGERPRINT_VERIFY="SHA256:Thbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8"
-          [[ "${GH_FINGERPRINT}" != "${GH_FINGERPRINT_VERIFY}" ]] || {
+          [[ "${GH_FINGERPRINT}" == "${GH_FINGERPRINT_VERIFY}" ]] || {
             echo >&2 "Unexpected github fingerprint: ${GH_FINGERPRINT} != ${GH_FINGERPRINT_VERIFY}"
             exit 1
           }
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          mkdir -p ~/.ssh
+          echo "${GH_KEY}" > ~/.ssh/known_hosts
 
           while IFS='' read -r line || [[ -n "$line" ]]; do
             [[ -n "$line" ]] || continue
