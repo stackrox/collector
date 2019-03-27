@@ -232,13 +232,13 @@ jobs:
           mkdir -p /tmp/cache
           echo "$MODULE_VERSION" >/tmp/cache/kernel-modules-version.txt
 
-#    - restore_cache:
-#        name: Restore Kernel module build cache
-#        keys:
-#          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
-#          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
-#          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
-#          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-
+    - restore_cache:
+        name: Restore Kernel module build cache
+        keys:
+          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
+          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
+          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-
 
     - run:
         name: Unpack module sources
@@ -371,7 +371,7 @@ jobs:
 
   kernels:
     machine: true
-    parallelism: 16
+    parallelism: 8
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
@@ -611,11 +611,11 @@ jobs:
             "/tmp/cache/kernel-modules/${MODULE_VERSION}/"
           echo "$MODULE_VERSION" >/tmp/cache/kernel-modules-version.txt
 
-#    - save_cache:
-#        name: Saving Kernel module build cache
-#        key: kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
-#        paths:
-#          - /tmp/cache/
+    - save_cache:
+        name: Saving Kernel module build cache
+        key: kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+        paths:
+          - /tmp/cache/
 
     - run:
         name: Adding Kernel module version file
@@ -830,10 +830,10 @@ workflows:
         filters:
           tags:
             only: /.*/
-#    - upload-modules:
-#        requires:
-#          - kernels
-#        filters:
-#          tags:
-#            only: /.*/
-#
+    - upload-modules:
+        requires:
+          - kernels
+        filters:
+          tags:
+            only: /.*/
+
