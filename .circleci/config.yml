@@ -187,9 +187,9 @@ jobs:
           GH_KEY="$(ssh-keyscan github.com 2> /dev/null)"
           GH_FINGERPRINT="$(echo ${GH_KEY} | ssh-keygen -lf - | cut -d" " -f2)"
           # Verify from: https://help.github.com/en/articles/githubs-ssh-key-fingerprints
-          GH_FINGERPRINT_VERIFY="SHA256:Thbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8"
+          GH_FINGERPRINT_VERIFY="SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8"
           [[ "${GH_FINGERPRINT}" == "${GH_FINGERPRINT_VERIFY}" ]] || {
-            echo >&2 "Unexpected github fingerprint: ${GH_FINGERPRINT} != ${GH_FINGERPRINT_VERIFY}"
+            echo >&2 "Unexpected SSH key fingerprint for github.com : ${GH_FINGERPRINT} != ${GH_FINGERPRINT_VERIFY}"
             exit 1
           }
           mkdir -p ~/.ssh
