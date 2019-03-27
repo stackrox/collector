@@ -174,6 +174,10 @@ jobs:
           EOF
           echo "Building modules for module version $version"
 
+    - add_ssh_keys:
+        fingerprints:
+        - "32:e2:6d:de:c3:bb:b8:a4:62:89:a1:df:7a:30:37:f2"
+
     - run:
         name: Prepare legacy sources
         command: |
