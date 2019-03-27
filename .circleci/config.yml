@@ -195,22 +195,29 @@ jobs:
           mkdir -p ~/.ssh
           echo "${GH_KEY}" > ~/.ssh/known_hosts
 
+          LEGACY_DIR="/tmp/old-sysdig"
+          SYSDIG_REL_DIR="sysdig/src"
+          git clone git@github.com:stackrox/collector "${LEGACY_DIR}"
+
           while IFS='' read -r line || [[ -n "$line" ]]; do
             [[ -n "$line" ]] || continue
 
             collector_ref="$line"
             echo "Preparing module source archive for collector version ${collector_ref}"
 
-            git clone git@github.com:stackrox/collector /tmp/old-sysdig
-            git -C /tmp/old-sysdig checkout "${collector_ref}"
-            git -C /tmp/old-sysdig submodule update --init
-            SYSDIG_DIR="/tmp/old-sysdig/sysdig/src" \
+            git -C "${LEGACY_DIR}" submodule deinit "${SYSDIG_REL_DIR}"
+            git -C "${LEGACY_DIR}" clean -xdf
+            git -C "${LEGACY_DIR}" checkout "${collector_ref}"
+            git -C "${LEGACY_DIR}" submodule update --init
+
+            SYSDIG_DIR="${LEGACY_DIR}/${SYSDIG_REL_DIR}" \
                 SCRATCH_DIR="${HOME}/scratch" \
                 OUTPUT_DIR="${HOME}/kobuild-tmp/versions-src" \
               ./kernel-modules/build/prepare-src
 
-            rm -rf /tmp/old-sysdig
           done < <(grep -v '^#' <RELEASED_VERSIONS | awk '{print $1}' | sort | uniq)
+
+          rm -rf "${LEGACY_DIR}"
 
           for i in "${HOME}/kobuild-tmp/versions-src"/*.tgz; do
             filename="$(basename "$i")"
@@ -364,7 +371,7 @@ jobs:
 
   kernels:
     machine: true
-    parallelism: 8
+    parallelism: 16
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
