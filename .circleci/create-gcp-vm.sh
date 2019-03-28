@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 
 set -e
-GDOCKER_USER="$1"
+local GDOCKER_USER="$1"
 shift
-GDOCKER_PASS="$1"
+local GDOCKER_PASS="$1"
 shift
-GSOURCE_ROOT="$1"
+local GSOURCE_ROOT="$1"
 shift
 
-source "$GSOURCE_ROOT/.circleci/ma.sh"
-source "$GSOURCE_ROOT/.circleci/envbuilder.sh"
+BASHMODROOT="$GSOURCE_ROOT/.circleci" # will change later
+pushd "$BASHMODROOT"
+source moba.sh
+popd
 
-runCircleGCPUbuntuTestViaSSH
+runCircleGCPUbuntuTestViaSSH "$GDOCKER_USER" "$GDOCKER_PASS" "$GDOCKER_ROOT"
 
 echo "A008"
 exit 0

@@ -6,6 +6,7 @@ createGCPVMUbuntu() {
 
   local REGION=us-central1
 
+  local zone
   #zones=$(gcloud compute zones list --filter="region=$REGION" | grep UP | cut -f1 -d' ')
   success=false
   for zone in us-central1-a us-central1-b ; do
@@ -37,7 +38,7 @@ createGCPVMUbuntu() {
 
 # builds collector.tar.gz from $1 git clone (not working dir!)
 buildSourceTarball() {
-  gitdir="$1"
+  local gitdir="$1"
   cd /tmp
   git clone $gitdir shipdir
   rm -rf shipdir/.git
@@ -54,7 +55,7 @@ buildSourceTarball() {
 # assumes file in current working dir collector.tar.gz should be copied
 # to $1 : destination instancename for GCP.
 scpSourceTarballToGcpHost() {
-  GCP_VM_NAME="$1"
+  local GCP_VM_NAME="$1"
   gcloud compute scp collector.tar.gz "$GCP_VM_NAME":
 }
 
