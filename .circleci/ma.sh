@@ -39,7 +39,7 @@ createGCPVMUbuntu() {
 buildSourceTarball() {
   gitdir="$1"
   cd /tmp
-  git clone $gitdir shipdir
+  git clone --depth 1 $gitdir shipdir
   rm -rf shipdir/.git
   echo $CIRCLE_BUILD_NUM > shipdir/buildnum.txt
   mkdir s2
