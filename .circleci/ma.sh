@@ -1,10 +1,10 @@
 createGCPVMUbuntu() {
-  GCP_VM_NAME="$1"
+  local GCP_VM_NAME="$1"
   shift
-  SOURCE_ROOT="$1"
+  local SOURCE_ROOT="$1"
   shift
 
-  REGION=us-central1
+  local REGION=us-central1
 
   #zones=$(gcloud compute zones list --filter="region=$REGION" | grep UP | cut -f1 -d' ')
   success=false
@@ -60,22 +60,22 @@ scpSourceTarballToGcpHost() {
 
 # TODO: fix function name
 installVariousAptDepsViaGCPSSH() {
-  GCP_VM_NAME="$1"
+  local GCP_VM_NAME="$1"
   gcloud compute ssh "$GCP_VM_NAME" --command "(which docker || export DEBIAN_FRONTEND=noninteractive ; sudo apt update -y && sudo apt install -y make cmake g++ gcc apt-transport-https ca-certificates curl gnupg-agent wget software-properties-common && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - && sudo add-apt-repository 'deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable' && sudo apt update -y && DEBIAN_FRONTEND=noninteractive sudo apt install -y docker-ce && sudo adduser $(id -un) docker)"
 }
 # parameters GCPVMName dockerUsername dockerPassword
 loginDockerViaGCPSSH() {
-  GCP_VM_NAME="$1"
+  local GCP_VM_NAME="$1"
   shift
-  DOCKER_USER="$1"
+  local DOCKER_USER="$1"
   shift
-  DOCKER_PASS="$1"
+  local DOCKER_PASS="$1"
   shift
   gcloud compute ssh "$GCP_VM_NAME" --command "docker login -u '$DOCKER_USER' -p '$DOCKER_PASS'"
 }
 
 extractSourceTarballViaGCPSSH() {
-  GCP_VM_NAME="$1"
+  local GCP_VM_NAME="$1"
   gcloud compute ssh "$GCP_VM_NAME" --command "tar xvpfz collector.tar.gz && rm collector.tar.gz"
 }
 
