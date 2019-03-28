@@ -9,7 +9,7 @@ main() {
   local GSOURCE_ROOT="$1"
   shift
 
-  BASHMODROOT="$GSOURCE_ROOT/.circleci" # will change later
+  local BASHMODROOT="$GSOURCE_ROOT/.circleci" # will change later
   pushd "$BASHMODROOT"
   source moba.sh
   popd
@@ -19,4 +19,7 @@ main() {
   echo "A008"
   return 0
 }
-main $@
+for i in "$@" ; do
+  echo got parm $i
+done
+main "$@"

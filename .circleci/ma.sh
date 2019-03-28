@@ -3,6 +3,7 @@ createGCPVMUbuntu() {
   shift
   local SOURCE_ROOT="$1"
   shift
+  [ -z "$SOURCE_ROOT" ] && echo "error: missing parameter SOURCE_ROOT dir" && return 1
 
   local REGION=us-central1
 
@@ -39,6 +40,7 @@ createGCPVMUbuntu() {
 # builds collector.tar.gz from $1 git clone (not working dir!)
 buildSourceTarball() {
   local gitdir="$1"
+  [ -z "$gitdir" ] && echo "error: missing parameter git source dir" && return 1
   cd /tmp
   git clone $gitdir shipdir
   rm -rf shipdir/.git
