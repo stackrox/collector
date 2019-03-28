@@ -65,7 +65,7 @@ function download_kernel_object() {
     local FILENAME_GZ="$OBJECT_PATH.gz"
 
     # Attempt to download kernel object
-    echo  "Attempting download: ${URL}.gz"
+    echo  "Attempting download: ${URL}.gz" >&2
     local HTTP_CODE=$(curl -w "%{http_code}" -L -s -o "$FILENAME_GZ" "${URL}.gz" 2>/dev/null)
 
     if [ "$HTTP_CODE" != "200" ] ; then
