@@ -10,7 +10,7 @@ FROM debian:stretch-slim
 MAINTAINER StackRox <support@stackrox.com>
 
 # Add kernel modules
-COPY --from=kernel_modules /kernel-modules /kernel-modules
+#COPY --from=kernel_modules /kernel-modules /kernel-modules
 
 # SYSDIG_HOST_ROOT is required by the sysdig kernel module; used as a prefix to
 # paths like /dev/sysdig0, /proc, and /boot. Make sure this matches the volume
