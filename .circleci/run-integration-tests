@@ -1,6 +1,3 @@
-local GCOLLECTOR_TAG="$1"
-shift
-
 run-integration-tests() {
   export COLLECTOR_TAG="$1"
   shift
@@ -36,6 +33,3 @@ run-integration-tests() {
   return $RESULT
 }
 
-run-integration-tests "$GCOLLECTOR_TAG"
-local RESULT = $?
-exit $RESULT
