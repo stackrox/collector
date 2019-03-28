@@ -697,7 +697,6 @@ jobs:
           fi
           gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_COLLECTOR}"
           gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_KERNEL_MODULES}"
-          local RESULT
           if gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "cd /home/circleci/collector/.circleci && source run-integration-tests && run-integration-tests ${COLLECTOR_TAG}" ; then
             RESULT=0
           else
