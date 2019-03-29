@@ -20,6 +20,8 @@ runCircleGCPUbuntuTestViaSSH() {
   shift
   local GSOURCE_ROOT="$1"
   shift
+  local GSOURCE_ROOT="$1"
+  shift
   local CIRCLE_BUILD_VM_NAME="collector-nb-${CIRCLE_BUILD_NUM}"
   runGCPUbuntuTestViaSSH "$CIRCLE_BUILD_VM_NAME" "$GDOCKER_USER" "$GDOCKER_PASS" "$GSOURCE_ROOT"
 }
