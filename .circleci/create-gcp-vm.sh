@@ -19,7 +19,3 @@ main() {
   echo "A008"
   return 0
 }
-for i in "$@" ; do
-  echo got parm $i
-done
-main "$@"

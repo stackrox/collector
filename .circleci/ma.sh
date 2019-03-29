@@ -3,6 +3,7 @@ createGCPVMUbuntu() {
   shift
   local SOURCE_ROOT="$1"
   shift
+  [ -z "$GCP_VM_NAME" ] && echo "error: missing parameter GCP_VM_NAME" && return 1
   [ -z "$SOURCE_ROOT" ] && echo "error: missing parameter SOURCE_ROOT dir" && return 1
 
   local REGION=us-central1
