@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
 
 set -e
-GDOCKER_USER="$1"
-shift
-GDOCKER_PASS="$1"
-shift
-GSOURCE_ROOT="$1"
-shift
+main() {
+  local GDOCKER_USER="$1"
+  shift
+  local GDOCKER_PASS="$1"
+  shift
+  local GSOURCE_ROOT="$1"
+  shift
 
-source "$GSOURCE_ROOT/.circleci/ma.sh"
+  local BASHMODROOT="$GSOURCE_ROOT/.circleci" # will change later
+  pushd "$BASHMODROOT"
+  source moba.sh
+  popd
 
-CIRCLE_BUILD_VM_NAME="collector-nb-${CIRCLE_BUILD_NUM}"
+  runCircleGCPUbuntuTestViaSSH "$GDOCKER_USER" "$GDOCKER_PASS" "$GDOCKER_ROOT" "$GSOURCE_ROOT"
 
-createGCPVMUbuntu "$CIRCLE_BUILD_VM_NAME" "$GSOURCE_ROOT"
-installVariousAptDepsViaGCPSSH "$CIRCLE_BUILD_VM_NAME"
-loginDockerViaGCPSSH "$CIRCLE_BUILD_VM_NAME" "$GDOCKER_USER" "$GDOCKER_PASS"
-extractSourceTarballViaGCPSSH "$CIRCLE_BUILD_VM_NAME"
-
-echo "A008"
-exit 0
+  echo "A008"
+  return 0
+}
