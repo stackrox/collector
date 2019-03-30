@@ -19,7 +19,6 @@ setupGCP: &setupGCP
       gcloud config unset compute/zone
       gcloud config set core/disable_prompts True
       gcloud auth list
-      gsutil ls gs://collector-build-cache/ || echo "ERROR: Could not ls bucket"
 createGCP: &createGCP
   run:
     name: Create GCP VM
@@ -93,12 +92,24 @@ jobs:
           EOF
 
     - run:
-        name: Set COLLECTOR_VERSION
+        name: Set COLLECTOR_VERSION and IMAGE_COLLECTOR
         command: |
           COLLECTOR_VERSION="$(make -s -C ~/workspace/go/src/github.com/stackrox/collector/collector tag)"
+          if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
           cat >>~/workspace/shared-env \<<-EOF
             export COLLECTOR_VERSION="$COLLECTOR_VERSION"
+            export IMAGE_COLLECTOR="stackrox/collector:${COLLECTOR_VERSION}"
+            export IMAGE_KERNEL_MODULES="stackrox/kernel-modules:${MODULE_VERSION}"
+            export COLLECTOR_TAG="${COLLECTOR_VERSION}"
           EOF
+          else
+          cat >>~/workspace/shared-env \<<-EOF
+            export COLLECTOR_VERSION="$COLLECTOR_VERSION"
+            export IMAGE_COLLECTOR="stackrox/collector:snapshot-${COLLECTOR_VERSION}"
+            export IMAGE_KERNEL_MODULES="stackrox/kernel-modules:snapshot-${COLLECTOR_VERSION}"
+            export COLLECTOR_TAG="snapshot-${COLLECTOR_VERSION}"
+          EOF
+          fi
 
     - persist_to_workspace:
         root: ~/workspace
@@ -565,6 +576,7 @@ jobs:
         command: |
           cd "$COLLECTOR_SOURCE_ROOT"
           mkdir -p container/bin
+          mkdir -p /tmp/cmake-build
           docker run \
             -v "$PWD:/src:ro" \
             -v "$PWD/sysdig/src:/usr/local/sysdig:ro" \
@@ -586,6 +598,91 @@ jobs:
         paths:
         - go/src/github.com/stackrox/collector/collector/container/bin
 
+
+  ebpf-integration-test:
+    machine: true
+    working_directory: ~/workspace
+
+    steps:
+    - init
+    - docker-login
+    - gcloud-init
+    - *createGCP
+
+    - run:
+        name: Check remote host GCP kernel version
+        command: |
+          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "uname -r && uname -a"
+
+    - run:
+        name: ubuntu ebpf integration test
+        command: |
+          set -e
+          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_COLLECTOR}"
+          if gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "cd /home/circleci/collector/.circleci && source run-integration-tests && run-integration-tests ${COLLECTOR_TAG}" ; then
+            RESULT=0
+          else
+            RESULT=1
+          fi
+          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/collector/integration-test-report.xml" /tmp/integration-test-report-gcp.xml
+          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp /tmp/integration-test-report-gcp.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
+          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs" /tmp/grpc_server_gcp.logs
+          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/collector.logs" /tmp/collector_gcp.logs
+          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/tmp/output_cpu.prof" /tmp/output_cpu_gcp.prof
+          exit ${RESULT}
+
+    - store_artifacts:
+        path: /tmp/integration-test-report-gcp.xml
+        destination: integration-test-report-gcp.xml
+    - store_test_results:
+        path: /tmp/integration-test-report-gcp.xml
+    - store_artifacts:
+        path: /tmp/grpc_server_gcp.logs
+        destination: grpc_server_gcp.logs
+    - store_artifacts:
+        path: /tmp/collector_gcp.logs
+        destination: collector_gcp.logs
+    - store_artifacts:
+        path: /tmp/output_cpu_gcp.prof
+        destination: output_cpu_gcp.prof
+    - *teardownGCP
+
+  module-integration-test:
+    machine: true
+    working_directory: ~/workspace
+
+    steps:
+    - init
+    - docker-login
+    - gcloud-init
+
+    - run:
+        name: module integration tests
+        command: |
+          cd "$COLLECTOR_SOURCE_ROOT"
+          go get -u github.com/jstemmer/go-junit-report
+          curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+          sudo mv /home/circleci/workspace/go/bin/dep /usr/local/bin/dep
+          sudo curl -L "https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+          make integration-tests integration-test-report
+          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
+
+    - store_test_results:
+        path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
+    - store_artifacts:
+        path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
+        destination: integration-test-report.xml
+    - store_artifacts:
+        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/collector.logs
+        destination: collector_logs
+    - store_artifacts:
+        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs
+        destination: grpc_server_logs
+    - store_artifacts:
+        path: /tmp/output_cpu.prof
+        destination: output_cpu.prof
+
   images:
     machine: true
     environment:
@@ -595,7 +692,6 @@ jobs:
     - init
     - docker-login
     - gcloud-init
-    - *createGCP
 
     - run:
         name: Copying Kernel modules build output
@@ -662,96 +758,12 @@ jobs:
           docker images | grep collector | grep "$COLLECTOR_VERSION"
 
     - run:
-        name: Check remote host GCP kernel version
-        command: |
-          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "uname -r && uname -a"
-    - run:
         name: Push images
         command: |
-          if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
-            echo Pushing release images
-            IMAGE_COLLECTOR="stackrox/collector:${COLLECTOR_VERSION}"
-            IMAGE_KERNEL_MODULES="stackrox/kernel-modules:${MODULE_VERSION}"
-            docker push "${IMAGE_COLLECTOR}"
-            echo "Pushing kernel modules"
-            docker push "${IMAGE_KERNEL_MODULES}"
-          else
-            echo Pushing snapshot images
-            IMAGE_COLLECTOR="stackrox/collector:snapshot-${COLLECTOR_VERSION}"
-            IMAGE_KERNEL_MODULES="stackrox/kernel-modules:snapshot-${COLLECTOR_VERSION}"
-            docker push "${IMAGE_COLLECTOR}"
-            echo "Pushing kernel modules"
-            docker push "${IMAGE_KERNEL_MODULES}"
-          fi
-    - run:
-        name: GCP Integration tests
-        command: |
-          set -e
-          if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
-            IMAGE_COLLECTOR="stackrox/collector:${COLLECTOR_VERSION}"
-            IMAGE_KERNEL_MODULES="stackrox/kernel-modules:${MODULE_VERSION}"
-            COLLECTOR_TAG="${COLLECTOR_VERSION}"
-          else
-            IMAGE_COLLECTOR="stackrox/collector:snapshot-${COLLECTOR_VERSION}"
-            IMAGE_KERNEL_MODULES="stackrox/kernel-modules:snapshot-${COLLECTOR_VERSION}"
-            COLLECTOR_TAG="snapshot-${COLLECTOR_VERSION}"
-          fi
-          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_COLLECTOR}"
-          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_KERNEL_MODULES}"
-          if gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "cd /home/circleci/collector/.circleci && source run-integration-tests && run-integration-tests ${COLLECTOR_TAG}" ; then
-            RESULT=0
-          else
-            RESULT=1
-          fi
-          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/collector/integration-test-report.xml" /tmp/integration-test-report-gcp.xml
-          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp /tmp/integration-test-report-gcp.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
-          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs" /tmp/grpc_server_gcp.logs
-          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/collector.logs" /tmp/collector_gcp.logs
-          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/tmp/output_cpu.prof" /tmp/output_cpu_gcp.prof
-          exit ${RESULT}
-    - store_artifacts:
-        path: /tmp/integration-test-report-gcp.xml
-        destination: integration-test-report-gcp.xml
-    - store_test_results:
-        path: /tmp/integration-test-report-gcp.xml
-    - store_artifacts:
-        path: /tmp/grpc_server_gcp.logs
-        destination: grpc_server_gcp.logs
-    - store_artifacts:
-        path: /tmp/collector_gcp.logs
-        destination: collector_gcp.logs
-    - store_artifacts:
-        path: /tmp/output_cpu_gcp.prof
-        destination: output_cpu_gcp.prof
-    - *teardownGCP
-
-    - run:
-        name: Integration tests
-        command: |
-          cd "$COLLECTOR_SOURCE_ROOT"
-          go get -u github.com/jstemmer/go-junit-report
-          curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-          sudo mv /tmp/dep /usr/local/bin/dep
-          export COLLECTOR_TAG="$COLLECTOR_VERSION"
-          sudo curl -L "https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-          sudo chmod +x /usr/local/bin/docker-compose
-          make integration-tests integration-test-report
-          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
-
-    - store_test_results:
-        path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
-    - store_artifacts:
-        path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
-        destination: integration-test-report.xml
-    - store_artifacts:
-        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/collector.logs
-        destination: collector_logs
-    - store_artifacts:
-        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs
-        destination: grpc_server_logs
-    - store_artifacts:
-        path: /tmp/output_cpu.prof
-        destination: output_cpu.prof
+          echo "Pushing collector image"
+          docker push "${IMAGE_COLLECTOR}"
+          echo "Pushing kernel module image"
+          docker push "${IMAGE_KERNEL_MODULES}"
 
   upload-modules:
     docker:
@@ -824,6 +836,12 @@ workflows:
         filters:
           tags:
             only: /.*/
+    - upload-modules:
+        requires:
+          - kernels
+        filters:
+          tags:
+            only: /.*/
     - images:
         requires:
         - collector
@@ -831,9 +849,15 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - upload-modules:
+    - ebpf-integration-test:
         requires:
-          - kernels
+        - images 
+        filters:
+          tags:
+            only: /.*/
+    - module-integration-test:
+        requires:
+        - images 
         filters:
           tags:
             only: /.*/
