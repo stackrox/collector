@@ -396,7 +396,7 @@ bool ReadContainerConnections(const char* proc_path, std::vector<Connection>* co
 
     FDHandle dirfd = procdir.openat(curr->d_name, O_RDONLY);
     if (!dirfd.valid()) {
-      CLOG(ERROR) << "Could not open process directory " << curr->d_name << ": " << StrError();
+      CLOG(DEBUG) << "Could not open process directory " << curr->d_name << ": " << StrError();
       continue;
     }
 
