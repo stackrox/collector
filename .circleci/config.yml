@@ -19,6 +19,7 @@ setupGCP: &setupGCP
       gcloud config unset compute/zone
       gcloud config set core/disable_prompts True
       gcloud auth list
+      gsutil ls gs://collector-build-cache/ || echo "ERROR: Could not ls bucket"
 createGCP: &createGCP
   run:
     name: Create GCP VM
@@ -576,7 +577,6 @@ jobs:
         command: |
           cd "$COLLECTOR_SOURCE_ROOT"
           mkdir -p container/bin
-          mkdir -p /tmp/cmake-build
           docker run \
             -v "$PWD:/src:ro" \
             -v "$PWD/sysdig/src:/usr/local/sysdig:ro" \
@@ -631,20 +631,20 @@ jobs:
           gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/tmp/output_cpu.prof" /tmp/output_cpu_gcp.prof
           exit ${RESULT}
 
-    - store_artifacts:
-        path: /tmp/integration-test-report-gcp.xml
-        destination: integration-test-report-gcp.xml
     - store_test_results:
         path: /tmp/integration-test-report-gcp.xml
     - store_artifacts:
+        path: /tmp/integration-test-report-gcp.xml
+        destination: ebpf-integration-test-report.xml
+    - store_artifacts:
         path: /tmp/grpc_server_gcp.logs
-        destination: grpc_server_gcp.logs
+        destination: ebpf-grpc-server.logs
     - store_artifacts:
         path: /tmp/collector_gcp.logs
-        destination: collector_gcp.logs
+        destination: ebpf-collector.logs
     - store_artifacts:
         path: /tmp/output_cpu_gcp.prof
-        destination: output_cpu_gcp.prof
+        destination: ebpf-output_cpu.prof
     - *teardownGCP
 
   module-integration-test:
@@ -672,16 +672,16 @@ jobs:
         path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
-        destination: integration-test-report.xml
+        destination: module-integration-test-report.xml
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/collector.logs
-        destination: collector_logs
+        destination: module-collector.logs
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs
-        destination: grpc_server_logs
+        destination: module-grpc-server.logs
     - store_artifacts:
         path: /tmp/output_cpu.prof
-        destination: output_cpu.prof
+        destination: module-output_cpu.prof
 
   images:
     machine: true
