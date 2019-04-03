@@ -152,6 +152,8 @@ void SysdigService::Start() {
     if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
       CLOG(WARNING) << "Failed to drop DAC_OVERRIDE capability: " << StrError();
     }
+  } else {
+    inspector_->set_simpledriver_mode();
   }
 
   std::lock_guard<std::mutex> lock(running_mutex_);
