@@ -1,3 +1,43 @@
+createGCPVMUbuntu() {
+  local GCP_VM_NAME="$1"
+  shift
+  local SOURCE_ROOT="$1"
+  shift
+  [ -z "$GCP_VM_NAME" ] && echo "error: missing parameter GCP_VM_NAME" && return 1
+  [ -z "$SOURCE_ROOT" ] && echo "error: missing parameter SOURCE_ROOT dir" && return 1
+
+  local REGION=us-central1
+
+  local zone
+  #zones=$(gcloud compute zones list --filter="region=$REGION" | grep UP | cut -f1 -d' ')
+  success=false
+  for zone in us-central1-a us-central1-b ; do
+      echo "Trying zone $zone"
+      gcloud config set compute/zone "${zone}"
+      if gcloud compute instances create \
+        --image-family ubuntu-1804-lts \
+        --image-project ubuntu-os-cloud \
+        --service-account=circleci-collector@stackrox-ci.iam.gserviceaccount.com \
+          "$GCP_VM_NAME"
+      then
+          success=true
+          break
+      else
+          gcloud compute instances delete "$GCP_VM_NAME"
+      fi
+  done
+
+  if test ! "$success" = "true" ; then
+    echo "Could not boot instance."
+    return 1
+  fi
+  echo "A000"
+  sleep 30  # give it time to boot
+  buildSourceTarball "$SOURCE_ROOT"
+  scpSourceTarballToGcpHost "$GCP_VM_NAME"
+  return 0
+}
+
 createGCPVMCos() {
   local GCP_VM_NAME="$1"
   shift
@@ -45,7 +85,11 @@ buildSourceTarball() {
   cd /tmp
   git clone $gitdir shipdir
   rm -rf shipdir/.git
-  echo $CIRCLE_BUILD_NUM > shipdir/buildnum.txt
+  if test -d ~/workspace -a -f ~/workspace/shared-env ; then
+    cp ~/workspace/shared-env shipdir
+  else
+    touch shipdir/shared-env
+  fi
   mkdir s2
   mv shipdir s2/collector
   cd s2

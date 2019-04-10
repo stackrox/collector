@@ -1,5 +1,4 @@
 run-integration-tests() {
-  export COLLECTOR_TAG=$1
   SCRIPTDIR=$(pwd)
   shift
 
