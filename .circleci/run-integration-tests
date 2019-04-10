@@ -1,8 +1,10 @@
+echo defining run-integration-tests function
 run-integration-tests() {
+  echo running run-integration-tests function from $(pwd)
   SCRIPTDIR=$(pwd)
-  shift
-
+  echo R001
   source make-golang-dist
+  echo R002
   cat >/tmp/roottodo.$$ <<EOF
   cd /usr/local
   mkdir tmpdir
@@ -16,7 +18,7 @@ EOF
   else
     bash -c "bash /tmp/roottodo.$$ && rm /tmp/roottodo.$$"
   fi
-
+  echo R003
   set -e
   export GOPATH=/go
   export PATH="/usr/local/go/bin:$GOPATH/bin:/usr/local/bin:$PATH"

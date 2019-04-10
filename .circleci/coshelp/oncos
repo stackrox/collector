@@ -69,6 +69,7 @@ else
 fi
 pwd
 echo "Running integration tests with COLLECTOR_TAG=$COLLECTOR_TAG"
+set -x
 run-integration-tests
 git describe --tags --abbrev=10 
 echo S003
