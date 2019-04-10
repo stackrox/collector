@@ -60,7 +60,15 @@ echo S001
 source run-integration-tests
 echo S002
 export ROX_COLLECTOR_EBPF=true
-test -f ../shared-env && source ../shared-env
+pwd
+if test -f ../shared-env ; then
+  echo "Doing shared env..."
+  source ../shared-env
+else
+  echo "(no shared-env found)"
+fi
+pwd
+echo "Running integration tests with COLLECTOR_TAG=$COLLECTOR_TAG"
 run-integration-tests
 git describe --tags --abbrev=10 
 echo S003
