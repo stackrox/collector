@@ -1,4 +1,4 @@
-createGCPVMUbuntu() {
+createGCPVMCos() {
   local GCP_VM_NAME="$1"
   shift
   local SOURCE_ROOT="$1"
@@ -15,8 +15,8 @@ createGCPVMUbuntu() {
       echo "Trying zone $zone"
       gcloud config set compute/zone "${zone}"
       if gcloud compute instances create \
-        --image-family ubuntu-1804-lts \
-        --image-project ubuntu-os-cloud \
+        --image-family cos-stable \
+        --image-project cos-cloud \
         --service-account=circleci-collector@stackrox-ci.iam.gserviceaccount.com \
           "$GCP_VM_NAME"
       then
