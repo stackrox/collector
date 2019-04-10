@@ -15,7 +15,7 @@ EOF
   if test -d /usr/local/go ; then
     echo golang already installed
   else
-    sudo bash -c "bash /tmp/roottodo.$$ && rm /tmp/roottodo.$$"
+    bash -c "bash /tmp/roottodo.$$ && rm /tmp/roottodo.$$"
   fi
 
   set -e
@@ -35,8 +35,8 @@ EOF
   cd $DN/collector/collector
   go get -u github.com/jstemmer/go-junit-report
   curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-  sudo curl -L "https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-  sudo chmod +x /usr/local/bin/docker-compose
+  curl -L "https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  chmod +x /usr/local/bin/docker-compose
   local RESULT
   if make integration-tests-ebpf ; then
     RESULT=0
