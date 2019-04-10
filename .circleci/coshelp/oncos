@@ -59,6 +59,7 @@ pwd
 echo S001
 source run-integration-tests
 echo S002
+export ROX_COLLECTOR_EBPF=true
 run-integration-tests $(git describe --tags --abbrev=10)
 git describe --tags --abbrev=10 
 echo S003
