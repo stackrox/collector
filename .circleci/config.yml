@@ -25,7 +25,7 @@ createGCP: &createGCP
     name: Create GCP VM
     command: |
       source $SOURCE_ROOT/.circleci/create-gcp-vm.sh
-      main "$DOCKER_USER" "$DOCKER_PASS" "$SOURCE_ROOT"
+      main "collector-nb-${CIRCLE_BUILD_NUM}" "$DOCKER_USER" "$DOCKER_PASS" "$SOURCE_ROOT"
     background: false
 teardownGCP: &teardownGCP
   run:
