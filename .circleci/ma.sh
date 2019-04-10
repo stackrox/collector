@@ -63,7 +63,6 @@ buildSourceTarballWorkingDir() {
   echo -n $CIRCLE_BUILD_NUM > collector/buildnum.txt
   tar cvfz /tmp/collector.tar.gz collector/
   popd
-  mv /tmp/collector.tar.gz .
 }
 
 # assumes file in current working dir collector.tar.gz should be copied

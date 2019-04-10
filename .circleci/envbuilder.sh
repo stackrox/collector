@@ -6,6 +6,7 @@ runGCPCosTestViaSSH() {
   local SOURCE_ROOT="$GLOBAL_SOURCE_ROOT"
   shift
   createGCPVMCos "$GCP_VM_NAME" "$GSOURCE_ROOT"
+  sleep 30
 #  local GDOCKER_USER="$1"
 #  shift
 #  local GDOCKER_PASS="$1"
