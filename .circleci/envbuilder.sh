@@ -3,16 +3,14 @@ GLOBAL_SOURCE_ROOT=$(pwd)/..
 runGCPCosTestViaSSH() {
   local GCP_VM_NAME="$1"
   shift
-  local SOURCE_ROOT="$GLOBAL_SOURCE_ROOT"
+  export DOCKER_USER="$1"
   shift
-  createGCPVMCos "$GCP_VM_NAME" "$GSOURCE_ROOT"
+  export DOCKER_PASS="$1"
+  shift
+  local SOURCE_ROOT="$1"
+  shift
+  createGCPVMCos "$GCP_VM_NAME" "$SOURCE_ROOT"
   sleep 30
-#  local GDOCKER_USER="$1"
-#  shift
-#  local GDOCKER_PASS="$1"
-#  shift
-#  local GSOURCE_ROOT="$1"
-#  shift
   if gcloud compute ssh "$GCP_VM_NAME" --command "test -d collector" ; then
     echo "(collector/ already copied it seems)"
   else

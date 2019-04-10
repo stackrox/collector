@@ -2,6 +2,8 @@
 
 set -e
 main() {
+  local GCP_VM_NAME="$1"
+  shift
   local GDOCKER_USER="$1"
   shift
   local GDOCKER_PASS="$1"
@@ -19,7 +21,7 @@ main() {
   popd
 
   echo "A007"
-  runGCPCosTestViaSSH "$GDOCKER_USER" "$GDOCKER_PASS" "$GDOCKER_ROOT" "$GSOURCE_ROOT"
+  runGCPCosTestViaSSH "$GCP_VM_NAME" "$GDOCKER_USER" "$GDOCKER_PASS" "$GSOURCE_ROOT"
   echo "A008"
   return 0
 }
