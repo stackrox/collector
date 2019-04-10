@@ -19,7 +19,7 @@ runGCPCosTestViaSSH() {
     extractSourceTarballViaGCPSSH "$GCP_VM_NAME"
   fi
   gcloud compute ssh "$GCP_VM_NAME" --command "sudo toolbox uname -a"
-  if gcloud compute ssh "$GCP_VM_NAME" --command 'pwd && docker version && ls -l /var/run/docker.sock && date && echo TOOLBOX && sudo toolbox --bind /var/run:/extrun --overlay $(pwd):$(pwd) $(pwd)/collector/.circleci/coshelp/oncos'" $DOCKER_USER $DOCKER_PASS" -- -t ; then
+  if gcloud compute ssh "$GCP_VM_NAME" --command 'pwd && docker version && ls -l /var/run/docker.sock && date && echo TOOLBOX && sudo toolbox --bind /var/run:/extrun --bind $(pwd):$(pwd) --bind /tmp:/tmp $(pwd)/collector/.circleci/coshelp/oncos'" $DOCKER_USER $DOCKER_PASS" -- -t ; then
     echo "Command succeeded"
     return 0
   else
