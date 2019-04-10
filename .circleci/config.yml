@@ -621,11 +621,11 @@ jobs:
           gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "uname -r && uname -a"
 
     - run:
-        name: ubuntu ebpf integration test
+        name: cos ebpf integration test
         command: |
           set -e
-          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_COLLECTOR}"
-          if gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "cd /home/circleci/collector/.circleci && source run-integration-tests && run-integration-tests ${COLLECTOR_TAG}" ; then
+          pwd
+          if ./circleci/coshelp/copy-tarball-to-cos "collector-nb-${CIRCLE_BUILD_NUM}" ; then
             RESULT=0
           else
             RESULT=1

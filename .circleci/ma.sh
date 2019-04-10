@@ -55,11 +55,23 @@ buildSourceTarball() {
   rm -rf s2
 }
 
+# builds collector.tar.gz from working dir
+buildSourceTarballWorkingDir() {
+  local gitdir="$1"
+  [ -z "$gitdir" ] && echo "error: missing parameter git source dir" && return 1
+  pushd $gitdir/..
+  echo -n $CIRCLE_BUILD_NUM > collector/buildnum.txt
+  tar cvfz /tmp/collector.tar.gz collector/
+  popd
+  mv /tmp/collector.tar.gz .
+}
+
 # assumes file in current working dir collector.tar.gz should be copied
 # to $1 : destination instancename for GCP.
 scpSourceTarballToGcpHost() {
   local GCP_VM_NAME="$1"
   gcloud compute scp collector.tar.gz "$GCP_VM_NAME":
+  rm collector.tar.gz
 }
 
 # TODO: fix function name
