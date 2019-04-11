@@ -23,8 +23,6 @@ services:
     - "9999"
     networks:
     - collector
-    volumes:
-    - /tmp:/tmp:rw
 
 networks:
   collector:
