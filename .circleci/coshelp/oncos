@@ -78,8 +78,10 @@ else
 fi
 pwd
 echo "Running integration tests with COLLECTOR_TAG=$COLLECTOR_TAG"
+echo "first df is $(df -h)"
 set -x
-run-integration-tests
+run-integration-tests || true   # TODO remove me
+echo "second df is $(df -h)"
 echo S003
 
 exit 0
