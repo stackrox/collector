@@ -57,6 +57,7 @@ createGCPVMCos() {
       if gcloud compute instances create \
         --image-family cos-stable \
         --image-project cos-cloud \
+        --boot-disk-size=20G \
         --service-account=circleci-collector@stackrox-ci.iam.gserviceaccount.com \
           "$GCP_VM_NAME"
       then
