@@ -1,5 +1,12 @@
 #!/bin/bash
 
+echo "INSIDEONCOS TMP IS"
+ls -ld /tmp
+echo "INSIDE LSTMP DONE"
+touch /tmp/t.dat
+ls -ld /tmp
+echo "INSIDE LSTMP TOUCH DONE"
+
 cd $(dirname $0)
 set -e
 
