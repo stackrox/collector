@@ -34,7 +34,7 @@ cd $(dirname $0)
 for i in 1 2 3 ; do
   apt clean -y
   apt update -y || true
-  if apt install -y make cmake g++ gcc git jq apt-transport-https ca-certificates curl gnupg-agent wget software-properties-common ca-certificates procps sudo ; then
+  if apt install -y make cmake g++ gcc git jq apt-transport-https ca-certificates curl gnupg-agent wget software-properties-common ca-certificates procps sudo bsdmainutils ; then
     break
   fi
   sleep 10
