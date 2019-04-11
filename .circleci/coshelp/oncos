@@ -2,9 +2,11 @@
 
 echo "INSIDEONCOS TMP IS"
 ls -ld /tmp
+echo "CONTAINING"
+ls -l /tmp
 echo "INSIDE LSTMP DONE"
 touch /tmp/t.dat
-ls -ld /tmp
+ls -l /tmp
 echo "INSIDE LSTMP TOUCH DONE"
 
 cd $(dirname $0)
@@ -78,7 +80,6 @@ pwd
 echo "Running integration tests with COLLECTOR_TAG=$COLLECTOR_TAG"
 set -x
 run-integration-tests
-git describe --tags --abbrev=10 
 echo S003
 
 exit 0
