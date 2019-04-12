@@ -677,7 +677,8 @@ jobs:
     - run:
         name: Wait for COS GCP VM to boot
         command: |
-          source .circleci/create-gcp-vm.sh
+          cd ~/workspace/go/src/github.com/stackrox/collector
+          source $SOURCE_ROOT/.circleci/create-gcp-vm.sh
           waitForCreateInSlots c
     - run:
         name: Check remote host GCP kernel version
