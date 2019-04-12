@@ -56,10 +56,12 @@ commands:
         name: Set up environment
         command: |
           cat >>"$BASH_ENV" \<<-EOF
-            export CIRCLE_INITIAL_BUILD_NUM="$CIRCLE_BUILDNUM"
             export WORKSPACE_ROOT="${HOME}/workspace"
           EOF
-          [[ -f ~/workspace/shared-env ]] && cat ~/workspace/shared-env >>"$BASH_ENV"
+          cat >>"${HOME}/workspace/shared-env" \<<-EOF
+            export CIRCLE_INITIAL_BUILD_NUM="$CIRCLE_BUILD_NUM"
+          EOF
+          [[ -f ~/workspace/shared-env ]] && cat "${HOME}/workspace/shared-env" >>"$BASH_ENV"
 
   gcloud-init:
     steps:
