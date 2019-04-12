@@ -16,7 +16,7 @@ setupGCP: &setupGCP
       gcloud auth activate-service-account --key-file /tmp/gcp.json
       gcloud config set project stackrox-ci
       gcloud config set compute/region us-central1
-      gcloud config unset compute/zone
+      gcloud config set compute/zone us-central1-a
       gcloud config set core/disable_prompts True
       gcloud auth list
       gsutil ls gs://collector-build-cache/ || echo "ERROR: Could not ls bucket"
@@ -25,13 +25,18 @@ createGCP: &createGCP
     name: Create GCP VM
     command: |
       source $SOURCE_ROOT/.circleci/create-gcp-vm.sh
+      createGCPVM "collector-nb-${CIRCLE_BUILD_NUM}" u ubuntu-1804-lts ubuntu-os-cloud
+      createGCPVM "collector-c-${CIRCLE_BUILD_NUM}" c cos-stable cos-cloud
       main "$DOCKER_USER" "$DOCKER_PASS" "$SOURCE_ROOT"
     background: false
 teardownGCP: &teardownGCP
   run:
     name: Tear down GCP VM
     command: |
-      gcloud compute instances delete "collector-nb-${CIRCLE_BUILD_NUM}"
+      source $SOURCE_ROOT/.circleci/create-gcp-vm.sh
+      deleteGCPVM "collector-nb-${CIRCLE_BUILD_NUM}" u
+      deleteGCPVM "collector-c-${CIRCLE_BUILD_NUM}" c
+      waitForDeleteInSlots c u
     when: always
     background: false
 commands:
