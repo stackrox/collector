@@ -30,6 +30,7 @@ makeRegisterFilenameFromSymbol() {
 
 waitForDeleteInSlots() {
   local GCP_SYMBOL_VAL
+  sleep 5
   for GCP_SYMBOL_VAL in $* ; do
     local REGISTERFILENAME=$(makeRegisterFilenameFromSymbol $GCP_SYMBOL_VAL)
     if test -f "$REGISTERFILENAME" ; then
