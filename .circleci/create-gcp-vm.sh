@@ -34,7 +34,7 @@ waitForDeleteInSlots() {
     local REGISTERFILENAME=$(makeRegisterFilenameFromSymbol $GCP_SYMBOL_VAL)
     if test -f "$REGISTERFILENAME" ; then
       source $REGISTERFILENAME
-      wait $GCLOUD_CREATE_PID || true
+      wait $GCLOUD_DELETE_PID || true
       echo "Done waiting for $GCP_SYMBOL_VAL , verifying deletion..."
       if confirmGCPVMSSHWorks $VM_NAME $ZONE ; then
         echo "ERROR in deletion of VM $GCP_SYMBOL_VAL ."
