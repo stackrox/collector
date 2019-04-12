@@ -29,14 +29,22 @@ createGCP: &createGCP
       createGCPVM "collector-c-${CIRCLE_BUILD_NUM}" c cos-stable cos-cloud
       main "$DOCKER_USER" "$DOCKER_PASS" "$SOURCE_ROOT"
     background: false
-teardownGCP: &teardownGCP
+teardownGCPC: &teardownGCPC
   run:
-    name: Tear down GCP VM
+    name: Tear down GCP VM Cos
+    command: |
+      source $SOURCE_ROOT/.circleci/create-gcp-vm.sh
+      deleteGCPVM "collector-c-${CIRCLE_BUILD_NUM}" c
+      waitForDeleteInSlots c
+    when: always
+    background: false
+teardownGCP: &teardownGCPU
+  run:
+    name: Tear down GCP VM Ubuntu
     command: |
       source $SOURCE_ROOT/.circleci/create-gcp-vm.sh
       deleteGCPVM "collector-nb-${CIRCLE_BUILD_NUM}" u
-      deleteGCPVM "collector-c-${CIRCLE_BUILD_NUM}" c
-      waitForDeleteInSlots c u
+      waitForDeleteInSlots u
     when: always
     background: false
 commands:
@@ -655,7 +663,7 @@ jobs:
     - store_artifacts:
         path: /tmp/output_cpu_gcp.prof
         destination: ebpf-output_cpu.prof
-    - *teardownGCP
+    - *teardownGCPU
 
   ebpf-cos-integration-test:
     machine: true
@@ -687,6 +695,7 @@ jobs:
           gcloud compute scp "collector-c-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/collector.logs" /tmp/collector_gcp.logs
           gcloud compute scp "collector-c-${CIRCLE_BUILD_NUM}:/tmp/output_cpu.prof" /tmp/output_cpu_gcp.prof
           exit ${RESULT}
+    - *teardownGCPC
 
   module-integration-test:
     machine: true
