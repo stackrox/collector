@@ -675,15 +675,21 @@ jobs:
     - gcloud-init
 
     - run:
+        name: Wait for COS GCP VM to boot
+        command: |
+          source .circleci/create-gcp-vm.sh
+          waitForCreateInSlots c
+    - run:
         name: Check remote host GCP kernel version
         command: |
-          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "uname -r && uname -a"
+          gcloud compute ssh "collector-c-${CIRCLE_BUILD_NUM}" --command "uname -r && uname -a"
 
     - run:
         name: cos ebpf integration test
         command: |
           set -e
           pwd
+          
           if ./circleci/coshelp/copy-tarball-to-cos "collector-c-${CIRCLE_BUILD_NUM}" ; then
             RESULT=0
           else
@@ -742,6 +748,7 @@ jobs:
     - initcommand
     - docker-login
     - gcloud-init
+    - *createGCP
 
     - run:
         name: Copying Kernel modules build output
