@@ -96,13 +96,7 @@ checkGCPVMExists() {
   shift
   local GCP_ZONE="$1"
   shift
-  if [[ -z "$CI" ]] ; then
-    SERVICE_ACCT=""
-  else
-    SERVICE_ACCT="--service-account=circleci-collector@stackrox-ci.iam.gserviceaccount.com"
-  fi
   if gcloud compute instances describe \
-    $SERVICE_ACCT \
     --zone "$GCP_ZONE" \
       "$GCP_VM_NAME" ; then
     return 0
