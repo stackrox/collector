@@ -58,9 +58,11 @@ commands:
           cat >>"$BASH_ENV" \<<-EOF
             export WORKSPACE_ROOT="${HOME}/workspace"
           EOF
-          cat >>"${HOME}/workspace/shared-env" \<<-EOF
-            export CIRCLE_INITIAL_BUILD_NUM="$CIRCLE_BUILD_NUM"
-          EOF
+          if test "${CIRCLE_JOB}" = "init" ; then
+            cat >>"${HOME}/workspace/shared-env" \<<-EOF
+              export CIRCLE_INITIAL_BUILD_NUM="$CIRCLE_BUILD_NUM"
+            EOF
+          fi
           [[ -f ~/workspace/shared-env ]] && cat "${HOME}/workspace/shared-env" >>"$BASH_ENV"
 
   gcloud-init:
