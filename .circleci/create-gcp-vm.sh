@@ -76,13 +76,7 @@ confirmGCPVMSSHWorks() {
   shift
   local GCP_ZONE="$1"
   shift
-  if [[ -z "$CI" ]] ; then
-    SERVICE_ACCT=""
-  else
-    SERVICE_ACCT="--service-account=circleci-collector@stackrox-ci.iam.gserviceaccount.com"
-  fi
   if gcloud compute ssh \
-    $SERVICE_ACCT \
     --zone "$GCP_ZONE" \
       "$GCP_VM_NAME" --command true ; then
     return 0
@@ -115,13 +109,7 @@ deleteGCPVM() {
 
   local REGISTERFILENAME=$(makeRegisterFilenameFromSymbol $GCP_SYMBOL_VAL)
   source "$REGISTERFILENAME"
-  if [[ -z "$CI" ]] ; then
-    SERVICE_ACCT=""
-  else
-    SERVICE_ACCT="--service-account=circleci-collector@stackrox-ci.iam.gserviceaccount.com"
-  fi
   gcloud compute instances delete --quiet \
-    $SERVICE_ACCT \
     --zone "$ZONE" \
       "$VM_NAME" &
   GCLOUD_DELETE_PID=$!
