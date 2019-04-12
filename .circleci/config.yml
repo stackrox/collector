@@ -618,7 +618,6 @@ jobs:
     - initcommand
     - docker-login
     - gcloud-init
-    - *createGCP
 
     - run:
         name: Check remote host GCP kernel version
@@ -657,6 +656,37 @@ jobs:
         path: /tmp/output_cpu_gcp.prof
         destination: ebpf-output_cpu.prof
     - *teardownGCP
+
+  ebpf-cos-integration-test:
+    machine: true
+    working_directory: ~/workspace
+
+    steps:
+    - init
+    - docker-login
+    - gcloud-init
+
+    - run:
+        name: Check remote host GCP kernel version
+        command: |
+          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "uname -r && uname -a"
+
+    - run:
+        name: cos ebpf integration test
+        command: |
+          set -e
+          pwd
+          if ./circleci/coshelp/copy-tarball-to-cos "collector-c-${CIRCLE_BUILD_NUM}" ; then
+            RESULT=0
+          else
+            RESULT=1
+          fi
+          gcloud compute scp "collector-c-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/collector/integration-test-report.xml" /tmp/integration-test-report-gcp.xml
+          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp /tmp/integration-test-report-gcp.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
+          gcloud compute scp "collector-c-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs" /tmp/grpc_server_gcp.logs
+          gcloud compute scp "collector-c-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/collector.logs" /tmp/collector_gcp.logs
+          gcloud compute scp "collector-c-${CIRCLE_BUILD_NUM}:/tmp/output_cpu.prof" /tmp/output_cpu_gcp.prof
+          exit ${RESULT}
 
   module-integration-test:
     machine: true
@@ -861,6 +891,12 @@ workflows:
           tags:
             only: /.*/
     - ebpf-integration-test:
+        requires:
+        - images 
+        filters:
+          tags:
+            only: /.*/
+    - ebpf-cos-integration-test:
         requires:
         - images 
         filters:
