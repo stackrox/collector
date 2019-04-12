@@ -25,8 +25,8 @@ createGCP: &createGCP
     name: Create GCP VM
     command: |
       source $SOURCE_ROOT/.circleci/create-gcp-vm.sh
-      createGCPVM "collector-nb-${CIRCLE_BUILD_NUM}" u ubuntu-1804-lts ubuntu-os-cloud
-      createGCPVM "collector-c-${CIRCLE_BUILD_NUM}" c cos-stable cos-cloud
+      createGCPVM "collector-nb-${CIRCLE_INITIAL_BUILD_NUM}" u ubuntu-1804-lts ubuntu-os-cloud
+      createGCPVM "collector-c-${CIRCLE_INITIAL_BUILD_NUM}" c cos-stable cos-cloud
       main "$DOCKER_USER" "$DOCKER_PASS" "$SOURCE_ROOT"
     background: false
 teardownGCPC: &teardownGCPC
@@ -34,7 +34,7 @@ teardownGCPC: &teardownGCPC
     name: Tear down GCP VM Cos
     command: |
       source $SOURCE_ROOT/.circleci/create-gcp-vm.sh
-      deleteGCPVM "collector-c-${CIRCLE_BUILD_NUM}" c
+      deleteGCPVM "collector-c-${CIRCLE_INITIAL_BUILD_NUM}" c
       waitForDeleteInSlots c
     when: always
     background: false
@@ -43,7 +43,7 @@ teardownGCP: &teardownGCPU
     name: Tear down GCP VM Ubuntu
     command: |
       source $SOURCE_ROOT/.circleci/create-gcp-vm.sh
-      deleteGCPVM "collector-nb-${CIRCLE_BUILD_NUM}" u
+      deleteGCPVM "collector-nb-${CIRCLE_INITIAL_BUILD_NUM}" u
       waitForDeleteInSlots u
     when: always
     background: false
@@ -56,6 +56,7 @@ commands:
         name: Set up environment
         command: |
           cat >>"$BASH_ENV" \<<-EOF
+            export CIRCLE_INITIAL_BUILD_NUM="$CIRCLE_BUILDNUM"
             export WORKSPACE_ROOT="${HOME}/workspace"
           EOF
           [[ -f ~/workspace/shared-env ]] && cat ~/workspace/shared-env >>"$BASH_ENV"
@@ -630,23 +631,23 @@ jobs:
     - run:
         name: Check remote host GCP kernel version
         command: |
-          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "uname -r && uname -a"
+          gcloud compute ssh "collector-nb-${CIRCLE_INITIAL_BUILD_NUM}" --command "uname -r && uname -a"
 
     - run:
         name: ubuntu ebpf integration test
         command: |
           set -e
-          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_COLLECTOR}"
-          if gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "cd /home/circleci/collector/.circleci && source run-integration-tests && run-integration-tests ${COLLECTOR_TAG}" ; then
+          gcloud compute ssh "collector-nb-${CIRCLE_INITIAL_BUILD_NUM}" --command "docker pull ${IMAGE_COLLECTOR}"
+          if gcloud compute ssh "collector-nb-${CIRCLE_INITIAL_BUILD_NUM}" --command "cd /home/circleci/collector/.circleci && source run-integration-tests && run-integration-tests ${COLLECTOR_TAG}" ; then
             RESULT=0
           else
             RESULT=1
           fi
-          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/collector/integration-test-report.xml" /tmp/integration-test-report-gcp.xml
-          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp /tmp/integration-test-report-gcp.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
-          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs" /tmp/grpc_server_gcp.logs
-          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/collector.logs" /tmp/collector_gcp.logs
-          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/tmp/output_cpu.prof" /tmp/output_cpu_gcp.prof
+          gcloud compute scp "collector-nb-${CIRCLE_INITIAL_BUILD_NUM}:/go/src/github.com/stackrox/collector/collector/integration-test-report.xml" /tmp/integration-test-report-gcp.xml
+          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp /tmp/integration-test-report-gcp.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_INITIAL_BUILD_NUM}/"
+          gcloud compute scp "collector-nb-${CIRCLE_INITIAL_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs" /tmp/grpc_server_gcp.logs
+          gcloud compute scp "collector-nb-${CIRCLE_INITIAL_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/collector.logs" /tmp/collector_gcp.logs
+          gcloud compute scp "collector-nb-${CIRCLE_INITIAL_BUILD_NUM}:/tmp/output_cpu.prof" /tmp/output_cpu_gcp.prof
           exit ${RESULT}
 
     - store_test_results:
@@ -683,7 +684,7 @@ jobs:
     - run:
         name: Check remote host GCP kernel version
         command: |
-          gcloud compute ssh "collector-c-${CIRCLE_BUILD_NUM}" --command "uname -r && uname -a"
+          gcloud compute ssh "collector-c-${CIRCLE_INITIAL_BUILD_NUM}" --command "uname -r && uname -a"
 
     - run:
         name: cos ebpf integration test
@@ -691,16 +692,16 @@ jobs:
           set -e
           pwd
           
-          if ./circleci/coshelp/copy-tarball-to-cos "collector-c-${CIRCLE_BUILD_NUM}" ; then
+          if ./circleci/coshelp/copy-tarball-to-cos "collector-c-${CIRCLE_INITIAL_BUILD_NUM}" ; then
             RESULT=0
           else
             RESULT=1
           fi
-          gcloud compute scp "collector-c-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/collector/integration-test-report.xml" /tmp/integration-test-report-gcp.xml
-          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp /tmp/integration-test-report-gcp.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
-          gcloud compute scp "collector-c-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs" /tmp/grpc_server_gcp.logs
-          gcloud compute scp "collector-c-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/collector.logs" /tmp/collector_gcp.logs
-          gcloud compute scp "collector-c-${CIRCLE_BUILD_NUM}:/tmp/output_cpu.prof" /tmp/output_cpu_gcp.prof
+          gcloud compute scp "collector-c-${CIRCLE_INITIAL_BUILD_NUM}:/go/src/github.com/stackrox/collector/collector/integration-test-report.xml" /tmp/integration-test-report-gcp.xml
+          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp /tmp/integration-test-report-gcp.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_INITIAL_BUILD_NUM}/"
+          gcloud compute scp "collector-c-${CIRCLE_INITIAL_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs" /tmp/grpc_server_gcp.logs
+          gcloud compute scp "collector-c-${CIRCLE_INITIAL_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/collector.logs" /tmp/collector_gcp.logs
+          gcloud compute scp "collector-c-${CIRCLE_INITIAL_BUILD_NUM}:/tmp/output_cpu.prof" /tmp/output_cpu_gcp.prof
           exit ${RESULT}
     - *teardownGCPC
 
@@ -723,7 +724,7 @@ jobs:
           sudo curl -L "https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
           make integration-tests integration-test-report
-          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
+          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_INITIAL_BUILD_NUM}/"
 
     - store_test_results:
         path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
