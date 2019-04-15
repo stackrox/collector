@@ -37,7 +37,7 @@ waitForDeleteInSlots() {
       source $REGISTERFILENAME
       wait $GCLOUD_DELETE_PID || true
       echo "Done waiting for $GCP_SYMBOL_VAL , verifying deletion..."
-      if confirmGCPVMSSHWorks $VM_NAME $ZONE ; then
+      if confirmGCPVMSSHWorks $VM_NAME ; then
         echo "ERROR in deletion of VM $GCP_SYMBOL_VAL ."
         return 1
       else
@@ -109,12 +109,14 @@ deleteGCPVM() {
   [ -z "$GCP_SYMBOL_VAL" ] && echo "error: missing parameter GCP_SYMBOL_VAL" && return 1
 
   local REGISTERFILENAME=$(makeRegisterFilenameFromSymbol $GCP_SYMBOL_VAL)
-  source "$REGISTERFILENAME"
-  gcloud compute instances delete --quiet \
-    --zone "$ZONE" \
-      "$VM_NAME" &
+  if test -f "$REGISTERFILENAME" ; then
+    source "$REGISTERFILENAME"
+    ZONEOPT="--zone $ZONE"
+  fi
+  gcloud compute instances delete --quiet $ZONEOPT "$GCP_VM_NAME" &
   GCLOUD_DELETE_PID=$!
   echo "GCLOUD_DELETE_PID=$GCLOUD_DELETE_PID" >> $REGISTERFILENAME
+  echo "VM_NAME=$GCP_VM_NAME" >> $REGISTERFILENAME
   echo "wait $GCLOUD_DELETE_PID || true"
   return 0
 }
