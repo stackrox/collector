@@ -157,7 +157,7 @@ CollectorArgs::checkChisel(const option::Option& option, bool msg)
         return ARG_ILLEGAL;
     }
 
-    CLOG(INFO) << "Chisel: " << chisel;
+    CLOG(DEGUG) << "Chisel: " << chisel;
     return ARG_OK;
 }
 
@@ -195,7 +195,7 @@ CollectorArgs::checkCollectorConfig(const option::Option& option, bool msg)
     }
 
     collectorConfig = root;
-    CLOG(INFO) << "Collector config: " << collectorConfig.toStyledString();
+    CLOG(DEBUG) << "Collector config: " << collectorConfig.toStyledString();
     return ARG_OK;
 }
 

@@ -140,8 +140,8 @@ fi
 # Uncomment this to enable generation of core for Collector
 # echo '/core/core.%e.%p.%t' > /proc/sys/kernel/core_pattern
 
-echo "COLLECTOR_CONFIG = $COLLECTOR_CONFIG"
-echo "CHISEL = $CHISEL"
+#echo "COLLECTOR_CONFIG = $COLLECTOR_CONFIG"
+#echo "CHISEL = $CHISEL"
 
 clean_up() {
     echo "collector pid to be stopped is $PID"
@@ -150,7 +150,7 @@ clean_up() {
 
 # Remove "/bin/sh -c" from arguments
 shift;shift
-echo "Exec $*"
+echo "Starting $*"
 # Signal handler for SIGTERM
 trap 'clean_up' TERM QUIT INT
 eval exec "$@" &
