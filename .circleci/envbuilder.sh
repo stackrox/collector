@@ -7,7 +7,6 @@ runGCPUbuntuTestViaSSH() {
   shift
   local GSOURCE_ROOT="$1"
   shift
-  createGCPVMUbuntu "$GCP_VM_NAME" "$GSOURCE_ROOT"
   installVariousAptDepsViaGCPSSH "$GCP_VM_NAME"
   loginDockerViaGCPSSH "$GCP_VM_NAME" "$GDOCKER_USER" "$GDOCKER_PASS"
   extractSourceTarballViaGCPSSH "$GCP_VM_NAME"
