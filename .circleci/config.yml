@@ -670,7 +670,7 @@ jobs:
     working_directory: ~/workspace
 
     steps:
-    - init
+    - initcommand
     - docker-login
     - gcloud-init
 
