@@ -23,6 +23,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "NetworkSignalHandler.h"
 
+#include "ConnScraper.h"
 #include "EventMap.h"
 
 namespace collector {
