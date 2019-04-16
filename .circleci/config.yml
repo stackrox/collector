@@ -16,7 +16,7 @@ setupGCP: &setupGCP
       gcloud auth activate-service-account --key-file /tmp/gcp.json
       gcloud config set project stackrox-ci
       gcloud config set compute/region us-central1
-      gcloud config unset compute/zone
+      gcloud config set compute/zone us-central1-a
       gcloud config set core/disable_prompts True
       gcloud auth list
       gsutil ls gs://collector-build-cache/ || echo "ERROR: Could not ls bucket"
@@ -25,13 +25,26 @@ createGCP: &createGCP
     name: Create GCP VM
     command: |
       source $SOURCE_ROOT/.circleci/create-gcp-vm.sh
+      createGCPVM "collector-nb-${CIRCLE_WORKFLOW_ID}" u ubuntu-1804-lts ubuntu-os-cloud
+      createGCPVM "collector-c-${CIRCLE_WORKFLOW_ID}" c cos-stable cos-cloud
       main "$DOCKER_USER" "$DOCKER_PASS" "$SOURCE_ROOT"
     background: false
-teardownGCP: &teardownGCP
+teardownGCPC: &teardownGCPC
   run:
-    name: Tear down GCP VM
+    name: Tear down GCP VM Cos
     command: |
-      gcloud compute instances delete "collector-nb-${CIRCLE_BUILD_NUM}"
+      source $SOURCE_ROOT/.circleci/create-gcp-vm.sh
+      deleteGCPVM "collector-c-${CIRCLE_WORKFLOW_ID}" c
+      waitForDeleteInSlots c
+    when: always
+    background: false
+teardownGCP: &teardownGCPU
+  run:
+    name: Tear down GCP VM Ubuntu
+    command: |
+      source $SOURCE_ROOT/.circleci/create-gcp-vm.sh
+      deleteGCPVM "collector-nb-${CIRCLE_WORKFLOW_ID}" u
+      waitForDeleteInSlots u
     when: always
     background: false
 commands:
@@ -45,7 +58,7 @@ commands:
           cat >>"$BASH_ENV" \<<-EOF
             export WORKSPACE_ROOT="${HOME}/workspace"
           EOF
-          [[ -f ~/workspace/shared-env ]] && cat ~/workspace/shared-env >>"$BASH_ENV"
+          [[ -f ~/workspace/shared-env ]] && cat "${HOME}/workspace/shared-env" >>"$BASH_ENV"
 
   gcloud-init:
     steps:
@@ -613,28 +626,27 @@ jobs:
     - initcommand
     - docker-login
     - gcloud-init
-    - *createGCP
 
     - run:
         name: Check remote host GCP kernel version
         command: |
-          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "uname -r && uname -a"
+          gcloud compute ssh "collector-nb-${CIRCLE_WORKFLOW_ID}" --command "uname -r && uname -a"
 
     - run:
         name: ubuntu ebpf integration test
         command: |
           set -e
-          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_COLLECTOR}"
-          if gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "cd /home/circleci/collector/.circleci && source run-integration-tests && run-integration-tests ${COLLECTOR_TAG}" ; then
+          gcloud compute ssh "collector-nb-${CIRCLE_WORKFLOW_ID}" --command "docker pull ${IMAGE_COLLECTOR}"
+          if gcloud compute ssh "collector-nb-${CIRCLE_WORKFLOW_ID}" --command "cd /home/circleci/collector/.circleci && source run-integration-tests && run-integration-tests ${COLLECTOR_TAG}" ; then
             RESULT=0
           else
             RESULT=1
           fi
-          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/collector/integration-test-report.xml" /tmp/integration-test-report-gcp.xml
-          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp /tmp/integration-test-report-gcp.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
-          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs" /tmp/grpc_server_gcp.logs
-          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/collector.logs" /tmp/collector_gcp.logs
-          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/tmp/output_cpu.prof" /tmp/output_cpu_gcp.prof
+          gcloud compute scp "collector-nb-${CIRCLE_WORKFLOW_ID}:/go/src/github.com/stackrox/collector/collector/integration-test-report.xml" /tmp/integration-test-report-gcp.xml
+          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp /tmp/integration-test-report-gcp.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_WORKFLOW_ID}/"
+          gcloud compute scp "collector-nb-${CIRCLE_WORKFLOW_ID}:/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs" /tmp/grpc_server_gcp.logs
+          gcloud compute scp "collector-nb-${CIRCLE_WORKFLOW_ID}:/go/src/github.com/stackrox/collector/integration-tests/collector.logs" /tmp/collector_gcp.logs
+          gcloud compute scp "collector-nb-${CIRCLE_WORKFLOW_ID}:/tmp/output_cpu.prof" /tmp/output_cpu_gcp.prof
           exit ${RESULT}
 
     - store_test_results:
@@ -651,7 +663,46 @@ jobs:
     - store_artifacts:
         path: /tmp/output_cpu_gcp.prof
         destination: ebpf-output_cpu.prof
-    - *teardownGCP
+    - *teardownGCPU
+
+  ebpf-cos-integration-test:
+    machine: true
+    working_directory: ~/workspace
+
+    steps:
+    - init
+    - docker-login
+    - gcloud-init
+
+    - run:
+        name: Wait for COS GCP VM to boot
+        command: |
+          cd ~/workspace/go/src/github.com/stackrox/collector
+          source $SOURCE_ROOT/.circleci/create-gcp-vm.sh
+          waitForCreateInSlots c
+    - run:
+        name: Check remote host GCP kernel version
+        command: |
+          gcloud compute ssh "collector-c-${CIRCLE_WORKFLOW_ID}" --command "uname -r && uname -a"
+
+    - run:
+        name: cos ebpf integration test
+        command: |
+          set -e
+          cd ~/workspace/go/src/github.com/stackrox/collector
+
+          if ./.circleci/coshelp/copy-tarball-to-cos "collector-c-${CIRCLE_WORKFLOW_ID}" ; then
+            RESULT=0
+          else
+            RESULT=1
+          fi
+          gcloud compute scp "collector-c-${CIRCLE_WORKFLOW_ID}:/go/src/github.com/stackrox/collector/collector/integration-test-report.xml" /tmp/integration-test-report-gcp.xml
+          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp /tmp/integration-test-report-gcp.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_WORKFLOW_ID}/"
+          gcloud compute scp "collector-c-${CIRCLE_WORKFLOW_ID}:/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs" /tmp/grpc_server_gcp.logs
+          gcloud compute scp "collector-c-${CIRCLE_WORKFLOW_ID}:/go/src/github.com/stackrox/collector/integration-tests/collector.logs" /tmp/collector_gcp.logs
+          gcloud compute scp "collector-c-${CIRCLE_WORKFLOW_ID}:/tmp/output_cpu.prof" /tmp/output_cpu_gcp.prof
+          exit ${RESULT}
+    - *teardownGCPC
 
   module-integration-test:
     machine: true
@@ -698,6 +749,7 @@ jobs:
     - initcommand
     - docker-login
     - gcloud-init
+    - *createGCP
 
     - run:
         name: Copying Kernel modules build output
@@ -861,10 +913,15 @@ workflows:
         filters:
           tags:
             only: /.*/
+    - ebpf-cos-integration-test:
+        requires:
+        - images 
+        filters:
+          tags:
+            only: /.*/
     - module-integration-test:
         requires:
         - images 
         filters:
           tags:
             only: /.*/
-

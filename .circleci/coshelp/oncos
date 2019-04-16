@@ -1,0 +1,87 @@
+#!/bin/bash
+
+echo "INSIDEONCOS TMP IS"
+ls -ld /tmp
+echo "CONTAINING"
+ls -l /tmp
+echo "INSIDE LSTMP DONE"
+touch /tmp/t.dat
+ls -l /tmp
+echo "INSIDE LSTMP TOUCH DONE"
+
+cd $(dirname $0)
+set -e
+
+echo EXTRUN
+ls -l /extrun
+DOCKER_USER=$1
+shift
+DOCKER_PASS=$1
+shift
+
+if [[ -z $DOCKER_USER ]] ; then
+  echo "ERROR: must set DOCKER_USER"
+  exit 1
+fi
+
+if [[ -z $DOCKER_PASS ]] ; then
+  echo "ERROR: must set DOCKER_PASS"
+  exit 1
+fi
+
+export DEBIAN_FRONTEND=noninteractive
+cd $(dirname $0)
+for i in 1 2 3 ; do
+  apt clean -y
+  apt update -y || true
+  if apt install -y make cmake g++ gcc git jq apt-transport-https ca-certificates curl gnupg-agent wget software-properties-common ca-certificates procps sudo bsdmainutils ; then
+    break
+  fi
+  sleep 10
+done
+
+apt-key add docker-gpg-key.asc && echo "Added docker key"
+
+add-apt-repository -y \
+   "deb [arch=amd64] https://download.docker.com/linux/debian stretch stable"
+for i in 1 2 3 ; do
+  apt clean -y
+  apt update -y || true
+  if apt install -y --no-install-recommends docker-ce ; then
+    break
+  fi
+  sleep 10
+done
+
+export DOCKER_HOST=unix:///extrun/docker.sock
+
+docker version
+
+docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+
+docker ps
+
+pwd
+cd ..
+
+pwd
+echo S001
+source run-integration-tests
+echo S002
+export ROX_COLLECTOR_EBPF=true
+pwd
+if test -f ../shared-env ; then
+  echo "Doing shared env..."
+  source ../shared-env
+else
+  echo "(no shared-env found)"
+fi
+pwd
+echo "Running integration tests with COLLECTOR_TAG=$COLLECTOR_TAG"
+echo "first df is $(df -h)"
+set -x
+run-integration-tests || true   # TODO remove me
+echo "second df is $(df -h)"
+echo S003
+
+exit 0

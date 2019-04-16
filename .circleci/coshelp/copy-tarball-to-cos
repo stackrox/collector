@@ -1,0 +1,25 @@
+#!/bin/bash
+MACHINE_NAME=$1
+if [[ -z $MACHINE_NAME ]] ; then
+  echo Must supply machine name.
+  exit 1
+fi
+
+if [[ -z $DOCKER_USER ]] ; then
+  echo "ERROR: must set DOCKER_USER"
+  exit 1
+fi
+
+if [[ -z $DOCKER_PASS ]] ; then
+  echo "ERROR: must set DOCKER_PASS"
+  exit 1
+fi
+
+source source-lib.sh
+
+gcloud compute ssh "$MACHINE_NAME" --command "date && ls -F && pwd && hostname"
+
+#runCircleGCPUbuntuTestViaSSH "$GDOCKER_USER" "$GDOCKER_PASS" "$GDOCKER_ROOT" "$GSOURCE_ROOT"
+
+runGCPCosTestViaSSH "$MACHINE_NAME"
+
