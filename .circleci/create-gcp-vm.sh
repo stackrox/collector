@@ -11,7 +11,7 @@ main() {
   source moba.sh
   popd
 
-  runCircleGCPUbuntuTestViaSSH "$GDOCKER_USER" "$GDOCKER_PASS" "$GDOCKER_ROOT" "$GSOURCE_ROOT"
+  runCircleGCPUbuntuTestViaSSH "$GDOCKER_USER" "$GDOCKER_PASS" "$GSOURCE_ROOT"
 
   echo "A008"
   return 0
