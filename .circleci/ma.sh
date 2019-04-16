@@ -68,6 +68,6 @@ loginDockerViaGCPSSH() {
 
 extractSourceTarballViaGCPSSH() {
   local GCP_VM_NAME="$1"
-  gcloud compute ssh "$GCP_VM_NAME" --command "tar xvpfz collector.tar.gz && rm collector.tar.gz"
+  gcloud compute ssh "$GCP_VM_NAME" --command "tar xvpfz collector.tar.gz && rm collector.tar.gz && echo CONFIG && cat collector/shared-env"
 }
 
