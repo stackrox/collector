@@ -7,6 +7,8 @@ runGCPUbuntuTestViaSSH() {
   shift
   local GSOURCE_ROOT="$1"
   shift
+  buildSourceTarballWorkingDir "$SOURCE_ROOT"
+  scpSourceTarballToGcpHost "$GCP_VM_NAME"
   installVariousAptDepsViaGCPSSH "$GCP_VM_NAME"
   loginDockerViaGCPSSH "$GCP_VM_NAME" "$GDOCKER_USER" "$GDOCKER_PASS"
   extractSourceTarballViaGCPSSH "$GCP_VM_NAME"
