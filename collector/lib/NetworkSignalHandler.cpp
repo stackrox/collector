@@ -95,6 +95,12 @@ std::pair<Connection, bool> NetworkSignalHandler::GetConnection(sinsp_evt* evt) 
   const Endpoint* local = is_server ? &server : &client;
   const Endpoint* remote = is_server ? &client : &server;
 
+  // connect() and accept() are meaningless wrt. who is the server and client in UDP. Hence, reverse the roles if the
+  // ports (ephemeral vs non-ephemeral) suggests they should be reversed.
+  if (l4proto == L4Proto::UDP && IsEphemeralPort(server.port()) > IsEphemeralPort(client.port())) {
+    is_server = !is_server;
+  }
+
   const std::string* container_id = event_extractor_.get_container_id(evt);
   if (!container_id) return {{}, false};
   return {Connection(*container_id, *local, *remote, l4proto, is_server), true};

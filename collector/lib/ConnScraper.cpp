@@ -271,9 +271,6 @@ bool ParseConnLine(const char* p, const char* endp, Address::Family family, Conn
   return true;
 }
 
-// IsEphemeralPort checks if the given port looks like an ephemeral (i.e., client-side) port. Note that not all
-// operating systems adhere to the IANA-recommended range. Therefore, the return value is not a bool, but instead an
-// int which indicates the confidence that the port is in fact ephemeral.
 int IsEphemeralPort(uint16_t port) {
   if (port >= 49152) return 4;  // IANA range
   if (port >= 32768) return 3;  // Modern Linux kernel range
@@ -324,7 +321,8 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE*
     conn_info.l4proto = l4proto;
     // Note that the layout of net/tcp guarantees that all listen sockets will be listed before all active or closed
     // connections, hence we can assume listen_endpoint to have its final value at this point.
-    conn_info.is_server = LocalIsServer(data.local, data.remote, listen_endpoints);
+    // Also, we only consult listen endpoints for connection-oriented protocols (i.e., TCP).
+    conn_info.is_server = LocalIsServer(data.local, data.remote, l4proto == L4Proto::TCP ? listen_endpoints : UnorderedSet<Endpoint>());
   }
 
   return true;

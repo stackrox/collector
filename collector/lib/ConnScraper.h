@@ -45,6 +45,12 @@ class ConnScraper {
   std::string proc_path_;
 };
 
+
+// IsEphemeralPort checks if the given port looks like an ephemeral (i.e., client-side) port. Note that not all
+// operating systems adhere to the IANA-recommended range. Therefore, the return value is not a bool, but instead an
+// int which indicates the confidence that the port is in fact ephemeral.
+int IsEphemeralPort(uint16_t port);
+
 }  // namespace collector
 
 #endif //COLLECTOR_CONNSCRAPER_H
