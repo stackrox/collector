@@ -23,6 +23,7 @@ buildSourceTarballWorkingDir() {
   fi
   tar cvfz /tmp/collector.tar.gz collector/
   popd
+  mv /tmp/collector.tar.gz .
 }
 
 # builds collector.tar.gz from $1 git clone (not working dir!)
