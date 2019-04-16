@@ -26,24 +26,9 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <vector>
 
-#include <grpcpp/channel.h>
+#include "CollectorConfig.h"
 
 namespace collector {
-
-struct CollectorConfig {
-  bool useEbpf = false;
-  bool useChiselCache = true;
-  int snapLen = 2048;
-  int scrape_interval;
-  bool turn_off_scrape = false;
-
-  std::string hostname;
-  std::string chisel;
-
-  std::string host_proc;
-
-  std::shared_ptr<grpc::Channel> grpc_channel;
-};
 
 class CollectorService {
  public:

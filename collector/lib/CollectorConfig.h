@@ -21,49 +21,52 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef _COLLECTOR_ARGS_H_
-#define _COLLECTOR_ARGS_H_
+#ifndef _COLLECTOR_CONFIG_H_
+#define _COLLECTOR_CONFIG_H_
 
-#include <string>
-#include <json/json.h>
+#include <vector>
 
-#include "optionparser.h"
+#include <grpcpp/channel.h>
 
 namespace collector {
 
-class CollectorArgs {
-    public:
-    static CollectorArgs *getInstance();
+class CollectorArgs;
 
-    bool parse(int argc, char **argv, int &exitCode);
-    void clear();
+class CollectorConfig {
+ public:
+  CollectorConfig();
+  CollectorConfig(CollectorArgs* collectorArgs);
 
-    option::ArgStatus checkCollectorConfig(const option::Option& option, bool msg);
-    option::ArgStatus checkCollectionMethod(const option::Option& option, bool msg);
-    option::ArgStatus checkChisel(const option::Option& option, bool msg);
-    option::ArgStatus checkGRPCServer(const option::Option& option, bool msg);
-    option::ArgStatus checkOptionalNumeric(const option::Option& option, bool msg);
+  std::string asString() const;
 
-    const Json::Value &CollectorConfig() const;
-    const std::string &CollectionMethod() const;
-    const std::string &Chisel() const;
-    const std::string &GRPCServer() const;
-    const std::string &Message() const;
+  bool UseEbpf() const;
+  bool UseChiselCache() const;
+  bool TurnOffScrape() const;
+  int ScrapeInterval() const;
+  int SnapLen() const;
+  std::string Chisel() const;
+  std::string Hostname() const;
+  std::string HostProc() const;
+  std::string CollectionMethod() const;
+  std::vector<std::string> Syscalls() const;
 
-    private:
-    CollectorArgs();
-    ~CollectorArgs();
+ private: 
+  bool use_chisel_cache_;
+  int scrape_interval_;
+  int snap_len_;
+  std::string collection_method_;
+  std::string chisel_;
+  bool turn_off_scrape_;
+  std::vector<std::string> syscalls_;
 
-    static CollectorArgs *instance;
+  std::string hostname_;
 
-    Json::Value collectorConfig;
-    std::string collectionMethod;
-    std::string chisel;
-    std::string message;
-    std::string grpcServer;
+  std::string host_proc_;
+
+ public:
+  std::shared_ptr<grpc::Channel> grpc_channel;
 };
 
-}   /* namespace collector */
+} // end namespace collector
 
-#endif  /* _COLLECTOR_ARGS_H_ */
-
+#endif  // _COLLECTOR_CONFIG_H_
