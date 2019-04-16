@@ -30,47 +30,28 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-const bool kDefaultUseChiselCache = true;
-const bool kDefaultSnapLen = 0;
-const int kDefaultScrapeInterval = 30;
-const bool kDefaultTurnOffScrape = false;
-
-const std::string kDefaultCollectionMethod = "kernel-module";
-
-const std::vector<std::string> kDefaultSyscalls = 
-  {"accept","connect","execve","fork","clone","close","shutdown","socket"};
-
-const char* kDefaultChisel = R"(
--- Chisel description
-description = "only display events relevant to security modeling and detection"
-short_description = "security relevant"
-category = "misc"
-
--- Chisel argument list
-args = {}
-
--- Event parsing callback
-function on_event()
-    return true
-end
-
-function on_init()
-    filter = "not container.id = 'host'\n"
-    chisel.set_filter(filter)
-    return true
-end
-
-)";
+constexpr bool        CollectorConfig::kUseChiselCache;
+constexpr bool        CollectorConfig::kSnapLen;
+constexpr bool        CollectorConfig::kTurnOffScrape;
+constexpr int         CollectorConfig::kScrapeInterval;
+constexpr char        CollectorConfig::kCollectionMethod[];
+constexpr char        CollectorConfig::kChisel[];
+constexpr const char* CollectorConfig::kSyscalls[];
 
 CollectorConfig::CollectorConfig(CollectorArgs *args) {
-  // Default values
-  use_chisel_cache_ = kDefaultUseChiselCache;
-  scrape_interval_ = kDefaultScrapeInterval;
-  turn_off_scrape_ = kDefaultTurnOffScrape;
-  snap_len_ = kDefaultSnapLen;
-  chisel_ = kDefaultChisel;
-  syscalls_ = kDefaultSyscalls;
-  collection_method_ = kDefaultCollectionMethod;
+  // Set default configuration values
+  use_chisel_cache_ = kUseChiselCache;
+  scrape_interval_ = kScrapeInterval;
+  turn_off_scrape_ = kTurnOffScrape;
+  snap_len_ = kSnapLen;
+  chisel_ = kChisel;
+  collection_method_ = kCollectionMethod;
+
+  for (const auto& syscall: kSyscalls) {
+    syscalls_.push_back(syscall);
+  }
+
+  // Get hostname and path to host proc dir
   hostname_ = GetHostname();
   host_proc_ = GetHostPath("/proc");
 
@@ -94,6 +75,17 @@ CollectorConfig::CollectorConfig(CollectorArgs *args) {
     if (!config["turnOffScrape"].empty()) {
       turn_off_scrape_ = config["turnOffScrape"].asBool();
       CLOG(INFO) << "User configured turnOffScrape=" << turn_off_scrape_;
+    }
+
+    // Log Level
+    if (!config["logLevel"].empty()) {
+      logging::LogLevel level;
+      if (logging::ParseLogLevelName(config["logLevel"].asString(), &level)) {
+        logging::SetLogLevel(level);
+        CLOG(INFO) << "User configured logLevel=" << config["logLevel"].asString();
+      } else {
+        CLOG(INFO) << "User configured logLevel is invalid " << config["logLevel"].asString();
+      }
     }
 
     // Chisel
@@ -173,15 +165,19 @@ std::vector<std::string> CollectorConfig::Syscalls() const {
   return syscalls_;
 }
 
-std::string CollectorConfig::asString() const {
-  std::stringstream ss;
-  ss << "collection_method:" << this->collection_method_;
-  ss << ", useChiselCache:" << this->use_chisel_cache_;
-  ss << ", snapLen:" << this->snap_len_;
-  ss << ", scrape_interval:" << this->scrape_interval_;
-  ss << ", turn_off_scrape:" << this->turn_off_scrape_;
-  ss << ", hostname:" << this->hostname_;
-  return ss.str();
+std::string CollectorConfig::LogLevel() const {
+  return logging::GetLogLevelName(logging::GetLogLevel());
+}
+
+std::ostream& operator<< (std::ostream& os, const CollectorConfig& c) {
+  os << "collection_method:" << c.CollectionMethod()
+    << ", useChiselCache:" << c.UseChiselCache()
+    << ", snapLen:" << c.SnapLen()
+    << ", scrape_interval:" << c.ScrapeInterval()
+    << ", turn_off_scrape:" << c.TurnOffScrape()
+    << ", hostname:" << c.Hostname()
+    << ", logLevel:" << c.LogLevel();
+  return os;
 }
 
 }  // namespace collector

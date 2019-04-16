@@ -48,7 +48,7 @@ CollectorService::CollectorService(const CollectorConfig& config, std::atomic<Co
                                    const std::atomic<int>* signum)
     : config_(config), control_(control), signum_(*signum)
 {
-  CLOG(DEBUG) << "config = [" << config.asString() << "]";
+  CLOG(INFO) << "Config: " << config;
 }
 
 void CollectorService::RunForever() {

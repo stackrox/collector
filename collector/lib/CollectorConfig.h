@@ -24,6 +24,7 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _COLLECTOR_CONFIG_H_
 #define _COLLECTOR_CONFIG_H_
 
+#include <ostream>
 #include <vector>
 
 #include <grpcpp/channel.h>
@@ -34,6 +35,34 @@ class CollectorArgs;
 
 class CollectorConfig {
  public:
+  static constexpr bool        kUseChiselCache = true;
+  static constexpr bool        kSnapLen = 0;
+  static constexpr bool        kTurnOffScrape = false;
+  static constexpr int         kScrapeInterval = 30;
+  static constexpr char        kCollectionMethod[] = "kernel-module";
+  static constexpr const char* kSyscalls[] = {"accept","connect","execve","fork","clone","close","shutdown","socket"};
+  static constexpr char        kChisel[] = R"(
+-- Chisel description
+description = "only display events relevant to security modeling and detection"
+short_description = "security relevant"
+category = "misc"
+
+-- Chisel argument list
+args = {}
+
+-- Event parsing callback
+function on_event()
+    return true
+end
+
+function on_init()
+    filter = "not container.id = 'host'\n"
+    chisel.set_filter(filter)
+    return true
+end
+
+)";
+
   CollectorConfig() = delete;
   CollectorConfig(CollectorArgs* collectorArgs);
 
@@ -49,6 +78,9 @@ class CollectorConfig {
   std::string HostProc() const;
   std::string CollectionMethod() const;
   std::vector<std::string> Syscalls() const;
+  std::string LogLevel() const;
+
+  std::shared_ptr<grpc::Channel> grpc_channel;
 
  private: 
   bool use_chisel_cache_;
@@ -61,8 +93,7 @@ class CollectorConfig {
   std::string hostname_;
   std::string host_proc_;
 
- public:
-  std::shared_ptr<grpc::Channel> grpc_channel;
+  friend std::ostream& operator<< (std::ostream& os, const CollectorConfig& c);
 };
 
 } // end namespace collector
