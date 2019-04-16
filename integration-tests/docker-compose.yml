@@ -16,6 +16,7 @@ services:
     volumes:
     - /var/run/docker.sock:/host/var/run/docker.sock:ro
     - /proc:/host/proc:ro
+    - /etc:/host/etc:ro
     - /sys/module:/host/sys/module:ro
     - /dev:/host/dev:ro
 

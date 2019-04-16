@@ -16,6 +16,7 @@ services:
     volumes:
     - /var/run/docker.sock:/host/var/run/docker.sock:ro
     - /proc:/host/proc:ro
+    - /etc:/host/etc:ro
     - /sys/kernel/debug/tracing/events:/host/sys/kernel/debug/tracing/events:ro
     - /sys/devices/system/cpu:/host/sys/devices/system/cpu:ro
 
