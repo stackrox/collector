@@ -25,8 +25,9 @@ createGCP: &createGCP
     name: Create GCP VM
     command: |
       source $SOURCE_ROOT/.circleci/create-gcp-vm.sh
-      createGCPVM "collector-nb-${CIRCLE_WORKFLOW_ID}" u ubuntu-1804-lts ubuntu-os-cloud
       createGCPVM "collector-c-${CIRCLE_WORKFLOW_ID}" c cos-stable cos-cloud
+      createGCPVM "collector-nb-${CIRCLE_WORKFLOW_ID}" u ubuntu-1804-lts ubuntu-os-cloud
+      waitForCreateInSlots c u
       main "$DOCKER_USER" "$DOCKER_PASS" "$SOURCE_ROOT"
     background: false
 teardownGCPC: &teardownGCPC

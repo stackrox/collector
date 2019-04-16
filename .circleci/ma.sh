@@ -6,7 +6,6 @@ createGCPVMUbuntu() {
   [ -z "$GCP_VM_NAME" ] && echo "error: missing parameter GCP_VM_NAME" && return 1
   [ -z "$SOURCE_ROOT" ] && echo "error: missing parameter SOURCE_ROOT dir" && return 1
 
-  waitForCreateInSlots u
   buildSourceTarball "$SOURCE_ROOT"
   scpSourceTarballToGcpHost "$GCP_VM_NAME"
   return 0
