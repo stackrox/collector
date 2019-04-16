@@ -126,7 +126,7 @@ CollectorConfig::CollectorConfig(CollectorArgs *args) {
 
     // Ebpf (deprecated)
     if (!config["useEbpf"].empty()) {
-      collection_method_ = config["useEbpf"].asBool() ? "ebpf" : "kernel-module";
+      collection_method_ = config["useEbpf"].asBool() ? "ebpf" : "kernel_module";
       CLOG(INFO) << "User configured useEbpf=" << config["useEbpf"].asBool();
     }
 
