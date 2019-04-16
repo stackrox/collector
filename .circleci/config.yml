@@ -925,4 +925,3 @@ workflows:
         filters:
           tags:
             only: /.*/
-
