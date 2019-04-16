@@ -691,7 +691,7 @@ jobs:
           set -e
           cd ~/workspace/go/src/github.com/stackrox/collector
 
-          if ./circleci/coshelp/copy-tarball-to-cos "collector-c-${CIRCLE_WORKFLOW_ID}" ; then
+          if ./.circleci/coshelp/copy-tarball-to-cos "collector-c-${CIRCLE_WORKFLOW_ID}" ; then
             RESULT=0
           else
             RESULT=1
