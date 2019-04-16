@@ -638,7 +638,7 @@ jobs:
         command: |
           set -e
           gcloud compute ssh "collector-nb-${CIRCLE_WORKFLOW_ID}" --command "docker pull ${IMAGE_COLLECTOR}"
-          if gcloud compute ssh "collector-nb-${CIRCLE_WORKFLOW_ID}" --command "cd /home/circleci/collector/.circleci && source run-integration-tests && run-integration-tests ${COLLECTOR_TAG}" ; then
+          if gcloud compute ssh "collector-nb-${CIRCLE_WORKFLOW_ID}" --command "cd /home/circleci/collector/.circleci && sudo bash -c 'source run-integration-tests && run-integration-tests ${COLLECTOR_TAG}'" ; then
             RESULT=0
           else
             RESULT=1
