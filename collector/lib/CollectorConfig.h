@@ -34,7 +34,7 @@ class CollectorArgs;
 
 class CollectorConfig {
  public:
-  CollectorConfig();
+  CollectorConfig() = delete;
   CollectorConfig(CollectorArgs* collectorArgs);
 
   std::string asString() const;
@@ -58,9 +58,7 @@ class CollectorConfig {
   std::string chisel_;
   bool turn_off_scrape_;
   std::vector<std::string> syscalls_;
-
   std::string hostname_;
-
   std::string host_proc_;
 
  public:

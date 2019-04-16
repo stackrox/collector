@@ -62,21 +62,8 @@ end
 
 )";
 
-CollectorConfig::CollectorConfig() {
-  // Defaults 
-  use_chisel_cache_ = kDefaultUseChiselCache;
-  scrape_interval_ = kDefaultScrapeInterval;
-  turn_off_scrape_ = kDefaultTurnOffScrape;
-  snap_len_ = kDefaultSnapLen;
-  chisel_ = kDefaultChisel;
-  syscalls_ = kDefaultSyscalls;
-  collection_method_ = kDefaultCollectionMethod;
-  hostname_ = GetHostname();
-  host_proc_ = GetHostPath("/proc");
-}
-
 CollectorConfig::CollectorConfig(CollectorArgs *args) {
-  // Defaults 
+  // Default values
   use_chisel_cache_ = kDefaultUseChiselCache;
   scrape_interval_ = kDefaultScrapeInterval;
   turn_off_scrape_ = kDefaultTurnOffScrape;
@@ -87,6 +74,7 @@ CollectorConfig::CollectorConfig(CollectorArgs *args) {
   hostname_ = GetHostname();
   host_proc_ = GetHostPath("/proc");
 
+  // Check user provided configuration
   if (args) {
     auto config = args->CollectorConfig();
 
