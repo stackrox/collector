@@ -44,6 +44,9 @@ EOF
   make tag
   pwd
   ls -F
+  echo $COLLECTOR_TAG
+  source ../shared-env
+  echo $COLLECTOR_TAG
   echo "STARTING  EBPF INTEGRATION TESTS"
   if make integration-tests-ebpf ; then
     RESULT=0
