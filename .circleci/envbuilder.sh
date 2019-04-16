@@ -22,18 +22,27 @@ runGCPCosTestViaSSH() {
   shift
   local GSOURCE_ROOT="$1"
   shift
-  installVariousAptDepsViaGCPSSH "$GCP_VM_NAME"
-  loginDockerViaGCPSSH "$GCP_VM_NAME" "$GDOCKER_USER" "$GDOCKER_PASS"
-  extractSourceTarballViaGCPSSH "$GCP_VM_NAME"
-  cd ../../integration-tests
+  if gcloud compute ssh "$GCP_VM_NAME" --command "test -d collector" ; then
+    echo "(collector/ already copied it seems)"
+  else
+    buildSourceTarballWorkingDir "$SOURCE_ROOT"
+    scpSourceTarballToGcpHost "$GCP_VM_NAME"
+    extractSourceTarballViaGCPSSH "$GCP_VM_NAME"
+  fi
+  gcloud compute ssh "$GCP_VM_NAME" --command "sudo toolbox uname -a"
+  if gcloud compute ssh "$GCP_VM_NAME" --command 'pwd && docker version && ls -l /var/run/docker.sock && date && echo TOOLBOX && ls -ld /tmp && echo TMPLSDONE && sudo toolbox --bind /var/run:/extrun --overlay $(pwd):$(pwd) $(pwd)/collector/.circleci/coshelp/oncos'" $DOCKER_USER $DOCKER_PASS" -- -t ; then
+    echo "Command succeeded"
+    return 0
+  else
+    echo "Command failed"
+    return 1
+  fi
 }
 
 runCircleGCPUbuntuTestViaSSH() {
   local GDOCKER_USER="$1"
   shift
   local GDOCKER_PASS="$1"
-  shift
-  local GSOURCE_ROOT="$1"
   shift
   local GSOURCE_ROOT="$1"
   shift

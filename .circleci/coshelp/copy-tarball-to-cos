@@ -21,5 +21,5 @@ gcloud compute ssh "$MACHINE_NAME" --command "date && ls -F && pwd && hostname"
 
 #runCircleGCPUbuntuTestViaSSH "$GDOCKER_USER" "$GDOCKER_PASS" "$GDOCKER_ROOT" "$GSOURCE_ROOT"
 
-runGCPCosTestViaSSH "$MACHINE_NAME"
+runGCPCosTestViaSSH "$MACHINE_NAME" "$DOCKER_USER" "$DOCKER_PASS" "$(pwd)/../.."
 
