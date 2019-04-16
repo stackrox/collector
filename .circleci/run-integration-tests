@@ -1,28 +1,43 @@
+echo defining run-integration-tests function
 run-integration-tests() {
-  export COLLECTOR_TAG="$1"
-  shift
-
+  echo running run-integration-tests function from $(pwd)
+  SCRIPTDIR=$(pwd)
+  echo R001
   source make-golang-dist
+  echo R002
   cat >/tmp/roottodo.$$ <<EOF
   cd /usr/local
   mkdir tmpdir
   cd tmpdir
-  tar xfz /home/circleci/.srbcache/dist/golang/go1.11.5.linux-amd64.tar.gz
+  tar xfz ~/.srbcache/dist/golang/go1.11.5.linux-amd64.tar.gz
   chown -R root:root go && mv go .. && cd .. && rm -rf tmpdir
   mkdir /go -m 777
 EOF
-  sudo bash -c "bash /tmp/roottodo.$$ && rm /tmp/roottodo.$$"
-
+  if test -d /usr/local/go ; then
+    echo golang already installed
+  else
+    bash -c "bash /tmp/roottodo.$$ && rm /tmp/roottodo.$$"
+  fi
+  echo R003
   set -e
   export GOPATH=/go
   export PATH="/usr/local/go/bin:$GOPATH/bin:/usr/local/bin:$PATH"
-  cd
-  local DN=$GOPATH/src/github.com/stackrox && mkdir -p $DN && mv collector $DN
+  echo "part 1 $(pwd)"
+  if test -d $HOME/collector ; then
+    cd
+  else
+    cd $SCRIPTDIR/../..
+  fi
+  echo "part 2 $(pwd)"
+  local DN=$GOPATH/src/github.com/stackrox && mkdir -p $DN || true
+  test -d collector || cd ../.. && echo ceedeed && pwd && ls -F
+  echo "part 3 $(pwd)"
+  mv collector $DN
   cd $DN/collector/collector
   go get -u github.com/jstemmer/go-junit-report
   curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-  sudo curl -L "https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-  sudo chmod +x /usr/local/bin/docker-compose
+  curl -L "https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  chmod +x /usr/local/bin/docker-compose
   local RESULT
   if make integration-tests-ebpf ; then
     RESULT=0
