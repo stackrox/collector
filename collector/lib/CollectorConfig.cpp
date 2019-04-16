@@ -30,7 +30,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-const bool kDefaultUseChiselCache = false;
+const bool kDefaultUseChiselCache = true;
 const bool kDefaultSnapLen = 0;
 const int kDefaultScrapeInterval = 30;
 const bool kDefaultTurnOffScrape = false;
@@ -125,21 +125,21 @@ CollectorConfig::CollectorConfig(CollectorArgs *args) {
       syscalls_ = syscalls;
 
       std::stringstream ss;
-      for (auto& s : syscalls_) ss << " " << s;
-      CLOG(INFO) << "User configured syscalls= " << ss.str();
+      for (auto& s : syscalls_) ss << s << ",";
+      CLOG(INFO) << "User configured syscalls=" << ss.str();
 
     }
 
     // Collection Method
     if (args->CollectionMethod().length() > 0) {
       collection_method_ = args->CollectionMethod();
-      CLOG(INFO) << "User configured collection method= " << collection_method_;
+      CLOG(INFO) << "User configured collection-method=" << collection_method_;
     }
 
     // Ebpf (deprecated)
     if (!config["useEbpf"].empty()) {
       collection_method_ = config["useEbpf"].asBool() ? "ebpf" : "kernel-module";
-      CLOG(INFO) << "User configured useEbpf= " << config["useEbpf"].asBool();
+      CLOG(INFO) << "User configured useEbpf=" << config["useEbpf"].asBool();
     }
 
   }
@@ -193,8 +193,6 @@ std::string CollectorConfig::asString() const {
   ss << ", scrape_interval:" << this->scrape_interval_;
   ss << ", turn_off_scrape:" << this->turn_off_scrape_;
   ss << ", hostname:" << this->hostname_;
-  ss << ", host_proc:" << this->host_proc_;
-  ss << ", grpc_chanel:" << (this->grpc_channel != nullptr);
   return ss.str();
 }
 
