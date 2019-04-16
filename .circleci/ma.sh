@@ -11,6 +11,20 @@ createGCPVMUbuntu() {
   return 0
 }
 
+# builds collector.tar.gz from working dir
+buildSourceTarballWorkingDir() {
+  local gitdir="$1"
+  [ -z "$gitdir" ] && echo "error: missing parameter git source dir" && return 1
+  pushd $gitdir/..
+  if test -d ~/workspace -a -f ~/workspace/shared-env ; then
+    cp ~/workspace/shared-env collector
+  else
+    touch shipdir/shared-env
+  fi
+  tar cvfz /tmp/collector.tar.gz collector/
+  popd
+}
+
 # builds collector.tar.gz from $1 git clone (not working dir!)
 buildSourceTarball() {
   local gitdir="$1"
