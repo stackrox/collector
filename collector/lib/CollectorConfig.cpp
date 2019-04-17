@@ -107,7 +107,6 @@ CollectorConfig::CollectorConfig(CollectorArgs *args) {
       std::stringstream ss;
       for (auto& s : syscalls_) ss << s << ",";
       CLOG(INFO) << "User configured syscalls=" << ss.str();
-
     }
 
     // Collection Method
@@ -121,7 +120,6 @@ CollectorConfig::CollectorConfig(CollectorArgs *args) {
       collection_method_ = config["useEbpf"].asBool() ? "ebpf" : "kernel_module";
       CLOG(INFO) << "User configured useEbpf=" << config["useEbpf"].asBool();
     }
-
   }
 }
 
@@ -170,14 +168,14 @@ std::string CollectorConfig::LogLevel() const {
 }
 
 std::ostream& operator<< (std::ostream& os, const CollectorConfig& c) {
-  os << "collection_method:" << c.CollectionMethod()
+  return os 
+    << "collection_method:" << c.CollectionMethod()
     << ", useChiselCache:" << c.UseChiselCache()
     << ", snapLen:" << c.SnapLen()
     << ", scrape_interval:" << c.ScrapeInterval()
     << ", turn_off_scrape:" << c.TurnOffScrape()
     << ", hostname:" << c.Hostname()
     << ", logLevel:" << c.LogLevel();
-  return os;
 }
 
 }  // namespace collector

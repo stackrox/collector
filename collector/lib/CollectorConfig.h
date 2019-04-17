@@ -42,25 +42,15 @@ class CollectorConfig {
   static constexpr char        kCollectionMethod[] = "kernel-module";
   static constexpr const char* kSyscalls[] = {"accept","connect","execve","fork","clone","close","shutdown","socket"};
   static constexpr char        kChisel[] = R"(
--- Chisel description
-description = "only display events relevant to security modeling and detection"
-short_description = "security relevant"
-category = "misc"
-
--- Chisel argument list
 args = {}
-
--- Event parsing callback
 function on_event()
     return true
 end
-
 function on_init()
     filter = "not container.id = 'host'\n"
     chisel.set_filter(filter)
     return true
 end
-
 )";
 
   CollectorConfig() = delete;
@@ -92,9 +82,9 @@ end
   std::vector<std::string> syscalls_;
   std::string hostname_;
   std::string host_proc_;
-
-  friend std::ostream& operator<< (std::ostream& os, const CollectorConfig& c);
 };
+
+std::ostream& operator<< (std::ostream& os, const CollectorConfig& c);
 
 } // end namespace collector
 
