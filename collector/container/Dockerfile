@@ -16,23 +16,7 @@ COPY --from=kernel_modules /kernel-modules /kernel-modules
 # paths like /dev/sysdig0, /proc, and /boot. Make sure this matches the volume
 # mount paths used when launching this container.
 #
-# COLLECTOR_CONFIG is the required json config string, and it defaults to
-# { "syscalls": [],"topic_query_field": "" }
-#
-# MAX_CONTENT_LENGTH_KB is optional, and it defaults to 1024.
-#
-# CONNECTION_LIMIT is optional, and it defaults to 64.
-#
-# CONNECTION_LIMIT_PER_IP is optional, and it defaults to 64.
-#
-# CONNECTION_TIMEOUT is optional, and it defaults to 8.
-#
-ENV SYSDIG_HOST_ROOT=/host \
-    MAX_CONTENT_LENGTH_KB=1024 \
-    CONNECTION_LIMIT=64 \
-    CONNECTION_LIMIT_PER_IP=64 \
-    CONNECTION_TIMEOUT=8 \
-    CHISEL='LS0gQ2hpc2VsIGRlc2NyaXB0aW9uCmRlc2NyaXB0aW9uID0gIm9ubHkgZGlzcGxheSBldmVudHMgcmVsZXZhbnQgdG8gc2VjdXJpdHkgbW9kZWxpbmcgYW5kIGRldGVjdGlvbiIKc2hvcnRfZGVzY3JpcHRpb24gPSAic2VjdXJpdHkgcmVsZXZhbnQiCmNhdGVnb3J5ID0gIm1pc2MiCgotLSBDaGlzZWwgYXJndW1lbnQgbGlzdAphcmdzID0ge30KCi0tIEV2ZW50IHBhcnNpbmcgY2FsbGJhY2sKZnVuY3Rpb24gb25fZXZlbnQoKQogICAgcmV0dXJuIHRydWUKZW5kCgpmdW5jdGlvbiBvbl9pbml0KCkKICAgIGZpbHRlciA9ICJub3QgY29udGFpbmVyLmlkID0gJ2hvc3QnXG4iCiAgICBjaGlzZWwuc2V0X2ZpbHRlcihmaWx0ZXIpCiAgICByZXR1cm4gdHJ1ZQplbmQK'
+ENV SYSDIG_HOST_ROOT=/host
 
 # HTTP API port (8080)
 EXPOSE 8080 9090
@@ -83,12 +67,9 @@ COPY NOTICE-collector.txt \
 
 ENTRYPOINT ["/bootstrap.sh"]
 
-# You must provide a BROKER_LIST environment variable or override the CMD.
-# For information on other variables, see the explanations of these environment variables above.
 CMD collector \
     --collector-config=$COLLECTOR_CONFIG \
-    --chisel=$CHISEL \
-    --broker-list=$BROKER_LIST \
+    --collection-method=$COLLECTION_METHOD \
     --grpc-server=$GRPC_SERVER
 
 COPY bin/ /usr/local/bin/

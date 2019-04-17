@@ -50,6 +50,7 @@ void SetLogLevel(LogLevel level);
 bool CheckLogLevel(LogLevel level);
 
 const char* GetLogLevelName(LogLevel level);
+char GetLogLevelShortName(LogLevel level);
 bool ParseLogLevelName(std::string name, LogLevel* level);
 
 const char* GetGlobalLogPrefix();
@@ -67,11 +68,10 @@ class LogMessage {
     } else {
       ++basename;
     }
-    const char* lvlName = GetLogLevelName(level_);
     auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     auto nowTm = gmtime(&now);
     std::cerr << GetGlobalLogPrefix() 
-      << "[" << lvlName
+      << "[" << GetLogLevelShortName(level_)
       << " " << std::put_time(nowTm, "%Y%m%d %H%M%S")
       << " " << basename << ":" << line_ << "] " << buf_.str() << std::endl;
     if (level_ == LogLevel::FATAL) {

@@ -14,7 +14,7 @@ KERNEL_MINOR=$(echo ${KERNEL_VERSION} | cut -d. -f2)
 
 MODULE_VERSION="$(cat /kernel-modules/MODULE_VERSION.txt)"
 if [[ -n "$MODULE_VERSION" ]]; then
-    echo "StackRox kernel object version: $MODULE_VERSION"
+    echo "StackRox kernel object version: $MODULE_VERSION" >&2
     if [[ -n "$MODULE_DOWNLOAD_BASE_URL" ]]; then
         MODULE_URL="${MODULE_DOWNLOAD_BASE_URL}/${MODULE_VERSION}"
     fi
@@ -31,7 +31,7 @@ if [ -f "/host/etc/os-release" ]; then
         fi 
     fi
 fi
-echo "Linux kernel version: $KERNEL_VERSION."
+echo "Linux kernel version: $KERNEL_VERSION." >&2
 
 KERNEL_MODULE="${MODULE_NAME}-${KERNEL_VERSION}.ko"
 KERNEL_PROBE="${PROBE_NAME}-${KERNEL_VERSION}.o"
@@ -48,8 +48,8 @@ function test {
 
 function remove_module() {
     if lsmod | grep -q "$MODULE_NAME"; then
-        echo "Collector kernel module has already been loaded."
-        echo "Removing so that collector can insert it at startup."
+        echo "Collector kernel module has already been loaded." >&2
+        echo "Removing so that collector can insert it at startup." >&2
         test rmmod "$MODULE_NAME"
     fi
 }
@@ -58,7 +58,7 @@ function download_kernel_object() {
     local KERNEL_OBJECT="$1"
     local OBJECT_PATH="$2"
     if [[ -z "$MODULE_URL" ]]; then
-        echo "Downloading modules not supported."
+        echo "Downloading modules not supported." >&2
         return 1
     fi
     local URL="$MODULE_URL/$KERNEL_OBJECT"
@@ -80,9 +80,10 @@ function download_kernel_object() {
 function find_kernel_object() {
     local KERNEL_OBJECT="$1"
     local OBJECT_PATH="$2"
-    EXPECTED_PATH="/kernel-modules/$KERNEL_OBJECT"
+    local EXPECTED_PATH="/kernel-modules/$KERNEL_OBJECT"
+
     if [[ -f "${EXPECTED_PATH}.gz" ]]; then
-      gunzip -c "${EXPECTED_PATH}.gz" >"$OBJECT_PATH"
+      gunzip -c "${EXPECTED_PATH}.gz" >"${OBJECT_PATH}"
     elif [ -f "$EXPECTED_PATH" ]; then
       cp "$EXPECTED_PATH" "$OBJECT_PATH"
     else
@@ -101,36 +102,66 @@ function kernel_supports_ebpf() {
     return 0
 }
 
+function collection_method_module() {
+    if [ -z "${COLLECTION_METHOD}" ] || [ "$(echo ${COLLECTION_METHOD} | tr '[:upper:]' '[:lower:]')" == "kernel_module" ]; then
+        return 0
+    fi
+    return 1
+}
+
+function collection_method_ebpf() {
+    if [ -z "${COLLECTION_METHOD}" ] || [ "$(echo ${COLLECTION_METHOD} | tr '[:upper:]' '[:lower:]')" == "ebpf" ]; then
+        return 0
+    fi
+    return 1
+}
+
 # Get the hostname from Docker so this container can use it in its output.
 export NODE_HOSTNAME=""
 NODE_HOSTNAME=$(curl -s --unix-socket /host/var/run/docker.sock http://localhost/info | jq --raw-output .Name)
 
+mkdir -p /module
 
-mkdir -p /module/
-if ! find_kernel_object "${KERNEL_MODULE}" "${MODULE_PATH}"; then
-  if ! download_kernel_object "${KERNEL_MODULE}" "${MODULE_PATH}" || [[ ! -f "$MODULE_PATH" ]]; then
-    echo "The $MODULE_NAME module may not have been compiled for this version yet." >&2
-  fi
+if ! collection_method_ebpf && ! collection_method_module ; then
+  echo "Collector configured with invalid value for COLLECTION_METHOD=${COLLECTION_METHOD}" >&2
 fi
 
-chmod 0444 "$MODULE_PATH"
-
-# The collector program will insert the kernel module upon startup.
-remove_module
-
-if kernel_supports_ebpf; then
-  if ! find_kernel_object "${KERNEL_PROBE}" "${PROBE_PATH}"; then
-    if ! download_kernel_object "${KERNEL_PROBE}" "${PROBE_PATH}" || [[ ! -f "$PROBE_PATH" ]]; then
-      echo "The $PROBE_NAME probe may not have been compiled for this version yet." >&2
+if collection_method_module; then
+  echo "Preparing Kernel Module..." >&2
+  if ! find_kernel_object "${KERNEL_MODULE}" "${MODULE_PATH}"; then
+    if ! download_kernel_object "${KERNEL_MODULE}" "${MODULE_PATH}" || [[ ! -f "$MODULE_PATH" ]]; then
+      echo "The $MODULE_NAME module may not have been compiled for this version yet." >&2
     fi
   fi
-  if [[ -f "$PROBE_PATH" ]]; then
-    chmod 0444 "$PROBE_PATH"
+  
+  if [[ -f "$MODULE_PATH" ]]; then
+    chmod 0444 "$MODULE_PATH"
+  else
+    echo "Failed to find kernel module for kernel version $KERNEL_VERSION." >&2
+  fi
+
+  # The collector program will insert the kernel module upon startup.
+  remove_module
+fi
+
+if collection_method_ebpf; then
+  echo "Preparing eBPF Probe..." >&2
+  if kernel_supports_ebpf; then
+    if ! find_kernel_object "${KERNEL_PROBE}" "${PROBE_PATH}"; then
+      if ! download_kernel_object "${KERNEL_PROBE}" "${PROBE_PATH}" || [[ ! -f "$PROBE_PATH" ]]; then
+        echo "The $PROBE_NAME probe may not have been compiled for this version yet." >&2
+      fi
+    fi
+
+    if [[ -f "$PROBE_PATH" ]]; then
+      chmod 0444 "$PROBE_PATH"
+    else
+      echo "Failed to find ebpf probe for kernel version $KERNEL_VERSION." >&2
+    fi
   fi
 fi
 
 if [[ ! -f "$PROBE_PATH" ]] && [[ ! -f "$MODULE_PATH" ]]; then
-    echo "No module or probe found for kernel version $KERNEL_VERSION." >&2
     echo "Please provide this complete error message to StackRox support." >&2
     echo "This program will now exit and retry when it is next restarted." >&2
     echo "" >&2
@@ -140,9 +171,6 @@ fi
 # Uncomment this to enable generation of core for Collector
 # echo '/core/core.%e.%p.%t' > /proc/sys/kernel/core_pattern
 
-echo "COLLECTOR_CONFIG = $COLLECTOR_CONFIG"
-echo "CHISEL = $CHISEL"
-
 clean_up() {
     echo "collector pid to be stopped is $PID"
     kill -TERM $PID; wait $PID
@@ -150,7 +178,7 @@ clean_up() {
 
 # Remove "/bin/sh -c" from arguments
 shift;shift
-echo "Exec $*"
+echo "Starting StackRox Collector..."  >&2
 # Signal handler for SIGTERM
 trap 'clean_up' TERM QUIT INT
 eval exec "$@" &

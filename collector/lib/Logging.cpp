@@ -74,19 +74,38 @@ bool CheckLogLevel(LogLevel level) {
 const char* GetLogLevelName(LogLevel level) {
   switch (level) {
   case LogLevel::TRACE:
-    return "T";
+    return "TRACE";
   case LogLevel::DEBUG:
-    return "D";
+    return "DEBUG";
   case LogLevel::INFO:
-    return "I";
+    return "INFO";
   case LogLevel::WARNING:
-    return "W";
+    return "WARNING";
   case LogLevel::ERROR:
-    return "E";
+    return "ERROR";
   case LogLevel::FATAL:
-    return "F";
+    return "FATAL";
   default:
     return "UNKNOWN";
+  };
+}
+
+char GetLogLevelShortName(LogLevel level) {
+  switch (level) {
+  case LogLevel::TRACE:
+    return 'T';
+  case LogLevel::DEBUG:
+    return 'D';
+  case LogLevel::INFO:
+    return 'I';
+  case LogLevel::WARNING:
+    return 'W';
+  case LogLevel::ERROR:
+    return 'E';
+  case LogLevel::FATAL:
+    return 'F';
+  default:
+    return 'U';
   };
 }
 

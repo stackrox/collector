@@ -49,6 +49,15 @@ std::unique_ptr<T> MakeUnique(Args&&... args) {
   return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
+// Return string decoded from base 64
+std::string Base64Decode(std::string const& encoded_string);
+
+// Get path using host prefix from SYSDIG_HOST_ROOT env var
+std::string GetHostPath(const std::string& file);
+
+// Get hostname from NODE_HOSTNAME env var
+const char* GetHostname();
+
 namespace impl {
 
 inline void StrAppend(std::ostringstream* os) {}

@@ -5,8 +5,10 @@ services:
   collector:
     image: "stackrox/collector:${COLLECTOR_TAG}"
     environment:
-    - "GRPC_SERVER=grpc-server:9999"
-    - 'COLLECTOR_CONFIG={"turnOffScrape":true,"syscalls":["accept","connect","execve","fork","clone","close","shutdown","socket"],"scrapeInterval":"2"}'
+    - 'GRPC_SERVER=grpc-server:9999'
+    - 'COLLECTOR_CONFIG={"logLevel":"debug","turnOffScrape":true,"scrapeInterval":"2"}'
+    - 'COLLECTION_METHOD=kernel_module'
+    - 'MODULE_DOWNLOAD_BASE_URL=https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656'
     restart: always
     privileged: true
     networks:
@@ -14,6 +16,7 @@ services:
     volumes:
     - /var/run/docker.sock:/host/var/run/docker.sock:ro
     - /proc:/host/proc:ro
+    - /etc:/host/etc:ro
     - /sys/module:/host/sys/module:ro
     - /dev:/host/dev:ro
 

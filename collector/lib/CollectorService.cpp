@@ -47,7 +47,9 @@ namespace collector {
 CollectorService::CollectorService(const CollectorConfig& config, std::atomic<ControlValue>* control,
                                    const std::atomic<int>* signum)
     : config_(config), control_(control), signum_(*signum)
-{}
+{
+  CLOG(INFO) << "Config: " << config;
+}
 
 void CollectorService::RunForever() {
   // Start monitoring services.
@@ -59,7 +61,7 @@ void CollectorService::RunForever() {
   std::shared_ptr<ConnectionTracker> conn_tracker;
 
   SysdigService sysdig;
-  GetStatus getStatus(config_.hostname, &sysdig);
+  GetStatus getStatus(config_.Hostname(), &sysdig);
 
   std::shared_ptr<prometheus::Registry> registry = std::make_shared<prometheus::Registry>();
 
@@ -72,7 +74,7 @@ void CollectorService::RunForever() {
 
   std::unique_ptr<NetworkStatusNotifier> net_status_notifier;
 
-  CLOG(INFO) << "Network scrape interval set to " << config_.scrape_interval << " seconds";
+  CLOG(INFO) << "Network scrape interval set to " << config_.ScrapeInterval() << " seconds";
 
   if (config_.grpc_channel) {
     CLOG(INFO) << "Waiting for GRPC server to become ready ...";
@@ -83,7 +85,7 @@ void CollectorService::RunForever() {
     CLOG(INFO) << "GRPC server connectivity is successful";
 
     conn_tracker = std::make_shared<ConnectionTracker>();
-    net_status_notifier = MakeUnique<NetworkStatusNotifier>(config_.hostname, config_.host_proc, config_.scrape_interval, config_.turn_off_scrape, conn_tracker, config_.grpc_channel);
+    net_status_notifier = MakeUnique<NetworkStatusNotifier>(config_.Hostname(), config_.HostProc(), config_.ScrapeInterval(), config_.TurnOffScrape(), conn_tracker, config_.grpc_channel);
     net_status_notifier->Start();
   }
 
@@ -103,7 +105,7 @@ void CollectorService::RunForever() {
 
     std::lock_guard<std::mutex> lock(chisel_mutex_);
     if (update_chisel_) {
-      CLOG(INFO) << "Updating chisel ...";
+      CLOG(DEBUG) << "Updating chisel ...";
       sysdig.SetChisel(chisel_);
       update_chisel_ = false;
       // Reset the control value to RUN, but abort if it has changed to STOP_COLLECTOR in the meantime.

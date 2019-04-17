@@ -48,9 +48,9 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
   }
 
   inspector_.reset(new_inspector());
-  inspector_->set_snaplen(config.snapLen);
+  inspector_->set_snaplen(config.SnapLen());
 
-  if (config.useEbpf) {
+  if (config.UseEbpf()) {
     useEbpf = true;
     inspector_->set_bpf_probe(kProbePath);
   }
@@ -67,9 +67,9 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
     CLOG(FATAL) << "There are no signal handlers";
   }
 
-  SetChisel(config.chisel);
+  SetChisel(config.Chisel());
 
-  use_chisel_cache_ = config.useChiselCache;
+  use_chisel_cache_ = config.UseChiselCache();
 }
 
 bool SysdigService::FilterEvent(sinsp_evt* event) {
@@ -228,7 +228,7 @@ bool SysdigService::GetStats(SysdigStats* stats) const {
 }
 
 void SysdigService::SetChisel(const std::string& chisel) {
-  CLOG(INFO) << "Updating chisel and flushing chisel cache";
+  CLOG(DEBUG) << "Updating chisel and flushing chisel cache";
   CLOG(DEBUG) << "New chisel: " << chisel;
   chisel_.reset(new_chisel(inspector_.get(), chisel, false));
   chisel_->on_init();

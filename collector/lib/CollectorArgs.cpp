@@ -21,6 +21,7 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
+#include <algorithm>
 #include <cstring>
 #include <iostream>
 #include <sstream>
@@ -39,6 +40,7 @@ enum optionIndex {
     UNKNOWN,
     HELP,
     COLLECTOR_CONFIG,
+    COLLECTION_METHOD,
     GRPC_SERVER,
     CHISEL
 };
@@ -47,6 +49,12 @@ static option::ArgStatus
 checkCollectorConfig(const option::Option& option, bool msg)
 {
     return CollectorArgs::getInstance()->checkCollectorConfig(option, msg);
+}
+
+static option::ArgStatus
+checkCollectionMethod(const option::Option& option, bool msg)
+{
+    return CollectorArgs::getInstance()->checkCollectionMethod(option, msg);
 }
 
 static option::ArgStatus
@@ -67,7 +75,8 @@ static const option::Descriptor usage[] =
                                                                                         "Options:" },
     { HELP,                    0, "", "help",                    option::Arg::None,     "  --help                \tPrint usage and exit." },
     { COLLECTOR_CONFIG,        0, "", "collector-config",        checkCollectorConfig,  "  --collector-config    \tREQUIRED: Collector config as a JSON string. Please refer to documentation on the valid JSON format." },
-    { CHISEL,                  0, "", "chisel",                  checkChisel,           "  --chisel              \tREQUIRED: Chisel is a base64 encoded string." },
+    { COLLECTION_METHOD,       0, "", "collection-method",       checkCollectionMethod, "  --collection-method   \tCollection method (kernel_module or ebpf)." },
+    { CHISEL,                  0, "", "chisel",                  checkChisel,           "  --chisel              \tChisel is a base64 encoded string." },
     { GRPC_SERVER,             0, "", "grpc-server",             checkGRPCServer,       "  --grpc-server         \tREQUIRED: GRPC server endpoint string in the form HOST1:PORT1." },
     { UNKNOWN,                 0, "", "",                        option::Arg::None,     "\nExamples:\n"
                                                                                         "  collector --grpc-server=\"172.16.0.5:443\"\n" },
@@ -137,6 +146,27 @@ CollectorArgs::parse(int argc, char **argv, int &exitCode)
 }
 
 option::ArgStatus
+CollectorArgs::checkCollectionMethod(const option::Option& option, bool msg)
+{
+    using namespace option;
+    using std::string;
+
+    if (option.arg == NULL) {
+        if (msg) {
+            this->message = "Missing collection method, using default.";
+        }
+        return ARG_OK;
+    }
+    std::string s = option.arg;
+    std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+    collectionMethod = s;
+
+    CLOG(DEBUG) << "CollectionMethod: " << collectionMethod;
+
+    return ARG_OK;
+}
+
+option::ArgStatus
 CollectorArgs::checkChisel(const option::Option& option, bool msg)
 {
     using namespace option;
@@ -157,7 +187,7 @@ CollectorArgs::checkChisel(const option::Option& option, bool msg)
         return ARG_ILLEGAL;
     }
 
-    CLOG(INFO) << "Chisel: " << chisel;
+    CLOG(DEBUG) << "Chisel: " << chisel;
     return ARG_OK;
 }
 
@@ -195,7 +225,7 @@ CollectorArgs::checkCollectorConfig(const option::Option& option, bool msg)
     }
 
     collectorConfig = root;
-    CLOG(INFO) << "Collector config: " << collectorConfig.toStyledString();
+    CLOG(DEBUG) << "Collector config: " << collectorConfig.toStyledString();
     return ARG_OK;
 }
 
@@ -252,6 +282,12 @@ const Json::Value &
 CollectorArgs::CollectorConfig()  const
 {
     return collectorConfig;
+}
+
+const std::string &
+CollectorArgs::CollectionMethod()  const
+{
+    return collectionMethod;
 }
 
 const std::string &

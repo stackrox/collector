@@ -91,14 +91,6 @@ static void AbortHandler(int signum) {
   raise(signum);
 }
 
-std::string GetHostPath(const std::string& file) {
-    const char* host_root = std::getenv("SYSDIG_HOST_ROOT");
-    if (!host_root) host_root = "";
-    std::string host_file(host_root);
-    host_file += file;
-    return host_file;
-}
-
 int InsertModule(int fd, const std::unordered_map<std::string, std::string>& args) {
   std::string args_str;
   bool first = true;
@@ -136,7 +128,7 @@ int InsertModule(int fd, const std::unordered_map<std::string, std::string>& arg
 // Method to insert the kernel module. The options to the module are computed
 // from the collector configuration. Specifically, the syscalls that we should
 // extract
-void insertModule(const Json::Value& syscall_list) {
+void insertModule(std::vector<std::string> syscall_list) {
     std::unordered_map<std::string, std::string> module_args;
 
     std::string& syscall_ids = module_args["s_syscallIds"];
@@ -144,11 +136,8 @@ void insertModule(const Json::Value& syscall_list) {
     // These are stashed into a string that will get passed to init_module
     // to insert the kernel module
     const EventNames& event_names = EventNames::GetInstance();
-    if (!syscall_list.isArray()) {
-      CLOG(FATAL) << "Syscall list JSON is not an array: " << syscall_list.toStyledString();
-    }
-    for (const auto& syscall_json : syscall_list) {
-        for (ppm_event_type id : event_names.GetEventIDs(syscall_json.asString())) {
+    for (const auto& syscall : syscall_list) {
+        for (ppm_event_type id : event_names.GetEventIDs(syscall)) {
             syscall_ids += std::to_string(id) + ",";
         }
     }
@@ -224,69 +213,6 @@ bool verifyProbeConfiguration() {
     return true;
 }
 
-static const std::string base64_chars =
-             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-             "abcdefghijklmnopqrstuvwxyz"
-             "0123456789+/";
-
-static inline bool is_base64(unsigned char c) {
-    return (std::isalnum(c) || (c == '+') || (c == '/'));
-}
-
-std::string base64_decode(std::string const& encoded_string) {
-    int in_len = encoded_string.size();
-    int i = 0;
-    int j = 0;
-    int in_ = 0;
-    unsigned char char_array_4[4], char_array_3[3];
-    std::string ret;
-
-    while (in_len-- && ( encoded_string[in_] != '=') && is_base64(encoded_string[in_])) {
-        char_array_4[i++] = encoded_string[in_]; in_++;
-        if (i ==4) {
-            for (i = 0; i <4; i++)
-                char_array_4[i] = base64_chars.find(char_array_4[i]);
-
-            char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
-            char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
-            char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
-
-            for (i = 0; (i < 3); i++)
-                ret += char_array_3[i];
-            i = 0;
-        }
-    }
-
-    if (i) {
-        for (j = i; j <4; j++)
-            char_array_4[j] = 0;
-
-        for (j = 0; j <4; j++)
-            char_array_4[j] = base64_chars.find(char_array_4[j]);
-
-        char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
-        char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
-        char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
-
-        for (j = 0; (j < i - 1); j++) ret += char_array_3[j];
-    }
-
-    return ret;
-}
-
-const char* GetHostname() {
-  const char* hostname = std::getenv("NODE_HOSTNAME");
-  if (hostname && *hostname) return hostname;
-
-  CLOG(ERROR) << "Failed to determine hostname, environment variable NODE_HOSTNAME not set";
-  return "unknown";
-}
-
-int GetScrapeInterval(Json::Value collectorConfig) {
-  std::string scrape_interval = collectorConfig.get("scrapeInterval", "30").asString();
-  return std::stoi(scrape_interval);
-}
-
 int main(int argc, char **argv) {
   if (!g_control.is_lock_free()) {
     CLOG(FATAL) << "Could not create a lock-free control variable!";
@@ -301,6 +227,8 @@ int main(int argc, char **argv) {
       CLOG(FATAL) << "Error parsing arguments";
   }
 
+  CollectorConfig config(args);
+
 #ifdef COLLECTOR_CORE
   struct rlimit limit;
   limit.rlim_cur = RLIM_INFINITY;
@@ -314,18 +242,12 @@ int main(int argc, char **argv) {
   Json::Value collectorConfig = args->CollectorConfig();
 
   // Extract configuration options
-  bool useChiselCache = collectorConfig["useChiselCache"].asBool();
-  CLOG(INFO) << "useChiselCache=" << useChiselCache;
-
   bool useGRPC = false;
   if (!args->GRPCServer().empty()) {
     useGRPC = true;
   }
 
-  bool useEbpf = collectorConfig["useEbpf"].asBool();
-  CLOG(INFO) << "useEbpf=" << useEbpf;
-
-  if (useEbpf) {
+  if (config.UseEbpf()) {
     if (!verifyProbeConfiguration()) {
       CLOG(FATAL) << "Error verifying ebpf configuration. Aborting...";
     }
@@ -339,7 +261,7 @@ int main(int argc, char **argv) {
       CLOG(WARNING) << "Failed to drop capabilities: " << StrError();
     }
 
-    insertModule(collectorConfig["syscalls"]);
+    insertModule(config.Syscalls());
 
     // Drop SYS_MODULE capability after successfully inserting module.
     capng_updatev(CAPNG_DROP, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_SYS_MODULE, -1);
@@ -353,12 +275,6 @@ int main(int argc, char **argv) {
   } else {
     CLOG(INFO) << "GRPC is disabled. Specify GRPC_SERVER='server addr' env and signalFormat = 'signal_summary' and  signalOutput = 'grpc'";
   }
-
-  std::string chiselB64 = args->Chisel();
-  std::string chisel = base64_decode(chiselB64);
-
-  bool turnOffScrape = collectorConfig["turnOffScrape"].asBool();
-  CLOG(INFO) << "turnOffScrape=" << turnOffScrape;
 
   std::shared_ptr<grpc::Channel> grpc_channel;
   if (useGRPC) {
@@ -384,15 +300,6 @@ int main(int argc, char **argv) {
     grpc_channel = collector::CreateChannel(args->GRPCServer(), creds);
   }
 
-  CollectorConfig config;
-  config.hostname = GetHostname();
-  config.host_proc = GetHostPath("/proc");
-  config.scrape_interval = GetScrapeInterval(collectorConfig);
-  config.turn_off_scrape = turnOffScrape;
-  config.snapLen = 0;
-  config.useChiselCache = useChiselCache;
-  config.useEbpf = useEbpf;
-  config.chisel = chisel;
   config.grpc_channel = std::move(grpc_channel);
 
   // Register signal handlers
