@@ -271,14 +271,6 @@ bool ParseConnLine(const char* p, const char* endp, Address::Family family, Conn
   return true;
 }
 
-int IsEphemeralPort(uint16_t port) {
-  if (port >= 49152) return 4;  // IANA range
-  if (port >= 32768) return 3;  // Modern Linux kernel range
-  if (port >= 1025 && port <= 5000) return 2;  // FreeBSD (partial) + Windows <=XP range
-  if (port == 1024) return 1;  // FreeBSD
-  return 0;  // not ephemeral according to any range
-}
-
 // LocalIsServer returns true if the connection between local and remote looks like the local end is the server (taking
 // the set of listening endpoints into account), and false otherwise.
 bool LocalIsServer(const Endpoint& local, const Endpoint& remote, const UnorderedSet<Endpoint>& listen_endpoints) {
@@ -437,6 +429,14 @@ bool ReadContainerConnections(const char* proc_path, std::vector<Connection>* co
 
 bool ConnScraper::Scrape(std::vector<Connection>* connections) {
   return ReadContainerConnections(proc_path_.c_str(), connections);
+}
+
+int IsEphemeralPort(uint16_t port) {
+  if (port >= 49152) return 4;  // IANA range
+  if (port >= 32768) return 3;  // Modern Linux kernel range
+  if (port >= 1025 && port <= 5000) return 2;  // FreeBSD (partial) + Windows <=XP range
+  if (port == 1024) return 1;  // FreeBSD
+  return 0;  // not ephemeral according to any range
 }
 
 }  // namespace collector
