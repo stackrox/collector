@@ -145,6 +145,11 @@ std::string GetHostPath(const std::string& file) {
   const char* host_root = std::getenv("SYSDIG_HOST_ROOT");
   if (!host_root) host_root = "";
   std::string host_file(host_root);
+  // Check if we are joining paths without a seperator,
+  if (host_file.length() && file.length() &&
+      host_file.back() != '/' && file.front() != '/') {
+    host_file += '/';
+  }
   host_file += file;
   return host_file;
 }
