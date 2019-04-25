@@ -329,6 +329,7 @@
 4.15.0-1040-azure
 4.15.0-1041-azure
 4.15.0-1042-azure
+4.15.0-1043-azure
 4.15.0-15-generic
 4.15.0-20-generic
 4.15.0-22-generic
@@ -767,5 +768,6 @@
 5.0.0-1004-gcp
 5.0.0-11-generic
 5.0.0-13-generic
+5.0.0-14-generic
 5.0.0-7-generic
 5.0.0-8-generic
