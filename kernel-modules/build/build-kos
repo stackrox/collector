@@ -65,8 +65,9 @@ build_ko() {
     }
 
     if (( kernel_major < 4 || (kernel_major == 4 && kernel_minor < 14) )); then
-        echo "Kernel version ${kernel_version} does not support eBPF probe building, skipping ..."
-        return 0
+        #echo "Kernel version ${kernel_version} does not support eBPF probe building, skipping ..."
+        #return 0
+        echo "Kernel version ${kernel_version} does may not support eBPF probe building"
     fi
 
     echo "Building collector eBPF probe for kernel version ${kernel_version} and module version ${module_version}."

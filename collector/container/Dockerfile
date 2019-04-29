@@ -43,6 +43,10 @@ RUN apt-get update \
 
 COPY libs/libsinsp-wrapper.so \
      /usr/local/lib/
+COPY libs/collector-3.10.0-957.10.1.el7.x86_64.ko.gz \
+     /kernel-modules/
+COPY libs/collector-ebpf-3.10.0-957.10.1.el7.x86_64.o.gz \
+     /kernel-modules/
 
 WORKDIR /
 
