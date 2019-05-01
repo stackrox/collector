@@ -47,8 +47,8 @@ class SignalServiceClient {
   using SignalService = sensor::SignalService;
   using SignalStreamMessage = sensor::SignalStreamMessage;
 
-  explicit SignalServiceClient(std::shared_ptr<grpc::Channel> channel)
-      : channel_(std::move(channel)), stream_active_(false) {}
+  explicit SignalServiceClient(std::string hostname, std::shared_ptr<grpc::Channel> channel)
+      : hostname_(std::move(hostname)), channel_(std::move(channel)), stream_active_(false) {}
 
   void Start();
   void Stop();
@@ -59,6 +59,7 @@ class SignalServiceClient {
   void EstablishGRPCStream();
   bool EstablishGRPCStreamSingle();
 
+  std::string hostname_;
   std::shared_ptr<grpc::Channel> channel_;
 
   StoppableThread thread_;

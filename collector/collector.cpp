@@ -143,8 +143,8 @@ void insertModule(std::vector<std::string> syscall_list) {
     }
     syscall_ids += "-1";
 
-    module_args["exclude_initns"] = "1";
-    module_args["exclude_selfns"] = "1";
+    module_args["exclude_initns"] = "0";
+    module_args["exclude_selfns"] = "0";
     module_args["verbose"] = "0";
 
     int fd = open(SysdigService::kModulePath, O_RDONLY);

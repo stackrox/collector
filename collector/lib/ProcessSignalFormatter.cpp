@@ -77,6 +77,8 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* eve
   if (!ValidateProcessDetails(event)) {
     CLOG(INFO) << "Dropping process event: " << ProcessDetails(event);
     return nullptr;
+  } else {
+    CLOG(DEBUG) << "Process event: " << ProcessDetails(event);
   }
 
   ProcessSignal* process_signal = CreateProcessSignal(event);
@@ -150,8 +152,11 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   signal->set_allocated_time(timestamp);
 
   // set container_id
-  if (const std::string* container_id = event_extractor_.get_container_id(event)) {
+  const std::string* container_id = event_extractor_.get_container_id(event);
+  if (container_id != nullptr && !(*container_id).empty()) {
     signal->set_container_id(*container_id);
+  } else {
+    signal->set_container_id("host");
   }
 
   // set process lineage
@@ -201,7 +206,11 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   signal->set_allocated_time(timestamp);
 
   // set container_id
-  signal->set_container_id(tinfo->m_container_id);
+  if (!tinfo->m_container_id.empty()) {
+    signal->set_container_id(tinfo->m_container_id);
+  } else{
+    signal->set_container_id("host");
+  }
 
   // set process lineage
   std::vector<std::string> lineage;
@@ -227,7 +236,7 @@ std::string ProcessSignalFormatter::ProcessDetails(sinsp_evt* event) {
   const char* args = event_extractor_.get_proc_args(event);
   const int64_t* pid = event_extractor_.get_pid(event);
 
-  ss << "Container: " << (container_id ? *container_id : "null")
+  ss << "Container: " << ((container_id && !(*container_id).empty()) ? *container_id : "host")
     << ", Name: " << (name ? *name : "null")
     << ", PID: " << (pid ? *pid : -1)
     << ", Path: " << (path ? *path : "null") 

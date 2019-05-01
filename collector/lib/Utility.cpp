@@ -74,7 +74,7 @@ const char* SignalName(int signum) {
 
 std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo *t) {
   if (t) {
-        os << "Container: \"" << t->m_container_id << "\", Name: " << t->m_comm << ", PID: " << t->m_pid << ", Args: " << t->m_exe;
+        os << "Container: \"" << ( t->m_container_id.empty() ? "host" : t->m_container_id ) << "\", Name: " << t->m_comm << ", PID: " << t->m_pid << ", Args: " << t->m_exe;
   } else {
         os << "NULL\n";
   }

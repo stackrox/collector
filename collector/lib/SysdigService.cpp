@@ -60,7 +60,7 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
   }
 
   if (config.grpc_channel) {
-    AddSignalHandler(MakeUnique<ProcessSignalHandler>(inspector_.get(), config.grpc_channel, &userspace_stats_));
+    AddSignalHandler(MakeUnique<ProcessSignalHandler>(config.Hostname(), inspector_.get(), config.grpc_channel, &userspace_stats_));
   }
 
   if (signal_handlers_.empty()) {
@@ -78,11 +78,17 @@ bool SysdigService::FilterEvent(sinsp_evt* event) {
   }
 
   sinsp_threadinfo* tinfo = event->get_thread_info();
-  if (!tinfo || tinfo->m_container_id.empty()) {
+  if (!tinfo) {
     return false;
   }
+  std::string container_id;
+  if (tinfo->m_container_id.empty()) {
+    container_id = "host";
+  } else {
+    container_id = tinfo->m_container_id;
+  }
 
-  auto pair = chisel_cache_.emplace(tinfo->m_container_id, ACCEPTED);
+  auto pair = chisel_cache_.emplace(container_id, ACCEPTED);
   ChiselCacheStatus& cache_status = pair.first->second;
   bool res;
 
@@ -200,6 +206,15 @@ bool SysdigService::SendExistingProcesses(SignalHandler* handler) {
       }
       CLOG(DEBUG) << "Found existing process: " << &tinfo;
     }
+    if (tinfo.m_container_id.empty() && tinfo.is_main_thread()) {
+      auto result = handler->HandleExistingProcess(&tinfo);
+      if (result == SignalHandler::ERROR || result == SignalHandler::NEEDS_REFRESH) {
+        CLOG(WARNING) << "Failed to write existing *host* process signal: " << &tinfo;
+        return false;
+      }
+      CLOG(DEBUG) << "Found existing *host* process " << &tinfo;
+    }
+
     return true;
   });
 }

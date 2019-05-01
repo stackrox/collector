@@ -47,7 +47,7 @@ function on_event()
     return true
 end
 function on_init()
-    filter = "not container.id = 'host'\n"
+    filter = "not container.id = 'host' or container.id = 'host'\n"
     chisel.set_filter(filter)
     return true
 end
