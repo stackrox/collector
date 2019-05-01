@@ -129,12 +129,12 @@ func (s *IntegrationTestSuite) TestProcessViz() {
 	assert.Nil(s.T(), err)
 	assert.Equal(s.T(), expectedProcessInfo, val)
 
-	processName = "sh"
-	exeFilePath = "/bin/sh"
-	expectedProcessInfo = fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
-	val, err = s.Get(processName, processBucket)
-	assert.Nil(s.T(), err)
-	assert.Equal(s.T(), expectedProcessInfo, val)
+	//processName = "sh"
+	//exeFilePath = "/bin/sh"
+	//expectedProcessInfo = fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
+	//val, err = s.Get(processName, processBucket)
+	//assert.Nil(s.T(), err)
+	//assert.Equal(s.T(), expectedProcessInfo, val)
 
 	processName = "sleep"
 	exeFilePath = "/bin/sleep"
