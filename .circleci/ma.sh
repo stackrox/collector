@@ -40,8 +40,8 @@ createGCPVM() {
   shift
 
   [ -z "$GCP_VM_NAME" ] && echo "error: missing parameter GCP_VM_NAME" && return 1
-  [ -z "$GCP_IMAGE_FAMILY" ] && echo "error: missing parameter GCP_VM_NAME" && return 1
-  [ -z "$GCP_IMAGE_PROJECT" ] && echo "error: missing parameter GCP_VM_NAME" && return 1
+  [ -z "$GCP_IMAGE_FAMILY" ] && echo "error: missing parameter GCP_IMAGE_FAMILY" && return 1
+  [ -z "$GCP_IMAGE_PROJECT" ] && echo "error: missing parameter GCP_IMAGE_PROJECT" && return 1
 
   local REGION=us-central1
 
