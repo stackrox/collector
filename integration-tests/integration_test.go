@@ -1,11 +1,7 @@
 package integrationtests
 
 import (
-	"bytes"
 	"fmt"
-	"os"
-	"os/exec"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -29,16 +25,17 @@ func TestCollectorGRPC(t *testing.T) {
 
 type IntegrationTestSuite struct {
 	suite.Suite
-	dbpath          string
-	db              *bolt.DB
-	serverIP        string
-	serverPort      string
-	clientIP        string
-	clientPort      string
-	serverContainer string
-	clientContainer string
-	useEbpf         bool
-	composeFile     string
+	db               *bolt.DB
+	executor         Executor
+	clientContainer  string
+	clientIP         string
+	clientPort       string
+	collectionMethod string
+	collectorTag     string
+	dbpath           string
+	serverContainer  string
+	serverIP         string
+	serverPort       string
 }
 
 // Launches collector
@@ -47,73 +44,94 @@ type IntegrationTestSuite struct {
 // Execs into nginx and does a sleep
 func (s *IntegrationTestSuite) SetupSuite() {
 
-	s.composeFile = "docker-compose.yml"
-	s.useEbpf = false
-
-	useEbpfEnvVar := "ROX_COLLECTOR_EBPF"
-	if e, ok := os.LookupEnv(useEbpfEnvVar); ok {
-		s.useEbpf, _ = strconv.ParseBool(e)
-	}
-
-	if s.useEbpf {
-		s.composeFile = "docker-compose-ebpf.yml"
-	}
-
-	s.dockerComposeUp()
 	s.dbpath = "/tmp/collector-test.db"
+	s.collectorTag = ReadEnvVar("COLLECTOR_TAG")
+
+	s.collectionMethod = ReadEnvVarWithDefault("COLLECTION_METHOD", "kernel_module")
+	if strings.Contains(s.collectionMethod, "module") {
+		s.collectionMethod = "kernel_module"
+	}
+
+	s.executor = NewExecutor()
+
+	images := []string{
+		"stackrox/collector:" + s.collectorTag,
+		"nginx:1.14-alpine",
+		"pstauffer/curl:latest",
+		"stackrox/grpc-server:2.3.16.0-99-g0b961f9515"}
+
+	for _, image := range images {
+		s.executor.PullImage(image)
+	}
+
+	s.resetDBFile(s.dbpath)
+
+	containerID, err := s.launchGRPCServer()
+	s.NoError(err)
+
+	containerID, err = s.launchCollector()
+	s.NoError(err)
+	collectorContainer := containerID
+
+	running, err := s.executor.Exec("docker", "inspect", "-f", "'{{.State.Running}}'", collectorContainer)
+	if strings.Trim(running, "'\"\n") != "true" {
+		assert.FailNow(s.T(), "collecter not running")
+	}
+
+	time.Sleep(10 * time.Second)
 
 	// invokes default nginx
-	containerID, err := s.launchContainer("nginx", "nginx:1.14-alpine", "")
-	assert.Nil(s.T(), err)
+	containerID, err = s.launchContainer("nginx", "nginx:1.14-alpine")
+	s.NoError(err)
 	s.serverContainer = containerID[0:12]
 
-	// invokes "sleep"
-	_, err = s.execContainer("nginx", []string{"sh", "-c", "sleep 5"})
-	assert.Nil(s.T(), err)
+	// invokes "sleep" and "sh" and "ls"
+	_, err = s.execContainer("nginx", []string{"sleep", "5"})
+	s.NoError(err)
+	_, err = s.execContainer("nginx", []string{"sh", "-c", "ls"})
+	s.NoError(err)
 
-  // start performance container
-  _, err = s.launchPerformanceContainer();
-	assert.Nil(s.T(), err)
+	//// start performance container
+	//err := s.executor.PullImage("ljishen/sysbench")
+	//s.NoError(err)
+	//_, err = s.launchPerformanceContainer()
+	//s.NoError(err)
 
 	// invokes another container
-	containerID, err = s.launchContainer("nginx-curl", "ewoutp/docker-nginx-curl", "")
-	assert.Nil(s.T(), err)
+	containerID, err = s.launchContainer("nginx-curl", "pstauffer/curl:latest", "sleep", "300")
+	s.NoError(err)
 	s.clientContainer = containerID[0:12]
 
 	ip, err := s.getIPAddress("nginx")
-	assert.Nil(s.T(), err)
+	s.NoError(err)
 	s.serverIP = ip
 
 	port, err := s.getPort("nginx")
-	assert.Nil(s.T(), err)
+	s.NoError(err)
 	s.serverPort = port
 
-	_, err = s.execContainer("nginx-curl", []string{"curl", ip})
-	assert.Nil(s.T(), err)
+	_, err = s.execContainer("nginx-curl", []string{"curl", s.serverIP})
+	s.NoError(err)
 
 	ip, err = s.getIPAddress("nginx-curl")
-	assert.Nil(s.T(), err)
+	s.NoError(err)
 	s.clientIP = ip
 
-	port, err = s.getPort("nginx-curl")
-	assert.Nil(s.T(), err)
-	s.clientPort = port
+	time.Sleep(10 * time.Second)
 
-	time.Sleep(20 * time.Second)
+	_, err = s.copyDBFile(s.dbpath)
+	s.NoError(err)
 
-	logs, err := s.containerLogs("test_collector_1")
-	assert.NoError(s.T(), err)
+	logs, err := s.containerLogs("collector")
+	s.NoError(err)
 	err = ioutil.WriteFile("collector.logs", []byte(logs), 0644)
-	assert.NoError(s.T(), err)
+	s.NoError(err)
 
-	logs, err = s.containerLogs("test_grpc-server_1")
+	logs, err = s.containerLogs("grpc-server")
 	err = ioutil.WriteFile("grpc_server.logs", []byte(logs), 0644)
-	assert.NoError(s.T(), err)
+	s.NoError(err)
 
-	// bring down server
-	s.dockerComposeDown()
-	// sleep for few
-	time.Sleep(2 * time.Second)
+	s.cleanupContainer([]string{"grpc-server"})
 
 	s.db, err = s.BoltDB()
 	if err != nil {
@@ -121,26 +139,30 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	}
 }
 
+func (s *IntegrationTestSuite) TearDownSuite() {
+	s.cleanupContainer([]string{"nginx", "nginx-curl", "collector"})
+}
+
 func (s *IntegrationTestSuite) TestProcessViz() {
 	processName := "nginx"
-	exeFilePath := "/usr/local/sbin/nginx"
+	exeFilePath := "/usr/sbin/nginx"
 	expectedProcessInfo := fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
 	val, err := s.Get(processName, processBucket)
-	assert.Nil(s.T(), err)
+	s.NoError(err)
 	assert.Equal(s.T(), expectedProcessInfo, val)
 
 	processName = "sh"
 	exeFilePath = "/bin/sh"
 	expectedProcessInfo = fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
 	val, err = s.Get(processName, processBucket)
-	assert.Nil(s.T(), err)
+	s.NoError(err)
 	assert.Equal(s.T(), expectedProcessInfo, val)
 
 	processName = "sleep"
 	exeFilePath = "/bin/sleep"
 	expectedProcessInfo = fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
 	val, err = s.Get(processName, processBucket)
-	assert.Nil(s.T(), err)
+	s.NoError(err)
 	assert.Equal(s.T(), expectedProcessInfo, val)
 }
 
@@ -148,88 +170,144 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 
 	// Server side checks
 	val, err := s.Get(s.serverContainer, networkBucket)
-	assert.Nil(s.T(), err)
+	s.NoError(err)
 	actualValues := strings.Split(string(val), ":")
 
 	if len(actualValues) < 3 {
 		assert.FailNow(s.T(), "serverContainer networkBucket was missing data. ", "val=\"%s\"", val)
 	}
-	expectedServerIP := actualValues[0]
-	expectedServerPort := actualValues[1]
-	expectedClientIP := actualValues[2]
+	actualServerIP := actualValues[0]
+	actualServerPort := actualValues[1]
+	actualClientIP := actualValues[2]
 	// client port are chosen at random so not checking that
 
-	assert.Equal(s.T(), expectedServerIP, expectedServerIP)
-	assert.Equal(s.T(), expectedServerPort, expectedServerPort)
-	assert.Equal(s.T(), expectedClientIP, expectedClientIP)
+	assert.Equal(s.T(), s.serverIP, actualServerIP)
+	assert.Equal(s.T(), s.serverPort, actualServerPort)
+	assert.Equal(s.T(), s.clientIP, actualClientIP)
 
 	fmt.Printf("ServerDetails from Bolt: %s %s\n", s.serverContainer, string(val))
 	fmt.Printf("ServerDetails from test: %s %s, Port: %s\n", s.serverContainer, s.serverIP, s.serverPort)
 
 	// client side checks
 	val, err = s.Get(s.clientContainer, networkBucket)
-	assert.Nil(s.T(), err)
-	expectedClientIP = actualValues[0]
-	expectedServerIP = actualValues[2]
-	expectedServerPort = actualValues[3]
-	assert.Equal(s.T(), expectedServerIP, expectedServerIP)
-	assert.Equal(s.T(), expectedServerPort, expectedServerPort)
-	assert.Equal(s.T(), expectedClientIP, expectedClientIP)
+	actualValues = strings.Split(string(val), ":")
+	s.NoError(err)
+
+	actualClientIP = actualValues[0]
+	actualServerIP = actualValues[2]
+	actualServerPort = actualValues[3]
+
+	assert.Equal(s.T(), s.clientIP, actualClientIP)
+	assert.Equal(s.T(), s.serverIP, actualServerIP)
+	assert.Equal(s.T(), s.serverPort, actualServerPort)
 
 	fmt.Printf("ClientDetails from Bolt: %s %s\n", s.clientContainer, string(val))
 	fmt.Printf("ClientDetails from test: %s %s, Port: %s\n", s.clientContainer, s.clientIP, s.clientPort)
 }
 
-func (s *IntegrationTestSuite) TearDownSuite() {
-	s.dockerComposeDown()
-	s.cleanupContainer([]string{"nginx", "nginx-curl"})
+func (s *IntegrationTestSuite) copyDBFile(path string) (string, error) {
+	return s.executor.CopyFromHost(path, path)
+}
+
+func (s *IntegrationTestSuite) resetDBFile(path string) (string, error) {
+	return s.executor.Exec("rm", "-fv", path)
 }
 
 func (s *IntegrationTestSuite) launchPerformanceContainer() (string, error) {
-	var cmd *exec.Cmd
-  cmd = exec.Command("docker", "run", "-d", "--rm",
-    "-v",  "/tmp:/root/results", "ljishen/sysbench",
-    "/root/results/output_cpu.prof", "--test=cpu",
-    "--cpu-max-prime=10000", "run")
-	stdoutStderr, err := cmd.CombinedOutput()
-	trimmed := strings.Trim(string(stdoutStderr), "\n")
-  return trimmed, err
+	cmd := []string{"docker", "run", "-d", "--rm",
+		"-v", "/tmp:/root/results", "ljishen/sysbench",
+		"/root/results/output_cpu.prof", "--test=cpu",
+		"--cpu-max-prime=10000", "run"}
+	return s.executor.Exec(cmd...)
 }
 
-func (s *IntegrationTestSuite) launchContainer(containerName, imageName, command string) (string, error) {
-	var cmd *exec.Cmd
-	if command != "" {
-		cmd = exec.Command("docker", "run", "-d", "--name", containerName, imageName, "/bin/sleep 300")
+func (s *IntegrationTestSuite) launchGRPCServer() (string, error) {
+	cmd := []string{"docker", "run",
+		"-d",
+		"--rm",
+		"--name", "grpc-server",
+		"--network=host",
+		"-v", "/tmp:/tmp:rw",
+		"stackrox/grpc-server:2.3.16.0-99-g0b961f9515"}
+	return s.executor.Exec(cmd...)
+}
+
+func (s *IntegrationTestSuite) launchCollector() (string, error) {
+	cmd := []string{"docker", "run",
+		"-d",
+		"--rm",
+		"--name", "collector",
+		"--privileged",
+		"--network=host"}
+
+	mounts := []string{
+		"-v", "/var/run/docker.sock:/host/var/run/docker.sock:ro",
+		"-v", "/proc:/host/proc:ro",
+		"-v", "/etc:/host/etc:ro"}
+
+	if s.collectionMethod == "kernel_module" {
+		moduleMounts := []string{
+			"-v", "/sys/module:/host/sys/module:ro",
+			"-v", "/dev:/host/dev:ro",
+		}
+		mounts = append(mounts, moduleMounts...)
 	} else {
-		cmd = exec.Command("docker", "run", "-d", "--name", containerName, imageName)
+		ebpfMounts := []string{
+			"-v", "/sys/kernel/debug/tracing/events:/host/sys/kernel/debug/tracing/events:ro",
+			"-v", "/sys/devices/system/cpu:/host/sys/devices/system/cpu:ro",
+		}
+		mounts = append(mounts, ebpfMounts...)
 	}
-	stdoutStderr, err := cmd.CombinedOutput()
-	trimmed := strings.Trim(string(stdoutStderr), "\n")
-	outLines := strings.Split(trimmed, "\n")
+
+	env := []string{
+		"--env", "GRPC_SERVER=localhost:9999",
+		"--env", `COLLECTOR_CONFIG={"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}`,
+		"--env", "COLLECTION_METHOD=" + s.collectionMethod}
+
+	img := "stackrox/collector:" + s.collectorTag
+
+	cmd = append(cmd, mounts...)
+	cmd = append(cmd, env...)
+	cmd = append(cmd, img)
+	return s.executor.Exec(cmd...)
+}
+
+func (s *IntegrationTestSuite) launchContainer(args ...string) (string, error) {
+	cmd := []string{"docker", "run", "-d", "--name"}
+	cmd = append(cmd, args...)
+	output, err := s.executor.Exec(cmd...)
+	outLines := strings.Split(output, "\n")
 	return outLines[len(outLines)-1], err
 }
 
 func (s *IntegrationTestSuite) execContainer(containerName string, command []string) (string, error) {
-	args := []string{"exec", containerName}
-	args = append(args, command...)
-	cmd := exec.Command("docker", args...)
-	stdoutStderr, err := cmd.CombinedOutput()
-	return strings.Trim(string(stdoutStderr), "\n"), err
+	cmd := []string{"docker", "exec", containerName}
+	cmd = append(cmd, command...)
+	return s.executor.Exec(cmd...)
+}
+
+func (s *IntegrationTestSuite) cleanupContainer(containers []string) {
+	for _, container := range containers {
+		s.executor.Exec("docker", "kill", container)
+		s.executor.Exec("docker", "rm", container)
+	}
+}
+
+func (s *IntegrationTestSuite) containerLogs(containerName string) (string, error) {
+	return s.executor.Exec("docker", "logs", containerName)
 }
 
 func (s *IntegrationTestSuite) getIPAddress(containerName string) (string, error) {
-	cmd := exec.Command("docker", "inspect", "--format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'", containerName)
-	stdoutStderr, err := cmd.CombinedOutput()
-	return strings.Trim(strings.Replace(string(stdoutStderr), "'", "", -1), "\n"), err
+	stdoutStderr, err := s.executor.Exec("docker", "inspect", "--format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'", containerName)
+	return strings.Replace(string(stdoutStderr), "'", "", -1), err
 }
 
 func (s *IntegrationTestSuite) getPort(containerName string) (string, error) {
-	cmd := exec.Command("docker", "inspect", "--format={{json .NetworkSettings.Ports}}", containerName)
-	stdoutStderr, err := cmd.CombinedOutput()
+	stdoutStderr, err := s.executor.Exec("docker", "inspect", "--format='{{json .NetworkSettings.Ports}}'", containerName)
 	if err != nil {
 		return "", err
 	}
-	rawString := strings.Trim(string(stdoutStderr), "\n")
+	rawString := strings.Trim(string(stdoutStderr), "'\n")
 	var portMap map[string]interface{}
 	err = json.Unmarshal([]byte(rawString), &portMap)
 	if err != nil {
@@ -241,65 +319,6 @@ func (s *IntegrationTestSuite) getPort(containerName string) (string, error) {
 	}
 
 	return "", fmt.Errorf("no port mapping found: %v %v", rawString, portMap)
-}
-
-func (s *IntegrationTestSuite) cleanupContainer(containers []string) {
-	for _, container := range containers {
-		exec.Command("docker", "kill", container).Run()
-		exec.Command("docker", "rm", container).Run()
-	}
-}
-
-func (s *IntegrationTestSuite) dockerComposeUp() error {
-	err := s.dockerCompose("docker-compose", "--project-name", "test", "--file", s.composeFile, "up", "-d")
-	if err != nil {
-		s.T().Fatal("Unable to deploy the stack", err.Error())
-	}
-
-	time.Sleep(10 * time.Second)
-
-	return err
-}
-
-func (s *IntegrationTestSuite) containerLogs(containerName string) (string, error) {
-	cmd := exec.Command("docker", "logs", containerName)
-	stdoutStderr, err := cmd.CombinedOutput()
-	return strings.Trim(string(stdoutStderr), "\n"), err
-}
-
-func (s *IntegrationTestSuite) dockerComposeDown() error {
-	err := s.dockerCompose("docker-compose", "--project-name", "test", "--file", s.composeFile, "down", "--volumes")
-	if err != nil {
-		s.T().Fatal("Unable to tear down the stack", err.Error())
-	}
-
-	return err
-}
-
-func (s *IntegrationTestSuite) dockerComposePorts(serviceName, containerPort string) (*bytes.Buffer, error) {
-	return s.dockerComposeStdout("docker-compose", "--project-name", "test", "--file", s.composeFile, "port", serviceName, containerPort)
-}
-
-func (s *IntegrationTestSuite) dockerCompose(name string, arg ...string) error {
-	dockerCompose := exec.Command(name, arg...)
-	dockerCompose.Stdout = os.Stdout
-	dockerCompose.Stderr = os.Stderr
-
-	err := dockerCompose.Run()
-
-	return err
-}
-
-func (s *IntegrationTestSuite) dockerComposeStdout(name string, arg ...string) (*bytes.Buffer, error) {
-	var stdout bytes.Buffer
-
-	dockerCompose := exec.Command(name, arg...)
-	dockerCompose.Stdout = &stdout
-	dockerCompose.Stderr = os.Stderr
-
-	err := dockerCompose.Run()
-
-	return &stdout, err
 }
 
 func (s *IntegrationTestSuite) BoltDB() (db *bolt.DB, err error) {

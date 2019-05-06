@@ -20,20 +20,7 @@ setupGCP: &setupGCP
       gcloud config set core/disable_prompts True
       gcloud auth list
       gsutil ls gs://collector-build-cache/ || echo "ERROR: Could not ls bucket"
-createGCP: &createGCP
-  run:
-    name: Create GCP VM
-    command: |
-      source $SOURCE_ROOT/.circleci/create-gcp-vm.sh
-      main "$DOCKER_USER" "$DOCKER_PASS" "$SOURCE_ROOT"
-    background: false
-teardownGCP: &teardownGCP
-  run:
-    name: Tear down GCP VM
-    command: |
-      gcloud compute instances delete "collector-nb-${CIRCLE_BUILD_NUM}"
-    when: always
-    background: false
+
 commands:
   initcommand:
     steps:
@@ -63,6 +50,7 @@ commands:
     - run:
         name: Login to Docker Hub
         command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+
 jobs:
   initjob:
     docker:
@@ -604,91 +592,6 @@ jobs:
         paths:
         - go/src/github.com/stackrox/collector/collector/container/bin
 
-
-  ebpf-integration-test:
-    machine: true
-    working_directory: ~/workspace
-
-    steps:
-    - initcommand
-    - docker-login
-    - gcloud-init
-    - *createGCP
-
-    - run:
-        name: Check remote host GCP kernel version
-        command: |
-          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "uname -r && uname -a"
-
-    - run:
-        name: ubuntu ebpf integration test
-        command: |
-          set -e
-          gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "docker pull ${IMAGE_COLLECTOR}"
-          if gcloud compute ssh "collector-nb-${CIRCLE_BUILD_NUM}" --command "cd /home/circleci/collector/.circleci && source run-integration-tests && run-integration-tests ${COLLECTOR_TAG}" ; then
-            RESULT=0
-          else
-            RESULT=1
-          fi
-          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/collector/integration-test-report.xml" /tmp/integration-test-report-gcp.xml
-          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp /tmp/integration-test-report-gcp.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
-          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs" /tmp/grpc_server_gcp.logs
-          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/go/src/github.com/stackrox/collector/integration-tests/collector.logs" /tmp/collector_gcp.logs
-          gcloud compute scp "collector-nb-${CIRCLE_BUILD_NUM}:/tmp/output_cpu.prof" /tmp/output_cpu_gcp.prof
-          exit ${RESULT}
-
-    - store_test_results:
-        path: /tmp/integration-test-report-gcp.xml
-    - store_artifacts:
-        path: /tmp/integration-test-report-gcp.xml
-        destination: ebpf-integration-test-report.xml
-    - store_artifacts:
-        path: /tmp/grpc_server_gcp.logs
-        destination: ebpf-grpc-server.logs
-    - store_artifacts:
-        path: /tmp/collector_gcp.logs
-        destination: ebpf-collector.logs
-    - store_artifacts:
-        path: /tmp/output_cpu_gcp.prof
-        destination: ebpf-output_cpu.prof
-    - *teardownGCP
-
-  module-integration-test:
-    machine: true
-    working_directory: ~/workspace
-
-    steps:
-    - initcommand
-    - docker-login
-    - gcloud-init
-
-    - run:
-        name: module integration tests
-        command: |
-          cd "$COLLECTOR_SOURCE_ROOT"
-          go get -u github.com/jstemmer/go-junit-report
-          curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-          sudo mv /home/circleci/workspace/go/bin/dep /usr/local/bin/dep
-          sudo curl -L "https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-          sudo chmod +x /usr/local/bin/docker-compose
-          make integration-tests integration-test-report
-          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
-
-    - store_test_results:
-        path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
-    - store_artifacts:
-        path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
-        destination: module-integration-test-report.xml
-    - store_artifacts:
-        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/collector.logs
-        destination: module-collector.logs
-    - store_artifacts:
-        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs
-        destination: module-grpc-server.logs
-    - store_artifacts:
-        path: /tmp/output_cpu.prof
-        destination: module-output_cpu.prof
-
   images:
     machine: true
     environment:
@@ -798,6 +701,66 @@ jobs:
           command:
             gsutil ls "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/"
 
+  integration-test:
+    parameters:
+      collection_method:
+        type: enum
+        enum: [module, ebpf]
+      vm_type:
+        type: enum
+        enum: [ubuntu, cos, rhel, coreos]
+
+    machine: true
+    working_directory: ~/workspace
+
+    steps:
+    - initcommand
+    - docker-login
+    - gcloud-init
+
+    - run:
+        name: "Create VM"
+        command: |
+          source $SOURCE_ROOT/.circleci/create-vm.sh
+          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-${CIRCLE_BUILD_NUM}"
+          export VM_TYPE=<< parameters.vm_type >>
+          main "$GCLOUD_INSTANCE" "$VM_TYPE" "$DOCKER_USER" "$DOCKER_PASS" "$SOURCE_ROOT"
+
+    - run:
+        name: "Running integration tests"
+        command: |
+          cd "$COLLECTOR_SOURCE_ROOT"
+          go get -u github.com/jstemmer/go-junit-report
+          curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+          sudo mv /home/circleci/workspace/go/bin/dep /usr/local/bin/dep
+          export REMOTE_HOST_TYPE=gcloud
+          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-${CIRCLE_BUILD_NUM}"
+          export COLLECTION_METHOD=<< parameters.collection_method >>
+          make integration-tests integration-test-report
+          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
+
+    - store_test_results:
+        path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
+    - store_artifacts:
+        path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
+        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-integration-test-report.xml"
+    - store_artifacts:
+        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/collector.logs
+        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-collector.logs"
+    - store_artifacts:
+        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs
+        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-grpc-server.logs"
+    - store_artifacts:
+        path: /tmp/output_cpu.prof
+        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-cpu.prof"
+
+    - run:
+        name: "Destroy VM"
+        command: |
+          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-${CIRCLE_BUILD_NUM}"
+          gcloud compute instances delete $GCLOUD_INSTANCE
+        when: always
+
 workflows:
   version: 2
   build:
@@ -855,16 +818,57 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - ebpf-integration-test:
+    - integration-test:
+        name: test-ebpf-cos
+        collection_method: ebpf
+        vm_type: cos
         requires:
-        - images 
+        - images
         filters:
           tags:
             only: /.*/
-    - module-integration-test:
+    - integration-test:
+        name: test-ebpf-ubuntu
+        collection_method: ebpf
+        vm_type: ubuntu
         requires:
-        - images 
+        - images
         filters:
           tags:
             only: /.*/
-
+    - integration-test:
+        name: test-ebpf-coreos
+        collection_method: ebpf
+        vm_type: coreos
+        requires:
+        - images
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-module-ubuntu
+        collection_method: module
+        vm_type: ubuntu
+        requires:
+        - images
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-module-rhel
+        collection_method: module
+        vm_type: rhel
+        requires:
+        - images
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-module-coreos
+        collection_method: module
+        vm_type: coreos
+        requires:
+        - images
+        filters:
+          tags:
+            only: /.*/
