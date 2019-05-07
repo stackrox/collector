@@ -243,20 +243,10 @@ func (s *IntegrationTestSuite) launchCollector() (string, error) {
 	mounts := []string{
 		"-v", "/var/run/docker.sock:/host/var/run/docker.sock:ro",
 		"-v", "/proc:/host/proc:ro",
-		"-v", "/etc:/host/etc:ro"}
-
-	if s.collectionMethod == "kernel_module" {
-		moduleMounts := []string{
-			"-v", "/sys/module:/host/sys/module:ro",
-			"-v", "/dev:/host/dev:ro",
-		}
-		mounts = append(mounts, moduleMounts...)
-	} else {
-		ebpfMounts := []string{
-			"-v", "/sys/kernel/debug/tracing/events:/host/sys/kernel/debug/tracing/events:ro",
-			"-v", "/sys/devices/system/cpu:/host/sys/devices/system/cpu:ro",
-		}
-		mounts = append(mounts, ebpfMounts...)
+		"-v", "/etc/:/host/etc:ro",
+		"-v", "/usr/lib/:/host/usr/lib:ro",
+		"-v", "/sys/:/host/sys:ro",
+		"-v", "/dev:/host/dev:ro",
 	}
 
 	env := []string{

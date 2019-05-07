@@ -1,46 +1,43 @@
 #!/bin/bash
 
-MODULE_NAME="collector"
-MODULE_PATH="/module/${MODULE_NAME}.ko"
-PROBE_NAME="collector-ebpf"
-PROBE_PATH="/module/${PROBE_NAME}.o"
+log() { echo "$@" >&2; }
 
-KERNEL_VERSION=$(uname -r)
-
-export KERNEL_MAJOR=""
-export KERNEL_MINOR=""
-KERNEL_MAJOR=$(echo ${KERNEL_VERSION} | cut -d. -f1)
-KERNEL_MINOR=$(echo ${KERNEL_VERSION} | cut -d. -f2)
-
-MODULE_VERSION="$(cat /kernel-modules/MODULE_VERSION.txt)"
-if [[ -n "$MODULE_VERSION" ]]; then
-    echo "StackRox kernel object version: $MODULE_VERSION" >&2
-    if [[ -n "$MODULE_DOWNLOAD_BASE_URL" ]]; then
-        MODULE_URL="${MODULE_DOWNLOAD_BASE_URL}/${MODULE_VERSION}"
+function get_os_release_value() {
+    local key=$1
+    local os_release="/host/etc/os-release"
+    if [ ! -f "${os_release}" ]; then
+        os_release="/host/usr/lib/os-release"
     fi
-fi
-
-if [ -f "/host/etc/os-release" ]; then
-    # Source the contents of /etc/os-release to determine if on COS
-    . "/host/etc/os-release"
-    
-    if [ ! -z "${ID}" ] && [ "${ID}" == "cos" ]; then
-        # check that last char of KERNEL_VERSION is '+' and BUILD_ID is defined/non-empty.
-        if [ "${KERNEL_VERSION: -1}" = "+" ] && [ ! -z "${BUILD_ID+x}" ]; then
-            KERNEL_VERSION="$(echo ${KERNEL_VERSION} | sed 's/.$//')-${BUILD_ID}-${ID}"
-        fi 
+    if [ -f "${os_release}" ]; then
+        while IFS="=" read var value; do
+            if [ "$key" == "$var" ]; then
+                echo $value
+            fi
+        done < "${os_release}"
     fi
-fi
-echo "Linux kernel version: $KERNEL_VERSION." >&2
+}
 
-KERNEL_MODULE="${MODULE_NAME}-${KERNEL_VERSION}.ko"
-KERNEL_PROBE="${PROBE_NAME}-${KERNEL_VERSION}.o"
+function get_distro() {
+    local distro=$(get_os_release_value "PRETTY_NAME")
+    if [ -z "${distro}" ]; then
+      echo "Linux"
+    fi
+    echo ${distro}
+}
+
+exit_with_error() {
+    log ""
+    log "Please provide this complete error message to StackRox support."
+    log "This program will now exit and retry when it is next restarted."
+    log ""
+    exit 1
+}
 
 function test {
     "$@"
     local status=$?
     if [ $status -ne 0 ]; then
-        echo "Error with $1" >&2
+        log "Error with $1"
         exit $status
     fi
     return $status
@@ -48,8 +45,8 @@ function test {
 
 function remove_module() {
     if lsmod | grep -q "$MODULE_NAME"; then
-        echo "Collector kernel module has already been loaded." >&2
-        echo "Removing so that collector can insert it at startup." >&2
+        log "Collector kernel module has already been loaded."
+        log "Removing so that collector can insert it at startup."
         test rmmod "$MODULE_NAME"
     fi
 }
@@ -57,8 +54,13 @@ function remove_module() {
 function download_kernel_object() {
     local KERNEL_OBJECT="$1"
     local OBJECT_PATH="$2"
+    local OBJECT_TYPE="kernel module"
+    if [ "${KERNEL_OBJECT##*.}" == "o" ]; then
+      OBJECT_TYPE="eBPF probe"
+    fi
+
     if [[ -z "$MODULE_URL" ]]; then
-        echo "Downloading modules not supported." >&2
+        log "Collector is not configured to download the $OBJECT_TYPE"
         return 1
     fi
     local URL="$MODULE_URL/$KERNEL_OBJECT"
@@ -68,12 +70,12 @@ function download_kernel_object() {
     local HTTP_CODE=$(curl -w "%{http_code}" -L -s -o "$FILENAME_GZ" "${URL}.gz" 2>/dev/null)
 
     if [ "$HTTP_CODE" != "200" ] ; then
-        echo "Error downloading $KERNEL_OBJECT for kernel version $KERNEL_VERSION (Error code: $HTTP_CODE)" >&2
+        log "Error downloading $OBJECT_TYPE $KERNEL_OBJECT (Error code: $HTTP_CODE)"
         return 1
     fi
 
     gunzip "$FILENAME_GZ"
-    echo "Using downloaded $KERNEL_OBJECT for kernel version $KERNEL_VERSION." >&2
+    log "Using downloaded $OBJECT_TYPE $KERNEL_OBJECT"
     return 0
 }
 
@@ -81,16 +83,21 @@ function find_kernel_object() {
     local KERNEL_OBJECT="$1"
     local OBJECT_PATH="$2"
     local EXPECTED_PATH="/kernel-modules/$KERNEL_OBJECT"
+    local OBJECT_TYPE="kernel module"
+    if [ "${KERNEL_OBJECT##*.}" == "o" ]; then
+      OBJECT_TYPE="eBPF probe"
+    fi
 
     if [[ -f "${EXPECTED_PATH}.gz" ]]; then
       gunzip -c "${EXPECTED_PATH}.gz" >"${OBJECT_PATH}"
     elif [ -f "$EXPECTED_PATH" ]; then
       cp "$EXPECTED_PATH" "$OBJECT_PATH"
     else
-      echo "Didn't find $KERNEL_OBJECT built-in." >&2
+      log "Didn't find $OBJECT_TYPE $KERNEL_OBJECT built-in."
       return 1
     fi
-    echo "Using built-in $KERNEL_OBJECT for kernel version $KERNEL_VERSION." >&2
+
+    log "Using built-in $OBJECT_TYPE $KERNEL_OBJECT"
     return 0
 }
 
@@ -102,42 +109,124 @@ function kernel_supports_ebpf() {
     return 0
 }
 
+function cos_host() {
+    if [ "${ID}" == "cos" ]; then
+        return 0
+    fi
+    return 1
+}
+
 function collection_method_module() {
-    if [ -z "${COLLECTION_METHOD}" ] || [ "$(echo ${COLLECTION_METHOD} | tr '[:upper:]' '[:lower:]')" == "kernel_module" ]; then
+    local collection_method="$(echo ${COLLECTION_METHOD} | tr '[:upper:]' '[:lower:]')"
+    if [ "${collection_method}" == "kernel_module" ] || [ "${collection_method}" == "kernel-module"; then
         return 0
     fi
     return 1
 }
 
 function collection_method_ebpf() {
-    if [ -z "${COLLECTION_METHOD}" ] || [ "$(echo ${COLLECTION_METHOD} | tr '[:upper:]' '[:lower:]')" == "ebpf" ]; then
+    local collection_method="$(echo ${COLLECTION_METHOD} | tr '[:upper:]' '[:lower:]')"
+    if [ "${collection_method}" == "ebpf" ]; then
         return 0
     fi
     return 1
 }
 
-# Get the hostname from Docker so this container can use it in its output.
+[ -n "${KERNEL_VERSION}" ] || { KERNEL_VERSION=$(uname -r); }
+
+MODULE_NAME="collector"
+MODULE_PATH="/module/${MODULE_NAME}.ko"
+PROBE_NAME="collector-ebpf"
+PROBE_PATH="/module/${PROBE_NAME}.o"
+
+export KERNEL_MAJOR=""
+export KERNEL_MINOR=""
+KERNEL_MAJOR=$(echo ${KERNEL_VERSION} | cut -d. -f1)
+KERNEL_MINOR=$(echo ${KERNEL_VERSION} | cut -d. -f2)
+
+# Get and export the node hostname from Docker, needed by collector
 export NODE_HOSTNAME=""
 NODE_HOSTNAME=$(curl -s --unix-socket /host/var/run/docker.sock http://localhost/info | jq --raw-output .Name)
 
+DISTRO="$(get_distro)"
+
+# Needed for COS
+BUILD_ID="$(get_os_release_value 'BUILD_ID')"
+ID="$(get_os_release_value 'ID')"
+
+log "Hostname: ${NODE_HOSTNAME}"
+log "OS: ${DISTRO}"
+log "Kernel Version: ${KERNEL_VERSION}"
+
+MODULE_VERSION="$(cat /kernel-modules/MODULE_VERSION.txt)"
+if [[ -n "$MODULE_VERSION" ]]; then
+    log "Collector Version: $MODULE_VERSION"
+    if [[ -n "$MODULE_DOWNLOAD_BASE_URL" ]]; then
+        MODULE_URL="${MODULE_DOWNLOAD_BASE_URL}/${MODULE_VERSION}"
+    fi
+fi
+
+if [ "${ID}" == "cos" ]; then
+    # check that last char of KERNEL_VERSION is '+' and BUILD_ID is non-empty.
+    if [ "${KERNEL_VERSION: -1}" = "+" ] && [ ! -z "${BUILD_ID}" ]; then
+        # Use custom kernel_version for COS
+        KERNEL_VERSION="$(echo ${KERNEL_VERSION} | sed 's/.$//')-${BUILD_ID}-${ID}"
+    fi
+fi
+ 
+KERNEL_MODULE="${MODULE_NAME}-${KERNEL_VERSION}.ko"
+KERNEL_PROBE="${PROBE_NAME}-${KERNEL_VERSION}.o"
+
 mkdir -p /module
 
+# Backwards compatability for releases older than 2.4.20
+if [ -z "${COLLECTION_METHOD}" ]; then
+  export COLLECTION_METHOD=""
+  if [ "$(echo '${COLLECTOR_CONFIG}' | jq --raw-output .useEbpf)" == "true" ]; then
+    COLLECTION_METHOD="EBPF"
+  else
+    COLLECTION_METHOD="KERNEL_MODULE"
+  fi
+fi
+
 if ! collection_method_ebpf && ! collection_method_module ; then
-  echo "Collector configured with invalid value for COLLECTION_METHOD=${COLLECTION_METHOD}" >&2
+  log "Error: Collector configured with invalid value: COLLECTION_METHOD=${COLLECTION_METHOD}"
+  exit_with_error
+fi
+
+if ! collection_method_ebpf && collection_method_module && cos_host ; then
+  log "Error: ${DISTRO} does not support third-party kernel modules"
+  if kernel_supports_ebpf; then
+    log "Warning: Switching to eBPF based collection, please configure RUNTIME_SUPPORT=ebpf"
+    COLLECTION_METHOD="EBPF"
+  else
+    exit_with_error
+  fi
+fi
+
+if collection_method_ebpf && ! kernel_supports_ebpf; then
+  if cos_host; then 
+    log "Error: ${DISTRO} does not support third-party kernel modules or the required eBPF features."
+    exit_with_error
+  else
+    log "Error: ${DISTRO} ${KERNEL_VERSION} does not support ebpf based collection."
+    log "Warning: Switching to kernel module based collection, please configure RUNTIME_SUPPORT=kernel-module"
+    COLLECTION_METHOD="KERNEL_MODULE"
+  fi
 fi
 
 if collection_method_module; then
-  echo "Preparing Kernel Module..." >&2
   if ! find_kernel_object "${KERNEL_MODULE}" "${MODULE_PATH}"; then
     if ! download_kernel_object "${KERNEL_MODULE}" "${MODULE_PATH}" || [[ ! -f "$MODULE_PATH" ]]; then
-      echo "The $MODULE_NAME module may not have been compiled for this version yet." >&2
+      log "The kernel module may not have been compiled for version ${KERNEL_VERSION}."
     fi
   fi
   
   if [[ -f "$MODULE_PATH" ]]; then
     chmod 0444 "$MODULE_PATH"
   else
-    echo "Failed to find kernel module for kernel version $KERNEL_VERSION." >&2
+    log "Error: Failed to find kernel module for kernel version $KERNEL_VERSION."
+    exit_with_error
   fi
 
   # The collector program will insert the kernel module upon startup.
@@ -145,40 +234,40 @@ if collection_method_module; then
 fi
 
 if collection_method_ebpf; then
-  echo "Preparing eBPF Probe..." >&2
   if kernel_supports_ebpf; then
     if ! find_kernel_object "${KERNEL_PROBE}" "${PROBE_PATH}"; then
       if ! download_kernel_object "${KERNEL_PROBE}" "${PROBE_PATH}" || [[ ! -f "$PROBE_PATH" ]]; then
-        echo "The $PROBE_NAME probe may not have been compiled for this version yet." >&2
+        log "The ebpf probe may not have been compiled for version ${KERNEL_VERSION}."
       fi
     fi
 
     if [[ -f "$PROBE_PATH" ]]; then
       chmod 0444 "$PROBE_PATH"
     else
-      echo "Failed to find ebpf probe for kernel version $KERNEL_VERSION." >&2
+      log "Error: Failed to find ebpf probe for kernel version $KERNEL_VERSION."
+      exit_with_error
     fi
+  else
+    log "Error: Kernel ${KERNEL_VERSION} doesn't support eBPF"
+    exit_with_error
   fi
 fi
 
 if [[ ! -f "$PROBE_PATH" ]] && [[ ! -f "$MODULE_PATH" ]]; then
-    echo "Please provide this complete error message to StackRox support." >&2
-    echo "This program will now exit and retry when it is next restarted." >&2
-    echo "" >&2
-    exit 1
+    exit_with_error
 fi
 
 # Uncomment this to enable generation of core for Collector
 # echo '/core/core.%e.%p.%t' > /proc/sys/kernel/core_pattern
 
 clean_up() {
-    echo "collector pid to be stopped is $PID"
+    log "collector pid to be stopped is $PID"
     kill -TERM $PID; wait $PID
 }
 
 # Remove "/bin/sh -c" from arguments
 shift;shift
-echo "Starting StackRox Collector..."  >&2
+log "Starting StackRox Collector..."  >&2
 # Signal handler for SIGTERM
 trap 'clean_up' TERM QUIT INT
 eval exec "$@" &
