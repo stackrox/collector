@@ -65,13 +65,18 @@ clean-generated-srcs:
 	rm -rf $(GENERATED_CPP_BASE_PATH)
 	rm -rf $(GENERATED_GO_BASE_PATH)
 
-prepare-src:
+build-kernel-modules:
+	make -C "${BASE_PATH}/kernel-modules" build-container
+
+prepare-src: build-kernel-modules
 	rm -rf ${BASE_PATH}/kernel-modules/kobuild-tmp/
 	mkdir -p ${BASE_PATH}/kernel-modules/kobuild-tmp/versions-src
-	SYSDIG_DIR="${BASE_PATH}/sysdig/src" \
-	  SCRATCH_DIR="${BASE_PATH}/kernel-modules/kobuild-tmp/scratch" \
-	  OUTPUT_DIR="${BASE_PATH}/kernel-modules/kobuild-tmp/versions-src" \
-	  "${BASE_PATH}/kernel-modules/build/prepare-src"
+	docker run --rm -i \
+	  -v "${BASE_PATH}/sysdig/src:/sysdig/src" \
+	  -v "${BASE_PATH}/kernel-modules/kobuild-tmp/versions-src:/output" \
+	  --tmpfs /scratch:exec \
+	  --env SYSDIG_DIR=/sysdig/src --env SCRATCH_DIR=/scratch --env OUTPUT_DIR=/output \
+	build-kernel-modules prepare-src
 
 module-version: prepare-src
 	$(eval VERSIONS = $$(wildcard ${BASE_PATH}/kernel-modules/kobuild-tmp/versions-src/*.tgz))

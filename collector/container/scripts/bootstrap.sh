@@ -1,6 +1,6 @@
 #!/bin/bash
 
-log() { echo "$@" >&2; }
+log() { echo "$*" >&2; }
 
 function get_os_release_value() {
     local key=$1
@@ -132,145 +132,151 @@ function collection_method_ebpf() {
     return 1
 }
 
-[ -n "${KERNEL_VERSION}" ] || { KERNEL_VERSION=$(uname -r); }
 
-MODULE_NAME="collector"
-MODULE_PATH="/module/${MODULE_NAME}.ko"
-PROBE_NAME="collector-ebpf"
-PROBE_PATH="/module/${PROBE_NAME}.o"
-
-export KERNEL_MAJOR=""
-export KERNEL_MINOR=""
-KERNEL_MAJOR=$(echo ${KERNEL_VERSION} | cut -d. -f1)
-KERNEL_MINOR=$(echo ${KERNEL_VERSION} | cut -d. -f2)
-
-# Get and export the node hostname from Docker, needed by collector
-export NODE_HOSTNAME=""
-NODE_HOSTNAME=$(curl -s --unix-socket /host/var/run/docker.sock http://localhost/info | jq --raw-output .Name)
-
-DISTRO="$(get_distro)"
-
-# Needed for COS
-BUILD_ID="$(get_os_release_value 'BUILD_ID')"
-ID="$(get_os_release_value 'ID')"
-
-log "Hostname: ${NODE_HOSTNAME}"
-log "OS: ${DISTRO}"
-log "Kernel Version: ${KERNEL_VERSION}"
-
-MODULE_VERSION="$(cat /kernel-modules/MODULE_VERSION.txt)"
-if [[ -n "$MODULE_VERSION" ]]; then
-    log "Collector Version: $MODULE_VERSION"
-    if [[ -n "$MODULE_DOWNLOAD_BASE_URL" ]]; then
-        MODULE_URL="${MODULE_DOWNLOAD_BASE_URL}/${MODULE_VERSION}"
-    fi
-fi
-
-if [ "${ID}" == "cos" ]; then
-    # check that last char of KERNEL_VERSION is '+' and BUILD_ID is non-empty.
-    if [ "${KERNEL_VERSION: -1}" = "+" ] && [ ! -z "${BUILD_ID}" ]; then
-        # Use custom kernel_version for COS
-        KERNEL_VERSION="$(echo ${KERNEL_VERSION} | sed 's/.$//')-${BUILD_ID}-${ID}"
-    fi
-fi
- 
-KERNEL_MODULE="${MODULE_NAME}-${KERNEL_VERSION}.ko"
-KERNEL_PROBE="${PROBE_NAME}-${KERNEL_VERSION}.o"
-
-mkdir -p /module
-
-# Backwards compatability for releases older than 2.4.20
-if [ -z "${COLLECTION_METHOD}" ]; then
-  export COLLECTION_METHOD=""
-  if [ "$(echo '${COLLECTOR_CONFIG}' | jq --raw-output .useEbpf)" == "true" ]; then
-    COLLECTION_METHOD="EBPF"
-  else
-    COLLECTION_METHOD="KERNEL_MODULE"
-  fi
-fi
-
-if ! collection_method_ebpf && ! collection_method_module ; then
-  log "Error: Collector configured with invalid value: COLLECTION_METHOD=${COLLECTION_METHOD}"
-  exit_with_error
-fi
-
-if ! collection_method_ebpf && collection_method_module && cos_host ; then
-  log "Error: ${DISTRO} does not support third-party kernel modules"
-  if kernel_supports_ebpf; then
-    log "Warning: Switching to eBPF based collection, please configure RUNTIME_SUPPORT=ebpf"
-    COLLECTION_METHOD="EBPF"
-  else
-    exit_with_error
-  fi
-fi
-
-if collection_method_ebpf && ! kernel_supports_ebpf; then
-  if cos_host; then 
-    log "Error: ${DISTRO} does not support third-party kernel modules or the required eBPF features."
-    exit_with_error
-  else
-    log "Error: ${DISTRO} ${KERNEL_VERSION} does not support ebpf based collection."
-    log "Warning: Switching to kernel module based collection, please configure RUNTIME_SUPPORT=kernel-module"
-    COLLECTION_METHOD="KERNEL_MODULE"
-  fi
-fi
-
-if collection_method_module; then
-  if ! find_kernel_object "${KERNEL_MODULE}" "${MODULE_PATH}"; then
-    if ! download_kernel_object "${KERNEL_MODULE}" "${MODULE_PATH}" || [[ ! -f "$MODULE_PATH" ]]; then
-      log "The kernel module may not have been compiled for version ${KERNEL_VERSION}."
-    fi
-  fi
-  
-  if [[ -f "$MODULE_PATH" ]]; then
-    chmod 0444 "$MODULE_PATH"
-  else
-    log "Error: Failed to find kernel module for kernel version $KERNEL_VERSION."
-    exit_with_error
-  fi
-
-  # The collector program will insert the kernel module upon startup.
-  remove_module
-fi
-
-if collection_method_ebpf; then
-  if kernel_supports_ebpf; then
-    if ! find_kernel_object "${KERNEL_PROBE}" "${PROBE_PATH}"; then
-      if ! download_kernel_object "${KERNEL_PROBE}" "${PROBE_PATH}" || [[ ! -f "$PROBE_PATH" ]]; then
-        log "The ebpf probe may not have been compiled for version ${KERNEL_VERSION}."
-      fi
-    fi
-
-    if [[ -f "$PROBE_PATH" ]]; then
-      chmod 0444 "$PROBE_PATH"
-    else
-      log "Error: Failed to find ebpf probe for kernel version $KERNEL_VERSION."
-      exit_with_error
-    fi
-  else
-    log "Error: Kernel ${KERNEL_VERSION} doesn't support eBPF"
-    exit_with_error
-  fi
-fi
-
-if [[ ! -f "$PROBE_PATH" ]] && [[ ! -f "$MODULE_PATH" ]]; then
-    exit_with_error
-fi
-
-# Uncomment this to enable generation of core for Collector
-# echo '/core/core.%e.%p.%t' > /proc/sys/kernel/core_pattern
-
-clean_up() {
+function clean_up() {
     log "collector pid to be stopped is $PID"
     kill -TERM $PID; wait $PID
 }
 
-# Remove "/bin/sh -c" from arguments
-shift;shift
-log "Starting StackRox Collector..."  >&2
-# Signal handler for SIGTERM
-trap 'clean_up' TERM QUIT INT
-eval exec "$@" &
-PID=$!
-wait $PID
-remove_module
+function main() {
+    [ -n "${KERNEL_VERSION}" ] || { KERNEL_VERSION=$(uname -r); }
+    
+    MODULE_NAME="collector"
+    MODULE_PATH="/module/${MODULE_NAME}.ko"
+    PROBE_NAME="collector-ebpf"
+    PROBE_PATH="/module/${PROBE_NAME}.o"
+    
+    # Get and export the kernel version, env vars read by collector
+    export KERNEL_MAJOR=""
+    export KERNEL_MINOR=""
+    KERNEL_MAJOR=$(echo ${KERNEL_VERSION} | cut -d. -f1)
+    KERNEL_MINOR=$(echo ${KERNEL_VERSION} | cut -d. -f2)
+    
+    # Get and export the node hostname from Docker, env var read by collector
+    export NODE_HOSTNAME=""
+    NODE_HOSTNAME=$(curl -s --unix-socket /host/var/run/docker.sock http://localhost/info | jq --raw-output .Name)
+    
+    DISTRO="$(get_distro)"
+    
+    # BUILD_ID and ID only used to identify COS kernel version
+    BUILD_ID="$(get_os_release_value 'BUILD_ID')"
+    ID="$(get_os_release_value 'ID')"
+    
+    log "Hostname: ${NODE_HOSTNAME}"
+    log "OS: ${DISTRO}"
+    log "Kernel Version: ${KERNEL_VERSION}"
+    
+    MODULE_VERSION="$(cat /kernel-modules/MODULE_VERSION.txt)"
+    if [[ -n "$MODULE_VERSION" ]]; then
+        log "Collector Version: $MODULE_VERSION"
+        if [[ -n "$MODULE_DOWNLOAD_BASE_URL" ]]; then
+            MODULE_URL="${MODULE_DOWNLOAD_BASE_URL}/${MODULE_VERSION}"
+        fi
+    fi
+    
+    if [ "${ID}" == "cos" ]; then
+        # check that last char of KERNEL_VERSION is '+' and BUILD_ID is non-empty.
+        if [ "${KERNEL_VERSION: -1}" = "+" ] && [ ! -z "${BUILD_ID}" ]; then
+            # Use custom kernel_version for COS
+            KERNEL_VERSION="$(echo ${KERNEL_VERSION} | sed 's/.$//')-${BUILD_ID}-${ID}"
+        fi
+    fi
+     
+    KERNEL_MODULE="${MODULE_NAME}-${KERNEL_VERSION}.ko"
+    KERNEL_PROBE="${PROBE_NAME}-${KERNEL_VERSION}.o"
+    
+    mkdir -p /module
+    
+    # Backwards compatability for releases older than 2.4.20
+    if [ -z "${COLLECTION_METHOD}" ]; then
+      export COLLECTION_METHOD=""
+      if [ "$(echo '${COLLECTOR_CONFIG}' | jq --raw-output .useEbpf)" == "true" ]; then
+        COLLECTION_METHOD="EBPF"
+      else
+        COLLECTION_METHOD="KERNEL_MODULE"
+      fi
+    fi
+    
+    # Handle invalid collection method setting
+    if ! collection_method_ebpf && ! collection_method_module ; then
+      log "Error: Collector configured with invalid value: COLLECTION_METHOD=${COLLECTION_METHOD}"
+      exit_with_error
+    fi
+    
+    # Handle attempt to run kernel module collection on COS host
+    if cos_host && collection_method_module ; then
+      log "Error: ${DISTRO} does not support third-party kernel modules"
+      if kernel_supports_ebpf; then
+        log "Warning: Switching to eBPF based collection, please configure RUNTIME_SUPPORT=ebpf"
+        COLLECTION_METHOD="EBPF"
+      else
+        exit_with_error
+      fi
+    fi
+    
+    # Handle attempt to run ebpf collection on host with kernel that does not support ebpf
+    if collection_method_ebpf && ! kernel_supports_ebpf; then
+      if cos_host; then 
+        log "Error: ${DISTRO} does not support third-party kernel modules or the required eBPF features."
+        exit_with_error
+      else
+        log "Error: ${DISTRO} ${KERNEL_VERSION} does not support ebpf based collection."
+        log "Warning: Switching to kernel module based collection, please configure RUNTIME_SUPPORT=kernel-module"
+        COLLECTION_METHOD="KERNEL_MODULE"
+      fi
+    fi
+    
+    # Find built-in or download kernel module
+    if collection_method_module; then
+      if ! find_kernel_object "${KERNEL_MODULE}" "${MODULE_PATH}"; then
+        if ! download_kernel_object "${KERNEL_MODULE}" "${MODULE_PATH}" || [[ ! -f "$MODULE_PATH" ]]; then
+          log "The kernel module may not have been compiled for version ${KERNEL_VERSION}."
+        fi
+      fi
+      
+      if [[ -f "$MODULE_PATH" ]]; then
+        chmod 0444 "$MODULE_PATH"
+      else
+        log "Error: Failed to find kernel module for kernel version $KERNEL_VERSION."
+        exit_with_error
+      fi
+    
+      # The collector program will insert the kernel module upon startup.
+      remove_module
+    
+    # Find built-in or download ebpf probe
+    elif collection_method_ebpf; then
+      if kernel_supports_ebpf; then
+        if ! find_kernel_object "${KERNEL_PROBE}" "${PROBE_PATH}"; then
+          if ! download_kernel_object "${KERNEL_PROBE}" "${PROBE_PATH}" || [[ ! -f "$PROBE_PATH" ]]; then
+            log "The ebpf probe may not have been compiled for version ${KERNEL_VERSION}."
+          fi
+        fi
+    
+        if [[ -f "$PROBE_PATH" ]]; then
+          chmod 0444 "$PROBE_PATH"
+        else
+          log "Error: Failed to find ebpf probe for kernel version $KERNEL_VERSION."
+          exit_with_error
+        fi
+      else
+        log "Error: Kernel ${KERNEL_VERSION} doesn't support eBPF"
+        exit_with_error
+      fi
+    fi
+    
+    # Uncomment this to enable generation of core for Collector
+    # echo '/core/core.%e.%p.%t' > /proc/sys/kernel/core_pattern
+    
+    # Remove "/bin/sh -c" from arguments
+    shift;shift
+    log "Starting StackRox Collector..."  >&2
+    # Signal handler for SIGTERM
+    trap 'clean_up' TERM QUIT INT
+    eval exec "$@" &
+    PID=$!
+    wait $PID
+    remove_module
+}
+
+main "$@"
