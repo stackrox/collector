@@ -10,8 +10,11 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+// TestCollectorBootstrap only run locally
 func TestCollectorBootstrap(t *testing.T) {
-	suite.Run(t, new(BootstrapTestSuite))
+	if ReadEnvVarWithDefault("REMOTE_HOST_TYPE", "local") == "local" {
+		suite.Run(t, new(BootstrapTestSuite))
+	}
 }
 
 type BootstrapTestSuite struct {
