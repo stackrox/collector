@@ -708,6 +708,7 @@ jobs:
     steps:
     - initcommand
     - docker-login
+    - gcloud-init
     - run:
         name: "Running integration tests"
         command: |
