@@ -1,15 +1,12 @@
 package integrationtests
 
 import (
-	"errors"
 	"fmt"
-	"os/user"
 	"strings"
 	"testing"
 	"time"
 
 	"encoding/json"
-	"io/ioutil"
 
 	"github.com/boltdb/bolt"
 	"github.com/stretchr/testify/assert"
@@ -24,200 +21,6 @@ const (
 
 func TestCollectorGRPC(t *testing.T) {
 	suite.Run(t, new(IntegrationTestSuite))
-}
-
-//func TestCollectorBootstrap(t *testing.T) {
-//	suite.Run(t, new(BootstrapTestSuite))
-//}
-
-type collectorManager struct {
-	Mounts           map[string]string
-	Env              map[string]string
-	executor         Executor
-	dbpath           string
-	collectorTag     string
-	collectionMethod string
-}
-
-func NewCollectorManager(e Executor) *collectorManager {
-	return &collectorManager{executor: e}
-}
-
-func (c *collectorManager) Setup() error {
-	c.dbpath = "/tmp/collector-test.db"
-	c.collectorTag = ReadEnvVar("COLLECTOR_TAG")
-	c.collectionMethod = ReadEnvVarWithDefault("COLLECTION_METHOD", "kernel_module")
-	if strings.Contains(c.collectionMethod, "module") {
-		c.collectionMethod = "kernel_module"
-	}
-
-	err := c.executor.PullImage("stackrox/collector:" + c.collectorTag)
-	if err != nil {
-		return err
-	}
-
-	err = c.executor.PullImage("stackrox/grpc-server:2.3.16.0-99-g0b961f9515")
-	if err != nil {
-		return err
-	}
-
-	// remove previous db file
-	_, err = c.executor.Exec("rm", "-fv", c.dbpath)
-	return err
-}
-
-func (c *collectorManager) SetupDefaultMounts() {
-	c.Mounts = map[string]string{
-		"/var/run/docker.sock": "/host/var/run/docker.sock:ro",
-		"/proc":                "/host/proc:ro",
-		"/etc/":                "/host/etc:ro",
-		"/usr/lib/":            "/host/usr/lib:ro",
-		"/sys/":                "/host/sys:ro",
-		"/dev":                 "/host/dev:ro",
-	}
-}
-
-func (c *collectorManager) SetupDefaultEnv() {
-	c.Env = map[string]string{
-		"GRPC_SERVER":       "localhost:9999",
-		"COLLECTOR_CONFIG":  `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}`,
-		"COLLECTION_METHOD": c.collectionMethod,
-	}
-}
-
-func (c *collectorManager) Launch() error {
-	err := c.launchGRPCServer()
-	if err != nil {
-		return err
-	}
-	return c.launchCollector()
-}
-
-func (c *collectorManager) TearDown() error {
-	c.CaptureLogs("collector", "collector.logs")
-	c.CaptureLogs("grpc-server", "grpc-server.logs")
-	c.killContainer("grpc-server")
-
-	c.killContainer("collector")
-	_, err := c.executor.CopyFromHost(c.dbpath, c.dbpath)
-	return err
-}
-
-func (c *collectorManager) BoltDB() (db *bolt.DB, err error) {
-	opts := &bolt.Options{ReadOnly: true}
-	db, err = bolt.Open(c.dbpath, 0600, opts)
-	if err != nil {
-		fmt.Printf("Permission error. %v\n", err)
-	}
-	return db, err
-}
-
-func (c *collectorManager) launchGRPCServer() error {
-	user, _ := user.Current()
-	cmd := []string{"docker", "run",
-		"-d",
-		"--rm",
-		"--name", "grpc-server",
-		"--network=host",
-		"-v", "/tmp:/tmp:rw",
-		"--user", user.Uid + ":" + user.Gid,
-		"stackrox/grpc-server:2.3.16.0-99-g0b961f9515"}
-	_, err := c.executor.Exec(cmd...)
-	return err
-}
-
-func (c *collectorManager) launchCollector() error {
-	cmd := []string{"docker", "run",
-		"-d",
-		"--rm",
-		"--name", "collector",
-		"--privileged",
-		"--network=host"}
-	img := "stackrox/collector:" + c.collectorTag
-	for k, v := range c.Mounts {
-		cmd = append(cmd, "-v", k+":"+v)
-	}
-	for k, v := range c.Env {
-		cmd = append(cmd, "--env", k+"="+v)
-	}
-
-	cmd = append(cmd, img)
-
-	containerID, err := c.executor.Exec(cmd...)
-	if err != nil {
-		return err
-	}
-
-	cid := containerID[0:12]
-	running, err := c.executor.Exec("docker", "inspect", "-f", "'{{.State.Running}}'", cid)
-	if err == nil && strings.Trim(running, "'\"\n") != "true" {
-		return errors.New("collector is not running")
-	}
-	return err
-}
-
-func (c *collectorManager) CaptureLogs(containerName, logFile string) (string, error) {
-	logs, err := c.executor.Exec("docker", "logs", containerName)
-	if err != nil {
-		return "", err
-	}
-	err = ioutil.WriteFile(logFile, []byte(logs), 0644)
-	if err != nil {
-		return "", err
-	}
-	return logs, nil
-}
-
-func (c *collectorManager) killContainer(name string) error {
-	_, err := c.executor.Exec("docker", "kill", name)
-	if err != nil {
-		return err
-	}
-	_, err = c.executor.Exec("docker", "rm", name)
-	return err
-}
-
-type BootstrapTestSuite struct {
-	suite.Suite
-	executor Executor
-}
-
-func (s *BootstrapTestSuite) SetupSuite() {
-	s.executor = NewExecutor()
-	collector := NewCollectorManager(s.executor)
-
-	err := collector.Setup()
-	require.NoError(s.T(), err)
-
-	collector.SetupDefaultEnv()
-	collector.SetupDefaultMounts()
-	collector.Env["KERNEL_VERSION"] = "3.10.0-514.10.2.el7.x86_64"
-	collector.Env["COLLECTION_METHOD"] = "ebpf"
-
-	err = collector.Launch()
-	require.NoError(s.T(), err)
-
-	collectorLogs, err := collector.CaptureLogs("collector", "bootstrap_collector.logs")
-	fmt.Printf("collector logs:\n%s\n", collectorLogs)
-
-	//err = collector.TearDown()
-	//require.NoError(s.T(), err)
-
-	//ff := []byte("temporary file's content")
-
-	//tmpfile, err := ioutil.TempFile("", "example")
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-
-	//defer os.Remove(tmpfile.Name()) // clean up
-
-	//if _, err := tmpfile.Write(content); err != nil {
-	//	log.Fatal(err)
-	//}
-	//if err := tmpfile.Close(); err != nil {
-	//	log.Fatal(err)
-	//}
 }
 
 type IntegrationTestSuite struct {
@@ -243,9 +46,6 @@ func (s *IntegrationTestSuite) SetupSuite() {
 
 	err := collector.Setup()
 	require.NoError(s.T(), err)
-
-	collector.SetupDefaultEnv()
-	collector.SetupDefaultMounts()
 
 	err = collector.Launch()
 	require.NoError(s.T(), err)

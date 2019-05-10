@@ -113,10 +113,8 @@ CollectorConfig::CollectorConfig(CollectorArgs *args) {
     if (args->CollectionMethod().length() > 0) {
       collection_method_ = args->CollectionMethod();
       CLOG(INFO) << "User configured collection-method=" << collection_method_;
-    }
-
-    // Ebpf (deprecated)
-    if (!config["useEbpf"].empty()) {
+    } else if (!config["useEbpf"].empty()) {
+      // useEbpf (deprecated)
       collection_method_ = config["useEbpf"].asBool() ? "ebpf" : "kernel_module";
       CLOG(INFO) << "User configured useEbpf=" << config["useEbpf"].asBool();
     }

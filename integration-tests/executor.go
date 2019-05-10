@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 var (
@@ -95,11 +97,17 @@ func (e *executor) RunCommand(cmd *exec.Cmd) (string, error) {
 	if cmd == nil {
 		return "", nil
 	}
-	fmt.Printf("Run: %s\n", strings.Join(cmd.Args, " "))
+	commandLine := strings.Join(cmd.Args, " ")
+	if debug {
+		fmt.Printf("Run: %s\n", commandLine)
+	}
 	stdoutStderr, err := cmd.CombinedOutput()
 	trimmed := strings.Trim(string(stdoutStderr), "\"\n")
 	if debug {
 		fmt.Printf("Run Output: %s\n", trimmed)
+	}
+	if err != nil {
+		err = errors.Wrapf(err, "Command Failed: %s", commandLine)
 	}
 	return trimmed, err
 }

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-log() { echo "$*" >&2; }
+log() { echo "$*" 1>&2; }
 
 function get_os_release_value() {
     local key=$1
@@ -16,21 +16,6 @@ function get_os_release_value() {
         done < "${os_release}"
     fi
 }
-
-# XXX remove me
-function os_release() {
-    local key=$1
-    local os_release="/host/etc/os-release"
-    if [ ! -f "${os_release}" ]; then
-        os_release="/host/usr/lib/os-release"
-    fi
-    if [ -f "${os_release}" ]; then
-        echo "=========${os_release}=========" >&2
-        cat "${os_release}" >&2
-        echo "===============================" >&2
-    fi
-}
-
 
 function get_distro() {
     local distro=$(get_os_release_value "PRETTY_NAME")
@@ -117,7 +102,7 @@ function kernel_supports_ebpf() {
 }
 
 function cos_host() {
-    if [ "${ID}" == "cos" ] && [ "${KERNEL_VERSION: -1}" = "+" ] && [ ! -z "${BUILD_ID}" ]; then
+    if [ "${ID}" == "cos" ] && [ ! -z "${BUILD_ID}" ]; then
         return 0
     fi
     return 1
@@ -125,7 +110,7 @@ function cos_host() {
 
 function collection_method_module() {
     local collection_method="$(echo ${COLLECTION_METHOD} | tr '[:upper:]' '[:lower:]')"
-    if [ "${collection_method}" == "kernel_module" ] || [ "${collection_method}" == "kernel-module"; then
+    if [ "${collection_method}" == "kernel_module" ] || [ "${collection_method}" == "kernel-module" ]; then
         return 0
     fi
     return 1
@@ -187,9 +172,6 @@ function main() {
         fi
     fi
 
-   # XXX remove me
-    os_release
-    
     # Special case kernel version if running on COS
     if cos_host ; then
         KERNEL_VERSION="$(echo ${KERNEL_VERSION} | sed 's/.$//')-${BUILD_ID}-${ID}"
@@ -200,7 +182,7 @@ function main() {
     # Backwards compatability for releases older than 2.4.20
     if [ -z "${COLLECTION_METHOD}" ]; then
       export COLLECTION_METHOD=""
-      if [ "$(echo '${COLLECTOR_CONFIG}' | jq --raw-output .useEbpf)" == "true" ]; then
+      if [ "$(echo ${COLLECTOR_CONFIG} | jq --raw-output .useEbpf)" == "true" ]; then
         COLLECTION_METHOD="EBPF"
       else
         COLLECTION_METHOD="KERNEL_MODULE"
