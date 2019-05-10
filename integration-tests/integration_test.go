@@ -1,7 +1,9 @@
 package integrationtests
 
 import (
+	"errors"
 	"fmt"
+	"os/user"
 	"strings"
 	"testing"
 	"time"
@@ -11,6 +13,7 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -23,19 +26,210 @@ func TestCollectorGRPC(t *testing.T) {
 	suite.Run(t, new(IntegrationTestSuite))
 }
 
+//func TestCollectorBootstrap(t *testing.T) {
+//	suite.Run(t, new(BootstrapTestSuite))
+//}
+
+type collectorManager struct {
+	Mounts           map[string]string
+	Env              map[string]string
+	executor         Executor
+	dbpath           string
+	collectorTag     string
+	collectionMethod string
+}
+
+func NewCollectorManager(e Executor) *collectorManager {
+	return &collectorManager{executor: e}
+}
+
+func (c *collectorManager) Setup() error {
+	c.dbpath = "/tmp/collector-test.db"
+	c.collectorTag = ReadEnvVar("COLLECTOR_TAG")
+	c.collectionMethod = ReadEnvVarWithDefault("COLLECTION_METHOD", "kernel_module")
+	if strings.Contains(c.collectionMethod, "module") {
+		c.collectionMethod = "kernel_module"
+	}
+
+	err := c.executor.PullImage("stackrox/collector:" + c.collectorTag)
+	if err != nil {
+		return err
+	}
+
+	err = c.executor.PullImage("stackrox/grpc-server:2.3.16.0-99-g0b961f9515")
+	if err != nil {
+		return err
+	}
+
+	// remove previous db file
+	_, err = c.executor.Exec("rm", "-fv", c.dbpath)
+	return err
+}
+
+func (c *collectorManager) SetupDefaultMounts() {
+	c.Mounts = map[string]string{
+		"/var/run/docker.sock": "/host/var/run/docker.sock:ro",
+		"/proc":                "/host/proc:ro",
+		"/etc/":                "/host/etc:ro",
+		"/usr/lib/":            "/host/usr/lib:ro",
+		"/sys/":                "/host/sys:ro",
+		"/dev":                 "/host/dev:ro",
+	}
+}
+
+func (c *collectorManager) SetupDefaultEnv() {
+	c.Env = map[string]string{
+		"GRPC_SERVER":       "localhost:9999",
+		"COLLECTOR_CONFIG":  `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}`,
+		"COLLECTION_METHOD": c.collectionMethod,
+	}
+}
+
+func (c *collectorManager) Launch() error {
+	err := c.launchGRPCServer()
+	if err != nil {
+		return err
+	}
+	return c.launchCollector()
+}
+
+func (c *collectorManager) TearDown() error {
+	c.CaptureLogs("collector", "collector.logs")
+	c.CaptureLogs("grpc-server", "grpc-server.logs")
+	c.killContainer("grpc-server")
+
+	c.killContainer("collector")
+	_, err := c.executor.CopyFromHost(c.dbpath, c.dbpath)
+	return err
+}
+
+func (c *collectorManager) BoltDB() (db *bolt.DB, err error) {
+	opts := &bolt.Options{ReadOnly: true}
+	db, err = bolt.Open(c.dbpath, 0600, opts)
+	if err != nil {
+		fmt.Printf("Permission error. %v\n", err)
+	}
+	return db, err
+}
+
+func (c *collectorManager) launchGRPCServer() error {
+	user, _ := user.Current()
+	cmd := []string{"docker", "run",
+		"-d",
+		"--rm",
+		"--name", "grpc-server",
+		"--network=host",
+		"-v", "/tmp:/tmp:rw",
+		"--user", user.Uid + ":" + user.Gid,
+		"stackrox/grpc-server:2.3.16.0-99-g0b961f9515"}
+	_, err := c.executor.Exec(cmd...)
+	return err
+}
+
+func (c *collectorManager) launchCollector() error {
+	cmd := []string{"docker", "run",
+		"-d",
+		"--rm",
+		"--name", "collector",
+		"--privileged",
+		"--network=host"}
+	img := "stackrox/collector:" + c.collectorTag
+	for k, v := range c.Mounts {
+		cmd = append(cmd, "-v", k+":"+v)
+	}
+	for k, v := range c.Env {
+		cmd = append(cmd, "--env", k+"="+v)
+	}
+
+	cmd = append(cmd, img)
+
+	containerID, err := c.executor.Exec(cmd...)
+	if err != nil {
+		return err
+	}
+
+	cid := containerID[0:12]
+	running, err := c.executor.Exec("docker", "inspect", "-f", "'{{.State.Running}}'", cid)
+	if err == nil && strings.Trim(running, "'\"\n") != "true" {
+		return errors.New("collector is not running")
+	}
+	return err
+}
+
+func (c *collectorManager) CaptureLogs(containerName, logFile string) (string, error) {
+	logs, err := c.executor.Exec("docker", "logs", containerName)
+	if err != nil {
+		return "", err
+	}
+	err = ioutil.WriteFile(logFile, []byte(logs), 0644)
+	if err != nil {
+		return "", err
+	}
+	return logs, nil
+}
+
+func (c *collectorManager) killContainer(name string) error {
+	_, err := c.executor.Exec("docker", "kill", name)
+	if err != nil {
+		return err
+	}
+	_, err = c.executor.Exec("docker", "rm", name)
+	return err
+}
+
+type BootstrapTestSuite struct {
+	suite.Suite
+	executor Executor
+}
+
+func (s *BootstrapTestSuite) SetupSuite() {
+	s.executor = NewExecutor()
+	collector := NewCollectorManager(s.executor)
+
+	err := collector.Setup()
+	require.NoError(s.T(), err)
+
+	collector.SetupDefaultEnv()
+	collector.SetupDefaultMounts()
+	collector.Env["KERNEL_VERSION"] = "3.10.0-514.10.2.el7.x86_64"
+	collector.Env["COLLECTION_METHOD"] = "ebpf"
+
+	err = collector.Launch()
+	require.NoError(s.T(), err)
+
+	collectorLogs, err := collector.CaptureLogs("collector", "bootstrap_collector.logs")
+	fmt.Printf("collector logs:\n%s\n", collectorLogs)
+
+	//err = collector.TearDown()
+	//require.NoError(s.T(), err)
+
+	//ff := []byte("temporary file's content")
+
+	//tmpfile, err := ioutil.TempFile("", "example")
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+
+	//defer os.Remove(tmpfile.Name()) // clean up
+
+	//if _, err := tmpfile.Write(content); err != nil {
+	//	log.Fatal(err)
+	//}
+	//if err := tmpfile.Close(); err != nil {
+	//	log.Fatal(err)
+	//}
+}
+
 type IntegrationTestSuite struct {
 	suite.Suite
-	db               *bolt.DB
-	executor         Executor
-	clientContainer  string
-	clientIP         string
-	clientPort       string
-	collectionMethod string
-	collectorTag     string
-	dbpath           string
-	serverContainer  string
-	serverIP         string
-	serverPort       string
+	db              *bolt.DB
+	executor        Executor
+	clientContainer string
+	clientIP        string
+	clientPort      string
+	serverContainer string
+	serverIP        string
+	serverPort      string
 }
 
 // Launches collector
@@ -44,52 +238,40 @@ type IntegrationTestSuite struct {
 // Execs into nginx and does a sleep
 func (s *IntegrationTestSuite) SetupSuite() {
 
-	s.dbpath = "/tmp/collector-test.db"
-	s.collectorTag = ReadEnvVar("COLLECTOR_TAG")
-
-	s.collectionMethod = ReadEnvVarWithDefault("COLLECTION_METHOD", "kernel_module")
-	if strings.Contains(s.collectionMethod, "module") {
-		s.collectionMethod = "kernel_module"
-	}
-
 	s.executor = NewExecutor()
+	collector := NewCollectorManager(s.executor)
+
+	err := collector.Setup()
+	require.NoError(s.T(), err)
+
+	collector.SetupDefaultEnv()
+	collector.SetupDefaultMounts()
+
+	err = collector.Launch()
+	require.NoError(s.T(), err)
 
 	images := []string{
-		"stackrox/collector:" + s.collectorTag,
 		"nginx:1.14-alpine",
 		"pstauffer/curl:latest",
-		"stackrox/grpc-server:2.3.16.0-99-g0b961f9515"}
-
-	for _, image := range images {
-		s.executor.PullImage(image)
 	}
 
-	s.resetDBFile(s.dbpath)
-
-	containerID, err := s.launchGRPCServer()
-	s.NoError(err)
-
-	containerID, err = s.launchCollector()
-	s.NoError(err)
-	collectorContainer := containerID
-
-	running, err := s.executor.Exec("docker", "inspect", "-f", "'{{.State.Running}}'", collectorContainer)
-	if strings.Trim(running, "'\"\n") != "true" {
-		assert.FailNow(s.T(), "collecter not running")
+	for _, image := range images {
+		err := s.executor.PullImage(image)
+		require.NoError(s.T(), err)
 	}
 
 	time.Sleep(10 * time.Second)
 
 	// invokes default nginx
-	containerID, err = s.launchContainer("nginx", "nginx:1.14-alpine")
-	s.NoError(err)
+	containerID, err := s.launchContainer("nginx", "nginx:1.14-alpine")
+	require.NoError(s.T(), err)
 	s.serverContainer = containerID[0:12]
 
 	// invokes "sleep" and "sh" and "ls"
 	_, err = s.execContainer("nginx", []string{"sleep", "5"})
-	s.NoError(err)
+	require.NoError(s.T(), err)
 	_, err = s.execContainer("nginx", []string{"sh", "-c", "ls"})
-	s.NoError(err)
+	require.NoError(s.T(), err)
 
 	//// start performance container
 	//err := s.executor.PullImage("ljishen/sysbench")
@@ -99,44 +281,32 @@ func (s *IntegrationTestSuite) SetupSuite() {
 
 	// invokes another container
 	containerID, err = s.launchContainer("nginx-curl", "pstauffer/curl:latest", "sleep", "300")
-	s.NoError(err)
+	require.NoError(s.T(), err)
 	s.clientContainer = containerID[0:12]
 
 	ip, err := s.getIPAddress("nginx")
-	s.NoError(err)
+	require.NoError(s.T(), err)
 	s.serverIP = ip
 
 	port, err := s.getPort("nginx")
-	s.NoError(err)
+	require.NoError(s.T(), err)
+
 	s.serverPort = port
 
 	_, err = s.execContainer("nginx-curl", []string{"curl", s.serverIP})
-	s.NoError(err)
+	require.NoError(s.T(), err)
 
 	ip, err = s.getIPAddress("nginx-curl")
-	s.NoError(err)
+	require.NoError(s.T(), err)
 	s.clientIP = ip
 
 	time.Sleep(10 * time.Second)
 
-	_, err = s.copyDBFile(s.dbpath)
-	s.NoError(err)
+	err = collector.TearDown()
+	require.NoError(s.T(), err)
 
-	logs, err := s.containerLogs("collector")
-	s.NoError(err)
-	err = ioutil.WriteFile("collector.logs", []byte(logs), 0644)
-	s.NoError(err)
-
-	logs, err = s.containerLogs("grpc-server")
-	err = ioutil.WriteFile("grpc_server.logs", []byte(logs), 0644)
-	s.NoError(err)
-
-	s.cleanupContainer([]string{"grpc-server"})
-
-	s.db, err = s.BoltDB()
-	if err != nil {
-		assert.FailNow(s.T(), "DB file could not be opened", "Error: %s", err)
-	}
+	s.db, err = collector.BoltDB()
+	require.NoError(s.T(), err)
 }
 
 func (s *IntegrationTestSuite) TearDownSuite() {
@@ -148,21 +318,21 @@ func (s *IntegrationTestSuite) TestProcessViz() {
 	exeFilePath := "/usr/sbin/nginx"
 	expectedProcessInfo := fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
 	val, err := s.Get(processName, processBucket)
-	s.NoError(err)
+	require.NoError(s.T(), err)
 	assert.Equal(s.T(), expectedProcessInfo, val)
 
 	processName = "sh"
 	exeFilePath = "/bin/sh"
 	expectedProcessInfo = fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
 	val, err = s.Get(processName, processBucket)
-	s.NoError(err)
+	require.NoError(s.T(), err)
 	assert.Equal(s.T(), expectedProcessInfo, val)
 
 	processName = "sleep"
 	exeFilePath = "/bin/sleep"
 	expectedProcessInfo = fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
 	val, err = s.Get(processName, processBucket)
-	s.NoError(err)
+	require.NoError(s.T(), err)
 	assert.Equal(s.T(), expectedProcessInfo, val)
 }
 
@@ -170,7 +340,7 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 
 	// Server side checks
 	val, err := s.Get(s.serverContainer, networkBucket)
-	s.NoError(err)
+	require.NoError(s.T(), err)
 	actualValues := strings.Split(string(val), ":")
 
 	if len(actualValues) < 3 {
@@ -191,7 +361,7 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 	// client side checks
 	val, err = s.Get(s.clientContainer, networkBucket)
 	actualValues = strings.Split(string(val), ":")
-	s.NoError(err)
+	require.NoError(s.T(), err)
 
 	actualClientIP = actualValues[0]
 	actualServerIP = actualValues[2]
@@ -203,63 +373,6 @@ func (s *IntegrationTestSuite) TestNetworkFlows() {
 
 	fmt.Printf("ClientDetails from Bolt: %s %s\n", s.clientContainer, string(val))
 	fmt.Printf("ClientDetails from test: %s %s, Port: %s\n", s.clientContainer, s.clientIP, s.clientPort)
-}
-
-func (s *IntegrationTestSuite) copyDBFile(path string) (string, error) {
-	return s.executor.CopyFromHost(path, path)
-}
-
-func (s *IntegrationTestSuite) resetDBFile(path string) (string, error) {
-	return s.executor.Exec("rm", "-fv", path)
-}
-
-func (s *IntegrationTestSuite) launchPerformanceContainer() (string, error) {
-	cmd := []string{"docker", "run", "-d", "--rm",
-		"-v", "/tmp:/root/results", "ljishen/sysbench",
-		"/root/results/output_cpu.prof", "--test=cpu",
-		"--cpu-max-prime=10000", "run"}
-	return s.executor.Exec(cmd...)
-}
-
-func (s *IntegrationTestSuite) launchGRPCServer() (string, error) {
-	cmd := []string{"docker", "run",
-		"-d",
-		"--rm",
-		"--name", "grpc-server",
-		"--network=host",
-		"-v", "/tmp:/tmp:rw",
-		"stackrox/grpc-server:2.3.16.0-99-g0b961f9515"}
-	return s.executor.Exec(cmd...)
-}
-
-func (s *IntegrationTestSuite) launchCollector() (string, error) {
-	cmd := []string{"docker", "run",
-		"-d",
-		"--rm",
-		"--name", "collector",
-		"--privileged",
-		"--network=host"}
-
-	mounts := []string{
-		"-v", "/var/run/docker.sock:/host/var/run/docker.sock:ro",
-		"-v", "/proc:/host/proc:ro",
-		"-v", "/etc/:/host/etc:ro",
-		"-v", "/usr/lib/:/host/usr/lib:ro",
-		"-v", "/sys/:/host/sys:ro",
-		"-v", "/dev:/host/dev:ro",
-	}
-
-	env := []string{
-		"--env", "GRPC_SERVER=localhost:9999",
-		"--env", `COLLECTOR_CONFIG={"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}`,
-		"--env", "COLLECTION_METHOD=" + s.collectionMethod}
-
-	img := "stackrox/collector:" + s.collectorTag
-
-	cmd = append(cmd, mounts...)
-	cmd = append(cmd, env...)
-	cmd = append(cmd, img)
-	return s.executor.Exec(cmd...)
 }
 
 func (s *IntegrationTestSuite) launchContainer(args ...string) (string, error) {
@@ -309,15 +422,6 @@ func (s *IntegrationTestSuite) getPort(containerName string) (string, error) {
 	}
 
 	return "", fmt.Errorf("no port mapping found: %v %v", rawString, portMap)
-}
-
-func (s *IntegrationTestSuite) BoltDB() (db *bolt.DB, err error) {
-	opts := &bolt.Options{ReadOnly: true}
-	db, err = bolt.Open(s.dbpath, 0600, opts)
-	if err != nil {
-		fmt.Printf("Permission error. %v\n", err)
-	}
-	return db, err
 }
 
 func (s *IntegrationTestSuite) Get(key string, bucket string) (val string, err error) {

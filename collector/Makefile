@@ -84,8 +84,8 @@ module-version: prepare-src
 	@echo "MODULE VERSION is $(MODULE_VERSION)"
 
 pull-modules: module-version
-	( docker pull stackrox/kernel-modules:$(MODULE_VERSION) && \
-	docker tag stackrox/kernel-modules:$(MODULE_VERSION) stackrox/kernel-modules:latest )
+	( docker image inspect stackrox/kernel-modules:$(MODULE_VERSION) > /dev/null || docker pull stackrox/kernel-modules:$(MODULE_VERSION) )
+	docker tag stackrox/kernel-modules:$(MODULE_VERSION) stackrox/kernel-modules:latest
 
 .PHONY: distribution
 distribution: clean
