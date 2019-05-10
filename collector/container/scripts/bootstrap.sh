@@ -1,34 +1,35 @@
 #!/bin/bash
 
-log() { echo "$*" 1>&2; }
+log() { echo "$*" >&2; }
 
 function get_os_release_value() {
     local key=$1
-    local os_release="/host/etc/os-release"
-    if [ ! -f "${os_release}" ]; then
-        os_release="/host/usr/lib/os-release"
+    local os_release_file="/host/etc/os-release"
+    if [[ ! -f "${os_release_file}" ]]; then
+        os_release_file="/host/usr/lib/os-release"
     fi
-    if [ -f "${os_release}" ]; then
-        while IFS="=" read var value; do
-            if [ "$key" == "$var" ]; then
-                echo $value
+    if [[ -f "${os_release_file}" ]]; then
+        while IFS="=" read -r var value; do
+            if [[ "$key" == "$var" ]]; then
+                echo "$value"
             fi
-        done < "${os_release}"
+        done < "${os_release_file}"
     fi
 }
 
 function get_distro() {
-    local distro=$(get_os_release_value "PRETTY_NAME")
-    if [ -z "${distro}" ]; then
+    local distro
+    distro=$(get_os_release_value 'PRETTY_NAME')
+    if [[ -z "${distro}" ]]; then
       echo "Linux"
     fi
-    echo ${distro}
+    echo "${distro}"
 }
 
 function test {
     "$@"
     local status=$?
-    if [ $status -ne 0 ]; then
+    if [[ $status -ne 0 ]]; then
         log "Error with $1"
         exit $status
     fi
@@ -47,7 +48,7 @@ function download_kernel_object() {
     local KERNEL_OBJECT="$1"
     local OBJECT_PATH="$2"
     local OBJECT_TYPE="kernel module"
-    if [ "${KERNEL_OBJECT##*.}" == "o" ]; then
+    if [[ "${KERNEL_OBJECT##*.}" == "o" ]]; then
       OBJECT_TYPE="eBPF probe"
     fi
 
@@ -59,9 +60,10 @@ function download_kernel_object() {
     local FILENAME_GZ="$OBJECT_PATH.gz"
 
     # Attempt to download kernel object
-    local HTTP_CODE=$(curl -w "%{http_code}" -L -s -o "$FILENAME_GZ" "${URL}.gz" 2>/dev/null)
+    local HTTP_CODE
+    HTTP_CODE=$(curl -w "%{http_code}" -L -s -o "$FILENAME_GZ" "${URL}.gz" 2>/dev/null)
 
-    if [ "$HTTP_CODE" != "200" ] ; then
+    if [[ "$HTTP_CODE" != "200" ]] ; then
         log "Error downloading $OBJECT_TYPE $KERNEL_OBJECT (Error code: $HTTP_CODE)"
         return 1
     fi
@@ -76,7 +78,7 @@ function find_kernel_object() {
     local OBJECT_PATH="$2"
     local EXPECTED_PATH="/kernel-modules/$KERNEL_OBJECT"
     local OBJECT_TYPE="kernel module"
-    if [ "${KERNEL_OBJECT##*.}" == "o" ]; then
+    if [[ "${KERNEL_OBJECT##*.}" == "o" ]]; then
       OBJECT_TYPE="eBPF probe"
     fi
 
@@ -102,23 +104,25 @@ function kernel_supports_ebpf() {
 }
 
 function cos_host() {
-    if [ "${ID}" == "cos" ] && [ ! -z "${BUILD_ID}" ]; then
+    if [[ "${ID}" == "cos" ]] && [[ -n "${BUILD_ID}" ]]; then
         return 0
     fi
     return 1
 }
 
 function collection_method_module() {
-    local collection_method="$(echo ${COLLECTION_METHOD} | tr '[:upper:]' '[:lower:]')"
-    if [ "${collection_method}" == "kernel_module" ] || [ "${collection_method}" == "kernel-module" ]; then
+    local collection_method
+    collection_method="$(echo "${COLLECTION_METHOD}" | tr '[:upper:]' '[:lower:]')"
+    if [[ "${collection_method}" == "kernel_module" || "${collection_method}" == "kernel-module" ]]; then
         return 0
     fi
     return 1
 }
 
 function collection_method_ebpf() {
-    local collection_method="$(echo ${COLLECTION_METHOD} | tr '[:upper:]' '[:lower:]')"
-    if [ "${collection_method}" == "ebpf" ]; then
+    local collection_method
+    collection_method="$(echo "${COLLECTION_METHOD}" | tr '[:upper:]' '[:lower:]')"
+    if [[ "${collection_method}" == "ebpf" ]]; then
         return 0
     fi
     return 1
@@ -134,19 +138,19 @@ exit_with_error() {
 
 function clean_up() {
     log "collector pid to be stopped is $PID"
-    kill -TERM $PID; wait $PID
+    kill -TERM "$PID"; wait "$PID"
 }
 
 function main() {
 
     # Get the host kernel version (or user defined env var)
-    [ -n "${KERNEL_VERSION}" ] || { KERNEL_VERSION=$(uname -r); }
+    [ -n "${KERNEL_VERSION}" ] || KERNEL_VERSION="$(uname -r)"
     
     # Get and export the kernel version, env vars read by collector
     export KERNEL_MAJOR=""
     export KERNEL_MINOR=""
-    KERNEL_MAJOR=$(echo ${KERNEL_VERSION} | cut -d. -f1)
-    KERNEL_MINOR=$(echo ${KERNEL_VERSION} | cut -d. -f2)
+    KERNEL_MAJOR=$(echo "${KERNEL_VERSION}" | cut -d. -f1)
+    KERNEL_MINOR=$(echo "${KERNEL_VERSION}" | cut -d. -f2)
     
     # Get and export the node hostname from Docker, env var read by collector
     export NODE_HOSTNAME=""
@@ -174,15 +178,18 @@ function main() {
 
     # Special case kernel version if running on COS
     if cos_host ; then
-        KERNEL_VERSION="$(echo ${KERNEL_VERSION} | sed 's/.$//')-${BUILD_ID}-${ID}"
+        # remove '+' from end of kernel version 
+        KERNEL_VERSION="${KERNEL_VERSION%?}-${BUILD_ID}-${ID}"
     fi
    
     mkdir -p /module
     
     # Backwards compatability for releases older than 2.4.20
-    if [ -z "${COLLECTION_METHOD}" ]; then
+    if [[ -z "${COLLECTION_METHOD}" ]]; then
       export COLLECTION_METHOD=""
-      if [ "$(echo ${COLLECTOR_CONFIG} | jq --raw-output .useEbpf)" == "true" ]; then
+      local config_json_ebpf
+      config_json_ebpf="$(echo "${COLLECTOR_CONFIG}" | jq --raw-output .useEbpf)"
+      if [[ "$config_json_ebpf" == "true" ]]; then
         COLLECTION_METHOD="EBPF"
       else
         COLLECTION_METHOD="KERNEL_MODULE"
