@@ -22,7 +22,6 @@ type collectorManager struct {
 }
 
 func NewCollectorManager(e Executor) *collectorManager {
-
 	collectionMethod := ReadEnvVarWithDefault("COLLECTION_METHOD", "kernel_module")
 	if strings.Contains(collectionMethod, "module") {
 		collectionMethod = "kernel_module"
@@ -87,11 +86,11 @@ func (c *collectorManager) TearDown() error {
 		if _, err := c.executor.CopyFromHost(c.DBPath, c.DBPath); err != nil {
 			return err
 		}
-		c.CaptureLogs("grpc-server", "grpc-server.logs")
+		c.captureLogs("grpc-server", "grpc-server.logs")
 		c.killContainer("grpc-server")
 	}
 
-	c.CaptureLogs("collector", "collector.logs")
+	c.captureLogs("collector", "collector.logs")
 	c.killContainer("collector")
 	return nil
 }
@@ -114,7 +113,8 @@ func (c *collectorManager) launchGRPCServer() error {
 		"--network=host",
 		"-v", "/tmp:/tmp:rw",
 		"--user", user.Uid + ":" + user.Gid,
-		"stackrox/grpc-server:2.3.16.0-99-g0b961f9515"}
+		c.GRPCServerImage,
+	}
 	_, err := c.executor.Exec(cmd...)
 	return err
 }
@@ -148,7 +148,7 @@ func (c *collectorManager) launchCollector() error {
 	return err
 }
 
-func (c *collectorManager) CaptureLogs(containerName, logFile string) (string, error) {
+func (c *collectorManager) captureLogs(containerName, logFile string) (string, error) {
 	logs, err := c.executor.Exec("docker", "logs", containerName)
 	if err != nil {
 		return "", err
