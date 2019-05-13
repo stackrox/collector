@@ -655,13 +655,13 @@ jobs:
           cp NOTICE-collector.txt container/
           cp COPYING.txt container/
           docker build \
-            -f Dockerfile \
+            -f container/Dockerfile \
             -t "stackrox/collector:snapshot-${COLLECTOR_VERSION}" \
             -t "stackrox/collector:${COLLECTOR_VERSION}" \
             --build-arg base="$MODULE_VERSION" \
             container
           docker build \
-            -f Dockerfile_slim \
+            -f container/Dockerfile_slim \
             -t "stackrox/collector:snapshot-${COLLECTOR_VERSION}-slim" \
             -t "stackrox/collector:${COLLECTOR_VERSION}-slim" \
             --build-arg base="$MODULE_VERSION" \

@@ -21,8 +21,8 @@ all: image integration-tests integration-test-report
 image: build_collector container/bin/collector container/Dockerfile container/scripts/ pull-modules
 	cp NOTICE-collector.txt container/
 	cp COPYING.txt container/
-	cd container && docker build -f Dockerfile -t stackrox/collector:$(COLLECTOR_TAG) .
-	cd container && docker build -f Dockerfile_slim -t stackrox/collector:$(COLLECTOR_TAG)-slim .
+	docker build -f container/Dockerfile -t stackrox/collector:$(COLLECTOR_TAG) container
+	docker build -f container/Dockerfile_slim -t stackrox/collector:$(COLLECTOR_TAG)-slim container
 
 build_collector: 
 	@echo "Build collector builder docker image"
