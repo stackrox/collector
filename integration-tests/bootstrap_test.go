@@ -28,11 +28,12 @@ func (s *BootstrapTestSuite) SetupSuite() {
 
 func (s *BootstrapTestSuite) TestBootstrapScript() {
 	tests := map[string]struct {
-		env               map[string]string
-		mounts            map[string]string
-		osRelease         string
-		expectedLogLines  []string
-		expectedExitError bool
+		env                map[string]string
+		mounts             map[string]string
+		osRelease          string
+		slimCollectorImage bool
+		expectedLogLines   []string
+		expectedExitError  bool
 	}{
 		"invalid collection method": {
 			expectedExitError: true,
@@ -93,6 +94,31 @@ func (s *BootstrapTestSuite) TestBootstrapScript() {
 				"Starting StackRox Collector...",
 			},
 		},
+		//"kernel object download fail": {
+		//	expectedExitError:  true,
+		//	slimCollectorImage: true,
+		//	env: map[string]string{
+		//		"MODULE_DOWNLOAD_BASE_URL": "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656",
+		//		"KERNEL_VERSION":           "4.9.100-stackrox-internal-testing",
+		//	},
+		//	expectedLogLines: []string{
+		//		"Didn't find kernel module collector-4.9.100-stackrox-internal-testing.ko built-in.",
+		//		"Error downloading kernel module collector-4.9.100-stackrox-internal-testing.ko (Error code: 403)",
+		//		"The kernel module may not have been compiled for version 4.9.100-stackrox-internal-testing.",
+		//		"Error: Failed to find kernel module for kernel version 4.9.100-stackrox-internal-testing.",
+		//	},
+		//},
+		"kernel object download success": {
+			slimCollectorImage: true,
+			env: map[string]string{
+				"MODULE_DOWNLOAD_BASE_URL": "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656",
+			},
+			expectedLogLines: []string{
+				"Didn't find kernel module",
+				"Using downloaded kernel module",
+				"Starting StackRox Collector...",
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -123,6 +149,10 @@ func (s *BootstrapTestSuite) TestBootstrapScript() {
 				require.NoError(t, err)
 				collector.Mounts["/host/etc/os-release:ro"] = tmp.Name()
 				delete(collector.Mounts, "/etc/")
+			}
+
+			if tc.slimCollectorImage {
+				collector.CollectorImage += "-slim"
 			}
 
 			err = collector.Launch()

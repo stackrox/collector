@@ -22,6 +22,7 @@ image: build_collector container/bin/collector container/Dockerfile container/sc
 	cp NOTICE-collector.txt container/
 	cp COPYING.txt container/
 	cd container && docker build -f Dockerfile -t stackrox/collector:$(COLLECTOR_TAG) .
+	cd container && docker build -f Dockerfile_slim -t stackrox/collector:$(COLLECTOR_TAG)-slim .
 
 build_collector: 
 	@echo "Build collector builder docker image"

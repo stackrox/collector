@@ -649,14 +649,21 @@ jobs:
             .
 
     - run:
-        name: Build collector Docker image
+        name: Build collector Docker images
         command: |
           cd "$COLLECTOR_SOURCE_ROOT"
           cp NOTICE-collector.txt container/
           cp COPYING.txt container/
           docker build \
+            -f Dockerfile
             -t "stackrox/collector:snapshot-${COLLECTOR_VERSION}" \
             -t "stackrox/collector:${COLLECTOR_VERSION}" \
+            --build-arg base="$MODULE_VERSION" \
+            container
+          docker build \
+            -f Dockerfile_slim
+            -t "stackrox/collector:snapshot-${COLLECTOR_VERSION}-slim" \
+            -t "stackrox/collector:${COLLECTOR_VERSION}-slim" \
             --build-arg base="$MODULE_VERSION" \
             container
 
@@ -664,13 +671,19 @@ jobs:
         name: Sanity check images
         command: |
           docker images | grep kernel | grep "$MODULE_VERSION"
+          docker images | grep kernel | grep "$snapshot-MODULE_VERSION"
           docker images | grep collector | grep "$COLLECTOR_VERSION"
+          docker images | grep collector | grep "$COLLECTOR_VERSION"
+          docker images | grep collector | grep "$snapshot-COLLECTOR_VERSION-slim"
+          docker images | grep collector | grep "$snapshot-COLLECTOR_VERSION-slim"
 
     - run:
         name: Push images
         command: |
           echo "Pushing collector image"
           docker push "${IMAGE_COLLECTOR}"
+          echo "Pushing collector slim image"
+          docker push "${IMAGE_COLLECTOR}-slim"
           echo "Pushing kernel module image"
           docker push "${IMAGE_KERNEL_MODULES}"
 
