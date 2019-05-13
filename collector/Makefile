@@ -21,7 +21,8 @@ all: image integration-tests integration-test-report
 image: build_collector container/bin/collector container/Dockerfile container/scripts/ pull-modules
 	cp NOTICE-collector.txt container/
 	cp COPYING.txt container/
-	cd container && docker build -f Dockerfile -t stackrox/collector:$(COLLECTOR_TAG) .
+	docker build -f container/Dockerfile -t stackrox/collector:$(COLLECTOR_TAG) container
+	docker build -f container/Dockerfile_slim -t stackrox/collector:$(COLLECTOR_TAG)-slim container
 
 build_collector: 
 	@echo "Build collector builder docker image"
@@ -65,13 +66,18 @@ clean-generated-srcs:
 	rm -rf $(GENERATED_CPP_BASE_PATH)
 	rm -rf $(GENERATED_GO_BASE_PATH)
 
-prepare-src:
+build-kernel-modules:
+	make -C "${BASE_PATH}/kernel-modules" build-container
+
+prepare-src: build-kernel-modules
 	rm -rf ${BASE_PATH}/kernel-modules/kobuild-tmp/
 	mkdir -p ${BASE_PATH}/kernel-modules/kobuild-tmp/versions-src
-	SYSDIG_DIR="${BASE_PATH}/sysdig/src" \
-	  SCRATCH_DIR="${BASE_PATH}/kernel-modules/kobuild-tmp/scratch" \
-	  OUTPUT_DIR="${BASE_PATH}/kernel-modules/kobuild-tmp/versions-src" \
-	  "${BASE_PATH}/kernel-modules/build/prepare-src"
+	docker run --rm -i \
+	  -v "${BASE_PATH}/sysdig/src:/sysdig/src" \
+	  -v "${BASE_PATH}/kernel-modules/kobuild-tmp/versions-src:/output" \
+	  --tmpfs /scratch:exec \
+	  --env SYSDIG_DIR=/sysdig/src --env SCRATCH_DIR=/scratch --env OUTPUT_DIR=/output \
+	build-kernel-modules prepare-src
 
 module-version: prepare-src
 	$(eval VERSIONS = $$(wildcard ${BASE_PATH}/kernel-modules/kobuild-tmp/versions-src/*.tgz))
@@ -79,8 +85,8 @@ module-version: prepare-src
 	@echo "MODULE VERSION is $(MODULE_VERSION)"
 
 pull-modules: module-version
-	( docker pull stackrox/kernel-modules:$(MODULE_VERSION) && \
-	docker tag stackrox/kernel-modules:$(MODULE_VERSION) stackrox/kernel-modules:latest )
+	( docker image inspect stackrox/kernel-modules:$(MODULE_VERSION) > /dev/null || docker pull stackrox/kernel-modules:$(MODULE_VERSION) )
+	docker tag stackrox/kernel-modules:$(MODULE_VERSION) stackrox/kernel-modules:latest
 
 .PHONY: distribution
 distribution: clean

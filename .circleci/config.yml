@@ -649,28 +649,38 @@ jobs:
             .
 
     - run:
-        name: Build collector Docker image
+        name: Build collector Docker images
         command: |
           cd "$COLLECTOR_SOURCE_ROOT"
           cp NOTICE-collector.txt container/
           cp COPYING.txt container/
           docker build \
+            -f container/Dockerfile \
             -t "stackrox/collector:snapshot-${COLLECTOR_VERSION}" \
             -t "stackrox/collector:${COLLECTOR_VERSION}" \
+            --build-arg base="$MODULE_VERSION" \
+            container
+          docker build \
+            -f container/Dockerfile_slim \
+            -t "stackrox/collector:snapshot-${COLLECTOR_VERSION}-slim" \
+            -t "stackrox/collector:${COLLECTOR_VERSION}-slim" \
             --build-arg base="$MODULE_VERSION" \
             container
 
     - run:
         name: Sanity check images
         command: |
-          docker images | grep kernel | grep "$MODULE_VERSION"
-          docker images | grep collector | grep "$COLLECTOR_VERSION"
+          docker images | grep kernel | grep "${MODULE_VERSION}"
+          docker images | grep kernel | grep "snapshot-${COLLECTOR_VERSION}"
+          docker images | grep collector | grep "${COLLECTOR_VERSION}"
 
     - run:
         name: Push images
         command: |
           echo "Pushing collector image"
           docker push "${IMAGE_COLLECTOR}"
+          echo "Pushing collector slim image"
+          docker push "${IMAGE_COLLECTOR}-slim"
           echo "Pushing kernel module image"
           docker push "${IMAGE_KERNEL_MODULES}"
 
@@ -700,6 +710,41 @@ jobs:
           name: Sanity check
           command:
             gsutil ls "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/"
+
+  integration-test-local:
+    machine: true
+    working_directory: ~/workspace
+
+    steps:
+    - initcommand
+    - docker-login
+    - gcloud-init
+    - run:
+        name: "Running integration tests"
+        command: |
+          cd "$COLLECTOR_SOURCE_ROOT"
+          go get -u github.com/jstemmer/go-junit-report
+          curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+          sudo mv /home/circleci/workspace/go/bin/dep /usr/local/bin/dep
+          export REMOTE_HOST_TYPE=local
+          export COLLECTION_METHOD=kernel_module
+          make integration-tests integration-test-report
+          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
+
+    - store_test_results:
+        path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
+    - store_artifacts:
+        path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
+        destination: "integration-test-report.xml"
+    - store_artifacts:
+        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/collector.logs
+        destination: "collector.logs"
+    - store_artifacts:
+        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs
+        destination: "grpc-server.logs"
+    - store_artifacts:
+        path: /tmp/output_cpu.prof
+        destination: "cpu.prof"
 
   integration-test:
     parameters:
@@ -818,12 +863,19 @@ workflows:
         filters:
           tags:
             only: /.*/
+    - integration-test-local:
+        requires:
+        - images
+        filters:
+          tags:
+            only: /.*/
     - integration-test:
         name: test-ebpf-cos
         collection_method: ebpf
         vm_type: cos
         requires:
         - images
+        - integration-test-local
         filters:
           tags:
             only: /.*/
@@ -833,6 +885,7 @@ workflows:
         vm_type: ubuntu
         requires:
         - images
+        - integration-test-local
         filters:
           tags:
             only: /.*/
@@ -842,6 +895,7 @@ workflows:
         vm_type: coreos
         requires:
         - images
+        - integration-test-local
         filters:
           tags:
             only: /.*/
@@ -851,6 +905,7 @@ workflows:
         vm_type: ubuntu
         requires:
         - images
+        - integration-test-local
         filters:
           tags:
             only: /.*/
@@ -860,6 +915,7 @@ workflows:
         vm_type: rhel
         requires:
         - images
+        - integration-test-local
         filters:
           tags:
             only: /.*/
@@ -869,6 +925,7 @@ workflows:
         vm_type: coreos
         requires:
         - images
+        - integration-test-local
         filters:
           tags:
             only: /.*/

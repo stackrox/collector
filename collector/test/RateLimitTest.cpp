@@ -44,7 +44,7 @@ TEST(RateLimitTest, TokenBucket) {
   EXPECT_EQ(l.AllowN(&b, 1), false);
 
   // sleep 5
-  std::this_thread::sleep_for(std::chrono::seconds(5));
+  std::this_thread::sleep_for(std::chrono::seconds(6));
   EXPECT_EQ(l.Tokens(&b), 10);
   EXPECT_EQ(l.AllowN(&b, 1), true);
   EXPECT_EQ(l.Tokens(&b), 9);
@@ -59,7 +59,7 @@ TEST(RateLimitTest, CacheTest) {
   EXPECT_EQ(r.Allow("A"), false);
   EXPECT_EQ(r.Allow("B"), false);
 
-  std::this_thread::sleep_for(std::chrono::seconds(5));
+  std::this_thread::sleep_for(std::chrono::seconds(6));
 
   EXPECT_EQ(r.Allow("A"), true);
   EXPECT_EQ(r.Allow("A"), true);

@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 var (
@@ -92,25 +94,35 @@ func (e *executor) Exec(args ...string) (string, error) {
 }
 
 func (e *executor) RunCommand(cmd *exec.Cmd) (string, error) {
-	fmt.Printf("Run: %s\n", strings.Join(cmd.Args, " "))
+	if cmd == nil {
+		return "", nil
+	}
+	commandLine := strings.Join(cmd.Args, " ")
+	if debug {
+		fmt.Printf("Run: %s\n", commandLine)
+	}
 	stdoutStderr, err := cmd.CombinedOutput()
 	trimmed := strings.Trim(string(stdoutStderr), "\"\n")
 	if debug {
 		fmt.Printf("Run Output: %s\n", trimmed)
+	}
+	if err != nil {
+		err = errors.Wrapf(err, "Command Failed: %s", commandLine)
 	}
 	return trimmed, err
 }
 
 func (e *executor) CopyFromHost(src string, dst string) (string, error) {
 	cmd := e.builder.RemoteCopyCommand(src, dst)
-	if cmd == nil {
-		cmd = e.builder.ExecCommand("sudo", "chmod", "a+r", dst)
-	}
 	return e.RunCommand(cmd)
 }
 
 func (e *executor) PullImage(image string) error {
-	_, err := e.Exec("docker", "pull", image)
+	_, err := e.Exec("docker", "image", "inspect", image)
+	if err == nil {
+		return nil
+	}
+	_, err = e.Exec("docker", "pull", image)
 	return err
 }
 

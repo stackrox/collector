@@ -10,4 +10,3 @@ deps: Gopkg.toml Gopkg.lock
 clean-deps:
 	@echo "+ $@"
 	rm -f deps
-	sudo rm -f /tmp/collector-test.db
