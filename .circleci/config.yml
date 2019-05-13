@@ -674,8 +674,8 @@ jobs:
           docker images | grep kernel | grep "$snapshot-MODULE_VERSION"
           docker images | grep collector | grep "$COLLECTOR_VERSION"
           docker images | grep collector | grep "$COLLECTOR_VERSION"
-          docker images | grep collector | grep "$snapshot-COLLECTOR_VERSION-slim"
-          docker images | grep collector | grep "$snapshot-COLLECTOR_VERSION-slim"
+          docker images | grep collector | grep "snapshot-${COLLECTOR_VERSION}-slim"
+          docker images | grep collector | grep "snapshot-${COLLECTOR_VERSION}-slim"
 
     - run:
         name: Push images
