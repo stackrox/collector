@@ -184,8 +184,6 @@ function main() {
     log "Hostname: ${NODE_HOSTNAME}"
     log "OS: ${OS_DISTRO}"
     log "Kernel Version: ${KERNEL_VERSION}"
-    log "ID: ${OS_ID}"
-    log "Version ID: ${OS_VERSION_ID}"
     
     local module_version
     module_version="$(cat /kernel-modules/MODULE_VERSION.txt)"
