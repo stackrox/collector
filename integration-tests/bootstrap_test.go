@@ -108,17 +108,17 @@ func (s *BootstrapTestSuite) TestBootstrapScript() {
 		//		"Error: Failed to find kernel module for kernel version 4.9.100-stackrox-internal-testing.",
 		//	},
 		//},
-		"kernel object download success": {
-			slimCollectorImage: true,
-			env: map[string]string{
-				"MODULE_DOWNLOAD_BASE_URL": "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656",
-			},
-			expectedLogLines: []string{
-				"Didn't find kernel module",
-				"Using downloaded kernel module",
-				"Starting StackRox Collector...",
-			},
-		},
+		//"kernel object download success": {
+		//	slimCollectorImage: true,
+		//	env: map[string]string{
+		//		"MODULE_DOWNLOAD_BASE_URL": "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656",
+		//	},
+		//	expectedLogLines: []string{
+		//		"Didn't find kernel module",
+		//		"Using downloaded kernel module",
+		//		"Starting StackRox Collector...",
+		//	},
+		//},
 	}
 
 	for name, tc := range tests {

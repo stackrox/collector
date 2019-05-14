@@ -65,7 +65,7 @@ build_ko() {
         return 1
     }
 
-    # Special case handle for RHEL 7.6 backported eBPF support
+    # Special case for RHEL 7.6 backported eBPF support
     local backported_ebpf=0
     if (( kernel_major == 3 && kernel_minor >= 10 )); then
         if [[ "$kernel_distro" == "redhat" ]]; then
