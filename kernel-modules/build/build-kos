@@ -72,7 +72,7 @@ build_ko() {
             # Extract build id: 3.10.0-957.10.1.el7.x86_64 -> 957
             local rhel_build_id
             rhel_build_id="$(echo "$kernel_uname" | awk -F'[-.]' '{ print $4 }')"
-            if (( rhel_build_id >= 957 ) )); then
+            if (( rhel_build_id >= 957 )); then
                 echo "Kernel ${kernel_uname} has backported eBPF support"
                 backported_ebpf = 1
             fi
