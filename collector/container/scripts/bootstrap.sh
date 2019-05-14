@@ -12,7 +12,10 @@ function get_os_release_value() {
         while IFS="=" read -r var value; do
             if [[ "$key" == "$var" ]]; then
                 # remove quotes
-                sed -e 's/^"//' -e 's/"$//' <<<"$value"
+                local trimmed_value
+                trimmed_value="${value%\"}"
+                trimmed_value="${trimmed_value#\"}"
+                echo "$trimmed_value"
             fi
         done < "$os_release_file"
     fi
