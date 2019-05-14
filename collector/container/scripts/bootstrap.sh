@@ -169,8 +169,7 @@ function main() {
     export NODE_HOSTNAME=""
     NODE_HOSTNAME=$(curl -s --unix-socket /host/var/run/docker.sock http://localhost/info | jq --raw-output .Name)
     
-    # Get the linux distribution and OS_BUILD_ID and ID to identify COS kernel version
-    # these are global vars used by other functions in this file
+    # Get the linux distribution and BUILD_ID and ID to identify kernel version (COS or RHEL)
     export OS_DISTRO=""
     OS_DISTRO="$(get_distro)"
     export OS_BUILD_ID=""
@@ -197,7 +196,7 @@ function main() {
     # Special case kernel version if running on COS
     if cos_host ; then
         # remove '+' from end of kernel version 
-        KERNEL_VERSION="${KERNEL_VERSION%+}-${OS_BUILD_ID}-${ID}"
+        KERNEL_VERSION="${KERNEL_VERSION%+}-${OS_BUILD_ID}-${OS_ID}"
     fi
    
     mkdir -p /module
