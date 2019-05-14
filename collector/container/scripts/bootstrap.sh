@@ -100,7 +100,7 @@ function find_kernel_object() {
 # Kernel version >= 4.14, or running on RHEL 7.6 (with backported eBPF)
 function kernel_supports_ebpf() {
     if rhel76_host; then
-      return 1
+      return 0
     fi
     if [[ ${KERNEL_MAJOR} -lt 4 || ( ${KERNEL_MAJOR} -eq 4 && ${KERNEL_MINOR} -lt 14 ) ]]; then
         return 1
