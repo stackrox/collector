@@ -74,7 +74,7 @@ build_ko() {
             rhel_build_id="$(echo "$kernel_uname" | awk -F'[-.]' '{ print $4 }')"
             if (( rhel_build_id >= 957 )); then
                 echo "Kernel ${kernel_uname} has backported eBPF support"
-                backported_ebpf = 1
+                backported_ebpf=1
             fi
         fi
     fi
