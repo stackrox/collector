@@ -11,7 +11,7 @@ function get_os_release_value() {
     if [[ -f "$os_release_file" ]]; then
         while IFS="=" read -r var value; do
             if [[ "$key" == "$var" ]]; then
-                echo "$value"
+                sed -e 's/^"//' -e 's/"$//' <<<"$value"
             fi
         done < "$os_release_file"
     fi
