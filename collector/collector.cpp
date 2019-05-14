@@ -187,6 +187,9 @@ bool verifyProbeConfiguration() {
     char *endptr = 0;
     const char* major_str = std::getenv("KERNEL_MAJOR");
     const char* minor_str = std::getenv("KERNEL_MINOR");
+    const char* os_id_str = std::getenv("OS_ID");
+    const char* os_version_id_str = std::getenv("OS_VERSION_ID");
+
     if (!major_str || !minor_str) {
         CLOG(ERROR) << "Failed to read environment variables KERNEL_MAJOR and/or KERNEL_MINOR";
         return false;
@@ -196,6 +199,15 @@ bool verifyProbeConfiguration() {
     if (endptr == major_str || (endptr && *endptr != 0)) {
         CLOG(ERROR) << "Failed to parse environment variable KERNEL_MAJOR";
         return false;
+    }
+
+    // Skip kernel version check if we are running on RHEL 7.6 which has backported eBPF support
+    if (os_id_str && os_version_id_str) {
+        std::string os_id(os_id_str), os_version_id(os_version_id_str);
+        if (os_id == "rhel" && os_version_id == "7.6") {
+            CLOG(INFO) "eBPF supported on RHEL 7.6";
+            return true;
+        }
     }
 
     endptr = 0;

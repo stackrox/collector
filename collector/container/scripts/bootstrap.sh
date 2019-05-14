@@ -97,8 +97,11 @@ function find_kernel_object() {
     return 0
 }
 
+# Kernel version >= 4.14, or running on RHEL 7.6 (with backported eBPF)
 function kernel_supports_ebpf() {
-    # Kernel version >= 4.14
+    if rhel76_host; then
+      return 1
+    fi
     if [[ ${KERNEL_MAJOR} -lt 4 || ( ${KERNEL_MAJOR} -eq 4 && ${KERNEL_MINOR} -lt 14 ) ]]; then
         return 1
     fi
@@ -106,7 +109,14 @@ function kernel_supports_ebpf() {
 }
 
 function cos_host() {
-    if [[ "$ID" == "cos" ]] && [[ -n "$BUILD_ID" ]]; then
+    if [[ "$OS_ID" == "cos" ]] && [[ -n "$OS_BUILD_ID" ]]; then
+        return 0
+    fi
+    return 1
+}
+
+function rhel76_host() {
+    if [[ "$OS_ID" == "rhel" ]] && [[ "$OS_VERSION_ID" == "7.6" ]]; then
         return 0
     fi
     return 1
@@ -159,15 +169,20 @@ function main() {
     export NODE_HOSTNAME=""
     NODE_HOSTNAME=$(curl -s --unix-socket /host/var/run/docker.sock http://localhost/info | jq --raw-output .Name)
     
-    # Get the linux distribution and BUILD_ID and ID to identify COS kernel version
+    # Get the linux distribution and OS_BUILD_ID and ID to identify COS kernel version
     # these are global vars used by other functions in this file
-    DISTRO="$(get_distro)"
-    BUILD_ID="$(get_os_release_value 'BUILD_ID')"
-    ID="$(get_os_release_value 'ID')"
+    export OS_DISTRO=""
+    OS_DISTRO="$(get_distro)"
+    export OS_BUILD_ID=""
+    OS_BUILD_ID="$(get_os_release_value 'BUILD_ID')"
+    export OS_VERSION_ID=""
+    OS_VERSION_ID="$(get_os_release_value 'VERSION_ID')"
+    export OS_ID=""
+    OS_ID="$(get_os_release_value 'ID')"
     
     # Print node info
     log "Hostname: ${NODE_HOSTNAME}"
-    log "OS: ${DISTRO}"
+    log "OS: ${OS_DISTRO}"
     log "Kernel Version: ${KERNEL_VERSION}"
     
     local module_version
@@ -182,7 +197,7 @@ function main() {
     # Special case kernel version if running on COS
     if cos_host ; then
         # remove '+' from end of kernel version 
-        KERNEL_VERSION="${KERNEL_VERSION%+}-${BUILD_ID}-${ID}"
+        KERNEL_VERSION="${KERNEL_VERSION%+}-${OS_BUILD_ID}-${ID}"
     fi
    
     mkdir -p /module
@@ -208,7 +223,7 @@ function main() {
     
     # Handle attempt to run kernel module collection on COS host
     if cos_host && collection_method_module ; then
-      log "Error: ${DISTRO} does not support third-party kernel modules"
+      log "Error: ${OS_DISTRO} does not support third-party kernel modules"
       if kernel_supports_ebpf; then
         log "Warning: Switching to eBPF based collection, please configure RUNTIME_SUPPORT=ebpf"
         COLLECTION_METHOD="EBPF"
@@ -220,10 +235,10 @@ function main() {
     # Handle attempt to run ebpf collection on host with kernel that does not support ebpf
     if collection_method_ebpf && ! kernel_supports_ebpf; then
       if cos_host; then 
-        log "Error: ${DISTRO} does not support third-party kernel modules or the required eBPF features."
+        log "Error: ${OS_DISTRO} does not support third-party kernel modules or the required eBPF features."
         exit_with_error
       else
-        log "Error: ${DISTRO} ${KERNEL_VERSION} does not support ebpf based collection."
+        log "Error: ${OS_DISTRO} ${KERNEL_VERSION} does not support ebpf based collection."
         log "Warning: Switching to kernel module based collection, please configure RUNTIME_SUPPORT=kernel-module"
         COLLECTION_METHOD="KERNEL_MODULE"
       fi
