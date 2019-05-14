@@ -65,21 +65,31 @@ build_ko() {
         return 1
     }
 
-    # Special case for RHEL 7.6 backported eBPF support
-    local backported_ebpf=0
+    # Check if this kernel is from RHEL 7.6 with backported eBPF support
+    local rhel76_kernel=false
     if (( kernel_major == 3 && kernel_minor >= 10 )); then
+        # RHEL 7.6 detection: distro=="redhat" and kernel build id at least 957
+        # Assumption is that RHEL 7.6 will continue to use kernel 3.10
         if [[ "$kernel_distro" == "redhat" ]]; then
             # Extract build id: 3.10.0-957.10.1.el7.x86_64 -> 957
             local rhel_build_id
             rhel_build_id="$(echo "$kernel_uname" | awk -F'[-.]' '{ print $4 }')"
             if (( rhel_build_id >= 957 )); then
                 echo "Kernel ${kernel_uname} has backported eBPF support"
-                backported_ebpf=1
+                rhel76_kernel=true
             fi
         fi
     fi
 
-    if (( backported_ebpf == 0 )); then
+    # Check if this module version supports RHEL 7.6 with backported eBPF support
+    if [[ "$rhel76_kernel" = true ]]; then
+        if ! grep -qRIs "SUPPORTS_RHEL76_EBPF" "${module_src_dir}/bpf/quirks.h"; then
+            echo "Module version ${module_version} does not support eBPF on RHEL 7.6"
+            return 0
+        fi
+
+    # Check kernel version is at least 4.14 (unless RHEL 7.6 kernel detected)
+    else
         if (( kernel_major < 4 || (kernel_major == 4 && kernel_minor < 14) )); then
             echo "Kernel version ${kernel_version} does not support eBPF probe building, skipping ..."
             return 0
