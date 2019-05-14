@@ -48,7 +48,7 @@ func (s *BootstrapTestSuite) TestBootstrapScript() {
 			},
 			osRelease: "ID=cos\nBUILD_ID=11895.86.0\nPRETTY_NAME=\"Container-Optimized OS from Google\"\n",
 			expectedLogLines: []string{
-				"Error: \"Container-Optimized OS from Google\" does not support third-party kernel modules",
+				"Error: Container-Optimized OS from Google does not support third-party kernel modules",
 				"Warning: Switching to eBPF based collection, please configure RUNTIME_SUPPORT=ebpf",
 			},
 		},
@@ -60,7 +60,7 @@ func (s *BootstrapTestSuite) TestBootstrapScript() {
 			},
 			osRelease: "ID=cos\nBUILD_ID=11895.86.0\nPRETTY_NAME=\"Container-Optimized OS from Google\"\n",
 			expectedLogLines: []string{
-				"Error: \"Container-Optimized OS from Google\" does not support third-party kernel modules",
+				"Error: Container-Optimized OS from Google does not support third-party kernel modules",
 				"This program will now exit and retry when it is next restarted.",
 			},
 		},
