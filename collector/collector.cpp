@@ -205,7 +205,7 @@ bool verifyProbeConfiguration() {
     if (os_id_str && os_version_id_str) {
         std::string os_id(os_id_str), os_version_id(os_version_id_str);
         if (os_id == "rhel" && os_version_id == "7.6") {
-            CLOG(INFO) "eBPF supported on RHEL 7.6";
+            CLOG(INFO) << "eBPF supported on RHEL 7.6";
             return true;
         }
     }
