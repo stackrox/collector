@@ -242,10 +242,10 @@ jobs:
     - restore_cache:
         name: Restore Kernel module build cache
         keys:
-          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
-          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
-          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
-          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-
+          - kernel-module-cache-v6-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+          - kernel-module-cache-v6-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
+          - kernel-module-cache-v6-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
+          - kernel-module-cache-v6-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-
 
     - run:
         name: Unpack module sources
@@ -279,10 +279,11 @@ jobs:
     - run:
         name: Download missing modules for current version from gcloud bucket
         command: |
-          gsutil -m rsync -r \
-            "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/" \
-            "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}/" \
-            || true
+          #gsutil -m rsync -r \
+          #  "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/" \
+          #  "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}/" \
+          #  || true
+          true
 
     - run:
         name: Patch module sources
@@ -307,7 +308,8 @@ jobs:
           for i in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
             version="$(basename "$i")"
             [[ "$version" != "$MODULE_VERSION" ]] || continue
-            ( gsutil ls "${COLLECTOR_MODULES_BUCKET}/${version}/" || true)  \
+            #( gsutil ls "${COLLECTOR_MODULES_BUCKET}/${version}/" || true)  \
+            ( true )  \
               | "${SOURCE_ROOT}/kernel-modules/build/extract-kernel-versions-from-module-files" \
                 >~/kobuild-tmp/existing-modules-"${version}"
 
@@ -619,7 +621,7 @@ jobs:
 
     - save_cache:
         name: Saving Kernel module build cache
-        key: kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+        key: kernel-module-cache-v6-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
         paths:
           - /tmp/cache/
 
