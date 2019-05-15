@@ -866,7 +866,7 @@ workflows:
     - integration-test-local:
         requires:
         - images
-        - upload-modules:
+        - upload-modules
         filters:
           tags:
             only: /.*/

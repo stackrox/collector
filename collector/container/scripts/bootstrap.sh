@@ -185,7 +185,6 @@ function main() {
     # Get the linux distribution and BUILD_ID and ID to identify kernel version (COS or RHEL)
     OS_DISTRO="$(get_distro)"
     OS_BUILD_ID="$(get_os_release_value 'BUILD_ID')"
-    OS_VERSION_ID="$(get_os_release_value 'VERSION_ID')"
     OS_ID="$(get_os_release_value 'ID')"
     
     # Print node info
