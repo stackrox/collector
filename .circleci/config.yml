@@ -239,13 +239,13 @@ jobs:
           mkdir -p /tmp/cache
           echo "$MODULE_VERSION" >/tmp/cache/kernel-modules-version.txt
 
-    - restore_cache:
-        name: Restore Kernel module build cache
-        keys:
-          - kernel-module-cache-v6-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
-          - kernel-module-cache-v6-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
-          - kernel-module-cache-v6-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
-          - kernel-module-cache-v6-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-
+#    - restore_cache:
+#        name: Restore Kernel module build cache
+#        keys:
+#          - kernel-module-cache-v7-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+#          - kernel-module-cache-v7-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
+#          - kernel-module-cache-v7-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
+#          - kernel-module-cache-v7-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-
 
     - run:
         name: Unpack module sources
@@ -619,11 +619,11 @@ jobs:
             "/tmp/cache/kernel-modules/${MODULE_VERSION}/"
           echo "$MODULE_VERSION" >/tmp/cache/kernel-modules-version.txt
 
-    - save_cache:
-        name: Saving Kernel module build cache
-        key: kernel-module-cache-v6-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
-        paths:
-          - /tmp/cache/
+#    - save_cache:
+#        name: Saving Kernel module build cache
+#        key: kernel-module-cache-v7-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+#        paths:
+#          - /tmp/cache/
 
     - run:
         name: Adding Kernel module version file
