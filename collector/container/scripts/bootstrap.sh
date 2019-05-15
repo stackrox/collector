@@ -122,9 +122,7 @@ function cos_host() {
 # RHEL 7.6 family detection: id=="rhel"||"centos", and kernel build id at least 957
 # Assumption is that RHEL 7.6 will continue to use kernel 3.10
 function rhel76_host() {
-    log "OS_ID=${OS_ID}, KERNEL_VERSION=${KERNEL_VERSION}"
     if [[ "$OS_ID" == "rhel" || "$OS_ID" == "centos" ]] && [[ "$KERNEL_VERSION" == *".el7."* ]]; then
-        log "->OS_ID=${OS_ID}, KERNEL_VERSION=${KERNEL_VERSION}"
         if [[ ${KERNEL_MAJOR} -eq 3 && ${KERNEL_MINOR} -eq 10 ]]; then
             # Extract build id: 3.10.0-957.10.1.el7.x86_64 -> 957
             local kernel_build_id
@@ -309,7 +307,10 @@ function main() {
     eval exec "$@" &
     PID=$!
     wait $PID
-    remove_module "$module_name"
+
+    if collection_method_module; then
+        remove_module "$module_name"
+    fi
 }
 
 main "$@"

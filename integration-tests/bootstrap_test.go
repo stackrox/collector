@@ -94,15 +94,15 @@ func (s *BootstrapTestSuite) TestBootstrapScript() {
 				"Starting StackRox Collector...",
 			},
 		},
-		"ebpf on rhel 7.6": {
-			expectedExitError: true,
+		"ebpf on rhel/centos 7.6": {
 			env: map[string]string{
 				"COLLECTION_METHOD": "ebpf",
 				"KERNEL_VERSION":    "3.10.0-957.10.1.el7.x86_64",
 			},
 			osRelease: "ID=\"centos\"\nVERSION_ID=\"7\"\nPRETTY_NAME=\"Red Hat Enterprise Linux Server 7.6 (Maipo)\"\n",
 			expectedLogLines: []string{
-				"This program will now exit and retry when it is next restarted.",
+				"Using built-in eBPF probe collector-ebpf-3.10.0-957.10.1.el7.x86_64.o",
+				"Starting StackRox Collector...",
 			},
 		},
 		// TODO(rc) need to whitelist stackrox-internal-testing for slack on call alerts
