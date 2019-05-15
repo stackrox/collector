@@ -82,6 +82,7 @@ prepare-src: build-kernel-modules
 module-version: prepare-src
 	$(eval VERSIONS = $$(wildcard ${BASE_PATH}/kernel-modules/kobuild-tmp/versions-src/*.tgz))
 	$(eval MODULE_VERSION := $(shell basename -s .tgz $(word 1,$(VERSIONS))))
+	$(eval MODULE_VERSION := 7c30b6f295bae9ccf8695982687d871847dfecd12a1cfbc3edcfa93ceec6b5dc)
 	@echo "MODULE VERSION is $(MODULE_VERSION)"
 
 pull-modules: module-version

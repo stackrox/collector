@@ -94,6 +94,18 @@ func (s *BootstrapTestSuite) TestBootstrapScript() {
 				"Starting StackRox Collector...",
 			},
 		},
+		"ebpf on rhel 7.6": {
+			expectedExitError: true,
+			env: map[string]string{
+				"COLLECTION_METHOD": "ebpf",
+				"KERNEL_VERSION":    "3.10.0-957.10.1.el7.x86_64",
+			},
+			osRelease: "ID=\"centos\"\nVERSION_ID=\"7\"\nPRETTY_NAME=\"Red Hat Enterprise Linux Server 7.6 (Maipo)\"\n",
+			expectedLogLines: []string{
+				"This program will now exit and retry when it is next restarted.",
+			},
+		},
+		// TODO(rc) need to whitelist stackrox-internal-testing for slack on call alerts
 		//"kernel object download fail": {
 		//	expectedExitError:  true,
 		//	slimCollectorImage: true,
@@ -108,17 +120,17 @@ func (s *BootstrapTestSuite) TestBootstrapScript() {
 		//		"Error: Failed to find kernel module for kernel version 4.9.100-stackrox-internal-testing.",
 		//	},
 		//},
-		//"kernel object download success": {
-		//	slimCollectorImage: true,
-		//	env: map[string]string{
-		//		"MODULE_DOWNLOAD_BASE_URL": "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656",
-		//	},
-		//	expectedLogLines: []string{
-		//		"Didn't find kernel module",
-		//		"Using downloaded kernel module",
-		//		"Starting StackRox Collector...",
-		//	},
-		//},
+		"kernel object download success": {
+			slimCollectorImage: true,
+			env: map[string]string{
+				"MODULE_DOWNLOAD_BASE_URL": "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656",
+			},
+			expectedLogLines: []string{
+				"Didn't find kernel module",
+				"Using downloaded kernel module",
+				"Starting StackRox Collector...",
+			},
+		},
 	}
 
 	for name, tc := range tests {
