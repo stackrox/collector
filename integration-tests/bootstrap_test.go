@@ -48,7 +48,7 @@ func (s *BootstrapTestSuite) TestBootstrapScript() {
 			},
 			osRelease: "ID=cos\nBUILD_ID=11895.86.0\nPRETTY_NAME=\"Container-Optimized OS from Google\"\n",
 			expectedLogLines: []string{
-				"Error: \"Container-Optimized OS from Google\" does not support third-party kernel modules",
+				"Error: Container-Optimized OS from Google does not support third-party kernel modules",
 				"Warning: Switching to eBPF based collection, please configure RUNTIME_SUPPORT=ebpf",
 			},
 		},
@@ -60,7 +60,7 @@ func (s *BootstrapTestSuite) TestBootstrapScript() {
 			},
 			osRelease: "ID=cos\nBUILD_ID=11895.86.0\nPRETTY_NAME=\"Container-Optimized OS from Google\"\n",
 			expectedLogLines: []string{
-				"Error: \"Container-Optimized OS from Google\" does not support third-party kernel modules",
+				"Error: Container-Optimized OS from Google does not support third-party kernel modules",
 				"This program will now exit and retry when it is next restarted.",
 			},
 		},
@@ -94,6 +94,18 @@ func (s *BootstrapTestSuite) TestBootstrapScript() {
 				"Starting StackRox Collector...",
 			},
 		},
+		"ebpf on rhel/centos 7.6": {
+			env: map[string]string{
+				"COLLECTION_METHOD": "ebpf",
+				"KERNEL_VERSION":    "3.10.0-957.10.1.el7.x86_64",
+			},
+			osRelease: "ID=\"centos\"\nVERSION_ID=\"7\"\nPRETTY_NAME=\"Red Hat Enterprise Linux Server 7.6 (Maipo)\"\n",
+			expectedLogLines: []string{
+				"Using built-in eBPF probe collector-ebpf-3.10.0-957.10.1.el7.x86_64.o",
+				"Starting StackRox Collector...",
+			},
+		},
+		// TODO(rc) need to whitelist stackrox-internal-testing for slack on call alerts
 		//"kernel object download fail": {
 		//	expectedExitError:  true,
 		//	slimCollectorImage: true,

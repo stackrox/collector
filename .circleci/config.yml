@@ -242,10 +242,10 @@ jobs:
     - restore_cache:
         name: Restore Kernel module build cache
         keys:
-          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
-          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
-          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
-          - kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-
+          - kernel-module-cache-v7-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+          - kernel-module-cache-v7-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
+          - kernel-module-cache-v7-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
+          - kernel-module-cache-v7-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-
 
     - run:
         name: Unpack module sources
@@ -619,7 +619,7 @@ jobs:
 
     - save_cache:
         name: Saving Kernel module build cache
-        key: kernel-module-cache-v5-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+        key: kernel-module-cache-v7-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
         paths:
           - /tmp/cache/
 
@@ -866,6 +866,7 @@ workflows:
     - integration-test-local:
         requires:
         - images
+        - upload-modules
         filters:
           tags:
             only: /.*/
@@ -912,6 +913,16 @@ workflows:
     - integration-test:
         name: test-module-rhel
         collection_method: module
+        vm_type: rhel
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-ebpf-rhel
+        collection_method: ebpf 
         vm_type: rhel
         requires:
         - images

@@ -23,7 +23,9 @@ build_ko() {
         echo "No BUNDLE_BUILD_DIR entry found in kernel source bundle!"
         return 1
     }
-    local kernel_build_dir="${kernel_src_dir}/$(cat "${kernel_src_dir}/BUNDLE_BUILD_DIR")"
+
+    local kernel_build_dir
+    kernel_build_dir="${kernel_src_dir}/$(cat "${kernel_src_dir}/BUNDLE_BUILD_DIR")"
 
     cd "$module_src_dir"
     KERNELDIR="$kernel_build_dir" make clean
@@ -36,7 +38,9 @@ build_ko() {
         echo "No BUNDLE_UNAME entry found in kernel source bundle!"
         return 1
     }
-    local kernel_uname="$(cat "${kernel_src_dir}/BUNDLE_UNAME")"
+
+    local kernel_uname
+    kernel_uname="$(cat "${kernel_src_dir}/BUNDLE_UNAME")"
 
     ko_version="$(/sbin/modinfo "$collector_ko" | grep vermagic | tr -s " " | cut -d " " -f 2)"
     if [[ "$ko_version" != "$kernel_uname" ]]; then
@@ -58,15 +62,42 @@ build_ko() {
     # Check kernel version >= 4.14
     kernel_major="$(cat "${kernel_src_dir}/BUNDLE_VERSION")"
     kernel_minor="$(cat "${kernel_src_dir}/BUNDLE_MAJOR")"
+    kernel_distro="$(cat "${kernel_src_dir}/BUNDLE_DISTRO")"
 
     [[ -n "$kernel_major" && -n "$kernel_minor" ]] || {
         echo >&2 "Bundle does not contain major/minor version information!"
         return 1
     }
 
-    if (( kernel_major < 4 || (kernel_major == 4 && kernel_minor < 14) )); then
-        echo "Kernel version ${kernel_version} does not support eBPF probe building, skipping ..."
-        return 0
+    # Check if this kernel is from RHEL 7.6 with backported eBPF support
+    local rhel76_kernel=false
+    if (( kernel_major == 3 && kernel_minor >= 10 )); then
+        # RHEL 7.6 detection: distro=="redhat" and kernel build id at least 957
+        # Assumption is that RHEL 7.6 will continue to use kernel 3.10
+        if [[ "$kernel_distro" == "redhat" ]]; then
+            # Extract build id: 3.10.0-957.10.1.el7.x86_64 -> 957
+            local rhel_build_id
+            rhel_build_id="$(echo "$kernel_uname" | awk -F'[-.]' '{ print $4 }')"
+            if (( rhel_build_id >= 957 )); then
+                echo "Kernel ${kernel_uname} has backported eBPF support"
+                rhel76_kernel=true
+            fi
+        fi
+    fi
+
+    # Check if this module version supports RHEL 7.6 with backported eBPF support
+    if [[ "$rhel76_kernel" == true ]]; then
+        if ! grep -qRIs "SUPPORTS_RHEL76_EBPF" "${module_src_dir}/bpf/quirks.h"; then
+            echo "Module version ${module_version} does not support eBPF on RHEL 7.6"
+            return 0
+        fi
+
+    # Check kernel version is at least 4.14 (unless RHEL 7.6 kernel detected)
+    else
+        if (( kernel_major < 4 || (kernel_major == 4 && kernel_minor < 14) )); then
+            echo "Kernel version ${kernel_version} does not support eBPF probe building, skipping ..."
+            return 0
+        fi
     fi
 
     echo "Building collector eBPF probe for kernel version ${kernel_version} and module version ${module_version}."

@@ -183,33 +183,7 @@ bool verifyProbeConfiguration() {
         return false;
     }
     close(fd);
-
-    char *endptr = 0;
-    const char* major_str = std::getenv("KERNEL_MAJOR");
-    const char* minor_str = std::getenv("KERNEL_MINOR");
-    if (!major_str || !minor_str) {
-        CLOG(ERROR) << "Failed to read environment variables KERNEL_MAJOR and/or KERNEL_MINOR";
-        return false;
-    }
-
-    long major_num = strtol(major_str, &endptr, 10);
-    if (endptr == major_str || (endptr && *endptr != 0)) {
-        CLOG(ERROR) << "Failed to parse environment variable KERNEL_MAJOR";
-        return false;
-    }
-
-    endptr = 0;
-    long minor_num = strtol(minor_str, &endptr, 10);
-    if (endptr == minor_str || (endptr && *endptr != 0)) {
-        CLOG(ERROR) << "Failed to parse environment variable KERNEL_MINOR";
-        return false;
-    }
-
-    if (major_num < 4 || (major_num == 4 && minor_num < 14)) {
-        CLOG(ERROR) << "eBPF not supported on kernel version " << major_num << "." << minor_num;
-        return false;
-    }
-    CLOG(INFO) << "eBPF supported on kernel version " << major_num << "." << minor_num;
+    // probe version checks are in bootstrap.sh
     return true;
 }
 
