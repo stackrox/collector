@@ -378,7 +378,7 @@ jobs:
 
   kernels:
     machine: true
-    parallelism: 24
+    parallelism: 8
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache

@@ -23,7 +23,9 @@ build_ko() {
         echo "No BUNDLE_BUILD_DIR entry found in kernel source bundle!"
         return 1
     }
-    local kernel_build_dir="${kernel_src_dir}/$(cat "${kernel_src_dir}/BUNDLE_BUILD_DIR")"
+
+    local kernel_build_dir
+    kernel_build_dir="${kernel_src_dir}/$(cat "${kernel_src_dir}/BUNDLE_BUILD_DIR")"
 
     cd "$module_src_dir"
     KERNELDIR="$kernel_build_dir" make clean
@@ -36,7 +38,9 @@ build_ko() {
         echo "No BUNDLE_UNAME entry found in kernel source bundle!"
         return 1
     }
-    local kernel_uname="$(cat "${kernel_src_dir}/BUNDLE_UNAME")"
+
+    local kernel_uname
+    kernel_uname="$(cat "${kernel_src_dir}/BUNDLE_UNAME")"
 
     ko_version="$(/sbin/modinfo "$collector_ko" | grep vermagic | tr -s " " | cut -d " " -f 2)"
     if [[ "$ko_version" != "$kernel_uname" ]]; then
@@ -82,7 +86,7 @@ build_ko() {
     fi
 
     # Check if this module version supports RHEL 7.6 with backported eBPF support
-    if [[ "$rhel76_kernel" = true ]]; then
+    if [[ "$rhel76_kernel" == true ]]; then
         if ! grep -qRIs "SUPPORTS_RHEL76_EBPF" "${module_src_dir}/bpf/quirks.h"; then
             echo "Module version ${module_version} does not support eBPF on RHEL 7.6"
             return 0
