@@ -58,6 +58,11 @@ function download_kernel_object() {
       OBJECT_TYPE="eBPF probe"
     fi
 
+    if [[ "${ROX_OFFLINE_MODE}" == "true" ]]; then
+        log "Collector is configured in offline mode. Cannot download module from the internet"
+        return 1
+    fi
+
     if [[ -z "${MODULE_URL}" ]]; then
         log "Collector is not configured to download the ${OBJECT_TYPE}"
         return 1
