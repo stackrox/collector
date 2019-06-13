@@ -721,6 +721,7 @@ jobs:
     - gcloud-init
     - run:
         name: "Running integration tests"
+        no_output_timeout: 45m
         command: |
           cd "$COLLECTOR_SOURCE_ROOT"
           go get -u github.com/jstemmer/go-junit-report
@@ -728,7 +729,7 @@ jobs:
           sudo mv /home/circleci/workspace/go/bin/dep /usr/local/bin/dep
           export REMOTE_HOST_TYPE=local
           export COLLECTION_METHOD=kernel_module
-          make integration-tests integration-test-report
+          make integration-tests-baseline integration-tests integration-test-report
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
     - store_test_results:
@@ -773,6 +774,7 @@ jobs:
 
     - run:
         name: "Running integration tests"
+        no_output_timeout: 45m
         command: |
           cd "$COLLECTOR_SOURCE_ROOT"
           go get -u github.com/jstemmer/go-junit-report
@@ -781,7 +783,7 @@ jobs:
           export REMOTE_HOST_TYPE=gcloud
           export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-${CIRCLE_BUILD_NUM}"
           export COLLECTION_METHOD=<< parameters.collection_method >>
-          make integration-tests integration-test-report
+          make integration-tests-baseline integration-tests integration-test-report
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
     - store_test_results:

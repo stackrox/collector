@@ -107,13 +107,13 @@ distribution: clean
 integration-tests:
 	@echo "+ $@"
 	make -C ../integration-tests clean-deps deps
-	go test -count=1 -v ../integration-tests/... 2>&1 | tee integration-test.log
+	go test -timeout 30m -run TestCollectorGRPC -count=1 -v ../integration-tests/... 2>&1 | tee integration-test.log
 
-.PHONY: integration-tests-ebpf
-integration-tests-ebpf:
+.PHONY: integration-tests-baseline
+integration-tests-baseline:
 	@echo "+ $@"
 	make -C ../integration-tests clean-deps deps
-	COLLECTION_METHOD=ebpf go test -count=1 -v ../integration-tests/... 2>&1 | tee integration-test.log
+	go test -timeout 30m -run TestBenchmarkBaseline -count=1 -v ../integration-tests/... 2>&1 | tee integration-test.log
 
 .PHONY: integration-test-report
 integration-test-report:
