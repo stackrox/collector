@@ -18,6 +18,69 @@
   version = "v1.1.1"
 
 [[projects]]
+  branch = "master"
+  digest = "1:8b4352b5f579e14cea4752fa72b80bee60e6dc0b725211da5c679c63ea06f811"
+  name = "github.com/gonum/blas"
+  packages = [
+    ".",
+    "blas64",
+    "native",
+    "native/internal/math32",
+  ]
+  pruneopts = "UT"
+  revision = "f22b278b28ac9805aadd613a754a60c35b24ae69"
+
+[[projects]]
+  branch = "master"
+  digest = "1:d1176d30bd3703900e4c6c64d0fb2acdcfa2a880b6cca404fe2a78972bdd5a7b"
+  name = "github.com/gonum/floats"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "c233463c7e827fd71a8cdb62dfda0e98f7c39ad5"
+
+[[projects]]
+  branch = "master"
+  digest = "1:9de33a3238dd6f897a94925adafe0893714dbc335fcd06a12a83cf3ea537bd8a"
+  name = "github.com/gonum/internal"
+  packages = [
+    "asm/f32",
+    "asm/f64",
+  ]
+  pruneopts = "UT"
+  revision = "f884aa71402950fb2796dbea0d5aa9ef9cfad8ca"
+
+[[projects]]
+  branch = "master"
+  digest = "1:6dbded6cebec9d9733ceb4536e26b0e27338fab169f6bf98c4877ade32c62f46"
+  name = "github.com/gonum/lapack"
+  packages = [
+    ".",
+    "lapack64",
+    "native",
+  ]
+  pruneopts = "UT"
+  revision = "e4cdc5a0bff924bb10be88482e635bd40429f65e"
+
+[[projects]]
+  branch = "master"
+  digest = "1:1c6083dc3f08ff798c226a98e6cf4ae209177695b49cabdd0f6621e814a59980"
+  name = "github.com/gonum/matrix"
+  packages = [
+    ".",
+    "mat64",
+  ]
+  pruneopts = "UT"
+  revision = "c518dec07be9a636c38a4650e217be059b5952ec"
+
+[[projects]]
+  branch = "master"
+  digest = "1:39dd7ed016b24212b743779630ad7f55c342b625cdc37e3863c57c027d68e870"
+  name = "github.com/gonum/stat"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "41a0da705a5b2a95346ddc3135b60499c8d38a40"
+
+[[projects]]
   digest = "1:cf31692c14422fa27c83a05292eb5cbe0fb2775972e8f1f8446a71549bd8980b"
   name = "github.com/pkg/errors"
   packages = ["."]
@@ -58,6 +121,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/boltdb/bolt",
+    "github.com/gonum/stat",
     "github.com/pkg/errors",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",

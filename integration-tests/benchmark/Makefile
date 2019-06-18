@@ -2,4 +2,4 @@
 
 .PHONY: all
 all:
-	@docker build -t stackrox/benchmark-collector .
+	@docker build -t stackrox/benchmark-collector:phoronix .

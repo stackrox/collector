@@ -729,7 +729,9 @@ jobs:
           sudo mv /home/circleci/workspace/go/bin/dep /usr/local/bin/dep
           export REMOTE_HOST_TYPE=local
           export COLLECTION_METHOD=kernel_module
-          make integration-tests-baseline integration-tests integration-test-report
+          export VM_TYPE=circle_local
+          #make integration-tests-baseline integration-tests integration-test-report
+          make integration-tests integration-test-report
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
     - store_test_results:
@@ -744,8 +746,8 @@ jobs:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs
         destination: "grpc-server.logs"
     - store_artifacts:
-        path: /tmp/output_cpu.prof
-        destination: "cpu.prof"
+        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/perf.json
+        destination: kernel_module-circle_local-perf.json
 
   integration-test:
     parameters:
@@ -783,7 +785,11 @@ jobs:
           export REMOTE_HOST_TYPE=gcloud
           export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-${CIRCLE_BUILD_NUM}"
           export COLLECTION_METHOD=<< parameters.collection_method >>
+          export VM_TYPE=<< parameters.vm_type >>
           make integration-tests-baseline integration-tests integration-test-report
+          ls -al ~/workspace
+          ls -al "${WORKSPACE_ROOT}"
+          cp "${WORKSPACE_ROOT}/go/src/github.com/stackrox/collector/integration-tests/perf.json" "${WORKSPACE_ROOT}/<< parameters.collection_method >>-<< parameters.vm_type >>-perf.json"
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
     - store_test_results:
@@ -798,8 +804,13 @@ jobs:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs
         destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-grpc-server.logs"
     - store_artifacts:
-        path: /tmp/output_cpu.prof
-        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-cpu.prof"
+        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/perf.json
+        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-perf.json"
+
+    - persist_to_workspace:
+        root: ~/workspace
+        paths:
+        - "<< parameters.collection_method >>-<< parameters.vm_type >>-perf.json"
 
     - run:
         name: "Destroy VM"
@@ -807,6 +818,31 @@ jobs:
           export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-${CIRCLE_BUILD_NUM}"
           gcloud compute instances delete $GCLOUD_INSTANCE
         when: always
+
+  integration-test-data:
+    machine: true
+    working_directory: ~/workspace
+
+    steps:
+    - initcommand
+
+    - run:
+        name: "Gather Data"
+        command: |
+          echo "ls 1"
+          ls ~/workspace/
+          echo "ls 2"
+          ls "~/workspace/"
+          echo "ls 3"
+          ls "${HOME}/workspace/"
+          echo "for all perf..."
+          for i in "${HOME}/workspace"/*.json; do
+            echo "Perfomrance data file: $i"
+            cat $i >> ~/workspace/all-perf.json
+          done
+
+    - store_artifacts:
+        path: ~/workspace/all-perf.json
 
 workflows:
   version: 2
@@ -942,3 +978,15 @@ workflows:
         filters:
           tags:
             only: /.*/
+    - integration-test-data:
+       requires:
+       - test-module-coreos
+       - test-module-rhel
+       - test-module-ubuntu
+       - test-ebpf-coreos
+       - test-ebpf-ubuntu
+       - test-ebpf-rhel
+       - test-ebpf-cos
+       filters:
+         tags:
+           only: /.*/ 

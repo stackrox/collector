@@ -22,7 +22,7 @@ createGCPVM() {
         --image-family $GCP_IMAGE_FAMILY \
         --image-project $GCP_IMAGE_PROJECT \
         --service-account=circleci-collector@stackrox-ci.iam.gserviceaccount.com \
-        --machine-type n1-standard-2 \
+        --machine-type n1-standard-4 \
         --boot-disk-size=20GB \
           "$GCP_VM_NAME"
       then

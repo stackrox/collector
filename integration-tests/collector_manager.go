@@ -108,7 +108,6 @@ func (c *collectorManager) launchGRPCServer() error {
 	user, _ := user.Current()
 	cmd := []string{"docker", "run",
 		"-d",
-		"--rm",
 		"--name", "grpc-server",
 		"--network=host",
 		"-v", "/tmp:/tmp:rw",
@@ -121,7 +120,6 @@ func (c *collectorManager) launchGRPCServer() error {
 
 func (c *collectorManager) launchCollector() error {
 	cmd := []string{"docker", "run",
-		"--rm",
 		"--name", "collector",
 		"--privileged",
 		"--network=host"}
@@ -151,6 +149,7 @@ func (c *collectorManager) launchCollector() error {
 func (c *collectorManager) captureLogs(containerName, logFile string) (string, error) {
 	logs, err := c.executor.Exec("docker", "logs", containerName)
 	if err != nil {
+		fmt.Printf("docker logs error (%v) for container %s: %s\n", err, containerName, logFile)
 		return "", err
 	}
 	err = ioutil.WriteFile(logFile, []byte(logs), 0644)
@@ -165,6 +164,6 @@ func (c *collectorManager) killContainer(name string) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.executor.Exec("docker", "rm", name)
+	_, err = c.executor.Exec("docker", "rm", "-fv", name)
 	return err
 }

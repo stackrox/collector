@@ -10,8 +10,8 @@
   </SuiteInformation>
   <Execute>
     <Test>pts/hackbench-1.0.0</Test>
-    <Arguments>2 process</Arguments>
-    <Description>Count: 2 - Type: Process</Description>
+    <Arguments>8 process</Arguments>
+    <Description>Count: 8 - Type: Process</Description>
     <OverrideTestOptions>FALSE</OverrideTestOptions>
   </Execute>
 </PhoronixTestSuite>

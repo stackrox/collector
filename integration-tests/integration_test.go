@@ -2,7 +2,9 @@ package integrationtests
 
 import (
 	"fmt"
+	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -10,6 +12,7 @@ import (
 	"encoding/json"
 
 	"github.com/boltdb/bolt"
+	"github.com/gonum/stat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -34,6 +37,7 @@ type IntegrationTestSuiteBase struct {
 	db        *bolt.DB
 	executor  Executor
 	collector *collectorManager
+	metrics   map[string]float64
 }
 
 type ProcessNetworkTestSuite struct {
@@ -46,6 +50,22 @@ type ProcessNetworkTestSuite struct {
 	serverPort      string
 }
 
+type ContainerStat struct {
+	Timestamp string
+	Id        string
+	Name      string
+	Mem       string
+	Cpu       float64
+}
+
+type PerformanceResult struct {
+	TestName         string
+	VmType           string
+	CollectionMethod string
+	Metrics          map[string]float64
+	//ContainerStats   []ContainerStat
+}
+
 type BenchmarkCollectorTestSuite struct {
 	IntegrationTestSuiteBase
 }
@@ -56,7 +76,9 @@ type BenchmarkBaselineTestSuite struct {
 
 func (s *BenchmarkCollectorTestSuite) SetupSuite() {
 	s.executor = NewExecutor()
+	s.StartContainerStats()
 	s.collector = NewCollectorManager(s.executor)
+	s.metrics = map[string]float64{}
 
 	err := s.collector.Setup()
 	require.NoError(s.T(), err)
@@ -78,10 +100,15 @@ func (s *BenchmarkCollectorTestSuite) TearDownSuite() {
 	require.NoError(s.T(), err)
 
 	s.cleanupContainer([]string{"collector", "grpc-server", "benchmark"})
+	stats := s.GetContainerStats()
+	s.PrintContainerStats(stats)
+	s.WritePerfResults("collector_benchmark", stats, s.metrics)
 }
 
 func (s *BenchmarkBaselineTestSuite) SetupSuite() {
 	s.executor = NewExecutor()
+	s.metrics = map[string]float64{}
+	s.StartContainerStats()
 }
 
 func (s *BenchmarkBaselineTestSuite) TestBenchmarkBaseline() {
@@ -90,6 +117,9 @@ func (s *BenchmarkBaselineTestSuite) TestBenchmarkBaseline() {
 
 func (s *BenchmarkBaselineTestSuite) TearDownSuite() {
 	s.cleanupContainer([]string{"benchmark"})
+	stats := s.GetContainerStats()
+	s.PrintContainerStats(stats)
+	s.WritePerfResults("baseline_benchmark", stats, s.metrics)
 }
 
 // Launches collector
@@ -98,7 +128,9 @@ func (s *BenchmarkBaselineTestSuite) TearDownSuite() {
 // Execs into nginx and does a sleep
 func (s *ProcessNetworkTestSuite) SetupSuite() {
 
+	s.metrics = map[string]float64{}
 	s.executor = NewExecutor()
+	s.StartContainerStats()
 	s.collector = NewCollectorManager(s.executor)
 
 	err := s.collector.Setup()
@@ -129,12 +161,6 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	require.NoError(s.T(), err)
 	_, err = s.execContainer("nginx", []string{"sh", "-c", "ls"})
 	require.NoError(s.T(), err)
-
-	//// start performance container
-	//err := s.executor.PullImage("ljishen/sysbench")
-	//s.NoError(err)
-	//_, err = s.launchPerformanceContainer()
-	//s.NoError(err)
 
 	// invokes another container
 	containerID, err = s.launchContainer("nginx-curl", "pstauffer/curl:latest", "sleep", "300")
@@ -168,6 +194,9 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 
 func (s *ProcessNetworkTestSuite) TearDownSuite() {
 	s.cleanupContainer([]string{"nginx", "nginx-curl", "collector"})
+	stats := s.GetContainerStats()
+	s.PrintContainerStats(stats)
+	s.WritePerfResults("process_network", stats, s.metrics)
 }
 
 func (s *ProcessNetworkTestSuite) TestProcessViz() {
@@ -352,8 +381,74 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	matches := re.FindSubmatch([]byte(benchmarkLogs))
 	if matches != nil {
 		fmt.Printf("Benchmark Time: %s\n", matches[1])
+		f, err := strconv.ParseFloat(string(matches[1]), 64)
+		require.NoError(s.T(), err)
+		s.metrics["hackbench_avg_time"] = f
 	} else {
 		fmt.Printf("Benchmark Time: Not found!\n")
 		assert.FailNow(s.T(), "Benchmark Time not found. Logs: %s\n", benchmarkLogs)
 	}
+}
+
+func (s *IntegrationTestSuiteBase) StartContainerStats() {
+	name := "container-stats"
+	image := "stackrox/benchmark-collector:stats"
+	args := []string{name, "-v", "/var/run/docker.sock:/var/run/docker.sock", image}
+
+	err := s.executor.PullImage(image)
+	require.NoError(s.T(), err)
+
+	_, err = s.launchContainer(args...)
+	require.NoError(s.T(), err)
+}
+
+func (s *IntegrationTestSuiteBase) GetContainerStats() (stats []ContainerStat) {
+	logs, err := s.containerLogs("container-stats")
+	if err != nil {
+		assert.FailNow(s.T(), "container-stats failure")
+		return nil
+	}
+	logLines := strings.Split(logs, "\n")
+	for _, line := range logLines {
+		var stat ContainerStat
+		json.Unmarshal([]byte(line), &stat)
+		stats = append(stats, stat)
+	}
+	s.cleanupContainer([]string{"container-stats"})
+	return stats
+}
+
+func (s *IntegrationTestSuiteBase) PrintContainerStats(stats []ContainerStat) {
+	cpuStats := map[string][]float64{}
+	for _, stat := range stats {
+		cpuStats[stat.Name] = append(cpuStats[stat.Name], stat.Cpu)
+	}
+	for name, cpu := range cpuStats {
+		s.metrics[fmt.Sprintf("%s_cpu_mean", name)] = stat.Mean(cpu, nil)
+		s.metrics[fmt.Sprintf("%s_cpu_stddev", name)] = stat.StdDev(cpu, nil)
+
+		fmt.Printf("CPU: Container %s, Mean %v, StdDev %v\n",
+			name, stat.Mean(cpu, nil), stat.StdDev(cpu, nil))
+	}
+}
+
+func (s *IntegrationTestSuiteBase) WritePerfResults(testName string, stats []ContainerStat, metrics map[string]float64) {
+	perf := PerformanceResult{
+		TestName:         testName,
+		VmType:           ReadEnvVarWithDefault("VM_TYPE", "default"),
+		CollectionMethod: ReadEnvVarWithDefault("COLLECTION_METHOD", "kernel_module"),
+		Metrics:          metrics,
+		//ContainerStats:   stats,
+	}
+
+	perfJson, _ := json.Marshal(perf)
+	perfFilename := "perf.json"
+
+	fmt.Printf("Writing %s\n", perfFilename)
+	f, err := os.OpenFile(perfFilename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	require.NoError(s.T(), err)
+	defer f.Close()
+
+	_, err = f.WriteString(string(perfJson))
+	require.NoError(s.T(), err)
 }
