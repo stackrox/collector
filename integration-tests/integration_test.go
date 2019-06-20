@@ -278,18 +278,18 @@ func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, contain
 
 	start := time.Now()
 	tick := time.Tick(30 * time.Second)
-	tickElapsed := time.Tick(5 * time.Minute)
-	timeout := time.After(10 * time.Minute)
+	tickElapsed := time.Tick(1 * time.Minute)
+	timeout := time.After(15 * time.Minute)
 	for {
 		select {
 		case <-tick:
 			output, err := s.executor.Exec(cmd...)
 			outLines := strings.Split(output, "\n")
-			if err != nil {
-				return false, err
-			}
 			if outLines[len(outLines)-1] == containerID {
 				return true, nil
+			}
+			if err != nil {
+				fmt.Printf("Retrying waitForContainerToExit(%s, %s): Error: %v\n", containerName, containerID, err)
 			}
 		case <-timeout:
 			fmt.Printf("Timed out waiting for container %s to exit, elapsed Time: %s\n", containerName, time.Since(start))
@@ -358,7 +358,7 @@ func (s *IntegrationTestSuiteBase) Get(key string, bucket string) (val string, e
 
 func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	benchmarkName := "benchmark"
-	benchmarkImage := "stackrox/benchmark-collector:latest"
+	benchmarkImage := "stackrox/benchmark-collector:phoronix"
 
 	err := s.executor.PullImage(benchmarkImage)
 	require.NoError(s.T(), err)
@@ -374,7 +374,8 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	require.NoError(s.T(), err)
 	benchmarkContainerID := containerID[0:12]
 
-	s.waitForContainerToExit(benchmarkName, benchmarkContainerID)
+	_, err = s.waitForContainerToExit(benchmarkName, benchmarkContainerID)
+	require.NoError(s.T(), err)
 
 	benchmarkLogs, err := s.containerLogs("benchmark")
 	re := regexp.MustCompile(`Average: ([0-9.]+) Seconds`)
@@ -385,8 +386,8 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 		require.NoError(s.T(), err)
 		s.metrics["hackbench_avg_time"] = f
 	} else {
-		fmt.Printf("Benchmark Time: Not found!\n")
-		assert.FailNow(s.T(), "Benchmark Time not found. Logs: %s\n", benchmarkLogs)
+		fmt.Printf("Benchmark Time: Not found! Logs: %s\n", benchmarkLogs)
+		assert.FailNow(s.T(), "Benchmark Time not found")
 	}
 }
 
