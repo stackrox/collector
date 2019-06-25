@@ -848,7 +848,7 @@ jobs:
           export PERF_TABLE=$(cat ~/workspace/benchmark.md)
           hub-comment -template-file .circleci/performance-comment-template.tpl
 
-    store_artifacts:
+    - store_artifacts:
         path: ~/workspace/all-perf.json
     - store_artifacts:
         path: ~/workspace/benchmark.md
