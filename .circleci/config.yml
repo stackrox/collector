@@ -835,8 +835,8 @@ jobs:
             cat $i >> ~/workspace/all-perf.json
           done
           ## TODO put into script
-          cat all-perf.json | jq -r '. | select(.Metrics.hackbench_avg_time != null) | [.TestName,  .CollectionMethod, .VmType, .Metrics.hackbench_avg_time ] | @csv ' > ~/workspace/benchmark.csv
-          cat ~/workspace/benchmark.csv | sort | awk -v FS="," 'BEGIN{print "|Test|Collection Method|Kernel|kjjBenchmark Time (secs)|";print "|---|---|---|---|"}{printf "|%s|%s|%s|%s|%s",$1,$2,$3,$4,ORS}' > ~/workspace/benchmark.md
+          cat all-perf.json | jq '. | select(.Metrics.hackbench_avg_time != null) | {kernel: .VmType, collection_method: .CollectionMethod, (.TestName): .Metrics.hackbench_avg_time } ' | jq -rs  ' group_by(.kernel) | .[] | group_by(.collection_method) | .[] | add | [.kernel, .collection_method, .baseline_benchmark, .collector_benchmark ] | @csv' > ~/workspace/benchmark.csv
+          cat ~/workspace/benchmark.csv | sort | awk -v FS="," 'BEGIN{print "|Kernel|Method|Without Collector Time (secs)|With Collector Time (secs)|";print "|---|---|---|---|"}{printf "|%s|%s|%s|%s|%s",$1,$2,$3,$4,ORS}' > ~/workspace/benchmark.md
 
     - run:
         name: Comment on PR
