@@ -731,7 +731,7 @@ jobs:
           export COLLECTION_METHOD=kernel_module
           export VM_TYPE=circle_local
           make integration-tests
-          make integration-tests-report
+          make integration-test-report
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
     - store_test_results:
