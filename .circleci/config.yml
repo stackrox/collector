@@ -846,7 +846,7 @@ jobs:
 
           ## TODO read file directly
           export PERF_TABLE=$(cat ~/workspace/benchmark.md)
-          hub-comment -template-file .circleci/performance-comment-template.tpl
+          hub-comment -template-file "${SOURCE_ROOT}/.circleci/performance-comment-template.tpl"
 
     - store_artifacts:
         path: ~/workspace/all-perf.json
