@@ -834,9 +834,26 @@ jobs:
             echo "Performance data file: $i"
             cat $i >> ~/workspace/all-perf.json
           done
+          ## TODO put into script
+          cat all-perf.json | jq -r '. | select(.Metrics.hackbench_avg_time != null) | [.TestName,  .CollectionMethod, .VmType, .Metrics.hackbench_avg_time ] | @csv ' > ~/workspace/benchmark.csv
+          cat ~/workspace/benchmark.csv | sort | awk -v FS="," 'BEGIN{print "|Test|Kernel|CollectionMethod|BenchmarkTime|";print "|---|---|---|---|"}{printf "|%s|%s|%s|%s|%s",$1,$2,$3,$4,ORS}' > ~/workspace/benchmark.md
+
+      - run:
+          name: Comment on PR
+          command: |
+            wget --quiet https://github.com/joshdk/hub-comment/releases/download/0.1.0-rc6/hub-comment_linux_amd64
+            sudo install hub-comment_linux_amd64 /usr/bin/hub-comment
+
+            ## TODO read file directly 
+            export PERF_TABLE=$(cat ~/workspace/benchmark.md)
+            hub-comment -template-file .circleci/performance-comment-template.tpl
 
     - store_artifacts:
         path: ~/workspace/all-perf.json
+    - store_artifacts:
+        path: ~/workspace/benchmark.md
+    - store_artifacts:
+        path: ~/workspace/benchmark.csv
 
 workflows:
   version: 2
