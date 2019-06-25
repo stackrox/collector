@@ -836,7 +836,7 @@ jobs:
           done
           ## TODO put into script
           cat all-perf.json | jq -r '. | select(.Metrics.hackbench_avg_time != null) | [.TestName,  .CollectionMethod, .VmType, .Metrics.hackbench_avg_time ] | @csv ' > ~/workspace/benchmark.csv
-          cat ~/workspace/benchmark.csv | sort | awk -v FS="," 'BEGIN{print "|Test|Kernel|CollectionMethod|BenchmarkTime|";print "|---|---|---|---|"}{printf "|%s|%s|%s|%s|%s",$1,$2,$3,$4,ORS}' > ~/workspace/benchmark.md
+          cat ~/workspace/benchmark.csv | sort | awk -v FS="," 'BEGIN{print "|Test|Kernel|CollectionMethod|Benchmark Time (secs)|";print "|---|---|---|---|"}{printf "|%s|%s|%s|%s|%s",$1,$2,$3,$4,ORS}' > ~/workspace/benchmark.md
 
     - run:
         name: Comment on PR
