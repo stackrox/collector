@@ -108,6 +108,7 @@ func (c *collectorManager) launchGRPCServer() error {
 	user, _ := user.Current()
 	cmd := []string{"docker", "run",
 		"-d",
+		"--rm",
 		"--name", "grpc-server",
 		"--network=host",
 		"-v", "/tmp:/tmp:rw",

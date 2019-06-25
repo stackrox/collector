@@ -63,7 +63,7 @@ type PerformanceResult struct {
 	VmType           string
 	CollectionMethod string
 	Metrics          map[string]float64
-	//ContainerStats   []ContainerStat
+	ContainerStats   []ContainerStat
 }
 
 type BenchmarkCollectorTestSuite struct {
@@ -439,7 +439,7 @@ func (s *IntegrationTestSuiteBase) WritePerfResults(testName string, stats []Con
 		VmType:           ReadEnvVarWithDefault("VM_TYPE", "default"),
 		CollectionMethod: ReadEnvVarWithDefault("COLLECTION_METHOD", "kernel_module"),
 		Metrics:          metrics,
-		//ContainerStats:   stats,
+		ContainerStats:   stats,
 	}
 
 	perfJson, _ := json.Marshal(perf)
