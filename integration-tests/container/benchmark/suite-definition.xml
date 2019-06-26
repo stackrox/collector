@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!--Phoronix Test Suite v8.8.0-->
+<PhoronixTestSuite>
+  <SuiteInformation>
+    <Title>collector</Title>
+    <Version>1.0.0</Version>
+    <TestType>System</TestType>
+    <Description>process tests for collector</Description>
+    <Maintainer>rc@stackrox.com</Maintainer>
+  </SuiteInformation>
+  <Execute>
+    <Test>pts/hackbench-1.0.0</Test>
+    <Arguments>4 process</Arguments>
+    <Description>Count: 4 - Type: Process</Description>
+    <OverrideTestOptions>FALSE</OverrideTestOptions>
+  </Execute>
+</PhoronixTestSuite>

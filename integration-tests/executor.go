@@ -107,7 +107,7 @@ func (e *executor) RunCommand(cmd *exec.Cmd) (string, error) {
 		fmt.Printf("Run Output: %s\n", trimmed)
 	}
 	if err != nil {
-		err = errors.Wrapf(err, "Command Failed: %s", commandLine)
+		err = errors.Wrapf(err, "Command Failed: %s\nOutput: %s\n", commandLine, trimmed)
 	}
 	return trimmed, err
 }

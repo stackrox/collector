@@ -1,36 +1,3 @@
-createGCPVMUbuntu() {
-  local GCP_VM_NAME="$1"
-
-  [ -z "$GCP_VM_NAME" ] && echo "error: missing parameter GCP_VM_NAME" && return 1
-
-  local REGION=us-central1
-
-  local zone
-  #zones=$(gcloud compute zones list --filter="region=$REGION" | grep UP | cut -f1 -d' ')
-  success=false
-  for zone in us-central1-a us-central1-b ; do
-      echo "Trying zone $zone"
-      gcloud config set compute/zone "${zone}"
-      if gcloud compute instances create \
-        --image-family ubuntu-1804-lts \
-        --image-project ubuntu-os-cloud \
-        --service-account=circleci-collector@stackrox-ci.iam.gserviceaccount.com \
-          "$GCP_VM_NAME"
-      then
-          success=true
-          break
-      else
-          gcloud compute instances delete "$GCP_VM_NAME"
-      fi
-  done
-
-  if test ! "$success" = "true" ; then
-    echo "Could not boot instance."
-    return 1
-  fi
-  return 0
-}
-
 createGCPVM() {
   local GCP_VM_NAME="$1"
   shift
@@ -55,6 +22,8 @@ createGCPVM() {
         --image-family $GCP_IMAGE_FAMILY \
         --image-project $GCP_IMAGE_PROJECT \
         --service-account=circleci-collector@stackrox-ci.iam.gserviceaccount.com \
+        --machine-type n1-standard-4 \
+        --boot-disk-size=20GB \
           "$GCP_VM_NAME"
       then
           success=true
