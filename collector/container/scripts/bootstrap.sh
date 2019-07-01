@@ -119,6 +119,13 @@ function cos_host() {
     return 1
 }
 
+function coreos_host() {
+    if [[ "$OS_ID" == "coreos" ]]; then
+        return 0
+    fi
+    return 1
+}
+
 # RHEL 7.6 family detection: id=="rhel"||"centos", and kernel build id at least 957
 # Assumption is that RHEL 7.6 will continue to use kernel 3.10
 function rhel76_host() {
@@ -247,6 +254,13 @@ function main() {
         log "Warning: Switching to kernel module based collection, please configure RUNTIME_SUPPORT=kernel-module"
         COLLECTION_METHOD="KERNEL_MODULE"
       fi
+    fi
+
+    # Handle attempt to run ebpf collection on host with kernel that does not support ebpf (bug ROX-2583)
+    if collection_method_ebpf && kernel_supports_ebpf && coreos_host; then
+        log "Warning: ${OS_DISTRO} ${KERNEL_VERSION} does not support eBPF based collection due to a known issue on CoreOS."
+        log "Warning: Switching to kernel module based collection, please contact StackRox Support for more information."
+        COLLECTION_METHOD="KERNEL_MODULE"
     fi
     
     # Find built-in or download kernel module
