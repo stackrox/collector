@@ -938,17 +938,16 @@ workflows:
         filters:
           tags:
             only: /.*/
-# TODO re-enable after fix for ebpf+coreos ROX-2583
-#    - integration-test:
-#        name: test-ebpf-coreos
-#        collection_method: ebpf
-#        vm_type: coreos
-#        requires:
-#        - images
-#        - integration-test-local
-#        filters:
-#          tags:
-#            only: /.*/
+    - integration-test:
+        name: test-ebpf-coreos
+        collection_method: ebpf
+        vm_type: coreos
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
     - integration-test:
         name: test-module-ubuntu
         collection_method: module
@@ -994,8 +993,7 @@ workflows:
        - test-module-coreos
        - test-module-rhel
        - test-module-ubuntu
-# TODO re-enable after fix for ebpf+coreos ROX-2583
-#       - test-ebpf-coreos
+       - test-ebpf-coreos
        - test-ebpf-ubuntu
        - test-ebpf-rhel
        - test-ebpf-cos
