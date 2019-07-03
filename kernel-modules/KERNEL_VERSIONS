@@ -424,6 +424,7 @@
 4.15.0-52-generic
 4.15.0-53-generic
 4.15.0-54-generic
+4.15.0-55-generic
 4.19.0-13-generic
 4.19.23-coreos-r1
 4.19.25-coreos
@@ -927,5 +928,6 @@
 5.0.0-18-generic
 5.0.0-19-generic
 5.0.0-20-generic
+5.0.0-21-generic
 5.0.0-7-generic
 5.0.0-8-generic
