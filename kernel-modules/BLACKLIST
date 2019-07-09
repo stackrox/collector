@@ -2,3 +2,4 @@
 # Format:
 # <kernel-version> [<module-version>]
 # If <module-version> is omitted, this blacklist entry applies to all module versions.
+5.2.0-8-generic
