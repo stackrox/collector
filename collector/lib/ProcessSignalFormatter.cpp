@@ -120,17 +120,17 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   const std::string* name = event_extractor_.get_comm(event);
   const std::string* exepath = event_extractor_.get_exepath(event);
 
-  // set name (if name is missing, try to use exec_file_path)
-  if (name && *name != "<NA>") {
+  // set name (if name is missing or empty, try to use exec_file_path)
+  if (name && !name->empty() && *name != "<NA>") {
     signal->set_name(*name); 
-  } else if (exepath && *exepath != "<NA>") {
+  } else if (exepath && !exepath->empty() && *exepath != "<NA>") {
     signal->set_name(*exepath); 
   }
 
-  // set exec_file_path (if exec_file_path is missing, try to use name)
-  if (exepath && *exepath != "<NA>") {
+  // set exec_file_path (if exec_file_path is missing or empty, try to use name)
+  if (exepath && !exepath->empty() && *exepath != "<NA>") {
     signal->set_exec_file_path(*exepath); 
-  } else if (name && *name != "<NA>") {
+  } else if (name && !name->empty() && *name != "<NA>") {
     signal->set_exec_file_path(*name); 
   }
 
@@ -171,17 +171,17 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   auto name = tinfo->get_comm();
   auto exepath = tinfo->m_exepath;
 
-  // set name (if name is missing, try to use exec_file_path)
-  if (name != "<NA>") {
+  // set name (if name is missing or empty, try to use exec_file_path)
+  if (!name.empty() && name != "<NA>") {
     signal->set_name(name);
-  } else if (exepath != "<NA>") {
+  } else if (!exepath.empty() && exepath != "<NA>") {
     signal->set_name(exepath); 
   }
 
-  // set exec_file_path (if exec_file_path is missing, try to use name)
-  if (exepath != "<NA>") {
+  // set exec_file_path (if exec_file_path is missing or empty, try to use name)
+  if (!exepath.empty() && exepath != "<NA>") {
     signal->set_exec_file_path(exepath); 
-  } else if (name != "<NA>") {
+  } else if (!name.empty() && name != "<NA>") {
     signal->set_exec_file_path(name); 
   }
 
