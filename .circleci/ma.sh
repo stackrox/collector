@@ -24,6 +24,7 @@ createGCPVM() {
         --service-account=circleci-collector@stackrox-ci.iam.gserviceaccount.com \
         --machine-type n1-standard-4 \
         --boot-disk-size=20GB \
+        --boot-disk-type=pd-ssd \
           "$GCP_VM_NAME"
       then
           success=true
