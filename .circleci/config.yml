@@ -801,7 +801,7 @@ jobs:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/collector.logs
         destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-collector.logs"
     - store_artifacts:
-        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs
+        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/grpc-server.logs
         destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-grpc-server.logs"
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/perf.json
