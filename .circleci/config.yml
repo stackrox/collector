@@ -18,6 +18,7 @@ setupGCP: &setupGCP
       gcloud config set compute/region us-central1
       gcloud config unset compute/zone
       gcloud config set core/disable_prompts True
+      gcloud compute project-info add-metadata --metadata enable-oslogin=TRUE
       gcloud auth list
       gsutil ls gs://collector-build-cache/ || echo "ERROR: Could not ls bucket"
 
