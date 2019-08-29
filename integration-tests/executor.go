@@ -36,8 +36,10 @@ type sshCommandBuilder struct {
 }
 
 type gcloudCommandBuilder struct {
+	user     string
 	instance string
 	options  string
+	vmType   string
 }
 
 type localCommandBuilder struct {
@@ -66,10 +68,16 @@ func NewSSHCommandBuilder() CommandBuilder {
 }
 
 func NewGcloudCommandBuilder() CommandBuilder {
-	return &gcloudCommandBuilder{
+	gcb := &gcloudCommandBuilder{
+		user:     ReadEnvVar("GCLOUD_USER"),
 		instance: ReadEnvVar("GCLOUD_INSTANCE"),
 		options:  ReadEnvVar("GCLOUD_OPTIONS"),
+		vmType:   ReadEnvVarWithDefault("VM_TYPE", "default"),
 	}
+	if gcb.user == "" && gcb.vmType == "coreos" {
+		gcb.user = "core"
+	}
+	return gcb
 }
 
 func NewLocalCommandBuilder() CommandBuilder {
@@ -143,7 +151,11 @@ func (e *gcloudCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
 		opts := strings.Split(e.options, " ")
 		cmdArgs = append(cmdArgs, opts...)
 	}
-	cmdArgs = append(cmdArgs, e.instance, "--", "-T")
+	userInstance := e.instance
+	if e.user != "" {
+		userInstance = e.user + "@" + e.instance
+	}
+	cmdArgs = append(cmdArgs, userInstance, "--", "-T")
 	for _, arg := range args {
 		argQuoted := strconv.Quote(arg)
 		argQuotedTrimmed := strings.Trim(argQuoted, "\"")
@@ -161,7 +173,11 @@ func (e *gcloudCommandBuilder) RemoteCopyCommand(remoteSrc string, localDst stri
 		opts := strings.Split(e.options, " ")
 		cmdArgs = append(cmdArgs, opts...)
 	}
-	cmdArgs = append(cmdArgs, e.instance+":"+remoteSrc, localDst)
+	userInstance := e.instance
+	if e.user != "" {
+		userInstance = e.user + "@" + e.instance
+	}
+	cmdArgs = append(cmdArgs, userInstance+":"+remoteSrc, localDst)
 	return exec.Command("gcloud", cmdArgs...)
 }
 

@@ -37,6 +37,11 @@ createGCPVM() {
     echo "Could not boot instance."
     return 1
   fi
+
+  gcloud compute instances add-metadata "$GCP_VM_NAME" --metadata serial-port-logging-enable=true
+  gcloud compute instances describe --format json "$GCP_VM_NAME" 
+  echo "Instance created successfully: $GCP_VM_NAME"
+
   return 0
 }
 
@@ -68,84 +73,60 @@ createGCPVMCoreOS() {
   createGCPVM $GCP_VM_NAME coreos-stable coreos-cloud
 }
 
-copySourceTarball() {
-  local GCP_VM_NAME="$1"
-  shift
-  local SOURCE_ROOT="$1"
-  shift
-
-  [ -z "$GCP_VM_NAME" ] && echo "error: missing parameter GCP_VM_NAME" && return 1
-  [ -z "$SOURCE_ROOT" ] && echo "error: missing parameter SOURCE_ROOT dir" && return 1
-
-  sleep 30  # give it time to boot
-  buildSourceTarball "$SOURCE_ROOT"
-  scpSourceTarballToGcpHost "$GCP_VM_NAME"
-  return 0
-}
-
-# builds collector.tar.gz from $1 git clone (not working dir!)
-buildSourceTarball() {
-  local gitdir="$1"
-  [ -z "$gitdir" ] && echo "error: missing parameter git source dir" && return 1
-  cd /tmp
-  git clone $gitdir shipdir
-  rm -rf shipdir/.git
-  echo $CIRCLE_BUILD_NUM > shipdir/buildnum.txt
-  mkdir s2
-  mv shipdir s2/collector
-  cd s2
-  tar cvfz collector.tar.gz collector/
-  cd ..
-  mv s2/collector.tar.gz .
-  rm -rf s2
-}
-
-# assumes file in current working dir collector.tar.gz should be copied
-# to $1 : destination instancename for GCP.
-scpSourceTarballToGcpHost() {
-  local GCP_VM_NAME="$1"
-  gcloud compute scp collector.tar.gz "$GCP_VM_NAME":
-}
-
-# TODO: fix function name
-installVariousAptDepsViaGCPSSH() {
-  local GCP_VM_NAME="$1"
-  gcloud compute ssh "$GCP_VM_NAME" --command "(which docker || export DEBIAN_FRONTEND=noninteractive ; sudo apt update -y && sudo apt install -y make cmake g++ gcc apt-transport-https ca-certificates curl gnupg-agent wget software-properties-common && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - && sudo add-apt-repository 'deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable' && sudo apt update -y && DEBIAN_FRONTEND=noninteractive sudo apt install -y docker-ce && sudo adduser $(id -un) docker)"
-}
-
 installDockerOnUbuntuViaGCPSSH() {
   local GCP_VM_NAME="$1"
-  gcloud compute ssh "$GCP_VM_NAME" --command "(which docker || export DEBIAN_FRONTEND=noninteractive ; sudo apt update -y && sudo apt install -y apt-transport-https ca-certificates curl gnupg-agent wget software-properties-common && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - && sudo add-apt-repository 'deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable' && sudo apt update -y && DEBIAN_FRONTEND=noninteractive sudo apt install -y docker-ce && sudo adduser $(id -un) docker)"
+  shift
+  local GCP_SSH_KEY_FILE="$1"
+  shift
+  gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "(which docker || export DEBIAN_FRONTEND=noninteractive ; sudo apt update -y && sudo apt install -y apt-transport-https ca-certificates curl gnupg-agent wget software-properties-common && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - && sudo add-apt-repository 'deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable' && sudo apt update -y && DEBIAN_FRONTEND=noninteractive sudo apt install -y docker-ce && sudo adduser $(id -un) docker)"
 }
 
 installDockerOnRHELViaGCPSSH() {
   local GCP_VM_NAME="$1"
+  shift
+  local GCP_SSH_KEY_FILE="$1"
+  shift
+
   # sudo yum install -y yum-utils device-mapper-persistent-data lvm2
   # sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
   # sudo yum install -y docker-ce docker-ce-cli containerd.io
   # sudo systemctl start docker
   # sudo usermod -aG docker $(whoami)
 
-  gcloud compute ssh "$GCP_VM_NAME" --command "sudo yum install -y yum-utils device-mapper-persistent-data lvm2"
-  gcloud compute ssh "$GCP_VM_NAME" --command "sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo"
-  gcloud compute ssh "$GCP_VM_NAME" --command "sudo yum install -y docker-ce docker-ce-cli containerd.io"
-  gcloud compute ssh "$GCP_VM_NAME" --command "sudo systemctl start docker"
-  gcloud compute ssh "$GCP_VM_NAME" --command "sudo usermod -aG docker $(whoami)"
+  gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum install -y yum-utils device-mapper-persistent-data lvm2"
+  gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo"
+  gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum install -y docker-ce docker-ce-cli containerd.io"
+  gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo systemctl start docker"
+  gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo usermod -aG docker $(whoami)"
 }
 
-# parameters GCPVMName dockerUsername dockerPassword
-loginDockerViaGCPSSH() {
+gcpSSHReady() {
+  local GCP_VM_USER="$1"
+  shift
   local GCP_VM_NAME="$1"
+  shift
+  local GCP_SSH_KEY_FILE="$1"
+  shift
+
+  local retryCount=5
+  for i in $(seq 1 $retryCount ); do
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCP_VM_NAME}" --command "whoami" \
+      && exitCode=0 && break || exitCode=$? && sleep 10
+  done
+  return $exitCode
+}
+
+loginDockerViaGCPSSH() {
+  local GCP_VM_USER="$1"
+  shift
+  local GCP_VM_NAME="$1"
+  shift
+  local GCP_SSH_KEY_FILE="$1"
   shift
   local DOCKER_USER="$1"
   shift
   local DOCKER_PASS="$1"
   shift
-  gcloud compute ssh "$GCP_VM_NAME" --command "docker login -u '$DOCKER_USER' -p '$DOCKER_PASS'"
-}
 
-extractSourceTarballViaGCPSSH() {
-  local GCP_VM_NAME="$1"
-  gcloud compute ssh "$GCP_VM_NAME" --command "tar xvpfz collector.tar.gz && rm collector.tar.gz"
+  gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCP_VM_NAME}" --command "docker login -u '$DOCKER_USER' -p '$DOCKER_PASS'"
 }
-
