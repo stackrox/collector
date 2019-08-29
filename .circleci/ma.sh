@@ -28,6 +28,7 @@ createGCPVM() {
           "$GCP_VM_NAME"
       then
           success=true
+          echo "Created $GCP_VM_NAME"
           break
       else
           gcloud compute instances delete "$GCP_VM_NAME"
@@ -142,6 +143,8 @@ loginDockerViaGCPSSH() {
   shift
   local DOCKER_PASS="$1"
   shift
+  # enable os login
+  gcloud compute instances add-metadata "$GCP_VM_NAME" --metadata enable-oslogin=TRUE
   gcloud compute ssh "$GCP_VM_NAME" --command "docker login -u '$DOCKER_USER' -p '$DOCKER_PASS'"
 }
 
