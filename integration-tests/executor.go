@@ -18,6 +18,7 @@ type Executor interface {
 	CopyFromHost(src string, dst string) (string, error)
 	PullImage(image string) error
 	Exec(args ...string) (string, error)
+	ExecRetry(args ...string) (string, error)
 }
 
 type CommandBuilder interface {
@@ -101,6 +102,22 @@ func (e *executor) Exec(args ...string) (string, error) {
 	return e.RunCommand(e.builder.ExecCommand(args...))
 }
 
+func (e *executor) ExecRetry(args ...string) (res string, err error) {
+	maxAttempts := 3
+	attempt := 0
+	for attempt < maxAttempts {
+		if attempt > 0 {
+			fmt.Printf("Retrying (%v) (%d of %d) Error: %v\n", args, attempt, maxAttempts, err)
+		}
+		attempt++
+		res, err = e.RunCommand(e.builder.ExecCommand(args...))
+		if err == nil {
+			break
+		}
+	}
+	return res, err
+}
+
 func (e *executor) RunCommand(cmd *exec.Cmd) (string, error) {
 	if cmd == nil {
 		return "", nil
@@ -120,9 +137,21 @@ func (e *executor) RunCommand(cmd *exec.Cmd) (string, error) {
 	return trimmed, err
 }
 
-func (e *executor) CopyFromHost(src string, dst string) (string, error) {
+func (e *executor) CopyFromHost(src string, dst string) (res string, err error) {
 	cmd := e.builder.RemoteCopyCommand(src, dst)
-	return e.RunCommand(cmd)
+	maxAttempts := 3
+	attempt := 0
+	for attempt < maxAttempts {
+		if attempt > 0 {
+			fmt.Printf("Retrying (%v) (%d of %d) Error: %v\n", cmd, attempt, maxAttempts, err)
+		}
+		attempt++
+		res, err = e.RunCommand(cmd)
+		if err == nil {
+			break
+		}
+	}
+	return res, err
 }
 
 func (e *executor) PullImage(image string) error {
@@ -130,7 +159,7 @@ func (e *executor) PullImage(image string) error {
 	if err == nil {
 		return nil
 	}
-	_, err = e.Exec("docker", "pull", image)
+	_, err = e.ExecRetry("docker", "pull", image)
 	return err
 }
 
