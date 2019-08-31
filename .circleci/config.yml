@@ -799,9 +799,7 @@ jobs:
           export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
           export COLLECTION_METHOD=<< parameters.collection_method >>
           export VM_TYPE=<< parameters.vm_type >>
-          make integration-tests-baseline
-          make integration-tests
-          make integration-test-report
+          make integration-tests-baseline integration-tests integration-test-report
           cp "${WORKSPACE_ROOT}/go/src/github.com/stackrox/collector/integration-tests/perf.json" "${WORKSPACE_ROOT}/<< parameters.collection_method >>-<< parameters.vm_type >>-perf.json"
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
