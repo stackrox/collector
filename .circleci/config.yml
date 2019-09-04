@@ -91,11 +91,16 @@ jobs:
             COLLECTOR_TAG="snapshot-${COLLECTOR_VERSION}"
           fi
 
+          GCLOUD_SSH_FINGERPRINT="$(echo ${GCLOUD_SSH_KEY_PUB} | awk '{print $2}' | base64 -d | md5sum | awk '{print $1}')"
+          GCP_SSH_KEY_FILE="${HOME}/.ssh/id_rsa_${GCLOUD_SSH_FINGERPRINT}" 
+
           cat >>~/workspace/shared-env \<<-EOF
             export COLLECTOR_VERSION="${COLLECTOR_VERSION}"
             export COLLECTOR_TAG="${COLLECTOR_TAG}"
             export IMAGE_COLLECTOR="stackrox/collector:${COLLECTOR_TAG}"
+            export GCP_SSH_KEY_FILE="${GCP_SSH_KEY_FILE}"
           EOF
+          cat ~/workspace/shared-env
 
     - persist_to_workspace:
         root: ~/workspace
@@ -743,7 +748,7 @@ jobs:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/collector.logs
         destination: "collector.logs"
     - store_artifacts:
-        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs
+        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/grpc-server.logs
         destination: "grpc-server.logs"
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/perf.json
@@ -763,8 +768,15 @@ jobs:
 
     steps:
     - initcommand
+    - add_ssh_keys
     - docker-login
     - gcloud-init
+
+    - run:
+        name: "Extract gcp ssh public key from environment variable"
+        command: |
+          echo "${GCLOUD_SSH_KEY_PUB}" > "${GCP_SSH_KEY_FILE}.pub"
+          chmod 0600 "${GCP_SSH_KEY_FILE}.pub"
 
     - run:
         name: "Create VM"
@@ -772,7 +784,7 @@ jobs:
           source $SOURCE_ROOT/.circleci/create-vm.sh
           export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-${CIRCLE_BUILD_NUM}"
           export VM_TYPE=<< parameters.vm_type >>
-          main "$GCLOUD_INSTANCE" "$VM_TYPE" "$DOCKER_USER" "$DOCKER_PASS" "$SOURCE_ROOT"
+          main "$GCLOUD_INSTANCE" "$VM_TYPE" "$GCP_SSH_KEY_FILE" "$DOCKER_USER" "$DOCKER_PASS" 
 
     - run:
         name: "Running integration tests"
@@ -784,13 +796,20 @@ jobs:
           sudo mv /home/circleci/workspace/go/bin/dep /usr/local/bin/dep
           export REMOTE_HOST_TYPE=gcloud
           export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-${CIRCLE_BUILD_NUM}"
+          export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
           export COLLECTION_METHOD=<< parameters.collection_method >>
           export VM_TYPE=<< parameters.vm_type >>
-          make integration-tests-baseline
-          make integration-tests
-          make integration-test-report
+          make integration-tests-baseline integration-tests integration-test-report
           cp "${WORKSPACE_ROOT}/go/src/github.com/stackrox/collector/integration-tests/perf.json" "${WORKSPACE_ROOT}/<< parameters.collection_method >>-<< parameters.vm_type >>-perf.json"
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
+
+    - run:
+        name: "Get serial port output"
+        command: |
+          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-${CIRCLE_BUILD_NUM}"
+          mkdir -p ~/workspace/serial-output
+          gcloud compute instances get-serial-port-output "$GCLOUD_INSTANCE" > ~/workspace/serial-output/"$GCLOUD_INSTANCE"-serial-output.logs
+        when: always
 
     - store_test_results:
         path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
@@ -801,11 +820,13 @@ jobs:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/collector.logs
         destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-collector.logs"
     - store_artifacts:
-        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/grpc_server.logs
+        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/grpc-server.logs
         destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-grpc-server.logs"
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/perf.json
         destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-perf.json"
+    - store_artifacts:
+        path: ~/workspace/serial-output
 
     - persist_to_workspace:
         root: ~/workspace

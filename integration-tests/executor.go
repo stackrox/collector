@@ -18,6 +18,7 @@ type Executor interface {
 	CopyFromHost(src string, dst string) (string, error)
 	PullImage(image string) error
 	Exec(args ...string) (string, error)
+	ExecRetry(args ...string) (string, error)
 }
 
 type CommandBuilder interface {
@@ -36,8 +37,10 @@ type sshCommandBuilder struct {
 }
 
 type gcloudCommandBuilder struct {
+	user     string
 	instance string
 	options  string
+	vmType   string
 }
 
 type localCommandBuilder struct {
@@ -66,10 +69,16 @@ func NewSSHCommandBuilder() CommandBuilder {
 }
 
 func NewGcloudCommandBuilder() CommandBuilder {
-	return &gcloudCommandBuilder{
+	gcb := &gcloudCommandBuilder{
+		user:     ReadEnvVar("GCLOUD_USER"),
 		instance: ReadEnvVar("GCLOUD_INSTANCE"),
 		options:  ReadEnvVar("GCLOUD_OPTIONS"),
+		vmType:   ReadEnvVarWithDefault("VM_TYPE", "default"),
 	}
+	if gcb.user == "" && gcb.vmType == "coreos" {
+		gcb.user = "core"
+	}
+	return gcb
 }
 
 func NewLocalCommandBuilder() CommandBuilder {
@@ -93,6 +102,22 @@ func (e *executor) Exec(args ...string) (string, error) {
 	return e.RunCommand(e.builder.ExecCommand(args...))
 }
 
+func (e *executor) ExecRetry(args ...string) (res string, err error) {
+	maxAttempts := 3
+	attempt := 0
+	for attempt < maxAttempts {
+		if attempt > 0 {
+			fmt.Printf("Retrying (%v) (%d of %d) Error: %v\n", args, attempt, maxAttempts, err)
+		}
+		attempt++
+		res, err = e.RunCommand(e.builder.ExecCommand(args...))
+		if err == nil {
+			break
+		}
+	}
+	return res, err
+}
+
 func (e *executor) RunCommand(cmd *exec.Cmd) (string, error) {
 	if cmd == nil {
 		return "", nil
@@ -112,9 +137,21 @@ func (e *executor) RunCommand(cmd *exec.Cmd) (string, error) {
 	return trimmed, err
 }
 
-func (e *executor) CopyFromHost(src string, dst string) (string, error) {
+func (e *executor) CopyFromHost(src string, dst string) (res string, err error) {
 	cmd := e.builder.RemoteCopyCommand(src, dst)
-	return e.RunCommand(cmd)
+	maxAttempts := 3
+	attempt := 0
+	for attempt < maxAttempts {
+		if attempt > 0 {
+			fmt.Printf("Retrying (%v) (%d of %d) Error: %v\n", cmd, attempt, maxAttempts, err)
+		}
+		attempt++
+		res, err = e.RunCommand(cmd)
+		if err == nil {
+			break
+		}
+	}
+	return res, err
 }
 
 func (e *executor) PullImage(image string) error {
@@ -122,7 +159,7 @@ func (e *executor) PullImage(image string) error {
 	if err == nil {
 		return nil
 	}
-	_, err = e.Exec("docker", "pull", image)
+	_, err = e.ExecRetry("docker", "pull", image)
 	return err
 }
 
@@ -143,7 +180,11 @@ func (e *gcloudCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
 		opts := strings.Split(e.options, " ")
 		cmdArgs = append(cmdArgs, opts...)
 	}
-	cmdArgs = append(cmdArgs, e.instance, "--", "-T")
+	userInstance := e.instance
+	if e.user != "" {
+		userInstance = e.user + "@" + e.instance
+	}
+	cmdArgs = append(cmdArgs, userInstance, "--", "-T")
 	for _, arg := range args {
 		argQuoted := strconv.Quote(arg)
 		argQuotedTrimmed := strings.Trim(argQuoted, "\"")
@@ -161,7 +202,11 @@ func (e *gcloudCommandBuilder) RemoteCopyCommand(remoteSrc string, localDst stri
 		opts := strings.Split(e.options, " ")
 		cmdArgs = append(cmdArgs, opts...)
 	}
-	cmdArgs = append(cmdArgs, e.instance+":"+remoteSrc, localDst)
+	userInstance := e.instance
+	if e.user != "" {
+		userInstance = e.user + "@" + e.instance
+	}
+	cmdArgs = append(cmdArgs, userInstance+":"+remoteSrc, localDst)
 	return exec.Command("gcloud", cmdArgs...)
 }
 
