@@ -608,6 +608,11 @@ jobs:
     - gcloud-init
 
     - run:
+        name: List all collector versions and compiled objects
+        command: |
+          ls -alr "${WORKSPACE_ROOT}/ko-build/build-output/*"
+
+    - run:
         name: Copying Kernel modules build output
         command: |
           mkdir -p "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
