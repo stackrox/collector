@@ -274,6 +274,7 @@ jobs:
         command: |
           [[ -d "/tmp/cache/kernel-modules/${MODULE_VERSION}/" ]] || exit 0
           mkdir -p "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"
+
           mv -v \
               "/tmp/cache/kernel-modules/${MODULE_VERSION}"/* \
               "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}/" \
@@ -906,6 +907,49 @@ jobs:
     - store_artifacts:
         path: ~/workspace/benchmark.csv
 
+  reload-released-images:
+    machine: true
+    environment:
+    - INSTALL_DIRECTORY: /tmp
+
+    working_directory: ~/workspace
+
+    steps:
+    - initcommand
+    - docker-login
+    - gcloud-init
+
+    - run:
+        name: Reload released collector images
+        command: |
+          cd "$SOURCE_ROOT"
+          if [[ ! -f RELEASED_VERSIONS ]]; then
+            echo "RELEASED_VERSIONS file does not exist!"
+            exit 1
+          fi
+
+          cd "$SOURCE_ROOT/reload"
+          while IFS='' read -r tag || [[ -n "$tag" ]]; do
+            [[ -n "$tag" ]] || continue
+            collector_image="stackrox/collector:$tag"
+
+            docker pull "${collector_image}"
+            for i in $(./missing-kernel-objects.sh "${collector_image}"); do
+              gsutil cp $COLLECTOR_MODULES_BUCKET/$i ./reload-kernel-modules/$(basename $i)
+            done
+
+            ## Add modules and probes to original image
+            docker build --build-arg collector_tag=${tag} -t stackrox/collector:${tag}-latest .
+
+            ## Tag and push new image with latest
+
+            ## clean up 
+            rm -rf ./reload-kernel-modules
+
+          done < <(grep -v '^#' <../RELEASED_VERSIONS | awk '{print $1}' | sort | uniq)
+
+          docker images
+
 workflows:
   version: 2
   build:
@@ -1132,3 +1176,12 @@ workflows:
        filters:
          tags:
            only: /.*/ 
+    - reload-released-images:
+        requires:
+        - images
+        filters:
+          # enable before push to master
+          #branches:
+          #  only: master
+          tags:
+            only: /.*/
