@@ -81,23 +81,17 @@ jobs:
           EOF
 
     - run:
-        name: Set COLLECTOR_VERSION and IMAGE_COLLECTOR
+        name: Set COLLECTOR_VERSION
         command: |
           COLLECTOR_VERSION="$(make -s -C ~/workspace/go/src/github.com/stackrox/collector/collector tag)"
 
-          if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
-            COLLECTOR_TAG="${COLLECTOR_VERSION}"
-          else
-            COLLECTOR_TAG="snapshot-${COLLECTOR_VERSION}"
-          fi
-
+          COLLECTOR_TAG="${COLLECTOR_VERSION}"
           GCLOUD_SSH_FINGERPRINT="$(echo ${GCLOUD_SSH_KEY_PUB} | awk '{print $2}' | base64 -d | md5sum | awk '{print $1}')"
           GCP_SSH_KEY_FILE="${HOME}/.ssh/id_rsa_${GCLOUD_SSH_FINGERPRINT}" 
 
           cat >>~/workspace/shared-env \<<-EOF
             export COLLECTOR_VERSION="${COLLECTOR_VERSION}"
             export COLLECTOR_TAG="${COLLECTOR_TAG}"
-            export IMAGE_COLLECTOR="stackrox/collector:${COLLECTOR_TAG}"
             export GCP_SSH_KEY_FILE="${GCP_SSH_KEY_FILE}"
           EOF
           cat ~/workspace/shared-env
@@ -170,19 +164,11 @@ jobs:
           version="$(basename "${versions[0]}" .tgz)"
           MODULE_VERSION="$version"
 
-          if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
-            IMAGE_KERNEL_MODULES="stackrox/kernel-modules:${MODULE_VERSION}"
-          else
-            IMAGE_KERNEL_MODULES="stackrox/kernel-modules:snapshot-${COLLECTOR_VERSION}"
-          fi
-
           cat >>"${WORKSPACE_ROOT}/shared-env" \<<-EOF
             export MODULE_VERSION="${MODULE_VERSION}"
-            export IMAGE_KERNEL_MODULES="${IMAGE_KERNEL_MODULES}"
           EOF
           cat >>"$BASH_ENV" \<<-EOF
             export MODULE_VERSION="${MODULE_VERSION}"
-            export IMAGE_KERNEL_MODULES="${IMAGE_KERNEL_MODULES}"
           EOF
           echo "Building modules for module version $version"
 
@@ -211,6 +197,13 @@ jobs:
           SYSDIG_REL_DIR="sysdig/src"
           git clone git@github.com:stackrox/collector "${LEGACY_DIR}"
 
+          mkdir -p "${WORKSPACE_ROOT}/ko-build"
+
+          # These directories contain a bi-directional mapping from collector to module version.
+          # The file structure allows using shell globbing without having to resort to `read` loops
+          # etc.
+          mkdir -p "${WORKSPACE_ROOT}/ko-build/"{released-collectors,released-modules}
+
           while IFS='' read -r line || [[ -n "$line" ]]; do
             [[ -n "$line" ]] || continue
 
@@ -222,10 +215,14 @@ jobs:
             git -C "${LEGACY_DIR}" checkout "${collector_ref}"
             git -C "${LEGACY_DIR}" submodule update --init
 
+            mod_ver_file="${WORKSPACE_ROOT}/ko-build/released-collectors/${collector_ref}"
             SYSDIG_DIR="${LEGACY_DIR}/${SYSDIG_REL_DIR}" \
                 SCRATCH_DIR="${HOME}/scratch" \
                 OUTPUT_DIR="${HOME}/kobuild-tmp/versions-src" \
-              ./kernel-modules/build/prepare-src
+              ./kernel-modules/build/prepare-src | tail -n 1 \
+                >"${mod_ver_file}"
+
+            echo "${collector_ref}" >> "${WORKSPACE_ROOT}/ko-build/released-modules/$(< "${mod_ver_file}")"
 
           done < <(grep -v '^#' <RELEASED_VERSIONS | awk '{print $1}' | sort | uniq)
 
@@ -645,6 +642,13 @@ jobs:
             >>"${SOURCE_ROOT}/kernel-modules/container/kernel-modules/MODULE_VERSION.txt"
 
     - run:
+        name: Load any missing modules from GCloud
+        command: |
+          gsutil -m rsync -r \
+              "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/" \
+              "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
+
+    - run:
         name: Sanity check
         command: |
           cd "$SOURCE_ROOT"
@@ -658,45 +662,44 @@ jobs:
         command: |
           cd "${SOURCE_ROOT}/kernel-modules/container"
           docker build \
-            -t "stackrox/kernel-modules:${MODULE_VERSION}" \
-            -t "stackrox/kernel-modules:snapshot-${COLLECTOR_VERSION}" \
+            -t "stackrox-kernel-modules:${MODULE_VERSION}" \
             .
 
     - run:
-        name: Build collector Docker images
+        name: Build collector images
         command: |
           cd "$COLLECTOR_SOURCE_ROOT"
           cp NOTICE-collector.txt container/
           cp COPYING.txt container/
+
+          build_args=(
+            --build-arg module_version="$MODULE_VERSION"
+            --build-arg collector_version="$COLLECTOR_VERSION"
+          )
+
           docker build \
-            -f container/Dockerfile \
-            -t "stackrox/collector:snapshot-${COLLECTOR_VERSION}" \
+            -t "stackrox/collector:${COLLECTOR_VERSION}-base" \
+            "${build_args[@]}" \
+            container
+
+          docker build \
             -t "stackrox/collector:${COLLECTOR_VERSION}" \
-            --build-arg base="$MODULE_VERSION" \
-            container
-          docker build \
-            -f container/Dockerfile_slim \
-            -t "stackrox/collector:snapshot-${COLLECTOR_VERSION}-slim" \
-            -t "stackrox/collector:${COLLECTOR_VERSION}-slim" \
-            --build-arg base="$MODULE_VERSION" \
-            container
+            "${build_args[@]}" \
+            container-combined
 
     - run:
         name: Sanity check images
         command: |
           docker images | grep kernel | grep "${MODULE_VERSION}"
-          docker images | grep kernel | grep "snapshot-${COLLECTOR_VERSION}"
           docker images | grep collector | grep "${COLLECTOR_VERSION}"
 
     - run:
         name: Push images
         command: |
+          echo "Pushing collector base image"
+          docker push "stackrox/collector:${COLLECTOR_VERSION}-base"
           echo "Pushing collector image"
-          docker push "${IMAGE_COLLECTOR}"
-          echo "Pushing collector slim image"
-          docker push "${IMAGE_COLLECTOR}-slim"
-          echo "Pushing kernel module image"
-          docker push "${IMAGE_KERNEL_MODULES}"
+          docker push "stackrox/collector:${COLLECTOR_VERSION}"
 
   upload-modules:
     docker:
@@ -909,6 +912,80 @@ jobs:
         path: ~/workspace/benchmark.md
     - store_artifacts:
         path: ~/workspace/benchmark.csv
+
+  reload-released-images:
+    machine: true
+    environment:
+    - INSTALL_DIRECTORY: /tmp
+
+    working_directory: ~/workspace
+
+    steps:
+    - initcommand
+    - docker-login
+
+    - gcloud-init
+
+    - run:
+        name: Prepare released kernel object cache
+        command: |
+          mkdir -p "/tmp/released-kernel-object-cache/"
+
+    - run:
+        name: Copy kernel objects built in this workflow
+        command: |
+          mod_build_dir="${WORKSPACE_ROOT}/ko-build/build-output"
+          if [ -z "$(ls -A "${mod_build_dir}" )" ] ; then
+            echo "No kernel objects built in this workflow"
+            # XXX uncomment here before commit to master
+            #circleci step halt
+            exit 0
+          fi
+          for mod_dir in "${mod_build_dir}"/*/ ; do
+            mod_ver="$(basename "$mod_dir")"
+            mkdir -p "/tmp/released-kernel-object-cache/${mod_ver}"
+            cp "${mod_dir}/"*.gz "/tmp/released-kernel-object-cache/${mod_ver}"
+          done
+
+    - run:
+        name: Reload released collector images
+        command: |
+          cd "$SOURCE_ROOT"
+          docker login -u "$STACKROX_IO_PUSH_USERNAME" -p "$STACKROX_IO_PUSH_PASSWORD" collector.stackrox.io
+
+          rm -rf "./reload/images"
+          for collector_ver_file in "${WORKSPACE_ROOT}/ko-build/released-collectors"/*; do
+            collector_ver="$(basename "${collector_ver_file}")"
+            mod_ver="$(< "${collector_ver_file}")"
+            echo "Checking ${collector_ver} with module version ${mod_ver}"
+
+            released_latest_image="stackrox/collector:${collector_ver}-latest"
+            released_base_image="stackrox/collector:${collector_ver}-base"
+            docker pull "${released_latest_image}"
+            
+            missing_objs_file="/tmp/missing-objs-${collector_ver}"
+            "./reload/missing-kernel-objects.sh" "${released_latest_image}" "${COLLECTOR_MODULES_BUCKET}" \
+              >"${missing_objs_file}"
+            
+            if [[ ! -s "${missing_objs_file}" ]] ; then
+              echo "Image ${released_latest_image} contains up to date kernel objects"
+              continue
+            fi
+            
+            echo "Kernel objects missing in image ${released_latest_image}:"
+            cat "${missing_objs_file}"
+
+            docker pull "${released_base_image}"
+            "./reload/build-latest.sh" "${collector_ver}" "${mod_ver}" "/tmp/released-kernel-object-cache/" "${COLLECTOR_MODULES_BUCKET}"
+
+            # XXX remove condition here before commit to master
+            if [[ "$CIRCLE_BRANCH" == "master" || -n "$CIRCLE_TAG" ]]; then
+              docker push "stackrox/collector:${collector_ver}-latest"
+              docker push "collector.stackrox.io/collector:${collector_ver}-latest"
+            fi
+          done
+
+          docker images
 
 workflows:
   version: 2
@@ -1135,3 +1212,13 @@ workflows:
        filters:
          tags:
            only: /.*/ 
+    - reload-released-images:
+        context: docker-io-and-stackrox-io-push
+        requires:
+        - images
+        filters:
+          # XXX uncomment here before commit to master
+          #branches:
+          #  only: master
+          tags:
+            only: /.*/
