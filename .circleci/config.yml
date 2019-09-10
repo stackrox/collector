@@ -134,7 +134,7 @@ jobs:
 
   prepare-kernels:
     docker:
-    - image: docker.io/stackrox/apollo-ci:collector-0.1.11-18-g3ecb0861c9
+    - image: docker.io/stackrox/apollo-ci:collector-0.1.11-34-gd4c412a947
       auth:
         username: $DOCKER_USER
         password: $DOCKER_PASS
@@ -490,7 +490,7 @@ jobs:
           apt-get install -y build-essential ca-certificates
 
     - restore_cache:
-        key: grpc-cpp-plugin-v1-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
+        key: grpc-cpp-plugin-v2-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
 
     - run:
         name: Build grpc plugin
@@ -500,7 +500,7 @@ jobs:
           fi
 
     - save_cache:
-        key: grpc-cpp-plugin-v1-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
+        key: grpc-cpp-plugin-v2-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
         paths:
           - /usr/local/bin/grpc_cpp_plugin
 
@@ -691,7 +691,7 @@ jobs:
 
   upload-modules:
     docker:
-    - image: docker.io/stackrox/apollo-ci:collector-0.1.11-18-g3ecb0861c9
+    - image: docker.io/stackrox/apollo-ci:collector-0.1.11-34-gd4c412a947
       auth:
         username: $DOCKER_USER
         password: $DOCKER_PASS
