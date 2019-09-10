@@ -185,6 +185,9 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
     signal->set_exec_file_path(name); 
   }
 
+  // set the process as coming from a scrape as opposed to an exec
+  signal->set_scraped(true);
+
   // set process arguments
   signal->set_args(extract_proc_args(tinfo));
 
