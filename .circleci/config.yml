@@ -231,9 +231,12 @@ jobs:
 
           rm -rf "${LEGACY_DIR}"
 
+          mkdir -p "${WORKSPACE_ROOT}/ko-build"
           for i in "${HOME}/kobuild-tmp/versions-src"/*.tgz; do
             filename="$(basename "$i")"
             version="${filename%.tgz}"
+            # used in reload-released-images job
+            echo "$version" >> "${WORKSPACE_ROOT}/ko-build/released-module-versions.txt"
             [[ "$version" != "$MODULE_VERSION" ]] || continue
             echo "Building modules for legacy module version $version"
           done
@@ -920,6 +923,32 @@ jobs:
     - gcloud-init
 
     - run:
+        name: Prepare released kernel object cache
+        command: |
+          mkdir -p "/tmp/released-kernel-object-cache/"
+
+    - restore_cache:
+        name: Restore cache for released kernel objects
+        keys:
+          - released-kernel-object-cache-v1-{{ .Branch }}-{{ .Revision }}
+          - released-kernel-object-cache-v1-{{ .Branch }}-
+          - released-kernel-object-cache-v1-master-
+          - released-kernel-object-cache-v1-
+
+    - run:
+        name: Sync released kernel objects with gcp bucket
+        command: |
+          while IFS='' read -r line || [[ -n "$line" ]]; do
+            [[ -n "$line" ]] || continue
+            version="$line"
+            mkdir -p "/tmp/released-kernel-object-cache/${version}"
+            gsutil -m rsync -r \
+              "${COLLECTOR_MODULES_BUCKET}/${version}/" \
+              "/tmp/released-kernel-object-cache/${version}" \
+              || true
+          done < "${WORKSPACE_ROOT}/ko-build/released-module-versions.txt"
+
+    - run:
         name: Reload released collector images
         command: |
           cd "$SOURCE_ROOT"
@@ -933,9 +962,11 @@ jobs:
             [[ -n "$tag" ]] || continue
             collector_image="stackrox/collector:$tag"
 
+            mkdir -p ./reload-kernel-modules
+
             docker pull "${collector_image}"
             for i in $(./missing-kernel-objects.sh "${collector_image}"); do
-              gsutil cp $COLLECTOR_MODULES_BUCKET/$i ./reload-kernel-modules/$(basename $i)
+              cp "/tmp/released-kernel-object-cache/$i" "./reload-kernel-modules/$(basename $i)"
             done
 
             ## Add modules and probes to original image
@@ -949,6 +980,12 @@ jobs:
           done < <(grep -v '^#' <../RELEASED_VERSIONS | awk '{print $1}' | sort | uniq)
 
           docker images
+
+    - save_cache:
+        name: Saving cache for released kernel objects
+        key: released-kernel-object-cache-v1-{{ .Branch }}-{{ .Revision }}
+        paths:
+          - /tmp/released-kernel-object-cache/
 
 workflows:
   version: 2
