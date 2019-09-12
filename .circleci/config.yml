@@ -964,30 +964,45 @@ jobs:
           cd "$SOURCE_ROOT/reload"
           while IFS='' read -r tag || [[ -n "$tag" ]]; do
             [[ -n "$tag" ]] || continue
-            collector_image="stackrox/collector:$tag"
+            collector_image="collector:$tag"
+            collector_image_latest="collector:$tag-latest"
+            collector_image_ci_latest="collector:ci-$tag-latest"
 
-            mkdir -p ./reload-kernel-modules
+            # Check if there collector_image_latest exists and needs reload
+            if docker pull "stackrox/${collector_image_latest}" ; then
+              if ./missing-kernel-objects.sh "stackrox/${collector_image_latest}" > "/tmp/latest-missing-${tag}.txt" ; then
+                latest_missing_count="$(cat "/tmp/latest-missing-${tag}.txt" | wc -l | awk '{print $1}')"
+                if [[ "${latest_missing_count}" -eq 0 ]] ; then
+                  echo "Image ${collector_image_latest} contains all availible kernel objects"
+                  continue
+                fi
+              fi
+            fi
 
-            docker pull "${collector_image}"
-            for i in $(./missing-kernel-objects.sh "${collector_image}"); do
+            mkdir ./reload-kernel-modules
+
+            docker pull "stackrox/${collector_image}"
+
+            for i in $(./missing-kernel-objects.sh "stackrox/${collector_image}"); do
               cp "/tmp/released-kernel-object-cache/$i" "./reload-kernel-modules/$(basename $i)"
             done
 
-            ## Add modules and probes to original image
-            docker build --build-arg collector_tag=${tag} -t stackrox/collector:ci-${tag}-latest .
+            # Add modules and probes to original image
+            docker build --build-arg collector_tag=${tag} -t "stackrox/${collector_image_ci_latest}" .
 
-            ## Tag and push new image with latest
+            # Tag and push new image with latest
             if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
-              docker tag stackrox/collector:ci-${tag}-latest stackrox/collector:${tag}-latest
-              docker push stackrox/collector:${tag}-latest
+              docker tag "stackrox/${collector_image_ci_latest}" "stackrox/${collector_image_latest}"
+              docker push "stackrox/${collector_image_latest}"
+
               echo "todo push to stackrox.io on master and/or tag"
-              #docker tag stackrox/collector:ci-${tag}-latest collector.stackrox.io/collector:${tag}-latest
-              #docker push collector.stackrox.io/collector:${tag}-latest
+              #docker tag "stackrox/${collector_image_ci_latest}" "collector.stackrox.io/${collector_image_latest}"
+              #docker push "collector.stackrox.io/${collector_image_latest}"
             else
-              docker push stackrox/collector:ci-${tag}-latest
+              docker push "stackrox/${collector_image_ci_latest}"
             fi
 
-            ## clean up 
+            # clean up
             rm -rf ./reload-kernel-modules
 
           done < <(grep -v '^#' <../RELEASED_VERSIONS | awk '{print $1}' | sort | uniq)
