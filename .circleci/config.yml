@@ -957,6 +957,11 @@ jobs:
             exit 1
           fi
 
+          docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
+          if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
+            docker login -u "$STACKROX_IO_PUSH_USERNAME" -p "$STACKROX_IO_PUSH_PASSWORD" collector.stackrox.io
+          fi
+
           cd "$SOURCE_ROOT/reload"
           while IFS='' read -r tag || [[ -n "$tag" ]]; do
             [[ -n "$tag" ]] || continue
@@ -970,9 +975,18 @@ jobs:
             done
 
             ## Add modules and probes to original image
-            docker build --build-arg collector_tag=${tag} -t stackrox/collector:${tag}-latest .
+            docker build --build-arg collector_tag=${tag} -t stackrox/collector:ci-${tag}-latest .
 
             ## Tag and push new image with latest
+            if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
+              docker tag stackrox/collector:ci-${tag}-latest stackrox/collector:${tag}-latest
+              docker push stackrox/collector:${tag}-latest
+              echo "todo push to stackrox.io on master and/or tag"
+              #docker tag stackrox/collector:ci-${tag}-latest collector.stackrox.io/collector:${tag}-latest
+              #docker push collector.stackrox.io/collector:${tag}-latest
+            else
+              docker push stackrox/collector:ci-${tag}-latest
+            fi
 
             ## clean up 
             rm -rf ./reload-kernel-modules
@@ -1214,6 +1228,7 @@ workflows:
          tags:
            only: /.*/ 
     - reload-released-images:
+        context: docker-io-and-stackrox-io-push
         requires:
         - images
         filters:
