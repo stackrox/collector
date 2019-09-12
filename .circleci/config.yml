@@ -760,7 +760,7 @@ jobs:
         enum: [module, ebpf]
       vm_type:
         type: enum
-        enum: [ubuntu, cos, rhel, coreos]
+        enum: [ubuntu-os, cos, rhel, coreos]
 
     machine: true
     working_directory: ~/workspace
