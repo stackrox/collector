@@ -953,7 +953,7 @@ workflows:
     - integration-test:
         name: test-ebpf-ubuntu
         collection_method: ebpf
-        vm_type: ubuntu
+        vm_type: ubuntu-os
         requires:
         - images
         - integration-test-local
@@ -973,7 +973,7 @@ workflows:
     - integration-test:
         name: test-module-ubuntu
         collection_method: module
-        vm_type: ubuntu
+        vm_type: ubuntu-os
         requires:
         - images
         - integration-test-local
