@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
-# usage: ./missing-kernel-objects.sh stackrox/collector:1.6.0-317-g903fb094c8
+# Usage: ./missing-kernel-objects.sh stackrox/collector:1.6.0-317-g903fb094c8
+
+# This script is takes a collector image and prints a list of kernel modules and ebpf probes
+# that are availibible in COLLECTOR_MODULES_BUCKET on GCP but that are not contained in the image.
+# The list is printed in the form {module_version}/{kernel-object-name}.gz
+
 
 if [[ $# -eq 0 ]] ; then
   echo "missing image name"
