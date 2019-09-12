@@ -733,7 +733,7 @@ jobs:
           sudo mv /home/circleci/workspace/go/bin/dep /usr/local/bin/dep
           export REMOTE_HOST_TYPE=local
           export COLLECTION_METHOD=kernel_module
-          export VM_TYPE=circle_local
+          export VM_CONFIG=circle_local
           make integration-tests
           make integration-test-report
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
@@ -760,7 +760,10 @@ jobs:
         enum: [module, ebpf]
       vm_type:
         type: enum
-        enum: [ubuntu-os, cos, rhel, coreos]
+        enum: [coreos, cos, rhel, ubuntu-os]
+      image_family:
+        type: enum
+        enum: [coreos-stable, cos-stable, rhel-7, ubuntu-1804-lts]
 
     machine: true
     working_directory: ~/workspace
@@ -783,7 +786,8 @@ jobs:
           source $SOURCE_ROOT/.circleci/create-vm.sh
           export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-${CIRCLE_BUILD_NUM}"
           export VM_TYPE=<< parameters.vm_type >>
-          main "$GCLOUD_INSTANCE" "$VM_TYPE" "$GCP_SSH_KEY_FILE" "$DOCKER_USER" "$DOCKER_PASS" 
+          export IMAGE_FAMILY=<< parameters.image_family >>
+          main "$GCLOUD_INSTANCE" "$VM_TYPE" "$IMAGE_FAMILY" "$GCP_SSH_KEY_FILE" "$DOCKER_USER" "$DOCKER_PASS" 
 
     - run:
         name: "Running integration tests"
@@ -797,7 +801,7 @@ jobs:
           export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-${CIRCLE_BUILD_NUM}"
           export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
           export COLLECTION_METHOD=<< parameters.collection_method >>
-          export VM_TYPE=<< parameters.vm_type >>
+          export VM_CONFIG="<< parameters.vm_type >>.<< parameters.image_family >>"
           make integration-tests-baseline integration-tests integration-test-report
           cp "${WORKSPACE_ROOT}/go/src/github.com/stackrox/collector/integration-tests/perf.json" "${WORKSPACE_ROOT}/<< parameters.collection_method >>-<< parameters.vm_type >>-perf.json"
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
@@ -855,7 +859,7 @@ jobs:
             cat $i >> ~/workspace/all-perf.json
           done
           ## TODO put into script
-          cat all-perf.json | jq '. | select(.Metrics.hackbench_avg_time != null) | {kernel: .VmType, collection_method: .CollectionMethod, (.TestName): .Metrics.hackbench_avg_time } ' | jq -rs  ' group_by(.kernel) | .[] | group_by(.collection_method) | .[] | add | [.kernel, .collection_method, .baseline_benchmark, .collector_benchmark ] | @csv' > ~/workspace/benchmark.csv
+          cat all-perf.json | jq '. | select(.Metrics.hackbench_avg_time != null) | {kernel: .VmConfig, collection_method: .CollectionMethod, (.TestName): .Metrics.hackbench_avg_time } ' | jq -rs  ' group_by(.kernel) | .[] | group_by(.collection_method) | .[] | add | [.kernel, .collection_method, .baseline_benchmark, .collector_benchmark ] | @csv' > ~/workspace/benchmark.csv
           cat ~/workspace/benchmark.csv | sort | awk -v FS="," 'BEGIN{print "|Kernel|Method|Without Collector Time (secs)|With Collector Time (secs)|";print "|---|---|---|---|"}{printf "|%s|%s|%s|%s|%s",$1,$2,$3,$4,ORS}' > ~/workspace/benchmark.md
 
     - run:
@@ -941,9 +945,10 @@ workflows:
           tags:
             only: /.*/
     - integration-test:
-        name: test-ebpf-cos
+        name: test-ebpf-cos-stable
         collection_method: ebpf
         vm_type: cos
+        image_family: cos-stable
         requires:
         - images
         - integration-test-local
@@ -951,9 +956,10 @@ workflows:
           tags:
             only: /.*/
     - integration-test:
-        name: test-ebpf-ubuntu
+        name: test-ebpf-ubuntu-1804-lts
         collection_method: ebpf
         vm_type: ubuntu-os
+        image_family: ubuntu-1804-lts
         requires:
         - images
         - integration-test-local
@@ -961,9 +967,10 @@ workflows:
           tags:
             only: /.*/
     - integration-test:
-        name: test-ebpf-coreos
+        name: test-ebpf-coreos-stable
         collection_method: ebpf
         vm_type: coreos
+        image_family: coreos-stable
         requires:
         - images
         - integration-test-local
@@ -971,9 +978,10 @@ workflows:
           tags:
             only: /.*/
     - integration-test:
-        name: test-module-ubuntu
+        name: test-module-ubuntu-1804-lts
         collection_method: module
         vm_type: ubuntu-os
+        image_family: ubuntu-1804-lts
         requires:
         - images
         - integration-test-local
@@ -981,9 +989,10 @@ workflows:
           tags:
             only: /.*/
     - integration-test:
-        name: test-module-rhel
+        name: test-module-rhel-7
         collection_method: module
         vm_type: rhel
+        image_family: rhel-7
         requires:
         - images
         - integration-test-local
@@ -991,9 +1000,10 @@ workflows:
           tags:
             only: /.*/
     - integration-test:
-        name: test-ebpf-rhel
+        name: test-ebpf-rhel-7
         collection_method: ebpf 
         vm_type: rhel
+        image_family: rhel-7
         requires:
         - images
         - integration-test-local
@@ -1001,9 +1011,10 @@ workflows:
           tags:
             only: /.*/
     - integration-test:
-        name: test-module-coreos
+        name: test-module-coreos-stable
         collection_method: module
         vm_type: coreos
+        image_family: coreos-stable
         requires:
         - images
         - integration-test-local
@@ -1012,13 +1023,13 @@ workflows:
             only: /.*/
     - integration-test-data:
        requires:
-       - test-module-coreos
-       - test-module-rhel
-       - test-module-ubuntu
-       - test-ebpf-coreos
-       - test-ebpf-ubuntu
-       - test-ebpf-rhel
-       - test-ebpf-cos
+       - test-module-coreos-stable
+       - test-module-rhel-7
+       - test-module-ubuntu-1804-lts
+       - test-ebpf-coreos-stable
+       - test-ebpf-ubuntu-1804-lts
+       - test-ebpf-rhel-7
+       - test-ebpf-cos-stable
        filters:
          tags:
            only: /.*/ 
