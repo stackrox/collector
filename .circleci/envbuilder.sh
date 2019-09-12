@@ -117,8 +117,7 @@ setupGCPVM() {
     GCP_VM_USER="core"
   fi
 
-  #ubuntu-1804-lts rhel-7 cos-stable coreos-stable
-  createGCPVM "$GCP_IMAGE_FAMILY" "$GCP_VM_TYPE-cloud"
+  createGCPVM "$GCP_VM_NAME" "$GCP_IMAGE_FAMILY" "$GCP_VM_TYPE-cloud"
 
   if ! gcpSSHReady "$GCP_VM_USER" "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"; then
     echo "GCP SSH failure"
