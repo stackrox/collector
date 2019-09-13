@@ -477,15 +477,10 @@ jobs:
           - ko-build/build-output
   grpc:
     docker:
-    - image: docker.io/stackrox/apollo-ci:0.1.11-34-gd4c412a947
-      auth:
-        username: $DOCKER_USER
-        password: $DOCKER_PASS
+    - image: ubuntu:trusty
     working_directory: /go/src/github.com/stackrox/collector
 
     steps:
-    - checkout
-
     - run:
         name: Install dependencies
         command: |
