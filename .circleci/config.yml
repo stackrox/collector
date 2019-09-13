@@ -944,28 +944,8 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - integration-test:
-        name: test-ebpf-cos-stable
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-stable
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
-    - integration-test:
-        name: test-ebpf-ubuntu-1804-lts
-        collection_method: ebpf
-        vm_type: ubuntu-os
-        image_family: ubuntu-1804-lts
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
+
+    # Core OS
     - integration-test:
         name: test-ebpf-coreos-stable
         collection_method: ebpf
@@ -978,10 +958,58 @@ workflows:
           tags:
             only: /.*/
     - integration-test:
-        name: test-module-ubuntu-1804-lts
+        name: test-module-coreos-stable
         collection_method: module
-        vm_type: ubuntu-os
-        image_family: ubuntu-1804-lts
+        vm_type: coreos
+        image_family: coreos-stable
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+
+    # Container-optimized OS (COS)
+    - integration-test:
+        name: test-ebpf-cos-stable
+        collection_method: ebpf
+        vm_type: cos
+        image_family: cos-stable
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-ebpf-cos-69-lts
+        collection_method: ebpf
+        vm_type: cos
+        image_family: cos-69-lts
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-ebpf-cos-73-lts
+        collection_method: ebpf
+        vm_type: cos
+        image_family: cos-73-lts
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+
+    # Red Hat
+    - integration-test:
+        name: test-ebpf-rhel-7
+        collection_method: ebpf 
+        vm_type: rhel
+        image_family: rhel-7
         requires:
         - images
         - integration-test-local
@@ -1000,10 +1028,10 @@ workflows:
           tags:
             only: /.*/
     - integration-test:
-        name: test-ebpf-rhel-7
+        name: test-ebpf-rhel-8
         collection_method: ebpf 
         vm_type: rhel
-        image_family: rhel-7
+        image_family: rhel-8
         requires:
         - images
         - integration-test-local
@@ -1011,25 +1039,79 @@ workflows:
           tags:
             only: /.*/
     - integration-test:
-        name: test-module-coreos-stable
+        name: test-module-rhel-8
         collection_method: module
-        vm_type: coreos
-        image_family: coreos-stable
+        vm_type: rhel
+        image_family: rhel-8
         requires:
         - images
         - integration-test-local
         filters:
           tags:
             only: /.*/
+
+    # Ubuntu
+    - integration-test:
+        name: test-ebpf-ubuntu-1804-lts
+        collection_method: ebpf
+        vm_type: ubuntu-os
+        image_family: ubuntu-1804-lts
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-module-ubuntu-1804-lts
+        collection_method: module
+        vm_type: ubuntu-os
+        image_family: ubuntu-1804-lts
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-ebpf-ubuntu-1904
+        collection_method: ebpf
+        vm_type: ubuntu-os
+        image_family: ubuntu-1904
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-module-ubuntu-1904
+        collection_method: module
+        vm_type: ubuntu-os
+        image_family: ubuntu-1904
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+
     - integration-test-data:
        requires:
        - test-module-coreos-stable
-       - test-module-rhel-7
-       - test-module-ubuntu-1804-lts
        - test-ebpf-coreos-stable
-       - test-ebpf-ubuntu-1804-lts
-       - test-ebpf-rhel-7
        - test-ebpf-cos-stable
+       - test-ebpf-cos-69-lts
+       - test-ebpf-cos-73-lts
+       - test-module-rhel-7
+       - test-module-rhel-7
+       - test-ebpf-rhel-7
+       - test-module-rhel-8
+       - test-ebpf-rhel-8
+       - test-module-ubuntu-1804-lts
+       - test-ebpf-ubuntu-1804-lts
+       - test-module-ubuntu-1904
+       - test-ebpf-ubuntu-1904
        filters:
          tags:
            only: /.*/ 
