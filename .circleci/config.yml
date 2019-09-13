@@ -490,7 +490,7 @@ jobs:
           apt-get install -y build-essential ca-certificates
 
     - restore_cache:
-        key: grpc-cpp-plugin-v2-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
+        key: grpc-cpp-plugin-v3-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
 
     - run:
         name: Build grpc plugin
@@ -500,7 +500,7 @@ jobs:
           fi
 
     - save_cache:
-        key: grpc-cpp-plugin-v2-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
+        key: grpc-cpp-plugin-v3-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
         paths:
           - /usr/local/bin/grpc_cpp_plugin
 
@@ -890,6 +890,8 @@ workflows:
           tags:
             only: /.*/
     - grpc:
+        requires:
+        - initjob
         filters:
           tags:
             only: /.*/
