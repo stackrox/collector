@@ -763,7 +763,7 @@ jobs:
         enum: [coreos, cos, rhel, ubuntu-os]
       image_family:
         type: enum
-        enum: [coreos-stable, cos-stable, rhel-7, ubuntu-1804-lts]
+        enum: [coreos-stable, cos-stable, cos-69-lts, cos-73-lts, rhel-7, rhel-8, ubuntu-1804-lts, ubuntu-1904]
 
     machine: true
     working_directory: ~/workspace
