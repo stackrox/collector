@@ -477,7 +477,7 @@ jobs:
           - ko-build/build-output
   grpc:
     docker:
-    - image: ubuntu:trusty
+    - image: circleci/golang:1.11.2-stretch
     working_directory: /go/src/github.com/stackrox/collector
 
     steps:
@@ -487,7 +487,7 @@ jobs:
         name: Install dependencies
         command: |
           apt-get update -y
-          apt-get install -y build-essential ca-certificates ssh
+          apt-get install -y build-essential ca-certificates
 
           #    - restore_cache:
           #        key: grpc-cpp-plugin-v4-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
