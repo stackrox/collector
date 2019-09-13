@@ -478,7 +478,7 @@ jobs:
   grpc:
     docker:
     - image: ubuntu:trusty
-    working_directory: /go/src/github.com/stackrox/collector
+    working_directory: ~/workspace/go/src/github.com/stackrox/collector
 
     steps:
     - run:
