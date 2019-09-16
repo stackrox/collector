@@ -485,7 +485,7 @@ jobs:
         name: Install dependencies
         command: |
           apt-get update -y
-          apt-get install -y build-essential ca-certificates
+          apt-get install -y build-essential ca-certificates git openssh-client
 
           #    - restore_cache:
           #        key: grpc-cpp-plugin-v4-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
@@ -494,7 +494,6 @@ jobs:
     - run:
         name: Build grpc plugin
         command: |
-          cd "${COLLECTOR_SOURCE_ROOT}"
           if [[ ! -x /usr/local/bin/grpc_cpp_plugin ]]; then
             make -C collector install-grpc
           fi
