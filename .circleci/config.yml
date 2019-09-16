@@ -886,143 +886,143 @@ workflows:
         filters:
           tags:
             only: /.*/
-#    - builder:
-#        requires:
-#        - initjob
-#        filters:
-#          tags:
-#            only: /.*/
+    - builder:
+        requires:
+        - initjob
+        filters:
+          tags:
+            only: /.*/
     - grpc:
         requires:
         - initjob
         filters:
           tags:
             only: /.*/
-#    - libsinsp:
-#        requires:
-#        - initjob
-#        filters:
-#          tags:
-#            only: /.*/
-#    - collector:
-#        requires:
-#        - builder
-#        - grpc
-#        - libsinsp
-#        filters:
-#          tags:
-#            only: /.*/
-#    - prepare-kernels:
-#        requires:
-#        - initjob
-#        filters:
-#          tags:
-#            only: /.*/
-#    - kernels:
-#        requires:
-#        - prepare-kernels
-#        filters:
-#          tags:
-#            only: /.*/
-#    - upload-modules:
-#        requires:
-#          - kernels
-#        filters:
-#          tags:
-#            only: /.*/
-#    - images:
-#        requires:
-#        - collector
-#        - kernels
-#        filters:
-#          tags:
-#            only: /.*/
-#    - integration-test-local:
-#        requires:
-#        - images
-#        - upload-modules
-#        filters:
-#          tags:
-#            only: /.*/
-#    - integration-test:
-#        name: test-ebpf-cos
-#        collection_method: ebpf
-#        vm_type: cos
-#        requires:
-#        - images
-#        - integration-test-local
-#        filters:
-#          tags:
-#            only: /.*/
-#    - integration-test:
-#        name: test-ebpf-ubuntu
-#        collection_method: ebpf
-#        vm_type: ubuntu
-#        requires:
-#        - images
-#        - integration-test-local
-#        filters:
-#          tags:
-#            only: /.*/
-#    - integration-test:
-#        name: test-ebpf-coreos
-#        collection_method: ebpf
-#        vm_type: coreos
-#        requires:
-#        - images
-#        - integration-test-local
-#        filters:
-#          tags:
-#            only: /.*/
-#    - integration-test:
-#        name: test-module-ubuntu
-#        collection_method: module
-#        vm_type: ubuntu
-#        requires:
-#        - images
-#        - integration-test-local
-#        filters:
-#          tags:
-#            only: /.*/
-#    - integration-test:
-#        name: test-module-rhel
-#        collection_method: module
-#        vm_type: rhel
-#        requires:
-#        - images
-#        - integration-test-local
-#        filters:
-#          tags:
-#            only: /.*/
-#    - integration-test:
-#        name: test-ebpf-rhel
-#        collection_method: ebpf 
-#        vm_type: rhel
-#        requires:
-#        - images
-#        - integration-test-local
-#        filters:
-#          tags:
-#            only: /.*/
-#    - integration-test:
-#        name: test-module-coreos
-#        collection_method: module
-#        vm_type: coreos
-#        requires:
-#        - images
-#        - integration-test-local
-#        filters:
-#          tags:
-#            only: /.*/
-#    - integration-test-data:
-#       requires:
-#       - test-module-coreos
-#       - test-module-rhel
-#       - test-module-ubuntu
-#       - test-ebpf-coreos
-#       - test-ebpf-ubuntu
-#       - test-ebpf-rhel
-#       - test-ebpf-cos
-#       filters:
-#         tags:
-#           only: /.*/ 
+    - libsinsp:
+        requires:
+        - initjob
+        filters:
+          tags:
+            only: /.*/
+    - collector:
+        requires:
+        - builder
+        - grpc
+        - libsinsp
+        filters:
+          tags:
+            only: /.*/
+    - prepare-kernels:
+        requires:
+        - initjob
+        filters:
+          tags:
+            only: /.*/
+    - kernels:
+        requires:
+        - prepare-kernels
+        filters:
+          tags:
+            only: /.*/
+    - upload-modules:
+        requires:
+          - kernels
+        filters:
+          tags:
+            only: /.*/
+    - images:
+        requires:
+        - collector
+        - kernels
+        filters:
+          tags:
+            only: /.*/
+    - integration-test-local:
+        requires:
+        - images
+        - upload-modules
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-ebpf-cos
+        collection_method: ebpf
+        vm_type: cos
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-ebpf-ubuntu
+        collection_method: ebpf
+        vm_type: ubuntu
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-ebpf-coreos
+        collection_method: ebpf
+        vm_type: coreos
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-module-ubuntu
+        collection_method: module
+        vm_type: ubuntu
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-module-rhel
+        collection_method: module
+        vm_type: rhel
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-ebpf-rhel
+        collection_method: ebpf 
+        vm_type: rhel
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-module-coreos
+        collection_method: module
+        vm_type: coreos
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test-data:
+       requires:
+       - test-module-coreos
+       - test-module-rhel
+       - test-module-ubuntu
+       - test-ebpf-coreos
+       - test-ebpf-ubuntu
+       - test-ebpf-rhel
+       - test-ebpf-cos
+       filters:
+         tags:
+           only: /.*/ 
