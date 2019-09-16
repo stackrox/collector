@@ -229,7 +229,6 @@ jobs:
 
             pushd "${LEGACY_DIR}/${SYSDIG_REL_DIR}"
             git show --name-status
-            git branch -a --contains HEAD
             popd
 
           done < <(grep -v '^#' <RELEASED_VERSIONS | awk '{print $1}' | sort | uniq)
