@@ -227,6 +227,11 @@ jobs:
                 OUTPUT_DIR="${HOME}/kobuild-tmp/versions-src" \
               ./kernel-modules/build/prepare-src
 
+            pushd "${LEGACY_DIR}/${SYSDIG_REL_DIR}"
+            git show --name-status
+            git branch -a --contains HEAD
+            popd
+
           done < <(grep -v '^#' <RELEASED_VERSIONS | awk '{print $1}' | sort | uniq)
 
           rm -rf "${LEGACY_DIR}"

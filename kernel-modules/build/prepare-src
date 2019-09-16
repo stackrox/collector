@@ -43,6 +43,7 @@ KERNELDIR=/dev/null make driver/fast || true
 
 cd "${SYSDIG_SCRATCH}/driver"
 module_version="$(get_module_version .)"
+echo "MODULE_VERSION=${module_version}"
 
 source_archive="${OUTPUT_DIR}/${module_version}.tgz"
 if [[ -s "$source_archive" ]]; then
