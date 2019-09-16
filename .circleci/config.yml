@@ -487,10 +487,10 @@ jobs:
           apt-get update -y
           apt-get install -y build-essential ca-certificates git sudo
 
+    - checkout
     - restore_cache:
         key: grpc-cpp-plugin-v2-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
 
-    - checkout
     - run:
         name: Build grpc plugin
         command: |
