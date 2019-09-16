@@ -477,7 +477,7 @@ jobs:
           - ko-build/build-output
   grpc:
     docker:
-    - image: ubuntu:trusty
+    - image: docker.io/stackrox/apollo-ci:collector-0.1.11-34-gd4c412a947
     working_directory: ~/workspace
 
     steps:
@@ -485,8 +485,8 @@ jobs:
     - run:
         name: Install dependencies
         command: |
-          apt-get update -y
-          apt-get install -y build-essential ca-certificates
+          sudo apt-get update -y
+          sudo apt-get install -y build-essential ca-certificates
 
           #    - restore_cache:
           #        key: grpc-cpp-plugin-v4-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
@@ -496,7 +496,7 @@ jobs:
         command: |
           cd "${COLLECTOR_SOURCE_ROOT}"
           if [[ ! -x /usr/local/bin/grpc_cpp_plugin ]]; then
-            make -C collector install-grpc
+            sudo make -C collector install-grpc
           fi
 
           #    - save_cache:
