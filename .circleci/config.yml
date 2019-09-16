@@ -477,7 +477,7 @@ jobs:
           - ko-build/build-output
   grpc:
     docker:
-    - image: ubuntu:xenial
+    - image: ubuntu:trusty
     working_directory: /go/src/github.com/stackrox/collector
 
     steps:
