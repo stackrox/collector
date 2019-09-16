@@ -28,7 +28,7 @@ UNAME_S="$(uname -s)"
 if [[ "${UNAME_S}" = "Linux" ]]; then
     sudo apt-get update && sudo apt-get install -y \
     build-essential autoconf git pkg-config \
-    automake libtool curl make g++ unzip \
+    automake libtool curl make g++ unzip dh-autoreconf \
     && apt-get clean
     install_grpc
     exit 0

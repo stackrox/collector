@@ -485,7 +485,7 @@ jobs:
         name: Install dependencies
         command: |
           apt-get update -y
-          apt-get install -y build-essential ca-certificates git dh-autoreconf
+          apt-get install -y git sudo
 
           #    - restore_cache:
           #        key: grpc-cpp-plugin-v4-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
