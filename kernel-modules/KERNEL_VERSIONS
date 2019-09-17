@@ -421,6 +421,7 @@
 4.15.0-1044-aws
 4.15.0-1044-azure
 4.15.0-1044-gcp
+4.15.0-1044-gke
 4.15.0-1045-aws
 4.15.0-1045-azure
 4.15.0-1046-aws
@@ -474,6 +475,7 @@
 4.15.0-60-generic
 4.15.0-62-generic
 4.15.0-63-generic
+4.15.0-64-generic
 4.19.0-13-generic
 4.19.23-coreos-r1
 4.19.25-coreos
@@ -635,6 +637,7 @@
 4.4.0-160-generic
 4.4.0-161-generic
 4.4.0-163-generic
+4.4.0-164-generic
 4.4.0-21-generic
 4.4.0-22-generic
 4.4.0-24-generic
@@ -1034,6 +1037,7 @@
 5.0.0-26-generic
 5.0.0-27-generic
 5.0.0-28-generic
+5.0.0-29-generic
 5.0.0-7-generic
 5.0.0-8-generic
 5.2.0-10-generic
