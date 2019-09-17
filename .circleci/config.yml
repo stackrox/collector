@@ -959,6 +959,10 @@ jobs:
           docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
           if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
             docker login -u "$STACKROX_IO_PUSH_USERNAME" -p "$STACKROX_IO_PUSH_PASSWORD" collector.stackrox.io
+          else
+            echo "Only run this job on master"
+            # XXX uncomment here before commit to master
+            #exit 1
           fi
 
           cd "$SOURCE_ROOT/reload"
@@ -990,12 +994,24 @@ jobs:
             # Add modules and probes to original image
             docker build --build-arg collector_tag=${tag} -t "stackrox/${collector_image_ci_latest}" .
 
+            # Sanity check reloaded image
+            ./missing-kernel-objects.sh "stackrox/${collector_image_latest}" > "/tmp/reloaded-latest-missing-${tag}.txt" ; then
+            reloaded_latest_missing_count="$(cat "/tmp/reloaded-latest-missing-${tag}.txt" | wc -l | awk '{print $1}')"
+            if [[ "${reloaded_latest_missing_count}" -eq 0 ]] ; then
+              echo "Reloading ${collector_image_latest} was successful."
+            else
+              echo "Reloading ${collector_image_latest} failed, missing ${reloaded_latest_missing_count} images:"
+              cat "/tmp/reloaded-latest-missing-${tag}.txt"
+              exit 1
+            fi
+
             # Tag and push new image with latest
             if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
               docker tag "stackrox/${collector_image_ci_latest}" "stackrox/${collector_image_latest}"
               docker push "stackrox/${collector_image_latest}"
 
               echo "todo push to stackrox.io on master and/or tag"
+              # XXX uncomment here before commit to master
               #docker tag "stackrox/${collector_image_ci_latest}" "collector.stackrox.io/${collector_image_latest}"
               #docker push "collector.stackrox.io/${collector_image_latest}"
             else
@@ -1246,7 +1262,7 @@ workflows:
         requires:
         - images
         filters:
-          # enable before push to master
+          # XXX uncomment here before commit to master
           #branches:
           #  only: master
           tags:
