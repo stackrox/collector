@@ -1,3 +1,3 @@
 ARG collector_tag=xxx
-FROM stackrox/collector:${collector_tag}
+FROM collector.stackrox.io/collector:${collector_tag}
 COPY reload-kernel-modules /kernel-modules/

@@ -1006,10 +1006,10 @@ jobs:
 
             # Tag and push new image with latest
             docker tag "stackrox/${collector_image_ci_latest}" "stackrox/${collector_image_latest}"
-            docker push "stackrox/${collector_image_latest}"
-
             docker tag "stackrox/${collector_image_ci_latest}" "collector.stackrox.io/${collector_image_latest}"
             # XXX uncomment here before commit to master
+            docker push "stackrox/${collector_image_ci_latest}"
+            #docker push "stackrox/${collector_image_latest}"
             #docker push "collector.stackrox.io/${collector_image_latest}"
 
             # clean up
