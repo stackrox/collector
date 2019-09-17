@@ -957,9 +957,9 @@ jobs:
           fi
 
           docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
-          if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
-            docker login -u "$STACKROX_IO_PUSH_USERNAME" -p "$STACKROX_IO_PUSH_PASSWORD" collector.stackrox.io
-          else
+          docker login -u "$STACKROX_IO_PUSH_USERNAME" -p "$STACKROX_IO_PUSH_PASSWORD" collector.stackrox.io
+
+          if [[ ! $CIRCLE_BRANCH = master ]]; then
             echo "Only run this job on master"
             # XXX uncomment here before commit to master
             #exit 1
@@ -973,50 +973,44 @@ jobs:
             collector_image_ci_latest="collector:ci-$tag-latest"
 
             # Check if there collector_image_latest exists and needs reload
-            if docker pull "stackrox/${collector_image_latest}" ; then
-              if ./missing-kernel-objects.sh "stackrox/${collector_image_latest}" > "/tmp/latest-missing-${tag}.txt" ; then
+            if docker pull "collector.stackrox.io/${collector_image_latest}" ; then
+              if ./missing-kernel-objects.sh "collector.stackrox.io/${collector_image_latest}" > "/tmp/latest-missing-${tag}.txt" ; then
                 latest_missing_count="$(cat "/tmp/latest-missing-${tag}.txt" | wc -l | awk '{print $1}')"
                 if [[ "${latest_missing_count}" -eq 0 ]] ; then
-                  echo "Image ${collector_image_latest} contains all availible kernel objects"
+                  echo "Skipping rebuild: image ${collector_image_latest} contains all availible kernel objects"
                   continue
                 fi
               fi
             fi
 
+            # Gather missing kernel objects for rebuild
             mkdir ./reload-kernel-modules
-
-            docker pull "stackrox/${collector_image}"
-
-            for i in $(./missing-kernel-objects.sh "stackrox/${collector_image}"); do
+            docker pull "collector.stackrox.io/${collector_image}"
+            for i in $(./missing-kernel-objects.sh "collector.stackrox.io/${collector_image}"); do
               cp "/tmp/released-kernel-object-cache/$i" "./reload-kernel-modules/$(basename $i)"
             done
 
-            # Add modules and probes to original image
+            # Add modules and probes to original image and tag stackrox/collector:ci-<version>-latest
             docker build --build-arg collector_tag=${tag} -t "stackrox/${collector_image_ci_latest}" .
 
             # Sanity check reloaded image
-            ./missing-kernel-objects.sh "stackrox/${collector_image_latest}" > "/tmp/reloaded-latest-missing-${tag}.txt" ; then
+            ./missing-kernel-objects.sh "stackrox/${collector_image_ci_latest}" > "/tmp/reloaded-latest-missing-${tag}.txt"
             reloaded_latest_missing_count="$(cat "/tmp/reloaded-latest-missing-${tag}.txt" | wc -l | awk '{print $1}')"
             if [[ "${reloaded_latest_missing_count}" -eq 0 ]] ; then
-              echo "Reloading ${collector_image_latest} was successful."
+              echo "Reloading ${collector_image} was successful."
             else
-              echo "Reloading ${collector_image_latest} failed, missing ${reloaded_latest_missing_count} images:"
+              echo "Reloading ${collector_image} failed, missing ${reloaded_latest_missing_count} images:"
               cat "/tmp/reloaded-latest-missing-${tag}.txt"
               exit 1
             fi
 
             # Tag and push new image with latest
-            if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
-              docker tag "stackrox/${collector_image_ci_latest}" "stackrox/${collector_image_latest}"
-              docker push "stackrox/${collector_image_latest}"
+            docker tag "stackrox/${collector_image_ci_latest}" "stackrox/${collector_image_latest}"
+            docker push "stackrox/${collector_image_latest}"
 
-              echo "todo push to stackrox.io on master and/or tag"
-              # XXX uncomment here before commit to master
-              #docker tag "stackrox/${collector_image_ci_latest}" "collector.stackrox.io/${collector_image_latest}"
-              #docker push "collector.stackrox.io/${collector_image_latest}"
-            else
-              docker push "stackrox/${collector_image_ci_latest}"
-            fi
+            docker tag "stackrox/${collector_image_ci_latest}" "collector.stackrox.io/${collector_image_latest}"
+            # XXX uncomment here before commit to master
+            #docker push "collector.stackrox.io/${collector_image_latest}"
 
             # clean up
             rm -rf ./reload-kernel-modules
