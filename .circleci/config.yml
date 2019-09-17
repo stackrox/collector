@@ -228,7 +228,7 @@ jobs:
               ./kernel-modules/build/prepare-src
 
             pushd "${LEGACY_DIR}/${SYSDIG_REL_DIR}"
-            git show --name-status
+            GIT_PAGER=cat git show --name-status
             popd
 
           done < <(grep -v '^#' <RELEASED_VERSIONS | awk '{print $1}' | sort | uniq)
