@@ -16,6 +16,7 @@ RUN apt-get update \
       kmod \
       wget \
       golang-go \
+      pkg-config \
  ;
 
 RUN sed s_unstable_jessie_g < /etc/apt/sources.list > /etc/apt/sources.list.d/jessie.list && \
