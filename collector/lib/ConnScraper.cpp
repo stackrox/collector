@@ -153,7 +153,7 @@ bool GetContainerID(int dirfd, std::string* container_id) {
       } else if (std::strncmp(p, "crio-", StrLen("crio-")) == 0) {
         p += StrLen("crio-");
       } else {
-        continue
+        continue;
       }
       if (line + sizeof(line) - p < 32) continue;
       *container_id = std::string(p, 12);
