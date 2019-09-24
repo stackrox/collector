@@ -1076,17 +1076,18 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - integration-test:
-        name: test-ebpf-ubuntu-1904
-        collection_method: ebpf
-        vm_type: ubuntu-os
-        image_family: ubuntu-1904
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
+    ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks`
+    #- integration-test:
+    #    name: test-ebpf-ubuntu-1904
+    #    collection_method: ebpf
+    #    vm_type: ubuntu-os
+    #    image_family: ubuntu-1904
+    #    requires:
+    #    - images
+    #    - integration-test-local
+    #    filters:
+    #      tags:
+    #        only: /.*/
     - integration-test:
         name: test-module-ubuntu-1904
         collection_method: module
@@ -1113,7 +1114,7 @@ workflows:
        - test-module-ubuntu-1804-lts
        - test-ebpf-ubuntu-1804-lts
        - test-module-ubuntu-1904
-       - test-ebpf-ubuntu-1904
+       #- test-ebpf-ubuntu-1904
        filters:
          tags:
            only: /.*/ 
