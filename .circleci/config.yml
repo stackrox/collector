@@ -784,7 +784,7 @@ jobs:
         name: "Create VM"
         command: |
           source $SOURCE_ROOT/.circleci/create-vm.sh
-          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-${CIRCLE_BUILD_NUM}"
+          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-${CIRCLE_BUILD_NUM}"
           export VM_TYPE=<< parameters.vm_type >>
           export IMAGE_FAMILY=<< parameters.image_family >>
           main "$GCLOUD_INSTANCE" "$VM_TYPE" "$IMAGE_FAMILY" "$GCP_SSH_KEY_FILE" "$DOCKER_USER" "$DOCKER_PASS" 
@@ -798,18 +798,18 @@ jobs:
           curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
           sudo mv /home/circleci/workspace/go/bin/dep /usr/local/bin/dep
           export REMOTE_HOST_TYPE=gcloud
-          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-${CIRCLE_BUILD_NUM}"
+          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-${CIRCLE_BUILD_NUM}"
           export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
           export COLLECTION_METHOD=<< parameters.collection_method >>
           export VM_CONFIG="<< parameters.vm_type >>.<< parameters.image_family >>"
           make integration-tests-baseline integration-tests integration-test-report
-          cp "${WORKSPACE_ROOT}/go/src/github.com/stackrox/collector/integration-tests/perf.json" "${WORKSPACE_ROOT}/<< parameters.collection_method >>-<< parameters.vm_type >>-perf.json"
+          cp "${WORKSPACE_ROOT}/go/src/github.com/stackrox/collector/integration-tests/perf.json" "${WORKSPACE_ROOT}/<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-perf.json"
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
     - run:
         name: "Get serial port output"
         command: |
-          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-${CIRCLE_BUILD_NUM}"
+          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-${CIRCLE_BUILD_NUM}"
           mkdir -p ~/workspace/serial-output
           gcloud compute instances get-serial-port-output "$GCLOUD_INSTANCE" > ~/workspace/serial-output/"$GCLOUD_INSTANCE"-serial-output.logs
         when: always
@@ -818,28 +818,28 @@ jobs:
         path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
-        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-integration-test-report.xml"
+        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-integration-test-report.xml"
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/collector.logs
-        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-collector.logs"
+        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-collector.logs"
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/grpc-server.logs
-        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-grpc-server.logs"
+        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-grpc-server.logs"
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/perf.json
-        destination: "<< parameters.collection_method >>_<< parameters.vm_type >>_<< parameters.image_family >>_perf.json"
+        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-perf.json"
     - store_artifacts:
         path: ~/workspace/serial-output
 
     - persist_to_workspace:
         root: ~/workspace
         paths:
-        - "<< parameters.collection_method >>_<< parameters.vm_type >>_<< parameters.image_family >>_perf.json"
+        - "<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-perf.json"
 
     - run:
         name: "Destroy VM"
         command: |
-          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-${CIRCLE_BUILD_NUM}"
+          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-${CIRCLE_BUILD_NUM}"
           gcloud compute instances delete $GCLOUD_INSTANCE
         when: always
 
