@@ -54,12 +54,17 @@ installDockerOnRHELViaGCPSSH() {
   shift
   local GCP_SSH_KEY_FILE="$1"
   shift
+  local GCP_IMAGE_FAMILY="$1"
+  shift
 
   gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum install -y yum-utils device-mapper-persistent-data lvm2"
   gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo"
-  # using skip-broken for rhel-8 (https://linuxconfig.org/how-to-install-docker-in-rhel-8)
-  gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum install --skip-broken --nobest -y docker-ce docker-ce-cli containerd.io"
-  gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo systemctl enable --now docker"
+  # using skip-broken and nobest for rhel-8 (https://linuxconfig.org/how-to-install-docker-in-rhel-8)
+  local extra_param=""
+  if test "$GCP_IMAGE_FAMILY" = "rhel-8" ; then
+    extra_params="--skip-broken --nobest"
+  fi
+  gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum install $extra_params -y docker-ce docker-ce-cli containerd.io"
   gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo systemctl start docker"
   gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo usermod -aG docker $(whoami)"
 }
@@ -129,7 +134,7 @@ setupGCPVM() {
   if test "$GCP_VM_TYPE" = "ubuntu-os" ; then
     installDockerOnUbuntuViaGCPSSH "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
   elif test "$GCP_VM_TYPE" = "rhel" ; then
-    installDockerOnRHELViaGCPSSH "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
+    installDockerOnRHELViaGCPSSH "$GCP_VM_NAME" "$GCP_IMAGE_FAMILY" "$GCP_SSH_KEY_FILE"
   fi
 
   loginDockerViaGCPSSH "$GCP_VM_USER" "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE" "$GDOCKER_USER" "$GDOCKER_PASS" 
