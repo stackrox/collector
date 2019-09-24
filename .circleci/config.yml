@@ -827,14 +827,14 @@ jobs:
         destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-grpc-server.logs"
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/perf.json
-        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-perf.json"
+      destination: "<< parameters.collection_method >>_<< parameters.vm_type >>_<< parameters.image_family >>_perf.json"
     - store_artifacts:
         path: ~/workspace/serial-output
 
     - persist_to_workspace:
         root: ~/workspace
         paths:
-        - "<< parameters.collection_method >>-<< parameters.vm_type >>-perf.json"
+        - "<< parameters.collection_method >>_<< parameters.vm_type >>_<< parameters.image_family >>_perf.json"
 
     - run:
         name: "Destroy VM"
@@ -854,7 +854,7 @@ jobs:
         name: "Gather Data"
         command: |
           echo "ls 1"
-          for i in "${WORKSPACE_ROOT}"/*.json; do
+          for i in "${WORKSPACE_ROOT}"/*perf.json; do
             echo "Performance data file: $i"
             cat $i >> ~/workspace/all-perf.json
           done
