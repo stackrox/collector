@@ -827,7 +827,7 @@ jobs:
         destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-grpc-server.logs"
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/perf.json
-      destination: "<< parameters.collection_method >>_<< parameters.vm_type >>_<< parameters.image_family >>_perf.json"
+        destination: "<< parameters.collection_method >>_<< parameters.vm_type >>_<< parameters.image_family >>_perf.json"
     - store_artifacts:
         path: ~/workspace/serial-output
 
