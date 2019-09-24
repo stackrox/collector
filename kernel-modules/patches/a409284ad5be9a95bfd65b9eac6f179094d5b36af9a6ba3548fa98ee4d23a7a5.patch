@@ -1,7 +1,7 @@
-diff --git a/driver/ppm_cputime.c b/driver/ppm_cputime.c
+diff --git a/ppm_cputime.c b/ppm_cputime.c
 index 70a05e1..405ce66 100644
---- a/driver/ppm_cputime.c
-+++ b/driver/ppm_cputime.c
+--- a/ppm_cputime.c
++++ b/ppm_cputime.c
 @@ -34,6 +34,7 @@ or GPL2.txt for full copies of the license.
  #include "ppm_events_public.h"
  #include "ppm_events.h"
