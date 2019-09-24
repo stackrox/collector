@@ -52,9 +52,9 @@ installDockerOnUbuntuViaGCPSSH() {
 installDockerOnRHELViaGCPSSH() {
   local GCP_VM_NAME="$1"
   shift
-  local GCP_SSH_KEY_FILE="$1"
-  shift
   local GCP_IMAGE_FAMILY="$1"
+  shift
+  local GCP_SSH_KEY_FILE="$1"
   shift
 
   gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum install -y yum-utils device-mapper-persistent-data lvm2"
