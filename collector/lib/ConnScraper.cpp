@@ -144,12 +144,17 @@ bool GetContainerID(int dirfd, std::string* container_id) {
       return true;
     }
     if (std::strncmp(p, "/kubepods.slice/", StrLen("/kubepods.slice/")) == 0) {
-      // format is `/kubepods.slice/kubepods-<qos>.slice/kubepods-<qos>-<pod-id>.slice/docker-<container id>.scope`
+      // format is `/kubepods.slice/kubepods-<qos>.slice/kubepods-<qos>-<pod-id>.slice/<container-runtime>-<container id>.scope`
       p = rep_strchr(4, p, '/');
       if (!p) continue;
       ++p;
-      if (std::strncmp(p, "docker-", StrLen("docker-")) != 0) continue;
-      p += StrLen("docker-");
+      if (std::strncmp(p, "docker-", StrLen("docker-")) == 0) {
+        p += StrLen("docker-");
+      } else if (std::strncmp(p, "crio-", StrLen("crio-")) == 0) {
+        p += StrLen("crio-");
+      } else {
+        continue
+      }
       if (line + sizeof(line) - p < 32) continue;
       *container_id = std::string(p, 12);
       return true;
