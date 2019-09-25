@@ -464,6 +464,7 @@ jobs:
         name: Build modules
         command: |
           docker run --rm -i \
+            -e FAILURE_LOG_FILE="/output/FAILURES-${CIRCLE_NODE_INDEX}" \
             -v "${HOME}/kobuild-tmp/bundles:/bundles:ro" \
             -v "${WORKSPACE_ROOT}/ko-build/module-versions:/sources:ro" \
             -v "${WORKSPACE_ROOT}/ko-build/build-output:/output" \
@@ -605,6 +606,15 @@ jobs:
     - initcommand
     - docker-login
     - gcloud-init
+
+    - run:
+        name: Test for build failures
+        command: |
+          if ls "${WORKSPACE_ROOT}/ko-build/build-output/FAILURES-"* 2>/dev/null; then
+            echo >&2 "Compilation failed for some kernel/module version combinations!"
+            cat >&2 2>/dev/null "${WORKSPACE_ROOT}/ko-build/build-output/FAILURES-"*
+            exit 1
+          fi
 
     - run:
         name: Copying Kernel modules build output
