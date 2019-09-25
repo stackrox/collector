@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-build_ko() {
+build_ko() (
     local kernel_version="$1"
     local module_version="$2"
 
@@ -106,14 +106,19 @@ build_ko() {
     collector_probe="bpf/probe.o"
     gzip -c "$collector_probe" >"/output/${module_version}/collector-ebpf-${kernel_version}.o.gz"
     rm "$collector_probe"
-}
+)
 
 build_kos() {
     while read -a line || [[ "${#line[@]}" -gt 0 ]]; do
         local kernel_version="${line[0]}"
         local module_version="${line[1]}"
 
-        build_ko "$kernel_version" "$module_version"
+        if ! build_ko "$kernel_version" "$module_version"; then
+            echo >&2 "Failed to build module version ${module_version} for kernel ${kernel_version}"
+            if [[ -n "${FAILURE_LOG_FILE:-}" ]]; then
+                echo >>"${FAILURE_LOG_FILE}" "${kernel_version} ${module_version}"
+            fi
+        fi
     done
 }
 
