@@ -1001,7 +1001,7 @@ workflows:
         filters:
           tags:
             only: /.*/
-    ## TODO(rc) enable rhel7, after fixing kernel objects are building and removed from blacklist
+    ## TODO(rc) enable ebpf rhel7 after fixing error on bpf map create
     #- integration-test:
     #    name: test-ebpf-rhel-7
     #    collection_method: ebpf 
@@ -1013,17 +1013,17 @@ workflows:
     #    filters:
     #      tags:
     #        only: /.*/
-    #- integration-test:
-    #    name: test-module-rhel-7
-    #    collection_method: module
-    #    vm_type: rhel
-    #    image_family: rhel-7
-    #    requires:
-    #    - images
-    #    - integration-test-local
-    #    filters:
-    #      tags:
-    #        only: /.*/
+    - integration-test:
+        name: test-module-rhel-7
+        collection_method: module
+        vm_type: rhel
+        image_family: rhel-7
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
     ## TODO(rc) enable rhel8 after kernels are supported in kernel-crawler
     #- integration-test:
     #    name: test-ebpf-rhel-8
@@ -1100,7 +1100,7 @@ workflows:
        #- test-ebpf-cos-stable
        - test-ebpf-cos-69-lts
        - test-ebpf-cos-73-lts
-       #- test-module-rhel-7
+       - test-module-rhel-7
        #- test-ebpf-rhel-7
        #- test-module-rhel-8
        #- test-ebpf-rhel-8
