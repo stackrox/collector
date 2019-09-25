@@ -733,7 +733,7 @@ jobs:
           sudo mv /home/circleci/workspace/go/bin/dep /usr/local/bin/dep
           export REMOTE_HOST_TYPE=local
           export COLLECTION_METHOD=kernel_module
-          export VM_TYPE=circle_local
+          export VM_CONFIG=circle_local
           make integration-tests
           make integration-test-report
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
@@ -760,7 +760,10 @@ jobs:
         enum: [module, ebpf]
       vm_type:
         type: enum
-        enum: [ubuntu, cos, rhel, coreos]
+        enum: [coreos, cos, rhel, ubuntu-os]
+      image_family:
+        type: enum
+        enum: [coreos-stable, cos-stable, cos-69-lts, cos-73-lts, rhel-7, rhel-8, ubuntu-1804-lts, ubuntu-1904]
 
     machine: true
     working_directory: ~/workspace
@@ -781,9 +784,10 @@ jobs:
         name: "Create VM"
         command: |
           source $SOURCE_ROOT/.circleci/create-vm.sh
-          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-${CIRCLE_BUILD_NUM}"
+          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-${CIRCLE_BUILD_NUM}"
           export VM_TYPE=<< parameters.vm_type >>
-          main "$GCLOUD_INSTANCE" "$VM_TYPE" "$GCP_SSH_KEY_FILE" "$DOCKER_USER" "$DOCKER_PASS" 
+          export IMAGE_FAMILY=<< parameters.image_family >>
+          main "$GCLOUD_INSTANCE" "$VM_TYPE" "$IMAGE_FAMILY" "$GCP_SSH_KEY_FILE" "$DOCKER_USER" "$DOCKER_PASS" 
 
     - run:
         name: "Running integration tests"
@@ -794,18 +798,18 @@ jobs:
           curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
           sudo mv /home/circleci/workspace/go/bin/dep /usr/local/bin/dep
           export REMOTE_HOST_TYPE=gcloud
-          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-${CIRCLE_BUILD_NUM}"
+          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-${CIRCLE_BUILD_NUM}"
           export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
           export COLLECTION_METHOD=<< parameters.collection_method >>
-          export VM_TYPE=<< parameters.vm_type >>
+          export VM_CONFIG="<< parameters.vm_type >>.<< parameters.image_family >>"
           make integration-tests-baseline integration-tests integration-test-report
-          cp "${WORKSPACE_ROOT}/go/src/github.com/stackrox/collector/integration-tests/perf.json" "${WORKSPACE_ROOT}/<< parameters.collection_method >>-<< parameters.vm_type >>-perf.json"
+          cp "${WORKSPACE_ROOT}/go/src/github.com/stackrox/collector/integration-tests/perf.json" "${WORKSPACE_ROOT}/<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-perf.json"
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
     - run:
         name: "Get serial port output"
         command: |
-          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-${CIRCLE_BUILD_NUM}"
+          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-${CIRCLE_BUILD_NUM}"
           mkdir -p ~/workspace/serial-output
           gcloud compute instances get-serial-port-output "$GCLOUD_INSTANCE" > ~/workspace/serial-output/"$GCLOUD_INSTANCE"-serial-output.logs
         when: always
@@ -814,28 +818,28 @@ jobs:
         path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
-        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-integration-test-report.xml"
+        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-integration-test-report.xml"
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/collector.logs
-        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-collector.logs"
+        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-collector.logs"
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/grpc-server.logs
-        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-grpc-server.logs"
+        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-grpc-server.logs"
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/perf.json
-        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-perf.json"
+        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-perf.json"
     - store_artifacts:
         path: ~/workspace/serial-output
 
     - persist_to_workspace:
         root: ~/workspace
         paths:
-        - "<< parameters.collection_method >>-<< parameters.vm_type >>-perf.json"
+        - "<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-perf.json"
 
     - run:
         name: "Destroy VM"
         command: |
-          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-${CIRCLE_BUILD_NUM}"
+          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-${CIRCLE_BUILD_NUM}"
           gcloud compute instances delete $GCLOUD_INSTANCE
         when: always
 
@@ -850,12 +854,12 @@ jobs:
         name: "Gather Data"
         command: |
           echo "ls 1"
-          for i in "${WORKSPACE_ROOT}"/*.json; do
+          for i in "${WORKSPACE_ROOT}"/*perf.json; do
             echo "Performance data file: $i"
             cat $i >> ~/workspace/all-perf.json
           done
           ## TODO put into script
-          cat all-perf.json | jq '. | select(.Metrics.hackbench_avg_time != null) | {kernel: .VmType, collection_method: .CollectionMethod, (.TestName): .Metrics.hackbench_avg_time } ' | jq -rs  ' group_by(.kernel) | .[] | group_by(.collection_method) | .[] | add | [.kernel, .collection_method, .baseline_benchmark, .collector_benchmark ] | @csv' > ~/workspace/benchmark.csv
+          cat all-perf.json | jq '. | select(.Metrics.hackbench_avg_time != null) | {kernel: .VmConfig, collection_method: .CollectionMethod, (.TestName): .Metrics.hackbench_avg_time } ' | jq -rs  ' group_by(.kernel) | .[] | group_by(.collection_method) | .[] | add | [.kernel, .collection_method, .baseline_benchmark, .collector_benchmark ] | @csv' > ~/workspace/benchmark.csv
           cat ~/workspace/benchmark.csv | sort | awk -v FS="," 'BEGIN{print "|Kernel|Method|Without Collector Time (secs)|With Collector Time (secs)|";print "|---|---|---|---|"}{printf "|%s|%s|%s|%s|%s",$1,$2,$3,$4,ORS}' > ~/workspace/benchmark.md
 
     - run:
@@ -940,10 +944,46 @@ workflows:
         filters:
           tags:
             only: /.*/
+
     - integration-test:
-        name: test-ebpf-cos
+        name: test-ebpf-coreos-stable
+        collection_method: ebpf
+        vm_type: coreos
+        image_family: coreos-stable
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-module-coreos-stable
+        collection_method: module
+        vm_type: coreos
+        image_family: coreos-stable
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks`
+    #- integration-test:
+    #    name: test-ebpf-cos-stable
+    #    collection_method: ebpf
+    #    vm_type: cos
+    #    image_family: cos-stable
+    #    requires:
+    #    - images
+    #    - integration-test-local
+    #    filters:
+    #      tags:
+    #        only: /.*/
+    - integration-test:
+        name: test-ebpf-cos-69-lts
         collection_method: ebpf
         vm_type: cos
+        image_family: cos-69-lts
         requires:
         - images
         - integration-test-local
@@ -951,19 +991,67 @@ workflows:
           tags:
             only: /.*/
     - integration-test:
-        name: test-ebpf-ubuntu
+        name: test-ebpf-cos-73-lts
         collection_method: ebpf
-        vm_type: ubuntu
+        vm_type: cos
+        image_family: cos-73-lts
         requires:
         - images
         - integration-test-local
         filters:
           tags:
             only: /.*/
+    ## TODO(rc) enable rhel7, after fixing kernel objects are building and removed from blacklist
+    #- integration-test:
+    #    name: test-ebpf-rhel-7
+    #    collection_method: ebpf 
+    #    vm_type: rhel
+    #    image_family: rhel-7
+    #    requires:
+    #    - images
+    #    - integration-test-local
+    #    filters:
+    #      tags:
+    #        only: /.*/
+    #- integration-test:
+    #    name: test-module-rhel-7
+    #    collection_method: module
+    #    vm_type: rhel
+    #    image_family: rhel-7
+    #    requires:
+    #    - images
+    #    - integration-test-local
+    #    filters:
+    #      tags:
+    #        only: /.*/
+    ## TODO(rc) enable rhel8 after kernels are supported in kernel-crawler
+    #- integration-test:
+    #    name: test-ebpf-rhel-8
+    #    collection_method: ebpf 
+    #    vm_type: rhel
+    #    image_family: rhel-8
+    #    requires:
+    #    - images
+    #    - integration-test-local
+    #    filters:
+    #      tags:
+    #        only: /.*/
+    #- integration-test:
+    #    name: test-module-rhel-8
+    #    collection_method: module
+    #    vm_type: rhel
+    #    image_family: rhel-8
+    #    requires:
+    #    - images
+    #    - integration-test-local
+    #    filters:
+    #      tags:
+    #        only: /.*/
     - integration-test:
-        name: test-ebpf-coreos
+        name: test-ebpf-ubuntu-1804-lts
         collection_method: ebpf
-        vm_type: coreos
+        vm_type: ubuntu-os
+        image_family: ubuntu-1804-lts
         requires:
         - images
         - integration-test-local
@@ -971,54 +1059,55 @@ workflows:
           tags:
             only: /.*/
     - integration-test:
-        name: test-module-ubuntu
+        name: test-module-ubuntu-1804-lts
         collection_method: module
-        vm_type: ubuntu
+        vm_type: ubuntu-os
+        image_family: ubuntu-1804-lts
         requires:
         - images
         - integration-test-local
         filters:
           tags:
             only: /.*/
+    ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks`
+    #- integration-test:
+    #    name: test-ebpf-ubuntu-1904
+    #    collection_method: ebpf
+    #    vm_type: ubuntu-os
+    #    image_family: ubuntu-1904
+    #    requires:
+    #    - images
+    #    - integration-test-local
+    #    filters:
+    #      tags:
+    #        only: /.*/
     - integration-test:
-        name: test-module-rhel
+        name: test-module-ubuntu-1904
         collection_method: module
-        vm_type: rhel
+        vm_type: ubuntu-os
+        image_family: ubuntu-1904
         requires:
         - images
         - integration-test-local
         filters:
           tags:
             only: /.*/
-    - integration-test:
-        name: test-ebpf-rhel
-        collection_method: ebpf 
-        vm_type: rhel
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
-    - integration-test:
-        name: test-module-coreos
-        collection_method: module
-        vm_type: coreos
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
+
     - integration-test-data:
        requires:
-       - test-module-coreos
-       - test-module-rhel
-       - test-module-ubuntu
-       - test-ebpf-coreos
-       - test-ebpf-ubuntu
-       - test-ebpf-rhel
-       - test-ebpf-cos
+       - test-module-coreos-stable
+       - test-ebpf-coreos-stable
+       #- test-ebpf-cos-stable
+       - test-ebpf-cos-69-lts
+       - test-ebpf-cos-73-lts
+       #- test-module-rhel-7
+       #- test-ebpf-rhel-7
+       #- test-module-rhel-8
+       #- test-ebpf-rhel-8
+       - test-module-ubuntu-1804-lts
+       - test-ebpf-ubuntu-1804-lts
+       - test-module-ubuntu-1904
+       #- test-ebpf-ubuntu-1904
        filters:
          tags:
            only: /.*/ 
