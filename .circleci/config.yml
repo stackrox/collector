@@ -945,7 +945,6 @@ workflows:
           tags:
             only: /.*/
 
-    # Core OS
     - integration-test:
         name: test-ebpf-coreos-stable
         collection_method: ebpf
@@ -968,8 +967,6 @@ workflows:
         filters:
           tags:
             only: /.*/
-
-    # Container-optimized OS (COS)
     ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks`
     #- integration-test:
     #    name: test-ebpf-cos-stable
@@ -1004,9 +1001,7 @@ workflows:
         filters:
           tags:
             only: /.*/
-
-    ## Red Hat
-    ## TODO(rc) enable rhel8 after kernels are enabled
+    ## TODO(rc) enable rhel7, after fixing kernel objects are building and removed from blacklist
     #- integration-test:
     #    name: test-ebpf-rhel-7
     #    collection_method: ebpf 
@@ -1029,7 +1024,7 @@ workflows:
     #    filters:
     #      tags:
     #        only: /.*/
-    ## TODO(rc) enable rhel7 kernel objects are building and removed from blacklist
+    ## TODO(rc) enable rhel8 after kernels are supported in kernel-crawler
     #- integration-test:
     #    name: test-ebpf-rhel-8
     #    collection_method: ebpf 
@@ -1052,8 +1047,6 @@ workflows:
     #    filters:
     #      tags:
     #        only: /.*/
-
-    # Ubuntu
     - integration-test:
         name: test-ebpf-ubuntu-1804-lts
         collection_method: ebpf
