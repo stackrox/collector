@@ -74,3 +74,27 @@ index 70a05e1..405ce66 100644
  }
  
  void task_cputime(struct task_struct *t, cputime_t *utime, cputime_t *stime)
+diff --git a/ppm_version.h b/ppm_version.h
+new file mode 100644
+index 0000000..4c7c400
+--- /dev/null
++++ b/ppm_version.h
+@@ -0,0 +1,18 @@
++#include <linux/version.h>
++
++/**
++ * for RHEL kernels, export the release code (which is equal to e.g.
++ * RHEL_RELEASE_CODE(8, 1)) under our own name.
++ * For other kernels, just use zeros.
++ *
++ * We need macros that are always defined to use in preprocessor directives
++ * to express the required kernel version in a single expression, without
++ * a multiline #ifdef soup.
++ */
++#ifdef RHEL_RELEASE_CODE
++#define PPM_RHEL_RELEASE_CODE RHEL_RELEASE_CODE
++#define PPM_RHEL_RELEASE_VERSION(x,y) RHEL_RELEASE_VERSION(x,y)
++#else
++#define PPM_RHEL_RELEASE_CODE 0
++#define PPM_RHEL_RELEASE_VERSION(x,y) 0
++#endif
