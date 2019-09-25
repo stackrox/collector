@@ -48,6 +48,8 @@ RUN apt-get update \
         protobuf-compiler \
         libgrpc++-dev \
         protobuf-compiler-grpc \
+ && dpkg -r --force-all e2fslibs e2fsprogs apt debconf dpkg \
+ && rm -rf /var/lib/apt \
         ;
 
 
