@@ -959,12 +959,6 @@ jobs:
           docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
           docker login -u "$STACKROX_IO_PUSH_USERNAME" -p "$STACKROX_IO_PUSH_PASSWORD" collector.stackrox.io
 
-          if [[ ! $CIRCLE_BRANCH = master ]]; then
-            echo "Only run this job on master"
-            # XXX uncomment here before commit to master
-            #exit 1
-          fi
-
           cd "$SOURCE_ROOT/reload"
           while IFS='' read -r tag || [[ -n "$tag" ]]; do
             [[ -n "$tag" ]] || continue
@@ -974,10 +968,9 @@ jobs:
 
             # Check if there collector_image_latest exists and needs reload
             if docker pull "collector.stackrox.io/${collector_image_latest}" ; then
-              if ./missing-kernel-objects.sh "collector.stackrox.io/${collector_image_latest}" > "/tmp/latest-missing-${tag}.txt" ; then
-                latest_missing_count="$(cat "/tmp/latest-missing-${tag}.txt" | wc -l | awk '{print $1}')"
-                if [[ "${latest_missing_count}" -eq 0 ]] ; then
-                  echo "Skipping rebuild: image ${collector_image_latest} contains all availible kernel objects"
+              if ./missing-kernel-objects.sh "collector.stackrox.io/${collector_image_latest}" "${COLLECTOR_MODULES_BUCKET}" > "/tmp/latest-missing-${tag}.txt" ; then
+                if [[ ! -s "/tmp/latest-missing-${tag}.txt" ]]; then
+                  echo "Skipping rebuild: image ${collector_image_latest} contains all available kernel objects"
                   continue
                 fi
               fi
@@ -986,7 +979,7 @@ jobs:
             # Gather missing kernel objects for rebuild
             mkdir ./reload-kernel-modules
             docker pull "collector.stackrox.io/${collector_image}"
-            for i in $(./missing-kernel-objects.sh "collector.stackrox.io/${collector_image}"); do
+            for i in $(./missing-kernel-objects.sh "collector.stackrox.io/${collector_image}" "${COLLECTOR_MODULES_BUCKET}"); do
               cp "/tmp/released-kernel-object-cache/$i" "./reload-kernel-modules/$(basename $i)"
             done
 
@@ -994,14 +987,13 @@ jobs:
             docker build --build-arg collector_tag=${tag} -t "stackrox/${collector_image_ci_latest}" .
 
             # Sanity check reloaded image
-            ./missing-kernel-objects.sh "stackrox/${collector_image_ci_latest}" > "/tmp/reloaded-latest-missing-${tag}.txt"
-            reloaded_latest_missing_count="$(cat "/tmp/reloaded-latest-missing-${tag}.txt" | wc -l | awk '{print $1}')"
-            if [[ "${reloaded_latest_missing_count}" -eq 0 ]] ; then
-              echo "Reloading ${collector_image} was successful."
-            else
-              echo "Reloading ${collector_image} failed, missing ${reloaded_latest_missing_count} images:"
+            ./missing-kernel-objects.sh "stackrox/${collector_image_ci_latest}" "${COLLECTOR_MODULES_BUCKET}" > "/tmp/reloaded-latest-missing-${tag}.txt"
+            if [[ -s "/tmp/reloaded-latest-missing-${tag}.txt" ]]; then
+              echo "Reloading ${collector_image} failed"
               cat "/tmp/reloaded-latest-missing-${tag}.txt"
-              exit 1
+              continue
+            else
+              echo "Reloading ${collector_image} was successful."
             fi
 
             # Tag and push new image with latest

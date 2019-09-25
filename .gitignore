@@ -14,3 +14,13 @@ integration-tests/deps
 integration-tests/vendor/
 integration-tests/collector.logs
 integration-tests/grpc_server.logs
+sysdig/build-output
+kernel-modules/kobuild-tmp
+
+# Mac OS hidden file
+.DS_Store
+
+# Vim swap files
+*.swp
+
+
