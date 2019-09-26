@@ -476,39 +476,6 @@ jobs:
         root: ~/workspace
         paths:
           - ko-build/build-output
-  grpc:
-    docker:
-    - image: ubuntu:trusty
-    working_directory: /go/src/github.com/stackrox/collector
-
-    steps:
-    - run:
-        name: Install dependencies
-        command: |
-          apt-get update -y
-          apt-get install -y build-essential ca-certificates git sudo
-
-    - checkout
-    - restore_cache:
-        key: grpc-cpp-plugin-v3-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
-
-    - run:
-        name: Build grpc plugin
-        command: |
-          if [[ ! -x /usr/local/bin/grpc_cpp_plugin ]]; then
-            make -C collector install-grpc
-          fi
-
-    - save_cache:
-        key: grpc-cpp-plugin-v3-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
-        paths:
-          - /usr/local/bin/grpc_cpp_plugin
-
-    - persist_to_workspace:
-        root: /usr/local
-        paths:
-          - bin/grpc_cpp_plugin
-
   libsinsp:
     machine: true
     working_directory: ~/workspace
@@ -564,8 +531,6 @@ jobs:
           file   collector/container/libs/libsinsp-wrapper.so
           echo '>>> Docker images:'
           docker images | grep collector
-          echo '>>> gRPC plugin:'
-          which grpc_cpp_plugin
 
     - run:
         name: Generate Protobuf Definitions
@@ -902,12 +867,6 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - grpc:
-        requires:
-        - initjob
-        filters:
-          tags:
-            only: /.*/
     - libsinsp:
         requires:
         - initjob
@@ -917,7 +876,6 @@ workflows:
     - collector:
         requires:
         - builder
-        - grpc
         - libsinsp
         filters:
           tags:
