@@ -134,7 +134,7 @@ function rhel76_host() {
             # Extract build id: 3.10.0-957.10.1.el7.x86_64 -> 957
             local kernel_build_id
             kernel_build_id=$(echo "$KERNEL_VERSION" | cut -d. -f3 | cut -d- -f2)
-            if [[ ${kernel_build_id} -ge 957 ]]; then
+            if [[ ${kernel_build_id} -ge 957 ]] && [[ ${kernel_build_id} -lt 1062 ]] ; then
                 return 0
             fi
         fi

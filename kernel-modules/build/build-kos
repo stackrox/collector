@@ -69,8 +69,8 @@ build_ko() (
         return 1
     }
 
-    # Check if this kernel is from RHEL 7.6 with backported eBPF support
-    local rhel76_kernel=false
+    # Check if this kernel is from RHEL 7.6+ with backported eBPF support
+    local rhel7_kernel_with_ebpf=false
     if (( kernel_major == 3 && kernel_minor >= 10 )); then
         # RHEL 7.6 detection: distro=="redhat" and kernel build id at least 957
         # Assumption is that RHEL 7.6 will continue to use kernel 3.10
@@ -78,17 +78,18 @@ build_ko() (
             # Extract build id: 3.10.0-957.10.1.el7.x86_64 -> 957
             local rhel_build_id
             rhel_build_id="$(echo "$kernel_uname" | awk -F'[-.]' '{ print $4 }')"
-            if (( rhel_build_id >= 957 )); then
+            # disable ebpf builds on kernels >= 1062 until ROX-3377 is resolved
+            if (( rhel_build_id >= 957 && rhel_build_id < 1062 )); then
                 echo "Kernel ${kernel_uname} has backported eBPF support"
-                rhel76_kernel=true
+                rhel7_kernel_with_ebpf=true
             fi
         fi
     fi
 
     # Check if this module version supports RHEL 7.6 with backported eBPF support
-    if [[ "$rhel76_kernel" == true ]]; then
+    if [[ "$rhel7_kernel_with_ebpf" == true ]]; then
         if ! grep -qRIs "SUPPORTS_RHEL76_EBPF" "${module_src_dir}/bpf/quirks.h"; then
-            echo "Module version ${module_version} does not support eBPF on RHEL 7.6"
+            echo "Module version ${module_version} does not support eBPF on RHEL 7"
             return 0
         fi
 
