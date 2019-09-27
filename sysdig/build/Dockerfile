@@ -1,5 +1,7 @@
 FROM debian:stretch-slim
 
+RUN printf "deb http://httpredir.debian.org/debian stretch-backports main non-free\ndeb-src http://httpredir.debian.org/debian stretch-backports main non-free" > /etc/apt/sources.list.d/backports.list
+
 # Install our dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -20,6 +22,15 @@ RUN apt-get update \
         curl \
         libtbb-dev \
         libelf-dev \
+        pkg-config \
+        ;
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends -t stretch-backports \
+        libc-ares-dev \
+        libprotobuf-dev \
+        protobuf-compiler \
+        libgrpc++-dev \
+        protobuf-compiler-grpc \
         ;
 
 COPY build.sh /build.sh

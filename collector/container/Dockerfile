@@ -21,6 +21,8 @@ ENV SYSDIG_HOST_ROOT=/host
 # HTTP API port (8080)
 EXPOSE 8080 9090
 
+RUN printf "deb http://httpredir.debian.org/debian stretch-backports main non-free\ndeb-src http://httpredir.debian.org/debian stretch-backports main non-free" > /etc/apt/sources.list.d/backports.list
+
 RUN apt-get update \
  && apt-get upgrade -y \
  && apt-get install -y --no-install-recommends \
@@ -37,9 +39,19 @@ RUN apt-get update \
         libtbb2 \
         libelf1 \
         libjsoncpp1 \
+ ;
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends -t stretch-backports \
+        libc-ares-dev \
+        libprotobuf-dev \
+        protobuf-compiler \
+        libgrpc++-dev \
+        protobuf-compiler-grpc \
  && dpkg -r --force-all e2fslibs e2fsprogs apt debconf dpkg \
  && rm -rf /var/lib/apt \
- ;
+        ;
+
 
 COPY libs/libsinsp-wrapper.so \
      /usr/local/lib/

@@ -38,6 +38,7 @@ target_link_libraries(collector_lib libuuid.a)
 target_link_libraries(collector_lib b64)
 target_link_libraries(collector_lib elf)
 target_link_libraries(collector_lib jsoncpp)
+target_link_libraries(collector_lib cares)
 
 add_executable(collector collector.cpp)
 target_link_libraries(collector collector_lib)
