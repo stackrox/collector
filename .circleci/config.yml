@@ -912,7 +912,7 @@ workflows:
         filters:
           tags:
             only: /.*/
-
+    # TODO(rc) Enabled but bootstrap.sh forces fallback to kernel-module (ROX-2583)
     - integration-test:
         name: test-ebpf-coreos-stable
         collection_method: ebpf
@@ -935,7 +935,7 @@ workflows:
         filters:
           tags:
             only: /.*/
-    ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks`
+    ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks` (ROX-3179)
     #- integration-test:
     #    name: test-ebpf-cos-stable
     #    collection_method: ebpf
@@ -969,18 +969,18 @@ workflows:
         filters:
           tags:
             only: /.*/
-    ## TODO(rc) enable ebpf rhel7 after fixing error on bpf map create
-    #- integration-test:
-    #    name: test-ebpf-rhel-7
-    #    collection_method: ebpf 
-    #    vm_type: rhel
-    #    image_family: rhel-7
-    #    requires:
-    #    - images
-    #    - integration-test-local
-    #    filters:
-    #      tags:
-    #        only: /.*/
+    - integration-test:
+        name: test-ebpf-rhel-7
+        collection_method: ebpf 
+        vm_type: rhel
+        image_family: rhel-7
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    # TODO(rc) Enabled but bootstrap.sh forces fallback to kernel-module (ROX-3377)
     - integration-test:
         name: test-module-rhel-7
         collection_method: module
@@ -1069,7 +1069,7 @@ workflows:
        - test-ebpf-cos-69-lts
        - test-ebpf-cos-73-lts
        - test-module-rhel-7
-       #- test-ebpf-rhel-7
+       - test-ebpf-rhel-7
        #- test-module-rhel-8
        #- test-ebpf-rhel-8
        - test-module-ubuntu-1804-lts
