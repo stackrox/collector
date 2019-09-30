@@ -43,11 +43,9 @@ RUN apt-get update \
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends -t stretch-backports \
-        libc-ares-dev \
-        libprotobuf-dev \
-        protobuf-compiler \
-        libgrpc++-dev \
-        protobuf-compiler-grpc \
+        libc-ares2 \
+        libprotobuf17 \
+        libgrpc++1 \
  && dpkg -r --force-all e2fslibs e2fsprogs apt debconf dpkg \
  && rm -rf /var/lib/apt \
         ;
