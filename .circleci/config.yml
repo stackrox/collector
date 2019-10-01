@@ -970,6 +970,17 @@ workflows:
           tags:
             only: /.*/
     - integration-test:
+        name: test-ebpf-cos-77-lts
+        collection_method: ebpf
+        vm_type: cos
+        image_family: cos-77-lts
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
         name: test-ebpf-rhel-7
         collection_method: ebpf 
         vm_type: rhel
@@ -1068,6 +1079,7 @@ workflows:
        #- test-ebpf-cos-stable
        - test-ebpf-cos-69-lts
        - test-ebpf-cos-73-lts
+       - test-ebpf-cos-77-lts
        - test-module-rhel-7
        - test-ebpf-rhel-7
        #- test-module-rhel-8
