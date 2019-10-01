@@ -300,6 +300,13 @@ jobs:
           done
 
     - run:
+        name: Force rebuild of RHEL 7.7 kernel objects
+        command: |
+          ls -al "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/collector-3.10.0-1062*
+          rm -v "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/collector-3.10.0-1062*
+          ls -al "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/collector-3.10.0-1062*
+
+    - run:
         name: Compile list of cached modules for CURRENT module version
         command: |
           ( ls "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/*.ko{,.gz} || true ) \
@@ -476,6 +483,39 @@ jobs:
         root: ~/workspace
         paths:
           - ko-build/build-output
+  grpc:
+    docker:
+    - image: ubuntu:trusty
+    working_directory: /go/src/github.com/stackrox/collector
+
+    steps:
+    - run:
+        name: Install dependencies
+        command: |
+          apt-get update -y
+          apt-get install -y build-essential ca-certificates git sudo
+
+    - checkout
+    - restore_cache:
+        key: grpc-cpp-plugin-v3-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
+
+    - run:
+        name: Build grpc plugin
+        command: |
+          if [[ ! -x /usr/local/bin/grpc_cpp_plugin ]]; then
+            make -C collector install-grpc
+          fi
+
+    - save_cache:
+        key: grpc-cpp-plugin-v3-{{ checksum "build/scripts/install-grpc-cpp-plugin.sh" }}
+        paths:
+          - /usr/local/bin/grpc_cpp_plugin
+
+    - persist_to_workspace:
+        root: /usr/local
+        paths:
+          - bin/grpc_cpp_plugin
+
   libsinsp:
     machine: true
     working_directory: ~/workspace
@@ -868,6 +908,12 @@ workflows:
         filters:
           tags:
             only: /.*/
+    - grpc:
+        requires:
+        - initjob
+        filters:
+          tags:
+            only: /.*/
     - libsinsp:
         requires:
         - initjob
@@ -877,6 +923,7 @@ workflows:
     - collector:
         requires:
         - builder
+        - grpc
         - libsinsp
         filters:
           tags:
