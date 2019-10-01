@@ -79,6 +79,13 @@ class StringView {
   const_iterator begin() const { return p_; }
   const_iterator end() const { return p_ + n_; }
 
+  template<std::size_t N>
+  bool operator==(const char (&str)[N]) const {
+    if (n_ != N) return false;
+    if (N == 0) return true;
+    return std::memcmp(p_, &str[0], N) == 0;
+  }
+
  private:
   const char* p_;
   size_type n_;
