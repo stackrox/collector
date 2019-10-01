@@ -50,7 +50,7 @@ class StringView {
   StringView(const char* p, size_type n) : p_(p), n_(n) {}
   StringView(const StringView& other) : p_(other.p_), n_(other.n_) {}
   template<std::size_t N>
-  StringView(const char (&buf)[N]) : p_(&buf[0]), n_(N) {}
+  StringView(const char (&buf)[N]) : p_(&buf[0]), n_(N - 1) {}
 
   operator bool() const { return n_ > 0; }
   std::string str() const { return std::string(p_, n_); }
@@ -75,7 +75,8 @@ class StringView {
 
   void remove_prefix(size_type n) {
     if (n > n_) n = n_;
-    p_ += n_;
+    p_ += n;
+    n_ -= n;
   }
 
   void remove_suffix(size_type n) {
@@ -88,9 +89,9 @@ class StringView {
 
   template<std::size_t N>
   bool operator==(const char (&str)[N]) const {
-    if (n_ != N) return false;
-    if (N == 0) return true;
-    return std::memcmp(p_, &str[0], N) == 0;
+    if (n_ != N - 1) return false;
+    if (N - 1 == 0) return true;
+    return std::memcmp(p_, &str[0], N - 1) == 0;
   }
 
  private:

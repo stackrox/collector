@@ -119,7 +119,7 @@ bool GetSocketINodes(int dirfd, UnorderedSet<ino_t>* sock_inodes) {
 
 // IsContainerID returns whether the given string view represents a container ID.
 bool IsContainerID(StringView str) {
-  if (str.size() != 32) return false;
+  if (str.size() != 64) return false;
   for (auto c : str) {
     if (!std::isdigit(c) && (c < 'a' || c > 'f')) return false;
   }
@@ -438,8 +438,8 @@ StringView ExtractContainerID(StringView cgroup_line) {
     cgroup_path.remove_suffix(StrLen(".scope"));
   }
 
-  auto container_id_part = cgroup_path.substr(cgroup_path.size() - 33);
-  if (container_id_part.size() != 33) return {};
+  auto container_id_part = cgroup_path.substr(cgroup_path.size() - 65);
+  if (container_id_part.size() != 65) return {};
   if (container_id_part[0] != '/' && container_id_part[0] != '-') return {};
   container_id_part.remove_prefix(1);
 
