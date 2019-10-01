@@ -64,7 +64,7 @@ TEST(ConnScraperTest, TestExtractContainerID) {
 
   for (const auto &c : cases) {
     auto short_container_id = ExtractContainerID(c.input);
-    EXPECT_EQ(short_container_id, c.exepected_output);
+    EXPECT_EQ(short_container_id, c.expected_output);
   }
 }
 
