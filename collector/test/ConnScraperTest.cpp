@@ -30,10 +30,6 @@ namespace collector {
 
 namespace {
 
-using CT = ConnectionTracker;
-using ::testing::UnorderedElementsAre;
-using ::testing::IsEmpty;
-
 TEST(ConnScraperTest, TestExtractContainerID) {
   struct TestCase {
     StringView input, expected_output;

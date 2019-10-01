@@ -27,6 +27,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include <string>
 #include <vector>
 
+#include <cstring>
+
 #include "FileSystem.h"
 #include "Hash.h"
 #include "NetworkConnection.h"
@@ -44,8 +46,11 @@ class StringView {
   using const_pointer = const char*;
 
   StringView() : p_(nullptr), n_(0) {}
+  StringView(const char* p) : p_(p), n_(std::strlen(p)) {}
   StringView(const char* p, size_type n) : p_(p), n_(n) {}
   StringView(const StringView& other) : p_(other.p_), n_(other.n_) {}
+  template<std::size_t N>
+  StringView(const char (&buf)[N]) : p_(&buf[0]), n_(N) {}
 
   operator bool() const { return n_ > 0; }
   std::string str() const { return std::string(p_, n_); }
