@@ -25,7 +25,7 @@ You should have received a copy of the GNU General Public License along with thi
 #define COLLECTOR_CONNSCRAPER_H
 
 #include <string>
-#include <string_view>
+#include <experimental/string_view>
 #include <vector>
 
 #include "FileSystem.h"
@@ -34,8 +34,10 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
+using StringView = std::experimental::string_view;
+
 // ExtractContainerID tries to extract a container ID from a cgroup line. Exposed for testing.
-std::string_view ExtractContainerID(std::string_view cgroup_line);
+StringView ExtractContainerID(StringView cgroup_line);
 
 // ConnScraper is a class that allows scraping a `/proc`-like directory structure for active network connections.
 class ConnScraper {

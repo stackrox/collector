@@ -36,7 +36,7 @@ using ::testing::IsEmpty;
 
 TEST(ConnScraperTest, TestExtractContainerID) {
   struct TestCase {
-    std::string_view input, expected_output;
+    StringView input, expected_output;
   };
 
   TestCase cases[] = {

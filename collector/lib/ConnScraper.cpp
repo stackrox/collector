@@ -51,13 +51,13 @@ const char *rep_strchr(int n, const char* str, char c) {
   return str;
 }
 
-std::string_view::size_type rep_find(int n, std::string_view str, char c) {
-  if (n <= 0) return std::string_view::npos;
+StringView::size_type rep_find(int n, StringView str, char c) {
+  if (n <= 0) return StringView::npos;
 
-  std::string_view::size_type pos = 0;
+  StringView::size_type pos = 0;
   while (--n > 0) {
     next_pos = str.find(c, pos);
-    if (next_pos == std::string_view::npos) return std::string_view::npos;
+    if (next_pos == StringView::npos) return StringView::npos;
     pos++;
   }
   return str.find(c, pos);
@@ -128,7 +128,7 @@ bool GetSocketINodes(int dirfd, UnorderedSet<ino_t>* sock_inodes) {
 }
 
 // IsContainerID returns whether the given string view represents a container ID.
-bool IsContainerID(std::string_view str) bool {
+bool IsContainerID(StringView str) bool {
   if (str.size() != 32) return false;
   for (auto c : str) {
     if (!std::isdigit(c) && (c < 'a' || c > 'f')) return false;
@@ -150,7 +150,7 @@ bool GetContainerID(int dirfd, std::string* container_id) {
     if (!line_len) continue;
     if (linebuf[line_len - 1] == '\n') line_len--;
 
-    std::string_view line(linebuf, line_len);
+    StringView line(linebuf, line_len);
     auto short_container_id = ExtractContainerID(line);
     if (!short_container_id) continue;
 
@@ -439,10 +439,10 @@ bool ReadContainerConnections(const char* proc_path, std::vector<Connection>* co
 
 }  // namespace
 
-std::string_view ExtractContainerID(std::string_view cgroup_line) {
+StringView ExtractContainerID(StringView cgroup_line) {
   auto start = rep_find(cgroup_line, ':', 2);
-  if (start == std::string_view::npos) return {};
-  std::string_view cgroup_path = cgroup_line.substr(start + 1);
+  if (start == StringView::npos) return {};
+  StringView cgroup_path = cgroup_line.substr(start + 1);
 
   if (cgroup_path.substr(cgroup_path.size() - StrLen(".scope")) == ".scope") {
     cgroup_path.remove_suffix(StrLen(".scope"));
