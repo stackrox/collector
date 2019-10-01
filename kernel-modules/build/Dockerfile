@@ -18,6 +18,7 @@ RUN apt-get update \
       golang-go \
       pkg-config \
       gawk \
+      file \
  ;
 
 RUN sed s_unstable_jessie_g < /etc/apt/sources.list > /etc/apt/sources.list.d/jessie.list && \
