@@ -43,18 +43,18 @@ class StringView {
   using const_iterator = const char*;
   using const_pointer = const char*;
 
-  StringView() : p_(std::nullptr), n_(0) {}
+  StringView() : p_(nullptr), n_(0) {}
   StringView(const char* p, size_type n) : p_(p), n_(n) {}
   StringView(const StringView& other) : p_(other.p_), n_(other.n_) {}
 
   operator bool() const { return n_ > 0; }
-  operator std::string() const { return std::string(p_, n_); }
+  std::string str() const { return std::string(p_, n_); }
 
   size_type size() const { return n_; }
 
   size_type find(char c, size_type pos = 0) const {
     if (pos >= n_) return npos;
-    const char* occ = std::memchr(p_ + pos, n_ - pos);
+    const char* occ = std::memchr(p_ + pos, c, n_ - pos);
     return occ ? occ - p_ : npos;
   }
 

@@ -135,7 +135,7 @@ bool GetContainerID(int dirfd, std::string* container_id) {
   thread_local char* linebuf;
   thread_local size_t linebuf_cap;
 
-  size_t line_len;
+  std::ssize_t line_len;
   while ((line_len = getline(&linebuf, &linebuf_cap, cgroups_file.get())) != -1) {
     if (!line_len) continue;
     if (linebuf[line_len - 1] == '\n') line_len--;
@@ -144,7 +144,7 @@ bool GetContainerID(int dirfd, std::string* container_id) {
     auto short_container_id = ExtractContainerID(line);
     if (!short_container_id) continue;
 
-    *container_id = short_container_id;
+    *container_id = short_container_id.str();
     return true;
   }
 
@@ -438,7 +438,7 @@ StringView ExtractContainerID(StringView cgroup_line) {
     cgroup_path.remove_suffix(StrLen(".scope"));
   }
 
-  container_id_part = cgroup_path.substr(cgroup_path.size() - 33);
+  auto container_id_part = cgroup_path.substr(cgroup_path.size() - 33);
   if (container_id_part.size() != 33) return {};
   if (container_id_part[0] != '/' && container_id_part[0] != '-') return {};
   container_id_part.remove_prefix(1);
