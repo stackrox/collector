@@ -304,7 +304,6 @@ jobs:
         command: |
           ls -al "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/collector-3.10.0-1062*
           rm -v "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/collector-3.10.0-1062*
-          ls -al "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/collector-3.10.0-1062*
 
     - run:
         name: Compile list of cached modules for CURRENT module version
