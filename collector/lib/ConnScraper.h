@@ -34,6 +34,24 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
+class StringView {
+ public:
+  using size_type = std::string::size_type;
+  static constexpr size_type npos = std::string::npos;
+
+  StringView(const char* p, size_type n) : p_(p), n_(n) {}
+  StringView(const StringView& other) : p_(other.p_), n_(other.n_) {}
+
+  operator bool() const { return n_ > 0; }
+  operator std::string() const { return std::string(p_, n_); }
+
+  size_type size() const { return n_; }
+
+  size_type find(char c, size_type pos = 0) const {
+    if (pos >= n_) return npos;
+    const char* occ = std::memchr(p_ + pos, n_ - pos);
+  }
+};
 using StringView = std::experimental::string_view;
 
 // ExtractContainerID tries to extract a container ID from a cgroup line. Exposed for testing.
