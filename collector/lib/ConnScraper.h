@@ -38,6 +38,11 @@ class StringView {
   using size_type = std::string::size_type;
   static constexpr size_type npos = std::string::npos;
 
+  using value_type = char;
+  using const_reference = const char&;
+  using const_iterator = const char*;
+  using const_pointer = const char*;
+
   StringView() : p_(std::nullptr), n_(0) {}
   StringView(const char* p, size_type n) : p_(p), n_(n) {}
   StringView(const StringView& other) : p_(other.p_), n_(other.n_) {}
@@ -70,6 +75,9 @@ class StringView {
     if (n > n_) n = n_;
     n_ -= n;
   }
+
+  const_iterator begin() const { return p_; }
+  const_iterator end() const { return p_ + n_; }
 };
 
 // ExtractContainerID tries to extract a container ID from a cgroup line. Exposed for testing.
