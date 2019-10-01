@@ -135,7 +135,7 @@ bool GetContainerID(int dirfd, std::string* container_id) {
   thread_local char* linebuf;
   thread_local size_t linebuf_cap;
 
-  std::ssize_t line_len;
+  ssize_t line_len;
   while ((line_len = getline(&linebuf, &linebuf_cap, cgroups_file.get())) != -1) {
     if (!line_len) continue;
     if (linebuf[line_len - 1] == '\n') line_len--;

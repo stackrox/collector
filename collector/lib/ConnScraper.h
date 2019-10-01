@@ -52,9 +52,11 @@ class StringView {
 
   size_type size() const { return n_; }
 
+  char operator[](int idx) const { return p_[idx]; }
+
   size_type find(char c, size_type pos = 0) const {
     if (pos >= n_) return npos;
-    const char* occ = std::memchr(p_ + pos, c, n_ - pos);
+    const char* occ = static_cast<const char*>(std::memchr(p_ + pos, c, n_ - pos));
     return occ ? occ - p_ : npos;
   }
 
