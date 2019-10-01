@@ -40,15 +40,17 @@ namespace {
 
 // String parsing helper functions
 
-// rep_strchr applies strchr n times, always advancing past the found character in each subsequent application.
-const char *rep_strchr(int n, const char* str, char c) {
-  if (!str) return nullptr;
+// rep_find applies find n times, always advancing past the found character in each subsequent application.
+StringView::size_type rep_find(int n, StringView str, char c) {
+  if (n <= 0) return StringView::npos;
 
-  str -= 1;
-  while (n-- > 0 && str) {
-    str = std::strchr(str + 1, c);
+  StringView::size_type pos = 0;
+  while (--n > 0) {
+    pos = str.find(c, pos);
+    if (pos == StringView::npos) return StringView::npos;
+    pos++;
   }
-  return str;
+  return str.find(c, pos);
 }
 
 // nextfield advances to the next field in a space-delimited string.
@@ -115,50 +117,35 @@ bool GetSocketINodes(int dirfd, UnorderedSet<ino_t>* sock_inodes) {
   return true;
 }
 
+// IsContainerID returns whether the given string view represents a container ID.
+bool IsContainerID(StringView str) {
+  if (str.size() != 64) return false;
+  for (auto c : str) {
+    if (!std::isdigit(c) && (c < 'a' || c > 'f')) return false;
+  }
+  return true;
+}
+
 // GetContainerID retrieves the container ID of the process represented by dirfd. The container ID is extracted from
 // the cgroup.
 bool GetContainerID(int dirfd, std::string* container_id) {
   FileHandle cgroups_file(FDHandle(openat(dirfd, "cgroup", O_RDONLY)), "r");
   if (!cgroups_file.valid()) return false;
 
-  char line[512];
-  while (fgets(line, sizeof(line), cgroups_file.get())) {
-    // Format is <id>:<name>:<cgroup-id>
-    const char* p = rep_strchr(2, line, ':');
-    if (!p) continue;
+  thread_local char* linebuf;
+  thread_local size_t linebuf_cap;
 
-    ++p;
-    if (std::strncmp(p, "/docker/", StrLen("/docker/")) == 0) {
-      p += StrLen("/docker/");
-      if (line + sizeof(line) - p < 32) continue;
-      *container_id = std::string(p, 12);  // *short* container ID to match sysdig
-      return true;
-    }
-    if (std::strncmp(p, "/kubepods/", StrLen("/kubepods/")) == 0) {
-      // format is `/kubepods/<service-class>/<pod-id>/<docker-container-id>`
-      p = rep_strchr(4, p, '/');
-      if (!p) continue;
-      ++p;
-      if (line + sizeof(line) - p < 32) continue;
-      *container_id = std::string(p, 12);  // *short* container ID to match sysdig
-      return true;
-    }
-    if (std::strncmp(p, "/kubepods.slice/", StrLen("/kubepods.slice/")) == 0) {
-      // format is `/kubepods.slice/kubepods-<qos>.slice/kubepods-<qos>-<pod-id>.slice/<container-runtime>-<container id>.scope`
-      p = rep_strchr(4, p, '/');
-      if (!p) continue;
-      ++p;
-      if (std::strncmp(p, "docker-", StrLen("docker-")) == 0) {
-        p += StrLen("docker-");
-      } else if (std::strncmp(p, "crio-", StrLen("crio-")) == 0) {
-        p += StrLen("crio-");
-      } else {
-        continue;
-      }
-      if (line + sizeof(line) - p < 32) continue;
-      *container_id = std::string(p, 12);
-      return true;
-    }
+  ssize_t line_len;
+  while ((line_len = getline(&linebuf, &linebuf_cap, cgroups_file.get())) != -1) {
+    if (!line_len) continue;
+    if (linebuf[line_len - 1] == '\n') line_len--;
+
+    StringView line(linebuf, line_len);
+    auto short_container_id = ExtractContainerID(line);
+    if (!short_container_id) continue;
+
+    *container_id = short_container_id.str();
+    return true;
   }
 
   return false;
@@ -441,6 +428,24 @@ bool ReadContainerConnections(const char* proc_path, std::vector<Connection>* co
 }
 
 }  // namespace
+
+StringView ExtractContainerID(StringView cgroup_line) {
+  auto start = rep_find(2, cgroup_line, ':');
+  if (start == StringView::npos) return {};
+  StringView cgroup_path = cgroup_line.substr(start + 1);
+
+  if (cgroup_path.substr(cgroup_path.size() - StrLen(".scope")) == ".scope") {
+    cgroup_path.remove_suffix(StrLen(".scope"));
+  }
+
+  auto container_id_part = cgroup_path.substr(cgroup_path.size() - 65);
+  if (container_id_part.size() != 65) return {};
+  if (container_id_part[0] != '/' && container_id_part[0] != '-') return {};
+  container_id_part.remove_prefix(1);
+
+  if (!IsContainerID(container_id_part)) return {};
+  return container_id_part.substr(0, 12);
+}
 
 bool ConnScraper::Scrape(std::vector<Connection>* connections) {
   return ReadContainerConnections(proc_path_.c_str(), connections);
