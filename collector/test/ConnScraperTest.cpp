@@ -21,34 +21,49 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef COLLECTOR_CONNSCRAPER_H
-#define COLLECTOR_CONNSCRAPER_H
+#include "ConnScraper.h"
 
-#include <string>
-#include <string_view>
-#include <vector>
-
-#include "FileSystem.h"
-#include "Hash.h"
-#include "NetworkConnection.h"
+#include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
 namespace collector {
 
-// ExtractContainerID tries to extract a container ID from a cgroup line. Exposed for testing.
-std::string_view ExtractContainerID(std::string_view cgroup_line);
+namespace {
 
-// ConnScraper is a class that allows scraping a `/proc`-like directory structure for active network connections.
-class ConnScraper {
- public:
-  ConnScraper(std::string proc_path) : proc_path_(std::move(proc_path)) {}
+using CT = ConnectionTracker;
+using ::testing::UnorderedElementsAre;
+using ::testing::IsEmpty;
 
-  // Scrape returns a snapshot of all active network connections in the given vector.
-  bool Scrape(std::vector<Connection>* connections);
+TEST(ConnScraperTest, TestExtractContainerID) {
+  struct TestCase {
+    std::string_view input, expected_output;
+  };
 
- private:
-  std::string proc_path_;
-};
+  TestCase cases[] = {
+      {
+          "11:freezer:/mesos/3b1cf944-1d97-40a6-ac73-b156ac2f2bfe/mesos/077d75a1-d7b6-4e55-8114-13f925fe4f49/kubepods/besteffort/pod8e18d5f1-1421-42b7-8151-fb1c3be4bd4d/e73c55f3e7f5b6a9cfc32a89bf13e44d348bcc4fa7b079f804d61fb1532ddbe5",
+          "e73c55f3e7f5",
+      },
+      {
+          "8:cpuacct,cpu:/mesos/3b1cf944-1d97-40a6-ac73-b156ac2f2bfe/kubepods/besteffort/pod8e18d5f1-1421-42b7-8151-fb1c3be4bd4d/e73c55f3e7f5b6a9cfc32a89bf13e44d348bcc4fa7b079f804d61fb1532ddbe5",
+          "e73c55f3e7f5",
+      },
+      {
+          "/docker/951e643e3c241b225b6284ef2b79a37c13fc64cbf65b5d46bda95fcb98fe63a4",
+          "951e643e3c24",
+      },
+      {
+          "12:pids:/kubepods/kubepods/besteffort/pod690705f9-df6e-11e9-8dc5-025000000001/c3bfd81b7da0be97190a74a7d459f4dfa18f57c88765cde2613af112020a1c4b",
+          "c3bfd81b7da0",
+      }
+  };
+
+  for (const auto &c : cases) {
+    auto short_container_id = ExtractContainerID(c.input);
+    EXPECT_EQ(short_container_id, c.exepected_output);
+  }
+}
+
+}  // namespace
 
 }  // namespace collector
-
-#endif //COLLECTOR_CONNSCRAPER_H
