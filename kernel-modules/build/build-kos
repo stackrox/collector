@@ -28,8 +28,8 @@ build_ko() (
     kernel_build_dir="${kernel_src_dir}/$(cat "${kernel_src_dir}/BUNDLE_BUILD_DIR")"
 
     cd "$module_src_dir"
-    KERNELDIR="$kernel_build_dir" make clean
-    KERNELDIR="$kernel_build_dir" make -j 6 all
+    KERNELDIR="$kernel_build_dir" make clean SHELL="$SHELL"
+    KERNELDIR="$kernel_build_dir" make -j 6 all SHELL="$SHELL"
 
     collector_ko=collector.ko
     strip -g "$collector_ko"
@@ -102,7 +102,7 @@ build_ko() (
     fi
 
     echo "Building collector eBPF probe for kernel version ${kernel_version} and module version ${module_version}."
-    KERNELDIR="$kernel_build_dir" make -j 6 -C bpf
+    KERNELDIR="$kernel_build_dir" make -j 6 -C bpf SHELL="$SHELL"
 
     collector_probe="bpf/probe.o"
     gzip -c "$collector_probe" >"/output/${module_version}/collector-ebpf-${kernel_version}.o.gz"
