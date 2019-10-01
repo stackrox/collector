@@ -78,6 +78,10 @@ class StringView {
 
   const_iterator begin() const { return p_; }
   const_iterator end() const { return p_ + n_; }
+
+ private:
+  const char* p_;
+  size_type n_;
 };
 
 // ExtractContainerID tries to extract a container ID from a cgroup line. Exposed for testing.

@@ -430,7 +430,7 @@ bool ReadContainerConnections(const char* proc_path, std::vector<Connection>* co
 }  // namespace
 
 StringView ExtractContainerID(StringView cgroup_line) {
-  auto start = rep_find(cgroup_line, ':', 2);
+  auto start = rep_find(2, cgroup_line, ':');
   if (start == StringView::npos) return {};
   StringView cgroup_path = cgroup_line.substr(start + 1);
 
