@@ -78,8 +78,7 @@ build_ko() (
             # Extract build id: 3.10.0-957.10.1.el7.x86_64 -> 957
             local rhel_build_id
             rhel_build_id="$(echo "$kernel_uname" | awk -F'[-.]' '{ print $4 }')"
-            # disable ebpf builds on kernels >= 1062 until ROX-3377 is resolved
-            if (( rhel_build_id >= 957 && rhel_build_id < 1062 )); then
+            if (( rhel_build_id >= 957 )); then
                 echo "Kernel ${kernel_uname} has backported eBPF support"
                 rhel7_kernel_with_ebpf=true
             fi

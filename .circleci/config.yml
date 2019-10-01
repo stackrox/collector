@@ -596,11 +596,11 @@ jobs:
             "/tmp/cache/kernel-modules/${MODULE_VERSION}/"
           echo "$MODULE_VERSION" >/tmp/cache/kernel-modules-version.txt
 
-    - save_cache:
-        name: Saving Kernel module build cache
-        key: kernel-module-cache-v8-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
-        paths:
-          - /tmp/cache/
+    #- save_cache:
+    #    name: Saving Kernel module build cache
+    #    key: kernel-module-cache-v8-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+    #    paths:
+    #      - /tmp/cache/
 
     - run:
         name: Adding Kernel module version file
@@ -660,8 +660,8 @@ jobs:
           docker push "${IMAGE_COLLECTOR}"
           echo "Pushing collector slim image"
           docker push "${IMAGE_COLLECTOR}-slim"
-          echo "Pushing kernel module image"
-          docker push "${IMAGE_KERNEL_MODULES}"
+          #echo "Pushing kernel module image"
+          #docker push "${IMAGE_KERNEL_MODULES}"
 
   upload-modules:
     docker:
@@ -681,9 +681,10 @@ jobs:
       - run:
           name: Uploading Kernel modules
           command: |
-            gsutil -m rsync -r \
-              "${WORKSPACE_ROOT}/ko-build/build-output/" \
-              "${COLLECTOR_MODULES_BUCKET}/"
+            echo "disable upload kernel modules"
+            #gsutil -m rsync -r \
+            #  "${WORKSPACE_ROOT}/ko-build/build-output/" \
+            #  "${COLLECTOR_MODULES_BUCKET}/"
 
       - run:
           name: Sanity check
