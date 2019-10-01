@@ -25,7 +25,6 @@ You should have received a copy of the GNU General Public License along with thi
 #define COLLECTOR_CONNSCRAPER_H
 
 #include <string>
-#include <experimental/string_view>
 #include <vector>
 
 #include "FileSystem.h"
@@ -39,6 +38,7 @@ class StringView {
   using size_type = std::string::size_type;
   static constexpr size_type npos = std::string::npos;
 
+  StringView() : p_(std::nullptr), n_(0) {}
   StringView(const char* p, size_type n) : p_(p), n_(n) {}
   StringView(const StringView& other) : p_(other.p_), n_(other.n_) {}
 
@@ -50,9 +50,27 @@ class StringView {
   size_type find(char c, size_type pos = 0) const {
     if (pos >= n_) return npos;
     const char* occ = std::memchr(p_ + pos, n_ - pos);
+    return occ ? occ - p_ : npos;
+  }
+
+  StringView substr(size_type pos = 0, size_type count = npos) const {
+    if (pos >= n_) return {};
+    const char* new_p = p_ + pos;
+    size_type new_n = n_ - pos;
+    if (new_n > count) new_n = count;
+    return StringView(new_p, new_n);
+  }
+
+  void remove_prefix(size_type n) {
+    if (n > n_) n = n_;
+    p_ += n_;
+  }
+
+  void remove_suffix(size_type n) {
+    if (n > n_) n = n_;
+    n_ -= n;
   }
 };
-using StringView = std::experimental::string_view;
 
 // ExtractContainerID tries to extract a container ID from a cgroup line. Exposed for testing.
 StringView ExtractContainerID(StringView cgroup_line);
