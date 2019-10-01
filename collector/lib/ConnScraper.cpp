@@ -40,24 +40,14 @@ namespace {
 
 // String parsing helper functions
 
-// rep_strchr applies strchr n times, always advancing past the found character in each subsequent application.
-const char *rep_strchr(int n, const char* str, char c) {
-  if (!str) return nullptr;
-
-  str -= 1;
-  while (n-- > 0 && str) {
-    str = std::strchr(str + 1, c);
-  }
-  return str;
-}
-
+// rep_find applies find n times, always advancing past the found character in each subsequent application.
 StringView::size_type rep_find(int n, StringView str, char c) {
   if (n <= 0) return StringView::npos;
 
   StringView::size_type pos = 0;
   while (--n > 0) {
-    next_pos = str.find(c, pos);
-    if (next_pos == StringView::npos) return StringView::npos;
+    pos = str.find(c, pos);
+    if (pos == StringView::npos) return StringView::npos;
     pos++;
   }
   return str.find(c, pos);
@@ -128,7 +118,7 @@ bool GetSocketINodes(int dirfd, UnorderedSet<ino_t>* sock_inodes) {
 }
 
 // IsContainerID returns whether the given string view represents a container ID.
-bool IsContainerID(StringView str) bool {
+bool IsContainerID(StringView str) {
   if (str.size() != 32) return false;
   for (auto c : str) {
     if (!std::isdigit(c) && (c < 'a' || c > 'f')) return false;
