@@ -4,7 +4,7 @@
 
 .PHONY: build_sysdig
 build_sysdig:
-	docker build --cache-from stackrox/collector-builder:sysdig -t stackrox/collector-builder:sysdig build/
+	docker build -t stackrox/collector-builder:sysdig build/
 
 all: build_sysdig
 	echo "Building for $(PLATFORM)..."

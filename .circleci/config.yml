@@ -484,9 +484,9 @@ jobs:
     - initcommand
     - docker-login
 
-    - run:
-        name: Restore sysdig builder cache image
-        command: docker pull stackrox/collector-builder:sysdig || true
+    #- run:
+    #    name: Restore sysdig builder cache image
+    #    command: docker pull stackrox/collector-builder:sysdig || true
 
     - run:
         name: Build libsinsp Wrapper
@@ -500,9 +500,9 @@ jobs:
           file   container/libs/libsinsp-wrapper.so
           docker images | grep collector
 
-    - run:
-        name: Save sysdig builder cache image
-        command: docker push stackrox/collector-builder:sysdig
+    #- run:
+    #    name: Save sysdig builder cache image
+    #    command: docker push stackrox/collector-builder:sysdig
 
     - persist_to_workspace:
         root: ~/workspace
