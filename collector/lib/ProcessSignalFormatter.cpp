@@ -79,6 +79,10 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* eve
     return nullptr;
   }
 
+  if (logging::CheckLogLevel(logging::LogLevel::DEBUG)) {
+    CheckUnexpectedExecPath(event);
+  }
+
   ProcessSignal* process_signal = CreateProcessSignal(event);
   if (!process_signal) return nullptr;
 
@@ -96,6 +100,10 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_threadin
   if (!ValidateProcessDetails(tinfo)) {
     CLOG(INFO) << "Dropping process event: " << tinfo;
     return nullptr;
+  }
+
+  if (logging::CheckLogLevel(logging::LogLevel::DEBUG)) {
+    CheckUnexpectedExecPath(tinfo);
   }
 
   ProcessSignal* process_signal = CreateProcessSignal(tinfo);
@@ -281,6 +289,28 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
     return true;
   };
   mt->traverse_parent_state(visitor);
+}
+
+bool IsUnexpectedExecPath(const std::string *path) {
+  std::string proc_self_str = "/proc/self";
+  if (path && (path->compare(0,proc_self_str.size(), proc_self_str) == 0 || 
+       path->find("containerd") != std::string::npos)) {
+      return true;
+  }
+  return false;
+}
+
+void ProcessSignalFormatter::CheckUnexpectedExecPath(sinsp_threadinfo* tinfo) {
+  if (IsUnexpectedExecPath(&(tinfo->m_exepath))) {
+      CLOG(DEBUG) << "Unexpected scraped process path: " << tinfo;
+  }
+}
+
+void ProcessSignalFormatter::CheckUnexpectedExecPath(sinsp_evt* event) {
+  const std::string* path = event_extractor_.get_exepath(event);
+  if (IsUnexpectedExecPath(path)) {
+      CLOG(DEBUG) << "Unexpected syscall process path: " << ProcessDetails(event);
+  }
 }
 
 }  // namespace collector

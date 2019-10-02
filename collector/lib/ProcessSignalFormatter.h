@@ -50,12 +50,14 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
   Signal* CreateSignal(sinsp_evt* event);
   ProcessSignal* CreateProcessSignal(sinsp_evt* event);
   bool ValidateProcessDetails(sinsp_evt* event);
+  void CheckUnexpectedExecPath(sinsp_evt* event);
   std::string ProcessDetails(sinsp_evt* event);
   void GetProcessLineage(sinsp_threadinfo* tinfo, std::vector<std::string>& lineage);
 
   Signal* CreateSignal(sinsp_threadinfo* tinfo);
   ProcessSignal* CreateProcessSignal(sinsp_threadinfo* tinfo);
   bool ValidateProcessDetails(sinsp_threadinfo* tinfo);
+  void CheckUnexpectedExecPath(sinsp_threadinfo* tinfo);
 
   const EventNames& event_names_;
   SysdigEventExtractor event_extractor_;
