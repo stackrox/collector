@@ -14,6 +14,7 @@ fi
 image="$1"
 gcp_bucket="$2"
 
+docker pull "${image}" &> /dev/null
 version=$(docker run --rm --entrypoint cat "${image}" "/kernel-modules/MODULE_VERSION.txt")
 kernel_modules=$(docker run --rm --entrypoint find "${image}" "/kernel-modules/" -name "*.gz" -type f -printf '%f\n')
 
