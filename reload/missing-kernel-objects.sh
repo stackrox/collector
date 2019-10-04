@@ -13,10 +13,15 @@ fi
 
 image="$1"
 gcp_bucket="$2"
+manifest_path="/kernel-modules/manifest.txt"
 
-docker pull "${image}" &> /dev/null
 version=$(docker run --rm --entrypoint cat "${image}" "/kernel-modules/MODULE_VERSION.txt")
-kernel_modules=$(docker run --rm --entrypoint find "${image}" "/kernel-modules/" -name "*.gz" -type f -printf '%f\n')
+
+if docker run --rm --entrypoint test "${image}" -f "$manifest_path" ; then
+  kernel_modules=$(docker run --rm --entrypoint cat "${image}" "/kernel-modules/manifest.txt")
+else
+  kernel_modules=$(docker run --rm --entrypoint find "${image}" "/kernel-modules/" -name "*.gz" -type f -printf '%f\n')
+fi
 
 # determine which kernel module and probes are missing from this image
 comm -1 -3 \

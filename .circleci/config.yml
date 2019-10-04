@@ -962,31 +962,36 @@ jobs:
           cd "$SOURCE_ROOT/reload"
           while IFS='' read -r tag || [[ -n "$tag" ]]; do
             [[ -n "$tag" ]] || continue
-            collector_image="collector:$tag"
+            docker_collector_image="docker.io/stackrox/collector:$tag"
+            stackrox_collector_image="collector.stackrox.io/collector:$tag"
 
-            # Check if there collector_image_latest exists and needs reload
-            if [[ -z $(./missing-kernel-objects.sh "collector.stackrox.io/${collector_image}-latest" "${COLLECTOR_MODULES_BUCKET}") ]] ; then
-              echo "Image ${collector_image}-latest contains all available kernel objects"
+            if ! docker pull "${stackrox_collector_image}-latest" &> /dev/null ; then
+              docker tag "${stackrox_collector_image}" "${stackrox_collector_image}-latest" 
+            fi
+
+            if [[ -z "$(./missing-kernel-objects.sh "${stackrox_collector_image}-latest" "${COLLECTOR_MODULES_BUCKET}")" ]] ; then
+              echo "${stackrox_collector_image}-latest contains all available kernel objects"
               continue
             fi
 
             # Gather missing kernel objects and rebuild
             mkdir ./reload-kernel-modules
-            for i in $(./missing-kernel-objects.sh "collector.stackrox.io/${collector_image}" "${COLLECTOR_MODULES_BUCKET}"); do
+            for i in $(./missing-kernel-objects.sh "${stackrox_collector_image}" "${COLLECTOR_MODULES_BUCKET}"); do
+              echo "$i" >> ./reload-kernel-modules-manifest.txt
               cp "/tmp/released-kernel-object-cache/$i" "./reload-kernel-modules/$(basename $i)"
             done
-            docker build --build-arg collector_tag=${tag} -t "stackrox/${collector_image}-latest" .
+            docker build --build-arg collector_tag=${tag} -t "${stackrox_collector_image}-latest" .
             rm -rf ./reload-kernel-modules
 
             # Sanity check reloaded image
-            if [[ -z $(./missing-kernel-objects.sh "collector.stackrox.io/${collector_image}-latest" "${COLLECTOR_MODULES_BUCKET}") ]] ; then
-              echo "Reloading ${collector_image}-latest failed"
+            if [[ ! -z "$(./missing-kernel-objects.sh "${stackrox_collector_image}-latest" "${COLLECTOR_MODULES_BUCKET}")" ]] ; then
+              echo "Reloading ${stackrox_collector_image}-latest failed"
               exit 1
             fi
 
             # Tag and push new image with latest
-            docker tag "stackrox/${collector_image}-latest" "stackrox/ci-${collector_image}-ci-latest"
-            docker push "stackrox/${collector_image}-ci-latest"
+            docker tag "${stackroxcollector_image}-latest" "stackrox/collector:ci-${tag}-latest"
+            docker push "stackrox/collector:ci-${tag}-latest"
 
             # XXX uncomment here before commit to master
             #docker push "stackrox/${collector_image}-latest"
