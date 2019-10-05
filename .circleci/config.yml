@@ -452,6 +452,9 @@ jobs:
     - run:
         name: Separate local build tasks by flavor
         command: |
+          # Handle the case that glob doesn't match anything
+          shopt -s nullglob
+
           for f in ~/kobuild-tmp/custom-flavors/versions.*; do
             flavor="$(basename "$f")"
             flavor="${flavor#versions\.}"
