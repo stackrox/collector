@@ -58,6 +58,7 @@ build_ko() (
 
         if [[ ! -d "${module_src_dir}/bpf" ]]; then
             echo "Module version does not support eBPF probe building, skipping ..."
+            touch "/output/${module_version}/.collector-ebpf-${kernel_version}.unavail"
             return 0
         fi
 
@@ -114,7 +115,7 @@ build_ko() (
     else
         echo >&2 "Invalid probe type '${probe_type}'"
         return 1
-    fo
+    fi
 )
 
 build_kos() {
