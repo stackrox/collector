@@ -457,7 +457,7 @@ jobs:
           for f in ~/kobuild-tmp/custom-flavors/versions.*; do
             flavor="$(basename "$f")"
             flavor="${flavor#versions\.}"
-            join -1 1 -2 1 -o'1.1,1.2' ~/kobuild-tmp/local-build-tasks "$f" >~/kobuild-tmp/local-build-tasks."$flavor"
+            join -1 1 -2 1 -o'1.1,1.2,1.3' <(sort <~/kobuild-tmp/local-build-tasks) <(sort <"$f") >~/kobuild-tmp/local-build-tasks."$flavor"
           done
           cat ~/kobuild-tmp/local-build-tasks.* ~/kobuild-tmp/local-build-tasks | sort | uniq -u >~/kobuild-tmp/local-build-tasks.default
           rm ~/kobuild-tmp/local-build-tasks
