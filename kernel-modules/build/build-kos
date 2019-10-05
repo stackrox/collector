@@ -122,11 +122,12 @@ build_kos() {
     while read -a line || [[ "${#line[@]}" -gt 0 ]]; do
         local kernel_version="${line[0]}"
         local module_version="${line[1]}"
+        local probe_type="${line[2]}"
 
-        if ! build_ko "$kernel_version" "$module_version"; then
-            echo >&2 "Failed to build module version ${module_version} for kernel ${kernel_version}"
+        if ! build_ko "$kernel_version" "$module_version" "${probe_type}"; then
+            echo >&2 "Failed to build "${probe_type}" probe version ${module_version} for kernel ${kernel_version}"
             if [[ -n "${FAILURE_LOG_FILE:-}" ]]; then
-                echo >>"${FAILURE_LOG_FILE}" "${kernel_version} ${module_version}"
+                echo >>"${FAILURE_LOG_FILE}" "${kernel_version} ${module_version} ${probe_type}"
             fi
         fi
     done
