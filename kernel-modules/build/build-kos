@@ -26,6 +26,14 @@ build_ko() (
     local kernel_build_dir
     kernel_build_dir="${kernel_src_dir}/$(cat "${kernel_src_dir}/BUNDLE_BUILD_DIR")"
 
+    [[ -f "${kernel_src_dir}/BUNDLE_UNAME" ]] || {
+        echo "No BUNDLE_UNAME entry found in kernel source bundle!"
+        return 1
+    }
+
+    local kernel_uname
+    kernel_uname="$(cat "${kernel_src_dir}/BUNDLE_UNAME")"
+
     cd "$module_src_dir"
 
     if [[ "$probe_type" == "mod" ]]; then
@@ -36,14 +44,6 @@ build_ko() (
 
         collector_ko=collector.ko
         strip -g "$collector_ko"
-
-        [[ -f "${kernel_src_dir}/BUNDLE_UNAME" ]] || {
-            echo "No BUNDLE_UNAME entry found in kernel source bundle!"
-            return 1
-        }
-
-        local kernel_uname
-        kernel_uname="$(cat "${kernel_src_dir}/BUNDLE_UNAME")"
 
         ko_version="$(/sbin/modinfo "$collector_ko" | grep vermagic | tr -s " " | cut -d " " -f 2)"
         if [[ "$ko_version" != "$kernel_uname" ]]; then
