@@ -348,13 +348,12 @@ jobs:
 
           # blacklisted-build-tasks is populated from the BLACKLIST file to exclude build tasks which would fail.
           "${SOURCE_ROOT}/kernel-modules/build/apply-blacklist.py" "${SOURCE_ROOT}/kernel-modules/BLACKLIST" \
-            ~/kobuild-tmp/all-build-tasks >~/kobuild-tmp/blacklisted-build-tasks
+            ~/kobuild-tmp/all-build-tasks >~/kobuild-tmp/non-blacklisted-build-tasks
 
           # Create the set of build tasks as the contents of `all-build-tasks` minus the redundant and blacklisted
           # build tasks.
-          cat ~/kobuild-tmp/all-build-tasks \
+          cat ~/kobuild-tmp/non-blacklisted-build-tasks \
               ~/kobuild-tmp/redundant-build-tasks ~/kobuild-tmp/redundant-build-tasks \
-              ~/kobuild-tmp/blacklisted-build-tasks ~/kobuild-tmp/blacklisted-build-tasks \
             | sort | uniq -u >build-tasks
 
     - run:
