@@ -473,6 +473,9 @@ jobs:
         command: |
           make -C "${SOURCE_ROOT}/kernel-modules" build-container
           docker tag "$BUILD_CONTAINER_TAG" build-kernel-modules-default
+
+          shopt -s nullglob
+
           for f in ~/kobuild-tmp/custom-flavors/versions.*; do
             flavor="$(basename "$f")"
             flavor="${flavor#versions\.}"
@@ -491,6 +494,8 @@ jobs:
     - run:
         name: Build modules
         command: |
+          shopt -s nullglob
+
           for task_file in ~/kobuild-tmp/local-build-tasks.*; do
             [[ -s "$task_file" ]] || continue
             flavor="$(basename "${task_file}")"
