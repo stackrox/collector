@@ -7,29 +7,30 @@ build_ko() (
     local module_version="$2"
     local probe_type="$3"
 
+    mkdir -p /scratch/module-src
+    local module_src_dir="/scratch/module-src/${module_version}"
+    [[ -d "$module_src_dir" ]] || cp -r "/sources/${module_version}" "$module_src_dir"
+
+    local kernel_src_dir="/scratch/kernel-src/${kernel_version}"
+    if [[ ! -d "$kernel_src_dir" ]]; then
+        rm -rf /scratch/kernel-src/* 2>/dev/null || true
+        mkdir -p "$kernel_src_dir"
+        tar -C "$kernel_src_dir" -xzf "/bundles/bundle-${kernel_version}.tgz"
+    fi
+
+    [[ -f "${kernel_src_dir}/BUNDLE_BUILD_DIR" ]] || {
+        echo "No BUNDLE_BUILD_DIR entry found in kernel source bundle!"
+        return 1
+    }
+
+    local kernel_build_dir
+    kernel_build_dir="${kernel_src_dir}/$(cat "${kernel_src_dir}/BUNDLE_BUILD_DIR")"
+
+    cd "$module_src_dir"
+
     if [[ "$probe_type" == "mod" ]]; then
         echo "Building collector module for kernel version ${kernel_version} and module version ${module_version}."
 
-        mkdir -p /scratch/module-src
-        local module_src_dir="/scratch/module-src/${module_version}"
-        [[ -d "$module_src_dir" ]] || cp -r "/sources/${module_version}" "$module_src_dir"
-
-        local kernel_src_dir="/scratch/kernel-src/${kernel_version}"
-        if [[ ! -d "$kernel_src_dir" ]]; then
-            rm -rf /scratch/kernel-src/* 2>/dev/null || true
-            mkdir -p "$kernel_src_dir"
-            tar -C "$kernel_src_dir" -xzf "/bundles/bundle-${kernel_version}.tgz"
-        fi
-
-        [[ -f "${kernel_src_dir}/BUNDLE_BUILD_DIR" ]] || {
-            echo "No BUNDLE_BUILD_DIR entry found in kernel source bundle!"
-            return 1
-        }
-
-        local kernel_build_dir
-        kernel_build_dir="${kernel_src_dir}/$(cat "${kernel_src_dir}/BUNDLE_BUILD_DIR")"
-
-        cd "$module_src_dir"
         KERNELDIR="$kernel_build_dir" make clean
         KERNELDIR="$kernel_build_dir" make -j 6 all
 
