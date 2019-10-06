@@ -723,9 +723,9 @@ jobs:
           name: Uploading Kernel modules
           command: |
             extra_args=()
-            if [[ "$CIRCLE_BRANCH" != "master" ]]; then
-              extra_args+=(-n)
-            fi
+            # if [[ "$CIRCLE_BRANCH" != "master" ]]; then
+            #   extra_args+=(-n)
+            # fi
 
             gsutil -m rsync -r "${extra_args[@]}" \
               "${WORKSPACE_ROOT}/ko-build/build-output/" \
