@@ -339,29 +339,21 @@ jobs:
             version="$(basename "$i")"
             echo "$version" >>~/kobuild-tmp/all-module-versions
 
-            awk -v modver="$version" '{print $1 " " modver}' <"${SOURCE_ROOT}/kernel-modules/KERNEL_VERSIONS" >>~/kobuild-tmp/all-build-tasks
-            awk -v modver="$version" '{print $1 " " modver}' <~/kobuild-tmp/existing-modules-"${version}" >>~/kobuild-tmp/redundant-build-tasks
+            awk -v modver="$version" '{print $1 " " modver " mod"}' <"${SOURCE_ROOT}/kernel-modules/KERNEL_VERSIONS" >>~/kobuild-tmp/all-build-tasks
+            if [[ -d "${i}/bpf" ]]; then
+              awk -v modver="$version" '{print $1 " " modver " bpf"}' <"${SOURCE_ROOT}/kernel-modules/KERNEL_VERSIONS" >>~/kobuild-tmp/all-build-tasks
+            fi
+            awk -v modver="$version" '{print $1 " " modver " " $2}' <~/kobuild-tmp/existing-modules-"${version}" >>~/kobuild-tmp/redundant-build-tasks
           done
 
           # blacklisted-build-tasks is populated from the BLACKLIST file to exclude build tasks which would fail.
-          echo >~/kobuild-tmp/blacklisted-build-tasks
-
-          while read -a line || [[ "${#line[@]}" -gt 0 ]]; do
-            [[ "${#line[@]}" -gt 0 ]] || continue
-            kernel_version="${line[0]}"
-            if [[ "${#line[@]}" -eq 1 ]]; then
-              awk -v kernelver="${kernel_version}" '{print kernelver " " $1}' <~/kobuild-tmp/all-module-versions >>~/kobuild-tmp/blacklisted-build-tasks
-            else
-              module_version="${line[1]}"
-              echo "${kernel_version} ${module_version}" >>~/kobuild-tmp/blacklisted-build-tasks
-            fi
-          done < <(sed -e 's@[[:space:]]*#.*$@@g' <"${SOURCE_ROOT}/kernel-modules/BLACKLIST")
+          "${SOURCE_ROOT}/kernel-modules/build/apply-blacklist.py" "${SOURCE_ROOT}/kernel-modules/BLACKLIST" \
+            ~/kobuild-tmp/all-build-tasks >~/kobuild-tmp/non-blacklisted-build-tasks
 
           # Create the set of build tasks as the contents of `all-build-tasks` minus the redundant and blacklisted
           # build tasks.
-          cat ~/kobuild-tmp/all-build-tasks \
+          cat ~/kobuild-tmp/non-blacklisted-build-tasks \
               ~/kobuild-tmp/redundant-build-tasks ~/kobuild-tmp/redundant-build-tasks \
-              ~/kobuild-tmp/blacklisted-build-tasks ~/kobuild-tmp/blacklisted-build-tasks \
             | sort | uniq -u >build-tasks
 
     - run:
@@ -370,9 +362,9 @@ jobs:
           cd "${WORKSPACE_ROOT}/ko-build"
 
           num_build_tasks="$(wc -l build-tasks | awk '{print $1}')"
-          echo "Building kernel modules for the following kernel/module version combinations:"
+          echo "Building kernel modules for the following kernel/module version/probe type combinations:"
           sed -e 's@^@  @' <build-tasks
-          echo "Total: ${num_build_tasks} kernel/module version combinations."
+          echo "Total: ${num_build_tasks} kernel/module version/probe type combinations."
 
     - persist_to_workspace:
         root: ~/workspace
@@ -419,9 +411,9 @@ jobs:
           mv "$this_shard_file" ~/kobuild-tmp/local-build-tasks
 
           num_build_tasks="$(wc -l ~/kobuild-tmp/local-build-tasks | awk '{print $1}')"
-          echo "Building kernel modules for the following kernel/module version combinations:"
+          echo "Building kernel modules for the following kernel/module version/probe type combinations:"
           sed -e 's@^@  @' <~/kobuild-tmp/local-build-tasks
-          echo "Total: ${num_build_tasks} kernel/module version combinations."
+          echo "Total: ${num_build_tasks} kernel/module version/probe type combinations."
 
           awk '{print $1}' <~/kobuild-tmp/local-build-tasks | sort | uniq >~/kobuild-tmp/all-kernel-versions
           awk '{print $2}' <~/kobuild-tmp/local-build-tasks | sort | uniq >~/kobuild-tmp/all-module-versions
@@ -459,10 +451,13 @@ jobs:
     - run:
         name: Separate local build tasks by flavor
         command: |
+          # Handle the case that glob doesn't match anything
+          shopt -s nullglob
+
           for f in ~/kobuild-tmp/custom-flavors/versions.*; do
             flavor="$(basename "$f")"
             flavor="${flavor#versions\.}"
-            join -1 1 -2 1 -o'1.1,1.2' ~/kobuild-tmp/local-build-tasks "$f" >~/kobuild-tmp/local-build-tasks."$flavor"
+            join -1 1 -2 1 -o'1.1,1.2,1.3' <(sort -k 1b,1 <~/kobuild-tmp/local-build-tasks) <(sort -k 1b,1 <"$f") >~/kobuild-tmp/local-build-tasks."$flavor"
           done
           cat ~/kobuild-tmp/local-build-tasks.* ~/kobuild-tmp/local-build-tasks | sort | uniq -u >~/kobuild-tmp/local-build-tasks.default
           rm ~/kobuild-tmp/local-build-tasks
@@ -478,6 +473,9 @@ jobs:
         command: |
           make -C "${SOURCE_ROOT}/kernel-modules" build-container
           docker tag "$BUILD_CONTAINER_TAG" build-kernel-modules-default
+
+          shopt -s nullglob
+
           for f in ~/kobuild-tmp/custom-flavors/versions.*; do
             flavor="$(basename "$f")"
             flavor="${flavor#versions\.}"
@@ -496,6 +494,8 @@ jobs:
     - run:
         name: Build modules
         command: |
+          shopt -s nullglob
+
           for task_file in ~/kobuild-tmp/local-build-tasks.*; do
             [[ -s "$task_file" ]] || continue
             flavor="$(basename "${task_file}")"
@@ -627,6 +627,7 @@ jobs:
           mkdir -p "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
           mv "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}/"* \
             "${SOURCE_ROOT}/kernel-modules/container/kernel-modules" || true
+          rm -f "${SOURCE_ROOT}/kernel-modules/container/kernel-modules/".*.unavail || true
 
     - run:
         name: Preparing Kernel modules build cache
@@ -721,7 +722,12 @@ jobs:
       - run:
           name: Uploading Kernel modules
           command: |
-            gsutil -m rsync -r \
+            extra_args=()
+            if [[ "$CIRCLE_BRANCH" != "master" ]]; then
+              extra_args+=(-n)
+            fi
+
+            gsutil -m rsync -r "${extra_args[@]}" \
               "${WORKSPACE_ROOT}/ko-build/build-output/" \
               "${COLLECTOR_MODULES_BUCKET}/"
 
