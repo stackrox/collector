@@ -3,7 +3,10 @@
 import sys
 import re
 
+# Strips whitespaces and comments at the end of line, i.e., turns '  foo  # bar' into '  foo' and
+# '  # comment line only' into ''.
 strip_comment_re = re.compile(r'\s*(?:#.*)?$')
+
 space_re = re.compile(r'\s+')
 
 def pattern_to_re(pat):
