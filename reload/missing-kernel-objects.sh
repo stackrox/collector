@@ -13,17 +13,21 @@ fi
 
 image="$1"
 gcp_bucket="$2"
-manifest_path="/kernel-modules/manifest.txt"
 
-version=$(docker run --rm --entrypoint cat "${image}" "/kernel-modules/MODULE_VERSION.txt")
+inspect_out="$(mktemp)"
+docker run -i --rm --entrypoint /bin/sh "${image}" /dev/stdin >"${inspect_out}" <<EOF
+set -e
+cat /kernel-modules/MODULE_VERSION.txt
+find /kernel-modules -name '*.gz' -type f
+EOF
 
-if docker run --rm --entrypoint test "${image}" -f "$manifest_path" ; then
-  kernel_modules=$(docker run --rm --entrypoint cat "${image}" "/kernel-modules/manifest.txt")
-else
-  kernel_modules=$(docker run --rm --entrypoint find "${image}" "/kernel-modules/" -name "*.gz" -type f -printf '%f\n')
-fi
+version="$(head -n 1 ${inspect_out})"
 
-# determine which kernel module and probes are missing from this image
-comm -1 -3 \
-   <( awk -v version="$version" '{print version "/" $1}' <(printf '%s\n' "$kernel_modules") | sort ) \
-   <( gsutil ls "${gcp_bucket}/${version}" | grep ".*.gz$" | awk -F '/' '{print $(NF-1) "/" $NF}' | sort )
+{
+    while IFS='' read -r line || [[ -n "$line" ]]; do
+        [[ -n "$line" ]] || continue
+        basename "$line"
+    done < <(tail -n +2 "$inspect_out")
+
+    gsutil ls "${gcp_bucket}/${version}/*.gz" | sed -e 's@^.*/@@g'
+} | sort | uniq -u
