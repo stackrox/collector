@@ -79,6 +79,8 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* eve
     return nullptr;
   }
 
+  CLOG(DEBUG) << "Process: " << ProcessDetails(event);
+
   ProcessSignal* process_signal = CreateProcessSignal(event);
   if (!process_signal) return nullptr;
 
@@ -100,6 +102,8 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_threadin
 
   ProcessSignal* process_signal = CreateProcessSignal(tinfo);
   if (!process_signal) return nullptr;
+
+  CLOG(DEBUG) << "Unexpected scraped process path: " << tinfo;
 
   Signal* signal = Allocate<Signal>();
   signal->set_allocated_process_signal(process_signal);
