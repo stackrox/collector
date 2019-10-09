@@ -282,6 +282,11 @@ jobs:
     - gcloud-init
 
     - run:
+        name: Upload module sources
+        command: |
+          gsutil -m rsync -r ~/kobuild-tmp/versions-src/ "gs://stackrox-kernel-modules-source/collector/"
+
+    - run:
         name: Download missing modules for current version from gcloud bucket
         command: |
           gsutil -m rsync -r \
@@ -302,7 +307,7 @@ jobs:
     - run:
         name: Compile list of cached modules for CURRENT module version
         command: |
-          ( ls "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/*.ko{,.gz} || true ) \
+          ( ls -a "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/ || true ) \
             | "${SOURCE_ROOT}/kernel-modules/build/extract-kernel-versions-from-module-files" \
             >~/kobuild-tmp/existing-modules-"${MODULE_VERSION}"
 
@@ -724,9 +729,10 @@ jobs:
               extra_args+=(-n)
             fi
 
-            gsutil -m rsync -r "${extra_args[@]}" \
+            gsutil -m rsync -r -n \
               "${WORKSPACE_ROOT}/ko-build/build-output/" \
               "${COLLECTOR_MODULES_BUCKET}/"
+
 
       - run:
           name: Sanity check
