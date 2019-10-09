@@ -9,7 +9,7 @@ gsutil -m rsync -r 'gs://stackrox-kernel-modules-source/collector' source-archiv
 
 mkdir -p sources/
 for f in source-archives/*.tgz; do
-    version="$(basename "${f%\.tgz}")"
+    version="$(basename "$f" .tgz)"
     if ! mkdir "sources/${version}"; then
         echo >&2 "Directory for module version ${version} already exists, remove to overwrite."
         continue

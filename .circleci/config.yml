@@ -167,8 +167,8 @@ jobs:
             exit 1
           }
 
-          version="$(basename "${versions[0]}")"
-          MODULE_VERSION="${version%.tgz}"
+          version="$(basename "${versions[0]}" .tgz)"
+          MODULE_VERSION="$version"
 
           if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
             IMAGE_KERNEL_MODULES="stackrox/kernel-modules:${MODULE_VERSION}"
@@ -232,8 +232,7 @@ jobs:
           rm -rf "${LEGACY_DIR}"
 
           for i in "${HOME}/kobuild-tmp/versions-src"/*.tgz; do
-            filename="$(basename "$i")"
-            version="${filename%.tgz}"
+            version="$(basename "$i" .tgz)"
             [[ "$version" != "$MODULE_VERSION" ]] || continue
             echo "Building modules for legacy module version $version"
           done
@@ -262,8 +261,7 @@ jobs:
           mkdir build-output
 
           for i in ~/kobuild-tmp/versions-src/*.tgz; do
-            filename="$(basename "$i")"
-            version="${filename%.tgz}"
+            version="$(basename "$i" .tgz)"
             mkdir -p "module-versions/${version}"
             tar -C "module-versions/${version}" -xvzf "$i"
             mkdir -p "build-output/${MODULE_VERSION}"
