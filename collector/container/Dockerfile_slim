@@ -10,7 +10,6 @@ FROM debian:stretch-slim
 MAINTAINER StackRox <support@stackrox.com>
 
 # Add module version file only 
-RUN mkdir /kernel-modules
 COPY --from=kernel_modules /kernel-modules/MODULE_VERSION.txt /kernel-modules/
 
 # SYSDIG_HOST_ROOT is required by the sysdig kernel module; used as a prefix to
