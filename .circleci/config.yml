@@ -170,19 +170,11 @@ jobs:
           version="$(basename "${versions[0]}")"
           MODULE_VERSION="${version%.tgz}"
 
-          if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
-            IMAGE_KERNEL_MODULES="stackrox/kernel-modules:${MODULE_VERSION}"
-          else
-            IMAGE_KERNEL_MODULES="stackrox/kernel-modules:snapshot-${COLLECTOR_VERSION}"
-          fi
-
           cat >>"${WORKSPACE_ROOT}/shared-env" \<<-EOF
             export MODULE_VERSION="${MODULE_VERSION}"
-            export IMAGE_KERNEL_MODULES="${IMAGE_KERNEL_MODULES}"
           EOF
           cat >>"$BASH_ENV" \<<-EOF
             export MODULE_VERSION="${MODULE_VERSION}"
-            export IMAGE_KERNEL_MODULES="${IMAGE_KERNEL_MODULES}"
           EOF
           echo "Building modules for module version $version"
 
@@ -658,28 +650,34 @@ jobs:
         command: |
           cd "${SOURCE_ROOT}/kernel-modules/container"
           docker build \
-            -t "stackrox/kernel-modules:${MODULE_VERSION}" \
-            -t "stackrox/kernel-modules:snapshot-${COLLECTOR_VERSION}" \
+            -t "stackrox-kernel-modules:${MODULE_VERSION}" \
             .
 
     - run:
-        name: Build collector Docker images
+        name: Build collector images
         command: |
           cd "$COLLECTOR_SOURCE_ROOT"
           cp NOTICE-collector.txt container/
           cp COPYING.txt container/
+
+          build_args=(
+            --build-arg module_version="$MODULE_VERSION"
+            --build-arg collector_version="$COLLECTOR_VERSION"
+          )
+
           docker build \
-            -f container/Dockerfile \
+            -f container/Dockerfile.base \
+            -t "stackrox/collector:snapshot-${COLLECTOR_VERSION}-base" \
+            -t "stackrox/collector:${COLLECTOR_VERSION}-base" \
+            "${build_args[@]}" \
+            container
+
+          docker build \
+            -f container/Dockerfile.combine \
             -t "stackrox/collector:snapshot-${COLLECTOR_VERSION}" \
             -t "stackrox/collector:${COLLECTOR_VERSION}" \
-            --build-arg base="$MODULE_VERSION" \
-            container
-          docker build \
-            -f container/Dockerfile_slim \
-            -t "stackrox/collector:snapshot-${COLLECTOR_VERSION}-slim" \
-            -t "stackrox/collector:${COLLECTOR_VERSION}-slim" \
-            --build-arg base="$MODULE_VERSION" \
-            container
+            "${build_args[@]}" \
+            container/.empty
 
     - run:
         name: Sanity check images
@@ -691,12 +689,10 @@ jobs:
     - run:
         name: Push images
         command: |
+          echo "Pushing collector slim image"
+          docker push "${IMAGE_COLLECTOR}-base"
           echo "Pushing collector image"
           docker push "${IMAGE_COLLECTOR}"
-          echo "Pushing collector slim image"
-          docker push "${IMAGE_COLLECTOR}-slim"
-          echo "Pushing kernel module image"
-          docker push "${IMAGE_KERNEL_MODULES}"
 
   upload-modules:
     docker:

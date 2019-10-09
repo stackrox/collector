@@ -1,16 +1,16 @@
-ARG base=latest
-# This is a hack because the argument to FROM must be either a hardcoded string or a variable expansion, but not a
-# mix of both.
-ARG base_image=stackrox/kernel-modules:${base}
-
-FROM ${base_image} AS kernel_modules
+ARG collector_version=xxx
+ARG module_version=xxx
 
 FROM debian:stretch-slim
 
-MAINTAINER StackRox <support@stackrox.com>
+LABEL maintainer="StackRox <support@stackrox.com>"
+LABEL io.stackrox.collector.module-version="${module_version}"
 
-# Add module version file only 
-COPY --from=kernel_modules /kernel-modules/MODULE_VERSION.txt /kernel-modules/
+ENV MODULE_VERSION=${module_version}
+
+# Add module version file only
+RUN mkdir /kernel-modules && \
+    echo "${module_version}" >/kernel-modules/MODULE_VERSION.txt
 
 # SYSDIG_HOST_ROOT is required by the sysdig kernel module; used as a prefix to
 # paths like /dev/sysdig0, /proc, and /boot. Make sure this matches the volume
@@ -83,3 +83,6 @@ CMD collector \
     --grpc-server=$GRPC_SERVER
 
 COPY bin/ /usr/local/bin/
+
+LABEL io.stackrox.collector.version="${collector_version}"
+ENV COLLECTOR_VERSION=${collector_version}
