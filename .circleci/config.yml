@@ -727,7 +727,7 @@ jobs:
               extra_args+=(-n)
             fi
 
-            gsutil -m rsync -r -n \
+            gsutil -m rsync -r "${extra_args[@]}" \
               "${WORKSPACE_ROOT}/ko-build/build-output/" \
               "${COLLECTOR_MODULES_BUCKET}/"
 
