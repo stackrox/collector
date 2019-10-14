@@ -166,7 +166,7 @@ index 70a05e1..e3121fa 100644
  #else
  			   struct cputime *prev,
 diff --git a/ppm_events.c b/ppm_events.c
-index cc3eb98..ef15842 100644
+index cc3eb98..30b19b9 100644
 --- a/ppm_events.c
 +++ b/ppm_events.c
 @@ -24,7 +24,7 @@ or GPL2.txt for full copies of the license.
@@ -201,7 +201,7 @@ index cc3eb98..ef15842 100644
  #endif
 +
 +/*
-+ * Linux 5.1 kernels modify the syscall_get_arguments_deprecated function to always
++ * Linux 5.1 kernels modify the syscall_get_arguments function to always
 + * return all arguments rather than allowing the caller to select which
 + * arguments are desired. This wrapper replicates the original
 + * functionality.
