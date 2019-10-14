@@ -45,9 +45,11 @@ KERNELDIR=/dev/null make driver/fast || true
 cd "${SYSDIG_SCRATCH}/driver"
 module_version="$(get_module_version .)"
 
+echo "$module_version"
+
 source_archive="${OUTPUT_DIR}/${module_version}.tgz"
 if [[ -s "$source_archive" ]]; then
     exit 0
 fi
 
-modfiles0 . | xargs -0 tar cfvz "$source_archive"
+modfiles0 . | xargs -0 tar cfvz "$source_archive" >&2

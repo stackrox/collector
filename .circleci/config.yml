@@ -203,6 +203,13 @@ jobs:
           SYSDIG_REL_DIR="sysdig/src"
           git clone git@github.com:stackrox/collector "${LEGACY_DIR}"
 
+          mkdir -p "${WORKSPACE_ROOT}/ko-build"
+
+          # These directories contain a bi-directional mapping from collector to module version.
+          # The file structure allows using shell globbing without having to resort to `read` loops
+          # etc.
+          mkdir -p "${WORKSPACE_ROOT}/ko-build/"{released-collectors,released-modules}
+
           while IFS='' read -r line || [[ -n "$line" ]]; do
             [[ -n "$line" ]] || continue
 
@@ -214,10 +221,14 @@ jobs:
             git -C "${LEGACY_DIR}" checkout "${collector_ref}"
             git -C "${LEGACY_DIR}" submodule update --init
 
+            mod_ver_file="${WORKSPACE_ROOT}/ko-build/released-collectors/${collector_ref}"
             SYSDIG_DIR="${LEGACY_DIR}/${SYSDIG_REL_DIR}" \
                 SCRATCH_DIR="${HOME}/scratch" \
                 OUTPUT_DIR="${HOME}/kobuild-tmp/versions-src" \
-              ./kernel-modules/build/prepare-src
+              ./kernel-modules/build/prepare-src \
+                >"${mod_ver_file}"
+
+            echo "${collector_ref}" >>"${WORKSPACE_ROOT}/ko-build/released-modules/$(< "${mod_ver_file}")"
 
           done < <(grep -v '^#' <RELEASED_VERSIONS | awk '{print $1}' | sort | uniq)
 
@@ -227,8 +238,6 @@ jobs:
           for i in "${HOME}/kobuild-tmp/versions-src"/*.tgz; do
             filename="$(basename "$i")"
             version="${filename%.tgz}"
-            # used in reload-released-images job
-            echo "$version" >> "${WORKSPACE_ROOT}/ko-build/released-module-versions.txt"
             [[ "$version" != "$MODULE_VERSION" ]] || continue
             echo "Building modules for legacy module version $version"
           done
@@ -637,6 +646,13 @@ jobs:
             >>"${SOURCE_ROOT}/kernel-modules/container/kernel-modules/MODULE_VERSION.txt"
 
     - run:
+        name: Load any missing modules from GCloud
+        run: |
+          gsutil -m rsync -r \
+              "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/" \
+              "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
+
+    - run:
         name: Sanity check
         command: |
           cd "$SOURCE_ROOT"
@@ -666,33 +682,34 @@ jobs:
           )
 
           docker build \
-            -f container/Dockerfile.base \
             -t "stackrox/collector:snapshot-${COLLECTOR_VERSION}-base" \
             -t "stackrox/collector:${COLLECTOR_VERSION}-base" \
             "${build_args[@]}" \
             container
 
           docker build \
-            -f container/Dockerfile.combine \
             -t "stackrox/collector:snapshot-${COLLECTOR_VERSION}" \
             -t "stackrox/collector:${COLLECTOR_VERSION}" \
+            -t "stackrox/collector:${COLLECTOR_VERSION}-latest" \
             "${build_args[@]}" \
-            container/.empty
+            container-combined
 
     - run:
         name: Sanity check images
         command: |
           docker images | grep kernel | grep "${MODULE_VERSION}"
-          docker images | grep kernel | grep "snapshot-${COLLECTOR_VERSION}"
           docker images | grep collector | grep "${COLLECTOR_VERSION}"
 
     - run:
         name: Push images
         command: |
-          echo "Pushing collector slim image"
+          echo "Pushing collector base image"
           docker push "${IMAGE_COLLECTOR}-base"
           echo "Pushing collector image"
           docker push "${IMAGE_COLLECTOR}"
+          if [[ "$CIRCLE_BRANCH" == "master" || -n "$CIRCLE_TAG" ]]; then
+            docker push "${IMAGE_COLLECTOR}-latest"
+          fi
 
   upload-modules:
     docker:
@@ -915,6 +932,7 @@ jobs:
     steps:
     - initcommand
     - docker-login
+
     - gcloud-init
 
     - run:
@@ -931,17 +949,25 @@ jobs:
           - released-kernel-object-cache-v1-
 
     - run:
+        name: Copy kernel objects built in this workflow
+        command: |
+          for mod_dir in "${WORKSPACE_ROOT}/ko-build/build-output"/*/; do
+            version="$(basename "$mod_dir")"
+            mkdir -p "/tmp/released-kernel-object-cache/${version}"
+            cp "${mod_dir}/"*.gz /tmp/released-kernel-object-cache/${version}"
+          done
+
+    - run:
         name: Sync released kernel objects with gcp bucket
         command: |
-          while IFS='' read -r line || [[ -n "$line" ]]; do
-            [[ -n "$line" ]] || continue
-            version="$line"
-            mkdir -p "/tmp/released-kernel-object-cache/${version}"
+          for modver_file in "${WORKSPACE_ROOT}/ko-build/module-releases"/*; do
+            modver="$(basename "${modver_file}")"
+            mkdir -p "/tmp/released-kernel-object-cache/${modver}"
             gsutil -m rsync -r \
-              "${COLLECTOR_MODULES_BUCKET}/${version}/" \
-              "/tmp/released-kernel-object-cache/${version}" \
+              "${COLLECTOR_MODULES_BUCKET}/${modver}/" \
+              "/tmp/released-kernel-object-cache/${modver}" \
               || true
-          done < "${WORKSPACE_ROOT}/ko-build/released-module-versions.txt"
+          done
 
     - run:
         name: Reload released collector images
@@ -952,8 +978,32 @@ jobs:
             exit 1
           fi
 
-          docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
-          docker login -u "$STACKROX_IO_PUSH_USERNAME" -p "$STACKROX_IO_PUSH_PASSWORD" collector.stackrox.io
+          for collector_ver_file in "${WORKSPACE_ROOT}/ko-build/released-collectors"/*; do
+            collector_ver="$(basename "${collector_ver_file}")"
+            modver="$(< "${collector_ver_file}")"
+
+            docker pull "stackrox/collector:${collector_ver}-base"
+
+            released_latest_image="collector.stackrox.io/collector:${collector_ver}-latest"
+            docker pull "${released_latest_image}"
+
+            missing_objs_file="/tmp/missing-objs-${collector_ver}"
+            ./missing-kernel-objects.sh "${released_latest_image}" \
+              "/tmp/released-kernel-object-cache/${modver}" \
+                >"${missing_objs_file}"
+
+            if [[ ! -s "${missing_objs_file}" ]]; then
+              echo "Image ${released_latest_image} contains all kernel objects"
+              continue
+            fi
+
+            echo "Kernel objects missing in image ${released_latest_image}:"
+            cat "${missing_objs_file}"
+
+            if [[ ! -d "images/${modver}" ]]; then
+
+
+
 
           cd "$SOURCE_ROOT/reload"
           while IFS='' read -r tag || [[ -n "$tag" ]]; do
