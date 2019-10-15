@@ -58,23 +58,47 @@ function download_kernel_object() {
       OBJECT_TYPE="eBPF probe"
     fi
 
-    if [[ -z "${MODULE_URL}" ]]; then
-        log "Collector is not configured to download the ${OBJECT_TYPE}"
+    local filename_gz="${OBJECT_PATH}.gz"
+    local curl_opts=(
+        -sS -4 --retry 5 --retry-connrefused --retry-delay 1 --retry-max-time 10
+        -f -L -w "HTTP Status Code %{http_code}"
+        -o "${filename_gz}"
+    )
+
+    if [[ ! -f "${filename_gz}" && -n "$GRPC_SERVER" ]]; then
+        local url="https://${GPRC_SERVER}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
+        log "Attempting to download from ${url}..."
+        curl "${curl_opts[@]}" \
+            --cacert /run/secrets/stackrox.io/certs/ca.pem \
+            --cert /run/secrets/stackrox.io/certs/cert.pem \
+            --key /run/secrets/stackrox.io/certs/key.pem \
+            "$url"
+        if [[ $? -ne 0 ]]; then
+            rm -f "${filename_gz}" 2>/dev/null
+            log "Failed to download ${OBJECT_TYPE}."
+        fi
+    fi
+    if [[ ! -f "${filename_gz}" && -n "${MODULE_URL}" ]]; then
+        local url="${MODULE_URL}/${KERNEL_OBJECT}.gz"
+        log "Attempting to download from ${url}..."
+        curl "${curl_opts[@]}" "$url"
+        if [[ $? -ne 0 ]]; then
+            rm -f "${filename_gz}" 2>/dev/null
+            log "Failed to download ${OBJECT_TYPE}"
+        fi
+    fi
+
+    if [[ ! -f "${filename_gz}" ]]; then
+        log "All attempts to download the ${OBJECT_TYPE} have failed."
         return 1
     fi
-    local URL="${MODULE_URL}/${KERNEL_OBJECT}"
-    local FILENAME_GZ="${OBJECT_PATH}.gz"
 
-    # Attempt to download kernel object
-    local HTTP_CODE
-    HTTP_CODE=$(curl -w "%{http_code}" -L -s -o "$FILENAME_GZ" "${URL}.gz" 2>/dev/null)
-
-    if [[ "$HTTP_CODE" != "200" ]] ; then
-        log "Error downloading ${OBJECT_TYPE} ${KERNEL_OBJECT} (Error code: ${HTTP_CODE})"
+    if ! gunzip --keep "$FILENAME_GZ"; then
+        log "${OBJECT_TYPE} downloaded, but there was an error un-gzipping. It looks like the file is corrupted."
+        log "Please contact StackRox support, enclosing the above error message(s)."
         return 1
     fi
 
-    gunzip "$FILENAME_GZ"
     log "Using downloaded ${OBJECT_TYPE} ${KERNEL_OBJECT}"
     return 0
 }
