@@ -14,7 +14,8 @@ def pattern_to_re(pat):
         return ".*"
     if pat[0] == '~':
         return pat[1:]
-    return pat.replace('*', '.*')
+    parts = pat.split('*')
+    return '.*'.join(re.escape(part) for part in parts)
 
 def open_input(filename):
     if filename == '-':

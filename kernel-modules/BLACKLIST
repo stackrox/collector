@@ -5,4 +5,4 @@
 # prefixed with ~, it is interpreted as a (Python) regex.
 # If <module-version> or <object type> is omitted, "*" is assumed
 ~3\.10\.0-1062(?:\.\d+)*\.el7.x86_64 * bpf
-
+*.el6.*

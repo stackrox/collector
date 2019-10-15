@@ -81,7 +81,7 @@ index 2f90a4a..ba27757 100644
  			drop = true;
  		break;
 diff --git a/ppm_cputime.c b/ppm_cputime.c
-index 70a05e1..e3121fa 100644
+index 70a05e1..71563b0 100644
 --- a/ppm_cputime.c
 +++ b/ppm_cputime.c
 @@ -34,6 +34,7 @@ or GPL2.txt for full copies of the license.
@@ -135,7 +135,7 @@ index 70a05e1..e3121fa 100644
  
  		/* Task is sleeping, nothing to add */
 -		if (t->vtime_snap_whence == VTIME_SLEEPING ||
-+		if (t->vtime.state == VTIME_SLEEPING ||
++		if (ppm_vtime_state(t) == VTIME_SLEEPING ||
  		    is_idle_task(t))
  			continue;
  
@@ -144,11 +144,11 @@ index 70a05e1..e3121fa 100644
  		 * the right place.
  		 */
 -		if (t->vtime_snap_whence == VTIME_USER || t->flags & PF_VCPU) {
-+		if (t->vtime.state == VTIME_USER || t->flags & PF_VCPU) {
++		if (ppm_vtime_state(t) == VTIME_USER || t->flags & PF_VCPU) {
  			*udelta = delta;
  		} else {
 -			if (t->vtime_snap_whence == VTIME_SYS)
-+			if (t->vtime.state == VTIME_SYS)
++			if (ppm_vtime_state(t) == VTIME_SYS)
  				*sdelta = delta;
  		}
 -	} while (read_seqretry(&t->vtime_seqlock, seq));
