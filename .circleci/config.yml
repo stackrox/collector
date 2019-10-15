@@ -167,8 +167,8 @@ jobs:
             exit 1
           }
 
-          version="$(basename "${versions[0]}")"
-          MODULE_VERSION="${version%.tgz}"
+          version="$(basename "${versions[0]}" .tgz)"
+          MODULE_VERSION="$version"
 
           if [[ $CIRCLE_BRANCH = master || -n $CIRCLE_TAG ]]; then
             IMAGE_KERNEL_MODULES="stackrox/kernel-modules:${MODULE_VERSION}"
@@ -232,8 +232,7 @@ jobs:
           rm -rf "${LEGACY_DIR}"
 
           for i in "${HOME}/kobuild-tmp/versions-src"/*.tgz; do
-            filename="$(basename "$i")"
-            version="${filename%.tgz}"
+            version="$(basename "$i" .tgz)"
             [[ "$version" != "$MODULE_VERSION" ]] || continue
             echo "Building modules for legacy module version $version"
           done
@@ -262,8 +261,7 @@ jobs:
           mkdir build-output
 
           for i in ~/kobuild-tmp/versions-src/*.tgz; do
-            filename="$(basename "$i")"
-            version="${filename%.tgz}"
+            version="$(basename "$i" .tgz)"
             mkdir -p "module-versions/${version}"
             tar -C "module-versions/${version}" -xvzf "$i"
             mkdir -p "build-output/${MODULE_VERSION}"
@@ -280,6 +278,11 @@ jobs:
             || true
 
     - gcloud-init
+
+    - run:
+        name: Upload module sources
+        command: |
+          gsutil -m rsync -r ~/kobuild-tmp/versions-src/ "gs://stackrox-kernel-modules-source/collector/"
 
     - run:
         name: Download missing modules for current version from gcloud bucket
@@ -302,7 +305,7 @@ jobs:
     - run:
         name: Compile list of cached modules for CURRENT module version
         command: |
-          ( ls "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/*.ko{,.gz} || true ) \
+          ( ls -a "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/ || true ) \
             | "${SOURCE_ROOT}/kernel-modules/build/extract-kernel-versions-from-module-files" \
             >~/kobuild-tmp/existing-modules-"${MODULE_VERSION}"
 
@@ -727,6 +730,7 @@ jobs:
             gsutil -m rsync -r "${extra_args[@]}" \
               "${WORKSPACE_ROOT}/ko-build/build-output/" \
               "${COLLECTOR_MODULES_BUCKET}/"
+
 
       - run:
           name: Sanity check

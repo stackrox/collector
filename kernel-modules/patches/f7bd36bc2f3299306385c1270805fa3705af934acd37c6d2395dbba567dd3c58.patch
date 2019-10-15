@@ -1,3 +1,22 @@
+diff --git a/bpf/Makefile b/bpf/Makefile
+index 9ec83c6..f87886b 100644
+--- a/bpf/Makefile
++++ b/bpf/Makefile
+@@ -32,12 +32,14 @@ $(obj)/probe.o: $(src)/probe.c \
+ 		$(src)/types.h
+ 	$(CLANG) $(LINUXINCLUDE) \
+ 		$(KBUILD_CPPFLAGS) \
++		$(KBUILD_EXTRA_CPPFLAGS) \
+ 		$(DEBUG) \
+ 		-D__KERNEL__ \
+ 		-D__BPF_TRACING__ \
+ 		-Wno-gnu-variable-sized-type-not-at-end \
+ 		-Wno-address-of-packed-member \
+ 		-fno-jump-tables \
++		-fno-stack-protector \
+ 		-Wno-tautological-compare \
+ 		-O2 -g -emit-llvm -c $< -o $(patsubst %.o,%.ll,$@)
+ 	$(LLC) -march=bpf -filetype=obj -o $@ $(patsubst %.o,%.ll,$@)
 diff --git a/bpf/fillers.h b/bpf/fillers.h
 index 2779a2a..b34a28a 100644
 --- a/bpf/fillers.h
@@ -13,3 +32,1658 @@ index 2779a2a..b34a28a 100644
  	}
  
  	return res;
+diff --git a/main.c b/main.c
+index 2f90a4a..ba27757 100644
+--- a/main.c
++++ b/main.c
+@@ -256,6 +256,15 @@ do {								\
+ 		pr_info(fmt, ##__VA_ARGS__);			\
+ } while (0)
+ 
++inline void ppm_syscall_get_arguments(struct task_struct *task, struct pt_regs *regs, unsigned long *args)
++{
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0))
++	syscall_get_arguments(task, regs, 0, 6, args);
++#else
++	syscall_get_arguments(task, regs, args);
++#endif
++}
++
+ /* Begin StackRox Section */
+ 
+ // A hashtable for storing a set of pointers. Used for storing the set of excluded PID namespaces.
+@@ -1661,12 +1670,12 @@ static const unsigned char compat_nas[21] = {
+ static enum ppm_event_type parse_socketcall_for(struct task_struct* task, struct event_filler_arguments *filler_args, struct pt_regs *regs)
+ /* End StackRox Section */
+ {
+-	unsigned long __user args[2];
++	unsigned long __user args[6];
+ 	unsigned long __user *scargs;
+ 	int socketcall_id;
+ 
+ 	/* Begin StackRox Section */
+-	syscall_get_arguments(task, regs, 0, 2, args);
++	ppm_syscall_get_arguments(task, regs, args);
+ 	/* End StackRox Section */
+ 	socketcall_id = args[0];
+ 	scargs = (unsigned long __user *)args[1];
+@@ -1784,6 +1793,7 @@ static inline int drop_nostate_event_for(struct task_struct* task,
+                                      enum ppm_event_type event_type,
+ 				     struct pt_regs *regs)
+ {
++	unsigned long __user args[6];
+ 	unsigned long arg = 0;
+ 	int close_fd = -1;
+ 	struct files_struct *files;
+@@ -1805,7 +1815,8 @@ static inline int drop_nostate_event_for(struct task_struct* task,
+ 		 * The invalid fd events don't matter to userspace in dropping mode,
+ 		 * so we do this before the UF_NEVER_DROP check
+ 		 */
+-		syscall_get_arguments(current, regs, 0, 1, &arg);
++		ppm_syscall_get_arguments(current, regs, args);
++		arg = args[0];
+ 		close_fd = (int)arg;
+ 
+ 		files = current->files;
+@@ -1825,7 +1836,8 @@ static inline int drop_nostate_event_for(struct task_struct* task,
+ 	case PPME_SYSCALL_FCNTL_E:
+ 	case PPME_SYSCALL_FCNTL_X:
+ 		// cmd arg
+-		syscall_get_arguments(current, regs, 1, 1, &arg);
++		ppm_syscall_get_arguments(current, regs, args);
++		arg = args[1];
+ 		if (arg != F_DUPFD && arg != F_DUPFD_CLOEXEC)
+ 			drop = true;
+ 		break;
+diff --git a/ppm_cputime.c b/ppm_cputime.c
+index 70a05e1..71563b0 100644
+--- a/ppm_cputime.c
++++ b/ppm_cputime.c
+@@ -34,6 +34,7 @@ or GPL2.txt for full copies of the license.
+ #include "ppm_events_public.h"
+ #include "ppm_events.h"
+ #include "ppm.h"
++#include "ppm_version.h"
+ 
+ #if (defined CONFIG_VIRT_CPU_ACCOUNTING_NATIVE) || (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 30))
+ void ppm_task_cputime_adjusted(struct task_struct *p, cputime_t *ut, cputime_t *st)
+@@ -48,15 +49,26 @@ void ppm_task_cputime_adjusted(struct task_struct *p, cputime_t *ut, cputime_t *
+ #endif
+ 
+ #ifdef CONFIG_VIRT_CPU_ACCOUNTING_GEN
++
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 13, 0)) || (PPM_RHEL_RELEASE_CODE > 0 && PPM_RHEL_RELEASE_CODE >= PPM_RHEL_RELEASE_VERSION(7, 7))
++#define ppm_vtime_starttime(tsk) ((tsk)->vtime.starttime)
++#define ppm_vtime_seqlock(tsk) (&(tsk)->vtime.seqlock)
++#define ppm_vtime_state(tsk) ((tsk)->vtime.state)
++#else
++#define ppm_vtime_starttime(tsk) ((tsk)->vtime_snap)
++#define ppm_vtime_seqlock(tsk) (&(tsk)->vtime_seqlock)
++#define ppm_vtime_state(tsk) ((tsk)->vtime_snap_whence)
++#endif
++
+ static unsigned long long vtime_delta(struct task_struct *tsk)
+ {
+ 	unsigned long long clock;
+ 
+ 	clock = local_clock();
+-	if (clock < tsk->vtime_snap)
++	if (clock < ppm_vtime_starttime(tsk))
+ 		return 0;
+ 
+-	return clock - tsk->vtime_snap;
++	return clock - ppm_vtime_starttime(tsk);
+ }
+ 
+ static void
+@@ -72,7 +84,7 @@ fetch_task_cputime(struct task_struct *t,
+ 		*udelta = 0;
+ 		*sdelta = 0;
+ 
+-		seq = read_seqbegin(&t->vtime_seqlock);
++		seq = read_seqbegin(ppm_vtime_seqlock(t));
+ 
+ 		if (u_dst)
+ 			*u_dst = *u_src;
+@@ -80,7 +92,7 @@ fetch_task_cputime(struct task_struct *t,
+ 			*s_dst = *s_src;
+ 
+ 		/* Task is sleeping, nothing to add */
+-		if (t->vtime_snap_whence == VTIME_SLEEPING ||
++		if (ppm_vtime_state(t) == VTIME_SLEEPING ||
+ 		    is_idle_task(t))
+ 			continue;
+ 
+@@ -90,13 +102,13 @@ fetch_task_cputime(struct task_struct *t,
+ 		 * Task runs either in user or kernel space, add pending nohz time to
+ 		 * the right place.
+ 		 */
+-		if (t->vtime_snap_whence == VTIME_USER || t->flags & PF_VCPU) {
++		if (ppm_vtime_state(t) == VTIME_USER || t->flags & PF_VCPU) {
+ 			*udelta = delta;
+ 		} else {
+-			if (t->vtime_snap_whence == VTIME_SYS)
++			if (ppm_vtime_state(t) == VTIME_SYS)
+ 				*sdelta = delta;
+ 		}
+-	} while (read_seqretry(&t->vtime_seqlock, seq));
++	} while (read_seqretry(ppm_vtime_seqlock(t), seq));
+ }
+ 
+ void task_cputime(struct task_struct *t, cputime_t *utime, cputime_t *stime)
+@@ -219,7 +231,7 @@ static void cputime_advance(cputime_t *counter, cputime_t new)
+  * runtime accounting.
+  */
+ static void cputime_adjust(struct task_cputime *curr,
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 3, 0))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 3, 0)) || (PPM_RHEL_RELEASE_CODE > 0 && PPM_RHEL_RELEASE_CODE >= PPM_RHEL_RELEASE_VERSION(7, 6))
+ 			   struct prev_cputime *prev,
+ #else
+ 			   struct cputime *prev,
+diff --git a/ppm_events.c b/ppm_events.c
+index 2f2070e..ef7de69 100644
+--- a/ppm_events.c
++++ b/ppm_events.c
+@@ -24,7 +24,7 @@ or GPL2.txt for full copies of the license.
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+-#include <asm/mman.h>
++#include <linux/mman.h>
+ #include <linux/in.h>
+ #if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 20)
+ #include <linux/mount.h>
+@@ -57,6 +57,23 @@ or GPL2.txt for full copies of the license.
+ #define ppm_access_ok(type, addr, size) ppm_access_ok_raw(type, addr, size)
+ #endif
+ 
++/*
++ * Linux 5.1 kernels modify the syscall_get_arguments function to always
++ * return all arguments rather than allowing the caller to select which
++ * arguments are desired. This wrapper replicates the original
++ * functionality.
++ */
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0))
++#define syscall_get_arguments_deprecated syscall_get_arguments
++#else
++#define syscall_get_arguments_deprecated(_task, _reg, _start, _len, _args) \
++	do { \
++		unsigned long _sga_args[6] = {}; \
++		syscall_get_arguments(_task, _reg, _sga_args); \
++		memcpy(_args, &_sga_args[_start], _len); \
++	} while(0)
++#endif
++
+ /* End StackRox patch */
+ 
+ extern bool g_tracers_enabled;
+@@ -256,7 +273,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
+ 					 * Get the address
+ 					 */
+ 					if (!args->is_socketcall)
+-						syscall_get_arguments(current, args->regs, 4, 1, &val);
++						syscall_get_arguments_deprecated(current, args->regs, 4, 1, &val);
+ 					else
+ 						val = args->socketcall_args[4];
+ 
+@@ -272,7 +289,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
+ 						 * Get the address len
+ 						 */
+ 						if (!args->is_socketcall)
+-							syscall_get_arguments(current, args->regs, 5, 1, &val);
++							syscall_get_arguments_deprecated(current, args->regs, 5, 1, &val);
+ 						else
+ 							val = args->socketcall_args[5];
+ 
+@@ -302,7 +319,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
+ #endif
+ 
+ 					if (!args->is_socketcall)
+-						syscall_get_arguments(current, args->regs, 1, 1, &val);
++						syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 					else
+ 						val = args->socketcall_args[1];
+ 
+@@ -1158,7 +1175,7 @@ int32_t parse_readv_writev_bufs(struct event_filler_arguments *args, const struc
+ 			 * Retrieve the FD. It will be used for dynamic snaplen calculation.
+ 			 */
+ 			if (!args->is_socketcall)
+-				syscall_get_arguments(current, args->regs, 0, 1, &val);
++				syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 			else
+ 				val = args->socketcall_args[0];
+ 			args->fd = (int)val;
+@@ -1289,7 +1306,7 @@ int32_t compat_parse_readv_writev_bufs(struct event_filler_arguments *args, cons
+ 			 * Retrieve the FD. It will be used for dynamic snaplen calculation.
+ 			 */
+ 			if (!args->is_socketcall)
+-				syscall_get_arguments(current, args->regs, 0, 1, &val);
++				syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 			else
+ 				val = args->socketcall_args[0];
+ 			args->fd = (int)val;
+@@ -1392,7 +1409,7 @@ int f_sys_autofill(struct event_filler_arguments *args)
+ 				/*
+ 				 * Regular argument
+ 				 */
+-				syscall_get_arguments(current,
++				syscall_get_arguments_deprecated(current,
+ 						args->regs,
+ 						evinfo->autofill_args[j].id,
+ 						1,
+diff --git a/ppm_fillers.c b/ppm_fillers.c
+index ccf092f..0919275 100644
+--- a/ppm_fillers.c
++++ b/ppm_fillers.c
+@@ -48,6 +48,23 @@ or GPL2.txt for full copies of the license.
+ 
+ #define merge_64(hi, lo) ((((unsigned long long)(hi)) << 32) + ((lo) & 0xffffffffUL))
+ 
++/*
++ * Linux 5.1 kernels modify the syscall_get_arguments_deprecated function to always
++ * return all arguments rather than allowing the caller to select which
++ * arguments are desired. This wrapper replicates the original
++ * functionality.
++ */
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0))
++#define syscall_get_arguments_deprecated syscall_get_arguments
++#else
++#define syscall_get_arguments_deprecated(_task, _reg, _start, _len, _args) \
++	do { \
++		unsigned long _sga_args[6] = {}; \
++		syscall_get_arguments(_task, _reg, _sga_args); \
++		memcpy(_args, &_sga_args[_start], _len); \
++	} while(0)
++#endif
++
+ int f_sys_generic(struct event_filler_arguments *args)
+ {
+ 	int res;
+@@ -107,7 +124,7 @@ int f_sys_single(struct event_filler_arguments *args)
+ 	int res;
+ 	unsigned long val;
+ 
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	res = val_to_ring(args, val, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -147,7 +164,7 @@ int f_sys_open_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * name
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	res = val_to_ring(args, val, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -156,7 +173,7 @@ int f_sys_open_x(struct event_filler_arguments *args)
+ 	 * Flags
+ 	 * Note that we convert them into the ppm portable representation before pushing them to the ring
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &flags);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &flags);
+ 	res = val_to_ring(args, open_flags_to_scap(flags), 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -164,7 +181,7 @@ int f_sys_open_x(struct event_filler_arguments *args)
+ 	/*
+ 	 *  mode
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &modes);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &modes);
+ 	res = val_to_ring(args, open_modes_to_scap(flags, modes), 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -182,7 +199,7 @@ int f_sys_read_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * Retrieve the FD. It will be used for dynamic snaplen calculation.
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	args->fd = (int)val;
+ 
+ 	/*
+@@ -203,7 +220,7 @@ int f_sys_read_x(struct event_filler_arguments *args)
+ 		val = 0;
+ 		bufsize = 0;
+ 	} else {
+-		syscall_get_arguments(current, args->regs, 1, 1, &val);
++		syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 
+ 		/*
+ 		 * The return value can be lower than the value provided by the user,
+@@ -233,7 +250,7 @@ int f_sys_write_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * Retrieve the FD. It will be used for dynamic snaplen calculation.
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	args->fd = (int)val;
+ 
+ 	/*
+@@ -248,13 +265,13 @@ int f_sys_write_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * data
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &val);
+ 	bufsize = val;
+ 
+ 	/*
+ 	 * Copy the buffer
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	args->enforce_snaplen = true;
+ 	res = val_to_ring(args, val, bufsize, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+@@ -693,7 +710,7 @@ int f_proc_startupdate(struct event_filler_arguments *args)
+ 			 */
+ 			args->str_storage[0] = 0;
+ 
+-			syscall_get_arguments(current, args->regs, 1, 1, &val);
++			syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ #ifdef CONFIG_COMPAT
+ 			if (unlikely(args->compat))
+ 				args_len = compat_accumulate_argv_or_env((compat_uptr_t)val,
+@@ -865,9 +882,9 @@ cgroups_error:
+ 		 */
+ 		if (args->event_type == PPME_SYSCALL_CLONE_20_X) {
+ #ifdef CONFIG_S390
+-			syscall_get_arguments(current, args->regs, 1, 1, &val);
++			syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ #else
+-			syscall_get_arguments(current, args->regs, 0, 1, &val);
++			syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ #endif
+ 		} else
+ 			val = 0;
+@@ -940,7 +957,7 @@ cgroups_error:
+ 			/*
+ 			 * The call failed, so get the env from the arguments
+ 			 */
+-			syscall_get_arguments(current, args->regs, 2, 1, &val);
++			syscall_get_arguments_deprecated(current, args->regs, 2, 1, &val);
+ #ifdef CONFIG_COMPAT
+ 			if (unlikely(args->compat))
+ 				env_len = compat_accumulate_argv_or_env((compat_uptr_t)val,
+@@ -1009,7 +1026,7 @@ int f_sys_execve_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * filename
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	res = val_to_ring(args, val, 0, true, 0);
+ 	if (res == PPM_FAILURE_INVALID_USER_MEMORY)
+ 		res = val_to_ring(args, (unsigned long)"<NA>", 0, false, 0);
+@@ -1041,7 +1058,7 @@ int f_sys_socket_bind_x(struct event_filler_arguments *args)
+ 	 * addr
+ 	 */
+ 	if (!args->is_socketcall)
+-		syscall_get_arguments(current, args->regs, 1, 1, &val);
++		syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	else
+ 		val = args->socketcall_args[1];
+ 
+@@ -1051,7 +1068,7 @@ int f_sys_socket_bind_x(struct event_filler_arguments *args)
+ 	 * Get the address len
+ 	 */
+ 	if (!args->is_socketcall)
+-		syscall_get_arguments(current, args->regs, 2, 1, &val);
++		syscall_get_arguments_deprecated(current, args->regs, 2, 1, &val);
+ 	else
+ 		val = args->socketcall_args[2];
+ 
+@@ -1109,7 +1126,7 @@ int f_sys_connect_x(struct event_filler_arguments *args)
+ 	 * in the stack, and therefore we can consume them.
+ 	 */
+ 	if (!args->is_socketcall) {
+-		syscall_get_arguments(current, args->regs, 0, 1, &val);
++		syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 		fd = (int)val;
+ 	} else
+ 		fd = (int)args->socketcall_args[0];
+@@ -1119,7 +1136,7 @@ int f_sys_connect_x(struct event_filler_arguments *args)
+ 		 * Get the address
+ 		 */
+ 		if (!args->is_socketcall)
+-			syscall_get_arguments(current, args->regs, 1, 1, &val);
++			syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 		else
+ 			val = args->socketcall_args[1];
+ 
+@@ -1129,7 +1146,7 @@ int f_sys_connect_x(struct event_filler_arguments *args)
+ 		 * Get the address len
+ 		 */
+ 		if (!args->is_socketcall)
+-			syscall_get_arguments(current, args->regs, 2, 1, &val);
++			syscall_get_arguments_deprecated(current, args->regs, 2, 1, &val);
+ 		else
+ 			val = args->socketcall_args[2];
+ 
+@@ -1194,7 +1211,7 @@ int f_sys_socketpair_x(struct event_filler_arguments *args)
+ 		 * fds
+ 		 */
+ 		if (!args->is_socketcall)
+-			syscall_get_arguments(current, args->regs, 3, 1, &val);
++			syscall_get_arguments_deprecated(current, args->regs, 3, 1, &val);
+ 		else
+ 			val = args->socketcall_args[3];
+ #ifdef CONFIG_COMPAT
+@@ -1429,7 +1446,7 @@ int f_sys_setsockopt_x(struct event_filler_arguments *args)
+ 	int64_t retval;
+ 	unsigned long val[5];
+ 
+-	syscall_get_arguments(current, args->regs, 0, 5, val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 5, val);
+ 	retval = (int64_t)(long)syscall_get_return_value(current, args->regs);
+ 
+ 	/* retval */
+@@ -1473,7 +1490,7 @@ int f_sys_getsockopt_x(struct event_filler_arguments *args)
+ 	uint32_t optlen;
+ 	unsigned long val[5];
+ 
+-	syscall_get_arguments(current, args->regs, 0, 5, val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 5, val);
+ 	retval = (int64_t)(long)syscall_get_return_value(current, args->regs);
+ 
+ 	/* retval */
+@@ -1575,7 +1592,7 @@ int f_sys_accept_x(struct event_filler_arguments *args)
+ 	 * queuepct
+ 	 */
+ 	if (!args->is_socketcall)
+-		syscall_get_arguments(current, args->regs, 0, 1, &srvskfd);
++		syscall_get_arguments_deprecated(current, args->regs, 0, 1, &srvskfd);
+ 	else
+ 		srvskfd = args->socketcall_args[0];
+ 
+@@ -1617,7 +1634,7 @@ int f_sys_send_e_common(struct event_filler_arguments *args, int *fd)
+ 	 * fd
+ 	 */
+ 	if (!args->is_socketcall)
+-		syscall_get_arguments(current, args->regs, 0, 1, &val);
++		syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	else
+ 		val = args->socketcall_args[0];
+ 
+@@ -1631,7 +1648,7 @@ int f_sys_send_e_common(struct event_filler_arguments *args, int *fd)
+ 	 * size
+ 	 */
+ 	if (!args->is_socketcall)
+-		syscall_get_arguments(current, args->regs, 2, 1, &size);
++		syscall_get_arguments_deprecated(current, args->regs, 2, 1, &size);
+ 	else
+ 		size = args->socketcall_args[2];
+ 
+@@ -1678,7 +1695,7 @@ int f_sys_sendto_e(struct event_filler_arguments *args)
+ 	 * Get the address
+ 	 */
+ 	if (!args->is_socketcall)
+-		syscall_get_arguments(current, args->regs, 4, 1, &val);
++		syscall_get_arguments_deprecated(current, args->regs, 4, 1, &val);
+ 	else
+ 		val = args->socketcall_args[4];
+ 
+@@ -1688,7 +1705,7 @@ int f_sys_sendto_e(struct event_filler_arguments *args)
+ 	 * Get the address len
+ 	 */
+ 	if (!args->is_socketcall)
+-		syscall_get_arguments(current, args->regs, 5, 1, &val);
++		syscall_get_arguments_deprecated(current, args->regs, 5, 1, &val);
+ 	else
+ 		val = args->socketcall_args[5];
+ 
+@@ -1736,7 +1753,7 @@ int f_sys_send_x(struct event_filler_arguments *args)
+ 	 * Retrieve the FD. It will be used for dynamic snaplen calculation.
+ 	 */
+ 	if (!args->is_socketcall)
+-		syscall_get_arguments(current, args->regs, 0, 1, &val);
++		syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	else
+ 		val = args->socketcall_args[0];
+ 
+@@ -1761,7 +1778,7 @@ int f_sys_send_x(struct event_filler_arguments *args)
+ 		bufsize = 0;
+ 	} else {
+ 		if (!args->is_socketcall)
+-			syscall_get_arguments(current, args->regs, 1, 1, &val);
++			syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 		else
+ 			val = args->socketcall_args[1];
+ 
+@@ -1790,7 +1807,7 @@ int f_sys_recv_x_common(struct event_filler_arguments *args, int64_t *retval)
+ 	 * Retrieve the FD. It will be used for dynamic snaplen calculation.
+ 	 */
+ 	if (!args->is_socketcall)
+-		syscall_get_arguments(current, args->regs, 0, 1, &val);
++		syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	else
+ 		val = args->socketcall_args[1];
+ 
+@@ -1815,7 +1832,7 @@ int f_sys_recv_x_common(struct event_filler_arguments *args, int64_t *retval)
+ 		bufsize = 0;
+ 	} else {
+ 		if (!args->is_socketcall)
+-			syscall_get_arguments(current, args->regs, 1, 1, &val);
++			syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 		else
+ 			val = args->socketcall_args[1];
+ 
+@@ -1871,7 +1888,7 @@ int f_sys_recvfrom_x(struct event_filler_arguments *args)
+ 		 * Get the fd
+ 		 */
+ 		if (!args->is_socketcall) {
+-			syscall_get_arguments(current, args->regs, 0, 1, &val);
++			syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 			fd = (int)val;
+ 		} else
+ 			fd = (int)args->socketcall_args[0];
+@@ -1880,7 +1897,7 @@ int f_sys_recvfrom_x(struct event_filler_arguments *args)
+ 		 * Get the address
+ 		 */
+ 		if (!args->is_socketcall)
+-			syscall_get_arguments(current, args->regs, 4, 1, &val);
++			syscall_get_arguments_deprecated(current, args->regs, 4, 1, &val);
+ 		else
+ 			val = args->socketcall_args[4];
+ 		usrsockaddr = (struct sockaddr __user *)val;
+@@ -1889,7 +1906,7 @@ int f_sys_recvfrom_x(struct event_filler_arguments *args)
+ 		 * Get the address len
+ 		 */
+ 		if (!args->is_socketcall)
+-			syscall_get_arguments(current, args->regs, 5, 1, &val);
++			syscall_get_arguments_deprecated(current, args->regs, 5, 1, &val);
+ 		else
+ 			val = args->socketcall_args[5];
+ 		if (usrsockaddr != NULL && val != 0) {
+@@ -1965,7 +1982,7 @@ int f_sys_sendmsg_e(struct event_filler_arguments *args)
+ 	 * fd
+ 	 */
+ 	if (!args->is_socketcall)
+-		syscall_get_arguments(current, args->regs, 0, 1, &val);
++		syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	else
+ 		val = args->socketcall_args[0];
+ 
+@@ -1978,7 +1995,7 @@ int f_sys_sendmsg_e(struct event_filler_arguments *args)
+ 	 * Retrieve the message header
+ 	 */
+ 	if (!args->is_socketcall)
+-		syscall_get_arguments(current, args->regs, 1, 1, &val);
++		syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	else
+ 		val = args->socketcall_args[1];
+ 
+@@ -2090,7 +2107,7 @@ int f_sys_sendmsg_x(struct event_filler_arguments *args)
+ 	 * Retrieve the message header
+ 	 */
+ 	if (!args->is_socketcall)
+-		syscall_get_arguments(current, args->regs, 1, 1, &val);
++		syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	else
+ 		val = args->socketcall_args[1];
+ 
+@@ -2163,7 +2180,7 @@ int f_sys_recvmsg_x(struct event_filler_arguments *args)
+ 	 * Retrieve the message header
+ 	 */
+ 	if (!args->is_socketcall)
+-		syscall_get_arguments(current, args->regs, 1, 1, &val);
++		syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	else
+ 		val = args->socketcall_args[1];
+ 
+@@ -2207,7 +2224,7 @@ int f_sys_recvmsg_x(struct event_filler_arguments *args)
+ 		 * Get the fd
+ 		 */
+ 		if (!args->is_socketcall) {
+-			syscall_get_arguments(current, args->regs, 0, 1, &val);
++			syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 			fd = (int)val;
+ 		} else
+ 			fd = (int)args->socketcall_args[0];
+@@ -2269,7 +2286,7 @@ int f_sys_pipe_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * fds
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 
+ #ifdef CONFIG_COMPAT
+ 	if (!args->compat) {
+@@ -2317,7 +2334,7 @@ int f_sys_eventfd_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * initval
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -2326,7 +2343,7 @@ int f_sys_eventfd_e(struct event_filler_arguments *args)
+ 	 * flags
+ 	 * XXX not implemented yet
+ 	 */
+-	/* syscall_get_arguments(current, args->regs, 1, 1, &val); */
++	/* syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val); */
+ 	val = 0;
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+@@ -2344,7 +2361,7 @@ int f_sys_shutdown_e(struct event_filler_arguments *args)
+ 	 * fd
+ 	 */
+ 	if (!args->is_socketcall)
+-		syscall_get_arguments(current, args->regs, 0, 1, &val);
++		syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	else
+ 		val = args->socketcall_args[0];
+ 
+@@ -2356,7 +2373,7 @@ int f_sys_shutdown_e(struct event_filler_arguments *args)
+ 	 * how
+ 	 */
+ 	if (!args->is_socketcall)
+-		syscall_get_arguments(current, args->regs, 1, 1, &val);
++		syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	else
+ 		val = args->socketcall_args[1];
+ 
+@@ -2375,7 +2392,7 @@ int f_sys_futex_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * addr
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -2383,7 +2400,7 @@ int f_sys_futex_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * op
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	res = val_to_ring(args, (unsigned long)futex_op_to_scap(val), 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -2391,7 +2408,7 @@ int f_sys_futex_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * val
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &val);
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -2407,7 +2424,7 @@ int f_sys_lseek_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * fd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -2415,7 +2432,7 @@ int f_sys_lseek_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * offset
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -2423,7 +2440,7 @@ int f_sys_lseek_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * whence
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &val);
+ 	res = val_to_ring(args, lseek_whence_to_scap(val), 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -2442,7 +2459,7 @@ int f_sys_llseek_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * fd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -2451,8 +2468,8 @@ int f_sys_llseek_e(struct event_filler_arguments *args)
+ 	 * offset
+ 	 * We build it by combining the offset_high and offset_low system call arguments
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &oh);
+-	syscall_get_arguments(current, args->regs, 2, 1, &ol);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &oh);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &ol);
+ 	offset = (((uint64_t)oh) << 32) + ((uint64_t)ol);
+ 	res = val_to_ring(args, offset, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+@@ -2461,7 +2478,7 @@ int f_sys_llseek_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * whence
+ 	 */
+-	syscall_get_arguments(current, args->regs, 4, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 4, 1, &val);
+ 	res = val_to_ring(args, lseek_whence_to_scap(val), 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -2485,7 +2502,7 @@ static int poll_parse_fds(struct event_filler_arguments *args, bool enter_event)
+ 	 *
+ 	 * Get the number of fds
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &nfds);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &nfds);
+ 
+ 	/*
+ 	 * Check if we have enough space to store both the fd list
+@@ -2495,7 +2512,7 @@ static int poll_parse_fds(struct event_filler_arguments *args, bool enter_event)
+ 		return PPM_FAILURE_BUFFER_FULL;
+ 
+ 	/* Get the fds pointer */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 
+ 	fds = (struct pollfd *)args->str_storage;
+ #ifdef CONFIG_COMPAT
+@@ -2552,7 +2569,7 @@ int f_sys_poll_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * timeout
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &val);
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -2607,7 +2624,7 @@ int f_sys_ppoll_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * timeout
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &val);
+ 	/* NULL timeout specified as 0xFFFFFF.... */
+ 	if (val == (unsigned long)NULL)
+ 		res = val_to_ring(args, (uint64_t)(-1), 0, false, 0);
+@@ -2619,7 +2636,7 @@ int f_sys_ppoll_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * sigmask
+ 	 */
+-	syscall_get_arguments(current, args->regs, 3, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 3, 1, &val);
+ 	if (val != (unsigned long)NULL)
+ 		if (0 != ppm_copy_from_user(&val, (void __user *)val, sizeof(val)))
+ 			return PPM_FAILURE_INVALID_USER_MEMORY;
+@@ -2661,7 +2678,7 @@ int f_sys_mount_e(struct event_filler_arguments *args)
+ 	 * Fix mount flags in arg 3.
+ 	 * See http://lxr.free-electrons.com/source/fs/namespace.c?v=4.2#L2650
+ 	 */
+-	syscall_get_arguments(current, args->regs, 3, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 3, 1, &val);
+ 	if ((val & PPM_MS_MGC_MSK) == PPM_MS_MGC_VAL)
+ 		val &= ~PPM_MS_MGC_MSK;
+ 	res = val_to_ring(args, val, 0, false, 0);
+@@ -2687,7 +2704,7 @@ int f_sys_openat_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * dirfd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 
+ 	if ((int)val == AT_FDCWD)
+ 		val = PPM_AT_FDCWD;
+@@ -2699,7 +2716,7 @@ int f_sys_openat_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * name
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	res = val_to_ring(args, val, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -2708,7 +2725,7 @@ int f_sys_openat_x(struct event_filler_arguments *args)
+ 	 * Flags
+ 	 * Note that we convert them into the ppm portable representation before pushing them to the ring
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &flags);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &flags);
+ 	res = val_to_ring(args, open_flags_to_scap(flags), 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -2716,7 +2733,7 @@ int f_sys_openat_x(struct event_filler_arguments *args)
+ 	/*
+ 	 *  mode
+ 	 */
+-	syscall_get_arguments(current, args->regs, 3, 1, &modes);
++	syscall_get_arguments_deprecated(current, args->regs, 3, 1, &modes);
+ 	res = val_to_ring(args, open_modes_to_scap(flags, modes), 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -2738,7 +2755,7 @@ int f_sys_unlinkat_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * dirfd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 
+ 	if ((int)val == AT_FDCWD)
+ 		val = PPM_AT_FDCWD;
+@@ -2750,7 +2767,7 @@ int f_sys_unlinkat_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * name
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	res = val_to_ring(args, val, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -2759,7 +2776,7 @@ int f_sys_unlinkat_x(struct event_filler_arguments *args)
+ 	 * flags
+ 	 * Note that we convert them into the ppm portable representation before pushing them to the ring
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &val);
+ 	res = val_to_ring(args, unlinkat_flags_to_scap(val), 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -2782,7 +2799,7 @@ int f_sys_linkat_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * olddir
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 
+ 	if ((int)val == AT_FDCWD)
+ 		val = PPM_AT_FDCWD;
+@@ -2794,7 +2811,7 @@ int f_sys_linkat_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * oldpath
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	res = val_to_ring(args, val, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -2802,7 +2819,7 @@ int f_sys_linkat_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * newdir
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &val);
+ 
+ 	if ((int)val == AT_FDCWD)
+ 		val = PPM_AT_FDCWD;
+@@ -2814,7 +2831,7 @@ int f_sys_linkat_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * newpath
+ 	 */
+-	syscall_get_arguments(current, args->regs, 3, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 3, 1, &val);
+ 	res = val_to_ring(args, val, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -2823,7 +2840,7 @@ int f_sys_linkat_x(struct event_filler_arguments *args)
+ 	 * Flags
+ 	 * Note that we convert them into the ppm portable representation before pushing them to the ring
+ 	 */
+-	syscall_get_arguments(current, args->regs, 4, 1, &flags);
++	syscall_get_arguments_deprecated(current, args->regs, 4, 1, &flags);
+ 	res = val_to_ring(args, linkat_flags_to_scap(flags), 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -2844,7 +2861,7 @@ int f_sys_pread64_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * fd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -2852,7 +2869,7 @@ int f_sys_pread64_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * size
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &size);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &size);
+ 	res = val_to_ring(args, size, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -2861,11 +2878,11 @@ int f_sys_pread64_e(struct event_filler_arguments *args)
+ 	 * pos
+ 	 */
+ #if defined CONFIG_X86
+-	syscall_get_arguments(current, args->regs, 3, 1, &pos0);
+-	syscall_get_arguments(current, args->regs, 4, 1, &pos1);
++	syscall_get_arguments_deprecated(current, args->regs, 3, 1, &pos0);
++	syscall_get_arguments_deprecated(current, args->regs, 4, 1, &pos1);
+ #elif defined CONFIG_ARM && CONFIG_AEABI
+-	syscall_get_arguments(current, args->regs, 4, 1, &pos0);
+-	syscall_get_arguments(current, args->regs, 5, 1, &pos1);
++	syscall_get_arguments_deprecated(current, args->regs, 4, 1, &pos0);
++	syscall_get_arguments_deprecated(current, args->regs, 5, 1, &pos1);
+ #else
+  #error This architecture/abi not yet supported
+ #endif
+@@ -2895,7 +2912,7 @@ int f_sys_pwrite64_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * fd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -2903,7 +2920,7 @@ int f_sys_pwrite64_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * size
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &size);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &size);
+ 	res = val_to_ring(args, size, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -2914,17 +2931,17 @@ int f_sys_pwrite64_e(struct event_filler_arguments *args)
+ 	 * separate registers that we need to merge.
+ 	 */
+ #ifdef _64BIT_ARGS_SINGLE_REGISTER
+-	syscall_get_arguments(current, args->regs, 3, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 3, 1, &val);
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+ #else
+  #if defined CONFIG_X86
+-	syscall_get_arguments(current, args->regs, 3, 1, &pos0);
+-	syscall_get_arguments(current, args->regs, 4, 1, &pos1);
++	syscall_get_arguments_deprecated(current, args->regs, 3, 1, &pos0);
++	syscall_get_arguments_deprecated(current, args->regs, 4, 1, &pos1);
+  #elif defined CONFIG_ARM && CONFIG_AEABI
+-	syscall_get_arguments(current, args->regs, 4, 1, &pos0);
+-	syscall_get_arguments(current, args->regs, 5, 1, &pos1);
++	syscall_get_arguments_deprecated(current, args->regs, 4, 1, &pos0);
++	syscall_get_arguments_deprecated(current, args->regs, 5, 1, &pos1);
+  #else
+   #error This architecture/abi not yet supported
+  #endif
+@@ -2962,8 +2979,8 @@ int f_sys_readv_preadv_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * data and size
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
+-	syscall_get_arguments(current, args->regs, 2, 1, &iovcnt);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &iovcnt);
+ 
+ #ifdef CONFIG_COMPAT
+ 	if (unlikely(args->compat)) {
+@@ -2994,7 +3011,7 @@ int f_sys_writev_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * fd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -3002,12 +3019,12 @@ int f_sys_writev_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * size
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &iovcnt);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &iovcnt);
+ 
+ 	/*
+ 	 * Copy the buffer
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ #ifdef CONFIG_COMPAT
+ 	if (unlikely(args->compat)) {
+ 		compat_iov = (const struct compat_iovec __user *)compat_ptr(val);
+@@ -3050,13 +3067,13 @@ int f_sys_writev_pwritev_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * data and size
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &iovcnt);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &iovcnt);
+ 
+ 
+ 	/*
+ 	 * Copy the buffer
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ #ifdef CONFIG_COMPAT
+ 	if (unlikely(args->compat)) {
+ 		compat_iov = (const struct compat_iovec __user *)compat_ptr(val);
+@@ -3085,7 +3102,7 @@ int f_sys_preadv64_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * fd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -3100,8 +3117,8 @@ int f_sys_preadv64_e(struct event_filler_arguments *args)
+ 	 * requirements apply here. For an overly-detailed discussion about
+ 	 * this, see https://lwn.net/Articles/311630/
+ 	 */
+-	syscall_get_arguments(current, args->regs, 3, 1, &pos0);
+-	syscall_get_arguments(current, args->regs, 4, 1, &pos1);
++	syscall_get_arguments_deprecated(current, args->regs, 3, 1, &pos0);
++	syscall_get_arguments_deprecated(current, args->regs, 4, 1, &pos1);
+ 
+ 	pos64 = merge_64(pos1, pos0);
+ 
+@@ -3131,7 +3148,7 @@ int f_sys_pwritev_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * fd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -3139,12 +3156,12 @@ int f_sys_pwritev_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * size
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &iovcnt);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &iovcnt);
+ 
+ 	/*
+ 	 * Copy the buffer
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ #ifdef CONFIG_COMPAT
+ 	if (unlikely(args->compat)) {
+ 		compat_iov = (const struct compat_iovec __user *)compat_ptr(val);
+@@ -3167,7 +3184,7 @@ int f_sys_pwritev_e(struct event_filler_arguments *args)
+ 	 * separate registers that we need to merge.
+ 	 */
+ #ifdef _64BIT_ARGS_SINGLE_REGISTER
+-	syscall_get_arguments(current, args->regs, 3, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 3, 1, &val);
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -3178,8 +3195,8 @@ int f_sys_pwritev_e(struct event_filler_arguments *args)
+ 	 * requirements apply here. For an overly-detailed discussion about
+ 	 * this, see https://lwn.net/Articles/311630/
+ 	 */
+-	syscall_get_arguments(current, args->regs, 3, 1, &pos0);
+-	syscall_get_arguments(current, args->regs, 4, 1, &pos1);
++	syscall_get_arguments_deprecated(current, args->regs, 3, 1, &pos0);
++	syscall_get_arguments_deprecated(current, args->regs, 4, 1, &pos1);
+ 
+ 	pos64 = merge_64(pos1, pos0);
+ 
+@@ -3196,7 +3213,7 @@ int f_sys_nanosleep_e(struct event_filler_arguments *args)
+ 	unsigned long val;
+ 	int res;
+ 
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	res = timespec_parse(args, val);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -3213,7 +3230,7 @@ int f_sys_getrlimit_setrlimit_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * resource
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 
+ 	ppm_resource = rlimit_resource_to_scap(val);
+ 
+@@ -3248,7 +3265,7 @@ int f_sys_getrlimit_setrlrimit_x(struct event_filler_arguments *args)
+ 	 * Copy the user structure and extract cur and max
+ 	 */
+ 	if (retval >= 0 || args->event_type == PPME_SYSCALL_SETRLIMIT_X) {
+-		syscall_get_arguments(current, args->regs, 1, 1, &val);
++		syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 
+ #ifdef CONFIG_COMPAT
+ 		if (!args->compat) {
+@@ -3296,7 +3313,7 @@ int f_sys_prlimit_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * pid
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+@@ -3305,7 +3322,7 @@ int f_sys_prlimit_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * resource
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 
+ 	ppm_resource = rlimit_resource_to_scap(val);
+ 
+@@ -3342,7 +3359,7 @@ int f_sys_prlimit_x(struct event_filler_arguments *args)
+ 	 * Copy the user structure and extract cur and max
+ 	 */
+ 	if (retval >= 0) {
+-		syscall_get_arguments(current, args->regs, 2, 1, &val);
++		syscall_get_arguments_deprecated(current, args->regs, 2, 1, &val);
+ 
+ #ifdef CONFIG_COMPAT
+ 		if (!args->compat) {
+@@ -3370,7 +3387,7 @@ int f_sys_prlimit_x(struct event_filler_arguments *args)
+ 		newmax = -1;
+ 	}
+ 
+-	syscall_get_arguments(current, args->regs, 3, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 3, 1, &val);
+ 
+ #ifdef CONFIG_COMPAT
+ 	if (!args->compat) {
+@@ -3525,7 +3542,7 @@ int f_sys_fcntl_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * fd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -3533,7 +3550,7 @@ int f_sys_fcntl_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * cmd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	res = val_to_ring(args, fcntl_cmd_to_scap(val), 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -3547,7 +3564,7 @@ static inline int parse_ptrace_addr(struct event_filler_arguments *args, u16 req
+ 	uint64_t dst;
+ 	u8 idx;
+ 
+-	syscall_get_arguments(current, args->regs, 2, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &val);
+ 	switch (request) {
+ 	default:
+ 		idx = PPM_PTRACE_IDX_UINT64;
+@@ -3564,7 +3581,7 @@ static inline int parse_ptrace_data(struct event_filler_arguments *args, u16 req
+ 	uint64_t dst;
+ 	u8 idx;
+ 
+-	syscall_get_arguments(current, args->regs, 3, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 3, 1, &val);
+ 	switch (request) {
+ 	case PPM_PTRACE_PEEKTEXT:
+ 	case PPM_PTRACE_PEEKDATA:
+@@ -3612,7 +3629,7 @@ int f_sys_ptrace_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * request
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	res = val_to_ring(args, ptrace_requests_to_scap(val), 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -3620,7 +3637,7 @@ int f_sys_ptrace_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * pid
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -3658,7 +3675,7 @@ int f_sys_ptrace_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * request
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	request = ptrace_requests_to_scap(val);
+ 
+ 	res = parse_ptrace_addr(args, request);
+@@ -3724,7 +3741,7 @@ int f_sys_mmap_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * addr
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -3732,7 +3749,7 @@ int f_sys_mmap_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * length
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -3740,7 +3757,7 @@ int f_sys_mmap_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * prot
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &val);
+ 	res = val_to_ring(args, prot_flags_to_scap(val), 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -3748,7 +3765,7 @@ int f_sys_mmap_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * flags
+ 	 */
+-	syscall_get_arguments(current, args->regs, 3, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 3, 1, &val);
+ 	res = val_to_ring(args, mmap_flags_to_scap(val), 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -3756,7 +3773,7 @@ int f_sys_mmap_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * fd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 4, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 4, 1, &val);
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -3764,7 +3781,7 @@ int f_sys_mmap_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * offset/pgoffset
+ 	 */
+-	syscall_get_arguments(current, args->regs, 5, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 5, 1, &val);
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -3786,7 +3803,7 @@ int f_sys_renameat_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * olddirfd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 
+ 	if ((int)val == AT_FDCWD)
+ 		val = PPM_AT_FDCWD;
+@@ -3798,7 +3815,7 @@ int f_sys_renameat_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * oldpath
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	res = val_to_ring(args, val, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -3806,7 +3823,7 @@ int f_sys_renameat_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * newdirfd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &val);
+ 
+ 	if ((int)val == AT_FDCWD)
+ 		val = PPM_AT_FDCWD;
+@@ -3818,7 +3835,7 @@ int f_sys_renameat_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * newpath
+ 	 */
+-	syscall_get_arguments(current, args->regs, 3, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 3, 1, &val);
+ 	res = val_to_ring(args, val, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -3840,7 +3857,7 @@ int f_sys_symlinkat_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * oldpath
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	res = val_to_ring(args, val, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -3848,7 +3865,7 @@ int f_sys_symlinkat_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * newdirfd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 
+ 	if ((int)val == AT_FDCWD)
+ 		val = PPM_AT_FDCWD;
+@@ -3860,7 +3877,7 @@ int f_sys_symlinkat_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * newpath
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &val);
+ 	res = val_to_ring(args, val, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -3896,7 +3913,7 @@ int f_sys_sendfile_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * out_fd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	res = val_to_ring(args, val, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -3904,7 +3921,7 @@ int f_sys_sendfile_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * in_fd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	res = val_to_ring(args, val, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -3912,7 +3929,7 @@ int f_sys_sendfile_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * offset
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &val);
+ 
+ 	if (val != 0) {
+ #ifdef CONFIG_COMPAT
+@@ -3937,7 +3954,7 @@ int f_sys_sendfile_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * size
+ 	 */
+-	syscall_get_arguments(current, args->regs, 3, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 3, 1, &val);
+ 	res = val_to_ring(args, val, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -3963,7 +3980,7 @@ int f_sys_sendfile_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * offset
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &val);
+ 
+ 	if (val != 0) {
+ #ifdef CONFIG_COMPAT
+@@ -3999,7 +4016,7 @@ int f_sys_quotactl_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * extract cmd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	cmd = quotactl_cmd_to_scap(val);
+ 	res = val_to_ring(args, cmd, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+@@ -4016,7 +4033,7 @@ int f_sys_quotactl_e(struct event_filler_arguments *args)
+ 	 *  extract id
+ 	 */
+ 	id = 0;
+-	syscall_get_arguments(current, args->regs, 2, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &val);
+ 	if ((cmd == PPM_Q_GETQUOTA) ||
+ 		 (cmd == PPM_Q_SETQUOTA) ||
+ 		 (cmd == PPM_Q_XGETQUOTA) ||
+@@ -4059,7 +4076,7 @@ int f_sys_quotactl_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * extract cmd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	cmd = quotactl_cmd_to_scap(val);
+ 
+ 	/*
+@@ -4073,7 +4090,7 @@ int f_sys_quotactl_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * Add special
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	res = val_to_ring(args, val, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -4081,7 +4098,7 @@ int f_sys_quotactl_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * get addr
+ 	 */
+-	syscall_get_arguments(current, args->regs, 3, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 3, 1, &val);
+ 
+ 	/*
+ 	 * get quotafilepath only for QUOTAON
+@@ -4259,7 +4276,7 @@ int f_sys_getresuid_and_gid_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * ruid
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ #ifdef CONFIG_COMPAT
+ 	if (!args->compat) {
+ #endif
+@@ -4279,7 +4296,7 @@ int f_sys_getresuid_and_gid_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * euid
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	len = ppm_copy_from_user(&uid, (void *)val, sizeof(uint32_t));
+ 	if (unlikely(len != 0))
+ 		return PPM_FAILURE_INVALID_USER_MEMORY;
+@@ -4291,7 +4308,7 @@ int f_sys_getresuid_and_gid_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * suid
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &val);
+ 	len = ppm_copy_from_user(&uid, (void *)val, sizeof(uint32_t));
+ 	if (unlikely(len != 0))
+ 		return PPM_FAILURE_INVALID_USER_MEMORY;
+@@ -4309,12 +4326,12 @@ int f_sys_flock_e(struct event_filler_arguments *args)
+ 	int res;
+ 	u32 flags;
+ 
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+ 
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	flags = flock_flags_to_scap(val);
+ 	res = val_to_ring(args, flags, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+@@ -4332,7 +4349,7 @@ int f_sys_setns_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * parse fd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	res = val_to_ring(args, val, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -4340,7 +4357,7 @@ int f_sys_setns_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * get type, parse as clone flags as it's a subset of it
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	flags = clone_flags_to_scap(val);
+ 	res = val_to_ring(args, flags, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+@@ -4358,7 +4375,7 @@ int f_sys_unshare_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * get type, parse as clone flags as it's a subset of it
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	flags = clone_flags_to_scap(val);
+ 	res = val_to_ring(args, flags, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+@@ -4459,7 +4476,7 @@ int f_sys_semop_x(struct event_filler_arguments *args)
+ 	 * actually this could be read in the enter function but
+ 	 * we also need to know the value to access the sembuf structs
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &nsops);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &nsops);
+ 	res = val_to_ring(args, nsops, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -4467,7 +4484,7 @@ int f_sys_semop_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * sembuf
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, (unsigned long *) &ptr);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, (unsigned long *) &ptr);
+ 
+ 	if (nsops && ptr) {
+ 		/* max length of sembuf array in g_event_info = 2 */
+@@ -4506,7 +4523,7 @@ int f_sys_semget_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * key
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	res = val_to_ring(args, val, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -4514,7 +4531,7 @@ int f_sys_semget_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * nsems
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	res = val_to_ring(args, val, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -4522,7 +4539,7 @@ int f_sys_semget_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * semflg
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &val);
+ 	res = val_to_ring(args, semget_flags_to_scap(val), 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -4538,7 +4555,7 @@ int f_sys_semctl_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * semid
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 	res = val_to_ring(args, val, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -4546,7 +4563,7 @@ int f_sys_semctl_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * semnum
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	res = val_to_ring(args, val, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -4554,7 +4571,7 @@ int f_sys_semctl_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * cmd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &val);
+ 	res = val_to_ring(args, semctl_cmd_to_scap(val), 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -4563,7 +4580,7 @@ int f_sys_semctl_e(struct event_filler_arguments *args)
+ 	 * optional argument semun/val
+ 	 */
+ 	if (val == SETVAL)
+-		syscall_get_arguments(current, args->regs, 3, 1, &val);
++		syscall_get_arguments_deprecated(current, args->regs, 3, 1, &val);
+ 	else
+ 		val = 0;
+ 	res = val_to_ring(args, val, 0, true, 0);
+@@ -4581,7 +4598,7 @@ int f_sys_access_e(struct event_filler_arguments *args)
+ 	/*
+ 	 * mode
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	res = val_to_ring(args, access_flags_to_scap(val), 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -4609,7 +4626,7 @@ int f_sys_bpf_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * fd, depending on cmd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &cmd);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &cmd);
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+ 	if(cmd == BPF_MAP_CREATE || cmd == BPF_PROG_LOAD)
+ #else
+@@ -4642,7 +4659,7 @@ int f_sys_mkdirat_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * dirfd
+ 	 */
+-	syscall_get_arguments(current, args->regs, 0, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 0, 1, &val);
+ 
+ 	if ((int)val == AT_FDCWD)
+ 		val = PPM_AT_FDCWD;
+@@ -4654,7 +4671,7 @@ int f_sys_mkdirat_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * path
+ 	 */
+-	syscall_get_arguments(current, args->regs, 1, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 1, 1, &val);
+ 	res = val_to_ring(args, val, 0, true, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+@@ -4662,7 +4679,7 @@ int f_sys_mkdirat_x(struct event_filler_arguments *args)
+ 	/*
+ 	 * mode
+ 	 */
+-	syscall_get_arguments(current, args->regs, 2, 1, &val);
++	syscall_get_arguments_deprecated(current, args->regs, 2, 1, &val);
+ 	res = val_to_ring(args, val, 0, false, 0);
+ 	if (unlikely(res != PPM_SUCCESS))
+ 		return res;
+diff --git a/ppm_flag_helpers.h b/ppm_flag_helpers.h
+index 6e9ac21..f006065 100644
+--- a/ppm_flag_helpers.h
++++ b/ppm_flag_helpers.h
+@@ -10,7 +10,7 @@ or GPL2.txt for full copies of the license.
+ #ifndef PPM_FLAG_HELPERS_H_
+ #define PPM_FLAG_HELPERS_H_
+ 
+-#include <asm/mman.h>
++#include <linux/mman.h>
+ #include <linux/futex.h>
+ #include <linux/ptrace.h>
+ 
+diff --git a/ppm_version.h b/ppm_version.h
+new file mode 100644
+index 0000000..4c7c400
+--- /dev/null
++++ b/ppm_version.h
+@@ -0,0 +1,18 @@
++#include <linux/version.h>
++
++/**
++ * for RHEL kernels, export the release code (which is equal to e.g.
++ * RHEL_RELEASE_CODE(8, 1)) under our own name.
++ * For other kernels, just use zeros.
++ *
++ * We need macros that are always defined to use in preprocessor directives
++ * to express the required kernel version in a single expression, without
++ * a multiline #ifdef soup.
++ */
++#ifdef RHEL_RELEASE_CODE
++#define PPM_RHEL_RELEASE_CODE RHEL_RELEASE_CODE
++#define PPM_RHEL_RELEASE_VERSION(x,y) RHEL_RELEASE_VERSION(x,y)
++#else
++#define PPM_RHEL_RELEASE_CODE 0
++#define PPM_RHEL_RELEASE_VERSION(x,y) 0
++#endif
