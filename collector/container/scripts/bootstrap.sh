@@ -93,7 +93,7 @@ function download_kernel_object() {
         return 1
     fi
 
-    if ! gunzip --keep "$FILENAME_GZ"; then
+    if ! gunzip --keep "$filename_gz"; then
         log "${OBJECT_TYPE} downloaded, but there was an error un-gzipping. It looks like the file is corrupted."
         log "Please contact StackRox support, enclosing the above error message(s)."
         return 1
