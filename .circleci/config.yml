@@ -1049,29 +1049,28 @@ workflows:
         filters:
           tags:
             only: /.*/
-    ## TODO(rc) enable rhel8 after kernels are supported in kernel-crawler
-    #- integration-test:
-    #    name: test-ebpf-rhel-8
-    #    collection_method: ebpf 
-    #    vm_type: rhel
-    #    image_family: rhel-8
-    #    requires:
-    #    - images
-    #    - integration-test-local
-    #    filters:
-    #      tags:
-    #        only: /.*/
-    #- integration-test:
-    #    name: test-module-rhel-8
-    #    collection_method: module
-    #    vm_type: rhel
-    #    image_family: rhel-8
-    #    requires:
-    #    - images
-    #    - integration-test-local
-    #    filters:
-    #      tags:
-    #        only: /.*/
+    - integration-test:
+        name: test-ebpf-rhel-8
+        collection_method: ebpf 
+        vm_type: rhel
+        image_family: rhel-8
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-module-rhel-8
+        collection_method: module
+        vm_type: rhel
+        image_family: rhel-8
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
     - integration-test:
         name: test-ebpf-ubuntu-1804-lts
         collection_method: ebpf
@@ -1127,8 +1126,8 @@ workflows:
        - test-ebpf-cos-73-lts
        - test-module-rhel-7
        - test-ebpf-rhel-7
-       #- test-module-rhel-8
-       #- test-ebpf-rhel-8
+       - test-module-rhel-8
+       - test-ebpf-rhel-8
        - test-module-ubuntu-1804-lts
        - test-ebpf-ubuntu-1804-lts
        - test-module-ubuntu-1904
