@@ -1278,9 +1278,13 @@
 5.3.0-1003-aws
 5.3.0-1003-azure
 5.3.0-1003-gcp
+5.3.0-1004-aws
+5.3.0-1004-azure
 5.3.0-1004-gcp
+5.3.0-1005-gcp
 5.3.0-12-generic
 5.3.0-13-generic
 5.3.0-16-generic
 5.3.0-17-generic
 5.3.0-18-generic
+5.3.0-19-generic
