@@ -369,6 +369,25 @@ jobs:
           sed -e 's@^@  @' <build-tasks
           echo "Total: ${num_build_tasks} kernel/module version/probe type combinations."
 
+    - run:
+        name: Check that existing kernel objects have not been blacklisted
+        command: |
+          for i in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
+            version="$(basename "$i")"
+            "${SOURCE_ROOT}/kernel-modules/build/apply-blacklist.py" "${SOURCE_ROOT}/kernel-modules/BLACKLIST" \
+              ~/kobuild-tmp/existing-modules-"${version}" >~/kobuild-tmp/non-blacklisted-existing-modules-"${version}"
+
+            cat ~/kobuild-tmp/non-blacklisted-existing-modules-"${version}" \
+              ~/kobuild-tmp/existing-modules-"${version}" \
+              | sort | uniq -u >~/kobuild-tmp/blacklisted-existing-modules-"${version}"
+
+            if [[ ! -s "~/kobuild-tmp/blacklisted-existing-modules-${version}" ]]; then
+              echo "Module version ${version} contains blacklisted kernel objects"
+              cat ~/kobuild-tmp/blacklisted-existing-modules-"${version}"
+              exit 1
+            fi
+          done
+
     - persist_to_workspace:
         root: ~/workspace
         paths:
