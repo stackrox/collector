@@ -372,6 +372,27 @@ jobs:
     - run:
         name: Check that existing kernel objects have not been blacklisted
         command: |
+          for i in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
+            version="$(basename "$i")"
+            ( gsutil ls "${COLLECTOR_MODULES_BUCKET}/${version}/" | grep "*.gz" || true)  \
+              | "${SOURCE_ROOT}/kernel-modules/build/extract-kernel-versions-from-module-files" \
+                >~/kobuild-tmp/built-kernel-objects-"${version}"
+            awk -v modver="$version" '{print $1 " " modver " " $2}' <~/kobuild-tmp/built-kernel-objects-"${version}" >>~/kobuild-tmp/built-kernel-objects-tasks-"${version}"
+
+            "${SOURCE_ROOT}/kernel-modules/build/apply-blacklist.py" "${SOURCE_ROOT}/kernel-modules/BLACKLIST" \
+              ~/kobuild-tmp/built-kernel-objects-tasks-"${version}" >~/kobuild-tmp/non-blacklisted-built-kernel-objects-tasks-"${version}"
+
+            non_blaclisted_existing=~/kobuild-tmp/non-blacklisted-built-kernel-objects-tasks-"${version}"
+            blacklisted_existing=~/kobuild-tmp/blacklisted-built-kernel-objects-tasks-"${version}"
+            cat "${non_blaclisted_existing}" \
+                ~/kobuild-tmp/built-kernel-objects-tasks-"${version}" \
+              | sort | uniq -u >"${blacklisted_existing}"
+
+            echo "Blacklisted existing built for ${version}"
+            cat "${blacklisted_existing}"
+            echo
+          done
+
           "${SOURCE_ROOT}/kernel-modules/build/apply-blacklist.py" "${SOURCE_ROOT}/kernel-modules/BLACKLIST" \
             ~/kobuild-tmp/redundant-build-tasks >~/kobuild-tmp/non-blacklisted-redundant-build-tasks
 
