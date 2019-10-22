@@ -374,16 +374,16 @@ jobs:
         command: |
           "${SOURCE_ROOT}/kernel-modules/build/apply-blacklist.py" "${SOURCE_ROOT}/kernel-modules/BLACKLIST" \
             ~/kobuild-tmp/redundant-build-tasks >~/kobuild-tmp/non-blacklisted-redundant-build-tasks
+
+          blacklisted_existing=~/kobuild-tmp/blacklisted-redundant-build-tasks
           cat ~/kobuild-tmp/redundant-build-tasks \
               ~/kobuild-tmp/non-blacklisted-redundant-build-tasks \
-            | sort | uniq -u >~/kobuild-tmp/blacklisted-redundant-build-tasks
+            | sort | uniq -u >"${blacklisted_existing}"
 
-          if [[ -s "~/kobuild-tmp/blacklisted-redundant-build-tasks" ]]; then
+          if [[ -s "${blacklisted_existing}" ]]; then
             echo "Existing kernel objects have been blacklisted" 
-            cat ~/kobuild-tmp/blacklisted-redundant-build-tasks
+            cat "${blacklisted_existing}" 
             exit 1
-          else
-            cat ~/kobuild-tmp/blacklisted-redundant-build-tasks
           fi
 
     - persist_to_workspace:
