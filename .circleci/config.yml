@@ -938,8 +938,8 @@ jobs:
           if [ -z "$(ls -A "${mod_build_dir}" )" ] ; then
             echo "No kernel objects built in this workflow"
             # XXX uncomment here before commit to master
-            #circleci step halt
-            exit 0
+            # circleci step halt
+            # exit 0
           fi
           for mod_dir in "${mod_build_dir}"/*/ ; do
             mod_ver="$(basename "$mod_dir")"
@@ -978,11 +978,8 @@ jobs:
             docker pull "${released_base_image}"
             "./reload/build-latest.sh" "${collector_ver}" "${mod_ver}" "/tmp/released-kernel-object-cache/" "${COLLECTOR_MODULES_BUCKET}"
 
-            # XXX remove condition here before commit to master
-            if [[ "$CIRCLE_BRANCH" == "master" || -n "$CIRCLE_TAG" ]]; then
-              docker push "stackrox/collector:${collector_ver}-latest"
-              docker push "collector.stackrox.io/collector:${collector_ver}-latest"
-            fi
+            docker push "stackrox/collector:${collector_ver}-latest"
+            docker push "collector.stackrox.io/collector:${collector_ver}-latest"
           done
 
           docker images
