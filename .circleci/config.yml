@@ -382,6 +382,8 @@ jobs:
             echo "Existing kernel objects have been blacklisted" 
             cat ~/kobuild-tmp/blacklisted-redundant-build-tasks
             exit 1
+          else
+            cat ~/kobuild-tmp/blacklisted-redundant-build-tasks
           fi
 
     - persist_to_workspace:
