@@ -937,8 +937,7 @@ jobs:
           mod_build_dir="${WORKSPACE_ROOT}/ko-build/build-output"
           if [ -z "$(ls -A "${mod_build_dir}" )" ] ; then
             echo "No kernel objects built in this workflow"
-            # XXX uncomment here before commit to master
-            # circleci step halt
+            circleci step halt
             exit 0
           fi
           for mod_dir in "${mod_build_dir}"/*/ ; do
@@ -1214,8 +1213,5 @@ workflows:
         requires:
         - images
         filters:
-          # XXX uncomment here before commit to master
-          #branches:
-          #  only: master
-          tags:
-            only: /.*/
+          branches:
+            only: master
