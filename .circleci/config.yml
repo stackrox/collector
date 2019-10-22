@@ -939,7 +939,7 @@ jobs:
             echo "No kernel objects built in this workflow"
             # XXX uncomment here before commit to master
             # circleci step halt
-            # exit 0
+            exit 0
           fi
           for mod_dir in "${mod_build_dir}"/*/ ; do
             mod_ver="$(basename "$mod_dir")"
