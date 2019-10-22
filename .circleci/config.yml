@@ -381,7 +381,7 @@ jobs:
               ~/kobuild-tmp/existing-modules-"${version}" \
               | sort | uniq -u >~/kobuild-tmp/blacklisted-existing-modules-"${version}"
 
-            if [[ ! -s "~/kobuild-tmp/blacklisted-existing-modules-${version}" ]]; then
+            if [[ -s "~/kobuild-tmp/blacklisted-existing-modules-${version}" ]]; then
               echo "Module version ${version} contains blacklisted kernel objects"
               cat ~/kobuild-tmp/blacklisted-existing-modules-"${version}"
               exit 1
