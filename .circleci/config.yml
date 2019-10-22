@@ -373,7 +373,7 @@ jobs:
         name: Check that existing kernel objects have not been blacklisted
         command: |
           "${SOURCE_ROOT}/kernel-modules/build/apply-blacklist.py" "${SOURCE_ROOT}/kernel-modules/BLACKLIST" \
-            ~/kobuild-tmp/redundant-build-tasks >~/kobuild-tmp/non-blacklisted-reduntant-build-tasks
+            ~/kobuild-tmp/redundant-build-tasks >~/kobuild-tmp/non-blacklisted-redundant-build-tasks
           cat ~/kobuild-tmp/redundant-build-tasks \
               ~/kobuild-tmp/non-blacklisted-redundant-build-tasks \
             | sort | uniq -u >~/kobuild-tmp/blacklisted-redundant-build-tasks
