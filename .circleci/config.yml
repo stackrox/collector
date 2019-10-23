@@ -684,6 +684,7 @@ jobs:
 
           docker build \
             -t "stackrox/collector:${COLLECTOR_VERSION}" \
+            -t "stackrox/collector:${COLLECTOR_VERSION}-latest" \
             "${build_args[@]}" \
             container-combined
 
@@ -700,6 +701,8 @@ jobs:
           docker push "stackrox/collector:${COLLECTOR_VERSION}-base"
           echo "Pushing collector image"
           docker push "stackrox/collector:${COLLECTOR_VERSION}"
+          echo "Pushing collector latest image"
+          docker push "stackrox/collector:${COLLECTOR_VERSION}-latest"
 
   upload-modules:
     docker:
