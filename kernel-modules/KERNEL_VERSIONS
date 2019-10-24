@@ -1256,6 +1256,7 @@
 5.0.0-1022-azure
 5.0.0-1023-azure
 5.0.0-1024-azure
+5.0.0-1024-gcp
 5.0.0-11-generic
 5.0.0-13-generic
 5.0.0-14-generic
@@ -1301,3 +1302,4 @@
 5.3.0-17-generic
 5.3.0-18-generic
 5.3.0-19-generic
+5.3.0-20-generic
