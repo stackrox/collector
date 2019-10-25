@@ -1,4 +1,4 @@
-FROM debian:stretch-slim
+FROM registry.access.redhat.com/ubi7/ubi-minimal
 
 ARG collector_version=xxx
 ARG module_version=xxx
@@ -7,6 +7,9 @@ LABEL maintainer="StackRox <support@stackrox.com>"
 LABEL io.stackrox.collector.module-version="${module_version}"
 
 ENV MODULE_VERSION=${module_version}
+
+RUN microdnf install gzip kmod
+RUN microdnf remove rpm rpm-libs microdnf libdnf libsolv
 
 # Add module version file only
 RUN mkdir /kernel-modules && \
@@ -21,20 +24,8 @@ ENV SYSDIG_HOST_ROOT=/host
 # HTTP API port (8080)
 EXPOSE 8080 9090
 
-RUN apt-get update \
- && apt-get upgrade -y \
- && apt-get install -y --no-install-recommends \
-        ca-certificates \
-        kmod \
-        curl \
-        libssl1.0.2 \
-        libuuid1 \
-        libcap-ng0 \
-        libelf1 \
- ;
-
-COPY libs/libsinsp-wrapper.so \
-     /usr/local/lib/
+COPY libs/libsinsp-wrapper.so.rhel \
+     /usr/local/lib/libsinsp-wrapper.so
 
 WORKDIR /
 
@@ -64,7 +55,7 @@ CMD collector \
     --collection-method=$COLLECTION_METHOD \
     --grpc-server=$GRPC_SERVER
 
-COPY bin/collector /usr/local/bin/
+COPY bin/collector.rhel /usr/local/bin/collector
 
 LABEL io.stackrox.collector.version="${collector_version}"
 ENV COLLECTOR_VERSION=${collector_version}

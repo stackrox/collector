@@ -32,6 +32,14 @@ func TestCollectorGRPC(t *testing.T) {
 	suite.Run(t, new(BenchmarkCollectorTestSuite))
 }
 
+func TestProcessNetwork(t *testing.T) {
+	suite.Run(t, new(ProcessNetworkTestSuite))
+}
+
+func TestBenchmark(t *testing.T) {
+	suite.Run(t, new(BenchmarkCollectorTestSuite))
+}
+
 type IntegrationTestSuiteBase struct {
 	suite.Suite
 	db        *bolt.DB

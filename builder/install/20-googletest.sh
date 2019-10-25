@@ -7,5 +7,5 @@ cd googletest
 mkdir cmake-build
 cd cmake-build
 cmake -DCMAKE_BUILD_TYPE=Release ..
-make -j 6
+make -j ${NPROCS}
 make install

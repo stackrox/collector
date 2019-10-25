@@ -7,10 +7,6 @@ container/NOTICE-*.txt
 tags
 collector.tar.gz
 cmake-build/
+cmake-build-rhel/
 generated/
 collector/protoc-*
-**/integration-tests/vendor
-../integration-tests/deps
-integration-test-report.xml
-integration-test.log
-../sysdig/build-output/

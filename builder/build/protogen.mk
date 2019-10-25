@@ -1,5 +1,7 @@
-BASE_PATH ?= $(CURDIR)/..
+BASE_PATH ?= $(CURDIR)collector
 PATH ?= $(PATH):/go/bin
+
+GENERATED_CPP_BASE_PATH := $(CURDIR)collector/collector/generated
 
 # Automatically locate all API and data protos.
 # GENERATED_API_XXX and PROTO_API_XXX variables contain standard paths used to
@@ -19,33 +21,15 @@ GENERATED_CPP_SRCS = \
     $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_CPP_BASE_PATH)/%.grpc.pb.cc) \
     $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_CPP_BASE_PATH)/%.grpc.pb.h)
 
-##############
-## Protobuf ##
-##############
-# Set some platform variables for protoc.
-PROTOC_VERSION := 3.6.1
-UNAME_S := $(shell uname -s)
-ifeq ($(UNAME_S),Linux)
-PROTOC_ARCH = linux
-endif
-ifeq ($(UNAME_S),Darwin)
-PROTOC_ARCH = osx
-endif
-
-TMP_PATH := $(BASE_PATH)/.protogen-tmp/
-
-PROTOC_ZIP := protoc-$(PROTOC_VERSION)-$(PROTOC_ARCH)-x86_64.zip
-PROTOC_FILE := $(TMP_PATH)/$(PROTOC_ZIP)
-
-PROTOC_TMP := $(TMP_PATH)/protoc-tmp/
+TMP_PATH := $(BASE_PATH)/.googleapis-tmp/
 
 GOOGLEAPIS_FILE := $(TMP_PATH)/googleapis.zip
 
 GOOGLEAPIS_DIR := $(BASE_PATH)/googleapis/
 
-PROTOC := $(PROTOC_TMP)/bin/protoc
+PROTOC := protoc
 
-PROTOC_INCLUDES := $(PROTOC_TMP)/include $(GOOGLEAPIS_DIR)
+PROTOC_INCLUDES := /usr/local/include $(GOOGLEAPIS_DIR)
 
 GRPC_CPP_PLUGIN := grpc_cpp_plugin
 
@@ -54,10 +38,6 @@ GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`
 $(TMP_PATH):
 	@echo "+ $@"
 	@mkdir -p $@
-
-$(PROTOC_FILE): $(TMP_PATH)
-	@echo "+ $@"
-	@wget -q https://github.com/google/protobuf/releases/download/v$(PROTOC_VERSION)/$(PROTOC_ZIP) -O $@
 
 $(GOOGLEAPIS_FILE): $(TMP_PATH)
 	@echo "+ $@"
@@ -68,18 +48,7 @@ $(GOOGLEAPIS_DIR): $(GOOGLEAPIS_FILE)
 	@unzip -q -u -d $(TMP_PATH) $<
 	@cp -pr $(TMP_PATH)/googleapis-master $@
 
-$(PROTOC_TMP)/include: $(PROTOC_TMP)
-
-$(PROTOC): $(PROTOC_TMP)
-	@echo "+ $@"
-	@chmod a+rx $@
-
-$(PROTOC_TMP): $(PROTOC_FILE) $(TMP_PATH)
-	@echo "+ $@"
-	@mkdir -p $@
-	@unzip -q -o -d $@ $<
-
-PROTO_DEPS_CPP=$(PROTOC) $(PROTOC_INCLUDES)
+PROTO_DEPS_CPP=$(PROTOC_INCLUDES)
 
 #######################################################################
 ## Generate gRPC proto messages, services, and gateways for the API. ##

@@ -60,7 +60,7 @@ function download_kernel_object() {
 
     local filename_gz="${OBJECT_PATH}.gz"
     local curl_opts=(
-        -sS -4 --retry 5 --retry-connrefused --retry-delay 1 --retry-max-time 10
+        -sS -4 --retry 5 --retry-delay 1 --retry-max-time 10
         -f -L -w "HTTP Status Code %{http_code}"
         -o "${filename_gz}"
     )
@@ -93,7 +93,7 @@ function download_kernel_object() {
         return 1
     fi
 
-    if ! gunzip --keep "$filename_gz"; then
+    if ! gunzip "$filename_gz"; then
         log "${OBJECT_TYPE} downloaded, but there was an error un-gzipping. It looks like the file is corrupted."
         log "Please contact StackRox support, enclosing the above error message(s)."
         return 1
@@ -209,7 +209,7 @@ function main() {
     # Get and export the node hostname from Docker, 
     # and export because this env var is read by collector
     export NODE_HOSTNAME=""
-    NODE_HOSTNAME=$(curl -s --unix-socket /host/var/run/docker.sock http://localhost/info | jq --raw-output .Name)
+    NODE_HOSTNAME="$(cat /host/proc/sys/kernel/hostname)"
     
     # Get the linux distribution and BUILD_ID and ID to identify kernel version (COS or RHEL)
     OS_DISTRO="$(get_distro)"
@@ -217,6 +217,7 @@ function main() {
     OS_ID="$(get_os_release_value 'ID')"
     
     # Print node info
+    log "Collector Version: ${COLLECTOR_VERSION}"
     log "Hostname: ${NODE_HOSTNAME}"
     log "OS: ${OS_DISTRO}"
     log "Kernel Version: ${KERNEL_VERSION}"
@@ -224,7 +225,7 @@ function main() {
     local module_version
     module_version="$(cat /kernel-modules/MODULE_VERSION.txt)"
     if [[ -n "$module_version" ]]; then
-        log "Collector Version: $module_version"
+        log "Module Version: $module_version"
         if [[ -n "$MODULE_DOWNLOAD_BASE_URL" ]]; then
             MODULE_URL="${MODULE_DOWNLOAD_BASE_URL}/${module_version}"
         fi
