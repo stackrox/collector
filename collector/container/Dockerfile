@@ -1,7 +1,7 @@
+FROM debian:stretch-slim
+
 ARG collector_version=xxx
 ARG module_version=xxx
-
-FROM debian:stretch-slim
 
 LABEL maintainer="StackRox <support@stackrox.com>"
 LABEL io.stackrox.collector.module-version="${module_version}"
