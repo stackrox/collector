@@ -66,7 +66,7 @@ function download_kernel_object() {
     )
 
     if [[ ! -f "${filename_gz}" && -n "$GRPC_SERVER" ]]; then
-        local url="https://${GPRC_SERVER}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
+        local url="https://${GRPC_SERVER}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
         log "Attempting to download from ${url}..."
         curl "${curl_opts[@]}" \
             --cacert /run/secrets/stackrox.io/certs/ca.pem \
