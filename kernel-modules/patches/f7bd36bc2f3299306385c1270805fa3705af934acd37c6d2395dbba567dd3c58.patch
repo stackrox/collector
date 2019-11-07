@@ -181,7 +181,7 @@ index 70a05e1..71563b0 100644
  #else
  			   struct cputime *prev,
 diff --git a/ppm_events.c b/ppm_events.c
-index 2f2070e..0ac777b 100644
+index 2f2070e..55f3d5c 100644
 --- a/ppm_events.c
 +++ b/ppm_events.c
 @@ -24,7 +24,7 @@ or GPL2.txt for full copies of the license.
@@ -193,7 +193,15 @@ index 2f2070e..0ac777b 100644
  #include <linux/in.h>
  #if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 20)
  #include <linux/mount.h>
-@@ -51,12 +51,29 @@ or GPL2.txt for full copies of the license.
+@@ -38,6 +38,7 @@ or GPL2.txt for full copies of the license.
+ #include "ppm_events.h"
+ #include "ppm.h"
+ #include "ppm_flag_helpers.h"
++#include "ppm_version.h"
+ 
+ /*
+  * The kernel patched with grsecurity makes the default access_ok trigger a
+@@ -51,12 +52,29 @@ or GPL2.txt for full copies of the license.
  
  /* Begin StackRox patch */
  
@@ -224,7 +232,7 @@ index 2f2070e..0ac777b 100644
  /* End StackRox patch */
  
  extern bool g_tracers_enabled;
-@@ -256,7 +273,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
+@@ -256,7 +274,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
  					 * Get the address
  					 */
  					if (!args->is_socketcall)
@@ -233,7 +241,7 @@ index 2f2070e..0ac777b 100644
  					else
  						val = args->socketcall_args[4];
  
-@@ -272,7 +289,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
+@@ -272,7 +290,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
  						 * Get the address len
  						 */
  						if (!args->is_socketcall)
@@ -242,7 +250,7 @@ index 2f2070e..0ac777b 100644
  						else
  							val = args->socketcall_args[5];
  
-@@ -302,7 +319,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
+@@ -302,7 +320,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
  #endif
  
  					if (!args->is_socketcall)
@@ -251,7 +259,7 @@ index 2f2070e..0ac777b 100644
  					else
  						val = args->socketcall_args[1];
  
-@@ -1158,7 +1175,7 @@ int32_t parse_readv_writev_bufs(struct event_filler_arguments *args, const struc
+@@ -1158,7 +1176,7 @@ int32_t parse_readv_writev_bufs(struct event_filler_arguments *args, const struc
  			 * Retrieve the FD. It will be used for dynamic snaplen calculation.
  			 */
  			if (!args->is_socketcall)
@@ -260,7 +268,7 @@ index 2f2070e..0ac777b 100644
  			else
  				val = args->socketcall_args[0];
  			args->fd = (int)val;
-@@ -1289,7 +1306,7 @@ int32_t compat_parse_readv_writev_bufs(struct event_filler_arguments *args, cons
+@@ -1289,7 +1307,7 @@ int32_t compat_parse_readv_writev_bufs(struct event_filler_arguments *args, cons
  			 * Retrieve the FD. It will be used for dynamic snaplen calculation.
  			 */
  			if (!args->is_socketcall)
@@ -269,7 +277,7 @@ index 2f2070e..0ac777b 100644
  			else
  				val = args->socketcall_args[0];
  			args->fd = (int)val;
-@@ -1392,7 +1409,7 @@ int f_sys_autofill(struct event_filler_arguments *args)
+@@ -1392,7 +1410,7 @@ int f_sys_autofill(struct event_filler_arguments *args)
  				/*
  				 * Regular argument
  				 */
