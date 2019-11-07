@@ -938,7 +938,7 @@ jobs:
         name: Copy kernel objects built in this workflow
         command: |
           mod_build_dir="${WORKSPACE_ROOT}/ko-build/build-output"
-          if [ -z "$(ls -A "${mod_build_dir}" )" ] ; then
+          if [ -z "$(find "${mod_build_dir}" -type f -name "*.gz" )" ] ; then
             echo "No kernel objects built in this workflow"
             circleci step halt
             exit 0

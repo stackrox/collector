@@ -181,7 +181,7 @@ index 70a05e1..71563b0 100644
  #else
  			   struct cputime *prev,
 diff --git a/ppm_events.c b/ppm_events.c
-index 2f2070e..ef7de69 100644
+index 2f2070e..0ac777b 100644
 --- a/ppm_events.c
 +++ b/ppm_events.c
 @@ -24,7 +24,7 @@ or GPL2.txt for full copies of the license.
@@ -193,7 +193,14 @@ index 2f2070e..ef7de69 100644
  #include <linux/in.h>
  #if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 20)
  #include <linux/mount.h>
-@@ -57,6 +57,23 @@ or GPL2.txt for full copies of the license.
+@@ -51,12 +51,29 @@ or GPL2.txt for full copies of the license.
+ 
+ /* Begin StackRox patch */
+ 
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)) || (PPM_RHEL_RELEASE_CODE > 0 && PPM_RHEL_RELEASE_CODE >= PPM_RHEL_RELEASE_VERSION(8, 1))
+ #define ppm_access_ok(type, addr, size) ppm_access_ok_raw(addr, size)
+ #else
  #define ppm_access_ok(type, addr, size) ppm_access_ok_raw(type, addr, size)
  #endif
  

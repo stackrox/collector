@@ -137,7 +137,7 @@ index 93bd163..f903da7 100644
  #else
  			   struct cputime *prev,
 diff --git a/ppm_events.c b/ppm_events.c
-index 087223e..7c0fc6a 100644
+index 087223e..4eefef0 100644
 --- a/ppm_events.c
 +++ b/ppm_events.c
 @@ -34,7 +34,7 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
@@ -162,7 +162,7 @@ index 087223e..7c0fc6a 100644
  
 +/* Begin StackRox patch */
 +
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)) || (PPM_RHEL_RELEASE_CODE > 0 && PPM_RHEL_RELEASE_CODE >= PPM_RHEL_RELEASE_VERSION(8, 1))
 +#define ppm_access_ok(type, addr, size) ppm_access_ok_raw(addr, size)
 +#else
 +#define ppm_access_ok(type, addr, size) ppm_access_ok_raw(type, addr, size)
