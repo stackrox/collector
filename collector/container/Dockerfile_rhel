@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi7/ubi-minimal
+FROM registry.access.redhat.com/ubi7/ubi
 
 ARG collector_version=xxx
 ARG module_version=xxx
@@ -8,8 +8,8 @@ LABEL io.stackrox.collector.module-version="${module_version}"
 
 ENV MODULE_VERSION=${module_version}
 
-RUN microdnf install gzip kmod
-RUN microdnf remove rpm rpm-libs microdnf libdnf libsolv
+# Remove package manager
+RUN rpm -e --nodeps yum yum-utils yum-plugin-ovl subscription-manager rpm rpm-libs rpm-build-libs rpm-python subscription-manager-rhsm
 
 # Add module version file only
 RUN mkdir /kernel-modules && \
