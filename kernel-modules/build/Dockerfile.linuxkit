@@ -1,0 +1,28 @@
+FROM debian:stable
+
+RUN apt-get update \
+ && apt-get upgrade -y \
+ && apt-get install --no-install-recommends -y \
+      binutils \
+      cmake \
+      make \
+      curl \
+      gcc \
+      gcc-8 \
+      gcc-8-plugin-dev \
+      clang-7 \
+      llvm-7 \
+      g++-8 \
+      libelf-dev \
+      kmod \
+      wget \
+      golang-go \
+      pkg-config \
+ ;
+
+RUN mkdir -p /output
+COPY build-kos /usr/bin/
+COPY prepare-src /usr/bin
+
+WORKDIR /scratch
+ENTRYPOINT [ "/bin/bash", "-c" ]
