@@ -137,7 +137,7 @@ index 75ca00b..c8e873d 100644
  #else
  			   struct cputime *prev,
 diff --git a/ppm_events.c b/ppm_events.c
-index 278b74d..97daacb 100644
+index 278b74d..e302df3 100644
 --- a/ppm_events.c
 +++ b/ppm_events.c
 @@ -57,7 +57,7 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
@@ -149,7 +149,15 @@ index 278b74d..97daacb 100644
  #include <linux/in.h>
  #if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 20)
  #include <linux/mount.h>
-@@ -77,11 +77,51 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
+@@ -70,6 +70,7 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
+ #include "ppm_events_public.h"
+ #include "ppm_events.h"
+ #include "ppm.h"
++#include "ppm_version.h"
+ 
+ 
+ /*
+@@ -77,11 +78,51 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
   * might_sleep(), so if present we use the one defined by them
   */
  #ifdef access_ok_noprefault
@@ -162,7 +170,7 @@ index 278b74d..97daacb 100644
  
 +/* Begin StackRox patch */
 +
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)) || (PPM_RHEL_RELEASE_CODE > 0 && PPM_RHEL_RELEASE_CODE >= PPM_RHEL_RELEASE_VERSION(8, 1))
 +#define ppm_access_ok(type, addr, size) ppm_access_ok_raw(addr, size)
 +#else
 +#define ppm_access_ok(type, addr, size) ppm_access_ok_raw(type, addr, size)
@@ -203,7 +211,7 @@ index 278b74d..97daacb 100644
  extern bool g_tracers_enabled;
  
  static void memory_dump(char *p, size_t size)
-@@ -206,8 +246,6 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
+@@ -206,8 +247,6 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
  	sa_family_t family;
  	struct sockaddr_storage sock_address;
  	struct sockaddr_storage peer_address;
@@ -212,7 +220,7 @@ index 278b74d..97daacb 100644
  	u16 sport, dport;
  
  	if (g_tracers_enabled && args->event_type == PPME_SYSCALL_WRITE_X) {
-@@ -257,7 +295,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
+@@ -257,7 +296,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
  	if (sock) {
  
  		if (sock->sk) {
@@ -221,7 +229,7 @@ index 278b74d..97daacb 100644
  
  			if (err == 0) {
  				if(args->event_type == PPME_SOCKET_SENDTO_X)
-@@ -268,7 +306,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
+@@ -268,7 +307,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
  					 * Get the address
  					 */
  					if (!args->is_socketcall)
@@ -230,7 +238,7 @@ index 278b74d..97daacb 100644
  					else
  						val = args->socketcall_args[4];
  
-@@ -278,18 +316,17 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
+@@ -278,18 +317,17 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
  						/*
  						 * Suppose is a connected socket, fall back to fd
  						 */
@@ -251,7 +259,7 @@ index 278b74d..97daacb 100644
  							/*
  							 * Copy the address
  							 */
-@@ -298,7 +335,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
+@@ -298,7 +336,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
  							/*
  							 * This case should be very rare, fallback again to sock
  							 */
@@ -260,7 +268,7 @@ index 278b74d..97daacb 100644
  						}
  					}
  				} else if (args->event_type == PPME_SOCKET_SENDMSG_X) {
-@@ -315,7 +352,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
+@@ -315,7 +353,7 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
  #endif
  
  					if (!args->is_socketcall)
@@ -269,7 +277,7 @@ index 278b74d..97daacb 100644
  					else
  						val = args->socketcall_args[1];
  
-@@ -342,18 +379,17 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
+@@ -342,18 +380,17 @@ inline u32 compute_snaplen(struct event_filler_arguments *args, char *buf, u32 l
  #endif
  
  					if (usrsockaddr != NULL && addrlen != 0) {
@@ -291,7 +299,7 @@ index 278b74d..97daacb 100644
  
  				if (err == 0) {
  					family = sock->sk->sk_family;
-@@ -986,8 +1022,6 @@ u16 fd_to_socktuple(int fd,
+@@ -986,8 +1023,6 @@ u16 fd_to_socktuple(int fd,
  	char *dest;
  	struct sockaddr_storage sock_address;
  	struct sockaddr_storage peer_address;
@@ -300,7 +308,7 @@ index 278b74d..97daacb 100644
  
  	/*
  	 * Get the socket from the fd
-@@ -1005,7 +1039,7 @@ u16 fd_to_socktuple(int fd,
+@@ -1005,7 +1040,7 @@ u16 fd_to_socktuple(int fd,
  		return 0;
  	}
  
@@ -309,7 +317,7 @@ index 278b74d..97daacb 100644
  	ASSERT(err == 0);
  
  	family = sock->sk->sk_family;
-@@ -1016,7 +1050,7 @@ u16 fd_to_socktuple(int fd,
+@@ -1016,7 +1051,7 @@ u16 fd_to_socktuple(int fd,
  	switch (family) {
  	case AF_INET:
  		if (!use_userdata) {
@@ -318,7 +326,7 @@ index 278b74d..97daacb 100644
  			if (err == 0) {
  				if (is_inbound) {
  					sip = ((struct sockaddr_in *) &peer_address)->sin_addr.s_addr;
-@@ -1068,7 +1102,7 @@ u16 fd_to_socktuple(int fd,
+@@ -1068,7 +1103,7 @@ u16 fd_to_socktuple(int fd,
  		break;
  	case AF_INET6:
  		if (!use_userdata) {
@@ -327,7 +335,7 @@ index 278b74d..97daacb 100644
  			ASSERT(err == 0);
  
  			if (is_inbound) {
-@@ -1143,7 +1177,7 @@ u16 fd_to_socktuple(int fd,
+@@ -1143,7 +1178,7 @@ u16 fd_to_socktuple(int fd,
  			if (is_inbound) {
  				us_name = ((struct sockaddr_un *) &sock_address)->sun_path;
  			} else {
@@ -336,7 +344,7 @@ index 278b74d..97daacb 100644
  				ASSERT(err == 0);
  
  				us_name = ((struct sockaddr_un *) &peer_address)->sun_path;
-@@ -1264,7 +1298,7 @@ int32_t parse_readv_writev_bufs(struct event_filler_arguments *args, const struc
+@@ -1264,7 +1299,7 @@ int32_t parse_readv_writev_bufs(struct event_filler_arguments *args, const struc
  			 * Retrieve the FD. It will be used for dynamic snaplen calculation.
  			 */
  			if (!args->is_socketcall)
@@ -345,7 +353,7 @@ index 278b74d..97daacb 100644
  			else
  				val = args->socketcall_args[0];
  			args->fd = (int)val;
-@@ -1395,7 +1429,7 @@ int32_t compat_parse_readv_writev_bufs(struct event_filler_arguments *args, cons
+@@ -1395,7 +1430,7 @@ int32_t compat_parse_readv_writev_bufs(struct event_filler_arguments *args, cons
  			 * Retrieve the FD. It will be used for dynamic snaplen calculation.
  			 */
  			if (!args->is_socketcall)
@@ -354,7 +362,7 @@ index 278b74d..97daacb 100644
  			else
  				val = args->socketcall_args[0];
  			args->fd = (int)val;
-@@ -1497,7 +1531,7 @@ int f_sys_autofill(struct event_filler_arguments *args, const struct ppm_event_e
+@@ -1497,7 +1532,7 @@ int f_sys_autofill(struct event_filler_arguments *args, const struct ppm_event_e
  				/*
  				 * Regular argument
  				 */
