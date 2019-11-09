@@ -20,6 +20,11 @@ RUN apt-get update \
       pkg-config \
  ;
 
+RUN rm -rf /usr/bin/clang \
+ && rm -rf /usr/bin/llc \
+ && ln -s /usr/bin/clang-7 /usr/bin/clang \
+ && ln -s /usr/bin/llc-7 /usr/bin/llc
+
 RUN mkdir -p /output
 COPY build-kos /usr/bin/
 COPY prepare-src /usr/bin
