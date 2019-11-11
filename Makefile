@@ -3,6 +3,7 @@ ROOT_DIR = .
 ifeq ($(COLLECTOR_TAG),)
 export COLLECTOR_TAG=$(shell git describe --tags --abbrev=10 --dirty)
 endif
+# Environment variable COLLECTOR_TAG is used by integration-tests
 export COLLECTOR_TAG
 
 ifeq ($(COLLECTOR_BUILDER_TAG),)
