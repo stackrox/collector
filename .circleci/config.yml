@@ -83,7 +83,7 @@ jobs:
     - run:
         name: Set COLLECTOR_VERSION
         command: |
-          COLLECTOR_VERSION="$(make -s -C ~/workspace/go/src/github.com/stackrox/collector/collector tag)"
+          COLLECTOR_VERSION="$(make -s -C ~/workspace/go/src/github.com/stackrox/collector tag)"
 
           COLLECTOR_TAG="${COLLECTOR_VERSION}"
           GCLOUD_SSH_FINGERPRINT="$(echo ${GCLOUD_SSH_KEY_PUB} | awk '{print $2}' | base64 -d | md5sum | awk '{print $1}')"
