@@ -3,6 +3,7 @@ ROOT_DIR = .
 ifeq ($(COLLECTOR_TAG),)
 export COLLECTOR_TAG=$(shell git describe --tags --abbrev=10 --dirty)
 endif
+export COLLECTOR_TAG
 
 ifeq ($(COLLECTOR_BUILDER_TAG),)
 export COLLECTOR_BUILDER_TAG=cache
@@ -15,6 +16,10 @@ endif
 dev-build: image integration-tests-process-network
 
 dev-build-rhel: image-rhel integration-tests-process-network-rhel
+
+.PHONY: tag
+tag:
+	@git describe --tags --abbrev=10 --dirty
 
 .PHONY: builder
 builder:
@@ -63,6 +68,7 @@ unittest-rhel:
 build-kernel-modules:
 	make -C kernel-modules build-container
 
+.PHONY: prepare-src
 prepare-src: build-kernel-modules
 	rm -rf kernel-modules/kobuild-tmp/
 	mkdir -p kernel-modules/kobuild-tmp/versions-src
@@ -71,11 +77,11 @@ prepare-src: build-kernel-modules
 	  -v "$(CURDIR)/kernel-modules/kobuild-tmp/versions-src:/output" \
 	  --tmpfs /scratch:exec \
 	  --env SYSDIG_DIR=/sysdig/src --env SCRATCH_DIR=/scratch --env OUTPUT_DIR=/output \
-	build-kernel-modules prepare-src
+	  build-kernel-modules prepare-src 2> /dev/null | tail -n 1 > kernel-modules/kobuild-tmp/MODULE_VERSION.txt
 
+.PHONY: module-version
 module-version: prepare-src
-	$(eval VERSIONS = $$(wildcard ${ROOT_DIR}/kernel-modules/kobuild-tmp/versions-src/*.tgz))
-	$(eval MODULE_VERSION := $(shell basename -s .tgz $(word 1,$(VERSIONS))))
+	$(eval MODULE_VERSION = $(shell cat ${ROOT_DIR}/kernel-modules/kobuild-tmp/MODULE_VERSION.txt))
 	@echo "MODULE VERSION is $(MODULE_VERSION)"
 
 image: collector unittest module-version

@@ -6,18 +6,7 @@ BASE_PATH ?= $(CURDIR)/..
 
 PATH ?= $(PATH):/go/bin
 
-ifeq ($(COLLECTOR_TAG),)
-export COLLECTOR_TAG=$(shell git describe --tags --abbrev=10 --dirty)
-endif
-
-.PHONY: all
-all: image integration-tests integration-test-report
-
 .SUFFIXES:
-
-.PHONY: tag
-tag:
-	@git describe --tags --abbrev=10 --dirty
 
 generated-srcs: 
 	docker run --rm \

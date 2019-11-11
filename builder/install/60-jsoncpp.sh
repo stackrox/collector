@@ -7,5 +7,5 @@ cd jsoncpp
 mkdir cmake-build
 cd cmake-build
 cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-fPIC ..
-make -j ${NPROCS}
+make -j "${NPROCS:-2}"
 make install

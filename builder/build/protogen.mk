@@ -1,4 +1,4 @@
-BASE_PATH ?= $(CURDIR)collector
+BASE_PATH ?= $(patsubst /,,$(CURDIR))/collector
 PATH ?= $(PATH):/go/bin
 
 GENERATED_CPP_BASE_PATH := $(CURDIR)collector/collector/generated

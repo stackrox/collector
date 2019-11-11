@@ -18,5 +18,5 @@ cd "curl-${CURL_VERSION}"
   --without-libmetalink --without-librtmp --without-winidn --without-libidn \
   --without-libidn2 --without-nghttp2 --without-libssh2  --without-libpsl \
   --prefix="/usr/local"
-make -j ${NPROCS}
+make -j "${NPROCS:-2}"
 make install

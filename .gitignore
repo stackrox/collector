@@ -1,8 +1,6 @@
 .idea/
 .rox/
-integration-tests/integration-test.log
-integration-tests/collector.logs
-integration-tests/grpc-server.logs
+integration-tests/*.logs
 integration-tests/perf.json
 sysdig/cmake-build
 sysdig/cmake-build-rhel
