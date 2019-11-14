@@ -1,7 +1,7 @@
-BASE_PATH ?= $(patsubst /,,$(CURDIR))/collector
+BASE_PATH ?= $(subst /,,$(CURDIR))/collector
 PATH ?= $(PATH):/go/bin
 
-GENERATED_CPP_BASE_PATH := $(CURDIR)collector/collector/generated
+GENERATED_CPP_BASE_PATH := $(BASE_PATH)/collector/generated
 
 # Automatically locate all API and data protos.
 # GENERATED_API_XXX and PROTO_API_XXX variables contain standard paths used to
