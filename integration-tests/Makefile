@@ -1,8 +1,18 @@
+BASE_PATH = ./..
+include ../Makefile-constants.mk
+
+ifeq ($(COLLECTOR_REPO),)
+COLLECTOR_REPO=stackrox/collector
+endif
+
+ifeq ($(COLLECTOR_IMAGE),)
+COLLECTOR_IMAGE=$(COLLECTOR_REPO):$(COLLECTOR_TAG)
+endif
+
 SHELL=/bin/bash
 
-ifeq ($(COLLECTOR_TAG),)
-export COLLECTOR_TAG=$(shell git describe --tags --abbrev=10 --dirty)
-endif
+# Environment variable COLLECTOR_IMAGE is used by integration-tests
+export COLLECTOR_IMAGE
 
 .PHONY: docker-clean
 docker-clean:

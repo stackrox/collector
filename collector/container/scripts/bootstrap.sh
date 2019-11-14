@@ -60,7 +60,7 @@ function download_kernel_object() {
 
     local filename_gz="${OBJECT_PATH}.gz"
     local curl_opts=(
-        -sS -4 --retry 5 --retry-delay 1 --retry-max-time 10
+        -sS -4 --retry 5 --retry-connrefused --retry-delay 1 --retry-max-time 10
         -f -L -w "HTTP Status Code %{http_code}"
         -o "${filename_gz}"
     )
@@ -93,7 +93,7 @@ function download_kernel_object() {
         return 1
     fi
 
-    if ! gunzip "$filename_gz"; then
+    if ! gzip -d --keep "$filename_gz"; then
         log "${OBJECT_TYPE} downloaded, but there was an error un-gzipping. It looks like the file is corrupted."
         log "Please contact StackRox support, enclosing the above error message(s)."
         return 1
@@ -208,8 +208,7 @@ function main() {
     
     # Get and export the node hostname from Docker, 
     # and export because this env var is read by collector
-    export NODE_HOSTNAME=""
-    NODE_HOSTNAME="$(cat /host/proc/sys/kernel/hostname)"
+    export NODE_HOSTNAME="$(cat /host/proc/sys/kernel/hostname)"
     
     # Get the linux distribution and BUILD_ID and ID to identify kernel version (COS or RHEL)
     OS_DISTRO="$(get_distro)"
@@ -242,14 +241,8 @@ function main() {
     # Backwards compatability for releases older than 2.4.20
     # COLLECTION_METHOD should be provided
     if [[ -z "$COLLECTION_METHOD" ]]; then
-      export COLLECTION_METHOD=""
-      local config_json_ebpf
-      config_json_ebpf="$(echo "$COLLECTOR_CONFIG" | jq --raw-output .useEbpf)"
-      if [[ "$config_json_ebpf" == "true" ]]; then
-        COLLECTION_METHOD="EBPF"
-      else
-        COLLECTION_METHOD="KERNEL_MODULE"
-      fi
+      log "Collector configured without environment variable (default: COLLECTION_METHOD=kernel_module)"
+      export COLLECTION_METHOD="KERNEL_MODULE"
     fi
     
     # Handle invalid collection method setting

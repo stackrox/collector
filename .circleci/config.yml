@@ -51,6 +51,18 @@ commands:
         name: Login to Docker Hub
         command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
 
+  update-go:
+    steps:
+    - run:
+        name: "Update Go"
+        command: |
+          GO_VERSION="1.13.3"
+          sudo rm -r /usr/local/go/
+          wget "https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz"
+          sudo tar -C /usr/local -xzf "go${GO_VERSION}.linux-amd64.tar.gz"
+          rm "go${GO_VERSION}.linux-amd64.tar.gz"
+          go version
+
 jobs:
   initjob:
     docker:
@@ -93,6 +105,7 @@ jobs:
             export COLLECTOR_VERSION="${COLLECTOR_VERSION}"
             export COLLECTOR_TAG="${COLLECTOR_TAG}"
             export COLLECTOR_BUILDER_TAG="circle-build-${CIRCLE_WORKFLOW_ID}"
+            export BUILD_BUILDER_IMAGE=true
             export GCP_SSH_KEY_FILE="${GCP_SSH_KEY_FILE}"
           EOF
           cat ~/workspace/shared-env
@@ -560,7 +573,7 @@ jobs:
         command: make -C "${SOURCE_ROOT}" collector
 
     - run:
-        name: collector unittest
+        name: Run collector unit tests
         command: make -C "${SOURCE_ROOT}" unittest
 
     - persist_to_workspace:
@@ -586,7 +599,7 @@ jobs:
         command: make -C "${SOURCE_ROOT}" collector-rhel
 
     - run:
-        name: rhel collector unittest
+        name: Run RHEL collector unit tests
         command: make -C "${SOURCE_ROOT}" unittest-rhel
 
     - persist_to_workspace:
@@ -682,6 +695,11 @@ jobs:
             container-combined
 
     - run:
+        name: Restore collector-builder rhel image
+        command: |
+          docker pull "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}"
+
+    - run:
         name: Build collector rhel images
         command: |
           cd "$COLLECTOR_SOURCE_ROOT"
@@ -690,18 +708,20 @@ jobs:
 
           build_args=(
             --build-arg module_version="$MODULE_VERSION"
-            --build-arg collector_version="rhel-$COLLECTOR_VERSION"
+            --build-arg collector_version="$COLLECTOR_VERSION"
+            --build-arg collector_builder_tag="rhel-$COLLECTOR_BUILDER_TAG"
+            --build-arg collector_repo="stackrox/collector-rhel"
           )
 
           docker build \
-            -t "stackrox/collector:rhel-${COLLECTOR_VERSION}-base" \
+            -t "stackrox/collector-rhel:${COLLECTOR_VERSION}-base" \
             "${build_args[@]}" \
             -f container/Dockerfile_rhel \
             container
 
           docker build \
-            -t "stackrox/collector:rhel-${COLLECTOR_VERSION}" \
-            -t "stackrox/collector:rhel-${COLLECTOR_VERSION}-latest" \
+            -t "stackrox/collector-rhel:${COLLECTOR_VERSION}" \
+            -t "stackrox/collector-rhel:${COLLECTOR_VERSION}-latest" \
             "${build_args[@]}" \
             container-combined
 
@@ -720,12 +740,13 @@ jobs:
           docker push "stackrox/collector:${COLLECTOR_VERSION}"
           echo "Pushing collector latest image"
           docker push "stackrox/collector:${COLLECTOR_VERSION}-latest"
-          echo "Pushing collector base rhel image"
-          docker push "stackrox/collector:rhel-${COLLECTOR_VERSION}-base"
+
+          echo "Pushing collector rhel base image"
+          docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}-base"
           echo "Pushing collector rhel image"
-          docker push "stackrox/collector:rhel-${COLLECTOR_VERSION}"
+          docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}"
           echo "Pushing collector rhel latest image"
-          docker push "stackrox/collector:rhel-${COLLECTOR_VERSION}-latest"
+          docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}-latest"
 
   upload-modules:
     docker:
@@ -791,16 +812,7 @@ jobs:
     - initcommand
     - docker-login
     - gcloud-init
-    - run:
-        name: "Update Go"
-        command: |
-          export GO_VERSION="1.13.3"
-          go version
-          sudo rm -r /usr/local/go/
-          wget "https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz"
-          sudo tar -C /usr/local -xzf "go${GO_VERSION}.linux-amd64.tar.gz"
-          go version
-          rm "go${GO_VERSION}.linux-amd64.tar.gz"
+    - update-go
 
     - run:
         name: "Running integration tests"
@@ -809,10 +821,7 @@ jobs:
           export REMOTE_HOST_TYPE=local
           export COLLECTION_METHOD=kernel_module
           export VM_CONFIG="circle_local_<< parameters.vm-config >>"
-          export COLLECTOR_TAG="${COLLECTOR_TAG}-base"
-          <<# parameters.use-rhel>>
-          export COLLECTOR_TAG="rhel-${COLLECTOR_TAG}"
-          <</ parameters.use-rhel>>
+          export COLLECTOR_REPO="stackrox/collector<<# parameters.use-rhel>>-rhel<</ parameters.use-rhel>>"
           make -C "${SOURCE_ROOT}" integration-tests integration-tests-report
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
@@ -842,7 +851,10 @@ jobs:
       image_family:
         type: enum
         enum: [coreos-stable, cos-stable, cos-69-lts, cos-73-lts, rhel-7, rhel-8, ubuntu-1804-lts, ubuntu-1904]
-
+      use-rhel:
+        type: boolean
+        default: false
+ 
     machine: true
     working_directory: ~/workspace
 
@@ -851,16 +863,7 @@ jobs:
     - add_ssh_keys
     - docker-login
     - gcloud-init
-    - run:
-        name: "Update Go"
-        command: |
-          export GO_VERSION="1.13.3"
-          go version
-          sudo rm -r /usr/local/go/
-          wget "https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz"
-          sudo tar -C /usr/local -xzf "go${GO_VERSION}.linux-amd64.tar.gz"
-          go version
-          rm "go${GO_VERSION}.linux-amd64.tar.gz"
+    - update-go
 
     - run:
         name: "Extract gcp ssh public key from environment variable"
@@ -889,6 +892,7 @@ jobs:
           export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
           export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
           export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
+          export COLLECTOR_REPO="stackrox/collector<<# parameters.use-rhel>>-rhel<</ parameters.use-rhel>>"
           make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report
           cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp "${SOURCE_ROOT}/integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"

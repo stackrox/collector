@@ -2,7 +2,7 @@
 
 set -e
 
-if cmake --version >/dev/null 2>&1 ; then
+if cmake --version &>/dev/null ; then
  echo >&2 "Not building cmake from source, already installed"
  exit 0
 fi

@@ -1,10 +1,9 @@
+BASE_PATH = ./..
+include ../Makefile-constants.mk
+
 HDRS := $(wildcard lib/*.h) $(shell find sysdig/src/userspace -name '*.h')
 
 SRCS := $(wildcard lib/*.cpp) collector.cpp
-
-BASE_PATH ?= $(CURDIR)/..
-
-PATH ?= $(PATH):/go/bin
 
 .SUFFIXES:
 

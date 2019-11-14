@@ -1,5 +1,6 @@
 ARG collector_version=xxx
-ARG base_image=stackrox/collector:${collector_version}-base
+ARG collector_repo=stackrox/collector
+ARG base_image=$collector_repo:${collector_version}-base
 
 ARG module_version=xxx
 ARG base_modules_image=stackrox-kernel-modules:${module_version}

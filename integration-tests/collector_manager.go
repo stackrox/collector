@@ -42,14 +42,14 @@ func NewCollectorManager(e Executor) *collectorManager {
 		"/host/dev:ro":                 "/dev",
 	}
 
-	collectorTag := ReadEnvVar("COLLECTOR_TAG")
+	collectorImage := ReadEnvVar("COLLECTOR_IMAGE")
 
 	return &collectorManager{
 		DBPath:            "/tmp/collector-test.db",
 		executor:          e,
 		DisableGrpcServer: false,
 		BootstrapOnly:     false,
-		CollectorImage:    "stackrox/collector:" + collectorTag,
+		CollectorImage:    collectorImage,
 		GRPCServerImage:   "stackrox/grpc-server:2.3.16.0-99-g0b961f9515",
 		Env:               env,
 		Mounts:            mounts,

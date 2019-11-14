@@ -11,5 +11,5 @@ cd /sysdig-build
 cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_DRIVER=OFF \
     -DUSE_BUNDLED_DEPS=OFF \
     /sysdig-src
-make -j ${NPROCS}
+make -j "${NPROCS:-2}"
 strip --strip-unneeded ./userspace/libsinsp/libsinsp-wrapper.so
