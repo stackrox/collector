@@ -24,5 +24,5 @@ export TBB_VERSION=2018_U5
 cd /install-tmp/ 
 for f in [0-9][0-9]-*.sh; do 
   ./"$f"
-  done
+done
 cd && rm -rf /install-tmp
