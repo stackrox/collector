@@ -1,20 +1,9 @@
-protoc-*.zip
-protoc-tmp
-
 .idea/
-
-go-proto-generated
-
-/.protogen-tmp/
-/.rox/
-/googleapis/
-
-collector/integration-test.log
-integration-tests/deps
-integration-tests/vendor/
-integration-tests/collector.logs
-integration-tests/grpc_server.logs
-sysdig/build-output
+.rox/
+integration-tests/*.logs
+integration-tests/perf.json
+sysdig/cmake-build
+sysdig/cmake-build-rhel
 kernel-modules/kobuild-tmp
 
 # Mac OS hidden file
@@ -22,5 +11,3 @@ kernel-modules/kobuild-tmp
 
 # Vim swap files
 *.swp
-
-

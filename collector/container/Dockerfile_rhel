@@ -1,4 +1,7 @@
-FROM debian:stretch-slim
+ARG collector_builder_tag
+FROM stackrox/collector-builder:${collector_builder_tag} as builder
+
+FROM registry.access.redhat.com/ubi7/ubi
 
 ARG collector_version=xxx
 ARG module_version=xxx
@@ -7,6 +10,16 @@ LABEL maintainer="StackRox <support@stackrox.com>"
 LABEL io.stackrox.collector.module-version="${module_version}"
 
 ENV MODULE_VERSION=${module_version}
+
+# Make image STIG compliant: https://dccscr.dsop.io/dsop/redhat/ubi/ubi7/
+ARG DSOP_URL=https://dccscr.dsop.io/dsop/redhat/ubi/ubi7/raw/18d21ee5ed843e7b319e2670f47687f057db98a6/7.7
+RUN ( for i in dsop-fix-{1,2,3}.sh ; do curl -O "$DSOP_URL/$i" ; done; )
+RUN ( chmod +x /dsop-fix-{1,2}.sh && for i in /dsop-fix-{1,2}.sh; do sh "$i"; done; )
+RUN ( yum update -y --disableplugin=subscription-manager && rm -rf /var/cache/yum/ /var/tmp/* /tmp/* /var/tmp/.???* /tmp/.???*; )
+RUN ( chmod +x /dsop-fix-3.sh && /dsop-fix-3.sh && rm -rf /dsop-fix*.sh ; )
+
+# Remove package manager
+RUN rpm -e --nodeps yum yum-utils yum-plugin-ovl subscription-manager rpm rpm-libs rpm-build-libs rpm-python subscription-manager-rhsm
 
 # Add module version file only
 RUN mkdir /kernel-modules && \
@@ -21,20 +34,8 @@ ENV SYSDIG_HOST_ROOT=/host
 # HTTP API port (8080)
 EXPOSE 8080 9090
 
-RUN apt-get update \
- && apt-get upgrade -y \
- && apt-get install -y --no-install-recommends \
-        ca-certificates \
-        kmod \
-        curl \
-        libssl1.0.2 \
-        libuuid1 \
-        libcap-ng0 \
-        libelf1 \
- ;
-
-COPY libs/libsinsp-wrapper.so \
-     /usr/local/lib/
+COPY libs/libsinsp-wrapper.so.rhel \
+     /usr/local/lib/libsinsp-wrapper.so
 
 WORKDIR /
 
@@ -64,7 +65,12 @@ CMD collector \
     --collection-method=$COLLECTION_METHOD \
     --grpc-server=$GRPC_SERVER
 
-COPY bin/collector /usr/local/bin/
+COPY bin/collector.rhel /usr/local/bin/collector
+
+# RHEL7 needs a newer version of curl and gzip
+COPY --from=builder /usr/local/bin/curl /usr/bin/curl
+COPY --from=builder /usr/local/lib/libcurl.so.4 /lib64/libcurl.so.4
+COPY --from=builder /usr/local/bin/gzip /usr/bin/gzip
 
 LABEL io.stackrox.collector.version="${collector_version}"
 ENV COLLECTOR_VERSION=${collector_version}

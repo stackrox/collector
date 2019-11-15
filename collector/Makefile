@@ -1,92 +1,91 @@
+BASE_PATH = ./..
+include ../Makefile-constants.mk
+
 HDRS := $(wildcard lib/*.h) $(shell find sysdig/src/userspace -name '*.h')
 
 SRCS := $(wildcard lib/*.cpp) collector.cpp
 
-GENERATED_SRCS := $(GENERATED_DATA_SRCS) $(GENERATED_API_SRCS) $(GENERATED_CPP_DATA_SRCS)
-
-BASE_PATH ?= $(CURDIR)/..
-
-PATH ?= $(PATH):/go/bin
-
-ifeq ($(COLLECTOR_TAG),)
-	export COLLECTOR_TAG=$(shell git describe --tags --abbrev=10 --dirty)
-endif
-
-.PHONY: all
-all: image integration-tests integration-test-report
-
 .SUFFIXES:
 
-.PHONY: image
-image: build_collector container/bin/collector container/Dockerfile container/scripts/ pull-modules
-	cp NOTICE-collector.txt container/
-	cp COPYING.txt container/
-	docker build -f container/Dockerfile -t stackrox/collector:$(COLLECTOR_TAG) container
-	docker build -f container/Dockerfile_slim -t stackrox/collector:$(COLLECTOR_TAG)-slim container
+generated-srcs: 
+	docker run --rm \
+	  -v $(CURDIR):/collector/collector \
+	  -v $(CURDIR)/../rox-proto:/collector/rox-proto:ro \
+	  stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) make -f protogen.mk generated-proto-srcs
 
-build_collector: 
-	@echo "Build collector builder docker image"
-	docker build \
-	  --cache-from stackrox/collector-builder:cache-local \
-	  -t stackrox/collector-builder:cache-local \
-	  "${BASE_PATH}/builder"
+generated-srcs-rhel: 
+	docker run --rm \
+	  -v $(CURDIR):/collector/collector \
+	  -v $(CURDIR)/../rox-proto:/collector/rox-proto:ro \
+	  stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) make -f protogen.mk generated-proto-srcs
 
 container/bin/collector: $(HDRS) $(SRCS) generated-srcs container/libs/libsinsp-wrapper.so
 	mkdir -p container/bin
 	docker rm -fv build_collector || true
-	docker run \
+	docker run --rm \
           -v "$(CURDIR):/src:ro" \
           -v "$(CURDIR)/sysdig/src:/usr/local/sysdig:ro" \
           -v "$(CURDIR)/container/libs/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
           -v "$(CURDIR)/sysdig/src/driver/ppm_events_public.h:/usr/local/include/ppm_events_public.h:ro" \
           -v "$(CURDIR)/sysdig/src/driver/ppm_fillers.h:/usr/local/include/ppm_fillers.h:ro" \
           -v "$(CURDIR)/cmake-build:/build-output" \
-	  --name build_collector stackrox/collector-builder:cache-local
+	  --name build_collector stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-collector.sh
 	cp cmake-build/collector container/bin/
 
+container/bin/collector-rhel: $(HDRS) $(SRCS) generated-srcs-rhel container/libs/libsinsp-wrapper.so.rhel
+	mkdir -p container/bin
+	docker rm -fv build_collector_rhel || true
+	docker run --rm \
+          -v "$(CURDIR):/src:ro" \
+          -v "$(CURDIR)/sysdig/src:/usr/local/sysdig:ro" \
+          -v "$(CURDIR)/container/libs/libsinsp-wrapper.so.rhel:/usr/local/lib/libsinsp-wrapper.so:ro" \
+          -v "$(CURDIR)/sysdig/src/driver/ppm_events_public.h:/usr/local/include/ppm_events_public.h:ro" \
+          -v "$(CURDIR)/sysdig/src/driver/ppm_fillers.h:/usr/local/include/ppm_fillers.h:ro" \
+          -v "$(CURDIR)/cmake-build-rhel:/build-output" \
+	  --name build_collector_rhel stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) /build-collector.sh
+	cp cmake-build-rhel/collector container/bin/collector.rhel
+
+unittest:
+	docker rm -fv collector_unittest || true
+	docker run --rm \
+	  -v "$(CURDIR)/container/libs/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
+          -v "$(CURDIR)/cmake-build:/build-output" \
+	  --name collector_unittest \
+	  stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-output/runUnitTests
+
+unittest-rhel:
+	docker rm -fv collector_unittest_rhel || true
+	docker run --rm \
+	  -v "$(CURDIR)/container/libs/libsinsp-wrapper.so.rhel:/usr/local/lib/libsinsp-wrapper.so:ro" \
+          -v "$(CURDIR)/cmake-build-rhel:/build-output" \
+	  --name collector_unittest_rhel \
+	  stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) /build-output/runUnitTests
+
 container/libs/libsinsp-wrapper.so: $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
-	make -C sysdig
+	docker rm -fv build_sysdig || true
+	docker run --rm \
+	  -v /etc/os-release:/host/etc/os-release \
+	  -v $(CURDIR)/sysdig/src:/sysdig-src \
+	  -v $(CURDIR)/sysdig/cmake-build:/sysdig-build \
+	  --name build_sysdig stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-sysdig.sh
 	mkdir -p container/libs/
-	cp sysdig/build-output/userspace/libsinsp/libsinsp-wrapper.so container/libs/
+	cp sysdig/cmake-build/userspace/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so
 
-.PHONY: clean
-clean: clean-generated-srcs
-	docker rm -fv build_collector || true
-	docker rmi -f stackrox/collector:latest || true
-	docker rmi -f stackrox/collector-builder:cache-local || true
-	make -C sysdig clean
-	rm -rf container/bin
-	rm -rf container/driver
-	rm -rf container/libs
-	rm -f container/COPYING*.txt
-	rm -f container/NOTICE.txt
+container/libs/libsinsp-wrapper.so.rhel: $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
+	docker rm -fv build_sysdig_rhel || true
+	docker run --rm \
+	  -v /etc/os-release:/host/etc/os-release \
+	  -v $(CURDIR)/sysdig/src:/sysdig-src \
+	  -v $(CURDIR)/sysdig/cmake-build-rhel:/sysdig-build \
+	  --name build_sysdig_rhel stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) /build-sysdig.sh
+	mkdir -p container/libs/
+	cp sysdig/cmake-build-rhel/userspace/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so.rhel
 
-.PHONY: clean-generated-srcs
-clean-generated-srcs:
-	rm -rf $(GENERATED_CPP_BASE_PATH)
-	rm -rf $(GENERATED_GO_BASE_PATH)
+.PHONY: txt-files
+txt-files:
+	cp NOTICE-collector.txt container/
+	cp COPYING.txt container/
 
-build-kernel-modules:
-	make -C "${BASE_PATH}/kernel-modules" build-container
-
-prepare-src: build-kernel-modules
-	rm -rf ${BASE_PATH}/kernel-modules/kobuild-tmp/
-	mkdir -p ${BASE_PATH}/kernel-modules/kobuild-tmp/versions-src
-	docker run --rm -i \
-	  -v "${BASE_PATH}/sysdig/src:/sysdig/src" \
-	  -v "${BASE_PATH}/kernel-modules/kobuild-tmp/versions-src:/output" \
-	  --tmpfs /scratch:exec \
-	  --env SYSDIG_DIR=/sysdig/src --env SCRATCH_DIR=/scratch --env OUTPUT_DIR=/output \
-	build-kernel-modules prepare-src
-
-module-version: prepare-src
-	$(eval VERSIONS = $$(wildcard ${BASE_PATH}/kernel-modules/kobuild-tmp/versions-src/*.tgz))
-	$(eval MODULE_VERSION := $(shell basename -s .tgz $(word 1,$(VERSIONS))))
-	@echo "MODULE VERSION is $(MODULE_VERSION)"
-
-pull-modules: module-version
-	( docker image inspect stackrox/kernel-modules:$(MODULE_VERSION) > /dev/null || docker pull stackrox/kernel-modules:$(MODULE_VERSION) )
-	docker tag stackrox/kernel-modules:$(MODULE_VERSION) stackrox/kernel-modules:latest
 
 .PHONY: distribution
 distribution: clean
@@ -102,34 +101,6 @@ distribution: clean
 			--exclude-from=.gitignore \
 			-czvf \
 			collector.tar.gz ./
-
-.PHONY: integration-tests
-integration-tests:
-	@echo "+ $@"
-	make -C ../integration-tests clean-deps deps
-	go test -timeout 30m -run TestCollectorGRPC -count=1 -v ../integration-tests/... 2>&1 | tee integration-test.log
-
-.PHONY: integration-tests-baseline
-integration-tests-baseline:
-	@echo "+ $@"
-	make -C ../integration-tests clean-deps deps
-	go test -timeout 30m -run TestBenchmarkBaseline -count=1 -v ../integration-tests/... 2>&1 | tee integration-test.log
-
-.PHONY: integration-test-report
-integration-test-report:
-	@echo "+ $@"
-	@cat integration-test.log | go-junit-report > integration-test-report.xml
-	@echo
-	@echo "Test coverage summary:"
-	@grep "^coverage: " -A1 integration-test.log | grep -v -e '--' | paste -d " "  - -
-	@echo
-	@echo "Test pass/fail summary:"
-	@grep failures integration-test-report.xml | column -t
-	@echo
-	@echo "`grep 'FAIL  github.com/stackrox/collector' integration-test.log | wc -l` package(s) detected with compilation or test failures."
-	@-grep 'FAIL    github.com/stackrox/collector' integration-test.log || true
-	@echo
-	@testerror="$$(grep -e 'Unable to deploy' -e 'FAIL:' integration-test.log | wc -l)" && test $$testerror -eq 0
 
 GENERATED_CPP_BASE_PATH := $(CURDIR)/generated
 
@@ -149,15 +120,23 @@ pull-protos:
 	@git --git-dir $(BASE_PATH)/.git --work-tree $(BASE_PATH) add $(BASE_PATH)/rox-proto/
 	@echo "Copied protos to $(BASE_PATH)/rox-proto and added to git index"
 
-install-grpc:
-	@$(BASE_PATH)/build/scripts/install-grpc-cpp-plugin.sh
+.PHONY: clean
+clean: clean-generated-srcs
+	docker rm -fv build_collector build_collector_rhel || true
+	docker rm -fv build_sysdig build_sysdig_rhel || true
+	docker rm -fv container-stats benchmark collector grpc-server || true
+	rm -rf sysdig/cmake-build
+	rm -rf sysdig/cmake-build-rhel
+	rm -rf sysdig/sysdig-build
+	rm -rf cmake-build
+	rm -rf cmake-build-rhel
+	rm -rf container/bin
+	rm -rf container/driver
+	rm -rf container/libs
+	rm -f container/COPYING*.txt
+	rm -f container/NOTICE.txt
 
-.PHONY: tag
-tag:
-	@git describe --tags --abbrev=10 --dirty
-
-include ../build/protogen.mk
-
-# Generating go protos too for testing purpose
-generated-srcs: install-grpc generated-proto-srcs
+.PHONY: clean-generated-srcs
+clean-generated-srcs:
+	rm -rf $(GENERATED_CPP_BASE_PATH)
 

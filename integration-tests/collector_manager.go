@@ -28,9 +28,10 @@ func NewCollectorManager(e Executor) *collectorManager {
 	}
 
 	env := map[string]string{
-		"GRPC_SERVER":       "localhost:9999",
-		"COLLECTOR_CONFIG":  `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}`,
-		"COLLECTION_METHOD": collectionMethod,
+		"GRPC_SERVER":              "localhost:9999",
+		"COLLECTOR_CONFIG":         `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}`,
+		"COLLECTION_METHOD":        collectionMethod,
+		"MODULE_DOWNLOAD_BASE_URL": "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656",
 	}
 	mounts := map[string]string{
 		"/host/var/run/docker.sock:ro": "/var/run/docker.sock",
@@ -41,14 +42,14 @@ func NewCollectorManager(e Executor) *collectorManager {
 		"/host/dev:ro":                 "/dev",
 	}
 
-	collectorTag := ReadEnvVar("COLLECTOR_TAG")
+	collectorImage := ReadEnvVar("COLLECTOR_IMAGE")
 
 	return &collectorManager{
 		DBPath:            "/tmp/collector-test.db",
 		executor:          e,
 		DisableGrpcServer: false,
 		BootstrapOnly:     false,
-		CollectorImage:    "stackrox/collector:" + collectorTag,
+		CollectorImage:    collectorImage,
 		GRPCServerImage:   "stackrox/grpc-server:2.3.16.0-99-g0b961f9515",
 		Env:               env,
 		Mounts:            mounts,

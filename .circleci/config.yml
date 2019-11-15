@@ -51,6 +51,18 @@ commands:
         name: Login to Docker Hub
         command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
 
+  update-go:
+    steps:
+    - run:
+        name: "Update Go"
+        command: |
+          GO_VERSION="1.13.3"
+          sudo rm -r /usr/local/go/
+          wget "https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz"
+          sudo tar -C /usr/local -xzf "go${GO_VERSION}.linux-amd64.tar.gz"
+          rm "go${GO_VERSION}.linux-amd64.tar.gz"
+          go version
+
 jobs:
   initjob:
     docker:
@@ -83,7 +95,7 @@ jobs:
     - run:
         name: Set COLLECTOR_VERSION
         command: |
-          COLLECTOR_VERSION="$(make -s -C ~/workspace/go/src/github.com/stackrox/collector/collector tag)"
+          COLLECTOR_VERSION="$(make -s -C ~/workspace/go/src/github.com/stackrox/collector tag)"
 
           COLLECTOR_TAG="${COLLECTOR_VERSION}"
           GCLOUD_SSH_FINGERPRINT="$(echo ${GCLOUD_SSH_KEY_PUB} | awk '{print $2}' | base64 -d | md5sum | awk '{print $1}')"
@@ -92,6 +104,8 @@ jobs:
           cat >>~/workspace/shared-env \<<-EOF
             export COLLECTOR_VERSION="${COLLECTOR_VERSION}"
             export COLLECTOR_TAG="${COLLECTOR_TAG}"
+            export COLLECTOR_BUILDER_TAG="circle-build-${CIRCLE_WORKFLOW_ID}"
+            export BUILD_BUILDER_IMAGE=true
             export GCP_SSH_KEY_FILE="${GCP_SSH_KEY_FILE}"
           EOF
           cat ~/workspace/shared-env
@@ -104,27 +118,52 @@ jobs:
 
   builder:
     machine: true
+    resource_class: large
     steps:
     - initcommand
     - docker-login
 
     - run:
-        name: Restore collector-builder cache image
-        command: docker pull stackrox/collector-builder:cache || true
+        name: Restore collector-builder image
+        command: docker pull "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}" || docker pull stackrox/collector-builder:cache || true
 
     - run:
-        name: Build collector builder Docker image
-        command: |
-          docker build \
-            --cache-from stackrox/collector-builder:cache \
-            -t stackrox/collector-builder:cache "${SOURCE_ROOT}/builder"
+        name: Build collector-builder image
+        command: make -C "${SOURCE_ROOT}" builder
 
     - run:
-        name: Save collector-builder cache image
+        name: Save collector-builder image
         command: |
-          docker push stackrox/collector-builder:cache
-          docker tag stackrox/collector-builder:cache "stackrox/collector-builder:circle-build-${CIRCLE_WORKFLOW_ID}"
-          docker push "stackrox/collector-builder:circle-build-${CIRCLE_WORKFLOW_ID}"
+          docker push "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}"
+          if [[ "$CIRCLE_BRANCH" == "master" ]]; then
+            docker tag "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}" stackrox/collector-builder:cache 
+            docker push stackrox/collector-builder:cache
+          fi
+
+  builder-rhel:
+    machine: true
+    resource_class: large
+    steps:
+    - initcommand
+    - docker-login
+
+    - run:
+        name: Restore collector-builder rhel image
+        command: docker pull "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}" || docker pull stackrox/collector-builder:rhel-cache || true
+
+    - run:
+        name: Build collector-builder rhel image
+        command: make -C "${SOURCE_ROOT}" builder-rhel
+
+    - run:
+        name: Save collector-builder rhel image
+        command: |
+          docker push "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}"
+          if [[ "$CIRCLE_BRANCH" == "master" ]]; then
+            docker tag "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}" stackrox/collector-builder:rhel-cache 
+            docker push stackrox/collector-builder:rhel-cache
+          fi
+
 
   prepare-kernels:
     docker:
@@ -516,91 +555,58 @@ jobs:
         root: ~/workspace
         paths:
           - ko-build/build-output
-  libsinsp:
-    machine: true
-    working_directory: ~/workspace
-
-    steps:
-    - initcommand
-    - docker-login
-
-    - run:
-        name: Restore sysdig builder cache image
-        command: docker pull stackrox/collector-builder:sysdig || true
-
-    - run:
-        name: Build libsinsp Wrapper
-        command: make -C "${COLLECTOR_SOURCE_ROOT}" container/libs/libsinsp-wrapper.so
-
-    - run:
-        name: Sanity check
-        command: |
-          cd "${COLLECTOR_SOURCE_ROOT}"
-          ls -lh container/libs
-          file   container/libs/libsinsp-wrapper.so
-          docker images | grep collector
-
-    - run:
-        name: Save sysdig builder cache image
-        command: docker push stackrox/collector-builder:sysdig
-
-    - persist_to_workspace:
-        root: ~/workspace
-        paths:
-        - go/src/github.com/stackrox/collector/collector/container/libs
 
   collector:
     machine: true
-    working_directory: ~/workspace
+    resource_class: large
 
     steps:
     - initcommand
     - docker-login
 
     - run:
-        name: Restore collector-builder cache image
-        command: docker pull "stackrox/collector-builder:circle-build-${CIRCLE_WORKFLOW_ID}"
-
-    - run:
-        name: Sanity Check
-        command: |
-          cd "${SOURCE_ROOT}"
-          pwd
-          echo '>>> Userspace lib:'
-          ls -lh collector/container/libs
-          file   collector/container/libs/libsinsp-wrapper.so
-          echo '>>> Docker images:'
-          docker images | grep collector
-
-    - run:
-        name: Generate Protobuf Definitions
-        command: make -C "$COLLECTOR_SOURCE_ROOT" generated-srcs
+        name: Restore collector-builder image
+        command: docker pull "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}"
 
     - run:
         name: Build collector
-        command: |
-          cd "$COLLECTOR_SOURCE_ROOT"
-          mkdir -p container/bin
-          docker run \
-            -v "$PWD:/src:ro" \
-            -v "$PWD/sysdig/src:/usr/local/sysdig:ro" \
-            -v "$PWD/container/libs/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
-            -v "$PWD/sysdig/src/driver/ppm_events_public.h:/usr/local/include/ppm_events_public.h:ro" \
-            -v "$PWD/sysdig/src/driver/ppm_fillers.h:/usr/local/include/ppm_fillers.h:ro" \
-            -v "$PWD/cmake-build:/build-output" \
-            --name build "stackrox/collector-builder:circle-build-${CIRCLE_WORKFLOW_ID}"
+        command: make -C "${SOURCE_ROOT}" collector
 
     - run:
-        name: Extract collector files
-        command: |
-          cd "$COLLECTOR_SOURCE_ROOT"
-          cp cmake-build/collector container/bin/
-          ls -lh container/bin/
+        name: Run collector unit tests
+        command: make -C "${SOURCE_ROOT}" unittest
 
     - persist_to_workspace:
         root: ~/workspace
         paths:
         - go/src/github.com/stackrox/collector/collector/container/bin
+        - go/src/github.com/stackrox/collector/collector/container/libs
+
+  collector-rhel:
+    machine: true
+    resource_class: large
+
+    steps:
+    - initcommand
+    - docker-login
+
+    - run:
+        name: Restore collector-builder rhel image
+        command: docker pull "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}"
+
+    - run:
+        name: Build rhel collector
+        command: make -C "${SOURCE_ROOT}" collector-rhel
+
+    - run:
+        name: Run RHEL collector unit tests
+        command: make -C "${SOURCE_ROOT}" unittest-rhel
+
+    - persist_to_workspace:
+        root: ~/workspace
+        paths:
+        - go/src/github.com/stackrox/collector/collector/container/bin
+        - go/src/github.com/stackrox/collector/collector/container/libs
 
   images:
     machine: true
@@ -689,6 +695,37 @@ jobs:
             container-combined
 
     - run:
+        name: Restore collector-builder rhel image
+        command: |
+          docker pull "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}"
+
+    - run:
+        name: Build collector rhel images
+        command: |
+          cd "$COLLECTOR_SOURCE_ROOT"
+          cp NOTICE-collector.txt container/
+          cp COPYING.txt container/
+
+          build_args=(
+            --build-arg module_version="$MODULE_VERSION"
+            --build-arg collector_version="$COLLECTOR_VERSION"
+            --build-arg collector_builder_tag="rhel-$COLLECTOR_BUILDER_TAG"
+            --build-arg collector_repo="stackrox/collector-rhel"
+          )
+
+          docker build \
+            -t "stackrox/collector-rhel:${COLLECTOR_VERSION}-base" \
+            "${build_args[@]}" \
+            -f container/Dockerfile_rhel \
+            container
+
+          docker build \
+            -t "stackrox/collector-rhel:${COLLECTOR_VERSION}" \
+            -t "stackrox/collector-rhel:${COLLECTOR_VERSION}-latest" \
+            "${build_args[@]}" \
+            container-combined
+
+    - run:
         name: Sanity check images
         command: |
           docker images | grep kernel | grep "${MODULE_VERSION}"
@@ -703,6 +740,13 @@ jobs:
           docker push "stackrox/collector:${COLLECTOR_VERSION}"
           echo "Pushing collector latest image"
           docker push "stackrox/collector:${COLLECTOR_VERSION}-latest"
+
+          echo "Pushing collector rhel base image"
+          docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}-base"
+          echo "Pushing collector rhel image"
+          docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}"
+          echo "Pushing collector rhel latest image"
+          docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}-latest"
 
   upload-modules:
     docker:
@@ -752,8 +796,15 @@ jobs:
               exit 1
             fi
 
-
   integration-test-local:
+    parameters:
+      vm-config:
+        type: string 
+        default: default
+      use-rhel:
+        type: boolean
+        default: false
+
     machine: true
     working_directory: ~/workspace
 
@@ -761,25 +812,24 @@ jobs:
     - initcommand
     - docker-login
     - gcloud-init
+    - update-go
+
     - run:
         name: "Running integration tests"
         no_output_timeout: 45m
         command: |
-          cd "$COLLECTOR_SOURCE_ROOT"
-          go get -u github.com/jstemmer/go-junit-report
-          curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-          sudo mv /home/circleci/workspace/go/bin/dep /usr/local/bin/dep
           export REMOTE_HOST_TYPE=local
           export COLLECTION_METHOD=kernel_module
-          export VM_CONFIG=circle_local
-          make integration-tests
-          make integration-test-report
-          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
+          export VM_CONFIG="circle_local_<< parameters.vm-config >>"
+          export COLLECTOR_REPO="stackrox/collector<<# parameters.use-rhel>>-rhel<</ parameters.use-rhel>>"
+          export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}-base"
+          make -C "${SOURCE_ROOT}" integration-tests integration-tests-report
+          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
     - store_test_results:
-        path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
+        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml
     - store_artifacts:
-        path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
+        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml
         destination: "integration-test-report.xml"
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/collector.logs
@@ -789,7 +839,7 @@ jobs:
         destination: "grpc-server.logs"
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/perf.json
-        destination: kernel_module-circle_local-perf.json
+        destination: "kernel_module-circle_local_<< parameters.vm-config >>-perf.json"
 
   integration-test:
     parameters:
@@ -802,7 +852,10 @@ jobs:
       image_family:
         type: enum
         enum: [coreos-stable, cos-stable, cos-69-lts, cos-73-lts, rhel-7, rhel-8, ubuntu-1804-lts, ubuntu-1904]
-
+      use-rhel:
+        type: boolean
+        default: false
+ 
     machine: true
     working_directory: ~/workspace
 
@@ -811,6 +864,7 @@ jobs:
     - add_ssh_keys
     - docker-login
     - gcloud-init
+    - update-go
 
     - run:
         name: "Extract gcp ssh public key from environment variable"
@@ -822,7 +876,8 @@ jobs:
         name: "Create VM"
         command: |
           source $SOURCE_ROOT/.circleci/create-vm.sh
-          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-${CIRCLE_BUILD_NUM}"
+          export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
+          export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
           export VM_TYPE=<< parameters.vm_type >>
           export IMAGE_FAMILY=<< parameters.image_family >>
           main "$GCLOUD_INSTANCE" "$VM_TYPE" "$IMAGE_FAMILY" "$GCP_SSH_KEY_FILE" "$DOCKER_USER" "$DOCKER_PASS" 
@@ -831,31 +886,31 @@ jobs:
         name: "Running integration tests"
         no_output_timeout: 45m
         command: |
-          cd "$COLLECTOR_SOURCE_ROOT"
-          go get -u github.com/jstemmer/go-junit-report
-          curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-          sudo mv /home/circleci/workspace/go/bin/dep /usr/local/bin/dep
           export REMOTE_HOST_TYPE=gcloud
-          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-${CIRCLE_BUILD_NUM}"
-          export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
-          export COLLECTION_METHOD=<< parameters.collection_method >>
+          export COLLECTION_METHOD="<< parameters.collection_method >>"
           export VM_CONFIG="<< parameters.vm_type >>.<< parameters.image_family >>"
-          make integration-tests-baseline integration-tests integration-test-report
-          cp "${WORKSPACE_ROOT}/go/src/github.com/stackrox/collector/integration-tests/perf.json" "${WORKSPACE_ROOT}/<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-perf.json"
-          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
+          export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
+          export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
+          export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
+          export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
+          export COLLECTOR_REPO="stackrox/collector<<# parameters.use-rhel>>-rhel<</ parameters.use-rhel>>"
+          make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report
+          cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
+          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp "${SOURCE_ROOT}/integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
     - run:
         name: "Get serial port output"
         command: |
-          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-${CIRCLE_BUILD_NUM}"
+          export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
+          export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
           mkdir -p ~/workspace/serial-output
           gcloud compute instances get-serial-port-output "$GCLOUD_INSTANCE" > ~/workspace/serial-output/"$GCLOUD_INSTANCE"-serial-output.logs
         when: always
 
     - store_test_results:
-        path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
+        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml
     - store_artifacts:
-        path: ~/workspace/go/src/github.com/stackrox/collector/collector/integration-test-report.xml
+        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml
         destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-integration-test-report.xml"
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/collector.logs
@@ -877,7 +932,8 @@ jobs:
     - run:
         name: "Destroy VM"
         command: |
-          export GCLOUD_INSTANCE="collector-ci-<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-${CIRCLE_BUILD_NUM}"
+          export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
+          export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
           gcloud compute instances delete $GCLOUD_INSTANCE
         when: always
 
@@ -906,6 +962,8 @@ jobs:
           wget --quiet https://github.com/joshdk/hub-comment/releases/download/0.1.0-rc6/hub-comment_linux_amd64
           sudo install hub-comment_linux_amd64 /usr/bin/hub-comment
 
+          export COLLECTOR_TAG="${COLLECTOR_TAG}"
+          export COLLECTOR_BUILDER_TAG="${COLLECTOR_BUILDER_TAG}"
           export PERF_TABLE=$(cat ~/workspace/benchmark.md)
           hub-comment -template-file "${SOURCE_ROOT}/.circleci/performance-comment-template.tpl"
 
@@ -1000,16 +1058,21 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - libsinsp:
+    - collector:
+        requires:
+        - builder
+        filters:
+          tags:
+            only: /.*/
+    - builder-rhel:
         requires:
         - initjob
         filters:
           tags:
             only: /.*/
-    - collector:
+    - collector-rhel:
         requires:
-        - builder
-        - libsinsp
+        - builder-rhel
         filters:
           tags:
             only: /.*/
@@ -1034,11 +1097,22 @@ workflows:
     - images:
         requires:
         - collector
+        - collector-rhel
         - kernels
         filters:
           tags:
             only: /.*/
     - integration-test-local:
+        requires:
+        - images
+        - upload-modules
+        filters:
+          tags:
+            only: /.*/
+    - integration-test-local:
+        name: integration-test-local-rhel
+        vm-config: rhel
+        use-rhel: true
         requires:
         - images
         - upload-modules
@@ -1147,17 +1221,18 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - integration-test:
-        name: test-ebpf-ubuntu-1804-lts
-        collection_method: ebpf
-        vm_type: ubuntu-os
-        image_family: ubuntu-1804-lts
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
+    ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks`
+    #- integration-test:
+    #    name: test-ebpf-ubuntu-1804-lts
+    #    collection_method: ebpf
+    #    vm_type: ubuntu-os
+    #    image_family: ubuntu-1804-lts
+    #    requires:
+    #    - images
+    #    - integration-test-local
+    #    filters:
+    #      tags:
+    #        only: /.*/
     - integration-test:
         name: test-module-ubuntu-1804-lts
         collection_method: module
@@ -1205,7 +1280,7 @@ workflows:
        - test-module-rhel-8
        - test-ebpf-rhel-8
        - test-module-ubuntu-1804-lts
-       - test-ebpf-ubuntu-1804-lts
+       #- test-ebpf-ubuntu-1804-lts
        - test-module-ubuntu-1904
        #- test-ebpf-ubuntu-1904
        filters:

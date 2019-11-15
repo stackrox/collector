@@ -93,7 +93,7 @@ function download_kernel_object() {
         return 1
     fi
 
-    if ! gunzip --keep "$filename_gz"; then
+    if ! gzip -d --keep "$filename_gz"; then
         log "${OBJECT_TYPE} downloaded, but there was an error un-gzipping. It looks like the file is corrupted."
         log "Please contact StackRox support, enclosing the above error message(s)."
         return 1
@@ -208,8 +208,7 @@ function main() {
     
     # Get and export the node hostname from Docker, 
     # and export because this env var is read by collector
-    export NODE_HOSTNAME=""
-    NODE_HOSTNAME=$(curl -s --unix-socket /host/var/run/docker.sock http://localhost/info | jq --raw-output .Name)
+    export NODE_HOSTNAME="$(cat /host/proc/sys/kernel/hostname)"
     
     # Get the linux distribution and BUILD_ID and ID to identify kernel version (COS or RHEL)
     OS_DISTRO="$(get_distro)"
@@ -217,6 +216,7 @@ function main() {
     OS_ID="$(get_os_release_value 'ID')"
     
     # Print node info
+    log "Collector Version: ${COLLECTOR_VERSION}"
     log "Hostname: ${NODE_HOSTNAME}"
     log "OS: ${OS_DISTRO}"
     log "Kernel Version: ${KERNEL_VERSION}"
@@ -224,7 +224,7 @@ function main() {
     local module_version
     module_version="$(cat /kernel-modules/MODULE_VERSION.txt)"
     if [[ -n "$module_version" ]]; then
-        log "Collector Version: $module_version"
+        log "Module Version: $module_version"
         if [[ -n "$MODULE_DOWNLOAD_BASE_URL" ]]; then
             MODULE_URL="${MODULE_DOWNLOAD_BASE_URL}/${module_version}"
         fi
@@ -241,14 +241,8 @@ function main() {
     # Backwards compatability for releases older than 2.4.20
     # COLLECTION_METHOD should be provided
     if [[ -z "$COLLECTION_METHOD" ]]; then
-      export COLLECTION_METHOD=""
-      local config_json_ebpf
-      config_json_ebpf="$(echo "$COLLECTOR_CONFIG" | jq --raw-output .useEbpf)"
-      if [[ "$config_json_ebpf" == "true" ]]; then
-        COLLECTION_METHOD="EBPF"
-      else
-        COLLECTION_METHOD="KERNEL_MODULE"
-      fi
+      log "Collector configured without environment variable (default: COLLECTION_METHOD=kernel_module)"
+      export COLLECTION_METHOD="KERNEL_MODULE"
     fi
     
     # Handle invalid collection method setting
