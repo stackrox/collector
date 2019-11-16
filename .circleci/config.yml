@@ -1025,9 +1025,8 @@ jobs:
             released_base_image="stackrox/collector:${collector_ver}-base"
             docker pull "${released_latest_image}"
             
-            time ( missing_objs_file="/tmp/missing-objs-${collector_ver}"
-            "./reload/missing-kernel-objects.sh" "${released_latest_image}" "${COLLECTOR_MODULES_BUCKET}" \
-              >"${missing_objs_file}" )
+            missing_objs_file="/tmp/missing-objs-${collector_ver}"
+            time ( "./reload/missing-kernel-objects.sh" "${released_latest_image}" "${COLLECTOR_MODULES_BUCKET}" > "${missing_objs_file}"; )
         
             
             if [[ ! -s "${missing_objs_file}" ]] ; then
