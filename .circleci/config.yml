@@ -976,6 +976,7 @@ jobs:
 
   reload-released-images:
     machine: true
+    resource_class: large
     environment:
     - INSTALL_DIRECTORY: /tmp
 
