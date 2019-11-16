@@ -998,7 +998,7 @@ jobs:
           mod_build_dir="${WORKSPACE_ROOT}/ko-build/build-output"
           if [ -z "$(find "${mod_build_dir}" -type f -name "*.gz" )" ] ; then
             echo "No kernel objects built in this workflow"
-            circleci step halt
+            #circleci step halt
             exit 0
           fi
           for mod_dir in "${mod_build_dir}"/*/ ; do
@@ -1015,17 +1015,20 @@ jobs:
 
           rm -rf "./reload/images"
           for collector_ver_file in "${WORKSPACE_ROOT}/ko-build/released-collectors"/*; do
+            date
             collector_ver="$(basename "${collector_ver_file}")"
             mod_ver="$(< "${collector_ver_file}")"
             echo "Checking ${collector_ver} with module version ${mod_ver}"
 
-            released_latest_image="stackrox/collector:${collector_ver}-latest"
+            #released_latest_image="stackrox/collector:${collector_ver}-latest"
+            released_latest_image="stackrox/collector:${collector_ver}"
             released_base_image="stackrox/collector:${collector_ver}-base"
             docker pull "${released_latest_image}"
             
-            missing_objs_file="/tmp/missing-objs-${collector_ver}"
+            time ( missing_objs_file="/tmp/missing-objs-${collector_ver}"
             "./reload/missing-kernel-objects.sh" "${released_latest_image}" "${COLLECTOR_MODULES_BUCKET}" \
-              >"${missing_objs_file}"
+              >"${missing_objs_file}" )
+        
             
             if [[ ! -s "${missing_objs_file}" ]] ; then
               echo "Image ${released_latest_image} contains up to date kernel objects"
@@ -1036,10 +1039,10 @@ jobs:
             cat "${missing_objs_file}"
 
             docker pull "${released_base_image}"
-            "./reload/build-latest.sh" "${collector_ver}" "${mod_ver}" "/tmp/released-kernel-object-cache/" "${COLLECTOR_MODULES_BUCKET}"
+            time "./reload/build-latest.sh" "${collector_ver}" "${mod_ver}" "/tmp/released-kernel-object-cache/" "${COLLECTOR_MODULES_BUCKET}"
 
-            docker push "stackrox/collector:${collector_ver}-latest"
-            docker push "collector.stackrox.io/collector:${collector_ver}-latest"
+            #docker push "stackrox/collector:${collector_ver}-latest"
+            #docker push "collector.stackrox.io/collector:${collector_ver}-latest"
           done
 
           docker images
@@ -1291,5 +1294,7 @@ workflows:
         requires:
         - images
         filters:
-          branches:
-            only: master
+         tags:
+           only: /.*/ 
+#         branches:
+#           only: master
