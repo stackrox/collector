@@ -1,0 +1,25 @@
+Support package preparation
+===========================
+
+Preparing support packages is a multi-stage process, consisting of the steps listed in this document.
+To allow easy interoperability between scripts written in different languages, intermediate information
+is stored in a certain directory structure. For simplicity, we assume the root directory is called METADATA.
+
+1. Determine Rox version -> Collector version map
+-------------------------------------------------
+For every relevant Rox version, writes a file `METADATA/rox-versions/<rox version>/COLLECTOR_VERSION`
+that contains the Collector version for this Rox release.
+
+2. Determine Collector version -> Module version and base image inventory
+-------------------------------------------------
+For every relevant Collector version, writes a file `METADATA/collector-versions/<collector version>/MODULE_VERSION`
+containing the relevant module version, and a file `METADATA/collector-versions/<collector version>/INVENTORY`
+that contains all probe files that are present in the *immutable* collector image.
+
+3. Determine Module version -> Common inventory and Rox versions
+-------------------------------------------------
+For every relevant module version, writes a file `METADATA/module-versions/<module version>/COMMON_INVENTORY`
+that contains the intersection of all relevant INVENTORY files, and a file
+`METADATA/module-versions/<module version>/ROX_VERSIONS` that contains all Rox versions that use a
+
+4. Generate
