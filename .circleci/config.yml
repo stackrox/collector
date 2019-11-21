@@ -1059,14 +1059,15 @@ jobs:
           name: Wait for 120 seconds
           command: |
             for i in {1..120}; do
+              sleep 1
               echo -n .
             done
             echo
 
-      - run:
-          name: Delete old files
-          command: |
-            gsutil -m rsync -r -d /tmp/support-packages/output "$GCLOUD_TARGET"
+#      - run:
+#          name: Delete old files
+#          command: |
+#            gsutil -m rsync -r -d /tmp/support-packages/output "$GCLOUD_TARGET"
 
   reload-released-images:
     machine: true
