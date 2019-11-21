@@ -28,7 +28,7 @@ include_directories(/usr/include/civetweb)
 include_directories(/usr/include/prometheus)
 include_directories(/usr/include/google/protobuf)
 
-add_definitions(-DUSE_PROTO_ARENAS)
+# add_definitions(-DUSE_PROTO_ARENAS)
 
 file(GLOB COLLECTOR_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/lib/*.cpp)
 file(GLOB_RECURSE PROTO_SRC_FILES ${PROJECT_SOURCE_DIR}/generated/*.cc)
