@@ -1375,6 +1375,6 @@ workflows:
 #          branches:
 #            only: master
     - update-support-packages:
-        context: stackrox-io-pull
+        context: docker-io-and-stackrox-io-push
         requires:
           - initjob
