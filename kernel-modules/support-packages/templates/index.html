@@ -3239,6 +3239,7 @@
             <p class="text-tertiary-800 mb-0">When running the StackRox Kubernetes Security Platform in Offline Mode, you can download a <i>Collector Support Package</i>
             from this page to ensure that Collectors have access to the files required at runtime. Please refer to the documentation on how to install support packages.</p>
             <p></p>
+            {% if support_packages %}
             <table>
                 <thead>
                     <tr><th>StackRox Version(s)</th><th>Last updated</th><th>Download Link</th></tr>
@@ -3247,22 +3248,26 @@
                     {% for pkg in support_packages %}
                     <tr>
                         <td>
-                            {% for rng in pkg.version_ranges %}
-                            {% if rng.first == rng.last %}
-                            {{rng.first}}
+                            {% for rng in pkg.rox_version_ranges %}
+                            {% if rng.min == rng.max %}
+                            {{rng.min}}
                             {% else %}
-                            {{rng.first}}&ndash;{{rng.last}}
+                            {{rng.min}}&ndash;{{rng.max}}
                             {% endif %}
                             <br>
                             {% endfor %}
                         </td>
-                        <td>{{pkg.last_update_time|readable_date}}</td>
+                        <td>{{pkg.last_update_time}}</td>
                         <td><a href="{{pkg.download_url}}">Download</a></td>
                     </tr>
                     {% endfor %}
-                    <tr><td>3.0.34.0-3.0.35.0<br>2.5.x<br></td></tr>
                 </tbody>
             </table>
+            {% else %}
+            <div class="border bg-base-200 border-base-400 border p-8">
+                <p class="text-alert-800 mb-0">Currently, no support packages are available. Please check back at a later time.</p>
+            </div>
+            {% endif %}
         </div>
     </div>
 </main>

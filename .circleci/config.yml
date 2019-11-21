@@ -974,6 +974,86 @@ jobs:
     - store_artifacts:
         path: ~/workspace/benchmark.csv
 
+  update-support-packages:
+    environment:
+      - DOWNLOAD_BASE_URL: "https://install.stackrox.io"
+      - RELATIVE_PATH: "collector-test-xkl5x1/support-packages"
+      - GCLOUD_BUCKET: "gs://sr-roxc"
+
+    working_directory: ~/workspace
+
+    steps:
+      - initcommand
+      - docker-login
+      - gcloud-init
+
+      - run:
+          name: Initialize environment
+          command: |
+            cci-export BASE_URL "${DOWNLOAD_BASE_URL}/${RELATIVE_PATH}"
+            cci-export SUPPORT_PKG_SRC_ROOT "${SOURCE_ROOT}/kernel-modules/support-packages"
+            cci-export GCLOUD_TARGET "${GCLOUD_BUCKET}/${RELATIVE_PATH}"
+
+      - run:
+          name: Install Pip
+          command: |
+            curl https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
+            sudo python3 /tmp/get-pip.py
+
+      - run:
+          name: Install Jinja2
+          command: |
+            sudo pip3 install Jinja2
+
+      - run:
+          name: Generate collector -> rox version map
+          command: |
+            "${SUPPORT_PKG_SRC_ROOT}/01-collector-to-rox-version-map.py" \
+              "${SOURCE_ROOT}/TEST_RELEASED_VERSIONS" \
+              /tmp/support-packages/metadata
+
+      - run:
+          name: Fetch collector metadata
+          command: |
+            "${SUPPORT_PKG_SRC_ROOT}/02-fetch-collectors-metadata.sh" \
+              /tmp/support-packages/metadata
+
+      - run:
+          name: Group by module version
+          command: |
+            "${SUPPORT_PKG_SRC_ROOT}/03-group-by-module-version.sh" \
+              /tmp/support-packages/metadata
+
+      - run:
+          name: Create support package files
+          command: |
+            "${SUPPORT_PKG_SRC_ROOT}/04-create-support-packages.sh" \
+              /tmp/support-packages/metadata /tmp/support-packages/output
+
+      - run:
+          name: Create index file
+          command: |
+            "${SUPPORT_PKG_SRC_ROOT}/05-create-index.py" \
+              /tmp/support-packages/metadata /tmp/support-packages/output
+
+      - run:
+          name: Upload to GCloud
+          command: |
+            gsutil -m rsync -r /tmp/support-packages/output "$GCLOUD_TARGET"
+
+      - run:
+          name: Wait for 120 seconds
+          command: |
+            for i in {1..120}; do
+              echo -n .
+            done
+            echo
+
+      - run:
+          name: Delete old files
+          command: |
+            gsutil -m rsync -r -d /tmp/support-packages/output "$GCLOUD_TARGET"
+
   reload-released-images:
     machine: true
     environment:
@@ -1052,244 +1132,248 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - builder:
+#    - builder:
+#        requires:
+#        - initjob
+#        filters:
+#          tags:
+#            only: /.*/
+#    - collector:
+#        requires:
+#        - builder
+#        filters:
+#          tags:
+#            only: /.*/
+#    - builder-rhel:
+#        requires:
+#        - initjob
+#        filters:
+#          tags:
+#            only: /.*/
+#    - collector-rhel:
+#        requires:
+#        - builder-rhel
+#        filters:
+#          tags:
+#            only: /.*/
+#    - prepare-kernels:
+#        requires:
+#        - initjob
+#        filters:
+#          tags:
+#            only: /.*/
+#    - kernels:
+#        requires:
+#        - prepare-kernels
+#        filters:
+#          tags:
+#            only: /.*/
+#    - upload-modules:
+#        requires:
+#          - kernels
+#        filters:
+#          tags:
+#            only: /.*/
+#    - images:
+#        requires:
+#        - collector
+#        - collector-rhel
+#        - kernels
+#        filters:
+#          tags:
+#            only: /.*/
+#    - integration-test-local:
+#        requires:
+#        - images
+#        - upload-modules
+#        filters:
+#          tags:
+#            only: /.*/
+#    - integration-test-local:
+#        name: integration-test-local-rhel
+#        vm-config: rhel
+#        use-rhel: true
+#        requires:
+#        - images
+#        - upload-modules
+#        filters:
+#          tags:
+#            only: /.*/
+#    # TODO(rc) Enabled but bootstrap.sh forces fallback to kernel-module (ROX-2583)
+#    - integration-test:
+#        name: test-ebpf-coreos-stable
+#        collection_method: ebpf
+#        vm_type: coreos
+#        image_family: coreos-stable
+#        requires:
+#        - images
+#        - integration-test-local
+#        filters:
+#          tags:
+#            only: /.*/
+#    - integration-test:
+#        name: test-module-coreos-stable
+#        collection_method: module
+#        vm_type: coreos
+#        image_family: coreos-stable
+#        requires:
+#        - images
+#        - integration-test-local
+#        filters:
+#          tags:
+#            only: /.*/
+#    ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks` (ROX-3179)
+#    #- integration-test:
+#    #    name: test-ebpf-cos-stable
+#    #    collection_method: ebpf
+#    #    vm_type: cos
+#    #    image_family: cos-stable
+#    #    requires:
+#    #    - images
+#    #    - integration-test-local
+#    #    filters:
+#    #      tags:
+#    #        only: /.*/
+#    - integration-test:
+#        name: test-ebpf-cos-69-lts
+#        collection_method: ebpf
+#        vm_type: cos
+#        image_family: cos-69-lts
+#        requires:
+#        - images
+#        - integration-test-local
+#        filters:
+#          tags:
+#            only: /.*/
+#    - integration-test:
+#        name: test-ebpf-cos-73-lts
+#        collection_method: ebpf
+#        vm_type: cos
+#        image_family: cos-73-lts
+#        requires:
+#        - images
+#        - integration-test-local
+#        filters:
+#          tags:
+#            only: /.*/
+#    - integration-test:
+#        name: test-ebpf-rhel-7
+#        collection_method: ebpf
+#        vm_type: rhel
+#        image_family: rhel-7
+#        requires:
+#        - images
+#        - integration-test-local
+#        filters:
+#          tags:
+#            only: /.*/
+#    # TODO(rc) Enabled but bootstrap.sh forces fallback to kernel-module (ROX-3377)
+#    - integration-test:
+#        name: test-module-rhel-7
+#        collection_method: module
+#        vm_type: rhel
+#        image_family: rhel-7
+#        requires:
+#        - images
+#        - integration-test-local
+#        filters:
+#          tags:
+#            only: /.*/
+#    - integration-test:
+#        name: test-ebpf-rhel-8
+#        collection_method: ebpf
+#        vm_type: rhel
+#        image_family: rhel-8
+#        requires:
+#        - images
+#        - integration-test-local
+#        filters:
+#          tags:
+#            only: /.*/
+#    - integration-test:
+#        name: test-module-rhel-8
+#        collection_method: module
+#        vm_type: rhel
+#        image_family: rhel-8
+#        requires:
+#        - images
+#        - integration-test-local
+#        filters:
+#          tags:
+#            only: /.*/
+#    ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks`
+#    #- integration-test:
+#    #    name: test-ebpf-ubuntu-1804-lts
+#    #    collection_method: ebpf
+#    #    vm_type: ubuntu-os
+#    #    image_family: ubuntu-1804-lts
+#    #    requires:
+#    #    - images
+#    #    - integration-test-local
+#    #    filters:
+#    #      tags:
+#    #        only: /.*/
+#    - integration-test:
+#        name: test-module-ubuntu-1804-lts
+#        collection_method: module
+#        vm_type: ubuntu-os
+#        image_family: ubuntu-1804-lts
+#        requires:
+#        - images
+#        - integration-test-local
+#        filters:
+#          tags:
+#            only: /.*/
+#    ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks`
+#    #- integration-test:
+#    #    name: test-ebpf-ubuntu-1904
+#    #    collection_method: ebpf
+#    #    vm_type: ubuntu-os
+#    #    image_family: ubuntu-1904
+#    #    requires:
+#    #    - images
+#    #    - integration-test-local
+#    #    filters:
+#    #      tags:
+#    #        only: /.*/
+#    - integration-test:
+#        name: test-module-ubuntu-1904
+#        collection_method: module
+#        vm_type: ubuntu-os
+#        image_family: ubuntu-1904
+#        requires:
+#        - images
+#        - integration-test-local
+#        filters:
+#          tags:
+#            only: /.*/
+#
+#    - integration-test-data:
+#       requires:
+#       - test-module-coreos-stable
+#       - test-ebpf-coreos-stable
+#       #- test-ebpf-cos-stable
+#       - test-ebpf-cos-69-lts
+#       - test-ebpf-cos-73-lts
+#       - test-module-rhel-7
+#       - test-ebpf-rhel-7
+#       - test-module-rhel-8
+#       - test-ebpf-rhel-8
+#       - test-module-ubuntu-1804-lts
+#       #- test-ebpf-ubuntu-1804-lts
+#       - test-module-ubuntu-1904
+#       #- test-ebpf-ubuntu-1904
+#       filters:
+#         tags:
+#           only: /.*/
+#    - reload-released-images:
+#        context: docker-io-and-stackrox-io-push
+#        requires:
+#        - images
+#        filters:
+#          branches:
+#            only: master
+    - update-support-packages:
+        context: stackrox-io-pull
         requires:
-        - initjob
-        filters:
-          tags:
-            only: /.*/
-    - collector:
-        requires:
-        - builder
-        filters:
-          tags:
-            only: /.*/
-    - builder-rhel:
-        requires:
-        - initjob
-        filters:
-          tags:
-            only: /.*/
-    - collector-rhel:
-        requires:
-        - builder-rhel
-        filters:
-          tags:
-            only: /.*/
-    - prepare-kernels:
-        requires:
-        - initjob
-        filters:
-          tags:
-            only: /.*/
-    - kernels:
-        requires:
-        - prepare-kernels
-        filters:
-          tags:
-            only: /.*/
-    - upload-modules:
-        requires:
-          - kernels
-        filters:
-          tags:
-            only: /.*/
-    - images:
-        requires:
-        - collector
-        - collector-rhel
-        - kernels
-        filters:
-          tags:
-            only: /.*/
-    - integration-test-local:
-        requires:
-        - images
-        - upload-modules
-        filters:
-          tags:
-            only: /.*/
-    - integration-test-local:
-        name: integration-test-local-rhel
-        vm-config: rhel
-        use-rhel: true
-        requires:
-        - images
-        - upload-modules
-        filters:
-          tags:
-            only: /.*/
-    # TODO(rc) Enabled but bootstrap.sh forces fallback to kernel-module (ROX-2583)
-    - integration-test:
-        name: test-ebpf-coreos-stable
-        collection_method: ebpf
-        vm_type: coreos
-        image_family: coreos-stable
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
-    - integration-test:
-        name: test-module-coreos-stable
-        collection_method: module
-        vm_type: coreos
-        image_family: coreos-stable
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
-    ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks` (ROX-3179)
-    #- integration-test:
-    #    name: test-ebpf-cos-stable
-    #    collection_method: ebpf
-    #    vm_type: cos
-    #    image_family: cos-stable
-    #    requires:
-    #    - images
-    #    - integration-test-local
-    #    filters:
-    #      tags:
-    #        only: /.*/
-    - integration-test:
-        name: test-ebpf-cos-69-lts
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-69-lts
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
-    - integration-test:
-        name: test-ebpf-cos-73-lts
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-73-lts
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
-    - integration-test:
-        name: test-ebpf-rhel-7
-        collection_method: ebpf 
-        vm_type: rhel
-        image_family: rhel-7
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
-    # TODO(rc) Enabled but bootstrap.sh forces fallback to kernel-module (ROX-3377)
-    - integration-test:
-        name: test-module-rhel-7
-        collection_method: module
-        vm_type: rhel
-        image_family: rhel-7
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
-    - integration-test:
-        name: test-ebpf-rhel-8
-        collection_method: ebpf 
-        vm_type: rhel
-        image_family: rhel-8
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
-    - integration-test:
-        name: test-module-rhel-8
-        collection_method: module
-        vm_type: rhel
-        image_family: rhel-8
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
-    ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks`
-    #- integration-test:
-    #    name: test-ebpf-ubuntu-1804-lts
-    #    collection_method: ebpf
-    #    vm_type: ubuntu-os
-    #    image_family: ubuntu-1804-lts
-    #    requires:
-    #    - images
-    #    - integration-test-local
-    #    filters:
-    #      tags:
-    #        only: /.*/
-    - integration-test:
-        name: test-module-ubuntu-1804-lts
-        collection_method: module
-        vm_type: ubuntu-os
-        image_family: ubuntu-1804-lts
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
-    ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks`
-    #- integration-test:
-    #    name: test-ebpf-ubuntu-1904
-    #    collection_method: ebpf
-    #    vm_type: ubuntu-os
-    #    image_family: ubuntu-1904
-    #    requires:
-    #    - images
-    #    - integration-test-local
-    #    filters:
-    #      tags:
-    #        only: /.*/
-    - integration-test:
-        name: test-module-ubuntu-1904
-        collection_method: module
-        vm_type: ubuntu-os
-        image_family: ubuntu-1904
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
-
-    - integration-test-data:
-       requires:
-       - test-module-coreos-stable
-       - test-ebpf-coreos-stable
-       #- test-ebpf-cos-stable
-       - test-ebpf-cos-69-lts
-       - test-ebpf-cos-73-lts
-       - test-module-rhel-7
-       - test-ebpf-rhel-7
-       - test-module-rhel-8
-       - test-ebpf-rhel-8
-       - test-module-ubuntu-1804-lts
-       #- test-ebpf-ubuntu-1804-lts
-       - test-module-ubuntu-1904
-       #- test-ebpf-ubuntu-1904
-       filters:
-         tags:
-           only: /.*/ 
-    - reload-released-images:
-        context: docker-io-and-stackrox-io-push
-        requires:
-        - images
-        filters:
-          branches:
-            only: master
+          - initjob

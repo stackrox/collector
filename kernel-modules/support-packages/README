@@ -22,4 +22,11 @@ For every relevant module version, writes a file `METADATA/module-versions/<modu
 that contains the intersection of all relevant INVENTORY files, and a file
 `METADATA/module-versions/<module version>/ROX_VERSIONS` that contains all Rox versions that use a
 
-4. Generate
+4. Generate support package files
+-------------------------------------------------
+For every relevant module version, creates a file `OUTPUT/<module version>/<support package filename>.zip`
+containing the relevant probes.
+
+5. Generate index.html file
+-------------------------------------------------
+Generates a file `OUTPUT/index.html` that contains an overview of support packages for all versions.
