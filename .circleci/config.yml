@@ -750,7 +750,7 @@ jobs:
 
   upload-modules:
     docker:
-    - image: docker.io/stackrox/apollo-ci:collector-0.1.11-34-gd4c412a947
+    - image: docker.io/stackrox/apollo-ci:collector-0.2.6
       auth:
         username: $DOCKER_USER
         password: $DOCKER_PASS
@@ -975,7 +975,12 @@ jobs:
         path: ~/workspace/benchmark.csv
 
   update-support-packages:
-    machine: true
+    docker:
+      - image: docker.io/stackrox/apollo-ci:collector-0.2.6
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASS
+
     environment:
       - DOWNLOAD_BASE_URL: "https://install.stackrox.io"
       - RELATIVE_PATH: "collector-test-xkl5x1/support-packages"
@@ -985,6 +990,7 @@ jobs:
 
     steps:
       - initcommand
+      - setup_remote_docker
       - docker-login
       - gcloud-init
 
