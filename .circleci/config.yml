@@ -975,6 +975,7 @@ jobs:
         path: ~/workspace/benchmark.csv
 
   update-support-packages:
+    machine: true
     environment:
       - DOWNLOAD_BASE_URL: "https://install.stackrox.io"
       - RELATIVE_PATH: "collector-test-xkl5x1/support-packages"
