@@ -28,7 +28,7 @@ class SupportPackage(object):
         )
 
 def render_index(packages, out_dir, template_file='index.html'):
-    curr_dir = Path(__file__).parent.absolute()
+    curr_dir = str(Path(__file__).parent.absolute().resolve())
     template_loader = jinja2.FileSystemLoader(searchpath=os.path.join(curr_dir, 'templates'))
     template_env = jinja2.Environment(loader=template_loader)
     template = template_env.get_template(template_file)
