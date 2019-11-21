@@ -167,7 +167,7 @@ jobs:
 
   prepare-kernels:
     docker:
-    - image: docker.io/stackrox/apollo-ci:collector-0.1.11-34-gd4c412a947
+    - image: docker.io/stackrox/apollo-ci:collector-0.2.6
       auth:
         username: $DOCKER_USER
         password: $DOCKER_PASS
