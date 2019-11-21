@@ -991,7 +991,14 @@ jobs:
     steps:
       - initcommand
       - setup_remote_docker
-      - docker-login
+      - run:
+          name: Docker login to collector.stackrox.io
+          command: |
+            docker login \
+              -u "$STACKROX_IO_PUSH_USERNAME" \
+              -p "$STACKROX_IO_PUSH_PASSWORD" \
+              collector.stackrox.io
+
       - gcloud-init
 
       - run:
