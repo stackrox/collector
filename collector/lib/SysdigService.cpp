@@ -165,7 +165,8 @@ void SysdigService::Run(const std::atomic<CollectorService::ControlValue>& contr
 
   while (control.load(std::memory_order_relaxed) == CollectorService::RUN) {
     sinsp_evt* evt = GetNext();
-    if (!evt) continue;
+    continue;
+    // if (!evt) continue;
 
     for (auto& signal_handler : signal_handlers_) {
       if (!signal_handler.ShouldHandle(evt)) continue;
