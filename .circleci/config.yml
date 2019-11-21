@@ -1064,10 +1064,12 @@ jobs:
             done
             echo
 
-#      - run:
-#          name: Delete old files
-#          command: |
-#            gsutil -m rsync -r -d /tmp/support-packages/output "$GCLOUD_TARGET"
+      - run:
+          name: Delete old files
+          command: |
+            echo gsutil -m rsync -n -r -d /tmp/support-packages/output "$GCLOUD_TARGET"
+            sleep 120
+            gsutil -m rsync -n -r -d /tmp/support-packages/output "$GCLOUD_TARGET"
 
   reload-released-images:
     machine: true
