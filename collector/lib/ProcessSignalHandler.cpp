@@ -31,7 +31,13 @@ namespace collector {
 
 std::string compute_process_key(const ::storage::ProcessSignal& s) {
   std::stringstream ss;
-  ss << s.container_id() << " " << s.name() << " " << s.args() << " " << s.exec_file_path();
+  ss << s.container_id() << " " << s.name() << " ";
+  if (s.args().length() <= 256) {
+    ss << s.args();
+  } else {
+    ss.write(s.args().c_str(), 256);
+  }
+  ss << " " << s.exec_file_path();
   return ss.str();
 }
 
