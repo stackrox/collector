@@ -8,7 +8,7 @@ fi
 set -ux
 mkdir -p /sysdig-build
 cd /sysdig-build
-cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_DRIVER=OFF \
+cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_DRIVER=OFF \
     -DUSE_BUNDLED_DEPS=OFF \
     /sysdig-src
 make -j "${NPROCS:-2}"
