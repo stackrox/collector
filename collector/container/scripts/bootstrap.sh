@@ -336,7 +336,7 @@ function main() {
     log "Starting StackRox Collector..."
     # Signal handler for SIGTERM
     trap 'clean_up' TERM QUIT INT
-    LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libtcmalloc.so.4 \
+    LD_PRELOAD=/usr/lib/libtcmalloc.so.4 \
         HEAPPROFILE=/module/heapprof \
         HEAP_PROFILE_TIME_INTERVAL=60 \
         eval exec "$@" &
