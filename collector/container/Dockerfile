@@ -31,6 +31,7 @@ RUN apt-get update \
         libuuid1 \
         libcap-ng0 \
         libelf1 \
+        google-perftools \
  ;
 
 COPY libs/libsinsp-wrapper.so \
