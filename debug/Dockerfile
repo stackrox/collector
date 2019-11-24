@@ -1,4 +1,4 @@
-FROM stackrox/collector:2.5.8-5-g366b2fc11f-latest
+FROM stackrox/collector:2.5.8-8-g66a5109cf8
 
 RUN apt-get install -y google-perftools
 
