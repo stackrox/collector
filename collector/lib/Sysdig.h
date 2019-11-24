@@ -32,6 +32,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include "CollectorService.h"
 #include "ConnTracker.h"
 
+#include "libscap/scap.h"
+
 namespace collector {
 
 struct SysdigStats {
@@ -66,7 +68,7 @@ class Sysdig {
   virtual void Run(const std::atomic<CollectorService::ControlValue>& control) = 0;
   virtual void CleanUp() = 0;
 
-  virtual bool GetStats(SysdigStats* stats) const = 0;
+  virtual bool GetStats(SysdigStats* stats, scap_stats* kernel_stats = nullptr) const = 0;
 };
 
 }   /* namespace collector */

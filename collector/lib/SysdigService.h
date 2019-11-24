@@ -55,7 +55,7 @@ class SysdigService : public Sysdig {
   void SetChisel(const std::string& new_chisel);
   void CleanUp() override;
 
-  bool GetStats(SysdigStats* stats) const override;
+  bool GetStats(SysdigStats* stats, scap_stats* kernel_stats = nullptr) const override;
 
  private:
   enum ChiselCacheStatus : int {

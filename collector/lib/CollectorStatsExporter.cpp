@@ -28,6 +28,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "SysdigService.h"
 #include "CollectorStatsExporter.h"
 #include "Logging.h"
+#include "LowLevelEventNames.h"
 
 #include "prometheus/registry.h"
 
@@ -55,6 +56,10 @@ void CollectorStatsExporter::run() {
         .Name("rox_collector_events")
         .Help("Collector events")
         .Register(*registry_);
+    auto& kernelEventCounters = prometheus::BuildGauge()
+        .Name("rox_collector_kernel_events")
+        .Help("Collector kernel events")
+        .Register(*registry_);
 
     auto& kernel = collectorEventCounters.Add({{"type", "kernel"}});
     auto& drops = collectorEventCounters.Add({{"type", "drops"}});
@@ -71,9 +76,29 @@ void CollectorStatsExporter::run() {
     auto& processResolutionFailuresByTinfo = collectorEventCounters.Add({{"type", "processResolutionFailuresByTinfo"}});
     auto& processRateLimitCount = collectorEventCounters.Add({{"type", "processRateLimitCount"}});
 
+    struct {
+      prometheus::Gauge* total;
+      prometheus::Gauge* drops_buffer;
+      prometheus::Gauge* drops_pf;
+      prometheus::Gauge* drops_bug;
+      prometheus::Gauge* drops_voluntary;
+    } per_event_type_counters[PPM_EVENT_MAX];
+
+    const auto& low_level_event_names = LowLevelEventNames::GetInstance();
+    for (int i = 0; i < PPM_EVENT_MAX; i++) {
+        auto& ctrs = per_event_type_counters[i];
+        const auto& event_name = low_level_event_names.GetEventName(static_cast<ppm_event_type>(i));
+        ctrs.total = &kernelEventCounters.Add({{"type", "totalEvents"}, {"eventType", event_name}});
+        ctrs.drops_buffer = &kernelEventCounters.Add({{"type", "bufferDrops"}, {"eventType", event_name}});
+        ctrs.drops_pf = &kernelEventCounters.Add({{"type", "pageFaultDrops"}, {"eventType", event_name}});
+        ctrs.drops_bug = &kernelEventCounters.Add({{"type", "bugDrops"}, {"eventType", event_name}});
+        ctrs.drops_voluntary = &kernelEventCounters.Add({{"type", "voluntaryDrops"}, {"eventType", event_name}});
+    }
+
     while (thread_.Pause(std::chrono::seconds(1))) {
         SysdigStats stats;
-        if (!sysdig_->GetStats(&stats)) {
+        scap_stats kernel_stats;
+        if (!sysdig_->GetStats(&stats, &kernel_stats)) {
             continue;
         }
 
@@ -92,6 +117,15 @@ void CollectorStatsExporter::run() {
         processResolutionFailuresByEvt.Set(stats.nProcessResolutionFailuresByEvt);
         processResolutionFailuresByTinfo.Set(stats.nProcessResolutionFailuresByTinfo);
         processRateLimitCount.Set(stats.nProcessRateLimitCount);
+
+        for (int i = 0; i < PPM_EVENT_MAX; i++) {
+            auto& ctrs = per_event_type_counters[i];
+            ctrs.total->Set(kernel_stats.n_evts_per_type[i]);
+            ctrs.drops_buffer->Set(kernel_stats.n_drops_buffer_per_event[i]);
+            ctrs.drops_pf->Set(kernel_stats.n_drops_pf_per_event[i]);
+            ctrs.drops_bug->Set(kernel_stats.n_drops_bug_per_event[i]);
+            ctrs.drops_voluntary->Set(kernel_stats.n_drops_voluntary_per_event[i]);
+        }
     }
 }
 

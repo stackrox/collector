@@ -4,7 +4,7 @@ project (collector)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall --std=c++11 -pthread -Wno-deprecated-declarations")
 
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -ggdb -D_DEBUG")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -ggdb -DNDEBUG -fno-inline")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-strict-aliasing -DNDEBUG")
 
 if(ADDRESS_SANITIZER)

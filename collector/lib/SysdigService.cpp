@@ -213,12 +213,15 @@ void SysdigService::CleanUp() {
   signal_handlers_.clear();
 }
 
-bool SysdigService::GetStats(SysdigStats* stats) const {
+bool SysdigService::GetStats(SysdigStats* stats, scap_stats* kernel_stats_out) const {
   std::lock_guard<std::mutex> lock(running_mutex_);
   if (!running_ || !inspector_) return false;
 
   scap_stats kernel_stats;
   inspector_->get_capture_stats(&kernel_stats);
+  if (kernel_stats_out) {
+    memcpy(kernel_stats_out, &kernel_stats, sizeof(scap_stats));
+  }
   *stats = userspace_stats_;
   stats->nEvents = kernel_stats.n_evts;
   stats->nDrops = kernel_stats.n_drops;
