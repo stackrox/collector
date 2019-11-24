@@ -337,7 +337,7 @@ function main() {
     # Signal handler for SIGTERM
     trap 'clean_up' TERM QUIT INT
     set -ex
-    LD_PRELOAD="/usr/lib/libtcmalloc.so.4" HEAPPROFILE=/tmp/collector.pprof HEAP_PROFILE_TIME_INTERVAL=10 eval exec "$@" &
+    LD_PRELOAD="/usr/lib/libprofiler.so.0" CPUPROFILESIGNAL=12 CPUPROFILE=/module/cpu.pprof eval exec "$@" &
     PID=$!
     wait $PID
 
