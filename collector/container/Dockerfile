@@ -31,6 +31,7 @@ RUN apt-get update \
         libuuid1 \
         libcap-ng0 \
         libelf1 \
+        google-perftools \
  && dpkg -r --force-all e2fslibs e2fsprogs apt debconf dpkg \
  && rm -rf /var/lib/apt \
  ;
@@ -51,6 +52,7 @@ WORKDIR /
 
 # update boot script
 COPY scripts/bootstrap.sh /bootstrap.sh
+COPY scripts/collector-wrapper.sh /usr/local/bin/
 RUN chown root.root /bootstrap.sh
 RUN chmod 700 /bootstrap.sh
 
@@ -61,7 +63,7 @@ COPY NOTICE-collector.txt \
 
 ENTRYPOINT ["/bootstrap.sh"]
 
-CMD collector \
+CMD collector-wrapper.sh \
     --collector-config=$COLLECTOR_CONFIG \
     --collection-method=$COLLECTION_METHOD \
     --grpc-server=$GRPC_SERVER

@@ -69,6 +69,7 @@ end
   std::string CollectionMethod() const;
   std::vector<std::string> Syscalls() const;
   std::string LogLevel() const;
+  bool EnableSysdigLog() const { return enable_sysdig_log_; }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
@@ -82,6 +83,8 @@ end
   std::vector<std::string> syscalls_;
   std::string hostname_;
   std::string host_proc_;
+
+  bool enable_sysdig_log_ = false;
 };
 
 std::ostream& operator<< (std::ostream& os, const CollectorConfig& c);
