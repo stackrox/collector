@@ -59,9 +59,9 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
     AddSignalHandler(MakeUnique<NetworkSignalHandler>(inspector_.get(), conn_tracker, &userspace_stats_));
   }
 
-  if (config.grpc_channel) {
-    AddSignalHandler(MakeUnique<ProcessSignalHandler>(inspector_.get(), config.grpc_channel, &userspace_stats_));
-  }
+  // if (config.grpc_channel) {
+  //   AddSignalHandler(MakeUnique<ProcessSignalHandler>(inspector_.get(), config.grpc_channel, &userspace_stats_));
+  // }
 
   if (signal_handlers_.empty()) {
     CLOG(FATAL) << "There are no signal handlers";
