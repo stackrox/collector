@@ -64,9 +64,16 @@ class ArenaProtoAllocator {
   void Reset() {
     google::protobuf::uint64 bytes_used = arena_.Reset();
     if (bytes_used > pool_size_) {
-      CLOG_THROTTLED(WARNING, std::chrono::seconds(5))
-            << "Used " << bytes_used << " bytes in the arena, which is more than the pre-allocated "
-            << pool_size_ << "bytes. Consider increasing the pre-allocated size";
+      size_t new_pool_size = (bytes_used / kDefaultPoolSize + 1) * kDefaultPoolSize;
+      CLOG(WARNING) << "Used " << bytes_used << " bytes in the arena, which is more than the pre-allocated "
+        << pool_size_ << " bytes. Increasing arena size to " << new_pool_size << " bytes.";
+
+      pool_.reset(new char[new_pool_size]);
+      pool_size_ = new_pool_size;
+
+      // This looks weird but is correct (search for `placement new/delete` on Google).
+      arena_.~Arena();
+      new (&arena_) google::protobuf::Arena(ArenaOptionsForInitialBlock(pool_.get(), pool_size_));
     }
   }
 
