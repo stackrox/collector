@@ -31,6 +31,8 @@ RUN apt-get update \
         libuuid1 \
         libcap-ng0 \
         libelf1 \
+ && dpkg -r --force-all e2fslibs e2fsprogs apt debconf dpkg \
+ && rm -rf /var/lib/apt \
  ;
 
 COPY libs/libsinsp-wrapper.so \
