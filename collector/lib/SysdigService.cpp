@@ -50,6 +50,10 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
   inspector_.reset(new_inspector());
   inspector_->set_snaplen(config.SnapLen());
 
+  if (config.EnableSysdigLog()) {
+    inspector_->set_log_stderr();
+  }
+
   if (config.UseEbpf()) {
     useEbpf = true;
     inspector_->set_bpf_probe(kProbePath);
