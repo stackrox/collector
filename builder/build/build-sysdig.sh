@@ -12,4 +12,4 @@ cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_DRIVER=OFF \
     -DUSE_BUNDLED_DEPS=OFF \
     /sysdig-src
 make -j "${NPROCS:-2}"
-strip --strip-unneeded ./userspace/libsinsp/libsinsp-wrapper.so
+#strip --strip-unneeded ./userspace/libsinsp/libsinsp-wrapper.so
