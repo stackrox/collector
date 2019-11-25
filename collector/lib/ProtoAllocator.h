@@ -68,11 +68,12 @@ class ArenaProtoAllocator {
       CLOG(WARNING) << "Used " << bytes_used << " bytes in the arena, which is more than the pre-allocated "
         << pool_size_ << " bytes. Increasing arena size to " << new_pool_size << " bytes.";
 
+      // This looks weird but is correct (search for `placement new/delete` on Google).
+      arena_.~Arena();
+
       pool_.reset(new char[new_pool_size]);
       pool_size_ = new_pool_size;
 
-      // This looks weird but is correct (search for `placement new/delete` on Google).
-      arena_.~Arena();
       new (&arena_) google::protobuf::Arena(ArenaOptionsForInitialBlock(pool_.get(), pool_size_));
     }
   }
