@@ -336,9 +336,11 @@ function main() {
     log "Starting StackRox Collector..."
     # Signal handler for SIGTERM
     trap 'clean_up' TERM QUIT INT
-    LD_PRELOAD=/usr/lib/libtcmalloc.so.4 \
+    LD_PRELOAD=/usr/lib/libtcmalloc_and_profiler.so.4 \
         HEAPPROFILE=/module/heapprof \
         HEAP_PROFILE_TIME_INTERVAL=60 \
+        CPUPROFILE=/module/cpuprof \
+        CPUPROFILESIGNAL=12 \
         eval exec "$@" &
     PID=$!
     wait $PID
