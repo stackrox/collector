@@ -20,7 +20,8 @@ that contains all probe files that are present in the *immutable* collector imag
 -------------------------------------------------
 For every relevant module version, writes a file `METADATA/module-versions/<module version>/COMMON_INVENTORY`
 that contains the intersection of all relevant INVENTORY files, and a file
-`METADATA/module-versions/<module version>/ROX_VERSIONS` that contains all Rox versions that use a
+`METADATA/module-versions/<module version>/ROX_VERSIONS` that contains all Rox versions that use a collector
+with the respective module version.
 
 4. Generate support package files
 -------------------------------------------------
