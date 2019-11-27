@@ -167,7 +167,7 @@ jobs:
 
   prepare-kernels:
     docker:
-    - image: docker.io/stackrox/apollo-ci:collector-0.1.11-34-gd4c412a947
+    - image: docker.io/stackrox/apollo-ci:collector-0.2.8
       auth:
         username: $DOCKER_USER
         password: $DOCKER_PASS
@@ -748,9 +748,38 @@ jobs:
           echo "Pushing collector rhel latest image"
           docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}-latest"
 
+  kernel-module-build-failures-check:
+    docker:
+      - image: docker.io/stackrox/apollo-ci:collector-0.2.8
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASS
+    environment:
+      ROX_CI_IMAGE: "true"
+
+    working_directory: ~/workspace
+
+    steps:
+      - initcommand
+
+      - run:
+          name: Save failures files
+          command: |
+            mkdir /tmp/failures
+            mv "${WORKSPACE_ROOT}/ko-build/build-output/FAILURES"-* /tmp/failures 2>/dev/null || true
+
+      - run:
+          name: Test for build failures
+          command: |
+            if ls /tmp/failures/FAILURES-* 2>/dev/null; then
+              echo >&2 "Compilation failed for some kernel/module version combinations!"
+              cat >&2 2>/dev/null /tmp/failures/FAILURES-*
+              exit 1
+            fi
+
   upload-modules:
     docker:
-    - image: docker.io/stackrox/apollo-ci:collector-0.1.11-34-gd4c412a947
+    - image: docker.io/stackrox/apollo-ci:collector-0.2.8
       auth:
         username: $DOCKER_USER
         password: $DOCKER_PASS
@@ -764,10 +793,9 @@ jobs:
       - gcloud-init
 
       - run:
-          name: Save failures file
+          name: Remove failures file
           command: |
-            mkdir /tmp/failures
-            mv "${WORKSPACE_ROOT}/ko-build/build-output/FAILURES"-* /tmp/failures 2>/dev/null || true
+            rm "${WORKSPACE_ROOT}/ko-build/build-output/FAILURES"-* 2>/dev/null || true
 
       - run:
           name: Uploading Kernel modules
@@ -781,20 +809,11 @@ jobs:
               "${WORKSPACE_ROOT}/ko-build/build-output/" \
               "${COLLECTOR_MODULES_BUCKET}/"
 
-
       - run:
           name: Sanity check
           command:
             gsutil ls "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/"
 
-      - run:
-          name: Test for build failures
-          command: |
-            if ls /tmp/failures/FAILURES-* 2>/dev/null; then
-              echo >&2 "Compilation failed for some kernel/module version combinations!"
-              cat >&2 2>/dev/null /tmp/failures/FAILURES-*
-              exit 1
-            fi
 
   integration-test-local:
     parameters:
@@ -974,6 +993,105 @@ jobs:
     - store_artifacts:
         path: ~/workspace/benchmark.csv
 
+  update-support-packages:
+    docker:
+      - image: docker.io/stackrox/apollo-ci:collector-0.2.8
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASS
+
+    environment:
+      - DOWNLOAD_BASE_URL: "https://install.stackrox.io"
+      - RELATIVE_PATH: "collector/support-packages"
+      - GCLOUD_BUCKET: "gs://sr-roxc"
+
+    working_directory: ~/workspace
+
+    steps:
+      - initcommand
+      - setup_remote_docker
+      - run:
+          name: Docker login to collector.stackrox.io
+          command: |
+            docker login \
+              -u "$STACKROX_IO_PUSH_USERNAME" \
+              -p "$STACKROX_IO_PUSH_PASSWORD" \
+              collector.stackrox.io
+
+      - gcloud-init
+
+      - run:
+          name: Initialize environment
+          command: |
+            cci-export BASE_URL "${DOWNLOAD_BASE_URL}/${RELATIVE_PATH}"
+            cci-export SUPPORT_PKG_SRC_ROOT "${SOURCE_ROOT}/kernel-modules/support-packages"
+            cci-export GCLOUD_TARGET "${GCLOUD_BUCKET}/${RELATIVE_PATH}"
+
+      - run:
+          name: Install Pip
+          command: |
+            curl https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
+            sudo python3 /tmp/get-pip.py
+
+      - run:
+          name: Install Jinja2
+          command: |
+            sudo pip3 install Jinja2
+
+      - run:
+          name: Generate collector -> rox version map
+          command: |
+            "${SUPPORT_PKG_SRC_ROOT}/01-collector-to-rox-version-map.py" \
+              "${SOURCE_ROOT}/RELEASED_VERSIONS" \
+              /tmp/support-packages/metadata
+
+      - run:
+          name: Fetch collector metadata
+          command: |
+            "${SUPPORT_PKG_SRC_ROOT}/02-fetch-collectors-metadata.sh" \
+              /tmp/support-packages/metadata
+
+      - run:
+          name: Group by module version
+          command: |
+            "${SUPPORT_PKG_SRC_ROOT}/03-group-by-module-version.sh" \
+              /tmp/support-packages/metadata
+
+      - run:
+          name: Create support package files
+          command: |
+            "${SUPPORT_PKG_SRC_ROOT}/04-create-support-packages.sh" \
+              /tmp/support-packages/metadata /tmp/support-packages/output
+
+      - run:
+          name: Create index file
+          command: |
+            "${SUPPORT_PKG_SRC_ROOT}/05-create-index.py" \
+              /tmp/support-packages/metadata /tmp/support-packages/output
+
+      - run:
+          name: Upload to GCloud
+          command: |
+            gsutil -m rsync -r /tmp/support-packages/output "$GCLOUD_TARGET"
+
+      - run:
+          name: Wait for 120 seconds
+          command: |
+            for i in {1..120}; do
+              sleep 1
+              echo -n .
+            done
+            echo
+
+      - run:
+          name: Delete old files
+          command: |
+            # Sanity check. If for some reason GCLOUD_TARGET is malformed, we risk deleting the
+            # entire `sr-roxc` bucket (!!!). Hence have a hardcoded check for the path looking
+            # valid.
+            [[ "$GCLOUD_TARGET" =~ ^gs://[^/]+/.*collector.*/.*support-packages.*$ ]]
+            gsutil -m rsync -n -r -d /tmp/support-packages/output "$GCLOUD_TARGET"
+
   reload-released-images:
     machine: true
     environment:
@@ -1094,6 +1212,12 @@ workflows:
         filters:
           tags:
             only: /.*/
+    - kernel-module-build-failures-check:
+        requires:
+          - kernels
+        filters:
+          tags:
+            only: /.*/
     - images:
         requires:
         - collector
@@ -1178,7 +1302,7 @@ workflows:
             only: /.*/
     - integration-test:
         name: test-ebpf-rhel-7
-        collection_method: ebpf 
+        collection_method: ebpf
         vm_type: rhel
         image_family: rhel-7
         requires:
@@ -1201,7 +1325,7 @@ workflows:
             only: /.*/
     - integration-test:
         name: test-ebpf-rhel-8
-        collection_method: ebpf 
+        collection_method: ebpf
         vm_type: rhel
         image_family: rhel-8
         requires:
@@ -1285,7 +1409,7 @@ workflows:
        #- test-ebpf-ubuntu-1904
        filters:
          tags:
-           only: /.*/ 
+           only: /.*/
     - reload-released-images:
         context: docker-io-and-stackrox-io-push
         requires:
@@ -1293,3 +1417,10 @@ workflows:
         filters:
           branches:
             only: master
+    - update-support-packages:
+        context: docker-io-and-stackrox-io-push
+        filters:
+          branches:
+            only: master
+        requires:
+          - upload-modules
