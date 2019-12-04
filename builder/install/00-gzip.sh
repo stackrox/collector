@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
+exit 0
 
 if [ ! -f /etc/redhat-release ]; then
  echo >&2 "Not building gzip from source"

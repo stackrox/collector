@@ -1,4 +1,4 @@
-FROM debian:stretch-slim
+FROM debian:buster-slim
 
 ARG NPROCS=6
 ENV NPROCS=$NPROCS
@@ -18,7 +18,7 @@ RUN apt-get update \
         libcap-ng-dev \
         libcurl4-openssl-dev \
         libelf-dev \
-        libssl1.0-dev \
+        libssl-dev \
         libtool \
         libz-dev \
         pkg-config \

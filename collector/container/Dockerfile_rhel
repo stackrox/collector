@@ -1,7 +1,7 @@
 ARG collector_builder_tag
 FROM stackrox/collector-builder:${collector_builder_tag} as builder
 
-FROM registry.access.redhat.com/ubi7/ubi
+FROM registry.access.redhat.com/ubi8/ubi
 
 ARG collector_version=xxx
 ARG module_version=xxx

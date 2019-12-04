@@ -1,18 +1,17 @@
-FROM centos:7
+FROM centos:8
 
 ARG NPROCS=6
 ENV NPROCS=$NPROCS
 
 ## Install packaged dependencies
 USER root
-RUN yum -y install \
+RUN yum -y update && yum -y install \
   autoconf automake binutils-devel bison ca-certificates \
-  elfutils-libelf-devel file flex gettext git glibc-devel glibc-static \
-  indent libtool make patchutils pkgconfig wget which \
-  unzip libcap-ng-devel python libuuid-devel libz-devel \
-  openssl-devel 
-RUN yum -y install centos-release-scl
-RUN yum -y install devtoolset-6-gcc devtoolset-6-gcc-c++
+  elfutils-libelf-devel file flex gettext git glibc-devel \
+  libtool make patchutils pkgconfig wget which \
+  unzip libcap-ng-devel python2 libuuid-devel zlib-devel \
+  openssl-devel gcc gcc-c++
+RUN yum -y update && yum -y install cmake libcurl-devel
 
 # We want to fail if the destination directory is there, hence mkdir (not -p).
 RUN mkdir install-tmp

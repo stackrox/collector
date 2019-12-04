@@ -1,4 +1,4 @@
-FROM debian:stretch-slim
+FROM debian:buster-slim
 
 ARG collector_version=xxx
 ARG module_version=xxx
@@ -27,7 +27,7 @@ RUN apt-get update \
         ca-certificates \
         kmod \
         curl \
-        libssl1.0.2 \
+        libssl1.1 \
         libuuid1 \
         libcap-ng0 \
         libelf1 \
