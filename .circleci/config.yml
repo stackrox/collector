@@ -219,7 +219,7 @@ jobs:
             echo "RELEASED_VERSIONS file does not exist!"
             exit 1
           fi
-            
+
           # get fingerprint from github
           GH_KEY="$(ssh-keyscan github.com 2> /dev/null)"
           GH_FINGERPRINT="$(echo ${GH_KEY} | ssh-keygen -lf - | cut -d" " -f2)"
@@ -336,6 +336,23 @@ jobs:
             [[ -f "${SOURCE_ROOT}/kernel-modules/patches/${version}.patch" ]] || continue
             echo "Applying patch for module version ${version} ..."
             patch -p1 -d "$version" <"${SOURCE_ROOT}/kernel-modules/patches/${version}.patch"
+          done
+
+    - run:
+        name: Sanity check cached modules for CURRENT module version
+        command: |
+          find "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}" -size 0 | grep -v .unavail >~/kobuild-tmp/empty-modules-${MODULE_VERSION}
+          echo "Empty or corrupted modules for version ${MODULE_VERSION}:"
+          cat ~/kobuild-tmp/empty-modules-"${MODULE_VERSION}"
+
+    - run:
+        name: Sanity check cached modules for LEGACY module version
+        command: |
+          for i in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
+            version="$(basename "$i")"
+            ( gsutil ls -l "${COLLECTOR_MODULES_BUCKET}/${version}/" || true) | egrep '^\s*0\s' | grep -v .unavail >~/kobuild-tmp/empty-modules-${version}
+            echo "Empty or corrupted modules for version ${version}:"
+            cat ~/kobuild-tmp/empty-modules-"${version}"
           done
 
     - run:
@@ -818,7 +835,7 @@ jobs:
   integration-test-local:
     parameters:
       vm-config:
-        type: string 
+        type: string
         default: default
       use-rhel:
         type: boolean
@@ -874,7 +891,7 @@ jobs:
       use-rhel:
         type: boolean
         default: false
- 
+
     machine: true
     working_directory: ~/workspace
 
@@ -1140,16 +1157,16 @@ jobs:
             released_latest_image="stackrox/collector:${collector_ver}-latest"
             released_base_image="stackrox/collector:${collector_ver}-base"
             docker pull "${released_latest_image}"
-            
+
             missing_objs_file="/tmp/missing-objs-${collector_ver}"
             "./reload/missing-kernel-objects.sh" "${released_latest_image}" "${COLLECTOR_MODULES_BUCKET}" \
               >"${missing_objs_file}"
-            
+
             if [[ ! -s "${missing_objs_file}" ]] ; then
               echo "Image ${released_latest_image} contains up to date kernel objects"
               continue
             fi
-            
+
             echo "Kernel objects missing in image ${released_latest_image}:"
             cat "${missing_objs_file}"
 
