@@ -279,13 +279,13 @@ jobs:
           mkdir -p /tmp/cache
           echo "$MODULE_VERSION" >/tmp/cache/kernel-modules-version.txt
 
-    - restore_cache:
-        name: Restore Kernel module build cache
-        keys:
-          - kernel-module-cache-v8-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
-          - kernel-module-cache-v8-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
-          - kernel-module-cache-v8-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
-          - kernel-module-cache-v8-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-
+    #- restore_cache:
+    #    name: Restore Kernel module build cache
+    #    keys:
+    #      - kernel-module-cache-v8-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+    #      - kernel-module-cache-v8-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
+    #      - kernel-module-cache-v8-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
+    #      - kernel-module-cache-v8-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-
 
     - run:
         name: Unpack module sources
@@ -339,38 +339,43 @@ jobs:
           done
 
     - run:
-        name: Sanity check cached modules for CURRENT module version
+        name: Check empty modules for CURRENT module version
         command: |
-          find "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}" -size 0 | grep -v .unavail >~/kobuild-tmp/empty-modules-${MODULE_VERSION}
-          echo "Empty or corrupted modules for version ${MODULE_VERSION}:"
+          ( find "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}" -type f -empty -not -name '*.unavail' || true ) \
+            | "${SOURCE_ROOT}/kernel-modules/build/extract-kernel-versions-from-module-files" \
+            >~/kobuild-tmp/empty-modules-${MODULE_VERSION}
           cat ~/kobuild-tmp/empty-modules-"${MODULE_VERSION}"
 
     - run:
-        name: Sanity check cached modules for LEGACY module version
+        name: Check empty modules for LEGACY module version
         command: |
           for i in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
             version="$(basename "$i")"
             [[ "$version" != "$MODULE_VERSION" ]] || continue
-            ( gsutil ls -l "${COLLECTOR_MODULES_BUCKET}/${version}/" || true) | \
-                grep -E '^\s*0\s' | grep -v .unavail >~/kobuild-tmp/empty-modules-${version} || true
-            echo "Empty or corrupted modules for version ${version}:"
+            ( gsutil ls -l "${COLLECTOR_MODULES_BUCKET}/${version}/" || true ) \
+              | grep -E '^\s*0\s' | grep -v .unavail \
+              | "${SOURCE_ROOT}/kernel-modules/build/extract-kernel-versions-from-module-files" \
+              >~/kobuild-tmp/empty-modules-"${version}" || true
+            echo "Empty modules for version ${version}:"
             cat ~/kobuild-tmp/empty-modules-"${version}"
           done
 
     - run:
         name: Compile list of cached modules for CURRENT module version
         command: |
-          ( ls -a "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/ || true ) \
+          ( find "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/ -type f -not -empty || true ; \
+            find "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/ -type f -name *.unavail || true ) \
             | "${SOURCE_ROOT}/kernel-modules/build/extract-kernel-versions-from-module-files" \
             >~/kobuild-tmp/existing-modules-"${MODULE_VERSION}"
 
     - run:
-        name: Compile list of existing modules for LEGACY module versions
+        name: Compile list of existing non-empty modules for LEGACY module versions
         command: |
           for i in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
             version="$(basename "$i")"
             [[ "$version" != "$MODULE_VERSION" ]] || continue
-            ( gsutil ls "${COLLECTOR_MODULES_BUCKET}/${version}/" || true)  \
+            ( gsutil ls -l "${COLLECTOR_MODULES_BUCKET}/${version}/" | grep -vE '^\s*0\s' || true ; \
+              gsutil ls -l "${COLLECTOR_MODULES_BUCKET}/${version}/" | grep .unavail || true ) \
               | "${SOURCE_ROOT}/kernel-modules/build/extract-kernel-versions-from-module-files" \
                 >~/kobuild-tmp/existing-modules-"${version}"
 
@@ -550,10 +555,21 @@ jobs:
         background: true
 
     - run:
+        name: Test for empty modules
+        command: |
+          for i in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
+            version="$(basename "$i")"
+            echo >&2 "Before compilation: empty files for $version: "
+            find "${WORKSPACE_ROOT}/ko-build/build-output/${version}" -type f -empty -not -name '*.unavail' -ls || true
+          done
+
+    - run:
         name: Build modules
         command: |
           shopt -s nullglob
 
+          shard_output_dir="${WORKSPACE_ROOT}/ko-build/build-output/shard-${CIRCLE_NODE_INDEX}"
+          mkdir "${shard_output_dir}"
           for task_file in ~/kobuild-tmp/local-build-tasks.*; do
             [[ -s "$task_file" ]] || continue
             flavor="$(basename "${task_file}")"
@@ -564,10 +580,30 @@ jobs:
               -e FAILURE_LOG_FILE="/output/FAILURES-${CIRCLE_NODE_INDEX}" \
               -v "${HOME}/kobuild-tmp/bundles:/bundles:ro" \
               -v "${WORKSPACE_ROOT}/ko-build/module-versions:/sources:ro" \
-              -v "${WORKSPACE_ROOT}/ko-build/build-output:/output" \
+              -v "${shard_output_dir}:/output" \
               --tmpfs /scratch:exec \
               "build-kernel-modules-${flavor}" \
               build-kos <"$task_file"
+          done
+          [[ ! -f ${shard_output_dir}/FAILURES-${CIRCLE_NODE_INDEX} ]] \
+            || mv ${shard_output_dir}/FAILURES-${CIRCLE_NODE_INDEX} ${shard_output_dir}/../
+
+    - run:
+        name: Test for empty modules
+        command: |
+          for i in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
+            version="$(basename "$i")"
+            echo >&2 "Compilation left empty files for $version: "
+            find "${WORKSPACE_ROOT}/ko-build/build-output/${version}" -type f -empty -not -name '*.unavail' -ls || true
+          done
+
+    - run:
+        name: Print built modules
+        command: |
+          for i in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
+            version="$(basename "$i")"
+            echo >&2 "Shard ${CIRCLE_NODE_INDEX} built for version $version: "
+            find "${WORKSPACE_ROOT}/ko-build/build-output/shard-${CIRCLE_NODE_INDEX}/${version}" -type f -ls || true
           done
 
     - persist_to_workspace:
@@ -638,6 +674,15 @@ jobs:
     - gcloud-init
 
     - run:
+        name: Test for empty modules
+        command: |
+          for i in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
+            version="$(basename "$i")"
+            echo >&2 "Compilation left empty files for $version: "
+            find "${WORKSPACE_ROOT}/ko-build/build-output/${version}" -type f -empty -not -name '*.unavail' -ls || true
+          done
+
+    - run:
         name: Copying Kernel modules build output
         command: |
           mkdir -p "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
@@ -653,11 +698,11 @@ jobs:
             "/tmp/cache/kernel-modules/${MODULE_VERSION}/"
           echo "$MODULE_VERSION" >/tmp/cache/kernel-modules-version.txt
 
-    - save_cache:
-        name: Saving Kernel module build cache
-        key: kernel-module-cache-v8-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
-        paths:
-          - /tmp/cache/
+    #- save_cache:
+    #    name: Saving Kernel module build cache
+    #    key: kernel-module-cache-v8-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+    #    paths:
+    #      - /tmp/cache/
 
     - run:
         name: Adding Kernel module version file
@@ -786,6 +831,15 @@ jobs:
           command: |
             mkdir /tmp/failures
             mv "${WORKSPACE_ROOT}/ko-build/build-output/FAILURES"-* /tmp/failures 2>/dev/null || true
+
+      - run:
+          name: Test for empty modules
+          command: |
+            for i in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
+              version="$(basename "$i")"
+              echo >&2 "Compilation left empty files for $version: "
+              find "${WORKSPACE_ROOT}/ko-build/build-output/${version}" -type f -empty -not -name '*.unavail' -ls || true
+            done
 
       - run:
           name: Test for build failures
