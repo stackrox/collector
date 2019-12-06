@@ -380,7 +380,7 @@ class DuplexClient {
 
   template <typename Stub, typename W, typename R>
   static std::unique_ptr<DuplexClientReaderWriter<W, R>> Create(
-      std::unique_ptr<grpc::ClientAsyncReaderWriter<W, R>> (Stub::*create_method)(
+      std::unique_ptr<grpc_impl::ClientAsyncReaderWriter<W, R>> (Stub::*create_method)(
           grpc::ClientContext* context,
           grpc::CompletionQueue* cq,
           void* tag),
@@ -392,7 +392,7 @@ class DuplexClient {
 
   template <typename Stub, typename W, typename R>
   static std::unique_ptr<DuplexClientWriter<W>> CreateWithReadCallback(
-      std::unique_ptr<grpc::ClientAsyncReaderWriter<W, R>> (Stub::*create_method)(
+      std::unique_ptr<grpc_impl::ClientAsyncReaderWriter<W, R>> (Stub::*create_method)(
           grpc::ClientContext* context,
           grpc::CompletionQueue* cq,
           void* tag),
@@ -405,7 +405,7 @@ class DuplexClient {
 
   template <typename Stub, typename W, typename R>
   static std::unique_ptr<DuplexClientWriter<W>> CreateWithReadsIgnored(
-      std::unique_ptr<grpc::ClientAsyncReaderWriter<W, R>> (Stub::*create_method)(
+      std::unique_ptr<grpc_impl::ClientAsyncReaderWriter<W, R>> (Stub::*create_method)(
           grpc::ClientContext* context,
           grpc::CompletionQueue* cq,
           void* tag),
@@ -531,7 +531,7 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
   }
 
  private:
-  using RW = grpc::ClientAsyncReaderWriter<W, R>;
+  using RW = grpc_impl::ClientAsyncReaderWriter<W, R>;
 
   template <typename Stub>
   DuplexClientReaderWriter(
@@ -659,7 +659,7 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
     this->SetFlags(fl);
   }
 
-  std::unique_ptr<grpc::ClientAsyncReaderWriter<W, R>> rw_;
+  std::unique_ptr<grpc_impl::ClientAsyncReaderWriter<W, R>> rw_;
   std::function<void(const R*)> read_callback_;
   R read_buf_;
   bool read_buf_valid_ = false;
