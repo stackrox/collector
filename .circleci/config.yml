@@ -658,7 +658,7 @@ jobs:
     - run:
         name: Consolidate shard built modules
         command: |
-          for i in "${WORKSPACE_ROOT}/ko-build/build-output/shard-*/; do
+          for i in "${WORKSPACE_ROOT}/ko-build/build-output"/shard-*/; do
             shard="$(basename "$i")"
             echo >&2 "Built for $shard"
             find "$i" -type f || true
