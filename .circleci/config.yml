@@ -279,13 +279,13 @@ jobs:
           mkdir -p /tmp/cache
           echo "$MODULE_VERSION" >/tmp/cache/kernel-modules-version.txt
 
-    #- restore_cache:
-    #    name: Restore Kernel module build cache
-    #    keys:
-    #      - kernel-module-cache-v8-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
-    #      - kernel-module-cache-v8-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
-    #      - kernel-module-cache-v8-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
-    #      - kernel-module-cache-v8-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-
+    - restore_cache:
+        name: Restore Kernel module build cache
+        keys:
+          - kernel-module-cache-v8-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+          - kernel-module-cache-v8-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
+          - kernel-module-cache-v8-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
+          - kernel-module-cache-v8-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-
 
     - run:
         name: Unpack module sources
@@ -339,29 +339,7 @@ jobs:
           done
 
     - run:
-        name: Check empty modules for CURRENT module version
-        command: |
-          ( find "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}" -type f -empty -not -name '*.unavail' || true ) \
-            | "${SOURCE_ROOT}/kernel-modules/build/extract-kernel-versions-from-module-files" \
-            >~/kobuild-tmp/empty-modules-${MODULE_VERSION}
-          cat ~/kobuild-tmp/empty-modules-"${MODULE_VERSION}"
-
-    - run:
-        name: Check empty modules for LEGACY module version
-        command: |
-          for i in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
-            version="$(basename "$i")"
-            [[ "$version" != "$MODULE_VERSION" ]] || continue
-            ( gsutil ls -l "${COLLECTOR_MODULES_BUCKET}/${version}/" || true ) \
-              | grep -E '^\s*0\s' | grep -v .unavail \
-              | "${SOURCE_ROOT}/kernel-modules/build/extract-kernel-versions-from-module-files" \
-              >~/kobuild-tmp/empty-modules-"${version}" || true
-            echo "Empty modules for version ${version}:"
-            cat ~/kobuild-tmp/empty-modules-"${version}"
-          done
-
-    - run:
-        name: Compile list of cached modules for CURRENT module version
+        name: Compile list of cached non-empty modules for CURRENT module version
         command: |
           ( find "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/ -type f -not -empty || true ; \
             find "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/ -type f -name *.unavail || true ) \
@@ -656,15 +634,6 @@ jobs:
     - gcloud-init
 
     - run:
-        name: Consolidate shard built modules
-        command: |
-          for i in "${WORKSPACE_ROOT}/ko-build/build-output"/shard-*/; do
-            shard="$(basename "$i")"
-            echo >&2 "Built for $shard"
-            find "$i" -type f || true
-          done
-
-    - run:
         name: Copying Kernel modules build output
         command: |
           mkdir -p "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
@@ -680,11 +649,11 @@ jobs:
             "/tmp/cache/kernel-modules/${MODULE_VERSION}/"
           echo "$MODULE_VERSION" >/tmp/cache/kernel-modules-version.txt
 
-    #- save_cache:
-    #    name: Saving Kernel module build cache
-    #    key: kernel-module-cache-v8-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
-    #    paths:
-    #      - /tmp/cache/
+    - save_cache:
+        name: Saving Kernel module build cache
+        key: kernel-module-cache-v8-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+        paths:
+          - /tmp/cache/
 
     - run:
         name: Adding Kernel module version file
@@ -815,15 +784,6 @@ jobs:
             mv "${WORKSPACE_ROOT}/ko-build/build-output/FAILURES"-* /tmp/failures 2>/dev/null || true
 
       - run:
-          name: Test for empty modules
-          command: |
-            for i in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
-              version="$(basename "$i")"
-              echo >&2 "Compilation left empty files for $version: "
-              find "${WORKSPACE_ROOT}/ko-build/build-output/${version}" -type f -empty -not -name '*.unavail' -ls || true
-            done
-
-      - run:
           name: Test for build failures
           command: |
             if ls /tmp/failures/FAILURES-* 2>/dev/null; then
@@ -831,6 +791,35 @@ jobs:
               cat >&2 2>/dev/null /tmp/failures/FAILURES-*
               exit 1
             fi
+
+  join-modules:
+    docker:
+    - image: docker.io/stackrox/apollo-ci:collector-0.2.8
+      auth:
+        username: $DOCKER_USER
+        password: $DOCKER_PASS
+    environment:
+      ROX_CI_IMAGE: "true"
+
+    working_directory: ~/workspace
+
+    steps:
+      - initcommand
+
+    - run:
+        name: Consolidate modules built by sharded jobs
+        command: |
+          if test -n "$(find "${WORKSPACE_ROOT}/ko-build/build-output" -type d -maxdepth 1 -name 'shard-*' -print -quit)" ; then
+            for i in "${WORKSPACE_ROOT}/ko-build/build-output"/shard-*/; do
+              shard="$(basename "$i")"
+              for k in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
+                version="$(basename "$k")"
+                if [ -z "$(find "$i/$version" -type f -name "*.gz" )" ] ; then
+                  mv "$i/$version"/*.gz "${WORKSPACE_ROOT}/ko-build/build-output/$version/"
+                fi
+              done
+            done
+          fi
 
   upload-modules:
     docker:
@@ -1261,15 +1250,21 @@ workflows:
         filters:
           tags:
             only: /.*/
+    - join-modules:
+        requires:
+        - kernels
+        filters:
+          tags:
+            only: /.*/
     - upload-modules:
         requires:
-          - kernels
+        - join-modules
         filters:
           tags:
             only: /.*/
     - kernel-module-build-failures-check:
         requires:
-          - kernels
+        - kernels
         filters:
           tags:
             only: /.*/
@@ -1278,6 +1273,7 @@ workflows:
         - collector
         - collector-rhel
         - kernels
+        - join-modules
         filters:
           tags:
             only: /.*/

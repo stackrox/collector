@@ -112,9 +112,8 @@ build_ko() (
 
         collector_probe="bpf/probe.o"
 
-        ls -al "$collector_probe"
         if [[ ! -f "$collector_probe" || ! -s "$collector_probe" ]]; then
-            echo "Empty or missing bpf output"
+            echo "Empty or missing compiled bpf output"
             return 1
         fi
 
