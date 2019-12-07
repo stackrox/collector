@@ -709,7 +709,6 @@ jobs:
           build_args=(
             --build-arg module_version="$MODULE_VERSION"
             --build-arg collector_version="$COLLECTOR_VERSION"
-            --build-arg collector_builder_tag="rhel-$COLLECTOR_BUILDER_TAG"
             --build-arg collector_repo="stackrox/collector-rhel"
           )
 
