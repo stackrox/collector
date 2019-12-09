@@ -339,21 +339,19 @@ jobs:
           done
 
     - run:
-        name: Compile list of cached non-empty modules for CURRENT module version
+        name: Compile list of cached modules for CURRENT module version
         command: |
-          ( find "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/ -type f -not -empty || true ; \
-            find "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/ -type f -name '*.unavail' || true ) \
+          ( ls -a "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/ || true ) \
             | "${SOURCE_ROOT}/kernel-modules/build/extract-kernel-versions-from-module-files" \
             >~/kobuild-tmp/existing-modules-"${MODULE_VERSION}"
 
     - run:
-        name: Compile list of existing non-empty modules for LEGACY module versions
+        name: Compile list of existing modules for LEGACY module versions
         command: |
           for i in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
             version="$(basename "$i")"
             [[ "$version" != "$MODULE_VERSION" ]] || continue
-            ( gsutil ls -l "${COLLECTOR_MODULES_BUCKET}/${version}/" | grep -vE '^\s*0\s' || true ; \
-              gsutil ls -l "${COLLECTOR_MODULES_BUCKET}/${version}/" | grep .unavail || true ) \
+            ( gsutil ls "${COLLECTOR_MODULES_BUCKET}/${version}/" || true)  \
               | "${SOURCE_ROOT}/kernel-modules/build/extract-kernel-versions-from-module-files" \
                 >~/kobuild-tmp/existing-modules-"${version}"
 
@@ -826,7 +824,6 @@ jobs:
           root: ~/workspace
           paths:
             - ko-build
-
 
   upload-modules:
     docker:
