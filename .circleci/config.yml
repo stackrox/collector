@@ -850,10 +850,6 @@ jobs:
             rm -rf "${WORKSPACE_ROOT}/ko-build/build-output/shard"-* 2>/dev/null || true
 
       - run:
-          name: Remove shard dirs
-          command: |
-
-      - run:
           name: Uploading Kernel modules
           command: |
             extra_args=()
