@@ -111,8 +111,16 @@ build_ko() (
         KERNELDIR="$kernel_build_dir" make -j 6 -C bpf
 
         collector_probe="bpf/probe.o"
+
+        if [[ ! -f "$collector_probe" || ! -s "$collector_probe" ]]; then
+            echo "Empty or missing compiled bpf output"
+            return 1
+        fi
+
+        mkdir -p "/output/${module_version}"
         gzip -c "$collector_probe" >"/output/${module_version}/collector-ebpf-${kernel_version}.o.gz"
         rm "$collector_probe"
+
     else
         echo >&2 "Invalid probe type '${probe_type}'"
         return 1
@@ -126,7 +134,7 @@ build_kos() {
         local probe_type="${line[2]}"
 
         if ! build_ko "$kernel_version" "$module_version" "${probe_type}"; then
-            echo >&2 "Failed to build "${probe_type}" probe version ${module_version} for kernel ${kernel_version}"
+            echo >&2 "Failed to build ${probe_type} probe version ${module_version} for kernel ${kernel_version}"
             if [[ -n "${FAILURE_LOG_FILE:-}" ]]; then
                 echo >>"${FAILURE_LOG_FILE}" "${kernel_version} ${module_version} ${probe_type}"
             fi
