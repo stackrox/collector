@@ -342,7 +342,7 @@ jobs:
         name: Compile list of cached non-empty modules for CURRENT module version
         command: |
           ( find "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/ -type f -not -empty || true ; \
-            find "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/ -type f -name *.unavail || true ) \
+            find "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/ -type f -name '*.unavail' || true ) \
             | "${SOURCE_ROOT}/kernel-modules/build/extract-kernel-versions-from-module-files" \
             >~/kobuild-tmp/existing-modules-"${MODULE_VERSION}"
 
@@ -811,17 +811,23 @@ jobs:
       - run:
           name: Consolidate modules built by sharded jobs
           command: |
-            if test -n "$(find ${WORKSPACE_ROOT}/ko-build/build-output -type d -name 'shard-*' -print)" ; then
-              for i in "${WORKSPACE_ROOT}/ko-build/build-output"/shard-*/; do
-                shard="$(basename "$i")"
-                for k in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
-                  version="$(basename "$k")"
-                  if [[ -d "$i/$version" && -z "$(find $i/$version -type f -name '*.gz' )" ]] ; then
-                    mv "$i/$version"/*.gz "${WORKSPACE_ROOT}/ko-build/build-output/$version/"
-                  fi
-                done
-              done
+            shard_dirs=("${WORKSPACE_ROOT}/ko-build/build-output/shard-"*)
+            if [[ "{#shard_dirs[@]}" == 0 ]]; then
+              exit 0
             fi
+            for shard_dir in "${shard_dirs[@]}"; do
+              for version_dir in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
+                version="$(basename "$version_dir")"
+                mv "$shard_dir/$version"/*.gz "${WORKSPACE_ROOT}/ko-build/build-output/$version/" || true
+              done
+              rm -rf "$shard_dir"
+            done
+
+      - persist_to_workspace:
+          root: ~/workspace
+          paths:
+            - ko-build
+
 
   upload-modules:
     docker:
