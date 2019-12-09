@@ -552,8 +552,8 @@ jobs:
               "build-kernel-modules-${flavor}" \
               build-kos <"$task_file"
           done
-          [[ ! -f ${shard_output_dir}/FAILURES-${CIRCLE_NODE_INDEX} ]] \
-            || mv ${shard_output_dir}/FAILURES-${CIRCLE_NODE_INDEX} ${shard_output_dir}/../
+          [[ ! -f "${shard_output_dir}/FAILURES-${CIRCLE_NODE_INDEX}" ]] \
+            || mv "${shard_output_dir}/FAILURES-${CIRCLE_NODE_INDEX}" "${shard_output_dir}"/../
 
     - run:
         name: Print built modules
@@ -561,8 +561,8 @@ jobs:
           shard_output_dir="${WORKSPACE_ROOT}/ko-build/build-output/shard-${CIRCLE_NODE_INDEX}"
           for i in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
             version="$(basename "$i")"
-            if [ -d "${shard_output_dir}/$version" ]; then
-              find "${shard_output_dir}/${version}" -type f -ls || true
+            if [[ -d "${shard_output_dir}/$version" ]]; then
+              find "${shard_output_dir}/${version}" -type f -ls
             fi
           done
 
@@ -816,6 +816,7 @@ jobs:
             for shard_dir in "${shard_dirs[@]}"; do
               for version_dir in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
                 version="$(basename "$version_dir")"
+                mkdir -p "${WORKSPACE_ROOT}/ko-build/build-output/$version/"
                 mv "$shard_dir/$version"/*.gz "${WORKSPACE_ROOT}/ko-build/build-output/$version/" || true
               done
             done
