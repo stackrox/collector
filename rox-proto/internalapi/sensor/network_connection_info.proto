@@ -26,6 +26,7 @@ message NetworkConnection {
     storage.L4Protocol protocol            = 4;
     ClientServerRole role            = 5;
     string container_id                 = 6;
+    string exe = 7;
 
     // If this connection was closed, this gives the timestamp when it was closed. If this is unset, we treat it as an
     // open connection.

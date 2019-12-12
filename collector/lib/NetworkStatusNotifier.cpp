@@ -137,6 +137,12 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
     }
 
     auto new_state = conn_tracker_->FetchState(true);
+    if (new_state.size() > 0) {
+      CLOG(INFO)<< "Connection Tracker State:";
+      for (const auto& kv : new_state) {
+          CLOG(INFO) << kv.first;
+      }
+    }
     ConnectionTracker::ComputeDelta(new_state, &old_state);
 
     const auto* msg = CreateInfoMessage(old_state);
@@ -181,6 +187,7 @@ sensor::NetworkConnectionInfoMessage* NetworkStatusNotifier::CreateInfoMessage(c
 sensor::NetworkConnection* NetworkStatusNotifier::ConnToProto(const Connection& conn) {
   auto* conn_proto = Allocate<sensor::NetworkConnection>();
   conn_proto->set_container_id(conn.container());
+  conn_proto->set_exe(conn.exe());
   conn_proto->set_role(conn.is_server() ? sensor::ROLE_SERVER : sensor::ROLE_CLIENT);
   conn_proto->set_protocol(TranslateL4Protocol(conn.l4proto()));
   conn_proto->set_socket_family(TranslateAddressFamily(conn.local().address().family()));

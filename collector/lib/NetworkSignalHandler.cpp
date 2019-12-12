@@ -24,6 +24,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "NetworkSignalHandler.h"
 
 #include "EventMap.h"
+#include <iostream>
 
 namespace collector {
 
@@ -96,8 +97,10 @@ std::pair<Connection, bool> NetworkSignalHandler::GetConnection(sinsp_evt* evt) 
   const Endpoint* remote = is_server ? &client : &server;
 
   const std::string* container_id = event_extractor_.get_container_id(evt);
+  const std::string* exe = event_extractor_.get_comm(evt);
+
   if (!container_id) return {{}, false};
-  return {Connection(*container_id, *local, *remote, l4proto, is_server), true};
+  return {Connection(*container_id, *exe, *local, *remote, l4proto, is_server), true};
 }
 
 SignalHandler::Result NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {

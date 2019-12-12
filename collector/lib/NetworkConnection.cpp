@@ -39,7 +39,7 @@ std::ostream& operator<<(std::ostream& os, L4Proto l4proto) {
 }
 
 std::ostream& operator<<(std::ostream& os, const Connection& conn) {
-  os << conn.container() << ": " << conn.local();
+  os << conn.container() << "/" << conn.exe() << ": " << conn.local();
   if (conn.is_server()) {
     os << " <- ";
   } else {

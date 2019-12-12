@@ -42,8 +42,8 @@ TEST(ConnTrackerTest, TestAddRemove) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
-  Connection conn1("xyz", a, b, L4Proto::TCP, true);
-  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  Connection conn1("xyz", "test", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", "test", b, a, L4Proto::TCP, false);
 
   int64_t now = NowMicros();
 
@@ -71,8 +71,8 @@ TEST(ConnTrackerTest, TestUpdate) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
-  Connection conn1("xyz", a, b, L4Proto::TCP, true);
-  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  Connection conn1("xyz", "test", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", "test", b, a, L4Proto::TCP, false);
 
   int64_t now = NowMicros();
 
@@ -98,8 +98,8 @@ TEST(ConnTrackerTest, TestComputeDelta) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
-  Connection conn1("xyz", a, b, L4Proto::TCP, true);
-  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  Connection conn1("xyz", "test", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", "test", b, a, L4Proto::TCP, false);
 
   int64_t now = NowMicros();
 

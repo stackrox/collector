@@ -362,7 +362,7 @@ void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const C
       for (const auto& socket_inode : netns_sockets.second) {
         const auto* conn = Lookup(*conns, socket_inode);
         if (!conn) continue;
-        Connection connection(container_id, conn->local, conn->remote, conn->l4proto, conn->is_server);
+        Connection connection(container_id, "scrape", conn->local, conn->remote, conn->l4proto, conn->is_server);
         if (!IsRelevantConnection(connection)) continue;
         connections->push_back(std::move(connection));
       }

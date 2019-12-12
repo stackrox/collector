@@ -180,28 +180,30 @@ std::ostream& operator<<(std::ostream& os, L4Proto l4proto);
 class Connection {
  public:
   Connection() : flags_(0) {}
-  Connection(std::string container, const Endpoint& local, const Endpoint& remote, L4Proto l4proto, bool is_server)
-      : container_(std::move(container)), local_(local), remote_(remote), flags_((static_cast<uint8_t>(l4proto) << 1) | ((is_server) ? 1 : 0))
+  Connection(std::string container, std::string exe, const Endpoint& local, const Endpoint& remote, L4Proto l4proto, bool is_server)
+      : container_(std::move(container)), exe_(std::move(exe)), local_(local), remote_(remote), flags_((static_cast<uint8_t>(l4proto) << 1) | ((is_server) ? 1 : 0))
   {}
 
   const std::string& container() const { return container_; }
+  const std::string& exe() const { return exe_; }
   const Endpoint& local() const { return local_; }
   const Endpoint& remote() const { return remote_; }
   bool is_server() const { return (flags_ & 0x1) != 0; }
   L4Proto l4proto() const { return static_cast<L4Proto>(flags_ >> 1); }
 
   bool operator==(const Connection& other) const {
-    return container_ == other.container_ && local_ == other.local_ && remote_ == other.remote_ && flags_ == other.flags_;
+    return container_ == other.container_ && exe_ == other.exe_ && local_ == other.local_ && remote_ == other.remote_ && flags_ == other.flags_;
   }
 
   bool operator!=(const Connection& other) const {
     return !(*this == other);
   }
 
-  size_t Hash() const { return HashAll(container_, local_, remote_, flags_); }
+  size_t Hash() const { return HashAll(container_, exe_, local_, remote_, flags_); }
 
  private:
   std::string container_;
+  std::string exe_;
   Endpoint local_;
   Endpoint remote_;
   uint8_t flags_;
