@@ -1172,7 +1172,7 @@ jobs:
           for mod_dir in "${mod_build_dir}"/*/ ; do
             mod_ver="$(basename "$mod_dir")"
             mkdir -p "/tmp/released-kernel-object-cache/${mod_ver}"
-            cp "${mod_dir}/"*.gz "/tmp/released-kernel-object-cache/${mod_ver}"
+            cp "${mod_dir}/"*.gz "/tmp/released-kernel-object-cache/${mod_ver}" || true
           done
 
     - run:
