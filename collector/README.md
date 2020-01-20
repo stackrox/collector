@@ -40,7 +40,7 @@ BROKER_LIST is required to send formatted events over Kafka. There is no default
 
 CHISEL is expected to contain a base64 encoded chisel file if the Collector should have additional configuration using a chisel. By defult the Collector operates with no chisel.
 
-SYSDIG_HOST_ROOT is required by the kernel module; used as a prefix to paths like /proc, and /boot. Make sure this matches the volume mount paths used when launching this container.
+COLLECTOR_HOST_ROOT is required by the kernel module; used as a prefix to paths like /proc, and /boot. Make sure this matches the volume mount paths used when launching this container.
 
 COLLECTOR_CONFIG is the required json config string. A default Collector config that can be used to bring up the Collector and generate events to stdout is as follows:
 
