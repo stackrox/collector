@@ -68,3 +68,5 @@ COPY --from=builder /usr/local/bin/gzip /usr/bin/gzip
 
 LABEL io.stackrox.collector.version="${collector_version}"
 ENV COLLECTOR_VERSION=${collector_version}
+
+HEALTHCHECK CMD curl --fail http://localhost:8080/ready || exit 1
