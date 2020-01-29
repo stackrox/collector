@@ -18,7 +18,7 @@ index 10800af..4cd3e30 100644
  		-O2 -g -emit-llvm -c $< -o $(patsubst %.o,%.ll,$@)
  	$(LLC) -march=bpf -filetype=obj -o $@ $(patsubst %.o,%.ll,$@)
 diff --git a/bpf/fillers.h b/bpf/fillers.h
-index a5b1f9f..5c4ae32 100644
+index a5b1f9f..3199d82 100644
 --- a/bpf/fillers.h
 +++ b/bpf/fillers.h
 @@ -1348,7 +1348,8 @@ static __always_inline int bpf_ppm_get_tty(struct task_struct *task)
@@ -31,7 +31,17 @@ index a5b1f9f..5c4ae32 100644
  	return _READ(task->pids[PIDTYPE_PID].pid);
  #else
  	return _READ(task->thread_pid);
-@@ -1404,7 +1405,8 @@ static __always_inline pid_t bpf_task_pid_nr_ns(struct task_struct *task,
+@@ -1385,7 +1386,8 @@ static __always_inline pid_t bpf_pid_nr_ns(struct pid *pid,
+ 	return nr;
+ }
+ 
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0) ||
++    ( defined(RHEL_RELEASE_CODE) && RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(8,1) )
+ static __always_inline struct pid **bpf_task_pid_ptr(struct task_struct *task,
+ 						     enum pid_type type)
+ {
+@@ -1404,7 +1406,8 @@ static __always_inline pid_t bpf_task_pid_nr_ns(struct task_struct *task,
  	if (!ns)
  		ns = bpf_task_active_pid_ns(task);
  
@@ -41,7 +51,7 @@ index a5b1f9f..5c4ae32 100644
  	if (type != PIDTYPE_PID) {
  		if (type == __PIDTYPE_TGID)
  			type = PIDTYPE_PID;
-@@ -1427,7 +1429,8 @@ static __always_inline pid_t bpf_task_pid_vnr(struct task_struct *task)
+@@ -1427,7 +1430,8 @@ static __always_inline pid_t bpf_task_pid_vnr(struct task_struct *task)
  
  static __always_inline pid_t bpf_task_tgid_vnr(struct task_struct *task)
  {
