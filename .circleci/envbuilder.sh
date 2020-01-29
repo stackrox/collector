@@ -46,7 +46,7 @@ installDockerOnUbuntuViaGCPSSH() {
   shift
   local GCP_SSH_KEY_FILE="$1"
   shift
-  gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "(which docker || export DEBIAN_FRONTEND=noninteractive ; sudo apt update -y && sudo apt install -y apt-transport-https ca-certificates curl gnupg-agent wget software-properties-common docker.io )"
+  gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "(which docker || export DEBIAN_FRONTEND=noninteractive ; sudo apt update -y && sudo apt install -y apt-transport-https ca-certificates curl gnupg-agent wget software-properties-common docker.io && sudo usermod -aG docker $(whoami) )"
 }
 
 installDockerOnRHELViaGCPSSH() {
