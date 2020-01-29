@@ -18,7 +18,7 @@ index 10800af..4cd3e30 100644
  		-O2 -g -emit-llvm -c $< -o $(patsubst %.o,%.ll,$@)
  	$(LLC) -march=bpf -filetype=obj -o $@ $(patsubst %.o,%.ll,$@)
 diff --git a/bpf/fillers.h b/bpf/fillers.h
-index a5b1f9f..3199d82 100644
+index a5b1f9f..ebef1c9 100644
 --- a/bpf/fillers.h
 +++ b/bpf/fillers.h
 @@ -1348,7 +1348,8 @@ static __always_inline int bpf_ppm_get_tty(struct task_struct *task)
@@ -36,7 +36,7 @@ index a5b1f9f..3199d82 100644
  }
  
 -#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0)
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0) ||
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0) || \
 +    ( defined(RHEL_RELEASE_CODE) && RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(8,1) )
  static __always_inline struct pid **bpf_task_pid_ptr(struct task_struct *task,
  						     enum pid_type type)
