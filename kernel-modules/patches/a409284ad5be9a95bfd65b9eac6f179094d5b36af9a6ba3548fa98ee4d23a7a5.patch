@@ -17,6 +17,20 @@ index 10800af..4cd3e30 100644
  		-Wno-tautological-compare \
  		-O2 -g -emit-llvm -c $< -o $(patsubst %.o,%.ll,$@)
  	$(LLC) -march=bpf -filetype=obj -o $@ $(patsubst %.o,%.ll,$@)
+diff --git a/bpf/fillers.h b/bpf/fillers.h
+index 0108c73..37bd7c3 100644
+--- a/bpf/fillers.h
++++ b/bpf/fillers.h
+@@ -1433,7 +1433,8 @@ static __always_inline pid_t bpf_task_tgid_vnr(struct task_struct *task)
+ 	return bpf_pid_vnr(bpf_task_tgid(task));
+ }
+ 
+-#elif LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
++#elif LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0) && \
++    ( !defined(RHEL_RELEASE_CODE) || RHEL_RELEASE_CODE < RHEL_RELEASE_VERSION(8,1) )
+ 
+ static __always_inline pid_t bpf_task_pid_nr_ns(struct task_struct *task,
+ 						enum pid_type type,
 diff --git a/main.c b/main.c
 index 2f90a4a..ba27757 100644
 --- a/main.c
