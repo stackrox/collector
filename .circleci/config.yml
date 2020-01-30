@@ -920,7 +920,7 @@ jobs:
         enum: [coreos, cos, rhel, ubuntu-os]
       image_family:
         type: enum
-        enum: [coreos-stable, cos-stable, cos-69-lts, cos-73-lts, rhel-7, rhel-8, ubuntu-1804-lts, ubuntu-1910]
+        enum: [coreos-stable, cos-stable, cos-69-lts, cos-73-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-1910]
       use-rhel:
         type: boolean
         default: false
@@ -1380,17 +1380,18 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - integration-test:
-        name: test-ebpf-rhel-8
-        collection_method: ebpf
-        vm_type: rhel
-        image_family: rhel-8
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
+    ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks` (ROX-3179)
+    #- integration-test:
+    #    name: test-ebpf-rhel-8
+    #    collection_method: ebpf
+    #    vm_type: rhel
+    #    image_family: rhel-8
+    #    requires:
+    #    - images
+    #    - integration-test-local
+    #    filters:
+    #      tags:
+    #        only: /.*/
     - integration-test:
         name: test-module-rhel-8
         collection_method: module
@@ -1402,7 +1403,7 @@ workflows:
         filters:
           tags:
             only: /.*/
-    ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks`
+    ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks` (ROX-3179)
     #- integration-test:
     #    name: test-ebpf-ubuntu-1804-lts
     #    collection_method: ebpf
@@ -1415,6 +1416,28 @@ workflows:
     #      tags:
     #        only: /.*/
     - integration-test:
+        name: test-module-ubuntu-1604-lts
+        collection_method: module
+        vm_type: ubuntu-os
+        image_family: ubuntu-1604-lts
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-ebpf-ubuntu-1604-lts
+        collection_method: ebpf
+        vm_type: ubuntu-os
+        image_family: ubuntu-1604-lts
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
         name: test-module-ubuntu-1804-lts
         collection_method: module
         vm_type: ubuntu-os
@@ -1425,7 +1448,7 @@ workflows:
         filters:
           tags:
             only: /.*/
-    ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks`
+    ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks` (ROX-3179)
     #- integration-test:
     #    name: test-ebpf-ubuntu-1910
     #    collection_method: ebpf
@@ -1459,7 +1482,9 @@ workflows:
        - test-module-rhel-7
        - test-ebpf-rhel-7
        - test-module-rhel-8
-       - test-ebpf-rhel-8
+       #- test-ebpf-rhel-8
+       - test-module-ubuntu-1604-lts
+       - test-ebpf-ubuntu-1604-lts
        - test-module-ubuntu-1804-lts
        #- test-ebpf-ubuntu-1804-lts
        #- test-module-ubuntu-1910
