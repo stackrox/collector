@@ -17,6 +17,50 @@ index 10800af..4cd3e30 100644
  		-Wno-tautological-compare \
  		-O2 -g -emit-llvm -c $< -o $(patsubst %.o,%.ll,$@)
  	$(LLC) -march=bpf -filetype=obj -o $@ $(patsubst %.o,%.ll,$@)
+diff --git a/bpf/fillers.h b/bpf/fillers.h
+index a5b1f9f..ebef1c9 100644
+--- a/bpf/fillers.h
++++ b/bpf/fillers.h
+@@ -1348,7 +1348,8 @@ static __always_inline int bpf_ppm_get_tty(struct task_struct *task)
+ 
+ static __always_inline struct pid *bpf_task_pid(struct task_struct *task)
+ {
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
++#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0) && \
++    ( !defined(RHEL_RELEASE_CODE) || RHEL_RELEASE_CODE < RHEL_RELEASE_VERSION(8,1) )
+ 	return _READ(task->pids[PIDTYPE_PID].pid);
+ #else
+ 	return _READ(task->thread_pid);
+@@ -1385,7 +1386,8 @@ static __always_inline pid_t bpf_pid_nr_ns(struct pid *pid,
+ 	return nr;
+ }
+ 
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0) || \
++    ( defined(RHEL_RELEASE_CODE) && RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(8,1) )
+ static __always_inline struct pid **bpf_task_pid_ptr(struct task_struct *task,
+ 						     enum pid_type type)
+ {
+@@ -1404,7 +1406,8 @@ static __always_inline pid_t bpf_task_pid_nr_ns(struct task_struct *task,
+ 	if (!ns)
+ 		ns = bpf_task_active_pid_ns(task);
+ 
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
++#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0) && \
++    ( !defined(RHEL_RELEASE_CODE) || RHEL_RELEASE_CODE < RHEL_RELEASE_VERSION(8,1) )
+ 	if (type != PIDTYPE_PID) {
+ 		if (type == __PIDTYPE_TGID)
+ 			type = PIDTYPE_PID;
+@@ -1427,7 +1430,8 @@ static __always_inline pid_t bpf_task_pid_vnr(struct task_struct *task)
+ 
+ static __always_inline pid_t bpf_task_tgid_vnr(struct task_struct *task)
+ {
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
++#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0) && \
++    ( !defined(RHEL_RELEASE_CODE) || RHEL_RELEASE_CODE < RHEL_RELEASE_VERSION(8,1) )
+ 	return bpf_task_pid_nr_ns(task, __PIDTYPE_TGID, NULL);
+ #else
+ 	return bpf_task_pid_nr_ns(task, PIDTYPE_TGID, NULL);
 diff --git a/main.c b/main.c
 index 2f90a4a..ba27757 100644
 --- a/main.c

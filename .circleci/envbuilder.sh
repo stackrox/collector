@@ -35,7 +35,7 @@ createGCPVM() {
   fi
 
   gcloud compute instances add-metadata "$GCP_VM_NAME" --metadata serial-port-logging-enable=true
-  gcloud compute instances describe --format json "$GCP_VM_NAME" 
+  gcloud compute instances describe --format json "$GCP_VM_NAME"
   echo "Instance created successfully: $GCP_VM_NAME"
 
   return 0
@@ -46,7 +46,7 @@ installDockerOnUbuntuViaGCPSSH() {
   shift
   local GCP_SSH_KEY_FILE="$1"
   shift
-  gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "(which docker || export DEBIAN_FRONTEND=noninteractive ; sudo apt update -y && sudo apt install -y apt-transport-https ca-certificates curl gnupg-agent wget software-properties-common && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - && sudo add-apt-repository 'deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable' && sudo apt update -y && DEBIAN_FRONTEND=noninteractive sudo apt install -y docker-ce && sudo adduser $(id -un) docker)"
+  gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "(which docker || export DEBIAN_FRONTEND=noninteractive ; sudo apt update -y && sudo apt install -y docker.io && sudo usermod -aG docker $(whoami) )"
 }
 
 installDockerOnRHELViaGCPSSH() {
