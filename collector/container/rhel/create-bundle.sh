@@ -14,6 +14,23 @@ image_exists() {
   fi
 }
 
+extract_from_image() {
+  image=$1
+  src=$2
+  dst=$3
+
+  [[ -n "$image" && -n "$src" && -n "$dst" ]] \
+      || die "extract_from_image: <image> <src> <dst>"
+
+  docker run -ii --rm --entrypoint /bin/sh "${image}" /dev/stdin \
+  > "${dst}" <<EOF
+set -e
+cat < ${src}
+EOF
+
+  [[ -s $dst ]] || die "file extracted from image is empty: $dst"
+}
+
 INPUT_ROOT="$1"
 BUILDER_IMAGE="$2"
 MODULE_DIR="$3"
@@ -27,7 +44,7 @@ OUTPUT_BUNDLE="$4"
 [[ -d "$MODULE_DIR" ]] \
    || die "Module directory doesn't exist or is not a directory."
 
-# Verify builder image exists
+# Verify image exists
 image_exists "${BUILDER_IMAGE}"
 
 # Create tmp directory
@@ -36,9 +53,12 @@ mkdir -p "${bundle_root}/usr/"{bin,lib64,local/bin,local/lib}
 mkdir -p "${bundle_root}/kernel-modules"
 chmod -R 755 "${bundle_root}"
 
-echo "Bundle root dir: ${bundle_root}"
+# =============================================================================
 
-# Each line is equivalent to Dockerfile COPY
+# Add files to be included in the Dockerfile here. This includes artifacts that
+# would be otherwise downloaded or included via a COPY command in the
+# Dockerfile.
+
 cp -p "${INPUT_ROOT}/libs/libsinsp-wrapper.so.rhel" "${bundle_root}/usr/local/lib/libsinsp-wrapper.so"
 cp -p "${INPUT_ROOT}/scripts/bootstrap.sh" "${bundle_root}/bootstrap.sh"
 cp -p "${INPUT_ROOT}/scripts/collector-wrapper.sh" "${bundle_root}/usr/local/bin/"
@@ -47,35 +67,37 @@ cp -p "${INPUT_ROOT}/bin/collector.rhel" "${bundle_root}/usr/local/bin/collector
 cp -pr "${MODULE_DIR}" "${bundle_root}/kernel-modules"
 
 # Files needed from the collector-builder image and associated
-# destination path in collector-rhel image.
-builder_filelist_src=(
+# destination in collector-rhel image.
+builder_src=(
     "usr/local/bin/curl"
-    "usr/local/lib/libcurl.so.4"
     "usr/local/bin/gzip"
+    "usr/local/lib/libcurl.so"
+    "usr/local/lib/libcurl.so.4"
 )
-builder_filelist_dst=(
-    "usr/bin"
-    "usr/lib64"
-    "usr/bin"
+builder_dst=(
+    "usr/bin/curl"
+    "usr/bin/gzip"
+    "usr/lib64/libcurl.so"
+    "usr/lib64/libcurl.so.4"
 )
-builder_tmp="$(mktemp)"
-docker run -ii --rm --entrypoint /bin/sh "${BUILDER_IMAGE}" /dev/stdin \
-> "${builder_tmp}" <<EOF
-set -e ; tar -cpz ${builder_filelist_src[@]}
-EOF
 
-[[ -s "${builder_tmp}" ]] || die "Empty builder extracted file"
-
-for ((i=0; i<${#builder_filelist_src[@]}; ++i)); do
-  tar xz -C "${bundle_root}/${builder_filelist_dst[$i]}" \
-      -f "${builder_tmp}" "${builder_filelist_src[$i]}"
+for ((i=0; i<${#builder_src[@]}; ++i)); do
+  extract_from_image "${BUILDER_IMAGE}" \
+      "${builder_src[$i]}" "${bundle_root}/${builder_dst[$i]}"
+  chmod 755 "${bundle_root}/${builder_dst[$i]}"
 done
 
-# Remove intermediate file
-rm "${builder_tmp}"
+# =============================================================================
 
-# Create artifact bundle
-tar czv --file "$OUTPUT_BUNDLE" --directory "${bundle_root}" .
+# Ensure files in bundle are added as uid=0, gid=0
+if tar --version | grep -q "gnu" ; then
+  tar_chown_args=("--owner=0" "--group=0")
+else
+  tar_chown_args=("--uid=0" "--gid=0")
+fi
+
+# Create output bundle of all files in $bundle_root
+tar cz "${tar_chown_args[@]}" --file "$OUTPUT_BUNDLE" --directory "${bundle_root}" .
 
 # Create checksum
 sha512sum "${OUTPUT_BUNDLE}" > "${OUTPUT_BUNDLE}.sha512"
