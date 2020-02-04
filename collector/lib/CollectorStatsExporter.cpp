@@ -44,7 +44,7 @@ CollectorStatsExporter::CollectorStatsExporter(std::shared_ptr<prometheus::Regis
 
 bool CollectorStatsExporter::start() {
     if (!thread_.Start(&CollectorStatsExporter::run, this)) {
-        CLOG(ERROR) << "Could not start sysdig stats exporter: already running";
+        CLOG(ERROR) << "Could not start stats exporter: already running";
         return false;
     }
     return true;

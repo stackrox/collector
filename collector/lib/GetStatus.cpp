@@ -41,12 +41,12 @@ GetStatus::handleGet(CivetServer *server, struct mg_connection *conn)
 
     if (ready) {
         status["status"] = "ok";
-        status["sysdig"] = Json::Value(Json::objectValue);
-        status["sysdig"]["node"] = node_name_;
-        status["sysdig"]["events"] = Json::UInt64(stats.nEvents);
-        status["sysdig"]["drops"] = Json::UInt64(stats.nDrops);
-        status["sysdig"]["preemptions"] = Json::UInt64(stats.nPreemptions);
-        status["sysdig"]["filtered_events"] = Json::UInt64(stats.nFilteredEvents);
+        status["collector"] = Json::Value(Json::objectValue);
+        status["collector"]["node"] = node_name_;
+        status["collector"]["events"] = Json::UInt64(stats.nEvents);
+        status["collector"]["drops"] = Json::UInt64(stats.nDrops);
+        status["collector"]["preemptions"] = Json::UInt64(stats.nPreemptions);
+        status["collector"]["filtered_events"] = Json::UInt64(stats.nFilteredEvents);
 
         mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n");
         mg_printf(conn, "%s\n", status.toStyledString().c_str());
