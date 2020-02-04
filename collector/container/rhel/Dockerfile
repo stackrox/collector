@@ -7,7 +7,6 @@ FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 ARG collector_version=xxx
 ARG module_version=xxx
 
-# ADD DSOP LABELS
 LABEL maintainer="StackRox <support@stackrox.com>"
 LABEL io.stackrox.collector.module-version="${module_version}"
 LABEL io.stackrox.collector.version="${collector_version}"
@@ -16,8 +15,20 @@ ENV COLLECTOR_VERSION=${collector_version}
 ENV MODULE_VERSION=${module_version}
 ENV COLLECTOR_HOST_ROOT=/host
 
-RUN yum update -y --disableplugin=subscription-manager && \
-    rpm -e --nodeps yum yum-utils yum-plugin-ovl subscription-manager rpm rpm-libs rpm-build-libs rpm-python subscription-manager-rhsm
+RUN yum update -y --nogpgcheck --disableplugin=subscription-manager
+RUN rpm -e --nodeps \
+      curl \
+      libcurl \
+      rpm \
+      rpm-build-libs \
+      rpm-libs \
+      rpm-python \
+      subscription-manager \
+      subscription-manager-rhsm \
+      yum \
+      yum-plugin-ovl \
+      yum-utils \
+    ;
 
 ADD bundle.tar.gz /
 
@@ -27,7 +38,6 @@ EXPOSE 8080 9090
 
 WORKDIR /
 
-RUN chown root.root /bootstrap.sh
 RUN chmod 700 /bootstrap.sh
 
 ENTRYPOINT ["/bootstrap.sh"]
