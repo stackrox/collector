@@ -16,7 +16,7 @@ LABEL io.stackrox.collector.module-version="${module_version}"
 ENV MODULE_VERSION=${module_version}
 
 RUN yum update -y --disableplugin=subscription-manager && \
-    rpm -e --nodeps yum yum-utils yum-plugin-ovl subscription-manager rpm rpm-libs rpm-build-libs rpm-python subscription-manager-rhsm
+    rpm -e --nodeps curl libcurl yum yum-utils yum-plugin-ovl subscription-manager rpm rpm-libs rpm-build-libs rpm-python subscription-manager-rhsm
 
 # Add module version file only
 RUN mkdir /kernel-modules && \
@@ -63,10 +63,11 @@ COPY bin/collector.rhel /usr/local/bin/collector
 
 # RHEL7 needs a newer version of curl and gzip
 COPY --from=builder /usr/local/bin/curl /usr/bin/curl
+COPY --from=builder /usr/local/lib/libcurl.so /lib64/libcurl.so
 COPY --from=builder /usr/local/lib/libcurl.so.4 /lib64/libcurl.so.4
 COPY --from=builder /usr/local/bin/gzip /usr/bin/gzip
 
 LABEL io.stackrox.collector.version="${collector_version}"
 ENV COLLECTOR_VERSION=${collector_version}
 
-HEALTHCHECK CMD curl --fail http://localhost:8080/ready || exit 1
+HEALTHCHECK CMD curl --fail http://127.0.0.1:8080/ready || exit 1
