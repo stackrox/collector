@@ -1,4 +1,4 @@
-FROM debian:unstable
+FROM debian:stable
 
 RUN apt-get update \
  && apt-get upgrade -y \
@@ -19,7 +19,7 @@ RUN apt-get update \
       pkg-config \
  ;
 
-RUN sed s_unstable_jessie_g < /etc/apt/sources.list > /etc/apt/sources.list.d/jessie.list && \
+RUN sed s_stable_jessie_g < /etc/apt/sources.list > /etc/apt/sources.list.d/jessie.list && \
     apt-get update && apt-get install --no-install-recommends -y \
       gcc-4.9 \
 ;

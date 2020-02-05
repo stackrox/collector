@@ -31,6 +31,19 @@ index 0108c73..37bd7c3 100644
  
  static __always_inline pid_t bpf_task_pid_nr_ns(struct task_struct *task,
  						enum pid_type type,
+diff --git a/bpf/quirks.h b/bpf/quirks.h
+index a26bfd9..410b0fe 100644
+--- a/bpf/quirks.h
++++ b/bpf/quirks.h
+@@ -40,6 +40,8 @@ or GPL2.txt for full copies of the license.
+ #define BPF_SUPPORTS_RAW_TRACEPOINTS
+ #endif
+ 
++#define RHEL_RELEASE_VERSION(X,Y) 0
++
+ #endif /* RHEL_RELEASE_CODE */
+ /* Redefine asm_volatile_goto to work around clang not supporting it
+  */
 diff --git a/main.c b/main.c
 index 2f90a4a..ba27757 100644
 --- a/main.c

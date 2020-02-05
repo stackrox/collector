@@ -72,6 +72,21 @@ index 2779a2a..8e897c2 100644
  	}
  
  	return res;
+diff --git a/bpf/quirks.h b/bpf/quirks.h
+index 11ec7ce..6f407f6 100644
+--- a/bpf/quirks.h
++++ b/bpf/quirks.h
+@@ -11,6 +11,10 @@ or GPL2.txt for full copies of the license.
+ 
+ #include <linux/version.h>
+ 
++#ifndef RHEL_RELEASE_CODE
++#define RHEL_RELEASE_VERSION(X,Y) 0
++#endif
++
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
+ #error Kernel version must be >= 4.14 with eBPF enabled
+ #endif
 diff --git a/main.c b/main.c
 index 2f90a4a..ba27757 100644
 --- a/main.c
