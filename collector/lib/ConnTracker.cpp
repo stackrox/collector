@@ -51,8 +51,29 @@ void ConnectionTracker::Update(const std::vector<Connection>& all_conns, int64_t
   }
 }
 
+Connection ConnectionTracker::NormalizeConnection(const Connection& conn) {
+  bool is_server = conn.is_server();
+  if (conn.l4proto() == L4Proto::UDP) {
+    // Inference of server role is unreliable for UDP, so go by port.
+    is_server = IsEphemeralPort(conn.local().port()) > IsEphemeralPort(conn.remote().port());
+  }
+
+  Endpoint local, remote = conn.remote();
+
+  if (is_server) {
+    // If this is the server, only the local port is relevant, while the remote port does not matter.
+    local = Endpoint(Address(), conn.local().port());
+    remote = Endpoint(conn.remote().address(), 0);
+  } else {
+    // If this is the client, the local port and address are not relevant.
+    local = Endpoint();
+  }
+
+  return Connection(conn.container(), local, remote, conn.l4proto(), is_server);
+}
+
 void ConnectionTracker::EmplaceOrUpdateNoLock(const Connection& conn, ConnStatus status) {
-  auto emplace_res = state_.emplace(conn, status);
+  auto emplace_res = state_.emplace(NormalizeConnection(conn), status);
   if (!emplace_res.second && status.LastActiveTime() > emplace_res.first->second.LastActiveTime()) {
     emplace_res.first->second = status;
   }

@@ -89,6 +89,9 @@ class ConnectionTracker {
   static void ComputeDelta(const ConnMap& new_state, ConnMap* old_state);
 
  private:
+  // NormalizeConnection transforms a connection into a normalized form.
+  static Connection NormalizeConnection(const Connection &conn);
+
   // Emplace a connection into the state ConnMap, or update its timestamp if the supplied timestamp is more recent
   // than the stored one.
   void EmplaceOrUpdateNoLock(const Connection& conn, ConnStatus status);
