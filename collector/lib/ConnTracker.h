@@ -42,7 +42,7 @@ class ConnStatus {
   ConnStatus() : data_(0UL) {}
   ConnStatus(int64_t microtimestamp, bool active) : data_((static_cast<uint64_t>(microtimestamp) >> 1) | ((active) ? kActiveFlag : 0UL)) {}
 
-  int64_t LastActiveTime() const { return data_ << 1; }
+  int64_t LastActiveTime() const { return static_cast<int64_t>(data_ << 1); }
   bool IsActive() const { return (data_ & kActiveFlag) != 0; }
 
   void SetActive(bool active) {
