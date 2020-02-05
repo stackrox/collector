@@ -35,22 +35,29 @@ namespace collector {
 // ConnStatus encapsulates the status of a connection, comprised of the timestamp when the connection was last seen
 // alive (in microseconds since epoch), and a flag indicating whether the connection is currently active.
 class ConnStatus {
+ private:
+  static constexpr uint64_t kActiveFlag = 1UL << 63;
+
  public:
   ConnStatus() : data_(0UL) {}
-  ConnStatus(int64_t microtimestamp, bool active) : data_((microtimestamp & ~0x1UL) | ((active) ? 0x1 : 0x0)) {}
+  ConnStatus(int64_t microtimestamp, bool active) : data_((static_cast<uint64_t>(microtimestamp) >> 1) | ((active) ? kActiveFlag : 0UL)) {}
 
-  int64_t LastActiveTime() const { return data_ & ~0x1UL; }
-  bool IsActive() const { return data_ & 0x1UL; }
+  int64_t LastActiveTime() const { return data_ << 1; }
+  bool IsActive() const { return (data_ & kActiveFlag) != 0; }
 
   void SetActive(bool active) {
-    if (active) data_ |= 0x1UL;
-    else data_ &= ~0x1UL;
+    if (active) data_ |= kActiveFlag;
+    else data_ &= ~kActiveFlag;
+  }
+
+  void MergeFrom(const ConnStatus& other) {
+    data_ = std::max(data_, other.data_);
   }
 
   ConnStatus WithStatus(bool active) const {
-    int64_t new_data = data_;
-    if (active) new_data |= 0x1UL;
-    else new_data &= ~0x1UL;
+    uint64_t new_data = data_;
+    if (active) new_data |= kActiveFlag;
+    else new_data &= ~kActiveFlag;
     return ConnStatus(new_data);
   }
 
@@ -63,9 +70,9 @@ class ConnStatus {
   }
 
  private:
-  explicit ConnStatus(int64_t data) : data_(data) {}
+  explicit ConnStatus(uint64_t data) : data_(data) {}
 
-  int64_t data_;
+  uint64_t data_;
 };
 
 using ConnMap = UnorderedMap<Connection, ConnStatus>;

@@ -91,7 +91,10 @@ ConnMap ConnectionTracker::FetchState(bool normalize, bool clear_inactive) {
       const auto& conn = *it;
 
       if (normalize) {
-        new_state.emplace(NormalizeConnection(conn.first), conn.second);
+        auto emplace_res = new_state.emplace(NormalizeConnection(conn.first), conn.second);
+        if (!emplace_res.second) {
+          emplace_res.first->second.MergeFrom(conn.second);
+        }
       } else {
         new_state.insert(conn);
       }
