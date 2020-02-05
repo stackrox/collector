@@ -55,7 +55,7 @@ Connection ConnectionTracker::NormalizeConnection(const Connection& conn) {
   bool is_server = conn.is_server();
   if (conn.l4proto() == L4Proto::UDP) {
     // Inference of server role is unreliable for UDP, so go by port.
-    is_server = IsEphemeralPort(conn.remote().port()) < IsEphemeralPort(conn.local().port());
+    is_server = IsEphemeralPort(conn.remote().port()) > IsEphemeralPort(conn.local().port());
   }
 
   Endpoint local, remote = conn.remote();
