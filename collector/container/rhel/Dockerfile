@@ -17,8 +17,6 @@ ENV COLLECTOR_HOST_ROOT=/host
 
 RUN yum update -y --nogpgcheck --disableplugin=subscription-manager
 RUN rpm -e --nodeps \
-      curl \
-      libcurl \
       rpm \
       rpm-build-libs \
       rpm-libs \
@@ -30,7 +28,7 @@ RUN rpm -e --nodeps \
       yum-utils \
     ;
 
-ADD bundle.tar.gz /
+ADD --chown=root:root bundle.tar.gz /
 
 RUN echo "${module_version}" >/kernel-modules/MODULE_VERSION.txt
 

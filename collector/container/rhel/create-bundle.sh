@@ -89,11 +89,11 @@ done
 
 # =============================================================================
 
-# Ensure files in bundle are added as uid=0, gid=0
+# Files should have owner/group equal to root:root
 if tar --version | grep -q "gnu" ; then
-  tar_chown_args=("--owner=0" "--group=0")
+  tar_chown_args=("--owner=root:0" "--group=root:0")
 else
-  tar_chown_args=("--uid=0" "--gid=0")
+  tar_chown_args=("--uid=root:0" "--gid=root:0")
 fi
 
 # Create output bundle of all files in $bundle_root
