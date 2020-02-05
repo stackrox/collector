@@ -73,27 +73,33 @@ Connection ConnectionTracker::NormalizeConnection(const Connection& conn) {
 }
 
 void ConnectionTracker::EmplaceOrUpdateNoLock(const Connection& conn, ConnStatus status) {
-  auto emplace_res = state_.emplace(NormalizeConnection(conn), status);
+  auto emplace_res = state_.emplace(conn, status);
   if (!emplace_res.second && status.LastActiveTime() > emplace_res.first->second.LastActiveTime()) {
     emplace_res.first->second = status;
   }
 }
 
-ConnMap ConnectionTracker::FetchState(bool clear_inactive) {
+ConnMap ConnectionTracker::FetchState(bool normalize, bool clear_inactive) {
   ConnMap new_state;
 
   WITH_LOCK(mutex_) {
-    if (!clear_inactive) {
+    if (!clear_inactive && !normalize) {
       return state_;
     }
 
-    for (const auto& conn : state_) {
-      if (conn.second.IsActive()) {
+    for (auto it = state_.begin(); it != state_.end(); ++it) {
+      const auto& conn = *it;
+
+      if (normalize) {
+        new_state.emplace(NormalizeConnection(conn.first), conn.second);
+      } else {
         new_state.insert(conn);
       }
-    }
 
-    state_.swap(new_state);
+      if (clear_inactive && !conn.second.IsActive()) {
+        state_.erase(it);
+      }
+    }
   }
 
   return new_state;

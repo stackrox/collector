@@ -83,7 +83,7 @@ class ConnectionTracker {
   void Update(const std::vector<Connection>& all_conns, int64_t timestamp);
 
   // Atomically fetch a snapshot of the current state, removing all inactive connections if requested.
-  ConnMap FetchState(bool clear_inactive = true);
+  ConnMap FetchState(bool normalize = false, bool clear_inactive = true);
 
   // ComputeDelta computes a diff between new_state and *old_state, and stores the diff in *old_state.
   static void ComputeDelta(const ConnMap& new_state, ConnMap* old_state);

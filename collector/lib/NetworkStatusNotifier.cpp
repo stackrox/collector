@@ -136,7 +136,7 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
       conn_tracker_->Update(all_conns, ts);
     }
 
-    auto new_state = conn_tracker_->FetchState(true);
+    auto new_state = conn_tracker_->FetchState(true, true);
     ConnectionTracker::ComputeDelta(new_state, &old_state);
 
     const auto* msg = CreateInfoMessage(old_state);
