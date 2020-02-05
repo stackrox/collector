@@ -55,7 +55,7 @@ Connection ConnectionTracker::NormalizeConnection(const Connection& conn) {
   bool is_server = conn.is_server();
   if (conn.l4proto() == L4Proto::UDP) {
     // Inference of server role is unreliable for UDP, so go by port.
-    is_server = IsEphemeralPort(conn.local().port()) > IsEphemeralPort(conn.remote().port());
+    is_server = IsEphemeralPort(conn.remote().port()) < IsEphemeralPort(conn.local().port());
   }
 
   Endpoint local, remote = conn.remote();
@@ -87,7 +87,7 @@ ConnMap ConnectionTracker::FetchState(bool normalize, bool clear_inactive) {
       return state_;
     }
 
-    for (auto it = state_.begin(); it != state_.end(); ++it) {
+    for (auto it = state_.begin(); it != state_.end(); ) {
       const auto& conn = *it;
 
       if (normalize) {
@@ -100,7 +100,9 @@ ConnMap ConnectionTracker::FetchState(bool normalize, bool clear_inactive) {
       }
 
       if (clear_inactive && !conn.second.IsActive()) {
-        state_.erase(it);
+        it = state_.erase(it);
+      } else {
+        ++it;
       }
     }
   }
