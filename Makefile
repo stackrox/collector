@@ -73,13 +73,16 @@ image: collector unittest $(MOD_VER_FILE)
 
 .PHONY: $(CURDIR)/collector/container/rhel/bundle.tar.gz
 $(CURDIR)/collector/container/rhel/bundle.tar.gz:
-	$(CURDIR)/collector/container/rhel/create-bundle.sh $(CURDIR)/collector/container stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) $(CURDIR)/kernel-modules/container/kernel-modules $@
+	$(CURDIR)/collector/container/rhel/create-bundle.sh \
+		$(CURDIR)/collector/container \
+		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) \
+		$(CURDIR)/kernel-modules/container/kernel-modules $@
 
 .PHONY: $(CURDIR)/collector/container/rhel/prebuild.sh
 $(CURDIR)/collector/container/rhel/prebuild.sh:
 	$(CURDIR)/collector/container/rhel/create-prebuild.sh $@
 
-image-rhel: collector-rhel unittest-rhel $(MOD_VER_FILE) $(CURDIR)/collector/container/rhel/bundle.tar.gz $(CURDIR)/collector/container/rhel/prebuild.sh
+image-rhel: collector-rhel unittest-rhel $(MOD_VER_FILE) $(CURDIR)/collector/container/rhel/bundle.tar.gz
 	make -C collector txt-files
 	docker build --build-arg collector_version="rhel-$(COLLECTOR_TAG)" \
 	  --build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
