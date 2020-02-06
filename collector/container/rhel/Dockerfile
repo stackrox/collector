@@ -28,7 +28,7 @@ RUN rpm -e --nodeps \
       yum-utils \
     ;
 
-ADD --chown=root:root bundle.tar.gz /
+ADD bundle.tar.gz /
 
 RUN echo "${module_version}" >/kernel-modules/MODULE_VERSION.txt
 

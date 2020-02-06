@@ -745,6 +745,10 @@ jobs:
             "${build_args[@]}" \
             container-combined
 
+    - store_artifacts:
+        path: ~/workspace/go/src/github.com/stackrox/collector/collector/container/rhel/bundle.tar.gz
+        destination: "bundle.tar.gz"
+
     - run:
         name: Sanity check images
         command: |
