@@ -258,7 +258,7 @@ func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
 	assert.Equal(s.T(), fmt.Sprintf("%s:%s", s.serverIP, s.serverPort), actualServerEndpoint)
 
 	fmt.Printf("ClientDetails from Bolt: %s %s\n", s.clientContainer, string(val))
-	fmt.Printf("ClientDetails from test: %s %s\n", s.clientIP)
+	fmt.Printf("ClientDetails from test: %s %s\n", s.clientContainer, s.clientIP)
 }
 
 func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, error) {
