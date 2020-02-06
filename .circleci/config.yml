@@ -930,9 +930,6 @@ jobs:
       image_family:
         type: enum
         enum: [coreos-stable, cos-stable, cos-69-lts, cos-73-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-1910]
-      use-rhel:
-        type: boolean
-        default: false
 
     machine: true
     working_directory: ~/workspace
@@ -971,7 +968,11 @@ jobs:
           export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
           export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
           export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
-          export COLLECTOR_REPO="stackrox/collector<<# parameters.use-rhel>>-rhel<</ parameters.use-rhel>>"
+          if .circleci/pr_has_label.sh ci-run-against-rhel; then
+            export COLLECTOR_REPO="stackrox/collector-rhel"
+          else
+            export COLLECTOR_REPO="stackrox/collector"
+          fi
           make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report
           cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp "${SOURCE_ROOT}/integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
