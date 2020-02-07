@@ -38,16 +38,19 @@ class ConnStatus {
  private:
   static constexpr uint64_t kActiveFlag = 1UL << 63;
 
+  static inline uint64_t MakeActive(uint64_t data, bool active) {
+    return active ? (data | kActiveFlag) : (data & ~kActiveFlag);
+  }
+
  public:
   ConnStatus() : data_(0UL) {}
-  ConnStatus(int64_t microtimestamp, bool active) : data_((static_cast<uint64_t>(microtimestamp) >> 1) | ((active) ? kActiveFlag : 0UL)) {}
+  ConnStatus(int64_t microtimestamp, bool active) : data_(MakeActive(static_cast<uint64_t>(microtimestamp) >> 1, active)) {}
 
   int64_t LastActiveTime() const { return static_cast<int64_t>(data_ << 1); }
   bool IsActive() const { return (data_ & kActiveFlag) != 0; }
 
   void SetActive(bool active) {
-    if (active) data_ |= kActiveFlag;
-    else data_ &= ~kActiveFlag;
+    data_ = MakeActive(data_, active);
   }
 
   void MergeFrom(const ConnStatus& other) {
@@ -56,9 +59,7 @@ class ConnStatus {
 
   ConnStatus WithStatus(bool active) const {
     uint64_t new_data = data_;
-    if (active) new_data |= kActiveFlag;
-    else new_data &= ~kActiveFlag;
-    return ConnStatus(new_data);
+    return ConnStatus(MakeActive(new_data, active));
   }
 
   bool operator==(const ConnStatus& other) const {
