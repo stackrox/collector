@@ -955,7 +955,7 @@ jobs:
           export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
           export VM_TYPE=<< parameters.vm_type >>
           export IMAGE_FAMILY=<< parameters.image_family >>
-          main "$GCLOUD_INSTANCE" "$VM_TYPE" "$IMAGE_FAMILY" "$GCP_SSH_KEY_FILE" "$DOCKER_USER" "$DOCKER_PASS" 
+          main "$GCLOUD_INSTANCE" "$VM_TYPE" "$IMAGE_FAMILY" "$GCP_SSH_KEY_FILE" "$DOCKER_USER" "$DOCKER_PASS"
 
     - run:
         name: "Running integration tests"
@@ -968,7 +968,7 @@ jobs:
           export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
           export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
           export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
-          if .circleci/pr_has_label.sh ci-run-against-rhel; then
+          if "${SOURCE_ROOT}/.circleci/pr_has_label.sh" ci-run-against-rhel; then
             export COLLECTOR_REPO="stackrox/collector-rhel"
           else
             export COLLECTOR_REPO="stackrox/collector"

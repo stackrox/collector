@@ -25,7 +25,7 @@ tests: docker-clean
 	go test -timeout 30m -count=1 -v \
 	  -run TestCollectorGRPC 2>&1 | tee -a integration-test.log
 
-.PHONY: process-network 
+.PHONY: process-network
 process-network: docker-clean
 	go version
 	set -o pipefail ; \
