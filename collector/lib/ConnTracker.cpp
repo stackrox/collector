@@ -80,7 +80,7 @@ void ConnectionTracker::EmplaceOrUpdateNoLock(const Connection& conn, ConnStatus
 }
 
 ConnMap ConnectionTracker::FetchState(bool normalize, bool clear_inactive) {
-  ConnMap new_state;
+  ConnMap fetched_state;
 
   WITH_LOCK(mutex_) {
     if (!clear_inactive && !normalize) {
@@ -91,12 +91,12 @@ ConnMap ConnectionTracker::FetchState(bool normalize, bool clear_inactive) {
       const auto& conn = *it;
 
       if (normalize) {
-        auto emplace_res = new_state.emplace(NormalizeConnection(conn.first), conn.second);
+        auto emplace_res = fetched_state.emplace(NormalizeConnection(conn.first), conn.second);
         if (!emplace_res.second) {
           emplace_res.first->second.MergeFrom(conn.second);
         }
       } else {
-        new_state.insert(conn);
+        fetched_state.insert(conn);
       }
 
       if (clear_inactive && !conn.second.IsActive()) {
@@ -107,7 +107,7 @@ ConnMap ConnectionTracker::FetchState(bool normalize, bool clear_inactive) {
     }
   }
 
-  return new_state;
+  return fetched_state;
 }
 
 /* static */
