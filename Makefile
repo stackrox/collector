@@ -20,7 +20,7 @@ ifdef BUILD_BUILDER_IMAGE
 	  -t stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 	  builder
 else
-	docker pull stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) 
+	docker pull stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG)
 endif
 
 .PHONY: builder-rhel
@@ -33,7 +33,7 @@ ifdef BUILD_BUILDER_IMAGE
 	  -f "$(CURDIR)/builder/Dockerfile_rhel" \
 	  builder
 else
-	docker pull stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) 
+	docker pull stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG)
 endif
 
 collector: builder
@@ -71,14 +71,24 @@ image: collector unittest $(MOD_VER_FILE)
 	  -t stackrox/collector:$(COLLECTOR_TAG) \
 	  collector/container
 
-image-rhel: collector-rhel unittest-rhel $(MOD_VER_FILE)
+.PHONY: $(CURDIR)/collector/container/rhel/bundle.tar.gz
+$(CURDIR)/collector/container/rhel/bundle.tar.gz:
+	$(CURDIR)/collector/container/rhel/create-bundle.sh \
+		$(CURDIR)/collector/container \
+		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) \
+		$(CURDIR)/kernel-modules/container/kernel-modules $@
+
+.PHONY: $(CURDIR)/collector/container/rhel/prebuild.sh
+$(CURDIR)/collector/container/rhel/prebuild.sh:
+	$(CURDIR)/collector/container/rhel/create-prebuild.sh $@
+
+image-rhel: collector-rhel unittest-rhel $(MOD_VER_FILE) $(CURDIR)/collector/container/rhel/bundle.tar.gz
 	make -C collector txt-files
 	docker build --build-arg collector_version="rhel-$(COLLECTOR_TAG)" \
 	  --build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
-	  --build-arg collector_builder_tag="rhel-$(COLLECTOR_BUILDER_TAG)" \
-	  -f collector/container/Dockerfile_rhel \
+	  -f collector/container/rhel/Dockerfile \
 	  -t stackrox/collector-rhel:$(COLLECTOR_TAG) \
-	  collector/container
+	  collector/container/rhel
 
 .PHONY: integration-tests
 integration-tests:
@@ -111,7 +121,6 @@ integration-tests-baseline-rhel:
 integration-tests-report:
 	make -C integration-tests report
 
-.PHONY: clean 
+.PHONY: clean
 clean:
-	make -C collector clean 
-
+	make -C collector clean
