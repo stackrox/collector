@@ -93,7 +93,7 @@ void CollectorService::RunForever() {
 
   CollectorStatsExporter exporter(registry, &sysdig);
   if (!exporter.start()) {
-    CLOG(FATAL) << "Unable to start sysdig stats exporter";
+    CLOG(FATAL) << "Unable to start collector stats exporter";
   }
 
   sysdig.Start();
@@ -101,7 +101,7 @@ void CollectorService::RunForever() {
   ControlValue cv;
   while ((cv = control_->load(std::memory_order_relaxed)) != STOP_COLLECTOR) {
     sysdig.Run(*control_);
-    CLOG(INFO) << "Interrupted sysdig!";
+    CLOG(INFO) << "Interrupted collector!";
 
     std::lock_guard<std::mutex> lock(chisel_mutex_);
     if (update_chisel_) {

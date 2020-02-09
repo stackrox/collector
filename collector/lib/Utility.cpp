@@ -142,7 +142,7 @@ std::string Base64Decode(std::string const& encoded_string) {
 }
 
 std::string GetHostPath(const std::string& file) {
-  const char* host_root = std::getenv("SYSDIG_HOST_ROOT");
+  const char* host_root = std::getenv("COLLECTOR_HOST_ROOT");
   if (!host_root) host_root = "";
   std::string host_file(host_root);
   // Check if we are joining paths without a seperator,
