@@ -1,7 +1,11 @@
+ARG BASE_REGISTRY=registry.access.redhat.com
+ARG BASE_IMAGE=ubi7/ubi
+ARG BASE_TAG=7.7
+
 ARG collector_builder_tag
 FROM stackrox/collector-builder:${collector_builder_tag} as builder
 
-FROM registry.access.redhat.com/ubi7/ubi
+FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
 ARG collector_version=xxx
 ARG module_version=xxx
@@ -11,25 +15,24 @@ LABEL io.stackrox.collector.module-version="${module_version}"
 
 ENV MODULE_VERSION=${module_version}
 
-# Make image STIG compliant: https://dccscr.dsop.io/dsop/redhat/ubi/ubi7/
-ARG DSOP_URL=https://dccscr.dsop.io/dsop/redhat/ubi/ubi7/raw/18d21ee5ed843e7b319e2670f47687f057db98a6/7.7
-RUN ( for i in dsop-fix-{1,2,3}.sh ; do curl -O "$DSOP_URL/$i" ; done; )
-RUN ( chmod +x /dsop-fix-{1,2}.sh && for i in /dsop-fix-{1,2}.sh; do sh "$i"; done; )
-RUN ( yum update -y --disableplugin=subscription-manager && rm -rf /var/cache/yum/ /var/tmp/* /tmp/* /var/tmp/.???* /tmp/.???*; )
-RUN ( chmod +x /dsop-fix-3.sh && /dsop-fix-3.sh && rm -rf /dsop-fix*.sh ; )
-
-# Remove package manager
-RUN rpm -e --nodeps yum yum-utils yum-plugin-ovl subscription-manager rpm rpm-libs rpm-build-libs rpm-python subscription-manager-rhsm
+RUN yum update -y --nogpgcheck --disableplugin=subscription-manager && \
+    rpm -e --nodeps \
+      rpm \
+      rpm-build-libs \
+      rpm-libs \
+      rpm-python \
+      subscription-manager \
+      subscription-manager-rhsm \
+      yum \
+      yum-plugin-ovl \
+      yum-utils \
+    ;
 
 # Add module version file only
 RUN mkdir /kernel-modules && \
     echo "${module_version}" >/kernel-modules/MODULE_VERSION.txt
 
-# SYSDIG_HOST_ROOT is required by the sysdig kernel module; used as a prefix to
-# paths like /dev/sysdig0, /proc, and /boot. Make sure this matches the volume
-# mount paths used when launching this container.
-#
-ENV SYSDIG_HOST_ROOT=/host
+ENV COLLECTOR_HOST_ROOT=/host
 
 # HTTP API port (8080)
 EXPOSE 8080 9090
@@ -70,8 +73,11 @@ COPY bin/collector.rhel /usr/local/bin/collector
 
 # RHEL7 needs a newer version of curl and gzip
 COPY --from=builder /usr/local/bin/curl /usr/bin/curl
+COPY --from=builder /usr/local/lib/libcurl.so /lib64/libcurl.so
 COPY --from=builder /usr/local/lib/libcurl.so.4 /lib64/libcurl.so.4
 COPY --from=builder /usr/local/bin/gzip /usr/bin/gzip
 
 LABEL io.stackrox.collector.version="${collector_version}"
 ENV COLLECTOR_VERSION=${collector_version}
+
+HEALTHCHECK CMD curl --fail http://127.0.0.1:8080/ready || exit 1

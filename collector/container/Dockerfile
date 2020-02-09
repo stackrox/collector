@@ -12,11 +12,7 @@ ENV MODULE_VERSION=${module_version}
 RUN mkdir /kernel-modules && \
     echo "${module_version}" >/kernel-modules/MODULE_VERSION.txt
 
-# SYSDIG_HOST_ROOT is required by the sysdig kernel module; used as a prefix to
-# paths like /dev/sysdig0, /proc, and /boot. Make sure this matches the volume
-# mount paths used when launching this container.
-#
-ENV SYSDIG_HOST_ROOT=/host
+ENV COLLECTOR_HOST_ROOT=/host
 
 # HTTP API port (8080)
 EXPOSE 8080 9090
