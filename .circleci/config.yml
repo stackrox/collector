@@ -721,24 +721,33 @@ jobs:
           cp NOTICE-collector.txt container/
           cp COPYING.txt container/
 
+          ./container/rhel/create-bundle.sh \
+            "$SOURCE_ROOT/collector/container" \
+            "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}" \
+            "$SOURCE_ROOT/kernel-modules/container/kernel-modules" \
+            "$SOURCE_ROOT/collector/container/rhel/bundle.tar.gz"
+
           build_args=(
             --build-arg module_version="$MODULE_VERSION"
             --build-arg collector_version="$COLLECTOR_VERSION"
-            --build-arg collector_builder_tag="rhel-$COLLECTOR_BUILDER_TAG"
             --build-arg collector_repo="stackrox/collector-rhel"
           )
 
           docker build \
             -t "stackrox/collector-rhel:${COLLECTOR_VERSION}-base" \
             "${build_args[@]}" \
-            -f container/Dockerfile_rhel \
-            container
+            -f container/rhel/Dockerfile \
+            container/rhel
 
           docker build \
             -t "stackrox/collector-rhel:${COLLECTOR_VERSION}" \
             -t "stackrox/collector-rhel:${COLLECTOR_VERSION}-latest" \
             "${build_args[@]}" \
             container-combined
+
+    - store_artifacts:
+        path: ~/workspace/go/src/github.com/stackrox/collector/collector/container/rhel/bundle.tar.gz
+        destination: "bundle.tar.gz"
 
     - run:
         name: Sanity check images
@@ -921,9 +930,6 @@ jobs:
       image_family:
         type: enum
         enum: [coreos-stable, cos-stable, cos-69-lts, cos-73-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-1910]
-      use-rhel:
-        type: boolean
-        default: false
 
     machine: true
     working_directory: ~/workspace
@@ -949,7 +955,7 @@ jobs:
           export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
           export VM_TYPE=<< parameters.vm_type >>
           export IMAGE_FAMILY=<< parameters.image_family >>
-          main "$GCLOUD_INSTANCE" "$VM_TYPE" "$IMAGE_FAMILY" "$GCP_SSH_KEY_FILE" "$DOCKER_USER" "$DOCKER_PASS" 
+          main "$GCLOUD_INSTANCE" "$VM_TYPE" "$IMAGE_FAMILY" "$GCP_SSH_KEY_FILE" "$DOCKER_USER" "$DOCKER_PASS"
 
     - run:
         name: "Running integration tests"
@@ -962,7 +968,11 @@ jobs:
           export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
           export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
           export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
-          export COLLECTOR_REPO="stackrox/collector<<# parameters.use-rhel>>-rhel<</ parameters.use-rhel>>"
+          if "${SOURCE_ROOT}/.circleci/pr_has_label.sh" ci-run-against-rhel; then
+            export COLLECTOR_REPO="stackrox/collector-rhel"
+          else
+            export COLLECTOR_REPO="stackrox/collector"
+          fi
           make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report
           cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp "${SOURCE_ROOT}/integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
