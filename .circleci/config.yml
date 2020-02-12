@@ -772,11 +772,9 @@ jobs:
     - run:
         name: Upload collector image RHEL DSOP bundle on release
         command: |
-          # TODO(rc) remove ! and TEST_PATH before commit to master
-          if [[ ! -n "$CIRCLE_TAG" ]]; then
-            TEST_PATH="f4797d572d06eea8bef7d8ceb9cbe2f08adb8ec6"
+          if [[ -n "$CIRCLE_TAG" ]]; then
             gsutil cp "${SOURCE_ROOT}/collector/container/rhel/bundle.tar.gz" \
-              "${GCLOUD_DSOP_BUCKET}/${TEST_PATH}/collector-rhel/${COLLECTOR_VERSION}-latest/"
+              "${GCLOUD_DSOP_BUCKET}/collector-rhel/${COLLECTOR_VERSION}-latest/"
           fi
 
   kernel-module-build-failures-check:
