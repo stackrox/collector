@@ -627,6 +627,7 @@ jobs:
     machine: true
     environment:
     - INSTALL_DIRECTORY: /tmp
+    - GCLOUD_DSOP_BUCKET: "gs://dsop-artifacts.stackrox.io"
 
     steps:
     - initcommand
@@ -745,10 +746,6 @@ jobs:
             "${build_args[@]}" \
             container-combined
 
-    - store_artifacts:
-        path: ~/workspace/go/src/github.com/stackrox/collector/collector/container/rhel/bundle.tar.gz
-        destination: "bundle.tar.gz"
-
     - run:
         name: Sanity check images
         command: |
@@ -771,6 +768,14 @@ jobs:
           docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}"
           echo "Pushing collector rhel latest image"
           docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}-latest"
+
+    - run:
+        name: Upload collector image RHEL DSOP bundle on release
+        command: |
+          if [[ -n "$CIRCLE_TAG" ]]; then
+            gsutil cp "${SOURCE_ROOT}/collector/container/rhel/bundle.tar.gz" \
+              "${GCLOUD_DSOP_BUCKET}/collector-rhel/${COLLECTOR_VERSION}-latest/"
+          fi
 
   kernel-module-build-failures-check:
     docker:
