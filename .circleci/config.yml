@@ -736,15 +736,11 @@ jobs:
 
           docker build \
             -t "stackrox/collector-rhel:${COLLECTOR_VERSION}-base" \
-            "${build_args[@]}" \
-            -f container/rhel/Dockerfile \
-            container/rhel
-
-          docker build \
             -t "stackrox/collector-rhel:${COLLECTOR_VERSION}" \
             -t "stackrox/collector-rhel:${COLLECTOR_VERSION}-latest" \
             "${build_args[@]}" \
-            container-combined
+            -f container/rhel/Dockerfile \
+            container/rhel
 
     - run:
         name: Sanity check images
