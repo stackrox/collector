@@ -64,7 +64,7 @@ cp -p "${INPUT_ROOT}/scripts/bootstrap.sh" "${bundle_root}/bootstrap.sh"
 cp -p "${INPUT_ROOT}/scripts/collector-wrapper.sh" "${bundle_root}/usr/local/bin/"
 cp -p "${INPUT_ROOT}/NOTICE-collector.txt" "${bundle_root}/COPYING.txt"
 cp -p "${INPUT_ROOT}/bin/collector.rhel" "${bundle_root}/usr/local/bin/collector"
-cp -pr "${MODULE_DIR}" "${bundle_root}/kernel-modules"
+cp -pr "${MODULE_DIR}"/* "${bundle_root}/kernel-modules/"
 
 # Files needed from the collector-builder image and associated
 # destination in collector-rhel image.
