@@ -51,6 +51,27 @@ void ConnectionTracker::Update(const std::vector<Connection>& all_conns, int64_t
   }
 }
 
+Connection ConnectionTracker::NormalizeConnection(const Connection& conn) {
+  bool is_server = conn.is_server();
+  if (conn.l4proto() == L4Proto::UDP) {
+    // Inference of server role is unreliable for UDP, so go by port.
+    is_server = IsEphemeralPort(conn.remote().port()) > IsEphemeralPort(conn.local().port());
+  }
+
+  Endpoint local, remote = conn.remote();
+
+  if (is_server) {
+    // If this is the server, only the local port is relevant, while the remote port does not matter.
+    local = Endpoint(Address(), conn.local().port());
+    remote = Endpoint(conn.remote().address(), 0);
+  } else {
+    // If this is the client, the local port and address are not relevant.
+    local = Endpoint();
+  }
+
+  return Connection(conn.container(), local, remote, conn.l4proto(), is_server);
+}
+
 void ConnectionTracker::EmplaceOrUpdateNoLock(const Connection& conn, ConnStatus status) {
   auto emplace_res = state_.emplace(conn, status);
   if (!emplace_res.second && status.LastActiveTime() > emplace_res.first->second.LastActiveTime()) {
@@ -58,24 +79,35 @@ void ConnectionTracker::EmplaceOrUpdateNoLock(const Connection& conn, ConnStatus
   }
 }
 
-ConnMap ConnectionTracker::FetchState(bool clear_inactive) {
-  ConnMap new_state;
+ConnMap ConnectionTracker::FetchState(bool normalize, bool clear_inactive) {
+  ConnMap fetched_state;
 
   WITH_LOCK(mutex_) {
-    if (!clear_inactive) {
+    if (!clear_inactive && !normalize) {
       return state_;
     }
 
-    for (const auto& conn : state_) {
-      if (conn.second.IsActive()) {
-        new_state.insert(conn);
+    for (auto it = state_.begin(); it != state_.end(); ) {
+      const auto& conn = *it;
+
+      if (normalize) {
+        auto emplace_res = fetched_state.emplace(NormalizeConnection(conn.first), conn.second);
+        if (!emplace_res.second) {
+          emplace_res.first->second.MergeFrom(conn.second);
+        }
+      } else {
+        fetched_state.insert(conn);
+      }
+
+      if (clear_inactive && !conn.second.IsActive()) {
+        it = state_.erase(it);
+      } else {
+        ++it;
       }
     }
-
-    state_.swap(new_state);
   }
 
-  return new_state;
+  return fetched_state;
 }
 
 /* static */

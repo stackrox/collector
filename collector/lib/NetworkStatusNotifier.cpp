@@ -136,7 +136,7 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
       conn_tracker_->Update(all_conns, ts);
     }
 
-    auto new_state = conn_tracker_->FetchState(true);
+    auto new_state = conn_tracker_->FetchState(true, true);
     ConnectionTracker::ComputeDelta(new_state, &old_state);
 
     const auto* msg = CreateInfoMessage(old_state);
@@ -191,8 +191,14 @@ sensor::NetworkConnection* NetworkStatusNotifier::ConnToProto(const Connection& 
 }
 
 sensor::NetworkAddress* NetworkStatusNotifier::EndpointToProto(const collector::Endpoint& endpoint) {
+  if (endpoint.IsNull()) {
+    return nullptr;
+  }
+
   auto* addr_proto = Allocate<sensor::NetworkAddress>();
-  addr_proto->set_address_data(endpoint.address().data(), endpoint.address().length());
+  if (!endpoint.address().IsNull()) {
+    addr_proto->set_address_data(endpoint.address().data(), endpoint.address().length());
+  }
   addr_proto->set_port(endpoint.port());
 
   return addr_proto;

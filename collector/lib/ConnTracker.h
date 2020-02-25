@@ -35,23 +35,30 @@ namespace collector {
 // ConnStatus encapsulates the status of a connection, comprised of the timestamp when the connection was last seen
 // alive (in microseconds since epoch), and a flag indicating whether the connection is currently active.
 class ConnStatus {
+ private:
+  static constexpr uint64_t kActiveFlag = 1UL << 63;
+
+  static inline uint64_t MakeActive(uint64_t data, bool active) {
+    return active ? (data | kActiveFlag) : (data & ~kActiveFlag);
+  }
+
  public:
   ConnStatus() : data_(0UL) {}
-  ConnStatus(int64_t microtimestamp, bool active) : data_((microtimestamp & ~0x1UL) | ((active) ? 0x1 : 0x0)) {}
+  ConnStatus(int64_t microtimestamp, bool active) : data_(MakeActive(static_cast<uint64_t>(microtimestamp), active)) {}
 
-  int64_t LastActiveTime() const { return data_ & ~0x1UL; }
-  bool IsActive() const { return data_ & 0x1UL; }
+  int64_t LastActiveTime() const { return static_cast<int64_t>(data_ & ~kActiveFlag); }
+  bool IsActive() const { return (data_ & kActiveFlag) != 0; }
 
   void SetActive(bool active) {
-    if (active) data_ |= 0x1UL;
-    else data_ &= ~0x1UL;
+    data_ = MakeActive(data_, active);
+  }
+
+  void MergeFrom(const ConnStatus& other) {
+    data_ = std::max(data_, other.data_);
   }
 
   ConnStatus WithStatus(bool active) const {
-    int64_t new_data = data_;
-    if (active) new_data |= 0x1UL;
-    else new_data &= ~0x1UL;
-    return ConnStatus(new_data);
+    return ConnStatus(MakeActive(data_, active));
   }
 
   bool operator==(const ConnStatus& other) const {
@@ -63,9 +70,9 @@ class ConnStatus {
   }
 
  private:
-  explicit ConnStatus(int64_t data) : data_(data) {}
+  explicit ConnStatus(uint64_t data) : data_(data) {}
 
-  int64_t data_;
+  uint64_t data_;
 };
 
 using ConnMap = UnorderedMap<Connection, ConnStatus>;
@@ -83,12 +90,15 @@ class ConnectionTracker {
   void Update(const std::vector<Connection>& all_conns, int64_t timestamp);
 
   // Atomically fetch a snapshot of the current state, removing all inactive connections if requested.
-  ConnMap FetchState(bool clear_inactive = true);
+  ConnMap FetchState(bool normalize = false, bool clear_inactive = true);
 
   // ComputeDelta computes a diff between new_state and *old_state, and stores the diff in *old_state.
   static void ComputeDelta(const ConnMap& new_state, ConnMap* old_state);
 
  private:
+  // NormalizeConnection transforms a connection into a normalized form.
+  static Connection NormalizeConnection(const Connection &conn);
+
   // Emplace a connection into the state ConnMap, or update its timestamp if the supplied timestamp is more recent
   // than the stored one.
   void EmplaceOrUpdateNoLock(const Connection& conn, ConnStatus status);

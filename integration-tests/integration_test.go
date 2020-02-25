@@ -52,7 +52,6 @@ type ProcessNetworkTestSuite struct {
 	IntegrationTestSuiteBase
 	clientContainer string
 	clientIP        string
-	clientPort      string
 	serverContainer string
 	serverIP        string
 	serverPort      string
@@ -175,21 +174,17 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	require.NoError(s.T(), err)
 	s.clientContainer = containerID[0:12]
 
-	ip, err := s.getIPAddress("nginx")
-	require.NoError(s.T(), err)
-	s.serverIP = ip
-
-	port, err := s.getPort("nginx")
+	s.serverIP, err = s.getIPAddress("nginx")
 	require.NoError(s.T(), err)
 
-	s.serverPort = port
-
-	_, err = s.execContainer("nginx-curl", []string{"curl", s.serverIP})
+	s.serverPort, err = s.getPort("nginx")
 	require.NoError(s.T(), err)
 
-	ip, err = s.getIPAddress("nginx-curl")
+	_, err = s.execContainer("nginx-curl", []string{"curl", fmt.Sprintf("%s:%s", s.serverIP, s.serverPort)})
 	require.NoError(s.T(), err)
-	s.clientIP = ip
+
+	s.clientIP, err = s.getIPAddress("nginx-curl")
+	require.NoError(s.T(), err)
 
 	time.Sleep(10 * time.Second)
 
@@ -235,38 +230,35 @@ func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
 	// Server side checks
 	val, err := s.Get(s.serverContainer, networkBucket)
 	require.NoError(s.T(), err)
-	actualValues := strings.Split(string(val), ":")
+	actualValues := strings.Split(string(val), "|")
 
-	if len(actualValues) < 3 {
+	if len(actualValues) < 2 {
 		assert.FailNow(s.T(), "serverContainer networkBucket was missing data. ", "val=\"%s\"", val)
 	}
-	actualServerIP := actualValues[0]
-	actualServerPort := actualValues[1]
-	actualClientIP := actualValues[2]
-	// client port are chosen at random so not checking that
+	actualServerEndpoint := actualValues[0]
+	actualClientEndpoint := actualValues[1]
 
-	assert.Equal(s.T(), s.serverIP, actualServerIP)
-	assert.Equal(s.T(), s.serverPort, actualServerPort)
-	assert.Equal(s.T(), s.clientIP, actualClientIP)
+	// From server perspective, network connection info only has local port and remote IP
+	assert.Equal(s.T(), fmt.Sprintf(":%s", s.serverPort), actualServerEndpoint)
+	assert.Equal(s.T(), s.clientIP, actualClientEndpoint)
 
 	fmt.Printf("ServerDetails from Bolt: %s %s\n", s.serverContainer, string(val))
 	fmt.Printf("ServerDetails from test: %s %s, Port: %s\n", s.serverContainer, s.serverIP, s.serverPort)
 
 	// client side checks
 	val, err = s.Get(s.clientContainer, networkBucket)
-	actualValues = strings.Split(string(val), ":")
 	require.NoError(s.T(), err)
+	actualValues = strings.Split(string(val), "|")
 
-	actualClientIP = actualValues[0]
-	actualServerIP = actualValues[2]
-	actualServerPort = actualValues[3]
+	actualClientEndpoint = actualValues[0]
+	actualServerEndpoint = actualValues[1]
 
-	assert.Equal(s.T(), s.clientIP, actualClientIP)
-	assert.Equal(s.T(), s.serverIP, actualServerIP)
-	assert.Equal(s.T(), s.serverPort, actualServerPort)
+	// From client perspective, network connection info has no local endpoint and full remote endpoint
+	assert.Empty(s.T(), actualClientEndpoint)
+	assert.Equal(s.T(), fmt.Sprintf("%s:%s", s.serverIP, s.serverPort), actualServerEndpoint)
 
 	fmt.Printf("ClientDetails from Bolt: %s %s\n", s.clientContainer, string(val))
-	fmt.Printf("ClientDetails from test: %s %s, Port: %s\n", s.clientContainer, s.clientIP, s.clientPort)
+	fmt.Printf("ClientDetails from test: %s %s\n", s.clientContainer, s.clientIP)
 }
 
 func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, error) {

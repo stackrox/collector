@@ -105,7 +105,7 @@ StringView ExtractContainerID(StringView cgroup_line);
 // ConnScraper is a class that allows scraping a `/proc`-like directory structure for active network connections.
 class ConnScraper {
  public:
-  ConnScraper(std::string proc_path) : proc_path_(std::move(proc_path)) {}
+  explicit ConnScraper(std::string proc_path) : proc_path_(std::move(proc_path)) {}
 
   // Scrape returns a snapshot of all active network connections in the given vector.
   bool Scrape(std::vector<Connection>* connections);
