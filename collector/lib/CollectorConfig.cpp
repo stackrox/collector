@@ -127,6 +127,14 @@ CollectorConfig::CollectorConfig(CollectorArgs *args) {
     });
     enable_sysdig_log_ = (val == "true");
   }
+
+  if (const char* disable_network_flows = std::getenv("ROX_COLLECTOR_DISABLE_NETWORK_FLOWS")) {
+    std::string val(disable_network_flows);
+    std::transform(val.begin(), val.end(), val.begin(), [](char c) {
+      return std::tolower(c);
+    });
+    disable_network_flows_ = (val == "true");
+  }
 }
 
 bool CollectorConfig::UseChiselCache() const {

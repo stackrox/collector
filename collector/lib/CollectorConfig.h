@@ -70,6 +70,7 @@ end
   std::vector<std::string> Syscalls() const;
   std::string LogLevel() const;
   bool EnableSysdigLog() const { return enable_sysdig_log_; }
+  bool DisableNetworkFlows() const { return disable_network_flows_; }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
@@ -83,6 +84,7 @@ end
   std::vector<std::string> syscalls_;
   std::string hostname_;
   std::string host_proc_;
+  bool disable_network_flows_ = false;
 
   bool enable_sysdig_log_ = false;
 };

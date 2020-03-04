@@ -84,9 +84,13 @@ void CollectorService::RunForever() {
     }
     CLOG(INFO) << "GRPC server connectivity is successful";
 
-    conn_tracker = std::make_shared<ConnectionTracker>();
-    net_status_notifier = MakeUnique<NetworkStatusNotifier>(config_.Hostname(), config_.HostProc(), config_.ScrapeInterval(), config_.TurnOffScrape(), conn_tracker, config_.grpc_channel);
-    net_status_notifier->Start();
+    if (!config_.DisableNetworkFlows()) {
+      conn_tracker = std::make_shared<ConnectionTracker>();
+      net_status_notifier = MakeUnique<NetworkStatusNotifier>(config_.Hostname(), config_.HostProc(),
+                                                              config_.ScrapeInterval(), config_.TurnOffScrape(),
+                                                              conn_tracker, config_.grpc_channel);
+      net_status_notifier->Start();
+    }
   }
 
   sysdig.Init(config_, conn_tracker);
