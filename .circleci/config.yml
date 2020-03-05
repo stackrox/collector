@@ -902,7 +902,7 @@ jobs:
           export VM_CONFIG="circle_local_<< parameters.vm-config >>"
           export COLLECTOR_REPO="stackrox/collector<<# parameters.use-rhel>>-rhel<</ parameters.use-rhel>>"
           export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}-base"
-          make -C "${SOURCE_ROOT}" integration-tests integration-tests-report
+          make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests integration-tests-report
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
     - store_test_results:

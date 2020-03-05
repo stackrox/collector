@@ -40,6 +40,13 @@ func TestBenchmark(t *testing.T) {
 	suite.Run(t, new(BenchmarkCollectorTestSuite))
 }
 
+// TestMissingProcScrape only works with local fake proc directory
+func TestMissingProcScrape(t *testing.T) {
+	if ReadEnvVarWithDefault("REMOTE_HOST_TYPE", "local") == "local" {
+		suite.Run(t, new(MissingProcScrapeTestSuite))
+	}
+}
+
 type IntegrationTestSuiteBase struct {
 	suite.Suite
 	db        *bolt.DB
@@ -78,6 +85,10 @@ type BenchmarkCollectorTestSuite struct {
 }
 
 type BenchmarkBaselineTestSuite struct {
+	IntegrationTestSuiteBase
+}
+
+type MissingProcScrapeTestSuite struct {
 	IntegrationTestSuiteBase
 }
 
@@ -259,6 +270,40 @@ func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
 
 	fmt.Printf("ClientDetails from Bolt: %s %s\n", s.clientContainer, string(val))
 	fmt.Printf("ClientDetails from test: %s %s\n", s.clientContainer, s.clientIP)
+}
+
+func (s *MissingProcScrapeTestSuite) SetupSuite() {
+	_, err := os.Stat("/tmp/fake-proc")
+	assert.False(s.T(), os.IsNotExist(err), "Missing fake proc directory")
+
+	s.metrics = map[string]float64{}
+	s.executor = NewExecutor()
+	s.collector = NewCollectorManager(s.executor)
+	s.collector.Mounts["/host/proc:ro"] = "/tmp/fake-proc"
+
+	err = s.collector.Setup()
+	require.NoError(s.T(), err)
+
+	err = s.collector.Launch()
+	require.NoError(s.T(), err)
+
+	time.Sleep(10 * time.Second)
+}
+
+func (s *MissingProcScrapeTestSuite) TestCollectorRunning() {
+	collectorRunning, err := s.executor.IsContainerRunning("collector")
+	require.NoError(s.T(), err)
+	assert.True(s.T(), collectorRunning, "Collector isn't running")
+}
+
+func (s *MissingProcScrapeTestSuite) TearDownSuite() {
+
+	err := s.collector.TearDown()
+	require.NoError(s.T(), err)
+
+	s.db, err = s.collector.BoltDB()
+	require.NoError(s.T(), err)
+	s.cleanupContainer([]string{"collector"})
 }
 
 func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, error) {

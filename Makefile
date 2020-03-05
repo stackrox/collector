@@ -102,6 +102,10 @@ integration-tests-baseline:
 integration-tests-process-network:
 	make -C integration-tests process-network
 
+.PHONY: integration-tests-missing-proc-scrape
+integration-tests-missing-proc-scrape:
+	make -C integration-tests missing-proc-scrape
+
 .PHONY: integration-tests-process-network-rhel
 integration-tests-process-network-rhel:
 	COLLECTOR_REPO="stackrox/collector-rhel" \
@@ -116,6 +120,11 @@ integration-tests-rhel:
 integration-tests-baseline-rhel:
 	COLLECTOR_REPO="stackrox/collector-rhel" \
 	  make -C integration-tests baseline
+
+.PHONY: integration-tests-missing-proc-scrape-rhel
+integration-tests-missing-proc-scrape-rhel:
+	COLLECTOR_REPO="stackrox/collector-rhel" \
+	make -C integration-tests missing-proc-scrape
 
 .PHONY: integration-tests-report
 integration-tests-report:
