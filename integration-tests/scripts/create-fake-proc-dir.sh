@@ -1,4 +1,5 @@
 #!/bin/bash
+# Creates an incomplete proc entry for a fake process
 
 fake_pid="8989"
 fake_proc_name="short"

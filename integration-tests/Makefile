@@ -41,7 +41,7 @@ baseline: docker-clean
 
 .PHONY: missing-proc-scrape
 missing-proc-scrape: docker-clean
-	./create-fake-proc-dir.sh
+	./scripts/create-fake-proc-dir.sh
 	go version
 	set -o pipefail ; \
 	go test -timeout 30m -count=1 -v \

@@ -276,9 +276,10 @@ func (s *MissingProcScrapeTestSuite) SetupSuite() {
 	_, err := os.Stat("/tmp/fake-proc")
 	assert.False(s.T(), os.IsNotExist(err), "Missing fake proc directory")
 
-	s.metrics = map[string]float64{}
 	s.executor = NewExecutor()
 	s.collector = NewCollectorManager(s.executor, s.T().Name())
+
+	// Mount the fake proc directory created by 'create-fake-proc.sh'
 	s.collector.Mounts["/host/proc:ro"] = "/tmp/fake-proc"
 
 	err = s.collector.Setup()
@@ -297,11 +298,7 @@ func (s *MissingProcScrapeTestSuite) TestCollectorRunning() {
 }
 
 func (s *MissingProcScrapeTestSuite) TearDownSuite() {
-
 	err := s.collector.TearDown()
-	require.NoError(s.T(), err)
-
-	s.db, err = s.collector.BoltDB()
 	require.NoError(s.T(), err)
 	s.cleanupContainer([]string{"collector"})
 }
