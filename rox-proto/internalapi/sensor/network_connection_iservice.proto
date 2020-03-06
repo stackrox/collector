@@ -16,9 +16,17 @@ message NetworkConnectionInfoMessage {
     }
 }
 
+message NetworkFlowsControlMessage {
+    IPAddressList public_ip_addresses = 1;
+}
+
+message IPAddressList {
+    repeated fixed32 ipv4_addresses = 1;
+}
+
 // A Sensor service that allows Collector to send NetworkConnectionInfo messages
 service NetworkConnectionInfoService {
     // Note: the response is a stream due to a bug in the C++ GRPC client library. The server is not expected to
     // send anything via this stream.
-    rpc PushNetworkConnectionInfo (stream NetworkConnectionInfoMessage) returns (stream v1.Empty);
+    rpc PushNetworkConnectionInfo (stream NetworkConnectionInfoMessage) returns (stream NetworkFlowsControlMessage);
 }

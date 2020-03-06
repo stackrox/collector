@@ -68,6 +68,17 @@ std::unique_ptr<grpc::ClientContext> NetworkStatusNotifier::CreateClientContext(
   return ctx;
 }
 
+void NetworkStatusNotifier::OnRecvControlMessage(const sensor::NetworkFlowsControlMessage* msg) {
+  if (!msg->has_public_ips()) {
+    return;
+  }
+
+  CLOG(INFO) << "Received new set of public IPs:";
+  for (const auto& public_ip : msg->public_ips().ipv4_addresses()) {
+    CLOG(INFO) << " - " << Address(public_ip);
+  }
+}
+
 void NetworkStatusNotifier::Run() {
   auto next_attempt = std::chrono::system_clock::now();
 
@@ -80,9 +91,9 @@ void NetworkStatusNotifier::Run() {
       break;
     }
 
-    auto client_writer = DuplexClient::CreateWithReadsIgnored(
+    auto client_writer = DuplexClient::CreateWithReadCallback(
         &sensor::NetworkConnectionInfoService::Stub::AsyncPushNetworkConnectionInfo,
-        channel_, context_.get());
+        channel_, context_.get(), [this](const sensor::NetworkFlowsControlMessage* msg) { OnRecvControlMessage(msg); });
 
     RunSingle(client_writer.get());
     if (thread_.should_stop()) {
