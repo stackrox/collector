@@ -95,7 +95,7 @@ type MissingProcScrapeTestSuite struct {
 func (s *BenchmarkCollectorTestSuite) SetupSuite() {
 	s.executor = NewExecutor()
 	s.StartContainerStats()
-	s.collector = NewCollectorManager(s.executor)
+	s.collector = NewCollectorManager(s.executor, s.T().Name())
 	s.metrics = map[string]float64{}
 
 	err := s.collector.Setup()
@@ -149,7 +149,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	s.metrics = map[string]float64{}
 	s.executor = NewExecutor()
 	s.StartContainerStats()
-	s.collector = NewCollectorManager(s.executor)
+	s.collector = NewCollectorManager(s.executor, s.T().Name())
 
 	err := s.collector.Setup()
 	require.NoError(s.T(), err)
@@ -278,7 +278,7 @@ func (s *MissingProcScrapeTestSuite) SetupSuite() {
 
 	s.metrics = map[string]float64{}
 	s.executor = NewExecutor()
-	s.collector = NewCollectorManager(s.executor)
+	s.collector = NewCollectorManager(s.executor, s.T().Name())
 	s.collector.Mounts["/host/proc:ro"] = "/tmp/fake-proc"
 
 	err = s.collector.Setup()
