@@ -91,9 +91,13 @@ void NetworkStatusNotifier::Run() {
       break;
     }
 
+    std::function<void(const sensor::NetworkFlowsControlMessage*)> read_cb = [this](const sensor::NetworkFlowsControlMessage* msg) {
+      OnRecvControlMessage(msg);
+    };
+
     auto client_writer = DuplexClient::CreateWithReadCallback(
         &sensor::NetworkConnectionInfoService::Stub::AsyncPushNetworkConnectionInfo,
-        channel_, context_.get(), [this](const sensor::NetworkFlowsControlMessage* msg) { OnRecvControlMessage(msg); });
+        channel_, context_.get(), std::move(read_cb));
 
     RunSingle(client_writer.get());
     if (thread_.should_stop()) {

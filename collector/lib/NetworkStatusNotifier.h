@@ -65,6 +65,8 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
 
   std::unique_ptr<grpc::ClientContext> CreateClientContext() const;
 
+  void OnRecvControlMessage(const sensor::NetworkFlowsControlMessage* msg);
+
   void Run();
   void RunSingle(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer);
 
