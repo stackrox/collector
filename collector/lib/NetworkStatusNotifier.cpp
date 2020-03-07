@@ -69,12 +69,12 @@ std::unique_ptr<grpc::ClientContext> NetworkStatusNotifier::CreateClientContext(
 }
 
 void NetworkStatusNotifier::OnRecvControlMessage(const sensor::NetworkFlowsControlMessage* msg) {
-  if (!msg->has_public_ips()) {
+  if (!msg->has_public_ip_addresses()) {
     return;
   }
 
   CLOG(INFO) << "Received new set of public IPs:";
-  for (const auto& public_ip : msg->public_ips().ipv4_addresses()) {
+  for (const auto& public_ip : msg->public_ip_addresses().ipv4_addresses()) {
     CLOG(INFO) << " - " << Address(public_ip);
   }
 }
