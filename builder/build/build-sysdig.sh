@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-if [ -f /etc/redhat-release ]; then
-  source "/opt/rh/devtoolset-6/enable"
-fi
-
 set -ux
 mkdir -p /sysdig-build
 cd /sysdig-build

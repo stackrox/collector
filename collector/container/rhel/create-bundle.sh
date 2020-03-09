@@ -81,11 +81,11 @@ builder_dst=(
     "usr/lib64/libcurl.so.4"
 )
 
-for ((i=0; i<${#builder_src[@]}; ++i)); do
-  extract_from_image "${BUILDER_IMAGE}" \
-      "${builder_src[$i]}" "${bundle_root}/${builder_dst[$i]}"
-  chmod 755 "${bundle_root}/${builder_dst[$i]}"
-done
+# for ((i=0; i<${#builder_src[@]}; ++i)); do
+#   extract_from_image "${BUILDER_IMAGE}" \
+#       "${builder_src[$i]}" "${bundle_root}/${builder_dst[$i]}"
+#   chmod 755 "${bundle_root}/${builder_dst[$i]}"
+# done
 
 # =============================================================================
 
