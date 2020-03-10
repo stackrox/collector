@@ -25,9 +25,8 @@ RUN rpm -e --nodeps \
       subscription-manager \
       python3-subscription-manager-rhsm \
       yum \
-      dnf \
-      dnf-data \
-      dnf-plugin-subscription-manager \
+      $(rpm -qa *dnf*) \
+      python3-hawkey \
     ;
 
 ADD bundle.tar.gz /
