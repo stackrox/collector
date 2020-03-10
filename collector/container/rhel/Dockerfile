@@ -25,6 +25,9 @@ RUN rpm -e --nodeps \
       subscription-manager \
       python3-subscription-manager-rhsm \
       yum \
+      dnf \
+      dnf-data \
+      dnf-plugin-subscription-manager \
     ;
 
 ADD bundle.tar.gz /
