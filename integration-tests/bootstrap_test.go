@@ -135,7 +135,7 @@ func (s *BootstrapTestSuite) TestBootstrapScript() {
 
 	for name, tc := range tests {
 		s.T().Run(name, func(t *testing.T) {
-			collector := NewCollectorManager(s.executor)
+			collector := NewCollectorManager(s.executor, s.T().Name())
 			collector.DisableGrpcServer = true
 			collector.BootstrapOnly = true
 

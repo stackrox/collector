@@ -3,7 +3,9 @@ package integrationtests
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/user"
+	"path/filepath"
 	"strings"
 
 	"github.com/boltdb/bolt"
@@ -19,9 +21,10 @@ type collectorManager struct {
 	GRPCServerImage   string
 	DisableGrpcServer bool
 	BootstrapOnly     bool
+	TestName          string
 }
 
-func NewCollectorManager(e Executor) *collectorManager {
+func NewCollectorManager(e Executor, name string) *collectorManager {
 	collectionMethod := ReadEnvVarWithDefault("COLLECTION_METHOD", "kernel_module")
 	if strings.Contains(collectionMethod, "module") {
 		collectionMethod = "kernel_module"
@@ -53,6 +56,7 @@ func NewCollectorManager(e Executor) *collectorManager {
 		GRPCServerImage:   "stackrox/grpc-server:3.0.38.x-89-ga1bf2bc906",
 		Env:               env,
 		Mounts:            mounts,
+		TestName:          name,
 	}
 }
 
@@ -87,11 +91,11 @@ func (c *collectorManager) TearDown() error {
 		if _, err := c.executor.CopyFromHost(c.DBPath, c.DBPath); err != nil {
 			return err
 		}
-		c.captureLogs("grpc-server", "grpc-server.logs")
+		c.captureLogs("grpc-server")
 		c.killContainer("grpc-server")
 	}
 
-	c.captureLogs("collector", "collector.logs")
+	c.captureLogs("collector")
 	c.killContainer("collector")
 	return nil
 }
@@ -148,12 +152,15 @@ func (c *collectorManager) launchCollector() error {
 	return err
 }
 
-func (c *collectorManager) captureLogs(containerName, logFile string) (string, error) {
+func (c *collectorManager) captureLogs(containerName string) (string, error) {
 	logs, err := c.executor.Exec("docker", "logs", containerName)
 	if err != nil {
-		fmt.Printf("docker logs error (%v) for container %s: %s\n", err, containerName, logFile)
+		fmt.Printf("docker logs error (%v) for container %s\n", err, containerName)
 		return "", err
 	}
+	logDirectory := filepath.Join(".", "container-logs")
+	os.MkdirAll(logDirectory, os.ModePerm)
+	logFile := filepath.Join(logDirectory, c.TestName+"-"+containerName+".log")
 	err = ioutil.WriteFile(logFile, []byte(logs), 0644)
 	if err != nil {
 		return "", err

@@ -17,6 +17,7 @@ var (
 type Executor interface {
 	CopyFromHost(src string, dst string) (string, error)
 	PullImage(image string) error
+	IsContainerRunning(image string) (bool, error)
 	Exec(args ...string) (string, error)
 	ExecRetry(args ...string) (string, error)
 }
@@ -161,6 +162,14 @@ func (e *executor) PullImage(image string) error {
 	}
 	_, err = e.ExecRetry("docker", "pull", image)
 	return err
+}
+
+func (e *executor) IsContainerRunning(containerID string) (bool, error) {
+	result, err := e.Exec("docker", "inspect", containerID, "--format='{{.State.Running}}'")
+	if err != nil {
+		return false, nil
+	}
+	return result == "'true'", nil
 }
 
 func (e *localCommandBuilder) ExecCommand(execArgs ...string) *exec.Cmd {

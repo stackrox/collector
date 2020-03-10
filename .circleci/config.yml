@@ -902,7 +902,7 @@ jobs:
           export VM_CONFIG="circle_local_<< parameters.vm-config >>"
           export COLLECTOR_REPO="stackrox/collector<<# parameters.use-rhel>>-rhel<</ parameters.use-rhel>>"
           export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}-base"
-          make -C "${SOURCE_ROOT}" integration-tests integration-tests-report
+          make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests integration-tests-report
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
     - store_test_results:
@@ -911,11 +911,8 @@ jobs:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml
         destination: "integration-test-report.xml"
     - store_artifacts:
-        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/collector.logs
-        destination: "collector.logs"
-    - store_artifacts:
-        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/grpc-server.logs
-        destination: "grpc-server.logs"
+        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
+        destination: "container-logs"
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/perf.json
         destination: "kernel_module-circle_local_<< parameters.vm-config >>-perf.json"
@@ -993,11 +990,8 @@ jobs:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml
         destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-integration-test-report.xml"
     - store_artifacts:
-        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/collector.logs
-        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-collector.logs"
-    - store_artifacts:
-        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/grpc-server.logs
-        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-grpc-server.logs"
+        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
+        destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-container-logs"
     - store_artifacts:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/perf.json
         destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-perf.json"
