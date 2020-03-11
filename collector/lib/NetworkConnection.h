@@ -25,6 +25,10 @@ You should have received a copy of the GNU General Public License along with thi
 #define COLLECTOR_NETWORKCONNECTION_H
 
 #include <arpa/inet.h>
+#include <endian.h>
+
+#define htonll(x) htobe64(x)
+#define ntohll(x) be64toh(x)
 
 #include <array>
 #include <ostream>
@@ -45,6 +49,8 @@ class Address {
   };
 
   static constexpr size_t kMaxLen = 16;
+  static_assert(kMaxLen % sizeof(uint64_t) == 0);
+  static constexpr size_t kU64MaxLen = kMaxLen / sizeof(uint64_t);
 
   static Address Any(Family family) { return Address(family); }
 
@@ -58,24 +64,31 @@ class Address {
 
   Address(Family family, const std::array<uint8_t, kMaxLen>& data) : Address(family) {
     std::memcpy(data_.data(), data.data(), Length(family));
+    data_[0] = ntohll(data_[0]);
+    data_[1] = ntohll(data_[1]);
   }
 
-  Address(uint32_t ipv4) : Address(Family::IPV4) {
-    std::memcpy(data_.data(), &ipv4, sizeof(ipv4));
-  }
+  explicit Address(uint32_t ipv4) : data_({static_cast<uint64_t>(ntohl(ipv4)) << 32, 0ULL}), family_(Family::IPV4) {}
 
-  Address(const uint32_t (&ipv6)[4]) : Address(Family::IPV6) {
-    std::memcpy(data_.data(), &ipv6, sizeof(ipv6));
-  }
+  explicit Address(const uint32_t (&ipv6)[4])
+      : data_({static_cast<uint64_t>(ntohl(ipv6[0])) << 32 | ntohl(ipv6[1]), static_cast<uint64_t>(ntohl(ipv6[2])) << 32 | ntohl(ipv6[3])}),
+        family_(Family::IPV6)
+  {}
 
-  Address(uint64_t ipv6_low, uint64_t ipv6_high, unsigned short port) : Address(Family::IPV6) {
-    std::memcpy(data_.data(), &ipv6_low, sizeof(ipv6_low));
-    std::memcpy(data_.data() + sizeof(ipv6_low), &ipv6_high, sizeof(ipv6_high));
+  Address(uint64_t ipv6_high, uint64_t ipv6_low) : Address(Family::IPV6) {
+    data_[0] = ipv6_high;
+    data_[1] = ipv6_low;
   }
 
   Family family() const { return family_; }
   size_t length() const { return Length(family_); }
-  const uint8_t* data() const { return data_.data(); }
+
+  const std::array<uint64_t, kU64MaxLen>& array() const { return data_; }
+  std::array<uint64_t, kU64MaxLen> network_array() const {
+      return {htonll(data_[0]), htonll(data_[1])};
+  }
+
+  const uint64_t* u64_data() const { return data_.data(); }
 
   size_t Hash() const { return HashAll(data_, family_); }
 
@@ -88,22 +101,36 @@ class Address {
   }
 
   bool IsNull() const {
-    return std::all_of(data_.begin(), data_.end(), [](uint8_t b) { return b == 0; });
+    return std::all_of(data_.begin(), data_.end(), [](uint64_t v) { return v == 0; });
+  }
+
+  Address ToV6() const {
+    switch (family_) {
+      case Address::Family::IPV6:
+        return *this;
+      case Address::Family::IPV4: {
+        uint64_t low = 0x00ff000000000000ULL | (data_[0] >> 32);
+        return {0ULL, low};
+      }
+      default:
+        return {};
+    }
   }
 
   bool IsLocal() const {
-    static const uint8_t ipv6_loopback_addr[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
     switch (family_) {
       case Family::IPV4:
-        return data_[0] == 127;
+        return data_[0] == 0x7f000000ULL;
       case Family::IPV6:
-        return std::memcmp(data_.data(), ipv6_loopback_addr, sizeof(ipv6_loopback_addr)) == 0;
+        return data_[0] == 0 && data_[1] == 1;
       default:
         return false;
     }
   }
 
-  static int Length(Family family) {
+  bool IsPublic() const;
+
+  static size_t Length(Family family) {
     switch (family) {
       case Family::IPV4:
         return 4;
@@ -118,17 +145,16 @@ class Address {
   friend std::ostream& operator<<(std::ostream& os, const Address& addr) {
     int af = (addr.family_ == Family::IPV4) ? AF_INET : AF_INET6;
     char addr_str[INET6_ADDRSTRLEN];
-    if (!inet_ntop(af, addr.data_.data(), addr_str, sizeof(addr_str))) {
+    const auto& network_array = addr.network_array();
+    if (!inet_ntop(af, network_array.data(), addr_str, sizeof(addr_str))) {
       return os << "<invalid address>";
     }
     return os << addr_str;
   }
 
-  Address(Family family) : family_(family) {
-    std::memset(data_.data(), 0, data_.size());
-  }
+  explicit Address(Family family) : data_({0, 0}), family_(family) {}
 
-  std::array<uint8_t, kMaxLen> data_;
+  std::array<uint64_t, kU64MaxLen> data_;
   Family family_;
 };
 
@@ -166,6 +192,68 @@ class Endpoint {
 
   Address address_;
   uint16_t port_;
+};
+
+
+class IPNet {
+ public:
+  IPNet(const Address& address, size_t bits) : IPNet(address.family(), address.array(), bits) {}
+
+  bool Contains(const Address& address) const {
+    if (address.family() != family_) {
+      return false;
+    }
+
+    const uint64_t* addr_p = address.u64_data();
+    const uint64_t* mask_p = mask_.data();
+
+    size_t bitsLeft = bits_;
+    while (bitsLeft >= 64) {
+      if (*addr_p++ != *mask_p++) {
+        return false;
+      }
+      bitsLeft -= 64;
+    }
+
+    if (bitsLeft > 0) {
+      uint64_t lastMask = ~(~static_cast<uint64_t>(0) >> bitsLeft);
+      if ((*addr_p & lastMask) != *mask_p) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+ private:
+  IPNet(Address::Family family, const std::array<uint64_t, Address::kU64MaxLen>& mask, size_t bits)
+      : family_(family), bits_(bits) {
+
+    mask_.fill(0);
+
+    if (bits_ > Address::Length(family)) {
+      bits_ = Address::Length(family);
+    }
+
+    size_t bits_left = bits_;
+
+    const uint64_t* in_mask_p = mask.data();
+    uint64_t* out_mask_p = mask_.data();
+
+    while (bits_left >= 64) {
+      *out_mask_p++ = *in_mask_p++;
+      bits_left -= 64;
+    }
+
+    if (bits_left > 0) {
+      uint64_t last_mask = ~(~static_cast<uint64_t>(0) >> bits_left);
+      *out_mask_p = *in_mask_p & last_mask;
+    }
+  }
+
+  Address::Family family_;
+  std::array<uint64_t, Address::kMaxLen / sizeof(uint64_t)> mask_;
+  size_t bits_;
 };
 
 enum class L4Proto : uint8_t {

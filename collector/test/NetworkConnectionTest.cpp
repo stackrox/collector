@@ -23,63 +23,44 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "NetworkConnection.h"
 
+#include <utility>
+
+#include "gtest/gtest.h"
+#include "gmock/gmock.h"
+
+#include "Utility.h"
+
 namespace collector {
 
 namespace {
 
-IPNet private_ipv4_networks[] = {
-  IPNet(Address(10, 0, 0, 0), 8),
-  IPNet(Address(172, 16, 0, 0), 12),
-  IPNet(Address(192, 168, 0, 0), 16),
-};
+TEST(TestAddress, TestConstructors) {
+  Address a(192, 168, 0, 1);
+  EXPECT_EQ(Str(a), "192.168.0.1");
+  EXPECT_EQ(a.array()[0], 0xc0a8000100000000ULL);
+  uint8_t a_bytes[4] = {192, 168, 0, 1};
+  EXPECT_EQ(a.length(), 4);
+  EXPECT_EQ(std::memcmp(a.network_array().data(), a_bytes, a.length()), 0);
+  EXPECT_FALSE(a.IsPublic());
+
+  Address b(htonl(0x7f000001));
+  EXPECT_EQ(Str(b), "127.0.0.1");
+  EXPECT_EQ(b.array()[0], 0x7f00000100000000ULL);
+  uint8_t b_bytes[4] = {127, 0, 0, 1};
+  EXPECT_EQ(a.length(), 4);
+  EXPECT_EQ(std::memcmp(b.network_array().data(), b_bytes, b.length()), 0);
+  EXPECT_TRUE(b.IsPublic());
+
+  uint32_t ipv6_data[4] = {htonl(0x2a020908), htonl(0xe850cf20), htonl(0x991944af), htonl(0xa46e1669)};
+  Address c(ipv6_data);
+  EXPECT_EQ(Str(c), "2a02:908:e850:cf20:9919:44af:a46e:1669");
+  EXPECT_EQ(c.array()[0], 0x2a020908e850cf20ULL);
+  EXPECT_EQ(c.array()[1], 0x991944afa46e1669ULL);
+  uint8_t c_bytes[16] = {0x2a, 0x02, 0x09, 0x08, 0xe8, 0x50, 0xcf, 0x20, 0x99, 0x19, 0x44, 0xaf, 0xa4, 0x6e, 0x16, 0x69};
+  EXPECT_EQ(std::memcmp(c.network_array().data(), c_bytes, c.length()), 0);
+  EXPECT_TRUE(c.IsPublic());
+}
 
 }  // namespace
-
-bool Address::IsPublic() const {
-  switch (family_) {
-    case Family::IPV4:
-      for (const auto& net : private_ipv4_networks) {
-        if (net.Contains(*this)) {
-          return false;
-        }
-      }
-      return true;
-
-    case Family::IPV6: {
-      uint64_t first_u64 = data_[0];
-      return (first_u64 & ~(~static_cast<uint64_t>(0) >> 8)) != 0xfd00000000000000ULL;
-    }
-
-    default:
-      return false;
-  }
-}
-
-std::ostream& operator<<(std::ostream& os, L4Proto l4proto) {
-  switch (l4proto) {
-    case L4Proto::TCP:
-      return os << "tcp";
-    case L4Proto::UDP:
-      return os << "udp";
-    case L4Proto::ICMP:
-      return os << "icmp";
-    default:
-      return os << "unknown(" << static_cast<uint8_t>(l4proto) << ")";
-  }
-}
-
-std::ostream& operator<<(std::ostream& os, const Connection& conn) {
-  os << conn.container() << ": " << conn.local();
-  if (conn.is_server()) {
-    os << " <- ";
-  } else {
-    os << " -> ";
-  }
-  os << conn.remote() << " [" << conn.l4proto();
-  if (conn.local().address().family() == Address::Family::IPV6) {
-    os << "6";
-  }
-  return os << "]";
-}
 
 }  // namespace collector

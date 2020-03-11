@@ -95,16 +95,22 @@ class ConnectionTracker {
   // ComputeDelta computes a diff between new_state and *old_state, and stores the diff in *old_state.
   static void ComputeDelta(const ConnMap& new_state, ConnMap* old_state);
 
+  void UpdateKnownPublicIPs(UnorderedSet<Address>&& known_public_ips);
+
  private:
   // NormalizeConnection transforms a connection into a normalized form.
-  static Connection NormalizeConnection(const Connection &conn);
+  Connection NormalizeConnectionNoLock(const Connection &conn) const;
 
   // Emplace a connection into the state ConnMap, or update its timestamp if the supplied timestamp is more recent
   // than the stored one.
   void EmplaceOrUpdateNoLock(const Connection& conn, ConnStatus status);
 
+  Address NormalizeAddressNoLock(const Address& address) const;
+
   std::mutex mutex_;
   ConnMap state_;
+
+  UnorderedSet<Address> known_public_ips_;
 };
 
 }  // namespace collector

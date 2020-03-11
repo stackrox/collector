@@ -73,10 +73,14 @@ void NetworkStatusNotifier::OnRecvControlMessage(const sensor::NetworkFlowsContr
     return;
   }
 
-  CLOG(INFO) << "Received new set of public IPs:";
-  for (const auto& public_ip : msg->public_ip_addresses().ipv4_addresses()) {
-    CLOG(INFO) << " - " << Address(public_ip);
+  UnorderedSet<Address> known_public_ips;
+  for (const uint32_t public_ip : msg->public_ip_addresses().ipv4_addresses()) {
+    Address addr(htonl(public_ip));
+    known_public_ips.insert(addr);
+    known_public_ips.insert(addr.ToV6());
   }
+
+  conn_tracker_->UpdateKnownPublicIPs(std::move(known_public_ips));
 }
 
 void NetworkStatusNotifier::Run() {
@@ -212,7 +216,7 @@ sensor::NetworkAddress* NetworkStatusNotifier::EndpointToProto(const collector::
 
   auto* addr_proto = Allocate<sensor::NetworkAddress>();
   if (!endpoint.address().IsNull()) {
-    addr_proto->set_address_data(endpoint.address().data(), endpoint.address().length());
+    addr_proto->set_address_data(endpoint.address().network_array().data(), endpoint.address().length());
   }
   addr_proto->set_port(endpoint.port());
 

@@ -25,9 +25,17 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <utility>
 
+#include "Containers.h"
 #include "Utility.h"
 
 namespace collector {
+
+namespace {
+
+static const Address canonical_external_ipv4_addr(255, 255, 255, 255);
+static const Address canonical_external_ipv6_addr(0xffffffffffffffffULL, 0xffffffffffffffffULL);
+
+}  // namespace
 
 void ConnectionTracker::UpdateConnection(const Connection& conn, int64_t timestamp, bool added) {
   WITH_LOCK(mutex_) {
@@ -51,7 +59,22 @@ void ConnectionTracker::Update(const std::vector<Connection>& all_conns, int64_t
   }
 }
 
-Connection ConnectionTracker::NormalizeConnection(const Connection& conn) {
+Address ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
+  if (!address.IsPublic() || Contains(known_public_ips_, address)) {
+    return address;
+  }
+
+  switch (address.family()) {
+    case Address::Family::IPV4:
+      return canonical_external_ipv4_addr;
+    case Address::Family::IPV6:
+      return canonical_external_ipv6_addr;
+    default:
+      return {};
+  }
+}
+
+Connection ConnectionTracker::NormalizeConnectionNoLock(const Connection& conn) const {
   bool is_server = conn.is_server();
   if (conn.l4proto() == L4Proto::UDP) {
     // Inference of server role is unreliable for UDP, so go by port.
@@ -63,10 +86,11 @@ Connection ConnectionTracker::NormalizeConnection(const Connection& conn) {
   if (is_server) {
     // If this is the server, only the local port is relevant, while the remote port does not matter.
     local = Endpoint(Address(), conn.local().port());
-    remote = Endpoint(conn.remote().address(), 0);
+    remote = Endpoint(NormalizeAddressNoLock(conn.remote().address()), 0);
   } else {
     // If this is the client, the local port and address are not relevant.
     local = Endpoint();
+    remote = Endpoint(NormalizeAddressNoLock(remote.address()), remote.port());
   }
 
   return Connection(conn.container(), local, remote, conn.l4proto(), is_server);
@@ -91,7 +115,7 @@ ConnMap ConnectionTracker::FetchState(bool normalize, bool clear_inactive) {
       const auto& conn = *it;
 
       if (normalize) {
-        auto emplace_res = fetched_state.emplace(NormalizeConnection(conn.first), conn.second);
+        auto emplace_res = fetched_state.emplace(NormalizeConnectionNoLock(conn.first), conn.second);
         if (!emplace_res.second) {
           emplace_res.first->second.MergeFrom(conn.second);
         }
@@ -150,6 +174,12 @@ void ConnectionTracker::ComputeDelta(const ConnMap& new_state, ConnMap* old_stat
     } else {
       it = old_state->erase(it);
     }
+  }
+}
+
+void ConnectionTracker::UpdateKnownPublicIPs(collector::UnorderedSet<collector::Address>&& known_public_ips) {
+  WITH_LOCK(mutex_) {
+    known_public_ips_ = std::move(known_public_ips);
   }
 }
 
