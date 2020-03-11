@@ -66,27 +66,6 @@ cp -p "${INPUT_ROOT}/NOTICE-collector.txt" "${bundle_root}/COPYING.txt"
 cp -p "${INPUT_ROOT}/bin/collector.rhel" "${bundle_root}/usr/local/bin/collector"
 cp -pr "${MODULE_DIR}"/* "${bundle_root}/kernel-modules/"
 
-# Files needed from the collector-builder image and associated
-# destination in collector-rhel image.
-builder_src=(
-    "usr/local/bin/curl"
-    "usr/local/bin/gzip"
-    "usr/local/lib/libcurl.so"
-    "usr/local/lib/libcurl.so.4"
-)
-builder_dst=(
-    "usr/bin/curl"
-    "usr/bin/gzip"
-    "usr/lib64/libcurl.so"
-    "usr/lib64/libcurl.so.4"
-)
-
-# for ((i=0; i<${#builder_src[@]}; ++i)); do
-#   extract_from_image "${BUILDER_IMAGE}" \
-#       "${builder_src[$i]}" "${bundle_root}/${builder_dst[$i]}"
-#   chmod 755 "${bundle_root}/${builder_dst[$i]}"
-# done
-
 # =============================================================================
 
 # Files should have owner/group equal to root:root
