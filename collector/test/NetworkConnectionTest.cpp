@@ -62,9 +62,20 @@ TEST(TestAddress, TestConstructors) {
 }
 
 
-TEST(TestAddress, TestConstructors) {
+TEST(TestAddress, TestIsPublic) {
+  IPNet mask(Address(172, 16, 0, 0), 12);
+
   Address a(172, 217, 212, 95);
   EXPECT_TRUE(a.IsPublic());
+  EXPECT_FALSE(mask.Contains(a));
+
+  const auto& mask_data = mask.mask_array();
+  EXPECT_EQ(mask.family(), Address::Family::IPV4);
+  EXPECT_EQ(mask.bits(), 12);
+  EXPECT_EQ(mask_data[0], 0xac10000000000000ULL);
+
+  Address b(169, 254, 169, 254);
+  EXPECT_TRUE(b.IsPublic());
 }
 
 }  // namespace

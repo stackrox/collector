@@ -199,6 +199,10 @@ class IPNet {
  public:
   IPNet(const Address& address, size_t bits) : IPNet(address.family(), address.array(), bits) {}
 
+  Address::Family family() const { return family_; }
+  const std::array<uint64_t, Address::kU64MaxLen>& mask_array() const { return mask_; }
+  size_t bits() const { return bits_; }
+
   bool Contains(const Address& address) const {
     if (address.family() != family_) {
       return false;
@@ -227,12 +231,10 @@ class IPNet {
 
  private:
   IPNet(Address::Family family, const std::array<uint64_t, Address::kU64MaxLen>& mask, size_t bits)
-      : family_(family), bits_(bits) {
+      : family_(family), mask_({0, 0}), bits_(bits) {
 
-    mask_.fill(0);
-
-    if (bits_ > Address::Length(family)) {
-      bits_ = Address::Length(family);
+    if (bits_ > Address::Length(family) * 8) {
+      bits_ = Address::Length(family) * 8;
     }
 
     size_t bits_left = bits_;
@@ -252,7 +254,7 @@ class IPNet {
   }
 
   Address::Family family_;
-  std::array<uint64_t, Address::kMaxLen / sizeof(uint64_t)> mask_;
+  std::array<uint64_t, Address::kU64MaxLen> mask_;
   size_t bits_;
 };
 

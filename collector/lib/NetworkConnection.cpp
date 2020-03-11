@@ -54,7 +54,7 @@ bool Address::IsPublic() const {
       if ((second_u64 & 0x0000ffff00000000ULL) == 0x0000ffff00000000ULL) {
           return Address(htonl(second_u64 >> 32)).IsPublic();
       }
-      return false;
+      return true;
     }
 
     default:
