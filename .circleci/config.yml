@@ -724,7 +724,6 @@ jobs:
 
           ./container/rhel/create-bundle.sh \
             "$SOURCE_ROOT/collector/container" \
-            "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}" \
             "$SOURCE_ROOT/kernel-modules/container/kernel-modules" \
             "$SOURCE_ROOT/collector/container/rhel/bundle.tar.gz"
 

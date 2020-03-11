@@ -75,7 +75,6 @@ image: collector unittest $(MOD_VER_FILE)
 $(CURDIR)/collector/container/rhel/bundle.tar.gz:
 	$(CURDIR)/collector/container/rhel/create-bundle.sh \
 		$(CURDIR)/collector/container \
-		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) \
 		$(CURDIR)/kernel-modules/container/kernel-modules $@
 
 .PHONY: $(CURDIR)/collector/container/rhel/prebuild.sh
