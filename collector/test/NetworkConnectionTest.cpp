@@ -61,6 +61,12 @@ TEST(TestAddress, TestConstructors) {
   EXPECT_TRUE(c.IsPublic());
 }
 
+
+TEST(TestAddress, TestConstructors) {
+  Address a(172, 217, 212, 95);
+  EXPECT_TRUE(a.IsPublic());
+}
+
 }  // namespace
 
 }  // namespace collector

@@ -47,7 +47,14 @@ bool Address::IsPublic() const {
 
     case Family::IPV6: {
       uint64_t first_u64 = data_[0];
-      return (first_u64 & ~(~static_cast<uint64_t>(0) >> 8)) != 0xfd00000000000000ULL;
+      if (first_u64 != 0) {
+        return (first_u64 & ~(~static_cast<uint64_t>(0) >> 8)) != 0xfd00000000000000ULL;
+      }
+      uint64_t second_u64 = data_[1];
+      if ((second_u64 & 0x0000ffff00000000ULL) == 0x0000ffff00000000ULL) {
+          return Address(htonl(second_u64 >> 32)).IsPublic();
+      }
+      return false;
     }
 
     default:
