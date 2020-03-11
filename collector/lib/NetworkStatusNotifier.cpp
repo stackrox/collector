@@ -65,6 +65,7 @@ sensor::SocketFamily TranslateAddressFamily(Address::Family family) {
 std::unique_ptr<grpc::ClientContext> NetworkStatusNotifier::CreateClientContext() const {
   auto ctx = MakeUnique<grpc::ClientContext>();
   ctx->AddMetadata("rox-collector-hostname", hostname_);
+  ctx->AddMetadata(kCapsMetadataKey, kSupportedCaps);
   return ctx;
 }
 
@@ -73,11 +74,22 @@ void NetworkStatusNotifier::OnRecvControlMessage(const sensor::NetworkFlowsContr
     return;
   }
 
+  const auto& public_ips = msg->public_ip_addresses();
+
   UnorderedSet<Address> known_public_ips;
-  for (const uint32_t public_ip : msg->public_ip_addresses().ipv4_addresses()) {
+  for (const uint32_t public_ip : public_ips.ipv4_addresses()) {
     Address addr(htonl(public_ip));
     known_public_ips.insert(addr);
     known_public_ips.insert(addr.ToV6());
+  }
+
+  auto ipv6_size = public_ips.ipv6_addresses_size();
+  if (ipv6_size % 2 != 0) {
+    CLOG(WARNING) << "IPv6 address field has odd length " << ipv6_size << ". Ignoring IPv6 addresses...";
+  } else {
+    for (int i = 0; i < ipv6_size; i += 2) {
+      known_public_ips.emplace(htonll(public_ips.ipv6_addresses(i)), htonll(public_ips.ipv6_addresses(i + 1)));
+    }
   }
 
   conn_tracker_->UpdateKnownPublicIPs(std::move(known_public_ips));
@@ -216,7 +228,7 @@ sensor::NetworkAddress* NetworkStatusNotifier::EndpointToProto(const collector::
 
   auto* addr_proto = Allocate<sensor::NetworkAddress>();
   if (!endpoint.address().IsNull()) {
-    addr_proto->set_address_data(endpoint.address().network_array().data(), endpoint.address().length());
+    addr_proto->set_address_data(endpoint.address().data(), endpoint.address().length());
   }
   addr_proto->set_port(endpoint.port());
 

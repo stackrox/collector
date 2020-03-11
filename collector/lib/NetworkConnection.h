@@ -64,29 +64,26 @@ class Address {
 
   Address(Family family, const std::array<uint8_t, kMaxLen>& data) : Address(family) {
     std::memcpy(data_.data(), data.data(), Length(family));
-    data_[0] = ntohll(data_[0]);
-    data_[1] = ntohll(data_[1]);
   }
 
-  explicit Address(uint32_t ipv4) : data_({static_cast<uint64_t>(ntohl(ipv4)) << 32, 0ULL}), family_(Family::IPV4) {}
-
-  explicit Address(const uint32_t (&ipv6)[4])
-      : data_({static_cast<uint64_t>(ntohl(ipv6[0])) << 32 | ntohl(ipv6[1]), static_cast<uint64_t>(ntohl(ipv6[2])) << 32 | ntohl(ipv6[3])}),
-        family_(Family::IPV6)
+  // Constructs an IPv4 address given a uint32_t containing the IPv4 address in *network* byte order.
+  explicit Address(uint32_t ipv4) : data_({htonll(static_cast<uint64_t>(ntohl(ipv4)) << 32), 0}), family_(Family::IPV4)
   {}
 
-  Address(uint64_t ipv6_high, uint64_t ipv6_low) : Address(Family::IPV6) {
-    data_[0] = ipv6_high;
-    data_[1] = ipv6_low;
+  // Constructs an IPv6 address from 4 network-encoded uint32_ts, in network order (high to low)
+  explicit Address(const uint32_t (&ipv6)[4]) : family_(Family::IPV6) {
+    static_assert(sizeof(data_) == sizeof(ipv6));
+    std::memcpy(data_.data(), &ipv6[0], sizeof(data_));
   }
+
+  // Constructs an IPv6 address from 2 network-encoded uint64_ts, in network order (high, low).
+  Address(uint64_t ipv6_high, uint64_t ipv6_low) : data_({ipv6_high, ipv6_low}), family_(Family::IPV6) {}
 
   Family family() const { return family_; }
   size_t length() const { return Length(family_); }
 
   const std::array<uint64_t, kU64MaxLen>& array() const { return data_; }
-  std::array<uint64_t, kU64MaxLen> network_array() const {
-      return {htonll(data_[0]), htonll(data_[1])};
-  }
+  const void* data() const { return data_.data(); }
 
   const uint64_t* u64_data() const { return data_.data(); }
 
@@ -109,7 +106,7 @@ class Address {
       case Address::Family::IPV6:
         return *this;
       case Address::Family::IPV4: {
-        uint64_t low = 0x00ff000000000000ULL | (data_[0] >> 32);
+        uint64_t low = htonll(0x0000ffff00000000ULL | (ntohll(data_[0]) >> 32));
         return {0ULL, low};
       }
       default:
@@ -120,12 +117,12 @@ class Address {
   bool IsLocal() const {
     switch (family_) {
       case Family::IPV4:
-        return (data_[0] & 0xff00000000000000ULL) == 0x7f00000000000000ULL;
+        return (data_[0] & htonll(0xff00000000000000ULL)) == htonll(0x7f00000000000000ULL);
       case Family::IPV6:
         if (data_[0] != 0) {
           return false;
         }
-        return data_[1] == 1 || (data_[1] & 0xffffffffff000000ULL) == 0x0000ffff7f000000ULL;
+        return data_[1] == htonll(1ULL) || (data_[1] & htonll(0xffffffffff000000ULL)) == htonll(0x0000ffff7f000000ULL);
       default:
         return false;
     }
@@ -148,8 +145,8 @@ class Address {
   friend std::ostream& operator<<(std::ostream& os, const Address& addr) {
     int af = (addr.family_ == Family::IPV4) ? AF_INET : AF_INET6;
     char addr_str[INET6_ADDRSTRLEN];
-    const auto& network_array = addr.network_array();
-    if (!inet_ntop(af, network_array.data(), addr_str, sizeof(addr_str))) {
+    const auto* data = addr.data();
+    if (!inet_ntop(af, data, addr_str, sizeof(addr_str))) {
       return os << "<invalid address>";
     }
     return os << addr_str;
@@ -224,7 +221,7 @@ class IPNet {
 
     if (bitsLeft > 0) {
       uint64_t lastMask = ~(~static_cast<uint64_t>(0) >> bitsLeft);
-      if ((*addr_p & lastMask) != *mask_p) {
+      if ((ntohll(*addr_p) & lastMask) != *mask_p) {
         return false;
       }
     }
@@ -252,7 +249,7 @@ class IPNet {
 
     if (bits_left > 0) {
       uint64_t last_mask = ~(~static_cast<uint64_t>(0) >> bits_left);
-      *out_mask_p = *in_mask_p & last_mask;
+      *out_mask_p = ntohll(*in_mask_p) & last_mask;  // last uint64 is intentionally stored in *host* order
     }
   }
 
