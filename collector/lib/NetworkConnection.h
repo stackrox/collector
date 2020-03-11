@@ -120,9 +120,12 @@ class Address {
   bool IsLocal() const {
     switch (family_) {
       case Family::IPV4:
-        return data_[0] == 0x7f000000ULL;
+        return (data_[0] & 0xff00000000000000ULL) == 0x7f00000000000000ULL;
       case Family::IPV6:
-        return data_[0] == 0 && data_[1] == 1;
+        if (data_[0] != 0) {
+          return false;
+        }
+        return data_[1] == 1 || (data_[1] & 0xffffffffff000000ULL) == 0x0000ffff7f000000ULL;
       default:
         return false;
     }
