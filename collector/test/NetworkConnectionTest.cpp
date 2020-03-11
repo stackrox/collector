@@ -42,6 +42,7 @@ TEST(TestAddress, TestConstructors) {
   EXPECT_EQ(a.length(), 4);
   EXPECT_EQ(std::memcmp(a.data(), a_bytes, a.length()), 0);
   EXPECT_FALSE(a.IsPublic());
+  EXPECT_FALSE(a.ToV6().IsPublic());
 
   Address b(htonl(0x7f000001));
   EXPECT_EQ(Str(b), "127.0.0.1");
@@ -50,6 +51,7 @@ TEST(TestAddress, TestConstructors) {
   EXPECT_EQ(a.length(), 4);
   EXPECT_EQ(std::memcmp(b.data(), b_bytes, b.length()), 0);
   EXPECT_TRUE(b.IsPublic());
+  EXPECT_TRUE(b.ToV6().IsPublic());
 
   uint32_t ipv6_data[4] = {htonl(0x2a020908), htonl(0xe850cf20), htonl(0x991944af), htonl(0xa46e1669)};
   Address c(ipv6_data);
@@ -59,10 +61,11 @@ TEST(TestAddress, TestConstructors) {
   uint8_t c_bytes[16] = {0x2a, 0x02, 0x09, 0x08, 0xe8, 0x50, 0xcf, 0x20, 0x99, 0x19, 0x44, 0xaf, 0xa4, 0x6e, 0x16, 0x69};
   EXPECT_EQ(std::memcmp(c.data(), c_bytes, c.length()), 0);
   EXPECT_TRUE(c.IsPublic());
+  EXPECT_TRUE(c.ToV6().IsPublic());
 }
 
 
-TEST(TestAddress, TestIsPublic) {
+TEST(TestAddress, TestMaskAndIsPublic) {
   IPNet mask(Address(172, 16, 0, 0), 12);
   const auto& mask_data = mask.mask_array();
   EXPECT_EQ(mask.family(), Address::Family::IPV4);
@@ -71,16 +74,31 @@ TEST(TestAddress, TestIsPublic) {
 
   Address a(172, 217, 212, 95);
   EXPECT_TRUE(a.IsPublic());
+  EXPECT_TRUE(a.ToV6().IsPublic());
   EXPECT_FALSE(mask.Contains(a));
 
   Address b(169, 254, 169, 254);
   EXPECT_TRUE(b.IsPublic());
+  EXPECT_TRUE(b.ToV6().IsPublic());
   EXPECT_FALSE(mask.Contains(b));
 
   EXPECT_FALSE(mask.Contains(Address(172, 15, 255, 255)));
   EXPECT_TRUE(mask.Contains(Address(172, 16, 0, 0)));
   EXPECT_TRUE(mask.Contains(Address(172, 31, 255, 255)));
   EXPECT_FALSE(mask.Contains(Address(172, 32, 0, 0)));
+}
+
+TEST(TestAddress, TestLoopback) {
+  Address a(127, 0, 10, 1);
+  EXPECT_TRUE(a.IsLocal());
+  EXPECT_TRUE(a.ToV6().IsLocal());
+
+  Address b(192, 168, 0, 1);
+  EXPECT_FALSE(b.IsLocal());
+  EXPECT_FALSE(b.ToV6().IsLocal());
+
+  Address c(0ULL, htonll(0x1ULL));
+  EXPECT_TRUE(c.IsLocal());
 }
 
 }  // namespace

@@ -33,6 +33,13 @@ IPNet private_ipv4_networks[] = {
   IPNet(Address(192, 168, 0, 0), 16),
 };
 
+IPNet private_ipv6_networks[] = {
+  IPNet(Address(htonll(0xfd00000000000000ULL), 0ULL), 8), // ULA
+  IPNet(Address(10, 0, 0, 8).ToV6(), 104),
+  IPNet(Address(172, 16, 0, 0).ToV6(), 108),
+  IPNet(Address(192, 168, 0, 0).ToV6(), 112),
+};
+
 }  // namespace
 
 bool Address::IsPublic() const {
@@ -45,17 +52,13 @@ bool Address::IsPublic() const {
       }
       return true;
 
-    case Family::IPV6: {
-      uint64_t first_u64 = data_[0];
-      if (first_u64 != 0) {
-        return (first_u64 & ~(~static_cast<uint64_t>(0) >> 8)) != 0xfd00000000000000ULL;
-      }
-      uint64_t second_u64 = data_[1];
-      if ((second_u64 & 0x0000ffff00000000ULL) == 0x0000ffff00000000ULL) {
-          return Address(htonl(second_u64 >> 32)).IsPublic();
+    case Family::IPV6:
+      for (const auto& net : private_ipv6_networks) {
+        if (net.Contains(*this)) {
+          return false;
+        }
       }
       return true;
-    }
 
     default:
       return false;
