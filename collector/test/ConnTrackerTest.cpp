@@ -131,6 +131,49 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn13_normalized, ConnStatus(now2, true))));
 }
 
+TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
+  Endpoint a(Address(10, 1, 1, 8), 9999);
+  Endpoint b(Address(35, 127, 0, 15), 54321);
+  Endpoint c(Address(139, 14, 171, 3), 54321);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xyz", a, b, L4Proto::TCP, false);
+  Connection conn3("xyz", a, c, L4Proto::TCP, true);
+  Connection conn4("xyz", a, c, L4Proto::TCP, false);
+
+  Connection conn13_normalized("xyz", Endpoint(Address(), 9999), Endpoint(Address(255, 255, 255, 255), 0), L4Proto::TCP, true);
+  Connection conn24_normalized("xyz", Endpoint(), Endpoint(Address(255, 255, 255, 255), 54321), L4Proto::TCP, false);
+
+  int64_t now = NowMicros();
+
+  ConnectionTracker tracker;
+  tracker.Update({conn1, conn2, conn3, conn4}, now);
+
+  auto state = tracker.FetchState(true);
+  EXPECT_THAT(state, UnorderedElementsAre(
+          std::make_pair(conn13_normalized, ConnStatus(now, true)),
+          std::make_pair(conn24_normalized, ConnStatus(now, true))));
+
+  auto state2 = tracker.FetchState(true);
+  EXPECT_EQ(state, state2);
+
+  UnorderedSet<Address> public_ips = {Address(35, 127, 0, 15)};
+  tracker.UpdateKnownPublicIPs(std::move(public_ips));
+
+  auto state3 = tracker.FetchState(true);
+
+  Connection conn1_normalized("xyz", Endpoint(Address(), 9999), Endpoint(Address(35, 127, 0, 15), 0), L4Proto::TCP, true);
+  Connection conn2_normalized("xyz", Endpoint(), b, L4Proto::TCP, false);
+  Connection conn3_normalized("xyz", Endpoint(Address(), 9999), Endpoint(Address(255, 255, 255, 255), 0), L4Proto::TCP, true);
+  Connection conn4_normalized("xyz", Endpoint(), Endpoint(Address(255, 255, 255, 255), 54321), L4Proto::TCP, false);
+
+  EXPECT_THAT(state3, UnorderedElementsAre(
+          std::make_pair(conn1_normalized, ConnStatus(now, true)),
+          std::make_pair(conn2_normalized, ConnStatus(now, true)),
+          std::make_pair(conn3_normalized, ConnStatus(now, true)),
+          std::make_pair(conn4_normalized, ConnStatus(now, true))));
+}
+
 TEST(ConnTrackerTest, TestComputeDelta) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
