@@ -1,4 +1,4 @@
-FROM centos:7
+FROM centos:8
 
 ARG NPROCS=6
 ENV NPROCS=$NPROCS
@@ -7,12 +7,12 @@ ENV NPROCS=$NPROCS
 USER root
 RUN yum -y install \
   autoconf automake binutils-devel bison ca-certificates \
-  elfutils-libelf-devel file flex gettext git glibc-devel glibc-static \
-  indent libtool make patchutils pkgconfig wget which \
-  unzip libcap-ng-devel python libuuid-devel libz-devel \
+  elfutils-libelf-devel file flex gettext git glibc-devel \
+  libtool make patchutils pkgconfig wget which \
+  unzip libcap-ng-devel python2 libuuid-devel libcurl-devel \
   openssl-devel 
-RUN yum -y install centos-release-scl
-RUN yum -y install devtoolset-6-gcc devtoolset-6-gcc-c++
+RUN yum -y groupinstall "Development Tools"
+RUN yum -y install cmake
 
 # We want to fail if the destination directory is there, hence mkdir (not -p).
 RUN mkdir install-tmp

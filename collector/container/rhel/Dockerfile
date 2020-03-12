@@ -1,6 +1,6 @@
 ARG BASE_REGISTRY=registry.access.redhat.com
-ARG BASE_IMAGE=ubi7/ubi
-ARG BASE_TAG=7.7
+ARG BASE_IMAGE=ubi8/ubi
+ARG BASE_TAG=8.1
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
@@ -16,16 +16,17 @@ ENV MODULE_VERSION=${module_version}
 ENV COLLECTOR_HOST_ROOT=/host
 
 RUN yum update -y --nogpgcheck --disableplugin=subscription-manager
+RUN yum install -y kmod
 RUN rpm -e --nodeps \
       rpm \
       rpm-build-libs \
       rpm-libs \
-      rpm-python \
+      python3-rpm \
       subscription-manager \
-      subscription-manager-rhsm \
+      python3-subscription-manager-rhsm \
       yum \
-      yum-plugin-ovl \
-      yum-utils \
+      $(rpm -qa *dnf*) \
+      python3-hawkey \
     ;
 
 ADD bundle.tar.gz /
