@@ -122,6 +122,7 @@ class Address {
         if (data_[0] != 0) {
           return false;
         }
+        // Localhost IPv6 addresses are ::1 (first case) as well as IPv4-mapped IPv6 for 127.0.0.0/8 (second case).
         return data_[1] == htonll(1ULL) || (data_[1] & htonll(0xffffffffff000000ULL)) == htonll(0x0000ffff7f000000ULL);
       default:
         return false;

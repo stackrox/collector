@@ -59,9 +59,10 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   void Stop();
 
  private:
+  static constexpr char kHostnameMetadataKey[] = "rox-collector-hostname";
   static constexpr char kCapsMetadataKey[] = "rox-collector-capabilities";
 
-  // Keep this updated will all capabilities supported. Format it as a comma-separated list with NO spaces.
+  // Keep this updated with all capabilities supported. Format it as a comma-separated list with NO spaces.
   static constexpr char kSupportedCaps[] = "public-ips";
 
   sensor::NetworkConnectionInfoMessage* CreateInfoMessage(const ConnMap& conn_delta);

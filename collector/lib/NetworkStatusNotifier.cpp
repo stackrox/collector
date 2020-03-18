@@ -62,12 +62,13 @@ sensor::SocketFamily TranslateAddressFamily(Address::Family family) {
 
 }  // namespace
 
+constexpr char NetworkStatusNotifier::kHostnameMetadataKey[];
 constexpr char NetworkStatusNotifier::kCapsMetadataKey[];
 constexpr char NetworkStatusNotifier::kSupportedCaps[];
 
 std::unique_ptr<grpc::ClientContext> NetworkStatusNotifier::CreateClientContext() const {
   auto ctx = MakeUnique<grpc::ClientContext>();
-  ctx->AddMetadata("rox-collector-hostname", hostname_);
+  ctx->AddMetadata(kHostnameMetadataKey, hostname_);
   ctx->AddMetadata(kCapsMetadataKey, kSupportedCaps);
   return ctx;
 }
