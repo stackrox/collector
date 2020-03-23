@@ -62,10 +62,41 @@ sensor::SocketFamily TranslateAddressFamily(Address::Family family) {
 
 }  // namespace
 
+constexpr char NetworkStatusNotifier::kHostnameMetadataKey[];
+constexpr char NetworkStatusNotifier::kCapsMetadataKey[];
+constexpr char NetworkStatusNotifier::kSupportedCaps[];
+
 std::unique_ptr<grpc::ClientContext> NetworkStatusNotifier::CreateClientContext() const {
   auto ctx = MakeUnique<grpc::ClientContext>();
-  ctx->AddMetadata("rox-collector-hostname", hostname_);
+  ctx->AddMetadata(kHostnameMetadataKey, hostname_);
+  ctx->AddMetadata(kCapsMetadataKey, kSupportedCaps);
   return ctx;
+}
+
+void NetworkStatusNotifier::OnRecvControlMessage(const sensor::NetworkFlowsControlMessage* msg) {
+  if (!msg->has_public_ip_addresses()) {
+    return;
+  }
+
+  const auto& public_ips = msg->public_ip_addresses();
+
+  UnorderedSet<Address> known_public_ips;
+  for (const uint32_t public_ip : public_ips.ipv4_addresses()) {
+    Address addr(htonl(public_ip));
+    known_public_ips.insert(addr);
+    known_public_ips.insert(addr.ToV6());
+  }
+
+  auto ipv6_size = public_ips.ipv6_addresses_size();
+  if (ipv6_size % 2 != 0) {
+    CLOG(WARNING) << "IPv6 address field has odd length " << ipv6_size << ". Ignoring IPv6 addresses...";
+  } else {
+    for (int i = 0; i < ipv6_size; i += 2) {
+      known_public_ips.emplace(htonll(public_ips.ipv6_addresses(i)), htonll(public_ips.ipv6_addresses(i + 1)));
+    }
+  }
+
+  conn_tracker_->UpdateKnownPublicIPs(std::move(known_public_ips));
 }
 
 void NetworkStatusNotifier::Run() {
@@ -80,9 +111,13 @@ void NetworkStatusNotifier::Run() {
       break;
     }
 
-    auto client_writer = DuplexClient::CreateWithReadsIgnored(
+    std::function<void(const sensor::NetworkFlowsControlMessage*)> read_cb = [this](const sensor::NetworkFlowsControlMessage* msg) {
+      OnRecvControlMessage(msg);
+    };
+
+    auto client_writer = DuplexClient::CreateWithReadCallback(
         &sensor::NetworkConnectionInfoService::Stub::AsyncPushNetworkConnectionInfo,
-        channel_, context_.get());
+        channel_, context_.get(), std::move(read_cb));
 
     RunSingle(client_writer.get());
     if (thread_.should_stop()) {

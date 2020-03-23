@@ -59,11 +59,19 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   void Stop();
 
  private:
+  static constexpr char kHostnameMetadataKey[] = "rox-collector-hostname";
+  static constexpr char kCapsMetadataKey[] = "rox-collector-capabilities";
+
+  // Keep this updated with all capabilities supported. Format it as a comma-separated list with NO spaces.
+  static constexpr char kSupportedCaps[] = "public-ips";
+
   sensor::NetworkConnectionInfoMessage* CreateInfoMessage(const ConnMap& conn_delta);
   sensor::NetworkConnection* ConnToProto(const Connection& conn);
   sensor::NetworkAddress* EndpointToProto(const Endpoint& endpoint);
 
   std::unique_ptr<grpc::ClientContext> CreateClientContext() const;
+
+  void OnRecvControlMessage(const sensor::NetworkFlowsControlMessage* msg);
 
   void Run();
   void RunSingle(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer);

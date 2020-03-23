@@ -25,6 +25,46 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
+namespace {
+
+IPNet private_ipv4_networks[] = {
+  IPNet(Address(10, 0, 0, 0), 8),
+  IPNet(Address(172, 16, 0, 0), 12),
+  IPNet(Address(192, 168, 0, 0), 16),
+};
+
+IPNet private_ipv6_networks[] = {
+  IPNet(Address(htonll(0xfd00000000000000ULL), 0ULL), 8), // ULA
+  IPNet(Address(10, 0, 0, 8).ToV6(), 104),
+  IPNet(Address(172, 16, 0, 0).ToV6(), 108),
+  IPNet(Address(192, 168, 0, 0).ToV6(), 112),
+};
+
+}  // namespace
+
+bool Address::IsPublic() const {
+  switch (family_) {
+    case Family::IPV4:
+      for (const auto& net : private_ipv4_networks) {
+        if (net.Contains(*this)) {
+          return false;
+        }
+      }
+      return true;
+
+    case Family::IPV6:
+      for (const auto& net : private_ipv6_networks) {
+        if (net.Contains(*this)) {
+          return false;
+        }
+      }
+      return true;
+
+    default:
+      return false;
+  }
+}
+
 std::ostream& operator<<(std::ostream& os, L4Proto l4proto) {
   switch (l4proto) {
     case L4Proto::TCP:
