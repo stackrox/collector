@@ -74,7 +74,7 @@ std::unique_ptr<grpc::ClientContext> NetworkStatusNotifier::CreateClientContext(
 }
 
 void NetworkStatusNotifier::OnRecvControlMessage(const sensor::NetworkFlowsControlMessage* msg) {
-  if (!msg->has_public_ip_addresses()) {
+  if (!msg || !msg->has_public_ip_addresses()) {
     return;
   }
 
