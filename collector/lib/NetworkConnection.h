@@ -230,6 +230,12 @@ class IPNet {
     return true;
   }
 
+  Address address() const {
+    std::array<uint8_t, Address::kMaxLen> data{};
+    std::memcpy(data.data(), mask_.data(), Address::kMaxLen);
+    return {family_, data};
+  }
+
  private:
   IPNet(Address::Family family, const std::array<uint64_t, Address::kU64MaxLen>& mask, size_t bits)
       : family_(family), mask_({0, 0}), bits_(bits) {

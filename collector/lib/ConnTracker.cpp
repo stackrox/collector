@@ -181,9 +181,11 @@ void ConnectionTracker::ComputeDelta(const ConnMap& new_state, ConnMap* old_stat
 void ConnectionTracker::UpdateKnownPublicIPs(collector::UnorderedSet<collector::Address>&& known_public_ips) {
   WITH_LOCK(mutex_) {
     known_public_ips_ = std::move(known_public_ips);
-    CLOG(INFO) << "known public ips:";
-    for (const auto& public_ip : known_public_ips_) {
-        CLOG(INFO) << " - " << public_ip;
+    if (CLOG_ENABLED(DEBUG)) {
+      CLOG(DEBUG) << "known public ips:";
+      for (const auto &public_ip : known_public_ips_) {
+        CLOG(DEBUG) << " - " << public_ip;
+      }
     }
   }
 }

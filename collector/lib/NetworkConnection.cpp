@@ -23,29 +23,45 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "NetworkConnection.h"
 
+#include <vector>
+
 namespace collector {
 
 namespace {
 
-IPNet private_ipv4_networks[] = {
-  IPNet(Address(10, 0, 0, 0), 8),
-  IPNet(Address(172, 16, 0, 0), 12),
-  IPNet(Address(192, 168, 0, 0), 16),
-};
+static const std::vector<IPNet>& PrivateIPv4Networks() {
+  static auto* networks = new std::vector<IPNet>{
+    IPNet(Address(10, 0, 0, 0), 8),
+    IPNet(Address(100, 64, 0, 0), 10),
+    IPNet(Address(169, 254, 0, 0), 16),
+    IPNet(Address(172, 16, 0, 0), 12),
+    IPNet(Address(192, 168, 0, 0), 16),
+  };
 
-IPNet private_ipv6_networks[] = {
-  IPNet(Address(htonll(0xfd00000000000000ULL), 0ULL), 8), // ULA
-  IPNet(Address(10, 0, 0, 8).ToV6(), 104),
-  IPNet(Address(172, 16, 0, 0).ToV6(), 108),
-  IPNet(Address(192, 168, 0, 0).ToV6(), 112),
-};
+  return *networks;
+}
+
+static const std::vector<IPNet>& PrivateIPv6Networks() {
+  static auto* networks = []() {
+    auto* networks = new std::vector<IPNet>();
+    const auto& ipv4_nets = PrivateIPv4Networks();
+    networks->reserve(ipv4_nets.size() + 1);
+    networks->emplace_back(Address(htonll(0xfd00000000000000ULL), 0ULL), 8);  // ULA
+    for (const auto& ipv4_net : ipv4_nets) {
+      networks->emplace_back(ipv4_net.address().ToV6(), ipv4_net.bits() + 96);
+    }
+    return networks;
+  };
+
+  return *networks;
+}
 
 }  // namespace
 
 bool Address::IsPublic() const {
   switch (family_) {
     case Family::IPV4:
-      for (const auto& net : private_ipv4_networks) {
+      for (const auto& net : PrivateIPv4Networks()) {
         if (net.Contains(*this)) {
           return false;
         }
@@ -53,7 +69,7 @@ bool Address::IsPublic() const {
       return true;
 
     case Family::IPV6:
-      for (const auto& net : private_ipv6_networks) {
+      for (const auto& net : PrivateIPv6Networks()) {
         if (net.Contains(*this)) {
           return false;
         }
