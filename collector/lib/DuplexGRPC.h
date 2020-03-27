@@ -458,7 +458,7 @@ class DuplexClient {
     OpResult op_res;
     auto result = ProcessSingle(nullptr, deadline, &op_res);
     while (result && op_res.op != op_desc.op) {
-      CLOG(INFO) << "Process single op " << op_res.op;
+      CLOG(INFO) << "Process single op " << static_cast<std::uint8_t>(op_res.op);
       result = ProcessSingle(nullptr, deadline, &op_res);
     }
     if (!result) return result;
@@ -552,7 +552,9 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
   // Perform the next read operation.
   void ReadNext() {
     read_buf_valid_ = false;
+    CLOG(INFO) << "Performing async read";
     OpDescriptor op_desc = ReadAsyncInternal();
+    CLOG(INFO) << "Async read result: " << static_cast<std::uint8_t>(op_desc.op_error);
     if (op_desc.op_error != OpError::OK) {
       return;
     }
@@ -612,7 +614,7 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
     auto next_status = this->cq_.AsyncNext(&raw_tag, &ok, deadline);
     if (next_status == grpc::CompletionQueue::GOT_EVENT) {
       Op op = TagToOp(raw_tag);
-      CLOG(INFO) << "Got async event " << op;
+      CLOG(INFO) << "Got async event " << static_cast<std::uint8_t>(op);
       ProcessEvent(op, ok);
       if (op_res_out) {
         op_res_out->op = op;
@@ -651,7 +653,7 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
         HandleFinish(ok);
         break;
       default:
-        CLOG(INFO) << "Unknown operation " << op;
+        CLOG(INFO) << "Unknown operation " << static_cast<std::uint8_t>(op);
         break;
     }
 
