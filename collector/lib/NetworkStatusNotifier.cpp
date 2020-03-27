@@ -158,6 +158,8 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
     return;
   }
 
+  CLOG(INFO) << "Established network connection info stream.";
+
   ConnMap old_state;
   auto next_scrape = std::chrono::system_clock::now();
 
