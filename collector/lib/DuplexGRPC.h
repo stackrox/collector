@@ -635,6 +635,8 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
     if (this->read_callback_) {
       this->read_callback_(ok ? &read_buf_ : nullptr);
       ReadNext();
+    } else {
+      read_buf_valid_ = ok;
     }
   }
 
