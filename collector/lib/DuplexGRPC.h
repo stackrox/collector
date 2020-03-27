@@ -614,7 +614,7 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
     auto next_status = this->cq_.AsyncNext(&raw_tag, &ok, deadline);
     if (next_status == grpc::CompletionQueue::GOT_EVENT) {
       Op op = TagToOp(raw_tag);
-      CLOG(INFO) << "Got async event " << static_cast<int>(static_cast<std::uint8_t>(op));
+      CLOG(INFO) << "Got async event " << static_cast<int>(static_cast<std::uint8_t>(op)) << ", ok: " << ok;
       ProcessEvent(op, ok);
       if (op_res_out) {
         op_res_out->op = op;
@@ -647,6 +647,16 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
   }
 
   void ProcessEvent(Op op, bool ok) {
+    Flags fl = Done(op);
+    // According to the completion queue doc, all failures on the client-side are permanent
+    if (!ok) {
+      FinishAsyncInternal();
+      fl |= DuplexClient::STREAM_ERROR;
+    }
+
+    this->ClearFlags(Pending(op));
+    this->SetFlags(fl);
+
     switch (op) {
       case Op::READ:
         HandleRead(ok);
@@ -658,16 +668,6 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
         CLOG(INFO) << "Unknown operation " << static_cast<int>(static_cast<std::uint8_t>(op));
         break;
     }
-
-    Flags fl = Done(op);
-    // According to the completion queue doc, all failures on the client-side are permanent
-    if (!ok) {
-      FinishAsyncInternal();
-      fl |= DuplexClient::STREAM_ERROR;
-    }
-
-    this->ClearFlags(Pending(op));
-    this->SetFlags(fl);
   }
 
   std::unique_ptr<grpc::ClientAsyncReaderWriter<W, R>> rw_;
