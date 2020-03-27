@@ -704,11 +704,17 @@ jobs:
             "${build_args[@]}" \
             container
 
-          docker build \
-            -t "stackrox/collector:${COLLECTOR_VERSION}" \
-            -t "stackrox/collector:${COLLECTOR_VERSION}-latest" \
-            "${build_args[@]}" \
-            container-combined
+          # On PR branches, only build slim images
+          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+            docker tag "stackrox/collector:${COLLECTOR_VERSION}-base" "stackrox/collector:${COLLECTOR_VERSION}"
+            docker tag "stackrox/collector:${COLLECTOR_VERSION}-base" "stackrox/collector:${COLLECTOR_VERSION}-latest"
+          else
+            docker build \
+              -t "stackrox/collector:${COLLECTOR_VERSION}" \
+              -t "stackrox/collector:${COLLECTOR_VERSION}-latest" \
+              "${build_args[@]}" \
+              container-combined
+          fi
 
     - run:
         name: Restore collector-builder rhel image
