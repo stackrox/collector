@@ -182,7 +182,7 @@ void ConnectionTracker::UpdateKnownPublicIPs(collector::UnorderedSet<collector::
   WITH_LOCK(mutex_) {
     known_public_ips_ = std::move(known_public_ips);
     CLOG(INFO) << "known public ips:";
-    for (const auto& public_ip : known_public_ips) {
+    for (const auto& public_ip : known_public_ips_) {
         CLOG(INFO) << " - " << public_ip;
     }
   }
