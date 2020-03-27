@@ -66,6 +66,8 @@ class Address {
     std::memcpy(data_.data(), data.data(), Length(family));
   }
 
+  Address(Family family, const std::array<uint64_t, kU64MaxLen>& data) : data_(data), family_(family) {}
+
   // Constructs an IPv4 address given a uint32_t containing the IPv4 address in *network* byte order.
   explicit Address(uint32_t ipv4) : data_({htonll(static_cast<uint64_t>(ntohl(ipv4)) << 32), 0}), family_(Family::IPV4)
   {}
@@ -228,6 +230,13 @@ class IPNet {
     }
 
     return true;
+  }
+
+  Address address() const {
+    auto addr_data = mask_;
+    auto last_idx = bits_ / 64;
+    addr_data[last_idx] = htonll(addr_data[last_idx]);  // perform host-to-network order switch for last uint64.
+    return {family_, addr_data};
   }
 
  private:

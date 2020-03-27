@@ -682,6 +682,10 @@ jobs:
     - run:
         name: Build kernel-modules Docker image
         command: |
+          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+            exit 0
+          fi
+
           cd "${SOURCE_ROOT}/kernel-modules/container"
           docker build \
             -t "stackrox-kernel-modules:${MODULE_VERSION}" \
@@ -704,11 +708,17 @@ jobs:
             "${build_args[@]}" \
             container
 
-          docker build \
-            -t "stackrox/collector:${COLLECTOR_VERSION}" \
-            -t "stackrox/collector:${COLLECTOR_VERSION}-latest" \
-            "${build_args[@]}" \
-            container-combined
+          # On PR branches, only build slim images
+          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+            docker tag "stackrox/collector:${COLLECTOR_VERSION}-base" "stackrox/collector:${COLLECTOR_VERSION}"
+            docker tag "stackrox/collector:${COLLECTOR_VERSION}-base" "stackrox/collector:${COLLECTOR_VERSION}-latest"
+          else
+            docker build \
+              -t "stackrox/collector:${COLLECTOR_VERSION}" \
+              -t "stackrox/collector:${COLLECTOR_VERSION}-latest" \
+              "${build_args[@]}" \
+              container-combined
+          fi
 
     - run:
         name: Restore collector-builder rhel image
@@ -744,8 +754,11 @@ jobs:
     - run:
         name: Sanity check images
         command: |
-          docker images | grep kernel | grep "${MODULE_VERSION}"
           docker images | grep collector | grep "${COLLECTOR_VERSION}"
+          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+            exit 0
+          fi
+          docker images | grep kernel | grep "${MODULE_VERSION}"
 
     - run:
         name: Push images

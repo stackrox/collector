@@ -617,6 +617,7 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
     } else if (next_status == grpc::CompletionQueue::SHUTDOWN) {
       this->SetFlags(Done(Op::SHUTDOWN));
     }
+
     if (flags_out) *flags_out = this->flags_;
     return Result(next_status);
   }
@@ -627,6 +628,8 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
     if (this->read_callback_) {
       this->read_callback_(ok ? &read_buf_ : nullptr);
       ReadNext();
+    } else {
+      read_buf_valid_ = ok;
     }
   }
 
@@ -637,6 +640,16 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
   }
 
   void ProcessEvent(Op op, bool ok) {
+    Flags fl = Done(op);
+    // According to the completion queue doc, all failures on the client-side are permanent
+    if (!ok) {
+      FinishAsyncInternal();
+      fl |= DuplexClient::STREAM_ERROR;
+    }
+
+    this->ClearFlags(Pending(op));
+    this->SetFlags(fl);
+
     switch (op) {
       case Op::READ:
         HandleRead(ok);
@@ -647,16 +660,6 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
       default:
         break;
     }
-
-    Flags fl = Done(op);
-    // According to the completion queue doc, all failures on the client-side are permanent
-    if (!ok) {
-      FinishAsyncInternal();
-      fl |= DuplexClient::STREAM_ERROR;
-    }
-
-    this->ClearFlags(Pending(op));
-    this->SetFlags(fl);
   }
 
   std::unique_ptr<grpc::ClientAsyncReaderWriter<W, R>> rw_;

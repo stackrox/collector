@@ -96,6 +96,8 @@ class LogMessage {
 
 }  // namespace collector
 
+#define CLOG_ENABLED(lvl) (collector::logging::CheckLogLevel(collector::logging::LogLevel::lvl))
+
 #define CLOG_IF(cond, lvl) \
   if (collector::logging::CheckLogLevel(collector::logging::LogLevel::lvl) && (cond)) \
     collector::logging::LogMessage(__FILE__, __LINE__, collector::logging::LogLevel::lvl)
