@@ -74,11 +74,16 @@ std::unique_ptr<grpc::ClientContext> NetworkStatusNotifier::CreateClientContext(
 }
 
 void NetworkStatusNotifier::OnRecvControlMessage(const sensor::NetworkFlowsControlMessage* msg) {
+  CLOG(INFO) << "Received control message " << msg;
   if (!msg || !msg->has_public_ip_addresses()) {
+    CLOG(INFO) << "Control message has no public IP addresses"
     return;
   }
 
   const auto& public_ips = msg->public_ip_addresses();
+
+
+  CLOG(INFO) << "Control message has " << public_ips.ipv4_addresses_size() << " and " << public_ips.ipv6_addresses_size() << " IPs";
 
   UnorderedSet<Address> known_public_ips;
   for (const uint32_t public_ip : public_ips.ipv4_addresses()) {
