@@ -51,7 +51,7 @@ static const std::vector<IPNet>& PrivateIPv6Networks() {
       networks->emplace_back(ipv4_net.address().ToV6(), ipv4_net.bits() + 96);
     }
     return networks;
-  };
+  }();
 
   return *networks;
 }

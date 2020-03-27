@@ -78,9 +78,14 @@ TEST(TestAddress, TestMaskAndIsPublic) {
   EXPECT_FALSE(mask.Contains(a));
 
   Address b(169, 254, 169, 254);
-  EXPECT_TRUE(b.IsPublic());
-  EXPECT_TRUE(b.ToV6().IsPublic());
+  EXPECT_FALSE(b.IsPublic());
+  EXPECT_FALSE(b.ToV6().IsPublic());
   EXPECT_FALSE(mask.Contains(b));
+
+  Address c(169, 253, 169, 254);
+  EXPECT_TRUE(c.IsPublic());
+  EXPECT_TRUE(c.ToV6().IsPublic());
+  EXPECT_FALSE(mask.Contains(c));
 
   EXPECT_FALSE(mask.Contains(Address(172, 15, 255, 255)));
   EXPECT_TRUE(mask.Contains(Address(172, 16, 0, 0)));
