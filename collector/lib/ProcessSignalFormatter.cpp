@@ -159,7 +159,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   std::vector<LineageInfo> lineage;
   this->GetProcessLineage(event->get_thread_info(), lineage);
   for (const auto &p : lineage) {
-    auto signal_lineage = signal->add_lineage();
+    auto signal_lineage = signal->add_lineage_info();
     signal_lineage->set_parent_name(p.parent_name());
     signal_lineage->set_parent_uid(p.parent_uid());
   }
@@ -216,7 +216,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   GetProcessLineage(tinfo, lineage);
   
   for (const auto &p : lineage) {
-    auto signal_lineage = signal->add_lineage();
+    auto signal_lineage = signal->add_lineage_info();
     signal_lineage->set_parent_name(p.parent_name());
     signal_lineage->set_parent_uid(p.parent_uid());
   }

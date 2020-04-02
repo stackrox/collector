@@ -42,7 +42,7 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
 
   using Signal = v1::Signal;
   using ProcessSignal = storage::ProcessSignal;
-  using LineageInfo = storage::LineageInfo;
+  using LineageInfo = storage::ProcessSignal_LineageInfo;
 
   const sensor::SignalStreamMessage* ToProtoMessage(sinsp_evt* event) override;
   const sensor::SignalStreamMessage* ToProtoMessage(sinsp_threadinfo* tinfo);
