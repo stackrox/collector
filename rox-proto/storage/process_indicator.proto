@@ -39,6 +39,11 @@ message ProcessIndicatorUniqueKey {
     string process_args           = 5;
 }
 
+message LineageInfo {
+    string parent_uid  = 1;
+    string parent_name = 2;
+}
+
 message ProcessSignal {
     // A unique UUID for identifying the message
     // We have this here instead of at the top level
@@ -71,7 +76,7 @@ message ProcessSignal {
     uint32 gid                     = 9;
 
     // Process Lineage
-    repeated string lineage        = 10;
+    repeated LineageInfo lineage   = 10;
 
     // Signal origin
     bool scraped                   = 11;
