@@ -872,6 +872,8 @@ jobs:
       - run:
           name: Uploading Kernel modules
           command: |
+            exit 0
+
             extra_args=()
             if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
               extra_args+=(-n)
