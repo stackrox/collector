@@ -885,7 +885,8 @@ jobs:
 
       - run:
           name: Sanity check
-          command:
+          command: |
+            exit 0
             # gsutil ls "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/"
 
 
