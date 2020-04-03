@@ -7,7 +7,7 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
     collector_version="$line"
 
     #collector_repo="collector.stackrox.io"
-    collector_repo="docker.io"
+    collector_repo="docker.io/stackrox"
     collector_image="${collector_repo}/collector:${collector_version}"
     collector_image_rebuilt="${collector_repo}/collector:${collector_version}-rebuilt"
     docker pull "${collector_image}"
@@ -15,7 +15,7 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
         -t "${collector_image_rebuilt}" \
         --build-arg collector_version="${collector_version}" "${DIR}"
     # sanity check
-    docker run -i --rm --entrypoint /bin/sh "${collector_image_rebuilt}" /dev/stdin >"${inspect_out}" <<EOF
+    docker run -i --rm --entrypoint /bin/sh "${collector_image_rebuilt}" <<EOF
 set -e
 cat /kernel-modules/MODULE_VERSION.txt
 ls kernel-modules/collector-ebpf-4.19.*-coreos*.o.gz
