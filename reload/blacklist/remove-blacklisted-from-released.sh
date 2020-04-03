@@ -28,4 +28,4 @@ EOF
 
     #docker push "${collector_image}"
 
-done < <(grep -v '^#' <"${DIR}/../../RELEASED_VERSIONS" | awk '{print $1}' | sort | uniq)
+done < <(grep -v '^#' <"${DIR}/../../RELEASED_VERSIONS" | awk '{print $1}' | sort -r | uniq)
