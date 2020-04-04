@@ -681,7 +681,7 @@ jobs:
     - run:
         name: Build kernel-modules Docker image
         command: |
-          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && false ]]; then
             exit 0
           fi
 
@@ -708,7 +708,7 @@ jobs:
             container
 
           # On PR branches, only build slim images
-          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && false ]]; then
             docker tag "stackrox/collector:${COLLECTOR_VERSION}-base" "stackrox/collector:${COLLECTOR_VERSION}"
             docker tag "stackrox/collector:${COLLECTOR_VERSION}-base" "stackrox/collector:${COLLECTOR_VERSION}-latest"
           else
@@ -754,7 +754,7 @@ jobs:
         name: Sanity check images
         command: |
           docker images | grep collector | grep "${COLLECTOR_VERSION}"
-          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && false ]]; then
             exit 0
           fi
           docker images | grep kernel | grep "${MODULE_VERSION}"
@@ -912,7 +912,7 @@ jobs:
           export COLLECTION_METHOD=kernel_module
           export VM_CONFIG="circle_local_<< parameters.vm-config >>"
           export COLLECTOR_REPO="stackrox/collector<<# parameters.use-rhel>>-rhel<</ parameters.use-rhel>>"
-          export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}-base"
+          export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}"
           make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests integration-tests-report
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
