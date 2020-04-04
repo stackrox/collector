@@ -220,6 +220,10 @@ jobs:
             exit 1
           fi
 
+          if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" ]]; then
+            exit 0
+          fi
+
           # get fingerprint from github
           GH_KEY="$(ssh-keyscan github.com 2> /dev/null)"
           GH_FINGERPRINT="$(echo ${GH_KEY} | ssh-keygen -lf - | cut -d" " -f2)"
