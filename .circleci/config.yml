@@ -285,7 +285,6 @@ jobs:
           - kernel-module-cache-v12-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
           - kernel-module-cache-v12-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
           - kernel-module-cache-v12-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
-          - kernel-module-cache-v12-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-
 
     - run:
         name: Unpack module sources
