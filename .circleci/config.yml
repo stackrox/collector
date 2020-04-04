@@ -883,6 +883,9 @@ jobs:
       - run:
           name: Sanity check
           command:
+            if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+              exit 0
+            fi
             gsutil ls "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/"
 
 
