@@ -882,7 +882,7 @@ jobs:
 
       - run:
           name: Sanity check
-          command:
+          command: |
             if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
               exit 0
             fi
