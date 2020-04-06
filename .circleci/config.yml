@@ -1340,28 +1340,28 @@ workflows:
           tags:
             only: /.*/
     ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks` (ROX-3179)
-    - integration-test:
-        name: test-ebpf-cos-stable
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-stable
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
-    - integration-test:
-        name: test-ebpf-cos-77-lts
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-77-lts
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
+    #- integration-test:
+    #    name: test-ebpf-cos-stable
+    #    collection_method: ebpf
+    #    vm_type: cos
+    #    image_family: cos-stable
+    #    requires:
+    #    - images
+    #    - integration-test-local
+    #    filters:
+    #      tags:
+    #        only: /.*/
+    #- integration-test:
+    #    name: test-ebpf-cos-77-lts
+    #    collection_method: ebpf
+    #    vm_type: cos
+    #    image_family: cos-77-lts
+    #    requires:
+    #    - images
+    #    - integration-test-local
+    #    filters:
+    #      tags:
+    #        only: /.*/
     - integration-test:
         name: test-ebpf-cos-69-lts
         collection_method: ebpf
@@ -1503,10 +1503,10 @@ workflows:
        requires:
        - test-module-coreos-stable
        - test-ebpf-coreos-stable
-       - test-ebpf-cos-stable
+       #- test-ebpf-cos-stable
        - test-ebpf-cos-69-lts
        - test-ebpf-cos-73-lts
-       - test-ebpf-cos-77-lts
+       #- test-ebpf-cos-77-lts
        - test-module-rhel-7
        - test-ebpf-rhel-7
        - test-module-rhel-8
