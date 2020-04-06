@@ -1475,18 +1475,18 @@ workflows:
         filters:
           tags:
             only: /.*/
-    ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks` (ROX-3179)
-    #- integration-test:
-    #    name: test-ebpf-ubuntu-1910
-    #    collection_method: ebpf
-    #    vm_type: ubuntu-os
-    #    image_family: ubuntu-1910
-    #    requires:
-    #    - images
-    #    - integration-test-local
-    #    filters:
-    #      tags:
-    #        only: /.*/
+    # TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks` (ROX-3179)
+    - integration-test:
+        name: test-ebpf-ubuntu-1910
+        collection_method: ebpf
+        vm_type: ubuntu-os
+        image_family: ubuntu-1910
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
     # TODO(rc) Enable after fixing ROX-4002 `Collector fails to report network connection details and process paths on Ubuntu 19.10`
     #- integration-test:
     #    name: test-module-ubuntu-1910
@@ -1516,7 +1516,7 @@ workflows:
        - test-module-ubuntu-1804-lts
        #- test-ebpf-ubuntu-1804-lts
        #- test-module-ubuntu-1910
-       #- test-ebpf-ubuntu-1910
+       - test-ebpf-ubuntu-1910
        filters:
          tags:
            only: /.*/
