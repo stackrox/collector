@@ -1323,7 +1323,6 @@ workflows:
         filters:
           tags:
             only: /.*/
-    # TODO(rc) Enabled but bootstrap.sh forces fallback to kernel-module (ROX-2583)
     - integration-test:
         name: test-ebpf-coreos-stable
         collection_method: ebpf
@@ -1346,7 +1345,6 @@ workflows:
         filters:
           tags:
             only: /.*/
-    # TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks` (ROX-3179)
     - integration-test:
         name: test-ebpf-cos-stable
         collection_method: ebpf
