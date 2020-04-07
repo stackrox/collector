@@ -160,7 +160,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   this->GetProcessLineage(event->get_thread_info(), lineage);
   for (const auto &p : lineage) {
     auto signal_lineage = signal->add_lineage_info();
-    signal_lineage->set_parent_name(p.parent_name());
+    signal_lineage->set_parent_exec_file_path(p.parent_exec_file_path());
     signal_lineage->set_parent_uid(p.parent_uid());
   }
 
@@ -217,7 +217,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   
   for (const auto &p : lineage) {
     auto signal_lineage = signal->add_lineage_info();
-    signal_lineage->set_parent_name(p.parent_name());
+    signal_lineage->set_parent_exec_file_path(p.parent_exec_file_path());
     signal_lineage->set_parent_uid(p.parent_uid());
   }
 
@@ -281,10 +281,10 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
     if (pt->m_vpid == -1) return false;
 
     // Collapse parent child processes that have the same path
-    if (lineage.empty() || (lineage.back().parent_name() != pt->m_exepath)) {
+    if (lineage.empty() || (lineage.back().parent_exec_file_path() != pt->m_exepath)) { 
       LineageInfo info;
-      info.set_parent_uid(std::to_string(pt->m_pid));
-      info.set_parent_name(pt->m_exepath);
+      info.set_parent_uid(pt->m_uid);
+      info.set_parent_exec_file_path(pt->m_exepath);
       lineage.push_back(info);
     }
 
