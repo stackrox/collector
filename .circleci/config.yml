@@ -220,6 +220,10 @@ jobs:
             exit 1
           fi
 
+          if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" ]]; then
+            exit 0
+          fi
+
           # get fingerprint from github
           GH_KEY="$(ssh-keyscan github.com 2> /dev/null)"
           GH_FINGERPRINT="$(echo ${GH_KEY} | ssh-keygen -lf - | cut -d" " -f2)"
@@ -882,7 +886,10 @@ jobs:
 
       - run:
           name: Sanity check
-          command:
+          command: |
+            if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+              exit 0
+            fi
             gsutil ls "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/"
 
 
@@ -912,7 +919,7 @@ jobs:
           export COLLECTION_METHOD=kernel_module
           export VM_CONFIG="circle_local_<< parameters.vm-config >>"
           export COLLECTOR_REPO="stackrox/collector<<# parameters.use-rhel>>-rhel<</ parameters.use-rhel>>"
-          export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}-base"
+          export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}"
           make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests integration-tests-report
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
@@ -938,7 +945,7 @@ jobs:
         enum: [coreos, cos, rhel, ubuntu-os]
       image_family:
         type: enum
-        enum: [coreos-stable, cos-stable, cos-69-lts, cos-73-lts, cos-77-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-1910]
+        enum: [coreos-stable, cos-stable, cos-69-lts, cos-73-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-1910]
 
     machine: true
     working_directory: ~/workspace
@@ -1316,7 +1323,6 @@ workflows:
         filters:
           tags:
             only: /.*/
-    # TODO(rc) Enabled but bootstrap.sh forces fallback to kernel-module (ROX-2583)
     - integration-test:
         name: test-ebpf-coreos-stable
         collection_method: ebpf
@@ -1339,29 +1345,39 @@ workflows:
         filters:
           tags:
             only: /.*/
-    ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks` (ROX-3179)
-    #- integration-test:
-    #    name: test-ebpf-cos-stable
-    #    collection_method: ebpf
-    #    vm_type: cos
-    #    image_family: cos-stable
-    #    requires:
-    #    - images
-    #    - integration-test-local
-    #    filters:
-    #      tags:
-    #        only: /.*/
-    #- integration-test:
-    #    name: test-ebpf-cos-77-lts
-    #    collection_method: ebpf
-    #    vm_type: cos
-    #    image_family: cos-77-lts
-    #    requires:
-    #    - images
-    #    - integration-test-local
-    #    filters:
-    #      tags:
-    #        only: /.*/
+    - integration-test:
+        name: test-ebpf-cos-stable
+        collection_method: ebpf
+        vm_type: cos
+        image_family: cos-stable
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-ebpf-cos-81-lts
+        collection_method: ebpf
+        vm_type: cos
+        image_family: cos-81-lts
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-ebpf-cos-77-lts
+        collection_method: ebpf
+        vm_type: cos
+        image_family: cos-77-lts
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
     - integration-test:
         name: test-ebpf-cos-69-lts
         collection_method: ebpf
@@ -1503,10 +1519,11 @@ workflows:
        requires:
        - test-module-coreos-stable
        - test-ebpf-coreos-stable
-       #- test-ebpf-cos-stable
+       - test-ebpf-cos-stable
        - test-ebpf-cos-69-lts
        - test-ebpf-cos-73-lts
-       #- test-ebpf-cos-77-lts
+       - test-ebpf-cos-77-lts
+       - test-ebpf-cos-81-lts
        - test-module-rhel-7
        - test-ebpf-rhel-7
        - test-module-rhel-8
