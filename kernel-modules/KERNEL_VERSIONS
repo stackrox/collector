@@ -1049,6 +1049,7 @@
 4.4.0-175-generic
 4.4.0-176-generic
 4.4.0-177-generic
+4.4.0-178-generic
 4.4.0-21-generic
 4.4.0-22-generic
 4.4.0-24-generic
@@ -1621,6 +1622,7 @@
 5.3.0-43-generic
 5.3.0-45-generic
 5.3.0-46-generic
+5.3.0-47-generic
 5.4.0-1002-aws
 5.4.0-1002-gcp
 5.4.0-1003-azure
