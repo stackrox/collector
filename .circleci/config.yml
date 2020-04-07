@@ -685,7 +685,7 @@ jobs:
     - run:
         name: Build kernel-modules Docker image
         command: |
-          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]] && false; then
+          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
             exit 0
           fi
 
@@ -712,7 +712,7 @@ jobs:
             container
 
           # On PR branches, only build slim images
-          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]] && false; then
+          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
             docker tag "stackrox/collector:${COLLECTOR_VERSION}-base" "stackrox/collector:${COLLECTOR_VERSION}"
             docker tag "stackrox/collector:${COLLECTOR_VERSION}-base" "stackrox/collector:${COLLECTOR_VERSION}-latest"
           else
@@ -758,7 +758,7 @@ jobs:
         name: Sanity check images
         command: |
           docker images | grep collector | grep "${COLLECTOR_VERSION}"
-          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]] && false; then
+          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
             exit 0
           fi
           docker images | grep kernel | grep "${MODULE_VERSION}"
