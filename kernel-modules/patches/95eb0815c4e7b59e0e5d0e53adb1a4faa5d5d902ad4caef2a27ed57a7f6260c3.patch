@@ -12,7 +12,7 @@ index e37cea8..2b6d3d3 100644
  			len = res;
  		} else {
 diff --git a/bpf/fillers.h b/bpf/fillers.h
-index 2458b09..697e369 100644
+index 2458b09..c7b0c12 100644
 --- a/bpf/fillers.h
 +++ b/bpf/fillers.h
 @@ -1451,7 +1451,8 @@ static __always_inline pid_t bpf_task_tgid_vnr(struct task_struct *task)
@@ -34,6 +34,15 @@ index 2458b09..697e369 100644
  		return PPM_FAILURE_INVALID_USER_MEMORY;
  
  	off += res - 1;
+@@ -1591,7 +1592,7 @@ static __always_inline int __bpf_append_cgroup(struct css_set *cgroups,
+ 		res = bpf_probe_read_str(&buf[off & SCRATCH_SIZE_HALF],
+ 						SCRATCH_SIZE_HALF,
+ 						cgroup_path[k]);
+-		if (res < 0)
++		if (res == -EFAULT)
+ 			return PPM_FAILURE_INVALID_USER_MEMORY;
+ 
+ 		if (res > 1) {
 @@ -1694,7 +1695,7 @@ static __always_inline int bpf_accumulate_argv_or_env(struct filler_data *data,
  			return PPM_FAILURE_BUFFER_FULL;
  
