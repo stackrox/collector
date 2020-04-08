@@ -7,7 +7,7 @@ index e37cea8..2b6d3d3 100644
  						 PPM_MAX_ARG_SIZE,
  						 (const void *)val);
 -			if (res < 0)
-+			if (res == -EFAULT)
++			if (res <= 0)
  				return PPM_FAILURE_INVALID_USER_MEMORY;
  			len = res;
  		} else {
@@ -30,7 +30,7 @@ index 2458b09..c7b0c12 100644
  				     SCRATCH_SIZE_HALF,
  				     subsys_name);
 -	if (res < 0)
-+	if (res == -EFAULT)
++	if (res <= 0)
  		return PPM_FAILURE_INVALID_USER_MEMORY;
  
  	off += res - 1;
@@ -39,7 +39,7 @@ index 2458b09..c7b0c12 100644
  						SCRATCH_SIZE_HALF,
  						cgroup_path[k]);
 -		if (res < 0)
-+		if (res == -EFAULT)
++		if (res <= 0)
  			return PPM_FAILURE_INVALID_USER_MEMORY;
  
  		if (res > 1) {
@@ -48,7 +48,7 @@ index 2458b09..c7b0c12 100644
  
  		len = bpf_probe_read_str(&data->buf[off & SCRATCH_SIZE_HALF], SCRATCH_SIZE_HALF, arg);
 -		if (len < 0)
-+		if (len == -EFAULT)
++		if (len <= 0)
  			return PPM_FAILURE_INVALID_USER_MEMORY;
  
  		*args_len += len;
@@ -57,7 +57,7 @@ index 2458b09..c7b0c12 100644
  						&data->buf[data->state->tail_ctx.curoff & SCRATCH_SIZE_HALF]);
  
 -		if (exe_len < 0)
-+		if (exe_len == -EFAULT)
++		if (exe_len <= 0)
  			return PPM_FAILURE_INVALID_USER_MEMORY;
  
  		/*
