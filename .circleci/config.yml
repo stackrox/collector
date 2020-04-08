@@ -99,7 +99,7 @@ jobs:
 
           COLLECTOR_TAG="${COLLECTOR_VERSION}"
           GCLOUD_SSH_FINGERPRINT="$(echo ${GCLOUD_SSH_KEY_PUB} | awk '{print $2}' | base64 -d | md5sum | awk '{print $1}')"
-          GCP_SSH_KEY_FILE="${HOME}/.ssh/id_rsa_${GCLOUD_SSH_FINGERPRINT}" 
+          GCP_SSH_KEY_FILE="${HOME}/.ssh/id_rsa_${GCLOUD_SSH_FINGERPRINT}"
 
           cat >>~/workspace/shared-env \<<-EOF
             export COLLECTOR_VERSION="${COLLECTOR_VERSION}"
@@ -136,7 +136,7 @@ jobs:
         command: |
           docker push "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}"
           if [[ "$CIRCLE_BRANCH" == "master" ]]; then
-            docker tag "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}" stackrox/collector-builder:cache 
+            docker tag "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}" stackrox/collector-builder:cache
             docker push stackrox/collector-builder:cache
           fi
 
@@ -160,7 +160,7 @@ jobs:
         command: |
           docker push "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}"
           if [[ "$CIRCLE_BRANCH" == "master" ]]; then
-            docker tag "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}" stackrox/collector-builder:rhel-cache 
+            docker tag "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}" stackrox/collector-builder:rhel-cache
             docker push stackrox/collector-builder:rhel-cache
           fi
 
@@ -283,12 +283,12 @@ jobs:
           mkdir -p /tmp/cache
           echo "$MODULE_VERSION" >/tmp/cache/kernel-modules-version.txt
 
-    - restore_cache:
-        name: Restore Kernel module build cache
-        keys:
-          - kernel-module-cache-v12-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
-          - kernel-module-cache-v12-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
-          - kernel-module-cache-v12-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
+    #- restore_cache:
+    #    name: Restore Kernel module build cache
+    #    keys:
+    #      - kernel-module-cache-v12-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+    #      - kernel-module-cache-v12-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
+    #      - kernel-module-cache-v12-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
 
     - run:
         name: Unpack module sources
@@ -330,6 +330,8 @@ jobs:
             "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/" \
             "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}/" \
             || true
+            # remove all ebpf probes so they will be rebuilt on this PR
+            find "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}/" -name "collector-ebpf*" -print -exec rm {} \;
 
     - run:
         name: Patch module sources
@@ -417,7 +419,7 @@ jobs:
 
   kernels:
     machine: true
-    parallelism: 8
+    parallelism: 32
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
@@ -528,7 +530,6 @@ jobs:
     - run:
         name: Upload builder cache image
         command: |
-          # [[ "$CIRCLE_BRANCH" == "master" ]] || exit 0
           (( CIRCLE_NODE_INDEX == 0 )) || exit 0
           docker push "$BUILD_CONTAINER_TAG"
         background: true
@@ -653,11 +654,11 @@ jobs:
             "/tmp/cache/kernel-modules/${MODULE_VERSION}/"
           echo "$MODULE_VERSION" >/tmp/cache/kernel-modules-version.txt
 
-    - save_cache:
-        name: Saving Kernel module build cache
-        key: kernel-module-cache-v12-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
-        paths:
-          - /tmp/cache/
+    #- save_cache:
+    #    name: Saving Kernel module build cache
+    #    key: kernel-module-cache-v12-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+    #    paths:
+    #      - /tmp/cache/
 
     - run:
         name: Adding Kernel module version file
@@ -685,7 +686,7 @@ jobs:
     - run:
         name: Build kernel-modules Docker image
         command: |
-          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]] && false; then
             exit 0
           fi
 
@@ -712,7 +713,7 @@ jobs:
             container
 
           # On PR branches, only build slim images
-          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]] && false; then
             docker tag "stackrox/collector:${COLLECTOR_VERSION}-base" "stackrox/collector:${COLLECTOR_VERSION}"
             docker tag "stackrox/collector:${COLLECTOR_VERSION}-base" "stackrox/collector:${COLLECTOR_VERSION}-latest"
           else
