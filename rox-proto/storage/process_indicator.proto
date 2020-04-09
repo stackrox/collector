@@ -80,7 +80,7 @@ message ProcessSignal {
     repeated LineageInfo lineage_info = 12;
 
     message LineageInfo {
-        uint32 parent_uid  = 1;
+        uint32 parent_uid            = 1;
         string parent_exec_file_path = 2;
     }
 }
