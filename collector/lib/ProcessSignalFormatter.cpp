@@ -37,6 +37,7 @@ namespace collector {
 using SignalStreamMessage = sensor::SignalStreamMessage;
 using Signal = ProcessSignalFormatter::Signal;
 using ProcessSignal = ProcessSignalFormatter::ProcessSignal;
+using LineageInfo = ProcessSignalFormatter::LineageInfo;
 
 using Timestamp = google::protobuf::Timestamp;
 using TimeUtil = google::protobuf::util::TimeUtil;
@@ -155,9 +156,13 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   }
 
   // set process lineage
-  std::vector<std::string> lineage;
-  GetProcessLineage(event->get_thread_info(), lineage);
-  for (const auto &p : lineage) signal->add_lineage(p);
+  std::vector<LineageInfo> lineage;
+  this->GetProcessLineage(event->get_thread_info(), lineage);
+  for (const auto &p : lineage) {
+    auto signal_lineage = signal->add_lineage_info();
+    signal_lineage->set_parent_exec_file_path(p.parent_exec_file_path());
+    signal_lineage->set_parent_uid(p.parent_uid());
+  }
 
   return signal;
 }
@@ -207,9 +212,14 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   signal->set_container_id(tinfo->m_container_id);
 
   // set process lineage
-  std::vector<std::string> lineage;
+  std::vector<LineageInfo> lineage;
   GetProcessLineage(tinfo, lineage);
-  for (const auto &p : lineage) signal->add_lineage(p);
+  
+  for (const auto &p : lineage) {
+    auto signal_lineage = signal->add_lineage_info();
+    signal_lineage->set_parent_exec_file_path(p.parent_exec_file_path());
+    signal_lineage->set_parent_uid(p.parent_uid());
+  }
 
   return signal;
 }
@@ -252,7 +262,7 @@ bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
 
 
 void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo, 
-    std::vector<std::string>& lineage) {
+    std::vector<LineageInfo>& lineage) {
   if (tinfo == NULL) return;
   sinsp_threadinfo* mt = NULL;
   if (tinfo->is_main_thread()) {
@@ -271,8 +281,11 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
     if (pt->m_vpid == -1) return false;
 
     // Collapse parent child processes that have the same path
-    if (lineage.empty() || (lineage.back() != pt->m_exepath)) {
-      lineage.push_back(pt->m_exepath);
+    if (lineage.empty() || (lineage.back().parent_exec_file_path() != pt->m_exepath)) { 
+      LineageInfo info;
+      info.set_parent_uid(pt->m_uid);
+      info.set_parent_exec_file_path(pt->m_exepath);
+      lineage.push_back(info);
     }
 
     // Limit max number of ancestors
