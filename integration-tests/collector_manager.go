@@ -53,7 +53,7 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 		DisableGrpcServer: false,
 		BootstrapOnly:     false,
 		CollectorImage:    collectorImage,
-		GRPCServerImage:   "stackrox/grpc-server:3.0.41.x-111-g615a477afc",
+		GRPCServerImage:   "stackrox/grpc-server:3.0.41.x-131-ge049c36b3d",
 		Env:               env,
 		Mounts:            mounts,
 		TestName:          name,
