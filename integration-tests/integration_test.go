@@ -243,34 +243,34 @@ func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
 	processName := "nginx"
 	exeFilePath := "/usr/sbin/nginx"
 	parentFilePath := "/usr/sbin/nginx"
-	expectedProcessInfo := fmt.Sprintf("%s:%s:%s:%d:%s:%s", processName, exeFilePath, parentUIDStr, 0, parentExecFilePathStr, parentFilePath)
+	expectedProcessLineageInfo := fmt.Sprintf("%s:%s:%s:%d:%s:%s", processName, exeFilePath, parentUIDStr, 0, parentExecFilePathStr, parentFilePath)
 	val, err := s.GetLineageInfo(processName, "0", processLineageInfoBucket)
 	require.NoError(s.T(), err)
-	assert.Equal(s.T(), expectedProcessInfo, val)
+	assert.Equal(s.T(), expectedProcessLineageInfo, val)
 
 	processName = "awk"
 	exeFilePath = "/usr/bin/awk"
 	parentFilePath = "/bin/busybox"
-	expectedProcessInfo = fmt.Sprintf("%s:%s:%s:%d:%s:%s", processName, exeFilePath, parentUIDStr, 0, parentExecFilePathStr, parentFilePath)
+	expectedProcessLineageInfo = fmt.Sprintf("%s:%s:%s:%d:%s:%s", processName, exeFilePath, parentUIDStr, 0, parentExecFilePathStr, parentFilePath)
 	val, err = s.GetLineageInfo(processName, "0", processLineageInfoBucket)
 	require.NoError(s.T(), err)
-	assert.Equal(s.T(), expectedProcessInfo, val)
+	assert.Equal(s.T(), expectedProcessLineageInfo, val)
 
 	processName = "grep"
 	exeFilePath = "/bin/grep"
 	parentFilePath = "/bin/busybox"
-	expectedProcessInfo = fmt.Sprintf("%s:%s:%s:%d:%s:%s", processName, exeFilePath, parentUIDStr, 0, parentExecFilePathStr, parentFilePath)
+	expectedProcessLineageInfo = fmt.Sprintf("%s:%s:%s:%d:%s:%s", processName, exeFilePath, parentUIDStr, 0, parentExecFilePathStr, parentFilePath)
 	val, err = s.GetLineageInfo(processName, "0", processLineageInfoBucket)
 	require.NoError(s.T(), err)
-	assert.Equal(s.T(), expectedProcessInfo, val)
+	assert.Equal(s.T(), expectedProcessLineageInfo, val)
 
 	processName = "sleep"
 	exeFilePath = "/bin/sleep"
 	parentFilePath = "/bin/busybox"
-	expectedProcessInfo = fmt.Sprintf("%s:%s:%s:%d:%s:%s", processName, exeFilePath, parentUIDStr, 0, parentExecFilePathStr, parentFilePath)
+	expectedProcessLineageInfo = fmt.Sprintf("%s:%s:%s:%d:%s:%s", processName, exeFilePath, parentUIDStr, 0, parentExecFilePathStr, parentFilePath)
 	val, err = s.GetLineageInfo(processName, "0", processLineageInfoBucket)
 	require.NoError(s.T(), err)
-	assert.Equal(s.T(), expectedProcessInfo, val)
+	assert.Equal(s.T(), expectedProcessLineageInfo, val)
 }
 
 func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
