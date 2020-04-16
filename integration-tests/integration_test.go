@@ -441,6 +441,12 @@ func (s *IntegrationTestSuiteBase) GetLineageInfo(processName string, key string
 	}
 	err = s.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucket))
+
+		b.ForEach(func(name []byte, _ []byte) error {
+			fmt.Println(string(name))
+			return nil
+		})
+
 		if b == nil {
 			return fmt.Errorf("Bucket %s was not found", bucket)
 		}
