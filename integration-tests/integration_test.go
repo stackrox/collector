@@ -240,14 +240,6 @@ func (s *ProcessNetworkTestSuite) TestProcessViz() {
 }
 
 func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
-	// processName := "nginx"
-	// exeFilePath := "/usr/sbin/nginx"
-	// parentFilePath := "/usr/sbin/nginx"
-	// expectedProcessLineageInfo := fmt.Sprintf("%s:%s:%s:%d:%s:%s", processName, exeFilePath, parentUIDStr, 0, parentExecFilePathStr, parentFilePath)
-	// val, err := s.GetLineageInfo(processName, "0", processLineageInfoBucket)
-	// require.NoError(s.T(), err)x
-	// assert.Equal(s.T(), expectedProcessLineageInfo, val)
-
 	processName := "awk"
 	exeFilePath := "/usr/bin/awk"
 	parentFilePath := "/bin/busybox"
@@ -441,11 +433,6 @@ func (s *IntegrationTestSuiteBase) GetLineageInfo(processName string, key string
 	}
 	err = s.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucket))
-
-		b.ForEach(func(name []byte, _ []byte) error {
-			fmt.Println(string(name))
-			return nil
-		})
 
 		if b == nil {
 			return fmt.Errorf("Bucket %s was not found", bucket)
