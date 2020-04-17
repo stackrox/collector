@@ -17,8 +17,21 @@ index 9ec83c6..f87886b 100644
  		-Wno-tautological-compare \
  		-O2 -g -emit-llvm -c $< -o $(patsubst %.o,%.ll,$@)
  	$(LLC) -march=bpf -filetype=obj -o $@ $(patsubst %.o,%.ll,$@)
+diff --git a/bpf/filler_helpers.h b/bpf/filler_helpers.h
+index a0c9fd6..d5e9bcd 100644
+--- a/bpf/filler_helpers.h
++++ b/bpf/filler_helpers.h
+@@ -721,7 +721,7 @@ static __always_inline int __bpf_val_to_ring(struct filler_data *data,
+ 			res = bpf_probe_read_str(&data->buf[data->state->tail_ctx.curoff & SCRATCH_SIZE_HALF],
+ 						 PPM_MAX_ARG_SIZE,
+ 						 (const void *)val);
+-			if (res < 0)
++			if (res <= 0)
+ 				return PPM_FAILURE_INVALID_USER_MEMORY;
+ 			len = res;
+ 		} else {
 diff --git a/bpf/fillers.h b/bpf/fillers.h
-index 2779a2a..8e897c2 100644
+index 2779a2a..5958325 100644
 --- a/bpf/fillers.h
 +++ b/bpf/fillers.h
 @@ -1343,7 +1343,8 @@ static __always_inline int bpf_ppm_get_tty(struct task_struct *task)
@@ -61,6 +74,33 @@ index 2779a2a..8e897c2 100644
  	return bpf_task_pid_nr_ns(task, __PIDTYPE_TGID, NULL);
  #else
  	return bpf_task_pid_nr_ns(task, PIDTYPE_TGID, NULL);
+@@ -1456,7 +1460,7 @@ static __always_inline int __bpf_append_cgroup(struct css_set *cgroups,
+ 	int res = bpf_probe_read_str(&buf[off & SCRATCH_SIZE_HALF],
+ 				     SCRATCH_SIZE_HALF,
+ 				     subsys_name);
+-	if (res < 0)
++	if (res <= 0)
+ 		return PPM_FAILURE_INVALID_USER_MEMORY;
+ 
+ 	off += res - 1;
+@@ -1580,7 +1584,7 @@ static __always_inline int bpf_accumulate_argv_or_env(struct filler_data *data,
+ 			return PPM_FAILURE_BUFFER_FULL;
+ 
+ 		len = bpf_probe_read_str(&data->buf[off & SCRATCH_SIZE_HALF], SCRATCH_SIZE_HALF, arg);
+-		if (len < 0)
++		if (len <= 0)
+ 			return PPM_FAILURE_INVALID_USER_MEMORY;
+ 
+ 		*args_len += len;
+@@ -1682,7 +1686,7 @@ FILLER(proc_startupdate, true)
+ 						SCRATCH_SIZE_HALF,
+ 						&data->buf[data->state->tail_ctx.curoff & SCRATCH_SIZE_HALF]);
+ 
+-		if (exe_len < 0)
++		if (exe_len <= 0)
+ 			return PPM_FAILURE_INVALID_USER_MEMORY;
+ 
+ 		/*
 @@ -2003,10 +2007,6 @@ FILLER(proc_startupdate_3, true)
  		 * loginuid
  		 */
@@ -72,6 +112,60 @@ index 2779a2a..8e897c2 100644
  	}
  
  	return res;
+diff --git a/bpf/probe.c b/bpf/probe.c
+index 146cc6e..9db63d6 100644
+--- a/bpf/probe.c
++++ b/bpf/probe.c
+@@ -149,6 +149,7 @@ BPF_PROBE("sched/", sched_process_exit, sched_process_exit_args)
+ 
+ BPF_PROBE("sched/", sched_switch, sched_switch_args)
+ {
++#if 0
+ 	struct sysdig_bpf_settings *settings;
+ 	enum ppm_event_type evt_type;
+ 
+@@ -162,6 +163,7 @@ BPF_PROBE("sched/", sched_switch, sched_switch_args)
+ 	evt_type = PPME_SCHEDSWITCH_6_E;
+ 
+ 	call_filler(ctx, ctx, evt_type, settings, 0);
++#endif
+ 	return 0;
+ }
+ 
+@@ -188,16 +190,25 @@ static __always_inline int bpf_page_fault(struct page_fault_args *ctx)
+ 
+ BPF_PROBE("exceptions/", page_fault_user, page_fault_args)
+ {
++#if 0
+ 	return bpf_page_fault(ctx);
++#else
++	return 0;
++#endif
+ }
+ 
+ BPF_PROBE("exceptions/", page_fault_kernel, page_fault_args)
+ {
++#if 0
+ 	return bpf_page_fault(ctx);
++#else
++	return 0;
++#endif
+ }
+ 
+ BPF_PROBE("signal/", signal_deliver, signal_deliver_args)
+ {
++#if 0
+ 	struct sysdig_bpf_settings *settings;
+ 	enum ppm_event_type evt_type;
+ 
+@@ -211,6 +222,7 @@ BPF_PROBE("signal/", signal_deliver, signal_deliver_args)
+ 	evt_type = PPME_SIGNALDELIVER_E;
+ 
+ 	call_filler(ctx, ctx, evt_type, settings, UF_ALWAYS_DROP);
++#endif
+ 	return 0;
+ }
+ 
 diff --git a/bpf/quirks.h b/bpf/quirks.h
 index 11ec7ce..6f407f6 100644
 --- a/bpf/quirks.h
