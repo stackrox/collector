@@ -344,8 +344,10 @@ jobs:
     - run:
         name: Compile list of cached modules for CURRENT module version
         command: |
+          # TODO remove grep -v bpf below! This is to force rebuild of bpf
           ( ls -a "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/ || true ) \
             | "${SOURCE_ROOT}/kernel-modules/build/extract-kernel-versions-from-module-files" \
+            | grep -v bpf \
             >~/kobuild-tmp/existing-modules-"${MODULE_VERSION}"
 
     - run:
@@ -354,8 +356,10 @@ jobs:
           for i in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
             version="$(basename "$i")"
             [[ "$version" != "$MODULE_VERSION" ]] || continue
+            # TODO remove grep -v bpf below! This is to force rebuild of bpf
             ( gsutil ls "${COLLECTOR_MODULES_BUCKET}/${version}/" || true)  \
               | "${SOURCE_ROOT}/kernel-modules/build/extract-kernel-versions-from-module-files" \
+              | grep -v bpf \
                 >~/kobuild-tmp/existing-modules-"${version}"
 
             echo "Existing modules for version ${version}:"
@@ -878,6 +882,7 @@ jobs:
             extra_args=()
             if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
               extra_args+=(-n)
+              exit 0  # TODO remove
             fi
 
             gsutil -m rsync -r "${extra_args[@]}" \
