@@ -19,8 +19,11 @@ import (
 )
 
 const (
-	processBucket = "Process"
-	networkBucket = "Network"
+	processBucket            = "Process"
+	processLineageInfoBucket = "LineageInfo"
+	networkBucket            = "Network"
+	parentUIDStr             = "ParentUid"
+	parentExecFilePathStr    = "ParentExecFilePath"
 )
 
 func TestBenchmarkBaseline(t *testing.T) {
@@ -236,6 +239,32 @@ func (s *ProcessNetworkTestSuite) TestProcessViz() {
 	assert.Equal(s.T(), expectedProcessInfo, val)
 }
 
+func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
+	processName := "awk"
+	exeFilePath := "/usr/bin/awk"
+	parentFilePath := "/bin/busybox"
+	expectedProcessLineageInfo := fmt.Sprintf("%s:%s:%s:%d:%s:%s", processName, exeFilePath, parentUIDStr, 0, parentExecFilePathStr, parentFilePath)
+	val, err := s.GetLineageInfo(processName, "0", processLineageInfoBucket)
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), expectedProcessLineageInfo, val)
+
+	processName = "grep"
+	exeFilePath = "/bin/grep"
+	parentFilePath = "/bin/busybox"
+	expectedProcessLineageInfo = fmt.Sprintf("%s:%s:%s:%d:%s:%s", processName, exeFilePath, parentUIDStr, 0, parentExecFilePathStr, parentFilePath)
+	val, err = s.GetLineageInfo(processName, "0", processLineageInfoBucket)
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), expectedProcessLineageInfo, val)
+
+	processName = "sleep"
+	exeFilePath = "/bin/sleep"
+	parentFilePath = "/bin/busybox"
+	expectedProcessLineageInfo = fmt.Sprintf("%s:%s:%s:%d:%s:%s", processName, exeFilePath, parentUIDStr, 0, parentExecFilePathStr, parentFilePath)
+	val, err = s.GetLineageInfo(processName, "0", processLineageInfoBucket)
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), expectedProcessLineageInfo, val)
+}
+
 func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
 
 	// Server side checks
@@ -393,6 +422,27 @@ func (s *IntegrationTestSuiteBase) Get(key string, bucket string) (val string, e
 			return fmt.Errorf("Bucket %s was not found", bucket)
 		}
 		val = string(b.Get([]byte(key)))
+		return nil
+	})
+	return
+}
+
+func (s *IntegrationTestSuiteBase) GetLineageInfo(processName string, key string, bucket string) (val string, err error) {
+	if s.db == nil {
+		return "", fmt.Errorf("Db %v is nil", s.db)
+	}
+	err = s.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(bucket))
+
+		if b == nil {
+			return fmt.Errorf("Bucket %s was not found", bucket)
+		}
+
+		processBucket := b.Bucket([]byte(processName))
+		if processBucket == nil {
+			return fmt.Errorf("Process bucket %s was not found", processName)
+		}
+		val = string(processBucket.Get([]byte(key)))
 		return nil
 	})
 	return
