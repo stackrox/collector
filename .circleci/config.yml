@@ -221,6 +221,7 @@ jobs:
           fi
 
           if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" ]]; then
+            echo "Not preparing legacy sources, as we are on a non-master branch."
             exit 0
           fi
 
@@ -576,7 +577,7 @@ jobs:
     - persist_to_workspace:
         root: ~/workspace
         paths:
-          - ko-build/build-output
+          - ko-build/build-output/shard-*
 
   collector:
     machine: true
@@ -879,15 +880,16 @@ jobs:
       - run:
           name: Uploading Kernel modules
           command: |
+            TARGET="${COLLECTOR_MODULES_BUCKET}/"
             extra_args=()
             if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
               extra_args+=(-n)
-              exit 0  # TODO remove
+              TARGET="gs://stackrox-collector-modules-staging/${CIRCLE_BRANCH}/${CIRCLE_BUILD_NUM}/"
             fi
 
             gsutil -m rsync -r "${extra_args[@]}" \
               "${WORKSPACE_ROOT}/ko-build/build-output/" \
-              "${COLLECTOR_MODULES_BUCKET}/"
+              "$TARGET"
 
       - run:
           name: Sanity check

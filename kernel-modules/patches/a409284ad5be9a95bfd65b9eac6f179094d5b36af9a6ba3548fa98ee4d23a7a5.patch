@@ -17,21 +17,8 @@ index 10800af..4cd3e30 100644
  		-Wno-tautological-compare \
  		-O2 -g -emit-llvm -c $< -o $(patsubst %.o,%.ll,$@)
  	$(LLC) -march=bpf -filetype=obj -o $@ $(patsubst %.o,%.ll,$@)
-diff --git a/bpf/filler_helpers.h b/bpf/filler_helpers.h
-index 50ab3f2..7b997a1 100644
---- a/bpf/filler_helpers.h
-+++ b/bpf/filler_helpers.h
-@@ -725,7 +725,7 @@ static __always_inline int __bpf_val_to_ring(struct filler_data *data,
- 			res = bpf_probe_read_str(&data->buf[data->state->tail_ctx.curoff & SCRATCH_SIZE_HALF],
- 						 PPM_MAX_ARG_SIZE,
- 						 (const void *)val);
--			if (res < 0)
-+			if (res <= 0)
- 				return PPM_FAILURE_INVALID_USER_MEMORY;
- 			len = res;
- 		} else {
 diff --git a/bpf/fillers.h b/bpf/fillers.h
-index 0108c73..7fc19a8 100644
+index 0108c73..37bd7c3 100644
 --- a/bpf/fillers.h
 +++ b/bpf/fillers.h
 @@ -1433,7 +1433,8 @@ static __always_inline pid_t bpf_task_tgid_vnr(struct task_struct *task)
@@ -44,96 +31,6 @@ index 0108c73..7fc19a8 100644
  
  static __always_inline pid_t bpf_task_pid_nr_ns(struct task_struct *task,
  						enum pid_type type,
-@@ -1526,7 +1527,7 @@ static __always_inline int __bpf_append_cgroup(struct css_set *cgroups,
- 	int res = bpf_probe_read_str(&buf[off & SCRATCH_SIZE_HALF],
- 				     SCRATCH_SIZE_HALF,
- 				     subsys_name);
--	if (res < 0)
-+	if (res <= 0)
- 		return PPM_FAILURE_INVALID_USER_MEMORY;
- 
- 	off += res - 1;
-@@ -1573,7 +1574,7 @@ static __always_inline int __bpf_append_cgroup(struct css_set *cgroups,
- 		res = bpf_probe_read_str(&buf[off & SCRATCH_SIZE_HALF],
- 						SCRATCH_SIZE_HALF,
- 						cgroup_path[k]);
--		if (res < 0)
-+		if (res <= 0)
- 			return PPM_FAILURE_INVALID_USER_MEMORY;
- 
- 		if (res > 1) {
-@@ -1676,7 +1677,7 @@ static __always_inline int bpf_accumulate_argv_or_env(struct filler_data *data,
- 			return PPM_FAILURE_BUFFER_FULL;
- 
- 		len = bpf_probe_read_str(&data->buf[off & SCRATCH_SIZE_HALF], SCRATCH_SIZE_HALF, arg);
--		if (len < 0)
-+		if (len <= 0)
- 			return PPM_FAILURE_INVALID_USER_MEMORY;
- 
- 		*args_len += len;
-@@ -1778,7 +1779,7 @@ FILLER(proc_startupdate, true)
- 						SCRATCH_SIZE_HALF,
- 						&data->buf[data->state->tail_ctx.curoff & SCRATCH_SIZE_HALF]);
- 
--		if (exe_len < 0)
-+		if (exe_len <= 0)
- 			return PPM_FAILURE_INVALID_USER_MEMORY;
- 
- 		/*
-diff --git a/bpf/probe.c b/bpf/probe.c
-index a9f9729..54d7680 100644
---- a/bpf/probe.c
-+++ b/bpf/probe.c
-@@ -147,6 +147,7 @@ BPF_PROBE("sched/", sched_process_exit, sched_process_exit_args)
- 
- BPF_PROBE("sched/", sched_switch, sched_switch_args)
- {
-+#if 0
- 	struct sysdig_bpf_settings *settings;
- 	enum ppm_event_type evt_type;
- 
-@@ -160,6 +161,7 @@ BPF_PROBE("sched/", sched_switch, sched_switch_args)
- 	evt_type = PPME_SCHEDSWITCH_6_E;
- 
- 	call_filler(ctx, ctx, evt_type, settings, 0);
-+#endif
- 	return 0;
- }
- 
-@@ -186,16 +188,25 @@ static __always_inline int bpf_page_fault(struct page_fault_args *ctx)
- 
- BPF_PROBE("exceptions/", page_fault_user, page_fault_args)
- {
-+#if 0
- 	return bpf_page_fault(ctx);
-+#else
-+	return 0;
-+#endif
- }
- 
- BPF_PROBE("exceptions/", page_fault_kernel, page_fault_args)
- {
-+#if 0
- 	return bpf_page_fault(ctx);
-+#else
-+	return 0;
-+#endif
- }
- 
- BPF_PROBE("signal/", signal_deliver, signal_deliver_args)
- {
-+#if 0
- 	struct sysdig_bpf_settings *settings;
- 	enum ppm_event_type evt_type;
- 
-@@ -209,6 +220,7 @@ BPF_PROBE("signal/", signal_deliver, signal_deliver_args)
- 	evt_type = PPME_SIGNALDELIVER_E;
- 
- 	call_filler(ctx, ctx, evt_type, settings, UF_ALWAYS_DROP);
-+#endif
- 	return 0;
- }
- 
 diff --git a/bpf/quirks.h b/bpf/quirks.h
 index a26bfd9..410b0fe 100644
 --- a/bpf/quirks.h
