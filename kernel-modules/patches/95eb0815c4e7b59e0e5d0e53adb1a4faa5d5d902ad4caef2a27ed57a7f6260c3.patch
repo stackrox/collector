@@ -90,7 +90,7 @@ index 2458b09..c7b0c12 100644
  
  		/*
 diff --git a/bpf/probe.c b/bpf/probe.c
-index a9f9729..54d7680 100644
+index a9f9729..920a281 100644
 --- a/bpf/probe.c
 +++ b/bpf/probe.c
 @@ -147,6 +147,7 @@ BPF_PROBE("sched/", sched_process_exit, sched_process_exit_args)
@@ -109,8 +109,11 @@ index a9f9729..54d7680 100644
  	return 0;
  }
  
-@@ -186,16 +188,25 @@ static __always_inline int bpf_page_fault(struct page_fault_args *ctx)
+@@ -184,18 +186,29 @@ static __always_inline int bpf_page_fault(struct page_fault_args *ctx)
+ 	return 0;
+ }
  
++#if 0
  BPF_PROBE("exceptions/", page_fault_user, page_fault_args)
  {
 +#if 0
@@ -128,6 +131,7 @@ index a9f9729..54d7680 100644
 +	return 0;
 +#endif
  }
++#endifs
  
  BPF_PROBE("signal/", signal_deliver, signal_deliver_args)
  {
@@ -135,7 +139,7 @@ index a9f9729..54d7680 100644
  	struct sysdig_bpf_settings *settings;
  	enum ppm_event_type evt_type;
  
-@@ -209,6 +220,7 @@ BPF_PROBE("signal/", signal_deliver, signal_deliver_args)
+@@ -209,6 +222,7 @@ BPF_PROBE("signal/", signal_deliver, signal_deliver_args)
  	evt_type = PPME_SIGNALDELIVER_E;
  
  	call_filler(ctx, ctx, evt_type, settings, UF_ALWAYS_DROP);
