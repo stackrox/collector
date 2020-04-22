@@ -90,7 +90,7 @@ index 2458b09..c7b0c12 100644
  
  		/*
 diff --git a/bpf/probe.c b/bpf/probe.c
-index a9f9729..920a281 100644
+index a9f9729..32d5085 100644
 --- a/bpf/probe.c
 +++ b/bpf/probe.c
 @@ -147,6 +147,7 @@ BPF_PROBE("sched/", sched_process_exit, sched_process_exit_args)
@@ -131,7 +131,7 @@ index a9f9729..920a281 100644
 +	return 0;
 +#endif
  }
-+#endifs
++#endif
  
  BPF_PROBE("signal/", signal_deliver, signal_deliver_args)
  {
