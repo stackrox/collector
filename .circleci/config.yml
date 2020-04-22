@@ -221,7 +221,6 @@ jobs:
           fi
 
           if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" ]]; then
-            echo "Not preparing legacy sources, as we are on a non-master branch."
             exit 0
           fi
 
@@ -345,10 +344,8 @@ jobs:
     - run:
         name: Compile list of cached modules for CURRENT module version
         command: |
-          # TODO remove grep -v bpf below! This is to force rebuild of bpf
           ( ls -a "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/ || true ) \
             | "${SOURCE_ROOT}/kernel-modules/build/extract-kernel-versions-from-module-files" \
-            | grep -v bpf \
             >~/kobuild-tmp/existing-modules-"${MODULE_VERSION}"
 
     - run:
@@ -357,10 +354,8 @@ jobs:
           for i in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
             version="$(basename "$i")"
             [[ "$version" != "$MODULE_VERSION" ]] || continue
-            # TODO remove grep -v bpf below! This is to force rebuild of bpf
             ( gsutil ls "${COLLECTOR_MODULES_BUCKET}/${version}/" || true)  \
               | "${SOURCE_ROOT}/kernel-modules/build/extract-kernel-versions-from-module-files" \
-              | grep -v bpf \
                 >~/kobuild-tmp/existing-modules-"${version}"
 
             echo "Existing modules for version ${version}:"
@@ -577,7 +572,7 @@ jobs:
     - persist_to_workspace:
         root: ~/workspace
         paths:
-          - ko-build/build-output/shard-*
+          - ko-build/build-output
 
   collector:
     machine: true
@@ -880,16 +875,14 @@ jobs:
       - run:
           name: Uploading Kernel modules
           command: |
-            TARGET="${COLLECTOR_MODULES_BUCKET}/"
             extra_args=()
             if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
               extra_args+=(-n)
-              TARGET="gs://stackrox-collector-modules-staging/${CIRCLE_BRANCH}/${CIRCLE_BUILD_NUM}/"
             fi
 
             gsutil -m rsync -r "${extra_args[@]}" \
               "${WORKSPACE_ROOT}/ko-build/build-output/" \
-              "$TARGET"
+              "${COLLECTOR_MODULES_BUCKET}/"
 
       - run:
           name: Sanity check
