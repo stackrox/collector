@@ -673,6 +673,7 @@ jobs:
     - run:
         name: Load any missing modules from GCloud
         command: |
+          exit 0
           gsutil -m rsync -r \
               "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/" \
               "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
