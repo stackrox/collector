@@ -645,7 +645,7 @@ jobs:
         name: Copying Kernel modules build output
         command: |
           mkdir -p "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
-          mv "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}/"* \
+          mv "${WORKSPACE_ROOT}/ko-build/built-probes/${MODULE_VERSION}/"* \
             "${SOURCE_ROOT}/kernel-modules/container/kernel-modules" || true
           rm -f "${SOURCE_ROOT}/kernel-modules/container/kernel-modules/".*.unavail || true
 
@@ -1192,7 +1192,7 @@ jobs:
     - run:
         name: Copy kernel objects built in this workflow
         command: |
-          mod_build_dir="${WORKSPACE_ROOT}/ko-build/build-output"
+          mod_build_dir="${WORKSPACE_ROOT}/ko-build/built-probes"
           if [ -z "$(find "${mod_build_dir}" -type f -name "*.gz" )" ] ; then
             echo "No kernel objects built in this workflow"
             circleci step halt
