@@ -159,10 +159,53 @@ index 2458b09..e2be0b2 100644
  
  FILLER(sys_quotactl_e, true)
 diff --git a/bpf/probe.c b/bpf/probe.c
-index a9f9729..32d5085 100644
+index a9f9729..279933d 100644
 --- a/bpf/probe.c
 +++ b/bpf/probe.c
-@@ -147,6 +147,7 @@ BPF_PROBE("sched/", sched_process_exit, sched_process_exit_args)
+@@ -34,6 +34,7 @@ int bpf_##event(struct type *ctx)
+ 
+ BPF_PROBE("raw_syscalls/", sys_enter, sys_enter_args)
+ {
++#if 0
+ 	const struct syscall_evt_pair *sc_evt;
+ 	struct sysdig_bpf_settings *settings;
+ 	enum ppm_event_type evt_type;
+@@ -77,12 +78,14 @@ BPF_PROBE("raw_syscalls/", sys_enter, sys_enter_args)
+ 		return 0;
+ 
+ 	call_filler(ctx, &stack_ctx, evt_type, settings, drop_flags);
++#endif
+ #endif
+ 	return 0;
+ }
+ 
+ BPF_PROBE("raw_syscalls/", sys_exit, sys_exit_args)
+ {
++#if 0
+ 	const struct syscall_evt_pair *sc_evt;
+ 	struct sysdig_bpf_settings *settings;
+ 	enum ppm_event_type evt_type;
+@@ -116,11 +119,13 @@ BPF_PROBE("raw_syscalls/", sys_exit, sys_exit_args)
+ 	}
+ 
+ 	call_filler(ctx, ctx, evt_type, settings, drop_flags);
++#endif
+ 	return 0;
+ }
+ 
+ BPF_PROBE("sched/", sched_process_exit, sched_process_exit_args)
+ {
++#if 0
+ 	struct sysdig_bpf_settings *settings;
+ 	enum ppm_event_type evt_type;
+ 	struct task_struct *task;
+@@ -142,11 +147,13 @@ BPF_PROBE("sched/", sched_process_exit, sched_process_exit_args)
+ 	evt_type = PPME_PROCEXIT_1_E;
+ 
+ 	call_filler(ctx, ctx, evt_type, settings, UF_NEVER_DROP);
++#endif
+ 	return 0;
+ }
  
  BPF_PROBE("sched/", sched_switch, sched_switch_args)
  {
@@ -170,7 +213,7 @@ index a9f9729..32d5085 100644
  	struct sysdig_bpf_settings *settings;
  	enum ppm_event_type evt_type;
  
-@@ -160,6 +161,7 @@ BPF_PROBE("sched/", sched_switch, sched_switch_args)
+@@ -160,6 +167,7 @@ BPF_PROBE("sched/", sched_switch, sched_switch_args)
  	evt_type = PPME_SCHEDSWITCH_6_E;
  
  	call_filler(ctx, ctx, evt_type, settings, 0);
@@ -178,7 +221,7 @@ index a9f9729..32d5085 100644
  	return 0;
  }
  
-@@ -184,18 +186,29 @@ static __always_inline int bpf_page_fault(struct page_fault_args *ctx)
+@@ -184,18 +192,29 @@ static __always_inline int bpf_page_fault(struct page_fault_args *ctx)
  	return 0;
  }
  
@@ -208,7 +251,7 @@ index a9f9729..32d5085 100644
  	struct sysdig_bpf_settings *settings;
  	enum ppm_event_type evt_type;
  
-@@ -209,6 +222,7 @@ BPF_PROBE("signal/", signal_deliver, signal_deliver_args)
+@@ -209,6 +228,7 @@ BPF_PROBE("signal/", signal_deliver, signal_deliver_args)
  	evt_type = PPME_SIGNALDELIVER_E;
  
  	call_filler(ctx, ctx, evt_type, settings, UF_ALWAYS_DROP);
