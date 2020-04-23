@@ -576,7 +576,7 @@ jobs:
     - persist_to_workspace:
         root: ~/workspace
         paths:
-          - ko-build/build-output
+          - ko-build/build-output/shard-*
 
   collector:
     machine: true
@@ -845,15 +845,15 @@ jobs:
             for shard_dir in "${shard_dirs[@]}"; do
               for version_dir in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
                 version="$(basename "$version_dir")"
-                mkdir -p "${WORKSPACE_ROOT}/ko-build/build-output/$version/"
-                mv "$shard_dir/$version"/*.gz "${WORKSPACE_ROOT}/ko-build/build-output/$version/" || true
+                mkdir -p "${WORKSPACE_ROOT}/ko-build/built-probes/$version/"
+                mv "$shard_dir/$version"/*.gz "${WORKSPACE_ROOT}/ko-build/built-probes/$version/" || true
               done
             done
 
       - persist_to_workspace:
           root: ~/workspace
           paths:
-            - ko-build
+            - ko-build/built-probes
 
   upload-modules:
     docker:
@@ -886,7 +886,7 @@ jobs:
             fi
 
             gsutil -m rsync -r "${extra_args[@]}" \
-              "${WORKSPACE_ROOT}/ko-build/build-output/" \
+              "${WORKSPACE_ROOT}/ko-build/built-probes/" \
               "${COLLECTOR_MODULES_BUCKET}/"
 
       - run:
