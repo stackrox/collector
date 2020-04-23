@@ -690,7 +690,7 @@ jobs:
     - run:
         name: Build kernel-modules Docker image
         command: |
-          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]] && false; then
             exit 0
           fi
 
@@ -717,7 +717,7 @@ jobs:
             container
 
           # On PR branches, only build slim images
-          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]] && false; then
             docker tag "stackrox/collector:${COLLECTOR_VERSION}-base" "stackrox/collector:${COLLECTOR_VERSION}"
             docker tag "stackrox/collector:${COLLECTOR_VERSION}-base" "stackrox/collector:${COLLECTOR_VERSION}-latest"
           else
