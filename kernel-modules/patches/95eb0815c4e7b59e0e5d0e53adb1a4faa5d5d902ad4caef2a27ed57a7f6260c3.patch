@@ -217,31 +217,18 @@ index a9f9729..32d5085 100644
  }
  
 diff --git a/bpf/quirks.h b/bpf/quirks.h
-index a26bfd9..ae2bb0d 100644
+index a26bfd9..410b0fe 100644
 --- a/bpf/quirks.h
 +++ b/bpf/quirks.h
-@@ -32,13 +32,15 @@ or GPL2.txt for full copies of the license.
- #define randomized_struct_fields_end    };
+@@ -40,6 +40,8 @@ or GPL2.txt for full copies of the license.
+ #define BPF_SUPPORTS_RAW_TRACEPOINTS
  #endif
  
--#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)
--#define BPF_FORBIDS_ZERO_ACCESS
--#endif
-+//#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)
-+//#define BPF_FORBIDS_ZERO_ACCESS
-+//#endif
- 
--#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 17, 0)
--#define BPF_SUPPORTS_RAW_TRACEPOINTS
--#endif
-+//#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 17, 0)
-+//#define BPF_SUPPORTS_RAW_TRACEPOINTS
-+//#endif
-+
 +#define RHEL_RELEASE_VERSION(X,Y) 0
- 
++
  #endif /* RHEL_RELEASE_CODE */
  /* Redefine asm_volatile_goto to work around clang not supporting it
+  */
 diff --git a/ppm_cputime.c b/ppm_cputime.c
 index 5e7c7e6..71563b0 100644
 --- a/ppm_cputime.c
