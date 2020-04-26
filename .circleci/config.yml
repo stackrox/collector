@@ -818,7 +818,7 @@ jobs:
           name: Save failures files
           command: |
             mkdir /tmp/failures
-            mv "${WORKSPACE_ROOT}/ko-build/build-output/FAILURES"-* /tmp/failures 2>/dev/null || true
+            cp -r "${WORKSPACE_ROOT}/ko-build/build-output/FAILURES"-*/. /tmp/failures || true
 
       - run:
           name: Test for build failures
@@ -844,6 +844,10 @@ jobs:
             done
 
             [[ "${#failure_files[@]}" == 0 ]]
+
+      - store_artifacts:
+          path: /tmp/failures
+
 
   join-modules:
     docker:
