@@ -94,6 +94,7 @@ build_ko() (
         if [[ "$rhel7_kernel_with_ebpf" == true ]]; then
             if ! grep -qRIs "SUPPORTS_RHEL76_EBPF" "${module_src_dir}/bpf/quirks.h"; then
                 echo "Module version ${module_version} does not support eBPF on RHEL 7"
+                mkdir -p "/output/${module_version}"
                 touch "/output/${module_version}/.collector-ebpf-${kernel_version}.unavail"
                 return 0
             fi
@@ -102,6 +103,7 @@ build_ko() (
         else
             if (( kernel_major < 4 || (kernel_major == 4 && kernel_minor < 14) )); then
                 echo "Kernel version ${kernel_version} does not support eBPF probe building, skipping ..."
+                mkdir -p "/output/${module_version}"
                 touch "/output/${module_version}/.collector-ebpf-${kernel_version}.unavail"
                 return 0
             fi
