@@ -557,7 +557,7 @@ jobs:
             flavor="${flavor#local-build-tasks\.}"
             echo "Building kernel modules with flavor $flavor"
 
-            docker run --rm -i \
+            docker run --rm -i --user="$(id -u):$(id -g)" \
               -v "${HOME}/kobuild-tmp/bundles:/bundles:ro" \
               -v "${WORKSPACE_ROOT}/ko-build/module-versions:/sources:ro" \
               -v "${shard_output_dir}:/output" \
