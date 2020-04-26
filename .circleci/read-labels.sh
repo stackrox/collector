@@ -28,4 +28,4 @@ cd "$labels_path"
 
 pull_request_number="${CIRCLE_PULL_REQUEST##*/}"
 url="https://api.github.com/repos/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/pulls/${pull_request_number}"
-curl -sS -H "Authorization: token ${GITHUB_TOKEN}" "${url}" | jq '([.labels | .[].name]  // []) | .[]' -r | xargs touch
+curl -sS -H "Authorization: token ${GITHUB_TOKEN}" "${url}" | jq '([.labels | .[].name]  // []) | .[]' -r | xargs -n 1 touch
