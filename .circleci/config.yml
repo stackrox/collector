@@ -119,6 +119,7 @@ jobs:
         root: ~/workspace
         paths:
         - go/src/github.com/stackrox/collector
+        - pr-metadata
         - shared-env
 
   builder:
@@ -680,8 +681,8 @@ jobs:
     - run:
         name: Load any missing modules from GCloud
         command: |
-          gsutil -m rsync -r -u \
-              "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/" \
+          gsutil -m cp -n \
+              "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/*.gz" \
               "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
 
     - run:
