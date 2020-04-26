@@ -226,7 +226,7 @@ jobs:
             exit 1
           fi
 
-          if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" ]]; then
+          if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-legacy-probes" ]]; then
             echo "Not building probes for legacy versions, as we are on a PR"
             exit 0
           fi
@@ -698,7 +698,8 @@ jobs:
     - run:
         name: Build kernel-modules Docker image
         command: |
-          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-full-images" ]]; then
+            echo "Not building kernel module images."
             exit 0
           fi
 
@@ -725,7 +726,8 @@ jobs:
             container
 
           # On PR branches, only build slim images
-          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-full-images" ]]; then
+            echo "Not building full images, re-tagging base images..."
             docker tag "stackrox/collector:${COLLECTOR_VERSION}-base" "stackrox/collector:${COLLECTOR_VERSION}"
             docker tag "stackrox/collector:${COLLECTOR_VERSION}-base" "stackrox/collector:${COLLECTOR_VERSION}-latest"
           else
