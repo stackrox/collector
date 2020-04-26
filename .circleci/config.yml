@@ -558,7 +558,6 @@ jobs:
             echo "Building kernel modules with flavor $flavor"
 
             docker run --rm -i \
-              -e FAILURE_LOG_FILE="/output/FAILURES-${CIRCLE_NODE_INDEX}" \
               -v "${HOME}/kobuild-tmp/bundles:/bundles:ro" \
               -v "${WORKSPACE_ROOT}/ko-build/module-versions:/sources:ro" \
               -v "${shard_output_dir}:/output" \
@@ -566,8 +565,9 @@ jobs:
               "build-kernel-modules-${flavor}" \
               build-kos <"$task_file"
           done
-          [[ ! -f "${shard_output_dir}/FAILURES-${CIRCLE_NODE_INDEX}" ]] \
-            || mv "${shard_output_dir}/FAILURES-${CIRCLE_NODE_INDEX}" "${shard_output_dir}"/../
+          find "${shard_output_dir}/FAILURES" -type d -empty -depth -exec rmdir {} \;
+          [[ ! -f "${shard_output_dir}/FAILURES" ]] \
+            || mv "${shard_output_dir}/FAILURES" "${shard_output_dir}/../FAILURES-${CIRCLE_NODE_INDEX}"
 
     - run:
         name: Print built modules
@@ -823,11 +823,27 @@ jobs:
       - run:
           name: Test for build failures
           command: |
-            if ls /tmp/failures/FAILURES-* 2>/dev/null; then
-              echo >&2 "Compilation failed for some kernel/module version combinations!"
-              cat >&2 2>/dev/null /tmp/failures/FAILURES-*
-              exit 1
-            fi
+            shopt -s nullglob
+            cd /tmp/failures
+            failure_files=(*/*/*.log)
+
+            for failure_file in "${failure_files[@]}"; do
+              if [[ "$failure_file" =~ ^([^/]+)/([^/]+)/([^/]+)\.log$ ]]; then
+                kernel_version="${BASH_REMATCH[1]}"
+                module_version="${BASH_REMATCH[2]}"
+                probe_type="${BASH_REMATCH[3]}"
+                echo >&2 "============================================================================"
+                echo >&2 "Failed to build ${probe_type} probe"
+                echo >&2 "Module version: ${module_version}"
+                echo >&2 "Kernel version: ${kernel_version}"
+                echo >&2
+                cat >&2 "$failure_file"
+                echo >&2
+                echo >&2
+              fi
+            done
+
+            [[ "${#failure_files[@]}" == 0 ]]
 
   join-modules:
     docker:
@@ -882,7 +898,7 @@ jobs:
       - run:
           name: Remove failures file and shard output dirs
           command: |
-            rm "${WORKSPACE_ROOT}/ko-build/build-output/FAILURES"-* 2>/dev/null || true
+            rm -rf "${WORKSPACE_ROOT}/ko-build/build-output/FAILURES"-* 2>/dev/null || true
             rm -rf "${WORKSPACE_ROOT}/ko-build/build-output/shard"-* 2>/dev/null || true
 
       - run:
