@@ -41,7 +41,8 @@ commands:
         working_directory: ~/.config/gcloud
         command: |
           if [[ -z "$ROX_CI_IMAGE" ]]; then
-            pip install -U crcmod google_compute_engine
+            pip install -U crcmod
+            curl https://sdk.cloud.google.com | bash
           fi
     - *setupGCP
 
