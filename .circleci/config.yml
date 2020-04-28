@@ -42,8 +42,10 @@ commands:
         command: |
           if [[ -z "$ROX_CI_IMAGE" ]]; then
             pip install -U crcmod
-            gcloud components update -q
           fi
+          gcloud components install gsutil -q
+          gcloud components update -q
+
     - *setupGCP
 
   docker-login:
