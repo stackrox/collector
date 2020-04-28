@@ -42,7 +42,7 @@ commands:
         command: |
           if [[ -z "$ROX_CI_IMAGE" ]]; then
             pip install -U crcmod
-            curl https://sdk.cloud.google.com | bash
+            gcloud components update -q
           fi
     - *setupGCP
 
