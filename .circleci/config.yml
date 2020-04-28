@@ -658,12 +658,16 @@ jobs:
             "${SOURCE_ROOT}/kernel-modules/container/kernel-modules" || true
           rm -f "${SOURCE_ROOT}/kernel-modules/container/kernel-modules/".*.unavail || true
 
+          ls "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
+
     - run:
         name: Copying Kernel modules from cache
         command: |
           cp -n "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}"/* \
             "${SOURCE_ROOT}/kernel-modules/container/kernel-modules" || true
           rm -f "${SOURCE_ROOT}/kernel-modules/container/kernel-modules/".*.unavail || true
+
+          ls "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
 
     - run:
         name: Preparing Kernel modules build cache
