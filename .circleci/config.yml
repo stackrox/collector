@@ -41,7 +41,8 @@ commands:
         working_directory: ~/.config/gcloud
         command: |
           if [[ -z "$ROX_CI_IMAGE" ]]; then
-            pip install -U crcmod
+            pip install -U crcmod google_compute_engine
+            pip install -U gcloud gsutil
           fi
           gcloud components install gsutil -q
           gcloud components update -q
