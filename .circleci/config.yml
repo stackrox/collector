@@ -46,6 +46,7 @@ commands:
             pip install -U crcmod google_compute_engine
             pip install -U gcloud gsutil
           fi
+          sudo chown circleci:circleci /opt
           gcloud components install gsutil -q
           gcloud components update -q
 
