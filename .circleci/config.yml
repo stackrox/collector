@@ -935,9 +935,16 @@ jobs:
               target="gs://stackrox-collector-modules-staging/pr-builds/${CIRCLE_BRANCH}/${CIRCLE_BUILD_NUM}/"
             fi
 
-            gsutil -m rsync -r "${extra_args[@]}" \
-              "${WORKSPACE_ROOT}/ko-build/built-probes/" \
-              "$target"
+            for probes_dir in "${WORKSPACE_ROOT}/ko-build/built-probes"/*; do
+              gsutil -m cp -n "${probes_dir}/*.gz" "${target}/$(basename "$probes_dir")/"
+            done
+
+            if [[ "$CIRCLE_BRANCH" == "master" || -n "$CIRCLE_TAG" ]]; then
+              # On PR/master builds, additionally upload modules from cache
+              for probes_dir in "${WORKSPACE_ROOT}/ko-build/cached-probes"/*; do
+                gsutil -m cp -n "${probes_dir}/*.gz" "${target}/$(basename "$probes_dir")/"
+              done
+            fi
 
       - run:
           name: Sanity check
