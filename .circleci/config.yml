@@ -73,7 +73,8 @@ commands:
 jobs:
   initjob:
     docker:
-    - image: docker.io/stackrox/apollo-ci:snapshot-collector-0.2.11-3-ga8bbdecd89
+    - image: docker.io/stackrox/apollo-ci:snapshot-collector-0.2.11-5-g5d6569d2a1
+
     working_directory: ~/workspace
 
     steps:
