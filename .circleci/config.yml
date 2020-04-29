@@ -41,6 +41,9 @@ commands:
         working_directory: ~/.config/gcloud
         command: |
           if [[ -z "$ROX_CI_IMAGE" ]]; then
+            pyenv global "$(ls "$(pyenv root)/versions" | grep '^3\.' | sort --version-sort -r | head -n 1)"
+            pip install --upgrade pip
+            pip install wheel
             pip install -U crcmod google_compute_engine
             pip install -U gcloud gsutil
           fi
