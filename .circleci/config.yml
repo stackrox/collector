@@ -74,6 +74,12 @@ jobs:
   initjob:
     docker:
     - image: docker.io/stackrox/apollo-ci:snapshot-collector-0.2.11-5-g5d6569d2a1
+      auth:
+        username: $DOCKER_USER
+        password: $DOCKER_PASS
+
+    environment:
+      ROX_CI_IMAGE: "true"
 
     working_directory: ~/workspace
 
