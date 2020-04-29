@@ -73,7 +73,7 @@ commands:
 jobs:
   initjob:
     docker:
-    - image: circleci/golang:1.11.2-stretch
+    - image: docker.io/stackrox/apollo-ci:snapshot-collector-0.2.11-3-ga8bbdecd89
     working_directory: ~/workspace
 
     steps:
@@ -180,7 +180,7 @@ jobs:
 
   prepare-kernels:
     docker:
-    - image: docker.io/stackrox/apollo-ci:snapshot-collector-0.2.11-3-ga8bbdecd89
+    - image: docker.io/stackrox/apollo-ci:snapshot-collector-0.2.11-5-g5d6569d2a1
       auth:
         username: $DOCKER_USER
         password: $DOCKER_PASS
@@ -823,7 +823,7 @@ jobs:
 
   kernel-module-build-failures-check:
     docker:
-      - image: docker.io/stackrox/apollo-ci:snapshot-collector-0.2.11-3-ga8bbdecd89
+      - image: docker.io/stackrox/apollo-ci:snapshot-collector-0.2.11-5-g5d6569d2a1
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PASS
@@ -872,7 +872,7 @@ jobs:
 
   join-modules:
     docker:
-    - image: docker.io/stackrox/apollo-ci:snapshot-collector-0.2.11-3-ga8bbdecd89
+    - image: docker.io/stackrox/apollo-ci:snapshot-collector-0.2.11-5-g5d6569d2a1
       auth:
         username: $DOCKER_USER
         password: $DOCKER_PASS
@@ -907,7 +907,7 @@ jobs:
 
   upload-modules:
     docker:
-    - image: docker.io/stackrox/apollo-ci:snapshot-collector-0.2.11-3-ga8bbdecd89
+    - image: docker.io/stackrox/apollo-ci:snapshot-collector-0.2.11-5-g5d6569d2a1
       auth:
         username: $DOCKER_USER
         password: $DOCKER_PASS
@@ -1130,7 +1130,7 @@ jobs:
 
   update-support-packages:
     docker:
-      - image: docker.io/stackrox/apollo-ci:snapshot-collector-0.2.11-3-ga8bbdecd89
+      - image: docker.io/stackrox/apollo-ci:snapshot-collector-0.2.11-5-g5d6569d2a1
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PASS
