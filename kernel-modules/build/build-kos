@@ -94,6 +94,7 @@ build_ko() (
         if [[ "$rhel7_kernel_with_ebpf" == true ]]; then
             if ! grep -qRIs "SUPPORTS_RHEL76_EBPF" "${module_src_dir}/bpf/quirks.h"; then
                 echo "Module version ${module_version} does not support eBPF on RHEL 7"
+                mkdir -p "/output/${module_version}"
                 touch "/output/${module_version}/.collector-ebpf-${kernel_version}.unavail"
                 return 0
             fi
@@ -102,6 +103,7 @@ build_ko() (
         else
             if (( kernel_major < 4 || (kernel_major == 4 && kernel_minor < 14) )); then
                 echo "Kernel version ${kernel_version} does not support eBPF probe building, skipping ..."
+                mkdir -p "/output/${module_version}"
                 touch "/output/${module_version}/.collector-ebpf-${kernel_version}.unavail"
                 return 0
             fi
@@ -133,11 +135,12 @@ build_kos() {
         local module_version="${line[1]}"
         local probe_type="${line[2]}"
 
-        if ! build_ko "$kernel_version" "$module_version" "${probe_type}"; then
+        failure_output_file="/output/FAILURES/${kernel_version}/${module_version}/${probe_type}.log"
+        mkdir -p "$(dirname "$failure_output_file")"
+        if ! build_ko "$kernel_version" "$module_version" "${probe_type}" 2> >(tee "$failure_output_file" >&2); then
             echo >&2 "Failed to build ${probe_type} probe version ${module_version} for kernel ${kernel_version}"
-            if [[ -n "${FAILURE_LOG_FILE:-}" ]]; then
-                echo >>"${FAILURE_LOG_FILE}" "${kernel_version} ${module_version} ${probe_type}"
-            fi
+        else
+            rm "$failure_output_file"
         fi
     done
 }

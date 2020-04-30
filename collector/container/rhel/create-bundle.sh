@@ -16,7 +16,7 @@ OUTPUT_BUNDLE="$3"
    || die "Usage: $0 <input-root> <builder-image> <module-dir> <output-bundle>"
 [[ -d "$INPUT_ROOT" ]] \
    || die "Input root directory doesn't exist or is not a directory."
-[[ -d "$MODULE_DIR" ]] \
+[[ "$MODULE_DIR" == "-" || -d "$MODULE_DIR" ]] \
    || die "Module directory doesn't exist or is not a directory."
 
 # Create tmp directory
@@ -36,7 +36,7 @@ cp -p "${INPUT_ROOT}/scripts/bootstrap.sh" "${bundle_root}/bootstrap.sh"
 cp -p "${INPUT_ROOT}/scripts/collector-wrapper.sh" "${bundle_root}/usr/local/bin/"
 cp -p "${INPUT_ROOT}/NOTICE-collector.txt" "${bundle_root}/COPYING.txt"
 cp -p "${INPUT_ROOT}/bin/collector.rhel" "${bundle_root}/usr/local/bin/collector"
-cp -pr "${MODULE_DIR}"/* "${bundle_root}/kernel-modules/"
+[[ "$MODULE_DIR" == "-" ]] || cp -pr "${MODULE_DIR}"/* "${bundle_root}/kernel-modules/"
 
 # =============================================================================
 

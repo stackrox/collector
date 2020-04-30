@@ -41,8 +41,15 @@ commands:
         working_directory: ~/.config/gcloud
         command: |
           if [[ -z "$ROX_CI_IMAGE" ]]; then
+            pip install --upgrade pip
+            pip install wheel
             pip install -U crcmod google_compute_engine
+            pip install -U gcloud gsutil
           fi
+          sudo chown circleci:circleci /opt
+          gcloud components install gsutil -q
+          gcloud components update -q
+
     - *setupGCP
 
   docker-login:
@@ -66,7 +73,14 @@ commands:
 jobs:
   initjob:
     docker:
-    - image: circleci/golang:1.11.2-stretch
+    - image: docker.io/stackrox/apollo-ci:collector-0.2.12
+      auth:
+        username: $DOCKER_USER
+        password: $DOCKER_PASS
+
+    environment:
+      ROX_CI_IMAGE: "true"
+
     working_directory: ~/workspace
 
     steps:
@@ -110,10 +124,16 @@ jobs:
           EOF
           cat ~/workspace/shared-env
 
+    - run:
+        name: Read PR metadata
+        command: |
+          ~/workspace/go/src/github.com/stackrox/collector/.circleci/read-labels.sh pr-metadata/labels
+
     - persist_to_workspace:
         root: ~/workspace
         paths:
         - go/src/github.com/stackrox/collector
+        - pr-metadata
         - shared-env
 
   builder:
@@ -167,7 +187,7 @@ jobs:
 
   prepare-kernels:
     docker:
-    - image: docker.io/stackrox/apollo-ci:collector-0.2.8
+    - image: docker.io/stackrox/apollo-ci:collector-0.2.12
       auth:
         username: $DOCKER_USER
         password: $DOCKER_PASS
@@ -220,7 +240,8 @@ jobs:
             exit 1
           fi
 
-          if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" ]]; then
+          if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-legacy-probes" ]]; then
+            echo "Not building probes for legacy versions, as we are on a PR"
             exit 0
           fi
 
@@ -281,7 +302,11 @@ jobs:
         name: Prepare Kernel module build cache lookup
         command: |
           mkdir -p /tmp/cache
-          echo "$MODULE_VERSION" >/tmp/cache/kernel-modules-version.txt
+          if [[ -f pr-metadata/labels/no-cache ]]; then
+            echo >/tmp/cache/kernel-modules-version.txt
+          else
+            echo "$MODULE_VERSION" >/tmp/cache/kernel-modules-version.txt
+          fi
 
     - restore_cache:
         name: Restore Kernel module build cache
@@ -310,10 +335,10 @@ jobs:
         name: Copy cached modules to build output
         command: |
           [[ -d "/tmp/cache/kernel-modules/${MODULE_VERSION}/" ]] || exit 0
-          mkdir -p "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"
+          mkdir -p "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}"
           mv -v \
               "/tmp/cache/kernel-modules/${MODULE_VERSION}"/* \
-              "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}/" \
+              "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}/" \
             || true
 
     - gcloud-init
@@ -328,7 +353,7 @@ jobs:
         command: |
           gsutil -m rsync -r \
             "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/" \
-            "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}/" \
+            "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}/" \
             || true
 
     - run:
@@ -344,7 +369,7 @@ jobs:
     - run:
         name: Compile list of cached modules for CURRENT module version
         command: |
-          ( ls -a "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}"/ || true ) \
+          ( ls -a "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}"/ || true ) \
             | "${SOURCE_ROOT}/kernel-modules/build/extract-kernel-versions-from-module-files" \
             >~/kobuild-tmp/existing-modules-"${MODULE_VERSION}"
 
@@ -547,7 +572,6 @@ jobs:
             echo "Building kernel modules with flavor $flavor"
 
             docker run --rm -i \
-              -e FAILURE_LOG_FILE="/output/FAILURES-${CIRCLE_NODE_INDEX}" \
               -v "${HOME}/kobuild-tmp/bundles:/bundles:ro" \
               -v "${WORKSPACE_ROOT}/ko-build/module-versions:/sources:ro" \
               -v "${shard_output_dir}:/output" \
@@ -555,8 +579,10 @@ jobs:
               "build-kernel-modules-${flavor}" \
               build-kos <"$task_file"
           done
-          [[ ! -f "${shard_output_dir}/FAILURES-${CIRCLE_NODE_INDEX}" ]] \
-            || mv "${shard_output_dir}/FAILURES-${CIRCLE_NODE_INDEX}" "${shard_output_dir}"/../
+          sudo chown -R "$(id -u):$(id -g)" "$shard_output_dir"
+          find "${shard_output_dir}/FAILURES" -type d -empty -depth -exec rmdir {} \;
+          [[ ! -d "${shard_output_dir}/FAILURES" ]] \
+            || mv "${shard_output_dir}/FAILURES" "${shard_output_dir}/../FAILURES-${CIRCLE_NODE_INDEX}"
 
     - run:
         name: Print built modules
@@ -572,7 +598,8 @@ jobs:
     - persist_to_workspace:
         root: ~/workspace
         paths:
-          - ko-build/build-output
+          - ko-build/build-output/shard-*
+          - ko-build/build-output/FAILURES-*
 
   collector:
     machine: true
@@ -641,9 +668,20 @@ jobs:
         name: Copying Kernel modules build output
         command: |
           mkdir -p "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
-          mv "${WORKSPACE_ROOT}/ko-build/build-output/${MODULE_VERSION}/"* \
+          mv "${WORKSPACE_ROOT}/ko-build/built-probes/${MODULE_VERSION}/"* \
             "${SOURCE_ROOT}/kernel-modules/container/kernel-modules" || true
           rm -f "${SOURCE_ROOT}/kernel-modules/container/kernel-modules/".*.unavail || true
+
+          ls "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
+
+    - run:
+        name: Copying Kernel modules from cache
+        command: |
+          cp -n "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}"/* \
+            "${SOURCE_ROOT}/kernel-modules/container/kernel-modules" || true
+          rm -f "${SOURCE_ROOT}/kernel-modules/container/kernel-modules/".*.unavail || true
+
+          ls "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
 
     - run:
         name: Preparing Kernel modules build cache
@@ -669,8 +707,8 @@ jobs:
     - run:
         name: Load any missing modules from GCloud
         command: |
-          gsutil -m rsync -r \
-              "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/" \
+          gsutil -m cp -n \
+              "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/*.gz" \
               "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
 
     - run:
@@ -685,7 +723,8 @@ jobs:
     - run:
         name: Build kernel-modules Docker image
         command: |
-          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-full-images" ]]; then
+            echo "Not building kernel module images."
             exit 0
           fi
 
@@ -712,7 +751,8 @@ jobs:
             container
 
           # On PR branches, only build slim images
-          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-full-images" ]]; then
+            echo "Not building full images, re-tagging base images..."
             docker tag "stackrox/collector:${COLLECTOR_VERSION}-base" "stackrox/collector:${COLLECTOR_VERSION}"
             docker tag "stackrox/collector:${COLLECTOR_VERSION}-base" "stackrox/collector:${COLLECTOR_VERSION}-latest"
           else
@@ -790,7 +830,7 @@ jobs:
 
   kernel-module-build-failures-check:
     docker:
-      - image: docker.io/stackrox/apollo-ci:collector-0.2.8
+      - image: docker.io/stackrox/apollo-ci:collector-0.2.12
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PASS
@@ -806,20 +846,40 @@ jobs:
           name: Save failures files
           command: |
             mkdir /tmp/failures
-            mv "${WORKSPACE_ROOT}/ko-build/build-output/FAILURES"-* /tmp/failures 2>/dev/null || true
+            cp -r "${WORKSPACE_ROOT}/ko-build/build-output/FAILURES"-*/. /tmp/failures || true
 
       - run:
           name: Test for build failures
           command: |
-            if ls /tmp/failures/FAILURES-* 2>/dev/null; then
-              echo >&2 "Compilation failed for some kernel/module version combinations!"
-              cat >&2 2>/dev/null /tmp/failures/FAILURES-*
-              exit 1
-            fi
+            shopt -s nullglob
+            cd /tmp/failures
+            failure_files=(*/*/*.log)
+
+            for failure_file in "${failure_files[@]}"; do
+              if [[ "$failure_file" =~ ^([^/]+)/([^/]+)/([^/]+)\.log$ ]]; then
+                kernel_version="${BASH_REMATCH[1]}"
+                module_version="${BASH_REMATCH[2]}"
+                probe_type="${BASH_REMATCH[3]}"
+                echo >&2 "============================================================================"
+                echo >&2 "Failed to build ${probe_type} probe"
+                echo >&2 "Module version: ${module_version}"
+                echo >&2 "Kernel version: ${kernel_version}"
+                echo >&2
+                cat >&2 "$failure_file"
+                echo >&2
+                echo >&2
+              fi
+            done
+
+            [[ "${#failure_files[@]}" == 0 ]]
+
+      - store_artifacts:
+          path: /tmp/failures
+
 
   join-modules:
     docker:
-    - image: docker.io/stackrox/apollo-ci:collector-0.2.8
+    - image: docker.io/stackrox/apollo-ci:collector-0.2.12
       auth:
         username: $DOCKER_USER
         password: $DOCKER_PASS
@@ -841,19 +901,20 @@ jobs:
             for shard_dir in "${shard_dirs[@]}"; do
               for version_dir in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
                 version="$(basename "$version_dir")"
-                mkdir -p "${WORKSPACE_ROOT}/ko-build/build-output/$version/"
-                mv "$shard_dir/$version"/*.gz "${WORKSPACE_ROOT}/ko-build/build-output/$version/" || true
+                out_dir="${WORKSPACE_ROOT}/ko-build/built-probes/$version/"
+                mkdir -p "$out_dir"
+                mv "$shard_dir/$version"/*.gz "$out_dir" || true
               done
             done
 
       - persist_to_workspace:
           root: ~/workspace
           paths:
-            - ko-build
+            - ko-build/built-probes/
 
   upload-modules:
     docker:
-    - image: docker.io/stackrox/apollo-ci:collector-0.2.8
+    - image: docker.io/stackrox/apollo-ci:collector-0.2.12
       auth:
         username: $DOCKER_USER
         password: $DOCKER_PASS
@@ -869,20 +930,28 @@ jobs:
       - run:
           name: Remove failures file and shard output dirs
           command: |
-            rm "${WORKSPACE_ROOT}/ko-build/build-output/FAILURES"-* 2>/dev/null || true
+            rm -rf "${WORKSPACE_ROOT}/ko-build/build-output/FAILURES"-* 2>/dev/null || true
             rm -rf "${WORKSPACE_ROOT}/ko-build/build-output/shard"-* 2>/dev/null || true
 
       - run:
           name: Uploading Kernel modules
           command: |
             extra_args=()
+            target="${COLLECTOR_MODULES_BUCKET}"
             if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
-              extra_args+=(-n)
+              target="gs://stackrox-collector-modules-staging/pr-builds/${CIRCLE_BRANCH}/${CIRCLE_BUILD_NUM}"
             fi
 
-            gsutil -m rsync -r "${extra_args[@]}" \
-              "${WORKSPACE_ROOT}/ko-build/build-output/" \
-              "${COLLECTOR_MODULES_BUCKET}/"
+            for probes_dir in "${WORKSPACE_ROOT}/ko-build/built-probes"/*; do
+              gsutil -m cp -n "${probes_dir}/*.gz" "${target}/$(basename "$probes_dir")/"
+            done
+
+            if [[ "$CIRCLE_BRANCH" == "master" || -n "$CIRCLE_TAG" ]]; then
+              # On PR/master builds, additionally upload modules from cache
+              for probes_dir in "${WORKSPACE_ROOT}/ko-build/cached-probes"/*; do
+                gsutil -m cp -n "${probes_dir}/*.gz" "${target}/$(basename "$probes_dir")/"
+              done
+            fi
 
       - run:
           name: Sanity check
@@ -1068,7 +1137,7 @@ jobs:
 
   update-support-packages:
     docker:
-      - image: docker.io/stackrox/apollo-ci:collector-0.2.8
+      - image: docker.io/stackrox/apollo-ci:collector-0.2.12
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PASS
@@ -1423,18 +1492,17 @@ workflows:
         filters:
           tags:
             only: /.*/
-    ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks` (ROX-3179)
-    #- integration-test:
-    #    name: test-ebpf-rhel-8
-    #    collection_method: ebpf
-    #    vm_type: rhel
-    #    image_family: rhel-8
-    #    requires:
-    #    - images
-    #    - integration-test-local
-    #    filters:
-    #      tags:
-    #        only: /.*/
+    - integration-test:
+        name: test-ebpf-rhel-8
+        collection_method: ebpf
+        vm_type: rhel
+        image_family: rhel-8
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
     - integration-test:
         name: test-module-rhel-8
         collection_method: module
@@ -1446,18 +1514,17 @@ workflows:
         filters:
           tags:
             only: /.*/
-    ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks` (ROX-3179)
-    #- integration-test:
-    #    name: test-ebpf-ubuntu-1804-lts
-    #    collection_method: ebpf
-    #    vm_type: ubuntu-os
-    #    image_family: ubuntu-1804-lts
-    #    requires:
-    #    - images
-    #    - integration-test-local
-    #    filters:
-    #      tags:
-    #        only: /.*/
+    - integration-test:
+        name: test-ebpf-ubuntu-1804-lts
+        collection_method: ebpf
+        vm_type: ubuntu-os
+        image_family: ubuntu-1804-lts
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
     - integration-test:
         name: test-module-ubuntu-1604-lts
         collection_method: module
@@ -1491,18 +1558,17 @@ workflows:
         filters:
           tags:
             only: /.*/
-    ## TODO(rc) Enable after fixing `Kernel panic - not syncing: softlockup: hung tasks` (ROX-3179)
-    #- integration-test:
-    #    name: test-ebpf-ubuntu-1910
-    #    collection_method: ebpf
-    #    vm_type: ubuntu-os
-    #    image_family: ubuntu-1910
-    #    requires:
-    #    - images
-    #    - integration-test-local
-    #    filters:
-    #      tags:
-    #        only: /.*/
+    - integration-test:
+        name: test-ebpf-ubuntu-1910
+        collection_method: ebpf
+        vm_type: ubuntu-os
+        image_family: ubuntu-1910
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
     # TODO(rc) Enable after fixing ROX-4002 `Collector fails to report network connection details and process paths on Ubuntu 19.10`
     #- integration-test:
     #    name: test-module-ubuntu-1910
@@ -1527,13 +1593,13 @@ workflows:
        - test-module-rhel-7
        - test-ebpf-rhel-7
        - test-module-rhel-8
-       #- test-ebpf-rhel-8
+       - test-ebpf-rhel-8
        - test-module-ubuntu-1604-lts
        - test-ebpf-ubuntu-1604-lts
        - test-module-ubuntu-1804-lts
-       #- test-ebpf-ubuntu-1804-lts
+       - test-ebpf-ubuntu-1804-lts
        #- test-module-ubuntu-1910
-       #- test-ebpf-ubuntu-1910
+       - test-ebpf-ubuntu-1910
        filters:
          tags:
            only: /.*/
