@@ -420,7 +420,7 @@ jobs:
           # Create the set of build tasks as the contents of `all-build-tasks` minus the redundant and blacklisted
           # build tasks.
           cat ~/kobuild-tmp/non-blacklisted-build-tasks \
-              ~/kobuild-tmp/redundant-build-tasks ~/kobuild-tmp/redundant-build-tasks \
+              <(cat ~/kobuild-tmp/redundant-build-tasks ~/kobuild-tmp/redundant-build-tasks | grep -v 4.19.112-12371.251.0-cos ) \
             | sort | uniq -u >build-tasks
 
     - run:
