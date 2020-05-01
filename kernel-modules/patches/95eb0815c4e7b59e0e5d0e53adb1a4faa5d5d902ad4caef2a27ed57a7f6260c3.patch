@@ -40,7 +40,7 @@ index e37cea8..4f29825 100644
  			len = res;
  		} else {
 diff --git a/bpf/fillers.h b/bpf/fillers.h
-index 2458b09..c7b0c12 100644
+index 2458b09..399c2ee 100644
 --- a/bpf/fillers.h
 +++ b/bpf/fillers.h
 @@ -1451,7 +1451,8 @@ static __always_inline pid_t bpf_task_tgid_vnr(struct task_struct *task)
@@ -71,7 +71,44 @@ index 2458b09..c7b0c12 100644
  			return PPM_FAILURE_INVALID_USER_MEMORY;
  
  		if (res > 1) {
-@@ -1694,7 +1695,7 @@ static __always_inline int bpf_accumulate_argv_or_env(struct filler_data *data,
+@@ -1629,8 +1630,7 @@ do {											\
+ 
+ static __always_inline int bpf_append_cgroup(struct task_struct *task,
+ 					     char *buf,
+-					     int *len)
+-{
++					     int *len) {
+ 	struct css_set *cgroups = _READ(task->cgroups);
+ 	int res;
+ 
+@@ -1640,9 +1640,9 @@ static __always_inline int bpf_append_cgroup(struct task_struct *task,
+ 
+ #if IS_ENABLED(CONFIG_CGROUP_SCHED)
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)
+-	APPEND_CGROUP(cpu);
++    APPEND_CGROUP(cpu);
+ #else
+-	APPEND_CGROUP(cpu_cgroup);
++    APPEND_CGROUP(cpu_cgroup);
+ #endif
+ #endif
+ 
+@@ -1650,6 +1650,14 @@ static __always_inline int bpf_append_cgroup(struct task_struct *task,
+ 	APPEND_CGROUP(cpuacct);
+ #endif
+ 
++	return PPM_SUCCESS;
++}
++
++static __always_inline int bpf_append_cgroup_2(struct task_struct *task,
++											 char *buf,
++											 int *len) {
++	struct css_set *cgroups = _READ(task->cgroups);
++	int res;
+ #if IS_ENABLED(CONFIG_BLK_CGROUP)
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)
+ 	APPEND_CGROUP(io);
+@@ -1694,7 +1702,7 @@ static __always_inline int bpf_accumulate_argv_or_env(struct filler_data *data,
  			return PPM_FAILURE_BUFFER_FULL;
  
  		len = bpf_probe_read_str(&data->buf[off & SCRATCH_SIZE_HALF], SCRATCH_SIZE_HALF, arg);
@@ -80,7 +117,7 @@ index 2458b09..c7b0c12 100644
  			return PPM_FAILURE_INVALID_USER_MEMORY;
  
  		*args_len += len;
-@@ -1796,7 +1797,7 @@ FILLER(proc_startupdate, true)
+@@ -1796,7 +1804,7 @@ FILLER(proc_startupdate, true)
  						SCRATCH_SIZE_HALF,
  						&data->buf[data->state->tail_ctx.curoff & SCRATCH_SIZE_HALF]);
  
@@ -89,6 +126,55 @@ index 2458b09..c7b0c12 100644
  			return PPM_FAILURE_INVALID_USER_MEMORY;
  
  		/*
+@@ -1938,13 +1946,12 @@ FILLER(proc_startupdate, true)
+ 	return PPM_FAILURE_BUG;
+ }
+ 
+-FILLER(proc_startupdate_2, true)
+-{
++FILLER(proc_startupdate_2, true) {
+ 	struct task_struct *task;
+ 	int cgroups_len = 0;
+ 	int res;
+ 
+-	task = (struct task_struct *)bpf_get_current_task();
++	task = (struct task_struct *) bpf_get_current_task();
+ 
+ 	/*
+ 	 * cgroups
+@@ -1953,7 +1960,31 @@ FILLER(proc_startupdate_2, true)
+ 	if (res != PPM_SUCCESS)
+ 		return res;
+ 
+-	res = __bpf_val_to_ring(data, (unsigned long)data->tmp_scratch, cgroups_len, PT_BYTEBUF, -1, false);
++	res = __bpf_val_to_ring(data, (unsigned long) data->tmp_scratch, cgroups_len, PT_BYTEBUF, -1, false);
++	if (res != PPM_SUCCESS)
++		return res;
++
++	bpf_tail_call(data->ctx, &tail_map, PPM_FILLER_proc_startupdate_2_1);
++	bpf_printk("Can't tail call to f_proc_startupdate_2_1 filler\n");
++	return PPM_FAILURE_BUG;
++}
++
++
++FILLER(proc_startupdate_2_1, true) {
++	struct task_struct *task;
++	int cgroups_len = 0;
++	int res;
++
++	task = (struct task_struct *) bpf_get_current_task();
++
++	/*
++	 * cgroups
++	 */
++	res = bpf_append_cgroup_2(task, data->tmp_scratch, &cgroups_len);
++	if (res != PPM_SUCCESS)
++		return res;
++
++	res = __bpf_val_to_ring(data, (unsigned long) data->tmp_scratch, cgroups_len, PT_BYTEBUF, -1, false);
+ 	if (res != PPM_SUCCESS)
+ 		return res;
+ 
 diff --git a/bpf/quirks.h b/bpf/quirks.h
 index a26bfd9..410b0fe 100644
 --- a/bpf/quirks.h
