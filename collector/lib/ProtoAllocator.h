@@ -38,7 +38,7 @@ namespace internal {
 
 inline void* BlockAlloc(size_t size) {
   static void* (* default_block_alloc)(size_t) = google::protobuf::ArenaOptions().block_alloc;
-  CLOG(WARNING) << "Allocating a memory block on the heap for the arena, this is inefficient and usually avoidable";
+  CLOG_THROTTLED(WARNING, std::chrono::seconds(5)) << "Allocating a memory block on the heap for the arena, this is inefficient and usually avoidable";
   return (*default_block_alloc)(size);
 }
 
@@ -53,7 +53,7 @@ inline google::protobuf::ArenaOptions ArenaOptionsForInitialBlock(char* storage,
 template <typename Message>
 class ArenaProtoAllocator {
  public:
-  static constexpr size_t kDefaultPoolSize = 524288; // used to be 32768
+  static constexpr size_t kDefaultPoolSize = 1024; // used to be 32768
 
   ArenaProtoAllocator() : ArenaProtoAllocator(kDefaultPoolSize) {}
 
@@ -64,9 +64,17 @@ class ArenaProtoAllocator {
   void Reset() {
     google::protobuf::uint64 bytes_used = arena_.Reset();
     if (bytes_used > pool_size_) {
-      CLOG_THROTTLED(WARNING, std::chrono::seconds(5))
-            << "Used " << bytes_used << " bytes in the arena, which is more than the pre-allocated "
-            << pool_size_ << "bytes. Consider increasing the pre-allocated size";
+      size_t new_pool_size = (bytes_used / kDefaultPoolSize + 1) * kDefaultPoolSize;
+      CLOG(WARNING) << "Used " << bytes_used << " bytes in the arena, which is more than the pre-allocated "
+        << pool_size_ << " bytes. Increasing arena size to " << new_pool_size << " bytes.";
+
+      // This looks weird but is correct (search for `placement new/delete` on Google).
+      arena_.~Arena();
+
+      pool_.reset(new char[new_pool_size]);
+      pool_size_ = new_pool_size;
+
+      new (&arena_) google::protobuf::Arena(ArenaOptionsForInitialBlock(pool_.get(), pool_size_));
     }
   }
 
