@@ -214,3 +214,15 @@ index 6c321f6..7e498e3 100644
  #include <linux/in.h>
  #if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 20)
  #include <linux/mount.h>
+diff --git a/ppm_fillers.h b/ppm_fillers.h
+index 8e2a7b0..8bf0457 100644
+--- a/ppm_fillers.h
++++ b/ppm_fillers.h
+@@ -39,6 +39,7 @@ or GPL2.txt for full copies of the license.
+ 	FN(sys_execve_e)			\
+ 	FN(proc_startupdate)			\
+ 	FN(proc_startupdate_2)			\
++	FN(proc_startupdate_2_1)			\
+ 	FN(proc_startupdate_3)			\
+ 	FN(sys_socketpair_x)			\
+ 	FN(sys_setsockopt_x)			\
