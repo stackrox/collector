@@ -40,7 +40,7 @@ index e37cea8..1a15376 100644
  			len = res;
  		} else {
 diff --git a/bpf/fillers.h b/bpf/fillers.h
-index 2458b09..bc2e15d 100644
+index 2458b09..7e3f386 100644
 --- a/bpf/fillers.h
 +++ b/bpf/fillers.h
 @@ -1451,7 +1451,8 @@ static __always_inline pid_t bpf_task_tgid_vnr(struct task_struct *task)
@@ -58,7 +58,7 @@ index 2458b09..bc2e15d 100644
  #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0) */
  
 -#define MAX_CGROUP_PATHS 6
-+#define MAX_CGROUP_PATHS 3
++#define MAX_CGROUP_PATHS 5
  
  static __always_inline int __bpf_append_cgroup(struct css_set *cgroups,
  					       int subsys_id,
