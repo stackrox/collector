@@ -40,7 +40,7 @@ index e37cea8..1a15376 100644
  			len = res;
  		} else {
 diff --git a/bpf/fillers.h b/bpf/fillers.h
-index 2458b09..bd3645a 100644
+index 2458b09..9af7ef9 100644
 --- a/bpf/fillers.h
 +++ b/bpf/fillers.h
 @@ -1451,7 +1451,8 @@ static __always_inline pid_t bpf_task_tgid_vnr(struct task_struct *task)
@@ -71,7 +71,41 @@ index 2458b09..bd3645a 100644
  			return PPM_FAILURE_INVALID_USER_MEMORY;
  
  		if (res > 1) {
-@@ -1694,7 +1695,7 @@ static __always_inline int bpf_accumulate_argv_or_env(struct filler_data *data,
+@@ -1634,9 +1635,11 @@ static __always_inline int bpf_append_cgroup(struct task_struct *task,
+ 	struct css_set *cgroups = _READ(task->cgroups);
+ 	int res;
+ 
++#if 0
+ #if IS_ENABLED(CONFIG_CPUSETS)
+ 	APPEND_CGROUP(cpuset);
+ #endif
++#endif
+ 
+ #if IS_ENABLED(CONFIG_CGROUP_SCHED)
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)
+@@ -1646,10 +1649,13 @@ static __always_inline int bpf_append_cgroup(struct task_struct *task,
+ #endif
+ #endif
+ 
++#if !IS_ENABLED(CONFIG_CGROUP_SCHED)
+ #if IS_ENABLED(CONFIG_CGROUP_CPUACCT)
+ 	APPEND_CGROUP(cpuacct);
+ #endif
++#endif
+ 
++#if 0
+ #if IS_ENABLED(CONFIG_BLK_CGROUP)
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)
+ 	APPEND_CGROUP(io);
+@@ -1657,6 +1663,7 @@ static __always_inline int bpf_append_cgroup(struct task_struct *task,
+ 	APPEND_CGROUP(blkio);
+ #endif
+ #endif
++#endif
+ 
+ #if IS_ENABLED(CONFIG_MEMCG)
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)
+@@ -1694,7 +1701,7 @@ static __always_inline int bpf_accumulate_argv_or_env(struct filler_data *data,
  			return PPM_FAILURE_BUFFER_FULL;
  
  		len = bpf_probe_read_str(&data->buf[off & SCRATCH_SIZE_HALF], SCRATCH_SIZE_HALF, arg);
@@ -80,7 +114,7 @@ index 2458b09..bd3645a 100644
  			return PPM_FAILURE_INVALID_USER_MEMORY;
  
  		*args_len += len;
-@@ -1796,7 +1797,7 @@ FILLER(proc_startupdate, true)
+@@ -1796,7 +1803,7 @@ FILLER(proc_startupdate, true)
  						SCRATCH_SIZE_HALF,
  						&data->buf[data->state->tail_ctx.curoff & SCRATCH_SIZE_HALF]);
  
