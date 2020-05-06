@@ -1,4 +1,4 @@
-FROM debian:stretch-slim
+FROM debian:stable-slim
 
 ARG NPROCS=6
 ENV NPROCS=$NPROCS

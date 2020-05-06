@@ -1,4 +1,4 @@
-FROM debian:stretch-slim
+FROM debian:stable-slim
 
 ARG collector_version=xxx
 ARG module_version=xxx
