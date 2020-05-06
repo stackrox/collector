@@ -244,12 +244,6 @@ int main(int argc, char **argv) {
     }
   }
 
-  if (useGRPC) {
-    grpc_init();
-  } else {
-    CLOG(INFO) << "GRPC is disabled. Specify GRPC_SERVER='server addr' env and signalFormat = 'signal_summary' and  signalOutput = 'grpc'";
-  }
-
   std::shared_ptr<grpc::Channel> grpc_channel;
   if (useGRPC) {
     CLOG(INFO) << "gRPC server=" << args->GRPCServer();
@@ -272,6 +266,8 @@ int main(int argc, char **argv) {
     }
 
     grpc_channel = collector::CreateChannel(args->GRPCServer(), creds);
+  } else {
+    CLOG(INFO) << "GRPC is disabled. Specify GRPC_SERVER='server addr' env and signalFormat = 'signal_summary' and  signalOutput = 'grpc'";
   }
 
   config.grpc_channel = std::move(grpc_channel);
