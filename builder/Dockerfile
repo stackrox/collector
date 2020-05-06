@@ -18,7 +18,7 @@ RUN apt-get update \
         libcap-ng-dev \
         libcurl4-openssl-dev \
         libelf-dev \
-        libssl1.0-dev \
+        libssl-dev \
         libtool \
         libz-dev \
         pkg-config \
