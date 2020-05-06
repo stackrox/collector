@@ -91,10 +91,12 @@ func (c *collectorManager) TearDown() error {
 		if _, err := c.executor.CopyFromHost(c.DBPath, c.DBPath); err != nil {
 			return err
 		}
+		c.abortContainer("grpc-server")
 		c.captureLogs("grpc-server")
 		c.killContainer("grpc-server")
 	}
 
+	c.abortContainer("collector")
 	c.captureLogs("collector")
 	c.killContainer("collector")
 	return nil
@@ -175,6 +177,11 @@ func (c *collectorManager) captureLogs(containerName string) error {
 		}
 	}
 	return lastErr
+}
+
+func (c *collectorManager) abortContainer(name string) error {
+	_, err := c.executor.Exec("docker", "kill", "-s", "ABRT", name)
+	return err
 }
 
 func (c *collectorManager) killContainer(name string) error {
