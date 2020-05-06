@@ -23,13 +23,13 @@ RUN apt-get update \
         ca-certificates \
         kmod \
         curl \
-        libssl1.0.2 \
+        libssl1.1 \
         libuuid1 \
         libcap-ng0 \
         libelf1 \
         google-perftools \
         `# https://security-tracker.debian.org/tracker/CVE-2017-14062` \
-        libidn11=1.33-1+deb9u1 \
+        libidn11=1.33-2.2 \
  && dpkg -r --force-all e2fslibs e2fsprogs apt debconf dpkg \
  && rm -rf /var/lib/apt \
  ;
