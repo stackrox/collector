@@ -152,20 +152,29 @@ func (c *collectorManager) launchCollector() error {
 	return err
 }
 
-func (c *collectorManager) captureLogs(containerName string) (string, error) {
-	logs, err := c.executor.Exec("docker", "logs", containerName)
-	if err != nil {
-		fmt.Printf("docker logs error (%v) for container %s\n", err, containerName)
-		return "", err
+func (c *collectorManager) captureLogs(containerName string) error {
+	var lastErr error
+	for action, extension := range map[string]string{
+		"logs":    "log",
+		"inspect": "inspect",
+	} {
+		logs, err := c.executor.Exec("docker", action, containerName)
+		if err != nil {
+			fmt.Printf("docker %s error (%v) for container %s\n", action, err, containerName)
+			lastErr = err
+			continue
+		}
+
+		logDirectory := filepath.Join(".", "container-logs")
+		os.MkdirAll(logDirectory, os.ModePerm)
+		logFile := filepath.Join(logDirectory, c.TestName+"-"+containerName+"."+extension)
+		err = ioutil.WriteFile(logFile, []byte(logs), 0644)
+		if err != nil {
+			lastErr = err
+			continue
+		}
 	}
-	logDirectory := filepath.Join(".", "container-logs")
-	os.MkdirAll(logDirectory, os.ModePerm)
-	logFile := filepath.Join(logDirectory, c.TestName+"-"+containerName+".log")
-	err = ioutil.WriteFile(logFile, []byte(logs), 0644)
-	if err != nil {
-		return "", err
-	}
-	return logs, nil
+	return lastErr
 }
 
 func (c *collectorManager) killContainer(name string) error {
