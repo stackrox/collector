@@ -15,6 +15,7 @@ cd cmake/build
 cmake \
     -DgRPC_CARES_PROVIDER=package \
     -DgRPC_PROTOBUF_PROVIDER=package \
+    -DgRPC_SSL_PROVIDER=package \
     -DCMAKE_BUILD_TYPE=Release \
     -DgRPC_INSTALL=ON \
     -DCMAKE_INSTALL_PREFIX=/usr/local \
