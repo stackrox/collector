@@ -250,7 +250,9 @@ int main(int argc, char **argv) {
 
     const auto& tls_config = collectorConfig["tlsConfig"];
 
+    CLOG(INFO) << "creaeting insecure creds";
     std::shared_ptr<grpc::ChannelCredentials> creds = grpc::InsecureChannelCredentials();
+    CLOG(INFO) << "Created insecure creds";
     if (!tls_config.isNull()) {
       std::string ca_cert_path = tls_config["caCertPath"].asString();
       std::string client_cert_path = tls_config["clientCertPath"].asString();
@@ -265,7 +267,9 @@ int main(int argc, char **argv) {
       }
     }
 
+    CLOG(INFO) << "Creating channel ...";
     grpc_channel = collector::CreateChannel(args->GRPCServer(), creds);
+    CLOG(INFO) << "Created channel.";
   } else {
     CLOG(INFO) << "GRPC is disabled. Specify GRPC_SERVER='server addr' env and signalFormat = 'signal_summary' and  signalOutput = 'grpc'";
   }
