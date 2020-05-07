@@ -244,6 +244,8 @@ int main(int argc, char **argv) {
     }
   }
 
+  grpc_init();
+
   std::shared_ptr<grpc::Channel> grpc_channel;
   if (useGRPC) {
     CLOG(INFO) << "gRPC server=" << args->GRPCServer();
