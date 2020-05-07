@@ -28,8 +28,6 @@ RUN apt-get update \
         libcap-ng0 \
         libelf1 \
         google-perftools \
-        `# https://security-tracker.debian.org/tracker/CVE-2017-14062` \
-        libidn11=1.33-2.2 \
  && dpkg -r --force-all e2fslibs e2fsprogs apt debconf dpkg \
  && rm -rf /var/lib/apt \
  ;
