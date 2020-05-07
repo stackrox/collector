@@ -7,6 +7,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/boltdb/bolt"
 )
@@ -181,6 +182,7 @@ func (c *collectorManager) captureLogs(containerName string) error {
 
 func (c *collectorManager) abortContainer(name string) error {
 	_, err := c.executor.Exec("docker", "kill", "-s", "ABRT", name)
+	time.Sleep(5 * time.Second)
 	return err
 }
 
