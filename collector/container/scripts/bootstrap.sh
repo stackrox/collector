@@ -194,7 +194,7 @@ exit_with_error() {
 
 function clean_up() {
     log "collector pid to be stopped is $PID"
-    kill -ABRT "$PID"; wait "$PID"
+    kill -TERM "$PID"; wait "$PID"
 }
 
 function main() {
@@ -328,7 +328,7 @@ function main() {
     shift;shift
     log "Starting StackRox Collector..."
     # Signal handler for SIGTERM
-    trap 'clean_up' TERM QUIT INT ABRT
+    trap 'clean_up' TERM QUIT INT
     eval exec "$@" &
     PID=$!
     wait $PID

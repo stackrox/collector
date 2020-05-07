@@ -29,8 +29,6 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <grpcpp/create_channel.h>
 
-#include "Logging.h"
-
 namespace collector {
 
 namespace {
@@ -52,7 +50,6 @@ std::shared_ptr<grpc::ChannelCredentials> TLSCredentialsFromFiles(
   sslOptions.pem_private_key = ReadFileContents(client_key_path);
   sslOptions.pem_cert_chain = ReadFileContents(client_cert_path);
 
-  CLOG(INFO) << "About to create TLS credentials";
   return grpc::SslCredentials(sslOptions);
 }
 
@@ -66,7 +63,6 @@ std::shared_ptr<grpc::Channel> CreateChannel(const std::string& server_address, 
   chan_args.SetInt("GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS", 10000);
   chan_args.SetInt("GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA", 0);
 
-  CLOG(INFO) << "About to create a custom channel";
   return grpc::CreateCustomChannel(server_address, creds, chan_args);
 }
 

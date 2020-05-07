@@ -7,7 +7,6 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/boltdb/bolt"
 )
@@ -92,12 +91,10 @@ func (c *collectorManager) TearDown() error {
 		if _, err := c.executor.CopyFromHost(c.DBPath, c.DBPath); err != nil {
 			return err
 		}
-		c.abortContainer("grpc-server")
 		c.captureLogs("grpc-server")
 		c.killContainer("grpc-server")
 	}
 
-	c.abortContainer("collector")
 	c.captureLogs("collector")
 	c.killContainer("collector")
 	return nil
@@ -155,35 +152,20 @@ func (c *collectorManager) launchCollector() error {
 	return err
 }
 
-func (c *collectorManager) captureLogs(containerName string) error {
-	var lastErr error
-	for action, extension := range map[string]string{
-		"logs":    "log",
-		"inspect": "inspect",
-	} {
-		logs, err := c.executor.Exec("docker", action, containerName)
-		if err != nil {
-			fmt.Printf("docker %s error (%v) for container %s\n", action, err, containerName)
-			lastErr = err
-			continue
-		}
-
-		logDirectory := filepath.Join(".", "container-logs")
-		os.MkdirAll(logDirectory, os.ModePerm)
-		logFile := filepath.Join(logDirectory, c.TestName+"-"+containerName+"."+extension)
-		err = ioutil.WriteFile(logFile, []byte(logs), 0644)
-		if err != nil {
-			lastErr = err
-			continue
-		}
+func (c *collectorManager) captureLogs(containerName string) (string, error) {
+	logs, err := c.executor.Exec("docker", "logs", containerName)
+	if err != nil {
+		fmt.Printf("docker logs error (%v) for container %s\n", err, containerName)
+		return "", err
 	}
-	return lastErr
-}
-
-func (c *collectorManager) abortContainer(name string) error {
-	_, err := c.executor.Exec("docker", "kill", "-s", "ABRT", name)
-	time.Sleep(5 * time.Second)
-	return err
+	logDirectory := filepath.Join(".", "container-logs")
+	os.MkdirAll(logDirectory, os.ModePerm)
+	logFile := filepath.Join(logDirectory, c.TestName+"-"+containerName+".log")
+	err = ioutil.WriteFile(logFile, []byte(logs), 0644)
+	if err != nil {
+		return "", err
+	}
+	return logs, nil
 }
 
 func (c *collectorManager) killContainer(name string) error {

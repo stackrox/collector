@@ -244,7 +244,11 @@ int main(int argc, char **argv) {
     }
   }
 
-  grpc_init();
+  if (useGRPC) {
+    grpc_init();
+  } else {
+    CLOG(INFO) << "GRPC is disabled. Specify GRPC_SERVER='server addr' env and signalFormat = 'signal_summary' and  signalOutput = 'grpc'";
+  }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
   if (useGRPC) {
@@ -252,9 +256,7 @@ int main(int argc, char **argv) {
 
     const auto& tls_config = collectorConfig["tlsConfig"];
 
-    CLOG(INFO) << "creaeting insecure creds";
-    std::shared_ptr<grpc::ChannelCredentials> creds;
-    CLOG(INFO) << "Created insecure creds";
+    std::shared_ptr<grpc::ChannelCredentials> creds = grpc::InsecureChannelCredentials();
     if (!tls_config.isNull()) {
       std::string ca_cert_path = tls_config["caCertPath"].asString();
       std::string client_cert_path = tls_config["clientCertPath"].asString();
@@ -267,15 +269,9 @@ int main(int argc, char **argv) {
            << "Partial TLS config: CACertPath=" << ca_cert_path << ", ClientCertPath=" << client_cert_path
            << ", ClientKeyPath=" << client_key_path << "; will not use TLS";
       }
-    } else {
-        creds = grpc::InsecureChannelCredentials();
     }
 
-    CLOG(INFO) << "Creating channel ...";
     grpc_channel = collector::CreateChannel(args->GRPCServer(), creds);
-    CLOG(INFO) << "Created channel.";
-  } else {
-    CLOG(INFO) << "GRPC is disabled. Specify GRPC_SERVER='server addr' env and signalFormat = 'signal_summary' and  signalOutput = 'grpc'";
   }
 
   config.grpc_channel = std::move(grpc_channel);
