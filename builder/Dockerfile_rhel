@@ -18,6 +18,9 @@ RUN yum -y groupinstall "Development Tools"
 RUN curl -L https://github.com/Kitware/CMake/releases/download/v3.15.2/cmake-3.15.2.tar.gz | tar -xzf - && \
     cd cmake-3.15.2 && ./bootstrap && make && make install && cd .. && rm -rf cmake-3.15.2
 
+# /usr/local/lib is not in the library path by default
+RUN echo '/usr/local/lib' >/etc/ld.so.conf.d/usrlocallib.conf && ldconfig
+
 # We want to fail if the destination directory is there, hence mkdir (not -p).
 RUN mkdir install-tmp
 

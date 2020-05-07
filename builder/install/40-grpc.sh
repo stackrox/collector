@@ -3,7 +3,7 @@
 set -e
 
 CXXFLAGS=""
-if [ -f /etc/redhat-release ] && false; then
+if [ -f /etc/redhat-release ]; then
 	CXXFLAGS="-Wno-error=class-memaccess -Wno-ignored-qualifiers -Wno-stringop-truncation -Wno-cast-function-type"
 fi
 
