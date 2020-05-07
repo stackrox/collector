@@ -29,6 +29,8 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <grpcpp/create_channel.h>
 
+#include "Logging.h"
+
 namespace collector {
 
 namespace {
