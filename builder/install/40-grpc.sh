@@ -10,5 +10,15 @@ fi
 git clone -b "$GRPC_REVISION" --depth 1 https://github.com/grpc/grpc
 cd grpc
 git submodule update --init
-make -j "${NPROCS:-2}" CXXFLAGS="${CXXFLAGS}" grpc_cpp_plugin static_cxx static_c
-make prefix=/usr/local install
+mkdir -p cmake/build
+cd cmake/build
+cmake \
+    -DgRPC_CARES_PROVIDER=package \
+    -DgRPC_PROTOBUF_PROVIDER=package \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DgRPC_INSTALL=ON \
+    -DCMAKE_INSTALL_PREFIX=/usr/local \
+    ../..
+
+make -j "${NPROCS:-2}" CXXFLAGS="${CXXFLAGS}"
+make install
