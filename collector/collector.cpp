@@ -251,7 +251,7 @@ int main(int argc, char **argv) {
     const auto& tls_config = collectorConfig["tlsConfig"];
 
     CLOG(INFO) << "creaeting insecure creds";
-    std::shared_ptr<grpc::ChannelCredentials> creds = grpc::InsecureChannelCredentials();
+    std::shared_ptr<grpc::ChannelCredentials> creds;
     CLOG(INFO) << "Created insecure creds";
     if (!tls_config.isNull()) {
       std::string ca_cert_path = tls_config["caCertPath"].asString();
@@ -265,6 +265,8 @@ int main(int argc, char **argv) {
            << "Partial TLS config: CACertPath=" << ca_cert_path << ", ClientCertPath=" << client_cert_path
            << ", ClientKeyPath=" << client_key_path << "; will not use TLS";
       }
+    } else {
+        creds = grpc::InsecureChannelCredentials();
     }
 
     CLOG(INFO) << "Creating channel ...";

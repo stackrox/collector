@@ -39,7 +39,7 @@ target_link_libraries(collector_lib uuid)
 
 add_executable(collector collector.cpp)
 target_link_libraries(collector collector_lib)
-target_link_libraries(collector libgrpc++.a libgrpc.a z crypto ssl)
+target_link_libraries(collector libgrpc++.a libgrpc.a libgrpc++_unsecure.a libgpr.a z crypto ssl)
 target_link_libraries(collector libprometheus-cpp-pull.a)
 target_link_libraries(collector libprometheus-cpp-core.a)
 target_link_libraries(collector libprotobuf.a)
