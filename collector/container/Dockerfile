@@ -1,4 +1,4 @@
-FROM debian:stable-slim
+FROM debian:buster-slim
 
 ARG collector_version=xxx
 ARG module_version=xxx

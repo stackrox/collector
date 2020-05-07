@@ -1,4 +1,4 @@
-FROM debian:stable-slim
+FROM debian:buster-slim
 
 ARG NPROCS=6
 ENV NPROCS=$NPROCS
