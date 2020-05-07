@@ -36,7 +36,7 @@ add_library(collector_lib ${COLLECTOR_LIB_SRC_FILES} ${PROTO_SRC_FILES})
 target_link_libraries(collector_lib sinsp-wrapper)
 target_link_libraries(collector_lib cap-ng)
 target_link_libraries(collector_lib uuid)
-target_link_libraries(collector_lib libgrpc++.a libgrpc.a libgpr.a libprotobuf.a z crypto ssl)
+target_link_libraries(collector_lib libgrpc++.a libgrpc.a libgpr.a libprotobuf.a z ssl crypto)
 
 add_executable(collector collector.cpp)
 target_link_libraries(collector collector_lib)

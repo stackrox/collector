@@ -6,6 +6,6 @@ curl -L "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOB
 cd "protobuf-${PROTOBUF_VERSION}"
 ./autogen.sh
 ./configure --with-zlib CXXFLAGS=-fPIC
-make -j "${NPROCS:-2}"
+make
 make install
 ldconfig
