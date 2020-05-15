@@ -20,6 +20,8 @@ EXPOSE 8080 9090
 RUN apt-get update \
  && apt-get upgrade -y \
  && apt-get install -y --no-install-recommends \
+        `# https://security-tracker.debian.org/tracker/CVE-2020-3810` \
+        apt=1.4.10 \
         ca-certificates \
         kmod \
         curl \
