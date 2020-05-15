@@ -114,7 +114,7 @@ setupGCPVM() {
   local GDOCKER_PASS="$1"
   shift
 
-  if [[ ! "$GCP_VM_TYPE" =~ ^(coreos|cos|rhel|ubuntu-os)$ ]]; then
+  if [[ ! "$GCP_VM_TYPE" =~ ^(coreos|flatcar|cos|rhel|ubuntu-os)$ ]]; then
     echo "Unsupported GPC_VM_TYPE: $GCP_VM_TYPE"
     exit 1
   fi
@@ -124,7 +124,12 @@ setupGCPVM() {
     GCP_VM_USER="core"
   fi
 
-  createGCPVM "$GCP_VM_NAME" "$GCP_IMAGE_FAMILY" "$GCP_VM_TYPE-cloud"
+  local image_project="$GCP_VM_TYPE-cloud"
+  if [[ "$GCP_VM_TYPE" == "flatcar" ]]; then
+    image_project="stackrox-machine-images"
+  fi
+
+  createGCPVM "$GCP_VM_NAME" "$GCP_IMAGE_FAMILY" "$image_project"
 
   if ! gcpSSHReady "$GCP_VM_USER" "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"; then
     echo "GCP SSH failure"

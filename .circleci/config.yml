@@ -1574,6 +1574,28 @@ workflows:
         filters:
           tags:
             only: /.*/
+    - integration-test:
+        name: test-ebpf-flatcar-stable
+        collection_method: ebpf
+        vm_type: flatcar
+        image_family: flatcar-stable
+        requires:
+          - images
+          - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-module-flatcar-stable
+        collection_method: module
+        vm_type: flatcar
+        image_family: flatcar-stable
+        requires:
+          - images
+          - integration-test-local
+        filters:
+          tags:
+            only: /.*/
     # TODO(rc) Enable after fixing ROX-4002 `Collector fails to report network connection details and process paths on Ubuntu 19.10`
     #- integration-test:
     #    name: test-module-ubuntu-1910
@@ -1590,6 +1612,8 @@ workflows:
        requires:
        - test-module-coreos-stable
        - test-ebpf-coreos-stable
+       - test-module-flatcar-stable
+       - test-ebpf-flatcar-stable
        - test-ebpf-cos-stable
        - test-ebpf-cos-69-lts
        - test-ebpf-cos-73-lts
