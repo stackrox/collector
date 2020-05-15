@@ -1016,10 +1016,10 @@ jobs:
         enum: [module, ebpf]
       vm_type:
         type: enum
-        enum: [coreos, cos, rhel, ubuntu-os]
+        enum: [coreos, flatcar, cos, rhel, ubuntu-os]
       image_family:
         type: enum
-        enum: [coreos-stable, cos-stable, cos-69-lts, cos-73-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-1910]
+        enum: [coreos-stable, flatcar-stable, cos-stable, cos-69-lts, cos-73-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-1910]
 
     machine: true
     working_directory: ~/workspace
