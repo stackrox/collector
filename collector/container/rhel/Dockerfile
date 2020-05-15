@@ -16,7 +16,7 @@ ENV MODULE_VERSION=${module_version}
 ENV COLLECTOR_HOST_ROOT=/host
 
 RUN yum update -y --nogpgcheck --disableplugin=subscription-manager
-RUN yum install -y kmod c-ares
+RUN yum install -y kmod
 RUN rpm -e --nodeps \
       rpm \
       rpm-build-libs \
