@@ -24,7 +24,6 @@ RUN apt-get update \
         kmod \
         curl \
         libssl1.1 \
-        libc-ares2 \
         libuuid1 \
         libcap-ng0 \
         libelf1 \

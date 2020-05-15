@@ -2,8 +2,6 @@
 
 set -e
 
-exit 0
-
 wget "https://c-ares.haxx.se/download/c-ares-${CARES_VERSION}.tar.gz"
 tar -zxf "c-ares-${CARES_VERSION}.tar.gz"
 cd "c-ares-${CARES_VERSION}"

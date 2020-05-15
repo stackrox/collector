@@ -15,7 +15,6 @@ RUN apt-get update \
         curl \
         g++ \
         git \
-        libc-ares-dev \
         libcap-ng-dev \
         libcurl4-openssl-dev \
         libelf-dev \
