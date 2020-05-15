@@ -494,7 +494,7 @@ jobs:
         command: |
           mkdir -p ~/kobuild-tmp/bundles
 
-          awk -v bucket="$KERNEL_BUNDLES_BUCKET" '{print bucket "/bundle-" $1 ".tgz"}' <~/kobuild-tmp/all-kernel-versions \
+          awk -v bucket="gs://stackrox-kernel-bundles-staging" '{print bucket "/bundle-" $1 ".tgz"}' <~/kobuild-tmp/all-kernel-versions \
             | gsutil -m cp -I ~/kobuild-tmp/bundles/
 
           ls ~/kobuild-tmp/bundles/
