@@ -10,7 +10,7 @@ RUN yum -y install \
   elfutils-libelf-devel file flex gettext git glibc-devel \
   libtool make patchutils pkgconfig wget which \
   unzip libcap-ng-devel python2 libuuid-devel libcurl-devel \
-  openssl-devel 
+  openssl-devel c-ares-devel
 RUN yum -y groupinstall "Development Tools"
 
 # The following command would only install cmake 3.11; we need 3.13+ to build gRPC properly
