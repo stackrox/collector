@@ -24,9 +24,6 @@ RUN sed s_stable_jessie_g < /etc/apt/sources.list > /etc/apt/sources.list.d/jess
       gcc-4.9 \
 ;
 
-# Since our base Debian image ships with GCC 7 which breaks older kernels, revert the
-# default to gcc-4.9
-RUN rm -rf /usr/bin/gcc && ln -s /usr/bin/gcc-4.9 /usr/bin/gcc
 RUN ln -s /usr/bin/gcc-7 /usr/bin/gcc-6
 
 RUN rm -rf /usr/bin/clang \
