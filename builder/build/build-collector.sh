@@ -5,5 +5,5 @@ set -ux
 ldconfig -v
 cd /build-output
 cmake -DCMAKE_BUILD_TYPE=Release /src
-make all
+make -j "${NPROCS:-2}" all
 strip --strip-unneeded ./collector

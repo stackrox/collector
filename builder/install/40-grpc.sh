@@ -21,5 +21,5 @@ cmake \
     -DCMAKE_INSTALL_PREFIX=/usr/local \
     ../..
 
-make CXXFLAGS="${CXXFLAGS}"
+make -j "${NPROCS:-2}" CXXFLAGS="${CXXFLAGS}"
 make install
