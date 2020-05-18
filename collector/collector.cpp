@@ -244,9 +244,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  if (useGRPC) {
-    grpc_init();
-  } else {
+  if (!useGRPC) {
     CLOG(INFO) << "GRPC is disabled. Specify GRPC_SERVER='server addr' env and signalFormat = 'signal_summary' and  signalOutput = 'grpc'";
   }
 

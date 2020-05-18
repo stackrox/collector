@@ -30,6 +30,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "Logging.h"
 
 #include "prometheus/registry.h"
+#include "prometheus/gauge.h"
 
 extern "C" {
     #include <pthread.h>

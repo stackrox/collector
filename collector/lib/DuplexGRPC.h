@@ -28,6 +28,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <cstdint>
 
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/support/async_stream.h>
 
 // This file defines an alternative client interface for bidirectional GRPC streams. The interface supports:
 // - simultaneous reading and writing without multithreading or low-level completion queue/tag work.
