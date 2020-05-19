@@ -759,6 +759,7 @@ jobs:
             docker build \
               -t "stackrox/collector:${COLLECTOR_VERSION}" \
               -t "stackrox/collector:${COLLECTOR_VERSION}-latest" \
+              -t "stackrox/collector:${COLLECTOR_VERSION}-latest-base" \
               "${build_args[@]}" \
               container-combined
           fi
@@ -812,6 +813,10 @@ jobs:
           docker push "stackrox/collector:${COLLECTOR_VERSION}"
           echo "Pushing collector latest image"
           docker push "stackrox/collector:${COLLECTOR_VERSION}-latest"
+
+          if [[ "$CIRCLE_BRANCH" == "master" || -n "$CIRCLE_TAG" ]]; then
+            docker push "stackrox/collector:${COLLECTOR_VERSION}-latest-base"
+          fi
 
           echo "Pushing collector rhel base image"
           docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}-base"
@@ -1285,7 +1290,7 @@ jobs:
             echo "Checking ${collector_ver} with module version ${mod_ver}"
 
             released_latest_image="stackrox/collector:${collector_ver}-latest"
-            released_base_image="stackrox/collector:${collector_ver}"
+            released_base_image="stackrox/collector:${collector_ver}-latest-base"
             docker pull "${released_latest_image}"
 
             missing_objs_file="/tmp/missing-objs-${collector_ver}"
@@ -1300,7 +1305,11 @@ jobs:
             echo "Kernel objects missing in image ${released_latest_image}:"
             cat "${missing_objs_file}"
 
-            docker pull "${released_base_image}"
+            if ! docker pull "${released_base_image}" ; then
+              docker tag "${released_latest_image}" "${released_base_image}"
+              docker push "${released_base_image}"
+            fi
+
             "./reload/build-latest.sh" "${collector_ver}" "${mod_ver}" "/tmp/released-kernel-object-cache/" "${COLLECTOR_MODULES_BUCKET}"
 
             docker push "stackrox/collector:${collector_ver}-latest"
