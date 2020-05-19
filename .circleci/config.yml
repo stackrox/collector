@@ -1285,7 +1285,7 @@ jobs:
             echo "Checking ${collector_ver} with module version ${mod_ver}"
 
             released_latest_image="stackrox/collector:${collector_ver}-latest"
-            released_base_image="stackrox/collector:${collector_ver}-base"
+            released_base_image="stackrox/collector:${collector_ver}"
             docker pull "${released_latest_image}"
 
             missing_objs_file="/tmp/missing-objs-${collector_ver}"
