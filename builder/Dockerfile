@@ -3,6 +3,8 @@ FROM ubuntu:focal
 ARG NPROCS=6
 ENV NPROCS=$NPROCS
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 # Install packaged dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
