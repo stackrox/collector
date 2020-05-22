@@ -1,4 +1,4 @@
-FROM ubuntu:bionic
+FROM ubuntu:focal
 
 ARG NPROCS=6
 ENV NPROCS=$NPROCS
