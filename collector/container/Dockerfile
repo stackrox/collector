@@ -1,4 +1,4 @@
-FROM debian:buster-slim
+FROM ubuntu:bionic
 
 ARG collector_version=xxx
 ARG module_version=xxx
