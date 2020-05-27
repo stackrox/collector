@@ -46,7 +46,15 @@ installDockerOnUbuntuViaGCPSSH() {
   shift
   local GCP_SSH_KEY_FILE="$1"
   shift
-  gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "(which docker || export DEBIAN_FRONTEND=noninteractive ; sudo apt update -y && sudo apt install -y docker.io && sudo usermod -aG docker $(whoami) )"
+  for _ in {1..3}; do
+    if gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "(which docker || export DEBIAN_FRONTEND=noninteractive ; sudo apt update -y && sudo apt install -y docker.io && sudo usermod -aG docker $(whoami) )"; then
+      return 0
+    fi
+    echo "Retrying in 5s ..."
+    sleep 5
+  done
+  echo "Failed to install Docker after 3 retries"
+  return 1
 }
 
 installDockerOnRHELViaGCPSSH() {
