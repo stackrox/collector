@@ -30,7 +30,7 @@ container/bin/collector: $(HDRS) $(SRCS) generated-srcs container/libs/libsinsp-
           -v "$(CURDIR)/sysdig/src/driver/ppm_fillers.h:/usr/local/include/ppm_fillers.h:ro" \
           -v "$(CURDIR)/cmake-build:/build-output" \
 	  --name build_collector stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-collector.sh
-	cp cmake-build/collector container/bin/
+	cp cmake-build/collector cmake-build/connscrape container/bin/
 
 container/bin/collector-rhel: $(HDRS) $(SRCS) generated-srcs-rhel container/libs/libsinsp-wrapper.so.rhel
 	mkdir -p container/bin
