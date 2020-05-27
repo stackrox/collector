@@ -287,7 +287,8 @@ func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
 
 	// client side checks
 	val, err = s.Get(s.clientContainer, networkBucket)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
+	s.Require().NotEmpty(val)
 	actualValues = strings.Split(string(val), "|")
 
 	actualClientEndpoint = actualValues[0]
@@ -421,6 +422,10 @@ func (s *IntegrationTestSuiteBase) Get(key string, bucket string) (val string, e
 		if b == nil {
 			return fmt.Errorf("Bucket %s was not found", bucket)
 		}
+		_ = b.ForEach(func(k, _ []byte) error {
+			fmt.Fprintf(os.Stderr, "Found key %s\n", string(k))
+			return nil
+		})
 		val = string(b.Get([]byte(key)))
 		return nil
 	})
