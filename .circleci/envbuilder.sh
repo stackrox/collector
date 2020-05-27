@@ -46,7 +46,15 @@ installDockerOnUbuntuViaGCPSSH() {
   shift
   local GCP_SSH_KEY_FILE="$1"
   shift
-  gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "(which docker || export DEBIAN_FRONTEND=noninteractive ; sudo apt update -y && sudo apt install -y docker.io && sudo usermod -aG docker $(whoami) )"
+  for _ in {1..3}; do
+    if gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "(which docker || export DEBIAN_FRONTEND=noninteractive ; sudo apt update -y && sudo apt install -y docker.io && sudo usermod -aG docker $(whoami) )"; then
+      return 0
+    fi
+    echo "Retrying in 5s ..."
+    sleep 5
+  done
+  echo "Failed to install Docker after 3 retries"
+  return 1
 }
 
 installDockerOnRHELViaGCPSSH() {
@@ -61,10 +69,13 @@ installDockerOnRHELViaGCPSSH() {
   gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo"
   # using skip-broken and nobest for rhel-8 (https://linuxconfig.org/how-to-install-docker-in-rhel-8)
   local extra_param=""
+  local docker_version=""
+  local docker_cli_version=""
   if test "$GCP_IMAGE_FAMILY" = "rhel-8" ; then
-    extra_params="--skip-broken --nobest"
+    docker_version="-3:18.09.1-3.el7"
+    docker_cli_version="-1:18.09.1-3.el7"
   fi
-  gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum install $extra_params -y docker-ce docker-ce-cli containerd.io"
+  gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum install $extra_params -y docker-ce${docker_version} docker-ce-cli${docker_cli_version} containerd.io"
   gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo systemctl start docker"
   gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo usermod -aG docker $(whoami)"
 }
