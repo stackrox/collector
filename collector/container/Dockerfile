@@ -65,7 +65,7 @@ CMD collector-wrapper.sh \
     --collection-method=$COLLECTION_METHOD \
     --grpc-server=$GRPC_SERVER
 
-COPY bin/collector /usr/local/bin/
+COPY bin/* /usr/local/bin/
 
 LABEL io.stackrox.collector.version="${collector_version}"
 ENV COLLECTOR_VERSION=${collector_version}
