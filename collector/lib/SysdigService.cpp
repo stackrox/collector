@@ -77,9 +77,9 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
 }
 
 bool SysdigService::FilterEvent(sinsp_evt* event) {
-  CLOG(INFO) << "Got event from thread: " << evt->get_thread_info();
-  CLOG(INFO) << "Event type: " << evt->get_type();
-  
+  CLOG(INFO) << "Got event from thread: " << event->get_thread_info();
+  CLOG(INFO) << "Event type: " << event->get_type();
+
   if (!use_chisel_cache_) {
     return chisel_->process(event);
   }
