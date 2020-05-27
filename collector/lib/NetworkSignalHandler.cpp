@@ -24,6 +24,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "NetworkSignalHandler.h"
 
 #include "EventMap.h"
+#include "Utility.h"
 
 namespace collector {
 
@@ -101,11 +102,14 @@ std::pair<Connection, bool> NetworkSignalHandler::GetConnection(sinsp_evt* evt) 
 }
 
 SignalHandler::Result NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
+  CLOG(INFO) << "Network signal: " << evt->get_type() << " from thread " << evt->get_thread_info();
   auto modifier = modifiers[evt->get_type()];
   if (modifier == Modifier::INVALID) return SignalHandler::IGNORED;
 
   auto result = GetConnection(evt);
+  CLOG(INFO) << "Connection: " << result.first;
   if (!result.second || !IsRelevantConnection(result.first)) {
+    CLOG(INFO) << "IGNORED";
     return SignalHandler::IGNORED;
   }
 
