@@ -1,4 +1,4 @@
-FROM debian:buster-slim
+FROM ubuntu:focal
 
 ARG collector_version=xxx
 ARG module_version=xxx
@@ -17,6 +17,7 @@ ENV COLLECTOR_HOST_ROOT=/host
 # HTTP API port (8080)
 EXPOSE 8080 9090
 
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
  && apt-get upgrade -y \
  && apt-get install -y --no-install-recommends \
