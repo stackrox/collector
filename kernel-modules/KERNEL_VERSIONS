@@ -1702,6 +1702,7 @@
 5.3.0-1020-gcp
 5.3.0-1021-azure
 5.3.0-1022-azure
+5.3.0-1023-azure
 5.3.0-12-generic
 5.3.0-13-generic
 5.3.0-16-generic
@@ -1730,6 +1731,7 @@
 5.3.0-52-generic
 5.3.0-53-generic
 5.3.0-55-generic
+5.3.0-56-generic
 5.4.0-1002-aws
 5.4.0-1002-gcp
 5.4.0-1003-azure
@@ -1757,7 +1759,9 @@
 5.4.0-1011-aws
 5.4.0-1011-azure
 5.4.0-1011-gcp
+5.4.0-1012-aws
 5.4.0-1012-azure
+5.4.0-1012-gcp
 5.4.0-15-generic
 5.4.0-16-generic
 5.4.0-17-generic
@@ -1775,5 +1779,6 @@
 5.4.0-31-generic
 5.4.0-32-generic
 5.4.0-33-generic
+5.4.0-34-generic
 5.4.0-8-generic
 5.4.0-9-generic
