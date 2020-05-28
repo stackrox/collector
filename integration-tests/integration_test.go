@@ -27,19 +27,22 @@ const (
 )
 
 func TestBenchmarkBaseline(t *testing.T) {
+	t.SkipNow()
 	suite.Run(t, new(BenchmarkBaselineTestSuite))
 }
 
 func TestCollectorGRPC(t *testing.T) {
 	suite.Run(t, new(ProcessNetworkTestSuite))
-	suite.Run(t, new(BenchmarkCollectorTestSuite))
+	//suite.Run(t, new(BenchmarkCollectorTestSuite))
 }
 
 func TestProcessNetwork(t *testing.T) {
+	t.SkipNow()
 	suite.Run(t, new(ProcessNetworkTestSuite))
 }
 
 func TestBenchmark(t *testing.T) {
+	t.SkipNow()
 	suite.Run(t, new(BenchmarkCollectorTestSuite))
 }
 
@@ -187,6 +190,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	containerID, err = s.launchContainer("nginx-curl", "pstauffer/curl:latest", "sleep", "300")
 	require.NoError(s.T(), err)
 	s.clientContainer = containerID[0:12]
+	fmt.Fprintln(os.Stderr, "Client container ID is ", s.clientContainer)
 
 	s.serverIP, err = s.getIPAddress("nginx")
 	require.NoError(s.T(), err)
@@ -199,6 +203,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 
 	s.clientIP, err = s.getIPAddress("nginx-curl")
 	require.NoError(s.T(), err)
+	fmt.Fprintln(os.Stderr, "Client container IP is ", s.clientIP)
 
 	time.Sleep(10 * time.Second)
 
