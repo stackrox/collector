@@ -62,13 +62,16 @@ index a5b1f9f..ebef1c9 100644
  #else
  	return bpf_task_pid_nr_ns(task, PIDTYPE_TGID, NULL);
 diff --git a/bpf/quirks.h b/bpf/quirks.h
-index a80d3e4..e7ca8ae 100644
+index a80d3e4..a0b453e 100644
 --- a/bpf/quirks.h
 +++ b/bpf/quirks.h
-@@ -11,6 +11,10 @@ or GPL2.txt for full copies of the license.
+@@ -11,6 +11,13 @@ or GPL2.txt for full copies of the license.
  
  #include <linux/version.h>
  
++#include <linux/kconfig.h>
++#undef CONFIG_CC_HAS_ASM_INLINE
++
 +#ifndef RHEL_RELEASE_CODE
 +#define RHEL_RELEASE_VERSION(X,Y) 0
 +#endif

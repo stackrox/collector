@@ -73,13 +73,16 @@ index 2779a2a..8e897c2 100644
  
  	return res;
 diff --git a/bpf/quirks.h b/bpf/quirks.h
-index 11ec7ce..6f407f6 100644
+index 11ec7ce..ffbb28d 100644
 --- a/bpf/quirks.h
 +++ b/bpf/quirks.h
-@@ -11,6 +11,10 @@ or GPL2.txt for full copies of the license.
+@@ -11,6 +11,13 @@ or GPL2.txt for full copies of the license.
  
  #include <linux/version.h>
  
++#include <linux/kconfig.h>
++#undef CONFIG_CC_HAS_ASM_INLINE
++
 +#ifndef RHEL_RELEASE_CODE
 +#define RHEL_RELEASE_VERSION(X,Y) 0
 +#endif
