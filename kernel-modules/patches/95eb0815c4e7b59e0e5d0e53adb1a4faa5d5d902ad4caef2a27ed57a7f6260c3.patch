@@ -124,10 +124,20 @@ index 2458b09..9af7ef9 100644
  
  		/*
 diff --git a/bpf/quirks.h b/bpf/quirks.h
-index a26bfd9..410b0fe 100644
+index a26bfd9..737b159 100644
 --- a/bpf/quirks.h
 +++ b/bpf/quirks.h
-@@ -40,6 +40,8 @@ or GPL2.txt for full copies of the license.
+@@ -11,6 +11,9 @@ or GPL2.txt for full copies of the license.
+ 
+ #include <linux/version.h>
+ 
++#include <linux/kconfig.h>
++#undef CONFIG_CC_HAS_ASM_INLINE
++
+ // This define exists so that /collector/kernel-modules/build-kos can determine
+ // that this version of sysdig supports the backported eBPF found in RHEL 7.6
+ #define SUPPORTS_RHEL76_EBPF
+@@ -40,6 +43,8 @@ or GPL2.txt for full copies of the license.
  #define BPF_SUPPORTS_RAW_TRACEPOINTS
  #endif
  
