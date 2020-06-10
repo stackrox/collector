@@ -880,9 +880,9 @@ jobs:
           path: /tmp/failures
 
       - slack/status:
-          fail_only: false  # change to true
+          fail_only: true
           mentions: SGX5Y89KJ
-          # only_for_branches: master # re-enable
+          only_for_branches: master
           webhook: '${SLACK_WEBHOOK_KERNEL_PROBE_BUILD_FAILURE}'
 
   join-modules:
