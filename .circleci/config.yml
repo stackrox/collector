@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs:
+  slack: circleci/slack@3.4.2
+
 setupGCP: &setupGCP
   run:
     name: Setup GCP env
@@ -876,6 +879,11 @@ jobs:
       - store_artifacts:
           path: /tmp/failures
 
+      - slack/status:
+          fail_only: true
+          mentions: SGX5Y89KJ
+          only_for_branches: master
+          webhook: '${SLACK_WEBHOOK_KERNEL_PROBE_BUILD_FAILURE}'
 
   join-modules:
     docker:
