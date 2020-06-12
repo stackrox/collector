@@ -32,6 +32,8 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "internalapi/sensor/signal_iservice.pb.h"
 
+#include <filesystem>
+
 namespace collector {
 
 using SignalStreamMessage = sensor::SignalStreamMessage;
@@ -188,6 +190,19 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
     signal->set_exec_file_path(exepath); 
   } else if (!name.empty() && name != "<NA>") {
     signal->set_exec_file_path(name); 
+  }
+
+  // If name length is 16, then it may be truncated because comm is truncated to 16 chars
+  // If the name of the process matches the name of exec file path base path (e.g. /usr/bin/entrypoint.sh base path = entrypoint.sh)
+  // then replace the name with the base path
+  if (name.length() == 16) {
+    auto basename = std::filesystem::path(signal->exec_file_path()).filename()
+    if (name.length() < basename.length()) {
+      auto res = std::mismatch(name.begin(), name.end(), basename.begin());
+      if(res.first == name.end()) {
+        signal->set_name(basename)
+      }
+    }
   }
 
   // set the process as coming from a scrape as opposed to an exec
