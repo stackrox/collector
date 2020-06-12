@@ -137,6 +137,19 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
     signal->set_exec_file_path(*name); 
   }
 
+  // If name length is 16, then it may be truncated because comm is truncated to 16 chars
+  // If the name of the process matches the name of exec file path base path (e.g. /usr/bin/entrypoint.sh base path = entrypoint.sh)
+  // then replace the name with the base path
+  if (name.length() == 16) {
+    auto basename = std::filesystem::path(signal->exec_file_path()).filename();
+    if (name.length() < basename.length()) {
+      auto res = std::mismatch(name.begin(), name.end(), basename.begin());
+      if(res.first == name.end()) {
+        signal->set_name(basename);
+      }
+    }
+  }
+
   // set process arguments
   if (const char* args = event_extractor_.get_proc_args(event)) signal->set_args(args);
 
@@ -196,11 +209,11 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   // If the name of the process matches the name of exec file path base path (e.g. /usr/bin/entrypoint.sh base path = entrypoint.sh)
   // then replace the name with the base path
   if (name.length() == 16) {
-    auto basename = std::filesystem::path(signal->exec_file_path()).filename()
+    auto basename = std::filesystem::path(signal->exec_file_path()).filename();
     if (name.length() < basename.length()) {
       auto res = std::mismatch(name.begin(), name.end(), basename.begin());
       if(res.first == name.end()) {
-        signal->set_name(basename)
+        signal->set_name(basename);
       }
     }
   }
