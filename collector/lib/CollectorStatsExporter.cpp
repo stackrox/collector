@@ -97,7 +97,7 @@ void CollectorStatsExporter::run() {
                 std::map<std::string, std::string>{{"quantity", "userspace"}, {"event_type", event_name}, {"event_dir", event_dir}});
         typed[i].chiselCacheHitsAccept = &collectorTypedEventCounters.Add(
                 std::map<std::string, std::string>{{"quantity", "chiselCacheHitsAccept"}, {"event_type", event_name}, {"event_dir", event_dir}});
-        typed[i].filtered = &collectorTypedEventCounters.Add(
+        typed[i].chiselCacheHitsReject = &collectorTypedEventCounters.Add(
                 std::map<std::string, std::string>{{"quantity", "chiselCacheHitsReject"}, {"event_type", event_name}, {"event_dir", event_dir}});
     }
 
