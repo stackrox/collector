@@ -95,7 +95,7 @@ void CollectorService::RunForever() {
 
   sysdig.Init(config_, conn_tracker);
 
-  CollectorStatsExporter exporter(registry, &sysdig);
+  CollectorStatsExporter exporter(registry, &config_, &sysdig);
   if (!exporter.start()) {
     CLOG(FATAL) << "Unable to start collector stats exporter";
   }

@@ -25,6 +25,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <chrono>
 #include <string>
 
+#include "Containers.h"
 #include "EventNames.h"
 #include "SysdigService.h"
 #include "CollectorStatsExporter.h"
@@ -40,8 +41,8 @@ extern "C" {
 
 namespace collector {
 
-CollectorStatsExporter::CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, SysdigService* sysdig)
-    : registry_(std::move(registry)), sysdig_(sysdig)
+CollectorStatsExporter::CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, const CollectorConfig* config, SysdigService* sysdig)
+    : registry_(std::move(registry)), config_(config), sysdig_(sysdig)
 {}
 
 bool CollectorStatsExporter::start() {
@@ -79,15 +80,23 @@ void CollectorStatsExporter::run() {
             .Register(*registry_);
 
     struct {
-        prometheus::Gauge* filtered;
-        prometheus::Gauge* userspace;
-        prometheus::Gauge* chiselCacheHitsAccept;
-        prometheus::Gauge* chiselCacheHitsReject;
-    } typed[PPM_EVENT_MAX];
+        prometheus::Gauge* filtered = nullptr;
+        prometheus::Gauge* userspace = nullptr;
+        prometheus::Gauge* chiselCacheHitsAccept = nullptr;
+        prometheus::Gauge* chiselCacheHitsReject = nullptr;
+    } typed[PPM_EVENT_MAX] = {};
+
+    const auto& active_syscalls = config_->Syscalls();
+    UnorderedSet<std::string> syscall_set(active_syscalls.begin(), active_syscalls.end());
 
     const auto& event_names = EventNames::GetInstance();
     for (int i = 0; i < PPM_EVENT_MAX; i++) {
         auto event_name = event_names.GetEventName(i);
+
+        if (!Contains(syscall_set, event_name)) {
+            continue;
+        }
+
         auto event_dir = event_name.substr(event_name.length() - 1);
         event_name.resize(event_name.length() - 1);
 
@@ -125,10 +134,10 @@ void CollectorStatsExporter::run() {
             nChiselCacheHitsAccept += chiselCacheHitsAccept;
             nChiselCacheHitsReject += chiselCacheHitsReject;
 
-            counters.filtered->Set(filtered);
-            counters.userspace->Set(userspace);
-            counters.chiselCacheHitsAccept->Set(chiselCacheHitsAccept);
-            counters.chiselCacheHitsReject->Set(chiselCacheHitsReject);
+            if (counters.filtered) counters.filtered->Set(filtered);
+            if (counters.userspace) counters.userspace->Set(userspace);
+            if (counters.chiselCacheHitsAccept) counters.chiselCacheHitsAccept->Set(chiselCacheHitsAccept);
+            if (counters.chiselCacheHitsReject) counters.chiselCacheHitsReject->Set(chiselCacheHitsReject);
         }
 
         filtered.Set(nFiltered);
