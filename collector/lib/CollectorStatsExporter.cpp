@@ -93,12 +93,12 @@ void CollectorStatsExporter::run() {
     for (int i = 0; i < PPM_EVENT_MAX; i++) {
         auto event_name = event_names.GetEventName(i);
 
+        auto event_dir = event_name.substr(event_name.length() - 1);
+        event_name.resize(event_name.length() - 1);
+
         if (!Contains(syscall_set, event_name)) {
             continue;
         }
-
-        auto event_dir = event_name.substr(event_name.length() - 1);
-        event_name.resize(event_name.length() - 1);
 
         typed[i].filtered = &collectorTypedEventCounters.Add(
                 std::map<std::string, std::string>{{"quantity", "filtered"}, {"event_type", event_name}, {"event_dir", event_dir}});
