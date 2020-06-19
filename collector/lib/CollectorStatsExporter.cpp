@@ -25,6 +25,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <chrono>
 #include <string>
 
+#include "EventNames.h"
 #include "SysdigService.h"
 #include "CollectorStatsExporter.h"
 #include "Logging.h"
@@ -72,7 +73,35 @@ void CollectorStatsExporter::run() {
     auto& processResolutionFailuresByTinfo = collectorEventCounters.Add({{"type", "processResolutionFailuresByTinfo"}});
     auto& processRateLimitCount = collectorEventCounters.Add({{"type", "processRateLimitCount"}});
 
-    while (thread_.Pause(std::chrono::seconds(1))) {
+    auto& collectorTypedEventCounters = prometheus::BuildGauge()
+            .Name("rox_collector_events_typed")
+            .Help("Collector events by event type")
+            .Register(*registry_);
+
+    struct {
+        prometheus::Gauge* filtered;
+        prometheus::Gauge* userspace;
+        prometheus::Gauge* chiselCacheHitsAccept;
+        prometheus::Gauge* chiselCacheHitsReject;
+    } typed[PPM_EVENT_MAX];
+
+    const auto& event_names = EventNames::GetInstance();
+    for (int i = 0; i < PPM_EVENT_MAX; i++) {
+        auto event_name = event_names.GetEventName(i);
+        auto event_dir = event_name.substr(event_name.length() - 1);
+        event_name.resize(event_name.length() - 1);
+
+        typed[i].filtered = &collectorTypedEventCounters.Add(
+                std::map<std::string, std::string>{{"quantity", "filtered"}, {"event_type", event_name}, {"event_dir", event_dir}});
+        typed[i].userspace = &collectorTypedEventCounters.Add(
+                std::map<std::string, std::string>{{"quantity", "userspace"}, {"event_type", event_name}, {"event_dir", event_dir}});
+        typed[i].chiselCacheHitsAccept = &collectorTypedEventCounters.Add(
+                std::map<std::string, std::string>{{"quantity", "chiselCacheHitsAccept"}, {"event_type", event_name}, {"event_dir", event_dir}});
+        typed[i].filtered = &collectorTypedEventCounters.Add(
+                std::map<std::string, std::string>{{"quantity", "chiselCacheHitsReject"}, {"event_type", event_name}, {"event_dir", event_dir}});
+    }
+
+    while (thread_.Pause(std::chrono::seconds(5))) {
         SysdigStats stats;
         if (!sysdig_->GetStats(&stats)) {
             continue;
@@ -81,10 +110,32 @@ void CollectorStatsExporter::run() {
         kernel.Set(stats.nEvents);
         drops.Set(stats.nDrops);
         preemptions.Set(stats.nPreemptions);
-        filtered.Set(stats.nFilteredEvents);
-        userspaceEvents.Set(stats.nUserspaceEvents);
-        chiselCacheHitsAccept.Set(stats.nChiselCacheHitsAccept);
-        chiselCacheHitsReject.Set(stats.nChiselCacheHitsReject);
+
+        uint64_t nFiltered = 0, nUserspace = 0, nChiselCacheHitsAccept = 0, nChiselCacheHitsReject = 0;
+        for (int i = 0; i < PPM_EVENT_MAX; i++) {
+            auto& counters = typed[i];
+
+            auto filtered = stats.nFilteredEvents[i];
+            auto userspace = stats.nUserspaceEvents[i];
+            auto chiselCacheHitsAccept = stats.nChiselCacheHitsAccept[i];
+            auto chiselCacheHitsReject = stats.nChiselCacheHitsReject[i];
+
+            nFiltered += filtered;
+            nUserspace += userspace;
+            nChiselCacheHitsAccept += chiselCacheHitsAccept;
+            nChiselCacheHitsReject += chiselCacheHitsReject;
+
+            counters.filtered->Set(filtered);
+            counters.userspace->Set(userspace);
+            counters.chiselCacheHitsAccept->Set(chiselCacheHitsAccept);
+            counters.chiselCacheHitsReject->Set(chiselCacheHitsReject);
+        }
+
+        filtered.Set(nFiltered);
+        userspaceEvents.Set(nUserspace);
+        chiselCacheHitsAccept.Set(nChiselCacheHitsAccept);
+        chiselCacheHitsReject.Set(nChiselCacheHitsReject);
+
         grpcSendFailures.Set(stats.nGRPCSendFailures);
 
         // process related metrics

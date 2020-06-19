@@ -102,9 +102,9 @@ bool SysdigService::FilterEvent(sinsp_evt* event) {
     res = (cache_status == ACCEPTED);
 
     if (res) {
-      ++userspace_stats_.nChiselCacheHitsAccept;
+      ++userspace_stats_.nChiselCacheHitsAccept[event->get_type()];
     } else {
-      ++userspace_stats_.nChiselCacheHitsReject;
+      ++userspace_stats_.nChiselCacheHitsReject[event->get_type()];
     }
   }
 
@@ -128,11 +128,11 @@ sinsp_evt* SysdigService::GetNext() {
 
   if (event->get_category() & EC_INTERNAL) return nullptr;
 
-  ++userspace_stats_.nUserspaceEvents;
+  ++userspace_stats_.nUserspaceEvents[event->get_type()];
   if (!FilterEvent(event)) {
     return nullptr;
   }
-  ++userspace_stats_.nFilteredEvents;
+  ++userspace_stats_.nFilteredEvents[event->get_type()];
 
   return event;
 }
