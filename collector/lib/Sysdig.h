@@ -29,6 +29,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include <atomic>
 #include <string>
 
+#include "ppm_events_public.h"
+
 #include "CollectorService.h"
 #include "ConnTracker.h"
 
@@ -43,10 +45,10 @@ struct SysdigStats {
   volatile uint64_t nPreemptions = 0; // the number of preemptions
 
   // stats gathered in user space
-  volatile uint64_t nFilteredEvents = 0;              // events post chisel filter
-  volatile uint64_t nUserspaceEvents = 0;             // events pre chisel filter, should be (nEvents - nDrops)
-  volatile uint64_t nChiselCacheHitsAccept = 0;       // number of events that hit the filter cache
-  volatile uint64_t nChiselCacheHitsReject = 0;       // number of events that hit the filter cache
+  volatile uint64_t nFilteredEvents[PPM_EVENT_MAX] = {0};              // events post chisel filter
+  volatile uint64_t nUserspaceEvents[PPM_EVENT_MAX] = {0};             // events pre chisel filter, should be (nEvents - nDrops)
+  volatile uint64_t nChiselCacheHitsAccept[PPM_EVENT_MAX] = {0};       // number of events that hit the filter cache
+  volatile uint64_t nChiselCacheHitsReject[PPM_EVENT_MAX] = {0};       // number of events that hit the filter cache
   volatile uint64_t nGRPCSendFailures = 0;            // number of signals that were not sent on GRPC
 
   // process related metrics
