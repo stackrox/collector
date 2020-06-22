@@ -13,6 +13,8 @@ RUN yum -y install \
   openssl-devel
 RUN yum -y groupinstall "Development Tools"
 
+RUN yum -y install https://extras.getpagespeed.com/release-latest.rpm && yum install gperftools
+
 # The following command would only install cmake 3.11; we need 3.13+ to build gRPC properly
 # RUN yum -y install cmake
 RUN curl -L https://github.com/Kitware/CMake/releases/download/v3.15.2/cmake-3.15.2.tar.gz | tar -xzf - && \

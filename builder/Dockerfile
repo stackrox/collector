@@ -28,6 +28,7 @@ RUN apt-get update \
         unzip \
         uuid-dev \
         wget \
+        libgoogle-perftools-dev \
         ;
 
 # We want to fail if the destination directory is there, hence mkdir (not -p).
