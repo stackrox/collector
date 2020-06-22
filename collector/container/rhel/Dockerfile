@@ -17,7 +17,7 @@ ENV COLLECTOR_HOST_ROOT=/host
 
 RUN yum update -y --nogpgcheck --disableplugin=subscription-manager
 RUN yum install -y kmod
-RUN yum -y install https://extras.getpagespeed.com/release-latest.rpm && yum install gperftools
+RUN yum -y install https://extras.getpagespeed.com/release-latest.rpm && yum -y install gperftools
 RUN rpm -e --nodeps \
       rpm \
       rpm-build-libs \
