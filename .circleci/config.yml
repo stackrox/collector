@@ -1609,7 +1609,7 @@ workflows:
        - test-ebpf-rhel-8
        - test-module-ubuntu-1604-lts
        - test-ebpf-ubuntu-1604-lts
-       - test-module-ubuntu-1804-lts
+       #- test-module-ubuntu-1804-lts
        - test-ebpf-ubuntu-1804-lts
        #- test-module-ubuntu-1910
        - test-ebpf-ubuntu-1910

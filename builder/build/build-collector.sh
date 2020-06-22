@@ -4,6 +4,6 @@ set -e
 set -ux
 ldconfig -v
 cd /build-output
-cmake -DCMAKE_BUILD_TYPE=Release /src
+cmake -DCMAKE_BUILD_TYPE=Profile /src
 make -j "${NPROCS:-2}" all
 strip --strip-unneeded ./collector
