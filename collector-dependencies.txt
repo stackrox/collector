@@ -1,0 +1,28 @@
+Collector is built on either the Debian Stretch Slim base image or the RedHat 8 Universial Base Image. The following Debian packages (or their Redhat equivalents) are installed.
+
+ca-certificates
+curl
+google-perftools
+kmod
+libcap-ng0
+libelf1
+libidn11
+libssl1.0.2
+libuuid1
+
+And the collector binary is dynamically linked with the following libaries.
+
+b64_version=1.2.1
+cares_version=1.13.0
+cmake_version=3.5.1
+googletest_revision=release-1.8.1
+grpc_revision=v1.15.0
+jq_version=1.6
+jsoncpp_revision=0.10.7
+luajit_version=2.0.3
+ncurses_version=6_0_20150725
+prometheus_cpp_revision=v0.4.2
+protobuf_version=3.6.1
+sysdig_version=0.26.4
+tbb_version=2018_u5
+
