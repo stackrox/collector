@@ -34,6 +34,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "Logging.h"
 #include "NetworkSignalHandler.h"
 #include "Utility.h"
+#include "TimeUtil.h"
 
 namespace collector {
 
