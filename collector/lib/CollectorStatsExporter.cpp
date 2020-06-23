@@ -169,8 +169,8 @@ void CollectorStatsExporter::run() {
             if (counters.parse_micros_total) counters.parse_micros_total->Set(parse_micros_total);
             if (counters.process_micros_total) counters.process_micros_total->Set(process_micros_total);
 
-            if (counters.parse_micros_avg) counters.parse_micros_avg->Set(parse_micros_total / userspace);
-            if (counters.process_micros_avg) counters.process_micros_avg->Set(process_micros_total / filtered);
+            if (counters.parse_micros_avg) counters.parse_micros_avg->Set(userspace ? parse_micros_total / userspace : 0);
+            if (counters.process_micros_avg) counters.process_micros_avg->Set(filtered ? process_micros_total / filtered : 0);
         }
 
         filtered.Set(nFiltered);
