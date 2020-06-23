@@ -118,7 +118,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   // set id
   char id[kUuidStringLength + 1];
   UUIDStr(id);
-  signal->set_id(id));
+  signal->set_id(id);
 
   const std::string* name = event_extractor_.get_comm(event);
   const std::string* exepath = event_extractor_.get_exepath(event);

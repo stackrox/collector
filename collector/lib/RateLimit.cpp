@@ -81,7 +81,7 @@ bool RateLimitCache::Allow(const std::string& key) {
     cache_.clear();
     return true;
   }
-  return limiter_->Allow(&bucket);
+  return limiter_.Allow(&bucket);
 }
 
 }  // namespace collector
