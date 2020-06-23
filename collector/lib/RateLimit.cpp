@@ -74,14 +74,14 @@ RateLimitCache::RateLimitCache()
 RateLimitCache::RateLimitCache(size_t capacity, int64_t burst_size, int64_t refill_time)
   : capacity_(capacity), limiter_(new Limiter(burst_size, refill_time)) {}
 
-bool RateLimitCache::Allow(std::string key) { 
-  auto pair = cache_.emplace(std::make_pair(key, TokenBucket()));
-  if (pair.second && cache_.size() > capacity_) {
+bool RateLimitCache::Allow(const std::string& key) {
+  auto& bucket = cache_[key];
+  if (!bucket.last_time && cache_.size() > capacity_) {
     CLOG(INFO) << "Flushing rate limiting cache";
     cache_.clear();
     return true;
   }
-  return limiter_->Allow(&pair.first->second);
+  return limiter_->Allow(&bucket);
 }
 
 }  // namespace collector
