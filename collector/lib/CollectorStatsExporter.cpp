@@ -79,11 +79,27 @@ void CollectorStatsExporter::run() {
             .Help("Collector events by event type")
             .Register(*registry_);
 
+    auto& collectorTypedEventTimesTotal = prometheus::BuildGauge()
+            .Name("rox_collector_event_times_us_total")
+            .Help("Collector event timings (total)")
+            .Register(*registry_);
+
+    auto& collectorTypedEventTimesAvg = prometheus::BuildGauge()
+            .Name("rox_collector_event_times_us_avg")
+            .Help("Collector event timings (average)")
+            .Register(*registry_);
+
     struct {
         prometheus::Gauge* filtered = nullptr;
         prometheus::Gauge* userspace = nullptr;
         prometheus::Gauge* chiselCacheHitsAccept = nullptr;
         prometheus::Gauge* chiselCacheHitsReject = nullptr;
+
+        prometheus::Gauge* parse_micros_total = nullptr;
+        prometheus::Gauge* process_micros_total = nullptr;
+
+        prometheus::Gauge* parse_micros_avg = nullptr;
+        prometheus::Gauge* process_micros_avg = nullptr;
     } typed[PPM_EVENT_MAX] = {};
 
     const auto& active_syscalls = config_->Syscalls();
@@ -107,6 +123,16 @@ void CollectorStatsExporter::run() {
                 std::map<std::string, std::string>{{"quantity", "chiselCacheHitsAccept"}, {"event_type", event_name}, {"event_dir", event_dir}});
         typed[i].chiselCacheHitsReject = &collectorTypedEventCounters.Add(
                 std::map<std::string, std::string>{{"quantity", "chiselCacheHitsReject"}, {"event_type", event_name}, {"event_dir", event_dir}});
+
+        typed[i].parse_micros_total = &collectorTypedEventTimesTotal.Add(
+                std::map<std::string, std::string>{{"step", "parse"}, {"event_type", event_name}, {"event_dir", event_dir}});
+        typed[i].process_micros_total = &collectorTypedEventTimesTotal.Add(
+                std::map<std::string, std::string>{{"step", "process"}, {"event_type", event_name}, {"event_dir", event_dir}});
+
+        typed[i].parse_micros_avg = &collectorTypedEventTimesAvg.Add(
+                std::map<std::string, std::string>{{"step", "parse"}, {"event_type", event_name}, {"event_dir", event_dir}});
+        typed[i].process_micros_avg = &collectorTypedEventTimesAvg.Add(
+                std::map<std::string, std::string>{{"step", "process"}, {"event_type", event_name}, {"event_dir", event_dir}});
     }
 
     while (thread_.Pause(std::chrono::seconds(5))) {
@@ -127,6 +153,8 @@ void CollectorStatsExporter::run() {
             auto userspace = stats.nUserspaceEvents[i];
             auto chiselCacheHitsAccept = stats.nChiselCacheHitsAccept[i];
             auto chiselCacheHitsReject = stats.nChiselCacheHitsReject[i];
+            auto parse_micros_total = stats.event_parse_micros[i];
+            auto process_micros_total = stats.event_process_micros[i];
 
             nFiltered += filtered;
             nUserspace += userspace;
@@ -137,6 +165,12 @@ void CollectorStatsExporter::run() {
             if (counters.userspace) counters.userspace->Set(userspace);
             if (counters.chiselCacheHitsAccept) counters.chiselCacheHitsAccept->Set(chiselCacheHitsAccept);
             if (counters.chiselCacheHitsReject) counters.chiselCacheHitsReject->Set(chiselCacheHitsReject);
+
+            if (counters.parse_micros_total) counters.parse_micros_total->Set(parse_micros_total);
+            if (counters.process_micros_total) counters.process_micros_total->Set(process_micros_total);
+
+            if (counters.parse_micros_avg) counters.parse_micros_avg->Set(userspace ? parse_micros_total / userspace : 0);
+            if (counters.process_micros_avg) counters.process_micros_avg->Set(filtered ? process_micros_total / filtered : 0);
         }
 
         filtered.Set(nFiltered);

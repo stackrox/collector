@@ -34,6 +34,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "Logging.h"
 #include "NetworkSignalHandler.h"
 #include "Utility.h"
+#include "TimeUtil.h"
 
 namespace collector {
 
@@ -123,12 +124,16 @@ bool SysdigService::FilterEvent(sinsp_evt* event) {
 
 sinsp_evt* SysdigService::GetNext() {
   sinsp_evt* event;
+
+  auto parse_start = NowMicros();
   auto res = inspector_->next(&event);
   if (res != SCAP_SUCCESS) return nullptr;
 
   if (event->get_category() & EC_INTERNAL) return nullptr;
 
+  userspace_stats_.event_parse_micros[event->get_type()] += (NowMicros() - parse_start);
   ++userspace_stats_.nUserspaceEvents[event->get_type()];
+
   if (!FilterEvent(event)) {
     return nullptr;
   }
@@ -171,6 +176,7 @@ void SysdigService::Run(const std::atomic<CollectorService::ControlValue>& contr
     sinsp_evt* evt = GetNext();
     if (!evt) continue;
 
+    auto process_start = NowMicros();
     for (auto& signal_handler : signal_handlers_) {
       if (!signal_handler.ShouldHandle(evt)) continue;
       auto result = signal_handler.handler->HandleSignal(evt);
@@ -181,6 +187,8 @@ void SysdigService::Run(const std::atomic<CollectorService::ControlValue>& contr
         result = signal_handler.handler->HandleSignal(evt);
       }
     }
+
+    userspace_stats_.event_process_micros[evt->get_type()] += (NowMicros() - process_start);
   }
 }
 
