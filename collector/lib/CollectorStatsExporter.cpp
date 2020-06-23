@@ -154,7 +154,7 @@ void CollectorStatsExporter::run() {
             auto chiselCacheHitsAccept = stats.nChiselCacheHitsAccept[i];
             auto chiselCacheHitsReject = stats.nChiselCacheHitsReject[i];
             auto parse_micros_total = stats.event_parse_micros[i];
-            auto process_micros_total = stats.event_parse_micros[i];
+            auto process_micros_total = stats.event_process_micros[i];
 
             nFiltered += filtered;
             nUserspace += userspace;
