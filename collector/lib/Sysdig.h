@@ -57,6 +57,10 @@ struct SysdigStats {
   volatile uint64_t nProcessResolutionFailuresByEvt = 0;      // number of process signals failed to resolve by event*
   volatile uint64_t nProcessResolutionFailuresByTinfo = 0;    // number of process signals failed to resolve by tinfo*
   volatile uint64_t nProcessRateLimitCount = 0;               // number of process signals rate limited
+
+  // Timing metrics
+  volatile uint64_t event_parse_micros[PPM_EVENT_MAX] = {0};  // total microseconds spent parsing event type (correlates w/ nUserspaceEvents)
+  volatile uint64_t event_process_micros[PPM_EVENT_MAX] = {0};  // total microseconds spent processing event type (correlates w/ nFilteredevents)
 };
 
 class Sysdig {

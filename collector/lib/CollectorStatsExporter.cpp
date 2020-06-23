@@ -79,11 +79,19 @@ void CollectorStatsExporter::run() {
             .Help("Collector events by event type")
             .Register(*registry_);
 
+    auto& collectorTypedEventTimes = prometheus::BuildGauge()
+            .Name("rox_collector_event_times_us")
+            .Help("Collector event timings")
+            .Register(*registry_);
+
     struct {
         prometheus::Gauge* filtered = nullptr;
         prometheus::Gauge* userspace = nullptr;
         prometheus::Gauge* chiselCacheHitsAccept = nullptr;
         prometheus::Gauge* chiselCacheHitsReject = nullptr;
+
+        prometheus::Gauge* parse_micros = nullptr;
+        prometheus::Gauge* process_micros = nullptr;
     } typed[PPM_EVENT_MAX] = {};
 
     const auto& active_syscalls = config_->Syscalls();
@@ -107,6 +115,11 @@ void CollectorStatsExporter::run() {
                 std::map<std::string, std::string>{{"quantity", "chiselCacheHitsAccept"}, {"event_type", event_name}, {"event_dir", event_dir}});
         typed[i].chiselCacheHitsReject = &collectorTypedEventCounters.Add(
                 std::map<std::string, std::string>{{"quantity", "chiselCacheHitsReject"}, {"event_type", event_name}, {"event_dir", event_dir}});
+
+        typed[i].parse_micros = &collectorTypedEventTimes.Add(
+                std::map<std::string, std::string>{{"step", "parse"}, {"event_type", event_name}, {"event_dir", event_dir}});
+        typed[i].process_micros = &collectorTypedEventTimes.Add(
+                std::map<std::string, std::string>{{"step", "process"}, {"event_type", event_name}, {"event_dir", event_dir}});
     }
 
     while (thread_.Pause(std::chrono::seconds(5))) {
@@ -137,6 +150,9 @@ void CollectorStatsExporter::run() {
             if (counters.userspace) counters.userspace->Set(userspace);
             if (counters.chiselCacheHitsAccept) counters.chiselCacheHitsAccept->Set(chiselCacheHitsAccept);
             if (counters.chiselCacheHitsReject) counters.chiselCacheHitsReject->Set(chiselCacheHitsReject);
+
+            if (counters.parse_micros) counters.parse_micros->Set(stats.event_parse_micros[i]);
+            if (counters.process_micros) counters.process_micros->Set(stats.event_process_micros[i]);
         }
 
         filtered.Set(nFiltered);
