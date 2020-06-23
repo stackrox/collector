@@ -81,14 +81,10 @@ std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo *t) {
   return os;
 }
 
-const char* UUIDStr() {
+void UUIDStr(char (&uuid_str)[kUuidStringLength + 1]) {
   uuid_t uuid;
-  constexpr int kUuidStringLength = 36;  // uuid_unparse manpage says so.
-  thread_local char uuid_str[kUuidStringLength + 1];
   uuid_generate_time_safe(uuid);
   uuid_unparse_lower(uuid, uuid_str);
-
-  return uuid_str;
 }
 
 static const std::string base64_chars =

@@ -85,8 +85,10 @@ std::string Str(Args&&... args) {
 
 std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo *t);
 
+constexpr int kUuidStringLength = 36;  // uuid_unparse manpage says so.
+
 // UUIDStr returns UUID in string format.
-const char* UUIDStr();
+void UUIDStr(char (&uuid_str)[kUuidStringLength + 1]);
 
 namespace internal {
 

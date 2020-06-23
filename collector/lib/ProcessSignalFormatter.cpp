@@ -116,7 +116,9 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   auto signal = Allocate<ProcessSignal>();
 
   // set id
-  signal->set_id(UUIDStr());
+  char id[kUuidStringLength + 1];
+  UUIDStr(id);
+  signal->set_id(id));
 
   const std::string* name = event_extractor_.get_comm(event);
   const std::string* exepath = event_extractor_.get_exepath(event);
@@ -171,7 +173,9 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   auto signal = Allocate<ProcessSignal>();
 
   // set id
-  signal->set_id(UUIDStr());
+  char id[kUuidStringLength + 1];
+  UUIDStr(id);
+  signal->set_id(id);
 
   auto name = tinfo->get_comm();
   auto exepath = tinfo->m_exepath;

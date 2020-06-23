@@ -29,9 +29,8 @@ You should have received a copy of the GNU General Public License along with thi
 namespace collector {
 
 struct TokenBucket {
-  TokenBucket() : tokens(0), last_time(0) {}
-  int64_t tokens;    // number of tokens in this bucket
-  int64_t last_time; // amount of time since the bucket last updated in microseconds
+  int64_t tokens = 0;    // number of tokens in this bucket
+  int64_t last_time = 0; // amount of time since the bucket last updated in microseconds
 };
  
 class Limiter {
@@ -53,11 +52,11 @@ class RateLimitCache {
 public: 
   RateLimitCache();
   RateLimitCache(size_t capacity, int64_t burst_size, int64_t refill_time);
-  bool Allow(std::string key);
+  bool Allow(const std::string& key);
 
 private:
   size_t capacity_;
-  std::unique_ptr<Limiter> limiter_;
+  Limiter limiter_;
   unordered_map<std::string, TokenBucket> cache_;
 };
 }  // namespace collector

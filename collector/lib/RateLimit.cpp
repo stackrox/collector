@@ -69,10 +69,10 @@ void Limiter::fill_bucket(TokenBucket *b) {
 
 // RateLimitCache Defaults: Limit duplicate events to rate of 10 every 30 min
 RateLimitCache::RateLimitCache() 
-  : capacity_(4096), limiter_(new Limiter(10, 30*60)) {}
+  : capacity_(4096), limiter_(10, 30*60) {}
 
 RateLimitCache::RateLimitCache(size_t capacity, int64_t burst_size, int64_t refill_time)
-  : capacity_(capacity), limiter_(new Limiter(burst_size, refill_time)) {}
+  : capacity_(capacity), limiter_(burst_size, refill_time) {}
 
 bool RateLimitCache::Allow(const std::string& key) {
   auto& bucket = cache_[key];
