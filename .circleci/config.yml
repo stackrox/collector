@@ -73,6 +73,12 @@ commands:
           rm "go${GO_VERSION}.linux-amd64.tar.gz"
           go version
 
+  set-python-version:
+    steps:
+    - run:
+        name: "Set python version to 3.5.9"
+        command: pyenv global 3.5.9
+
 jobs:
   initjob:
     docker:
@@ -140,7 +146,8 @@ jobs:
         - shared-env
 
   builder:
-    machine: true
+    machine:
+      image: ubuntu-1604:202004-01
     resource_class: large
     steps:
     - initcommand
@@ -164,7 +171,8 @@ jobs:
           fi
 
   builder-rhel:
-    machine: true
+    machine:
+      image: ubuntu-1604:202004-01
     resource_class: large
     steps:
     - initcommand
@@ -444,7 +452,8 @@ jobs:
           - shared-env
 
   kernels:
-    machine: true
+    machine:
+      image: ubuntu-1604:202004-01
     parallelism: 8
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
@@ -605,7 +614,8 @@ jobs:
           - ko-build/build-output/FAILURES-*
 
   collector:
-    machine: true
+    machine:
+      image: ubuntu-1604:202004-01
     resource_class: large
 
     steps:
@@ -631,7 +641,8 @@ jobs:
         - go/src/github.com/stackrox/collector/collector/container/libs
 
   collector-rhel:
-    machine: true
+    machine:
+      image: ubuntu-1604:202004-01
     resource_class: large
 
     steps:
@@ -657,7 +668,9 @@ jobs:
         - go/src/github.com/stackrox/collector/collector/container/libs
 
   images:
-    machine: true
+    machine:
+      image: ubuntu-1604:202004-01
+      docker_layer_caching: true
     environment:
     - INSTALL_DIRECTORY: /tmp
     - GCLOUD_DSOP_BUCKET: "gs://dsop-artifacts.stackrox.io"
@@ -984,7 +997,8 @@ jobs:
         type: boolean
         default: false
 
-    machine: true
+    machine:
+      image: ubuntu-1604:202004-01
     working_directory: ~/workspace
 
     steps:
@@ -1028,14 +1042,16 @@ jobs:
       image_family:
         type: enum
         enum: [coreos-stable, cos-stable, cos-69-lts, cos-73-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-1910]
+    machine:
+      image: ubuntu-1604:202004-01
 
-    machine: true
     working_directory: ~/workspace
 
     steps:
     - initcommand
     - add_ssh_keys
     - docker-login
+    - set-python-version
     - gcloud-init
     - update-go
 
@@ -1112,7 +1128,8 @@ jobs:
         when: always
 
   integration-test-data:
-    machine: true
+    machine:
+      image: ubuntu-1604:202004-01
     working_directory: ~/workspace
 
     steps:
@@ -1248,7 +1265,9 @@ jobs:
             gsutil -m rsync -n -r -d /tmp/support-packages/output "$GCLOUD_TARGET"
 
   reload-released-images:
-    machine: true
+    machine:
+      image: ubuntu-1604:202004-01
+      docker_layer_caching: true
     environment:
     - INSTALL_DIRECTORY: /tmp
 
