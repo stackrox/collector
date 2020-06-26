@@ -5,22 +5,6 @@ set -e
 # ebpf probes that are available in the provided path on GCP but are not
 # contained in the image, or differ from the image.
 
-function print_gcp_modules_with_hash {
-    local gcp_bucket=$1
-    local version=$2
-    gsutil hash -h "${gcp_bucket}/${version}/*.gz" | \
-        paste -d " " - - - | \
-        gsed "s/.*\(collector-.*.gz\).*Hash (md5)\:[[:space:]]*\([[:alnum:]]\+\)/\1 \2/" \
-        2> /dev/null
-}
-function print_image_modules_with_hash {
-    local inspect_out=$1
-    while IFS='' read -r line || [[ -n "$line" ]]; do
-        [[ -n "$line" ]] || continue
-        basename "$line"
-    done < <(tail -n +2 "$inspect_out")
-}
-
 if [[ ! $# -eq 2 ]] ; then
   echo "Usage: $0 <collector-image> gs://<collector-module-bucket-path>"
   exit 1
@@ -39,14 +23,17 @@ EOF
 
 version="$(head -n 1 "${inspect_out}")"
 
-image_modules="$(print_image_modules_with_hash "$inspect_out")"
-gcp_modules="$(print_gcp_modules_with_hash "$gcp_bucket" "$version")"
-
-[[ "$gcp_modules" ]] || exit
+[[ $(gsutil ls "${gcp_bucket}/${version}/*.gz" 2> /dev/null) ]] || exit
 
 {
-    echo "${image_modules}"
-    echo "${image_modules}"
-    echo "${gcp_modules}"
+    while IFS='' read -r line || [[ -n "$line" ]]; do
+        [[ -n "$line" ]] || continue
+        basename "$line"
+        basename "$line"
+    done < <(tail -n +2 "$inspect_out")
+
+    gsutil hash -h "${gcp_bucket}/${version}/*.gz" | \
+        paste -d " " - - - | \
+        sed "s/.*\(collector-.*.gz\).*Hash (md5)\:[[:space:]]*\([[:alnum:]]\+\)/\1 \2/"
 
 } | sort | uniq -u | awk -F' ' '{print $1}' | sort | uniq
