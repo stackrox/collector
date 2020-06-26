@@ -260,11 +260,10 @@ jobs:
             exit 1
           fi
 
-          ## remove before commit
-          #if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-legacy-probes" ]]; then
-          #  echo "Not building probes for legacy versions, as we are on a PR"
-          #  exit 0
-          #fi
+          if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-legacy-probes" ]]; then
+            echo "Not building probes for legacy versions, as we are on a PR"
+            exit 0
+          fi
 
           # get fingerprint from github
           GH_KEY="$(ssh-keyscan github.com 2> /dev/null)"
@@ -1347,11 +1346,11 @@ jobs:
               continue
             fi
 
-            #docker pull "${released_base_image}" | cat
-            #"./reload/build-latest.sh" "${collector_ver}" "${mod_ver}" "/tmp/released-kernel-object-cache/" "${COLLECTOR_MODULES_BUCKET}"
+            docker pull "${released_base_image}" | cat
+            "./reload/build-latest.sh" "${collector_ver}" "${mod_ver}" "/tmp/released-kernel-object-cache/" "${COLLECTOR_MODULES_BUCKET}"
 
-            #docker push "stackrox/collector:${collector_ver}-latest" | cat
-            #docker push "collector.stackrox.io/collector:${collector_ver}-latest" | cat
+            docker push "stackrox/collector:${collector_ver}-latest" | cat
+            docker push "collector.stackrox.io/collector:${collector_ver}-latest" | cat
           done
 
           docker images
