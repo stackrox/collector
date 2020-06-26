@@ -345,7 +345,7 @@ index 2f2070e..55f3d5c 100644
  						evinfo->autofill_args[j].id,
  						1,
 diff --git a/ppm_fillers.c b/ppm_fillers.c
-index ccf092f..0919275 100644
+index ccf092f..56eba35 100644
 --- a/ppm_fillers.c
 +++ b/ppm_fillers.c
 @@ -48,6 +48,23 @@ or GPL2.txt for full copies of the license.
@@ -365,7 +365,7 @@ index ccf092f..0919275 100644
 +	do { \
 +		unsigned long _sga_args[6] = {}; \
 +		syscall_get_arguments(_task, _reg, _sga_args); \
-+		memcpy(_args, &_sga_args[_start], _len); \
++		memcpy(_args, &_sga_args[_start], _len * sizeof(unsigned long)); \
 +	} while(0)
 +#endif
 +

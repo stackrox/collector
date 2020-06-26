@@ -127,10 +127,19 @@ jobs:
           cat >>~/workspace/shared-env \<<-EOF
             export COLLECTOR_VERSION="${COLLECTOR_VERSION}"
             export COLLECTOR_TAG="${COLLECTOR_TAG}"
-            export COLLECTOR_BUILDER_TAG="circle-build-${CIRCLE_WORKFLOW_ID}"
-            export BUILD_BUILDER_IMAGE=true
             export GCP_SSH_KEY_FILE="${GCP_SSH_KEY_FILE}"
           EOF
+
+          if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-builder-image" ]]; then
+          cat >>~/workspace/shared-env \<<-EOF
+            export COLLECTOR_BUILDER_TAG="cache"
+          EOF
+          else
+          cat >>~/workspace/shared-env \<<-EOF
+            export COLLECTOR_BUILDER_TAG="circle-build-${CIRCLE_WORKFLOW_ID}"
+            export BUILD_BUILDER_IMAGE=true
+          EOF
+          fi
           cat ~/workspace/shared-env
 
     - run:
@@ -251,10 +260,11 @@ jobs:
             exit 1
           fi
 
-          if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-legacy-probes" ]]; then
-            echo "Not building probes for legacy versions, as we are on a PR"
-            exit 0
-          fi
+          ## remove before commit
+          #if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-legacy-probes" ]]; then
+          #  echo "Not building probes for legacy versions, as we are on a PR"
+          #  exit 0
+          #fi
 
           # get fingerprint from github
           GH_KEY="$(ssh-keyscan github.com 2> /dev/null)"
@@ -427,6 +437,10 @@ jobs:
           # blacklisted-build-tasks is populated from the BLACKLIST file to exclude build tasks which would fail.
           "${SOURCE_ROOT}/kernel-modules/build/apply-blacklist.py" "${SOURCE_ROOT}/kernel-modules/BLACKLIST" \
             ~/kobuild-tmp/all-build-tasks >~/kobuild-tmp/non-blacklisted-build-tasks
+
+          wc -l ~/kobuild-tmp/redundant-build-tasks
+          sed -i '/^5\.[^0].*mod$/d' ~/kobuild-tmp/redundant-build-tasks
+          wc -l ~/kobuild-tmp/redundant-build-tasks
 
           # Create the set of build tasks as the contents of `all-build-tasks` minus the redundant and blacklisted
           # build tasks.
@@ -780,11 +794,6 @@ jobs:
           fi
 
     - run:
-        name: Restore collector-builder rhel image
-        command: |
-          docker pull "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}"
-
-    - run:
         name: Build collector rhel images
         command: |
           cd "$COLLECTOR_SOURCE_ROOT"
@@ -960,7 +969,7 @@ jobs:
             extra_args=()
             target="${COLLECTOR_MODULES_BUCKET}"
             if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
-              target="gs://stackrox-collector-modules-staging/pr-builds/${CIRCLE_BRANCH}/${CIRCLE_BUILD_NUM}"
+              target="gs://stackrox-collector-modules-staging/pr-builds/${CIRCLE_BRANCH}/${CIRCLE_WORKFLOW_ID}"
             fi
 
             shopt -s nullglob
@@ -970,14 +979,15 @@ jobs:
               gsutil -m cp -n "${probes_dir}/*.gz" "${target}/$(basename "$probes_dir")/"
             done
 
-            if [[ "$CIRCLE_BRANCH" == "master" || -n "$CIRCLE_TAG" ]]; then
+            # disable before commit
+            #if [[ "$CIRCLE_BRANCH" == "master" || -n "$CIRCLE_TAG" ]]; then
               # On PR/master builds, additionally upload modules from cache
               for probes_dir in "${WORKSPACE_ROOT}/ko-build/cached-probes"/*; do
                 files=("${probes_dir}"/*.gz)
                 [[ "${#files[@]}" > 0 ]] || continue
                 gsutil -m cp -n "${probes_dir}/*.gz" "${target}/$(basename "$probes_dir")/"
               done
-            fi
+            #fi
 
       - run:
           name: Sanity check
@@ -1305,6 +1315,11 @@ jobs:
           cd "$SOURCE_ROOT"
           docker login -u "$STACKROX_IO_PUSH_USERNAME" -p "$STACKROX_IO_PUSH_PASSWORD" collector.stackrox.io
 
+          modules_bucket="${COLLECTOR_MODULES_BUCKET}"
+          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+            modules_bucket="gs://stackrox-collector-modules-staging/pr-builds/${CIRCLE_BRANCH}/${CIRCLE_WORKFLOW_ID}"
+          fi
+
           rm -rf "./reload/images"
           for collector_ver_file in "${WORKSPACE_ROOT}/ko-build/released-collectors"/*; do
             collector_ver="$(basename "${collector_ver_file}")"
@@ -1313,10 +1328,11 @@ jobs:
 
             released_latest_image="stackrox/collector:${collector_ver}-latest"
             released_base_image="stackrox/collector:${collector_ver}-base"
-            docker pull "${released_latest_image}"
+            docker pull "${released_latest_image}" | cat
 
             missing_objs_file="/tmp/missing-objs-${collector_ver}"
-            "./reload/missing-kernel-objects.sh" "${released_latest_image}" "${COLLECTOR_MODULES_BUCKET}" \
+            echo "Reloading ${released_latest_image} from modules bucket ${modules_bucket}"
+            "./reload/missing-kernel-objects.sh" "${released_latest_image}" "${modules_bucket}" \
               >"${missing_objs_file}"
 
             if [[ ! -s "${missing_objs_file}" ]] ; then
@@ -1327,11 +1343,15 @@ jobs:
             echo "Kernel objects missing in image ${released_latest_image}:"
             cat "${missing_objs_file}"
 
-            docker pull "${released_base_image}"
-            "./reload/build-latest.sh" "${collector_ver}" "${mod_ver}" "/tmp/released-kernel-object-cache/" "${COLLECTOR_MODULES_BUCKET}"
+            if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+              continue
+            fi
 
-            docker push "stackrox/collector:${collector_ver}-latest"
-            docker push "collector.stackrox.io/collector:${collector_ver}-latest"
+            #docker pull "${released_base_image}" | cat
+            #"./reload/build-latest.sh" "${collector_ver}" "${mod_ver}" "/tmp/released-kernel-object-cache/" "${COLLECTOR_MODULES_BUCKET}"
+
+            #docker push "stackrox/collector:${collector_ver}-latest" | cat
+            #docker push "collector.stackrox.io/collector:${collector_ver}-latest" | cat
           done
 
           docker images
@@ -1639,8 +1659,10 @@ workflows:
         requires:
         - images
         filters:
-          branches:
-            only: master
+          #branches:
+          #  only: master
+          tags:
+           only: /.*/
     - update-support-packages:
         context: docker-io-and-stackrox-io-push
         filters:

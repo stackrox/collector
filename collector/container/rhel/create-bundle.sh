@@ -13,7 +13,7 @@ MODULE_DIR="$2"
 OUTPUT_BUNDLE="$3"
 
 [[ -n "$INPUT_ROOT" && -n "$MODULE_DIR" && -n "$OUTPUT_BUNDLE" ]] \
-   || die "Usage: $0 <input-root> <builder-image> <module-dir> <output-bundle>"
+   || die "Usage: $0 <input-root> <module-dir> <output-bundle>"
 [[ -d "$INPUT_ROOT" ]] \
    || die "Input root directory doesn't exist or is not a directory."
 [[ "$MODULE_DIR" == "-" || -d "$MODULE_DIR" ]] \
