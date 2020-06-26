@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 
-# This script takes a collector image and prints a list of kernel modules and
-# ebpf probes that are available in the provided path on GCP but are not
-# contained in the image, or differ from the image.
+# This script takes a collector image and a GCS bucket and prints
+# the probes from either that are not found in both sources and/or
+# do not have the same hash.
 
 if [[ ! $# -eq 2 ]] ; then
   echo "Usage: $0 <collector-image> gs://<collector-module-bucket-path>"
@@ -28,7 +28,6 @@ version="$(head -n 1 "${inspect_out}")"
 {
     while IFS='' read -r line || [[ -n "$line" ]]; do
         [[ -n "$line" ]] || continue
-        basename "$line"
         basename "$line"
     done < <(tail -n +2 "$inspect_out")
 
