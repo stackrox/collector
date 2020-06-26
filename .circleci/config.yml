@@ -122,7 +122,7 @@ jobs:
 
           COLLECTOR_TAG="${COLLECTOR_VERSION}"
           GCLOUD_SSH_FINGERPRINT="$(echo ${GCLOUD_SSH_KEY_PUB} | awk '{print $2}' | base64 -d | md5sum | awk '{print $1}')"
-          GCP_SSH_KEY_FILE="${HOME}/.ssh/id_rsa_${GCLOUD_SSH_FINGERPRINT}" 
+          GCP_SSH_KEY_FILE="${HOME}/.ssh/id_rsa_${GCLOUD_SSH_FINGERPRINT}"
 
           cat >>~/workspace/shared-env \<<-EOF
             export COLLECTOR_VERSION="${COLLECTOR_VERSION}"
@@ -166,7 +166,7 @@ jobs:
         command: |
           docker push "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}"
           if [[ "$CIRCLE_BRANCH" == "master" ]]; then
-            docker tag "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}" stackrox/collector-builder:cache 
+            docker tag "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}" stackrox/collector-builder:cache
             docker push stackrox/collector-builder:cache
           fi
 
@@ -191,7 +191,7 @@ jobs:
         command: |
           docker push "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}"
           if [[ "$CIRCLE_BRANCH" == "master" ]]; then
-            docker tag "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}" stackrox/collector-builder:rhel-cache 
+            docker tag "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}" stackrox/collector-builder:rhel-cache
             docker push stackrox/collector-builder:rhel-cache
           fi
 
@@ -1041,7 +1041,7 @@ jobs:
         enum: [coreos, cos, rhel, ubuntu-os]
       image_family:
         type: enum
-        enum: [coreos-stable, cos-stable, cos-69-lts, cos-73-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-1910]
+        enum: [coreos-stable, cos-stable, cos-69-lts, cos-73-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-2004-lts]
     machine:
       image: ubuntu-1604:202004-01
 
@@ -1591,28 +1591,27 @@ workflows:
           tags:
             only: /.*/
     - integration-test:
-        name: test-ebpf-ubuntu-1910
+        name: test-ebpf-ubuntu-2004-lts
         collection_method: ebpf
         vm_type: ubuntu-os
-        image_family: ubuntu-1910
+        image_family: ubuntu-2004-lts
         requires:
         - images
         - integration-test-local
         filters:
           tags:
             only: /.*/
-    # TODO(rc) Enable after fixing ROX-4002 `Collector fails to report network connection details and process paths on Ubuntu 19.10`
-    #- integration-test:
-    #    name: test-module-ubuntu-1910
-    #    collection_method: module
-    #    vm_type: ubuntu-os
-    #    image_family: ubuntu-1910
-    #    requires:
-    #    - images
-    #    - integration-test-local
-    #    filters:
-    #      tags:
-    #        only: /.*/
+    - integration-test:
+        name: test-module-ubuntu-2004-lts
+        collection_method: module
+        vm_type: ubuntu-os
+        image_family: ubuntu-2004-lts
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
     - integration-test-data:
        requires:
        - test-module-coreos-stable
@@ -1630,8 +1629,8 @@ workflows:
        - test-ebpf-ubuntu-1604-lts
        - test-module-ubuntu-1804-lts
        - test-ebpf-ubuntu-1804-lts
-       #- test-module-ubuntu-1910
-       - test-ebpf-ubuntu-1910
+       - test-module-ubuntu-2004-lts
+       - test-ebpf-ubuntu-2004-lts
        filters:
          tags:
            only: /.*/
