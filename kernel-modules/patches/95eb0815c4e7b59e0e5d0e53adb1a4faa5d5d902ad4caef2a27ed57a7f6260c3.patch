@@ -172,3 +172,16 @@ index 6c321f6..7e498e3 100644
  #include <linux/in.h>
  #if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 20)
  #include <linux/mount.h>
+diff --git a/ppm_fillers.c b/ppm_fillers.c
+index 2f8f634..366cae8 100644
+--- a/ppm_fillers.c
++++ b/ppm_fillers.c
+@@ -69,7 +69,7 @@ static inline struct inode *file_inode(struct file *f)
+ 	do { \
+ 		unsigned long _sga_args[6] = {}; \
+ 		syscall_get_arguments(_task, _reg, _sga_args); \
+-		memcpy(_args, &_sga_args[_start], _len); \
++		memcpy(_args, &_sga_args[_start], _len * sizeof(unsigned long)); \
+ 	} while(0)
+ #endif
+ 

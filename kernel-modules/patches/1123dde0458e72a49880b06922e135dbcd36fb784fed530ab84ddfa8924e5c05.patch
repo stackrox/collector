@@ -372,7 +372,7 @@ index 087223e..37873f8 100644
  						evinfo->autofill_args[j].id,
  						1,
 diff --git a/ppm_fillers.c b/ppm_fillers.c
-index 4d9ecbc..fed360f 100644
+index 4d9ecbc..5571ab2 100644
 --- a/ppm_fillers.c
 +++ b/ppm_fillers.c
 @@ -39,7 +39,7 @@ along with sysdig.  If not, see <http://www.gnu.org/licenses/>.
@@ -401,7 +401,7 @@ index 4d9ecbc..fed360f 100644
 +	do { \
 +		unsigned long _sga_args[6] = {}; \
 +		syscall_get_arguments(_task, _reg, _sga_args); \
-+		memcpy(_args, &_sga_args[_start], _len); \
++		memcpy(_args, &_sga_args[_start], _len * sizeof(unsigned long)); \
 +	} while(0)
 +#endif
 +

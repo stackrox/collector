@@ -127,10 +127,19 @@ jobs:
           cat >>~/workspace/shared-env \<<-EOF
             export COLLECTOR_VERSION="${COLLECTOR_VERSION}"
             export COLLECTOR_TAG="${COLLECTOR_TAG}"
-            export COLLECTOR_BUILDER_TAG="circle-build-${CIRCLE_WORKFLOW_ID}"
-            export BUILD_BUILDER_IMAGE=true
             export GCP_SSH_KEY_FILE="${GCP_SSH_KEY_FILE}"
           EOF
+
+          if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-builder-image" ]]; then
+          cat >>~/workspace/shared-env \<<-EOF
+            export COLLECTOR_BUILDER_TAG="cache"
+          EOF
+          else
+          cat >>~/workspace/shared-env \<<-EOF
+            export COLLECTOR_BUILDER_TAG="circle-build-${CIRCLE_WORKFLOW_ID}"
+            export BUILD_BUILDER_IMAGE=true
+          EOF
+          fi
           cat ~/workspace/shared-env
 
     - run:
@@ -322,9 +331,9 @@ jobs:
     - restore_cache:
         name: Restore Kernel module build cache
         keys:
-          - kernel-module-cache-v12-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
-          - kernel-module-cache-v12-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
-          - kernel-module-cache-v12-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
+          - kernel-module-cache-v13-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+          - kernel-module-cache-v13-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
+          - kernel-module-cache-v13-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
 
     - run:
         name: Unpack module sources
@@ -362,6 +371,7 @@ jobs:
     - run:
         name: Download missing modules for current version from gcloud bucket
         command: |
+          mkdir -p "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}"
           gsutil -m rsync -r \
             "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/" \
             "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}/" \
@@ -709,7 +719,7 @@ jobs:
 
     - save_cache:
         name: Saving Kernel module build cache
-        key: kernel-module-cache-v12-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+        key: kernel-module-cache-v13-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
         paths:
           - /tmp/cache/
 
@@ -778,11 +788,6 @@ jobs:
               "${build_args[@]}" \
               container-combined
           fi
-
-    - run:
-        name: Restore collector-builder rhel image
-        command: |
-          docker pull "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}"
 
     - run:
         name: Build collector rhel images
@@ -1305,6 +1310,8 @@ jobs:
           cd "$SOURCE_ROOT"
           docker login -u "$STACKROX_IO_PUSH_USERNAME" -p "$STACKROX_IO_PUSH_PASSWORD" collector.stackrox.io
 
+          modules_bucket="${COLLECTOR_MODULES_BUCKET}"
+
           rm -rf "./reload/images"
           for collector_ver_file in "${WORKSPACE_ROOT}/ko-build/released-collectors"/*; do
             collector_ver="$(basename "${collector_ver_file}")"
@@ -1313,10 +1320,11 @@ jobs:
 
             released_latest_image="stackrox/collector:${collector_ver}-latest"
             released_base_image="stackrox/collector:${collector_ver}-base"
-            docker pull "${released_latest_image}"
+            docker pull "${released_latest_image}" | cat
 
             missing_objs_file="/tmp/missing-objs-${collector_ver}"
-            "./reload/missing-kernel-objects.sh" "${released_latest_image}" "${COLLECTOR_MODULES_BUCKET}" \
+            echo "Reloading ${released_latest_image} from modules bucket ${modules_bucket}"
+            "./reload/missing-kernel-objects.sh" "${released_latest_image}" "${modules_bucket}" \
               >"${missing_objs_file}"
 
             if [[ ! -s "${missing_objs_file}" ]] ; then
@@ -1327,11 +1335,15 @@ jobs:
             echo "Kernel objects missing in image ${released_latest_image}:"
             cat "${missing_objs_file}"
 
-            docker pull "${released_base_image}"
+            if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+              continue
+            fi
+
+            docker pull "${released_base_image}" | cat
             "./reload/build-latest.sh" "${collector_ver}" "${mod_ver}" "/tmp/released-kernel-object-cache/" "${COLLECTOR_MODULES_BUCKET}"
 
-            docker push "stackrox/collector:${collector_ver}-latest"
-            docker push "collector.stackrox.io/collector:${collector_ver}-latest"
+            docker push "stackrox/collector:${collector_ver}-latest" | cat
+            docker push "collector.stackrox.io/collector:${collector_ver}-latest" | cat
           done
 
           docker images
