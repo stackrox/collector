@@ -1,11 +1,6 @@
-FROM alpine:3
-
-RUN mkdir /kernel-modules/
-
-COPY ./kernel-modules /kernel-modules/
-
-RUN find /kernel-modules -name '*.ko' -exec gzip {} \;
-
-FROM scratch
-
-COPY --from=0 /kernel-modules/ /kernel-modules/
+ARG collector_version=xxx
+ARG collector_repo=stackrox/collector
+ARG base_image=$collector_repo:${collector_version}-base
+FROM ${base_image}
+ARG module_version=xxx
+ADD ${module_version}.tar.gz /kernel-modules/

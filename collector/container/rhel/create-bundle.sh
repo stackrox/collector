@@ -9,15 +9,15 @@ die() {
 }
 
 INPUT_ROOT="$1"
-MODULE_DIR="$2"
+MODULE_ARCHIVE="$2"
 OUTPUT_BUNDLE="$3"
 
-[[ -n "$INPUT_ROOT" && -n "$MODULE_DIR" && -n "$OUTPUT_BUNDLE" ]] \
-   || die "Usage: $0 <input-root> <module-dir> <output-bundle>"
+[[ -n "$INPUT_ROOT" && -n "$MODULE_ARCHIVE" && -n "$OUTPUT_BUNDLE" ]] \
+   || die "Usage: $0 <input-root> <module-archive> <output-bundle>"
 [[ -d "$INPUT_ROOT" ]] \
    || die "Input root directory doesn't exist or is not a directory."
-[[ "$MODULE_DIR" == "-" || -d "$MODULE_DIR" ]] \
-   || die "Module directory doesn't exist or is not a directory."
+[[ "$MODULE_ARCHIVE" == "-" || -f "$MODULE_ARCHIVE" ]] \
+   || die "Module archive doesn't exist."
 
 # Create tmp directory
 bundle_root="$(mktemp -d)"
@@ -36,7 +36,7 @@ cp -p "${INPUT_ROOT}/scripts/bootstrap.sh" "${bundle_root}/bootstrap.sh"
 cp -p "${INPUT_ROOT}/scripts/collector-wrapper.sh" "${bundle_root}/usr/local/bin/"
 cp -p "${INPUT_ROOT}/NOTICE-collector.txt" "${bundle_root}/COPYING.txt"
 cp -p "${INPUT_ROOT}/bin/collector.rhel" "${bundle_root}/usr/local/bin/collector"
-[[ "$MODULE_DIR" == "-" ]] || cp -pr "${MODULE_DIR}"/* "${bundle_root}/kernel-modules/"
+[[ "$MODULE_ARCHIVE" == "-" ]] || tar xzf "${MODULE_ARCHIVE}" -C "${bundle_root}/kernel-modules/"
 
 # =============================================================================
 

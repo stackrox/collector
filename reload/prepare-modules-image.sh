@@ -14,16 +14,11 @@ fi
 
 mkdir -p "${DIR}/images/${mod_ver}" "${cache_root}/${mod_ver}"
 
-gsutil -m rsync -r \
-  "${gcp_bucket}/${mod_ver}/" "${cache_root}/${mod_ver}"
+gsutil -m rsync -r -x ".*\.unavail$" "${gcp_bucket}/${mod_ver}/" "${cache_root}/${mod_ver}" | cat
+echo "${mod_ver}" > "${cache_root}/${mod_ver}/MODULE_VERSION.txt"
+rm -f "${cache_root}/${mod_ver}"/.*.unavail
 
-mkdir -p "${DIR}/images/${mod_ver}/kernel-modules"
+mkdir -p "${DIR}/images/${mod_ver}/container"
+tar -czf "${DIR}/images/${mod_ver}/container/${mod_ver}.tar.gz" -C "${cache_root}/${mod_ver}" .
 
-rsync -a "${cache_root}/${mod_ver}"/*.gz "${DIR}/images/${mod_ver}/kernel-modules"
-
-cd "${DIR}/images/${mod_ver}"
-docker build \
-  -t "stackrox-kernel-modules:${mod_ver}" \
-  -f - \
-  . < "${DIR}/../kernel-modules/container/Dockerfile"
-
+cp "${DIR}/../kernel-modules/container/Dockerfile" "${DIR}/images/${mod_ver}/container/"
