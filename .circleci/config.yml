@@ -826,10 +826,6 @@ jobs:
         name: Sanity check images
         command: |
           docker images | grep collector | grep "${COLLECTOR_VERSION}"
-          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
-            exit 0
-          fi
-          docker images | grep kernel | grep "${MODULE_VERSION}"
 
     - run:
         name: Push images
