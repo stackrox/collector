@@ -40,7 +40,7 @@ build_ko() (
         echo "Building collector module for kernel version ${kernel_version} and module version ${module_version}."
 
         KERNELDIR="$kernel_build_dir" make clean
-        KERNELDIR="$kernel_build_dir" make -j 6 all
+        KERNELDIR="$kernel_build_dir" make KBUILD_CFLAGS="-fno-pie" -j 6 all
 
         collector_ko=collector.ko
         strip -g "$collector_ko"
