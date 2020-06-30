@@ -16,7 +16,7 @@ fi
 
 released_latest_image="stackrox/collector:${collector_ver}-latest"
 
-if [[ ! -d "${DIR}/images/${mod_ver}" ]]; then
+if [[ ! -d "${DIR}/images/${mod_ver}/container" ]]; then
   "${DIR}/prepare-modules-image.sh" "${mod_ver}" "${cache_root}" "${gcp_bucket}"
 fi
 
@@ -25,9 +25,9 @@ build_args=(
   --build-arg collector_version="${collector_ver}"
 )
 
-cd "${DIR}/../collector/container-combined"
 docker build \
   -t "collector.stackrox.io/collector:${collector_ver}-latest" \
   -t "${released_latest_image}" \
+  -t "stackrox/collector:${collector_ver}-reload-latest" \
   "${build_args[@]}" \
-  .
+  "${DIR}/images/${mod_ver}/container"

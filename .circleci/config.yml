@@ -260,11 +260,6 @@ jobs:
             exit 1
           fi
 
-          if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-legacy-probes" ]]; then
-            echo "Not building probes for legacy versions, as we are on a PR"
-            exit 0
-          fi
-
           # get fingerprint from github
           GH_KEY="$(ssh-keyscan github.com 2> /dev/null)"
           GH_FINGERPRINT="$(echo ${GH_KEY} | ssh-keygen -lf - | cut -d" " -f2)"
@@ -306,14 +301,23 @@ jobs:
               ./kernel-modules/build/prepare-src | tail -n 1 \
                 >"${mod_ver_file}"
 
-            echo "${collector_ref}" >> "${WORKSPACE_ROOT}/ko-build/released-modules/$(< "${mod_ver_file}")"
+            if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-legacy-probes" ]]; then
+                version="$(< "${mod_ver_file}")"
+                [[ "$version" != "$MODULE_VERSION" ]] || continue
+                echo "Not building probes for legacy version ${version}"
+                ls "${HOME}/kobuild-tmp/versions-src/"
+                rm "${HOME}/kobuild-tmp/versions-src/${version}.tgz"
+            else
+                echo "${collector_ref}" >> "${WORKSPACE_ROOT}/ko-build/released-modules/$(< "${mod_ver_file}")"
+            fi
 
           done < <(grep -v '^#' <RELEASED_VERSIONS | awk '{print $1}' | sort | uniq)
 
           rm -rf "${LEGACY_DIR}"
 
-          for i in "${HOME}/kobuild-tmp/versions-src"/*.tgz; do
-            version="$(basename "$i" .tgz)"
+          shopt -s nullglob
+          for i in "${WORKSPACE_ROOT}/ko-build/released-modules"/* ; do
+            version="$(basename $i .tgz)"
             [[ "$version" != "$MODULE_VERSION" ]] || continue
             echo "Building modules for legacy module version $version"
           done
@@ -680,7 +684,6 @@ jobs:
   images:
     machine:
       image: ubuntu-1604:202004-01
-      docker_layer_caching: true
     environment:
     - INSTALL_DIRECTORY: /tmp
     - GCLOUD_DSOP_BUCKET: "gs://dsop-artifacts.stackrox.io"
@@ -747,17 +750,15 @@ jobs:
           find kernel-modules/container
 
     - run:
-        name: Build kernel-modules Docker image
+        name: Build kernel-modules archive
         command: |
           if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-full-images" ]]; then
-            echo "Not building kernel module images."
+            echo "Not building kernel module archive"
             exit 0
           fi
-
           cd "${SOURCE_ROOT}/kernel-modules/container"
-          docker build \
-            -t "stackrox-kernel-modules:${MODULE_VERSION}" \
-            .
+          tar czf "${MODULE_VERSION}.tar.gz" -C ./kernel-modules .
+          rm -rf ./kernel-modules
 
     - run:
         name: Build collector images
@@ -786,7 +787,7 @@ jobs:
               -t "stackrox/collector:${COLLECTOR_VERSION}" \
               -t "stackrox/collector:${COLLECTOR_VERSION}-latest" \
               "${build_args[@]}" \
-              container-combined
+              "${SOURCE_ROOT}/kernel-modules/container"
           fi
 
     - run:
@@ -796,15 +797,20 @@ jobs:
           cp NOTICE-collector.txt container/
           cp COPYING.txt container/
 
+          MODULE_ARCHIVE="${SOURCE_ROOT}/kernel-modules/container/${MODULE_VERSION}.tar.gz"
+          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-full-images" ]]; then
+            MODULE_ARCHIVE="-"
+            echo "Not building full rhel images."
+          fi
+
           ./container/rhel/create-bundle.sh \
             "$SOURCE_ROOT/collector/container" \
-            "$SOURCE_ROOT/kernel-modules/container/kernel-modules" \
+            "${MODULE_ARCHIVE}" \
             "$SOURCE_ROOT/collector/container/rhel/bundle.tar.gz"
 
           build_args=(
             --build-arg module_version="$MODULE_VERSION"
             --build-arg collector_version="$COLLECTOR_VERSION"
-            --build-arg collector_repo="stackrox/collector-rhel"
           )
 
           docker build \
@@ -1272,7 +1278,6 @@ jobs:
   reload-released-images:
     machine:
       image: ubuntu-1604:202004-01
-      docker_layer_caching: true
     environment:
     - INSTALL_DIRECTORY: /tmp
 
@@ -1280,29 +1285,32 @@ jobs:
 
     steps:
     - initcommand
-    - docker-login
-
-    - gcloud-init
 
     - run:
-        name: Prepare released kernel object cache
+        name: Check if reload job should run and copy kernel objects
         command: |
-          mkdir -p "/tmp/released-kernel-object-cache/"
-
-    - run:
-        name: Copy kernel objects built in this workflow
-        command: |
+          shopt -s nullglob
           mod_build_dir="${WORKSPACE_ROOT}/ko-build/build-output"
-          if [ -z "$(find "${mod_build_dir}" -type f -name "*.gz" )" ] ; then
-            echo "No kernel objects built in this workflow"
+          if [[ ( "$CIRCLE_BRANCH" != "master" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/reload-released-images" ) \
+             || ( "$CIRCLE_BRANCH" == "master" && -z "$( find "${mod_build_dir}" -type f -name *.gz )" ) ]]; then
+            echo "Not reloading released images"
             circleci step halt
             exit 0
           fi
-          for mod_dir in "${mod_build_dir}"/*/ ; do
+
+          for mod_dir in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
             mod_ver="$(basename "$mod_dir")"
+            echo "Checking for module version ${mod_ver}"
+            [[ -d "${mod_build_dir}/${mod_ver}" ]] || continue
+            [[ ! -z "$( find "${mod_build_dir}/${mod_ver}" -type f -name '*.gz' )" ]] || continue
+            echo "Copying into cache for module version ${mod_ver}"
             mkdir -p "/tmp/released-kernel-object-cache/${mod_ver}"
-            cp "${mod_dir}/"*.gz "/tmp/released-kernel-object-cache/${mod_ver}" || true
+            cp "${mod_build_dir}/${mod_ver}"/*.gz "/tmp/released-kernel-object-cache/${mod_ver}"
           done
+
+
+    - docker-login
+    - gcloud-init
 
     - run:
         name: Reload released collector images
@@ -1317,13 +1325,12 @@ jobs:
             collector_ver="$(basename "${collector_ver_file}")"
             mod_ver="$(< "${collector_ver_file}")"
             echo "Checking ${collector_ver} with module version ${mod_ver}"
-
             released_latest_image="stackrox/collector:${collector_ver}-latest"
             released_base_image="stackrox/collector:${collector_ver}-base"
             docker pull "${released_latest_image}" | cat
 
             missing_objs_file="/tmp/missing-objs-${collector_ver}"
-            echo "Reloading ${released_latest_image} from modules bucket ${modules_bucket}"
+            echo "Reloading ${released_latest_image}"
             "./reload/missing-kernel-objects.sh" "${released_latest_image}" "${modules_bucket}" \
               >"${missing_objs_file}"
 
@@ -1335,15 +1342,15 @@ jobs:
             echo "Kernel objects missing in image ${released_latest_image}:"
             cat "${missing_objs_file}"
 
-            if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
-              continue
-            fi
-
             docker pull "${released_base_image}" | cat
             "./reload/build-latest.sh" "${collector_ver}" "${mod_ver}" "/tmp/released-kernel-object-cache/" "${COLLECTOR_MODULES_BUCKET}"
 
-            docker push "stackrox/collector:${collector_ver}-latest" | cat
-            docker push "collector.stackrox.io/collector:${collector_ver}-latest" | cat
+            if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+              docker push "stackrox/collector:${collector_ver}-reload-latest" | cat
+            else
+              docker push "stackrox/collector:${collector_ver}-latest" | cat
+              docker push "collector.stackrox.io/collector:${collector_ver}-latest" | cat
+            fi
           done
 
           docker images
@@ -1651,8 +1658,8 @@ workflows:
         requires:
         - images
         filters:
-          branches:
-            only: master
+         tags:
+           only: /.*/
     - update-support-packages:
         context: docker-io-and-stackrox-io-push
         filters:
