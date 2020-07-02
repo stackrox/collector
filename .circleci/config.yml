@@ -447,7 +447,7 @@ jobs:
           # build tasks.
           cat ~/kobuild-tmp/non-blacklisted-build-tasks \
               ~/kobuild-tmp/redundant-build-tasks ~/kobuild-tmp/redundant-build-tasks \
-            | sort | uniq -u >build-tasks
+            | sort | uniq -u | grep 5.3.0-1016-gke >build-tasks
 
     - run:
         name: Print list of all (source, kernel version) build combinations
