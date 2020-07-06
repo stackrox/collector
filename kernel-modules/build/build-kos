@@ -36,12 +36,10 @@ build_ko() (
     kernel_minor="$(cat "${kernel_src_dir}/BUNDLE_MAJOR")"
     kernel_distro="$(cat "${kernel_src_dir}/BUNDLE_DISTRO")"
 
-
     cd "$module_src_dir"
 
     rhel7_enable_no_pi_flag=false
     rhel7_kernel_with_ebpf=false
-
     if (( kernel_major == 3 && kernel_minor >= 10 )); then
         if [[ "$kernel_distro" == "redhat" ]]; then
             rhel_build_id="$(echo "$kernel_uname" | awk -F'[-.]' '{ print $4 }')"
@@ -61,7 +59,7 @@ build_ko() (
 
         KERNELDIR="$kernel_build_dir" make clean
         if [[ "$rhel7_enable_no_pi_flag" == true ]]; then
-            KERNELDIR="$kernel_build_dir" make -j 6 KBUILD_CFLAGS="-fno-pie -fno-pic" all
+            KERNELDIR="$kernel_build_dir" make -j 6 KBUILD_CFLAGS="-fno-pic" all
         else
             KERNELDIR="$kernel_build_dir" make -j 6 all
         fi
@@ -112,7 +110,12 @@ build_ko() (
         fi
 
         echo "Building collector eBPF probe for kernel version ${kernel_version} and module version ${module_version}."
-        KERNELDIR="$kernel_build_dir" make -j 6 -C bpf
+        if [[ "$rhel7_enable_no_pi_flag" == true ]]; then
+            KERNELDIR="$kernel_build_dir" make -j 6 -C bpf KBUILD_CFLAGS="-fno-pic"
+        else
+            KERNELDIR="$kernel_build_dir" make -j 6 -C bpf
+        fi
+
 
         collector_probe="bpf/probe.o"
 
