@@ -317,7 +317,7 @@ bool GetConnections(int dirfd, UnorderedMap<ino_t, ConnInfo>* connections) {
   bool success = true;
   {
     FDHandle net_tcp_fd = openat(dirfd, "net/tcp", O_RDONLY);
-    if (net_tcp_fd.valid())) {
+    if (net_tcp_fd.valid()) {
       FileHandle net_tcp(std::move(net_tcp_fd), "r");
       success = ReadConnectionsFromFile(Address::Family::IPV4, L4Proto::TCP, net_tcp, connections)) && success;
     } else {
