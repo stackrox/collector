@@ -31,17 +31,19 @@ build_ko() (
         return 1
     }
 
-    local kernel_uname
     kernel_uname="$(cat "${kernel_src_dir}/BUNDLE_UNAME")"
+    kernel_major="$(cat "${kernel_src_dir}/BUNDLE_VERSION")"
+    kernel_minor="$(cat "${kernel_src_dir}/BUNDLE_MAJOR")"
+    kernel_distro="$(cat "${kernel_src_dir}/BUNDLE_DISTRO")"
+
 
     cd "$module_src_dir"
 
-    local rhel7_enable_no_pi_flag=false
-    local rhel7_kernel_with_ebpf=false
+    rhel7_enable_no_pi_flag=false
+    rhel7_kernel_with_ebpf=false
 
     if (( kernel_major == 3 && kernel_minor >= 10 )); then
         if [[ "$kernel_distro" == "redhat" ]]; then
-            local rhel_build_id
             rhel_build_id="$(echo "$kernel_uname" | awk -F'[-.]' '{ print $4 }')"
             if (( rhel_build_id >= 957 )); then
                 echo "Kernel ${kernel_uname} has backported eBPF support"
@@ -84,11 +86,6 @@ build_ko() (
             touch "/output/${module_version}/.collector-ebpf-${kernel_version}.unavail"
             return 0
         fi
-
-        # Check kernel version >= 4.14
-        kernel_major="$(cat "${kernel_src_dir}/BUNDLE_VERSION")"
-        kernel_minor="$(cat "${kernel_src_dir}/BUNDLE_MAJOR")"
-        kernel_distro="$(cat "${kernel_src_dir}/BUNDLE_DISTRO")"
 
         [[ -n "$kernel_major" && -n "$kernel_minor" ]] || {
             echo >&2 "Bundle does not contain major/minor version information!"
