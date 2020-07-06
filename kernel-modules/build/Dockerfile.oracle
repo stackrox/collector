@@ -1,8 +1,10 @@
 FROM oraclelinux:7
 
-RUN yum -y install \
-    wget \
+RUN yum -y update && yum -y install yum-utils && \
+    yum-config-manager --enable ol7_UEKR6 && \
+    yum -y install \
     git \
+    wget \
     gcc \
     gcc-c++ \
     autoconf \
