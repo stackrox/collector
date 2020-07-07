@@ -314,23 +314,28 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE*
 // GetConnections reads all active connections (inode -> connection info mapping) for a given network NS, addressed by
 // the dir FD for a proc entry of a process in that network namespace.
 bool GetConnections(int dirfd, UnorderedMap<ino_t, ConnInfo>* connections) {
+  bool success = true;
   {
     FDHandle net_tcp_fd = openat(dirfd, "net/tcp", O_RDONLY);
-    if (!net_tcp_fd.valid()) return false;
-
-    FileHandle net_tcp(std::move(net_tcp_fd), "r");
-    if (!ReadConnectionsFromFile(Address::Family::IPV4, L4Proto::TCP, net_tcp, connections)) return false;
+    if (net_tcp_fd.valid()) {
+      FileHandle net_tcp(std::move(net_tcp_fd), "r");
+      success = ReadConnectionsFromFile(Address::Family::IPV4, L4Proto::TCP, net_tcp, connections) && success;
+    } else {
+      success = false;  // there should always be a net/tcp file
+    }
   }
 
   {
     FDHandle net_tcp6_fd = openat(dirfd, "net/tcp6", O_RDONLY);
-    if (!net_tcp6_fd.valid()) return false;
-
-    FileHandle net_tcp6(std::move(net_tcp6_fd), "r");
-    if (!ReadConnectionsFromFile(Address::Family::IPV6, L4Proto::TCP, net_tcp6, connections)) return false;
+    if (net_tcp6_fd.valid()) {
+      FileHandle net_tcp6(std::move(net_tcp6_fd), "r");
+      success = ReadConnectionsFromFile(Address::Family::IPV6, L4Proto::TCP, net_tcp6, connections) && success;
+    } else {
+      success = false;
+    }
   }
 
-  return true;
+  return success;
 }
 
 // netns -> (inode -> connection info) mapping
@@ -404,9 +409,17 @@ bool ReadContainerConnections(const char* proc_path, std::vector<Connection>* co
       auto emplace_res = conns_by_ns.emplace(netns_inode, UnorderedMap<uint64_t, ConnInfo>());
       if (emplace_res.second) {
         if (!GetConnections(dirfd, &emplace_res.first->second)) {
-          CLOG(ERROR) << "Could not get network connections: " << StrError();
-          conns_by_ns.erase(emplace_res.first);
-          continue;
+          // If there was an error reading connections, that could be due to a number of reasons.
+          // We need to differentiate persistent errors (e.g., expected net/tcp6 file not found)
+          // from spurious/race condition errors caused by the process disappearing while reading
+          // the directory. To determine if the latter is the root cause, we reattempt to read the
+          // network namespace inode; if that succeeds, we assume that the process is still alive
+          // and any errors encountered are persistent.
+          uint64_t netns_inode2;
+          if (!GetNetworkNamespace(dirfd, &netns_inode2) || netns_inode2 != netns_inode) {
+            conns_by_ns.erase(emplace_res.first);
+            continue;
+          }
         }
       }
     }
