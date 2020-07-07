@@ -31,23 +31,42 @@ build_ko() (
         return 1
     }
 
-    local kernel_uname
-    kernel_uname="$(cat "${kernel_src_dir}/BUNDLE_UNAME")"
+    # Extract bundle details
+    local bundle_uname bundle_version bundle_major bundle_distro
+    bundle_uname="$(cat "${kernel_src_dir}/BUNDLE_UNAME")"
+    bundle_version="$(cat "${kernel_src_dir}/BUNDLE_VERSION")"
+    bundle_major="$(cat "${kernel_src_dir}/BUNDLE_MAJOR")"
+    bundle_distro="$(cat "${kernel_src_dir}/BUNDLE_DISTRO")"
 
     cd "$module_src_dir"
+
+    local rhel7_kernel_with_ebpf=false
+    declare -a extra_make_args
+    if (( bundle_version == 3 && bundle_major >= 10 )); then
+        if [[ "$bundle_distro" == "redhat" ]]; then
+            rhel_build_id="$(echo "$bundle_uname" | awk -F'[-.]' '{ print $4 }')"
+            if (( rhel_build_id >= 957 )); then
+                echo "Kernel ${bundle_uname} has backported eBPF support"
+                rhel7_kernel_with_ebpf=true
+            fi
+            if (( rhel_build_id >= 1127 )); then
+                echo "Makefile for ${bundle_uname} does not disable position independent code"
+                extra_make_args+=("KBUILD_CFLAGS=-fno-pic")
+            fi
+        fi
+    fi
 
     if [[ "$probe_type" == "mod" ]]; then
         echo "Building collector module for kernel version ${kernel_version} and module version ${module_version}."
 
         KERNELDIR="$kernel_build_dir" make clean
-        KERNELDIR="$kernel_build_dir" make -j 6 all
-
+        KERNELDIR="$kernel_build_dir" make -j 6 "${extra_make_args[@]}" all
         collector_ko=collector.ko
         strip -g "$collector_ko"
 
         ko_version="$(/sbin/modinfo "$collector_ko" | grep vermagic | tr -s " " | cut -d " " -f 2)"
-        if [[ "$ko_version" != "$kernel_uname" ]]; then
-            echo "Corrupted probe, KO_VERSION=$ko_version, KERNEL_VERSION=$kernel_uname" >&2
+        if [[ "$ko_version" != "$bundle_uname" ]]; then
+            echo "Corrupted probe, KO_VERSION=$ko_version, BUNDLE_UNAME=$bundle_uname" >&2
             return 1
         fi
 
@@ -63,32 +82,10 @@ build_ko() (
             return 0
         fi
 
-        # Check kernel version >= 4.14
-        kernel_major="$(cat "${kernel_src_dir}/BUNDLE_VERSION")"
-        kernel_minor="$(cat "${kernel_src_dir}/BUNDLE_MAJOR")"
-        kernel_distro="$(cat "${kernel_src_dir}/BUNDLE_DISTRO")"
-
-        [[ -n "$kernel_major" && -n "$kernel_minor" ]] || {
+        [[ -n "$bundle_version" && -n "$bundle_major" ]] || {
             echo >&2 "Bundle does not contain major/minor version information!"
             return 1
         }
-
-        # Check if this kernel is from RHEL 7.6+ with backported eBPF support
-        local rhel7_kernel_with_ebpf=false
-        if (( kernel_major == 3 && kernel_minor >= 10 )); then
-            # RHEL 7.6 detection: distro=="redhat" and kernel build id at least 957
-            # Assumption is that RHEL 7.6 will continue to use kernel 3.10
-            if [[ "$kernel_distro" == "redhat" ]]; then
-                # Extract build id: 3.10.0-957.10.1.el7.x86_64 -> 957
-                local rhel_build_id
-                rhel_build_id="$(echo "$kernel_uname" | awk -F'[-.]' '{ print $4 }')"
-                # disable ebpf builds on kernels >= 1062 until ROX-3377 is resolved
-                if (( rhel_build_id >= 957 && rhel_build_id < 1062 )); then
-                    echo "Kernel ${kernel_uname} has backported eBPF support"
-                    rhel7_kernel_with_ebpf=true
-                fi
-            fi
-        fi
 
         # Check if this module version supports RHEL 7.6 with backported eBPF support
         if [[ "$rhel7_kernel_with_ebpf" == true ]]; then
@@ -101,7 +98,7 @@ build_ko() (
 
         # Check kernel version is at least 4.14 (unless RHEL 7.6 kernel detected)
         else
-            if (( kernel_major < 4 || (kernel_major == 4 && kernel_minor < 14) )); then
+            if (( bundle_version < 4 || (bundle_version == 4 && bundle_major < 14) )); then
                 echo "Kernel version ${kernel_version} does not support eBPF probe building, skipping ..."
                 mkdir -p "/output/${module_version}"
                 touch "/output/${module_version}/.collector-ebpf-${kernel_version}.unavail"
@@ -110,7 +107,7 @@ build_ko() (
         fi
 
         echo "Building collector eBPF probe for kernel version ${kernel_version} and module version ${module_version}."
-        KERNELDIR="$kernel_build_dir" make -j 6 -C bpf
+        KERNELDIR="$kernel_build_dir" make -j 6 -C bpf "${extra_make_args[@]}"
 
         collector_probe="bpf/probe.o"
 
@@ -130,7 +127,7 @@ build_ko() (
 )
 
 build_kos() {
-    while read -a line || [[ "${#line[@]}" -gt 0 ]]; do
+    while read -r -a line || [[ "${#line[@]}" -gt 0 ]]; do
         local kernel_version="${line[0]}"
         local module_version="${line[1]}"
         local probe_type="${line[2]}"
