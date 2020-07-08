@@ -453,7 +453,7 @@ jobs:
           # build tasks.
           cat ~/kobuild-tmp/non-blacklisted-build-tasks \
               ~/kobuild-tmp/redundant-build-tasks ~/kobuild-tmp/redundant-build-tasks \
-            | sort | uniq -u >build-tasks
+            | sort | uniq -u | grep 3.10.0-1127.10.1.el7.x86_64 >build-tasks
 
     - run:
         name: Print list of all (source, kernel version) build combinations
