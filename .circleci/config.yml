@@ -527,7 +527,7 @@ jobs:
         command: |
           mkdir -p ~/kobuild-tmp/bundles
 
-          awk -v bucket="$KERNEL_BUNDLES_BUCKET" '{print bucket "/bundle-" $1 ".tgz"}' <~/kobuild-tmp/all-kernel-versions \
+          awk -v bucket="gs://stackrox-kernel-bundles-staging/17056" '{print bucket "/bundle-" $1 ".tgz"}' <~/kobuild-tmp/all-kernel-versions \
             | gsutil -m cp -I ~/kobuild-tmp/bundles/
 
           ls ~/kobuild-tmp/bundles/
@@ -539,12 +539,16 @@ jobs:
           make --quiet -C "${SOURCE_ROOT}/kernel-modules" print-custom-flavors >~/kobuild-tmp/custom-flavors/all
           mkdir ~/kobuild-tmp/meta-inspect
           for bundle_file in ~/kobuild-tmp/bundles/bundle-*.tgz; do
-            tar -xzf "${bundle_file}" -C ~/kobuild-tmp/meta-inspect ./BUNDLE_DISTRO
+            version="$(basename "$bundle_file" | sed -E 's/^bundle-(.*)\.tgz$/\1/')"
+            tar -xzf "${bundle_file}" -C ~/kobuild-tmp/meta-inspect ./BUNDLE_DISTRO ./BUNDLE_VERSION
             distro="$(< ~/kobuild-tmp/meta-inspect/BUNDLE_DISTRO)"
+            kernel_version="$(< ~/kobuild-tmp/meta-inspect/BUNDLE_VERSION)"
             if grep -q "$distro" <~/kobuild-tmp/custom-flavors/all; then
-              version="$(basename "$bundle_file" | sed -E 's/^bundle-(.*)\.tgz$/\1/')"
               echo "$version" >>~/kobuild-tmp/custom-flavors/versions."$distro"
               echo "Building kernel version $version with custom builder flavor $distro"
+            elif (( kernel_version >= 5 )); then
+              echo "$version" >>~/kobuild-tmp/custom-flavors/versions.modern
+              echo "Building kernel version $version with modern builder"
             fi
           done
 
