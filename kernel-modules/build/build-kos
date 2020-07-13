@@ -41,14 +41,12 @@ build_ko() (
     cd "$module_src_dir"
 
     local rhel7_kernel_with_ebpf=false
-    declare -a extra_make_args
     if (( bundle_version == 3 && bundle_major >= 10 )); then
         if [[ "$bundle_distro" == "redhat" ]]; then
             rhel_build_id="$(echo "$bundle_uname" | awk -F'[-.]' '{ print $4 }')"
             if (( rhel_build_id >= 957 )); then
                 echo "Kernel ${bundle_uname} has backported eBPF support"
                 rhel7_kernel_with_ebpf=true
-                echo "Makefile for ${bundle_uname} does not disable position independent code"
             fi
         fi
     fi
@@ -57,7 +55,7 @@ build_ko() (
         echo "Building collector module for kernel version ${kernel_version} and module version ${module_version}."
 
         KERNELDIR="$kernel_build_dir" BUILD_ROOT="${kernel_src_dir}" make clean
-        KERNELDIR="$kernel_build_dir" BUILD_ROOT="${kernel_src_dir}" make -j 6 "${extra_make_args[@]}" all
+        KERNELDIR="$kernel_build_dir" BUILD_ROOT="${kernel_src_dir}" make -j 6 all
 
         collector_ko=collector.ko
         strip -g "$collector_ko"
@@ -106,7 +104,7 @@ build_ko() (
 
         echo "Building collector eBPF probe for kernel version ${kernel_version} and module version ${module_version}."
 
-        KERNELDIR="$kernel_build_dir" BUILD_ROOT="${kernel_src_dir}" make -j 6 -C bpf "${extra_make_args[@]}"
+        KERNELDIR="$kernel_build_dir" BUILD_ROOT="${kernel_src_dir}" make -j 6 -C bpf
 
         collector_probe="bpf/probe.o"
 
