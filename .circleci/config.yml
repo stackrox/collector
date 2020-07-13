@@ -453,7 +453,7 @@ jobs:
           # build tasks.
           cat ~/kobuild-tmp/non-blacklisted-build-tasks \
               ~/kobuild-tmp/redundant-build-tasks ~/kobuild-tmp/redundant-build-tasks \
-            | sort | uniq -u | grep ".*\(el7\|el8\).*" >build-tasks
+            | sort | uniq -u >build-tasks
 
     - run:
         name: Print list of all (source, kernel version) build combinations
@@ -475,7 +475,7 @@ jobs:
   kernels:
     machine:
       image: ubuntu-1604:202004-01
-    parallelism: 8
+    parallelism: 32
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
