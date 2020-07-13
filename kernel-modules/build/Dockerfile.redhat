@@ -1,7 +1,7 @@
 FROM centos:8
 
 RUN yum -y groupinstall "Development Tools"
-RUN yum -y install clang llvm
+RUN yum -y install clang llvm elfutils-libelf-devel
 
 RUN mkdir -p /output
 COPY build-kos /usr/bin/
