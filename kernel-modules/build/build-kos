@@ -49,7 +49,6 @@ build_ko() (
                 echo "Kernel ${bundle_uname} has backported eBPF support"
                 rhel7_kernel_with_ebpf=true
                 echo "Makefile for ${bundle_uname} does not disable position independent code"
-                extra_make_args+=("KBUILD_CFLAGS=\"-fno-pic -fno-common\" CONFIG_MODULE_SIG=N")
             fi
         fi
     fi

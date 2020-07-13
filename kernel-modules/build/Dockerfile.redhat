@@ -1,0 +1,12 @@
+FROM centos:8
+
+RUN yum -y groupinstall "Development Tools"
+RUN yum -y install clang llvm
+
+RUN mkdir -p /output
+COPY build-kos /usr/bin/
+COPY prepare-src /usr/bin
+
+WORKDIR /scratch
+ENTRYPOINT [ "/bin/bash", "-c" ]
+
