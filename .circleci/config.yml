@@ -1058,7 +1058,7 @@ jobs:
         enum: [coreos, cos, rhel, ubuntu-os]
       image_family:
         type: enum
-        enum: [coreos-stable, cos-stable, cos-69-lts, cos-73-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-2004-lts]
+        enum: [coreos-stable, cos-stable, cos-85-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-2004-lts]
     machine:
       image: ubuntu-1604:202004-01
 
@@ -1505,21 +1505,10 @@ workflows:
           tags:
             only: /.*/
     - integration-test:
-        name: test-ebpf-cos-69-lts
+        name: test-ebpf-cos-85-lts
         collection_method: ebpf
         vm_type: cos
-        image_family: cos-69-lts
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
-    - integration-test:
-        name: test-ebpf-cos-73-lts
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-73-lts
+        image_family: cos-85-lts
         requires:
         - images
         - integration-test-local
@@ -1642,10 +1631,9 @@ workflows:
        - test-module-coreos-stable
        - test-ebpf-coreos-stable
        - test-ebpf-cos-stable
-       - test-ebpf-cos-69-lts
-       - test-ebpf-cos-73-lts
        - test-ebpf-cos-77-lts
        - test-ebpf-cos-81-lts
+       - test-ebpf-cos-85-lts
        - test-module-rhel-7
        - test-ebpf-rhel-7
        - test-module-rhel-8
