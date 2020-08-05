@@ -16,19 +16,15 @@ For every relevant Collector version, writes a file `METADATA/collector-versions
 containing the relevant module version, and a file `METADATA/collector-versions/<collector version>/INVENTORY`
 that contains all probe files that are present in the *immutable* collector image.
 
-3. Determine Module version -> Common inventory and Rox versions
+3. Determine Module version -> Rox versions
 -------------------------------------------------
-For every relevant module version, writes a file `METADATA/module-versions/<module version>/COMMON_INVENTORY`
-that contains the intersection of all relevant INVENTORY files, and a file
-`METADATA/module-versions/<module version>/ROX_VERSIONS` that contains all Rox versions that use a collector
-with the respective module version.
+For every relevant module version, writes a file `METADATA/module-versions/<module version>/ROX_VERSIONS`
+that contains all Rox versions that use a collector with the respective module version.
 
 4. Generate support package files
 -------------------------------------------------
 For every relevant module version, creates a file `OUTPUT/<module version>/<support package filename>.zip`
 containing the relevant probes.
-Note: For now 'relevant' probes means: all available probes for the given module version, without taking into
-consideration the previously computed content of `METADATA/module-versions/<module version>/COMMON_INVENTORY`.
 
 5. Generate index.html file
 -------------------------------------------------
