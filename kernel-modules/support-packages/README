@@ -27,6 +27,8 @@ with the respective module version.
 -------------------------------------------------
 For every relevant module version, creates a file `OUTPUT/<module version>/<support package filename>.zip`
 containing the relevant probes.
+Note: For now 'relevant' probes means: all available probes for the given module version, without taking into
+consideration the previously computed content of `METADATA/module-versions/<module version>/COMMON_INVENTORY`.
 
 5. Generate index.html file
 -------------------------------------------------
