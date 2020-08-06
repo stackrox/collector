@@ -77,9 +77,11 @@ function download_kernel_object() {
         echo "Found Server hostname ${server_hostname} and port ${server_port}"
 
         if [[ "$SNI_HOSTNAME" != "$server_hostname" ]]; then
+            set -ex
             local ip="$(dig ${server_hostname} +short | head -n 1)"
             url="https://sensor.stackrox:${server_port}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
-            resolve_opt="--resolve sensor.stackrox:${port}:${server_hostname}"
+            resolve_opt="--resolve sensor.stackrox:${server_port}:${ip}"
+            set +ex
         fi
         curl "${curl_opts[@]}" "${resolve_opt}" \
             --cacert /run/secrets/stackrox.io/certs/ca.pem \
