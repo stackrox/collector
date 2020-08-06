@@ -70,20 +70,15 @@ function download_kernel_object() {
         log "Attempting to download from ${url}..."
 
 
-        local resolve_opt=""
+        local resolve_opts=()
         local server_hostname="$(echo $GRPC_SERVER | cut -d : -f 1)"
         local server_port="$(echo $GRPC_SERVER | cut -d : -f 2)"
-
-        echo "Found Server hostname ${server_hostname} and port ${server_port}"
-
         if [[ "$SNI_HOSTNAME" != "$server_hostname" ]]; then
-            set -ex
-            local ip="$(dig ${server_hostname} +short | head -n 1)"
+            local ip="$(dig ${server_hostname} +short +search | head -n 1)"
             url="https://sensor.stackrox:${server_port}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
-            resolve_opt="--resolve sensor.stackrox:${server_port}:${ip}"
-            set +ex
+            resolve_opts=(--resolve "sensor.stackrox:${server_port}:${ip}")
         fi
-        curl "${curl_opts[@]}" "${resolve_opt}" \
+        curl "${curl_opts[@]}" "${resolve_opts[@]}" \
             --cacert /run/secrets/stackrox.io/certs/ca.pem \
             --cert /run/secrets/stackrox.io/certs/cert.pem \
             --key /run/secrets/stackrox.io/certs/key.pem \
