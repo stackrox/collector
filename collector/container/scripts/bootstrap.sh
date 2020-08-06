@@ -73,8 +73,11 @@ function download_kernel_object() {
         local resolve_opt=""
         local server_hostname="$(echo $GRPC_SERVER | cut -d : -f 1)"
         local server_port="$(echo $GRPC_SERVER | cut -d : -f 2)"
+
+        echo "Found Server hostname ${server_hostname} and port ${server_port}"
+
         if [[ "$SNI_HOSTNAME" != "$server_hostname" ]]; then
-            local ip ="$(dig ${server_hostname} +short | head -n 1)"
+            local ip="$(dig ${server_hostname} +short | head -n 1)"
             url="https://sensor.stackrox:${server_port}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
             resolve_opt="--resolve sensor.stackrox:${port}:${server_hostname}"
         fi
