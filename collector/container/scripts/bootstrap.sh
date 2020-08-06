@@ -69,14 +69,13 @@ function download_kernel_object() {
         local url="https://${GRPC_SERVER}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
         log "Attempting to download from ${url}..."
 
-
         local resolve_opts=()
         local server_hostname="$(echo $GRPC_SERVER | cut -d : -f 1)"
         local server_port="$(echo $GRPC_SERVER | cut -d : -f 2)"
         if [[ "$SNI_HOSTNAME" != "$server_hostname" ]]; then
             local ip="$(dig ${server_hostname} +short +search | head -n 1)"
-            url="https://sensor.stackrox:${server_port}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
-            resolve_opts=(--resolve "sensor.stackrox:${server_port}:${ip}")
+            url="https://${SNI_HOSTNAME}:${server_port}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
+            resolve_opts=(--resolve "${SNI_HOSTNAME}:${server_port}:${ip}")
         fi
         curl "${curl_opts[@]}" "${resolve_opts[@]}" \
             --cacert /run/secrets/stackrox.io/certs/ca.pem \
