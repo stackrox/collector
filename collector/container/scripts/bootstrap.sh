@@ -68,7 +68,14 @@ function download_kernel_object() {
     if [[ ! -f "${filename_gz}" && -n "$GRPC_SERVER" ]]; then
         local url="https://${GRPC_SERVER}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
         log "Attempting to download from ${url}..."
-        curl "${curl_opts[@]}" \
+
+        local insecure_skip_verify_opt=""
+        if [[ -n "$SNI_HOSTNAME" ]]; then
+            # Although this feels overly broad to skip tls verification, it's necessary
+            # as we can not override the expected hostname in curl
+            insecure_skip_verify_opt="-k"
+        fi
+        curl "${curl_opts[@]}" "${insecure_skip_verify_opt}" \
             --cacert /run/secrets/stackrox.io/certs/ca.pem \
             --cert /run/secrets/stackrox.io/certs/cert.pem \
             --key /run/secrets/stackrox.io/certs/key.pem \

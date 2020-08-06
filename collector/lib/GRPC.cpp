@@ -53,7 +53,7 @@ std::shared_ptr<grpc::ChannelCredentials> TLSCredentialsFromFiles(
   return grpc::SslCredentials(sslOptions);
 }
 
-std::shared_ptr<grpc::Channel> CreateChannel(const std::string& server_address, const std::shared_ptr<grpc::ChannelCredentials>& creds) {
+std::shared_ptr<grpc::Channel> CreateChannel(const std::string& server_address, const std::string& hostname_override, const std::shared_ptr<grpc::ChannelCredentials>& creds) {
   grpc::ChannelArguments chan_args;
   chan_args.SetInt("GRPC_ARG_KEEPALIVE_TIME_MS", 10000);
   chan_args.SetInt("GRPC_ARG_KEEPALIVE_TIMEOUT_MS", 10000);
@@ -62,7 +62,9 @@ std::shared_ptr<grpc::Channel> CreateChannel(const std::string& server_address, 
   chan_args.SetInt("GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS", 5000);
   chan_args.SetInt("GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS", 10000);
   chan_args.SetInt("GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA", 0);
-
+  if (!hostname_override.empty()) {
+    chan_args.SetSslTargetNameOverride(hostname_override);
+  }
   return grpc::CreateCustomChannel(server_address, creds, chan_args);
 }
 

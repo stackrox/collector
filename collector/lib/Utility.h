@@ -55,6 +55,9 @@ std::string Base64Decode(std::string const& encoded_string);
 // Get path using host prefix from SYSDIG_HOST_ROOT env var
 std::string GetHostPath(const std::string& file);
 
+// Get SNI hostname from SNI_HOSTNAME env var
+const char* GetSNIHostname();
+
 // Get hostname from NODE_HOSTNAME env var
 const char* GetHostname();
 

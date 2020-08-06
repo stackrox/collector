@@ -32,7 +32,7 @@ namespace collector {
 std::shared_ptr<grpc::ChannelCredentials> TLSCredentialsFromFiles(
     const std::string& ca_cert_path, const std::string& client_cert_path, const std::string& client_key_path);
 
-std::shared_ptr<grpc::Channel> CreateChannel(const std::string& server_address, const std::shared_ptr<grpc::ChannelCredentials>& creds);
+std::shared_ptr<grpc::Channel> CreateChannel(const std::string& server_address, const std::string& hostname_override, const std::shared_ptr<grpc::ChannelCredentials>& creds);
 
 }  // namespace collector
 
