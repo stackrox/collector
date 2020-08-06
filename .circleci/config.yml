@@ -784,6 +784,7 @@ jobs:
 
           docker build \
             -t "stackrox/collector:${COLLECTOR_VERSION}-base" \
+            -t "stackrox/collector:${COLLECTOR_VERSION}-slim" \
             "${build_args[@]}" \
             container
 
@@ -825,6 +826,7 @@ jobs:
 
           docker build \
             -t "stackrox/collector-rhel:${COLLECTOR_VERSION}-base" \
+            -t "stackrox/collector-rhel:${COLLECTOR_VERSION}-slim" \
             -t "stackrox/collector-rhel:${COLLECTOR_VERSION}" \
             -t "stackrox/collector-rhel:${COLLECTOR_VERSION}-latest" \
             "${build_args[@]}" \
@@ -841,6 +843,8 @@ jobs:
         command: |
           echo "Pushing collector base image"
           docker push "stackrox/collector:${COLLECTOR_VERSION}-base"
+          echo "Pushing collector slim image"
+          docker push "stackrox/collector:${COLLECTOR_VERSION}-slim"
           echo "Pushing collector image"
           docker push "stackrox/collector:${COLLECTOR_VERSION}"
           echo "Pushing collector latest image"
@@ -848,6 +852,8 @@ jobs:
 
           echo "Pushing collector rhel base image"
           docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}-base"
+          echo "Pushing collector rhel slim image"
+          docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}-slim"
           echo "Pushing collector rhel image"
           docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}"
           echo "Pushing collector rhel latest image"
