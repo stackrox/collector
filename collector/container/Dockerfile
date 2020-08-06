@@ -29,7 +29,6 @@ RUN apt-get update \
         libcap-ng0 \
         libelf1 \
         google-perftools \
-        dnsutils \
  && dpkg -r --force-all e2fslibs e2fsprogs apt debconf dpkg \
  && rm -rf /var/lib/apt \
  ;

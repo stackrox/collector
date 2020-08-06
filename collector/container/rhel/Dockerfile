@@ -27,7 +27,6 @@ RUN rpm -e --nodeps \
       yum \
       $(rpm -qa *dnf*) \
       python3-hawkey \
-      dnsutils \
     ;
 
 ADD bundle.tar.gz /

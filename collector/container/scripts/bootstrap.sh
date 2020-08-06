@@ -69,15 +69,14 @@ function download_kernel_object() {
         local url="https://${GRPC_SERVER}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
         log "Attempting to download from ${url}..."
 
-        local resolve_opts=()
+        local connect_to_opts=()
         local server_hostname="$(echo $GRPC_SERVER | cut -d : -f 1)"
         local server_port="$(echo $GRPC_SERVER | cut -d : -f 2)"
         if [[ "$SNI_HOSTNAME" != "$server_hostname" ]]; then
-            local ip="$(dig ${server_hostname} +short +search | head -n 1)"
             url="https://${SNI_HOSTNAME}:${server_port}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
-            resolve_opts=(--resolve "${SNI_HOSTNAME}:${server_port}:${ip}")
+            connect_to_opts=(--connect-to "${SNI_HOSTNAME}:${server_port}:${GRPC_SERVER}")
         fi
-        curl "${curl_opts[@]}" "${resolve_opts[@]}" \
+        curl "${curl_opts[@]}" "${connect_to_opts[@]}" \
             --cacert /run/secrets/stackrox.io/certs/ca.pem \
             --cert /run/secrets/stackrox.io/certs/cert.pem \
             --key /run/secrets/stackrox.io/certs/key.pem \
@@ -220,7 +219,7 @@ function main() {
     export NODE_HOSTNAME="$(cat /host/proc/sys/kernel/hostname)"
     
     # Export SNI_HOSTNAME and default it to sensor.stackrox
-    export SNI_HOSTNAME=${SNI_HOSTNAME:-sensor.stackrox}
+    export SNI_HOSTNAME="${SNI_HOSTNAME:-sensor.stackrox}"
 
     # Get the linux distribution and BUILD_ID and ID to identify kernel version (COS or RHEL)
     OS_DISTRO="$(get_distro)"
