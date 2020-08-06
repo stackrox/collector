@@ -70,8 +70,8 @@ function download_kernel_object() {
         log "Attempting to download from ${url}..."
 
         local connect_to_opts=()
-        local server_port="$(printf "%s\n" "${GRPC_SERVER##*:}")"
-        if [[ "$server_port" == "$server_hostname" ]]; then
+        local server_port="${GRPC_SERVER##*:}"
+        if [[ "$server_port" == "$GRPC_SERVER" ]]; then
             echo >&2 "GRPC_SERVER env var must specify the port"
             exit 1
         fi
