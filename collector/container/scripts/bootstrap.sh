@@ -70,8 +70,12 @@ function download_kernel_object() {
         log "Attempting to download from ${url}..."
 
         local connect_to_opts=()
-        local server_hostname="$(echo $GRPC_SERVER | cut -d : -f 1)"
-        local server_port="$(echo $GRPC_SERVER | cut -d : -f 2)"
+        local server_port="$(printf "%s\n" "${GRPC_SERVER##*:}")"
+        if [[ "$server_port" == "$server_hostname" ]]; then
+            echo >&2 "GRPC_SERVER env var must specify the port"
+            exit 1
+        fi
+        local server_hostname="${GRPC_SERVER%:"$server_port"}"
         if [[ "$SNI_HOSTNAME" != "$server_hostname" ]]; then
             url="https://${SNI_HOSTNAME}:${server_port}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
             connect_to_opts=(--connect-to "${SNI_HOSTNAME}:${server_port}:${GRPC_SERVER}")
