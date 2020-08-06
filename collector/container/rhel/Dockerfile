@@ -27,6 +27,7 @@ RUN rpm -e --nodeps \
       yum \
       $(rpm -qa *dnf*) \
       python3-hawkey \
+      dig
     ;
 
 ADD bundle.tar.gz /
