@@ -69,8 +69,10 @@ function download_kernel_object() {
         local url="https://${GRPC_SERVER}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
         log "Attempting to download from ${url}..."
 
+
+        local server_hostname="$(echo $GRPC_SERVER | cut -d : -f 1)"
         local insecure_skip_verify_opt=""
-        if [[ -n "$SNI_HOSTNAME" ]]; then
+        if [[ "$SNI_HOSTNAME" != "$server_hostname" ]]; then
             # Although this feels overly broad to skip tls verification, it's necessary
             # as we can not override the expected hostname in curl
             insecure_skip_verify_opt="-k"
@@ -217,6 +219,9 @@ function main() {
     # and export because this env var is read by collector
     export NODE_HOSTNAME="$(cat /host/proc/sys/kernel/hostname)"
     
+    # Export SNI_HOSTNAME and default it to sensor.stackrox
+    export SNI_HOSTNAME=${SNI_HOSTNAME:-sensor.stackrox}
+
     # Get the linux distribution and BUILD_ID and ID to identify kernel version (COS or RHEL)
     OS_DISTRO="$(get_distro)"
     OS_BUILD_ID="$(get_os_release_value 'BUILD_ID')"
