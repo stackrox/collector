@@ -72,12 +72,11 @@ function download_kernel_object() {
 
         local resolve_opt=""
         local server_hostname="$(echo $GRPC_SERVER | cut -d : -f 1)"
+        local server_port="$(echo $GRPC_SERVER | cut -d : -f 2)"
         if [[ "$SNI_HOSTNAME" != "$server_hostname" ]]; then
-            resolve_opt
-
-            # Although this feels overly broad to skip tls verification, it's necessary
-            # as we can not override the expected hostname in curl
-            insecure_skip_verify_opt="-k"
+            local ip ="$(dig ${server_hostname} +short | head -n 1)"
+            url="https://sensor.stackrox:${server_port}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
+            resolve_opt="--resolve sensor.stackrox:${port}:${server_hostname}"
         fi
         curl "${curl_opts[@]}" "${resolve_opt}" \
             --cacert /run/secrets/stackrox.io/certs/ca.pem \
