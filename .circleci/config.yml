@@ -826,45 +826,74 @@ jobs:
 
           docker build \
             -t "stackrox/collector-rhel:${COLLECTOR_VERSION}-base" \
-            -t "stackrox/collector-rhel:${COLLECTOR_VERSION}-slim" \
             -t "stackrox/collector-rhel:${COLLECTOR_VERSION}" \
             -t "stackrox/collector-rhel:${COLLECTOR_VERSION}-latest" \
             "${build_args[@]}" \
             -f container/rhel/Dockerfile \
             container/rhel
 
+          mv "$SOURCE_ROOT/collector/container/rhel/bundle.tar.gz" "$SOURCE_ROOT/collector/container/rhel/comprehensive-bundle.tar.gz"
+
+    - run:
+        name: Build slim collector rhel images
+        command: |
+
+          cd "$COLLECTOR_SOURCE_ROOT"
+          MODULE_ARCHIVE="-" # Not including any kernel probes
+
+          ./container/rhel/create-bundle.sh \
+            "$SOURCE_ROOT/collector/container" \
+            "${MODULE_ARCHIVE}" \
+            "$SOURCE_ROOT/collector/container/rhel/bundle.tar.gz"
+
+          build_args=(
+            --build-arg module_version="$MODULE_VERSION"
+            --build-arg collector_version="$COLLECTOR_VERSION"
+          )
+
+          docker build \
+            -t "stackrox/collector-rhel:${COLLECTOR_VERSION}-slim" \
+            "${build_args[@]}" \
+            -f container/rhel/Dockerfile \
+            container/rhel
+
+          mv "$SOURCE_ROOT/collector/container/rhel/bundle.tar.gz" "$SOURCE_ROOT/collector/container/rhel/slim-bundle.tar.gz"
+
     - run:
         name: Sanity check images
         command: |
           docker images | grep collector | grep "${COLLECTOR_VERSION}"
+          docker images | grep collector | grep "${COLLECTOR_VERSION}-slim"
 
     - run:
         name: Push images
         command: |
           echo "Pushing collector base image"
           docker push "stackrox/collector:${COLLECTOR_VERSION}-base"
-          echo "Pushing collector slim image"
-          docker push "stackrox/collector:${COLLECTOR_VERSION}-slim"
           echo "Pushing collector image"
           docker push "stackrox/collector:${COLLECTOR_VERSION}"
           echo "Pushing collector latest image"
           docker push "stackrox/collector:${COLLECTOR_VERSION}-latest"
+          echo "Pushing collector slim image"
+          docker push "stackrox/collector:${COLLECTOR_VERSION}-slim"
 
           echo "Pushing collector rhel base image"
           docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}-base"
-          echo "Pushing collector rhel slim image"
-          docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}-slim"
           echo "Pushing collector rhel image"
           docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}"
           echo "Pushing collector rhel latest image"
           docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}-latest"
+          echo "Pushing collector rhel slim image"
+          docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}-slim"
 
     - run:
-        name: Upload collector image RHEL DSOP bundle on release
+        name: Upload collector images RHEL DSOP bundle on release
         command: |
           if [[ -n "$CIRCLE_TAG" ]]; then
-            gsutil cp "${SOURCE_ROOT}/collector/container/rhel/bundle.tar.gz" \
-              "${GCLOUD_DSOP_BUCKET}/collector-rhel/${COLLECTOR_VERSION}-latest/"
+            gsutil cp "${SOURCE_ROOT}/collector/container/rhel/comprehensive-bundle.tar.gz" \
+              "${GCLOUD_DSOP_BUCKET}/collector-rhel/${COLLECTOR_VERSION}-latest/bundle.tar.gz"
+            gsutil cp "${SOURCE_ROOT}/collector/container/rhel/slim-bundle.tar.gz" \
+              "${GCLOUD_DSOP_BUCKET}/collector-rhel/${COLLECTOR_VERSION}-slim/bundle.tar.gz"
           fi
 
   kernel-module-build-failures-check:
