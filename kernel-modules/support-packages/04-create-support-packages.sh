@@ -23,11 +23,10 @@ for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
     package_root="$(mktemp -d)"
     probe_dir="${package_root}/kernel-modules/${mod_ver}"
     mkdir -p "$probe_dir"
-    {
-        gsutil ls "${COLLECTOR_MODULES_BUCKET}/${mod_ver}/*.gz" | sed -E 's@^([^/]*/)*@@g'
-        cat "${mod_ver_dir}/COMMON_INVENTORY"
-    } | sort | uniq -u | awk -v PREFIX="${COLLECTOR_MODULES_BUCKET}/${mod_ver}" '{print PREFIX "/" $1}' \
-    | gsutil -m cp -I "$probe_dir"
+    # For now we create *full* kernel support packages, not only deltas, in order to
+    # support the slim collector use-case.
+    # Remains to be clarified; we might provide more fine granular download options in the future.
+    gsutil -m cp "${COLLECTOR_MODULES_BUCKET}/${mod_ver}/*.gz" "$probe_dir"
 
     package_out_dir="${OUT_DIR}/${mod_ver}"
     mkdir -p "$package_out_dir"
