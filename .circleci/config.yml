@@ -832,7 +832,7 @@ jobs:
             -f container/rhel/Dockerfile \
             container/rhel
 
-          mv "$SOURCE_ROOT/collector/container/rhel/bundle.tar.gz" "$SOURCE_ROOT/collector/container/rhel/comprehensive-bundle.tar.gz"
+          mv "$SOURCE_ROOT/collector/container/rhel/bundle.tar.gz" "$SOURCE_ROOT/collector/container/rhel/latest-bundle.tar.gz"
 
     - run:
         name: Build slim collector rhel images
@@ -890,7 +890,7 @@ jobs:
         name: Upload collector image RHEL DSOP bundles on release
         command: |
           if [[ -n "$CIRCLE_TAG" ]]; then
-            gsutil cp "${SOURCE_ROOT}/collector/container/rhel/comprehensive-bundle.tar.gz" \
+            gsutil cp "${SOURCE_ROOT}/collector/container/rhel/latest-bundle.tar.gz" \
               "${GCLOUD_DSOP_BUCKET}/collector-rhel/${COLLECTOR_VERSION}-latest/bundle.tar.gz"
             gsutil cp "${SOURCE_ROOT}/collector/container/rhel/slim-bundle.tar.gz" \
               "${GCLOUD_DSOP_BUCKET}/collector-rhel/${COLLECTOR_VERSION}-slim/bundle.tar.gz"
