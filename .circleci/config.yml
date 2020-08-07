@@ -887,7 +887,7 @@ jobs:
           docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}-slim"
 
     - run:
-        name: Upload collector images RHEL DSOP bundle on release
+        name: Upload collector image RHEL DSOP bundles on release
         command: |
           if [[ -n "$CIRCLE_TAG" ]]; then
             gsutil cp "${SOURCE_ROOT}/collector/container/rhel/comprehensive-bundle.tar.gz" \
