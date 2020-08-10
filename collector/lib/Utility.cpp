@@ -154,6 +154,13 @@ std::string GetHostPath(const std::string& file) {
   return host_file;
 }
 
+const char* GetSNIHostname() {
+  const char* hostname = std::getenv("SNI_HOSTNAME");
+  if (hostname && *hostname) return hostname;
+
+  return "";
+}
+
 const char* GetHostname() {
   const char* hostname = std::getenv("NODE_HOSTNAME");
   if (hostname && *hostname) return hostname;

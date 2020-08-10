@@ -66,9 +66,29 @@ function download_kernel_object() {
     )
 
     if [[ ! -f "${filename_gz}" && -n "$GRPC_SERVER" ]]; then
-        local url="https://${GRPC_SERVER}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
+        local connect_to_opts=()
+        local server_port="${GRPC_SERVER##*:}"
+        if [[ "$server_port" == "$GRPC_SERVER" ]]; then
+            echo >&2 "GRPC_SERVER env var must specify the port"
+            exit 1
+        fi
+
+        local sni_port="${SNI_HOSTNAME##*:}"
+        if [[ "$sni_port" != "$SNI_HOSTNAME" ]]; then
+            echo >&2 "SNI_HOSTNAME env var must NOT specify the port"
+            exit 1
+        fi
+
+        local server_hostname="${GRPC_SERVER%:"$server_port"}"
+        if [[ "$SNI_HOSTNAME" != "$server_hostname" ]]; then
+            server_hostname="${SNI_HOSTNAME}"
+            connect_to_opts=(--connect-to "${SNI_HOSTNAME}:${server_port}:${GRPC_SERVER}")
+        fi
+
+        local url="https://${server_hostname}:${server_port}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
         log "Attempting to download from ${url}..."
-        curl "${curl_opts[@]}" \
+
+        curl "${curl_opts[@]}" "${connect_to_opts[@]}" \
             --cacert /run/secrets/stackrox.io/certs/ca.pem \
             --cert /run/secrets/stackrox.io/certs/cert.pem \
             --key /run/secrets/stackrox.io/certs/key.pem \
@@ -210,6 +230,9 @@ function main() {
     # and export because this env var is read by collector
     export NODE_HOSTNAME="$(cat /host/proc/sys/kernel/hostname)"
     
+    # Export SNI_HOSTNAME and default it to sensor.stackrox
+    export SNI_HOSTNAME="${SNI_HOSTNAME:-sensor.stackrox}"
+
     # Get the linux distribution and BUILD_ID and ID to identify kernel version (COS or RHEL)
     OS_DISTRO="$(get_distro)"
     OS_BUILD_ID="$(get_os_release_value 'BUILD_ID')"

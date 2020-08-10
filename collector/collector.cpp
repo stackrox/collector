@@ -269,7 +269,7 @@ int main(int argc, char **argv) {
       }
     }
 
-    grpc_channel = collector::CreateChannel(args->GRPCServer(), creds);
+    grpc_channel = collector::CreateChannel(args->GRPCServer(), GetSNIHostname(), creds);
   }
 
   config.grpc_channel = std::move(grpc_channel);
