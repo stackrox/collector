@@ -85,7 +85,7 @@ function download_kernel_object() {
             connect_to_opts=(--connect-to "${SNI_HOSTNAME}:${server_port}:${GRPC_SERVER}")
         fi
 
-        local url="https://${GRPC_SERVER}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
+        local url="https://${server_hostname}:${server_port}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
         log "Attempting to download from ${url}..."
 
         curl "${curl_opts[@]}" "${connect_to_opts[@]}" \
