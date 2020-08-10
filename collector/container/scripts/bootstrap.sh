@@ -66,20 +66,28 @@ function download_kernel_object() {
     )
 
     if [[ ! -f "${filename_gz}" && -n "$GRPC_SERVER" ]]; then
-        local url="https://${GRPC_SERVER}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
-        log "Attempting to download from ${url}..."
-
         local connect_to_opts=()
         local server_port="${GRPC_SERVER##*:}"
         if [[ "$server_port" == "$GRPC_SERVER" ]]; then
             echo >&2 "GRPC_SERVER env var must specify the port"
             exit 1
         fi
+
+        local sni_port="${SNI_HOSTNAME##*:}"
+        if [[ "$sni_port" != "$SNI_HOSTNAME" ]]; then
+            echo >&2 "SNI_HOSTNAME env var must NOT specify the port"
+            exit 1
+        fi
+
         local server_hostname="${GRPC_SERVER%:"$server_port"}"
         if [[ "$SNI_HOSTNAME" != "$server_hostname" ]]; then
-            url="https://${SNI_HOSTNAME}:${server_port}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
+            server_hostname="${SNI_HOSTNAME}"
             connect_to_opts=(--connect-to "${SNI_HOSTNAME}:${server_port}:${GRPC_SERVER}")
         fi
+
+        local url="https://${GRPC_SERVER}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
+        log "Attempting to download from ${url}..."
+
         curl "${curl_opts[@]}" "${connect_to_opts[@]}" \
             --cacert /run/secrets/stackrox.io/certs/ca.pem \
             --cert /run/secrets/stackrox.io/certs/cert.pem \
