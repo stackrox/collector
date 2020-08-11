@@ -40,7 +40,22 @@ class CollectorConfig {
   static constexpr bool        kTurnOffScrape = false;
   static constexpr int         kScrapeInterval = 30;
   static constexpr char        kCollectionMethod[] = "kernel-module";
-  static constexpr const char* kSyscalls[] = {"accept","connect","execve","fork","clone","close","shutdown","socket","procexit","procinfo", "chdir", "fchdir"};
+  static constexpr const char* kSyscalls[] = {
+    "accept",
+    "chdir",
+    "clone",
+    "close",
+    "connect",
+    "execve",
+    "fchdir",
+    "fork",
+    "procexit",
+    "procinfo",
+    "setuid",
+    "shutdown",
+    "socket",
+    "vfork",
+  };
   static constexpr char        kChisel[] = R"(
 args = {}
 function on_event()
