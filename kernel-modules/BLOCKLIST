@@ -1,4 +1,4 @@
-# Kernel module build blacklist
+# Kernel module build blocklist
 # Format:
 # <kernel-version> [<module-version>] [<object type (bpf or mod)>]
 # Wildcards (*) can be used for glob-style pattern matching; if a pattern is

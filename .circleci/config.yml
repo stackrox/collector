@@ -444,13 +444,13 @@ jobs:
             awk -v modver="$version" '{print $1 " " modver " " $2}' <~/kobuild-tmp/existing-modules-"${version}" >>~/kobuild-tmp/redundant-build-tasks
           done
 
-          # blacklisted-build-tasks is populated from the BLACKLIST file to exclude build tasks which would fail.
-          "${SOURCE_ROOT}/kernel-modules/build/apply-blacklist.py" "${SOURCE_ROOT}/kernel-modules/BLACKLIST" \
-            ~/kobuild-tmp/all-build-tasks >~/kobuild-tmp/non-blacklisted-build-tasks
+          # blocklisted-build-tasks is populated from the BLOCKLIST file to exclude build tasks which would fail.
+          "${SOURCE_ROOT}/kernel-modules/build/apply-blocklist.py" "${SOURCE_ROOT}/kernel-modules/BLOCKLIST" \
+            ~/kobuild-tmp/all-build-tasks >~/kobuild-tmp/non-blocklisted-build-tasks
 
-          # Create the set of build tasks as the contents of `all-build-tasks` minus the redundant and blacklisted
+          # Create the set of build tasks as the contents of `all-build-tasks` minus the redundant and blocklisted
           # build tasks.
-          cat ~/kobuild-tmp/non-blacklisted-build-tasks \
+          cat ~/kobuild-tmp/non-blocklisted-build-tasks \
               ~/kobuild-tmp/redundant-build-tasks ~/kobuild-tmp/redundant-build-tasks \
             | sort | uniq -u >build-tasks
 
