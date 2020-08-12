@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
   ConnScraper scraper(proc_dir);
   std::vector<Connection> conns;
 
-  if (!scraper.Scrape(&conns)) {
+  if (!scraper.Scrape(&conns, nullptr)) {
     std::cerr << "Failed to scrape :(" << std::endl;
     return 1;
   }

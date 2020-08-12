@@ -25,10 +25,19 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "CollectorConfig.h"
 #include "CollectorArgs.h"
+#include "EnvVar.h"
 #include "Logging.h"
 #include "Utility.h"
 
 namespace collector {
+
+namespace {
+
+BoolEnvVar disable_network_flows("ROX_COLLECTOR_DISABLE_NETWORK_FLOWS", false);
+
+BoolEnvVar ports_feature_flag("ROX_NETWORK_GRAPH_PORTS", false);
+
+}  // namespace
 
 constexpr bool        CollectorConfig::kUseChiselCache;
 constexpr bool        CollectorConfig::kSnapLen;
@@ -128,12 +137,12 @@ CollectorConfig::CollectorConfig(CollectorArgs *args) {
     enable_sysdig_log_ = (val == "true");
   }
 
-  if (const char* disable_network_flows = std::getenv("ROX_COLLECTOR_DISABLE_NETWORK_FLOWS")) {
-    std::string val(disable_network_flows);
-    std::transform(val.begin(), val.end(), val.begin(), [](char c) {
-      return std::tolower(c);
-    });
-    disable_network_flows_ = (val == "true");
+  if (disable_network_flows) {
+    disable_network_flows_ = true;
+  }
+
+  if (ports_feature_flag) {
+    scrape_listen_endpoints_ = true;
   }
 }
 

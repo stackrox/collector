@@ -94,6 +94,10 @@ std::ostream& operator<<(std::ostream& os, L4Proto l4proto) {
   }
 }
 
+std::ostream& operator<<(std::ostream& os, const ContainerEndpoint& container_endpoint) {
+  return os << container_endpoint.container() << ": " << container_endpoint.endpoint();
+}
+
 std::ostream& operator<<(std::ostream& os, const Connection& conn) {
   os << conn.container() << ": " << conn.local();
   if (conn.is_server()) {

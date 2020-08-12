@@ -280,18 +280,21 @@ bool LocalIsServer(const Endpoint& local, const Endpoint& remote, const Unordere
 
 // ReadConnectionsFromFile reads all connections from a `net/tcp[6]` file and stores them by inode in the given map.
 bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE* f,
-                             UnorderedMap<ino_t, ConnInfo>* connections) {
+                             UnorderedMap<ino_t, ConnInfo>* connections, UnorderedMap<ino_t, Endpoint>* listen_endpoints) {
   char line[512];
 
   if (!std::fgets(line, sizeof(line), f)) return false;  // ignore the first *header) line.
 
-  UnorderedSet<Endpoint> listen_endpoints;
+  UnorderedSet<Endpoint> all_listen_endpoints;
 
   while (std::fgets(line, sizeof(line), f)) {
     ConnLineData data;
     if (!ParseConnLine(line, line + sizeof(line), family, &data)) continue;
     if (data.state == TCP_LISTEN) {  // listen socket
-      listen_endpoints.insert(data.local);
+      all_listen_endpoints.insert(data.local);
+      if (data.inode && listen_endpoints) {
+        listen_endpoints->emplace(data.inode, data.local);
+      }
       continue;
     }
     if (data.state != TCP_ESTABLISHED) {
@@ -305,7 +308,7 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE*
     conn_info.l4proto = l4proto;
     // Note that the layout of net/tcp guarantees that all listen sockets will be listed before all active or closed
     // connections, hence we can assume listen_endpoint to have its final value at this point.
-    conn_info.is_server = LocalIsServer(data.local, data.remote, listen_endpoints);
+    conn_info.is_server = LocalIsServer(data.local, data.remote, all_listen_endpoints);
   }
 
   return true;
@@ -313,13 +316,13 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE*
 
 // GetConnections reads all active connections (inode -> connection info mapping) for a given network NS, addressed by
 // the dir FD for a proc entry of a process in that network namespace.
-bool GetConnections(int dirfd, UnorderedMap<ino_t, ConnInfo>* connections) {
+bool GetConnections(int dirfd, UnorderedMap<ino_t, ConnInfo>* connections, UnorderedMap<ino_t, Endpoint>* listen_endpoints) {
   bool success = true;
   {
     FDHandle net_tcp_fd = openat(dirfd, "net/tcp", O_RDONLY);
     if (net_tcp_fd.valid()) {
       FileHandle net_tcp(std::move(net_tcp_fd), "r");
-      success = ReadConnectionsFromFile(Address::Family::IPV4, L4Proto::TCP, net_tcp, connections) && success;
+      success = ReadConnectionsFromFile(Address::Family::IPV4, L4Proto::TCP, net_tcp, connections, listen_endpoints) && success;
     } else {
       success = false;  // there should always be a net/tcp file
     }
@@ -329,7 +332,7 @@ bool GetConnections(int dirfd, UnorderedMap<ino_t, ConnInfo>* connections) {
     FDHandle net_tcp6_fd = openat(dirfd, "net/tcp6", O_RDONLY);
     if (net_tcp6_fd.valid()) {
       FileHandle net_tcp6(std::move(net_tcp6_fd), "r");
-      success = ReadConnectionsFromFile(Address::Family::IPV6, L4Proto::TCP, net_tcp6, connections) && success;
+      success = ReadConnectionsFromFile(Address::Family::IPV6, L4Proto::TCP, net_tcp6, connections, listen_endpoints) && success;
     } else {
       success = false;
     }
@@ -338,8 +341,13 @@ bool GetConnections(int dirfd, UnorderedMap<ino_t, ConnInfo>* connections) {
   return success;
 }
 
+struct NSNetworkData {
+  UnorderedMap<ino_t, ConnInfo> connections;
+  UnorderedMap<ino_t, Endpoint> listen_endpoints;
+};
+
 // netns -> (inode -> connection info) mapping
-using ConnsByNS = UnorderedMap<ino_t, UnorderedMap<ino_t, ConnInfo>>;
+using ConnsByNS = UnorderedMap<ino_t, NSNetworkData>;
 // container id -> (netns -> socket inodes) mapping
 using SocketsByContainer = UnorderedMap<std::string, UnorderedMap<ino_t, UnorderedSet<ino_t>>>;
 
@@ -347,18 +355,23 @@ using SocketsByContainer = UnorderedMap<std::string, UnorderedMap<ino_t, Unorder
 // container id -> (netns -> socket inodes) mapping, and synthesizes this to a list of (container id, connection info)
 // tuples.
 void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const ConnsByNS& conns_by_ns,
-                         std::vector<Connection>* connections) {
+                         std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) {
   for (const auto& container_sockets : sockets_by_container) {
     const auto& container_id = container_sockets.first;
     for (const auto& netns_sockets : container_sockets.second) {
-      const auto* conns = Lookup(conns_by_ns, netns_sockets.first);
-      if (!conns) continue;
+      const auto* ns_network_data = Lookup(conns_by_ns, netns_sockets.first);
+      if (!ns_network_data) continue;
       for (const auto& socket_inode : netns_sockets.second) {
-        const auto* conn = Lookup(*conns, socket_inode);
-        if (!conn) continue;
-        Connection connection(container_id, conn->local, conn->remote, conn->l4proto, conn->is_server);
-        if (!IsRelevantConnection(connection)) continue;
-        connections->push_back(std::move(connection));
+        if (const auto* conn = Lookup(ns_network_data->connections, socket_inode)) {
+          Connection connection(container_id, conn->local, conn->remote, conn->l4proto, conn->is_server);
+          if (!IsRelevantConnection(connection)) continue;
+          connections->push_back(std::move(connection));
+        } else if (listen_endpoints) {
+          if (const auto* ep = Lookup(ns_network_data->listen_endpoints, socket_inode)) {
+            if (!IsRelevantEndpoint(*ep)) continue;
+            listen_endpoints->emplace_back(container_id, *ep);
+          }
+        }
       }
     }
   }
@@ -366,7 +379,7 @@ void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const C
 
 // ReadContainerConnections reads all container connection info from the given `/proc`-like directory. All connections
 // from non-container processes are ignored.
-bool ReadContainerConnections(const char* proc_path, std::vector<Connection>* connections) {
+bool ReadContainerConnections(const char* proc_path, std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) {
   DirHandle procdir = opendir(proc_path);
   if (!procdir.valid()) {
     CLOG(ERROR) << "Could not open " << proc_path << ": " << StrError();
@@ -406,9 +419,10 @@ bool ReadContainerConnections(const char* proc_path, std::vector<Connection>* co
     if (no_sockets && !container_ns_sockets.empty()) {
       // These are the first sockets for this (container, netns) pair. Make sure we actually have the information about
       // connections in this network namespace.
-      auto emplace_res = conns_by_ns.emplace(netns_inode, UnorderedMap<uint64_t, ConnInfo>());
+      auto emplace_res = conns_by_ns.emplace(netns_inode, NSNetworkData());
       if (emplace_res.second) {
-        if (!GetConnections(dirfd, &emplace_res.first->second)) {
+        auto& ns_network_data = emplace_res.first->second;
+        if (!GetConnections(dirfd, &ns_network_data.connections, listen_endpoints ? &ns_network_data.listen_endpoints : nullptr)) {
           // If there was an error reading connections, that could be due to a number of reasons.
           // We need to differentiate persistent errors (e.g., expected net/tcp6 file not found)
           // from spurious/race condition errors caused by the process disappearing while reading
@@ -425,7 +439,7 @@ bool ReadContainerConnections(const char* proc_path, std::vector<Connection>* co
     }
   }
 
-  ResolveSocketInodes(sockets_by_container_and_ns, conns_by_ns, connections);
+  ResolveSocketInodes(sockets_by_container_and_ns, conns_by_ns, connections, listen_endpoints);
   return true;
 }
 
@@ -449,8 +463,8 @@ StringView ExtractContainerID(StringView cgroup_line) {
   return container_id_part.substr(0, 12);
 }
 
-bool ConnScraper::Scrape(std::vector<Connection>* connections) {
-  return ReadContainerConnections(proc_path_.c_str(), connections);
+bool ConnScraper::Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) {
+  return ReadContainerConnections(proc_path_.c_str(), connections, listen_endpoints);
 }
 
 }  // namespace collector

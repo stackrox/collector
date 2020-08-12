@@ -76,6 +76,7 @@ class ConnStatus {
 };
 
 using ConnMap = UnorderedMap<Connection, ConnStatus>;
+using ContainerEndpointMap = UnorderedMap<ContainerEndpoint, ConnStatus>;
 
 class ConnectionTracker {
  public:
@@ -87,13 +88,15 @@ class ConnectionTracker {
     UpdateConnection(conn, timestamp, false);
   }
 
-  void Update(const std::vector<Connection>& all_conns, int64_t timestamp);
+  void Update(const std::vector<Connection>& all_conns, const std::vector<ContainerEndpoint>& all_listen_endpoints, int64_t timestamp);
 
   // Atomically fetch a snapshot of the current state, removing all inactive connections if requested.
-  ConnMap FetchState(bool normalize = false, bool clear_inactive = true);
+  ConnMap FetchConnState(bool normalize = false, bool clear_inactive = true);
+  ContainerEndpointMap FetchEndpointState(bool normalize = false, bool clear_inactive = true);
 
   // ComputeDelta computes a diff between new_state and *old_state, and stores the diff in *old_state.
-  static void ComputeDelta(const ConnMap& new_state, ConnMap* old_state);
+  template <typename T>
+  static void ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state);
 
   void UpdateKnownPublicIPs(UnorderedSet<Address>&& known_public_ips);
 
@@ -105,13 +108,62 @@ class ConnectionTracker {
   // than the stored one.
   void EmplaceOrUpdateNoLock(const Connection& conn, ConnStatus status);
 
+  // Emplace a listen endpoint into the state ContainerEndpointMap, or update its timestamp if the supplied timestamp is more
+  // recent than the stored one.
+  void EmplaceOrUpdateNoLock(const ContainerEndpoint& ep, ConnStatus status);
+
   Address NormalizeAddressNoLock(const Address& address) const;
 
   std::mutex mutex_;
-  ConnMap state_;
+  ConnMap conn_state_;
+  ContainerEndpointMap endpoint_state_;
 
   UnorderedSet<Address> known_public_ips_;
 };
+
+/* static */
+template <typename T>
+void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state) {
+  // Insert all objects from the new state, if anything changed about them.
+  for (const auto& conn : new_state) {
+    auto insert_res = old_state->insert(conn);
+    auto &old_conn = *insert_res.first;
+    if (!insert_res.second) {  // was already present
+      if (conn.second.IsActive() != old_conn.second.IsActive()) {
+        // Object was either resurrected or newly closed. Update in either case.
+        old_conn.second = conn.second;
+      } else if (conn.second.IsActive()) {
+        // Both objects are active. Not part of the delta.
+        old_state->erase(insert_res.first);
+      } else {
+        // Both objects are inactive. Update the timestamp if applicable, otherwise omit from delta.
+        if (old_conn.second.LastActiveTime() < conn.second.LastActiveTime()) {
+          old_conn.second = conn.second;
+        } else {
+          old_state->erase(insert_res.first);
+        }
+      }
+    }
+  }
+
+  // Mark all active objects in the old state that are not present in the new state as inactive, and remove the
+  // inactive ones.
+  for (auto it = old_state->begin(); it != old_state->end(); ) {
+    auto& old_conn = *it;
+    // Ignore all objects present in the new state.
+    if (new_state.find(old_conn.first) != new_state.end()) {
+      ++it;
+      continue;
+    }
+
+    if (old_conn.second.IsActive()) {
+      old_conn.second.SetActive(false);
+      ++it;
+    } else {
+      it = old_state->erase(it);
+    }
+  }
+}
 
 }  // namespace collector
 

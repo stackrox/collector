@@ -108,7 +108,7 @@ class ConnScraper {
   explicit ConnScraper(std::string proc_path) : proc_path_(std::move(proc_path)) {}
 
   // Scrape returns a snapshot of all active network connections in the given vector.
-  bool Scrape(std::vector<Connection>* connections);
+  bool Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints);
 
  private:
   std::string proc_path_;

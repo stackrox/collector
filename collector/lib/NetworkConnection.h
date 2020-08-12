@@ -56,6 +56,8 @@ class Address {
 
   Address() : Address(Family::UNKNOWN) {}
 
+  explicit Address(Family family) : data_({0, 0}), family_(family) {}
+
   Address(unsigned char a, unsigned char b, unsigned char c, unsigned char d)
       : Address(htonl(static_cast<uint32_t>(a) << 24 |
                       static_cast<uint32_t>(b) << 16 |
@@ -154,8 +156,6 @@ class Address {
     }
     return os << addr_str;
   }
-
-  explicit Address(Family family) : data_({0, 0}), family_(family) {}
 
   std::array<uint64_t, kU64MaxLen> data_;
   Family family_;
@@ -277,6 +277,30 @@ enum class L4Proto : uint8_t {
 
 std::ostream& operator<<(std::ostream& os, L4Proto l4proto);
 
+class ContainerEndpoint {
+ public:
+  ContainerEndpoint(std::string container, const Endpoint& endpoint) : container_(std::move(container)), endpoint_(endpoint) {}
+
+  const std::string& container() const { return container_; }
+  const Endpoint& endpoint() const { return endpoint_; }
+
+  bool operator==(const ContainerEndpoint& other) const {
+    return container_ == other.container_ && endpoint_ == other.endpoint_;
+  }
+
+  bool operator!=(const ContainerEndpoint& other) const {
+    return !(*this == other);
+  }
+
+  size_t Hash() const { return HashAll(container_, endpoint_); }
+
+ private:
+  std::string container_;
+  Endpoint endpoint_;
+};
+
+std::ostream& operator<<(std::ostream& os, const ContainerEndpoint& container_endpoint);
+
 class Connection {
  public:
   Connection() : flags_(0) {}
@@ -313,6 +337,11 @@ std::ostream& operator<<(std::ostream& os, const Connection& conn);
 // not a local loopback address).
 inline bool IsRelevantConnection(const Connection& conn) {
   return !conn.remote().address().IsLocal();
+}
+
+// Checks if the given endpoints is relevant (i.e., it is not only listening on local loopback).
+inline bool IsRelevantEndpoint(const Endpoint& ep) {
+  return !ep.address().IsLocal();
 }
 
 // IsEphemeralPort checks if the given port looks like an ephemeral (i.e., client-side) port. Note that not all
