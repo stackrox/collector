@@ -32,7 +32,6 @@ add_definitions(-DUSE_PROTO_ARENAS)
 
 file(GLOB COLLECTOR_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/lib/*.cpp)
 file(GLOB_RECURSE PROTO_SRC_FILES ${PROJECT_SOURCE_DIR}/generated/*.cc)
-add_library(collector_lib ${COLLECTOR_LIB_SRC_FILES} ${PROTO_SRC_FILES} lib/EnvVar.h)
 target_link_libraries(collector_lib sinsp-wrapper)
 target_link_libraries(collector_lib cap-ng)
 target_link_libraries(collector_lib uuid)

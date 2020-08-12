@@ -86,7 +86,7 @@ end
   std::string hostname_;
   std::string host_proc_;
   bool disable_network_flows_ = false;
-  bool scrape_listen_endpoints_ = true;
+  bool scrape_listen_endpoints_ = false;
 
   bool enable_sysdig_log_ = false;
 };
