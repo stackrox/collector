@@ -51,6 +51,7 @@ class CollectorConfig {
     "fork",
     "procexit",
     "procinfo",
+    "setresuid",
     "setuid",
     "shutdown",
     "socket",
