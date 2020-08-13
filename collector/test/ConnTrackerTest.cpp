@@ -51,18 +51,18 @@ TEST(ConnTrackerTest, TestAddRemove) {
   tracker.AddConnection(conn1, now);
   tracker.AddConnection(conn2, now);
 
-  auto state = tracker.FetchState();
+  auto state = tracker.FetchConnState();
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now, true)), std::make_pair(conn2, ConnStatus(now, true))));
 
-  auto state2 = tracker.FetchState();
+  auto state2 = tracker.FetchConnState();
   EXPECT_EQ(state, state2);
 
   int64_t now2 = NowMicros();
   tracker.RemoveConnection(conn1, now2);
-  state = tracker.FetchState();
+  state = tracker.FetchConnState();
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now2, false)), std::make_pair(conn2, ConnStatus(now, true))));
 
-  state = tracker.FetchState();
+  state = tracker.FetchConnState();
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn2, ConnStatus(now, true))));
 }
 
@@ -77,20 +77,20 @@ TEST(ConnTrackerTest, TestUpdate) {
   int64_t now = NowMicros();
 
   ConnectionTracker tracker;
-  tracker.Update({conn1, conn2}, now);
+  tracker.Update({conn1, conn2}, {}, now);
 
-  auto state = tracker.FetchState();
+  auto state = tracker.FetchConnState();
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now, true)), std::make_pair(conn2, ConnStatus(now, true))));
 
-  auto state2 = tracker.FetchState();
+  auto state2 = tracker.FetchConnState();
   EXPECT_EQ(state, state2);
 
   int64_t now2 = NowMicros();
-  tracker.Update({conn1}, now2);
-  state = tracker.FetchState();
+  tracker.Update({conn1}, {}, now2);
+  state = tracker.FetchConnState();
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now2, true)), std::make_pair(conn2, ConnStatus(now, false))));
 
-  state = tracker.FetchState();
+  state = tracker.FetchConnState();
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now2, true))));
 }
 
@@ -110,24 +110,24 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
   int64_t now = NowMicros();
 
   ConnectionTracker tracker;
-  tracker.Update({conn1, conn2, conn3, conn4}, now);
+  tracker.Update({conn1, conn2, conn3, conn4}, {}, now);
 
-  auto state = tracker.FetchState(true);
+  auto state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(
           std::make_pair(conn13_normalized, ConnStatus(now, true)),
           std::make_pair(conn24_normalized, ConnStatus(now, true))));
 
-  auto state2 = tracker.FetchState(true);
+  auto state2 = tracker.FetchConnState(true);
   EXPECT_EQ(state, state2);
 
   int64_t now2 = NowMicros();
-  tracker.Update({conn1}, now2);
-  state = tracker.FetchState(true);
+  tracker.Update({conn1}, {}, now2);
+  state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(
           std::make_pair(conn13_normalized, ConnStatus(now2, true)),
           std::make_pair(conn24_normalized, ConnStatus(now, false))));
 
-  state = tracker.FetchState(true);
+  state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn13_normalized, ConnStatus(now2, true))));
 }
 
@@ -147,20 +147,20 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
   int64_t now = NowMicros();
 
   ConnectionTracker tracker;
-  tracker.Update({conn1, conn2, conn3, conn4}, now);
+  tracker.Update({conn1, conn2, conn3, conn4}, {}, now);
 
-  auto state = tracker.FetchState(true);
+  auto state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(
           std::make_pair(conn13_normalized, ConnStatus(now, true)),
           std::make_pair(conn24_normalized, ConnStatus(now, true))));
 
-  auto state2 = tracker.FetchState(true);
+  auto state2 = tracker.FetchConnState(true);
   EXPECT_EQ(state, state2);
 
   UnorderedSet<Address> public_ips = {Address(35, 127, 0, 15)};
   tracker.UpdateKnownPublicIPs(std::move(public_ips));
 
-  auto state3 = tracker.FetchState(true);
+  auto state3 = tracker.FetchConnState(true);
 
   Connection conn1_normalized("xyz", Endpoint(Address(), 9999), Endpoint(Address(35, 127, 0, 15), 0), L4Proto::TCP, true);
   Connection conn2_normalized("xyz", Endpoint(), b, L4Proto::TCP, false);

@@ -87,7 +87,8 @@ void CollectorService::RunForever() {
     if (!config_.DisableNetworkFlows()) {
       conn_tracker = std::make_shared<ConnectionTracker>();
       net_status_notifier = MakeUnique<NetworkStatusNotifier>(config_.Hostname(), config_.HostProc(),
-                                                              config_.ScrapeInterval(), config_.TurnOffScrape(),
+                                                              config_.ScrapeInterval(), config_.ScrapeListenEndpoints(),
+                                                              config_.TurnOffScrape(),
                                                               conn_tracker, config_.grpc_channel);
       net_status_notifier->Start();
     }

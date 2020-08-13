@@ -61,6 +61,7 @@ end
   bool UseEbpf() const;
   bool UseChiselCache() const;
   bool TurnOffScrape() const;
+  bool ScrapeListenEndpoints() const { return scrape_listen_endpoints_; }
   int ScrapeInterval() const;
   int SnapLen() const;
   std::string Chisel() const;
@@ -85,6 +86,7 @@ end
   std::string hostname_;
   std::string host_proc_;
   bool disable_network_flows_ = false;
+  bool scrape_listen_endpoints_ = false;
 
   bool enable_sysdig_log_ = false;
 };

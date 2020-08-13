@@ -44,18 +44,27 @@ void ConnectionTracker::UpdateConnection(const Connection& conn, int64_t timesta
   }
 }
 
-void ConnectionTracker::Update(const std::vector<Connection>& all_conns, int64_t timestamp) {
+void ConnectionTracker::Update(
+        const std::vector<Connection>& all_conns,
+        const std::vector<ContainerEndpoint>& all_listen_endpoints,
+        int64_t timestamp) {
   WITH_LOCK(mutex_) {
-    // Mark all existing connections as inactive
-    for (auto &prev_conn : state_) {
+    // Mark all existing connections and listen endpoints as inactive
+    for (auto& prev_conn : conn_state_) {
       prev_conn.second.SetActive(false);
+    }
+    for (auto& prev_endpoint : endpoint_state_) {
+      prev_endpoint.second.SetActive(false);
     }
 
     ConnStatus new_status(timestamp, true);
 
-    // Insert (or mark as active) all current connections.
-    for (const auto &curr_conn : all_conns) {
+    // Insert (or mark as active) all current connections and listen endpoints.
+    for (const auto& curr_conn : all_conns) {
       EmplaceOrUpdateNoLock(curr_conn, new_status);
+    }
+    for (const auto& curr_endpoint : all_listen_endpoints) {
+      EmplaceOrUpdateNoLock(curr_endpoint, new_status);
     }
   }
 }
@@ -97,85 +106,94 @@ Connection ConnectionTracker::NormalizeConnectionNoLock(const Connection& conn) 
   return Connection(conn.container(), local, remote, conn.l4proto(), is_server);
 }
 
-void ConnectionTracker::EmplaceOrUpdateNoLock(const Connection& conn, ConnStatus status) {
-  auto emplace_res = state_.emplace(conn, status);
+namespace {
+
+template <typename T>
+void EmplaceOrUpdate(UnorderedMap<T, ConnStatus>* m, const T& obj, ConnStatus status) {
+  auto emplace_res = m->emplace(obj, status);
   if (!emplace_res.second && status.LastActiveTime() > emplace_res.first->second.LastActiveTime()) {
     emplace_res.first->second = status;
   }
 }
 
-ConnMap ConnectionTracker::FetchState(bool normalize, bool clear_inactive) {
-  ConnMap fetched_state;
+}  // namespace
 
-  WITH_LOCK(mutex_) {
-    if (!clear_inactive && !normalize) {
-      return state_;
+void ConnectionTracker::EmplaceOrUpdateNoLock(const Connection& conn, ConnStatus status) {
+  EmplaceOrUpdate(&conn_state_, conn, status);
+}
+
+void ConnectionTracker::EmplaceOrUpdateNoLock(const ContainerEndpoint& ep, ConnStatus status) {
+  EmplaceOrUpdate(&endpoint_state_, ep, status);
+}
+
+namespace {
+
+struct dont_normalize {
+  template<typename T>
+  inline auto operator()(T&& arg) const -> decltype(std::forward<T>(arg)) {
+    return std::forward<T>(arg);
+  }
+};
+
+template <typename T, typename ProcessFn>
+UnorderedMap<T, ConnStatus> FetchState(UnorderedMap<T, ConnStatus>* state, bool clear_inactive, const ProcessFn& process_fn) {
+  constexpr bool normalize = !std::is_same<ProcessFn, dont_normalize>::value;
+
+  UnorderedMap<T, ConnStatus> fetched_state;
+
+  if (!clear_inactive && !normalize) {
+    return *state;
+  }
+
+  for (auto it = state->begin(); it != state->end(); ) {
+    const auto& entry = *it;
+
+    if (normalize) {
+      auto emplace_res = fetched_state.emplace(process_fn(entry.first), entry.second);
+      if (!emplace_res.second) {
+        emplace_res.first->second.MergeFrom(entry.second);
+      }
+    } else {
+      fetched_state.insert(entry);
     }
 
-    for (auto it = state_.begin(); it != state_.end(); ) {
-      const auto& conn = *it;
-
-      if (normalize) {
-        auto emplace_res = fetched_state.emplace(NormalizeConnectionNoLock(conn.first), conn.second);
-        if (!emplace_res.second) {
-          emplace_res.first->second.MergeFrom(conn.second);
-        }
-      } else {
-        fetched_state.insert(conn);
-      }
-
-      if (clear_inactive && !conn.second.IsActive()) {
-        it = state_.erase(it);
-      } else {
-        ++it;
-      }
+    if (clear_inactive && !entry.second.IsActive()) {
+      it = state->erase(it);
+    } else {
+      ++it;
     }
   }
 
   return fetched_state;
 }
 
-/* static */
-void ConnectionTracker::ComputeDelta(const ConnMap& new_state, ConnMap* old_state) {
-  // Insert all connections from the new state, if anything changed about them.
-  for (const auto& conn : new_state) {
-    auto insert_res = old_state->insert(conn);
-    auto &old_conn = *insert_res.first;
-    if (!insert_res.second) {  // was already present
-      if (conn.second.IsActive() != old_conn.second.IsActive()) {
-        // Connection was either resurrected or newly closed. Update in either case.
-        old_conn.second = conn.second;
-      } else if (conn.second.IsActive()) {
-        // Both connections are active. Not part of the delta.
-        old_state->erase(insert_res.first);
-      } else {
-        // Both connections are inactive. Update the timestamp if applicable, otherwise omit from delta.
-        if (old_conn.second.LastActiveTime() < conn.second.LastActiveTime()) {
-          old_conn.second = conn.second;
-        } else {
-          old_state->erase(insert_res.first);
-        }
-      }
-    }
-  }
+}  // namespace
 
-  // Mark all active connections in the old state that are not present in the new state as inactive, and remove the
-  // inactive ones.
-  for (auto it = old_state->begin(); it != old_state->end(); ) {
-    auto& old_conn = *it;
-    // Ignore all connections present in the new state.
-    if (new_state.find(old_conn.first) != new_state.end()) {
-      ++it;
-      continue;
+ConnMap ConnectionTracker::FetchConnState(bool normalize, bool clear_inactive) {
+  WITH_LOCK(mutex_) {
+    if (normalize) {
+      return FetchState(&conn_state_, clear_inactive, [this](const Connection &conn) {
+        return this->NormalizeConnectionNoLock(conn);
+      });
     }
 
-    if (old_conn.second.IsActive()) {
-      old_conn.second.SetActive(false);
-      ++it;
-    } else {
-      it = old_state->erase(it);
-    }
+    return FetchState(&conn_state_, clear_inactive, dont_normalize());
   }
+  return {};  // will never happen
+}
+
+ContainerEndpointMap ConnectionTracker::FetchEndpointState(bool normalize, bool clear_inactive) {
+  WITH_LOCK(mutex_) {
+    if (normalize) {
+      return FetchState(&endpoint_state_, clear_inactive, [this](const ContainerEndpoint &cep) {
+        const auto& ep = cep.endpoint();
+        return ContainerEndpoint(cep.container(), Endpoint(Address(ep.address().family()), ep.port()));
+      });
+    }
+
+    return FetchState(&endpoint_state_, clear_inactive, dont_normalize());
+  }
+  return {};  // will never happen
 }
 
 void ConnectionTracker::UpdateKnownPublicIPs(collector::UnorderedSet<collector::Address>&& known_public_ips) {

@@ -155,7 +155,8 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
 
   CLOG(INFO) << "Established network connection info stream.";
 
-  ConnMap old_state;
+  ConnMap old_conn_state;
+  ContainerEndpointMap old_cep_state;
   auto next_scrape = std::chrono::system_clock::now();
 
   while (writer->Sleep(next_scrape)) {
@@ -164,20 +165,25 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
     if (!turn_off_scraping_) {
       int64_t ts = NowMicros();
       std::vector<Connection> all_conns;
-      bool success = conn_scraper_.Scrape(&all_conns);
+      std::vector<ContainerEndpoint> all_listen_endpoints;
+      bool success = conn_scraper_.Scrape(&all_conns, scrape_listen_endpoints_ ? &all_listen_endpoints : nullptr);
 
       if (!success) {
         CLOG(ERROR) << "Failed to scrape connections and no pending connections to send";
         continue;
       }
-      conn_tracker_->Update(all_conns, ts);
+      conn_tracker_->Update(all_conns, all_listen_endpoints, ts);
     }
 
-    auto new_state = conn_tracker_->FetchState(true, true);
-    ConnectionTracker::ComputeDelta(new_state, &old_state);
+    auto new_conn_state = conn_tracker_->FetchConnState(true, true);
+    ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
 
-    const auto* msg = CreateInfoMessage(old_state);
-    old_state = std::move(new_state);
+    auto new_cep_state = conn_tracker_->FetchEndpointState(true, true);
+    ConnectionTracker::ComputeDelta(new_cep_state, &old_cep_state);
+
+    const auto* msg = CreateInfoMessage(old_conn_state, old_cep_state);
+    old_conn_state = std::move(new_conn_state);
+    old_cep_state = std::move(new_cep_state);
 
     if (!msg) {
       continue;
@@ -190,29 +196,39 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
   }
 }
 
-sensor::NetworkConnectionInfoMessage* NetworkStatusNotifier::CreateInfoMessage(const ConnMap& delta) {
-  if (delta.empty()) {
-    return nullptr;
-  }
+sensor::NetworkConnectionInfoMessage* NetworkStatusNotifier::CreateInfoMessage(const ConnMap& conn_delta, const ContainerEndpointMap& endpoint_delta) {
+  if (conn_delta.empty() && endpoint_delta.empty()) return nullptr;
 
   Reset();
   auto* msg = AllocateRoot();
+  auto* info = msg->mutable_info();
 
-  auto* info_msg = Allocate<sensor::NetworkConnectionInfo>();
-  *info_msg->mutable_time() = CurrentTimeProto();
-  auto* updates = info_msg->mutable_updated_connections();
+  AddConnections(info->mutable_updated_connections(), conn_delta);
+  AddContainerEndpoints(info->mutable_updated_endpoints(), endpoint_delta);
 
+  return msg;
+}
+
+void NetworkStatusNotifier::AddConnections(::google::protobuf::RepeatedPtrField<sensor::NetworkConnection>* updates, const ConnMap& delta) {
   for (const auto& delta_entry : delta) {
     auto* conn_proto = ConnToProto(delta_entry.first);
     if (!delta_entry.second.IsActive()) {
       *conn_proto->mutable_close_timestamp() = google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(
-          delta_entry.second.LastActiveTime());
+              delta_entry.second.LastActiveTime());
     }
     updates->AddAllocated(conn_proto);
   }
+}
 
-  msg->set_allocated_info(info_msg);
-  return msg;
+void NetworkStatusNotifier::AddContainerEndpoints(::google::protobuf::RepeatedPtrField<sensor::NetworkEndpoint>* updates, const ContainerEndpointMap& delta) {
+  for (const auto& delta_entry : delta) {
+    auto* endpoint_proto = ContainerEndpointToProto(delta_entry.first);
+    if (!delta_entry.second.IsActive()) {
+      *endpoint_proto->mutable_close_timestamp() = google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(
+              delta_entry.second.LastActiveTime());
+    }
+    updates->AddAllocated(endpoint_proto);
+  }
 }
 
 sensor::NetworkConnection* NetworkStatusNotifier::ConnToProto(const Connection& conn) {
@@ -225,6 +241,15 @@ sensor::NetworkConnection* NetworkStatusNotifier::ConnToProto(const Connection& 
   conn_proto->set_allocated_remote_address(EndpointToProto(conn.remote()));
 
   return conn_proto;
+}
+
+sensor::NetworkEndpoint* NetworkStatusNotifier::ContainerEndpointToProto(const ContainerEndpoint& cep) {
+  auto* endpoint_proto = Allocate<sensor::NetworkEndpoint>();
+  endpoint_proto->set_container_id(cep.container());
+  endpoint_proto->set_socket_family(TranslateAddressFamily(cep.endpoint().address().family()));
+  endpoint_proto->set_allocated_listen_address(EndpointToProto(cep.endpoint()));
+
+  return endpoint_proto;
 }
 
 sensor::NetworkAddress* NetworkStatusNotifier::EndpointToProto(const collector::Endpoint& endpoint) {

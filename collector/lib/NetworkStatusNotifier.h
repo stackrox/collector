@@ -46,11 +46,13 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
  public:
   using Stub = sensor::NetworkConnectionInfoService::Stub;
 
-  NetworkStatusNotifier(std::string hostname, std::string proc_dir, int scrape_interval, bool turn_off_scrape,
+  NetworkStatusNotifier(std::string hostname, std::string proc_dir, int scrape_interval, bool scrape_listen_endpoints,
+                        bool turn_off_scrape,
                         std::shared_ptr<ConnectionTracker> conn_tracker,
                         std::shared_ptr<grpc::Channel> channel)
       : hostname_(std::move(hostname)), conn_scraper_(std::move(proc_dir)), scrape_interval_(scrape_interval),
         turn_off_scraping_(turn_off_scrape),
+        scrape_listen_endpoints_(scrape_listen_endpoints),
         conn_tracker_(std::move(conn_tracker)), channel_(std::move(channel)),
         stub_(sensor::NetworkConnectionInfoService::NewStub(channel_))
   {}
@@ -65,8 +67,12 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   // Keep this updated with all capabilities supported. Format it as a comma-separated list with NO spaces.
   static constexpr char kSupportedCaps[] = "public-ips";
 
-  sensor::NetworkConnectionInfoMessage* CreateInfoMessage(const ConnMap& conn_delta);
+  sensor::NetworkConnectionInfoMessage* CreateInfoMessage(const ConnMap& conn_delta, const ContainerEndpointMap& cep_delta);
+  void AddConnections(::google::protobuf::RepeatedPtrField<sensor::NetworkConnection>* updates, const ConnMap& delta);
+  void AddContainerEndpoints(::google::protobuf::RepeatedPtrField<sensor::NetworkEndpoint>* updates, const ContainerEndpointMap& delta);
+
   sensor::NetworkConnection* ConnToProto(const Connection& conn);
+  sensor::NetworkEndpoint* ContainerEndpointToProto(const ContainerEndpoint& cep);
   sensor::NetworkAddress* EndpointToProto(const Endpoint& endpoint);
 
   std::unique_ptr<grpc::ClientContext> CreateClientContext() const;
@@ -86,6 +92,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   ConnScraper conn_scraper_;
   int scrape_interval_;
   bool turn_off_scraping_;
+  bool scrape_listen_endpoints_;
   std::shared_ptr<ConnectionTracker> conn_tracker_;
 
   std::shared_ptr<grpc::Channel> channel_;
