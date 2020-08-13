@@ -53,7 +53,8 @@ struct ParseBool {
     std::transform(str_val.begin(), str_val.end(), str_val.begin(), [](char c) -> char {
       return static_cast<char>(std::tolower(c));
     });
-    return str_val == "true";
+    *out = (str_val == "true");
+    return true;
   }
 };
 
