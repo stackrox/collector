@@ -279,24 +279,27 @@ std::ostream& operator<<(std::ostream& os, L4Proto l4proto);
 
 class ContainerEndpoint {
  public:
-  ContainerEndpoint(std::string container, const Endpoint& endpoint) : container_(std::move(container)), endpoint_(endpoint) {}
+  ContainerEndpoint(std::string container, const Endpoint& endpoint, L4Proto l4proto)
+      : container_(std::move(container)), endpoint_(endpoint), l4proto_(l4proto) {}
 
   const std::string& container() const { return container_; }
   const Endpoint& endpoint() const { return endpoint_; }
+  const L4Proto l4proto() const { return l4proto_; }
 
   bool operator==(const ContainerEndpoint& other) const {
-    return container_ == other.container_ && endpoint_ == other.endpoint_;
+    return container_ == other.container_ && endpoint_ == other.endpoint_ && l4proto_ == other.l4proto_;
   }
 
   bool operator!=(const ContainerEndpoint& other) const {
     return !(*this == other);
   }
 
-  size_t Hash() const { return HashAll(container_, endpoint_); }
+  size_t Hash() const { return HashAll(container_, endpoint_, l4proto_); }
 
  private:
   std::string container_;
   Endpoint endpoint_;
+  L4Proto l4proto_;
 };
 
 std::ostream& operator<<(std::ostream& os, const ContainerEndpoint& container_endpoint);

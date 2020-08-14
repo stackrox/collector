@@ -187,7 +187,7 @@ ContainerEndpointMap ConnectionTracker::FetchEndpointState(bool normalize, bool 
     if (normalize) {
       return FetchState(&endpoint_state_, clear_inactive, [this](const ContainerEndpoint &cep) {
         const auto& ep = cep.endpoint();
-        return ContainerEndpoint(cep.container(), Endpoint(Address(ep.address().family()), ep.port()));
+        return ContainerEndpoint(cep.container(), Endpoint(Address(ep.address().family()), ep.port()), cep.l4proto());
       });
     }
 

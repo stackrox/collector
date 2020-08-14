@@ -6,6 +6,7 @@
 #define COLLECTOR_ENVVAR_H
 
 #include <algorithm>
+#include <mutex>
 #include <utility>
 
 #include <cctype>
@@ -20,21 +21,19 @@ class EnvVar {
  public:
   template <typename... Args>
   explicit EnvVar(const char* env_var_name, Args&& ...def_val_ctor_args) noexcept
-      : env_var_name_(env_var_name), def_val_(std::forward<Args>(def_val_ctor_args)...) {}
+      : env_var_name_(env_var_name), val_(std::forward<Args>(def_val_ctor_args)...) {}
 
   const T& value() const {
-    static T val = [this]() {
-      T v = def_val_;
+    std::call_once(init_once_, [this]() {
       const char* env_val = std::getenv(env_var_name_);
       if (!env_val || !*env_val) {
-        return v;
+        return;
       }
-      if (!ParseT()(&v, env_val)) {
+      if (!ParseT()(&val_, env_val)) {
         CLOG(WARNING) << "Failed to parse value '" << env_val << "' for environment variable " << env_var_name_ << ". Using default value.";
       }
-      return v;
-    }();
-    return val;
+    });
+    return val_;
   }
 
   explicit operator T() const {
@@ -43,7 +42,8 @@ class EnvVar {
 
  private:
   const char* env_var_name_;
-  T def_val_;
+  mutable T val_;
+  mutable std::once_flag init_once_;
 };
 
 namespace internal {

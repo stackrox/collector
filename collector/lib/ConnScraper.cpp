@@ -205,6 +205,11 @@ struct ConnInfo {
   bool is_server;
 };
 
+struct EndpointInfo {
+  Endpoint endpoint;
+  L4Proto l4proto;
+};
+
 // ParseEndpoint parses an endpoint listed in the `net/tcp[6]` file.
 const char *ParseEndpoint(const char* p, const char* endp, Address::Family family, Endpoint* endpoint) {
   static bool needs_byteorder_swap = (htons(42) != 42);
@@ -280,7 +285,7 @@ bool LocalIsServer(const Endpoint& local, const Endpoint& remote, const Unordere
 
 // ReadConnectionsFromFile reads all connections from a `net/tcp[6]` file and stores them by inode in the given map.
 bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE* f,
-                             UnorderedMap<ino_t, ConnInfo>* connections, UnorderedMap<ino_t, Endpoint>* listen_endpoints) {
+                             UnorderedMap<ino_t, ConnInfo>* connections, UnorderedMap<ino_t, EndpointInfo>* listen_endpoints) {
   char line[512];
 
   if (!std::fgets(line, sizeof(line), f)) return false;  // ignore the first *header) line.
@@ -293,7 +298,9 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE*
     if (data.state == TCP_LISTEN) {  // listen socket
       all_listen_endpoints.insert(data.local);
       if (data.inode && listen_endpoints) {
-        listen_endpoints->emplace(data.inode, data.local);
+        auto& endpoint_info = (*listen_endpoints)[data.inode];
+        endpoint_info.endpoint = data.local;
+        endpoint_info.l4proto = l4proto;
       }
       continue;
     }
@@ -316,7 +323,7 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE*
 
 // GetConnections reads all active connections (inode -> connection info mapping) for a given network NS, addressed by
 // the dir FD for a proc entry of a process in that network namespace.
-bool GetConnections(int dirfd, UnorderedMap<ino_t, ConnInfo>* connections, UnorderedMap<ino_t, Endpoint>* listen_endpoints) {
+bool GetConnections(int dirfd, UnorderedMap<ino_t, ConnInfo>* connections, UnorderedMap<ino_t, EndpointInfo>* listen_endpoints) {
   bool success = true;
   {
     FDHandle net_tcp_fd = openat(dirfd, "net/tcp", O_RDONLY);
@@ -343,7 +350,7 @@ bool GetConnections(int dirfd, UnorderedMap<ino_t, ConnInfo>* connections, Unord
 
 struct NSNetworkData {
   UnorderedMap<ino_t, ConnInfo> connections;
-  UnorderedMap<ino_t, Endpoint> listen_endpoints;
+  UnorderedMap<ino_t, EndpointInfo> listen_endpoints;
 };
 
 // netns -> (inode -> connection info) mapping
@@ -368,8 +375,8 @@ void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const C
           connections->push_back(std::move(connection));
         } else if (listen_endpoints) {
           if (const auto* ep = Lookup(ns_network_data->listen_endpoints, socket_inode)) {
-            if (!IsRelevantEndpoint(*ep)) continue;
-            listen_endpoints->emplace_back(container_id, *ep);
+            if (!IsRelevantEndpoint(ep->endpoint)) continue;
+            listen_endpoints->emplace_back(container_id, ep->endpoint, ep->l4proto);
           }
         }
       }
