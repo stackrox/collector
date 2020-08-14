@@ -246,6 +246,7 @@ sensor::NetworkConnection* NetworkStatusNotifier::ConnToProto(const Connection& 
 sensor::NetworkEndpoint* NetworkStatusNotifier::ContainerEndpointToProto(const ContainerEndpoint& cep) {
   auto* endpoint_proto = Allocate<sensor::NetworkEndpoint>();
   endpoint_proto->set_container_id(cep.container());
+  endpoint_proto->set_protocol(TranslateL4Protocol(cep.l4proto()));
   endpoint_proto->set_socket_family(TranslateAddressFamily(cep.endpoint().address().family()));
   endpoint_proto->set_allocated_listen_address(EndpointToProto(cep.endpoint()));
 
