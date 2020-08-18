@@ -206,6 +206,8 @@ sensor::NetworkConnectionInfoMessage* NetworkStatusNotifier::CreateInfoMessage(c
   AddConnections(info->mutable_updated_connections(), conn_delta);
   AddContainerEndpoints(info->mutable_updated_endpoints(), endpoint_delta);
 
+  *info->mutable_time() = CurrentTimeProto();
+
   return msg;
 }
 
