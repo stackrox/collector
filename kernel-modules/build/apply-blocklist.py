@@ -22,11 +22,11 @@ def open_input(filename):
         return sys.stdin
     return open(filename)
 
-def main(blacklist_file, tasks_file='-'):
-    blacklist_regexes = []
+def main(blocklist_file, tasks_file='-'):
+    blocklist_regexes = []
 
-    with open(blacklist_file, 'r') as blacklist:
-        for line in blacklist:
+    with open(blocklist_file, 'r') as blocklist:
+        for line in blocklist:
             line = strip_comment_re.sub('', line).strip()
             if not line:
                 continue
@@ -34,16 +34,16 @@ def main(blacklist_file, tasks_file='-'):
             parts = (parts + ["*", "*"])[:3]
 
             part_res = [pattern_to_re(p) for p in parts]
-            blacklist_regexes.append(r'\s+'.join(part_res))
+            blocklist_regexes.append(r'\s+'.join(part_res))
 
-    blacklist_re = re.compile(r'^(?:%s)$' % r'|'.join((r'(?:%s)' % r for r in blacklist_regexes)))
+    blocklist_re = re.compile(r'^(?:%s)$' % r'|'.join((r'(?:%s)' % r for r in blocklist_regexes)))
 
     with open_input(tasks_file) as f:
         for line in f:
             line = strip_comment_re.sub('', line).strip()
             if not line:
                 continue
-            if not blacklist_re.match(line):
+            if not blocklist_re.match(line):
                 print(line)
 
 

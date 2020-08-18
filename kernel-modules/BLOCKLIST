@@ -1,4 +1,4 @@
-# Kernel module build blacklist
+# Kernel module build blocklist
 # Format:
 # <kernel-version> [<module-version>] [<object type (bpf or mod)>]
 # Wildcards (*) can be used for glob-style pattern matching; if a pattern is
@@ -6,3 +6,5 @@
 # If <module-version> or <object type> is omitted, "*" is assumed
 ~3\.10\.0-1062(?:\.\d+)*\.el7.x86_64 * bpf
 *.el6.*
+# TODO(ROX-5396) - Fix collector probe compilation for 5.7.* and 5.8.* kernels
+~5\.[7,8]\..*
