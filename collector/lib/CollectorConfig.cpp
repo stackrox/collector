@@ -35,7 +35,7 @@ namespace {
 
 BoolEnvVar disable_network_flows("ROX_COLLECTOR_DISABLE_NETWORK_FLOWS", false);
 
-BoolEnvVar ports_feature_flag("ROX_NETWORK_GRAPH_PORTS", false);
+BoolEnvVar ports_feature_flag("ROX_NETWORK_GRAPH_PORTS", true);
 
 }  // namespace
 
