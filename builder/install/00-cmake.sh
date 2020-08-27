@@ -8,4 +8,4 @@ if cmake --version &>/dev/null ; then
 fi
 
 wget "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz"
-tar -zxf "cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz" --strip 1 -C "/usr/local/"
+tar -zxf "cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz" --strip 1 -C "/usr/"

@@ -3,7 +3,12 @@ set -e
 
 set -ux
 ldconfig -v
-cd /build-output
+
+cd /src/cmake-build
 cmake -DCMAKE_BUILD_TYPE=Release /src
-make -j "${NPROCS:-2}" all
-strip --strip-unneeded ./collector
+
+make -j 6
+
+strip --strip-unneeded \
+    ./collector
+    ./EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so

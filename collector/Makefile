@@ -7,85 +7,60 @@ SRCS := $(wildcard lib/*.cpp) collector.cpp
 
 .SUFFIXES:
 
-generated-srcs: 
+generated-srcs:
 	docker run --rm \
 	  -v $(CURDIR):/collector/collector \
 	  -v $(CURDIR)/../rox-proto:/collector/rox-proto:ro \
 	  stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) make -f protogen.mk generated-proto-srcs
 
-generated-srcs-rhel: 
+generated-srcs-rhel:
 	docker run --rm \
 	  -v $(CURDIR):/collector/collector \
 	  -v $(CURDIR)/../rox-proto:/collector/rox-proto:ro \
 	  stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) make -f protogen.mk generated-proto-srcs
 
-container/bin/collector: $(HDRS) $(SRCS) generated-srcs container/libs/libsinsp-wrapper.so
+container/bin/collector: $(HDRS) $(SRCS) generated-srcs $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
 	mkdir -p container/bin
 	docker rm -fv build_collector || true
-	docker run --rm \
+	docker run --rm --name build_collector \
           -v "$(CURDIR):/src:ro" \
-          -v "$(CURDIR)/sysdig/src:/usr/local/sysdig:ro" \
-          -v "$(CURDIR)/container/libs/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
-          -v "$(CURDIR)/sysdig/src/driver/ppm_events_public.h:/usr/local/include/ppm_events_public.h:ro" \
-          -v "$(CURDIR)/sysdig/src/driver/ppm_fillers.h:/usr/local/include/ppm_fillers.h:ro" \
-          -v "$(CURDIR)/cmake-build:/build-output" \
-	  --name build_collector stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-collector.sh
+          -v "$(CURDIR)/../sysdig/:/sysdig:ro" \
+          -v "$(CURDIR)/cmake-build:/src/cmake-build" \
+		  stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-collector.sh
 	cp cmake-build/collector container/bin/
+	cp cmake-build/EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so
 
-container/bin/collector-rhel: $(HDRS) $(SRCS) generated-srcs-rhel container/libs/libsinsp-wrapper.so.rhel
+container/bin/collector-rhel: $(HDRS) $(SRCS) generated-srcs $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
 	mkdir -p container/bin
 	docker rm -fv build_collector_rhel || true
-	docker run --rm \
+	docker run --rm --name build_collector_rhel \
           -v "$(CURDIR):/src:ro" \
-          -v "$(CURDIR)/sysdig/src:/usr/local/sysdig:ro" \
-          -v "$(CURDIR)/container/libs/libsinsp-wrapper.so.rhel:/usr/local/lib/libsinsp-wrapper.so:ro" \
-          -v "$(CURDIR)/sysdig/src/driver/ppm_events_public.h:/usr/local/include/ppm_events_public.h:ro" \
-          -v "$(CURDIR)/sysdig/src/driver/ppm_fillers.h:/usr/local/include/ppm_fillers.h:ro" \
-          -v "$(CURDIR)/cmake-build-rhel:/build-output" \
-	  --name build_collector_rhel stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) /build-collector.sh
+          -v "$(CURDIR)/../sysdig/:/sysdig:ro" \
+          -v "$(CURDIR)/cmake-build-rhel:/src/cmake-build" \
+		  stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) /build-collector.sh
 	cp cmake-build-rhel/collector container/bin/collector.rhel
+	cp cmake-build-rhel/EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so
 
 unittest:
 	docker rm -fv collector_unittest || true
 	docker run --rm \
 	  -v "$(CURDIR)/container/libs/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
-          -v "$(CURDIR)/cmake-build:/build-output" \
+      -v "$(CURDIR)/cmake-build:/src/cmake-build" \
 	  --name collector_unittest \
-	  stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-output/runUnitTests
+	  stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) /src/cmake-build/runUnitTests
 
 unittest-rhel:
 	docker rm -fv collector_unittest_rhel || true
 	docker run --rm \
 	  -v "$(CURDIR)/container/libs/libsinsp-wrapper.so.rhel:/usr/local/lib/libsinsp-wrapper.so:ro" \
-          -v "$(CURDIR)/cmake-build-rhel:/build-output" \
+      -v "$(CURDIR)/cmake-build-rhel:/src/cmake-build" \
 	  --name collector_unittest_rhel \
-	  stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) /build-output/runUnitTests
-
-container/libs/libsinsp-wrapper.so: $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
-	docker rm -fv build_sysdig || true
-	docker run --rm \
-	  -v /etc/os-release:/host/etc/os-release \
-	  -v $(CURDIR)/sysdig/src:/sysdig-src \
-	  -v $(CURDIR)/sysdig/cmake-build:/sysdig-build \
-	  --name build_sysdig stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-sysdig.sh
-	mkdir -p container/libs/
-	cp sysdig/cmake-build/userspace/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so
-
-container/libs/libsinsp-wrapper.so.rhel: $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
-	docker rm -fv build_sysdig_rhel || true
-	docker run --rm \
-	  -v /etc/os-release:/host/etc/os-release \
-	  -v $(CURDIR)/sysdig/src:/sysdig-src \
-	  -v $(CURDIR)/sysdig/cmake-build-rhel:/sysdig-build \
-	  --name build_sysdig_rhel stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) /build-sysdig.sh
-	mkdir -p container/libs/
-	cp sysdig/cmake-build-rhel/userspace/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so.rhel
+	  stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) /src/cmake-build/runUnitTests
 
 .PHONY: txt-files
 txt-files:
 	cp NOTICE-collector.txt container/
 	cp COPYING.txt container/
-
 
 .PHONY: distribution
 distribution: clean
@@ -123,7 +98,6 @@ pull-protos:
 .PHONY: clean
 clean: clean-generated-srcs
 	docker rm -fv build_collector build_collector_rhel || true
-	docker rm -fv build_sysdig build_sysdig_rhel || true
 	docker rm -fv container-stats benchmark collector grpc-server || true
 	rm -rf sysdig/cmake-build
 	rm -rf sysdig/cmake-build-rhel

@@ -5,18 +5,43 @@ ENV NPROCS=$NPROCS
 
 ## Install packaged dependencies
 USER root
-RUN yum -y install \
-  autoconf automake binutils-devel bison ca-certificates \
-  elfutils-libelf-devel file flex gettext git glibc-devel \
-  libtool make patchutils pkgconfig wget which \
-  unzip libcap-ng-devel python2 libuuid-devel libcurl-devel \
-  openssl-devel
-RUN yum -y groupinstall "Development Tools"
-
-# The following command would only install cmake 3.11; we need 3.13+ to build gRPC properly
-# RUN yum -y install cmake
-RUN curl -L https://github.com/Kitware/CMake/releases/download/v3.15.2/cmake-3.15.2.tar.gz | tar -xzf - && \
-    cd cmake-3.15.2 && ./bootstrap && make && make install && cd .. && rm -rf cmake-3.15.2
+RUN yum -y update \
+    && yum -y install \
+        autoconf \
+        automake \
+        binutils-devel \
+        bison \
+        ca-certificates \
+        clang \
+        cracklib-dicts \
+        elfutils-libelf-devel \
+        file \
+        flex \
+        gcc \
+        gcc-c++ \
+        gdb \
+        gettext \
+        git \
+        glibc-devel \
+        libcap-ng-devel \
+        libcurl-devel \
+        libtool \
+        libuuid-devel \
+        make \
+        openssh-server \
+        openssl-devel \
+        patchutils \
+        passwd \
+        pkgconfig \
+        python2 \
+        rsync \
+        tar \
+        unzip \
+        wget \
+        which \
+    && yum -y groupinstall "Development Tools" \
+    && yum clean all \
+    ;
 
 # /usr/local/lib is not in the library path by default
 RUN echo '/usr/local/lib' >/etc/ld.so.conf.d/usrlocallib.conf && ldconfig
@@ -31,10 +56,28 @@ RUN ./install-tmp/install.sh
 
 RUN ldconfig
 
-# Copy files needed for generating proto code, building sysdig library and building collector
-COPY build/protogen.mk /protogen.mk
-COPY build/build-sysdig.sh /build-sysdig.sh
-COPY build/build-collector.sh /build-collector.sh
+# Copy Makefile for generating protobuf code.
+COPY build/protogen.mk /
 
+# Copy script for building collector and sysdig
+COPY build/build-collector.sh /
 RUN chmod 700 /build-collector.sh
-RUN chmod 700 /build-sysdig.sh
+
+# Set up ssh for remote development with IDE
+RUN ssh-keygen -A \
+   && ( \
+    echo 'LogLevel DEBUG2'; \
+    echo 'PermitRootLogin yes'; \
+    echo 'PasswordAuthentication yes'; \
+    echo 'Subsystem sftp /usr/libexec/openssh/sftp-server'; \
+  ) > /etc/ssh/sshd_config_remote_development \
+  && mkdir /run/sshd
+
+# Add remote development user
+RUN useradd -m remoteuser \
+  && yes c0llectah | passwd remoteuser
+
+# Create directory to copy collector and sysdig source into builder container
+RUN mkdir /src && chmod a+rwx /src
+
+CMD ["/usr/sbin/sshd", "-D", "-e", "-f", "/etc/ssh/sshd_config_remote_development"]
