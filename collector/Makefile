@@ -20,7 +20,8 @@ generated-srcs-rhel:
 		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) make -f protogen.mk generated-proto-srcs
 
 container/bin/collector: $(HDRS) $(SRCS) generated-srcs $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
-	mkdir -p container/{bin,libs}
+	mkdir -p container/bin
+	mkdir -p container/libs
 	docker rm -fv build_collector || true
 	docker run --rm --name build_collector \
 		-v "$(CURDIR):/src:ro" \
@@ -31,7 +32,8 @@ container/bin/collector: $(HDRS) $(SRCS) generated-srcs $(shell find sysdig/src/
 	cp cmake-build/EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so
 
 container/bin/collector-rhel: $(HDRS) $(SRCS) generated-srcs $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
-	mkdir -p container/{bin,libs}
+	mkdir -p container/bin
+	mkdir -p container/libs
 	docker rm -fv build_collector_rhel || true
 	docker run --rm --name build_collector_rhel \
 		-v "$(CURDIR):/src:ro" \
