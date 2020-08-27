@@ -61,6 +61,7 @@ function download_kernel_object() {
     local filename_gz="${OBJECT_PATH}.gz"
     local curl_opts=(
         -sS -4 --retry 20 --retry-connrefused --retry-delay 1 --retry-max-time 30
+        --connect-timeout 2
         -f -L -w "HTTP Status Code %{http_code}"
         -o "${filename_gz}"
     )
