@@ -14,7 +14,7 @@ git clone --recurse-submodules git@github.com:stackrox/collector.git
 ### Development with an IDE (CLion)
 
 #### Setup
-These instructions are for using the C/C++ IDE CLion for JetBrains, but should be adaptable to any IDE that supports development over ssh/sftp.
+These instructions are for using the *JetBrains* C/C++ IDE **CLion**, but should be adaptable to any IDE that supports development over ssh/sftp.
 - If running CLion IDE for the first time:
   - Download and install CLion (https://www.jetbrains.com/clion/download/)
   - Create a project from the `collector/collector` directory using an existing CMakeLists file (`collector/collector/CMakeLists.txt`).
