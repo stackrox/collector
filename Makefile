@@ -15,10 +15,10 @@ tag:
 builder:
 ifdef BUILD_BUILDER_IMAGE
 	docker build \
-	  --cache-from stackrox/collector-builder:cache \
-	  --cache-from stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) \
-	  -t stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) \
-	  builder
+		--cache-from stackrox/collector-builder:cache \
+		--cache-from stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) \
+		-t stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) \
+		builder
 else
 	docker pull stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG)
 endif
@@ -27,11 +27,11 @@ endif
 builder-rhel:
 ifdef BUILD_BUILDER_IMAGE
 	docker build \
-	  --cache-from stackrox/collector-builder:rhel-cache \
-	  --cache-from stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) \
-	  -t stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) \
-	  -f "$(CURDIR)/builder/Dockerfile_rhel" \
-	  builder
+		--cache-from stackrox/collector-builder:rhel-cache \
+		--cache-from stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) \
+		-t stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) \
+		-f "$(CURDIR)/builder/Dockerfile_rhel" \
+		builder
 else
 	docker pull stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG)
 endif
@@ -66,15 +66,14 @@ $(MOD_VER_FILE): build-kernel-modules
 image: collector unittest $(MOD_VER_FILE)
 	make -C collector txt-files
 	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
-	  --build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
-	  -f collector/container/Dockerfile \
-	  -t stackrox/collector:$(COLLECTOR_TAG) \
-	  collector/container
+		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
+		-f collector/container/Dockerfile \
+		-t stackrox/collector:$(COLLECTOR_TAG) \
+		collector/container
 
 .PHONY: $(CURDIR)/collector/container/rhel/bundle.tar.gz
 $(CURDIR)/collector/container/rhel/bundle.tar.gz:
-	$(CURDIR)/collector/container/rhel/create-bundle.sh \
-		$(CURDIR)/collector/container - $@
+	$(CURDIR)/collector/container/rhel/create-bundle.sh $(CURDIR)/collector/container - $@
 
 .PHONY: $(CURDIR)/collector/container/rhel/prebuild.sh
 $(CURDIR)/collector/container/rhel/prebuild.sh:
@@ -83,10 +82,10 @@ $(CURDIR)/collector/container/rhel/prebuild.sh:
 image-rhel: collector-rhel unittest-rhel $(MOD_VER_FILE) $(CURDIR)/collector/container/rhel/bundle.tar.gz
 	make -C collector txt-files
 	docker build --build-arg collector_version="rhel-$(COLLECTOR_TAG)" \
-	  --build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
-	  -f collector/container/rhel/Dockerfile \
-	  -t stackrox/collector-rhel:$(COLLECTOR_TAG) \
-	  collector/container/rhel
+		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
+		-f collector/container/rhel/Dockerfile \
+		-t stackrox/collector-rhel:$(COLLECTOR_TAG) \
+		collector/container/rhel
 
 .PHONY: integration-tests
 integration-tests:
@@ -107,17 +106,17 @@ integration-tests-missing-proc-scrape:
 .PHONY: integration-tests-process-network-rhel
 integration-tests-process-network-rhel:
 	COLLECTOR_REPO="stackrox/collector-rhel" \
-	  make -C integration-tests process-network
+	make -C integration-tests process-network
 
 .PHONY: integration-tests-rhel
 integration-tests-rhel:
 	COLLECTOR_REPO="stackrox/collector-rhel" \
-	  make -C integration-tests tests
+	make -C integration-tests tests
 
 .PHONY: integration-tests-baseline-rhel
 integration-tests-baseline-rhel:
 	COLLECTOR_REPO="stackrox/collector-rhel" \
-	  make -C integration-tests baseline
+	make -C integration-tests baseline
 
 .PHONY: integration-tests-missing-proc-scrape-rhel
 integration-tests-missing-proc-scrape-rhel:
