@@ -39,7 +39,7 @@ container/bin/collector-rhel: $(HDRS) $(SRCS) generated-srcs $(shell find sysdig
           -v "$(CURDIR)/cmake-build-rhel:/src/cmake-build" \
 		  stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) /build-collector.sh
 	cp cmake-build-rhel/collector container/bin/collector.rhel
-	cp cmake-build-rhel/EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so
+	cp cmake-build-rhel/EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so.rhel
 
 unittest:
 	docker rm -fv collector_unittest || true

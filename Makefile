@@ -74,8 +74,7 @@ image: collector unittest $(MOD_VER_FILE)
 .PHONY: $(CURDIR)/collector/container/rhel/bundle.tar.gz
 $(CURDIR)/collector/container/rhel/bundle.tar.gz:
 	$(CURDIR)/collector/container/rhel/create-bundle.sh \
-		$(CURDIR)/collector/container \
-		$(CURDIR)/kernel-modules/container/kernel-modules $@
+		$(CURDIR)/collector/container - $@
 
 .PHONY: $(CURDIR)/collector/container/rhel/prebuild.sh
 $(CURDIR)/collector/container/rhel/prebuild.sh:
