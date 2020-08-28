@@ -26,19 +26,19 @@ container/bin/collector: $(HDRS) $(SRCS) generated-srcs $(shell find sysdig/src/
 	docker run --rm --name build_collector \
 		-v "$(CURDIR):/src:ro" \
 		-v "$(CURDIR)/../sysdig/:/sysdig:ro" \
-		-v "$(CURDIR)/cmake-build:/src/cmake-build" \
+		-v "$(CURDIR)/cmake-build:/tmp/cmake-build" \
 		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-collector.sh
 	cp cmake-build/collector container/bin/
 	cp cmake-build/EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so
 
-container/bin/collector-rhel: $(HDRS) $(SRCS) generated-srcs $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
+container/bin/collector-rhel: $(HDRS) $(SRCS) generated-srcs-rhel $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
 	mkdir -p container/bin
 	mkdir -p container/libs
 	docker rm -fv build_collector_rhel || true
 	docker run --rm --name build_collector_rhel \
 		-v "$(CURDIR):/src:ro" \
 		-v "$(CURDIR)/../sysdig/:/sysdig:ro" \
-		-v "$(CURDIR)/cmake-build-rhel:/src/cmake-build" \
+		-v "$(CURDIR)/cmake-build-rhel:/tmp/cmake-build" \
 		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) /build-collector.sh
 	cp cmake-build-rhel/collector container/bin/collector.rhel
 	cp cmake-build-rhel/EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so.rhel

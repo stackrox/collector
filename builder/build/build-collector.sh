@@ -3,7 +3,7 @@ set -e
 
 set -ux
 ldconfig -v
-cd /src/cmake-build
+cd /tmp/cmake-build
 cmake -DCMAKE_BUILD_TYPE=Release /src
 make -j "${NPROCS:-2}" all
 strip --strip-unneeded \

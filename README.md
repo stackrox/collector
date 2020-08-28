@@ -24,7 +24,7 @@ These instructions are for using the *JetBrains* C/C++ IDE **CLion**, but should
 - In the **CLion->Preferences** window, add a new **Toolchain** entry in settings under **Build, Execution, Deployment** as a **Remote Host** type.
 - Then click in the **Credentials** section and fill out the SSH credentials used in the builder Dockerfile.
   - Host: `localhost`, Port: `2222`, User name: `remoteuser`, Password: `c0llectah`
-- Next, select **Deployment** under **Build, Execution, Deployment**, and then **Mappings**. Change **Deployment path** to `/src`.
+- Next, select **Deployment** under **Build, Execution, Deployment**, and then **Mappings**. Set **Deployment path** to `/tmp`.
 - Finally, add a CMake profile that uses the **Remote Host** toolchain and change build directory to `cmake-build`.
 
 The development workflow can also be used with the rhel based builder image. For a CMake profile to use with the Red Hat builder, change the build
