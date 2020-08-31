@@ -127,6 +127,16 @@ integration-tests-missing-proc-scrape-rhel:
 integration-tests-report:
 	make -C integration-tests report
 
+.PHONY: start-dev
+start-dev: builder
+	docker rm -fv collector_remote_dev
+	docker run -d --cap-add sys_ptrace -p127.0.0.1:2222:22 --name collector_remote_dev stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG)
+
+.PHONY: start-dev-rhel
+start-dev-rhel: builder-rhel
+	docker rm -fv collector_remote_dev
+	docker run -d --cap-add sys_ptrace -p127.0.0.1:2222:22 --name collector_remote_dev stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG)
+
 .PHONY: clean
 clean:
 	make -C collector clean
