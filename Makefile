@@ -137,6 +137,7 @@ endif
 
 .PHONY: start-dev
 start-dev: builder teardown-dev $(DEV_SSH_SERVER_KEY)
+	make -C collector generated-srcs
 	docker run -d \
 		--name collector_remote_dev \
 		--cap-add sys_ptrace -p127.0.0.1:$(LOCAL_SSH_PORT):22 \
@@ -145,6 +146,7 @@ start-dev: builder teardown-dev $(DEV_SSH_SERVER_KEY)
 
 .PHONY: start-dev-rhel $(DEV_SSH_SERVER_KEY)
 start-dev-rhel: builder-rhel teardown-dev
+	make -C collector generated-srcs
 	docker run -d \
 		--name collector_remote_dev \
 		--cap-add sys_ptrace -p127.0.0.1:$(LOCAL_SSH_PORT):22 \
