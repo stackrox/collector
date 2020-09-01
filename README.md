@@ -25,7 +25,7 @@ Or, builder images from a PR by with `COLLECTOR_BUILDER_TAG=<circle-build-id> ma
 - In the **CLion->Preferences** window, add a new **Toolchain** entry in settings under **Build, Execution, Deployment** as a **Remote Host** type.
 - Then, click in the **Credentials** section and fill out the SSH credentials used in the builder Dockerfile.
   - Host: `localhost`, Port: `2222`, User name: `remoteuser`, Password: `c0llectah`
-- Next, select **Deployment** under **Build, Execution, Deployment**, and then **Mappings**. Set **Deployment path** to `/tmp`.
+- Next, select **Deployment** under **Build, Execution, Deployment**, and then **Mappings**. Set **Deployment path** to `/src`.
 - Finally, add a CMake profile that uses the **Remote Host** toolchain and change **Build directory**/**Generation Path** to `cmake-build`.
 
 The development workflow can also be used with the rhel based builder image.

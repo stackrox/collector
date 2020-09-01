@@ -4,6 +4,7 @@ include Makefile-constants.mk
 MOD_VER_FILE=$(CURDIR)/kernel-modules/kobuild-tmp/MODULE_VERSION.txt
 
 LOCAL_SSH_PORT ?= 2222
+DEV_SSH_SERVER_KEY ?= $(CURDIR)/.collector_dev_ssh_host_ed25519_key
 
 dev-build: image integration-tests-process-network
 
@@ -129,23 +130,29 @@ integration-tests-missing-proc-scrape-rhel:
 integration-tests-report:
 	make -C integration-tests report
 
+$(DEV_SSH_SERVER_KEY):
+ifeq (,$(wildcard $(DEV_SSH_SERVER_KEY)))
+	ssh-keygen -t ed25519 -N '' -f $(DEV_SSH_SERVER_KEY) < /dev/null
+endif
+
 .PHONY: start-dev
-start-dev: builder teardown-dev
+start-dev: builder teardown-dev $(DEV_SSH_SERVER_KEY)
 	docker run -d \
 		--name collector_remote_dev \
 		--cap-add sys_ptrace -p127.0.0.1:$(LOCAL_SSH_PORT):22 \
+		-v $(DEV_SSH_SERVER_KEY):/etc/sshkeys/ssh_host_ed25519_key:ro \
 		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG)
 
-.PHONY: start-dev-rhel
+.PHONY: start-dev-rhel $(DEV_SSH_SERVER_KEY)
 start-dev-rhel: builder-rhel teardown-dev
 	docker run -d \
 		--name collector_remote_dev \
 		--cap-add sys_ptrace -p127.0.0.1:$(LOCAL_SSH_PORT):22 \
+		-v $(DEV_SSH_SERVER_KEY):/etc/sshkeys/ssh_host_ed25519_key:ro \
 		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG)
 
 .PHONY: teardown-dev
 teardown-dev:
-	ssh-keygen -f "$(HOME)/.ssh/known_hosts" -R [localhost]:$(LOCAL_SSH_PORT)
 	-docker rm -fv collector_remote_dev
 
 .PHONY: clean

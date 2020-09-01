@@ -59,6 +59,8 @@ RUN ( \
     echo 'LogLevel DEBUG2'; \
     echo 'PermitRootLogin yes'; \
     echo 'PasswordAuthentication yes'; \
+    echo 'HostKey /etc/sshkeys/ssh_host_ed25519_key'; \
+    echo 'HostKeyAlgorithms ssh-ed25519'; \
     echo 'Subsystem sftp /usr/lib/openssh/sftp-server'; \
   ) > /etc/ssh/sshd_config_remote_development \
   && mkdir /run/sshd
