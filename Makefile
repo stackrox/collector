@@ -3,6 +3,8 @@ include Makefile-constants.mk
 
 MOD_VER_FILE=$(CURDIR)/kernel-modules/kobuild-tmp/MODULE_VERSION.txt
 
+LOCAL_SSH_PORT ?= 2222
+
 dev-build: image integration-tests-process-network
 
 dev-build-rhel: image-rhel integration-tests-process-network-rhel
@@ -128,15 +130,24 @@ integration-tests-report:
 	make -C integration-tests report
 
 .PHONY: start-dev
-start-dev: builder
-	docker rm -fv collector_remote_dev
-	docker run -d --cap-add sys_ptrace -p127.0.0.1:2222:22 --name collector_remote_dev stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG)
+start-dev: builder teardown-dev
+	docker run -d \
+		--name collector_remote_dev \
+		--cap-add sys_ptrace -p127.0.0.1:$(LOCAL_SSH_PORT):22 \
+		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG)
 
 .PHONY: start-dev-rhel
-start-dev-rhel: builder-rhel
+start-dev-rhel: builder-rhel teardown-dev
+	docker run -d \
+		--name collector_remote_dev \
+		--cap-add sys_ptrace -p127.0.0.1:$(LOCAL_SSH_PORT):22 \
+		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG)
+
+.PHONY: teardown-dev
+teardown-dev:
+	ssh-keygen -f "$(HOME)/.ssh/known_hosts" -R [localhost]:$(LOCAL_SSH_PORT)
 	docker rm -fv collector_remote_dev
-	docker run -d --cap-add sys_ptrace -p127.0.0.1:2222:22 --name collector_remote_dev stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG)
 
 .PHONY: clean
-clean:
+clean: teardown-dev
 	make -C collector clean
