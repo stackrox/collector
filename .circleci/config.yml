@@ -116,6 +116,11 @@ jobs:
           EOF
 
     - run:
+        name: Read PR metadata
+        command: |
+          ~/workspace/go/src/github.com/stackrox/collector/.circleci/read-labels.sh pr-metadata/labels
+
+    - run:
         name: Set COLLECTOR_VERSION
         command: |
           COLLECTOR_VERSION="$(make -s -C ~/workspace/go/src/github.com/stackrox/collector tag)"
@@ -130,7 +135,7 @@ jobs:
             export GCP_SSH_KEY_FILE="${GCP_SSH_KEY_FILE}"
           EOF
 
-          if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-builder-image" ]]; then
+          if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -f pr-metadata/labels/build-builder-image ]]; then
           cat >>~/workspace/shared-env \<<-EOF
             export COLLECTOR_BUILDER_TAG="cache"
           EOF
@@ -141,11 +146,6 @@ jobs:
           EOF
           fi
           cat ~/workspace/shared-env
-
-    - run:
-        name: Read PR metadata
-        command: |
-          ~/workspace/go/src/github.com/stackrox/collector/.circleci/read-labels.sh pr-metadata/labels
 
     - persist_to_workspace:
         root: ~/workspace

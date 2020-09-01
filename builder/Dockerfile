@@ -13,9 +13,12 @@ RUN apt-get update \
         binutils \
         build-essential \
         ca-certificates \
+        clang \
         cmake \
         curl \
         g++ \
+        gcc \
+        gdb \
         git \
         libcap-ng-dev \
         libcurl4-openssl-dev \
@@ -25,10 +28,14 @@ RUN apt-get update \
         libz-dev \
         pkg-config \
         python \
+        rsync \
+        ssh \
+        tar \
         unzip \
         uuid-dev \
         wget \
-        ;
+    && apt-get clean \
+    ;
 
 # We want to fail if the destination directory is there, hence mkdir (not -p).
 RUN mkdir install-tmp
@@ -40,10 +47,30 @@ RUN ./install-tmp/install.sh
 
 RUN ldconfig
 
-# Copy files needed for generating proto code, building sysdig library and building collector
-COPY build/protogen.mk /protogen.mk
-COPY build/build-sysdig.sh /build-sysdig.sh
-COPY build/build-collector.sh /build-collector.sh
+# Copy Makefile for generating protobuf code.
+COPY build/protogen.mk /
 
+# Copy script for building collector and sysdig
+COPY build/build-collector.sh /
 RUN chmod 700 /build-collector.sh
-RUN chmod 700 /build-sysdig.sh
+
+# Set up ssh for remote development with IDE
+RUN ( \
+    echo 'LogLevel DEBUG2'; \
+    echo 'PermitRootLogin yes'; \
+    echo 'PasswordAuthentication yes'; \
+    echo 'HostKey /etc/sshkeys/ssh_host_ed25519_key'; \
+    echo 'HostKeyAlgorithms ssh-ed25519'; \
+    echo 'Subsystem sftp /usr/lib/openssh/sftp-server'; \
+  ) > /etc/ssh/sshd_config_remote_development \
+  && mkdir /run/sshd
+
+# Add remote development user
+RUN useradd -m remoteuser \
+  && yes c0llectah | passwd remoteuser
+
+# Create directory to copy collector and sysdig source into builder container
+RUN mkdir /src && chmod a+rwx /src
+
+CMD ["/usr/sbin/sshd", "-D", "-e", "-f", "/etc/ssh/sshd_config_remote_development"]
+
