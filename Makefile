@@ -146,7 +146,7 @@ start-dev-rhel: builder-rhel teardown-dev
 .PHONY: teardown-dev
 teardown-dev:
 	ssh-keygen -f "$(HOME)/.ssh/known_hosts" -R [localhost]:$(LOCAL_SSH_PORT)
-	docker rm -fv collector_remote_dev
+	-docker rm -fv collector_remote_dev
 
 .PHONY: clean
 clean: teardown-dev
