@@ -20,6 +20,7 @@ You should have received a copy of the GNU General Public License along with thi
 * do not wish to do so, delete this exception statement from your
 * version.
 */
+#include "sinsp_errno.h"
 
 #include "NetworkSignalHandler.h"
 
@@ -49,8 +50,11 @@ EventMap<Modifier> modifiers = {
 std::pair<Connection, bool> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
   const int64_t* res = event_extractor_.get_event_rawres(evt);
   if (!res || *res < 0) {
-    // ignore unsuccessful events for now.
-    return {{}, false};
+    // track non-blocking connect attempts (EINPROGRESS)
+    if (!res || *res != -SE_EINPROGRESS) {
+        // ignore unsuccessful events for now.
+        return {{}, false};
+    }
   }
 
   auto* fd_info = evt->get_fd_info();
@@ -113,7 +117,7 @@ SignalHandler::Result NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
 }
 
 std::vector<string> NetworkSignalHandler::GetRelevantEvents() {
-  return {"close<", "shutdown<", "connect<", "accept<"};
+  return {"shutdown<", "connect<", "accept<"};
 }
 
 }  // namespace collector

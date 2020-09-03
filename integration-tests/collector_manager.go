@@ -32,7 +32,7 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 
 	env := map[string]string{
 		"GRPC_SERVER":              "localhost:9999",
-		"COLLECTOR_CONFIG":         `{"logLevel":"debug","scrapeInterval":2}`,
+		"COLLECTOR_CONFIG":         `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}`,
 		"COLLECTION_METHOD":        collectionMethod,
 		"MODULE_DOWNLOAD_BASE_URL": "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656",
 	}
