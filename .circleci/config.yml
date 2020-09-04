@@ -1671,8 +1671,8 @@ workflows:
        - test-ebpf-cos-85-lts
        - test-module-rhel-7
        - test-ebpf-rhel-7
-       #- test-module-rhel-8
-       #- test-ebpf-rhel-8
+       - test-module-rhel-8
+       - test-ebpf-rhel-8
        - test-module-ubuntu-1604-lts
        - test-ebpf-ubuntu-1604-lts
        - test-module-ubuntu-1804-lts
