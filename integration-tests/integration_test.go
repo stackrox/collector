@@ -162,7 +162,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 
 	images := []string{
 		"nginx:1.14-alpine",
-		"pstauffer/curl:latest",
+		"cirrusci/wget",
 	}
 
 	for _, image := range images {
@@ -184,7 +184,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	require.NoError(s.T(), err)
 
 	// invokes another container
-	containerID, err = s.launchContainer("nginx-curl", "pstauffer/curl:latest", "sleep", "300")
+	containerID, err = s.launchContainer("nginx-wget", "cirrusci/wget:latest", "sleep", "300")
 	require.NoError(s.T(), err)
 	s.clientContainer = containerID[0:12]
 
@@ -194,10 +194,10 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	s.serverPort, err = s.getPort("nginx")
 	require.NoError(s.T(), err)
 
-	_, err = s.execContainer("nginx-curl", []string{"curl", fmt.Sprintf("%s:%s", s.serverIP, s.serverPort)})
+	_, err = s.execContainer("nginx-wget", []string{"wget", "-O", "-", fmt.Sprintf("%s:%s", s.serverIP, s.serverPort)})
 	require.NoError(s.T(), err)
 
-	s.clientIP, err = s.getIPAddress("nginx-curl")
+	s.clientIP, err = s.getIPAddress("nginx-wget")
 	require.NoError(s.T(), err)
 
 	time.Sleep(10 * time.Second)
@@ -210,7 +210,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 }
 
 func (s *ProcessNetworkTestSuite) TearDownSuite() {
-	s.cleanupContainer([]string{"nginx", "nginx-curl", "collector"})
+	s.cleanupContainer([]string{"nginx", "nginx-wget", "collector"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
 	s.WritePerfResults("process_network", stats, s.metrics)

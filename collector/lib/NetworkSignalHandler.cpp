@@ -50,11 +50,9 @@ EventMap<Modifier> modifiers = {
 std::pair<Connection, bool> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
   const int64_t *res = event_extractor_.get_event_rawres(evt);
   if (!res || *res < 0) {
-    // track non-blocking connect attempts (EINPROGRESS)
-    if (!res || *res != -SE_EINPROGRESS) {
-      // ignore unsuccessful events for now.
-      return {{}, false};
-    }
+    // ignore unsuccessful events for now, including non-blocking
+    // connect (EINPROGRESS) or accept (EAGAIN) calls that may ultimately be successful
+    return {{}, false};
   }
 
   auto* fd_info = evt->get_fd_info();

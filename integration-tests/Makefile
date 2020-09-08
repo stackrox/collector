@@ -16,7 +16,7 @@ export COLLECTOR_IMAGE
 
 .PHONY: docker-clean
 docker-clean:
-	docker rm -fv container-stats benchmark collector grpc-server nginx nginx-curl || true
+	docker rm -fv container-stats benchmark collector grpc-server nginx nginx-wget || true
 
 .PHONY: tests
 tests: docker-clean
