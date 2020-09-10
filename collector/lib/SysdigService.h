@@ -87,6 +87,7 @@ class SysdigService : public Sysdig {
   std::unique_ptr<sinsp_chisel> chisel_;
   std::vector<SignalHandlerEntry> signal_handlers_;
   SysdigStats userspace_stats_;
+  std::bitset<PPM_EVENT_MAX> global_event_filter_;
 
   std::unordered_map<string, ChiselCacheStatus> chisel_cache_;
   bool use_chisel_cache_;
