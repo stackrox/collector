@@ -174,7 +174,7 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
   Connection conn4_normalized("xyz", Endpoint(), Endpoint(Address(255, 255, 255, 255), 54321), L4Proto::TCP, false);
   Connection conn5_normalized("xyz", Endpoint(Address(), 9999), Endpoint(Address(35, 127, 1, 15), 0), L4Proto::TCP, true);
 
-EXPECT_THAT(state3, UnorderedElementsAre(
+  EXPECT_THAT(state3, UnorderedElementsAre(
           std::make_pair(conn1_normalized, ConnStatus(now, true)),
           std::make_pair(conn2_normalized, ConnStatus(now, true)),
           std::make_pair(conn3_normalized, ConnStatus(now, true)),
