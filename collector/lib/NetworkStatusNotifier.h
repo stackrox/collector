@@ -81,6 +81,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
 
   void Run();
   void RunSingle(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer);
+  void ReceiveIPNetworks(const sensor::IPNetworkList* networks);
 
   std::string hostname_;
 

@@ -75,10 +75,15 @@ Address ConnectionTracker::NormalizeAddressNoLock(const Address& address) const 
     return address;
   }
 
-  // If association to known cluster entities fails, then try to associate it to smallest known network.
-  for (const auto& network : (*known_ip_networks_)[address.family()]) {
-    if network.Contains(address) {
+  // If association to known cluster entities fails, then try to associate it to a known network. Since the networks are
+  // sorted smallest to largest, we map it to a subnet. This is not fully correct. For example, If there is also a
+  // supernet in known network list, this address would not be mapped to the supernet.
+  const auto& networks = Lookup(known_ip_networks_, address.family());
+  if (networks) {
+    for (const auto network : *networks) {
+      if (network.Contains(address)) {
         return network.address();
+      }
     }
   }
 

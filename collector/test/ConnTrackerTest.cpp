@@ -162,7 +162,8 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
   UnorderedSet<Address> public_ips = {Address(35, 127, 0, 15)};
   tracker.UpdateKnownPublicIPs(std::move(public_ips));
 
-  UnorderedMap<Address::Family, std::vector<IPNet>> known_networks = {{Address::Family::IPV4, IPNet(Address(35, 127, 1, 15), 24)}};
+
+  UnorderedMap<Address::Family, std::vector<IPNet>> known_networks = {{Address::Family::IPV4, {IPNet(Address(35, 127, 1, 15), 24)}}};
   tracker.UpdateKnownIPNetworks(std::move(known_networks));
 
   auto state3 = tracker.FetchConnState(true);

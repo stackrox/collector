@@ -102,21 +102,21 @@ void NetworkStatusNotifier::OnRecvControlMessage(const sensor::NetworkFlowsContr
     return;
   }
 
-  receiveIPNetworks(msg->ip_networks());
+  ReceiveIPNetworks(msg->ip_networks());
 }
 
-void receiveIPNetworks(const sensor::IPNetworkList* networks) {
+void NetworkStatusNotifier::ReceiveIPNetworks(const sensor::IPNetworkList* networks) {
     // Sort the networks for smallest to largest and then lexicographically.
     struct {
-        bool operator(const IPNet& a, const IPNet& b) const {
+        bool operator() (const IPNet& a, const IPNet& b) const {
             if (a.bits() != b.bits()) {
                 return a.bits() > b.bits();
             }
 
-            const auto& data1 = a.address().data();
-            const auto& data2 = b.address().data();
+            const uint64_t* data1 = a.address().u64_data();
+            const uint64_t* data2 = b.address().u64_data();
             for (int i = 0; i < Address::kU64MaxLen; i++) {
-                if data1[i] > data2[i] {
+                if (data1[i] > data2[i]) {
                     return true;
                 }
             }
