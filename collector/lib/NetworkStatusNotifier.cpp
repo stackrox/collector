@@ -97,6 +97,79 @@ void NetworkStatusNotifier::OnRecvControlMessage(const sensor::NetworkFlowsContr
   }
 
   conn_tracker_->UpdateKnownPublicIPs(std::move(known_public_ips));
+
+  if (!msg->has_ip_networks()) {
+    return;
+  }
+
+  receiveIPNetworks(msg->ip_networks());
+}
+
+void receiveIPNetworks(const sensor::IPNetworkList* networks) {
+    // Sort the networks for smallest to largest and then lexicographically.
+    struct {
+        bool operator(const IPNet& a, const IPNet& b) const {
+            if (a.bits() != b.bits()) {
+                return a.bits() > b.bits();
+            }
+
+            const auto& data1 = a.address().data();
+            const auto& data2 = b.address().data();
+            for (int i = 0; i < Address::kU64MaxLen; i++) {
+                if data1[i] > data2[i] {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }networkComparator;
+
+    UnorderedMap<Address::Family, std::vector<IPNet>> known_ip_networks;
+    auto ipv4_network_size = networks.ipv4_networks_size();
+    if (ipv4_network_size % 5 != 0) {
+        CLOG(WARNING) << "IPv4 network field has incorrect length " << ipv4_network_size << ". Ignoring IPv4 networks...";
+    } else {
+        int k = 0;
+        std::array<IPNet, ipv4_network_size / 5> ipv4_networks = {};
+        for (int i = 0; i < ipv4_network_size; i += 5) {
+            // htonl
+            Address addr(networks.ipv4_networks(i), networks.ipv4_networks(i + 1), networks.ipv4_networks(i + 2), networks.ipv4_networks(i + 3));
+            IPNet net(addr, networks.ipv4_networks(i + 4));
+            ipv4_networks[k] = net;
+            k++;
+        }
+        std::sort(ipv4_networks.begin(), ipv4_networks.end(), networkComparator);
+        known_ip_networks[Address::Family::IPV4] = ipv4_networks;
+    }
+
+    auto ipv6_network_size = networks.ipv6_networks_size();
+    if (ipv6_network_size % 17 != 0) {
+        CLOG(WARNING) << "IPv6 network field has incorrect length " << ipv6_network_size << ". Ignoring IPv6 networks...";
+    } else {
+        int k = 0;
+        std::array<IPNet, ipv6_network_size / 17> ipv6_networks = {};
+        for (int i = 0; i < ipv6_network_size; i += 17) {
+            uint64_t high, low;
+            // htonll
+            for (int j = 0; j < 8; j++) {
+                high |= static_cast<uint64_t>(networks.ipv6_networks(i + j)) << (8 * (7 - j));
+            }
+
+            // htonll
+            for (int j = 8; j < 16; j++) {
+                low |= static_cast<uint64_t>(networks.ipv6_networks(i + j)) << (8 * (15 - j));
+            }
+            Address addr(high, low);
+            IPNet net(addr, networks.ipv6_networks(i + 16));
+            ipv6_networks[k] = net;
+            k++;
+        }
+
+        std::sort(ipv6_networks.begin(), ipv6_networks.end(), networkComparator);
+        known_ip_networks[Address::Family::IPV6] = ipv6_networks;
+    }
+
+    conn_tracker_->UpdateKnownIPNetworks(std::move(known_ip_networks));
 }
 
 void NetworkStatusNotifier::Run() {

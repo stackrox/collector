@@ -135,11 +135,13 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
   Endpoint a(Address(10, 1, 1, 8), 9999);
   Endpoint b(Address(35, 127, 0, 15), 54321);
   Endpoint c(Address(139, 14, 171, 3), 54321);
+  Endpoint d(Address(35, 127, 4, 15), 54321);
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
   Connection conn2("xyz", a, b, L4Proto::TCP, false);
   Connection conn3("xyz", a, c, L4Proto::TCP, true);
   Connection conn4("xyz", a, c, L4Proto::TCP, false);
+  Connection conn5("xyz", a, d, L4Proto::TCP, false);
 
   Connection conn13_normalized("xyz", Endpoint(Address(), 9999), Endpoint(Address(255, 255, 255, 255), 0), L4Proto::TCP, true);
   Connection conn24_normalized("xyz", Endpoint(), Endpoint(Address(255, 255, 255, 255), 54321), L4Proto::TCP, false);
@@ -147,7 +149,7 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
   int64_t now = NowMicros();
 
   ConnectionTracker tracker;
-  tracker.Update({conn1, conn2, conn3, conn4}, {}, now);
+  tracker.Update({conn1, conn2, conn3, conn4, conn5}, {}, now);
 
   auto state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(
@@ -160,18 +162,23 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
   UnorderedSet<Address> public_ips = {Address(35, 127, 0, 15)};
   tracker.UpdateKnownPublicIPs(std::move(public_ips));
 
+  UnorderedMap<Address::Family, std::vector<IPNet>> known_networks = {{Address::Family::IPV4, IPNet(Address(35, 127, 1, 15), 24)}};
+  tracker.UpdateKnownIPNetworks(std::move(known_networks));
+
   auto state3 = tracker.FetchConnState(true);
 
   Connection conn1_normalized("xyz", Endpoint(Address(), 9999), Endpoint(Address(35, 127, 0, 15), 0), L4Proto::TCP, true);
   Connection conn2_normalized("xyz", Endpoint(), b, L4Proto::TCP, false);
   Connection conn3_normalized("xyz", Endpoint(Address(), 9999), Endpoint(Address(255, 255, 255, 255), 0), L4Proto::TCP, true);
   Connection conn4_normalized("xyz", Endpoint(), Endpoint(Address(255, 255, 255, 255), 54321), L4Proto::TCP, false);
+  Connection conn5_normalized("xyz", Endpoint(Address(), 9999), Endpoint(Address(35, 127, 1, 15), 0), L4Proto::TCP, true);
 
-  EXPECT_THAT(state3, UnorderedElementsAre(
+EXPECT_THAT(state3, UnorderedElementsAre(
           std::make_pair(conn1_normalized, ConnStatus(now, true)),
           std::make_pair(conn2_normalized, ConnStatus(now, true)),
           std::make_pair(conn3_normalized, ConnStatus(now, true)),
-          std::make_pair(conn4_normalized, ConnStatus(now, true))));
+          std::make_pair(conn4_normalized, ConnStatus(now, true)),
+          std::make_pair(conn5_normalized, ConnStatus(now, true))));
 }
 
 TEST(ConnTrackerTest, TestComputeDelta) {

@@ -70,10 +70,19 @@ void ConnectionTracker::Update(
 }
 
 Address ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
+  // Try to associate address to known cluster entities first, even if it is contained by a known network.
   if (!address.IsPublic() || Contains(known_public_ips_, address)) {
     return address;
   }
 
+  // If association to known cluster entities fails, then try to associate it to smallest known network.
+  for (const auto& network : (*known_ip_networks_)[address.family()]) {
+    if network.Contains(address) {
+        return network.address();
+    }
+  }
+
+  // Otherwise, associate it to "rest of the internet".
   switch (address.family()) {
     case Address::Family::IPV4:
       return canonical_external_ipv4_addr;
@@ -208,4 +217,15 @@ void ConnectionTracker::UpdateKnownPublicIPs(collector::UnorderedSet<collector::
   }
 }
 
+void ConnectionTracker::UpdateKnownIPNetworks(UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks) {
+  WITH_LOCK(mutex_) {
+    known_ip_networks_ = std::move(known_ip_networks);
+    if (CLOG_ENABLED(DEBUG)) {
+      CLOG(DEBUG) << "known ip networks:";
+      for (const auto &ip_network : known_ip_networks_) {
+        CLOG(DEBUG) << " - " << ip_network;
+      }
+    }
+  }
+}
 }  // namespace collector

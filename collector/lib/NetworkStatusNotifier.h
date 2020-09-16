@@ -65,7 +65,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   static constexpr char kCapsMetadataKey[] = "rox-collector-capabilities";
 
   // Keep this updated with all capabilities supported. Format it as a comma-separated list with NO spaces.
-  static constexpr char kSupportedCaps[] = "public-ips";
+  static constexpr char kSupportedCaps[] = "public-ips,NetworkGraphExternalSrcs";
 
   sensor::NetworkConnectionInfoMessage* CreateInfoMessage(const ConnMap& conn_delta, const ContainerEndpointMap& cep_delta);
   void AddConnections(::google::protobuf::RepeatedPtrField<sensor::NetworkConnection>* updates, const ConnMap& delta);
