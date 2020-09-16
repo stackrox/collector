@@ -227,8 +227,10 @@ void ConnectionTracker::UpdateKnownIPNetworks(UnorderedMap<Address::Family, std:
     known_ip_networks_ = std::move(known_ip_networks);
     if (CLOG_ENABLED(DEBUG)) {
       CLOG(DEBUG) << "known ip networks:";
-      for (const auto &ip_network : known_ip_networks_) {
-        CLOG(DEBUG) << " - " << ip_network;
+      for (const auto &network_pair : known_ip_networks_) {
+        for (const auto network : network_pair.second) {
+          CLOG(DEBUG) << " - " << network;
+        }
       }
     }
   }
