@@ -322,6 +322,11 @@ sensor::NetworkAddress* NetworkStatusNotifier::EndpointToProto(const collector::
   auto* addr_proto = Allocate<sensor::NetworkAddress>();
   if (!endpoint.address().IsNull()) {
     addr_proto->set_address_data(endpoint.address().data(), endpoint.address().length());
+  } else if (!endpoint.network().IsNull()) {
+    std::array<uint8_t, 17> network_data = {};
+    memcpy(&network_data, endpoint.address().data(), endpoint.network().address().length());
+    network_data[endpoint.network().address().length() - 1] = endpoint.network().bits();
+    addr_proto->set_ip_network(network_data.data(), endpoint.network().address().length() + sizeof(endpoint.network().bits()));
   }
   addr_proto->set_port(endpoint.port());
 
