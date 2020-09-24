@@ -69,20 +69,21 @@ void ConnectionTracker::Update(
   }
 }
 
-Address ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
+Endpoint ConnectionTracker::NormalizeEndpointNoLock(const Address& address, const unsigned short port) const {
   // Try to associate address to known cluster entities first, even if it is contained by a known network.
   if (!address.IsPublic() || Contains(known_public_ips_, address)) {
-    return address;
+    return Endpoint(address, port);
   }
 
-  // If association to known cluster entities fails, then try to associate it to a known network. Since the networks are
-  // sorted smallest to largest, we map it to a subnet. This is not fully correct. For example, If there is also a
-  // supernet in known network list, this address would not be mapped to the supernet.
+  // If association to known cluster entities fails, then try to associate the address to a known network. Since the
+  // networks are sorted highest-smallest to lowest-largest, we map the address to first matched subnet. We do not want
+  // to map to all networks that contains this address, for example, if there is also a supernet in known network list,
+  // this address would not be mapped to the supernet.
   const auto& networks = Lookup(known_ip_networks_, address.family());
   if (networks) {
     for (const auto network : *networks) {
       if (network.Contains(address)) {
-        return network.address();
+        return Endpoint(network, port);
       }
     }
   }
@@ -90,11 +91,11 @@ Address ConnectionTracker::NormalizeAddressNoLock(const Address& address) const 
   // Otherwise, associate it to "rest of the internet".
   switch (address.family()) {
     case Address::Family::IPV4:
-      return canonical_external_ipv4_addr;
+      return Endpoint(canonical_external_ipv4_addr, port);
     case Address::Family::IPV6:
-      return canonical_external_ipv6_addr;
+      return Endpoint(canonical_external_ipv6_addr, port);
     default:
-      return {};
+      return Endpoint(Address(), port);
   }
 }
 
@@ -110,11 +111,11 @@ Connection ConnectionTracker::NormalizeConnectionNoLock(const Connection& conn) 
   if (is_server) {
     // If this is the server, only the local port is relevant, while the remote port does not matter.
     local = Endpoint(Address(), conn.local().port());
-    remote = Endpoint(NormalizeAddressNoLock(conn.remote().address()), 0);
+    remote = NormalizeEndpointNoLock(conn.remote().address(), 0);
   } else {
     // If this is the client, the local port and address are not relevant.
     local = Endpoint();
-    remote = Endpoint(NormalizeAddressNoLock(remote.address()), remote.port());
+    remote = NormalizeEndpointNoLock(remote.address(), remote.port());
   }
 
   return Connection(conn.container(), local, remote, conn.l4proto(), is_server);

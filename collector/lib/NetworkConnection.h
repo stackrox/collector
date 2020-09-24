@@ -101,6 +101,37 @@ class Address {
     return !(*this == other);
   }
 
+  bool operator<(const Address& that) const {
+    auto this_data = data_;
+    auto that_data = that.data_;
+
+    if (family_ == Family::IPV4) {
+      this_data = this->ToV6().data_;
+    }
+    if (that.family() == Family::IPV4) {
+      that_data = that.ToV6().data_;
+    }
+
+    for (int i = 3; i >= 0; i--) {
+      auto this_byte = static_cast<uint8_t>(this_data[0] >> (i * 8) & 0xFF);
+      auto that_byte = static_cast<uint8_t>(that_data[0] >> (i * 8) & 0xFF);
+
+      if (this_byte != that_byte) {
+        return this_byte < that_byte;
+      }
+    }
+
+    for (int i = 3; i >= 0; i--) {
+      auto this_byte = static_cast<uint8_t>(this_data[0] >> (i * 8) & 0xFF);
+      auto that_byte = static_cast<uint8_t>(that_data[0] >> (i * 8) & 0xFF);
+
+      if (this_byte != that_byte) {
+        return this_byte < that_byte;
+      }
+    }
+    return false;
+  }
+
   bool IsNull() const {
     return std::all_of(data_.begin(), data_.end(), [](uint64_t v) { return v == 0; });
   }
@@ -161,45 +192,9 @@ class Address {
   Family family_;
 };
 
-class Endpoint {
- public:
-  Endpoint() : port_(0) {}
-  Endpoint(const Address& address, unsigned short port) : address_(address), port_(port) {}
-
-  size_t Hash() const {
-    return HashAll(address_, port_);
-  }
-
-  bool operator==(const Endpoint& other) const {
-    return port_ == other.port_ && address_ == other.address_;
-  }
-
-  bool operator!=(const Endpoint& other) const {
-    return !(*this == other);
-  }
-
-  const Address& address() const { return address_; }
-  uint16_t port() const { return port_; }
-
-  bool IsNull() const { return port_ == 0 && address_.IsNull(); }
-
- private:
-  friend std::ostream& operator<<(std::ostream& os, const Endpoint& ep) {
-    if (ep.address_.family() == Address::Family::IPV6) {
-      os << "[" << ep.address_ << "]";
-    } else {
-      os << ep.address_;
-    }
-    return os << ":" << ep.port_;
-  }
-
-  Address address_;
-  uint16_t port_;
-};
-
-
 class IPNet {
  public:
+  IPNet() : IPNet(Address(0, 0, 0, 0), 0) {}
   IPNet(const Address& address, size_t bits) : IPNet(address.family(), address.array(), bits) {}
 
   Address::Family family() const { return family_; }
@@ -239,6 +234,29 @@ class IPNet {
     return {family_, addr_data};
   }
 
+  size_t Hash() const {
+    return HashAll(mask_, bits_);
+  }
+
+  bool IsNull() const {
+    return std::all_of(mask_.begin(), mask_.end(), [](uint64_t v) { return v == 0; }) && bits_ == 0;
+  }
+
+  bool operator==(const IPNet& other) const {
+    return mask_ == other.mask_ && bits_ == other.bits_;
+  }
+
+  bool operator!=(const IPNet& other) const {
+    return !(*this == other);
+  }
+
+  bool operator<(const IPNet& that) const {
+    if (this->address() != that.address()) {
+        return this->address() < that.address();
+    }
+    return this->bits() < that.bits();
+  }
+
  private:
   IPNet(Address::Family family, const std::array<uint64_t, Address::kU64MaxLen>& mask, size_t bits)
       : family_(family), mask_({0, 0}), bits_(bits) {
@@ -263,9 +281,64 @@ class IPNet {
     }
   }
 
+  friend std::ostream& operator<<(std::ostream& os, const IPNet& net) {
+    return os << net.address() << "/" << net.bits_;
+  }
+
   Address::Family family_;
   std::array<uint64_t, Address::kU64MaxLen> mask_;
   size_t bits_;
+};
+
+class Endpoint {
+ public:
+  Endpoint() : port_(0) {}
+  Endpoint(const Address& address, unsigned short port) : address_(address), port_(port) {}
+  Endpoint(const IPNet& network, unsigned short port) : network_(network), port_(port) {}
+
+  size_t Hash() const {
+    return HashAll(address_, port_, network_);
+  }
+
+  bool operator==(const Endpoint& other) const {
+    return port_ == other.port_ && address_ == other.address_ && network_ == other.network_;
+  }
+
+  bool operator!=(const Endpoint& other) const {
+    return !(*this == other);
+  }
+
+  const IPNet& network() const { return network_; }
+  const Address& address() const { return address_; }
+  uint16_t port() const { return port_; }
+
+  bool IsNull() const {
+      return port_ == 0 && address_.IsNull() && network_.IsNull();
+  }
+
+  private:
+   friend std::ostream& operator<<(std::ostream& os, const Endpoint& ep) {
+     if (ep.address_.IsNull() && !ep.network_.IsNull()) {
+       // Represent network same as address although <<CIDR>>:port is not recognized.
+       if (ep.network_.family() == Address::Family::IPV6) {
+         os << "[" << ep.network_ << "]";
+       } else {
+         os << ep.network_;
+       }
+       return os << ":" << ep.port_;
+     }
+
+     if (ep.address_.family() == Address::Family::IPV6) {
+       os << "[" << ep.address_ << "]";
+     } else {
+       os << ep.address_;
+     }
+     return os << ":" << ep.port_;
+   }
+
+   IPNet network_;
+   Address address_;
+   uint16_t port_;
 };
 
 enum class L4Proto : uint8_t {
@@ -357,6 +430,13 @@ inline int IsEphemeralPort(uint16_t port) {
   if (port == 1024) return 1;  // FreeBSD
   return 0;  // not ephemeral according to any range
 }
+
+// NetworkDescComparator is a comparator to sort the networks as highest-smallest to lowest-largest within the same family.
+struct NetworkDescComparator {
+  bool operator() (const IPNet& a, const IPNet& b) const {
+    return !(a < b);
+  }
+};
 
 }  // namespace collector
 
