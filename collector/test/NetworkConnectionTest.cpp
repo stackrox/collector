@@ -107,7 +107,7 @@ TEST(TestAddress, TestLoopback) {
 }
 
 TEST(TestIPNet, TestNetworkDescComparator) {
-  std::array<IPNet, 7> networks = {
+  std::array<IPNet, 8> networks = {
     IPNet(Address(10, 0, 0, 0), 8),
     IPNet(Address(127, 0, 0, 1), 16),
     IPNet(Address(127, 254, 0, 0), 16),
@@ -115,9 +115,11 @@ TEST(TestIPNet, TestNetworkDescComparator) {
     IPNet(Address(192, 0, 0, 0), 16),
     IPNet(Address(192, 0, 0, 0), 8),
     IPNet(Address(192, 0, 0, 1), 8),
+    IPNet(Address(200, 200), 8),
   };
 
-  std::array<IPNet, 7> expected = {
+  std::array<IPNet, 8> expected = {
+      IPNet(Address(200, 200), 8),
     IPNet(Address(192, 0, 0, 0), 16),
     IPNet(Address(192, 0, 0, 1), 8),
     IPNet(Address(192, 0, 0, 0), 8),
@@ -127,8 +129,7 @@ TEST(TestIPNet, TestNetworkDescComparator) {
     IPNet(Address(10, 64, 0, 0), 8),
   };
 
-  NetworkDescComparator compare;
-  std::sort(networks.begin(), networks.end(), compare);
+  std::sort(networks.begin(), networks.end(), std::greater<IPNet>());
 
   EXPECT_THAT(networks, expected);
 }

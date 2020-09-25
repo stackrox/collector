@@ -113,7 +113,7 @@ class ConnectionTracker {
   // recent than the stored one.
   void EmplaceOrUpdateNoLock(const ContainerEndpoint& ep, ConnStatus status);
 
-  Endpoint NormalizeEndpointNoLock(const Address& address, const unsigned short port) const;
+  IPNet NormalizeAddressNoLock(const Address& address) const;
 
   std::mutex mutex_;
   ConnMap conn_state_;
