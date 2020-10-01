@@ -32,7 +32,8 @@ RUN mv collector-wrapper.sh /usr/local/bin/ && \
     dnf upgrade -y && \
     dnf install -y kmod && \
     dnf clean all && \
-    rm -rf /var/cache/dnf
+    rm -rf /var/cache/dnf && \
+    echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt
 
 
 EXPOSE 8080 9090
