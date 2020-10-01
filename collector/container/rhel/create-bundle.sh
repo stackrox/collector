@@ -33,8 +33,8 @@ chmod -R 755 "${bundle_root}"
 # Copy scripts to image build context directory
 
 mkdir -p "${OUTPUT_DIR}/scripts"
-cp "${INPUT_ROOT}/scripts/bootsrap.sh"               "${OUTPUT_DIR}/scripts"
-cp "${INPUT_ROOT}/scripts/collector-wrapper.sh"       "${OUTPUT_DIR}/scripts"
+cp "${INPUT_ROOT}/scripts/bootstrap.sh"          "${OUTPUT_DIR}/scripts"
+cp "${INPUT_ROOT}/scripts/collector-wrapper.sh" "${OUTPUT_DIR}/scripts"
 
 # =============================================================================
 
