@@ -767,6 +767,9 @@ jobs:
             exit 0
           fi
           cd "${SOURCE_ROOT}/kernel-modules/container"
+          cd ./kernel-modules
+          gunzip *
+          cd ../
           tar czf "${MODULE_VERSION}.tar.gz" -C ./kernel-modules .
           rm -rf ./kernel-modules
 
