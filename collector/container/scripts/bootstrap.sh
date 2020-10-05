@@ -128,6 +128,9 @@ function find_kernel_object() {
     local KERNEL_OBJECT="$1"
     local OBJECT_PATH="$2"
     local EXPECTED_PATH="/kernel-modules/${KERNEL_OBJECT}"
+    local module_version
+    module_version="$(cat /kernel-modules/MODULE_VERSION.txt)"
+    local EXPECTED_ARCHIVE="/kernel-modules/${module_version}.tar.gz"
     local OBJECT_TYPE="kernel module"
     if [[ "${KERNEL_OBJECT##*.}" == "o" ]]; then
       OBJECT_TYPE="eBPF probe"
@@ -137,6 +140,11 @@ function find_kernel_object() {
       gunzip -c "${EXPECTED_PATH}.gz" >"${OBJECT_PATH}"
     elif [ -f "$EXPECTED_PATH" ]; then
       cp "$EXPECTED_PATH" "$OBJECT_PATH"
+    elif [ -f "$EXPECTED_ARCHIVE" ]; then
+      if tar tvf "$EXPECTED_ARCHIVE" | grep -q "$KERNEL_OBJECT" ; then
+        tar xzf "$EXPECTED_ARCHIVE" ".${EXPECTED_PATH}"
+        cp "$EXPECTED_PATH" "$OBJECT_PATH"
+      fi
     else
       log "Didn't find ${OBJECT_TYPE} ${KERNEL_OBJECT} built-in."
       return 1
