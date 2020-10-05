@@ -817,7 +817,7 @@ jobs:
           ./container/rhel/create-bundle.sh \
             "$SOURCE_ROOT/collector/container" \
             "${MODULE_ARCHIVE}" \
-            "$SOURCE_ROOT/collector/container/rhel/bundle.tar.gz"
+            "$SOURCE_ROOT/collector/container/rhel"
 
           build_args=(
             --build-arg module_version="$MODULE_VERSION"
@@ -844,7 +844,7 @@ jobs:
           ./container/rhel/create-bundle.sh \
             "$SOURCE_ROOT/collector/container" \
             "${MODULE_ARCHIVE}" \
-            "$SOURCE_ROOT/collector/container/rhel/bundle.tar.gz"
+            "$SOURCE_ROOT/collector/container/rhel"
 
           build_args=(
             --build-arg module_version="$MODULE_VERSION"

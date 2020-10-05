@@ -10,14 +10,18 @@ die() {
 
 INPUT_ROOT="$1"
 MODULE_ARCHIVE="$2"
-OUTPUT_BUNDLE="$3"
+OUTPUT_DIR="$3"
 
-[[ -n "$INPUT_ROOT" && -n "$MODULE_ARCHIVE" && -n "$OUTPUT_BUNDLE" ]] \
-   || die "Usage: $0 <input-root> <module-archive> <output-bundle>"
+[[ -n "$INPUT_ROOT" && -n "$MODULE_ARCHIVE" && -n "$OUTPUT_DIR" ]] \
+   || die "Usage: $0 <input-root> <module-archive> <output-dir>"
 [[ -d "$INPUT_ROOT" ]] \
    || die "Input root directory doesn't exist or is not a directory."
 [[ "$MODULE_ARCHIVE" == "-" || -f "$MODULE_ARCHIVE" ]] \
    || die "Module archive doesn't exist."
+[[ -d "$OUTPUT_DIR" ]] \
+    || die "Output directory doesn't exist or is not a directory."
+
+OUTPUT_BUNDLE="${OUTPUT_DIR}/bundle.tar.gz"
 
 # Create tmp directory
 bundle_root="$(mktemp -d)"
@@ -26,10 +30,17 @@ mkdir -p "${bundle_root}/kernel-modules"
 chmod -R 755 "${bundle_root}"
 
 # =============================================================================
+# Copy scripts to image build context directory
 
-# Add files to be included in the Dockerfile here. This includes artifacts that
-# would be otherwise downloaded or included via a COPY command in the
-# Dockerfile.
+mkdir -p "${OUTPUT_DIR}/scripts"
+cp "${INPUT_ROOT}/scripts/bootstrap.sh"          "${OUTPUT_DIR}/scripts"
+cp "${INPUT_ROOT}/scripts/collector-wrapper.sh" "${OUTPUT_DIR}/scripts"
+
+# =============================================================================
+
+# Add binaries and data files to be included in the Dockerfile here. This
+# includes artifacts that would be otherwise downloaded or included via a COPY
+# command in the Dockerfile.
 
 cp -p "${INPUT_ROOT}/libs/libsinsp-wrapper.so.rhel" "${bundle_root}/usr/local/lib/libsinsp-wrapper.so"
 cp -p "${INPUT_ROOT}/scripts/bootstrap.sh" "${bundle_root}/bootstrap.sh"

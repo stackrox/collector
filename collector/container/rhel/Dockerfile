@@ -7,31 +7,34 @@ FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 ARG collector_version=xxx
 ARG module_version=xxx
 
-LABEL maintainer="StackRox <support@stackrox.com>"
-LABEL io.stackrox.collector.module-version="${module_version}"
-LABEL io.stackrox.collector.version="${collector_version}"
+LABEL name="collector-rhel" \
+      vendor="StackRox" \
+      maintainer="support@stackrox.com" \
+      summary="Runtime data collection for the StackRox Kubernetes Security Platform" \
+      description="This image supports runtime data collection in the StackRox Kubernetes Security Platform." \
+      io.stackrox.collector.module-version="${module_version}" \
+      io.stackrox.collector.version="${collector_version}"
 
-ENV COLLECTOR_VERSION=${collector_version}
-ENV MODULE_VERSION=${module_version}
-ENV COLLECTOR_HOST_ROOT=/host
+ENV COLLECTOR_VERSION=${collector_version} \
+    MODULE_VERSION=${module_version} \
+    COLLECTOR_HOST_ROOT=/host
 
-RUN yum update -y --nogpgcheck --disableplugin=subscription-manager
-RUN yum install -y kmod
-RUN rpm -e --nodeps \
-      rpm \
-      rpm-build-libs \
-      rpm-libs \
-      python3-rpm \
-      subscription-manager \
-      python3-subscription-manager-rhsm \
-      yum \
-      $(rpm -qa *dnf*) \
-      python3-hawkey \
-    ;
+COPY scripts /
+COPY bundle.tar.gz /
 
-ADD bundle.tar.gz /
+RUN mv collector-wrapper.sh /usr/local/bin/ && \
+    chmod 700 bootstrap.sh && \
+    tar -zxf bundle.tar.gz ./COPYING.txt && \
+    tar -zxf bundle.tar.gz ./kernel-modules/ && \
+    tar -zxf bundle.tar.gz ./usr/local/lib/libsinsp-wrapper.so && \
+    tar -zxf bundle.tar.gz ./usr/local/bin/collector && \
+    rm -f bundle.tar.gz && \
+    dnf upgrade -y && \
+    dnf install -y kmod && \
+    dnf clean all && \
+    rm -rf /var/cache/dnf && \
+    echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt
 
-RUN echo "${module_version}" >/kernel-modules/MODULE_VERSION.txt
 
 EXPOSE 8080 9090
 
