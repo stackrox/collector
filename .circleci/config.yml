@@ -772,7 +772,7 @@ jobs:
           gunzip --force --keep *.gz
           rm -f *.gz
           cd ../
-          tar cvJf "${MODULE_VERSION}.tar.gz" -C ./kernel-modules .
+          XZ_OPT=-3 tar cvJf "${MODULE_VERSION}.tar.gz" -C ./kernel-modules .
           rm -rf ./kernel-modules
 
     - run:
