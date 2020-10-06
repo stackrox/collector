@@ -141,12 +141,9 @@ function find_kernel_object() {
       gunzip -c "${EXPECTED_PATH}.gz" >"${OBJECT_PATH}"
     elif [ -f "$EXPECTED_PATH" ]; then
       cp "$EXPECTED_PATH" "$OBJECT_PATH"
-    elif [ -f "$EXPECTED_ARCHIVE" ]; then
-      if tar –tf  "$EXPECTED_ARCHIVE" "./${KERNEL_OBJECT}" >/dev/null 2>&1; then
-        log "$(date) Found ${KERNEL_OBJECT} in built-in archive."
-        tar xJf "$EXPECTED_ARCHIVE" "./${KERNEL_OBJECT}"
-        cp "./${KERNEL_OBJECT}" "$OBJECT_PATH"
-      fi
+    elif [ -f "$EXPECTED_ARCHIVE" ] && tar xJf "$EXPECTED_ARCHIVE" "./${KERNEL_OBJECT}" >/dev/null 2>&1; then
+      log "$(date) Found ${KERNEL_OBJECT} in built-in archive."
+      cp "./${KERNEL_OBJECT}" "$OBJECT_PATH"
     else
       log "$(date) Didn't find ${OBJECT_TYPE} ${KERNEL_OBJECT} built-in."
       return 1
