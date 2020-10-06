@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -o xtrace
+
 log() { echo "$*" >&2; }
 
 function get_os_release_value() {
