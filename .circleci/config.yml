@@ -762,7 +762,6 @@ jobs:
 
     - run:
         name: Build kernel-modules archive
-        no_output_timeout: 60m
         command: |
           if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-full-images" ]]; then
             echo "Not building kernel module archive"
@@ -772,7 +771,6 @@ jobs:
           cd ./kernel-modules
           gunzip --force --keep *.gz
           rm -f *.gz
-          ls -al
           cd ../
           tar cvJf "${MODULE_VERSION}.tar.gz" -C ./kernel-modules .
           rm -rf ./kernel-modules
@@ -867,10 +865,15 @@ jobs:
           mv "$SOURCE_ROOT/collector/container/rhel/bundle.tar.gz" "$SOURCE_ROOT/collector/container/rhel/slim-bundle.tar.gz"
 
     - run:
-        name: Sanity check images
+        name: Sanity check images and print layer sizes
         command: |
           docker images | grep collector | grep "${COLLECTOR_VERSION}"
           docker images | grep collector | grep "${COLLECTOR_VERSION}-slim"
+
+          echo "Layers: stackrox/collector:${COLLECTOR_VERSION}-latest"
+          docker history "stackrox/collector:${COLLECTOR_VERSION}-latest"
+          echo "Layers: stackrox/collector-rhel:${COLLECTOR_VERSION}-latest"
+          docker history "stackrox/collector-rhel:${COLLECTOR_VERSION}-latest"
 
     - run:
         name: Push images

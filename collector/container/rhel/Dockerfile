@@ -30,7 +30,7 @@ RUN mv collector-wrapper.sh /usr/local/bin/ && \
     tar -zxf bundle.tar.gz ./usr/local/bin/collector && \
     rm -f bundle.tar.gz && \
     dnf upgrade -y && \
-    dnf install -y kmod && \
+    dnf install -y kmod xz && \
     dnf clean all && \
     rm -rf /var/cache/dnf && \
     # (Optional) Remove line below to keep package management utilities
