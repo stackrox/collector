@@ -772,7 +772,7 @@ jobs:
           ls -al
           rm -f *.gz
           cd ../
-          tar czf "${MODULE_VERSION}.tar.gz" -C ./kernel-modules .
+          tar cJf "${MODULE_VERSION}.tar.gz" -C ./kernel-modules .
           rm -rf ./kernel-modules
 
     - run:

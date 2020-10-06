@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -o xtrace
-
 log() { echo "$*" >&2; }
 
 function get_os_release_value() {
@@ -138,21 +136,22 @@ function find_kernel_object() {
       OBJECT_TYPE="eBPF probe"
     fi
 
+    log "$(date) Attempting to find built-in ${OBJECT_TYPE} ${KERNEL_OBJECT}"
     if [[ -f "${EXPECTED_PATH}.gz" ]]; then
       gunzip -c "${EXPECTED_PATH}.gz" >"${OBJECT_PATH}"
     elif [ -f "$EXPECTED_PATH" ]; then
       cp "$EXPECTED_PATH" "$OBJECT_PATH"
     elif [ -f "$EXPECTED_ARCHIVE" ]; then
       if tar tvf "$EXPECTED_ARCHIVE" | grep -q "$KERNEL_OBJECT" ; then
-        tar xzf "$EXPECTED_ARCHIVE" "./${KERNEL_OBJECT}"
+        tar xJf "$EXPECTED_ARCHIVE" "./${KERNEL_OBJECT}"
         cp "./${KERNEL_OBJECT}" "$OBJECT_PATH"
       fi
     else
-      log "Didn't find ${OBJECT_TYPE} ${KERNEL_OBJECT} built-in."
+      log "$(date) Didn't find ${OBJECT_TYPE} ${KERNEL_OBJECT} built-in."
       return 1
     fi
 
-    log "Using built-in ${OBJECT_TYPE} ${KERNEL_OBJECT}"
+    log "$(date) Using built-in ${OBJECT_TYPE} ${KERNEL_OBJECT}"
     return 0
 }
 
