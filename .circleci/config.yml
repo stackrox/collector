@@ -693,8 +693,8 @@ jobs:
 
   images:
     machine:
-      image: ubuntu-1604:202004-01
-    resource_class: large
+      image: ubuntu-2004:202008-01
+    resource_class: xlarge
     environment:
     - INSTALL_DIRECTORY: /tmp
     - GCLOUD_DSOP_BUCKET: "gs://dsop-artifacts.stackrox.io"
@@ -762,7 +762,7 @@ jobs:
 
     - run:
         name: Build kernel-modules archive
-        no_output_timeout: 30m
+        no_output_timeout: 60m
         command: |
           if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-full-images" ]]; then
             echo "Not building kernel module archive"
@@ -774,7 +774,7 @@ jobs:
           rm -f *.gz
           ls -al
           cd ../
-          tar cJf "${MODULE_VERSION}.tar.gz" -C ./kernel-modules .
+          tar cvJf "${MODULE_VERSION}.tar.gz" -C ./kernel-modules .
           rm -rf ./kernel-modules
 
     - run:
