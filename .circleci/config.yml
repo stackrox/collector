@@ -768,7 +768,8 @@ jobs:
           fi
           cd "${SOURCE_ROOT}/kernel-modules/container"
           cd ./kernel-modules
-          gunzip *
+          gunzip --keep *.gz
+          rm *.gz
           cd ../
           tar czf "${MODULE_VERSION}.tar.gz" -C ./kernel-modules .
           rm -rf ./kernel-modules
