@@ -768,7 +768,7 @@ jobs:
           fi
           cd "${SOURCE_ROOT}/kernel-modules/container"
           cd ./kernel-modules
-          gunzip --keep *.gz
+          gunzip --force --keep *.gz
           ls -al
           rm -f *.gz
           cd ../
