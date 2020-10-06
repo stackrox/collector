@@ -142,8 +142,8 @@ function find_kernel_object() {
       cp "$EXPECTED_PATH" "$OBJECT_PATH"
     elif [ -f "$EXPECTED_ARCHIVE" ]; then
       if tar tvf "$EXPECTED_ARCHIVE" | grep -q "$KERNEL_OBJECT" ; then
-        tar xzf "$EXPECTED_ARCHIVE" ".${EXPECTED_PATH}"
-        cp "$EXPECTED_PATH" "$OBJECT_PATH"
+        tar xzf "$EXPECTED_ARCHIVE" "./${KERNEL_OBJECT}"
+        cp "./${KERNEL_OBJECT}" "$OBJECT_PATH"
       fi
     else
       log "Didn't find ${OBJECT_TYPE} ${KERNEL_OBJECT} built-in."
