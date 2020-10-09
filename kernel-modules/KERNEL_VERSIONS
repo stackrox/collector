@@ -2096,6 +2096,7 @@
 5.8.0-1006-azure
 5.8.0-1007-aws
 5.8.0-1007-azure
+5.8.0-1008-aws
 5.8.0-12-generic
 5.8.0-16-generic
 5.8.0-18-generic
@@ -2103,4 +2104,5 @@
 5.8.0-2-amd64
 5.8.0-20-generic
 5.8.0-21-generic
+5.8.0-22-generic
 5.8.11-flatcar
