@@ -216,7 +216,7 @@ class IPNet {
   }
 
   bool IsNull() const {
-    return std::all_of(mask_.begin(), mask_.end(), [](uint64_t v) { return v == 0; }) && bits_ == 0;
+    return bits_ == 0 && std::all_of(mask_.begin(), mask_.end(), [](uint64_t v) { return v == 0; });
   }
 
   bool operator==(const IPNet& other) const {
@@ -228,10 +228,10 @@ class IPNet {
   }
 
   bool operator>(const IPNet& that) const {
-    if (address() != that.address()) {
-        return address() > that.address();
+    if (bits_ != that.bits_) {
+      return bits_ > that.bits_;
     }
-    return bits() > that.bits();
+    return address() > that.address();
   }
 
  private:
@@ -270,7 +270,7 @@ class IPNet {
 class Endpoint {
  public:
   Endpoint() : port_(0) {}
-  Endpoint(const Address& address, unsigned short port) : network_(IPNet(address, 32)), port_(port) {}
+  Endpoint(const Address& address, unsigned short port) : network_(IPNet(address, 8 * address.length())), port_(port) {}
   Endpoint(const IPNet& network, unsigned short port) : network_(network), port_(port) {}
 
   size_t Hash() const {
@@ -294,10 +294,10 @@ class Endpoint {
   }
 
   private:
-   friend std::ostream& operator<<(std::ostream& os, const Endpoint& ep) {
+    friend std::ostream& operator<<(std::ostream& os, const Endpoint& ep) {
      // This is an individual IP address.
-     if (ep.network_.bits() == 32 || ep.network_.bits() == 128) {
-       if (ep.network_.address().family() == Address::Family::IPV6) {
+     if (ep.network_.bits() == 8 * ep.network_.address().length()) {
+       if (ep.network_.family() == Address::Family::IPV6) {
          os << "[" << ep.network_.address() << "]";
        } else {
          os << ep.network_.address();

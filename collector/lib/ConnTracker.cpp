@@ -35,6 +35,8 @@ namespace {
 
 static const Address canonical_external_ipv4_addr(255, 255, 255, 255);
 static const Address canonical_external_ipv6_addr(0xffffffffffffffffULL, 0xffffffffffffffffULL);
+static const IPNet canonical_external_ipv4_network(canonical_external_ipv4_addr, 32);
+static const IPNet canonical_external_ipv6_network(canonical_external_ipv6_addr, 128);
 
 }  // namespace
 
@@ -74,7 +76,8 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
     return {};
   }
 
-  // Try to associate address to known cluster entities first, even if it is contained by a known network.
+  // Try to associate address to known cluster entities first, even if it is contained by a known network. If an IP
+  // address is not public, we always assume that it could be that of a known cluster entity.
   if (!address.IsPublic() || Contains(known_public_ips_, address)) {
     return IPNet(address, 8 * address.length());
   }
@@ -87,7 +90,7 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
   if (networks) {
     for (const auto& network : *networks) {
       if (network.Contains(address)) {
-        return IPNet(network);
+        return network;
       }
     }
   }
@@ -95,9 +98,9 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
   // Otherwise, associate it to "rest of the internet".
   switch (address.family()) {
     case Address::Family::IPV4:
-      return IPNet(canonical_external_ipv4_addr, 32);
+      return canonical_external_ipv4_network;
     case Address::Family::IPV6:
-      return IPNet(canonical_external_ipv6_addr, 128);
+      return canonical_external_ipv6_network;
     default:
       return IPNet();
   }

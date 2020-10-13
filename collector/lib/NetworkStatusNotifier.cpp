@@ -66,15 +66,16 @@ constexpr char NetworkStatusNotifier::kHostnameMetadataKey[];
 constexpr char NetworkStatusNotifier::kCapsMetadataKey[];
 constexpr char NetworkStatusNotifier::kSupportedCaps[];
 
-std::vector<IPNet> readNetworks(const string* networks, size_t tuple_size) {
+std::vector<IPNet> readNetworks(const string* networks, Address::Family family) {
+  int tuple_size = Address::Length(family) + 1;
   int num_nets = networks->size() / tuple_size;
   std::vector<IPNet> ip_nets;
   ip_nets.reserve(num_nets);
   for (int i = 0; i < num_nets; i++) {
     // Bytes are received in big-endian order.
-    std::array<uint64_t, Address::kU64MaxLen> data = {};
-    std::memcpy(&data, &networks[tuple_size * i], tuple_size - 1);
-    IPNet net(Address(*data.data()), std::stoi(networks[tuple_size * i + tuple_size - 1]));
+    Address addr(family);
+    std::memcpy(const_cast<void *>(addr.data()), &networks->c_str()[tuple_size * i], Address::Length(family));
+    IPNet net(addr, static_cast<int>(networks->c_str()[tuple_size * i + tuple_size - 1]));
     ip_nets.push_back(net);
   }
   return ip_nets;
@@ -92,13 +93,8 @@ void NetworkStatusNotifier::OnRecvControlMessage(const sensor::NetworkFlowsContr
     return;
   }
 
-  if (msg->has_public_ip_addresses()) {
-    ReceivePublicIPs(&msg->public_ip_addresses());
-  }
-
-  if (msg->has_ip_networks()) {
-    ReceiveIPNetworks(&msg->ip_networks());
-  }
+  ReceivePublicIPs(&msg->public_ip_addresses());
+  ReceiveIPNetworks(&msg->ip_networks());
 }
 
 void NetworkStatusNotifier::ReceivePublicIPs(const sensor::IPAddressList* public_ips) {
@@ -135,7 +131,7 @@ void NetworkStatusNotifier::ReceiveIPNetworks(const sensor::IPNetworkList* netwo
   if (ipv4_networks_size % 5 != 0) {
     CLOG(WARNING) << "IPv4 network field has incorrect length " << ipv4_networks_size << ". Ignoring IPv4 networks...";
   } else {
-    std::vector<IPNet> ipv4_networks = readNetworks(&networks->ipv4_networks(), 5);
+    std::vector<IPNet> ipv4_networks = readNetworks(&networks->ipv4_networks(), Address::Family::IPV4);
     // Sort the networks in smallest subnet to largest subnet order.
     std::sort(ipv4_networks.begin(), ipv4_networks.end(), std::greater<IPNet>());
     known_ip_networks[Address::Family::IPV4] = ipv4_networks;
@@ -145,7 +141,7 @@ void NetworkStatusNotifier::ReceiveIPNetworks(const sensor::IPNetworkList* netwo
   if (ipv6_networks_size % 17 != 0) {
     CLOG(WARNING) << "IPv6 network field has incorrect length " << ipv6_networks_size << ". Ignoring IPv6 networks...";
   } else {
-    std::vector<IPNet> ipv6_networks = readNetworks(&networks->ipv6_networks(), 17);
+    std::vector<IPNet> ipv6_networks = readNetworks(&networks->ipv6_networks(), Address::Family::IPV6);
     // Sort the networks in smallest subnet to largest subnet order.
     std::sort(ipv6_networks.begin(), ipv6_networks.end(), std::greater<IPNet>());
     known_ip_networks[Address::Family::IPV6] = ipv6_networks;
@@ -319,15 +315,16 @@ sensor::NetworkAddress* NetworkStatusNotifier::EndpointToProto(const collector::
   // Ensure that it is an individual IP address. For known external sources, that are also individual IP addresses,
   // it is okay if they are mapped to `address_data` field of response proto. Sensor tries to match them to known
   // cluster entities followed by known external networks, if former fails.
-  if (!endpoint.address().IsNull() && (endpoint.network().bits() == 32 || endpoint.network().bits() == 128)) {
-    addr_proto->set_address_data(endpoint.address().data(), endpoint.address().length());
+  // Note: We are sending the address data and network data as separate fields for backward compatibility, although,
+  // network field can handle both.
+  auto addr_length = endpoint.address().length();
+  if (!endpoint.address().IsNull() && endpoint.network().bits() == 8 * addr_length) {
+    addr_proto->set_address_data(endpoint.address().data(), addr_length);
   } else if (!endpoint.network().IsNull()) {
-    int data_size = 8 * endpoint.network().address().length() + 1;
-    std::vector<uint8_t> network;
-    network.reserve(data_size);
-    std::memcpy(&network, endpoint.network().address().data(), data_size - 1);
-    network.push_back(endpoint.network().bits());
-    addr_proto->set_ip_network(network.data(), data_size);
+    std::array<uint8_t, Address::kMaxLen + 1> buff;
+    std::memcpy(buff.data(), endpoint.network().address().data(), addr_length);
+    buff[addr_length] = endpoint.network().bits();
+    addr_proto->set_ip_network(buff.data(), addr_length + 1);
   }
   addr_proto->set_port(endpoint.port());
 

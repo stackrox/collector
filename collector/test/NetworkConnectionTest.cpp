@@ -119,19 +119,19 @@ TEST(TestIPNet, TestNetworkDescComparator) {
   };
 
   std::array<IPNet, 8> expected = {
-      IPNet(Address(200, 200), 8),
     IPNet(Address(192, 0, 0, 0), 16),
-    IPNet(Address(192, 0, 0, 1), 8),
-    IPNet(Address(192, 0, 0, 0), 8),
-    IPNet(Address(172, 16, 0, 0), 12),
     IPNet(Address(127, 254, 0, 0), 16),
     IPNet(Address(127, 0, 0, 1), 16),
+    IPNet(Address(172, 16, 0, 0), 12),
+    IPNet(Address(200, 200), 8),
+    IPNet(Address(192, 0, 0, 1), 8),
+    IPNet(Address(192, 0, 0, 0), 8),
     IPNet(Address(10, 64, 0, 0), 8),
   };
 
   std::sort(networks.begin(), networks.end(), std::greater<IPNet>());
 
-  EXPECT_THAT(networks, expected);
+  EXPECT_EQ(networks, expected);
 }
 
 }  // namespace
