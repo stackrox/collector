@@ -75,9 +75,7 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
   if (address.IsNull()) {
     return {};
   }
-  if (CLOG_ENABLED(DEBUG)) {
-    CLOG(DEBUG) << "remote address: " << address << '\n';
-  }
+
   // Try to associate address to known cluster entities first, even if it is contained by a known network. If an IP
   // address is not public, we always assume that it could be that of a known cluster entity.
   if (!address.IsPublic() || Contains(known_public_ips_, address)) {

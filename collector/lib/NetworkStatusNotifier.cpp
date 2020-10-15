@@ -66,16 +66,16 @@ constexpr char NetworkStatusNotifier::kHostnameMetadataKey[];
 constexpr char NetworkStatusNotifier::kCapsMetadataKey[];
 constexpr char NetworkStatusNotifier::kSupportedCaps[];
 
-std::vector<IPNet> readNetworks(const string* networks, Address::Family family) {
+std::vector<IPNet> readNetworks(const string& networks, Address::Family family) {
   int tuple_size = Address::Length(family) + 1;
-  int num_nets = networks->size() / tuple_size;
+  int num_nets = networks.size() / tuple_size;
   std::vector<IPNet> ip_nets;
   ip_nets.reserve(num_nets);
   for (int i = 0; i < num_nets; i++) {
     // Bytes are received in big-endian order.
-    Address addr(family);
-    std::memcpy(const_cast<void *>(addr.data()), &networks->c_str()[tuple_size * i], Address::Length(family));
-    IPNet net(addr, static_cast<int>(networks->c_str()[tuple_size * i + tuple_size - 1]));
+    std::array<uint64_t, Address::kU64MaxLen> ip = {};
+    std::memcpy(&ip, &networks.c_str()[tuple_size * i], Address::Length(family));
+    IPNet net(Address(family, ip), static_cast<int>(networks.c_str()[tuple_size * i + tuple_size - 1]));
     ip_nets.push_back(net);
   }
   return ip_nets;
@@ -92,56 +92,51 @@ void NetworkStatusNotifier::OnRecvControlMessage(const sensor::NetworkFlowsContr
   if (!msg) {
     return;
   }
-
-  ReceivePublicIPs(&msg->public_ip_addresses());
-  ReceiveIPNetworks(&msg->ip_networks());
+  if (msg->has_ip_networks()) {
+    ReceivePublicIPs(msg->public_ip_addresses());
+  }
+  if (msg->has_ip_networks()) {
+    ReceiveIPNetworks(msg->ip_networks());
+  }
 }
 
-void NetworkStatusNotifier::ReceivePublicIPs(const sensor::IPAddressList* public_ips) {
-  if (!public_ips) {
-    return;
-  }
-
+void NetworkStatusNotifier::ReceivePublicIPs(const sensor::IPAddressList& public_ips) {
   UnorderedSet<Address> known_public_ips;
-  for (const uint32_t public_ip : public_ips->ipv4_addresses()) {
+  for (const uint32_t public_ip : public_ips.ipv4_addresses()) {
     Address addr(htonl(public_ip));
     known_public_ips.insert(addr);
     known_public_ips.insert(addr.ToV6());
   }
 
-  auto ipv6_size = public_ips->ipv6_addresses_size();
+  auto ipv6_size = public_ips.ipv6_addresses_size();
   if (ipv6_size % 2 != 0) {
     CLOG(WARNING) << "IPv6 address field has odd length " << ipv6_size << ". Ignoring IPv6 addresses...";
   } else {
     for (int i = 0; i < ipv6_size; i += 2) {
-      known_public_ips.emplace(htonll(public_ips->ipv6_addresses(i)), htonll(public_ips->ipv6_addresses(i + 1)));
+      known_public_ips.emplace(htonll(public_ips.ipv6_addresses(i)), htonll(public_ips.ipv6_addresses(i + 1)));
     }
   }
 
   conn_tracker_->UpdateKnownPublicIPs(std::move(known_public_ips));
 }
 
-void NetworkStatusNotifier::ReceiveIPNetworks(const sensor::IPNetworkList* networks) {
-  if (!networks) {
-    return;
-  }
-
+void NetworkStatusNotifier::ReceiveIPNetworks(const sensor::IPNetworkList& networks) {
   UnorderedMap<Address::Family, std::vector<IPNet>> known_ip_networks;
-  auto ipv4_networks_size = networks->ipv4_networks().size();
+  auto ipv4_networks_size = networks.ipv4_networks().size();
   if (ipv4_networks_size % 5 != 0) {
     CLOG(WARNING) << "IPv4 network field has incorrect length " << ipv4_networks_size << ". Ignoring IPv4 networks...";
   } else {
-    std::vector<IPNet> ipv4_networks = readNetworks(&networks->ipv4_networks(), Address::Family::IPV4);
+    std::vector<IPNet> ipv4_networks = readNetworks(networks.ipv4_networks(), Address::Family::IPV4);
     // Sort the networks in smallest subnet to largest subnet order.
     std::sort(ipv4_networks.begin(), ipv4_networks.end(), std::greater<IPNet>());
     known_ip_networks[Address::Family::IPV4] = ipv4_networks;
   }
 
-  auto ipv6_networks_size = networks->ipv6_networks().size();
+  auto ipv6_networks_size = networks.ipv6_networks().size();
   if (ipv6_networks_size % 17 != 0) {
     CLOG(WARNING) << "IPv6 network field has incorrect length " << ipv6_networks_size << ". Ignoring IPv6 networks...";
   } else {
-    std::vector<IPNet> ipv6_networks = readNetworks(&networks->ipv6_networks(), Address::Family::IPV6);
+    std::vector<IPNet> ipv6_networks = readNetworks(networks.ipv6_networks(), Address::Family::IPV6);
     // Sort the networks in smallest subnet to largest subnet order.
     std::sort(ipv6_networks.begin(), ipv6_networks.end(), std::greater<IPNet>());
     known_ip_networks[Address::Family::IPV6] = ipv6_networks;

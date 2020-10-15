@@ -293,28 +293,28 @@ class Endpoint {
       return port_ == 0 && network_.IsNull();
   }
 
-  private:
-    friend std::ostream& operator<<(std::ostream& os, const Endpoint& ep) {
-     // This is an individual IP address.
-     if (ep.network_.bits() == 8 * ep.network_.address().length()) {
-       if (ep.network_.family() == Address::Family::IPV6) {
-         os << "[" << ep.network_.address() << "]";
-       } else {
-         os << ep.network_.address();
-       }
-     } else {
-       // Represent network in /nn notation.
-       if (ep.network_.family() == Address::Family::IPV6) {
-         os << "[" << ep.network_ << "]";
-       } else {
-         os << ep.network_;
-       }
-     }
-     return os << ":" << ep.port_;
-   }
+ private:
+  friend std::ostream& operator<<(std::ostream& os, const Endpoint& ep) {
+    // This is an individual IP address.
+    if (ep.network_.bits() == 8 * ep.network_.address().length()) {
+      if (ep.network_.family() == Address::Family::IPV6) {
+        os << "[" << ep.network_.address() << "]";
+      } else {
+        os << ep.network_.address();
+      }
+    } else {
+      // Represent network in /nn notation.
+      if (ep.network_.family() == Address::Family::IPV6) {
+        os << "[" << ep.network_ << "]";
+      } else {
+        os << ep.network_;
+      }
+    }
+    return os << ":" << ep.port_;
+  }
 
-   IPNet network_;
-   uint16_t port_;
+  IPNet network_;
+  uint16_t port_;
 };
 
 enum class L4Proto : uint8_t {
