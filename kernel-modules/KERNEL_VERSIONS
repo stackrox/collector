@@ -857,6 +857,7 @@
 4.15.0-118-generic
 4.15.0-119-generic
 4.15.0-121-generic
+4.15.0-122-generic
 4.15.0-15-generic
 4.15.0-20-generic
 4.15.0-22-generic
@@ -2069,6 +2070,7 @@
 5.4.0-48-generic
 5.4.0-49-generic
 5.4.0-51-generic
+5.4.0-52-generic
 5.4.0-8-generic
 5.4.0-9-generic
 5.4.49-13310.1015.0-cos
@@ -2119,8 +2121,11 @@
 5.8.0-1007-gcp
 5.8.0-1008-aws
 5.8.0-1008-azure
+5.8.0-1008-gcp
 5.8.0-1009-aws
 5.8.0-1009-azure
+5.8.0-1010-aws
+5.8.0-1010-azure
 5.8.0-12-generic
 5.8.0-16-generic
 5.8.0-18-generic
@@ -2130,5 +2135,6 @@
 5.8.0-21-generic
 5.8.0-22-generic
 5.8.0-23-generic
+5.8.0-25-generic
 5.8.0-3-amd64
 5.8.11-flatcar
