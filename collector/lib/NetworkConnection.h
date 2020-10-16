@@ -101,6 +101,14 @@ class Address {
     return !(*this == other);
   }
 
+  bool operator>(const Address& that) const {
+    if (family_ != that.family_) {
+      return family_ > that.family_;
+    }
+
+    return std::memcmp(data(), that.data(), length()) > 0;
+  }
+
   bool IsNull() const {
     return std::all_of(data_.begin(), data_.end(), [](uint64_t v) { return v == 0; });
   }
@@ -161,45 +169,9 @@ class Address {
   Family family_;
 };
 
-class Endpoint {
- public:
-  Endpoint() : port_(0) {}
-  Endpoint(const Address& address, unsigned short port) : address_(address), port_(port) {}
-
-  size_t Hash() const {
-    return HashAll(address_, port_);
-  }
-
-  bool operator==(const Endpoint& other) const {
-    return port_ == other.port_ && address_ == other.address_;
-  }
-
-  bool operator!=(const Endpoint& other) const {
-    return !(*this == other);
-  }
-
-  const Address& address() const { return address_; }
-  uint16_t port() const { return port_; }
-
-  bool IsNull() const { return port_ == 0 && address_.IsNull(); }
-
- private:
-  friend std::ostream& operator<<(std::ostream& os, const Endpoint& ep) {
-    if (ep.address_.family() == Address::Family::IPV6) {
-      os << "[" << ep.address_ << "]";
-    } else {
-      os << ep.address_;
-    }
-    return os << ":" << ep.port_;
-  }
-
-  Address address_;
-  uint16_t port_;
-};
-
-
 class IPNet {
  public:
+  IPNet() : IPNet(Address(), 0) {}
   IPNet(const Address& address, size_t bits) : IPNet(address.family(), address.array(), bits) {}
 
   Address::Family family() const { return family_; }
@@ -239,6 +211,29 @@ class IPNet {
     return {family_, addr_data};
   }
 
+  size_t Hash() const {
+    return HashAll(mask_, bits_);
+  }
+
+  bool IsNull() const {
+    return bits_ == 0 && std::all_of(mask_.begin(), mask_.end(), [](uint64_t v) { return v == 0; });
+  }
+
+  bool operator==(const IPNet& other) const {
+    return mask_ == other.mask_ && bits_ == other.bits_;
+  }
+
+  bool operator!=(const IPNet& other) const {
+    return !(*this == other);
+  }
+
+  bool operator>(const IPNet& that) const {
+    if (bits_ != that.bits_) {
+      return bits_ > that.bits_;
+    }
+    return address() > that.address();
+  }
+
  private:
   IPNet(Address::Family family, const std::array<uint64_t, Address::kU64MaxLen>& mask, size_t bits)
       : family_(family), mask_({0, 0}), bits_(bits) {
@@ -263,9 +258,63 @@ class IPNet {
     }
   }
 
+  friend std::ostream& operator<<(std::ostream& os, const IPNet& net) {
+    return os << net.address() << "/" << net.bits_;
+  }
+
   Address::Family family_;
   std::array<uint64_t, Address::kU64MaxLen> mask_;
   size_t bits_;
+};
+
+class Endpoint {
+ public:
+  Endpoint() : port_(0) {}
+  Endpoint(const Address& address, unsigned short port) : network_(IPNet(address, 8 * address.length())), port_(port) {}
+  Endpoint(const IPNet& network, unsigned short port) : network_(network), port_(port) {}
+
+  size_t Hash() const {
+    return HashAll(network_, port_);
+  }
+
+  bool operator==(const Endpoint& other) const {
+    return port_ == other.port_ && network_ == other.network_;
+  }
+
+  bool operator!=(const Endpoint& other) const {
+    return !(*this == other);
+  }
+
+  const IPNet& network() const { return network_; }
+  Address address() const { return network_.address(); }
+  uint16_t port() const { return port_; }
+
+  bool IsNull() const {
+      return port_ == 0 && network_.IsNull();
+  }
+
+ private:
+  friend std::ostream& operator<<(std::ostream& os, const Endpoint& ep) {
+    // This is an individual IP address.
+    if (ep.network_.bits() == 8 * ep.network_.address().length()) {
+      if (ep.network_.family() == Address::Family::IPV6) {
+        os << "[" << ep.network_.address() << "]";
+      } else {
+        os << ep.network_.address();
+      }
+    } else {
+      // Represent network in /nn notation.
+      if (ep.network_.family() == Address::Family::IPV6) {
+        os << "[" << ep.network_ << "]";
+      } else {
+        os << ep.network_;
+      }
+    }
+    return os << ":" << ep.port_;
+  }
+
+  IPNet network_;
+  uint16_t port_;
 };
 
 enum class L4Proto : uint8_t {

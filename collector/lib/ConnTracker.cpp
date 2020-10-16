@@ -35,6 +35,8 @@ namespace {
 
 static const Address canonical_external_ipv4_addr(255, 255, 255, 255);
 static const Address canonical_external_ipv6_addr(0xffffffffffffffffULL, 0xffffffffffffffffULL);
+static const IPNet canonical_external_ipv4_network(canonical_external_ipv4_addr, 32);
+static const IPNet canonical_external_ipv6_network(canonical_external_ipv6_addr, 128);
 
 }  // namespace
 
@@ -69,18 +71,38 @@ void ConnectionTracker::Update(
   }
 }
 
-Address ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
-  if (!address.IsPublic() || Contains(known_public_ips_, address)) {
-    return address;
+IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
+  if (address.IsNull()) {
+    return {};
   }
 
+  // Try to associate address to known cluster entities first, even if it is contained by a known network. If an IP
+  // address is not public, we always assume that it could be that of a known cluster entity.
+  if (!address.IsPublic() || Contains(known_public_ips_, address)) {
+    return IPNet(address, 8 * address.length());
+  }
+
+  // If association to known cluster entities fails, then try to associate the address to a known network. Since the
+  // networks are sorted highest-smallest to lowest-largest within family, we map the address to first matched subnet.
+  // We do not want to map to all networks that contains this address, for example, if there is also a supernet in
+  // known network list, this address would not be mapped to the supernet.
+  const auto* networks = Lookup(known_ip_networks_, address.family());
+  if (networks) {
+    for (const auto& network : *networks) {
+      if (network.Contains(address)) {
+        return network;
+      }
+    }
+  }
+
+  // Otherwise, associate it to "rest of the internet".
   switch (address.family()) {
     case Address::Family::IPV4:
-      return canonical_external_ipv4_addr;
+      return canonical_external_ipv4_network;
     case Address::Family::IPV6:
-      return canonical_external_ipv6_addr;
+      return canonical_external_ipv6_network;
     default:
-      return {};
+      return IPNet();
   }
 }
 
@@ -208,4 +230,17 @@ void ConnectionTracker::UpdateKnownPublicIPs(collector::UnorderedSet<collector::
   }
 }
 
+void ConnectionTracker::UpdateKnownIPNetworks(UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks) {
+  WITH_LOCK(mutex_) {
+    known_ip_networks_ = std::move(known_ip_networks);
+    if (CLOG_ENABLED(DEBUG)) {
+      CLOG(DEBUG) << "known ip networks:";
+      for (const auto &network_pair : known_ip_networks_) {
+        for (const auto network : network_pair.second) {
+          CLOG(DEBUG) << " - " << network;
+        }
+      }
+    }
+  }
+}
 }  // namespace collector

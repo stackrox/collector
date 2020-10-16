@@ -66,6 +66,21 @@ constexpr char NetworkStatusNotifier::kHostnameMetadataKey[];
 constexpr char NetworkStatusNotifier::kCapsMetadataKey[];
 constexpr char NetworkStatusNotifier::kSupportedCaps[];
 
+std::vector<IPNet> readNetworks(const string& networks, Address::Family family) {
+  int tuple_size = Address::Length(family) + 1;
+  int num_nets = networks.size() / tuple_size;
+  std::vector<IPNet> ip_nets;
+  ip_nets.reserve(num_nets);
+  for (int i = 0; i < num_nets; i++) {
+    // Bytes are received in big-endian order.
+    std::array<uint64_t, Address::kU64MaxLen> ip = {};
+    std::memcpy(&ip, &networks.c_str()[tuple_size * i], Address::Length(family));
+    IPNet net(Address(family, ip), static_cast<int>(networks.c_str()[tuple_size * i + tuple_size - 1]));
+    ip_nets.push_back(net);
+  }
+  return ip_nets;
+}
+
 std::unique_ptr<grpc::ClientContext> NetworkStatusNotifier::CreateClientContext() const {
   auto ctx = MakeUnique<grpc::ClientContext>();
   ctx->AddMetadata(kHostnameMetadataKey, hostname_);
@@ -74,12 +89,18 @@ std::unique_ptr<grpc::ClientContext> NetworkStatusNotifier::CreateClientContext(
 }
 
 void NetworkStatusNotifier::OnRecvControlMessage(const sensor::NetworkFlowsControlMessage* msg) {
-  if (!msg || !msg->has_public_ip_addresses()) {
+  if (!msg) {
     return;
   }
+  if (msg->has_ip_networks()) {
+    ReceivePublicIPs(msg->public_ip_addresses());
+  }
+  if (msg->has_ip_networks()) {
+    ReceiveIPNetworks(msg->ip_networks());
+  }
+}
 
-  const auto& public_ips = msg->public_ip_addresses();
-
+void NetworkStatusNotifier::ReceivePublicIPs(const sensor::IPAddressList& public_ips) {
   UnorderedSet<Address> known_public_ips;
   for (const uint32_t public_ip : public_ips.ipv4_addresses()) {
     Address addr(htonl(public_ip));
@@ -97,6 +118,31 @@ void NetworkStatusNotifier::OnRecvControlMessage(const sensor::NetworkFlowsContr
   }
 
   conn_tracker_->UpdateKnownPublicIPs(std::move(known_public_ips));
+}
+
+void NetworkStatusNotifier::ReceiveIPNetworks(const sensor::IPNetworkList& networks) {
+  UnorderedMap<Address::Family, std::vector<IPNet>> known_ip_networks;
+  auto ipv4_networks_size = networks.ipv4_networks().size();
+  if (ipv4_networks_size % 5 != 0) {
+    CLOG(WARNING) << "IPv4 network field has incorrect length " << ipv4_networks_size << ". Ignoring IPv4 networks...";
+  } else {
+    std::vector<IPNet> ipv4_networks = readNetworks(networks.ipv4_networks(), Address::Family::IPV4);
+    // Sort the networks in smallest subnet to largest subnet order.
+    std::sort(ipv4_networks.begin(), ipv4_networks.end(), std::greater<IPNet>());
+    known_ip_networks[Address::Family::IPV4] = ipv4_networks;
+  }
+
+  auto ipv6_networks_size = networks.ipv6_networks().size();
+  if (ipv6_networks_size % 17 != 0) {
+    CLOG(WARNING) << "IPv6 network field has incorrect length " << ipv6_networks_size << ". Ignoring IPv6 networks...";
+  } else {
+    std::vector<IPNet> ipv6_networks = readNetworks(networks.ipv6_networks(), Address::Family::IPV6);
+    // Sort the networks in smallest subnet to largest subnet order.
+    std::sort(ipv6_networks.begin(), ipv6_networks.end(), std::greater<IPNet>());
+    known_ip_networks[Address::Family::IPV6] = ipv6_networks;
+  }
+
+  conn_tracker_->UpdateKnownIPNetworks(std::move(known_ip_networks));
 }
 
 void NetworkStatusNotifier::Run() {
@@ -261,8 +307,19 @@ sensor::NetworkAddress* NetworkStatusNotifier::EndpointToProto(const collector::
   }
 
   auto* addr_proto = Allocate<sensor::NetworkAddress>();
-  if (!endpoint.address().IsNull()) {
-    addr_proto->set_address_data(endpoint.address().data(), endpoint.address().length());
+  // Ensure that it is an individual IP address. For known external sources, that are also individual IP addresses,
+  // it is okay if they are mapped to `address_data` field of response proto. Sensor tries to match them to known
+  // cluster entities followed by known external networks, if former fails.
+  // Note: We are sending the address data and network data as separate fields for backward compatibility, although,
+  // network field can handle both.
+  auto addr_length = endpoint.address().length();
+  if (!endpoint.address().IsNull() && endpoint.network().bits() == 8 * addr_length) {
+    addr_proto->set_address_data(endpoint.address().data(), addr_length);
+  } else if (!endpoint.network().IsNull()) {
+    std::array<uint8_t, Address::kMaxLen + 1> buff;
+    std::memcpy(buff.data(), endpoint.network().address().data(), addr_length);
+    buff[addr_length] = endpoint.network().bits();
+    addr_proto->set_ip_network(buff.data(), addr_length + 1);
   }
   addr_proto->set_port(endpoint.port());
 
