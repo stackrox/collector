@@ -19,6 +19,8 @@ ENV COLLECTOR_VERSION=${collector_version} \
     MODULE_VERSION=${module_version} \
     COLLECTOR_HOST_ROOT=/host
 
+WORKDIR /
+
 COPY scripts /
 COPY bundle.tar.gz /
 
@@ -39,10 +41,6 @@ RUN mv collector-wrapper.sh /usr/local/bin/ && \
 
 
 EXPOSE 8080 9090
-
-WORKDIR /
-
-RUN chmod 700 /bootstrap.sh
 
 ENTRYPOINT ["/bootstrap.sh"]
 
