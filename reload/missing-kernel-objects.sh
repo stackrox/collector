@@ -18,7 +18,7 @@ docker run -i --rm --entrypoint /bin/sh "${image}" /dev/stdin >"${inspect_out}" 
 set -e
 cat /kernel-modules/MODULE_VERSION.txt
 find /kernel-modules -name '*.gz' -type f | xargs md5sum 2>/dev/null | \
-sed "s/\([[:alnum:]]\+\).*\(collector-.*\.gz\)/\2 \1/"
+sed "s/\([[:alnum:]]\+\).*\(collector-.*\.gz\)/\2 \1 img/"
 EOF
 
 version="$(head -n 1 "${inspect_out}")"
@@ -33,6 +33,7 @@ version="$(head -n 1 "${inspect_out}")"
 
     gsutil hash -h "${gcp_bucket}/${version}/*.gz" | \
         paste -d " " - - - | \
-        sed "s/.*\(collector-.*.gz\).*Hash (md5)\:[[:space:]]*\([[:alnum:]]\+\)/\1 \2/"
+        gsed "s/.*\(collector-.*.gz\).*Hash (md5)\:[[:space:]]*\([[:alnum:]]\+\)/\1 \2 gcp/"
 
-} | sort | uniq -u | awk -F' ' '{print $1}' | sort | uniq
+#} | sort | uniq -u | awk -F' ' '{print $1}' | sort | uniq
+} | sort | uniq -u

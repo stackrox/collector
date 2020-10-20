@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+DIR="$(cd "$(dirname "$0")" && pwd)"
+SOURCE_ROOT="${SOURCE_ROOT:-${DIR}/..}"
+BUILD_CONTAINER_TAG="${BUILD_CONTAINER_TAG:-stackrox/collector-builder:kobuilder-cache}"
+KOBUILD_DIR="${KOBUILD_DIR:-${SOURCE_ROOT}/kobuild}"
+PROBE_DIR="${SOURCE_ROOT}/collector/container/probes"
+
+kernel_version="$1"
+probe_type="$2"
+module_version=$(cat "${SOURCE_ROOT}/kernel-modules/kobuild-tmp/MODULE_VERSION.txt")
+
+bundle_file="${KOBUILD_DIR}/bundles/bundle-${kernel_version}.tgz"
+
+tar -xzf "${bundle_file}" -C "${KOBUILD_DIR}"/meta-inspect ./BUNDLE_DISTRO
+distro="$(< "${KOBUILD_DIR}"/meta-inspect/BUNDLE_DISTRO)"
+flavor="default"
+
+# Check if non-default disto
+if grep -q "$distro" <"${KOBUILD_DIR}"/custom-flavors/all; then
+    flavor="${distro}"
+fi
+echo "Using ${flavor} builder"
+
+echo "Building ${probe_type} probe for ${distro}:${kernel_version} and collector version ${module_version}"
+
+task_file=/tmp/kernel-build-task-file
+echo "${kernel_version} ${module_version} ${probe_type}" > "${task_file}"
+echo "Taskfile: ${task_file}"
+cat "${task_file}"
+
+echo "docker run --rm -i \
+  -v "${KOBUILD_DIR}/bundles:/bundles:ro" \
+  -v "${KOBUILD_DIR}/module-versions:/sources:ro" \
+  -v "${KOBUILD_DIR}/output:/output" \
+  --tmpfs /scratch:exec \
+  "build-kernel-modules${flavor}" build-kos <"${task_file}""
+
+docker run --rm -i \
+  -v "${KOBUILD_DIR}/bundles:/bundles:ro" \
+  -v "${KOBUILD_DIR}/module-versions:/sources:ro" \
+  -v "${KOBUILD_DIR}/output:/output" \
+  --tmpfs /scratch:exec \
+  "build-kernel-modules-${flavor}" build-kos <"${task_file}"
+
+mkdir -p "${PROBE_DIR}"
+ls "${KOBUILD_DIR}/output/${module_version}/"*.gz
+cp "${KOBUILD_DIR}/output/${module_version}/"*.gz "${PROBE_DIR}"/

@@ -1,29 +1,16 @@
-FROM debian:stable
+FROM alpine:3.10
 
-RUN apt-get update \
- && apt-get upgrade -y \
- && apt-get install --no-install-recommends -y \
-      binutils \
-      cmake \
-      make \
-      curl \
-      gcc \
-      gcc-8 \
-      gcc-8-plugin-dev \
-      clang-7 \
-      llvm-7 \
-      g++-8 \
-      libelf-dev \
-      kmod \
-      wget \
-      golang-go \
-      pkg-config \
- ;
-
-RUN rm -rf /usr/bin/clang \
- && rm -rf /usr/bin/llc \
- && ln -s /usr/bin/clang-7 /usr/bin/clang \
- && ln -s /usr/bin/llc-7 /usr/bin/llc
+RUN apk add --no-cache --update wget ca-certificates \
+    build-base gcc abuild binutils \
+    bc \
+    cmake \
+    git \
+    bash \
+    elfutils-dev \
+    elfutils-libelf \
+    linux-headers \
+    openssl-dev \
+    autoconf kmod pigz clang llvm8
 
 RUN mkdir -p /output
 COPY build-kos /usr/bin/

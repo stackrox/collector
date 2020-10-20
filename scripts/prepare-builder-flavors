@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+DIR="$(cd "$(dirname "$0")" && pwd)"
+SOURCE_ROOT="${SOURCE_ROOT:-${DIR}/..}"
+BUILD_CONTAINER_TAG="${BUILD_CONTAINER_TAG:-stackrox/collector-builder:kobuilder-cache}"
+KOBUILD_DIR="${KOBUILD_DIR:-${SOURCE_ROOT}/kobuild}"
+
+mkdir -p "${KOBUILD_DIR}"/custom-flavors
+make --quiet -C "${SOURCE_ROOT}/kernel-modules" print-custom-flavors >"${KOBUILD_DIR}"/custom-flavors/all
+mkdir "${KOBUILD_DIR}"/meta-inspect
+for bundle_file in "${KOBUILD_DIR}"/bundles/bundle-*.tgz; do
+  tar -xzf "${bundle_file}" -C "${KOBUILD_DIR}"/meta-inspect ./BUNDLE_DISTRO
+  distro="$(< ${KOBUILD_DIR}/meta-inspect/BUNDLE_DISTRO)"
+  if grep -q "$distro" <"${KOBUILD_DIR}"/custom-flavors/all; then
+    version="$(basename "$bundle_file" | sed -E 's/^bundle-(.*)\.tgz$/\1/')"
+    echo "$version" >>"${KOBUILD_DIR}"/custom-flavors/versions."$distro"
+    echo "Building kernel version $version with custom builder flavor $distro"
+  fi
+done

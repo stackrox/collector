@@ -1,6 +1,7 @@
 container/bin
 container/driver
 container/libs
+container/probes
 container/include
 container/COPYING.txt
 container/NOTICE-*.txt

@@ -107,6 +107,7 @@ clean: clean-generated-srcs
 	rm -rf container/bin
 	rm -rf container/driver
 	rm -rf container/libs
+	rm -rf container/probes
 	rm -f container/COPYING*.txt
 	rm -f container/NOTICE.txt
 

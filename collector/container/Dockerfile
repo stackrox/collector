@@ -35,6 +35,7 @@ RUN apt-get update \
 
 COPY libs/libsinsp-wrapper.so \
      /usr/local/lib/
+COPY probes/ /kernel-modules/
 
 WORKDIR /
 

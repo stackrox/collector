@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+DIR="$(cd "$(dirname "$0")" && pwd)"
+SOURCE_ROOT="${SOURCE_ROOT:-${DIR}/..}"
+KOBUILD_DIR="${KOBUILD_DIR:-${SOURCE_ROOT}/kobuild}"
+
+make -C "${SOURCE_ROOT}/kernel-modules" build-container
+docker tag "$BUILD_CONTAINER_TAG" build-kernel-modules-default
+
+shopt -s nullglob
+
+docker pull "${BUILD_CONTAINER_TAG}"
+
+for f in "${KOBUILD_DIR}"/custom-flavors/versions.*; do
+  flavor="$(basename "$f")"
+  flavor="${flavor#versions\.}"
+  make -C "${SOURCE_ROOT}/kernel-modules" "build-container-${flavor}"
+done

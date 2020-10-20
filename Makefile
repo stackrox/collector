@@ -68,6 +68,7 @@ $(MOD_VER_FILE): build-kernel-modules
 
 image: collector unittest $(MOD_VER_FILE)
 	make -C collector txt-files
+	mkdir -p collector/container/probes
 	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
 		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
 		-f collector/container/Dockerfile \
@@ -156,6 +157,15 @@ start-dev-rhel: builder-rhel teardown-dev
 .PHONY: teardown-dev
 teardown-dev:
 	-docker rm -fv collector_remote_dev
+
+.PHONY: local-kernel-builders
+local-kernel-builders:
+	./scripts/copy-kernel-packer-repo-bundles
+	./scripts/prepare-module-srcs
+	./scripts/prepare-builder-flavors
+	make -C kernel-modules all-build-containers
+	docker tag build-kernel-modules build-kernel-modules-default
+	./scripts/build-builder-images
 
 .PHONY: clean
 clean: teardown-dev

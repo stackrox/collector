@@ -28,6 +28,10 @@ build_args=(
 docker build \
   -t "collector.stackrox.io/collector:${collector_ver}-latest" \
   -t "${released_latest_image}" \
+<<<<<<< Updated upstream
   -t "stackrox/collector:${collector_ver}-reload-latest" \
+=======
+  -t "stackrox/collector:${collector_ver}-reload-latest"
+>>>>>>> Stashed changes
   "${build_args[@]}" \
   "${DIR}/images/${mod_ver}/container"

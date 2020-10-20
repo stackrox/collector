@@ -1,0 +1,18 @@
+
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+DIR="$(cd "$(dirname "$0")" && pwd)"
+SOURCE_ROOT="${SOURCE_ROOT:-${DIR}/..}"
+KOBUILD_DIR="${KOBUILD_DIR:-${SOURCE_ROOT}/kobuild}"
+VERSIONS_SRC="${VERSIONS_SRC:-${SOURCE_ROOT}/source-archives}"
+
+"${SOURCE_ROOT}"/legacy-modules/download.sh
+
+for i in "${VERSIONS_SRC}"/*.tgz; do
+  version="$(basename "$i" .tgz)"
+  echo "$version from $i"
+  mkdir -p "${KOBUILD_DIR}"/module-versions/"${version}"
+  tar -C "${KOBUILD_DIR}"/module-versions/"${version}" -xvzf "$i"
+done
