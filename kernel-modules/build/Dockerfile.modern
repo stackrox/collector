@@ -21,7 +21,7 @@ RUN apt-get update \
 
 RUN echo 'deb http://deb.debian.org/debian testing main' >> /etc/apt/sources.list \
     && apt-get update -y \
-    && apt-get install -y --no-install-recommends gcc-9
+    && apt-get install -y --no-install-recommends gcc-9 gcc-10
 
 RUN ln -s /usr/bin/gcc-7 /usr/bin/gcc-6
 
