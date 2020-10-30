@@ -6,7 +6,5 @@
 # If <module-version> or <object type> is omitted, "*" is assumed
 ~3\.10\.0-1062(?:\.\d+)*\.el7.x86_64 * bpf
 *.el6.*
-# TODO(ROX-5396) - Fix collector probe compilation for 5.7.* and 5.8.* kernels
-~5\.[7,8,9]\..*
 # TOOD(ROX-5809) - Fix collector probe compilation for 4.19. cloud Debian kernels
 ~4\.19.*cloud.*
