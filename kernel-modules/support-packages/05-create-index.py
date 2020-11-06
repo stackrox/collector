@@ -64,7 +64,7 @@ def load_support_packages(output_dir, mod_md_map):
         st = os.stat(os.path.join(mod_out_dir, support_pkg_file))
         last_mod_time = datetime.utcfromtimestamp(st.st_mtime).strftime('%Y/%m/%d, %H:%M:%S')
 
-        support_pkg_file_latest = f'support-pkg-{mod_ver[:6]}-latest.zip'
+        support_pkg_file_latest = 'support-pkg-%s-latest.zip' % (mod_ver[:6])
         try:
             os.stat(os.path.join(mod_out_dir, support_pkg_file_latest))
         except:
