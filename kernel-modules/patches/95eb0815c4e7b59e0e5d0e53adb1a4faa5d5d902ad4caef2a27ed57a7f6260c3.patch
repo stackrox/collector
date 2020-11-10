@@ -1,3 +1,15 @@
+diff --git a/bpf/Makefile b/bpf/Makefile
+index f4dd132..5c745fc 100644
+--- a/bpf/Makefile
++++ b/bpf/Makefile
+@@ -41,6 +41,7 @@ $(obj)/probe.o: $(src)/probe.c \
+ 		$(KBUILD_EXTRA_CPPFLAGS) \
+ 		$(DEBUG) \
+ 		-D__KERNEL__ \
++		-DKBUILD_MODNAME=\"collector\" \
+ 		-D__BPF_TRACING__ \
+ 		-Wno-gnu-variable-sized-type-not-at-end \
+ 		-Wno-address-of-packed-member \
 diff --git a/bpf/filler_helpers.h b/bpf/filler_helpers.h
 index e37cea8..1a15376 100644
 --- a/bpf/filler_helpers.h
