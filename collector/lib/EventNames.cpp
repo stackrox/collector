@@ -22,6 +22,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 
 #include "EventNames.h"
+#include "Utility.h"
 
 extern const struct ppm_event_info g_event_info[];  // defined in libscap
 extern const struct syscall_evt_pair g_syscall_table[];  // defined in libscap
@@ -49,13 +50,13 @@ EventNames::EventNames() {
   for (int i = 0; i < SYSCALL_TABLE_SIZE; i++) {
     ppm_event_type enter_evt = g_syscall_table[i].enter_event_type;
     if (enter_evt < 0 || enter_evt >= syscall_by_id_.size()) {
-      throw CollectorException("Invalid syscall event id " + std::to_string(enter_evt));
+      throw CollectorException(Str("Invalid syscall event id ", enter_evt));
     }
     syscall_by_id_[enter_evt] = i;
 
     ppm_event_type exit_evt = g_syscall_table[i].exit_event_type;
     if (exit_evt < 0 || exit_evt >= syscall_by_id_.size()) {
-      throw CollectorException("Invalid syscall event id " + std::to_string(exit_evt));
+      throw CollectorException(Str("Invalid syscall event id ", exit_evt));
     }
     syscall_by_id_[exit_evt] = i;
   }

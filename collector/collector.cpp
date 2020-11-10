@@ -195,8 +195,8 @@ void setBPFDropSyscalls(const std::vector<std::string>& syscall_list) {
     g_bpf_drop_syscalls[i] = 1;
   }
   // Do not drop syscalls from given list
-  const EventNames &event_names = EventNames::GetInstance();
-  for (const auto &syscall_str : syscall_list) {
+  const EventNames& event_names = EventNames::GetInstance();
+  for (const auto& syscall_str : syscall_list) {
     for (ppm_event_type event_id : event_names.GetEventIDs(syscall_str)) {
       uint16_t syscall_id = event_names.GetEventSyscallID(event_id);
       if (!syscall_id) continue;
