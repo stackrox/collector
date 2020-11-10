@@ -479,7 +479,7 @@ jobs:
   kernels:
     machine:
       image: ubuntu-1604:202004-01
-    parallelism: 8
+    parallelism: 24
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
