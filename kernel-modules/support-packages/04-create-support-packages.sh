@@ -31,7 +31,9 @@ for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
     package_out_dir="${OUT_DIR}/${mod_ver}"
     mkdir -p "$package_out_dir"
     filename="support-pkg-${mod_ver::6}-$(date '+%Y%m%d%H%M%S').zip"
+    latest_filename="support-pkg-${mod_ver::6}-latest.zip"
 
     ( cd "$package_root" ; zip -r "${package_out_dir}/${filename}" . )
+    cp "${package_out_dir}/${filename}" "${package_out_dir}/${latest_filename}"
     rm -rf "$package_root" || true
 done

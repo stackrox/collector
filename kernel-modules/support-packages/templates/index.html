@@ -3240,6 +3240,9 @@
             from this page to ensure that Collectors have access to the files required at runtime. Please refer to the documentation on how to install support packages.</p>
             <p></p>
             {% if support_packages %}
+            <em>Note:</em> The "stable link" always points to the latest support package for a given version. It will retain
+            its validity when a support package is updated, but the contents of the downloaded file change over time.
+            <p></p>
             <table>
                 <thead>
                     <tr><th>StackRox Version(s)</th><th>Last updated</th><th>Download Link</th></tr>
@@ -3258,7 +3261,7 @@
                             {% endfor %}
                         </td>
                         <td>{{pkg.last_update_time}}</td>
-                        <td><a href="{{pkg.download_url}}">Download</a></td>
+                        <td><a href="{{pkg.download_url}}">Download</a>{% if pkg.download_url_latest %} (<a href="{{pkg.download_url_latest}}">stable link</a>){% endif %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

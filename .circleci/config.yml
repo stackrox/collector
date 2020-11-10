@@ -37,6 +37,13 @@ commands:
           EOF
           [[ -f ~/workspace/shared-env ]] && cat ~/workspace/shared-env >>"$BASH_ENV"
 
+  read-pr-metadata:
+    steps:
+    - run:
+        name: Read PR metadata
+        command: |
+          ~/workspace/go/src/github.com/stackrox/collector/.circleci/read-labels.sh pr-metadata/labels
+
   gcloud-init:
     steps:
     - run:
@@ -115,10 +122,7 @@ jobs:
             export PATH="${PATH}:${GOPATH}/bin:${WORKSPACE_ROOT}/bin"
           EOF
 
-    - run:
-        name: Read PR metadata
-        command: |
-          ~/workspace/go/src/github.com/stackrox/collector/.circleci/read-labels.sh pr-metadata/labels
+    - read-pr-metadata
 
     - run:
         name: Set COLLECTOR_VERSION
@@ -1233,6 +1237,15 @@ jobs:
 
     steps:
       - initcommand
+      - read-pr-metadata
+      - run:
+          name: Check whether to run job
+          command: |
+            if [[ "$CIRCLE_BRANCH" != "master" && ! -f ~/workspace/pr-metadata/labels/test-support-packages ]]; then
+              echo "On a PR without the test-support-packages label. Not building support packages."
+              circleci step halt
+            fi
+
       - setup_remote_docker
       - run:
           name: Docker login to collector.stackrox.io
@@ -1247,9 +1260,13 @@ jobs:
       - run:
           name: Initialize environment
           command: |
-            cci-export BASE_URL "${DOWNLOAD_BASE_URL}/${RELATIVE_PATH}"
+            relative_path="$RELATIVE_PATH"
+            if [[ "$CIRCLE_BRANCH" != "master" ]]; then
+              relative_path="${relative_path}/.test-${CIRCLE_BUILD_NUM}"
+            fi
+            cci-export BASE_URL "${DOWNLOAD_BASE_URL}/${relative_path}"
             cci-export SUPPORT_PKG_SRC_ROOT "${SOURCE_ROOT}/kernel-modules/support-packages"
-            cci-export GCLOUD_TARGET "${GCLOUD_BUCKET}/${RELATIVE_PATH}"
+            cci-export GCLOUD_TARGET "${GCLOUD_BUCKET}/${relative_path}"
 
       - run:
           name: Install Pip
@@ -1314,6 +1331,8 @@ jobs:
             # entire `sr-roxc` bucket (!!!). Hence have a hardcoded check for the path looking
             # valid.
             [[ "$GCLOUD_TARGET" =~ ^gs://[^/]+/.*collector.*/.*support-packages.*$ ]]
+            # On non-master, additionally test that we have a .test indicator in the URL
+            [[ "$CIRCLE_BRANCH" == "master" || "$GCLOUD_TARGET" = *.test* ]]
             gsutil -m rsync -n -r -d /tmp/support-packages/output "$GCLOUD_TARGET"
 
   reload-released-images:
@@ -1667,8 +1686,5 @@ workflows:
            only: /.*/
     - update-support-packages:
         context: docker-io-and-stackrox-io-push
-        filters:
-          branches:
-            only: master
         requires:
           - upload-modules
