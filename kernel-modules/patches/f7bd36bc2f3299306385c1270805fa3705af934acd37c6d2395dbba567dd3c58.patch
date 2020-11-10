@@ -1,14 +1,15 @@
 diff --git a/bpf/Makefile b/bpf/Makefile
-index 9ec83c6..f87886b 100644
+index 9ec83c6..53d979e 100644
 --- a/bpf/Makefile
 +++ b/bpf/Makefile
-@@ -32,12 +32,14 @@ $(obj)/probe.o: $(src)/probe.c \
+@@ -32,12 +32,15 @@ $(obj)/probe.o: $(src)/probe.c \
  		$(src)/types.h
  	$(CLANG) $(LINUXINCLUDE) \
  		$(KBUILD_CPPFLAGS) \
 +		$(KBUILD_EXTRA_CPPFLAGS) \
  		$(DEBUG) \
  		-D__KERNEL__ \
++		-DKBUILD_MODNAME=\"collector\" \
  		-D__BPF_TRACING__ \
  		-Wno-gnu-variable-sized-type-not-at-end \
  		-Wno-address-of-packed-member \
