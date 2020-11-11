@@ -381,7 +381,6 @@ jobs:
         name: Download missing modules for current version from gcloud bucket
         command: |
           mkdir -p "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}"
-          [[ ! -f pr-metadata/labels/no-cache ]] || exit 0
           gsutil -m rsync -r \
             "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/" \
             "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}/" \
@@ -753,7 +752,7 @@ jobs:
         command: |
           gsutil -m cp -n \
               "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/*.gz" \
-              "${SOURCE_ROOT}/kernel-modules/container/kernel-modules" || true
+              "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
 
     - run:
         name: Sanity check

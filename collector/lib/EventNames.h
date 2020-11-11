@@ -32,7 +32,6 @@ You should have received a copy of the GNU General Public License along with thi
 #include "ppm_events_public.h"
 
 #include "CollectorException.h"
-#include "Utility.h"
 
 namespace collector {
 
@@ -50,20 +49,11 @@ class EventNames {
     return it->second;
   }
 
-  // Return event name for given event id
   const std::string& GetEventName(uint16_t id) const {
     if (id < 0 || id >= names_by_id_.size()) {
-      throw CollectorException(Str("Invalid event id ", id));
+      throw CollectorException("Invalid event id " + std::to_string(id));
     }
     return names_by_id_[id];
-  }
-
-  // Return associated syscall id for given event id
-  uint16_t GetEventSyscallID(uint16_t id) const {
-    if (id < 0 || id >= syscall_by_id_.size()) {
-      throw CollectorException(Str("Invalid event id ", id));
-    }
-    return syscall_by_id_[id];
   }
 
  private:
@@ -71,7 +61,6 @@ class EventNames {
 
   std::unordered_map<std::string, EventIDVector> events_by_name_;
   std::array<std::string, PPM_EVENT_MAX> names_by_id_;
-  std::array<uint16_t, PPM_EVENT_MAX> syscall_by_id_;
 };
 
 }  // namespace collector

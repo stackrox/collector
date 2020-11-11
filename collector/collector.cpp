@@ -63,8 +63,6 @@ extern "C" {
 #define finit_module(fd, opts, flags) syscall(__NR_finit_module, fd, opts, flags)
 #define delete_module(name, flags) syscall(__NR_delete_module, name, flags)
 
-extern unsigned char g_bpf_drop_syscalls[];  // defined in libscap
-
 using namespace collector;
 
 static std::atomic<CollectorService::ControlValue> g_control(CollectorService::RUN);
@@ -130,7 +128,7 @@ int InsertModule(int fd, const std::unordered_map<std::string, std::string>& arg
 // Method to insert the kernel module. The options to the module are computed
 // from the collector configuration. Specifically, the syscalls that we should
 // extract
-void insertModule(const std::vector<std::string>& syscall_list) {
+void insertModule(std::vector<std::string> syscall_list) {
     std::unordered_map<std::string, std::string> module_args;
 
     std::string& syscall_ids = module_args["s_syscallIds"];
@@ -189,22 +187,6 @@ bool verifyProbeConfiguration() {
     return true;
 }
 
-void setBPFDropSyscalls(const std::vector<std::string>& syscall_list) {
-  // Initialize bpf syscall drop table to drop all
-  for (int i = 0; i < SYSCALL_TABLE_SIZE; i++) {
-    g_bpf_drop_syscalls[i] = 1;
-  }
-  // Do not drop syscalls from given list
-  const EventNames& event_names = EventNames::GetInstance();
-  for (const auto& syscall_str : syscall_list) {
-    for (ppm_event_type event_id : event_names.GetEventIDs(syscall_str)) {
-      uint16_t syscall_id = event_names.GetEventSyscallID(event_id);
-      if (!syscall_id) continue;
-      g_bpf_drop_syscalls[syscall_id] = 0;
-    }
-  }
-}
-
 int main(int argc, char **argv) {
   if (!g_control.is_lock_free()) {
     CLOG(FATAL) << "Could not create a lock-free control variable!";
@@ -243,7 +225,6 @@ int main(int argc, char **argv) {
     if (!verifyProbeConfiguration()) {
       CLOG(FATAL) << "Error verifying ebpf configuration. Aborting...";
     }
-    setBPFDropSyscalls(config.Syscalls());
   } else {
     // First action: drop all capabilities except for SYS_MODULE (inserting the module), SYS_PTRACE (reading from /proc),
     // and DAC_OVERRIDE (opening the device files with O_RDWR regardless of actual permissions).
