@@ -868,6 +868,7 @@
 4.15.0-121-generic
 4.15.0-122-generic
 4.15.0-123-generic
+4.15.0-124-generic
 4.15.0-15-generic
 4.15.0-20-generic
 4.15.0-22-generic
@@ -2108,6 +2109,7 @@
 5.4.0-51-generic
 5.4.0-52-generic
 5.4.0-53-generic
+5.4.0-54-generic
 5.4.0-8-generic
 5.4.0-9-generic
 5.4.49-13310.1015.0-cos
@@ -2184,6 +2186,7 @@
 5.8.0-25-generic
 5.8.0-26-generic
 5.8.0-28-generic
+5.8.0-29-generic
 5.8.0-3-amd64
 5.8.11-flatcar
 5.9.0-1-amd64
