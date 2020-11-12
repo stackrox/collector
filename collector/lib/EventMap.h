@@ -31,7 +31,6 @@ You should have received a copy of the GNU General Public License along with thi
 #include "ppm_events_public.h"
 
 #include "EventNames.h"
-#include "Utility.h"
 
 namespace collector {
 
@@ -50,14 +49,14 @@ class EventMap {
 
   T& operator[](uint16_t id) {
     if (id < 0 || id >= values_.size()) {
-      throw CollectorException(Str("Invalid event id ", id));
+      throw CollectorException("Invalid event id " + std::to_string(id));
     }
     return values_[id];
   }
 
   const T& operator[](uint16_t id) const {
     if (id < 0 || id >= values_.size()) {
-      throw CollectorException(Str("Invalid event id ", id));
+      throw CollectorException("Invalid event id " + std::to_string(id));
     }
     return values_[id];
   }
