@@ -878,6 +878,7 @@
 4.15.0-124-generic
 4.15.0-125-generic
 4.15.0-126-generic
+4.15.0-127-generic
 4.15.0-15-generic
 4.15.0-20-generic
 4.15.0-22-generic
@@ -2099,6 +2100,7 @@
 5.4.0-1031-azure
 5.4.0-1031-gcp
 5.4.0-1032-azure
+5.4.0-1033-azure
 5.4.0-15-generic
 5.4.0-16-generic
 5.4.0-17-generic
@@ -2224,6 +2226,7 @@
 5.8.0-3-amd64
 5.8.0-30-generic
 5.8.0-31-generic
+5.8.0-32-generic
 5.8.11-flatcar
 5.9.0-1-amd64
 5.9.0-1-cloud-amd64
