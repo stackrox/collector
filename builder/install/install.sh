@@ -20,4 +20,4 @@ cd /install-tmp/
 for f in [0-9][0-9]-*.sh; do 
   ./"$f"
 done
-cd && rm -rf /install-tmp
+#cd && rm -rf /install-tmp
