@@ -163,10 +163,3 @@ limitations under the License.
 
 Copyright (C) 2013-2018 Draios Inc. dba Sysdig
 
-SYSDIG SUBCOMPONENTS:
-
--The files in <driver/> and its subdirectories are used to compile the
- kernel module and may be injected into eBPF; these are dual licensed
- under the MIT license or the GNU General Public License 2. Copies of
- both licenses are available in the subdirectory.
-
