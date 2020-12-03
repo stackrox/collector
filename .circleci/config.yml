@@ -779,8 +779,6 @@ jobs:
         name: Build collector images
         command: |
           cd "$COLLECTOR_SOURCE_ROOT"
-          cp NOTICE-collector.txt container/
-          cp COPYING.txt container/
 
           build_args=(
             --build-arg module_version="$MODULE_VERSION"
