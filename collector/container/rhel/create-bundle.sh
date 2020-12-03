@@ -46,6 +46,7 @@ cp -p "${INPUT_ROOT}/libs/libsinsp-wrapper.so.rhel" "${bundle_root}/usr/local/li
 cp -p "${INPUT_ROOT}/scripts/bootstrap.sh" "${bundle_root}/bootstrap.sh"
 cp -p "${INPUT_ROOT}/scripts/collector-wrapper.sh" "${bundle_root}/usr/local/bin/"
 cp -r "${INPUT_ROOT}/THIRD_PARTY_NOTICES.rhel" "${bundle_root}/THIRD_PARTY_NOTICES"
+cp -r "${INPUT_ROOT}/LICENSE-kernel-modules.txt" "${bundle_root}/kernel-modules/LICENSE"
 cp -p "${INPUT_ROOT}/bin/collector.rhel" "${bundle_root}/usr/local/bin/collector"
 [[ "$MODULE_ARCHIVE" == "-" ]] || tar xzf "${MODULE_ARCHIVE}" -C "${bundle_root}/kernel-modules/"
 

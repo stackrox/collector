@@ -218,8 +218,16 @@ function clean_up() {
     kill -TERM "$PID"; wait "$PID"
 }
 
-function main() {
+function gpl_notice() {
+    log ""
+    log "This product uses kernel module and ebpf subcomponents licensed under the GNU"
+    log "GENERAL PURPOSE LICENSE Version 2 outlined in the /kernel-modules/LICENSE file."
+    log "Source code for the kernel module and ebpf subcomponents is available upon"
+    log "request by contacting support@stackrox.com."
+    log ""
+}
 
+function main() {
     # Get the host kernel version (or user defined env var)
     [ -n "$KERNEL_VERSION" ] || KERNEL_VERSION="$(uname -r)"
     
@@ -253,6 +261,9 @@ function main() {
             MODULE_URL="${MODULE_DOWNLOAD_BASE_URL}/${module_version}"
         fi
     fi
+
+    # print GPL noticer
+    gpl_notice
 
     # Special case kernel version if running on COS
     if cos_host ; then

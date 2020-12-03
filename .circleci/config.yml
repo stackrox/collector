@@ -1265,7 +1265,7 @@ jobs:
             fi
             cci-export BASE_URL "${DOWNLOAD_BASE_URL}/${relative_path}"
             cci-export SUPPORT_PKG_SRC_ROOT "${SOURCE_ROOT}/kernel-modules/support-packages"
-            cci-export LICENSE_FILE "${SOURCE_ROOT}/kernel-modules/container/LICENSE"
+            cci-export LICENSE_FILE "${SOURCE_ROOT}/collector/LICENSE-kernel-modules.txt"
             cci-export GCLOUD_TARGET "${GCLOUD_BUCKET}/${relative_path}"
 
       - run:

@@ -19,6 +19,7 @@ EXPOSE 8080 9090
 
 # copy notice and license files
 COPY THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES
+COPY LICENSE-kernel-modules.txt /kernel-modules/LICENSE
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
