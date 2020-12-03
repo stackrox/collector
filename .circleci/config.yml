@@ -1265,6 +1265,7 @@ jobs:
             fi
             cci-export BASE_URL "${DOWNLOAD_BASE_URL}/${relative_path}"
             cci-export SUPPORT_PKG_SRC_ROOT "${SOURCE_ROOT}/kernel-modules/support-packages"
+            cci-export LICENSE_FILE "${SOURCE_ROOT}/kernel-modules/container/LICENSE"
             cci-export GCLOUD_TARGET "${GCLOUD_BUCKET}/${relative_path}"
 
       - run:
@@ -1301,7 +1302,7 @@ jobs:
           name: Create support package files
           command: |
             "${SUPPORT_PKG_SRC_ROOT}/04-create-support-packages.sh" \
-              /tmp/support-packages/metadata /tmp/support-packages/output
+              "${LICENSE_FILE}" /tmp/support-packages/metadata /tmp/support-packages/output
 
       - run:
           name: Create index file

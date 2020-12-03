@@ -62,8 +62,8 @@ unittest-rhel:
 .PHONY: txt-files
 txt-files:
 	mkdir -p container/THIRD_PARTY_NOTICES/ container/THIRD_PARTY_NOTICES.rhel/
-	cp NOTICE-sysdig.txt NOTICE-sysdig-driver.txt container/THIRD_PARTY_NOTICES/
-	cp NOTICE-sysdig.txt NOTICE-sysdig-driver.txt container/THIRD_PARTY_NOTICES.rhel/
+	cp NOTICE-sysdig.txt container/THIRD_PARTY_NOTICES/sysdig
+	cp NOTICE-sysdig.txt container/THIRD_PARTY_NOTICES.rhel/sysdig
 
 .PHONY: distribution
 distribution: clean
