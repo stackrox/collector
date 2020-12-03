@@ -228,6 +228,7 @@ function gpl_notice() {
 }
 
 function main() {
+    
     # Get the host kernel version (or user defined env var)
     [ -n "$KERNEL_VERSION" ] || KERNEL_VERSION="$(uname -r)"
     
@@ -262,7 +263,6 @@ function main() {
         fi
     fi
 
-    # print GPL noticer
     gpl_notice
 
     # Special case kernel version if running on COS
