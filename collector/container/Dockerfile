@@ -17,6 +17,9 @@ ENV COLLECTOR_HOST_ROOT=/host
 # HTTP API port (8080)
 EXPOSE 8080 9090
 
+# copy notice and license files
+COPY THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES
+
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
  && apt-get upgrade -y \
@@ -30,6 +33,7 @@ RUN apt-get update \
         libelf1 \
         google-perftools \
  && dpkg -r --force-all e2fslibs e2fsprogs apt debconf dpkg \
+ && ( for pkg in /usr/share/doc/*; do cp $pkg/copyright /THIRD_PARTY_NOTICES/$(basename $pkg); done ) \
  && rm -rf /var/lib/apt \
  ;
 
@@ -52,9 +56,6 @@ COPY scripts/bootstrap.sh /bootstrap.sh
 COPY scripts/collector-wrapper.sh /usr/local/bin/
 RUN chown root.root /bootstrap.sh
 RUN chmod 700 /bootstrap.sh
-
-# copy notice and license files
-COPY THIRD_PARTY_NOTICES /
 
 ENTRYPOINT ["/bootstrap.sh"]
 

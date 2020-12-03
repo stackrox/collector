@@ -810,8 +810,6 @@ jobs:
         name: Build collector rhel images
         command: |
           cd "$COLLECTOR_SOURCE_ROOT"
-          cp NOTICE-collector.txt container/
-          cp COPYING.txt container/
 
           MODULE_ARCHIVE="${SOURCE_ROOT}/kernel-modules/container/${MODULE_VERSION}.tar.gz"
           if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-full-images" ]]; then
