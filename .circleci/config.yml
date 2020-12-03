@@ -669,6 +669,7 @@ jobs:
         - go/src/github.com/stackrox/collector/collector/container/bin
         - go/src/github.com/stackrox/collector/collector/container/libs
         - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES
+        - go/src/github.com/stackrox/collector/collector/container/LICENSE-kernel-modules.txt
 
   collector-rhel:
     machine:
@@ -697,6 +698,7 @@ jobs:
         - go/src/github.com/stackrox/collector/collector/container/bin
         - go/src/github.com/stackrox/collector/collector/container/libs
         - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES.rhel
+        - go/src/github.com/stackrox/collector/collector/container/LICENSE-kernel-modules.txt
 
   images:
     machine:

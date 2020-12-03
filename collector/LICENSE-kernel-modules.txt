@@ -2,7 +2,7 @@ collector kernel module and ebpf subcomponents
 
 Copyright 2020 StackRox, Inc.  All rights reserved
 
-This product uses kernel module and ebpf subcomponents licensed under the GNU
+This product may use kernel module and ebpf subcomponents licensed under the GNU
 GENERAL PURPOSE LICENSE Version 2 set forth below.
 
 Source code for the kernel module and ebpf subcomponents is available upon

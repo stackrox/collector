@@ -263,8 +263,6 @@ function main() {
         fi
     fi
 
-    gpl_notice
-
     # Special case kernel version if running on COS
     if cos_host ; then
         # remove '+' from end of kernel version 
@@ -355,6 +353,9 @@ function main() {
         exit_with_error
       fi
     fi
+
+    # Print GPL notice after probe is downloaded or verified to be present
+    gpl_notice
     
     # Uncomment this to enable generation of core for Collector
     # echo '/core/core.%e.%p.%t' > /proc/sys/kernel/core_pattern
