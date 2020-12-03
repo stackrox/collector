@@ -668,6 +668,7 @@ jobs:
         paths:
         - go/src/github.com/stackrox/collector/collector/container/bin
         - go/src/github.com/stackrox/collector/collector/container/libs
+        - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES
 
   collector-rhel:
     machine:
@@ -695,6 +696,7 @@ jobs:
         paths:
         - go/src/github.com/stackrox/collector/collector/container/bin
         - go/src/github.com/stackrox/collector/collector/container/libs
+        - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES.rhel
 
   images:
     machine:
