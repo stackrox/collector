@@ -4,10 +4,10 @@ set -e
 
 git clone https://github.com/jupp0r/prometheus-cpp.git -b "$PROMETHEUS_CPP_REVISION" --depth 1
 cd prometheus-cpp
-cat LICENSE 3rdparty/civetweb/LICENSE.md > "${LICENSE_DIR}/prometheus-${PROMETHEUS_CPP_REVISION}"
 git submodule update --init
 mkdir -p /usr/local/include
 cp -R 3rdparty/civetweb/include /usr/local/include/civetweb
+cat LICENSE 3rdparty/civetweb/LICENSE.md > "${LICENSE_DIR}/prometheus-${PROMETHEUS_CPP_REVISION}"
 
 mkdir build
 cd build
