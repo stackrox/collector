@@ -42,7 +42,7 @@ container/bin/collector-rhel: $(HDRS) $(SRCS) txt-files generated-srcs-rhel $(sh
 		-v "$(CURDIR)/cmake-build-rhel:/tmp/cmake-build" \
 		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) /build-collector.sh
 	cp cmake-build-rhel/collector container/bin/collector.rhel
-	cp -r cmake-build-rhel/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
+	cp -r cmake-build-rhel/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES.rhel/
 	cp cmake-build-rhel/EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so.rhel
 
 unittest:
@@ -61,9 +61,9 @@ unittest-rhel:
 
 .PHONY: txt-files
 txt-files:
-	mkdir -p container/THIRD_PARTY_NOTICES/
-	cp NOTICE-sysdig.txt container/THIRD_PARTY_NOTICES/
-	cp NOTICE-sysdig-driver.txt container/THIRD_PARTY_NOTICES/
+	mkdir -p container/THIRD_PARTY_NOTICES/ container/THIRD_PARTY_NOTICES.rhel/
+	cp NOTICE-sysdig.txt NOTICE-sysdig-driver.txt container/THIRD_PARTY_NOTICES/
+	cp NOTICE-sysdig.txt NOTICE-sysdig-driver.txt container/THIRD_PARTY_NOTICES.rhel/
 
 .PHONY: distribution
 distribution: clean
@@ -111,6 +111,7 @@ clean: clean-generated-srcs
 	rm -rf container/driver
 	rm -rf container/libs
 	rm -rf container/THIRD_PARTY_NOTICES
+	rm -rf container/THIRD_PARTY_NOTICES.rhel
 
 .PHONY: clean-generated-srcs
 clean-generated-srcs:
