@@ -29,7 +29,7 @@ container/bin/collector: $(HDRS) $(SRCS) txt-files generated-srcs $(shell find s
 		-v "$(CURDIR)/cmake-build:/tmp/cmake-build" \
 		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-collector.sh
 	cp cmake-build/collector container/bin/
-	cp -r cmake-build/THIRD_PARTY_NOTICES container/
+	cp -r cmake-build/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
 	cp cmake-build/EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so
 
 container/bin/collector-rhel: $(HDRS) $(SRCS) txt-files generated-srcs-rhel $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
@@ -42,7 +42,7 @@ container/bin/collector-rhel: $(HDRS) $(SRCS) txt-files generated-srcs-rhel $(sh
 		-v "$(CURDIR)/cmake-build-rhel:/tmp/cmake-build" \
 		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) /build-collector.sh
 	cp cmake-build-rhel/collector container/bin/collector.rhel
-	cp -r cmake-build-rhel/THIRD_PARTY_NOTICES container/
+	cp -r cmake-build-rhel/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
 	cp cmake-build-rhel/EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so.rhel
 
 unittest:
