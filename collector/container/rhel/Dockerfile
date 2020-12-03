@@ -26,7 +26,7 @@ COPY bundle.tar.gz /
 
 RUN mv collector-wrapper.sh /usr/local/bin/ && \
     chmod 700 bootstrap.sh && \
-    tar -zxf bundle.tar.gz ./COPYING.txt && \
+    tar -zxf bundle.tar.gz ./THIRD_PARTY_NOTICES/ && \
     tar -zxf bundle.tar.gz ./kernel-modules/ && \
     tar -zxf bundle.tar.gz ./usr/local/lib/libsinsp-wrapper.so && \
     tar -zxf bundle.tar.gz ./usr/local/bin/collector && \

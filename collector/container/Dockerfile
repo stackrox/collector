@@ -54,9 +54,7 @@ RUN chown root.root /bootstrap.sh
 RUN chmod 700 /bootstrap.sh
 
 # copy notice and license files
-COPY NOTICE-collector.txt \
-     COPYING.txt \
-     /
+COPY THIRD_PARTY_NOTICES /
 
 ENTRYPOINT ["/bootstrap.sh"]
 

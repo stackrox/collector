@@ -8,6 +8,7 @@ if [ -f /etc/redhat-release ]; then
 fi
 
 git clone -b "$GRPC_REVISION" --depth 1 https://github.com/grpc/grpc
+cp NOTICE.txt "${LICENSE_DIR}/grpc-${GRPC_REVISION}"
 cd grpc
 git submodule update --init
 mkdir -p cmake/build

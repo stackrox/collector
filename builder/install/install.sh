@@ -16,8 +16,11 @@ export PROMETHEUS_CPP_REVISION=v0.9.0
 export PROTOBUF_VERSION=3.11.4
 export TBB_VERSION=2018_U5
 
-cd /install-tmp/ 
-for f in [0-9][0-9]-*.sh; do 
+export LICENSE_DIR="/THIRD_PARTY_NOTICES"
+
+mkdir -p "${LICENSE_DIR}"
+cd /install-tmp/
+for f in [0-9][0-9]-*.sh; do
   ./"$f"
 done
-#cd && rm -rf /install-tmp
+cd && rm -rf /install-tmp

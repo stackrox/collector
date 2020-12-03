@@ -19,7 +19,7 @@ generated-srcs-rhel:
 		-v $(CURDIR)/../rox-proto:/collector/rox-proto:ro \
 		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) make -f protogen.mk generated-proto-srcs
 
-container/bin/collector: $(HDRS) $(SRCS) generated-srcs $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
+container/bin/collector: $(HDRS) $(SRCS) txt-files generated-srcs $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
 	mkdir -p container/bin
 	mkdir -p container/libs
 	docker rm -fv build_collector || true
@@ -29,9 +29,10 @@ container/bin/collector: $(HDRS) $(SRCS) generated-srcs $(shell find sysdig/src/
 		-v "$(CURDIR)/cmake-build:/tmp/cmake-build" \
 		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-collector.sh
 	cp cmake-build/collector container/bin/
+	cp -r cmake-build/THIRD_PARTY_NOTICES container/
 	cp cmake-build/EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so
 
-container/bin/collector-rhel: $(HDRS) $(SRCS) generated-srcs-rhel $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
+container/bin/collector-rhel: $(HDRS) $(SRCS) txt-files generated-srcs-rhel $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
 	mkdir -p container/bin
 	mkdir -p container/libs
 	docker rm -fv build_collector_rhel || true
@@ -41,6 +42,7 @@ container/bin/collector-rhel: $(HDRS) $(SRCS) generated-srcs-rhel $(shell find s
 		-v "$(CURDIR)/cmake-build-rhel:/tmp/cmake-build" \
 		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) /build-collector.sh
 	cp cmake-build-rhel/collector container/bin/collector.rhel
+	cp -r cmake-build-rhel/THIRD_PARTY_NOTICES container/
 	cp cmake-build-rhel/EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so.rhel
 
 unittest:
@@ -59,8 +61,9 @@ unittest-rhel:
 
 .PHONY: txt-files
 txt-files:
-	cp NOTICE-collector.txt container/
-	cp COPYING.txt container/
+	mkdir -p container/THIRD_PARTY_NOTICES/
+	cp NOTICE-sysdig.txt container/THIRD_PARTY_NOTICES/
+	cp NOTICE-sysdig-driver.txt container/THIRD_PARTY_NOTICES/
 
 .PHONY: distribution
 distribution: clean
@@ -107,8 +110,7 @@ clean: clean-generated-srcs
 	rm -rf container/bin
 	rm -rf container/driver
 	rm -rf container/libs
-	rm -f container/COPYING*.txt
-	rm -f container/NOTICE.txt
+	rm -rf container/THIRD_PARTY_NOTICES
 
 .PHONY: clean-generated-srcs
 clean-generated-srcs:
