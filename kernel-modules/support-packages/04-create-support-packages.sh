@@ -34,7 +34,7 @@ for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
     filename="support-pkg-${mod_ver::6}-$(date '+%Y%m%d%H%M%S').zip"
     latest_filename="support-pkg-${mod_ver::6}-latest.zip"
 
-    cp "${LICENSE_FILE}" "${probe_dir}"/
+    cp "${LICENSE_FILE}" "${probe_dir}"/LICENSE
 
     ( cd "$package_root" ; zip -r "${package_out_dir}/${filename}" . )
     cp "${package_out_dir}/${filename}" "${package_out_dir}/${latest_filename}"
