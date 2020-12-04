@@ -9,3 +9,4 @@ make -j "${NPROCS:-2}" all
 strip --strip-unneeded \
     ./collector \
     ./EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so
+cp -r /THIRD_PARTY_NOTICES .

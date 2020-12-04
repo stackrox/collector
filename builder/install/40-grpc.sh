@@ -9,6 +9,7 @@ fi
 
 git clone -b "$GRPC_REVISION" --depth 1 https://github.com/grpc/grpc
 cd grpc
+cp NOTICE.txt "${LICENSE_DIR}/grpc-${GRPC_REVISION}"
 git submodule update --init
 mkdir -p cmake/build
 cd cmake/build

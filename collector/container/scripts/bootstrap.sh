@@ -218,8 +218,17 @@ function clean_up() {
     kill -TERM "$PID"; wait "$PID"
 }
 
-function main() {
+function gpl_notice() {
+    log ""
+    log "This product uses kernel module and ebpf subcomponents licensed under the GNU"
+    log "GENERAL PURPOSE LICENSE Version 2 outlined in the /kernel-modules/LICENSE file."
+    log "Source code for the kernel module and ebpf subcomponents is available upon"
+    log "request by contacting support@stackrox.com."
+    log ""
+}
 
+function main() {
+    
     # Get the host kernel version (or user defined env var)
     [ -n "$KERNEL_VERSION" ] || KERNEL_VERSION="$(uname -r)"
     
@@ -344,6 +353,9 @@ function main() {
         exit_with_error
       fi
     fi
+
+    # Print GPL notice after probe is downloaded or verified to be present
+    gpl_notice
     
     # Uncomment this to enable generation of core for Collector
     # echo '/core/core.%e.%p.%t' > /proc/sys/kernel/core_pattern

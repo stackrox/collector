@@ -26,11 +26,12 @@ COPY bundle.tar.gz /
 
 RUN mv collector-wrapper.sh /usr/local/bin/ && \
     chmod 700 bootstrap.sh && \
-    tar -zxf bundle.tar.gz ./COPYING.txt && \
+    tar -zxf bundle.tar.gz ./THIRD_PARTY_NOTICES/ && \
     tar -zxf bundle.tar.gz ./kernel-modules/ && \
     tar -zxf bundle.tar.gz ./usr/local/lib/libsinsp-wrapper.so && \
     tar -zxf bundle.tar.gz ./usr/local/bin/collector && \
     rm -f bundle.tar.gz && \
+    rpm -qa --qf "%{name}: %{license}\n" > /THIRD_PARTY_NOTICES/NOTICE-redhat-packages.txt && \
     dnf upgrade -y && \
     dnf install -y kmod && \
     dnf clean all && \

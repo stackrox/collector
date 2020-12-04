@@ -668,6 +668,7 @@ jobs:
         paths:
         - go/src/github.com/stackrox/collector/collector/container/bin
         - go/src/github.com/stackrox/collector/collector/container/libs
+        - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES
 
   collector-rhel:
     machine:
@@ -695,6 +696,7 @@ jobs:
         paths:
         - go/src/github.com/stackrox/collector/collector/container/bin
         - go/src/github.com/stackrox/collector/collector/container/libs
+        - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES.rhel
 
   images:
     machine:
@@ -742,11 +744,12 @@ jobs:
           - /tmp/cache/
 
     - run:
-        name: Adding Kernel module version file
+        name: Adding Kernel module version and license files
         command: |
           mkdir -p "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
           echo "$MODULE_VERSION" \
             >>"${SOURCE_ROOT}/kernel-modules/container/kernel-modules/MODULE_VERSION.txt"
+          cp "${SOURCE_ROOT}"/collector/LICENSE-kernel-modules.txt "${SOURCE_ROOT}"/collector/container/
 
     - run:
         name: Load any missing modules from GCloud
@@ -779,8 +782,6 @@ jobs:
         name: Build collector images
         command: |
           cd "$COLLECTOR_SOURCE_ROOT"
-          cp NOTICE-collector.txt container/
-          cp COPYING.txt container/
 
           build_args=(
             --build-arg module_version="$MODULE_VERSION"
@@ -810,8 +811,6 @@ jobs:
         name: Build collector rhel images
         command: |
           cd "$COLLECTOR_SOURCE_ROOT"
-          cp NOTICE-collector.txt container/
-          cp COPYING.txt container/
 
           MODULE_ARCHIVE="${SOURCE_ROOT}/kernel-modules/container/${MODULE_VERSION}.tar.gz"
           if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-full-images" ]]; then
@@ -1267,6 +1266,7 @@ jobs:
             fi
             cci-export BASE_URL "${DOWNLOAD_BASE_URL}/${relative_path}"
             cci-export SUPPORT_PKG_SRC_ROOT "${SOURCE_ROOT}/kernel-modules/support-packages"
+            cci-export LICENSE_FILE "${SOURCE_ROOT}/collector/LICENSE-kernel-modules.txt"
             cci-export GCLOUD_TARGET "${GCLOUD_BUCKET}/${relative_path}"
 
       - run:
@@ -1303,7 +1303,7 @@ jobs:
           name: Create support package files
           command: |
             "${SUPPORT_PKG_SRC_ROOT}/04-create-support-packages.sh" \
-              /tmp/support-packages/metadata /tmp/support-packages/output
+              "${LICENSE_FILE}" /tmp/support-packages/metadata /tmp/support-packages/output
 
       - run:
           name: Create index file

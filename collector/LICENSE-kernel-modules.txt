@@ -1,3 +1,38 @@
+collector kernel module and ebpf subcomponents
+
+Copyright 2020 StackRox, Inc.  All rights reserved
+
+This product may use kernel module and ebpf subcomponents licensed under the GNU
+GENERAL PURPOSE LICENSE Version 2 set forth below.
+
+Source code for the kernel module and ebpf subcomponents is available upon
+request by contacting support@stackrox.com.
+
+The collector kernel module and eBPF subcomponents use the sysdig driver
+subcomponent which is dual licensed under the MIT license and the GNU
+General Public License 2 set forth below.
+
+Copyright (c) 2013-2018 Draios Inc. dba Sysdig
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
                     GNU GENERAL PUBLIC LICENSE
                        Version 2, June 1991
 
@@ -276,18 +311,6 @@ TO LOSS OF DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY
 YOU OR THIRD PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER
 PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGES.
-
-* In addition, as a special exception, the copyright holders give
-* permission to link the code of portions of this program with the
-* OpenSSL library under certain conditions as described in each
-* individual source file, and distribute linked combinations
-* including the two.
-* You must obey the GNU General Public License in all respects
-* for all of the code used other than OpenSSL.  If you modify
-* file(s) with this exception, you may extend this exception to your
-* version of the file(s), but you are not obligated to do so.  If you
-* do not wish to do so, delete this exception statement from your
-* version.
 
                      END OF TERMS AND CONDITIONS
 
