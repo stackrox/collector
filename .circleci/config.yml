@@ -669,7 +669,6 @@ jobs:
         - go/src/github.com/stackrox/collector/collector/container/bin
         - go/src/github.com/stackrox/collector/collector/container/libs
         - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES
-        - go/src/github.com/stackrox/collector/collector/container/LICENSE-kernel-modules.txt
 
   collector-rhel:
     machine:
@@ -698,7 +697,6 @@ jobs:
         - go/src/github.com/stackrox/collector/collector/container/bin
         - go/src/github.com/stackrox/collector/collector/container/libs
         - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES.rhel
-        - go/src/github.com/stackrox/collector/collector/container/LICENSE-kernel-modules.txt
 
   images:
     machine:
@@ -746,11 +744,12 @@ jobs:
           - /tmp/cache/
 
     - run:
-        name: Adding Kernel module version file
+        name: Adding Kernel module version and license files
         command: |
           mkdir -p "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
           echo "$MODULE_VERSION" \
             >>"${SOURCE_ROOT}/kernel-modules/container/kernel-modules/MODULE_VERSION.txt"
+          cp "${SOURCE_ROOT}"/collector/LICENSE-kernel-modules.txt "${SOURCE_ROOT}"/collector/container/
 
     - run:
         name: Load any missing modules from GCloud
