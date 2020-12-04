@@ -34,7 +34,6 @@ RUN apt-get update \
         libelf1 \
         google-perftools \
  && dpkg -r --force-all e2fslibs e2fsprogs apt debconf dpkg \
- && ( for pkg in /usr/share/doc/*; do cp $pkg/copyright /THIRD_PARTY_NOTICES/$(basename $pkg); done ) \
  && rm -rf /var/lib/apt \
  ;
 
