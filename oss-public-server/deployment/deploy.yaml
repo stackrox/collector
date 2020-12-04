@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: server
+    spec:
+      containers:
+        - name: server
+          image: us.gcr.io/stackrox-collector/public-server:2018-07-10
+          ports:
+            - name: http
+              containerPort: 32257
+          imagePullPolicy: Always
+      restartPolicy: Always
