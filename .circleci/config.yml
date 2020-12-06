@@ -893,6 +893,7 @@ jobs:
     - run:
         name: Upload collector image RHEL DSOP bundles on release
         command: |
+          exit 0
           if [[ -n "$CIRCLE_TAG" ]]; then
             gsutil cp "${SOURCE_ROOT}/collector/container/rhel/latest-bundle.tar.gz" \
               "${GCLOUD_DSOP_BUCKET}/collector-rhel/${COLLECTOR_VERSION}-latest/bundle.tar.gz"
@@ -1013,6 +1014,8 @@ jobs:
       - run:
           name: Uploading Kernel modules
           command: |
+            circleci step halt
+
             extra_args=()
             target="${COLLECTOR_MODULES_BUCKET}"
             if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
