@@ -1410,7 +1410,7 @@ jobs:
               docker push "stackrox/collector:${collector_ver}-reload-latest" | cat
             else
               docker push "stackrox/collector:${collector_ver}-latest" | cat
-              docker push "collector.stackrox.io/collector:${collector_ver}-latest" | cat
+              # docker push "collector.stackrox.io/collector:${collector_ver}-latest" | cat
             fi
           done
 
