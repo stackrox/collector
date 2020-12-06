@@ -33,10 +33,10 @@ RUN mv collector-wrapper.sh /usr/local/bin/ && \
     rm -f bundle.tar.gz && \
     dnf upgrade -y && \
     dnf install -y kmod && \
-    dnf clean all && \
-    rm -rf /var/cache/dnf && \
+    # dnf clean all && \
+    # rm -rf /var/cache/dnf && \
     # (Optional) Remove line below to keep package management utilities
-    rpm -e --nodeps rpm rpm-build-libs rpm-libs python3-rpm subscription-manager python3-subscription-manager-rhsm yum $(rpm -qa *dnf*) python3-hawkey && \
+    # rpm -e --nodeps rpm rpm-build-libs rpm-libs python3-rpm subscription-manager python3-subscription-manager-rhsm yum $(rpm -qa *dnf*) python3-hawkey && \
     echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt
 
 
