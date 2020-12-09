@@ -83,22 +83,9 @@ collector-image: $(MOD_VER_FILE)
 		-t stackrox/collector:$(COLLECTOR_TAG)-base \
 		collector/container
 
-<<<<<<< HEAD
-.PHONY: $(CURDIR)/collector/container/rhel/bundle.tar.gz
-$(CURDIR)/collector/container/rhel/bundle.tar.gz:
-	$(CURDIR)/collector/container/rhel/create-bundle.sh $(CURDIR)/collector/container - $(CURDIR)/collector/container/rhel/
-
-.PHONY: $(CURDIR)/collector/container/rhel/prebuild.sh
-$(CURDIR)/collector/container/rhel/prebuild.sh:
-	$(CURDIR)/collector/container/rhel/create-prebuild.sh $@
-
-image-rhel: collector-rhel unittest-rhel $(MOD_VER_FILE) $(CURDIR)/collector/container/rhel/bundle.tar.gz
-	make -C collector txt-files
-=======
 collector-image-rhel: $(MOD_VER_FILE)
 	$(CURDIR)/collector/container/rhel/create-bundle.sh \
 		"$(CURDIR)/collector/container" - "$(CURDIR)/collector/container/rhel"
->>>>>>> 15580d67 (X-Smart-Squash: Squashed 16 commits:)
 	docker build --build-arg collector_version="rhel-$(COLLECTOR_TAG)" \
 		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
 		-f collector/container/rhel/Dockerfile \
