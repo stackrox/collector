@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+DIR="$(cd "$(dirname "$0")" && pwd)"
+SOURCE_ROOT="${SOURCE_ROOT:-${DIR}/..}"
+BUILD_CONTAINER_TAG="${BUILD_CONTAINER_TAG:-stackrox/collector-builder:kobuilder-cache}"
+KOBUILD_DIR="${KOBUILD_DIR:-${SOURCE_ROOT}/kobuild}"
+PROBE_DIR="${PROBE_DIR:-${SOURCE_ROOT}/probes}"
+
+kernel="$1"
+probe_type="$2"
+module_version=$(cat "${SOURCE_ROOT}/kernel-modules/kobuild-tmp/MODULE_VERSION.txt")
+
+bundle_file="${KOBUILD_DIR}/bundles/bundle-${kernel}.tgz"
+
+inspect_dir=$(mktemp -d)
+tar -xzf "${bundle_file}" -C "${inspect_dir}" ./BUNDLE_DISTRO ./BUNDLE_VERSION
+distro="$(< "${inspect_dir}/BUNDLE_DISTRO")"
+kernel_version="$(< "${inspect_dir}/BUNDLE_VERSION")"
+rm -rf "${inspect_dir}"
+
+# Select builder flavor
+if basename "${SOURCE_ROOT}/kernel-modules/build/Dockerfile".* | sed 's/Dockerfile.//' | grep -q "${distro}"; then
+    flavor="${distro}"
+elif (( kernel_version >= 5 )); then
+    flavor="modern"
+fi
+
+echo "Using ${flavor} builder"
+echo "Building ${probe_type} probe for ${distro}:${kernel} and collector version ${module_version}"
+
+task_file=/tmp/kernel-build-task-file
+echo "${kernel} ${module_version} ${probe_type}" > "${task_file}"
+
+mkdir -p "${PROBE_DIR}"
+docker run --rm -i \
+  -v "${KOBUILD_DIR}/bundles:/bundles:ro" \
+  -v "${SOURCE_ROOT}/sources:/sources:ro" \
+  -v "${PROBE_DIR}:/output" \
+  --tmpfs /scratch:exec \
+  "build-kernel-modules-${flavor}" build-kos <"${task_file}"

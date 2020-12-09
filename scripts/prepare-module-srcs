@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+DIR="$(cd "$(dirname "$0")" && pwd)"
+TOPLEVEL="$(cd ${SOURCE_ROOT:-${DIR}/..}; pwd)"
+SOURCES_DIR="${SOURCES_DIR:-${TOPLEVEL}/sources}"
+MOD_VER_FILE="${TOPLEVEL}/kernel-modules/kobuild-tmp/MODULE_VERSION.txt"
+
+mkdir -p "${TOPLEVEL}/sources"
+
+docker run --rm -i \
+  -v "${TOPLEVEL}/sysdig:/sysdig:ro" \
+  -v "${SOURCES_DIR}:/output" \
+  --tmpfs /scratch:exec \
+  --env SYSDIG_DIR=/sysdig/src --env SCRATCH_DIR=/scratch --env OUTPUT_DIR=/output \
+  build-kernel-modules prepare-src 2> /dev/null | tail -n 1 > "${MOD_VER_FILE}"
+
+version="$(cat ${MOD_VER_FILE})"
+mkdir -p "${SOURCES_DIR}/${version}"
+tar xzf "${SOURCES_DIR}/${version}.tgz" -C "${SOURCES_DIR}/${version}"
+rm "${SOURCES_DIR}/${version}.tgz"
+
+if [[ -f "${TOPLEVEL}/kernel-modules/patches/${version}.patch" ]] ; then
+    echo "Applying patch for module version ${version} ..."
+    patch -p1 -d "${SOURCES_DIR}/${version}" <"${TOPLEVEL}/kernel-modules/patches/${version}.patch"
+fi

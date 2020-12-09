@@ -1,6 +1,8 @@
 .idea/
 .rox/
-integration-tests/*.logs
+.ccls-cache
+integration-tests/*.log
+integration-tests/container-logs/*.log
 integration-tests/perf.json
 sysdig/cmake-build
 sysdig/cmake-build-rhel
@@ -14,3 +16,10 @@ kernel-modules/kobuild-tmp
 
 # Development SSH Server keys
 .collector_dev_ssh_host_ed25519_key*
+
+# Patches and local probe build
+kobuild
+sources
+patches
+probes
+source-archives
