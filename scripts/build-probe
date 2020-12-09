@@ -19,6 +19,7 @@ kernel_version="$(< "${inspect_dir}/BUNDLE_VERSION")"
 rm -rf "${inspect_dir}"
 
 # Select builder flavor
+flavor="modern"
 if basename "${SOURCE_ROOT}/kernel-modules/build/Dockerfile".* | sed 's/Dockerfile.//' | grep -q "${distro}"; then
     flavor="${distro}"
 elif (( kernel_version >= 5 )); then

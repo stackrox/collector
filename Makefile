@@ -93,6 +93,11 @@ collector-image-rhel: $(MOD_VER_FILE)
 		collector/container/rhel
 
 image: collector unittest txt-files collector-image
+	docker build \
+		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
+		--build-arg collector_version="$(COLLECTOR_TAG)" \
+		-t "stackrox/collector:$(COLLECTOR_TAG)" \
+		"$(CURDIR)/kernel-modules/container"
 
 image-rhel: collector-rhel unittest-rhel txt-files collector-image-rhel
 
@@ -207,4 +212,4 @@ probe-archive-dev: $(MOD_VER_FILE)
 .PHONY: clean
 clean: teardown-dev
 	$(MAKE) -C collector clean
-	rm -rf kobuild sources patches probes source-archives
+	rm -rf sources patches probes source-archives
