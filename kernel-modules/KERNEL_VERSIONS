@@ -249,12 +249,6 @@
 4.11.6-coreos-r1
 4.11.9-coreos
 4.12.10-coreos
-4.12.14-197.61-default
-4.12.14-197.64-default
-4.12.14-197.67-default
-4.12.14-197.72-default
-4.12.14-8.47-azure
-4.12.14-8.52-azure
 4.12.14-coreos
 4.12.7-coreos
 4.13.0-1002-gcp
@@ -2044,12 +2038,7 @@
 5.3.0-62-generic
 5.3.0-63-generic
 5.3.0-64-generic
-5.3.18-18.21-azure
-5.3.18-18.24-azure
-5.3.18-24.24-default
 5.3.18-24.29-default
-5.3.18-24.34-default
-5.3.18-24.37-default
 5.4.0-1002-aws
 5.4.0-1002-gcp
 5.4.0-1003-azure
@@ -2271,6 +2260,7 @@
 5.8.0-30-generic
 5.8.0-31-generic
 5.8.0-32-generic
+5.8.0-33-generic
 5.8.11-flatcar
 5.9.0-1-amd64
 5.9.0-1-cloud-amd64
