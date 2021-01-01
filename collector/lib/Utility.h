@@ -91,6 +91,10 @@ std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo *t);
 // UUIDStr returns UUID in string format.
 const char* UUIDStr();
 
+// OverrideFromEnv overrides the given string, using the value from the given environment variable if it
+// is both set and non-empty. The return value indicates whether the value was overridden.
+bool OverrideFromEnv(std::string* val, const char* env_var_name);
+
 namespace internal {
 
 // ScopedLock just wraps a `std::unique_lock`. In addition, its operator bool() is marked constexpr and always returns

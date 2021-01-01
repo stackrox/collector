@@ -169,5 +169,12 @@ const char* GetHostname() {
   return "unknown";
 }
 
+bool OverrideFromEnv(std::string* val, const char* env_var_name) {
+  const char* env_value = std::getenv(env_var_name);
+  if (!env_value || !*env_value) return false;
+
+  *val = *env_value;
+  return true;
+}
 
 }  // namespace collector

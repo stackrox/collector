@@ -52,12 +52,11 @@ extern "C" {
 #include "CollectorArgs.h"
 #include "CollectorService.h"
 #include "EventNames.h"
-#include "GetStatus.h"
 #include "GRPC.h"
 #include "LogLevel.h"
 #include "Logging.h"
+#include "MultiPath.h"
 #include "SysdigService.h"
-#include "CollectorStatsExporter.h"
 #include "Utility.h"
 
 #define finit_module(fd, opts, flags) syscall(__NR_finit_module, fd, opts, flags)
@@ -274,13 +273,30 @@ int main(int argc, char **argv) {
     const auto& tls_config = collectorConfig["tlsConfig"];
 
     std::shared_ptr<grpc::ChannelCredentials> creds = grpc::InsecureChannelCredentials();
-    if (!tls_config.isNull()) {
-      std::string ca_cert_path = tls_config["caCertPath"].asString();
-      std::string client_cert_path = tls_config["clientCertPath"].asString();
-      std::string client_key_path = tls_config["clientKeyPath"].asString();
+    std::string ca_cert_path, client_cert_path, client_key_path;
 
+    bool use_mtls = false;
+    if (!tls_config.isNull()) {
+      use_mtls = true;
+      ca_cert_path = tls_config["caCertPath"].asString();
+      client_cert_path = tls_config["clientCertPath"].asString();
+      client_key_path = tls_config["clientKeyPath"].asString();
+    }
+
+    // The order of evaluation for the following is important. We want to ensure the OverrideFromEnv
+    // functions are called regardless of the value of use_mtls, and short-circuiting would get in the
+    // way of that.
+    use_mtls = OverrideFromEnv(&ca_cert_path, "ROX_MTLS_CA_FILE") || use_mtls;
+    use_mtls = OverrideFromEnv(&client_cert_path, "ROX_MTLS_CERT_FILE") || use_mtls;
+    use_mtls = OverrideFromEnv(&client_key_path, "ROX_MTLS_KEY_FILE") || use_mtls;
+
+    if (use_mtls) {
       if (!ca_cert_path.empty() && !client_cert_path.empty() && !client_key_path.empty()) {
-        creds = collector::TLSCredentialsFromFiles(ca_cert_path, client_cert_path, client_key_path);
+        creds = collector::TLSCredentialsFromFiles(
+                ResolveMultiPath(ca_cert_path),
+                ResolveMultiPath(client_cert_path),
+                ResolveMultiPath(client_key_path)
+        );
       } else {
         CLOG(ERROR)
            << "Partial TLS config: CACertPath=" << ca_cert_path << ", ClientCertPath=" << client_cert_path

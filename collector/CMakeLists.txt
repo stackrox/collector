@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
 project (collector)
 
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall --std=c++11 -pthread -Wno-deprecated-declarations")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -pthread -Wno-deprecated-declarations")
 
 set(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-strict-aliasing -DNDEBUG")
@@ -10,6 +11,8 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-strict-aliasing -DNDEBUG")
 if(ADDRESS_SANITIZER)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
 endif()
+
+add_subdirectory(abseil-cpp)
 
 include_directories(${PROJECT_SOURCE_DIR}/lib)
 include_directories(${PROJECT_SOURCE_DIR}/generated/proto)
@@ -37,6 +40,7 @@ add_dependencies(collector_lib sinsp-wrapper)
 target_link_libraries(collector_lib sinsp-wrapper)
 target_link_libraries(collector_lib cap-ng)
 target_link_libraries(collector_lib uuid)
+target_link_libraries(collector_lib absl::strings)
 target_link_libraries(collector_lib libgrpc++.a libgrpc.a libgpr.a libprotobuf.a libupb.a libabsl_bad_optional_access.a libabsl_base.a libabsl_dynamic_annotations.a libabsl_log_severity.a libabsl_spinlock_wait.a libabsl_str_format_internal.a libabsl_strings.a libabsl_strings_internal.a libabsl_throw_delegate.a libabsl_int128.a libabsl_raw_logging_internal.a libaddress_sorting.a libcares.a z ssl crypto)
 
 add_executable(collector collector.cpp)
