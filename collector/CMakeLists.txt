@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
 project (collector)
 
-set(CMAKE_CXX_STANDARD 11)
+# set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -pthread -Wno-deprecated-declarations")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -std=c++11 -pthread -Wno-deprecated-declarations")
 
 set(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-strict-aliasing -DNDEBUG")
@@ -63,7 +63,7 @@ target_link_libraries(runUnitTests libgtest_main.a)
 target_link_libraries(runUnitTests libgmock.a)
 target_link_libraries(runUnitTests libgmock_main.a)
 
-add_test(collector-tests runUnitTests)
+add_test(NAME CollectorTests WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/test" COMMAND runUnitTests)
 
 # Sysdig Wrapper Library
 set(BUILD_DRIVER OFF CACHE BOOL "Build the driver on Linux" FORCE)

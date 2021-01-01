@@ -10,7 +10,7 @@
 
 namespace collector {
 
-std::string ResolveMultiPath(const std::string& spec, bool* ok = nullptr) {
+std::string ResolveMultiPath(const std::string& spec, bool* ok) {
   auto alternatives = absl::StrSplit(spec, ';');
   for (const auto& alt : alternatives) {
     std::string trimmed(absl::StripAsciiWhitespace(alt));
