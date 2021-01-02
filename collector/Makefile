@@ -49,7 +49,7 @@ unittest:
 	docker rm -fv collector_unittest || true
 	docker run --rm --name collector_unittest \
 		-v "$(CURDIR)/container/libs/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
-		-v "$(CURDIR):/src:ro \
+		-v "$(CURDIR):/src:ro" \
 		-v "$(CURDIR)/cmake-build:/tmp/cmake-build" \
 		-w /tmp/cmake-build \
 		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) make test
