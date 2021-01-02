@@ -59,11 +59,10 @@ file(GLOB TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/test/*.cpp)
 add_executable(runUnitTests ${TEST_SRC_FILES})
 target_link_libraries(runUnitTests collector_lib)
 target_link_libraries(runUnitTests libgtest.a)
-target_link_libraries(runUnitTests libgtest_main.a)
 target_link_libraries(runUnitTests libgmock.a)
-target_link_libraries(runUnitTests libgmock_main.a)
+target_link_libraries(runUnitTests absl::flags_parse)
 
-add_test(NAME CollectorTests WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/test" COMMAND runUnitTests)
+add_test(CollectorTests runUnitTests --testdata_dir "${PROJECT_SOURCE_DIR}/test/testdata")
 
 # Sysdig Wrapper Library
 set(BUILD_DRIVER OFF CACHE BOOL "Build the driver on Linux" FORCE)
