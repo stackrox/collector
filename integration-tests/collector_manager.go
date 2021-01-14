@@ -95,6 +95,7 @@ func (c *collectorManager) TearDown() error {
 		c.killContainer("grpc-server")
 	}
 
+	c.captureLogs("collector")
 	isRunning, err := c.executor.IsContainerRunning("collector")
 	if err != nil {
 		return err
@@ -106,7 +107,6 @@ func (c *collectorManager) TearDown() error {
 		}
 		return fmt.Errorf("Container collector is not running (exitcode=%d)", exitCode)
 	}
-	c.captureLogs("collector")
 	c.killContainer("collector")
 	return nil
 }
