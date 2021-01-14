@@ -43,6 +43,10 @@ func TestBenchmark(t *testing.T) {
 	suite.Run(t, new(BenchmarkCollectorTestSuite))
 }
 
+func TestImageLabelJSON(t *testing.T) {
+	suite.Run(t, new(ImageLabelJSONTestSuite))
+}
+
 // TestMissingProcScrape only works with local fake proc directory
 func TestMissingProcScrape(t *testing.T) {
 	if ReadEnvVarWithDefault("REMOTE_HOST_TYPE", "local") == "local" {
@@ -93,6 +97,31 @@ type BenchmarkBaselineTestSuite struct {
 
 type MissingProcScrapeTestSuite struct {
 	IntegrationTestSuiteBase
+}
+
+type ImageLabelJSONTestSuite struct {
+	IntegrationTestSuiteBase
+}
+
+func (s *ImageLabelJSONTestSuite) SetupSuite() {
+	s.executor = NewExecutor()
+	s.collector = NewCollectorManager(s.executor, s.T().Name())
+	err := s.collector.Setup()
+	require.NoError(s.T(), err)
+	err = s.collector.Launch()
+	require.NoError(s.T(), err)
+}
+
+func (s *ImageLabelJSONTestSuite) TestRunImageWithJSONLabel() {
+	s.RunImageWithJSONLabels()
+}
+
+func (s *ImageLabelJSONTestSuite) TearDownSuite() {
+	err := s.collector.TearDown()
+	require.NoError(s.T(), err)
+	s.db, err = s.collector.BoltDB()
+	require.NoError(s.T(), err)
+	s.cleanupContainer([]string{"collector", "grpc-server", "jsonlabel"})
 }
 
 func (s *BenchmarkCollectorTestSuite) SetupSuite() {
@@ -481,6 +510,21 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 		fmt.Printf("Benchmark Time: Not found! Logs: %s\n", benchmarkLogs)
 		assert.FailNow(s.T(), "Benchmark Time not found")
 	}
+}
+
+func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
+	name := "jsonlabel"
+	image := "stackrox/benchmark-collector:json-label"
+	err := s.executor.PullImage(image)
+	require.NoError(s.T(), err)
+	args := []string{
+		name,
+		image,
+	}
+	containerID, err := s.launchContainer(args...)
+	require.NoError(s.T(), err)
+	_, err = s.waitForContainerToExit(name, containerID[0:12])
+	require.NoError(s.T(), err)
 }
 
 func (s *IntegrationTestSuiteBase) StartContainerStats() {

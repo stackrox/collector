@@ -368,10 +368,12 @@ function main() {
     eval exec "$@" &
     PID=$!
     wait $PID
+    status=$?
 
     if collection_method_module; then
         remove_module "$module_name"
     fi
+    exit $status
 }
 
 main "$@"
