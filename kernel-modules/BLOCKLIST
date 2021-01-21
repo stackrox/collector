@@ -7,6 +7,6 @@
 ~3\.10\.0-1062(?:\.\d+)*\.el7.x86_64 * bpf
 *.el6.*
 # TODO(ROX-5396) - Fix collector probe compilation for 5.7-5.10 kernels
-~5\.[7-9]|10\..*
+~5\.([7-9]|10)\..*
 # TODO(ROX-5809) - Fix collector probe compilation for 4.19. cloud Debian kernels
 ~4\.19.*cloud.*
