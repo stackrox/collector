@@ -1,16 +1,14 @@
-FROM centos:7
+FROM centos:8
 
 RUN yum update -y
 RUN yum -y groupinstall "Development Tools" && \
-    yum -y install centos-release-scl && \
-    yum -y install llvm-toolset-7.0 elfutils-libelf-devel \
+    yum -y install llvm-toolset elfutils-libelf-devel \
     ;
 
 RUN mkdir -p /output
 COPY build-kos /usr/bin/
 COPY prepare-src /usr/bin
 
-COPY redhat-entrypoint.sh /redhat-entrypoint.sh
-
 WORKDIR /scratch
-ENTRYPOINT [ "/redhat-entrypoint.sh" ]
+ENTRYPOINT [ "/bin/bash", "-c" ]
+
