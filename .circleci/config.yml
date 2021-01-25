@@ -547,12 +547,12 @@ jobs:
             tar -xzf "${bundle_file}" -C ~/kobuild-tmp/meta-inspect ./BUNDLE_DISTRO ./BUNDLE_VERSION
             distro="$(< ~/kobuild-tmp/meta-inspect/BUNDLE_DISTRO)"
             kernel_version="$(< ~/kobuild-tmp/meta-inspect/BUNDLE_VERSION)"
-            if grep -q "$distro" <~/kobuild-tmp/custom-flavors/all; then
-              echo "$version" >>~/kobuild-tmp/custom-flavors/versions."$distro"
-              echo "Building kernel version $version with custom builder flavor $distro"
-            elif (( kernel_version >= 5 )); then
+            if (( kernel_version >= 5 )); then
               echo "$version" >>~/kobuild-tmp/custom-flavors/versions.modern
               echo "Building kernel version $version with modern builder"
+            elif grep -q "$distro" <~/kobuild-tmp/custom-flavors/all; then
+              echo "$version" >>~/kobuild-tmp/custom-flavors/versions."$distro"
+              echo "Building kernel version $version with custom builder flavor $distro"
             fi
           done
 
