@@ -39,6 +39,13 @@ baseline: docker-clean
 	go test -timeout 30m -count=1 -v \
 	  -run TestBenchmarkBaseline 2>&1 | tee -a integration-test.log
 
+.PHONY: image-label-json
+image-label-json: docker-clean
+	go version
+	set -o pipefail ; \
+	go test -timeout 30m -count=1 -v \
+	  -run TestImageLabelJSON 2>&1 | tee -a integration-test.log
+
 .PHONY: missing-proc-scrape
 missing-proc-scrape: docker-clean
 	./scripts/create-fake-proc-dir.sh

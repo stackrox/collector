@@ -106,6 +106,10 @@ integration-tests-process-network:
 integration-tests-missing-proc-scrape:
 	make -C integration-tests missing-proc-scrape
 
+.PHONY: integration-tests-image-label-json
+integration-tests-image-label-json:
+	make -C integration-tests image-label-json
+
 .PHONY: integration-tests-process-network-rhel
 integration-tests-process-network-rhel:
 	COLLECTOR_REPO="stackrox/collector-rhel" \

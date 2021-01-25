@@ -96,7 +96,22 @@ func (c *collectorManager) TearDown() error {
 	}
 
 	c.captureLogs("collector")
-	c.killContainer("collector")
+	isRunning, err := c.executor.IsContainerRunning("collector")
+	if err != nil {
+		return err
+	}
+	if isRunning {
+		c.killContainer("collector")
+	} else {
+		// Check if collector container segfaulted or exited with error
+		exitCode, err := c.executor.ExitCode("collector")
+		if err != nil {
+			return err
+		}
+		if exitCode != 0 {
+			return fmt.Errorf("Collector container has non-zero exit code (%d)", exitCode)
+		}
+	}
 	return nil
 }
 
