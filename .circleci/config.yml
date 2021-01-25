@@ -1272,7 +1272,7 @@ jobs:
       - run:
           name: Install Pip
           command: |
-            curl https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
+            curl https://bootstrap.pypa.io/3.5/get-pip.py -o /tmp/get-pip.py
             sudo python3 /tmp/get-pip.py
 
       - run:
