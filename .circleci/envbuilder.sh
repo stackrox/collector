@@ -75,6 +75,17 @@ installDockerOnRHELViaGCPSSH() {
   gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo usermod -aG docker $(whoami)"
 }
 
+setupDockerOnSUSEViaGCPSSH() {
+  local GCP_VM_NAME="$1"
+  shift
+  local GCP_SSH_KEY_FILE="$1"
+  shift
+
+  ssh-keygen -f "/home/circleci/.ssh/google_compute_known_hosts" -R "compute.$(gcloud compute instances describe $GCP_VM_NAME --format='get(id)')"
+  gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo systemctl start docker"
+}
+
+
 gcpSSHReady() {
   local GCP_VM_USER="$1"
   shift
@@ -120,7 +131,7 @@ setupGCPVM() {
   local GDOCKER_PASS="$1"
   shift
 
-  if [[ ! "$GCP_VM_TYPE" =~ ^(coreos|cos|rhel|ubuntu-os)$ ]]; then
+  if [[ ! "$GCP_VM_TYPE" =~ ^(coreos|cos|rhel|suse|suse-sap|ubuntu-os)$ ]]; then
     echo "Unsupported GPC_VM_TYPE: $GCP_VM_TYPE"
     exit 1
   fi
@@ -141,7 +152,9 @@ setupGCPVM() {
     installDockerOnUbuntuViaGCPSSH "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
   elif test "$GCP_VM_TYPE" = "rhel" ; then
     installDockerOnRHELViaGCPSSH "$GCP_VM_NAME" "$GCP_IMAGE_FAMILY" "$GCP_SSH_KEY_FILE"
+  elif [[ "$GCP_VM_TYPE" =~ "suse" ]] ; then
+    setupDockerOnSUSEViaGCPSSH "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
   fi
 
-  loginDockerViaGCPSSH "$GCP_VM_USER" "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE" "$GDOCKER_USER" "$GDOCKER_PASS" 
+  loginDockerViaGCPSSH "$GCP_VM_USER" "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE" "$GDOCKER_USER" "$GDOCKER_PASS"
 }
