@@ -483,6 +483,7 @@ jobs:
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
+    - KERNEL_BUNDLES_STAGING_BUCKET: ""
 
     steps:
     - initcommand
@@ -532,7 +533,14 @@ jobs:
           mkdir -p ~/kobuild-tmp/bundles
 
           awk -v bucket="$KERNEL_BUNDLES_BUCKET" '{print bucket "/bundle-" $1 ".tgz"}' <~/kobuild-tmp/all-kernel-versions \
-            | gsutil -m cp -I ~/kobuild-tmp/bundles/
+            | gsutil -m cp -I ~/kobuild-tmp/bundles/ || true
+
+          # Include kernel bundles within env var KERNEL_BUNDLES_STAGING_BUCKET, if it is set on a PR branch
+          if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -z "$KERNEL_BUNDLES_STAGING_BUCKET" ]]; then
+            awk -v bucket="$KERNEL_BUNDLES_STAGING_BUCKET" \
+              '{print bucket "/bundle-" $1 ".tgz"}' <~/kobuild-tmp/all-kernel-versions \
+              | gsutil -m cp -I ~/kobuild-tmp/bundles/ || true
+          fi
 
           ls ~/kobuild-tmp/bundles/
 
@@ -547,7 +555,7 @@ jobs:
             tar -xzf "${bundle_file}" -C ~/kobuild-tmp/meta-inspect ./BUNDLE_DISTRO ./BUNDLE_VERSION
             distro="$(< ~/kobuild-tmp/meta-inspect/BUNDLE_DISTRO)"
             kernel_version="$(< ~/kobuild-tmp/meta-inspect/BUNDLE_VERSION)"
-            if (( kernel_version >= 5 )); then
+            if [[ "$distro" == "suse" ]] || (( kernel_version >= 5 )); then
               echo "$version" >>~/kobuild-tmp/custom-flavors/versions.modern
               echo "Building kernel version $version with modern builder"
             elif grep -q "$distro" <~/kobuild-tmp/custom-flavors/all; then
@@ -574,7 +582,8 @@ jobs:
 
     - run:
         name: Restore builder cache image(s)
-        command: docker pull $BUILD_CONTAINER_CACHE_IMAGES || true
+        command: |
+          make -C "${SOURCE_ROOT}/kernel-modules" pull-build-containers
 
     - run:
         name: Build builder image
@@ -596,7 +605,7 @@ jobs:
         command: |
           # [[ "$CIRCLE_BRANCH" == "master" ]] || exit 0
           (( CIRCLE_NODE_INDEX == 0 )) || exit 0
-          docker push "$BUILD_CONTAINER_TAG"
+          make -C "${SOURCE_ROOT}/kernel-modules" push-build-containers
         background: true
 
     - run:
@@ -1094,10 +1103,10 @@ jobs:
         enum: [module, ebpf]
       vm_type:
         type: enum
-        enum: [cos, rhel, ubuntu-os]
+        enum: [cos, rhel, suse, suse-sap, ubuntu-os]
       image_family:
         type: enum
-        enum: [cos-stable, cos-85-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-2004-lts]
+        enum: [cos-stable, cos-85-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-2004-lts, sles-12, sles-15, sles-15-sp2-sap]
     machine:
       image: ubuntu-1604:202004-01
 
@@ -1659,6 +1668,61 @@ workflows:
         filters:
           tags:
             only: /.*/
+    - integration-test:
+        name: test-ebpf-sles-15
+        collection_method: ebpf
+        vm_type: suse
+        image_family: sles-15
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-module-sles-15
+        collection_method: module
+        vm_type: suse
+        image_family: sles-15
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-module-sles-12
+        collection_method: module
+        vm_type: suse
+        image_family: sles-12
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-ebpf-sles-15-sp2-sap
+        collection_method: ebpf
+        vm_type: suse-sap
+        image_family: sles-15-sp2-sap
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
+    - integration-test:
+        name: test-module-sles-15-sp2-sap
+        collection_method: module
+        vm_type: suse-sap
+        image_family: sles-15-sp2-sap
+        requires:
+        - images
+        - integration-test-local
+        filters:
+          tags:
+            only: /.*/
     - integration-test-data:
        requires:
        - test-ebpf-cos-stable
@@ -1675,6 +1739,11 @@ workflows:
        - test-ebpf-ubuntu-1804-lts
        - test-module-ubuntu-2004-lts
        - test-ebpf-ubuntu-2004-lts
+       - test-ebpf-sles-15
+       - test-module-sles-15
+       - test-module-sles-12
+       - test-ebpf-sles-15-sp2-sap
+       - test-module-sles-15-sp2-sap
        filters:
          tags:
            only: /.*/

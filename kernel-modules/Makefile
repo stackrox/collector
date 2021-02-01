@@ -12,10 +12,30 @@ build-container:
 	docker build $(BUILD_CONTAINER_CACHE_IMAGES:%=--cache-from=%) -t $(BUILD_CONTAINER_TAG) ./build
 
 build-container-%: build/Dockerfile.%
-	docker build $(BUILD_CONTAINER_CACHE_IMAGES:%=--cache-from=%-$%) -t $(BUILD_CONTAINER_TAG)-$* ./build -f $<
+	docker build $(BUILD_CONTAINER_CACHE_IMAGES:%=--cache-from=%-$@) -t $(BUILD_CONTAINER_TAG)-$* ./build -f $<
 
 .PHONY: all-build-containers
 all-build-containers: build-container $(CUSTOM_FLAVORS:%=build-container-%)
+
+.PHONY: pull-build-container
+pull-build-container:
+	docker pull $(BUILD_CONTAINER_CACHE_IMAGES) || true
+
+pull-build-container-%: build/Dockerfile.%
+	$(BUILD_CONTAINER_CACHE_IMAGES:%=docker pull %-$*) || true
+
+.PHONY: pull-build-containers
+pull-build-containers: pull-build-container $(CUSTOM_FLAVORS:%=pull-build-container-%)
+
+.PHONY: push-build-container
+push-build-container:
+	docker push $(BUILD_CONTAINER_CACHE_IMAGES) || true
+
+push-build-container-%: build/Dockerfile.%
+	$(BUILD_CONTAINER_CACHE_IMAGES:%=docker push %-$*) || true
+
+.PHONY: push-build-containers
+push-build-containers: push-build-container $(CUSTOM_FLAVORS:%=push-build-container-%)
 
 .PHONY: print-custom-flavors
 print-custom-flavors:
