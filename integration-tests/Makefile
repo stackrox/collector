@@ -64,7 +64,7 @@ report:
 	@grep "^coverage: " -A1 integration-test.log | grep -v -e '--' | paste -d " "  - -
 	@echo
 	@echo "Test pass/fail summary:"
-	@grep failures integration-test-report.xml | column -t
+	@grep failures integration-test-report.xml | awk -vOFS="  " 'NF > 0 { $$1 = $$1 } 1'
 	@echo
 	@echo "`grep 'FAIL  github.com/stackrox/collector' integration-test.log | wc -l` package(s) detected with compilation or test failures."
 	@-grep 'FAIL    github.com/stackrox/collector' integration-test.log || true
