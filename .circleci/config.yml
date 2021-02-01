@@ -988,10 +988,7 @@ jobs:
                 out_dir="${WORKSPACE_ROOT}/ko-build/built-probes/${version}/"
                 mkdir -p "$out_dir"
                 files=("${job_dir}"/*.{gz,unavail})
-                echo
                 echo "${#files[@]} files in ${job_dir}"
-                echo $( IFS=$'\n'; echo "${files[*]}" )
-                echo
                 [[ "${#files[@]}" > 0 ]] || continue
                 mv "${job_dir}"/*.{gz,unavail} "$out_dir"
               done
