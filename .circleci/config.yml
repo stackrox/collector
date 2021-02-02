@@ -100,13 +100,15 @@ commands:
     steps:
     - run:
         name: Login to Docker Hub with pull credentials
-        command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
+        command: |
+            docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
 
   docker-login-push:
     steps:
     - run:
         name: Login to Docker Hub with push credentials
-        command: docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD"
+        command: |
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD"
 
   stackrox-io-login:
     steps:
@@ -1026,7 +1028,7 @@ jobs:
             for probes_dir in "${WORKSPACE_ROOT}/ko-build/built-probes"/*; do
               files=("${probes_dir}"/*.{gz,unavail})
               [[ "${#files[@]}" > 0 ]] || continue
-              ( IFS=$'\n'; echo "${files[*]}" ) | gsutil -m cp -n -I "${target}/$(basename "$probes_dir")/"
+              printf '%s\n' "${files[@]}" | gsutil -m cp -n -I "${target}/$(basename "$probes_dir")/"
             done
 
             if [[ "$CIRCLE_BRANCH" == "master" || -n "$CIRCLE_TAG" ]]; then
@@ -1034,7 +1036,7 @@ jobs:
               for probes_dir in "${WORKSPACE_ROOT}/ko-build/cached-probes"/*; do
                 files=("${probes_dir}"/*.{gz,unavail})
                 [[ "${#files[@]}" > 0 ]] || continue
-                ( IFS=$'\n'; echo "${files[*]}" ) | gsutil -m cp -n -I "${target}/$(basename "$probes_dir")/"
+                printf '%s\n' "${files[@]}" | gsutil -m cp -n -I "${target}/$(basename "$probes_dir")/"
               done
             fi
 
