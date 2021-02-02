@@ -1,5 +1,39 @@
 version: 2.1
 
+defaultImage: &defaultImage
+  docker:
+  - image: docker.io/stackrox/apollo-ci:collector-0.3.7
+    auth:
+      username: $DOCKER_IO_PULL_USERNAME
+      password: $DOCKER_IO_PULL_PASSWORD
+  working_directory: ~/workspace
+  environment:
+    ROX_CI_IMAGE: true
+
+defaultMachine: &defaultMachine
+  machine:
+    image: ubuntu-2004:202010-01
+
+runOnAllTags: &runOnAllTags
+  filters:
+    tags:
+      only: /.*/
+
+runOnAllTagsWithDockerIOPullCtx: &runOnAllTagsWithDockerIOPullCtx
+  <<: *runOnAllTags
+  context: docker-io-pull
+
+runOnAllTagsWithDockerIOPushCtx: &runOnAllTagsWithDockerIOPushCtx
+  <<: *runOnAllTags
+  context: docker-io-push
+
+runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequires
+  <<: *runOnAllTags
+  context: docker-io-pull
+  requires:
+  - images
+  - integration-test-local
+
 orbs:
   slack: circleci/slack@3.4.2
 
@@ -65,40 +99,30 @@ commands:
   docker-login:
     steps:
     - run:
-        name: Login to Docker Hub
-        command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
-
-  update-go:
-    steps:
-    - run:
-        name: "Update Go"
+        name: Login to Docker Hub with pull credentials
         command: |
-          GO_VERSION="1.13.3"
-          sudo rm -r /usr/local/go/
-          wget "https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz"
-          sudo tar -C /usr/local -xzf "go${GO_VERSION}.linux-amd64.tar.gz"
-          rm "go${GO_VERSION}.linux-amd64.tar.gz"
-          go version
+            docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
 
-  set-python-version:
+  docker-login-push:
     steps:
     - run:
-        name: "Set python version to 3.5.9"
-        command: pyenv global 3.5.9
+        name: Login to Docker Hub with push credentials
+        command: |
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD"
+
+  stackrox-io-login:
+    steps:
+    - run:
+        name: Docker login to collector.stackrox.io
+        command: |
+          docker login \
+            -u "$STACKROX_IO_PUSH_USERNAME" \
+            -p "$STACKROX_IO_PUSH_PASSWORD" \
+            collector.stackrox.io
 
 jobs:
   initjob:
-    docker:
-    - image: docker.io/stackrox/apollo-ci:collector-0.2.12
-      auth:
-        username: $DOCKER_USER
-        password: $DOCKER_PASS
-
-    environment:
-      ROX_CI_IMAGE: "true"
-
-    working_directory: ~/workspace
-
+    <<: *defaultImage
     steps:
     - checkout:
         path: ~/workspace/go/src/github.com/stackrox/collector
@@ -159,12 +183,12 @@ jobs:
         - shared-env
 
   builder:
-    machine:
-      image: ubuntu-1604:202004-01
+    <<: *defaultMachine
     resource_class: large
+
     steps:
     - initcommand
-    - docker-login
+    - docker-login-push
 
     - run:
         name: Restore collector-builder image
@@ -184,12 +208,12 @@ jobs:
           fi
 
   builder-rhel:
-    machine:
-      image: ubuntu-1604:202004-01
+    <<: *defaultMachine
     resource_class: large
+
     steps:
     - initcommand
-    - docker-login
+    - docker-login-push
 
     - run:
         name: Restore collector-builder rhel image
@@ -210,15 +234,7 @@ jobs:
 
 
   prepare-kernels:
-    docker:
-    - image: docker.io/stackrox/apollo-ci:collector-0.2.12
-      auth:
-        username: $DOCKER_USER
-        password: $DOCKER_PASS
-    environment:
-      ROX_CI_IMAGE: "true"
-
-    working_directory: ~/workspace
+    <<: *defaultImage
 
     steps:
     - initcommand
@@ -477,8 +493,7 @@ jobs:
           - shared-env
 
   kernels:
-    machine:
-      image: ubuntu-1604:202004-01
+    <<: *defaultMachine
     parallelism: 8
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
@@ -578,7 +593,7 @@ jobs:
           cat ~/kobuild-tmp/local-build-tasks.* ~/kobuild-tmp/local-build-tasks | sort | uniq -u >~/kobuild-tmp/local-build-tasks.default
           rm ~/kobuild-tmp/local-build-tasks
 
-    - docker-login
+    - docker-login-push
 
     - run:
         name: Restore builder cache image(s)
@@ -652,8 +667,7 @@ jobs:
           - ko-build/build-output/FAILURES-*
 
   collector:
-    machine:
-      image: ubuntu-1604:202004-01
+    <<: *defaultMachine
     resource_class: large
 
     steps:
@@ -680,8 +694,7 @@ jobs:
         - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES
 
   collector-rhel:
-    machine:
-      image: ubuntu-1604:202004-01
+    <<: *defaultMachine
     resource_class: large
 
     steps:
@@ -708,15 +721,14 @@ jobs:
         - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES.rhel
 
   images:
-    machine:
-      image: ubuntu-1604:202004-01
+    <<: *defaultMachine
     environment:
     - INSTALL_DIRECTORY: /tmp
     - GCLOUD_DSOP_BUCKET: "gs://dsop-artifacts.stackrox.io"
 
     steps:
     - initcommand
-    - docker-login
+    - docker-login-push
     - gcloud-init
 
     - run:
@@ -910,15 +922,7 @@ jobs:
           fi
 
   kernel-module-build-failures-check:
-    docker:
-      - image: docker.io/stackrox/apollo-ci:collector-0.2.12
-        auth:
-          username: $DOCKER_USER
-          password: $DOCKER_PASS
-    environment:
-      ROX_CI_IMAGE: "true"
-
-    working_directory: ~/workspace
+    <<: *defaultImage
 
     steps:
       - initcommand
@@ -964,15 +968,7 @@ jobs:
           webhook: '${SLACK_WEBHOOK_KERNEL_PROBE_BUILD_FAILURE}'
 
   join-modules:
-    docker:
-    - image: docker.io/stackrox/apollo-ci:collector-0.2.12
-      auth:
-        username: $DOCKER_USER
-        password: $DOCKER_PASS
-    environment:
-      ROX_CI_IMAGE: "true"
-
-    working_directory: ~/workspace
+    <<: *defaultImage
 
     steps:
       - initcommand
@@ -980,6 +976,8 @@ jobs:
       - run:
           name: Consolidate modules built by sharded jobs
           command: |
+            shopt -s nullglob
+            shopt -s dotglob
             shard_dirs=("${WORKSPACE_ROOT}/ko-build/build-output/shard-"*)
             if [[ "{#shard_dirs[@]}" == 0 ]]; then
               exit 0
@@ -987,9 +985,14 @@ jobs:
             for shard_dir in "${shard_dirs[@]}"; do
               for version_dir in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
                 version="$(basename "$version_dir")"
-                out_dir="${WORKSPACE_ROOT}/ko-build/built-probes/$version/"
+                job_dir="${shard_dir}/${version}"
+                [[ -d "${job_dir}" ]] || continue
+                out_dir="${WORKSPACE_ROOT}/ko-build/built-probes/${version}/"
                 mkdir -p "$out_dir"
-                mv "$shard_dir/$version"/*.gz "$out_dir" || true
+                files=("${job_dir}"/*.{gz,unavail})
+                echo "${#files[@]} files in ${job_dir}"
+                [[ "${#files[@]}" > 0 ]] || continue
+                mv "${job_dir}"/*.{gz,unavail} "$out_dir"
               done
             done
 
@@ -999,15 +1002,7 @@ jobs:
             - ko-build/built-probes/
 
   upload-modules:
-    docker:
-    - image: docker.io/stackrox/apollo-ci:collector-0.2.12
-      auth:
-        username: $DOCKER_USER
-        password: $DOCKER_PASS
-    environment:
-      ROX_CI_IMAGE: "true"
-
-    working_directory: ~/workspace
+    <<: *defaultImage
 
     steps:
       - initcommand
@@ -1029,18 +1024,19 @@ jobs:
             fi
 
             shopt -s nullglob
+            shopt -s dotglob
             for probes_dir in "${WORKSPACE_ROOT}/ko-build/built-probes"/*; do
-              files=("${probes_dir}"/*.gz)
+              files=("${probes_dir}"/*.{gz,unavail})
               [[ "${#files[@]}" > 0 ]] || continue
-              gsutil -m cp -n "${probes_dir}/*.gz" "${target}/$(basename "$probes_dir")/"
+              printf '%s\n' "${files[@]}" | gsutil -m cp -n -I "${target}/$(basename "$probes_dir")/"
             done
 
             if [[ "$CIRCLE_BRANCH" == "master" || -n "$CIRCLE_TAG" ]]; then
               # On PR/master builds, additionally upload modules from cache
               for probes_dir in "${WORKSPACE_ROOT}/ko-build/cached-probes"/*; do
-                files=("${probes_dir}"/*.gz)
+                files=("${probes_dir}"/*.{gz,unavail})
                 [[ "${#files[@]}" > 0 ]] || continue
-                gsutil -m cp -n "${probes_dir}/*.gz" "${target}/$(basename "$probes_dir")/"
+                printf '%s\n' "${files[@]}" | gsutil -m cp -n -I "${target}/$(basename "$probes_dir")/"
               done
             fi
 
@@ -1062,15 +1058,13 @@ jobs:
         type: boolean
         default: false
 
-    machine:
-      image: ubuntu-1604:202004-01
+    <<: *defaultMachine
     working_directory: ~/workspace
 
     steps:
     - initcommand
     - docker-login
     - gcloud-init
-    - update-go
 
     - run:
         name: "Running integration tests"
@@ -1107,18 +1101,13 @@ jobs:
       image_family:
         type: enum
         enum: [cos-stable, cos-85-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-2004-lts, sles-12, sles-15, sles-15-sp2-sap]
-    machine:
-      image: ubuntu-1604:202004-01
 
-    working_directory: ~/workspace
+    <<: *defaultImage
 
     steps:
     - initcommand
     - add_ssh_keys
-    - docker-login
-    - set-python-version
     - gcloud-init
-    - update-go
 
     - run:
         name: "Extract gcp ssh public key from environment variable"
@@ -1134,7 +1123,7 @@ jobs:
           export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
           export VM_TYPE=<< parameters.vm_type >>
           export IMAGE_FAMILY=<< parameters.image_family >>
-          main "$GCLOUD_INSTANCE" "$VM_TYPE" "$IMAGE_FAMILY" "$GCP_SSH_KEY_FILE" "$DOCKER_USER" "$DOCKER_PASS"
+          main "$GCLOUD_INSTANCE" "$VM_TYPE" "$IMAGE_FAMILY" "$GCP_SSH_KEY_FILE" "$DOCKER_IO_PULL_USERNAME" "$DOCKER_IO_PULL_PASSWORD"
 
     - run:
         name: "Running integration tests"
@@ -1193,9 +1182,7 @@ jobs:
         when: always
 
   integration-test-data:
-    machine:
-      image: ubuntu-1604:202004-01
-    working_directory: ~/workspace
+    <<: *defaultImage
 
     steps:
     - initcommand
@@ -1231,18 +1218,11 @@ jobs:
         path: ~/workspace/benchmark.csv
 
   update-support-packages:
-    docker:
-      - image: docker.io/stackrox/apollo-ci:collector-0.2.12
-        auth:
-          username: $DOCKER_USER
-          password: $DOCKER_PASS
-
+    <<: *defaultImage
     environment:
       - DOWNLOAD_BASE_URL: "https://install.stackrox.io"
       - RELATIVE_PATH: "collector/support-packages"
       - GCLOUD_BUCKET: "gs://sr-roxc"
-
-    working_directory: ~/workspace
 
     steps:
       - initcommand
@@ -1256,14 +1236,7 @@ jobs:
             fi
 
       - setup_remote_docker
-      - run:
-          name: Docker login to collector.stackrox.io
-          command: |
-            docker login \
-              -u "$STACKROX_IO_PUSH_USERNAME" \
-              -p "$STACKROX_IO_PUSH_PASSWORD" \
-              collector.stackrox.io
-
+      - stackrox-io-login
       - gcloud-init
 
       - run:
@@ -1279,15 +1252,9 @@ jobs:
             cci-export GCLOUD_TARGET "${GCLOUD_BUCKET}/${relative_path}"
 
       - run:
-          name: Install Pip
-          command: |
-            curl https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
-            sudo python3 /tmp/get-pip.py
-
-      - run:
           name: Install Jinja2
           command: |
-            sudo pip3 install Jinja2
+            pip install Jinja2
 
       - run:
           name: Generate collector -> rox version map
@@ -1345,12 +1312,16 @@ jobs:
             [[ "$CIRCLE_BRANCH" == "master" || "$GCLOUD_TARGET" = *.test* ]]
             gsutil -m rsync -n -r -d /tmp/support-packages/output "$GCLOUD_TARGET"
 
+      - slack/status:
+          fail_only: true
+          mentions: SGX5Y89KJ
+          only_for_branches: master
+          webhook: '${SLACK_WEBHOOK_KERNEL_PROBE_BUILD_FAILURE}'
+
   reload-released-images:
-    machine:
-      image: ubuntu-1604:202004-01
+    <<: *defaultMachine
     environment:
     - INSTALL_DIRECTORY: /tmp
-
     working_directory: ~/workspace
 
     steps:
@@ -1378,15 +1349,14 @@ jobs:
             cp "${mod_build_dir}/${mod_ver}"/*.gz "/tmp/released-kernel-object-cache/${mod_ver}"
           done
 
-
-    - docker-login
+    - docker-login-push
+    - stackrox-io-login
     - gcloud-init
 
     - run:
         name: Reload released collector images
         command: |
           cd "$SOURCE_ROOT"
-          docker login -u "$STACKROX_IO_PUSH_USERNAME" -p "$STACKROX_IO_PUSH_PASSWORD" collector.stackrox.io
 
           modules_bucket="${COLLECTOR_MODULES_BUCKET}"
 
@@ -1430,331 +1400,206 @@ workflows:
   build:
     jobs:
     - initjob:
-        filters:
-          tags:
-            only: /.*/
+        <<: *runOnAllTagsWithDockerIOPullCtx
     - builder:
+        <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - initjob
-        filters:
-          tags:
-            only: /.*/
     - collector:
+        <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
         - builder
-        filters:
-          tags:
-            only: /.*/
     - builder-rhel:
+        <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - initjob
-        filters:
-          tags:
-            only: /.*/
     - collector-rhel:
+        <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
         - builder-rhel
-        filters:
-          tags:
-            only: /.*/
     - prepare-kernels:
+        <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
         - initjob
-        filters:
-          tags:
-            only: /.*/
     - kernels:
+        <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - prepare-kernels
-        filters:
-          tags:
-            only: /.*/
     - join-modules:
+        <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
         - kernels
-        filters:
-          tags:
-            only: /.*/
     - upload-modules:
+        <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
         - join-modules
-        filters:
-          tags:
-            only: /.*/
     - kernel-module-build-failures-check:
+        <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
         - kernels
-        filters:
-          tags:
-            only: /.*/
     - images:
+        <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - collector
         - collector-rhel
         - kernels
         - join-modules
-        filters:
-          tags:
-            only: /.*/
     - integration-test-local:
+        <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
         - images
         - upload-modules
-        filters:
-          tags:
-            only: /.*/
     - integration-test-local:
+        <<: *runOnAllTagsWithDockerIOPullCtx
         name: integration-test-local-rhel
         vm-config: rhel
         use-rhel: true
         requires:
         - images
         - upload-modules
-        filters:
-          tags:
-            only: /.*/
     - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-cos-stable
         collection_method: ebpf
         vm_type: cos
         image_family: cos-stable
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
     - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-cos-81-lts
         collection_method: ebpf
         vm_type: cos
         image_family: cos-81-lts
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
     - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-cos-77-lts
         collection_method: ebpf
         vm_type: cos
         image_family: cos-77-lts
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
     - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-cos-85-lts
         collection_method: ebpf
         vm_type: cos
         image_family: cos-85-lts
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
     - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-rhel-7
         collection_method: ebpf
         vm_type: rhel
         image_family: rhel-7
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
     # TODO(rc) Enabled but bootstrap.sh forces fallback to kernel-module (ROX-3377)
     - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-module-rhel-7
         collection_method: module
         vm_type: rhel
         image_family: rhel-7
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
     - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-rhel-8
         collection_method: ebpf
         vm_type: rhel
         image_family: rhel-8
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
     - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-module-rhel-8
         collection_method: module
         vm_type: rhel
         image_family: rhel-8
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
     - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-ubuntu-1804-lts
         collection_method: ebpf
         vm_type: ubuntu-os
         image_family: ubuntu-1804-lts
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
     - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-module-ubuntu-1604-lts
         collection_method: module
         vm_type: ubuntu-os
         image_family: ubuntu-1604-lts
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
     - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-ubuntu-1604-lts
         collection_method: ebpf
         vm_type: ubuntu-os
         image_family: ubuntu-1604-lts
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
     - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-module-ubuntu-1804-lts
         collection_method: module
         vm_type: ubuntu-os
         image_family: ubuntu-1804-lts
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
     - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-ubuntu-2004-lts
         collection_method: ebpf
         vm_type: ubuntu-os
         image_family: ubuntu-2004-lts
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
     - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-module-ubuntu-2004-lts
         collection_method: module
         vm_type: ubuntu-os
         image_family: ubuntu-2004-lts
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
     - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-sles-15
         collection_method: ebpf
         vm_type: suse
         image_family: sles-15
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
     - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-module-sles-15
         collection_method: module
         vm_type: suse
         image_family: sles-15
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
     - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-module-sles-12
         collection_method: module
         vm_type: suse
         image_family: sles-12
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
     - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-sles-15-sp2-sap
         collection_method: ebpf
         vm_type: suse-sap
         image_family: sles-15-sp2-sap
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
     - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-module-sles-15-sp2-sap
         collection_method: module
         vm_type: suse-sap
         image_family: sles-15-sp2-sap
-        requires:
-        - images
-        - integration-test-local
-        filters:
-          tags:
-            only: /.*/
     - integration-test-data:
-       requires:
-       - test-ebpf-cos-stable
-       - test-ebpf-cos-77-lts
-       - test-ebpf-cos-81-lts
-       - test-ebpf-cos-85-lts
-       - test-module-rhel-7
-       - test-ebpf-rhel-7
-       - test-module-rhel-8
-       - test-ebpf-rhel-8
-       - test-module-ubuntu-1604-lts
-       - test-ebpf-ubuntu-1604-lts
-       - test-module-ubuntu-1804-lts
-       - test-ebpf-ubuntu-1804-lts
-       - test-module-ubuntu-2004-lts
-       - test-ebpf-ubuntu-2004-lts
-       - test-ebpf-sles-15
-       - test-module-sles-15
-       - test-module-sles-12
-       - test-ebpf-sles-15-sp2-sap
-       - test-module-sles-15-sp2-sap
-       filters:
-         tags:
-           only: /.*/
+        <<: *runOnAllTagsWithDockerIOPullCtx
+        requires:
+        - test-ebpf-cos-stable
+        - test-ebpf-cos-77-lts
+        - test-ebpf-cos-81-lts
+        - test-ebpf-cos-85-lts
+        - test-module-rhel-7
+        - test-ebpf-rhel-7
+        - test-module-rhel-8
+        - test-ebpf-rhel-8
+        - test-module-ubuntu-1604-lts
+        - test-ebpf-ubuntu-1604-lts
+        - test-module-ubuntu-1804-lts
+        - test-ebpf-ubuntu-1804-lts
+        - test-module-ubuntu-2004-lts
+        - test-ebpf-ubuntu-2004-lts
+        - test-ebpf-sles-15
+        - test-module-sles-15
+        - test-module-sles-12
+        - test-ebpf-sles-15-sp2-sap
+        - test-module-sles-15-sp2-sap
     - reload-released-images:
-        context: docker-io-and-stackrox-io-push
+        <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - images
-        filters:
-         tags:
-           only: /.*/
     - update-support-packages:
+        <<: *runOnAllTags
         context: docker-io-and-stackrox-io-push
         requires:
           - upload-modules
