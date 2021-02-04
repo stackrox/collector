@@ -2341,6 +2341,7 @@
 5.4.0-63-generic
 5.4.0-64-generic
 5.4.0-65-generic
+5.4.0-66-generic
 5.4.0-8-generic
 5.4.0-9-generic
 5.4.49-13310.1015.0-cos
@@ -2455,6 +2456,7 @@
 5.8.0-1021-aws
 5.8.0-1021-azure
 5.8.0-1021-gcp
+5.8.0-1022-aws
 5.8.0-12-generic
 5.8.0-16-generic
 5.8.0-18-generic
