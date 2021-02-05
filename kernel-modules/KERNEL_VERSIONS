@@ -2458,6 +2458,8 @@
 5.8.0-1021-azure
 5.8.0-1021-gcp
 5.8.0-1022-aws
+5.8.0-1022-azure
+5.8.0-1023-aws
 5.8.0-12-generic
 5.8.0-16-generic
 5.8.0-18-generic
@@ -2484,6 +2486,7 @@
 5.8.0-40-generic
 5.8.0-41-generic
 5.8.0-42-generic
+5.8.0-43-generic
 5.8.11-flatcar
 5.9.0-1-amd64
 5.9.0-1-cloud-amd64
