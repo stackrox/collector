@@ -976,6 +976,7 @@ jobs:
       - run:
           name: Consolidate modules built by sharded jobs
           command: |
+            mkdir -p "${WORKSPACE_ROOT}/ko-build/built-probes"
             shopt -s nullglob
             shopt -s dotglob
             shard_dirs=("${WORKSPACE_ROOT}/ko-build/build-output/shard-"*)
@@ -1300,6 +1301,7 @@ jobs:
               echo -n .
             done
             echo
+
       - store_artifacts:
           path: /tmp/support-packages/metadata
 
