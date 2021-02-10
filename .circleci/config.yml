@@ -1300,6 +1300,8 @@ jobs:
               echo -n .
             done
             echo
+      - store_artifacts:
+          path: /tmp/support-packages/metadata
 
       - run:
           name: Delete old files
