@@ -84,11 +84,8 @@ commands:
         name: Install and configure gcloud
         working_directory: ~/.config/gcloud
         command: |
-          python --version
-          python3 --version
-          sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1
-          python --version
           if [[ -z "$ROX_CI_IMAGE" ]]; then
+            sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1
             pip install --upgrade pip
             pip install wheel
             pip install -U crcmod google_compute_engine
