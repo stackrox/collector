@@ -84,6 +84,8 @@ commands:
         name: Install and configure gcloud
         working_directory: ~/.config/gcloud
         command: |
+          python --version
+          python3 --version
           if [[ -z "$ROX_CI_IMAGE" ]]; then
             pip install --upgrade pip
             pip install wheel
