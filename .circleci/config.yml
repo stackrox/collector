@@ -573,6 +573,9 @@ jobs:
             if [[ "$distro" == "suse" ]] || (( kernel_version >= 5 )); then
               echo "$version" >>~/kobuild-tmp/custom-flavors/versions.modern
               echo "Building kernel version $version with modern builder"
+            elif [[ "$distro" == "redhat" && "$kernel_version" =~ ^.*el8_[3-9]\.x86_64$ ]]
+              echo "$version" >>~/kobuild-tmp/custom-flavors/versions.modern
+              echo "Building kernel version $version with modern builder"
             elif grep -q "$distro" <~/kobuild-tmp/custom-flavors/all; then
               echo "$version" >>~/kobuild-tmp/custom-flavors/versions."$distro"
               echo "Building kernel version $version with custom builder flavor $distro"
