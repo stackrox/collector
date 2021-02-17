@@ -1596,6 +1596,7 @@ workflows:
         - test-module-sles-15-sp2-sap
     - reload-released-images:
         <<: *runOnAllTagsWithDockerIOPushCtx
+        context: docker-io-and-stackrox-io-push
         requires:
         - images
     - update-support-packages:
