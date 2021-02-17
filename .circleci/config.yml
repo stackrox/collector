@@ -498,7 +498,7 @@ jobs:
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
-    - KERNEL_BUNDLES_STAGING_BUCKET: ""
+    - KERNEL_BUNDLES_STAGING_BUCKET: "gs://stackrox-kernel-bundles-staging/rc/fix-debian/4e1ea039fc0c5b2cb96a1f0d332ee4beb1fd2113"
 
     steps:
     - initcommand
