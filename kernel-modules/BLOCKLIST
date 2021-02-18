@@ -8,3 +8,6 @@
 *.el6.*
 # TODO(ROX-5396) - Fix collector probe compilation for 5.7-5.10 kernels
 ~5\.([7-9]|10)\..*
+# TODO(ROX-6615) - Kernel crawler deletes debian kernels
+4.19.0-10-cloud-amd64
+4.19.0-14-amd64
