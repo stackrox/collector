@@ -85,10 +85,10 @@ commands:
         working_directory: ~/.config/gcloud
         command: |
           if [[ -z "$ROX_CI_IMAGE" ]]; then
-            pip install --upgrade pip
-            pip install wheel
-            pip install -U crcmod google_compute_engine
-            pip install -U gcloud gsutil
+            pip3 install --upgrade pip
+            pip3 install wheel
+            pip3 install -U crcmod google_compute_engine
+            pip3 install -U gcloud gsutil
           fi
           sudo chown circleci:circleci /opt
           gcloud components install gsutil -q
@@ -570,7 +570,12 @@ jobs:
             tar -xzf "${bundle_file}" -C ~/kobuild-tmp/meta-inspect ./BUNDLE_DISTRO ./BUNDLE_VERSION
             distro="$(< ~/kobuild-tmp/meta-inspect/BUNDLE_DISTRO)"
             kernel_version="$(< ~/kobuild-tmp/meta-inspect/BUNDLE_VERSION)"
+            # SUSE and all kernels >= 5 can use modern builder
             if [[ "$distro" == "suse" ]] || (( kernel_version >= 5 )); then
+              echo "$version" >>~/kobuild-tmp/custom-flavors/versions.modern
+              echo "Building kernel version $version with modern builder"
+            # RHEL 8.3+ kernels require a newer gcc and can be compiled with modern builder
+            elif [[ "$distro" == "redhat" && "$version" =~ ^.*el8_[3-9]\.x86_64$ ]]; then
               echo "$version" >>~/kobuild-tmp/custom-flavors/versions.modern
               echo "Building kernel version $version with modern builder"
             elif grep -q "$distro" <~/kobuild-tmp/custom-flavors/all; then
@@ -1596,6 +1601,7 @@ workflows:
         - test-module-sles-15-sp2-sap
     - reload-released-images:
         <<: *runOnAllTagsWithDockerIOPushCtx
+        context: docker-io-and-stackrox-io-push
         requires:
         - images
     - update-support-packages:
