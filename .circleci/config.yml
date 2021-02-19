@@ -983,6 +983,7 @@ jobs:
           command: |
             shopt -s nullglob
             shopt -s dotglob
+            mkdir -p "${WORKSPACE_ROOT}/ko-build/built-probes"
             shard_dirs=("${WORKSPACE_ROOT}/ko-build/build-output/shard-"*)
             if [[ "{#shard_dirs[@]}" == 0 ]]; then
               exit 0
