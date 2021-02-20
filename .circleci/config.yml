@@ -498,7 +498,7 @@ jobs:
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
-    - KERNEL_BUNDLES_STAGING_BUCKET: ""
+    - KERNEL_BUNDLES_STAGING_BUCKET: "gs://stackrox-kernel-bundles-staging/rc/amazonlinux2-extras-kernel-5.4/285f3c1cb01cc696b9b3c8f8a0a6142e1bce9c5e"
 
     steps:
     - initcommand
