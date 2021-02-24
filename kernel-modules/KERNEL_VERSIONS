@@ -1000,6 +1000,7 @@
 4.15.0-134-generic
 4.15.0-135-generic
 4.15.0-136-generic
+4.15.0-137-generic
 4.15.0-15-generic
 4.15.0-20-generic
 4.15.0-22-generic
@@ -2360,6 +2361,7 @@
 5.4.0-64-generic
 5.4.0-65-generic
 5.4.0-66-generic
+5.4.0-67-generic
 5.4.0-8-generic
 5.4.0-9-generic
 5.4.20-12.75.amzn2.x86_64
@@ -2531,6 +2533,7 @@
 5.8.0-42-generic
 5.8.0-43-generic
 5.8.0-44-generic
+5.8.0-45-generic
 5.8.11-flatcar
 5.9.0-1-amd64
 5.9.0-1-cloud-amd64
