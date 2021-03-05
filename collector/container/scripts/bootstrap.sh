@@ -281,10 +281,10 @@ function main() {
         banner_ts="$(uname -a | awk -F'SMP ' '{print $2}' | awk -F'x86_64' '{print $1}')"
         kernel_version_ts="$(date '+%Y-%m-%d-%H-%M-%S' -d "${banner_ts}")"
         KERNEL_VERSION="${KERNEL_VERSION%-linuxkit}-dockerdesktop-${kernel_version_ts}"
-      if collection_method_ebpf; then
-        log "Warning: ${OS_DISTRO} does not support ebpf, switching to kernel module based collection"
-        COLLECTION_METHOD="KERNEL_MODULE"
-      fi
+        if collection_method_ebpf; then
+            log "Warning: ${OS_DISTRO} does not support ebpf, switching to kernel module based collection"
+            COLLECTION_METHOD="KERNEL_MODULE"
+        fi
     fi
 
     mkdir -p /module
