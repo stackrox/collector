@@ -46,38 +46,6 @@ index b687e28..9ea0a2d 100644
  #define FILLER_RAW(x)							\
  static __always_inline int __bpf_##x(struct filler_data *data);		\
  									\
-diff --git a/dkms.conf.in b/dkms.conf.in
-new file mode 100644
-index 0000000..afa8ee7
---- /dev/null
-+++ b/dkms.conf.in
-@@ -0,0 +1,5 @@
-+PACKAGE_NAME="@PACKAGE_NAME@"
-+PACKAGE_VERSION="@PROBE_VERSION@"
-+BUILT_MODULE_NAME[0]="@PROBE_NAME@"
-+DEST_MODULE_LOCATION[0]="/kernel/extra"
-+AUTOINSTALL="yes"
-diff --git a/driver_config.h.in b/driver_config.h.in
-new file mode 100644
-index 0000000..5afb3ac
---- /dev/null
-+++ b/driver_config.h.in
-@@ -0,0 +1,15 @@
-+/*
-+
-+Copyright (c) 2013-2018 Draios Inc. dba Sysdig.
-+
-+This file is dual licensed under either the MIT or GPL 2. See MIT.txt
-+or GPL2.txt for full copies of the license.
-+
-+*/
-+#pragma once
-+
-+#define PROBE_VERSION "${PROBE_VERSION}"
-+
-+#define PROBE_NAME "${PROBE_NAME}"
-+
-+#define PROBE_DEVICE_NAME "${PROBE_DEVICE_NAME}"
 diff --git a/kernel_hacks.h b/kernel_hacks.h
 new file mode 100644
 index 0000000..adbf9de
