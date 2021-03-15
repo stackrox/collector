@@ -381,8 +381,8 @@ jobs:
         command: |
           [[ -d "/tmp/cache/kernel-modules/${MODULE_VERSION}/" ]] || exit 0
           mkdir -p "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}"
-          ls "/tmp/cache/kernel-modules/${MODULE_VERSION}/"* \
-            > "~/kobuild-tmp/cci-cached-probes-${MODULE_VERSION}"
+          ( ls "/tmp/cache/kernel-modules/${MODULE_VERSION}/"* || true ) /
+            >~/kobuild-tmp/cci-cache-"${MODULE_VERSION}"
           mv -v \
               "/tmp/cache/kernel-modules/${MODULE_VERSION}"/* \
               "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}/" \
