@@ -381,6 +381,8 @@ jobs:
         command: |
           [[ -d "/tmp/cache/kernel-modules/${MODULE_VERSION}/" ]] || exit 0
           mkdir -p "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}"
+          ls "/tmp/cache/kernel-modules/${MODULE_VERSION}"/* \
+            > "${WORKSPACE_ROOT}/kobuild-tmp/cci-cached-probes-${MODULE_VERSION}"
           mv -v \
               "/tmp/cache/kernel-modules/${MODULE_VERSION}"/* \
               "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}/" \
@@ -394,7 +396,7 @@ jobs:
           gsutil -m rsync -r ~/kobuild-tmp/versions-src/ "gs://stackrox-kernel-modules-source/collector/"
 
     - run:
-        name: Download missing modules for current version from gcloud bucket
+        name: Download missing modules for CURRENT version from gcloud bucket
         command: |
           mkdir -p "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}"
           [[ ! -f pr-metadata/labels/no-cache ]] || exit 0
