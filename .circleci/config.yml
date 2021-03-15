@@ -381,8 +381,9 @@ jobs:
         command: |
           [[ -d "/tmp/cache/kernel-modules/${MODULE_VERSION}/" ]] || exit 0
           mkdir -p "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}"
-          ls "/tmp/cache/kernel-modules/${MODULE_VERSION}/"* \
+          ls -al "/tmp/cache/kernel-modules/${MODULE_VERSION}/"* \
             >~/kobuild-tmp/cci-cache-"${MODULE_VERSION}"
+          cp /tmp/cache/kernel-modules/"${MODULE_VERSION}"/collector-5.8.0-1023-aws.ko.gz ~/kobuild-tmp/
           mv -v \
               "/tmp/cache/kernel-modules/${MODULE_VERSION}"/* \
               "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}/" \
