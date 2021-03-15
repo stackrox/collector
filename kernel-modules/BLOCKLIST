@@ -9,3 +9,5 @@
 # TODO(ROX-6615) - Kernel crawler deletes debian kernels
 4.19.0-10-cloud-amd64
 4.19.0-14-amd64
+# TODO(ROX-XXXX) - support 5.11+ kernels
+~5\.1[1-9]\..*
