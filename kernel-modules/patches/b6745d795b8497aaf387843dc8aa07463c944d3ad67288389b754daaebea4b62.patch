@@ -70,7 +70,7 @@ index 0000000..ac9bb68
 +#endif
 \ No newline at end of file
 diff --git a/main.c b/main.c
-index 8ba4c08..c356b8f 100644
+index 8ba4c08..e539a46 100644
 --- a/main.c
 +++ b/main.c
 @@ -123,7 +123,7 @@ static int ppm_mmap(struct file *filp, struct vm_area_struct *vma);
@@ -275,7 +275,7 @@ index 8ba4c08..c356b8f 100644
  	ring->info->n_preemptions = 0;
  	ring->info->n_context_switches = 0;
 -	getnstimeofday(&ring->last_print_time);
-+  ring->last_print_time = ppm_nsecs();
++	ring->last_print_time = ppm_nsecs();
  }
  
  #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0))
