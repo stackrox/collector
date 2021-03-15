@@ -357,7 +357,6 @@ jobs:
         name: Restore Kernel module build cache
         keys:
           - kernel-module-cache-v14-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
-          - kernel-module-cache-v14-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
           - kernel-module-cache-v14-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
 
     - run:
@@ -381,9 +380,6 @@ jobs:
         command: |
           [[ -d "/tmp/cache/kernel-modules/${MODULE_VERSION}/" ]] || exit 0
           mkdir -p "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}"
-          ls -al "/tmp/cache/kernel-modules/${MODULE_VERSION}/"* \
-            >~/kobuild-tmp/cci-cache-"${MODULE_VERSION}"
-          cp /tmp/cache/kernel-modules/"${MODULE_VERSION}"/collector-5.8.0-1023-aws.ko.gz ~/kobuild-tmp/
           mv -v \
               "/tmp/cache/kernel-modules/${MODULE_VERSION}"/* \
               "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}/" \
@@ -1553,18 +1549,18 @@ workflows:
         collection_method: module
         vm_type: ubuntu-os
         image_family: ubuntu-2004-lts
-    #- integration-test:
-    #    <<: *runOnAllTagsWithIntegrationTestRequires
-    #    name: test-ebpf-ubuntu-2010
-    #    collection_method: ebpf
-    #    vm_type: ubuntu-os
-    #    image_family: ubuntu-2010
-    #- integration-test:
-    #    <<: *runOnAllTagsWithIntegrationTestRequires
-    #    name: test-module-ubuntu-2010
-    #    collection_method: module
-    #    vm_type: ubuntu-os
-    #    image_family: ubuntu-2010
+    - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
+        name: test-ebpf-ubuntu-2010
+        collection_method: ebpf
+        vm_type: ubuntu-os
+        image_family: ubuntu-2010
+    - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
+        name: test-module-ubuntu-2010
+        collection_method: module
+        vm_type: ubuntu-os
+        image_family: ubuntu-2010
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-sles-15
@@ -1612,8 +1608,8 @@ workflows:
         - test-ebpf-ubuntu-1804-lts
         - test-module-ubuntu-2004-lts
         - test-ebpf-ubuntu-2004-lts
-        #- test-module-ubuntu-2010
-        #- test-ebpf-ubuntu-2010
+        - test-module-ubuntu-2010
+        - test-ebpf-ubuntu-2010
         - test-ebpf-sles-15
         - test-module-sles-15
         - test-module-sles-12
