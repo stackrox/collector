@@ -25,7 +25,7 @@ index b687e28..76cf40f 100644
  #include <linux/audit.h>
 diff --git a/kernel_hacks.h b/kernel_hacks.h
 new file mode 100644
-index 0000000..ac9bb68
+index 0000000..e76f909
 --- /dev/null
 +++ b/kernel_hacks.h
 @@ -0,0 +1,39 @@
@@ -68,7 +68,6 @@ index 0000000..ac9bb68
 +#else
 +#define timeval64 timeval
 +#endif
-\ No newline at end of file
 diff --git a/main.c b/main.c
 index 8ba4c08..df0ab2f 100644
 --- a/main.c
@@ -280,7 +279,7 @@ index 8ba4c08..df0ab2f 100644
  
  #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0))
 diff --git a/ppm.h b/ppm.h
-index 27e5f2d..5c46b3e 100644
+index 27e5f2d..3054be8 100644
 --- a/ppm.h
 +++ b/ppm.h
 @@ -21,7 +21,7 @@ or GPL2.txt for full copies of the license.
@@ -305,9 +304,9 @@ index 27e5f2d..5c46b3e 100644
  
  extern void ppm_syscall_get_arguments(struct task_struct *task, struct pt_regs *regs, unsigned long *args);
  
-+#define NS_TO_SEC(_ns) ((_ns) / 1000000000)
-+#define MORE_THAN_ONE_SECOND_AHEAD(_ns1, _ns2) ((_ns1) - (_ns2) > 1000000000)
 +#define SECOND_IN_NS 1000000000
++#define NS_TO_SEC(_ns) ((_ns) / SECOND_IN_NS)
++#define MORE_THAN_ONE_SECOND_AHEAD(_ns1, _ns2) ((_ns1) - (_ns2) > SECOND_IN_NS)
  #endif /* PPM_H_ */
 diff --git a/ppm_fillers.c b/ppm_fillers.c
 index 366cae8..919cd2a 100644
