@@ -357,7 +357,6 @@ jobs:
         name: Restore Kernel module build cache
         keys:
           - kernel-module-cache-v14-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
-          - kernel-module-cache-v14-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-
           - kernel-module-cache-v14-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
 
     - run:
@@ -394,7 +393,7 @@ jobs:
           gsutil -m rsync -r ~/kobuild-tmp/versions-src/ "gs://stackrox-kernel-modules-source/collector/"
 
     - run:
-        name: Download missing modules for current version from gcloud bucket
+        name: Download missing modules for CURRENT version from gcloud bucket
         command: |
           mkdir -p "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}"
           [[ ! -f pr-metadata/labels/no-cache ]] || exit 0
@@ -485,6 +484,8 @@ jobs:
           sed -e 's@^@  @' <build-tasks
           echo "Total: ${num_build_tasks} kernel/module version/probe type combinations."
 
+    - store_artifacts:
+        path: ~/kobuild-tmp
     - persist_to_workspace:
         root: ~/workspace
         paths:
@@ -1106,7 +1107,7 @@ jobs:
         enum: [cos, rhel, suse, suse-sap, ubuntu-os]
       image_family:
         type: enum
-        enum: [cos-stable, cos-85-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-2004-lts, sles-12, sles-15, sles-15-sp2-sap]
+        enum: [cos-stable, cos-85-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2010, sles-12, sles-15, sles-15-sp2-sap]
 
     <<: *defaultImage
 
@@ -1550,6 +1551,18 @@ workflows:
         image_family: ubuntu-2004-lts
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
+        name: test-ebpf-ubuntu-2010
+        collection_method: ebpf
+        vm_type: ubuntu-os
+        image_family: ubuntu-2010
+    - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
+        name: test-module-ubuntu-2010
+        collection_method: module
+        vm_type: ubuntu-os
+        image_family: ubuntu-2010
+    - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-sles-15
         collection_method: ebpf
         vm_type: suse
@@ -1595,6 +1608,8 @@ workflows:
         - test-ebpf-ubuntu-1804-lts
         - test-module-ubuntu-2004-lts
         - test-ebpf-ubuntu-2004-lts
+        - test-module-ubuntu-2010
+        - test-ebpf-ubuntu-2010
         - test-ebpf-sles-15
         - test-module-sles-15
         - test-module-sles-12
