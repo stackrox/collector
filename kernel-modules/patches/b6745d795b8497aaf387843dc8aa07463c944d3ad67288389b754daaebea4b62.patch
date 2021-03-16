@@ -70,7 +70,7 @@ index 0000000..ac9bb68
 +#endif
 \ No newline at end of file
 diff --git a/main.c b/main.c
-index 8ba4c08..e539a46 100644
+index 8ba4c08..df0ab2f 100644
 --- a/main.c
 +++ b/main.c
 @@ -123,7 +123,7 @@ static int ppm_mmap(struct file *filp, struct vm_area_struct *vma);
@@ -97,7 +97,7 @@ index 8ba4c08..e539a46 100644
  
 +static inline nanoseconds ppm_nsecs(void)
 +{
-+	return ktime_get_real_ns();
++	return ktime_to_ns(ktime_get_real());
 +}
 +
  inline void ppm_syscall_get_arguments(struct task_struct *task, struct pt_regs *regs, unsigned long *args)
