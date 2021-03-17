@@ -972,6 +972,8 @@
 4.15.0-1094-gcp
 4.15.0-1095-aws
 4.15.0-1095-azure
+4.15.0-1095-gcp
+4.15.0-1096-aws
 4.15.0-1096-azure
 4.15.0-1097-azure
 4.15.0-1098-azure
@@ -988,6 +990,7 @@
 4.15.0-1108-azure
 4.15.0-1109-azure
 4.15.0-111-generic
+4.15.0-1110-azure
 4.15.0-112-generic
 4.15.0-113-generic
 4.15.0-114-generic
@@ -1013,6 +1016,7 @@
 4.15.0-135-generic
 4.15.0-136-generic
 4.15.0-137-generic
+4.15.0-139-generic
 4.15.0-15-generic
 4.15.0-20-generic
 4.15.0-22-generic
@@ -1502,6 +1506,7 @@
 4.4.0-202-generic
 4.4.0-203-generic
 4.4.0-204-generic
+4.4.0-206-generic
 4.4.0-21-generic
 4.4.0-22-generic
 4.4.0-24-generic
