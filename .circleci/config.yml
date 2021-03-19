@@ -796,6 +796,7 @@ jobs:
     - run:
         name: Build kernel-modules archive
         command: |
+          mkdir ~/layer-manifests
           if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-full-images" ]]; then
             echo "Not building kernel module archive"
             exit 0
@@ -803,6 +804,11 @@ jobs:
           cd "${SOURCE_ROOT}/kernel-modules/container"
           tar czf "${MODULE_VERSION}.tar.gz" -C ./kernel-modules .
           rm -rf ./kernel-modules
+          tar --full-time txzf "${SOURCE_ROOT}/kernel-modules/container/${MODULE_VERSION}.tar.gz" > ~/layer-manifests/archive-info.txt
+          "${SOURCE_ROOT}/reload/bucket_probes_into_layers.py" ~/layer-manifests/archive-info.txt 100000000 ~/layer-manifests || true
+
+    - store_artifacts:
+        path: ~/layer-manifests
 
     - run:
         name: Build collector images
