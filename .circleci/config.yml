@@ -804,7 +804,7 @@ jobs:
           cd "${SOURCE_ROOT}/kernel-modules/container"
           tar czf "${MODULE_VERSION}.tar.gz" -C ./kernel-modules .
           rm -rf ./kernel-modules
-          tar --full-time txzf "${SOURCE_ROOT}/kernel-modules/container/${MODULE_VERSION}.tar.gz" > ~/layer-manifests/archive-info.txt
+          tar --full-time -tzf "${SOURCE_ROOT}/kernel-modules/container/${MODULE_VERSION}.tar.gz" > ~/layer-manifests/archive-info.txt
           "${SOURCE_ROOT}/reload/bucket_probes_into_layers.py" ~/layer-manifests/archive-info.txt 100000000 ~/layer-manifests || true
 
     - store_artifacts:
