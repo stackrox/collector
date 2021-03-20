@@ -805,7 +805,7 @@ jobs:
           tar czf "${MODULE_VERSION}.tar.gz" -C ./kernel-modules .
           rm -rf ./kernel-modules
           tar --full-time -tzf "${SOURCE_ROOT}/kernel-modules/container/${MODULE_VERSION}.tar.gz" > ~/layer-manifests/archive-info.txt
-          "${SOURCE_ROOT}/reload/bucket_probes_into_layers.py" ~/layer-manifests/archive-info.txt 100000000 ~/layer-manifests || true
+          "${SOURCE_ROOT}/reload/bucket-probes-into-layers.py" ~/layer-manifests/archive-info.txt 100000000 ~/layer-manifests || true
 
     - store_artifacts:
         path: ~/layer-manifests
