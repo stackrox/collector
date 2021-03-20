@@ -5,8 +5,7 @@ import os
 import re
 import sys
 
-# 'tar --full-time txvf' -> 2021-02-17 08:55:05 ./collector-ebpf-4.18.0-240.15.1.el8_3.x86_64.o.gz 568866
-probe_info_re = re.compile(r'^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (./collector.*.gz) (\d+)$')
+probe_info_re = re.compile(r'^\S+ \S+ (\d+) (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (./collector.*.gz)$')
 
 def bucket_archive_list(f, bytes_per_layer):
     probe_info = []
@@ -16,7 +15,7 @@ def bucket_archive_list(f, bytes_per_layer):
         if probe_info_match == None or len(probe_info_match.groups()) != 3:
             continue
 
-        created_time, name, size_bytes = probe_info_match.groups()
+        size_bytes, created_time, name = probe_info_match.groups()
         probe_info.append({"name":name, "created_time":created_time, "size_bytes":int(size_bytes)})
 
     remaining_bucket_bytes = 0
