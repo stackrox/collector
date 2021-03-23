@@ -2360,8 +2360,12 @@
 5.4.0-1038-gcp
 5.4.0-1039-aws
 5.4.0-1039-azure
+5.4.0-1039-gke
 5.4.0-1040-azure
+5.4.0-1040-gcp
+5.4.0-1041-aws
 5.4.0-1041-azure
+5.4.0-1043-azure
 5.4.0-15-generic
 5.4.0-16-generic
 5.4.0-17-generic
@@ -2412,6 +2416,7 @@
 5.4.0-65-generic
 5.4.0-66-generic
 5.4.0-67-generic
+5.4.0-70-generic
 5.4.0-8-generic
 5.4.0-9-generic
 5.4.100-1.el7.elrepo.x86_64
@@ -2573,6 +2578,9 @@
 5.8.0-1024-azure
 5.8.0-1024-gcp
 5.8.0-1025-aws
+5.8.0-1026-azure
+5.8.0-1026-gcp
+5.8.0-1027-aws
 5.8.0-12-generic
 5.8.0-16-generic
 5.8.0-18-generic
@@ -2602,6 +2610,7 @@
 5.8.0-43-generic
 5.8.0-44-generic
 5.8.0-45-generic
+5.8.0-48-generic
 5.8.11-flatcar
 5.9.0-1-amd64
 5.9.0-1-cloud-amd64
