@@ -730,7 +730,6 @@ jobs:
     <<: *defaultMachine
     environment:
     - INSTALL_DIRECTORY: /tmp
-    - GCLOUD_DSOP_BUCKET: "gs://dsop-artifacts.stackrox.io"
 
     steps:
     - initcommand
@@ -916,16 +915,6 @@ jobs:
           docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}-latest"
           echo "Pushing collector rhel slim image"
           docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}-slim"
-
-    - run:
-        name: Upload collector image RHEL DSOP bundles on release
-        command: |
-          if [[ -n "$CIRCLE_TAG" ]]; then
-            gsutil cp "${SOURCE_ROOT}/collector/container/rhel/latest-bundle.tar.gz" \
-              "${GCLOUD_DSOP_BUCKET}/collector-rhel/${COLLECTOR_VERSION}-latest/bundle.tar.gz"
-            gsutil cp "${SOURCE_ROOT}/collector/container/rhel/slim-bundle.tar.gz" \
-              "${GCLOUD_DSOP_BUCKET}/collector-rhel/${COLLECTOR_VERSION}-slim/bundle.tar.gz"
-          fi
 
   kernel-module-build-failures-check:
     <<: *defaultImage
