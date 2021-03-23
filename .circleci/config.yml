@@ -572,7 +572,7 @@ jobs:
             distro="$(< ~/kobuild-tmp/meta-inspect/BUNDLE_DISTRO)"
             kernel_version="$(< ~/kobuild-tmp/meta-inspect/BUNDLE_VERSION)"
             # SUSE and all kernels >= 5 can use modern builder
-            if [[ "$distro" == "suse" ]] || (( kernel_version >= 5 )); then
+            if [[ "$distro" =~ ^suse$|^dockerdesktop$ ]] || (( kernel_version >= 5 )); then
               echo "$version" >>~/kobuild-tmp/custom-flavors/versions.modern
               echo "Building kernel version $version with modern builder"
             # RHEL 8.3+ kernels require a newer gcc and can be compiled with modern builder

@@ -4,6 +4,8 @@
 # Wildcards (*) can be used for glob-style pattern matching; if a pattern is
 # prefixed with ~, it is interpreted as a (Python) regex.
 # If <module-version> or <object type> is omitted, "*" is assumed
+# Docker Desktop enables randstruct which is not currently supported by llvm
+*dockerdesktop* * bpf
 ~3\.10\.0-1062(?:\.\d+)*\.el7.x86_64 * bpf
 *.el6.*
 # TODO(ROX-6615) - Kernel crawler deletes debian kernels

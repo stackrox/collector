@@ -171,6 +171,13 @@ function coreos_host() {
     return 1
 }
 
+function dockerdesktop_host() {
+    if [[ "$OS_DISTRO" == "Docker Desktop" ]]; then
+        return 0
+    fi
+    return 1
+}
+
 # RHEL 7.6 family detection: id=="rhel"||"centos", and kernel build id at least 957
 # Assumption is that RHEL 7.6 will continue to use kernel 3.10
 function rhel76_host() {
@@ -268,7 +275,18 @@ function main() {
         # remove '+' from end of kernel version 
         KERNEL_VERSION="${KERNEL_VERSION%+}-${OS_BUILD_ID}-${OS_ID}"
     fi
-   
+
+    # Special case kernel version if running on Docker Desktop
+    if dockerdesktop_host ; then
+        banner_ts="$(uname -a | awk -F'SMP ' '{print $2}' | awk -F'x86_64' '{print $1}')"
+        kernel_version_ts="$(date '+%Y-%m-%d-%H-%M-%S' -d "${banner_ts}")"
+        KERNEL_VERSION="${KERNEL_VERSION%-linuxkit}-dockerdesktop-${kernel_version_ts}"
+        if collection_method_ebpf; then
+            log "Warning: ${OS_DISTRO} does not support ebpf, switching to kernel module based collection"
+            COLLECTION_METHOD="KERNEL_MODULE"
+        fi
+    fi
+
     mkdir -p /module
     
     # Backwards compatability for releases older than 2.4.20
