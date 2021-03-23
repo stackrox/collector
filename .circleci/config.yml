@@ -499,7 +499,7 @@ jobs:
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
-    - KERNEL_BUNDLES_STAGING_BUCKET: "gs://stackrox-kernel-bundles-staging/rc/docker-desktop/f697aa7a6a4ca481d05b430cba92068327aa071f"
+    - KERNEL_BUNDLES_STAGING_BUCKET: ""
 
     steps:
     - initcommand
