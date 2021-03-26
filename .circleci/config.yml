@@ -332,7 +332,7 @@ jobs:
                 echo "${collector_ref}" >> "${WORKSPACE_ROOT}/ko-build/released-modules/$(< "${mod_ver_file}")"
             fi
 
-          done < <(grep -v '^#' <RELEASED_VERSIONS | awk '{print $1}' | sort | uniq)
+          done < <(grep -v '^#' <RELEASED_VERSIONS | awk -F'#' '{print $1}' | awk 'NF==2 {print $1}' | sort | uniq)
 
           rm -rf "${LEGACY_DIR}"
 
