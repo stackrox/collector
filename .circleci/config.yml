@@ -807,6 +807,7 @@ jobs:
           tar --full-time -tzvf "${SOURCE_ROOT}/kernel-modules/container/${MODULE_VERSION}.tar.gz" > ~/layer-manifests/archive-info.txt
           "${SOURCE_ROOT}/reload/bucket-probes-into-layers.py" ~/layer-manifests/archive-info.txt 100000000 ~/layer-manifests || true
 
+
     - store_artifacts:
         path: ~/layer-manifests
 
@@ -1324,6 +1325,7 @@ jobs:
     <<: *defaultMachine
     environment:
     - INSTALL_DIRECTORY: /tmp
+    - DOCKER_BUILDKIT: 1
     working_directory: ~/workspace
 
     steps:
