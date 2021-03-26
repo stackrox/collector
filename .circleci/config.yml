@@ -1356,22 +1356,29 @@ jobs:
     - gcloud-init
 
     - run:
-        name: Reload released collector images
+        name: Determine collector versions that need reload
         command: |
           cd "$SOURCE_ROOT"
 
+          docker version
           modules_bucket="${COLLECTOR_MODULES_BUCKET}"
 
+          ls -al "./reload/images"
           rm -rf "./reload/images"
+
+          mkdir -p /tmp/reload/collectors
+
           for collector_ver_file in "${WORKSPACE_ROOT}/ko-build/released-collectors"/*; do
+
             collector_ver="$(basename "${collector_ver_file}")"
             mod_ver="$(< "${collector_ver_file}")"
             echo "Checking ${collector_ver} with module version ${mod_ver}"
+
             released_latest_image="stackrox/collector:${collector_ver}-latest"
             released_base_image="stackrox/collector:${collector_ver}-base"
-            docker pull "${released_latest_image}" | cat
+            docker pull -q "${released_latest_image}" | cat
 
-            missing_objs_file="/tmp/missing-objs-${collector_ver}"
+            missing_objs_file="/tmp/reload/collectors/${collector_ver}"
             echo "Reloading ${released_latest_image}"
             "./reload/missing-kernel-objects.sh" "${released_latest_image}" "${modules_bucket}" \
               >"${missing_objs_file}"
@@ -1383,19 +1390,49 @@ jobs:
 
             echo "Kernel objects missing in image ${released_latest_image}:"
             wc -l "${missing_objs_file}"
+
             if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
               echo "not on master or tag"
               continue
             fi
+          done
 
-            docker pull "${released_base_image}" | cat
+          ls /tmp/reload/
+          circleci step halt
+
+    - run:
+        name: Reload collector images
+        command: |
+          cd "$SOURCE_ROOT"
+
+          modules_bucket="${COLLECTOR_MODULES_BUCKET}"
+
+          rm -rf "./reload/images"
+          for collector_ver_file in "/tmp/reload/collectors"/*; do
+            collector_ver="$(basename "${collector_ver_file}")"
+
+            mod_ver="$(< "${WORKSPACE_ROOT}/ko-build/released-collectors/${collector_ver}")"
+
+            echo "Checking ${collector_ver} with module version ${mod_ver}"
+
+            released_latest_image="stackrox/collector:${collector_ver}-latest"
+            released_base_image="stackrox/collector:${collector_ver}-base"
+
+            docker pull -q "${released_latest_image}" | cat
+
+            missing_objs_file="/tmp/reload/collectors/${collector_ver}"
+
+            echo "Kernel objects missing in image ${released_latest_image}:"
+            wc -l "${missing_objs_file}"
+
+            docker pull -q "${released_base_image}" | cat
             "./reload/build-latest.sh" "${collector_ver}" "${mod_ver}" "/tmp/released-kernel-object-cache/" "${COLLECTOR_MODULES_BUCKET}"
 
             if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
-              docker push "stackrox/collector:${collector_ver}-reload-latest" | cat
+              docker push -q "stackrox/collector:${collector_ver}-reload-latest" | cat
             else
-              docker push "stackrox/collector:${collector_ver}-latest" | cat
-              docker push "collector.stackrox.io/collector:${collector_ver}-latest" | cat
+              docker push -q "stackrox/collector:${collector_ver}-latest" | cat
+              docker push -q "collector.stackrox.io/collector:${collector_ver}-latest" | cat
             fi
           done
 
