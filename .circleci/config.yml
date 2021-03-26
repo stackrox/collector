@@ -1382,7 +1382,11 @@ jobs:
             fi
 
             echo "Kernel objects missing in image ${released_latest_image}:"
-            cat "${missing_objs_file}"
+            wc -l "${missing_objs_file}"
+            if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+              echo "not on master or tag"
+              continue
+            fi
 
             docker pull "${released_base_image}" | cat
             "./reload/build-latest.sh" "${collector_ver}" "${mod_ver}" "/tmp/released-kernel-object-cache/" "${COLLECTOR_MODULES_BUCKET}"
