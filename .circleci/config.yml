@@ -1399,13 +1399,8 @@ jobs:
               continue
             fi
 
-            echo "Kernel objects missing in image ${released_latest_image}:"
-            wc -l "${missing_objs_file}"
+            echo "Missing objs count of ${released_latest_image}: $(wc -l <"${missing_objs_file}")"
 
-            if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
-              echo "not on master or tag"
-              continue
-            fi
           done
 
           ls /tmp/reload/
