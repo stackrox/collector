@@ -1110,6 +1110,15 @@ jobs:
     steps:
     - initcommand
     - add_ssh_keys
+
+    - run:
+        name: Check whether to run job
+        command: |
+          if [[ -f ~/workspace/pr-metadata/labels/skip-integration-tests ]]; then
+            echo "Skipping job with skip-integration-tests label.
+            circleci step halt
+          fi
+
     - gcloud-init
 
     - run:
@@ -1363,12 +1372,11 @@ jobs:
           cd "$SOURCE_ROOT"
 
           docker version
+          gsutil version
           modules_bucket="${COLLECTOR_MODULES_BUCKET}"
 
-          ls -al "./reload/images"
-          rm -rf "./reload/images"
-
-          mkdir -p /tmp/reload/collectors
+          reload_dir="/tmp/reload/collectors"
+          mkdir -p "${reload_dir}"
 
           for collector_ver_file in "${WORKSPACE_ROOT}/ko-build/released-collectors"/*; do
 
@@ -1380,11 +1388,11 @@ jobs:
             released_base_image="stackrox/collector:${collector_ver}-base"
             docker pull -q "${released_latest_image}" | cat
 
-            missing_objs_file="/tmp/reload/collectors/${collector_ver}"
             echo "Reloading ${released_latest_image}"
-            "./reload/missing-kernel-objects.sh" "${released_latest_image}" "${modules_bucket}" \
-              >"${missing_objs_file}"
+            "./reload/missing-kernel-objects.sh" \
+              "${collector_ver}" "${modules_bucket}" "${reload_dir}"
 
+            missing_objs_file="${reload_dir}/${collector_ver}/missing-probes"
             if [[ ! -s "${missing_objs_file}" ]] ; then
               echo "Image ${released_latest_image} contains up to date kernel objects"
               continue
@@ -1400,11 +1408,15 @@ jobs:
           done
 
           ls /tmp/reload/
-          circleci step halt
+
+    - store_artifacts:
+        path: /tmp/reload/collector
 
     - run:
         name: Reload collector images
         command: |
+          circleci step halt
+          exit 0
           cd "$SOURCE_ROOT"
 
           modules_bucket="${COLLECTOR_MODULES_BUCKET}"
