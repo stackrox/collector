@@ -1372,8 +1372,6 @@ jobs:
         command: |
           cd "$SOURCE_ROOT"
 
-          docker version
-          gsutil version
           modules_bucket="${COLLECTOR_MODULES_BUCKET}"
 
           reload_dir="/tmp/reload/collectors"
@@ -1389,7 +1387,6 @@ jobs:
             released_base_image="stackrox/collector:${collector_ver}-base"
             docker pull -q "${released_latest_image}" | cat
 
-            echo "Reloading ${released_latest_image}"
             "./reload/missing-kernel-objects.sh" \
               "${collector_ver}" "${modules_bucket}" "${reload_dir}"
 
@@ -1399,7 +1396,7 @@ jobs:
               continue
             fi
 
-            echo "Missing objs count of ${released_latest_image}: $(wc -l <"${missing_objs_file}")"
+            echo "Missing objs count of ${collector_ver}: $(wc -l <"${missing_objs_file}")"
 
           done
 
@@ -1411,13 +1408,10 @@ jobs:
     - run:
         name: Reload collector images
         command: |
-          circleci step halt
-          exit 0
           cd "$SOURCE_ROOT"
 
           modules_bucket="${COLLECTOR_MODULES_BUCKET}"
 
-          rm -rf "./reload/images"
           for collector_ver_file in "/tmp/reload/collectors"/*; do
             collector_ver="$(basename "${collector_ver_file}")"
 

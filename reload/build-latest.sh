@@ -17,6 +17,7 @@ fi
 released_latest_image="stackrox/collector:${collector_ver}-latest"
 
 if [[ ! -d "${DIR}/images/${mod_ver}/container" ]]; then
+  echo "Syncing kernel modules for ${mod_ver}"
   "${DIR}/prepare-modules-image.sh" "${mod_ver}" "${cache_root}" "${gcp_bucket}"
 fi
 
