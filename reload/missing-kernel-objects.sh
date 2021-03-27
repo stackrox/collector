@@ -44,7 +44,7 @@ module_version="$(head -n 1 "${inspect_out}")"
     gsutil hash -h "${gcp_bucket}/${module_version}/*.gz" | \
         tee "${output_dir}/${collector_version}/gsutil-output" | \
         paste -d " " - - - | \
-        gsed "s/.*\(collector-.*.gz\).*Hash (md5)\:[[:space:]]*\([[:alnum:]]\+\)/\1 \2/" | \
+        sed "s/.*\(collector-.*.gz\).*Hash (md5)\:[[:space:]]*\([[:alnum:]]\+\)/\1 \2/" | \
         tee "${output_dir}/${collector_version}/bucket-probes"
 
 } | sort | uniq -u | awk -F' ' '{print $1}' | sort | uniq \
