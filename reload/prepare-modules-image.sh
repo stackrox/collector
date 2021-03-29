@@ -4,21 +4,24 @@ set -e
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
 mod_ver="$1"
-cache_root="$2"
+image_dir="$2"
 gcp_bucket="$3"
 
-if [[ -z "$mod_ver" || -z "$cache_root" || -z "$gcp_bucket" || $# -ne 3 ]]; then
-    echo >&2 "Usage: $0 <module-version> <kernel-obj-cache-root> <gcp-bucket>"
+if [[ -z "$mod_ver" || -z "$image_dir" || -z "$gcp_bucket" || $# -ne 3 ]]; then
+    echo >&2 "Usage: $0 <module-version> <image-dir> <gcp-bucket>"
     exit 1
 fi
 
-mkdir -p "${DIR}/images/${mod_ver}" "${cache_root}/${mod_ver}"
+container_dir="${image_dir}/${mod_ver}/container"
+kernel_modules_dir="${container_dir}/kernel-modules"
+mkdir -p "${kernel_modules_dir}"
 
-gsutil -m rsync -r -x ".*\.unavail$" "${gcp_bucket}/${mod_ver}/" "${cache_root}/${mod_ver}" | cat
-echo "${mod_ver}" > "${cache_root}/${mod_ver}/MODULE_VERSION.txt"
-rm -f "${cache_root}/${mod_ver}"/.*.unavail
+gsutil -m rsync -r -x ".*\.unavail$" "${gcp_bucket}/${mod_ver}/" "${kernel_modules_dir}"
 
-mkdir -p "${DIR}/images/${mod_ver}/container"
-tar -czf "${DIR}/images/${mod_ver}/container/${mod_ver}.tar.gz" -C "${cache_root}/${mod_ver}" .
+echo "${mod_ver}" > "${kernel_modules_dir}/MODULE_VERSION.txt"
+rm -f "${kernel_modules_dir}"/.*.unavail
 
-cp "${DIR}/../kernel-modules/container/Dockerfile" "${DIR}/images/${mod_ver}/container/"
+cp "${DIR}/../kernel-modules/container/"* "${container_dir}"
+
+ls -al "${container_dir}"
+ls -al "${kernel_modules_dir}"

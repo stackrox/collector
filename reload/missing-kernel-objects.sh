@@ -32,6 +32,7 @@ sed "s/\([[:alnum:]]\+\).*\(collector-.*\.gz\)/\2 \1/"
 EOF
 
 module_version="$(head -n 1 "${inspect_out}")"
+echo "${module_version}" > "${output_dir}/${collector_version}/module-version"
 
 [[ $(gsutil ls "${gcp_bucket}/${module_version}/*.gz" 2> /dev/null) ]] || exit
 
