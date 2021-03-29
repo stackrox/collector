@@ -820,7 +820,7 @@ jobs:
             docker tag "stackrox/collector:${COLLECTOR_VERSION}-base" "stackrox/collector:${COLLECTOR_VERSION}-latest"
           else
 
-            FINAL_DEPTH="$("kernel-modules/container/bucket-probes-into-layers.py" -1 "$MAX_LAYER_SIZE" "${SOURCE_ROOT}/kernel-modules/container/kernel-modules" "-")"
+            FINAL_DEPTH="$("kernel-modules/container/bucket-probes.py" -1 "$MAX_LAYER_SIZE" "${SOURCE_ROOT}/kernel-modules/container/kernel-modules" "-")"
 
             kernel_modules_build_args=(
               --build-arg final_depth="$FINAL_DEPTH"
@@ -1423,7 +1423,7 @@ jobs:
             echo "Rebuilding ${released_latest_image} with module version ${mod_ver}"
             docker pull -q "${released_base_image}" | cat
 
-            FINAL_DEPTH="$("${SOURCE_ROOT}/kernel-modules/container/bucket-probes-into-layers.py" -1 "$MAX_LAYER_SIZE" "${WORKSPACE_ROOT}/images/${mod_ver}/container/kernel-modules" "-")"
+            FINAL_DEPTH="$("${SOURCE_ROOT}/kernel-modules/container/bucket-probes.py" -1 "$MAX_LAYER_SIZE" "${WORKSPACE_ROOT}/images/${mod_ver}/container/kernel-modules" "-")"
             build_args=(
               --build-arg module_version="${mod_ver}"
               --build-arg collector_version="${collector_ver}"
