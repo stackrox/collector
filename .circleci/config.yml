@@ -823,12 +823,12 @@ jobs:
             FINAL_DEPTH="$("${SOURCE_ROOT}/kernel-modules/container/bucket-probes.py" -1 "$MAX_LAYER_SIZE" "${SOURCE_ROOT}/kernel-modules/container/kernel-modules" "-")"
 
             kernel_modules_build_args=(
-              --build-arg final_depth="$FINAL_DEPTH"
               --build-arg max_layer_depth="$FINAL_DEPTH"
               --build-arg max_layer_size="$MAX_LAYER_SIZE"
             )
 
             docker build \
+              --target="probe-layer-${FINAL_DEPTH}" \
               -t "stackrox/collector:${COLLECTOR_VERSION}" \
               -t "stackrox/collector:${COLLECTOR_VERSION}-latest" \
               "${build_args[@]}" \
@@ -1427,11 +1427,11 @@ jobs:
             build_args=(
               --build-arg module_version="${mod_ver}"
               --build-arg collector_version="${collector_ver}"
-              --build-arg final_depth="${FINAL_DEPTH}"
               --build-arg max_layer_depth="${FINAL_DEPTH}"
               --build-arg max_layer_size="${MAX_LAYER_SIZE}"
             )
             docker build \
+              --target="probe-layer-${FINAL_DEPTH}" \
               -t "collector.stackrox.io/collector:${collector_ver}-latest" \
               -t "${released_latest_image}" \
               -t "stackrox/collector:${collector_ver}-reload-latest" \

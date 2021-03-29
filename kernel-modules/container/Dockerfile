@@ -1,11 +1,10 @@
 ARG collector_version=xxx
 ARG collector_repo=stackrox/collector
-ARG final_depth=7
 ARG base_image=$collector_repo:${collector_version}-base
 
 FROM python:3 as kernel-modules
 ARG max_layer_size=300000000
-ARG max_layer_depth=7
+ARG max_layer_depth=8
 
 COPY kernel-modules/ /kernel-modules
 COPY bucket-probes.py /
@@ -39,5 +38,3 @@ COPY --from=kernel-modules /kernel-modules/6 /kernel-modules/
 
 FROM probe-layer-7 AS probe-layer-8
 COPY --from=kernel-modules /kernel-modules/7 /kernel-modules/
-
-FROM probe-layer-${final_depth}
