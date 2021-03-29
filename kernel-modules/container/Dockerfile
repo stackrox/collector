@@ -13,7 +13,7 @@ COPY bucket-probes.py /
 # Split probes into directories containing at most max_layer_size bytes.
 RUN cd /kernel-modules && \
   /bucket-probes.py "${max_layer_depth}" "${max_layer_size}" "." "/layers" && \
-  for i in "/layers"/*; do mkdir -p "$i"; xargs -a "$i" mv -t "$(basename "$i")" ; done
+  for i in "/layers"/*; do mkdir -p "$(basename "$i")"; xargs -a "$i" mv -t "$(basename "$i")" ; done
 
 # Probes are split across multiple layers to limit blob size
 FROM ${base_image} AS probe-layer-0
