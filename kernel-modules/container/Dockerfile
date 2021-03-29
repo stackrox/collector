@@ -16,29 +16,28 @@ RUN cd /kernel-modules && \
   for i in "/layers"/*; do mkdir -p "$(basename "$i")"; xargs -a "$i" mv -t "$(basename "$i")" ; done
 
 # Probes are split across multiple layers to limit blob size
-FROM ${base_image} AS probe-layer-0
-
+FROM ${base_image} AS probe-layer-1
 COPY --from=kernel-modules /kernel-modules/0 /kernel-modules/
 
-FROM probe-layer-0 AS probe-layer-1
+FROM probe-layer-1 AS probe-layer-2
 COPY --from=kernel-modules /kernel-modules/1 /kernel-modules/
 
-FROM probe-layer-1 AS probe-layer-2
+FROM probe-layer-2 AS probe-layer-3
 COPY --from=kernel-modules /kernel-modules/2 /kernel-modules/
 
-FROM probe-layer-2 AS probe-layer-3
+FROM probe-layer-3 AS probe-layer-4
 COPY --from=kernel-modules /kernel-modules/3 /kernel-modules/
 
-FROM probe-layer-3 AS probe-layer-4
+FROM probe-layer-4 AS probe-layer-5
 COPY --from=kernel-modules /kernel-modules/4 /kernel-modules/
 
-FROM probe-layer-4 AS probe-layer-5
+FROM probe-layer-5 AS probe-layer-6
 COPY --from=kernel-modules /kernel-modules/5 /kernel-modules/
 
-FROM probe-layer-5 AS probe-layer-6
+FROM probe-layer-6 AS probe-layer-7
 COPY --from=kernel-modules /kernel-modules/6 /kernel-modules/
 
-FROM probe-layer-6 AS probe-layer-7
+FROM probe-layer-7 AS probe-layer-8
 COPY --from=kernel-modules /kernel-modules/7 /kernel-modules/
 
 FROM probe-layer-${final_depth}
