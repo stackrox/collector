@@ -1373,7 +1373,7 @@ jobs:
             released_base_image="stackrox/collector:${collector_ver}-base"
             docker pull -q "${released_latest_image}" | cat
 
-            "./reload/missing-kernel-objects.sh" \
+            "${SOURCE_ROOT}/reload/missing-kernel-objects.sh" \
               "${collector_ver}" "${COLLECTOR_MODULES_BUCKET}" "${reload_dir}"
 
             missing_objs_file="${reload_dir}/${collector_ver}/missing-probes"
@@ -1412,23 +1412,26 @@ jobs:
             mod_ver="$(< "${collector_dir}/module-version")"
             released_latest_image="stackrox/collector:${collector_ver}-latest"
 
-            echo "Rebuilding ${released_latest_image} with module version ${mod_ver}"
             docker pull -q "${released_base_image}" | cat
 
-            FINAL_DEPTH="$("${SOURCE_ROOT}/kernel-modules/container/bucket-probes.py" -1 "$MAX_LAYER_SIZE" "${WORKSPACE_ROOT}/images/${mod_ver}/container/kernel-modules" "-")"
+            container_build_dir="${WORKSPACE_ROOT}/images/${mod_ver}/container"
+            layer_count="$("${SOURCE_ROOT}/kernel-modules/container/bucket-probes.py" -1 "$MAX_LAYER_SIZE" "${container_build_dir}/kernel-modules" "-")"
+
+            echo "Adding ${layer_count} probe layers to ${released_latest_image} (${mod_ver})"
+
             build_args=(
               --build-arg module_version="${mod_ver}"
               --build-arg collector_version="${collector_ver}"
-              --build-arg max_layer_depth="${FINAL_DEPTH}"
+              --build-arg max_layer_depth="${layer_count}"
               --build-arg max_layer_size="${MAX_LAYER_SIZE}"
             )
             docker build \
-              --target="probe-layer-${FINAL_DEPTH}" \
+              --target="probe-layer-${layer_count}" \
               -t "collector.stackrox.io/collector:${collector_ver}-latest" \
               -t "${released_latest_image}" \
               -t "stackrox/collector:${collector_ver}-reload-latest" \
               "${build_args[@]}" \
-              "${DIR}/images/${mod_ver}/container"
+              "${container_build_dir}"
 
             if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
               docker push -q "stackrox/collector:${collector_ver}-reload-latest" | cat

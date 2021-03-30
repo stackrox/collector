@@ -22,6 +22,3 @@ echo "${mod_ver}" > "${kernel_modules_dir}/MODULE_VERSION.txt"
 rm -f "${kernel_modules_dir}"/.*.unavail
 
 cp "${DIR}/../kernel-modules/container/"* "${container_dir}"
-
-ls -al "${container_dir}"
-ls -al "${kernel_modules_dir}"
