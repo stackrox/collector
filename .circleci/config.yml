@@ -1412,12 +1412,13 @@ jobs:
             mod_ver="$(< "${collector_dir}/module-version")"
             released_latest_image="stackrox/collector:${collector_ver}-latest"
 
+            echo "${released_latest_image} (${mod_ver})"
             docker pull -q "${released_base_image}" | cat
 
             container_build_dir="${WORKSPACE_ROOT}/images/${mod_ver}/container"
             layer_count="$("${SOURCE_ROOT}/kernel-modules/container/bucket-probes.py" -1 "$MAX_LAYER_SIZE" "${container_build_dir}/kernel-modules" "-")"
 
-            echo "Adding ${layer_count} probe layers to ${released_latest_image} (${mod_ver})"
+            echo "Adding ${layer_count} kernel module layers"
 
             build_args=(
               --build-arg module_version="${mod_ver}"
