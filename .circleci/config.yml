@@ -841,15 +841,9 @@ jobs:
         command: |
           cd "$COLLECTOR_SOURCE_ROOT"
 
-          MODULE_ARCHIVE="${SOURCE_ROOT}/kernel-modules/container/${MODULE_VERSION}.tar.gz"
-          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-full-images" ]]; then
-            MODULE_ARCHIVE="-"
-            echo "Not building full rhel images."
-          fi
-
           ./container/rhel/create-bundle.sh \
             "$SOURCE_ROOT/collector/container" \
-            "${MODULE_ARCHIVE}" \
+            "-" \
             "$SOURCE_ROOT/collector/container/rhel"
 
           build_args=(
@@ -864,8 +858,6 @@ jobs:
             "${build_args[@]}" \
             -f container/rhel/Dockerfile \
             container/rhel
-
-          mv "$SOURCE_ROOT/collector/container/rhel/bundle.tar.gz" "$SOURCE_ROOT/collector/container/rhel/latest-bundle.tar.gz"
 
     - run:
         name: Build slim collector rhel images
