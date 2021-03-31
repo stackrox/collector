@@ -1426,7 +1426,7 @@ jobs:
               --build-arg max_layer_depth="${layer_count}"
               --build-arg max_layer_size="${MAX_LAYER_SIZE}"
             )
-            docker build \
+            docker build -q \
               --target="probe-layer-${layer_count}" \
               -t "collector.stackrox.io/collector:${collector_ver}-latest" \
               -t "${released_latest_image}" \
@@ -1435,10 +1435,10 @@ jobs:
               "${container_build_dir}"
 
             if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
-              docker push -q "stackrox/collector:${collector_ver}-reload-latest" | cat
+              docker push "stackrox/collector:${collector_ver}-reload-latest" | cat
             else
-              docker push -q "stackrox/collector:${collector_ver}-latest" | cat
-              docker push -q "collector.stackrox.io/collector:${collector_ver}-latest" | cat
+              docker push "stackrox/collector:${collector_ver}-latest" | cat
+              docker push "collector.stackrox.io/collector:${collector_ver}-latest" | cat
             fi
           done
 
