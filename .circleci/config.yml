@@ -1413,7 +1413,7 @@ jobs:
             released_latest_image="stackrox/collector:${collector_ver}-latest"
 
             echo "${released_latest_image} (${mod_ver})"
-            docker pull -q "${released_base_image}" | cat
+            docker pull -q "${released_latest_image}" | cat
 
             container_build_dir="${WORKSPACE_ROOT}/images/${mod_ver}/container"
             layer_count="$("${SOURCE_ROOT}/kernel-modules/container/bucket-probes.py" -1 "$MAX_LAYER_SIZE" "${container_build_dir}/kernel-modules" "-")"
