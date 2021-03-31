@@ -1074,8 +1074,6 @@ jobs:
 
     steps:
     - initcommand
-    - add_ssh_keys
-    - gcloud-init
 
     - run:
         name: Check whether to run job
@@ -1086,6 +1084,8 @@ jobs:
             exit 0
           fi
 
+    - add_ssh_keys
+    - gcloud-init
 
     - run:
         name: "Extract gcp ssh public key from environment variable"
@@ -1164,6 +1164,15 @@ jobs:
 
     steps:
     - initcommand
+
+    - run:
+        name: Check whether to run job
+        command: |
+          if [[ -f ~/workspace/pr-metadata/labels/skip-integration-tests ]]; then
+            echo "Skipping job with skip-integration-tests label."
+            circleci step halt
+            exit 0
+          fi
 
     - run:
         name: "Gather Data"
