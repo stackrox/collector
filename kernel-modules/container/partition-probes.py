@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+# Utility script for dividing kernel probes into multiple layers so that the
+# image can be properly cached by CloudFlare. Given a directory that contains
+# kernel probes and max MB per layer, output a a manifest file for each layer.
+
 import collections
 import os
 import re
@@ -34,9 +38,9 @@ def write_layer_manifests(probe_buckets, output_dir):
 
 def main(args):
     if len(args) != 5:
-        raise Exception("Usage: %s <max-depth> <bytes-per-layer> <probe-dir> <output-dir>" % (args[0]))
+        raise Exception("Usage: %s <max-depth> <megabytes-per-layer> <probe-dir> <output-dir>" % (args[0]))
     max_layer_depth = int(args[1])
-    bytes_per_layer = int(args[2])
+    bytes_per_layer = int(args[2]) * 1024 * 1024
     probe_dir = args[3]
     output_dir = args[4]
 

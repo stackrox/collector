@@ -45,9 +45,8 @@ echo "${module_version}" > "${output_dir}/${collector_version}/module-version"
     gsutil hash -h -m "${gcp_bucket}/${module_version}/*.gz" | \
         tee "${output_dir}/${collector_version}/gsutil-output" | \
         paste -d " " - - - | \
-        tee "${output_dir}/${collector_version}/paste-output" | \
         sed "s/.*\(collector-.*.gz\).*Hash (md5)\:[[:space:]]*\([[:alnum:]]\+\).*/\1 \2/" | \
-        tee "${output_dir}/${collector_version}/bucket-probes"
+        tee "${output_dir}/${collector_version}/gcp-bucket-probes"
 
 } | sort | uniq -u | awk -F' ' '{print $1}' | sort | uniq \
     > "${output_dir}/${collector_version}/missing-probes"

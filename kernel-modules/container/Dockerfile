@@ -1,17 +1,17 @@
 ARG collector_version=xxx
 ARG collector_repo=stackrox/collector
-ARG base_image=$collector_repo:${collector_version}-base
+ARG base_image=${collector_repo}:${collector_version}-base
 
 FROM python:3 as kernel-modules
-ARG max_layer_size=300000000
+ARG max_layer_size=300
 ARG max_layer_depth=8
 
 COPY kernel-modules/ /kernel-modules
-COPY bucket-probes.py /
+COPY partition-probes.py /
 
 # Split probes into directories containing at most max_layer_size bytes.
 RUN cd /kernel-modules && \
-  /bucket-probes.py "${max_layer_depth}" "${max_layer_size}" "." "/layers" && \
+  /partition-probes.py "${max_layer_depth}" "${max_layer_size}" "." "/layers" && \
   for i in "/layers"/*; do mkdir -p "$(basename "$i")"; xargs -a "$i" mv -t "$(basename "$i")" ; done
 
 # Probes are split across multiple layers to limit blob size
