@@ -1390,8 +1390,6 @@ jobs:
             # Sync kernel objects from GCS
             gsutil -m rsync -r -x ".*\.unavail$" \
               "${COLLECTOR_MODULES_BUCKET}/${mod_ver}/" "${kernel_modules_dir}"
-            ls "${kernel_modules_dir}"/.*.unavail
-            rm -f "${kernel_modules_dir}"/.*.unavail
 
             # Copy Dockerfile and build scripts
             cp "${SOURCE_ROOT}/kernel-modules/container/"* "${container_build_dir}"
