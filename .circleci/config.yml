@@ -1421,6 +1421,12 @@ jobs:
 
           docker images
 
+    - slack/status:
+        fail_only: true
+        mentions: SGX5Y89KJ
+        only_for_branches: master
+        webhook: '${SLACK_WEBHOOK_KERNEL_PROBE_BUILD_FAILURE}'
+
 workflows:
   version: 2
   build:
