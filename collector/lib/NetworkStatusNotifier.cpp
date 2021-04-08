@@ -21,6 +21,7 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
+#include "ConnTracker.h"
 #include "NetworkStatusNotifier.h"
 
 #include "Containers.h"
@@ -315,6 +316,18 @@ sensor::NetworkAddress* NetworkStatusNotifier::EndpointToProto(const collector::
   auto addr_length = endpoint.address().length();
   if (!endpoint.address().IsNull() && endpoint.network().bits() == 8 * addr_length) {
     addr_proto->set_address_data(endpoint.address().data(), addr_length);
+
+    // If the endpoint is private, add the matching network. Sensor first tries to match the private IP address
+    // to a known cluster entity. If that fails, it tries to match the following network to the known networks.
+    if (!endpoint.address().IsPublic()) {
+      collector::IPNet network = conn_tracker_-> FetchMatchingNetwork(endpoint.address());
+      if (!network.IsNull()) {
+        std::array<uint8_t, Address::kMaxLen + 1> buff;
+        std::memcpy(buff.data(), network.address().data(), addr_length);
+        buff[addr_length] = network.bits();
+        addr_proto->set_ip_network(buff.data(), addr_length + 1);
+      }
+    }
   } else if (!endpoint.network().IsNull()) {
     std::array<uint8_t, Address::kMaxLen + 1> buff;
     std::memcpy(buff.data(), endpoint.network().address().data(), addr_length);
