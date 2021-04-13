@@ -76,11 +76,9 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
     return {};
   }
 
-  // Try to associate address to known cluster entities first, even if it is contained by a known network. If an IP
-  // address is not public, we assume that it could be that of a known cluster entity. We also add the matching
-  // network, before sending out connection info to Sensor.
-  if (!address.IsPublic() || Contains(known_public_ips_, address)) {
-    return IPNet(address, 8 * address.length());
+  // Try to associate address to known cluster entities first, even if it is contained by a known network.
+  if (Contains(known_public_ips_, address)) {
+    return IPNet(address, 8 * address.length(), true);
   }
 
   // If association to known cluster entities fails, then try to associate the address to a known network. Since the
@@ -91,6 +89,10 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
   if (networks) {
     for (const auto& network : *networks) {
       if (network.Contains(address)) {
+        // If an IP address is not public, we always assume that it could be that of a known cluster entity.
+        if (!address.IsPublic()) {
+          return IPNet(address, network.bits(), true);
+        }
         return network;
       }
     }
@@ -243,21 +245,5 @@ void ConnectionTracker::UpdateKnownIPNetworks(UnorderedMap<Address::Family, std:
       }
     }
   }
-}
-
-IPNet ConnectionTracker::FetchMatchingNetwork(const Address& address) {
-  WITH_LOCK(mutex_) {
-    const auto *networks = Lookup(known_ip_networks_, address.family());
-    if (networks) {
-      for (const auto &network : *networks) {
-        if (network.Contains(address)) {
-          return network;
-        }
-      }
-    }
-
-    return {};
-  }
-  return {};  // will never happen
 }
 }  // namespace collector

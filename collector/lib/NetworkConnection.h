@@ -171,8 +171,8 @@ class Address {
 
 class IPNet {
  public:
-  IPNet() : IPNet(Address(), 0) {}
-  IPNet(const Address& address, size_t bits) : IPNet(address.family(), address.array(), bits) {}
+  IPNet() : IPNet(Address(), 0, false) {}
+  IPNet(const Address& address, size_t bits, bool is_addr = false) : IPNet(address.family(), address.array(), bits, is_addr) {}
 
   Address::Family family() const { return family_; }
   const std::array<uint64_t, Address::kU64MaxLen>& mask_array() const { return mask_; }
@@ -219,6 +219,10 @@ class IPNet {
     return bits_ == 0 && std::all_of(mask_.begin(), mask_.end(), [](uint64_t v) { return v == 0; });
   }
 
+  bool IsAddress() const {
+    return is_addr_;
+  }
+
   bool operator==(const IPNet& other) const {
     return mask_ == other.mask_ && bits_ == other.bits_;
   }
@@ -235,8 +239,8 @@ class IPNet {
   }
 
  private:
-  IPNet(Address::Family family, const std::array<uint64_t, Address::kU64MaxLen>& mask, size_t bits)
-      : family_(family), mask_({0, 0}), bits_(bits) {
+  IPNet(Address::Family family, const std::array<uint64_t, Address::kU64MaxLen>& mask, size_t bits, bool is_addr)
+      : family_(family), mask_({0, 0}), bits_(bits), is_addr_(is_addr) {
 
     if (bits_ > Address::Length(family) * 8) {
       bits_ = Address::Length(family) * 8;
@@ -265,6 +269,7 @@ class IPNet {
   Address::Family family_;
   std::array<uint64_t, Address::kU64MaxLen> mask_;
   size_t bits_;
+  bool is_addr_;
 };
 
 class Endpoint {

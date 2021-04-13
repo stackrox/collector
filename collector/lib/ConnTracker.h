@@ -100,7 +100,6 @@ class ConnectionTracker {
 
   void UpdateKnownPublicIPs(UnorderedSet<Address>&& known_public_ips);
   void UpdateKnownIPNetworks(UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks);
-  IPNet FetchMatchingNetwork(const Address& address);
 
  private:
   // NormalizeConnection transforms a connection into a normalized form.
