@@ -275,7 +275,7 @@ class IPNet {
 class Endpoint {
  public:
   Endpoint() : port_(0) {}
-  Endpoint(const Address& address, unsigned short port) : network_(IPNet(address, 8 * address.length())), port_(port) {}
+  Endpoint(const Address& address, unsigned short port) : network_(IPNet(address, 8 * address.length(), true)), port_(port) {}
   Endpoint(const IPNet& network, unsigned short port) : network_(network), port_(port) {}
 
   size_t Hash() const {

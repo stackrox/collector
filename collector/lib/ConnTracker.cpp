@@ -98,6 +98,12 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
     }
   }
 
+  // If there is no known private subnet, do not mark it is network.
+  // Consequently, Sensor will only perform known cluster entity lookup.
+  if (!address.IsPublic()) {
+    return IPNet(address, 8 * address.length(), true);
+  }
+
   // Otherwise, associate it to "rest of the internet".
   switch (address.family()) {
     case Address::Family::IPV4:

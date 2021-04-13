@@ -129,7 +129,7 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
 
   state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn13_normalized, ConnStatus(now2, true))));
-}
+  }
 
 TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
   Endpoint a(Address(10, 1, 1, 8), 9999);
@@ -161,7 +161,6 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
 
   UnorderedSet<Address> public_ips = {Address(35, 127, 0, 15)};
   tracker.UpdateKnownPublicIPs(std::move(public_ips));
-
 
   UnorderedMap<Address::Family, std::vector<IPNet>> known_networks = {{Address::Family::IPV4, {IPNet(Address(35, 127, 1, 15), 24)}}};
   tracker.UpdateKnownIPNetworks(std::move(known_networks));
