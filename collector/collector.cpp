@@ -52,6 +52,7 @@ extern "C" {
 #include "CollectorArgs.h"
 #include "CollectorService.h"
 #include "EventNames.h"
+#include "EnvVar.h"
 #include "GetStatus.h"
 #include "GRPC.h"
 #include "LogLevel.h"
@@ -66,6 +67,10 @@ extern "C" {
 extern unsigned char g_bpf_drop_syscalls[];  // defined in libscap
 
 using namespace collector;
+
+namespace {
+    BoolEnvVar exclude_ns("ROX_COLLECTOR_EXCLUDE_NS", true);
+}  // namespace
 
 static std::atomic<CollectorService::ControlValue> g_control(CollectorService::RUN);
 static std::atomic<int> g_signum(0);
@@ -145,8 +150,10 @@ void insertModule(const std::vector<std::string>& syscall_list) {
     }
     syscall_ids += "-1";
 
-    module_args["exclude_initns"] = "1";
-    module_args["exclude_selfns"] = "1";
+    std::string exclude_ns_value = exclude_ns ? "1" : "0";
+
+    module_args["exclude_initns"] = exclude_ns_value;
+    module_args["exclude_selfns"] = exclude_ns_value;
     module_args["verbose"] = "0";
 
     int fd = open(SysdigService::kModulePath, O_RDONLY);
