@@ -57,7 +57,7 @@ index 1a15376..cba7abf 100644
  		val = bpf_syscall_get_argument(data, 1);
  		if (bpf_probe_read(&mh, sizeof(mh), (void *)val)) {
 diff --git a/bpf/fillers.h b/bpf/fillers.h
-index b687e28..76cf40f 100644
+index b687e28..1a178da 100644
 --- a/bpf/fillers.h
 +++ b/bpf/fillers.h
 @@ -20,6 +20,7 @@ or GPL2.txt for full copies of the license.
@@ -68,6 +68,72 @@ index b687e28..76cf40f 100644
  
  #include <linux/tty.h>
  #include <linux/audit.h>
+@@ -274,6 +275,9 @@ static __always_inline int bpf_poll_parse_fds(struct filler_data *data,
+ #endif
+ 		return PPM_FAILURE_INVALID_USER_MEMORY;
+ 
++	if (data->state->tail_ctx.curoff > SCRATCH_SIZE_HALF)
++		return PPM_FAILURE_BUFFER_FULL;
++
+ 	off = data->state->tail_ctx.curoff + sizeof(u16);
+ 	fds_count = 0;
+ 
+@@ -430,11 +434,11 @@ static __always_inline int bpf_parse_readv_writev_bufs(struct filler_data *data,
+ 
+ #ifdef BPF_FORBIDS_ZERO_ACCESS
+ 				if (to_read)
+-					if (bpf_probe_read(&data->buf[off & SCRATCH_SIZE_HALF],
++					if (bpf_probe_read(&data->buf[off & SCRATCH_SIZE_HALF - 1],
+ 							   ((to_read - 1) & SCRATCH_SIZE_HALF) + 1,
+ 							   iov[j].iov_base))
+ #else
+-				if (bpf_probe_read(&data->buf[off & SCRATCH_SIZE_HALF],
++				if (bpf_probe_read(&data->buf[off & SCRATCH_SIZE_HALF - 1],
+ 						   to_read & SCRATCH_SIZE_HALF,
+ 						   iov[j].iov_base))
+ #endif
+@@ -2714,7 +2718,7 @@ FILLER(sys_recvfrom_x, true)
+ 	unsigned long val;
+ 	u16 size = 0;
+ 	long retval;
+-	int addrlen;
++	unsigned long addrlen;
+ 	int err = 0;
+ 	int res;
+ 	int fd;
+@@ -2852,7 +2856,7 @@ FILLER(sys_recvmsg_x_2, true)
+ 	unsigned long val;
+ 	u16 size = 0;
+ 	long retval;
+-	int addrlen;
++	unsigned long addrlen;
+ 	int res;
+ 	int fd;
+ 
+@@ -2918,7 +2922,7 @@ FILLER(sys_sendmsg_e, true)
+ 	unsigned long iovcnt;
+ 	unsigned long val;
+ 	u16 size = 0;
+-	int addrlen;
++	unsigned long addrlen;
+ 	int err = 0;
+ 	int res;
+ 	int fd;
+diff --git a/bpf/ring_helpers.h b/bpf/ring_helpers.h
+index a296af7..6880a6c 100644
+--- a/bpf/ring_helpers.h
++++ b/bpf/ring_helpers.h
+@@ -34,6 +34,10 @@ static __always_inline void fixup_evt_arg_len(char *p,
+ 					      unsigned int argnum,
+ 					      unsigned int arglen)
+ {
++    if (argnum > PPM_MAX_EVENT_PARAMS)
++ 	{
++ 		return;
++ 	}
+ 	volatile unsigned int argnumv = argnum;
+ 	*((u16 *)&p[sizeof(struct ppm_evt_hdr)] + (argnumv & (PPM_MAX_EVENT_PARAMS - 1))) = arglen;
+ }
 diff --git a/kernel_hacks.h b/kernel_hacks.h
 new file mode 100644
 index 0000000..e76f909
