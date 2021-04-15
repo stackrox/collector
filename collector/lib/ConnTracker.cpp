@@ -90,11 +90,11 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
       if (network.Contains(address)) {
         // Try to associate address to known cluster entities. If an IP address is not public, we always assume
         // that it could be that of a known cluster entity.
-        if (!address.IsPublic()){
+        if (!address.IsPublic()) {
           return IPNet(address, network.bits());
         }
 
-        if(Contains(known_public_ips_, address)) {
+        if (Contains(known_public_ips_, address)) {
           return IPNet(address, network.bits(), true);
         }
         return network;
