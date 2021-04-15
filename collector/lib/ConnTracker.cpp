@@ -76,8 +76,7 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
     return {};
   }
 
-  // Try to associate the address to a known subnet. If a known private subnet is matched, do not set the address flag.
-  // If public subnet is matched and address is also an known cluster entity, set the address flag.
+  // Try to associate the address to a known subnet. If a known subnet is matched, do not set the address flag.
   //
   // Since the networks are sorted highest-smallest to lowest-largest within family, we map the address to first
   // matched subnet.
@@ -95,7 +94,7 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
         }
 
         if (Contains(known_public_ips_, address)) {
-          return IPNet(address, network.bits(), true);
+          return IPNet(address, network.bits());
         }
         return network;
       }
