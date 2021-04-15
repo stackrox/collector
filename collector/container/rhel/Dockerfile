@@ -6,7 +6,7 @@ FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
 
 COPY bundle.tar.gz /
 WORKDIR /bundle
-RUN tar -xfz /bundle.tar.gz
+RUN tar -xzf /bundle.tar.gz
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
