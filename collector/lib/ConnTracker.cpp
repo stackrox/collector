@@ -35,8 +35,8 @@ namespace {
 
 static const Address canonical_external_ipv4_addr(255, 255, 255, 255);
 static const Address canonical_external_ipv6_addr(0xffffffffffffffffULL, 0xffffffffffffffffULL);
-static const IPNet canonical_external_ipv4_network(canonical_external_ipv4_addr, 32);
-static const IPNet canonical_external_ipv6_network(canonical_external_ipv6_addr, 128);
+static const IPNet canonical_external_ipv4_network(canonical_external_ipv4_addr);
+static const IPNet canonical_external_ipv6_network(canonical_external_ipv6_addr);
 
 }  // namespace
 
@@ -129,7 +129,7 @@ Connection ConnectionTracker::NormalizeConnectionNoLock(const Connection& conn) 
 
   if (is_server) {
     // If this is the server, only the local port is relevant, while the remote port does not matter.
-    local = Endpoint(Address(), conn.local().port());
+    local = Endpoint(IPNet(Address()), conn.local().port());
     remote = Endpoint(NormalizeAddressNoLock(conn.remote().address()), 0);
   } else {
     // If this is the client, the local port and address are not relevant.
