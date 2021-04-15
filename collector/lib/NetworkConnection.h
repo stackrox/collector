@@ -172,6 +172,7 @@ class Address {
 class IPNet {
  public:
   IPNet() : IPNet(Address(), 0, false) {}
+  explicit IPNet(const Address& address) : IPNet(address, 8 * address.length(), true) {}
   IPNet(const Address& address, size_t bits, bool is_addr = false) : IPNet(address.family(), address.array(), bits, is_addr) {}
 
   Address::Family family() const { return family_; }
@@ -275,7 +276,7 @@ class IPNet {
 class Endpoint {
  public:
   Endpoint() : port_(0) {}
-  Endpoint(const Address& address, unsigned short port) : network_(IPNet(address, 8 * address.length(), true)), port_(port) {}
+  Endpoint(const Address& address, unsigned short port) : network_(IPNet(address)), port_(port) {}
   Endpoint(const IPNet& network, unsigned short port) : network_(network), port_(port) {}
 
   size_t Hash() const {

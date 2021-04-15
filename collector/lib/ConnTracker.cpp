@@ -76,21 +76,25 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
     return {};
   }
 
-  // Try to associate address to known cluster entities first, even if it is contained by a known network.
-  if (Contains(known_public_ips_, address)) {
-    return IPNet(address, 8 * address.length(), true);
-  }
-
-  // If association to known cluster entities fails, then try to associate the address to a known network. Since the
-  // networks are sorted highest-smallest to lowest-largest within family, we map the address to first matched subnet.
+  // Try to associate the address to a known subnet. If a known private subnet is matched, do not set the address flag.
+  // If public subnet is matched and address is also an known cluster entity, set the address flag.
+  //
+  // Since the networks are sorted highest-smallest to lowest-largest within family, we map the address to first
+  // matched subnet.
+  //
   // We do not want to map to all networks that contains this address, for example, if there is also a supernet in
   // known network list, this address would not be mapped to the supernet.
   const auto* networks = Lookup(known_ip_networks_, address.family());
   if (networks) {
     for (const auto& network : *networks) {
       if (network.Contains(address)) {
-        // If an IP address is not public, we always assume that it could be that of a known cluster entity.
-        if (!address.IsPublic()) {
+        // Try to associate address to known cluster entities. If an IP address is not public, we always assume
+        // that it could be that of a known cluster entity.
+        if (!address.IsPublic()){
+          return IPNet(address, network.bits());
+        }
+
+        if(Contains(known_public_ips_, address)) {
           return IPNet(address, network.bits(), true);
         }
         return network;
@@ -98,10 +102,10 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
     }
   }
 
-  // If there is no known private subnet, do not mark it is network.
+  // If address does not belong to known subnets, do not mark it is network.
   // Consequently, Sensor will only perform known cluster entity lookup.
-  if (!address.IsPublic()) {
-    return IPNet(address, 8 * address.length(), true);
+  if (!address.IsPublic() || Contains(known_public_ips_, address)) {
+    return IPNet(address);
   }
 
   // Otherwise, associate it to "rest of the internet".

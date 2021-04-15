@@ -311,7 +311,11 @@ sensor::NetworkAddress* NetworkStatusNotifier::EndpointToProto(const collector::
 
   auto* addr_proto = Allocate<sensor::NetworkAddress>();
   auto addr_length = endpoint.address().length();
-  if (endpoint.network().IsAddress()) {
+
+  if (!endpoint.address().IsPublic()) {
+    // address data is always set for private address, however, the address flag may not be set.
+    addr_proto->set_address_data(endpoint.address().data(), addr_length);
+  } else if (endpoint.network().IsAddress()) {
     addr_proto->set_address_data(endpoint.address().data(), addr_length);
   }
 
