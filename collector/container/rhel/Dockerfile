@@ -2,6 +2,12 @@ ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8/ubi
 ARG BASE_TAG=8.2
 
+FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
+
+COPY bundle.tar.gz /
+WORKDIR /bundle
+RUN tar -xzf /bundle.tar.gz
+
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
 ARG collector_version=xxx
@@ -22,15 +28,14 @@ ENV COLLECTOR_VERSION=${collector_version} \
 WORKDIR /
 
 COPY scripts /
-COPY bundle.tar.gz /
+
+COPY --from=extracted_bundle /bundle/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
+COPY --from=extracted_bundle /bundle/kernel-modules/ /kernel-modules/
+COPY --from=extracted_bundle /bundle/usr/local/lib/libsinsp-wrapper.so /usr/local/lib/
+COPY --from=extracted_bundle /bundle/usr/local/bin/collector /usr/local/bin/
 
 RUN mv collector-wrapper.sh /usr/local/bin/ && \
     chmod 700 bootstrap.sh && \
-    tar -zxf bundle.tar.gz ./THIRD_PARTY_NOTICES/ && \
-    tar -zxf bundle.tar.gz ./kernel-modules/ && \
-    tar -zxf bundle.tar.gz ./usr/local/lib/libsinsp-wrapper.so && \
-    tar -zxf bundle.tar.gz ./usr/local/bin/collector && \
-    rm -f bundle.tar.gz && \
     dnf upgrade -y && \
     dnf install -y kmod && \
     dnf clean all && \
