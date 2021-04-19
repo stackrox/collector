@@ -1038,6 +1038,7 @@
 4.15.0-140-generic
 4.15.0-141-generic
 4.15.0-142-generic
+4.15.0-143-generic
 4.15.0-15-generic
 4.15.0-20-generic
 4.15.0-22-generic
@@ -2475,6 +2476,7 @@
 5.4.0-70-generic
 5.4.0-71-generic
 5.4.0-72-generic
+5.4.0-73-generic
 5.4.0-8-generic
 5.4.0-9-generic
 5.4.100-1.el7.elrepo.x86_64
@@ -2691,6 +2693,7 @@
 5.8.0-48-generic
 5.8.0-49-generic
 5.8.0-50-generic
+5.8.0-51-generic
 5.8.11-flatcar
 5.9.0-1-amd64
 5.9.0-1-cloud-amd64
