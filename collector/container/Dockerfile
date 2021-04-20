@@ -32,10 +32,13 @@ RUN apt-get update \
         libuuid1 \
         libcap-ng0 \
         libelf1 \
-        google-perftools \
- && dpkg -r --force-all e2fslibs e2fsprogs apt debconf dpkg \
- && rm -rf /var/lib/apt \
- ;
+        libgoogle-perftools4 \
+ && dpkg -P --force-all e2fslibs e2fsprogs apt libapt-pkg6.0 debconf \
+ && ( ls /THIRD_PARTY_NOTICES/ | sed 's/\(.*\)-/\1,/' ; \
+      dpkg-query -f '${Package},${Version}\n' -W | grep -v dpkg ) > /MANIFEST.csv \
+ && dpkg -P --force-all dpkg \
+ && rm -rf /var/{cache,lib,log}/{apt,dpkg} \
+    ;
 
 COPY libs/libsinsp-wrapper.so \
      /usr/local/lib/
