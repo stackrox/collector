@@ -308,26 +308,20 @@ sensor::NetworkAddress* NetworkStatusNotifier::EndpointToProto(const collector::
 
   // Note: We are sending the address data and network data as separate fields for
   // backward compatibility, although, network field can handle both.
+  // Sensor tries to match address to known cluster entities. If that fails, it tries
+  // to match the network to known external networks,
 
   auto* addr_proto = Allocate<sensor::NetworkAddress>();
   auto addr_length = endpoint.address().length();
-
-  if (!endpoint.address().IsPublic()) {
-    // address data is always set for private address, however, the address flag may not be set.
-    addr_proto->set_address_data(endpoint.address().data(), addr_length);
-  } else if (endpoint.network().IsAddress()) {
+  if (endpoint.network().IsAddress()) {
     addr_proto->set_address_data(endpoint.address().data(), addr_length);
   }
-
-  // For private address, Sensor tries to match address to known cluster entities.
-  // If that fails, it tries to match the network to known external networks,
-  if (!endpoint.network().IsAddress() || endpoint.network().bits() < 8 * addr_length) {
+  if (endpoint.network().bits() > 0) {
     std::array<uint8_t, Address::kMaxLen + 1> buff;
     std::memcpy(buff.data(), endpoint.network().address().data(), addr_length);
     buff[addr_length] = endpoint.network().bits();
     addr_proto->set_ip_network(buff.data(), addr_length + 1);
   }
-
   addr_proto->set_port(endpoint.port());
 
   return addr_proto;

@@ -69,46 +69,47 @@ void ConnectionTracker::Update(
   }
 }
 
-IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
-  if (address.IsNull()) {
-    return {};
-  }
-
-  // Try to associate the address to a known subnet. If a known subnet is matched, do not set the address flag.
-  //
+IPNet ConnectionTracker::DetermineNetworkNoLock(const Address& address) const {
   // Since the networks are sorted highest-smallest to lowest-largest within family, we map the address to first
   // matched subnet.
   //
   // We do not want to map to all networks that contains this address, for example, if there is also a supernet in
   // known network list, this address would not be mapped to the supernet.
   const auto* networks = Lookup(known_ip_networks_, address.family());
-  if (networks) {
-    for (const auto& network : *networks) {
-      if (network.Contains(address)) {
-        // Try to associate address to known cluster entities. If an IP address is not public, we always assume
-        // that it could be that of a known cluster entity.
-        if (!address.IsPublic() || Contains(known_public_ips_, address)) {
-          return IPNet(address, network.bits());
-        }
-        return network;
-      }
-    }
+  if (!networks) {
+    return {};
   }
 
-  // If address does not belong to known subnets, do not mark it is network.
-  // Consequently, Sensor will only perform known cluster entity lookup.
+  for (const auto &network : *networks) {
+    if (network.Contains(address)) {
+      return network;
+    }
+  }
+  return {};
+}
+
+IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
+  if (address.IsNull()) {
+    return {};
+  }
+
+  const auto& network = DetermineNetworkNoLock(address);
   if (!address.IsPublic() || Contains(known_public_ips_, address)) {
-    return IPNet(address);
+    return IPNet(address, network.bits(), true);
+  }
+
+  if (!network.IsNull()) {
+    return network;
   }
 
   // Otherwise, associate it to "rest of the internet".
   switch (address.family()) {
     case Address::Family::IPV4:
-      return IPNet(canonical_external_ipv4_addr);
+      return IPNet(canonical_external_ipv4_addr, 0, true);
     case Address::Family::IPV6:
-      return IPNet(canonical_external_ipv6_addr);
+      return IPNet(canonical_external_ipv6_addr, 0, true);
     default:
-      return IPNet();
+      return {};
   }
 }
 
