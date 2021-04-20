@@ -8,23 +8,35 @@ PROBE_DIR="${PROBE_DIR:-${SOURCE_ROOT}/probes}"
 
 kernel="$1"
 probe_type="$2"
-module_version=$(cat "${SOURCE_ROOT}/kernel-modules/kobuild-tmp/MODULE_VERSION.txt")
+flavor="$3"
+
+set -euo pipefail
+
+die() {
+    echo "Usage: $0 <kernel-version> <bpf|mod> <builder-image-flavor>"
+    echo >&2 "$@"
+    exit 1
+}
+
+[[ -n "${kernel}" && -n "${probe_type}" && -n "${flavor}" ]] || die
 
 bundle_file="${KOBUILD_DIR}/bundles/bundle-${kernel}.tgz"
-
-inspect_dir=$(mktemp -d)
-tar -xzf "${bundle_file}" -C "${inspect_dir}" ./BUNDLE_DISTRO ./BUNDLE_VERSION
-distro="$(< "${inspect_dir}/BUNDLE_DISTRO")"
-kernel_version="$(< "${inspect_dir}/BUNDLE_VERSION")"
-rm -rf "${inspect_dir}"
-
-# Select builder flavor
-flavor="modern"
-if basename "${SOURCE_ROOT}/kernel-modules/build/Dockerfile".* | sed 's/Dockerfile.//' | grep -q "${distro}"; then
-    flavor="${distro}"
-elif (( kernel_version >= 5 )); then
-    flavor="modern"
+if [[ ! -f "${bundle_file}" ]]; then
+    die "Kernel bundle not found: ${bundle_file}"
 fi
+
+if ! basename "${SOURCE_ROOT}/kernel-modules/build/Dockerfile".* | sed 's/Dockerfile.//' | grep -q "${flavor}"; then
+    die "Unknown builder flavor: ${flavor}"
+fi
+
+case $probe_type in
+  bpf|mod) ;;
+  *) die "Probe type must be either 'mod' or 'bpf'" ;;
+esac
+
+module_version=$(cat "${SOURCE_ROOT}/kernel-modules/kobuild-tmp/MODULE_VERSION.txt")
+
+distro="$(tar -O -xzf "${bundle_file}" ./BUNDLE_DISTRO)"
 
 echo "Using ${flavor} builder"
 echo "Building ${probe_type} probe for ${distro}:${kernel} and collector version ${module_version}"
