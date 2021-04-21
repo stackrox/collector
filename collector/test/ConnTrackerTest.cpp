@@ -106,8 +106,8 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
   Connection conn4("xzy", c, a, L4Proto::TCP, false);
   Connection conn5("xyz", a, d, L4Proto::TCP, true);
 
-  Connection conn13_normalized("xyz", Endpoint(Address(), 80), Endpoint(Address(192, 168, 1, 10), 0), L4Proto::TCP, true);
-  Connection conn24_normalized("xzy", Endpoint(), a, L4Proto::TCP, false);
+  Connection conn13_normalized("xyz", Endpoint(IPNet(Address()), 80), Endpoint(IPNet(Address(192, 168, 1, 10), 0, true), 0), L4Proto::TCP, true);
+  Connection conn24_normalized("xzy", Endpoint(), Endpoint(IPNet(Address(192, 168, 0, 1), 0, true), 80), L4Proto::TCP, false);
 
   int64_t now = NowMicros();
 
@@ -154,7 +154,7 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
   known_networks = {{Address::Family::IPV4, {IPNet(Address(192, 168, 0, 0), 24)}}};
   tracker.UpdateKnownIPNetworks(std::move(known_networks));
 
-  Connection conn13_3_normalized("xyz", Endpoint(IPNet(), 80), Endpoint(IPNet(Address(192, 168, 1, 10)), 0), L4Proto::TCP, true);
+  Connection conn13_3_normalized("xyz", Endpoint(IPNet(), 80), Endpoint(IPNet(Address(192, 168, 1, 10), 0, true), 0), L4Proto::TCP, true);
 
   state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn13_3_normalized, ConnStatus(now2, true))));
@@ -169,7 +169,7 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
   known_networks = {{Address::Family::IPV4, {IPNet(Address(35, 127, 0, 15), 32)}}};
   tracker.UpdateKnownIPNetworks(std::move(known_networks));
 
-  Connection conn15_normalized("xyz", Endpoint(IPNet(), 80), Endpoint(IPNet(Address(35, 127, 0, 15)), 0), L4Proto::TCP, true);
+  Connection conn15_normalized("xyz", Endpoint(IPNet(), 80), Endpoint(IPNet(Address(35, 127, 0, 15), 32, true), 0), L4Proto::TCP, true);
 
   int64_t now3 = NowMicros();
   tracker.Update({conn5}, {}, now3);
@@ -189,13 +189,13 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
   state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn15_1_normalized, ConnStatus(now3, true))));
 
-  // No known cluster entities
+  // No known networks
   public_ips = {Address(35, 127, 0, 15)};
   tracker.UpdateKnownPublicIPs(std::move(public_ips));
 
   known_networks = {};
   tracker.UpdateKnownIPNetworks(std::move(known_networks));
-  Connection conn15_2_normalized("xyz", Endpoint(IPNet(), 80), Endpoint(IPNet(Address(35, 127, 0, 15)), 0), L4Proto::TCP, true);
+  Connection conn15_2_normalized("xyz", Endpoint(IPNet(), 80), Endpoint(IPNet(Address(35, 127, 0, 15), 0, true), 0), L4Proto::TCP, true);
 
   state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn15_2_normalized, ConnStatus(now3, true))));
@@ -237,9 +237,9 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
 
   auto state3 = tracker.FetchConnState(true);
 
-  Connection conn1_normalized("xyz", Endpoint(IPNet(), 9999), Endpoint(IPNet(Address(35, 127, 0, 15)), 0), L4Proto::TCP, true);
-  Connection conn2_normalized("xyz", Endpoint(), b, L4Proto::TCP, false);
-  Connection conn3_normalized("xyz", Endpoint(IPNet(), 9999), Endpoint(IPNet(Address(255, 255, 255, 255)), 0), L4Proto::TCP, true);
+  Connection conn1_normalized("xyz", Endpoint(IPNet(), 9999), Endpoint(IPNet(Address(35, 127, 0, 15), 0, true), 0), L4Proto::TCP, true);
+  Connection conn2_normalized("xyz", Endpoint(), Endpoint(IPNet(Address(35, 127, 0, 15), 0, true), 54321), L4Proto::TCP, false);
+  Connection conn3_normalized("xyz", Endpoint(IPNet(), 9999), Endpoint(IPNet(Address(255, 255, 255, 255), 0, true), 0), L4Proto::TCP, true);
   Connection conn4_normalized("xyz", Endpoint(), Endpoint(IPNet(Address(255, 255, 255, 255), 0, true), 54321), L4Proto::TCP, false);
   Connection conn5_normalized("xyz", Endpoint(IPNet(), 9999), Endpoint(IPNet(Address(35, 127, 1, 0), 24, false), 0), L4Proto::TCP, true);
 

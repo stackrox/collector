@@ -226,12 +226,12 @@ class IPNet {
     return true;
   }
 
-  Address address() const {
+  Address address() const& {
     return address_;
   }
 
   size_t Hash() const {
-    return HashAll(mask_, bits_);
+    return HashAll(address_.array(), mask_, bits_);
   }
 
   bool IsNull() const {
@@ -243,10 +243,13 @@ class IPNet {
   }
 
   bool operator==(const IPNet& other) const {
+    if (bits_ != other.bits_) {
+      return false;
+    }
     if (is_addr_) {
       return address_ == other.address_;
     }
-    return mask_ == other.mask_ && bits_ == other.bits_;
+    return mask_ == other.mask_;
   }
 
   bool operator!=(const IPNet& other) const {
@@ -262,9 +265,6 @@ class IPNet {
 
  private:
   friend std::ostream& operator<<(std::ostream& os, const IPNet& net) {
-    if (net.is_addr_) {
-      return os << net.address_;
-    }
     return os << net.address_ << "/" << net.bits_;
   }
 
