@@ -66,3 +66,10 @@ std::ostream& operator<<(std::ostream& os, const Connection& conn) {
 }
 
 }  // namespace collector
+
+namespace std {
+size_t Hash(const collector::L4ProtoPortPair& pp) {
+  std::hash<int> int_hasher;
+  return int_hasher((int) pp.first) ^ int_hasher((int) pp.second);
+}
+}  // namespace std

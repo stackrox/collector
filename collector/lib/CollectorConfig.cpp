@@ -37,6 +37,8 @@ BoolEnvVar disable_network_flows("ROX_COLLECTOR_DISABLE_NETWORK_FLOWS", false);
 
 BoolEnvVar ports_feature_flag("ROX_NETWORK_GRAPH_PORTS", true);
 
+BoolEnvVar network_drop_ignored("ROX_NETWORK_DROP_IGNORED", true);
+
 }  // namespace
 
 constexpr bool        CollectorConfig::kUseChiselCache;
@@ -46,6 +48,8 @@ constexpr int         CollectorConfig::kScrapeInterval;
 constexpr char        CollectorConfig::kCollectionMethod[];
 constexpr char        CollectorConfig::kChisel[];
 constexpr const char* CollectorConfig::kSyscalls[];
+
+const UnorderedSet<L4ProtoPortPair> CollectorConfig::kIgnoredL4ProtoPortPairs = {{L4Proto::UDP, 9}};;
 
 CollectorConfig::CollectorConfig(CollectorArgs *args) {
   // Set default configuration values
@@ -143,6 +147,10 @@ CollectorConfig::CollectorConfig(CollectorArgs *args) {
 
   if (ports_feature_flag) {
     scrape_listen_endpoints_ = true;
+  }
+
+  if (network_drop_ignored) {
+    ignored_l4proto_port_pairs_ = kIgnoredL4ProtoPortPairs;
   }
 }
 

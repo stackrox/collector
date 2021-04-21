@@ -100,10 +100,26 @@ class ConnectionTracker {
 
   void UpdateKnownPublicIPs(UnorderedSet<Address>&& known_public_ips);
   void UpdateKnownIPNetworks(UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks);
+  void UpdateIgnoredL4ProtoPortPairs(UnorderedSet<L4ProtoPortPair>&& ignored_l4proto_port_pairs);
 
  private:
   // NormalizeConnection transforms a connection into a normalized form.
   Connection NormalizeConnectionNoLock(const Connection &conn) const;
+
+  // NormalizeContainerEndpoint transforms a container endpoint into a normalized form.
+  ContainerEndpoint NormalizeContainerEndpoint(const ContainerEndpoint &cep) const;
+
+  // Determine if connection filtering is enabled
+  bool IsConnectionFilteringEnabled() { return !ignored_l4proto_port_pairs_.empty(); }
+
+  // Determine if a connection should be ignored
+  bool ShouldFetchConnection(const Connection &conn) const;
+
+  // Determine if a container endpoint should be ignored
+  bool ShouldFetchContainerEndpoint(const ContainerEndpoint &cep) const;
+
+  // Determine if a protocol port combination from a connection or endpoint should be ignored
+  bool IsIgnoredL4ProtoPortPair(const L4ProtoPortPair &p) const;
 
   // Emplace a connection into the state ConnMap, or update its timestamp if the supplied timestamp is more recent
   // than the stored one.
@@ -125,6 +141,7 @@ class ConnectionTracker {
   UnorderedSet<Address> known_public_ips_;
   UnorderedMap<Address::Family, std::vector<IPNet>> known_ip_networks_;
   UnorderedMap<Address::Family, bool> known_private_networks_exists_;
+  UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
 };
 
 /* static */

@@ -332,6 +332,7 @@ enum class L4Proto : uint8_t {
 };
 
 std::ostream& operator<<(std::ostream& os, L4Proto l4proto);
+using L4ProtoPortPair = ::std::pair<L4Proto, uint16_t>;
 
 class ContainerEndpoint {
  public:
@@ -457,5 +458,9 @@ static inline const std::vector<IPNet>& PrivateNetworks(Address::Family family) 
 
 
 }  // namespace collector
+
+namespace std {
+  size_t Hash(const collector::L4ProtoPortPair& pp);
+}  // namespace std
 
 #endif //COLLECTOR_NETWORKCONNECTION_H
