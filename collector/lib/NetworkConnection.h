@@ -171,15 +171,37 @@ class Address {
 
 class IPNet {
  public:
-  IPNet() : IPNet(Address(), 0) {}
-  IPNet(const Address& address, size_t bits) : IPNet(address.family(), address.array(), bits) {}
+  IPNet() : IPNet(Address(), 0, false) {}
+  explicit IPNet(const Address& address) : IPNet(address, 8 * address.length(), true) {}
+  IPNet(const Address& address, size_t bits, bool is_addr = false)
+  : address_(address), mask_({0, 0}), bits_(bits), is_addr_(is_addr) {
 
-  Address::Family family() const { return family_; }
+    if (bits_ > Address::Length(address_.family()) * 8) {
+      bits_ = Address::Length(address_.family()) * 8;
+    }
+
+    size_t bits_left = bits_;
+
+    const uint64_t* in_mask_p = address.array().data();
+    uint64_t* out_mask_p = mask_.data();
+
+    while (bits_left >= 64) {
+      *out_mask_p++ = *in_mask_p++;
+      bits_left -= 64;
+    }
+
+    if (bits_left > 0) {
+      uint64_t last_mask = ~(~static_cast<uint64_t>(0) >> bits_left);
+      *out_mask_p = ntohll(*in_mask_p) & last_mask;  // last uint64 is intentionally stored in *host* order
+    }
+  }
+
+  Address::Family family() const { return address_.family(); }
   const std::array<uint64_t, Address::kU64MaxLen>& mask_array() const { return mask_; }
   size_t bits() const { return bits_; }
 
   bool Contains(const Address& address) const {
-    if (address.family() != family_) {
+    if (address.family() != address_.family()) {
       return false;
     }
 
@@ -204,23 +226,30 @@ class IPNet {
     return true;
   }
 
-  Address address() const {
-    auto addr_data = mask_;
-    auto last_idx = bits_ / 64;
-    addr_data[last_idx] = htonll(addr_data[last_idx]);  // perform host-to-network order switch for last uint64.
-    return {family_, addr_data};
+  const Address& address() const {
+    return address_;
   }
 
   size_t Hash() const {
-    return HashAll(mask_, bits_);
+    return HashAll(address_.array(), mask_, bits_);
   }
 
   bool IsNull() const {
-    return bits_ == 0 && std::all_of(mask_.begin(), mask_.end(), [](uint64_t v) { return v == 0; });
+    return bits_ == 0 && address_.IsNull();
+  }
+
+  bool IsAddress() const {
+    return is_addr_;
   }
 
   bool operator==(const IPNet& other) const {
-    return mask_ == other.mask_ && bits_ == other.bits_;
+    if (bits_ != other.bits_) {
+      return false;
+    }
+    if (is_addr_) {
+      return address_ == other.address_;
+    }
+    return mask_ == other.mask_;
   }
 
   bool operator!=(const IPNet& other) const {
@@ -231,46 +260,24 @@ class IPNet {
     if (bits_ != that.bits_) {
       return bits_ > that.bits_;
     }
-    return address() > that.address();
+    return address_ > that.address_;
   }
 
  private:
-  IPNet(Address::Family family, const std::array<uint64_t, Address::kU64MaxLen>& mask, size_t bits)
-      : family_(family), mask_({0, 0}), bits_(bits) {
-
-    if (bits_ > Address::Length(family) * 8) {
-      bits_ = Address::Length(family) * 8;
-    }
-
-    size_t bits_left = bits_;
-
-    const uint64_t* in_mask_p = mask.data();
-    uint64_t* out_mask_p = mask_.data();
-
-    while (bits_left >= 64) {
-      *out_mask_p++ = *in_mask_p++;
-      bits_left -= 64;
-    }
-
-    if (bits_left > 0) {
-      uint64_t last_mask = ~(~static_cast<uint64_t>(0) >> bits_left);
-      *out_mask_p = ntohll(*in_mask_p) & last_mask;  // last uint64 is intentionally stored in *host* order
-    }
-  }
-
   friend std::ostream& operator<<(std::ostream& os, const IPNet& net) {
-    return os << net.address() << "/" << net.bits_;
+    return os << net.address_ << "/" << net.bits_;
   }
 
-  Address::Family family_;
+  Address address_;
   std::array<uint64_t, Address::kU64MaxLen> mask_;
   size_t bits_;
+  bool is_addr_;
 };
 
 class Endpoint {
  public:
   Endpoint() : port_(0) {}
-  Endpoint(const Address& address, unsigned short port) : network_(IPNet(address, 8 * address.length())), port_(port) {}
+  Endpoint(const Address& address, unsigned short port) : network_(IPNet(address)), port_(port) {}
   Endpoint(const IPNet& network, unsigned short port) : network_(network), port_(port) {}
 
   size_t Hash() const {

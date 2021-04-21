@@ -115,6 +115,9 @@ class ConnectionTracker {
 
   IPNet NormalizeAddressNoLock(const Address& address) const;
 
+  // DetermineNetworkNoLock identifies the subnet containing address.
+  IPNet DetermineNetworkNoLock(const Address& address) const;
+
   std::mutex mutex_;
   ConnMap conn_state_;
   ContainerEndpointMap endpoint_state_;

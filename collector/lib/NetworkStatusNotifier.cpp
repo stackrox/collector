@@ -306,16 +306,17 @@ sensor::NetworkAddress* NetworkStatusNotifier::EndpointToProto(const collector::
     return nullptr;
   }
 
+  // Note: We are sending the address data and network data as separate fields for
+  // backward compatibility, although, network field can handle both.
+  // Sensor tries to match address to known cluster entities. If that fails, it tries
+  // to match the network to known external networks,
+
   auto* addr_proto = Allocate<sensor::NetworkAddress>();
-  // Ensure that it is an individual IP address. For known external sources, that are also individual IP addresses,
-  // it is okay if they are mapped to `address_data` field of response proto. Sensor tries to match them to known
-  // cluster entities followed by known external networks, if former fails.
-  // Note: We are sending the address data and network data as separate fields for backward compatibility, although,
-  // network field can handle both.
   auto addr_length = endpoint.address().length();
-  if (!endpoint.address().IsNull() && endpoint.network().bits() == 8 * addr_length) {
+  if (endpoint.network().IsAddress()) {
     addr_proto->set_address_data(endpoint.address().data(), addr_length);
-  } else if (!endpoint.network().IsNull()) {
+  }
+  if (endpoint.network().bits() > 0) {
     std::array<uint8_t, Address::kMaxLen + 1> buff;
     std::memcpy(buff.data(), endpoint.network().address().data(), addr_length);
     buff[addr_length] = endpoint.network().bits();
