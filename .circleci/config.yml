@@ -1360,7 +1360,7 @@ jobs:
           done
 
     - store_artifacts:
-        path: "${RELOAD_MD_DIRECTORY}"
+        path: /tmp/reload/collectors
 
     - run:
         name: Sync module versions
