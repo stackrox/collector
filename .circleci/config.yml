@@ -144,6 +144,7 @@ jobs:
             export SOURCE_ROOT="${GOPATH}/src/github.com/stackrox/collector"
             export COLLECTOR_SOURCE_ROOT="${SOURCE_ROOT}/collector"
             export PATH="${PATH}:${GOPATH}/bin:${WORKSPACE_ROOT}/bin"
+            export MAX_LAYER_MB=300
           EOF
 
     - read-pr-metadata
@@ -332,7 +333,7 @@ jobs:
                 echo "${collector_ref}" >> "${WORKSPACE_ROOT}/ko-build/released-modules/$(< "${mod_ver_file}")"
             fi
 
-          done < <(grep -v '^#' <RELEASED_VERSIONS | awk '{print $1}' | sort | uniq)
+          done < <(grep -v '^#' <RELEASED_VERSIONS | awk -F'#' '{print $1}' | awk 'NF==2 {print $1}' | sort | uniq)
 
           rm -rf "${LEGACY_DIR}"
 
@@ -794,21 +795,8 @@ jobs:
           find kernel-modules/container
 
     - run:
-        name: Build kernel-modules archive
+        name: Build collector slim and base images
         command: |
-          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-full-images" ]]; then
-            echo "Not building kernel module archive"
-            exit 0
-          fi
-          cd "${SOURCE_ROOT}/kernel-modules/container"
-          tar czf "${MODULE_VERSION}.tar.gz" -C ./kernel-modules .
-          rm -rf ./kernel-modules
-
-    - run:
-        name: Build collector images
-        command: |
-          cd "$COLLECTOR_SOURCE_ROOT"
-
           build_args=(
             --build-arg module_version="$MODULE_VERSION"
             --build-arg collector_version="$COLLECTOR_VERSION"
@@ -818,76 +806,55 @@ jobs:
             -t "stackrox/collector:${COLLECTOR_VERSION}-base" \
             -t "stackrox/collector:${COLLECTOR_VERSION}-slim" \
             "${build_args[@]}" \
-            container
+            ${SOURCE_ROOT}/collector/container
+
+          "${SOURCE_ROOT}/collector/container/rhel/create-bundle.sh" \
+            "$SOURCE_ROOT/collector/container" \
+            "-" \
+            "$SOURCE_ROOT/collector/container/rhel"
+
+          docker build \
+            -t "stackrox/collector-rhel:${COLLECTOR_VERSION}-base" \
+            -t "stackrox/collector-rhel:${COLLECTOR_VERSION}-slim" \
+            "${build_args[@]}" \
+            -f ${SOURCE_ROOT}/collector/container/rhel/Dockerfile \
+            "$SOURCE_ROOT/collector/container/rhel"
+
+    - run:
+        name: Build collector -latest images
+        command: |
+          collector_repos=(
+            "stackrox/collector"
+            "stackrox/collector-rhel"
+          )
 
           # On PR branches, only build slim images
           if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-full-images" ]]; then
             echo "Not building full images, re-tagging base images..."
-            docker tag "stackrox/collector:${COLLECTOR_VERSION}-base" "stackrox/collector:${COLLECTOR_VERSION}"
-            docker tag "stackrox/collector:${COLLECTOR_VERSION}-base" "stackrox/collector:${COLLECTOR_VERSION}-latest"
-          else
+            for collector_repo in "${collector_repos[@]}"; do
+                docker tag "${collector_repo}:${COLLECTOR_VERSION}-base" "${collector_repo}:${COLLECTOR_VERSION}"
+                docker tag "${collector_repo}:${COLLECTOR_VERSION}-base" "${collector_repo}:${COLLECTOR_VERSION}-latest"
+            done
+            exit 0
+          fi
+
+          container_build_dir="${SOURCE_ROOT}/kernel-modules/container"
+          layer_count="$("${container_build_dir}/partition-probes.py" -1 "$MAX_LAYER_MB" "${container_build_dir}/kernel-modules" "-")"
+          for collector_repo in "${collector_repos[@]}"; do
+            build_args=(
+              --build-arg collector_repo="${collector_repo}"
+              --build-arg collector_version="$COLLECTOR_VERSION"
+              --build-arg module_version="$MODULE_VERSION"
+              --build-arg max_layer_size="$MAX_LAYER_MB"
+              --build-arg max_layer_depth="$layer_count"
+            )
             docker build \
-              -t "stackrox/collector:${COLLECTOR_VERSION}" \
-              -t "stackrox/collector:${COLLECTOR_VERSION}-latest" \
+              --target="probe-layer-${layer_count}" \
+              -t "${collector_repo}:${COLLECTOR_VERSION}" \
+              -t "${collector_repo}:${COLLECTOR_VERSION}-latest" \
               "${build_args[@]}" \
-              "${SOURCE_ROOT}/kernel-modules/container"
-          fi
-
-    - run:
-        name: Build collector rhel images
-        command: |
-          cd "$COLLECTOR_SOURCE_ROOT"
-
-          MODULE_ARCHIVE="${SOURCE_ROOT}/kernel-modules/container/${MODULE_VERSION}.tar.gz"
-          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-full-images" ]]; then
-            MODULE_ARCHIVE="-"
-            echo "Not building full rhel images."
-          fi
-
-          ./container/rhel/create-bundle.sh \
-            "$SOURCE_ROOT/collector/container" \
-            "${MODULE_ARCHIVE}" \
-            "$SOURCE_ROOT/collector/container/rhel"
-
-          build_args=(
-            --build-arg module_version="$MODULE_VERSION"
-            --build-arg collector_version="$COLLECTOR_VERSION"
-          )
-
-          docker build \
-            -t "stackrox/collector-rhel:${COLLECTOR_VERSION}-base" \
-            -t "stackrox/collector-rhel:${COLLECTOR_VERSION}" \
-            -t "stackrox/collector-rhel:${COLLECTOR_VERSION}-latest" \
-            "${build_args[@]}" \
-            -f container/rhel/Dockerfile \
-            container/rhel
-
-          mv "$SOURCE_ROOT/collector/container/rhel/bundle.tar.gz" "$SOURCE_ROOT/collector/container/rhel/latest-bundle.tar.gz"
-
-    - run:
-        name: Build slim collector rhel images
-        command: |
-
-          cd "$COLLECTOR_SOURCE_ROOT"
-          MODULE_ARCHIVE="-" # Not including any kernel probes
-
-          ./container/rhel/create-bundle.sh \
-            "$SOURCE_ROOT/collector/container" \
-            "${MODULE_ARCHIVE}" \
-            "$SOURCE_ROOT/collector/container/rhel"
-
-          build_args=(
-            --build-arg module_version="$MODULE_VERSION"
-            --build-arg collector_version="$COLLECTOR_VERSION"
-          )
-
-          docker build \
-            -t "stackrox/collector-rhel:${COLLECTOR_VERSION}-slim" \
-            "${build_args[@]}" \
-            -f container/rhel/Dockerfile \
-            container/rhel
-
-          mv "$SOURCE_ROOT/collector/container/rhel/bundle.tar.gz" "$SOURCE_ROOT/collector/container/rhel/slim-bundle.tar.gz"
+              "${container_build_dir}"
+          done
 
     - run:
         name: Sanity check images
@@ -1102,6 +1069,14 @@ jobs:
 
     steps:
     - initcommand
+    - run:
+        name: Check whether to run job
+        command: |
+          if [[ -f ~/workspace/pr-metadata/labels/skip-integration-tests ]]; then
+            echo "Skipping job with skip-integration-tests label."
+            circleci step halt
+            exit 0
+          fi
     - add_ssh_keys
     - gcloud-init
 
@@ -1182,6 +1157,14 @@ jobs:
 
     steps:
     - initcommand
+    - run:
+        name: Check whether to run job
+        command: |
+          if [[ -f ~/workspace/pr-metadata/labels/skip-integration-tests ]]; then
+            echo "Skipping job with skip-integration-tests label."
+            circleci step halt
+            exit 0
+          fi
 
     - run:
         name: "Gather Data"
@@ -1318,6 +1301,8 @@ jobs:
     <<: *defaultMachine
     environment:
     - INSTALL_DIRECTORY: /tmp
+    - RELOAD_MD_DIRECTORY: /tmp/reload/collectors
+    - DOCKER_BUILDKIT: 1
     working_directory: ~/workspace
 
     steps:
@@ -1340,9 +1325,10 @@ jobs:
             echo "Checking for module version ${mod_ver}"
             [[ -d "${mod_build_dir}/${mod_ver}" ]] || continue
             [[ ! -z "$( find "${mod_build_dir}/${mod_ver}" -type f -name '*.gz' )" ]] || continue
-            echo "Copying into cache for module version ${mod_ver}"
-            mkdir -p "/tmp/released-kernel-object-cache/${mod_ver}"
-            cp "${mod_build_dir}/${mod_ver}"/*.gz "/tmp/released-kernel-object-cache/${mod_ver}"
+            echo "Copying into container build directory for module version ${mod_ver}"
+            container_build_dir="${WORKSPACE_ROOT}/images/${mod_ver}/container"
+            mkdir -p "${container_build_dir}/kernel-modules"
+            cp "${mod_build_dir}/${mod_ver}"/*.gz "${container_build_dir}/kernel-modules"
           done
 
     - docker-login-push
@@ -1350,36 +1336,81 @@ jobs:
     - gcloud-init
 
     - run:
-        name: Reload released collector images
+        name: Determine collector versions that need reload
         command: |
-          cd "$SOURCE_ROOT"
-
-          modules_bucket="${COLLECTOR_MODULES_BUCKET}"
-
-          rm -rf "./reload/images"
+          mkdir -p "${RELOAD_MD_DIRECTORY}"
           for collector_ver_file in "${WORKSPACE_ROOT}/ko-build/released-collectors"/*; do
             collector_ver="$(basename "${collector_ver_file}")"
             mod_ver="$(< "${collector_ver_file}")"
-            echo "Checking ${collector_ver} with module version ${mod_ver}"
+            echo "Missing object check for module version: ${mod_ver} and collector version: ${collector_ver}"
+
             released_latest_image="stackrox/collector:${collector_ver}-latest"
-            released_base_image="stackrox/collector:${collector_ver}-base"
-            docker pull "${released_latest_image}" | cat
+            docker pull -q "${released_latest_image}" | cat
 
-            missing_objs_file="/tmp/missing-objs-${collector_ver}"
-            echo "Reloading ${released_latest_image}"
-            "./reload/missing-kernel-objects.sh" "${released_latest_image}" "${modules_bucket}" \
-              >"${missing_objs_file}"
+            "${SOURCE_ROOT}/reload/missing-kernel-objects.sh" \
+              "${collector_ver}" "${COLLECTOR_MODULES_BUCKET}" "${RELOAD_MD_DIRECTORY}"
 
+            missing_objs_file="${RELOAD_MD_DIRECTORY}/${collector_ver}/missing-probes"
             if [[ ! -s "${missing_objs_file}" ]] ; then
               echo "Image ${released_latest_image} contains up to date kernel objects"
               continue
             fi
 
-            echo "Kernel objects missing in image ${released_latest_image}:"
-            cat "${missing_objs_file}"
+            echo "Found $(wc -l <"${missing_objs_file}") missing or updated kernel objects."
+          done
 
-            docker pull "${released_base_image}" | cat
-            "./reload/build-latest.sh" "${collector_ver}" "${mod_ver}" "/tmp/released-kernel-object-cache/" "${COLLECTOR_MODULES_BUCKET}"
+    - store_artifacts:
+        path: /tmp/reload/collectors
+
+    - run:
+        name: Sync module versions
+        command: |
+          for collector_dir in "/tmp/reload/collectors"/*; do
+            cat "${collector_dir}/module-version"
+          done | sort | uniq > /tmp/reload/module-versions
+
+          while IFS='' read -r mod_ver || [[ -n "$mod_ver" ]]; do
+            container_build_dir="${WORKSPACE_ROOT}/images/${mod_ver}/container"
+
+            kernel_modules_dir="${container_build_dir}/kernel-modules"
+            mkdir -p "${kernel_modules_dir}"
+            echo "${mod_ver}" > "${kernel_modules_dir}/MODULE_VERSION.txt"
+
+            # Sync kernel objects from GCS
+            gsutil -m rsync -r -x ".*\.unavail$" \
+              "${COLLECTOR_MODULES_BUCKET}/${mod_ver}/" "${kernel_modules_dir}"
+
+            # Copy Dockerfile and build scripts into build directory
+            cp "${SOURCE_ROOT}/kernel-modules/container/"* "${container_build_dir}"
+          done < /tmp/reload/module-versions
+
+    - run:
+        name: Reload collector images
+        command: |
+          for collector_dir in "${RELOAD_MD_DIRECTORY}"/*; do
+            collector_ver="$(basename "${collector_dir}")"
+            mod_ver="$(< "${collector_dir}/module-version")"
+
+
+            container_build_dir="${WORKSPACE_ROOT}/images/${mod_ver}/container"
+            layer_count="$("${container_build_dir}/partition-probes.py" -1 "$MAX_LAYER_MB" "${container_build_dir}/kernel-modules" "-")"
+
+            echo "Reloading ${layer_count} image layers for collector ${collector_ver} (${mod_ver})"
+
+            build_args=(
+              --build-arg module_version="${mod_ver}"
+              --build-arg collector_version="${collector_ver}"
+              --build-arg max_layer_depth="${layer_count}"
+              --build-arg max_layer_size="${MAX_LAYER_MB}"
+            )
+
+            docker build -q \
+              --target="probe-layer-${layer_count}" \
+              -t "collector.stackrox.io/collector:${collector_ver}-latest" \
+              -t "stackrox/collector:${collector_ver}-latest" \
+              -t "stackrox/collector:${collector_ver}-reload-latest" \
+              "${build_args[@]}" \
+              "${container_build_dir}"
 
             if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
               docker push "stackrox/collector:${collector_ver}-reload-latest" | cat
@@ -1390,6 +1421,12 @@ jobs:
           done
 
           docker images
+
+    - slack/status:
+        fail_only: true
+        mentions: SGX5Y89KJ
+        only_for_branches: master
+        webhook: '${SLACK_WEBHOOK_KERNEL_PROBE_BUILD_FAILURE}'
 
 workflows:
   version: 2
