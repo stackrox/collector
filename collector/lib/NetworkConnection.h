@@ -226,7 +226,7 @@ class IPNet {
     return true;
   }
 
-  Address address() const& {
+  const Address& address() const {
     return address_;
   }
 
