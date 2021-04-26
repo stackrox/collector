@@ -80,10 +80,26 @@ IPNet ConnectionTracker::DetermineNetworkNoLock(const Address& address) const {
     return {};
   }
 
-  for (const auto &network : *networks) {
-    if (network.Contains(address)) {
-      return network;
+  IPNet searchAddr(address);
+  IPNet result;
+  auto lo = networks->begin(), hi = networks->end() - 1;
+  while (lo <= hi) {
+    auto mid = lo + (hi - lo) / 2;
+
+    const auto currNetwork = *mid;
+    if (currNetwork.address() < searchAddr.address() && currNetwork.bits() < searchAddr.bits()) {
+      lo = mid + 1;
+      result = currNetwork;
+    } else if (currNetwork.address() > searchAddr.address() && currNetwork.bits() > searchAddr.bits()) {
+      hi = mid - 1;
+    } else {
+      result = currNetwork;
+      break;
     }
+  }
+
+  if (result.Contains(address)) {
+    return result;
   }
   return {};
 }

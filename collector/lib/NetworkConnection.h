@@ -32,6 +32,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <array>
 #include <ostream>
+#include <sstream>
 #include <string>
 
 #include <cstring>
@@ -99,6 +100,14 @@ class Address {
 
   bool operator!=(const Address& other) const {
     return !(*this == other);
+  }
+
+  bool operator<(const Address& that) const {
+    if (family_ != that.family_) {
+      return family_ < that.family_;
+    }
+
+    return std::memcmp(data(), that.data(), length()) < 0;
   }
 
   bool operator>(const Address& that) const {
@@ -254,6 +263,13 @@ class IPNet {
 
   bool operator!=(const IPNet& other) const {
     return !(*this == other);
+  }
+
+  bool operator<(const IPNet& that) const {
+    if (bits_ != that.bits_) {
+      return bits_ < that.bits_;
+    }
+    return address_ < that.address_;
   }
 
   bool operator>(const IPNet& that) const {

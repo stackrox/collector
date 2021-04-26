@@ -249,6 +249,37 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
       std::make_pair(conn3_normalized, ConnStatus(now, true)),
       std::make_pair(conn4_normalized, ConnStatus(now, true)),
       std::make_pair(conn5_normalized, ConnStatus(now, true))));
+
+  // Verify network matching
+  public_ips = {};
+  tracker.UpdateKnownPublicIPs(std::move(public_ips));
+
+  std::vector<IPNet> ipv4_networks = {
+      IPNet(Address(35, 127, 1, 0), 24),
+      IPNet(Address(35, 127, 1, 0), 16),
+      IPNet(Address(35, 126, 0, 0), 16),
+      IPNet(Address(35, 126, 0, 0), 8),
+      IPNet(Address(34, 126, 0, 0), 8),
+      };
+  std::sort(ipv4_networks.begin(), ipv4_networks.end(), std::less<IPNet>());
+  known_networks = {{Address::Family::IPV4, ipv4_networks}};
+  tracker.UpdateKnownIPNetworks(std::move(known_networks));
+
+  int64_t now2 = NowMicros();
+  tracker.Update({conn5}, {}, now2);
+
+  Connection conn1_1_normalized("xyz", Endpoint(IPNet(), 9999), Endpoint(IPNet(Address(35, 127, 1, 0), 16, false), 0), L4Proto::TCP, true);
+  Connection conn2_1_normalized("xyz", Endpoint(), Endpoint(IPNet(Address(35, 127, 1, 0), 16, false), 54321), L4Proto::TCP, false);
+  state = tracker.FetchConnState(true);
+  EXPECT_THAT(state, UnorderedElementsAre(
+      std::make_pair(conn1_1_normalized, ConnStatus(now2, false)),
+      std::make_pair(conn2_1_normalized, ConnStatus(now2, false)),
+      std::make_pair(conn3_normalized, ConnStatus(now2, false)),
+      std::make_pair(conn4_normalized, ConnStatus(now2, false)),
+      std::make_pair(conn5_normalized, ConnStatus(now2, true))));
+
+  state = tracker.FetchConnState(true);
+  EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn5_normalized, ConnStatus(now2, true))));
 }
 
 TEST(ConnTrackerTest, TestComputeDelta) {

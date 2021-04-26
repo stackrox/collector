@@ -128,7 +128,7 @@ void NetworkStatusNotifier::ReceiveIPNetworks(const sensor::IPNetworkList& netwo
   } else {
     std::vector<IPNet> ipv4_networks = readNetworks(networks.ipv4_networks(), Address::Family::IPV4);
     // Sort the networks in smallest subnet to largest subnet order.
-    std::sort(ipv4_networks.begin(), ipv4_networks.end(), std::greater<IPNet>());
+    std::sort(ipv4_networks.begin(), ipv4_networks.end(), std::less<IPNet>());
     known_ip_networks[Address::Family::IPV4] = ipv4_networks;
   }
 
@@ -138,7 +138,7 @@ void NetworkStatusNotifier::ReceiveIPNetworks(const sensor::IPNetworkList& netwo
   } else {
     std::vector<IPNet> ipv6_networks = readNetworks(networks.ipv6_networks(), Address::Family::IPV6);
     // Sort the networks in smallest subnet to largest subnet order.
-    std::sort(ipv6_networks.begin(), ipv6_networks.end(), std::greater<IPNet>());
+    std::sort(ipv6_networks.begin(), ipv6_networks.end(), std::less<IPNet>());
     known_ip_networks[Address::Family::IPV6] = ipv6_networks;
   }
 
