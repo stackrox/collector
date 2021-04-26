@@ -116,6 +116,7 @@ function download_kernel_object() {
 
     if ! gzip -d --keep "${filename_gz}"; then
         rm -f "${filename_gz}" 2>/dev/null
+        rm -f "${OBJECT_PATH}" 2>/dev/null
         log "Failed to decompress ${OBJECT_TYPE} after download, removing from local storage."
         return 1
     fi
