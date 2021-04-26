@@ -114,11 +114,9 @@ function download_kernel_object() {
         return 1
     fi
 
-    if ! gzip -d --keep "$filename_gz"; then
-        gzip --list --verbose "$filename_gz" || true
-        rm -f "$filename_gz"
-        log "${OBJECT_TYPE} downloaded, but there was an error un-gzipping."
-        log "Please contact StackRox support, enclosing the above error message(s)."
+    if ! gzip -d --keep "${filename_gz}"; then
+        rm -f "${filename_gz}" 2>/dev/null
+        log "Failed to decompress ${OBJECT_TYPE} after download, removing from local storage."
         return 1
     fi
 
@@ -136,12 +134,9 @@ function find_kernel_object() {
     fi
 
     if [[ -f "${EXPECTED_PATH}.gz" ]]; then
-      gunzip -c "${EXPECTED_PATH}.gz" >"${OBJECT_PATH}"
-      if ! gzip -d --keep "${EXPECTED_PATH}.gz"; then
-        gzip --list --verbose "$EXPECTED_PATH.gz" || true
-        rm -f "${EXPECTED_PATH}.gz"
-        log "There was an error un-gzipping."
-        log "Please contact StackRox support, enclosing the above error message(s)."
+      if ! gunzip -c "${EXPECTED_PATH}.gz" >"${OBJECT_PATH}"; then
+        rm -f "${OBJECT_PATH}" 2>/dev/null
+        log "Failed to decompress ${OBJECT_TYPE}, removing from local storage."
         return 1
       fi
     elif [ -f "$EXPECTED_PATH" ]; then
