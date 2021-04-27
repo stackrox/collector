@@ -132,7 +132,7 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
   state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn13_normalized, ConnStatus(now2, true))));
 
-  // Private subnet containing the address
+  // Private subnet containing the address; exact private IP subnet
   UnorderedMap<Address::Family, std::vector<IPNet>> known_networks = {{Address::Family::IPV4, {IPNet(Address(192, 168, 0, 0), 16)}}};
   tracker.UpdateKnownIPNetworks(std::move(known_networks));
 
@@ -140,6 +140,24 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
 
   state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn13_1_normalized, ConnStatus(now2, true))));
+
+  // Private subnet containing the address; user-defined contained in private IP space.
+  known_networks = {{Address::Family::IPV4, {IPNet(Address(192, 168, 1, 0), 24)}}};
+  tracker.UpdateKnownIPNetworks(std::move(known_networks));
+
+  Connection conn13_1_1_normalized("xyz", Endpoint(IPNet(), 80), Endpoint(IPNet(Address(192, 168, 1, 10), 24, true), 0), L4Proto::TCP, true);
+
+  state = tracker.FetchConnState(true);
+  EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn13_1_1_normalized, ConnStatus(now2, true))));
+
+  // Private subnet containing the address; user-defined contains a private IP space.
+  known_networks = {{Address::Family::IPV4, {IPNet(Address(192, 168, 0, 0), 8)}}};
+  tracker.UpdateKnownIPNetworks(std::move(known_networks));
+
+  Connection conn13_1_2_normalized("xyz", Endpoint(IPNet(), 80), Endpoint(IPNet(Address(192, 168, 1, 10), 8, true), 0), L4Proto::TCP, true);
+
+  state = tracker.FetchConnState(true);
+  EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn13_1_2_normalized, ConnStatus(now2, true))));
 
   // Single IP address as private subnet
   known_networks = {{Address::Family::IPV4, {IPNet(Address(192, 168, 1, 10), 32)}}};

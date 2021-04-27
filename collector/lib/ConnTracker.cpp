@@ -40,12 +40,14 @@ static const Address canonical_external_ipv6_addr(0xffffffffffffffffULL, 0xfffff
 
 bool ContainsPrivateNetwork(Address::Family family, const std::vector<IPNet>& networks) {
   for (const auto net : networks) {
-    // Check if network is subnet of any private network.
-    if (!net.address().IsPublic()) {
-      return true;
+    // Check if user-defined network is contained in private IP space.
+    for (const auto& pNet : PrivateNetworks(family)) {
+      if (pNet.Contains(net.address())) {
+        return true;
+      }
     }
 
-    // Check if any private network is subnet of incoming network.
+    // Check if any private IP space is contained in user-defined network.
     for (const auto& pNet : PrivateNetworks(family)) {
       if (net.Contains(pNet.address())) {
         return true;
