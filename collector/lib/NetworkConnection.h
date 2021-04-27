@@ -443,6 +443,18 @@ static inline const std::vector<IPNet>& PrivateIPv6Networks() {
   return *networks;
 }
 
+static inline const std::vector<IPNet>& PrivateNetworks(Address::Family family) {
+  switch (family) {
+    case Address::Family::IPV4:
+      return PrivateIPv4Networks();
+    case Address::Family::IPV6:
+      return PrivateIPv6Networks();
+    default:
+      return {};
+  }
+}
+
+
 }  // namespace collector
 
 #endif //COLLECTOR_NETWORKCONNECTION_H

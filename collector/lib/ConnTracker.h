@@ -99,7 +99,7 @@ class ConnectionTracker {
   static void ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state);
 
   void UpdateKnownPublicIPs(UnorderedSet<Address>&& known_public_ips);
-  void UpdateKnownIPNetworks(UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks, UnorderedMap<Address::Family, bool> private_networks_exists);
+  void UpdateKnownIPNetworks(UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks);
 
  private:
   // NormalizeConnection transforms a connection into a normalized form.

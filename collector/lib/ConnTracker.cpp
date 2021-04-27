@@ -38,6 +38,23 @@ static const Address canonical_external_ipv6_addr(0xffffffffffffffffULL, 0xfffff
 
 }  // namespace
 
+bool ContainsPrivateNetwork(Address::Family family, const std::vector<IPNet>& networks) {
+  for (const auto net : networks) {
+    // Check if network is subnet of any private network.
+    if (!net.address().IsPublic()) {
+      return true;
+    }
+
+    // Check if any private network is subnet of incoming network.
+    for (const auto& pNet : PrivateNetworks(family)) {
+      if (net.Contains(pNet.address())) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 void ConnectionTracker::UpdateConnection(const Connection& conn, int64_t timestamp, bool added) {
   WITH_LOCK(mutex_) {
     EmplaceOrUpdateNoLock(conn, ConnStatus(timestamp, added));
@@ -242,12 +259,15 @@ void ConnectionTracker::UpdateKnownPublicIPs(collector::UnorderedSet<collector::
   }
 }
 
-void ConnectionTracker::UpdateKnownIPNetworks(
-    UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks,
-    UnorderedMap<Address::Family, bool> private_networks_exists) {
+void ConnectionTracker::UpdateKnownIPNetworks(UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks) {
+  UnorderedMap<Address::Family, bool> known_private_networks_exists;
+  for (const auto &network_pair : known_ip_networks) {
+    known_private_networks_exists[network_pair.first] = ContainsPrivateNetwork(network_pair.first, network_pair.second);
+  }
+
   WITH_LOCK(mutex_) {
     known_ip_networks_ = std::move(known_ip_networks);
-    known_private_networks_exists_ = std::move(private_networks_exists);
+    known_private_networks_exists_ = std::move(known_private_networks_exists);
     if (CLOG_ENABLED(DEBUG)) {
       CLOG(DEBUG) << "known ip networks:";
       for (const auto &network_pair : known_ip_networks_) {
@@ -258,4 +278,5 @@ void ConnectionTracker::UpdateKnownIPNetworks(
     }
   }
 }
+
 }  // namespace collector
