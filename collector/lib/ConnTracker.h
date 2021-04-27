@@ -124,6 +124,7 @@ class ConnectionTracker {
 
   UnorderedSet<Address> known_public_ips_;
   UnorderedMap<Address::Family, std::vector<IPNet>> known_ip_networks_;
+  UnorderedMap<Address::Family, bool> known_private_networks_exists_;
 };
 
 /* static */

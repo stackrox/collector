@@ -141,7 +141,6 @@ void NetworkStatusNotifier::ReceiveIPNetworks(const sensor::IPNetworkList& netwo
     std::sort(ipv6_networks.begin(), ipv6_networks.end(), std::greater<IPNet>());
     known_ip_networks[Address::Family::IPV6] = ipv6_networks;
   }
-
   conn_tracker_->UpdateKnownIPNetworks(std::move(known_ip_networks));
 }
 
