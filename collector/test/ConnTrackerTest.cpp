@@ -159,6 +159,15 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
   state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn13_1_2_normalized, ConnStatus(now2, true))));
 
+  // No private subnet
+  known_networks = {};
+  tracker.UpdateKnownIPNetworks(std::move(known_networks));
+
+  Connection conn13_1_3_normalized("xyz", Endpoint(IPNet(), 80), Endpoint(IPNet(Address(192, 168, 1, 10), 0, true), 0), L4Proto::TCP, true);
+
+  state = tracker.FetchConnState(true);
+  EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn13_1_3_normalized, ConnStatus(now2, true))));
+
   // Single IP address as private subnet
   known_networks = {{Address::Family::IPV4, {IPNet(Address(192, 168, 1, 10), 32)}}};
   tracker.UpdateKnownIPNetworks(std::move(known_networks));

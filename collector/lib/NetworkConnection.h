@@ -444,13 +444,14 @@ static inline const std::vector<IPNet>& PrivateIPv6Networks() {
 }
 
 static inline const std::vector<IPNet>& PrivateNetworks(Address::Family family) {
+  static std::vector<IPNet>* no_networks = new std::vector<IPNet>;
   switch (family) {
     case Address::Family::IPV4:
       return PrivateIPv4Networks();
     case Address::Family::IPV6:
       return PrivateIPv6Networks();
     default:
-      return {};
+      return *no_networks;
   }
 }
 

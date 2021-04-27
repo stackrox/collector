@@ -39,17 +39,10 @@ static const Address canonical_external_ipv6_addr(0xffffffffffffffffULL, 0xfffff
 }  // namespace
 
 bool ContainsPrivateNetwork(Address::Family family, const std::vector<IPNet>& networks) {
-  for (const auto net : networks) {
-    // Check if user-defined network is contained in private IP space.
+  for (const auto& net : networks) {
+    // Check if user-defined network is contained in private IP space or vice-versa.
     for (const auto& pNet : PrivateNetworks(family)) {
-      if (pNet.Contains(net.address())) {
-        return true;
-      }
-    }
-
-    // Check if any private IP space is contained in user-defined network.
-    for (const auto& pNet : PrivateNetworks(family)) {
-      if (net.Contains(pNet.address())) {
+      if (pNet.Contains(net.address()) || net.Contains(pNet.address())) {
         return true;
       }
     }
@@ -263,7 +256,7 @@ void ConnectionTracker::UpdateKnownPublicIPs(collector::UnorderedSet<collector::
 
 void ConnectionTracker::UpdateKnownIPNetworks(UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks) {
   UnorderedMap<Address::Family, bool> known_private_networks_exists;
-  for (const auto &network_pair : known_ip_networks) {
+  for (const auto& network_pair : known_ip_networks) {
     known_private_networks_exists[network_pair.first] = ContainsPrivateNetwork(network_pair.first, network_pair.second);
   }
 
