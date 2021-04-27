@@ -134,16 +134,25 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
 
   // Private subnet containing the address
   UnorderedMap<Address::Family, std::vector<IPNet>> known_networks = {{Address::Family::IPV4, {IPNet(Address(192, 168, 0, 0), 16)}}};
-  tracker.UpdateKnownIPNetworks(std::move(known_networks));
+  tracker.UpdateKnownIPNetworks(std::move(known_networks), {{Address::Family::IPV4, true}});
 
   Connection conn13_1_normalized("xyz", Endpoint(IPNet(), 80), Endpoint(IPNet(Address(192, 168, 1, 10), 16, true), 0), L4Proto::TCP, true);
 
   state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn13_1_normalized, ConnStatus(now2, true))));
 
+  // Private subnet containing the address; flag set to false
+  tracker.UpdateKnownIPNetworks(std::move(known_networks), {{Address::Family::IPV4, false}});
+
+  // Note the difference in bits
+  Connection conn13_1_1_normalized("xyz", Endpoint(IPNet(), 80), Endpoint(IPNet(Address(192, 168, 1, 10), 0, true), 0), L4Proto::TCP, true);
+
+  state = tracker.FetchConnState(true);
+  EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn13_1_1_normalized, ConnStatus(now2, true))));
+
   // Single IP address as private subnet
   known_networks = {{Address::Family::IPV4, {IPNet(Address(192, 168, 1, 10), 32)}}};
-  tracker.UpdateKnownIPNetworks(std::move(known_networks));
+  tracker.UpdateKnownIPNetworks(std::move(known_networks), {{Address::Family::IPV4, true}});
 
   Connection conn13_2_normalized("xyz", Endpoint(IPNet(), 80), Endpoint(IPNet(Address(192, 168, 1, 10)), 0), L4Proto::TCP, true);
 
@@ -152,7 +161,7 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
 
   // Subnet not containing the address
   known_networks = {{Address::Family::IPV4, {IPNet(Address(192, 168, 0, 0), 24)}}};
-  tracker.UpdateKnownIPNetworks(std::move(known_networks));
+  tracker.UpdateKnownIPNetworks(std::move(known_networks), {{Address::Family::IPV4, true}});
 
   Connection conn13_3_normalized("xyz", Endpoint(IPNet(), 80), Endpoint(IPNet(Address(192, 168, 1, 10), 0, true), 0), L4Proto::TCP, true);
 
@@ -167,7 +176,7 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
   tracker.UpdateKnownPublicIPs(std::move(public_ips));
 
   known_networks = {{Address::Family::IPV4, {IPNet(Address(35, 127, 0, 15), 32)}}};
-  tracker.UpdateKnownIPNetworks(std::move(known_networks));
+  tracker.UpdateKnownIPNetworks(std::move(known_networks), {{Address::Family::IPV4, false}});
 
   Connection conn15_normalized("xyz", Endpoint(IPNet(), 80), Endpoint(IPNet(Address(35, 127, 0, 15), 32, true), 0), L4Proto::TCP, true);
 
@@ -194,7 +203,7 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
   tracker.UpdateKnownPublicIPs(std::move(public_ips));
 
   known_networks = {};
-  tracker.UpdateKnownIPNetworks(std::move(known_networks));
+  tracker.UpdateKnownIPNetworks(std::move(known_networks), {{Address::Family::IPV4, false}});
   Connection conn15_2_normalized("xyz", Endpoint(IPNet(), 80), Endpoint(IPNet(Address(35, 127, 0, 15), 0, true), 0), L4Proto::TCP, true);
 
   state = tracker.FetchConnState(true);
@@ -233,7 +242,7 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
   tracker.UpdateKnownPublicIPs(std::move(public_ips));
 
   UnorderedMap<Address::Family, std::vector<IPNet>> known_networks = {{Address::Family::IPV4, {IPNet(Address(35, 127, 1, 15), 24)}}};
-  tracker.UpdateKnownIPNetworks(std::move(known_networks));
+  tracker.UpdateKnownIPNetworks(std::move(known_networks), {{Address::Family::IPV4, false}});
 
   auto state3 = tracker.FetchConnState(true);
 

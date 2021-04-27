@@ -66,9 +66,40 @@ constexpr char NetworkStatusNotifier::kHostnameMetadataKey[];
 constexpr char NetworkStatusNotifier::kCapsMetadataKey[];
 constexpr char NetworkStatusNotifier::kSupportedCaps[];
 
-std::vector<IPNet> readNetworks(const string& networks, Address::Family family) {
+bool overlapsWithPrivate(Address::Family family, const IPNet& net) {
+  // Check if network is subnet of any private network.
+  if (net.address().IsPublic()) {
+    return true;
+  }
+
+  // Check if any private network is subnet of incoming network.
+  switch (family) {
+    case Address::Family::IPV4:
+      for (const auto& pNet : PrivateIPv4Networks()) {
+        if (net.Contains(pNet.address())) {
+          return false;
+        }
+      }
+      return true;
+
+    case Address::Family::IPV6:
+      for (const auto& pNet : PrivateIPv6Networks()) {
+        if (net.Contains(pNet.address())) {
+          return false;
+        }
+      }
+      return true;
+
+    default:
+      return false;
+  }
+}
+
+std::tuple<std::vector<IPNet>, bool> readNetworks(const string& networks, Address::Family family) {
   int tuple_size = Address::Length(family) + 1;
   int num_nets = networks.size() / tuple_size;
+
+  bool private_network_exists;
   std::vector<IPNet> ip_nets;
   ip_nets.reserve(num_nets);
   for (int i = 0; i < num_nets; i++) {
@@ -77,8 +108,12 @@ std::vector<IPNet> readNetworks(const string& networks, Address::Family family) 
     std::memcpy(&ip, &networks.c_str()[tuple_size * i], Address::Length(family));
     IPNet net(Address(family, ip), static_cast<int>(networks.c_str()[tuple_size * i + tuple_size - 1]));
     ip_nets.push_back(net);
+
+    if (!private_network_exists && overlapsWithPrivate(family, net)) {
+      private_network_exists = true;
+    }
   }
-  return ip_nets;
+  return std::make_tuple(ip_nets, private_network_exists);
 }
 
 std::unique_ptr<grpc::ClientContext> NetworkStatusNotifier::CreateClientContext() const {
@@ -122,27 +157,34 @@ void NetworkStatusNotifier::ReceivePublicIPs(const sensor::IPAddressList& public
 
 void NetworkStatusNotifier::ReceiveIPNetworks(const sensor::IPNetworkList& networks) {
   UnorderedMap<Address::Family, std::vector<IPNet>> known_ip_networks;
+  UnorderedMap<Address::Family, bool> known_private_networks_exists;
+
   auto ipv4_networks_size = networks.ipv4_networks().size();
   if (ipv4_networks_size % 5 != 0) {
     CLOG(WARNING) << "IPv4 network field has incorrect length " << ipv4_networks_size << ". Ignoring IPv4 networks...";
   } else {
-    std::vector<IPNet> ipv4_networks = readNetworks(networks.ipv4_networks(), Address::Family::IPV4);
+    std::vector<IPNet> ipv4_networks;
+    bool private_ipv4_networks_exists;
+    std::tie(ipv4_networks, private_ipv4_networks_exists) = readNetworks(networks.ipv4_networks(), Address::Family::IPV4);
     // Sort the networks in smallest subnet to largest subnet order.
     std::sort(ipv4_networks.begin(), ipv4_networks.end(), std::greater<IPNet>());
     known_ip_networks[Address::Family::IPV4] = ipv4_networks;
+    known_private_networks_exists[Address::Family::IPV4] = private_ipv4_networks_exists;
   }
 
   auto ipv6_networks_size = networks.ipv6_networks().size();
   if (ipv6_networks_size % 17 != 0) {
     CLOG(WARNING) << "IPv6 network field has incorrect length " << ipv6_networks_size << ". Ignoring IPv6 networks...";
   } else {
-    std::vector<IPNet> ipv6_networks = readNetworks(networks.ipv6_networks(), Address::Family::IPV6);
+    std::vector<IPNet> ipv6_networks;
+    bool private_ipv6_networks_exists;
+    std::tie(ipv6_networks, private_ipv6_networks_exists) = readNetworks(networks.ipv6_networks(), Address::Family::IPV6);
     // Sort the networks in smallest subnet to largest subnet order.
     std::sort(ipv6_networks.begin(), ipv6_networks.end(), std::greater<IPNet>());
     known_ip_networks[Address::Family::IPV6] = ipv6_networks;
+    known_private_networks_exists[Address::Family::IPV6] = private_ipv6_networks_exists;
   }
-
-  conn_tracker_->UpdateKnownIPNetworks(std::move(known_ip_networks));
+  conn_tracker_->UpdateKnownIPNetworks(std::move(known_ip_networks), std::move(known_private_networks_exists));
 }
 
 void NetworkStatusNotifier::Run() {

@@ -93,8 +93,13 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
     return {};
   }
 
+  bool private_addr = !address.IsPublic();
+  if (private_addr && !Lookup(known_private_networks_exists_, address.family()))  {
+    return IPNet(address, 0, true);
+  }
+
   const auto& network = DetermineNetworkNoLock(address);
-  if (!address.IsPublic() || Contains(known_public_ips_, address)) {
+  if (private_addr || Contains(known_public_ips_, address)) {
     return IPNet(address, network.bits(), true);
   }
 
@@ -237,9 +242,12 @@ void ConnectionTracker::UpdateKnownPublicIPs(collector::UnorderedSet<collector::
   }
 }
 
-void ConnectionTracker::UpdateKnownIPNetworks(UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks) {
+void ConnectionTracker::UpdateKnownIPNetworks(
+    UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks,
+    UnorderedMap<Address::Family, bool> private_networks_exists) {
   WITH_LOCK(mutex_) {
     known_ip_networks_ = std::move(known_ip_networks);
+    known_private_networks_exists_ = std::move(private_networks_exists);
     if (CLOG_ENABLED(DEBUG)) {
       CLOG(DEBUG) << "known ip networks:";
       for (const auto &network_pair : known_ip_networks_) {

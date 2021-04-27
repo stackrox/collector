@@ -23,40 +23,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "NetworkConnection.h"
 
-#include <vector>
-
 namespace collector {
-
-namespace {
-
-static const std::vector<IPNet>& PrivateIPv4Networks() {
-  static auto* networks = new std::vector<IPNet>{
-    IPNet(Address(10, 0, 0, 0), 8),
-    IPNet(Address(100, 64, 0, 0), 10),
-    IPNet(Address(169, 254, 0, 0), 16),
-    IPNet(Address(172, 16, 0, 0), 12),
-    IPNet(Address(192, 168, 0, 0), 16),
-  };
-
-  return *networks;
-}
-
-static const std::vector<IPNet>& PrivateIPv6Networks() {
-  static auto* networks = []() {
-    auto* networks = new std::vector<IPNet>();
-    const auto& ipv4_nets = PrivateIPv4Networks();
-    networks->reserve(ipv4_nets.size() + 1);
-    networks->emplace_back(Address(htonll(0xfd00000000000000ULL), 0ULL), 8);  // ULA
-    for (const auto& ipv4_net : ipv4_nets) {
-      networks->emplace_back(ipv4_net.address().ToV6(), ipv4_net.bits() + 96);
-    }
-    return networks;
-  }();
-
-  return *networks;
-}
-
-}  // namespace
 
 bool Address::IsPublic() const {
   switch (family_) {

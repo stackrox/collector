@@ -33,7 +33,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <array>
 #include <ostream>
 #include <string>
-
+#include <vector>
 #include <cstring>
 
 #include "Hash.h"
@@ -412,6 +412,35 @@ inline int IsEphemeralPort(uint16_t port) {
   if (port >= 1025 && port <= 5000) return 2;  // FreeBSD (partial) + Windows <=XP range
   if (port == 1024) return 1;  // FreeBSD
   return 0;  // not ephemeral according to any range
+}
+
+// PrivateIPv4Networks return private IPv4 networks.
+static inline const std::vector<IPNet>& PrivateIPv4Networks() {
+  static auto* networks = new std::vector<IPNet>{
+    IPNet(Address(10, 0, 0, 0), 8),
+    IPNet(Address(100, 64, 0, 0), 10),
+    IPNet(Address(169, 254, 0, 0), 16),
+    IPNet(Address(172, 16, 0, 0), 12),
+    IPNet(Address(192, 168, 0, 0), 16),
+    };
+
+  return *networks;
+}
+
+// PrivateIPv6Networks returns private IPv6 networks.
+static inline const std::vector<IPNet>& PrivateIPv6Networks() {
+  static auto* networks = []() {
+    auto* networks = new std::vector<IPNet>();
+    const auto& ipv4_nets = PrivateIPv4Networks();
+    networks->reserve(ipv4_nets.size() + 1);
+    networks->emplace_back(Address(htonll(0xfd00000000000000ULL), 0ULL), 8);  // ULA
+    for (const auto& ipv4_net : ipv4_nets) {
+      networks->emplace_back(ipv4_net.address().ToV6(), ipv4_net.bits() + 96);
+    }
+    return networks;
+  }();
+
+  return *networks;
 }
 
 }  // namespace collector
