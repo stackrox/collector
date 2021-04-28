@@ -1417,6 +1417,7 @@ jobs:
             else
               docker push "stackrox/collector:${collector_ver}-latest" | cat
               docker push "collector.stackrox.io/collector:${collector_ver}-latest" | cat
+              .circleci/set-cache-control.sh "collector.stackrox.io/collector:${collector_ver}-latest"
             fi
           done
 
