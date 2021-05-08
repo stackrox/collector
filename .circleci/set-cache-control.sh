@@ -52,4 +52,5 @@ EOF
 # __MAIN__
 image="${1:-}"
 [[ -n "$image" ]] || usage
+export DOCKER_CLI_EXPERIMENTAL="enabled"
 set_cache_control_all_layers "$image"
