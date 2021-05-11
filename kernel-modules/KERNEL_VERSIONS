@@ -2701,7 +2701,10 @@
 5.8.0-1030-gcp
 5.8.0-1031-aws
 5.8.0-1031-azure
+5.8.0-1031-gcp
 5.8.0-1032-aws
+5.8.0-1032-azure
+5.8.0-1033-aws
 5.8.0-12-generic
 5.8.0-16-generic
 5.8.0-18-generic
@@ -2736,6 +2739,7 @@
 5.8.0-50-generic
 5.8.0-51-generic
 5.8.0-52-generic
+5.8.0-53-generic
 5.8.11-flatcar
 5.8.14-flatcar
 5.8.18-flatcar
