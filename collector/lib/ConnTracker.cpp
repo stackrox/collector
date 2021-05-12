@@ -239,7 +239,7 @@ ConnMap ConnectionTracker::FetchConnState(bool normalize, bool clear_inactive) {
                           [this](const Connection &conn) { return this->NormalizeConnectionNoLock(conn); },
                           [this](const Connection &conn) { return this->ShouldFetchConnection(conn); });
       }
-      return FetchState(&conn_state_, clear_inactive,dont_normalize(),
+      return FetchState(&conn_state_, clear_inactive, dont_normalize(),
                         [this](const Connection &conn) { return this->ShouldFetchConnection(conn); });
     }
     if (normalize) {
@@ -247,7 +247,7 @@ ConnMap ConnectionTracker::FetchConnState(bool normalize, bool clear_inactive) {
                         [this](const Connection &conn) { return this->NormalizeConnectionNoLock(conn); },
                         dont_filter());
     }
-    return FetchState(&conn_state_, clear_inactive, dont_normalize(),dont_filter());
+    return FetchState(&conn_state_, clear_inactive, dont_normalize(), dont_filter());
   }
   return {};  // will never happen
 }
