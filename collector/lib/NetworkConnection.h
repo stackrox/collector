@@ -460,7 +460,7 @@ static inline const std::vector<IPNet>& PrivateNetworks(Address::Family family) 
 }  // namespace collector
 
 namespace std {
-  size_t Hash(const collector::L4ProtoPortPair& pp);
+size_t Hash(const collector::L4ProtoPortPair& pp);
 }  // namespace std
 
 #endif //COLLECTOR_NETWORKCONNECTION_H

@@ -23,8 +23,6 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "ConnTracker.h"
 
-#include <utility>
-
 #include "Containers.h"
 #include "Logging.h"
 #include "Utility.h"
@@ -152,24 +150,6 @@ Connection ConnectionTracker::NormalizeConnectionNoLock(const Connection& conn) 
   return Connection(conn.container(), local, remote, conn.l4proto(), is_server);
 }
 
-ContainerEndpoint ConnectionTracker::NormalizeContainerEndpoint(const ContainerEndpoint &cep) const {
-  const auto& ep = cep.endpoint();
-  return ContainerEndpoint(cep.container(), Endpoint(Address(ep.address().family()), ep.port()), cep.l4proto());
-}
-
-bool ConnectionTracker::ShouldFetchConnection(const Connection &conn) const {
-  return !IsIgnoredL4ProtoPortPair(L4ProtoPortPair(conn.l4proto(), conn.local().port())) &&
-         !IsIgnoredL4ProtoPortPair(L4ProtoPortPair(conn.l4proto(), conn.remote().port()));
-}
-
-bool ConnectionTracker::ShouldFetchContainerEndpoint(const ContainerEndpoint &cep) const {
-  return !IsIgnoredL4ProtoPortPair(L4ProtoPortPair(cep.l4proto(), cep.endpoint().port()));
-}
-
-bool ConnectionTracker::IsIgnoredL4ProtoPortPair(const L4ProtoPortPair &p) const {
-  return Contains(ignored_l4proto_port_pairs_, p);
-}
-
 namespace {
 
 template <typename T>
@@ -199,9 +179,16 @@ struct dont_normalize {
   }
 };
 
+struct normalize_connection {
+  template<typename T>
+  inline auto operator()(T&& arg) const -> decltype(std::forward<T>(arg)) {
+    return std::forward<T>(arg);
+  }
+};
+
 struct dont_filter {
   template<typename T>
-  inline auto operator()(T&& arg) const -> bool {
+  inline constexpr bool operator()(T&& arg) const {
     return true;
   }
 };
@@ -214,7 +201,7 @@ UnorderedMap<T, ConnStatus> FetchState(UnorderedMap<T, ConnStatus>* state, bool 
 
   UnorderedMap<T, ConnStatus> fetched_state;
 
-  if (!clear_inactive && !normalize) {
+  if (!clear_inactive && !normalize && !filter) {
     return *state;
   }
 
@@ -246,38 +233,42 @@ UnorderedMap<T, ConnStatus> FetchState(UnorderedMap<T, ConnStatus>* state, bool 
 
 ConnMap ConnectionTracker::FetchConnState(bool normalize, bool clear_inactive) {
   WITH_LOCK(mutex_) {
-    std::function<bool(const Connection&)> filter_fn = dont_filter();
-    std::function<const Connection(const Connection&)> process_fn = dont_normalize();
     if (IsConnectionFilteringEnabled()) {
-      filter_fn = [this](const Connection &conn) {
-        return this->ShouldFetchConnection(conn);
-      };
+      if (normalize) {
+        return FetchState(&conn_state_, clear_inactive,
+                          [this](const Connection &conn) { return this->NormalizeConnectionNoLock(conn); },
+                          [this](const Connection &conn) { return this->ShouldFetchConnection(conn); });
+      }
+      return FetchState(&conn_state_, clear_inactive,dont_normalize(),
+                        [this](const Connection &conn) { return this->ShouldFetchConnection(conn); });
     }
     if (normalize) {
-      process_fn = [this](const Connection &conn) {
-        return this->NormalizeConnectionNoLock(conn);
-      };
+      return FetchState(&conn_state_, clear_inactive,
+                        [this](const Connection &conn) { return this->NormalizeConnectionNoLock(conn); },
+                        dont_filter());
     }
-    return FetchState(&conn_state_, clear_inactive, process_fn, filter_fn);
+    return FetchState(&conn_state_, clear_inactive, dont_normalize(),dont_filter());
   }
   return {};  // will never happen
 }
 
 ContainerEndpointMap ConnectionTracker::FetchEndpointState(bool normalize, bool clear_inactive) {
   WITH_LOCK(mutex_) {
-    std::function<bool(const ContainerEndpoint&)> filter_fn = dont_filter();
-    std::function<const ContainerEndpoint(const ContainerEndpoint&)> process_fn = dont_normalize();
     if (IsConnectionFilteringEnabled()) {
-      filter_fn = [this] (const ContainerEndpoint &cep) {
-        return this->ShouldFetchContainerEndpoint(cep);
-      };
+      if (normalize) {
+        return FetchState(&endpoint_state_, clear_inactive,
+                          [this](const ContainerEndpoint &cep) { return this->NormalizeContainerEndpoint(cep); },
+                          [this](const ContainerEndpoint &cep) { return this->ShouldFetchContainerEndpoint(cep); });
+      }
+      return FetchState(&endpoint_state_, clear_inactive, dont_normalize(),
+                        [this](const ContainerEndpoint &cep) { return this->ShouldFetchContainerEndpoint(cep); });
     }
     if (normalize) {
-      process_fn = [this](const ContainerEndpoint &cep) {
-        return this->NormalizeContainerEndpoint(cep);
-      };
+      return FetchState(&endpoint_state_, clear_inactive,
+                        [this](const ContainerEndpoint &cep) { return this->NormalizeContainerEndpoint(cep); },
+                        dont_filter());
     }
-    return FetchState(&endpoint_state_, clear_inactive, process_fn, filter_fn);
+    return FetchState(&endpoint_state_, clear_inactive, dont_normalize(), dont_filter());
   }
   return {};  // will never happen
 }

@@ -29,6 +29,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "Hash.h"
 #include "NetworkConnection.h"
+#include "Containers.h"
 
 namespace collector {
 
@@ -106,21 +107,6 @@ class ConnectionTracker {
   // NormalizeConnection transforms a connection into a normalized form.
   Connection NormalizeConnectionNoLock(const Connection &conn) const;
 
-  // NormalizeContainerEndpoint transforms a container endpoint into a normalized form.
-  ContainerEndpoint NormalizeContainerEndpoint(const ContainerEndpoint &cep) const;
-
-  // Determine if connection filtering is enabled
-  bool IsConnectionFilteringEnabled() { return !ignored_l4proto_port_pairs_.empty(); }
-
-  // Determine if a connection should be ignored
-  bool ShouldFetchConnection(const Connection &conn) const;
-
-  // Determine if a container endpoint should be ignored
-  bool ShouldFetchContainerEndpoint(const ContainerEndpoint &cep) const;
-
-  // Determine if a protocol port combination from a connection or endpoint should be ignored
-  bool IsIgnoredL4ProtoPortPair(const L4ProtoPortPair &p) const;
-
   // Emplace a connection into the state ConnMap, or update its timestamp if the supplied timestamp is more recent
   // than the stored one.
   void EmplaceOrUpdateNoLock(const Connection& conn, ConnStatus status);
@@ -133,6 +119,33 @@ class ConnectionTracker {
 
   // DetermineNetworkNoLock identifies the subnet containing address.
   IPNet DetermineNetworkNoLock(const Address& address) const;
+
+  // Determine if connection filtering is enabled
+  inline bool IsConnectionFilteringEnabled() const {
+    return !ignored_l4proto_port_pairs_.empty();
+  }
+
+  // Determine if a protocol port combination from a connection or endpoint should be ignored
+  inline bool IsIgnoredL4ProtoPortPair(const L4ProtoPortPair &p) const {
+    return Contains(ignored_l4proto_port_pairs_, p);
+  }
+
+  // NormalizeContainerEndpoint transforms a container endpoint into a normalized form.
+  inline ContainerEndpoint NormalizeContainerEndpoint(const ContainerEndpoint &cep) const {
+    const auto& ep = cep.endpoint();
+    return ContainerEndpoint(cep.container(), Endpoint(Address(ep.address().family()), ep.port()), cep.l4proto());
+  }
+
+  // Determine if a connection should be ignored
+  inline bool ShouldFetchConnection(const Connection &conn) const {
+    return !IsIgnoredL4ProtoPortPair(L4ProtoPortPair(conn.l4proto(), conn.local().port())) &&
+           !IsIgnoredL4ProtoPortPair(L4ProtoPortPair(conn.l4proto(), conn.remote().port()));
+  }
+
+  // Determine if a container endpoint should be ignored
+  inline bool ShouldFetchContainerEndpoint(const ContainerEndpoint &cep) const {
+    return !IsIgnoredL4ProtoPortPair(L4ProtoPortPair(cep.l4proto(), cep.endpoint().port()));
+  }
 
   std::mutex mutex_;
   ConnMap conn_state_;
