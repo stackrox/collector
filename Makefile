@@ -211,7 +211,7 @@ probe-dev: $(MOD_VER_FILE)
 .PHONY: probe-archive-dev
 probe-archive-dev: $(MOD_VER_FILE)
 	mkdir -p "$(CURDIR)/kernel-modules/container/kernel-modules"
-	cp "$(CURDIR)/probes/$(shell cat $(MOD_VER_FILE))/"* "$(CURDIR)/kernel-modules/container/kernel-modules/"
+	cp "$(CURDIR)/probes/$(shell cat $(MOD_VER_FILE))/"* "$(CURDIR)/kernel-modules/container/kernel-modules/" || true
 
 .PHONY: clean
 clean: teardown-dev
