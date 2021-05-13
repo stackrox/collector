@@ -14,6 +14,7 @@ RUN apt-get update \
         build-essential \
         ca-certificates \
         clang \
+        ccache \
         cmake \
         curl \
         g++ \

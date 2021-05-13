@@ -43,5 +43,16 @@ The development workflow can also be used with the rhel based builder image.
 ### Building collector image(s) from the command-line
 - `make image` or `make image-rhel` will create the default (Ubuntu) and Red Hat based collector images respectively.
 
+### Building collector image(s) from the command-line with CLion binaries
+- `make image-dev` or `make image-dev-rhel` will copy the collector binaries built by CLion in the `collector_remote_dev` container.
 
-
+### Example workflow to building a kernel probes locally from the command-line and run integration tests on a remote VM
+- To build a collector image locally containing probes for the kernel `5.4.0-1028-gcp`
+  - Clone the [stackrox/kernel-packer](https://github.com/stackrox/kernel-packer) repository.
+  - From the kernel-packer repository, run `./scripts/local-bundle 5.4.0-1028-gcp`, to download and build the kernel bundle.
+  - Prepare the probe build environment in the collector repostitory with `make probe-dev`
+  - Build the probe with `./scripts/build-probe 5.4.0-1028-gcp`
+  - Build a collector binaries within CLion
+  - Build a the collector image with the CLion binaries and locally built probes with `make image-dev`
+  - Push the image: `docker push stackrox/collector:$(make tag)`
+  - Execute the integration tests on a remote gcp VM with `COLLECTION_METHOD=ebpf REMOTE_HOST_TYPE=gcloud GCLOUD_INSTANCE=robby-test GCLOUD_OPTIONS="--zone us-central1-a --project stackrox-dev" make integration-tests-process-network`

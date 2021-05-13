@@ -19,28 +19,26 @@ generated-srcs-rhel:
 		-v $(CURDIR)/../rox-proto:/collector/rox-proto:ro \
 		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) make -f protogen.mk generated-proto-srcs
 
-container/bin/collector: $(HDRS) $(SRCS) txt-files generated-srcs $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
-	mkdir -p container/bin
-	mkdir -p container/libs
+container/bin/collector: $(HDRS) $(SRCS) generated-srcs txt-files $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
 	docker rm -fv build_collector || true
 	docker run --rm --name build_collector \
 		-v "$(CURDIR):/src:ro" \
 		-v "$(CURDIR)/../sysdig/:/sysdig:ro" \
 		-v "$(CURDIR)/cmake-build:/tmp/cmake-build" \
 		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-collector.sh
-	cp cmake-build/collector container/bin/
+	mkdir -p container/bin container/libs
 	cp -r cmake-build/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
+	cp cmake-build/collector container/bin/collector
 	cp cmake-build/EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so
 
-container/bin/collector-rhel: $(HDRS) $(SRCS) txt-files generated-srcs-rhel $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
-	mkdir -p container/bin
-	mkdir -p container/libs
+container/bin/collector-rhel: $(HDRS) $(SRCS) generated-srcs-rhel txt-files $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
 	docker rm -fv build_collector_rhel || true
 	docker run --rm --name build_collector_rhel \
 		-v "$(CURDIR):/src:ro" \
 		-v "$(CURDIR)/../sysdig/:/sysdig:ro" \
 		-v "$(CURDIR)/cmake-build-rhel:/tmp/cmake-build" \
 		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) /build-collector.sh
+	mkdir -p container/bin container/libs
 	cp cmake-build-rhel/collector container/bin/collector.rhel
 	cp -r cmake-build-rhel/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES.rhel/
 	cp cmake-build-rhel/EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so.rhel
@@ -113,6 +111,9 @@ clean: clean-generated-srcs
 	rm -rf container/libs
 	rm -rf container/THIRD_PARTY_NOTICES
 	rm -rf container/THIRD_PARTY_NOTICES.rhel
+	rm -rf container/probes
+	rm -f container/COPYING*.txt
+	rm -f container/NOTICE.txt
 
 .PHONY: clean-generated-srcs
 clean-generated-srcs:
