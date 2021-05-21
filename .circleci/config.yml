@@ -18,6 +18,8 @@ runOnAllTags: &runOnAllTags
   filters:
     tags:
       only: /.*/
+    branches:
+      ignore: gavin/cpaas-collector
 
 runOnAllTagsWithDockerIOPullCtx: &runOnAllTagsWithDockerIOPullCtx
   <<: *runOnAllTags
@@ -1429,6 +1431,14 @@ jobs:
         only_for_branches: master
         webhook: '${SLACK_WEBHOOK_KERNEL_PROBE_BUILD_FAILURE}'
 
+  build-cpaas:
+    <<: *defaultMachine
+    steps:
+    - run:
+        name: holding
+        command: |
+          echo 123
+
 workflows:
   version: 2
   build:
@@ -1654,3 +1664,9 @@ workflows:
         context: docker-io-and-stackrox-io-push
         requires:
           - upload-modules
+  build-cpaas:
+    jobs:
+      - build-cpaas:
+          filters:
+            branches:
+              only: gavin/cpaas-collector
