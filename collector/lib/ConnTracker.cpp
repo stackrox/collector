@@ -179,13 +179,6 @@ struct dont_normalize {
   }
 };
 
-struct normalize_connection {
-  template<typename T>
-  inline auto operator()(T&& arg) const -> decltype(std::forward<T>(arg)) {
-    return std::forward<T>(arg);
-  }
-};
-
 struct dont_filter {
   template<typename T>
   inline constexpr bool operator()(T&& arg) const {
@@ -233,7 +226,7 @@ UnorderedMap<T, ConnStatus> FetchState(UnorderedMap<T, ConnStatus>* state, bool 
 
 ConnMap ConnectionTracker::FetchConnState(bool normalize, bool clear_inactive) {
   WITH_LOCK(mutex_) {
-    if (IsConnectionFilteringEnabled()) {
+    if (HasConnectionStateFilters()) {
       if (normalize) {
         return FetchState(&conn_state_, clear_inactive,
                           [this](const Connection &conn) { return this->NormalizeConnectionNoLock(conn); },
@@ -254,7 +247,7 @@ ConnMap ConnectionTracker::FetchConnState(bool normalize, bool clear_inactive) {
 
 ContainerEndpointMap ConnectionTracker::FetchEndpointState(bool normalize, bool clear_inactive) {
   WITH_LOCK(mutex_) {
-    if (IsConnectionFilteringEnabled()) {
+    if (HasConnectionStateFilters()) {
       if (normalize) {
         return FetchState(&endpoint_state_, clear_inactive,
                           [this](const ContainerEndpoint &cep) { return this->NormalizeContainerEndpoint(cep); },

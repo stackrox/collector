@@ -120,8 +120,8 @@ class ConnectionTracker {
   // DetermineNetworkNoLock identifies the subnet containing address.
   IPNet DetermineNetworkNoLock(const Address& address) const;
 
-  // Determine if connection filtering is enabled
-  inline bool IsConnectionFilteringEnabled() const {
+  // Returns true if any connection filters are found.
+  inline bool HasConnectionStateFilters() const {
     return !ignored_l4proto_port_pairs_.empty();
   }
 

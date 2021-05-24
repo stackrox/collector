@@ -33,10 +33,13 @@ namespace collector {
 
 namespace {
 
+// If true, disable processing of network system call events and reading of connection information in /proc.
 BoolEnvVar disable_network_flows("ROX_COLLECTOR_DISABLE_NETWORK_FLOWS", false);
 
+// If true, retrieve tcp listening sockets while reading connection information in /proc.
 BoolEnvVar ports_feature_flag("ROX_NETWORK_GRAPH_PORTS", true);
 
+// If true, ignore connections with configured protocol and port pairs (e.g., udp/9).
 BoolEnvVar network_drop_ignored("ROX_NETWORK_DROP_IGNORED", true);
 
 }  // namespace
