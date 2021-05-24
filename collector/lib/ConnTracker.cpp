@@ -23,6 +23,9 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "ConnTracker.h"
 
+#include <utility>
+
+#include "CollectorStats.h"
 #include "Containers.h"
 #include "Logging.h"
 #include "Utility.h"
@@ -151,10 +154,12 @@ void EmplaceOrUpdate(UnorderedMap<T, ConnStatus>* m, const T& obj, ConnStatus st
 }  // namespace
 
 void ConnectionTracker::EmplaceOrUpdateNoLock(const Connection& conn, ConnStatus status) {
+  COUNTER_INC(stats_, CollectorStats::net_conn_updates);
   EmplaceOrUpdate(&conn_state_, conn, status);
 }
 
 void ConnectionTracker::EmplaceOrUpdateNoLock(const ContainerEndpoint& ep, ConnStatus status) {
+  COUNTER_INC(stats_, CollectorStats::net_cep_updates);
   EmplaceOrUpdate(&endpoint_state_, ep, status);
 }
 
@@ -213,48 +218,63 @@ UnorderedMap<T, ConnStatus> FetchState(UnorderedMap<T, ConnStatus>* state, bool 
 }  // namespace
 
 ConnMap ConnectionTracker::FetchConnState(bool normalize, bool clear_inactive) {
+  ConnMap cm;
+  size_t state_size;
   WITH_LOCK(mutex_) {
+    state_size = conn_state_.size();
     if (HasConnectionStateFilters()) {
       if (normalize) {
-        return FetchState(&conn_state_, clear_inactive,
-                          [this](const Connection &conn) { return this->NormalizeConnectionNoLock(conn); },
-                          [this](const Connection &conn) { return this->ShouldFetchConnection(conn); });
-      }
-      return FetchState(&conn_state_, clear_inactive, dont_normalize(),
+        cm = FetchState(&conn_state_, clear_inactive,
+                        [this](const Connection &conn) { return this->NormalizeConnectionNoLock(conn); },
                         [this](const Connection &conn) { return this->ShouldFetchConnection(conn); });
-    }
-    if (normalize) {
-      return FetchState(&conn_state_, clear_inactive,
+      } else {
+        cm = FetchState(&conn_state_, clear_inactive, dont_normalize(),
+                        [this](const Connection &conn) { return this->ShouldFetchConnection(conn); });
+      }
+    } else {
+      if (normalize) {
+        cm = FetchState(&conn_state_, clear_inactive,
                         [this](const Connection &conn) { return this->NormalizeConnectionNoLock(conn); },
                         dont_filter());
+      } else {
+        cm = FetchState(&conn_state_, clear_inactive, dont_normalize(), dont_filter());
+      }
     }
-    return FetchState(&conn_state_, clear_inactive, dont_normalize(), dont_filter());
+    COUNTER_ADD(stats_, CollectorStats::net_conn_inactive, (state_size - conn_state_.size()));
   }
-  return {};  // will never happen
+  return cm;
 }
 
 ContainerEndpointMap ConnectionTracker::FetchEndpointState(bool normalize, bool clear_inactive) {
+  ContainerEndpointMap cem;
+  size_t state_size;
   WITH_LOCK(mutex_) {
+    state_size = conn_state_.size();
     if (HasConnectionStateFilters()) {
       if (normalize) {
-        return FetchState(&endpoint_state_, clear_inactive,
-                          [this](const ContainerEndpoint &cep) { return this->NormalizeContainerEndpoint(cep); },
-                          [this](const ContainerEndpoint &cep) { return this->ShouldFetchContainerEndpoint(cep); });
+        cem = FetchState(&endpoint_state_, clear_inactive,
+                         [this](const ContainerEndpoint &cep) { return this->NormalizeContainerEndpoint(cep); },
+                         [this](const ContainerEndpoint &cep) { return this->ShouldFetchContainerEndpoint(cep); });
+      } else {
+        cem = FetchState(&endpoint_state_, clear_inactive, dont_normalize(),
+                         [this](const ContainerEndpoint &cep) { return this->ShouldFetchContainerEndpoint(cep); });
       }
-      return FetchState(&endpoint_state_, clear_inactive, dont_normalize(),
-                        [this](const ContainerEndpoint &cep) { return this->ShouldFetchContainerEndpoint(cep); });
+    } else {
+      if (normalize) {
+        cem = FetchState(&endpoint_state_, clear_inactive,
+                         [this](const ContainerEndpoint &cep) { return this->NormalizeContainerEndpoint(cep); },
+                         dont_filter());
+      } else {
+        cem = FetchState(&endpoint_state_, clear_inactive, dont_normalize(), dont_filter());
+      }
     }
-    if (normalize) {
-      return FetchState(&endpoint_state_, clear_inactive,
-                        [this](const ContainerEndpoint &cep) { return this->NormalizeContainerEndpoint(cep); },
-                        dont_filter());
-    }
-    return FetchState(&endpoint_state_, clear_inactive, dont_normalize(), dont_filter());
+    COUNTER_ADD(stats_, CollectorStats::net_cep_inactive, (state_size - endpoint_state_.size()));
   }
-  return {};  // will never happen
+  return cem;
 }
 
 void ConnectionTracker::UpdateKnownPublicIPs(collector::UnorderedSet<collector::Address>&& known_public_ips) {
+  COUNTER_SET(stats_, CollectorStats::net_known_public_ips, known_public_ips.size());
   WITH_LOCK(mutex_) {
     known_public_ips_ = std::move(known_public_ips);
     if (CLOG_ENABLED(DEBUG)) {
@@ -278,7 +298,9 @@ void ConnectionTracker::UpdateKnownIPNetworks(UnorderedMap<Address::Family, std:
   }
 
   UnorderedMap<Address::Family, bool> known_private_networks_exists;
+  COUNTER_ZERO(stats_, CollectorStats::net_known_ip_networks);
   for (const auto& network_pair : known_ip_networks) {
+    COUNTER_ADD(stats_, CollectorStats::net_known_ip_networks, network_pair.second.size());
     known_private_networks_exists[network_pair.first] = ContainsPrivateNetwork(network_pair.first, network_pair.second);
   }
 
