@@ -29,6 +29,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "Hash.h"
 #include "NetworkConnection.h"
+#include "Containers.h"
 
 namespace collector {
 
@@ -100,6 +101,7 @@ class ConnectionTracker {
 
   void UpdateKnownPublicIPs(UnorderedSet<Address>&& known_public_ips);
   void UpdateKnownIPNetworks(UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks);
+  void UpdateIgnoredL4ProtoPortPairs(UnorderedSet<L4ProtoPortPair>&& ignored_l4proto_port_pairs);
 
  private:
   // NormalizeConnection transforms a connection into a normalized form.
@@ -118,6 +120,33 @@ class ConnectionTracker {
   // DetermineNetworkNoLock identifies the subnet containing address.
   IPNet DetermineNetworkNoLock(const Address& address) const;
 
+  // Returns true if any connection filters are found.
+  inline bool HasConnectionStateFilters() const {
+    return !ignored_l4proto_port_pairs_.empty();
+  }
+
+  // Determine if a protocol port combination from a connection or endpoint should be ignored
+  inline bool IsIgnoredL4ProtoPortPair(const L4ProtoPortPair &p) const {
+    return Contains(ignored_l4proto_port_pairs_, p);
+  }
+
+  // NormalizeContainerEndpoint transforms a container endpoint into a normalized form.
+  inline ContainerEndpoint NormalizeContainerEndpoint(const ContainerEndpoint &cep) const {
+    const auto& ep = cep.endpoint();
+    return ContainerEndpoint(cep.container(), Endpoint(Address(ep.address().family()), ep.port()), cep.l4proto());
+  }
+
+  // Determine if a connection should be ignored
+  inline bool ShouldFetchConnection(const Connection &conn) const {
+    return !IsIgnoredL4ProtoPortPair(L4ProtoPortPair(conn.l4proto(), conn.local().port())) &&
+           !IsIgnoredL4ProtoPortPair(L4ProtoPortPair(conn.l4proto(), conn.remote().port()));
+  }
+
+  // Determine if a container endpoint should be ignored
+  inline bool ShouldFetchContainerEndpoint(const ContainerEndpoint &cep) const {
+    return !IsIgnoredL4ProtoPortPair(L4ProtoPortPair(cep.l4proto(), cep.endpoint().port()));
+  }
+
   std::mutex mutex_;
   ConnMap conn_state_;
   ContainerEndpointMap endpoint_state_;
@@ -125,6 +154,7 @@ class ConnectionTracker {
   UnorderedSet<Address> known_public_ips_;
   UnorderedMap<Address::Family, std::vector<IPNet>> known_ip_networks_;
   UnorderedMap<Address::Family, bool> known_private_networks_exists_;
+  UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
 };
 
 /* static */

@@ -47,6 +47,10 @@ std::ostream& operator<<(std::ostream& os, L4Proto l4proto) {
   }
 }
 
+size_t Hash(const L4ProtoPortPair& pp) {
+  return HashAll(pp.first, pp.second);
+}
+
 std::ostream& operator<<(std::ostream& os, const ContainerEndpoint& container_endpoint) {
   return os << container_endpoint.container() << ": " << container_endpoint.endpoint();
 }

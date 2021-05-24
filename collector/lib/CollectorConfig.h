@@ -28,6 +28,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <vector>
 
 #include <grpcpp/channel.h>
+#include "NetworkConnection.h"
 
 namespace collector {
 
@@ -70,6 +71,7 @@ function on_init()
     return true
 end
 )";
+  static const UnorderedSet<L4ProtoPortPair> kIgnoredL4ProtoPortPairs;
 
   CollectorConfig() = delete;
   CollectorConfig(CollectorArgs* collectorArgs);
@@ -90,6 +92,7 @@ end
   std::string LogLevel() const;
   bool EnableSysdigLog() const { return enable_sysdig_log_; }
   bool DisableNetworkFlows() const { return disable_network_flows_; }
+  const UnorderedSet<L4ProtoPortPair>& IgnoredL4ProtoPortPairs() const { return ignored_l4proto_port_pairs_; }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
@@ -105,6 +108,7 @@ end
   std::string host_proc_;
   bool disable_network_flows_ = false;
   bool scrape_listen_endpoints_ = false;
+  UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
 
   bool enable_sysdig_log_ = false;
 };

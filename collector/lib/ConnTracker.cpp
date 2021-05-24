@@ -23,8 +23,6 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "ConnTracker.h"
 
-#include <utility>
-
 #include "Containers.h"
 #include "Logging.h"
 #include "Utility.h"
@@ -181,26 +179,37 @@ struct dont_normalize {
   }
 };
 
-template <typename T, typename ProcessFn>
-UnorderedMap<T, ConnStatus> FetchState(UnorderedMap<T, ConnStatus>* state, bool clear_inactive, const ProcessFn& process_fn) {
+struct dont_filter {
+  template<typename T>
+  inline constexpr bool operator()(T&& arg) const {
+    return true;
+  }
+};
+
+template <typename T, typename ProcessFn, typename FilterFn>
+UnorderedMap<T, ConnStatus> FetchState(UnorderedMap<T, ConnStatus>* state, bool clear_inactive,
+                                       const ProcessFn& process_fn, const FilterFn& filter_fn) {
   constexpr bool normalize = !std::is_same<ProcessFn, dont_normalize>::value;
+  constexpr bool filter = !std::is_same<FilterFn, dont_filter>::value;
 
   UnorderedMap<T, ConnStatus> fetched_state;
 
-  if (!clear_inactive && !normalize) {
+  if (!clear_inactive && !normalize && !filter) {
     return *state;
   }
 
   for (auto it = state->begin(); it != state->end(); ) {
     const auto& entry = *it;
 
-    if (normalize) {
-      auto emplace_res = fetched_state.emplace(process_fn(entry.first), entry.second);
-      if (!emplace_res.second) {
-        emplace_res.first->second.MergeFrom(entry.second);
+    if (!filter || filter_fn(entry.first)) {
+      if (normalize) {
+        auto emplace_res = fetched_state.emplace(process_fn(entry.first), entry.second);
+        if (!emplace_res.second) {
+          emplace_res.first->second.MergeFrom(entry.second);
+        }
+      } else {
+        fetched_state.insert(entry);
       }
-    } else {
-      fetched_state.insert(entry);
     }
 
     if (clear_inactive && !entry.second.IsActive()) {
@@ -217,27 +226,42 @@ UnorderedMap<T, ConnStatus> FetchState(UnorderedMap<T, ConnStatus>* state, bool 
 
 ConnMap ConnectionTracker::FetchConnState(bool normalize, bool clear_inactive) {
   WITH_LOCK(mutex_) {
-    if (normalize) {
-      return FetchState(&conn_state_, clear_inactive, [this](const Connection &conn) {
-        return this->NormalizeConnectionNoLock(conn);
-      });
+    if (HasConnectionStateFilters()) {
+      if (normalize) {
+        return FetchState(&conn_state_, clear_inactive,
+                          [this](const Connection &conn) { return this->NormalizeConnectionNoLock(conn); },
+                          [this](const Connection &conn) { return this->ShouldFetchConnection(conn); });
+      }
+      return FetchState(&conn_state_, clear_inactive, dont_normalize(),
+                        [this](const Connection &conn) { return this->ShouldFetchConnection(conn); });
     }
-
-    return FetchState(&conn_state_, clear_inactive, dont_normalize());
+    if (normalize) {
+      return FetchState(&conn_state_, clear_inactive,
+                        [this](const Connection &conn) { return this->NormalizeConnectionNoLock(conn); },
+                        dont_filter());
+    }
+    return FetchState(&conn_state_, clear_inactive, dont_normalize(), dont_filter());
   }
   return {};  // will never happen
 }
 
 ContainerEndpointMap ConnectionTracker::FetchEndpointState(bool normalize, bool clear_inactive) {
   WITH_LOCK(mutex_) {
-    if (normalize) {
-      return FetchState(&endpoint_state_, clear_inactive, [this](const ContainerEndpoint &cep) {
-        const auto& ep = cep.endpoint();
-        return ContainerEndpoint(cep.container(), Endpoint(Address(ep.address().family()), ep.port()), cep.l4proto());
-      });
+    if (HasConnectionStateFilters()) {
+      if (normalize) {
+        return FetchState(&endpoint_state_, clear_inactive,
+                          [this](const ContainerEndpoint &cep) { return this->NormalizeContainerEndpoint(cep); },
+                          [this](const ContainerEndpoint &cep) { return this->ShouldFetchContainerEndpoint(cep); });
+      }
+      return FetchState(&endpoint_state_, clear_inactive, dont_normalize(),
+                        [this](const ContainerEndpoint &cep) { return this->ShouldFetchContainerEndpoint(cep); });
     }
-
-    return FetchState(&endpoint_state_, clear_inactive, dont_normalize());
+    if (normalize) {
+      return FetchState(&endpoint_state_, clear_inactive,
+                        [this](const ContainerEndpoint &cep) { return this->NormalizeContainerEndpoint(cep); },
+                        dont_filter());
+    }
+    return FetchState(&endpoint_state_, clear_inactive, dont_normalize(), dont_filter());
   }
   return {};  // will never happen
 }
@@ -274,4 +298,15 @@ void ConnectionTracker::UpdateKnownIPNetworks(UnorderedMap<Address::Family, std:
   }
 }
 
+void ConnectionTracker::UpdateIgnoredL4ProtoPortPairs(UnorderedSet<L4ProtoPortPair> &&ignored_l4proto_port_pairs) {
+  WITH_LOCK(mutex_) {
+    ignored_l4proto_port_pairs_ = std::move(ignored_l4proto_port_pairs);
+    if (CLOG_ENABLED(DEBUG)) {
+      CLOG(DEBUG) << "ignored l4 protocol and port pairs";
+      for (const auto &proto_port_pair : ignored_l4proto_port_pairs_) {
+        CLOG(DEBUG) << proto_port_pair.first << "/" << proto_port_pair.second;
+      }
+    }
+  }
+}
 }  // namespace collector
