@@ -127,8 +127,6 @@ void NetworkStatusNotifier::ReceiveIPNetworks(const sensor::IPNetworkList& netwo
     CLOG(WARNING) << "IPv4 network field has incorrect length " << ipv4_networks_size << ". Ignoring IPv4 networks...";
   } else {
     std::vector<IPNet> ipv4_networks = readNetworks(networks.ipv4_networks(), Address::Family::IPV4);
-    // Sort the networks in smallest subnet to largest subnet order.
-    std::sort(ipv4_networks.begin(), ipv4_networks.end(), std::greater<IPNet>());
     known_ip_networks[Address::Family::IPV4] = ipv4_networks;
   }
 
@@ -137,8 +135,6 @@ void NetworkStatusNotifier::ReceiveIPNetworks(const sensor::IPNetworkList& netwo
     CLOG(WARNING) << "IPv6 network field has incorrect length " << ipv6_networks_size << ". Ignoring IPv6 networks...";
   } else {
     std::vector<IPNet> ipv6_networks = readNetworks(networks.ipv6_networks(), Address::Family::IPV6);
-    // Sort the networks in smallest subnet to largest subnet order.
-    std::sort(ipv6_networks.begin(), ipv6_networks.end(), std::greater<IPNet>());
     known_ip_networks[Address::Family::IPV6] = ipv6_networks;
   }
   conn_tracker_->UpdateKnownIPNetworks(std::move(known_ip_networks));

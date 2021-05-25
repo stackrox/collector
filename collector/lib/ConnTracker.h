@@ -29,7 +29,11 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "Hash.h"
 #include "NetworkConnection.h"
+<<<<<<< HEAD
 #include "Containers.h"
+=======
+#include "NRadix.h"
+>>>>>>> 52a6a21a (Optimize network lookup during conn normalization)
 
 namespace collector {
 
@@ -117,9 +121,6 @@ class ConnectionTracker {
 
   IPNet NormalizeAddressNoLock(const Address& address) const;
 
-  // DetermineNetworkNoLock identifies the subnet containing address.
-  IPNet DetermineNetworkNoLock(const Address& address) const;
-
   // Returns true if any connection filters are found.
   inline bool HasConnectionStateFilters() const {
     return !ignored_l4proto_port_pairs_.empty();
@@ -152,7 +153,7 @@ class ConnectionTracker {
   ContainerEndpointMap endpoint_state_;
 
   UnorderedSet<Address> known_public_ips_;
-  UnorderedMap<Address::Family, std::vector<IPNet>> known_ip_networks_;
+  NRadixTree known_ip_networks_;
   UnorderedMap<Address::Family, bool> known_private_networks_exists_;
   UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
 };
