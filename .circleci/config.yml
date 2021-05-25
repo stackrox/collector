@@ -1491,12 +1491,13 @@ workflows:
         requires:
         - images
         - upload-modules
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-cos-stable
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-stable
+    # Enable after fixing COS stable ebpf (5.4.104+) (ROX-7107)
+    #- integration-test:
+    #    <<: *runOnAllTagsWithIntegrationTestRequires
+    #    name: test-ebpf-cos-stable
+    #    collection_method: ebpf
+    #    vm_type: cos
+    #    image_family: cos-stable
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-cos-81-lts
@@ -1621,7 +1622,8 @@ workflows:
     - integration-test-data:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
-        - test-ebpf-cos-stable
+        # Enable after fixing COS stable ebpf (5.4.104+) (ROX-7107)
+        #- test-ebpf-cos-stable
         - test-ebpf-cos-77-lts
         - test-ebpf-cos-81-lts
         - test-ebpf-cos-85-lts
