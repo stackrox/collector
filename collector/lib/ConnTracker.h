@@ -29,11 +29,8 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "Hash.h"
 #include "NetworkConnection.h"
-<<<<<<< HEAD
 #include "Containers.h"
-=======
 #include "NRadix.h"
->>>>>>> 52a6a21a (Optimize network lookup during conn normalization)
 
 namespace collector {
 
