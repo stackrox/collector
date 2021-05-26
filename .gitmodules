@@ -2,3 +2,15 @@
 	path = sysdig/src
 	url = git@github.com:stackrox/sysdig
 	branch = stackrox-changes-tag-0.24.2
+[submodule "third_party/prometheus-cpp"]
+	path = third_party/prometheus-cpp
+	url = git@github.com:jupp0r/prometheus-cpp.git
+[submodule "third_party/abseil-cpp"]
+	path = third_party/abseil-cpp
+	url = git@github.com:abseil/abseil-cpp.git
+[submodule "third_party/googletest"]
+	path = third_party/googletest
+	url = https://github.com/google/googletest.git
+[submodule "third_party/libb64"]
+	path = third_party/libb64
+	url = git@github.com:libb64/libb64.git
