@@ -134,6 +134,25 @@ TEST(NRadixTest, TestFind) {
 
   actual = tree.Find(IPNet(Address(1, 0, 10, 10), 32));
   EXPECT_EQ(IPNet(), actual);
+
+  //// IPV6 address lookup
+  actual = tree.Find(Address(10, 0, 0, 0).ToV6());
+  EXPECT_EQ(IPNet(), actual);
+
+  actual = tree.Find(Address(htonll(0x0A0A0A0A0A0A0A0AULL), htonll(0x0A0A0A0A0A0A0A0AULL)));
+  EXPECT_EQ(IPNet(), actual);
+
+  // Simulate path traversal overlapping with 10.0.0.0/8
+  tree.Insert(IPNet(Address(htonll(0x0A0A000000000000ULL), htonll(0ULL)), 80));
+  actual = tree.Find(Address(htonll(0x0A0A000000000000ULL), htonll(0x0000000000000A0AULL)));
+  EXPECT_EQ(IPNet(Address(htonll(0x0A0A000000000000ULL), htonll(0LL)), 80), actual);
+
+  tree.Insert(IPNet(Address(10, 0, 0, 0).ToV6(), 70));
+  actual = tree.Find(Address(10, 0, 0, 0).ToV6());
+  EXPECT_EQ(IPNet(Address(10, 0, 0, 0).ToV6(), 70), actual);
+
+  actual = tree.Find(IPNet(Address(htonll(0x2001db833334444), htonll(0x5555666677778888))));
+  EXPECT_EQ(IPNet(Address(htonll(0x2001db833334444), htonll(0x0ULL)), 64), actual);
 }
 
 } // namespace

@@ -34,20 +34,26 @@
 namespace collector {
 
 struct nRadixNode {
+  const IPNet* value_;
   nRadixNode* left_;
   nRadixNode* right_;
-  nRadixNode* parent_;
-  IPNet value_;
 };
 
 class NRadixTree {
  public:
-  NRadixTree(): root_(new nRadixNode()) {};
+  NRadixTree(): root_(new nRadixNode()) {}
   explicit NRadixTree(const std::vector<IPNet>& networks): root_(new nRadixNode()) {
     for (const auto& network : networks) {
       this->Insert(network);
     }
-  };
+  }
+
+  NRadixTree& operator=(NRadixTree other)  {
+    deleteSubtree(root_);
+    root_ = nullptr;
+    std::swap(root_, other.root_);
+    return *this;
+  }
 
   // Inserts a network into radix tree. If the network already exists, insertion is skipped.
   // This function does not guarantee thread safety.
@@ -62,6 +68,8 @@ class NRadixTree {
   std::vector<IPNet> GetAll() const;
 
  private:
+  void deleteSubtree(nRadixNode* node);
+
   nRadixNode* root_;
 };
 

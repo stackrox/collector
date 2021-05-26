@@ -28,9 +28,7 @@
 namespace collector {
 
 bool NRadixTree::Insert(const IPNet& network) {
-  if (network.IsNull()) {
-    return false;
-  }
+  if (network.IsNull()) return false;
 
   if (network.bits() == 0) {
     CLOG(ERROR) << "Cannot handle CIDR " << network << " with /0, in network tree";
@@ -39,7 +37,7 @@ bool NRadixTree::Insert(const IPNet& network) {
 
   const uint64_t* addr_p = network.address().u64_data();
   const auto net_mask = network.net_mask_array();
-  const uint64_t *net_mask_p = net_mask.data();
+  const uint64_t* net_mask_p = net_mask.data();
   uint64_t bit(0x8000000000000000ULL);
 
   nRadixNode* node = this->root_;
@@ -55,18 +53,14 @@ bool NRadixTree::Insert(const IPNet& network) {
       next = node->left_;
     }
 
-    if (next == nullptr) {
-      break;
-    }
+    if (next == nullptr) break;
 
     bit >>= 1;
     node = next;
 
     if (bit == 0) {
       // We have walked 128 bits, return.
-      if (++i >= Address::kU64MaxLen) {
-        return false;
-      }
+      if (++i >= Address::kU64MaxLen) return false;
 
       // Reset and move to lower part.
       bit = 0x8000000000000000ULL;
@@ -80,18 +74,17 @@ bool NRadixTree::Insert(const IPNet& network) {
   // We finished walking network bits of mask and a node already exist, try updating it with the value.
   if (next) {
     // Node already filled. Indicate that the new node was not actually inserted.
-    if (!node->value_.IsNull()) {
+    if (node->value_) {
       CLOG(ERROR) << "Failed to insert CIDR " << network << " in network tree. CIDR already exists";
       return false;
     }
-    node->value_ = network;
+    node->value_ = &network;
     return true;
   }
 
   // There still are bits to be walked, so go ahead and add them to the tree.
   while (bit & *net_mask_p) {
     next = new nRadixNode();
-    next->parent_ = node;
 
     if (ntohll(*addr_p) & bit) {
       node->right_ = next;
@@ -104,9 +97,7 @@ bool NRadixTree::Insert(const IPNet& network) {
 
     if (bit == 0) {
       // We have walked all bits, stop.
-      if (++i >= Address::kU64MaxLen) {
-        break;
-      }
+      if (++i >= Address::kU64MaxLen) break;
 
       bit = 0x8000000000000000ULL;
       if (network.bits() >= 64) {
@@ -116,14 +107,12 @@ bool NRadixTree::Insert(const IPNet& network) {
     }
   }
 
-  node->value_ = network;
+  node->value_ = new IPNet(network);
   return true;
 }
 
 IPNet NRadixTree::Find(const IPNet& network) const {
-  if (network.IsNull()) {
-    return {};
-  }
+  if (network.IsNull()) return {};
 
   if (network.bits() == 0) {
     CLOG(ERROR) << "Cannot handle CIDR " << network << " with /0, in network tree";
@@ -136,11 +125,11 @@ IPNet NRadixTree::Find(const IPNet& network) const {
   uint64_t bit(0x8000000000000000ULL);
 
   IPNet ret;
-  nRadixNode *node = this->root_;
+  nRadixNode* node = this->root_;
   size_t i = 0;
   while (node) {
-    if (!node->value_.IsNull()) {
-      ret = node->value_;
+    if (node->value_) {
+      ret = *node->value_;
     }
 
     if (ntohll(*addr_p) & bit) {
@@ -151,17 +140,13 @@ IPNet NRadixTree::Find(const IPNet& network) const {
 
     // All network bits are traversed. If a supernet was found along the way, `ret` holds it,
     // else there does not exist any supernet containing the search network/address.
-    if (!(*net_mask_p & bit)) {
-      break;
-    }
+    if (!(*net_mask_p & bit)) break;
 
     bit >>= 1;
 
     if (bit == 0) {
       // We have walked 128 bits, stop.
-      if (++i >= Address::kU64MaxLen) {
-        break;
-      }
+      if (++i >= Address::kU64MaxLen) break;
 
       bit = 0x8000000000000000ULL;
       if (network.bits() >= 64) {
@@ -170,21 +155,19 @@ IPNet NRadixTree::Find(const IPNet& network) const {
       }
     }
   }
-  return ret;
+
+  return (network.family() == ret.family()) ? ret : IPNet();
 }
 
 IPNet NRadixTree::Find(const Address& addr) const {
   return Find(IPNet(addr));
 }
 
-void getAll(nRadixNode *node, std::vector<IPNet>& ret) {
-  if (!node) {
-    return;
-  }
+void getAll(nRadixNode* node, std::vector<IPNet>& ret) {
+  if (!node) return;
 
-  if (!node->value_.IsNull()) {
-    std::cout << node->value_;
-    ret.push_back(node->value_);
+  if (node->value_) {
+    ret.push_back(*node->value_);
   }
 
   getAll(node->left_, ret);
@@ -195,6 +178,15 @@ std::vector<IPNet> NRadixTree::GetAll() const {
   std::vector<IPNet> ret;
   getAll(this->root_, ret);
   return ret;
+}
+
+void NRadixTree::deleteSubtree(nRadixNode* node) {
+  if (!node) return;
+
+  deleteSubtree(node->left_);
+  deleteSubtree(node->right_);
+
+  delete node;
 }
 
 }
