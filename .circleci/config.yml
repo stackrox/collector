@@ -577,7 +577,8 @@ jobs:
               echo "$version" >>~/kobuild-tmp/custom-flavors/versions.modern
               echo "Building kernel version $version with modern builder"
             # RHEL 8.3+ kernels require a newer gcc and can be compiled with modern builder
-            elif [[ "$distro" == "redhat" && "$version" =~ ^.*el8_[3-9]\.x86_64$ ]]; then
+            #  Match kernels of the form 4.18.0-240.1.1.el8_3.x86_64 and 4.18.0-301.1.el8.x86_64
+            elif [[ "$distro" == "redhat" && "$version" =~ ^.*(el8_[3-9]|[3-9][0-9][0-9][.0-9]+el8)\.x86_64$ ]]; then
               echo "$version" >>~/kobuild-tmp/custom-flavors/versions.modern
               echo "Building kernel version $version with modern builder"
             elif grep -q "$distro" <~/kobuild-tmp/custom-flavors/all; then
@@ -1490,12 +1491,13 @@ workflows:
         requires:
         - images
         - upload-modules
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-cos-stable
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-stable
+    # Enable after fixing COS stable ebpf (5.4.104+) (ROX-7107)
+    #- integration-test:
+    #    <<: *runOnAllTagsWithIntegrationTestRequires
+    #    name: test-ebpf-cos-stable
+    #    collection_method: ebpf
+    #    vm_type: cos
+    #    image_family: cos-stable
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-cos-81-lts
@@ -1620,7 +1622,8 @@ workflows:
     - integration-test-data:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
-        - test-ebpf-cos-stable
+        # Enable after fixing COS stable ebpf (5.4.104+) (ROX-7107)
+        #- test-ebpf-cos-stable
         - test-ebpf-cos-77-lts
         - test-ebpf-cos-81-lts
         - test-ebpf-cos-85-lts
