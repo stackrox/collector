@@ -270,7 +270,10 @@ void ConnectionTracker::UpdateKnownIPNetworks(UnorderedMap<Address::Family, std:
   NRadixTree tree;
   for (const auto& network_pair : known_ip_networks) {
     for (const auto& network : network_pair.second) {
-      tree.Insert(network);
+      if (!tree.Insert(network)) {
+        // Log error and continue inserting rest of networks.
+        CLOG(ERROR) << "Failed to insert CIDR " << network << " in network tree";
+      }
     }
   }
 

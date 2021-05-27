@@ -153,6 +153,10 @@ TEST(NRadixTest, TestFind) {
 
   actual = tree.Find(IPNet(Address(htonll(0x2001db833334444), htonll(0x5555666677778888))));
   EXPECT_EQ(IPNet(Address(htonll(0x2001db833334444), htonll(0x0ULL)), 64), actual);
+
+  tree.Insert(IPNet(Address(htonll(0x2001db833334444), htonll(0x5555666677778888))));
+  actual = tree.Find(IPNet(Address(htonll(0x2001db833334444), htonll(0x5555666677778888))));
+  EXPECT_EQ(IPNet(Address(htonll(0x2001db833334444), htonll(0x5555666677778888))), actual);
 }
 
 } // namespace

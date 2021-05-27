@@ -27,11 +27,14 @@
 
 namespace collector {
 
-bool NRadixTree::Insert(const IPNet& network) {
-  if (network.IsNull()) return false;
+bool NRadixTree::Insert(const IPNet& network) const {
+  if (network.IsNull()) {
+    CLOG(ERROR) << "Cannot handle null IP networks in network tree";
+    return false;
+  }
 
-  if (network.bits() == 0) {
-    CLOG(ERROR) << "Cannot handle CIDR " << network << " with /0, in network tree";
+  if (network.bits() < 1 || network.bits() > 128) {
+    CLOG(ERROR) << "Cannot handle CIDR " << network << " with /" << network.bits() << " , in network tree";
     return false;
   }
 
@@ -53,14 +56,14 @@ bool NRadixTree::Insert(const IPNet& network) {
       next = node->left_;
     }
 
-    if (next == nullptr) break;
+    if (!next) break;
 
     bit >>= 1;
     node = next;
 
     if (bit == 0) {
-      // We have walked 128 bits, return.
-      if (++i >= Address::kU64MaxLen) return false;
+      // We have walked 128 bits, stop.
+      if (++i >= Address::kU64MaxLen) break;
 
       // Reset and move to lower part.
       bit = 0x8000000000000000ULL;
@@ -75,10 +78,10 @@ bool NRadixTree::Insert(const IPNet& network) {
   if (next) {
     // Node already filled. Indicate that the new node was not actually inserted.
     if (node->value_) {
-      CLOG(ERROR) << "Failed to insert CIDR " << network << " in network tree. CIDR already exists";
+      CLOG(ERROR) << "CIDR " << network << " already exists";
       return false;
     }
-    node->value_ = &network;
+    node->value_ = new IPNet(network);
     return true;
   }
 
@@ -96,7 +99,7 @@ bool NRadixTree::Insert(const IPNet& network) {
     node = next;
 
     if (bit == 0) {
-      // We have walked all bits, stop.
+      // We have walked all 128 bits, stop.
       if (++i >= Address::kU64MaxLen) break;
 
       bit = 0x8000000000000000ULL;
@@ -146,7 +149,12 @@ IPNet NRadixTree::Find(const IPNet& network) const {
 
     if (bit == 0) {
       // We have walked 128 bits, stop.
-      if (++i >= Address::kU64MaxLen) break;
+      if (++i >= Address::kU64MaxLen) {
+        if (node->value_) {
+          ret = *node->value_;
+        }
+        break;
+      }
 
       bit = 0x8000000000000000ULL;
       if (network.bits() >= 64) {
@@ -178,15 +186,6 @@ std::vector<IPNet> NRadixTree::GetAll() const {
   std::vector<IPNet> ret;
   getAll(this->root_, ret);
   return ret;
-}
-
-void NRadixTree::deleteSubtree(nRadixNode* node) {
-  if (!node) return;
-
-  deleteSubtree(node->left_);
-  deleteSubtree(node->right_);
-
-  delete node;
 }
 
 }

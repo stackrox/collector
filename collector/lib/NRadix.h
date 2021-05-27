@@ -34,6 +34,35 @@
 namespace collector {
 
 struct nRadixNode {
+  nRadixNode() : value_(nullptr), left_(nullptr), right_(nullptr) {}
+  explicit nRadixNode(const IPNet& value) : value_(new IPNet(value)), left_(nullptr), right_(nullptr) {}
+
+  nRadixNode(const nRadixNode& other): value_(nullptr), left_(nullptr), right_(nullptr) {
+    if (other.value_) {
+      value_ = new IPNet(*other.value_);
+    }
+    if (other.left_) {
+      left_ = new nRadixNode(*other.left_);
+    }
+    if (other.right_) {
+      right_ = new nRadixNode(*other.right_);
+    }
+  }
+
+  nRadixNode& operator=(const nRadixNode& other) {
+    if (this == &other) return *this;
+    auto* new_node = new nRadixNode(other);
+    std::swap(*new_node, *this);
+    delete new_node;
+    return *this;
+  }
+
+  ~nRadixNode() {
+    delete left_;
+    delete right_;
+    delete value_;
+  }
+
   const IPNet* value_;
   nRadixNode* left_;
   nRadixNode* right_;
@@ -44,20 +73,32 @@ class NRadixTree {
   NRadixTree(): root_(new nRadixNode()) {}
   explicit NRadixTree(const std::vector<IPNet>& networks): root_(new nRadixNode()) {
     for (const auto& network : networks) {
-      this->Insert(network);
+      auto inserted = this->Insert(network);
+      if (!inserted) {
+        CLOG(ERROR) << "Failed to insert CIDR " << network << " in network tree";
+        delete root_;
+      }
     }
   }
 
-  NRadixTree& operator=(NRadixTree other)  {
-    deleteSubtree(root_);
-    root_ = nullptr;
-    std::swap(root_, other.root_);
+  NRadixTree(const NRadixTree& other): root_(new nRadixNode(*other.root_)) {}
+
+  ~NRadixTree() {
+    // This calls the node destructor which in turn cleans up all the nodes.
+    delete root_;
+  }
+
+  NRadixTree& operator=(const NRadixTree& other)  {
+    if (this == &other) return *this;
+    delete root_;
+    // This calls the node copy constructor which in turn copies all the nodes.
+    root_ = new nRadixNode(*other.root_);
     return *this;
   }
 
   // Inserts a network into radix tree. If the network already exists, insertion is skipped.
   // This function does not guarantee thread safety.
-  bool Insert(const IPNet& network);
+  bool Insert(const IPNet& network) const;
   // Returns the smallest subnet larger than or equal to the queried network.
   // This function does not guarantee thread safety.
   IPNet Find(const IPNet& network) const;
@@ -66,9 +107,6 @@ class NRadixTree {
   IPNet Find(const Address& addr) const;
 
   std::vector<IPNet> GetAll() const;
-
- private:
-  void deleteSubtree(nRadixNode* node);
 
   nRadixNode* root_;
 };
