@@ -33,14 +33,21 @@ namespace {
 
 static const Address canonical_external_ipv4_addr(255, 255, 255, 255);
 static const Address canonical_external_ipv6_addr(0xffffffffffffffffULL, 0xffffffffffffffffULL);
+static const NRadixTree private_networks_tree(PrivateNetworks());
 
 }  // namespace
 
+// TODO: Add a function to determine private network existence from tree overlap.
 bool ContainsPrivateNetwork(Address::Family family, const std::vector<IPNet>& networks) {
   for (const auto& net : networks) {
     // Check if user-defined network is contained in private IP space or vice-versa.
+
+    if (!private_networks_tree.Find(net).IsNull()) {
+      return true;
+    }
+
     for (const auto& pNet : PrivateNetworks(family)) {
-      if (pNet.Contains(net.address()) || net.Contains(pNet.address())) {
+      if (net.Contains(pNet.address())) {
         return true;
       }
     }
@@ -79,25 +86,6 @@ void ConnectionTracker::Update(
   }
 }
 
-IPNet ConnectionTracker::DetermineNetworkNoLock(const Address& address) const {
-  // Since the networks are sorted highest-smallest to lowest-largest within family, we map the address to first
-  // matched subnet.
-  //
-  // We do not want to map to all networks that contains this address, for example, if there is also a supernet in
-  // known network list, this address would not be mapped to the supernet.
-  const auto* networks = Lookup(known_ip_networks_, address.family());
-  if (!networks) {
-    return {};
-  }
-
-  for (const auto &network : *networks) {
-    if (network.Contains(address)) {
-      return network;
-    }
-  }
-  return {};
-}
-
 IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
   if (address.IsNull()) {
     return {};
@@ -108,7 +96,7 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
     return IPNet(address, 0, true);
   }
 
-  const auto& network = DetermineNetworkNoLock(address);
+  const auto& network = known_ip_networks_.Find(address);
   if (private_addr || Contains(known_public_ips_, address)) {
     return IPNet(address, network.bits(), true);
   }
@@ -279,20 +267,28 @@ void ConnectionTracker::UpdateKnownPublicIPs(collector::UnorderedSet<collector::
 }
 
 void ConnectionTracker::UpdateKnownIPNetworks(UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks) {
+  NRadixTree tree;
+  for (const auto& network_pair : known_ip_networks) {
+    for (const auto& network : network_pair.second) {
+      if (!tree.Insert(network)) {
+        // Log error and continue inserting rest of networks.
+        CLOG(ERROR) << "Failed to insert CIDR " << network << " in network tree";
+      }
+    }
+  }
+
   UnorderedMap<Address::Family, bool> known_private_networks_exists;
   for (const auto& network_pair : known_ip_networks) {
     known_private_networks_exists[network_pair.first] = ContainsPrivateNetwork(network_pair.first, network_pair.second);
   }
 
   WITH_LOCK(mutex_) {
-    known_ip_networks_ = std::move(known_ip_networks);
+    known_ip_networks_ = tree;
     known_private_networks_exists_ = std::move(known_private_networks_exists);
     if (CLOG_ENABLED(DEBUG)) {
       CLOG(DEBUG) << "known ip networks:";
-      for (const auto &network_pair : known_ip_networks_) {
-        for (const auto network : network_pair.second) {
-          CLOG(DEBUG) << " - " << network;
-        }
+      for (auto network : known_ip_networks_.GetAll()) {
+        CLOG(DEBUG) << " - " << network;
       }
     }
   }

@@ -198,6 +198,16 @@ class IPNet {
 
   Address::Family family() const { return address_.family(); }
   const std::array<uint64_t, Address::kU64MaxLen>& mask_array() const { return mask_; }
+  const std::array<uint64_t, Address::kU64MaxLen> net_mask_array() const {
+    if (bits_ < 64) {
+      return {~(0xFFFFFFFFFFFFFFFFULL >> bits_), 0ULL};
+    }
+    if (bits_ == 128) {
+      return {0xFFFFFFFFFFFFFFFFULL, 0xFFFFFFFFFFFFFFFFULL};
+    }
+    return {0xFFFFFFFFFFFFFFFFULL, ~(0xFFFFFFFFFFFFFFFFULL >> (bits_ % 64)) };
+  }
+
   size_t bits() const { return bits_; }
 
   bool Contains(const Address& address) const {
@@ -455,6 +465,15 @@ static inline const std::vector<IPNet>& PrivateNetworks(Address::Family family) 
     default:
       return *no_networks;
   }
+}
+
+static inline const std::vector<IPNet>& PrivateNetworks() {
+  static std::vector<IPNet>* ret = new std::vector<IPNet>;
+  const auto& ipv4_nets = PrivateIPv4Networks();
+  ret->insert(ret->end(), ipv4_nets.begin(), ipv4_nets.end());
+  const auto& ipv6_nets = PrivateIPv6Networks();
+  ret->insert(ret->end(), ipv6_nets.begin(), ipv6_nets.end());
+  return *ret;
 }
 
 }  // namespace collector
