@@ -205,7 +205,7 @@ class IPNet {
     if (bits_ == 128) {
       return {0xFFFFFFFFFFFFFFFFULL, 0xFFFFFFFFFFFFFFFFULL};
     }
-    return {0xFFFFFFFFFFFFFFFFULL, ~(0xFFFFFFFFFFFFFFFFULL >> bits_)};
+    return {0xFFFFFFFFFFFFFFFFULL, ~(0xFFFFFFFFFFFFFFFFULL >> (bits_ % 64)) };
   }
 
   size_t bits() const { return bits_; }
