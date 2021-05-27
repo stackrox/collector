@@ -7,10 +7,7 @@ if [ -f /etc/redhat-release ]; then
 	CXXFLAGS="-Wno-error=class-memaccess -Wno-ignored-qualifiers -Wno-stringop-truncation -Wno-cast-function-type"
 fi
 
-git clone -b "$GRPC_REVISION" --depth 1 https://github.com/grpc/grpc
-cd grpc
-cp NOTICE.txt "${LICENSE_DIR}/grpc-${GRPC_REVISION}"
-git submodule update --init
+cd third_party/grpc
 mkdir -p cmake/build
 cd cmake/build
 cmake \
