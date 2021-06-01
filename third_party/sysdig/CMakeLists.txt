@@ -400,7 +400,7 @@ if(NOT WIN32)
 	option(USE_BUNDLED_CURL "Enable building of the bundled curl" ${USE_BUNDLED_DEPS})
 
 	if(NOT USE_BUNDLED_CURL)
-		find_package(CURL REQUIRED PATH /usr/local)
+		find_package(CURL REQUIRED)
 		message(STATUS "Found CURL: include: ${CURL_INCLUDE_DIR}, lib: ${CURL_LIBRARIES}")
 	else()
 		set(CURL_BUNDLE_DIR "${PROJECT_BINARY_DIR}/curl-prefix/src/curl")
