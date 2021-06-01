@@ -1,7 +1,3 @@
-[submodule "sysdig/src"]
-	path = sysdig/src
-	url = git@github.com:stackrox/sysdig
-	branch = stackrox-changes-tag-0.24.2
 [submodule "third_party/prometheus-cpp"]
 	path = third_party/prometheus-cpp
 	url = git@github.com:jupp0r/prometheus-cpp.git
