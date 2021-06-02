@@ -40,7 +40,10 @@ static const NRadixTree private_networks_tree(PrivateNetworks());
 
 }  // namespace
 
-// TODO: Add a function to determine private network existence from tree overlap.
+bool ContainsPrivateNetwork(Address::Family family, NRadixTree tree) {
+  return tree.IsAnyIPNetSubset(family, private_networks_tree) || private_networks_tree.IsAnyIPNetSubset(family, tree);
+}
+
 bool ContainsPrivateNetwork(Address::Family family, const std::vector<IPNet>& networks) {
   for (const auto& net : networks) {
     // Check if user-defined network is contained in private IP space or vice-versa.
@@ -95,7 +98,8 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
   }
 
   bool private_addr = !address.IsPublic();
-  if (private_addr && !Lookup(known_private_networks_exists_, address.family()))  {
+  const auto* known_private_networks_exists = Lookup(known_private_networks_exists_, address.family());
+  if (private_addr && (known_private_networks_exists && !*known_private_networks_exists))  {
     return IPNet(address, 0, true);
   }
 
@@ -301,7 +305,7 @@ void ConnectionTracker::UpdateKnownIPNetworks(UnorderedMap<Address::Family, std:
   COUNTER_ZERO(stats_, CollectorStats::net_known_ip_networks);
   for (const auto& network_pair : known_ip_networks) {
     COUNTER_ADD(stats_, CollectorStats::net_known_ip_networks, network_pair.second.size());
-    known_private_networks_exists[network_pair.first] = ContainsPrivateNetwork(network_pair.first, network_pair.second);
+    known_private_networks_exists[network_pair.first] = ContainsPrivateNetwork(network_pair.first, tree);
   }
 
   WITH_LOCK(mutex_) {
