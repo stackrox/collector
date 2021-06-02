@@ -7,7 +7,6 @@ if [ -f /etc/redhat-release ]; then
 	CXXFLAGS="-Wno-error=class-memaccess -Wno-ignored-qualifiers -Wno-stringop-truncation -Wno-cast-function-type"
 fi
 
-cd third_party
 tar xzf grpc-${GRPC_VERSION}.tar.gz
 cd grpc-${GRPC_VERSION}
 mkdir -p cmake/build

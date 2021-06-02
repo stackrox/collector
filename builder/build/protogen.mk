@@ -1,7 +1,9 @@
-BASE_PATH ?= $(subst /,,$(CURDIR))/collector
+ifndef BASE_PATH
+$(error Set a BASE_PATH)
+endif
 PATH ?= $(PATH):/go/bin
 
-GENERATED_CPP_BASE_PATH := $(BASE_PATH)/collector/generated
+GENERATED_CPP_BASE_PATH := $(BASE_PATH)/generated
 
 # Automatically locate all API and data protos.
 # GENERATED_API_XXX and PROTO_API_XXX variables contain standard paths used to
@@ -21,10 +23,6 @@ GENERATED_CPP_SRCS = \
     $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_CPP_BASE_PATH)/%.grpc.pb.cc) \
     $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_CPP_BASE_PATH)/%.grpc.pb.h)
 
-TMP_PATH := $(BASE_PATH)/.googleapis-tmp/
-
-GOOGLEAPIS_FILE := $(TMP_PATH)/googleapis.zip
-
 GOOGLEAPIS_DIR := $(BASE_PATH)/googleapis/
 
 PROTOC := protoc
@@ -34,19 +32,6 @@ PROTOC_INCLUDES := /usr/local/include $(GOOGLEAPIS_DIR)
 GRPC_CPP_PLUGIN := grpc_cpp_plugin
 
 GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`
-
-$(TMP_PATH):
-	@echo "+ $@"
-	@mkdir -p $@
-
-$(GOOGLEAPIS_FILE): $(TMP_PATH)
-	@echo "+ $@"
-	@wget -q https://github.com/googleapis/googleapis/archive/master.zip -O $@
-
-$(GOOGLEAPIS_DIR): $(GOOGLEAPIS_FILE)
-	@echo "+ $@"
-	@unzip -q -u -d $(TMP_PATH) $<
-	@cp -pr $(TMP_PATH)/googleapis-master $@
 
 PROTO_DEPS_CPP=$(PROTOC_INCLUDES)
 
@@ -80,9 +65,3 @@ $(GENERATED_CPP_BASE_PATH)/%.grpc.pb.cc $(GENERATED_CPP_BASE_PATH)/%.grpc.pb.h: 
 		$(filter $(BASE_PATH)/$(SUBDIR)/%, $(ALL_PROTOS))
 
 generated-proto-srcs: $(GENERATED_CPP_SRCS)
-
-# Clean things that we use to generate protobufs
-.PHONY: clean-protogen-artifacts
-clean-protogen-artifacts:
-	@echo "+ $@"
-	@rm -rf $(TMP_PATH)
