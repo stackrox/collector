@@ -1,4 +1,4 @@
 [submodule "sysdig/src"]
 	path = sysdig/src
-	url = git@github.com:stackrox/sysdig
+	url = https://github.com:stackrox/sysdig
 	branch = stackrox-changes-tag-0.24.2
