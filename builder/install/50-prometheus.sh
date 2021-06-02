@@ -13,4 +13,3 @@ cmake -DCMAKE_BUILD_TYPE=Release ../
 make -j "${NPROCS:-2}"
 make install
 ldconfig
-

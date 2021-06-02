@@ -22,3 +22,10 @@ cmake \
 
 make -j "${NPROCS:-2}" CXXFLAGS="${CXXFLAGS}"
 make install
+
+cd ../../third_party/googletest
+mkdir -p cmake/build
+cd cmake/build
+cmake -DCMAKE_BUILD_TYPE=Release ../..
+make -j "${NPROCS:-2}"
+make install
