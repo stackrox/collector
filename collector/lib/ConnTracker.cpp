@@ -44,23 +44,6 @@ bool ContainsPrivateNetwork(Address::Family family, NRadixTree tree) {
   return tree.IsAnyIPNetSubset(family, private_networks_tree) || private_networks_tree.IsAnyIPNetSubset(family, tree);
 }
 
-bool ContainsPrivateNetwork(Address::Family family, const std::vector<IPNet>& networks) {
-  for (const auto& net : networks) {
-    // Check if user-defined network is contained in private IP space or vice-versa.
-
-    if (!private_networks_tree.Find(net).IsNull()) {
-      return true;
-    }
-
-    for (const auto& pNet : PrivateNetworks(family)) {
-      if (net.Contains(pNet.address())) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 void ConnectionTracker::UpdateConnection(const Connection& conn, int64_t timestamp, bool added) {
   WITH_LOCK(mutex_) {
     EmplaceOrUpdateNoLock(conn, ConnStatus(timestamp, added));
@@ -98,7 +81,7 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
   }
 
   bool private_addr = !address.IsPublic();
-  const auto* known_private_networks_exists = Lookup(known_private_networks_exists_, address.family());
+  const bool* known_private_networks_exists = Lookup(known_private_networks_exists_, address.family());
   if (private_addr && (known_private_networks_exists && !*known_private_networks_exists))  {
     return IPNet(address, 0, true);
   }

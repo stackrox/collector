@@ -286,7 +286,7 @@ TEST(NRadixTest, TestIsAnyIPNetSubsetWithFamily) {
     IPNet(Address(11, 10, 0, 0), 16),
     IPNet(Address(10, 1, 0, 0), 16)
   });
-  // 10.0.0.0/8 contains 10.1.0.0/16 but we are looking for IPv6
+  // 10.0.0.0/8 contains 10.1.0.0/16 but we are checking IPv6 private subnet existence.
   EXPECT_FALSE(t1.IsAnyIPNetSubset(Address::Family::IPV6, t2));
 
   t1 = NRadixTree(std::vector<IPNet>{
@@ -314,9 +314,9 @@ TEST(NRadixTest, TestIsAnyIPNetSubsetWithFamily) {
     IPNet(Address(10, 10, 0, 0), 16),
     IPNet(Address(10, 1, 0, 0), 16)
   });
-  // 10.0.0.0/8 contains 10.1.0.0/16 and 10.10.0.0/16
+  // 10.0.0.0/8 contains 10.1.0.0/16 and 10.10.0.0/16 but we are checking for IPv6 private subnet existence.
   EXPECT_FALSE(t1.IsAnyIPNetSubset(Address::Family::IPV6, t2));
-  // 10.10.0.0/16 contains 10.10.0.0/24
+  // 10.10.0.0/16 contains 10.10.0.0/24 but we are checking for IPv6 private subnet existence.
   EXPECT_FALSE(t2.IsAnyIPNetSubset(Address::Family::IPV6, t1));
 }
 

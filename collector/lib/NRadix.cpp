@@ -192,13 +192,15 @@ std::vector<IPNet> NRadixTree::GetAll() const {
   return ret;
 }
 
-bool isAnyIPNetSubsetUtil(Address::Family family, nRadixNode* n1, nRadixNode* n2, IPNet* net1, IPNet* net2) {
+// Check if any subnet in n2's (sub-)tree is fully contained by a subnet in n1's (sub-)tree.
+bool isAnyIPNetSubsetUtil(Address::Family family, const nRadixNode* n1, const nRadixNode* n2,
+                          IPNet* containing_net, IPNet* contained_net) {
   // If we have found networks from both trees belonging to same family, we have the answer.
-  if (net1 && net2) {
+  if (containing_net && contained_net) {
     if (family == Address::Family::UNKNOWN) {
-      if (net1->family() == net2->family()) return true;
+      if (containing_net->family() == contained_net->family()) return true;
     } else {
-      if (net1->family() == family && net2->family() == family) return true;
+      if (containing_net->family() == family && contained_net->family() == family) return true;
     }
   }
 
@@ -206,11 +208,13 @@ bool isAnyIPNetSubsetUtil(Address::Family family, nRadixNode* n1, nRadixNode* n2
   if (!n2) return false;
 
   if (n1 && n1->value_) {
-    net1 = new IPNet(*n1->value_);
+    delete containing_net;
+    containing_net = new IPNet(*n1->value_);
   }
 
   if (n2->value_) {
-    net2 = new IPNet(*n2->value_);
+    delete contained_net;
+    contained_net = new IPNet(*n2->value_);
   }
 
   // If we find a network in first tree, that means it contains
@@ -219,23 +223,19 @@ bool isAnyIPNetSubsetUtil(Address::Family family, nRadixNode* n1, nRadixNode* n2
   // finding the smaller network down the path.
   
   if (n1) {
-    return isAnyIPNetSubsetUtil(family, n1->left_, n2->left_, net1, net2) ||
-           isAnyIPNetSubsetUtil(family, n1->right_, n2->right_, net1, net2);
+    return isAnyIPNetSubsetUtil(family, n1->left_, n2->left_, containing_net, contained_net) ||
+           isAnyIPNetSubsetUtil(family, n1->right_, n2->right_, containing_net, contained_net);
   }
-  return isAnyIPNetSubsetUtil(family, n1, n2->left_, net1, net2) ||
-         isAnyIPNetSubsetUtil(family, n1, n2->right_, net1, net2);
+  return isAnyIPNetSubsetUtil(family, nullptr, n2->left_, containing_net, contained_net) ||
+         isAnyIPNetSubsetUtil(family, nullptr, n2->right_, containing_net, contained_net);
 }
 
 bool NRadixTree::IsAnyIPNetSubset(const NRadixTree& other) const {
-  IPNet* containing_network = nullptr;
-  IPNet* contained_network = nullptr;
-  return isAnyIPNetSubsetUtil(Address::Family::UNKNOWN, root_, other.root_, containing_network, contained_network);
+  return this->IsAnyIPNetSubset(Address::Family::UNKNOWN, other);
 }
 
 bool NRadixTree::IsAnyIPNetSubset(Address::Family family, const NRadixTree& other) const {
-  IPNet* containing_network = nullptr;
-  IPNet* contained_network = nullptr;
-  return isAnyIPNetSubsetUtil(family, root_, other.root_, containing_network, contained_network);
+  return isAnyIPNetSubsetUtil(family, root_, other.root_, nullptr, nullptr);
 }
 
 }
