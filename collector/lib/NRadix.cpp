@@ -194,7 +194,7 @@ std::vector<IPNet> NRadixTree::GetAll() const {
 
 // Check if any subnet in n2's (sub-)tree is fully contained by a subnet in n1's (sub-)tree.
 bool isAnyIPNetSubsetUtil(Address::Family family, const nRadixNode* n1, const nRadixNode* n2,
-                          IPNet* containing_net, IPNet* contained_net) {
+                          const IPNet* containing_net, const IPNet* contained_net) {
   // If we have found networks from both trees belonging to same family, we have the answer.
   if (containing_net && contained_net) {
     if (family == Address::Family::UNKNOWN) {
@@ -208,13 +208,11 @@ bool isAnyIPNetSubsetUtil(Address::Family family, const nRadixNode* n1, const nR
   if (!n2) return false;
 
   if (n1 && n1->value_) {
-    delete containing_net;
-    containing_net = new IPNet(*n1->value_);
+    containing_net = n1->value_;
   }
 
   if (n2->value_) {
-    delete contained_net;
-    contained_net = new IPNet(*n2->value_);
+    contained_net = n2->value_;
   }
 
   // If we find a network in first tree, that means it contains
