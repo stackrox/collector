@@ -118,3 +118,11 @@ clean: clean-generated-srcs
 clean-generated-srcs:
 	rm -rf $(GENERATED_CPP_BASE_PATH)
 
+.PHONY: check
+check:
+	git ls-files | grep -E '\.(cpp|h|cu|cuh)$$' | grep -v optionparser.h | xargs clang-format -Werror --style=file -n
+
+.PHONY: format
+format:
+	git ls-files | grep -E '\.(cpp|h|cu|cuh)$$' | grep -v optionparser.h | xargs clang-format -Werror --style=file -i
+
