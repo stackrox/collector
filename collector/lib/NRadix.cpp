@@ -192,4 +192,48 @@ std::vector<IPNet> NRadixTree::GetAll() const {
   return ret;
 }
 
+// Check if any subnet in n2's (sub-)tree is fully contained by a subnet in n1's (sub-)tree.
+bool isAnyIPNetSubsetUtil(Address::Family family, const nRadixNode* n1, const nRadixNode* n2,
+                          const IPNet* containing_net, const IPNet* contained_net) {
+  // If we have found networks from both trees belonging to same family, we have the answer.
+  if (containing_net && contained_net) {
+    if (family == Address::Family::UNKNOWN) {
+      if (containing_net->family() == contained_net->family()) return true;
+    } else {
+      if (containing_net->family() == family && contained_net->family() == family) return true;
+    }
+  }
+
+  // There are no more networks down the path in second tree, so stop.
+  if (!n2) return false;
+
+  if (n1 && n1->value_) {
+    containing_net = n1->value_;
+  }
+
+  if (n2->value_) {
+    contained_net = n2->value_;
+  }
+
+  // If we find a network in first tree, that means it contains
+  // some subnet in network in n2 subtree. However, former may
+  // belong to IPv4 and later may belong to IPv6. Hence, continue
+  // finding the smaller network down the path.
+  
+  if (n1) {
+    return isAnyIPNetSubsetUtil(family, n1->left_, n2->left_, containing_net, contained_net) ||
+           isAnyIPNetSubsetUtil(family, n1->right_, n2->right_, containing_net, contained_net);
+  }
+  return isAnyIPNetSubsetUtil(family, nullptr, n2->left_, containing_net, contained_net) ||
+         isAnyIPNetSubsetUtil(family, nullptr, n2->right_, containing_net, contained_net);
+}
+
+bool NRadixTree::IsAnyIPNetSubset(const NRadixTree& other) const {
+  return this->IsAnyIPNetSubset(Address::Family::UNKNOWN, other);
+}
+
+bool NRadixTree::IsAnyIPNetSubset(Address::Family family, const NRadixTree& other) const {
+  return isAnyIPNetSubsetUtil(family, root_, other.root_, nullptr, nullptr);
+}
+
 }

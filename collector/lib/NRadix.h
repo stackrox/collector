@@ -109,8 +109,12 @@ class NRadixTree {
   // Returns the smallest subnet larger than or equal to the queried address.
   // This function does not guarantee thread safety.
   IPNet Find(const Address& addr) const;
-
+  // Returns a vector of all the stored networks.
   std::vector<IPNet> GetAll() const;
+  // Determines whether any network in `other` is fully contained by any network in this tree.
+  bool IsAnyIPNetSubset(const NRadixTree& other) const;
+  // Determines whether any network in `other` is fully contained by any network in this tree, for a given family.
+  bool IsAnyIPNetSubset(Address::Family family, const NRadixTree& other) const;
 
   nRadixNode* root_;
 };
