@@ -23,26 +23,20 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <iostream>
 #include <chrono>
-#include <string>
 
 #include "Containers.h"
 #include "EventNames.h"
 #include "SysdigService.h"
 #include "CollectorStatsExporter.h"
 #include "Logging.h"
+#include "Utility.h"
 
-#include "prometheus/registry.h"
 #include "prometheus/gauge.h"
-
-extern "C" {
-    #include <pthread.h>
-    #include <string.h>
-}
 
 namespace collector {
 
-CollectorStatsExporter::CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, const CollectorConfig* config, SysdigService* sysdig)
-    : registry_(std::move(registry)), config_(config), sysdig_(sysdig)
+CollectorStatsExporter::CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, const CollectorConfig* config, SysdigService* sysdig, CollectorStats* collector_stats)
+    : registry_(std::move(registry)), config_(config), sysdig_(sysdig), collector_stats_(collector_stats)
 {}
 
 bool CollectorStatsExporter::start() {
@@ -52,6 +46,26 @@ bool CollectorStatsExporter::start() {
     }
     return true;
 }
+
+class CollectorTimerGauge {
+public:
+  CollectorTimerGauge(prometheus::Family<prometheus::Gauge>& g, const std::string& timer_name)
+    : events_(&g.Add({{"type", timer_name + "_events"}})),
+      times_us_total_(&g.Add({{"type", timer_name + "_times_us_total"}})),
+      times_us_avg_(&g.Add({{"type", timer_name + "_times_us_avg"}}))
+  {}
+
+  void Update(int64_t count, int64_t total_us) {
+    events_->Set(count);
+    times_us_total_->Set(total_us);
+    times_us_avg_->Set(count ? total_us / count : 0);
+  }
+
+private:
+  prometheus::Gauge* events_;
+  prometheus::Gauge* times_us_total_;
+  prometheus::Gauge* times_us_avg_;
+};
 
 void CollectorStatsExporter::run() {
     auto& collectorEventCounters = prometheus::BuildGauge()
@@ -73,6 +87,26 @@ void CollectorStatsExporter::run() {
     auto& processResolutionFailuresByEvt = collectorEventCounters.Add({{"type", "processResolutionFailuresByEvt"}});
     auto& processResolutionFailuresByTinfo = collectorEventCounters.Add({{"type", "processResolutionFailuresByTinfo"}});
     auto& processRateLimitCount = collectorEventCounters.Add({{"type", "processRateLimitCount"}});
+
+    auto& collector_timers_gauge = prometheus::BuildGauge()
+            .Name("rox_collector_timers")
+            .Help("Collector timers")
+            .Register(*registry_);
+    std::array<unique_ptr<CollectorTimerGauge>, CollectorStats::timer_type_max> collector_timers;
+    for (int i=0; i<CollectorStats::timer_type_max; i++) {
+      auto tt = (CollectorStats::TimerType)(i);
+      collector_timers[tt] = MakeUnique<CollectorTimerGauge>(collector_timers_gauge,
+                                                             CollectorStats::timer_type_to_name[tt]);
+    }
+    auto& collector_counters_gauge = prometheus::BuildGauge()
+            .Name("rox_collector_counters")
+            .Help("Collector counters")
+            .Register(*registry_);
+    std::array<prometheus::Gauge*, CollectorStats::counter_type_max> collector_counters;
+    for (int i=0; i<CollectorStats::counter_type_max; i++) {
+      auto ct = (CollectorStats::CounterType)(i);
+      collector_counters[i] = &(collector_counters_gauge.Add({{"type", CollectorStats::counter_type_to_name[ct]}}));
+    }
 
     auto& collectorTypedEventCounters = prometheus::BuildGauge()
             .Name("rox_collector_events_typed")
@@ -186,6 +220,16 @@ void CollectorStatsExporter::run() {
         processResolutionFailuresByEvt.Set(stats.nProcessResolutionFailuresByEvt);
         processResolutionFailuresByTinfo.Set(stats.nProcessResolutionFailuresByTinfo);
         processRateLimitCount.Set(stats.nProcessRateLimitCount);
+
+        for (int i = 0; i < CollectorStats::timer_type_max; i++) {
+          auto tt = (CollectorStats::TimerType)(i);
+          collector_timers[tt]->Update(collector_stats_->GetTimerCount(tt),
+                                       collector_stats_->GetTimerDurationMicros(tt));
+        }
+        for (int i = 0; i < CollectorStats::counter_type_max; i++) {
+          auto ct = (CollectorStats::CounterType)(i);
+          collector_counters[ct]->Set(collector_stats_->GetCounter(ct));
+        }
     }
 }
 

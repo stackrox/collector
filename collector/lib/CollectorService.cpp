@@ -31,7 +31,6 @@ extern "C" {
 
 #include "civetweb/CivetServer.h"
 #include "prometheus/exposer.h"
-#include "prometheus/registry.h"
 
 #include "ConnTracker.h"
 #include "Containers.h"
@@ -92,14 +91,15 @@ void CollectorService::RunForever() {
       net_status_notifier = MakeUnique<NetworkStatusNotifier>(config_.Hostname(), config_.HostProc(),
                                                               config_.ScrapeInterval(), config_.ScrapeListenEndpoints(),
                                                               config_.TurnOffScrape(),
-                                                              conn_tracker, config_.grpc_channel);
+                                                              conn_tracker, config_.grpc_channel,
+                                                              &collector_stats_);
       net_status_notifier->Start();
     }
   }
 
   sysdig.Init(config_, conn_tracker);
 
-  CollectorStatsExporter exporter(registry, &config_, &sysdig);
+  CollectorStatsExporter exporter(registry, &config_, &sysdig, &collector_stats_);
   if (!exporter.start()) {
     CLOG(FATAL) << "Unable to start collector stats exporter";
   }

@@ -27,6 +27,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <vector>
 
 #include "CollectorConfig.h"
+#include "CollectorStats.h"
 
 namespace collector {
 
@@ -54,6 +55,7 @@ class CollectorService {
 
   std::atomic<ControlValue>* control_;
   const std::atomic<int>& signum_;
+  CollectorStats collector_stats_;
 };
 
 }  // namespace collector

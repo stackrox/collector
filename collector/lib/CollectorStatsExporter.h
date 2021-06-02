@@ -27,6 +27,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <memory>
 
 #include "CollectorConfig.h"
+#include "CollectorStats.h"
 #include "StoppableThread.h"
 #include "SysdigService.h"
 
@@ -36,7 +37,7 @@ namespace collector {
 
 class CollectorStatsExporter {
   public:
-    CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, const CollectorConfig* config, SysdigService* sysdig);
+    CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, const CollectorConfig* config, SysdigService* sysdig, CollectorStats* collector_stats);
 
     bool start();
     void run();
@@ -47,6 +48,7 @@ class CollectorStatsExporter {
     const CollectorConfig* config_;
     SysdigService *sysdig_;
     StoppableThread thread_;
+    CollectorStats* collector_stats_;
 };
 
 }  // namespace collector

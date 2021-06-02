@@ -23,7 +23,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "NetworkStatusNotifier.h"
 
-#include "Containers.h"
+#include "CollectorStats.h"
 #include "DuplexGRPC.h"
 #include "GRPCUtil.h"
 #include "ProtoUtil.h"
@@ -207,32 +207,44 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
       int64_t ts = NowMicros();
       std::vector<Connection> all_conns;
       std::vector<ContainerEndpoint> all_listen_endpoints;
-      bool success = conn_scraper_.Scrape(&all_conns, scrape_listen_endpoints_ ? &all_listen_endpoints : nullptr);
-
-      if (!success) {
-        CLOG(ERROR) << "Failed to scrape connections and no pending connections to send";
-        continue;
+      WITH_TIMER(stats_, CollectorStats::net_scrape_read) {
+        bool success = conn_scraper_.Scrape(&all_conns, scrape_listen_endpoints_ ? &all_listen_endpoints : nullptr);
+        if (!success) {
+          CLOG(ERROR) << "Failed to scrape connections and no pending connections to send";
+          continue;
+        }
       }
-      conn_tracker_->Update(all_conns, all_listen_endpoints, ts);
+      WITH_TIMER(stats_, CollectorStats::net_scrape_update) {
+        conn_tracker_->Update(all_conns, all_listen_endpoints, ts);
+      }
     }
 
-    auto new_conn_state = conn_tracker_->FetchConnState(true, true);
-    ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
+    const sensor::NetworkConnectionInfoMessage* msg;
+    ConnMap new_conn_state;
+    ContainerEndpointMap new_cep_state;
+    WITH_TIMER(stats_, CollectorStats::net_fetch_state) {
+      new_conn_state = conn_tracker_->FetchConnState(true, true);
+      ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
 
-    auto new_cep_state = conn_tracker_->FetchEndpointState(true, true);
-    ConnectionTracker::ComputeDelta(new_cep_state, &old_cep_state);
+      new_cep_state = conn_tracker_->FetchEndpointState(true, true);
+      ConnectionTracker::ComputeDelta(new_cep_state, &old_cep_state);
+    }
 
-    const auto* msg = CreateInfoMessage(old_conn_state, old_cep_state);
-    old_conn_state = std::move(new_conn_state);
-    old_cep_state = std::move(new_cep_state);
+    WITH_TIMER(stats_, CollectorStats::net_create_message) {
+      msg = CreateInfoMessage(old_conn_state, old_cep_state);
+      old_conn_state = std::move(new_conn_state);
+      old_cep_state = std::move(new_cep_state);
+    }
 
     if (!msg) {
       continue;
     }
 
-    if (!writer->Write(*msg, next_scrape)) {
-      CLOG(ERROR) << "Failed to write network connection info";
-      return;
+    WITH_TIMER(stats_, CollectorStats::net_write_message) {
+      if (!writer->Write(*msg, next_scrape)) {
+        CLOG(ERROR) << "Failed to write network connection info";
+        return;
+      }
     }
   }
 }
@@ -245,7 +257,9 @@ sensor::NetworkConnectionInfoMessage* NetworkStatusNotifier::CreateInfoMessage(c
   auto* info = msg->mutable_info();
 
   AddConnections(info->mutable_updated_connections(), conn_delta);
+  COUNTER_ADD(stats_, CollectorStats::net_conn_deltas, conn_delta.size());
   AddContainerEndpoints(info->mutable_updated_endpoints(), endpoint_delta);
+  COUNTER_ADD(stats_, CollectorStats::net_cep_deltas, endpoint_delta.size());
 
   *info->mutable_time() = CurrentTimeProto();
 
