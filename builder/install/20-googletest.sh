@@ -2,7 +2,9 @@
 
 set -e
 
-git clone https://github.com/google/googletest.git -b "$GOOGLETEST_REVISION" --depth 1
+if [ ! -n "${CPAAS_BUILD}" ]; then
+    git clone https://github.com/google/googletest.git -b "$GOOGLETEST_REVISION" --depth 1
+fi
 cd googletest
 cp LICENSE "${LICENSE_DIR}/googletest-${GOOGLETEST_REVISION}"
 mkdir cmake-build
