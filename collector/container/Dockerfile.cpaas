@@ -1,20 +1,27 @@
 #@follow_tag(registry.access.redhat.com/ubi8/ubi:latest)
 FROM registry.access.redhat.com/ubi8/ubi:8.4-203 AS builder
 
-ARG LICENSE_DIR="/THIRD_PARTY_NOTICES"
-RUN mkdir -p "${LICENSE_DIR}"
+#COPY $REMOTE_SOURCE $REMOTE_SOURCE_DIR
 
 ARG CPAAS_BUILD="true"
 
-### Generated sources from protobufs
-
 RUN yum -y update
-RUN yum -y install make \
-                   wget \
-                   unzip \
-                   cmake \
-                   gcc-c++ \
-                   openssl-devel
+RUN yum -y install \
+    make \
+    wget \
+    unzip \
+    cmake \
+    gcc-c++ \
+    openssl-devel \
+    ncurses-devel \
+    curl-devel \
+    libuuid-devel \
+    libcap-ng-devel
+
+ARG LICENSE_DIR="/THIRD_PARTY_NOTICES"
+RUN mkdir -p "${LICENSE_DIR}"
+
+### Generated sources from protobufs
 
 ARG GENERATED_SRCS_DIR=/build-generated-srcs
 RUN mkdir -p ${GENERATED_SRCS_DIR}
@@ -54,10 +61,7 @@ COPY builder/build/protogen.mk .
 
 RUN BASE_PATH=${GENERATED_SRCS_DIR} make -f protogen.mk SKIP_GOOGLEAPIS=1 generated-proto-srcs
 
-### Sysdig
-
-RUN yum -y install ncurses-devel \
-                   curl-devel
+### Dependencies
 
 ARG BUILD_DIR=/build
 RUN mkdir -p ${BUILD_DIR}
@@ -112,29 +116,20 @@ RUN yum localinstall -y elfutils-*
 
 ARG PROMETHEUS_CPP_REVISION=v0.9.0
 COPY third_party/prometheus-cpp-${PROMETHEUS_CPP_REVISION}.tar.gz .
-COPY /builder/install/50-prometheus.sh .
+COPY builder/install/50-prometheus.sh .
 RUN ./50-prometheus.sh
+
+### Build
 
 COPY collector ${BUILD_DIR}/src
 RUN cp -a ${GENERATED_SRCS_DIR}/collector/generated ${BUILD_DIR}/src/generated
 COPY sysdig ${BUILD_DIR}/sysdig
 
-RUN mkdir -p ${BUILD_DIR}/cmake-collector
-RUN ldconfig
-WORKDIR ${BUILD_DIR}/cmake-collector
-RUN cmake -DCMAKE_BUILD_TYPE=Release ${BUILD_DIR}/src
-RUN make -j "${NPROCS:-2}" -f CMakeFiles/Makefile2 EXCLUDE_FROM_DEFAULT_BUILD/all
-
-### Collector
-
-RUN yum -y install libuuid-devel \
-                   libcap-ng-devel
-
-RUN make -j "${NPROCS:-2}" -f CMakeFiles/Makefile2 CMakeFiles/collector_lib.dir/all
-
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 
-RUN make -j "${NPROCS:-2}" -f CMakeFiles/Makefile2 CMakeFiles/collector.dir/all
+RUN mkdir -p ${BUILD_DIR}/cmake-collector
+WORKDIR ${BUILD_DIR}/cmake-collector
+RUN cmake -DCMAKE_BUILD_TYPE=Release ${BUILD_DIR}/src
 RUN make -j "${NPROCS:-2}" all
 
 RUN strip --strip-unneeded \
@@ -160,8 +155,8 @@ RUN find . -type f \( -name 'Makefile' -o -name '*.c' -o -name '*.h' \) -print0 
     LC_ALL=C sort -z | xargs -0 sha256sum | awk '{print$1 " " $2}' | sha256sum | awk '{print$1}' \
     > /MODULE_VERSION.txt
 
-#@follow_tag(registry.access.redhat.com/ubi8/ubi:latest)
-FROM registry.access.redhat.com/ubi8/ubi:8.4-203
+#@follow_tag(registry.access.redhat.com/ubi8/ubi-minimal:latest)
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4-200
 
 WORKDIR /
 
@@ -172,8 +167,6 @@ LABEL com.redhat.component="rhacs-collector-container" \
       version="1.0.0"
 
 ENV COLLECTOR_HOST_ROOT=/host
-
-RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 
 ARG BUILD_DIR=/build
 
@@ -191,23 +184,23 @@ RUN mv /builder_lib64/libprofiler.* /usr/lib64/
 RUN mv /builder_lib64/libunwind.* /usr/lib64/
 RUN rm -rf /builder_lib64
 
-RUN ldconfig
-
 COPY --from=builder ${BUILD_DIR}/cmake-collector/collector /usr/local/bin/
 
 COPY --from=builder ${BUILD_DIR}/src/container/scripts /
 RUN mv /collector-wrapper.sh /usr/local/bin/ && \
     chmod 700 bootstrap.sh && \
+    echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
     mkdir /kernel-modules && \
-    dnf upgrade -y && \
-    dnf install -y kmod && \
-    dnf clean all && \
+    microdnf upgrade -y && \
+    microdnf install -y kmod && \
+    microdnf clean all && \
     rm -rf /var/cache/dnf
     # (Optional) Remove line below to keep package management utilities
     # rpm -e --nodeps rpm rpm-build-libs rpm-libs python3-rpm subscription-manager python3-subscription-manager-rhsm yum $(rpm -qa *dnf*) python3-hawkey
 
 COPY --from=builder /MODULE_VERSION.txt /kernel-modules/MODULE_VERSION.txt
 
+RUN ldconfig
 RUN collector --help || true
 
 EXPOSE 8080 9090
