@@ -1,0 +1,220 @@
+#@follow_tag(registry.access.redhat.com/ubi8/ubi:latest)
+FROM registry.access.redhat.com/ubi8/ubi:8.4-203 AS builder
+
+ARG LICENSE_DIR="/THIRD_PARTY_NOTICES"
+RUN mkdir -p "${LICENSE_DIR}"
+
+ARG CPAAS_BUILD="true"
+
+### Generated sources from protobufs
+
+RUN yum -y update
+RUN yum -y install make \
+                   wget \
+                   unzip \
+                   cmake \
+                   gcc-c++ \
+                   openssl-devel
+
+ARG GENERATED_SRCS_DIR=/build-generated-srcs
+RUN mkdir -p ${GENERATED_SRCS_DIR}
+WORKDIR ${GENERATED_SRCS_DIR}
+
+ARG PROTOBUF_VERSION=3.11.2
+ARG PROTOBUF_EL_VERSION=2.el8ost
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/protobuf/${PROTOBUF_VERSION}/${PROTOBUF_EL_VERSION}/x86_64/protobuf-${PROTOBUF_VERSION}-${PROTOBUF_EL_VERSION}.x86_64.rpm
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/protobuf/${PROTOBUF_VERSION}/${PROTOBUF_EL_VERSION}/x86_64/protobuf-compiler-${PROTOBUF_VERSION}-${PROTOBUF_EL_VERSION}.x86_64.rpm
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/protobuf/${PROTOBUF_VERSION}/${PROTOBUF_EL_VERSION}/x86_64/protobuf-devel-${PROTOBUF_VERSION}-${PROTOBUF_EL_VERSION}.x86_64.rpm
+RUN yum localinstall -y protobuf*
+
+ARG C_ARES_VERSION=1.13.0
+ARG C_ARES_EL_VERSION=5.el8
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/c-ares/${C_ARES_VERSION}/${C_ARES_EL_VERSION}/x86_64/c-ares-${C_ARES_VERSION}-${C_ARES_EL_VERSION}.x86_64.rpm
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/c-ares/${C_ARES_VERSION}/${C_ARES_EL_VERSION}/x86_64/c-ares-devel-${C_ARES_VERSION}-${C_ARES_EL_VERSION}.x86_64.rpm
+RUN yum localinstall -y c-ares*
+
+ARG LIBUNWIND_VERSION=1.2
+ARG LIBUNWIND_EL_VERSION=3.el8+5
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/libunwind/${LIBUNWIND_VERSION}/${LIBUNWIND_EL_VERSION}/x86_64/libunwind-${LIBUNWIND_VERSION}-${LIBUNWIND_EL_VERSION}.x86_64.rpm
+RUN yum localinstall -y libunwind*
+
+ARG GPERFTOOLS_VERSION=2.8
+ARG GPERFTOOLS_EL_VERSION=1.el8cp
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/gperftools/${GPERFTOOLS_VERSION}/${GPERFTOOLS_EL_VERSION}/x86_64/gperftools-libs-${GPERFTOOLS_VERSION}-${GPERFTOOLS_EL_VERSION}.x86_64.rpm
+RUN yum localinstall -y gperftools*
+
+ARG GRPC_VERSION=v1.28.1
+COPY third_party/grpc-${GRPC_VERSION}.tar.gz .
+COPY builder/install/40-grpc.sh .
+RUN ./40-grpc.sh
+
+RUN cp -a grpc-${GRPC_VERSION}/third_party/googleapis .
+COPY rox-proto rox-proto
+COPY builder/build/protogen.mk .
+
+RUN BASE_PATH=${GENERATED_SRCS_DIR} make -f protogen.mk SKIP_GOOGLEAPIS=1 generated-proto-srcs
+
+### Sysdig
+
+RUN yum -y install ncurses-devel \
+                   openssl-devel \
+                   curl-devel
+
+ARG BUILD_DIR=/build
+RUN mkdir -p ${BUILD_DIR}
+WORKDIR ${BUILD_DIR}
+
+ARG JSONCPP_VERSION=1.8.4
+ARG JSONCPP_EL_VERSION=3.el8+7
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/jsoncpp/${JSONCPP_VERSION}/${JSONCPP_EL_VERSION}/x86_64/jsoncpp-${JSONCPP_VERSION}-${JSONCPP_EL_VERSION}.x86_64.rpm
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/jsoncpp/${JSONCPP_VERSION}/${JSONCPP_EL_VERSION}/x86_64/jsoncpp-devel-${JSONCPP_VERSION}-${JSONCPP_EL_VERSION}.x86_64.rpm
+RUN yum localinstall -y jsoncpp*
+
+ARG TBB_VERSION=2018.2
+ARG TBB_EL_VERSION=9.el8
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/tbb/${TBB_VERSION}/${TBB_EL_VERSION}/x86_64/tbb-${TBB_VERSION}-${TBB_EL_VERSION}.x86_64.rpm
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/tbb/${TBB_VERSION}/${TBB_EL_VERSION}/x86_64/tbb-devel-${TBB_VERSION}-${TBB_EL_VERSION}.x86_64.rpm
+RUN yum localinstall -y tbb*
+
+ARG JQ_VERSION=1.6
+ARG JQ_EL_VERSION=2.el8
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/jq/${JQ_VERSION}/${JQ_EL_VERSION}/x86_64/jq-${JQ_VERSION}-${JQ_EL_VERSION}.x86_64.rpm
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/jq/${JQ_VERSION}/${JQ_EL_VERSION}/x86_64/jq-devel-${JQ_VERSION}-${JQ_EL_VERSION}.x86_64.rpm
+RUN yum localinstall -y jq*
+
+ARG LIBB64_VERSION=v1.2.1
+COPY third_party/libb64-${LIBB64_VERSION}.tar.gz .
+COPY builder/install/50-libb64.sh .
+RUN LIBB64_VERSION=${LIBB64_VERSION} ./50-libb64.sh
+
+ARG LUA_VERSION=5.1.5
+ARG LUA_EL_VERSION=10.el8+7
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/compat-lua/${LUA_VERSION}/${LUA_EL_VERSION}/x86_64/compat-lua-${LUA_VERSION}-${LUA_EL_VERSION}.x86_64.rpm
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/compat-lua/${LUA_VERSION}/${LUA_EL_VERSION}/x86_64/compat-lua-devel-${LUA_VERSION}-${LUA_EL_VERSION}.x86_64.rpm
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/compat-lua/${LUA_VERSION}/${LUA_EL_VERSION}/x86_64/compat-lua-libs-${LUA_VERSION}-${LUA_EL_VERSION}.x86_64.rpm
+RUN yum localinstall -y compat-lua-*
+
+ARG ZSTD_VERSION=1.4.5
+ARG ZSTD_EL_VERSION=6.el8ost
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/zstd/${ZSTD_VERSION}/${ZSTD_EL_VERSION}/x86_64/zstd-${ZSTD_VERSION}-${ZSTD_EL_VERSION}.x86_64.rpm
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/zstd/${ZSTD_VERSION}/${ZSTD_EL_VERSION}/x86_64/libzstd-${ZSTD_VERSION}-${ZSTD_EL_VERSION}.x86_64.rpm
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/zstd/${ZSTD_VERSION}/${ZSTD_EL_VERSION}/x86_64/libzstd-devel-${ZSTD_VERSION}-${ZSTD_EL_VERSION}.x86_64.rpm
+RUN yum localinstall -y zstd-*
+RUN yum localinstall -y libzstd-*
+
+ARG ELFUTILS_VERSION=0.182
+ARG ELFUTILS_EL_VERSION=3.el8
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/elfutils/${ELFUTILS_VERSION}/${ELFUTILS_EL_VERSION}/x86_64/elfutils-${ELFUTILS_VERSION}-${ELFUTILS_EL_VERSION}.x86_64.rpm
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/elfutils/${ELFUTILS_VERSION}/${ELFUTILS_EL_VERSION}/x86_64/elfutils-devel-${ELFUTILS_VERSION}-${ELFUTILS_EL_VERSION}.x86_64.rpm
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/elfutils/${ELFUTILS_VERSION}/${ELFUTILS_EL_VERSION}/x86_64/elfutils-libs-${ELFUTILS_VERSION}-${ELFUTILS_EL_VERSION}.x86_64.rpm
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/elfutils/${ELFUTILS_VERSION}/${ELFUTILS_EL_VERSION}/x86_64/elfutils-libelf-${ELFUTILS_VERSION}-${ELFUTILS_EL_VERSION}.x86_64.rpm
+RUN wget http://download.eng.bos.redhat.com/brewroot/packages/elfutils/${ELFUTILS_VERSION}/${ELFUTILS_EL_VERSION}/x86_64/elfutils-libelf-devel-${ELFUTILS_VERSION}-${ELFUTILS_EL_VERSION}.x86_64.rpm
+RUN yum localinstall -y elfutils-*
+
+ARG PROMETHEUS_CPP_REVISION=v0.9.0
+COPY third_party/prometheus-cpp-${PROMETHEUS_CPP_REVISION}.tar.gz .
+COPY /builder/install/50-prometheus.sh .
+RUN ./50-prometheus.sh
+
+COPY collector ${BUILD_DIR}/src
+RUN cp -a ${GENERATED_SRCS_DIR}/collector/generated ${BUILD_DIR}/src/generated
+COPY sysdig ${BUILD_DIR}/sysdig
+
+RUN mkdir -p ${BUILD_DIR}/cmake-collector
+RUN ldconfig
+WORKDIR ${BUILD_DIR}/cmake-collector
+RUN cmake -DCMAKE_BUILD_TYPE=Release ${BUILD_DIR}/src
+RUN make -j "${NPROCS:-2}" -f CMakeFiles/Makefile2 EXCLUDE_FROM_DEFAULT_BUILD/all
+
+### Collector
+
+RUN yum -y install libuuid-devel \
+                   libcap-ng-devel
+
+RUN make -j "${NPROCS:-2}" -f CMakeFiles/Makefile2 CMakeFiles/collector_lib.dir/all
+
+RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
+
+RUN make -j "${NPROCS:-2}" -f CMakeFiles/Makefile2 CMakeFiles/collector.dir/all
+RUN make -j "${NPROCS:-2}" all
+
+RUN strip --strip-unneeded \
+    ./collector \
+    ./EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so
+
+### MODULE_VERSION
+
+RUN mkdir -p ${BUILD_DIR}/cmake-sysdig
+WORKDIR ${BUILD_DIR}/cmake-sysdig
+RUN cmake \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_C_FLAGS="-fno-pie" \
+        -DPROBE_NAME=collector \
+        -DBUILD_USERSPACE=OFF \
+        -DBUILD_DRIVER=ON \
+        -DENABLE_DKMS=OFF \
+        -DBUILD_BPF=ON \
+        ${BUILD_DIR}/sysdig/src
+RUN KERNELDIR=/dev/null make driver/fast 2> /dev/null || true
+WORKDIR ${BUILD_DIR}/sysdig/src/driver
+RUN find . -type f \( -name 'Makefile' -o -name '*.c' -o -name '*.h' \) -print0 | \
+    LC_ALL=C sort -z | xargs -0 sha256sum | awk '{print$1 " " $2}' | sha256sum | awk '{print$1}' \
+    > /MODULE_VERSION.txt
+
+#@follow_tag(registry.access.redhat.com/ubi8/ubi:latest)
+FROM registry.access.redhat.com/ubi8/ubi:8.4-203
+
+WORKDIR /
+
+LABEL maintainer="Red Hat, Inc."
+
+LABEL com.redhat.component="rhacs-collector-container" \
+      name="rhacs-collector"
+
+ENV COLLECTOR_HOST_ROOT=/host
+
+RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
+
+COPY --from=builder ${BUILD_DIR}/cmake-collector/EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so /usr/local/lib/
+COPY --from=builder /usr/lib64 /builder_lib64
+
+RUN mv /builder_lib64/libjsoncpp.* /usr/lib64/
+RUN mv /builder_lib64/libtbb.* /usr/lib64/
+RUN mv /builder_lib64/libjq.* /usr/lib64/
+RUN mv /builder_lib64/liblua-5.1.* /usr/lib64/
+RUN mv /builder_lib64/libprotobuf.* /usr/lib64/
+RUN mv /builder_lib64/libcares.* /usr/lib64/
+RUN mv /builder_lib64/libonig.* /usr/lib64/
+RUN mv /builder_lib64/libprofiler.* /usr/lib64/
+RUN mv /builder_lib64/libunwind.* /usr/lib64/
+RUN rm -rf /builder_lib64
+
+RUN ldconfig
+
+COPY --from=builder ${BUILD_DIR}/cmake-collector/collector /usr/local/bin/
+
+COPY --from=builder ${BUILD_DIR}/src/container/scripts /
+RUN mv /collector-wrapper.sh /usr/local/bin/ && \
+    chmod 700 bootstrap.sh && \
+    mkdir /kernel-modules && \
+    dnf upgrade -y && \
+    dnf install -y kmod && \
+    dnf clean all && \
+    rm -rf /var/cache/dnf
+    # (Optional) Remove line below to keep package management utilities
+    # rpm -e --nodeps rpm rpm-build-libs rpm-libs python3-rpm subscription-manager python3-subscription-manager-rhsm yum $(rpm -qa *dnf*) python3-hawkey
+
+COPY --from=builder /MODULE_VERSION.txt /kernel-modules/MODULE_VERSION.txt
+
+RUN collector --help || true
+
+EXPOSE 8080 9090
+
+ENTRYPOINT ["/bootstrap.sh"]
+
+CMD collector-wrapper.sh \
+    --collector-config=$COLLECTOR_CONFIG \
+    --collection-method=$COLLECTION_METHOD \
+    --grpc-server=$GRPC_SERVER
+
+HEALTHCHECK CMD curl --fail http://127.0.0.1:8080/ready || exit 1
