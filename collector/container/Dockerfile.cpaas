@@ -57,7 +57,6 @@ RUN BASE_PATH=${GENERATED_SRCS_DIR} make -f protogen.mk SKIP_GOOGLEAPIS=1 genera
 ### Sysdig
 
 RUN yum -y install ncurses-devel \
-                   openssl-devel \
                    curl-devel
 
 ARG BUILD_DIR=/build
@@ -169,11 +168,14 @@ WORKDIR /
 LABEL maintainer="Red Hat, Inc."
 
 LABEL com.redhat.component="rhacs-collector-container" \
-      name="rhacs-collector"
+      name="rhacs-collector" \
+      version="1.0.0"
 
 ENV COLLECTOR_HOST_ROOT=/host
 
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
+
+ARG BUILD_DIR=/build
 
 COPY --from=builder ${BUILD_DIR}/cmake-collector/EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so /usr/local/lib/
 COPY --from=builder /usr/lib64 /builder_lib64
