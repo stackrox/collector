@@ -884,6 +884,23 @@ jobs:
           echo "Pushing collector rhel slim image"
           docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}-slim"
 
+  cpaas-image:
+    <<: *defaultMachine
+    steps:
+    - initcommand
+    - docker-login-push
+    - run:
+        name: Build collector CPaaS images
+        command: |
+
+          docker build \
+            -t "stackrox/collector:${COLLECTOR_VERSION}" \
+            -t "stackrox/collector:${COLLECTOR_VERSION}-base" \
+            -t "stackrox/collector:${COLLECTOR_VERSION}-latest" \
+            -t "stackrox/collector:${COLLECTOR_VERSION}-slim" \
+            -f ${SOURCE_ROOT}/collector/container/Dockerfile.cpaas \
+            ${SOURCE_ROOT}
+
   kernel-module-build-failures-check:
     <<: *defaultImage
 
@@ -1478,6 +1495,10 @@ workflows:
         - collector-rhel
         - kernels
         - join-modules
+    - cpaas-image:
+        <<: *runOnAllTagsWithDockerIOPushCtx
+        requires:
+        - initjob
     - integration-test-local:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
