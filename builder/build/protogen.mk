@@ -48,7 +48,12 @@ $(GOOGLEAPIS_DIR): $(GOOGLEAPIS_FILE)
 	@unzip -q -u -d $(TMP_PATH) $<
 	@cp -pr $(TMP_PATH)/googleapis-master $@
 
-PROTO_DEPS_CPP=$(PROTOC_INCLUDES)
+ifeq (1,${SKIP_GOOGLEAPIS})
+PROTO_DEPS_CPP=/usr/local/include
+else
+PROTO_DEPS_CPP=/usr/local/include $(GOOGLEAPIS_DIR)
+endif
+
 
 #######################################################################
 ## Generate gRPC proto messages, services, and gateways for the API. ##
