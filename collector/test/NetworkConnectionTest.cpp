@@ -21,14 +21,12 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#include "NetworkConnection.h"
-
 #include <utility>
 
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
-
+#include "NetworkConnection.h"
 #include "Utility.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace collector {
 
@@ -63,7 +61,6 @@ TEST(TestAddress, TestConstructors) {
   EXPECT_TRUE(c.IsPublic());
   EXPECT_TRUE(c.ToV6().IsPublic());
 }
-
 
 TEST(TestAddress, TestMaskAndIsPublic) {
   IPNet mask(Address(172, 16, 0, 0), 12);
@@ -108,25 +105,25 @@ TEST(TestAddress, TestLoopback) {
 
 TEST(TestIPNet, TestNetworkDescComparator) {
   std::array<IPNet, 8> networks = {
-    IPNet(Address(10, 0, 0, 0), 8),
-    IPNet(Address(127, 0, 0, 1), 16),
-    IPNet(Address(127, 254, 0, 0), 16),
-    IPNet(Address(172, 16, 0, 0), 12),
-    IPNet(Address(192, 0, 0, 0), 16),
-    IPNet(Address(192, 0, 0, 0), 8),
-    IPNet(Address(192, 0, 0, 1), 8),
-    IPNet(Address(200, 200), 8),
+      IPNet(Address(10, 0, 0, 0), 8),
+      IPNet(Address(127, 0, 0, 1), 16),
+      IPNet(Address(127, 254, 0, 0), 16),
+      IPNet(Address(172, 16, 0, 0), 12),
+      IPNet(Address(192, 0, 0, 0), 16),
+      IPNet(Address(192, 0, 0, 0), 8),
+      IPNet(Address(192, 0, 0, 1), 8),
+      IPNet(Address(200, 200), 8),
   };
 
   std::array<IPNet, 8> expected = {
-    IPNet(Address(192, 0, 0, 0), 16),
-    IPNet(Address(127, 254, 0, 0), 16),
-    IPNet(Address(127, 0, 0, 1), 16),
-    IPNet(Address(172, 16, 0, 0), 12),
-    IPNet(Address(200, 200), 8),
-    IPNet(Address(192, 0, 0, 1), 8),
-    IPNet(Address(192, 0, 0, 0), 8),
-    IPNet(Address(10, 64, 0, 0), 8),
+      IPNet(Address(192, 0, 0, 0), 16),
+      IPNet(Address(127, 254, 0, 0), 16),
+      IPNet(Address(127, 0, 0, 1), 16),
+      IPNet(Address(172, 16, 0, 0), 12),
+      IPNet(Address(200, 200), 8),
+      IPNet(Address(192, 0, 0, 1), 8),
+      IPNet(Address(192, 0, 0, 0), 8),
+      IPNet(Address(10, 64, 0, 0), 8),
   };
 
   std::sort(networks.begin(), networks.end(), std::greater<IPNet>());

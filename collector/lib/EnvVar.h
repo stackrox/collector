@@ -6,11 +6,10 @@
 #define COLLECTOR_ENVVAR_H
 
 #include <algorithm>
-#include <mutex>
-#include <utility>
-
 #include <cctype>
 #include <cstdlib>
+#include <mutex>
+#include <utility>
 
 #include "Logging.h"
 
@@ -20,7 +19,7 @@ template <typename T, typename ParseT>
 class EnvVar {
  public:
   template <typename... Args>
-  explicit EnvVar(const char* env_var_name, Args&& ...def_val_ctor_args) noexcept
+  explicit EnvVar(const char* env_var_name, Args&&... def_val_ctor_args) noexcept
       : env_var_name_(env_var_name), val_(std::forward<Args>(def_val_ctor_args)...) {}
 
   const T& value() const {
@@ -64,4 +63,4 @@ using BoolEnvVar = EnvVar<bool, internal::ParseBool>;
 
 }  // namespace collector
 
-#endif //COLLECTOR_ENVVAR_H
+#endif  //COLLECTOR_ENVVAR_H

@@ -24,11 +24,10 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef COLLECTOR_FILESYSTEM_H
 #define COLLECTOR_FILESYSTEM_H
 
+#include <cstdio>
 #include <dirent.h>
 #include <fcntl.h>
 #include <unistd.h>
-
-#include <cstdio>
 
 namespace collector {
 
@@ -96,7 +95,7 @@ class FDHandle : public ResourceWrapper<int, FDHandle> {
 class FileHandle : public ResourceWrapper<std::FILE*, FileHandle> {
  public:
   using ResourceWrapper::ResourceWrapper;
-  FileHandle(FileHandle &&other) : ResourceWrapper(other.release()) {}
+  FileHandle(FileHandle&& other) : ResourceWrapper(other.release()) {}
   FileHandle(FDHandle&& fd, const char* mode) : ResourceWrapper(fdopen(fd.release(), mode)) {}
 
   static constexpr std::FILE* Invalid() { return nullptr; }
@@ -127,4 +126,4 @@ class DirHandle : public ResourceWrapper<DIR*, DirHandle> {
 
 }  // namespace collector
 
-#endif //COLLECTOR_FILESYSTEM_H
+#endif  //COLLECTOR_FILESYSTEM_H

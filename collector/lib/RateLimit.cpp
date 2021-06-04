@@ -22,9 +22,10 @@ You should have received a copy of the GNU General Public License along with thi
 */
 
 #include "RateLimit.h"
-#include "Utility.h"
-#include "TimeUtil.h"
+
 #include "Logging.h"
+#include "TimeUtil.h"
+#include "Utility.h"
 
 namespace collector {
 
@@ -34,15 +35,15 @@ Limiter::Limiter(int64_t burst_size, int64_t refill_time) {
   refill_time_ = duration_cast<microseconds>(seconds(refill_time)).count();
 }
 
-bool Limiter::Allow(TokenBucket *b) {
+bool Limiter::Allow(TokenBucket* b) {
   return AllowN(b, 1);
 }
 
-int64_t Limiter::Tokens(TokenBucket *b) {
+int64_t Limiter::Tokens(TokenBucket* b) {
   return std::min(burst_size_, b->tokens + (refill_count(b) * burst_size_));
 }
 
-bool Limiter::AllowN(TokenBucket *b, int64_t n) {
+bool Limiter::AllowN(TokenBucket* b, int64_t n) {
   if (!b->last_time) fill_bucket(b);
 
   int64_t refill = refill_count(b);
@@ -58,23 +59,23 @@ bool Limiter::AllowN(TokenBucket *b, int64_t n) {
   return true;
 }
 
-int64_t Limiter::refill_count(TokenBucket *b) {
+int64_t Limiter::refill_count(TokenBucket* b) {
   return (NowMicros() - b->last_time) / refill_time_;
 }
 
-void Limiter::fill_bucket(TokenBucket *b) {
+void Limiter::fill_bucket(TokenBucket* b) {
   b->last_time = NowMicros();
   b->tokens = burst_size_;
 }
 
 // RateLimitCache Defaults: Limit duplicate events to rate of 10 every 30 min
-RateLimitCache::RateLimitCache() 
-  : capacity_(4096), limiter_(new Limiter(10, 30*60)) {}
+RateLimitCache::RateLimitCache()
+    : capacity_(4096), limiter_(new Limiter(10, 30 * 60)) {}
 
 RateLimitCache::RateLimitCache(size_t capacity, int64_t burst_size, int64_t refill_time)
-  : capacity_(capacity), limiter_(new Limiter(burst_size, refill_time)) {}
+    : capacity_(capacity), limiter_(new Limiter(burst_size, refill_time)) {}
 
-bool RateLimitCache::Allow(std::string key) { 
+bool RateLimitCache::Allow(std::string key) {
   auto pair = cache_.emplace(std::make_pair(key, TokenBucket()));
   if (pair.second && cache_.size() > capacity_) {
     CLOG(INFO) << "Flushing rate limiting cache";

@@ -24,17 +24,18 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef COLLECTOR_NETWORKCONNECTION_H
 #define COLLECTOR_NETWORKCONNECTION_H
 
-#include <arpa/inet.h>
 #include <endian.h>
+
+#include <arpa/inet.h>
 
 #define htonll(x) htobe64(x)
 #define ntohll(x) be64toh(x)
 
 #include <array>
+#include <cstring>
 #include <ostream>
 #include <string>
 #include <vector>
-#include <cstring>
 
 #include "Hash.h"
 
@@ -71,8 +72,7 @@ class Address {
   Address(Family family, const std::array<uint64_t, kU64MaxLen>& data) : data_(data), family_(family) {}
 
   // Constructs an IPv4 address given a uint32_t containing the IPv4 address in *network* byte order.
-  explicit Address(uint32_t ipv4) : data_({htonll(static_cast<uint64_t>(ntohl(ipv4)) << 32), 0}), family_(Family::IPV4)
-  {}
+  explicit Address(uint32_t ipv4) : data_({htonll(static_cast<uint64_t>(ntohl(ipv4)) << 32), 0}), family_(Family::IPV4) {}
 
   // Constructs an IPv6 address from 4 network-encoded uint32_ts, in network order (high to low)
   explicit Address(const uint32_t (&ipv6)[4]) : family_(Family::IPV6) {
@@ -174,8 +174,7 @@ class IPNet {
   IPNet() : IPNet(Address(), 0, false) {}
   explicit IPNet(const Address& address) : IPNet(address, 8 * address.length(), true) {}
   IPNet(const Address& address, size_t bits, bool is_addr = false)
-  : address_(address), mask_({0, 0}), bits_(bits), is_addr_(is_addr) {
-
+      : address_(address), mask_({0, 0}), bits_(bits), is_addr_(is_addr) {
     if (bits_ > Address::Length(address_.family()) * 8) {
       bits_ = Address::Length(address_.family()) * 8;
     }
@@ -205,7 +204,7 @@ class IPNet {
     if (bits_ == 128) {
       return {0xFFFFFFFFFFFFFFFFULL, 0xFFFFFFFFFFFFFFFFULL};
     }
-    return {0xFFFFFFFFFFFFFFFFULL, ~(0xFFFFFFFFFFFFFFFFULL >> (bits_ % 64)) };
+    return {0xFFFFFFFFFFFFFFFFULL, ~(0xFFFFFFFFFFFFFFFFULL >> (bits_ % 64))};
   }
 
   size_t bits() const { return bits_; }
@@ -307,7 +306,7 @@ class Endpoint {
   uint16_t port() const { return port_; }
 
   bool IsNull() const {
-      return port_ == 0 && network_.IsNull();
+    return port_ == 0 && network_.IsNull();
   }
 
  private:
@@ -376,8 +375,7 @@ class Connection {
  public:
   Connection() : flags_(0) {}
   Connection(std::string container, const Endpoint& local, const Endpoint& remote, L4Proto l4proto, bool is_server)
-      : container_(std::move(container)), local_(local), remote_(remote), flags_((static_cast<uint8_t>(l4proto) << 1) | ((is_server) ? 1 : 0))
-  {}
+      : container_(std::move(container)), local_(local), remote_(remote), flags_((static_cast<uint8_t>(l4proto) << 1) | ((is_server) ? 1 : 0)) {}
 
   const std::string& container() const { return container_; }
   const Endpoint& local() const { return local_; }
@@ -419,22 +417,22 @@ inline bool IsRelevantEndpoint(const Endpoint& ep) {
 // operating systems adhere to the IANA-recommended range. Therefore, the return value is not a bool, but instead an
 // int which indicates the confidence that the port is in fact ephemeral.
 inline int IsEphemeralPort(uint16_t port) {
-  if (port >= 49152) return 4;  // IANA range
-  if (port >= 32768) return 3;  // Modern Linux kernel range
+  if (port >= 49152) return 4;                 // IANA range
+  if (port >= 32768) return 3;                 // Modern Linux kernel range
   if (port >= 1025 && port <= 5000) return 2;  // FreeBSD (partial) + Windows <=XP range
-  if (port == 1024) return 1;  // FreeBSD
-  return 0;  // not ephemeral according to any range
+  if (port == 1024) return 1;                  // FreeBSD
+  return 0;                                    // not ephemeral according to any range
 }
 
 // PrivateIPv4Networks return private IPv4 networks.
 static inline const std::vector<IPNet>& PrivateIPv4Networks() {
   static auto* networks = new std::vector<IPNet>{
-    IPNet(Address(10, 0, 0, 0), 8),
-    IPNet(Address(100, 64, 0, 0), 10),
-    IPNet(Address(169, 254, 0, 0), 16),
-    IPNet(Address(172, 16, 0, 0), 12),
-    IPNet(Address(192, 168, 0, 0), 16),
-    };
+      IPNet(Address(10, 0, 0, 0), 8),
+      IPNet(Address(100, 64, 0, 0), 10),
+      IPNet(Address(169, 254, 0, 0), 16),
+      IPNet(Address(172, 16, 0, 0), 12),
+      IPNet(Address(192, 168, 0, 0), 16),
+  };
 
   return *networks;
 }
@@ -478,4 +476,4 @@ static inline const std::vector<IPNet>& PrivateNetworks() {
 
 }  // namespace collector
 
-#endif //COLLECTOR_NETWORKCONNECTION_H
+#endif  //COLLECTOR_NETWORKCONNECTION_H

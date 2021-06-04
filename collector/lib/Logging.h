@@ -24,13 +24,12 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _LOGGING_H_
 #define _LOGGING_H_
 
-#include <string.h>
-
-#include <cstdint>
-#include <iostream>
-#include <iomanip>
-#include <sstream>
 #include <chrono>
+#include <cstdint>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string.h>
 
 namespace collector {
 
@@ -70,10 +69,10 @@ class LogMessage {
     }
     auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     auto nowTm = gmtime(&now);
-    std::cerr << GetGlobalLogPrefix() 
-      << "[" << GetLogLevelShortName(level_)
-      << " " << std::put_time(nowTm, "%Y%m%d %H%M%S")
-      << " " << basename << ":" << line_ << "] " << buf_.str() << std::endl;
+    std::cerr << GetGlobalLogPrefix()
+              << "[" << GetLogLevelShortName(level_)
+              << " " << std::put_time(nowTm, "%Y%m%d %H%M%S")
+              << " " << basename << ":" << line_ << "] " << buf_.str() << std::endl;
     if (level_ == LogLevel::FATAL) {
       exit(1);
     }
@@ -98,21 +97,19 @@ class LogMessage {
 
 #define CLOG_ENABLED(lvl) (collector::logging::CheckLogLevel(collector::logging::LogLevel::lvl))
 
-#define CLOG_IF(cond, lvl) \
+#define CLOG_IF(cond, lvl)                                                            \
   if (collector::logging::CheckLogLevel(collector::logging::LogLevel::lvl) && (cond)) \
-    collector::logging::LogMessage(__FILE__, __LINE__, collector::logging::LogLevel::lvl)
+  collector::logging::LogMessage(__FILE__, __LINE__, collector::logging::LogLevel::lvl)
 
 #define CLOG(lvl) CLOG_IF(true, lvl)
 
-#define CLOG_THROTTLED_IF(cond, lvl, interval) \
-  static std::chrono::steady_clock::time_point _clog_lastlog_ ## __LINE__; \
+#define CLOG_THROTTLED_IF(cond, lvl, interval)                                          \
+  static std::chrono::steady_clock::time_point _clog_lastlog_##__LINE__;                \
   if (collector::logging::CheckLogLevel(collector::logging::LogLevel::lvl) && (cond) && \
-      (std::chrono::steady_clock::now() - _clog_lastlog_ ## __LINE__ >= interval)) \
-    _clog_lastlog_ ## __LINE__ = std::chrono::steady_clock::now(), \
-        collector::logging::LogMessage(__FILE__, __LINE__, collector::logging::LogLevel::lvl)
+      (std::chrono::steady_clock::now() - _clog_lastlog_##__LINE__ >= interval))        \
+  _clog_lastlog_##__LINE__ = std::chrono::steady_clock::now(),                          \
+  collector::logging::LogMessage(__FILE__, __LINE__, collector::logging::LogLevel::lvl)
 
 #define CLOG_THROTTLED(lvl, interval) CLOG_THROTTLED_IF(true, lvl, interval)
 
-#endif  /* _LOG_LEVEL_H_ */
-
-
+#endif /* _LOG_LEVEL_H_ */

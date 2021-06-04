@@ -22,15 +22,16 @@ You should have received a copy of the GNU General Public License along with thi
 */
 
 #include "ProcessSignalFormatter.h"
-#include <google/protobuf/util/time_util.h>
 
 #include <uuid/uuid.h>
+
+#include <google/protobuf/util/time_util.h>
+
+#include "internalapi/sensor/signal_iservice.pb.h"
 
 #include "EventMap.h"
 #include "Logging.h"
 #include "Utility.h"
-
-#include "internalapi/sensor/signal_iservice.pb.h"
 
 namespace collector {
 
@@ -45,18 +46,18 @@ using TimeUtil = google::protobuf::util::TimeUtil;
 namespace {
 
 enum ProcessSignalType {
-	EXECVE,
-	UNKNOWN_PROCESS_TYPE
+  EXECVE,
+  UNKNOWN_PROCESS_TYPE
 };
 
 static EventMap<ProcessSignalType> process_signals = {
-  {
-    { "execve<", ProcessSignalType::EXECVE },
-  },
-  ProcessSignalType::UNKNOWN_PROCESS_TYPE,
+    {
+        {"execve<", ProcessSignalType::EXECVE},
+    },
+    ProcessSignalType::UNKNOWN_PROCESS_TYPE,
 };
 
-string extract_proc_args(sinsp_threadinfo *tinfo) {
+string extract_proc_args(sinsp_threadinfo* tinfo) {
   if (tinfo->m_args.empty()) return "";
   std::ostringstream args;
   for (auto it = tinfo->m_args.begin(); it != tinfo->m_args.end();) {
@@ -66,7 +67,7 @@ string extract_proc_args(sinsp_threadinfo *tinfo) {
   return args.str();
 }
 
-}
+}  // namespace
 
 const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* event) {
   if (process_signals[event->get_type()] == ProcessSignalType::UNKNOWN_PROCESS_TYPE) {
@@ -111,7 +112,6 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_threadin
   return signal_stream_message;
 }
 
-
 ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   auto signal = Allocate<ProcessSignal>();
 
@@ -123,16 +123,16 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
 
   // set name (if name is missing or empty, try to use exec_file_path)
   if (name && !name->empty() && *name != "<NA>") {
-    signal->set_name(*name); 
+    signal->set_name(*name);
   } else if (exepath && !exepath->empty() && *exepath != "<NA>") {
-    signal->set_name(*exepath); 
+    signal->set_name(*exepath);
   }
 
   // set exec_file_path (if exec_file_path is missing or empty, try to use name)
   if (exepath && !exepath->empty() && *exepath != "<NA>") {
-    signal->set_exec_file_path(*exepath); 
+    signal->set_exec_file_path(*exepath);
   } else if (name && !name->empty() && *name != "<NA>") {
-    signal->set_exec_file_path(*name); 
+    signal->set_exec_file_path(*name);
   }
 
   // set process arguments
@@ -158,7 +158,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   // set process lineage
   std::vector<LineageInfo> lineage;
   this->GetProcessLineage(event->get_thread_info(), lineage);
-  for (const auto &p : lineage) {
+  for (const auto& p : lineage) {
     auto signal_lineage = signal->add_lineage_info();
     signal_lineage->set_parent_exec_file_path(p.parent_exec_file_path());
     signal_lineage->set_parent_uid(p.parent_uid());
@@ -180,14 +180,14 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   if (!name.empty() && name != "<NA>") {
     signal->set_name(name);
   } else if (!exepath.empty() && exepath != "<NA>") {
-    signal->set_name(exepath); 
+    signal->set_name(exepath);
   }
 
   // set exec_file_path (if exec_file_path is missing or empty, try to use name)
   if (!exepath.empty() && exepath != "<NA>") {
-    signal->set_exec_file_path(exepath); 
+    signal->set_exec_file_path(exepath);
   } else if (!name.empty() && name != "<NA>") {
-    signal->set_exec_file_path(name); 
+    signal->set_exec_file_path(name);
   }
 
   // set the process as coming from a scrape as opposed to an exec
@@ -214,8 +214,8 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   // set process lineage
   std::vector<LineageInfo> lineage;
   GetProcessLineage(tinfo, lineage);
-  
-  for (const auto &p : lineage) {
+
+  for (const auto& p : lineage) {
     auto signal_lineage = signal->add_lineage_info();
     signal_lineage->set_parent_exec_file_path(p.parent_exec_file_path());
     signal_lineage->set_parent_uid(p.parent_uid());
@@ -241,10 +241,10 @@ std::string ProcessSignalFormatter::ProcessDetails(sinsp_evt* event) {
   const int64_t* pid = event_extractor_.get_pid(event);
 
   ss << "Container: " << (container_id ? *container_id : "null")
-    << ", Name: " << (name ? *name : "null")
-    << ", PID: " << (pid ? *pid : -1)
-    << ", Path: " << (path ? *path : "null") 
-    << ", Args: "<< (args ? args : "null");
+     << ", Name: " << (name ? *name : "null")
+     << ", PID: " << (pid ? *pid : -1)
+     << ", Path: " << (path ? *path : "null")
+     << ", Args: " << (args ? args : "null");
 
   return ss.str();
 }
@@ -260,9 +260,8 @@ bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
   return true;
 }
 
-
-void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo, 
-    std::vector<LineageInfo>& lineage) {
+void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
+                                               std::vector<LineageInfo>& lineage) {
   if (tinfo == NULL) return;
   sinsp_threadinfo* mt = NULL;
   if (tinfo->is_main_thread()) {
@@ -271,8 +270,7 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
     mt = tinfo->get_main_thread();
     if (mt == NULL) return;
   }
-  sinsp_threadinfo::visitor_func_t visitor = [this, &lineage] (sinsp_threadinfo *pt)
-  {
+  sinsp_threadinfo::visitor_func_t visitor = [this, &lineage](sinsp_threadinfo* pt) {
     if (pt == NULL) return false;
     if (pt->m_pid == 0) return false;
 
@@ -281,7 +279,7 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
     if (pt->m_vpid == -1) return false;
 
     // Collapse parent child processes that have the same path
-    if (lineage.empty() || (lineage.back().parent_exec_file_path() != pt->m_exepath)) { 
+    if (lineage.empty() || (lineage.back().parent_exec_file_path() != pt->m_exepath)) {
       LineageInfo info;
       info.set_parent_uid(pt->m_uid);
       info.set_parent_exec_file_path(pt->m_exepath);

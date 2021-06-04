@@ -23,14 +23,14 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "NetworkStatusNotifier.h"
 
+#include <google/protobuf/util/time_util.h>
+
 #include "CollectorStats.h"
 #include "DuplexGRPC.h"
 #include "GRPCUtil.h"
 #include "ProtoUtil.h"
 #include "TimeUtil.h"
 #include "Utility.h"
-
-#include <google/protobuf/util/time_util.h>
 
 namespace collector {
 
@@ -177,7 +177,7 @@ void NetworkStatusNotifier::Run() {
 }
 
 void NetworkStatusNotifier::Start() {
-  thread_.Start([this]{ Run(); });
+  thread_.Start([this] { Run(); });
   CLOG(INFO) << "Started network status notifier.";
 }
 
@@ -271,7 +271,7 @@ void NetworkStatusNotifier::AddConnections(::google::protobuf::RepeatedPtrField<
     auto* conn_proto = ConnToProto(delta_entry.first);
     if (!delta_entry.second.IsActive()) {
       *conn_proto->mutable_close_timestamp() = google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(
-              delta_entry.second.LastActiveTime());
+          delta_entry.second.LastActiveTime());
     }
     updates->AddAllocated(conn_proto);
   }
@@ -282,7 +282,7 @@ void NetworkStatusNotifier::AddContainerEndpoints(::google::protobuf::RepeatedPt
     auto* endpoint_proto = ContainerEndpointToProto(delta_entry.first);
     if (!delta_entry.second.IsActive()) {
       *endpoint_proto->mutable_close_timestamp() = google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(
-              delta_entry.second.LastActiveTime());
+          delta_entry.second.LastActiveTime());
     }
     updates->AddAllocated(endpoint_proto);
   }

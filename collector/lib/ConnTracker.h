@@ -27,10 +27,10 @@ You should have received a copy of the GNU General Public License along with thi
 #include <mutex>
 #include <vector>
 
-#include "Hash.h"
-#include "NetworkConnection.h"
 #include "Containers.h"
+#include "Hash.h"
 #include "NRadix.h"
+#include "NetworkConnection.h"
 
 namespace collector {
 
@@ -106,11 +106,11 @@ class ConnectionTracker {
   void UpdateKnownIPNetworks(UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks);
   void UpdateIgnoredL4ProtoPortPairs(UnorderedSet<L4ProtoPortPair>&& ignored_l4proto_port_pairs);
 
-  void SetCollectorStats(CollectorStats* stats) { stats_ = stats;}
+  void SetCollectorStats(CollectorStats* stats) { stats_ = stats; }
 
  private:
   // NormalizeConnection transforms a connection into a normalized form.
-  Connection NormalizeConnectionNoLock(const Connection &conn) const;
+  Connection NormalizeConnectionNoLock(const Connection& conn) const;
 
   // Emplace a connection into the state ConnMap, or update its timestamp if the supplied timestamp is more recent
   // than the stored one.
@@ -128,24 +128,24 @@ class ConnectionTracker {
   }
 
   // Determine if a protocol port combination from a connection or endpoint should be ignored
-  inline bool IsIgnoredL4ProtoPortPair(const L4ProtoPortPair &p) const {
+  inline bool IsIgnoredL4ProtoPortPair(const L4ProtoPortPair& p) const {
     return Contains(ignored_l4proto_port_pairs_, p);
   }
 
   // NormalizeContainerEndpoint transforms a container endpoint into a normalized form.
-  inline ContainerEndpoint NormalizeContainerEndpoint(const ContainerEndpoint &cep) const {
+  inline ContainerEndpoint NormalizeContainerEndpoint(const ContainerEndpoint& cep) const {
     const auto& ep = cep.endpoint();
     return ContainerEndpoint(cep.container(), Endpoint(Address(ep.address().family()), ep.port()), cep.l4proto());
   }
 
   // Determine if a connection should be ignored
-  inline bool ShouldFetchConnection(const Connection &conn) const {
+  inline bool ShouldFetchConnection(const Connection& conn) const {
     return !IsIgnoredL4ProtoPortPair(L4ProtoPortPair(conn.l4proto(), conn.local().port())) &&
            !IsIgnoredL4ProtoPortPair(L4ProtoPortPair(conn.l4proto(), conn.remote().port()));
   }
 
   // Determine if a container endpoint should be ignored
-  inline bool ShouldFetchContainerEndpoint(const ContainerEndpoint &cep) const {
+  inline bool ShouldFetchContainerEndpoint(const ContainerEndpoint& cep) const {
     return !IsIgnoredL4ProtoPortPair(L4ProtoPortPair(cep.l4proto(), cep.endpoint().port()));
   }
 
@@ -166,7 +166,7 @@ void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_stat
   // Insert all objects from the new state, if anything changed about them.
   for (const auto& conn : new_state) {
     auto insert_res = old_state->insert(conn);
-    auto &old_conn = *insert_res.first;
+    auto& old_conn = *insert_res.first;
     if (!insert_res.second) {  // was already present
       if (conn.second.IsActive() != old_conn.second.IsActive()) {
         // Object was either resurrected or newly closed. Update in either case.
@@ -187,7 +187,7 @@ void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_stat
 
   // Mark all active objects in the old state that are not present in the new state as inactive, and remove the
   // inactive ones.
-  for (auto it = old_state->begin(); it != old_state->end(); ) {
+  for (auto it = old_state->begin(); it != old_state->end();) {
     auto& old_conn = *it;
     // Ignore all objects present in the new state.
     if (new_state.find(old_conn.first) != new_state.end()) {
@@ -206,4 +206,4 @@ void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_stat
 
 }  // namespace collector
 
-#endif //COLLECTOR_CONNTRACKER_H
+#endif  //COLLECTOR_CONNTRACKER_H

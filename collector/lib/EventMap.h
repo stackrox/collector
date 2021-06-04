@@ -28,9 +28,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include <string>
 #include <utility>
 
-#include "ppm_events_public.h"
-
 #include "EventNames.h"
+#include "ppm_events_public.h"
 
 namespace collector {
 

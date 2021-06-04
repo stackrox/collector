@@ -22,42 +22,42 @@ You should have received a copy of the GNU General Public License along with thi
 */
 
 #include <atomic>
-#include <fstream>
-#include <iostream>
+#include <cctype>
 #include <chrono>
+#include <csignal>
 #include <cstdio>
 #include <cstdlib>
-#include <csignal>
-#include <cctype>
+#include <fstream>
+#include <iostream>
 #include <string>
-#include <sys/wait.h>
 #include <thread>
+
+#include <sys/wait.h>
 
 extern "C" {
 #include <assert.h>
+#include <cap-ng.h>
 #include <execinfo.h>
 #include <fcntl.h>
 #include <stdio.h>
-#include <sys/stat.h>
-#include <sys/syscall.h>
-#include <sys/types.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 #include <sys/resource.h>
-
-#include <cap-ng.h>
+#include <sys/stat.h>
+#include <sys/syscall.h>
+#include <sys/types.h>
 }
 
 #include "CollectorArgs.h"
 #include "CollectorService.h"
+#include "CollectorStatsExporter.h"
 #include "EventNames.h"
-#include "GetStatus.h"
 #include "GRPC.h"
+#include "GetStatus.h"
 #include "LogLevel.h"
 #include "Logging.h"
 #include "SysdigService.h"
-#include "CollectorStatsExporter.h"
 #include "Utility.h"
 
 #define finit_module(fd, opts, flags) syscall(__NR_finit_module, fd, opts, flags)
@@ -97,8 +97,10 @@ int InsertModule(int fd, const std::unordered_map<std::string, std::string>& arg
   std::string args_str;
   bool first = true;
   for (auto& entry : args) {
-    if (first) first = false;
-    else args_str += " ";
+    if (first)
+      first = false;
+    else
+      args_str += " ";
     args_str += entry.first + "=" + entry.second;
   }
   CLOG(DEBUG) << "Kernel module arguments: " << args_str;
@@ -131,62 +133,62 @@ int InsertModule(int fd, const std::unordered_map<std::string, std::string>& arg
 // from the collector configuration. Specifically, the syscalls that we should
 // extract
 void insertModule(const std::vector<std::string>& syscall_list) {
-    std::unordered_map<std::string, std::string> module_args;
+  std::unordered_map<std::string, std::string> module_args;
 
-    std::string& syscall_ids = module_args["s_syscallIds"];
-    // Iterate over the syscalls that we want and pull each of their ids.
-    // These are stashed into a string that will get passed to init_module
-    // to insert the kernel module
-    const EventNames& event_names = EventNames::GetInstance();
-    for (const auto& syscall : syscall_list) {
-        for (ppm_event_type id : event_names.GetEventIDs(syscall)) {
-            syscall_ids += std::to_string(id) + ",";
-        }
+  std::string& syscall_ids = module_args["s_syscallIds"];
+  // Iterate over the syscalls that we want and pull each of their ids.
+  // These are stashed into a string that will get passed to init_module
+  // to insert the kernel module
+  const EventNames& event_names = EventNames::GetInstance();
+  for (const auto& syscall : syscall_list) {
+    for (ppm_event_type id : event_names.GetEventIDs(syscall)) {
+      syscall_ids += std::to_string(id) + ",";
     }
-    syscall_ids += "-1";
+  }
+  syscall_ids += "-1";
 
-    module_args["exclude_initns"] = "1";
-    module_args["exclude_selfns"] = "1";
-    module_args["verbose"] = "0";
+  module_args["exclude_initns"] = "1";
+  module_args["exclude_selfns"] = "1";
+  module_args["verbose"] = "0";
 
-    int fd = open(SysdigService::kModulePath, O_RDONLY);
-    if (fd < 0) {
-        CLOG(FATAL) << "Cannot open kernel module: " << SysdigService::kModulePath << ". Aborting...";
+  int fd = open(SysdigService::kModulePath, O_RDONLY);
+  if (fd < 0) {
+    CLOG(FATAL) << "Cannot open kernel module: " << SysdigService::kModulePath << ". Aborting...";
+  }
+
+  CLOG(INFO) << "Inserting kernel module " << SysdigService::kModulePath
+             << " with indefinite removal and retry if required.";
+
+  // Attempt to insert the module. If it is already inserted then remove it and
+  // try again
+  int result = InsertModule(fd, module_args);
+  while (result != 0) {
+    if (errno == EEXIST) {
+      // note that we forcefully remove the kernel module whether or not it has a non-zero
+      // reference count. There is only one container that is ever expected to be using
+      // this kernel module and that is us
+      delete_module(SysdigService::kModuleName, O_NONBLOCK | O_TRUNC);
+      sleep(2);  // wait for 2s before trying again
+    } else {
+      CLOG(FATAL) << "Error inserting kernel module: " << SysdigService::kModulePath << ": " << StrError()
+                  << ". Aborting...";
     }
+    result = InsertModule(fd, module_args);
+  }
+  close(fd);
 
-    CLOG(INFO) << "Inserting kernel module " << SysdigService::kModulePath
-               << " with indefinite removal and retry if required.";
-
-    // Attempt to insert the module. If it is already inserted then remove it and
-    // try again
-    int result = InsertModule(fd, module_args);
-    while (result != 0) {
-        if (errno == EEXIST) {
-            // note that we forcefully remove the kernel module whether or not it has a non-zero
-            // reference count. There is only one container that is ever expected to be using
-            // this kernel module and that is us
-            delete_module(SysdigService::kModuleName, O_NONBLOCK | O_TRUNC);
-            sleep(2);    // wait for 2s before trying again
-        } else {
-            CLOG(FATAL) << "Error inserting kernel module: " << SysdigService::kModulePath  << ": " << StrError()
-                        << ". Aborting...";
-        }
-        result = InsertModule(fd, module_args);
-    }
-    close(fd);
-
-    CLOG(INFO) << "Done inserting kernel module " << SysdigService::kModulePath << ".";
+  CLOG(INFO) << "Done inserting kernel module " << SysdigService::kModulePath << ".";
 }
 
 bool verifyProbeConfiguration() {
-    int fd = open(SysdigService::kProbePath, O_RDONLY);
-    if (fd < 0) {
-        CLOG(ERROR) << "Cannot open kernel probe:" << SysdigService::kProbePath;
-        return false;
-    }
-    close(fd);
-    // probe version checks are in bootstrap.sh
-    return true;
+  int fd = open(SysdigService::kProbePath, O_RDONLY);
+  if (fd < 0) {
+    CLOG(ERROR) << "Cannot open kernel probe:" << SysdigService::kProbePath;
+    return false;
+  }
+  close(fd);
+  // probe version checks are in bootstrap.sh
+  return true;
 }
 
 void setBPFDropSyscalls(const std::vector<std::string>& syscall_list) {
@@ -205,18 +207,18 @@ void setBPFDropSyscalls(const std::vector<std::string>& syscall_list) {
   }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   if (!g_control.is_lock_free()) {
     CLOG(FATAL) << "Could not create a lock-free control variable!";
   }
 
-  CollectorArgs *args = CollectorArgs::getInstance();
+  CollectorArgs* args = CollectorArgs::getInstance();
   int exitCode = 0;
   if (!args->parse(argc, argv, exitCode)) {
-      if (!args->Message().empty()) {
-          CLOG(FATAL) << args->Message();
-      }
-      CLOG(FATAL) << "Error parsing arguments";
+    if (!args->Message().empty()) {
+      CLOG(FATAL) << args->Message();
+    }
+    CLOG(FATAL) << "Error parsing arguments";
   }
 
   CollectorConfig config(args);
@@ -283,8 +285,8 @@ int main(int argc, char **argv) {
         creds = collector::TLSCredentialsFromFiles(ca_cert_path, client_cert_path, client_key_path);
       } else {
         CLOG(ERROR)
-           << "Partial TLS config: CACertPath=" << ca_cert_path << ", ClientCertPath=" << client_cert_path
-           << ", ClientKeyPath=" << client_key_path << "; will not use TLS";
+            << "Partial TLS config: CACertPath=" << ca_cert_path << ", ClientCertPath=" << client_cert_path
+            << ", ClientKeyPath=" << client_key_path << "; will not use TLS";
       }
     }
 

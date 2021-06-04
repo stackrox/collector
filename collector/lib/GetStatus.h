@@ -26,9 +26,8 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <string>
 
-#include "civetweb/CivetServer.h"
-
 #include "Sysdig.h"
+#include "civetweb/CivetServer.h"
 
 namespace collector {
 
@@ -36,13 +35,13 @@ class GetStatus : public CivetHandler {
  public:
   GetStatus(std::string node_name, const Sysdig* sysdig)
       : node_name_(std::move(node_name)), sysdig_(sysdig) {}
-  bool handleGet(CivetServer *server, struct mg_connection *conn);
+  bool handleGet(CivetServer* server, struct mg_connection* conn);
 
  private:
   std::string node_name_;
   const Sysdig* sysdig_;
 };
 
-}   /* namespace collector */
+} /* namespace collector */
 
-#endif  /* _GET_STATUS_H_ */
+#endif /* _GET_STATUS_H_ */

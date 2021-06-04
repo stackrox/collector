@@ -27,18 +27,19 @@ You should have received a copy of the GNU General Public License along with thi
 // SIGNAL_SERVICE_CLIENT.h
 // This class defines our GRPC client abstraction
 
-#include "CollectorService.h"
-#include "DuplexGRPC.h"
-#include "SignalHandler.h"
-#include "StoppableThread.h"
-
 #include <mutex>
+
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 
 #include "api/v1/signal.pb.h"
 #include "internalapi/sensor/signal_iservice.grpc.pb.h"
+
+#include "CollectorService.h"
+#include "DuplexGRPC.h"
+#include "SignalHandler.h"
+#include "StoppableThread.h"
 
 namespace collector {
 
@@ -74,4 +75,4 @@ class SignalServiceClient {
 
 }  // namespace collector
 
-#endif // __SIGNAL_SERVICE_CLIENT_H
+#endif  // __SIGNAL_SERVICE_CLIENT_H

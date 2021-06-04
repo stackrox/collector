@@ -41,7 +41,7 @@ struct nRadixNode {
   nRadixNode() : value_(nullptr), left_(nullptr), right_(nullptr) {}
   explicit nRadixNode(const IPNet& value) : value_(new IPNet(value)), left_(nullptr), right_(nullptr) {}
 
-  nRadixNode(const nRadixNode& other): value_(nullptr), left_(nullptr), right_(nullptr) {
+  nRadixNode(const nRadixNode& other) : value_(nullptr), left_(nullptr), right_(nullptr) {
     if (other.value_) {
       value_ = new IPNet(*other.value_);
     }
@@ -74,8 +74,8 @@ struct nRadixNode {
 
 class NRadixTree {
  public:
-  NRadixTree(): root_(new nRadixNode()) {}
-  explicit NRadixTree(const std::vector<IPNet>& networks): root_(new nRadixNode()) {
+  NRadixTree() : root_(new nRadixNode()) {}
+  explicit NRadixTree(const std::vector<IPNet>& networks) : root_(new nRadixNode()) {
     for (const auto& network : networks) {
       auto inserted = this->Insert(network);
       if (!inserted) {
@@ -85,14 +85,14 @@ class NRadixTree {
     }
   }
 
-  NRadixTree(const NRadixTree& other): root_(new nRadixNode(*other.root_)) {}
+  NRadixTree(const NRadixTree& other) : root_(new nRadixNode(*other.root_)) {}
 
   ~NRadixTree() {
     // This calls the node destructor which in turn cleans up all the nodes.
     delete root_;
   }
 
-  NRadixTree& operator=(const NRadixTree& other)  {
+  NRadixTree& operator=(const NRadixTree& other) {
     if (this == &other) return *this;
     delete root_;
     // This calls the node copy constructor which in turn copies all the nodes.
@@ -119,6 +119,6 @@ class NRadixTree {
   nRadixNode* root_;
 };
 
-} // namespace collector
+}  // namespace collector
 
-#endif //COLLECTOR_NRADIX_H
+#endif  //COLLECTOR_NRADIX_H

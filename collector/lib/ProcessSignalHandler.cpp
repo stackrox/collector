@@ -22,10 +22,12 @@ You should have received a copy of the GNU General Public License along with thi
 */
 
 #include "ProcessSignalHandler.h"
-#include "RateLimit.h"
+
+#include <sstream>
 
 #include "storage/process_indicator.pb.h"
-#include <sstream>
+
+#include "RateLimit.h"
 
 namespace collector {
 
@@ -74,7 +76,7 @@ SignalHandler::Result ProcessSignalHandler::HandleExistingProcess(sinsp_threadin
     ++(stats_->nProcessResolutionFailuresByTinfo);
     return IGNORED;
   }
-  
+
   if (!rate_limiter_.Allow(compute_process_key(signal_msg->signal().process_signal()))) {
     ++(stats_->nProcessRateLimitCount);
     return IGNORED;

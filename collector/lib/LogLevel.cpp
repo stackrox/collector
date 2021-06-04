@@ -31,7 +31,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-bool LogLevel::handlePost(CivetServer *server, struct mg_connection *conn) {
+bool LogLevel::handlePost(CivetServer* server, struct mg_connection* conn) {
   using namespace std;
 
   Json::Value response(Json::objectValue);

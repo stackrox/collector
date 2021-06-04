@@ -53,46 +53,48 @@ class SysdigEventExtractor {
   std::vector<FilterCheckWrapper*> wrappers_;
 
 #define DECLARE_FILTER_CHECK(id, fieldname) \
-  FilterCheckWrapper filter_check_ ## id ## _ = { this, fieldname }
+  FilterCheckWrapper filter_check_##id##_ = {this, fieldname}
 
-#define FIELD_RAW(id, fieldname, type) \
- public: \
-  const type* get_ ## id (sinsp_evt* event) { \
-    uint32_t len; \
-    auto buf = filter_check_ ## id ## _->extract(event, &len); \
-    if (!buf) return nullptr; \
-    if (len != sizeof(type)) { \
-      CLOG_THROTTLED(WARNING, std::chrono::seconds(30)) \
+#define FIELD_RAW(id, fieldname, type)                                                                     \
+ public:                                                                                                   \
+  const type* get_##id(sinsp_evt* event) {                                                                 \
+    uint32_t len;                                                                                          \
+    auto buf = filter_check_##id##_->extract(event, &len);                                                 \
+    if (!buf) return nullptr;                                                                              \
+    if (len != sizeof(type)) {                                                                             \
+      CLOG_THROTTLED(WARNING, std::chrono::seconds(30))                                                    \
           << "Failed to extract value for field " << fieldname << ": expected type " << #type << " (size " \
-          << sizeof(type) << "), but returned value has size " << len; \
-      return nullptr; \
-    } \
-    return reinterpret_cast<const type*>(buf); \
-  } \
- private: \
+          << sizeof(type) << "), but returned value has size " << len;                                     \
+      return nullptr;                                                                                      \
+    }                                                                                                      \
+    return reinterpret_cast<const type*>(buf);                                                             \
+  }                                                                                                        \
+                                                                                                           \
+ private:                                                                                                  \
   DECLARE_FILTER_CHECK(id, fieldname)
 
-#define FIELD_CSTR(id, fieldname) \
- public: \
-  const char* get_ ## id(sinsp_evt* event) { \
-    uint32_t len; \
-    auto buf = filter_check_ ## id ## _->extract(event, &len); \
-    if (!buf) return nullptr; \
-    return reinterpret_cast<const char*>(buf); \
-  } \
- private: \
+#define FIELD_CSTR(id, fieldname)                          \
+ public:                                                   \
+  const char* get_##id(sinsp_evt* event) {                 \
+    uint32_t len;                                          \
+    auto buf = filter_check_##id##_->extract(event, &len); \
+    if (!buf) return nullptr;                              \
+    return reinterpret_cast<const char*>(buf);             \
+  }                                                        \
+                                                           \
+ private:                                                  \
   DECLARE_FILTER_CHECK(id, fieldname)
 
-#define EVT_ARG(name) FIELD_CSTR(evt_arg_ ## name, "evt.arg." #name)
-#define EVT_ARG_RAW(name, type) FIELD_RAW(evt_arg_ ## name, "evt.rawarg." #name, type)
+#define EVT_ARG(name) FIELD_CSTR(evt_arg_##name, "evt.arg." #name)
+#define EVT_ARG_RAW(name, type) FIELD_RAW(evt_arg_##name, "evt.rawarg." #name, type)
 
-#define TINFO_FIELD(id) \
- public: \
-  const decltype(std::declval<sinsp_threadinfo>().m_ ## id)* get_ ## id(sinsp_evt* event) { \
-    if (!event) return nullptr; \
-    sinsp_threadinfo* tinfo = event->get_thread_info(true); \
-    if (!tinfo) return nullptr; \
-    return &tinfo->m_ ## id; \
+#define TINFO_FIELD(id)                                                                 \
+ public:                                                                                \
+  const decltype(std::declval<sinsp_threadinfo>().m_##id)* get_##id(sinsp_evt* event) { \
+    if (!event) return nullptr;                                                         \
+    sinsp_threadinfo* tinfo = event->get_thread_info(true);                             \
+    if (!tinfo) return nullptr;                                                         \
+    return &tinfo->m_##id;                                                              \
   }
 
   // Fields can be made available for querying by using a number of macros:

@@ -23,25 +23,25 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "SysdigService.h"
 
-#include <linux/ioctl.h>
 #include <cap-ng.h>
+
+#include <linux/ioctl.h>
 
 #include "libsinsp/wrapper.h"
 
 #include "CollectorException.h"
 #include "EventNames.h"
-#include "ProcessSignalHandler.h"
 #include "Logging.h"
 #include "NetworkSignalHandler.h"
-#include "Utility.h"
+#include "ProcessSignalHandler.h"
 #include "TimeUtil.h"
+#include "Utility.h"
 
 namespace collector {
 
 constexpr char SysdigService::kModulePath[];
 constexpr char SysdigService::kModuleName[];
 constexpr char SysdigService::kProbePath[];
-
 
 void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) {
   if (inspector_ || chisel_) {
@@ -206,7 +206,7 @@ bool SysdigService::SendExistingProcesses(SignalHandler* handler) {
     return false;
   }
 
-  return threads->loop([&] (sinsp_threadinfo& tinfo) {
+  return threads->loop([&](sinsp_threadinfo& tinfo) {
     if (!tinfo.m_container_id.empty() && tinfo.is_main_thread()) {
       auto result = handler->HandleExistingProcess(&tinfo);
       if (result == SignalHandler::ERROR || result == SignalHandler::NEEDS_REFRESH) {

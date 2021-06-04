@@ -29,9 +29,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include <unordered_map>
 #include <vector>
 
-#include "ppm_events_public.h"
-
 #include "CollectorException.h"
+#include "ppm_events_public.h"
 
 namespace collector {
 

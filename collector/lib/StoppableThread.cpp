@@ -21,11 +21,11 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#include <unistd.h>
+#include "StoppableThread.h"
 
 #include <iostream>
+#include <unistd.h>
 
-#include "StoppableThread.h"
 #include "Utility.h"
 
 namespace collector {

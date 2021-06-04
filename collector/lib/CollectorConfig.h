@@ -28,6 +28,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <vector>
 
 #include <grpcpp/channel.h>
+
 #include "NetworkConnection.h"
 
 namespace collector {
@@ -36,31 +37,31 @@ class CollectorArgs;
 
 class CollectorConfig {
  public:
-  static constexpr bool        kUseChiselCache = true;
-  static constexpr bool        kSnapLen = 0;
-  static constexpr bool        kTurnOffScrape = false;
-  static constexpr int         kScrapeInterval = 30;
-  static constexpr char        kCollectionMethod[] = "kernel-module";
+  static constexpr bool kUseChiselCache = true;
+  static constexpr bool kSnapLen = 0;
+  static constexpr bool kTurnOffScrape = false;
+  static constexpr int kScrapeInterval = 30;
+  static constexpr char kCollectionMethod[] = "kernel-module";
   static constexpr const char* kSyscalls[] = {
-    "accept",
-    "chdir",
-    "clone",
-    "close",
-    "connect",
-    "execve",
-    "fchdir",
-    "fork",
-    "procexit",
-    "procinfo",
-    "setresgid",
-    "setresuid",
-    "setgid",
-    "setuid",
-    "shutdown",
-    "socket",
-    "vfork",
+      "accept",
+      "chdir",
+      "clone",
+      "close",
+      "connect",
+      "execve",
+      "fchdir",
+      "fork",
+      "procexit",
+      "procinfo",
+      "setresgid",
+      "setresuid",
+      "setgid",
+      "setuid",
+      "shutdown",
+      "socket",
+      "vfork",
   };
-  static constexpr char        kChisel[] = R"(
+  static constexpr char kChisel[] = R"(
 args = {}
 function on_event()
     return true
@@ -96,7 +97,7 @@ end
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
- private: 
+ private:
   bool use_chisel_cache_;
   int scrape_interval_;
   int snap_len_;
@@ -113,8 +114,8 @@ end
   bool enable_sysdig_log_ = false;
 };
 
-std::ostream& operator<< (std::ostream& os, const CollectorConfig& c);
+std::ostream& operator<<(std::ostream& os, const CollectorConfig& c);
 
-} // end namespace collector
+}  // end namespace collector
 
 #endif  // _COLLECTOR_CONFIG_H_

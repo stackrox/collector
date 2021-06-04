@@ -22,12 +22,13 @@ You should have received a copy of the GNU General Public License along with thi
 */
 
 #include "SignalServiceClient.h"
-#include "GRPCUtil.h"
-#include "Logging.h"
-#include "Utility.h"
-#include "ProtoUtil.h"
 
 #include <fstream>
+
+#include "GRPCUtil.h"
+#include "Logging.h"
+#include "ProtoUtil.h"
+#include "Utility.h"
 
 namespace collector {
 
@@ -65,12 +66,13 @@ bool SignalServiceClient::EstablishGRPCStreamSingle() {
 }
 
 void SignalServiceClient::EstablishGRPCStream() {
-  while (EstablishGRPCStreamSingle());
+  while (EstablishGRPCStreamSingle())
+    ;
   CLOG(INFO) << "Signal service client terminating.";
 }
 
 void SignalServiceClient::Start() {
-  thread_.Start([this]{EstablishGRPCStream();});
+  thread_.Start([this] { EstablishGRPCStream(); });
 }
 
 void SignalServiceClient::Stop() {
@@ -81,8 +83,8 @@ void SignalServiceClient::Stop() {
 
 SignalHandler::Result SignalServiceClient::PushSignals(const SignalStreamMessage& msg) {
   if (!stream_active_.load(std::memory_order_acquire)) {
-  	CLOG_THROTTLED(ERROR, std::chrono::seconds(10))
-		  << "GRPC stream is not established";
+    CLOG_THROTTLED(ERROR, std::chrono::seconds(10))
+        << "GRPC stream is not established";
     return SignalHandler::ERROR;
   }
 
@@ -107,4 +109,4 @@ SignalHandler::Result SignalServiceClient::PushSignals(const SignalStreamMessage
   return SignalHandler::PROCESSED;
 }
 
-} // namespace collector
+}  // namespace collector

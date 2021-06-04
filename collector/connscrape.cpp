@@ -60,7 +60,8 @@ int main(int argc, char** argv) {
   }
 
   if (scrape_endpoints) {
-    std::cout << std::endl << "Endpoints:" << std::endl;
+    std::cout << std::endl
+              << "Endpoints:" << std::endl;
     for (const auto& ep : endpoints) {
       std::cout << " " << ep << std::endl;
     }
