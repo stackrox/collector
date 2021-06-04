@@ -867,22 +867,22 @@ jobs:
         name: Push images
         command: |
           echo "Pushing collector base image"
-          docker push "stackrox/collector:${COLLECTOR_VERSION}-base"
+          ./scripts/push-as-manifest-list.sh "stackrox/collector:${COLLECTOR_VERSION}-base"
           echo "Pushing collector image"
-          docker push "stackrox/collector:${COLLECTOR_VERSION}"
+          ./scripts/push-as-manifest-list.sh "stackrox/collector:${COLLECTOR_VERSION}"
           echo "Pushing collector latest image"
-          docker push "stackrox/collector:${COLLECTOR_VERSION}-latest"
+          ./scripts/push-as-manifest-list.sh "stackrox/collector:${COLLECTOR_VERSION}-latest"
           echo "Pushing collector slim image"
-          docker push "stackrox/collector:${COLLECTOR_VERSION}-slim"
+          ./scripts/push-as-manifest-list.sh "stackrox/collector:${COLLECTOR_VERSION}-slim"
 
           echo "Pushing collector rhel base image"
-          docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}-base"
+          ./scripts/push-as-manifest-list.sh "stackrox/collector-rhel:${COLLECTOR_VERSION}-base"
           echo "Pushing collector rhel image"
-          docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}"
+          ./scripts/push-as-manifest-list.sh "stackrox/collector-rhel:${COLLECTOR_VERSION}"
           echo "Pushing collector rhel latest image"
-          docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}-latest"
+          ./scripts/push-as-manifest-list.sh "stackrox/collector-rhel:${COLLECTOR_VERSION}-latest"
           echo "Pushing collector rhel slim image"
-          docker push "stackrox/collector-rhel:${COLLECTOR_VERSION}-slim"
+          ./scripts/push-as-manifest-list.sh "stackrox/collector-rhel:${COLLECTOR_VERSION}-slim"
 
   kernel-module-build-failures-check:
     <<: *defaultImage
@@ -1414,10 +1414,10 @@ jobs:
               "${container_build_dir}"
 
             if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
-              docker push "stackrox/collector:${collector_ver}-reload-latest" | cat
+              ./scripts/push-as-manifest-list.sh "stackrox/collector:${collector_ver}-reload-latest" | cat
             else
-              docker push "stackrox/collector:${collector_ver}-latest" | cat
-              docker push "collector.stackrox.io/collector:${collector_ver}-latest" | cat
+              ./scripts/push-as-manifest-list.sh "stackrox/collector:${collector_ver}-latest" | cat
+              ./scripts/push-as-manifest-list.sh "collector.stackrox.io/collector:${collector_ver}-latest" | cat
             fi
           done
 
