@@ -192,7 +192,9 @@ RUN mv /collector-wrapper.sh /usr/local/bin/ && \
     echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
     mkdir /kernel-modules && \
     microdnf upgrade -y && \
-    microdnf install -y kmod && \
+    microdnf install -y \
+      gzip \
+      kmod && \
     microdnf clean all && \
     rm -rf /var/cache/dnf
     # (Optional) Remove line below to keep package management utilities
