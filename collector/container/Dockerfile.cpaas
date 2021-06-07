@@ -3,126 +3,31 @@ FROM registry.access.redhat.com/ubi8/ubi:8.4-203 AS builder
 
 #COPY $REMOTE_SOURCE $REMOTE_SOURCE_DIR
 
-ARG CPAAS_BUILD="true"
-
-RUN yum -y update
-RUN yum -y install \
-    make \
-    wget \
-    unzip \
-    cmake \
-    gcc-c++ \
-    openssl-devel \
-    ncurses-devel \
-    curl-devel \
-    libuuid-devel \
-    libcap-ng-devel \
-    autoconf \
-    libtool \
-    git
-
-ARG LICENSE_DIR="/THIRD_PARTY_NOTICES"
-RUN mkdir -p "${LICENSE_DIR}"
-
-### Generated sources from protobufs
-
-ARG GENERATED_SRCS_DIR=/build-generated-srcs
-RUN mkdir -p ${GENERATED_SRCS_DIR}
-WORKDIR ${GENERATED_SRCS_DIR}
-
-ARG GRPC_VERSION=v1.28.1
-COPY third_party/grpc grpc
-COPY third_party/abseil-cpp abseil-cpp
-COPY third_party/c-ares c-ares
-COPY third_party/protobuf protobuf
-COPY builder/install/40-grpc.sh .
-RUN ./40-grpc.sh
-
-COPY third_party/googleapis googleapis
-COPY rox-proto rox-proto
-COPY builder/build/protogen.mk .
-
-RUN BASE_PATH=${GENERATED_SRCS_DIR} make -f protogen.mk SKIP_GOOGLEAPI_FETCH=1 generated-proto-srcs
-
-### Dependencies
+RUN yum -y update && \
+    yum -y install \
+        make \
+        wget \
+        unzip \
+        cmake \
+        gcc-c++ \
+        openssl-devel \
+        ncurses-devel \
+        curl-devel \
+        libuuid-devel \
+        libcap-ng-devel \
+        autoconf \
+        libtool \
+        git
 
 ARG BUILD_DIR=/build
 RUN mkdir -p ${BUILD_DIR}
 WORKDIR ${BUILD_DIR}
-
-ARG LIBB64_VERSION=v1.2.1
-COPY third_party/libb64-${LIBB64_VERSION}.tar.gz .
-COPY builder/install/50-libb64.sh .
-RUN LIBB64_VERSION=${LIBB64_VERSION} ./50-libb64.sh
-
-COPY third_party/luajit luajit
-COPY builder/install/50-luajit.sh .
-RUN ./50-luajit.sh
-
-COPY third_party/jsoncpp jsoncpp
-COPY builder/install/60-jsoncpp.sh .
-RUN ./60-jsoncpp.sh
-
-COPY third_party/tbb tbb
-COPY builder/install/60-tbb.sh .
-RUN ./60-tbb.sh
-
-COPY third_party/jq jq
-COPY builder/install/50-jq.sh .
-RUN ./50-jq.sh
-
-ARG ELFUTILS_VERSION=0.182
-COPY third_party/elfutils-${ELFUTILS_VERSION}-generated elfutils-${ELFUTILS_VERSION}-generated
-COPY third_party/elfutils elfutils
-COPY builder/install/60-elfutils.sh .
-RUN ./60-elfutils.sh
-
-COPY third_party/googletest googletest
-COPY builder/install/20-googletest.sh .
-RUN ./20-googletest.sh
-
-ARG PROMETHEUS_CPP_REVISION=v0.9.0
-COPY third_party/prometheus-cpp prometheus-cpp
-COPY third_party/civetweb civetweb
-COPY builder/install/50-prometheus.sh .
-RUN ./50-prometheus.sh
-
-### Build
-
-COPY collector ${BUILD_DIR}/src
-RUN cp -a ${GENERATED_SRCS_DIR}/collector/generated ${BUILD_DIR}/src/generated
-COPY sysdig ${BUILD_DIR}/sysdig
-
-RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
-
-RUN mkdir -p ${BUILD_DIR}/cmake-collector
-WORKDIR ${BUILD_DIR}/cmake-collector
-RUN cmake -DCMAKE_BUILD_TYPE=Release ${BUILD_DIR}/src
-RUN make -j "${NPROCS:-2}" all
-RUN ./runUnitTests
-
-RUN strip --strip-unneeded \
-    ./collector \
-    ./EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so
-
-### MODULE_VERSION
-
-RUN mkdir -p ${BUILD_DIR}/cmake-sysdig
-WORKDIR ${BUILD_DIR}/cmake-sysdig
-RUN cmake \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_C_FLAGS="-fno-pie" \
-        -DPROBE_NAME=collector \
-        -DBUILD_USERSPACE=OFF \
-        -DBUILD_DRIVER=ON \
-        -DENABLE_DKMS=OFF \
-        -DBUILD_BPF=ON \
-        ${BUILD_DIR}/sysdig/src
-RUN KERNELDIR=/dev/null make driver/fast 2> /dev/null || true
-WORKDIR ${BUILD_DIR}/sysdig/src/driver
-RUN find . -type f \( -name 'Makefile' -o -name '*.c' -o -name '*.h' \) -print0 | \
-    LC_ALL=C sort -z | xargs -0 sha256sum | awk '{print$1 " " $2}' | sha256sum | awk '{print$1}' \
-    > /MODULE_VERSION.txt
+COPY builder builder
+COPY collector src
+COPY rox-proto rox-proto
+COPY sysdig sysdig
+COPY third_party third_party
+RUN ./builder/build/build-cpaas.sh
 
 #@follow_tag(registry.access.redhat.com/ubi8/ubi-minimal:latest)
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4-200
@@ -158,6 +63,7 @@ RUN mv /collector-wrapper.sh /usr/local/bin/ && \
     # rpm -e --nodeps rpm rpm-build-libs rpm-libs python3-rpm subscription-manager python3-subscription-manager-rhsm yum $(rpm -qa *dnf*) python3-hawkey
 
 COPY --from=builder /MODULE_VERSION.txt /kernel-modules/MODULE_VERSION.txt
+COPY --from=builder /THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES
 
 RUN ldconfig
 RUN collector --help || true
