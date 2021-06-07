@@ -71,9 +71,10 @@ EXPOSE 8080 9090
 
 ENTRYPOINT ["/bootstrap.sh"]
 
-CMD ["collector-wrapper.sh", \
-     "--collector-config=$COLLECTOR_CONFIG", \
-     "--collection-method=$COLLECTION_METHOD", \
-     "--grpc-server=$GRPC_SERVER"]
+# hadolint ignore=DL3025
+CMD collector-wrapper.sh \
+    --collector-config=$COLLECTOR_CONFIG \
+    --collection-method=$COLLECTION_METHOD \
+    --grpc-server=$GRPC_SERVER
 
 HEALTHCHECK CMD curl --fail http://127.0.0.1:8080/ready || exit 1
