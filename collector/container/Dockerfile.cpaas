@@ -3,8 +3,9 @@ FROM registry.access.redhat.com/ubi8/ubi:8.4-203 AS builder
 
 #COPY $REMOTE_SOURCE $REMOTE_SOURCE_DIR
 
-RUN yum -y update && \
-    yum -y install \
+# hadolint ignore=DL3041
+RUN dnf -y update && \
+    dnf -y install \
         make \
         wget \
         unzip \
@@ -17,7 +18,8 @@ RUN yum -y update && \
         libcap-ng-devel \
         autoconf \
         libtool \
-        git
+        git && \
+    dnf clean all
 
 ARG BUILD_DIR=/build
 RUN mkdir -p ${BUILD_DIR}
@@ -65,16 +67,13 @@ RUN mv /collector-wrapper.sh /usr/local/bin/ && \
 COPY --from=builder /MODULE_VERSION.txt /kernel-modules/MODULE_VERSION.txt
 COPY --from=builder /THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES
 
-RUN ldconfig
-RUN collector --help || true
-
 EXPOSE 8080 9090
 
 ENTRYPOINT ["/bootstrap.sh"]
 
-CMD collector-wrapper.sh \
-    --collector-config=$COLLECTOR_CONFIG \
-    --collection-method=$COLLECTION_METHOD \
-    --grpc-server=$GRPC_SERVER
+CMD ["collector-wrapper.sh", \
+     "--collector-config=$COLLECTOR_CONFIG", \
+     "--collection-method=$COLLECTION_METHOD", \
+     "--grpc-server=$GRPC_SERVER"]
 
 HEALTHCHECK CMD curl --fail http://127.0.0.1:8080/ready || exit 1

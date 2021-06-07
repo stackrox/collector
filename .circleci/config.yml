@@ -910,6 +910,11 @@ jobs:
     - initcommand
     - docker-login-push
     - run:
+        name: Lint Dockerfile
+        command: |
+          hadolint ${SOURCE_ROOT}/collector/container/Dockerfile.cpaas
+
+    - run:
         name: Build collector CPaaS images
         command: |
 
@@ -923,7 +928,7 @@ jobs:
             ${SOURCE_ROOT}
 
     - run:
-        name: Push images
+        name: Push collector CPaaS images
         command: |
           echo "Pushing collector base image"
           docker push "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}-base"
