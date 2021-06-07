@@ -23,12 +23,12 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "ConnScraper.h"
 
-#include <fcntl.h>
-#include <netinet/tcp.h>
-
 #include <cctype>
 #include <cinttypes>
 #include <cstring>
+#include <fcntl.h>
+
+#include <netinet/tcp.h>
 
 #include "Containers.h"
 #include "Logging.h"
@@ -54,14 +54,15 @@ StringView::size_type rep_find(int n, StringView str, char c) {
 }
 
 // nextfield advances to the next field in a space-delimited string.
-const char *nextfield(const char* p, const char* endp) {
+const char* nextfield(const char* p, const char* endp) {
   while (p < endp && *p && !std::isspace(*p)) p++;
-  while (p < endp && *p && std::isspace(*++p));
+  while (p < endp && *p && std::isspace(*++p))
+    ;
   return (p < endp && *p) ? p : nullptr;
 }
 
 // rep_nextfield repeatedly applies nextfield n times.
-const char *rep_nextfield(int n, const char* p, const char* endp) {
+const char* rep_nextfield(int n, const char* p, const char* endp) {
   while (n-- > 0 && p) {
     p = nextfield(p, endp);
   }
@@ -211,13 +212,13 @@ struct EndpointInfo {
 };
 
 // ParseEndpoint parses an endpoint listed in the `net/tcp[6]` file.
-const char *ParseEndpoint(const char* p, const char* endp, Address::Family family, Endpoint* endpoint) {
+const char* ParseEndpoint(const char* p, const char* endp, Address::Family family, Endpoint* endpoint) {
   static bool needs_byteorder_swap = (htons(42) != 42);
 
   std::array<uint8_t, Address::kMaxLen> addr_data = {};
 
   int addr_len = Address::Length(family);
-  int nread = ReadHexBytes(p, endp, addr_data.data(), 4, addr_len/4, needs_byteorder_swap);
+  int nread = ReadHexBytes(p, endp, addr_data.data(), 4, addr_len / 4, needs_byteorder_swap);
   if (nread != addr_len) return nullptr;
   p += nread * 2;
   if (*p++ != ':') return nullptr;

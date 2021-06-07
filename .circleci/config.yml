@@ -183,6 +183,22 @@ jobs:
         - pr-metadata
         - shared-env
 
+  lint:
+    <<: *defaultImage
+    steps:
+    - initcommand
+    - run:
+        name: Install clang-format
+        command: |
+          sudo bash -c 'printf "deb http://deb.debian.org/debian/ buster-backports main contrib non-free" > /etc/apt/sources.list.d/backports.list'
+          sudo apt-get update
+          sudo apt-get install -y clang-format-11
+          sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-11 100
+    - run:
+        name: Lint via clang-format
+        command: |
+           make -C "${COLLECTOR_SOURCE_ROOT}" check
+
   builder:
     <<: *defaultMachine
     resource_class: large
@@ -1435,10 +1451,14 @@ workflows:
     jobs:
     - initjob:
         <<: *runOnAllTagsWithDockerIOPullCtx
+    - lint:
+        <<: *runOnAllTagsWithDockerIOPullCtx
+        requires:
+        - initjob
     - builder:
         <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
-        - initjob
+        - lint
     - collector:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
@@ -1446,7 +1466,7 @@ workflows:
     - builder-rhel:
         <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
-        - initjob
+        - lint
     - collector-rhel:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
@@ -1454,7 +1474,7 @@ workflows:
     - prepare-kernels:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
-        - initjob
+        - lint
     - kernels:
         <<: *runOnAllTagsWithDockerIOPushCtx
         requires:

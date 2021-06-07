@@ -24,10 +24,9 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef COLLECTOR_CONNSCRAPER_H
 #define COLLECTOR_CONNSCRAPER_H
 
+#include <cstring>
 #include <string>
 #include <vector>
-
-#include <cstring>
 
 #include "FileSystem.h"
 #include "Hash.h"
@@ -49,7 +48,7 @@ class StringView {
   StringView(const char* p) : p_(p), n_(std::strlen(p)) {}
   StringView(const char* p, size_type n) : p_(p), n_(n) {}
   StringView(const StringView& other) : p_(other.p_), n_(other.n_) {}
-  template<std::size_t N>
+  template <std::size_t N>
   StringView(const char (&buf)[N]) : p_(&buf[0]), n_(N - 1) {}
 
   operator bool() const { return n_ > 0; }
@@ -87,7 +86,7 @@ class StringView {
   const_iterator begin() const { return p_; }
   const_iterator end() const { return p_ + n_; }
 
-  template<std::size_t N>
+  template <std::size_t N>
   bool operator==(const char (&str)[N]) const {
     if (n_ != N - 1) return false;
     if (N - 1 == 0) return true;
@@ -116,4 +115,4 @@ class ConnScraper {
 
 }  // namespace collector
 
-#endif //COLLECTOR_CONNSCRAPER_H
+#endif  //COLLECTOR_CONNSCRAPER_H

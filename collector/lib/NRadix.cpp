@@ -27,6 +27,7 @@
  */
 
 #include "NRadix.h"
+
 #include "Utility.h"
 
 namespace collector {
@@ -126,9 +127,9 @@ IPNet NRadixTree::Find(const IPNet& network) const {
     return {};
   }
 
-  const uint64_t *addr_p = network.address().u64_data();
+  const uint64_t* addr_p = network.address().u64_data();
   const auto net_mask = network.net_mask_array();
-  const uint64_t *net_mask_p = net_mask.data();
+  const uint64_t* net_mask_p = net_mask.data();
   uint64_t bit(0x8000000000000000ULL);
 
   IPNet ret;
@@ -219,7 +220,7 @@ bool isAnyIPNetSubsetUtil(Address::Family family, const nRadixNode* n1, const nR
   // some subnet in network in n2 subtree. However, former may
   // belong to IPv4 and later may belong to IPv6. Hence, continue
   // finding the smaller network down the path.
-  
+
   if (n1) {
     return isAnyIPNetSubsetUtil(family, n1->left_, n2->left_, containing_net, contained_net) ||
            isAnyIPNetSubsetUtil(family, n1->right_, n2->right_, containing_net, contained_net);
@@ -236,4 +237,4 @@ bool NRadixTree::IsAnyIPNetSubset(Address::Family family, const NRadixTree& othe
   return isAnyIPNetSubsetUtil(family, root_, other.root_, nullptr, nullptr);
 }
 
-}
+}  // namespace collector

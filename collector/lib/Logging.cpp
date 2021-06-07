@@ -43,8 +43,7 @@ LogLevel all_levels[] = {
     LogLevel::INFO,
     LogLevel::WARNING,
     LogLevel::ERROR,
-    LogLevel::FATAL
-};
+    LogLevel::FATAL};
 
 std::unordered_map<std::string, LogLevel>& GetNameToLevelMap() {
   static std::unordered_map<std::string, LogLevel>* name_to_level_map = []() {
@@ -73,39 +72,39 @@ bool CheckLogLevel(LogLevel level) {
 
 const char* GetLogLevelName(LogLevel level) {
   switch (level) {
-  case LogLevel::TRACE:
-    return "TRACE";
-  case LogLevel::DEBUG:
-    return "DEBUG";
-  case LogLevel::INFO:
-    return "INFO";
-  case LogLevel::WARNING:
-    return "WARNING";
-  case LogLevel::ERROR:
-    return "ERROR";
-  case LogLevel::FATAL:
-    return "FATAL";
-  default:
-    return "UNKNOWN";
+    case LogLevel::TRACE:
+      return "TRACE";
+    case LogLevel::DEBUG:
+      return "DEBUG";
+    case LogLevel::INFO:
+      return "INFO";
+    case LogLevel::WARNING:
+      return "WARNING";
+    case LogLevel::ERROR:
+      return "ERROR";
+    case LogLevel::FATAL:
+      return "FATAL";
+    default:
+      return "UNKNOWN";
   };
 }
 
 char GetLogLevelShortName(LogLevel level) {
   switch (level) {
-  case LogLevel::TRACE:
-    return 'T';
-  case LogLevel::DEBUG:
-    return 'D';
-  case LogLevel::INFO:
-    return 'I';
-  case LogLevel::WARNING:
-    return 'W';
-  case LogLevel::ERROR:
-    return 'E';
-  case LogLevel::FATAL:
-    return 'F';
-  default:
-    return 'U';
+    case LogLevel::TRACE:
+      return 'T';
+    case LogLevel::DEBUG:
+      return 'D';
+    case LogLevel::INFO:
+      return 'I';
+    case LogLevel::WARNING:
+      return 'W';
+    case LogLevel::ERROR:
+      return 'E';
+    case LogLevel::FATAL:
+      return 'F';
+    default:
+      return 'U';
   };
 }
 

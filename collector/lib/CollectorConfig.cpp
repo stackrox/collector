@@ -21,9 +21,10 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
+#include "CollectorConfig.h"
+
 #include <sstream>
 
-#include "CollectorConfig.h"
 #include "CollectorArgs.h"
 #include "EnvVar.h"
 #include "Logging.h"
@@ -44,17 +45,18 @@ BoolEnvVar network_drop_ignored("ROX_NETWORK_DROP_IGNORED", true);
 
 }  // namespace
 
-constexpr bool        CollectorConfig::kUseChiselCache;
-constexpr bool        CollectorConfig::kSnapLen;
-constexpr bool        CollectorConfig::kTurnOffScrape;
-constexpr int         CollectorConfig::kScrapeInterval;
-constexpr char        CollectorConfig::kCollectionMethod[];
-constexpr char        CollectorConfig::kChisel[];
+constexpr bool CollectorConfig::kUseChiselCache;
+constexpr bool CollectorConfig::kSnapLen;
+constexpr bool CollectorConfig::kTurnOffScrape;
+constexpr int CollectorConfig::kScrapeInterval;
+constexpr char CollectorConfig::kCollectionMethod[];
+constexpr char CollectorConfig::kChisel[];
 constexpr const char* CollectorConfig::kSyscalls[];
 
-const UnorderedSet<L4ProtoPortPair> CollectorConfig::kIgnoredL4ProtoPortPairs = {{L4Proto::UDP, 9}};;
+const UnorderedSet<L4ProtoPortPair> CollectorConfig::kIgnoredL4ProtoPortPairs = {{L4Proto::UDP, 9}};
+;
 
-CollectorConfig::CollectorConfig(CollectorArgs *args) {
+CollectorConfig::CollectorConfig(CollectorArgs* args) {
   // Set default configuration values
   use_chisel_cache_ = kUseChiselCache;
   scrape_interval_ = kScrapeInterval;
@@ -63,7 +65,7 @@ CollectorConfig::CollectorConfig(CollectorArgs *args) {
   chisel_ = kChisel;
   collection_method_ = kCollectionMethod;
 
-  for (const auto& syscall: kSyscalls) {
+  for (const auto& syscall : kSyscalls) {
     syscalls_.push_back(syscall);
   }
 
@@ -87,7 +89,7 @@ CollectorConfig::CollectorConfig(CollectorArgs *args) {
       CLOG(INFO) << "User configured scrapeInterval=" << scrape_interval_;
     }
 
-    // Scrape Enabled/Disabled 
+    // Scrape Enabled/Disabled
     if (!config["turnOffScrape"].empty()) {
       turn_off_scrape_ = config["turnOffScrape"].asBool();
       CLOG(INFO) << "User configured turnOffScrape=" << turn_off_scrape_;
@@ -201,15 +203,15 @@ std::string CollectorConfig::LogLevel() const {
   return logging::GetLogLevelName(logging::GetLogLevel());
 }
 
-std::ostream& operator<< (std::ostream& os, const CollectorConfig& c) {
-  return os 
-    << "collection_method:" << c.CollectionMethod()
-    << ", useChiselCache:" << c.UseChiselCache()
-    << ", snapLen:" << c.SnapLen()
-    << ", scrape_interval:" << c.ScrapeInterval()
-    << ", turn_off_scrape:" << c.TurnOffScrape()
-    << ", hostname:" << c.Hostname()
-    << ", logLevel:" << c.LogLevel();
+std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
+  return os
+         << "collection_method:" << c.CollectionMethod()
+         << ", useChiselCache:" << c.UseChiselCache()
+         << ", snapLen:" << c.SnapLen()
+         << ", scrape_interval:" << c.ScrapeInterval()
+         << ", turn_off_scrape:" << c.TurnOffScrape()
+         << ", hostname:" << c.Hostname()
+         << ", logLevel:" << c.LogLevel();
 }
 
 }  // namespace collector

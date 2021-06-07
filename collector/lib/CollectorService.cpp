@@ -29,25 +29,23 @@ extern "C" {
 
 #include <memory>
 
-#include "civetweb/CivetServer.h"
-#include "prometheus/exposer.h"
-
+#include "CollectorStatsExporter.h"
 #include "ConnTracker.h"
 #include "Containers.h"
-#include "CollectorStatsExporter.h"
-#include "GetStatus.h"
 #include "GRPCUtil.h"
+#include "GetStatus.h"
 #include "LogLevel.h"
 #include "NetworkStatusNotifier.h"
 #include "SysdigService.h"
 #include "Utility.h"
+#include "civetweb/CivetServer.h"
+#include "prometheus/exposer.h"
 
 namespace collector {
 
 CollectorService::CollectorService(const CollectorConfig& config, std::atomic<ControlValue>* control,
                                    const std::atomic<int>* signum)
-    : config_(config), control_(control), signum_(*signum)
-{
+    : config_(config), control_(control), signum_(*signum) {
   CLOG(INFO) << "Config: " << config;
 }
 
@@ -55,7 +53,7 @@ void CollectorService::RunForever() {
   // Start monitoring services.
   // Some of these variables must remain in scope, so
   // be cautious if decomposing to a separate function.
-  const char *options[] = { "listening_ports", "8080", 0};
+  const char* options[] = {"listening_ports", "8080", 0};
   CivetServer server(options);
 
   std::shared_ptr<ConnectionTracker> conn_tracker;
@@ -86,7 +84,7 @@ void CollectorService::RunForever() {
 
     if (!config_.DisableNetworkFlows()) {
       conn_tracker = std::make_shared<ConnectionTracker>();
-      UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs (config_.IgnoredL4ProtoPortPairs());
+      UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs(config_.IgnoredL4ProtoPortPairs());
       conn_tracker->UpdateIgnoredL4ProtoPortPairs(std::move(ignored_l4proto_port_pairs));
       net_status_notifier = MakeUnique<NetworkStatusNotifier>(config_.Hostname(), config_.HostProc(),
                                                               config_.ScrapeInterval(), config_.ScrapeListenEndpoints(),

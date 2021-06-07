@@ -27,15 +27,16 @@ You should have received a copy of the GNU General Public License along with thi
 #include <chrono>
 #include <functional>
 
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/channel.h>
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/grpcpp.h>
 
 #include "Logging.h"
 
 namespace collector {
 
-bool WaitForChannelReady(const std::shared_ptr<grpc::Channel>& channel,
+bool WaitForChannelReady(
+    const std::shared_ptr<grpc::Channel>& channel,
     const std::function<bool()>& check_interrupted = []() { return false; },
     const std::chrono::nanoseconds& poll_interval = std::chrono::seconds(1));
 

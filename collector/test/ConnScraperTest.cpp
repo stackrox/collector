@@ -22,9 +22,8 @@ You should have received a copy of the GNU General Public License along with thi
 */
 
 #include "ConnScraper.h"
-
-#include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace collector {
 
@@ -62,7 +61,7 @@ TEST(ConnScraperTest, TestExtractContainerID) {
       },
   };
 
-  for (const auto &c : cases) {
+  for (const auto& c : cases) {
     auto short_container_id = ExtractContainerID(c.input);
     EXPECT_EQ(short_container_id, c.expected_output);
   }

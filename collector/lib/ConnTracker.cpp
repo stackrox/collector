@@ -51,9 +51,9 @@ void ConnectionTracker::UpdateConnection(const Connection& conn, int64_t timesta
 }
 
 void ConnectionTracker::Update(
-        const std::vector<Connection>& all_conns,
-        const std::vector<ContainerEndpoint>& all_listen_endpoints,
-        int64_t timestamp) {
+    const std::vector<Connection>& all_conns,
+    const std::vector<ContainerEndpoint>& all_listen_endpoints,
+    int64_t timestamp) {
   WITH_LOCK(mutex_) {
     // Mark all existing connections and listen endpoints as inactive
     for (auto& prev_conn : conn_state_) {
@@ -82,7 +82,7 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
 
   bool private_addr = !address.IsPublic();
   const bool* known_private_networks_exists = Lookup(known_private_networks_exists_, address.family());
-  if (private_addr && (known_private_networks_exists && !*known_private_networks_exists))  {
+  if (private_addr && (known_private_networks_exists && !*known_private_networks_exists)) {
     return IPNet(address, 0, true);
   }
 
@@ -153,14 +153,14 @@ void ConnectionTracker::EmplaceOrUpdateNoLock(const ContainerEndpoint& ep, ConnS
 namespace {
 
 struct dont_normalize {
-  template<typename T>
+  template <typename T>
   inline auto operator()(T&& arg) const -> decltype(std::forward<T>(arg)) {
     return std::forward<T>(arg);
   }
 };
 
 struct dont_filter {
-  template<typename T>
+  template <typename T>
   inline constexpr bool operator()(T&& arg) const {
     return true;
   }
@@ -178,7 +178,7 @@ UnorderedMap<T, ConnStatus> FetchState(UnorderedMap<T, ConnStatus>* state, bool 
     return *state;
   }
 
-  for (auto it = state->begin(); it != state->end(); ) {
+  for (auto it = state->begin(); it != state->end();) {
     const auto& entry = *it;
 
     if (!filter || filter_fn(entry.first)) {
@@ -211,18 +211,20 @@ ConnMap ConnectionTracker::FetchConnState(bool normalize, bool clear_inactive) {
     state_size = conn_state_.size();
     if (HasConnectionStateFilters()) {
       if (normalize) {
-        cm = FetchState(&conn_state_, clear_inactive,
-                        [this](const Connection &conn) { return this->NormalizeConnectionNoLock(conn); },
-                        [this](const Connection &conn) { return this->ShouldFetchConnection(conn); });
+        cm = FetchState(
+            &conn_state_, clear_inactive,
+            [this](const Connection& conn) { return this->NormalizeConnectionNoLock(conn); },
+            [this](const Connection& conn) { return this->ShouldFetchConnection(conn); });
       } else {
         cm = FetchState(&conn_state_, clear_inactive, dont_normalize(),
-                        [this](const Connection &conn) { return this->ShouldFetchConnection(conn); });
+                        [this](const Connection& conn) { return this->ShouldFetchConnection(conn); });
       }
     } else {
       if (normalize) {
-        cm = FetchState(&conn_state_, clear_inactive,
-                        [this](const Connection &conn) { return this->NormalizeConnectionNoLock(conn); },
-                        dont_filter());
+        cm = FetchState(
+            &conn_state_, clear_inactive,
+            [this](const Connection& conn) { return this->NormalizeConnectionNoLock(conn); },
+            dont_filter());
       } else {
         cm = FetchState(&conn_state_, clear_inactive, dont_normalize(), dont_filter());
       }
@@ -239,18 +241,20 @@ ContainerEndpointMap ConnectionTracker::FetchEndpointState(bool normalize, bool 
     state_size = conn_state_.size();
     if (HasConnectionStateFilters()) {
       if (normalize) {
-        cem = FetchState(&endpoint_state_, clear_inactive,
-                         [this](const ContainerEndpoint &cep) { return this->NormalizeContainerEndpoint(cep); },
-                         [this](const ContainerEndpoint &cep) { return this->ShouldFetchContainerEndpoint(cep); });
+        cem = FetchState(
+            &endpoint_state_, clear_inactive,
+            [this](const ContainerEndpoint& cep) { return this->NormalizeContainerEndpoint(cep); },
+            [this](const ContainerEndpoint& cep) { return this->ShouldFetchContainerEndpoint(cep); });
       } else {
         cem = FetchState(&endpoint_state_, clear_inactive, dont_normalize(),
-                         [this](const ContainerEndpoint &cep) { return this->ShouldFetchContainerEndpoint(cep); });
+                         [this](const ContainerEndpoint& cep) { return this->ShouldFetchContainerEndpoint(cep); });
       }
     } else {
       if (normalize) {
-        cem = FetchState(&endpoint_state_, clear_inactive,
-                         [this](const ContainerEndpoint &cep) { return this->NormalizeContainerEndpoint(cep); },
-                         dont_filter());
+        cem = FetchState(
+            &endpoint_state_, clear_inactive,
+            [this](const ContainerEndpoint& cep) { return this->NormalizeContainerEndpoint(cep); },
+            dont_filter());
       } else {
         cem = FetchState(&endpoint_state_, clear_inactive, dont_normalize(), dont_filter());
       }
@@ -266,7 +270,7 @@ void ConnectionTracker::UpdateKnownPublicIPs(collector::UnorderedSet<collector::
     known_public_ips_ = std::move(known_public_ips);
     if (CLOG_ENABLED(DEBUG)) {
       CLOG(DEBUG) << "known public ips:";
-      for (const auto &public_ip : known_public_ips_) {
+      for (const auto& public_ip : known_public_ips_) {
         CLOG(DEBUG) << " - " << public_ip;
       }
     }
@@ -303,12 +307,12 @@ void ConnectionTracker::UpdateKnownIPNetworks(UnorderedMap<Address::Family, std:
   }
 }
 
-void ConnectionTracker::UpdateIgnoredL4ProtoPortPairs(UnorderedSet<L4ProtoPortPair> &&ignored_l4proto_port_pairs) {
+void ConnectionTracker::UpdateIgnoredL4ProtoPortPairs(UnorderedSet<L4ProtoPortPair>&& ignored_l4proto_port_pairs) {
   WITH_LOCK(mutex_) {
     ignored_l4proto_port_pairs_ = std::move(ignored_l4proto_port_pairs);
     if (CLOG_ENABLED(DEBUG)) {
       CLOG(DEBUG) << "ignored l4 protocol and port pairs";
-      for (const auto &proto_port_pair : ignored_l4proto_port_pairs_) {
+      for (const auto& proto_port_pair : ignored_l4proto_port_pairs_) {
         CLOG(DEBUG) << proto_port_pair.first << "/" << proto_port_pair.second;
       }
     }

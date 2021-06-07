@@ -23,24 +23,23 @@ You should have received a copy of the GNU General Public License along with thi
 
 extern "C" {
 
-#include <arpa/inet.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
-#include <netinet/in.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <poll.h>
-#include <unistd.h>
-#include <uuid/uuid.h>
-
-#include <errno.h>
 #include <signal.h>
 #include <string.h>
+#include <unistd.h>
 
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <uuid/uuid.h>
 }
 
-#include "Utility.h"
 #include "Logging.h"
+#include "Utility.h"
 
 namespace collector {
 
@@ -61,7 +60,9 @@ const char* StrError(int errnum) {
 
 const char* SignalName(int signum) {
   switch (signum) {
-#define SIG(name) case SIG ## name: return "SIG" #name
+#define SIG(name) \
+  case SIG##name: \
+    return "SIG" #name
     SIG(ABRT);
     SIG(SEGV);
     SIG(TERM);
@@ -72,11 +73,11 @@ const char* SignalName(int signum) {
   }
 }
 
-std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo *t) {
+std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo* t) {
   if (t) {
-        os << "Container: \"" << t->m_container_id << "\", Name: " << t->m_comm << ", PID: " << t->m_pid << ", Args: " << t->m_exe;
+    os << "Container: \"" << t->m_container_id << "\", Name: " << t->m_comm << ", PID: " << t->m_pid << ", Args: " << t->m_exe;
   } else {
-        os << "NULL\n";
+    os << "NULL\n";
   }
   return os;
 }
@@ -92,53 +93,54 @@ const char* UUIDStr() {
 }
 
 static const std::string base64_chars =
-             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-             "abcdefghijklmnopqrstuvwxyz"
-             "0123456789+/";
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "abcdefghijklmnopqrstuvwxyz"
+    "0123456789+/";
 
 static inline bool is_base64(unsigned char c) {
-    return (std::isalnum(c) || (c == '+') || (c == '/'));
+  return (std::isalnum(c) || (c == '+') || (c == '/'));
 }
 
 std::string Base64Decode(std::string const& encoded_string) {
-    int in_len = encoded_string.size();
-    int i = 0;
-    int j = 0;
-    int in_ = 0;
-    unsigned char char_array_4[4], char_array_3[3];
-    std::string ret;
+  int in_len = encoded_string.size();
+  int i = 0;
+  int j = 0;
+  int in_ = 0;
+  unsigned char char_array_4[4], char_array_3[3];
+  std::string ret;
 
-    while (in_len-- && ( encoded_string[in_] != '=') && is_base64(encoded_string[in_])) {
-        char_array_4[i++] = encoded_string[in_]; in_++;
-        if (i ==4) {
-            for (i = 0; i <4; i++)
-                char_array_4[i] = base64_chars.find(char_array_4[i]);
+  while (in_len-- && (encoded_string[in_] != '=') && is_base64(encoded_string[in_])) {
+    char_array_4[i++] = encoded_string[in_];
+    in_++;
+    if (i == 4) {
+      for (i = 0; i < 4; i++)
+        char_array_4[i] = base64_chars.find(char_array_4[i]);
 
-            char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
-            char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
-            char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+      char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+      char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+      char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
-            for (i = 0; (i < 3); i++)
-                ret += char_array_3[i];
-            i = 0;
-        }
+      for (i = 0; (i < 3); i++)
+        ret += char_array_3[i];
+      i = 0;
     }
+  }
 
-    if (i) {
-        for (j = i; j <4; j++)
-            char_array_4[j] = 0;
+  if (i) {
+    for (j = i; j < 4; j++)
+      char_array_4[j] = 0;
 
-        for (j = 0; j <4; j++)
-            char_array_4[j] = base64_chars.find(char_array_4[j]);
+    for (j = 0; j < 4; j++)
+      char_array_4[j] = base64_chars.find(char_array_4[j]);
 
-        char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
-        char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
-        char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+    char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+    char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+    char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
-        for (j = 0; (j < i - 1); j++) ret += char_array_3[j];
-    }
+    for (j = 0; (j < i - 1); j++) ret += char_array_3[j];
+  }
 
-    return ret;
+  return ret;
 }
 
 std::string GetHostPath(const std::string& file) {
@@ -168,6 +170,5 @@ const char* GetHostname() {
   CLOG(ERROR) << "Failed to determine hostname, environment variable NODE_HOSTNAME not set";
   return "unknown";
 }
-
 
 }  // namespace collector

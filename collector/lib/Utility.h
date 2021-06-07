@@ -24,9 +24,8 @@ You should have received a copy of the GNU General Public License along with thi
 #define _UTILITY_H_
 
 #include <cerrno>
-#include <cinttypes>
-
 #include <chrono>
+#include <cinttypes>
 #include <functional>
 #include <iostream>
 #include <memory>
@@ -86,7 +85,7 @@ std::string Str(Args&&... args) {
   return string_stream.str();
 }
 
-std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo *t);
+std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo* t);
 
 // UUIDStr returns UUID in string format.
 const char* UUIDStr();
@@ -95,10 +94,10 @@ namespace internal {
 
 // ScopedLock just wraps a `std::unique_lock`. In addition, its operator bool() is marked constexpr and always returns
 // true, such that it can be used in an assignment in an `if` condition (see WITH_LOCK below).
-template<typename Mutex>
+template <typename Mutex>
 class ScopedLock {
  public:
-  ScopedLock(Mutex &m) : lock_(m) {}
+  ScopedLock(Mutex& m) : lock_(m) {}
 
   constexpr operator bool() const { return true; }
 
@@ -108,14 +107,14 @@ class ScopedLock {
 
 // Lock allows locking any mutex without having to explictly specify the type of the mutex, such that its return value
 // can just be assigned to an auto-typed variable.
-template<typename Mutex>
-ScopedLock<Mutex> Lock(Mutex &mutex) {
+template <typename Mutex>
+ScopedLock<Mutex> Lock(Mutex& mutex) {
   return ScopedLock<Mutex>(mutex);
 }
 
 }  // namespace internal
 
-#define WITH_LOCK(m) if (auto __scoped_lock_ ## __LINE__ = internal::Lock(m))
+#define WITH_LOCK(m) if (auto __scoped_lock_##__LINE__ = internal::Lock(m))
 
 // ssizeof(x) returns the same value as sizeof(x), but as a signed integer.
 #define ssizeof(x) static_cast<ssize_t>(sizeof(x))

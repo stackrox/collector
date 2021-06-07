@@ -1,9 +1,8 @@
 #include <string>
 
+#include "EventMap.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include "EventMap.h"
 
 TEST(EventMap, MissingElement) {
   using namespace collector;
@@ -13,10 +12,10 @@ TEST(EventMap, MissingElement) {
     SHUTDOWN,
   };
   EventMap<TestModifier> modifiers = {
-          {
-                  {"shutdown<", TestModifier::SHUTDOWN},
-          },
-          TestModifier::INVALID,
+      {
+          {"shutdown<", TestModifier::SHUTDOWN},
+      },
+      TestModifier::INVALID,
   };
 
   EXPECT_EQ(TestModifier::SHUTDOWN, modifiers[PPME_SOCKET_SHUTDOWN_X]);

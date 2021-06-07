@@ -48,11 +48,10 @@ TEST(NRadixTest, TestInsert) {
   EXPECT_TRUE(inserted);
 
   std::vector<IPNet> expected = std::vector<IPNet>{
-    IPNet(Address(10, 0, 0, 0), 32),
-    IPNet(Address(10, 10, 0, 0), 16),
-    IPNet(Address(10, 0, 0, 0), 16),
-    IPNet(Address(10, 0, 0, 0), 8)
-  };
+      IPNet(Address(10, 0, 0, 0), 32),
+      IPNet(Address(10, 10, 0, 0), 16),
+      IPNet(Address(10, 0, 0, 0), 16),
+      IPNet(Address(10, 0, 0, 0), 8)};
   std::vector<IPNet> actual = tree.GetAll();
   std::sort(actual.begin(), actual.end(), std::greater<IPNet>());
   EXPECT_EQ(actual, expected);
@@ -83,16 +82,15 @@ TEST(NRadixTest, TestInsert) {
   EXPECT_FALSE(inserted);
 
   expected = std::vector<IPNet>{
-    IPNet(Address(htonll(0x2001db833334444), htonll(0x0ULL)), 128),
-    IPNet(Address(htonll(0x2001db833334444), htonll(0x0ULL)), 65),
-    IPNet(Address(htonll(0x2001db833334444), htonll(0x5555666677778888)), 64),
-    IPNet(Address(htonll(0x2001db833334444), htonll(0x5555666677778888)), 63),
-    IPNet(Address(htonll(0x0ULL), htonll(0x10000000000000)), 33),
-    IPNet(Address(10, 0, 0, 0), 32),
-    IPNet(Address(10, 10, 0, 0), 16),
-    IPNet(Address(10, 0, 0, 0), 16),
-    IPNet(Address(10, 0, 0, 0), 8)
-  };
+      IPNet(Address(htonll(0x2001db833334444), htonll(0x0ULL)), 128),
+      IPNet(Address(htonll(0x2001db833334444), htonll(0x0ULL)), 65),
+      IPNet(Address(htonll(0x2001db833334444), htonll(0x5555666677778888)), 64),
+      IPNet(Address(htonll(0x2001db833334444), htonll(0x5555666677778888)), 63),
+      IPNet(Address(htonll(0x0ULL), htonll(0x10000000000000)), 33),
+      IPNet(Address(10, 0, 0, 0), 32),
+      IPNet(Address(10, 10, 0, 0), 16),
+      IPNet(Address(10, 0, 0, 0), 16),
+      IPNet(Address(10, 0, 0, 0), 8)};
   actual = tree.GetAll();
   std::sort(actual.begin(), actual.end(), std::greater<IPNet>());
   EXPECT_EQ(actual, expected);
@@ -100,14 +98,14 @@ TEST(NRadixTest, TestInsert) {
 
 TEST(NRadixTest, TestFind) {
   NRadixTree tree(std::vector<IPNet>{
-    IPNet(Address(10, 0, 0, 0), 8),
-    IPNet(Address(10, 10, 0, 0), 16),
-    IPNet(Address(10, 0, 0, 0), 16),
-    IPNet(Address(htonll(0x2001db833334444), htonll(0x5555666677778888)), 63),
-    IPNet(Address(htonll(0x2001db833334444), htonll(0x5555666677778888)), 64),
-    IPNet(Address(htonll(0x2001db833334444), htonll(0x0ULL)), 70),
-    IPNet(Address(htonll(0x2001db833334444), htonll(0x0ULL)), 128),
-    });
+      IPNet(Address(10, 0, 0, 0), 8),
+      IPNet(Address(10, 10, 0, 0), 16),
+      IPNet(Address(10, 0, 0, 0), 16),
+      IPNet(Address(htonll(0x2001db833334444), htonll(0x5555666677778888)), 63),
+      IPNet(Address(htonll(0x2001db833334444), htonll(0x5555666677778888)), 64),
+      IPNet(Address(htonll(0x2001db833334444), htonll(0x0ULL)), 70),
+      IPNet(Address(htonll(0x2001db833334444), htonll(0x0ULL)), 128),
+  });
 
   //// IPV4 address lookup
   auto actual = tree.Find(Address(10, 10, 10, 10));
@@ -161,165 +159,140 @@ TEST(NRadixTest, TestFind) {
 
 TEST(NRadixTest, TestIsAnyIPNetSubset) {
   NRadixTree t1(std::vector<IPNet>{
-    IPNet(Address(10, 0, 0, 0), 8),
-    IPNet(Address(10, 10, 0, 0), 16),
-    IPNet(Address(10, 0, 0, 0), 16)
-  });
+      IPNet(Address(10, 0, 0, 0), 8),
+      IPNet(Address(10, 10, 0, 0), 16),
+      IPNet(Address(10, 0, 0, 0), 16)});
   NRadixTree t2(std::vector<IPNet>{
-    IPNet(Address(11, 0, 0, 0), 8),
-    IPNet(Address(11, 10, 0, 0), 16)
-  });
+      IPNet(Address(11, 0, 0, 0), 8),
+      IPNet(Address(11, 10, 0, 0), 16)});
   EXPECT_FALSE(t1.IsAnyIPNetSubset(t2));
   EXPECT_FALSE(t2.IsAnyIPNetSubset(t1));
 
   t1 = NRadixTree(std::vector<IPNet>{
-    IPNet(Address(10, 0, 0, 0), 8),
-    IPNet(Address(10, 10, 0, 0), 16),
-    IPNet(Address(10, 0, 0, 0), 16)
-  });
+      IPNet(Address(10, 0, 0, 0), 8),
+      IPNet(Address(10, 10, 0, 0), 16),
+      IPNet(Address(10, 0, 0, 0), 16)});
   t2 = NRadixTree(std::vector<IPNet>{
-    IPNet(Address(11, 0, 0, 0), 8),
-    IPNet(Address(11, 10, 0, 0), 16),
-    IPNet(Address(10, 1, 0, 0), 16)
-  });
+      IPNet(Address(11, 0, 0, 0), 8),
+      IPNet(Address(11, 10, 0, 0), 16),
+      IPNet(Address(10, 1, 0, 0), 16)});
   // 10.0.0.0/8 contains 10.1.0.0/16
   EXPECT_TRUE(t1.IsAnyIPNetSubset(t2));
   EXPECT_FALSE(t2.IsAnyIPNetSubset(t1));
 
   t1 = NRadixTree(std::vector<IPNet>{
-    IPNet(Address(10, 0, 0, 0), 8),
-    IPNet(Address(10, 10, 0, 0), 24),
-    IPNet(Address(10, 0, 0, 0), 16)
-  });
+      IPNet(Address(10, 0, 0, 0), 8),
+      IPNet(Address(10, 10, 0, 0), 24),
+      IPNet(Address(10, 0, 0, 0), 16)});
   t2 = NRadixTree(std::vector<IPNet>{
-    IPNet(Address(11, 0, 0, 0), 8),
-    IPNet(Address(10, 10, 0, 0), 16),
-    IPNet(Address(10, 1, 0, 0), 16)
-  });
+      IPNet(Address(11, 0, 0, 0), 8),
+      IPNet(Address(10, 10, 0, 0), 16),
+      IPNet(Address(10, 1, 0, 0), 16)});
   // 10.0.0.0/8 contains 10.1.0.0/16 and 10.10.0.0/16
   EXPECT_TRUE(t1.IsAnyIPNetSubset(t2));
   // 10.10.0.0/16 contains 10.10.0.0/24
   EXPECT_TRUE(t2.IsAnyIPNetSubset(t1));
 
   t1 = NRadixTree(std::vector<IPNet>{
-    IPNet(Address(10, 0, 0, 0), 8),
-    IPNet(Address(10, 10, 0, 0), 16),
-    IPNet(Address(10, 0, 0, 0), 16),
-    });
+      IPNet(Address(10, 0, 0, 0), 8),
+      IPNet(Address(10, 10, 0, 0), 16),
+      IPNet(Address(10, 0, 0, 0), 16),
+  });
   // Simulate path traversal overlapping with 10.0.0.0/8
   t2 = NRadixTree(std::vector<IPNet>{
-    IPNet(Address(htonll(0x0A0A000000000000ULL), htonll(0ULL)), 80)
-  });
+      IPNet(Address(htonll(0x0A0A000000000000ULL), htonll(0ULL)), 80)});
   EXPECT_FALSE(t1.IsAnyIPNetSubset(t2));
   EXPECT_FALSE(t2.IsAnyIPNetSubset(t1));
 
   t1 = NRadixTree(std::vector<IPNet>{
-    IPNet(Address(htonll(0x0A0A000000000000ULL), htonll(0ULL)), 70)
-  });
+      IPNet(Address(htonll(0x0A0A000000000000ULL), htonll(0ULL)), 70)});
   t2 = NRadixTree(std::vector<IPNet>{
-    IPNet(Address(htonll(0x0A0A000000000000ULL), htonll(0ULL)), 80)
-  });
+      IPNet(Address(htonll(0x0A0A000000000000ULL), htonll(0ULL)), 80)});
   EXPECT_TRUE(t1.IsAnyIPNetSubset(t2));
   EXPECT_FALSE(t2.IsAnyIPNetSubset(t1));
 
   t1 = NRadixTree(std::vector<IPNet>{
-    IPNet(Address(htonll(0x0A0A000000000000ULL), htonll(0ULL)), 80)
-  });
+      IPNet(Address(htonll(0x0A0A000000000000ULL), htonll(0ULL)), 80)});
   t2 = NRadixTree(std::vector<IPNet>{
-    IPNet(Address(htonll(0x0A0A000000000000ULL), htonll(0ULL)), 80)
-  });
+      IPNet(Address(htonll(0x0A0A000000000000ULL), htonll(0ULL)), 80)});
   EXPECT_TRUE(t1.IsAnyIPNetSubset(t2));
   EXPECT_TRUE(t2.IsAnyIPNetSubset(t1));
 
   t1 = NRadixTree(std::vector<IPNet>{
-    IPNet(Address(htonll(0x0A0A000000000000ULL), htonll(0ULL)), 16)
-  });
+      IPNet(Address(htonll(0x0A0A000000000000ULL), htonll(0ULL)), 16)});
   t2 = NRadixTree(std::vector<IPNet>{
-    IPNet(Address(htonll(0x0A0A000000000000ULL), htonll(0ULL)), 80)
-  });
+      IPNet(Address(htonll(0x0A0A000000000000ULL), htonll(0ULL)), 80)});
   EXPECT_TRUE(t1.IsAnyIPNetSubset(t2));
   EXPECT_FALSE(t2.IsAnyIPNetSubset(t1));
 
   t1 = NRadixTree(std::vector<IPNet>{
-    IPNet(Address(htonll(0x0A0A000000000000ULL), htonll(0ULL)), 8)
-  });
+      IPNet(Address(htonll(0x0A0A000000000000ULL), htonll(0ULL)), 8)});
   t2 = NRadixTree(std::vector<IPNet>{
-    IPNet(Address(htonll(0x0A0A000000000000ULL), htonll(0ULL)), 80)
-  });
+      IPNet(Address(htonll(0x0A0A000000000000ULL), htonll(0ULL)), 80)});
   EXPECT_TRUE(t1.IsAnyIPNetSubset(t2));
   EXPECT_FALSE(t2.IsAnyIPNetSubset(t1));
 }
 
 TEST(NRadixTest, TestIsAnyIPNetSubsetWithFamily) {
   NRadixTree t1(std::vector<IPNet>{
-    IPNet(Address(10, 0, 0, 0), 8),
-    IPNet(Address(10, 10, 0, 0), 16),
-    IPNet(Address(10, 0, 0, 0), 16)
-  });
+      IPNet(Address(10, 0, 0, 0), 8),
+      IPNet(Address(10, 10, 0, 0), 16),
+      IPNet(Address(10, 0, 0, 0), 16)});
   NRadixTree t2(std::vector<IPNet>{
-    IPNet(Address(11, 0, 0, 0), 8),
-    IPNet(Address(11, 10, 0, 0), 16)
-  });
+      IPNet(Address(11, 0, 0, 0), 8),
+      IPNet(Address(11, 10, 0, 0), 16)});
   EXPECT_FALSE(t1.IsAnyIPNetSubset(Address::Family::IPV4, t2));
   EXPECT_FALSE(t2.IsAnyIPNetSubset(Address::Family::IPV4, t1));
 
   t1 = NRadixTree(std::vector<IPNet>{
-    IPNet(Address(10, 0, 0, 0), 8),
-    IPNet(Address(10, 10, 0, 0), 16),
-    IPNet(Address(10, 0, 0, 0), 16)
-  });
+      IPNet(Address(10, 0, 0, 0), 8),
+      IPNet(Address(10, 10, 0, 0), 16),
+      IPNet(Address(10, 0, 0, 0), 16)});
   t2 = NRadixTree(std::vector<IPNet>{
-    IPNet(Address(11, 0, 0, 0), 8),
-    IPNet(Address(11, 10, 0, 0), 16),
-    IPNet(Address(10, 1, 0, 0), 16)
-  });
+      IPNet(Address(11, 0, 0, 0), 8),
+      IPNet(Address(11, 10, 0, 0), 16),
+      IPNet(Address(10, 1, 0, 0), 16)});
   // 10.0.0.0/8 contains 10.1.0.0/16
   EXPECT_TRUE(t1.IsAnyIPNetSubset(Address::Family::IPV4, t2));
 
   t1 = NRadixTree(std::vector<IPNet>{
-    IPNet(Address(10, 0, 0, 0), 8),
-    IPNet(Address(10, 10, 0, 0), 16),
-    IPNet(Address(10, 0, 0, 0), 16)
-  });
+      IPNet(Address(10, 0, 0, 0), 8),
+      IPNet(Address(10, 10, 0, 0), 16),
+      IPNet(Address(10, 0, 0, 0), 16)});
   t2 = NRadixTree(std::vector<IPNet>{
-    IPNet(Address(11, 0, 0, 0), 8),
-    IPNet(Address(11, 10, 0, 0), 16),
-    IPNet(Address(10, 1, 0, 0), 16)
-  });
+      IPNet(Address(11, 0, 0, 0), 8),
+      IPNet(Address(11, 10, 0, 0), 16),
+      IPNet(Address(10, 1, 0, 0), 16)});
   // 10.0.0.0/8 contains 10.1.0.0/16 but we are checking IPv6 private subnet existence.
   EXPECT_FALSE(t1.IsAnyIPNetSubset(Address::Family::IPV6, t2));
 
   t1 = NRadixTree(std::vector<IPNet>{
-    IPNet(Address(10, 0, 0, 0), 8),
-    IPNet(Address(10, 10, 0, 0), 24),
-    IPNet(Address(10, 0, 0, 0), 16)
-  });
+      IPNet(Address(10, 0, 0, 0), 8),
+      IPNet(Address(10, 10, 0, 0), 24),
+      IPNet(Address(10, 0, 0, 0), 16)});
   t2 = NRadixTree(std::vector<IPNet>{
-    IPNet(Address(11, 0, 0, 0), 8),
-    IPNet(Address(10, 10, 0, 0), 16),
-    IPNet(Address(10, 1, 0, 0), 16)
-  });
+      IPNet(Address(11, 0, 0, 0), 8),
+      IPNet(Address(10, 10, 0, 0), 16),
+      IPNet(Address(10, 1, 0, 0), 16)});
   // 10.0.0.0/8 contains 10.1.0.0/16 and 10.10.0.0/16
   EXPECT_TRUE(t1.IsAnyIPNetSubset(Address::Family::IPV4, t2));
   // 10.10.0.0/16 contains 10.10.0.0/24
   EXPECT_TRUE(t2.IsAnyIPNetSubset(Address::Family::IPV4, t1));
 
   t1 = NRadixTree(std::vector<IPNet>{
-    IPNet(Address(10, 0, 0, 0), 8),
-    IPNet(Address(10, 10, 0, 0), 24),
-    IPNet(Address(10, 0, 0, 0), 16)
-  });
+      IPNet(Address(10, 0, 0, 0), 8),
+      IPNet(Address(10, 10, 0, 0), 24),
+      IPNet(Address(10, 0, 0, 0), 16)});
   t2 = NRadixTree(std::vector<IPNet>{
-    IPNet(Address(11, 0, 0, 0), 8),
-    IPNet(Address(10, 10, 0, 0), 16),
-    IPNet(Address(10, 1, 0, 0), 16)
-  });
+      IPNet(Address(11, 0, 0, 0), 8),
+      IPNet(Address(10, 10, 0, 0), 16),
+      IPNet(Address(10, 1, 0, 0), 16)});
   // 10.0.0.0/8 contains 10.1.0.0/16 and 10.10.0.0/16 but we are checking for IPv6 private subnet existence.
   EXPECT_FALSE(t1.IsAnyIPNetSubset(Address::Family::IPV6, t2));
   // 10.10.0.0/16 contains 10.10.0.0/24 but we are checking for IPv6 private subnet existence.
   EXPECT_FALSE(t2.IsAnyIPNetSubset(Address::Family::IPV6, t1));
 }
 
-} // namespace
+}  // namespace
 
-} // namespace collector
+}  // namespace collector

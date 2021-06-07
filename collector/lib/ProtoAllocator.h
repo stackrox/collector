@@ -25,7 +25,7 @@ You should have received a copy of the GNU General Public License along with thi
 #define COLLECTOR_PROTOALLOCATOR_H
 
 #ifdef USE_PROTO_ARENAS
-#include <google/protobuf/arena.h>
+#  include <google/protobuf/arena.h>
 #endif
 
 #include "Logging.h"
@@ -37,7 +37,7 @@ namespace internal {
 #ifdef USE_PROTO_ARENAS
 
 inline void* BlockAlloc(size_t size) {
-  static void* (* default_block_alloc)(size_t) = google::protobuf::ArenaOptions().block_alloc;
+  static void* (*default_block_alloc)(size_t) = google::protobuf::ArenaOptions().block_alloc;
   CLOG_THROTTLED(WARNING, std::chrono::seconds(5)) << "Allocating a memory block on the heap for the arena, this is inefficient and usually avoidable";
   return (*default_block_alloc)(size);
 }
@@ -58,15 +58,14 @@ class ArenaProtoAllocator {
   ArenaProtoAllocator() : ArenaProtoAllocator(kDefaultPoolSize) {}
 
   explicit ArenaProtoAllocator(size_t pool_size)
-      : pool_(new char[pool_size]), pool_size_(pool_size),
-        arena_(ArenaOptionsForInitialBlock(pool_.get(), pool_size_)) {}
+      : pool_(new char[pool_size]), pool_size_(pool_size), arena_(ArenaOptionsForInitialBlock(pool_.get(), pool_size_)) {}
 
   void Reset() {
     google::protobuf::uint64 bytes_used = arena_.Reset();
     if (bytes_used > pool_size_) {
       size_t new_pool_size = (bytes_used / kDefaultPoolSize + 1) * kDefaultPoolSize;
       CLOG(WARNING) << "Used " << bytes_used << " bytes in the arena, which is more than the pre-allocated "
-        << pool_size_ << " bytes. Increasing arena size to " << new_pool_size << " bytes.";
+                    << pool_size_ << " bytes. Increasing arena size to " << new_pool_size << " bytes.";
 
       // This looks weird but is correct (search for `placement new/delete` on Google).
       arena_.~Arena();
@@ -79,7 +78,7 @@ class ArenaProtoAllocator {
   }
 
   template <typename T, typename... Args>
-  T* Allocate(Args&& ... args) {
+  T* Allocate(Args&&... args) {
     return google::protobuf::Arena::CreateMessage<T>(&arena_, std::forward<Args>(args)...);
   }
 
@@ -105,7 +104,7 @@ class HeapProtoAllocator {
   void Reset() {}
 
   template <typename T, typename... Args>
-  T* Allocate(Args&& ... args) { return new T(std::forward<Args>(args)...); }
+  T* Allocate(Args&&... args) { return new T(std::forward<Args>(args)...); }
 
   Message* AllocateRoot() {
     message_.Clear();
@@ -128,4 +127,4 @@ using ProtoAllocator =
 
 }  // namespace collector
 
-#endif //COLLECTOR_PROTOALLOCATOR_H
+#endif  //COLLECTOR_PROTOALLOCATOR_H

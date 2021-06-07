@@ -21,22 +21,20 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#include "ConnTracker.h"
-
 #include <utility>
 
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
-
+#include "ConnTracker.h"
 #include "TimeUtil.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace collector {
 
 namespace {
 
 using CT = ConnectionTracker;
-using ::testing::UnorderedElementsAre;
 using ::testing::IsEmpty;
+using ::testing::UnorderedElementsAre;
 
 TEST(ConnTrackerTest, TestAddRemove) {
   Endpoint a(Address(192, 168, 0, 1), 80);
@@ -65,7 +63,6 @@ TEST(ConnTrackerTest, TestAddRemove) {
   state = tracker.FetchConnState();
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn2, ConnStatus(now, true))));
 }
-
 
 TEST(ConnTrackerTest, TestUpdate) {
   Endpoint a(Address(192, 168, 0, 1), 80);
@@ -106,20 +103,20 @@ TEST(ConnTrackerTest, TestUpdateIgnoredL4ProtoPortPairs) {
   Connection conn_fe("xzy", f, e, L4Proto::UDP, false);
 
   Connection conn_ab_normalized("xyz",
-                               Endpoint(IPNet(Address()), 80),
-                               Endpoint(IPNet(Address(192, 168, 1, 10), 0, true), 0),
-                               L4Proto::TCP, true);
+                                Endpoint(IPNet(Address()), 80),
+                                Endpoint(IPNet(Address(192, 168, 1, 10), 0, true), 0),
+                                L4Proto::TCP, true);
   Connection conn_ba_normalized("xzy",
-                               Endpoint(),
-                               Endpoint(IPNet(Address(192, 168, 0, 1), 0, true), 80),
-                               L4Proto::TCP,false);
+                                Endpoint(),
+                                Endpoint(IPNet(Address(192, 168, 0, 1), 0, true), 80),
+                                L4Proto::TCP, false);
   Connection conn_ef_normalized("xyz",
-                              Endpoint(IPNet(Address()), 9),
-                              Endpoint(IPNet(f.address(), 0, true), 0),L4Proto::UDP, true);
+                                Endpoint(IPNet(Address()), 9),
+                                Endpoint(IPNet(f.address(), 0, true), 0), L4Proto::UDP, true);
   Connection conn_fe_normalized("xzy",
-                              Endpoint(),
-                              Endpoint(IPNet(e.address(), 0, true), 9),
-                              L4Proto::UDP, false);
+                                Endpoint(),
+                                Endpoint(IPNet(e.address(), 0, true), 9),
+                                L4Proto::UDP, false);
   int64_t now = NowMicros();
   ConnectionTracker tracker;
   tracker.Update({conn_ab, conn_ba, conn_ef, conn_fe}, {}, now);
@@ -127,10 +124,10 @@ TEST(ConnTrackerTest, TestUpdateIgnoredL4ProtoPortPairs) {
   // no normalization, no l4protoport filtering
   auto state = tracker.FetchConnState(false);
   EXPECT_THAT(state, UnorderedElementsAre(
-          std::make_pair(conn_ab, ConnStatus(now, true)),
-          std::make_pair(conn_ba, ConnStatus(now, true)),
-          std::make_pair(conn_ef, ConnStatus(now, true)),
-          std::make_pair(conn_fe, ConnStatus(now, true))));
+                         std::make_pair(conn_ab, ConnStatus(now, true)),
+                         std::make_pair(conn_ba, ConnStatus(now, true)),
+                         std::make_pair(conn_ef, ConnStatus(now, true)),
+                         std::make_pair(conn_fe, ConnStatus(now, true))));
 
   // no normalization, filter out udp/9
   UnorderedSet<L4ProtoPortPair> ignored_proto_port_pairs;
@@ -138,24 +135,24 @@ TEST(ConnTrackerTest, TestUpdateIgnoredL4ProtoPortPairs) {
   tracker.UpdateIgnoredL4ProtoPortPairs(std::move(ignored_proto_port_pairs));
   state = tracker.FetchConnState(false);
   EXPECT_THAT(state, UnorderedElementsAre(
-          std::make_pair(conn_ab, ConnStatus(now, true)),
-          std::make_pair(conn_ba, ConnStatus(now, true))));
+                         std::make_pair(conn_ab, ConnStatus(now, true)),
+                         std::make_pair(conn_ba, ConnStatus(now, true))));
 
   //normalization, filter out udp/9
   state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(
-            std::make_pair(conn_ab_normalized, ConnStatus(now, true)),
-            std::make_pair(conn_ba_normalized, ConnStatus(now, true))));
+                         std::make_pair(conn_ab_normalized, ConnStatus(now, true)),
+                         std::make_pair(conn_ba_normalized, ConnStatus(now, true))));
 
   // normalization, no l4protoport filtering
   state = tracker.FetchConnState(true);
   tracker.UpdateIgnoredL4ProtoPortPairs(UnorderedSet<L4ProtoPortPair>());
   state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(
-          std::make_pair(conn_ab_normalized, ConnStatus(now, true)),
-          std::make_pair(conn_ba_normalized, ConnStatus(now, true)),
-          std::make_pair(conn_ef_normalized, ConnStatus(now, true)),
-          std::make_pair(conn_fe_normalized, ConnStatus(now, true))));
+                         std::make_pair(conn_ab_normalized, ConnStatus(now, true)),
+                         std::make_pair(conn_ba_normalized, ConnStatus(now, true)),
+                         std::make_pair(conn_ef_normalized, ConnStatus(now, true)),
+                         std::make_pair(conn_fe_normalized, ConnStatus(now, true))));
 }
 
 TEST(ConnTrackerTest, TestUpdateNormalized) {
@@ -180,8 +177,8 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
 
   auto state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(
-      std::make_pair(conn13_normalized, ConnStatus(now, true)),
-      std::make_pair(conn24_normalized, ConnStatus(now, true))));
+                         std::make_pair(conn13_normalized, ConnStatus(now, true)),
+                         std::make_pair(conn24_normalized, ConnStatus(now, true))));
 
   auto state2 = tracker.FetchConnState(true);
   EXPECT_EQ(state, state2);
@@ -190,8 +187,8 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
   tracker.Update({conn1}, {}, now2);
   state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(
-      std::make_pair(conn13_normalized, ConnStatus(now2, true)),
-      std::make_pair(conn24_normalized, ConnStatus(now, false))));
+                         std::make_pair(conn13_normalized, ConnStatus(now2, true)),
+                         std::make_pair(conn24_normalized, ConnStatus(now, false))));
 
   state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn13_normalized, ConnStatus(now2, true))));
@@ -273,8 +270,8 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
   tracker.Update({conn5}, {}, now3);
   state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(
-      std::make_pair(conn15_normalized, ConnStatus(now3, true)),
-      std::make_pair(conn13_3_normalized, ConnStatus(now2, false))));
+                         std::make_pair(conn15_normalized, ConnStatus(now3, true)),
+                         std::make_pair(conn13_3_normalized, ConnStatus(now2, false))));
 
   state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn15_normalized, ConnStatus(now3, true))));
@@ -331,8 +328,8 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
 
   auto state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(
-      std::make_pair(conn13_normalized, ConnStatus(now, true)),
-      std::make_pair(conn24_normalized, ConnStatus(now, true))));
+                         std::make_pair(conn13_normalized, ConnStatus(now, true)),
+                         std::make_pair(conn24_normalized, ConnStatus(now, true))));
 
   auto state2 = tracker.FetchConnState(true);
   EXPECT_EQ(state, state2);
@@ -352,11 +349,11 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
   Connection conn5_normalized("xyz", Endpoint(IPNet(), 9999), Endpoint(IPNet(Address(35, 127, 1, 0), 24, false), 0), L4Proto::TCP, true);
 
   EXPECT_THAT(state3, UnorderedElementsAre(
-      std::make_pair(conn1_normalized, ConnStatus(now, true)),
-      std::make_pair(conn2_normalized, ConnStatus(now, true)),
-      std::make_pair(conn3_normalized, ConnStatus(now, true)),
-      std::make_pair(conn4_normalized, ConnStatus(now, true)),
-      std::make_pair(conn5_normalized, ConnStatus(now, true))));
+                          std::make_pair(conn1_normalized, ConnStatus(now, true)),
+                          std::make_pair(conn2_normalized, ConnStatus(now, true)),
+                          std::make_pair(conn3_normalized, ConnStatus(now, true)),
+                          std::make_pair(conn4_normalized, ConnStatus(now, true)),
+                          std::make_pair(conn5_normalized, ConnStatus(now, true))));
 }
 
 TEST(ConnTrackerTest, TestComputeDelta) {

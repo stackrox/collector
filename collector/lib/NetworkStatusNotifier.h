@@ -51,13 +51,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
                         std::shared_ptr<ConnectionTracker> conn_tracker,
                         std::shared_ptr<grpc::Channel> channel,
                         CollectorStats* collector_stats)
-      : hostname_(std::move(hostname)), conn_scraper_(std::move(proc_dir)), scrape_interval_(scrape_interval),
-        turn_off_scraping_(turn_off_scrape),
-        scrape_listen_endpoints_(scrape_listen_endpoints),
-        conn_tracker_(std::move(conn_tracker)), channel_(std::move(channel)),
-        stub_(sensor::NetworkConnectionInfoService::NewStub(channel_)),
-        stats_(collector_stats)
-  {
+      : hostname_(std::move(hostname)), conn_scraper_(std::move(proc_dir)), scrape_interval_(scrape_interval), turn_off_scraping_(turn_off_scrape), scrape_listen_endpoints_(scrape_listen_endpoints), conn_tracker_(std::move(conn_tracker)), channel_(std::move(channel)), stub_(sensor::NetworkConnectionInfoService::NewStub(channel_)), stats_(collector_stats) {
     conn_tracker_->SetCollectorStats(stats_);
   }
 
@@ -108,4 +102,4 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
 
 }  // namespace collector
 
-#endif //COLLECTOR_NETWORKSTATUSNOTIFIER_H
+#endif  //COLLECTOR_NETWORKSTATUSNOTIFIER_H

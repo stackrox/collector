@@ -24,13 +24,13 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _PROCESS_SIGNAL_FORMATTER_H_
 #define _PROCESS_SIGNAL_FORMATTER_H_
 
-#include "EventNames.h"
-#include "ProtoSignalFormatter.h"
-#include "SysdigEventExtractor.h"
-
 #include "api/v1/signal.pb.h"
 #include "internalapi/sensor/signal_iservice.pb.h"
 #include "storage/process_indicator.pb.h"
+
+#include "EventNames.h"
+#include "ProtoSignalFormatter.h"
+#include "SysdigEventExtractor.h"
 
 namespace collector {
 

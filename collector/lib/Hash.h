@@ -39,8 +39,10 @@ class HasHash {
   typedef char YesType[1];
   typedef char NoType[2];
 
-  template <typename C> static YesType& test(typename std::enable_if<std::is_same<decltype(std::declval<const C>().Hash()), size_t>::value>::type*) ;
-  template <typename C> static NoType& test(...);
+  template <typename C>
+  static YesType& test(typename std::enable_if<std::is_same<decltype(std::declval<const C>().Hash()), size_t>::value>::type*);
+  template <typename C>
+  static NoType& test(...);
 
  public:
   enum { value = sizeof(test<T>(0)) == sizeof(YesType) };
@@ -52,8 +54,10 @@ class HasStdHashSpecialization {
   typedef char YesType[1];
   typedef char NoType[2];
 
-  template <typename C> static YesType& test(std::integral_constant<size_t, sizeof(std::hash<C>)>*) ;
-  template <typename C> static NoType& test(...);
+  template <typename C>
+  static YesType& test(std::integral_constant<size_t, sizeof(std::hash<C>)>*);
+  template <typename C>
+  static NoType& test(...);
 
  public:
   enum { value = sizeof(test<T>(0)) == sizeof(YesType) };
@@ -97,7 +101,7 @@ size_t Hash(const std::array<T, N>& array) {
 // Hasher is a function object that hashes values by calling the free function Hash(value), in an ADL-enabled fashion.
 struct Hasher {
   template <typename T>
-  size_t operator() (const T& val) const {
+  size_t operator()(const T& val) const {
     return Hash(val);
   }
 };
@@ -121,4 +125,4 @@ using UnorderedMap = std::unordered_map<K, V, Hasher>;
 
 }  // namespace collector
 
-#endif //COLLECTOR_HASH_H
+#endif  //COLLECTOR_HASH_H

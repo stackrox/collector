@@ -34,9 +34,9 @@ namespace collector {
 class CollectorService {
  public:
   enum ControlValue {
-    RUN = 0,  // Keep running
+    RUN = 0,           // Keep running
     INTERRUPT_SYSDIG,  // Stop running sysdig, but resume collector operation (e.g., for chisel update)
-    STOP_COLLECTOR,  // Stop the collector (e.g., SIGINT or SIGTERM received).
+    STOP_COLLECTOR,    // Stop the collector (e.g., SIGINT or SIGTERM received).
   };
 
   CollectorService(const CollectorConfig& config, std::atomic<ControlValue>* control, const std::atomic<int>* signum);

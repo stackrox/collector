@@ -21,19 +21,19 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#include "RateLimit.h"
-
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
 #include <chrono>
 #include <thread>
+
+#include "RateLimit.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace collector {
 namespace {
 
 TEST(RateLimitTest, TokenBucket) {
   // Limit 10 burst size, refill every 5 seconds
-  Limiter l(10,5);
+  Limiter l(10, 5);
   TokenBucket b;
   EXPECT_EQ(l.Tokens(&b), 10);
   EXPECT_EQ(l.AllowN(&b, 9), true);
@@ -94,4 +94,3 @@ TEST(RateLimitTest, EvictionTest) {
 }  // namespace
 
 }  // namespace collector
-

@@ -158,16 +158,16 @@ struct is_empty<> : std::true_type {};
 
 // Status codes
 enum class Status {
-  OK,                // Operation started at GRPC level (async) / completed successfully (sync).
-  ALREADY_PENDING,   // Operation is already pending.
-  ALREADY_DONE,      // Operation was already done (idempotent operations only).
+  OK,               // Operation started at GRPC level (async) / completed successfully (sync).
+  ALREADY_PENDING,  // Operation is already pending.
+  ALREADY_DONE,     // Operation was already done (idempotent operations only).
 
-  ERROR,             // The operation failed (sync only).
-  TIMEOUT,           // Timed out waiting for the desired condition (sync only).
-  ILLEGAL_STATE,     // The operation is not valid in the current state.
-  SHUTDOWN,          // The client was shutdown.
+  ERROR,          // The operation failed (sync only).
+  TIMEOUT,        // Timed out waiting for the desired condition (sync only).
+  ILLEGAL_STATE,  // The operation is not valid in the current state.
+  SHUTDOWN,       // The client was shutdown.
 
-  INTERNAL_ERROR,    // An internal error in the duplex client library.
+  INTERNAL_ERROR,  // An internal error in the duplex client library.
 };
 
 // Convenience wrapper around a `Status`.
@@ -502,7 +502,8 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
     // Shutdown the client and drain the queue.
     this->Shutdown();  // ignore errors
     auto now = ToDeadline(time_point::min());
-    while (ProcessSingle(nullptr, now, nullptr));
+    while (ProcessSingle(nullptr, now, nullptr))
+      ;
   }
 
   template <typename TS = time_point>
@@ -683,4 +684,4 @@ using DuplexClientReaderWriter = grpc_duplex_impl::DuplexClientReaderWriter<W, R
 
 }  // namespace collector
 
-#endif //COLLECTOR_DUPLEXGRPC_H
+#endif  //COLLECTOR_DUPLEXGRPC_H

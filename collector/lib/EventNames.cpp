@@ -23,7 +23,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "EventNames.h"
 
-extern const struct ppm_event_info g_event_info[];  // defined in libscap
+extern const struct ppm_event_info g_event_info[];       // defined in libscap
 extern const struct syscall_evt_pair g_syscall_table[];  // defined in libscap
 
 namespace collector {
