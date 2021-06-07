@@ -32,6 +32,7 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
   context: docker-io-pull
   requires:
   - images
+  - cpaas-image
   - integration-test-local
 
 orbs:
@@ -904,6 +905,7 @@ jobs:
     machine:
       image: ubuntu-2004:202010-01
       docker_layer_caching: true
+    resource_class: large
     steps:
     - initcommand
     - docker-login-push
