@@ -1162,7 +1162,7 @@ jobs:
           export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
           if "${SOURCE_ROOT}/.circleci/pr_has_label.sh" ci-run-against-rhel; then
             export COLLECTOR_REPO="stackrox/collector-rhel"
-          elsif "${SOURCE_ROOT}/.circleci/pr_has_label.sh" ci-run-against-cpaas; then
+          elif "${SOURCE_ROOT}/.circleci/pr_has_label.sh" ci-run-against-cpaas; then
             export COLLECTOR_REPO="stackrox/collector-test-cpaas"
           else
             export COLLECTOR_REPO="stackrox/collector"
