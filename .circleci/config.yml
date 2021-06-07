@@ -912,7 +912,8 @@ jobs:
     - run:
         name: Lint Dockerfile
         command: |
-          hadolint ${SOURCE_ROOT}/collector/container/Dockerfile.cpaas
+          docker run --rm -i hadolint/hadolint < \
+            ${SOURCE_ROOT}/collector/container/Dockerfile.cpaas
 
     - run:
         name: Build collector CPaaS images
