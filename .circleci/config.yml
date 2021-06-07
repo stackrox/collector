@@ -914,10 +914,10 @@ jobs:
         command: |
 
           docker build \
-            -t "stackrox/collector:${COLLECTOR_VERSION}-cpaas" \
-            -t "stackrox/collector:${COLLECTOR_VERSION}-cpaas-base" \
-            -t "stackrox/collector:${COLLECTOR_VERSION}-cpaas-latest" \
-            -t "stackrox/collector:${COLLECTOR_VERSION}-cpaas-slim" \
+            -t "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}" \
+            -t "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}-base" \
+            -t "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}-latest" \
+            -t "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}-slim" \
             -f ${SOURCE_ROOT}/collector/container/Dockerfile.cpaas \
             ${SOURCE_ROOT}
 
@@ -925,13 +925,13 @@ jobs:
         name: Push images
         command: |
           echo "Pushing collector base image"
-          docker push "stackrox/collector:${COLLECTOR_VERSION}-cpaas-base"
+          docker push "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}-base"
           echo "Pushing collector image"
-          docker push "stackrox/collector:${COLLECTOR_VERSION}-cpaas"
+          docker push "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}"
           echo "Pushing collector latest image"
-          docker push "stackrox/collector:${COLLECTOR_VERSION}-cpaas-latest"
+          docker push "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}-latest"
           echo "Pushing collector slim image"
-          docker push "stackrox/collector:${COLLECTOR_VERSION}-cpaas-slim"
+          docker push "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}-slim"
 
   kernel-module-build-failures-check:
     <<: *defaultImage
@@ -1070,6 +1070,9 @@ jobs:
       use-rhel:
         type: boolean
         default: false
+      use-cpaas:
+        type: boolean
+        default: false
 
     <<: *defaultMachine
     working_directory: ~/workspace
@@ -1086,7 +1089,7 @@ jobs:
           export REMOTE_HOST_TYPE=local
           export COLLECTION_METHOD=kernel_module
           export VM_CONFIG="circle_local_<< parameters.vm-config >>"
-          export COLLECTOR_REPO="stackrox/collector<<# parameters.use-rhel>>-rhel<</ parameters.use-rhel>>"
+          export COLLECTOR_REPO="stackrox/collector<<# parameters.use-rhel>>-rhel<</ parameters.use-rhel>><<# parameters.use-cpaas>>-test-cpaas<</ parameters.use-cpaas>>"
           export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}"
           make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
@@ -1159,6 +1162,8 @@ jobs:
           export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
           if "${SOURCE_ROOT}/.circleci/pr_has_label.sh" ci-run-against-rhel; then
             export COLLECTOR_REPO="stackrox/collector-rhel"
+          elsif "${SOURCE_ROOT}/.circleci/pr_has_label.sh" ci-run-against-cpaas; then
+            export COLLECTOR_REPO="stackrox/collector-test-cpaas"
           else
             export COLLECTOR_REPO="stackrox/collector"
           fi
@@ -1548,6 +1553,13 @@ workflows:
         requires:
         - images
         - upload-modules
+    - integration-test-local:
+        <<: *runOnAllTagsWithDockerIOPullCtx
+        name: integration-test-local-cpaas
+        vm-config: rhel
+        use-cpaas: true
+        requires:
+        - cpaas-image
     # Enable after fixing COS stable ebpf (5.4.104+) (ROX-7107)
     #- integration-test:
     #    <<: *runOnAllTagsWithIntegrationTestRequires
