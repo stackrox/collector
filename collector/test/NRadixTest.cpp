@@ -25,6 +25,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include "Containers.h"
+
 namespace collector {
 
 namespace {
@@ -293,6 +295,63 @@ TEST(NRadixTest, TestIsAnyIPNetSubsetWithFamily) {
   EXPECT_FALSE(t2.IsAnyIPNetSubset(Address::Family::IPV6, t1));
 }
 
-}  // namespace
+void TestLookup(const NRadixTree& tree, const std::vector<IPNet>& networks, Address lookup_addr) {
+  auto t1 = std::chrono::steady_clock::now();
+  IPNet actual = tree.Find(lookup_addr);
+  auto t2 = std::chrono::steady_clock::now();
+
+  EXPECT_EQ(IPNet(lookup_addr), actual);
+  std::chrono::duration<double, std::milli> tree_lookup_dur = t2 - t1;
+  std::cout << "Address (" << lookup_addr << ") lookup time with network radix tree: " << tree_lookup_dur.count() << "ms\n";
+  actual = {};
+
+  t1 = std::chrono::steady_clock::now();
+  // This is the legacy lookup code.
+  for (const auto net : networks) {
+    if (net.Contains(lookup_addr)) {
+      actual = net;
+      break;
+    }
+  }
+  t2 = std::chrono::steady_clock::now();
+
+  EXPECT_EQ(IPNet(lookup_addr), actual);
+  std::chrono::duration<double, std::milli> linear_lookup_dur = t2 - t1;
+  std::cout << "Address (" << lookup_addr << ") lookup time without network radix tree: " << linear_lookup_dur.count() << "ms\n";
+}
+
+TEST(NRadixTest, BenchMarkNetworkLookup) {
+  std::vector<IPNet> nets;
+  nets.reserve(20000);
+
+  IPNet net(Address(1, 1, 1, 1));
+  nets.push_back(net);
+
+  // Last addr is 1.1.79.33
+  for (int i = 1; i < 20000; i++) {
+    const uint32_t next_ip = ntohl(static_cast<uint32_t>(*net.address().u64_data())) + 1UL;
+    net = IPNet(Address(htonl(next_ip)));
+    nets.emplace_back(net);
+  }
+
+  auto t1 = std::chrono::steady_clock::now();
+  NRadixTree tree(nets);
+  auto t2 = std::chrono::steady_clock::now();
+  std::chrono::duration<double, std::milli> dur = t2 - t1;
+  std::cout << "Time to create tree with 20000 networks: " << dur.count() << "ms\n";
+
+  std::sort(nets.begin(), nets.end(), std::greater<IPNet>());
+
+  TestLookup(tree, nets, Address(1, 1, 79, 32));
+  TestLookup(tree, nets, Address(1, 1, 79, 1));
+  TestLookup(tree, nets, Address(1, 1, 50, 100));
+  TestLookup(tree, nets, Address(1, 1, 40, 100));
+  TestLookup(tree, nets, Address(1, 1, 30, 100));
+  TestLookup(tree, nets, Address(1, 1, 20, 100));
+  TestLookup(tree, nets, Address(1, 1, 10, 100));
+  TestLookup(tree, nets, Address(1, 1, 1, 1));
+}
+
+} // namespace
 
 }  // namespace collector
