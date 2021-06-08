@@ -1567,6 +1567,7 @@ workflows:
         use-cpaas: true
         requires:
         - cpaas-image
+        - upload-modules
     # Enable after fixing COS stable ebpf (5.4.104+) (ROX-7107)
     #- integration-test:
     #    <<: *runOnAllTagsWithIntegrationTestRequires
