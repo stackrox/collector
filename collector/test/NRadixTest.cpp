@@ -340,7 +340,13 @@ TEST(NRadixTest, BenchMarkNetworkLookup) {
   std::chrono::duration<double, std::milli> dur = t2 - t1;
   std::cout << "Time to create tree with 20000 networks: " << dur.count() << "ms\n";
 
+  // This is from the legacy lookup code. The networks were sorted after receiving from Sensor.
+  // Therefore the vector ends up being 1.1.79.32, 1.1.79.31 ... 1.1.1.1.
+  t1 = std::chrono::steady_clock::now();
   std::sort(nets.begin(), nets.end(), std::greater<IPNet>());
+  t2 = std::chrono::steady_clock::now();
+  dur = t2 - t1;
+  std::cout << "Time to sort 20000 networks: " << dur.count() << "ms\n";
 
   TestLookup(tree, nets, Address(1, 1, 79, 32));
   TestLookup(tree, nets, Address(1, 1, 79, 1));
