@@ -3,8 +3,8 @@
 set -e
 
 if [ -n "${CPAAS_BUILD}" ]; then
-    tar xzf libb64-${LIBB64_VERSION}.tar.gz
-    cd libb64-${LIBB64_VERSION}
+    tar xzf libb64-v${B64_VERSION}.tar.gz
+    cd libb64-v${B64_VERSION}
 else
     wget "https://downloads.sourceforge.net/project/libb64/libb64/libb64/libb64-${B64_VERSION}.zip"
     unzip "libb64-${B64_VERSION}.zip"
