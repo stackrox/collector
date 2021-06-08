@@ -40,7 +40,7 @@ LABEL maintainer="Red Hat, Inc."
 
 LABEL com.redhat.component="rhacs-collector-container" \
       name="rhacs-collector" \
-      version="${CI_COLLECTOR_UPSTREAM_VERSION}"
+      version="${CI_RHACS_COLLECTOR_UPSTREAM_VERSION_SANITIZED}"
 
 ENV COLLECTOR_HOST_ROOT=/host
 

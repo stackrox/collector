@@ -920,7 +920,7 @@ jobs:
         command: |
 
           docker build \
-            --build-arg CI_COLLECTOR_UPSTREAM_VERSION=${COLLECTOR_VERSION} \
+            --build-arg CI_RHACS_COLLECTOR_UPSTREAM_VERSION_SANITIZED=${COLLECTOR_VERSION} \
             -t "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}" \
             -t "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}-base" \
             -t "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}-latest" \
