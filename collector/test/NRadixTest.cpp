@@ -21,11 +21,10 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
+#include "Containers.h"
 #include "NRadix.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include "Containers.h"
 
 namespace collector {
 
@@ -358,6 +357,6 @@ TEST(NRadixTest, BenchMarkNetworkLookup) {
   TestLookup(tree, nets, Address(1, 1, 1, 1));
 }
 
-} // namespace
+}  // namespace
 
 }  // namespace collector
