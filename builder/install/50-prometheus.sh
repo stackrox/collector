@@ -5,7 +5,7 @@ set -e
 if [ -n "${CPAAS_BUILD}" ]; then
     cd prometheus-cpp
     cd 3rdparty
-    rm -rf civetweb googletest
+    rmdir civetweb googletest
     mv ../../civetweb .
     cp -a ../../googletest .
     cd ..

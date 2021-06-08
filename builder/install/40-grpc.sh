@@ -10,7 +10,7 @@ fi
 if [ -n "${CPAAS_BUILD}" ]; then
     cd grpc
     cd third_party
-    rm -rf abseil-cpp cares/cares protobuf
+    rmdir abseil-cpp cares/cares protobuf
     mv ../../abseil-cpp .
     mv ../../c-ares cares/cares
     mv ../../protobuf .
