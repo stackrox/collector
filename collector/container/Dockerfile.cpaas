@@ -3,9 +3,9 @@ FROM registry.access.redhat.com/ubi8/ubi:8.4-203 AS builder
 
 #COPY $REMOTE_SOURCE $REMOTE_SOURCE_DIR
 
-ARG REDHAT_DEV_ACCT_USERNAME
-ARG REDHAT_DEV_ACCT_PASSWORD
-RUN subscription-manager register --username "${REDHAT_DEV_ACCT_USERNAME}" --password "${REDHAT_DEV_ACCT_PASSWORD}"
+ARG REDHAT_USERNAME
+ARG REDHAT_PASSWORD
+RUN subscription-manager register --username "${REDHAT_USERNAME}" --password "${REDHAT_PASSWORD}"
 RUN subscription-manager attach
 
 # hadolint ignore=DL3041

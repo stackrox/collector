@@ -921,6 +921,8 @@ jobs:
 
           docker build \
             --build-arg CI_RHACS_COLLECTOR_UPSTREAM_VERSION_SANITIZED=${COLLECTOR_VERSION} \
+            --build-arg REDHAT_USERNAME="${REDHAT_DEV_ACCT_USERNAME}" \
+            --build-arg REDHAT_PASSWORD="${REDHAT_DEV_ACCT_PASSWORD}"  \
             -t "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}" \
             -t "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}-base" \
             -t "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}-latest" \
