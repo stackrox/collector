@@ -3,6 +3,11 @@ FROM registry.access.redhat.com/ubi8/ubi:8.4-203 AS builder
 
 #COPY $REMOTE_SOURCE $REMOTE_SOURCE_DIR
 
+ARG REDHAT_DEV_ACCT_USERNAME
+ARG REDHAT_DEV_ACCT_PASSWORD
+RUN subscription-manager register --username "${REDHAT_DEV_ACCT_USERNAME}" --password "${REDHAT_DEV_ACCT_PASSWORD}"
+RUN subscription-manager attach
+
 # hadolint ignore=DL3041
 RUN dnf -y update && \
     dnf -y install \
@@ -18,7 +23,8 @@ RUN dnf -y update && \
         libcap-ng-devel \
         autoconf \
         libtool \
-        git && \
+        git \
+        elfutils-libelf-devel && \
     dnf clean all
 
 ARG BUILD_DIR=/build

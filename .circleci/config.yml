@@ -1544,7 +1544,10 @@ workflows:
         - kernels
         - join-modules
     - cpaas-image:
-        <<: *runOnAllTagsWithDockerIOPushCtx
+        <<: *runOnAllTags
+        context:
+          - docker-io-push
+          - redhat-login
         requires:
         - initjob
     - integration-test-local:
