@@ -21,6 +21,8 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
+#include <random>
+
 #include "Containers.h"
 #include "NRadix.h"
 #include "gmock/gmock.h"
@@ -294,14 +296,13 @@ TEST(NRadixTest, TestIsAnyIPNetSubsetWithFamily) {
   EXPECT_FALSE(t2.IsAnyIPNetSubset(Address::Family::IPV6, t1));
 }
 
-void TestLookup(const NRadixTree& tree, const std::vector<IPNet>& networks, Address lookup_addr) {
+std::pair<std::chrono::duration<double, std::milli>, std::chrono::duration<double, std::milli>> TestLookup(const NRadixTree& tree, const std::vector<IPNet>& networks, Address lookup_addr) {
   auto t1 = std::chrono::steady_clock::now();
   IPNet actual = tree.Find(lookup_addr);
   auto t2 = std::chrono::steady_clock::now();
 
-  EXPECT_EQ(IPNet(lookup_addr), actual);
+  EXPECT_NE(IPNet(), actual);
   std::chrono::duration<double, std::milli> tree_lookup_dur = t2 - t1;
-  std::cout << "Address (" << lookup_addr << ") lookup time with network radix tree: " << tree_lookup_dur.count() << "ms\n";
   actual = {};
 
   t1 = std::chrono::steady_clock::now();
@@ -314,47 +315,84 @@ void TestLookup(const NRadixTree& tree, const std::vector<IPNet>& networks, Addr
   }
   t2 = std::chrono::steady_clock::now();
 
-  EXPECT_EQ(IPNet(lookup_addr), actual);
+  EXPECT_NE(IPNet(), actual);
   std::chrono::duration<double, std::milli> linear_lookup_dur = t2 - t1;
-  std::cout << "Address (" << lookup_addr << ") lookup time without network radix tree: " << linear_lookup_dur.count() << "ms\n";
+  return {tree_lookup_dur, linear_lookup_dur};
 }
 
 TEST(NRadixTest, BenchMarkNetworkLookup) {
-  std::vector<IPNet> nets;
-  nets.reserve(20000);
+  size_t num_ipv4_nets = 20000, num_ipv6_nets = 10000;
+  size_t num_nets = num_ipv4_nets + num_ipv6_nets;
 
-  IPNet net(Address(1, 1, 1, 1));
-  nets.push_back(net);
+  std::random_device ip_rd;
+  std::default_random_engine ip_gen(ip_rd());
+  std::uniform_int_distribution<unsigned long> ip_distr(0, 0xFFFFFFF0);
 
-  // Last addr is 1.1.79.33
-  for (int i = 1; i < 20000; i++) {
-    const uint32_t next_ip = ntohl(static_cast<uint32_t>(*net.address().u64_data())) + 1UL;
-    net = IPNet(Address(htonl(next_ip)));
-    nets.emplace_back(net);
+  std::random_device mask_rd;
+  std::default_random_engine mask_gen(mask_rd());
+  std::uniform_int_distribution<unsigned char> mask_distr(0x01, 0x20);
+
+  // Generate IPv4 networks.
+  UnorderedSet<IPNet> ipv4_network_set;
+  ipv4_network_set.reserve(num_ipv4_nets);
+  for (int i = 0; i < num_ipv4_nets; i++) {
+    ipv4_network_set.insert(IPNet(Address(ip_distr(ip_gen)), mask_distr(mask_gen)));
   }
 
+  // Generate IPv6 networks.
+  mask_distr = std::uniform_int_distribution<unsigned char>(0x21, 0x80);
+  UnorderedSet<IPNet> ipv6_network_set;
+  ipv6_network_set.reserve(num_ipv6_nets);
+  for (int i = 0; i < num_ipv6_nets; i++) {
+    ipv6_network_set.insert(IPNet(Address(ip_distr(ip_gen), ip_distr(ip_gen)), mask_distr(mask_gen)));
+  }
+
+  // Benchmark tree creation.
   auto t1 = std::chrono::steady_clock::now();
-  NRadixTree tree(nets);
+  NRadixTree tree;
+  for (const auto net : ipv4_network_set) {
+    tree.Insert(net);
+  }
+  for (const auto net : ipv6_network_set) {
+    tree.Insert(net);
+  }
   auto t2 = std::chrono::steady_clock::now();
   std::chrono::duration<double, std::milli> dur = t2 - t1;
-  std::cout << "Time to create tree with 20000 networks: " << dur.count() << "ms\n";
+  std::cout << "Time to create tree with " << num_nets << " networks: " << dur.count() << "ms\n";
 
   // This is from the legacy lookup code. The networks were sorted after receiving from Sensor.
-  // Therefore the vector ends up being 1.1.79.32, 1.1.79.31 ... 1.1.1.1.
+  std::vector<IPNet> ipv4_nets(ipv4_network_set.begin(), ipv4_network_set.end());
   t1 = std::chrono::steady_clock::now();
-  std::sort(nets.begin(), nets.end(), std::greater<IPNet>());
+  std::sort(ipv4_nets.begin(), ipv4_nets.end(), std::greater<IPNet>());
   t2 = std::chrono::steady_clock::now();
   dur = t2 - t1;
-  std::cout << "Time to sort 20000 networks: " << dur.count() << "ms\n";
+  std::cout << "Time to sort " << num_ipv4_nets << " ipv4 networks: " << dur.count() << "ms\n";
 
-  TestLookup(tree, nets, Address(1, 1, 79, 32));
-  TestLookup(tree, nets, Address(1, 1, 79, 1));
-  TestLookup(tree, nets, Address(1, 1, 50, 100));
-  TestLookup(tree, nets, Address(1, 1, 40, 100));
-  TestLookup(tree, nets, Address(1, 1, 30, 100));
-  TestLookup(tree, nets, Address(1, 1, 20, 100));
-  TestLookup(tree, nets, Address(1, 1, 10, 100));
-  TestLookup(tree, nets, Address(1, 1, 1, 1));
+  // This is from the legacy lookup code. The networks were sorted after receiving from Sensor.
+  std::vector<IPNet> ipv6_nets(ipv6_network_set.begin(), ipv6_network_set.end());
+  t1 = std::chrono::steady_clock::now();
+  std::sort(ipv6_nets.begin(), ipv6_nets.end(), std::greater<IPNet>());
+  t2 = std::chrono::steady_clock::now();
+  dur = t2 - t1;
+  std::cout << "Time to sort " << num_ipv6_nets << " ipv6 networks: " << dur.count() << "ms\n";
+
+  // Benchmark network lookups.
+  // In legacy code, IPv4 and IPv6 networks were stored separately in respective family bucket.
+  double aggr_dur_with_tree = 0, aggr_dur_without_tree = 0;
+  for (const auto net : ipv4_network_set) {
+    const auto durs = TestLookup(tree, ipv4_nets, net.address());
+    aggr_dur_with_tree += durs.first.count();
+    aggr_dur_without_tree += durs.second.count();
+  }
+
+  for (const auto net : ipv6_network_set) {
+    const auto durs = TestLookup(tree, ipv6_nets, net.address());
+    aggr_dur_with_tree += durs.first.count();
+    aggr_dur_without_tree += durs.second.count();
+  }
+
+  std::cout << "Avg time to lookup " << num_nets << " addresses with network radix tree (#networks:" << num_nets << "): " << (aggr_dur_with_tree / num_nets) << "ms\n";
+  std::cout << "Avg time to lookup " << num_nets << " addresses without network radix tree (#networks:" << num_nets << "): " << (aggr_dur_without_tree / num_nets) << "ms\n";
 }
 
 }  // namespace

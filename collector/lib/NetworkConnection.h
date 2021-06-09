@@ -240,7 +240,8 @@ class IPNet {
   }
 
   size_t Hash() const {
-    return HashAll(address_.array(), mask_, bits_);
+    if (is_addr_) return HashAll(address_.array(), mask_, bits_);
+    return HashAll(mask_, bits_);
   }
 
   bool IsNull() const {

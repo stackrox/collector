@@ -155,7 +155,7 @@ IPNet NRadixTree::Find(const IPNet& network) const {
     if (bit == 0) {
       // We have walked 128 bits, stop.
       if (++i >= Address::kU64MaxLen) {
-        if (node->value_) {
+        if (node && node->value_) {
           ret = *node->value_;
         }
         break;
