@@ -7,6 +7,7 @@ ARG REDHAT_USERNAME
 ARG REDHAT_PASSWORD
 RUN subscription-manager register --username "${REDHAT_USERNAME}" --password "${REDHAT_PASSWORD}"
 RUN subscription-manager attach
+RUN dnf config-manager --enable codeready-builder-for-rhel-8-x86_64-rpms
 
 # hadolint ignore=DL3041
 RUN dnf -y update && \
@@ -24,7 +25,9 @@ RUN dnf -y update && \
         autoconf \
         libtool \
         git \
-        elfutils-libelf-devel && \
+        elfutils-libelf-devel \
+        gtest-devel \
+        gmock-devel && \
     dnf clean all
 
 ARG BUILD_DIR=/build

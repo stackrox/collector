@@ -5,9 +5,8 @@ set -e
 if [ -n "${CPAAS_BUILD}" ]; then
     cd prometheus-cpp
     cd 3rdparty
-    rmdir civetweb googletest
+    rmdir civetweb
     mv ../../civetweb .
-    cp -a ../../googletest .
     cd ..
     cp LICENSE "${LICENSE_DIR}/prometheus-${PROMETHEUS_CPP_REVISION}"
 else
@@ -21,7 +20,7 @@ cp -R 3rdparty/civetweb/include /usr/local/include/civetweb
 cat LICENSE 3rdparty/civetweb/LICENSE.md > "${LICENSE_DIR}/prometheus-${PROMETHEUS_CPP_REVISION}"
 mkdir build
 cd build
-cmake -DCMAKE_BUILD_TYPE=Release ../
+cmake -DENABLE_TESTING=OFF -DCMAKE_BUILD_TYPE=Release ../
 make -j "${NPROCS:-2}"
 make install
 ldconfig

@@ -37,7 +37,6 @@ cd third_party
 ../builder/install/60-jsoncpp.sh .
 ../builder/install/60-tbb.sh .
 ../builder/install/50-jq.sh .
-../builder/install/20-googletest.sh .
 ../builder/install/50-prometheus.sh .
 cd ..
 
