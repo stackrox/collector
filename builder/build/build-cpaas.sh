@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eu
+set -eux
 
 export CPAAS_BUILD="true"
 export LICENSE_DIR="/THIRD_PARTY_NOTICES"
@@ -34,7 +34,6 @@ export TBB_VERSION=2018_U5
 cd third_party
 ../builder/install/50-libb64.sh
 ../builder/install/50-luajit.sh
-../builder/install/60-jsoncpp.sh .
 ../builder/install/60-tbb.sh .
 ../builder/install/50-jq.sh .
 ../builder/install/50-prometheus.sh .
@@ -73,6 +72,3 @@ find . -type f \( -name 'Makefile' -o -name '*.c' -o -name '*.h' \) -print0 | \
     LC_ALL=C sort -z | xargs -0 sha256sum | awk '{print$1 " " $2}' | sha256sum | awk '{print$1}' \
     > /MODULE_VERSION.txt
 cd ../../..
-
-ls -l
-

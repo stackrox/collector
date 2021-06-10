@@ -8,6 +8,7 @@ ARG REDHAT_PASSWORD
 RUN subscription-manager register --username "${REDHAT_USERNAME}" --password "${REDHAT_PASSWORD}"
 RUN subscription-manager attach
 RUN dnf config-manager --enable codeready-builder-for-rhel-8-x86_64-rpms
+RUN dnf config-manager --enable amq-clients-2-for-rhel-8-x86_64-rpms
 
 # hadolint ignore=DL3041
 RUN dnf -y update && \
@@ -27,9 +28,11 @@ RUN dnf -y update && \
         git \
         elfutils-libelf-devel \
         gtest-devel \
-        gmock-devel && \
+        gmock-devel \
+        jsoncpp-devel && \
     dnf clean all
 
+# ENV NPROCS=16
 ARG BUILD_DIR=/build
 RUN mkdir -p ${BUILD_DIR}
 WORKDIR ${BUILD_DIR}
@@ -87,3 +90,5 @@ CMD collector-wrapper.sh \
     --grpc-server=$GRPC_SERVER
 
 HEALTHCHECK CMD curl --fail http://127.0.0.1:8080/ready || exit 1
+
+#RUN collector --help || true
