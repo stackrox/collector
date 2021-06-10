@@ -12,5 +12,5 @@ else
 fi
 cp COPYING "${LICENSE_DIR}/jq-${JQ_VERSION}"
 ./configure --without-oniguruma --disable-maintainer-mode --enable-all-static --disable-dependency-tracking --prefix=/usr/local
-make LDFLAGS=-all-static CFLAGS=-fPIC
+make -j "${NPROCS:-2}" LDFLAGS=-all-static CFLAGS=-fPIC
 make install
