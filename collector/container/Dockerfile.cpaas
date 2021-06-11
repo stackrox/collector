@@ -30,7 +30,8 @@ RUN dnf -y update && \
         elfutils-libelf-devel \
         gtest-devel \
         gmock-devel \
-        jsoncpp-devel && \
+        jsoncpp-devel  \
+        tbb-devel && \
     dnf clean all
 
 # ENV NPROCS=16
@@ -51,27 +52,33 @@ WORKDIR /
 
 LABEL maintainer="Red Hat, Inc."
 
+ARG COLLECTOR_VERSION
 LABEL com.redhat.component="rhacs-collector-container" \
       name="rhacs-collector" \
-      version="${CI_RHACS_COLLECTOR_UPSTREAM_VERSION_SANITIZED}"
+      version="${COLLECTOR_VERSION}"
 
 ENV COLLECTOR_HOST_ROOT=/host
 
+COPY --from=builder /etc/pki/entitlement /etc/pki/entitlement
+COPY --from=builder /etc/rhsm /etc/rhsm
+
 ARG BUILD_DIR=/build
-
 COPY --from=builder ${BUILD_DIR}/cmake-collector/EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so /usr/local/lib/
-
 COPY --from=builder ${BUILD_DIR}/cmake-collector/collector /usr/local/bin/
-
 COPY --from=builder ${BUILD_DIR}/src/container/scripts /
+
 RUN mv /collector-wrapper.sh /usr/local/bin/ && \
     chmod 700 bootstrap.sh && \
     echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
     mkdir /kernel-modules && \
     microdnf upgrade -y && \
     microdnf install -y \
+      --enablerepo=codeready-builder-for-rhel-8-x86_64-rpms \
+      --enablerepo=amq-clients-2-for-rhel-8-x86_64-rpms \
       gzip \
-      kmod && \
+      kmod \
+      jsoncpp \
+      tbb && \
     microdnf clean all && \
     rm -rf /var/cache/dnf
     # (Optional) Remove line below to keep package management utilities
@@ -82,6 +89,11 @@ COPY --from=builder /THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES
 
 EXPOSE 8080 9090
 
+RUN rm -rf /etc/pki/entitlement
+RUN rm -rf /etc/rhsm
+
+RUN collector --help || if [ $? -ne 1 ]; then echo "Invalid collector build"; exit 1; fi
+
 ENTRYPOINT ["/bootstrap.sh"]
 
 # hadolint ignore=DL3025
@@ -91,5 +103,3 @@ CMD collector-wrapper.sh \
     --grpc-server=$GRPC_SERVER
 
 HEALTHCHECK CMD curl --fail http://127.0.0.1:8080/ready || exit 1
-
-#RUN collector --help || true

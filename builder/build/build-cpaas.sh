@@ -34,7 +34,6 @@ export TBB_VERSION=2018_U5
 cd third_party
 ../builder/install/50-libb64.sh
 ../builder/install/50-luajit.sh
-../builder/install/60-tbb.sh .
 ../builder/install/50-jq.sh .
 ../builder/install/50-prometheus.sh .
 cd ..

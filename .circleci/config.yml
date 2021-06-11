@@ -920,7 +920,7 @@ jobs:
         command: |
 
           docker build \
-            --build-arg CI_RHACS_COLLECTOR_UPSTREAM_VERSION_SANITIZED=${COLLECTOR_VERSION} \
+            --build-arg COLLECTOR_VERSION=${COLLECTOR_VERSION} \
             --build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
             --build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}"  \
             -t "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}" \
