@@ -8,6 +8,7 @@ ARG REDHAT_PASSWORD
 RUN subscription-manager register --username "${REDHAT_USERNAME}" --password "${REDHAT_PASSWORD}"
 RUN subscription-manager attach
 RUN dnf config-manager --enable codeready-builder-for-rhel-8-x86_64-rpms
+RUN subscription-manager list --available
 RUN dnf config-manager --enable amq-clients-2-for-rhel-8-x86_64-rpms
 
 # hadolint ignore=DL3041
