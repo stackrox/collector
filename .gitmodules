@@ -20,9 +20,6 @@
 [submodule "third_party/luajit"]
 	path = third_party/luajit
 	url = https://luajit.org/git/luajit.git
-[submodule "third_party/tbb"]
-	path = third_party/tbb
-	url = https://github.com/intel/tbb
 [submodule "third_party/jq"]
 	path = third_party/jq
 	url = https://github.com/stedolan/jq.git
