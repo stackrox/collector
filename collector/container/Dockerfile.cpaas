@@ -11,6 +11,7 @@ RUN subscription-manager attach
 RUN subscription-manager attach --pool=8a85f9a178d12e760178dba5bb1d2b43
 RUN dnf config-manager --enable codeready-builder-for-rhel-8-x86_64-rpms
 RUN dnf config-manager --enable amq-clients-2-for-rhel-8-x86_64-rpms
+RUN dnf config-manager --enable rhocp-4.6-for-rhel-8-x86_64-rpms
 
 # hadolint ignore=DL3041
 RUN dnf -y update && \
@@ -32,7 +33,9 @@ RUN dnf -y update && \
         gtest-devel \
         gmock-devel \
         jsoncpp-devel  \
-        tbb-devel && \
+        tbb-devel \
+        jq-devel \
+        c-ares-devel && \
     dnf clean all
 
 ARG BUILD_DIR=/build
@@ -77,10 +80,13 @@ RUN mv /collector-wrapper.sh /usr/local/bin/ && \
     microdnf install -y \
       --enablerepo=codeready-builder-for-rhel-8-x86_64-rpms \
       --enablerepo=amq-clients-2-for-rhel-8-x86_64-rpms \
+      --enablerepo=rhocp-4.6-for-rhel-8-x86_64-rpms \
       gzip \
       kmod \
       jsoncpp \
-      tbb && \
+      tbb \
+      jq-devel \
+      c-ares && \
     microdnf clean all && \
     rm -rf /var/cache/dnf
     # (Optional) Remove line below to keep package management utilities

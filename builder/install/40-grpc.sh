@@ -10,9 +10,8 @@ fi
 if [ -n "${CPAAS_BUILD}" ]; then
     cd grpc
     cd third_party
-    rmdir abseil-cpp cares/cares protobuf
+    rmdir abseil-cpp protobuf
     mv ../../abseil-cpp .
-    mv ../../c-ares cares/cares
     mv ../../protobuf .
     cd ..
     CMAKE_FLAGS=(
@@ -29,7 +28,6 @@ else
     cd grpc
     git submodule update --init
     CMAKE_FLAGS=(
-        -DgRPC_CARES_PROVIDER=package
         -DgRPC_PROTOBUF_PROVIDER=package
     )
 fi
@@ -38,6 +36,7 @@ mkdir -p cmake/build
 cd cmake/build
 cmake \
     "${CMAKE_FLAGS[@]}" \
+    -DgRPC_CARES_PROVIDER=package \
     -DgRPC_SSL_PROVIDER=package \
     -DCMAKE_BUILD_TYPE=Release \
     -DgRPC_INSTALL=ON \
