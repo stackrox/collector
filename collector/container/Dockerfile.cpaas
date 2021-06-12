@@ -5,6 +5,7 @@ FROM registry.access.redhat.com/ubi8/ubi:8.4-203 AS builder
 
 ARG REDHAT_USERNAME
 ARG REDHAT_PASSWORD
+RUN rm -rf /etc/rhsm-host
 RUN subscription-manager register --username "${REDHAT_USERNAME}" --password "${REDHAT_PASSWORD}"
 RUN subscription-manager attach
 RUN subscription-manager attach --pool=8a85f9a178d12e760178dba5bb1d2b43
@@ -34,7 +35,6 @@ RUN dnf -y update && \
         tbb-devel && \
     dnf clean all
 
-# ENV NPROCS=16
 ARG BUILD_DIR=/build
 RUN mkdir -p ${BUILD_DIR}
 WORKDIR ${BUILD_DIR}
@@ -43,7 +43,8 @@ COPY collector src
 COPY rox-proto rox-proto
 COPY sysdig sysdig
 COPY third_party third_party
-RUN ./builder/build/build-cpaas.sh
+ARG NPROCS=2
+RUN NPROCS=${NPROCS} ./builder/build/build-cpaas.sh
 
 #@follow_tag(registry.access.redhat.com/ubi8/ubi-minimal:latest)
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4-200
@@ -59,6 +60,7 @@ LABEL com.redhat.component="rhacs-collector-container" \
 
 ENV COLLECTOR_HOST_ROOT=/host
 
+RUN rm -rf /etc/rhsm-host
 COPY --from=builder /etc/pki/entitlement /etc/pki/entitlement
 COPY --from=builder /etc/rhsm /etc/rhsm
 
