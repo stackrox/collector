@@ -1,7 +1,7 @@
-#@follow_tag(registry.access.redhat.com/ubi8/ubi:latest)
-FROM registry.access.redhat.com/ubi8/ubi:8.4-203 AS builder
+# This builds a collector container based on UBI with a reliance on Red Hat
+# subscription entitlements.
 
-#COPY $REMOTE_SOURCE $REMOTE_SOURCE_DIR
+FROM registry.access.redhat.com/ubi8/ubi:8.4-203 AS builder
 
 ARG REDHAT_USERNAME
 ARG REDHAT_PASSWORD
@@ -47,19 +47,14 @@ COPY rox-proto rox-proto
 COPY sysdig sysdig
 COPY third_party third_party
 ARG NPROCS=2
-RUN NPROCS=${NPROCS} ./builder/build/build-cpaas.sh
+RUN NPROCS=${NPROCS} ./builder/build/build-ubi.sh
 
-#@follow_tag(registry.access.redhat.com/ubi8/ubi-minimal:latest)
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4-200
 
 WORKDIR /
 
-LABEL maintainer="Red Hat, Inc."
-
 ARG COLLECTOR_VERSION
-LABEL com.redhat.component="rhacs-collector-container" \
-      name="rhacs-collector" \
-      version="${COLLECTOR_VERSION}"
+LABEL version="${COLLECTOR_VERSION}"
 
 ENV COLLECTOR_HOST_ROOT=/host
 
@@ -89,8 +84,6 @@ RUN mv /collector-wrapper.sh /usr/local/bin/ && \
       c-ares && \
     microdnf clean all && \
     rm -rf /var/cache/dnf
-    # (Optional) Remove line below to keep package management utilities
-    # rpm -e --nodeps rpm rpm-build-libs rpm-libs python3-rpm subscription-manager python3-subscription-manager-rhsm yum $(rpm -qa *dnf*) python3-hawkey
 
 COPY --from=builder /MODULE_VERSION.txt /kernel-modules/MODULE_VERSION.txt
 COPY --from=builder /THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES

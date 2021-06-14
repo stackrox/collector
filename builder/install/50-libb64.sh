@@ -2,7 +2,7 @@
 
 set -e
 
-if [ -n "${CPAAS_BUILD}" ]; then
+if [ -n "${WITH_RHEL8_RPMS}" ]; then
     tar xzf libb64-v${B64_VERSION}.tar.gz
     cd libb64-v${B64_VERSION}
 else

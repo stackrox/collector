@@ -2,9 +2,7 @@
 
 set -e
 
-if [ ! -n "${CPAAS_BUILD}" ]; then
-    git clone https://github.com/open-source-parsers/jsoncpp.git -b "$JSONCPP_REVISION" --depth 1
-fi
+git clone https://github.com/open-source-parsers/jsoncpp.git -b "$JSONCPP_REVISION" --depth 1
 cd jsoncpp
 cp LICENSE "${LICENSE_DIR}/jsoncpp-${JSONCPP_REVISION}"
 mkdir cmake-build

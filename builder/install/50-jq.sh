@@ -2,15 +2,10 @@
 
 set -e
 
-if [ -n "${CPAAS_BUILD}" ]; then
-    cd jq
-    autoreconf -fi
-else
-    wget "https://github.com/stedolan/jq/releases/download/jq-${JQ_VERSION}/jq-${JQ_VERSION}.tar.gz"
-    tar -zxf "jq-${JQ_VERSION}.tar.gz"
-    cd "jq-${JQ_VERSION}"
-fi
+wget "https://github.com/stedolan/jq/releases/download/jq-${JQ_VERSION}/jq-${JQ_VERSION}.tar.gz"
+tar -zxf "jq-${JQ_VERSION}.tar.gz"
+cd "jq-${JQ_VERSION}"
 cp COPYING "${LICENSE_DIR}/jq-${JQ_VERSION}"
 ./configure --without-oniguruma --disable-maintainer-mode --enable-all-static --disable-dependency-tracking --prefix=/usr/local
-make -j "${NPROCS:-2}" LDFLAGS=-all-static CFLAGS=-fPIC
+make LDFLAGS=-all-static CFLAGS=-fPIC
 make install

@@ -2,7 +2,7 @@
 
 set -e
 
-if [ -n "${CPAAS_BUILD}" ]; then
+if [ -n "${WITH_RHEL8_RPMS}" ]; then
     cd prometheus-cpp
     cd 3rdparty
     rmdir civetweb

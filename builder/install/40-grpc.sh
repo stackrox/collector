@@ -7,7 +7,7 @@ if [ -f /etc/redhat-release ]; then
 	CXXFLAGS="-Wno-error=class-memaccess -Wno-ignored-qualifiers -Wno-stringop-truncation -Wno-cast-function-type"
 fi
 
-if [ -n "${CPAAS_BUILD}" ]; then
+if [ -n "${WITH_RHEL8_RPMS}" ]; then
     cd grpc
     cd third_party
     rmdir abseil-cpp protobuf

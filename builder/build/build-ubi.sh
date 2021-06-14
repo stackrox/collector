@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
+
+# This builds the collector and its dependencies with the assumption that a Red
+# Hat subscription provides access to required RHEL 8 RPMs and that dependencies
+# are resolved with submodules.
+
 set -eux
 
-export CPAAS_BUILD="true"
+export WITH_RHEL8_RPMS="true"
 export LICENSE_DIR="/THIRD_PARTY_NOTICES"
 mkdir -p "${LICENSE_DIR}"
 
