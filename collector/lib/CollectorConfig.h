@@ -51,6 +51,7 @@ class CollectorConfig {
       "execve",
       "fchdir",
       "fork",
+      "open",
       "procexit",
       "procinfo",
       "setresgid",
