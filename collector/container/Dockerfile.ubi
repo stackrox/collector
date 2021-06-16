@@ -4,20 +4,18 @@ FROM registry.access.redhat.com/ubi8/ubi:8.4-203 AS builder
 
 ARG REDHAT_USERNAME
 ARG REDHAT_PASSWORD
-RUN rm -rf /etc/rhsm-host
-RUN subscription-manager register --username "${REDHAT_USERNAME}" --password "${REDHAT_PASSWORD}"
-RUN subscription-manager attach
-RUN subscription-manager attach --pool=8a85f9a178d12e760178dba5bb1d2b43
-RUN dnf config-manager --enable codeready-builder-for-rhel-8-x86_64-rpms
-RUN dnf config-manager --enable amq-clients-2-for-rhel-8-x86_64-rpms
-RUN dnf config-manager --enable rhocp-4.6-for-rhel-8-x86_64-rpms
+RUN rm -rf /etc/rhsm-host && \
+    subscription-manager register --username "${REDHAT_USERNAME}" --password "${REDHAT_PASSWORD}" && \
+    subscription-manager attach && \
+    subscription-manager attach --pool=8a85f9a178d12e760178dba5bb1d2b43 && \
+    dnf config-manager --enable codeready-builder-for-rhel-8-x86_64-rpms && \
+    dnf config-manager --enable amq-clients-2-for-rhel-8-x86_64-rpms && \
+    dnf config-manager --enable rhocp-4.6-for-rhel-8-x86_64-rpms
 
 # hadolint ignore=DL3041
 RUN dnf -y update && \
     dnf -y install \
         make \
-        wget \
-        unzip \
         cmake \
         gcc-c++ \
         openssl-devel \
@@ -90,9 +88,10 @@ COPY --from=builder /THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES
 
 EXPOSE 8080 9090
 
-RUN rm -rf /etc/pki/entitlement
-RUN rm -rf /etc/rhsm
+RUN rm -rf /etc/pki/entitlement && \
+    rm -rf /etc/rhsm
 
+# hadolint ignore=DL3059
 RUN collector --help || if [ $? -ne 1 ]; then echo "Invalid collector build"; exit 1; fi
 
 ENTRYPOINT ["/bootstrap.sh"]
