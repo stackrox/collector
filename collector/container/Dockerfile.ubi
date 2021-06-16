@@ -16,8 +16,6 @@ RUN dnf config-manager --enable rhocp-4.6-for-rhel-8-x86_64-rpms
 RUN dnf -y update && \
     dnf -y install \
         make \
-        wget \
-        unzip \
         cmake \
         gcc-c++ \
         openssl-devel \
