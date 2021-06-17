@@ -922,7 +922,8 @@ jobs:
           docker build \
             --build-arg COLLECTOR_VERSION=${COLLECTOR_VERSION} \
             --build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
-            --build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}"  \
+            --build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}" \
+            -t "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}" \
             -t "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}-slim" \
             -f ${SOURCE_ROOT}/collector/container/Dockerfile.ubi \
             ${SOURCE_ROOT}
@@ -930,6 +931,8 @@ jobs:
     - run:
         name: Push collector UBI images
         command: |
+          echo "Pushing collector image"
+          docker push "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}"
           echo "Pushing collector slim image"
           docker push "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}-slim"
 
