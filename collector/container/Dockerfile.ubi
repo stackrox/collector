@@ -78,7 +78,7 @@ RUN mv /collector-wrapper.sh /usr/local/bin/ && \
       kmod \
       jsoncpp \
       tbb \
-      jq-devel \
+      jq \
       c-ares && \
     microdnf clean all && \
     rm -rf /var/cache/dnf
