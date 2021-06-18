@@ -6,6 +6,8 @@
 
 set -eux
 
+source ./builder/install/versions.sh
+
 export WITH_RHEL8_RPMS="true"
 export LICENSE_DIR="/THIRD_PARTY_NOTICES"
 mkdir -p "${LICENSE_DIR}"

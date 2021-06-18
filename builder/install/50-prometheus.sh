@@ -8,7 +8,6 @@ if [ -n "${WITH_RHEL8_RPMS}" ]; then
     rmdir civetweb
     mv ../../civetweb .
     cd ..
-    cp LICENSE "${LICENSE_DIR}/prometheus-${PROMETHEUS_CPP_REVISION}"
 else
     git clone https://github.com/jupp0r/prometheus-cpp.git -b "$PROMETHEUS_CPP_REVISION" --depth 1
     cd prometheus-cpp
