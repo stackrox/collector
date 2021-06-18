@@ -3,8 +3,7 @@
 set -e
 
 if [ -n "${WITH_RHEL8_RPMS}" ]; then
-    tar xzf libb64-v${B64_VERSION}.tar.gz
-    cd libb64-v${B64_VERSION}
+    cd libb64
 else
     wget "https://downloads.sourceforge.net/project/libb64/libb64/libb64/libb64-${B64_VERSION}.zip"
     unzip "libb64-${B64_VERSION}.zip"
