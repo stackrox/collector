@@ -15,7 +15,7 @@ mkdir -p "${LICENSE_DIR}"
 ### Generate source from protobufs
 
 cd third_party
-GRPC_VERSION=v1.28.1 ../builder/install/40-grpc.sh
+../builder/install/40-grpc.sh
 cd ..
 
 ln -s third_party/googleapis googleapis
@@ -23,10 +23,6 @@ ln -s third_party/googleapis googleapis
 BASE_PATH=$(pwd) make -f builder/build/protogen.mk SKIP_GOOGLEAPI_FETCH=1 generated-proto-srcs
 
 ### Dependencies
-
-export B64_VERSION=1.2.1
-export LUAJIT_VERSION=2.0.3
-export PROMETHEUS_CPP_REVISION=v0.9.0
 
 cd third_party
 ../builder/install/50-libb64.sh
