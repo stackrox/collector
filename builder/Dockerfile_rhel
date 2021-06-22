@@ -13,7 +13,6 @@ RUN yum -y update \
         bison \
         ca-certificates \
         clang \
-        ccache \
         cracklib-dicts \
         elfutils-libelf-devel \
         file \
