@@ -28,6 +28,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "CollectorStats.h"
 #include "DuplexGRPC.h"
 #include "GRPCUtil.h"
+#include "Profiler.h"
 #include "ProtoUtil.h"
 #include "TimeUtil.h"
 #include "Utility.h"
@@ -141,6 +142,7 @@ void NetworkStatusNotifier::ReceiveIPNetworks(const sensor::IPNetworkList& netwo
 }
 
 void NetworkStatusNotifier::Run() {
+  Profiler::RegisterCPUThread();
   auto next_attempt = std::chrono::system_clock::now();
 
   while (thread_.PauseUntil(next_attempt)) {
