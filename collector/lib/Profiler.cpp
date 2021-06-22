@@ -9,8 +9,6 @@
 
 namespace collector {
 
-// CPU profiler
-
 bool Profiler::IsCPUProfilerSupported() { return true; }
 
 bool Profiler::IsCPUProfilerEnabled() { return ProfilingIsEnabledForAllThreads(); }
@@ -25,8 +23,6 @@ void Profiler::StopCPUProfiler() {
 }
 
 void Profiler::RegisterCPUThread() { ProfilerRegisterThread(); }
-
-// Heap profiler
 
 bool Profiler::IsHeapProfilerSupported() { return true; }
 
