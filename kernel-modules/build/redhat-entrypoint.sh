@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-exec scl enable llvm-toolset-7.0 -- "$@"
+exec scl enable devtoolset-8 llvm-toolset-7.0 -- "$@"

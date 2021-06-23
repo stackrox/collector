@@ -3,7 +3,7 @@ FROM centos:7
 RUN yum update -y
 RUN yum -y groupinstall "Development Tools" && \
     yum -y install centos-release-scl && \
-    yum -y install llvm-toolset-7.0 elfutils-libelf-devel \
+    yum -y install devtoolset-8 llvm-toolset-7.0 elfutils-libelf-devel \
     ;
 
 RUN mkdir -p /output
