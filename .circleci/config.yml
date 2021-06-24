@@ -597,6 +597,12 @@ jobs:
             elif [[ "$distro" == "redhat" && "$version" =~ ^.*(el8_[3-9]|[3-9][0-9][0-9][.0-9]+el8)\.x86_64$ ]]; then
               echo "$version" >>~/kobuild-tmp/custom-flavors/versions.modern
               echo "Building kernel version $version with modern builder"
+            elif [[ "$distro" == "redhat" && "$version" == "4.18.0-293.el8.x86_64" ]]; then
+              echo "$version" >>~/kobuild-tmp/custom-flavors/versions.modern
+              echo "Building kernel version $version with modern builder"
+            elif [[ "$distro" == "debian" && "$version" =~ ^4.19.0-17(-cloud|)-amd64$ ]]; then
+              echo "$version" >>~/kobuild-tmp/custom-flavors/versions.modern
+              echo "Building kernel version $version with modern builder"
             elif grep -q "$distro" <~/kobuild-tmp/custom-flavors/all; then
               echo "$version" >>~/kobuild-tmp/custom-flavors/versions."$distro"
               echo "Building kernel version $version with custom builder flavor $distro"
