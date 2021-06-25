@@ -1,93 +1,64 @@
 #include "ProfilerHandler.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <cstring>
-#include <memory>
 
 #include <json/json.h>
 #include <sys/stat.h>
 
 #include "Logging.h"
 #include "Profiler.h"
+#include "Utility.h"
 
 namespace collector {
 
-const char* kCPUProfileFilename = "/module/cpu_profile";
+const std::string ProfilerHandler::kCPUProfileFilename = "/module/cpu_profile";
+const std::string ProfilerHandler::kBaseRoute = "/profile";
+const std::string ProfilerHandler::kCPURoute = kBaseRoute + "/cpu";
+const std::string ProfilerHandler::kHeapRoute = kBaseRoute + "/heap";
 
-bool handleHeapStart(CivetServer* server, struct mg_connection* conn) {
-  if (!Profiler::IsHeapProfilerSupported()) {
-    return mg_send_http_error(conn, 500, "unsupported") >= 0;
-  }
-  if (Profiler::IsHeapProfilerEnabled()) {
-    return mg_send_http_error(conn, 400, "heap profiler already started ") >= 0;
-  }
-  Profiler::StartHeapProfiler();
-  const mg_request_info* req_info = mg_get_request_info(conn);
-  CLOG(INFO) << "started heap profiler - " << req_info->remote_addr;
-  return mg_send_http_ok(conn, "text/plain", 0) >= 0;
+bool ProfilerHandler::ServerError(struct mg_connection* conn, const char* err) {
+  return mg_send_http_error(conn, 500, err) >= 0;
 }
 
-bool handleHeapStop(CivetServer* server, struct mg_connection* conn) {
-  if (!Profiler::IsHeapProfilerSupported()) {
-    return mg_send_http_error(conn, 500, "unsupported") >= 0;
+bool ProfilerHandler::ClientError(struct mg_connection* conn, const char* err) {
+  return mg_send_http_error(conn, 400, err) >= 0;
+}
+
+bool ProfilerHandler::SendCPUProfile(struct mg_connection* conn) {
+  WITH_LOCK(mutex_) {
+    if (cpu_profile_length_ == 0) {
+      return mg_send_http_ok(conn, "text/plain", 0) >= 0;
+    }
+    mg_send_mime_file(conn, kCPUProfileFilename.c_str(), "application/octet-stream");
   }
-  if (!Profiler::IsHeapProfilerEnabled()) {
-    return mg_send_http_error(conn, 400, "heap profiler not enabled") >= 0;
-  }
-  const char* heap_profile = Profiler::AllocAndGetHeapProfile();
-  if (!heap_profile) {
-    return mg_send_http_error(conn, 500, "failed to get heap profile") >= 0;
-  }
-  int heap_profile_len = strlen(heap_profile);
-  if (mg_send_http_ok(conn, "application/octet-stream", heap_profile_len) < 0) {
-    return false;
-  }
-  mg_write(conn, heap_profile, heap_profile_len);
-  free((void*)heap_profile);
-  Profiler::StopHeapProfiler();
-  CLOG(INFO) << "stopped heap profiler - sent " << heap_profile_len << " bytes";
   return true;
 }
 
-bool handleCPUStart(CivetServer* server, struct mg_connection* conn) {
-  if (!Profiler::IsCPUProfilerSupported()) {
-    return mg_send_http_error(conn, 500, "unsupported") >= 0;
+bool ProfilerHandler::SendHeapProfile(struct mg_connection* conn) {
+  WITH_LOCK(mutex_) {
+    if (heap_profile_length_ == 0) {
+      return mg_send_http_ok(conn, "text/plain", 0) >= 0;
+    }
+    if (mg_send_http_ok(conn, "application/octet-stream", heap_profile_length_) < 0) {
+      return false;
+    }
+    if (mg_write(conn, heap_profile_.get(), heap_profile_length_) != heap_profile_length_) {
+      return false;
+    }
   }
-  if (Profiler::IsCPUProfilerEnabled()) {
-    return mg_send_http_error(conn, 400, "cpu profiler already enabled") >= 0;
-  }
-  if (!Profiler::StartCPUProfiler(kCPUProfileFilename)) {
-    return mg_send_http_error(conn, 500, "failed to start cpu profiler") >= 0;
-  }
-  const mg_request_info* req_info = mg_get_request_info(conn);
-  CLOG(INFO) << "started cpu profiler - " << req_info->remote_addr;
-  return mg_send_http_ok(conn, "text/plain", 0) >= 0;
-}
-
-bool handleCPUStop(CivetServer* server, struct mg_connection* conn) {
-  if (!Profiler::IsCPUProfilerSupported()) {
-    return mg_send_http_error(conn, 500, "unsupported") >= 0;
-  }
-  if (!Profiler::IsCPUProfilerEnabled()) {
-    return mg_send_http_error(conn, 400, "cpu profiler not enabled") >= 0;
-  }
-  Profiler::StopCPUProfiler();
-  struct stat sdata;
-  int cpu_profile_len = -1;
-  if (stat(kCPUProfileFilename, &sdata) == 0) {
-    cpu_profile_len = sdata.st_size;
-  }
-  mg_send_file(conn, kCPUProfileFilename);
-  CLOG(INFO) << "stopped cpu profiler - sent " << cpu_profile_len << " bytes";
   return true;
 }
 
-bool handleStatus(CivetServer* server, struct mg_connection* conn) {
+bool ProfilerHandler::SendStatus(struct mg_connection* conn) {
   Json::Value resp(Json::objectValue);
-  resp["cpuProfilerSupported"] = Profiler::IsCPUProfilerSupported();
-  resp["cpuProfilerEnabled"] = Profiler::IsCPUProfilerEnabled();
-  resp["heapProfilerSupported"] = Profiler::IsHeapProfilerSupported();
-  resp["heapProfilerEnabled"] = Profiler::IsHeapProfilerEnabled();
+  WITH_LOCK(mutex_) {
+    resp["supports_cpu"] = Profiler::IsCPUProfilerSupported();
+    resp["supports_heap"] = Profiler::IsHeapProfilerSupported();
+    resp["cpu"] = Profiler::IsCPUProfilerEnabled() ? "on" : (cpu_profile_length_ > 0 ? "off" : "empty");
+    resp["heap"] = Profiler::IsHeapProfilerEnabled() ? "on" : (heap_profile_length_ > 0 ? "off" : "empty");
+  }
   std::string json_body = resp.toStyledString();
   if (mg_send_http_ok(conn, "application/json", json_body.length()) < 0) {
     return false;
@@ -95,27 +66,97 @@ bool handleStatus(CivetServer* server, struct mg_connection* conn) {
   return mg_write(conn, json_body.c_str(), json_body.length()) >= 0;
 }
 
-bool ProfilerHandler::handleGet(CivetServer* server, struct mg_connection* conn) {
-  std::string cpu_value, heap_value;
-  server->getParam(conn, "cpu", cpu_value);
-  server->getParam(conn, "heap", heap_value);
+bool ProfilerHandler::HandleCPURoute(struct mg_connection* conn, const std::string& post_data) {
+  WITH_LOCK(mutex_) {
+    if (post_data == "on") {
+      if (!Profiler::IsCPUProfilerEnabled() && !Profiler::StartCPUProfiler(kCPUProfileFilename)) {
+        return ServerError(conn, "failed starting cpu profiler");
+      }
+      CLOG(INFO) << "started cpu profiler";
+    } else if (post_data == "off") {
+      if (Profiler::IsCPUProfilerEnabled()) {
+        Profiler::StopCPUProfiler();
+        struct stat sdata;
+        if (stat(kCPUProfileFilename.c_str(), &sdata) == 0) {
+          cpu_profile_length_ = sdata.st_size;
+        }
+        CLOG(INFO) << "stopped cpu profiler, bytes=" << cpu_profile_length_;
+      }
+    } else if (post_data == "empty") {
+      if (cpu_profile_length_ != 0) {
+        cpu_profile_length_ = 0;
+        if (std::remove(kCPUProfileFilename.c_str()) != 0) {
+          CLOG(INFO) << "remove failed: " << StrError();
+          return ServerError(conn, "failure while deleting cpu profile");
+        }
+        CLOG(INFO) << "cleared cpu profile";
+      }
+    } else {
+      return ClientError(conn, "invalid post data");
+    }
+  }
+  return mg_send_http_ok(conn, "text/plain", 0) >= 0;
+}
 
-  if (cpu_value.empty() && heap_value.empty()) {
-    return handleStatus(server, conn);
+bool ProfilerHandler::HandleHeapRoute(struct mg_connection* conn, const std::string& post_data) {
+  WITH_LOCK(mutex_) {
+    if (post_data == "on") {
+      if (!Profiler::IsHeapProfilerEnabled()) {
+        Profiler::StartHeapProfiler();
+        CLOG(INFO) << "started heap profiler";
+      }
+    } else if (post_data == "off") {
+      if (Profiler::IsHeapProfilerEnabled()) {
+        heap_profile_ = std::shared_ptr<void>((void*)Profiler::AllocAndGetHeapProfile(), free);
+        heap_profile_length_ = strlen(static_cast<const char*>(heap_profile_.get()));
+        Profiler::StopHeapProfiler();
+        CLOG(INFO) << "stopped heap profiler, bytes=" << heap_profile_length_;
+      }
+    } else if (post_data == "empty") {
+      if (heap_profile_length_ != 0) {
+        heap_profile_length_ = 0;
+        heap_profile_.reset();
+        CLOG(INFO) << "cleared heap profile";
+      }
+    } else {
+      return ClientError(conn, "invalid post data");
+    }
   }
-  if (heap_value == "start" && cpu_value.empty()) {
-    return handleHeapStart(server, conn);
+  return mg_send_http_ok(conn, "text/plain", 0) >= 0;
+}
+
+bool ProfilerHandler::handlePost(CivetServer* server, struct mg_connection* conn) {
+  if (!Profiler::IsCPUProfilerSupported()) {
+    return ServerError(conn, "not supported");
   }
-  if (heap_value == "stop" && cpu_value.empty()) {
-    return handleHeapStop(server, conn);
+  const mg_request_info* req_info = mg_get_request_info(conn);
+  if (req_info == nullptr) {
+    return ServerError(conn, "unable to read request");
   }
-  if (cpu_value == "start" && heap_value.empty()) {
-    return handleCPUStart(server, conn);
+  std::string uri(req_info->local_uri);
+  std::string post_data(server->getPostData(conn));
+  if (uri == kCPURoute) {
+    return HandleCPURoute(conn, post_data);
+  } else if (uri == kHeapRoute) {
+    return HandleHeapRoute(conn, post_data);
   }
-  if (cpu_value == "stop" && heap_value.empty()) {
-    return handleCPUStop(server, conn);
+  return ClientError(conn, "unknown route");
+}
+
+bool ProfilerHandler::handleGet(CivetServer* server, struct mg_connection* conn) {
+  const mg_request_info* req_info = mg_get_request_info(conn);
+  if (req_info == nullptr) {
+    return ServerError(conn, "unable to read request");
   }
-  return mg_send_http_error(conn, 400, "bad request") >= 0;
+  std::string uri = req_info->local_uri;
+  if (uri == kBaseRoute) {
+    return SendStatus(conn);
+  } else if (uri == kHeapRoute) {
+    return SendHeapProfile((conn));
+  } else if (uri == kCPURoute) {
+    return SendCPUProfile(conn);
+  }
+  return ClientError(conn, "unknown route");
 }
 
 }  // namespace collector

@@ -11,7 +11,6 @@ if(NOT DEFINED ENV{DISABLE_PROFILING})
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCOLLECTOR_PROFILING")
 endif()
 
->>>>>>> 9ab55422 (cpu/heap profiling)
 if(ADDRESS_SANITIZER)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
 endif()

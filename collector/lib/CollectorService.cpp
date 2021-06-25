@@ -69,7 +69,7 @@ void CollectorService::RunForever() {
   server.addHandler("/loglevel", setLogLevel);
 
   ProfilerHandler profiler_handler;
-  server.addHandler("/profile", profiler_handler);
+  server.addHandler(ProfilerHandler::kBaseRoute, profiler_handler);
 
   prometheus::Exposer exposer("9090");
   exposer.RegisterCollectable(registry);
