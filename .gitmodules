@@ -1,4 +1,28 @@
 [submodule "sysdig/src"]
 	path = sysdig/src
-	url = git@github.com:stackrox/sysdig
+	url = https://github.com/stackrox/sysdig.git
 	branch = stackrox-changes-tag-0.24.2
+[submodule "grpc"]
+	path = third_party/grpc
+	url = https://github.com/grpc/grpc
+[submodule "third_party/abseil-cpp"]
+	path = third_party/abseil-cpp
+	url = https://github.com/abseil/abseil-cpp.git
+[submodule "third_party/protobuf"]
+	path = third_party/protobuf
+	url = https://github.com/protocolbuffers/protobuf.git
+[submodule "third_party/googleapis"]
+	path = third_party/googleapis
+	url = https://github.com/googleapis/googleapis.git
+[submodule "third_party/luajit"]
+	path = third_party/luajit
+	url = https://luajit.org/git/luajit.git
+[submodule "third_party/prometheus-cpp"]
+	path = third_party/prometheus-cpp
+	url = https://github.com/jupp0r/prometheus-cpp
+[submodule "third_party/civetweb"]
+	path = third_party/civetweb
+	url = https://github.com/civetweb/civetweb.git
+[submodule "third_party/libb64"]
+	path = third_party/libb64
+	url = https://github.com/libb64/libb64.git

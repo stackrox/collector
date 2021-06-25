@@ -1,0 +1,107 @@
+# This builds a collector container based on UBI with a reliance on Red Hat
+# subscription entitlements.
+FROM registry.access.redhat.com/ubi8/ubi:8.4-203 AS builder
+
+ARG REDHAT_USERNAME
+ARG REDHAT_PASSWORD
+RUN rm -rf /etc/rhsm-host && \
+    subscription-manager register --username "${REDHAT_USERNAME}" --password "${REDHAT_PASSWORD}" && \
+    subscription-manager attach && \
+    # this pool id may be associated with the current test user account.
+    # if the account changes, use: `subscription-manager list --available` to find a valid id.
+    subscription-manager attach --pool=8a85f9a178d12e760178dba5bb1d2b43 && \
+    dnf config-manager --enable codeready-builder-for-rhel-8-x86_64-rpms && \
+    dnf config-manager --enable amq-clients-2-for-rhel-8-x86_64-rpms && \
+    dnf config-manager --enable rhocp-4.6-for-rhel-8-x86_64-rpms
+
+# hadolint ignore=DL3041
+RUN dnf -y update && \
+    dnf -y install \
+        make \
+        cmake \
+        gcc-c++ \
+        openssl-devel \
+        ncurses-devel \
+        curl-devel \
+        libuuid-devel \
+        libcap-ng-devel \
+        autoconf \
+        libtool \
+        git \
+        elfutils-libelf-devel \
+        gtest-devel \
+        gmock-devel \
+        jsoncpp-devel  \
+        tbb-devel \
+        jq-devel \
+        c-ares-devel && \
+    dnf clean all
+
+ARG BUILD_DIR=/build
+RUN mkdir -p ${BUILD_DIR}
+WORKDIR ${BUILD_DIR}
+COPY builder builder
+COPY collector src
+COPY rox-proto rox-proto
+COPY sysdig sysdig
+COPY third_party third_party
+ARG NPROCS=2
+RUN NPROCS=${NPROCS} ./builder/build/build-ubi.sh
+
+
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4-200
+
+WORKDIR /
+
+ARG COLLECTOR_VERSION
+LABEL version="${COLLECTOR_VERSION}"
+
+ENV COLLECTOR_HOST_ROOT=/host
+
+RUN rm -rf /etc/rhsm-host
+COPY --from=builder /etc/pki/entitlement /etc/pki/entitlement
+COPY --from=builder /etc/rhsm /etc/rhsm
+
+ARG BUILD_DIR=/build
+COPY --from=builder ${BUILD_DIR}/cmake-collector/EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so /usr/local/lib/
+COPY --from=builder ${BUILD_DIR}/cmake-collector/collector /usr/local/bin/
+COPY --from=builder ${BUILD_DIR}/src/container/scripts /
+
+RUN mv /collector-wrapper.sh /usr/local/bin/ && \
+    chmod 700 bootstrap.sh && \
+    echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
+    mkdir /kernel-modules && \
+    microdnf upgrade -y && \
+    microdnf install -y \
+      --enablerepo=codeready-builder-for-rhel-8-x86_64-rpms \
+      --enablerepo=amq-clients-2-for-rhel-8-x86_64-rpms \
+      --enablerepo=rhocp-4.6-for-rhel-8-x86_64-rpms \
+      gzip \
+      kmod \
+      jsoncpp \
+      tbb \
+      jq \
+      c-ares && \
+    microdnf clean all && \
+    rm -rf /var/cache/dnf
+
+COPY --from=builder /MODULE_VERSION.txt /kernel-modules/MODULE_VERSION.txt
+COPY --from=builder /THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES
+
+EXPOSE 8080 9090
+
+RUN rm -rf /etc/pki/entitlement && \
+    rm -rf /etc/rhsm
+
+# hadolint ignore=DL3059
+RUN collector --help || if [ $? -ne 1 ]; then echo "Invalid collector build"; exit 1; fi
+
+ENTRYPOINT ["/bootstrap.sh"]
+
+# hadolint ignore=DL3025
+CMD collector-wrapper.sh \
+    --collector-config=$COLLECTOR_CONFIG \
+    --collection-method=$COLLECTION_METHOD \
+    --grpc-server=$GRPC_SERVER
+
+HEALTHCHECK CMD curl --fail http://127.0.0.1:8080/ready || exit 1

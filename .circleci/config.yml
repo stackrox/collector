@@ -32,6 +32,7 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
   context: docker-io-pull
   requires:
   - images
+  - ubi-image
   - integration-test-local
 
 orbs:
@@ -906,6 +907,41 @@ jobs:
           echo "Pushing collector rhel slim image"
           ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "stackrox/collector-rhel:${COLLECTOR_VERSION}-slim"
 
+  ubi-image:
+    machine:
+      image: ubuntu-2004:202010-01
+      docker_layer_caching: true
+    resource_class: large
+    steps:
+    - initcommand
+    - docker-login-push
+    - run:
+        name: Lint Dockerfile
+        command: |
+          docker run --rm -i hadolint/hadolint < \
+            ${SOURCE_ROOT}/collector/container/Dockerfile.ubi
+
+    - run:
+        name: Build collector UBI images
+        command: |
+
+          docker build \
+            --build-arg COLLECTOR_VERSION=${COLLECTOR_VERSION} \
+            --build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
+            --build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}" \
+            -t "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}" \
+            -t "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}-slim" \
+            -f ${SOURCE_ROOT}/collector/container/Dockerfile.ubi \
+            ${SOURCE_ROOT}
+
+    - run:
+        name: Push collector UBI images
+        command: |
+          echo "Pushing collector image"
+          docker push "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}"
+          echo "Pushing collector slim image"
+          docker push "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}-slim"
+
   kernel-module-build-failures-check:
     <<: *defaultImage
 
@@ -1043,6 +1079,9 @@ jobs:
       use-rhel:
         type: boolean
         default: false
+      use-ubi:
+        type: boolean
+        default: false
 
     <<: *defaultMachine
     working_directory: ~/workspace
@@ -1059,7 +1098,7 @@ jobs:
           export REMOTE_HOST_TYPE=local
           export COLLECTION_METHOD=kernel_module
           export VM_CONFIG="circle_local_<< parameters.vm-config >>"
-          export COLLECTOR_REPO="stackrox/collector<<# parameters.use-rhel>>-rhel<</ parameters.use-rhel>>"
+          export COLLECTOR_REPO="stackrox/collector<<# parameters.use-rhel>>-rhel<</ parameters.use-rhel>><<# parameters.use-ubi>>-test-cpaas<</ parameters.use-ubi>>"
           export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}"
           make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
@@ -1132,6 +1171,8 @@ jobs:
           export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
           if "${SOURCE_ROOT}/.circleci/pr_has_label.sh" ci-run-against-rhel; then
             export COLLECTOR_REPO="stackrox/collector-rhel"
+          elif "${SOURCE_ROOT}/.circleci/pr_has_label.sh" ci-run-against-ubi; then
+            export COLLECTOR_REPO="stackrox/collector-test-cpaas"
           else
             export COLLECTOR_REPO="stackrox/collector"
           fi
@@ -1504,6 +1545,13 @@ workflows:
         - collector-rhel
         - kernels
         - join-modules
+    - ubi-image:
+        <<: *runOnAllTags
+        context:
+          - docker-io-push
+          - redhat-developer-account-login
+        requires:
+        - initjob
     - integration-test-local:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
@@ -1516,6 +1564,14 @@ workflows:
         use-rhel: true
         requires:
         - images
+        - upload-modules
+    - integration-test-local:
+        <<: *runOnAllTagsWithDockerIOPullCtx
+        name: integration-test-local-ubi
+        vm-config: rhel
+        use-ubi: true
+        requires:
+        - ubi-image
         - upload-modules
     # Enable after fixing COS stable ebpf (5.4.104+) (ROX-7107)
     #- integration-test:
