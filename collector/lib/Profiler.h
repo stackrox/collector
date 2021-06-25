@@ -1,8 +1,8 @@
 #ifndef COLLECTOR_PROFILER_H
 #define COLLECTOR_PROFILER_H
 
-#include <string>
 #include <memory>
+#include <string>
 
 struct Free {
   void operator()(const void* p) const { free((void*)p); }
