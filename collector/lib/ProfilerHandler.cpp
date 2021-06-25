@@ -13,7 +13,8 @@
 
 namespace collector {
 
-const std::string ProfilerHandler::kCPUProfileFilename = "/module/cpu_profile";
+StringEnvVar cpu_profile_filename("ROX_COLLECTOR_PROFILE_CPU_PATH", "/module/cpu_profile");
+
 const std::string ProfilerHandler::kBaseRoute = "/profile";
 const std::string ProfilerHandler::kCPURoute = kBaseRoute + "/cpu";
 const std::string ProfilerHandler::kHeapRoute = kBaseRoute + "/heap";
@@ -69,10 +70,12 @@ bool ProfilerHandler::SendStatus(struct mg_connection* conn) {
 bool ProfilerHandler::HandleCPURoute(struct mg_connection* conn, const std::string& post_data) {
   WITH_LOCK(mutex_) {
     if (post_data == "on") {
-      if (!Profiler::IsCPUProfilerEnabled() && !Profiler::StartCPUProfiler(kCPUProfileFilename)) {
-        return ServerError(conn, "failed starting cpu profiler");
+      if (!Profiler::IsCPUProfilerEnabled()) {
+        if (!Profiler::StartCPUProfiler(kCPUProfileFilename)) {
+          return ServerError(conn, "failed starting cpu profiler");
+        }
+        CLOG(INFO) << "started cpu profiler";
       }
-      CLOG(INFO) << "started cpu profiler";
     } else if (post_data == "off") {
       if (Profiler::IsCPUProfilerEnabled()) {
         Profiler::StopCPUProfiler();
@@ -107,8 +110,11 @@ bool ProfilerHandler::HandleHeapRoute(struct mg_connection* conn, const std::str
       }
     } else if (post_data == "off") {
       if (Profiler::IsHeapProfilerEnabled()) {
-        heap_profile_ = std::shared_ptr<void>((void*)Profiler::AllocAndGetHeapProfile(), free);
-        heap_profile_length_ = strlen(static_cast<const char*>(heap_profile_.get()));
+        heap_profile_ = Profiler::AllocAndGetHeapProfile();
+        if (heap_profile_ == nullptr) {
+          return ServerError(conn, "failed get heap profile");
+        }
+        heap_profile_length_ = strlen(heap_profile_.get());
         Profiler::StopHeapProfiler();
         CLOG(INFO) << "stopped heap profiler, bytes=" << heap_profile_length_;
       }

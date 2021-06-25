@@ -4,6 +4,7 @@
 #include <memory>
 #include <mutex>
 
+#include "Profiler.h"
 #include "civetweb/CivetServer.h"
 
 namespace collector {
@@ -37,7 +38,7 @@ class ProfilerHandler : public CivetHandler {
   bool SendCPUProfile(struct mg_connection* conn);
   bool HandleCPURoute(struct mg_connection* conn, const std::string& post_data);
   bool HandleHeapRoute(struct mg_connection* conn, const std::string& post_data);
-  std::shared_ptr<void> heap_profile_;
+  MallocUniquePtr heap_profile_;
   size_t heap_profile_length_;
   size_t cpu_profile_length_;
   std::mutex mutex_;

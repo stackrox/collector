@@ -2,6 +2,12 @@
 #define COLLECTOR_PROFILER_H
 
 #include <string>
+#include <memory>
+
+struct Free {
+  void operator()(const void* p) const { free((void*)p); }
+};
+using MallocUniquePtr = std::unique_ptr<char, Free>;
 
 #ifdef COLLECTOR_PROFILING
 #  include "gperftools/heap-profiler.h"
@@ -11,11 +17,11 @@ namespace collector {
 class Profiler {
  public:
   static inline void RegisterCPUThread() { ProfilerRegisterThread(); }
-  static inline const char* AllocAndGetHeapProfile() {
+  static inline MallocUniquePtr AllocAndGetHeapProfile() {
     if (!IsHeapProfilerEnabled()) {
       return nullptr;
     }
-    return GetHeapProfile();
+    return MallocUniquePtr(GetHeapProfile());
   }
   static inline bool StartCPUProfiler(const std::string& output_dir) {
     return ProfilerStart(output_dir.c_str());
@@ -43,16 +49,16 @@ class Profiler {
 namespace collector {
 class Profiler {
  public:
-  void RegisterCPUThread() {}
-  const char* AllocAndGetHeapProfile() { return nullptr; }
-  bool StartCPUProfiler(const std::string& output_dir) { return false; }
-  void StopCPUProfiler() {}
-  void StartHeapProfiler() {}
-  void StopHeapProfiler() {}
-  bool IsCPUProfilerSupported() { return false; }
-  bool IsCPUProfilerEnabled() { return false; }
-  bool IsHeapProfilerSupported() { return false; }
-  bool IsHeapProfilerEnabled() { return false; }
+  static inline void RegisterCPUThread() {}
+  static inline MallocUniquePtr AllocAndGetHeapProfile() { return MallocUniquePtr(nullptr); }
+  static inline bool StartCPUProfiler(const std::string& output_dir) { return false; }
+  static inline void StopCPUProfiler() {}
+  static inline void StartHeapProfiler() {}
+  static inline void StopHeapProfiler() {}
+  static inline bool IsCPUProfilerSupported() { return false; }
+  static inline bool IsCPUProfilerEnabled() { return false; }
+  static inline bool IsHeapProfilerSupported() { return false; }
+  static inline bool IsHeapProfilerEnabled() { return false; }
 };
 }  // namespace collector
 #endif
