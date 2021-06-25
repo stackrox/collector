@@ -13,8 +13,7 @@
 
 namespace collector {
 
-StringEnvVar cpu_profile_filename("ROX_COLLECTOR_PROFILE_CPU_PATH", "/module/cpu_profile");
-
+const std::string ProfilerHandler::kCPUProfileFilename = "/module/cpu_profile";
 const std::string ProfilerHandler::kBaseRoute = "/profile";
 const std::string ProfilerHandler::kCPURoute = kBaseRoute + "/cpu";
 const std::string ProfilerHandler::kHeapRoute = kBaseRoute + "/heap";
