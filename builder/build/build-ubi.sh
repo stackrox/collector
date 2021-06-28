@@ -32,6 +32,8 @@ cd ..
 
 ### Build
 
+export DISABLE_PROFILING="true"
+
 cp -a collector/generated src/generated
 echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 mkdir -p cmake-collector
