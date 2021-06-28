@@ -36,6 +36,7 @@ extern "C" {
 #include "GetStatus.h"
 #include "LogLevel.h"
 #include "NetworkStatusNotifier.h"
+#include "ProfilerHandler.h"
 #include "SysdigService.h"
 #include "Utility.h"
 #include "civetweb/CivetServer.h"
@@ -66,6 +67,9 @@ void CollectorService::RunForever() {
   server.addHandler("/ready", getStatus);
   LogLevel setLogLevel;
   server.addHandler("/loglevel", setLogLevel);
+
+  ProfilerHandler profiler_handler;
+  server.addHandler(ProfilerHandler::kBaseRoute, profiler_handler);
 
   prometheus::Exposer exposer("9090");
   exposer.RegisterCollectable(registry);

@@ -7,6 +7,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall --std=c++11 -pthread -Wno-de
 set(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-strict-aliasing -DNDEBUG")
 
+if(NOT DEFINED ENV{DISABLE_PROFILING})
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCOLLECTOR_PROFILING")
+endif()
+
 if(ADDRESS_SANITIZER)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
 endif()
@@ -47,6 +51,11 @@ target_link_libraries(collector_lib z ssl crypto)
 
 add_executable(collector collector.cpp)
 target_link_libraries(collector collector_lib)
+
+if(NOT DEFINED ENV{DISABLE_PROFILING})
+	target_link_libraries(collector profiler tcmalloc)
+endif()
+
 target_link_libraries(collector libprometheus-cpp-pull.a)
 target_link_libraries(collector libprometheus-cpp-core.a)
 
@@ -59,6 +68,10 @@ enable_testing()
 # Unit Tests
 file(GLOB TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/test/*.cpp)
 add_executable(runUnitTests ${TEST_SRC_FILES})
+
+if(NOT DEFINED ENV{DISABLE_PROFILING})
+	target_link_libraries(runUnitTests profiler tcmalloc)
+endif()
 target_link_libraries(runUnitTests collector_lib)
 if(DEFINED ENV{WITH_RHEL8_RPMS})
 target_link_libraries(runUnitTests gtest gtest_main gmock gmock_main)

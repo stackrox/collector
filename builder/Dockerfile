@@ -23,6 +23,7 @@ RUN apt-get update \
         libcap-ng-dev \
         libcurl4-openssl-dev \
         libelf-dev \
+        libgoogle-perftools-dev \
         libssl-dev \
         libtool \
         libz-dev \
