@@ -22,6 +22,15 @@ These instructions are for using the *JetBrains* C/C++ IDE **CLion**, but should
   - `make start-dev`
     - (Optional) Local builder images can used by setting the environment variable before execution using `BUILD_BUILDER_IMAGE=true make start-dev`.
 Or, builder images from a PR by with `COLLECTOR_BUILDER_TAG=<circle-build-id> make start-dev`.
+
+Instructions for CLion v2021.1.3
+- In the **File->Settings->Build, Execution, Deployment->Toolchains** window, add a new **Toolchain** entry as a **Remote Host** type.
+- Then, click in the **Credentials** section and fill out the SSH credentials used in the builder Dockerfile.
+  - Host: `localhost`, Port: `2222`, User name: `remoteuser`, Password: `c0llectah`
+- In the **File->Setting->Build, Execution, Deployment->Deployment** window click on the **Mappings** tab. Set **Deployment path** to /tmp.
+- In the **File->Settings->Build, Execution, Deployment->CMake** window add a CMake profile that uses the **Remote Host** toolchain and change **Build directory**/**Generation Path** to `cmake-build`.
+
+Instructions for older versions of CLion
 - In the **CLion->Preferences** window, add a new **Toolchain** entry in settings under **Build, Execution, Deployment** as a **Remote Host** type.
 - Then, click in the **Credentials** section and fill out the SSH credentials used in the builder Dockerfile.
   - Host: `localhost`, Port: `2222`, User name: `remoteuser`, Password: `c0llectah`
