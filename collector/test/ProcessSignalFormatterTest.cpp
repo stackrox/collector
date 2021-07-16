@@ -68,7 +68,6 @@ TEST(ProcessSignalFormatterTest, ProcessWithoutParentTest) {
   tinfo->m_pid = 0;
   tinfo->m_tid = 0;
   tinfo->m_inspector = new sinsp;
-  sinsp_threadinfo *parent = tinfo->get_parent_thread();
   std::vector<LineageInfo> lineage;
 
   processSignalFormatter.GetProcessLineage(tinfo, lineage);
@@ -381,6 +380,6 @@ TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
   EXPECT_EQ(lineage[1].parent_exec_file_path(), tinfo->m_exepath);
 }
 
-}
+}  // namespace
 
-}
+}  // namespace collector
