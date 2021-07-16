@@ -22,29 +22,13 @@ You should have received a copy of the GNU General Public License along with thi
 */
 
 #include "ProcessSignalFormatter.h"
-
-#include <uuid/uuid.h>
-
-#include <google/protobuf/util/time_util.h>
-
-#include "internalapi/sensor/signal_iservice.pb.h"
-
-#include "EventMap.h"
-#include "Logging.h"
-#include "Utility.h"
-
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 namespace collector {
 
-using SignalStreamMessage = sensor::SignalStreamMessage;
-using Signal = ProcessSignalFormatter::Signal;
 using ProcessSignal = ProcessSignalFormatter::ProcessSignal;
 using LineageInfo = ProcessSignalFormatter::LineageInfo;
-
-using Timestamp = google::protobuf::Timestamp;
-using TimeUtil = google::protobuf::util::TimeUtil;
 
 namespace {
 
