@@ -90,7 +90,7 @@ void CollectorStatsExporter::run() {
   auto& processResolutionFailuresByTinfo = collectorEventCounters.Add({{"type", "processResolutionFailuresByTinfo"}});
   auto& processRateLimitCount = collectorEventCounters.Add({{"type", "processRateLimitCount"}});
 
-  auto& processCPUNumPeriods= collectorEventCounters.Add({{"type", "process_cpu_nr_periods"}});
+  auto& processCPUNumPeriods = collectorEventCounters.Add({{"type", "process_cpu_nr_periods"}});
   auto& processCPUNumThrottled = collectorEventCounters.Add({{"type", "process_cpu_nr_throttled"}});
   auto& processCPUThrottledTime = collectorEventCounters.Add({{"type", "process_cpu_throttled_time"}});
 
@@ -195,7 +195,7 @@ void CollectorStatsExporter::run() {
   }
 
   int64_t last_cpu_throttle_update = 0;
-  int64_t cpu_throttle_update_interval_micros = 30*1000*1000;
+  int64_t cpu_throttle_update_interval_micros = 30 * 1000 * 1000;
   while (thread_.Pause(std::chrono::seconds(5))) {
     SysdigStats stats;
     if (!sysdig_->GetStats(&stats)) {
@@ -284,7 +284,6 @@ void CollectorStatsExporter::run() {
       processCPUNumPeriods.Set(cpu_throttle_metrics.nr_periods);
       processCPUNumThrottled.Set(cpu_throttle_metrics.nr_throttled);
       processCPUThrottledTime.Set(cpu_throttle_metrics.throttled_time);
-
     }
     // Memory stats
     processMemAllocatedSize.Set(MemoryStats::AllocatedSize());

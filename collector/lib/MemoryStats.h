@@ -3,7 +3,7 @@
 
 #ifdef COLLECTOR_PROFILING
 
-#include "gperftools/malloc_extension.h"
+#  include "gperftools/malloc_extension.h"
 
 namespace collector {
 
@@ -31,7 +31,7 @@ class MemoryStats {
   }
 };
 
-} // namespace collector
+}  // namespace collector
 
 #else
 namespace collector {
@@ -41,8 +41,8 @@ class MemoryStats {
   static inline size_t HeapSize() { return 0; }
   static inline size_t PhysicalSize() { return 0; }
 };
-} // namespace collector
+}  // namespace collector
 
-#endif // COLLECTOR_PROFILING
+#endif  // COLLECTOR_PROFILING
 
 #endif  // COLLECTOR_MEMORYSTATS_H

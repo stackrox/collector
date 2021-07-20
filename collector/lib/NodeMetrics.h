@@ -2,9 +2,10 @@
 #define COLLECTOR_NODEMETRICS_H
 
 #include <unistd.h>
-#include "Utility.h"
-#include "FileSystem.h"
+
 #include "Containers.h"
+#include "FileSystem.h"
+#include "Utility.h"
 
 namespace collector {
 
@@ -35,17 +36,16 @@ class CPUThrottleMetrics {
       return false;
     }
     char line[512];
-    std::map<std::string,size_t*> fields = {
-        {"nr_periods",     &m->nr_periods},
-        {"nr_throttled",   &m->nr_throttled},
-        {"throttled_time", &m->throttled_time}
-    };
+    std::map<std::string, size_t*> fields = {
+        {"nr_periods", &m->nr_periods},
+        {"nr_throttled", &m->nr_throttled},
+        {"throttled_time", &m->throttled_time}};
     size_t read_count = 0;
     while (std::fgets(line, sizeof(line), cpu_stat_file)) {
       std::stringstream ss_line(line);
       std::string k, v;
       if (ss_line >> k >> v) {
-        size_t** value_ptr = Lookup(fields,k);
+        size_t** value_ptr = Lookup(fields, k);
         if (!value_ptr && !*value_ptr) {
           continue;
         }
@@ -58,6 +58,6 @@ class CPUThrottleMetrics {
   }
 };
 
-} // namespace collector
+}  // namespace collector
 
 #endif  //COLLECTOR_NODEMETRICS_H
