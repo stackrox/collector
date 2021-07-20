@@ -30,6 +30,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include "Containers.h"
 #include "EventNames.h"
 #include "Logging.h"
+#include "MemoryStats.h"
+#include "NodeMetrics.h"
 #include "SysdigService.h"
 #include "Utility.h"
 #include "prometheus/gauge.h"
@@ -40,6 +42,7 @@ CollectorStatsExporter::CollectorStatsExporter(std::shared_ptr<prometheus::Regis
     : registry_(std::move(registry)), config_(config), sysdig_(sysdig) {}
 
 bool CollectorStatsExporter::start() {
+  start_time_ = NowMicros();
   if (!thread_.Start(&CollectorStatsExporter::run, this)) {
     CLOG(ERROR) << "Could not start stats exporter: already running";
     return false;
@@ -86,6 +89,19 @@ void CollectorStatsExporter::run() {
   auto& processResolutionFailuresByEvt = collectorEventCounters.Add({{"type", "processResolutionFailuresByEvt"}});
   auto& processResolutionFailuresByTinfo = collectorEventCounters.Add({{"type", "processResolutionFailuresByTinfo"}});
   auto& processRateLimitCount = collectorEventCounters.Add({{"type", "processRateLimitCount"}});
+
+  auto& processCPUNumPeriods= collectorEventCounters.Add({{"type", "process_cpu_nr_periods"}});
+  auto& processCPUNumThrottled = collectorEventCounters.Add({{"type", "process_cpu_nr_throttled"}});
+  auto& processCPUThrottledTime = collectorEventCounters.Add({{"type", "process_cpu_throttled_time"}});
+
+  auto& processCPUCoreCount = collectorEventCounters.Add({{"type", "process_cpu_core_count"}});
+  processCPUCoreCount.Set(NodeMetrics::NumProcessors());
+
+  auto& processMemAllocatedSize = collectorEventCounters.Add({{"type", "process_mem_allocated_size"}});
+  auto& processMemHeapSize = collectorEventCounters.Add({{"type", "process_mem_heap_size"}});
+  auto& processMemPhysicalSize = collectorEventCounters.Add({{"type", "process_mem_physical_size"}});
+
+  auto& collectorUptime = collectorEventCounters.Add({{"type", "uptime"}});
 
   auto& collector_timers_gauge = prometheus::BuildGauge()
                                      .Name("rox_collector_timers")
@@ -178,6 +194,8 @@ void CollectorStatsExporter::run() {
         std::map<std::string, std::string>{{"step", "process"}, {"event_type", event_name}, {"event_dir", event_dir}});
   }
 
+  int64_t last_cpu_throttle_update = 0;
+  int64_t cpu_throttle_update_interval_micros = 30*1000*1000;
   while (thread_.Pause(std::chrono::seconds(5))) {
     SysdigStats stats;
     if (!sysdig_->GetStats(&stats)) {
@@ -254,6 +272,27 @@ void CollectorStatsExporter::run() {
     lineage_avg->Set(lineage_count_avg);
     lineage_std_dev->Set(lineage_count_std_dev);
     lineage_avg_string_len->Set(lineage_count_string_avg);
+
+    int64_t curr_time_micros = NowMicros();
+
+    // only update every 30 seconds
+    if ((curr_time_micros - last_cpu_throttle_update) >= cpu_throttle_update_interval_micros) {
+      CPUThrottleMetrics::cpu_throttle_metric_t cpu_throttle_metrics;
+      if (!CPUThrottleMetrics::ReadStatFile(&cpu_throttle_metrics)) {
+        CLOG(DEBUG) << "Failed to read cpu throttle metrics";
+      }
+      processCPUNumPeriods.Set(cpu_throttle_metrics.nr_periods);
+      processCPUNumThrottled.Set(cpu_throttle_metrics.nr_throttled);
+      processCPUThrottledTime.Set(cpu_throttle_metrics.throttled_time);
+
+    }
+    // Memory stats
+    processMemAllocatedSize.Set(MemoryStats::AllocatedSize());
+    processMemHeapSize.Set(MemoryStats::HeapSize());
+    processMemPhysicalSize.Set(MemoryStats::PhysicalSize());
+
+    // Uptime
+    collectorUptime.Set(curr_time_micros - start_time_);
   }
 }
 
