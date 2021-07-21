@@ -1095,6 +1095,7 @@
 4.15.0-15-generic
 4.15.0-150-generic
 4.15.0-151-generic
+4.15.0-152-generic
 4.15.0-20-generic
 4.15.0-22-generic
 4.15.0-23-generic
@@ -2294,6 +2295,7 @@
 5.11.0-23-generic
 5.11.0-24-generic
 5.11.0-25-generic
+5.11.0-26-generic
 5.11.10-100.fc32.x86_64
 5.11.10-200.fc33.x86_64
 5.11.10-300.fc34.x86_64
@@ -2775,6 +2777,7 @@
 5.4.0-79-generic
 5.4.0-8-generic
 5.4.0-80-generic
+5.4.0-81-generic
 5.4.0-9-generic
 5.4.100-1.el7.elrepo.x86_64
 5.4.100-16207.0.0-cos
