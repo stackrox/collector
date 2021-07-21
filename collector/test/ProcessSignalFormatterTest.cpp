@@ -21,6 +21,13 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
+// clang-format off
+// sinsp.h needs to be included before chisel.h
+#include "libsinsp/sinsp.h"
+#include "libsinsp/chisel.h"
+#include "libsinsp/wrapper.h"
+// clang-format on
+
 #include "ProcessSignalFormatter.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -45,22 +52,23 @@ TEST(ProcessSignalFormatterTest, NoProcessTest) {
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithoutParentTest) {
-  sinsp* inspector = new sinsp;
-  ProcessSignalFormatter processSignalFormatter(inspector);
+  sinsp* inspector = new_inspector();
 
-  sinsp_threadinfo* tinfo = new sinsp_threadinfo;
+  ProcessSignalFormatter processSignalFormatter(inspector);
+  auto tinfo = std::make_shared<sinsp_threadinfo>(inspector);
   tinfo->m_pid = 0;
   tinfo->m_tid = 0;
-  tinfo->m_inspector = new sinsp;
+
+  inspector->add_thread(tinfo);
   std::vector<LineageInfo> lineage;
 
-  processSignalFormatter.GetProcessLineage(tinfo, lineage);
+  processSignalFormatter.GetProcessLineage(tinfo.get(), lineage);
 
   EXPECT_TRUE(lineage.empty());
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithParentTest) {
-  sinsp* inspector = new sinsp;
+  sinsp* inspector = new_inspector();
   ProcessSignalFormatter processSignalFormatter(inspector);
   auto tinfo = std::make_shared<sinsp_threadinfo>(inspector);
   tinfo->m_pid = 3;
@@ -87,7 +95,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentTest) {
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithParentWithPid0Test) {
-  sinsp* inspector = new sinsp;
+  sinsp* inspector = new_inspector();
   ProcessSignalFormatter processSignalFormatter(inspector);
   auto tinfo = std::make_shared<sinsp_threadinfo>(inspector);
   tinfo->m_pid = 0;
@@ -108,7 +116,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentWithPid0Test) {
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithParentWithSameNameTest) {
-  sinsp* inspector = new sinsp;
+  sinsp* inspector = new_inspector();
   ProcessSignalFormatter processSignalFormatter(inspector);
   auto tinfo = std::make_shared<sinsp_threadinfo>(inspector);
   tinfo->m_pid = 3;
@@ -134,7 +142,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentWithSameNameTest) {
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
-  sinsp* inspector = new sinsp;
+  sinsp* inspector = new_inspector();
   ProcessSignalFormatter processSignalFormatter(inspector);
 
   auto tinfo = std::make_shared<sinsp_threadinfo>(inspector);
@@ -176,7 +184,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
-  sinsp* inspector = new sinsp;
+  sinsp* inspector = new_inspector();
   ProcessSignalFormatter processSignalFormatter(inspector);
 
   auto tinfo = std::make_shared<sinsp_threadinfo>(inspector);
@@ -215,7 +223,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
 }
 
 TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
-  sinsp* inspector = new sinsp;
+  sinsp* inspector = new_inspector();
   ProcessSignalFormatter processSignalFormatter(inspector);
 
   auto tinfo = std::make_shared<sinsp_threadinfo>(inspector);
@@ -263,7 +271,7 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
 }
 
 TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
-  sinsp* inspector = new sinsp;
+  sinsp* inspector = new_inspector();
   ProcessSignalFormatter processSignalFormatter(inspector);
 
   auto tinfo = std::make_shared<sinsp_threadinfo>(inspector);
@@ -314,7 +322,7 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
-  sinsp* inspector = new sinsp;
+  sinsp* inspector = new_inspector();
   ProcessSignalFormatter processSignalFormatter(inspector);
 
   auto tinfo = std::make_shared<sinsp_threadinfo>(inspector);
