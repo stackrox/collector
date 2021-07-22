@@ -29,6 +29,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "internalapi/sensor/signal_iservice.pb.h"
 
+#include "CollectorStats.h"
 #include "EventMap.h"
 #include "Logging.h"
 #include "Utility.h"
@@ -292,6 +293,7 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
     return true;
   };
   mt->traverse_parent_state(visitor);
+  COUNTER_INC(stats_, CollectorStats::process_lineage_counts);
 }
 
 }  // namespace collector

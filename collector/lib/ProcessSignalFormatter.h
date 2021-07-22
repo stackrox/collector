@@ -34,6 +34,8 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
+class CollectorStats;
+
 class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamMessage> {
  public:
   ProcessSignalFormatter(sinsp* inspector) : event_names_(EventNames::GetInstance()) {
@@ -47,12 +49,14 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
   const sensor::SignalStreamMessage* ToProtoMessage(sinsp_evt* event) override;
   const sensor::SignalStreamMessage* ToProtoMessage(sinsp_threadinfo* tinfo);
 
+  void GetProcessLineage(sinsp_threadinfo* tinfo, std::vector<LineageInfo>& lineage);
+  void SetCollectorStats(CollectorStats* stats) { stats_ = stats; }
+
  private:
   Signal* CreateSignal(sinsp_evt* event);
   ProcessSignal* CreateProcessSignal(sinsp_evt* event);
   bool ValidateProcessDetails(sinsp_evt* event);
   std::string ProcessDetails(sinsp_evt* event);
-  void GetProcessLineage(sinsp_threadinfo* tinfo, std::vector<LineageInfo>& lineage);
 
   Signal* CreateSignal(sinsp_threadinfo* tinfo);
   ProcessSignal* CreateProcessSignal(sinsp_threadinfo* tinfo);
@@ -60,6 +64,7 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
 
   const EventNames& event_names_;
   SysdigEventExtractor event_extractor_;
+  CollectorStats* stats_ = nullptr;
 };
 
 }  // namespace collector

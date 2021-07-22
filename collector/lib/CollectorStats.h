@@ -23,8 +23,8 @@
   X(net_cep_deltas)        \
   X(net_cep_inactive)      \
   X(net_known_ip_networks) \
-  X(net_known_public_ips)
-
+  X(net_known_public_ips)  \
+  X(process_lineage_counts)
 namespace collector {
 
 class CollectorStats {
