@@ -61,6 +61,8 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
   Signal* CreateSignal(sinsp_threadinfo* tinfo);
   ProcessSignal* CreateProcessSignal(sinsp_threadinfo* tinfo);
   bool ValidateProcessDetails(sinsp_threadinfo* tinfo);
+  int GetTotalStringLength(std::vector<LineageInfo>& lineage);
+  void CountLineage(std::vector<LineageInfo>& lineage);
 
   const EventNames& event_names_;
   SysdigEventExtractor event_extractor_;

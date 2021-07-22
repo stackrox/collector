@@ -261,6 +261,21 @@ bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
   return true;
 }
 
+int ProcessSignalFormatter::GetTotalStringLength(std::vector<LineageInfo>& lineage) {
+  int totalStringLength = 0;
+  for (LineageInfo l : lineage) totalStringLength += l.parent_exec_file_path().size();
+
+  return totalStringLength;
+}
+
+void ProcessSignalFormatter::CountLineage(std::vector<LineageInfo>& lineage) {
+  int totalStringLength = GetTotalStringLength(lineage);
+  COUNTER_INC(stats_, CollectorStats::process_lineage_counts);
+  COUNTER_ADD(stats_, CollectorStats::process_lineage_total, lineage.size());
+  COUNTER_ADD(stats_, CollectorStats::process_lineage_sqr_total, lineage.size() * lineage.size());
+  COUNTER_ADD(stats_, CollectorStats::process_lineage_string_total, totalStringLength);
+}
+
 void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
                                                std::vector<LineageInfo>& lineage) {
   if (tinfo == NULL) return;
@@ -293,7 +308,7 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
     return true;
   };
   mt->traverse_parent_state(visitor);
-  COUNTER_INC(stats_, CollectorStats::process_lineage_counts);
+  CountLineage(lineage);
 }
 
 }  // namespace collector
