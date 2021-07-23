@@ -107,6 +107,7 @@ class ConnectionTracker {
   void UpdateIgnoredL4ProtoPortPairs(UnorderedSet<L4ProtoPortPair>&& ignored_l4proto_port_pairs);
 
   void SetCollectorStats(CollectorStats* stats) { stats_ = stats; }
+  CollectorStats* GetCollectorStats() { return stats_; }
 
  private:
   // NormalizeConnection transforms a connection into a normalized form.

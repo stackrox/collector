@@ -261,14 +261,14 @@ bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
   return true;
 }
 
-int ProcessSignalFormatter::GetTotalStringLength(std::vector<LineageInfo>& lineage) {
+int ProcessSignalFormatter::GetTotalStringLength(const std::vector<LineageInfo>& lineage) {
   int totalStringLength = 0;
   for (LineageInfo l : lineage) totalStringLength += l.parent_exec_file_path().size();
 
   return totalStringLength;
 }
 
-void ProcessSignalFormatter::CountLineage(std::vector<LineageInfo>& lineage) {
+void ProcessSignalFormatter::CountLineage(const std::vector<LineageInfo>& lineage) {
   int totalStringLength = GetTotalStringLength(lineage);
   COUNTER_INC(stats_, CollectorStats::process_lineage_counts);
   COUNTER_ADD(stats_, CollectorStats::process_lineage_total, lineage.size());

@@ -28,13 +28,12 @@ You should have received a copy of the GNU General Public License along with thi
 #include "internalapi/sensor/signal_iservice.pb.h"
 #include "storage/process_indicator.pb.h"
 
+#include "CollectorStats.h"
 #include "EventNames.h"
 #include "ProtoSignalFormatter.h"
 #include "SysdigEventExtractor.h"
 
 namespace collector {
-
-class CollectorStats;
 
 class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamMessage> {
  public:
@@ -61,8 +60,8 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
   Signal* CreateSignal(sinsp_threadinfo* tinfo);
   ProcessSignal* CreateProcessSignal(sinsp_threadinfo* tinfo);
   bool ValidateProcessDetails(sinsp_threadinfo* tinfo);
-  int GetTotalStringLength(std::vector<LineageInfo>& lineage);
-  void CountLineage(std::vector<LineageInfo>& lineage);
+  int GetTotalStringLength(const std::vector<LineageInfo>& lineage);
+  void CountLineage(const std::vector<LineageInfo>& lineage);
 
   const EventNames& event_names_;
   SysdigEventExtractor event_extractor_;

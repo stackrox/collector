@@ -39,8 +39,6 @@ namespace collector {
 using ProcessSignal = ProcessSignalFormatter::ProcessSignal;
 using LineageInfo = ProcessSignalFormatter::LineageInfo;
 
-class CollectorStats;
-
 namespace {
 
 TEST(ProcessSignalFormatterTest, NoProcessTest) {
