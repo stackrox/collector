@@ -32,6 +32,7 @@ TEST(TestStats, TestMemoryStats) {
   auto mem0 = std::unique_ptr<char[]>(new char[array_size]);
   EXPECT_TRUE(mem0 != nullptr);
   EXPECT_EQ(array_size, MemoryStats::AllocatedSize() - allocated_size_before);
+  EXPECT_GT(MemoryStats::PhysicalSize(), 0);
 #endif
 }
 

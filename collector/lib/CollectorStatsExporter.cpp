@@ -92,7 +92,7 @@ void CollectorStatsExporter::run() {
 
   auto& processCPUNumPeriods = collectorEventCounters.Add({{"type", "process_cpu_nr_periods"}});
   auto& processCPUNumThrottled = collectorEventCounters.Add({{"type", "process_cpu_nr_throttled"}});
-  auto& processCPUThrottledTime = collectorEventCounters.Add({{"type", "process_cpu_throttled_time"}});
+  auto& processCPUThrottledTime = collectorEventCounters.Add({{"type", "process_cpu_throttled_time_ns"}});
 
   auto& processCPUCoreCount = collectorEventCounters.Add({{"type", "process_cpu_core_count"}});
   processCPUCoreCount.Set(NodeMetrics::NumProcessors());
