@@ -30,6 +30,7 @@
   X(process_lineage_string_total)
 namespace collector {
 
+//This is a singleton class which keeps track of metrics
 class CollectorStats {
  public:
 #define X(n) n,
@@ -40,6 +41,8 @@ class CollectorStats {
 #undef X
   static std::array<std::string, timer_type_max> timer_type_to_name;
 
+  static CollectorStats* GetOrCreate();
+  static void Reset();
   inline int64_t GetTimerCount(size_t index) const { return timer_count_[index]; }
   inline int64_t GetTimerDurationMicros(size_t index) const { return timer_total_us_[index]; }
   inline void EndTimerAt(size_t index, int64_t duration_us) {
@@ -68,6 +71,11 @@ class CollectorStats {
   std::array<std::atomic<int64_t>, timer_type_max> timer_total_us_ = {{}};
 
   std::array<std::atomic<int64_t>, counter_type_max> counter_ = {{}};
+
+  //Singleton pattern requires that the constructor be private. Also CollectorStats should not be copied.
+  CollectorStats(){};
+  CollectorStats(CollectorStats const&){};
+  static CollectorStats* stats_;
 };
 
 namespace internal {

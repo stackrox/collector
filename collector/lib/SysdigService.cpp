@@ -65,7 +65,7 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
   }
 
   if (config.grpc_channel) {
-    AddSignalHandler(MakeUnique<ProcessSignalHandler>(inspector_.get(), config.grpc_channel, &userspace_stats_, conn_tracker.get()->GetCollectorStats()));
+    AddSignalHandler(MakeUnique<ProcessSignalHandler>(inspector_.get(), config.grpc_channel, &userspace_stats_));
   }
 
   if (signal_handlers_.empty()) {

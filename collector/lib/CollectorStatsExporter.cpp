@@ -36,8 +36,8 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-CollectorStatsExporter::CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, const CollectorConfig* config, SysdigService* sysdig, CollectorStats* collector_stats)
-    : registry_(std::move(registry)), config_(config), sysdig_(sysdig), collector_stats_(collector_stats) {}
+CollectorStatsExporter::CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, const CollectorConfig* config, SysdigService* sysdig)
+    : registry_(std::move(registry)), config_(config), sysdig_(sysdig) { collector_stats_ = CollectorStats::GetOrCreate(); }
 
 bool CollectorStatsExporter::start() {
   if (!thread_.Start(&CollectorStatsExporter::run, this)) {
@@ -246,15 +246,17 @@ void CollectorStatsExporter::run() {
     int64_t lineage_count_sqr_total = collector_stats_->GetCounter(CollectorStats::process_lineage_sqr_total);
     int64_t lineage_count_string_total = collector_stats_->GetCounter(CollectorStats::process_lineage_string_total);
 
-    float lineage_count_avg = (float)lineage_count_total / (float)lineage_count_stat;
-    float lineage_count_sqr_avg = (float)lineage_count_sqr_total / (float)lineage_count_stat;
+    float lineage_count_avg = lineage_count_stat ? (float)lineage_count_total / (float)lineage_count_stat : 0;
+    float lineage_count_sqr_avg = lineage_count_stat ? (float)lineage_count_sqr_total / (float)lineage_count_stat : 0;
     float lineage_count_std_dev = sqrt(lineage_count_sqr_avg - lineage_count_avg * lineage_count_avg);
-    float lineage_count_string_avg = (float)lineage_count_string_total / (float)lineage_count_stat;
+    float lineage_count_string_avg = lineage_count_stat ? (float)lineage_count_string_total / (float)lineage_count_stat : 0;
 
     lineage_count->Set(lineage_count_stat);
     lineage_avg->Set(lineage_count_avg);
     lineage_std_dev->Set(lineage_count_std_dev);
     lineage_avg_string_len->Set(lineage_count_string_avg);
+
+    CLOG(INFO) << "lineage_count_std_dev= " << lineage_count_std_dev;
   }
 }
 
