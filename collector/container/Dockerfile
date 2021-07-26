@@ -33,6 +33,7 @@ RUN apt-get update \
         libcap-ng0 \
         libelf1 \
         libgoogle-perftools4 \
+	valgrind \
  && dpkg -r --force-all e2fslibs e2fsprogs apt debconf dpkg \
  && rm -rf /var/lib/apt \
  ;
