@@ -35,6 +35,7 @@ RUN apt-get update \
         unzip \
         uuid-dev \
         wget \
+	valgrind \
     && apt-get clean \
     ;
 
