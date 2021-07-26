@@ -209,14 +209,14 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
       int64_t ts = NowMicros();
       std::vector<Connection> all_conns;
       std::vector<ContainerEndpoint> all_listen_endpoints;
-      WITH_TIMER(stats_, CollectorStats::net_scrape_read) {
+      WITH_TIMER(CollectorStats::GetOrCreate(), CollectorStats::net_scrape_read) {
         bool success = conn_scraper_.Scrape(&all_conns, scrape_listen_endpoints_ ? &all_listen_endpoints : nullptr);
         if (!success) {
           CLOG(ERROR) << "Failed to scrape connections and no pending connections to send";
           continue;
         }
       }
-      WITH_TIMER(stats_, CollectorStats::net_scrape_update) {
+      WITH_TIMER(CollectorStats::GetOrCreate(), CollectorStats::net_scrape_update) {
         conn_tracker_->Update(all_conns, all_listen_endpoints, ts);
       }
     }
@@ -224,7 +224,7 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
     const sensor::NetworkConnectionInfoMessage* msg;
     ConnMap new_conn_state;
     ContainerEndpointMap new_cep_state;
-    WITH_TIMER(stats_, CollectorStats::net_fetch_state) {
+    WITH_TIMER(CollectorStats::GetOrCreate(), CollectorStats::net_fetch_state) {
       new_conn_state = conn_tracker_->FetchConnState(true, true);
       ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
 
@@ -232,7 +232,7 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
       ConnectionTracker::ComputeDelta(new_cep_state, &old_cep_state);
     }
 
-    WITH_TIMER(stats_, CollectorStats::net_create_message) {
+    WITH_TIMER(CollectorStats::GetOrCreate(), CollectorStats::net_create_message) {
       msg = CreateInfoMessage(old_conn_state, old_cep_state);
       old_conn_state = std::move(new_conn_state);
       old_cep_state = std::move(new_cep_state);
@@ -242,7 +242,7 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
       continue;
     }
 
-    WITH_TIMER(stats_, CollectorStats::net_write_message) {
+    WITH_TIMER(CollectorStats::GetOrCreate(), CollectorStats::net_write_message) {
       if (!writer->Write(*msg, next_scrape)) {
         CLOG(ERROR) << "Failed to write network connection info";
         return;
@@ -259,9 +259,9 @@ sensor::NetworkConnectionInfoMessage* NetworkStatusNotifier::CreateInfoMessage(c
   auto* info = msg->mutable_info();
 
   AddConnections(info->mutable_updated_connections(), conn_delta);
-  COUNTER_ADD(stats_, CollectorStats::net_conn_deltas, conn_delta.size());
+  COUNTER_ADD(CollectorStats::GetOrCreate(), CollectorStats::net_conn_deltas, conn_delta.size());
   AddContainerEndpoints(info->mutable_updated_endpoints(), endpoint_delta);
-  COUNTER_ADD(stats_, CollectorStats::net_cep_deltas, endpoint_delta.size());
+  COUNTER_ADD(CollectorStats::GetOrCreate(), CollectorStats::net_cep_deltas, endpoint_delta.size());
 
   *info->mutable_time() = CurrentTimeProto();
 

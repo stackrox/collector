@@ -41,7 +41,7 @@ namespace collector {
 class ProcessSignalHandler : public SignalHandler {
  public:
   ProcessSignalHandler(sinsp* inspector, std::shared_ptr<grpc::Channel> channel, SysdigStats* stats)
-      : client_(std::move(channel)), formatter_(inspector) {}
+      : client_(std::move(channel)), formatter_(inspector), stats_(stats) {}
 
   bool Start() override;
   Result HandleSignal(sinsp_evt* evt) override;

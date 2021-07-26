@@ -63,8 +63,6 @@ TEST(ProcessSignalFormatterTest, NoProcessTest) {
   EXPECT_EQ(stringTotal, 0);
 
   EXPECT_TRUE(lineage.empty());
-
-  CollectorStats::Reset();
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithoutParentTest) {

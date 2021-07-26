@@ -1,7 +1,5 @@
 #include "CollectorStats.h"
 
-#include <iostream>
-
 namespace collector {
 
 #define X(n) #n,
@@ -21,8 +19,13 @@ CollectorStats* CollectorStats::GetOrCreate() {
 }
 
 void CollectorStats::Reset() {
-  if (CollectorStats::stats_) delete CollectorStats::stats_;
-  CollectorStats::stats_ = 0;
+  for (int i = 0; i < timer_type_max; i++) {
+    CollectorStats::stats_->timer_count_[i] = 0;
+    CollectorStats::stats_->timer_total_us_[i] = 0;
+  }
+  for (int i = 0; i < counter_type_max; i++) {
+    CollectorStats::stats_->counter_[i] = 0;
+  }
 }
 
 CollectorStats* CollectorStats::stats_ = NULL;

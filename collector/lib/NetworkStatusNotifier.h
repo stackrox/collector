@@ -95,7 +95,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
 
   std::shared_ptr<grpc::Channel> channel_;
   std::unique_ptr<Stub> stub_;
-  CollectorStats* stats_ = CollectorStats::GetOrCreate();
+  //CollectorStats* stats_ = CollectorStats::GetOrCreate();
 };
 
 }  // namespace collector

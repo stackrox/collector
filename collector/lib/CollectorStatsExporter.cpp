@@ -37,7 +37,7 @@ You should have received a copy of the GNU General Public License along with thi
 namespace collector {
 
 CollectorStatsExporter::CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, const CollectorConfig* config, SysdigService* sysdig)
-    : registry_(std::move(registry)), config_(config), sysdig_(sysdig) { collector_stats_ = CollectorStats::GetOrCreate(); }
+    : registry_(std::move(registry)), config_(config), sysdig_(sysdig) {}
 
 bool CollectorStatsExporter::start() {
   if (!thread_.Start(&CollectorStatsExporter::run, this)) {
@@ -178,7 +178,6 @@ void CollectorStatsExporter::run() {
     typed[i].process_micros_avg = &collectorTypedEventTimesAvg.Add(
         std::map<std::string, std::string>{{"step", "process"}, {"event_type", event_name}, {"event_dir", event_dir}});
   }
-
   while (thread_.Pause(std::chrono::seconds(5))) {
     SysdigStats stats;
     if (!sysdig_->GetStats(&stats)) {
@@ -233,18 +232,19 @@ void CollectorStatsExporter::run() {
 
     for (int i = 0; i < CollectorStats::timer_type_max; i++) {
       auto tt = (CollectorStats::TimerType)(i);
-      collector_timers[tt]->Update(collector_stats_->GetTimerCount(tt),
-                                   collector_stats_->GetTimerDurationMicros(tt));
-    }
-    for (int i = 0; i < CollectorStats::counter_type_max; i++) {
-      auto ct = (CollectorStats::CounterType)(i);
-      collector_counters[ct]->Set(collector_stats_->GetCounter(ct));
+      collector_timers[tt]->Update(CollectorStats::GetOrCreate()->GetTimerCount(tt),
+                                   CollectorStats::GetOrCreate()->GetTimerDurationMicros(tt));
     }
 
-    int64_t lineage_count_stat = collector_stats_->GetCounter(CollectorStats::process_lineage_counts);
-    int64_t lineage_count_total = collector_stats_->GetCounter(CollectorStats::process_lineage_total);
-    int64_t lineage_count_sqr_total = collector_stats_->GetCounter(CollectorStats::process_lineage_sqr_total);
-    int64_t lineage_count_string_total = collector_stats_->GetCounter(CollectorStats::process_lineage_string_total);
+    for (int i = 0; i < CollectorStats::counter_type_max; i++) {
+      auto ct = (CollectorStats::CounterType)(i);
+      collector_counters[ct]->Set(CollectorStats::GetOrCreate()->GetCounter(ct));
+    }
+
+    int64_t lineage_count_stat = CollectorStats::GetOrCreate()->GetCounter(CollectorStats::process_lineage_counts);
+    int64_t lineage_count_total = CollectorStats::GetOrCreate()->GetCounter(CollectorStats::process_lineage_total);
+    int64_t lineage_count_sqr_total = CollectorStats::GetOrCreate()->GetCounter(CollectorStats::process_lineage_sqr_total);
+    int64_t lineage_count_string_total = CollectorStats::GetOrCreate()->GetCounter(CollectorStats::process_lineage_string_total);
 
     float lineage_count_avg = lineage_count_stat ? (float)lineage_count_total / (float)lineage_count_stat : 0;
     float lineage_count_sqr_avg = lineage_count_stat ? (float)lineage_count_sqr_total / (float)lineage_count_stat : 0;
@@ -255,8 +255,6 @@ void CollectorStatsExporter::run() {
     lineage_avg->Set(lineage_count_avg);
     lineage_std_dev->Set(lineage_count_std_dev);
     lineage_avg_string_len->Set(lineage_count_string_avg);
-
-    CLOG(INFO) << "lineage_count_std_dev= " << lineage_count_std_dev;
   }
 }
 

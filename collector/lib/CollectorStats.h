@@ -1,7 +1,6 @@
 #ifndef COLLECTOR_COLLECTORSTATS_H
 #define COLLECTOR_COLLECTORSTATS_H
 
-#include <array>
 #include <atomic>
 #include <unordered_map>
 #include <vector>

@@ -141,12 +141,12 @@ void EmplaceOrUpdate(UnorderedMap<T, ConnStatus>* m, const T& obj, ConnStatus st
 }  // namespace
 
 void ConnectionTracker::EmplaceOrUpdateNoLock(const Connection& conn, ConnStatus status) {
-  COUNTER_INC(stats_, CollectorStats::net_conn_updates);
+  COUNTER_INC(CollectorStats::GetOrCreate(), CollectorStats::net_conn_updates);
   EmplaceOrUpdate(&conn_state_, conn, status);
 }
 
 void ConnectionTracker::EmplaceOrUpdateNoLock(const ContainerEndpoint& ep, ConnStatus status) {
-  COUNTER_INC(stats_, CollectorStats::net_cep_updates);
+  COUNTER_INC(CollectorStats::GetOrCreate(), CollectorStats::net_cep_updates);
   EmplaceOrUpdate(&endpoint_state_, ep, status);
 }
 
@@ -229,7 +229,7 @@ ConnMap ConnectionTracker::FetchConnState(bool normalize, bool clear_inactive) {
         cm = FetchState(&conn_state_, clear_inactive, dont_normalize(), dont_filter());
       }
     }
-    COUNTER_ADD(stats_, CollectorStats::net_conn_inactive, (state_size - conn_state_.size()));
+    COUNTER_ADD(CollectorStats::GetOrCreate(), CollectorStats::net_conn_inactive, (state_size - conn_state_.size()));
   }
   return cm;
 }
@@ -259,13 +259,13 @@ ContainerEndpointMap ConnectionTracker::FetchEndpointState(bool normalize, bool 
         cem = FetchState(&endpoint_state_, clear_inactive, dont_normalize(), dont_filter());
       }
     }
-    COUNTER_ADD(stats_, CollectorStats::net_cep_inactive, (state_size - endpoint_state_.size()));
+    COUNTER_ADD(CollectorStats::GetOrCreate(), CollectorStats::net_cep_inactive, (state_size - endpoint_state_.size()));
   }
   return cem;
 }
 
 void ConnectionTracker::UpdateKnownPublicIPs(collector::UnorderedSet<collector::Address>&& known_public_ips) {
-  COUNTER_SET(stats_, CollectorStats::net_known_public_ips, known_public_ips.size());
+  COUNTER_SET(CollectorStats::GetOrCreate(), CollectorStats::net_known_public_ips, known_public_ips.size());
   WITH_LOCK(mutex_) {
     known_public_ips_ = std::move(known_public_ips);
     if (CLOG_ENABLED(DEBUG)) {
@@ -289,9 +289,9 @@ void ConnectionTracker::UpdateKnownIPNetworks(UnorderedMap<Address::Family, std:
   }
 
   UnorderedMap<Address::Family, bool> known_private_networks_exists;
-  COUNTER_ZERO(stats_, CollectorStats::net_known_ip_networks);
+  COUNTER_ZERO(CollectorStats::GetOrCreate(), CollectorStats::net_known_ip_networks);
   for (const auto& network_pair : known_ip_networks) {
-    COUNTER_ADD(stats_, CollectorStats::net_known_ip_networks, network_pair.second.size());
+    COUNTER_ADD(CollectorStats::GetOrCreate(), CollectorStats::net_known_ip_networks, network_pair.second.size());
     known_private_networks_exists[network_pair.first] = ContainsPrivateNetwork(network_pair.first, tree);
   }
 
