@@ -1,6 +1,6 @@
 # This builds a collector container based on UBI with a reliance on Red Hat
 # subscription entitlements.
-FROM registry.access.redhat.com/ubi8/ubi:8.4-203 AS builder
+FROM registry.access.redhat.com/ubi8/ubi:8.4-206.1626828523 AS builder
 
 ARG REDHAT_USERNAME
 ARG REDHAT_PASSWORD
@@ -49,7 +49,7 @@ ARG NPROCS=2
 RUN NPROCS=${NPROCS} ./builder/build/build-ubi.sh
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4-200
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4-205.1626828526
 
 WORKDIR /
 
