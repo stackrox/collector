@@ -740,7 +740,9 @@ jobs:
 
     - run:
         name: Restore collector-builder rhel image
-        command: docker pull "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}"
+        command: |
+          echo "skip dockerhub" && exit 0
+          docker pull "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}"
 
     - run:
         name: Build rhel collector
