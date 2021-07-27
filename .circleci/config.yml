@@ -1,9 +1,14 @@
 version: 2.1
 
 defaultImage: &defaultImage
-  machine:
-    image: ubuntu-2004:202104-01
+  docker:
+  - image: quay.io/cgorman1/apollo-ci:collector-0.3.7
+    auth:
+      username: $QUAY_CGORMAN1_RO_USER
+      password: $QUAY_CGORMAN1_RO_PASSWORD
   working_directory: ~/workspace
+  environment:
+    ROX_CI_IMAGE: true
 
 defaultMachine: &defaultMachine
   machine:
@@ -16,15 +21,21 @@ runOnAllTags: &runOnAllTags
 
 runOnAllTagsWithDockerIOPullCtx: &runOnAllTagsWithDockerIOPullCtx
   <<: *runOnAllTags
-  context: docker-io-pull
+  context:
+    - docker-io-pull
+    - quay-cgorman1-readonly
 
 runOnAllTagsWithDockerIOPushCtx: &runOnAllTagsWithDockerIOPushCtx
   <<: *runOnAllTags
-  context: docker-io-push
+  context:
+    - docker-io-push
+    - quay-cgorman1-readonly
 
 runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequires
   <<: *runOnAllTags
-  context: docker-io-pull
+  context:
+    - docker-io-pull
+    - quay-cgorman1-readonly
   requires:
   - images
   - ubi-image
@@ -97,6 +108,7 @@ commands:
     - run:
         name: Login to Docker Hub with pull credentials
         command: |
+            docker login -u "$QUAY_CGORMAN1_RO_USER" -p "$QUAY_CGORMAN1_RO_PASSWORD"
             echo "skip dockerhub" && exit 0
             docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
 
@@ -105,6 +117,7 @@ commands:
     - run:
         name: Login to Docker Hub with push credentials
         command: |
+            docker login -u "$QUAY_CGORMAN1_RO_USER" -p "$QUAY_CGORMAN1_RO_PASSWORD"
             echo "skip dockerhub" && exit 0
             docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD"
 
