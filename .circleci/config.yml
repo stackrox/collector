@@ -1759,6 +1759,8 @@ workflows:
         - images
     - update-support-packages:
         <<: *runOnAllTags
-        context: docker-io-and-stackrox-io-push
+        context:
+          - docker-io-and-stackrox-io-push
+          - quay-cgorman1-readonly
         requires:
           - upload-modules
