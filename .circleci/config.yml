@@ -1,14 +1,9 @@
 version: 2.1
 
 defaultImage: &defaultImage
-  docker:
-  - image: docker.io/stackrox/apollo-ci:collector-0.3.7
-    auth:
-      username: $DOCKER_IO_PULL_USERNAME
-      password: $DOCKER_IO_PULL_PASSWORD
+  machine:
+    image: ubuntu-2004:202104-01
   working_directory: ~/workspace
-  environment:
-    ROX_CI_IMAGE: true
 
 defaultMachine: &defaultMachine
   machine:
