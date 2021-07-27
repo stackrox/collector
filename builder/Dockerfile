@@ -23,10 +23,11 @@ RUN apt-get update \
         libcap-ng-dev \
         libcurl4-openssl-dev \
         libelf-dev \
-        libgoogle-perftools-dev \
         libssl-dev \
         libtool \
         libz-dev \
+        libunwind8 \
+        libunwind-dev \
         pkg-config \
         python \
         rsync \
@@ -44,7 +45,7 @@ RUN mkdir install-tmp
 COPY install/*.sh install-tmp/
 
 # Build dependencies from source
-RUN ./install-tmp/install.sh
+RUN ./install-tmp/build-collector-dependencies.sh
 
 RUN ldconfig
 

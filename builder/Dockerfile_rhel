@@ -52,7 +52,7 @@ RUN mkdir install-tmp
 COPY install/*.sh install-tmp/
 
 # Build dependencies from source
-RUN ./install-tmp/install.sh
+RUN ./install-tmp/build-collector-dependencies.sh
 
 RUN ldconfig
 

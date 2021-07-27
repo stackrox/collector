@@ -25,7 +25,7 @@ TEST(TestStats, TestThrottleMetrics) {
 TEST(TestStats, TestMemoryStats) {
 #ifdef COLLECTOR_PROFILING
   EXPECT_GT(MemoryStats::HeapSize(), MemoryStats::AllocatedSize());
-  EXPECT_GT(MemoryStats::HeapSize(), MemoryStats::PhysicalSize());
+  EXPECT_GT(MemoryStats::PhysicalSize(), MemoryStats::HeapSize());
   auto allocated_size_before = MemoryStats::AllocatedSize();
   EXPECT_GT(allocated_size_before, 0);
   constexpr int array_size = 4096;
