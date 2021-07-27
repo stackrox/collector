@@ -1103,6 +1103,7 @@ jobs:
         name: "Running integration tests"
         no_output_timeout: 45m
         command: |
+          echo "skip dockerhub" && circleci step halt && exit 0
           export REMOTE_HOST_TYPE=local
           export COLLECTION_METHOD=kernel_module
           export VM_CONFIG="circle_local_<< parameters.vm-config >>"
