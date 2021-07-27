@@ -1236,6 +1236,7 @@ jobs:
     - run:
         name: Check whether to run job
         command: |
+          echo "skip dockerhub" && circleci step halt && exit 0
           if [[ -f ~/workspace/pr-metadata/labels/skip-integration-tests ]]; then
             echo "Skipping job with skip-integration-tests label."
             circleci step halt
