@@ -201,7 +201,7 @@ jobs:
     - run:
         name: Install clang-format
         command: |
-          #sudo bash -c 'printf "deb http://deb.debian.org/debian/ buster-backports main contrib non-free" > /etc/apt/sources.list.d/backports.list'
+          sudo bash -c 'printf "deb http://deb.debian.org/debian/ buster-backports main contrib non-free" > /etc/apt/sources.list.d/backports.list'
           sudo apt-get update
           sudo apt-get install -y clang-format-11
           sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-11 100
