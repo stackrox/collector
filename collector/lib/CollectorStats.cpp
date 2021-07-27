@@ -12,22 +12,20 @@ std::array<std::string, CollectorStats::counter_type_max> CollectorStats::counte
     COUNTER_NAMES};
 #undef X
 
-CollectorStats* CollectorStats::GetOrCreate() {
-  if (!CollectorStats::stats_) CollectorStats::stats_ = new CollectorStats;
+CollectorStats& CollectorStats::GetOrCreate() {
+  static CollectorStats stats;
 
-  return CollectorStats::stats_;
+  return stats;
 }
 
 void CollectorStats::Reset() {
   for (int i = 0; i < timer_type_max; i++) {
-    CollectorStats::stats_->timer_count_[i] = 0;
-    CollectorStats::stats_->timer_total_us_[i] = 0;
+    CollectorStats::GetOrCreate().timer_count_[i] = 0;
+    CollectorStats::GetOrCreate().timer_total_us_[i] = 0;
   }
   for (int i = 0; i < counter_type_max; i++) {
-    CollectorStats::stats_->counter_[i] = 0;
+    CollectorStats::GetOrCreate().counter_[i] = 0;
   }
 }
-
-CollectorStats* CollectorStats::stats_ = NULL;
 
 }  // namespace collector

@@ -232,19 +232,19 @@ void CollectorStatsExporter::run() {
 
     for (int i = 0; i < CollectorStats::timer_type_max; i++) {
       auto tt = (CollectorStats::TimerType)(i);
-      collector_timers[tt]->Update(CollectorStats::GetOrCreate()->GetTimerCount(tt),
-                                   CollectorStats::GetOrCreate()->GetTimerDurationMicros(tt));
+      collector_timers[tt]->Update(CollectorStats::GetOrCreate().GetTimerCount(tt),
+                                   CollectorStats::GetOrCreate().GetTimerDurationMicros(tt));
     }
 
     for (int i = 0; i < CollectorStats::counter_type_max; i++) {
       auto ct = (CollectorStats::CounterType)(i);
-      collector_counters[ct]->Set(CollectorStats::GetOrCreate()->GetCounter(ct));
+      collector_counters[ct]->Set(CollectorStats::GetOrCreate().GetCounter(ct));
     }
 
-    int64_t lineage_count_stat = CollectorStats::GetOrCreate()->GetCounter(CollectorStats::process_lineage_counts);
-    int64_t lineage_count_total = CollectorStats::GetOrCreate()->GetCounter(CollectorStats::process_lineage_total);
-    int64_t lineage_count_sqr_total = CollectorStats::GetOrCreate()->GetCounter(CollectorStats::process_lineage_sqr_total);
-    int64_t lineage_count_string_total = CollectorStats::GetOrCreate()->GetCounter(CollectorStats::process_lineage_string_total);
+    int64_t lineage_count_stat = CollectorStats::GetOrCreate().GetCounter(CollectorStats::process_lineage_counts);
+    int64_t lineage_count_total = CollectorStats::GetOrCreate().GetCounter(CollectorStats::process_lineage_total);
+    int64_t lineage_count_sqr_total = CollectorStats::GetOrCreate().GetCounter(CollectorStats::process_lineage_sqr_total);
+    int64_t lineage_count_string_total = CollectorStats::GetOrCreate().GetCounter(CollectorStats::process_lineage_string_total);
 
     float lineage_count_avg = lineage_count_stat ? (float)lineage_count_total / (float)lineage_count_stat : 0;
     float lineage_count_sqr_avg = lineage_count_stat ? (float)lineage_count_sqr_total / (float)lineage_count_stat : 0;

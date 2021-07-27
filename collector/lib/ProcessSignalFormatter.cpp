@@ -270,16 +270,10 @@ int ProcessSignalFormatter::GetTotalStringLength(const std::vector<LineageInfo>&
 
 void ProcessSignalFormatter::CountLineage(const std::vector<LineageInfo>& lineage) {
   int totalStringLength = GetTotalStringLength(lineage);
-  /*
-  COUNTER_INC(stats_, CollectorStats::process_lineage_counts);
-  COUNTER_ADD(stats_, CollectorStats::process_lineage_total, lineage.size());
-  COUNTER_ADD(stats_, CollectorStats::process_lineage_sqr_total, lineage.size() * lineage.size());
-  COUNTER_ADD(stats_, CollectorStats::process_lineage_string_total, totalStringLength);
-*/
-  COUNTER_INC(CollectorStats::GetOrCreate(), CollectorStats::process_lineage_counts);
-  COUNTER_ADD(CollectorStats::GetOrCreate(), CollectorStats::process_lineage_total, lineage.size());
-  COUNTER_ADD(CollectorStats::GetOrCreate(), CollectorStats::process_lineage_sqr_total, lineage.size() * lineage.size());
-  COUNTER_ADD(CollectorStats::GetOrCreate(), CollectorStats::process_lineage_string_total, totalStringLength);
+  COUNTER_INC(CollectorStats::process_lineage_counts);
+  COUNTER_ADD(CollectorStats::process_lineage_total, lineage.size());
+  COUNTER_ADD(CollectorStats::process_lineage_sqr_total, lineage.size() * lineage.size());
+  COUNTER_ADD(CollectorStats::process_lineage_string_total, totalStringLength);
 }
 
 void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
