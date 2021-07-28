@@ -1099,7 +1099,7 @@ jobs:
 
     steps:
     - initcommand
-    - docker-login
+    - docker-login-push
     - gcloud-init
 
     - run:
@@ -1564,12 +1564,12 @@ workflows:
         requires:
         - initjob
     - integration-test-local:
-        <<: *runOnAllTagsWithDockerIOPullCtx
+        <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - images
         - upload-modules
     - integration-test-local:
-        <<: *runOnAllTagsWithDockerIOPullCtx
+        <<: *runOnAllTagsWithDockerIOPushCtx
         name: integration-test-local-rhel
         vm-config: rhel
         use-rhel: true
@@ -1577,7 +1577,7 @@ workflows:
         - images
         - upload-modules
     - integration-test-local:
-        <<: *runOnAllTagsWithDockerIOPullCtx
+        <<: *runOnAllTagsWithDockerIOPushCtx
         name: integration-test-local-ubi
         vm-config: rhel
         use-ubi: true
