@@ -1518,7 +1518,7 @@ workflows:
         requires:
         - lint
     - collector:
-        <<: *runOnAllTagsWithDockerIOPullCtx
+        <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - builder
     - builder-rhel:
@@ -1526,7 +1526,7 @@ workflows:
         requires:
         - lint
     - collector-rhel:
-        <<: *runOnAllTagsWithDockerIOPullCtx
+        <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - builder-rhel
     - prepare-kernels:
