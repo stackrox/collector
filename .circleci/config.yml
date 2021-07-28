@@ -1136,7 +1136,7 @@ jobs:
         enum: [cos, rhel, suse, suse-sap, ubuntu-os]
       image_family:
         type: enum
-        enum: [cos-stable, cos-85-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2010, sles-12, sles-15, sles-15-sp2-sap]
+        enum: [cos-stable, cos-85-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2104, sles-12, sles-15, sles-15-sp2-sap]
 
     <<: *defaultImage
 
@@ -1672,16 +1672,16 @@ workflows:
         image_family: ubuntu-2004-lts
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-ubuntu-2010
+        name: test-ebpf-ubuntu-2104
         collection_method: ebpf
         vm_type: ubuntu-os
-        image_family: ubuntu-2010
+        image_family: ubuntu-2104
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-ubuntu-2010
+        name: test-module-ubuntu-2104
         collection_method: module
         vm_type: ubuntu-os
-        image_family: ubuntu-2010
+        image_family: ubuntu-2104
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-sles-15
@@ -1730,8 +1730,8 @@ workflows:
         - test-ebpf-ubuntu-1804-lts
         - test-module-ubuntu-2004-lts
         - test-ebpf-ubuntu-2004-lts
-        - test-module-ubuntu-2010
-        - test-ebpf-ubuntu-2010
+        - test-module-ubuntu-2104
+        - test-ebpf-ubuntu-2104
         - test-ebpf-sles-15
         - test-module-sles-15
         - test-module-sles-12
