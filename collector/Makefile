@@ -1,7 +1,11 @@
 BASE_PATH = ./..
 include ../Makefile-constants.mk
 
-VALGRIND_CMD ?= valgrind --leak-check=full
+USE_VALGRIND ?= 'false'
+
+ifeq '$(USE_VALGRIND)' 'true'
+	VALGRIND_CMD = valgrind --leak-check=full
+endif
 
 HDRS := $(wildcard lib/*.h) $(shell find sysdig/src/userspace -name '*.h')
 
