@@ -36,7 +36,7 @@ namespace collector {
 
 class CollectorStatsExporter {
  public:
-  CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, const CollectorConfig* config, SysdigService* sysdig, CollectorStats* collector_stats);
+  CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, const CollectorConfig* config, SysdigService* sysdig);
 
   bool start();
   void run();
@@ -47,7 +47,7 @@ class CollectorStatsExporter {
   const CollectorConfig* config_;
   SysdigService* sysdig_;
   StoppableThread thread_;
-  CollectorStats* collector_stats_;
+  //CollectorStats* collector_stats_;
 };
 
 }  // namespace collector

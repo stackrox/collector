@@ -106,8 +106,6 @@ class ConnectionTracker {
   void UpdateKnownIPNetworks(UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks);
   void UpdateIgnoredL4ProtoPortPairs(UnorderedSet<L4ProtoPortPair>&& ignored_l4proto_port_pairs);
 
-  void SetCollectorStats(CollectorStats* stats) { stats_ = stats; }
-
  private:
   // NormalizeConnection transforms a connection into a normalized form.
   Connection NormalizeConnectionNoLock(const Connection& conn) const;
@@ -157,7 +155,6 @@ class ConnectionTracker {
   NRadixTree known_ip_networks_;
   UnorderedMap<Address::Family, bool> known_private_networks_exists_;
   UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
-  CollectorStats* stats_ = nullptr;
 };
 
 /* static */
