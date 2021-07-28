@@ -34,7 +34,7 @@ runOnAllTagsWithDockerIOPushCtx: &runOnAllTagsWithDockerIOPushCtx
 runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequires
   <<: *runOnAllTags
   context:
-    - docker-io-pull
+    - docker-io-push
     - quay-cgorman1-readonly
   requires:
   - images
