@@ -1453,7 +1453,7 @@ jobs:
 
             # Sync kernel objects from GCS
             gsutil -m rsync -r -x ".*\.unavail$" \
-              "${COLLECTOR_MODULES_BUCKET}/${mod_ver}/" "${kernel_modules_dir}"
+              "${COLLECTOR_MODULES_BUCKET}/${mod_ver}/" "${kernel_modules_dir}" | cat
 
             # Copy Dockerfile and build scripts into build directory
             cp "${SOURCE_ROOT}/kernel-modules/container/"* "${container_build_dir}"
@@ -1462,6 +1462,7 @@ jobs:
     - run:
         name: Reload collector images
         command: |
+          docker image prune
           for collector_dir in "${RELOAD_MD_DIRECTORY}"/*; do
             collector_ver="$(basename "${collector_dir}")"
             mod_ver="$(< "${collector_dir}/module-version")"
@@ -1479,23 +1480,28 @@ jobs:
               --build-arg max_layer_size="${MAX_LAYER_MB}"
             )
 
+            dockerhub_base_image="stackrox/collector:${collector_ver}-base"
+            dockerhub_pr_image="stackrox/collector:${collector_ver}-reload-latest"
+            dockerhub_image="stackrox/collector:${collector_ver}-latest"
+            stackrox_io_image="collector.stackrox.io/collector:${collector_ver}-latest"
             docker build -q \
               --target="probe-layer-${layer_count}" \
-              -t "collector.stackrox.io/collector:${collector_ver}-latest" \
-              -t "stackrox/collector:${collector_ver}-latest" \
-              -t "stackrox/collector:${collector_ver}-reload-latest" \
+              -t "${stackrox_io_image}" \
+              -t "${dockerhub_image}" \
+              -t "${dockerhub_pr_image}" \
               "${build_args[@]}" \
               "${container_build_dir}"
 
             if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
-              ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "stackrox/collector:${collector_ver}-reload-latest" | cat
+              ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${dockerhub_pr_image}" | cat
             else
-              ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "stackrox/collector:${collector_ver}-latest" | cat
-              ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "collector.stackrox.io/collector:${collector_ver}-latest" | cat
+              ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${dockerhub_image}" | cat
+              ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${stackrox_io_image}" | cat
             fi
+            # clean-up to reduce disk usage
+            docker image rm -f "${stackrox_io_image}" "${dockerhub_image}" "${dockerhub_pr_image}" "${dockerhub_base_image}"
+            docker images
           done
-
-          docker images
 
     - slack/status:
         fail_only: true
