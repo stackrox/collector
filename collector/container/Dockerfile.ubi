@@ -34,6 +34,7 @@ RUN dnf -y update && \
         jsoncpp-devel  \
         tbb-devel \
         jq-devel \
+	valgrind \
         c-ares-devel && \
     dnf clean all
 
