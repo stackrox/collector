@@ -1670,18 +1670,19 @@ workflows:
         collection_method: module
         vm_type: ubuntu-os
         image_family: ubuntu-2004-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-ubuntu-2104
-        collection_method: ebpf
-        vm_type: ubuntu-os
-        image_family: ubuntu-2104
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-ubuntu-2104
-        collection_method: module
-        vm_type: ubuntu-os
-        image_family: ubuntu-2104
+    # TODO(ROX-6790) - support glibc 2.33 for 5.11+ kernels
+    #- integration-test:
+    #    <<: *runOnAllTagsWithIntegrationTestRequires
+    #    name: test-ebpf-ubuntu-2104
+    #    collection_method: ebpf
+    #    vm_type: ubuntu-os
+    #    image_family: ubuntu-2104
+    #- integration-test:
+    #    <<: *runOnAllTagsWithIntegrationTestRequires
+    #    name: test-module-ubuntu-2104
+    #    collection_method: module
+    #    vm_type: ubuntu-os
+    #    image_family: ubuntu-2104
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-sles-15
@@ -1730,8 +1731,9 @@ workflows:
         - test-ebpf-ubuntu-1804-lts
         - test-module-ubuntu-2004-lts
         - test-ebpf-ubuntu-2004-lts
-        - test-module-ubuntu-2104
-        - test-ebpf-ubuntu-2104
+        # TODO(ROX-6790) - support glibc 2.33 for 5.11+ kernels
+        #- test-module-ubuntu-2104
+        #- test-ebpf-ubuntu-2104
         - test-ebpf-sles-15
         - test-module-sles-15
         - test-module-sles-12
