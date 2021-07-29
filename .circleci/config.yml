@@ -1501,7 +1501,7 @@ jobs:
             fi
             # clean-up to reduce disk usage
             docker image rm -f "${image_list[@]}"
-            docker prune --force
+            docker image prune --force
             docker images
           done
 
