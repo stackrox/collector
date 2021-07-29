@@ -39,6 +39,7 @@ RUN yum -y update \
         unzip \
         wget \
         which \
+        xz-libs \
     && yum -y groupinstall "Development Tools" \
     && yum clean all \
     ;
