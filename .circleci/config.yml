@@ -1472,18 +1472,18 @@ jobs:
             layer_count="$("${container_build_dir}/partition-probes.py" -1 "$MAX_LAYER_MB" "${container_build_dir}/kernel-modules" "-")"
 
             echo "Reloading ${layer_count} image layers for collector ${collector_ver} (${mod_ver})"
-
+            dockerhub_repo="stackrox/collector:${collector_ver}"
+            dockerhub_base_image="{$dockerhub_repo}-base"
+            dockerhub_pr_image="${dockerhub_repo}-reload-latest"
+            dockerhub_image="${dockerhub_repo}-latest"
+            stackrox_io_image="collector.stackrox.io/collector:${collector_ver}-latest"
+            image_list=("${dockerhub_image}" "${dockerhub_base_image}" "${dockerhub_pr_image}" "${stackrox_io_image}")
             build_args=(
               --build-arg module_version="${mod_ver}"
               --build-arg collector_version="${collector_ver}"
               --build-arg max_layer_depth="${layer_count}"
               --build-arg max_layer_size="${MAX_LAYER_MB}"
             )
-
-            dockerhub_base_image="stackrox/collector:${collector_ver}-base"
-            dockerhub_pr_image="stackrox/collector:${collector_ver}-reload-latest"
-            dockerhub_image="stackrox/collector:${collector_ver}-latest"
-            stackrox_io_image="collector.stackrox.io/collector:${collector_ver}-latest"
             docker build -q \
               --target="probe-layer-${layer_count}" \
               -t "${stackrox_io_image}" \
@@ -1494,12 +1494,15 @@ jobs:
 
             if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
               ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${dockerhub_pr_image}" | cat
+              image_list+=("${dockerhub_pr_image}-amd64")
             else
               ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${dockerhub_image}" | cat
               ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${stackrox_io_image}" | cat
+              image_list+=("${dockerhub_image}-amd64" "${stackrox_io_image}-amd64")
             fi
             # clean-up to reduce disk usage
-            docker image rm -f "${stackrox_io_image}" "${dockerhub_image}" "${dockerhub_pr_image}" "${dockerhub_base_image}"
+            docker image rm -f "${image_list[@]}"
+            docker prune --force
             docker images
           done
 
