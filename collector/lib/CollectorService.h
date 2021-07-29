@@ -55,7 +55,6 @@ class CollectorService {
 
   std::atomic<ControlValue>* control_;
   const std::atomic<int>& signum_;
-  CollectorStats collector_stats_;
 };
 
 }  // namespace collector

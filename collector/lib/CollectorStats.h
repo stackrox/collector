@@ -1,7 +1,6 @@
 #ifndef COLLECTOR_COLLECTORSTATS_H
 #define COLLECTOR_COLLECTORSTATS_H
 
-#include <array>
 #include <atomic>
 #include <unordered_map>
 #include <vector>
@@ -15,20 +14,28 @@
   X(net_create_message) \
   X(net_write_message)
 
-#define COUNTER_NAMES      \
-  X(net_conn_updates)      \
-  X(net_conn_deltas)       \
-  X(net_conn_inactive)     \
-  X(net_cep_updates)       \
-  X(net_cep_deltas)        \
-  X(net_cep_inactive)      \
-  X(net_known_ip_networks) \
-  X(net_known_public_ips)
-
+#define COUNTER_NAMES          \
+  X(net_conn_updates)          \
+  X(net_conn_deltas)           \
+  X(net_conn_inactive)         \
+  X(net_cep_updates)           \
+  X(net_cep_deltas)            \
+  X(net_cep_inactive)          \
+  X(net_known_ip_networks)     \
+  X(net_known_public_ips)      \
+  X(process_lineage_counts)    \
+  X(process_lineage_total)     \
+  X(process_lineage_sqr_total) \
+  X(process_lineage_string_total)
 namespace collector {
 
+//This is a singleton class which keeps track of metrics
 class CollectorStats {
  public:
+  CollectorStats(const CollectorStats&) = delete;
+  CollectorStats& operator=(const CollectorStats&) = delete;
+  CollectorStats(CollectorStats&&) = delete;
+
 #define X(n) n,
   enum TimerType {
     TIMER_NAMES
@@ -37,6 +44,8 @@ class CollectorStats {
 #undef X
   static std::array<std::string, timer_type_max> timer_type_to_name;
 
+  static CollectorStats& GetOrCreate();
+  static void Reset();
   inline int64_t GetTimerCount(size_t index) const { return timer_count_[index]; }
   inline int64_t GetTimerDurationMicros(size_t index) const { return timer_total_us_[index]; }
   inline void EndTimerAt(size_t index, int64_t duration_us) {
@@ -65,6 +74,8 @@ class CollectorStats {
   std::array<std::atomic<int64_t>, timer_type_max> timer_total_us_ = {{}};
 
   std::array<std::atomic<int64_t>, counter_type_max> counter_ = {{}};
+
+  CollectorStats(){};
 };
 
 namespace internal {
@@ -94,23 +105,14 @@ ScopedTimer<T> scoped_timer(T* timer_array, size_t index) {
 
 }  // namespace internal
 
-#define SCOPED_TIMER(s, i) auto __scoped_timer_##__LINE__ = internal::scoped_timer(s, i)
-#define WITH_TIMER(s, i) if (SCOPED_TIMER(s, i))
+#define SCOPED_TIMER(i) auto __scoped_timer_##__LINE__ = internal::scoped_timer(&CollectorStats::GetOrCreate(), i)
+#define WITH_TIMER(i) if (SCOPED_TIMER(i))
 
-#define COUNTER_SET(s, i, v)                     \
-  do {                                           \
-    if (s != nullptr) {                          \
-      s->CounterSet(i, static_cast<int64_t>(v)); \
-    }                                            \
-  } while (0)
-#define COUNTER_ADD(s, i, v)                     \
-  do {                                           \
-    if (s != nullptr) {                          \
-      s->CounterAdd(i, static_cast<int64_t>(v)); \
-    }                                            \
-  } while (0)
-#define COUNTER_INC(s, i) COUNTER_ADD(s, i, 1)
-#define COUNTER_ZERO(s, i) COUNTER_SET(s, i, 0)
+#define COUNTER_SET(i, v) CollectorStats::GetOrCreate().CounterSet(i, static_cast<int64_t>(v));
+#define COUNTER_ADD(i, v) CollectorStats::GetOrCreate().CounterAdd(i, static_cast<int64_t>(v));
+
+#define COUNTER_INC(i) COUNTER_ADD(i, 1)
+#define COUNTER_ZERO(i) COUNTER_SET(i, 0)
 
 }  // namespace collector
 

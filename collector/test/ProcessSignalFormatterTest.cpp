@@ -28,7 +28,9 @@ You should have received a copy of the GNU General Public License along with thi
 #include "libsinsp/wrapper.h"
 // clang-format on
 
+#include "CollectorStats.h"
 #include "ProcessSignalFormatter.h"
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -41,6 +43,8 @@ namespace {
 
 TEST(ProcessSignalFormatterTest, NoProcessTest) {
   sinsp* inspector = NULL;
+  CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+
   ProcessSignalFormatter processSignalFormatter(inspector);
 
   sinsp_threadinfo* tinfo = NULL;
@@ -48,31 +52,63 @@ TEST(ProcessSignalFormatterTest, NoProcessTest) {
 
   processSignalFormatter.GetProcessLineage(tinfo, lineage);
 
+  int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
+  int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
+  int sqrTotal = collector_stats.GetCounter(CollectorStats::process_lineage_sqr_total);
+  int stringTotal = collector_stats.GetCounter(CollectorStats::process_lineage_string_total);
+
+  EXPECT_EQ(count, 0);
+  EXPECT_EQ(total, 0);
+  EXPECT_EQ(sqrTotal, 0);
+  EXPECT_EQ(stringTotal, 0);
+
   EXPECT_TRUE(lineage.empty());
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithoutParentTest) {
   sinsp* inspector = new_inspector();
+  CollectorStats& collector_stats = CollectorStats::GetOrCreate();
 
   ProcessSignalFormatter processSignalFormatter(inspector);
+
   auto tinfo = std::make_shared<sinsp_threadinfo>(inspector);
   tinfo->m_pid = 0;
   tinfo->m_tid = 0;
+  tinfo->m_ptid = -1;
+  tinfo->m_vpid = 2;
+  tinfo->m_uid = 7;
+  tinfo->m_exepath = "qwerty";
 
   inspector->add_thread(tinfo);
   std::vector<LineageInfo> lineage;
 
   processSignalFormatter.GetProcessLineage(tinfo.get(), lineage);
 
+  int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
+  int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
+  int sqrTotal = collector_stats.GetCounter(CollectorStats::process_lineage_sqr_total);
+  int stringTotal = collector_stats.GetCounter(CollectorStats::process_lineage_string_total);
+
+  EXPECT_EQ(count, 1);
+  EXPECT_EQ(total, 0);
+  EXPECT_EQ(sqrTotal, 0);
+  EXPECT_EQ(stringTotal, 0);
+
   EXPECT_TRUE(lineage.empty());
+
+  CollectorStats::Reset();
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithParentTest) {
   sinsp* inspector = new_inspector();
+  CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+
   ProcessSignalFormatter processSignalFormatter(inspector);
+
   auto tinfo = std::make_shared<sinsp_threadinfo>(inspector);
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
+  tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
   tinfo->m_uid = 42;
   tinfo->m_exepath = "asdf";
@@ -88,18 +124,34 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentTest) {
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(tinfo2.get(), lineage);
 
+  int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
+  int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
+  int sqrTotal = collector_stats.GetCounter(CollectorStats::process_lineage_sqr_total);
+  int stringTotal = collector_stats.GetCounter(CollectorStats::process_lineage_string_total);
+
+  EXPECT_EQ(count, 1);
+  EXPECT_EQ(total, 1);
+  EXPECT_EQ(sqrTotal, 1);
+  EXPECT_EQ(stringTotal, 4);
+
   EXPECT_EQ(lineage.size(), 1);
 
   EXPECT_EQ(lineage[0].parent_uid(), tinfo->m_uid);
   EXPECT_EQ(lineage[0].parent_exec_file_path(), tinfo->m_exepath);
+
+  CollectorStats::Reset();
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithParentWithPid0Test) {
   sinsp* inspector = new_inspector();
+  CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+
   ProcessSignalFormatter processSignalFormatter(inspector);
+
   auto tinfo = std::make_shared<sinsp_threadinfo>(inspector);
   tinfo->m_pid = 0;
   tinfo->m_tid = 0;
+  tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
   tinfo->m_exepath = "asdf";
   auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector);
@@ -112,15 +164,32 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentWithPid0Test) {
   inspector->add_thread(tinfo2);
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(tinfo2.get(), lineage);
+
+  int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
+  int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
+  int sqrTotal = collector_stats.GetCounter(CollectorStats::process_lineage_sqr_total);
+  int stringTotal = collector_stats.GetCounter(CollectorStats::process_lineage_string_total);
+
+  EXPECT_EQ(count, 1);
+  EXPECT_EQ(total, 0);
+  EXPECT_EQ(sqrTotal, 0);
+  EXPECT_EQ(stringTotal, 0);
+
   EXPECT_TRUE(lineage.empty());
+
+  CollectorStats::Reset();
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithParentWithSameNameTest) {
   sinsp* inspector = new_inspector();
+  CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+
   ProcessSignalFormatter processSignalFormatter(inspector);
+
   auto tinfo = std::make_shared<sinsp_threadinfo>(inspector);
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
+  tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
   tinfo->m_uid = 43;
   tinfo->m_exepath = "asdf";
@@ -135,19 +204,35 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentWithSameNameTest) {
   inspector->add_thread(tinfo2);
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(tinfo2.get(), lineage);
+
+  int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
+  int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
+  int sqrTotal = collector_stats.GetCounter(CollectorStats::process_lineage_sqr_total);
+  int stringTotal = collector_stats.GetCounter(CollectorStats::process_lineage_string_total);
+
+  EXPECT_EQ(count, 1);
+  EXPECT_EQ(total, 1);
+  EXPECT_EQ(sqrTotal, 1);
+  EXPECT_EQ(stringTotal, 4);
+
   EXPECT_EQ(lineage.size(), 1);
 
   EXPECT_EQ(lineage[0].parent_uid(), tinfo->m_uid);
   EXPECT_EQ(lineage[0].parent_exec_file_path(), tinfo->m_exepath);
+
+  CollectorStats::Reset();
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
   sinsp* inspector = new_inspector();
+  CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+
   ProcessSignalFormatter processSignalFormatter(inspector);
 
   auto tinfo = std::make_shared<sinsp_threadinfo>(inspector);
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
+  tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
   tinfo->m_uid = 42;
   tinfo->m_exepath = "asdf";
@@ -174,6 +259,17 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(tinfo3.get(), lineage);
+
+  int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
+  int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
+  int sqrTotal = collector_stats.GetCounter(CollectorStats::process_lineage_sqr_total);
+  int stringTotal = collector_stats.GetCounter(CollectorStats::process_lineage_string_total);
+
+  EXPECT_EQ(count, 1);
+  EXPECT_EQ(total, 2);
+  EXPECT_EQ(sqrTotal, 4);
+  EXPECT_EQ(stringTotal, 10);
+
   EXPECT_EQ(lineage.size(), 2);
 
   EXPECT_EQ(lineage[0].parent_uid(), tinfo2->m_uid);
@@ -181,15 +277,20 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
 
   EXPECT_EQ(lineage[1].parent_uid(), tinfo->m_uid);
   EXPECT_EQ(lineage[1].parent_exec_file_path(), tinfo->m_exepath);
+
+  CollectorStats::Reset();
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
   sinsp* inspector = new_inspector();
+  CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+
   ProcessSignalFormatter processSignalFormatter(inspector);
 
   auto tinfo = std::make_shared<sinsp_threadinfo>(inspector);
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
+  tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
   tinfo->m_uid = 42;
   tinfo->m_exepath = "asdf";
@@ -216,19 +317,35 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(tinfo3.get(), lineage);
+
+  int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
+  int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
+  int sqrTotal = collector_stats.GetCounter(CollectorStats::process_lineage_sqr_total);
+  int stringTotal = collector_stats.GetCounter(CollectorStats::process_lineage_string_total);
+
+  EXPECT_EQ(count, 1);
+  EXPECT_EQ(total, 1);
+  EXPECT_EQ(sqrTotal, 1);
+  EXPECT_EQ(stringTotal, 4);
+
   EXPECT_EQ(lineage.size(), 1);
 
   EXPECT_EQ(lineage[0].parent_uid(), tinfo2->m_uid);
   EXPECT_EQ(lineage[0].parent_exec_file_path(), tinfo2->m_exepath);
+
+  CollectorStats::Reset();
 }
 
 TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
   sinsp* inspector = new_inspector();
+  CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+
   ProcessSignalFormatter processSignalFormatter(inspector);
 
   auto tinfo = std::make_shared<sinsp_threadinfo>(inspector);
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
+  tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
   tinfo->m_uid = 42;
   tinfo->m_exepath = "asdf";
@@ -264,19 +381,35 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(tinfo4.get(), lineage);
+
+  int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
+  int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
+  int sqrTotal = collector_stats.GetCounter(CollectorStats::process_lineage_sqr_total);
+  int stringTotal = collector_stats.GetCounter(CollectorStats::process_lineage_string_total);
+
+  EXPECT_EQ(count, 1);
+  EXPECT_EQ(total, 1);
+  EXPECT_EQ(sqrTotal, 1);
+  EXPECT_EQ(stringTotal, 4);
+
   EXPECT_EQ(lineage.size(), 1);
 
   EXPECT_EQ(lineage[0].parent_uid(), tinfo3->m_uid);
   EXPECT_EQ(lineage[0].parent_exec_file_path(), tinfo3->m_exepath);
+
+  CollectorStats::Reset();
 }
 
 TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
   sinsp* inspector = new_inspector();
+  CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+
   ProcessSignalFormatter processSignalFormatter(inspector);
 
   auto tinfo = std::make_shared<sinsp_threadinfo>(inspector);
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
+  tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
   tinfo->m_uid = 42;
   tinfo->m_exepath = "qwerty";
@@ -312,6 +445,17 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(tinfo4.get(), lineage);
+
+  int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
+  int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
+  int sqrTotal = collector_stats.GetCounter(CollectorStats::process_lineage_sqr_total);
+  int stringTotal = collector_stats.GetCounter(CollectorStats::process_lineage_string_total);
+
+  EXPECT_EQ(count, 1);
+  EXPECT_EQ(total, 2);
+  EXPECT_EQ(sqrTotal, 4);
+  EXPECT_EQ(stringTotal, 10);
+
   EXPECT_EQ(lineage.size(), 2);
 
   EXPECT_EQ(lineage[0].parent_uid(), tinfo3->m_uid);
@@ -319,15 +463,20 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
 
   EXPECT_EQ(lineage[1].parent_uid(), tinfo->m_uid);
   EXPECT_EQ(lineage[1].parent_exec_file_path(), tinfo->m_exepath);
+
+  CollectorStats::Reset();
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
   sinsp* inspector = new_inspector();
+  CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+
   ProcessSignalFormatter processSignalFormatter(inspector);
 
   auto tinfo = std::make_shared<sinsp_threadinfo>(inspector);
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
+  tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
   tinfo->m_uid = 42;
   tinfo->m_exepath = "qwerty";
@@ -363,6 +512,17 @@ TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(tinfo3.get(), lineage);
+
+  int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
+  int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
+  int sqrTotal = collector_stats.GetCounter(CollectorStats::process_lineage_sqr_total);
+  int stringTotal = collector_stats.GetCounter(CollectorStats::process_lineage_string_total);
+
+  EXPECT_EQ(count, 1);
+  EXPECT_EQ(total, 2);
+  EXPECT_EQ(sqrTotal, 4);
+  EXPECT_EQ(stringTotal, 10);
+
   EXPECT_EQ(lineage.size(), 2);
 
   EXPECT_EQ(lineage[0].parent_uid(), tinfo2->m_uid);
@@ -370,6 +530,55 @@ TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
 
   EXPECT_EQ(lineage[1].parent_uid(), tinfo->m_uid);
   EXPECT_EQ(lineage[1].parent_exec_file_path(), tinfo->m_exepath);
+
+  CollectorStats::Reset();
+}
+
+TEST(ProcessSignalFormatterTest, CountTwoCounterCallsTest) {
+  sinsp* inspector = new_inspector();
+  CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+
+  ProcessSignalFormatter processSignalFormatter(inspector);
+
+  auto tinfo = std::make_shared<sinsp_threadinfo>(inspector);
+  tinfo->m_pid = 1;
+  tinfo->m_tid = 1;
+  tinfo->m_ptid = 555;
+  tinfo->m_vpid = 10;
+  tinfo->m_uid = 9;
+  tinfo->m_exepath = "jkl;";
+
+  inspector->add_thread(tinfo);
+  std::vector<LineageInfo> lineage;
+
+  processSignalFormatter.GetProcessLineage(tinfo.get(), lineage);
+
+  auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector);
+  tinfo2->m_pid = 2;
+  tinfo2->m_tid = 2;
+  tinfo2->m_ptid = 555;
+  tinfo2->m_vpid = 10;
+  tinfo2->m_uid = 9;
+  tinfo2->m_exepath = "jkl;";
+
+  inspector->add_thread(tinfo2);
+  std::vector<LineageInfo> lineage2;
+
+  processSignalFormatter.GetProcessLineage(tinfo.get(), lineage2);
+
+  int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
+  int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
+  int sqrTotal = collector_stats.GetCounter(CollectorStats::process_lineage_sqr_total);
+  int stringTotal = collector_stats.GetCounter(CollectorStats::process_lineage_string_total);
+
+  EXPECT_EQ(count, 2);
+  EXPECT_EQ(total, 0);
+  EXPECT_EQ(sqrTotal, 0);
+  EXPECT_EQ(stringTotal, 0);
+
+  EXPECT_TRUE(lineage2.empty());
+
+  CollectorStats::Reset();
 }
 
 }  // namespace

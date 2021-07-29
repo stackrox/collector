@@ -29,6 +29,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "internalapi/sensor/signal_iservice.pb.h"
 
+#include "CollectorStats.h"
 #include "EventMap.h"
 #include "Logging.h"
 #include "Utility.h"
@@ -260,6 +261,21 @@ bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
   return true;
 }
 
+int ProcessSignalFormatter::GetTotalStringLength(const std::vector<LineageInfo>& lineage) {
+  int totalStringLength = 0;
+  for (LineageInfo l : lineage) totalStringLength += l.parent_exec_file_path().size();
+
+  return totalStringLength;
+}
+
+void ProcessSignalFormatter::CountLineage(const std::vector<LineageInfo>& lineage) {
+  int totalStringLength = GetTotalStringLength(lineage);
+  COUNTER_INC(CollectorStats::process_lineage_counts);
+  COUNTER_ADD(CollectorStats::process_lineage_total, lineage.size());
+  COUNTER_ADD(CollectorStats::process_lineage_sqr_total, lineage.size() * lineage.size());
+  COUNTER_ADD(CollectorStats::process_lineage_string_total, totalStringLength);
+}
+
 void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
                                                std::vector<LineageInfo>& lineage) {
   if (tinfo == NULL) return;
@@ -292,6 +308,7 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
     return true;
   };
   mt->traverse_parent_state(visitor);
+  CountLineage(lineage);
 }
 
 }  // namespace collector

@@ -25,6 +25,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <chrono>
 #include <iostream>
+#include <math.h>
 
 #include "Containers.h"
 #include "EventNames.h"
@@ -35,8 +36,8 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-CollectorStatsExporter::CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, const CollectorConfig* config, SysdigService* sysdig, CollectorStats* collector_stats)
-    : registry_(std::move(registry)), config_(config), sysdig_(sysdig), collector_stats_(collector_stats) {}
+CollectorStatsExporter::CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, const CollectorConfig* config, SysdigService* sysdig)
+    : registry_(std::move(registry)), config_(config), sysdig_(sysdig) {}
 
 bool CollectorStatsExporter::start() {
   if (!thread_.Start(&CollectorStatsExporter::run, this)) {
@@ -103,7 +104,7 @@ void CollectorStatsExporter::run() {
   std::array<prometheus::Gauge*, CollectorStats::counter_type_max> collector_counters;
   for (int i = 0; i < CollectorStats::counter_type_max; i++) {
     auto ct = (CollectorStats::CounterType)(i);
-    collector_counters[i] = &(collector_counters_gauge.Add({{"type", CollectorStats::counter_type_to_name[ct]}}));
+    collector_counters[ct] = &(collector_counters_gauge.Add({{"type", CollectorStats::counter_type_to_name[ct]}}));
   }
 
   auto& collectorTypedEventCounters = prometheus::BuildGauge()
@@ -120,6 +121,16 @@ void CollectorStatsExporter::run() {
                                           .Name("rox_collector_event_times_us_avg")
                                           .Help("Collector event timings (average)")
                                           .Register(*registry_);
+
+  auto& collectorProcessLineageInfo = prometheus::BuildGauge()
+                                          .Name("rox_collector_process_lineage_info")
+                                          .Help("Collector process lineage info")
+                                          .Register(*registry_);
+
+  prometheus::Gauge* lineage_count = &collectorProcessLineageInfo.Add({{"type", "lineage_count"}});
+  prometheus::Gauge* lineage_avg = &collectorProcessLineageInfo.Add({{"type", "lineage_avg"}});
+  prometheus::Gauge* lineage_std_dev = &collectorProcessLineageInfo.Add({{"type", "std_dev"}});
+  prometheus::Gauge* lineage_avg_string_len = &collectorProcessLineageInfo.Add({{"type", "lineage_avg_string_len"}});
 
   struct {
     prometheus::Gauge* filtered = nullptr;
@@ -221,13 +232,28 @@ void CollectorStatsExporter::run() {
 
     for (int i = 0; i < CollectorStats::timer_type_max; i++) {
       auto tt = (CollectorStats::TimerType)(i);
-      collector_timers[tt]->Update(collector_stats_->GetTimerCount(tt),
-                                   collector_stats_->GetTimerDurationMicros(tt));
+      collector_timers[tt]->Update(CollectorStats::GetOrCreate().GetTimerCount(tt),
+                                   CollectorStats::GetOrCreate().GetTimerDurationMicros(tt));
     }
     for (int i = 0; i < CollectorStats::counter_type_max; i++) {
       auto ct = (CollectorStats::CounterType)(i);
-      collector_counters[ct]->Set(collector_stats_->GetCounter(ct));
+      collector_counters[ct]->Set(CollectorStats::GetOrCreate().GetCounter(ct));
     }
+
+    int64_t lineage_count_stat = CollectorStats::GetOrCreate().GetCounter(CollectorStats::process_lineage_counts);
+    int64_t lineage_count_total = CollectorStats::GetOrCreate().GetCounter(CollectorStats::process_lineage_total);
+    int64_t lineage_count_sqr_total = CollectorStats::GetOrCreate().GetCounter(CollectorStats::process_lineage_sqr_total);
+    int64_t lineage_count_string_total = CollectorStats::GetOrCreate().GetCounter(CollectorStats::process_lineage_string_total);
+
+    float lineage_count_avg = lineage_count_stat ? (float)lineage_count_total / (float)lineage_count_stat : 0;
+    float lineage_count_sqr_avg = lineage_count_stat ? (float)lineage_count_sqr_total / (float)lineage_count_stat : 0;
+    float lineage_count_std_dev = sqrt(lineage_count_sqr_avg - lineage_count_avg * lineage_count_avg);
+    float lineage_count_string_avg = lineage_count_stat ? (float)lineage_count_string_total / (float)lineage_count_stat : 0;
+
+    lineage_count->Set(lineage_count_stat);
+    lineage_avg->Set(lineage_count_avg);
+    lineage_std_dev->Set(lineage_count_std_dev);
+    lineage_avg_string_len->Set(lineage_count_string_avg);
   }
 }
 
