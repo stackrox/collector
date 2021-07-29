@@ -1462,7 +1462,6 @@ jobs:
     - run:
         name: Reload collector images
         command: |
-          docker image prune --force
           for collector_dir in "${RELOAD_MD_DIRECTORY}"/*; do
             collector_ver="$(basename "${collector_dir}")"
             mod_ver="$(< "${collector_dir}/module-version")"
@@ -1473,7 +1472,7 @@ jobs:
 
             echo "Reloading ${layer_count} image layers for collector ${collector_ver} (${mod_ver})"
             dockerhub_repo="stackrox/collector:${collector_ver}"
-            dockerhub_base_image="{$dockerhub_repo}-base"
+            dockerhub_base_image="${dockerhub_repo}-base"
             dockerhub_pr_image="${dockerhub_repo}-reload-latest"
             dockerhub_image="${dockerhub_repo}-latest"
             stackrox_io_image="collector.stackrox.io/collector:${collector_ver}-latest"
@@ -1501,13 +1500,8 @@ jobs:
               image_list+=("${dockerhub_image}-amd64" "${stackrox_io_image}-amd64")
             fi
             # clean-up to reduce disk usage
-            echo "removing images: ${image_list[@]}"
             docker image rm -f "${image_list[@]}"
-            echo "image list before prune:"
-            docker images
-            echo "pruning images"
             docker prune --force
-            echo "image list after prune:"
             docker images
           done
 
