@@ -76,16 +76,19 @@ SignalHandler::Result ProcessSignalHandler::HandleExistingProcess(sinsp_threadin
     ++(stats_->nProcessResolutionFailuresByTinfo);
     return IGNORED;
   }
+
   if (!rate_limiter_.Allow(compute_process_key(signal_msg->signal().process_signal()))) {
     ++(stats_->nProcessRateLimitCount);
     return IGNORED;
   }
+
   auto result = client_.PushSignals(*signal_msg);
   if (result == SignalHandler::PROCESSED) {
     ++(stats_->nProcessSent);
   } else if (result == SignalHandler::ERROR) {
     ++(stats_->nProcessSendFailures);
   }
+
   return result;
 }
 

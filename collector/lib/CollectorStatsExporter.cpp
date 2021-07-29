@@ -143,7 +143,6 @@ void CollectorStatsExporter::run() {
 
     prometheus::Gauge* parse_micros_avg = nullptr;
     prometheus::Gauge* process_micros_avg = nullptr;
-
   } typed[PPM_EVENT_MAX] = {};
 
   const auto& active_syscalls = config_->Syscalls();
@@ -178,6 +177,7 @@ void CollectorStatsExporter::run() {
     typed[i].process_micros_avg = &collectorTypedEventTimesAvg.Add(
         std::map<std::string, std::string>{{"step", "process"}, {"event_type", event_name}, {"event_dir", event_dir}});
   }
+
   while (thread_.Pause(std::chrono::seconds(5))) {
     SysdigStats stats;
     if (!sysdig_->GetStats(&stats)) {
@@ -235,7 +235,6 @@ void CollectorStatsExporter::run() {
       collector_timers[tt]->Update(CollectorStats::GetOrCreate().GetTimerCount(tt),
                                    CollectorStats::GetOrCreate().GetTimerDurationMicros(tt));
     }
-
     for (int i = 0; i < CollectorStats::counter_type_max; i++) {
       auto ct = (CollectorStats::CounterType)(i);
       collector_counters[ct]->Set(CollectorStats::GetOrCreate().GetCounter(ct));

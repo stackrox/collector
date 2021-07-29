@@ -47,7 +47,6 @@ class CollectorStatsExporter {
   const CollectorConfig* config_;
   SysdigService* sysdig_;
   StoppableThread thread_;
-  //CollectorStats* collector_stats_;
 };
 
 }  // namespace collector
