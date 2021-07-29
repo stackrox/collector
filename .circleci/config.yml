@@ -34,7 +34,7 @@ runOnAllTagsWithDockerIOPushCtx: &runOnAllTagsWithDockerIOPushCtx
 runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequires
   <<: *runOnAllTags
   context:
-    - docker-io-pull
+    - docker-io-push
     - quay-cgorman1-readonly
   requires:
   - images
@@ -116,7 +116,6 @@ commands:
     - run:
         name: Login to Docker Hub with push credentials
         command: |
-            echo "skip dockerhub" && exit 0
             docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD"
 
   stackrox-io-login:
@@ -173,16 +172,16 @@ jobs:
             export GCP_SSH_KEY_FILE="${GCP_SSH_KEY_FILE}"
           EOF
 
-          #if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -f pr-metadata/labels/build-builder-image ]]; then
-          #cat >>~/workspace/shared-env \<<-EOF
-          #  export COLLECTOR_BUILDER_TAG="cache"
-          #EOF
-          #else
+          if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -f pr-metadata/labels/build-builder-image ]]; then
+          cat >>~/workspace/shared-env \<<-EOF
+            export COLLECTOR_BUILDER_TAG="cache"
+          EOF
+          else
           cat >>~/workspace/shared-env \<<-EOF
             export COLLECTOR_BUILDER_TAG="circle-build-${CIRCLE_WORKFLOW_ID}"
             export BUILD_BUILDER_IMAGE=true
           EOF
-          #fi
+          fi
           cat ~/workspace/shared-env
 
     - persist_to_workspace:
@@ -219,7 +218,6 @@ jobs:
     - run:
         name: Restore collector-builder image
         command: |
-          echo "skip dockerhub" && exit 0
           docker pull "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}" || docker pull stackrox/collector-builder:cache || true
 
     - run:
@@ -229,7 +227,6 @@ jobs:
     - run:
         name: Save collector-builder image
         command: |
-          echo "skip dockerhub" && exit 0
           docker push "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}"
           if [[ "$CIRCLE_BRANCH" == "master" ]]; then
             docker tag "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}" stackrox/collector-builder:cache
@@ -247,7 +244,6 @@ jobs:
     - run:
         name: Restore collector-builder rhel image
         command: |
-          echo "skip dockerhub" && exit 0
           docker pull "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}" || docker pull stackrox/collector-builder:rhel-cache || true
 
     - run:
@@ -257,7 +253,6 @@ jobs:
     - run:
         name: Save collector-builder rhel image
         command: |
-          echo "skip dockerhub" && exit 0
           docker push "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}"
           if [[ "$CIRCLE_BRANCH" == "master" ]]; then
             docker tag "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}" stackrox/collector-builder:rhel-cache
@@ -643,7 +638,6 @@ jobs:
     - run:
         name: Restore builder cache image(s)
         command: |
-          echo "skip dockerhub" && exit 0
           make -C "${SOURCE_ROOT}/kernel-modules" pull-build-containers
 
     - run:
@@ -718,12 +712,11 @@ jobs:
 
     steps:
     - initcommand
-    - docker-login
+    - docker-login-push
 
     - run:
         name: Restore collector-builder image
         command: |
-          echo "skip dockerhub" && exit 0
           docker pull "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}"
 
     - run:
@@ -747,12 +740,11 @@ jobs:
 
     steps:
     - initcommand
-    - docker-login
+    - docker-login-push
 
     - run:
         name: Restore collector-builder rhel image
         command: |
-          echo "skip dockerhub" && exit 0
           docker pull "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}"
 
     - run:
@@ -908,7 +900,6 @@ jobs:
     - run:
         name: Push images
         command: |
-          echo "skip dockerhub" && exit 0
           echo "Pushing collector base image"
           ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "stackrox/collector:${COLLECTOR_VERSION}-base"
           echo "Pushing collector image"
@@ -957,7 +948,6 @@ jobs:
     - run:
         name: Push collector UBI images
         command: |
-          echo "skip dockerhub" && exit 0
           echo "Pushing collector image"
           docker push "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}"
           echo "Pushing collector slim image"
@@ -1109,14 +1099,13 @@ jobs:
 
     steps:
     - initcommand
-    - docker-login
+    - docker-login-push
     - gcloud-init
 
     - run:
         name: "Running integration tests"
         no_output_timeout: 45m
         command: |
-          echo "skip dockerhub" && circleci step halt && exit 0
           export REMOTE_HOST_TYPE=local
           export COLLECTION_METHOD=kernel_module
           export VM_CONFIG="circle_local_<< parameters.vm-config >>"
@@ -1147,7 +1136,7 @@ jobs:
         enum: [cos, rhel, suse, suse-sap, ubuntu-os]
       image_family:
         type: enum
-        enum: [cos-stable, cos-85-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2010, sles-12, sles-15, sles-15-sp2-sap]
+        enum: [cos-stable, cos-85-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2104, sles-12, sles-15, sles-15-sp2-sap]
 
     <<: *defaultImage
 
@@ -1156,7 +1145,6 @@ jobs:
     - run:
         name: Check whether to run job
         command: |
-          echo "skip dockerhub" && circleci step halt && exit 0
           if [[ -f ~/workspace/pr-metadata/labels/skip-integration-tests ]]; then
             echo "Skipping job with skip-integration-tests label."
             circleci step halt
@@ -1179,7 +1167,7 @@ jobs:
           export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
           export VM_TYPE=<< parameters.vm_type >>
           export IMAGE_FAMILY=<< parameters.image_family >>
-          main "$GCLOUD_INSTANCE" "$VM_TYPE" "$IMAGE_FAMILY" "$GCP_SSH_KEY_FILE" "$DOCKER_IO_PULL_USERNAME" "$DOCKER_IO_PULL_PASSWORD"
+          main "$GCLOUD_INSTANCE" "$VM_TYPE" "$IMAGE_FAMILY" "$GCP_SSH_KEY_FILE" "$DOCKER_IO_PUSH_USERNAME" "$DOCKER_IO_PUSH_PASSWORD"
 
     - run:
         name: "Running integration tests"
@@ -1247,7 +1235,6 @@ jobs:
     - run:
         name: Check whether to run job
         command: |
-          echo "skip dockerhub" && circleci step halt && exit 0
           if [[ -f ~/workspace/pr-metadata/labels/skip-integration-tests ]]; then
             echo "Skipping job with skip-integration-tests label."
             circleci step halt
@@ -1426,7 +1413,6 @@ jobs:
     - run:
         name: Determine collector versions that need reload
         command: |
-          echo "skip dockerhub" && circleci step halt && exit 0
           mkdir -p "${RELOAD_MD_DIRECTORY}"
           for collector_ver_file in "${WORKSPACE_ROOT}/ko-build/released-collectors"/*; do
             collector_ver="$(basename "${collector_ver_file}")"
@@ -1532,7 +1518,7 @@ workflows:
         requires:
         - lint
     - collector:
-        <<: *runOnAllTagsWithDockerIOPullCtx
+        <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - builder
     - builder-rhel:
@@ -1540,7 +1526,7 @@ workflows:
         requires:
         - lint
     - collector-rhel:
-        <<: *runOnAllTagsWithDockerIOPullCtx
+        <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - builder-rhel
     - prepare-kernels:
@@ -1578,12 +1564,12 @@ workflows:
         requires:
         - initjob
     - integration-test-local:
-        <<: *runOnAllTagsWithDockerIOPullCtx
+        <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - images
         - upload-modules
     - integration-test-local:
-        <<: *runOnAllTagsWithDockerIOPullCtx
+        <<: *runOnAllTagsWithDockerIOPushCtx
         name: integration-test-local-rhel
         vm-config: rhel
         use-rhel: true
@@ -1591,7 +1577,7 @@ workflows:
         - images
         - upload-modules
     - integration-test-local:
-        <<: *runOnAllTagsWithDockerIOPullCtx
+        <<: *runOnAllTagsWithDockerIOPushCtx
         name: integration-test-local-ubi
         vm-config: rhel
         use-ubi: true
@@ -1684,18 +1670,19 @@ workflows:
         collection_method: module
         vm_type: ubuntu-os
         image_family: ubuntu-2004-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-ubuntu-2010
-        collection_method: ebpf
-        vm_type: ubuntu-os
-        image_family: ubuntu-2010
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-ubuntu-2010
-        collection_method: module
-        vm_type: ubuntu-os
-        image_family: ubuntu-2010
+    # TODO(ROX-6790) - support glibc 2.33 for 5.11+ kernels
+    #- integration-test:
+    #    <<: *runOnAllTagsWithIntegrationTestRequires
+    #    name: test-ebpf-ubuntu-2104
+    #    collection_method: ebpf
+    #    vm_type: ubuntu-os
+    #    image_family: ubuntu-2104
+    #- integration-test:
+    #    <<: *runOnAllTagsWithIntegrationTestRequires
+    #    name: test-module-ubuntu-2104
+    #    collection_method: module
+    #    vm_type: ubuntu-os
+    #    image_family: ubuntu-2104
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-sles-15
@@ -1744,8 +1731,9 @@ workflows:
         - test-ebpf-ubuntu-1804-lts
         - test-module-ubuntu-2004-lts
         - test-ebpf-ubuntu-2004-lts
-        - test-module-ubuntu-2010
-        - test-ebpf-ubuntu-2010
+        # TODO(ROX-6790) - support glibc 2.33 for 5.11+ kernels
+        #- test-module-ubuntu-2104
+        #- test-ebpf-ubuntu-2104
         - test-ebpf-sles-15
         - test-module-sles-15
         - test-module-sles-12
