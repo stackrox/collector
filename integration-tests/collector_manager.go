@@ -25,6 +25,7 @@ type collectorManager struct {
 }
 
 func NewCollectorManager(e Executor, name string) *collectorManager {
+	var useValgrind = os.Getenv("USE_VALGRIND")
 	collectionMethod := ReadEnvVarWithDefault("COLLECTION_METHOD", "kernel_module")
 	if strings.Contains(collectionMethod, "module") {
 		collectionMethod = "kernel_module"
@@ -34,6 +35,7 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 		"GRPC_SERVER":              "localhost:9999",
 		"COLLECTOR_CONFIG":         `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}`,
 		"COLLECTION_METHOD":        collectionMethod,
+		"USE_VALGRIND":             useValgrind,
 		"MODULE_DOWNLOAD_BASE_URL": "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656",
 	}
 	mounts := map[string]string{
