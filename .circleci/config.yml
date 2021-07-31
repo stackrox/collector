@@ -725,7 +725,7 @@ jobs:
 
     - run:
         name: Run collector unit tests
-        command: make -C "${SOURCE_ROOT}" unittest
+        command: make -C "${SOURCE_ROOT}" unittest USE_VALGRIND=true
 
     - persist_to_workspace:
         root: ~/workspace
