@@ -802,7 +802,7 @@ jobs:
 
     - run:
         name: Run RHEL collector unit tests
-        command: make -C "${SOURCE_ROOT}" unittest-rhel
+        command: make -C "${SOURCE_ROOT}" unittest-rhel USE_VALGRIND=true
 
     - persist_to_workspace:
         root: ~/workspace
@@ -1191,7 +1191,7 @@ jobs:
           export VM_CONFIG="circle_local_<< parameters.vm-config >>"
           export COLLECTOR_REPO="stackrox/collector<<# parameters.use-rhel>>-rhel<</ parameters.use-rhel>><<# parameters.use-ubi>>-test-cpaas<</ parameters.use-ubi>>"
           export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}"
-          make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report
+          make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report USE_VALGRIND=true
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
     - store_test_results:
