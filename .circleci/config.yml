@@ -755,6 +755,34 @@ jobs:
         - go/src/github.com/stackrox/collector/collector/container/libs
         - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES
 
+  collector-valgrind:
+    <<: *defaultMachine
+    resource_class: large
+
+    steps:
+    - initcommand
+    - docker-login-push
+
+    - run:
+        name: Restore collector-builder image
+        command: |
+          docker pull "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}"
+
+    - run:
+        name: Build collector
+        command: make -C "${SOURCE_ROOT}" collector
+
+    - run:
+        name: Run collector unit tests
+        command: make -C "${SOURCE_ROOT}" unittest USE_VALGRIND=true
+
+    - persist_to_workspace:
+        root: ~/workspace
+        paths:
+        - go/src/github.com/stackrox/collector/collector/container/bin
+        - go/src/github.com/stackrox/collector/collector/container/libs
+        - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES
+
   collector-rhel:
     <<: *defaultMachine
     resource_class: large
