@@ -804,7 +804,7 @@ jobs:
         name: Run RHEL collector unit tests
         command: |
           unittest_output_file=unittest_results.txt
-          max_allowed_valgrind_erros=5
+          max_allowed_valgrind_errors=5
           make -C "${SOURCE_ROOT}" unittest-rhel USE_VALGRIND=true >& $unittest_output_file
           cat $unittest_output_file
           valgrind_errors=`grep ERROR\ SUMMARY $unittest_output_file | awk '{print $7}'`
