@@ -781,7 +781,15 @@ jobs:
 
     - run:
         name: Run RHEL collector unit tests
-        command: make -C "${SOURCE_ROOT}" unittest-rhel USE_VALGRIND=true
+        command: |
+          unittest_output_file=unittest_results.txt
+          make -C "${SOURCE_ROOT}" unittest-rhel USE_VALGRIND=true >& $unittest_output_file
+          cat $unittest_output_file
+          valgrind_errors=`grep ERROR\ SUMMARY $unittest_output_file | awk '{print $7}'`
+          if [ $valgrind_errors -gt 5 ]
+          then
+            exit
+          fi
 
     - persist_to_workspace:
         root: ~/workspace
