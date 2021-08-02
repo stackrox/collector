@@ -41,6 +41,11 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
   - ubi-image
   - integration-test-local
 
+runOnValgrindTag: &runOnValgrindTag
+  filters:
+    tags:
+      only: 
+
 orbs:
   slack: circleci/slack@3.4.2
 
@@ -725,7 +730,7 @@ jobs:
 
     - run:
         name: Run collector unit tests
-        command: make -C "${SOURCE_ROOT}" unittest USE_VALGRIND=true
+        command: make -C "${SOURCE_ROOT}"
 
     - persist_to_workspace:
         root: ~/workspace
@@ -740,6 +745,7 @@ jobs:
 
     steps:
     - initcommand
+    - read-pr-metadata
     - docker-login-push
 
     - run:
@@ -753,7 +759,19 @@ jobs:
 
     - run:
         name: Run collector unit tests
-        command: make -C "${SOURCE_ROOT}" unittest USE_VALGRIND=true
+        command: | 
+          if [ -f pr-metadata/labels/valgrind ]; then 
+            unittest_output_file=unittest_results.txt
+            max_allowed_valgrind_errors=25
+            make -C "${SOURCE_ROOT}" unittest USE_VALGRIND=true >& $unittest_output_file
+            cat $unittest_output_file
+            valgrind_errors=`grep ERROR\ SUMMARY $unittest_output_file | awk '{print $7}'`
+            if [ $valgrind_errors -gt $max_allowed_valgrind_errors ]
+            then
+              echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
+              exit 1
+            fi
+          fi
 
     - persist_to_workspace:
         root: ~/workspace
@@ -782,8 +800,37 @@ jobs:
     - run:
         name: Run RHEL collector unit tests
         command: |
+          make -C "${SOURCE_ROOT}" unittest-rhel
+
+    - persist_to_workspace:
+        root: ~/workspace
+        paths:
+        - go/src/github.com/stackrox/collector/collector/container/bin
+        - go/src/github.com/stackrox/collector/collector/container/libs
+        - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES.rhel
+
+  collector-rhel-valgrind:
+    <<: *defaultMachine
+    resource_class: large
+
+    steps:
+    - initcommand
+    - docker-login-push
+
+    - run:
+        name: Restore collector-builder rhel image
+        command: |
+          docker pull "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}"
+
+    - run:
+        name: Build rhel collector
+        command: make -C "${SOURCE_ROOT}" collector-rhel
+
+    - run:
+        name: Run RHEL collector unit tests
+        command: |
           unittest_output_file=unittest_results.txt
-          max_allowed_valgrind_errors=5
+          max_allowed_valgrind_errors=25
           make -C "${SOURCE_ROOT}" unittest-rhel USE_VALGRIND=true >& $unittest_output_file
           cat $unittest_output_file
           valgrind_errors=`grep ERROR\ SUMMARY $unittest_output_file | awk '{print $7}'`
@@ -1576,6 +1623,10 @@ workflows:
         requires:
         - lint
     - collector-rhel:
+        <<: *runOnAllTagsWithDockerIOPushCtx
+        requires:
+        - builder-rhel
+    - collector-rhel-valgrind:
         <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - builder-rhel
