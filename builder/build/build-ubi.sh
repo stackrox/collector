@@ -51,7 +51,7 @@ cd ..
 mkdir -p cmake-sysdig
 cd cmake-sysdig
 cmake \
-        -DCMAKE_BUILD_TYPE=Debug \
+        -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_C_FLAGS="-fno-pie" \
         -DPROBE_NAME=collector \
         -DBUILD_USERSPACE=OFF \
