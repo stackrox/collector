@@ -850,15 +850,17 @@ jobs:
     - run:
         name: Run RHEL collector unit tests
         command: |
-          unittest_output_file=unittest_results.txt
-          max_allowed_valgrind_errors=25
-          make -C "${SOURCE_ROOT}" unittest-rhel USE_VALGRIND=true >& $unittest_output_file
-          cat $unittest_output_file
-          valgrind_errors=`grep ERROR\ SUMMARY $unittest_output_file | awk '{print $7}'`
-          if [ $valgrind_errors -gt $max_allowed_valgrind_errors ]
-          then
-            echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
-            exit 1
+          if [ -f pr-metadata/labels/valgrind ]; then 
+            unittest_output_file=unittest_results.txt
+            max_allowed_valgrind_errors=25
+            make -C "${SOURCE_ROOT}" unittest USE_VALGRIND=true >& $unittest_output_file
+            cat $unittest_output_file
+            valgrind_errors=`grep ERROR\ SUMMARY $unittest_output_file | awk '{print $7}'`
+            if [ $valgrind_errors -gt $max_allowed_valgrind_errors ]
+            then
+              echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
+              exit 1
+            fi
           fi
 
     - persist_to_workspace:
