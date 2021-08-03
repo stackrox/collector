@@ -4,7 +4,7 @@ set -e
 set -ux
 ldconfig -v
 cd /tmp/cmake-build
-cmake -DCMAKE_BUILD_TYPE=Debug /src
+cmake -DCMAKE_BUILD_TYPE=Release /src
 make -j "${NPROCS:-2}" all
 strip --strip-unneeded \
     ./collector \
