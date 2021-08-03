@@ -26,7 +26,9 @@
   X(process_lineage_counts)    \
   X(process_lineage_total)     \
   X(process_lineage_sqr_total) \
-  X(process_lineage_string_total)
+  X(process_lineage_string_total) \
+  X(rate_limit_flushing_counts)
+
 namespace collector {
 
 //This is a singleton class which keeps track of metrics

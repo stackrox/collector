@@ -23,6 +23,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "RateLimit.h"
 
+#include "CollectorStats.h"
 #include "Logging.h"
 #include "TimeUtil.h"
 #include "Utility.h"
@@ -80,6 +81,7 @@ bool RateLimitCache::Allow(std::string key) {
   if (pair.second && cache_.size() > capacity_) {
     CLOG(INFO) << "Flushing rate limiting cache";
     cache_.clear();
+    COUNTER_INC(CollectorStats::rate_limit_flushing_counts);
     return true;
   }
   return limiter_->Allow(&pair.first->second);
