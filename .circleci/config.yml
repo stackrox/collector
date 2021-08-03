@@ -762,7 +762,7 @@ jobs:
         command: | 
           if [ -f pr-metadata/labels/valgrind ]; then 
             unittest_output_file=unittest_results.txt
-            max_allowed_valgrind_errors=25
+            max_allowed_valgrind_errors=0
             make -C "${SOURCE_ROOT}" unittest USE_VALGRIND=true >& $unittest_output_file
             cat $unittest_output_file
             valgrind_errors=`grep ERROR\ SUMMARY $unittest_output_file | awk '{print $7}'`
@@ -815,6 +815,7 @@ jobs:
 
     steps:
     - initcommand
+    - read-pr-metadata
     - docker-login-push
 
     - run:
@@ -831,8 +832,8 @@ jobs:
         command: |
           if [ -f pr-metadata/labels/valgrind ]; then 
             unittest_output_file=unittest_results.txt
-            max_allowed_valgrind_errors=25
-            make -C "${SOURCE_ROOT}" unittest USE_VALGRIND=true >& $unittest_output_file
+            max_allowed_valgrind_errors=0
+            make -C "${SOURCE_ROOT}" unittest-rhel USE_VALGRIND=true >& $unittest_output_file
             cat $unittest_output_file
             valgrind_errors=`grep ERROR\ SUMMARY $unittest_output_file | awk '{print $7}'`
             if [ $valgrind_errors -gt $max_allowed_valgrind_errors ]
