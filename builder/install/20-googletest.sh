@@ -7,6 +7,6 @@ cd googletest
 cp LICENSE "${LICENSE_DIR}/googletest-${GOOGLETEST_REVISION}"
 mkdir cmake-build
 cd cmake-build
-cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake -DCMAKE_BUILD_TYPE=Debug ..
 make -j "${NPROCS:-2}"
 make install
