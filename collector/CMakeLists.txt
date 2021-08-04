@@ -53,7 +53,7 @@ add_executable(collector collector.cpp)
 target_link_libraries(collector collector_lib)
 
 if(NOT DEFINED ENV{DISABLE_PROFILING})
-	target_link_libraries(collector libunwind.a libtcmalloc_and_profiler.a lzma)
+	target_link_libraries(collector libtcmalloc_and_profiler.a libunwind.a lzma)
 endif()
 
 target_link_libraries(collector libprometheus-cpp-pull.a)
@@ -70,7 +70,7 @@ file(GLOB TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/test/*.cpp)
 add_executable(runUnitTests ${TEST_SRC_FILES})
 
 if(NOT DEFINED ENV{DISABLE_PROFILING})
-	target_link_libraries(runUnitTests libunwind.a libtcmalloc_and_profiler.a lzma)
+	target_link_libraries(runUnitTests libtcmalloc_and_profiler.a libunwind.a lzma)
 endif()
 target_link_libraries(runUnitTests collector_lib)
 if(DEFINED ENV{WITH_RHEL8_RPMS})
