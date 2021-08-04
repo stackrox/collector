@@ -1292,12 +1292,14 @@ jobs:
             echo "Not using Valgrind. Not checking for Valgrind errors"
             exit 0
           fi
-          for file in `ls ~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs`
+          log_dir=~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
+          for file in `ls $log_dir`
           do
             max_allowed_valgrind_errors=0
-            valgrind_errors=`grep ERROR\ SUMMARY $file | awk '{print $7}'`
+            valgrind_errors=`grep ERROR\ SUMMARY $log_dir/$file | awk '{print $7}'`
             if [ $valgrind_errors -gt $max_allowed_valgrind_errors ]
             then
+              cat $log_dir/$file
               echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
               exit 1
             fi
@@ -1396,12 +1398,14 @@ jobs:
             echo "Not using Valgrind. Not checking for Valgrind errors"
             exit 0
           fi
-          for file in `ls ~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs`
+          log_dir=~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
+          for file in `ls $log_dir`
           do
             max_allowed_valgrind_errors=0
-            valgrind_errors=`grep ERROR\ SUMMARY $file | awk '{print $7}'`
+            valgrind_errors=`grep ERROR\ SUMMARY $log_dir/$file | awk '{print $7}'`
             if [ $valgrind_errors -gt $max_allowed_valgrind_errors ]
             then
+              cat $log_dir/$file
               echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
               exit 1
             fi
