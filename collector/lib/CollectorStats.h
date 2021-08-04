@@ -14,19 +14,21 @@
   X(net_create_message) \
   X(net_write_message)
 
-#define COUNTER_NAMES          \
-  X(net_conn_updates)          \
-  X(net_conn_deltas)           \
-  X(net_conn_inactive)         \
-  X(net_cep_updates)           \
-  X(net_cep_deltas)            \
-  X(net_cep_inactive)          \
-  X(net_known_ip_networks)     \
-  X(net_known_public_ips)      \
-  X(process_lineage_counts)    \
-  X(process_lineage_total)     \
-  X(process_lineage_sqr_total) \
-  X(process_lineage_string_total)
+#define COUNTER_NAMES             \
+  X(net_conn_updates)             \
+  X(net_conn_deltas)              \
+  X(net_conn_inactive)            \
+  X(net_cep_updates)              \
+  X(net_cep_deltas)               \
+  X(net_cep_inactive)             \
+  X(net_known_ip_networks)        \
+  X(net_known_public_ips)         \
+  X(process_lineage_counts)       \
+  X(process_lineage_total)        \
+  X(process_lineage_sqr_total)    \
+  X(process_lineage_string_total) \
+  X(rate_limit_flushing_counts)
+
 namespace collector {
 
 //This is a singleton class which keeps track of metrics
