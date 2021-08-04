@@ -64,7 +64,7 @@ installESMUpdatesOnUbuntu() {
   local GCP_SSH_KEY_FILE="$1"
   shift
   for _ in {1..3}; do
-    if gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo apt update -y && sudo apt install -y ubuntu-advantage-tools && sudo ua attach ${UBUNTU_ESM_SUBSCRIPTION_TOKEN} && apt-get update -y && apt-get dist-upgrade -y"; then
+    if gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo apt update -y && sudo apt install -y ubuntu-advantage-tools && sudo ua attach ${UBUNTU_ESM_SUBSCRIPTION_TOKEN} && sudo apt update -y && sudo apt dist-upgrade -y"; then
       return 0
     fi
     echo "Retrying in 5s ..."
