@@ -36,6 +36,7 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
   context:
     - docker-io-push
     - quay-cgorman1-readonly
+    - ubuntu-esm-subscription-token # Provides environment variable UBUNTU_ESM_SUBSCRIPTION_TOKEN.
   requires:
   - images
   - ubi-image
