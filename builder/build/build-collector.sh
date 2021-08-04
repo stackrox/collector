@@ -4,9 +4,16 @@ set -e
 set -ux
 ldconfig -v
 cd /tmp/cmake-build
-cmake -DCMAKE_BUILD_TYPE=Debug /src
+if [[ -z "${CMAKE_BUILD_TYPE}" ]]; then
+  CMAKE_BUILD_TYPE=Release
+fi
+echo "CMAKE_BUILD_TYPE= $CMAKE_BUILD_TYPE"
+cmake -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE /src
 make -j "${NPROCS:-2}" all
-#strip --strip-unneeded \
-#    ./collector \
-#    ./EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so
+if [ $CMAKE_BUILD_TYPE = "Release" ]; then
+  echo "Strip unneeded"
+  strip --strip-unneeded \
+      ./collector \
+      ./EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so
+fi
 cp -r /THIRD_PARTY_NOTICES .
