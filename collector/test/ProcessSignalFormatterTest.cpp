@@ -108,7 +108,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentTest) {
   auto tinfo = std::make_shared<sinsp_threadinfo>(inspector);
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
-  tinfo->m_ptid = -1;
+  //tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
   tinfo->m_uid = 42;
   tinfo->m_exepath = "asdf";
