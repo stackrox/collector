@@ -1265,6 +1265,7 @@ jobs:
     steps:
     - initcommand
     - docker-login-push
+    - read-pr-metadata
     - gcloud-init
 
     - run:
@@ -1276,8 +1277,31 @@ jobs:
           export VM_CONFIG="circle_local_<< parameters.vm-config >>"
           export COLLECTOR_REPO="stackrox/collector<<# parameters.use-rhel>>-rhel<</ parameters.use-rhel>><<# parameters.use-ubi>>-test-cpaas<</ parameters.use-ubi>>"
           export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}"
-          make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report
+          if [ -z pr-metadata/labels/valgrind-integration-tests ]; then
+            use_valgrind=true
+          else
+            use_valgrind=false
+          fi
+          make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report USE_VALGRIND=$use_valgrind
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
+
+    - run:
+        name: "Check Valgrind errors"
+        command: |
+          if [ -z pr-metadata/labels/valgrind-integration-tests ]; then
+            echo "Not using Valgrind. Not checking for Valgrind errors"
+            exit 0
+          fi
+          for file in `ls ~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs`
+          do
+            max_allowed_valgrind_errors=0
+            valgrind_errors=`grep ERROR\ SUMMARY $file | awk '{print $7}'`
+            if [ $valgrind_errors -gt $max_allowed_valgrind_errors ]
+            then
+              echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
+              exit 1
+            fi
+          done
 
     - store_test_results:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml
@@ -1318,6 +1342,7 @@ jobs:
             exit 0
           fi
     - add_ssh_keys
+    - read-pr-metadata
     - gcloud-init
 
     - run:
@@ -1355,9 +1380,32 @@ jobs:
           else
             export COLLECTOR_REPO="stackrox/collector"
           fi
-          make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report
+          if [ -z pr-metadata/labels/valgrind-integration-tests ]; then
+            use_valgrind=true
+          else
+            use_valgrind=false
+          fi
+          make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report USE_VALGRIND=$use_valgrind
           cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp "${SOURCE_ROOT}/integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
+
+    - run:
+        name: "Check Valgrind errors"
+        command: |
+          if [ -z pr-metadata/labels/valgrind-integration-tests ]; then
+            echo "Not using Valgrind. Not checking for Valgrind errors"
+            exit 0
+          fi
+          for file in `ls ~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs`
+          do
+            max_allowed_valgrind_errors=0
+            valgrind_errors=`grep ERROR\ SUMMARY $file | awk '{print $7}'`
+            if [ $valgrind_errors -gt $max_allowed_valgrind_errors ]
+            then
+              echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
+              exit 1
+            fi
+          done
 
     - run:
         name: "Get serial port output"
