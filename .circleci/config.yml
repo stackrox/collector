@@ -1288,7 +1288,7 @@ jobs:
     - run:
         name: "Check Valgrind errors"
         command: |
-          if [ -z pr-metadata/labels/valgrind-integration-tests ]; then
+          if [ ! -z pr-metadata/labels/valgrind-integration-tests ]; then
             echo "Not using Valgrind. Not checking for Valgrind errors"
             exit 0
           fi
@@ -1301,7 +1301,7 @@ jobs:
             then
               cat $log_dir/$file
               echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
-              exit 1
+              exit 2
             fi
           done
 
@@ -1394,7 +1394,7 @@ jobs:
     - run:
         name: "Check Valgrind errors"
         command: |
-          if [ -z pr-metadata/labels/valgrind-integration-tests ]; then
+          if [ ! -z pr-metadata/labels/valgrind-integration-tests ]; then
             echo "Not using Valgrind. Not checking for Valgrind errors"
             exit 0
           fi
@@ -1407,7 +1407,7 @@ jobs:
             then
               cat $log_dir/$file
               echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
-              exit 1
+              exit 2
             fi
           done
 
