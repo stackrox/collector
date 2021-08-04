@@ -526,7 +526,7 @@ jobs:
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
-    - KERNEL_BUNDLES_STAGING_BUCKET: ""
+    - KERNEL_BUNDLES_STAGING_BUCKET: "gs://stackrox-kernel-bundles-staging/rc/ubuntu-esm/dbb889ab440be29807110fa49566255b3952fad9"
 
     steps:
     - initcommand
