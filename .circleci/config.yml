@@ -1277,7 +1277,7 @@ jobs:
           export VM_CONFIG="circle_local_<< parameters.vm-config >>"
           export COLLECTOR_REPO="stackrox/collector<<# parameters.use-rhel>>-rhel<</ parameters.use-rhel>><<# parameters.use-ubi>>-test-cpaas<</ parameters.use-ubi>>"
           export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}"
-          if [ -z pr-metadata/labels/valgrind-integration-tests ]; then
+          if [ -f pr-metadata/labels/valgrind-integration-tests ]; then
             use_valgrind=true
           else
             use_valgrind=false
@@ -1288,7 +1288,7 @@ jobs:
     - run:
         name: "Check Valgrind errors"
         command: |
-          if [ ! -z pr-metadata/labels/valgrind-integration-tests ]; then
+          if [ ! -f pr-metadata/labels/valgrind-integration-tests ]; then
             echo "Not using Valgrind. Not checking for Valgrind errors"
             exit 0
           fi
@@ -1382,7 +1382,7 @@ jobs:
           else
             export COLLECTOR_REPO="stackrox/collector"
           fi
-          if [ -z pr-metadata/labels/valgrind-integration-tests ]; then
+          if [ -f pr-metadata/labels/valgrind-integration-tests ]; then
             use_valgrind=true
           else
             use_valgrind=false
@@ -1394,7 +1394,7 @@ jobs:
     - run:
         name: "Check Valgrind errors"
         command: |
-          if [ ! -z pr-metadata/labels/valgrind-integration-tests ]; then
+          if [ ! -f pr-metadata/labels/valgrind-integration-tests ]; then
             echo "Not using Valgrind. Not checking for Valgrind errors"
             exit 0
           fi
