@@ -1297,7 +1297,7 @@ jobs:
           do
             max_allowed_valgrind_errors=0
             valgrind_errors=`grep ERROR\ SUMMARY $file | awk '{print $7}'`
-            if [[ ! -z valgrind_errors && $valgrind_errors -gt $max_allowed_valgrind_errors ]]
+            if [[ ! -z $valgrind_errors && $valgrind_errors -gt $max_allowed_valgrind_errors ]]
             then
               cat $file
               echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
@@ -1403,7 +1403,7 @@ jobs:
           do
             max_allowed_valgrind_errors=0
             valgrind_errors=`grep ERROR\ SUMMARY $file | awk '{print $7}'`
-            if [[ ! -z valgrind_errors && $valgrind_errors -gt $max_allowed_valgrind_errors ]]
+            if [[ ! -z $valgrind_errors && $valgrind_errors -gt $max_allowed_valgrind_errors ]]
             then
               cat $file
               echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
