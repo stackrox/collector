@@ -183,9 +183,11 @@ function dockerdesktop_host() {
     return 1
 }
 
-function ubuntu_esm_backport_host() {
+function ubuntu_backport_host() {
     if [[ "$OS_ID" == "ubuntu" ]]; then
-        local uname_version="$(uname -v)"
+        local uname_version
+        uname_version="$(uname -v)"
+        # Check uname for backport version 16.04
         if [[ "${uname_version}" == *"~16.04"* ]]; then
             return 0
         fi
@@ -291,9 +293,9 @@ function main() {
         KERNEL_VERSION="${KERNEL_VERSION%+}-${OS_BUILD_ID}-${OS_ID}"
     fi
 
-    # Special case kernel version if running on Ubuntu ESM backported kernel
-    if ubuntu_esm_backport_host ; then
-        KERNEL_VERSION="${KERNEL_VERSION}-esm"
+    # Special case kernel version if running on Ubuntu backport kernel
+    if ubuntu_backport_host ; then
+        KERNEL_VERSION="${KERNEL_VERSION}~16.04"
     fi
 
     # Special case kernel version if running on Docker Desktop
