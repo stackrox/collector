@@ -1293,13 +1293,13 @@ jobs:
             exit 0
           fi
           log_dir=~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
-          for file in `ls $log_dir`
+          for file in `ls $log_dir/*collector.log`
           do
             max_allowed_valgrind_errors=0
-            valgrind_errors=`grep ERROR\ SUMMARY $log_dir/$file | awk '{print $7}'`
-            if [ $valgrind_errors -gt $max_allowed_valgrind_errors ]
+            valgrind_errors=`grep ERROR\ SUMMARY $file | awk '{print $7}'`
+            if [[ ! -z valgrind_errors && $valgrind_errors -gt $max_allowed_valgrind_errors ]]
             then
-              cat $log_dir/$file
+              cat $file
               echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
               exit 2
             fi
@@ -1399,13 +1399,13 @@ jobs:
             exit 0
           fi
           log_dir=~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
-          for file in `ls $log_dir`
+          for file in `ls $log_dir/*collector.log`
           do
             max_allowed_valgrind_errors=0
-            valgrind_errors=`grep ERROR\ SUMMARY $log_dir/$file | awk '{print $7}'`
-            if [ $valgrind_errors -gt $max_allowed_valgrind_errors ]
+            valgrind_errors=`grep ERROR\ SUMMARY $file | awk '{print $7}'`
+            if [[ ! -z valgrind_errors && $valgrind_errors -gt $max_allowed_valgrind_errors ]]
             then
-              cat $log_dir/$file
+              cat $file
               echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
               exit 2
             fi
