@@ -275,22 +275,20 @@ void CollectorStatsExporter::run() {
 
     int64_t curr_time_micros = NowMicros();
 
-    // only update every 30 seconds
     if ((curr_time_micros - last_cpu_throttle_update) >= cpu_throttle_update_interval_micros) {
       CPUThrottleMetrics::cpu_throttle_metric_t cpu_throttle_metrics;
       if (!CPUThrottleMetrics::ReadStatFile(&cpu_throttle_metrics)) {
         CLOG(DEBUG) << "Failed to read cpu throttle metrics";
+      } else {
+        processCPUNumPeriods.Set(cpu_throttle_metrics.nr_periods);
+        processCPUNumThrottled.Set(cpu_throttle_metrics.nr_throttled);
+        processCPUThrottledTime.Set(cpu_throttle_metrics.throttled_time);
       }
-      processCPUNumPeriods.Set(cpu_throttle_metrics.nr_periods);
-      processCPUNumThrottled.Set(cpu_throttle_metrics.nr_throttled);
-      processCPUThrottledTime.Set(cpu_throttle_metrics.throttled_time);
     }
-    // Memory stats
     processMemAllocatedSize.Set(MemoryStats::AllocatedSize());
     processMemHeapSize.Set(MemoryStats::HeapSize());
     processMemPhysicalSize.Set(MemoryStats::PhysicalSize());
 
-    // Uptime
     collectorUptime.Set(curr_time_micros - start_time_);
   }
 }
