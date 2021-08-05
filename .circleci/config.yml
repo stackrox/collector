@@ -1299,7 +1299,6 @@ jobs:
             echo "Checking $file for Valgrind errors"
             max_allowed_valgrind_lines=20
             valgrind_lines=`grep ==[0-9]*== $file | wc -l`
-            echo "Found $valgrind_lines Valgrind lines"
             if [[ ! -z $valgrind_lines && $valgrind_lines -gt $max_allowed_valgrind_lines ]]
             then
               cat $file
@@ -1402,15 +1401,18 @@ jobs:
             echo "Not using Valgrind. Not checking for Valgrind errors"
             exit 0
           fi
+          echo "Using Valgrind"
           log_dir=~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
           for file in `ls $log_dir/*collector.log`
           do
-            max_allowed_valgrind_errors=0
-            valgrind_errors=`grep ERROR\ SUMMARY $file | awk '{print $7}'`
-            if [[ ! -z $valgrind_errors && $valgrind_errors -gt $max_allowed_valgrind_errors ]]
+            echo "Checking $file for Valgrind errors"
+            max_allowed_valgrind_lines=20
+            valgrind_lines=`grep ==[0-9]*== $file | wc -l`
+            if [[ ! -z $valgrind_lines && $valgrind_lines -gt $max_allowed_valgrind_lines ]]
             then
               cat $file
-              echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
+              echo ""
+              echo "Too many Valgrind lines. Valgrind lines: $valgrind_lines. Maximum Valgrind lines allowed: $max_allowed_valgrind_lines."
               exit 2
             fi
           done
