@@ -5,6 +5,7 @@ USE_VALGRIND ?= 'false'
 
 ifeq '$(USE_VALGRIND)' 'true'
 	VALGRIND_CMD = valgrind --leak-check=full
+	COLLECTOR_PRE_ARGUMENTS = $(VALGRIND_CMD)
 endif
 
 HDRS := $(wildcard lib/*.h) $(shell find sysdig/src/userspace -name '*.h')

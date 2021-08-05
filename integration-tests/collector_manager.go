@@ -100,15 +100,12 @@ func (c *collectorManager) TearDown() error {
 		c.captureLogs("grpc-server")
 		c.killContainer("grpc-server")
 	}
-
-	c.captureLogs("collector")
 	isRunning, err := c.executor.IsContainerRunning("collector")
 	if err != nil {
 		return err
 	}
-	if isRunning {
-		c.killContainer("collector")
-	} else {
+	if !isRunning {
+		c.captureLogs("collector")
 		// Check if collector container segfaulted or exited with error
 		exitCode, err := c.executor.ExitCode("collector")
 		if err != nil {
@@ -117,6 +114,10 @@ func (c *collectorManager) TearDown() error {
 		if exitCode != 0 {
 			return fmt.Errorf("Collector container has non-zero exit code (%d)", exitCode)
 		}
+	} else {
+		c.stopContainer("collector")
+		c.captureLogs("collector")
+		c.killContainer("collector")
 	}
 	return nil
 }
@@ -195,5 +196,10 @@ func (c *collectorManager) killContainer(name string) error {
 		return err
 	}
 	_, err = c.executor.Exec("docker", "rm", "-fv", name)
+	return err
+}
+
+func (c *collectorManager) stopContainer(name string) error {
+	_, err := c.executor.Exec("docker", "stop", name)
 	return err
 }
