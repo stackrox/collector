@@ -1297,6 +1297,8 @@ jobs:
           for file in `ls $log_dir/*collector.log`
           do
             echo "Checking $file for Valgrind errors"
+            echo "Displaying file contents"
+            cat $file
             max_allowed_valgrind_errors=0
             valgrind_errors=`grep ERROR\ SUMMARY $file | awk '{print $7}'`
             echo "Found $valgrind_errors Valgrind errors"
