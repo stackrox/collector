@@ -101,7 +101,7 @@ void CollectorStatsExporter::run() {
   auto& processMemHeapSize = collectorEventCounters.Add({{"type", "process_mem_heap_size"}});
   auto& processMemPhysicalSize = collectorEventCounters.Add({{"type", "process_mem_physical_size"}});
 
-  auto& collectorUptime = collectorEventCounters.Add({{"type", "uptime"}});
+  auto& collectorUptime = collectorEventCounters.Add({{"type", "process_uptime"}});
 
   auto& collector_timers_gauge = prometheus::BuildGauge()
                                      .Name("rox_collector_timers")
