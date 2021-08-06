@@ -973,7 +973,8 @@ jobs:
         name: Build collector UBI images
         command: |
 
-          docker build \ --build-arg COLLECTOR_VERSION=${COLLECTOR_VERSION} \
+          docker build \
+            --build-arg COLLECTOR_VERSION=${COLLECTOR_VERSION} \
             --build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
             --build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}" \
             -t "collector-test-cpaas:${COLLECTOR_VERSION}" \
