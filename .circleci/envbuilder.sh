@@ -58,6 +58,23 @@ installDockerOnUbuntuViaGCPSSH() {
   return 1
 }
 
+installESMUpdatesOnUbuntu() {
+  local GCP_VM_NAME="$1"
+  shift
+  local GCP_SSH_KEY_FILE="$1"
+  shift
+  for _ in {1..3}; do
+    if gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo apt update -y && sudo apt install -y ubuntu-advantage-tools && sudo ua attach ${UBUNTU_ESM_SUBSCRIPTION_TOKEN} && sudo apt update -y && sudo apt dist-upgrade -y"; then
+      return 0
+    fi
+    echo "Retrying in 5s ..."
+    sleep 5
+  done
+  echo "Failed to install ESM updates after 3 retries"
+  return 1
+}
+
+
 installDockerOnRHELViaGCPSSH() {
   local GCP_VM_NAME="$1"
   shift
@@ -150,6 +167,9 @@ setupGCPVM() {
 
   if test "$GCP_VM_TYPE" = "ubuntu-os" ; then
     installDockerOnUbuntuViaGCPSSH "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
+    if [[ "${GCP_VM_NAME}" =~ "ubuntu-1604" ]] ; then
+        installESMUpdatesOnUbuntu "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
+    fi
   elif test "$GCP_VM_TYPE" = "rhel" ; then
     installDockerOnRHELViaGCPSSH "$GCP_VM_NAME" "$GCP_IMAGE_FAMILY" "$GCP_SSH_KEY_FILE"
   elif [[ "$GCP_VM_TYPE" =~ "suse" ]] ; then

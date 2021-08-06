@@ -41,6 +41,7 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
   context:
     - docker-io-push
     - quay-cgorman1-readonly
+    - ubuntu-esm-subscription-token # Provides environment variable UBUNTU_ESM_SUBSCRIPTION_TOKEN.
   requires:
   - images
   - ubi-image
@@ -546,7 +547,7 @@ jobs:
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
-    - KERNEL_BUNDLES_STAGING_BUCKET: ""
+    - KERNEL_BUNDLES_STAGING_BUCKET: "gs://stackrox-kernel-bundles-staging/rc/ubuntu-esm/f3fa010e213a9bb486b06e23a614715224533416"
 
     steps:
     - initcommand

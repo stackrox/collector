@@ -183,6 +183,18 @@ function dockerdesktop_host() {
     return 1
 }
 
+function ubuntu_backport_host() {
+    if [[ "$OS_ID" == "ubuntu" ]]; then
+        local uname_version
+        uname_version="$(uname -v)"
+        # Check uname for backport version 16.04
+        if [[ "${uname_version}" == *"~16.04"* ]]; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
 # RHEL 7.6 family detection: id=="rhel"||"centos", and kernel build id at least 957
 # Assumption is that RHEL 7.6 will continue to use kernel 3.10
 function rhel76_host() {
@@ -279,6 +291,11 @@ function main() {
     if cos_host ; then
         # remove '+' from end of kernel version 
         KERNEL_VERSION="${KERNEL_VERSION%+}-${OS_BUILD_ID}-${OS_ID}"
+    fi
+
+    # Special case kernel version if running on Ubuntu backport kernel
+    if ubuntu_backport_host ; then
+        KERNEL_VERSION="${KERNEL_VERSION}~16.04"
     fi
 
     # Special case kernel version if running on Docker Desktop
