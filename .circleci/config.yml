@@ -1614,7 +1614,7 @@ workflows:
         <<: *runOnAllTags
         context:
           - docker-io-push
-          - quay-cgorman-readwrite
+          - quay-cgorman1-readwrite
           - redhat-developer-account-login
         requires:
         - initjob
