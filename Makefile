@@ -51,13 +51,13 @@ collector: builder
 collector-rhel: builder-rhel
 	make -C collector container/bin/collector-rhel
 
-#.PHONY: unittest
-#unittest:
-#	make -C collector unittest
+.PHONY: unittest
+unittest:
+	make -C collector unittest
 
-#.PHONY: unittest-rhel
-#unittest-rhel:
-#	make -C collector unittest-rhel
+.PHONY: unittest-rhel
+unittest-rhel:
+	make -C collector unittest-rhel
 
 .PHONY: build-kernel-modules
 build-kernel-modules:
@@ -72,7 +72,7 @@ $(MOD_VER_FILE): build-kernel-modules
 	  --env SYSDIG_DIR=/sysdig/src --env SCRATCH_DIR=/scratch --env OUTPUT_DIR=/output \
 	  build-kernel-modules prepare-src 2> /dev/null | tail -n 1 > "$(MOD_VER_FILE)"
 
-image: collector #unittest $(MOD_VER_FILE)
+image: collector unittest $(MOD_VER_FILE)
 	make -C collector txt-files
 	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
 		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
