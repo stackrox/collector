@@ -8,6 +8,10 @@ DEV_SSH_SERVER_KEY ?= $(CURDIR)/.collector_dev_ssh_host_ed25519_key
 USE_VALGRIND ?= false
 CMAKE_BUILD_TYPE = ?= Release
 
+ifeq '$(USE_VALGRIND)' 'true'
+	COLLECTOR_PRE_ARGUMENTS = valgrind --leak-check=full
+endif
+
 dev-build: image integration-tests-process-network
 
 dev-build-rhel: image-rhel integration-tests-process-network-rhel
