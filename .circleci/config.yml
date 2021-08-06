@@ -1298,18 +1298,20 @@ jobs:
           for file in `ls $log_dir/*collector.log`
           do
             echo "Checking $file for Valgrind errors"
-            #cat $file
+            cat $file
             valgrind_summary=`grep ERROR\ SUMMARY $file`
-            valgrind_summary_lines=`echo $valgrind_summary | wc -l`
+            valgrind_summary_lines=`grep ERROR\ SUMMARY $file | wc -l`
             if [ $valgrind_summary_lines -eq 1 ]; then
               valgrind_errors=`echo $valgrind_summary | awk '{print $7}'`
-              if [[ ! -z $valgrind_errors && $valgrind_errors -gt $max_allowed_valgrind_errors ]]; then
+              if [[ $valgrind_errors -gt $max_allowed_valgrind_errors ]]; then
                 echo ""
                 echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
                 exit 2
               fi
             fi
           done
+
+        done
 
     - store_test_results:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml
@@ -1409,12 +1411,12 @@ jobs:
           for file in `ls $log_dir/*collector.log`
           do
             echo "Checking $file for Valgrind errors"
-            #cat $file
+            cat $file
             valgrind_summary=`grep ERROR\ SUMMARY $file`
-            valgrind_summary_lines=`echo $valgrind_summary | wc -l`
+            valgrind_summary_lines=`grep ERROR\ SUMMARY $file | wc -l`
             if [ $valgrind_summary_lines -eq 1 ]; then
               valgrind_errors=`echo $valgrind_summary | awk '{print $7}'`
-              if [[ ! -z $valgrind_errors && $valgrind_errors -gt $max_allowed_valgrind_errors ]]; then
+              if [[ $valgrind_errors -gt $max_allowed_valgrind_errors ]]; then
                 echo ""
                 echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
                 exit 2
