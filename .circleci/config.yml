@@ -1294,7 +1294,7 @@ jobs:
           fi
           echo "Using Valgrind"
           max_allowed_valgrind_errors=0
-          log_dir=$HOME/projects/collector/integration-tests/container-logs
+          log_dir=~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
           for file in `ls $log_dir/*-collector.log`
           do
             echo "Checking $file for Valgrind errors"
@@ -1405,7 +1405,7 @@ jobs:
           fi
           echo "Using Valgrind"
           max_allowed_valgrind_errors=0
-          log_dir=$HOME/projects/collector/integration-tests/container-logs
+          log_dir=~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
           for file in `ls $log_dir/*-collector.log`
           do
             echo "Checking $file for Valgrind errors"
