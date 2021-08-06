@@ -87,7 +87,6 @@ function download_kernel_object() {
         fi
 
         local url="https://${server_hostname}:${server_port}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
-        log "Attempting to download from ${url}..."
 
         curl "${curl_opts[@]}" "${connect_to_opts[@]}" \
             --cacert /run/secrets/stackrox.io/certs/ca.pem \
@@ -96,32 +95,31 @@ function download_kernel_object() {
             "$url"
         if [[ $? -ne 0 ]]; then
             rm -f "${filename_gz}" 2>/dev/null
-            log "Failed to download ${OBJECT_TYPE}."
+            log "Unable to download from ${url}"
         fi
     fi
     if [[ ! -f "${filename_gz}" && -n "${MODULE_URL}" ]]; then
         local url="${MODULE_URL}/${KERNEL_OBJECT}.gz"
-        log "Attempting to download from ${url}..."
         curl "${curl_opts[@]}" "$url"
         if [[ $? -ne 0 ]]; then
             rm -f "${filename_gz}" 2>/dev/null
-            log "Failed to download ${OBJECT_TYPE}"
+            log "Unable to download from ${url}"
+            return 1
         fi
     fi
 
     if [[ ! -f "${filename_gz}" ]]; then
-        log "All attempts to download the ${OBJECT_TYPE} have failed."
         return 1
     fi
 
     if ! gzip -d --keep "${filename_gz}"; then
         rm -f "${filename_gz}" 2>/dev/null
         rm -f "${OBJECT_PATH}" 2>/dev/null
-        log "Failed to decompress ${OBJECT_TYPE} after download, removing from local storage."
+        log "Failed to decompress ${OBJECT_TYPE} ${KERNEL_OBJECT} after download and removing from local storage."
         return 1
     fi
 
-    log "Using downloaded ${OBJECT_TYPE} ${KERNEL_OBJECT}"
+    log "Downloaded ${OBJECT_TYPE} ${KERNEL_OBJECT}."
     return 0
 }
 
@@ -143,11 +141,11 @@ function find_kernel_object() {
     elif [ -f "$EXPECTED_PATH" ]; then
       cp "$EXPECTED_PATH" "$OBJECT_PATH"
     else
-      log "Didn't find ${OBJECT_TYPE} ${KERNEL_OBJECT} built-in."
+      log "Local storage does not contain ${OBJECT_TYPE} ${KERNEL_OBJECT}."
       return 1
     fi
 
-    log "Using built-in ${OBJECT_TYPE} ${KERNEL_OBJECT}"
+    log "Local storage contains ${OBJECT_TYPE} ${KERNEL_OBJECT}."
     return 0
 }
 
@@ -262,7 +260,7 @@ function get_kernel_object() {
 
       if ! find_kernel_object "$kernel_module" "$module_path"; then
         if ! download_kernel_object "${kernel_module}" "${module_path}" || [[ ! -f "$module_path" ]]; then
-          log "Unable to download kernel module for version ${kernel_version}."
+          return 1
         fi
       fi
 
@@ -285,7 +283,7 @@ function get_kernel_object() {
 
         if ! find_kernel_object "${kernel_probe}" "${probe_path}"; then
           if ! download_kernel_object "${kernel_probe}" "${probe_path}" || [[ ! -f "$probe_path" ]]; then
-            log "Unable to download ebpf probe for version ${kernel_version}."
+            return 1
           fi
         fi
 
@@ -339,7 +337,7 @@ function main() {
         fi
     fi
 
-    declare kernel_versions -a
+    declare -a kernel_versions
 
     # Special case kernel version if running on COS
     if cos_host ; then

@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/boltdb/bolt"
@@ -29,7 +30,7 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 	if strings.Contains(collectionMethod, "module") {
 		collectionMethod = "kernel_module"
 	}
-	offlineMode = strconv.ParseBool(ReadEnvVarWithDefault("COLLECTOR_OFFLINE_MODE", "false"))
+	offlineMode, _ := strconv.ParseBool(ReadEnvVarWithDefault("COLLECTOR_OFFLINE_MODE", "false"))
 
 	env := map[string]string{
 		"GRPC_SERVER":              "localhost:9999",
