@@ -1416,8 +1416,6 @@ jobs:
             fi
           done
 
-         done
-
     - run:
         name: "Get serial port output"
         command: |
