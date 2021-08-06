@@ -1297,13 +1297,13 @@ jobs:
           for file in `ls $log_dir/*collector.log`
           do
             echo "Checking $file for Valgrind errors"
-            max_allowed_valgrind_lines=20
-            valgrind_lines=`grep ==[0-9]*== $file | wc -l`
-            if [[ ! -z $valgrind_lines && $valgrind_lines -gt $max_allowed_valgrind_lines ]]
+            cat $file
+            max_allowed_valgrind_errors=0
+            valgrind_errors=`grep ERROR\ SUMMARY $unittest_output_file | awk '{print $7}'`
+            if [[ ! -z $valgrind_errors && $valgrind_errors -gt $max_allowed_valgrind_errors ]]
             then
-              cat $file
               echo ""
-              echo "Too many Valgrind lines. Valgrind lines: $valgrind_lines. Maximum Valgrind lines allowed: $max_allowed_valgrind_lines."
+              echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
               exit 2
             fi
           done
@@ -1393,7 +1393,6 @@ jobs:
           make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report USE_VALGRIND=$use_valgrind
           cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp "${SOURCE_ROOT}/integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
-
     - run:
         name: "Check Valgrind errors"
         command: |
@@ -1406,16 +1405,18 @@ jobs:
           for file in `ls $log_dir/*collector.log`
           do
             echo "Checking $file for Valgrind errors"
-            max_allowed_valgrind_lines=20
-            valgrind_lines=`grep ==[0-9]*== $file | wc -l`
-            if [[ ! -z $valgrind_lines && $valgrind_lines -gt $max_allowed_valgrind_lines ]]
+            cat $file
+            max_allowed_valgrind_errors=0
+            valgrind_errors=`grep ERROR\ SUMMARY $unittest_output_file | awk '{print $7}'`
+            if [[ ! -z $valgrind_errors && $valgrind_errors -gt $max_allowed_valgrind_errors ]]
             then
-              cat $file
               echo ""
-              echo "Too many Valgrind lines. Valgrind lines: $valgrind_lines. Maximum Valgrind lines allowed: $max_allowed_valgrind_lines."
+              echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
               exit 2
             fi
           done
+
+         done
 
     - run:
         name: "Get serial port output"
