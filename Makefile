@@ -51,13 +51,13 @@ collector: builder
 collector-rhel: builder-rhel
 	make -C collector container/bin/collector-rhel
 
-.PHONY: unittest
-unittest:
-	make -C collector unittest
+#.PHONY: unittest
+#unittest:
+#	make -C collector unittest
 
-.PHONY: unittest-rhel
-unittest-rhel:
-	make -C collector unittest-rhel
+#.PHONY: unittest-rhel
+#unittest-rhel:
+#	make -C collector unittest-rhel
 
 .PHONY: build-kernel-modules
 build-kernel-modules:
@@ -72,7 +72,7 @@ $(MOD_VER_FILE): build-kernel-modules
 	  --env SYSDIG_DIR=/sysdig/src --env SCRATCH_DIR=/scratch --env OUTPUT_DIR=/output \
 	  build-kernel-modules prepare-src 2> /dev/null | tail -n 1 > "$(MOD_VER_FILE)"
 
-image: collector unittest $(MOD_VER_FILE)
+image: collector #unittest $(MOD_VER_FILE)
 	make -C collector txt-files
 	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
 		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
@@ -98,43 +98,43 @@ image-rhel: collector-rhel unittest-rhel $(MOD_VER_FILE) $(CURDIR)/collector/con
 
 .PHONY: integration-tests
 integration-tests:
-	make -C integration-tests tests
+	make -C integration-tests tests COLLECTOR_PRE_ARGUMENTS="$(COLLECTOR_PRE_ARGUMENTS)"
 
 .PHONY: integration-tests-baseline
 integration-tests-baseline:
-	make -C integration-tests baseline
+	make -C integration-tests baseline COLLECTOR_PRE_ARGUMENTS="$(COLLECTOR_PRE_ARGUMENTS)"
 
 .PHONY: integration-tests-process-network
 integration-tests-process-network:
-	make -C integration-tests process-network
+	make -C integration-tests process-network COLLECTOR_PRE_ARGUMENTS="$(COLLECTOR_PRE_ARGUMENTS)"
 
 .PHONY: integration-tests-missing-proc-scrape
 integration-tests-missing-proc-scrape:
-	make -C integration-tests missing-proc-scrape
+	make -C integration-tests missing-proc-scrape  COLLECTOR_PRE_ARGUMENTS="$(COLLECTOR_PRE_ARGUMENTS)"
 
 .PHONY: integration-tests-image-label-json
 integration-tests-image-label-json:
-	make -C integration-tests image-label-json
+	make -C integration-tests image-label-json COLLECTOR_PRE_ARGUMENTS="$(COLLECTOR_PRE_ARGUMENTS)"
 
 .PHONY: integration-tests-process-network-rhel
 integration-tests-process-network-rhel:
 	COLLECTOR_REPO="stackrox/collector-rhel" \
-	make -C integration-tests process-network
+	make -C integration-tests process-network COLLECTOR_PRE_ARGUMENTS="$(COLLECTOR_PRE_ARGUMENTS)"
 
 .PHONY: integration-tests-rhel
 integration-tests-rhel:
 	COLLECTOR_REPO="stackrox/collector-rhel" \
-	make -C integration-tests tests
+	make -C integration-tests tests COLLECTOR_PRE_ARGUMENTS="$(COLLECTOR_PRE_ARGUMENTS)"
 
 .PHONY: integration-tests-baseline-rhel
 integration-tests-baseline-rhel:
 	COLLECTOR_REPO="stackrox/collector-rhel" \
-	make -C integration-tests baseline
+	make -C integration-tests baseline COLLECTOR_PRE_ARGUMENTS="$(COLLECTOR_PRE_ARGUMENTS)"
 
 .PHONY: integration-tests-missing-proc-scrape-rhel
 integration-tests-missing-proc-scrape-rhel:
 	COLLECTOR_REPO="stackrox/collector-rhel" \
-	make -C integration-tests missing-proc-scrape
+	make -C integration-tests missing-proc-scrape COLLECTOR_PRE_ARGUMENTS="$(COLLECTOR_PRE_ARGUMENTS)"
 
 .PHONY: integration-tests-report
 integration-tests-report:
