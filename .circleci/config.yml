@@ -1293,18 +1293,21 @@ jobs:
             exit 0
           fi
           echo "Using Valgrind"
+          max_allowed_valgrind_errors=0
           log_dir=~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
           for file in `ls $log_dir/*collector.log`
           do
             echo "Checking $file for Valgrind errors"
-            cat $file
-            max_allowed_valgrind_errors=0
-            valgrind_errors=`grep ERROR\ SUMMARY $unittest_output_file | awk '{print $7}'`
-            if [[ ! -z $valgrind_errors && $valgrind_errors -gt $max_allowed_valgrind_errors ]]
-            then
-              echo ""
-              echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
-              exit 2
+            #cat $file
+            valgrind_summary=`grep ERROR\ SUMMARY $file`
+            valgrind_summary_lines=`echo $valgrind_summary | wc -l`
+            if [ $valgrind_summary_lines -eq 1 ]; then
+              valgrind_errors=`echo $valgrind_summary | awk '{print $7}'`
+              if [[ ! -z $valgrind_errors && $valgrind_errors -gt $max_allowed_valgrind_errors ]]; then
+                echo ""
+                echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
+                exit 2
+              fi
             fi
           done
 
@@ -1401,18 +1404,21 @@ jobs:
             exit 0
           fi
           echo "Using Valgrind"
+          max_allowed_valgrind_errors=0
           log_dir=~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
           for file in `ls $log_dir/*collector.log`
           do
             echo "Checking $file for Valgrind errors"
-            cat $file
-            max_allowed_valgrind_errors=0
-            valgrind_errors=`grep ERROR\ SUMMARY $unittest_output_file | awk '{print $7}'`
-            if [[ ! -z $valgrind_errors && $valgrind_errors -gt $max_allowed_valgrind_errors ]]
-            then
-              echo ""
-              echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
-              exit 2
+            #cat $file
+            valgrind_summary=`grep ERROR\ SUMMARY $file`
+            valgrind_summary_lines=`echo $valgrind_summary | wc -l`
+            if [ $valgrind_summary_lines -eq 1 ]; then
+              valgrind_errors=`echo $valgrind_summary | awk '{print $7}'`
+              if [[ ! -z $valgrind_errors && $valgrind_errors -gt $max_allowed_valgrind_errors ]]; then
+                echo ""
+                echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
+                exit 2
+              fi
             fi
           done
 
