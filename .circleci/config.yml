@@ -1294,13 +1294,13 @@ jobs:
           fi
           echo "Using Valgrind"
           max_allowed_valgrind_errors=0
-          log_dir=~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
-          for file in `ls $log_dir/*collector.log`
+          log_dir=$HOME/projects/collector/integration-tests/container-logs
+          for file in `ls $log_dir/*-collector.log`
           do
             echo "Checking $file for Valgrind errors"
             cat $file
-            valgrind_summary=`grep ERROR\ SUMMARY $file`
-            valgrind_summary_lines=`grep ERROR\ SUMMARY $file | wc -l`
+            valgrind_summary=`grep ERROR\ SUMMARY $file || true`
+            valgrind_summary_lines=`(grep ERROR\ SUMMARY $file || true) | wc -l`
             if [ $valgrind_summary_lines -eq 1 ]; then
               valgrind_errors=`echo $valgrind_summary | awk '{print $7}'`
               if [[ $valgrind_errors -gt $max_allowed_valgrind_errors ]]; then
@@ -1405,13 +1405,13 @@ jobs:
           fi
           echo "Using Valgrind"
           max_allowed_valgrind_errors=0
-          log_dir=~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
-          for file in `ls $log_dir/*collector.log`
+          log_dir=$HOME/projects/collector/integration-tests/container-logs
+          for file in `ls $log_dir/*-collector.log`
           do
             echo "Checking $file for Valgrind errors"
             cat $file
-            valgrind_summary=`grep ERROR\ SUMMARY $file`
-            valgrind_summary_lines=`grep ERROR\ SUMMARY $file | wc -l`
+            valgrind_summary=`grep ERROR\ SUMMARY $file || true`
+            valgrind_summary_lines=`(grep ERROR\ SUMMARY $file || true) | wc -l`
             if [ $valgrind_summary_lines -eq 1 ]; then
               valgrind_errors=`echo $valgrind_summary | awk '{print $7}'`
               if [[ $valgrind_errors -gt $max_allowed_valgrind_errors ]]; then
