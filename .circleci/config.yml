@@ -843,6 +843,8 @@ jobs:
           gsutil -m cp -n \
               "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/*.gz" \
               "${SOURCE_ROOT}/kernel-modules/container/kernel-modules" || true
+          ls -al "${SOURCE_ROOT}/kernel-modules/container/kernel-modules/"*4.15.0-1098-gcp~16.04*
+          rm -f "${SOURCE_ROOT}/kernel-modules/container/kernel-modules/"*4.15.0-1098-gcp~16.04*
 
     - run:
         name: Sanity check
@@ -1243,7 +1245,7 @@ jobs:
             export COLLECTOR_REPO="stackrox/collector"
           fi
           make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report
-          cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
+          cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}<<# parameters.offline >>-offline<</ parameters.offline >>-perf.json"
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp "${SOURCE_ROOT}/integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
     - run:
@@ -1272,7 +1274,7 @@ jobs:
     - persist_to_workspace:
         root: ~/workspace
         paths:
-        - "<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-perf.json"
+          "<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >><<# parameters.offline >>-offline<</ parameters.offline >>-perf.json"
 
     - run:
         name: "Destroy VM"
@@ -1742,6 +1744,20 @@ workflows:
         image_family: ubuntu-1604-lts
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
+        name: test-module-ubuntu-1604-lts-offline
+        collection_method: module
+        vm_type: ubuntu-os
+        image_family: ubuntu-1604-lts
+        offline: true
+    - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
+        name: test-ebpf-ubuntu-1604-lts-offline
+        collection_method: ebpf
+        vm_type: ubuntu-os
+        image_family: ubuntu-1604-lts
+        offline: true
+    - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-module-ubuntu-1804-lts
         collection_method: module
         vm_type: ubuntu-os
@@ -1815,6 +1831,8 @@ workflows:
         - test-ebpf-rhel-8
         - test-module-ubuntu-1604-lts-esm
         - test-ebpf-ubuntu-1604-lts-esm
+        - test-module-ubuntu-1604-lts-offline
+        - test-ebpf-ubuntu-1604-lts-offline
         - test-module-ubuntu-1804-lts
         - test-ebpf-ubuntu-1804-lts
         - test-module-ubuntu-2004-lts
