@@ -1425,6 +1425,8 @@ jobs:
     - INSTALL_DIRECTORY: /tmp
     - RELOAD_MD_DIRECTORY: /tmp/reload/collectors
     - DOCKER_BUILDKIT: 1
+    - QUAY_REPO: "quay.io/cgorman1"
+    - DOCKER_REPO: "docker.io/stackrox"
     working_directory: ~/workspace
 
     steps:
@@ -1466,7 +1468,7 @@ jobs:
             mod_ver="$(< "${collector_ver_file}")"
             echo "Missing object check for module version: ${mod_ver} and collector version: ${collector_ver}"
 
-            released_latest_image="stackrox/collector:${collector_ver}-latest"
+            released_latest_image="${DOCKER_REPO}/collector:${collector_ver}-latest"
             docker pull -q "${released_latest_image}" | cat
 
             "${SOURCE_ROOT}/reload/missing-kernel-objects.sh" \
@@ -1518,15 +1520,32 @@ jobs:
             layer_count="$("${container_build_dir}/partition-probes.py" -1 "$MAX_LAYER_MB" "${container_build_dir}/kernel-modules" "-")"
 
             echo "Reloading ${layer_count} image layers for collector ${collector_ver} (${mod_ver})"
-            dockerhub_repo="stackrox/collector:${collector_ver}"
+
+            dockerhub_repo="${DOCKER_REPO}/collector:${collector_ver}"
             dockerhub_base_image="${dockerhub_repo}-base"
             dockerhub_pr_image="${dockerhub_repo}-reload-latest"
             dockerhub_image="${dockerhub_repo}-latest"
+
+            quay_base_repo="${QUAY_REPO}/collector:${collector_ver}"
+            quay_base_image="${quay_base_repo}-base"
+            quay_pr_image="${quay_base_repo}-reload-latest"
+            quay_image="${quay_base_repo}-latest"
+
             stackrox_io_image="collector.stackrox.io/collector:${collector_ver}-latest"
-            image_list=("${dockerhub_image}" "${dockerhub_base_image}" "${dockerhub_pr_image}" "${stackrox_io_image}")
+
+            image_list=(
+              "${dockerhub_image}"
+              "${dockerhub_base_image}"
+              "${dockerhub_pr_image}"
+              "${quay_image}"
+              "${quay_base_image}"
+              "${quay_pr_image}"
+              "${stackrox_io_image}"
+            )
             build_args=(
               --build-arg module_version="${mod_ver}"
               --build-arg collector_version="${collector_ver}"
+              --build-arg collector_repo="${DOCKER_REPO}/collector"
               --build-arg max_layer_depth="${layer_count}"
               --build-arg max_layer_size="${MAX_LAYER_MB}"
             )
@@ -1535,16 +1554,20 @@ jobs:
               -t "${stackrox_io_image}" \
               -t "${dockerhub_image}" \
               -t "${dockerhub_pr_image}" \
+              -t "${quay_pr_image}" \
+              -t "${quay_image}" \
               "${build_args[@]}" \
               "${container_build_dir}"
 
             if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
               ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${dockerhub_pr_image}" | cat
-              image_list+=("${dockerhub_pr_image}-amd64")
+              ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${quay_pr_image}" | cat
+              image_list+=("${dockerhub_pr_image}-amd64" "${quay_pr_image}-amd64")
             else
               ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${dockerhub_image}" | cat
+              ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${quay_image}" | cat
               ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${stackrox_io_image}" | cat
-              image_list+=("${dockerhub_image}-amd64" "${stackrox_io_image}-amd64")
+              image_list+=("${dockerhub_image}-amd64" "${quay_image}-amd64" "${stackrox_io_image}-amd64")
             fi
             # clean-up to reduce disk usage
             docker image rm -f "${image_list[@]}"
