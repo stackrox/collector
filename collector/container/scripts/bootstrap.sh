@@ -251,6 +251,58 @@ function gpl_notice() {
     log ""
 }
 
+function get_kernel_object() {
+    local kernel_version="$1"
+
+    # Find built-in or download kernel module
+    if collection_method_module; then
+      local module_name="collector"
+      local module_path="/module/${module_name}.ko"
+      local kernel_module="${module_name}-${kernel_version}.ko"
+
+      if ! find_kernel_object "$kernel_module" "$module_path"; then
+        if ! download_kernel_object "${kernel_module}" "${module_path}" || [[ ! -f "$module_path" ]]; then
+          log "Unable to download kernel module for version ${kernel_version}."
+        fi
+      fi
+
+      if [[ -f "$module_path" ]]; then
+        chmod 0444 "$module_path"
+      else
+        log "Did not find kernel module for kernel version $kernel_version."
+        return 1
+      fi
+
+      # The collector program will insert the kernel module upon startup.
+      remove_module "$module_name"
+
+    # Find built-in or download ebpf probe
+    elif collection_method_ebpf; then
+      if kernel_supports_ebpf; then
+        local probe_name="collector-ebpf"
+        local probe_path="/module/${probe_name}.o"
+        local kernel_probe="${probe_name}-${kernel_version}.o"
+
+        if ! find_kernel_object "${kernel_probe}" "${probe_path}"; then
+          if ! download_kernel_object "${kernel_probe}" "${probe_path}" || [[ ! -f "$probe_path" ]]; then
+            log "Unable to download ebpf probe for version ${kernel_version}."
+          fi
+        fi
+
+        if [[ -f "$probe_path" ]]; then
+          chmod 0444 "$probe_path"
+        else
+          log "Did not find ebpf probe for kernel version $kernel_version."
+          return 1
+        fi
+      else
+        log "Kernel ${kernel_version} doesn't support eBPF"
+        return 1
+      fi
+    fi
+    return 0
+}
+
 function main() {
     
     # Get the host kernel version (or user defined env var)
@@ -287,6 +339,8 @@ function main() {
         fi
     fi
 
+    declare kernel_versions -a
+
     # Special case kernel version if running on COS
     if cos_host ; then
         # remove '+' from end of kernel version 
@@ -295,7 +349,7 @@ function main() {
 
     # Special case kernel version if running on Ubuntu backport kernel
     if ubuntu_backport_host ; then
-        KERNEL_VERSION="${KERNEL_VERSION}~16.04"
+        kernel_versions+=("${KERNEL_VERSION}~16.04")
     fi
 
     # Special case kernel version if running on Docker Desktop
@@ -308,6 +362,8 @@ function main() {
             COLLECTION_METHOD="KERNEL_MODULE"
         fi
     fi
+
+    kernel_versions+=("${KERNEL_VERSION}")
 
     mkdir -p /module
     
@@ -346,53 +402,15 @@ function main() {
         COLLECTION_METHOD="KERNEL_MODULE"
       fi
     fi
-    
-    # Find built-in or download kernel module
-    if collection_method_module; then
-      local module_name="collector"
-      local module_path="/module/${module_name}.ko"
-      local kernel_module="${module_name}-${KERNEL_VERSION}.ko"
 
-      if ! find_kernel_object "$kernel_module" "$module_path"; then
-        if ! download_kernel_object "${kernel_module}" "${module_path}" || [[ ! -f "$module_path" ]]; then
-          log "The kernel module may not have been compiled for version ${KERNEL_VERSION}."
-        fi
+    for kernel_version in "${kernel_versions[@]}"; do
+      if get_kernel_object "${kernel_version}"; then
+        break
       fi
-      
-      if [[ -f "$module_path" ]]; then
-        chmod 0444 "$module_path"
-      else
-        log "Error: Failed to find kernel module for kernel version $KERNEL_VERSION."
+      if [[ "${kernel_version}" == "$KERNEL_VERSION" ]]; then
         exit_with_error
       fi
-    
-      # The collector program will insert the kernel module upon startup.
-      remove_module "$module_name"
-    
-    # Find built-in or download ebpf probe
-    elif collection_method_ebpf; then
-      if kernel_supports_ebpf; then
-        local probe_name="collector-ebpf"
-        local probe_path="/module/${probe_name}.o"
-        local kernel_probe="${probe_name}-${KERNEL_VERSION}.o"
- 
-        if ! find_kernel_object "${kernel_probe}" "${probe_path}"; then
-          if ! download_kernel_object "${kernel_probe}" "${probe_path}" || [[ ! -f "$probe_path" ]]; then
-            log "The ebpf probe may not have been compiled for version ${KERNEL_VERSION}."
-          fi
-        fi
-    
-        if [[ -f "$probe_path" ]]; then
-          chmod 0444 "$probe_path"
-        else
-          log "Error: Failed to find ebpf probe for kernel version $KERNEL_VERSION."
-          exit_with_error
-        fi
-      else
-        log "Error: Kernel ${KERNEL_VERSION} doesn't support eBPF"
-        exit_with_error
-      fi
-    fi
+    done
 
     # Print GPL notice after probe is downloaded or verified to be present
     gpl_notice
