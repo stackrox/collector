@@ -1456,6 +1456,7 @@ jobs:
           done
 
     - docker-login-push
+    - quay-login-push
     - stackrox-io-login
     - gcloud-init
 
