@@ -1820,10 +1820,12 @@ workflows:
         - test-ebpf-sles-15-sp2-sap
         - test-module-sles-15-sp2-sap
     - reload-released-images:
-        <<: *runOnAllTagsWithDockerIOPushCtx
-        context: docker-io-and-stackrox-io-push
+        <<: *runOnAllTags
+        context:
+          - docker-io-and-stackrox-io-push
+          - quay-cgorman1-readwrite
         requires:
-        - images
+          - images
     - update-support-packages:
         <<: *runOnAllTags
         context:
