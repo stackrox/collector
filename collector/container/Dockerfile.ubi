@@ -82,6 +82,7 @@ RUN mv /collector-wrapper.sh /usr/local/bin/ && \
       jsoncpp \
       tbb \
       jq \
+      valgrind \
       c-ares && \
     microdnf clean all && \
     rm -rf /var/cache/dnf
