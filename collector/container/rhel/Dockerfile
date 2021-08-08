@@ -38,7 +38,6 @@ RUN mv collector-wrapper.sh /usr/local/bin/ && \
     chmod 700 bootstrap.sh && \
     dnf upgrade -y && \
     dnf install -y kmod && \
-    dnf install -y valgrind && \
     dnf clean all && \
     rm -rf /var/cache/dnf && \
     # (Optional) Remove line below to keep package management utilities

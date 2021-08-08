@@ -248,7 +248,13 @@ jobs:
 
     - run:
         name: Build collector-builder image
-        command: make -C "${SOURCE_ROOT}" builder
+        command: | 
+          if [ -f pr-metadata/labels/debug ]; then
+            CMAKE_BUILD_TYPE=Debug
+          else
+            CMAKE_BUILD_TYPE=Release
+          fi
+          make -C "${SOURCE_ROOT}" builder
 
     - run:
         name: Save collector-builder image
@@ -274,7 +280,13 @@ jobs:
 
     - run:
         name: Build collector-builder rhel image
-        command: make -C "${SOURCE_ROOT}" builder-rhel
+        command: | 
+          if [ -f pr-metadata/labels/debug ]; then
+            CMAKE_BUILD_TYPE=Debug
+          else
+            CMAKE_BUILD_TYPE=Release
+          fi
+          make -C "${SOURCE_ROOT}" builder-rhel
 
     - run:
         name: Save collector-builder rhel image
