@@ -254,7 +254,7 @@ jobs:
           else
             CMAKE_BUILD_TYPE=Release
           fi
-          make -C "${SOURCE_ROOT}" builder
+          make -C "${SOURCE_ROOT}" builder CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
 
     - run:
         name: Save collector-builder image
@@ -286,7 +286,7 @@ jobs:
           else
             CMAKE_BUILD_TYPE=Release
           fi
-          make -C "${SOURCE_ROOT}" builder-rhel
+          make -C "${SOURCE_ROOT}" builder-rhel CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
 
     - run:
         name: Save collector-builder rhel image
