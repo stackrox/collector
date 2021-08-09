@@ -23,32 +23,32 @@ tests: docker-clean
 	go version
 	set -o pipefail ; \
 	go test -timeout 30m -count=1 -v \
-	  -run TestCollectorGRPC 2>&1 | tee -a integration-test.log ;
-	ls container-logs/*
+	  -run TestCollectorGRPC 2>&1 | tee -a integration-test.log || true ;
+	ls container-logs/* || true
 
 .PHONY: process-network
 process-network: docker-clean
 	go version
 	set -o pipefail ; \
 	go test -timeout 30m -count=1 -v \
- 	  -run TestProcessNetwork 2>&1 | tee -a integration-test.log ;
-	ls container-logs/*
+ 	  -run TestProcessNetwork 2>&1 | tee -a integration-test.log || true ;
+	ls container-logs/* || true
 
 .PHONY: baseline
 baseline: docker-clean
 	go version
 	set -o pipefail ; \
 	go test -timeout 30m -count=1 -v \
-	  -run TestBenchmarkBaseline 2>&1 | tee -a integration-test.log ;
-	ls container-logs/*
+	  -run TestBenchmarkBaseline 2>&1 | tee -a integration-test.log || true;
+	ls container-logs/* || true
 
 .PHONY: image-label-json
 image-label-json: docker-clean
 	go version
 	set -o pipefail ; \
 	go test -timeout 30m -count=1 -v \
-	  -run TestImageLabelJSON 2>&1 | tee -a integration-test.log ;
-	ls container-logs/*
+	  -run TestImageLabelJSON 2>&1 | tee -a integration-test.log || true ;
+	ls container-logs/* || true
 
 .PHONY: missing-proc-scrape
 missing-proc-scrape: docker-clean
@@ -56,8 +56,8 @@ missing-proc-scrape: docker-clean
 	go version
 	set -o pipefail ; \
 	go test -timeout 30m -count=1 -v \
-	  -run TestMissingProcScrape 2>&1 | tee -a integration-test.log ;
-	ls container-logs/*
+	  -run TestMissingProcScrape 2>&1 | tee -a integration-test.log || true ;
+	ls container-logs/* || true
 
 .PHONY: report
 report:
