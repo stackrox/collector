@@ -181,16 +181,15 @@ function dockerdesktop_host() {
     return 1
 }
 
-function ubuntu_backport_host() {
+function get_ubuntu_backport_version() {
     if [[ "$OS_ID" == "ubuntu" ]]; then
         local uname_version
         uname_version="$(uname -v)"
         # Check uname for backport version 16.04
         if [[ "${uname_version}" == *"~16.04"* ]]; then
-            return 0
+            echo "~16.04"
         fi
     fi
-    return 1
 }
 
 # RHEL 7.6 family detection: id=="rhel"||"centos", and kernel build id at least 957
@@ -337,17 +336,10 @@ function main() {
         fi
     fi
 
-    declare -a kernel_versions
-
     # Special case kernel version if running on COS
     if cos_host ; then
         # remove '+' from end of kernel version 
         KERNEL_VERSION="${KERNEL_VERSION%+}-${OS_BUILD_ID}-${OS_ID}"
-    fi
-
-    # Special case kernel version if running on Ubuntu backport kernel
-    if ubuntu_backport_host ; then
-        kernel_versions+=("${KERNEL_VERSION}~16.04")
     fi
 
     # Special case kernel version if running on Docker Desktop
@@ -360,8 +352,6 @@ function main() {
             COLLECTION_METHOD="KERNEL_MODULE"
         fi
     fi
-
-    kernel_versions+=("${KERNEL_VERSION}")
 
     mkdir -p /module
     
@@ -401,14 +391,24 @@ function main() {
       fi
     fi
 
+    kernel_versions=()
+    # Add backport kernel version if running on Ubuntu backport kernel
+    ubuntu_backport_version="$(get_ubuntu_backport_version)"
+    if [[ -n "$ubuntu_backport_version" ]]; then
+        kernel_versions+=("${KERNEL_VERSION}${ubuntu_backport_version}")
+    fi
+    kernel_versions+=("${KERNEL_VERSION}")
+
+    success=0
     for kernel_version in "${kernel_versions[@]}"; do
       if get_kernel_object "${kernel_version}"; then
+        success=1
         break
       fi
-      if [[ "${kernel_version}" == "$KERNEL_VERSION" ]]; then
-        exit_with_error
-      fi
     done
+    if (( ! success )); then
+      exit_with_error
+    fi
 
     # Print GPL notice after probe is downloaded or verified to be present
     gpl_notice

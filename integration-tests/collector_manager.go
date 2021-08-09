@@ -38,7 +38,7 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 		"COLLECTION_METHOD":        collectionMethod,
 	}
 	if !offlineMode {
-		env["MODULE_DOWNLOAD_BASE_URL"]="https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"
+		env["MODULE_DOWNLOAD_BASE_URL"] = "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"
 	}
 	mounts := map[string]string{
 		"/host/var/run/docker.sock:ro": "/var/run/docker.sock",
