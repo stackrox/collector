@@ -1,8 +1,12 @@
 version: 2.1
+parameters:
+  quay-repo:
+    type: string
+    default: "quay.io/cgorman1"
 
 defaultImage: &defaultImage
   docker:
-  - image: quay.io/cgorman1/apollo-ci:collector-0.3.7
+  - image: "<< pipeline.parameters.quay-repo >>/apollo-ci:collector-0.3.7"
     auth:
       username: $QUAY_CGORMAN1_RO_USER
       password: $QUAY_CGORMAN1_RO_PASSWORD
@@ -782,7 +786,7 @@ jobs:
     <<: *defaultMachine
     environment:
     - INSTALL_DIRECTORY: /tmp
-    - QUAY_REPO: "quay.io/cgorman1"
+    - QUAY_REPO: << pipeline.parameters.quay-repo >>
     - DOCKER_REPO: "docker.io/stackrox"
 
     steps:
@@ -956,7 +960,7 @@ jobs:
       docker_layer_caching: true
     resource_class: large
     environment:
-    - QUAY_REPO: "quay.io/cgorman1"
+    - QUAY_REPO: << pipeline.parameters.quay-repo >>
     - DOCKER_REPO: "docker.io/stackrox"
 
     steps:
@@ -1425,7 +1429,7 @@ jobs:
     - INSTALL_DIRECTORY: /tmp
     - RELOAD_MD_DIRECTORY: /tmp/reload/collectors
     - DOCKER_BUILDKIT: 1
-    - QUAY_REPO: "quay.io/cgorman1"
+    - QUAY_REPO: << pipeline.parameters.quay-repo >>
     - DOCKER_REPO: "docker.io/stackrox"
     working_directory: ~/workspace
 
