@@ -48,7 +48,8 @@ image-label-json: docker-clean
 	set -o pipefail ; \
 	go test -timeout 30m -count=1 -v \
 	  -run TestImageLabelJSON 2>&1 | tee -a integration-test.log || true ;
-	ls container-logs/* || true
+	ls container-logs/* || true ;
+	cat container-logs/TestImageLabelJSON-collector.log || true
 
 .PHONY: missing-proc-scrape
 missing-proc-scrape: docker-clean
@@ -57,7 +58,8 @@ missing-proc-scrape: docker-clean
 	set -o pipefail ; \
 	go test -timeout 30m -count=1 -v \
 	  -run TestMissingProcScrape 2>&1 | tee -a integration-test.log || true ;
-	ls container-logs/* || true
+	ls container-logs/* || true ;
+	cat container-logs/TestMissingProcScrape-collector.log || true
 
 .PHONY: report
 report:
