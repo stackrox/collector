@@ -24,7 +24,6 @@ tests: docker-clean
 	set -o pipefail ; \
 	go test -timeout 30m -count=1 -v \
 	  -run TestCollectorGRPC 2>&1 | tee -a integration-test.log ;
-	cat container-logs/TestProcessNetwork-collector.log
 	ls container-logs/*
 
 .PHONY: process-network
@@ -33,7 +32,6 @@ process-network: docker-clean
 	set -o pipefail ; \
 	go test -timeout 30m -count=1 -v \
  	  -run TestProcessNetwork 2>&1 | tee -a integration-test.log ;
-	cat container-logs/TestProcessNetwork-collector.log
 	ls container-logs/*
 
 .PHONY: baseline
@@ -42,7 +40,6 @@ baseline: docker-clean
 	set -o pipefail ; \
 	go test -timeout 30m -count=1 -v \
 	  -run TestBenchmarkBaseline 2>&1 | tee -a integration-test.log ;
-	cat container-logs/TestProcessNetwork-collector.log
 	ls container-logs/*
 
 .PHONY: image-label-json
@@ -51,7 +48,6 @@ image-label-json: docker-clean
 	set -o pipefail ; \
 	go test -timeout 30m -count=1 -v \
 	  -run TestImageLabelJSON 2>&1 | tee -a integration-test.log ;
-	cat container-logs/TestProcessNetwork-collector.log
 	ls container-logs/*
 
 .PHONY: missing-proc-scrape
@@ -61,7 +57,6 @@ missing-proc-scrape: docker-clean
 	set -o pipefail ; \
 	go test -timeout 30m -count=1 -v \
 	  -run TestMissingProcScrape 2>&1 | tee -a integration-test.log ;
-	cat container-logs/TestProcessNetwork-collector.log
 	ls container-logs/*
 
 .PHONY: report
