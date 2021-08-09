@@ -67,7 +67,7 @@ TEST(ProcessSignalFormatterTest, NoProcessTest) {
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithoutParentTest) {
-  std::unique_ptr<sinsp> inspector;
+  std::unique_ptr<sinsp> inspector; //Smart pointer
   inspector.reset(new_inspector());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
 
