@@ -1,8 +1,12 @@
 version: 2.1
+parameters:
+  quay-repo:
+    type: string
+    default: "quay.io/cgorman1"
 
 defaultImage: &defaultImage
   docker:
-  - image: quay.io/cgorman1/apollo-ci:collector-0.3.7
+  - image: "<< pipeline.parameters.quay-repo >>/apollo-ci:collector-0.3.7"
     auth:
       username: $QUAY_CGORMAN1_RO_USER
       password: $QUAY_CGORMAN1_RO_PASSWORD
@@ -29,6 +33,7 @@ runOnAllTagsWithDockerIOPushCtx: &runOnAllTagsWithDockerIOPushCtx
   <<: *runOnAllTags
   context:
     - docker-io-push
+    - quay-cgorman1-readwrite
     - quay-cgorman1-readonly
 
 runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequires
@@ -117,6 +122,21 @@ commands:
         name: Login to Docker Hub with push credentials
         command: |
             docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD"
+
+  quay-login:
+    steps:
+    - run:
+        name: Login to Quay with pull credentials
+        command: |
+            docker login -u "$QUAY_CGORMAN1_RO_USER" -p "$QUAY_CGORMAN1_RO_PASSWORD" quay.io
+
+  quay-login-push:
+    steps:
+    - run:
+        name: Login to Quay with push credentials
+        command: |
+            docker login -u "$QUAY_CGORMAN1_RW_USER" -p "$QUAY_CGORMAN1_RW_PASSWORD" quay.io
+
 
   stackrox-io-login:
     steps:
@@ -766,10 +786,13 @@ jobs:
     <<: *defaultMachine
     environment:
     - INSTALL_DIRECTORY: /tmp
+    - QUAY_REPO: << pipeline.parameters.quay-repo >>
+    - DOCKER_REPO: "docker.io/stackrox"
 
     steps:
     - initcommand
     - docker-login-push
+    - quay-login-push
     - gcloud-init
 
     - run:
@@ -838,8 +861,10 @@ jobs:
           )
 
           docker build \
-            -t "stackrox/collector:${COLLECTOR_VERSION}-base" \
-            -t "stackrox/collector:${COLLECTOR_VERSION}-slim" \
+            -t "${DOCKER_REPO}/collector:${COLLECTOR_VERSION}-base" \
+            -t "${DOCKER_REPO}/collector:${COLLECTOR_VERSION}-slim" \
+            -t "${QUAY_REPO}/collector:${COLLECTOR_VERSION}-base" \
+            -t "${QUAY_REPO}/collector:${COLLECTOR_VERSION}-slim" \
             "${build_args[@]}" \
             ${SOURCE_ROOT}/collector/container
 
@@ -849,8 +874,10 @@ jobs:
             "$SOURCE_ROOT/collector/container/rhel"
 
           docker build \
-            -t "stackrox/collector-rhel:${COLLECTOR_VERSION}-base" \
-            -t "stackrox/collector-rhel:${COLLECTOR_VERSION}-slim" \
+            -t "${DOCKER_REPO}/collector-rhel:${COLLECTOR_VERSION}-base" \
+            -t "${DOCKER_REPO}/collector-rhel:${COLLECTOR_VERSION}-slim" \
+            -t "${QUAY_REPO}/collector-rhel:${COLLECTOR_VERSION}-base" \
+            -t "${QUAY_REPO}/collector-rhel:${COLLECTOR_VERSION}-slim" \
             "${build_args[@]}" \
             -f ${SOURCE_ROOT}/collector/container/rhel/Dockerfile \
             "$SOURCE_ROOT/collector/container/rhel"
@@ -859,16 +886,20 @@ jobs:
         name: Build collector -latest images
         command: |
           collector_repos=(
-            "stackrox/collector"
-            "stackrox/collector-rhel"
+            "collector"
+            "collector-rhel"
           )
 
           # On PR branches, only build slim images
           if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-full-images" ]]; then
             echo "Not building full images, re-tagging base images..."
             for collector_repo in "${collector_repos[@]}"; do
-                docker tag "${collector_repo}:${COLLECTOR_VERSION}-base" "${collector_repo}:${COLLECTOR_VERSION}"
-                docker tag "${collector_repo}:${COLLECTOR_VERSION}-base" "${collector_repo}:${COLLECTOR_VERSION}-latest"
+              docker_full_repo="${DOCKER_REPO}/${collector_repo}:${COLLECTOR_VERSION}"
+              quay_full_repo="${QUAY_REPO}/${collector_repo}:${COLLECTOR_VERSION}"
+              docker tag "${docker_full_repo}-base" "${docker_full_repo}"
+              docker tag "${docker_full_repo}-base" "${docker_full_repo}-latest"
+              docker tag "${quay_full_repo}-base" "${quay_full_repo}"
+              docker tag "${quay_full_repo}-base" "${quay_full_repo}-latest"
             done
             exit 0
           fi
@@ -885,8 +916,10 @@ jobs:
             )
             docker build \
               --target="probe-layer-${layer_count}" \
-              -t "${collector_repo}:${COLLECTOR_VERSION}" \
-              -t "${collector_repo}:${COLLECTOR_VERSION}-latest" \
+              -t "${DOCKER_REPO}/${collector_repo}:${COLLECTOR_VERSION}" \
+              -t "${DOCKER_REPO}/${collector_repo}:${COLLECTOR_VERSION}-latest" \
+              -t "${QUAY_REPO}/${collector_repo}:${COLLECTOR_VERSION}" \
+              -t "${QUAY_REPO}/${collector_repo}:${COLLECTOR_VERSION}-latest" \
               "${build_args[@]}" \
               "${container_build_dir}"
           done
@@ -900,32 +933,40 @@ jobs:
     - run:
         name: Push images
         command: |
-          echo "Pushing collector base image"
-          ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "stackrox/collector:${COLLECTOR_VERSION}-base"
-          echo "Pushing collector image"
-          ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "stackrox/collector:${COLLECTOR_VERSION}"
-          echo "Pushing collector latest image"
-          ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "stackrox/collector:${COLLECTOR_VERSION}-latest"
-          echo "Pushing collector slim image"
-          ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "stackrox/collector:${COLLECTOR_VERSION}-slim"
-
-          echo "Pushing collector rhel base image"
-          ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "stackrox/collector-rhel:${COLLECTOR_VERSION}-base"
-          echo "Pushing collector rhel image"
-          ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "stackrox/collector-rhel:${COLLECTOR_VERSION}"
-          echo "Pushing collector rhel latest image"
-          ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "stackrox/collector-rhel:${COLLECTOR_VERSION}-latest"
-          echo "Pushing collector rhel slim image"
-          ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "stackrox/collector-rhel:${COLLECTOR_VERSION}-slim"
+          image_repos=(
+            "${DOCKER_REPO}/collector"
+            "${DOCKER_REPO}/collector-rhel"
+            "${QUAY_REPO}/collector"
+            "${QUAY_REPO}/collector-rhel"
+          )
+          image_tags=(
+            "${COLLECTOR_VERSION}"
+            "${COLLECTOR_VERSION}-base"
+            "${COLLECTOR_VERSION}-slim"
+            "${COLLECTOR_VERSION}-latest"
+          )
+          for repo in "${image_repos[@]}"; do
+            for tag in "${image_tags[@]}"; do
+              image="${repo}:${tag}"
+              echo "Pushing image ${image}"
+              docker image inspect "${image}" >/dev/null
+              ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${image}"
+            done
+          done
 
   ubi-image:
     machine:
       image: ubuntu-2004:202010-01
       docker_layer_caching: true
     resource_class: large
+    environment:
+    - QUAY_REPO: << pipeline.parameters.quay-repo >>
+    - DOCKER_REPO: "docker.io/stackrox"
+
     steps:
     - initcommand
     - docker-login-push
+    - quay-login-push
     - run:
         name: Lint Dockerfile
         command: |
@@ -940,18 +981,28 @@ jobs:
             --build-arg COLLECTOR_VERSION=${COLLECTOR_VERSION} \
             --build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
             --build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}" \
-            -t "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}" \
-            -t "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}-slim" \
+            -t "collector-test-cpaas:${COLLECTOR_VERSION}" \
             -f ${SOURCE_ROOT}/collector/container/Dockerfile.ubi \
             ${SOURCE_ROOT}
 
     - run:
         name: Push collector UBI images
         command: |
-          echo "Pushing collector image"
-          docker push "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}"
-          echo "Pushing collector slim image"
-          docker push "stackrox/collector-test-cpaas:${COLLECTOR_VERSION}-slim"
+          image_repos=(
+            "${DOCKER_REPO}/collector-test-cpaas"
+            "${QUAY_REPO}/collector-test-cpaas"
+          )
+          image_tags=(
+            "${COLLECTOR_VERSION}"
+            "${COLLECTOR_VERSION}-slim"
+          )
+          for repo in "${image_repos[@]}"; do
+            for tag in "${image_tags[@]}"; do
+              image="${repo}:${tag}"
+              docker image tag "collector-test-cpaas:${COLLECTOR_VERSION}" "${image}"
+              docker push "${image}"
+            done
+          done
 
   kernel-module-build-failures-check:
     <<: *defaultImage
@@ -1378,6 +1429,8 @@ jobs:
     - INSTALL_DIRECTORY: /tmp
     - RELOAD_MD_DIRECTORY: /tmp/reload/collectors
     - DOCKER_BUILDKIT: 1
+    - QUAY_REPO: << pipeline.parameters.quay-repo >>
+    - DOCKER_REPO: "docker.io/stackrox"
     working_directory: ~/workspace
 
     steps:
@@ -1407,6 +1460,7 @@ jobs:
           done
 
     - docker-login-push
+    - quay-login-push
     - stackrox-io-login
     - gcloud-init
 
@@ -1419,7 +1473,7 @@ jobs:
             mod_ver="$(< "${collector_ver_file}")"
             echo "Missing object check for module version: ${mod_ver} and collector version: ${collector_ver}"
 
-            released_latest_image="stackrox/collector:${collector_ver}-latest"
+            released_latest_image="${DOCKER_REPO}/collector:${collector_ver}-latest"
             docker pull -q "${released_latest_image}" | cat
 
             "${SOURCE_ROOT}/reload/missing-kernel-objects.sh" \
@@ -1471,15 +1525,32 @@ jobs:
             layer_count="$("${container_build_dir}/partition-probes.py" -1 "$MAX_LAYER_MB" "${container_build_dir}/kernel-modules" "-")"
 
             echo "Reloading ${layer_count} image layers for collector ${collector_ver} (${mod_ver})"
-            dockerhub_repo="stackrox/collector:${collector_ver}"
+
+            dockerhub_repo="${DOCKER_REPO}/collector:${collector_ver}"
             dockerhub_base_image="${dockerhub_repo}-base"
             dockerhub_pr_image="${dockerhub_repo}-reload-latest"
             dockerhub_image="${dockerhub_repo}-latest"
+
+            quay_base_repo="${QUAY_REPO}/collector:${collector_ver}"
+            quay_base_image="${quay_base_repo}-base"
+            quay_pr_image="${quay_base_repo}-reload-latest"
+            quay_image="${quay_base_repo}-latest"
+
             stackrox_io_image="collector.stackrox.io/collector:${collector_ver}-latest"
-            image_list=("${dockerhub_image}" "${dockerhub_base_image}" "${dockerhub_pr_image}" "${stackrox_io_image}")
+
+            image_list=(
+              "${dockerhub_image}"
+              "${dockerhub_base_image}"
+              "${dockerhub_pr_image}"
+              "${quay_image}"
+              "${quay_base_image}"
+              "${quay_pr_image}"
+              "${stackrox_io_image}"
+            )
             build_args=(
               --build-arg module_version="${mod_ver}"
               --build-arg collector_version="${collector_ver}"
+              --build-arg collector_repo="${DOCKER_REPO}/collector"
               --build-arg max_layer_depth="${layer_count}"
               --build-arg max_layer_size="${MAX_LAYER_MB}"
             )
@@ -1488,16 +1559,20 @@ jobs:
               -t "${stackrox_io_image}" \
               -t "${dockerhub_image}" \
               -t "${dockerhub_pr_image}" \
+              -t "${quay_pr_image}" \
+              -t "${quay_image}" \
               "${build_args[@]}" \
               "${container_build_dir}"
 
             if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
               ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${dockerhub_pr_image}" | cat
-              image_list+=("${dockerhub_pr_image}-amd64")
+              ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${quay_pr_image}" | cat
+              image_list+=("${dockerhub_pr_image}-amd64" "${quay_pr_image}-amd64")
             else
               ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${dockerhub_image}" | cat
+              ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${quay_image}" | cat
               ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${stackrox_io_image}" | cat
-              image_list+=("${dockerhub_image}-amd64" "${stackrox_io_image}-amd64")
+              image_list+=("${dockerhub_image}-amd64" "${quay_image}-amd64" "${stackrox_io_image}-amd64")
             fi
             # clean-up to reduce disk usage
             docker image rm -f "${image_list[@]}"
@@ -1568,6 +1643,7 @@ workflows:
         <<: *runOnAllTags
         context:
           - docker-io-push
+          - quay-cgorman1-readwrite
           - redhat-developer-account-login
         requires:
         - initjob
@@ -1748,10 +1824,12 @@ workflows:
         - test-ebpf-sles-15-sp2-sap
         - test-module-sles-15-sp2-sap
     - reload-released-images:
-        <<: *runOnAllTagsWithDockerIOPushCtx
-        context: docker-io-and-stackrox-io-push
+        <<: *runOnAllTags
+        context:
+          - docker-io-and-stackrox-io-push
+          - quay-cgorman1-readwrite
         requires:
-        - images
+          - images
     - update-support-packages:
         <<: *runOnAllTags
         context:
