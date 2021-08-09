@@ -41,6 +41,7 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
   context:
     - docker-io-push
     - quay-cgorman1-readonly
+    - ubuntu-esm-subscription-token # Provides environment variable UBUNTU_ESM_SUBSCRIPTION_TOKEN.
   requires:
   - images
   - ubi-image
@@ -908,7 +909,7 @@ jobs:
           layer_count="$("${container_build_dir}/partition-probes.py" -1 "$MAX_LAYER_MB" "${container_build_dir}/kernel-modules" "-")"
           for collector_repo in "${collector_repos[@]}"; do
             build_args=(
-              --build-arg collector_repo="${collector_repo}"
+              --build-arg collector_repo="${DOCKER_REPO}/${collector_repo}"
               --build-arg collector_version="$COLLECTOR_VERSION"
               --build-arg module_version="$MODULE_VERSION"
               --build-arg max_layer_size="$MAX_LAYER_MB"
@@ -1188,7 +1189,9 @@ jobs:
       image_family:
         type: enum
         enum: [cos-stable, cos-85-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2104, sles-12, sles-15, sles-15-sp2-sap]
-
+      offline:
+        type: boolean
+        default: false
     <<: *defaultImage
 
     steps:
@@ -1226,6 +1229,7 @@ jobs:
         command: |
           export REMOTE_HOST_TYPE=gcloud
           export COLLECTION_METHOD="<< parameters.collection_method >>"
+          export COLLECTOR_OFFLINE_MODE="<< parameters.offline >>"
           export VM_CONFIG="<< parameters.vm_type >>.<< parameters.image_family >>"
           export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
           export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
@@ -1726,13 +1730,13 @@ workflows:
         image_family: ubuntu-1804-lts
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-ubuntu-1604-lts
+        name: test-module-ubuntu-1604-lts-esm
         collection_method: module
         vm_type: ubuntu-os
         image_family: ubuntu-1604-lts
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-ubuntu-1604-lts
+        name: test-ebpf-ubuntu-1604-lts-esm
         collection_method: ebpf
         vm_type: ubuntu-os
         image_family: ubuntu-1604-lts
@@ -1809,8 +1813,8 @@ workflows:
         - test-ebpf-rhel-7
         - test-module-rhel-8
         - test-ebpf-rhel-8
-        - test-module-ubuntu-1604-lts
-        - test-ebpf-ubuntu-1604-lts
+        - test-module-ubuntu-1604-lts-esm
+        - test-ebpf-ubuntu-1604-lts-esm
         - test-module-ubuntu-1804-lts
         - test-ebpf-ubuntu-1804-lts
         - test-module-ubuntu-2004-lts

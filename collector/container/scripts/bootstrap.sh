@@ -87,7 +87,6 @@ function download_kernel_object() {
         fi
 
         local url="https://${server_hostname}:${server_port}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
-        log "Attempting to download from ${url}..."
 
         curl "${curl_opts[@]}" "${connect_to_opts[@]}" \
             --cacert /run/secrets/stackrox.io/certs/ca.pem \
@@ -96,32 +95,31 @@ function download_kernel_object() {
             "$url"
         if [[ $? -ne 0 ]]; then
             rm -f "${filename_gz}" 2>/dev/null
-            log "Failed to download ${OBJECT_TYPE}."
+            log "Unable to download from ${url}"
         fi
     fi
     if [[ ! -f "${filename_gz}" && -n "${MODULE_URL}" ]]; then
         local url="${MODULE_URL}/${KERNEL_OBJECT}.gz"
-        log "Attempting to download from ${url}..."
         curl "${curl_opts[@]}" "$url"
         if [[ $? -ne 0 ]]; then
             rm -f "${filename_gz}" 2>/dev/null
-            log "Failed to download ${OBJECT_TYPE}"
+            log "Unable to download from ${url}"
+            return 1
         fi
     fi
 
     if [[ ! -f "${filename_gz}" ]]; then
-        log "All attempts to download the ${OBJECT_TYPE} have failed."
         return 1
     fi
 
     if ! gzip -d --keep "${filename_gz}"; then
         rm -f "${filename_gz}" 2>/dev/null
         rm -f "${OBJECT_PATH}" 2>/dev/null
-        log "Failed to decompress ${OBJECT_TYPE} after download, removing from local storage."
+        log "Failed to decompress ${OBJECT_TYPE} ${KERNEL_OBJECT} after download and removing from local storage."
         return 1
     fi
 
-    log "Using downloaded ${OBJECT_TYPE} ${KERNEL_OBJECT}"
+    log "Downloaded ${OBJECT_TYPE} ${KERNEL_OBJECT}."
     return 0
 }
 
@@ -143,11 +141,11 @@ function find_kernel_object() {
     elif [ -f "$EXPECTED_PATH" ]; then
       cp "$EXPECTED_PATH" "$OBJECT_PATH"
     else
-      log "Didn't find ${OBJECT_TYPE} ${KERNEL_OBJECT} built-in."
+      log "Local storage does not contain ${OBJECT_TYPE} ${KERNEL_OBJECT}."
       return 1
     fi
 
-    log "Using built-in ${OBJECT_TYPE} ${KERNEL_OBJECT}"
+    log "Local storage contains ${OBJECT_TYPE} ${KERNEL_OBJECT}."
     return 0
 }
 
@@ -181,6 +179,17 @@ function dockerdesktop_host() {
         return 0
     fi
     return 1
+}
+
+function get_ubuntu_backport_version() {
+    if [[ "$OS_ID" == "ubuntu" ]]; then
+        local uname_version
+        uname_version="$(uname -v)"
+        # Check uname for backport version 16.04
+        if [[ "${uname_version}" == *"~16.04"* ]]; then
+            echo "~16.04"
+        fi
+    fi
 }
 
 # RHEL 7.6 family detection: id=="rhel"||"centos", and kernel build id at least 957
@@ -237,6 +246,58 @@ function gpl_notice() {
     log "Source code for the kernel module and ebpf subcomponents is available upon"
     log "request by contacting support@stackrox.com."
     log ""
+}
+
+function get_kernel_object() {
+    local kernel_version="$1"
+
+    # Find built-in or download kernel module
+    if collection_method_module; then
+      local module_name="collector"
+      local module_path="/module/${module_name}.ko"
+      local kernel_module="${module_name}-${kernel_version}.ko"
+
+      if ! find_kernel_object "$kernel_module" "$module_path"; then
+        if ! download_kernel_object "${kernel_module}" "${module_path}" || [[ ! -f "$module_path" ]]; then
+          return 1
+        fi
+      fi
+
+      if [[ -f "$module_path" ]]; then
+        chmod 0444 "$module_path"
+      else
+        log "Did not find kernel module for kernel version $kernel_version."
+        return 1
+      fi
+
+      # The collector program will insert the kernel module upon startup.
+      remove_module "$module_name"
+
+    # Find built-in or download ebpf probe
+    elif collection_method_ebpf; then
+      if kernel_supports_ebpf; then
+        local probe_name="collector-ebpf"
+        local probe_path="/module/${probe_name}.o"
+        local kernel_probe="${probe_name}-${kernel_version}.o"
+
+        if ! find_kernel_object "${kernel_probe}" "${probe_path}"; then
+          if ! download_kernel_object "${kernel_probe}" "${probe_path}" || [[ ! -f "$probe_path" ]]; then
+            return 1
+          fi
+        fi
+
+        if [[ -f "$probe_path" ]]; then
+          chmod 0444 "$probe_path"
+        else
+          log "Did not find ebpf probe for kernel version $kernel_version."
+          return 1
+        fi
+      else
+        log "Kernel ${kernel_version} doesn't support eBPF"
+        return 1
+      fi
+    fi
+    return 0
 }
 
 function main() {
@@ -329,52 +390,24 @@ function main() {
         COLLECTION_METHOD="KERNEL_MODULE"
       fi
     fi
-    
-    # Find built-in or download kernel module
-    if collection_method_module; then
-      local module_name="collector"
-      local module_path="/module/${module_name}.ko"
-      local kernel_module="${module_name}-${KERNEL_VERSION}.ko"
 
-      if ! find_kernel_object "$kernel_module" "$module_path"; then
-        if ! download_kernel_object "${kernel_module}" "${module_path}" || [[ ! -f "$module_path" ]]; then
-          log "The kernel module may not have been compiled for version ${KERNEL_VERSION}."
-        fi
+    kernel_versions=()
+    # Add backport kernel version if running on Ubuntu backport kernel
+    ubuntu_backport_version="$(get_ubuntu_backport_version)"
+    if [[ -n "$ubuntu_backport_version" ]]; then
+        kernel_versions+=("${KERNEL_VERSION}${ubuntu_backport_version}")
+    fi
+    kernel_versions+=("${KERNEL_VERSION}")
+
+    success=0
+    for kernel_version in "${kernel_versions[@]}"; do
+      if get_kernel_object "${kernel_version}"; then
+        success=1
+        break
       fi
-      
-      if [[ -f "$module_path" ]]; then
-        chmod 0444 "$module_path"
-      else
-        log "Error: Failed to find kernel module for kernel version $KERNEL_VERSION."
-        exit_with_error
-      fi
-    
-      # The collector program will insert the kernel module upon startup.
-      remove_module "$module_name"
-    
-    # Find built-in or download ebpf probe
-    elif collection_method_ebpf; then
-      if kernel_supports_ebpf; then
-        local probe_name="collector-ebpf"
-        local probe_path="/module/${probe_name}.o"
-        local kernel_probe="${probe_name}-${KERNEL_VERSION}.o"
- 
-        if ! find_kernel_object "${kernel_probe}" "${probe_path}"; then
-          if ! download_kernel_object "${kernel_probe}" "${probe_path}" || [[ ! -f "$probe_path" ]]; then
-            log "The ebpf probe may not have been compiled for version ${KERNEL_VERSION}."
-          fi
-        fi
-    
-        if [[ -f "$probe_path" ]]; then
-          chmod 0444 "$probe_path"
-        else
-          log "Error: Failed to find ebpf probe for kernel version $KERNEL_VERSION."
-          exit_with_error
-        fi
-      else
-        log "Error: Kernel ${KERNEL_VERSION} doesn't support eBPF"
-        exit_with_error
-      fi
+    done
+    if (( ! success )); then
+      exit_with_error
     fi
 
     # Print GPL notice after probe is downloaded or verified to be present
