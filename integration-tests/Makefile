@@ -24,7 +24,8 @@ tests: docker-clean
 	set -o pipefail ; \
 	go test -timeout 30m -count=1 -v \
 	  -run TestCollectorGRPC 2>&1 | tee -a integration-test.log || true ;
-	ls container-logs/* || true
+	ls container-logs/* || true ;
+	cat container-logs/TestCollectorGRPC-collector.log || true
 
 .PHONY: process-network
 process-network: docker-clean
