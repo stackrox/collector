@@ -50,8 +50,9 @@ cd ..
 
 mkdir -p cmake-sysdig
 cd cmake-sysdig
+CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-Release}"
 cmake \
-        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
         -DCMAKE_C_FLAGS="-fno-pie" \
         -DPROBE_NAME=collector \
         -DBUILD_USERSPACE=OFF \

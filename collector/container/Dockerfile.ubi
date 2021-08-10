@@ -47,6 +47,7 @@ COPY rox-proto rox-proto
 COPY sysdig sysdig
 COPY third_party third_party
 ARG NPROCS=2
+RUN CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 RUN NPROCS=${NPROCS} ./builder/build/build-ubi.sh
 
 
