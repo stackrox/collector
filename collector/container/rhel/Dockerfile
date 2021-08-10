@@ -34,6 +34,16 @@ COPY --from=extracted_bundle /bundle/kernel-modules/ /kernel-modules/
 COPY --from=extracted_bundle /bundle/usr/local/lib/libsinsp-wrapper.so /usr/local/lib/
 COPY --from=extracted_bundle /bundle/usr/local/bin/collector /usr/local/bin/
 
+RUN yum update -y && \
+    yum install -y --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos --enablerepo=ubi-8-codeready-builder --disableplugin=subscription-manager perl --nobest && \
+    yum install -y wget bzip2 gcc make && \
+    wget https://sourceware.org/pub/valgrind/valgrind-3.17.0.tar.bz2 && \
+    tar xjf valgrind-3.17.0.tar.bz2 && \
+    cd valgrind-3.17.0 && \
+    ./configure MAKE="gmake" --disable-dependency-tracking && \
+    make && \
+    make install  
+
 RUN mv collector-wrapper.sh /usr/local/bin/ && \
     chmod 700 bootstrap.sh && \
     dnf upgrade -y && \
@@ -43,6 +53,7 @@ RUN mv collector-wrapper.sh /usr/local/bin/ && \
     # (Optional) Remove line below to keep package management utilities
     rpm -e --nodeps rpm rpm-build-libs rpm-libs python3-rpm subscription-manager python3-subscription-manager-rhsm yum $(rpm -qa *dnf*) python3-hawkey && \
     echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt
+
 
 
 EXPOSE 8080 9090
