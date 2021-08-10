@@ -26,7 +26,7 @@ tests: docker-clean
 	  -run TestCollectorGRPC 2>&1 | tee -a integration-test.log || true ;
 	ls container-logs/* || true ;
 	cat container-logs/TestCollectorGRPC-collector.log || true ;
-	cat container-logs/TestCollectorGRPC-grpc-server.log || true
+	cat container-logs/TestCollectorGRPC-grpc-server.log || true #Comment just to test CircleCI
 
 .PHONY: process-network
 process-network: docker-clean
