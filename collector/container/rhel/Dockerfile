@@ -1,14 +1,3 @@
-
-#ARG BASE_REGISTRY=registry.access.redhat.com
-#ARG BASE_IMAGE=ubi8/ubi
-#ARG BASE_TAG=8.4
-#
-#FROM centos:8 AS valgrind_build
-#
-#RUN yum install -y valgrind which
-#RUN ls -lrt /usr/bin
-#RUN which valgrind
-
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8/ubi
 ARG BASE_TAG=8.4

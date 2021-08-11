@@ -47,11 +47,6 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
   - ubi-image
   - integration-test-local
 
-runOnValgrindTag: &runOnValgrindTag
-  filters:
-    tags:
-      only: 
-
 orbs:
   slack: circleci/slack@3.4.2
 
@@ -248,7 +243,7 @@ jobs:
 
     - run:
         name: Build collector-builder image
-        command: | 
+        command: |
           if [ -f pr-metadata/labels/debug ]; then
             CMAKE_BUILD_TYPE=Debug
           else
@@ -280,7 +275,7 @@ jobs:
 
     - run:
         name: Build collector-builder rhel image
-        command: | 
+        command: |
           if [ -f pr-metadata/labels/debug ]; then
             CMAKE_BUILD_TYPE=Debug
           else
@@ -805,8 +800,8 @@ jobs:
 
     - run:
         name: Run collector unit tests
-        command: | 
-          if [ -f pr-metadata/labels/valgrind-unit-tests ]; then 
+        command: |
+          if [ -f pr-metadata/labels/valgrind-unit-tests ]; then
             unittest_output_file=unittest_results.txt
             max_allowed_valgrind_errors=0
             make -C "${SOURCE_ROOT}" unittest USE_VALGRIND=true >& $unittest_output_file

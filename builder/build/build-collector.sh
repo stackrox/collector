@@ -5,7 +5,6 @@ set -ux
 ldconfig -v
 cd /tmp/cmake-build
 CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-Release}"
-echo "CMAKE_BUILD_TYPE= $CMAKE_BUILD_TYPE"
 cmake -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE /src
 make -j "${NPROCS:-2}" all
 if [ $CMAKE_BUILD_TYPE = "Release" ]; then
