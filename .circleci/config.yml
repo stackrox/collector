@@ -1424,10 +1424,12 @@ jobs:
     environment:
     - INSTALL_DIRECTORY: /tmp
     - RELOAD_MD_DIRECTORY: /tmp/reload/collectors
+    - RELOAD_TASKS_DIRECTORY: /tmp/reload/tasks
     - DOCKER_BUILDKIT: 1
     - QUAY_REPO: << pipeline.parameters.quay-repo >>
     - DOCKER_REPO: "docker.io/stackrox"
     working_directory: ~/workspace
+    parallelism: 8
 
     steps:
     - initcommand
@@ -1461,28 +1463,80 @@ jobs:
     - gcloud-init
 
     - run:
+        name: Determine collector versions that need reload for current shard
+        command: |
+          echo "Nodes total: $CIRCLE_NODE_TOTAL"
+          echo "Node index:  $CIRCLE_NODE_INDEX"
+
+          mkdir -p "${RELOAD_TASKS_DIRECTORY}"
+          collector_repo_list=( "collector" "collector-rhel" )
+          for collector_repo in "${collector_repo_list[@]}"; do
+            for collector_ver_file in "${WORKSPACE_ROOT}/ko-build/released-collectors"/*; do
+              collector_ver="$(basename "${collector_ver_file}")"
+              mod_ver="$(< "${collector_ver_file}")"
+              image="${DOCKER_REPO}/${collector_repo}:${collector_ver}-latest"
+              if docker manifest inspect "${image}" &> /dev/null ; then
+                echo "${mod_ver} ${collector_ver} ${collector_repo}"
+              fi
+            done
+          done | sort > "${RELOAD_TASKS_DIRECTORY}/all"
+
+          cd "${RELOAD_TASKS_DIRECTORY}"
+          num_tasks=$(wc -l <all)
+          shard_size=$(((num_tasks - 1) / CIRCLE_NODE_TOTAL + 1))
+
+          echo "Total number of collector reload tasks: ${num_tasks}"
+          echo "Tasks per shard: ${shard_size}"
+          echo
+
+          mkdir -p "${RELOAD_TASKS_DIRECTORY}/shards"
+          cd "${RELOAD_TASKS_DIRECTORY}/shards"
+          split -d -l "$shard_size" "${RELOAD_TASKS_DIRECTORY}/all" shard-
+          this_shard_file="${RELOAD_TASKS_DIRECTORY}/shards/shard-$(printf '%02d' "$CIRCLE_NODE_INDEX")"
+          if [[ ! -s "$this_shard_file" ]]; then
+            echo "Nothing to be done for this shard."
+            circleci step halt
+            exit 0
+          fi
+          mv "$this_shard_file" "${RELOAD_TASKS_DIRECTORY}"/local
+
+          echo "Checking collector images for reload with updated probes for the following module versions: "
+          awk '{print $1}' <"${RELOAD_TASKS_DIRECTORY}"/local | sort | uniq
+          echo
+          echo "Checking collector images for reload with updated probes for the following collector versions: "
+          awk '{print $3 ":" $2}' <"${RELOAD_TASKS_DIRECTORY}"/local | sort | uniq
+
+    - run:
         name: Determine collector versions that need reload
         command: |
           mkdir -p "${RELOAD_MD_DIRECTORY}"
-          for collector_ver_file in "${WORKSPACE_ROOT}/ko-build/released-collectors"/*; do
-            collector_ver="$(basename "${collector_ver_file}")"
-            mod_ver="$(< "${collector_ver_file}")"
-            echo "Missing object check for module version: ${mod_ver} and collector version: ${collector_ver}"
+          while IFS=' ' read -r mod_ver collector_ver collector_repo; do
+            if [[ -z "$mod_ver" || -z "$collector_ver" || -z "$collector_repo" ]]; then
+              echo "Unexpected empty variable."
+              continue
+            fi
+            image="${DOCKER_REPO}/${collector_repo}:${collector_ver}-latest"
 
-            released_latest_image="${DOCKER_REPO}/collector:${collector_ver}-latest"
-            docker pull -q "${released_latest_image}" | cat
-
+            echo "Missing object check for ${image} with module version ${mod_ver}"
+            docker pull -q "${image}" | cat
             "${SOURCE_ROOT}/reload/missing-kernel-objects.sh" \
-              "${collector_ver}" "${COLLECTOR_MODULES_BUCKET}" "${RELOAD_MD_DIRECTORY}"
+              "${DOCKER_REPO}/${collector_repo}" "${collector_ver}" "${COLLECTOR_MODULES_BUCKET}" "${RELOAD_MD_DIRECTORY}"
 
-            missing_objs_file="${RELOAD_MD_DIRECTORY}/${collector_ver}/missing-probes"
+            missing_objs_file="${RELOAD_MD_DIRECTORY}/${collector_repo}:${collector_ver}/missing-probes"
             if [[ ! -s "${missing_objs_file}" ]] ; then
-              echo "Image ${released_latest_image} contains up to date kernel objects"
+              echo "Image ${image} contains up-to-date kernel objects."
               continue
             fi
 
-            echo "Found $(wc -l <"${missing_objs_file}") missing or updated kernel objects."
-          done
+            echo "Found $(wc -l <"${missing_objs_file}" ) missing or updated kernel objects."
+          done < "${RELOAD_TASKS_DIRECTORY}"/local
+          if [[ -z "$(ls -A "$RELOAD_MD_DIRECTORY")" ]]; then
+            echo "No versions for this shard need to be rebuilt."
+            circleci step halt
+            exit 0
+          fi
+          echo "Reloading collector images with updated probes for for the following collector versions: "
+          ls -A "$RELOAD_MD_DIRECTORY"
 
     - store_artifacts:
         path: /tmp/reload/collectors
@@ -1490,9 +1544,13 @@ jobs:
     - run:
         name: Sync module versions
         command: |
-          for collector_dir in "/tmp/reload/collectors"/*; do
+          echo "Reloading collector images with updated probes for for the following module versions: "
+          for collector_dir in "$RELOAD_MD_DIRECTORY"/*; do
+            if [[ ! -s "${collector_dir}/missing_probes" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/reload-released-images-force" ]]; then
+              continue
+            fi
             cat "${collector_dir}/module-version"
-          done | sort | uniq > /tmp/reload/module-versions
+          done | sort | uniq | tee /tmp/reload/module-versions
 
           while IFS='' read -r mod_ver || [[ -n "$mod_ver" ]]; do
             container_build_dir="${WORKSPACE_ROOT}/images/${mod_ver}/container"
@@ -1513,26 +1571,30 @@ jobs:
         name: Reload collector images
         command: |
           for collector_dir in "${RELOAD_MD_DIRECTORY}"/*; do
-            collector_ver="$(basename "${collector_dir}")"
+            if [[ ! -s "${collector_dir}/missing_probes" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/reload-released-images-force" ]]; then
+              continue
+            fi
+            collector_repo="$(cut -d':' -f1 \<<<"${collector_dir}")"
+            collector_ver="$(cut -d':' -f2 \<<<"${collector_dir}")"
             mod_ver="$(< "${collector_dir}/module-version")"
 
 
             container_build_dir="${WORKSPACE_ROOT}/images/${mod_ver}/container"
             layer_count="$("${container_build_dir}/partition-probes.py" -1 "$MAX_LAYER_MB" "${container_build_dir}/kernel-modules" "-")"
 
-            echo "Reloading ${layer_count} image layers for collector ${collector_ver} (${mod_ver})"
+            echo "Reloading ${layer_count} image layers for ${collector_repo} ${collector_ver} ${mod_ver}"
 
-            dockerhub_repo="${DOCKER_REPO}/collector:${collector_ver}"
+            dockerhub_repo="${DOCKER_REPO}/${collector_repo}/${collector_ver}"
             dockerhub_base_image="${dockerhub_repo}-base"
             dockerhub_pr_image="${dockerhub_repo}-reload-latest"
             dockerhub_image="${dockerhub_repo}-latest"
 
-            quay_base_repo="${QUAY_REPO}/collector:${collector_ver}"
+            quay_base_repo="${QUAY_REPO}/${collector_repo}/${collector_ver}"
             quay_base_image="${quay_base_repo}-base"
             quay_pr_image="${quay_base_repo}-reload-latest"
             quay_image="${quay_base_repo}-latest"
 
-            stackrox_io_image="collector.stackrox.io/collector:${collector_ver}-latest"
+            stackrox_io_image="collector.stackrox.io/${collector_repo}/${collector_ver}-latest"
 
             image_list=(
               "${dockerhub_image}"
@@ -1546,7 +1608,7 @@ jobs:
             build_args=(
               --build-arg module_version="${mod_ver}"
               --build-arg collector_version="${collector_ver}"
-              --build-arg collector_repo="${DOCKER_REPO}/collector"
+              --build-arg collector_repo="${DOCKER_REPO}/${collector_repo}"
               --build-arg max_layer_depth="${layer_count}"
               --build-arg max_layer_size="${MAX_LAYER_MB}"
             )
@@ -1844,7 +1906,7 @@ workflows:
           - docker-io-and-stackrox-io-push
           - quay-cgorman1-readwrite
         requires:
-          - images
+          - prepare-kernels
     - update-support-packages:
         <<: *runOnAllTags
         context:
