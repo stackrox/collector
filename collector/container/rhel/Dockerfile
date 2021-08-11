@@ -1,6 +1,31 @@
+
+#ARG BASE_REGISTRY=registry.access.redhat.com
+#ARG BASE_IMAGE=ubi8/ubi
+#ARG BASE_TAG=8.4
+#
+#FROM centos:8 AS valgrind_build
+#
+#RUN yum install -y valgrind which
+#RUN ls -lrt /usr/bin
+#RUN which valgrind
+
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8/ubi
 ARG BASE_TAG=8.4
+
+FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS valgrind_build
+
+RUN yum update -y && \
+    echo $PWD  && \
+    yum install -y --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos --enablerepo=ubi-8-codeready-builder --disableplugin=subscription-manager perl --nobest && \
+    yum install -y wget bzip2 gcc make && \
+    wget https://sourceware.org/pub/valgrind/valgrind-3.17.0.tar.bz2 && \
+    tar xjf valgrind-3.17.0.tar.bz2 && \
+    cd valgrind-3.17.0 && \
+    mkdir bin && \
+    ./configure MAKE="gmake" --disable-dependency-tracking --prefix=/valgrind-3.17.0/bin && \
+    make && \
+    make install
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
 
@@ -33,16 +58,8 @@ COPY --from=extracted_bundle /bundle/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY --from=extracted_bundle /bundle/kernel-modules/ /kernel-modules/
 COPY --from=extracted_bundle /bundle/usr/local/lib/libsinsp-wrapper.so /usr/local/lib/
 COPY --from=extracted_bundle /bundle/usr/local/bin/collector /usr/local/bin/
+COPY --from=valgrind_build /valgrind-3.17.0 /valgrind-3.17.0
 
-RUN yum update -y && \
-    yum install -y --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos --enablerepo=ubi-8-codeready-builder --disableplugin=subscription-manager perl --nobest && \
-    yum install -y wget bzip2 gcc make && \
-    wget https://sourceware.org/pub/valgrind/valgrind-3.17.0.tar.bz2 && \
-    tar xjf valgrind-3.17.0.tar.bz2 && \
-    cd valgrind-3.17.0 && \
-    ./configure MAKE="gmake" --disable-dependency-tracking && \
-    make && \
-    make install  
 
 RUN mv collector-wrapper.sh /usr/local/bin/ && \
     chmod 700 bootstrap.sh && \
@@ -52,6 +69,7 @@ RUN mv collector-wrapper.sh /usr/local/bin/ && \
     rm -rf /var/cache/dnf && \
     # (Optional) Remove line below to keep package management utilities
     rpm -e --nodeps rpm rpm-build-libs rpm-libs python3-rpm subscription-manager python3-subscription-manager-rhsm yum $(rpm -qa *dnf*) python3-hawkey && \
+    ln -s /valgrind-3.17.0/bin/bin/valgrind /usr/local/bin/valgrind && \
     echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt
 
 
