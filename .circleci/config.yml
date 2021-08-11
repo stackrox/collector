@@ -883,7 +883,7 @@ jobs:
     - run:
         name: Run RHEL collector unit tests
         command: |
-          if [ -f pr-metadata/labels/valgrind-unit-tests ]; then 
+          if [ -f pr-metadata/labels/valgrind-unit-tests ]; then
             unittest_output_file=unittest_results.txt
             max_allowed_valgrind_errors=0
             make -C "${SOURCE_ROOT}" unittest-rhel USE_VALGRIND=true >& $unittest_output_file
