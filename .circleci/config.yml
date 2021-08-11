@@ -1585,12 +1585,12 @@ jobs:
 
             echo "Reloading ${layer_count} image layers for ${collector_repo} ${collector_ver} ${mod_ver}"
 
-            dockerhub_repo="${DOCKER_REPO}/${collector_repo}/${collector_ver}"
+            dockerhub_repo="${DOCKER_REPO}/${collector_repo}:${collector_ver}"
             dockerhub_base_image="${dockerhub_repo}-base"
             dockerhub_pr_image="${dockerhub_repo}-reload-latest"
             dockerhub_image="${dockerhub_repo}-latest"
 
-            quay_base_repo="${QUAY_REPO}/${collector_repo}/${collector_ver}"
+            quay_base_repo="${QUAY_REPO}/${collector_repo}:${collector_ver}"
             quay_base_image="${quay_base_repo}-base"
             quay_pr_image="${quay_base_repo}-reload-latest"
             quay_image="${quay_base_repo}-latest"
