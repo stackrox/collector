@@ -1574,9 +1574,10 @@ jobs:
             if [[ ! -s "${collector_dir}/missing_probes" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/reload-released-images-force" ]]; then
               continue
             fi
-            collector_repo="$(cut -d':' -f1 \<<<"${collector_dir}")"
-            collector_ver="$(cut -d':' -f2 \<<<"${collector_dir}")"
             mod_ver="$(< "${collector_dir}/module-version")"
+            collector_repo_and_ver="$(basename "${collector_dir}")"
+            collector_repo="$(cut -d':' -f1 \<<<"${collector_repo_and_ver}")"
+            collector_ver="$(cut -d':' -f2 \<<<"${collector_repo_and_ver}")"
 
 
             container_build_dir="${WORKSPACE_ROOT}/images/${mod_ver}/container"
