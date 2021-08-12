@@ -5,7 +5,6 @@ ARG BASE_TAG=8.4
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS valgrind_build
 
 RUN yum update -y && \
-    echo $PWD  && \
     yum install -y --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos --enablerepo=ubi-8-codeready-builder --disableplugin=subscription-manager perl --nobest && \
     yum install -y wget bzip2 gcc make && \
     wget https://sourceware.org/pub/valgrind/valgrind-3.17.0.tar.bz2 && \
