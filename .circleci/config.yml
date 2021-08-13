@@ -828,6 +828,7 @@ jobs:
           if [[ ! -f pr-metadata/labels/valgrind-unit-tests ]]; then
             echo "Skipping Valgrind unit tests."
             circleci step halt
+            circleci-agent step halt
             exit 0
           fi
 
@@ -837,7 +838,7 @@ jobs:
     - run:
         name: Restore collector-builder image
         command: |
-          docker pull "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}"
+          docker pull "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}"
 
     - run:
         name: Build collector
