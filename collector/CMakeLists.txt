@@ -69,7 +69,7 @@ enable_testing()
 file(GLOB TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/test/*.cpp)
 add_executable(runUnitTests ${TEST_SRC_FILES})
 
-if(NOT DEFINED ENV{DISABLE_PROFILING})
+if(NOT DEFINED ENV{DISABLE_PROFILING} AND "$ENV{USE_VALGRIND}" STREQUAL "true")
 	target_link_libraries(runUnitTests profiler tcmalloc)
 endif()
 target_link_libraries(runUnitTests collector_lib)
