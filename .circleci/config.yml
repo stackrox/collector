@@ -781,6 +781,17 @@ jobs:
     steps:
     - initcommand
     - read-pr-metadata
+
+    - run:
+        name: Check whether to run job
+        command: |
+          if [[ ! -f pr-metadata/labels/valgrind-unit-tests ]]; then
+            echo "Skipping Valgrind unit tests."
+            circleci step halt
+            exit 0
+          fi
+
+
     - docker-login-push
 
     - run:
@@ -796,22 +807,20 @@ jobs:
           else
             CMAKE_BUILD_TYPE=Release
           fi
-          make -C "${SOURCE_ROOT}" collector CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+          make -C "${SOURCE_ROOT}" collector CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE USE_VALGRIND=true
 
     - run:
         name: Run collector unit tests
         command: |
-          if [ -f pr-metadata/labels/valgrind-unit-tests ]; then
-            unittest_output_file=unittest_results.txt
-            max_allowed_valgrind_errors=0
-            make -C "${SOURCE_ROOT}" unittest USE_VALGRIND=true >& $unittest_output_file
-            cat $unittest_output_file
-            valgrind_errors=`grep ERROR\ SUMMARY $unittest_output_file | awk '{print $7}'`
-            if [ $valgrind_errors -gt $max_allowed_valgrind_errors ]
-            then
-              echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
-              exit 1
-            fi
+          unittest_output_file=unittest_results.txt
+          max_allowed_valgrind_errors=0
+          make -C "${SOURCE_ROOT}" unittest USE_VALGRIND=true >& $unittest_output_file
+          cat $unittest_output_file
+          valgrind_errors=`grep ERROR\ SUMMARY $unittest_output_file | awk '{print $7}'`
+          if [ $valgrind_errors -gt $max_allowed_valgrind_errors ]
+          then
+            echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
+            exit 1
           fi
 
     - persist_to_workspace:
@@ -855,7 +864,7 @@ jobs:
         - go/src/github.com/stackrox/collector/collector/container/bin
         - go/src/github.com/stackrox/collector/collector/container/libs
         - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES.rhel
-
+         
   collector-rhel-valgrind:
     <<: *defaultMachine
     resource_class: large
@@ -863,37 +872,46 @@ jobs:
     steps:
     - initcommand
     - read-pr-metadata
+
+    - run:
+        name: Check whether to run job
+        command: |
+          if [[ ! -f pr-metadata/labels/valgrind-unit-tests ]]; then
+            echo "Skipping Valgrind unit tests."
+            circleci step halt
+            exit 0
+          fi
+
+
     - docker-login-push
 
     - run:
-        name: Restore collector-builder rhel image
+        name: Restore collector-builder image
         command: |
-          docker pull "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}"
+          docker pull "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}"
 
     - run:
-        name: Build rhel collector
+        name: Build collector
         command: |
           if [ -f pr-metadata/labels/debug ]; then
             CMAKE_BUILD_TYPE=Debug
           else
             CMAKE_BUILD_TYPE=Release
           fi
-          make -C "${SOURCE_ROOT}" collector-rhel CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+          make -C "${SOURCE_ROOT}" collector-rhel CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE USE_VALGRIND=true
 
     - run:
-        name: Run RHEL collector unit tests
+        name: Run collector unit tests
         command: |
-          if [ -f pr-metadata/labels/valgrind-unit-tests ]; then
-            unittest_output_file=unittest_results.txt
-            max_allowed_valgrind_errors=0
-            make -C "${SOURCE_ROOT}" unittest-rhel USE_VALGRIND=true >& $unittest_output_file
-            cat $unittest_output_file
-            valgrind_errors=`grep ERROR\ SUMMARY $unittest_output_file | awk '{print $7}'`
-            if [ $valgrind_errors -gt $max_allowed_valgrind_errors ]
-            then
-              echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
-              exit 1
-            fi
+          unittest_output_file=unittest_results.txt
+          max_allowed_valgrind_errors=0
+          make -C "${SOURCE_ROOT}" unittest-rhel USE_VALGRIND=true >& $unittest_output_file
+          cat $unittest_output_file
+          valgrind_errors=`grep ERROR\ SUMMARY $unittest_output_file | awk '{print $7}'`
+          if [ $valgrind_errors -gt $max_allowed_valgrind_errors ]
+          then
+            echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
+            exit 1
           fi
 
     - persist_to_workspace:
@@ -901,7 +919,7 @@ jobs:
         paths:
         - go/src/github.com/stackrox/collector/collector/container/bin
         - go/src/github.com/stackrox/collector/collector/container/libs
-        - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES.rhel
+        - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES
 
   images:
     <<: *defaultMachine
