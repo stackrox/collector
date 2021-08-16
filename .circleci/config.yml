@@ -109,14 +109,6 @@ commands:
 
     - *setupGCP
 
-  docker-login:
-    steps:
-    - run:
-        name: Login to Docker Hub with pull credentials
-        command: |
-            echo "skip dockerhub" && exit 0
-            docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
-
   docker-login-push:
     steps:
     - run:
