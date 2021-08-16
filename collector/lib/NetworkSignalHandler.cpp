@@ -123,4 +123,4 @@ bool NetworkSignalHandler::Stop() {
   return true;
 }
 
-}// namespace collector
+}  // namespace collector
