@@ -79,6 +79,7 @@ void SignalServiceClient::Stop() {
   stream_interrupted_.notify_one();
   thread_.Stop();
   context_->TryCancel();
+  context_.reset();
 }
 
 SignalHandler::Result SignalServiceClient::PushSignals(const SignalStreamMessage& msg) {

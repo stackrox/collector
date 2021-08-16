@@ -53,6 +53,8 @@ class RateLimitCache {
  public:
   RateLimitCache();
   RateLimitCache(size_t capacity, int64_t burst_size, int64_t refill_time);
+  ~RateLimitCache();
+  void ResetRateLimitCache();
   bool Allow(std::string key);
 
  private:

@@ -117,4 +117,10 @@ std::vector<string> NetworkSignalHandler::GetRelevantEvents() {
   return {"close<", "shutdown<", "connect<", "accept<"};
 }
 
-}  // namespace collector
+bool NetworkSignalHandler::Stop() {
+  std::cout << "In NetworkSignalHandler::Stop() " << std::endl;
+  event_extractor_.ClearWrappers();
+  return true;
+}
+
+}// namespace collector

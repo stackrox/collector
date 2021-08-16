@@ -225,6 +225,13 @@ void SysdigService::CleanUp() {
   inspector_->close();
   chisel_.reset();
   inspector_.reset();
+
+  for (auto& signal_handler : signal_handlers_) {
+    if (!signal_handler.handler->Stop()) {
+      CLOG(FATAL) << "Error stopping signal handler " << signal_handler.handler->GetName();
+    }
+  }
+
   signal_handlers_.clear();
 }
 
