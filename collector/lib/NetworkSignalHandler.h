@@ -41,6 +41,7 @@ class NetworkSignalHandler final : public SignalHandler {
   std::string GetName() override { return "NetworkSignalHandler"; }
   Result HandleSignal(sinsp_evt* evt) override;
   std::vector<std::string> GetRelevantEvents() override;
+  bool Stop() override;
 
  private:
   std::pair<Connection, bool> GetConnection(sinsp_evt* evt);

@@ -44,6 +44,7 @@ class ProcessSignalHandler : public SignalHandler {
       : client_(std::move(channel)), formatter_(inspector), stats_(stats) {}
 
   bool Start() override;
+  bool Stop() override;
   Result HandleSignal(sinsp_evt* evt) override;
   Result HandleExistingProcess(sinsp_threadinfo* tinfo) override;
   std::string GetName() override { return "ProcessSignalHandler"; }

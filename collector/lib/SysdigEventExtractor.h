@@ -37,6 +37,7 @@ namespace collector {
 class SysdigEventExtractor {
  public:
   void Init(sinsp* inspector);
+  void ClearWrappers();
 
  private:
   struct FilterCheckWrapper {

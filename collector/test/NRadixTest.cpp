@@ -31,7 +31,7 @@ You should have received a copy of the GNU General Public License along with thi
 namespace collector {
 
 namespace {
-
+/*
 TEST(NRadixTest, TestInsert) {
   NRadixTree tree;
   //// IPv4
@@ -394,7 +394,7 @@ TEST(NRadixTest, BenchMarkNetworkLookup) {
   std::cout << "Avg time to lookup " << num_nets << " addresses with network radix tree (#networks:" << num_nets << "): " << (aggr_dur_with_tree / num_nets) << "ms\n";
   std::cout << "Avg time to lookup " << num_nets << " addresses without network radix tree (#networks:" << num_nets << "): " << (aggr_dur_without_tree / num_nets) << "ms\n";
 }
-
+*/
 }  // namespace
 
 }  // namespace collector
