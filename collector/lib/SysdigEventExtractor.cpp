@@ -33,13 +33,13 @@ void SysdigEventExtractor::Init(sinsp* inspector) {
 }
 
 void SysdigEventExtractor::ClearWrappers() {
-  for (FilterCheckWrapper *wrapper: wrappers_) {
+  for (FilterCheckWrapper* wrapper : wrappers_) {
     if (wrapper) {
       wrapper->filter_check.reset();
     }
   }
 
-  for (std::vector<FilterCheckWrapper *>::iterator i = wrappers_.end() - 1; i != wrappers_.begin() - 1; i--) {
+  for (std::vector<FilterCheckWrapper*>::iterator i = wrappers_.end() - 1; i != wrappers_.begin() - 1; i--) {
     wrappers_.erase(i);
   }
 }

@@ -70,7 +70,7 @@ void Limiter::fill_bucket(TokenBucket* b) {
 }
 
 // RateLimitCache Defaults: Limit duplicate events to rate of 10 every 30 min
-RateLimitCache::RateLimitCache(): capacity_(4096) {
+RateLimitCache::RateLimitCache() : capacity_(4096) {
   limiter_.reset(new Limiter(10, 30 * 60));
 }
 
