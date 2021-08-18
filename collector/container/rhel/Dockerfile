@@ -46,7 +46,7 @@ COPY --from=extracted_bundle /bundle/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY --from=extracted_bundle /bundle/kernel-modules/ /kernel-modules/
 COPY --from=extracted_bundle /bundle/usr/local/lib/libsinsp-wrapper.so /usr/local/lib/
 COPY --from=extracted_bundle /bundle/usr/local/bin/collector /usr/local/bin/
-COPY --from=valgrind_build /valgrind-3.17.0 /valgrind-3.17.0
+COPY --from=valgrind_build /valgrind-3.17.0/bin /valgrind-3.17.0
 
 
 RUN mv collector-wrapper.sh /usr/local/bin/ && \
@@ -57,7 +57,7 @@ RUN mv collector-wrapper.sh /usr/local/bin/ && \
     rm -rf /var/cache/dnf && \
     # (Optional) Remove line below to keep package management utilities
     rpm -e --nodeps rpm rpm-build-libs rpm-libs python3-rpm subscription-manager python3-subscription-manager-rhsm yum $(rpm -qa *dnf*) python3-hawkey && \
-    ln -s /valgrind-3.17.0/bin/bin/valgrind /usr/local/bin/valgrind && \
+    ln -s /valgrind-3.17.0/bin/valgrind /usr/local/bin/valgrind && \
     echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt
 
 

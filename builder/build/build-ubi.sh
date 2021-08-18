@@ -39,7 +39,7 @@ cp -a collector/generated src/generated
 echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 mkdir -p cmake-collector
 cd cmake-collector
-cmake -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE ../src
+cmake -DCMAKE_BUILD_TYPE="$CMAKE_BUILD_TYPE" ../src
 make -j "${NPROCS:-2}" all
 ./runUnitTests
 strip --strip-unneeded \
@@ -52,7 +52,7 @@ cd ..
 mkdir -p cmake-sysdig
 cd cmake-sysdig
 cmake \
-        -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+        -DCMAKE_BUILD_TYPE="$CMAKE_BUILD_TYPE" \
         -DCMAKE_C_FLAGS="-fno-pie" \
         -DPROBE_NAME=collector \
         -DBUILD_USERSPACE=OFF \

@@ -244,12 +244,7 @@ jobs:
     - run:
         name: Build collector-builder image
         command: |
-          if [ -f pr-metadata/labels/debug ]; then
-            CMAKE_BUILD_TYPE=Debug
-          else
-            CMAKE_BUILD_TYPE=Release
-          fi
-          make -C "${SOURCE_ROOT}" builder CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+          make -C "${SOURCE_ROOT}" builder
 
     - run:
         name: Save collector-builder image
@@ -276,12 +271,7 @@ jobs:
     - run:
         name: Build collector-builder rhel image
         command: |
-          if [ -f pr-metadata/labels/debug ]; then
-            CMAKE_BUILD_TYPE=Debug
-          else
-            CMAKE_BUILD_TYPE=Release
-          fi
-          make -C "${SOURCE_ROOT}" builder-rhel CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+          make -C "${SOURCE_ROOT}" builder-rhel
 
     - run:
         name: Save collector-builder rhel image
@@ -762,50 +752,24 @@ jobs:
             CMAKE_BUILD_TYPE=Release
           fi
           make -C "${SOURCE_ROOT}" collector CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
-
+          
     - run:
         name: Run collector unit tests
-        command: make -C "${SOURCE_ROOT}"
-
-    - persist_to_workspace:
-        root: ~/workspace
-        paths:
-        - go/src/github.com/stackrox/collector/collector/container/bin
-        - go/src/github.com/stackrox/collector/collector/container/libs
-        - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES
-
-  collector-valgrind:
-    <<: *defaultMachine
-    resource_class: large
-
-    steps:
-    - initcommand
-    - read-pr-metadata
-    - docker-login-push
-
-    - run:
-        name: Restore collector-builder image
         command: |
-          docker pull "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}"
-
-    - run:
-        name: Build collector
-        command: |
-          if [ -f pr-metadata/labels/debug ]; then
-            CMAKE_BUILD_TYPE=Debug
+          if [ -f pr-metadata/labels/valgrind-integration-tests ]; then
+            use_valgrind=true
           else
-            CMAKE_BUILD_TYPE=Release
+            use_valgrind=false
           fi
-          make -C "${SOURCE_ROOT}" collector CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+          unittest_output_file=unittest_results.txt
+          make -C "${SOURCE_ROOT}" unittest USE_VALGRIND=$use_valgrind >& $unittest_output_file
+          cat $unittest_output_file
 
     - run:
-        name: Run collector unit tests
+        name: Check Valgrind errors
         command: |
           if [ -f pr-metadata/labels/valgrind-unit-tests ]; then
-            unittest_output_file=unittest_results.txt
             max_allowed_valgrind_errors=0
-            make -C "${SOURCE_ROOT}" unittest USE_VALGRIND=true >& $unittest_output_file
-            cat $unittest_output_file
             valgrind_errors=`grep ERROR\ SUMMARY $unittest_output_file | awk '{print $7}'`
             if [ $valgrind_errors -gt $max_allowed_valgrind_errors ]
             then
@@ -819,44 +783,8 @@ jobs:
         paths:
         - go/src/github.com/stackrox/collector/collector/container/bin
         - go/src/github.com/stackrox/collector/collector/container/libs
-        - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES
-
+ 
   collector-rhel:
-    <<: *defaultMachine
-    resource_class: large
-
-    steps:
-    - initcommand
-    - docker-login-push
-
-    - run:
-        name: Restore collector-builder rhel image
-        command: |
-          docker pull "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}"
-
-    - run:
-        name: Build rhel collector
-        command: |
-          if [ -f pr-metadata/labels/debug ]; then
-            CMAKE_BUILD_TYPE=Debug
-          else
-            CMAKE_BUILD_TYPE=Release
-          fi
-          make -C "${SOURCE_ROOT}" collector-rhel CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
-
-    - run:
-        name: Run RHEL collector unit tests
-        command: |
-          make -C "${SOURCE_ROOT}" unittest-rhel
-
-    - persist_to_workspace:
-        root: ~/workspace
-        paths:
-        - go/src/github.com/stackrox/collector/collector/container/bin
-        - go/src/github.com/stackrox/collector/collector/container/libs
-        - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES.rhel
-
-  collector-rhel-valgrind:
     <<: *defaultMachine
     resource_class: large
 
@@ -868,7 +796,7 @@ jobs:
     - run:
         name: Restore collector-builder rhel image
         command: |
-          docker pull "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}"
+          docker pull "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}"
 
     - run:
         name: Build rhel collector
@@ -879,15 +807,24 @@ jobs:
             CMAKE_BUILD_TYPE=Release
           fi
           make -C "${SOURCE_ROOT}" collector-rhel CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
-
+          
     - run:
         name: Run RHEL collector unit tests
         command: |
+          if [ -f pr-metadata/labels/valgrind-integration-tests ]; then
+            use_valgrind=true
+          else
+            use_valgrind=false
+          fi
+          unittest_output_file=unittest_results.txt
+          make -C "${SOURCE_ROOT}" unittest-rhel USE_VALGRIND=$use_valgrind >& $unittest_output_file
+          cat $unittest_output_file
+
+    - run:
+        name: Check Valgrind errors
+        command: |
           if [ -f pr-metadata/labels/valgrind-unit-tests ]; then
-            unittest_output_file=unittest_results.txt
             max_allowed_valgrind_errors=0
-            make -C "${SOURCE_ROOT}" unittest-rhel USE_VALGRIND=true >& $unittest_output_file
-            cat $unittest_output_file
             valgrind_errors=`grep ERROR\ SUMMARY $unittest_output_file | awk '{print $7}'`
             if [ $valgrind_errors -gt $max_allowed_valgrind_errors ]
             then
@@ -1797,19 +1734,11 @@ workflows:
         <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - builder
-    - collector-valgrind:
-        <<: *runOnAllTagsWithDockerIOPushCtx
-        requires:
-        - builder
     - builder-rhel:
         <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - lint
     - collector-rhel:
-        <<: *runOnAllTagsWithDockerIOPushCtx
-        requires:
-        - builder-rhel
-    - collector-rhel-valgrind:
         <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - builder-rhel

@@ -6,11 +6,7 @@ MOD_VER_FILE=$(CURDIR)/kernel-modules/kobuild-tmp/MODULE_VERSION.txt
 LOCAL_SSH_PORT ?= 2222
 DEV_SSH_SERVER_KEY ?= $(CURDIR)/.collector_dev_ssh_host_ed25519_key
 USE_VALGRIND ?= false
-CMAKE_BUILD_TYPE = ?= Release
-
-ifeq '$(USE_VALGRIND)' 'true'
-	COLLECTOR_PRE_ARGUMENTS = valgrind --leak-check=full
-endif
+CMAKE_BUILD_TYPE ?= Release
 
 dev-build: image integration-tests-process-network
 
@@ -98,43 +94,43 @@ image-rhel: collector-rhel unittest-rhel $(MOD_VER_FILE) $(CURDIR)/collector/con
 
 .PHONY: integration-tests
 integration-tests:
-	make -C integration-tests tests COLLECTOR_PRE_ARGUMENTS="$(COLLECTOR_PRE_ARGUMENTS)"
+	make -C integration-tests tests
 
 .PHONY: integration-tests-baseline
 integration-tests-baseline:
-	make -C integration-tests baseline COLLECTOR_PRE_ARGUMENTS="$(COLLECTOR_PRE_ARGUMENTS)"
+	make -C integration-tests baseline
 
 .PHONY: integration-tests-process-network
 integration-tests-process-network:
-	make -C integration-tests process-network COLLECTOR_PRE_ARGUMENTS="$(COLLECTOR_PRE_ARGUMENTS)"
+	make -C integration-tests process-network
 
 .PHONY: integration-tests-missing-proc-scrape
 integration-tests-missing-proc-scrape:
-	make -C integration-tests missing-proc-scrape  COLLECTOR_PRE_ARGUMENTS="$(COLLECTOR_PRE_ARGUMENTS)"
+	make -C integration-tests missing-proc-scrape
 
 .PHONY: integration-tests-image-label-json
 integration-tests-image-label-json:
-	make -C integration-tests image-label-json COLLECTOR_PRE_ARGUMENTS="$(COLLECTOR_PRE_ARGUMENTS)"
+	make -C integration-tests image-label-json
 
 .PHONY: integration-tests-process-network-rhel
 integration-tests-process-network-rhel:
 	COLLECTOR_REPO="stackrox/collector-rhel" \
-	make -C integration-tests process-network COLLECTOR_PRE_ARGUMENTS="$(COLLECTOR_PRE_ARGUMENTS)"
+	make -C integration-tests process-network
 
 .PHONY: integration-tests-rhel
 integration-tests-rhel:
 	COLLECTOR_REPO="stackrox/collector-rhel" \
-	make -C integration-tests tests COLLECTOR_PRE_ARGUMENTS="$(COLLECTOR_PRE_ARGUMENTS)"
+	make -C integration-tests tests
 
 .PHONY: integration-tests-baseline-rhel
 integration-tests-baseline-rhel:
 	COLLECTOR_REPO="stackrox/collector-rhel" \
-	make -C integration-tests baseline COLLECTOR_PRE_ARGUMENTS="$(COLLECTOR_PRE_ARGUMENTS)"
+	make -C integration-tests baseline
 
 .PHONY: integration-tests-missing-proc-scrape-rhel
 integration-tests-missing-proc-scrape-rhel:
 	COLLECTOR_REPO="stackrox/collector-rhel" \
-	make -C integration-tests missing-proc-scrape COLLECTOR_PRE_ARGUMENTS="$(COLLECTOR_PRE_ARGUMENTS)"
+	make -C integration-tests missing-proc-scrape
 
 .PHONY: integration-tests-report
 integration-tests-report:

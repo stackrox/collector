@@ -10,3 +10,8 @@ else
 COLLECTOR_TAG := $(CIRCLE_TAG)
 endif
 endif
+
+ifeq ($(USE_VALGRIND),true)
+	COLLECTOR_PRE_ARGUMENTS := valgrind --leak-check=full
+endif
+
