@@ -761,8 +761,8 @@ jobs:
           else
             use_valgrind=false
           fi
-          unittest_output_file=unittest_results.txt
-          make -C "${SOURCE_ROOT}" unittest USE_VALGRIND=$use_valgrind >& $unittest_output_file
+          export UNITTEST_OUTPUT_FILE=unittest_results.txt
+          make -C "${SOURCE_ROOT}" unittest USE_VALGRIND=$use_valgrind >& $UNITTEST_OUTPUT_FILE
           cat $unittest_output_file
 
     - run:
@@ -817,7 +817,7 @@ jobs:
           else
             use_valgrind=false
           fi
-          unittest_output_file=unittest_results.txt
+          export UNITTEST_OUTPUT_FILE=unittest_results.txt
           make -C "${SOURCE_ROOT}" unittest-rhel USE_VALGRIND=$use_valgrind >& $unittest_output_file
           cat $unittest_output_file
 
@@ -826,7 +826,7 @@ jobs:
         command: |
           if [ -f pr-metadata/labels/valgrind-unit-tests ]; then
             max_allowed_valgrind_errors=0
-            valgrind_errors=`grep ERROR\ SUMMARY $unittest_output_file | awk '{print $7}'`
+            valgrind_errors=`grep ERROR\ SUMMARY $UNITTEST_OUTPUT_FILE | awk '{print $7}'`
             if [ $valgrind_errors -gt $max_allowed_valgrind_errors ]
             then
               echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
