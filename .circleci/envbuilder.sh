@@ -84,7 +84,6 @@ installDockerOnRHELViaGCPSSH() {
   local GCP_SSH_KEY_FILE="$1"
   shift
 
-  ssh-keygen -f "/home/circleci/.ssh/google_compute_known_hosts" -R "compute.$(gcloud compute instances describe $GCP_VM_NAME --format='get(id)')"
   gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum install -y yum-utils device-mapper-persistent-data lvm2"
   gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo"
   gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum-config-manager --setopt=\"docker-ce-stable.baseurl=https://download.docker.com/linux/centos/${GCP_IMAGE_FAMILY: -1}/x86_64/stable\" --save"
@@ -99,7 +98,6 @@ setupDockerOnSUSEViaGCPSSH() {
   local GCP_SSH_KEY_FILE="$1"
   shift
 
-  ssh-keygen -f "/home/circleci/.ssh/google_compute_known_hosts" -R "compute.$(gcloud compute instances describe $GCP_VM_NAME --format='get(id)')"
   gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo systemctl start docker"
 }
 
@@ -117,6 +115,11 @@ gcpSSHReady() {
     gcloud compute ssh --strict-host-key-checking=no --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCP_VM_NAME}" --command "whoami" \
       && exitCode=0 && break || exitCode=$? && sleep 15
   done
+
+  instance_id="$(gcloud compute instances describe $GCP_VM_NAME --format='get(id)')"
+  ssh-keygen -f "/home/circleci/.ssh/google_compute_known_hosts" -R "compute.${instance_id}"
+  echo "Cleared existing ssh keys for compute.${instance_id}"
+
   return $exitCode
 }
 
