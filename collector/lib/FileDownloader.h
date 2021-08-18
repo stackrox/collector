@@ -24,6 +24,7 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef COLLECTOR_FILEDOWNLOADER_H
 #define COLLECTOR_FILEDOWNLOADER_H
 
+#include <array>
 #include <chrono>
 #include <fstream>
 
@@ -42,17 +43,17 @@ class FileDownloader {
   FileDownloader();
   ~FileDownloader();
 
-  void SetURL(const char* const url);
-  void SetURL(const std::string& url);
+  bool SetURL(const char* const url);
+  bool SetURL(const std::string& url);
   void IPResolve(resolve_t version);
   void SetRetries(unsigned int times, unsigned int delay, unsigned int max_time);
-  void SetConnectionTimeout(int timeout);
-  void FollowRedirects(bool follow);
+  bool SetConnectionTimeout(int timeout);
+  bool FollowRedirects(bool follow);
   void OutputFile(const char* const path);
   void OutputFile(const std::string& path);
-  void CACert(const char* const path);
-  void Cert(const char* const path);
-  void Key(const char* const path);
+  bool CACert(const char* const path);
+  bool Cert(const char* const path);
+  bool Key(const char* const path);
   bool ConnectTo(const char* const entry);
 
   bool IsReady();
@@ -62,9 +63,12 @@ class FileDownloader {
   CURL* curl;
   curl_slist* connect_to;
   std::ofstream file;
-  unsigned int retry_times;
-  unsigned int retry_delay;
-  std::chrono::seconds retry_max_time;
+  std::array<char, CURL_ERROR_SIZE> error;
+  struct {
+    unsigned int times;
+    unsigned int delay;
+    std::chrono::seconds max_time;
+  } retry;
 };
 
 }  // namespace collector

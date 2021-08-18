@@ -34,12 +34,16 @@ static size_t WriteFile(void* content, size_t size, size_t nmemb, void* stream) 
   return size * nmemb;
 }
 
-FileDownloader::FileDownloader() : connect_to(nullptr), retry_times(0), retry_delay(0), retry_max_time(std::chrono::seconds(0)) {
+FileDownloader::FileDownloader() : connect_to(nullptr) {
   curl = curl_easy_init();
 
   if (curl) {
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteFile);
+    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, error.data());
   }
+
+  error.fill('\0');
+  retry = {.times = 0, .delay = 0, .max_time = std::chrono::seconds(0)};
 }
 
 FileDownloader::~FileDownloader() {
@@ -56,12 +60,19 @@ FileDownloader::~FileDownloader() {
   curl_slist_free_all(connect_to);
 }
 
-void FileDownloader::SetURL(const char* const url) {
-  curl_easy_setopt(curl, CURLOPT_URL, url);
+bool FileDownloader::SetURL(const char* const url) {
+  auto result = curl_easy_setopt(curl, CURLOPT_URL, url);
+
+  if (result != CURLE_OK) {
+    CLOG(WARNING) << "Unable to set URL '" << url << "' - " << curl_easy_strerror(result);
+    return false;
+  }
+
+  return true;
 }
 
-void FileDownloader::SetURL(const std::string& url) {
-  SetURL(url.c_str());
+bool FileDownloader::SetURL(const std::string& url) {
+  return SetURL(url.c_str());
 }
 
 void FileDownloader::IPResolve(FileDownloader::resolve_t version) {
@@ -69,21 +80,30 @@ void FileDownloader::IPResolve(FileDownloader::resolve_t version) {
 }
 
 void FileDownloader::SetRetries(unsigned int times, unsigned int delay, unsigned int max_time) {
-  retry_times = times;
-  retry_delay = delay;
-  retry_max_time = std::chrono::seconds(max_time);
+  retry.times = times;
+  retry.delay = delay;
+  retry.max_time = std::chrono::seconds(max_time);
 }
 
-void FileDownloader::SetConnectionTimeout(int timeout) {
-  curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, timeout);
-}
+bool FileDownloader::SetConnectionTimeout(int timeout) {
+  auto result = curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, timeout);
 
-void FileDownloader::FollowRedirects(bool follow) {
-  if (follow) {
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-  } else {
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 0L);
+  if (result != CURLE_OK) {
+    CLOG(WARNING) << "Unable to set connection timeout - " << curl_easy_strerror(result);
+    return false;
   }
+
+  return true;
+}
+
+bool FileDownloader::FollowRedirects(bool follow) {
+  auto result = curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, follow ? 1L : 0L);
+
+  if (result != CURLE_OK) {
+    CLOG(WARNING) << "Unable to set value for redirections - " << curl_easy_strerror(result);
+    return false;
+  }
+  return true;
 }
 
 void FileDownloader::OutputFile(const std::string& path) {
@@ -98,22 +118,41 @@ void FileDownloader::OutputFile(const char* const path) {
   OutputFile(std::string(path));
 }
 
-void FileDownloader::CACert(const char* const path) {
-  curl_easy_setopt(curl, CURLOPT_CAINFO, path);
+bool FileDownloader::CACert(const char* const path) {
+  auto result = curl_easy_setopt(curl, CURLOPT_CAINFO, path);
+
+  if (result != CURLE_OK) {
+    CLOG(WARNING) << "Unable to set path to CA certificate bundle - " << curl_easy_strerror(result);
+    return false;
+  }
+  return true;
 }
 
-void FileDownloader::Cert(const char* const path) {
-  curl_easy_setopt(curl, CURLOPT_SSLCERT, path);
+bool FileDownloader::Cert(const char* const path) {
+  auto result = curl_easy_setopt(curl, CURLOPT_SSLCERT, path);
+
+  if (result != CURLE_OK) {
+    CLOG(WARNING) << "Unable to set SSL client certificate - " << curl_easy_strerror(result);
+    return false;
+  }
+  return true;
 }
 
-void FileDownloader::Key(const char* const path) {
-  curl_easy_setopt(curl, CURLOPT_SSLKEY, path);
+bool FileDownloader::Key(const char* const path) {
+  auto result = curl_easy_setopt(curl, CURLOPT_SSLKEY, path);
+
+  if (result != CURLE_OK) {
+    CLOG(WARNING) << "Unable to set key file - " << curl_easy_strerror(result);
+    return false;
+  }
+  return true;
 }
 
 bool FileDownloader::ConnectTo(const char* const entry) {
   curl_slist* temp = curl_slist_append(connect_to, entry);
 
   if (temp == nullptr) {
+    CLOG(WARNING) << "Unable to set option to connect to '" << entry;
     return false;
   }
 
@@ -128,6 +167,7 @@ bool FileDownloader::IsReady() {
 
 bool FileDownloader::Download() {
   if (curl == nullptr) {
+    CLOG(WARNING) << "Attempted to download a file using an uninitialized object";
     return false;
   }
 
@@ -139,24 +179,30 @@ bool FileDownloader::Download() {
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, reinterpret_cast<void*>(&file));
 
   if (connect_to) {
-    curl_easy_setopt(curl, CURLOPT_CONNECT_TO, connect_to);
+    auto result = curl_easy_setopt(curl, CURLOPT_CONNECT_TO, connect_to);
+
+    if (result != CURLE_OK) {
+      CLOG(INFO) << "Unable to set connection host, the download is likely to fail - " << curl_easy_strerror(result);
+    }
   }
 
   auto start_time = std::chrono::steady_clock::now();
 
-  for (int retries = retry_times; retries; retries--) {
-    auto res = curl_easy_perform(curl);
+  for (auto retries = retry.times; retries; retries--) {
+    error.fill('\0');
+    auto result = curl_easy_perform(curl);
 
-    if (res == CURLE_OK) {
+    if (result == CURLE_OK) {
       return true;
     }
 
-    CLOG(DEBUG) << "Fail to download file - " << curl_easy_strerror(res);
+    std::string error_message = error.data();
+    CLOG(INFO) << "Fail to download file - " << (!error_message.empty() ? error_message : curl_easy_strerror(result));
 
-    sleep(retry_delay);
+    sleep(retry.delay);
 
     auto time_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - start_time);
-    if (time_elapsed > retry_max_time) {
+    if (time_elapsed > retry.max_time) {
       CLOG(WARNING) << "Timeout while retrying to download file";
       return false;
     }
