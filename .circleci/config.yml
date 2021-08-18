@@ -732,6 +732,8 @@ jobs:
   collector:
     <<: *defaultMachine
     resource_class: large
+    environment:
+      UNITTEST_OUTPUT_FILE: unittest_results.txt
 
     steps:
     - initcommand
@@ -761,7 +763,6 @@ jobs:
           else
             use_valgrind=false
           fi
-          export UNITTEST_OUTPUT_FILE=unittest_results.txt
           make -C "${SOURCE_ROOT}" unittest USE_VALGRIND=$use_valgrind >& $UNITTEST_OUTPUT_FILE
           cat $UNITTEST_OUTPUT_FILE
 
@@ -788,6 +789,8 @@ jobs:
   collector-rhel:
     <<: *defaultMachine
     resource_class: large
+    environment:
+      UNITTEST_OUTPUT_FILE: unittest_results.txt
 
     steps:
     - initcommand
@@ -817,7 +820,6 @@ jobs:
           else
             use_valgrind=false
           fi
-          export UNITTEST_OUTPUT_FILE=unittest_results.txt
           make -C "${SOURCE_ROOT}" unittest-rhel USE_VALGRIND=$use_valgrind >& $UNITTEST_OUTPUT_FILE
           cat $UNITTEST_OUTPUT_FILE
 
