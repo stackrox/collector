@@ -53,6 +53,7 @@ extern "C" {
 #include "CollectorService.h"
 #include "CollectorStatsExporter.h"
 #include "EventNames.h"
+#include "FileDownloader.h"
 #include "GRPC.h"
 #include "GetStatus.h"
 #include "LogLevel.h"
@@ -91,6 +92,78 @@ static void AbortHandler(int signum) {
   // Re-raise the signal (this time routing it to the default handler) to make sure we get the correct exit code.
   signal(signum, SIG_DFL);
   raise(signum);
+}
+
+std::string getModuleVersion() {
+  std::ifstream file("/kernel-modules/MODULE_VERSION.txt");
+  if (!file.is_open()) {
+    CLOG(WARNING) << "Failed to open '/kernel-modules/MODULE_VERSION.txt'";
+    return "";
+  }
+
+  std::string module_version;
+  getline(file, module_version);
+
+  return module_version;
+}
+
+bool downloadKernelObject(const std::string& grpc_server, const std::string& kernel_module, const std::string& module_path) {
+  struct stat st;
+
+  // Check if the compressed file exists
+  if (stat((kernel_module + ".gz").c_str(), &st) == 0) {
+    // File exists, decompress it and move on
+    return true;
+  }
+
+  // Compressed file does not exist.
+  size_t port_offset = grpc_server.find(':');
+  if (port_offset == std::string::npos) {
+    CLOG(WARNING) << "GRPC server must have a valid port";
+    return false;
+  }
+
+  const std::string SNI_hostname(GetSNIHostname());
+  if (SNI_hostname.find(':') != std::string::npos) {
+    CLOG(WARNING) << "SNI hostname must NOT specify a port";
+    return false;
+  }
+
+  FileDownloader downloader;
+  if (!downloader.IsReady()) {
+    CLOG(WARNING) << "Failed to initialize FileDownloader object";
+    return false;
+  }
+
+  std::string server_hostname;
+  if (grpc_server.compare(0, port_offset - 1, SNI_hostname) != 0) {
+    const std::string server_port(grpc_server.substr(port_offset + 1));
+    server_hostname = SNI_hostname + ":" + server_port;
+    downloader.ConnectTo(SNI_hostname + ":" + server_port + ":" + grpc_server);
+  } else {
+    server_hostname = grpc_server;
+  }
+
+  std::string module_version = getModuleVersion();
+  if (module_version.empty()) return false;
+
+  const std::string url("https://" + server_hostname + "/kernel-objects/" + module_version + "/" + kernel_module + ".gz");
+
+  downloader.IPResolve(FileDownloader::IPv4);
+  downloader.SetRetries(30, 1, 60);
+  if (!downloader.SetConnectionTimeout(2)) return false;
+  if (!downloader.FollowRedirects(true)) return false;
+  downloader.OutputFile(module_path + ".gz");
+  if (!downloader.CACert("/run/secrets/stackrox.io/certs/ca.pem")) return false;
+  if (!downloader.Cert("/run/secrets/stackrox.io/certs/cert.pem")) return false;
+  if (!downloader.Key("/run/secrets/stackrox.io/certs/key.pem")) return false;
+  if (!downloader.SetURL(url)) return false;
+
+  if (!downloader.Download()) {
+    CLOG(ERROR) << "Failed to download " << kernel_module;
+    return false;
+  }
+  return true;
 }
 
 int InsertModule(int fd, const std::unordered_map<std::string, std::string>& args) {

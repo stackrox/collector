@@ -148,6 +148,10 @@ bool FileDownloader::Key(const char* const path) {
   return true;
 }
 
+bool FileDownloader::ConnectTo(const std::string& entry) {
+  return ConnectTo(entry.c_str());
+}
+
 bool FileDownloader::ConnectTo(const char* const entry) {
   curl_slist* temp = curl_slist_append(connect_to, entry);
 

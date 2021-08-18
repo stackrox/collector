@@ -54,6 +54,7 @@ class FileDownloader {
   bool CACert(const char* const path);
   bool Cert(const char* const path);
   bool Key(const char* const path);
+  bool ConnectTo(const std::string& entry);
   bool ConnectTo(const char* const entry);
 
   bool IsReady();
