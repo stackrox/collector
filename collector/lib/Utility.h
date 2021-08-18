@@ -60,6 +60,9 @@ const char* GetSNIHostname();
 // Get hostname from NODE_HOSTNAME env var
 const char* GetHostname();
 
+// Get kernel version from KERNEL_VERSION env var
+const char* GetKernelVersion();
+
 namespace impl {
 
 inline void StrAppend(std::ostringstream* os) {}

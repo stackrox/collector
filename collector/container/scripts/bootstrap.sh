@@ -303,7 +303,7 @@ function get_kernel_object() {
 function main() {
     
     # Get the host kernel version (or user defined env var)
-    [ -n "$KERNEL_VERSION" ] || KERNEL_VERSION="$(uname -r)"
+    [ -n "$KERNEL_VERSION" ] || export KERNEL_VERSION="$(uname -r)"
     
     # Get the kernel version
     KERNEL_MAJOR=$(echo "$KERNEL_VERSION" | cut -d. -f1)
