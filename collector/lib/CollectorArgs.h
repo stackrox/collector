@@ -50,6 +50,7 @@ class CollectorArgs {
   const std::string& Chisel() const;
   const std::string& GRPCServer() const;
   const std::string& Message() const;
+  bool TestDownload() const;
 
  private:
   CollectorArgs();
@@ -62,6 +63,7 @@ class CollectorArgs {
   std::string chisel;
   std::string message;
   std::string grpcServer;
+  bool testDownload;
 };
 
 } /* namespace collector */

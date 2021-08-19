@@ -108,14 +108,6 @@ std::string getModuleVersion() {
 }
 
 bool downloadKernelObject(const std::string& grpc_server, const std::string& kernel_module, const std::string& module_path) {
-  struct stat st;
-
-  // Check if the compressed file exists
-  if (stat((kernel_module + ".gz").c_str(), &st) == 0) {
-    // File exists, decompress it and move on
-    return true;
-  }
-
   // Compressed file does not exist.
   size_t port_offset = grpc_server.find(':');
   if (port_offset == std::string::npos) {
@@ -136,7 +128,7 @@ bool downloadKernelObject(const std::string& grpc_server, const std::string& ker
   }
 
   std::string server_hostname;
-  if (grpc_server.compare(0, port_offset - 1, SNI_hostname) != 0) {
+  if (grpc_server.compare(0, port_offset, SNI_hostname) != 0) {
     const std::string server_port(grpc_server.substr(port_offset + 1));
     server_hostname = SNI_hostname + ":" + server_port;
     downloader.ConnectTo(SNI_hostname + ":" + server_port + ":" + grpc_server);
@@ -145,24 +137,36 @@ bool downloadKernelObject(const std::string& grpc_server, const std::string& ker
   }
 
   std::string module_version = getModuleVersion();
-  if (module_version.empty()) return false;
+  if (module_version.empty()) {
+    CLOG(WARNING) << "/kernel-modules/MODULE_VERSION.txt must exist and not be empty";
+    return false;
+  }
 
   const std::string url("https://" + server_hostname + "/kernel-objects/" + module_version + "/" + kernel_module + ".gz");
 
   downloader.IPResolve(FileDownloader::IPv4);
   downloader.SetRetries(30, 1, 60);
+  downloader.OutputFile(module_path + ".gz");
   if (!downloader.SetConnectionTimeout(2)) return false;
   if (!downloader.FollowRedirects(true)) return false;
-  downloader.OutputFile(module_path + ".gz");
   if (!downloader.CACert("/run/secrets/stackrox.io/certs/ca.pem")) return false;
   if (!downloader.Cert("/run/secrets/stackrox.io/certs/cert.pem")) return false;
   if (!downloader.Key("/run/secrets/stackrox.io/certs/key.pem")) return false;
   if (!downloader.SetURL(url)) return false;
 
   if (!downloader.Download()) {
-    CLOG(ERROR) << "Failed to download " << kernel_module;
+    CLOG(ERROR) << "Unable to download from " << url;
     return false;
   }
+  return true;
+}
+
+bool getKernelObject(const std::string& grpc_server, const std::string& kernel_module, const std::string& module_path) {
+  // Attempt to download the kernel object
+  if (!downloadKernelObject(grpc_server, kernel_module, module_path)) {
+    return false;
+  }
+
   return true;
 }
 
@@ -312,6 +316,25 @@ int main(int argc, char** argv) {
   bool useGRPC = false;
   if (!args->GRPCServer().empty()) {
     useGRPC = true;
+  }
+
+  if (args->TestDownload()) {
+    std::string kernel_object_path;
+    std::string kernel_module;
+
+    CLOG(WARNING) << "Testing downloads";
+
+    if (config.UseEbpf()) {
+      kernel_object_path = SysdigService::kProbePath;
+      kernel_module = std::string(SysdigService::kProbeName) + "-" + GetKernelVersion() + ".o";
+    } else {
+      kernel_object_path = SysdigService::kModulePath;
+      kernel_module = std::string(SysdigService::kModuleName) + "-" + GetKernelVersion() + ".ko";
+    }
+
+    if (!getKernelObject(args->GRPCServer(), kernel_module, kernel_object_path)) {
+      CLOG(FATAL) << "Error getting kernel object: " << kernel_module;
+    }
   }
 
   if (config.UseEbpf()) {
