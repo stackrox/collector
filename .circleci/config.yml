@@ -758,7 +758,7 @@ jobs:
     - run:
         name: Run collector unit tests
         command: |
-          if [ -f pr-metadata/labels/valgrind-integration-tests ]; then
+          if [ -f pr-metadata/labels/valgrind-unit-tests ]; then
             use_valgrind=true
           else
             use_valgrind=false
@@ -767,11 +767,16 @@ jobs:
           cat $UNITTEST_OUTPUT_FILE
           if [ -f pr-metadata/labels/valgrind-unit-tests ]; then
             max_allowed_valgrind_errors=0
+            valgrind_summary_lines=`(grep ERROR\ SUMMARY $UNITTEST_OUTPUTFILE || true) | wc -l`
+            if [$valgrind_summary_lines -eq 0]; then
+              echo "Error: Valgrind summary not found"
+              exit 2
+            fi
             valgrind_errors=`grep ERROR\ SUMMARY $UNITTEST_OUTPUT_FILE | awk '{print $7}'`
             if [ $valgrind_errors -gt $max_allowed_valgrind_errors ]
             then
               echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
-              exit 
+              exit 3
             fi
           fi
 
@@ -811,7 +816,7 @@ jobs:
     - run:
         name: Run RHEL collector unit tests
         command: |
-          if [ -f pr-metadata/labels/valgrind-integration-tests ]; then
+          if [ -f pr-metadata/labels/valgrind-unit-tests ]; then
             use_valgrind=true
           else
             use_valgrind=false
@@ -824,7 +829,7 @@ jobs:
             if [ $valgrind_errors -gt $max_allowed_valgrind_errors ]
             then
               echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
-              exit 1
+              exit 2
             fi
           fi
 
