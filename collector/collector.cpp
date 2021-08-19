@@ -21,6 +21,7 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
+#include <array>
 #include <atomic>
 #include <cctype>
 #include <chrono>
@@ -54,6 +55,7 @@ extern "C" {
 #include "CollectorStatsExporter.h"
 #include "EventNames.h"
 #include "FileDownloader.h"
+#include "FileSystem.h"
 #include "GRPC.h"
 #include "GetStatus.h"
 #include "LogLevel.h"
@@ -146,7 +148,7 @@ bool downloadKernelObject(const std::string& grpc_server, const std::string& ker
 
   downloader.IPResolve(FileDownloader::IPv4);
   downloader.SetRetries(30, 1, 60);
-  downloader.OutputFile(module_path + ".gz");
+  downloader.OutputFile(module_path + ".test.gz");
   if (!downloader.SetConnectionTimeout(2)) return false;
   if (!downloader.FollowRedirects(true)) return false;
   if (!downloader.CACert("/run/secrets/stackrox.io/certs/ca.pem")) return false;
@@ -164,6 +166,31 @@ bool downloadKernelObject(const std::string& grpc_server, const std::string& ker
 bool getKernelObject(const std::string& grpc_server, const std::string& kernel_module, const std::string& module_path) {
   // Attempt to download the kernel object
   if (!downloadKernelObject(grpc_server, kernel_module, module_path)) {
+    return false;
+  }
+
+  // Decompress the file
+  GZFileHandle input = gzopen((module_path + ".test.gz").c_str(), "rb");
+  if (!input.valid()) {
+    CLOG(WARNING) << "Unable to open gunzipped file.";
+    return false;
+  }
+
+  std::ofstream output(module_path + ".test");
+  if (!output.is_open()) {
+    CLOG(WARNING) << "Unable to open output file.";
+    return false;
+  }
+
+  std::array<char, 8192> buf;
+  int bytes_read;
+  while (bytes_read = gzread(input.get(), buf.data(), 8192), bytes_read > 0) {
+    output.write(buf.data(), bytes_read);
+  }
+
+  if (bytes_read < 0 || !gzeof(input.get())) {
+    int errnum;
+    CLOG(WARNING) << "Failed decompressing file " << gzerror(input.get(), &errnum);
     return false;
   }
 

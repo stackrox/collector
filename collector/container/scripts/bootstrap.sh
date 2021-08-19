@@ -303,7 +303,7 @@ function get_kernel_object() {
 function main() {
     
     # Get the host kernel version (or user defined env var)
-    [ -n "$KERNEL_VERSION" ] || export KERNEL_VERSION="$(uname -r)"
+    [ -n "$KERNEL_VERSION" ] || KERNEL_VERSION="$(uname -r)"
     
     # Get the kernel version
     KERNEL_MAJOR=$(echo "$KERNEL_VERSION" | cut -d. -f1)
@@ -409,6 +409,8 @@ function main() {
     if (( ! success )); then
       exit_with_error
     fi
+
+    export KERNEL_CANDIDATES="${kernel_versions[@]}"
 
     # Print GPL notice after probe is downloaded or verified to be present
     gpl_notice

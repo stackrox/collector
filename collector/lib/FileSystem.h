@@ -28,6 +28,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <dirent.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <zlib.h>
 
 namespace collector {
 
@@ -122,6 +123,16 @@ class DirHandle : public ResourceWrapper<DIR*, DirHandle> {
 
   static constexpr DIR* Invalid() { return nullptr; }
   static bool Close(DIR* dir) { return (closedir(dir) == 0); }
+};
+
+class GZFileHandle : public ResourceWrapper<gzFile, GZFileHandle> {
+ public:
+  using ResourceWrapper::ResourceWrapper;
+  GZFileHandle(GZFileHandle&& other) : ResourceWrapper(other.release()) {}
+  GZFileHandle(FDHandle&& fd, const char* mode) : ResourceWrapper(gzdopen(fd.release(), mode)) {}
+
+  static constexpr gzFile Invalid() { return nullptr; }
+  static bool Close(gzFile file) { return (gzclose(file) == Z_OK); }
 };
 
 }  // namespace collector
