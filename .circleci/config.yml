@@ -765,17 +765,13 @@ jobs:
           fi
           make -C "${SOURCE_ROOT}" unittest USE_VALGRIND=$use_valgrind >& $UNITTEST_OUTPUT_FILE
           cat $UNITTEST_OUTPUT_FILE
-
-    - run:
-        name: Check Valgrind errors
-        command: |
           if [ -f pr-metadata/labels/valgrind-unit-tests ]; then
             max_allowed_valgrind_errors=0
             valgrind_errors=`grep ERROR\ SUMMARY $UNITTEST_OUTPUT_FILE | awk '{print $7}'`
             if [ $valgrind_errors -gt $max_allowed_valgrind_errors ]
             then
               echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
-              exit 1
+              exit 
             fi
           fi
 
@@ -822,10 +818,6 @@ jobs:
           fi
           make -C "${SOURCE_ROOT}" unittest-rhel USE_VALGRIND=$use_valgrind >& $UNITTEST_OUTPUT_FILE
           cat $UNITTEST_OUTPUT_FILE
-
-    - run:
-        name: Check Valgrind errors
-        command: |
           if [ -f pr-metadata/labels/valgrind-unit-tests ]; then
             max_allowed_valgrind_errors=0
             valgrind_errors=`grep ERROR\ SUMMARY $UNITTEST_OUTPUT_FILE | awk '{print $7}'`
