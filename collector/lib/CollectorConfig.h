@@ -72,6 +72,8 @@ function on_init()
     return true
 end
 )";
+  static constexpr bool kTestDownload = false;
+
   static const UnorderedSet<L4ProtoPortPair> kIgnoredL4ProtoPortPairs;
 
   CollectorConfig() = delete;
@@ -94,6 +96,7 @@ end
   bool EnableSysdigLog() const { return enable_sysdig_log_; }
   bool DisableNetworkFlows() const { return disable_network_flows_; }
   const UnorderedSet<L4ProtoPortPair>& IgnoredL4ProtoPortPairs() const { return ignored_l4proto_port_pairs_; }
+  bool TestDownload() const { return test_download_; }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
@@ -109,6 +112,7 @@ end
   std::string host_proc_;
   bool disable_network_flows_ = false;
   bool scrape_listen_endpoints_ = false;
+  bool test_download_;
   UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
 
   bool enable_sysdig_log_ = false;

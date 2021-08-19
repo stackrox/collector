@@ -42,8 +42,7 @@ enum optionIndex {
   COLLECTOR_CONFIG,
   COLLECTION_METHOD,
   GRPC_SERVER,
-  CHISEL,
-  TEST_DOWNLOAD
+  CHISEL
 };
 
 static option::ArgStatus
@@ -76,7 +75,6 @@ static const option::Descriptor usage[] =
         {COLLECTION_METHOD, 0, "", "collection-method", checkCollectionMethod, "  --collection-method   \tCollection method (kernel_module or ebpf)."},
         {CHISEL, 0, "", "chisel", checkChisel, "  --chisel              \tChisel is a base64 encoded string."},
         {GRPC_SERVER, 0, "", "grpc-server", checkGRPCServer, "  --grpc-server         \tREQUIRED: GRPC server endpoint string in the form HOST1:PORT1."},
-        {TEST_DOWNLOAD, 0, "", "test-download", option::Arg::None, "  --test-download       \tTest downloading of kernel objects within the collector binary."},
         {UNKNOWN, 0, "", "", option::Arg::None,
          "\nExamples:\n"
          "  collector --grpc-server=\"172.16.0.5:443\"\n"},
@@ -127,8 +125,6 @@ bool CollectorArgs::parse(int argc, char** argv, int& exitCode) {
     exitCode = 0;
     return false;
   }
-
-  testDownload = options[TEST_DOWNLOAD] != nullptr;
 
   if (options[GRPC_SERVER]) {
     exitCode = 0;
@@ -297,10 +293,6 @@ CollectorArgs::GRPCServer() const {
 const std::string&
 CollectorArgs::Message() const {
   return message;
-}
-
-bool CollectorArgs::TestDownload() const {
-  return testDownload;
 }
 
 } /* namespace collector */

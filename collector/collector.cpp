@@ -345,7 +345,7 @@ int main(int argc, char** argv) {
     useGRPC = true;
   }
 
-  if (args->TestDownload()) {
+  if (config.TestDownload()) {
     std::istringstream kernel_candidates(GetKernelCandidates());
 
     CLOG(WARNING) << "Testing downloads";

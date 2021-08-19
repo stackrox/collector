@@ -64,6 +64,7 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   snap_len_ = kSnapLen;
   chisel_ = kChisel;
   collection_method_ = kCollectionMethod;
+  test_download_ = kTestDownload;
 
   for (const auto& syscall : kSyscalls) {
     syscalls_.push_back(syscall);
@@ -93,6 +94,12 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
     if (!config["turnOffScrape"].empty()) {
       turn_off_scrape_ = config["turnOffScrape"].asBool();
       CLOG(INFO) << "User configured turnOffScrape=" << turn_off_scrape_;
+    }
+
+    // Test kernel object downloading
+    if (!config["testDownload"].empty()) {
+      test_download_ = config["testDownload"].asBool();
+      CLOG(INFO) << "User configured testDownload=" << test_download_;
     }
 
     // Log Level
