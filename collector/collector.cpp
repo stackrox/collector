@@ -346,21 +346,43 @@ int main(int argc, char** argv) {
   }
 
   if (args->TestDownload()) {
-    std::string kernel_object_path;
-    std::string kernel_module;
+    std::istringstream kernel_candidates(GetKernelCandidates());
 
     CLOG(WARNING) << "Testing downloads";
 
-    if (config.UseEbpf()) {
-      kernel_object_path = SysdigService::kProbePath;
-      kernel_module = std::string(SysdigService::kProbeName) + "-" + GetKernelVersion() + ".o";
-    } else {
-      kernel_object_path = SysdigService::kModulePath;
-      kernel_module = std::string(SysdigService::kModuleName) + "-" + GetKernelVersion() + ".ko";
+    if (kernel_candidates.str().empty()) {
+      CLOG(FATAL) << "No kernel candidates available";
     }
 
-    if (!getKernelObject(args->GRPCServer(), kernel_module, kernel_object_path)) {
-      CLOG(FATAL) << "Error getting kernel object: " << kernel_module;
+    struct {
+      std::string path;
+      std::string name;
+      std::string extension;
+    } kernel_object;
+
+    if (config.UseEbpf()) {
+      kernel_object.path = SysdigService::kProbePath;
+      kernel_object.name = SysdigService::kProbeName;
+      kernel_object.extension = ".o";
+    } else {
+      kernel_object.path = SysdigService::kModulePath;
+      kernel_object.name = SysdigService::kModuleName;
+      kernel_object.extension = ".ko";
+    }
+
+    bool success = false;
+    std::string kernel_candidate;
+    while (std::getline(kernel_candidates, kernel_candidate, ' ') && !success) {
+      std::string kernel_module = kernel_object.name + "-" + kernel_candidate + kernel_object.extension;
+
+      success = getKernelObject(args->GRPCServer(), kernel_module, kernel_object.path);
+      if (!success) {
+        CLOG(DEBUG) << "Error getting kernel object: " << kernel_module;
+      }
+    }
+
+    if (!success) {
+      CLOG(FATAL) << "No suitable kernel object downloaded";
     }
   }
 

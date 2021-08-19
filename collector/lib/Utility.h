@@ -60,8 +60,8 @@ const char* GetSNIHostname();
 // Get hostname from NODE_HOSTNAME env var
 const char* GetHostname();
 
-// Get kernel version from KERNEL_VERSION env var
-const char* GetKernelVersion();
+// Get kernel candidates from KERNEL_CANDIDATES env var
+const char* GetKernelCandidates();
 
 namespace impl {
 

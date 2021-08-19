@@ -171,12 +171,12 @@ const char* GetHostname() {
   return "unknown";
 }
 
-const char* GetKernelVersion() {
-  const char* kernel_version = std::getenv("KERNEL_VERSION");
-  if (kernel_version && *kernel_version) return kernel_version;
+const char* GetKernelCandidates() {
+  const char* kernel_candidates = std::getenv("KERNEL_CANDIDATES");
+  if (kernel_candidates && *kernel_candidates) return kernel_candidates;
 
   CLOG(ERROR) << "Failed to determine kernel version, environment variable KERNEL_VERSION not set";
-  return "unknown";
+  return "";
 }
 
 }  // namespace collector
