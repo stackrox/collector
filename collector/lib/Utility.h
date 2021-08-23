@@ -63,8 +63,11 @@ const char* GetHostname();
 // Get kernel candidates from KERNEL_CANDIDATES env var
 const char* GetKernelCandidates();
 
-// Get kernel candidates from TEST_BIN_DOWNLOAD env var
+// Get flag for testing download of kernel modules from TEST_BIN_DOWNLOAD env var
 const char* GetTestBinDownload();
+
+// Get base URL for kernel modules downloads from MODULE_DOWNLOAD_BASE_URL
+const char* getModuleDownloadBaseURL();
 
 namespace impl {
 

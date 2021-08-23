@@ -165,6 +165,13 @@ bool FileDownloader::ConnectTo(const char* const entry) {
   return true;
 }
 
+void FileDownloader::ResetCURL() {
+  curl_easy_reset(curl);
+
+  curl_slist_free_all(connect_to);
+  connect_to = nullptr;
+}
+
 bool FileDownloader::IsReady() {
   return curl != nullptr;
 }
@@ -200,7 +207,7 @@ bool FileDownloader::Download() {
       return true;
     }
 
-    std::string error_message = error.data();
+    std::string error_message(error.data());
     CLOG(INFO) << "Fail to download file - " << (!error_message.empty() ? error_message : curl_easy_strerror(result));
 
     sleep(retry.delay);

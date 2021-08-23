@@ -57,6 +57,7 @@ class FileDownloader {
   bool ConnectTo(const std::string& entry);
   bool ConnectTo(const char* const entry);
 
+  void ResetCURL();
   bool IsReady();
   bool Download();
 
