@@ -170,13 +170,13 @@ bool getKernelObject(const std::string& grpc_server, const std::string& kernel_m
   }
 
   // Decompress the file
-  GZFileHandle input = gzopen((module_path + ".test.gz").c_str(), "rb");
+  GZFileHandle input = gzopen((module_path + ".gz").c_str(), "rb");
   if (!input.valid()) {
     CLOG(WARNING) << "Unable to open gunzipped file.";
     return false;
   }
 
-  std::ofstream output(module_path + ".test");
+  std::ofstream output(module_path);
   if (!output.is_open()) {
     CLOG(WARNING) << "Unable to open output file.";
     return false;
@@ -345,7 +345,7 @@ int main(int argc, char** argv) {
     useGRPC = true;
   }
 
-  if (config.TestDownload()) {
+  if (*GetTestBinDownload() != '\0') {
     std::istringstream kernel_candidates(GetKernelCandidates());
 
     CLOG(WARNING) << "Testing downloads";

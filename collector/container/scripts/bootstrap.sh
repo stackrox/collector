@@ -258,6 +258,11 @@ function get_kernel_object() {
       local kernel_module="${module_name}-${kernel_version}.ko"
 
       if ! find_kernel_object "$kernel_module" "$module_path"; then
+        if [[ -n "${TEST_BIN_DOWNLOAD}" ]]; then
+          echo "Testing download of kernel object inside collector binary"
+          return 0
+        fi
+
         if ! download_kernel_object "${kernel_module}" "${module_path}" || [[ ! -f "$module_path" ]]; then
           return 1
         fi
@@ -281,6 +286,11 @@ function get_kernel_object() {
         local kernel_probe="${probe_name}-${kernel_version}.o"
 
         if ! find_kernel_object "${kernel_probe}" "${probe_path}"; then
+          if [[ -n "${TEST_BIN_DOWNLOAD}" ]]; then
+            echo "Testing download of kernel object inside collector binary"
+            return 0
+          fi
+
           if ! download_kernel_object "${kernel_probe}" "${probe_path}" || [[ ! -f "$probe_path" ]]; then
             return 1
           fi

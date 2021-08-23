@@ -63,6 +63,9 @@ const char* GetHostname();
 // Get kernel candidates from KERNEL_CANDIDATES env var
 const char* GetKernelCandidates();
 
+// Get kernel candidates from TEST_BIN_DOWNLOAD env var
+const char* GetTestBinDownload();
+
 namespace impl {
 
 inline void StrAppend(std::ostringstream* os) {}

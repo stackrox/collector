@@ -179,4 +179,12 @@ const char* GetKernelCandidates() {
   return "";
 }
 
+const char* GetTestBinDownload() {
+  const char* test_download = std::getenv("TEST_BIN_DOWNLOAD");
+  if (test_download && *test_download) return test_download;
+
+  CLOG(DEBUG) << "TEST_BIN_DOWNLOAD not set";
+  return "";
+}
+
 }  // namespace collector
