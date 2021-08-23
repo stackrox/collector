@@ -30,5 +30,5 @@ namespace collector {
 
 bool downloadKernelObject(const std::string& grpc_server, const std::string& kernel_module, const std::string& module_path);
 
-} // namespace collector
+}  // namespace collector
 #endif  // COLLECTOR_DOWNLOADKERNELOBJECT_H

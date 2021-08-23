@@ -22,6 +22,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 
 #include "DownloadKernelObject.h"
+
 #include "FileDownloader.h"
 #include "Logging.h"
 #include "Utility.h"
@@ -124,4 +125,4 @@ bool downloadKernelObject(const std::string& grpc_server, const std::string& ker
   }
   return false;
 }
-} // namespace collector
+}  // namespace collector
