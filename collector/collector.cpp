@@ -49,12 +49,11 @@ extern "C" {
 #include <sys/syscall.h>
 #include <sys/types.h>
 }
-
 #include "CollectorArgs.h"
 #include "CollectorService.h"
 #include "CollectorStatsExporter.h"
+#include "DownloadKernelObject.h"
 #include "EventNames.h"
-#include "FileDownloader.h"
 #include "FileSystem.h"
 #include "GRPC.h"
 #include "GetStatus.h"
@@ -94,103 +93,6 @@ static void AbortHandler(int signum) {
   // Re-raise the signal (this time routing it to the default handler) to make sure we get the correct exit code.
   signal(signum, SIG_DFL);
   raise(signum);
-}
-
-std::string getModuleVersion() {
-  std::ifstream file("/kernel-modules/MODULE_VERSION.txt");
-  if (!file.is_open()) {
-    CLOG(WARNING) << "Failed to open '/kernel-modules/MODULE_VERSION.txt'";
-    return "";
-  }
-
-  std::string module_version;
-  getline(file, module_version);
-
-  return module_version;
-}
-
-bool downloadKernelObjectFromGRPC(FileDownloader& downloader, const std::string& grpc_server, const std::string& kernel_module, const std::string& module_version) {
-  size_t port_offset = grpc_server.find(':');
-  if (port_offset == std::string::npos) {
-    CLOG(WARNING) << "GRPC server must have a valid port";
-    return false;
-  }
-
-  const std::string SNI_hostname(GetSNIHostname());
-  if (SNI_hostname.find(':') != std::string::npos) {
-    CLOG(WARNING) << "SNI hostname must NOT specify a port";
-    return false;
-  }
-
-  std::string server_hostname;
-  if (grpc_server.compare(0, port_offset, SNI_hostname) != 0) {
-    const std::string server_port(grpc_server.substr(port_offset + 1));
-    server_hostname = SNI_hostname + ":" + server_port;
-    downloader.ConnectTo(SNI_hostname + ":" + server_port + ":" + grpc_server);
-  } else {
-    server_hostname = grpc_server;
-  }
-
-  // Attempt to download the kernel object from the GRPC server
-  std::string url("https://" + server_hostname + "/kernel-objects/" + module_version + "/" + kernel_module + ".gz");
-  if (url.empty()) return false;
-
-  CLOG(DEBUG) << "Attempting to download kernel object from " << url;
-  if (!downloader.SetURL(url)) return false;
-  if (!downloader.Download()) return false;
-
-  CLOG(DEBUG) << "Downloaded kernel object from " << url;
-  return true;
-}
-
-bool downloadKernelObjectFromModuleURL(FileDownloader& downloader, const std::string& base_url, const std::string& module_version) {
-  if (!downloader.SetURL(base_url + "/" + module_version)) return false;
-  if (!downloader.Download()) return false;
-  return true;
-}
-
-bool downloadKernelObject(const std::string& grpc_server, const std::string& kernel_module, const std::string& module_path) {
-  FileDownloader downloader;
-  if (!downloader.IsReady()) {
-    CLOG(WARNING) << "Failed to initialize FileDownloader object";
-    return false;
-  }
-
-  std::string module_version(getModuleVersion());
-  if (module_version.empty()) {
-    CLOG(WARNING) << "/kernel-modules/MODULE_VERSION.txt must exist and not be empty";
-    return false;
-  }
-
-  downloader.IPResolve(FileDownloader::IPv4);
-  downloader.SetRetries(30, 1, 60);
-  downloader.OutputFile(module_path + ".gz");
-  if (!downloader.SetConnectionTimeout(2)) return false;
-  if (!downloader.FollowRedirects(true)) return false;
-  if (!downloader.CACert("/run/secrets/stackrox.io/certs/ca.pem")) return false;
-  if (!downloader.Cert("/run/secrets/stackrox.io/certs/cert.pem")) return false;
-  if (!downloader.Key("/run/secrets/stackrox.io/certs/key.pem")) return false;
-
-  if (downloadKernelObjectFromGRPC(downloader, grpc_server, kernel_module, module_version)) {
-    return true;
-  }
-
-  std::string base_url(getModuleDownloadBaseURL());
-  if (base_url.empty()) {
-    return false;
-  }
-
-  downloader.ResetCURL();
-  downloader.IPResolve(FileDownloader::IPv4);
-  downloader.SetRetries(30, 1, 60);
-  downloader.OutputFile(module_path + ".gz");
-  if (!downloader.SetConnectionTimeout(2)) return false;
-  if (!downloader.FollowRedirects(true)) return false;
-
-  if (downloadKernelObjectFromModuleURL(downloader, base_url, module_version)) {
-    return true;
-  }
-  return false;
 }
 
 bool getKernelObject(const std::string& grpc_server, const std::string& kernel_module, const std::string& module_path) {
@@ -380,10 +282,10 @@ int main(int argc, char** argv) {
     useGRPC = true;
   }
 
-  if (*GetTestBinDownload() != '\0') {
+  if (*(GetTestBinDownload()) != '\0') {
     std::istringstream kernel_candidates(GetKernelCandidates());
 
-    CLOG(WARNING) << "Testing downloads";
+    CLOG(INFO) << "Testing downloads";
 
     if (kernel_candidates.str().empty()) {
       CLOG(FATAL) << "No kernel candidates available";
