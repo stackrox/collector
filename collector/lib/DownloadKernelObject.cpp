@@ -77,8 +77,15 @@ bool downloadKernelObjectFromGRPC(FileDownloader& downloader, const std::string&
 }
 
 bool downloadKernelObjectFromModuleURL(FileDownloader& downloader, const std::string& base_url, const std::string& module_version) {
-  if (!downloader.SetURL(base_url + "/" + module_version)) return false;
+  std::string url(base_url + "/" + module_version);
+
+  CLOG(DEBUG) << "Attempting to download kernel object from " << url;
+
+  if (!downloader.SetURL(url)) return false;
   if (!downloader.Download()) return false;
+
+  CLOG(DEBUG) << "Downloaded kernel object from " << url;
+
   return true;
 }
 

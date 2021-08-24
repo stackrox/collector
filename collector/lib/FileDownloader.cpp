@@ -168,6 +168,10 @@ bool FileDownloader::ConnectTo(const char* const entry) {
 void FileDownloader::ResetCURL() {
   curl_easy_reset(curl);
 
+  // Readd both the write function and the error buffer
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteFile);
+  curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, error.data());
+
   curl_slist_free_all(connect_to);
   connect_to = nullptr;
 }
