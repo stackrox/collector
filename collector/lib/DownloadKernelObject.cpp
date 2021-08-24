@@ -42,6 +42,19 @@ std::string getModuleVersion() {
   return module_version;
 }
 
+bool downloadKernelObjectFromURL(FileDownloader& downloader, const std::string& base_url, const std::string& kernel_module, const std::string& module_version) {
+  std::string url(base_url + "/" + module_version + "/" + kernel_module + ".gz");
+
+  CLOG(DEBUG) << "Attempting to download kernel object from " << url;
+
+  if (!downloader.SetURL(url)) return false;
+  if (!downloader.Download()) return false;
+
+  CLOG(DEBUG) << "Downloaded kernel object from " << url;
+
+  return true;
+}
+
 bool downloadKernelObjectFromGRPC(FileDownloader& downloader, const std::string& grpc_server, const std::string& kernel_module, const std::string& module_version) {
   size_t port_offset = grpc_server.find(':');
   if (port_offset == std::string::npos) {
@@ -65,28 +78,10 @@ bool downloadKernelObjectFromGRPC(FileDownloader& downloader, const std::string&
   }
 
   // Attempt to download the kernel object from the GRPC server
-  std::string url("https://" + server_hostname + "/kernel-objects/" + module_version + "/" + kernel_module + ".gz");
-  if (url.empty()) return false;
+  std::string base_url("https://" + server_hostname + "/kernel-objects");
+  if (base_url.empty()) return false;
 
-  CLOG(DEBUG) << "Attempting to download kernel object from " << url;
-  if (!downloader.SetURL(url)) return false;
-  if (!downloader.Download()) return false;
-
-  CLOG(DEBUG) << "Downloaded kernel object from " << url;
-  return true;
-}
-
-bool downloadKernelObjectFromModuleURL(FileDownloader& downloader, const std::string& base_url, const std::string& module_version) {
-  std::string url(base_url + "/" + module_version);
-
-  CLOG(DEBUG) << "Attempting to download kernel object from " << url;
-
-  if (!downloader.SetURL(url)) return false;
-  if (!downloader.Download()) return false;
-
-  CLOG(DEBUG) << "Downloaded kernel object from " << url;
-
-  return true;
+  return downloadKernelObjectFromURL(downloader, base_url, kernel_module, module_version);
 }
 
 bool downloadKernelObject(const std::string& grpc_server, const std::string& kernel_module, const std::string& module_path) {
@@ -127,7 +122,7 @@ bool downloadKernelObject(const std::string& grpc_server, const std::string& ker
   if (!downloader.SetConnectionTimeout(2)) return false;
   if (!downloader.FollowRedirects(true)) return false;
 
-  if (downloadKernelObjectFromModuleURL(downloader, base_url, module_version)) {
+  if (downloadKernelObjectFromURL(downloader, base_url, kernel_module, module_version)) {
     return true;
   }
   return false;

@@ -313,12 +313,15 @@ int main(int argc, char** argv) {
       std::string kernel_module = kernel_object.name + "-" + kernel_candidate + kernel_object.extension;
 
       success = getKernelObject(args->GRPCServer(), kernel_module, kernel_object.path);
+
+      // Remove the gunzipped file, we wont need it anymore
+      unlink((kernel_object.path + ".gz").c_str());
+
       if (!success) {
         CLOG(WARNING) << "Error getting kernel object: " << kernel_module;
 
         // Remove downloaded files
         unlink(kernel_object.path.c_str());
-        unlink((kernel_object.path + ".gz").c_str());
       }
     }
 
