@@ -6,7 +6,7 @@ parameters:
 
 defaultImage: &defaultImage
   docker:
-  - image: "<< pipeline.parameters.quay-repo >>/apollo-ci:collector-0.3.7"
+  - image: "<< pipeline.parameters.quay-repo >>/apollo-ci:collector-0.3.13"
     auth:
       username: $QUAY_CGORMAN1_RO_USER
       password: $QUAY_CGORMAN1_RO_PASSWORD
