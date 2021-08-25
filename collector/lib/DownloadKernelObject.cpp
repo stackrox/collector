@@ -55,8 +55,8 @@ bool downloadKernelObjectFromURL(FileDownloader& downloader, const std::string& 
   return true;
 }
 
-bool downloadKernelObjectFromGRPC(FileDownloader& downloader, const std::string& grpc_server, const std::string& kernel_module, const std::string& module_version) {
-  size_t port_offset = grpc_server.find(':');
+bool downloadKernelObjectFromGRPC(FileDownloader& downloader, const std::string& hostname, const std::string& kernel_module, const std::string& module_version) {
+  size_t port_offset = hostname.find(':');
   if (port_offset == std::string::npos) {
     CLOG(WARNING) << "GRPC server must have a valid port";
     return false;
@@ -69,12 +69,12 @@ bool downloadKernelObjectFromGRPC(FileDownloader& downloader, const std::string&
   }
 
   std::string server_hostname;
-  if (grpc_server.compare(0, port_offset, SNI_hostname) != 0) {
-    const std::string server_port(grpc_server.substr(port_offset + 1));
+  if (hostname.compare(0, port_offset, SNI_hostname) != 0) {
+    const std::string server_port(hostname.substr(port_offset + 1));
     server_hostname = SNI_hostname + ":" + server_port;
-    downloader.ConnectTo(SNI_hostname + ":" + server_port + ":" + grpc_server);
+    downloader.ConnectTo(SNI_hostname + ":" + server_port + ":" + hostname);
   } else {
-    server_hostname = grpc_server;
+    server_hostname = hostname;
   }
 
   // Attempt to download the kernel object from the GRPC server
@@ -84,7 +84,7 @@ bool downloadKernelObjectFromGRPC(FileDownloader& downloader, const std::string&
   return downloadKernelObjectFromURL(downloader, base_url, kernel_module, module_version);
 }
 
-bool downloadKernelObject(const std::string& grpc_server, const std::string& kernel_module, const std::string& module_path) {
+bool downloadKernelObject(const std::string& hostname, const std::string& kernel_module, const std::string& module_path) {
   FileDownloader downloader;
   if (!downloader.IsReady()) {
     CLOG(WARNING) << "Failed to initialize FileDownloader object";
@@ -106,7 +106,7 @@ bool downloadKernelObject(const std::string& grpc_server, const std::string& ker
   if (!downloader.Cert("/run/secrets/stackrox.io/certs/cert.pem")) return false;
   if (!downloader.Key("/run/secrets/stackrox.io/certs/key.pem")) return false;
 
-  if (downloadKernelObjectFromGRPC(downloader, grpc_server, kernel_module, module_version)) {
+  if (downloadKernelObjectFromGRPC(downloader, hostname, kernel_module, module_version)) {
     return true;
   }
 

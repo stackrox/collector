@@ -175,7 +175,7 @@ const char* GetKernelCandidates() {
   const char* kernel_candidates = std::getenv("KERNEL_CANDIDATES");
   if (kernel_candidates && *kernel_candidates) return kernel_candidates;
 
-  CLOG(ERROR) << "Failed to determine kernel version, environment variable KERNEL_VERSION not set";
+  CLOG(ERROR) << "Failed to determine kernel object candidates, environment variable KERNEL_CANDIDATES not set";
   return "";
 }
 

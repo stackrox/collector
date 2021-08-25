@@ -95,8 +95,8 @@ static void AbortHandler(int signum) {
   raise(signum);
 }
 
-bool getKernelObject(const std::string& grpc_server, const std::string& kernel_module, const std::string& module_path) {
-  if (!downloadKernelObject(grpc_server, kernel_module, module_path)) {
+bool getKernelObject(const std::string& hostname, const std::string& kernel_module, const std::string& module_path) {
+  if (!downloadKernelObject(hostname, kernel_module, module_path)) {
     CLOG(WARNING) << "Unable to download kernel object " << kernel_module;
     return false;
   }

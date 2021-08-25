@@ -28,7 +28,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-bool downloadKernelObject(const std::string& grpc_server, const std::string& kernel_module, const std::string& module_path);
+bool downloadKernelObject(const std::string& hostname, const std::string& kernel_module, const std::string& module_path);
 
 }  // namespace collector
 #endif  // COLLECTOR_DOWNLOADKERNELOBJECT_H
