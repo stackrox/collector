@@ -31,11 +31,13 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 		collectionMethod = "kernel_module"
 	}
 	offlineMode, _ := strconv.ParseBool(ReadEnvVarWithDefault("COLLECTOR_OFFLINE_MODE", "false"))
+	test_bin_download := ReadEnvVar("TEST_BIN_DOWNLOAD")
 
 	env := map[string]string{
 		"GRPC_SERVER":              "localhost:9999",
 		"COLLECTOR_CONFIG":         `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}`,
 		"COLLECTION_METHOD":        collectionMethod,
+		"TEST_BIN_DOWNLOAD":        test_bin_download,
 	}
 	if !offlineMode {
 		env["MODULE_DOWNLOAD_BASE_URL"] = "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"
