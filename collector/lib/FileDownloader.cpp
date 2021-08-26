@@ -40,6 +40,7 @@ FileDownloader::FileDownloader() : connect_to(nullptr) {
   if (curl) {
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteFile);
     curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, error.data());
+    curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
   }
 
   error.fill('\0');
@@ -171,6 +172,7 @@ void FileDownloader::ResetCURL() {
   // Readd both the write function and the error buffer
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteFile);
   curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, error.data());
+  curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
 
   curl_slist_free_all(connect_to);
   connect_to = nullptr;
