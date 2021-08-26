@@ -108,7 +108,7 @@ bool getKernelObject(const std::string& hostname, const std::string& kernel_modu
     return false;
   }
 
-  std::ofstream output(module_path);
+  std::ofstream output(module_path, std::ios::binary);
   if (!output.is_open()) {
     CLOG(WARNING) << "Unable to open output file " << module_path;
     return false;
