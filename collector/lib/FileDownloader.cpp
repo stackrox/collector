@@ -34,13 +34,25 @@ static size_t WriteFile(void* content, size_t size, size_t nmemb, void* stream) 
   return size * nmemb;
 }
 
+static int DebugCallback(CURL* curl, curl_infotype type, char* data, size_t size, void* userptr) {
+  // Unused arguments
+  (void)curl;
+  (void)userptr;
+  (void)type;
+
+  std::string msg(data, size);
+
+  // Dump everything into the log as a first approach
+  CLOG(DEBUG) << msg;
+
+  return 0;
+}
+
 FileDownloader::FileDownloader() : connect_to_(nullptr) {
   curl_ = curl_easy_init();
 
   if (curl_) {
-    curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, WriteFile);
-    curl_easy_setopt(curl_, CURLOPT_ERRORBUFFER, error_.data());
-    curl_easy_setopt(curl_, CURLOPT_FAILONERROR, 1L);
+    SetDefaultOptions();
   }
 
   error_.fill('\0');
@@ -176,10 +188,7 @@ bool FileDownloader::ConnectTo(const char* const entry) {
 void FileDownloader::ResetCURL() {
   curl_easy_reset(curl_);
 
-  // Re-add both the write function and the error buffer
-  curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, WriteFile);
-  curl_easy_setopt(curl_, CURLOPT_ERRORBUFFER, error_.data());
-  curl_easy_setopt(curl_, CURLOPT_FAILONERROR, 1L);
+  SetDefaultOptions();
 
   curl_slist_free_all(connect_to_);
   connect_to_ = nullptr;
@@ -242,6 +251,17 @@ bool FileDownloader::Download() {
   CLOG(WARNING) << "Failed to download " << output_path_;
 
   return false;
+}
+
+void FileDownloader::SetDefaultOptions() {
+  curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, WriteFile);
+  curl_easy_setopt(curl_, CURLOPT_ERRORBUFFER, error_.data());
+  curl_easy_setopt(curl_, CURLOPT_FAILONERROR, 1L);
+
+  if (logging::GetLogLevel() <= logging::LogLevel::DEBUG) {
+    curl_easy_setopt(curl_, CURLOPT_VERBOSE, 1L);
+    curl_easy_setopt(curl_, CURLOPT_DEBUGFUNCTION, DebugCallback);
+  }
 }
 
 }  // namespace collector

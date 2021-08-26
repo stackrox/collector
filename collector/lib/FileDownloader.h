@@ -71,6 +71,8 @@ class FileDownloader {
     unsigned int delay;
     std::chrono::seconds max_time;
   } retry_;
+
+  void SetDefaultOptions();
 };
 
 }  // namespace collector
