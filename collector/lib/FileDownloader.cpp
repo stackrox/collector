@@ -38,14 +38,35 @@ static int DebugCallback(CURL* curl, curl_infotype type, char* data, size_t size
   // Unused arguments
   (void)curl;
   (void)userptr;
-  (void)type;
 
   std::string msg(data, size);
 
-  // Dump everything into the log as a first approach
-  CLOG(DEBUG) << msg;
+  switch (type) {
+    case CURLINFO_TEXT:
+      CLOG(DEBUG) << "== Info: " << msg;
+    case CURLINFO_HEADER_OUT:
+      CLOG(DEBUG) << "-> Send header - " << msg;
+      break;
+    case CURLINFO_DATA_OUT:
+      CLOG(DEBUG) << "-> Send data - " << msg;
+      break;
+    case CURLINFO_SSL_DATA_OUT:
+      CLOG(DEBUG) << "-> Send SSL data - " << msg;
+      break;
+    case CURLINFO_HEADER_IN:
+      CLOG(DEBUG) << "<- Recv header - " << msg;
+      break;
+    case CURLINFO_DATA_IN:
+      CLOG(DEBUG) << "<- Recv data - " << msg;
+      break;
+    case CURLINFO_SSL_DATA_IN:
+      CLOG(DEBUG) << "<- Recv SSL data - " << msg;
+      break;
+    default: /* in case a new one is introduced to shock us */
+      return CURLE_OK;
+  }
 
-  return 0;
+  return CURLE_OK;
 }
 
 FileDownloader::FileDownloader() : connect_to_(nullptr) {
