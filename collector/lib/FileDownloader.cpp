@@ -262,6 +262,8 @@ void FileDownloader::SetDefaultOptions() {
     curl_easy_setopt(curl_, CURLOPT_VERBOSE, 1L);
     curl_easy_setopt(curl_, CURLOPT_DEBUGFUNCTION, DebugCallback);
   }
+
+  curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
 }
 
 }  // namespace collector
