@@ -114,15 +114,21 @@ bool getKernelObject(const std::string& hostname, const std::string& kernel_modu
     return false;
   }
 
-  std::array<char, 8192> buf;
+  const int BUFFER_SIZE = 8192;
+  std::array<char, BUFFER_SIZE> buf;
   int bytes_read;
-  while (bytes_read = gzread(input.get(), buf.data(), 8192), bytes_read > 0) {
+  do {
+    bytes_read = gzread(input.get(), buf.data(), BUFFER_SIZE);
+
+    if (bytes_read <= 0) {
+      break;
+    }
     output.write(buf.data(), bytes_read);
-  }
+
+  } while (bytes_read == BUFFER_SIZE);
 
   if (bytes_read < 0 || !gzeof(input.get())) {
-    int errnum;
-    CLOG(WARNING) << "Failed decompressing file " << gzerror(input.get(), &errnum);
+    CLOG(WARNING) << "Failed decompressing file " << input.error_msg();
     return false;
   }
 

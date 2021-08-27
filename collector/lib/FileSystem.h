@@ -126,6 +126,9 @@ class DirHandle : public ResourceWrapper<DIR*, DirHandle> {
 };
 
 class GZFileHandle : public ResourceWrapper<gzFile, GZFileHandle> {
+ private:
+  std::string error_msg_;
+
  public:
   using ResourceWrapper::ResourceWrapper;
   GZFileHandle(GZFileHandle&& other) : ResourceWrapper(other.release()) {}
@@ -133,6 +136,24 @@ class GZFileHandle : public ResourceWrapper<gzFile, GZFileHandle> {
 
   static constexpr gzFile Invalid() { return nullptr; }
   static bool Close(gzFile file) { return (gzclose(file) == Z_OK); }
+
+  const std::string& error_msg() {
+    int errnum = Z_OK;
+    const char* gz_error = gzerror(get(), &errnum);
+
+    if (gz_error == nullptr) {
+      error_msg_ = "";
+      return error_msg_;
+    }
+
+    error_msg_ = gz_error;
+
+    if (errnum == Z_ERRNO) {
+      error_msg_ + " - " + strerror(errno) + " (" + std::to_string(errno) + ")";
+    }
+
+    return error_msg_;
+  };
 };
 
 }  // namespace collector
