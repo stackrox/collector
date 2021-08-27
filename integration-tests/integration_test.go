@@ -246,26 +246,26 @@ func (s *ProcessNetworkTestSuite) TearDownSuite() {
 }
 
 func (s *ProcessNetworkTestSuite) TestProcessViz() {
-	processName := "nginx"
-	exeFilePath := "/usr/sbin/nginx"
-	expectedProcessInfo := fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
-	val, err := s.Get(processName, processBucket)
-	require.NoError(s.T(), err)
-	assert.Equal(s.T(), expectedProcessInfo, val)
-
-	processName = "sh"
-	exeFilePath = "/bin/sh"
-	expectedProcessInfo = fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
-	val, err = s.Get(processName, processBucket)
-	require.NoError(s.T(), err)
-	assert.Equal(s.T(), expectedProcessInfo, val)
-
-	processName = "sleep"
-	exeFilePath = "/bin/sleep"
-	expectedProcessInfo = fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
-	val, err = s.Get(processName, processBucket)
-	require.NoError(s.T(), err)
-	assert.Equal(s.T(), expectedProcessInfo, val)
+	cases := []struct {
+		processName string
+		exeFilePath string
+		pid         int64
+		gid         int64
+	}{
+		{"nginx", "/usr/sbin/nginx", 0, 0},
+		{"sh", "/bin/sh", 0, 0},
+		{"sleep", "/bin/sleep", 0, 0},
+	}
+	var expectedInfo []string
+	var actualInfo []string
+	for _, tc := range cases {
+		expected := fmt.Sprintf("%s:%s:%d:%d", tc.processName, tc.exeFilePath, tc.pid, tc.gid)
+		actual, err := s.Get(tc.processName, processBucket)
+		require.NoError(s.T(), err)
+		expectedInfo = append(expectedInfo, expected)
+		actualInfo = append(actualInfo, actual)
+	}
+	assert.ElementsMatch(s.T(), expectedInfo, actualInfo, "process info does not match")
 }
 
 func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
