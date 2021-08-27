@@ -200,7 +200,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	err = s.collector.Launch()
 	require.NoError(s.T(), err)
 
-	//time.Sleep(10 * time.Second)
+	time.Sleep(60 * time.Second)
 
 	// invokes default nginx
 	containerID, err := s.launchContainer("nginx", "nginx:1.14-alpine")
