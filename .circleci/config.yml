@@ -152,6 +152,9 @@ commands:
 jobs:
   initjob:
     <<: *defaultImage
+    environment:
+    - WORKSPACE_ENV_FILE: ~/workspace/shared-env
+
     steps:
     - checkout:
         path: ~/workspace/go/src/github.com/stackrox/collector
@@ -168,7 +171,7 @@ jobs:
     - run:
         name: Set up shared environment
         command: |
-          cat >~/workspace/shared-env \<<-"EOF"
+          cat > $WORKSPACE_ENV_FILE \<<-"EOF"
             export GOPATH="${WORKSPACE_ROOT}/go"
             export SOURCE_ROOT="${GOPATH}/src/github.com/stackrox/collector"
             export COLLECTOR_SOURCE_ROOT="${SOURCE_ROOT}/collector"
@@ -187,23 +190,46 @@ jobs:
           GCLOUD_SSH_FINGERPRINT="$(echo ${GCLOUD_SSH_KEY_PUB} | awk '{print $2}' | base64 -d | md5sum | awk '{print $1}')"
           GCP_SSH_KEY_FILE="${HOME}/.ssh/id_rsa_${GCLOUD_SSH_FINGERPRINT}"
 
-          cat >>~/workspace/shared-env \<<-EOF
+          cat >> $WORKSPACE_ENV_FILE \<<-EOF
             export COLLECTOR_VERSION="${COLLECTOR_VERSION}"
             export COLLECTOR_TAG="${COLLECTOR_TAG}"
             export GCP_SSH_KEY_FILE="${GCP_SSH_KEY_FILE}"
           EOF
 
           if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -f pr-metadata/labels/build-builder-image ]]; then
-          cat >>~/workspace/shared-env \<<-EOF
+          cat >> $WORKSPACE_ENV_FILE \<<-EOF
             export COLLECTOR_BUILDER_TAG="cache"
           EOF
           else
-          cat >>~/workspace/shared-env \<<-EOF
+          cat >> $WORKSPACE_ENV_FILE \<<-EOF
             export COLLECTOR_BUILDER_TAG="circle-build-${CIRCLE_WORKFLOW_ID}"
             export BUILD_BUILDER_IMAGE=true
           EOF
           fi
-          cat ~/workspace/shared-env
+          cat $WORKSPACE_ENV_FILE
+
+    - run:
+        name: Set label environment variables
+        command: |
+          if [[ -f pr-metadata/labels/build-legacy-probes ]]; then
+            echo 'export BUILD_LEGACY_PROBES=true' >> $WORKSPACE_ENV_FILE
+          else
+            echo 'export BUILD_LEGACY_PROBES=false' >> $WORKSPACE_ENV_FILE
+          fi
+
+          if [[ -f pr-metadata/labels/debug ]]; then
+            echo 'export CMAKE_BUILD_TYPE=Debug >> $WORKSPACE_ENV_FILE'
+          else
+            echo 'export CMAKE_BUILD_TYPE=Release >> $WORKSPACE_ENV_FILE'
+          fi
+
+          if [[ -f pr-metadata/labels/valgrind-unit-tests ]]; then
+            echo 'export VALGRIND_UNIT_TESTS=true >> $WORKSPACE_ENV_FILE'
+          else
+            echo 'export VALGRIND_UNIT_TESTS=false >> $WORKSPACE_ENV_FILE'
+          fi
+
+
 
     - persist_to_workspace:
         root: ~/workspace
@@ -748,27 +774,17 @@ jobs:
     - run:
         name: Build collector
         command: |
-          if [ -f pr-metadata/labels/debug ]; then
-            CMAKE_BUILD_TYPE=Debug
-          else
-            CMAKE_BUILD_TYPE=Release
-          fi
           make -C "${SOURCE_ROOT}" collector CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
           
     - run:
         name: Run collector unit tests
         command: |
-          if [ -f pr-metadata/labels/valgrind-unit-tests ]; then
-            use_valgrind=true
-          else
-            use_valgrind=false
-          fi
-          make -C "${SOURCE_ROOT}" unittest USE_VALGRIND=$use_valgrind >& $UNITTEST_OUTPUT_FILE
+          make -C "${SOURCE_ROOT}" unittest USE_VALGRIND=$VALGRIND_UNIT_TESTS >& $UNITTEST_OUTPUT_FILE
           cat $UNITTEST_OUTPUT_FILE
-          if [ -f pr-metadata/labels/valgrind-unit-tests ]; then
+          if [ $VALGRIND_UNIT_TESTS == "true" ]; then
             max_allowed_valgrind_errors=0
-            valgrind_summary_lines=`(grep ERROR\ SUMMARY $UNITTEST_OUTPUTFILE || true) | wc -l`
-            if [$valgrind_summary_lines -eq 0]; then
+            valgrind_summary_lines=`(grep ERROR\ SUMMARY $UNITTEST_OUTPUT_FILE || true) | wc -l`
+            if [ $valgrind_summary_lines -eq 0 ]; then
               echo "Error: Valgrind summary not found"
               exit 2
             fi
@@ -806,22 +822,12 @@ jobs:
     - run:
         name: Build rhel collector
         command: |
-          if [ -f pr-metadata/labels/debug ]; then
-            CMAKE_BUILD_TYPE=Debug
-          else
-            CMAKE_BUILD_TYPE=Release
-          fi
           make -C "${SOURCE_ROOT}" collector-rhel CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
           
     - run:
         name: Run RHEL collector unit tests
         command: |
-          if [ -f pr-metadata/labels/valgrind-unit-tests ]; then
-            use_valgrind=true
-          else
-            use_valgrind=false
-          fi
-          make -C "${SOURCE_ROOT}" unittest-rhel USE_VALGRIND=$use_valgrind >& $UNITTEST_OUTPUT_FILE
+          make -C "${SOURCE_ROOT}" unittest-rhel USE_VALGRIND=$USE_VALGRIND >& $UNITTEST_OUTPUT_FILE
           cat $UNITTEST_OUTPUT_FILE
           if [ -f pr-metadata/labels/valgrind-unit-tests ]; then
             max_allowed_valgrind_errors=0
@@ -1034,12 +1040,6 @@ jobs:
     - run:
         name: Build collector UBI images
         command: |
-          if [ -f pr-metadata/labels/debug ]; then
-            CMAKE_BUILD_TYPE=Debug
-          else
-            CMAKE_BUILD_TYPE=Release
-          fi
-
           docker build \
             --build-arg COLLECTOR_VERSION=${COLLECTOR_VERSION} \
             --build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \

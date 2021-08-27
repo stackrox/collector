@@ -55,14 +55,14 @@ unittest:
 	docker run --rm --name collector_unittest \
 		-v "$(CURDIR)/container/libs/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
 		-v "$(CURDIR)/cmake-build:/src/cmake-build" \
-		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) $(VALGRIND_CMD) /src/cmake-build/runUnitTests
+		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) $(COLLECTOR_PRE_ARGUMENTS) /src/cmake-build/runUnitTests
 
 unittest-rhel:
 	docker rm -fv collector_unittest_rhel || true
 	docker run --rm --name collector_unittest_rhel \
 		-v "$(CURDIR)/container/libs/libsinsp-wrapper.so.rhel:/usr/local/lib/libsinsp-wrapper.so:ro" \
 		-v "$(CURDIR)/cmake-build-rhel:/src/cmake-build" \
-		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) $(VALGRIND_CMD) /src/cmake-build/runUnitTests
+		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) $(COLLECTOR_PRE_ARGUMENTS) /src/cmake-build/runUnitTests
 
 .PHONY: txt-files
 txt-files:
