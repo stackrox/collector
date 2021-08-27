@@ -22,6 +22,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 #include "FileDownloader.h"
 
+#include <algorithm>
 #include <unistd.h>
 
 #include "Logging.h"
@@ -41,29 +42,38 @@ static int DebugCallback(CURL* curl, curl_infotype type, char* data, size_t size
 
   std::string msg(data, size);
 
-  switch (type) {
-    case CURLINFO_TEXT:
-      CLOG(DEBUG) << "== Info: " << msg;
-    case CURLINFO_HEADER_OUT:
-      CLOG(DEBUG) << "-> Send header - " << msg;
-      break;
-    case CURLINFO_DATA_OUT:
-      CLOG(DEBUG) << "-> Send data - " << msg;
-      break;
-    case CURLINFO_SSL_DATA_OUT:
-      CLOG(DEBUG) << "-> Send SSL data - " << msg;
-      break;
-    case CURLINFO_HEADER_IN:
-      CLOG(DEBUG) << "<- Recv header - " << msg;
-      break;
-    case CURLINFO_DATA_IN:
-      CLOG(DEBUG) << "<- Recv data - " << msg;
-      break;
-    case CURLINFO_SSL_DATA_IN:
-      CLOG(DEBUG) << "<- Recv SSL data - " << msg;
-      break;
-    default: /* in case a new one is introduced to shock us */
-      return CURLE_OK;
+  if (type == CURLINFO_TEXT) {
+    CLOG(DEBUG) << "== Info: " << msg;
+  }
+
+  //  if (logging::GetLogLevel() > logging::LogLevel::TRACE) {
+  //    // Skip other types of messages if we are not tracing
+  //    return CURLE_OK;
+  //  }
+
+  std::transform(msg.begin(), msg.end(), msg.begin(), [](unsigned char c) -> char {
+    if (c < 0x20 || c >= 0x80) return '.';
+    return (char)c;
+  });
+
+  const char* hdr = nullptr;
+
+  if (type == CURLINFO_HEADER_OUT) {
+    hdr = "-> Send header - ";
+  } else if (type == CURLINFO_DATA_OUT) {
+    hdr = "-> Send data - ";
+  } else if (type == CURLINFO_SSL_DATA_OUT) {
+    hdr = "-> Send SSL data - ";
+  } else if (type == CURLINFO_HEADER_IN) {
+    hdr = "<- Recv header - ";
+  } else if (type == CURLINFO_DATA_IN) {
+    hdr = "<- Recv data - ";
+  } else if (type == CURLINFO_SSL_DATA_IN) {
+    hdr = "<- Recv SSL data - ";
+  }
+
+  if (hdr) {
+    CLOG(DEBUG) << hdr << msg;
   }
 
   return CURLE_OK;
