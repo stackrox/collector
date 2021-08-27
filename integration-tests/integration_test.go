@@ -180,14 +180,6 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 
 	s.metrics = map[string]float64{}
 	s.executor = NewExecutor()
-	s.StartContainerStats()
-	s.collector = NewCollectorManager(s.executor, s.T().Name())
-
-	err := s.collector.Setup()
-	require.NoError(s.T(), err)
-
-	err = s.collector.Launch()
-	require.NoError(s.T(), err)
 
 	images := []string{
 		"nginx:1.14-alpine",
@@ -199,7 +191,16 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 		require.NoError(s.T(), err)
 	}
 
-	time.Sleep(10 * time.Second)
+	s.StartContainerStats()
+	s.collector = NewCollectorManager(s.executor, s.T().Name())
+
+	err := s.collector.Setup()
+	require.NoError(s.T(), err)
+
+	err = s.collector.Launch()
+	require.NoError(s.T(), err)
+
+	//time.Sleep(10 * time.Second)
 
 	// invokes default nginx
 	containerID, err := s.launchContainer("nginx", "nginx:1.14-alpine")
