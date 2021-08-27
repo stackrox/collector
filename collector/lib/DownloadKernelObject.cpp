@@ -84,7 +84,7 @@ bool downloadKernelObjectFromGRPC(FileDownloader& downloader, const std::string&
   return downloadKernelObjectFromURL(downloader, base_url, kernel_module, module_version);
 }
 
-bool downloadKernelObject(const std::string& hostname, const std::string& kernel_module, const std::string& module_path) {
+bool downloadKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& module_path) {
   FileDownloader downloader;
   if (!downloader.IsReady()) {
     CLOG(WARNING) << "Failed to initialize FileDownloader object";
@@ -102,9 +102,15 @@ bool downloadKernelObject(const std::string& hostname, const std::string& kernel
   downloader.OutputFile(module_path + ".gz");
   if (!downloader.SetConnectionTimeout(2)) return false;
   if (!downloader.FollowRedirects(true)) return false;
-  if (!downloader.CACert("/run/secrets/stackrox.io/certs/ca.pem")) return false;
-  if (!downloader.Cert("/run/secrets/stackrox.io/certs/cert.pem")) return false;
-  if (!downloader.Key("/run/secrets/stackrox.io/certs/key.pem")) return false;
+
+  if (!tls_config.isNull()) {
+    if (!downloader.CACert(tls_config["caCertPath"].asCString())) return false;
+    if (!downloader.Cert(tls_config["clientCertPath"].asCString())) return false;
+    if (!downloader.Key(tls_config["clientKeyPath"].asCString())) return false;
+  } else {
+    CLOG(WARNING) << "No TLS configuration provided";
+    return false;
+  }
 
   if (downloadKernelObjectFromGRPC(downloader, hostname, kernel_module, module_version)) {
     return true;

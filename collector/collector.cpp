@@ -95,8 +95,8 @@ static void AbortHandler(int signum) {
   raise(signum);
 }
 
-bool getKernelObject(const std::string& hostname, const std::string& kernel_module, const std::string& module_path) {
-  if (!downloadKernelObject(hostname, kernel_module, module_path)) {
+bool getKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& module_path) {
+  if (!downloadKernelObject(hostname, tls_config, kernel_module, module_path)) {
     CLOG(WARNING) << "Unable to download kernel object " << kernel_module;
     return false;
   }
@@ -339,7 +339,7 @@ int main(int argc, char** argv) {
     while (std::getline(kernel_candidates, kernel_candidate, ' ') && !success) {
       std::string kernel_module = kernel_object.name + "-" + kernel_candidate + kernel_object.extension;
 
-      success = getKernelObject(args->GRPCServer(), kernel_module, kernel_object.path);
+      success = getKernelObject(args->GRPCServer(), collectorConfig["tlsConfig"], kernel_module, kernel_object.path);
 
       // Remove the gunzipped file, we wont need it anymore
       unlink((kernel_object.path + ".gz").c_str());

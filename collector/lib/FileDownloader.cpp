@@ -112,6 +112,11 @@ void FileDownloader::OutputFile(const char* const path) {
 }
 
 bool FileDownloader::CACert(const char* const path) {
+  if (path == nullptr) {
+    CLOG(WARNING) << "CA certificate bundle path unset";
+    return false;
+  }
+
   auto result = curl_easy_setopt(curl, CURLOPT_CAINFO, path);
 
   if (result != CURLE_OK) {
@@ -122,6 +127,11 @@ bool FileDownloader::CACert(const char* const path) {
 }
 
 bool FileDownloader::Cert(const char* const path) {
+  if (path == nullptr) {
+    CLOG(WARNING) << "SSL client certificate path unset";
+    return false;
+  }
+
   auto result = curl_easy_setopt(curl, CURLOPT_SSLCERT, path);
 
   if (result != CURLE_OK) {
@@ -132,6 +142,11 @@ bool FileDownloader::Cert(const char* const path) {
 }
 
 bool FileDownloader::Key(const char* const path) {
+  if (path == nullptr) {
+    CLOG(WARNING) << "SSL client key file path unset";
+    return false;
+  }
+
   auto result = curl_easy_setopt(curl, CURLOPT_SSLKEY, path);
 
   if (result != CURLE_OK) {
