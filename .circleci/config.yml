@@ -171,7 +171,7 @@ jobs:
     - run:
         name: Set up shared environment
         command: |
-          cat > $WORKSPACE_ENV_FILE \<<-"EOF"
+          cat >~/workspace/shared-env \<<-"EOF"
             export GOPATH="${WORKSPACE_ROOT}/go"
             export SOURCE_ROOT="${GOPATH}/src/github.com/stackrox/collector"
             export COLLECTOR_SOURCE_ROOT="${SOURCE_ROOT}/collector"
@@ -218,15 +218,15 @@ jobs:
           fi
 
           if [[ -f pr-metadata/labels/debug ]]; then
-            echo 'export CMAKE_BUILD_TYPE=Debug >> $WORKSPACE_ENV_FILE'
+            echo 'export CMAKE_BUILD_TYPE=Debug' >> $WORKSPACE_ENV_FILE
           else
-            echo 'export CMAKE_BUILD_TYPE=Release >> $WORKSPACE_ENV_FILE'
+            echo 'export CMAKE_BUILD_TYPE=Release' >> $WORKSPACE_ENV_FILE
           fi
 
           if [[ -f pr-metadata/labels/valgrind-unit-tests ]]; then
-            echo 'export VALGRIND_UNIT_TESTS=true >> $WORKSPACE_ENV_FILE'
+            echo 'export VALGRIND_UNIT_TESTS=true' >> $WORKSPACE_ENV_FILE
           else
-            echo 'export VALGRIND_UNIT_TESTS=false >> $WORKSPACE_ENV_FILE'
+            echo 'export VALGRIND_UNIT_TESTS=false' >> $WORKSPACE_ENV_FILE
           fi
 
 
