@@ -52,10 +52,6 @@ FileDownloader::~FileDownloader() {
     curl_easy_cleanup(curl);
   }
 
-  if (file.is_open()) {
-    file.close();
-  }
-
   curl_global_cleanup();
 
   curl_slist_free_all(connect_to);
@@ -108,11 +104,7 @@ bool FileDownloader::FollowRedirects(bool follow) {
 }
 
 void FileDownloader::OutputFile(const std::string& path) {
-  if (file.is_open()) {
-    file.close();
-  }
-
-  file.open(path, std::ios::binary);
+  output_path = path;
 }
 
 void FileDownloader::OutputFile(const char* const path) {
@@ -188,12 +180,10 @@ bool FileDownloader::Download() {
     return false;
   }
 
-  if (!file.is_open()) {
+  if (output_path.empty()) {
     CLOG(WARNING) << "Attempted to download a file without an output set";
     return false;
   }
-
-  curl_easy_setopt(curl, CURLOPT_WRITEDATA, reinterpret_cast<void*>(&file));
 
   if (connect_to) {
     auto result = curl_easy_setopt(curl, CURLOPT_CONNECT_TO, connect_to);
@@ -206,6 +196,15 @@ bool FileDownloader::Download() {
   auto start_time = std::chrono::steady_clock::now();
 
   for (auto retries = retry.times; retries; retries--) {
+    std::ofstream of(output_path, std::ios::trunc | std::ios::binary);
+
+    if (!of.is_open()) {
+      CLOG(WARNING) << "Failed to open " << output_path;
+      return false;
+    }
+
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, reinterpret_cast<void*>(&of));
+
     error.fill('\0');
     auto result = curl_easy_perform(curl);
 
@@ -214,18 +213,18 @@ bool FileDownloader::Download() {
     }
 
     std::string error_message(error.data());
-    CLOG(INFO) << "Fail to download file - " << (!error_message.empty() ? error_message : curl_easy_strerror(result));
+    CLOG(INFO) << "Fail to download " << output_path << " - " << (!error_message.empty() ? error_message : curl_easy_strerror(result));
 
     sleep(retry.delay);
 
     auto time_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - start_time);
     if (time_elapsed > retry.max_time) {
-      CLOG(WARNING) << "Timeout while retrying to download file";
+      CLOG(WARNING) << "Timeout while retrying to download " << output_path;
       return false;
     }
   }
 
-  CLOG(WARNING) << "Failed to download file";
+  CLOG(WARNING) << "Failed to download " << output_path;
 
   return false;
 }

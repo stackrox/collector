@@ -64,7 +64,7 @@ class FileDownloader {
  private:
   CURL* curl;
   curl_slist* connect_to;
-  std::ofstream file;
+  std::string output_path;
   std::array<char, CURL_ERROR_SIZE> error;
   struct {
     unsigned int times;
