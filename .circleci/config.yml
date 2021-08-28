@@ -190,43 +190,43 @@ jobs:
           GCLOUD_SSH_FINGERPRINT="$(echo ${GCLOUD_SSH_KEY_PUB} | awk '{print $2}' | base64 -d | md5sum | awk '{print $1}')"
           GCP_SSH_KEY_FILE="${HOME}/.ssh/id_rsa_${GCLOUD_SSH_FINGERPRINT}"
 
-          cat >> $WORKSPACE_ENV_FILE \<<-EOF
+          cat >> ~/workspace/shared-env \<<-EOF
             export COLLECTOR_VERSION="${COLLECTOR_VERSION}"
             export COLLECTOR_TAG="${COLLECTOR_TAG}"
             export GCP_SSH_KEY_FILE="${GCP_SSH_KEY_FILE}"
           EOF
 
           if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -f pr-metadata/labels/build-builder-image ]]; then
-          cat >> $WORKSPACE_ENV_FILE \<<-EOF
+          cat >> ~/workspace/shared-env \<<-EOF
             export COLLECTOR_BUILDER_TAG="cache"
           EOF
           else
-          cat >> $WORKSPACE_ENV_FILE \<<-EOF
+          cat >> ~/workspace/shared-env \<<-EOF
             export COLLECTOR_BUILDER_TAG="circle-build-${CIRCLE_WORKFLOW_ID}"
             export BUILD_BUILDER_IMAGE=true
           EOF
           fi
-          cat $WORKSPACE_ENV_FILE
+          cat ~/workspace/shared-env
 
     - run:
         name: Set label environment variables
         command: |
           if [[ -f pr-metadata/labels/build-legacy-probes ]]; then
-            echo 'export BUILD_LEGACY_PROBES=true' >> $WORKSPACE_ENV_FILE
+            echo 'export BUILD_LEGACY_PROBES=true' >> ~/workspace/shared-env
           else
-            echo 'export BUILD_LEGACY_PROBES=false' >> $WORKSPACE_ENV_FILE
+            echo 'export BUILD_LEGACY_PROBES=false' >> ~/workspace/shared-env
           fi
 
           if [[ -f pr-metadata/labels/debug ]]; then
-            echo 'export CMAKE_BUILD_TYPE=Debug' >> $WORKSPACE_ENV_FILE
+            echo 'export CMAKE_BUILD_TYPE=Debug' >> ~/workspace/shared-env
           else
-            echo 'export CMAKE_BUILD_TYPE=Release' >> $WORKSPACE_ENV_FILE
+            echo 'export CMAKE_BUILD_TYPE=Release' >> ~/workspace/shared-env
           fi
 
           if [[ -f pr-metadata/labels/valgrind-unit-tests ]]; then
-            echo 'export VALGRIND_UNIT_TESTS=true' >> $WORKSPACE_ENV_FILE
+            echo 'export VALGRIND_UNIT_TESTS=true' >> ~/workspace/shared-env
           else
-            echo 'export VALGRIND_UNIT_TESTS=false' >> $WORKSPACE_ENV_FILE
+            echo 'export VALGRIND_UNIT_TESTS=false' >> ~/workspace/shared-env
           fi
 
 
