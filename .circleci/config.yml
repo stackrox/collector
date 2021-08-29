@@ -827,18 +827,23 @@ jobs:
     - run:
         name: Run RHEL collector unit tests
         command: |
-          make -C "${SOURCE_ROOT}" unittest-rhel USE_VALGRIND=$USE_VALGRIND >& $UNITTEST_OUTPUT_FILE
+          make -C "${SOURCE_ROOT}" unittest-rhel USE_VALGRIND=$VALGRIND_UNIT_TESTS >& $UNITTEST_OUTPUT_FILE
           cat $UNITTEST_OUTPUT_FILE
-          if [ -f pr-metadata/labels/valgrind-unit-tests ]; then
+          if [ $VALGRIND_UNIT_TESTS == "true" ]; then
             max_allowed_valgrind_errors=0
+            valgrind_summary_lines=`(grep ERROR\ SUMMARY $UNITTEST_OUTPUT_FILE || true) | wc -l`
+            if [ $valgrind_summary_lines -eq 0 ]; then
+              echo "Error: Valgrind summary not found"
+              exit 2
+            fi
             valgrind_errors=`grep ERROR\ SUMMARY $UNITTEST_OUTPUT_FILE | awk '{print $7}'`
             if [ $valgrind_errors -gt $max_allowed_valgrind_errors ]
             then
               echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
-              exit 2
+              exit 3
             fi
           fi
-
+         
     - persist_to_workspace:
         root: ~/workspace
         paths:
