@@ -55,10 +55,10 @@ bool downloadKernelObjectFromURL(FileDownloader& downloader, const std::string& 
   return true;
 }
 
-bool downloadKernelObjectFromGRPC(FileDownloader& downloader, const std::string& hostname, const std::string& kernel_module, const std::string& module_version) {
+bool downloadKernelObjectFromHostname(FileDownloader& downloader, const Json::Value& tls_config, const std::string& hostname, const std::string& kernel_module, const std::string& module_version) {
   size_t port_offset = hostname.find(':');
   if (port_offset == std::string::npos) {
-    CLOG(WARNING) << "GRPC server must have a valid port";
+    CLOG(WARNING) << "Provided hostname must have a valid port";
     return false;
   }
 
@@ -67,6 +67,15 @@ bool downloadKernelObjectFromGRPC(FileDownloader& downloader, const std::string&
     CLOG(WARNING) << "SNI hostname must NOT specify a port";
     return false;
   }
+
+  if (tls_config.isNull()) {
+    CLOG(WARNING) << "No TLS configuration provided";
+    return false;
+  }
+
+  if (!downloader.CACert(tls_config["caCertPath"].asCString())) return false;
+  if (!downloader.Cert(tls_config["clientCertPath"].asCString())) return false;
+  if (!downloader.Key(tls_config["clientKeyPath"].asCString())) return false;
 
   std::string server_hostname;
   if (hostname.compare(0, port_offset, SNI_hostname) != 0) {
@@ -77,7 +86,7 @@ bool downloadKernelObjectFromGRPC(FileDownloader& downloader, const std::string&
     server_hostname = hostname;
   }
 
-  // Attempt to download the kernel object from the GRPC server
+  // Attempt to download the kernel object from a given hostname server
   std::string base_url("https://" + server_hostname + "/kernel-objects");
   if (base_url.empty()) return false;
 
@@ -103,16 +112,7 @@ bool downloadKernelObject(const std::string& hostname, const Json::Value& tls_co
   if (!downloader.SetConnectionTimeout(2)) return false;
   if (!downloader.FollowRedirects(true)) return false;
 
-  if (!tls_config.isNull()) {
-    if (!downloader.CACert(tls_config["caCertPath"].asCString())) return false;
-    if (!downloader.Cert(tls_config["clientCertPath"].asCString())) return false;
-    if (!downloader.Key(tls_config["clientKeyPath"].asCString())) return false;
-  } else {
-    CLOG(WARNING) << "No TLS configuration provided";
-    return false;
-  }
-
-  if (downloadKernelObjectFromGRPC(downloader, hostname, kernel_module, module_version)) {
+  if (downloadKernelObjectFromHostname(downloader, tls_config, hostname, kernel_module, module_version)) {
     return true;
   }
 
