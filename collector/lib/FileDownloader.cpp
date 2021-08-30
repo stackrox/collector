@@ -31,16 +31,38 @@ namespace collector {
 
 static size_t HeaderCallback(char* buffer, size_t size, size_t nitems, void* downloadData_) {
   auto downloadData = reinterpret_cast<DownloadData*>(downloadData_);
-  std::string data(buffer, size * nitems);
-  CLOG(DEBUG) << "Received HTTP header: " << data;
+  size *= nitems;
+  std::string data(buffer, size);
 
-  return size * nitems;
+  CLOG(DEBUG) << "Received HTTP header: " << data;
+  if (data.substr(0, 5) == "HTTP/") {
+    size_t error_code_offset = data.find(' ');
+
+    if (error_code_offset == std::string::npos) {
+      CLOG(DEBUG) << "Failed extracting HTTP status code";
+      downloadData->httpStatus = 500;
+      return size;
+    }
+
+    downloadData->httpStatus = std::stoul(data.substr(error_code_offset + 1, data.find(' ')));
+    CLOG(DEBUG) << "Set HTTP status code to '" << downloadData->httpStatus << "'";
+  }
+
+  return size;
 }
 
 static size_t WriteFile(void* content, size_t size, size_t nmemb, void* downloadData_) {
   auto downloadData = reinterpret_cast<DownloadData*>(downloadData_);
-  downloadData->of.write(reinterpret_cast<const char*>(content), size * nmemb);
-  return size * nmemb;
+  size *= nmemb;
+
+  if (downloadData->httpStatus >= 400) {
+    std::string body(reinterpret_cast<const char*>(content), size);
+    CLOG(WARNING) << "HTTP Body Response: " << body;
+    return size;
+  }
+
+  downloadData->of.write(reinterpret_cast<const char*>(content), size);
+  return size;
 }
 
 static int DebugCallback(CURL* curl, curl_infotype type, char* data, size_t size, void* userptr) {
