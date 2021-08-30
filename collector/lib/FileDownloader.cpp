@@ -29,9 +29,17 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-static size_t WriteFile(void* content, size_t size, size_t nmemb, void* stream) {
-  auto s = reinterpret_cast<std::ofstream*>(stream);
-  s->write(reinterpret_cast<const char*>(content), size * nmemb);
+static size_t HeaderCallback(char* buffer, size_t size, size_t nitems, void* downloadData_) {
+  auto downloadData = reinterpret_cast<DownloadData*>(downloadData_);
+  std::string data(buffer, size * nitems);
+  CLOG(DEBUG) << "Received HTTP header: " << data;
+
+  return size * nitems;
+}
+
+static size_t WriteFile(void* content, size_t size, size_t nmemb, void* downloadData_) {
+  auto downloadData = reinterpret_cast<DownloadData*>(downloadData_);
+  downloadData->of.write(reinterpret_cast<const char*>(content), size * nmemb);
   return size * nmemb;
 }
 
@@ -44,12 +52,13 @@ static int DebugCallback(CURL* curl, curl_infotype type, char* data, size_t size
 
   if (type == CURLINFO_TEXT) {
     CLOG(DEBUG) << "== Info: " << msg;
+    return CURLE_OK;
   }
 
-  //  if (logging::GetLogLevel() > logging::LogLevel::TRACE) {
-  //    // Skip other types of messages if we are not tracing
-  //    return CURLE_OK;
-  //  }
+  if (logging::GetLogLevel() > logging::LogLevel::TRACE) {
+    // Skip other types of messages if we are not tracing
+    return CURLE_OK;
+  }
 
   std::transform(msg.begin(), msg.end(), msg.begin(), [](unsigned char c) -> char {
     if (c < 0x20 || c >= 0x80) return '.';
@@ -252,13 +261,15 @@ bool FileDownloader::Download() {
 
   for (auto retries = retry_.times; retries; retries--) {
     std::ofstream of(output_path_, std::ios::trunc | std::ios::binary);
+    DownloadData downloadData = {.httpStatus = 0, .of = of};
 
     if (!of.is_open()) {
       CLOG(WARNING) << "Failed to open " << output_path_;
       return false;
     }
 
-    curl_easy_setopt(curl_, CURLOPT_WRITEDATA, reinterpret_cast<void*>(&of));
+    curl_easy_setopt(curl_, CURLOPT_HEADERDATA, reinterpret_cast<void*>(&downloadData));
+    curl_easy_setopt(curl_, CURLOPT_WRITEDATA, reinterpret_cast<void*>(&downloadData));
 
     error_.fill('\0');
     auto result = curl_easy_perform(curl_);
@@ -286,15 +297,13 @@ bool FileDownloader::Download() {
 
 void FileDownloader::SetDefaultOptions() {
   curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, WriteFile);
+  curl_easy_setopt(curl_, CURLOPT_HEADERFUNCTION, HeaderCallback);
   curl_easy_setopt(curl_, CURLOPT_ERRORBUFFER, error_.data());
-  curl_easy_setopt(curl_, CURLOPT_FAILONERROR, 1L);
 
   if (logging::GetLogLevel() <= logging::LogLevel::DEBUG) {
     curl_easy_setopt(curl_, CURLOPT_VERBOSE, 1L);
     curl_easy_setopt(curl_, CURLOPT_DEBUGFUNCTION, DebugCallback);
   }
-
-  curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
 }
 
 }  // namespace collector
