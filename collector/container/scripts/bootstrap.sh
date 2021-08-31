@@ -251,6 +251,9 @@ function gpl_notice() {
 function get_kernel_object() {
     local kernel_version="$1"
 
+    local alternate_download
+    alternate_download="$(echo "$ROX_COLLECTOR_ALT_PROBE_DOWNLOAD" | tr '[:upper:]' '[:lower:]')"
+
     # Find built-in or download kernel module
     if collection_method_module; then
       local module_name="collector"
@@ -258,7 +261,7 @@ function get_kernel_object() {
       local kernel_module="${module_name}-${kernel_version}.ko"
 
       if ! find_kernel_object "$kernel_module" "$module_path"; then
-        if [[ -n "${ROX_COLLECTOR_ALT_PROBE_DOWNLOAD}" ]]; then
+        if [[ "$alternate_download" == "true" ]]; then
           echo "Testing download of kernel object inside collector binary"
           return 0
         fi
@@ -286,7 +289,7 @@ function get_kernel_object() {
         local kernel_probe="${probe_name}-${kernel_version}.o"
 
         if ! find_kernel_object "${kernel_probe}" "${probe_path}"; then
-          if [[ -n "${ROX_COLLECTOR_ALT_PROBE_DOWNLOAD}" ]]; then
+          if [[ "$alternate_download" == "true" ]]; then
             echo "Testing download of kernel object inside collector binary"
             return 0
           fi
