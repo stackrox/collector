@@ -4,16 +4,24 @@ ARG BASE_TAG=8.4
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS valgrind_build
 
-RUN yum update -y && \
-    yum install -y --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos --enablerepo=ubi-8-codeready-builder --disableplugin=subscription-manager perl --nobest && \
-    yum install -y wget bzip2 gcc make && \
-    wget https://sourceware.org/pub/valgrind/valgrind-3.17.0.tar.bz2 && \
-    tar xjf valgrind-3.17.0.tar.bz2 && \
-    cd valgrind-3.17.0 && \
-    mkdir bin && \
-    ./configure MAKE="gmake" --disable-dependency-tracking --prefix=/valgrind-3.17.0/bin && \
-    make && \
-    make install
+ARG USE_VALGRIND=false
+
+RUN if [ $USE_VALGRIND == "true" ]; then \
+      echo "Installing valgrind"; \
+      yum update -y && \
+      yum install -y --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos --enablerepo=ubi-8-codeready-builder --disableplugin=subscription-manager perl --nobest && \
+      yum install -y wget bzip2 gcc make && \
+      wget https://sourceware.org/pub/valgrind/valgrind-3.17.0.tar.bz2 && \
+      tar xjf valgrind-3.17.0.tar.bz2 && \
+      cd valgrind-3.17.0 && \
+      mkdir bin && \
+      ./configure MAKE="gmake" --disable-dependency-tracking --prefix=/valgrind-3.17.0/bin && \
+      make && \
+      make install; \
+    else \
+      echo "Not installing valgrind"; \
+      mkdir -p /valgrind-3.17.0/bin; \
+    fi
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
 
@@ -58,7 +66,8 @@ RUN mv collector-wrapper.sh /usr/local/bin/ && \
     # (Optional) Remove line below to keep package management utilities
     rpm -e --nodeps rpm rpm-build-libs rpm-libs python3-rpm subscription-manager python3-subscription-manager-rhsm yum $(rpm -qa *dnf*) python3-hawkey && \
     ln -s /valgrind-3.17.0/bin/valgrind /usr/local/bin/valgrind && \
-    echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt
+    echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt; \
+    rmdir /valgrind-3.17.0 || true
 
 
 

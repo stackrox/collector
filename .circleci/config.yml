@@ -931,6 +931,7 @@ jobs:
           build_args=(
             --build-arg module_version="$MODULE_VERSION"
             --build-arg collector_version="$COLLECTOR_VERSION"
+            --build-arg USE_VALGRIND="$USE_VALGRIND"
           )
 
           docker build \
@@ -1353,10 +1354,11 @@ jobs:
           make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report USE_VALGRIND=$use_valgrind
           cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp "${SOURCE_ROOT}/integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
+
     - run:
         name: "Check Valgrind errors"
         command: |
-          if [ ! -f pr-metadata/labels/valgrind-integration-tests ]; then
+          if [ $VALGRIND_INTEGRATION_TESTS == "false" ]; then
             echo "Not using Valgrind. Not checking for Valgrind errors"
             exit 0
           fi
@@ -1374,10 +1376,14 @@ jobs:
               if [[ $valgrind_errors -gt $max_allowed_valgrind_errors ]]; then
                 echo ""
                 echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
-                exit 2
+                exit 3
               fi
+            else
+              echo "Error: Valgrind summary not found"
+              exit 2
             fi
           done
+         done
 
     - run:
         name: "Get serial port output"

@@ -86,6 +86,7 @@ image-rhel: collector-rhel unittest-rhel $(MOD_VER_FILE) $(CURDIR)/collector/con
 	make -C collector txt-files
 	docker build --build-arg collector_version="rhel-$(COLLECTOR_TAG)" \
 		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
+		--build-arg USE_VALGRIND=$(USE_VALGRIND) \
 		-f collector/container/rhel/Dockerfile \
 		-t stackrox/collector-rhel:$(COLLECTOR_TAG) \
 		collector/container/rhel
