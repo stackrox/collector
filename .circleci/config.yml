@@ -1346,12 +1346,7 @@ jobs:
           else
             export COLLECTOR_REPO="stackrox/collector"
           fi
-          if [ -f pr-metadata/labels/valgrind-integration-tests ]; then
-            use_valgrind=true
-          else
-            use_valgrind=false
-          fi
-          make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report USE_VALGRIND=$use_valgrind
+          make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report USE_VALGRIND=$VALGRIND_INTEGRATION_TESTS
           cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp "${SOURCE_ROOT}/integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
@@ -1383,7 +1378,6 @@ jobs:
               exit 2
             fi
           done
-         done
 
     - run:
         name: "Get serial port output"
