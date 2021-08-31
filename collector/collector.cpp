@@ -101,14 +101,6 @@ bool getKernelObject(const std::string& hostname, const Json::Value& tls_config,
     return false;
   }
 
-  struct stat st;
-  if (stat((module_path + ".gz").c_str(), &st)) {
-    CLOG(DEBUG) << "Failed stat'ing " << module_path << ".gz - " << strerror(errno);
-    return false;
-  }
-
-  CLOG(DEBUG) << "Decompressing " << module_path << ".gz - Size: " << st.st_size << "bytes";
-
   // Decompress the file
   GZFileHandle input = gzopen((module_path + ".gz").c_str(), "rb");
   if (!input.valid()) {
@@ -124,29 +116,17 @@ bool getKernelObject(const std::string& hostname, const Json::Value& tls_config,
 
   const int BUFFER_SIZE = 8192;
   std::array<char, BUFFER_SIZE> buf;
-  int bytes_read, total_bytes_read = 0;
+  int bytes_read;
   do {
     bytes_read = gzread(input.get(), buf.data(), BUFFER_SIZE);
 
-    CLOG(DEBUG) << "Read " << bytes_read << " bytes";
     if (bytes_read <= 0) {
       break;
     }
 
-    total_bytes_read += bytes_read;
     output.write(buf.data(), bytes_read);
 
   } while (bytes_read == BUFFER_SIZE);
-
-  CLOG(DEBUG) << "Total bytes read while decompressing: " << total_bytes_read;
-
-  output.close();
-
-  if (!stat(module_path.c_str(), &st)) {
-    CLOG(DEBUG) << "Final size of " << module_path << ": " << st.st_size;
-  } else {
-    CLOG(DEBUG) << "Failed stat'ing " << module_path << " - " << strerror(errno);
-  }
 
   if (bytes_read < 0 || !gzeof(input.get())) {
     CLOG(WARNING) << "Failed decompressing file " << input.error_msg();
