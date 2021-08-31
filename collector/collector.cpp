@@ -309,7 +309,7 @@ int main(int argc, char** argv) {
     useGRPC = true;
   }
 
-  if (*(GetTestBinDownload()) != '\0') {
+  if (config.AlternateProbeDownload()) {
     std::istringstream kernel_candidates(GetKernelCandidates());
 
     CLOG(INFO) << "Testing downloads";

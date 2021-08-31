@@ -179,14 +179,6 @@ const char* GetKernelCandidates() {
   return "";
 }
 
-const char* GetTestBinDownload() {
-  const char* test_download = std::getenv("TEST_BIN_DOWNLOAD");
-  if (test_download && *test_download) return test_download;
-
-  CLOG(DEBUG) << "TEST_BIN_DOWNLOAD not set";
-  return "";
-}
-
 const char* getModuleDownloadBaseURL() {
   const char* module_download_base_url = std::getenv("MODULE_DOWNLOAD_BASE_URL");
   if (module_download_base_url && *module_download_base_url) return module_download_base_url;
