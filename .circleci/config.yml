@@ -152,8 +152,6 @@ commands:
 jobs:
   initjob:
     <<: *defaultImage
-    environment:
-    - WORKSPACE_ENV_FILE: ~/workspace/shared-env
 
     steps:
     - checkout:
@@ -227,6 +225,12 @@ jobs:
             echo 'export VALGRIND_UNIT_TESTS=true' >> ~/workspace/shared-env
           else
             echo 'export VALGRIND_UNIT_TESTS=false' >> ~/workspace/shared-env
+          fi
+
+          if [[ -f pr-metadata/labels/valgrind-integration-tests ]]; then
+            echo 'export VALGRIND_INTEGRATION_TESTS=true' >> ~/workspace/shared-env
+          else
+            echo 'export VALGRIND_INTEGRATION_TESTS=false' >> ~/workspace/shared-env
           fi
 
 
@@ -1232,18 +1236,13 @@ jobs:
           export VM_CONFIG="circle_local_<< parameters.vm-config >>"
           export COLLECTOR_REPO="stackrox/collector<<# parameters.use-rhel>>-rhel<</ parameters.use-rhel>><<# parameters.use-ubi>>-test-cpaas<</ parameters.use-ubi>>"
           export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}"
-          if [ -f pr-metadata/labels/valgrind-integration-tests ]; then
-            use_valgrind=true
-          else
-            use_valgrind=false
-          fi
-          make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report USE_VALGRIND=$use_valgrind
+          make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report USE_VALGRIND=$VALGRIND_INTEGRATION_TESTS
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
     - run:
         name: "Check Valgrind errors"
         command: |
-          if [ ! -f pr-metadata/labels/valgrind-integration-tests ]; then
+          if [ $VALGRIND_INTEGRATION_TESTS == "true" ]; then
             echo "Not using Valgrind. Not checking for Valgrind errors"
             exit 0
           fi
@@ -1261,8 +1260,11 @@ jobs:
               if [[ $valgrind_errors -gt $max_allowed_valgrind_errors ]]; then
                 echo ""
                 echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
-                exit 2
+                exit 3
               fi
+            else
+              echo "Error: Valgrind summary not found"
+              exit 2
             fi
           done
 

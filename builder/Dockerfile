@@ -37,7 +37,6 @@ RUN apt-get update \
         wget \
         valgrind \
     && apt-get clean \
-    && apt list -a libgoogle-perftools-dev \
     ;
 
 # We want to fail if the destination directory is there, hence mkdir (not -p).
