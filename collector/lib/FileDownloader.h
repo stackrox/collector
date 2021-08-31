@@ -33,7 +33,8 @@ You should have received a copy of the GNU General Public License along with thi
 namespace collector {
 
 struct DownloadData {
-  unsigned int httpStatus;
+  unsigned int http_status;
+  std::string error_msg;
   std::ofstream& of;
 };
 
