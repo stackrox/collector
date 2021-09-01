@@ -64,7 +64,7 @@ const char* GetHostname();
 const char* GetKernelCandidates();
 
 // Get base URL for kernel modules downloads from MODULE_DOWNLOAD_BASE_URL
-const char* getModuleDownloadBaseURL();
+const char* GetModuleDownloadBaseURL();
 
 namespace impl {
 

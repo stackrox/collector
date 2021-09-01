@@ -123,7 +123,7 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
     return true;
   }
 
-  std::string base_url(getModuleDownloadBaseURL());
+  std::string base_url(GetModuleDownloadBaseURL());
   if (base_url.empty()) {
     return false;
   }
