@@ -262,7 +262,11 @@ function get_kernel_object() {
 
       if ! find_kernel_object "$kernel_module" "$module_path"; then
         if [[ "$alternate_download" == "true" ]]; then
-          log "Testing download of kernel object inside collector binary"
+          log "Kernel object will be downloaded by the collector binary"
+
+          # The collector program will insert the kernel module upon startup.
+          remove_module "$module_name"
+
           return 0
         fi
 
@@ -290,7 +294,7 @@ function get_kernel_object() {
 
         if ! find_kernel_object "${kernel_probe}" "${probe_path}"; then
           if [[ "$alternate_download" == "true" ]]; then
-            log "Testing download of kernel object inside collector binary"
+            log "Kernel object will be downloaded by the collector binary"
             return 0
           fi
 
