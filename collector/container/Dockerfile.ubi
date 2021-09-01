@@ -4,6 +4,7 @@ FROM registry.access.redhat.com/ubi8/ubi:8.4-206.1626828523 AS builder
 
 ARG REDHAT_USERNAME
 ARG REDHAT_PASSWORD
+ARG USE_VALGRIND=false
 RUN rm -rf /etc/rhsm-host && \
     subscription-manager register --username "${REDHAT_USERNAME}" --password "${REDHAT_PASSWORD}" && \
     subscription-manager attach && \
@@ -34,8 +35,10 @@ RUN dnf -y update && \
         jsoncpp-devel  \
         tbb-devel \
         jq-devel \
-        valgrind \
-        c-ares-devel && \
+        c-ares-devel;
+    if [ $USE_VALGRIND == "true" ]; then \
+        dnf -y install valgrind; \
+    fi; \
     dnf clean all
 
 ARG BUILD_DIR=/build

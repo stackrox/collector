@@ -233,6 +233,12 @@ jobs:
             echo 'export VALGRIND_INTEGRATION_TESTS=false' >> ~/workspace/shared-env
           fi
 
+          if [[ $VALGRIND_UNIT_TESTS == "true" || $VALGRIND_INTEGRATION_TESTS ]]; then
+            echo 'export USE_VALGRIND=true' >> ~/workspace/shared-env
+          else
+            echo 'export USE_VALGRIND=false' >> ~/workspace/shared-env
+          fi
+
 
 
     - persist_to_workspace:
@@ -987,6 +993,7 @@ jobs:
               --build-arg module_version="$MODULE_VERSION"
               --build-arg max_layer_size="$MAX_LAYER_MB"
               --build-arg max_layer_depth="$layer_count"
+              --build-arg USE_VALGRIND="$USE_VALGRIND"
             )
             docker build \
               --target="probe-layer-${layer_count}" \
@@ -1054,6 +1061,7 @@ jobs:
             --build-arg COLLECTOR_VERSION=${COLLECTOR_VERSION} \
             --build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
             --build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}" \
+            --build-arg USE_VALGRIND="${USE_VALGRIND}" \
             -t "collector-test-cpaas:${COLLECTOR_VERSION}" \
             --build-arg CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}" \
             -f ${SOURCE_ROOT}/collector/container/Dockerfile.ubi \
@@ -1690,6 +1698,7 @@ jobs:
               --build-arg collector_repo="${DOCKER_REPO}/collector"
               --build-arg max_layer_depth="${layer_count}"
               --build-arg max_layer_size="${MAX_LAYER_MB}"
+              --build-arg USE_VALGRIND="${USE_VALGRIND}"
             )
             docker build -q \
               --target="probe-layer-${layer_count}" \

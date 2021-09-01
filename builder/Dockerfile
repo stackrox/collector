@@ -1,6 +1,7 @@
 FROM ubuntu:focal
 
 ARG NPROCS=6
+ARG USE_VALGRIND=false
 ENV NPROCS=$NPROCS
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -34,9 +35,11 @@ RUN apt-get update \
         tar \
         unzip \
         uuid-dev \
-        wget \
-        valgrind \
-    && apt-get clean \
+        wget; \
+        if [ "$USE_VALGRIND" = "true" ]; then \
+          apt-get install -y --no-install-recommends valgrind; \
+        fi; \
+        apt-get clean \
     ;
 
 # We want to fail if the destination directory is there, hence mkdir (not -p).
