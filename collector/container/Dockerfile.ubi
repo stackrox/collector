@@ -35,8 +35,8 @@ RUN dnf -y update && \
         jsoncpp-devel  \
         tbb-devel \
         jq-devel \
-        c-ares-devel;
-    if [ $USE_VALGRIND == "true" ]; then \
+        c-ares-devel; \
+    if [ "$USE_VALGRIND" = "true" ]; then \
         dnf -y install valgrind; \
     fi; \
     dnf clean all
