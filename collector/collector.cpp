@@ -245,8 +245,6 @@ int main(int argc, char** argv) {
   if (config.AlternateProbeDownload()) {
     std::istringstream kernel_candidates(GetKernelCandidates());
 
-    CLOG(INFO) << "Testing downloads";
-
     if (kernel_candidates.str().empty()) {
       CLOG(FATAL) << "No kernel candidates available";
     }
@@ -255,17 +253,23 @@ int main(int argc, char** argv) {
       std::string path;
       std::string name;
       std::string extension;
+      std::string type;
     } kernel_object;
 
     if (config.UseEbpf()) {
       kernel_object.path = SysdigService::kProbePath;
       kernel_object.name = SysdigService::kProbeName;
       kernel_object.extension = ".o";
+      kernel_object.type = "eBPF probe";
+
     } else {
       kernel_object.path = SysdigService::kModulePath;
       kernel_object.name = SysdigService::kModuleName;
       kernel_object.extension = ".ko";
+      kernel_object.type = "kernel module";
     }
+
+    CLOG(INFO) << "Attempting to download " << kernel_object.type << " - Candidate kernel versions: " << kernel_candidates.str();
 
     bool success = false;
     std::string kernel_candidate;
