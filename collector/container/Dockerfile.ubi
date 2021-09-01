@@ -62,6 +62,8 @@ WORKDIR /
 ARG COLLECTOR_VERSION
 LABEL version="${COLLECTOR_VERSION}"
 
+ARG USE_VALGRIND=false
+
 ENV COLLECTOR_HOST_ROOT=/host
 
 RUN rm -rf /etc/rhsm-host
@@ -87,8 +89,10 @@ RUN mv /collector-wrapper.sh /usr/local/bin/ && \
       jsoncpp \
       tbb \
       jq \
-      valgrind \
-      c-ares && \
+      c-ares; \
+    if [ "$USE_VALGRIND" = "true" ]; then \
+      microdnf install -y valgrind; \
+    fi; \
     microdnf clean all && \
     rm -rf /var/cache/dnf
 

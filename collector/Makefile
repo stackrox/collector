@@ -1,8 +1,6 @@
 BASE_PATH = ./..
 include ../Makefile-constants.mk
 
-USE_VALGRIND ?= 'false'
-
 HDRS := $(wildcard lib/*.h) $(shell find sysdig/src/userspace -name '*.h')
 
 SRCS := $(wildcard lib/*.cpp) collector.cpp
