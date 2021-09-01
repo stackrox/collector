@@ -36,7 +36,7 @@ extern "C" {
 
 namespace collector {
 
-std::string getModuleVersion() {
+std::string GetModuleVersion() {
   std::ifstream file("/kernel-modules/MODULE_VERSION.txt");
   if (!file.is_open()) {
     CLOG(WARNING) << "Failed to open '/kernel-modules/MODULE_VERSION.txt'";
@@ -49,7 +49,7 @@ std::string getModuleVersion() {
   return module_version;
 }
 
-bool downloadKernelObjectFromURL(FileDownloader& downloader, const std::string& base_url, const std::string& kernel_module, const std::string& module_version) {
+bool DownloadKernelObjectFromURL(FileDownloader& downloader, const std::string& base_url, const std::string& kernel_module, const std::string& module_version) {
   std::string url(base_url + "/" + module_version + "/" + kernel_module + ".gz");
 
   CLOG(DEBUG) << "Attempting to download kernel object from " << url;
@@ -62,7 +62,7 @@ bool downloadKernelObjectFromURL(FileDownloader& downloader, const std::string& 
   return true;
 }
 
-bool downloadKernelObjectFromHostname(FileDownloader& downloader, const Json::Value& tls_config, const std::string& hostname, const std::string& kernel_module, const std::string& module_version) {
+bool DownloadKernelObjectFromHostname(FileDownloader& downloader, const Json::Value& tls_config, const std::string& hostname, const std::string& kernel_module, const std::string& module_version) {
   size_t port_offset = hostname.find(':');
   if (port_offset == std::string::npos) {
     CLOG(WARNING) << "Provided hostname must have a valid port";
@@ -97,17 +97,17 @@ bool downloadKernelObjectFromHostname(FileDownloader& downloader, const Json::Va
   std::string base_url("https://" + server_hostname + "/kernel-objects");
   if (base_url.empty()) return false;
 
-  return downloadKernelObjectFromURL(downloader, base_url, kernel_module, module_version);
+  return DownloadKernelObjectFromURL(downloader, base_url, kernel_module, module_version);
 }
 
-bool downloadKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& module_path) {
+bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& module_path) {
   FileDownloader downloader;
   if (!downloader.IsReady()) {
     CLOG(WARNING) << "Failed to initialize FileDownloader object";
     return false;
   }
 
-  std::string module_version(getModuleVersion());
+  std::string module_version(GetModuleVersion());
   if (module_version.empty()) {
     CLOG(WARNING) << "/kernel-modules/MODULE_VERSION.txt must exist and not be empty";
     return false;
@@ -119,7 +119,7 @@ bool downloadKernelObject(const std::string& hostname, const Json::Value& tls_co
   if (!downloader.SetConnectionTimeout(2)) return false;
   if (!downloader.FollowRedirects(true)) return false;
 
-  if (downloadKernelObjectFromHostname(downloader, tls_config, hostname, kernel_module, module_version)) {
+  if (DownloadKernelObjectFromHostname(downloader, tls_config, hostname, kernel_module, module_version)) {
     return true;
   }
 
@@ -135,14 +135,14 @@ bool downloadKernelObject(const std::string& hostname, const Json::Value& tls_co
   if (!downloader.SetConnectionTimeout(2)) return false;
   if (!downloader.FollowRedirects(true)) return false;
 
-  if (downloadKernelObjectFromURL(downloader, base_url, kernel_module, module_version)) {
+  if (DownloadKernelObjectFromURL(downloader, base_url, kernel_module, module_version)) {
     return true;
   }
   return false;
 }
 
 bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& module_path) {
-  if (!downloadKernelObject(hostname, tls_config, kernel_module, module_path)) {
+  if (!DownloadKernelObject(hostname, tls_config, kernel_module, module_path)) {
     CLOG(WARNING) << "Unable to download kernel object " << kernel_module;
     return false;
   }
