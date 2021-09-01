@@ -21,7 +21,6 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#include <array>
 #include <atomic>
 #include <cctype>
 #include <chrono>
@@ -52,10 +51,10 @@ extern "C" {
 #include "CollectorArgs.h"
 #include "CollectorService.h"
 #include "CollectorStatsExporter.h"
-#include "DownloadKernelObject.h"
 #include "EventNames.h"
 #include "FileSystem.h"
 #include "GRPC.h"
+#include "GetKernelObject.h"
 #include "GetStatus.h"
 #include "LogLevel.h"
 #include "Logging.h"
@@ -93,52 +92,6 @@ static void AbortHandler(int signum) {
   // Re-raise the signal (this time routing it to the default handler) to make sure we get the correct exit code.
   signal(signum, SIG_DFL);
   raise(signum);
-}
-
-bool getKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& module_path) {
-  if (!downloadKernelObject(hostname, tls_config, kernel_module, module_path)) {
-    CLOG(WARNING) << "Unable to download kernel object " << kernel_module;
-    return false;
-  }
-
-  // Decompress the file
-  GZFileHandle input = gzopen((module_path + ".gz").c_str(), "rb");
-  if (!input.valid()) {
-    CLOG(WARNING) << "Unable to open gunzipped file " << module_path << ".gz - " << strerror(errno);
-    return false;
-  }
-
-  std::ofstream output(module_path, std::ios::binary);
-  if (!output.is_open()) {
-    CLOG(WARNING) << "Unable to open output file " << module_path;
-    return false;
-  }
-
-  const int BUFFER_SIZE = 8192;
-  std::array<char, BUFFER_SIZE> buf;
-  int bytes_read;
-  do {
-    bytes_read = gzread(input.get(), buf.data(), BUFFER_SIZE);
-
-    if (bytes_read <= 0) {
-      break;
-    }
-
-    output.write(buf.data(), bytes_read);
-
-  } while (bytes_read == BUFFER_SIZE);
-
-  if (bytes_read < 0 || !gzeof(input.get())) {
-    CLOG(WARNING) << "Failed decompressing file " << input.error_msg();
-    return false;
-  }
-
-  if (chmod(module_path.c_str(), 0444)) {
-    CLOG(WARNING) << "Failed to set file permissions for " << module_path << " - " << strerror(errno);
-    return false;
-  }
-
-  return true;
 }
 
 int InsertModule(int fd, const std::unordered_map<std::string, std::string>& args) {
@@ -319,7 +272,7 @@ int main(int argc, char** argv) {
     while (std::getline(kernel_candidates, kernel_candidate, ' ') && !success) {
       std::string kernel_module = kernel_object.name + "-" + kernel_candidate + kernel_object.extension;
 
-      success = getKernelObject(args->GRPCServer(), collectorConfig["tlsConfig"], kernel_module, kernel_object.path);
+      success = GetKernelObject(args->GRPCServer(), collectorConfig["tlsConfig"], kernel_module, kernel_object.path);
 
       // Remove the gunzipped file, we wont need it anymore
       unlink((kernel_object.path + ".gz").c_str());

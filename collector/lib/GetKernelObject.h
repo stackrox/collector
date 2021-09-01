@@ -21,8 +21,8 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef COLLECTOR_DOWNLOADKERNELOBJECT_H
-#define COLLECTOR_DOWNLOADKERNELOBJECT_H
+#ifndef COLLECTOR_GETKERNELOBJECT_H
+#define COLLECTOR_GETKERNELOBJECT_H
 
 #include <string>
 
@@ -30,7 +30,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-bool downloadKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& module_path);
+bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& module_path);
 
 }  // namespace collector
-#endif  // COLLECTOR_DOWNLOADKERNELOBJECT_H
+#endif  // COLLECTOR_GETKERNELOBJECT_H
