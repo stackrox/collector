@@ -52,7 +52,6 @@ extern "C" {
 #include "CollectorService.h"
 #include "CollectorStatsExporter.h"
 #include "EventNames.h"
-#include "FileSystem.h"
 #include "GRPC.h"
 #include "GetKernelObject.h"
 #include "GetStatus.h"
@@ -278,7 +277,7 @@ int main(int argc, char** argv) {
 
       success = GetKernelObject(args->GRPCServer(), collectorConfig["tlsConfig"], kernel_module, kernel_object.path);
 
-      // Remove the gunzipped file, we wont need it anymore
+      // Remove the gzipped file, we won't need it anymore
       unlink((kernel_object.path + ".gz").c_str());
 
       if (!success) {

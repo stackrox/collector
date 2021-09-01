@@ -149,7 +149,7 @@ class GZFileHandle : public ResourceWrapper<gzFile, GZFileHandle> {
     error_msg_ = gz_error;
 
     if (errnum == Z_ERRNO) {
-      error_msg_ + " - " + strerror(errno) + " (" + std::to_string(errno) + ")";
+      error_msg_ = error_msg_ + " - " + strerror(errno) + " (" + std::to_string(errno) + ")";
     }
 
     return error_msg_;
