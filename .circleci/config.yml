@@ -233,7 +233,7 @@ jobs:
             echo 'export VALGRIND_INTEGRATION_TESTS=false' >> ~/workspace/shared-env
           fi
 
-          if [[ $VALGRIND_UNIT_TESTS == "true" || $VALGRIND_INTEGRATION_TESTS ]]; then
+          if [[ -f pr-metadata/labels/valgrind-unit-tests || -f pr-metadata/labels/valgrind-integration-tests ]]; then
             echo 'export USE_VALGRIND=true' >> ~/workspace/shared-env
           else
             echo 'export USE_VALGRIND=false' >> ~/workspace/shared-env
