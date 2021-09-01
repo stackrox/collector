@@ -62,15 +62,15 @@ class FileDownloader {
   bool Download();
 
  private:
-  CURL* curl;
-  curl_slist* connect_to;
-  std::string output_path;
-  std::array<char, CURL_ERROR_SIZE> error;
+  CURL* curl_;
+  curl_slist* connect_to_;
+  std::string output_path_;
+  std::array<char, CURL_ERROR_SIZE> error_;
   struct {
     unsigned int times;
     unsigned int delay;
     std::chrono::seconds max_time;
-  } retry;
+  } retry_;
 };
 
 }  // namespace collector
