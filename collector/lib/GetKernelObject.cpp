@@ -100,7 +100,7 @@ bool DownloadKernelObjectFromHostname(FileDownloader& downloader, const Json::Va
   return DownloadKernelObjectFromURL(downloader, base_url, kernel_module, module_version);
 }
 
-bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& module_path) {
+bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& compressed_module_path) {
   FileDownloader downloader;
   if (!downloader.IsReady()) {
     CLOG(WARNING) << "Failed to initialize FileDownloader object";
@@ -115,7 +115,7 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
 
   downloader.IPResolve(FileDownloader::IPv4);
   downloader.SetRetries(30, 1, 60);
-  downloader.OutputFile(module_path + ".gz");
+  downloader.OutputFile(compressed_module_path);
   if (!downloader.SetConnectionTimeout(2)) return false;
   if (!downloader.FollowRedirects(true)) return false;
 
@@ -131,7 +131,7 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
   downloader.ResetCURL();
   downloader.IPResolve(FileDownloader::IPv4);
   downloader.SetRetries(30, 1, 60);
-  downloader.OutputFile(module_path + ".gz");
+  downloader.OutputFile(compressed_module_path);
   if (!downloader.SetConnectionTimeout(2)) return false;
   if (!downloader.FollowRedirects(true)) return false;
 
@@ -142,15 +142,17 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
 }
 
 bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& module_path) {
-  if (!DownloadKernelObject(hostname, tls_config, kernel_module, module_path)) {
+  std::string compressed_module_path(module_path + ".gz");
+
+  if (!DownloadKernelObject(hostname, tls_config, kernel_module, compressed_module_path)) {
     CLOG(WARNING) << "Unable to download kernel object " << kernel_module;
     return false;
   }
 
   // Decompress the file
-  GZFileHandle input = gzopen((module_path + ".gz").c_str(), "rb");
+  GZFileHandle input = gzopen(compressed_module_path.c_str(), "rb");
   if (!input.valid()) {
-    CLOG(WARNING) << "Unable to open gunzipped file " << module_path << ".gz - " << strerror(errno);
+    CLOG(WARNING) << "Unable to open gzipped file " << compressed_module_path << " - " << strerror(errno);
     return false;
   }
 
@@ -183,6 +185,8 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
     CLOG(WARNING) << "Failed to set file permissions for " << module_path << " - " << strerror(errno);
     return false;
   }
+
+  CLOG(INFO) << "Successfully downloaded and decompressed " << module_path;
 
   return true;
 }
