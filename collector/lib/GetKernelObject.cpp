@@ -100,7 +100,7 @@ bool DownloadKernelObjectFromHostname(FileDownloader& downloader, const Json::Va
   return DownloadKernelObjectFromURL(downloader, base_url, kernel_module, module_version);
 }
 
-bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& compressed_module_path) {
+bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& compressed_module_path, bool verbose) {
   FileDownloader downloader;
   if (!downloader.IsReady()) {
     CLOG(WARNING) << "Failed to initialize FileDownloader object";
@@ -115,6 +115,7 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
 
   downloader.IPResolve(FileDownloader::IPv4);
   downloader.SetRetries(30, 1, 60);
+  downloader.VerboseMode(verbose);
   downloader.OutputFile(compressed_module_path);
   if (!downloader.SetConnectionTimeout(2)) return false;
   if (!downloader.FollowRedirects(true)) return false;
@@ -131,6 +132,7 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
   downloader.ResetCURL();
   downloader.IPResolve(FileDownloader::IPv4);
   downloader.SetRetries(30, 1, 60);
+  downloader.VerboseMode(verbose);
   downloader.OutputFile(compressed_module_path);
   if (!downloader.SetConnectionTimeout(2)) return false;
   if (!downloader.FollowRedirects(true)) return false;
@@ -141,10 +143,10 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
   return false;
 }
 
-bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& module_path) {
+bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& module_path, bool verbose) {
   std::string compressed_module_path(module_path + ".gz");
 
-  if (!DownloadKernelObject(hostname, tls_config, kernel_module, compressed_module_path)) {
+  if (!DownloadKernelObject(hostname, tls_config, kernel_module, compressed_module_path, verbose)) {
     CLOG(WARNING) << "Unable to download kernel object " << kernel_module;
     return false;
   }
@@ -163,7 +165,7 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
   }
 
   const int BUFFER_SIZE = 8192;
-  std::array<char, BUFFER_SIZE> buf;
+  std::array<char, BUFFER_SIZE> buf = {'\0'};
   int bytes_read;
   do {
     bytes_read = gzread(input.get(), buf.data(), BUFFER_SIZE);

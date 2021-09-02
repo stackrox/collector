@@ -24,6 +24,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <algorithm>
 #include <unistd.h>
+#include <utils.h>
 
 #include "Logging.h"
 
@@ -70,6 +71,7 @@ static int DebugCallback(CURL* curl, curl_infotype type, char* data, size_t size
   (void)userptr;
 
   std::string msg(data, size);
+  msg = rtrim(msg);
 
   if (type == CURLINFO_TEXT) {
     CLOG(DEBUG) << "== Info: " << msg;
@@ -246,6 +248,15 @@ bool FileDownloader::ConnectTo(const char* const entry) {
   return true;
 }
 
+void FileDownloader::VerboseMode(bool verbose) {
+  if (logging::GetLogLevel() <= logging::LogLevel::DEBUG && verbose) {
+    curl_easy_setopt(curl_, CURLOPT_VERBOSE, 1L);
+    curl_easy_setopt(curl_, CURLOPT_DEBUGFUNCTION, DebugCallback);
+  } else {
+    curl_easy_setopt(curl_, CURLOPT_VERBOSE, 0L);
+  }
+}
+
 void FileDownloader::ResetCURL() {
   curl_easy_reset(curl_);
 
@@ -323,11 +334,6 @@ void FileDownloader::SetDefaultOptions() {
   curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, WriteFile);
   curl_easy_setopt(curl_, CURLOPT_HEADERFUNCTION, HeaderCallback);
   curl_easy_setopt(curl_, CURLOPT_ERRORBUFFER, error_.data());
-
-  if (logging::GetLogLevel() <= logging::LogLevel::DEBUG) {
-    curl_easy_setopt(curl_, CURLOPT_VERBOSE, 1L);
-    curl_easy_setopt(curl_, CURLOPT_DEBUGFUNCTION, DebugCallback);
-  }
 }
 
 }  // namespace collector

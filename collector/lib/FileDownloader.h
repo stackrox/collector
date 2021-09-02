@@ -62,6 +62,7 @@ class FileDownloader {
   bool Key(const char* const path);
   bool ConnectTo(const std::string& entry);
   bool ConnectTo(const char* const entry);
+  void VerboseMode(bool verbose);
 
   void ResetCURL();
   bool IsReady();

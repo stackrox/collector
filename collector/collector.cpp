@@ -274,7 +274,7 @@ int main(int argc, char** argv) {
     while (std::getline(kernel_candidates, kernel_candidate, ' ') && !success) {
       std::string kernel_module = kernel_object.name + "-" + kernel_candidate + kernel_object.extension;
 
-      success = GetKernelObject(args->GRPCServer(), collectorConfig["tlsConfig"], kernel_module, kernel_object.path);
+      success = GetKernelObject(args->GRPCServer(), collectorConfig["tlsConfig"], kernel_module, kernel_object.path, config.SetCurlVerbose());
 
       // Remove the gzipped file, we won't need it anymore
       unlink((kernel_object.path + ".gz").c_str());
