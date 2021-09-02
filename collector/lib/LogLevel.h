@@ -30,7 +30,7 @@ namespace collector {
 
 class LogLevel : public CivetHandler {
  public:
-  bool handlePost(CivetServer* server, struct mg_connection* conn);
+  bool handlePost(CivetServer* server, struct mg_connection* conn) override;
 };
 
 }  // namespace collector

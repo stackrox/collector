@@ -23,7 +23,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "ProcessSignalFormatter.h"
 
-#include <uuid/uuid.h>
+#include <numeric>
 
 #include <google/protobuf/util/time_util.h>
 
@@ -51,7 +51,7 @@ enum ProcessSignalType {
   UNKNOWN_PROCESS_TYPE
 };
 
-static EventMap<ProcessSignalType> process_signals = {
+EventMap<ProcessSignalType> process_signals = {
     {
         {"execve<", ProcessSignalType::EXECVE},
     },
@@ -83,9 +83,8 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* eve
   }
 
   ProcessSignal* process_signal = CreateProcessSignal(event);
-  if (!process_signal) return nullptr;
 
-  Signal* signal = Allocate<Signal>();
+  auto* signal = Allocate<Signal>();
   signal->set_allocated_process_signal(process_signal);
 
   SignalStreamMessage* signal_stream_message = AllocateRoot();
@@ -102,9 +101,8 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_threadin
   }
 
   ProcessSignal* process_signal = CreateProcessSignal(tinfo);
-  if (!process_signal) return nullptr;
 
-  Signal* signal = Allocate<Signal>();
+  auto signal = Allocate<Signal>();
   signal->set_allocated_process_signal(process_signal);
 
   SignalStreamMessage* signal_stream_message = AllocateRoot();
@@ -114,7 +112,7 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_threadin
 }
 
 ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
-  auto signal = Allocate<ProcessSignal>();
+  auto* signal = Allocate<ProcessSignal>();
 
   // set id
   signal->set_id(UUIDStr());
@@ -261,15 +259,14 @@ bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
   return true;
 }
 
-int ProcessSignalFormatter::GetTotalStringLength(const std::vector<LineageInfo>& lineage) {
-  int totalStringLength = 0;
-  for (LineageInfo l : lineage) totalStringLength += l.parent_exec_file_path().size();
-
-  return totalStringLength;
+size_t ProcessSignalFormatter::GetTotalStringLength(const std::vector<LineageInfo>& lineage) {
+  return std::accumulate(lineage.begin(), lineage.end(), 0, [](size_t i, const LineageInfo& l) -> size_t {
+    return i + l.parent_exec_file_path().size();
+  });
 }
 
 void ProcessSignalFormatter::CountLineage(const std::vector<LineageInfo>& lineage) {
-  int totalStringLength = GetTotalStringLength(lineage);
+  size_t totalStringLength = GetTotalStringLength(lineage);
   COUNTER_INC(CollectorStats::process_lineage_counts);
   COUNTER_ADD(CollectorStats::process_lineage_total, lineage.size());
   COUNTER_ADD(CollectorStats::process_lineage_sqr_total, lineage.size() * lineage.size());
@@ -278,16 +275,16 @@ void ProcessSignalFormatter::CountLineage(const std::vector<LineageInfo>& lineag
 
 void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
                                                std::vector<LineageInfo>& lineage) {
-  if (tinfo == NULL) return;
-  sinsp_threadinfo* mt = NULL;
+  if (tinfo == nullptr) return;
+  sinsp_threadinfo* mt;
   if (tinfo->is_main_thread()) {
     mt = tinfo;
   } else {
     mt = tinfo->get_main_thread();
-    if (mt == NULL) return;
+    if (mt == nullptr) return;
   }
-  sinsp_threadinfo::visitor_func_t visitor = [this, &lineage](sinsp_threadinfo* pt) {
-    if (pt == NULL) return false;
+  sinsp_threadinfo::visitor_func_t visitor = [&lineage](sinsp_threadinfo* pt) {
+    if (pt == nullptr) return false;
     if (pt->m_pid == 0) return false;
 
     // Only print lineage within the container

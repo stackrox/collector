@@ -77,7 +77,7 @@ class CollectorStats {
 
   std::array<std::atomic<int64_t>, counter_type_max> counter_ = {{}};
 
-  CollectorStats(){};
+  CollectorStats() = default;
 };
 
 namespace internal {
@@ -110,8 +110,8 @@ ScopedTimer<T> scoped_timer(T* timer_array, size_t index) {
 #define SCOPED_TIMER(i) auto __scoped_timer_##__LINE__ = internal::scoped_timer(&CollectorStats::GetOrCreate(), i)
 #define WITH_TIMER(i) if (SCOPED_TIMER(i))
 
-#define COUNTER_SET(i, v) CollectorStats::GetOrCreate().CounterSet(i, static_cast<int64_t>(v));
-#define COUNTER_ADD(i, v) CollectorStats::GetOrCreate().CounterAdd(i, static_cast<int64_t>(v));
+#define COUNTER_SET(i, v) CollectorStats::GetOrCreate().CounterSet(i, static_cast<int64_t>(v))
+#define COUNTER_ADD(i, v) CollectorStats::GetOrCreate().CounterAdd(i, static_cast<int64_t>(v))
 
 #define COUNTER_INC(i) COUNTER_ADD(i, 1)
 #define COUNTER_ZERO(i) COUNTER_SET(i, 0)

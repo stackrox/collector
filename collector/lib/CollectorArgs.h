@@ -37,7 +37,7 @@ class CollectorArgs {
   static CollectorArgs* getInstance();
 
   bool parse(int argc, char** argv, int& exitCode);
-  void clear();
+  static void clear();
 
   option::ArgStatus checkCollectorConfig(const option::Option& option, bool msg);
   option::ArgStatus checkCollectionMethod(const option::Option& option, bool msg);
@@ -52,8 +52,8 @@ class CollectorArgs {
   const std::string& Message() const;
 
  private:
-  CollectorArgs();
-  ~CollectorArgs();
+  CollectorArgs() = default;
+  ~CollectorArgs() = default;
 
   static CollectorArgs* instance;
 

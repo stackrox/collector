@@ -38,7 +38,7 @@ class CollectorArgs;
 class CollectorConfig {
  public:
   static constexpr bool kUseChiselCache = true;
-  static constexpr bool kSnapLen = 0;
+  static constexpr bool kSnapLen = false;
   static constexpr bool kTurnOffScrape = false;
   static constexpr int kScrapeInterval = 30;
   static constexpr char kCollectionMethod[] = "kernel-module";
@@ -90,7 +90,7 @@ end
   std::string HostProc() const;
   std::string CollectionMethod() const;
   std::vector<std::string> Syscalls() const;
-  std::string LogLevel() const;
+  static std::string LogLevel();
   bool EnableSysdigLog() const { return enable_sysdig_log_; }
   bool DisableNetworkFlows() const { return disable_network_flows_; }
   const UnorderedSet<L4ProtoPortPair>& IgnoredL4ProtoPortPairs() const { return ignored_l4proto_port_pairs_; }

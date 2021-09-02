@@ -47,14 +47,14 @@ class EventMap {
   }
 
   T& operator[](uint16_t id) {
-    if (id < 0 || id >= values_.size()) {
+    if (id >= values_.size()) {
       throw CollectorException("Invalid event id " + std::to_string(id));
     }
     return values_[id];
   }
 
   const T& operator[](uint16_t id) const {
-    if (id < 0 || id >= values_.size()) {
+    if (id >= values_.size()) {
       throw CollectorException("Invalid event id " + std::to_string(id));
     }
     return values_[id];

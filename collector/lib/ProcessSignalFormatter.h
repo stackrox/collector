@@ -48,7 +48,7 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
   const sensor::SignalStreamMessage* ToProtoMessage(sinsp_evt* event) override;
   const sensor::SignalStreamMessage* ToProtoMessage(sinsp_threadinfo* tinfo);
 
-  void GetProcessLineage(sinsp_threadinfo* tinfo, std::vector<LineageInfo>& lineage);
+  static void GetProcessLineage(sinsp_threadinfo* tinfo, std::vector<LineageInfo>& lineage);
 
  private:
   Signal* CreateSignal(sinsp_evt* event);
@@ -58,13 +58,13 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
 
   Signal* CreateSignal(sinsp_threadinfo* tinfo);
   ProcessSignal* CreateProcessSignal(sinsp_threadinfo* tinfo);
-  bool ValidateProcessDetails(sinsp_threadinfo* tinfo);
-  int GetTotalStringLength(const std::vector<LineageInfo>& lineage);
-  void CountLineage(const std::vector<LineageInfo>& lineage);
+  static bool ValidateProcessDetails(sinsp_threadinfo* tinfo);
+  static size_t GetTotalStringLength(const std::vector<LineageInfo>& lineage);
+  static void CountLineage(const std::vector<LineageInfo>& lineage);
 
   const EventNames& event_names_;
   SysdigEventExtractor event_extractor_;
-  //CollectorStats* stats_ = CollectorStats::GetOrCreate();
+  // CollectorStats* stats_ = CollectorStats::GetOrCreate();
 };
 
 }  // namespace collector

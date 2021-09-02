@@ -40,19 +40,18 @@ class StringView {
   static constexpr size_type npos = std::string::npos;
 
   using value_type = char;
-  using const_reference = const char&;
   using const_iterator = const char*;
   using const_pointer = const char*;
 
   StringView() : p_(nullptr), n_(0) {}
   StringView(const char* p) : p_(p), n_(std::strlen(p)) {}
   StringView(const char* p, size_type n) : p_(p), n_(n) {}
-  StringView(const StringView& other) : p_(other.p_), n_(other.n_) {}
+  StringView(const StringView& other) = default;
   template <std::size_t N>
   StringView(const char (&buf)[N]) : p_(&buf[0]), n_(N - 1) {}
 
   operator bool() const { return n_ > 0; }
-  std::string str() const { return std::string(p_, n_); }
+  std::string str() const { return {p_, n_}; }
 
   size_type size() const { return n_; }
 
@@ -69,7 +68,7 @@ class StringView {
     const char* new_p = p_ + pos;
     size_type new_n = n_ - pos;
     if (new_n > count) new_n = count;
-    return StringView(new_p, new_n);
+    return {new_p, new_n};
   }
 
   void remove_prefix(size_type n) {

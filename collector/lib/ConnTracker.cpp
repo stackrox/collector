@@ -23,8 +23,6 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "ConnTracker.h"
 
-#include <utility>
-
 #include "CollectorStats.h"
 #include "Containers.h"
 #include "Logging.h"
@@ -34,13 +32,13 @@ namespace collector {
 
 namespace {
 
-static const Address canonical_external_ipv4_addr(255, 255, 255, 255);
-static const Address canonical_external_ipv6_addr(0xffffffffffffffffULL, 0xffffffffffffffffULL);
-static const NRadixTree private_networks_tree(PrivateNetworks());
+const Address canonical_external_ipv4_addr(255, 255, 255, 255);
+const Address canonical_external_ipv6_addr(0xffffffffffffffffULL, 0xffffffffffffffffULL);
+const NRadixTree private_networks_tree(PrivateNetworks());
 
 }  // namespace
 
-bool ContainsPrivateNetwork(Address::Family family, NRadixTree tree) {
+bool ContainsPrivateNetwork(Address::Family family, const NRadixTree& tree) {
   return tree.IsAnyIPNetSubset(family, private_networks_tree) || private_networks_tree.IsAnyIPNetSubset(family, tree);
 }
 
@@ -83,12 +81,12 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
   bool private_addr = !address.IsPublic();
   const bool* known_private_networks_exists = Lookup(known_private_networks_exists_, address.family());
   if (private_addr && (known_private_networks_exists && !*known_private_networks_exists)) {
-    return IPNet(address, 0, true);
+    return {address, 0, true};
   }
 
   const auto& network = known_ip_networks_.Find(address);
   if (private_addr || Contains(known_public_ips_, address)) {
-    return IPNet(address, network.bits(), true);
+    return {address, network.bits(), true};
   }
 
   if (!network.IsNull()) {
@@ -98,9 +96,9 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
   // Otherwise, associate it to "rest of the internet".
   switch (address.family()) {
     case Address::Family::IPV4:
-      return IPNet(canonical_external_ipv4_addr, 0, true);
+      return {canonical_external_ipv4_addr, 0, true};
     case Address::Family::IPV6:
-      return IPNet(canonical_external_ipv6_addr, 0, true);
+      return {canonical_external_ipv6_addr, 0, true};
     default:
       return {};
   }
@@ -125,7 +123,7 @@ Connection ConnectionTracker::NormalizeConnectionNoLock(const Connection& conn) 
     remote = Endpoint(NormalizeAddressNoLock(remote.address()), remote.port());
   }
 
-  return Connection(conn.container(), local, remote, conn.l4proto(), is_server);
+  return {conn.container(), local, remote, conn.l4proto(), is_server};
 }
 
 namespace {
@@ -206,9 +204,8 @@ UnorderedMap<T, ConnStatus> FetchState(UnorderedMap<T, ConnStatus>* state, bool 
 
 ConnMap ConnectionTracker::FetchConnState(bool normalize, bool clear_inactive) {
   ConnMap cm;
-  size_t state_size;
   WITH_LOCK(mutex_) {
-    state_size = conn_state_.size();
+    size_t state_size = conn_state_.size();
     if (HasConnectionStateFilters()) {
       if (normalize) {
         cm = FetchState(
@@ -236,9 +233,8 @@ ConnMap ConnectionTracker::FetchConnState(bool normalize, bool clear_inactive) {
 
 ContainerEndpointMap ConnectionTracker::FetchEndpointState(bool normalize, bool clear_inactive) {
   ContainerEndpointMap cem;
-  size_t state_size;
   WITH_LOCK(mutex_) {
-    state_size = conn_state_.size();
+    size_t state_size = conn_state_.size();
     if (HasConnectionStateFilters()) {
       if (normalize) {
         cem = FetchState(

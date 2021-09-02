@@ -78,7 +78,7 @@ bool ProfilerHandler::HandleCPURoute(struct mg_connection* conn, const std::stri
     } else if (post_data == "off") {
       if (Profiler::IsCPUProfilerEnabled()) {
         Profiler::StopCPUProfiler();
-        struct stat sdata;
+        struct stat sdata = {0};
         if (stat(kCPUProfileFilename.c_str(), &sdata) == 0) {
           cpu_profile_length_ = sdata.st_size;
         }
@@ -139,7 +139,7 @@ bool ProfilerHandler::handlePost(CivetServer* server, struct mg_connection* conn
     return ServerError(conn, "unable to read request");
   }
   std::string uri(req_info->local_uri);
-  std::string post_data(server->getPostData(conn));
+  std::string post_data(CivetServer::getPostData(conn));
   if (uri == kCPURoute) {
     return HandleCPURoute(conn, post_data);
   } else if (uri == kHeapRoute) {

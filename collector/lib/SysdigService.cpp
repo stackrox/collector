@@ -187,7 +187,7 @@ void SysdigService::Run(const std::atomic<CollectorService::ControlValue>& contr
         if (!SendExistingProcesses(signal_handler.handler.get())) {
           continue;
         }
-        result = signal_handler.handler->HandleSignal(evt);
+        signal_handler.handler->HandleSignal(evt);
       }
     }
 
@@ -253,7 +253,7 @@ void SysdigService::SetChisel(const std::string& chisel) {
     std::lock_guard<std::mutex> lock(running_mutex_);
     if (running_) {
       // Reset kernel-level exclusion table.
-      if (!inspector_->ioctl(0, PPM_IOCTL_EXCLUDE_NS_OF_PID, 0)) {
+      if (!inspector_->ioctl(0, PPM_IOCTL_EXCLUDE_NS_OF_PID, nullptr)) {
         CLOG(WARNING)
             << "Failed to reset the kernel-level PID namespace exclusion table via ioctl(): " << inspector_->getlasterr();
       }

@@ -550,7 +550,7 @@ public:
    */
   int type() const
   {
-    return desc == 0 ? 0 : desc->type;
+    return desc == nullptr ? 0 : desc->type;
   }
 
   /**
@@ -559,7 +559,7 @@ public:
    */
   int index() const
   {
-    return desc == 0 ? -1 : (int)desc->index;
+    return desc == nullptr ? -1 : (int)desc->index;
   }
 
   /**
@@ -576,13 +576,13 @@ public:
    */
   int count()
   {
-    int c = (desc == 0 ? 0 : 1);
+    int c = (desc == nullptr ? 0 : 1);
     Option* p = first();
     while (!p->isLast())
     {
       ++c;
       p = p->next_;
-    };
+    }
     return c;
   }
 
@@ -662,7 +662,7 @@ public:
    */
   Option* prev()
   {
-    return isFirst() ? 0 : prev_;
+    return isFirst() ? nullptr : prev_;
   }
 
   /**
@@ -688,7 +688,7 @@ public:
    */
   Option* next()
   {
-    return isLast() ? 0 : next_;
+    return isLast() ? nullptr : next_;
   }
 
   /**
@@ -742,7 +742,7 @@ public:
    */
   operator const Option*() const
   {
-    return desc ? this : 0;
+    return desc ? this : nullptr;
   }
 
   /**
@@ -763,7 +763,7 @@ public:
    */
   operator Option*()
   {
-    return desc ? this : 0;
+    return desc ? this : nullptr;
   }
 
   /**
@@ -771,7 +771,7 @@ public:
    * @ref desc, @ref name, @ref arg and @ref namelen.
    */
   Option() :
-      desc(0), name(0), arg(0), namelen(0)
+      desc(nullptr), name(nullptr), arg(nullptr), namelen(0)
   {
     prev_ = tag(this);
     next_ = tag(this);
@@ -827,7 +827,7 @@ private:
     prev_ = tag(this);
     next_ = tag(this);
     namelen = 0;
-    if (name == 0)
+    if (name == nullptr)
       return;
     namelen = 1;
     if (name[0] != '-')
@@ -1063,19 +1063,17 @@ private:
  *   ...
  * @endcode
  */
-class Parser
-{
-  int op_count; //!< @internal @brief see optionsCount()
-  int nonop_count; //!< @internal @brief see nonOptionsCount()
-  const char** nonop_args; //!< @internal @brief see nonOptions()
-  bool err; //!< @internal @brief see error()
+class Parser {
+  int op_count;             //!< @internal @brief see optionsCount()
+  int nonop_count;          //!< @internal @brief see nonOptionsCount()
+  const char** nonop_args;  //!< @internal @brief see nonOptions()
+  bool err;                 //!< @internal @brief see error()
 public:
-
   /**
    * @brief Creates a new Parser.
    */
   Parser() :
-      op_count(0), nonop_count(0), nonop_args(0), err(false)
+      op_count(0), nonop_count(0), nonop_args(nullptr), err(false)
   {
   }
 
@@ -1085,7 +1083,7 @@ public:
    */
   Parser(bool gnu, const Descriptor usage[], int argc, const char** argv, Option options[], Option buffer[],
          int min_abbr_len = 0, bool single_minus_longopt = false, int bufmax = -1) :
-      op_count(0), nonop_count(0), nonop_args(0), err(false)
+      op_count(0), nonop_count(0), nonop_args(nullptr), err(false)
   {
     parse(gnu, usage, argc, argv, options, buffer, min_abbr_len, single_minus_longopt, bufmax);
   }
@@ -1093,7 +1091,7 @@ public:
   //! @brief Parser(...) with non-const argv.
   Parser(bool gnu, const Descriptor usage[], int argc, char** argv, Option options[], Option buffer[],
          int min_abbr_len = 0, bool single_minus_longopt = false, int bufmax = -1) :
-      op_count(0), nonop_count(0), nonop_args(0), err(false)
+      op_count(0), nonop_count(0), nonop_args(nullptr), err(false)
   {
     parse(gnu, usage, argc, (const char**) argv, options, buffer, min_abbr_len, single_minus_longopt, bufmax);
   }
@@ -1101,7 +1099,7 @@ public:
   //! @brief POSIX Parser(...) (gnu==false).
   Parser(const Descriptor usage[], int argc, const char** argv, Option options[], Option buffer[], int min_abbr_len = 0,
          bool single_minus_longopt = false, int bufmax = -1) :
-      op_count(0), nonop_count(0), nonop_args(0), err(false)
+      op_count(0), nonop_count(0), nonop_args(nullptr), err(false)
   {
     parse(false, usage, argc, argv, options, buffer, min_abbr_len, single_minus_longopt, bufmax);
   }
@@ -1109,7 +1107,7 @@ public:
   //! @brief POSIX Parser(...) (gnu==false) with non-const argv.
   Parser(const Descriptor usage[], int argc, char** argv, Option options[], Option buffer[], int min_abbr_len = 0,
          bool single_minus_longopt = false, int bufmax = -1) :
-      op_count(0), nonop_count(0), nonop_args(0), err(false)
+      op_count(0), nonop_count(0), nonop_args(nullptr), err(false)
   {
     parse(false, usage, argc, (const char**) argv, options, buffer, min_abbr_len, single_minus_longopt, bufmax);
   }
@@ -1203,7 +1201,7 @@ public:
    * @li The count (and the buffer[]) includes unknown options if they are collected
    * (see Descriptor::longopt).
    */
-  int optionsCount()
+  int optionsCount() const
   {
     return op_count;
   }
@@ -1222,7 +1220,7 @@ public:
    * user does not supply any non-option arguments the defaults will still be in
    * effect.
    */
-  int nonOptionsCount()
+  int nonOptionsCount() const
   {
     return nonop_count;
   }
@@ -1266,7 +1264,7 @@ public:
    * @endcode
    *
    */
-  bool error()
+  bool error() const
   {
     return err;
   }
@@ -1425,7 +1423,7 @@ public:
   {
   }
 
-  bool perform(Option&)
+  bool perform(Option&) override
   {
     if (*buffer_max == 0x7fffffff)
       return false; // overflow protection: don't accept number of options that doesn't fit signed int
@@ -1465,7 +1463,7 @@ public:
     parser.op_count = bufidx;
   }
 
-  bool perform(Option& option)
+  bool perform(Option& option) override
   {
     if (bufmax < 0 || parser.op_count < bufmax)
     {
@@ -1473,7 +1471,7 @@ public:
         return false; // overflow protection: don't accept number of options that doesn't fit signed int
 
       buffer[parser.op_count] = option;
-      int idx = buffer[parser.op_count].desc->index;
+      unsigned int idx = buffer[parser.op_count].desc->index;
       if (options[idx])
         options[idx].append(buffer[parser.op_count]);
       else
@@ -1483,7 +1481,7 @@ public:
     return true; // NOTE: an option that is discarded because of a full buffer is not fatal
   }
 
-  bool finished(int numargs, const char** args)
+  bool finished(int numargs, const char** args) override
   {
     // only overwrite non-option argument list if there's at least 1
     // new non-option argument. Otherwise we keep the old list. This
@@ -1510,7 +1508,7 @@ inline void Stats::add(bool gnu, const Descriptor usage[], int argc, const char*
 {
   // determine size of options array. This is the greatest index used in the usage + 1
   int i = 0;
-  while (usage[i].shortopt != 0)
+  while (usage[i].shortopt != nullptr)
   {
     if (usage[i].index + 1 >= options_max)
       options_max = (usage[i].index + 1) + 1; // 1 more than necessary as sentinel
@@ -1526,12 +1524,12 @@ inline bool Parser::workhorse(bool gnu, const Descriptor usage[], int numargs, c
                               bool single_minus_longopt, bool print_errors, int min_abbr_len)
 {
   // protect against NULL pointer
-  if (args == 0)
+  if (args == nullptr)
     numargs = 0;
 
   int nonops = 0;
 
-  while (numargs != 0 && *args != 0)
+  while (numargs != 0 && *args != nullptr)
   {
     const char* param = *args; // param can be --long-option, -srto or non-option argument
 
@@ -1584,30 +1582,28 @@ inline bool Parser::workhorse(bool gnu, const Descriptor usage[], int numargs, c
       const char* optarg;
 
       /******************** long option **********************/
-      if (handle_short_options == false || try_single_minus_longopt)
-      {
+      if (!handle_short_options || try_single_minus_longopt) {
         idx = 0;
-        while (usage[idx].longopt != 0 && !streq(usage[idx].longopt, longopt_name))
+        while (usage[idx].longopt != nullptr && !streq(usage[idx].longopt, longopt_name))
           ++idx;
 
-        if (usage[idx].longopt == 0 && min_abbr_len > 0) // if we should try to match abbreviated long options
+        if (usage[idx].longopt == nullptr && min_abbr_len > 0)  // if we should try to match abbreviated long options
         {
           int i1 = 0;
-          while (usage[i1].longopt != 0 && !streqabbr(usage[i1].longopt, longopt_name, min_abbr_len))
+          while (usage[i1].longopt != nullptr && !streqabbr(usage[i1].longopt, longopt_name, min_abbr_len))
             ++i1;
-          if (usage[i1].longopt != 0)
-          { // now test if the match is unambiguous by checking for another match
+          if (usage[i1].longopt != nullptr) {  // now test if the match is unambiguous by checking for another match
             int i2 = i1 + 1;
-            while (usage[i2].longopt != 0 && !streqabbr(usage[i2].longopt, longopt_name, min_abbr_len))
+            while (usage[i2].longopt != nullptr && !streqabbr(usage[i2].longopt, longopt_name, min_abbr_len))
               ++i2;
 
-            if (usage[i2].longopt == 0) // if there was no second match it's unambiguous, so accept i1 as idx
+            if (usage[i2].longopt == nullptr)  // if there was no second match it's unambiguous, so accept i1 as idx
               idx = i1;
           }
         }
 
         // if we found something, disable handle_short_options (only relevant if single_minus_longopt)
-        if (usage[idx].longopt != 0)
+        if (usage[idx].longopt != nullptr)
           handle_short_options = false;
 
         try_single_minus_longopt = false; // prevent looking for longopt in the middle of shortopt group
@@ -1619,7 +1615,7 @@ inline bool Parser::workhorse(bool gnu, const Descriptor usage[], int numargs, c
           ++optarg;
         else
           // possibly detached argument
-          optarg = (have_more_args ? args[1] : 0);
+          optarg = (have_more_args ? args[1] : nullptr);
       }
 
       /************************ short option ***********************************/
@@ -1629,11 +1625,11 @@ inline bool Parser::workhorse(bool gnu, const Descriptor usage[], int numargs, c
           break; // end of short option group
 
         idx = 0;
-        while (usage[idx].shortopt != 0 && !instr(*param, usage[idx].shortopt))
+        while (usage[idx].shortopt != nullptr && !instr(*param, usage[idx].shortopt))
           ++idx;
 
         if (param[1] == 0) // if the potential argument is separate
-          optarg = (have_more_args ? args[1] : 0);
+          optarg = (have_more_args ? args[1] : nullptr);
         else
           // if the potential argument is attached
           optarg = param + 1;
@@ -1641,16 +1637,16 @@ inline bool Parser::workhorse(bool gnu, const Descriptor usage[], int numargs, c
 
       const Descriptor* descriptor = &usage[idx];
 
-      if (descriptor->shortopt == 0) /**************  unknown option ********************/
+      if (descriptor->shortopt == nullptr) /**************  unknown option ********************/
       {
         // look for dummy entry (shortopt == "" and longopt == "") to use as Descriptor for unknown options
         idx = 0;
-        while (usage[idx].shortopt != 0 && (usage[idx].shortopt[0] != 0 || usage[idx].longopt[0] != 0))
+        while (usage[idx].shortopt != nullptr && (usage[idx].shortopt[0] != 0 || usage[idx].longopt[0] != 0))
           ++idx;
-        descriptor = (usage[idx].shortopt == 0 ? 0 : &usage[idx]);
+        descriptor = (usage[idx].shortopt == nullptr ? nullptr : &usage[idx]);
       }
 
-      if (descriptor != 0)
+      if (descriptor != nullptr)
       {
         Option option(descriptor, param, optarg);
         switch (descriptor->check_arg(option, print_errors))
@@ -1659,7 +1655,7 @@ inline bool Parser::workhorse(bool gnu, const Descriptor usage[], int numargs, c
             return false; // fatal
           case ARG_OK:
             // skip one element of the argument vector, if it's a separated argument
-            if (optarg != 0 && have_more_args && optarg == args[1])
+            if (optarg != nullptr && have_more_args && optarg == args[1])
             {
               shift(args, nonops);
               if (numargs > 0)
@@ -1673,7 +1669,7 @@ inline bool Parser::workhorse(bool gnu, const Descriptor usage[], int numargs, c
             break;
           case ARG_IGNORE:
           case ARG_NONE:
-            option.arg = 0;
+            option.arg = nullptr;
             break;
         }
 
@@ -1690,13 +1686,13 @@ inline bool Parser::workhorse(bool gnu, const Descriptor usage[], int numargs, c
 
   } // while
 
-  if (numargs > 0 && *args == 0) // It's a bug in the caller if numargs is greater than the actual number
-    numargs = 0; // of arguments, but as a service to the user we fix this if we spot it.
+  if (numargs > 0 && *args == nullptr)  // It's a bug in the caller if numargs is greater than the actual number
+    numargs = 0;                        // of arguments, but as a service to the user we fix this if we spot it.
 
-  if (numargs < 0) // if we don't know the number of remaining non-option arguments
-  { // we need to count them
+  if (numargs < 0)  // if we don't know the number of remaining non-option arguments
+  {                 // we need to count them
     numargs = 0;
-    while (args[numargs] != 0)
+    while (args[numargs] != nullptr)
       ++numargs;
   }
 
@@ -1733,7 +1729,7 @@ struct PrintUsageImplementation
   {
     Function* write;
 
-    virtual void operator()(const char* str, int size)
+    void operator()(const char* str, int size) override
     {
       (*write)(str, size);
     }
@@ -1754,7 +1750,7 @@ struct PrintUsageImplementation
   {
     OStream& ostream;
 
-    virtual void operator()(const char* str, int size)
+    void operator()(const char* str, int size) override
     {
       ostream.write(str, size);
     }
@@ -1775,7 +1771,7 @@ struct PrintUsageImplementation
   {
     const Temporary& userstream;
 
-    virtual void operator()(const char* str, int size)
+    void operator()(const char* str, int size) override
     {
       userstream.write(str, size);
     }
@@ -1798,7 +1794,7 @@ struct PrintUsageImplementation
     Syscall* write;
     int fd;
 
-    virtual void operator()(const char* str, int size)
+    void operator()(const char* str, int size) override
     {
       (*write)(fd, str, size);
     }
@@ -1819,7 +1815,7 @@ struct PrintUsageImplementation
     Function* fwrite;
     Stream* stream;
 
-    virtual void operator()(const char* str, int size)
+    void operator()(const char* str, int size) override
     {
       (*fwrite)(str, size, 1, stream);
     }
@@ -1979,7 +1975,7 @@ struct PrintUsageImplementation
   public:
     //! @brief Creates an iterator for @c usage.
     LinePartIterator(const Descriptor usage[]) :
-        tablestart(usage), rowdesc(0), rowstart(0), ptr(0), col(-1), len(0), max_line_in_block(0), line_in_block(0),
+        tablestart(usage), rowdesc(nullptr), rowstart(nullptr), ptr(nullptr), col(-1), len(0), max_line_in_block(0), line_in_block(0),
         target_line_in_block(0), hit_target_line(true)
     {
     }
@@ -1993,18 +1989,18 @@ struct PrintUsageImplementation
     {
       // If this is NOT the first time nextTable() is called after the constructor,
       // then skip to the next table break (i.e. a Descriptor with help == 0)
-      if (rowdesc != 0)
+      if (rowdesc != nullptr)
       {
-        while (tablestart->help != 0 && tablestart->shortopt != 0)
+        while (tablestart->help != nullptr && tablestart->shortopt != nullptr)
           ++tablestart;
       }
 
       // Find the next table after the break (if any)
-      while (tablestart->help == 0 && tablestart->shortopt != 0)
+      while (tablestart->help == nullptr && tablestart->shortopt != nullptr)
         ++tablestart;
 
       restartTable();
-      return rowstart != 0;
+      return rowstart != nullptr;
     }
 
     /**
@@ -2014,7 +2010,7 @@ struct PrintUsageImplementation
     {
       rowdesc = tablestart;
       rowstart = tablestart->help;
-      ptr = 0;
+      ptr = nullptr;
     }
 
     /**
@@ -2024,10 +2020,10 @@ struct PrintUsageImplementation
      */
     bool nextRow()
     {
-      if (ptr == 0)
+      if (ptr == nullptr)
       {
         restartRow();
-        return rowstart != 0;
+        return rowstart != nullptr;
       }
 
       while (*ptr != 0 && *ptr != '\n')
@@ -2035,7 +2031,7 @@ struct PrintUsageImplementation
 
       if (*ptr == 0)
       {
-        if ((rowdesc + 1)->help == 0) // table break
+        if ((rowdesc + 1)->help == nullptr)  // table break
           return false;
 
         ++rowdesc;
@@ -2074,7 +2070,7 @@ struct PrintUsageImplementation
      */
     bool next()
     {
-      if (ptr == 0)
+      if (ptr == nullptr)
         return false;
 
       if (col == -1)
@@ -2144,7 +2140,7 @@ struct PrintUsageImplementation
      * @brief Returns the index (counting from 0) of the column in which
      * the part pointed to by @ref data() is located.
      */
-    int column()
+    int column() const
     {
       return col;
     }
@@ -2153,15 +2149,15 @@ struct PrintUsageImplementation
      * @brief Returns the index (counting from 0) of the line within the current column
      * this part belongs to.
      */
-    int line()
+    int line() const
     {
-      return target_line_in_block; // NOT line_in_block !!! It would be wrong if !hit_target_line
+      return target_line_in_block;  // NOT line_in_block !!! It would be wrong if !hit_target_line
     }
 
     /**
      * @brief Returns the length of the part pointed to by @ref data() in raw chars (not UTF-8 characters).
      */
-    int length()
+    int length() const
     {
       return len;
     }
@@ -2170,7 +2166,7 @@ struct PrintUsageImplementation
      * @brief Returns the width in screen columns of the part pointed to by @ref data().
      * Takes multi-byte UTF-8 sequences and wide characters into account.
      */
-    int screenLength()
+    int screenLength() const
     {
       return screenlen;
     }
@@ -2242,12 +2238,12 @@ struct PrintUsageImplementation
      */
     bool wrote_something;
 
-    bool buf_empty()
+    bool buf_empty() const
     {
       return ((tail + 1) & bufmask) == head;
     }
 
-    bool buf_full()
+    bool buf_full() const
     {
       return tail == head;
     }
@@ -2458,8 +2454,7 @@ struct PrintUsageImplementation
       do
       {
         lastcolumn = 0;
-        for (int i = 0; i < maxcolumns; ++i)
-          col_width[i] = 0;
+        std::fill_n(std::begin(col_width), maxcolumns, 0);
 
         part.restartTable();
         while (part.nextRow())
@@ -2567,11 +2562,10 @@ struct PrintUsageImplementation
           {
             // NOTE: This code block is not necessarily executed for
             // each line, because some rows may have fewer columns.
-
-            LineWrapper& lineWrapper = (part.column() == 0) ? interjectionLineWrapper : lastColumnLineWrapper;
-
-            if (!print_last_column_on_own_line || part.column() != lastcolumn)
+            if (!print_last_column_on_own_line || part.column() != lastcolumn) {
+              LineWrapper& lineWrapper = (part.column() == 0) ? interjectionLineWrapper : lastColumnLineWrapper;
               lineWrapper.process(write, part.data(), part.length());
+            }
           }
         } // while
 

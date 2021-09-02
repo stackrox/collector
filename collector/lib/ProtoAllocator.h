@@ -97,7 +97,7 @@ class ArenaProtoAllocator {
 template <typename Message>
 class HeapProtoAllocator {
  public:
-  HeapProtoAllocator() {}
+  HeapProtoAllocator() = default;
 
   HeapProtoAllocator(size_t) : HeapProtoAllocator() {}
 

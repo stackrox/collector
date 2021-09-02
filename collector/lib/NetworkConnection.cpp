@@ -26,12 +26,9 @@ You should have received a copy of the GNU General Public License along with thi
 namespace collector {
 
 bool Address::IsPublic() const {
-  for (const auto& net : PrivateNetworks(family_)) {
-    if (net.Contains(*this)) {
-      return false;
-    }
-  }
-  return true;
+  const auto& networks = PrivateNetworks(family_);
+
+  return std::none_of(networks.begin(), networks.end(), [this](const IPNet& net) -> bool { return net.Contains(*this); });
 }
 
 std::ostream& operator<<(std::ostream& os, L4Proto l4proto) {

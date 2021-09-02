@@ -50,7 +50,7 @@ class EventNames {
 
   // Return event name for given event id
   const std::string& GetEventName(uint16_t id) const {
-    if (id < 0 || id >= names_by_id_.size()) {
+    if (id >= names_by_id_.size()) {
       throw CollectorException("Invalid event id " + std::to_string(id));
     }
     return names_by_id_[id];
@@ -58,7 +58,7 @@ class EventNames {
 
   // Return associated syscall id for given event id
   uint16_t GetEventSyscallID(uint16_t id) const {
-    if (id < 0 || id >= syscall_by_id_.size()) {
+    if (id >= syscall_by_id_.size()) {
       throw CollectorException("Invalid event id " + std::to_string(id));
     }
     return syscall_by_id_[id];

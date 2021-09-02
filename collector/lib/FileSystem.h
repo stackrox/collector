@@ -86,7 +86,7 @@ class ResourceWrapper {
 class FDHandle : public ResourceWrapper<int, FDHandle> {
  public:
   using ResourceWrapper::ResourceWrapper;
-  FDHandle(FDHandle&& other) : ResourceWrapper(other.release()) {}
+  FDHandle(FDHandle&& other) noexcept : ResourceWrapper(other.release()) {}
 
   static constexpr int Invalid() { return -1; }
   static bool Close(int fd) { return (::close(fd) == 0); }
@@ -95,7 +95,7 @@ class FDHandle : public ResourceWrapper<int, FDHandle> {
 class FileHandle : public ResourceWrapper<std::FILE*, FileHandle> {
  public:
   using ResourceWrapper::ResourceWrapper;
-  FileHandle(FileHandle&& other) : ResourceWrapper(other.release()) {}
+  FileHandle(FileHandle&& other) noexcept : ResourceWrapper(other.release()) {}
   FileHandle(FDHandle&& fd, const char* mode) : ResourceWrapper(fdopen(fd.release(), mode)) {}
 
   static constexpr std::FILE* Invalid() { return nullptr; }
@@ -105,7 +105,7 @@ class FileHandle : public ResourceWrapper<std::FILE*, FileHandle> {
 class DirHandle : public ResourceWrapper<DIR*, DirHandle> {
  public:
   using ResourceWrapper::ResourceWrapper;
-  DirHandle(DirHandle&& other) : ResourceWrapper(other.release()) {}
+  DirHandle(DirHandle&& other) noexcept : ResourceWrapper(other.release()) {}
   DirHandle(FDHandle&& fd) : ResourceWrapper(fdopendir(fd.release())) {}
 
   FDHandle openat(const char* path, int mode) const {

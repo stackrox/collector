@@ -44,7 +44,7 @@ class SysdigEventExtractor {
       extractor->wrappers_.push_back(this);
     }
 
-    sinsp_filter_check_iface* operator->() { return filter_check.get(); }
+    sinsp_filter_check_iface* operator->() const { return filter_check.get(); }
 
     const char* event_name;
     std::unique_ptr<sinsp_filter_check_iface> filter_check;

@@ -26,7 +26,6 @@ You should have received a copy of the GNU General Public License along with thi
 #include <algorithm>
 #include <atomic>
 #include <cctype>
-#include <string>
 #include <unordered_map>
 
 namespace collector {
@@ -47,7 +46,7 @@ LogLevel all_levels[] = {
 
 std::unordered_map<std::string, LogLevel>& GetNameToLevelMap() {
   static std::unordered_map<std::string, LogLevel>* name_to_level_map = []() {
-    std::unordered_map<std::string, LogLevel>* map = new std::unordered_map<std::string, LogLevel>;
+    auto* map = new std::unordered_map<std::string, LogLevel>;
     for (LogLevel level : all_levels) {
       map->emplace(GetLogLevelName(level), level);
     }
@@ -86,7 +85,7 @@ const char* GetLogLevelName(LogLevel level) {
       return "FATAL";
     default:
       return "UNKNOWN";
-  };
+  }
 }
 
 char GetLogLevelShortName(LogLevel level) {
@@ -105,7 +104,7 @@ char GetLogLevelShortName(LogLevel level) {
       return 'F';
     default:
       return 'U';
-  };
+  }
 }
 
 bool ParseLogLevelName(std::string name, LogLevel* level) {

@@ -324,9 +324,9 @@ class DuplexClient {
       return status_;
     }
     if (res.IsTimeout()) {
-      return grpc::Status(grpc::StatusCode::DEADLINE_EXCEEDED, "timed out waiting for operation status");
+      return {grpc::StatusCode::DEADLINE_EXCEEDED, "timed out waiting for operation status"};
     }
-    return grpc::Status(grpc::StatusCode::UNKNOWN, "unknown error retrieving status");
+    return {grpc::StatusCode::UNKNOWN, "unknown error retrieving status"};
   }
 
   // Finish immediately (note that the status might indicate a timeout).
@@ -434,7 +434,7 @@ class DuplexClient {
   }
 
   // CheckFlags checks which of the given flags are set.
-  Flags CheckFlags(Flags fl) {
+  Flags CheckFlags(Flags fl) const {
     return flags_ & fl;
   }
 

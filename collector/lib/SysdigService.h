@@ -71,7 +71,7 @@ class SysdigService : public Sysdig {
     std::unique_ptr<SignalHandler> handler;
     std::bitset<PPM_EVENT_MAX> event_filter;
 
-    SignalHandlerEntry(std::unique_ptr<SignalHandler> handler, std::bitset<PPM_EVENT_MAX> event_filter)
+    SignalHandlerEntry(std::unique_ptr<SignalHandler> handler, const std::bitset<PPM_EVENT_MAX>& event_filter)
         : handler(std::move(handler)), event_filter(event_filter) {}
 
     bool ShouldHandle(sinsp_evt* evt) const {

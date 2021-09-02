@@ -29,7 +29,7 @@ extern const struct syscall_evt_pair g_syscall_table[];  // defined in libscap
 namespace collector {
 
 const EventNames& EventNames::GetInstance() {
-  static EventNames* event_names = new EventNames;
+  static auto* event_names = new EventNames;
   return *event_names;
 }
 
@@ -38,7 +38,7 @@ EventNames::EventNames() {
     std::string name(g_event_info[i].name);
     syscall_by_id_[i] = 0;
     names_by_id_[i] = name;
-    ppm_event_type event_type(static_cast<ppm_event_type>(i));
+    auto event_type(static_cast<ppm_event_type>(i));
     events_by_name_[name].push_back(event_type);
     if (PPME_IS_ENTER(event_type)) {
       events_by_name_[name + ">"].push_back(event_type);

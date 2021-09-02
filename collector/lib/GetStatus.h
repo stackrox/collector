@@ -35,7 +35,7 @@ class GetStatus : public CivetHandler {
  public:
   GetStatus(std::string node_name, const Sysdig* sysdig)
       : node_name_(std::move(node_name)), sysdig_(sysdig) {}
-  bool handleGet(CivetServer* server, struct mg_connection* conn);
+  bool handleGet(CivetServer* server, struct mg_connection* conn) override;
 
  private:
   std::string node_name_;

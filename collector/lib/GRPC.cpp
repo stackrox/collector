@@ -25,7 +25,6 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <fstream>
 #include <sstream>
-#include <string>
 
 #include <grpcpp/create_channel.h>
 

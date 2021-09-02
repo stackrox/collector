@@ -23,9 +23,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "CollectorStatsExporter.h"
 
-#include <chrono>
-#include <iostream>
-#include <math.h>
+#include <cmath>
 
 #include "Containers.h"
 #include "EventNames.h"
@@ -101,7 +99,7 @@ void CollectorStatsExporter::run() {
                                        .Name("rox_collector_counters")
                                        .Help("Collector counters")
                                        .Register(*registry_);
-  std::array<prometheus::Gauge*, CollectorStats::counter_type_max> collector_counters;
+  std::array<prometheus::Gauge*, CollectorStats::counter_type_max> collector_counters{};
   for (int i = 0; i < CollectorStats::counter_type_max; i++) {
     auto ct = (CollectorStats::CounterType)(i);
     collector_counters[ct] = &(collector_counters_gauge.Add({{"type", CollectorStats::counter_type_to_name[ct]}}));

@@ -27,12 +27,12 @@ class ProfilerHandler : public CivetHandler {
   static const std::string kCPURoute;
   static const std::string kHeapRoute;
 
-  bool handleGet(CivetServer* server, struct mg_connection* conn);
-  bool handlePost(CivetServer* server, struct mg_connection* conn);
+  bool handleGet(CivetServer* server, struct mg_connection* conn) override;
+  bool handlePost(CivetServer* server, struct mg_connection* conn) override;
 
  private:
-  bool ServerError(struct mg_connection* conn, const char* err);
-  bool ClientError(struct mg_connection* conn, const char* err);
+  static bool ServerError(struct mg_connection* conn, const char* err);
+  static bool ClientError(struct mg_connection* conn, const char* err);
   bool SendStatus(struct mg_connection* conn);
   bool SendHeapProfile(struct mg_connection* conn);
   bool SendCPUProfile(struct mg_connection* conn);

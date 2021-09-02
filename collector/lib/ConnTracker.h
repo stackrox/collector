@@ -131,9 +131,9 @@ class ConnectionTracker {
   }
 
   // NormalizeContainerEndpoint transforms a container endpoint into a normalized form.
-  inline ContainerEndpoint NormalizeContainerEndpoint(const ContainerEndpoint& cep) const {
+  static inline ContainerEndpoint NormalizeContainerEndpoint(const ContainerEndpoint& cep) {
     const auto& ep = cep.endpoint();
-    return ContainerEndpoint(cep.container(), Endpoint(Address(ep.address().family()), ep.port()), cep.l4proto());
+    return {cep.container(), Endpoint(Address(ep.address().family()), ep.port()), cep.l4proto()};
   }
 
   // Determine if a connection should be ignored
@@ -163,8 +163,8 @@ void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_stat
   // Insert all objects from the new state, if anything changed about them.
   for (const auto& conn : new_state) {
     auto insert_res = old_state->insert(conn);
-    auto& old_conn = *insert_res.first;
     if (!insert_res.second) {  // was already present
+      auto& old_conn = *insert_res.first;
       if (conn.second.IsActive() != old_conn.second.IsActive()) {
         // Object was either resurrected or newly closed. Update in either case.
         old_conn.second = conn.second;

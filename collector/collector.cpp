@@ -22,40 +22,28 @@ You should have received a copy of the GNU General Public License along with thi
 */
 
 #include <atomic>
-#include <cctype>
 #include <chrono>
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <string>
 #include <thread>
 
-#include <sys/wait.h>
-
 extern "C" {
-#include <assert.h>
 #include <cap-ng.h>
 #include <execinfo.h>
 #include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
-#include <sys/types.h>
 }
 
 #include "CollectorArgs.h"
 #include "CollectorService.h"
-#include "CollectorStatsExporter.h"
 #include "EventNames.h"
 #include "GRPC.h"
-#include "GetStatus.h"
-#include "LogLevel.h"
 #include "Logging.h"
 #include "SysdigService.h"
 #include "Utility.h"
@@ -79,7 +67,7 @@ static void ShutdownHandler(int signum) {
 static void AbortHandler(int signum) {
   // Write a stacktrace to stderr
   void* buffer[32];
-  size_t size = backtrace(buffer, 32);
+  int size = backtrace(buffer, 32);
   backtrace_symbols_fd(buffer, size, STDERR_FILENO);
 
   // Write a message to stderr using only reentrant functions.

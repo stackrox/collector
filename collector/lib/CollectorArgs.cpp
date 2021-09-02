@@ -27,7 +27,6 @@ You should have received a copy of the GNU General Public License along with thi
 #include <cstring>
 #include <iostream>
 #include <sstream>
-#include <string>
 
 #include "Logging.h"
 #include "optionparser.h"
@@ -78,20 +77,14 @@ static const option::Descriptor usage[] =
         {UNKNOWN, 0, "", "", option::Arg::None,
          "\nExamples:\n"
          "  collector --grpc-server=\"172.16.0.5:443\"\n"},
-        {0, 0, 0, 0, 0, 0},
+        {0, 0, nullptr, nullptr, nullptr, nullptr},
 };
-
-CollectorArgs::CollectorArgs() {
-}
-
-CollectorArgs::~CollectorArgs() {
-}
 
 CollectorArgs* CollectorArgs::instance;
 
 CollectorArgs*
 CollectorArgs::getInstance() {
-  if (instance == NULL) {
+  if (instance == nullptr) {
     instance = new CollectorArgs();
   }
   return instance;
@@ -143,7 +136,7 @@ CollectorArgs::checkCollectionMethod(const option::Option& option, bool msg) {
   using namespace option;
   using std::string;
 
-  if (option.arg == NULL) {
+  if (option.arg == nullptr) {
     if (msg) {
       this->message = "Missing collection method, using default.";
     }
@@ -166,14 +159,14 @@ CollectorArgs::checkChisel(const option::Option& option, bool msg) {
   using namespace option;
   using std::string;
 
-  if (option.arg == NULL) {
+  if (option.arg == nullptr) {
     if (msg) {
       this->message = "Missing chisel. No chisel will be used.";
     }
     return ARG_OK;
   }
   chisel = option.arg;
-  int chiselEncodedLength = chisel.length();
+  auto chiselEncodedLength = chisel.length();
   if (chiselEncodedLength > MAX_CHISEL_LENGTH) {
     if (msg) {
       this->message = "Chisel encoded length cannot exceed " + std::to_string(MAX_CHISEL_LENGTH) + ".";
@@ -190,7 +183,7 @@ CollectorArgs::checkCollectorConfig(const option::Option& option, bool msg) {
   using namespace option;
   using std::string;
 
-  if (option.arg == NULL) {
+  if (option.arg == nullptr) {
     if (msg) {
       this->message = "Missing collector config";
     }
@@ -202,7 +195,7 @@ CollectorArgs::checkCollectorConfig(const option::Option& option, bool msg) {
 
   Json::Value root;
   Json::Reader reader;
-  bool parsingSuccessful = reader.parse(arg.c_str(), root);
+  bool parsingSuccessful = reader.parse(arg, root);
   if (!parsingSuccessful) {
     if (msg) {
       this->message = "A valid JSON configuration is required to start the collector.";
@@ -227,7 +220,7 @@ CollectorArgs::checkGRPCServer(const option::Option& option, bool msg) {
   using namespace option;
   using std::string;
 
-  if (option.arg == NULL || ::strlen(option.arg) == 0) {
+  if (option.arg == nullptr || ::strlen(option.arg) == 0) {
     if (msg) {
       this->message = "Missing grpc list. Cannot configure GRPC client. Reverting to stdout.";
     }

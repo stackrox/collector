@@ -25,6 +25,7 @@ You should have received a copy of the GNU General Public License along with thi
 #define COLLECTOR_NETWORKCONNECTION_H
 
 #include <endian.h>
+#include <iterator>
 
 #include <arpa/inet.h>
 
@@ -158,8 +159,7 @@ class Address {
   friend std::ostream& operator<<(std::ostream& os, const Address& addr) {
     int af = (addr.family_ == Family::IPV4) ? AF_INET : AF_INET6;
     char addr_str[INET6_ADDRSTRLEN];
-    const auto* data = addr.data();
-    if (!inet_ntop(af, data, addr_str, sizeof(addr_str))) {
+    if (!inet_ntop(af, addr.data(), addr_str, sizeof(addr_str))) {
       return os << "<invalid address>";
     }
     return os << addr_str;
@@ -445,9 +445,7 @@ static inline const std::vector<IPNet>& PrivateIPv6Networks() {
     const auto& ipv4_nets = PrivateIPv4Networks();
     networks->reserve(ipv4_nets.size() + 1);
     networks->emplace_back(Address(htonll(0xfd00000000000000ULL), 0ULL), 8);  // ULA
-    for (const auto& ipv4_net : ipv4_nets) {
-      networks->emplace_back(ipv4_net.address().ToV6(), ipv4_net.bits() + 96);
-    }
+    std::transform(ipv4_nets.begin(), ipv4_nets.end(), networks->begin() + 1, [](const IPNet& net) -> IPNet { return {net.address().ToV6(), net.bits() + 96}; });
     return networks;
   }();
 
@@ -455,7 +453,7 @@ static inline const std::vector<IPNet>& PrivateIPv6Networks() {
 }
 
 static inline const std::vector<IPNet>& PrivateNetworks(Address::Family family) {
-  static std::vector<IPNet>* no_networks = new std::vector<IPNet>;
+  static auto* no_networks = new std::vector<IPNet>;
   switch (family) {
     case Address::Family::IPV4:
       return PrivateIPv4Networks();
@@ -467,7 +465,7 @@ static inline const std::vector<IPNet>& PrivateNetworks(Address::Family family) 
 }
 
 static inline const std::vector<IPNet>& PrivateNetworks() {
-  static std::vector<IPNet>* ret = new std::vector<IPNet>;
+  static auto* ret = new std::vector<IPNet>;
   const auto& ipv4_nets = PrivateIPv4Networks();
   ret->insert(ret->end(), ipv4_nets.begin(), ipv4_nets.end());
   const auto& ipv6_nets = PrivateIPv6Networks();

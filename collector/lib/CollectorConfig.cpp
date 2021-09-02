@@ -54,7 +54,6 @@ constexpr char CollectorConfig::kChisel[];
 constexpr const char* CollectorConfig::kSyscalls[];
 
 const UnorderedSet<L4ProtoPortPair> CollectorConfig::kIgnoredL4ProtoPortPairs = {{L4Proto::UDP, 9}};
-;
 
 CollectorConfig::CollectorConfig(CollectorArgs* args) {
   // Set default configuration values
@@ -65,9 +64,7 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   chisel_ = kChisel;
   collection_method_ = kCollectionMethod;
 
-  for (const auto& syscall : kSyscalls) {
-    syscalls_.push_back(syscall);
-  }
+  std::copy(std::begin(kSyscalls), std::end(kSyscalls), std::back_inserter(syscalls_));
 
   // Get hostname and path to host proc dir
   hostname_ = GetHostname();
@@ -108,7 +105,7 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
 
     // Chisel
     if (args->Chisel().length()) {
-      auto chiselB64 = args->Chisel();
+      const auto& chiselB64 = args->Chisel();
       CLOG(INFO) << "User configured chisel=" << chiselB64;
       chisel_ = Base64Decode(chiselB64);
     }
@@ -117,9 +114,9 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
     if (!config["syscalls"].empty() && config["syscalls"].isArray()) {
       auto syscall_list = config["syscalls"];
       std::vector<std::string> syscalls;
-      for (const auto& syscall_json : syscall_list) {
-        syscalls.push_back(syscall_json.asString());
-      }
+
+      std::transform(syscall_list.begin(), syscall_list.end(), std::back_inserter(syscalls), [](const Json::Value& syscall_json) -> std::string { return syscall_json.asString(); });
+
       syscalls_ = syscalls;
 
       std::stringstream ss;
@@ -199,7 +196,7 @@ std::vector<std::string> CollectorConfig::Syscalls() const {
   return syscalls_;
 }
 
-std::string CollectorConfig::LogLevel() const {
+std::string CollectorConfig::LogLevel() {
   return logging::GetLogLevelName(logging::GetLogLevel());
 }
 

@@ -68,8 +68,8 @@ constexpr char NetworkStatusNotifier::kCapsMetadataKey[];
 constexpr char NetworkStatusNotifier::kSupportedCaps[];
 
 std::vector<IPNet> readNetworks(const string& networks, Address::Family family) {
-  int tuple_size = Address::Length(family) + 1;
-  int num_nets = networks.size() / tuple_size;
+  size_t tuple_size = Address::Length(family) + 1;
+  size_t num_nets = networks.size() / tuple_size;
   std::vector<IPNet> ip_nets;
   ip_nets.reserve(num_nets);
   for (int i = 0; i < num_nets; i++) {
@@ -328,7 +328,7 @@ sensor::NetworkAddress* NetworkStatusNotifier::EndpointToProto(const collector::
     addr_proto->set_address_data(endpoint.address().data(), addr_length);
   }
   if (endpoint.network().bits() > 0) {
-    std::array<uint8_t, Address::kMaxLen + 1> buff;
+    std::array<uint8_t, Address::kMaxLen + 1> buff = {0};
     std::memcpy(buff.data(), endpoint.network().address().data(), addr_length);
     buff[addr_length] = endpoint.network().bits();
     addr_proto->set_ip_network(buff.data(), addr_length + 1);

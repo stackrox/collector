@@ -60,11 +60,11 @@ bool Limiter::AllowN(TokenBucket* b, int64_t n) {
   return true;
 }
 
-int64_t Limiter::refill_count(TokenBucket* b) {
+int64_t Limiter::refill_count(TokenBucket* b) const {
   return (NowMicros() - b->last_time) / refill_time_;
 }
 
-void Limiter::fill_bucket(TokenBucket* b) {
+void Limiter::fill_bucket(TokenBucket* b) const {
   b->last_time = NowMicros();
   b->tokens = burst_size_;
 }

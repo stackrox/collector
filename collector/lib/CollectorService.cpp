@@ -23,15 +23,10 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "CollectorService.h"
 
-extern "C" {
-#include <signal.h>
-}
-
-#include <memory>
+#include <csignal>
 
 #include "CollectorStatsExporter.h"
 #include "ConnTracker.h"
-#include "Containers.h"
 #include "GRPCUtil.h"
 #include "GetStatus.h"
 #include "LogLevel.h"
@@ -39,7 +34,6 @@ extern "C" {
 #include "ProfilerHandler.h"
 #include "SysdigService.h"
 #include "Utility.h"
-#include "civetweb/CivetServer.h"
 #include "prometheus/exposer.h"
 
 namespace collector {
@@ -54,7 +48,7 @@ void CollectorService::RunForever() {
   // Start monitoring services.
   // Some of these variables must remain in scope, so
   // be cautious if decomposing to a separate function.
-  const char* options[] = {"listening_ports", "8080", 0};
+  const char* options[] = {"listening_ports", "8080", nullptr};
   CivetServer server(options);
 
   std::shared_ptr<ConnectionTracker> conn_tracker;

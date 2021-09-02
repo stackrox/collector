@@ -42,8 +42,8 @@ class Limiter {
   int64_t Tokens(TokenBucket* b);
 
  private:
-  void fill_bucket(TokenBucket* b);
-  int64_t refill_count(TokenBucket* b);
+  void fill_bucket(TokenBucket* b) const;
+  int64_t refill_count(TokenBucket* b) const;
 
   int64_t burst_size_;   // max number of tokens per bucket and the number added each refill
   int64_t refill_time_;  // amount of time between refill in microseconds

@@ -26,7 +26,6 @@ You should have received a copy of the GNU General Public License along with thi
 #include <cctype>
 #include <cinttypes>
 #include <cstring>
-#include <fcntl.h>
 
 #include <netinet/tcp.h>
 
@@ -41,7 +40,7 @@ namespace {
 // String parsing helper functions
 
 // rep_find applies find n times, always advancing past the found character in each subsequent application.
-StringView::size_type rep_find(int n, StringView str, char c) {
+StringView::size_type rep_find(int n, const StringView& str, char c) {
   if (n <= 0) return StringView::npos;
 
   StringView::size_type pos = 0;
@@ -119,12 +118,12 @@ bool GetSocketINodes(int dirfd, UnorderedSet<ino_t>* sock_inodes) {
 }
 
 // IsContainerID returns whether the given string view represents a container ID.
-bool IsContainerID(StringView str) {
+bool IsContainerID(const StringView& str) {
   if (str.size() != 64) return false;
-  for (auto c : str) {
-    if (!std::isdigit(c) && (c < 'a' || c > 'f')) return false;
-  }
-  return true;
+
+  return std::all_of(str.begin(), str.end(), [](char c) -> bool {
+    return (std::isdigit(c) || (c >= 'a' && c <= 'f'));
+  });
 }
 
 // GetContainerID retrieves the container ID of the process represented by dirfd. The container ID is extracted from

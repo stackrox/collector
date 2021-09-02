@@ -21,20 +21,18 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
+#include <cerrno>
+#include <csignal>
+#include <cstring>
+
 extern "C" {
 
-#include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
 #include <poll.h>
-#include <signal.h>
-#include <string.h>
 #include <unistd.h>
 
 #include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <uuid/uuid.h>
 }
 
@@ -102,9 +100,8 @@ static inline bool is_base64(unsigned char c) {
 }
 
 std::string Base64Decode(std::string const& encoded_string) {
-  int in_len = encoded_string.size();
+  size_t in_len = encoded_string.size();
   int i = 0;
-  int j = 0;
   int in_ = 0;
   unsigned char char_array_4[4], char_array_3[3];
   std::string ret;
@@ -127,6 +124,8 @@ std::string Base64Decode(std::string const& encoded_string) {
   }
 
   if (i) {
+    int j;
+
     for (j = i; j < 4; j++)
       char_array_4[j] = 0;
 
