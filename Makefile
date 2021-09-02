@@ -45,14 +45,14 @@ collector: builder
 collector-rhel: builder-rhel
 	make -C collector container/bin/collector-rhel
 
-# copy collector binaries built using CLion
+# Copy collector binaries built using remote dev environment
 collector-dev:
 	mkdir -p collector/container/bin collector/container/libs
 	docker cp collector_remote_dev:/tmp/cmake-build/collector collector/container/bin/
 	docker cp collector_remote_dev:/tmp/cmake-build/EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so collector/container/libs/libsinsp-wrapper.so
 	docker cp collector_remote_dev:/THIRD_PARTY_NOTICES - | tar -x --strip-components 1 -C collector/container/THIRD_PARTY_NOTICES
 
-# copy rhel collector binaries built using CLion
+# Copy rhel collector binaries built using remote dev environment
 collector-rhel-dev:
 	mkdir -p collector/container/bin collector/container/libs
 	docker cp collector_remote_dev:/tmp/cmake-build-rhel/collector collector/container/bin/collector.rhel
@@ -173,7 +173,7 @@ start-dev-rhel: builder-rhel teardown-dev
 		-v $(DEV_SSH_SERVER_KEY):/etc/sshkeys/ssh_host_ed25519_key:ro \
 		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG)
 
-# build collector image with binaries from remote docker dev and locally built probes
+# Build collector image with binaries from remote docker dev and locally built probes
 image-dev: txt-files collector-dev collector-image probe-archive-dev
 	docker build \
 		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
@@ -183,7 +183,17 @@ image-dev: txt-files collector-dev collector-image probe-archive-dev
 		-t "stackrox/collector:$(COLLECTOR_TAG)" \
 		"$(CURDIR)/kernel-modules/container"
 
-# build rhel collector image with binaries from remote docker dev and locally built probes
+# Build collector image and binaries, with locally built probes
+image-local: collector unittest txt-files collector-image probe-archive-dev
+	docker build \
+		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
+		--build-arg collector_version="$(COLLECTOR_TAG)" \
+		--build-arg max_layer_depth=7 \
+		--build-arg max_layer_size=300 \
+		-t "stackrox/collector:$(COLLECTOR_TAG)" \
+		"$(CURDIR)/kernel-modules/container"
+
+# Build rhel collector image with binaries built in remote dev environment and locally built probes
 image-rhel-dev: txt-files collector-rhel-dev probe-archive-dev
 	$(CURDIR)/collector/container/rhel/create-bundle.sh \
 		"$(CURDIR)/collector/container" \
@@ -207,7 +217,7 @@ probe-dev: $(MOD_VER_FILE)
 	./legacy-modules/download.sh
 	make -C "${CURDIR}/kernel-modules" all-build-containers
 
-# create an archive of all probes built locally
+# Create an archive of all probes built locally
 .PHONY: probe-archive-dev
 probe-archive-dev: $(MOD_VER_FILE)
 	mkdir -p "$(CURDIR)/kernel-modules/container/kernel-modules"
@@ -216,5 +226,5 @@ probe-archive-dev: $(MOD_VER_FILE)
 .PHONY: clean
 clean: teardown-dev
 	make -C collector clean
-	rm -rf sources patches probes source-archives
+	rm -rf sources patches probes source-archives kobuild
 	rm -rf "$(CURDIR)/kernel-modules/container/kernel-modules"
