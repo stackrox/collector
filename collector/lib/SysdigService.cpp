@@ -61,11 +61,17 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
   }
 
   if (conn_tracker) {
-    AddSignalHandler(MakeUnique<NetworkSignalHandler>(inspector_.get(), conn_tracker, &userspace_stats_));
+    std::unique_ptr<SignalHandler> networkSignalHandler;
+    networkSignalHandler.reset(new NetworkSignalHandler(inspector_.get(), conn_tracker, &userspace_stats_));
+    AddSignalHandler(networkSignalHandler);
+    //AddSignalHandler(MakeUnique<NetworkSignalHandler>(inspector_.get(), conn_tracker, &userspace_stats_));
   }
 
   if (config.grpc_channel) {
-    AddSignalHandler(MakeUnique<ProcessSignalHandler>(inspector_.get(), config.grpc_channel, &userspace_stats_));
+    std::unique_ptr<SignalHandler> processSignalHandler;
+    processSignalHandler.reset(new ProcessSignalHandler(inspector_, config.grpc_channel, &userspace_stats_));
+    AddSignalHandler(processSignalHandler);
+    //AddSignalHandler(MakeUnique<ProcessSignalHandler>(inspector_.get(), config.grpc_channel, &userspace_stats_));
   }
 
   if (signal_handlers_.empty()) {
@@ -268,7 +274,7 @@ void SysdigService::SetChisel(const std::string& chisel) {
   }
 }
 
-void SysdigService::AddSignalHandler(std::unique_ptr<SignalHandler> signal_handler) {
+void SysdigService::AddSignalHandler(std::unique_ptr<SignalHandler> &signal_handler) {
   std::bitset<PPM_EVENT_MAX> event_filter;
   const auto& relevant_events = signal_handler->GetRelevantEvents();
   if (relevant_events.empty()) {
