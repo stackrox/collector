@@ -639,6 +639,8 @@ jobs:
               flavor="modern"
             elif [[ "$distro" == "debian" && "$version" =~ ^4.19.0-17(-cloud|)-amd64$ ]]; then
               flavor="modern"
+            elif [[ "$distro" == "flatcar" && kernel_version == 5 && kernel_major == 10 ]]; then
+              flavor="hirsute"
             elif grep -q "$distro" <~/kobuild-tmp/custom-flavors/all; then
               flavor="$distro"
             fi
