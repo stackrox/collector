@@ -535,7 +535,7 @@ jobs:
 
   kernels:
     <<: *defaultMachine
-    parallelism: 32
+    parallelism: 8
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
@@ -1193,10 +1193,10 @@ jobs:
         enum: [module, ebpf]
       vm_type:
         type: enum
-        enum: [cos, rhel, suse, suse-sap, ubuntu-os]
+        enum: [cos, rhel, suse, suse-sap, ubuntu-os, flatcar]
       image_family:
         type: enum
-        enum: [cos-beta, cos-dev, cos-stable, cos-89-lts, cos-85-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2104, sles-12, sles-15, sles-15-sp2-sap]
+        enum: [cos-beta, cos-dev, cos-stable, cos-89-lts, cos-85-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2104, sles-12, sles-15, sles-15-sp2-sap, flatcar-stable]
       offline:
         type: boolean
         default: false
@@ -1826,6 +1826,18 @@ workflows:
         collection_method: module
         vm_type: suse-sap
         image_family: sles-15-sp2-sap
+    - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
+        name: test-module-flatcar-stable
+        collection_method: module
+        vm_type: flatcar
+        image_family: flatcar-stable
+    - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
+        name: test-ebpf-flatcar-stable
+        collection_method: ebpf
+        vm_type: flatcar
+        image_family: flatcar-stable
     - integration-test-data:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
@@ -1854,6 +1866,8 @@ workflows:
         - test-module-sles-12
         - test-ebpf-sles-15-sp2-sap
         - test-module-sles-15-sp2-sap
+        - test-ebpf-flatcar-stable
+        - test-module-flatcar-stable
     - reload-released-images:
         <<: *runOnAllTags
         context:
