@@ -1888,6 +1888,8 @@ workflows:
         - test-module-flatcar-stable
         - test-ebpf-fedora-coreos-stable
         - test-module-fedora-coreos-stable
+        - test-ebpf-flatcar-stable
+        - test-module-flatcar-stable
     - reload-released-images:
         <<: *runOnAllTags
         context:
