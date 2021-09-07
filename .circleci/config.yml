@@ -1846,6 +1846,18 @@ workflows:
         collection_method: ebpf
         vm_type: fedora-coreos
         image_family: fedora-coreos-stable
+    - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
+        name: test-module-flatcar-stable
+        collection_method: module
+        vm_type: flatcar
+        image_family: flatcar-stable
+    - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
+        name: test-ebpf-flatcar-stable
+        collection_method: ebpf
+        vm_type: flatcar
+        image_family: flatcar-stable
     - integration-test-data:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
