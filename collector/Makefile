@@ -13,12 +13,6 @@ generated-srcs:
 		-v $(CURDIR)/../rox-proto:/collector/rox-proto:ro \
 		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) make -f protogen.mk generated-proto-srcs
 
-generated-srcs-rhel:
-	docker run --rm \
-		-v $(CURDIR):/collector/collector \
-		-v $(CURDIR)/../rox-proto:/collector/rox-proto:ro \
-		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) make -f protogen.mk generated-proto-srcs
-
 container/bin/collector: $(HDRS) $(SRCS) txt-files generated-srcs $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
 	mkdir -p container/bin
 	mkdir -p container/libs
@@ -27,28 +21,13 @@ container/bin/collector: $(HDRS) $(SRCS) txt-files generated-srcs $(shell find s
 		-v "$(CURDIR):/src:ro" \
 		-v "$(CURDIR)/../sysdig/:/sysdig:ro" \
 		-v "$(CURDIR)/cmake-build:/tmp/cmake-build" \
-		--env CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
-		--env USE_VALGRIND=$(USE_VALGRIND) \
+		-e CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
+		-e USE_VALGRIND=$(USE_VALGRIND) \
+		-e DISABLE_PROFILING="true" \
 		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-collector.sh
-	cp cmake-build/collector container/bin/
+	cp cmake-build/collector container/bin/collector
 	cp -r cmake-build/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
 	cp cmake-build/EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so
-
-container/bin/collector-rhel: $(HDRS) $(SRCS) txt-files generated-srcs-rhel $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
-	mkdir -p container/bin
-	mkdir -p container/libs
-	docker rm -fv build_collector_rhel || true
-	docker run --rm --name build_collector_rhel \
-		-v "$(CURDIR):/src:ro" \
-		-v "$(CURDIR)/../sysdig/:/sysdig:ro" \
-		-v "$(CURDIR)/cmake-build-rhel:/tmp/cmake-build" \
-		-e DISABLE_PROFILING="true" \
-		--env CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
-		--env USE_VALGRIND=$(USE_VALGRIND) \
-		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) /build-collector.sh
-	cp cmake-build-rhel/collector container/bin/collector.rhel
-	cp -r cmake-build-rhel/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES.rhel/
-	cp cmake-build-rhel/EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so.rhel
 
 unittest:
 	docker rm -fv collector_unittest || true
@@ -57,19 +36,11 @@ unittest:
 		-v "$(CURDIR)/cmake-build:/src/cmake-build" \
 		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) $(COLLECTOR_PRE_ARGUMENTS) /src/cmake-build/runUnitTests
 
-unittest-rhel:
-	docker rm -fv collector_unittest_rhel || true
-	docker run --rm --name collector_unittest_rhel \
-		-v "$(CURDIR)/container/libs/libsinsp-wrapper.so.rhel:/usr/local/lib/libsinsp-wrapper.so:ro" \
-		-v "$(CURDIR)/cmake-build-rhel:/src/cmake-build" \
-		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) $(COLLECTOR_PRE_ARGUMENTS) /src/cmake-build/runUnitTests
-
 .PHONY: txt-files
 txt-files:
-	mkdir -p container/THIRD_PARTY_NOTICES/ container/THIRD_PARTY_NOTICES.rhel/
+	mkdir -p container/THIRD_PARTY_NOTICES/
 	cp LICENSE-kernel-modules.txt container/
 	cp NOTICE-sysdig.txt container/THIRD_PARTY_NOTICES/sysdig
-	cp NOTICE-sysdig.txt container/THIRD_PARTY_NOTICES.rhel/sysdig
 
 .PHONY: distribution
 distribution: clean
@@ -106,18 +77,15 @@ pull-protos:
 
 .PHONY: clean
 clean: clean-generated-srcs
-	docker rm -fv build_collector build_collector_rhel || true
+	docker rm -fv build_collector || true
 	docker rm -fv container-stats benchmark collector grpc-server || true
 	rm -rf sysdig/cmake-build
-	rm -rf sysdig/cmake-build-rhel
 	rm -rf sysdig/sysdig-build
 	rm -rf cmake-build
-	rm -rf cmake-build-rhel
 	rm -rf container/bin
 	rm -rf container/driver
 	rm -rf container/libs
 	rm -rf container/THIRD_PARTY_NOTICES
-	rm -rf container/THIRD_PARTY_NOTICES.rhel
 
 .PHONY: clean-generated-srcs
 clean-generated-srcs:

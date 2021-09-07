@@ -37,10 +37,6 @@ Instructions for Linux
 - In the **File->Setting->Build, Execution, Deployment->Deployment** window click on the **Mappings** tab. Set **Deployment path** to /tmp.
 - In the **File->Settings->Build, Execution, Deployment->CMake** window add a CMake profile that uses the **Remote Host** toolchain and change **Build directory**/**Generation Path** to `cmake-build`.
 
-The development workflow can also be used with the rhel based builder image.
-  - Start the collector builder with `make start-dev-rhel`
-  - Create a Red Hat CMake profile with **Build Directory**/**Generation Path** set to `cmake-build-rhel`.
-
 #### Teardown
 - Run `make teardown-dev` to remove the builder container and associated ephemeral ssh keys from `$HOME/.ssh/known_hosts`
 - After restarting, you may need click **Resync with Remote Hosts** under the **Tools** menu in **CLion**.
@@ -50,7 +46,7 @@ The development workflow can also be used with the rhel based builder image.
 - To run unit tests, select the *runUnitTests* configuration and then select **Run**.
 
 ### Building collector image(s) from the command-line
-- `make image` or `make image-rhel` will create the default (Ubuntu) and Red Hat based collector images respectively.
+- `make image` will create the Red Hat based collector image.
 
 
 

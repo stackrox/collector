@@ -280,39 +280,14 @@ jobs:
     - run:
         name: Save collector-builder image
         command: |
-          docker push "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}"
+          if [[ "${COLLECTOR_BUILDER_TAG}" != "cache" ]]; then
+            # Push cache only if creating a new builder
+            docker push "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}"
+          fi
           if [[ "$CIRCLE_BRANCH" == "master" ]]; then
             docker tag "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}" stackrox/collector-builder:cache
             docker push stackrox/collector-builder:cache
           fi
-
-  builder-rhel:
-    <<: *defaultMachine
-    resource_class: large
-
-    steps:
-    - initcommand
-    - docker-login-push
-
-    - run:
-        name: Restore collector-builder rhel image
-        command: |
-          docker pull "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}" || docker pull stackrox/collector-builder:rhel-cache || true
-
-    - run:
-        name: Build collector-builder rhel image
-        command: |
-          make -C "${SOURCE_ROOT}" builder-rhel
-
-    - run:
-        name: Save collector-builder rhel image
-        command: |
-          docker push "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}"
-          if [[ "$CIRCLE_BRANCH" == "master" ]]; then
-            docker tag "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}" stackrox/collector-builder:rhel-cache
-            docker push stackrox/collector-builder:rhel-cache
-          fi
-
 
   prepare-kernels:
     <<: *defaultImage
@@ -795,7 +770,7 @@ jobs:
     - docker-login-push
 
     - run:
-        name: Restore collector-builder image
+        name: Restore collector-builder rhel image
         command: |
           docker pull "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}"
 
@@ -816,40 +791,6 @@ jobs:
         - go/src/github.com/stackrox/collector/collector/container/bin
         - go/src/github.com/stackrox/collector/collector/container/libs
         - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES
-
-  collector-rhel:
-    <<: *defaultMachine
-    resource_class: large
-    environment:
-      UNITTEST_OUTPUT_FILE: unittest_results.txt
-
-    steps:
-    - initcommand
-    - read-pr-metadata
-    - docker-login-push
-
-    - run:
-        name: Restore collector-builder rhel image
-        command: |
-          docker pull "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}"
-
-    - run:
-        name: Build rhel collector
-        command: |
-          make -C "${SOURCE_ROOT}" collector-rhel CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE USE_VALGRIND="$BUILD_USE_VALGRIND"
-
-    - run:
-        name: Run RHEL collector unit tests
-        command: |
-          make -C "${SOURCE_ROOT}" unittest-rhel "USE_VALGRIND=$VALGRIND_UNIT_TESTS" 2>&1 | tee "$UNITTEST_OUTPUT_FILE"
-          "${SOURCE_ROOT}/.circleci/check-file-for-valgrind-errors.sh" "$UNITTEST_OUTPUT_FILE" "$VALGRIND_UNIT_TESTS"
-
-    - persist_to_workspace:
-        root: ~/workspace
-        paths:
-        - go/src/github.com/stackrox/collector/collector/container/bin
-        - go/src/github.com/stackrox/collector/collector/container/libs
-        - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES.rhel
 
   images:
     <<: *defaultMachine
@@ -930,24 +871,16 @@ jobs:
             --build-arg USE_VALGRIND="$BUILD_USE_VALGRIND"
           )
 
-          docker build \
-            -t "${DOCKER_REPO}/collector:${COLLECTOR_VERSION}-base" \
-            -t "${DOCKER_REPO}/collector:${COLLECTOR_VERSION}-slim" \
-            -t "${QUAY_REPO}/collector:${COLLECTOR_VERSION}-base" \
-            -t "${QUAY_REPO}/collector:${COLLECTOR_VERSION}-slim" \
-            "${build_args[@]}" \
-            ${SOURCE_ROOT}/collector/container
-
           "${SOURCE_ROOT}/collector/container/rhel/create-bundle.sh" \
             "$SOURCE_ROOT/collector/container" \
             "-" \
             "$SOURCE_ROOT/collector/container/rhel"
 
           docker build \
-            -t "${DOCKER_REPO}/collector-rhel:${COLLECTOR_VERSION}-base" \
-            -t "${DOCKER_REPO}/collector-rhel:${COLLECTOR_VERSION}-slim" \
-            -t "${QUAY_REPO}/collector-rhel:${COLLECTOR_VERSION}-base" \
-            -t "${QUAY_REPO}/collector-rhel:${COLLECTOR_VERSION}-slim" \
+            -t "${DOCKER_REPO}/collector:${COLLECTOR_VERSION}-base" \
+            -t "${DOCKER_REPO}/collector:${COLLECTOR_VERSION}-slim" \
+            -t "${QUAY_REPO}/collector:${COLLECTOR_VERSION}-base" \
+            -t "${QUAY_REPO}/collector:${COLLECTOR_VERSION}-slim" \
             "${build_args[@]}" \
             -f ${SOURCE_ROOT}/collector/container/rhel/Dockerfile \
             "$SOURCE_ROOT/collector/container/rhel"
@@ -957,7 +890,6 @@ jobs:
         command: |
           collector_repos=(
             "collector"
-            "collector-rhel"
           )
 
           # On PR branches, only build slim images
@@ -1006,9 +938,7 @@ jobs:
         command: |
           image_repos=(
             "${DOCKER_REPO}/collector"
-            "${DOCKER_REPO}/collector-rhel"
             "${QUAY_REPO}/collector"
-            "${QUAY_REPO}/collector-rhel"
           )
           image_tags=(
             "${COLLECTOR_VERSION}"
@@ -1210,9 +1140,6 @@ jobs:
       vm-config:
         type: string
         default: default
-      use-rhel:
-        type: boolean
-        default: false
       use-ubi:
         type: boolean
         default: false
@@ -1233,7 +1160,7 @@ jobs:
           export REMOTE_HOST_TYPE=local
           export COLLECTION_METHOD=kernel_module
           export VM_CONFIG="circle_local_<< parameters.vm-config >>"
-          export COLLECTOR_REPO="stackrox/collector<<# parameters.use-rhel>>-rhel<</ parameters.use-rhel>><<# parameters.use-ubi>>-test-cpaas<</ parameters.use-ubi>>"
+          export COLLECTOR_REPO="stackrox/collector<<# parameters.use-ubi>>-test-cpaas<</ parameters.use-ubi>>"
           export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}"
           export USE_VALGRIND=$VALGRIND_INTEGRATION_TESTS
           make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report
@@ -1336,6 +1263,20 @@ jobs:
         name: "Running integration tests"
         no_output_timeout: 45m
         command: |
+          export REMOTE_HOST_TYPE=gcloud
+          export COLLECTION_METHOD="<< parameters.collection_method >>"
+          export COLLECTOR_OFFLINE_MODE="<< parameters.offline >>"
+          export ROX_COLLECTOR_ALT_PROBE_DOWNLOAD=false
+          export VM_CONFIG="<< parameters.vm_type >>.<< parameters.image_family >>"
+          export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
+          export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
+          export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
+          export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
+          if "${SOURCE_ROOT}/.circleci/pr_has_label.sh" ci-run-against-ubi; then
+            export COLLECTOR_REPO="stackrox/collector-test-cpaas"
+          else
+            export COLLECTOR_REPO="stackrox/collector"
+          fi
           make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report
           cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp "${SOURCE_ROOT}/integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
@@ -1741,14 +1682,6 @@ workflows:
         <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - builder
-    - builder-rhel:
-        <<: *runOnAllTagsWithDockerIOPushCtx
-        requires:
-        - lint
-    - collector-rhel:
-        <<: *runOnAllTagsWithDockerIOPushCtx
-        requires:
-        - builder-rhel
     - prepare-kernels:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
@@ -1773,7 +1706,6 @@ workflows:
         <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - collector
-        - collector-rhel
         - kernels
         - join-modules
     - ubi-image:
@@ -1786,14 +1718,8 @@ workflows:
         - initjob
     - integration-test-local:
         <<: *runOnAllTagsWithDockerIOPushCtx
-        requires:
-        - images
-        - upload-modules
-    - integration-test-local:
-        <<: *runOnAllTagsWithDockerIOPushCtx
-        name: integration-test-local-rhel
+        name: integration-test-local
         vm-config: rhel
-        use-rhel: true
         requires:
         - images
         - upload-modules
