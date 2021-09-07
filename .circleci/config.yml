@@ -608,28 +608,44 @@ jobs:
           mkdir ~/kobuild-tmp/meta-inspect
           for bundle_file in ~/kobuild-tmp/bundles/bundle-*.tgz; do
             version="$(basename "$bundle_file" | sed -E 's/^bundle-(.*)\.tgz$/\1/')"
-            tar -xzf "${bundle_file}" -C ~/kobuild-tmp/meta-inspect ./BUNDLE_DISTRO ./BUNDLE_VERSION
+            tar -xzf "${bundle_file}" -C ~/kobuild-tmp/meta-inspect ./BUNDLE_DISTRO ./BUNDLE_VERSION ./BUNDLE_MAJOR
             distro="$(< ~/kobuild-tmp/meta-inspect/BUNDLE_DISTRO)"
             kernel_version="$(< ~/kobuild-tmp/meta-inspect/BUNDLE_VERSION)"
+            kernel_major="$(< ~/kobuild-tmp/meta-inspect/BUNDLE_MAJOR)"
+            flavor="default"
+            if [[ "$distro" == "debian" ]] ; then
+              build_id="$(echo "${version}" | cut -d '-' -f2)"
+              if (( kernel_version >= 5 )); then
+                if (( kernel_version > 5 || (( kernel_version == 5 && kernel_major > 10 )) )); then
+                  flavor="hirsute"
+                else
+                  flavor="modern"
+                fi
+              elif (( build_id >= 14 )); then
+                flavor="modern"
+              fi
             # SUSE and all kernels >= 5 can use modern builder
-            if [[ "$distro" =~ ^suse$|^dockerdesktop$ ]] || (( kernel_version >= 5 )); then
-              echo "$version" >>~/kobuild-tmp/custom-flavors/versions.modern
-              echo "Building kernel version $version with modern builder"
+            elif [[ "$distro" =~ ^suse$|^dockerdesktop$ ]] || (( kernel_version >= 5 )); then
+              if (( kernel_version > 5 || (( kernel_version == 5 && kernel_major > 10 )) || (( "$distro" == "flatcar" && kernel_version == 5 && kernel_major == 10  )) )); then
+                flavor="hirsute"
+              else
+                flavor="modern"
+              fi
             # RHEL 8.3+ kernels require a newer gcc and can be compiled with modern builder
             #  Match kernels of the form 4.18.0-240.1.1.el8_3.x86_64 and 4.18.0-301.1.el8.x86_64
             elif [[ "$distro" == "redhat" && "$version" =~ ^.*(el8_[3-9]|[3-9][0-9][0-9][.0-9]+el8)\.x86_64$ ]]; then
-              echo "$version" >>~/kobuild-tmp/custom-flavors/versions.modern
-              echo "Building kernel version $version with modern builder"
+              flavor="modern"
             elif [[ "$distro" == "redhat" && "$version" == "4.18.0-293.el8.x86_64" ]]; then
-              echo "$version" >>~/kobuild-tmp/custom-flavors/versions.modern
-              echo "Building kernel version $version with modern builder"
+              flavor="modern"
             elif [[ "$distro" == "debian" && "$version" =~ ^4.19.0-17(-cloud|)-amd64$ ]]; then
-              echo "$version" >>~/kobuild-tmp/custom-flavors/versions.modern
-              echo "Building kernel version $version with modern builder"
+              flavor="modern"
             elif grep -q "$distro" <~/kobuild-tmp/custom-flavors/all; then
-              echo "$version" >>~/kobuild-tmp/custom-flavors/versions."$distro"
-              echo "Building kernel version $version with custom builder flavor $distro"
+              flavor="$distro"
             fi
+            if [[ "$flavor" != "default" ]]; then
+              echo "$version" >>~/kobuild-tmp/custom-flavors/versions."$flavor"
+            fi
+            echo "Building kernel version $version with $flavor builder"
           done
 
     - run:
