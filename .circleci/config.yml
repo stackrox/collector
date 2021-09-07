@@ -1222,7 +1222,7 @@ jobs:
           export REMOTE_HOST_TYPE=gcloud
           export COLLECTION_METHOD="<< parameters.collection_method >>"
           export COLLECTOR_OFFLINE_MODE="<< parameters.offline >>"
-          export ROX_COLLECTOR_ALT_PROBE_DOWNLOAD=true
+          export ROX_COLLECTOR_ALT_PROBE_DOWNLOAD=false
           export VM_CONFIG="<< parameters.vm_type >>.<< parameters.image_family >>"
           export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
           export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"

@@ -260,7 +260,6 @@ int main(int argc, char** argv) {
       kernel_object.name = SysdigService::kProbeName;
       kernel_object.extension = ".o";
       kernel_object.type = "eBPF probe";
-
     } else {
       kernel_object.path = SysdigService::kModulePath;
       kernel_object.name = SysdigService::kModuleName;
