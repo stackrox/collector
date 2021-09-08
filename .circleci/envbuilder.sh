@@ -48,7 +48,7 @@ installDockerOnUbuntuViaGCPSSH() {
   local GCP_SSH_KEY_FILE="$1"
   shift
   for _ in {1..3}; do
-    if gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "(which docker || export DEBIAN_FRONTEND=noninteractive ; sudo apt update -y && sudo apt install -y docker.io && sudo usermod -aG docker $(whoami) )"; then
+    if gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "(which docker || export DEBIAN_FRONTEND=noninteractive ; sudo apt update -y && sudo apt install -y docker.io )"; then
       return 0
     fi
     echo "Retrying in 5s ..."
@@ -89,7 +89,6 @@ installDockerOnRHELViaGCPSSH() {
   gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum-config-manager --setopt=\"docker-ce-stable.baseurl=https://download.docker.com/linux/centos/${GCP_IMAGE_FAMILY: -1}/x86_64/stable\" --save"
   gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum install -y docker-ce docker-ce-cli containerd.io"
   gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo systemctl start docker"
-  gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo usermod -aG docker $(whoami)"
 }
 
 setupDockerOnSUSEViaGCPSSH() {
@@ -135,6 +134,7 @@ loginDockerViaGCPSSH() {
   local DOCKER_PASS="$1"
   shift
 
+  gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCP_VM_NAME}" --command "sudo usermod -aG docker ${GCP_VM_USER}"
   gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCP_VM_NAME}" --command "docker login -u '$DOCKER_USER' -p '$DOCKER_PASS'"
 }
 
@@ -152,17 +152,23 @@ setupGCPVM() {
   local GDOCKER_PASS="$1"
   shift
 
-  if [[ ! "$GCP_VM_TYPE" =~ ^(coreos|cos|rhel|suse|suse-sap|ubuntu-os)$ ]]; then
+  if [[ ! "$GCP_VM_TYPE" =~ ^(coreos|cos|rhel|suse|suse-sap|ubuntu-os|flatcar)$ ]]; then
     echo "Unsupported GPC_VM_TYPE: $GCP_VM_TYPE"
     exit 1
   fi
 
   local GCP_VM_USER="$(whoami)"
-  if test "$GCP_VM_TYPE" = "coreos" ; then
+  if [[ "$GCP_VM_TYPE" =~ "coreos" ]]; then
     GCP_VM_USER="core"
   fi
 
-  createGCPVM "$GCP_VM_NAME" "$GCP_IMAGE_FAMILY" "$GCP_VM_TYPE-cloud"
+  if [[ "$GCP_VM_TYPE" != "flatcar" ]]; then
+    GCP_IMAGE_PROJECT="$GCP_VM_TYPE-cloud"
+  else
+    GCP_IMAGE_PROJECT="kinvolk-public"
+  fi
+
+  createGCPVM "$GCP_VM_NAME" "$GCP_IMAGE_FAMILY" "$GCP_IMAGE_PROJECT"
 
   if ! gcpSSHReady "$GCP_VM_USER" "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"; then
     echo "GCP SSH failure"

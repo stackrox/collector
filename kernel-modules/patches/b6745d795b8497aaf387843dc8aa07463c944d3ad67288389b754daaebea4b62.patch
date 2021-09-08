@@ -1,8 +1,19 @@
 diff --git a/bpf/Makefile b/bpf/Makefile
-index 5c745fc..b1466d4 100644
+index 5c745fc..61b570c 100644
 --- a/bpf/Makefile
 +++ b/bpf/Makefile
-@@ -18,6 +18,8 @@ KERNELDIR ?= /lib/modules/$(shell uname -r)/build
+@@ -5,7 +5,9 @@
+ # MIT.txt or GPL.txt for full copies of the license.
+ #
+
+-always += probe.o
++always-y += probe.o
++# kept for compatibility with kernels < 5.11
++always += probe.o
+
+ LLC ?= llc
+ CLANG ?= clang
+@@ -18,6 +20,8 @@ KERNELDIR ?= /lib/modules/$(shell uname -r)/build
  ifeq ($(shell grep -sq "^\s*struct\s\+audit_task_info\s\+\*audit;\s*$$" $(KERNELDIR)/include/linux/sched.h ; echo $$? ), 0)
  	KBUILD_CPPFLAGS+= -DCOS_73_WORKAROUND
  endif
