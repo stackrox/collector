@@ -23,14 +23,14 @@ These instructions are for using the *JetBrains* C/C++ IDE **CLion**, but should
     - (Optional) Local builder images can used by setting the environment variable before execution using `BUILD_BUILDER_IMAGE=true make start-dev`.
 Or, builder images from a PR by with `COLLECTOR_BUILDER_TAG=<circle-build-id> make start-dev`.
 
-Instructions for Mac OS 
+Instructions for Mac OS
 - In the **CLion->Preferences** window, add a new **Toolchain** entry in settings under **Build, Execution, Deployment** as a **Remote Host** type.
 - Then, click in the **Credentials** section and fill out the SSH credentials used in the builder Dockerfile.
   - Host: `localhost`, Port: `2222`, User name: `remoteuser`, Password: `c0llectah`
 - Next, select **Deployment** under **Build, Execution, Deployment**, and then **Mappings**. Set **Deployment path** to `/tmp`.
 - Finally, add a CMake profile that uses the **Remote Host** toolchain and change **Build directory**/**Generation Path** to `cmake-build`.
 
-Instructions for Linux 
+Instructions for Linux
 - In the **File->Settings->Build, Execution, Deployment->Toolchains** window, add a new **Toolchain** entry as a **Remote Host** type.
 - Then, click in the **Credentials** section and fill out the SSH credentials used in the builder Dockerfile.
   - Host: `localhost`, Port: `2222`, User name: `remoteuser`, Password: `c0llectah`
@@ -60,7 +60,7 @@ The development workflow can also be used with the rhel based builder image.
   - Clone the [stackrox/kernel-packer](https://github.com/stackrox/kernel-packer) repository.
   - From the kernel-packer repository, run `./scripts/local-bundle 5.4.0-1028-gcp`, to download and build the kernel bundle.
   - Prepare the probe build environment in the collector repostitory with `make probe-dev`
-  - Build the probe with `./scripts/build-probe 5.4.0-1028-gcp`
+  - Build the probe with `./scripts/build-probe 5.4.0-1028-gcp [mod|bpf]`
   - Build a collector binaries within CLion
   - Build a the collector image with the CLion binaries and locally built probes with `make image-dev`
   - Push the image: `docker push stackrox/collector:$(make tag)`

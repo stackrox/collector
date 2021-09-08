@@ -8,6 +8,7 @@ SOURCES_DIR="${SOURCES_DIR:-${TOPLEVEL}/sources}"
 MOD_VER_FILE="${TOPLEVEL}/kernel-modules/kobuild-tmp/MODULE_VERSION.txt"
 
 mkdir -p "${TOPLEVEL}/sources"
+mkdir -p "${TOPLEVEL}/kernel-modules/kobuild-tmp"
 
 docker run --rm -i \
   -v "${TOPLEVEL}/sysdig:/sysdig:ro" \
