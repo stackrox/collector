@@ -251,6 +251,9 @@ function gpl_notice() {
 function get_kernel_object() {
     local kernel_version="$1"
 
+    local alternate_download
+    alternate_download="$(echo "$ROX_COLLECTOR_ALT_PROBE_DOWNLOAD" | tr '[:upper:]' '[:lower:]')"
+
     # Find built-in or download kernel module
     if collection_method_module; then
       local module_name="collector"
@@ -258,6 +261,15 @@ function get_kernel_object() {
       local kernel_module="${module_name}-${kernel_version}.ko"
 
       if ! find_kernel_object "$kernel_module" "$module_path"; then
+        if [[ "$alternate_download" == "true" ]]; then
+          log "Kernel object will be downloaded by the collector binary"
+
+          # The collector program will insert the kernel module upon startup.
+          remove_module "$module_name"
+
+          return 0
+        fi
+
         if ! download_kernel_object "${kernel_module}" "${module_path}" || [[ ! -f "$module_path" ]]; then
           return 1
         fi
@@ -281,6 +293,11 @@ function get_kernel_object() {
         local kernel_probe="${probe_name}-${kernel_version}.o"
 
         if ! find_kernel_object "${kernel_probe}" "${probe_path}"; then
+          if [[ "$alternate_download" == "true" ]]; then
+            log "Kernel object will be downloaded by the collector binary"
+            return 0
+          fi
+
           if ! download_kernel_object "${kernel_probe}" "${probe_path}" || [[ ! -f "$probe_path" ]]; then
             return 1
           fi
@@ -409,6 +426,8 @@ function main() {
     if (( ! success )); then
       exit_with_error
     fi
+
+    export KERNEL_CANDIDATES="${kernel_versions[@]}"
 
     # Print GPL notice after probe is downloaded or verified to be present
     gpl_notice

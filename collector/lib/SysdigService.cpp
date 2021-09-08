@@ -42,6 +42,7 @@ namespace collector {
 constexpr char SysdigService::kModulePath[];
 constexpr char SysdigService::kModuleName[];
 constexpr char SysdigService::kProbePath[];
+constexpr char SysdigService::kProbeName[];
 
 void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) {
   if (inspector_ || chisel_) {
