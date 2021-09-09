@@ -43,6 +43,9 @@ BoolEnvVar ports_feature_flag("ROX_NETWORK_GRAPH_PORTS", true);
 // If true, ignore connections with configured protocol and port pairs (e.g., udp/9).
 BoolEnvVar network_drop_ignored("ROX_NETWORK_DROP_IGNORED", true);
 
+// If true, attempt to download a kernel probe from within the collector binary
+BoolEnvVar alternate_probe_download("ROX_COLLECTOR_ALT_PROBE_DOWNLOAD", false);
+
 }  // namespace
 
 constexpr bool CollectorConfig::kUseChiselCache;
@@ -156,6 +159,10 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
 
   if (network_drop_ignored) {
     ignored_l4proto_port_pairs_ = kIgnoredL4ProtoPortPairs;
+  }
+
+  if (alternate_probe_download) {
+    alternate_probe_download_ = true;
   }
 }
 

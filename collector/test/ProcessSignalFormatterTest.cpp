@@ -31,7 +31,6 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "CollectorStats.h"
 #include "ProcessSignalFormatter.h"
-
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 

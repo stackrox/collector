@@ -171,4 +171,20 @@ const char* GetHostname() {
   return "unknown";
 }
 
+const char* GetKernelCandidates() {
+  const char* kernel_candidates = std::getenv("KERNEL_CANDIDATES");
+  if (kernel_candidates && *kernel_candidates) return kernel_candidates;
+
+  CLOG(ERROR) << "Failed to determine kernel object candidates, environment variable KERNEL_CANDIDATES not set";
+  return "";
+}
+
+const char* GetModuleDownloadBaseURL() {
+  const char* module_download_base_url = std::getenv("MODULE_DOWNLOAD_BASE_URL");
+  if (module_download_base_url && *module_download_base_url) return module_download_base_url;
+
+  CLOG(DEBUG) << "MODULE_DOWNLOAD_BASE_URL not set";
+  return "";
+}
+
 }  // namespace collector

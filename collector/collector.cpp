@@ -48,12 +48,12 @@ extern "C" {
 #include <sys/syscall.h>
 #include <sys/types.h>
 }
-
 #include "CollectorArgs.h"
 #include "CollectorService.h"
 #include "CollectorStatsExporter.h"
 #include "EventNames.h"
 #include "GRPC.h"
+#include "GetKernelObject.h"
 #include "GetStatus.h"
 #include "LogLevel.h"
 #include "Logging.h"
@@ -239,6 +239,57 @@ int main(int argc, char** argv) {
   bool useGRPC = false;
   if (!args->GRPCServer().empty()) {
     useGRPC = true;
+  }
+
+  if (config.AlternateProbeDownload()) {
+    std::istringstream kernel_candidates(GetKernelCandidates());
+
+    if (kernel_candidates.str().empty()) {
+      CLOG(FATAL) << "No kernel candidates available";
+    }
+
+    struct {
+      std::string path;
+      std::string name;
+      std::string extension;
+      std::string type;
+    } kernel_object;
+
+    if (config.UseEbpf()) {
+      kernel_object.path = SysdigService::kProbePath;
+      kernel_object.name = SysdigService::kProbeName;
+      kernel_object.extension = ".o";
+      kernel_object.type = "eBPF probe";
+    } else {
+      kernel_object.path = SysdigService::kModulePath;
+      kernel_object.name = SysdigService::kModuleName;
+      kernel_object.extension = ".ko";
+      kernel_object.type = "kernel module";
+    }
+
+    CLOG(INFO) << "Attempting to download " << kernel_object.type << " - Candidate kernel versions: " << kernel_candidates.str();
+
+    bool success = false;
+    std::string kernel_candidate;
+    while (std::getline(kernel_candidates, kernel_candidate, ' ') && !success) {
+      std::string kernel_module = kernel_object.name + "-" + kernel_candidate + kernel_object.extension;
+
+      success = GetKernelObject(args->GRPCServer(), collectorConfig["tlsConfig"], kernel_module, kernel_object.path);
+
+      // Remove the gzipped file, we won't need it anymore
+      unlink((kernel_object.path + ".gz").c_str());
+
+      if (!success) {
+        CLOG(WARNING) << "Error getting kernel object: " << kernel_module;
+
+        // Remove downloaded files
+        unlink(kernel_object.path.c_str());
+      }
+    }
+
+    if (!success) {
+      CLOG(FATAL) << "No suitable kernel object downloaded";
+    }
   }
 
   if (config.UseEbpf()) {

@@ -60,6 +60,12 @@ const char* GetSNIHostname();
 // Get hostname from NODE_HOSTNAME env var
 const char* GetHostname();
 
+// Get kernel candidates from KERNEL_CANDIDATES env var
+const char* GetKernelCandidates();
+
+// Get base URL for kernel modules downloads from MODULE_DOWNLOAD_BASE_URL
+const char* GetModuleDownloadBaseURL();
+
 namespace impl {
 
 inline void StrAppend(std::ostringstream* os) {}
