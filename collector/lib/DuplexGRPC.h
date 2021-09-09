@@ -417,7 +417,7 @@ class DuplexClient {
   }
 
  protected:
-  DuplexClient(grpc::ClientContext* context) : context_(context) {}
+  explicit DuplexClient(grpc::ClientContext* context) : context_(context) {}
 
   // SetFlags sets the given flags, and returns the newly set flags.
   Flags SetFlags(Flags fl) {
@@ -454,7 +454,7 @@ class DuplexClient {
       return Result(op_desc.op_error);
     }
 
-    OpResult op_res;
+    OpResult op_res{};
     auto result = ProcessSingle(nullptr, deadline, &op_res);
     while (result && op_res.op != op_desc.op) {
       result = ProcessSingle(nullptr, deadline, &op_res);
@@ -490,7 +490,7 @@ class DuplexClientWriter : public DuplexClient {
   }
 
  protected:
-  DuplexClientWriter(grpc::ClientContext* context) : DuplexClient(context) {}
+  explicit DuplexClientWriter(grpc::ClientContext* context) : DuplexClient(context) {}
 
   virtual OpDescriptor WriteAsyncInternal(const W& obj) = 0;
 };

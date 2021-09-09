@@ -44,13 +44,13 @@ class StringView {
   using const_pointer = const char*;
 
   StringView() : p_(nullptr), n_(0) {}
-  StringView(const char* p) : p_(p), n_(std::strlen(p)) {}
+  explicit StringView(const char* p) : p_(p), n_(std::strlen(p)) {}
   StringView(const char* p, size_type n) : p_(p), n_(n) {}
   StringView(const StringView& other) = default;
   template <std::size_t N>
-  StringView(const char (&buf)[N]) : p_(&buf[0]), n_(N - 1) {}
+  explicit StringView(const char (&buf)[N]) : p_(&buf[0]), n_(N - 1) {}
 
-  operator bool() const { return n_ > 0; }
+  explicit operator bool() const { return n_ > 0; }
   std::string str() const { return {p_, n_}; }
 
   size_type size() const { return n_; }

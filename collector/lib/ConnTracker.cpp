@@ -239,7 +239,7 @@ ContainerEndpointMap ConnectionTracker::FetchEndpointState(bool normalize, bool 
       if (normalize) {
         cem = FetchState(
             &endpoint_state_, clear_inactive,
-            [this](const ContainerEndpoint& cep) { return this->NormalizeContainerEndpoint(cep); },
+            [](const ContainerEndpoint& cep) { return ConnectionTracker::NormalizeContainerEndpoint(cep); },
             [this](const ContainerEndpoint& cep) { return this->ShouldFetchContainerEndpoint(cep); });
       } else {
         cem = FetchState(&endpoint_state_, clear_inactive, dont_normalize(),
@@ -249,7 +249,7 @@ ContainerEndpointMap ConnectionTracker::FetchEndpointState(bool normalize, bool 
       if (normalize) {
         cem = FetchState(
             &endpoint_state_, clear_inactive,
-            [this](const ContainerEndpoint& cep) { return this->NormalizeContainerEndpoint(cep); },
+            [](const ContainerEndpoint& cep) { return ConnectionTracker::NormalizeContainerEndpoint(cep); },
             dont_filter());
       } else {
         cem = FetchState(&endpoint_state_, clear_inactive, dont_normalize(), dont_filter());

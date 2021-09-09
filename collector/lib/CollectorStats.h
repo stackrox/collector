@@ -92,7 +92,7 @@ class ScopedTimer {
       timer_array_->EndTimerAt(index_, NowMicros() - start_time_);
     }
   }
-  constexpr operator bool() const { return true; }
+  constexpr explicit operator bool() const { return true; }
 
  private:
   T* timer_array_;

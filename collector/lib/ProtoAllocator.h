@@ -99,7 +99,7 @@ class HeapProtoAllocator {
  public:
   HeapProtoAllocator() = default;
 
-  HeapProtoAllocator(size_t) : HeapProtoAllocator() {}
+  explicit HeapProtoAllocator(size_t) : HeapProtoAllocator() {}
 
   void Reset() {}
 

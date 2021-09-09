@@ -23,8 +23,6 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "CollectorService.h"
 
-#include <csignal>
-
 #include "CollectorStatsExporter.h"
 #include "ConnTracker.h"
 #include "GRPCUtil.h"

@@ -72,7 +72,7 @@ std::vector<IPNet> readNetworks(const string& networks, Address::Family family) 
   size_t num_nets = networks.size() / tuple_size;
   std::vector<IPNet> ip_nets;
   ip_nets.reserve(num_nets);
-  for (int i = 0; i < num_nets; i++) {
+  for (size_t i = 0; i < num_nets; i++) {
     // Bytes are received in big-endian order.
     std::array<uint64_t, Address::kU64MaxLen> ip = {};
     std::memcpy(&ip, &networks.c_str()[tuple_size * i], Address::Length(family));

@@ -51,7 +51,7 @@ enum ProcessSignalType {
   UNKNOWN_PROCESS_TYPE
 };
 
-EventMap<ProcessSignalType> process_signals = {
+EventMap<ProcessSignalType> process_signals{
     {
         {"execve<", ProcessSignalType::EXECVE},
     },

@@ -75,7 +75,7 @@ end
   static const UnorderedSet<L4ProtoPortPair> kIgnoredL4ProtoPortPairs;
 
   CollectorConfig() = delete;
-  CollectorConfig(CollectorArgs* collectorArgs);
+  explicit CollectorConfig(CollectorArgs* collectorArgs);
 
   std::string asString() const;
 

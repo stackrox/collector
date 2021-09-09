@@ -35,7 +35,7 @@ enum class Modifier : uint8_t {
   REMOVE,
 };
 
-EventMap<Modifier> modifiers = {
+EventMap<Modifier> modifiers{
     {
         {"close<", Modifier::REMOVE},
         {"shutdown<", Modifier::REMOVE},

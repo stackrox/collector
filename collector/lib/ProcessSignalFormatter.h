@@ -37,7 +37,7 @@ namespace collector {
 
 class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamMessage> {
  public:
-  ProcessSignalFormatter(sinsp* inspector) : event_names_(EventNames::GetInstance()) {
+  explicit ProcessSignalFormatter(sinsp* inspector) : event_names_(EventNames::GetInstance()) {
     event_extractor_.Init(inspector);
   }
 

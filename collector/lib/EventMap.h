@@ -37,7 +37,7 @@ template <typename T>
 class EventMap {
  public:
   EventMap() : EventMap(T()) {}
-  EventMap(const T& initVal) : event_names_(EventNames::GetInstance()) {
+  explicit EventMap(const T& initVal) : event_names_(EventNames::GetInstance()) {
     values_.fill(initVal);
   }
   EventMap(std::initializer_list<std::pair<std::string, T>> init, const T& initVal = T()) : EventMap(initVal) {

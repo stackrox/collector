@@ -94,7 +94,7 @@ int InsertModule(int fd, const std::unordered_map<std::string, std::string>& arg
   CLOG(DEBUG) << "Kernel module arguments: " << args_str;
   int res = finit_module(fd, args_str.c_str(), 0);
   if (res != 0) return res;
-  struct stat st;
+  struct stat st {};
   std::string param_dir = GetHostPath(std::string("/sys/module/") + SysdigService::kModuleName + "/parameters/");
   res = stat(param_dir.c_str(), &st);
   if (res != 0) {
