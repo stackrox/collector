@@ -66,8 +66,7 @@ TEST(ProcessSignalFormatterTest, NoProcessTest) {
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithoutParentTest) {
-  std::unique_ptr<sinsp> inspector;
-  inspector.reset(new_inspector());
+  std::unique_ptr<sinsp> inspector(new_inspector());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
 
   ProcessSignalFormatter processSignalFormatter(inspector.get());
@@ -101,8 +100,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithoutParentTest) {
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithParentTest) {
-  std::unique_ptr<sinsp> inspector;
-  inspector.reset(new_inspector());
+  std::unique_ptr<sinsp> inspector(new_inspector());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
 
   ProcessSignalFormatter processSignalFormatter(inspector.get());
@@ -145,8 +143,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentTest) {
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithParentWithPid0Test) {
-  std::unique_ptr<sinsp> inspector;
-  inspector.reset(new_inspector());
+  std::unique_ptr<sinsp> inspector(new_inspector());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
 
   ProcessSignalFormatter processSignalFormatter(inspector.get());
@@ -184,8 +181,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentWithPid0Test) {
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithParentWithSameNameTest) {
-  std::unique_ptr<sinsp> inspector;
-  inspector.reset(new_inspector());
+  std::unique_ptr<sinsp> inspector(new_inspector());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
 
   ProcessSignalFormatter processSignalFormatter(inspector.get());
@@ -228,8 +224,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentWithSameNameTest) {
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
-  std::unique_ptr<sinsp> inspector;
-  inspector.reset(new_inspector());
+  std::unique_ptr<sinsp> inspector(new_inspector());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
 
   ProcessSignalFormatter processSignalFormatter(inspector.get());
@@ -287,8 +282,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
-  std::unique_ptr<sinsp> inspector;
-  inspector.reset(new_inspector());
+  std::unique_ptr<sinsp> inspector(new_inspector());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
 
   ProcessSignalFormatter processSignalFormatter(inspector.get());
@@ -343,8 +337,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
 }
 
 TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
-  std::unique_ptr<sinsp> inspector;
-  inspector.reset(new_inspector());
+  std::unique_ptr<sinsp> inspector(new_inspector());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
 
   ProcessSignalFormatter processSignalFormatter(inspector.get());
@@ -408,8 +401,7 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
 }
 
 TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
-  std::unique_ptr<sinsp> inspector;
-  inspector.reset(new_inspector());
+  std::unique_ptr<sinsp> inspector(new_inspector());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
 
   ProcessSignalFormatter processSignalFormatter(inspector.get());
@@ -476,8 +468,7 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
 }
 
 TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
-  std::unique_ptr<sinsp> inspector;
-  inspector.reset(new_inspector());
+  std::unique_ptr<sinsp> inspector(new_inspector());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
 
   ProcessSignalFormatter processSignalFormatter(inspector.get());
@@ -544,8 +535,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
 }
 
 TEST(ProcessSignalFormatterTest, CountTwoCounterCallsTest) {
-  std::unique_ptr<sinsp> inspector;
-  inspector.reset(new_inspector());
+  std::unique_ptr<sinsp> inspector(new_inspector());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
 
   ProcessSignalFormatter processSignalFormatter(inspector.get());

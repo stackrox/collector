@@ -797,8 +797,7 @@ jobs:
     - run:
         name: Run collector unit tests
         command: |
-          make -C "${SOURCE_ROOT}" unittest USE_VALGRIND=$VALGRIND_UNIT_TESTS >& $UNITTEST_OUTPUT_FILE
-          cat $UNITTEST_OUTPUT_FILE
+          make -C "${SOURCE_ROOT}" unittest USE_VALGRIND=$VALGRIND_UNIT_TESTS 2>&1 | tee $UNITTEST_OUTPUT_FILE
           if [ $VALGRIND_UNIT_TESTS == "true" ]; then
             max_allowed_valgrind_errors=0
             valgrind_summary_lines=`(grep ERROR\ SUMMARY $UNITTEST_OUTPUT_FILE || true) | wc -l`
@@ -845,8 +844,7 @@ jobs:
     - run:
         name: Run RHEL collector unit tests
         command: |
-          make -C "${SOURCE_ROOT}" unittest-rhel USE_VALGRIND=$VALGRIND_UNIT_TESTS >& $UNITTEST_OUTPUT_FILE
-          cat $UNITTEST_OUTPUT_FILE
+          make -C "${SOURCE_ROOT}" unittest-rhel USE_VALGRIND=$VALGRIND_UNIT_TESTS 2>&1 | tee $UNITTEST_OUTPUT_FILE
           if [ $VALGRIND_UNIT_TESTS == "true" ]; then
             max_allowed_valgrind_errors=0
             valgrind_summary_lines=`(grep ERROR\ SUMMARY $UNITTEST_OUTPUT_FILE || true) | wc -l`
@@ -1253,7 +1251,8 @@ jobs:
           export VM_CONFIG="circle_local_<< parameters.vm-config >>"
           export COLLECTOR_REPO="stackrox/collector<<# parameters.use-rhel>>-rhel<</ parameters.use-rhel>><<# parameters.use-ubi>>-test-cpaas<</ parameters.use-ubi>>"
           export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}"
-          make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report USE_VALGRIND=$VALGRIND_INTEGRATION_TESTS
+          export USE_VALGRIND=$VALGRIND_INTEGRATION_TESTS
+          make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
     - run:
@@ -1269,17 +1268,18 @@ jobs:
           for file in `ls $log_dir/*-collector.log`
           do
             echo "Checking $file for Valgrind errors"
-            cat $file
             valgrind_summary=`grep ERROR\ SUMMARY $file || true`
             valgrind_summary_lines=`(grep ERROR\ SUMMARY $file || true) | wc -l`
             if [ $valgrind_summary_lines -eq 1 ]; then
               valgrind_errors=`echo $valgrind_summary | awk '{print $7}'`
               if [[ $valgrind_errors -gt $max_allowed_valgrind_errors ]]; then
                 echo ""
+                cat $file
                 echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
                 exit 3
               fi
             else
+              cat $file
               echo "Error: Valgrind summary not found"
               exit 2
             fi
@@ -1356,6 +1356,7 @@ jobs:
           export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
           export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
           export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
+          export USE_VALGRIND=$VALGRIND_INTEGRATION_TESTS
           if "${SOURCE_ROOT}/.circleci/pr_has_label.sh" ci-run-against-rhel; then
             export COLLECTOR_REPO="stackrox/collector-rhel"
           elif "${SOURCE_ROOT}/.circleci/pr_has_label.sh" ci-run-against-ubi; then
@@ -1363,7 +1364,7 @@ jobs:
           else
             export COLLECTOR_REPO="stackrox/collector"
           fi
-          make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report USE_VALGRIND=$VALGRIND_INTEGRATION_TESTS
+          make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report
           cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp "${SOURCE_ROOT}/integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
@@ -1380,17 +1381,18 @@ jobs:
           for file in `ls $log_dir/*-collector.log`
           do
             echo "Checking $file for Valgrind errors"
-            cat $file
             valgrind_summary=`grep ERROR\ SUMMARY $file || true`
             valgrind_summary_lines=`(grep ERROR\ SUMMARY $file || true) | wc -l`
             if [ $valgrind_summary_lines -eq 1 ]; then
               valgrind_errors=`echo $valgrind_summary | awk '{print $7}'`
               if [[ $valgrind_errors -gt $max_allowed_valgrind_errors ]]; then
                 echo ""
+                cat $file
                 echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
                 exit 3
               fi
             else
+              cat $file
               echo "Error: Valgrind summary not found"
               exit 2
             fi
