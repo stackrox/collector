@@ -29,6 +29,8 @@ extern "C" {
 #include <sys/stat.h>
 }
 
+#include <fstream>
+
 #include "FileDownloader.h"
 #include "FileSystem.h"
 #include "Logging.h"

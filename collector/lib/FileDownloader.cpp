@@ -23,6 +23,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "FileDownloader.h"
 
 #include <algorithm>
+#include <fstream>
 #include <unistd.h>
 #include <utils.h>
 
@@ -61,7 +62,7 @@ static size_t WriteFile(void* content, size_t size, size_t nmemb, void* download
     return 0;  // Force the download to fail explicitly
   }
 
-  download_data->of.write(reinterpret_cast<const char*>(content), size);
+  download_data->os.write(reinterpret_cast<const char*>(content), size);
   return size;
 }
 
@@ -293,7 +294,7 @@ bool FileDownloader::Download() {
 
   for (auto retries = retry_.times; retries; retries--) {
     std::ofstream of(output_path_, std::ios::trunc | std::ios::binary);
-    DownloadData download_data = {.http_status = 0, .error_msg = "", .of = of};
+    DownloadData download_data = {.http_status = 0, .error_msg = "", .os = of};
 
     if (!of.is_open()) {
       CLOG(WARNING) << "Failed to open " << output_path_;

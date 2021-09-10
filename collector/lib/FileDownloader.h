@@ -26,7 +26,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <array>
 #include <chrono>
-#include <fstream>
+#include <ostream>
 
 #include <curl/curl.h>
 
@@ -35,7 +35,7 @@ namespace collector {
 struct DownloadData {
   unsigned int http_status;
   std::string error_msg;
-  std::ofstream& of;
+  std::ostream& os;
 };
 
 class FileDownloader {
