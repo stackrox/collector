@@ -42,7 +42,7 @@ ifdef BUILD_BUILDER_IMAGE
 		-f "$(CURDIR)/builder/Dockerfile_rhel" \
 		builder
 else
-	docker pull stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG)
+	#docker pull stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG)
 endif
 
 collector: builder

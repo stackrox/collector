@@ -59,6 +59,7 @@ class SysdigService : public Sysdig {
   void CleanUp() override;
 
   bool GetStats(SysdigStats* stats) const override;
+  void AddSignalHandler(std::unique_ptr<SignalHandler> &signal_handler);
 
  private:
   enum ChiselCacheStatus : int {
@@ -84,7 +85,6 @@ class SysdigService : public Sysdig {
   bool FilterEvent(sinsp_evt* event);
   bool SendExistingProcesses(SignalHandler* handler);
 
-  void AddSignalHandler(std::unique_ptr<SignalHandler> &signal_handler);
 
   std::unique_ptr<sinsp> inspector_;
   std::unique_ptr<sinsp_chisel> chisel_;

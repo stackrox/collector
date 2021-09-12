@@ -91,6 +91,7 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* eve
   SignalStreamMessage* signal_stream_message = AllocateRoot();
   signal_stream_message->clear_collector_register_request();
   signal_stream_message->set_allocated_signal(signal);
+
   return signal_stream_message;
 }
 

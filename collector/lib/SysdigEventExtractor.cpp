@@ -33,6 +33,7 @@ void SysdigEventExtractor::Init(sinsp* inspector) {
 }
 
 void SysdigEventExtractor::ClearWrappers() {
+  std::cout << "In ClearWrappers" << std::endl;
   for (FilterCheckWrapper* wrapper : wrappers_) {
     if (wrapper) {
       wrapper->filter_check.reset();
@@ -42,6 +43,9 @@ void SysdigEventExtractor::ClearWrappers() {
   for (std::vector<FilterCheckWrapper*>::iterator i = wrappers_.end() - 1; i != wrappers_.begin() - 1; i--) {
     wrappers_.erase(i);
   }
+  wrappers_.clear();
+  wrappers_.shrink_to_fit();
+  std::cout << "Capacity and size after being cleared " << wrappers_.capacity() << "\t" << wrappers_.size() << std::endl;
 }
 
 }  // namespace collector

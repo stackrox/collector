@@ -33,9 +33,9 @@ namespace collector {
 
 class NetworkSignalHandler final : public SignalHandler {
  public:
-  explicit NetworkSignalHandler(sinsp* inspector, std::shared_ptr<ConnectionTracker> conn_tracker, SysdigStats* stats)
+  explicit NetworkSignalHandler(std::unique_ptr<sinsp>& inspector, std::shared_ptr<ConnectionTracker> conn_tracker, SysdigStats* stats)
       : conn_tracker_(std::move(conn_tracker)), stats_(stats) {
-    event_extractor_.Init(inspector);
+    event_extractor_.Init(inspector.get());
   }
 
   std::string GetName() override { return "NetworkSignalHandler"; }

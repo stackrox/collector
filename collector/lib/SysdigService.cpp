@@ -62,11 +62,12 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
 
   if (conn_tracker) {
     std::unique_ptr<SignalHandler> networkSignalHandler;
-    networkSignalHandler.reset(new NetworkSignalHandler(inspector_.get(), conn_tracker, &userspace_stats_));
+    networkSignalHandler.reset(new NetworkSignalHandler(inspector_, conn_tracker, &userspace_stats_));
+    //networkSignalHandler.reset(new NetworkSignalHandler(inspector_.get(), conn_tracker, &userspace_stats_));
     AddSignalHandler(networkSignalHandler);
     //AddSignalHandler(MakeUnique<NetworkSignalHandler>(inspector_.get(), conn_tracker, &userspace_stats_));
   }
-
+  std::cout << "config.grpc_channel= " << config.grpc_channel << std::endl;
   if (config.grpc_channel) {
     std::unique_ptr<SignalHandler> processSignalHandler;
     processSignalHandler.reset(new ProcessSignalHandler(inspector_, config.grpc_channel, &userspace_stats_));
@@ -226,11 +227,10 @@ bool SysdigService::SendExistingProcesses(SignalHandler* handler) {
 }
 
 void SysdigService::CleanUp() {
+  std::cout << "In SysdigService::CleanUp" << std::endl;
   std::lock_guard<std::mutex> lock(running_mutex_);
   running_ = false;
-  inspector_->close();
   chisel_.reset();
-  inspector_.reset();
 
   for (auto& signal_handler : signal_handlers_) {
     if (!signal_handler.handler->Stop()) {
@@ -239,6 +239,8 @@ void SysdigService::CleanUp() {
   }
 
   signal_handlers_.clear();
+  inspector_->close();
+  inspector_.reset();
 }
 
 bool SysdigService::GetStats(SysdigStats* stats) const {

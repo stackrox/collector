@@ -67,7 +67,6 @@ void CollectorService::RunForever() {
   server.addHandler("/ready", getStatus);
   LogLevel setLogLevel;
   server.addHandler("/loglevel", setLogLevel);
-
   ProfilerHandler profiler_handler;
   server.addHandler(ProfilerHandler::kBaseRoute, profiler_handler);
 

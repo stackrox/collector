@@ -36,13 +36,19 @@ namespace collector {
 // This class allows extracting a predefined set of Sysdig event fields in an efficient manner.
 class SysdigEventExtractor {
  public:
+  SysdigEventExtractor() {
+    std::cout << "In SysdigEventExtractor constructor" << std::endl;
+    wrappers_.reserve(100);
+  }
   void Init(sinsp* inspector);
   void ClearWrappers();
 
  private:
   struct FilterCheckWrapper {
     FilterCheckWrapper(SysdigEventExtractor* extractor, const char* event_name) : event_name(event_name) {
+      extractor->wrappers_.reserve(100);
       extractor->wrappers_.push_back(this);
+      std::cout << "capacity= " << extractor->wrappers_.capacity() << std::endl;
     }
 
     sinsp_filter_check_iface* operator->() { return filter_check.get(); }
@@ -51,6 +57,7 @@ class SysdigEventExtractor {
     std::unique_ptr<sinsp_filter_check_iface> filter_check;
   };
 
+  //FilterCheckWrapper* wrappers_[100];
   std::vector<FilterCheckWrapper*> wrappers_;
 
 #define DECLARE_FILTER_CHECK(id, fieldname) \
