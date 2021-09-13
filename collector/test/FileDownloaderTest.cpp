@@ -30,7 +30,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 TEST(FileDownloaderTest, HeaderCallbackNonHTTPHeader) {
   std::stringstream os;
-  collector::DownloadData download_data_{.http_status = 0, .error_msg = "", .os = os};
+  collector::DownloadData download_data_{.http_status = 0, .error_msg = "", .os = &os};
   char* header = const_cast<char*>("content-type: image/png\t\n");
 
   size_t res = collector::HeaderCallback(header, sizeof(char), strlen(header), reinterpret_cast<void*>(&download_data_));
@@ -42,7 +42,7 @@ TEST(FileDownloaderTest, HeaderCallbackNonHTTPHeader) {
 
 TEST(FileDownloaderTest, HeaderCallbackUnauthorizedResponse) {
   std::stringstream os;
-  collector::DownloadData download_data_{.http_status = 0, .error_msg = "", .os = os};
+  collector::DownloadData download_data_{.http_status = 0, .error_msg = "", .os = &os};
   char* header = const_cast<char*>("HTTP/1.1 403 \t\n");
 
   size_t res = collector::HeaderCallback(header, sizeof(char), strlen(header), reinterpret_cast<void*>(&download_data_));
@@ -54,7 +54,7 @@ TEST(FileDownloaderTest, HeaderCallbackUnauthorizedResponse) {
 
 TEST(FileDownloaderTest, HeaderCallbackMalformedHTTPResponse) {
   std::stringstream os;
-  collector::DownloadData download_data_{.http_status = 0, .error_msg = "", .os = os};
+  collector::DownloadData download_data_{.http_status = 0, .error_msg = "", .os = &os};
   char* header = const_cast<char*>("HTTP/1.1403\t\n");
 
   size_t res = collector::HeaderCallback(header, sizeof(char), strlen(header), reinterpret_cast<void*>(&download_data_));
@@ -66,7 +66,7 @@ TEST(FileDownloaderTest, HeaderCallbackMalformedHTTPResponse) {
 
 TEST(FileDownloaderTest, HeaderCallbackSuccessfulResponse) {
   std::stringstream os;
-  collector::DownloadData download_data_{.http_status = 0, .error_msg = "", .os = os};
+  collector::DownloadData download_data_{.http_status = 0, .error_msg = "", .os = &os};
   char* header = const_cast<char*>("HTTP/1.1 200 \t\n");
 
   size_t res = collector::HeaderCallback(header, sizeof(char), strlen(header), reinterpret_cast<void*>(&download_data_));
@@ -78,7 +78,7 @@ TEST(FileDownloaderTest, HeaderCallbackSuccessfulResponse) {
 
 TEST(FileDownloaderTest, WriteFileSuccess) {
   std::stringstream os;
-  collector::DownloadData download_data_{.http_status = 200, .error_msg = "", .os = os};
+  collector::DownloadData download_data_{.http_status = 200, .error_msg = "", .os = &os};
   char* content = const_cast<char*>("This is some content that should be dumped into a file, for testing purposes it will be dumped to a string");
 
   size_t res = collector::WriteFile(content, sizeof(char), strlen(content), reinterpret_cast<void*>(&download_data_));
@@ -89,7 +89,7 @@ TEST(FileDownloaderTest, WriteFileSuccess) {
 
 TEST(FileDownloaderTest, WriteFileFailedRequest) {
   std::stringstream os;
-  collector::DownloadData download_data_{.http_status = 403, .error_msg = "", .os = os};
+  collector::DownloadData download_data_{.http_status = 403, .error_msg = "", .os = &os};
   char* content = const_cast<char*>("This is some content that should be dumped into a file, for testing purposes it will be dumped to a string");
 
   size_t res = collector::WriteFile(content, sizeof(char), strlen(content), reinterpret_cast<void*>(&download_data_));

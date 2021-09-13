@@ -27,50 +27,49 @@ You should have received a copy of the GNU General Public License along with thi
 #include <unistd.h>
 #include <utils.h>
 
+#include "ConnScraper.h"
 #include "Logging.h"
 
 namespace collector {
 
-static size_t HeaderCallback(char* buffer, size_t size, size_t nitems, void* download_data_) {
-  auto download_data = reinterpret_cast<DownloadData*>(download_data_);
-  size *= nitems;
-  std::string data(buffer, size);
+namespace {
+
+size_t HeaderCallback(char* buffer, size_t size, size_t nitems, void* dd) {
+  auto download_data = static_cast<DownloadData*>(dd);
+  size_t buffer_size = size * nitems;
+  StringView data(buffer, buffer_size);
 
   if (data.substr(0, 5) == "HTTP/") {
     size_t error_code_offset = data.find(' ');
 
     if (error_code_offset == std::string::npos) {
       download_data->http_status = 500;
-      download_data->error_msg = "Failed extracting HTTP status code (" + data + ")";
+      download_data->error_msg = "Failed extracting HTTP status code (" + data.substr(0, 1024).str() + ")";
       return 0;  // Force the download to fail explicitly
     }
 
-    download_data->http_status = std::stoul(data.substr(error_code_offset + 1, data.find(' ')));
+    download_data->http_status = std::stoul(data.substr(error_code_offset + 1, data.find(' ', error_code_offset + 1)).str());
     CLOG(DEBUG) << "Set HTTP status code to '" << download_data->http_status << "'";
   }
 
-  return size;
+  return buffer_size;
 }
 
-static size_t WriteFile(void* content, size_t size, size_t nmemb, void* download_data_) {
-  auto download_data = reinterpret_cast<DownloadData*>(download_data_);
-  size *= nmemb;
+size_t WriteFile(void* content, size_t size, size_t nitems, void* dd) {
+  auto download_data = static_cast<DownloadData*>(dd);
+  size_t content_size = size * nitems;
+  const char* content_bytes = static_cast<const char*>(content);
 
   if (download_data->http_status >= 400) {
-    std::string body(reinterpret_cast<const char*>(content), size);
-    download_data->error_msg = "HTTP Body Response: " + body;
+    download_data->error_msg = "HTTP Body Response: " + std::string(content_bytes, content_size <= 1024 ? content_size : 1024);
     return 0;  // Force the download to fail explicitly
   }
 
-  download_data->os.write(reinterpret_cast<const char*>(content), size);
-  return size;
+  download_data->os->write(content_bytes, content_size);
+  return content_size;
 }
 
-static int DebugCallback(CURL* curl, curl_infotype type, char* data, size_t size, void* userptr) {
-  // Unused arguments
-  (void)curl;
-  (void)userptr;
-
+int DebugCallback(CURL*, curl_infotype type, char* data, size_t size, void*) {
   std::string msg(data, size);
   msg = rtrim(msg);
 
@@ -84,8 +83,8 @@ static int DebugCallback(CURL* curl, curl_infotype type, char* data, size_t size
     return CURLE_OK;
   }
 
-  std::transform(msg.begin(), msg.end(), msg.begin(), [](unsigned char c) -> char {
-    if (c < 0x20 || c >= 0x80) return '.';
+  std::transform(msg.begin(), msg.end(), msg.begin(), [](char c) -> char {
+    if (c < 0x20) return '.';
     return (char)c;
   });
 
@@ -111,6 +110,8 @@ static int DebugCallback(CURL* curl, curl_infotype type, char* data, size_t size
 
   return CURLE_OK;
 }
+
+}  // namespace
 
 FileDownloader::FileDownloader() : connect_to_(nullptr) {
   curl_ = curl_easy_init();
@@ -249,7 +250,7 @@ bool FileDownloader::ConnectTo(const char* const entry) {
   return true;
 }
 
-void FileDownloader::VerboseMode(bool verbose) {
+void FileDownloader::SetVerboseMode(bool verbose) {
   if (logging::GetLogLevel() <= logging::LogLevel::DEBUG && verbose) {
     curl_easy_setopt(curl_, CURLOPT_VERBOSE, 1L);
     curl_easy_setopt(curl_, CURLOPT_DEBUGFUNCTION, DebugCallback);
@@ -292,17 +293,17 @@ bool FileDownloader::Download() {
 
   auto start_time = std::chrono::steady_clock::now();
 
-  for (auto retries = retry_.times; retries; retries--) {
+  for (auto max_attempts = retry_.times; max_attempts; max_attempts--) {
     std::ofstream of(output_path_, std::ios::trunc | std::ios::binary);
-    DownloadData download_data = {.http_status = 0, .error_msg = "", .os = of};
+    DownloadData download_data = {.http_status = 0, .error_msg = "", .os = &of};
 
     if (!of.is_open()) {
       CLOG(WARNING) << "Failed to open " << output_path_;
       return false;
     }
 
-    curl_easy_setopt(curl_, CURLOPT_HEADERDATA, reinterpret_cast<void*>(&download_data));
-    curl_easy_setopt(curl_, CURLOPT_WRITEDATA, reinterpret_cast<void*>(&download_data));
+    curl_easy_setopt(curl_, CURLOPT_HEADERDATA, static_cast<void*>(&download_data));
+    curl_easy_setopt(curl_, CURLOPT_WRITEDATA, static_cast<void*>(&download_data));
 
     error_.fill('\0');
     auto result = curl_easy_perform(curl_);
@@ -311,11 +312,12 @@ bool FileDownloader::Download() {
       return true;
     }
 
-    std::string error_message(error_.data());
-    CLOG(INFO) << "Fail to download " << output_path_ << " - " << (!error_message.empty() ? error_message : curl_easy_strerror(result));
+    CLOG(INFO) << "Fail to download " << output_path_ << " - " << ((error_[0] != '\0') ? error_.data() : curl_easy_strerror(result));
     if (download_data.http_status >= 400) {
       CLOG(INFO) << "HTTP Request failed with error code '" << download_data.http_status << "' - " << download_data.error_msg;
     }
+
+    if (max_attempts == 1) break;
 
     sleep(retry_.delay);
 

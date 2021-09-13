@@ -169,7 +169,7 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   }
 
   if (set_curl_verbose) {
-    set_curl_verbose_ = true;
+    curl_verbose_ = true;
   }
 }
 

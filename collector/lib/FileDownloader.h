@@ -35,7 +35,7 @@ namespace collector {
 struct DownloadData {
   unsigned int http_status;
   std::string error_msg;
-  std::ostream& os;
+  std::ostream* os;
 };
 
 class FileDownloader {
@@ -62,7 +62,7 @@ class FileDownloader {
   bool Key(const char* const path);
   bool ConnectTo(const std::string& entry);
   bool ConnectTo(const char* const entry);
-  void VerboseMode(bool verbose);
+  void SetVerboseMode(bool verbose);
 
   void ResetCURL();
   bool IsReady();
