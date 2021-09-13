@@ -539,7 +539,7 @@ jobs:
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
-    - KERNEL_BUNDLES_STAGING_BUCKET: gs://stackrox-kernel-bundles-staging/rc/dockerdesktop-path/05a338c83a32599b4e7016bd3655bf32aa71db01
+    - KERNEL_BUNDLES_STAGING_BUCKET: gs://stackrox-kernel-bundles-staging/mauro/ROX-6790-crawl-2004-backports/7b9d05acc2747653a186213b80f3183963bea7dd/
 
     steps:
     - initcommand
