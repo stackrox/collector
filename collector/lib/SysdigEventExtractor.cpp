@@ -42,6 +42,8 @@ void SysdigEventExtractor::ClearWrappers() {
   for (std::vector<FilterCheckWrapper*>::iterator i = wrappers_.end() - 1; i != wrappers_.begin() - 1; i--) {
     wrappers_.erase(i);
   }
+
+  wrappers_.shrink_to_fit();
 }
 
 }  // namespace collector
