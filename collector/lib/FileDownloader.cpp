@@ -27,8 +27,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include <unistd.h>
 #include <utils.h>
 
-#include "ConnScraper.h"
 #include "Logging.h"
+#include "StringView.h"
 
 namespace collector {
 
