@@ -24,8 +24,8 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef COLLECTOR_STRINGVIEW_H
 #define COLLECTOR_STRINGVIEW_H
 
-#include <string>
 #include <cstring>
+#include <string>
 
 namespace collector {
 class StringView {
