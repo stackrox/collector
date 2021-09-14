@@ -1,18 +1,16 @@
 diff --git a/bpf/Makefile b/bpf/Makefile
-index 5c745fc..61b570c 100644
+index 5c745fc..f946d4d 100644
 --- a/bpf/Makefile
 +++ b/bpf/Makefile
-@@ -5,7 +5,9 @@
+@@ -5,6 +5,8 @@
  # MIT.txt or GPL.txt for full copies of the license.
  #
-
--always += probe.o
+ 
 +always-y += probe.o
 +# kept for compatibility with kernels < 5.11
-+always += probe.o
-
+ always += probe.o
+ 
  LLC ?= llc
- CLANG ?= clang
 @@ -18,6 +20,8 @@ KERNELDIR ?= /lib/modules/$(shell uname -r)/build
  ifeq ($(shell grep -sq "^\s*struct\s\+audit_task_info\s\+\*audit;\s*$$" $(KERNELDIR)/include/linux/sched.h ; echo $$? ), 0)
  	KBUILD_CPPFLAGS+= -DCOS_73_WORKAROUND
@@ -20,20 +18,29 @@ index 5c745fc..61b570c 100644
 +# clang-7 does not support -fmacro-prefix-map
 +KBUILD_CPPFLAGS:=$(filter-out -fmacro-prefix-map=%,$(KBUILD_CPPFLAGS))
  # End StackRox
-
+ 
  all:
 diff --git a/bpf/fillers.h b/bpf/fillers.h
-index b687e28..76cf40f 100644
+index b687e28..5f6ad06 100644
 --- a/bpf/fillers.h
 +++ b/bpf/fillers.h
 @@ -20,6 +20,7 @@ or GPL2.txt for full copies of the license.
  //#define COS_73_WORKAROUND
-
+ 
  #include "../ppm_flag_helpers.h"
 +#include "../kernel_hacks.h"
-
+ 
  #include <linux/tty.h>
  #include <linux/audit.h>
+@@ -277,7 +278,7 @@ static __always_inline int bpf_poll_parse_fds(struct filler_data *data,
+ 	off = data->state->tail_ctx.curoff + sizeof(u16);
+ 	fds_count = 0;
+ 
+-	#pragma unroll
++	#pragma unroll POLL_MAXFDS
+ 	for (j = 0; j < POLL_MAXFDS; ++j) {
+ 		u16 flags;
+ 
 diff --git a/kernel_hacks.h b/kernel_hacks.h
 new file mode 100644
 index 0000000..e76f909
@@ -99,12 +106,12 @@ index 8ba4c08..a91cb97 100644
 -	struct timespec *ts,
 +	nanoseconds ns,
  	struct event_data_t *event_datap);
-
+ 
  static void record_event_all_consumers_for(struct task_struct* task,
 @@ -256,6 +256,11 @@ do {								\
  		pr_info(fmt, ##__VA_ARGS__);			\
  } while (0)
-
+ 
 +static inline nanoseconds ppm_nsecs(void)
 +{
 +	return ktime_to_ns(ktime_get_real());
@@ -118,9 +125,9 @@ index 8ba4c08..a91cb97 100644
  	{
  		struct event_data_t event_data;
 -		struct timespec ts;
-
+ 
  		vpr_info("PPM_IOCTL_DISABLE_DROPPING_MODE, consumer %p\n", consumer_id);
-
+ 
 @@ -1203,12 +1207,11 @@ cleanup_ioctl_procinfo:
  		 * Push an event into the ring buffer so that the user can know that dropping
  		 * mode has been disabled
@@ -129,21 +136,21 @@ index 8ba4c08..a91cb97 100644
  		event_data.category = PPMC_CONTEXT_SWITCH;
  		event_data.event_info.context_data.sched_prev = (void *)DEI_DISABLE_DROPPING;
  		event_data.event_info.context_data.sched_next = (void *)0;
-
+ 
 -		record_event_consumer(consumer, PPME_SYSDIGEVENT_E, UF_NEVER_DROP, &ts, &event_data);
 +		record_event_consumer(consumer, PPME_SYSDIGEVENT_E, UF_NEVER_DROP, ppm_nsecs(), &event_data);
-
+ 
  		ret = 0;
  		goto cleanup_ioctl;
 @@ -1770,11 +1773,11 @@ static enum ppm_event_type parse_socketcall_for(struct task_struct* task, struct
  #endif /* _HAS_SOCKETCALL */
-
+ 
  /* Begin StackRox Section */
 -static inline void record_drop_e_for(struct task_struct* task, struct ppm_consumer_t *consumer, struct timespec *ts)
 +static inline void record_drop_e_for(struct task_struct* task, struct ppm_consumer_t *consumer, nanoseconds ns)
  {
  	struct event_data_t event_data = {0};
-
+ 
 -	if (record_event_consumer_for(task, consumer, PPME_DROP_E, UF_NEVER_DROP, ts, &event_data) == 0) {
 +	if (record_event_consumer_for(task, consumer, PPME_DROP_E, UF_NEVER_DROP, ns, &event_data) == 0) {
  		consumer->need_to_insert_drop_e = 1;
@@ -152,12 +159,12 @@ index 8ba4c08..a91cb97 100644
 @@ -1784,11 +1787,11 @@ static inline void record_drop_e_for(struct task_struct* task, struct ppm_consum
  	}
  }
-
+ 
 -static inline void record_drop_x_for(struct task_struct* task, struct ppm_consumer_t *consumer, struct timespec *ts)
 +static inline void record_drop_x_for(struct task_struct* task, struct ppm_consumer_t *consumer, nanoseconds ns)
  {
  	struct event_data_t event_data = {0};
-
+ 
 -	if (record_event_consumer_for(task, consumer, PPME_DROP_X, UF_NEVER_DROP, ts, &event_data) == 0) {
 +	if (record_event_consumer_for(task, consumer, PPME_DROP_X, UF_NEVER_DROP, ns, &event_data) == 0) {
  		consumer->need_to_insert_drop_x = 1;
@@ -175,7 +182,7 @@ index 8ba4c08..a91cb97 100644
 @@ -1888,10 +1891,11 @@ static inline int drop_event_for(struct task_struct* task,
  			return 1;
  		}
-
+ 
 -		if (ts->tv_nsec >= consumer->sampling_interval) {
 +		if (consumer->sampling_interval < SECOND_IN_NS &&
 +		    (ns % SECOND_IN_NS) >= consumer->sampling_interval) {
@@ -184,29 +191,29 @@ index 8ba4c08..a91cb97 100644
 -				record_drop_e_for(task, consumer, ts);
 +				record_drop_e_for(task, consumer, ns);
  			}
-
+ 
  			return 1;
 @@ -1899,7 +1903,7 @@ static inline int drop_event_for(struct task_struct* task,
-
+ 
  		if (consumer->is_dropping == 1) {
  			consumer->is_dropping = 0;
 -			record_drop_x_for(task, consumer, ts);
 +			record_drop_x_for(task, consumer, ns);
  		}
  	}
-
+ 
 @@ -1911,18 +1915,16 @@ static void record_event_all_consumers_for(struct task_struct* task, enum ppm_ev
  	struct event_data_t *event_datap)
  {
  	struct ppm_consumer_t *consumer;
 -	struct timespec ts;
 +	nanoseconds ns = ppm_nsecs();
-
+ 
  	/* Begin StackRox section */
  	/* Moved this from record_event_consumers_for */
  	if (!test_bit(event_type, g_events_mask)) return;
  	/* End StackRox section */
-
+ 
 -	getnstimeofday(&ts);
 -
  	rcu_read_lock();
@@ -226,7 +233,7 @@ index 8ba4c08..a91cb97 100644
  {
  	int res = 0;
 @@ -1974,11 +1976,11 @@ static int record_event_consumer_for(struct task_struct* task,
-
+ 
  	if (event_type != PPME_DROP_E && event_type != PPME_DROP_X) {
  		if (consumer->need_to_insert_drop_e == 1)
 -			record_drop_e_for(task, consumer, ts);
@@ -234,7 +241,7 @@ index 8ba4c08..a91cb97 100644
  		else if (consumer->need_to_insert_drop_x == 1)
 -			record_drop_x_for(task, consumer, ts);
 +			record_drop_x_for(task, consumer, ns);
-
+ 
 -		if (drop_event_for(task, consumer, event_type, drop_flags, ts,
 +		if (drop_event_for(task, consumer, event_type, drop_flags, ns,
  			       event_datap->event_info.syscall_data.regs))
@@ -252,7 +259,7 @@ index 8ba4c08..a91cb97 100644
 @@ -2252,7 +2254,7 @@ static int record_event_consumer_for(struct task_struct* task,
  		}
  	}
-
+ 
 -	if (ts->tv_sec > ring->last_print_time.tv_sec + 1) {
 +	if (MORE_THAN_ONE_SECOND_AHEAD(ns, ring->last_print_time)) {
  		vpr_info("consumer:%p CPU:%d, use:%d%%, ev:%llu, dr_buf:%llu, dr_pf:%llu, pr:%llu, cs:%llu\n",
@@ -261,11 +268,11 @@ index 8ba4c08..a91cb97 100644
 @@ -2263,7 +2265,7 @@ static int record_event_consumer_for(struct task_struct* task,
  		       ring_info->n_preemptions,
  		       ring->info->n_context_switches);
-
+ 
 -		ring->last_print_time = *ts;
 +		ring->last_print_time = ns;
  	}
-
+ 
  	atomic_dec(&ring->preempt_count);
 @@ -2275,10 +2277,10 @@ static int record_event_consumer_for(struct task_struct* task,
  static int record_event_consumer(struct ppm_consumer_t *consumer,
@@ -278,7 +285,7 @@ index 8ba4c08..a91cb97 100644
 -	return record_event_consumer_for(current, consumer, event_type, drop_flags, ts, event_datap);
 +	return record_event_consumer_for(current, consumer, event_type, drop_flags, ns, event_datap);
  }
-
+ 
  /* End StackRox Section */
 @@ -2657,7 +2659,7 @@ static void reset_ring_buffer(struct ppm_ring_buffer_context *ring)
  	ring->info->n_drops_pf = 0;
@@ -287,7 +294,7 @@ index 8ba4c08..a91cb97 100644
 -	getnstimeofday(&ring->last_print_time);
 +	ring->last_print_time = ppm_nsecs();
  }
-
+ 
  #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0))
 diff --git a/ppm.h b/ppm.h
 index 27e5f2d..3054be8 100644
@@ -296,10 +303,10 @@ index 27e5f2d..3054be8 100644
 @@ -21,7 +21,7 @@ or GPL2.txt for full copies of the license.
  #define ASSERT(expr)
  #endif
-
+ 
 -#include <linux/time.h>
 +typedef u64 nanoseconds;
-
+ 
  /* Begin StackRox Section */
  #include <linux/pid_namespace.h>
 @@ -54,7 +54,7 @@ struct ppm_ring_buffer_context {
@@ -312,9 +319,9 @@ index 27e5f2d..3054be8 100644
  	atomic_t preempt_count;
  	char *str_storage;	/* String storage. Size is one page. */
 @@ -123,4 +123,7 @@ extern const enum ppm_syscall_code g_syscall_ia32_code_routing_table[];
-
+ 
  extern void ppm_syscall_get_arguments(struct task_struct *task, struct pt_regs *regs, unsigned long *args);
-
+ 
 +#define SECOND_IN_NS 1000000000
 +#define NS_TO_SEC(_ns) ((_ns) / SECOND_IN_NS)
 +#define MORE_THAN_ONE_SECOND_AHEAD(_ns1, _ns2) ((_ns1) - (_ns2) > SECOND_IN_NS)
@@ -326,16 +333,16 @@ index 366cae8..919cd2a 100644
 @@ -47,6 +47,8 @@ or GPL2.txt for full copies of the license.
  #include <linux/bpf.h>
  #endif
-
+ 
 +#include "kernel_hacks.h"
 +
  #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 0)
  static inline struct inode *file_inode(struct file *f)
  {
 @@ -627,9 +629,9 @@ static int compat_accumulate_argv_or_env(compat_uptr_t argv,
-
+ 
  #endif
-
+ 
 -// probe_kernel_read() only added in kernel 2.6.26
 +/* probe_kernel_read() only added in kernel 2.6.26, name changed in 5.8.0 */
  #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
@@ -345,13 +352,13 @@ index 366cae8..919cd2a 100644
  	long ret;
  	mm_segment_t old_fs = get_fs();
 @@ -642,8 +644,11 @@ long probe_kernel_read(void *dst, const void *src, size_t size)
-
+ 
  	return ret ? -EFAULT : 0;
  }
 +#elif LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
 +#define copy_from_kernel_nofault probe_kernel_read
  #endif
-
+ 
 +
  static int ppm_get_tty(void)
  {
@@ -359,40 +366,40 @@ index 366cae8..919cd2a 100644
 @@ -664,25 +669,25 @@ static int ppm_get_tty(void)
  	if (!sig)
  		return 0;
-
+ 
 -	if (unlikely(probe_kernel_read(&tty, &sig->tty, sizeof(tty))))
 +	if (unlikely(copy_from_kernel_nofault(&tty, &sig->tty, sizeof(tty))))
  		return 0;
-
+ 
  	if (!tty)
  		return 0;
-
+ 
 -	if (unlikely(probe_kernel_read(&index, &tty->index, sizeof(index))))
 +	if (unlikely(copy_from_kernel_nofault(&index, &tty->index, sizeof(index))))
  		return 0;
-
+ 
 -	if (unlikely(probe_kernel_read(&driver, &tty->driver, sizeof(driver))))
 +	if (unlikely(copy_from_kernel_nofault(&driver, &tty->driver, sizeof(driver))))
  		return 0;
-
+ 
  	if (!driver)
  		return 0;
-
+ 
 -	if (unlikely(probe_kernel_read(&major, &driver->major, sizeof(major))))
 +	if (unlikely(copy_from_kernel_nofault(&major, &driver->major, sizeof(major))))
  		return 0;
-
+ 
 -	if (unlikely(probe_kernel_read(&minor_start, &driver->minor_start, sizeof(minor_start))))
 +	if (unlikely(copy_from_kernel_nofault(&minor_start, &driver->minor_start, sizeof(minor_start))))
  		return 0;
-
+ 
  	tty_nr = new_encode_dev(MKDEV(major, minor_start) + index);
 @@ -1347,6 +1352,7 @@ static int parse_sockopt(struct event_filler_arguments *args, int level, int opt
  		uint64_t val64;
  		struct timeval tv;
  	} u;
 +	nanoseconds ns = 0;
-
+ 
  	if (level == SOL_SOCKET) {
  		switch (optname) {
 @@ -1363,9 +1369,12 @@ static int parse_sockopt(struct event_filler_arguments *args, int level, int opt
@@ -407,7 +414,7 @@ index 366cae8..919cd2a 100644
 +				ns = u.tv.tv_sec * SECOND_IN_NS + u.tv.tv_usec * 1000;
 +				return val_to_ring(args, ns, 0, false, PPM_SOCKOPT_IDX_TIMEVAL);
 +
-
+ 
  #ifdef SO_COOKIE
  			case SO_COOKIE:
 @@ -2707,7 +2716,7 @@ static int timespec_parse(struct event_filler_arguments *args, unsigned long val
@@ -418,3 +425,4 @@ index 366cae8..919cd2a 100644
 +		cfulen = (int)ppm_copy_from_user(targetbuf, (void __user *)val, sizeof(*tts));
  		if (unlikely(cfulen != 0))
  			return PPM_FAILURE_INVALID_USER_MEMORY;
+ 
