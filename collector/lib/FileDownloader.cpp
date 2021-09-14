@@ -43,7 +43,7 @@ size_t HeaderCallback(char* buffer, size_t size, size_t nitems, void* dd) {
   if (data.substr(0, 5) == "HTTP/") {
     size_t error_code_offset = data.find(' ');
 
-    if (error_code_offset == std::string::npos) {
+    if (error_code_offset == StringView::npos) {
       download_data->http_status = 500;
       download_data->error_msg = Str("Failed extracting HTTP status code (", data.substr(0, 1024), ")");
       return 0;  // Force the download to fail explicitly
@@ -62,7 +62,7 @@ size_t WriteFile(void* content, size_t size, size_t nitems, void* dd) {
   const char* content_bytes = static_cast<const char*>(content);
 
   if (download_data->http_status >= 400) {
-    download_data->error_msg = Str("HTTP Body Response: ", content_size <= 1024 ? content_size : 1024);
+    download_data->error_msg = Str("HTTP Body Response: ", StringView(content_bytes, std::min(content_size, 1024UL)));
     return 0;  // Force the download to fail explicitly
   }
 

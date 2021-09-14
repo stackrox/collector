@@ -80,6 +80,11 @@ class StringView {
   const_iterator begin() const { return p_; }
   const_iterator end() const { return p_ + n_; }
 
+  friend std::ostream& operator<<(std::ostream& out, StringView const& sv) {
+    out.write(sv.p_, sv.n_);
+    return out;
+  }
+
   template <std::size_t N>
   bool operator==(const char (&str)[N]) const {
     if (n_ != N - 1) return false;
