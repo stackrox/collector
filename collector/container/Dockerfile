@@ -28,7 +28,6 @@ RUN apt-get update \
         ca-certificates \
         kmod \
         curl \
-        file \
         libssl1.1 \
         libuuid1 \
         libcap-ng0 \
