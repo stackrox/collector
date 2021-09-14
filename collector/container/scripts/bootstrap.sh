@@ -279,6 +279,8 @@ function get_kernel_object() {
 
       if [[ -f "$module_path" ]]; then
         chmod 0444 "$module_path"
+	echo ""
+	file $module_path #For debugging
       else
         log "Did not find kernel module for kernel version $kernel_version."
         return 1
