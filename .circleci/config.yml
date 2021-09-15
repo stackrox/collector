@@ -625,7 +625,7 @@ jobs:
                 flavor="modern"
               fi
             # Ubuntu 20.04 backport
-            elif [[ "$distro" == "ubuntu" && "$version" =~ "~20.04" ]]; then
+            elif [[ "$distro" == "ubuntu" && "$version" == *"~20.04"* ]]; then
                flavor="modern"
             # SUSE and all kernels >= 5 can use modern builder
             elif [[ "$distro" =~ ^suse$|^dockerdesktop$ ]] || (( kernel_version >= 5 )); then
