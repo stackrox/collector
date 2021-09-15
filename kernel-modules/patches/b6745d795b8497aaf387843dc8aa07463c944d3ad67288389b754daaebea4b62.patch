@@ -21,7 +21,7 @@ index 5c745fc..f946d4d 100644
  
  all:
 diff --git a/bpf/fillers.h b/bpf/fillers.h
-index b687e28..5f6ad06 100644
+index b687e28..ef91d1b 100644
 --- a/bpf/fillers.h
 +++ b/bpf/fillers.h
 @@ -20,6 +20,7 @@ or GPL2.txt for full copies of the license.
@@ -32,14 +32,47 @@ index b687e28..5f6ad06 100644
  
  #include <linux/tty.h>
  #include <linux/audit.h>
-@@ -277,7 +278,7 @@ static __always_inline int bpf_poll_parse_fds(struct filler_data *data,
+@@ -277,25 +278,22 @@ static __always_inline int bpf_poll_parse_fds(struct filler_data *data,
  	off = data->state->tail_ctx.curoff + sizeof(u16);
  	fds_count = 0;
  
 -	#pragma unroll
 +	#pragma unroll POLL_MAXFDS
  	for (j = 0; j < POLL_MAXFDS; ++j) {
- 		u16 flags;
+-		u16 flags;
++		if (off > SCRATCH_SIZE_HALF)
++			return PPM_FAILURE_BUFFER_FULL;
+ 
+ 		if (j == nfds)
+ 			break;
+ 
++		u16 flags;
++
+ 		if (enter_event) {
+ 			flags = poll_events_to_scap(fds[j].events);
+ 		} else {
+-			if (!fds[j].revents)
+-				continue;
+-
+ 			flags = poll_events_to_scap(fds[j].revents);
+ 		}
+ 
+-		if (off > SCRATCH_SIZE_HALF)
+-			return PPM_FAILURE_BUFFER_FULL;
+-
+ 		*(s64 *)&data->buf[off & SCRATCH_SIZE_HALF] = fds[j].fd;
+ 		off += sizeof(s64);
+ 
+@@ -391,6 +389,10 @@ static __always_inline int bpf_parse_readv_writev_bufs(struct filler_data *data,
+ 		if (j == iovcnt)
+ 			break;
+ 
++		// BPF seems to require a hard limit to avoid overflows
++		if (size == LONG_MAX)
++			break;
++
+ 		size += iov[j].iov_len;
+ 	}
  
 diff --git a/kernel_hacks.h b/kernel_hacks.h
 new file mode 100644
