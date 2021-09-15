@@ -11,8 +11,16 @@
 # TODO(ROX-6615) - Kernel crawler deletes debian kernels
 4.19.0-10-cloud-amd64
 4.19.0-14-amd64
-# TODO(ROX-6790) - support glibc 2.33 for 5.11+ kernels
-~5\.1[1-9]\..*
+# TODO(ROX-??)
+~5\.1[1-9]\..*fc[0-9]+\.x86_64
+# TODO(ROX-??)
+4.19.0-11-amd64
+4.19.0-12-amd64
+4.19.0-6-amd64
+4.19.0-8-amd64
+4.19.0-9-amd64
+# backport 5.8
+5.8.*20.04
 # TODO(ROX-6789) - backport 5.7+ patches to legacy collector versions
 ~5\.([7-9]|10)\..* 1123dde0458e72a49880b06922e135dbcd36fb784fed530ab84ddfa8924e5c05
 ~5\.([7-9]|10)\..* 612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656

@@ -624,6 +624,9 @@ jobs:
               elif (( build_id >= 14 )); then
                 flavor="modern"
               fi
+            # Ubuntu 20.04 backport
+￼           elif [[ "$distro" == "ubuntu" && "$version" =~ "~20.04" ]]; then
+￼              flavor="modern"
             # SUSE and all kernels >= 5 can use modern builder
             elif [[ "$distro" =~ ^suse$|^dockerdesktop$ ]] || (( kernel_version >= 5 )); then
               if (( kernel_version > 5 || (( kernel_version == 5 && kernel_major > 10 )) || (( "$distro" == "flatcar" && kernel_version == 5 && kernel_major == 10  )) )); then
@@ -1778,19 +1781,18 @@ workflows:
         collection_method: module
         vm_type: ubuntu-os
         image_family: ubuntu-2004-lts
-    # TODO(ROX-6790) - support glibc 2.33 for 5.11+ kernels
-    #- integration-test:
-    #    <<: *runOnAllTagsWithIntegrationTestRequires
-    #    name: test-ebpf-ubuntu-2104
-    #    collection_method: ebpf
-    #    vm_type: ubuntu-os
-    #    image_family: ubuntu-2104
-    #- integration-test:
-    #    <<: *runOnAllTagsWithIntegrationTestRequires
-    #    name: test-module-ubuntu-2104
-    #    collection_method: module
-    #    vm_type: ubuntu-os
-    #    image_family: ubuntu-2104
+    - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
+        name: test-ebpf-ubuntu-2104
+        collection_method: ebpf
+        vm_type: ubuntu-os
+        image_family: ubuntu-2104
+    - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
+        name: test-module-ubuntu-2104
+        collection_method: module
+        vm_type: ubuntu-os
+        image_family: ubuntu-2104
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-sles-15
@@ -1852,9 +1854,8 @@ workflows:
         - test-ebpf-ubuntu-1804-lts
         - test-module-ubuntu-2004-lts
         - test-ebpf-ubuntu-2004-lts
-        # TODO(ROX-6790) - support glibc 2.33 for 5.11+ kernels
-        #- test-module-ubuntu-2104
-        #- test-ebpf-ubuntu-2104
+        - test-module-ubuntu-2104
+        - test-ebpf-ubuntu-2104
         - test-ebpf-sles-15
         - test-module-sles-15
         - test-module-sles-12
