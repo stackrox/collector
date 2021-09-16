@@ -15,7 +15,7 @@ RUN if [ $USE_VALGRIND == "true" ]; then \
       tar xjf valgrind-3.17.0.tar.bz2 && \
       cd valgrind-3.17.0 && \
       mkdir bin && \
-      ./configure MAKE="gmake" --disable-dependency-tracking --prefix=/valgrind-3.17.0/bin && \
+      ./configure MAKE="gmake" --disable-dependency-tracking --prefix=/valgrind-3.17.0 && \
       make && \
       make install; \
     else \
@@ -68,7 +68,7 @@ RUN mv collector-wrapper.sh /usr/local/bin/ && \
     # (Optional) Remove line below to keep package management utilities
     rpm -e --nodeps rpm rpm-build-libs rpm-libs python3-rpm subscription-manager python3-subscription-manager-rhsm yum $(rpm -qa *dnf*) python3-hawkey; \
     if [ $USE_VALGRIND == "true" ]; then \
-    ln -s /valgrind-3.17.0/bin/bin/valgrind /usr/local/bin/valgrind; \
+      ln -s /valgrind-3.17.0/bin/valgrind /usr/local/bin/valgrind; \
     fi \
     echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt; \
     rmdir /valgrind-3.17.0 || true
