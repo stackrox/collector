@@ -621,10 +621,12 @@ jobs:
                 else
                   flavor="modern"
                 fi
-              elif [[ "$version" =~ ^4.19.0-[0-9]*(-cloud|)-amd64$ ]]; then
+              elif [[ "$version" =~ ^4.19.0-[0-9]*-cloud-amd64$ ]]; then
                 flavor="modern"
-              elif (( build_id >= 14 )); then
+              elif (( build_id >= 13 || build_id == 10 )); then
                 flavor="modern"
+              elif [[ "$version" =~ ^4.19.0-[0-9]*-amd64$ ]]; then
+                flavor="hirsute"
               fi
             # Ubuntu 20.04 backport
             elif [[ "$distro" == "ubuntu" && "$version" =~ "~20.04" ]]; then
