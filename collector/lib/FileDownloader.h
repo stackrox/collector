@@ -26,11 +26,17 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <array>
 #include <chrono>
-#include <fstream>
+#include <ostream>
 
 #include <curl/curl.h>
 
 namespace collector {
+
+struct DownloadData {
+  unsigned int http_status;
+  std::string error_msg;
+  std::ostream* os;
+};
 
 class FileDownloader {
  public:
@@ -56,6 +62,7 @@ class FileDownloader {
   bool Key(const char* const path);
   bool ConnectTo(const std::string& entry);
   bool ConnectTo(const char* const entry);
+  void SetVerboseMode(bool verbose);
 
   void ResetCURL();
   bool IsReady();
@@ -71,6 +78,8 @@ class FileDownloader {
     unsigned int delay;
     std::chrono::seconds max_time;
   } retry_;
+
+  void SetDefaultOptions();
 };
 
 }  // namespace collector

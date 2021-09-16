@@ -22,25 +22,103 @@ You should have received a copy of the GNU General Public License along with thi
 */
 #include "FileDownloader.h"
 
+#include <algorithm>
+#include <fstream>
 #include <unistd.h>
+#include <utils.h>
 
 #include "Logging.h"
+#include "StringView.h"
+#include "Utility.h"
 
 namespace collector {
 
-static size_t WriteFile(void* content, size_t size, size_t nmemb, void* stream) {
-  auto s = reinterpret_cast<std::ofstream*>(stream);
-  s->write(reinterpret_cast<const char*>(content), size * nmemb);
-  return size * nmemb;
+namespace {
+
+size_t HeaderCallback(char* buffer, size_t size, size_t nitems, void* dd) {
+  auto download_data = static_cast<DownloadData*>(dd);
+  size_t buffer_size = size * nitems;
+  StringView data(buffer, buffer_size);
+
+  if (data.substr(0, 5) == "HTTP/") {
+    size_t error_code_offset = data.find(' ');
+
+    if (error_code_offset == StringView::npos) {
+      download_data->http_status = 500;
+      download_data->error_msg = Str("Failed extracting HTTP status code (", data.substr(0, 1024), ")");
+      return 0;  // Force the download to fail explicitly
+    }
+
+    download_data->http_status = std::stoul(data.substr(error_code_offset + 1, data.find(' ', error_code_offset + 1)).str());
+    CLOG(DEBUG) << "Set HTTP status code to '" << download_data->http_status << "'";
+  }
+
+  return buffer_size;
 }
+
+size_t WriteFile(void* content, size_t size, size_t nitems, void* dd) {
+  auto download_data = static_cast<DownloadData*>(dd);
+  size_t content_size = size * nitems;
+  const char* content_bytes = static_cast<const char*>(content);
+
+  if (download_data->http_status >= 400) {
+    download_data->error_msg = Str("HTTP Body Response: ", StringView(content_bytes, std::min(content_size, 1024UL)));
+    return 0;  // Force the download to fail explicitly
+  }
+
+  download_data->os->write(content_bytes, content_size);
+  return content_size;
+}
+
+int DebugCallback(CURL*, curl_infotype type, char* data, size_t size, void*) {
+  std::string msg(data, size);
+  msg = rtrim(msg);
+
+  if (type == CURLINFO_TEXT) {
+    CLOG(DEBUG) << "== Info: " << msg;
+    return CURLE_OK;
+  }
+
+  if (logging::GetLogLevel() > logging::LogLevel::TRACE) {
+    // Skip other types of messages if we are not tracing
+    return CURLE_OK;
+  }
+
+  std::transform(msg.begin(), msg.end(), msg.begin(), [](char c) -> char {
+    if (c < 0x20) return '.';
+    return (char)c;
+  });
+
+  const char* hdr = nullptr;
+
+  if (type == CURLINFO_HEADER_OUT) {
+    hdr = "-> Send header - ";
+  } else if (type == CURLINFO_DATA_OUT) {
+    hdr = "-> Send data - ";
+  } else if (type == CURLINFO_SSL_DATA_OUT) {
+    hdr = "-> Send SSL data - ";
+  } else if (type == CURLINFO_HEADER_IN) {
+    hdr = "<- Recv header - ";
+  } else if (type == CURLINFO_DATA_IN) {
+    hdr = "<- Recv data - ";
+  } else if (type == CURLINFO_SSL_DATA_IN) {
+    hdr = "<- Recv SSL data - ";
+  }
+
+  if (hdr) {
+    CLOG(DEBUG) << hdr << msg;
+  }
+
+  return CURLE_OK;
+}
+
+}  // namespace
 
 FileDownloader::FileDownloader() : connect_to_(nullptr) {
   curl_ = curl_easy_init();
 
   if (curl_) {
-    curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, WriteFile);
-    curl_easy_setopt(curl_, CURLOPT_ERRORBUFFER, error_.data());
-    curl_easy_setopt(curl_, CURLOPT_FAILONERROR, 1L);
+    SetDefaultOptions();
   }
 
   error_.fill('\0');
@@ -173,13 +251,19 @@ bool FileDownloader::ConnectTo(const char* const entry) {
   return true;
 }
 
+void FileDownloader::SetVerboseMode(bool verbose) {
+  if (logging::GetLogLevel() <= logging::LogLevel::DEBUG && verbose) {
+    curl_easy_setopt(curl_, CURLOPT_VERBOSE, 1L);
+    curl_easy_setopt(curl_, CURLOPT_DEBUGFUNCTION, DebugCallback);
+  } else {
+    curl_easy_setopt(curl_, CURLOPT_VERBOSE, 0L);
+  }
+}
+
 void FileDownloader::ResetCURL() {
   curl_easy_reset(curl_);
 
-  // Re-add both the write function and the error buffer
-  curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, WriteFile);
-  curl_easy_setopt(curl_, CURLOPT_ERRORBUFFER, error_.data());
-  curl_easy_setopt(curl_, CURLOPT_FAILONERROR, 1L);
+  SetDefaultOptions();
 
   curl_slist_free_all(connect_to_);
   connect_to_ = nullptr;
@@ -210,15 +294,17 @@ bool FileDownloader::Download() {
 
   auto start_time = std::chrono::steady_clock::now();
 
-  for (auto retries = retry_.times; retries; retries--) {
+  for (auto max_attempts = retry_.times; max_attempts; max_attempts--) {
     std::ofstream of(output_path_, std::ios::trunc | std::ios::binary);
+    DownloadData download_data = {.http_status = 0, .error_msg = "", .os = &of};
 
     if (!of.is_open()) {
       CLOG(WARNING) << "Failed to open " << output_path_;
       return false;
     }
 
-    curl_easy_setopt(curl_, CURLOPT_WRITEDATA, reinterpret_cast<void*>(&of));
+    curl_easy_setopt(curl_, CURLOPT_HEADERDATA, static_cast<void*>(&download_data));
+    curl_easy_setopt(curl_, CURLOPT_WRITEDATA, static_cast<void*>(&download_data));
 
     error_.fill('\0');
     auto result = curl_easy_perform(curl_);
@@ -227,8 +313,12 @@ bool FileDownloader::Download() {
       return true;
     }
 
-    std::string error_message(error_.data());
-    CLOG(INFO) << "Fail to download " << output_path_ << " - " << (!error_message.empty() ? error_message : curl_easy_strerror(result));
+    CLOG(INFO) << "Fail to download " << output_path_ << " - " << ((error_[0] != '\0') ? error_.data() : curl_easy_strerror(result));
+    if (download_data.http_status >= 400) {
+      CLOG(INFO) << "HTTP Request failed with error code '" << download_data.http_status << "' - " << download_data.error_msg;
+    }
+
+    if (max_attempts == 1) break;
 
     sleep(retry_.delay);
 
@@ -242,6 +332,12 @@ bool FileDownloader::Download() {
   CLOG(WARNING) << "Failed to download " << output_path_;
 
   return false;
+}
+
+void FileDownloader::SetDefaultOptions() {
+  curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, WriteFile);
+  curl_easy_setopt(curl_, CURLOPT_HEADERFUNCTION, HeaderCallback);
+  curl_easy_setopt(curl_, CURLOPT_ERRORBUFFER, error_.data());
 }
 
 }  // namespace collector

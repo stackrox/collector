@@ -30,7 +30,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& module_path);
+bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& module_path, bool verbose);
 
 }  // namespace collector
 #endif  // COLLECTOR_GETKERNELOBJECT_H
