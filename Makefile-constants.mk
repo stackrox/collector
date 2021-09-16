@@ -17,4 +17,4 @@ CMAKE_BUILD_TYPE ?= Release
 ifeq ($(USE_VALGRIND),true)
 	COLLECTOR_PRE_ARGUMENTS := valgrind --leak-check=full
 endif
-
+export COLLECTOR_PRE_ARGUMENTS
