@@ -323,15 +323,7 @@ function main() {
     
     # Get the host kernel version (or user defined env var)
     [ -n "$KERNEL_VERSION" ] || KERNEL_VERSION="$(uname -r)"
-    
-    #Debugging. Remove later
-    echo "KERNEL_VERSION= $KERNEL_VERSION"
-    uname_a=`uname -a`
-    echo "uname_a= $uname_a"
-    uname_v=`uname -v`
-    echo "uname_v= $uname_v"
-    ########################
-    
+
     # Get the kernel version
     KERNEL_MAJOR=$(echo "$KERNEL_VERSION" | cut -d. -f1)
     KERNEL_MINOR=$(echo "$KERNEL_VERSION" | cut -d. -f2)
