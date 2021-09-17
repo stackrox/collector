@@ -188,7 +188,7 @@ function get_ubuntu_backport_version() {
         # Check uname for backport version 16.04
         if [[ "${uname_version}" == *"~16.04"* ]]; then
             echo "~16.04"
-	elif [[ "${uname_version}" == *"~20.04"* ]]; then
+    elif [[ "${uname_version}" == *"~20.04"* ]]; then
             echo "~20.04"
         fi
     fi
