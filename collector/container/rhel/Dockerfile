@@ -69,7 +69,7 @@ RUN mv collector-wrapper.sh /usr/local/bin/ && \
     rpm -e --nodeps rpm rpm-build-libs rpm-libs python3-rpm subscription-manager python3-subscription-manager-rhsm yum $(rpm -qa *dnf*) python3-hawkey; \
     if [ $USE_VALGRIND == "true" ]; then \
       ln -s /valgrind-3.17.0/bin/valgrind /usr/local/bin/valgrind; \
-    fi \
+    fi; \
     echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt; \
     rmdir /valgrind-3.17.0 || true
 
