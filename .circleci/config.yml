@@ -396,8 +396,8 @@ jobs:
     - restore_cache:
         name: Restore Kernel module build cache
         keys:
-          - kernel-module-cache-v15-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
-          - kernel-module-cache-v15-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
+          - kernel-module-cache-v16-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+          - kernel-module-cache-v16-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-master-
 
     - run:
         name: Unpack module sources
@@ -621,9 +621,14 @@ jobs:
                 else
                   flavor="modern"
                 fi
+              elif [[ "$version" =~ ^4.19.0-[0-9]*(-cloud|)-amd64$ ]]; then
+                flavor="modern"
               elif (( build_id >= 14 )); then
                 flavor="modern"
               fi
+            # Ubuntu 20.04 backport
+            elif [[ "$distro" == "ubuntu" && "$version" =~ "~20.04" ]]; then
+              flavor="modern"
             # SUSE and all kernels >= 5 can use modern builder
             elif [[ "$distro" =~ ^suse$|^dockerdesktop$ ]] || (( kernel_version >= 5 )); then
               if (( kernel_version > 5 || (( kernel_version == 5 && kernel_major > 10 )) || (( "$distro" == "flatcar" && kernel_version == 5 && kernel_major == 10  )) )); then
@@ -645,7 +650,7 @@ jobs:
             if [[ "$flavor" != "default" ]]; then
               echo "$version" >>~/kobuild-tmp/custom-flavors/versions."$flavor"
             fi
-            echo "Building kernel version $version with $flavor builder"
+            echo "Building kernel version $version with $flavor builder. Distro is $distro"
           done
 
     - run:
@@ -833,7 +838,7 @@ jobs:
 
     - save_cache:
         name: Saving Kernel module build cache
-        key: kernel-module-cache-v15-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
+        key: kernel-module-cache-v16-{{ checksum "/tmp/cache/kernel-modules-version.txt" }}-{{ .Branch }}-{{ .Revision }}
         paths:
           - /tmp/cache/
 
@@ -1193,10 +1198,10 @@ jobs:
         enum: [module, ebpf]
       vm_type:
         type: enum
-        enum: [cos, rhel, suse, suse-sap, ubuntu-os, flatcar]
+        enum: [cos, rhel, suse, suse-sap, ubuntu-os, flatcar, fedora-coreos]
       image_family:
         type: enum
-        enum: [cos-beta, cos-dev, cos-stable, cos-89-lts, cos-85-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2104, sles-12, sles-15, sles-15-sp2-sap, flatcar-stable]
+        enum: [cos-beta, cos-dev, cos-stable, cos-89-lts, cos-85-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2104, sles-12, sles-15, sles-15-sp2-sap, flatcar-stable, fedora-coreos-stable]
       offline:
         type: boolean
         default: false
@@ -1216,6 +1221,30 @@ jobs:
     - gcloud-init
 
     - run:
+        name: "Setup env vars"
+        command: |
+          COLLECTOR_REPO="stackrox/collector"
+          if "${SOURCE_ROOT}/.circleci/pr_has_label.sh" ci-run-against-rhel; then
+            COLLECTOR_REPO="stackrox/collector-rhel"
+          elif "${SOURCE_ROOT}/.circleci/pr_has_label.sh" ci-run-against-ubi; then
+            COLLECTOR_REPO="stackrox/collector-test-cpaas"
+          fi
+          TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
+          cat >>"$BASH_ENV" \<<-EOF
+            export COLLECTION_METHOD="<< parameters.collection_method >>"
+            export COLLECTOR_OFFLINE_MODE="<< parameters.offline >>"
+            export ROX_COLLECTOR_ALT_PROBE_DOWNLOAD=false
+            export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
+            export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
+            export IMAGE_FAMILY=<< parameters.image_family >>
+            export REMOTE_HOST_TYPE=gcloud
+            export TEST_NAME="${TEST_NAME}"
+            export VM_CONFIG="<< parameters.vm_type >>.<< parameters.image_family >>"
+            export VM_TYPE=<< parameters.vm_type >>
+            export COLLECTOR_REPO="${COLLECTOR_REPO}"
+          EOF
+
+    - run:
         name: "Extract gcp ssh public key from environment variable"
         command: |
           echo "${GCLOUD_SSH_KEY_PUB}" > "${GCP_SSH_KEY_FILE}.pub"
@@ -1225,31 +1254,12 @@ jobs:
         name: "Create VM"
         command: |
           source $SOURCE_ROOT/.circleci/create-vm.sh
-          export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
-          export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
-          export VM_TYPE=<< parameters.vm_type >>
-          export IMAGE_FAMILY=<< parameters.image_family >>
           main "$GCLOUD_INSTANCE" "$VM_TYPE" "$IMAGE_FAMILY" "$GCP_SSH_KEY_FILE" "$DOCKER_IO_PUSH_USERNAME" "$DOCKER_IO_PUSH_PASSWORD"
 
     - run:
         name: "Running integration tests"
         no_output_timeout: 45m
         command: |
-          export REMOTE_HOST_TYPE=gcloud
-          export COLLECTION_METHOD="<< parameters.collection_method >>"
-          export COLLECTOR_OFFLINE_MODE="<< parameters.offline >>"
-          export VM_CONFIG="<< parameters.vm_type >>.<< parameters.image_family >>"
-          export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
-          export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
-          export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
-          export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
-          if "${SOURCE_ROOT}/.circleci/pr_has_label.sh" ci-run-against-rhel; then
-            export COLLECTOR_REPO="stackrox/collector-rhel"
-          elif "${SOURCE_ROOT}/.circleci/pr_has_label.sh" ci-run-against-ubi; then
-            export COLLECTOR_REPO="stackrox/collector-test-cpaas"
-          else
-            export COLLECTOR_REPO="stackrox/collector"
-          fi
           make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report
           cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp "${SOURCE_ROOT}/integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
@@ -1285,8 +1295,6 @@ jobs:
     - run:
         name: "Destroy VM"
         command: |
-          export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
-          export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
           gcloud compute instances delete $GCLOUD_INSTANCE
         when: always
 
@@ -1777,19 +1785,18 @@ workflows:
         collection_method: module
         vm_type: ubuntu-os
         image_family: ubuntu-2004-lts
-    # TODO(ROX-6790) - support glibc 2.33 for 5.11+ kernels
-    #- integration-test:
-    #    <<: *runOnAllTagsWithIntegrationTestRequires
-    #    name: test-ebpf-ubuntu-2104
-    #    collection_method: ebpf
-    #    vm_type: ubuntu-os
-    #    image_family: ubuntu-2104
-    #- integration-test:
-    #    <<: *runOnAllTagsWithIntegrationTestRequires
-    #    name: test-module-ubuntu-2104
-    #    collection_method: module
-    #    vm_type: ubuntu-os
-    #    image_family: ubuntu-2104
+    - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
+        name: test-ebpf-ubuntu-2104
+        collection_method: ebpf
+        vm_type: ubuntu-os
+        image_family: ubuntu-2104
+    - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
+        name: test-module-ubuntu-2104
+        collection_method: module
+        vm_type: ubuntu-os
+        image_family: ubuntu-2104
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-sles-15
@@ -1832,6 +1839,19 @@ workflows:
         collection_method: ebpf
         vm_type: flatcar
         image_family: flatcar-stable
+    # TODO: Fix 5.13 kernel probes
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-module-fedora-coreos-stable
+    #     collection_method: module
+    #     vm_type: fedora-coreos
+    #     image_family: fedora-coreos-stable
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-ebpf-fedora-coreos-stable
+    #     collection_method: ebpf
+    #     vm_type: fedora-coreos
+    #     image_family: fedora-coreos-stable
     - integration-test-data:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
@@ -1851,9 +1871,8 @@ workflows:
         - test-ebpf-ubuntu-1804-lts
         - test-module-ubuntu-2004-lts
         - test-ebpf-ubuntu-2004-lts
-        # TODO(ROX-6790) - support glibc 2.33 for 5.11+ kernels
-        #- test-module-ubuntu-2104
-        #- test-ebpf-ubuntu-2104
+        - test-module-ubuntu-2104
+        - test-ebpf-ubuntu-2104
         - test-ebpf-sles-15
         - test-module-sles-15
         - test-module-sles-12
@@ -1861,6 +1880,9 @@ workflows:
         - test-module-sles-15-sp2-sap
         - test-ebpf-flatcar-stable
         - test-module-flatcar-stable
+        # TODO: Fix 5.13 kernel probes
+        # - test-ebpf-fedora-coreos-stable
+        # - test-module-fedora-coreos-stable
     - reload-released-images:
         <<: *runOnAllTags
         context:

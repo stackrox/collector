@@ -188,6 +188,8 @@ function get_ubuntu_backport_version() {
         # Check uname for backport version 16.04
         if [[ "${uname_version}" == *"~16.04"* ]]; then
             echo "~16.04"
+    elif [[ "${uname_version}" == *"~20.04"* ]]; then
+            echo "~20.04"
         fi
     fi
 }
@@ -304,7 +306,7 @@ function main() {
     
     # Get the host kernel version (or user defined env var)
     [ -n "$KERNEL_VERSION" ] || KERNEL_VERSION="$(uname -r)"
-    
+
     # Get the kernel version
     KERNEL_MAJOR=$(echo "$KERNEL_VERSION" | cut -d. -f1)
     KERNEL_MINOR=$(echo "$KERNEL_VERSION" | cut -d. -f2)
