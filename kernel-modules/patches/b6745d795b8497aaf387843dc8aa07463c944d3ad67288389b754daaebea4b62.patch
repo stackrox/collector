@@ -1,18 +1,16 @@
 diff --git a/bpf/Makefile b/bpf/Makefile
-index 5c745fc..61b570c 100644
+index 5c745fc..f946d4d 100644
 --- a/bpf/Makefile
 +++ b/bpf/Makefile
-@@ -5,7 +5,9 @@
+@@ -5,6 +5,8 @@
  # MIT.txt or GPL.txt for full copies of the license.
  #
-
--always += probe.o
+ 
 +always-y += probe.o
 +# kept for compatibility with kernels < 5.11
-+always += probe.o
-
+ always += probe.o
+ 
  LLC ?= llc
- CLANG ?= clang
 @@ -18,6 +20,8 @@ KERNELDIR ?= /lib/modules/$(shell uname -r)/build
  ifeq ($(shell grep -sq "^\s*struct\s\+audit_task_info\s\+\*audit;\s*$$" $(KERNELDIR)/include/linux/sched.h ; echo $$? ), 0)
  	KBUILD_CPPFLAGS+= -DCOS_73_WORKAROUND
@@ -23,7 +21,7 @@ index 5c745fc..61b570c 100644
  
  all:
 diff --git a/bpf/fillers.h b/bpf/fillers.h
-index b687e28..76cf40f 100644
+index b687e28..ef91d1b 100644
 --- a/bpf/fillers.h
 +++ b/bpf/fillers.h
 @@ -20,6 +20,7 @@ or GPL2.txt for full copies of the license.
@@ -34,6 +32,48 @@ index b687e28..76cf40f 100644
  
  #include <linux/tty.h>
  #include <linux/audit.h>
+@@ -277,25 +278,22 @@ static __always_inline int bpf_poll_parse_fds(struct filler_data *data,
+ 	off = data->state->tail_ctx.curoff + sizeof(u16);
+ 	fds_count = 0;
+ 
+-	#pragma unroll
++	#pragma unroll POLL_MAXFDS
+ 	for (j = 0; j < POLL_MAXFDS; ++j) {
+-		u16 flags;
++		if (off > SCRATCH_SIZE_HALF)
++			return PPM_FAILURE_BUFFER_FULL;
+ 
+ 		if (j == nfds)
+ 			break;
+ 
++		u16 flags;
++
+ 		if (enter_event) {
+ 			flags = poll_events_to_scap(fds[j].events);
+ 		} else {
+-			if (!fds[j].revents)
+-				continue;
+-
+ 			flags = poll_events_to_scap(fds[j].revents);
+ 		}
+ 
+-		if (off > SCRATCH_SIZE_HALF)
+-			return PPM_FAILURE_BUFFER_FULL;
+-
+ 		*(s64 *)&data->buf[off & SCRATCH_SIZE_HALF] = fds[j].fd;
+ 		off += sizeof(s64);
+ 
+@@ -391,6 +389,10 @@ static __always_inline int bpf_parse_readv_writev_bufs(struct filler_data *data,
+ 		if (j == iovcnt)
+ 			break;
+ 
++		// BPF seems to require a hard limit to avoid overflows
++		if (size == LONG_MAX)
++			break;
++
+ 		size += iov[j].iov_len;
+ 	}
+ 
 diff --git a/kernel_hacks.h b/kernel_hacks.h
 new file mode 100644
 index 0000000..e76f909
