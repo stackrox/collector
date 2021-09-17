@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 log_file=$1
 use_valgrind=$2
 
