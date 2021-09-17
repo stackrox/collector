@@ -152,7 +152,7 @@ setupGCPVM() {
   local GDOCKER_PASS="$1"
   shift
 
-  if [[ ! "$GCP_VM_TYPE" =~ ^(coreos|cos|rhel|suse|suse-sap|ubuntu-os|flatcar)$ ]]; then
+  if [[ ! "$GCP_VM_TYPE" =~ ^(coreos|cos|rhel|suse|suse-sap|ubuntu-os|flatcar|fedora-coreos)$ ]]; then
     echo "Unsupported GPC_VM_TYPE: $GCP_VM_TYPE"
     exit 1
   fi
