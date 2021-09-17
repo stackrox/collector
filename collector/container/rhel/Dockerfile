@@ -34,6 +34,7 @@ FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
 ARG collector_version=xxx
 ARG module_version=xxx
+ARG USE_VALGRIND=false
 
 LABEL name="collector-rhel" \
       vendor="StackRox" \
