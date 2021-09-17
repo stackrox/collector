@@ -798,19 +798,7 @@ jobs:
         name: Run collector unit tests
         command: |
           make -C "${SOURCE_ROOT}" unittest "USE_VALGRIND=$VALGRIND_UNIT_TESTS" 2>&1 | tee "$UNITTEST_OUTPUT_FILE"
-          if [[ "$VALGRIND_UNIT_TESTS" == "true" ]]; then
-            valgrind_summary_lines="$({ grep 'ERROR SUMMARY' "$UNITTEST_OUTPUT_FILE" || true ; } | wc -l)"
-            if (( valgrind_summary_lines == 0 )); then
-              echo "Error: Valgrind summary not found"
-              exit 2
-            fi
-            valgrind_errors="$(grep 'ERROR SUMMARY' "$UNITTEST_OUTPUT_FILE" | awk '{print $7}')"
-            if (( valgrind_errors > 0 ))
-            then
-              echo "Found $valgrind_errors Valgrind errors"
-              exit 3
-            fi
-          fi
+          "${SOURCE_ROOT}/.circleci/check-file-for-valgrind-errors.sh" "$UNITTEST_OUTPUT_FILE" 
 
     - persist_to_workspace:
         root: ~/workspace
@@ -844,19 +832,7 @@ jobs:
         name: Run RHEL collector unit tests
         command: |
           make -C "${SOURCE_ROOT}" unittest-rhel "USE_VALGRIND=$VALGRIND_UNIT_TESTS" 2>&1 | tee "$UNITTEST_OUTPUT_FILE"
-          if [[ "$VALGRIND_UNIT_TESTS" == "true" ]]; then
-            valgrind_summary_lines="$({ grep 'ERROR SUMMARY' "$UNITTEST_OUTPUT_FILE" || true ; } | wc -l)"
-            if (( valgrind_summary_lines == 0 )); then
-              echo "Error: Valgrind summary not found"
-              exit 2
-            fi
-            valgrind_errors="$(grep 'ERROR SUMMARY' "$UNITTEST_OUTPUT_FILE" | awk '{print $7}')"
-            if (( valgrind_errors > 0 ))
-            then
-              echo "Found $valgrind_errors Valgrind errors"
-              exit 3
-            fi
-          fi
+          "${SOURCE_ROOT}/.circleci/check-file-for-valgrind-errors.sh" "$UNITTEST_OUTPUT_FILE" 
 
     - persist_to_workspace:
         root: ~/workspace
@@ -1261,26 +1237,10 @@ jobs:
             exit 0
           fi
           echo "Using Valgrind"
-          max_allowed_valgrind_errors=0
           log_dir=~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
           for file in "$log_dir"/*-collector.log
           do
-            echo "Checking $file for Valgrind errors"
-            valgrind_summary="$(grep 'ERROR SUMMARY' "$file" || true)"
-            valgrind_summary_lines="$({ grep 'ERROR SUMMARY' $file || true ; } | wc -l)"
-            if [ $valgrind_summary_lines -eq 1 ]; then
-              valgrind_errors=`echo $valgrind_summary | awk '{print $7}'`
-              if [[ $valgrind_errors -gt $max_allowed_valgrind_errors ]]; then
-                echo ""
-                cat $file
-                echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
-                exit 3
-              fi
-            else
-              cat $file
-              echo "Error: Valgrind summary not found"
-              exit 2
-            fi
+            "${SOURCE_ROOT}/.circleci/check-file-for-valgrind-errors.sh" "$file"
           done
 
     - store_test_results:
@@ -1374,26 +1334,10 @@ jobs:
             exit 0
           fi
           echo "Using Valgrind"
-          max_allowed_valgrind_errors=0
           log_dir=~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
           for file in "$log_dir"/*-collector.log
           do
-            echo "Checking $file for Valgrind errors"
-            valgrind_summary="$(grep 'ERROR SUMMARY' "$file" || true)"
-            valgrind_summary_lines="$({ grep 'ERROR SUMMARY' $file || true ; } | wc -l)"
-            if [ $valgrind_summary_lines -eq 1 ]; then
-              valgrind_errors=`echo $valgrind_summary | awk '{print $7}'`
-              if [[ $valgrind_errors -gt $max_allowed_valgrind_errors ]]; then
-                echo ""
-                cat $file
-                echo "Too many Valgrind errors. Valgrind errors: $valgrind_errors. Maximum Valgrind errors allowed: $max_allowed_valgrind_errors."
-                exit 3
-              fi
-            else
-              cat $file
-              echo "Error: Valgrind summary not found"
-              exit 2
-            fi
+            "${SOURCE_ROOT}/.circleci/check-file-for-valgrind-errors.sh" "$file"
           done
 
     - run:
