@@ -26,6 +26,7 @@ type collectorManager struct {
 }
 
 func NewCollectorManager(e Executor, name string) *collectorManager {
+	var collectorPreArguments = os.Getenv("COLLECTOR_PRE_ARGUMENTS")
 	collectionMethod := ReadEnvVarWithDefault("COLLECTION_METHOD", "kernel_module")
 	if strings.Contains(collectionMethod, "module") {
 		collectionMethod = "kernel_module"
@@ -37,6 +38,7 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 		"GRPC_SERVER":                      "localhost:9999",
 		"COLLECTOR_CONFIG":                 `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}`,
 		"COLLECTION_METHOD":                collectionMethod,
+		"COLLECTOR_PRE_ARGUMENTS":          collectorPreArguments,
 		"ROX_COLLECTOR_ALT_PROBE_DOWNLOAD": alternateProbeDownload,
 	}
 	if !offlineMode {
@@ -100,15 +102,12 @@ func (c *collectorManager) TearDown() error {
 		c.captureLogs("grpc-server")
 		c.killContainer("grpc-server")
 	}
-
-	c.captureLogs("collector")
 	isRunning, err := c.executor.IsContainerRunning("collector")
 	if err != nil {
 		return err
 	}
-	if isRunning {
-		c.killContainer("collector")
-	} else {
+	if !isRunning {
+		c.captureLogs("collector")
 		// Check if collector container segfaulted or exited with error
 		exitCode, err := c.executor.ExitCode("collector")
 		if err != nil {
@@ -117,6 +116,10 @@ func (c *collectorManager) TearDown() error {
 		if exitCode != 0 {
 			return fmt.Errorf("Collector container has non-zero exit code (%d)", exitCode)
 		}
+	} else {
+		c.stopContainer("collector")
+		c.captureLogs("collector")
+		c.killContainer("collector")
 	}
 	return nil
 }
@@ -195,5 +198,10 @@ func (c *collectorManager) killContainer(name string) error {
 		return err
 	}
 	_, err = c.executor.Exec("docker", "rm", "-fv", name)
+	return err
+}
+
+func (c *collectorManager) stopContainer(name string) error {
+	_, err := c.executor.Exec("docker", "stop", name)
 	return err
 }

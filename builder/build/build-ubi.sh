@@ -33,12 +33,13 @@ cd ..
 ### Build
 
 export DISABLE_PROFILING="true"
+CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-Release}"
 
 cp -a collector/generated src/generated
 echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 mkdir -p cmake-collector
 cd cmake-collector
-cmake -DCMAKE_BUILD_TYPE=Release ../src
+cmake -DCMAKE_BUILD_TYPE="$CMAKE_BUILD_TYPE" ../src
 make -j "${NPROCS:-2}" all
 ./runUnitTests
 strip --strip-unneeded \

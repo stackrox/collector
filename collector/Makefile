@@ -27,6 +27,7 @@ container/bin/collector: $(HDRS) $(SRCS) txt-files generated-srcs $(shell find s
 		-v "$(CURDIR):/src:ro" \
 		-v "$(CURDIR)/../sysdig/:/sysdig:ro" \
 		-v "$(CURDIR)/cmake-build:/tmp/cmake-build" \
+		--env CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
 		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-collector.sh
 	cp cmake-build/collector container/bin/
 	cp -r cmake-build/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
@@ -41,6 +42,7 @@ container/bin/collector-rhel: $(HDRS) $(SRCS) txt-files generated-srcs-rhel $(sh
 		-v "$(CURDIR)/../sysdig/:/sysdig:ro" \
 		-v "$(CURDIR)/cmake-build-rhel:/tmp/cmake-build" \
 		-e DISABLE_PROFILING="true" \
+		--env CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
 		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) /build-collector.sh
 	cp cmake-build-rhel/collector container/bin/collector.rhel
 	cp -r cmake-build-rhel/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES.rhel/
@@ -51,14 +53,14 @@ unittest:
 	docker run --rm --name collector_unittest \
 		-v "$(CURDIR)/container/libs/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
 		-v "$(CURDIR)/cmake-build:/src/cmake-build" \
-		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) /src/cmake-build/runUnitTests
+		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) $(COLLECTOR_PRE_ARGUMENTS) /src/cmake-build/runUnitTests
 
 unittest-rhel:
 	docker rm -fv collector_unittest_rhel || true
 	docker run --rm --name collector_unittest_rhel \
 		-v "$(CURDIR)/container/libs/libsinsp-wrapper.so.rhel:/usr/local/lib/libsinsp-wrapper.so:ro" \
 		-v "$(CURDIR)/cmake-build-rhel:/src/cmake-build" \
-		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) /src/cmake-build/runUnitTests
+		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) $(COLLECTOR_PRE_ARGUMENTS) /src/cmake-build/runUnitTests
 
 .PHONY: txt-files
 txt-files:

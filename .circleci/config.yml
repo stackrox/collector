@@ -144,6 +144,7 @@ commands:
 jobs:
   initjob:
     <<: *defaultImage
+
     steps:
     - checkout:
         path: ~/workspace/go/src/github.com/stackrox/collector
@@ -179,23 +180,58 @@ jobs:
           GCLOUD_SSH_FINGERPRINT="$(echo ${GCLOUD_SSH_KEY_PUB} | awk '{print $2}' | base64 -d | md5sum | awk '{print $1}')"
           GCP_SSH_KEY_FILE="${HOME}/.ssh/id_rsa_${GCLOUD_SSH_FINGERPRINT}"
 
-          cat >>~/workspace/shared-env \<<-EOF
+          cat >> ~/workspace/shared-env \<<-EOF
             export COLLECTOR_VERSION="${COLLECTOR_VERSION}"
             export COLLECTOR_TAG="${COLLECTOR_TAG}"
             export GCP_SSH_KEY_FILE="${GCP_SSH_KEY_FILE}"
           EOF
 
           if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -f pr-metadata/labels/build-builder-image ]]; then
-          cat >>~/workspace/shared-env \<<-EOF
+          cat >> ~/workspace/shared-env \<<-EOF
             export COLLECTOR_BUILDER_TAG="cache"
           EOF
           else
-          cat >>~/workspace/shared-env \<<-EOF
+          cat >> ~/workspace/shared-env \<<-EOF
             export COLLECTOR_BUILDER_TAG="circle-build-${CIRCLE_WORKFLOW_ID}"
             export BUILD_BUILDER_IMAGE=true
           EOF
           fi
           cat ~/workspace/shared-env
+
+    - run:
+        name: Set label environment variables
+        command: |
+          if [[ -f pr-metadata/labels/build-legacy-probes ]]; then
+            echo 'export BUILD_LEGACY_PROBES=true' >> ~/workspace/shared-env
+          else
+            echo 'export BUILD_LEGACY_PROBES=false' >> ~/workspace/shared-env
+          fi
+
+          if [[ -f pr-metadata/labels/debug ]]; then
+            echo 'export CMAKE_BUILD_TYPE=Debug' >> ~/workspace/shared-env
+          else
+            echo 'export CMAKE_BUILD_TYPE=Release' >> ~/workspace/shared-env
+          fi
+
+          if [[ -f pr-metadata/labels/valgrind-unit-tests ]]; then
+            echo 'export VALGRIND_UNIT_TESTS=true' >> ~/workspace/shared-env
+          else
+            echo 'export VALGRIND_UNIT_TESTS=false' >> ~/workspace/shared-env
+          fi
+
+          if [[ -f pr-metadata/labels/valgrind-integration-tests ]]; then
+            echo 'export VALGRIND_INTEGRATION_TESTS=true' >> ~/workspace/shared-env
+          else
+            echo 'export VALGRIND_INTEGRATION_TESTS=false' >> ~/workspace/shared-env
+          fi
+
+          if [[ -f pr-metadata/labels/valgrind-unit-tests || -f pr-metadata/labels/valgrind-integration-tests ]]; then
+            echo 'export USE_VALGRIND=true' >> ~/workspace/shared-env
+          else
+            echo 'export USE_VALGRIND=false' >> ~/workspace/shared-env
+          fi
+
+
 
     - persist_to_workspace:
         root: ~/workspace
@@ -235,7 +271,8 @@ jobs:
 
     - run:
         name: Build collector-builder image
-        command: make -C "${SOURCE_ROOT}" builder
+        command: |
+          make -C "${SOURCE_ROOT}" builder
 
     - run:
         name: Save collector-builder image
@@ -261,7 +298,8 @@ jobs:
 
     - run:
         name: Build collector-builder rhel image
-        command: make -C "${SOURCE_ROOT}" builder-rhel
+        command: |
+          make -C "${SOURCE_ROOT}" builder-rhel
 
     - run:
         name: Save collector-builder rhel image
@@ -743,9 +781,12 @@ jobs:
   collector:
     <<: *defaultMachine
     resource_class: large
+    environment:
+      UNITTEST_OUTPUT_FILE: unittest_results.txt
 
     steps:
     - initcommand
+    - read-pr-metadata
     - docker-login-push
 
     - run:
@@ -755,11 +796,14 @@ jobs:
 
     - run:
         name: Build collector
-        command: make -C "${SOURCE_ROOT}" collector
+        command: |
+          make -C "${SOURCE_ROOT}" collector CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
 
     - run:
         name: Run collector unit tests
-        command: make -C "${SOURCE_ROOT}" unittest
+        command: |
+          make -C "${SOURCE_ROOT}" unittest "USE_VALGRIND=$VALGRIND_UNIT_TESTS" 2>&1 | tee "$UNITTEST_OUTPUT_FILE"
+          "${SOURCE_ROOT}/.circleci/check-file-for-valgrind-errors.sh" "$UNITTEST_OUTPUT_FILE" "$VALGRIND_UNIT_TESTS"
 
     - persist_to_workspace:
         root: ~/workspace
@@ -771,9 +815,12 @@ jobs:
   collector-rhel:
     <<: *defaultMachine
     resource_class: large
+    environment:
+      UNITTEST_OUTPUT_FILE: unittest_results.txt
 
     steps:
     - initcommand
+    - read-pr-metadata
     - docker-login-push
 
     - run:
@@ -783,11 +830,14 @@ jobs:
 
     - run:
         name: Build rhel collector
-        command: make -C "${SOURCE_ROOT}" collector-rhel
+        command: |
+          make -C "${SOURCE_ROOT}" collector-rhel CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
 
     - run:
         name: Run RHEL collector unit tests
-        command: make -C "${SOURCE_ROOT}" unittest-rhel
+        command: |
+          make -C "${SOURCE_ROOT}" unittest-rhel "USE_VALGRIND=$VALGRIND_UNIT_TESTS" 2>&1 | tee "$UNITTEST_OUTPUT_FILE"
+          "${SOURCE_ROOT}/.circleci/check-file-for-valgrind-errors.sh" "$UNITTEST_OUTPUT_FILE" "$VALGRIND_UNIT_TESTS"
 
     - persist_to_workspace:
         root: ~/workspace
@@ -872,6 +922,7 @@ jobs:
           build_args=(
             --build-arg module_version="$MODULE_VERSION"
             --build-arg collector_version="$COLLECTOR_VERSION"
+            --build-arg USE_VALGRIND="$USE_VALGRIND"
           )
 
           docker build \
@@ -927,6 +978,7 @@ jobs:
               --build-arg module_version="$MODULE_VERSION"
               --build-arg max_layer_size="$MAX_LAYER_MB"
               --build-arg max_layer_depth="$layer_count"
+              --build-arg USE_VALGRIND="$USE_VALGRIND"
             )
             docker build \
               --target="probe-layer-${layer_count}" \
@@ -990,12 +1042,13 @@ jobs:
     - run:
         name: Build collector UBI images
         command: |
-
           docker build \
             --build-arg COLLECTOR_VERSION=${COLLECTOR_VERSION} \
             --build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
             --build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}" \
+            --build-arg USE_VALGRIND="${USE_VALGRIND}" \
             -t "collector-test-cpaas:${COLLECTOR_VERSION}" \
+            --build-arg CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}" \
             -f ${SOURCE_ROOT}/collector/container/Dockerfile.ubi \
             ${SOURCE_ROOT}
 
@@ -1165,6 +1218,7 @@ jobs:
     steps:
     - initcommand
     - docker-login-push
+    - read-pr-metadata
     - gcloud-init
 
     - run:
@@ -1176,8 +1230,23 @@ jobs:
           export VM_CONFIG="circle_local_<< parameters.vm-config >>"
           export COLLECTOR_REPO="stackrox/collector<<# parameters.use-rhel>>-rhel<</ parameters.use-rhel>><<# parameters.use-ubi>>-test-cpaas<</ parameters.use-ubi>>"
           export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}"
+          export USE_VALGRIND=$VALGRIND_INTEGRATION_TESTS
           make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
+
+    - run:
+        name: "Check Valgrind errors"
+        command: |
+          if [[ "$VALGRIND_INTEGRATION_TESTS" != "true" ]]; then
+            echo "Not using Valgrind. Not checking for Valgrind errors"
+            exit 0
+          fi
+          echo "Using Valgrind"
+          log_dir=~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
+          for file in "$log_dir"/*-collector.log
+          do
+            "${SOURCE_ROOT}/.circleci/check-file-for-valgrind-errors.sh" "$file" "$VALGRIND_INTEGRATION_TESTS"
+          done
 
     - store_test_results:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml
@@ -1218,6 +1287,7 @@ jobs:
             exit 0
           fi
     - add_ssh_keys
+    - read-pr-metadata
     - gcloud-init
 
     - run:
@@ -1263,6 +1333,20 @@ jobs:
           make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report
           cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp "${SOURCE_ROOT}/integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
+
+    - run:
+        name: "Check Valgrind errors"
+        command: |
+          if [[ "$VALGRIND_INTEGRATION_TESTS" != "true" ]]; then
+            echo "Not using Valgrind. Not checking for Valgrind errors"
+            exit 0
+          fi
+          echo "Using Valgrind"
+          log_dir=~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
+          for file in "$log_dir"/*-collector.log
+          do
+            "${SOURCE_ROOT}/.circleci/check-file-for-valgrind-errors.sh" "$file" "$VALGRIND_INTEGRATION_TESTS"
+          done
 
     - run:
         name: "Get serial port output"
@@ -1573,6 +1657,7 @@ jobs:
               --build-arg collector_repo="${DOCKER_REPO}/collector"
               --build-arg max_layer_depth="${layer_count}"
               --build-arg max_layer_size="${MAX_LAYER_MB}"
+              --build-arg USE_VALGRIND="${USE_VALGRIND}"
             )
             docker build -q \
               --target="probe-layer-${layer_count}" \

@@ -2,6 +2,7 @@ FROM ubuntu:focal
 
 ARG collector_version=xxx
 ARG module_version=xxx
+ARG USE_VALGRIND=false
 
 LABEL maintainer="StackRox <support@stackrox.com>"
 LABEL io.stackrox.collector.module-version="${module_version}"
@@ -32,8 +33,11 @@ RUN apt-get update \
         libuuid1 \
         libcap-ng0 \
         libelf1 \
-        libgoogle-perftools4 \
- && dpkg -r --force-all e2fslibs e2fsprogs apt debconf dpkg \
+        libgoogle-perftools4; \
+        if [ "$USE_VALGRIND" = "true" ]; then \
+          apt-get install -y --no-install-recommends valgrind; \
+        fi; \
+ dpkg -r --force-all e2fslibs e2fsprogs apt debconf dpkg \
  && rm -rf /var/lib/apt \
  ;
 

@@ -173,4 +173,8 @@ TEST_P(CollectorArgsTest, Parse) {
   EXPECT_EQ(testCase.expectedGRPCServer, args->GRPCServer());
 
   args->clear();
+  for (size_t i = 0; i < testCase.argv.size(); i++) {
+    delete[] argv[i];
+  }
+  delete[] argv;
 }

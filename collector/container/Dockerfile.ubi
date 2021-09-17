@@ -4,6 +4,7 @@ FROM registry.access.redhat.com/ubi8/ubi:8.4 AS builder
 
 ARG REDHAT_USERNAME
 ARG REDHAT_PASSWORD
+ARG USE_VALGRIND=false
 RUN rm -rf /etc/rhsm-host && \
     subscription-manager register --username "${REDHAT_USERNAME}" --password "${REDHAT_PASSWORD}" && \
     subscription-manager attach && \
@@ -34,12 +35,17 @@ RUN dnf -y update && \
         jsoncpp-devel  \
         tbb-devel \
         jq-devel \
-        c-ares-devel && \
+        c-ares-devel; \
+    if [ "$USE_VALGRIND" = "true" ]; then \
+        dnf -y install valgrind; \
+    fi; \
     dnf clean all
 
 ARG BUILD_DIR=/build
 RUN mkdir -p ${BUILD_DIR}
 WORKDIR ${BUILD_DIR}
+ARG CMAKE_BUILD_TYPE
+ENV CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 COPY builder builder
 COPY collector src
 COPY rox-proto rox-proto
@@ -55,6 +61,8 @@ WORKDIR /
 
 ARG COLLECTOR_VERSION
 LABEL version="${COLLECTOR_VERSION}"
+
+ARG USE_VALGRIND=false
 
 ENV COLLECTOR_HOST_ROOT=/host
 
@@ -81,7 +89,10 @@ RUN mv /collector-wrapper.sh /usr/local/bin/ && \
       jsoncpp \
       tbb \
       jq \
-      c-ares && \
+      c-ares; \
+    if [ "$USE_VALGRIND" = "true" ]; then \
+      microdnf install -y valgrind; \
+    fi; \
     microdnf clean all && \
     rm -rf /var/cache/dnf
 

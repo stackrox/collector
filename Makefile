@@ -20,6 +20,7 @@ ifdef BUILD_BUILDER_IMAGE
 	docker build \
 		--cache-from stackrox/collector-builder:cache \
 		--cache-from stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) \
+		--build-arg USE_VALGRIND=$(USE_VALGRIND) \
 		-t stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		builder
 else
@@ -32,6 +33,7 @@ ifdef BUILD_BUILDER_IMAGE
 	docker build \
 		--cache-from stackrox/collector-builder:rhel-cache \
 		--cache-from stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) \
+		--build-arg USE_VALGRIND=$(USE_VALGRIND) \
 		-t stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) \
 		-f "$(CURDIR)/builder/Dockerfile_rhel" \
 		builder
@@ -70,6 +72,7 @@ image: collector unittest $(MOD_VER_FILE)
 	make -C collector txt-files
 	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
 		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
+		--build-arg USE_VALGRIND="$(USE_VALGRIND)" \
 		-f collector/container/Dockerfile \
 		-t stackrox/collector:$(COLLECTOR_TAG) \
 		collector/container
@@ -86,6 +89,7 @@ image-rhel: collector-rhel unittest-rhel $(MOD_VER_FILE) $(CURDIR)/collector/con
 	make -C collector txt-files
 	docker build --build-arg collector_version="rhel-$(COLLECTOR_TAG)" \
 		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
+		--build-arg USE_VALGRIND=$(USE_VALGRIND) \
 		-f collector/container/rhel/Dockerfile \
 		-t stackrox/collector-rhel:$(COLLECTOR_TAG) \
 		collector/container/rhel
