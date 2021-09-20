@@ -821,32 +821,20 @@ jobs:
     steps:
     - initcommand
     - read-pr-metadata
-
-    - run:
-        name: Check whether to run job
-        command: |
-          if [[ ! -f pr-metadata/labels/valgrind-unit-tests ]]; then
-            echo "Skipping Valgrind unit tests."
-            circleci step halt
-            circleci-agent step halt
-            exit 0
-          fi
-
-
     - docker-login-push
 
     - run:
-        name: Restore collector-builder image
+        name: Restore collector-builder rhel image
         command: |
           docker pull "stackrox/collector-builder:rhel-${COLLECTOR_BUILDER_TAG}"
 
     - run:
-        name: Build collector
+        name: Build rhel collector
         command: |
           make -C "${SOURCE_ROOT}" collector-rhel CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
 
     - run:
-        name: Run collector unit tests
+        name: Run RHEL collector unit tests
         command: |
           make -C "${SOURCE_ROOT}" unittest-rhel "USE_VALGRIND=$VALGRIND_UNIT_TESTS" 2>&1 | tee "$UNITTEST_OUTPUT_FILE"
           "${SOURCE_ROOT}/.circleci/check-file-for-valgrind-errors.sh" "$UNITTEST_OUTPUT_FILE" "$VALGRIND_UNIT_TESTS"
@@ -856,7 +844,7 @@ jobs:
         paths:
         - go/src/github.com/stackrox/collector/collector/container/bin
         - go/src/github.com/stackrox/collector/collector/container/libs
-        - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES
+        - go/src/github.com/stackrox/collector/collector/container/THIRD_PARTY_NOTICES.rhel
 
   images:
     <<: *defaultMachine
