@@ -26,7 +26,10 @@ type collectorManager struct {
 }
 
 func NewCollectorManager(e Executor, name string) *collectorManager {
-	var collectorPreArguments = "'" + os.Getenv("COLLECTOR_PRE_ARGUMENTS") + "'"
+	var collectorPreArguments = os.Getenv("COLLECTOR_PRE_ARGUMENTS")
+	if strings.Contains(collectorPreArguments, " ") {
+		collectorPreArguments = "'" + collectorPreArguments + "'"
+	}
 	collectionMethod := ReadEnvVarWithDefault("COLLECTION_METHOD", "kernel_module")
 	if strings.Contains(collectionMethod, "module") {
 		collectionMethod = "kernel_module"
