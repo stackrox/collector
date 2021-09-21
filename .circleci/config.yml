@@ -799,7 +799,7 @@ jobs:
     - run:
         name: Build collector
         command: |
-          make -C "${SOURCE_ROOT}" collector CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+          make -C "${SOURCE_ROOT}" collector CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE USE_VALGRIND="$BUILD_USE_VALGRIND"
 
     - run:
         name: Run collector unit tests
@@ -833,7 +833,7 @@ jobs:
     - run:
         name: Build rhel collector
         command: |
-          make -C "${SOURCE_ROOT}" collector-rhel CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+          make -C "${SOURCE_ROOT}" collector-rhel CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE USE_VALGRIND="$BUILD_USE_VALGRIND"
 
     - run:
         name: Run RHEL collector unit tests
