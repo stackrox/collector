@@ -272,7 +272,6 @@ jobs:
     - run:
         name: Build collector-builder image
         command: |
-          echo "BUILD_USE_VALGRIND= $BUILD_USE_VALGRIND"
           make -C "${SOURCE_ROOT}" builder
 
     - run:
@@ -300,7 +299,6 @@ jobs:
     - run:
         name: Build collector-builder rhel image
         command: |
-          echo "BUILD_USE_VALGRIND= $BUILD_USE_VALGRIND"
           make -C "${SOURCE_ROOT}" builder-rhel
 
     - run:
