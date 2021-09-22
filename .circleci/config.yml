@@ -50,27 +50,6 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
 orbs:
   slack: circleci/slack@3.4.2
 
-setupGCP: &setupGCP
-  run:
-    name: Setup GCP env
-    command: |
-      which gcloud
-      which gsutil
-      gsutil ver
-      gsutil ver -l | grep crcmod
-      gcloud version
-      cat ~/.boto || true
-      echo '[Credentials]' >~/.boto
-      echo 'gs_service_key_file = /tmp/gcp.json' >>~/.boto
-      echo $GOOGLE_CREDENTIALS_CIRCLECI_COLLECTOR > /tmp/gcp.json
-      gcloud auth activate-service-account --key-file /tmp/gcp.json
-      gcloud config set project stackrox-ci
-      gcloud config set compute/region us-central1
-      gcloud config unset compute/zone
-      gcloud config set core/disable_prompts True
-      gcloud auth list
-      gsutil ls gs://collector-build-cache/ || echo "ERROR: Could not ls bucket"
-
 commands:
   initcommand:
     steps:
@@ -92,6 +71,13 @@ commands:
           ~/workspace/go/src/github.com/stackrox/collector/.circleci/read-labels.sh pr-metadata/labels
 
   gcloud-init:
+    parameters:
+      service-account-env:
+        type: string
+        default: GOOGLE_CREDENTIALS_CIRCLECI_COLLECTOR
+      bucket-permission-check:
+        type: string
+        default: gs://collector-build-cache
     steps:
     - run:
         name: Install and configure gcloud
@@ -106,8 +92,25 @@ commands:
           sudo chown circleci:circleci /opt
           gcloud components install gsutil -q
           gcloud components update -q
-
-    - *setupGCP
+    - run:
+        name: Setup GCP env
+        command: |
+          which gcloud
+          which gsutil
+          gsutil ver
+          gsutil ver -l | grep crcmod
+          gcloud version
+          cat ~/.boto || true
+          echo '[Credentials]' >~/.boto
+          echo 'gs_service_key_file = /tmp/gcp.json' >>~/.boto
+          echo "${<< parameters.service-account-env >>}" > /tmp/gcp.json
+          gcloud auth activate-service-account --key-file /tmp/gcp.json
+          gcloud config set project stackrox-ci
+          gcloud config set compute/region us-central1
+          gcloud config unset compute/zone
+          gcloud config set core/disable_prompts True
+          gcloud auth list
+          gsutil ls << parameters.bucket-permission-check >>/ || echo "ERROR: Could not ls bucket"
 
   docker-login-push:
     steps:
@@ -1432,6 +1435,8 @@ jobs:
       - DOWNLOAD_BASE_URL: "https://install.stackrox.io"
       - RELATIVE_PATH: "collector/support-packages"
       - GCLOUD_BUCKET: "gs://sr-roxc"
+      - PUBLIC_RELATIVE_PATH: "offline/v1/support-packages"
+      - PUBLIC_GCLOUD_BUCKET: "gs://collector-support-public"
 
     steps:
       - initcommand
@@ -1459,6 +1464,7 @@ jobs:
             cci-export SUPPORT_PKG_SRC_ROOT "${SOURCE_ROOT}/kernel-modules/support-packages"
             cci-export LICENSE_FILE "${SOURCE_ROOT}/collector/LICENSE-kernel-modules.txt"
             cci-export GCLOUD_TARGET "${GCLOUD_BUCKET}/${relative_path}"
+            cci-export PUBLIC_GCLOUD_TARGET "${PUBLIC_GCLOUD_BUCKET}/${PUBLIC_RELATIVE_PATH}"
 
       - run:
           name: Install Jinja2
@@ -1520,6 +1526,29 @@ jobs:
             # On non-master, additionally test that we have a .test indicator in the URL
             [[ "$CIRCLE_BRANCH" == "master" || "$GCLOUD_TARGET" = *.test* ]]
             gsutil -m rsync -n -r -d /tmp/support-packages/output "$GCLOUD_TARGET"
+
+      - gcloud-init:
+          service-account-env: GCP_SERVICE_ACCOUNT_CREDS
+          bucket-permission-check: $PUBLIC_GCLOUD_BUCKET
+
+      - run:
+          name: Upload to Public GCloud Bucket if on master
+          command: |
+            if [[ "$CIRCLE_BRANCH" != "master" ]]; then
+              exit 0
+            fi
+            # Sync support packages
+            gsutil -m rsync -r /tmp/support-packages/output "$PUBLIC_GCLOUD_TARGET"
+
+            # Sleep for 120s
+            for i in {1..120}; do
+              sleep 1
+              echo -n .
+            done
+            echo
+
+            # Delete old files
+            gsutil -m rsync -n -r -d /tmp/support-packages/output "$PUBLIC_GCLOUD_TARGET"
 
       - slack/status:
           fail_only: true
@@ -1980,5 +2009,6 @@ workflows:
         context:
           - docker-io-and-stackrox-io-push
           - quay-cgorman1-readonly
+          - collector-support
         requires:
           - upload-modules
