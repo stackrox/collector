@@ -118,7 +118,6 @@ std::vector<string> NetworkSignalHandler::GetRelevantEvents() {
 }
 
 bool NetworkSignalHandler::Stop() {
-  std::cout << "In NetworkSignalHandler::Stop() " << std::endl;
   event_extractor_.ClearWrappers();
   return true;
 }
