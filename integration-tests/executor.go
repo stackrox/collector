@@ -206,7 +206,7 @@ func (e *gcloudCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
 	for _, arg := range args {
 		argQuoted := strconv.Quote(arg)
 		argQuotedTrimmed := strings.Trim(argQuoted, "\"")
-		if arg != argQuotedTrimmed {
+		if arg != argQuotedTrimmed || strings.Contains(arg, " ") {
 			arg = argQuoted
 		}
 		cmdArgs = append(cmdArgs, arg)
@@ -235,7 +235,7 @@ func (e *sshCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
 	for _, arg := range args {
 		argQuoted := strconv.Quote(arg)
 		argQuotedTrimmed := strings.Trim(argQuoted, "\"")
-		if arg != argQuotedTrimmed {
+		if arg != argQuotedTrimmed || strings.Contains(arg, " ") {
 			arg = argQuoted
 		}
 		cmdArgs = append(cmdArgs, arg)

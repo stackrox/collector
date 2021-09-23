@@ -28,6 +28,7 @@ container/bin/collector: $(HDRS) $(SRCS) txt-files generated-srcs $(shell find s
 		-v "$(CURDIR)/../sysdig/:/sysdig:ro" \
 		-v "$(CURDIR)/cmake-build:/tmp/cmake-build" \
 		--env CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
+		--env USE_VALGRIND=$(USE_VALGRIND) \
 		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-collector.sh
 	cp cmake-build/collector container/bin/
 	cp -r cmake-build/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
@@ -43,6 +44,7 @@ container/bin/collector-rhel: $(HDRS) $(SRCS) txt-files generated-srcs-rhel $(sh
 		-v "$(CURDIR)/cmake-build-rhel:/tmp/cmake-build" \
 		-e DISABLE_PROFILING="true" \
 		--env CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
+		--env USE_VALGRIND=$(USE_VALGRIND) \
 		stackrox/collector-builder:rhel-$(COLLECTOR_BUILDER_TAG) /build-collector.sh
 	cp cmake-build-rhel/collector container/bin/collector.rhel
 	cp -r cmake-build-rhel/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES.rhel/
