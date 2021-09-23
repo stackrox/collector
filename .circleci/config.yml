@@ -1534,9 +1534,9 @@ jobs:
       - run:
           name: Upload to Public GCloud Bucket if on master
           command: |
-            # if [[ "$CIRCLE_BRANCH" != "master" ]]; then
-            #   exit 0
-            # fi
+            if [[ "$CIRCLE_BRANCH" != "master" ]]; then
+              exit 0
+            fi
             # Sync support packages
             gsutil -m rsync -r /tmp/support-packages/output "$PUBLIC_GCLOUD_TARGET"
 
