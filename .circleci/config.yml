@@ -1312,8 +1312,7 @@ jobs:
             export VM_CONFIG="<< parameters.vm_type >>.<< parameters.image_family >>"
             export VM_TYPE=<< parameters.vm_type >>
             export COLLECTOR_REPO="${COLLECTOR_REPO}"
-            export USE_VALGRIND="true" #For debugging, not production
-            #export USE_VALGRIND=$VALGRIND_INTEGRATION_TESTS
+            export USE_VALGRIND=$VALGRIND_INTEGRATION_TESTS
           EOF
 
     - run:
