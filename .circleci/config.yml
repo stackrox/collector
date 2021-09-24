@@ -651,7 +651,7 @@ jobs:
             kernel_version="$(< ~/kobuild-tmp/meta-inspect/BUNDLE_VERSION)"
             kernel_major="$(< ~/kobuild-tmp/meta-inspect/BUNDLE_MAJOR)"
             flavor="default"
-            if (( kernel_version == 5 && kernel_major == 13)); then
+            if (( "$distro" == "redhat" && kernel_version == 5 && kernel_major == 13)); then
               flavor="rawhide"
             elif [[ "$distro" == "debian" ]] ; then
               build_id="$(echo "${version}" | cut -d '-' -f2)"
