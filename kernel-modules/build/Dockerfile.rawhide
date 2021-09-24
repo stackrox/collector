@@ -1,3 +1,10 @@
 FROM fedora:rawhide
 
 RUN dnf -y install gcc
+
+RUN mkdir -p /output
+COPY build-kos /usr/bin/
+COPY prepare-src /usr/bin
+
+WORKDIR /scratch
+ENTRYPOINT [ "/bin/bash", "-c" ]
