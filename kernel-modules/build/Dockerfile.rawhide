@@ -1,0 +1,3 @@
+FROM fedora:rawhide
+
+RUN dnf -y install gcc
