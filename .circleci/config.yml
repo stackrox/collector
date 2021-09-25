@@ -1333,7 +1333,7 @@ jobs:
         name: "Running integration tests"
         no_output_timeout: 45m
         command: |
-          make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report
+          make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report || true #For debugging
           cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp "${SOURCE_ROOT}/integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
