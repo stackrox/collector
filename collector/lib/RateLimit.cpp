@@ -76,10 +76,6 @@ RateLimitCache::RateLimitCache()
 RateLimitCache::RateLimitCache(size_t capacity, int64_t burst_size, int64_t refill_time)
     : capacity_(capacity), limiter_(new Limiter(burst_size, refill_time)) {}
 
-RateLimitCache::~RateLimitCache() {
-  limiter_.reset();
-}
-
 void RateLimitCache::ResetRateLimitCache() {
   limiter_.reset();
 }
