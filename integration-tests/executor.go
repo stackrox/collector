@@ -247,5 +247,10 @@ func (e *sshCommandBuilder) RemoteCopyCommand(remoteSrc string, localDst string)
 	args := []string{
 		"-o", "StrictHostKeyChecking=no", "-i", e.keyPath,
 		e.user + "@" + e.address + ":" + remoteSrc, localDst}
+	fmt.Print("In RemoteCopyCommand")
+	fmt.Print(args)
+	if _, err := os.Stat("/tmp/collector-test.db"); os.IsNotExist(err) {
+		fmt.Print("/tmp/collector-test.db does not exist")
+	}
 	return exec.Command("scp", args...)
 }
