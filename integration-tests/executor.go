@@ -77,9 +77,9 @@ func NewGcloudCommandBuilder() CommandBuilder {
 		options:  ReadEnvVar("GCLOUD_OPTIONS"),
 		vmType:   ReadEnvVarWithDefault("VM_CONFIG", "default"),
 	}
-	if gcb.user == "" && strings.Contains(gcb.vmType, "coreos") {
-		gcb.user = "core"
-	}
+	//if gcb.user == "" && strings.Contains(gcb.vmType, "coreos") {
+	//	gcb.user = "core"
+	//}
 	return gcb
 }
 
@@ -225,10 +225,10 @@ func (e *gcloudCommandBuilder) RemoteCopyCommand(remoteSrc string, localDst stri
 		userInstance = e.user + "@" + e.instance
 	}
 	cmdArgs = append(cmdArgs, userInstance+":"+remoteSrc, localDst)
-	fmt.Print("In RemoteCopyCommand gcloud")
+	fmt.Print("In RemoteCopyCommand gcloud\n")
 	fmt.Print(cmdArgs)
-	if _, err := os.Stat("/tmp/collector-test.db"); os.IsNotExist(err) {
-		fmt.Print("/tmp/collector-test.db does not exist")
+	if _, err := os.Stat(remoteSrc); os.IsNotExist(err) {
+		fmt.Print(remoteSrc)
 	}
 	return exec.Command("gcloud", cmdArgs...)
 }
