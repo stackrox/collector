@@ -226,7 +226,7 @@ func (e *gcloudCommandBuilder) RemoteCopyCommand(remoteSrc string, localDst stri
 	}
 	cmdArgs = append(cmdArgs, userInstance+":"+remoteSrc, localDst)
 	fmt.Print("In RemoteCopyCommand gcloud")
-	fmt.Print(args)
+	fmt.Print(cmdArgs)
 	if _, err := os.Stat("/tmp/collector-test.db"); os.IsNotExist(err) {
 		fmt.Print("/tmp/collector-test.db does not exist")
 	}
