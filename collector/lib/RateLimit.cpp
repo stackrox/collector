@@ -76,6 +76,10 @@ RateLimitCache::RateLimitCache()
 RateLimitCache::RateLimitCache(size_t capacity, int64_t burst_size, int64_t refill_time)
     : capacity_(capacity), limiter_(new Limiter(burst_size, refill_time)) {}
 
+void RateLimitCache::ResetRateLimitCache() {
+  limiter_.reset();
+}
+
 bool RateLimitCache::Allow(std::string key) {
   auto pair = cache_.emplace(std::make_pair(key, TokenBucket()));
   if (pair.second && cache_.size() > capacity_) {

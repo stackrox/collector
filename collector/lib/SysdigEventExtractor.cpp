@@ -32,4 +32,13 @@ void SysdigEventExtractor::Init(sinsp* inspector) {
   }
 }
 
+void SysdigEventExtractor::ClearWrappers() {
+  for (FilterCheckWrapper* wrapper : wrappers_) {
+    if (wrapper) {
+      wrapper->filter_check.reset();
+    }
+  }
+  wrappers_.clear();
+}
+
 }  // namespace collector
