@@ -67,6 +67,7 @@ function download_kernel_object() {
     )
 
     if [[ ! -f "${filename_gz}" && -n "$GRPC_SERVER" ]]; then
+	echo "In if [[ ! -f ${filename_gz} && -n $GRPC_SERVER ]]; then"
         local connect_to_opts=()
         local server_port="${GRPC_SERVER##*:}"
         if [[ "$server_port" == "$GRPC_SERVER" ]]; then
@@ -99,6 +100,7 @@ function download_kernel_object() {
         fi
     fi
     if [[ ! -f "${filename_gz}" && -n "${MODULE_URL}" ]]; then
+        echo "In if [[ ! -f ${filename_gz} && -n ${MODULE_URL} ]]; then"
         local url="${MODULE_URL}/${KERNEL_OBJECT}.gz"
         curl "${curl_opts[@]}" "$url"
         if [[ $? -ne 0 ]]; then
