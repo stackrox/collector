@@ -186,7 +186,7 @@ jobs:
             export GCP_SSH_KEY_FILE="${GCP_SSH_KEY_FILE}"
           EOF
 
-          if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -f pr-metadata/labels/build-builder-image ]]; then
+          if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -f pr-metadata/labels/build-builder-image && ! -f pr-metadata/labels/valgrind-unit-tests && ! -f pr-metadata/labels/valgrind-integration-tests ]]; then
           cat >> ~/workspace/shared-env \<<-EOF
             export COLLECTOR_BUILDER_TAG="cache"
           EOF
