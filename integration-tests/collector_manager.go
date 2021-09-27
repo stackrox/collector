@@ -95,13 +95,6 @@ func (c *collectorManager) Launch() error {
 }
 
 func (c *collectorManager) TearDown() error {
-	if !c.DisableGrpcServer {
-		if _, err := c.executor.CopyFromHost(c.DBPath, c.DBPath); err != nil {
-			return err
-		}
-		c.captureLogs("grpc-server")
-		c.killContainer("grpc-server")
-	}
 	isRunning, err := c.executor.IsContainerRunning("collector")
 	if err != nil {
 		return err
@@ -120,6 +113,13 @@ func (c *collectorManager) TearDown() error {
 		c.stopContainer("collector")
 		c.captureLogs("collector")
 		c.killContainer("collector")
+	}
+	if !c.DisableGrpcServer {
+		c.captureLogs("grpc-server")
+		if _, err := c.executor.CopyFromHost(c.DBPath, c.DBPath); err != nil {
+			return err
+		}
+		c.killContainer("grpc-server")
 	}
 	return nil
 }
