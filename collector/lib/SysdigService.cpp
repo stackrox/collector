@@ -229,7 +229,7 @@ void SysdigService::CleanUp() {
 
   for (auto& signal_handler : signal_handlers_) {
     if (!signal_handler.handler->Stop()) {
-      CLOG(FATAL) << "Error stopping signal handler " << signal_handler.handler->GetName();
+      CLOG(ERROR) << "Error stopping signal handler " << signal_handler.handler->GetName();
     }
   }
 
