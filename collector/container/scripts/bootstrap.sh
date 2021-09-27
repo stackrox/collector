@@ -96,7 +96,7 @@ function download_kernel_object() {
             "$url"
         if [[ $? -ne 0 ]]; then
             rm -f "${filename_gz}" 2>/dev/null
-            log "Unable to download from ${url}"
+            log "1. Unable to download from ${url}"
         fi
     fi
     if [[ ! -f "${filename_gz}" && -n "${MODULE_URL}" ]]; then
@@ -105,7 +105,7 @@ function download_kernel_object() {
         curl "${curl_opts[@]}" "$url"
         if [[ $? -ne 0 ]]; then
             rm -f "${filename_gz}" 2>/dev/null
-            log "Unable to download from ${url}"
+            log "2. Unable to download from ${url}"
             return 1
         fi
     fi
