@@ -14,7 +14,7 @@ RUN apt-get update \
       gcc-8 \
       gcc-9 \
       gcc-10 \
-      clang-9 \
+      clang \
       llvm \
       g++ \
       libelf-dev \
@@ -23,8 +23,6 @@ RUN apt-get update \
       golang-go \
       pkg-config \
  ;
-
-RUN ln -s /usr/bin/clang-9 /usr/bin/clang
 
 RUN apt-get autoremove -y
 
