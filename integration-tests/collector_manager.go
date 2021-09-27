@@ -114,7 +114,9 @@ func (c *collectorManager) TearDown() error {
 		c.captureLogs("collector")
 		c.killContainer("collector")
 	}
+	fmt.Print("About to check DisableGrpcServer")
 	if !c.DisableGrpcServer {
+		fmt.Print("About to capture grpc-server logs")
 		c.captureLogs("grpc-server")
 		if _, err := c.executor.CopyFromHost(c.DBPath, c.DBPath); err != nil {
 			return err
