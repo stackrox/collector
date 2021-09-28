@@ -140,10 +140,10 @@ func (e *executor) RunCommand(cmd *exec.Cmd) (string, error) {
 }
 
 func (e *executor) CopyFromHost(src string, dst string) (res string, err error) {
-	cmd := e.builder.RemoteCopyCommand(src, dst)
 	maxAttempts := 3
 	attempt := 0
 	for attempt < maxAttempts {
+		cmd := e.builder.RemoteCopyCommand(src, dst)
 		if attempt > 0 {
 			fmt.Printf("Retrying (%v) (%d of %d) Error: %v\n", cmd, attempt, maxAttempts, err)
 		}
