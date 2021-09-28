@@ -193,8 +193,7 @@ func (c *collectorManager) isSelinuxPermissiveNeeded() bool {
 }
 
 func (c *collectorManager) setSelinuxPermissive() {
-	fmt.Print("In SelinuxPermissive()\n")
-	cmd := []string{"sudo setenforce 0"}
+	cmd := []string{"sudo", "setenforce", "0"}
 	_, err := c.executor.Exec(cmd...)
 	if err != nil {
 		fmt.Printf("Error: Unable to set SELinux to permissive. %v\n", err)
