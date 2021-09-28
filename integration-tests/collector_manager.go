@@ -138,8 +138,34 @@ func (c *collectorManager) BoltDB() (db *bolt.DB, err error) {
 	return db, err
 }
 
+func (c *collectorManager) setSelinuxPermissiveIfNeeded() {
+	if c.isSelinuxPermissiveNeeded() {
+		c.setSelinuxPermissive()
+	}
+}
+
+func (c *collectorManager) isSelinuxPermissiveNeeded() bool {
+	fmt.Print("In nuxPermissiveNeeded()\n")
+	vmType :=   ReadEnvVarWithDefault("VM_CONFIG", "default")
+	fmt.Print("vmType= " + vmType)
+	if strings.Contains(vmType, "coreos") {
+		return true
+	}
+	return false;
+}
+
+func (c *collectorManager) setSelinuxPermissive() {
+	fmt.Print("In SelinuxPermissive()\n")
+	cmd := []string{"sudo setenforce 0"}
+	_, err := c.executor.Exec(cmd...)
+	if err != nil {
+		fmt.Printf("Error: Unable to set SELinux to permissive. %v\n", err)
+	}
+}
+
 func (c *collectorManager) launchGRPCServer() error {
 	user, _ := user.Current()
+	c.setSelinuxPermissiveIfNeeded()
 	cmd := []string{"docker", "run",
 		"-d",
 		"--rm",
