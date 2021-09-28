@@ -655,8 +655,8 @@ jobs:
             kernel_major="$(< ~/kobuild-tmp/meta-inspect/BUNDLE_MAJOR)"
             flavor="default"
             if (( "$distro" == "redhat" && kernel_version == 5 && kernel_major == 13)); then
-￼             flavor="hirsute"
-￼           elif [[ "$distro" == "debian" ]] ; then
+              flavor="hirsute"
+            elif [[ "$distro" == "debian" ]] ; then
               build_id="$(echo "${version}" | cut -d '-' -f2)"
               if (( kernel_version >= 5 )); then
                 if (( kernel_version > 5 || (( kernel_version == 5 && kernel_major > 10 )) )); then
@@ -1956,19 +1956,18 @@ workflows:
         collection_method: ebpf
         vm_type: flatcar
         image_family: flatcar-stable
-    # TODO: Fix 5.13 kernel probes
-    # - integration-test:
-    #     <<: *runOnAllTagsWithIntegrationTestRequires
-    #     name: test-module-fedora-coreos-stable
-    #     collection_method: module
-    #     vm_type: fedora-coreos
-    #     image_family: fedora-coreos-stable
-    # - integration-test:
-    #     <<: *runOnAllTagsWithIntegrationTestRequires
-    #     name: test-ebpf-fedora-coreos-stable
-    #     collection_method: ebpf
-    #     vm_type: fedora-coreos
-    #     image_family: fedora-coreos-stable
+    - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
+        name: test-module-fedora-coreos-stable
+        collection_method: module
+        vm_type: fedora-coreos
+        image_family: fedora-coreos-stable
+    - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
+        name: test-ebpf-fedora-coreos-stable
+        collection_method: ebpf
+        vm_type: fedora-coreos
+        image_family: fedora-coreos-stable
     - integration-test-data:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
@@ -1997,9 +1996,8 @@ workflows:
         - test-module-sles-15-sp2-sap
         - test-ebpf-flatcar-stable
         - test-module-flatcar-stable
-        # TODO: Fix 5.13 kernel probes
-        # - test-ebpf-fedora-coreos-stable
-        # - test-module-fedora-coreos-stable
+        - test-ebpf-fedora-coreos-stable
+        - test-module-fedora-coreos-stable
     - reload-released-images:
         <<: *runOnAllTags
         context:
