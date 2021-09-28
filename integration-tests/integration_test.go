@@ -177,6 +177,8 @@ func (s *BenchmarkBaselineTestSuite) TearDownSuite() {
 // Launches nginx container
 // Execs into nginx and does a sleep
 func (s *ProcessNetworkTestSuite) SetupSuite() {
+	fmt.Print("func (s *ProcessNetworkTestSuite) SetupSuite()\n")
+	var isRunning bool
 
 	s.metrics = map[string]float64{}
 	s.executor = NewExecutor()
@@ -185,9 +187,16 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 
 	err := s.collector.Setup()
 	require.NoError(s.T(), err)
+	fmt.Print("After collector.Setup()\n")
+	isRunning, _ = s.collector.executor.IsContainerRunning("grpc-server")
+	fmt.Print("The grpc-server is " + strconv.FormatBool(isRunning) + "\n")
 
 	err = s.collector.Launch()
 	require.NoError(s.T(), err)
+	fmt.Print("After collector.Launch()\n")
+	isRunning, _ = s.collector.executor.IsContainerRunning("grpc-server")
+	fmt.Print("The grpc-server is " + strconv.FormatBool(isRunning) + "\n")
+	s.collector.captureLogs("grpc-server")
 
 	images := []string{
 		"nginx:1.14-alpine",
@@ -198,13 +207,26 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 		err := s.executor.PullImage(image)
 		require.NoError(s.T(), err)
 	}
+	fmt.Print("After PullImages\n")
+	isRunning, _ = s.collector.executor.IsContainerRunning("grpc-server")
+	fmt.Print("The grpc-server is " + strconv.FormatBool(isRunning) + "\n")
+	s.collector.captureLogs("grpc-server")
 
 	time.Sleep(10 * time.Second)
+	fmt.Print("After sleep\n")
+	isRunning, _ = s.collector.executor.IsContainerRunning("grpc-server")
+	fmt.Print("The grpc-server is " + strconv.FormatBool(isRunning) + "\n")
+	s.collector.captureLogs("grpc-server")
 
 	// invokes default nginx
 	containerID, err := s.launchContainer("nginx", "nginx:1.14-alpine")
 	require.NoError(s.T(), err)
 	s.serverContainer = containerID[0:12]
+
+	fmt.Print("After starting nginx\n")
+	isRunning, _ = s.collector.executor.IsContainerRunning("grpc-server")
+	fmt.Print("The grpc-server is " + strconv.FormatBool(isRunning) + "\n")
+	s.collector.captureLogs("grpc-server")
 
 	// invokes "sleep" and "sh" and "ls"
 	_, err = s.execContainer("nginx", []string{"sleep", "5"})
@@ -212,13 +234,28 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	_, err = s.execContainer("nginx", []string{"sh", "-c", "ls"})
 	require.NoError(s.T(), err)
 
+	fmt.Print("After sleep and sh\n")
+	isRunning, _ = s.collector.executor.IsContainerRunning("grpc-server")
+	fmt.Print("The grpc-server is " + strconv.FormatBool(isRunning) + "\n")
+	s.collector.captureLogs("grpc-server")
+
 	// invokes another container
 	containerID, err = s.launchContainer("nginx-curl", "pstauffer/curl:latest", "sleep", "300")
 	require.NoError(s.T(), err)
 	s.clientContainer = containerID[0:12]
 
+	fmt.Print("After invokes another container\n")
+	isRunning, _ = s.collector.executor.IsContainerRunning("grpc-server")
+	fmt.Print("The grpc-server is " + strconv.FormatBool(isRunning) + "\n")
+	s.collector.captureLogs("grpc-server")
+
 	s.serverIP, err = s.getIPAddress("nginx")
 	require.NoError(s.T(), err)
+
+	fmt.Print("After getIPAddress\n")
+	isRunning, _ = s.collector.executor.IsContainerRunning("grpc-server")
+	fmt.Print("The grpc-server is " + strconv.FormatBool(isRunning) + "\n")
+	s.collector.captureLogs("grpc-server")
 
 	s.serverPort, err = s.getPort("nginx")
 	require.NoError(s.T(), err)
@@ -230,6 +267,10 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	require.NoError(s.T(), err)
 
 	time.Sleep(10 * time.Second)
+	fmt.Print("After second sleep")
+	isRunning, _ = s.collector.executor.IsContainerRunning("grpc-server")
+	fmt.Print("The grpc-server is " + strconv.FormatBool(isRunning) + "\n")
+	s.collector.captureLogs("grpc-server")
 
 	err = s.collector.TearDown()
 	require.NoError(s.T(), err)
@@ -239,6 +280,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 }
 
 func (s *ProcessNetworkTestSuite) TearDownSuite() {
+	fmt.Print("func (s *ProcessNetworkTestSuite) TestNetworkFlows()\n")
 	s.cleanupContainer([]string{"nginx", "nginx-curl", "collector"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
@@ -246,6 +288,7 @@ func (s *ProcessNetworkTestSuite) TearDownSuite() {
 }
 
 func (s *ProcessNetworkTestSuite) TestProcessViz() {
+	fmt.Print("func (s *ProcessNetworkTestSuite) TestProcessViz()\n")
 	processName := "nginx"
 	exeFilePath := "/usr/sbin/nginx"
 	expectedProcessInfo := fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
@@ -269,6 +312,7 @@ func (s *ProcessNetworkTestSuite) TestProcessViz() {
 }
 
 func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
+	fmt.Print("func (s *ProcessNetworkTestSuite) TestProcessLineageInfo()\n")
 	processName := "awk"
 	exeFilePath := "/usr/bin/awk"
 	parentFilePath := "/bin/busybox"
@@ -295,7 +339,7 @@ func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
 }
 
 func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
-
+	fmt.Print("In func (s *ProcessNetworkTestSuite) TestNetworkFlows()\n")
 	// Server side checks
 	val, err := s.Get(s.serverContainer, networkBucket)
 	require.NoError(s.T(), err)

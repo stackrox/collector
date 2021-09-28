@@ -95,6 +95,9 @@ func (c *collectorManager) Launch() error {
 }
 
 func (c *collectorManager) TearDown() error {
+	fmt.Print("In TearDown()\n")
+	isRunning, _ := c.executor.IsContainerRunning("grpc-server")
+	fmt.Print("The grpc-server is " + strconv.FormatBool(isRunning) + "\n")
 	isRunning, err := c.executor.IsContainerRunning("collector")
 	if err != nil {
 		return err
@@ -114,9 +117,9 @@ func (c *collectorManager) TearDown() error {
 		c.captureLogs("collector")
 		c.killContainer("collector")
 	}
-	fmt.Print("About to check DisableGrpcServer")
+	fmt.Print("About to check DisableGrpcServer\n")
 	if !c.DisableGrpcServer {
-		fmt.Print("About to capture grpc-server logs")
+		fmt.Print("About to capture grpc-server logs\n")
 		c.captureLogs("grpc-server")
 		if _, err := c.executor.CopyFromHost(c.DBPath, c.DBPath); err != nil {
 			return err
@@ -147,6 +150,9 @@ func (c *collectorManager) launchGRPCServer() error {
 		c.GRPCServerImage,
 	}
 	_, err := c.executor.Exec(cmd...)
+	fmt.Print("In launchGRPCServer()\n")
+	isRunning, _ := c.executor.IsContainerRunning("grpc-server")
+	fmt.Print("The grpc-server is " + strconv.FormatBool(isRunning) + "\n")
 	return err
 }
 

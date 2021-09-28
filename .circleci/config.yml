@@ -1855,78 +1855,78 @@ workflows:
         collection_method: ebpf
         vm_type: ubuntu-os
         image_family: ubuntu-1604-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-ubuntu-1804-lts
-        collection_method: module
-        vm_type: ubuntu-os
-        image_family: ubuntu-1804-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-ubuntu-2004-lts
-        collection_method: ebpf
-        vm_type: ubuntu-os
-        image_family: ubuntu-2004-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-ubuntu-2004-lts
-        collection_method: module
-        vm_type: ubuntu-os
-        image_family: ubuntu-2004-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-ubuntu-2104
-        collection_method: ebpf
-        vm_type: ubuntu-os
-        image_family: ubuntu-2104
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-ubuntu-2104
-        collection_method: module
-        vm_type: ubuntu-os
-        image_family: ubuntu-2104
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-sles-15
-        collection_method: ebpf
-        vm_type: suse
-        image_family: sles-15
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-sles-15
-        collection_method: module
-        vm_type: suse
-        image_family: sles-15
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-sles-12
-        collection_method: module
-        vm_type: suse
-        image_family: sles-12
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-sles-15-sp2-sap
-        collection_method: ebpf
-        vm_type: suse-sap
-        image_family: sles-15-sp2-sap
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-sles-15-sp2-sap
-        collection_method: module
-        vm_type: suse-sap
-        image_family: sles-15-sp2-sap
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-flatcar-stable
-        collection_method: module
-        vm_type: flatcar
-        image_family: flatcar-stable
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-flatcar-stable
-        collection_method: ebpf
-        vm_type: flatcar
-        image_family: flatcar-stable
+        #    - integration-test:
+        #        <<: *runOnAllTagsWithIntegrationTestRequires
+        #        name: test-module-ubuntu-1804-lts
+        #        collection_method: module
+        #        vm_type: ubuntu-os
+        #        image_family: ubuntu-1804-lts
+        #    - integration-test:
+        #        <<: *runOnAllTagsWithIntegrationTestRequires
+        #        name: test-ebpf-ubuntu-2004-lts
+        #        collection_method: ebpf
+        #        vm_type: ubuntu-os
+        #        image_family: ubuntu-2004-lts
+        #    - integration-test:
+        #        <<: *runOnAllTagsWithIntegrationTestRequires
+        #        name: test-module-ubuntu-2004-lts
+        #        collection_method: module
+        #        vm_type: ubuntu-os
+        #        image_family: ubuntu-2004-lts
+        #    - integration-test:
+        #        <<: *runOnAllTagsWithIntegrationTestRequires
+        #        name: test-ebpf-ubuntu-2104
+        #        collection_method: ebpf
+        #        vm_type: ubuntu-os
+        #        image_family: ubuntu-2104
+        #    - integration-test:
+        #        <<: *runOnAllTagsWithIntegrationTestRequires
+        #        name: test-module-ubuntu-2104
+        #        collection_method: module
+        #        vm_type: ubuntu-os
+        #        image_family: ubuntu-2104
+        #    - integration-test:
+        #        <<: *runOnAllTagsWithIntegrationTestRequires
+        #        name: test-ebpf-sles-15
+        #        collection_method: ebpf
+        #        vm_type: suse
+        #        image_family: sles-15
+        #    - integration-test:
+        #        <<: *runOnAllTagsWithIntegrationTestRequires
+        #        name: test-module-sles-15
+        #        collection_method: module
+        #        vm_type: suse
+        #        image_family: sles-15
+        #    - integration-test:
+        #        <<: *runOnAllTagsWithIntegrationTestRequires
+        #        name: test-module-sles-12
+        #        collection_method: module
+        #        vm_type: suse
+        #        image_family: sles-12
+        #    - integration-test:
+        #        <<: *runOnAllTagsWithIntegrationTestRequires
+        #        name: test-ebpf-sles-15-sp2-sap
+        #        collection_method: ebpf
+        #        vm_type: suse-sap
+        #        image_family: sles-15-sp2-sap
+        #    - integration-test:
+        #        <<: *runOnAllTagsWithIntegrationTestRequires
+        #        name: test-module-sles-15-sp2-sap
+        #        collection_method: module
+        #        vm_type: suse-sap
+        #        image_family: sles-15-sp2-sap
+        #    - integration-test:
+        #        <<: *runOnAllTagsWithIntegrationTestRequires
+        #        name: test-module-flatcar-stable
+        #        collection_method: module
+        #        vm_type: flatcar
+        #        image_family: flatcar-stable
+        #    - integration-test:
+        #        <<: *runOnAllTagsWithIntegrationTestRequires
+        #        name: test-ebpf-flatcar-stable
+        #        collection_method: ebpf
+        #        vm_type: flatcar
+        #        image_family: flatcar-stable
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-module-fedora-coreos-stable
@@ -1939,36 +1939,36 @@ workflows:
         collection_method: ebpf
         vm_type: fedora-coreos
         image_family: fedora-coreos-stable
-    - integration-test-data:
-        <<: *runOnAllTagsWithDockerIOPullCtx
-        requires:
-        - test-ebpf-cos-stable
-        - test-ebpf-cos-beta
-        - test-ebpf-cos-dev
-        - test-ebpf-cos-81-lts
-        - test-ebpf-cos-85-lts
-        - test-ebpf-cos-89-lts
-        - test-module-rhel-7
-        - test-ebpf-rhel-7
-        - test-module-rhel-8
-        - test-ebpf-rhel-8
-        - test-module-ubuntu-1604-lts-esm
-        - test-ebpf-ubuntu-1604-lts-esm
-        - test-module-ubuntu-1804-lts
-        - test-ebpf-ubuntu-1804-lts
-        - test-module-ubuntu-2004-lts
-        - test-ebpf-ubuntu-2004-lts
-        - test-module-ubuntu-2104
-        - test-ebpf-ubuntu-2104
-        - test-ebpf-sles-15
-        - test-module-sles-15
-        - test-module-sles-12
-        - test-ebpf-sles-15-sp2-sap
-        - test-module-sles-15-sp2-sap
-        - test-ebpf-flatcar-stable
-        - test-module-flatcar-stable
-        - test-ebpf-fedora-coreos-stable
-        - test-module-fedora-coreos-stable
+        #    - integration-test-data:
+        #        <<: *runOnAllTagsWithDockerIOPullCtx
+        #        requires:
+        #        - test-ebpf-cos-stable
+        #        - test-ebpf-cos-beta
+        #        - test-ebpf-cos-dev
+        #        - test-ebpf-cos-81-lts
+        #        - test-ebpf-cos-85-lts
+        #        - test-ebpf-cos-89-lts
+        #        - test-module-rhel-7
+        #        - test-ebpf-rhel-7
+        #        - test-module-rhel-8
+        #        - test-ebpf-rhel-8
+        #        - test-module-ubuntu-1604-lts-esm
+        #        - test-ebpf-ubuntu-1604-lts-esm
+        #        - test-module-ubuntu-1804-lts
+        #        - test-ebpf-ubuntu-1804-lts
+        #        - test-module-ubuntu-2004-lts
+        #        - test-ebpf-ubuntu-2004-lts
+        #        - test-module-ubuntu-2104
+        #        - test-ebpf-ubuntu-2104
+        #        - test-ebpf-sles-15
+        #        - test-module-sles-15
+        #        - test-module-sles-12
+        #        - test-ebpf-sles-15-sp2-sap
+        #        - test-module-sles-15-sp2-sap
+        #        - test-ebpf-flatcar-stable
+        #        - test-module-flatcar-stable
+        #        - test-ebpf-fedora-coreos-stable
+        #        - test-module-fedora-coreos-stable
     - reload-released-images:
         <<: *runOnAllTags
         context:

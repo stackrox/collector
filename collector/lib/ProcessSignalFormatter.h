@@ -64,7 +64,6 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
 
   const EventNames& event_names_;
   SysdigEventExtractor event_extractor_;
-  //CollectorStats* stats_ = CollectorStats::GetOrCreate();
 };
 
 }  // namespace collector
