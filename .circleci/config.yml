@@ -45,7 +45,7 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
   requires:
   - images
   - ubi-image
-  - integration-test-local
+    #- integration-test-local
 
 orbs:
   slack: circleci/slack@3.4.2
@@ -1382,7 +1382,11 @@ jobs:
     - run:
         name: "Destroy VM"
         command: |
-          sleep 7200 #So we can investigate with ssh without destroying vm. For debugging not production
+          for ((a=0;a<1000;a=a+1))
+          do
+            echo $a
+            sleep 10
+          done
           gcloud compute instances delete $GCLOUD_INSTANCE
         when: always
 
@@ -1756,27 +1760,27 @@ workflows:
           - redhat-developer-account-login
         requires:
         - initjob
-    - integration-test-local:
-        <<: *runOnAllTagsWithDockerIOPushCtx
-        requires:
-        - images
-        - upload-modules
-    - integration-test-local:
-        <<: *runOnAllTagsWithDockerIOPushCtx
-        name: integration-test-local-rhel
-        vm-config: rhel
-        use-rhel: true
-        requires:
-        - images
-        - upload-modules
-    - integration-test-local:
-        <<: *runOnAllTagsWithDockerIOPushCtx
-        name: integration-test-local-ubi
-        vm-config: rhel
-        use-ubi: true
-        requires:
-        - ubi-image
-        - upload-modules
+          #    - integration-test-local:
+          #        <<: *runOnAllTagsWithDockerIOPushCtx
+          #        requires:
+          #        - images
+          #        - upload-modules
+          #    - integration-test-local:
+          #        <<: *runOnAllTagsWithDockerIOPushCtx
+          #        name: integration-test-local-rhel
+          #        vm-config: rhel
+          #        use-rhel: true
+          #        requires:
+          #        - images
+          #        - upload-modules
+          #    - integration-test-local:
+          #        <<: *runOnAllTagsWithDockerIOPushCtx
+          #        name: integration-test-local-ubi
+          #        vm-config: rhel
+          #        use-ubi: true
+          #        requires:
+          #        - ubi-image
+          #        - upload-modules
           #    - integration-test:
           #        <<: *runOnAllTagsWithIntegrationTestRequires
           #        name: test-ebpf-cos-stable
