@@ -1339,9 +1339,7 @@ jobs:
 
     - run:
         name: "Check Valgrind errors"
-        no_output_timeout: 120m
         command: |
-          sleep 20000 #So we can investigate with ssh without destroying vm. For debugging not production
           if [[ "$VALGRIND_INTEGRATION_TESTS" != "true" ]]; then
             echo "Not using Valgrind. Not checking for Valgrind errors"
             exit 0
@@ -1384,6 +1382,7 @@ jobs:
     - run:
         name: "Destroy VM"
         command: |
+          sleep 7200 #So we can investigate with ssh without destroying vm. For debugging not production
           gcloud compute instances delete $GCLOUD_INSTANCE
         when: always
 
