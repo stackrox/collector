@@ -151,6 +151,8 @@ func (c *collectorManager) launchGRPCServer() error {
 	}
 	_, err := c.executor.Exec(cmd...)
 	fmt.Print("In launchGRPCServer()\n")
+	fmt.Print(cmd)
+	fmt.Print("\n")
 	isRunning, _ := c.executor.IsContainerRunning("grpc-server")
 	fmt.Print("The grpc-server is " + strconv.FormatBool(isRunning) + "\n")
 	return err
