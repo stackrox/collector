@@ -1339,7 +1339,9 @@ jobs:
 
     - run:
         name: "Check Valgrind errors"
+        no_output_timeout: 120m
         command: |
+          sleep 20000 #So we can investigate with ssh without destroying vm. For debugging not production
           if [[ "$VALGRIND_INTEGRATION_TESTS" != "true" ]]; then
             echo "Not using Valgrind. Not checking for Valgrind errors"
             exit 0
@@ -1776,85 +1778,85 @@ workflows:
         requires:
         - ubi-image
         - upload-modules
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-cos-stable
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-stable
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-cos-beta
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-beta
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-cos-dev
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-dev
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-cos-81-lts
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-81-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-cos-85-lts
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-85-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-cos-89-lts
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-89-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-rhel-7
-        collection_method: ebpf
-        vm_type: rhel
-        image_family: rhel-7
-    # TODO(rc) Enabled but bootstrap.sh forces fallback to kernel-module (ROX-3377)
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-rhel-7
-        collection_method: module
-        vm_type: rhel
-        image_family: rhel-7
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-rhel-8
-        collection_method: ebpf
-        vm_type: rhel
-        image_family: rhel-8
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-rhel-8
-        collection_method: module
-        vm_type: rhel
-        image_family: rhel-8
+          #    - integration-test:
+          #        <<: *runOnAllTagsWithIntegrationTestRequires
+          #        name: test-ebpf-cos-stable
+          #        collection_method: ebpf
+          #        vm_type: cos
+          #        image_family: cos-stable
+          #    - integration-test:
+          #        <<: *runOnAllTagsWithIntegrationTestRequires
+          #        name: test-ebpf-cos-beta
+          #        collection_method: ebpf
+          #        vm_type: cos
+          #        image_family: cos-beta
+          #    - integration-test:
+          #        <<: *runOnAllTagsWithIntegrationTestRequires
+          #        name: test-ebpf-cos-dev
+          #        collection_method: ebpf
+          #        vm_type: cos
+          #        image_family: cos-dev
+          #    - integration-test:
+          #        <<: *runOnAllTagsWithIntegrationTestRequires
+          #        name: test-ebpf-cos-81-lts
+          #        collection_method: ebpf
+          #        vm_type: cos
+          #        image_family: cos-81-lts
+          #    - integration-test:
+          #        <<: *runOnAllTagsWithIntegrationTestRequires
+          #        name: test-ebpf-cos-85-lts
+          #        collection_method: ebpf
+          #        vm_type: cos
+          #        image_family: cos-85-lts
+          #    - integration-test:
+          #        <<: *runOnAllTagsWithIntegrationTestRequires
+          #        name: test-ebpf-cos-89-lts
+          #        collection_method: ebpf
+          #        vm_type: cos
+          #        image_family: cos-89-lts
+          #    - integration-test:
+          #        <<: *runOnAllTagsWithIntegrationTestRequires
+          #        name: test-ebpf-rhel-7
+          #        collection_method: ebpf
+          #        vm_type: rhel
+          #        image_family: rhel-7
+          #    # TODO(rc) Enabled but bootstrap.sh forces fallback to kernel-module (ROX-3377)
+          #    - integration-test:
+          #        <<: *runOnAllTagsWithIntegrationTestRequires
+          #        name: test-module-rhel-7
+          #        collection_method: module
+          #        vm_type: rhel
+          #        image_family: rhel-7
+          #    - integration-test:
+          #        <<: *runOnAllTagsWithIntegrationTestRequires
+          #        name: test-ebpf-rhel-8
+          #        collection_method: ebpf
+          #        vm_type: rhel
+          #        image_family: rhel-8
+          #    - integration-test:
+          #        <<: *runOnAllTagsWithIntegrationTestRequires
+          #        name: test-module-rhel-8
+          #        collection_method: module
+          #        vm_type: rhel
+          #        image_family: rhel-8
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-ubuntu-1804-lts
         collection_method: ebpf
         vm_type: ubuntu-os
         image_family: ubuntu-1804-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-ubuntu-1604-lts-esm
-        collection_method: module
-        vm_type: ubuntu-os
-        image_family: ubuntu-1604-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-ubuntu-1604-lts-esm
-        collection_method: ebpf
-        vm_type: ubuntu-os
-        image_family: ubuntu-1604-lts
+          #    - integration-test:
+          #        <<: *runOnAllTagsWithIntegrationTestRequires
+          #        name: test-module-ubuntu-1604-lts-esm
+          #        collection_method: module
+          #        vm_type: ubuntu-os
+          #        image_family: ubuntu-1604-lts
+          #    - integration-test:
+          #        <<: *runOnAllTagsWithIntegrationTestRequires
+          #        name: test-ebpf-ubuntu-1604-lts-esm
+          #        collection_method: ebpf
+          #        vm_type: ubuntu-os
+          #        image_family: ubuntu-1604-lts
         #    - integration-test:
         #        <<: *runOnAllTagsWithIntegrationTestRequires
         #        name: test-module-ubuntu-1804-lts
@@ -1927,12 +1929,12 @@ workflows:
         #        collection_method: ebpf
         #        vm_type: flatcar
         #        image_family: flatcar-stable
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-fedora-coreos-stable
-        collection_method: module
-        vm_type: fedora-coreos
-        image_family: fedora-coreos-stable
+        #    - integration-test:
+        #        <<: *runOnAllTagsWithIntegrationTestRequires
+        #        name: test-module-fedora-coreos-stable
+        #        collection_method: module
+        #        vm_type: fedora-coreos
+        #        image_family: fedora-coreos-stable
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-fedora-coreos-stable
