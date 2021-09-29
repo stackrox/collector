@@ -770,7 +770,7 @@ jobs:
     - docker-login-push
 
     - run:
-        name: Restore collector-builder rhel image
+        name: Restore collector-builder image
         command: |
           docker pull "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}"
 
@@ -1263,20 +1263,6 @@ jobs:
         name: "Running integration tests"
         no_output_timeout: 45m
         command: |
-          export REMOTE_HOST_TYPE=gcloud
-          export COLLECTION_METHOD="<< parameters.collection_method >>"
-          export COLLECTOR_OFFLINE_MODE="<< parameters.offline >>"
-          export ROX_COLLECTOR_ALT_PROBE_DOWNLOAD=false
-          export VM_CONFIG="<< parameters.vm_type >>.<< parameters.image_family >>"
-          export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
-          export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
-          export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
-          export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
-          if "${SOURCE_ROOT}/.circleci/pr_has_label.sh" ci-run-against-ubi; then
-            export COLLECTOR_REPO="stackrox/collector-test-cpaas"
-          else
-            export COLLECTOR_REPO="stackrox/collector"
-          fi
           make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report
           cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp "${SOURCE_ROOT}/integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
