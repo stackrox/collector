@@ -39,7 +39,7 @@ elif [[ "$distro" == "redhat" && "$version" == "4.18.0-293.el8.x86_64" ]]; then
   flavor="modern"
 elif [[ "$distro" == "debian" && "$version" =~ ^4.19.0-17(-cloud|)-amd64$ ]]; then
   flavor="modern"
-#elif grep -q "$distro" <~/kobuild-tmp/custom-flavors/all; then
-#  flavor="$distro"
+elif grep -q "$distro" <~/kobuild-tmp/custom-flavors/all; then
+  flavor="$distro"
 fi
 echo $flavor
