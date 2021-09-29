@@ -135,7 +135,10 @@ func (c *collectorManager) BoltDB() (db *bolt.DB, err error) {
 
 func (c *collectorManager) launchGRPCServer() error {
 	user, _ := user.Current()
-	c.setSelinuxPermissiveIfNeeded()
+	selinuxErr := setSelinuxPermissiveIfNeeded()
+	if selinuxErr != nil {
+		return selinuxErr
+	}
 	cmd := []string{"docker", "run",
 		"-d",
 		"--rm",
@@ -175,29 +178,6 @@ func (c *collectorManager) launchCollector() error {
 	output, err := c.executor.Exec(cmd...)
 	c.CollectorOutput = output
 	return err
-}
-
-//SELinux needs to be set to permissive in order for the mock GRPC to work in fedora coreos
-func (c *collectorManager) setSelinuxPermissiveIfNeeded() {
-	if c.isSelinuxPermissiveNeeded() {
-		c.setSelinuxPermissive()
-	}
-}
-
-func (c *collectorManager) isSelinuxPermissiveNeeded() bool {
-	vmType :=   ReadEnvVarWithDefault("VM_CONFIG", "default")
-	if strings.Contains(vmType, "coreos") {
-		return true
-	}
-	return false;
-}
-
-func (c *collectorManager) setSelinuxPermissive() {
-	cmd := []string{"sudo", "setenforce", "0"}
-	_, err := c.executor.Exec(cmd...)
-	if err != nil {
-		fmt.Printf("Error: Unable to set SELinux to permissive. %v\n", err)
-	}
 }
 
 func (c *collectorManager) captureLogs(containerName string) (string, error) {
