@@ -1,0 +1,56 @@
+FROM ubuntu:impish
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \
+ && apt-get upgrade -y \
+ #&& apt-get install --no-install-recommends -y \
+      #binutils \
+      #cmake \
+      #make \
+      #curl \
+      #flex \
+      #bison \
+      #gcc \
+      #gcc-8 \
+      #gcc-9 \
+      #gcc-10 \
+      #clang-9 \
+      #llvm \
+      #g++ \
+      #libelf-dev \
+      #kmod \
+      #wget \
+      #golang-go \
+      #pkg-config \
+ ;
+
+RUN apt-get install -y binutils || true
+RUN apt-get install -y cmake || true
+RUN apt-get install -y make || true
+RUN apt-get install -y curl || true
+RUN apt-get install -y flex || true
+RUN apt-get install -y bison || true
+RUN apt-get install -y gcc || true
+RUN apt-get install -y gcc-8 || true
+RUN apt-get install -y gcc-9 || true
+RUN apt-get install -y gcc-10 || true
+RUN apt-get install -y clang-9 || true
+RUN apt-get install -y llvm || true
+RUN apt-get install -y g++ || true
+RUN apt-get install -y libelf-dev || true
+RUN apt-get install -y kmod || true
+RUN apt-get install -y wget || true
+RUN apt-get install -y golang-go || true
+RUN apt-get install -y pkg-config || true
+#RUN rm -rf /var/lib/apt/lists/*
+#RUN apt-get install -y make
+RUN ln -s /usr/bin/clang-9 /usr/bin/clang
+
+#RUN apt-get autoremove -y
+
+RUN mkdir -p /output
+COPY build-kos /usr/bin/
+COPY prepare-src /usr/bin
+
+WORKDIR /scratch
+ENTRYPOINT [ "/bin/bash", "-c" ]

@@ -19,6 +19,7 @@
 ~5\.([7-9]|1[0-9])\..* 7c30b6f295bae9ccf8695982687d871847dfecd12a1cfbc3edcfa93ceec6b5dc
 ~5\.([7-9]|1[0-9])\..* a409284ad5be9a95bfd65b9eac6f179094d5b36af9a6ba3548fa98ee4d23a7a5
 ~5\.([7-9]|1[0-9])\..* f7bd36bc2f3299306385c1270805fa3705af934acd37c6d2395dbba567dd3c58
+<<<<<<< HEAD
 # TODO(ROX-7956): Fix most recent docker desktop
 5.10.47-dockerdesktop-2021-07-03-21-51-47
 # TODO(ROX-??) Check broken modules compilation
@@ -32,32 +33,3 @@
 4.19.0-6-amd64
 4.19.0-8-amd64
 4.19.0-9-amd64
-# TODO(ROX-??)
-5.11.0-155.fc35.x86_64 * mod
-5.11.0-156.fc34.x86_64 * mod
-5.11.2-300.fc34.x86_64 * mod
-5.11.3-300.fc34.x86_64 * mod
-5.11.5-300.fc34.x86_64 * mod
-5.11.5-50.fc33.x86_64 * mod
-# TODO(ROX-??)
-5.13.0-1000-aws * mod
-5.13.0-1003-aws * mod
-5.13.0-1003-azure * mod
-5.13.0-1003-gcp * mod
-5.13.0-1004-aws * mod
-5.13.0-1004-azure * mod
-5.13.0-16-generic * mod
-5.13.0-17-generic * mod
-5.13.0-58.fc35.x86_64 * mod
-# TODO(ROX-??)
-5.14.0-60.fc35.x86_64 * mod
-5.14.0-60.fc36.x86_64 * mod
-5.14.0-61.fc36.x86_64 * mod
-5.14.1-300.fc35.x86_64 * mod
-5.14.2-300.fc35.x86_64 * mod
-5.14.3-300.fc35.x86_64 * mod
-5.14.4-300.fc35.x86_64 * mod
-5.14.5-300.fc35.x86_64 * mod
-5.14.6-300.fc35.x86_64 * mod
-5.14.7-300.fc35.x86_64 * mod
-5.14.8-300.fc35.x86_64 * mod
