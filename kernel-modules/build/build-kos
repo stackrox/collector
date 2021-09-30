@@ -104,7 +104,7 @@ build_ko() (
 
         echo "Building collector eBPF probe for kernel version ${kernel_version} and module version ${module_version}."
 
-        KERNELDIR="$kernel_build_dir" BUILD_ROOT="${kernel_src_dir}" make -j 6 -C bpf
+        KERNELDIR="$kernel_build_dir" BUILD_ROOT="${kernel_src_dir}" make -C bpf
 
         collector_probe="bpf/probe.o"
 
