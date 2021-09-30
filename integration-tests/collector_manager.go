@@ -115,10 +115,10 @@ func (c *collectorManager) TearDown() error {
 		c.killContainer("collector")
 	}
 	if !c.DisableGrpcServer {
+		c.captureLogs("grpc-server")
 		if _, err := c.executor.CopyFromHost(c.DBPath, c.DBPath); err != nil {
 			return err
 		}
-		c.captureLogs("grpc-server")
 		c.killContainer("grpc-server")
 	}
 	return nil
@@ -135,6 +135,10 @@ func (c *collectorManager) BoltDB() (db *bolt.DB, err error) {
 
 func (c *collectorManager) launchGRPCServer() error {
 	user, _ := user.Current()
+	selinuxErr := setSelinuxPermissiveIfNeeded()
+	if selinuxErr != nil {
+		return selinuxErr
+	}
 	cmd := []string{"docker", "run",
 		"-d",
 		"--rm",
