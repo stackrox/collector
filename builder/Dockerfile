@@ -1,46 +1,51 @@
-FROM ubuntu:focal
+FROM centos:8
 
 ARG NPROCS=6
 ARG USE_VALGRIND=false
 ENV NPROCS=$NPROCS
 
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Install packaged dependencies
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
+## Install packaged dependencies
+USER root
+RUN yum -y update \
+    && yum -y install \
         autoconf \
         automake \
-        binutils \
-        build-essential \
+        binutils-devel \
+        bison \
         ca-certificates \
         clang \
-        cmake \
-        curl \
-        g++ \
+        cracklib-dicts \
+        elfutils-libelf-devel \
+        file \
+        flex \
         gcc \
+        gcc-c++ \
         gdb \
+        gettext \
         git \
-        libcap-ng-dev \
-        libcurl4-openssl-dev \
-        libelf-dev \
-        libgoogle-perftools-dev \
-        libssl-dev \
+        glibc-devel \
+        libcap-ng-devel \
+        libcurl-devel \
         libtool \
-        libz-dev \
-        pkg-config \
-        python \
+        libuuid-devel \
+        make \
+        openssh-server \
+        openssl-devel \
+        patchutils \
+        passwd \
+        pkgconfig \
+        python2 \
         rsync \
-        ssh \
         tar \
         unzip \
-        uuid-dev \
-        wget; \
-        if [ "$USE_VALGRIND" = "true" ]; then \
-          apt-get install -y --no-install-recommends valgrind; \
-        fi; \
-        apt-get clean \
+        wget \
+        which \
+    && yum -y groupinstall "Development Tools" \
+    && yum clean all \
     ;
+
+# /usr/local/lib is not in the library path by default
+RUN echo '/usr/local/lib' >/etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 
 # We want to fail if the destination directory is there, hence mkdir (not -p).
 RUN mkdir install-tmp
@@ -60,13 +65,14 @@ COPY build/build-collector.sh /
 RUN chmod 700 /build-collector.sh
 
 # Set up ssh for remote development with IDE
-RUN ( \
+RUN ssh-keygen -A \
+   && ( \
     echo 'LogLevel DEBUG2'; \
     echo 'PermitRootLogin yes'; \
     echo 'PasswordAuthentication yes'; \
     echo 'HostKey /etc/sshkeys/ssh_host_ed25519_key'; \
     echo 'HostKeyAlgorithms ssh-ed25519'; \
-    echo 'Subsystem sftp /usr/lib/openssh/sftp-server'; \
+    echo 'Subsystem sftp /usr/libexec/openssh/sftp-server'; \
   ) > /etc/ssh/sshd_config_remote_development \
   && mkdir /run/sshd
 
@@ -78,4 +84,3 @@ RUN useradd -m remoteuser \
 RUN mkdir /src && chmod a+rwx /src
 
 CMD ["/usr/sbin/sshd", "-D", "-e", "-f", "/etc/ssh/sshd_config_remote_development"]
-
