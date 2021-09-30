@@ -37,7 +37,7 @@ ARG collector_version=xxx
 ARG module_version=xxx
 ARG USE_VALGRIND=false
 
-LABEL name="collector-rhel" \
+LABEL name="collector" \
       vendor="StackRox" \
       maintainer="support@stackrox.com" \
       summary="Runtime data collection for the StackRox Kubernetes Security Platform" \
