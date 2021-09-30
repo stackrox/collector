@@ -7,7 +7,8 @@ kernel_major=$4
 
 flavor="default"
 if (( kernel_version == 5 && kernel_major >= 13 )); then
-  flavor="impish"
+  flavor="hirsute" #Testing if these work for bpf
+  #flavor="impish"
 elif [[ "$distro" == "debian" ]] ; then
   build_id="$(echo "${version}" | cut -d '-' -f2)"
   if (( kernel_version >= 5 )); then
