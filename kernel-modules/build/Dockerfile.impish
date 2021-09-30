@@ -34,7 +34,7 @@ RUN apt-get install -y gcc || true
 RUN apt-get install -y gcc-8 || true
 RUN apt-get install -y gcc-9 || true
 RUN apt-get install -y gcc-10 || true
-RUN apt-get install -y clang-9 || true
+RUN apt-get install -y clang-12 || true
 RUN apt-get install -y llvm || true
 RUN apt-get install -y g++ || true
 RUN apt-get install -y libelf-dev || true
@@ -44,7 +44,7 @@ RUN apt-get install -y golang-go || true
 RUN apt-get install -y pkg-config || true
 #RUN rm -rf /var/lib/apt/lists/*
 #RUN apt-get install -y make
-RUN ln -s /usr/bin/clang-9 /usr/bin/clang
+RUN ln -s /usr/bin/clang-12 /usr/bin/clang
 
 #RUN apt-get autoremove -y
 
