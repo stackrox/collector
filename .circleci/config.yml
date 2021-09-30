@@ -1226,9 +1226,7 @@ jobs:
         name: "Setup env vars"
         command: |
           COLLECTOR_REPO="stackrox/collector"
-          if "${SOURCE_ROOT}/.circleci/pr_has_label.sh" ci-run-against-rhel; then
-            COLLECTOR_REPO="stackrox/collector-rhel"
-          elif "${SOURCE_ROOT}/.circleci/pr_has_label.sh" ci-run-against-ubi; then
+          if "${SOURCE_ROOT}/.circleci/pr_has_label.sh" ci-run-against-ubi; then
             COLLECTOR_REPO="stackrox/collector-test-cpaas"
           fi
           TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
