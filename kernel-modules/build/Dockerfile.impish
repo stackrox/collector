@@ -21,7 +21,7 @@ RUN apt-get update \
       kmod \
       wget \
       golang-go \
-      pkg-config \
+      pkg-config || true\
  ;
 
 RUN ln -s /usr/bin/clang-12 /usr/bin/clang

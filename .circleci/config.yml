@@ -1790,6 +1790,18 @@ workflows:
         image_family: ubuntu-2104
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
+        name: test-ebpf-ubuntu-2110
+        collection_method: ebpf
+        vm_type: ubuntu-os
+        image_family: ubuntu-2110
+    - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
+        name: test-module-ubuntu-2110
+        collection_method: module
+        vm_type: ubuntu-os
+        image_family: ubuntu-2110
+    - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-sles-15
         collection_method: ebpf
         vm_type: suse
@@ -1863,6 +1875,8 @@ workflows:
         - test-ebpf-ubuntu-2004-lts
         - test-module-ubuntu-2104
         - test-ebpf-ubuntu-2104
+        - test-module-ubuntu-2110
+        - test-ebpf-ubuntu-2110
         - test-ebpf-sles-15
         - test-module-sles-15
         - test-module-sles-12
