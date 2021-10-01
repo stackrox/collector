@@ -19,7 +19,6 @@
 ~5\.([7-9]|1[0-9])\..* 7c30b6f295bae9ccf8695982687d871847dfecd12a1cfbc3edcfa93ceec6b5dc
 ~5\.([7-9]|1[0-9])\..* a409284ad5be9a95bfd65b9eac6f179094d5b36af9a6ba3548fa98ee4d23a7a5
 ~5\.([7-9]|1[0-9])\..* f7bd36bc2f3299306385c1270805fa3705af934acd37c6d2395dbba567dd3c58
-<<<<<<< HEAD
 # TODO(ROX-7956): Fix most recent docker desktop
 5.10.47-dockerdesktop-2021-07-03-21-51-47
 # TODO(ROX-??) Check broken modules compilation
