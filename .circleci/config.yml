@@ -602,19 +602,7 @@ jobs:
     - run:
         name: Download required packages
         command: |
-          mkdir -p ~/kobuild-tmp/bundles
-
-          awk -v bucket="$KERNEL_BUNDLES_BUCKET" '{print bucket "/bundle-" $1 ".tgz"}' <~/kobuild-tmp/all-kernel-versions \
-            | gsutil -m cp -I ~/kobuild-tmp/bundles/ || true
-
-          # Include kernel bundles within env var KERNEL_BUNDLES_STAGING_BUCKET, if it is set on a PR branch
-          if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -z "$KERNEL_BUNDLES_STAGING_BUCKET" ]]; then
-            awk -v bucket="$KERNEL_BUNDLES_STAGING_BUCKET" \
-              '{print bucket "/bundle-" $1 ".tgz"}' <~/kobuild-tmp/all-kernel-versions \
-              | gsutil -m cp -I ~/kobuild-tmp/bundles/ || true
-          fi
-
-          ls ~/kobuild-tmp/bundles/
+          "${SOURCE_ROOT}/.circleci/download-required-packages.sh"
 
     - run:
         name: Determine versions requiring a custom builder flavor
