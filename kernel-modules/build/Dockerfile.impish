@@ -1,9 +1,9 @@
 FROM ubuntu:impish
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update \
- && apt-get upgrade -y \
- && apt-get install -y \
+RUN apt-get update || true; \
+    apt-get upgrade -y || true; \
+    apt-get install -y \
       binutils \
       cmake \
       make \
