@@ -9,6 +9,12 @@ flavor="default"
 if (( kernel_version == 5 && kernel_major >= 13 )); then
   if [[ "$distro" == "ubuntu" ]]; then
     flavor="impish"
+  elif [[ "$version" == "5.13.0-58.fc35.x86_64" ]]; then
+    flavor="impish"
+  elif [[ "$version" =~ ^5.14.0-(60|61).fc ]]; then
+    flavor="impish"
+  elif [[ "$version" =~ ^5.14.[0-9]-300.fc35.x86_64 ]]; then
+    flavor="impish"
   else
     flavor="hirsute"
   fi
