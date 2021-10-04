@@ -11,7 +11,7 @@ downloadBundlesListedInFile() {
 }
 
 getNumFailedDownloads() {
-    echo "$(ls $bundles_dir/*.gstmp 2>/dev/null | wc -l || true)"
+    echo "$(ls "$bundles_dir"/*.gstmp 2>/dev/null | wc -l || true)"
 }
 
 reportIfFailed() {
@@ -21,8 +21,8 @@ reportIfFailed() {
     echo "There are $num_failed_downloads failed downloads"
     failed_downloads_dir="$bundles_dir/failed-downloads/"
     mkdir "$failed_downloads_dir"
-    mv "$bundles_dir/*.gstmp" "$failed_downloads_dir"
-    ls "$failed_downloads_dir/"
+    mv "$bundles_dir"/*.gstmp "$failed_downloads_dir"
+    ls "$failed_downloads_dir"/
     echo
   fi
 }
@@ -40,20 +40,20 @@ retryFailedDownloads() {
     sleep 30
 
     failed_downloads_file="$kobuild_dir/failed_downloads.txt"
-    ls $bundles_dir/*.gstmp > "$failed_downloads_file"
+    ls "$bundles_dir"/*.gstmp > "$failed_downloads_file"
     sed -i 's|^.*bundle-||' "$failed_downloads_file"
     sed -i 's|.tgz_.gstmp||' "$failed_downloads_file"
 
     downloadBundlesListedInFile "$bucket" "$failed_downloads_file"
   done
   reportIfFailed
-}
+  }
 
 downloadBundles() {
   bucket=$1
 
-  downloadBundlesListedInFile $bucket $kobuild_dir/all-kernel-versions
-  retryFailedDownloads $bucket
+  downloadBundlesListedInFile "$bucket" "$kobuild_dir/all-kernel-versions"
+  retryFailedDownloads "$bucket"
 
 }
 
@@ -61,7 +61,7 @@ kobuild_dir=$1
 
 bundles_dir="$kobuild_dir/bundles"
 
-mkdir -p $bundles_dir
+mkdir -p "$bundles_dir"
 downloadBundles "$KERNEL_BUNDLES_BUCKET"
 
 if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -z "$KERNEL_BUNDLES_STAGING_BUCKET" ]]; then
