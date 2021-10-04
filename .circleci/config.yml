@@ -602,7 +602,7 @@ jobs:
     - run:
         name: Download required packages
         command: |
-          "${SOURCE_ROOT}/.circleci/download-required-packages.sh"
+          "${SOURCE_ROOT}/.circleci/download-required-packages.sh" ~/kobuild-tmp
 
     - run:
         name: Determine versions requiring a custom builder flavor
