@@ -42,7 +42,7 @@ retryFailedDownloads() {
     failed_downloads_file="$kobuild_dir/failed_downloads.txt"
     ls "$bundles_dir"/*.gstmp > "$failed_downloads_file"
     sed -i 's|^.*bundle-||' "$failed_downloads_file"
-    sed -i 's|.tgz_.gstmp||' "$failed_downloads_file"
+    sed -i 's|\.tgz_\.gstmp$||' "$failed_downloads_file"
 
     downloadBundlesListedInFile "$bucket" "$failed_downloads_file"
   done
@@ -57,7 +57,7 @@ downloadBundles() {
 
 }
 
-kobuild_dir=$1
+kobuild_dir="${1:-~/kobuild-tmp}"
 
 bundles_dir="$kobuild_dir/bundles"
 
