@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 
 compareVersions() {
-  kernel_version1=$1
-  kernel_major1=$2
+  kernel_version_other=$1
+  kernel_major_other=$2
 
-  if (( kernel_version1 < kernel_version )); then
+  if (( kernel_version_other < kernel_version )); then
     echo "later"
-  elif (( kernel_version1 == kernel_version)); then
-    if (( kernel_major1 < kernel_major )); then
+  elif (( kernel_version_other == kernel_version)); then
+    if (( kernel_major_other < kernel_major )); then
       echo "later"
-    elif (( kernel_major1 == kernel_major )); then
+    elif (( kernel_major_other == kernel_major )); then
       echo "same"
     else
       echo "earlier"
@@ -50,13 +50,17 @@ getFlavorFor5_13_plus() {
   echo $flavor_local
 }
 
+if (( $# < 4 )); then
+  echo "ERROR: You do not have enough arguments"
+  echo "USAGE: $0 version distro kernel_version kernel_major [custom_build_flavors_all_file]"
+  exit 2
+fi
 
 version=$1
 distro=$2
 kernel_version=$3
 kernel_major=$4
 custom_build_flavors_all_file=${5:-~/kobuild-tmp/custom-flavors/all}
-
 
 flavor="default"
 # Ubuntu 20.04 backport
