@@ -1,45 +1,67 @@
 #!/usr/bin/env bash
+set -eo pipefail
 
-downloadBundles() {
+downloadBundlesListedInFile() {
   bucket=$1
-  awk -v bucket="$bucket" '{print bucket "/bundle-" $1 ".tgz"}' <~/kobuild-tmp/all-kernel-versions \
-    | gsutil -m cp -I ~/kobuild-tmp/bundles/ || true
+  downloads_file=$2
 
-  # If the download failed try again multiple times
-  max_attempts=5 #If you can't download it after 5 attempts you probably can't download it
-  for ((i=0;i<$max_attempts;i=i+1))
-  do
-    shopt -s nullglob
-    for bundle in ~/kobuild-tmp/bundles/*.gstmp #Failed downloads end in .gstmp
-    do
-      rm $bundle
-      kernel="$(echo $bundle | sed 's|^.*bundle-||')"
-      kernel="$(echo $kernel | sed 's|.tgz_.gstmp||')"
-      src="${bucket}/bundle-${kernel}.tgz"
-      gsutil cp "$src" ~/kobuild-tmp/bundles/ || true
-    done
+  awk -v bucket="$bucket" '{print bucket "/bundle-" $1 ".tgz"}' <"$downloads_file" \
+    | gsutil -m cp -I "$bundles_dir" || true
 
-    shopt -u nullglob
-    num_failed_downloads="$(ls ~/kobuild-tmp/bundles/*.gstmp 2>/dev/null | wc -l || true)"
-    if (( num_failed_downloads > 0 )); then
-      sleep 30
-    else
-      break
-    fi
+}
 
-  done
+getNumFailedDownloads() {
+    echo "$(ls "$bundles_dir"/*.gstmp 2>/dev/null | wc -l || true)"
+}
 
+reportIfFailed() {
+  num_failed_downloads="$(getNumFailedDownloads)"
   if (( num_failed_downloads > 0 )); then
     echo
     echo "There are $num_failed_downloads failed downloads"
-    mkdir ~/kobuild-tmp/bundles/failed-downloads/
-    mv ~/kobuild-tmp/bundles/*.gstmp ~/kobuild-tmp/bundles/failed-downloads/
-    ls ~/kobuild-tmp/bundles/failed-downloads
+    failed_downloads_dir="$bundles_dir/failed-downloads/"
+    mkdir "$failed_downloads_dir"
+    mv "$bundles_dir"/*.gstmp "$failed_downloads_dir"
+    ls "$failed_downloads_dir"/
     echo
   fi
 }
 
-mkdir -p ~/kobuild-tmp/bundles
+retryFailedDownloads() {
+  bucket=$1
+
+  max_attempts=5 #If you can't download it after 5 attempts you probably can't download it
+  for ((i=0;i<$max_attempts;i=i+1))
+  do
+    num_failed_downloads="$(getNumFailedDownloads)"
+    if (( num_failed_downloads == 0 )); then
+      break
+    fi
+    sleep 30
+
+    failed_downloads_file="$kobuild_dir/failed_downloads.txt"
+    ls "$bundles_dir"/*.gstmp > "$failed_downloads_file"
+    sed -i 's|^.*bundle-||' "$failed_downloads_file"
+    sed -i 's|\.tgz_\.gstmp$||' "$failed_downloads_file"
+
+    downloadBundlesListedInFile "$bucket" "$failed_downloads_file"
+  done
+  reportIfFailed
+  }
+
+downloadBundles() {
+  bucket=$1
+
+  downloadBundlesListedInFile "$bucket" "$kobuild_dir/all-kernel-versions"
+  retryFailedDownloads "$bucket"
+
+}
+
+kobuild_dir="${1:-~/kobuild-tmp}"
+
+bundles_dir="$kobuild_dir/bundles"
+
+mkdir -p "$bundles_dir"
 downloadBundles "$KERNEL_BUNDLES_BUCKET"
 
 if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -z "$KERNEL_BUNDLES_STAGING_BUCKET" ]]; then
