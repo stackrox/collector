@@ -21,7 +21,7 @@ index 5c745fc..f946d4d 100644
  
  all:
 diff --git a/bpf/filler_helpers.h b/bpf/filler_helpers.h
-index 1a15376..2265725 100644
+index 1a15376..c094cdf 100644
 --- a/bpf/filler_helpers.h
 +++ b/bpf/filler_helpers.h
 @@ -215,16 +215,16 @@ static __always_inline bool bpf_getsockname(struct socket *sock,
@@ -46,15 +46,15 @@ index 1a15376..2265725 100644
  #endif
  		return -EFAULT;
  
-@@ -728,17 +728,20 @@ static __always_inline int __bpf_val_to_ring(struct filler_data *data,
+@@ -728,12 +728,14 @@ static __always_inline int __bpf_val_to_ring(struct filler_data *data,
  {
  	unsigned int len_dyn = 0;
  	unsigned int len;
 +	unsigned long curoff_bounded;
  
-+	curoff_bounded = data->state->tail_ctx.curoff & SCRATCH_SIZE_HALF;
  	if (data->state->tail_ctx.curoff > SCRATCH_SIZE_HALF)
  		return PPM_FAILURE_BUFFER_FULL;
++	curoff_bounded = data->state->tail_ctx.curoff & SCRATCH_SIZE_HALF;
  
  	if (dyn_idx != (u8)-1) {
 -		*((u8 *)&data->buf[data->state->tail_ctx.curoff & SCRATCH_SIZE_HALF]) = dyn_idx;
@@ -62,12 +62,14 @@ index 1a15376..2265725 100644
  		len_dyn = sizeof(u8);
  		data->state->tail_ctx.curoff += len_dyn;
  		data->state->tail_ctx.len += len_dyn;
- 	}
+@@ -741,6 +743,7 @@ static __always_inline int __bpf_val_to_ring(struct filler_data *data,
  
-+	curoff_bounded = data->state->tail_ctx.curoff & SCRATCH_SIZE_HALF;
  	if (data->state->tail_ctx.curoff > SCRATCH_SIZE_HALF)
  		return PPM_FAILURE_BUFFER_FULL;
++	curoff_bounded = data->state->tail_ctx.curoff & SCRATCH_SIZE_HALF;
  
+ 	switch (type) {
+ 	case PT_CHARBUF:
 @@ -748,7 +751,7 @@ static __always_inline int __bpf_val_to_ring(struct filler_data *data,
  		if (!data->curarg_already_on_frame) {
  			int res;
