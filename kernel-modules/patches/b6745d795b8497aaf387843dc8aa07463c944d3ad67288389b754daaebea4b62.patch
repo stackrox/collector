@@ -173,7 +173,7 @@ index 1a15376..c094cdf 100644
  		break;
  	default: {
 diff --git a/bpf/fillers.h b/bpf/fillers.h
-index b687e28..ada4676 100644
+index b687e28..f39e79b 100644
 --- a/bpf/fillers.h
 +++ b/bpf/fillers.h
 @@ -20,6 +20,7 @@ or GPL2.txt for full copies of the license.
@@ -266,7 +266,7 @@ index b687e28..ada4676 100644
  #endif
  	char *cgroup_path[MAX_CGROUP_PATHS];
 -	int off = *len;
-+	unsigned int off = (unsigned int)*len;
++	volatile unsigned int off = (unsigned int)*len;
  
  	if (off > SCRATCH_SIZE_HALF)
  		return PPM_FAILURE_BUFFER_FULL;
