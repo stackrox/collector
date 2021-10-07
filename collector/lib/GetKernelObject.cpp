@@ -115,7 +115,7 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
     return false;
   }
 
-  downloader.IPResolve(FileDownloader::IPv4);
+  downloader.IPResolve(FileDownloader::ANY);
   downloader.SetRetries(30, 1, 60);
   downloader.SetVerboseMode(verbose);
   downloader.OutputFile(compressed_module_path);
@@ -132,7 +132,7 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
   }
 
   downloader.ResetCURL();
-  downloader.IPResolve(FileDownloader::IPv4);
+  downloader.IPResolve(FileDownloader::ANY);
   downloader.SetRetries(30, 1, 60);
   downloader.SetVerboseMode(verbose);
   downloader.OutputFile(compressed_module_path);
