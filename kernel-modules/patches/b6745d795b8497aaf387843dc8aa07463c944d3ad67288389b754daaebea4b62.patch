@@ -173,7 +173,7 @@ index 1a15376..c094cdf 100644
  		break;
  	default: {
 diff --git a/bpf/fillers.h b/bpf/fillers.h
-index b687e28..69669d4 100644
+index b687e28..ada4676 100644
 --- a/bpf/fillers.h
 +++ b/bpf/fillers.h
 @@ -20,6 +20,7 @@ or GPL2.txt for full copies of the license.
@@ -261,75 +261,24 @@ index b687e28..69669d4 100644
  						   to_read & SCRATCH_SIZE_HALF,
  						   iov[j].iov_base))
  #endif
-@@ -1538,11 +1545,13 @@ static __always_inline int __bpf_append_cgroup(struct css_set *cgroups,
+@@ -1537,7 +1544,7 @@ static __always_inline int __bpf_append_cgroup(struct css_set *cgroups,
+ 	struct cgroup_name *cn = _READ(cgroup->name);
  #endif
  	char *cgroup_path[MAX_CGROUP_PATHS];
- 	int off = *len;
-+	unsigned int off_bounded;
+-	int off = *len;
++	unsigned int off = (unsigned int)*len;
  
-+	off_bounded = off & SCRATCH_SIZE_HALF;
  	if (off > SCRATCH_SIZE_HALF)
  		return PPM_FAILURE_BUFFER_FULL;
+@@ -1609,7 +1616,7 @@ static __always_inline int __bpf_append_cgroup(struct css_set *cgroups,
  
--	int res = bpf_probe_read_str(&buf[off & SCRATCH_SIZE_HALF],
-+	int res = bpf_probe_read_str(&buf[off_bounded],
- 				     SCRATCH_SIZE_HALF,
- 				     subsys_name);
- 	if (res <= 0)
-@@ -1550,11 +1559,13 @@ static __always_inline int __bpf_append_cgroup(struct css_set *cgroups,
- 
- 	off += res - 1;
- 
-+	off_bounded = off & SCRATCH_SIZE_HALF;
- 	if (off > SCRATCH_SIZE_HALF)
- 		return PPM_FAILURE_BUFFER_FULL;
- 
--	buf[off & SCRATCH_SIZE_HALF] = '=';
-+	buf[off_bounded] = '=';
+ 	buf[off & SCRATCH_SIZE_HALF] = 0;
  	++off;
-+	off_bounded = off & SCRATCH_SIZE_HALF;
+-	*len = off;
++	*len = (int)off;
  
- 	#pragma unroll MAX_CGROUP_PATHS
- 	for (int k = 0; k < MAX_CGROUP_PATHS; ++k) {
-@@ -1582,14 +1593,15 @@ static __always_inline int __bpf_append_cgroup(struct css_set *cgroups,
- 			if (off > SCRATCH_SIZE_HALF)
- 				return PPM_FAILURE_BUFFER_FULL;
- 
--			buf[off & SCRATCH_SIZE_HALF] = '/';
-+			buf[off_bounded] = '/';
- 			++off;
-+			off_bounded = off & SCRATCH_SIZE_HALF;
- 		}
- 
- 		if (off > SCRATCH_SIZE_HALF)
- 			return PPM_FAILURE_BUFFER_FULL;
- 
--		res = bpf_probe_read_str(&buf[off & SCRATCH_SIZE_HALF],
-+		res = bpf_probe_read_str(&buf[off_bounded],
- 						SCRATCH_SIZE_HALF,
- 						cgroup_path[k]);
- 		if (res <= 0)
-@@ -1597,17 +1609,18 @@ static __always_inline int __bpf_append_cgroup(struct css_set *cgroups,
- 
- 		if (res > 1) {
- 			if (res == sizeof("/") &&
--			    buf[off & SCRATCH_SIZE_HALF] == '/')
-+			    buf[off_bounded] == '/')
- 				--res;
- 
- 			off += res - 1;
-+			off_bounded = off & SCRATCH_SIZE_HALF;
- 		}
- 	}
- 
- 	if (off > SCRATCH_SIZE_HALF)
- 		return PPM_FAILURE_BUFFER_FULL;
- 
--	buf[off & SCRATCH_SIZE_HALF] = 0;
-+	buf[off_bounded] = 0;
- 	++off;
- 	*len = off;
- 
+ 	return PPM_SUCCESS;
+ }
 diff --git a/bpf/ring_helpers.h b/bpf/ring_helpers.h
 index a296af7..90850bc 100644
 --- a/bpf/ring_helpers.h
