@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+version=$1
+distro=$2
+kernel_version=$3
+kernel_major=$4
+custom_build_flavors_all_file=${5:-~/kobuild-tmp/custom-flavors/all}
+
 compareVersions() {
   kernel_version_other=$1
   kernel_major_other=$2
@@ -56,11 +62,6 @@ if (( $# < 4 )); then
   exit 2
 fi
 
-version=$1
-distro=$2
-kernel_version=$3
-kernel_major=$4
-custom_build_flavors_all_file=${5:-~/kobuild-tmp/custom-flavors/all}
 
 flavor="default"
 # Ubuntu 20.04 backport
