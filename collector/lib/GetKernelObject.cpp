@@ -57,7 +57,13 @@ bool DownloadKernelObjectFromURL(FileDownloader& downloader, const std::string& 
   CLOG(DEBUG) << "Attempting to download kernel object from " << url;
 
   if (!downloader.SetURL(url)) return false;
-  if (!downloader.Download()) return false;
+  downloader.IPResolve(FileDownloader::ANY);
+  if (!downloader.Download()) {
+    downloader.IPResolve(FileDownloader::IPv4);
+    if (!downloader.Download()) {
+      return false;
+    }
+  }
 
   CLOG(DEBUG) << "Downloaded kernel object from " << url;
 
@@ -115,7 +121,6 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
     return false;
   }
 
-  downloader.IPResolve(FileDownloader::ANY);
   downloader.SetRetries(30, 1, 60);
   downloader.SetVerboseMode(verbose);
   downloader.OutputFile(compressed_module_path);
@@ -132,7 +137,6 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
   }
 
   downloader.ResetCURL();
-  downloader.IPResolve(FileDownloader::ANY);
   downloader.SetRetries(30, 1, 60);
   downloader.SetVerboseMode(verbose);
   downloader.OutputFile(compressed_module_path);

@@ -21,6 +21,10 @@ function get_os_release_value() {
     fi
 }
 
+function curl_ipv4_fallback() {
+  curl "$@" || curl -4 "$@"
+}
+
 function get_distro() {
     local distro
     distro=$(get_os_release_value 'PRETTY_NAME')
@@ -88,7 +92,7 @@ function download_kernel_object() {
 
         local url="https://${server_hostname}:${server_port}/kernel-objects/${module_version}/${KERNEL_OBJECT}.gz"
 
-        curl "${curl_opts[@]}" "${connect_to_opts[@]}" \
+        curl_ipv4_fallback "${curl_opts[@]}" "${connect_to_opts[@]}" \
             --cacert /run/secrets/stackrox.io/certs/ca.pem \
             --cert /run/secrets/stackrox.io/certs/cert.pem \
             --key /run/secrets/stackrox.io/certs/key.pem \
@@ -100,7 +104,7 @@ function download_kernel_object() {
     fi
     if [[ ! -f "${filename_gz}" && -n "${MODULE_URL}" ]]; then
         local url="${MODULE_URL}/${KERNEL_OBJECT}.gz"
-        curl "${curl_opts[@]}" "$url"
+        curl_ipv4_fallback "${curl_opts[@]}" "$url"
         if [[ $? -ne 0 ]]; then
             rm -f "${filename_gz}" 2>/dev/null
             log "Unable to download from ${url}"
