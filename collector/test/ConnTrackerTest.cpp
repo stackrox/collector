@@ -366,7 +366,7 @@ TEST(ConnTrackerTest, TestComputeDeltaEmptyOldState) {
   int64_t now = NowMicros();
 
   ConnMap orig_state = {{conn1, ConnStatus(now, true)},
-                      {conn2, ConnStatus(now, true)}};
+                        {conn2, ConnStatus(now, true)}};
   ConnMap state1 = orig_state;
   ConnMap state2;
 
@@ -385,7 +385,7 @@ TEST(ConnTrackerTest, TestComputeDeltaSameState) {
   int64_t now = NowMicros();
 
   ConnMap orig_state = {{conn1, ConnStatus(now, true)},
-                      {conn2, ConnStatus(now, true)}};
+                        {conn2, ConnStatus(now, true)}};
   ConnMap state1 = orig_state;
   ConnMap state2 = orig_state;
 
@@ -405,7 +405,7 @@ TEST(ConnTrackerTest, TestComputeDeltaRemoveConnection) {
 
   ConnMap state1 = {{conn2, ConnStatus(now, true)}};
   ConnMap state2 = {{conn1, ConnStatus(now, true)},
-                      {conn2, ConnStatus(now, true)}};
+                    {conn2, ConnStatus(now, true)}};
 
   // Removing a connection from the active state should have it appear as inactive in the delta (with the previous
   // timestamp).
@@ -424,7 +424,7 @@ TEST(ConnTrackerTest, TestComputeDeltaChangeTimeStamp) {
   int64_t now2 = 1000;
 
   ConnMap state1 = {{conn1, ConnStatus(now, true)},
-                  {conn2, ConnStatus(now, true)}};
+                    {conn2, ConnStatus(now, true)}};
   ConnMap state2 = state1;
 
   state1[conn1] = ConnStatus(now2, true);
@@ -444,7 +444,7 @@ TEST(ConnTrackerTest, TestComputeDeltaSetToInactive) {
   int64_t now2 = 1000;
 
   ConnMap state1 = {{conn1, ConnStatus(now, true)},
-                  {conn2, ConnStatus(now, true)}};
+                    {conn2, ConnStatus(now, true)}};
   ConnMap state2 = state1;
 
   state1[conn1] = ConnStatus(now2, false);
@@ -464,7 +464,7 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveRemovedIsntInDelta) {
   int64_t now = 0;
 
   ConnMap state1 = {{conn1, ConnStatus(now, true)},
-                  {conn2, ConnStatus(now, true)}};
+                    {conn2, ConnStatus(now, true)}};
   ConnMap state2 = state1;
 
   state2[conn1].SetActive(false);
@@ -485,7 +485,7 @@ TEST(ConnTrackerTest, TestApplyAfterglow) {
   int64_t afterglow_period = 1000;
 
   ConnMap original_state = {{conn1, ConnStatus(now, true)},
-                  {conn2, ConnStatus(now, true)}};
+                            {conn2, ConnStatus(now, true)}};
   ConnMap state = original_state;
 
   CT::ApplyAfterglow(state, now, afterglow_period);
@@ -506,7 +506,7 @@ TEST(ConnTrackerTest, TestApplyAfterglowActivateBeforeAfterglowPeriod) {
   ConnMap original_state = {{conn1, ConnStatus(now, true)},
                             {conn2, ConnStatus(now, false)}};
   ConnMap expected_state = {{conn1, ConnStatus(now, true)},
-                          {conn2, ConnStatus(now, true)}};
+                            {conn2, ConnStatus(now, true)}};
   ConnMap state = original_state;
 
   CT::ApplyAfterglow(state, now2, afterglow_period);
@@ -561,17 +561,13 @@ TEST(ConnTrackerTest, TestComputeDeltaWithAfterglowExpired) {
   int64_t now = 0;
   int64_t now2 = 400000000;
 
-
   ConnMap state1 = {{conn1, ConnStatus(now, true)},
                     {conn2, ConnStatus(now, false)}};
   ConnMap state2 = {{conn1, ConnStatus(now, true)},
                     {conn2, ConnStatus(now, true)}};
 
-
-
   CT::ComputeDeltaWithAfterglow(state1, &state2, now2);
   EXPECT_THAT(state2, UnorderedElementsAre(std::make_pair(conn2, ConnStatus(now, false))));
-
 }
 
 }  // namespace

@@ -167,9 +167,9 @@ void ConnectionTracker::ApplyAfterglow(UnorderedMap<T, ConnStatus>& state, int64
   //Sets inactive connections that were active within the afterglow period to active. Purpose is not to report
   //connections that are frequently opened and closed at every update.
   for (auto& conn : state) {
-      if (now - conn.second.LastActiveTime() < afterglow_period) {
-          conn.second.SetActive(true);
-      }
+    if (now - conn.second.LastActiveTime() < afterglow_period) {
+      conn.second.SetActive(true);
+    }
   }
 }
 
