@@ -14,10 +14,10 @@ do
   expected_builder="$(echo $line | awk '{print $3}')"
   kernel_version="$(echo $version | cut -d. -f1)"
   major_version="$(echo $version | cut -d. -f2)"
-  builder="$($script $version $distro $kernel_version $major_version $custom_build_flavors_all_file)"
+  builder="$("$script" "$version" "$distro" "$kernel_version" "$major_version" "$custom_build_flavors_all_file")"
 
   if [[ $builder != $expected_builder ]]; then
-    num_failures=$(expr $num_failures + 1)
+    num_failures=$((num_failures + 1))
     echo 
     echo "##############"
     echo "ERROR: Expected builder does not match builder"
