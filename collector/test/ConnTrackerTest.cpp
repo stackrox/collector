@@ -356,7 +356,7 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
                           std::make_pair(conn5_normalized, ConnStatus(now, true))));
 }
 
-TEST(ConnTrackerTest, TestComputeDelta) {
+TEST(ConnTrackerTest, TestComputeDeltaEmptyOldState) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -365,44 +365,213 @@ TEST(ConnTrackerTest, TestComputeDelta) {
 
   int64_t now = NowMicros();
 
-  ConnMap orig_state = {{conn1, ConnStatus(now, true)}, {conn2, ConnStatus(now, true)}};
+  ConnMap orig_state = {{conn1, ConnStatus(now, true)},
+                      {conn2, ConnStatus(now, true)}};
   ConnMap state1 = orig_state;
   ConnMap state2;
 
   // ComputeDelta on an empty old state should just copy over the entire state.
   CT::ComputeDelta(state1, &state2);
   EXPECT_EQ(state1, state2);
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaSameState) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+
+  int64_t now = NowMicros();
+
+  ConnMap orig_state = {{conn1, ConnStatus(now, true)},
+                      {conn2, ConnStatus(now, true)}};
+  ConnMap state1 = orig_state;
+  ConnMap state2 = orig_state;
 
   // ComputeDelta on two equal states should result in an empty delta.
   CT::ComputeDelta(state1, &state2);
   EXPECT_THAT(state2, IsEmpty());
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaRemoveConnection) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+
+  int64_t now = NowMicros();
+
+  ConnMap state1 = {{conn2, ConnStatus(now, true)}};
+  ConnMap state2 = {{conn1, ConnStatus(now, true)},
+                      {conn2, ConnStatus(now, true)}};
 
   // Removing a connection from the active state should have it appear as inactive in the delta (with the previous
   // timestamp).
-  state2 = state1;
-  state1.erase(conn1);
   CT::ComputeDelta(state1, &state2);
   EXPECT_THAT(state2, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now, false))));
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaChangeTimeStamp) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+
+  int64_t now = 0;
+  int64_t now2 = 1000;
+
+  ConnMap state1 = {{conn1, ConnStatus(now, true)},
+                  {conn2, ConnStatus(now, true)}};
+  ConnMap state2 = state1;
+
+  state1[conn1] = ConnStatus(now2, true);
 
   // Just updating the timestamp of an active connection should not make it appear in the delta.
-  state1 = state2 = orig_state;
-  state1[conn1] = ConnStatus(NowMicros(), true);
   CT::ComputeDelta(state1, &state2);
   EXPECT_THAT(state2, IsEmpty());
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaSetToInactive) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t now = 0;
+  int64_t now2 = 1000;
+
+  ConnMap state1 = {{conn1, ConnStatus(now, true)},
+                  {conn2, ConnStatus(now, true)}};
+  ConnMap state2 = state1;
+
+  state1[conn1] = ConnStatus(now2, false);
 
   // Marking a connection as inactive should make it appear as inactive in the delta.
-  state1 = state2 = orig_state;
-  int64_t now2 = NowMicros();
-  state1[conn1] = ConnStatus(now2, false);
   CT::ComputeDelta(state1, &state2);
   EXPECT_THAT(state2, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now2, false))));
+}
 
+TEST(ConnTrackerTest, TestComputeDeltaInactiveRemovedIsntInDelta) {
   // A connection that was already inactive no longer showing up at all in the new state should not appear in the delta.
-  state1 = state2 = orig_state;
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t now = 0;
+
+  ConnMap state1 = {{conn1, ConnStatus(now, true)},
+                  {conn2, ConnStatus(now, true)}};
+  ConnMap state2 = state1;
+
   state2[conn1].SetActive(false);
   state1.erase(conn1);
+
   CT::ComputeDelta(state1, &state2);
   EXPECT_THAT(state2, IsEmpty());
+}
+
+TEST(ConnTrackerTest, TestApplyAfterglow) {
+  //Afterglow should not do anything as both connections are active
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t now = 0;
+  int64_t afterglow_period = 1000;
+
+  ConnMap original_state = {{conn1, ConnStatus(now, true)},
+                  {conn2, ConnStatus(now, true)}};
+  ConnMap state = original_state;
+
+  CT::ApplyAfterglow(state, now, afterglow_period);
+  EXPECT_THAT(state, original_state);
+}
+
+TEST(ConnTrackerTest, TestApplyAfterglowActivateBeforeAfterglowPeriod) {
+  //Afterglow should flip the inactive connection to be active, since it was recently active
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t now = 0;
+  int64_t now2 = 500;
+  int64_t afterglow_period = 1000;
+
+  ConnMap original_state = {{conn1, ConnStatus(now, true)},
+                            {conn2, ConnStatus(now, false)}};
+  ConnMap expected_state = {{conn1, ConnStatus(now, true)},
+                          {conn2, ConnStatus(now, true)}};
+  ConnMap state = original_state;
+
+  CT::ApplyAfterglow(state, now2, afterglow_period);
+  EXPECT_THAT(state, expected_state);
+}
+
+TEST(ConnTrackerTest, TestApplyAfterglowDontActivateAfterAfterglowPeriod) {
+  //Afterglow should not flip the inactive connection to be active, because the afterglow period is expired
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t now = 0;
+  int64_t now2 = 5000;
+  int64_t afterglow_period = 1000;
+
+  ConnMap original_state = {{conn1, ConnStatus(now, true)},
+                            {conn2, ConnStatus(now, false)}};
+  ConnMap state = original_state;
+
+  CT::ApplyAfterglow(state, now2, afterglow_period);
+  EXPECT_THAT(state, original_state);
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaWithAfterglow) {
+  //Afterglow flips the inactive connection to active, so it does not show up in delta
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t now = 0;
+
+  ConnMap state1 = {{conn1, ConnStatus(now, true)},
+                    {conn2, ConnStatus(now, false)}};
+  ConnMap state2 = {{conn1, ConnStatus(now, true)},
+                    {conn2, ConnStatus(now, true)}};
+
+  CT::ComputeDeltaWithAfterglow(state1, &state2, now);
+  EXPECT_THAT(state2, IsEmpty());
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaWithAfterglowExpired) {
+  //The inactive connection is outside of the afterglow period so it is not flipped to be in the active state
+  //so it appears in delta
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t now = 0;
+  int64_t now2 = 400000000;
+
+
+  ConnMap state1 = {{conn1, ConnStatus(now, true)},
+                    {conn2, ConnStatus(now, false)}};
+  ConnMap state2 = {{conn1, ConnStatus(now, true)},
+                    {conn2, ConnStatus(now, true)}};
+
+
+
+  CT::ComputeDeltaWithAfterglow(state1, &state2, now2);
+  EXPECT_THAT(state2, UnorderedElementsAre(std::make_pair(conn2, ConnStatus(now, false))));
+
 }
 
 }  // namespace

@@ -98,6 +98,10 @@ class ConnectionTracker {
   ConnMap FetchConnState(bool normalize = false, bool clear_inactive = true);
   ContainerEndpointMap FetchEndpointState(bool normalize = false, bool clear_inactive = true);
 
+  template <typename T>
+  static void ApplyAfterglow(UnorderedMap<T, ConnStatus>& state, int64_t now, int64_t afterglow_period);
+  template <typename T>
+  static void ComputeDeltaWithAfterglow(UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state, int64_t now, int64_t afterglow_period = 200000000);
   // ComputeDelta computes a diff between new_state and *old_state, and stores the diff in *old_state.
   template <typename T>
   static void ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state);
@@ -158,6 +162,26 @@ class ConnectionTracker {
 };
 
 /* static */
+template <typename T>
+void ConnectionTracker::ApplyAfterglow(UnorderedMap<T, ConnStatus>& state, int64_t now, int64_t afterglow_period) {
+  //Sets inactive connections that were active within the afterglow period to active. Purpose is not to report
+  //connections that are frequently opened and closed at every update.
+  for (auto& conn : state) {
+      if (now - conn.second.LastActiveTime() < afterglow_period) {
+          conn.second.SetActive(true);
+      }
+  }
+}
+
+template <typename T>
+void ConnectionTracker::ComputeDeltaWithAfterglow(UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state, int64_t now, int64_t afterglow_period) {
+  //First inactive connections that were active withing the afterglow period are set to active
+  //then the change or delta of the connections are found. The purpose is that connections that are frequently opened
+  //and closed should not be reported at every update.
+  ApplyAfterglow(new_state, now, afterglow_period);
+  ComputeDelta(new_state, old_state);
+}
+
 template <typename T>
 void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state) {
   // Insert all objects from the new state, if anything changed about them.
