@@ -75,6 +75,7 @@ class ConnStatus {
   explicit ConnStatus(uint64_t data) : data_(data) {}
 
   uint64_t data_;
+  const int64_t AFTERGLOW_PERIOD_DEFAULT = 200000000 //20 Seconds
 };
 
 using ConnMap = UnorderedMap<Connection, ConnStatus>;
@@ -101,7 +102,7 @@ class ConnectionTracker {
   template <typename T>
   static void ApplyAfterglow(UnorderedMap<T, ConnStatus>& state, int64_t now, int64_t afterglow_period);
   template <typename T>
-  static void ComputeDeltaWithAfterglow(UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state, int64_t now, int64_t afterglow_period = 200000000);
+  static void ComputeDeltaWithAfterglow(UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state, int64_t now, int64_t afterglow_period = AFTERGLOW_PERIOD_DEFAULT);
   // ComputeDelta computes a diff between new_state and *old_state, and stores the diff in *old_state.
   template <typename T>
   static void ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state);
@@ -175,7 +176,7 @@ void ConnectionTracker::ApplyAfterglow(UnorderedMap<T, ConnStatus>& state, int64
 
 template <typename T>
 void ConnectionTracker::ComputeDeltaWithAfterglow(UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state, int64_t now, int64_t afterglow_period) {
-  //First inactive connections that were active withing the afterglow period are set to active
+  //First inactive connections that were active within the afterglow period are set to active
   //then the change or delta of the connections are found. The purpose is that connections that are frequently opened
   //and closed should not be reported at every update.
   ApplyAfterglow(new_state, now, afterglow_period);
