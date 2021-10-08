@@ -48,7 +48,7 @@ getFlavorFor5_13_plus() {
     flavor_local="impish"
   elif [[ "$version" =~ ^5.14.0-(60|61).fc ]]; then
     flavor_local="impish"
-  elif [[ "$version" =~ ^5.14.[0-9]-300.fc35.x86_64 ]]; then
+  elif [[ "$version" =~ ^5.14.[0-9]+-300.fc35.x86_64 ]]; then
     flavor_local="impish"
   else
     flavor_local="hirsute"
