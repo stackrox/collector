@@ -75,7 +75,6 @@ class ConnStatus {
   explicit ConnStatus(uint64_t data) : data_(data) {}
 
   uint64_t data_;
-  const int64_t AFTERGLOW_PERIOD_DEFAULT = 200000000 //20 Seconds
 };
 
 using ConnMap = UnorderedMap<Connection, ConnStatus>;
@@ -85,6 +84,7 @@ class CollectorStats;
 
 class ConnectionTracker {
  public:
+  static const int64_t AFTERGLOW_PERIOD_DEFAULT = 200000000;  //20 Seconds
   void UpdateConnection(const Connection& conn, int64_t timestamp, bool added);
   void AddConnection(const Connection& conn, int64_t timestamp) {
     UpdateConnection(conn, timestamp, true);
