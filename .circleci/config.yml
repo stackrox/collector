@@ -1086,6 +1086,45 @@ jobs:
             fi
             gsutil ls "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/"
 
+  dockerized-kdrivers:
+    <<: *defaultMachine
+
+    steps:
+    - initcommand
+    - gcloud-init
+    - docker-login-push
+    - quay-login
+
+    - run:
+        name: Create docker context
+        command: |
+          mkdir -p ~/workspace/go/src/github.com/stackrox/bundles
+
+          ## Get the bundle for the running machine
+          gsutil -m cp gs://stackrox-kernel-bundles/bundle-$(uname -r).tgz ~/workspace/go/src/github.com/stackrox/bundles
+
+    - run:
+        name: Build probes
+        command: |
+          DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
+            --build-arg BRANCH="$CIRCLE_BRANCH" \
+            --build-arg USER="${REDHAT_USERNAME}" \
+            --build-arg PASS="${REDHAT_PASSWORD}" \
+            --tag kernel-builder \
+            -f ~/workspace/go/src/github.com/stackrox/collector/kernel-modules/dockerized/Dockerfile \
+            ~/workspace/go/src/github.com/stackrox
+
+    - run:
+        name: Create test image
+        command: |
+            DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
+                --tag "stackrox/collector:${COLLECTOR_TAG}-dockerized" \
+                ~/workspace/go/src/github.com/stackrox/collector/kernel-modules/dockerized/tests
+
+    - run:
+        name: Push test image
+        command: |
+            docker push "stackrox/collector:${COLLECTOR_TAG}-dockerized"
 
   integration-test-local:
     parameters:
@@ -1095,6 +1134,9 @@ jobs:
       use-ubi:
         type: boolean
         default: false
+      dockerized:
+        type: string
+        default: "false"
 
     <<: *defaultMachine
     working_directory: ~/workspace
@@ -1113,7 +1155,12 @@ jobs:
           export COLLECTION_METHOD=kernel_module
           export VM_CONFIG="circle_local_<< parameters.vm-config >>"
           export COLLECTOR_REPO="stackrox/collector<<# parameters.use-ubi>>-test-cpaas<</ parameters.use-ubi>>"
-          export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}"
+          if [[ << parameters.dockerized >> == "true" ]]; then
+            export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}-dockerized"
+          else
+            export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}"
+          fi
+          echo "${COLLECTOR_IMAGE}"
           export USE_VALGRIND=$VALGRIND_INTEGRATION_TESTS
           make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
@@ -1618,260 +1665,275 @@ workflows:
         <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - builder
-    - prepare-kernels:
-        <<: *runOnAllTagsWithDockerIOPullCtx
-        requires:
-        - lint
-    - kernels:
-        <<: *runOnAllTagsWithDockerIOPushCtx
-        requires:
-        - prepare-kernels
-    - join-modules:
-        <<: *runOnAllTagsWithDockerIOPullCtx
-        requires:
-        - kernels
-    - upload-modules:
-        <<: *runOnAllTagsWithDockerIOPullCtx
-        requires:
-        - join-modules
-    - kernel-module-build-failures-check:
-        <<: *runOnAllTagsWithDockerIOPullCtx
-        requires:
-        - kernels
-    - images:
-        <<: *runOnAllTagsWithDockerIOPushCtx
-        requires:
-        - collector
-        - kernels
-        - join-modules
-    - ubi-image:
+    - dockerized-kdrivers:
         <<: *runOnAllTags
         context:
           - docker-io-push
-          - quay-cgorman1-readwrite
+          - quay-cgorman1-readonly
           - redhat-developer-account-login
         requires:
-        - initjob
+        - lint
+    # - prepare-kernels:
+    #     <<: *runOnAllTagsWithDockerIOPullCtx
+    #     requires:
+    #     - lint
+    # - kernels:
+    #     <<: *runOnAllTagsWithDockerIOPushCtx
+    #     requires:
+    #     - prepare-kernels
+    # - join-modules:
+    #     <<: *runOnAllTagsWithDockerIOPullCtx
+    #     requires:
+    #     - kernels
+    # - upload-modules:
+    #     <<: *runOnAllTagsWithDockerIOPullCtx
+    #     requires:
+    #     - join-modules
+    # - kernel-module-build-failures-check:
+    #     <<: *runOnAllTagsWithDockerIOPullCtx
+    #     requires:
+    #     - kernels
+    # - images:
+    #     <<: *runOnAllTagsWithDockerIOPushCtx
+    #     requires:
+    #     - collector
+    #     - kernels
+    #     - join-modules
+    # - ubi-image:
+    #     <<: *runOnAllTags
+    #     context:
+    #       - docker-io-push
+    #       - quay-cgorman1-readwrite
+    #       - redhat-developer-account-login
+    #     requires:
+    #     - initjob
+    # - integration-test-local:
+    #     <<: *runOnAllTagsWithDockerIOPushCtx
+    #     name: integration-test-local
+    #     vm-config: rhel
+    #     requires:
+    #     - images
+    #     - upload-modules
     - integration-test-local:
         <<: *runOnAllTagsWithDockerIOPushCtx
-        name: integration-test-local
+        name: integration-test-local-dockerized
         vm-config: rhel
         requires:
-        - images
-        - upload-modules
-    - integration-test-local:
-        <<: *runOnAllTagsWithDockerIOPushCtx
-        name: integration-test-local-ubi
-        vm-config: rhel
-        use-ubi: true
-        requires:
-        - ubi-image
-        - upload-modules
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-cos-stable
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-stable
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-cos-beta
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-beta
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-cos-dev
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-dev
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-cos-81-lts
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-81-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-cos-85-lts
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-85-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-cos-89-lts
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-89-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-rhel-7
-        collection_method: ebpf
-        vm_type: rhel
-        image_family: rhel-7
-    # TODO(rc) Enabled but bootstrap.sh forces fallback to kernel-module (ROX-3377)
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-rhel-7
-        collection_method: module
-        vm_type: rhel
-        image_family: rhel-7
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-rhel-8
-        collection_method: ebpf
-        vm_type: rhel
-        image_family: rhel-8
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-rhel-8
-        collection_method: module
-        vm_type: rhel
-        image_family: rhel-8
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-ubuntu-1804-lts
-        collection_method: ebpf
-        vm_type: ubuntu-os
-        image_family: ubuntu-1804-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-ubuntu-1604-lts-esm
-        collection_method: module
-        vm_type: ubuntu-os
-        image_family: ubuntu-1604-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-ubuntu-1604-lts-esm
-        collection_method: ebpf
-        vm_type: ubuntu-os
-        image_family: ubuntu-1604-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-ubuntu-1804-lts
-        collection_method: module
-        vm_type: ubuntu-os
-        image_family: ubuntu-1804-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-ubuntu-2004-lts
-        collection_method: ebpf
-        vm_type: ubuntu-os
-        image_family: ubuntu-2004-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-ubuntu-2004-lts
-        collection_method: module
-        vm_type: ubuntu-os
-        image_family: ubuntu-2004-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-ubuntu-2104
-        collection_method: ebpf
-        vm_type: ubuntu-os
-        image_family: ubuntu-2104
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-ubuntu-2104
-        collection_method: module
-        vm_type: ubuntu-os
-        image_family: ubuntu-2104
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-sles-15
-        collection_method: ebpf
-        vm_type: suse
-        image_family: sles-15
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-sles-15
-        collection_method: module
-        vm_type: suse
-        image_family: sles-15
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-sles-12
-        collection_method: module
-        vm_type: suse
-        image_family: sles-12
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-sles-15-sp2-sap
-        collection_method: ebpf
-        vm_type: suse-sap
-        image_family: sles-15-sp2-sap
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-sles-15-sp2-sap
-        collection_method: module
-        vm_type: suse-sap
-        image_family: sles-15-sp2-sap
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-flatcar-stable
-        collection_method: module
-        vm_type: flatcar
-        image_family: flatcar-stable
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-flatcar-stable
-        collection_method: ebpf
-        vm_type: flatcar
-        image_family: flatcar-stable
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-fedora-coreos-stable
-        collection_method: module
-        vm_type: fedora-coreos
-        image_family: fedora-coreos-stable
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-fedora-coreos-stable
-        collection_method: ebpf
-        vm_type: fedora-coreos
-        image_family: fedora-coreos-stable
-    - integration-test-data:
-        <<: *runOnAllTagsWithDockerIOPullCtx
-        requires:
-        - test-ebpf-cos-stable
-        - test-ebpf-cos-beta
-        - test-ebpf-cos-dev
-        - test-ebpf-cos-81-lts
-        - test-ebpf-cos-85-lts
-        - test-ebpf-cos-89-lts
-        - test-module-rhel-7
-        - test-ebpf-rhel-7
-        - test-module-rhel-8
-        - test-ebpf-rhel-8
-        - test-module-ubuntu-1604-lts-esm
-        - test-ebpf-ubuntu-1604-lts-esm
-        - test-module-ubuntu-1804-lts
-        - test-ebpf-ubuntu-1804-lts
-        - test-module-ubuntu-2004-lts
-        - test-ebpf-ubuntu-2004-lts
-        - test-module-ubuntu-2104
-        - test-ebpf-ubuntu-2104
-        - test-ebpf-sles-15
-        - test-module-sles-15
-        - test-module-sles-12
-        - test-ebpf-sles-15-sp2-sap
-        - test-module-sles-15-sp2-sap
-        - test-ebpf-flatcar-stable
-        - test-module-flatcar-stable
-        - test-ebpf-fedora-coreos-stable
-        - test-module-fedora-coreos-stable
-    - reload-released-images:
-        <<: *runOnAllTags
-        context:
-          - docker-io-and-stackrox-io-push
-          - quay-cgorman1-readwrite
-        requires:
-          - images
-    - update-support-packages:
-        <<: *runOnAllTags
-        context:
-          - docker-io-and-stackrox-io-push
-          - quay-cgorman1-readonly
-          - collector-support
-        requires:
-          - upload-modules
+        - dockerized-kdrivers
+        dockerized: "true"
+    # - integration-test-local:
+    #     <<: *runOnAllTagsWithDockerIOPushCtx
+    #     name: integration-test-local-ubi
+    #     vm-config: rhel
+    #     use-ubi: true
+    #     requires:
+    #     - ubi-image
+    #     - upload-modules
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-ebpf-cos-stable
+    #     collection_method: ebpf
+    #     vm_type: cos
+    #     image_family: cos-stable
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-ebpf-cos-beta
+    #     collection_method: ebpf
+    #     vm_type: cos
+    #     image_family: cos-beta
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-ebpf-cos-dev
+    #     collection_method: ebpf
+    #     vm_type: cos
+    #     image_family: cos-dev
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-ebpf-cos-81-lts
+    #     collection_method: ebpf
+    #     vm_type: cos
+    #     image_family: cos-81-lts
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-ebpf-cos-85-lts
+    #     collection_method: ebpf
+    #     vm_type: cos
+    #     image_family: cos-85-lts
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-ebpf-cos-89-lts
+    #     collection_method: ebpf
+    #     vm_type: cos
+    #     image_family: cos-89-lts
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-ebpf-rhel-7
+    #     collection_method: ebpf
+    #     vm_type: rhel
+    #     image_family: rhel-7
+    # # TODO(rc) Enabled but bootstrap.sh forces fallback to kernel-module (ROX-3377)
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-module-rhel-7
+    #     collection_method: module
+    #     vm_type: rhel
+    #     image_family: rhel-7
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-ebpf-rhel-8
+    #     collection_method: ebpf
+    #     vm_type: rhel
+    #     image_family: rhel-8
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-module-rhel-8
+    #     collection_method: module
+    #     vm_type: rhel
+    #     image_family: rhel-8
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-ebpf-ubuntu-1804-lts
+    #     collection_method: ebpf
+    #     vm_type: ubuntu-os
+    #     image_family: ubuntu-1804-lts
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-module-ubuntu-1604-lts-esm
+    #     collection_method: module
+    #     vm_type: ubuntu-os
+    #     image_family: ubuntu-1604-lts
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-ebpf-ubuntu-1604-lts-esm
+    #     collection_method: ebpf
+    #     vm_type: ubuntu-os
+    #     image_family: ubuntu-1604-lts
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-module-ubuntu-1804-lts
+    #     collection_method: module
+    #     vm_type: ubuntu-os
+    #     image_family: ubuntu-1804-lts
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-ebpf-ubuntu-2004-lts
+    #     collection_method: ebpf
+    #     vm_type: ubuntu-os
+    #     image_family: ubuntu-2004-lts
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-module-ubuntu-2004-lts
+    #     collection_method: module
+    #     vm_type: ubuntu-os
+    #     image_family: ubuntu-2004-lts
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-ebpf-ubuntu-2104
+    #     collection_method: ebpf
+    #     vm_type: ubuntu-os
+    #     image_family: ubuntu-2104
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-module-ubuntu-2104
+    #     collection_method: module
+    #     vm_type: ubuntu-os
+    #     image_family: ubuntu-2104
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-ebpf-sles-15
+    #     collection_method: ebpf
+    #     vm_type: suse
+    #     image_family: sles-15
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-module-sles-15
+    #     collection_method: module
+    #     vm_type: suse
+    #     image_family: sles-15
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-module-sles-12
+    #     collection_method: module
+    #     vm_type: suse
+    #     image_family: sles-12
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-ebpf-sles-15-sp2-sap
+    #     collection_method: ebpf
+    #     vm_type: suse-sap
+    #     image_family: sles-15-sp2-sap
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-module-sles-15-sp2-sap
+    #     collection_method: module
+    #     vm_type: suse-sap
+    #     image_family: sles-15-sp2-sap
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-module-flatcar-stable
+    #     collection_method: module
+    #     vm_type: flatcar
+    #     image_family: flatcar-stable
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-ebpf-flatcar-stable
+    #     collection_method: ebpf
+    #     vm_type: flatcar
+    #     image_family: flatcar-stable
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-module-fedora-coreos-stable
+    #     collection_method: module
+    #     vm_type: fedora-coreos
+    #     image_family: fedora-coreos-stable
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-ebpf-fedora-coreos-stable
+    #     collection_method: ebpf
+    #     vm_type: fedora-coreos
+    #     image_family: fedora-coreos-stable
+    # - integration-test-data:
+    #     <<: *runOnAllTagsWithDockerIOPullCtx
+    #     requires:
+    #     - test-ebpf-cos-stable
+    #     - test-ebpf-cos-beta
+    #     - test-ebpf-cos-dev
+    #     - test-ebpf-cos-81-lts
+    #     - test-ebpf-cos-85-lts
+    #     - test-ebpf-cos-89-lts
+    #     - test-module-rhel-7
+    #     - test-ebpf-rhel-7
+    #     - test-module-rhel-8
+    #     - test-ebpf-rhel-8
+    #     - test-module-ubuntu-1604-lts-esm
+    #     - test-ebpf-ubuntu-1604-lts-esm
+    #     - test-module-ubuntu-1804-lts
+    #     - test-ebpf-ubuntu-1804-lts
+    #     - test-module-ubuntu-2004-lts
+    #     - test-ebpf-ubuntu-2004-lts
+    #     - test-module-ubuntu-2104
+    #     - test-ebpf-ubuntu-2104
+    #     - test-ebpf-sles-15
+    #     - test-module-sles-15
+    #     - test-module-sles-12
+    #     - test-ebpf-sles-15-sp2-sap
+    #     - test-module-sles-15-sp2-sap
+    #     - test-ebpf-flatcar-stable
+    #     - test-module-flatcar-stable
+    #     - test-ebpf-fedora-coreos-stable
+    #     - test-module-fedora-coreos-stable
+    # - reload-released-images:
+    #     <<: *runOnAllTags
+    #     context:
+    #       - docker-io-and-stackrox-io-push
+    #       - quay-cgorman1-readwrite
+    #     requires:
+    #       - images
+    # - update-support-packages:
+    #     <<: *runOnAllTags
+    #     context:
+    #       - docker-io-and-stackrox-io-push
+    #       - quay-cgorman1-readonly
+    #       - collector-support
+    #     requires:
+    #       - upload-modules
