@@ -226,9 +226,9 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	_, err = s.execContainer("nginx-curl", []string{"curl", fmt.Sprintf("%s:%s", s.serverIP, s.serverPort)})
 	require.NoError(s.T(), err)
 
-	_, err = s.execContainer("nginx-curl", []string{"sh", "-c", `i=0; while [ "$i" -le 50 ]; do echo $i; curl nytimes.com; sleep 1; i=$(( i + 1 )); done`})
+	//_, err = s.execContainer("nginx-curl", []string{"sh", "-c", `i=0; while [ "$i" -le 50 ]; do echo $i; curl nytimes.com; sleep 1; i=$(( i + 1 )); done`})
 	//_, err = s.execContainer("nginx-curl", []string{"sh", "-c", `i=0; while [ "$i" -le 5 ]; do echo $i; i=$(( i + 1 )); done`})
-	require.NoError(s.T(), err)
+	//require.NoError(s.T(), err)
 
 	s.clientIP, err = s.getIPAddress("nginx-curl")
 	require.NoError(s.T(), err)
