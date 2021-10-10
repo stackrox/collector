@@ -66,6 +66,7 @@ image: collector unittest $(MOD_VER_FILE) $(CURDIR)/collector/container/rhel/bun
 .PHONY: integration-tests
 integration-tests:
 	make -C integration-tests tests
+	make -C integration-tests repeat-network #Take out later
 
 .PHONY: integration-tests-baseline
 integration-tests-baseline:
@@ -78,6 +79,10 @@ integration-tests-process-network:
 .PHONY: integration-tests-missing-proc-scrape
 integration-tests-missing-proc-scrape:
 	make -C integration-tests missing-proc-scrape
+
+.PHONY: integration-tests-repeat-network
+integration-tests-repeat-network:
+	make -C integration-tests repeat-network
 
 .PHONY: integration-tests-image-label-json
 integration-tests-image-label-json:

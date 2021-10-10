@@ -54,6 +54,52 @@ func TestMissingProcScrape(t *testing.T) {
 	}
 }
 
+func TestRepeatedNetworkFlow(t *testing.T) {
+	//Perform 10 curl commands with a 1 second sleep between each curl command
+	//The first client to server connection is recorded
+	//The first server to client connection is recorded
+	//The second through ninth curl commands are ignored, because of afterglow
+	//The closing of the last server connection is recorded
+	//The closing of the last client connection is recorded
+	//Thus there are 4 networking events recorded
+	repeatedNetworkFlowTestSuite := new(RepeatedNetworkFlowTestSuite)
+	repeatedNetworkFlowTestSuite.numMetaIter = 1
+	repeatedNetworkFlowTestSuite.numIter = 10
+	repeatedNetworkFlowTestSuite.sleepBetweenCurlTime = 1
+	repeatedNetworkFlowTestSuite.sleepBetweenIterations = 1
+	repeatedNetworkFlowTestSuite.expectedReports = 4
+	suite.Run(t, repeatedNetworkFlowTestSuite)
+
+	//Perform two curl commands 40 seconds apart
+	//40 seconds is greater than the afterglow period so all openings and closings are reported
+	//Every opening and closing for the server and client are reported and there are two curls
+	//so we have 2*2*2=8 recoreded networking events
+	repeatedNetworkFlowTestSuite.numMetaIter = 1
+	repeatedNetworkFlowTestSuite.numIter = 2
+	repeatedNetworkFlowTestSuite.sleepBetweenCurlTime = 40
+	repeatedNetworkFlowTestSuite.sleepBetweenIterations = 1
+	repeatedNetworkFlowTestSuite.expectedReports = 8
+	suite.Run(t, repeatedNetworkFlowTestSuite)
+
+	//Perform a curl
+	//wait one second
+	//perform a curl
+	//wait 40 seconds
+	//perform a curl
+	//wait one second
+	//perform a curl
+	//We should get 4 recorded networking events, for the same reason that we 4 records from the
+	//first test. Since there is a 40 second sleep between the two sets of curl commands and that is
+	//longer than the afterglow period, the two sets of curl commands are independent. Thus we get
+	//2*4=8 records
+	repeatedNetworkFlowTestSuite.numMetaIter = 2
+	repeatedNetworkFlowTestSuite.numIter = 2
+	repeatedNetworkFlowTestSuite.sleepBetweenCurlTime = 1
+	repeatedNetworkFlowTestSuite.sleepBetweenIterations = 40
+	repeatedNetworkFlowTestSuite.expectedReports = 8
+	suite.Run(t, repeatedNetworkFlowTestSuite)
+}
+
 type IntegrationTestSuiteBase struct {
 	suite.Suite
 	db        *bolt.DB
@@ -97,6 +143,20 @@ type BenchmarkBaselineTestSuite struct {
 
 type MissingProcScrapeTestSuite struct {
 	IntegrationTestSuiteBase
+}
+
+type RepeatedNetworkFlowTestSuite struct {
+	IntegrationTestSuiteBase
+	clientContainer string
+	clientIP        string
+	serverContainer string
+	serverIP        string
+	serverPort      string
+	numMetaIter	int
+	numIter		int
+	sleepBetweenCurlTime	int
+	sleepBetweenIterations	int
+	expectedReports		int
 }
 
 type ImageLabelJSONTestSuite struct {
@@ -225,10 +285,6 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 
 	_, err = s.execContainer("nginx-curl", []string{"curl", fmt.Sprintf("%s:%s", s.serverIP, s.serverPort)})
 	require.NoError(s.T(), err)
-
-	//_, err = s.execContainer("nginx-curl", []string{"sh", "-c", `i=0; while [ "$i" -le 50 ]; do echo $i; curl nytimes.com; sleep 1; i=$(( i + 1 )); done`})
-	//_, err = s.execContainer("nginx-curl", []string{"sh", "-c", `i=0; while [ "$i" -le 5 ]; do echo $i; i=$(( i + 1 )); done`})
-	//require.NoError(s.T(), err)
 
 	s.clientIP, err = s.getIPAddress("nginx-curl")
 	require.NoError(s.T(), err)
@@ -363,6 +419,120 @@ func (s *MissingProcScrapeTestSuite) TearDownSuite() {
 	err := s.collector.TearDown()
 	require.NoError(s.T(), err)
 	s.cleanupContainer([]string{"collector"})
+}
+
+// Launches collector
+// Launches gRPC server in insecure mode
+// Launches nginx container
+func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
+	s.metrics = map[string]float64{}
+	s.executor = NewExecutor()
+	s.StartContainerStats()
+	s.collector = NewCollectorManager(s.executor, s.T().Name())
+
+	err := s.collector.Setup()
+	require.NoError(s.T(), err)
+
+	err = s.collector.Launch()
+	require.NoError(s.T(), err)
+
+	images := []string{
+		"nginx:1.14-alpine",
+		"pstauffer/curl:latest",
+	}
+
+	for _, image := range images {
+		err := s.executor.PullImage(image)
+		require.NoError(s.T(), err)
+	}
+
+	time.Sleep(10 * time.Second)
+
+	// invokes default nginx
+	containerID, err := s.launchContainer("nginx", "nginx:1.14-alpine")
+	require.NoError(s.T(), err)
+	s.serverContainer = containerID[0:12]
+
+	// invokes another container
+	containerID, err = s.launchContainer("nginx-curl", "pstauffer/curl:latest", "sleep", "300")
+	require.NoError(s.T(), err)
+	s.clientContainer = containerID[0:12]
+
+	s.serverIP, err = s.getIPAddress("nginx")
+	require.NoError(s.T(), err)
+
+	s.serverPort, err = s.getPort("nginx")
+	require.NoError(s.T(), err)
+
+
+	serverAddress := fmt.Sprintf("%s:%s", s.serverIP, s.serverPort)
+	for i := 0; i < s.numMetaIter; i++ {
+		for j := 0; j < s.numIter; j++ {
+			_, err = s.execContainer("nginx-curl", []string{"curl", serverAddress})
+			require.NoError(s.T(), err)
+			time.Sleep(time.Duration(s.sleepBetweenCurlTime) * time.Second)
+		}
+		time.Sleep(time.Duration(s.sleepBetweenIterations) * time.Second)
+	}
+	s.clientIP, err = s.getIPAddress("nginx-curl")
+	require.NoError(s.T(), err)
+
+	totalTime := s.sleepBetweenCurlTime * s.numIter * s.numMetaIter + s.sleepBetweenIterations * s.numMetaIter
+	totalTime = totalTime + 20
+	time.Sleep(time.Duration(totalTime) * time.Second)
+	logLines := s.GetLogLines("grpc-server")
+	networkLines := FilterLines(logLines)
+	//This should be in TestRepeatedNetworkFlow, but I was unable to access the grpc-serve log files
+	//there, or get the number of recorded networking events in any other way
+	assert.Equal(s.T(), s.expectedReports, len(networkLines))
+	err = s.collector.TearDown()
+	require.NoError(s.T(), err)
+
+	s.db, err = s.collector.BoltDB()
+	require.NoError(s.T(), err)
+}
+
+func (s *RepeatedNetworkFlowTestSuite) TearDownSuite() {
+	s.cleanupContainer([]string{"nginx", "nginx-curl", "collector"})
+	stats := s.GetContainerStats()
+	s.PrintContainerStats(stats)
+	s.WritePerfResults("repeated_network_flow", stats, s.metrics)
+}
+
+func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
+	// Server side checks
+
+	val, err := s.Get(s.serverContainer, networkBucket)
+	require.NoError(s.T(), err)
+	actualValues := strings.Split(string(val), "|")
+
+	if len(actualValues) < 2 {
+		assert.FailNow(s.T(), "serverContainer networkBucket was missing data. ", "val=\"%s\"", val)
+	}
+	actualServerEndpoint := actualValues[0]
+	actualClientEndpoint := actualValues[1]
+
+	// From server perspective, network connection info only has local port and remote IP
+	assert.Equal(s.T(), fmt.Sprintf(":%s", s.serverPort), actualServerEndpoint)
+	assert.Equal(s.T(), s.clientIP, actualClientEndpoint)
+
+	fmt.Printf("ServerDetails from Bolt: %s %s\n", s.serverContainer, string(val))
+	fmt.Printf("ServerDetails from test: %s %s, Port: %s\n", s.serverContainer, s.serverIP, s.serverPort)
+
+	// client side checks
+	val, err = s.Get(s.clientContainer, networkBucket)
+	require.NoError(s.T(), err)
+	actualValues = strings.Split(string(val), "|")
+
+	actualClientEndpoint = actualValues[0]
+	actualServerEndpoint = actualValues[1]
+
+	// From client perspective, network connection info has no local endpoint and full remote endpoint
+	assert.Empty(s.T(), actualClientEndpoint)
+	assert.Equal(s.T(), fmt.Sprintf("%s:%s", s.serverIP, s.serverPort), actualServerEndpoint)
+
+	fmt.Printf("ClientDetails from Bolt: %s %s\n", s.clientContainer, string(val))
+	fmt.Printf("ClientDetails from test: %s %s\n", s.clientContainer, s.clientIP)
 }
 
 func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, error) {
@@ -541,6 +711,27 @@ func (s *IntegrationTestSuiteBase) StartContainerStats() {
 
 	_, err = s.launchContainer(args...)
 	require.NoError(s.T(), err)
+}
+
+func (s *IntegrationTestSuiteBase) GetLogLines(containerName string) ([]string) {
+	logs, err := s.containerLogs(containerName)
+	if err != nil {
+		assert.FailNow(s.T(), containerName + " failure")
+	}
+	logLines := strings.Split(logs, "\n")
+	return logLines
+}
+
+func FilterLines(lines []string) ([]string) {
+	filtered := []string{}
+	pattern := "^Network"
+	for i := range lines {
+		foundMatch, _ := regexp.MatchString(pattern, lines[i])
+		if foundMatch {
+			filtered = append(filtered, lines[i])
+		}
+	}
+	return filtered
 }
 
 func (s *IntegrationTestSuiteBase) GetContainerStats() (stats []ContainerStat) {

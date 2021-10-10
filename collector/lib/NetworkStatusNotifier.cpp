@@ -227,12 +227,12 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
     WITH_TIMER(CollectorStats::net_fetch_state) {
       int64_t now = NowMicros();
       new_conn_state = conn_tracker_->FetchConnState(true, true);
-      ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
-      //ConnectionTracker::ComputeDeltaWithAfterglow(new_conn_state, &old_conn_state, now);
+      //ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
+      ConnectionTracker::ComputeDeltaWithAfterglow(new_conn_state, &old_conn_state, now);
 
       new_cep_state = conn_tracker_->FetchEndpointState(true, true);
-      //ConnectionTracker::ComputeDeltaWithAfterglow(new_cep_state, &old_cep_state, now);
-      ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
+      ConnectionTracker::ComputeDeltaWithAfterglow(new_cep_state, &old_cep_state, now);
+      //ConnectionTracker::ComputeDelta(new_cep_state, &old_cep_state);
     }
 
     WITH_TIMER(CollectorStats::net_create_message) {
