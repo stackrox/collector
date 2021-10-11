@@ -463,6 +463,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 
 	s.serverPort, err = s.getPort("nginx")
 	require.NoError(s.T(), err)
+	time.Sleep(20 * time.Second)
 
 
 	serverAddress := fmt.Sprintf("%s:%s", s.serverIP, s.serverPort)
@@ -481,10 +482,10 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	totalTime = totalTime + 20
 	time.Sleep(time.Duration(totalTime) * time.Second)
 	logLines := s.GetLogLines("grpc-server")
-	networkLines := FilterLines(logLines)
+	networkLines := CountNumMatchingPattern(logLines, "^Network")
 	//This should be in TestRepeatedNetworkFlow, but I was unable to access the grpc-serve log files
 	//there, or get the number of recorded networking events in any other way
-	assert.Equal(s.T(), s.expectedReports, len(networkLines))
+	assert.Equal(s.T(), s.expectedReports, networkLines)
 	err = s.collector.TearDown()
 	require.NoError(s.T(), err)
 
@@ -722,16 +723,15 @@ func (s *IntegrationTestSuiteBase) GetLogLines(containerName string) ([]string) 
 	return logLines
 }
 
-func FilterLines(lines []string) ([]string) {
-	filtered := []string{}
-	pattern := "^Network"
+func CountNumMatchingPattern(lines []string, pattern string) int {
+	count := 0
 	for i := range lines {
 		foundMatch, _ := regexp.MatchString(pattern, lines[i])
 		if foundMatch {
-			filtered = append(filtered, lines[i])
+			count++
 		}
 	}
-	return filtered
+	return count
 }
 
 func (s *IntegrationTestSuiteBase) GetContainerStats() (stats []ContainerStat) {
