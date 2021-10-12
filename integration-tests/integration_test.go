@@ -157,6 +157,7 @@ type RepeatedNetworkFlowTestSuite struct {
 	sleepBetweenCurlTime	int
 	sleepBetweenIterations	int
 	expectedReports		int
+	observedReports		int
 }
 
 type ImageLabelJSONTestSuite struct {
@@ -483,9 +484,10 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	time.Sleep(time.Duration(totalTime) * time.Second)
 	logLines := s.GetLogLines("grpc-server")
 	networkLines := CountNumMatchingPattern(logLines, "^Network")
+	s.observedReports = networkLines
 	//This should be in TestRepeatedNetworkFlow, but I was unable to access the grpc-serve log files
 	//there, or get the number of recorded networking events in any other way
-	assert.Equal(s.T(), s.expectedReports, networkLines)
+	//assert.Equal(s.T(), s.expectedReports, networkLines)
 	err = s.collector.TearDown()
 	require.NoError(s.T(), err)
 
@@ -502,6 +504,7 @@ func (s *RepeatedNetworkFlowTestSuite) TearDownSuite() {
 
 func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
 	// Server side checks
+	assert.Equal(s.T(), s.expectedReports, s.observedReports)
 
 	val, err := s.Get(s.serverContainer, networkBucket)
 	require.NoError(s.T(), err)
