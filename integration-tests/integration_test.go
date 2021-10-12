@@ -466,8 +466,11 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	require.NoError(s.T(), err)
 	time.Sleep(20 * time.Second)
 
-
 	serverAddress := fmt.Sprintf("%s:%s", s.serverIP, s.serverPort)
+	innerLoop := `j=0; while [ "$j" -lt ` + strconv.Itoa(s.numIter) + ` ]; do curl ` + serverAddress + `; sleep ` + strconv.Itoa(s.sleepBetweenCurlTime) + `; j=$((j + 1)); done`
+	curlCommand := `i=0; while [ "$i" -lt ` + strconv.Itoa(s.numMetaIter) + ` ]; do ` + innerLoop + `; sleep ` + strconv.Itoa(s.sleepBetweenIterations) + `; i=$((i + 1)); done`
+	_, err = s.execContainer("nginx-curl", []string{"sh", "-c", curlCommand})
+	/*
 	for i := 0; i < s.numMetaIter; i++ {
 		for j := 0; j < s.numIter; j++ {
 			_, err = s.execContainer("nginx-curl", []string{"curl", serverAddress})
@@ -476,6 +479,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 		}
 		time.Sleep(time.Duration(s.sleepBetweenIterations) * time.Second)
 	}
+	*/
 	s.clientIP, err = s.getIPAddress("nginx-curl")
 	require.NoError(s.T(), err)
 
