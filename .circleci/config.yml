@@ -1631,7 +1631,7 @@ workflows:
     - kernels:
         <<: *runOnAllTagsWithDockerIOPushCtx
         context:
-          - docker-io-pull
+          - docker-io-push
           - quay-cgorman1-readonly
           - quay-cgorman1-readwrite
           - redhat-developer-account-login
