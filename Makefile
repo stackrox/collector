@@ -108,3 +108,37 @@ teardown-dev:
 .PHONY: clean
 clean: teardown-dev
 	make -C collector clean
+
+# Build collector image with binaries from remote docker dev and locally built probes
+image-dev: txt-files collector-dev collector-image probe-archive-dev
+	docker build \
+		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
+		--build-arg collector_version="$(COLLECTOR_TAG)" \
+		--build-arg max_layer_depth=7 \
+		--build-arg max_layer_size=300 \
+		-t "stackrox/collector:$(COLLECTOR_TAG)" \
+		"$(CURDIR)/kernel-modules/container"
+
+# Build collector image and binaries, with locally built probes
+image-local: collector unittest txt-files collector-image probe-archive-dev
+	docker build \
+		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
+		--build-arg collector_version="$(COLLECTOR_TAG)" \
+		--build-arg max_layer_depth=7 \
+		--build-arg max_layer_size=300 \
+		-t "stackrox/collector:$(COLLECTOR_TAG)" \
+		"$(CURDIR)/kernel-modules/container"
+
+# Copy kernel bundles from ../kernel-packer and build all builder containers
+.PHONY: probe-dev
+probe-dev: $(MOD_VER_FILE)
+	./scripts/copy-kernel-packer-repo-bundles
+	./legacy-modules/download.sh
+	make -C "${CURDIR}/kernel-modules" all-build-containers
+
+# Create an archive of all probes built locally
+.PHONY: probe-archive-dev
+probe-archive-dev: $(MOD_VER_FILE)
+	mkdir -p "$(CURDIR)/kernel-modules/container/kernel-modules"
+	cp "$(CURDIR)/probes/$(shell cat $(MOD_VER_FILE))/"* "$(CURDIR)/kernel-modules/container/kernel-modules/" || true
+
