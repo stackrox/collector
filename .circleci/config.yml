@@ -58,20 +58,10 @@ commands:
     - run:
         name: Set up environment
         command: |
-          if [[ ! -z "${REDHAT_USERNAME}" ]]; then
-            echo "Exists"
-          else
-            echo "Doesn't exist"
-          fi
           cat >>"$BASH_ENV" \<<-EOF
             export WORKSPACE_ROOT="${HOME}/workspace"
           EOF
           [[ -f ~/workspace/shared-env ]] && cat ~/workspace/shared-env >>"$BASH_ENV"
-          if [[ ! -z "${REDHAT_USERNAME}" ]]; then
-            echo "Exists"
-          else
-            echo "Doesn't exist"
-          fi
 
   read-pr-metadata:
     steps:
@@ -564,7 +554,7 @@ jobs:
       image: ubuntu-2004:202010-01
       docker_layer_caching: true
     resource_class: large
-    parallelism: 8
+    parallelism: 64
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
@@ -576,11 +566,6 @@ jobs:
     - run:
         name: Determine tasks for current shard
         command: |
-          if [[ ! -z "${REDHAT_USERNAME}" ]]; then
-            echo "Exists"
-          else
-            echo "Doesn't exist"
-          fi
           echo "Nodes total: $CIRCLE_NODE_TOTAL"
           echo "Node index:  $CIRCLE_NODE_INDEX"
 
@@ -673,7 +658,7 @@ jobs:
           for f in ~/kobuild-tmp/custom-flavors/versions.*; do
             flavor="$(basename "$f")"
             flavor="${flavor#versions\.}"
-            make -C "${SOURCE_ROOT}/kernel-modules" "build-container-${flavor}" REDHAT_USERNAME="{$REDHAT_USERNAME}" REDHAT_PASSWORD="{$REDHAT_PASSWORD}"
+            make -C "${SOURCE_ROOT}/kernel-modules" "build-container-${flavor}" REDHAT_USERNAME="${REDHAT_USERNAME}" REDHAT_PASSWORD="${REDHAT_PASSWORD}"
             docker tag "${BUILD_CONTAINER_TAG}-${flavor}" "build-kernel-modules-${flavor}"
           done
 
@@ -778,11 +763,6 @@ jobs:
     - run:
         name: Copying Kernel modules build output
         command: |
-          if [[ ! -z "${REDHAT_USERNAME}" ]]; then
-            echo "Exists"
-          else
-            echo "Doesn't exist"
-          fi
           mkdir -p "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
           mv "${WORKSPACE_ROOT}/ko-build/built-probes/${MODULE_VERSION}/"* \
             "${SOURCE_ROOT}/kernel-modules/container/kernel-modules" || true
@@ -946,22 +926,12 @@ jobs:
     - run:
         name: Lint Dockerfile
         command: |
-          if [[ ! -z "${REDHAT_USERNAME}" ]]; then
-            echo "Exists"
-          else
-            echo "Doesn't exist"
-          fi
           docker run --rm -i hadolint/hadolint < \
             ${SOURCE_ROOT}/collector/container/Dockerfile.ubi
 
     - run:
         name: Build collector UBI images
         command: |
-          if [[ ! -z "${REDHAT_USERNAME}" ]]; then
-            echo "Exists"
-          else
-            echo "Doesn't exist"
-          fi
           docker build \
             --build-arg COLLECTOR_VERSION=${COLLECTOR_VERSION} \
             --build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
@@ -1657,6 +1627,8 @@ workflows:
         - lint
     - kernels:
         <<: *runOnAllTagsWithDockerIOPushCtx
+        context:
+          - redhat-developer-account-login
         requires:
         - prepare-kernels
     - join-modules:
