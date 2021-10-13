@@ -1629,6 +1629,10 @@ workflows:
         - lint
     - kernels:
         <<: *runOnAllTagsWithDockerIOPushCtx
+        context:
+          - docker-io-pull
+          - quay-cgorman1-readonly
+          - redhat-developer-account-login
         requires:
         - prepare-kernels
     - join-modules:
