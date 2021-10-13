@@ -69,6 +69,7 @@ func TestRepeatedNetworkFlow(t *testing.T) {
 	repeatedNetworkFlowTestSuite.sleepBetweenIterations = 1
 	repeatedNetworkFlowTestSuite.expectedReports = 4
 	suite.Run(t, repeatedNetworkFlowTestSuite)
+	
 	//Perform two curl commands 40 seconds apart
 	//40 seconds is greater than the afterglow period so all openings and closings are reported
 	//Every opening and closing for the server and client are reported and there are two curls
@@ -466,9 +467,11 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	time.Sleep(20 * time.Second)
 
 	serverAddress := fmt.Sprintf("%s:%s", s.serverIP, s.serverPort)
-	innerLoop := `j=0; while [ $j -lt ` + strconv.Itoa(s.numIter) + ` ]; do curl ` + serverAddress + `; sleep ` + strconv.Itoa(s.sleepBetweenCurlTime) + `; j=$((j + 1)); done`
-	curlCommand := `i=0; while [ $i -lt ` + strconv.Itoa(s.numMetaIter) + ` ]; do ` + innerLoop + `; sleep ` + strconv.Itoa(s.sleepBetweenIterations) + `; i=$((i + 1)); done`
+	innerLoop := "for j in `seq 0 " + strconv.Itoa(s.numIter - 1)  + "`; do curl " + serverAddress + `; sleep ` + strconv.Itoa(s.sleepBetweenCurlTime) + `; done`
+	curlCommand := "for i in `seq 0 " + strconv.Itoa(s.numMetaIter - 1) + "`; do " + innerLoop + `; sleep ` + strconv.Itoa(s.sleepBetweenIterations) + `; done`
 	_, err = s.execContainer("nginx-curl", []string{"sh", "-c", curlCommand})
+	//innerLoop := `j=0; while [ $j -lt ` + strconv.Itoa(s.numIter) + ` ]; do curl ` + serverAddress + `; sleep ` + strconv.Itoa(s.sleepBetweenCurlTime) + `; j=$((j + 1)); done`
+	//curlCommand := `i=0; while [ $i -lt ` + strconv.Itoa(s.numMetaIter) + ` ]; do ` + innerLoop + `; sleep ` + strconv.Itoa(s.sleepBetweenIterations) + `; i=$((i + 1)); done`
 	/*
 	for i := 0; i < s.numMetaIter; i++ {
 		for j := 0; j < s.numIter; j++ {
