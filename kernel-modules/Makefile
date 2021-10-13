@@ -12,7 +12,16 @@ build-container:
 	docker build $(BUILD_CONTAINER_CACHE_IMAGES:%=--cache-from=%) -t $(BUILD_CONTAINER_TAG) ./build
 
 build-container-%: build/Dockerfile.%
-	docker build $(BUILD_CONTAINER_CACHE_IMAGES:%=--cache-from=%-$@) -t $(BUILD_CONTAINER_TAG)-$* ./build -f $<
+	docker build \
+		--build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
+		--build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}" \
+		 $(BUILD_CONTAINER_CACHE_IMAGES:%=--cache-from=%-$@) -t $(BUILD_CONTAINER_TAG)-$* ./build -f $<
+
+build-ubi-container: build/Dockerfile.ubi
+	docker build \
+		--build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
+		--build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}" \
+		-t $(BUILD_CONTAINER_TAG)-ubi ./build -f $<
 
 .PHONY: all-build-containers
 all-build-containers: build-container $(CUSTOM_FLAVORS:%=build-container-%)

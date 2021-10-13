@@ -655,7 +655,7 @@ jobs:
           for f in ~/kobuild-tmp/custom-flavors/versions.*; do
             flavor="$(basename "$f")"
             flavor="${flavor#versions\.}"
-            make -C "${SOURCE_ROOT}/kernel-modules" "build-container-${flavor}"
+            make -C "${SOURCE_ROOT}/kernel-modules" "build-container-${flavor}" REDHAT_USERNAME=$REDHAT_USERNAME REDHAT_PASSWORD=$REDHAT_PASSWORD
             docker tag "${BUILD_CONTAINER_TAG}-${flavor}" "build-kernel-modules-${flavor}"
           done
 

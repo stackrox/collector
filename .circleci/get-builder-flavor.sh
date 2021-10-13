@@ -27,7 +27,7 @@ compareVersions() {
 }
 
 getFlavorForDebian() {
-  debian_flavor="default"
+  debian_flavor="ubi"
   build_id="$(echo "${version}" | cut -d '-' -f2 | sed 's|\..*||')"
   if [[ "$(compareVersions 5 10)" == "later" ]]; then
     debian_flavor="hirsute"
@@ -63,7 +63,7 @@ if (( $# < 4 )); then
 fi
 
 
-flavor="default"
+flavor="ubi"
 # Ubuntu 20.04 backport
 if [[ "$distro" == "ubuntu" && "$version" =~ "~20.04" ]]; then
   flavor="modern"

@@ -13,4 +13,11 @@ kernel-modules/kobuild-tmp
 *.swp
 
 # Development SSH Server keys
-.collector_dev_ssh_host_ed25519_key*
+collector_dev_ssh_host_ed25519_key*
+
+# Patches and local probe build
+kobuild
+sources
+patches
+probes
+source-archives
