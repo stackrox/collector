@@ -13,15 +13,20 @@ module_version=$(cat "${SOURCE_ROOT}/kernel-modules/kobuild-tmp/MODULE_VERSION.t
 bundle_file="${KOBUILD_DIR}/bundles/bundle-${kernel}.tgz"
 
 inspect_dir=$(mktemp -d)
-tar -xzf "${bundle_file}" -C "${inspect_dir}" ./BUNDLE_DISTRO ./BUNDLE_VERSION
+tar -xzf "${bundle_file}" -C "${inspect_dir}" ./BUNDLE_DISTRO ./BUNDLE_VERSION ./BUNDLE_MAJOR
 distro="$(< "${inspect_dir}/BUNDLE_DISTRO")"
 kernel_version="$(< "${inspect_dir}/BUNDLE_VERSION")"
-kernel_major="$(< "${inspect_dir}/BUNDLE_MAJOR)"
+kernel_major="$(< "${inspect_dir}/BUNDLE_MAJOR")"
 rm -rf "${inspect_dir}"
 
 # Select builder flavor
+echo $DIR
+echo "kernel= $kernel"
+echo "distro= $distro"
+echo "kernel_version= $kernel_version"
+echo "kernel_major= $kernel_major"
 flavor="ubi"
-flavor="$("${DIR}/.circleci/get-builder-flavor.sh" $kernel $distro $kernel_version $kernel_major)"
+flavor="$("${DIR}/../.circleci/get-builder-flavor.sh" $kernel $distro $kernel_version $kernel_major)"
 
 echo "Using ${flavor} builder"
 echo "Building ${probe_type} probe for ${distro}:${kernel} and collector version ${module_version}"
