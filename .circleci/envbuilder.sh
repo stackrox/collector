@@ -111,7 +111,7 @@ gcpSSHReady() {
 
   local retryCount=6
   for _ in $(seq 1 $retryCount ); do
-    gcloud compute ssh --strict-host-key-checking=no --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCP_VM_NAME}" --command "whoami" \
+    gcloud compute ssh --strict-host-key-checking=no --ssh-flag="-o PasswordAuthentication=no" --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCP_VM_NAME}" --command "whoami" \
       && exitCode=0 && break || exitCode=$? && sleep 15
   done
 
