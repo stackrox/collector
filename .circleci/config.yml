@@ -28,6 +28,7 @@ runOnAllTagsWithDockerIOPullCtx: &runOnAllTagsWithDockerIOPullCtx
   context:
     - docker-io-pull
     - quay-cgorman1-readonly
+    - quay-cgorman1-readwrite
     - redhat-developer-account-login
 
 runOnAllTagsWithDockerIOPushCtx: &runOnAllTagsWithDockerIOPushCtx
@@ -1632,6 +1633,7 @@ workflows:
         context:
           - docker-io-pull
           - quay-cgorman1-readonly
+          - quay-cgorman1-readwrite
           - redhat-developer-account-login
         requires:
         - prepare-kernels
