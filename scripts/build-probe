@@ -16,15 +16,12 @@ inspect_dir=$(mktemp -d)
 tar -xzf "${bundle_file}" -C "${inspect_dir}" ./BUNDLE_DISTRO ./BUNDLE_VERSION
 distro="$(< "${inspect_dir}/BUNDLE_DISTRO")"
 kernel_version="$(< "${inspect_dir}/BUNDLE_VERSION")"
+kernel_major="$(< "${inspect_dir}/BUNDLE_MAJOR)"
 rm -rf "${inspect_dir}"
 
 # Select builder flavor
 flavor="ubi"
-if basename "${SOURCE_ROOT}/kernel-modules/build/Dockerfile".* | sed 's/Dockerfile.//' | grep -q "${distro}"; then
-    flavor="${distro}"
-elif (( kernel_version >= 5 )); then
-    flavor="default"
-fi
+flavor="$("${DIR}/.circleci/get-builder-flavor.sh" $kernel $distro $kernel_version $kernel_major)"
 
 echo "Using ${flavor} builder"
 echo "Building ${probe_type} probe for ${distro}:${kernel} and collector version ${module_version}"
