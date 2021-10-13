@@ -1,0 +1,46 @@
+# This builds a collector container based on UBI with a reliance on Red Hat
+# subscription entitlements.
+FROM registry.access.redhat.com/ubi8/ubi:8.4 AS builder
+
+ARG REDHAT_USERNAME
+ARG REDHAT_PASSWORD
+RUN rm -rf /etc/rhsm-host && \
+    subscription-manager register --username "${REDHAT_USERNAME}" --password "${REDHAT_PASSWORD}" && \
+    subscription-manager attach && \
+    # this pool id may be associated with the current test user account.
+    # if the account changes, use: `subscription-manager list --available` to find a valid id.
+    subscription-manager attach --pool=8a85f9a178d12e760178dba5bb1d2b43 && \
+    dnf config-manager --enable codeready-builder-for-rhel-8-x86_64-rpms && \
+    dnf config-manager --enable amq-clients-2-for-rhel-8-x86_64-rpms && \
+    dnf config-manager --enable rhocp-4.6-for-rhel-8-x86_64-rpms
+
+# hadolint ignore=DL3041
+RUN dnf -y update && \
+    dnf -y install \
+        make \
+        cmake \
+        gcc-c++ \
+        openssl-devel \
+        ncurses-devel \
+        curl-devel \
+        libuuid-devel \
+        libcap-ng-devel \
+        autoconf \
+        kmod \
+        libtool \
+        git \
+        elfutils-libelf-devel \
+        gtest-devel \
+        gmock-devel \
+        jsoncpp-devel  \
+        tbb-devel \
+        jq-devel \
+        c-ares-devel; \
+    dnf clean all
+
+RUN mkdir -p /output
+COPY build-kos /usr/bin/
+COPY prepare-src /usr/bin
+
+WORKDIR /scratch
+ENTRYPOINT [ "/bin/bash", "-c" ]
