@@ -550,7 +550,10 @@ jobs:
           - shared-env
 
   kernels:
-    <<: *defaultMachine
+    machine:
+      image: ubuntu-2004:202010-01
+      docker_layer_caching: true
+    resource_class: large
     parallelism: 64
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
