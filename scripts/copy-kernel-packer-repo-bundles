@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+DIR="$(cd "$(dirname "$0")" && pwd)"
+SOURCE_ROOT="${SOURCE_ROOT:-${DIR}/..}"
+KOBUILD_DIR="${KOBUILD_DIR:-${SOURCE_ROOT}/kobuild}"
+
+KERNEL_PACKER_DIR="${KERNEL_PACKER_DIR:-${SOURCE_ROOT}/../kernel-packer}"
+BUNDLE_SRC_DIR="${KERNEL_PACKER_DIR}/.build-data/bundles"
+BUNDLE_DST_DIR="${KOBUILD_DIR}/bundles"
+
+mkdir -p "${BUNDLE_DST_DIR}"
+for bundle_path in "${BUNDLE_SRC_DIR}"/[0-9a-z]*/bundle-*.tgz ; do
+    bundle=$(basename "$bundle_path")
+    rm "${BUNDLE_DST_DIR}/${bundle}"
+    ln "$bundle_path" "${BUNDLE_DST_DIR}/${bundle}"
+done

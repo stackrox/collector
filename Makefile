@@ -133,8 +133,8 @@ image-local: collector unittest txt-files collector-image probe-archive-dev
 .PHONY: probe-dev
 probe-dev: $(MOD_VER_FILE)
 	./scripts/copy-kernel-packer-repo-bundles
-	./legacy-modules/download.sh
-	make -C "${CURDIR}/kernel-modules" all-build-containers
+	#./legacy-modules/download.sh
+	#make -C "${CURDIR}/kernel-modules" all-build-containers
 
 # Create an archive of all probes built locally
 .PHONY: probe-archive-dev
