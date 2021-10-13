@@ -28,6 +28,7 @@ runOnAllTagsWithDockerIOPullCtx: &runOnAllTagsWithDockerIOPullCtx
   context:
     - docker-io-pull
     - quay-cgorman1-readonly
+    - redhat-developer-account-login
 
 runOnAllTagsWithDockerIOPushCtx: &runOnAllTagsWithDockerIOPushCtx
   <<: *runOnAllTags
@@ -619,7 +620,8 @@ jobs:
             distro="$(< ~/kobuild-tmp/meta-inspect/BUNDLE_DISTRO)"
             kernel_version="$(< ~/kobuild-tmp/meta-inspect/BUNDLE_VERSION)"
             kernel_major="$(< ~/kobuild-tmp/meta-inspect/BUNDLE_MAJOR)"
-            flavor="$("${SOURCE_ROOT}/.circleci/get-builder-flavor.sh" $version $distro $kernel_version $kernel_major)"
+            #flavor="$("${SOURCE_ROOT}/.circleci/get-builder-flavor.sh" $version $distro $kernel_version $kernel_major)"
+            flavor="ubi"
             if [[ "$flavor" != "default" ]]; then
               echo "$version" >>~/kobuild-tmp/custom-flavors/versions."$flavor"
             fi
@@ -1627,8 +1629,6 @@ workflows:
         - lint
     - kernels:
         <<: *runOnAllTagsWithDockerIOPushCtx
-        context:
-          - redhat-developer-account-login
         requires:
         - prepare-kernels
     - join-modules:
