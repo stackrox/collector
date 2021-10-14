@@ -466,13 +466,17 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	require.NoError(s.T(), err)
 	time.Sleep(20 * time.Second)
 
+	logLinesInitial := s.GetLogLines("grpc-server")
+	networkLinesInitial := CountNumMatchingPattern(logLinesInitial, "^Network")
 	serverAddress := fmt.Sprintf("%s:%s", s.serverIP, s.serverPort)
+	/*
 	innerLoop := "for j in `seq 0 " + strconv.Itoa(s.numIter - 1)  + "`; do curl " + serverAddress + `; sleep ` + strconv.Itoa(s.sleepBetweenCurlTime) + `; done`
 	curlCommand := "for i in `seq 0 " + strconv.Itoa(s.numMetaIter - 1) + "`; do " + innerLoop + `; sleep ` + strconv.Itoa(s.sleepBetweenIterations) + `; done`
 	_, err = s.execContainer("nginx-curl", []string{"sh", "-c", curlCommand})
+	*/
 	//innerLoop := `j=0; while [ $j -lt ` + strconv.Itoa(s.numIter) + ` ]; do curl ` + serverAddress + `; sleep ` + strconv.Itoa(s.sleepBetweenCurlTime) + `; j=$((j + 1)); done`
 	//curlCommand := `i=0; while [ $i -lt ` + strconv.Itoa(s.numMetaIter) + ` ]; do ` + innerLoop + `; sleep ` + strconv.Itoa(s.sleepBetweenIterations) + `; i=$((i + 1)); done`
-	/*
+
 	for i := 0; i < s.numMetaIter; i++ {
 		for j := 0; j < s.numIter; j++ {
 			_, err = s.execContainer("nginx-curl", []string{"curl", serverAddress})
@@ -481,7 +485,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 		}
 		time.Sleep(time.Duration(s.sleepBetweenIterations) * time.Second)
 	}
-	*/
+
 	s.clientIP, err = s.getIPAddress("nginx-curl")
 	require.NoError(s.T(), err)
 
@@ -490,7 +494,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	time.Sleep(time.Duration(totalTime) * time.Second)
 	logLines := s.GetLogLines("grpc-server")
 	networkLines := CountNumMatchingPattern(logLines, "^Network")
-	s.observedReports = networkLines
+	s.observedReports = networkLines - networkLinesInitial
 	//This should be in TestRepeatedNetworkFlow, but I was unable to access the grpc-serve log files
 	//there, or get the number of recorded networking events in any other way
 	//assert.Equal(s.T(), s.expectedReports, networkLines)

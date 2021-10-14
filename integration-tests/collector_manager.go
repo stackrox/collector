@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/boltdb/bolt"
 )
@@ -111,6 +112,7 @@ func (c *collectorManager) TearDown() error {
 		}
 	} else {
 		c.stopContainer("collector")
+		time.Sleep(10 * time.Second)
 		c.captureLogs("collector")
 		c.killContainer("collector")
 	}
