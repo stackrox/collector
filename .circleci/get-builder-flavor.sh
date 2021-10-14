@@ -6,6 +6,8 @@ kernel_version=$3
 kernel_major=$4
 custom_build_flavors_all_file=${5:-~/kobuild-tmp/custom-flavors/all}
 
+default_flavor="default"
+
 compareVersions() {
   kernel_version_other=$1
   kernel_major_other=$2
@@ -27,7 +29,7 @@ compareVersions() {
 }
 
 getFlavorForDebian() {
-  debian_flavor="ubi"
+  debian_flavor=$default_flavor
   build_id="$(echo "${version}" | cut -d '-' -f2 | sed 's|\..*||')"
   if [[ "$(compareVersions 5 10)" == "later" ]]; then
     debian_flavor="hirsute"
@@ -63,10 +65,12 @@ if (( $# < 4 )); then
 fi
 
 
-flavor="ubi"
+flavor=$default_flavor
 # Ubuntu 20.04 backport
 if [[ "$distro" == "ubuntu" && "$version" =~ "~20.04" ]]; then
   flavor="modern"
+elif (( kernel_version == 4 && (( kernel_major == 4 || kernel_major == 7 || kernel_major == 12 )) )); then #ubi flavor works for most kernels, but just do a few for now
+  flavor="ubi"
 elif (( kernel_version == 5 && kernel_major >= 13 )); then
   flavor="$(getFlavorFor5_13_plus)"
 elif [[ "$distro" == "debian" ]] ; then
