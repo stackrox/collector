@@ -556,7 +556,7 @@ jobs:
       image: ubuntu-2004:202010-01
       docker_layer_caching: true
     resource_class: large
-    parallelism: 64
+    parallelism: 32
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
