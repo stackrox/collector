@@ -273,12 +273,12 @@ sensor::NetworkConnectionInfoMessage* NetworkStatusNotifier::CreateInfoMessage(c
 }
 
 void NetworkStatusNotifier::AddConnections(::google::protobuf::RepeatedPtrField<sensor::NetworkConnection>* updates, const ConnMap& delta) {
-    std::cout << "In AddConnections" << std::endl;
-    std::cout << "delta.size()= " << delta.size() << std::endl;
+  std::cout << "In AddConnections" << std::endl;
+  std::cout << "delta.size()= " << delta.size() << std::endl;
   for (const auto& delta_entry : delta) {
     auto* conn_proto = ConnToProto(delta_entry.first);
     std::cout << "delta_entry.first= " << delta_entry.first << std::endl;
-      std::cout << "delta_entry.second= " << delta_entry.second.LastActiveTime() << std::endl;
+    std::cout << "delta_entry.second= " << delta_entry.second.LastActiveTime() << std::endl;
     if (!delta_entry.second.IsActive()) {
       *conn_proto->mutable_close_timestamp() = google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(
           delta_entry.second.LastActiveTime());
@@ -288,12 +288,12 @@ void NetworkStatusNotifier::AddConnections(::google::protobuf::RepeatedPtrField<
 }
 
 void NetworkStatusNotifier::AddContainerEndpoints(::google::protobuf::RepeatedPtrField<sensor::NetworkEndpoint>* updates, const ContainerEndpointMap& delta) {
-    cout << "In AddContainerEndpoints" << std::endl;
-    cout << "delta.size()= " << delta.size() << std::endl;
+  cout << "In AddContainerEndpoints" << std::endl;
+  cout << "delta.size()= " << delta.size() << std::endl;
   for (const auto& delta_entry : delta) {
     auto* endpoint_proto = ContainerEndpointToProto(delta_entry.first);
     std::cout << "delta_entry.first" << std::endl;
-      //std::cout << "delta_entry.first" << delta_entry.first << std::endl;
+    //std::cout << "delta_entry.first" << delta_entry.first << std::endl;
     if (!delta_entry.second.IsActive()) {
       *endpoint_proto->mutable_close_timestamp() = google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(
           delta_entry.second.LastActiveTime());
