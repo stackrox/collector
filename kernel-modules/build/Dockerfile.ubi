@@ -19,7 +19,9 @@ RUN dnf -y update && \
     dnf -y install \
         make \
         cmake \
+        clang \
         gcc-c++ \
+        gcc \
         openssl-devel \
         ncurses-devel \
         curl-devel \
@@ -28,6 +30,7 @@ RUN dnf -y update && \
         autoconf \
         kmod \
         libtool \
+        llvm \
         git \
         elfutils-libelf-devel \
         gtest-devel \
