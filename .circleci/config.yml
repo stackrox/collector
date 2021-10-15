@@ -1262,7 +1262,7 @@ jobs:
     - run:
         name: "Destroy VM"
         command: |
-          for ((i=0;i<1000;i=i+1))
+          for ((i=0;i<300;i=i+1))
           do
             echo "sleepint"
             sleep 10
