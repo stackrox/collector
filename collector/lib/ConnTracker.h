@@ -108,6 +108,8 @@ class ConnectionTracker {
   static void ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state);
   template <typename T>
   static void ComputeDelta2(const UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state, int64_t now);
+  template <typename T>
+  static void printConnState(UnorderedMap<T, ConnStatus> state);
   //    static bool wasRecentlyActive(ConnStatus conn, int64_t now);
 
   void UpdateKnownPublicIPs(UnorderedSet<Address>&& known_public_ips);
@@ -193,6 +195,14 @@ void ConnectionTracker::ComputeDeltaWithAfterglow(UnorderedMap<T, ConnStatus>& n
 //}
 
 template <typename T>
+void ConnectionTracker::printConnState(UnorderedMap<T, ConnStatus> state) {
+  for (const auto& conn : state) {
+    std::cout << "conn.first= " << conn.first << endl;
+    std::cout << "conn.second.LastActiveTime()= " << conn.second.LastActiveTime() << std::endl;
+  }
+}
+
+template <typename T>
 void ConnectionTracker::ComputeDelta2(const UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state, int64_t now) {
   // Insert all objects from the new state, if anything changed about them.
   std::cout << std::endl
@@ -200,6 +210,11 @@ void ConnectionTracker::ComputeDelta2(const UnorderedMap<T, ConnStatus>& new_sta
   std::cout << "In ComputeDelta" << std::endl;
   std::cout << "old_state.size()= " << old_state->size() << std::endl;
   std::cout << "new_state.size()= " << new_state.size() << std::endl;
+  std::cout << "printing new_state" << endl;
+  printConnState(new_state);
+  std::cout << "printing old_state" << endl;
+  printConnState(*old_state);
+
   for (const auto& conn : new_state) {
     auto insert_res = old_state->insert(conn);
     auto& old_conn = *insert_res.first;
@@ -207,6 +222,10 @@ void ConnectionTracker::ComputeDelta2(const UnorderedMap<T, ConnStatus>& new_sta
     //            bool newRecentlyActive = wasRecentlyActive(conn.second, now);
     bool oldRecentlyActive = old_conn.second.IsActive() || now - old_conn.second.LastActiveTime() < AFTERGLOW_PERIOD_DEFAULT;
     bool newRecentlyActive = conn.second.IsActive() || now - conn.second.LastActiveTime() < AFTERGLOW_PERIOD_DEFAULT;
+    std::cout << "now= " << now << " old_conn.second.LastActiveTime()= " << old_conn.second.LastActiveTime() << " conn.second.LastActiveTime()= " << conn.second.LastActiveTime() << endl;
+    std::cout << "ot= " << now - old_conn.second.LastActiveTime() << std::endl;
+    std::cout << "dt= " << now - conn.second.LastActiveTime() << std::endl;
+    std::cout << "AFTERGLOW_PERIOD_DEFAULT= " << AFTERGLOW_PERIOD_DEFAULT << std::endl;
     if (!insert_res.second) {  // was already present
       std::cout << "conn.second.IsActive()= " << conn.second.IsActive() << std::endl;
       std::cout << "old_conn.second.IsActive()= " << old_conn.second.IsActive() << std::endl;
@@ -250,6 +269,7 @@ void ConnectionTracker::ComputeDelta2(const UnorderedMap<T, ConnStatus>& new_sta
   }
   std::cout << "At bottom" << std::endl;
   std::cout << "old_state.size()= " << old_state->size() << std::endl;
+  std::cout << std::endl;
 }
 
 template <typename T>
