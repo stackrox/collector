@@ -67,9 +67,9 @@ func TestRepeatedNetworkFlow(t *testing.T) {
 	repeatedNetworkFlowTestSuite.numIter = 10
 	repeatedNetworkFlowTestSuite.sleepBetweenCurlTime = 1
 	repeatedNetworkFlowTestSuite.sleepBetweenIterations = 1
-	repeatedNetworkFlowTestSuite.expectedReports = 4
+	repeatedNetworkFlowTestSuite.expectedReports = 2
 	suite.Run(t, repeatedNetworkFlowTestSuite)
-	
+
 	//Perform two curl commands 40 seconds apart
 	//40 seconds is greater than the afterglow period so all openings and closings are reported
 	//Every opening and closing for the server and client are reported and there are two curls
@@ -78,7 +78,7 @@ func TestRepeatedNetworkFlow(t *testing.T) {
 	repeatedNetworkFlowTestSuite.numIter = 2
 	repeatedNetworkFlowTestSuite.sleepBetweenCurlTime = 40
 	repeatedNetworkFlowTestSuite.sleepBetweenIterations = 1
-	repeatedNetworkFlowTestSuite.expectedReports = 8
+	repeatedNetworkFlowTestSuite.expectedReports = 4
 	suite.Run(t, repeatedNetworkFlowTestSuite)
 
 	//Perform a curl
@@ -96,7 +96,7 @@ func TestRepeatedNetworkFlow(t *testing.T) {
 	repeatedNetworkFlowTestSuite.numIter = 2
 	repeatedNetworkFlowTestSuite.sleepBetweenCurlTime = 1
 	repeatedNetworkFlowTestSuite.sleepBetweenIterations = 40
-	repeatedNetworkFlowTestSuite.expectedReports = 8
+	repeatedNetworkFlowTestSuite.expectedReports = 4
 	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
 
@@ -290,7 +290,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	s.clientIP, err = s.getIPAddress("nginx-curl")
 	require.NoError(s.T(), err)
 
-	time.Sleep(100 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	err = s.collector.TearDown()
 	require.NoError(s.T(), err)

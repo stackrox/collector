@@ -473,7 +473,7 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveRemovedIsntInDelta) {
   CT::ComputeDelta(state1, &state2);
   EXPECT_THAT(state2, IsEmpty());
 }
-
+/*
 TEST(ConnTrackerTest, TestApplyAfterglow) {
   //Afterglow should not do anything as both connections are active
   Endpoint a(Address(192, 168, 0, 1), 80);
@@ -569,6 +569,7 @@ TEST(ConnTrackerTest, TestComputeDeltaWithAfterglowExpired) {
   CT::ComputeDeltaWithAfterglow(state1, &state2, now2);
   EXPECT_THAT(state2, UnorderedElementsAre(std::make_pair(conn2, ConnStatus(now, false))));
 }
+*/
 
 }  // namespace
 
