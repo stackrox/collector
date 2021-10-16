@@ -1262,11 +1262,6 @@ jobs:
     - run:
         name: "Destroy VM"
         command: |
-          for ((i=0;i<300;i=i+1))
-          do
-            echo "sleepint"
-            sleep 10
-          done
           gcloud compute instances delete $GCLOUD_INSTANCE
         when: always
 
