@@ -205,16 +205,15 @@ void ConnectionTracker::printConnState(UnorderedMap<T, ConnStatus> state) {
 }
 
 template <typename T>
-void ConnectionTracker::AddAfterglow(const UnorderedMap<T, ConnStatus> &afterglow_state, UnorderedMap<T, ConnStatus> *new_state, int64_t now) {
-
-    for (const auto& conn : afterglow_state) {
-        std::cout << "now= " << now << " conn.second.LastActiveTime()= " << conn.second.LastActiveTime() << " AFTERGLOW_PERIOD_DEFAULT= " << AFTERGLOW_PERIOD_DEFAULT << std::endl;
-        std::cout << "dt= " << now - conn.second.LastActiveTime() << std::endl;
-        if (now - conn.second.LastActiveTime() < AFTERGLOW_PERIOD_DEFAULT && new_state->find(conn.first) == new_state->end()) {
-            new_state->insert(conn);
-            //auto insert_res = old_state->insert(conn);
-        }
+void ConnectionTracker::AddAfterglow(const UnorderedMap<T, ConnStatus>& afterglow_state, UnorderedMap<T, ConnStatus>* new_state, int64_t now) {
+  for (const auto& conn : afterglow_state) {
+    std::cout << "now= " << now << " conn.second.LastActiveTime()= " << conn.second.LastActiveTime() << " AFTERGLOW_PERIOD_DEFAULT= " << AFTERGLOW_PERIOD_DEFAULT << std::endl;
+    std::cout << "dt= " << now - conn.second.LastActiveTime() << std::endl;
+    if (now - conn.second.LastActiveTime() < AFTERGLOW_PERIOD_DEFAULT && new_state->find(conn.first) == new_state->end()) {
+      new_state->insert(conn);
+      //auto insert_res = old_state->insert(conn);
     }
+  }
 }
 template <typename T>
 void ConnectionTracker::ComputeDelta2(const UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state, int64_t now) {

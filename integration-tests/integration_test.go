@@ -63,7 +63,6 @@ func TestRepeatedNetworkFlow(t *testing.T) {
 	//The closing of the last client connection is recorded
 	//Thus there are 4 networking events recorded
 	repeatedNetworkFlowTestSuite := new(RepeatedNetworkFlowTestSuite)
-	/*
 	repeatedNetworkFlowTestSuite.numMetaIter = 1
 	repeatedNetworkFlowTestSuite.numIter = 10
 	repeatedNetworkFlowTestSuite.sleepBetweenCurlTime = 1
@@ -81,7 +80,6 @@ func TestRepeatedNetworkFlow(t *testing.T) {
 	repeatedNetworkFlowTestSuite.sleepBetweenIterations = 1
 	repeatedNetworkFlowTestSuite.expectedReports = 4
 	suite.Run(t, repeatedNetworkFlowTestSuite)
-	*/
 
 	//Perform a curl
 	//wait one second
