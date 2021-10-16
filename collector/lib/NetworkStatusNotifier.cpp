@@ -221,22 +221,28 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
       }
     }
 
+    int64_t now = NowMicros();
     const sensor::NetworkConnectionInfoMessage* msg;
     ConnMap new_conn_state;
+    ConnMap afterglow_conn_state = old_conn_state;
+    ContainerEndpointMap afterglow_cep_state = old_cep_state;
     ContainerEndpointMap new_cep_state;
     WITH_TIMER(CollectorStats::net_fetch_state) {
-      int64_t now = NowMicros();
       new_conn_state = conn_tracker_->FetchConnState(true, true);
       //ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
-      ConnectionTracker::ComputeDeltaWithAfterglow(new_conn_state, &old_conn_state, now);
+      ConnectionTracker::ComputeDelta2(new_conn_state, &old_conn_state, now);
 
       new_cep_state = conn_tracker_->FetchEndpointState(true, true);
-      ConnectionTracker::ComputeDeltaWithAfterglow(new_cep_state, &old_cep_state, now);
-      //ConnectionTracker::ComputeDelta(new_cep_state, &old_cep_state);
+      //ConnectionTracker::ComputeDelta2(new_cep_state, &old_cep_state, &delta_cep_state, now);
+      ConnectionTracker::ComputeDelta(new_cep_state, &old_cep_state);
     }
 
     WITH_TIMER(CollectorStats::net_create_message) {
       msg = CreateInfoMessage(old_conn_state, old_cep_state);
+      std::cout << "afterglow_conn_state.size()= " << afterglow_conn_state.size() << std::endl;
+        std::cout << "new_conn_state.size()= " << new_conn_state.size() << std::endl;
+      ConnectionTracker::AddAfterglow(afterglow_conn_state, &new_conn_state, now);
+        std::cout << "new_conn_state.size()= " << new_conn_state.size() << std::endl;
       old_conn_state = std::move(new_conn_state);
       old_cep_state = std::move(new_cep_state);
     }
