@@ -115,13 +115,6 @@ func TestRepeatedNetworkFlow(t *testing.T) {
 
 	repeatedNetworkFlowTestSuite.numMetaIter = 1
 	repeatedNetworkFlowTestSuite.numIter = 4
-	repeatedNetworkFlowTestSuite.sleepBetweenCurlTime = 18
-	repeatedNetworkFlowTestSuite.sleepBetweenIterations = 1
-	repeatedNetworkFlowTestSuite.expectedReports = 2
-	suite.Run(t, repeatedNetworkFlowTestSuite)
-
-	repeatedNetworkFlowTestSuite.numMetaIter = 1
-	repeatedNetworkFlowTestSuite.numIter = 4
 	repeatedNetworkFlowTestSuite.sleepBetweenCurlTime = 22
 	repeatedNetworkFlowTestSuite.sleepBetweenIterations = 1
 	repeatedNetworkFlowTestSuite.expectedReports = 8
