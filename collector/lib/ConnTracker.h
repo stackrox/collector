@@ -104,6 +104,7 @@ class ConnectionTracker {
   // ComputeDelta computes a diff between new_state and *old_state, and stores the diff in *old_state.
   template <typename T>
   static void AddAfterglow(const UnorderedMap<T, ConnStatus>& afterglow_state, UnorderedMap<T, ConnStatus>* old_state, int64_t now);
+  static bool WasRecentlyActive(const ConnStatus& conn, int64_t now);
   template <typename T>
   static void ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state, int64_t now);
   //    static bool wasRecentlyActive(ConnStatus conn, int64_t now);
@@ -168,11 +169,12 @@ class ConnectionTracker {
 template <typename T>
 void ConnectionTracker::AddAfterglow(const UnorderedMap<T, ConnStatus>& afterglow_state, UnorderedMap<T, ConnStatus>* new_state, int64_t now) {
   for (const auto& conn : afterglow_state) {
-    if (now - conn.second.LastActiveTime() < AFTERGLOW_PERIOD_DEFAULT && new_state->find(conn.first) == new_state->end()) {
+    if (WasRecentlyActive(conn.second, now) && new_state->find(conn.first) == new_state->end()) {
       new_state->insert(conn);
     }
   }
 }
+
 template <typename T>
 void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state, int64_t now) {
   // Insert all objects from the new state, if anything changed about them.
@@ -180,8 +182,8 @@ void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_stat
   for (const auto& conn : new_state) {
     auto insert_res = old_state->insert(conn);
     auto& old_conn = *insert_res.first;
-    bool oldRecentlyActive = old_conn.second.IsActive() || now - old_conn.second.LastActiveTime() < AFTERGLOW_PERIOD_DEFAULT;
-    bool newRecentlyActive = conn.second.IsActive() || now - conn.second.LastActiveTime() < AFTERGLOW_PERIOD_DEFAULT;
+    bool oldRecentlyActive = WasRecentlyActive(old_conn.second, now);
+    bool newRecentlyActive = WasRecentlyActive(conn.second, now);
     if (!insert_res.second) {  // was already present
       if (newRecentlyActive != oldRecentlyActive) {
         // Object was either resurrected or newly closed. Update in either case.
