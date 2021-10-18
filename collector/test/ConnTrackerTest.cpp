@@ -363,7 +363,7 @@ TEST(ConnTrackerTest, TestComputeDeltaEmptyOldState) {
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
   Connection conn2("xzy", b, a, L4Proto::TCP, false);
 
-  int64_t now = NowMicros();
+  int64_t now = 0;
 
   ConnMap orig_state = {{conn1, ConnStatus(now, true)},
                         {conn2, ConnStatus(now, true)}};
@@ -371,7 +371,7 @@ TEST(ConnTrackerTest, TestComputeDeltaEmptyOldState) {
   ConnMap state2;
 
   // ComputeDelta on an empty old state should just copy over the entire state.
-  CT::ComputeDelta(state1, &state2);
+  CT::ComputeDelta(state1, &state2, now);
   EXPECT_EQ(state1, state2);
 }
 
@@ -382,7 +382,7 @@ TEST(ConnTrackerTest, TestComputeDeltaSameState) {
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
   Connection conn2("xzy", b, a, L4Proto::TCP, false);
 
-  int64_t now = NowMicros();
+  int64_t now = 0;
 
   ConnMap orig_state = {{conn1, ConnStatus(now, true)},
                         {conn2, ConnStatus(now, true)}};
@@ -390,7 +390,7 @@ TEST(ConnTrackerTest, TestComputeDeltaSameState) {
   ConnMap state2 = orig_state;
 
   // ComputeDelta on two equal states should result in an empty delta.
-  CT::ComputeDelta(state1, &state2);
+  CT::ComputeDelta(state1, &state2, now);
   EXPECT_THAT(state2, IsEmpty());
 }
 
@@ -401,7 +401,7 @@ TEST(ConnTrackerTest, TestComputeDeltaRemoveConnection) {
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
   Connection conn2("xzy", b, a, L4Proto::TCP, false);
 
-  int64_t now = NowMicros();
+  int64_t now = 0;
 
   ConnMap state1 = {{conn2, ConnStatus(now, true)}};
   ConnMap state2 = {{conn1, ConnStatus(now, true)},
@@ -409,7 +409,7 @@ TEST(ConnTrackerTest, TestComputeDeltaRemoveConnection) {
 
   // Removing a connection from the active state should have it appear as inactive in the delta (with the previous
   // timestamp).
-  CT::ComputeDelta(state1, &state2);
+  CT::ComputeDelta(state1, &state2, now);
   EXPECT_THAT(state2, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now, false))));
 }
 
@@ -430,7 +430,7 @@ TEST(ConnTrackerTest, TestComputeDeltaChangeTimeStamp) {
   state1[conn1] = ConnStatus(now2, true);
 
   // Just updating the timestamp of an active connection should not make it appear in the delta.
-  CT::ComputeDelta(state1, &state2);
+  CT::ComputeDelta(state1, &state2, now);
   EXPECT_THAT(state2, IsEmpty());
 }
 
@@ -442,6 +442,7 @@ TEST(ConnTrackerTest, TestComputeDeltaSetToInactive) {
   Connection conn2("xzy", b, a, L4Proto::TCP, false);
   int64_t now = 0;
   int64_t now2 = 1000;
+  int64_t now3 = 100000000; //100 seconds
 
   ConnMap state1 = {{conn1, ConnStatus(now, true)},
                     {conn2, ConnStatus(now, true)}};
@@ -450,7 +451,7 @@ TEST(ConnTrackerTest, TestComputeDeltaSetToInactive) {
   state1[conn1] = ConnStatus(now2, false);
 
   // Marking a connection as inactive should make it appear as inactive in the delta.
-  CT::ComputeDelta(state1, &state2);
+  CT::ComputeDelta(state1, &state2, now3);
   EXPECT_THAT(state2, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now2, false))));
 }
 
@@ -470,7 +471,7 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveRemovedIsntInDelta) {
   state2[conn1].SetActive(false);
   state1.erase(conn1);
 
-  CT::ComputeDelta(state1, &state2);
+  CT::ComputeDelta(state1, &state2, now);
   EXPECT_THAT(state2, IsEmpty());
 }
 /*

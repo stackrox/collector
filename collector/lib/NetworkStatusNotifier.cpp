@@ -230,11 +230,11 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
     WITH_TIMER(CollectorStats::net_fetch_state) {
       new_conn_state = conn_tracker_->FetchConnState(true, true);
       //ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
-      ConnectionTracker::ComputeDelta2(new_conn_state, &old_conn_state, now);
+      ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state, now);
 
       new_cep_state = conn_tracker_->FetchEndpointState(true, true);
       //ConnectionTracker::ComputeDelta2(new_cep_state, &old_cep_state, &delta_cep_state, now);
-      ConnectionTracker::ComputeDelta(new_cep_state, &old_cep_state);
+      ConnectionTracker::ComputeDelta(new_cep_state, &old_cep_state, now);
     }
 
     WITH_TIMER(CollectorStats::net_create_message) {
