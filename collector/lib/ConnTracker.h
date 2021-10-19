@@ -169,15 +169,6 @@ class ConnectionTracker {
 /* static */
 
 template <typename T>
-void ConnectionTracker::AddAfterglow(const UnorderedMap<T, ConnStatus>& afterglow_state, UnorderedMap<T, ConnStatus>* new_state, int64_t now) {
-  for (const auto& conn : afterglow_state) {
-    if (WasRecentlyActive(conn.second, now)) {
-      new_state->insert(conn);
-    }
-  }
-}
-
-template <typename T>
 void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state, int64_t now) {
   // Insert all objects from the new state, if anything changed about them.
 
@@ -194,7 +185,7 @@ void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_stat
         // Both objects are active. Not part of the delta.
         old_state->erase(insert_res.first);
       } else {
-        // Both objects are inactive. Update the timestamp if applicable, otherwise omit from old.
+        // Both objects are inactive. Update the timestamp if applicable, otherwise omit from delta.
         if (old_conn.second.LastActiveTime() < conn.second.LastActiveTime()) {
           old_conn.second = conn.second;
         } else {
