@@ -145,6 +145,9 @@ type MissingProcScrapeTestSuite struct {
 }
 
 type RepeatedNetworkFlowTestSuite struct {
+	//The goal with these integration tests is to make sure we report the correct number of 
+	//networking events. Sometimes if a connection is made multiple times within a short time
+	//called an "afterglow" period, we only want to report the connection once.
 	IntegrationTestSuiteBase
 	clientContainer string
 	clientIP        string

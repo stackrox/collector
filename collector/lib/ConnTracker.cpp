@@ -131,6 +131,8 @@ Connection ConnectionTracker::NormalizeConnectionNoLock(const Connection& conn) 
 }
 
 bool ConnectionTracker::WasRecentlyActive(const ConnStatus& conn, int64_t now) {
+  //Returns true if a connection is active or was active during the afterglow period.
+  //This is helpful for not reporting frequent connections every time we see them.
   return conn.IsActive() || now - conn.LastActiveTime() < afterglow_period_micros_;
 }
 

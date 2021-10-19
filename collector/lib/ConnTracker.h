@@ -169,6 +169,9 @@ class ConnectionTracker {
 /* static */
 template <typename T>
 void ConnectionTracker::AddAfterglow(const UnorderedMap<T, ConnStatus>& afterglow_state, UnorderedMap<T, ConnStatus>* new_state, int64_t now) {
+  //Adds connections that are in the afterglow_state, which were active within the afterglow period to the new_state,
+  //so that they get transferred over to the old_state and are not added to the delta if the new_state has those
+  //connections as well.
   for (const auto& conn : afterglow_state) {
     if (WasRecentlyActive(conn.second, now)) {
       new_state->insert(conn);
@@ -183,8 +186,8 @@ void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_stat
   for (const auto& conn : new_state) {
     auto insert_res = old_state->insert(conn);
     auto& old_conn = *insert_res.first;
-    if (!insert_res.second) {  // was already present
-      bool oldRecentlyActive = WasRecentlyActive(old_conn.second, now);
+    if (!insert_res.second) {                                            // was already present
+      bool oldRecentlyActive = WasRecentlyActive(old_conn.second, now);  //Connections active within the afterglow period are considered to be active for the purpose of the delta.
       bool newRecentlyActive = WasRecentlyActive(conn.second, now);
       if (newRecentlyActive != oldRecentlyActive) {
         // Object was either resurrected or newly closed. Update in either case.

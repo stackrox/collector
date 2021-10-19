@@ -224,6 +224,8 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
     int64_t now = NowMicros();
     const sensor::NetworkConnectionInfoMessage* msg;
     ConnMap new_conn_state;
+    //Information about recently active connections is saved in the afterglow state so that we do not report
+    //frequent connections every time that we see them.
     ConnMap afterglow_conn_state = old_conn_state;
     ContainerEndpointMap afterglow_cep_state = old_cep_state;
     ContainerEndpointMap new_cep_state;
@@ -236,7 +238,10 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
     }
 
     WITH_TIMER(CollectorStats::net_create_message) {
+      //Report the deltas, which have been saved in the old state.
       msg = CreateInfoMessage(old_conn_state, old_cep_state);
+      //Add recently active connections that were not in the new state to the new state and move them to the old state
+      //so that we keep track of connections and don't add them to the delta if we have seen them recently.
       ConnectionTracker::AddAfterglow(afterglow_conn_state, &new_conn_state, now);
       ConnectionTracker::AddAfterglow(afterglow_cep_state, &new_cep_state, now);
       old_conn_state = std::move(new_conn_state);
