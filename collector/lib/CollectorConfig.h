@@ -90,6 +90,7 @@ end
   std::string HostProc() const;
   std::string CollectionMethod() const;
   std::vector<std::string> Syscalls() const;
+  int64_t AfterglowPeriod() const;
   std::string LogLevel() const;
   bool EnableSysdigLog() const { return enable_sysdig_log_; }
   bool DisableNetworkFlows() const { return disable_network_flows_; }
@@ -116,6 +117,7 @@ end
   bool curl_verbose_ = false;
 
   bool enable_sysdig_log_ = false;
+  int64_t afterglow_period_micros = 20000000; //20 seconds in microseconds
 };
 
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c);

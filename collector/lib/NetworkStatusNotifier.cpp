@@ -240,6 +240,7 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
     WITH_TIMER(CollectorStats::net_create_message) {
       msg = CreateInfoMessage(old_conn_state, old_cep_state);
       ConnectionTracker::AddAfterglow(afterglow_conn_state, &new_conn_state, now);
+      ConnectionTracker::AddAfterglow(afterglow_cep_state, &new_cep_state, now);
       old_conn_state = std::move(new_conn_state);
       old_cep_state = std::move(new_cep_state);
     }

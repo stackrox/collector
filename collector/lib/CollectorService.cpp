@@ -88,6 +88,7 @@ void CollectorService::RunForever() {
 
     if (!config_.DisableNetworkFlows()) {
       conn_tracker = std::make_shared<ConnectionTracker>();
+      conn_tracker->setAfterglowPeriod(config_.AfterglowPeriod());
       UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs(config_.IgnoredL4ProtoPortPairs());
       conn_tracker->UpdateIgnoredL4ProtoPortPairs(std::move(ignored_l4proto_port_pairs));
       net_status_notifier = MakeUnique<NetworkStatusNotifier>(config_.Hostname(), config_.HostProc(),

@@ -101,6 +101,12 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
       CLOG(INFO) << "User configured turnOffScrape=" << turn_off_scrape_;
     }
 
+   // Afterglow Period
+   if (!config["afterglowPeriod"].empty()) {
+       afterglow_period_micros = (int64_t) (config["afterglowPeriod"].asDouble() * 1000000); //User can specify the afterglow period in seconds and it is converted into microseconds
+       CLOG(INFO) << "User configured afterglowPeriod=" << config["afterglowPeriod"].asString();
+   }
+
     // Log Level
     if (!config["logLevel"].empty()) {
       logging::LogLevel level;
@@ -215,6 +221,10 @@ std::vector<std::string> CollectorConfig::Syscalls() const {
 
 std::string CollectorConfig::LogLevel() const {
   return logging::GetLogLevelName(logging::GetLogLevel());
+}
+
+int64_t CollectorConfig::AfterglowPeriod() const {
+    return afterglow_period_micros;
 }
 
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
