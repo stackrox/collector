@@ -117,7 +117,7 @@ end
   bool curl_verbose_ = false;
 
   bool enable_sysdig_log_ = false;
-  int64_t afterglow_period_micros = 20000000; //20 seconds in microseconds
+  int64_t afterglow_period_micros = 20000000;  //20 seconds in microseconds
 };
 
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c);

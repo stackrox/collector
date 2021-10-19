@@ -99,11 +99,10 @@ class ConnectionTracker {
   ContainerEndpointMap FetchEndpointState(bool normalize = false, bool clear_inactive = true);
 
   void setAfterglowPeriod(int64_t afterglow_period_micros) {
-      afterglow_period_micros_ = afterglow_period_micros;
+    afterglow_period_micros_ = afterglow_period_micros;
   }
 
-
-    template <typename T>
+  template <typename T>
   static void AddAfterglow(const UnorderedMap<T, ConnStatus>& afterglow_state, UnorderedMap<T, ConnStatus>* old_state, int64_t now);
   static bool WasRecentlyActive(const ConnStatus& conn, int64_t now);
   // ComputeDelta computes a diff between new_state and *old_state, and stores the diff in *old_state.

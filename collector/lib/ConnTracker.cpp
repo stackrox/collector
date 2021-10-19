@@ -44,7 +44,7 @@ bool ContainsPrivateNetwork(Address::Family family, NRadixTree tree) {
   return tree.IsAnyIPNetSubset(family, private_networks_tree) || private_networks_tree.IsAnyIPNetSubset(family, tree);
 }
 
-int64_t ConnectionTracker::afterglow_period_micros_ = 20000000; //20 seconds in microseconds
+int64_t ConnectionTracker::afterglow_period_micros_ = 20000000;  //20 seconds in microseconds
 
 void ConnectionTracker::UpdateConnection(const Connection& conn, int64_t timestamp, bool added) {
   WITH_LOCK(mutex_) {
