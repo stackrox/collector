@@ -564,6 +564,58 @@ TEST(ConnTrackerTest, TestAddAfterglowShouldNotAddExisting) {
   EXPECT_THAT(new_state, afterglow_state);
 }
 
+void getNextAddress(int address_parts[4], int& port) {
+  for (int i = 0; i < 4; i++) {
+    address_parts[i]++;
+    if (address_parts[i] < 256)
+      break;
+    else {
+      address_parts[i] = 0;
+    }
+  }
+  if (address_parts[3] == 256) {
+    port++;
+    for (int i = 0; i < 4; i++) address_parts[i] = 0;
+  }
+}
+
+TEST(ConnTrackerTest, TestAddAfterglowBendhmark) {
+  int num_endpoints = 500;
+  int num_connections = 20000;
+  int address_parts[4] = {0, 0, 0, 0};
+  int port = 0;
+  vector<Endpoint> endpoints(num_endpoints);
+  vector<Connection> connections(num_connections * 2);
+  ConnMap afterglow_state, new_state;
+
+  for (int i = 0; i < num_endpoints; i++) {
+    Address address(address_parts[0], address_parts[1], address_parts[2], address_parts[3]);
+    Endpoint tempEndpoint(address, port);
+    endpoints[i] = tempEndpoint;
+    getNextAddress(address_parts, port);
+  }
+  int64_t now = 1000;
+  int connection_idx = 0;
+  for (int i = 0; i < num_endpoints; i++) {
+    for (int j = 0; j < num_endpoints; j++) {
+      Connection tempConn1(std::to_string(connection_idx), endpoints[i], endpoints[j], L4Proto::TCP, false);
+      Connection tempConn2(std::to_string(connection_idx), endpoints[j], endpoints[i], L4Proto::TCP, false);
+      afterglow_state.insert({tempConn1, ConnStatus(now, false)});
+      afterglow_state.insert({tempConn2, ConnStatus(now, false)});
+      connection_idx += 2;
+      if (connection_idx > num_connections) break;
+    }
+    if (connection_idx > num_connections) break;
+  }
+  auto t1 = std::chrono::steady_clock::now();
+  int now2 = 2000;
+  CT::AddAfterglow(afterglow_state, &new_state, now2);
+  auto t2 = std::chrono::steady_clock::now();
+  std::chrono::duration<double, std::milli> dur = t2 - t1;
+  std::cout << "afterglow_state.size()= " << afterglow_state.size() << std::endl;
+  std::cout << "Time taken by AddAfterglow= " << dur.count() << "ms\n";
+}
+
 }  // namespace
 
 }  // namespace collector

@@ -167,6 +167,14 @@ class ConnectionTracker {
 };
 
 /* static */
+template <typename T>
+void ConnectionTracker::AddAfterglow(const UnorderedMap<T, ConnStatus>& afterglow_state, UnorderedMap<T, ConnStatus>* new_state, int64_t now) {
+  for (const auto& conn : afterglow_state) {
+    if (WasRecentlyActive(conn.second, now)) {
+      new_state->insert(conn);
+    }
+  }
+}
 
 template <typename T>
 void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state, int64_t now) {
