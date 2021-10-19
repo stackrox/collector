@@ -1137,6 +1137,10 @@ jobs:
       dockerized:
         type: string
         default: "false"
+      collection_method:
+        type: enum
+        enum: [kernel_module, ebpf]
+        default: kernel_module
 
     <<: *defaultMachine
     working_directory: ~/workspace
@@ -1152,7 +1156,7 @@ jobs:
         no_output_timeout: 45m
         command: |
           export REMOTE_HOST_TYPE=local
-          export COLLECTION_METHOD=kernel_module
+          export COLLECTION_METHOD="<< parameters.collection_method >>"
           export VM_CONFIG="circle_local_<< parameters.vm-config >>"
           export COLLECTOR_REPO="stackrox/collector<<# parameters.use-ubi>>-test-cpaas<</ parameters.use-ubi>>"
           if [[ << parameters.dockerized >> == "true" ]]; then
@@ -1721,6 +1725,14 @@ workflows:
         requires:
         - dockerized-kdrivers
         dockerized: "true"
+    - integration-test-local:
+        <<: *runOnAllTagsWithDockerIOPushCtx
+        name: integration-test-local-ebpf-dockerized
+        vm-config: rhel
+        requires:
+        - dockerized-kdrivers
+        dockerized: "true"
+        collection_method: "ebpf"
     # - integration-test-local:
     #     <<: *runOnAllTagsWithDockerIOPushCtx
     #     name: integration-test-local-ubi
