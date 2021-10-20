@@ -11,10 +11,10 @@ SYSDIG_SCRATCH="${SCRATCH_DIR}/sysdig-src"
 BUILD_SCRATCH="${SCRATCH_DIR}/cmake-build"
 
 modfiles0() (
-	local dir="${1:-${SYSDIG_SCRATCH}/driver}"
-    cd "$dir"
-    find . -type f \( -name 'Makefile' -o -name '*.c' -o -name '*.h' \) -print0 | \
-    	LC_ALL=C sort -z
+	local dir="$1"
+	cd "$dir"
+	find . -type f \( -name 'Makefile' -o -name '*.c' -o -name '*.h' \) -print0 | \
+		LC_ALL=C sort -z
 )
 
 get_module_version() (
@@ -25,31 +25,33 @@ get_module_version() (
 		awk '{print$1}'
 )
 
-rm -rf "$SYSDIG_SCRATCH" "$BUILD_SCRATCH" 2>/dev/null || true
+rm -rf "$SYSDIG_SCRATCH" "$BUILD_SCRATCH" 2>/dev/null
 mkdir -p "$SYSDIG_SCRATCH" "$BUILD_SCRATCH"
 cp -r "${SYSDIG_DIR}/." "${SYSDIG_SCRATCH}"
 
 cd "$BUILD_SCRATCH"
 cmake \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_C_FLAGS="-fno-pie" \
-    -DPROBE_NAME=collector \
-    -DBUILD_USERSPACE=OFF \
-    -DBUILD_DRIVER=ON \
-    -DENABLE_DKMS=OFF \
-    -DBUILD_BPF=ON \
-    "$SYSDIG_SCRATCH"
+	-DCMAKE_BUILD_TYPE=Release \
+	-DCMAKE_C_FLAGS="-fno-pie" \
+	-DPROBE_NAME=collector \
+	-DBUILD_USERSPACE=OFF \
+	-DBUILD_DRIVER=ON \
+	-DENABLE_DKMS=OFF \
+	-DBUILD_BPF=ON \
+	"$SYSDIG_SCRATCH"
 KERNELDIR=/dev/null make driver/fast >&2 > /dev/null || true
 
 cd "${SYSDIG_SCRATCH}/driver"
 module_version="$(get_module_version .)"
-echo "$module_version"
+echo "Configured driver version: $module_version"
 
 source_archive="${OUTPUT_DIR}/${module_version}/"
 
 if [[ ! -d "$source_archive" ]]; then
-    mkdir -p "$source_archive" "$source_archive"/bpf
+	mkdir -p "$source_archive" "$source_archive"/bpf
 
-    cp *.c *.h Makefile "$source_archive"
-    cp bpf/*.c bpf/*.h bpf/Makefile "$source_archive"/bpf
+	cp *.c *.h Makefile "$source_archive"
+	cp bpf/*.c bpf/*.h bpf/Makefile "$source_archive"/bpf
+else
+	echo "Duplicate version '${module_version}' detected, skipping..."
 fi

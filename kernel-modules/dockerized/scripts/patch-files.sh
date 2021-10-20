@@ -42,9 +42,7 @@ checkout_branch "$WORK_BRANCH"
 SYSDIG_DIR="/collector/${SYSDIG_REL_DIR}" \
 SCRATCH_DIR="/scratch" \
 OUTPUT_DIR="/kobuild-tmp/versions-src" \
-/scripts/prepare-src 1>&2 > /dev/null
-
-apply_patches
+/scripts/prepare-src.sh
 
 legacy="$(echo "$BUILD_LEGACY" | tr '[:upper:]' '[:lower:]')"
 if [[ "$legacy" == "false" ]]; then
@@ -62,15 +60,14 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
 
 	checkout_branch $collector_ref
 
-	mod_ver_file="/versions/released-collectors/${collector_ref}"
-
 	SYSDIG_DIR="/collector/${SYSDIG_REL_DIR}" \
 	SCRATCH_DIR="/scratch" \
 	OUTPUT_DIR="/kobuild-tmp/versions-src" \
-	/scripts/prepare-src 1>&2 > /dev/null
+	/scripts/prepare-src.sh
 
-	# echo "${collector_ref}" >> "/versions/released-modules/$(< "${mod_ver_file}")"
 done < <(grep -v '^#' < /collector/RELEASED_VERSIONS | awk -F'#' '{print $1}' | awk 'NF==2 {print $1}' | sort | uniq)
+
+apply_patches
 
 # Leave the collector repo as clean as possible
 checkout_branch "$WORK_BRANCH"
