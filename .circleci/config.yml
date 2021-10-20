@@ -1135,7 +1135,7 @@ jobs:
         type: boolean
         default: false
       dockerized:
-        type: bool
+        type: boolean
         default: false
       collection_method:
         type: enum
