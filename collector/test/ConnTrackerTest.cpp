@@ -564,7 +564,7 @@ TEST(ConnTrackerTest, TestAddAfterglowShouldNotAddExisting) {
   EXPECT_THAT(new_state, afterglow_state);
 }
 
-void getNextAddress(int address_parts[4], int& port) {
+void GetNextAddress(int address_parts[4], int& port) {
   for (int i = 0; i < 4; i++) {
     address_parts[i]++;
     if (address_parts[i] < 256)
@@ -579,20 +579,17 @@ void getNextAddress(int address_parts[4], int& port) {
   }
 }
 
-TEST(ConnTrackerTest, TestAddAfterglowBendhmark) {
-  int num_endpoints = 500;
-  int num_connections = 20000;
+void CreateFakeState(ConnMap& afterglow_state, int num_endpoints, int num_connections) {
   int address_parts[4] = {0, 0, 0, 0};
   int port = 0;
   vector<Endpoint> endpoints(num_endpoints);
   vector<Connection> connections(num_connections * 2);
-  ConnMap afterglow_state, new_state;
 
   for (int i = 0; i < num_endpoints; i++) {
     Address address(address_parts[0], address_parts[1], address_parts[2], address_parts[3]);
     Endpoint tempEndpoint(address, port);
     endpoints[i] = tempEndpoint;
-    getNextAddress(address_parts, port);
+    GetNextAddress(address_parts, port);
   }
   int64_t now = 1000;
   int connection_idx = 0;
@@ -607,14 +604,55 @@ TEST(ConnTrackerTest, TestAddAfterglowBendhmark) {
     }
     if (connection_idx > num_connections) break;
   }
+}
+
+TEST(ConnTrackerTest, TestAddAfterglowBenchmark) {
+  int num_endpoints = 500;
+  int num_connections = 20000;
+  int64_t now = 2000;
+  ConnMap afterglow_state, new_state;
+
+  CreateFakeState(afterglow_state, num_endpoints, num_connections);
   auto t1 = std::chrono::steady_clock::now();
-  int now2 = 2000;
-  CT::AddAfterglow(afterglow_state, &new_state, now2);
+  CT::AddAfterglow(afterglow_state, &new_state, now);
   auto t2 = std::chrono::steady_clock::now();
   std::chrono::duration<double, std::milli> dur = t2 - t1;
   std::cout << "afterglow_state.size()= " << afterglow_state.size() << std::endl;
   std::cout << "new_state.size()= " << new_state.size() << std::endl;
-  std::cout << "Time taken by AddAfterglow= " << dur.count() << "ms\n";
+  std::cout << "Time taken by AddAfterglow= " << dur.count() << " ms\n";
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaBenchmark) {
+  int num_endpoints = 500;
+  int num_connections = 20000;
+  int64_t now = 2000;
+  ConnMap new_state, old_state;
+
+  CreateFakeState(new_state, num_endpoints, num_connections);
+  auto t1 = std::chrono::steady_clock::now();
+  CT::ComputeDelta(new_state, &old_state, now);
+  auto t2 = std::chrono::steady_clock::now();
+  std::chrono::duration<double, std::milli> dur = t2 - t1;
+  std::cout << "old_state.size()= " << old_state.size() << std::endl;
+  std::cout << "new_state.size()= " << new_state.size() << std::endl;
+  std::cout << "Time taken by ComputeDelta= " << dur.count() << " ms\n";
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaBenchmark2) {
+  int num_endpoints = 500;
+  int num_connections = 20000;
+  int64_t now = 2000;
+  ConnMap new_state, old_state;
+
+  CreateFakeState(new_state, num_endpoints, num_connections);
+  old_state = new_state;
+  auto t1 = std::chrono::steady_clock::now();
+  CT::ComputeDelta(new_state, &old_state, now);
+  auto t2 = std::chrono::steady_clock::now();
+  std::chrono::duration<double, std::milli> dur = t2 - t1;
+  std::cout << "old_state.size()= " << old_state.size() << std::endl;
+  std::cout << "new_state.size()= " << new_state.size() << std::endl;
+  std::cout << "Time taken by ComputeDelta= " << dur.count() << " ms\n";
 }
 
 }  // namespace
