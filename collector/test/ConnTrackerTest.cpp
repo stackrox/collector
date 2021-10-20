@@ -43,7 +43,7 @@ TEST(ConnTrackerTest, TestAddRemove) {
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
   Connection conn2("xzy", b, a, L4Proto::TCP, false);
 
-  int64_t now = NowMicros();
+  int64_t now = 1000;
 
   ConnectionTracker tracker;
   tracker.AddConnection(conn1, now);
@@ -55,7 +55,7 @@ TEST(ConnTrackerTest, TestAddRemove) {
   auto state2 = tracker.FetchConnState();
   EXPECT_EQ(state, state2);
 
-  int64_t now2 = NowMicros();
+  int64_t now2 = 2000;
   tracker.RemoveConnection(conn1, now2);
   state = tracker.FetchConnState();
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now2, false)), std::make_pair(conn2, ConnStatus(now, true))));
@@ -71,7 +71,7 @@ TEST(ConnTrackerTest, TestUpdate) {
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
   Connection conn2("xzy", b, a, L4Proto::TCP, false);
 
-  int64_t now = NowMicros();
+  int64_t now = 1000;
 
   ConnectionTracker tracker;
   tracker.Update({conn1, conn2}, {}, now);
@@ -82,7 +82,7 @@ TEST(ConnTrackerTest, TestUpdate) {
   auto state2 = tracker.FetchConnState();
   EXPECT_EQ(state, state2);
 
-  int64_t now2 = NowMicros();
+  int64_t now2 = 1005;
   tracker.Update({conn1}, {}, now2);
   state = tracker.FetchConnState();
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now2, true)), std::make_pair(conn2, ConnStatus(now, false))));
@@ -117,7 +117,7 @@ TEST(ConnTrackerTest, TestUpdateIgnoredL4ProtoPortPairs) {
                                 Endpoint(),
                                 Endpoint(IPNet(e.address(), 0, true), 9),
                                 L4Proto::UDP, false);
-  int64_t now = NowMicros();
+  int64_t now = 1000;
   ConnectionTracker tracker;
   tracker.Update({conn_ab, conn_ba, conn_ef, conn_fe}, {}, now);
 
@@ -170,7 +170,7 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
   Connection conn13_normalized("xyz", Endpoint(IPNet(Address()), 80), Endpoint(IPNet(Address(192, 168, 1, 10), 0, true), 0), L4Proto::TCP, true);
   Connection conn24_normalized("xzy", Endpoint(), Endpoint(IPNet(Address(192, 168, 0, 1), 0, true), 80), L4Proto::TCP, false);
 
-  int64_t now = NowMicros();
+  int64_t now = 1000;
 
   ConnectionTracker tracker;
   tracker.Update({conn1, conn2, conn3, conn4}, {}, now);
@@ -183,7 +183,7 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
   auto state2 = tracker.FetchConnState(true);
   EXPECT_EQ(state, state2);
 
-  int64_t now2 = NowMicros();
+  int64_t now2 = 1005;
   tracker.Update({conn1}, {}, now2);
   state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(
@@ -266,7 +266,7 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
 
   Connection conn15_normalized("xyz", Endpoint(IPNet(), 80), Endpoint(IPNet(Address(35, 127, 0, 15), 32, true), 0), L4Proto::TCP, true);
 
-  int64_t now3 = NowMicros();
+  int64_t now3 = 1010;
   tracker.Update({conn5}, {}, now3);
   state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(
@@ -321,7 +321,7 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
   Connection conn13_normalized("xyz", Endpoint(IPNet(), 9999), Endpoint(IPNet(Address(255, 255, 255, 255), 0, true), 0), L4Proto::TCP, true);
   Connection conn24_normalized("xyz", Endpoint(), Endpoint(IPNet(Address(255, 255, 255, 255), 0, true), 54321), L4Proto::TCP, false);
 
-  int64_t now = NowMicros();
+  int64_t now = 1000;
 
   ConnectionTracker tracker;
   tracker.Update({conn1, conn2, conn3, conn4, conn5}, {}, now);
@@ -363,7 +363,7 @@ TEST(ConnTrackerTest, TestComputeDeltaEmptyOldState) {
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
   Connection conn2("xzy", b, a, L4Proto::TCP, false);
 
-  int64_t now = 0;
+  int64_t now = 1000;
 
   ConnMap orig_state = {{conn1, ConnStatus(now, true)},
                         {conn2, ConnStatus(now, true)}};
@@ -382,7 +382,7 @@ TEST(ConnTrackerTest, TestComputeDeltaSameState) {
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
   Connection conn2("xzy", b, a, L4Proto::TCP, false);
 
-  int64_t now = 0;
+  int64_t now = 1000;
 
   ConnMap orig_state = {{conn1, ConnStatus(now, true)},
                         {conn2, ConnStatus(now, true)}};
@@ -401,7 +401,7 @@ TEST(ConnTrackerTest, TestComputeDeltaRemoveConnection) {
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
   Connection conn2("xzy", b, a, L4Proto::TCP, false);
 
-  int64_t now = 0;
+  int64_t now = 1000;
 
   ConnMap state1 = {{conn2, ConnStatus(now, true)}};
   ConnMap state2 = {{conn1, ConnStatus(now, true)},
@@ -420,8 +420,8 @@ TEST(ConnTrackerTest, TestComputeDeltaChangeTimeStamp) {
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
   Connection conn2("xzy", b, a, L4Proto::TCP, false);
 
-  int64_t now = 0;
-  int64_t now2 = 1000;
+  int64_t now = 1000;
+  int64_t now2 = 2000;
 
   ConnMap state1 = {{conn1, ConnStatus(now, true)},
                     {conn2, ConnStatus(now, true)}};
@@ -440,8 +440,8 @@ TEST(ConnTrackerTest, TestComputeDeltaSetToInactive) {
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
   Connection conn2("xzy", b, a, L4Proto::TCP, false);
-  int64_t now = 0;
-  int64_t now2 = 1000;
+  int64_t now = 1000;
+  int64_t now2 = 2000;
   int64_t now3 = 100000000;  //100 seconds
 
   ConnMap state1 = {{conn1, ConnStatus(now, true)},
@@ -462,7 +462,7 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveRemovedIsntInDelta) {
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
   Connection conn2("xzy", b, a, L4Proto::TCP, false);
-  int64_t now = 0;
+  int64_t now = 1000;
 
   ConnMap state1 = {{conn1, ConnStatus(now, true)},
                     {conn2, ConnStatus(now, true)}};
@@ -482,7 +482,7 @@ TEST(ConnTrackerTest, TestComputeDeltaWithAfterglow) {
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
   Connection conn2("xzy", b, a, L4Proto::TCP, false);
-  int64_t now = 0;
+  int64_t now = 1000;
 
   ConnMap state1 = {{conn1, ConnStatus(now, true)},
                     {conn2, ConnStatus(now, false)}};
@@ -501,7 +501,7 @@ TEST(ConnTrackerTest, TestComputeDeltaWithAfterglowExpired) {
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
   Connection conn2("xzy", b, a, L4Proto::TCP, false);
-  int64_t now = 0;
+  int64_t now = 1000;
   int64_t now2 = 400000000;
 
   ConnMap state1 = {{conn1, ConnStatus(now, true)},
@@ -519,7 +519,7 @@ TEST(ConnTrackerTest, TestAddAfterglow) {
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
   Connection conn2("xzy", b, a, L4Proto::TCP, false);
-  int64_t now = 0;
+  int64_t now = 1000;
   int64_t now2 = 400000000;
 
   ConnMap afterglow_state = {{conn1, ConnStatus(now, true)},
@@ -536,8 +536,8 @@ TEST(ConnTrackerTest, TestAddAfterglowNotExpired) {
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
   Connection conn2("xzy", b, a, L4Proto::TCP, false);
-  int64_t now = 0;
-  int64_t now2 = 1000;
+  int64_t now = 1000;
+  int64_t now2 = 2000;
 
   ConnMap afterglow_state = {{conn1, ConnStatus(now, true)},
                              {conn2, ConnStatus(now, false)}};
@@ -553,8 +553,8 @@ TEST(ConnTrackerTest, TestAddAfterglowShouldNotAddExisting) {
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
   Connection conn2("xzy", b, a, L4Proto::TCP, false);
-  int64_t now = 0;
-  int64_t now2 = 1000;
+  int64_t now = 1000;
+  int64_t now2 = 2000;
 
   ConnMap afterglow_state = {{conn1, ConnStatus(now, true)},
                              {conn2, ConnStatus(now, false)}};
@@ -613,6 +613,7 @@ TEST(ConnTrackerTest, TestAddAfterglowBendhmark) {
   auto t2 = std::chrono::steady_clock::now();
   std::chrono::duration<double, std::milli> dur = t2 - t1;
   std::cout << "afterglow_state.size()= " << afterglow_state.size() << std::endl;
+  std::cout << "new_state.size()= " << new_state.size() << std::endl;
   std::cout << "Time taken by AddAfterglow= " << dur.count() << "ms\n";
 }
 
