@@ -57,9 +57,7 @@ for file in /bundles/bundle-*.tgz; do
 
 	for module in /kobuild-tmp/versions-src/*; do
 		# TODO: apply blocklist to tasks
-		if [[ $module == "/kobuild-tmp/versions-src/95eb0815c4e7b59e0e5d0e53adb1a4faa5d5d902ad4caef2a27ed57a7f6260c3" ]]; then
-			continue
-		fi
+
 		compile_kmod $module $KERNEL_SRC $KERNEL_BUILD $KERNEL_VERSION
 		compile_bpf $module $KERNEL_SRC $KERNEL_BUILD $KERNEL_VERSION
 	done

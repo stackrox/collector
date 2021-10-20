@@ -1101,7 +1101,7 @@ jobs:
           mkdir -p ~/workspace/go/src/github.com/stackrox/bundles
 
           ## Get the bundle for the running machine
-          gsutil -m cp gs://stackrox-kernel-bundles/bundle-$(uname -r).tgz ~/workspace/go/src/github.com/stackrox/bundles
+          gsutil -m cp "gs://stackrox-kernel-bundles/bundle-$(uname -r).tgz" ~/workspace/go/src/github.com/stackrox/bundles
 
     - run:
         name: Build probes
@@ -1135,8 +1135,8 @@ jobs:
         type: boolean
         default: false
       dockerized:
-        type: string
-        default: "false"
+        type: bool
+        default: false
       collection_method:
         type: enum
         enum: [kernel_module, ebpf]
@@ -1159,11 +1159,7 @@ jobs:
           export COLLECTION_METHOD="<< parameters.collection_method >>"
           export VM_CONFIG="circle_local_<< parameters.vm-config >>"
           export COLLECTOR_REPO="stackrox/collector<<# parameters.use-ubi>>-test-cpaas<</ parameters.use-ubi>>"
-          if [[ << parameters.dockerized >> == "true" ]]; then
-            export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}-dockerized"
-          else
-            export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}"
-          fi
+          export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}<<# parameters.dockerized >>-dockerized<</ parameters.dockerized >>"
           echo "${COLLECTOR_IMAGE}"
           export USE_VALGRIND=$VALGRIND_INTEGRATION_TESTS
           make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report
@@ -1724,14 +1720,14 @@ workflows:
         vm-config: rhel
         requires:
         - dockerized-kdrivers
-        dockerized: "true"
+        dockerized: true
     - integration-test-local:
         <<: *runOnAllTagsWithDockerIOPushCtx
         name: integration-test-local-ebpf-dockerized
         vm-config: rhel
         requires:
         - dockerized-kdrivers
-        dockerized: "true"
+        dockerized: true
         collection_method: "ebpf"
     - integration-test-local:
         <<: *runOnAllTagsWithDockerIOPushCtx
