@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eo pipefail
+set -euo pipefail
 
 [[ -n "$SCRATCH_DIR" && -n "$SYSDIG_DIR" && -n "$OUTPUT_DIR" ]] || {
 	echo >&2 "SCRATCH_DIR, SYSDIG_DIR and OUTPUT_DIR all need to be set"
@@ -47,7 +47,7 @@ echo "$module_version"
 
 source_archive="${OUTPUT_DIR}/${module_version}/"
 
-if [[ ! -d $source_archive ]]; then
+if [[ ! -d "$source_archive" ]]; then
     mkdir -p "$source_archive" "$source_archive"/bpf
 
     cp *.c *.h Makefile "$source_archive"
