@@ -1174,10 +1174,10 @@ jobs:
           fi
           echo "Using Valgrind"
           log_dir=~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
-          for file in "$log_dir"/*-collector.log
-          do
-            "${SOURCE_ROOT}/.circleci/check-file-for-valgrind-errors.sh" "$file" "$VALGRIND_INTEGRATION_TESTS"
-          done
+          #for file in "$log_dir"/*-collector.log
+          #do
+          #  "${SOURCE_ROOT}/.circleci/check-file-for-valgrind-errors.sh" "$file" "$VALGRIND_INTEGRATION_TESTS"
+          #done
 
     - store_test_results:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml
@@ -1273,10 +1273,10 @@ jobs:
           fi
           echo "Using Valgrind"
           log_dir=~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
-          for file in "$log_dir"/*-collector.log
-          do
-            "${SOURCE_ROOT}/.circleci/check-file-for-valgrind-errors.sh" "$file" "$VALGRIND_INTEGRATION_TESTS"
-          done
+          #for file in "$log_dir"/*-collector.log
+          #do
+          #  "${SOURCE_ROOT}/.circleci/check-file-for-valgrind-errors.sh" "$file" "$VALGRIND_INTEGRATION_TESTS"
+          #done
 
     - run:
         name: "Get serial port output"
