@@ -1119,7 +1119,7 @@ jobs:
         command: |
             DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
                 --tag "stackrox/collector:${COLLECTOR_TAG}-dockerized" \
-                --build-arg COLLECTOR_TAG="${COLLECTOR_TAG}" \
+                --build-arg COLLECTOR_TAG="${COLLECTOR_TAG}-slim" \
                 ~/workspace/go/src/github.com/stackrox/collector/kernel-modules/dockerized/tests
 
     - run:
@@ -1672,7 +1672,7 @@ workflows:
           - quay-cgorman1-readonly
           - redhat-developer-account-login
         requires:
-        - lint
+        - images
     - prepare-kernels:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
