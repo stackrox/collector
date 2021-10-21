@@ -1086,6 +1086,46 @@ jobs:
             fi
             gsutil ls "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/"
 
+  dockerized-kdrivers:
+    <<: *defaultMachine
+
+    steps:
+    - initcommand
+    - gcloud-init
+    - docker-login-push
+    - quay-login
+
+    - run:
+        name: Create docker context
+        command: |
+          mkdir -p ~/workspace/go/src/github.com/stackrox/bundles
+
+          ## Get the bundle for the running machine
+          gsutil -m cp "gs://stackrox-kernel-bundles/bundle-$(uname -r).tgz" ~/workspace/go/src/github.com/stackrox/bundles
+
+    - run:
+        name: Build probes
+        command: |
+          DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
+            --build-arg BRANCH="$CIRCLE_BRANCH" \
+            --build-arg USER="${REDHAT_USERNAME}" \
+            --build-arg PASS="${REDHAT_PASSWORD}" \
+            --tag kernel-builder \
+            -f ~/workspace/go/src/github.com/stackrox/collector/kernel-modules/dockerized/Dockerfile \
+            ~/workspace/go/src/github.com/stackrox
+
+    - run:
+        name: Create test image
+        command: |
+            DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
+                --tag "stackrox/collector:${COLLECTOR_TAG}-dockerized" \
+                --build-arg COLLECTOR_TAG="${COLLECTOR_TAG}-slim" \
+                ~/workspace/go/src/github.com/stackrox/collector/kernel-modules/dockerized/tests
+
+    - run:
+        name: Push test image
+        command: |
+            docker push "stackrox/collector:${COLLECTOR_TAG}-dockerized"
 
   integration-test-local:
     parameters:
@@ -1095,6 +1135,13 @@ jobs:
       use-ubi:
         type: boolean
         default: false
+      dockerized:
+        type: boolean
+        default: false
+      collection_method:
+        type: enum
+        enum: [kernel_module, ebpf]
+        default: kernel_module
 
     <<: *defaultMachine
     working_directory: ~/workspace
@@ -1110,10 +1157,10 @@ jobs:
         no_output_timeout: 45m
         command: |
           export REMOTE_HOST_TYPE=local
-          export COLLECTION_METHOD=kernel_module
+          export COLLECTION_METHOD="<< parameters.collection_method >>"
           export VM_CONFIG="circle_local_<< parameters.vm-config >>"
           export COLLECTOR_REPO="stackrox/collector<<# parameters.use-ubi>>-test-cpaas<</ parameters.use-ubi>>"
-          export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}"
+          export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}<<# parameters.dockerized >>-dockerized<</ parameters.dockerized >>"
           export USE_VALGRIND=$VALGRIND_INTEGRATION_TESTS
           make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
@@ -1618,6 +1665,14 @@ workflows:
         <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - builder
+    - dockerized-kdrivers:
+        <<: *runOnAllTags
+        context:
+          - docker-io-push
+          - quay-cgorman1-readonly
+          - redhat-developer-account-login
+        requires:
+        - images
     - prepare-kernels:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
@@ -1659,6 +1714,21 @@ workflows:
         requires:
         - images
         - upload-modules
+    - integration-test-local:
+        <<: *runOnAllTagsWithDockerIOPushCtx
+        name: integration-test-local-dockerized
+        vm-config: rhel
+        requires:
+        - dockerized-kdrivers
+        dockerized: true
+    - integration-test-local:
+        <<: *runOnAllTagsWithDockerIOPushCtx
+        name: integration-test-local-ebpf-dockerized
+        vm-config: rhel
+        requires:
+        - dockerized-kdrivers
+        dockerized: true
+        collection_method: "ebpf"
     - integration-test-local:
         <<: *runOnAllTagsWithDockerIOPushCtx
         name: integration-test-local-ubi
