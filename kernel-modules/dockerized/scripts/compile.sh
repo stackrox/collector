@@ -15,7 +15,7 @@ compile() (
 	collector_version="${collector_src#"/kobuild-tmp/versions-src/"}"
 	mkdir -p /kernel-modules/"$collector_version"
 
-	if [[ $type == "mod" ]]; then
+	if [[ "$type" == "mod" ]]; then
 		src_dir="$collector_src"
 		object="$src_dir"/collector.ko
 		compressed=/kernel-modules/"$collector_version"/collector-"$kversion".ko.gz

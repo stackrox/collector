@@ -46,10 +46,12 @@ OUTPUT_DIR="/kobuild-tmp/versions-src" \
 
 legacy="$(echo "$BUILD_LEGACY" | tr '[:upper:]' '[:lower:]')"
 if [[ "$legacy" == "false" ]]; then
-	# We are not building legacy probes, move on
+	# We are not building legacy probes, patch and move on
+	apply_patches
 	exit 0
 fi
 
+# TODO: Support BLOCKLIST
 echo "Building legacy drivers"
 # Loop through collector versions and create the required patched sources.
 while IFS='' read -r line || [[ -n "$line" ]]; do
@@ -58,7 +60,7 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
 	collector_ref="$line"
 	echo "Preparing module source archive for collector version ${collector_ref}"
 
-	checkout_branch $collector_ref
+	checkout_branch "$collector_ref"
 
 	SYSDIG_DIR="/collector/${SYSDIG_REL_DIR}" \
 	SCRATCH_DIR="/scratch" \

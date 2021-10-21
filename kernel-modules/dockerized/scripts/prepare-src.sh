@@ -50,7 +50,7 @@ source_archive="${OUTPUT_DIR}/${module_version}/"
 if [[ ! -d "$source_archive" ]]; then
 	mkdir -p "$source_archive" "$source_archive"/bpf
 
-	cp *.c *.h Makefile "$source_archive"
+	cp ./*.c ./*.h Makefile "$source_archive"
 	cp bpf/*.c bpf/*.h bpf/Makefile "$source_archive"/bpf
 else
 	echo "Duplicate version '${module_version}' detected, skipping..."
