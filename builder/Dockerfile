@@ -42,7 +42,7 @@ RUN yum -y update \
         unzip \
         wget \
         which \
-        libbpf \
+        libbpf-static \
         libbpf-devel \
     && yum -y groupinstall "Development Tools" \
     && yum clean all \
