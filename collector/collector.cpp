@@ -181,12 +181,12 @@ void insertModule(const std::vector<std::string>& syscall_list) {
 }
 
 bool verifyProbeConfiguration() {
-  int fd = open(SysdigService::kProbePath, O_RDONLY);
-  if (fd < 0) {
-    CLOG(ERROR) << "Cannot open kernel probe:" << SysdigService::kProbePath;
-    return false;
-  }
-  close(fd);
+  // int fd = open(SysdigService::kProbePath, O_RDONLY);
+  // if (fd < 0) {
+  //   CLOG(ERROR) << "Cannot open kernel probe:" << SysdigService::kProbePath;
+  //   return false;
+  // }
+  // close(fd);
   // probe version checks are in bootstrap.sh
   return true;
 }

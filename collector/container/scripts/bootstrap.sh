@@ -320,18 +320,18 @@ function get_kernel_object() {
 }
 
 function main() {
-    
+
     # Get the host kernel version (or user defined env var)
     [ -n "$KERNEL_VERSION" ] || KERNEL_VERSION="$(uname -r)"
 
     # Get the kernel version
     KERNEL_MAJOR=$(echo "$KERNEL_VERSION" | cut -d. -f1)
     KERNEL_MINOR=$(echo "$KERNEL_VERSION" | cut -d. -f2)
-    
-    # Get and export the node hostname from Docker, 
+
+    # Get and export the node hostname from Docker,
     # and export because this env var is read by collector
     export NODE_HOSTNAME="$(cat /host/proc/sys/kernel/hostname)"
-    
+
     # Export SNI_HOSTNAME and default it to sensor.stackrox
     export SNI_HOSTNAME="${SNI_HOSTNAME:-sensor.stackrox}"
 
@@ -339,13 +339,13 @@ function main() {
     OS_DISTRO="$(get_distro)"
     OS_BUILD_ID="$(get_os_release_value 'BUILD_ID')"
     OS_ID="$(get_os_release_value 'ID')"
-    
+
     # Print node info
     log "Collector Version: ${COLLECTOR_VERSION}"
     log "Hostname: ${NODE_HOSTNAME}"
     log "OS: ${OS_DISTRO}"
     log "Kernel Version: ${KERNEL_VERSION}"
-    
+
     local module_version
     module_version="$(cat /kernel-modules/MODULE_VERSION.txt)"
     if [[ -n "$module_version" ]]; then
@@ -357,7 +357,7 @@ function main() {
 
     # Special case kernel version if running on COS
     if cos_host ; then
-        # remove '+' from end of kernel version 
+        # remove '+' from end of kernel version
         KERNEL_VERSION="${KERNEL_VERSION%+}-${OS_BUILD_ID}-${OS_ID}"
     fi
 
@@ -373,20 +373,20 @@ function main() {
     fi
 
     mkdir -p /module
-    
+
     # Backwards compatability for releases older than 2.4.20
     # COLLECTION_METHOD should be provided
     if [[ -z "$COLLECTION_METHOD" ]]; then
       log "Collector configured without environment variable (default: COLLECTION_METHOD=kernel_module)"
       export COLLECTION_METHOD="KERNEL_MODULE"
     fi
-    
+
     # Handle invalid collection method setting
     if ! collection_method_ebpf && ! collection_method_module ; then
       log "Error: Collector configured with invalid value: COLLECTION_METHOD=${COLLECTION_METHOD}"
       exit_with_error
     fi
-    
+
     # Handle attempt to run kernel module collection on COS host
     if cos_host && collection_method_module ; then
       log "Error: ${OS_DISTRO} does not support third-party kernel modules"
@@ -397,10 +397,10 @@ function main() {
         exit_with_error
       fi
     fi
-    
+
     # Handle attempt to run ebpf collection on host with kernel that does not support ebpf
     if collection_method_ebpf && ! kernel_supports_ebpf; then
-      if cos_host; then 
+      if cos_host; then
         log "Error: ${OS_DISTRO} does not support third-party kernel modules or the required eBPF features."
         exit_with_error
       else
@@ -419,24 +419,24 @@ function main() {
     kernel_versions+=("${KERNEL_VERSION}")
 
     success=0
-    for kernel_version in "${kernel_versions[@]}"; do
-      if get_kernel_object "${kernel_version}"; then
-        success=1
-        break
-      fi
-    done
-    if (( ! success )); then
-      exit_with_error
-    fi
+    # for kernel_version in "${kernel_versions[@]}"; do
+    #   if get_kernel_object "${kernel_version}"; then
+    #     success=1
+    #     break
+    #   fi
+    # done
+    # if (( ! success )); then
+    #   exit_with_error
+    # fi
 
     export KERNEL_CANDIDATES="${kernel_versions[@]}"
 
     # Print GPL notice after probe is downloaded or verified to be present
     gpl_notice
-    
+
     # Uncomment this to enable generation of core for Collector
     # echo '/core/core.%e.%p.%t' > /proc/sys/kernel/core_pattern
-    
+
     # Remove "/bin/sh -c" from arguments
     shift;shift
     log "Starting StackRox Collector..."
