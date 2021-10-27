@@ -7,6 +7,8 @@ ENV NPROCS=$NPROCS
 ## Install packaged dependencies
 USER root
 RUN yum -y update \
+    && yum -y install dnf-plugins-core \
+    && yum -y config-manager --set-enabled powertools \
     && yum -y install \
         autoconf \
         automake \
@@ -40,6 +42,8 @@ RUN yum -y update \
         unzip \
         wget \
         which \
+        libbpf \
+        libbpf-devel \
     && yum -y groupinstall "Development Tools" \
     && yum clean all \
     ;
