@@ -44,5 +44,6 @@ RUN /scripts/compile.sh
 FROM registry.access.redhat.com/ubi8/ubi:8.4
 
 COPY --from=builder /kernel-modules /kernel-modules
+COPY --from=patcher /kobuild-tmp/latest-version /latest-version
 
 ENTRYPOINT [ "/bin/bash", "-c" ]

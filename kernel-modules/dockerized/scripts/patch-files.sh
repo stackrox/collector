@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -exuo pipefail
 
 WORK_BRANCH="${1:-master}"
 BUILD_LEGACY="${2:-false}"
@@ -43,6 +43,9 @@ SYSDIG_DIR="/collector/${SYSDIG_REL_DIR}" \
 SCRATCH_DIR="/scratch" \
 OUTPUT_DIR="/kobuild-tmp/versions-src" \
 /scripts/prepare-src.sh
+
+# Save the latest driver version in a file for a later use in tests.
+find /kobuild-tmp/versions-src -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n1 basename | head -n1 > /kobuild-tmp/latest-version
 
 legacy="$(echo "$BUILD_LEGACY" | tr '[:upper:]' '[:lower:]')"
 if [[ "$legacy" == "false" ]]; then
