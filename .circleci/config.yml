@@ -237,46 +237,6 @@ jobs:
           done
           echo "export BUILD_USE_VALGRIND=$BUILD_USE_VALGRIND" >> ~/workspace/shared-env
 
-#          if [[ -f pr-metadata/labels/valgrind-unit-tests ]]; then
-#            echo 'export VALGRIND_UNIT_TESTS=true' >> ~/workspace/shared-env
-#            echo 'export CHECK_VALGIRND_UNIT_TEST=true' >> ~/workspace/shared-env
-#          else
-#            echo 'export VALGRIND_UNIT_TESTS=false' >> ~/workspace/shared-env
-#            echo 'export CHECK_VALGIRND_UNIT_TEST=false' >> ~/workspace/shared-env
-#          fi
-#
-#          if [[ -f pr-metadata/labels/valgrind-integration-tests ]]; then
-#            echo 'export VALGRIND_INTEGRATION_TESTS=true' >> ~/workspace/shared-env
-#            echo 'export CHECK_VALGIRND_INTEGRATION_TEST=true' >> ~/workspace/shared-env
-#          else
-#            echo 'export VALGRIND_INTEGRATION_TESTS=false' >> ~/workspace/shared-env
-#            echo 'export CHECK_VALGIRND_INTEGRATION_TEST=false' >> ~/workspace/shared-env
-#          fi
-#
-#          if [[ -f pr-metadata/labels/helgrind-unit-tests ]]; then
-#            echo 'export HELGRIND_UNIT_TESTS=true' >> ~/workspace/shared-env
-#            echo 'export CHECK_VALGIRND_UNIT_TEST=true' >> ~/workspace/shared-env
-#          else
-#            echo 'export HELGRIND_UNIT_TESTS=false' >> ~/workspace/shared-env
-#            echo 'export CHECK_VALGIRND_UNIT_TEST=false' >> ~/workspace/shared-env
-#          fi
-#
-#          if [[ -f pr-metadata/labels/helgrind-integration-tests ]]; then
-#            echo 'export HELGRIND_INTEGRATION_TESTS=true' >> ~/workspace/shared-env
-#            echo 'export CHECK_VALGIRND_INTEGRATION_TEST=true' >> ~/workspace/shared-env
-#          else
-#            echo 'export HELGRIND_INTEGRATION_TESTS=false' >> ~/workspace/shared-env
-#            echo 'export CHECK_VALGIRND_INTEGRATION_TEST=false' >> ~/workspace/shared-env
-#          fi
-#
-#          if [[ -f pr-metadata/labels/valgrind-unit-tests || -f pr-metadata/labels/valgrind-integration-tests ||  -f pr-metadata/labels/helgrind-unit-tests || -f pr-metadata/labels/helgrind-integration-tests ]]; then
-#            echo 'export BUILD_USE_VALGRIND=true' >> ~/workspace/shared-env
-#          else
-#            echo 'export BUILD_USE_VALGRIND=false' >> ~/workspace/shared-env
-#          fi
-
-
-
     - persist_to_workspace:
         root: ~/workspace
         paths:
