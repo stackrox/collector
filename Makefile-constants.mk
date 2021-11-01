@@ -14,7 +14,11 @@ endif
 USE_VALGRIND ?= false
 CMAKE_BUILD_TYPE ?= Release
 
-ifeq ($(USE_VALGRIND),true)
+ifeq ($(USE_HELGRIND),true)
+	COLLECTOR_PRE_ARGUMENTS := valgrind --tool=helgrind
+	USE_VALGRIND := true
+else ifeq ($(USE_VALGRIND),true)
 	COLLECTOR_PRE_ARGUMENTS := valgrind --leak-check=full
 endif
+
 export COLLECTOR_PRE_ARGUMENTS

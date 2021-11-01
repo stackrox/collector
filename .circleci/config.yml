@@ -216,23 +216,64 @@ jobs:
             echo 'export CMAKE_BUILD_TYPE=Release' >> ~/workspace/shared-env
           fi
 
-          if [[ -f pr-metadata/labels/valgrind-unit-tests ]]; then
-            echo 'export VALGRIND_UNIT_TESTS=true' >> ~/workspace/shared-env
-          else
-            echo 'export VALGRIND_UNIT_TESTS=false' >> ~/workspace/shared-env
-          fi
+          # Loops over all possible types of Valgrind tests, checks the labels, and sets environment variables accordingly
+          BUILD_USE_VALGRIND="false" # Default is not to use Valgrind, but build with Valgrind if any Valgrind label is present
+          for test_type in unit-test integration-test
+          do
+            CHECK_VALGRIND="false" # Default is not to check for Valgrind errors, but if any Valgrind is used, we must check for Valgrind errors
+            for valgrind_test_type in helgrind valgrind
+            do
+               up_valgrind_test_type=${valgrind_test_type^^}
+               up_test_type="$(echo ${test_type^^} | sed 's|-|_|')"
+              if [[ -f pr-metadata/labels/${valgrind_test_type}-${test_type} ]]; then
+                echo "export ${up_valgrind_test_type}_${up_test_type}=true" >> ~/workspace/shared-env
+                CHECK_VALGRIND="true"
+                BUILD_USE_VALGRIND="true"
+              else
+                echo "export ${up_valgrind_test_type}_${up_test_type}=false" >> ~/workspace/shared-env
+              fi
+            done
+            echo "export CHECK_${up_valgrind_test_type}_${up_test_type}=$CHECK_VALGRIND" >> ~/workspace/shared-env
+          done
+          echo "export BUILD_USE_VALGRIND=$BUILD_USE_VALGRIND" >> ~/workspace/shared-env
 
-          if [[ -f pr-metadata/labels/valgrind-integration-tests ]]; then
-            echo 'export VALGRIND_INTEGRATION_TESTS=true' >> ~/workspace/shared-env
-          else
-            echo 'export VALGRIND_INTEGRATION_TESTS=false' >> ~/workspace/shared-env
-          fi
-
-          if [[ -f pr-metadata/labels/valgrind-unit-tests || -f pr-metadata/labels/valgrind-integration-tests ]]; then
-            echo 'export BUILD_USE_VALGRIND=true' >> ~/workspace/shared-env
-          else
-            echo 'export BUILD_USE_VALGRIND=false' >> ~/workspace/shared-env
-          fi
+#          if [[ -f pr-metadata/labels/valgrind-unit-tests ]]; then
+#            echo 'export VALGRIND_UNIT_TESTS=true' >> ~/workspace/shared-env
+#            echo 'export CHECK_VALGIRND_UNIT_TEST=true' >> ~/workspace/shared-env
+#          else
+#            echo 'export VALGRIND_UNIT_TESTS=false' >> ~/workspace/shared-env
+#            echo 'export CHECK_VALGIRND_UNIT_TEST=false' >> ~/workspace/shared-env
+#          fi
+#
+#          if [[ -f pr-metadata/labels/valgrind-integration-tests ]]; then
+#            echo 'export VALGRIND_INTEGRATION_TESTS=true' >> ~/workspace/shared-env
+#            echo 'export CHECK_VALGIRND_INTEGRATION_TEST=true' >> ~/workspace/shared-env
+#          else
+#            echo 'export VALGRIND_INTEGRATION_TESTS=false' >> ~/workspace/shared-env
+#            echo 'export CHECK_VALGIRND_INTEGRATION_TEST=false' >> ~/workspace/shared-env
+#          fi
+#
+#          if [[ -f pr-metadata/labels/helgrind-unit-tests ]]; then
+#            echo 'export HELGRIND_UNIT_TESTS=true' >> ~/workspace/shared-env
+#            echo 'export CHECK_VALGIRND_UNIT_TEST=true' >> ~/workspace/shared-env
+#          else
+#            echo 'export HELGRIND_UNIT_TESTS=false' >> ~/workspace/shared-env
+#            echo 'export CHECK_VALGIRND_UNIT_TEST=false' >> ~/workspace/shared-env
+#          fi
+#
+#          if [[ -f pr-metadata/labels/helgrind-integration-tests ]]; then
+#            echo 'export HELGRIND_INTEGRATION_TESTS=true' >> ~/workspace/shared-env
+#            echo 'export CHECK_VALGIRND_INTEGRATION_TEST=true' >> ~/workspace/shared-env
+#          else
+#            echo 'export HELGRIND_INTEGRATION_TESTS=false' >> ~/workspace/shared-env
+#            echo 'export CHECK_VALGIRND_INTEGRATION_TEST=false' >> ~/workspace/shared-env
+#          fi
+#
+#          if [[ -f pr-metadata/labels/valgrind-unit-tests || -f pr-metadata/labels/valgrind-integration-tests ||  -f pr-metadata/labels/helgrind-unit-tests || -f pr-metadata/labels/helgrind-integration-tests ]]; then
+#            echo 'export BUILD_USE_VALGRIND=true' >> ~/workspace/shared-env
+#          else
+#            echo 'export BUILD_USE_VALGRIND=false' >> ~/workspace/shared-env
+#          fi
 
 
 
@@ -734,8 +775,8 @@ jobs:
     - run:
         name: Run collector unit tests
         command: |
-          make -C "${SOURCE_ROOT}" unittest "USE_VALGRIND=$VALGRIND_UNIT_TESTS" 2>&1 | tee "$UNITTEST_OUTPUT_FILE"
-          "${SOURCE_ROOT}/.circleci/check-file-for-valgrind-errors.sh" "$UNITTEST_OUTPUT_FILE" "$VALGRIND_UNIT_TESTS"
+          make -C "${SOURCE_ROOT}" unittest "USE_VALGRIND=$VALGRIND_UNIT_TESTS" "USE_HELGRIND=$HELGRIND_UNIT_TESTS" 2>&1 | tee "$UNITTEST_OUTPUT_FILE"
+          "${SOURCE_ROOT}/.circleci/check-file-for-valgrind-errors.sh" "$UNIT_TEST_OUTPUT_FILE" "$CHECK_VALGRIND_UNIT_TESTS"
 
     - persist_to_workspace:
         root: ~/workspace
@@ -1162,6 +1203,7 @@ jobs:
           export COLLECTOR_REPO="stackrox/collector<<# parameters.use-ubi>>-test-cpaas<</ parameters.use-ubi>>"
           export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}<<# parameters.dockerized >>-dockerized<</ parameters.dockerized >>"
           export USE_VALGRIND=$VALGRIND_INTEGRATION_TESTS
+          export USE_HELGRIND=$HELGRIND_INTEGRATION_TESTS
           make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
@@ -1242,6 +1284,7 @@ jobs:
             export VM_TYPE=<< parameters.vm_type >>
             export COLLECTOR_REPO="${COLLECTOR_REPO}"
             export USE_VALGRIND=$VALGRIND_INTEGRATION_TESTS
+            export USE_HELGRIND=$HELGRIND_INTEGRATION_TESTS
           EOF
 
     - run:
@@ -1267,7 +1310,7 @@ jobs:
     - run:
         name: "Check Valgrind errors"
         command: |
-          if [[ "$VALGRIND_INTEGRATION_TESTS" != "true" ]]; then
+          if [[ "$CHECK_VALGRIND_INTEGRATION_TESTS" != "true" ]]; then
             echo "Not using Valgrind. Not checking for Valgrind errors"
             exit 0
           fi
@@ -1275,7 +1318,7 @@ jobs:
           log_dir=~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
           for file in "$log_dir"/*-collector.log
           do
-            "${SOURCE_ROOT}/.circleci/check-file-for-valgrind-errors.sh" "$file" "$VALGRIND_INTEGRATION_TESTS"
+            "${SOURCE_ROOT}/.circleci/check-file-for-valgrind-errors.sh" "$file" "$CHECK_VALGRIND_INTEGRATION_TESTS"
           done
 
     - run:
