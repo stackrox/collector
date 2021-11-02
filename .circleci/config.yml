@@ -1170,7 +1170,7 @@ jobs:
     - run:
         name: "Check Valgrind errors"
         command: |
-          if [[ "$VALGRIND_INTEGRATION_TESTS" != "true" ]]; then
+          if [[ "$CHECK_VALGRIND_INTEGRATION_TESTS" != "true" ]]; then
             echo "Not using Valgrind. Not checking for Valgrind errors"
             exit 0
           fi
