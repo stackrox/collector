@@ -3377,3 +3377,4 @@
 5.9.8-200.fc33.x86_64 redhat modern
 5.9.9-100.fc32.x86_64 redhat modern
 5.9.9-200.fc33.x86_64 redhat modern
+5.15.0-60.fc36.x86_64 redhat impish
