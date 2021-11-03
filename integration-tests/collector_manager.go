@@ -206,6 +206,7 @@ func (c *collectorManager) killContainer(name string) error {
 }
 
 func (c *collectorManager) stopContainer(name string) error {
-	_, err := c.executor.Exec("docker", "stop", name)
+	//_, err := c.executor.Exec("docker", "stop", name)
+	_, err := c.executor.Exec("docker", "stop", "--time", "100", name)
 	return err
 }
