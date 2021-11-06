@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/boltdb/bolt"
 )
@@ -102,6 +103,7 @@ func (c *collectorManager) TearDown() error {
 	if !isRunning {
 		c.captureLogs("collector")
 		// Check if collector container segfaulted or exited with error
+		fmt.Print("Collector is not running\n")
 		exitCode, err := c.executor.ExitCode("collector")
 		if err != nil {
 			return err
@@ -110,6 +112,8 @@ func (c *collectorManager) TearDown() error {
 			return fmt.Errorf("Collector container has non-zero exit code (%d)", exitCode)
 		}
 	} else {
+		fmt.Print("Collector is running\n")
+		fmt.Print("Stopping collector\n")
 		c.stopContainer("collector")
 		c.captureLogs("collector")
 		c.killContainer("collector")
@@ -131,6 +135,28 @@ func (c *collectorManager) BoltDB() (db *bolt.DB, err error) {
 		fmt.Printf("Permission error. %v\n", err)
 	}
 	return db, err
+}
+
+func (c *collectorManager) getContainers() string {
+	cmd := []string{"docker", "container", "ps"}
+	containers, _ := c.executor.Exec(cmd...)
+	fmt.Print("\n")
+	fmt.Print("\n")
+	fmt.Print(containers)
+	fmt.Print("\n")
+	fmt.Print("\n")
+	return containers
+}
+
+func (c *collectorManager) getAllContainers() string {
+	cmd := []string{"docker", "container", "ps", "-a"}
+	containers, _ := c.executor.Exec(cmd...)
+	fmt.Print("\n")
+	fmt.Print("\n")
+	fmt.Print(containers)
+	fmt.Print("\n")
+	fmt.Print("\n")
+	return containers
 }
 
 func (c *collectorManager) launchGRPCServer() error {
@@ -197,11 +223,31 @@ func (c *collectorManager) captureLogs(containerName string) (string, error) {
 }
 
 func (c *collectorManager) killContainer(name string) error {
+	fmt.Print("In killContaimer\n")
+	fmt.Print(name + "\n")
 	_, err := c.executor.Exec("docker", "kill", name)
 	if err != nil {
-		return err
+		fmt.Print("err= ")
+		fmt.Print(err)
+		fmt.Print("\n")
+
+		//return err
 	}
-	_, err = c.executor.Exec("docker", "rm", "-fv", name)
+	time.Sleep(10 * time.Second)
+	var result string
+	maxAttempts := 3
+	attempt := 0
+	for attempt < maxAttempts {
+		attempt++
+		result, err = c.executor.Exec("docker", "rm", "-fv", name)
+		fmt.Print("result= " + result + "\n")
+		fmt.Print("err= ")
+		fmt.Print(err)
+		fmt.Print("\n")
+		if err == nil {
+			break
+		}
+	}
 	return err
 }
 
