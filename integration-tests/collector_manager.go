@@ -96,6 +96,7 @@ func (c *collectorManager) Launch() error {
 }
 
 func (c *collectorManager) TearDown() error {
+	//time.Sleep(10000 * time.Second)
 	isRunning, err := c.executor.IsContainerRunning("collector")
 	if err != nil {
 		return err
@@ -114,6 +115,7 @@ func (c *collectorManager) TearDown() error {
 	} else {
 		fmt.Print("Collector is running\n")
 		fmt.Print("Stopping collector\n")
+		c.killCollectorProcess()
 		c.stopContainer("collector")
 		c.captureLogs("collector")
 		c.killContainer("collector")
@@ -254,5 +256,52 @@ func (c *collectorManager) killContainer(name string) error {
 func (c *collectorManager) stopContainer(name string) error {
 	//_, err := c.executor.Exec("docker", "stop", name)
 	_, err := c.executor.Exec("docker", "stop", "--time", "100", name)
+	return err
+}
+
+func (c *collectorManager) killCollectorProcess() error {
+	collectorPid := c.getCollectorPid()
+	sigTerm := "15"
+	err := c.killProcess("collector", collectorPid, sigTerm)
+
+	return err
+}
+
+func (c *collectorManager) getCollectorPid() string {
+	//pid, err := c.executor.Exec("docker", "exec", "collector", "ls", "-d", "/proc/4*")
+	//pid, err := c.executor.Exec("docker", "exec", "collector", "ls", "/proc/")
+	//pid, err := c.executor.Exec("docker", "exec", "-i", "collector", "ls", "/proc/", "|", "grep", "4", "|", "awk", "'{", "print", "$1", "}'")
+	//pid, err := c.executor.Exec("docker", "exec", "collector", "'ls", "/proc/", "|", "grep", "4'")
+	//fmt.Print("pid= " + pid + "\n")
+	//	fmt.Print("err= ")
+	//	fmt.Print(err)
+	//	fmt.Print("\n")
+
+	pid := "47"
+
+	return pid
+}
+
+func (c *collectorManager) killProcess(containerName string, pid string, signal string) error {
+	//fmt.Print("Killing process " + pid + " in container " + containerName + "\n")
+	//Temporary attempt at killing collector process before killing the collector container.
+	pidi := 40
+	for pidi < 50 {
+		//c.executor.Exec("docker", "exec", containerName, "kill", "-" + signal, strconv.Itoa(pidi))
+		_, err := c.executor.Exec("docker", "exec", containerName, "kill", "-" + signal, strconv.Itoa(pidi))
+		pidi++
+		if err != nil {
+			fmt.Print("err= ")
+			fmt.Print(err)
+			fmt.Print("\n")
+		}
+	}
+	_, err := c.executor.Exec("docker", "exec", containerName, "kill", "-" + signal, strconv.Itoa(pidi))
+	if err != nil {
+		fmt.Print("err= ")
+		fmt.Print(err)
+		fmt.Print("\n")
+	}
+
 	return err
 }
