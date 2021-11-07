@@ -45,7 +45,7 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
   requires:
   - images
   - ubi-image
-  - integration-test-local
+    #- integration-test-local
 
 orbs:
   slack: circleci/slack@3.4.2
