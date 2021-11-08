@@ -188,8 +188,6 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 
 	err = s.collector.Launch()
 	require.NoError(s.T(), err)
-	s.collector.getContainers()
-	s.collector.getAllContainers()
 
 	images := []string{
 		"nginx:1.14-alpine",
@@ -233,21 +231,14 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 
 	time.Sleep(10 * time.Second)
 
-	fmt.Print("Before s.collector.TearDown\n")
-	s.collector.getContainers()
-	s.collector.getAllContainers()
 	err = s.collector.TearDown()
 	require.NoError(s.T(), err)
-	fmt.Print("After s.collector.TearDown\n")
-	s.collector.getContainers()
-	s.collector.getAllContainers()
 
 	s.db, err = s.collector.BoltDB()
 	require.NoError(s.T(), err)
 }
 
 func (s *ProcessNetworkTestSuite) TearDownSuite() {
-	fmt.Print("In ProcessNetworkTestSuite TearDowmSuite()\n")
 	s.cleanupContainer([]string{"nginx", "nginx-curl"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)

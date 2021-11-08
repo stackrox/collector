@@ -196,8 +196,7 @@ func (e *executor) IsContainerRunning(containerID string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	//return strconv.ParseBool(strings.Trim(result, "\"'"))
-	return strconv.ParseBool(strings.Trim(result,"\"'"))
+	return strconv.ParseBool(strings.Trim(result, "\"'"))
 }
 
 func (e *executor) ExitCode(containerID string) (int, error) {
