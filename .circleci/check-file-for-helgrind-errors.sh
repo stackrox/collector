@@ -1,10 +1,11 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bash 
+set -eo pipefail
 
 log_file=$1
 use_helgrind=$2
 
 if [[ "$use_helgrind" == "true" ]]; then
-  data_race_lines="$({ grep ^==[0-9].*data\ race "$log_file" ; } | wc -l)"
+  data_race_lines="$({ grep "^==[0-9].*data race" "$log_file" || true ; } | wc -l)"
   if (( data_race_lines > 0 ))
   then
     echo "Found $data_race_lines possible data races"
