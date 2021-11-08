@@ -35,8 +35,11 @@ extern "C" {
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/utsname.h>
 #include <uuid/uuid.h>
 }
+
+#include <fstream>
 
 #include "Logging.h"
 #include "Utility.h"
@@ -160,15 +163,24 @@ const char* GetSNIHostname() {
   const char* hostname = std::getenv("SNI_HOSTNAME");
   if (hostname && *hostname) return hostname;
 
-  return "";
+  // if the environment variable is not defined, then default
+  // to sensor.stackrox
+  return "sensor.stackrox";
 }
 
-const char* GetHostname() {
-  const char* hostname = std::getenv("NODE_HOSTNAME");
-  if (hostname && *hostname) return hostname;
+std::string GetHostname() {
+  const char* hostname_env = std::getenv("NODE_HOSTNAME");
+  if (hostname_env && *hostname_env) return {hostname_env};
 
-  CLOG(ERROR) << "Failed to determine hostname, environment variable NODE_HOSTNAME not set";
-  return "unknown";
+  std::ifstream file("/host/proc/sys/kernel/hostname");
+  if (!file.is_open()) {
+    CLOG(ERROR) << "Failed to determine hostname, environment variable NODE_HOSTNAME not set";
+    return "unknown";
+  }
+
+  std::string hostname;
+  std::getline(file, hostname);
+  return hostname;
 }
 
 const char* GetKernelCandidates() {
@@ -185,6 +197,55 @@ const char* GetModuleDownloadBaseURL() {
 
   CLOG(DEBUG) << "MODULE_DOWNLOAD_BASE_URL not set";
   return "";
+}
+
+// Reads a named value from the os-release file (either in /etc/ or in /usr/lib)
+// and filters for a specific name. The file is in the format <NAME>="<VALUE>"
+// Quotes are removed from the value, if found. If not found, an empty string is returned.
+std::string getOSReleaseValue(const char* name) {
+  std::ifstream release_file("/host/etc/os-release");
+  if (!release_file.is_open()) {
+    release_file.open("/host/usr/lib/os-release");
+  }
+
+  if (release_file.is_open()) {
+    std::string line;
+    while (std::getline(release_file, line)) {
+      std::istringstream stream(line);
+      std::string key;
+      std::string value;
+
+      std::getline(stream, key, '=');
+      std::getline(stream, value);
+
+      if (key == name) {
+        // remove quotes from around the value.
+        value.erase(std::remove(value.begin(), value.end(), '"'), value.end());
+        return value;
+      }
+    }
+  }
+
+  return "";
+}
+
+// Get the Linux distribution
+std::string GetDistro() {
+  std::string distro = getOSReleaseValue("PRETTY_NAME");
+  if (distro.empty()) {
+    return "Linux";
+  }
+  return {distro};
+}
+
+// Get the Build ID to identify which kind of kernel we're running on
+std::string GetBuildID() {
+  return getOSReleaseValue("BUILD_ID");
+}
+
+// Get the OS ID to identify which kind of kernel we're running on
+std::string GetOSID() {
+  return getOSReleaseValue("ID");
 }
 
 }  // namespace collector

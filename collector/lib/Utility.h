@@ -58,13 +58,22 @@ std::string GetHostPath(const std::string& file);
 const char* GetSNIHostname();
 
 // Get hostname from NODE_HOSTNAME env var
-const char* GetHostname();
+std::string GetHostname();
 
 // Get kernel candidates from KERNEL_CANDIDATES env var
 const char* GetKernelCandidates();
 
 // Get base URL for kernel modules downloads from MODULE_DOWNLOAD_BASE_URL
 const char* GetModuleDownloadBaseURL();
+
+// Get the Linux distribution
+std::string GetDistro();
+
+// Get the Build ID to identify which kind of kernel we're running on
+std::string GetBuildID();
+
+// Get the OS ID to identify which kind of kernel we're running on
+std::string GetOSID();
 
 namespace impl {
 
