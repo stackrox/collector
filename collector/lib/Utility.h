@@ -66,15 +66,6 @@ const char* GetKernelCandidates();
 // Get base URL for kernel modules downloads from MODULE_DOWNLOAD_BASE_URL
 const char* GetModuleDownloadBaseURL();
 
-// Get the Linux distribution
-std::string GetDistro();
-
-// Get the Build ID to identify which kind of kernel we're running on
-std::string GetBuildID();
-
-// Get the OS ID to identify which kind of kernel we're running on
-std::string GetOSID();
-
 namespace impl {
 
 inline void StrAppend(std::ostringstream* os) {}

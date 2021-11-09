@@ -77,40 +77,31 @@ struct KernelVersion {
 };
 
 class HostInfo {
-  KernelVersion GetKernelVersion() {
-    if (kernel_version_.release.empty()) {
-      kernel_version_ = KernelVersion::Get();
-    }
-    return kernel_version_;
+ public:
+  static HostInfo& Instance() {
+    static HostInfo instance;
+    return instance;
   }
 
-  std::string& GetHostname() {
-    if (hostname_.empty()) {
-      hostname_ = collector::GetHostname();
-    }
-    return hostname_;
-  }
+  // delete the followinw to ensure singleton pattern
+  HostInfo(HostInfo const&) = delete;
+  void operator=(HostInfo const&) = delete;
 
-  std::string& GetDistro() {
-    if (distro_.empty()) {
-      distro_ = collector::GetDistro();
-    }
-    return distro_;
-  }
+  // Get the Kernel version information for the host.
+  KernelVersion GetKernelVersion();
 
-  std::string& GetBuildID() {
-    if (build_id_.empty()) {
-      build_id_ = collector::GetBuildID();
-    }
-    return build_id_;
-  }
+  // Get the host's hostname
+  std::string& GetHostname();
 
-  std::string& GetOSID() {
-    if (os_id_.empty()) {
-      os_id_ = collector::GetOSID();
-    }
-    return os_id_;
-  }
+  // Get the Linux distribution, if possible.
+  // If not, default to "Linux"
+  std::string& GetDistro();
+
+  // Get the Build ID of the host.
+  std::string& GetBuildID();
+
+  // Get the OS ID of the host
+  std::string& GetOSID();
 
   bool IsCOS() {
     return GetOSID() == "cos" && !GetBuildID().empty();
@@ -146,6 +137,10 @@ class HostInfo {
   }
 
  private:
+  // basic default constructor, doesn't need to do anything,
+  // since we're lazy-initializing internal state.
+  HostInfo() = default;
+
   KernelVersion kernel_version_;
   std::string distro_;
   std::string hostname_;
