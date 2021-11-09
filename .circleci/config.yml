@@ -45,7 +45,7 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
   requires:
   - images
   - ubi-image
-    #- integration-test-local
+  - integration-test-local
 
 orbs:
   slack: circleci/slack@3.4.2
@@ -217,14 +217,17 @@ jobs:
           fi
 
           # Loops over all possible types of Valgrind tests, checks the labels, and sets environment variables accordingly
-          BUILD_USE_VALGRIND="false" # Default is not to use Valgrind, but build with Valgrind if any Valgrind label is present
+          # Default is not to use Valgrind, but build with Valgrind if any Valgrind label is present
+
+          BUILD_USE_VALGRIND="false" 
           for test_type in unit-tests integration-tests
           do
-            CHECK_VALGRIND="false" # Default is not to check for Valgrind errors, but if any Valgrind is used, we must check for Valgrind errors
+            CHECK_VALGRIND="false"
             for valgrind_test_type in helgrind valgrind
             do
-               up_valgrind_test_type=${valgrind_test_type^^}
-               up_test_type="$(echo ${test_type^^} | sed 's|-|_|')"
+              up_valgrind_test_type=${valgrind_test_type^^}
+              up_test_type="$(echo ${test_type^^} | sed 's|-|_|')"
+
               if [[ -f pr-metadata/labels/${valgrind_test_type}-${test_type} ]]; then
                 echo "export ${up_valgrind_test_type}_${up_test_type}=true" >> ~/workspace/shared-env
                 CHECK_VALGRIND="true"
