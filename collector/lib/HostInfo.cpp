@@ -7,9 +7,11 @@
 
 namespace collector {
 
+namespace {
+
 // Helper to construct an absolute path based on mount location
 // of various on-host files.
-static std::string pathOnHost(const char* path) {
+std::string pathOnHost(const char* path) {
   static const char* root = "/host";
   std::stringstream stream;
   stream << root << path;
@@ -19,36 +21,43 @@ static std::string pathOnHost(const char* path) {
 // Reads a named value from the os-release file (either in /etc/ or in /usr/lib)
 // and filters for a specific name. The file is in the format <NAME>="<VALUE>"
 // Quotes are removed from the value, if found. If not found, an empty string is returned.
-static std::string getOSReleaseValue(const char* name) {
+std::string getOSReleaseValue(const char* name) {
   std::ifstream release_file(pathOnHost("/etc/os-release"));
   if (!release_file.is_open()) {
     release_file.open(pathOnHost("/usr/lib/os-release"));
-  }
-
-  if (release_file.is_open()) {
-    std::string line;
-    while (std::getline(release_file, line)) {
-      std::istringstream stream(line);
-      std::string key;
-      std::string value;
-
-      std::getline(stream, key, '=');
-      std::getline(stream, value);
-
-      if (key == name) {
-        // remove quotes from around the value.
-        value.erase(std::remove(value.begin(), value.end(), '"'), value.end());
-        return value;
-      }
+    if (!release_file.is_open()) {
+      return "";
     }
   }
 
+  std::string line;
+  while (std::getline(release_file, line)) {
+    std::istringstream stream(line);
+    std::string key;
+    std::string value;
+
+    std::getline(stream, key, '=');
+    std::getline(stream, value);
+
+    if (key == name) {
+      // ensure we remove quotations from the start and end, if they exist.
+      if (*value.begin() == '"') {
+        value.erase(0, 1);
+      }
+      if (*(value.end() - 1) == '"') {
+        value.erase(value.size() - 1);
+      }
+      return value;
+    }
+  }
   return "";
 }
 
+}  // namespace
+
 KernelVersion HostInfo::GetKernelVersion() {
   if (kernel_version_.release.empty()) {
-    kernel_version_ = KernelVersion::Get();
+    kernel_version_ = KernelVersion::FromHost();
   }
   return kernel_version_;
 }
@@ -59,11 +68,13 @@ std::string& HostInfo::GetHostname() {
     if (hostname_env && *hostname_env) {
       hostname_ = std::string(hostname_env);
     } else {
+      CLOG(INFO) << "environment variable NODE_HOSTNAME not set";
       // if we can't get the hostname from the environment
       // we can look in /proc (mounted at /host/proc in the collector container)
-      std::ifstream file("/host/proc/sys/kernel/hostname");
+      std::ifstream file(pathOnHost("/proc/sys/kernel/hostname"));
       if (!file.is_open()) {
-        CLOG(ERROR) << "Failed to determine hostname, environment variable NODE_HOSTNAME not set";
+        CLOG(INFO) << "sys/kernel/hostname file not found";
+        CLOG(WARNING) << "Failed to determine hostname";
         hostname_ = "unknown";
       } else {
         std::getline(file, hostname_);

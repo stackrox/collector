@@ -5,7 +5,7 @@
 namespace collector {
 
 TEST(KernelVersionTest, TestParseWithBuildID) {
-  KernelVersion version = KernelVersion::Parse("5.1.10-123", "");
+  KernelVersion version = KernelVersion("5.1.10-123", "");
   EXPECT_EQ(5, version.major);
   EXPECT_EQ(1, version.minor);
   EXPECT_EQ(10, version.patch);
@@ -13,7 +13,7 @@ TEST(KernelVersionTest, TestParseWithBuildID) {
 }
 
 TEST(KernelVersionTest, TestParseWithoutBuildID) {
-  KernelVersion version = KernelVersion::Parse("5.1.10", "");
+  KernelVersion version = KernelVersion("5.1.10", "");
   EXPECT_EQ(5, version.major);
   EXPECT_EQ(1, version.minor);
   EXPECT_EQ(10, version.patch);
@@ -21,7 +21,7 @@ TEST(KernelVersionTest, TestParseWithoutBuildID) {
 }
 
 TEST(KernelVersionTest, TestParseWithAdditional) {
-  KernelVersion version = KernelVersion::Parse("5.10.25-linuxkit", "");
+  KernelVersion version = KernelVersion("5.10.25-linuxkit", "");
   EXPECT_EQ(5, version.major);
   EXPECT_EQ(10, version.minor);
   EXPECT_EQ(25, version.patch);
@@ -29,7 +29,7 @@ TEST(KernelVersionTest, TestParseWithAdditional) {
 }
 
 TEST(KernelVersionTest, TestParseWithBuildIDAndAdditional) {
-  KernelVersion version = KernelVersion::Parse("3.10.0-957.10.1.el7.x86_64", "");
+  KernelVersion version = KernelVersion("3.10.0-957.10.1.el7.x86_64", "");
   EXPECT_EQ(3, version.major);
   EXPECT_EQ(10, version.minor);
   EXPECT_EQ(0, version.patch);
@@ -37,7 +37,7 @@ TEST(KernelVersionTest, TestParseWithBuildIDAndAdditional) {
 }
 
 TEST(KernelVersionTest, TestParseInvalidRelease) {
-  KernelVersion version = KernelVersion::Parse("not.a.release", "");
+  KernelVersion version = KernelVersion("not.a.release", "");
   EXPECT_EQ(0, version.major);
   EXPECT_EQ(0, version.minor);
   EXPECT_EQ(0, version.patch);
@@ -67,7 +67,7 @@ TEST(KernelVersionTest, TestParseKnownReleaseStrings) {
   };
 
   for (auto k : test_data) {
-    KernelVersion version = KernelVersion::Parse(k.release_string, "");
+    KernelVersion version = KernelVersion(k.release_string, "");
     EXPECT_EQ(k.major, version.major);
     EXPECT_EQ(k.minor, version.minor);
     EXPECT_EQ(k.patch, version.patch);
@@ -80,7 +80,7 @@ TEST(KernelVersionTest, TestVersionStringPopulated) {
   // We're not doing anything with the version string asside from storing it
   // for other things to process, so we can simply test that it is populated
   // correctly in the KernelVersion class
-  KernelVersion version = KernelVersion::Parse("5.10.3", "this-is-a-version-string");
+  KernelVersion version = KernelVersion("5.10.3", "this-is-a-version-string");
   EXPECT_EQ("this-is-a-version-string", version.version);
 }
 

@@ -15,7 +15,33 @@ const int MIN_RHEL_BUILD_ID = 957;
 const int MAX_RHEL_BUILD_ID = 1062;
 
 struct KernelVersion {
-  static KernelVersion Get() {
+  KernelVersion() : major(0), minor(0), patch(0), build_id(0) {}
+
+  KernelVersion(const char* release, const char* version) : major(0), minor(0), patch(0), build_id(0) {
+    // used to skip individual characters in the stream
+    char skip;
+    std::stringstream stream(release);
+
+    // expected format:
+    // {major}.{minor}.{patch}[-{build_id}]
+    // where -{build_id} is optional
+
+    stream >> this->major >> skip;
+    stream >> this->minor >> skip;
+    stream >> this->patch >> skip;
+
+    // if there is no build id field, this is still safe (though the stream's
+    // error bit will be set because it's unlikely to be an integer)
+    stream >> build_id;
+
+    this->version = version;
+    this->release = release;
+  }
+
+  // Constructs a KernelVersion from host information.
+  // First checking the KERNEL_VERSION environment variable, otherwise uses
+  // the uname syscall.
+  static KernelVersion FromHost() {
     const char* release = nullptr;
     const char* version = nullptr;
     const char* kernel_version_env = std::getenv("KERNEL_VERSION");
@@ -31,33 +57,7 @@ struct KernelVersion {
       version = uts_buffer.version;
     }
 
-    return KernelVersion::Parse(release, version);
-  }
-
-  // Given a release string, parse it into a KernelVersion object
-  static KernelVersion Parse(const char* release, const char* version) {
-    int major = 0;
-    int minor = 0;
-    int patch = 0;
-    int build_id = 0;
-
-    // used to skip individual characters in the stream
-    char skip;
-    std::stringstream stream(release);
-
-    // expected format:
-    // {major}.{minor}.{patch}[-{build_id}]
-    // where -{build_id} is optional
-
-    stream >> major >> skip;
-    stream >> minor >> skip;
-    stream >> patch >> skip;
-
-    // if there is no build id field, this is still safe (though the stream's
-    // error bit will be set because it's unlikely to be an integer)
-    stream >> build_id;
-
-    return KernelVersion{major, minor, patch, build_id, {release}, {version}};
+    return {release, version};
   }
 
   bool HasEBPFSupport() {
@@ -88,7 +88,7 @@ class HostInfo {
     return instance;
   }
 
-  // delete the followinw to ensure singleton pattern
+  // delete the following to ensure singleton pattern
   HostInfo(HostInfo const&) = delete;
   void operator=(HostInfo const&) = delete;
 
