@@ -1180,7 +1180,7 @@ jobs:
           for file in "$log_dir"/*-collector.log
           do
             "${SOURCE_ROOT}/.circleci/check-file-for-valgrind-errors.sh" "$file" "$VALGRIND_INTEGRATION_TESTS"
-            "${SOURCE_ROOT}/.circleci/check-file-for-helgrind-errors.sh" "$UNITTEST_OUTPUT_FILE" "$HELGRIND_INTEGRATION_TESTS"
+            "${SOURCE_ROOT}/.circleci/check-file-for-helgrind-errors.sh" "$file" "$HELGRIND_INTEGRATION_TESTS"
           done
 
     - store_test_results:
