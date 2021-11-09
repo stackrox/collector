@@ -41,6 +41,7 @@ extern "C" {
 
 #include <fstream>
 
+#include "HostInfo.h"
 #include "Logging.h"
 #include "Utility.h"
 
@@ -169,18 +170,8 @@ const char* GetSNIHostname() {
 }
 
 std::string GetHostname() {
-  const char* hostname_env = std::getenv("NODE_HOSTNAME");
-  if (hostname_env && *hostname_env) return {hostname_env};
-
-  std::ifstream file("/host/proc/sys/kernel/hostname");
-  if (!file.is_open()) {
-    CLOG(ERROR) << "Failed to determine hostname, environment variable NODE_HOSTNAME not set";
-    return "unknown";
-  }
-
-  std::string hostname;
-  std::getline(file, hostname);
-  return hostname;
+  HostInfo& info = HostInfo::Instance();
+  return info.GetHostname();
 }
 
 const char* GetKernelCandidates() {
