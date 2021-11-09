@@ -7,13 +7,22 @@
 
 namespace collector {
 
+// Helper to construct an absolute path based on mount location
+// of various on-host files.
+static std::string pathOnHost(const char* path) {
+  static const char* root = "/host";
+  std::stringstream stream;
+  stream << root << path;
+  return stream.str();
+}
+
 // Reads a named value from the os-release file (either in /etc/ or in /usr/lib)
 // and filters for a specific name. The file is in the format <NAME>="<VALUE>"
 // Quotes are removed from the value, if found. If not found, an empty string is returned.
-static std::string getOSReleaseValue(const char *name) {
-  std::ifstream release_file("/host/etc/os-release");
+static std::string getOSReleaseValue(const char* name) {
+  std::ifstream release_file(pathOnHost("/etc/os-release"));
   if (!release_file.is_open()) {
-    release_file.open("/host/usr/lib/os-release");
+    release_file.open(pathOnHost("/usr/lib/os-release"));
   }
 
   if (release_file.is_open()) {
