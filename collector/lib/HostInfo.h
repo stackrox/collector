@@ -31,6 +31,11 @@ struct KernelVersion {
       version = uts_buffer.version;
     }
 
+    return KernelVersion::Parse(release, version);
+  }
+
+  // Given a release string, parse it into a KernelVersion object
+  static KernelVersion Parse(const char* release, const char* version) {
     int major = 0;
     int minor = 0;
     int patch = 0;
