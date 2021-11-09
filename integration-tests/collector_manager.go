@@ -134,18 +134,18 @@ func (c *collectorManager) BoltDB() (db *bolt.DB, err error) {
 }
 
 //These two methods might be useful in the future. I used them for debugging
-func (c *collectorManager) getContainers() string {
+func (c *collectorManager) getContainers() (string, error) {
 	cmd := []string{"docker", "container", "ps"}
-	containers, _ := c.executor.Exec(cmd...)
+	containers, err := c.executor.Exec(cmd...)
 
-	return containers
+	return containers, err
 }
 
-func (c *collectorManager) getAllContainers() string {
+func (c *collectorManager) getAllContainers() (string, error) {
 	cmd := []string{"docker", "container", "ps", "-a"}
-	containers, _ := c.executor.Exec(cmd...)
+	containers, err := c.executor.Exec(cmd...)
 
-	return containers
+	return containers, err
 }
 
 func (c *collectorManager) launchGRPCServer() error {
@@ -221,14 +221,11 @@ func (c *collectorManager) killContainer(name string) error {
 		// Returning here seems to be a problem as the container might not be removed	
 		//return err
 	}
-
-
 	_, err = c.executor.Exec("docker", "rm", "-fv", name)
 	return err
 }
 
 func (c *collectorManager) stopContainer(name string) error {
-	//_, err := c.executor.Exec("docker", "stop", name)
 	_, err := c.executor.Exec("docker", "stop", "--time", "100", name)
 	return err
 }
