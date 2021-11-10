@@ -89,6 +89,8 @@ struct KernelVersion {
     return {release, version};
   }
 
+  // Whether or not the kernel has built-in eBPF support
+  // Anything before 4.14 doesn't have support, anything newer does.
   bool HasEBPFSupport() {
     if (major < 4 || (major == 4 && minor < 14)) {
       return false;
@@ -110,8 +112,13 @@ struct KernelVersion {
   std::string version;
 };
 
+// Singleton that provides ways of retrieving Host information to inform
+// runtime configuration of collector.
 class HostInfo {
  public:
+  // Singleton - we're not expecting this Host information to change
+  // during execution of collector, so this will be our one source of 'truth'
+  // but primarily used during collector startup.
   static HostInfo& Instance() {
     static HostInfo instance;
     return instance;
@@ -137,18 +144,24 @@ class HostInfo {
   // Get the OS ID of the host
   std::string& GetOSID();
 
+  // Whether we're running on a COS host
   bool IsCOS() {
     return GetOSID() == "cos" && !GetBuildID().empty();
   }
 
+  // Whether we're running on a CoreOS host
   bool IsCoreOS() {
     return GetOSID() == "coreos";
   }
 
+  // Whether we're running on Docker Desktop
   bool IsDockerDesktop() {
     return GetDistro() == "Docker Desktop";
   }
 
+  // Whether we're running on RHEL 7.6
+  // This assumes that RHEL 7.6 will remain on kernel 3.10 and constrains
+  // this check to build IDs between MIN_RHEL_BUILD_ID and MAX_RHEL_BUILD_ID
   bool IsRHEL76() {
     auto kernel = GetKernelVersion();
     if (GetOSID() == "rhel" || GetOSID() == "centos") {
@@ -163,6 +176,9 @@ class HostInfo {
     return false;
   }
 
+  // Whether this host has eBPF support, based on the kernel version.
+  // Only exception is RHEL 7.6, which does support eBPF but runs kernel 3.10 (which ordinarily does
+  // not support eBPF)
   bool HasEBPFSupport() {
     if (IsRHEL76()) {
       return true;
@@ -175,10 +191,15 @@ class HostInfo {
   // since we're lazy-initializing internal state.
   HostInfo() = default;
 
+  // the kernel version of the host
   KernelVersion kernel_version_;
+  // the Linux distribution of the host (defaults to Linux)
   std::string distro_;
+  // the hostname of the host
   std::string hostname_;
+  // the build ID of the host (from the release string, and os-release
   std::string build_id_;
+  // the OS ID (from os-release file)
   std::string os_id_;
 };
 
