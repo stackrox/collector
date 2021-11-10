@@ -1201,7 +1201,7 @@ jobs:
         enum: [cos, rhel, suse, suse-sap, ubuntu-os, flatcar, fedora-coreos]
       image_family:
         type: enum
-        enum: [cos-beta, cos-dev, cos-stable, cos-89-lts, cos-85-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1604-lts, ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2104, sles-12, sles-15, sles-15-sp2-sap, flatcar-stable, fedora-coreos-stable]
+        enum: [cos-beta, cos-dev, cos-stable, cos-89-lts, cos-85-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2104, sles-12, sles-15, sles-15-sp2-sap, flatcar-stable, fedora-coreos-stable]
       offline:
         type: boolean
         default: false
@@ -1806,18 +1806,6 @@ workflows:
         image_family: ubuntu-1804-lts
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-ubuntu-1604-lts-esm
-        collection_method: module
-        vm_type: ubuntu-os
-        image_family: ubuntu-1604-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-ubuntu-1604-lts-esm
-        collection_method: ebpf
-        vm_type: ubuntu-os
-        image_family: ubuntu-1604-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-module-ubuntu-1804-lts
         collection_method: module
         vm_type: ubuntu-os
@@ -1913,8 +1901,6 @@ workflows:
         - test-ebpf-rhel-7
         - test-module-rhel-8
         - test-ebpf-rhel-8
-        - test-module-ubuntu-1604-lts-esm
-        - test-ebpf-ubuntu-1604-lts-esm
         - test-module-ubuntu-1804-lts
         - test-ebpf-ubuntu-1804-lts
         - test-module-ubuntu-2004-lts
