@@ -71,8 +71,9 @@ RUN mv collector-wrapper.sh /usr/local/bin/ && \
     if [ $USE_VALGRIND == "true" ]; then \
       ln -s /valgrind-3.17.0/install/bin/valgrind /usr/local/bin/valgrind; \
     fi && \
-    echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt; \
-    rmdir /valgrind-3.17.0 || true
+    echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt;
+
+RUN rmdir /valgrind-3.17.0 || true
 
 
 
