@@ -89,10 +89,10 @@ RUN mv /collector-wrapper.sh /usr/local/bin/ && \
       jsoncpp \
       tbb \
       jq \
-      c-ares; \
+      c-ares && \
     if [ "$USE_VALGRIND" = "true" ]; then \
       microdnf install -y valgrind; \
-    fi; \
+    fi && \
     microdnf clean all && \
     rm -rf /var/cache/dnf
 
