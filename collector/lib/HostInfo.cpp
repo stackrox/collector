@@ -21,11 +21,11 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
+#include "HostInfo.h"
 
 #include <fstream>
 
 #include "Logging.h"
-#include "HostInfo.h"
 
 namespace collector {
 
