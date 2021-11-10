@@ -26,8 +26,9 @@ You should have received a copy of the GNU General Public License along with thi
 
 extern "C" {
 #include <sys/utsname.h>
-};
+}
 
+#include <regex>
 #include <string>
 
 #include "Utility.h"
@@ -41,24 +42,29 @@ struct KernelVersion {
   KernelVersion() : major(0), minor(0), patch(0), build_id(0) {}
 
   KernelVersion(const char* release, const char* version) : major(0), minor(0), patch(0), build_id(0) {
-    // used to skip individual characters in the stream
-    char skip;
-    std::stringstream stream(release);
-
-    // expected format:
-    // {major}.{minor}.{patch}[-{build_id}]
-    // where -{build_id} is optional
-
-    stream >> this->major >> skip;
-    stream >> this->minor >> skip;
-    stream >> this->patch >> skip;
-
-    // if there is no build id field, this is still safe (though the stream's
-    // error bit will be set because it's unlikely to be an integer)
-    stream >> build_id;
-
     this->version = version;
     this->release = release;
+
+    // regex for parsing first parts of release version:
+    // ^                   -> must match start of the string
+    // (\d+)\.(\d+)\.(\d+) -> match and capture major, minor, patch versions
+    // (-(\d+))?           -> optionally match hyphen followed by build id number
+    // .*                  -> matches the rest of the string
+    std::regex release_re(R"(^(\d+)\.(\d+)\.(\d+)(-(\d+))?.*)");
+    std::smatch match;
+    if (!std::regex_match(this->release, match, release_re)) {
+      return;
+    }
+
+    // index zero is the full release string rather than the capture groups
+    major = std::stoi(match.str(1));
+    minor = std::stoi(match.str(2));
+    patch = std::stoi(match.str(3));
+
+    // not 4, because that's the capture group for the entire '-<build_id>'
+    if (!match.str(5).empty()) {
+      build_id = std::stoi(match.str(5));
+    }
   }
 
   // Constructs a KernelVersion from host information.
