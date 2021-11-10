@@ -22,7 +22,7 @@ RUN if [ $USE_VALGRIND == "true" ]; then \
     else \
       echo "Not installing valgrind" && \
       mkdir -p /valgrind-3.17.0/install/bin && \
-      mkdir -p /valgrind-3.17.0/include && \
+      mkdir -p /valgrind-3.17.0/include; \
     fi
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
