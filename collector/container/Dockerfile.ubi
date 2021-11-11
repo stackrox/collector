@@ -35,10 +35,10 @@ RUN dnf -y update && \
         jsoncpp-devel  \
         tbb-devel \
         jq-devel \
-        c-ares-devel; \
+        c-ares-devel && \
     if [ "$USE_VALGRIND" = "true" ]; then \
         dnf -y install valgrind; \
-    fi; \
+    fi && \
     dnf clean all
 
 ARG BUILD_DIR=/build
@@ -89,10 +89,10 @@ RUN mv /collector-wrapper.sh /usr/local/bin/ && \
       jsoncpp \
       tbb \
       jq \
-      c-ares; \
+      c-ares && \
     if [ "$USE_VALGRIND" = "true" ]; then \
       microdnf install -y valgrind; \
-    fi; \
+    fi && \
     microdnf clean all && \
     rm -rf /var/cache/dnf
 

@@ -1,6 +1,6 @@
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8/ubi
-ARG BASE_TAG=8.4
+ARG BASE_TAG=8.5
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS valgrind_build
 
@@ -20,8 +20,8 @@ RUN if [ $USE_VALGRIND == "true" ]; then \
       make && \
       make install; \
     else \
-      echo "Not installing valgrind"; \
-      mkdir -p /valgrind-3.17.0/install/bin; \
+      echo "Not installing valgrind" && \
+      mkdir -p /valgrind-3.17.0/install/bin && \
       mkdir -p /valgrind-3.17.0/include; \
     fi
 
@@ -67,12 +67,13 @@ RUN mv collector-wrapper.sh /usr/local/bin/ && \
     dnf clean all && \
     rm -rf /var/cache/dnf && \
     # (Optional) Remove line below to keep package management utilities
-    rpm -e --nodeps rpm rpm-build-libs rpm-libs python3-rpm subscription-manager python3-subscription-manager-rhsm yum $(rpm -qa *dnf*) python3-hawkey; \
+    rpm -e --nodeps rpm rpm-build-libs rpm-libs python3-rpm subscription-manager python3-subscription-manager-rhsm yum $(rpm -qa *dnf*) python3-hawkey && \
     if [ $USE_VALGRIND == "true" ]; then \
       ln -s /valgrind-3.17.0/install/bin/valgrind /usr/local/bin/valgrind; \
-    fi; \
-    echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt; \
-    rmdir /valgrind-3.17.0 || true
+    fi && \
+    echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt;
+
+RUN rmdir /valgrind-3.17.0 || true
 
 
 
