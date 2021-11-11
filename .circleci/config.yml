@@ -2048,20 +2048,6 @@ workflows:
         vm_type: ubuntu-os
         image_family: ubuntu-1804-lts
         dockerized: true
-    # - integration-test:
-    #     <<: *runOnAllTagsWithDockerizedIntegrationTestRequires
-    #     name: test-module-ubuntu-1604-lts-esm-dockerized
-    #     collection_method: module
-    #     vm_type: ubuntu-os
-    #     image_family: ubuntu-1604-lts
-    #     dockerized: true
-    # - integration-test:
-    #     <<: *runOnAllTagsWithDockerizedIntegrationTestRequires
-    #     name: test-ebpf-ubuntu-1604-lts-esm-dockerized
-    #     collection_method: ebpf
-    #     vm_type: ubuntu-os
-    #     image_family: ubuntu-1604-lts
-    #     dockerized: true
     - integration-test:
         <<: *runOnAllTagsWithDockerizedIntegrationTestRequires
         name: test-module-ubuntu-1804-lts-dockerized
