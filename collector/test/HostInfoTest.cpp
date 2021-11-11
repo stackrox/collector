@@ -35,7 +35,7 @@ class MockHostInfo : public HostInfo {
 
   // Mocking just the GetOSReleaseValue method, so we can test everything
   // else
-  MOCK_METHOD(std::string, GetOSReleaseValue, (const char*), (override));
+  MOCK_METHOD1(GetOSReleaseValue, std::string(const char*));
 };
 
 TEST(KernelVersionTest, TestParseWithBuildID) {
