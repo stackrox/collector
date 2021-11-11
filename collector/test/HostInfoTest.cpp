@@ -22,9 +22,21 @@ You should have received a copy of the GNU General Public License along with thi
 */
 
 #include "HostInfo.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+using namespace testing;
+
 namespace collector {
+
+class MockHostInfo : public HostInfo {
+ public:
+  MockHostInfo() = default;
+
+  // Mocking just the GetOSReleaseValue method, so we can test everything
+  // else
+  MOCK_METHOD(std::string, GetOSReleaseValue, (const char*), (override));
+};
 
 TEST(KernelVersionTest, TestParseWithBuildID) {
   KernelVersion version = KernelVersion("5.1.10-123", "");
@@ -118,6 +130,121 @@ TEST(KernelVersionTest, TestHasEBPFSupport) {
 
   KernelVersion new_four_kernel("4.20.0", "");
   EXPECT_EQ(true, new_four_kernel.HasEBPFSupport());
+}
+
+TEST(HostInfoTest, TestIsRHEL76) {
+  KernelVersion kernel("3.10.0-957.10.1.el7.x86_64", "");
+  std::string os_id = "rhel";
+  EXPECT_TRUE(IsRHEL76(kernel, os_id));
+
+  os_id = "coreos";
+  EXPECT_FALSE(IsRHEL76(kernel, os_id));
+
+  kernel = KernelVersion("5.10.0", "");
+  EXPECT_FALSE(IsRHEL76(kernel, os_id));
+}
+
+TEST(HostInfoTest, TestHasEBPFSupport) {
+  KernelVersion kernel("3.10.0-957.10.1.el7.x86_64", "");
+  std::string os_id = "rhel";
+  EXPECT_TRUE(HasEBPFSupport(kernel, os_id));
+
+  os_id = "coreos";
+  EXPECT_FALSE(HasEBPFSupport(kernel, os_id));
+
+  kernel = KernelVersion("5.10.0", "");
+  EXPECT_TRUE(HasEBPFSupport(kernel, os_id));
+}
+
+TEST(HostInfoTest, TestHostInfoGetDistro) {
+  MockHostInfo host;
+  EXPECT_CALL(host, GetOSReleaseValue(StrEq("PRETTY_NAME")))
+      .WillOnce(Return("SomeDistro"));
+  EXPECT_EQ("SomeDistro", host.GetDistro());
+
+  // Verify that we don't re-inititialize state
+  EXPECT_CALL(host, GetOSReleaseValue(StrEq("PRETTY_NAME")))
+      .Times(0);
+  EXPECT_EQ("SomeDistro", host.GetDistro());
+}
+
+TEST(HostInfoTest, TestHostInfoGetDistroLinux) {
+  MockHostInfo host;
+  EXPECT_CALL(host, GetOSReleaseValue(StrEq("PRETTY_NAME")))
+      .WillOnce(Return(""));
+  EXPECT_EQ("Linux", host.GetDistro());
+}
+
+TEST(HostInfoTest, TestHostInfoGetBuildID) {
+  MockHostInfo host;
+  EXPECT_CALL(host, GetOSReleaseValue(StrEq("BUILD_ID")))
+      .WillOnce(Return("SomeBuildID"));
+  EXPECT_EQ("SomeBuildID", host.GetBuildID());
+  // Verify that we don't re-inititialize state
+  EXPECT_CALL(host, GetOSReleaseValue(StrEq("BUILD_ID")))
+      .Times(0);
+  EXPECT_EQ("SomeBuildID", host.GetBuildID());
+}
+
+TEST(HostInfoTest, TestHostInfoGetOSID) {
+  MockHostInfo host;
+  EXPECT_CALL(host, GetOSReleaseValue(StrEq("ID")))
+      .WillOnce(Return("SomeOSID"));
+  EXPECT_EQ("SomeOSID", host.GetOSID());
+  EXPECT_CALL(host, GetOSReleaseValue(StrEq("ID")))
+      .Times(0);
+  EXPECT_EQ("SomeOSID", host.GetOSID());
+}
+
+TEST(HostInfoTest, TestHostInfoIsCOS) {
+  MockHostInfo host;
+  EXPECT_CALL(host, GetOSReleaseValue(StrEq("ID")))
+      .WillOnce(Return("cos"));
+  EXPECT_CALL(host, GetOSReleaseValue(StrEq("BUILD_ID")))
+      .WillOnce(Return("123"));
+  EXPECT_TRUE(host.IsCOS());
+}
+
+TEST(HostInfoTest, TestHostInfoIsNotCOS) {
+  MockHostInfo hostIDWrong;
+  EXPECT_CALL(hostIDWrong, GetOSReleaseValue(StrEq("ID")))
+      .WillOnce(Return("Docker Desktop"));
+  EXPECT_FALSE(hostIDWrong.IsCOS());
+
+  MockHostInfo hostBuildIDWrong;
+  EXPECT_CALL(hostBuildIDWrong, GetOSReleaseValue(StrEq("ID")))
+      .WillOnce(Return("cos"));
+  EXPECT_CALL(hostBuildIDWrong, GetOSReleaseValue(StrEq("BUILD_ID")))
+      .WillOnce(Return(""));
+  EXPECT_FALSE(hostBuildIDWrong.IsCOS());
+}
+
+TEST(HostInfoTest, TestHostInfoIsCoreOS) {
+  MockHostInfo host;
+  EXPECT_CALL(host, GetOSReleaseValue(StrEq("ID")))
+      .WillOnce(Return("coreos"));
+  EXPECT_TRUE(host.IsCoreOS());
+}
+
+TEST(HostInfoTest, TestHostInfoIsNotCoreOS) {
+  MockHostInfo host;
+  EXPECT_CALL(host, GetOSReleaseValue(StrEq("ID")))
+      .WillOnce(Return("Docker Desktop"));
+  EXPECT_FALSE(host.IsCoreOS());
+}
+
+TEST(HostInfoTest, TestHostInfoIsDockerDesktop) {
+  MockHostInfo host;
+  EXPECT_CALL(host, GetOSReleaseValue(StrEq("PRETTY_NAME")))
+      .WillOnce(Return("Docker Desktop"));
+  EXPECT_TRUE(host.IsDockerDesktop());
+}
+
+TEST(HostInfoTest, TestHostInfoIsNotDockerDesktop) {
+  MockHostInfo host;
+  EXPECT_CALL(host, GetOSReleaseValue(StrEq("PRETTY_NAME")))
+      .WillOnce(Return("coreos"));
+  EXPECT_FALSE(host.IsDockerDesktop());
 }
 
 }  // namespace collector

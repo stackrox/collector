@@ -38,42 +38,27 @@ std::string pathOnHost(const char* path) {
   return root + path;
 }
 
-// Reads a named value from the os-release file (either in /etc/ or in /usr/lib)
-// and filters for a specific name. The file is in the format <NAME>="<VALUE>"
-// Quotes are removed from the value, if found. If not found, an empty string is returned.
-std::string getOSReleaseValue(const char* name) {
-  std::ifstream release_file(pathOnHost("/etc/os-release"));
-  if (!release_file.is_open()) {
-    release_file.open(pathOnHost("/usr/lib/os-release"));
-    if (!release_file.is_open()) {
-      return "";
+}  // namespace
+
+bool IsRHEL76(KernelVersion& kernel, std::string& os_id) {
+  if (os_id == "rhel" || os_id == "centos") {
+    // example release version: 3.10.0-957.10.1.el7.x86_64
+    // build_id = 957
+    if (kernel.release.find(".el7.") != std::string::npos) {
+      if (kernel.major == 3 && kernel.minor == 10) {
+        return kernel.build_id >= MIN_RHEL_BUILD_ID && kernel.build_id <= MAX_RHEL_BUILD_ID;
+      }
     }
   }
-
-  std::string line;
-  while (std::getline(release_file, line)) {
-    std::istringstream stream(line);
-    std::string key;
-    std::string value;
-
-    std::getline(stream, key, '=');
-    std::getline(stream, value);
-
-    if (key == name) {
-      // ensure we remove quotations from the start and end, if they exist.
-      if (value[0] == '"') {
-        value.erase(0, 1);
-      }
-      if (value[value.size() - 1] == '"') {
-        value.erase(value.size() - 1);
-      }
-      return value;
-    }
-  }
-  return "";
+  return false;
 }
 
-}  // namespace
+bool HasEBPFSupport(KernelVersion& kernel, std::string& os_id) {
+  if (IsRHEL76(kernel, os_id)) {
+    return true;
+  }
+  return kernel.HasEBPFSupport();
+}
 
 KernelVersion HostInfo::GetKernelVersion() {
   if (kernel_version_.release.empty()) {
@@ -106,7 +91,7 @@ std::string& HostInfo::GetHostname() {
 
 std::string& HostInfo::GetDistro() {
   if (distro_.empty()) {
-    distro_ = getOSReleaseValue("PRETTY_NAME");
+    distro_ = GetOSReleaseValue("PRETTY_NAME");
     if (distro_.empty()) {
       distro_ = "Linux";
     }
@@ -116,16 +101,52 @@ std::string& HostInfo::GetDistro() {
 
 std::string& HostInfo::GetBuildID() {
   if (build_id_.empty()) {
-    build_id_ = getOSReleaseValue("BUILD_ID");
+    build_id_ = GetOSReleaseValue("BUILD_ID");
   }
   return build_id_;
 }
 
 std::string& HostInfo::GetOSID() {
   if (os_id_.empty()) {
-    os_id_ = getOSReleaseValue("ID");
+    os_id_ = GetOSReleaseValue("ID");
   }
   return os_id_;
+}
+
+std::string HostInfo::filterForKey(std::istream& stream, const char* name) {
+  std::string line;
+  while (std::getline(stream, line)) {
+    std::istringstream line_stream(line);
+    std::string key;
+    std::string value;
+
+    std::getline(line_stream, key, '=');
+    std::getline(line_stream, value);
+
+    if (key == name) {
+      // ensure we remove quotations from the start and end, if they exist.
+      if (value[0] == '"') {
+        value.erase(0, 1);
+      }
+      if (value[value.size() - 1] == '"') {
+        value.erase(value.size() - 1);
+      }
+      return value;
+    }
+  }
+  return "";
+}
+
+std::string HostInfo::GetOSReleaseValue(const char* name) {
+  std::ifstream release_file(pathOnHost("/etc/os-release"));
+  if (!release_file.is_open()) {
+    release_file.open(pathOnHost("/usr/lib/os-release"));
+    if (!release_file.is_open()) {
+      return "";
+    }
+  }
+
+  return filterForKey(release_file, name);
 }
 
 }  // namespace collector

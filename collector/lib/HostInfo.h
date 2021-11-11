@@ -112,6 +112,15 @@ struct KernelVersion {
   std::string version;
 };
 
+// Helper method which checks whether the given kernel & os
+// are RHEL 7.6 (to inform later heuristics around eBPF support)
+bool IsRHEL76(KernelVersion& kernel, std::string& os_id);
+
+// Helper method which checks whether the given kernel & os
+// support eBPF. In practice this is RHEL 7.6, and any kernel
+// newer than 4.14
+bool HasEBPFSupport(KernelVersion& kernel, std::string& os_id);
+
 // Singleton that provides ways of retrieving Host information to inform
 // runtime configuration of collector.
 class HostInfo {
@@ -164,33 +173,28 @@ class HostInfo {
   // this check to build IDs between MIN_RHEL_BUILD_ID and MAX_RHEL_BUILD_ID
   bool IsRHEL76() {
     auto kernel = GetKernelVersion();
-    if (GetOSID() == "rhel" || GetOSID() == "centos") {
-      // example release version: 3.10.0-957.10.1.el7.x86_64
-      // build_id = 957
-      if (kernel.release.find(".el7.") != std::string::npos) {
-        if (kernel.major == 3 && kernel.minor == 10) {
-          return kernel.build_id > MIN_RHEL_BUILD_ID && kernel.build_id < MAX_RHEL_BUILD_ID;
-        }
-      }
-    }
-    return false;
+    return collector::IsRHEL76(kernel, GetOSID());
   }
 
   // Whether this host has eBPF support, based on the kernel version.
   // Only exception is RHEL 7.6, which does support eBPF but runs kernel 3.10 (which ordinarily does
   // not support eBPF)
   bool HasEBPFSupport() {
-    if (IsRHEL76()) {
-      return true;
-    }
-    return GetKernelVersion().HasEBPFSupport();
+    auto kernel = GetKernelVersion();
+    return collector::HasEBPFSupport(kernel, GetOSID());
   }
 
- private:
+  // Reads a named value from the os-release file (either in /etc/ or in /usr/lib)
+  // and filters for a specific name. The file is in the format <NAME>="<VALUE>"
+  // Quotes are removed from the value, if found. If not found, an empty string is returned.
+  virtual std::string GetOSReleaseValue(const char* key);
+
+ protected:
   // basic default constructor, doesn't need to do anything,
   // since we're lazy-initializing internal state.
   HostInfo() = default;
 
+ private:
   // the kernel version of the host
   KernelVersion kernel_version_;
   // the Linux distribution of the host (defaults to Linux)
@@ -201,6 +205,10 @@ class HostInfo {
   std::string build_id_;
   // the OS ID (from os-release file)
   std::string os_id_;
+
+  // Given a stream, reads line by line, expecting '<key>=<value>' format
+  // returns the value matching the key called 'name'
+  std::string filterForKey(std::istream& stream, const char* name);
 };
 
 }  // namespace collector
