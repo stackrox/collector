@@ -106,4 +106,18 @@ TEST(KernelVersionTest, TestVersionStringPopulated) {
   EXPECT_EQ("this-is-a-version-string", version.version);
 }
 
+TEST(KernelVersionTest, TestHasEBPFSupport) {
+  KernelVersion new_kernel("5.10.0", "");
+  EXPECT_EQ(true, new_kernel.HasEBPFSupport());
+
+  KernelVersion old_kernel("2.6.0", "");
+  EXPECT_EQ(false, old_kernel.HasEBPFSupport());
+
+  KernelVersion old_four_kernel("4.10.0", "");
+  EXPECT_EQ(false, old_four_kernel.HasEBPFSupport());
+
+  KernelVersion new_four_kernel("4.20.0", "");
+  EXPECT_EQ(true, new_four_kernel.HasEBPFSupport());
+}
+
 }  // namespace collector

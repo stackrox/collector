@@ -34,10 +34,8 @@ namespace {
 // Helper to construct an absolute path based on mount location
 // of various on-host files.
 std::string pathOnHost(const char* path) {
-  static const char* root = "/host";
-  std::stringstream stream;
-  stream << root << path;
-  return stream.str();
+  static const std::string root = "/host";
+  return root + path;
 }
 
 // Reads a named value from the os-release file (either in /etc/ or in /usr/lib)
@@ -63,10 +61,10 @@ std::string getOSReleaseValue(const char* name) {
 
     if (key == name) {
       // ensure we remove quotations from the start and end, if they exist.
-      if (*value.begin() == '"') {
+      if (value[0] == '"') {
         value.erase(0, 1);
       }
-      if (*(value.end() - 1) == '"') {
+      if (value[value.size() - 1] == '"') {
         value.erase(value.size() - 1);
       }
       return value;
@@ -108,11 +106,9 @@ std::string& HostInfo::GetHostname() {
 
 std::string& HostInfo::GetDistro() {
   if (distro_.empty()) {
-    std::string pretty_name = getOSReleaseValue("PRETTY_NAME");
-    if (pretty_name.empty()) {
+    distro_ = getOSReleaseValue("PRETTY_NAME");
+    if (distro_.empty()) {
       distro_ = "Linux";
-    } else {
-      distro_ = pretty_name;
     }
   }
   return distro_;
