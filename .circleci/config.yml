@@ -1303,9 +1303,6 @@ jobs:
           # Decompress the collector repo
           gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCLOUD_INSTANCE}" --command "cd /home/${GCP_VM_USER}/ctx && tar xzf collector.tar.gz && rm -f collector.tar.gz"
 
-          # Pull ubi image before build (required by ubuntu 16.04)
-          gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCLOUD_INSTANCE}" --command "docker pull registry.access.redhat.com/ubi8/ubi:8.4"
-
           # Create the test image on the remote machine
           # Build the probes
           if [[ "$VM_TYPE" =~ "coreos" ]]; then

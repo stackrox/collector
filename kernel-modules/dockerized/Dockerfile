@@ -1,7 +1,7 @@
 ARG USER
 ARG PASS
 
-FROM registry.access.redhat.com/ubi8/ubi:8.4 AS rhel-8-base
+FROM registry.access.redhat.com/ubi8/ubi:8.5 AS rhel-8-base
 
 ARG USER
 ARG PASS
@@ -80,7 +80,7 @@ RUN find /bundles/ -type f -name "bundle-[4-9].*" -delete
 RUN scl enable llvm-toolset-7.0 /scripts/compile.sh
 
 # Create a clean image leaving only the compiled kernel modules
-FROM registry.access.redhat.com/ubi8/ubi:8.4
+FROM registry.access.redhat.com/ubi8/ubi:8.5
 
 COPY --from=rhel-8-builder /kernel-modules /kernel-modules
 COPY --from=rhel-7-builder /kernel-modules /kernel-modules
