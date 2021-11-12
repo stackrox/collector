@@ -1267,7 +1267,7 @@ jobs:
         command: |
           <<^ parameters.dockerized >>exit 0<</ parameters.dockerized >>
 
-          IMAGE_FAMILY="<< parameters.image_family >>" "${SOURCE_ROOT}/.circleci/build-driver.sh"
+          IMAGE_FAMILY="<< parameters.image_family >>" "${SOURCE_ROOT}/.circleci/build-image-to-test.sh"
 
     - run:
         name: "Running integration tests"
