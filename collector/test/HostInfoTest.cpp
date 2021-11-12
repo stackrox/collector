@@ -21,7 +21,7 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#include "HostInfo.h"
+#include "HostInfo.cpp"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -40,41 +40,41 @@ class MockHostInfo : public HostInfo {
 
 TEST(KernelVersionTest, TestParseWithBuildID) {
   KernelVersion version = KernelVersion("5.1.10-123", "");
-  EXPECT_EQ(5, version.major);
-  EXPECT_EQ(1, version.minor);
-  EXPECT_EQ(10, version.patch);
+  EXPECT_EQ(5, version.kernel);
+  EXPECT_EQ(1, version.major);
+  EXPECT_EQ(10, version.minor);
   EXPECT_EQ(123, version.build_id);
 }
 
 TEST(KernelVersionTest, TestParseWithoutBuildID) {
   KernelVersion version = KernelVersion("5.1.10", "");
-  EXPECT_EQ(5, version.major);
-  EXPECT_EQ(1, version.minor);
-  EXPECT_EQ(10, version.patch);
+  EXPECT_EQ(5, version.kernel);
+  EXPECT_EQ(1, version.major);
+  EXPECT_EQ(10, version.minor);
   EXPECT_EQ(0, version.build_id);
 }
 
 TEST(KernelVersionTest, TestParseWithAdditional) {
   KernelVersion version = KernelVersion("5.10.25-linuxkit", "");
-  EXPECT_EQ(5, version.major);
-  EXPECT_EQ(10, version.minor);
-  EXPECT_EQ(25, version.patch);
+  EXPECT_EQ(5, version.kernel);
+  EXPECT_EQ(10, version.major);
+  EXPECT_EQ(25, version.minor);
   EXPECT_EQ(0, version.build_id);
 }
 
 TEST(KernelVersionTest, TestParseWithBuildIDAndAdditional) {
   KernelVersion version = KernelVersion("3.10.0-957.10.1.el7.x86_64", "");
-  EXPECT_EQ(3, version.major);
-  EXPECT_EQ(10, version.minor);
-  EXPECT_EQ(0, version.patch);
+  EXPECT_EQ(3, version.kernel);
+  EXPECT_EQ(10, version.major);
+  EXPECT_EQ(0, version.minor);
   EXPECT_EQ(957, version.build_id);
 }
 
 TEST(KernelVersionTest, TestParseInvalidRelease) {
   KernelVersion version = KernelVersion("not.a.release", "");
+  EXPECT_EQ(0, version.kernel);
   EXPECT_EQ(0, version.major);
   EXPECT_EQ(0, version.minor);
-  EXPECT_EQ(0, version.patch);
   EXPECT_EQ(0, version.build_id);
 }
 
@@ -102,9 +102,9 @@ TEST(KernelVersionTest, TestParseKnownReleaseStrings) {
 
   for (auto k : test_data) {
     KernelVersion version = KernelVersion(k.release_string, "");
-    EXPECT_EQ(k.major, version.major);
-    EXPECT_EQ(k.minor, version.minor);
-    EXPECT_EQ(k.patch, version.patch);
+    EXPECT_EQ(k.major, version.kernel);
+    EXPECT_EQ(k.minor, version.major);
+    EXPECT_EQ(k.patch, version.minor);
     EXPECT_EQ(k.build_id, version.build_id);
     EXPECT_EQ(k.release_string, version.release);
   }
@@ -135,25 +135,25 @@ TEST(KernelVersionTest, TestHasEBPFSupport) {
 TEST(HostInfoTest, TestIsRHEL76) {
   KernelVersion kernel("3.10.0-957.10.1.el7.x86_64", "");
   std::string os_id = "rhel";
-  EXPECT_TRUE(IsRHEL76(kernel, os_id));
+  EXPECT_TRUE(isRHEL76(kernel, os_id));
 
   os_id = "coreos";
-  EXPECT_FALSE(IsRHEL76(kernel, os_id));
+  EXPECT_FALSE(isRHEL76(kernel, os_id));
 
   kernel = KernelVersion("5.10.0", "");
-  EXPECT_FALSE(IsRHEL76(kernel, os_id));
+  EXPECT_FALSE(isRHEL76(kernel, os_id));
 }
 
 TEST(HostInfoTest, TestHasEBPFSupport) {
   KernelVersion kernel("3.10.0-957.10.1.el7.x86_64", "");
   std::string os_id = "rhel";
-  EXPECT_TRUE(HasEBPFSupport(kernel, os_id));
+  EXPECT_TRUE(hasEBPFSupport(kernel, os_id));
 
   os_id = "coreos";
-  EXPECT_FALSE(HasEBPFSupport(kernel, os_id));
+  EXPECT_FALSE(hasEBPFSupport(kernel, os_id));
 
   kernel = KernelVersion("5.10.0", "");
-  EXPECT_TRUE(HasEBPFSupport(kernel, os_id));
+  EXPECT_TRUE(hasEBPFSupport(kernel, os_id));
 }
 
 TEST(HostInfoTest, TestHostInfoGetDistro) {
@@ -245,6 +245,34 @@ TEST(HostInfoTest, TestHostInfoIsNotDockerDesktop) {
   EXPECT_CALL(host, GetOSReleaseValue(StrEq("PRETTY_NAME")))
       .WillOnce(Return("coreos"));
   EXPECT_FALSE(host.IsDockerDesktop());
+}
+
+TEST(HostInfoTest, TestFilterValueNoQuotes) {
+  std::stringstream stream;
+  stream << "KEY=Value\n";
+  EXPECT_EQ("Value", filterForKey(stream, "KEY"));
+}
+
+TEST(HostInfoTest, TestFilterValueQuotes) {
+  std::stringstream stream;
+  stream << "KEY=\"Value Value\"\n";
+  EXPECT_EQ("Value Value", filterForKey(stream, "KEY"));
+}
+
+TEST(HostInfoTest, TestFilterValueFound) {
+  std::stringstream stream;
+  stream << "KEY1=Value1\n"
+         << "KEY2=Value2\n"
+         << "KEY3=Value3\n";
+  EXPECT_EQ("Value2", filterForKey(stream, "KEY2"));
+}
+
+TEST(HostInfoTest, TestFilterValueNotFound) {
+  std::stringstream stream;
+  stream << "KEY1=Value1\n"
+         << "KEY2=Value2\n"
+         << "KEY3=Value3\n";
+  EXPECT_EQ("", filterForKey(stream, "Invalid"));
 }
 
 }  // namespace collector

@@ -39,15 +39,15 @@ const int MIN_RHEL_BUILD_ID = 957;
 const int MAX_RHEL_BUILD_ID = 1062;
 
 struct KernelVersion {
-  KernelVersion() : major(0), minor(0), patch(0), build_id(0) {}
+  KernelVersion() : kernel(0), major(0), minor(0), build_id(0) {}
 
-  KernelVersion(const char* release, const char* version) : major(0), minor(0), patch(0), build_id(0) {
+  KernelVersion(const char* release, const char* version) : kernel(0), major(0), minor(0), build_id(0) {
     this->version = version;
     this->release = release;
 
     // regex for parsing first parts of release version:
     // ^                   -> must match start of the string
-    // (\d+)\.(\d+)\.(\d+) -> match and capture major, minor, patch versions
+    // (\d+)\.(\d+)\.(\d+) -> match and capture kernel, major, minor versions
     // (-(\d+))?           -> optionally match hyphen followed by build id number
     // .*                  -> matches the rest of the string
     std::regex release_re(R"(^(\d+)\.(\d+)\.(\d+)(-(\d+))?.*)");
@@ -57,9 +57,9 @@ struct KernelVersion {
     }
 
     // index zero is the full release string rather than the capture groups
-    major = std::stoi(match.str(1));
-    minor = std::stoi(match.str(2));
-    patch = std::stoi(match.str(3));
+    kernel = std::stoi(match.str(1));
+    major = std::stoi(match.str(2));
+    minor = std::stoi(match.str(3));
 
     // not 4, because that's the capture group for the entire '-<build_id>'
     if (!match.str(5).empty()) {
@@ -91,19 +91,19 @@ struct KernelVersion {
 
   // Whether or not the kernel has built-in eBPF support
   // Anything before 4.14 doesn't have support, anything newer does.
-  bool HasEBPFSupport() {
-    if (major < 4 || (major == 4 && minor < 14)) {
+  bool HasEBPFSupport() const {
+    if (kernel < 4 || (kernel == 4 && major < 14)) {
       return false;
     }
     return true;
   }
 
+  // the kernel version
+  int kernel;
   // the kernel major version
   int major;
   // the kernel minor version
   int minor;
-  // the kernel patch version
-  int patch;
   // the kernel build id
   int build_id;
   // the entire release string (as in `uname -r`)
@@ -111,15 +111,6 @@ struct KernelVersion {
   // the entire version string (as in `uname -v`)
   std::string version;
 };
-
-// Helper method which checks whether the given kernel & os
-// are RHEL 7.6 (to inform later heuristics around eBPF support)
-bool IsRHEL76(KernelVersion& kernel, std::string& os_id);
-
-// Helper method which checks whether the given kernel & os
-// support eBPF. In practice this is RHEL 7.6, and any kernel
-// newer than 4.14
-bool HasEBPFSupport(KernelVersion& kernel, std::string& os_id);
 
 // Singleton that provides ways of retrieving Host information to inform
 // runtime configuration of collector.
@@ -168,26 +159,20 @@ class HostInfo {
     return GetDistro() == "Docker Desktop";
   }
 
-  // Whether we're running on RHEL 7.6
-  // This assumes that RHEL 7.6 will remain on kernel 3.10 and constrains
-  // this check to build IDs between MIN_RHEL_BUILD_ID and MAX_RHEL_BUILD_ID
-  bool IsRHEL76() {
-    auto kernel = GetKernelVersion();
-    return collector::IsRHEL76(kernel, GetOSID());
-  }
-
-  // Whether this host has eBPF support, based on the kernel version.
-  // Only exception is RHEL 7.6, which does support eBPF but runs kernel 3.10 (which ordinarily does
-  // not support eBPF)
-  bool HasEBPFSupport() {
-    auto kernel = GetKernelVersion();
-    return collector::HasEBPFSupport(kernel, GetOSID());
-  }
-
   // Reads a named value from the os-release file (either in /etc/ or in /usr/lib)
   // and filters for a specific name. The file is in the format <NAME>="<VALUE>"
   // Quotes are removed from the value, if found. If not found, an empty string is returned.
   virtual std::string GetOSReleaseValue(const char* key);
+
+  // Whether we're running on RHEL 7.6
+  // This assumes that RHEL 7.6 will remain on kernel 3.10 and constrains
+  // this check to build IDs between MIN_RHEL_BUILD_ID and MAX_RHEL_BUILD_ID
+  bool IsRHEL76();
+
+  // Whether this host has eBPF support, based on the kernel version.
+  // Only exception is RHEL 7.6, which does support eBPF but runs kernel 3.10 (which ordinarily does
+  // not support eBPF)
+  bool HasEBPFSupport();
 
  protected:
   // basic default constructor, doesn't need to do anything,
@@ -205,10 +190,6 @@ class HostInfo {
   std::string build_id_;
   // the OS ID (from os-release file)
   std::string os_id_;
-
-  // Given a stream, reads line by line, expecting '<key>=<value>' format
-  // returns the value matching the key called 'name'
-  std::string filterForKey(std::istream& stream, const char* name);
 };
 
 }  // namespace collector

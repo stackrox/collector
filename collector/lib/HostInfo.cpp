@@ -38,14 +38,14 @@ std::string pathOnHost(const char* path) {
   return root + path;
 }
 
-}  // namespace
-
-bool IsRHEL76(KernelVersion& kernel, std::string& os_id) {
+// Helper method which checks whether the given kernel & os
+// are RHEL 7.6 (to inform later heuristics around eBPF support)
+bool isRHEL76(const KernelVersion& kernel, const std::string& os_id) {
   if (os_id == "rhel" || os_id == "centos") {
     // example release version: 3.10.0-957.10.1.el7.x86_64
     // build_id = 957
     if (kernel.release.find(".el7.") != std::string::npos) {
-      if (kernel.major == 3 && kernel.minor == 10) {
+      if (kernel.kernel == 3 && kernel.major == 10) {
         return kernel.build_id >= MIN_RHEL_BUILD_ID && kernel.build_id <= MAX_RHEL_BUILD_ID;
       }
     }
@@ -53,12 +53,42 @@ bool IsRHEL76(KernelVersion& kernel, std::string& os_id) {
   return false;
 }
 
-bool HasEBPFSupport(KernelVersion& kernel, std::string& os_id) {
-  if (IsRHEL76(kernel, os_id)) {
+// Helper method which checks whether the given kernel & os
+// support eBPF. In practice this is RHEL 7.6, and any kernel
+// newer than 4.14
+bool hasEBPFSupport(const KernelVersion& kernel, const std::string& os_id) {
+  if (isRHEL76(kernel, os_id)) {
     return true;
   }
   return kernel.HasEBPFSupport();
 }
+
+// Given a stream, reads line by line, expecting '<key>=<value>' format
+// returns the value matching the key called 'name'
+std::string filterForKey(std::istream& stream, const char* name) {
+  std::string line;
+  while (std::getline(stream, line)) {
+    auto idx = line.find('=');
+    if (idx == std::string::npos) {
+      continue;
+    }
+    std::string key = line.substr(0, idx);
+    if (key == name) {
+      std::string value = line.substr(idx + 1);
+      // ensure we remove quotations from the start and end, if they exist.
+      if (value[0] == '"') {
+        value.erase(0, 1);
+      }
+      if (value[value.size() - 1] == '"') {
+        value.erase(value.size() - 1);
+      }
+      return value;
+    }
+  }
+  return "";
+}
+
+}  // namespace
 
 KernelVersion HostInfo::GetKernelVersion() {
   if (kernel_version_.release.empty()) {
@@ -113,30 +143,6 @@ std::string& HostInfo::GetOSID() {
   return os_id_;
 }
 
-std::string HostInfo::filterForKey(std::istream& stream, const char* name) {
-  std::string line;
-  while (std::getline(stream, line)) {
-    std::istringstream line_stream(line);
-    std::string key;
-    std::string value;
-
-    std::getline(line_stream, key, '=');
-    std::getline(line_stream, value);
-
-    if (key == name) {
-      // ensure we remove quotations from the start and end, if they exist.
-      if (value[0] == '"') {
-        value.erase(0, 1);
-      }
-      if (value[value.size() - 1] == '"') {
-        value.erase(value.size() - 1);
-      }
-      return value;
-    }
-  }
-  return "";
-}
-
 std::string HostInfo::GetOSReleaseValue(const char* name) {
   std::ifstream release_file(pathOnHost("/etc/os-release"));
   if (!release_file.is_open()) {
@@ -147,6 +153,16 @@ std::string HostInfo::GetOSReleaseValue(const char* name) {
   }
 
   return filterForKey(release_file, name);
+}
+
+bool HostInfo::IsRHEL76() {
+  auto kernel = GetKernelVersion();
+  return collector::isRHEL76(kernel, GetOSID());
+}
+
+bool HostInfo::HasEBPFSupport() {
+  auto kernel = GetKernelVersion();
+  return collector::hasEBPFSupport(kernel, GetOSID());
 }
 
 }  // namespace collector
