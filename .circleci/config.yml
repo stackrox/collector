@@ -1267,7 +1267,7 @@ jobs:
         command: |
           <<^ parameters.dockerized >>exit 0<</ parameters.dockerized >>
 
-          "$SOURCE_ROOT/.circleci/build-dockerized-image.sh"
+          "$SOURCE_ROOT/.circleci/build-drivers.sh"
 
           # Check the required module has been built
           if [[ "${COLLECTION_METHOD}" == "module" ]]; then
