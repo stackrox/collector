@@ -1,12 +1,12 @@
-ARG USER
-ARG PASS
+ARG REDHAT_USERNAME
+ARG REDHAT_PASSWORD
 
 FROM registry.access.redhat.com/ubi8/ubi:8.5 AS rhel-8-base
 
-ARG USER
-ARG PASS
+ARG REDHAT_USERNAME
+ARG REDHAT_PASSWORD
 
-RUN subscription-manager register --username $USER --password $PASS && \
+RUN subscription-manager register --username $REDHAT_USERNAME --password $REDHAT_PASSWORD && \
 	subscription-manager attach && \
 	# this pool id may be associated with the current test user account.
 	# if the account changes, use: `subscription-manager list --available` to find a valid id.
@@ -30,10 +30,10 @@ COPY /collector/kernel-modules/dockerized/scripts /scripts
 
 FROM registry.access.redhat.com/ubi7/ubi:7.9 AS rhel-7-base
 
-ARG USER
-ARG PASS
+ARG REDHAT_USERNAME
+ARG REDHAT_PASSWORD
 
-RUN subscription-manager register --username $USER --password $PASS && \
+RUN subscription-manager register --username $REDHAT_USERNAME --password $REDHAT_PASSWORD && \
 	subscription-manager attach && \
 	# this pool id may be associated with the current test user account.
 	# if the account changes, use: `subscription-manager list --available` to find a valid id.
