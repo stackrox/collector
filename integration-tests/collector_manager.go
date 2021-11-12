@@ -1,7 +1,7 @@
 package integrationtests
 
 import (
-	"errors"
+	"github.com/hashicorp/go-multierror"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -215,7 +215,16 @@ func (c *collectorManager) captureLogs(containerName string) (string, error) {
 func (c *collectorManager) killContainer(name string) error {
 	_, err1 := c.executor.Exec("docker", "kill", name)
 	_, err2 := c.executor.Exec("docker", "rm", "-fv", name)
-	return errors.Wrap(err1, "dfasd")
+
+	var result error
+	if err1 != nil {
+		result = multierror.Append(result, err1)
+	}
+	if err2 != nil {
+		result = multierror.Append(result, err2)
+	}
+
+	return result
 }
 
 func (c *collectorManager) stopContainer(name string) error {
