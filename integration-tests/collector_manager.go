@@ -1,6 +1,7 @@
 package integrationtests
 
 import (
+	"github.com/hashicorp/go-multierror"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -133,6 +134,21 @@ func (c *collectorManager) BoltDB() (db *bolt.DB, err error) {
 	return db, err
 }
 
+//These two methods might be useful in the future. I used them for debugging
+func (c *collectorManager) getContainers() (string, error) {
+	cmd := []string{"docker", "container", "ps"}
+	containers, err := c.executor.Exec(cmd...)
+
+	return containers, err
+}
+
+func (c *collectorManager) getAllContainers() (string, error) {
+	cmd := []string{"docker", "container", "ps", "-a"}
+	containers, err := c.executor.Exec(cmd...)
+
+	return containers, err
+}
+
 func (c *collectorManager) launchGRPCServer() error {
 	user, _ := user.Current()
 	selinuxErr := setSelinuxPermissiveIfNeeded()
@@ -197,15 +213,21 @@ func (c *collectorManager) captureLogs(containerName string) (string, error) {
 }
 
 func (c *collectorManager) killContainer(name string) error {
-	_, err := c.executor.Exec("docker", "kill", name)
-	if err != nil {
-		return err
+	_, err1 := c.executor.Exec("docker", "kill", name)
+	_, err2 := c.executor.Exec("docker", "rm", "-fv", name)
+
+	var result error
+	if err1 != nil {
+		result = multierror.Append(result, err1)
 	}
-	_, err = c.executor.Exec("docker", "rm", "-fv", name)
-	return err
+	if err2 != nil {
+		result = multierror.Append(result, err2)
+	}
+
+	return result
 }
 
 func (c *collectorManager) stopContainer(name string) error {
-	_, err := c.executor.Exec("docker", "stop", name)
+	_, err := c.executor.Exec("docker", "stop", "--time", "100", name)
 	return err
 }
