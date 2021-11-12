@@ -37,14 +37,13 @@ compile() (
 )
 
 compile_kmod() (
-	local collector_src="$1"
 	local kernel_src_dir="$2"
-	local kernel_build_dir="$3"
 	local kversion="$4"
 
-	# Attempt to run modpost
+	# Attempting to run modpost will fail if it requires glibc version newer than
+	# available in this distro. We skip building such kernel drivers for now.
 	if ! "${kernel_src_dir}/scripts/mod/modpost"; then
-		echo "Failed to run kbuild tools, skipping module for ${kversion}"
+		echo >&2 "Failed to run kbuild tools, skipping module for ${kversion}"
 		return 0
 	fi
 
@@ -67,7 +66,7 @@ compile_bpf() (
 	local rhel7_kernel_with_ebpf=false
 	if (( bundle_version == 3 && bundle_major >= 10 )); then
 		if [[ "$bundle_distro" == "redhat" ]]; then
-			rhel_build_id="$(echo "$bundle_uname" | awk -F'[-.]' '{ print $4 }')"
+			local rhel_build_id="$(echo "$bundle_uname" | awk -F'[-.]' '{ print $4 }')"
 			if (( rhel_build_id >= 957 )); then
 				echo "Kernel ${bundle_uname} has backported eBPF support"
 				rhel7_kernel_with_ebpf=true
@@ -88,7 +87,7 @@ compile_bpf() (
 	# Check if this module version supports RHEL 7.6 with backported eBPF support
 	if [[ "$rhel7_kernel_with_ebpf" == true ]]; then
 		if ! grep -qRIs "SUPPORTS_RHEL76_EBPF" "${collector_src}/bpf/quirks.h"; then
-			echo "Module version ${collector_src#"/kobuild-tmp/versions-src/"} does not support eBPF on RHEL 7"
+			echo "Module version ${collector_src#"/kobuild-tmp/versions-src/"} does not support eBPF on RHEL 7, skipping ..."
 			return 0
 		fi
 
