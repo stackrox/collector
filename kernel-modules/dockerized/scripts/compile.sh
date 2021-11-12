@@ -115,11 +115,13 @@ for file in /bundles/bundle-*.tgz; do
 	for module in /kobuild-tmp/versions-src/*; do
 		# TODO: apply blocklist to tasks
 
+		# Note that failing compilation does not break the entire build process as we are still developing this
+		# approach and don't want to interrupt large batches because of issues with just a few drivers in it.
 		if ! compile_kmod "$module" "$KERNEL_SRC" "$KERNEL_BUILD" "$KERNEL_VERSION"; then
-			echo "Failed to build kernel driver for ${KERNEL_VERSION}"
+			echo >&2 "Failed to build kernel driver for ${KERNEL_VERSION}"
 		fi
 		if ! compile_bpf "$module" "$KERNEL_SRC" "$KERNEL_BUILD" "$KERNEL_VERSION"; then
-			echo "Failed to build eBPF probe for ${KERNEL_VERSION}"
+			echo >&2 "Failed to build eBPF probe for ${KERNEL_VERSION}"
 		fi
 	done
 done
