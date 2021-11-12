@@ -1267,7 +1267,7 @@ jobs:
         command: |
           <<^ parameters.dockerized >>exit 0<</ parameters.dockerized >>
 
-          "$SOURCE_ROOT/.circleci/build-driver-remotely.sh"
+          "$SOURCE_ROOT/.circleci/build-dockerized-image.sh"
 
     - run:
         name: "Running integration tests"
