@@ -1269,33 +1269,11 @@ jobs:
 
           "$SOURCE_ROOT/.circleci/build-driver-remotely.sh"
 
-          # Check the required module has been built
-          if [[ "${COLLECTION_METHOD}" == "module" ]]; then
-            test_pattern="${KERNEL_VERSION}"
-            if [[ "<< parameters.image_family >>" == "ubuntu-2004-lts" ]]; then
-              test_pattern="${KERNEL_VERSION}~20\.04"
-            elif [[ "<< parameters.image_family >>" == "ubuntu-1604-lts" ]]; then
-              test_pattern="${KERNEL_VERSION}~16\.04"
-            fi
-
-            echo "${test_pattern}"
-            if ! gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCLOUD_INSTANCE}" --command "docker run --rm kernel-builder 'find /kernel-modules -name \"*\.ko\.gz\"'" | grep -q "${test_pattern}\.ko\.gz"; then
-              echo "Required kernel module for ${KERNEL_VERSION} has not been built"
-              exit 1
-            fi
-          fi
-
-          # Build and tag the test image
-          gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCLOUD_INSTANCE}" --command "docker pull \"${COLLECTOR_REPO}\":\"${COLLECTOR_TAG}-slim\" && docker build --tag \"${COLLECTOR_REPO}:${COLLECTOR_TAG}-dockerized\" --build-arg COLLECTOR_TAG=\"${COLLECTOR_TAG}-slim\" /home/${GCP_VM_USER}/ctx/collector/kernel-modules/dockerized/tests"
-
-          # Clean up the remote machine
-          gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCLOUD_INSTANCE}" --command "rm -rf /home/${GCP_VM_USER}/ctx/ && docker rmi -f kernel-builder && docker system prune -f"
-
     - run:
         name: "Running integration tests"
         no_output_timeout: 45m
         command: |
-          <<# parameters.dockerized >>export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}-dockerized"<</ parameters.dockerized >>
+          <<# parameters.dockerized >>export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${CIRCLE_BUILD_NUM}"<</ parameters.dockerized >>
           echo "Running tests with image '${COLLECTOR_IMAGE}'"
           make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report
           cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"

@@ -1,15 +1,11 @@
 #! /bin/bash
 
-function vm_exec {
-	gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCLOUD_INSTANCE}" --command "$1"
-}
-
 GCP_VM_USER="$(whoami)"
 if [[ "$VM_TYPE" =~ "coreos" ]]; then
 	GCP_VM_USER="core"
 fi
 
-KERNEL_VERSION="$(vm_exec "uname -r")"
+KERNEL_VERSION="$(gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCLOUD_INSTANCE}" --command "uname -r")"
 
 # Remove trailing '+' from some distros.
 KERNEL_VERSION="${KERNEL_VERSION%"+"}"
@@ -22,21 +18,34 @@ mkdir -p "${BUNDLES_DIR}"
 # Get the bundle for the running machine
 gsutil -m cp "gs://stackrox-kernel-bundles/bundle-${KERNEL_VERSION}*.tgz" "${BUNDLES_DIR}"
 
-# tar the collector repo in order to speed up transfer to the remote VM
-tar -czf ~/collector.tar.gz -C ~/workspace/go/src/github.com/stackrox/ collector/
+docker build \
+	--build-arg BRANCH="${CIRCLE_BRANCH}" \
+	--build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
+	--build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}" \
+	--tag kernel-builder \
+	-f "/home/${GCP_VM_USER}/ctx/collector/kernel-modules/dockerized/Dockerfile" \
+	"/home/${GCP_VM_USER}/ctx"
 
-# Upload bundles and collector repo to the remote VM
-vm_exec "mkdir -p '/home/${GCP_VM_USER}/ctx/bundles'"
-gcloud compute scp --ssh-key-file="${GCP_SSH_KEY_FILE}" "${BUNDLES_DIR}/*" "${GCP_VM_USER}@${GCLOUD_INSTANCE}:/home/${GCP_VM_USER}/ctx/bundles"
-gcloud compute scp --ssh-key-file="${GCP_SSH_KEY_FILE}" ~/collector.tar.gz "${GCP_VM_USER}@${GCLOUD_INSTANCE}:/home/${GCP_VM_USER}/ctx/"
+# Check the required module has been built
+if [[ "${COLLECTION_METHOD}" == "module" ]]; then
+	test_pattern="${KERNEL_VERSION}"
+	if [[ "<< parameters.image_family >>" == "ubuntu-2004-lts" ]]; then
+		test_pattern="${KERNEL_VERSION}~20\.04"
+	elif [[ "<< parameters.image_family >>" == "ubuntu-1604-lts" ]]; then
+		test_pattern="${KERNEL_VERSION}~16\.04"
+	fi
 
-# Decompress the collector repo
-vm_exec "cd '/home/${GCP_VM_USER}/ctx' && tar xzf collector.tar.gz && rm -f collector.tar.gz"
-
-# Create the test image on the remote machine
-# Build the probes
-if [[ "$VM_TYPE" =~ "coreos" ]]; then
-	vm_exec "sudo docker build --build-arg BRANCH='${CIRCLE_BRANCH}' --build-arg REDHAT_USERNAME='${REDHAT_USERNAME}' --build-arg REDHAT_PASSWORD='${REDHAT_PASSWORD}' --tag kernel-builder -f '/home/${GCP_VM_USER}/ctx/collector/kernel-modules/dockerized/Dockerfile' '/home/${GCP_VM_USER}/ctx'"
-else
-	vm_exec "docker build --build-arg BRANCH='${CIRCLE_BRANCH}' --build-arg REDHAT_USERNAME='${REDHAT_USERNAME}' --build-arg REDHAT_PASSWORD='${REDHAT_PASSWORD}' --tag kernel-builder -f '/home/${GCP_VM_USER}/ctx/collector/kernel-modules/dockerized/Dockerfile' '/home/${GCP_VM_USER}/ctx'"
+	echo "${test_pattern}"
+	if ! gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCLOUD_INSTANCE}" --command "docker run --rm kernel-builder 'find /kernel-modules -name \"*\.ko\.gz\"'" | grep -q "${test_pattern}\.ko\.gz"; then
+		echo >&2 "Required kernel module for ${KERNEL_VERSION} has not been built"
+		exit 1
+	fi
 fi
+
+# Build and tag the test image
+docker build \
+	--tag "${COLLECTOR_REPO}:${CIRCLE_BUILD_NUM}" \
+	--build-arg COLLECTOR_TAG="${COLLECTOR_TAG}-slim" \
+	/home/${GCP_VM_USER}/ctx/collector/kernel-modules/dockerized/tests
+
+docker push ${COLLECTOR_REPO}:${CIRCLE_BUILD_NUM}"
