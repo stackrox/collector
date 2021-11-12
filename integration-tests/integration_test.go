@@ -188,8 +188,6 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 
 	err = s.collector.Launch()
 	require.NoError(s.T(), err)
-	s.collector.getContainers()
-	s.collector.getAllContainers()
 
 	images := []string{
 		"nginx:1.14-alpine",

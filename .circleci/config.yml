@@ -219,7 +219,7 @@ jobs:
           # Loops over all possible types of Valgrind tests, checks the labels, and sets environment variables accordingly
           # Default is not to use Valgrind, but build with Valgrind if any Valgrind label is present
 
-          BUILD_USE_VALGRIND="false" 
+          BUILD_USE_VALGRIND="false"
           for test_type in unit-tests integration-tests
           do
             CHECK_VALGRIND="false"

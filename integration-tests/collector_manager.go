@@ -1,6 +1,7 @@
 package integrationtests
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -212,17 +213,9 @@ func (c *collectorManager) captureLogs(containerName string) (string, error) {
 }
 
 func (c *collectorManager) killContainer(name string) error {
-	_, err := c.executor.Exec("docker", "kill", name)
-	if err != nil {
-		fmt.Print("err= ")
-		fmt.Print(err)
-		fmt.Print("\n")
-
-		// Returning here seems to be a problem as the container might not be removed	
-		//return err
-	}
-	_, err = c.executor.Exec("docker", "rm", "-fv", name)
-	return err
+	_, err1 := c.executor.Exec("docker", "kill", name)
+	_, err2 := c.executor.Exec("docker", "rm", "-fv", name)
+	return errors.Wrap(err1, "dfasd")
 }
 
 func (c *collectorManager) stopContainer(name string) error {
