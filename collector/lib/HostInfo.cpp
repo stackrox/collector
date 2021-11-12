@@ -31,13 +31,6 @@ namespace collector {
 
 namespace {
 
-// Helper to construct an absolute path based on mount location
-// of various on-host files.
-std::string pathOnHost(const char* path) {
-  static const std::string root = "/host";
-  return root + path;
-}
-
 // Helper method which checks whether the given kernel & os
 // are RHEL 7.6 (to inform later heuristics around eBPF support)
 bool isRHEL76(const KernelVersion& kernel, const std::string& os_id) {
@@ -106,7 +99,7 @@ std::string& HostInfo::GetHostname() {
       CLOG(INFO) << "environment variable NODE_HOSTNAME not set";
       // if we can't get the hostname from the environment
       // we can look in /proc (mounted at /host/proc in the collector container)
-      std::ifstream file(pathOnHost("/proc/sys/kernel/hostname"));
+      std::ifstream file(GetHostPath("/proc/sys/kernel/hostname"));
       if (!file.is_open()) {
         CLOG(INFO) << "sys/kernel/hostname file not found";
         CLOG(WARNING) << "Failed to determine hostname";
@@ -144,9 +137,9 @@ std::string& HostInfo::GetOSID() {
 }
 
 std::string HostInfo::GetOSReleaseValue(const char* name) {
-  std::ifstream release_file(pathOnHost("/etc/os-release"));
+  std::ifstream release_file(GetHostPath("/etc/os-release"));
   if (!release_file.is_open()) {
-    release_file.open(pathOnHost("/usr/lib/os-release"));
+    release_file.open(GetHostPath("/usr/lib/os-release"));
     if (!release_file.is_open()) {
       return "";
     }
