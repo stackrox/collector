@@ -36,7 +36,7 @@ vm_exec "cd '/home/${GCP_VM_USER}/ctx' && tar xzf collector.tar.gz && rm -f coll
 # Create the test image on the remote machine
 # Build the probes
 if [[ "$VM_TYPE" =~ "coreos" ]]; then
-	vm_exec "sudo docker build --build-arg BRANCH='${CIRCLE_BRANCH}' --build-arg USER='${REDHAT_USERNAME}' --build-arg PASS='${REDHAT_PASSWORD}' --tag kernel-builder -f '/home/${GCP_VM_USER}/ctx/collector/kernel-modules/dockerized/Dockerfile' '/home/${GCP_VM_USER}/ctx'"
+	vm_exec "sudo docker build --build-arg BRANCH='${CIRCLE_BRANCH}' --build-arg REDHAT_USERNAME='${REDHAT_USERNAME}' --build-arg REDHAT_PASSWORD='${REDHAT_PASSWORD}' --tag kernel-builder -f '/home/${GCP_VM_USER}/ctx/collector/kernel-modules/dockerized/Dockerfile' '/home/${GCP_VM_USER}/ctx'"
 else
-	vm_exec "docker build --build-arg BRANCH='${CIRCLE_BRANCH}' --build-arg USER='${REDHAT_USERNAME}' --build-arg PASS='${REDHAT_PASSWORD}' --tag kernel-builder -f '/home/${GCP_VM_USER}/ctx/collector/kernel-modules/dockerized/Dockerfile' '/home/${GCP_VM_USER}/ctx'"
+	vm_exec "docker build --build-arg BRANCH='${CIRCLE_BRANCH}' --build-arg REDHAT_USERNAME='${REDHAT_USERNAME}' --build-arg REDHAT_PASSWORD='${REDHAT_PASSWORD}' --tag kernel-builder -f '/home/${GCP_VM_USER}/ctx/collector/kernel-modules/dockerized/Dockerfile' '/home/${GCP_VM_USER}/ctx'"
 fi

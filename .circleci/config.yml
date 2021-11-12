@@ -1111,8 +1111,8 @@ jobs:
         command: |
           docker build \
             --build-arg BRANCH="$CIRCLE_BRANCH" \
-            --build-arg USER="${REDHAT_USERNAME}" \
-            --build-arg PASS="${REDHAT_PASSWORD}" \
+            --build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
+            --build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}" \
             --tag kernel-builder \
             -f ~/workspace/go/src/github.com/stackrox/collector/kernel-modules/dockerized/Dockerfile \
             ~/workspace/go/src/github.com/stackrox
