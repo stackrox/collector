@@ -1791,11 +1791,11 @@ workflows:
             image_family: [ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2104]
             collection_method: [module, ebpf]
             dockerized: [false, true]
-          # exclude:
+          exclude:
             # Failing due to GLIC 2.33 not available on ubi 8
-            # - image_family: ubuntu-2104
-              # collection_method: module
-              # dockerized: true
+            - image_family: ubuntu-2104
+              collection_method: module
+              dockerized: true
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
@@ -1830,10 +1830,10 @@ workflows:
           parameters:
             collection_method: [module, ebpf]
             dockerized: [false, true]
-          # exclude:
+          exclude:
             # Failing due to GLIC 2.33 not available on ubi 8
-            # - collection_method: module
-              # dockerized: true
+            - collection_method: module
+              dockerized: true
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-<< matrix.collection_method >>-fedora-coreos-stable<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
@@ -1843,10 +1843,10 @@ workflows:
           parameters:
             collection_method: [module, ebpf]
             dockerized: [false, true]
-          # exclude:
+          exclude:
             # Failing due to GLIC 2.33 not available on ubi 8
-            # - collection_method: module
-              # dockerized: true
+            - collection_method: module
+              dockerized: true
     - integration-test-data:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
