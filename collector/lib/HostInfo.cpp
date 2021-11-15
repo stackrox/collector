@@ -159,4 +159,49 @@ bool HostInfo::HasEBPFSupport() {
   return collector::hasEBPFSupport(kernel, GetOSID());
 }
 
+std::string HostInfo::NormalizedKernel() {
+  auto kernel = GetKernelVersion();
+  if (IsCOS()) {
+    std::string release = kernel.release;
+    // remove the + from the end of the kernel version
+    if (release[release.size() - 1] == '+') {
+      release.erase(release.size() - 1);
+    }
+    return release + "-" + GetBuildID() + "-" + GetOSID();
+  }
+
+  if (IsDockerDesktop()) {
+    std::stringstream timestamp(kernel.release.substr(kernel.release.find("SMP ") + 4));
+    std::tm tm{};
+    timestamp >> std::get_time(&tm, "%a %b %d %H:%M:%S %Z %Y");
+    timestamp.clear();
+    timestamp << std::put_time(&tm, "+%Y-%m-%d-%H-%M-%S");
+    return kernel.ShortRelease() + "-dockerdesktop-" + timestamp.str();
+  }
+
+  auto backport = UbuntuBackport();
+  if (!backport.empty()) {
+    return kernel.release + backport;
+  }
+
+  return kernel.release;
+}
+
+std::string HostInfo::UbuntuBackport() {
+  if (!IsUbuntu()) {
+    return "";
+  }
+
+  const char* candidates[] = {
+      "~16.04",
+      "~20.04"};
+
+  auto kernel = GetKernelVersion();
+  for (auto candidate : candidates) {
+    if (kernel.version.find(candidate) != std::string::npos) {
+      return {candidate};
+    }
+  }
+}
+
 }  // namespace collector
