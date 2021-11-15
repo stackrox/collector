@@ -1216,6 +1216,8 @@ jobs:
 
     steps:
     - initcommand
+    - docker-login-push
+
     - run:
         name: Check whether to run job
         command: |
