@@ -141,6 +141,7 @@ std::string HostInfo::GetOSReleaseValue(const char* name) {
   if (!release_file.is_open()) {
     release_file.open(GetHostPath("/usr/lib/os-release"));
     if (!release_file.is_open()) {
+      CLOG(ERROR) << "failed to open os-release file, unable to resolve OS information.";
       return "";
     }
   }
