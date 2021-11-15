@@ -55,6 +55,7 @@ extern "C" {
 #include "GRPC.h"
 #include "GetKernelObject.h"
 #include "GetStatus.h"
+#include "HostHeuristics.h"
 #include "LogLevel.h"
 #include "Logging.h"
 #include "SysdigService.h"
@@ -222,6 +223,11 @@ int main(int argc, char** argv) {
   }
 
   CollectorConfig config(args);
+  HostInfo& host = HostInfo::Instance();
+
+  for (auto heuristic : g_host_heuristics) {
+    heuristic->Process(&config);
+  }
 
 #ifdef COLLECTOR_CORE
   struct rlimit limit;
