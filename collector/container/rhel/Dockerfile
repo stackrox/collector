@@ -36,6 +36,7 @@ FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 ARG collector_version=xxx
 ARG module_version=xxx
 ARG USE_VALGRIND=false
+ARG ADDRESS_SANITIZER=false
 
 LABEL name="collector" \
       vendor="StackRox" \
@@ -60,21 +61,9 @@ COPY --from=extracted_bundle /bundle/usr/local/bin/collector /usr/local/bin/
 COPY --from=valgrind_build /valgrind-3.17.0/install /valgrind-3.17.0/install
 COPY --from=valgrind_build /valgrind-3.17.0/include /valgrind-3.17.0/include
 
-RUN mv collector-wrapper.sh /usr/local/bin/ && \
-    chmod 700 bootstrap.sh && \
-    dnf upgrade -y && \
-    dnf install -y kmod && \
-    dnf clean all && \
-    rm -rf /var/cache/dnf && \
-    # (Optional) Remove line below to keep package management utilities
-    rpm -e --nodeps rpm rpm-build-libs rpm-libs python3-rpm subscription-manager python3-subscription-manager-rhsm yum $(rpm -qa *dnf*) python3-hawkey && \
-    if [ $USE_VALGRIND == "true" ]; then \
-      ln -s /valgrind-3.17.0/install/bin/valgrind /usr/local/bin/valgrind; \
-    fi && \
-    echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt;
+COPY final-step.sh /
 
-RUN rmdir /valgrind-3.17.0 || true
-
+RUN ./final-step.sh && rm -f final-step.sh
 
 
 EXPOSE 8080 9090

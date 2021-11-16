@@ -18,11 +18,12 @@ container/bin/collector: $(HDRS) $(SRCS) txt-files generated-srcs $(shell find s
 	mkdir -p container/libs
 	docker rm -fv build_collector || true
 	docker run --rm --name build_collector \
-		-v "$(CURDIR):/src:ro" \
+		-v "$(CURDIR):/src" \
 		-v "$(CURDIR)/../sysdig/:/sysdig:ro" \
 		-v "$(CURDIR)/cmake-build:/tmp/cmake-build" \
 		-e CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
 		-e USE_VALGRIND=$(USE_VALGRIND) \
+		-e ADDRESS_SANITIZER=$(ADDRESS_SANITIZER) \
 		-e DISABLE_PROFILING="true" \
 		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-collector.sh
 	cp cmake-build/collector container/bin/collector

@@ -5,6 +5,7 @@ FROM registry.access.redhat.com/ubi8/ubi:8.4 AS builder
 ARG REDHAT_USERNAME
 ARG REDHAT_PASSWORD
 ARG USE_VALGRIND=false
+ARG ADDRESS_SANITIZER=false
 RUN rm -rf /etc/rhsm-host && \
     subscription-manager register --username "${REDHAT_USERNAME}" --password "${REDHAT_PASSWORD}" && \
     subscription-manager attach && \
@@ -39,6 +40,9 @@ RUN dnf -y update && \
     if [ "$USE_VALGRIND" = "true" ]; then \
         dnf -y install valgrind; \
     fi && \
+    if [ "$ADDRESS_SANITIZER" = "true" ]; then \
+        dnf -y install libasan; \
+    fi && \
     dnf clean all
 
 ARG BUILD_DIR=/build
@@ -63,6 +67,7 @@ ARG COLLECTOR_VERSION
 LABEL version="${COLLECTOR_VERSION}"
 
 ARG USE_VALGRIND=false
+ARG ADDRESS_SANITIZER=false
 
 ENV COLLECTOR_HOST_ROOT=/host
 
@@ -92,6 +97,9 @@ RUN mv /collector-wrapper.sh /usr/local/bin/ && \
       c-ares && \
     if [ "$USE_VALGRIND" = "true" ]; then \
       microdnf install -y valgrind; \
+    fi && \
+    if [ "$ADDRESS_SANITIZER" = "true" ]; then \
+        microdnf -y install libasan; \
     fi && \
     microdnf clean all && \
     rm -rf /var/cache/dnf
