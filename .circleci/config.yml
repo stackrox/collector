@@ -39,13 +39,16 @@ runOnAllTagsWithDockerIOPushCtx: &runOnAllTagsWithDockerIOPushCtx
 runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequires
   <<: *runOnAllTags
   context:
-    - docker-io-push
+    - docker-io-pull
     - quay-rhacs-eng-readonly
     - ubuntu-esm-subscription-token # Provides environment variable UBUNTU_ESM_SUBSCRIPTION_TOKEN.
+    - redhat-developer-account-login
   requires:
   - images
   - ubi-image
   - integration-test-local
+  - integration-test-local-dockerized
+  - integration-test-local-ebpf-dockerized
 
 orbs:
   slack: circleci/slack@3.4.2
@@ -111,6 +114,13 @@ commands:
           gcloud config set core/disable_prompts True
           gcloud auth list
           gsutil ls << parameters.bucket-permission-check >>/ || echo "ERROR: Could not ls bucket"
+
+  docker-login-pull:
+    steps:
+    - run:
+        name: Login to Docker Hub with pull credentials
+        command: |
+            docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
 
   docker-login-push:
     steps:
@@ -1110,10 +1120,10 @@ jobs:
     - run:
         name: Build probes
         command: |
-          DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
+          docker build \
             --build-arg BRANCH="$CIRCLE_BRANCH" \
-            --build-arg USER="${REDHAT_USERNAME}" \
-            --build-arg PASS="${REDHAT_PASSWORD}" \
+            --build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
+            --build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}" \
             --tag kernel-builder \
             -f ~/workspace/go/src/github.com/stackrox/collector/kernel-modules/dockerized/Dockerfile \
             ~/workspace/go/src/github.com/stackrox
@@ -1121,7 +1131,7 @@ jobs:
     - run:
         name: Create test image
         command: |
-            DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
+            docker build \
                 --tag "stackrox/collector:${COLLECTOR_TAG}-dockerized" \
                 --build-arg COLLECTOR_TAG="${COLLECTOR_TAG}-slim" \
                 ~/workspace/go/src/github.com/stackrox/collector/kernel-modules/dockerized/tests
@@ -1210,10 +1220,16 @@ jobs:
       offline:
         type: boolean
         default: false
-    <<: *defaultImage
+      dockerized:
+        type: boolean
+        default: false
+    <<: *defaultMachine
+    working_directory: ~/workspace
 
     steps:
     - initcommand
+    - docker-login-pull
+
     - run:
         name: Check whether to run job
         command: |
@@ -1260,12 +1276,21 @@ jobs:
         name: "Create VM"
         command: |
           source $SOURCE_ROOT/.circleci/create-vm.sh
-          main "$GCLOUD_INSTANCE" "$VM_TYPE" "$IMAGE_FAMILY" "$GCP_SSH_KEY_FILE" "$DOCKER_IO_PUSH_USERNAME" "$DOCKER_IO_PUSH_PASSWORD"
+          main "$GCLOUD_INSTANCE" "$VM_TYPE" "$IMAGE_FAMILY" "$GCP_SSH_KEY_FILE" "$DOCKER_IO_PULL_USERNAME" "$DOCKER_IO_PULL_PASSWORD"
+
+    - run:
+        name: "Build dockerized driver"
+        command: |
+          <<^ parameters.dockerized >>exit 0<</ parameters.dockerized >>
+
+          IMAGE_FAMILY="<< parameters.image_family >>" "${SOURCE_ROOT}/.circleci/build-image-to-test.sh"
 
     - run:
         name: "Running integration tests"
         no_output_timeout: 45m
         command: |
+          <<# parameters.dockerized >>export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}-dockerized"<</ parameters.dockerized >>
+          echo "Running tests with image '${COLLECTOR_IMAGE}'"
           make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report
           cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp "${SOURCE_ROOT}/integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
@@ -1745,155 +1770,96 @@ workflows:
         - upload-modules
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-cos-stable
-        collection_method: ebpf
+        name: test-ebpf-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
         vm_type: cos
-        image_family: cos-stable
+        collection_method: ebpf
+        matrix:
+          parameters:
+            image_family: [cos-stable, cos-beta, cos-dev, cos-81-lts, cos-85-lts, cos-89-lts]
+            dockerized: [false, true]
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-cos-beta
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-beta
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-cos-dev
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-dev
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-cos-81-lts
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-81-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-cos-85-lts
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-85-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-cos-89-lts
-        collection_method: ebpf
-        vm_type: cos
-        image_family: cos-89-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-rhel-7
-        collection_method: ebpf
+        name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
         vm_type: rhel
-        image_family: rhel-7
-    # TODO(rc) Enabled but bootstrap.sh forces fallback to kernel-module (ROX-3377)
+        matrix:
+          parameters:
+            image_family: [rhel-7, rhel-8]
+            collection_method: [module, ebpf]
+            dockerized: [false, true]
+          exclude:
+            # TODO(rc) Enabled but bootstrap.sh forces fallback to kernel-module (ROX-3377)
+            - image_family: rhel-7
+              collection_method: ebpf
+              dockerized: false
+            # TODO(rc) Enabled but bootstrap.sh forces fallback to kernel-module (ROX-3377)
+            - image_family: rhel-7
+              collection_method: ebpf
+              dockerized: true
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-rhel-7
-        collection_method: module
-        vm_type: rhel
-        image_family: rhel-7
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-rhel-8
-        collection_method: ebpf
-        vm_type: rhel
-        image_family: rhel-8
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-rhel-8
-        collection_method: module
-        vm_type: rhel
-        image_family: rhel-8
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-ubuntu-1804-lts
-        collection_method: ebpf
+        name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
         vm_type: ubuntu-os
-        image_family: ubuntu-1804-lts
+        matrix:
+          parameters:
+            image_family: [ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2104]
+            collection_method: [module, ebpf]
+            dockerized: [false, true]
+          exclude:
+            # Failing due to GLIC 2.33 not available on ubi 8
+            - image_family: ubuntu-2104
+              collection_method: module
+              dockerized: true
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-ubuntu-1804-lts
-        collection_method: module
-        vm_type: ubuntu-os
-        image_family: ubuntu-1804-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-ubuntu-2004-lts
-        collection_method: ebpf
-        vm_type: ubuntu-os
-        image_family: ubuntu-2004-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-ubuntu-2004-lts
-        collection_method: module
-        vm_type: ubuntu-os
-        image_family: ubuntu-2004-lts
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-ubuntu-2104
-        collection_method: ebpf
-        vm_type: ubuntu-os
-        image_family: ubuntu-2104
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-ubuntu-2104
-        collection_method: module
-        vm_type: ubuntu-os
-        image_family: ubuntu-2104
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-sles-15
-        collection_method: ebpf
+        name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
         vm_type: suse
-        image_family: sles-15
+        matrix:
+          parameters:
+            image_family: [sles-12, sles-15]
+            collection_method: [module, ebpf]
+            dockerized: [false, true]
+          exclude:
+            - image_family: sles-12
+              collection_method: ebpf
+              dockerized: false
+            - image_family: sles-12
+              collection_method: ebpf
+              dockerized: true
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-sles-15
-        collection_method: module
-        vm_type: suse
-        image_family: sles-15
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-sles-12
-        collection_method: module
-        vm_type: suse
-        image_family: sles-12
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-sles-15-sp2-sap
-        collection_method: ebpf
+        name: test-<< matrix.collection_method >>-sles-15-sp2-sap<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
         vm_type: suse-sap
         image_family: sles-15-sp2-sap
+        matrix:
+          parameters:
+            collection_method: [module, ebpf]
+            dockerized: [false, true]
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-sles-15-sp2-sap
-        collection_method: module
-        vm_type: suse-sap
-        image_family: sles-15-sp2-sap
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-flatcar-stable
-        collection_method: module
+        name: test-<< matrix.collection_method >>-flatcar-stable<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
         vm_type: flatcar
         image_family: flatcar-stable
+        matrix:
+          parameters:
+            collection_method: [module, ebpf]
+            dockerized: [false, true]
+          exclude:
+            # Failing due to GLIC 2.33 not available on ubi 8
+            - collection_method: module
+              dockerized: true
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-flatcar-stable
-        collection_method: ebpf
-        vm_type: flatcar
-        image_family: flatcar-stable
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-module-fedora-coreos-stable
-        collection_method: module
-        vm_type: fedora-coreos
+        name: test-<< matrix.collection_method >>-fedora-coreos-stable<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
         image_family: fedora-coreos-stable
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-fedora-coreos-stable
-        collection_method: ebpf
         vm_type: fedora-coreos
-        image_family: fedora-coreos-stable
+        matrix:
+          parameters:
+            collection_method: [module, ebpf]
+            dockerized: [false, true]
+          exclude:
+            # Failing due to GLIC 2.33 not available on ubi 8
+            - collection_method: module
+              dockerized: true
     - integration-test-data:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
@@ -1904,7 +1870,7 @@ workflows:
         - test-ebpf-cos-85-lts
         - test-ebpf-cos-89-lts
         - test-module-rhel-7
-        - test-ebpf-rhel-7
+        # - test-ebpf-rhel-7
         - test-module-rhel-8
         - test-ebpf-rhel-8
         - test-module-ubuntu-1804-lts
