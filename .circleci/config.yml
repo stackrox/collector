@@ -1270,7 +1270,7 @@ jobs:
         name: "Create VM"
         command: |
           source $SOURCE_ROOT/.circleci/create-vm.sh
-          main "$GCLOUD_INSTANCE" "$VM_TYPE" "$IMAGE_FAMILY" "$GCP_SSH_KEY_FILE" "$DOCKER_IO_PUSH_USERNAME" "$DOCKER_IO_PUSH_PASSWORD"
+          main "$GCLOUD_INSTANCE" "$VM_TYPE" "$IMAGE_FAMILY" "$GCP_SSH_KEY_FILE" "$DOCKER_IO_PULL_USERNAME" "$DOCKER_IO_PULL_PASSWORD"
 
     - run:
         name: "Build dockerized driver"
