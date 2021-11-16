@@ -228,7 +228,6 @@ jobs:
 
           # Loops over all possible types of Valgrind tests, checks the labels, and sets environment variables accordingly
           # Default is not to use Valgrind, but build with Valgrind if any Valgrind label is present
-
           BUILD_USE_VALGRIND="false"
           for test_type in unit-tests integration-tests
           do
@@ -249,6 +248,12 @@ jobs:
             echo "export CHECK_${up_valgrind_test_type}_${up_test_type}=$CHECK_VALGRIND" >> ~/workspace/shared-env
           done
           echo "export BUILD_USE_VALGRIND=$BUILD_USE_VALGRIND" >> ~/workspace/shared-env
+
+          if [[ -f pr-metadata/labels/address-sanitizer ]]; then
+            echo 'export SANITIZER_TESTS=true' >> ~/workspace/shared-env
+          else
+            echo 'export SANITIZER_TESTS=false' >> ~/workspace/shared-env
+          fi
 
     - persist_to_workspace:
         root: ~/workspace
@@ -743,7 +748,7 @@ jobs:
     - run:
         name: Build collector
         command: |
-          make -C "${SOURCE_ROOT}" collector CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE USE_VALGRIND="$BUILD_USE_VALGRIND"
+          make -C "${SOURCE_ROOT}" collector CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE USE_VALGRIND="$BUILD_USE_VALGRIND" ADDRESS_SANITIZER=$SANITIZER_TESTS
 
     - run:
         name: Run collector unit tests
@@ -835,6 +840,7 @@ jobs:
             --build-arg module_version="$MODULE_VERSION"
             --build-arg collector_version="$COLLECTOR_VERSION"
             --build-arg USE_VALGRIND="$BUILD_USE_VALGRIND"
+            --build-arg ADDRESS_SANITIZER="$SANITIZER_TESTS"
           )
 
           "${SOURCE_ROOT}/collector/container/rhel/create-bundle.sh" \
@@ -882,6 +888,7 @@ jobs:
               --build-arg max_layer_size="$MAX_LAYER_MB"
               --build-arg max_layer_depth="$layer_count"
               --build-arg USE_VALGRIND="$BUILD_USE_VALGRIND"
+              --build-arg ADDRESS_SANITIZER="$SANITIZER_TESTS"
             )
             docker build \
               --target="probe-layer-${layer_count}" \
@@ -948,6 +955,7 @@ jobs:
             --build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
             --build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}" \
             --build-arg USE_VALGRIND="${BUILD_USE_VALGRIND}" \
+            --build-arg ADDRESS_SANITIZER="${SANITIZER_TESTS}" \
             -t "collector-test-cpaas:${COLLECTOR_VERSION}" \
             --build-arg CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}" \
             -f ${SOURCE_ROOT}/collector/container/Dockerfile.ubi \
@@ -1645,6 +1653,7 @@ jobs:
               --build-arg max_layer_depth="${layer_count}"
               --build-arg max_layer_size="${MAX_LAYER_MB}"
               --build-arg USE_VALGRIND="${BUILD_USE_VALGRIND}"
+              --build-arg ADDRESS_SANITIZER="${SANITIZER_TESTS}"
             )
             docker build -q \
               --target="probe-layer-${layer_count}" \

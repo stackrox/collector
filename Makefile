@@ -19,6 +19,7 @@ ifdef BUILD_BUILDER_IMAGE
 		--cache-from stackrox/collector-builder:cache \
 		--cache-from stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		--build-arg USE_VALGRIND=$(USE_VALGRIND) \
+		--build-arg ADDRESS_SANITIZER=$(ADDRESS_SANITIZER) \
 		-t stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-f "$(CURDIR)/builder/Dockerfile" \
 		builder
@@ -59,6 +60,7 @@ image: collector unittest $(MOD_VER_FILE) $(CURDIR)/collector/container/rhel/bun
 	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
 		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
 		--build-arg USE_VALGRIND=$(USE_VALGRIND) \
+		--build-arg ADDRESS_SANITIZER=$(ADDRESS_SANITIZER) \
 		-f collector/container/rhel/Dockerfile \
 		-t stackrox/collector:$(COLLECTOR_TAG) \
 		collector/container/rhel

@@ -12,6 +12,7 @@ endif
 endif
 
 USE_VALGRIND ?= false
+ADDRESS_SANITIZER ?= false
 CMAKE_BUILD_TYPE ?= Release
 
 ifeq ($(USE_HELGRIND),true)
