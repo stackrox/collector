@@ -159,7 +159,7 @@ bool HostInfo::HasEBPFSupport() {
   return collector::hasEBPFSupport(kernel, GetOSID());
 }
 
-std::string HostInfo::NormalizedKernel() {
+std::string HostInfo::NormalizedRelease() {
   auto kernel = GetKernelVersion();
   if (IsCOS()) {
     std::string release = kernel.release;
@@ -202,6 +202,8 @@ std::string HostInfo::UbuntuBackport() {
       return {candidate};
     }
   }
+
+  return "";
 }
 
 }  // namespace collector

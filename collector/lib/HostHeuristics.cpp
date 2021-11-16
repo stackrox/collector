@@ -11,8 +11,8 @@ class CollectionHeuristic : public Heuristic {
   // does not support it, we can try to use kernel modules instead.
   // The exception to this is COS, where third party modules are not
   // supported, so there is nothing we can do and must exit.
-  void Process(HostInfo& host, CollectorConfig* config) {
-    if (config->UseEbpf() && !host.HasEBPFSupport()) {
+  void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) {
+    if (config.UseEbpf() && !host.HasEBPFSupport()) {
       if (host.IsCOS()) {
         CLOG(FATAL) << host.GetDistro() << " does not support third-party kernel modules or the required eBPF features.";
       }
@@ -20,7 +20,7 @@ class CollectionHeuristic : public Heuristic {
       CLOG(ERROR) << host.GetDistro() << " " << host.GetKernelVersion().release
                   << " does not support ebpf based collection.";
       CLOG(WARNING) << "Switching to kernel module based collection, please configure RUNTIME_SUPPORT=kernel-module";
-      // TODO: config->SetCollectionMethod("kernel-module");
+      hconfig->SetCollectionMethod("kernel-module");
     }
   }
 };
@@ -31,18 +31,18 @@ class CosHeuristic : public Heuristic {
   // If we're on COS, and configured to use kernel modules, we attempt
   // to switch to eBPF collection if possible, otherwise we are unable
   // to collect and must exit.
-  void Process(HostInfo& host, CollectorConfig* config) {
+  void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) {
     if (!host.IsCOS()) {
       return;
     }
 
-    if (!config->UseEbpf()) {
+    if (!config.UseEbpf()) {
       CLOG(ERROR) << host.GetDistro() << " does not support third-party kernel modules";
     }
 
     if (host.HasEBPFSupport()) {
       CLOG(WARNING) << "switching to eBPF based collection, please configure RUNTIME_SUPPORT=ebpf";
-      // TODO: config->SetCollectionMethod("ebpf");
+      hconfig->SetCollectionMethod("ebpf");
     } else {
       CLOG(FATAL) << "unable to switch to eBPF collection on this host";
     }
@@ -53,14 +53,14 @@ class DockerDesktopHeuristic : public Heuristic {
  public:
   // Docker Desktop does not support eBPF so we switch to use kernel
   // modules instead.
-  void Process(HostInfo& host, CollectorConfig* config) {
+  void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) {
     if (!host.IsDockerDesktop()) {
       return;
     }
 
-    if (config->UseEbpf()) {
+    if (config.UseEbpf()) {
       CLOG(WARNING) << host.GetDistro() << " does not support eBPF, switching to kernel module based collection.";
-      // TODO: config->SetCollectionMethod("kernel-module");
+      hconfig->SetCollectionMethod("kernel-module");
     }
   }
 };
@@ -69,12 +69,19 @@ const CollectionHeuristic kCollectionHeuristic;
 const CosHeuristic kCosHeuristic;
 const DockerDesktopHeuristic kDockerDesktopHeuristic;
 
-}  // namespace
-
-const std::vector<Heuristic*> g_host_heuristics = {
+static const std::vector<Heuristic*> g_host_heuristics = {
     (Heuristic*)&kCollectionHeuristic,
     (Heuristic*)&kCosHeuristic,
     (Heuristic*)&kDockerDesktopHeuristic,
 };
+
+}  // namespace
+
+void ProcessHostHeuristics(const CollectorConfig& config, HostConfig* host_config) {
+  HostInfo& host_info = HostInfo::Instance();
+  for (auto heuristic : g_host_heuristics) {
+    heuristic->Process(host_info, config, host_config);
+  }
+}
 
 }  // namespace collector

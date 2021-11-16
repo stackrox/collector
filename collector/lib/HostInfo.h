@@ -193,7 +193,7 @@ class HostInfo {
   // primarily for informing the kernel object downloader what to
   // download.
   // TODO: put this in the downloader?
-  std::string NormalizedKernel();
+  std::string NormalizedRelease();
 
   // Gets the Ubuntu backport version, if there is one.
   std::string UbuntuBackport();

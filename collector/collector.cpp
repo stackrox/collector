@@ -223,11 +223,6 @@ int main(int argc, char** argv) {
   }
 
   CollectorConfig config(args);
-  HostInfo& host = HostInfo::Instance();
-
-  for (auto heuristic : g_host_heuristics) {
-    heuristic->Process(&config);
-  }
 
 #ifdef COLLECTOR_CORE
   struct rlimit limit;

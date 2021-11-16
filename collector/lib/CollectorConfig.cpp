@@ -27,6 +27,8 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "CollectorArgs.h"
 #include "EnvVar.h"
+#include "HostHeuristics.h"
+#include "HostInfo.h"
 #include "Logging.h"
 #include "Utility.h"
 
@@ -171,6 +173,8 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   if (set_curl_verbose) {
     curl_verbose_ = true;
   }
+
+  ProcessHostHeuristics(*this, &this->host_config_);
 }
 
 bool CollectorConfig::UseChiselCache() const {
@@ -178,6 +182,9 @@ bool CollectorConfig::UseChiselCache() const {
 }
 
 bool CollectorConfig::UseEbpf() const {
+  if (host_config_.HasCollectionMethod()) {
+    return host_config_.CollectionMethod() == "ebpf";
+  }
   return (collection_method_ == "ebpf");
 }
 
@@ -198,7 +205,11 @@ std::string CollectorConfig::Chisel() const {
 }
 
 std::string CollectorConfig::CollectionMethod() const {
-  return collection_method_;
+  if (host_config_.CollectionMethod().empty()) {
+    // the host configuration hasn't overridden the collection method
+    return collection_method_;
+  }
+  return host_config_.CollectionMethod();
 }
 
 std::string CollectorConfig::Hostname() const {
