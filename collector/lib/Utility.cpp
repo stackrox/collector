@@ -38,6 +38,9 @@ extern "C" {
 #include <uuid/uuid.h>
 }
 
+#include <fstream>
+
+#include "HostInfo.h"
 #include "Logging.h"
 #include "Utility.h"
 
@@ -160,15 +163,14 @@ const char* GetSNIHostname() {
   const char* hostname = std::getenv("SNI_HOSTNAME");
   if (hostname && *hostname) return hostname;
 
-  return "";
+  // if the environment variable is not defined, then default
+  // to sensor.stackrox
+  return "sensor.stackrox";
 }
 
-const char* GetHostname() {
-  const char* hostname = std::getenv("NODE_HOSTNAME");
-  if (hostname && *hostname) return hostname;
-
-  CLOG(ERROR) << "Failed to determine hostname, environment variable NODE_HOSTNAME not set";
-  return "unknown";
+std::string GetHostname() {
+  HostInfo& info = HostInfo::Instance();
+  return info.GetHostname();
 }
 
 const char* GetKernelCandidates() {

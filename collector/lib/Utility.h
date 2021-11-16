@@ -58,7 +58,7 @@ std::string GetHostPath(const std::string& file);
 const char* GetSNIHostname();
 
 // Get hostname from NODE_HOSTNAME env var
-const char* GetHostname();
+std::string GetHostname();
 
 // Get kernel candidates from KERNEL_CANDIDATES env var
 const char* GetKernelCandidates();
