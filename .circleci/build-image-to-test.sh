@@ -4,7 +4,7 @@
 
 set -eo pipefail
 
-GCP_VM_USER="$(whoami)"
+GCP_VM_USER="circleci"
 if [[ "$VM_TYPE" =~ "coreos" ]]; then
 	GCP_VM_USER="core"
 fi
