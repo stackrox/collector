@@ -11,7 +11,7 @@ class CollectionHeuristic : public Heuristic {
   // does not support it, we can try to use kernel modules instead.
   // The exception to this is COS, where third party modules are not
   // supported, so there is nothing we can do and must exit.
-  void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) {
+  void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
     if (config.UseEbpf() && !host.HasEBPFSupport()) {
       if (host.IsCOS()) {
         CLOG(FATAL) << host.GetDistro() << " does not support third-party kernel modules or the required eBPF features.";
@@ -31,7 +31,7 @@ class CosHeuristic : public Heuristic {
   // If we're on COS, and configured to use kernel modules, we attempt
   // to switch to eBPF collection if possible, otherwise we are unable
   // to collect and must exit.
-  void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) {
+  void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
     if (!host.IsCOS()) {
       return;
     }
@@ -53,7 +53,7 @@ class DockerDesktopHeuristic : public Heuristic {
  public:
   // Docker Desktop does not support eBPF so we switch to use kernel
   // modules instead.
-  void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) {
+  void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
     if (!host.IsDockerDesktop()) {
       return;
     }
@@ -69,7 +69,7 @@ const CollectionHeuristic kCollectionHeuristic;
 const CosHeuristic kCosHeuristic;
 const DockerDesktopHeuristic kDockerDesktopHeuristic;
 
-static const std::vector<Heuristic*> g_host_heuristics = {
+static const Heuristic* g_host_heuristics[] = {
     (Heuristic*)&kCollectionHeuristic,
     (Heuristic*)&kCosHeuristic,
     (Heuristic*)&kDockerDesktopHeuristic,

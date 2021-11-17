@@ -9,7 +9,7 @@ namespace collector {
 
 class Heuristic {
  public:
-  virtual void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) {}
+  virtual void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {}
 };
 
 // Processes all known heuristics, allowing them to populate host_config
