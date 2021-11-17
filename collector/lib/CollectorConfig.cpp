@@ -205,11 +205,10 @@ std::string CollectorConfig::Chisel() const {
 }
 
 std::string CollectorConfig::CollectionMethod() const {
-  if (host_config_.CollectionMethod().empty()) {
-    // the host configuration hasn't overridden the collection method
-    return collection_method_;
+  if (host_config_.HasCollectionMethod()) {
+    return host_config_.CollectionMethod();
   }
-  return host_config_.CollectionMethod();
+  return collection_method_;
 }
 
 std::string CollectorConfig::Hostname() const {

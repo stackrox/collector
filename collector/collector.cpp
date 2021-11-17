@@ -55,7 +55,6 @@ extern "C" {
 #include "GRPC.h"
 #include "GetKernelObject.h"
 #include "GetStatus.h"
-#include "HostHeuristics.h"
 #include "LogLevel.h"
 #include "Logging.h"
 #include "SysdigService.h"
