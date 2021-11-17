@@ -42,9 +42,9 @@ const int MAX_RHEL_BUILD_ID = 1062;
 struct KernelVersion {
   KernelVersion() : kernel(0), major(0), minor(0), build_id(0) {}
 
-  KernelVersion(const char* release, const char* version) : kernel(0), major(0), minor(0), build_id(0) {
-    this->version = version;
-    this->release = release;
+  KernelVersion(std::string release, std::string version) : kernel(0), major(0), minor(0), build_id(0) {
+    this->version = std::move(version);
+    this->release = std::move(release);
 
     // regex for parsing first parts of release version:
     // ^                   -> must match start of the string
@@ -72,25 +72,25 @@ struct KernelVersion {
   // First checking the KERNEL_VERSION environment variable, otherwise uses
   // the uname syscall.
   static KernelVersion FromHost() {
-    const char* release = nullptr;
-    const char* version = nullptr;
+    std::string release;
+    std::string version;
+
     const char* kernel_version_env = std::getenv("KERNEL_VERSION");
     if (kernel_version_env && *kernel_version_env) {
-      release = kernel_version_env;
+      release.assign(kernel_version_env);
     }
 
     struct utsname uts_buffer {};
     if (uname(&uts_buffer) == 0) {
-      if (release != nullptr) {
-        release = uts_buffer.release;
+      if (release.empty()) {
+        release.assign(uts_buffer.release);
       }
-      version = uts_buffer.version;
+      version.assign(uts_buffer.version);
+      CLOG(INFO) << "identified kernel release: '" << release << "'";
+      CLOG(INFO) << "identified kernel version: '" << version << "'";
     } else {
       CLOG(WARNING) << "uname failed (" << StrError() << ") unable to resolve kernel information";
     }
-
-    if (version == nullptr) version = "";
-    if (release == nullptr) release = "";
 
     return {release, version};
   }
