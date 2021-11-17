@@ -65,11 +65,7 @@ class DockerDesktopHeuristic : public Heuristic {
   }
 };
 
-//const CollectionHeuristic kCollectionHeuristic;
-//const CosHeuristic kCosHeuristic;
-//const DockerDesktopHeuristic kDockerDesktopHeuristic;
-//
-static const std::unique_ptr<Heuristic> g_host_heuristics[] = {
+const std::unique_ptr<Heuristic> g_host_heuristics[] = {
     std::unique_ptr<Heuristic>(new CollectionHeuristic),
     std::unique_ptr<Heuristic>(new CosHeuristic),
     std::unique_ptr<Heuristic>(new DockerDesktopHeuristic),

@@ -54,6 +54,7 @@ struct KernelVersion {
     std::regex release_re(R"(^(\d+)\.(\d+)\.(\d+)(-(\d+))?.*)");
     std::smatch match;
     if (!std::regex_match(this->release, match, release_re)) {
+      CLOG(ERROR) << "'" << this->release << "' does not match expected kernel version format.";
       return;
     }
 
