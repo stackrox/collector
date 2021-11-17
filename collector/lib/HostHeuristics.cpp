@@ -65,21 +65,21 @@ class DockerDesktopHeuristic : public Heuristic {
   }
 };
 
-const CollectionHeuristic kCollectionHeuristic;
-const CosHeuristic kCosHeuristic;
-const DockerDesktopHeuristic kDockerDesktopHeuristic;
-
-static const Heuristic* g_host_heuristics[] = {
-    (Heuristic*)&kCollectionHeuristic,
-    (Heuristic*)&kCosHeuristic,
-    (Heuristic*)&kDockerDesktopHeuristic,
+//const CollectionHeuristic kCollectionHeuristic;
+//const CosHeuristic kCosHeuristic;
+//const DockerDesktopHeuristic kDockerDesktopHeuristic;
+//
+static const std::unique_ptr<Heuristic> g_host_heuristics[] = {
+    std::unique_ptr<Heuristic>(new CollectionHeuristic),
+    std::unique_ptr<Heuristic>(new CosHeuristic),
+    std::unique_ptr<Heuristic>(new DockerDesktopHeuristic),
 };
 
 }  // namespace
 
 void ProcessHostHeuristics(const CollectorConfig& config, HostConfig* host_config) {
   HostInfo& host_info = HostInfo::Instance();
-  for (auto heuristic : g_host_heuristics) {
+  for (auto& heuristic : g_host_heuristics) {
     heuristic->Process(host_info, config, host_config);
   }
 }

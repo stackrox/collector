@@ -31,6 +31,7 @@ extern "C" {
 #include <regex>
 #include <string>
 
+#include "Logging.h"
 #include "Utility.h"
 
 namespace collector {
@@ -84,7 +85,12 @@ struct KernelVersion {
         release = uts_buffer.release;
       }
       version = uts_buffer.version;
+    } else {
+      CLOG(WARNING) << "uname failed (" << StrError() << ") unable to resolve kernel information";
     }
+
+    if (version == nullptr) version = "";
+    if (release == nullptr) release = "";
 
     return {release, version};
   }
