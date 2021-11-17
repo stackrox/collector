@@ -37,14 +37,16 @@ CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-Release}"
 
 cp -a collector/generated src/generated
 
-# Needed for address sanitizer to work. See https://github.com/grpc/grpc/issues/22238.
-# When Collector is built with address sanitizer it sets GRPC_ASAN_ENABLED, which changes a struct in the grpc library.
-# If grpc is compiled without that flag and is then linked with Collector the struct will have
-# two different definitions and Collector will crash when trying to connect to a grpc server.
-for file in `grep -rl port_platform.h src/generated --include=*.h`
-do
-	sed -i 's|#include <grpc/impl/codegen/port_platform.h>|#include <grpc/impl/codegen/port_platform.h>\n#ifdef GRPC_ASAN_ENABLED\n#  undef GRPC_ASAN_ENABLED\n#endif|' $file
-done
+if [ $ADDRESS_SANITIZER = "true" ]; then
+  # Needed for address sanitizer to work. See https://github.com/grpc/grpc/issues/22238.
+  # When Collector is built with address sanitizer it sets GRPC_ASAN_ENABLED, which changes a struct in the grpc library.
+  # If grpc is compiled without that flag and is then linked with Collector the struct will have
+  # two different definitions and Collector will crash when trying to connect to a grpc server.
+  for file in `grep -rl port_platform.h src/generated --include=*.h`
+  do
+  	sed -i 's|#include <grpc/impl/codegen/port_platform.h>|#include <grpc/impl/codegen/port_platform.h>\n#ifdef GRPC_ASAN_ENABLED\n#  undef GRPC_ASAN_ENABLED\n#endif|' $file
+  done
+fi
 
 echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 mkdir -p cmake-collector
