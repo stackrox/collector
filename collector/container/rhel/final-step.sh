@@ -10,10 +10,9 @@ if [ "$ADDRESS_SANITIZER" == "true" ]; then
   dnf install -y libasan
 fi
 
+rpm -e --nodeps $(rpm -qa '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*')
 dnf clean all
 rm -rf /var/cache/dnf
-# (Optional) Remove line below to keep package management utilities
-rpm -e --nodeps rpm rpm-build-libs rpm-libs python3-rpm subscription-manager python3-subscription-manager-rhsm yum $(rpm -qa *dnf*) python3-hawkey
 
 if [ "$USE_VALGRIND" == "true" ]; then
   ln -s /valgrind-3.17.0/install/bin/valgrind /usr/local/bin/valgrind
