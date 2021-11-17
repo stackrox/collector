@@ -98,16 +98,6 @@ struct KernelVersion {
     return true;
   }
 
-  // Gets the short version of the release string.
-  // Just contains {kernel_version}.{major_version}.{minor_version}
-  std::string ShortRelease() {
-    std::stringstream stream;
-    stream << kernel << "."
-           << major << "."
-           << minor;
-    return stream.str();
-  }
-
   // the kernel version
   int kernel;
   // the kernel major version
@@ -169,11 +159,6 @@ class HostInfo {
     return GetDistro() == "Docker Desktop";
   }
 
-  // Whether we're running on an ubuntu host
-  bool IsUbuntu() {
-    return GetOSID() == "ubuntu";
-  }
-
   // Reads a named value from the os-release file (either in /etc/ or in /usr/lib)
   // and filters for a specific name. The file is in the format <NAME>="<VALUE>"
   // Quotes are removed from the value, if found. If not found, an empty string is returned.
@@ -188,15 +173,6 @@ class HostInfo {
   // Only exception is RHEL 7.6, which does support eBPF but runs kernel 3.10 (which ordinarily does
   // not support eBPF)
   bool HasEBPFSupport();
-
-  // Normalizes the kernel version string based on the platform,
-  // primarily for informing the kernel object downloader what to
-  // download.
-  // TODO: put this in the downloader?
-  std::string NormalizedRelease();
-
-  // Gets the Ubuntu backport version, if there is one.
-  std::string UbuntuBackport();
 
  protected:
   // basic default constructor, doesn't need to do anything,
