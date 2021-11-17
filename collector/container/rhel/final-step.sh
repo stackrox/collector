@@ -10,8 +10,8 @@ if [ "$ADDRESS_SANITIZER" == "true" ]; then
   dnf install -y libasan
 fi
 
-rpm -e --nodeps $(rpm -qa '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*')
 dnf clean all
+rpm -e --nodeps $(rpm -qa '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*')
 rm -rf /var/cache/dnf
 
 if [ "$USE_VALGRIND" == "true" ]; then
