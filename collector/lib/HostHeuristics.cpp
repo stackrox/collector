@@ -6,6 +6,15 @@ namespace collector {
 
 namespace {
 
+class Heuristic {
+ public:
+  // Process the given HostInfo and CollectorConfig to adjust HostConfig as necessary.
+  // It is intended that any number of Heuristics may be applied to the configs,
+  // to allow overriding of specific configuration options based on the platform.
+  // Note: non-const reference to HostInfo due to its lazy-initialization.
+  virtual void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {}
+};
+
 class CollectionHeuristic : public Heuristic {
   // If we're configured to use eBPF but the host we're running on
   // does not support it, we can try to use kernel modules instead.

@@ -4,10 +4,10 @@
 #include <string>
 
 //
-// The HostConfig is runtime-configured based on the host we are
-// running collector. It is intended to inform minor adjustments to
+// The HostConfig is runtime-configured based on the host where
+// collector is running. It is intended to inform minor adjustments to
 // the CollectorConfig, in cases where we can fall back to other ways
-// of operating (particularly around the collection method)
+// of operating.
 //
 class HostConfig {
  public:
