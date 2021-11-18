@@ -14,3 +14,8 @@ kernel-modules/kobuild-tmp
 
 # Development SSH Server keys
 .collector_dev_ssh_host_ed25519_key*
+
+# vscode configuration files
+.vscode/
+.devcontainer/
+.devcontainer.json

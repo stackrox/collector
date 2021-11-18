@@ -45,6 +45,25 @@ Instructions for Linux
 - To build the sysdig wrapper libary and collector binary: select the *collector* configuration from the **Run...** menu and then **Build**.
 - To run unit tests, select the *runUnitTests* configuration and then select **Run**.
 
+### Development with Visual Studio Code
+#### Setup for C++ using devcontainers
+Visual Studio Code can be used as a development environment by leveraging its devcontainers feature.
+- Install the [remote-containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension.
+- Create a `.devcontainer.json` file under `collector` and set the `image` attribute to `stackrox/collector-builder:cache`
+```json
+{
+  "name": "collector-dev",
+  "image": "stackrox/collector-builder:cache"
+}
+```
+- Open the `collector/` directory in a new instance of Visual Studio Code and when prompted select **Reopen In Container**, a new container should be created and the workspace directory will be mounted inside of it.
+
+#### Teardown
+Closing the Visual Studio Code instance will stop the container.
+
+#### Important note on performance
+Even though development containers is a supported feature of `Docker for Desktop`, there is a [bug](https://github.com/docker/for-mac/issues/3677) that tanks performance when running containers with mounted volumes. A possible workaround is to setup docker to run inside a VM and mounting the work directories using NFS.
+
 ### Building collector image(s) from the command-line
 - `make image` will create the Red Hat based collector image.
 
