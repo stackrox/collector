@@ -356,7 +356,7 @@ jobs:
           fi
 
           # get fingerprint from github
-          GH_KEY="$(ssh-keyscan github.com 2> /dev/null)"
+          GH_KEY="$(ssh-keyscan github.com 2> /dev/null | grep ssh-rsa | head -n1)"
           GH_FINGERPRINT="$(echo ${GH_KEY} | ssh-keygen -lf - | cut -d" " -f2)"
           # Verify from: https://help.github.com/en/articles/githubs-ssh-key-fingerprints
           GH_FINGERPRINT_VERIFY="SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8"
