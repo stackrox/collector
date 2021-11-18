@@ -82,11 +82,13 @@ const std::unique_ptr<Heuristic> g_host_heuristics[] = {
 
 }  // namespace
 
-void ProcessHostHeuristics(const CollectorConfig& config, HostConfig* host_config) {
+HostConfig ProcessHostHeuristics(const CollectorConfig& config) {
   HostInfo& host_info = HostInfo::Instance();
+  HostConfig host_config;
   for (auto& heuristic : g_host_heuristics) {
-    heuristic->Process(host_info, config, host_config);
+    heuristic->Process(host_info, config, &host_config);
   }
+  return host_config;
 }
 
 }  // namespace collector

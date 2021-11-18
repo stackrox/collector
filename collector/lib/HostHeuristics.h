@@ -7,9 +7,9 @@
 
 namespace collector {
 
-// Processes all known heuristics, allowing them to populate host_config
-// based on their results.
-void ProcessHostHeuristics(const CollectorConfig& config, HostConfig* host_config);
+// Processes all known heuristics, constructing an appropriate HostConfig
+// that allows collector to operate effectively on this platform.
+HostConfig ProcessHostHeuristics(const CollectorConfig& config);
 
 }  // namespace collector
 

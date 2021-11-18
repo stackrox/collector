@@ -174,7 +174,7 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
     curl_verbose_ = true;
   }
 
-  ProcessHostHeuristics(*this, &this->host_config_);
+  host_config_ = ProcessHostHeuristics(*this);
 }
 
 bool CollectorConfig::UseChiselCache() const {
