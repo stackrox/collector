@@ -102,6 +102,7 @@ RUN mv /collector-wrapper.sh /usr/local/bin/ && \
         microdnf -y install libasan; \
     fi && \
     microdnf clean all && \
+    rpm -e --nodeps $(rpm -qa '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf
 
 COPY --from=builder /MODULE_VERSION.txt /kernel-modules/MODULE_VERSION.txt
