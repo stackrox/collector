@@ -80,6 +80,7 @@ COPY --from=builder ${BUILD_DIR}/cmake-collector/EXCLUDE_FROM_DEFAULT_BUILD/user
 COPY --from=builder ${BUILD_DIR}/cmake-collector/collector /usr/local/bin/
 COPY --from=builder ${BUILD_DIR}/src/container/scripts /
 
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN mv /collector-wrapper.sh /usr/local/bin/ && \
     chmod 700 bootstrap.sh && \
     echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
