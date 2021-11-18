@@ -24,6 +24,7 @@ container/bin/collector: $(HDRS) $(SRCS) txt-files generated-srcs $(shell find s
 		-e CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
 		-e USE_VALGRIND=$(USE_VALGRIND) \
 		-e ADDRESS_SANITIZER=$(ADDRESS_SANITIZER) \
+		-e COLLECTOR_DEBUG_CID=$(COLLECTOR_DEBUG_CID) \
 		-e DISABLE_PROFILING="true" \
 		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-collector.sh
 	cp cmake-build/collector container/bin/collector
