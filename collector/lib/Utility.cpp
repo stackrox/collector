@@ -46,6 +46,62 @@ extern "C" {
 
 namespace collector {
 
+namespace {
+
+std::vector<std::string> split_str(std::string& str, char delim) {
+  std::stringstream stream(str);
+  std::string item;
+  std::vector<std::string> items;
+  while (std::getline(stream, item, delim)) {
+    items.push_back(item);
+  }
+  return items;
+}
+
+std::string getUbuntuBackport(HostInfo& host) {
+  if (!host.IsUbuntu()) {
+    return "";
+  }
+
+  const char* candidates[] = {
+      "~16.04",
+      "~20.04"};
+
+  auto kernel = host.GetKernelVersion();
+  for (auto candidate : candidates) {
+    if (kernel.version.find(candidate) != std::string::npos) {
+      return kernel.release + candidate;
+    }
+  }
+
+  return "";
+}
+
+std::string normalizeReleaseString(HostInfo& host) {
+  auto kernel = host.GetKernelVersion();
+  if (host.IsCOS()) {
+    std::string release = kernel.release;
+    // remove the + from the end of the kernel version
+    if (release[release.size() - 1] == '+') {
+      release.erase(release.size() - 1);
+    }
+    return release + "-" + host.GetBuildID() + "-" + host.GetOSID();
+  }
+
+  if (host.IsDockerDesktop()) {
+    std::stringstream timestamp(kernel.release.substr(kernel.release.find("SMP ") + 4));
+    std::tm tm{};
+    timestamp >> std::get_time(&tm, "%a %b %d %H:%M:%S %Z %Y");
+    timestamp.clear();
+    timestamp << std::put_time(&tm, "+%Y-%m-%d-%H-%M-%S");
+    return kernel.ShortRelease() + "-dockerdesktop-" + timestamp.str();
+  }
+
+  return kernel.release;
+}
+
+}  // namespace
+
 static constexpr int kMsgBufSize = 4096;
 
 const char* StrError(int errnum) {
@@ -173,12 +229,24 @@ std::string GetHostname() {
   return info.GetHostname();
 }
 
-const char* GetKernelCandidates() {
+const std::vector<std::string> GetKernelCandidates() {
   const char* kernel_candidates = std::getenv("KERNEL_CANDIDATES");
-  if (kernel_candidates && *kernel_candidates) return kernel_candidates;
+  if (kernel_candidates && *kernel_candidates) {
+    std::string candidates(kernel_candidates);
+    return split_str(candidates, ' ');
+  }
 
-  CLOG(ERROR) << "Failed to determine kernel object candidates, environment variable KERNEL_CANDIDATES not set";
-  return "";
+  HostInfo& host = HostInfo::Instance();
+  std::vector<std::string> candidates{normalizeReleaseString(host)};
+
+  if (host.IsUbuntu()) {
+    std::string backport = getUbuntuBackport(host);
+    if (!backport.empty()) {
+      candidates.push_back(backport);
+    }
+  }
+
+  return candidates;
 }
 
 const char* GetModuleDownloadBaseURL() {

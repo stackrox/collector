@@ -242,9 +242,9 @@ int main(int argc, char** argv) {
   }
 
   if (config.AlternateProbeDownload()) {
-    std::istringstream kernel_candidates(GetKernelCandidates());
+    std::vector<std::string> kernel_candidates = GetKernelCandidates();
 
-    if (kernel_candidates.str().empty()) {
+    if (kernel_candidates.empty()) {
       CLOG(FATAL) << "No kernel candidates available";
     }
 
@@ -267,11 +267,15 @@ int main(int argc, char** argv) {
       kernel_object.type = "kernel module";
     }
 
-    CLOG(INFO) << "Attempting to download " << kernel_object.type << " - Candidate kernel versions: " << kernel_candidates.str();
+    CLOG(INFO) << "Attempting to download " << kernel_object.type << " - Candidate kernel versions: ";
+    for (auto candidate : kernel_candidates) {
+      CLOG(INFO) << candidate;
+    }
 
     bool success = false;
     std::string kernel_candidate;
-    while (std::getline(kernel_candidates, kernel_candidate, ' ') && !success) {
+
+    for (auto kernel_candidate : kernel_candidates) {
       std::string kernel_module = kernel_object.name + "-" + kernel_candidate + kernel_object.extension;
 
       success = GetKernelObject(args->GRPCServer(), collectorConfig["tlsConfig"], kernel_module, kernel_object.path, config.CurlVerbose());
@@ -284,6 +288,8 @@ int main(int argc, char** argv) {
 
         // Remove downloaded files
         unlink(kernel_object.path.c_str());
+      } else {
+        break;
       }
     }
 
