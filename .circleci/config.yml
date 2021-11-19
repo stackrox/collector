@@ -1129,7 +1129,7 @@ jobs:
         name: Build probes
         command: |
           GIT_REF="${CIRCLE_BRANCH}"
-          if [[ -z "${CIRCLE_TAG}" ]]; then
+          if [[ -n "${CIRCLE_TAG}" ]]; then
             GIT_REF="${CIRCLE_TAG}"
           fi
           docker build \
