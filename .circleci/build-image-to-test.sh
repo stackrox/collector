@@ -23,8 +23,12 @@ mkdir -p "${BUNDLES_DIR}"
 # Get the bundle for the running machine
 gsutil -m cp "gs://stackrox-kernel-bundles/bundle-${KERNEL_VERSION}*.tgz" "${BUNDLES_DIR}/"
 
+GIT_REF="${CIRCLE_BRANCH}"
+if [[ -n "${CIRCLE_TAG}" ]]; then
+  GIT_REF="${CIRCLE_TAG}"
+fi
 docker build \
-	--build-arg BRANCH="${CIRCLE_BRANCH}" \
+	--build-arg BRANCH="${GIT_REF}" \
 	--build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
 	--build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}" \
 	--tag kernel-builder \
