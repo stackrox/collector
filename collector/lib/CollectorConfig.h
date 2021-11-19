@@ -29,6 +29,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <grpcpp/channel.h>
 
+#include "HostConfig.h"
 #include "NetworkConnection.h"
 
 namespace collector {
@@ -116,6 +117,8 @@ end
   bool curl_verbose_ = false;
 
   bool enable_sysdig_log_ = false;
+
+  HostConfig host_config_;
 };
 
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c);

@@ -31,6 +31,7 @@ extern "C" {
 #include <regex>
 #include <string>
 
+#include "Logging.h"
 #include "Utility.h"
 
 namespace collector {
@@ -41,10 +42,8 @@ const int MAX_RHEL_BUILD_ID = 1062;
 struct KernelVersion {
   KernelVersion() : kernel(0), major(0), minor(0), build_id(0) {}
 
-  KernelVersion(const char* release, const char* version) : kernel(0), major(0), minor(0), build_id(0) {
-    this->version = version;
-    this->release = release;
-
+  KernelVersion(std::string release, std::string version)
+      : kernel(0), major(0), minor(0), build_id(0), release(std::move(release)), version(std::move(version)) {
     // regex for parsing first parts of release version:
     // ^                   -> must match start of the string
     // (\d+)\.(\d+)\.(\d+) -> match and capture kernel, major, minor versions
@@ -53,6 +52,7 @@ struct KernelVersion {
     std::regex release_re(R"(^(\d+)\.(\d+)\.(\d+)(-(\d+))?.*)");
     std::smatch match;
     if (!std::regex_match(this->release, match, release_re)) {
+      CLOG(ERROR) << "'" << this->release << "' does not match expected kernel version format.";
       return;
     }
 
@@ -71,8 +71,9 @@ struct KernelVersion {
   // First checking the KERNEL_VERSION environment variable, otherwise uses
   // the uname syscall.
   static KernelVersion FromHost() {
-    const char* release = nullptr;
-    const char* version = nullptr;
+    std::string release;
+    std::string version;
+
     const char* kernel_version_env = std::getenv("KERNEL_VERSION");
     if (kernel_version_env && *kernel_version_env) {
       release = kernel_version_env;
@@ -80,10 +81,14 @@ struct KernelVersion {
 
     struct utsname uts_buffer {};
     if (uname(&uts_buffer) == 0) {
-      if (release != nullptr) {
+      if (release.empty()) {
         release = uts_buffer.release;
       }
       version = uts_buffer.version;
+      CLOG(DEBUG) << "identified kernel release: '" << release << "'";
+      CLOG(DEBUG) << "identified kernel version: '" << version << "'";
+    } else {
+      CLOG(WARNING) << "uname failed (" << StrError() << ") unable to resolve kernel information";
     }
 
     return {release, version};
