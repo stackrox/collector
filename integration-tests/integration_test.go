@@ -14,7 +14,6 @@ import (
 	"github.com/boltdb/bolt"
 	"github.com/gonum/stat"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -52,6 +51,52 @@ func TestMissingProcScrape(t *testing.T) {
 	if ReadEnvVarWithDefault("REMOTE_HOST_TYPE", "local") == "local" {
 		suite.Run(t, new(MissingProcScrapeTestSuite))
 	}
+}
+
+func TestRepeatedNetworkFlow(t *testing.T) {
+	//Perform 10 curl commands with a 1 second sleep between each curl command
+	//The first client to server connection is recorded
+	//The first server to client connection is recorded
+	//The second through tenth curl commands are ignored, because of afterglow
+	//Thus there are 2 networking events recorded
+	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
+		numMetaIter: 1,
+		numIter: 10,
+		sleepBetweenCurlTime: 1,
+		sleepBetweenIterations: 1,
+		expectedReports: 2,
+	}
+	suite.Run(t, repeatedNetworkFlowTestSuite)
+}
+
+func TestRepeatedNetworkFlowWithAfterglowExpiration(t *testing.T) {
+	//Perform two curl commands 15 seconds apart
+	//15 seconds is greater than the afterglow period so all openings
+	//Every opening for the server and client are reported and there are two curls
+	//so we have 2*2=4 recoreded networking events
+	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
+		numMetaIter: 1,
+		numIter: 2,
+		sleepBetweenCurlTime: 15,
+		sleepBetweenIterations: 1,
+		expectedReports: 4,
+	}
+	suite.Run(t, repeatedNetworkFlowTestSuite)
+}
+
+func TestRepeatedNetworkFlowWithMultipleAfterglowExpirations(t *testing.T) {
+	//Perform two curl commands 15 seconds apart
+	//15 seconds is greater than the afterglow period so all openings
+	//Every opening for the server and client are reported and there are two curls
+	//so we have 2*2=4 recoreded networking events
+	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
+		numMetaIter: 1,
+		numIter: 3,
+		sleepBetweenCurlTime: 15,
+		sleepBetweenIterations: 1,
+		expectedReports: 6,
+	}
+	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
 
 type IntegrationTestSuiteBase struct {
@@ -99,6 +144,24 @@ type MissingProcScrapeTestSuite struct {
 	IntegrationTestSuiteBase
 }
 
+type RepeatedNetworkFlowTestSuite struct {
+	//The goal with these integration tests is to make sure we report the correct number of 
+	//networking events. Sometimes if a connection is made multiple times within a short time
+	//called an "afterglow" period, we only want to report the connection once.
+	IntegrationTestSuiteBase
+	clientContainer string
+	clientIP        string
+	serverContainer string
+	serverIP        string
+	serverPort      string
+	numMetaIter	int
+	numIter		int
+	sleepBetweenCurlTime	int
+	sleepBetweenIterations	int
+	expectedReports		int
+	observedReports		int
+}
+
 type ImageLabelJSONTestSuite struct {
 	IntegrationTestSuiteBase
 }
@@ -107,9 +170,9 @@ func (s *ImageLabelJSONTestSuite) SetupSuite() {
 	s.executor = NewExecutor()
 	s.collector = NewCollectorManager(s.executor, s.T().Name())
 	err := s.collector.Setup()
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	err = s.collector.Launch()
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 }
 
 func (s *ImageLabelJSONTestSuite) TestRunImageWithJSONLabel() {
@@ -118,9 +181,9 @@ func (s *ImageLabelJSONTestSuite) TestRunImageWithJSONLabel() {
 
 func (s *ImageLabelJSONTestSuite) TearDownSuite() {
 	err := s.collector.TearDown()
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	s.db, err = s.collector.BoltDB()
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	s.cleanupContainer([]string{"collector", "grpc-server", "jsonlabel"})
 }
 
@@ -131,10 +194,10 @@ func (s *BenchmarkCollectorTestSuite) SetupSuite() {
 	s.metrics = map[string]float64{}
 
 	err := s.collector.Setup()
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	err = s.collector.Launch()
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 }
 
@@ -144,10 +207,10 @@ func (s *BenchmarkCollectorTestSuite) TestBenchmarkCollector() {
 
 func (s *BenchmarkCollectorTestSuite) TearDownSuite() {
 	err := s.collector.TearDown()
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	s.db, err = s.collector.BoltDB()
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	s.cleanupContainer([]string{"collector", "grpc-server", "benchmark"})
 	stats := s.GetContainerStats()
@@ -184,10 +247,10 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	s.collector = NewCollectorManager(s.executor, s.T().Name())
 
 	err := s.collector.Setup()
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	err = s.collector.Launch()
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	images := []string{
 		"nginx:1.14-alpine",
@@ -196,46 +259,46 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 
 	for _, image := range images {
 		err := s.executor.PullImage(image)
-		require.NoError(s.T(), err)
+		s.Require().NoError(err)
 	}
 
 	time.Sleep(10 * time.Second)
 
 	// invokes default nginx
 	containerID, err := s.launchContainer("nginx", "nginx:1.14-alpine")
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	s.serverContainer = containerID[0:12]
 
 	// invokes "sleep" and "sh" and "ls"
 	_, err = s.execContainer("nginx", []string{"sleep", "5"})
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	_, err = s.execContainer("nginx", []string{"sh", "-c", "ls"})
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	// invokes another container
 	containerID, err = s.launchContainer("nginx-curl", "pstauffer/curl:latest", "sleep", "300")
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	s.clientContainer = containerID[0:12]
 
 	s.serverIP, err = s.getIPAddress("nginx")
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	s.serverPort, err = s.getPort("nginx")
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	_, err = s.execContainer("nginx-curl", []string{"curl", fmt.Sprintf("%s:%s", s.serverIP, s.serverPort)})
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	s.clientIP, err = s.getIPAddress("nginx-curl")
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	time.Sleep(10 * time.Second)
 
 	err = s.collector.TearDown()
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	s.db, err = s.collector.BoltDB()
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 }
 
 func (s *ProcessNetworkTestSuite) TearDownSuite() {
@@ -250,21 +313,21 @@ func (s *ProcessNetworkTestSuite) TestProcessViz() {
 	exeFilePath := "/usr/sbin/nginx"
 	expectedProcessInfo := fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
 	val, err := s.Get(processName, processBucket)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	assert.Equal(s.T(), expectedProcessInfo, val)
 
 	processName = "sh"
 	exeFilePath = "/bin/sh"
 	expectedProcessInfo = fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
 	val, err = s.Get(processName, processBucket)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	assert.Equal(s.T(), expectedProcessInfo, val)
 
 	processName = "sleep"
 	exeFilePath = "/bin/sleep"
 	expectedProcessInfo = fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
 	val, err = s.Get(processName, processBucket)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	assert.Equal(s.T(), expectedProcessInfo, val)
 }
 
@@ -274,7 +337,7 @@ func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
 	parentFilePath := "/bin/busybox"
 	expectedProcessLineageInfo := fmt.Sprintf("%s:%s:%s:%d:%s:%s", processName, exeFilePath, parentUIDStr, 0, parentExecFilePathStr, parentFilePath)
 	val, err := s.GetLineageInfo(processName, "0", processLineageInfoBucket)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	assert.Equal(s.T(), expectedProcessLineageInfo, val)
 
 	processName = "grep"
@@ -282,7 +345,7 @@ func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
 	parentFilePath = "/bin/busybox"
 	expectedProcessLineageInfo = fmt.Sprintf("%s:%s:%s:%d:%s:%s", processName, exeFilePath, parentUIDStr, 0, parentExecFilePathStr, parentFilePath)
 	val, err = s.GetLineageInfo(processName, "0", processLineageInfoBucket)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	assert.Equal(s.T(), expectedProcessLineageInfo, val)
 
 	processName = "sleep"
@@ -290,7 +353,7 @@ func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
 	parentFilePath = "/bin/busybox"
 	expectedProcessLineageInfo = fmt.Sprintf("%s:%s:%s:%d:%s:%s", processName, exeFilePath, parentUIDStr, 0, parentExecFilePathStr, parentFilePath)
 	val, err = s.GetLineageInfo(processName, "0", processLineageInfoBucket)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	assert.Equal(s.T(), expectedProcessLineageInfo, val)
 }
 
@@ -298,7 +361,7 @@ func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
 
 	// Server side checks
 	val, err := s.Get(s.serverContainer, networkBucket)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	actualValues := strings.Split(string(val), "|")
 
 	if len(actualValues) < 2 {
@@ -316,7 +379,7 @@ func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
 
 	// client side checks
 	val, err = s.Get(s.clientContainer, networkBucket)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	actualValues = strings.Split(string(val), "|")
 
 	actualClientEndpoint = actualValues[0]
@@ -341,24 +404,145 @@ func (s *MissingProcScrapeTestSuite) SetupSuite() {
 	s.collector.Mounts["/host/proc:ro"] = "/tmp/fake-proc"
 
 	err = s.collector.Setup()
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	err = s.collector.Launch()
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	time.Sleep(10 * time.Second)
 }
 
 func (s *MissingProcScrapeTestSuite) TestCollectorRunning() {
 	collectorRunning, err := s.executor.IsContainerRunning("collector")
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	assert.True(s.T(), collectorRunning, "Collector isn't running")
 }
 
 func (s *MissingProcScrapeTestSuite) TearDownSuite() {
 	err := s.collector.TearDown()
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	s.cleanupContainer([]string{"collector"})
+}
+
+// Launches collector
+// Launches gRPC server in insecure mode
+// Launches nginx container
+func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
+	s.metrics = map[string]float64{}
+	s.executor = NewExecutor()
+	s.StartContainerStats()
+	s.collector = NewCollectorManager(s.executor, s.T().Name())
+
+	err := s.collector.Setup()
+	s.Require().NoError(err)
+
+	err = s.collector.Launch()
+	s.Require().NoError(err)
+
+	images := []string{
+		"nginx:1.14-alpine",
+		"pstauffer/curl:latest",
+	}
+
+	for _, image := range images {
+		err := s.executor.PullImage(image)
+		s.Require().NoError(err)
+	}
+
+	time.Sleep(10 * time.Second)
+
+	// invokes default nginx
+	containerID, err := s.launchContainer("nginx", "nginx:1.14-alpine")
+	s.Require().NoError(err)
+	s.serverContainer = containerID[0:12]
+
+	// invokes another container
+	containerID, err = s.launchContainer("nginx-curl", "pstauffer/curl:latest", "sleep", "300")
+	s.Require().NoError(err)
+	s.clientContainer = containerID[0:12]
+
+	s.serverIP, err = s.getIPAddress("nginx")
+	s.Require().NoError(err)
+
+	s.serverPort, err = s.getPort("nginx")
+	s.Require().NoError(err)
+	time.Sleep(120 * time.Second)
+
+	logLinesInitial := s.GetLogLines("grpc-server")
+	networkLinesInitial := CountNumMatchingPattern(logLinesInitial, "^Network")
+	serverAddress := fmt.Sprintf("%s:%s", s.serverIP, s.serverPort)
+
+	for i := 0; i < s.numMetaIter; i++ {
+		for j := 0; j < s.numIter; j++ {
+			_, err = s.execContainer("nginx-curl", []string{"curl", serverAddress})
+			s.Require().NoError(err)
+			time.Sleep(time.Duration(s.sleepBetweenCurlTime) * time.Second)
+		}
+		time.Sleep(time.Duration(s.sleepBetweenIterations) * time.Second)
+	}
+
+	s.clientIP, err = s.getIPAddress("nginx-curl")
+	s.Require().NoError(err)
+
+	//totalTime := s.sleepBetweenCurlTime * s.numIter * s.numMetaIter + s.sleepBetweenIterations * s.numMetaIter
+	//totalTime = totalTime + 20
+	//time.Sleep(time.Duration(totalTime) * time.Second)
+	time.Sleep(10 * time.Second)
+	logLines := s.GetLogLines("grpc-server")
+	networkLines := CountNumMatchingPattern(logLines, "^Network")
+	s.observedReports = networkLines - networkLinesInitial
+	//This should be in TestRepeatedNetworkFlow, but I was unable to access the grpc-serve log files
+	//there, or get the number of recorded networking events in any other way
+	//assert.Equal(s.T(), s.expectedReports, networkLines)
+	err = s.collector.TearDown()
+	s.Require().NoError(err)
+
+	s.db, err = s.collector.BoltDB()
+	s.Require().NoError(err)
+}
+
+func (s *RepeatedNetworkFlowTestSuite) TearDownSuite() {
+	s.cleanupContainer([]string{"nginx", "nginx-curl", "collector"})
+	stats := s.GetContainerStats()
+	s.PrintContainerStats(stats)
+	s.WritePerfResults("repeated_network_flow", stats, s.metrics)
+}
+
+func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
+	// Server side checks
+	assert.Equal(s.T(), s.expectedReports, s.observedReports)
+
+	val, err := s.Get(s.serverContainer, networkBucket)
+	s.Require().NoError(err)
+	actualValues := strings.Split(string(val), "|")
+
+	if len(actualValues) < 2 {
+		assert.FailNow(s.T(), "serverContainer networkBucket was missing data. ", "val=\"%s\"", val)
+	}
+	actualServerEndpoint := actualValues[0]
+	actualClientEndpoint := actualValues[1]
+
+	// From server perspective, network connection info only has local port and remote IP
+	assert.Equal(s.T(), fmt.Sprintf(":%s", s.serverPort), actualServerEndpoint)
+	assert.Equal(s.T(), s.clientIP, actualClientEndpoint)
+
+	fmt.Printf("ServerDetails from Bolt: %s %s\n", s.serverContainer, string(val))
+	fmt.Printf("ServerDetails from test: %s %s, Port: %s\n", s.serverContainer, s.serverIP, s.serverPort)
+
+	// client side checks
+	val, err = s.Get(s.clientContainer, networkBucket)
+	s.Require().NoError(err)
+	actualValues = strings.Split(string(val), "|")
+
+	actualClientEndpoint = actualValues[0]
+	actualServerEndpoint = actualValues[1]
+
+	// From client perspective, network connection info has no local endpoint and full remote endpoint
+	assert.Empty(s.T(), actualClientEndpoint)
+	assert.Equal(s.T(), fmt.Sprintf("%s:%s", s.serverIP, s.serverPort), actualServerEndpoint)
+
+	fmt.Printf("ClientDetails from Bolt: %s %s\n", s.clientContainer, string(val))
+	fmt.Printf("ClientDetails from test: %s %s\n", s.clientContainer, s.clientIP)
 }
 
 func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, error) {
@@ -482,7 +666,7 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	benchmarkImage := "stackrox/benchmark-collector:phoronix"
 
 	err := s.executor.PullImage(benchmarkImage)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	benchmarkArgs := []string{
 		benchmarkName,
@@ -492,11 +676,11 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	}
 
 	containerID, err := s.launchContainer(benchmarkArgs...)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	benchmarkContainerID := containerID[0:12]
 
 	_, err = s.waitForContainerToExit(benchmarkName, benchmarkContainerID)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	benchmarkLogs, err := s.containerLogs("benchmark")
 	re := regexp.MustCompile(`Average: ([0-9.]+) Seconds`)
@@ -504,7 +688,7 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	if matches != nil {
 		fmt.Printf("Benchmark Time: %s\n", matches[1])
 		f, err := strconv.ParseFloat(string(matches[1]), 64)
-		require.NoError(s.T(), err)
+		s.Require().NoError(err)
 		s.metrics["hackbench_avg_time"] = f
 	} else {
 		fmt.Printf("Benchmark Time: Not found! Logs: %s\n", benchmarkLogs)
@@ -516,15 +700,15 @@ func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
 	name := "jsonlabel"
 	image := "stackrox/benchmark-collector:json-label"
 	err := s.executor.PullImage(image)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	args := []string{
 		name,
 		image,
 	}
 	containerID, err := s.launchContainer(args...)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	_, err = s.waitForContainerToExit(name, containerID[0:12])
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 }
 
 func (s *IntegrationTestSuiteBase) StartContainerStats() {
@@ -533,10 +717,28 @@ func (s *IntegrationTestSuiteBase) StartContainerStats() {
 	args := []string{name, "-v", "/var/run/docker.sock:/var/run/docker.sock", image}
 
 	err := s.executor.PullImage(image)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	_, err = s.launchContainer(args...)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
+}
+
+func (s *IntegrationTestSuiteBase) GetLogLines(containerName string) ([]string) {
+	logs, err := s.containerLogs(containerName)
+	s.Require().NoError(err, containerName + " failure")
+	logLines := strings.Split(logs, "\n")
+	return logLines
+}
+
+func CountNumMatchingPattern(lines []string, pattern string) int {
+	count := 0
+	for _, line := range lines {
+		foundMatch, _ := regexp.MatchString(pattern, line)
+		if foundMatch {
+			count++
+		}
+	}
+	return count
 }
 
 func (s *IntegrationTestSuiteBase) GetContainerStats() (stats []ContainerStat) {
@@ -583,9 +785,9 @@ func (s *IntegrationTestSuiteBase) WritePerfResults(testName string, stats []Con
 
 	fmt.Printf("Writing %s\n", perfFilename)
 	f, err := os.OpenFile(perfFilename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	defer f.Close()
 
 	_, err = f.WriteString(string(perfJson))
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 }

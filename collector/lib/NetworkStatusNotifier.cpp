@@ -191,7 +191,7 @@ void NetworkStatusNotifier::Stop() {
 }
 
 void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
-  if (!writer->WaitUntilStarted(std::chrono::seconds(10))) {
+  if (!writer->WaitUntilStarted(std::chrono::seconds(100))) {
     CLOG(ERROR) << "Failed to establish network connection info stream.";
     return;
   }
@@ -201,6 +201,7 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
   ConnMap old_conn_state;
   ContainerEndpointMap old_cep_state;
   auto next_scrape = std::chrono::system_clock::now();
+  int64_t old_now = NowMicros();
 
   while (writer->Sleep(next_scrape)) {
     next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(scrape_interval_);
@@ -221,21 +222,25 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
       }
     }
 
+    int64_t now = NowMicros();
     const sensor::NetworkConnectionInfoMessage* msg;
-    ConnMap new_conn_state;
-    ContainerEndpointMap new_cep_state;
+    ContainerEndpointMap new_cep_state, delta_cep;
+    ConnMap new_conn_state, delta_conn;
     WITH_TIMER(CollectorStats::net_fetch_state) {
       new_conn_state = conn_tracker_->FetchConnState(true, true);
-      ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
+      ConnectionTracker::ComputeDelta(new_conn_state, old_conn_state, delta_conn, now, old_now, afterglow_period_micros_);
 
       new_cep_state = conn_tracker_->FetchEndpointState(true, true);
-      ConnectionTracker::ComputeDelta(new_cep_state, &old_cep_state);
+      ConnectionTracker::ComputeDelta(new_cep_state, old_cep_state, delta_cep, now, old_now, afterglow_period_micros_);
     }
 
     WITH_TIMER(CollectorStats::net_create_message) {
-      msg = CreateInfoMessage(old_conn_state, old_cep_state);
-      old_conn_state = std::move(new_conn_state);
-      old_cep_state = std::move(new_cep_state);
+      //Report the deltas
+      msg = CreateInfoMessage(delta_conn, delta_cep);
+      //Add new connections to the old_state and remove inactive connections that are older than the afterglow period.
+      ConnectionTracker::UpdateOldState(&old_conn_state, new_conn_state, now, afterglow_period_micros_);
+      ConnectionTracker::UpdateOldState(&old_cep_state, new_cep_state, now, afterglow_period_micros_);
+      old_now = now;
     }
 
     if (!msg) {

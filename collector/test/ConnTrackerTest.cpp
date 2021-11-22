@@ -18,8 +18,7 @@ You should have received a copy of the GNU General Public License along with thi
 * file(s) with this exception, you may extend this exception to your
 * version of the file(s), but you are not obligated to do so.  If you
 * do not wish to do so, delete this exception statement from your
-* version.
-*/
+* version. */
 
 #include <utility>
 
@@ -43,7 +42,7 @@ TEST(ConnTrackerTest, TestAddRemove) {
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
   Connection conn2("xzy", b, a, L4Proto::TCP, false);
 
-  int64_t now = NowMicros();
+  int64_t now = 1000;
 
   ConnectionTracker tracker;
   tracker.AddConnection(conn1, now);
@@ -55,7 +54,7 @@ TEST(ConnTrackerTest, TestAddRemove) {
   auto state2 = tracker.FetchConnState();
   EXPECT_EQ(state, state2);
 
-  int64_t now2 = NowMicros();
+  int64_t now2 = 2000;
   tracker.RemoveConnection(conn1, now2);
   state = tracker.FetchConnState();
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now2, false)), std::make_pair(conn2, ConnStatus(now, true))));
@@ -71,7 +70,7 @@ TEST(ConnTrackerTest, TestUpdate) {
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
   Connection conn2("xzy", b, a, L4Proto::TCP, false);
 
-  int64_t now = NowMicros();
+  int64_t now = 1000;
 
   ConnectionTracker tracker;
   tracker.Update({conn1, conn2}, {}, now);
@@ -82,7 +81,7 @@ TEST(ConnTrackerTest, TestUpdate) {
   auto state2 = tracker.FetchConnState();
   EXPECT_EQ(state, state2);
 
-  int64_t now2 = NowMicros();
+  int64_t now2 = 1005;
   tracker.Update({conn1}, {}, now2);
   state = tracker.FetchConnState();
   EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now2, true)), std::make_pair(conn2, ConnStatus(now, false))));
@@ -117,7 +116,7 @@ TEST(ConnTrackerTest, TestUpdateIgnoredL4ProtoPortPairs) {
                                 Endpoint(),
                                 Endpoint(IPNet(e.address(), 0, true), 9),
                                 L4Proto::UDP, false);
-  int64_t now = NowMicros();
+  int64_t now = 1000;
   ConnectionTracker tracker;
   tracker.Update({conn_ab, conn_ba, conn_ef, conn_fe}, {}, now);
 
@@ -170,7 +169,7 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
   Connection conn13_normalized("xyz", Endpoint(IPNet(Address()), 80), Endpoint(IPNet(Address(192, 168, 1, 10), 0, true), 0), L4Proto::TCP, true);
   Connection conn24_normalized("xzy", Endpoint(), Endpoint(IPNet(Address(192, 168, 0, 1), 0, true), 80), L4Proto::TCP, false);
 
-  int64_t now = NowMicros();
+  int64_t now = 1000;
 
   ConnectionTracker tracker;
   tracker.Update({conn1, conn2, conn3, conn4}, {}, now);
@@ -183,7 +182,7 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
   auto state2 = tracker.FetchConnState(true);
   EXPECT_EQ(state, state2);
 
-  int64_t now2 = NowMicros();
+  int64_t now2 = 1005;
   tracker.Update({conn1}, {}, now2);
   state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(
@@ -266,7 +265,7 @@ TEST(ConnTrackerTest, TestUpdateNormalized) {
 
   Connection conn15_normalized("xyz", Endpoint(IPNet(), 80), Endpoint(IPNet(Address(35, 127, 0, 15), 32, true), 0), L4Proto::TCP, true);
 
-  int64_t now3 = NowMicros();
+  int64_t now3 = 1010;
   tracker.Update({conn5}, {}, now3);
   state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(
@@ -321,7 +320,7 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
   Connection conn13_normalized("xyz", Endpoint(IPNet(), 9999), Endpoint(IPNet(Address(255, 255, 255, 255), 0, true), 0), L4Proto::TCP, true);
   Connection conn24_normalized("xyz", Endpoint(), Endpoint(IPNet(Address(255, 255, 255, 255), 0, true), 54321), L4Proto::TCP, false);
 
-  int64_t now = NowMicros();
+  int64_t now = 1000;
 
   ConnectionTracker tracker;
   tracker.Update({conn1, conn2, conn3, conn4, conn5}, {}, now);
@@ -356,53 +355,388 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
                           std::make_pair(conn5_normalized, ConnStatus(now, true))));
 }
 
-TEST(ConnTrackerTest, TestComputeDelta) {
+TEST(ConnTrackerTest, TestComputeDeltaEmptyOldState) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
   Connection conn2("xzy", b, a, L4Proto::TCP, false);
 
-  int64_t now = NowMicros();
+  int64_t now = 1000;
+  int64_t old_now = 500;
+  int64_t afterglow_period_micros = 20000000;  // 20 seconds in microseconds
 
-  ConnMap orig_state = {{conn1, ConnStatus(now, true)}, {conn2, ConnStatus(now, true)}};
-  ConnMap state1 = orig_state;
-  ConnMap state2;
+  ConnMap new_state = {{conn1, ConnStatus(now, true)},
+                       {conn2, ConnStatus(now, true)}};
+  ConnMap old_state, delta;
 
   // ComputeDelta on an empty old state should just copy over the entire state.
-  CT::ComputeDelta(state1, &state2);
-  EXPECT_EQ(state1, state2);
+  CT::ComputeDelta(new_state, old_state, delta, now, old_now, afterglow_period_micros);
+  EXPECT_EQ(new_state, delta);
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaSameState) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+
+  int64_t now = 1000;
+  int64_t old_now = 500;
+  int64_t afterglow_period_micros = 20000000;  // 20 seconds in microseconds
+
+  ConnMap new_state = {{conn1, ConnStatus(now, true)},
+                       {conn2, ConnStatus(now, true)}};
+  ConnMap old_state = new_state;
+  ConnMap delta;
 
   // ComputeDelta on two equal states should result in an empty delta.
-  CT::ComputeDelta(state1, &state2);
-  EXPECT_THAT(state2, IsEmpty());
+  CT::ComputeDelta(new_state, old_state, delta, now, old_now, afterglow_period_micros);
+  EXPECT_THAT(delta, IsEmpty());
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaRemoveConnection) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+
+  int64_t now = 1000;
+  int64_t old_now = 500;
+  int64_t afterglow_period_micros = 20000000;  // 20 seconds in microseconds
+
+  ConnMap new_state = {{conn2, ConnStatus(now, true)}};
+  ConnMap old_state = {{conn1, ConnStatus(old_now, true)},
+                       {conn2, ConnStatus(old_now, true)}};
+  ConnMap delta;
 
   // Removing a connection from the active state should have it appear as inactive in the delta (with the previous
   // timestamp).
-  state2 = state1;
-  state1.erase(conn1);
-  CT::ComputeDelta(state1, &state2);
-  EXPECT_THAT(state2, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now, false))));
+  CT::ComputeDelta(new_state, old_state, delta, now, old_now, afterglow_period_micros);
+  EXPECT_THAT(delta, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(old_now, false))));
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaChangeTimeStamp) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+
+  int64_t now = 2000;
+  int64_t old_now = 1000;
+  int64_t afterglow_period_micros = 20000000;  // 20 seconds in microseconds
+
+  ConnMap new_state = {{conn1, ConnStatus(now, true)},
+                       {conn2, ConnStatus(now, true)}};
+  ConnMap old_state = new_state;
+  ConnMap delta;
+
+  new_state[conn1] = ConnStatus(old_now, true);
 
   // Just updating the timestamp of an active connection should not make it appear in the delta.
-  state1 = state2 = orig_state;
-  state1[conn1] = ConnStatus(NowMicros(), true);
-  CT::ComputeDelta(state1, &state2);
-  EXPECT_THAT(state2, IsEmpty());
+  CT::ComputeDelta(new_state, old_state, delta, now, old_now, afterglow_period_micros);
+  EXPECT_THAT(delta, IsEmpty());
+}
 
-  // Marking a connection as inactive should make it appear as inactive in the delta.
-  state1 = state2 = orig_state;
-  int64_t now2 = NowMicros();
-  state1[conn1] = ConnStatus(now2, false);
-  CT::ComputeDelta(state1, &state2);
-  EXPECT_THAT(state2, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now2, false))));
+TEST(ConnTrackerTest, TestComputeDeltaSetToInactive) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
 
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t now = 1000;
+  int64_t now2 = 2000;
+  int64_t now3 = 100000000;  //100 seconds
+  int64_t old_now = 2000;
+  int64_t afterglow_period_micros = 20000000;  // 20 seconds in microseconds
+
+  ConnMap old_state = {{conn1, ConnStatus(now, true)},
+                       {conn2, ConnStatus(now, true)}};
+  ConnMap new_state = {{conn1, ConnStatus(now2, false)},
+                       {conn2, ConnStatus(now2, true)}};
+  ConnMap delta;
+  new_state[conn1] = ConnStatus(now2, false);
+
+  // Marking a connection as inactive should make it appear as inactive in the delta if the connection has expired in the old_state
+  CT::ComputeDelta(new_state, old_state, delta, now3, old_now, afterglow_period_micros);
+  EXPECT_THAT(delta, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now2, false))));
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaInactiveRemovedIsntInDelta) {
   // A connection that was already inactive no longer showing up at all in the new state should not appear in the delta.
-  state1 = state2 = orig_state;
-  state2[conn1].SetActive(false);
-  state1.erase(conn1);
-  CT::ComputeDelta(state1, &state2);
-  EXPECT_THAT(state2, IsEmpty());
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t now = 2000;
+  int64_t old_now = 1000;
+  int64_t afterglow_period_micros = 20000000;  // 20 seconds in microseconds
+
+  ConnMap new_state = {{conn2, ConnStatus(now, true)}};
+  ConnMap old_state = {{conn1, ConnStatus(old_now, false)},
+                       {conn2, ConnStatus(old_now, true)}};
+  ConnMap delta;
+  CT::ComputeDelta(new_state, old_state, delta, now, old_now, afterglow_period_micros);
+  EXPECT_THAT(delta, IsEmpty());
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaWithAfterglow) {
+  //Afterglow flips the inactive connection to active, so it does not show up in delta
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t now = 1000;
+  int64_t old_now = 3;
+  int64_t afterglow_period_micros = 20000000;  // 20 seconds in microseconds
+
+  ConnMap new_state = {{conn1, ConnStatus(now, true)},
+                       {conn2, ConnStatus(now, false)}};
+  ConnMap old_state = {{conn1, ConnStatus(old_now, true)},
+                       {conn2, ConnStatus(old_now, true)}};
+  ConnMap delta;
+
+  CT::ComputeDelta(new_state, old_state, delta, now, old_now, afterglow_period_micros);
+  EXPECT_THAT(delta, IsEmpty());
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaWithZeroAfterglowPeriod) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t now = 1000;
+  int64_t old_now = 3;
+  int64_t afterglow_period_micros = 0;
+
+  ConnMap new_state = {{conn1, ConnStatus(now, true)},
+                       {conn2, ConnStatus(now, false)}};
+  ConnMap old_state = {{conn1, ConnStatus(old_now, true)},
+                       {conn2, ConnStatus(old_now, true)}};
+  ConnMap delta;
+
+  CT::ComputeDelta(new_state, old_state, delta, now, old_now, afterglow_period_micros);
+  EXPECT_THAT(delta, UnorderedElementsAre(std::make_pair(conn2, ConnStatus(now, false))));
+}
+TEST(ConnTrackerTest, TestComputeDeltaWithZeroAfterglowPeriodEmptyNewState) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t now = 1000;
+  int64_t old_now = 3;
+  int64_t afterglow_period_micros = 0;
+
+  ConnMap old_state = {{conn1, ConnStatus(now, true)},
+                       {conn2, ConnStatus(now, true)}};
+  ConnMap new_state;
+  ConnMap delta;
+  ConnMap expected_delta = {{conn1, ConnStatus(now, false)},
+                            {conn2, ConnStatus(now, false)}};
+
+  CT::ComputeDelta(new_state, old_state, delta, now, old_now, afterglow_period_micros);
+  EXPECT_THAT(delta, expected_delta);
+}
+TEST(ConnTrackerTest, TestComputeDeltaWithZeroAfterglowPeriodEmptyOldState) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t now = 1000;
+  int64_t old_now = 3;
+  int64_t afterglow_period_micros = 0;
+
+  ConnMap new_state = {{conn1, ConnStatus(now, true)},
+                       {conn2, ConnStatus(now, true)}};
+  ConnMap old_state;
+  ConnMap delta;
+
+  CT::ComputeDelta(new_state, old_state, delta, now, old_now, afterglow_period_micros);
+  EXPECT_THAT(delta, new_state);
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaWithZeroAfterglowPeriodNoChange) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t now = 1000;
+  int64_t old_now = 3;
+  int64_t afterglow_period_micros = 0;
+
+  ConnMap new_state = {{conn1, ConnStatus(now, true)},
+                       {conn2, ConnStatus(now, true)}};
+  ConnMap old_state = {{conn1, ConnStatus(old_now, true)},
+                       {conn2, ConnStatus(old_now, true)}};
+  ConnMap delta;
+
+  CT::ComputeDelta(new_state, old_state, delta, now, old_now, afterglow_period_micros);
+  EXPECT_THAT(delta, IsEmpty());
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaWithAfterglowExpired) {
+  //The inactive connection is outside of the afterglow period so it is not flipped to be in the active state
+  //so it appears in delta
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t now = 400000000;
+  int64_t now2 = 2000;
+  int64_t old_now = 1000;
+  int64_t afterglow_period_micros = 20000000;  // 20 seconds in microseconds
+
+  ConnMap new_state = {{conn1, ConnStatus(now2, true)},
+                       {conn2, ConnStatus(now2, false)}};
+  ConnMap old_state = {{conn1, ConnStatus(old_now, true)},
+                       {conn2, ConnStatus(old_now, true)}};
+  ConnMap delta;
+
+  CT::ComputeDelta(new_state, old_state, delta, now, old_now, afterglow_period_micros);
+  EXPECT_THAT(delta, UnorderedElementsAre(std::make_pair(conn2, ConnStatus(now2, false))));
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaWithAfterglowPeriodShorterThanScrapingInterval) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  int64_t now = 20;
+  int64_t old_now = 10;
+  int64_t connection_time1 = 7;
+  int64_t connection_time2 = 17;
+  int64_t afterglow_period_micros = 5;
+
+  ConnMap old_state = {{conn1, ConnStatus(connection_time1, true)}};
+  ConnMap new_state = {{conn1, ConnStatus(connection_time2, true)}};
+  ConnMap delta;
+
+  CT::ComputeDelta(new_state, old_state, delta, now, old_now, afterglow_period_micros);
+  EXPECT_THAT(delta, IsEmpty());
+}
+
+void GetNextAddress(int address_parts[4], int& port) {
+  for (int i = 0; i < 4; i++) {
+    address_parts[i]++;
+    if (address_parts[i] < 256)
+      break;
+    else {
+      address_parts[i] = 0;
+    }
+  }
+  if (address_parts[3] == 256) {
+    port++;
+    for (int i = 0; i < 4; i++) address_parts[i] = 0;
+  }
+}
+
+void CreateFakeState(ConnMap& afterglow_state, int num_endpoints, int num_connections, int64_t now) {
+  int address_parts[4] = {0, 0, 0, 0};
+  int port = 0;
+  vector<Endpoint> endpoints(num_endpoints);
+  vector<Connection> connections(num_connections * 2);
+
+  for (int i = 0; i < num_endpoints; i++) {
+    Address address(address_parts[0], address_parts[1], address_parts[2], address_parts[3]);
+    Endpoint tempEndpoint(address, port);
+    endpoints[i] = tempEndpoint;
+    GetNextAddress(address_parts, port);
+  }
+  int connection_idx = 0;
+  for (int i = 0; i < num_endpoints; i++) {
+    for (int j = 0; j < num_endpoints; j++) {
+      Connection tempConn1(std::to_string(connection_idx), endpoints[i], endpoints[j], L4Proto::TCP, false);
+      Connection tempConn2(std::to_string(connection_idx), endpoints[j], endpoints[i], L4Proto::TCP, false);
+      afterglow_state.insert({tempConn1, ConnStatus(now, false)});
+      afterglow_state.insert({tempConn2, ConnStatus(now, false)});
+      connection_idx += 2;
+      if (connection_idx > num_connections) break;
+    }
+    if (connection_idx > num_connections) break;
+  }
+}
+
+TEST(ConnTrackerTest, TestUpdateOldStateBenchmark) {
+  int num_endpoints = 500;
+  int num_connections = 20000;
+  int64_t now1 = 1000;
+  int64_t now2 = 2000;
+  int64_t afterglow_period_micros = 20000000;  // 20 seconds in microseconds
+  ConnMap old_state, new_state;
+
+  CreateFakeState(old_state, num_endpoints, num_connections, now1);
+  auto t1 = std::chrono::steady_clock::now();
+  CT::UpdateOldState(&old_state, new_state, now2, afterglow_period_micros);
+  auto t2 = std::chrono::steady_clock::now();
+  std::chrono::duration<double, std::milli> dur = t2 - t1;
+  std::cout << "old_state.size()= " << old_state.size() << std::endl;
+  std::cout << "new_state.size()= " << new_state.size() << std::endl;
+  std::cout << "Time taken by UpdateOldState= " << dur.count() << " ms\n";
+}
+
+TEST(ConnTrackerTest, TestUpdateOldStateBenchmark2) {
+  int num_endpoints = 500;
+  int num_connections = 20000;
+  int64_t now1 = 1000;
+  int64_t now2 = 2000;
+  int64_t afterglow_period_micros = 20000000;  // 20 seconds in microseconds
+  ConnMap old_state, new_state;
+
+  CreateFakeState(new_state, num_endpoints, num_connections, now1);
+  auto t1 = std::chrono::steady_clock::now();
+  CT::UpdateOldState(&old_state, new_state, now2, afterglow_period_micros);
+  auto t2 = std::chrono::steady_clock::now();
+  std::chrono::duration<double, std::milli> dur = t2 - t1;
+  std::cout << "old_state.size()= " << old_state.size() << std::endl;
+  std::cout << "new_state.size()= " << new_state.size() << std::endl;
+  std::cout << "Time taken by UpdateOldState= " << dur.count() << " ms\n";
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaBenchmark) {
+  int num_endpoints = 500;
+  int num_connections = 20000;
+  int64_t now = 2000;
+  int64_t old_now = 1000;
+  int64_t afterglow_period_micros = 20000000;  // 20 seconds in microseconds
+  ConnMap new_state, old_state, delta;
+
+  CreateFakeState(new_state, num_endpoints, num_connections, old_now);
+  auto t1 = std::chrono::steady_clock::now();
+  CT::ComputeDelta(new_state, old_state, delta, now, old_now, afterglow_period_micros);
+  auto t2 = std::chrono::steady_clock::now();
+  std::chrono::duration<double, std::milli> dur = t2 - t1;
+  std::cout << "old_state.size()= " << old_state.size() << std::endl;
+  std::cout << "new_state.size()= " << new_state.size() << std::endl;
+  std::cout << "Time taken by ComputeDelta= " << dur.count() << " ms\n";
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaBenchmark2) {
+  int num_endpoints = 500;
+  int num_connections = 20000;
+  int64_t now = 2000;
+  int64_t old_now = 1000;
+  int64_t afterglow_period_micros = 20000000;  // 20 seconds in microseconds
+  ConnMap new_state, old_state, delta;
+
+  CreateFakeState(new_state, num_endpoints, num_connections, now);
+  CreateFakeState(new_state, num_endpoints, num_connections, old_now);
+  auto t1 = std::chrono::steady_clock::now();
+  CT::ComputeDelta(new_state, old_state, delta, now, old_now, afterglow_period_micros);
+  auto t2 = std::chrono::steady_clock::now();
+  std::chrono::duration<double, std::milli> dur = t2 - t1;
+  std::cout << "old_state.size()= " << old_state.size() << std::endl;
+  std::cout << "new_state.size()= " << new_state.size() << std::endl;
+  std::cout << "Time taken by ComputeDelta= " << dur.count() << " ms\n";
 }
 
 }  // namespace

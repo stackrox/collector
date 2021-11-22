@@ -54,6 +54,14 @@ missing-proc-scrape: docker-clean
 	go test -timeout 30m -count=1 -v \
 	  -run TestMissingProcScrape 2>&1 | tee -a integration-test.log
 
+.PHONY: repeat-network
+repeat-network: docker-clean
+	./scripts/create-fake-proc-dir.sh
+	go version
+	set -o pipefail ; \
+	go test -timeout 30m -count=1 -v \
+	  -run TestRepeatedNetworkFlow 2>&1 | tee -a integration-test.log
+
 .PHONY: report
 report:
 	go get -u github.com/jstemmer/go-junit-report

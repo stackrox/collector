@@ -98,9 +98,12 @@ class ConnectionTracker {
   ConnMap FetchConnState(bool normalize = false, bool clear_inactive = true);
   ContainerEndpointMap FetchEndpointState(bool normalize = false, bool clear_inactive = true);
 
-  // ComputeDelta computes a diff between new_state and *old_state, and stores the diff in *old_state.
   template <typename T>
-  static void ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state);
+  static void UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, const UnorderedMap<T, ConnStatus>& new_state, int64_t now, int64_t afterglow_period_micros);
+  static bool WasRecentlyActive(const ConnStatus& conn, int64_t now, int64_t afterglow_period_micros);
+  template <typename T>
+  // ComputeDelta computes a diff between new_state and old_state
+  static void ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, const UnorderedMap<T, ConnStatus>& old_state, UnorderedMap<T, ConnStatus>& delta, int64_t now, int64_t old_now, int64_t afterglow_period_micros);
 
   void UpdateKnownPublicIPs(UnorderedSet<Address>&& known_public_ips);
   void UpdateKnownIPNetworks(UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks);
@@ -159,44 +162,53 @@ class ConnectionTracker {
 
 /* static */
 template <typename T>
-void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state) {
-  // Insert all objects from the new state, if anything changed about them.
+void ConnectionTracker::UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, const UnorderedMap<T, ConnStatus>& new_state, int64_t now, int64_t afterglow_period_micros) {
+  //Remove inactive connections that are older than the afterglow period and add unexpired new connections to the old state
+  for (auto it = old_state->begin(); it != old_state->end();) {
+    auto& old_conn = *it;
+    if (WasRecentlyActive(old_conn.second, now, afterglow_period_micros)) {
+      ++it;
+      continue;
+    } else {
+      it = old_state->erase(it);
+    }
+  }
   for (const auto& conn : new_state) {
     auto insert_res = old_state->insert(conn);
-    auto& old_conn = *insert_res.first;
-    if (!insert_res.second) {  // was already present
-      if (conn.second.IsActive() != old_conn.second.IsActive()) {
+    if (!insert_res.second) {
+      auto& old_conn = *insert_res.first;
+      old_conn.second = conn.second;
+    }
+  }
+}
+
+template <typename T>
+void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, const UnorderedMap<T, ConnStatus>& old_state, UnorderedMap<T, ConnStatus>& delta, int64_t now, int64_t old_now, int64_t afterglow_period_micros) {
+  // Insert all objects from the new state, if anything changed about them.
+  for (const auto& conn : new_state) {
+    auto old_conn = old_state.find(conn.first);
+    if (old_conn != old_state.end()) {
+      bool oldRecentlyActive = WasRecentlyActive(old_conn->second, old_now, afterglow_period_micros);  //Connections active within the afterglow period are considered to be active for the purpose of the delta.
+      bool newRecentlyActive = WasRecentlyActive(conn.second, now, afterglow_period_micros);
+      if (newRecentlyActive != oldRecentlyActive) {
         // Object was either resurrected or newly closed. Update in either case.
-        old_conn.second = conn.second;
-      } else if (conn.second.IsActive()) {
-        // Both objects are active. Not part of the delta.
-        old_state->erase(insert_res.first);
-      } else {
+        delta.insert(conn);
+      } else if (!newRecentlyActive) {
         // Both objects are inactive. Update the timestamp if applicable, otherwise omit from delta.
-        if (old_conn.second.LastActiveTime() < conn.second.LastActiveTime()) {
-          old_conn.second = conn.second;
-        } else {
-          old_state->erase(insert_res.first);
+        if (old_conn->second.LastActiveTime() < conn.second.LastActiveTime()) {
+          delta.insert(conn);
         }
       }
+    } else {
+      delta.insert(conn);
     }
   }
 
-  // Mark all active objects in the old state that are not present in the new state as inactive, and remove the
-  // inactive ones.
-  for (auto it = old_state->begin(); it != old_state->end();) {
-    auto& old_conn = *it;
-    // Ignore all objects present in the new state.
-    if (new_state.find(old_conn.first) != new_state.end()) {
-      ++it;
-      continue;
-    }
-
-    if (old_conn.second.IsActive()) {
-      old_conn.second.SetActive(false);
-      ++it;
-    } else {
-      it = old_state->erase(it);
+  //Add everything in the old state that was in the active state and is not in the new state
+  for (auto conn : old_state) {
+    if (new_state.find(conn.first) == new_state.end() && conn.second.IsActive()) {
+      conn.second.SetActive(false);
+      delta.insert(conn);
     }
   }
 }
