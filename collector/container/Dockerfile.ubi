@@ -80,6 +80,8 @@ COPY --from=builder ${BUILD_DIR}/cmake-collector/EXCLUDE_FROM_DEFAULT_BUILD/user
 COPY --from=builder ${BUILD_DIR}/cmake-collector/collector /usr/local/bin/
 COPY --from=builder ${BUILD_DIR}/src/container/scripts /
 
+# Switch shell to bash with pipefall to avoid hadolint warning DL4006
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN mv /collector-wrapper.sh /usr/local/bin/ && \
     chmod 700 bootstrap.sh && \
     echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
@@ -102,8 +104,12 @@ RUN mv /collector-wrapper.sh /usr/local/bin/ && \
         microdnf -y install libasan; \
     fi && \
     microdnf clean all && \
+    rpm --query --all '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' |\
+      xargs rpm -e --nodeps && \
     rm -rf /var/cache/dnf
 
+# Restore the default shell because "bootstrap.sh" expects a shell to be started with a single parameter
+SHELL ["/bin/sh", "-c"]
 COPY --from=builder /MODULE_VERSION.txt /kernel-modules/MODULE_VERSION.txt
 COPY --from=builder /THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES
 
