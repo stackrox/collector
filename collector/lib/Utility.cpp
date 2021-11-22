@@ -48,6 +48,7 @@ namespace collector {
 
 namespace {
 
+// Splits a string into chunks delimited by the provided character
 std::vector<std::string> split_str(std::string& str, char delim) {
   std::stringstream stream(str);
   std::string item;
@@ -58,6 +59,9 @@ std::vector<std::string> split_str(std::string& str, char delim) {
   return items;
 }
 
+// Retrieves the ubuntu backport version from the host kernel's release
+// string. If the host is not Ubuntu, or it is unable to find an appropriate
+// backport version, this function returns an empty string.
 std::string getUbuntuBackport(HostInfo& host) {
   if (!host.IsUbuntu()) {
     return "";
@@ -77,6 +81,9 @@ std::string getUbuntuBackport(HostInfo& host) {
   return "";
 }
 
+// Normalizes this host's release string into something collector can use
+// to download appropriate kernel objects from the webserver. If the release
+// string does not require normalization, it is simply returned.
 std::string normalizeReleaseString(HostInfo& host) {
   auto kernel = host.GetKernelVersion();
   if (host.IsCOS()) {
@@ -229,7 +236,7 @@ std::string GetHostname() {
   return info.GetHostname();
 }
 
-const std::vector<std::string> GetKernelCandidates() {
+std::vector<std::string> GetKernelCandidates() {
   const char* kernel_candidates = std::getenv("KERNEL_CANDIDATES");
   if (kernel_candidates && *kernel_candidates) {
     std::string candidates(kernel_candidates);
