@@ -42,22 +42,12 @@ extern "C" {
 
 #include "HostInfo.h"
 #include "Logging.h"
+#include "StringView.h"
 #include "Utility.h"
 
 namespace collector {
 
 namespace {
-
-// Splits a string into chunks delimited by the provided character
-std::vector<std::string> split_str(std::string& str, char delim) {
-  std::stringstream stream(str);
-  std::string item;
-  std::vector<std::string> items;
-  while (std::getline(stream, item, delim)) {
-    items.push_back(item);
-  }
-  return items;
-}
 
 // Retrieves the ubuntu backport version from the host kernel's release
 // string. If the host is not Ubuntu, or it is unable to find an appropriate
@@ -67,9 +57,10 @@ std::string getUbuntuBackport(HostInfo& host) {
     return "";
   }
 
-  const char* candidates[] = {
+  static const char* candidates[] = {
       "~16.04",
-      "~20.04"};
+      "~20.04",
+  };
 
   auto kernel = host.GetKernelVersion();
   for (auto candidate : candidates) {
@@ -96,7 +87,13 @@ std::string normalizeReleaseString(HostInfo& host) {
   }
 
   if (host.IsDockerDesktop()) {
-    std::stringstream timestamp(kernel.release.substr(kernel.release.find("SMP ") + 4));
+    auto smp = kernel.release.find("SMP ");
+    if (smp == std::string::npos) {
+      CLOG(FATAL) << "Unable to parse docker desktop kernel release: "
+                  << "'" << kernel.release << "'";
+    }
+
+    std::stringstream timestamp(kernel.release.substr(smp + 4));
     std::tm tm{};
     timestamp >> std::get_time(&tm, "%a %b %d %H:%M:%S %Z %Y");
     timestamp.clear();
@@ -239,8 +236,8 @@ std::string GetHostname() {
 std::vector<std::string> GetKernelCandidates() {
   const char* kernel_candidates = std::getenv("KERNEL_CANDIDATES");
   if (kernel_candidates && *kernel_candidates) {
-    std::string candidates(kernel_candidates);
-    return split_str(candidates, ' ');
+    StringView sview(kernel_candidates);
+    return sview.split_str(' ');
   }
 
   HostInfo& host = HostInfo::Instance();

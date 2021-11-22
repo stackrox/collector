@@ -103,7 +103,7 @@ struct KernelVersion {
     return true;
   }
 
-  // Provies a simple version of the release string
+  // Provides a simple version of the release string
   // containing only the kernel, major, and minor versions.
   std::string ShortRelease() {
     std::stringstream ss;
