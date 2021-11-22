@@ -15,7 +15,7 @@ RUN apt-get update || true; \
       gcc-9 \
       gcc-10 \
       clang-12 \
-      llvm \
+      llvm-12 \
       g++ \
       libelf-dev \
       kmod \
@@ -24,7 +24,8 @@ RUN apt-get update || true; \
       pkg-config || true\
  ;
 
-RUN ln -s /usr/bin/clang-12 /usr/bin/clang
+RUN ln -s /usr/bin/clang-12 /usr/bin/clang && \
+    ln -s /usr/bin/llc-12 /usr/bin/llc
 
 RUN apt-get autoremove -y
 
