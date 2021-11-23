@@ -25,8 +25,11 @@ You should have received a copy of the GNU General Public License along with thi
 #define COLLECTOR_STRINGVIEW_H
 
 #include <cstring>
+#include <ostream>
 #include <string>
 #include <vector>
+
+#include "Logging.h"
 
 namespace collector {
 class StringView {
@@ -63,7 +66,7 @@ class StringView {
     if (pos >= n_) return {};
     const char* new_p = p_ + pos;
     size_type new_n = n_ - pos;
-    if (new_n > count) new_n = count;
+    if (new_n > count && count != npos) new_n = count;
     return StringView(new_p, new_n);
   }
 
@@ -75,11 +78,13 @@ class StringView {
     size_type n = find(delim);
 
     for (; n != npos; n = find(delim, offset)) {
-      parts.push_back(substr(offset, n));
+      parts.push_back(substr(offset, n - offset));
       offset = n + 1;
     }
 
-    parts.push_back(substr(offset, n));
+    if (offset < size()) {
+      parts.push_back(substr(offset));
+    }
     return parts;
   }
 
