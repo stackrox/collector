@@ -237,7 +237,7 @@ std::vector<std::string> GetKernelCandidates() {
   const char* kernel_candidates = std::getenv("KERNEL_CANDIDATES");
   if (kernel_candidates && *kernel_candidates) {
     StringView sview(kernel_candidates);
-    return sview.split_str(' ');
+    return sview.split(' ');
   }
 
   HostInfo& host = HostInfo::Instance();

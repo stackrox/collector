@@ -50,26 +50,9 @@ TEST(StringViewTest, TestSubstrPosTooLarge) {
   ASSERT_EQ("", view.substr(100).str());
 }
 
-TEST(StringViewTest, TestSplitView) {
-  StringView view("aaaa bbbb cccc dddd");
-  std::vector<StringView> splits = view.split_view(' ');
-  ASSERT_EQ(4, splits.size());
-
-  std::vector<std::string> expected = {
-      "aaaa",
-      "bbbb",
-      "cccc",
-      "dddd",
-  };
-
-  for (std::string::size_type i = 0; i < splits.size(); i++) {
-    ASSERT_EQ(expected[i], splits[i].str());
-  }
-}
-
 TEST(StringViewTest, TestSplitStr) {
   StringView view("aaaa bbbb cccc dddd");
-  std::vector<std::string> splits = view.split_str(' ');
+  std::vector<std::string> splits = view.split(' ');
   ASSERT_EQ(4, splits.size());
 
   std::vector<std::string> expected = {
@@ -86,7 +69,7 @@ TEST(StringViewTest, TestSplitStr) {
 
 TEST(StringViewTest, TestSplitStrNoDelimiter) {
   StringView view("aaaa");
-  std::vector<std::string> splits = view.split_str(' ');
+  std::vector<std::string> splits = view.split(' ');
   ASSERT_EQ(1, splits.size());
   ASSERT_EQ("aaaa", splits[0]);
 }

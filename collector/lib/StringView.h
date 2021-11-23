@@ -64,37 +64,26 @@ class StringView {
     if (pos >= n_) return {};
     const char* new_p = p_ + pos;
     size_type new_n = n_ - pos;
-    if (pos + count >= n_) count = n_ - pos;
-    if (new_n > count && count != npos) new_n = count;
-    return StringView(new_p, new_n);
-  }
-
-  // Splits this view into more views of the same data by the given
-  // delimiter.
-  std::vector<StringView> split_view(char delim = ' ') const {
-    std::vector<StringView> parts;
-    size_type offset = 0;
-    size_type n = find(delim);
-
-    for (; n != npos; n = find(delim, offset)) {
-      parts.push_back(substr(offset, n - offset));
-      offset = n + 1;
-    }
-
-    if (offset < size()) {
-      parts.push_back(substr(offset));
-    }
-    return parts;
+    if (count == npos) return {new_p, new_n};
+    if (count < 0) return {};
+    if (new_n > count) new_n = count;
+    return {new_p, new_n};
   }
 
   // Splits this view into string copies of parts of the data, delimited
   // by the given character.
-  std::vector<std::string> split_str(char delim = ' ') const {
-    std::vector<StringView> views = split_view(delim);
+  std::vector<std::string> split(char delim = ' ') const {
     std::vector<std::string> parts;
+    size_type offset = 0;
+    size_type n = find(delim);
 
-    for (auto& view : views) {
-      parts.push_back(view.str());
+    for (; n != npos; n = find(delim, offset)) {
+      parts.push_back(substr(offset, n - offset).str());
+      offset = n + 1;
+    }
+
+    if (offset < size()) {
+      parts.push_back(substr(offset).str());
     }
 
     return parts;
