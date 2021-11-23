@@ -66,6 +66,7 @@ class StringView {
     if (pos >= n_) return {};
     const char* new_p = p_ + pos;
     size_type new_n = n_ - pos;
+    if (pos + count >= n_) count = n_ - pos;
     if (new_n > count && count != npos) new_n = count;
     return StringView(new_p, new_n);
   }

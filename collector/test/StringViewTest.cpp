@@ -40,6 +40,16 @@ TEST(StringViewTest, TestSubstrWithCount) {
   ASSERT_EQ("ab", view.substr(3, 2).str());
 }
 
+TEST(StringViewTest, TestSubstrCountTooLarge) {
+  StringView view("aaaabb");
+  ASSERT_EQ("aabb", view.substr(2, 10).str());
+}
+
+TEST(StringViewTest, TestSubstrPosTooLarge) {
+  StringView view("aaaa");
+  ASSERT_EQ("", view.substr(100).str());
+}
+
 TEST(StringViewTest, TestSplitView) {
   StringView view("aaaa bbbb cccc dddd");
   std::vector<StringView> splits = view.split_view(' ');
