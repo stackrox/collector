@@ -38,6 +38,46 @@ extern "C" {
 
 namespace collector {
 
+namespace {
+
+bool gunzipFile(const std::string& compressed_path, const std::string& output_path) {
+  // Decompress the file
+  GZFileHandle input = gzopen(compressed_path.c_str(), "rb");
+  if (!input.valid()) {
+    CLOG(ERROR) << "Unable to open gzipped file " << compressed_path << " - " << strerror(errno);
+    return false;
+  }
+
+  std::ofstream output(output_path, std::ios::binary);
+  if (!output.is_open()) {
+    CLOG(WARNING) << "Unable to open output file " << output_path;
+    return false;
+  }
+
+  const int BUFFER_SIZE = 8192;
+  std::array<char, BUFFER_SIZE> buf = {'\0'};
+  int bytes_read;
+  do {
+    bytes_read = gzread(input.get(), buf.data(), BUFFER_SIZE);
+
+    if (bytes_read <= 0) {
+      break;
+    }
+
+    output.write(buf.data(), bytes_read);
+
+  } while (bytes_read == BUFFER_SIZE);
+
+  if (bytes_read < 0 || !gzeof(input.get())) {
+    CLOG(ERROR) << "Failed decompressing file " << input.error_msg();
+    return false;
+  }
+
+  return true;
+}
+
+}  // namespace
+
 std::string GetModuleVersion() {
   std::ifstream file("/kernel-modules/MODULE_VERSION.txt");
   if (!file.is_open()) {
@@ -147,50 +187,33 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
 
 bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& module_path, bool verbose) {
   std::string compressed_module_path(module_path + ".gz");
+  struct stat sb;
 
-  if (!DownloadKernelObject(hostname, tls_config, kernel_module, compressed_module_path, verbose)) {
-    CLOG(WARNING) << "Unable to download kernel object " << kernel_module;
-    return false;
-  }
-
-  // Decompress the file
-  GZFileHandle input = gzopen(compressed_module_path.c_str(), "rb");
-  if (!input.valid()) {
-    CLOG(WARNING) << "Unable to open gzipped file " << compressed_module_path << " - " << strerror(errno);
-    return false;
-  }
-
-  std::ofstream output(module_path, std::ios::binary);
-  if (!output.is_open()) {
-    CLOG(WARNING) << "Unable to open output file " << module_path;
-    return false;
-  }
-
-  const int BUFFER_SIZE = 8192;
-  std::array<char, BUFFER_SIZE> buf = {'\0'};
-  int bytes_read;
-  do {
-    bytes_read = gzread(input.get(), buf.data(), BUFFER_SIZE);
-
-    if (bytes_read <= 0) {
-      break;
+  if (stat(compressed_module_path.c_str(), &sb) == 0) {
+    CLOG(DEBUG) << "kernel object file " << compressed_module_path << " already exists.";
+    if (!gunzipFile(compressed_module_path, module_path)) {
+      CLOG(WARNING) << "failed to decompress existing kernel object";
+      return false;
+    }
+  } else if (stat(module_path.c_str(), &sb) == 0) {
+    CLOG(INFO) << "using existing kernel module: " << module_path;
+  } else {
+    if (!DownloadKernelObject(hostname, tls_config, kernel_module, compressed_module_path, verbose)) {
+      CLOG(WARNING) << "Unable to download kernel object " << kernel_module;
+      return false;
     }
 
-    output.write(buf.data(), bytes_read);
-
-  } while (bytes_read == BUFFER_SIZE);
-
-  if (bytes_read < 0 || !gzeof(input.get())) {
-    CLOG(WARNING) << "Failed decompressing file " << input.error_msg();
-    return false;
+    if (!gunzipFile(compressed_module_path, module_path)) {
+      CLOG(WARNING) << "failed to decompress downloaded kernel object";
+      return false;
+    }
+    CLOG(INFO) << "Successfully downloaded and decompressed " << module_path;
   }
 
   if (chmod(module_path.c_str(), 0444)) {
     CLOG(WARNING) << "Failed to set file permissions for " << module_path << " - " << strerror(errno);
     return false;
   }
-
-  CLOG(INFO) << "Successfully downloaded and decompressed " << module_path;
 
   return true;
 }
