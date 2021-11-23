@@ -75,10 +75,10 @@ TEST(StringViewTest, TestSplitStr) {
 }
 
 TEST(StringViewTest, TestSplitStrNoDelimiter) {
-    StringView view("aaaa");
-    std::vector<std::string> splits = view.split_str(' ');
-    ASSERT_EQ(1, splits.size());
-    ASSERT_EQ("aaaa", splits[0]);
+  StringView view("aaaa");
+  std::vector<std::string> splits = view.split_str(' ');
+  ASSERT_EQ(1, splits.size());
+  ASSERT_EQ("aaaa", splits[0]);
 }
 
 }  // namespace collector
