@@ -34,6 +34,7 @@ cd ..
 
 export DISABLE_PROFILING="true"
 CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-Release}"
+ADDRESS_SANITIZER="${ADDRESS_SANITIZER:-false}"
 
 cp -a collector/generated src/generated
 
