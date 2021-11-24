@@ -1,0 +1,17 @@
+ARG COLLECTOR_TAG
+ARG COLLECTOR_REPO=quay.io/rhacs-eng
+ARG DRIVERS_TAG=latest
+ARG DRIVERS_REPO=quay.io/rhacs-eng
+
+FROM $DRIVERS_REPO/collector-drivers:$DRIVERS_TAG AS drivers
+
+FROM $COLLECTOR_REPO/collector:$COLLECTOR_TAG
+
+COPY --from=drivers /kernel-modules/ /kernel-modules/
+
+# Remove all .unavail files, they are not needed by collector
+RUN find /kernel-modules/$(cat /kernel-modules/MODULE_VERSION.txt)/ -name '*.unavail' -type f -delete && \
+	# Make modules for the current collector version available in /kernel-modules
+	mv -v /kernel-modules/$(cat /kernel-modules/MODULE_VERSION.txt)/*.gz /kernel-modules/ || true; \
+	# Remove all versioned subdirectories under /kernel-modules
+	find /kernel-modules/ -mindepth 1 -maxdepth 1 -type d -delete

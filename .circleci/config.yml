@@ -3,6 +3,12 @@ parameters:
   quay-repo:
     type: string
     default: "quay.io/rhacs-eng"
+  dockerized-parallel:
+    type: integer
+    default: 32
+  dockerized-cache-tag:
+    type: string
+    default: cache-v1
 
 defaultImage: &defaultImage
   docker:
@@ -47,8 +53,7 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
   - images
   - ubi-image
   - integration-test-local
-  - integration-test-local-dockerized
-  - integration-test-local-ebpf-dockerized
+  - dockerized-build-collector
 
 orbs:
   slack: circleci/slack@3.4.2
@@ -122,6 +127,38 @@ commands:
         command: |
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" -p "$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
 
+  dockerized-pull-cache-image:
+    steps:
+    - run:
+        name: Pull cache image
+        command: |
+          # If we are running with dockerized-no-cache, we create an empty image as base
+          if [[ "${COLLECTOR_DRIVERS_CACHE}" == "no-cache" ]]; then
+            docker run --name empty-cache registry.access.redhat.com/ubi8/ubi:8.5 mkdir -p /kernel-modules/
+            docker commit empty-cache "<< pipeline.parameters.quay-repo >>/collector-drivers:$COLLECTOR_DRIVERS_CACHE"
+            docker rm empty-cache
+            exit 0
+          fi
+
+          # If we can't pull the cache image, we are either working with no cache or creating the cache itself.
+          # In any case, we can create the empty image to account for this
+          if ! docker pull "<< pipeline.parameters.quay-repo >>/collector-drivers:$COLLECTOR_DRIVERS_CACHE"; then
+            docker run --name empty-cache registry.access.redhat.com/ubi8/ubi:8.5 mkdir -p /kernel-modules/
+            docker commit empty-cache "<< pipeline.parameters.quay-repo >>/collector-drivers:$COLLECTOR_DRIVERS_CACHE"
+            docker rm empty-cache
+          fi
+
+  dockerized-check-drivers-built:
+    steps:
+    - run:
+        name: Check if job should run
+        command: |
+          if [[ ! -s ~/workspace/build-tasks ]]; then
+            echo "Nothing was built, skipping this job"
+
+            circleci step halt
+            exit 0
+          fi
 
   stackrox-io-login:
     steps:
@@ -195,6 +232,23 @@ jobs:
             export BUILD_BUILDER_IMAGE=true
           EOF
           fi
+
+          COLLECTOR_DRIVERS_CACHE="<< pipeline.parameters.dockerized-cache-tag >>"
+          COLLECTOR_DRIVERS_TAG="circle-build-${CIRCLE_WORKFLOW_ID}"
+          if [[ -f pr-metadata/labels/dockerized-no-cache ]]; then
+            COLLECTOR_DRIVERS_CACHE="no-cache"
+          fi
+
+          if [[ -n "$CIRCLE_TAG" || "$CIRCLE_BRANCH" == "master" ]]; then
+            COLLECTOR_DRIVERS_CACHE="<< pipeline.parameters.dockerized-cache-tag >>"
+            COLLECTOR_DRIVERS_TAG="<< pipeline.parameters.dockerized-cache-tag >>"
+          fi
+
+          cat >> ~/workspace/shared-env \<<-EOF
+            export COLLECTOR_DRIVERS_CACHE="${COLLECTOR_DRIVERS_CACHE}"
+            export COLLECTOR_DRIVERS_TAG="${COLLECTOR_DRIVERS_TAG}"
+          EOF
+
           cat ~/workspace/shared-env
 
     - run:
@@ -643,46 +697,124 @@ jobs:
             "${CI_ROOT}/upload-modules/30-sanity-check.sh" "${CIRCLE_TAG}" "${CIRCLE_BRANCH}"
 
 
-  dockerized-kdrivers:
+  dockerized-task-file:
     <<: *defaultMachine
 
     steps:
     - initcommand
-    - gcloud-init
-    - docker-login-push
+    - docker-login-pull
     - quay-login
+    - dockerized-pull-cache-image
 
     - run:
-        name: Create docker context
-        command: |
-          mkdir -p ~/workspace/go/src/github.com/stackrox/bundles
-          ## Get the bundle for the running machine
-          gsutil -m cp "gs://stackrox-kernel-bundles/bundle-$(uname -r).tgz" ~/workspace/go/src/github.com/stackrox/bundles
-    - run:
-        name: Build probes
+        name: Create task files
         command: |
           GIT_REF="${CIRCLE_BRANCH}"
           if [[ -n "${CIRCLE_TAG}" ]]; then
             GIT_REF="${CIRCLE_TAG}"
           fi
-          docker build \
-            --build-arg BRANCH="${GIT_REF}" \
-            --build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
-            --build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}" \
-            --tag kernel-builder \
-            -f ~/workspace/go/src/github.com/stackrox/collector/kernel-modules/dockerized/Dockerfile \
-            ~/workspace/go/src/github.com/stackrox
+
+          "${SOURCE_ROOT}/.circleci/dockerized-drivers/create-task-file.sh" \
+            "<< pipeline.parameters.quay-repo >>" \
+            "<< pipeline.parameters.dockerized-parallel >>" \
+            "${CIRCLE_NODE_INDEX}" \
+            "${GIT_REF}"
+
+    - persist_to_workspace:
+        root: ~/workspace
+        paths:
+          - task-shard-*
+          - build-tasks
+
+  dockerized-build-drivers:
+    <<: *defaultMachine
+    parallelism: << pipeline.parameters.dockerized-parallel >>
+
+    steps:
+    - initcommand
+    - dockerized-check-drivers-built
+    - gcloud-init
+    - docker-login-pull
+    - quay-login-push
+    - dockerized-pull-cache-image
+
     - run:
-        name: Create test image
+        name: Download required bundles
         command: |
-            docker build \
-                --tag "stackrox/collector:${COLLECTOR_TAG}-dockerized" \
-                --build-arg COLLECTOR_TAG="${COLLECTOR_TAG}-slim" \
-                ~/workspace/go/src/github.com/stackrox/collector/kernel-modules/dockerized/tests
+          echo "Nodes total: $CIRCLE_NODE_TOTAL"
+          echo "Node index:  $CIRCLE_NODE_INDEX"
+
+          this_shard_file=~/workspace/task-shard-"$(printf '%02d' "$CIRCLE_NODE_INDEX")"
+
+          if [[ ! -s "$this_shard_file" ]]; then
+            echo "Nothing to be done for this shard."
+
+            circleci step halt
+            exit 0
+          fi
+
+          ## Get the bundles for the running machine
+          "${SOURCE_ROOT}/.circleci/download-required-packages.sh" "${CIRCLE_TAG}" "${CIRCLE_BRANCH}" ~/workspace/go/src/github.com/stackrox "${this_shard_file}"
+
     - run:
-        name: Push test image
+        name: Build drivers
         command: |
-            docker push "stackrox/collector:${COLLECTOR_TAG}-dockerized"
+          GIT_REF="${CIRCLE_BRANCH}"
+          if [[ -n "${CIRCLE_TAG}" ]]; then
+            GIT_REF="${CIRCLE_TAG}"
+          fi
+
+          "${SOURCE_ROOT}/.circleci/dockerized-drivers/build-drivers.sh" \
+            "<< pipeline.parameters.quay-repo >>" \
+            "${GIT_REF}" \
+            "${CIRCLE_NODE_INDEX}"
+
+  dockerized-unify-images:
+    <<: *defaultMachine
+
+    steps:
+    - initcommand
+    - docker-login-pull
+    - quay-login-push
+    - dockerized-pull-cache-image
+
+    - run:
+        name: Unify images
+        command: |
+          "${SOURCE_ROOT}/.circleci/dockerized-drivers/unify-images.sh" \
+            "<< pipeline.parameters.quay-repo >>" \
+            "<< pipeline.parameters.dockerized-parallel >>"
+
+  dockerized-check-failures:
+    <<: *defaultMachine
+
+    steps:
+    - initcommand
+    - dockerized-check-drivers-built
+    - quay-login
+
+    - run:
+        name: Test for build failures
+        command: |
+          "${SOURCE_ROOT}/.circleci/dockerized-drivers/check-failures.sh" \
+            "<< pipeline.parameters.quay-repo >>"
+
+    - store_artifacts:
+        path: /tmp/dockerized-failures
+
+  dockerized-build-collector:
+    <<: *defaultMachine
+
+    steps:
+    - initcommand
+    - quay-login
+    - docker-login-push
+
+    - run:
+        name: Build full collector image
+        command: |
+          "${SOURCE_ROOT}/.circleci/dockerized-drivers/build-full-collector.sh" \
+            "docker.io/stackrox"
 
   integration-test-local:
     parameters:
@@ -692,13 +824,6 @@ jobs:
       use-ubi:
         type: boolean
         default: false
-      dockerized:
-        type: boolean
-        default: false
-      collection_method:
-        type: enum
-        enum: [kernel_module, ebpf]
-        default: kernel_module
 
     <<: *defaultMachine
     working_directory: ~/workspace
@@ -714,10 +839,10 @@ jobs:
         no_output_timeout: 45m
         command: |
           export REMOTE_HOST_TYPE=local
-          export COLLECTION_METHOD="<< parameters.collection_method >>"
+          export COLLECTION_METHOD="kernel_module"
           export VM_CONFIG="circle_local_<< parameters.vm-config >>"
           export COLLECTOR_REPO="stackrox/collector<<# parameters.use-ubi>>-test-cpaas<</ parameters.use-ubi>>"
-          export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}<<# parameters.dockerized >>-dockerized<</ parameters.dockerized >>"
+          export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}"
           export USE_VALGRIND=$VALGRIND_INTEGRATION_TESTS
           export USE_HELGRIND=$HELGRIND_INTEGRATION_TESTS
           export ROX_COLLECTOR_ALT_PROBE_DOWNLOAD=true
@@ -825,13 +950,6 @@ jobs:
         command: |
           source $SOURCE_ROOT/.circleci/create-vm.sh
           main "$GCLOUD_INSTANCE" "$VM_TYPE" "$IMAGE_FAMILY" "$IMAGE_NAME" "$GCP_SSH_KEY_FILE" "$DOCKER_IO_PULL_USERNAME" "$DOCKER_IO_PULL_PASSWORD"
-
-    - run:
-        name: "Build dockerized driver"
-        command: |
-          <<^ parameters.dockerized >>exit 0<</ parameters.dockerized >>
-
-          IMAGE_FAMILY="<< parameters.image_family >>" "${CI_ROOT}/build-image-to-test.sh"
 
     - run:
         name: "Running integration tests"
@@ -1246,14 +1364,43 @@ workflows:
         <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - builder
-    - dockerized-kdrivers:
+    - dockerized-task-file:
+        <<: *runOnAllTags
+        context:
+          - docker-io-pull
+          - quay-rhacs-eng-readonly
+          - redhat-developer-account-login
+        requires:
+        - lint
+    - dockerized-build-drivers:
+        <<: *runOnAllTags
+        context:
+          - docker-io-pull
+          - quay-rhacs-eng-readwrite
+          - redhat-developer-account-login
+        requires:
+        - dockerized-task-file
+    - dockerized-unify-images:
+        <<: *runOnAllTags
+        context:
+          - docker-io-pull
+          - quay-rhacs-eng-readwrite
+        requires:
+          - dockerized-build-drivers
+    - dockerized-check-failures:
+        <<: *runOnAllTags
+        context:
+          - quay-rhacs-eng-readonly
+        requires:
+          - dockerized-unify-images
+    - dockerized-build-collector:
         <<: *runOnAllTags
         context:
           - docker-io-push
           - quay-rhacs-eng-readonly
-          - redhat-developer-account-login
         requires:
-        - images
+          - dockerized-unify-images
+          - images
     - prepare-kernels:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
@@ -1295,21 +1442,6 @@ workflows:
         requires:
         - images
         - upload-modules
-    - integration-test-local:
-        <<: *runOnAllTagsWithDockerIOPushCtx
-        name: integration-test-local-dockerized
-        vm-config: rhel
-        requires:
-        - dockerized-kdrivers
-        dockerized: true
-    - integration-test-local:
-        <<: *runOnAllTagsWithDockerIOPushCtx
-        name: integration-test-local-ebpf-dockerized
-        vm-config: rhel
-        requires:
-        - dockerized-kdrivers
-        dockerized: true
-        collection_method: "ebpf"
     - integration-test-local:
         <<: *runOnAllTagsWithDockerIOPushCtx
         name: integration-test-local-ubi

@@ -1,0 +1,13 @@
+ARG BASE_TAG
+ARG EXTRA_DRIVERS=latest
+ARG DRIVERS_REPO=quay.io/rhacs-eng
+
+FROM $DRIVERS_REPO/collector-drivers:$EXTRA_DRIVERS AS drivers
+
+FROM $DRIVERS_REPO/collector-drivers:$BASE_TAG
+
+COPY --from=drivers /kernel-modules/ /kernel-modules/
+COPY --from=drivers /FAILURES/ /CURRENT-FAILURES/
+
+# Remove empty directories from the failures directory
+RUN find /CURRENT-FAILURES -mindepth 1 -type d -empty -delete

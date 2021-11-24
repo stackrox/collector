@@ -1,6 +1,9 @@
 ARG REDHAT_USERNAME
 ARG REDHAT_PASSWORD
 
+ARG CACHE_REPO
+ARG CACHE_TAG
+
 FROM registry.access.redhat.com/ubi8/ubi:8.5 AS rhel-8-base
 
 ARG REDHAT_USERNAME
@@ -23,10 +26,50 @@ RUN subscription-manager register --username $REDHAT_USERNAME --password $REDHAT
 		patch \
 		elfutils-libelf \
 		elfutils-libelf-devel \
-		git
+		git \
+		python3 \
+		kmod && \
+	ln -s /usr/bin/gcc /usr/bin/gcc-8
 
 # This directory goes separately to prevent it from being modified/deleted when switching branches
 COPY /collector/kernel-modules/dockerized/scripts /scripts
+
+FROM rhel-8-base AS patcher
+
+ARG BRANCH=master
+ARG LEGACY_PROBES=false
+
+COPY /collector /collector
+
+RUN /scripts/patch-files.sh $BRANCH $LEGACY_PROBES
+
+FROM $CACHE_REPO/collector-drivers:$CACHE_TAG AS cache
+
+FROM rhel-8-base AS task-master
+
+ARG USE_KERNELS_FILE=false
+ENV USE_KERNELS_FILE=$USE_KERNELS_FILE
+
+COPY /bundles /bundles
+COPY /collector/kernel-modules/build/apply-blocklist.py /scripts
+COPY /collector/kernel-modules/BLOCKLIST /scripts
+COPY /collector/kernel-modules/dockerized/BLOCKLIST /scripts/dockerized/
+COPY /collector/kernel-modules/KERNEL_VERSIONS /KERNEL_VERSIONS
+COPY --from=patcher /kobuild-tmp/versions-src /kobuild-tmp/versions-src
+COPY --from=cache /kernel-modules/ /kernel-modules/
+
+RUN /scripts/create-task-file.sh; rm -rf /bundles/ /kobuild-tmp/ /kernel-modules/
+
+FROM rhel-8-base AS rhel-8-builder
+
+COPY /bundles /bundles
+COPY --from=patcher /kobuild-tmp/versions-src /kobuild-tmp/versions-src
+COPY --from=task-master /build-tasks /build-tasks
+
+# This stage will only build bundles for kernel 4+
+RUN sed -i '/^[0-3]\./d' /build-tasks; \
+	/scripts/compile.sh </build-tasks; \
+	rm -rf /bundles/
 
 FROM registry.access.redhat.com/ubi7/ubi:7.9 AS rhel-7-base
 
@@ -45,44 +88,29 @@ RUN subscription-manager register --username $REDHAT_USERNAME --password $REDHAT
 		make \
 		gcc-c++ \
 		llvm-toolset-7.0 \
-		elfutils-libelf
+		elfutils-libelf \
+		kmod
 
 # This directory goes separately to prevent it from being modified/deleted when switching branches
 COPY /collector/kernel-modules/dockerized/scripts /scripts
 
-FROM rhel-8-base AS patcher
-
-ARG BRANCH=master
-ARG LEGACY_PROBES=false
-
-COPY /collector /collector
-
-RUN /scripts/patch-files.sh $BRANCH $LEGACY_PROBES
-
-FROM rhel-8-base AS rhel-8-builder
-
-COPY --from=patcher /kobuild-tmp/versions-src /kobuild-tmp/versions-src
-COPY /bundles /bundles
-
-# This stage will only build bundles for kernel 4+
-RUN find /bundles/ -type f -name "bundle-[0-3].*" -delete
-
-RUN /scripts/compile.sh
-
 FROM rhel-7-base AS rhel-7-builder
 
-COPY --from=patcher /kobuild-tmp/versions-src /kobuild-tmp/versions-src
 COPY /bundles /bundles
+COPY --from=patcher /kobuild-tmp/versions-src /kobuild-tmp/versions-src
+COPY --from=task-master /build-tasks /build-tasks
 
 # This stage will only build bundles for kernel 0-3
-RUN find /bundles/ -type f -name "bundle-[4-9].*" -delete
-
-RUN scl enable llvm-toolset-7.0 /scripts/compile.sh
+RUN sed -i '/^[4-9]\./d' /build-tasks; \
+	scl enable llvm-toolset-7.0 /scripts/compile.sh </build-tasks; \
+	rm -rf /bundles/
 
 # Create a clean image leaving only the compiled kernel modules
 FROM registry.access.redhat.com/ubi8/ubi:8.5
 
 COPY --from=rhel-8-builder /kernel-modules /kernel-modules
 COPY --from=rhel-7-builder /kernel-modules /kernel-modules
+COPY --from=rhel-8-builder /FAILURES /FAILURES
+COPY --from=rhel-7-builder /FAILURES /FAILURES
 
 ENTRYPOINT [ "/bin/bash", "-c" ]

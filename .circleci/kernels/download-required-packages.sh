@@ -39,7 +39,7 @@ retryFailedDownloads() {
     fi
     sleep 30
 
-    failed_downloads_file="$kobuild_dir/failed_downloads.txt"
+    failed_downloads_file="$KOBUILD_DIR/failed_downloads.txt"
     ls "$bundles_dir"/*.gstmp > "$failed_downloads_file"
     sed -i 's|^.*bundle-||' "$failed_downloads_file"
     sed -i 's|\.tgz_\.gstmp$||' "$failed_downloads_file"
@@ -52,16 +52,17 @@ retryFailedDownloads() {
 downloadBundles() {
   bucket=$1
 
-  downloadBundlesListedInFile "$bucket" "$kobuild_dir/all-kernel-versions"
+  downloadBundlesListedInFile "$bucket" "$KERNELS_FILE"
   retryFailedDownloads "$bucket"
 
 }
 
 TAG=$1
 BRANCH=$2
-kobuild_dir="${3:-~/kobuild-tmp}"
+KOBUILD_DIR="${3:-~/kobuild-tmp}"
+KERNELS_FILE="${4:-"$KOBUILD_DIR/all-kernel-versions"}"
 
-bundles_dir="$kobuild_dir/bundles"
+bundles_dir="$KOBUILD_DIR/bundles"
 
 mkdir -p "$bundles_dir"
 downloadBundles "$KERNEL_BUNDLES_BUCKET"
