@@ -70,3 +70,5 @@ Even though development containers is a supported feature of `Docker for Desktop
 ### Setting up git hooks
 Some basic git hooks can be found under the `githooks/` directory.
 In order to use them run `git config core.hooksPath ./githooks/` from the collector root directory.
+
+Meaningless change
