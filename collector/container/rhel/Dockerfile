@@ -63,16 +63,14 @@ COPY --from=valgrind_build /valgrind-3.17.0/include /valgrind-3.17.0/include
 
 COPY final-step.sh /
 
+# Create the module directory, for downloading kernel objects
+RUN mkdir -p /module
+
 RUN ./final-step.sh && rm -f final-step.sh
 
 
 EXPOSE 8080 9090
 
-ENTRYPOINT ["/bootstrap.sh"]
-
-CMD collector-wrapper.sh \
-    --collector-config=$COLLECTOR_CONFIG \
-    --collection-method=$COLLECTION_METHOD \
-    --grpc-server=$GRPC_SERVER
+ENTRYPOINT "collector-wrapper.sh" "--collector-config=$COLLECTOR_CONFIG" "--collection-method=$COLLECTION_METHOD" "--grpc-server=$GRPC_SERVER"
 
 HEALTHCHECK CMD curl --fail http://127.0.0.1:8080/ready || exit 1
