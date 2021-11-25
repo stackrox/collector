@@ -973,7 +973,7 @@ jobs:
           cat >>"$BASH_ENV" \<<-EOF
             export COLLECTION_METHOD="<< parameters.collection_method >>"
             export COLLECTOR_OFFLINE_MODE="<< parameters.offline >>"
-            export ROX_COLLECTOR_ALT_PROBE_DOWNLOAD=false
+            export ROX_COLLECTOR_ALT_PROBE_DOWNLOAD=true
             export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
             export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
             export IMAGE_FAMILY=<< parameters.image_family >>
