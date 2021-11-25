@@ -241,7 +241,7 @@ std::vector<std::string> GetKernelCandidates() {
   }
 
   HostInfo& host = HostInfo::Instance();
-  std::vector<std::string> candidates{normalizeReleaseString(host)};
+  std::vector<std::string> candidates;
 
   if (host.IsUbuntu()) {
     std::string backport = getUbuntuBackport(host);
@@ -249,6 +249,8 @@ std::vector<std::string> GetKernelCandidates() {
       candidates.push_back(backport);
     }
   }
+
+  candidates.push_back(normalizeReleaseString(host));
 
   return candidates;
 }

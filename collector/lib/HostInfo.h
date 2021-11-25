@@ -176,7 +176,7 @@ class HostInfo {
 
   // Whether we're running on Ubuntu
   bool IsUbuntu() {
-    return GetDistro() == "ubuntu";
+    return GetOSID() == "ubuntu";
   }
 
   // Reads a named value from the os-release file (either in /etc/ or in /usr/lib)
