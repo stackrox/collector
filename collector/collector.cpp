@@ -207,6 +207,15 @@ void setBPFDropSyscalls(const std::vector<std::string>& syscall_list) {
   }
 }
 
+void gplNotice() {
+    CLOG(INFO) << "";
+    CLOG(INFO) << "This product uses kernel module and ebpf subcomponents licensed under the GNU";
+    CLOG(INFO) << "GENERAL PURPOSE LICENSE Version 2 outlined in the /kernel-modules/LICENSE file.";
+    CLOG(INFO) << "Source code for the kernel module and ebpf subcomponents is available upon";
+    CLOG(INFO) << "request by contacting support@stackrox.com.";
+    CLOG(INFO) << "";
+}
+
 int main(int argc, char** argv) {
   if (!g_control.is_lock_free()) {
     CLOG(FATAL) << "Could not create a lock-free control variable!";
@@ -296,6 +305,9 @@ int main(int argc, char** argv) {
     if (!success) {
       CLOG(FATAL) << "No suitable kernel object downloaded";
     }
+
+    // output the GPL notice only once the kernel object has been found or downloaded
+    gplNotice();
   }
 
   if (config.UseEbpf()) {
@@ -360,6 +372,11 @@ int main(int argc, char** argv) {
 
   CollectorService collector(config, &g_control, &g_signum);
   collector.RunForever();
+
+  if (!config.UseEbpf()) {
+    CLOG(INFO) << "Unloading kernel module";
+    delete_module(SysdigService::kModulePath, O_NONBLOCK | O_TRUNC);
+  }
 
   CLOG(INFO) << "Collector exiting successfully!";
 
