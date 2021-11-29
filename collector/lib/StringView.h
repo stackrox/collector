@@ -82,7 +82,8 @@ class StringView {
       offset = n + 1;
     }
 
-    // push remainder of the string (if any)
+    // Push remainder of the string. This may be empty if the string
+    // ends with a delimiter.
     parts.push_back(substr(offset).str());
 
     return parts;
