@@ -5,7 +5,7 @@ namespace collector {
 
 TEST(StringViewTest, TestFindStringExists) {
   StringView view("aaaabbbbcccc");
-  std::string::size_type expected = 8;
+  StringView::size_type expected = 8;
   ASSERT_EQ(expected, view.find('c'));
 }
 
@@ -15,9 +15,9 @@ TEST(StringViewTest, TestFindStringNotExists) {
 }
 
 TEST(StringViewTest, TestFindStringExistsFromPos) {
-  StringView view("abcdefgh");
-  std::string::size_type expected = 5;
-  ASSERT_EQ(expected, view.find('f', 4));
+  StringView view("This f is skipped, but this f is not.");
+  StringView::size_type expected = 28;
+  ASSERT_EQ(expected, view.find('f', 10));
 }
 
 TEST(StringViewTest, TestFindStringNotExistsFromPos) {
@@ -72,6 +72,30 @@ TEST(StringViewTest, TestSplitStrNoDelimiter) {
   std::vector<std::string> splits = view.split(' ');
   ASSERT_EQ(1, splits.size());
   ASSERT_EQ("aaaa", splits[0]);
+}
+
+TEST(StringViewTest, TestSplitDelimiterAtEnd) {
+  StringView view("a b c ");
+  std::vector<std::string> expected{
+      "a",
+      "b",
+      "c",
+      "",
+  };
+  std::vector<std::string> splits = view.split(' ');
+  ASSERT_EQ(expected, splits);
+}
+
+TEST(StringViewTest, TestSplitDoubleDelimiter) {
+  StringView view("a b  c");
+  std::vector<std::string> expected{
+      "a",
+      "b",
+      "",
+      "c",
+  };
+  std::vector<std::string> splits = view.split(' ');
+  ASSERT_EQ(expected, splits);
 }
 
 }  // namespace collector

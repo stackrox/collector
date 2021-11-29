@@ -82,7 +82,10 @@ class StringView {
       offset = n + 1;
     }
 
-    if (offset < size()) {
+    // If there is more string left, add it to the output. This means that
+    // if the last character is a delimiter, an empty string is added.
+    // (hence less than or equal to size rather than strictly less than)
+    if (offset <= size()) {
       parts.push_back(substr(offset).str());
     }
 
