@@ -63,6 +63,8 @@ flavor="default"
 # Ubuntu 20.04 backport
 if [[ "$distro" == "ubuntu" && "$version" =~ "~20.04" ]]; then
   flavor="modern"
+elif [[ "$distro" =~ ^dockerdesktop$ ]]; then
+  flavor="modern"
 elif (( kernel_version == 5 && kernel_major >= 13 )); then
   flavor="$(getFlavorFor5_13_plus)"
 elif [[ "$distro" == "debian" ]] ; then
@@ -71,7 +73,7 @@ elif [[ "$(compareVersions 5 9)" == "later" ]]; then
   flavor="hirsute"
 elif (( kernel_version == 5 )); then
   flavor="modern"
-elif [[ "$distro" =~ ^suse$|^dockerdesktop$ ]]; then
+elif [[ "$distro" =~ ^suse$ ]]; then
   flavor="modern"
 # RHEL 8.3+ kernels require a newer gcc and can be compiled with modern builder
 #  Match kernels of the form 4.18.0-240.1.1.el8_3.x86_64 and 4.18.0-301.1.el8.x86_64
