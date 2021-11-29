@@ -40,6 +40,8 @@ namespace collector {
 
 namespace {
 
+// Given a path to a gzip encoded file, and an output path, gzip decompresses the input
+// file and writes the decompressed bytes to the output path.
 bool gunzipFile(const std::string& compressed_path, const std::string& output_path) {
   // Decompress the file
   GZFileHandle input = gzopen(compressed_path.c_str(), "rb");
