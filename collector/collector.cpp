@@ -208,12 +208,12 @@ void setBPFDropSyscalls(const std::vector<std::string>& syscall_list) {
 }
 
 void gplNotice() {
-    CLOG(INFO) << "";
-    CLOG(INFO) << "This product uses kernel module and ebpf subcomponents licensed under the GNU";
-    CLOG(INFO) << "GENERAL PURPOSE LICENSE Version 2 outlined in the /kernel-modules/LICENSE file.";
-    CLOG(INFO) << "Source code for the kernel module and ebpf subcomponents is available upon";
-    CLOG(INFO) << "request by contacting support@stackrox.com.";
-    CLOG(INFO) << "";
+  CLOG(INFO) << "";
+  CLOG(INFO) << "This product uses kernel module and ebpf subcomponents licensed under the GNU";
+  CLOG(INFO) << "GENERAL PURPOSE LICENSE Version 2 outlined in the /kernel-modules/LICENSE file.";
+  CLOG(INFO) << "Source code for the kernel module and ebpf subcomponents is available upon";
+  CLOG(INFO) << "request by contacting support@stackrox.com.";
+  CLOG(INFO) << "";
 }
 
 int main(int argc, char** argv) {
