@@ -36,14 +36,14 @@ extern "C" {
 #include "Logging.h"
 #include "Utility.h"
 
-static const std::string kDownloadDirectory = "/kernel-modules";
+static const std::string kKernelModulesDir = "/kernel-modules";
 
 namespace collector {
 
 std::string GetModuleVersion() {
-  std::ifstream file(kDownloadDirectory + "/MODULE_VERSION.txt");
+  std::ifstream file(kKernelModulesDir + "/MODULE_VERSION.txt");
   if (!file.is_open()) {
-    CLOG(WARNING) << "Failed to open '" << kDownloadDirectory << "/MODULE_VERSION.txt'";
+    CLOG(WARNING) << "Failed to open '" << kKernelModulesDir << "/MODULE_VERSION.txt'";
     return "";
   }
 
@@ -148,7 +148,7 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
 }
 
 bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& module_path, bool verbose) {
-  std::string expected_path = kDownloadDirectory + "/" + kernel_module;
+  std::string expected_path = kKernelModulesDir + "/" + kernel_module;
   std::string expected_path_compressed = expected_path + ".gz";
   struct stat sb;
 
