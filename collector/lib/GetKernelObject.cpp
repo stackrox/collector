@@ -38,48 +38,6 @@ extern "C" {
 
 namespace collector {
 
-namespace {
-
-// Given a path to a gzip encoded file, and an output path, gzip decompresses the input
-// file and writes the decompressed bytes to the output path.
-bool gunzipFile(const std::string& compressed_path, const std::string& output_path) {
-  // Decompress the file
-  GZFileHandle input = gzopen(compressed_path.c_str(), "rb");
-  if (!input.valid()) {
-    CLOG(ERROR) << "Unable to open gzipped file " << compressed_path << " - " << strerror(errno);
-    return false;
-  }
-
-  std::ofstream output(output_path, std::ios::binary);
-  if (!output.is_open()) {
-    CLOG(WARNING) << "Unable to open output file " << output_path;
-    return false;
-  }
-
-  const int BUFFER_SIZE = 8192;
-  std::array<char, BUFFER_SIZE> buf = {'\0'};
-  int bytes_read;
-  do {
-    bytes_read = gzread(input.get(), buf.data(), BUFFER_SIZE);
-
-    if (bytes_read <= 0) {
-      break;
-    }
-
-    output.write(buf.data(), bytes_read);
-
-  } while (bytes_read == BUFFER_SIZE);
-
-  if (bytes_read < 0 || !gzeof(input.get())) {
-    CLOG(ERROR) << "Failed decompressing file " << input.error_msg();
-    return false;
-  }
-
-  return true;
-}
-
-}  // namespace
-
 std::string GetModuleVersion() {
   std::ifstream file("/kernel-modules/MODULE_VERSION.txt");
   if (!file.is_open()) {
@@ -193,7 +151,7 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
 
   if (stat(compressed_module_path.c_str(), &sb) == 0) {
     CLOG(DEBUG) << "kernel object file " << compressed_module_path << " already exists.";
-    if (!gunzipFile(compressed_module_path, module_path)) {
+    if (!GZFileHandle::Decompress(compressed_module_path, module_path)) {
       CLOG(WARNING) << "failed to decompress existing kernel object";
       return false;
     }
@@ -205,7 +163,7 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
       return false;
     }
 
-    if (!gunzipFile(compressed_module_path, module_path)) {
+    if (!GZFileHandle::Decompress(compressed_module_path, module_path)) {
       CLOG(WARNING) << "failed to decompress downloaded kernel object";
       return false;
     }
