@@ -36,12 +36,14 @@ extern "C" {
 #include "Logging.h"
 #include "Utility.h"
 
+static const std::string kDownloadDirectory = "/kernel-modules";
+
 namespace collector {
 
 std::string GetModuleVersion() {
-  std::ifstream file("/kernel-modules/MODULE_VERSION.txt");
+  std::ifstream file(kDownloadDirectory + "/MODULE_VERSION.txt");
   if (!file.is_open()) {
-    CLOG(WARNING) << "Failed to open '/kernel-modules/MODULE_VERSION.txt'";
+    CLOG(WARNING) << "Failed to open '" << kDownloadDirectory << "/MODULE_VERSION.txt'";
     return "";
   }
 
@@ -146,25 +148,48 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
 }
 
 bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& module_path, bool verbose) {
-  std::string compressed_module_path(module_path + ".gz");
+  std::string expected_path = kDownloadDirectory + kernel_module;
+  std::string expected_path_compressed = expected_path + ".gz";
   struct stat sb;
 
-  if (stat(compressed_module_path.c_str(), &sb) == 0) {
-    CLOG(DEBUG) << "kernel object file " << compressed_module_path << " already exists.";
-    if (!GZFileHandle::Decompress(compressed_module_path, module_path)) {
-      CLOG(WARNING) << "failed to decompress existing kernel object";
+  // first check for an existing compressed kernel object in the
+  // kernel-modules directory.
+  if (stat(expected_path_compressed.c_str(), &sb) == 0) {
+    CLOG(DEBUG) << "Found existing compressed kernel module.";
+    if (!GZFileHandle::DecompressFile(expected_path_compressed, module_path)) {
+      CLOG(ERROR) << "Failed to decompress " << expected_path_compressed;
       return false;
     }
-  } else if (stat(module_path.c_str(), &sb) == 0) {
-    CLOG(INFO) << "using existing kernel module: " << module_path;
-  } else {
-    if (!DownloadKernelObject(hostname, tls_config, kernel_module, compressed_module_path, verbose)) {
+  }
+  // then check if we have a decompressed object in the kernel-modules
+  // directory. If it exists, copy it to modules directory.
+  else if (stat(expected_path.c_str(), &sb) == 0) {
+    std::ifstream input_file(expected_path, std::ios::binary);
+    if (!input_file.is_open()) {
+      CLOG(ERROR) << "Failed to open " << expected_path << " - " << StrError();
+      return false;
+    }
+
+    std::ofstream output_file(module_path, std::ios::binary);
+    if (!output_file.is_open()) {
+      CLOG(ERROR) << "Failed to open " << module_path << " - " << StrError();
+      return false;
+    }
+
+    std::copy(std::istream_iterator<char>(input_file),
+              std::istream_iterator<char>(),
+              std::ostream_iterator<char>(output_file));
+  }
+  // Otherwise there is no module in local storage, so we should download it.
+  else {
+    CLOG(INFO) << "Local storage does not contain " << kernel_module;
+    if (!DownloadKernelObject(hostname, tls_config, kernel_module, expected_path_compressed, verbose)) {
       CLOG(WARNING) << "Unable to download kernel object " << kernel_module;
       return false;
     }
 
-    if (!GZFileHandle::Decompress(compressed_module_path, module_path)) {
-      CLOG(WARNING) << "failed to decompress downloaded kernel object";
+    if (!GZFileHandle::DecompressFile(expected_path_compressed, module_path)) {
+      CLOG(WARNING) << "Failed to decompress downloaded kernel object";
       return false;
     }
     CLOG(INFO) << "Successfully downloaded and decompressed " << module_path;

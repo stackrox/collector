@@ -34,6 +34,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <zlib.h>
 
 #include "Logging.h"
+#include "Utility.h"
 
 namespace collector {
 
@@ -188,16 +189,16 @@ class GZFileHandle : public ResourceWrapper<gzFile, GZFileHandle> {
 
   // Given a path to a gzip encoded file, and an output path, gzip decompresses the input
   // file and writes the decompressed bytes to the output path.
-  static bool Decompress(const std::string& input_path, const std::string& output_path) {
+  static bool DecompressFile(const std::string& input_path, const std::string& output_path) {
     GZFileHandle input = gzopen(input_path.c_str(), "rb");
     if (!input.valid()) {
-      CLOG(ERROR) << "Unable to open gzipped file " << input_path << " - " << strerror(errno);
+      CLOG(ERROR) << "Unable to open gzipped file " << input_path << " - " << StrError();
       return false;
     }
 
     std::ofstream output(output_path, std::ios::binary);
     if (!output.is_open()) {
-      CLOG(WARNING) << "Unable to open output file " << output_path;
+      CLOG(WARNING) << "Unable to open output file " << output_path << " - " << StrError();
       return false;
     }
 
