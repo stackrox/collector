@@ -392,7 +392,7 @@ jobs:
     - run:
         name: Determine versions requiring a custom builder flavor
         command: |
-          "${SOURCE_ROOT}/.circleci/determine-versions-requiring-a-custom-builder-flavor.sh" ~/kobuild-tmp
+          "${SOURCE_ROOT}/.circleci/kernels/determine-versions-requiring-a-custom-builder-flavor.sh" ~/kobuild-tmp
 
     - run:
         name: Separate local build tasks by flavor
