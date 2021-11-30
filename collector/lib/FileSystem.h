@@ -163,7 +163,7 @@ class GZFileHandle : public ResourceWrapper<gzFile, GZFileHandle> {
 
   // Unzips this GZFileHandle, writing the decompressed bytes to the
   // provided output stream.
-  bool Decompress(std::ostream& output_stream) {
+  bool Decompress(std::ostream* output_stream) {
     auto resource = get();
     const int BUFFER_SIZE = 8192;
 
@@ -176,7 +176,7 @@ class GZFileHandle : public ResourceWrapper<gzFile, GZFileHandle> {
         break;
       }
 
-      output_stream.write(buf.data(), bytes_read);
+      output_stream->write(buf.data(), bytes_read);
     } while (bytes_read == BUFFER_SIZE);
 
     if (bytes_read < 0 || !gzeof(resource)) {
@@ -202,7 +202,7 @@ class GZFileHandle : public ResourceWrapper<gzFile, GZFileHandle> {
       return false;
     }
 
-    return input.Decompress(output);
+    return input.Decompress(&output);
   }
 };
 
