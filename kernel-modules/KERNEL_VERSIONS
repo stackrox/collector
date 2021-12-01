@@ -1251,6 +1251,7 @@
 4.15.0-162-generic~16.04
 4.15.0-163-generic
 4.15.0-163-generic~16.04
+4.15.0-165-generic
 4.15.0-20-generic
 4.15.0-22-generic
 4.15.0-23-generic
@@ -2686,6 +2687,7 @@
 5.13.0-1007-azure
 5.13.0-1007-gcp
 5.13.0-1008-azure
+5.13.0-1009-azure
 5.13.0-11-generic
 5.13.0-12-generic
 5.13.0-13-generic
