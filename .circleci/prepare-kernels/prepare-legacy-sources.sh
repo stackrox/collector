@@ -9,13 +9,13 @@ fi
 
 # get fingerprint from github
 GH_KEY="$(ssh-keyscan github.com 2> /dev/null | grep ssh-rsa | head -n1)"
-GH_FINGERPRINT="$(echo ${GH_KEY} | ssh-keygen -lf - | cut -d" " -f2)"
+GH_FINGERPRINT="$(echo "${GH_KEY}" | ssh-keygen -lf - | cut -d" " -f2)"
 # Verify from: https://help.github.com/en/articles/githubs-ssh-key-fingerprints
 GH_FINGERPRINT_VERIFY="SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8"
-[[ "${GH_FINGERPRINT}" == "${GH_FINGERPRINT_VERIFY}" ]] || {
+if [[ "${GH_FINGERPRINT}" != "${GH_FINGERPRINT_VERIFY}" ]]; then
   echo >&2 "Unexpected SSH key fingerprint for github.com : ${GH_FINGERPRINT} != ${GH_FINGERPRINT_VERIFY}"
   exit 1
-}
+fi
 mkdir -p ~/.ssh
 echo "${GH_KEY}" > ~/.ssh/known_hosts
 
