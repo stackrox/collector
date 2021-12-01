@@ -24,11 +24,17 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef COLLECTOR_FILESYSTEM_H
 #define COLLECTOR_FILESYSTEM_H
 
+#include <array>
 #include <cstdio>
 #include <dirent.h>
 #include <fcntl.h>
+#include <fstream>
+#include <string>
 #include <unistd.h>
 #include <zlib.h>
+
+#include "Logging.h"
+#include "Utility.h"
 
 namespace collector {
 
@@ -137,7 +143,7 @@ class GZFileHandle : public ResourceWrapper<gzFile, GZFileHandle> {
   static constexpr gzFile Invalid() { return nullptr; }
   static bool Close(gzFile file) { return (gzclose(file) == Z_OK); }
 
-  const std::string& error_msg() {
+  const std::string& ErrorMessage() {
     int errnum = Z_OK;
     const char* gz_error = gzerror(get(), &errnum);
 
@@ -154,8 +160,52 @@ class GZFileHandle : public ResourceWrapper<gzFile, GZFileHandle> {
 
     return error_msg_;
   };
+
+  // Unzips this GZFileHandle, writing the decompressed bytes to the
+  // provided output stream.
+  bool Decompress(std::ostream* output_stream) {
+    auto resource = get();
+    const int BUFFER_SIZE = 8192;
+
+    std::array<char, BUFFER_SIZE> buf = {'\0'};
+    int bytes_read;
+    do {
+      bytes_read = gzread(resource, buf.data(), BUFFER_SIZE);
+
+      if (bytes_read <= 0) {
+        break;
+      }
+
+      output_stream->write(buf.data(), bytes_read);
+    } while (bytes_read == BUFFER_SIZE);
+
+    if (bytes_read < 0 || !gzeof(resource)) {
+      CLOG(ERROR) << "Failed decompressing file " << ErrorMessage();
+      return false;
+    }
+
+    return true;
+  }
+
+  // Given a path to a gzip encoded file, and an output path, gzip decompresses the input
+  // file and writes the decompressed bytes to the output path.
+  static bool DecompressFile(const std::string& input_path, const std::string& output_path) {
+    GZFileHandle input = gzopen(input_path.c_str(), "rb");
+    if (!input.valid()) {
+      CLOG(ERROR) << "Unable to open gzipped file " << input_path << " - " << StrError();
+      return false;
+    }
+
+    std::ofstream output(output_path, std::ios::binary);
+    if (!output.is_open()) {
+      CLOG(WARNING) << "Unable to open output file " << output_path << " - " << StrError();
+      return false;
+    }
+
+    return input.Decompress(&output);
+  }
 };
 
 }  // namespace collector
 
-#endif  //COLLECTOR_FILESYSTEM_H
+#endif  // COLLECTOR_FILESYSTEM_H

@@ -36,12 +36,14 @@ extern "C" {
 #include "Logging.h"
 #include "Utility.h"
 
+static const std::string kKernelModulesDir = "/kernel-modules";
+
 namespace collector {
 
 std::string GetModuleVersion() {
-  std::ifstream file("/kernel-modules/MODULE_VERSION.txt");
+  std::ifstream file(kKernelModulesDir + "/MODULE_VERSION.txt");
   if (!file.is_open()) {
-    CLOG(WARNING) << "Failed to open '/kernel-modules/MODULE_VERSION.txt'";
+    CLOG(WARNING) << "Failed to open '" << kKernelModulesDir << "/MODULE_VERSION.txt'";
     return "";
   }
 
@@ -146,51 +148,57 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
 }
 
 bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& module_path, bool verbose) {
-  std::string compressed_module_path(module_path + ".gz");
+  std::string expected_path = kKernelModulesDir + "/" + kernel_module;
+  std::string expected_path_compressed = expected_path + ".gz";
+  struct stat sb;
 
-  if (!DownloadKernelObject(hostname, tls_config, kernel_module, compressed_module_path, verbose)) {
-    CLOG(WARNING) << "Unable to download kernel object " << kernel_module;
-    return false;
+  // first check for an existing compressed kernel object in the
+  // kernel-modules directory.
+  if (stat(expected_path_compressed.c_str(), &sb) == 0) {
+    CLOG(DEBUG) << "Found existing compressed kernel module.";
+    if (!GZFileHandle::DecompressFile(expected_path_compressed, module_path)) {
+      CLOG(ERROR) << "Failed to decompress " << expected_path_compressed;
+      return false;
+    }
   }
-
-  // Decompress the file
-  GZFileHandle input = gzopen(compressed_module_path.c_str(), "rb");
-  if (!input.valid()) {
-    CLOG(WARNING) << "Unable to open gzipped file " << compressed_module_path << " - " << strerror(errno);
-    return false;
-  }
-
-  std::ofstream output(module_path, std::ios::binary);
-  if (!output.is_open()) {
-    CLOG(WARNING) << "Unable to open output file " << module_path;
-    return false;
-  }
-
-  const int BUFFER_SIZE = 8192;
-  std::array<char, BUFFER_SIZE> buf = {'\0'};
-  int bytes_read;
-  do {
-    bytes_read = gzread(input.get(), buf.data(), BUFFER_SIZE);
-
-    if (bytes_read <= 0) {
-      break;
+  // then check if we have a decompressed object in the kernel-modules
+  // directory. If it exists, copy it to modules directory.
+  else if (stat(expected_path.c_str(), &sb) == 0) {
+    std::ifstream input_file(expected_path, std::ios::binary);
+    if (!input_file.is_open()) {
+      CLOG(ERROR) << "Failed to open " << expected_path << " - " << StrError();
+      return false;
     }
 
-    output.write(buf.data(), bytes_read);
+    std::ofstream output_file(module_path, std::ios::binary);
+    if (!output_file.is_open()) {
+      CLOG(ERROR) << "Failed to open " << module_path << " - " << StrError();
+      return false;
+    }
 
-  } while (bytes_read == BUFFER_SIZE);
+    std::copy(std::istream_iterator<char>(input_file),
+              std::istream_iterator<char>(),
+              std::ostream_iterator<char>(output_file));
+  }
+  // Otherwise there is no module in local storage, so we should download it.
+  else {
+    CLOG(INFO) << "Local storage does not contain " << kernel_module;
+    if (!DownloadKernelObject(hostname, tls_config, kernel_module, expected_path_compressed, verbose)) {
+      CLOG(WARNING) << "Unable to download kernel object " << kernel_module;
+      return false;
+    }
 
-  if (bytes_read < 0 || !gzeof(input.get())) {
-    CLOG(WARNING) << "Failed decompressing file " << input.error_msg();
-    return false;
+    if (!GZFileHandle::DecompressFile(expected_path_compressed, module_path)) {
+      CLOG(WARNING) << "Failed to decompress downloaded kernel object";
+      return false;
+    }
+    CLOG(INFO) << "Successfully downloaded and decompressed " << module_path;
   }
 
   if (chmod(module_path.c_str(), 0444)) {
     CLOG(WARNING) << "Failed to set file permissions for " << module_path << " - " << strerror(errno);
     return false;
   }
-
-  CLOG(INFO) << "Successfully downloaded and decompressed " << module_path;
 
   return true;
 }
