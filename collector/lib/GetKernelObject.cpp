@@ -186,16 +186,18 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
   // Otherwise there is no module in local storage, so we should download it.
   else {
     CLOG(INFO) << "Local storage does not contain " << kernel_module;
-    if (!DownloadKernelObject(hostname, tls_config, kernel_module, expected_path_compressed, verbose)) {
-      CLOG(WARNING) << "Unable to download kernel object " << kernel_module;
+    std::string downloadPath = module_path + ".gz";
+    if (!DownloadKernelObject(hostname, tls_config, kernel_module, downloadPath, verbose)) {
+      CLOG(WARNING) << "Unable to download kernel object " << kernel_module << " to " << downloadPath;
       return false;
     }
 
-    if (!GZFileHandle::DecompressFile(expected_path_compressed, module_path)) {
+    if (!GZFileHandle::DecompressFile(downloadPath, module_path)) {
       CLOG(WARNING) << "Failed to decompress downloaded kernel object";
       return false;
     }
     CLOG(INFO) << "Successfully downloaded and decompressed " << module_path;
+    (void)unlink(downloadPath.c_str());
   }
 
   if (chmod(module_path.c_str(), 0444)) {
