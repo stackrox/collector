@@ -154,8 +154,10 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
 
   // first check for an existing compressed kernel object in the
   // kernel-modules directory.
+  CLOG(DEBUG) << "Checking for existence of " << expected_path_compressed
+              << " and " << expected_path;
   if (stat(expected_path_compressed.c_str(), &sb) == 0) {
-    CLOG(DEBUG) << "Found existing compressed kernel module.";
+    CLOG(DEBUG) << "Found existing compressed kernel object.";
     if (!GZFileHandle::DecompressFile(expected_path_compressed, module_path)) {
       CLOG(ERROR) << "Failed to decompress " << expected_path_compressed;
       return false;
@@ -164,6 +166,7 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
   // then check if we have a decompressed object in the kernel-modules
   // directory. If it exists, copy it to modules directory.
   else if (stat(expected_path.c_str(), &sb) == 0) {
+    CLOG(DEBUG) << "Found existing kernel object " << expected_path;
     std::ifstream input_file(expected_path, std::ios::binary);
     if (!input_file.is_open()) {
       CLOG(ERROR) << "Failed to open " << expected_path << " - " << StrError();
