@@ -23,3 +23,7 @@ else ifeq ($(USE_VALGRIND),true)
 endif
 
 export COLLECTOR_PRE_ARGUMENTS
+
+ifeq ($(DOCS_PORT),)
+DOCS_PORT:=8080
+endif

@@ -115,6 +115,18 @@ clean: teardown-dev clean-docs
 docs:
 	make -C docs html
 
+.PHONY: serve-docs
+serve-docs: docs
+	docker run --rm -it -d \
+		--name collector_docs \
+		-v $(CURDIR)/docs/build/html:/usr/share/nginx/html:ro \
+		-p $(DOCS_PORT):80 \
+		nginx:alpine
+
+.PHONY: stop-docs
+stop-docs:
+	docker stop collector_docs
+
 .PHONY: clean-docs
-clean-docs:
+clean-docs: stop-docs
 	make -C docs clean
