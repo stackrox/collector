@@ -108,5 +108,13 @@ teardown-dev:
 	-docker rm -fv collector_remote_dev
 
 .PHONY: clean
-clean: teardown-dev
+clean: teardown-dev clean-docs
 	make -C collector clean
+
+.PHONY: docs
+docs:
+	make -C docs doxygen
+
+.PHONY: clean-docs
+clean-docs:
+	make -C docs clean

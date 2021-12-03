@@ -1,0 +1,6 @@
+FROM fedora:35
+
+RUN dnf -y update && \
+	dnf -y install doxygen
+
+ENTRYPOINT [ "doxygen" ]
