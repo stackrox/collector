@@ -20,6 +20,7 @@ for version_dir in "${MD_DIR}/collector-versions"/*; do
     docker pull "$collector_image"
     tmp_output="$(mktemp)"
 
+    echo "collector_image=${collector_image}"
     docker run --rm --entrypoint /bin/bash "$collector_image" -c '
         cd /kernel-modules &&
         head -n 1 MODULE_VERSION.txt &&
