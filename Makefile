@@ -113,7 +113,7 @@ clean: teardown-dev clean-docs
 
 .PHONY: docs
 docs:
-	make -C docs doxygen
+	make -C docs html
 
 .PHONY: clean-docs
 clean-docs:
