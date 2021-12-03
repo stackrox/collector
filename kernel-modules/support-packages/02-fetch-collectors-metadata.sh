@@ -26,7 +26,7 @@ for version_dir in "${MD_DIR}/collector-versions"/*; do
         head -n 1 MODULE_VERSION.txt &&
         ls *.gz
     ' >"$tmp_output"
-    docker rm -fv "$collector_image"
+    docker image rm --force "$collector_image"
 
     head -n 1 "$tmp_output" >"${version_dir}/MODULE_VERSION"
     tail -n +2 "$tmp_output" >"${version_dir}/INVENTORY"
