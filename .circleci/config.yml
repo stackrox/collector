@@ -61,7 +61,7 @@ executors:
         default: small
     resource_class: << parameters.resource_class >>
     docker:
-      - image: quay.io/rhacs-eng/apollo-ci:snapshot-env-check-0.3.19-42-g5b17c7c565
+      - image: quay.io/rhacs-eng/apollo-ci:snapshot-env-check-0.3.19-43-g079c085a90
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
