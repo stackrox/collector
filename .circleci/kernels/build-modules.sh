@@ -21,5 +21,6 @@ for task_file in ~/kobuild-tmp/local-build-tasks.*; do
 done
 sudo chown -R "$(id -u):$(id -g)" "$shard_output_dir"
 find "${shard_output_dir}/FAILURES" -type d -empty -depth -exec rmdir {} \;
-[[ ! -d "${shard_output_dir}/FAILURES" ]] \
-  || mv "${shard_output_dir}/FAILURES" "${shard_output_dir}/../FAILURES-${CIRCLE_NODE_INDEX}"
+if [[ -d "${shard_output_dir}/FAILURES" ]]; then
+  mv "${shard_output_dir}/FAILURES" "${shard_output_dir}/../FAILURES-${CIRCLE_NODE_INDEX}"
+fi
