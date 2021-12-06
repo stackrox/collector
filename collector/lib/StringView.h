@@ -75,9 +75,8 @@ class StringView {
   std::vector<std::string> split(char delim = ' ') const {
     std::vector<std::string> parts;
     size_type offset = 0;
-    size_type n = find(delim);
 
-    for (; n != npos; n = find(delim, offset)) {
+    for (size_type n = find(delim); n != npos; n = find(delim, offset)) {
       parts.push_back(substr(offset, n - offset).str());
       offset = n + 1;
     }
