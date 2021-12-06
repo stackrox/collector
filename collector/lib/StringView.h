@@ -25,7 +25,9 @@ You should have received a copy of the GNU General Public License along with thi
 #define COLLECTOR_STRINGVIEW_H
 
 #include <cstring>
+#include <ostream>
 #include <string>
+#include <vector>
 
 namespace collector {
 class StringView {
@@ -62,8 +64,28 @@ class StringView {
     if (pos >= n_) return {};
     const char* new_p = p_ + pos;
     size_type new_n = n_ - pos;
+    if (count == npos) return {new_p, new_n};
+    if (count < 0) return {};
     if (new_n > count) new_n = count;
-    return StringView(new_p, new_n);
+    return {new_p, new_n};
+  }
+
+  // Splits this view into string copies of parts of the data, delimited
+  // by the given character.
+  std::vector<std::string> split(char delim = ' ') const {
+    std::vector<std::string> parts;
+    size_type offset = 0;
+
+    for (size_type n = find(delim); n != npos; n = find(delim, offset)) {
+      parts.push_back(substr(offset, n - offset).str());
+      offset = n + 1;
+    }
+
+    // Push remainder of the string. This may be empty if the string
+    // ends with a delimiter.
+    parts.push_back(substr(offset).str());
+
+    return parts;
   }
 
   void remove_prefix(size_type n) {

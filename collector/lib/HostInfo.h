@@ -103,6 +103,16 @@ struct KernelVersion {
     return true;
   }
 
+  // Provides a simple version of the release string
+  // containing only the kernel, major, and minor versions.
+  std::string ShortRelease() {
+    std::stringstream ss;
+    ss << kernel << "."
+       << major << "."
+       << minor;
+    return ss.str();
+  }
+
   // the kernel version
   int kernel;
   // the kernel major version
@@ -162,6 +172,11 @@ class HostInfo {
   // Whether we're running on Docker Desktop
   bool IsDockerDesktop() {
     return GetDistro() == "Docker Desktop";
+  }
+
+  // Whether we're running on Ubuntu
+  bool IsUbuntu() {
+    return GetDistro() == "ubuntu";
   }
 
   // Reads a named value from the os-release file (either in /etc/ or in /usr/lib)

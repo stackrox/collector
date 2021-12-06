@@ -42,9 +42,69 @@ extern "C" {
 
 #include "HostInfo.h"
 #include "Logging.h"
+#include "StringView.h"
 #include "Utility.h"
 
 namespace collector {
+
+namespace {
+
+// Retrieves the ubuntu backport version from the host kernel's release
+// string. If the host is not Ubuntu, or it is unable to find an appropriate
+// backport version, this function returns an empty string.
+std::string getUbuntuBackport(HostInfo& host) {
+  if (!host.IsUbuntu()) {
+    return "";
+  }
+
+  static const char* candidates[] = {
+      "~16.04",
+      "~20.04",
+  };
+
+  auto kernel = host.GetKernelVersion();
+  for (auto candidate : candidates) {
+    if (kernel.version.find(candidate) != std::string::npos) {
+      return kernel.release + candidate;
+    }
+  }
+
+  return "";
+}
+
+// Normalizes this host's release string into something collector can use
+// to download appropriate kernel objects from the webserver. If the release
+// string does not require normalization, it is simply returned.
+std::string normalizeReleaseString(HostInfo& host) {
+  auto kernel = host.GetKernelVersion();
+  if (host.IsCOS()) {
+    std::string release = kernel.release;
+    // remove the + from the end of the kernel version
+    if (release[release.size() - 1] == '+') {
+      release.erase(release.size() - 1);
+    }
+    return release + "-" + host.GetBuildID() + "-" + host.GetOSID();
+  }
+
+  if (host.IsDockerDesktop()) {
+    auto smp = kernel.release.find("SMP ");
+    if (smp == std::string::npos) {
+      CLOG(FATAL) << "Unable to parse docker desktop kernel release: "
+                  << "'" << kernel.release << "'";
+    }
+
+    std::stringstream timestamp(kernel.release.substr(smp + 4));
+    std::tm tm{};
+    timestamp >> std::get_time(&tm, "%a %b %d %H:%M:%S %Z %Y");
+    timestamp.clear();
+    timestamp << std::put_time(&tm, "+%Y-%m-%d-%H-%M-%S");
+    return kernel.ShortRelease() + "-dockerdesktop-" + timestamp.str();
+  }
+
+  return kernel.release;
+}
+
+}  // namespace
 
 static constexpr int kMsgBufSize = 4096;
 
@@ -173,12 +233,24 @@ std::string GetHostname() {
   return info.GetHostname();
 }
 
-const char* GetKernelCandidates() {
+std::vector<std::string> GetKernelCandidates() {
   const char* kernel_candidates = std::getenv("KERNEL_CANDIDATES");
-  if (kernel_candidates && *kernel_candidates) return kernel_candidates;
+  if (kernel_candidates && *kernel_candidates) {
+    StringView sview(kernel_candidates);
+    return sview.split(' ');
+  }
 
-  CLOG(ERROR) << "Failed to determine kernel object candidates, environment variable KERNEL_CANDIDATES not set";
-  return "";
+  HostInfo& host = HostInfo::Instance();
+  std::vector<std::string> candidates{normalizeReleaseString(host)};
+
+  if (host.IsUbuntu()) {
+    std::string backport = getUbuntuBackport(host);
+    if (!backport.empty()) {
+      candidates.push_back(backport);
+    }
+  }
+
+  return candidates;
 }
 
 const char* GetModuleDownloadBaseURL() {
