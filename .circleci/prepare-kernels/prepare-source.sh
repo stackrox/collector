@@ -17,6 +17,6 @@ versions=(~/kobuild-tmp/versions-src/*)
 version="$(basename "${versions[0]}" .tgz)"
 MODULE_VERSION="$version"
 
-echo export MODULE_VERSION="${MODULE_VERSION}" >> "${WORKSPACE_ROOT}/shared-env"
-echo export MODULE_VERSION="${MODULE_VERSION}" >> "$BASH_ENV"
+echo "export MODULE_VERSION=""${MODULE_VERSION}" >> "${WORKSPACE_ROOT}/shared-env"
+echo "export MODULE_VERSION=""${MODULE_VERSION}" >> "$BASH_ENV"
 echo "Building modules for module version $version"

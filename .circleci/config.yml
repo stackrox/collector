@@ -86,12 +86,12 @@ commands:
         name: Install and configure gcloud
         working_directory: ~/.config/gcloud
         command: |
-          "${SOURCE_ROOT}/.circleci/install-and-configure-gcloud.sh"
+          "${CI_ROOT}/gcloud-init/install-and-configure-gcloud.sh"
 
     - run:
         name: Setup GCP env
         command: |
-          "${SOURCE_ROOT}/.circleci/setup-gcp-env.sh" "${<< parameters.service-account-env >>}" << parameters.bucket-permission-check >>
+          "${CI_ROOT}/gcloud-init/setup-gcp-env.sh" "${<< parameters.service-account-env >>}" << parameters.bucket-permission-check >>
 
   docker-login-pull:
     steps:
@@ -155,6 +155,7 @@ jobs:
           cat >~/workspace/shared-env \<<-"EOF"
             export GOPATH="${WORKSPACE_ROOT}/go"
             export SOURCE_ROOT="${GOPATH}/src/github.com/stackrox/collector"
+            export CI_ROOT="${SOURCE_ROOT/.circleci}"
             export COLLECTOR_SOURCE_ROOT="${SOURCE_ROOT}/collector"
             export PATH="${PATH}:${GOPATH}/bin:${WORKSPACE_ROOT}/bin"
             export MAX_LAYER_MB=300
@@ -277,7 +278,7 @@ jobs:
     - run:
         name: Save collector-builder image
         command: |
-          "${SOURCE_ROOT}/.circleci/save-collector-builder-image.sh"
+          "${CI_ROOT}/save-collector-builder-image.sh"
 
   prepare-kernels:
     <<: *defaultImage
@@ -293,17 +294,17 @@ jobs:
     - run:
         name: Prepare source
         command: |
-          "${SOURCE_ROOT}/.circleci/prepare-kernels/prepare-source.sh"
+          "${CI_ROOT}/prepare-kernels/prepare-source.sh"
 
     - run:
         name: Prepare legacy sources
         command: |
-          "${SOURCE_ROOT}/.circleci/prepare-kernels/prepare-legacy-sources.sh"
+          "${CI_ROOT}/prepare-kernels/prepare-legacy-sources.sh"
 
     - run:
         name: Prepare Kernel module build cache lookup
         command: |
-          "${SOURCE_ROOT}/.circleci/prepare-kernels/prepare-kernel-module-build-cache-lookup.sh"
+          "${CI_ROOT}/prepare-kernels/prepare-kernel-module-build-cache-lookup.sh"
 
     - restore_cache:
         name: Restore Kernel module build cache
@@ -314,12 +315,12 @@ jobs:
     - run:
         name: Unpack module sources
         command: |
-          "${SOURCE_ROOT}/.circleci/prepare-kernels/unpack-module-sources.sh"
+          "${CI_ROOT}/prepare-kernels/unpack-module-sources.sh"
 
     - run:
         name: Copy cached modules to build output
         command: |
-          "${SOURCE_ROOT}/.circleci/prepare-kernels/copy-cached-modules-to-build-output.sh"
+          "${CI_ROOT}/prepare-kernels/copy-cached-modules-to-build-output.sh"
 
     - gcloud-init
 
@@ -331,32 +332,32 @@ jobs:
     - run:
         name: Download missing modules for CURRENT version from gcloud bucket
         command: |
-          "${SOURCE_ROOT}/.circleci/prepare-kernels/download-missing-modules-for-current-version-from-gcloud-bucket.sh"
+          "${CI_ROOT}/prepare-kernels/download-missing-modules-for-current-version-from-gcloud-bucket.sh"
 
     - run:
         name: Patch module sources
         command: |
-          "${SOURCE_ROOT}/.circleci/prepare-kernels/patch-module-sources.sh"
+          "${CI_ROOT}/prepare-kernels/patch-module-sources.sh"
 
     - run:
         name: Compile list of cached modules for CURRENT module version
         command: |
-          "${SOURCE_ROOT}/.circleci/prepare-kernels/compile-list-of-cached-modules-for-current-module-version.sh"
+          "${CI_ROOT}/prepare-kernels/compile-list-of-cached-modules-for-current-module-version.sh"
 
     - run:
         name: Compile list of existing modules for LEGACY module versions
         command: |
-          "${SOURCE_ROOT}/.circleci/prepare-kernels/compile-list-of-existing-modules-for-legacy-module-versions.sh"
+          "${CI_ROOT}/prepare-kernels/compile-list-of-existing-modules-for-legacy-module-versions.sh"
 
     - run:
         name: Generate list of all (source, kernel version) build combinations
         command: |
-          "${SOURCE_ROOT}/.circleci/prepare-kernels/generate-list-of-all-build-combinations.sh"
+          "${CI_ROOT}/prepare-kernels/generate-list-of-all-build-combinations.sh"
 
     - run:
         name: Print list of all (source, kernel version) build combinations
         command: |
-          "${SOURCE_ROOT}/.circleci/prepare-kernels/print-list-of-all-build-combinations.sh"
+          "${CI_ROOT}/prepare-kernels/print-list-of-all-build-combinations.sh"
 
     - store_artifacts:
         path: ~/kobuild-tmp
@@ -381,23 +382,23 @@ jobs:
     - run:
         name: Determine tasks for current shard
         command: |
-          "${SOURCE_ROOT}/.circleci/kernels/determine-tasks-for-current-shard.sh"
+          "${CI_ROOT}/kernels/determine-tasks-for-current-shard.sh"
 
     - gcloud-init
     - run:
         name: Download required packages
         command: |
-          "${SOURCE_ROOT}/.circleci/kernels/download-required-packages.sh" ~/kobuild-tmp
+          "${CI_ROOT}/kernels/download-required-packages.sh" ~/kobuild-tmp
 
     - run:
         name: Determine versions requiring a custom builder flavor
         command: |
-          "${SOURCE_ROOT}/.circleci/kernels/determine-versions-requiring-a-custom-builder-flavor.sh" ~/kobuild-tmp
+          "${CI_ROOT}/kernels/determine-versions-requiring-a-custom-builder-flavor.sh" ~/kobuild-tmp
 
     - run:
         name: Separate local build tasks by flavor
         command: |
-          "${SOURCE_ROOT}/.circleci/kernels/separate-local-build-tasks-by-flavor.sh"
+          "${CI_ROOT}/kernels/separate-local-build-tasks-by-flavor.sh"
 
     - docker-login-push
 
@@ -409,7 +410,7 @@ jobs:
     - run:
         name: Build builder image
         command: |
-          "${SOURCE_ROOT}/.circleci/kernels/build-builder-image.sh"
+          "${CI_ROOT}/kernels/build-builder-image.sh"
 
     - run:
         name: Upload builder cache image
@@ -422,12 +423,12 @@ jobs:
     - run:
         name: Build modules
         command: |
-          "${SOURCE_ROOT}/.circleci/kernels/build-modules.sh"
+          "${CI_ROOT}/kernels/build-modules.sh"
 
     - run:
         name: Print built modules
         command: |
-          "${SOURCE_ROOT}/.circleci/kernels/print-built-modules.sh"
+          "${CI_ROOT}/kernels/print-built-modules.sh"
 
     - persist_to_workspace:
         root: ~/workspace
@@ -460,7 +461,7 @@ jobs:
         name: Run collector unit tests
         command: |
           make -C "${SOURCE_ROOT}" unittest "USE_VALGRIND=$VALGRIND_UNIT_TESTS" "USE_HELGRIND=$HELGRIND_UNIT_TESTS" 2>&1 | tee "$UNITTEST_OUTPUT_FILE"
-          "${SOURCE_ROOT}/.circleci/check-file-for-valgrind-errors.sh" "$UNITTEST_OUTPUT_FILE" "$VALGRIND_UNIT_TESTS" "$HELGRIND_UNIT_TESTS"
+          "${CI_ROOT}/check-file-for-valgrind-errors.sh" "$UNITTEST_OUTPUT_FILE" "$VALGRIND_UNIT_TESTS" "$HELGRIND_UNIT_TESTS"
 
     - persist_to_workspace:
         root: ~/workspace
@@ -909,7 +910,7 @@ jobs:
           log_dir=~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
           for file in "$log_dir"/*-collector.log
           do
-            "${SOURCE_ROOT}/.circleci/check-file-for-valgrind-errors.sh" "$file" "$VALGRIND_INTEGRATION_TESTS" "$HELGRIND_INTEGRATION_TESTS"
+            "${CI_ROOT}/check-file-for-valgrind-errors.sh" "$file" "$VALGRIND_INTEGRATION_TESTS" "$HELGRIND_INTEGRATION_TESTS"
           done
 
     - store_test_results:
@@ -964,7 +965,7 @@ jobs:
         name: "Setup env vars"
         command: |
           COLLECTOR_REPO="stackrox/collector"
-          if "${SOURCE_ROOT}/.circleci/pr_has_label.sh" ci-run-against-ubi; then
+          if "${CI_ROOT}/pr_has_label.sh" ci-run-against-ubi; then
             COLLECTOR_REPO="stackrox/collector-test-cpaas"
           fi
           TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
@@ -1001,7 +1002,7 @@ jobs:
         command: |
           <<^ parameters.dockerized >>exit 0<</ parameters.dockerized >>
 
-          IMAGE_FAMILY="<< parameters.image_family >>" "${SOURCE_ROOT}/.circleci/build-image-to-test.sh"
+          IMAGE_FAMILY="<< parameters.image_family >>" "${CI_ROOT}/build-image-to-test.sh"
 
     - run:
         name: "Running integration tests"
@@ -1024,7 +1025,7 @@ jobs:
           log_dir=~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
           for file in "$log_dir"/*-collector.log
           do
-            "${SOURCE_ROOT}/.circleci/check-file-for-valgrind-errors.sh" "$file" "$VALGRIND_INTEGRATION_TESTS" "$HELGRIND_INTEGRATION_TESTS"
+            "${CI_ROOT}/check-file-for-valgrind-errors.sh" "$file" "$VALGRIND_INTEGRATION_TESTS" "$HELGRIND_INTEGRATION_TESTS"
           done
 
     - run:
@@ -1096,7 +1097,7 @@ jobs:
           export COLLECTOR_TAG="${COLLECTOR_TAG}"
           export COLLECTOR_BUILDER_TAG="${COLLECTOR_BUILDER_TAG}"
           export PERF_TABLE=$(cat ~/workspace/benchmark.md)
-          hub-comment -template-file "${SOURCE_ROOT}/.circleci/performance-comment-template.tpl"
+          hub-comment -template-file "${CI_ROOT}/performance-comment-template.tpl"
 
     - store_artifacts:
         path: ~/workspace/all-perf.json
