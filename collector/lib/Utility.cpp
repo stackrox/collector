@@ -87,13 +87,13 @@ std::string normalizeReleaseString(HostInfo& host) {
   }
 
   if (host.IsDockerDesktop()) {
-    auto smp = kernel.release.find("SMP ");
+    auto smp = kernel.version.find("SMP ");
     if (smp == std::string::npos) {
-      CLOG(FATAL) << "Unable to parse docker desktop kernel release: "
-                  << "'" << kernel.release << "'";
+      CLOG(FATAL) << "Unable to parse docker desktop kernel version: "
+                  << "'" << kernel.version << "'";
     }
 
-    std::stringstream timestamp(kernel.release.substr(smp + 4));
+    std::stringstream timestamp(kernel.version.substr(smp + 4));
     std::tm tm{};
     timestamp >> std::get_time(&tm, "%a %b %d %H:%M:%S %Z %Y");
     timestamp.clear();
