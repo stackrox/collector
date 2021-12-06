@@ -155,7 +155,7 @@ jobs:
           cat >~/workspace/shared-env \<<-"EOF"
             export GOPATH="${WORKSPACE_ROOT}/go"
             export SOURCE_ROOT="${GOPATH}/src/github.com/stackrox/collector"
-            export CI_ROOT="${SOURCE_ROOT/.circleci}"
+            export CI_ROOT="${SOURCE_ROOT}/.circleci"
             export COLLECTOR_SOURCE_ROOT="${SOURCE_ROOT}/collector"
             export PATH="${PATH}:${GOPATH}/bin:${WORKSPACE_ROOT}/bin"
             export MAX_LAYER_MB=300
@@ -278,7 +278,7 @@ jobs:
     - run:
         name: Save collector-builder image
         command: |
-          "${CI_ROOT}/save-collector-builder-image.sh"
+          "${CI_ROOT}/builder/save-collector-builder-image.sh"
 
   prepare-kernels:
     <<: *defaultImage
