@@ -95,9 +95,13 @@ std::string normalizeReleaseString(HostInfo& host) {
 
     std::stringstream timestamp(kernel.version.substr(smp + 4));
     std::tm tm{};
-    timestamp >> std::get_time(&tm, "%a %b %d %H:%M:%S %Z %Y");
+    // Currently assuming that all docker desktop kernels have UTC timestamps
+    // to simplify parsing for this edge case. std::get_time does not support parsing
+    // timezone information (%Z)
+    timestamp >> std::get_time(&tm, "%a %b %d %H:%M:%S UTC %Y");
     timestamp.clear();
-    timestamp << std::put_time(&tm, "+%Y-%m-%d-%H-%M-%S");
+    timestamp.str("");
+    timestamp << std::put_time(&tm, "%Y-%m-%d-%H-%M-%S");
     return kernel.ShortRelease() + "-dockerdesktop-" + timestamp.str();
   }
 
