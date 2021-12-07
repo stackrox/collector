@@ -1419,7 +1419,7 @@ jobs:
               circleci step halt
             fi
 
-      - setup_remote_docker
+      - setup_remote_docker:
           version: 20.10.11
       - stackrox-io-login
       - gcloud-init
