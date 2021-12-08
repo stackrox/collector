@@ -52,6 +52,9 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 		"/host/usr/lib:ro":             "/usr/lib/",
 		"/host/sys:ro":                 "/sys/",
 		"/host/dev:ro":                 "/dev",
+		// /module is an anonymous volume to reflect the way collector
+		// is usually run in kubernetes (with in-memory volume for /module)
+		"/module":                      "",
 	}
 
 	collectorImage := ReadEnvVar("COLLECTOR_IMAGE")
@@ -179,7 +182,12 @@ func (c *collectorManager) launchCollector() error {
 	}
 
 	for dst, src := range c.Mounts {
-		cmd = append(cmd, "-v", src+":"+dst)
+		mount := src + ":" + dst
+		if src == "" {
+			// allows specification of anonymous volumes
+			mount = dst
+		}
+		cmd = append(cmd, "-v", mount)
 	}
 	for k, v := range c.Env {
 		cmd = append(cmd, "--env", k+"="+v)

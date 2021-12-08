@@ -250,11 +250,12 @@ int main(int argc, char** argv) {
     useGRPC = true;
   }
 
-  if (!MakeDir("/module")) {
-    CLOG(FATAL) << "Failed to create /module directory, unable to download or install kernel objects.";
-  }
-
   if (config.AlternateProbeDownload()) {
+    struct stat st;
+    if (stat("/module", &st) != 0 || !S_ISDIR(st.st_mode)) {
+      CLOG(FATAL) << "Unexpected image state. /module directory does not exist.";
+    }
+
     std::vector<std::string> kernel_candidates = GetKernelCandidates();
 
     if (kernel_candidates.empty()) {

@@ -66,10 +66,6 @@ std::vector<std::string> GetKernelCandidates();
 // Get base URL for kernel modules downloads from MODULE_DOWNLOAD_BASE_URL
 const char* GetModuleDownloadBaseURL();
 
-// Creates a directory at the given path. All preceding path elements must
-// exist; this function does not attempt to construct the entire path.
-bool MakeDir(const char* path);
-
 namespace impl {
 
 inline void StrAppend(std::ostringstream* os) {}
