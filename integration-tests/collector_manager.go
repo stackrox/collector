@@ -1,8 +1,8 @@
 package integrationtests
 
 import (
-	"github.com/hashicorp/go-multierror"
 	"fmt"
+	"github.com/hashicorp/go-multierror"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -33,7 +33,7 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 		collectionMethod = "kernel_module"
 	}
 	offlineMode, _ := strconv.ParseBool(ReadEnvVarWithDefault("COLLECTOR_OFFLINE_MODE", "false"))
-	alternateProbeDownload := ReadEnvVar("ROX_COLLECTOR_ALT_PROBE_DOWNLOAD")
+	alternateProbeDownload := ReadEnvVarWithDefault("ROX_COLLECTOR_ALT_PROBE_DOWNLOAD", "true")
 
 	env := map[string]string{
 		"GRPC_SERVER":                      "localhost:9999",
