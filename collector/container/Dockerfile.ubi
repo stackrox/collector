@@ -118,9 +118,6 @@ EXPOSE 8080 9090
 RUN rm -rf /etc/pki/entitlement && \
     rm -rf /etc/rhsm
 
-# Create the module directory, for downloading kernel objects
-RUN mkdir -p /module
-
 # hadolint ignore=DL3059
 RUN collector --help || if [ $? -ne 1 ]; then echo "Invalid collector build"; exit 1; fi
 

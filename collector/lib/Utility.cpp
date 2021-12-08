@@ -34,6 +34,7 @@ extern "C" {
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <uuid/uuid.h>
 }
@@ -265,6 +266,19 @@ const char* GetModuleDownloadBaseURL() {
 
   CLOG(DEBUG) << "MODULE_DOWNLOAD_BASE_URL not set";
   return "";
+}
+
+bool MakeDir(const char* path) {
+  // create the directory as rwxr-xr-x so that it is only
+  // writable by us (root).
+  if (mkdir(path, 0755) != 0) {
+    if (errno != EEXIST) {
+      CLOG(ERROR) << "Failed to create directory '" << path << "': " << StrError();
+      return false;
+    }
+    CLOG(DEBUG) << "Directory '" << path << "' already exists.";
+  }
+  return true;
 }
 
 }  // namespace collector

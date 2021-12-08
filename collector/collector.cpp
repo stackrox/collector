@@ -250,6 +250,10 @@ int main(int argc, char** argv) {
     useGRPC = true;
   }
 
+  if (!MakeDir("/module")) {
+    CLOG(FATAL) << "Failed to create /module directory, unable to download or install kernel objects.";
+  }
+
   if (config.AlternateProbeDownload()) {
     std::vector<std::string> kernel_candidates = GetKernelCandidates();
 

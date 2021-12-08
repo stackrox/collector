@@ -63,9 +63,6 @@ COPY --from=valgrind_build /valgrind-3.17.0/include /valgrind-3.17.0/include
 
 COPY final-step.sh /
 
-# Create the module directory, for downloading kernel objects
-RUN mkdir -p /module
-
 RUN ./final-step.sh && rm -f final-step.sh
 
 
