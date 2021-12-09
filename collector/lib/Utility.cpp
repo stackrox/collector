@@ -267,4 +267,10 @@ const char* GetModuleDownloadBaseURL() {
   return "";
 }
 
+void TryUnlink(const char* path) {
+  if (unlink(path) != 0) {
+    CLOG(WARNING) << "Failed to unlink '" << path << "': " << StrError();
+  }
+}
+
 }  // namespace collector

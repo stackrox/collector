@@ -197,7 +197,7 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
       return false;
     }
     CLOG(INFO) << "Successfully downloaded and decompressed " << module_path;
-    (void)unlink(downloadPath.c_str());
+    TryUnlink(downloadPath.c_str());
   }
 
   if (chmod(module_path.c_str(), 0444)) {

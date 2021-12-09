@@ -295,13 +295,13 @@ int main(int argc, char** argv) {
       success = GetKernelObject(args->GRPCServer(), collectorConfig["tlsConfig"], kernel_module, kernel_object.path, config.CurlVerbose());
 
       // Remove the gzipped file, we won't need it anymore
-      unlink((kernel_object.path + ".gz").c_str());
+      TryUnlink((kernel_object.path + ".gz").c_str());
 
       if (!success) {
         CLOG(WARNING) << "Error getting kernel object: " << kernel_module;
 
         // Remove downloaded files
-        unlink(kernel_object.path.c_str());
+        TryUnlink(kernel_object.path.c_str());
       } else {
         break;
       }
