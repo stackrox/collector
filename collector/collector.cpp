@@ -378,11 +378,6 @@ int main(int argc, char** argv) {
   CollectorService collector(config, &g_control, &g_signum);
   collector.RunForever();
 
-  if (!config.UseEbpf()) {
-    CLOG(INFO) << "Unloading kernel module";
-    delete_module(SysdigService::kModulePath, O_NONBLOCK | O_TRUNC);
-  }
-
   CLOG(INFO) << "Collector exiting successfully!";
 
   return 0;
