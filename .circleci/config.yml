@@ -52,7 +52,7 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
 
 orbs:
   slack: circleci/slack@3.4.2
-  ci-artifacts: stackrox/ci-artifacts-orb@0.0.7
+  ci-artifacts: stackrox/ci-artifacts-orb@0.0.8
 
 commands:
   initcommand:
