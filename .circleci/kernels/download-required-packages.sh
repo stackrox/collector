@@ -57,13 +57,15 @@ downloadBundles() {
 
 }
 
-kobuild_dir="${1:-~/kobuild-tmp}"
+TAG=$1
+BRANCH=$2
+kobuild_dir="${3:-~/kobuild-tmp}"
 
 bundles_dir="$kobuild_dir/bundles"
 
 mkdir -p "$bundles_dir"
 downloadBundles "$KERNEL_BUNDLES_BUCKET"
 
-if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -z "$KERNEL_BUNDLES_STAGING_BUCKET" ]]; then
+if [[ -z "$TAG" && "$BRANCH" != "master" && ! -z "$KERNEL_BUNDLES_STAGING_BUCKET" ]]; then
   downloadBundles "$KERNEL_BUNDLES_STAGING_BUCKET"
 fi

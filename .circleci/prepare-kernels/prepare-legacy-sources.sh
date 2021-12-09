@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
+TAG=$1
+BRANCH=$2
+
 cd "$SOURCE_ROOT"
 if [[ ! -f RELEASED_VERSIONS ]]; then
   echo "RELEASED_VERSIONS file does not exist!"
@@ -50,7 +53,7 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
 
   # If not building legacy probe version {module_version}, remove source 'kobuild-tmp/versions-src/{module_version}.tgz'
   # and do not add the collector version to 'ko-build/released-modules/{module_version}'.
-  if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-legacy-probes" ]]; then
+  if [[ -z "$TAG" && "$BRANCH" != "master" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-legacy-probes" ]]; then
       version="$(< "${mod_ver_file}")"
       [[ "$version" != "$MODULE_VERSION" ]] || continue
       echo "Not building probes for legacy version ${version}"

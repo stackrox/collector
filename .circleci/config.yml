@@ -278,7 +278,7 @@ jobs:
     - run:
         name: Save collector-builder image
         command: |
-          "${CI_ROOT}/builder/save-collector-builder-image.sh"
+          "${CI_ROOT}/builder/save-collector-builder-image.sh" "${CIRCLE_BRANCH}"
 
   prepare-kernels:
     <<: *defaultImage
@@ -299,7 +299,7 @@ jobs:
     - run:
         name: Prepare legacy sources
         command: |
-          "${CI_ROOT}/prepare-kernels/prepare-legacy-sources.sh"
+          "${CI_ROOT}/prepare-kernels/prepare-legacy-sources.sh" $CIRCLE_TAG $CIRCLE_BRANCH
 
     - run:
         name: Prepare Kernel module build cache lookup
@@ -382,13 +382,13 @@ jobs:
     - run:
         name: Determine tasks for current shard
         command: |
-          "${CI_ROOT}/kernels/determine-tasks-for-current-shard.sh"
+          "${CI_ROOT}/kernels/determine-tasks-for-current-shard.sh" $CIRCLE_NODE_TOTAL $CIRCLE_NODE_INDEX
 
     - gcloud-init
     - run:
         name: Download required packages
         command: |
-          "${CI_ROOT}/kernels/download-required-packages.sh" ~/kobuild-tmp
+          "${CI_ROOT}/kernels/download-required-packages.sh" $CIRCLE_TAG $CIRCLE_BRANCH ~/kobuild-tmp
 
     - run:
         name: Determine versions requiring a custom builder flavor
@@ -423,12 +423,12 @@ jobs:
     - run:
         name: Build modules
         command: |
-          "${CI_ROOT}/kernels/build-modules.sh"
+          "${CI_ROOT}/kernels/build-modules.sh" $CIRCLE_NODE_INDEX
 
     - run:
         name: Print built modules
         command: |
-          "${CI_ROOT}/kernels/print-built-modules.sh"
+          "${CI_ROOT}/kernels/print-built-modules.sh" $CIRCLE_NODE_INDEX
 
     - persist_to_workspace:
         root: ~/workspace

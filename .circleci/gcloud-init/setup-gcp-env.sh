@@ -12,7 +12,6 @@ gcloud version
 cat ~/.boto || true
 echo '[Credentials]' >~/.boto
 echo 'gs_service_key_file = /tmp/gcp.json' >>~/.boto
-#echo "${<< parameters.service-account-env >>}" > /tmp/gcp.json
 echo "$service_account_env" > /tmp/gcp.json
 gcloud auth activate-service-account --key-file /tmp/gcp.json
 gcloud config set project stackrox-ci
@@ -20,5 +19,4 @@ gcloud config set compute/region us-central1
 gcloud config unset compute/zone
 gcloud config set core/disable_prompts True
 gcloud auth list
-#gsutil ls << parameters.bucket-permission-check >>/ || echo "ERROR: Could not ls bucket"
 gsutil ls $bucket_permission_check/ || echo "ERROR: Could not ls bucket"

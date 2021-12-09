@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
-echo "Nodes total: $CIRCLE_NODE_TOTAL"
-echo "Node index:  $CIRCLE_NODE_INDEX"
+NODE_TOTAL=$1
+NODE_INDEX=$2
+
+echo "Nodes total: $NODE_TOTAL"
+echo "Node index:  $NODE_INDEX"
 
 cd "${WORKSPACE_ROOT}/ko-build"
 num_tasks=$(wc -l <build-tasks)
-shard_size=$(((num_tasks - 1) / CIRCLE_NODE_TOTAL + 1))
+shard_size=$(((num_tasks - 1) / NODE_TOTAL + 1))
 
 echo "Total number of tasks: ${num_tasks}"
 echo "Tasks per shard: ${shard_size}"
@@ -15,7 +18,7 @@ mkdir -p ~/kobuild-tmp
 cd ~/kobuild-tmp
 split -d -l "$shard_size" "${WORKSPACE_ROOT}/ko-build/build-tasks" task-shard-
 
-this_shard_file=~/kobuild-tmp/task-shard-"$(printf '%02d' "$CIRCLE_NODE_INDEX")"
+this_shard_file=~/kobuild-tmp/task-shard-"$(printf '%02d' "$NODE_INDEX")"
 
 if [[ ! -s "$this_shard_file" ]]; then
   echo "Nothing to be done for this shard."
