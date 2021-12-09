@@ -207,6 +207,36 @@ void setBPFDropSyscalls(const std::vector<std::string>& syscall_list) {
   }
 }
 
+// creates a GRPC channel, using the tls configuration provided from the args.
+std::shared_ptr<grpc::Channel> createChannel(CollectorArgs* args) {
+  CLOG(INFO) << "gRPC server=" << args->GRPCServer();
+  Json::Value collectorConfig = args->CollectorConfig();
+
+  const auto& tls_config = collectorConfig["tlsConfig"];
+
+  std::shared_ptr<grpc::ChannelCredentials> creds = grpc::InsecureChannelCredentials();
+  if (!tls_config.isNull()) {
+    std::string ca_cert_path = tls_config["caCertPath"].asString();
+    std::string client_cert_path = tls_config["clientCertPath"].asString();
+    std::string client_key_path = tls_config["clientKeyPath"].asString();
+
+    if (!ca_cert_path.empty() && !client_cert_path.empty() && !client_key_path.empty()) {
+      creds = collector::TLSCredentialsFromFiles(ca_cert_path, client_cert_path, client_key_path);
+    } else {
+      CLOG(ERROR)
+          << "Partial TLS config: CACertPath=" << ca_cert_path << ", ClientCertPath=" << client_cert_path
+          << ", ClientKeyPath=" << client_key_path << "; will not use TLS";
+    }
+  }
+
+  return {collector::CreateChannel(args->GRPCServer(), GetSNIHostname(), creds)};
+}
+
+// attempts to connect to the GRPC server, up to a timeout
+bool attemptGRPCConnection(std::shared_ptr<grpc::Channel>& channel, std::chrono::seconds timeout) {
+  return channel->WaitForConnected(std::chrono::system_clock::now() + timeout);
+}
+
 void gplNotice() {
   CLOG(INFO) << "";
   CLOG(INFO) << "This product uses kernel module and ebpf subcomponents licensed under the GNU";
@@ -301,6 +331,18 @@ int main(int argc, char** argv) {
     }
 
     if (!success) {
+      //
+      // If the download fails, attempt to connect to the GRPC server. This will
+      // help to distinguish between networking issues rather than nebulous
+      // download failures.
+      //
+      auto channel = createChannel(args);
+      CLOG(INFO) << "Attempting to connect to GRPC server";
+      if (!attemptGRPCConnection(channel, std::chrono::seconds(1))) {
+        CLOG(ERROR) << "Unable to connect to GRPC server";
+      }
+      // Always exit regardless of GRPC connectivity because collector is unable
+      // to run without appropriate kernel probes.
       CLOG(FATAL) << "No suitable kernel object downloaded";
     }
 
@@ -338,26 +380,7 @@ int main(int argc, char** argv) {
 
   std::shared_ptr<grpc::Channel> grpc_channel;
   if (useGRPC) {
-    CLOG(INFO) << "gRPC server=" << args->GRPCServer();
-
-    const auto& tls_config = collectorConfig["tlsConfig"];
-
-    std::shared_ptr<grpc::ChannelCredentials> creds = grpc::InsecureChannelCredentials();
-    if (!tls_config.isNull()) {
-      std::string ca_cert_path = tls_config["caCertPath"].asString();
-      std::string client_cert_path = tls_config["clientCertPath"].asString();
-      std::string client_key_path = tls_config["clientKeyPath"].asString();
-
-      if (!ca_cert_path.empty() && !client_cert_path.empty() && !client_key_path.empty()) {
-        creds = collector::TLSCredentialsFromFiles(ca_cert_path, client_cert_path, client_key_path);
-      } else {
-        CLOG(ERROR)
-            << "Partial TLS config: CACertPath=" << ca_cert_path << ", ClientCertPath=" << client_cert_path
-            << ", ClientKeyPath=" << client_key_path << "; will not use TLS";
-      }
-    }
-
-    grpc_channel = collector::CreateChannel(args->GRPCServer(), GetSNIHostname(), creds);
+    grpc_channel = createChannel(args);
   }
 
   config.grpc_channel = std::move(grpc_channel);
