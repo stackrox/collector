@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
-$BRANCH=$1
+BRANCH=$1
 
 if [[ "${COLLECTOR_BUILDER_TAG}" != "cache" ]]; then
   # Push cache only if creating a new builder
