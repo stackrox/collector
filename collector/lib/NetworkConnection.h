@@ -41,12 +41,18 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
+/**
+ * Class used for representing IP addresses.
+ */
 class Address {
  public:
+  /**
+   * \brief Supported IP families.
+   */
   enum class Family : unsigned char {
-    UNKNOWN = 0,
-    IPV4,
-    IPV6,
+    UNKNOWN = 0,  ///< Unknown or uninitilized family.
+    IPV4,         ///< IPv4 family.
+    IPV6,         ///< IPv6 family.
   };
 
   static constexpr size_t kMaxLen = 16;
@@ -55,37 +61,79 @@ class Address {
 
   static Address Any(Family family) { return Address(family); }
 
+  /**
+   * Creates a new `Address` object with all default values
+   */
   Address() : Address(Family::UNKNOWN) {}
 
+  /**
+   * Constructs an `Address` object from a `Family`.
+   * Defaults data to null and sets the family accordingly.
+   */
   explicit Address(Family family) : data_({0, 0}), family_(family) {}
 
+  /**
+   * Constructs an `IPv4` `Address` object using the supplied parameters as the octets of the IP address.
+   * The resulting IP will be equivalent to *a.b.c.d*.
+   */
   Address(unsigned char a, unsigned char b, unsigned char c, unsigned char d)
       : Address(htonl(static_cast<uint32_t>(a) << 24 |
                       static_cast<uint32_t>(b) << 16 |
                       static_cast<uint32_t>(c) << 8 |
                       static_cast<uint32_t>(d))) {}
 
+  /**
+   * Constructs an `Address` by copying the supplied `Family` and data.
+   */
   Address(Family family, const std::array<uint8_t, kMaxLen>& data) : Address(family) {
     std::memcpy(data_.data(), data.data(), Length(family));
   }
 
+  /**
+   * Constructs an `Address` by copying the supplied `Family` and data.
+   */
   Address(Family family, const std::array<uint64_t, kU64MaxLen>& data) : data_(data), family_(family) {}
 
-  // Constructs an IPv4 address given a uint32_t containing the IPv4 address in *network* byte order.
+  /**
+   * Constructs an IPv4 address given a uint32_t containing the IPv4 address in *network* byte order.
+   */
   explicit Address(uint32_t ipv4) : data_({htonll(static_cast<uint64_t>(ntohl(ipv4)) << 32), 0}), family_(Family::IPV4) {}
 
-  // Constructs an IPv6 address from 4 network-encoded uint32_ts, in network order (high to low)
+  /**
+   * Constructs an IPv6 address from 4 network-encoded uint32_ts, in network order (high to low)
+   */
   explicit Address(const uint32_t (&ipv6)[4]) : family_(Family::IPV6) {
     static_assert(sizeof(data_) == sizeof(ipv6));
     std::memcpy(data_.data(), &ipv6[0], sizeof(data_));
   }
 
-  // Constructs an IPv6 address from 2 network-encoded uint64_ts, in network order (high, low).
+  /**
+   * Constructs an IPv6 address from 2 network-encoded uint64_ts, in network order (high, low).
+   */
   Address(uint64_t ipv6_high, uint64_t ipv6_low) : data_({ipv6_high, ipv6_low}), family_(Family::IPV6) {}
 
+  /**
+   * \brief `Family` getter.
+   *
+   * Returns the `Family` configured in the current object.
+   *
+   * \return A copy of the configured `Family`.
+   */
   Family family() const { return family_; }
+  /**
+   * Returns the address length in octets for the `Family` configured in the current object.
+   *
+   * \return The length of address corresponding to the `Family` of the current object.
+   */
   size_t length() const { return Length(family_); }
 
+  /**
+   * \brief Data getter.
+   *
+   * Returns a copy of the data stored in the current object.
+   *
+   * \return An array holding all IPs and lengths in the object.
+   */
   const std::array<uint64_t, kU64MaxLen>& array() const { return data_; }
   const void* data() const { return data_.data(); }
 

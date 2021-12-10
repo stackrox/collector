@@ -19,8 +19,8 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-Docs
-====
-.. doxygenclass:: collector::Address
-   :members:
-   :undoc-members:
+Contents
+========
+
+.. toctree::
+   collector/NetworkConnection
