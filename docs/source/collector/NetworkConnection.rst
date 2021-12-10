@@ -5,4 +5,4 @@ Address class documentation
 ---------------------------
 
 .. doxygenclass:: collector::Address
-   :members:
+	:members:
