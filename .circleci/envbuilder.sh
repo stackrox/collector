@@ -10,6 +10,8 @@ createGCPVM() {
   [ -z "$GCP_IMAGE_FAMILY" ] && echo "error: missing parameter GCP_IMAGE_FAMILY" && return 1
   [ -z "$GCP_IMAGE_PROJECT" ] && echo "error: missing parameter GCP_IMAGE_PROJECT" && return 1
 
+  return 1
+
   success=false
   for zone in us-central1-a us-central1-b ; do
       echo "Trying zone $zone"
@@ -115,7 +117,7 @@ gcpSSHReady() {
       && exitCode=0 && break || exitCode=$? && sleep 15
   done
 
-  instance_id="$(gcloud compute instances describe $GCP_VM_NAME --format='get(id)')"
+  instance_id="$(gcloud compute instances describe "$GCP_VM_NAME" --format='get(id)')"
   ssh-keygen -f "/home/circleci/.ssh/google_compute_known_hosts" -R "compute.${instance_id}"
   echo "Cleared existing ssh keys for compute.${instance_id}"
 
