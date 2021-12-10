@@ -233,8 +233,8 @@ std::shared_ptr<grpc::Channel> createChannel(CollectorArgs* args) {
 }
 
 // attempts to connect to the GRPC server, up to a timeout
-bool attemptGRPCConnection(std::shared_ptr<grpc::Channel>& channel, std::chrono::seconds timeout) {
-  return channel->WaitForConnected(std::chrono::system_clock::now() + timeout);
+bool attemptGRPCConnection(std::shared_ptr<grpc::Channel>& channel) {
+  return channel->WaitForConnected(std::chrono::system_clock::now() + std::chrono::seconds(1));
 }
 
 void gplNotice() {
@@ -338,8 +338,10 @@ int main(int argc, char** argv) {
       //
       auto channel = createChannel(args);
       CLOG(INFO) << "Attempting to connect to GRPC server";
-      if (!attemptGRPCConnection(channel, std::chrono::seconds(1))) {
-        CLOG(ERROR) << "Unable to connect to GRPC server";
+      if (!attemptGRPCConnection(channel)) {
+        CLOG(ERROR) << "Unable to connect to the GRPC server.";
+      } else {
+        CLOG(INFO) << "Successfully connected to the GRPC server.";
       }
       // Always exit regardless of GRPC connectivity because collector is unable
       // to run without appropriate kernel probes.
