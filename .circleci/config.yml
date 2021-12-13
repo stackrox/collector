@@ -486,7 +486,7 @@ jobs:
     - run:
         name: Copying Kernel modules build output
         command: |
-          "${CI_ROOT}/images/copyting-kernel-modules-build-output.sh"
+          "${CI_ROOT}/images/copying-kernel-modules-build-output.sh"
 
     - run:
         name: Copying Kernel modules from cache
