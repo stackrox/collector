@@ -336,12 +336,16 @@ int main(int argc, char** argv) {
       // help to distinguish between networking issues rather than nebulous
       // download failures.
       //
-      auto channel = createChannel(args);
-      CLOG(INFO) << "Attempting to connect to GRPC server";
-      if (!attemptGRPCConnection(channel)) {
-        CLOG(ERROR) << "Unable to connect to the GRPC server.";
+      if (useGRPC) {
+        auto channel = createChannel(args);
+        CLOG(INFO) << "Attempting to connect to GRPC server";
+        if (!attemptGRPCConnection(channel)) {
+          CLOG(ERROR) << "Unable to connect to the GRPC server.";
+        } else {
+          CLOG(INFO) << "Successfully connected to the GRPC server.";
+        }
       } else {
-        CLOG(INFO) << "Successfully connected to the GRPC server.";
+        CLOG(INFO) << "GRPC not configured: unable to check connectivity.";
       }
       // Always exit regardless of GRPC connectivity because collector is unable
       // to run without appropriate kernel probes.
