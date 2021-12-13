@@ -496,7 +496,7 @@ jobs:
     - run:
         name: Preparing Kernel modules build cache
         command: |
-          "${CI_ROOT}/preparing-kernel-modules-build-cache.sh"
+          "${CI_ROOT}/images/preparing-kernel-modules-build-cache.sh"
 
     - save_cache:
         name: Saving Kernel module build cache
