@@ -486,29 +486,17 @@ jobs:
     - run:
         name: Copying Kernel modules build output
         command: |
-          mkdir -p "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
-          mv "${WORKSPACE_ROOT}/ko-build/built-probes/${MODULE_VERSION}/"* \
-            "${SOURCE_ROOT}/kernel-modules/container/kernel-modules" || true
-          rm -f "${SOURCE_ROOT}/kernel-modules/container/kernel-modules/".*.unavail || true
-
-          ls "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
+          "${CI_ROOT}/images/copyting-kernel-modules-build-output.sh"
 
     - run:
         name: Copying Kernel modules from cache
         command: |
-          cp -n "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}"/* \
-            "${SOURCE_ROOT}/kernel-modules/container/kernel-modules" || true
-          rm -f "${SOURCE_ROOT}/kernel-modules/container/kernel-modules/".*.unavail || true
-
-          ls "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
+          "${CI_ROOT}/images/copying-kernel-modules-from-cache.sh"
 
     - run:
         name: Preparing Kernel modules build cache
         command: |
-          mkdir -p "/tmp/cache/kernel-modules/${MODULE_VERSION}/"
-          cp -rl "${SOURCE_ROOT}/kernel-modules/container/kernel-modules/." \
-            "/tmp/cache/kernel-modules/${MODULE_VERSION}/"
-          echo "$MODULE_VERSION" >/tmp/cache/kernel-modules-version.txt
+          "${CI_ROOT}/preparing-kernel-modules-build-cache.sh"
 
     - save_cache:
         name: Saving Kernel module build cache
@@ -519,121 +507,37 @@ jobs:
     - run:
         name: Adding Kernel module version and license files
         command: |
-          mkdir -p "${SOURCE_ROOT}/kernel-modules/container/kernel-modules"
-          echo "$MODULE_VERSION" \
-            >>"${SOURCE_ROOT}/kernel-modules/container/kernel-modules/MODULE_VERSION.txt"
-          cp "${SOURCE_ROOT}"/collector/LICENSE-kernel-modules.txt "${SOURCE_ROOT}"/collector/container/
+          "${CI_ROOT}/images/adding-kernel-module-version-and-license-files.sh"
 
     - run:
         name: Load any missing modules from GCloud
         command: |
-          gsutil -m cp -n \
-              "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/*.gz" \
-              "${SOURCE_ROOT}/kernel-modules/container/kernel-modules" || true
+          "${CI_ROOT}/images/load-any-missing-modules-from-gcloud.sh"
 
     - run:
         name: Sanity check
         command: |
-          cd "$SOURCE_ROOT"
-          echo '>>> Collector Artifacts:'
-          find collector/container
-          echo '>>> Kernel Modules:'
-          find kernel-modules/container
+          "${CI_ROOT}/images/sanity-check.sh"
 
     - run:
         name: Build collector slim and base images
         command: |
-          build_args=(
-            --build-arg module_version="$MODULE_VERSION"
-            --build-arg collector_version="$COLLECTOR_VERSION"
-            --build-arg USE_VALGRIND="$BUILD_USE_VALGRIND"
-            --build-arg ADDRESS_SANITIZER="$SANITIZER_TESTS"
-          )
-
-          "${SOURCE_ROOT}/collector/container/rhel/create-bundle.sh" \
-            "$SOURCE_ROOT/collector/container" \
-            "-" \
-            "$SOURCE_ROOT/collector/container/rhel"
-
-          docker build \
-            -t "${DOCKER_REPO}/collector:${COLLECTOR_VERSION}-base" \
-            -t "${DOCKER_REPO}/collector:${COLLECTOR_VERSION}-slim" \
-            -t "${QUAY_REPO}/collector:${COLLECTOR_VERSION}-base" \
-            -t "${QUAY_REPO}/collector:${COLLECTOR_VERSION}-slim" \
-            "${build_args[@]}" \
-            -f ${SOURCE_ROOT}/collector/container/rhel/Dockerfile \
-            "$SOURCE_ROOT/collector/container/rhel"
+          "${CI_ROOT}/images/build-collector-slim-and-base-images.sh"
 
     - run:
         name: Build collector -latest images
         command: |
-          collector_repos=(
-            "collector"
-          )
-
-          # On PR branches, only build slim images
-          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-full-images" ]]; then
-            echo "Not building full images, re-tagging base images..."
-            for collector_repo in "${collector_repos[@]}"; do
-              docker_full_repo="${DOCKER_REPO}/${collector_repo}:${COLLECTOR_VERSION}"
-              quay_full_repo="${QUAY_REPO}/${collector_repo}:${COLLECTOR_VERSION}"
-              docker tag "${docker_full_repo}-base" "${docker_full_repo}"
-              docker tag "${docker_full_repo}-base" "${docker_full_repo}-latest"
-              docker tag "${quay_full_repo}-base" "${quay_full_repo}"
-              docker tag "${quay_full_repo}-base" "${quay_full_repo}-latest"
-            done
-            exit 0
-          fi
-
-          container_build_dir="${SOURCE_ROOT}/kernel-modules/container"
-          layer_count="$("${container_build_dir}/partition-probes.py" -1 "$MAX_LAYER_MB" "${container_build_dir}/kernel-modules" "-")"
-          for collector_repo in "${collector_repos[@]}"; do
-            build_args=(
-              --build-arg collector_repo="${DOCKER_REPO}/${collector_repo}"
-              --build-arg collector_version="$COLLECTOR_VERSION"
-              --build-arg module_version="$MODULE_VERSION"
-              --build-arg max_layer_size="$MAX_LAYER_MB"
-              --build-arg max_layer_depth="$layer_count"
-              --build-arg USE_VALGRIND="$BUILD_USE_VALGRIND"
-              --build-arg ADDRESS_SANITIZER="$SANITIZER_TESTS"
-            )
-            docker build \
-              --target="probe-layer-${layer_count}" \
-              -t "${DOCKER_REPO}/${collector_repo}:${COLLECTOR_VERSION}" \
-              -t "${DOCKER_REPO}/${collector_repo}:${COLLECTOR_VERSION}-latest" \
-              -t "${QUAY_REPO}/${collector_repo}:${COLLECTOR_VERSION}" \
-              -t "${QUAY_REPO}/${collector_repo}:${COLLECTOR_VERSION}-latest" \
-              "${build_args[@]}" \
-              "${container_build_dir}"
-          done
+          "${CI_ROOT}/images/build-collector-latest-images.sh"
 
     - run:
         name: Sanity check images
         command: |
-          docker images | grep collector | grep "${COLLECTOR_VERSION}"
-          docker images | grep collector | grep "${COLLECTOR_VERSION}-slim"
+          "${CI_ROOT}/images/sanity-check-images.sh"
 
     - run:
         name: Push images
         command: |
-          image_repos=(
-            "${DOCKER_REPO}/collector"
-            "${QUAY_REPO}/collector"
-          )
-          image_tags=(
-            "${COLLECTOR_VERSION}"
-            "${COLLECTOR_VERSION}-base"
-            "${COLLECTOR_VERSION}-slim"
-            "${COLLECTOR_VERSION}-latest"
-          )
-          for repo in "${image_repos[@]}"; do
-            for tag in "${image_tags[@]}"; do
-              image="${repo}:${tag}"
-              echo "Pushing image ${image}"
-              docker image inspect "${image}" >/dev/null
-              ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${image}"
-            done
-          done
+          "${CI_ROOT}/images/push-images.sh"
 
   ubi-image:
     machine:
