@@ -160,6 +160,7 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
     CLOG(DEBUG) << "Found existing compressed kernel object.";
     if (!GZFileHandle::DecompressFile(expected_path_compressed, module_path)) {
       CLOG(ERROR) << "Failed to decompress " << expected_path_compressed;
+      // don't delete the local /kernel-modules gzip file because it is on a read-only file system.
       return false;
     }
   }
@@ -194,10 +195,12 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
 
     if (!GZFileHandle::DecompressFile(downloadPath, module_path)) {
       CLOG(WARNING) << "Failed to decompress downloaded kernel object";
+      // If the gzipped file is corrupted, delete it so we don't try to use it
+      // next time.
+      TryUnlink(downloadPath.c_str());
       return false;
     }
     CLOG(INFO) << "Successfully downloaded and decompressed " << module_path;
-    TryUnlink(downloadPath.c_str());
   }
 
   if (chmod(module_path.c_str(), 0444)) {

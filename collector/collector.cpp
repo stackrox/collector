@@ -293,15 +293,8 @@ int main(int argc, char** argv) {
       std::string kernel_module = kernel_object.name + "-" + kernel_candidate + kernel_object.extension;
 
       success = GetKernelObject(args->GRPCServer(), collectorConfig["tlsConfig"], kernel_module, kernel_object.path, config.CurlVerbose());
-
-      // Remove the gzipped file, we won't need it anymore
-      TryUnlink((kernel_object.path + ".gz").c_str());
-
       if (!success) {
         CLOG(WARNING) << "Error getting kernel object: " << kernel_module;
-
-        // Remove downloaded files
-        TryUnlink(kernel_object.path.c_str());
       } else {
         break;
       }
