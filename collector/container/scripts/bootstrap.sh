@@ -323,7 +323,7 @@ function main() {
     
     # Get the host kernel version (or user defined env var)
     #[ -n "$KERNEL_VERSION" ] || KERNEL_VERSION="$(uname -r)"
-    if [[ -n "$KERNEL_VERSION" ]]; then
+    if [[ ! -n "$KERNEL_VERSION" ]]; then
         uname_a="$(uname -a) | awk '{print $7}'"
         if [[ "$uname_a" =~ "gardenlinux" ]]; then
                 KERNEL_VERSION=$uname_a
