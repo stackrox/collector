@@ -561,35 +561,12 @@ jobs:
     - run:
         name: Build collector UBI images
         command: |
-          docker build \
-            --build-arg COLLECTOR_VERSION=${COLLECTOR_VERSION} \
-            --build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
-            --build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}" \
-            --build-arg USE_VALGRIND="${BUILD_USE_VALGRIND}" \
-            --build-arg ADDRESS_SANITIZER="${SANITIZER_TESTS}" \
-            -t "collector-test-cpaas:${COLLECTOR_VERSION}" \
-            --build-arg CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}" \
-            -f ${SOURCE_ROOT}/collector/container/Dockerfile.ubi \
-            ${SOURCE_ROOT}
+          "${CI_ROOT}/ubi-images/build-collector-ubi-images.sh"
 
     - run:
         name: Push collector UBI images
         command: |
-          image_repos=(
-            "${DOCKER_REPO}/collector-test-cpaas"
-            "${QUAY_REPO}/collector-test-cpaas"
-          )
-          image_tags=(
-            "${COLLECTOR_VERSION}"
-            "${COLLECTOR_VERSION}-slim"
-          )
-          for repo in "${image_repos[@]}"; do
-            for tag in "${image_tags[@]}"; do
-              image="${repo}:${tag}"
-              docker image tag "collector-test-cpaas:${COLLECTOR_VERSION}" "${image}"
-              docker push "${image}"
-            done
-          done
+          "${CI_ROOT}/ubi-images/push-collector-ubi-images.sh"
 
   kernel-module-build-failures-check:
     <<: *defaultImage
@@ -606,27 +583,7 @@ jobs:
       - run:
           name: Test for build failures
           command: |
-            shopt -s nullglob
-            cd /tmp/failures
-            failure_files=(*/*/*.log)
-
-            for failure_file in "${failure_files[@]}"; do
-              if [[ "$failure_file" =~ ^([^/]+)/([^/]+)/([^/]+)\.log$ ]]; then
-                kernel_version="${BASH_REMATCH[1]}"
-                module_version="${BASH_REMATCH[2]}"
-                probe_type="${BASH_REMATCH[3]}"
-                echo >&2 "============================================================================"
-                echo >&2 "Failed to build ${probe_type} probe"
-                echo >&2 "Module version: ${module_version}"
-                echo >&2 "Kernel version: ${kernel_version}"
-                echo >&2
-                cat >&2 "$failure_file"
-                echo >&2
-                echo >&2
-              fi
-            done
-
-            [[ "${#failure_files[@]}" == 0 ]]
+            "${CI_ROOT}/kernel-module-build-failures/test-for-build-failures.sh"
 
       - store_artifacts:
           path: /tmp/failures
@@ -646,27 +603,8 @@ jobs:
       - run:
           name: Consolidate modules built by sharded jobs
           command: |
-            shopt -s nullglob
-            shopt -s dotglob
-            mkdir -p "${WORKSPACE_ROOT}/ko-build/built-probes"
-            shard_dirs=("${WORKSPACE_ROOT}/ko-build/build-output/shard-"*)
-            if [[ "{#shard_dirs[@]}" == 0 ]]; then
-              exit 0
-            fi
-            for shard_dir in "${shard_dirs[@]}"; do
-              for version_dir in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
-                version="$(basename "$version_dir")"
-                job_dir="${shard_dir}/${version}"
-                [[ -d "${job_dir}" ]] || continue
-                out_dir="${WORKSPACE_ROOT}/ko-build/built-probes/${version}/"
-                mkdir -p "$out_dir"
-                files=("${job_dir}"/*.{gz,unavail})
-                echo "${#files[@]} files in ${job_dir}"
-                [[ "${#files[@]}" > 0 ]] || continue
-                mv "${job_dir}"/*.{gz,unavail} "$out_dir"
-              done
-            done
-
+            "${CI_ROOT}/join-modules/consolidate-modules-build-by-sharded-jobs.sh"
+          
       - persist_to_workspace:
           root: ~/workspace
           paths:
@@ -674,53 +612,6 @@ jobs:
 
   upload-modules:
     <<: *defaultImage
-
-    steps:
-      - initcommand
-      - gcloud-init
-
-      - run:
-          name: Remove failures file and shard output dirs
-          command: |
-            rm -rf "${WORKSPACE_ROOT}/ko-build/build-output/FAILURES"-* 2>/dev/null || true
-            rm -rf "${WORKSPACE_ROOT}/ko-build/build-output/shard"-* 2>/dev/null || true
-
-      - run:
-          name: Uploading Kernel modules
-          command: |
-            extra_args=()
-            target="${COLLECTOR_MODULES_BUCKET}"
-            if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
-              target="gs://stackrox-collector-modules-staging/pr-builds/${CIRCLE_BRANCH}/${CIRCLE_BUILD_NUM}"
-            fi
-
-            shopt -s nullglob
-            shopt -s dotglob
-            for probes_dir in "${WORKSPACE_ROOT}/ko-build/built-probes"/*; do
-              files=("${probes_dir}"/*.{gz,unavail})
-              [[ "${#files[@]}" > 0 ]] || continue
-              printf '%s\n' "${files[@]}" | gsutil -m cp -n -I "${target}/$(basename "$probes_dir")/"
-            done
-
-            if [[ "$CIRCLE_BRANCH" == "master" || -n "$CIRCLE_TAG" ]]; then
-              # On PR/master builds, additionally upload modules from cache
-              for probes_dir in "${WORKSPACE_ROOT}/ko-build/cached-probes"/*; do
-                files=("${probes_dir}"/*.{gz,unavail})
-                [[ "${#files[@]}" > 0 ]] || continue
-                printf '%s\n' "${files[@]}" | gsutil -m cp -n -I "${target}/$(basename "$probes_dir")/"
-              done
-            fi
-
-      - run:
-          name: Sanity check
-          command: |
-            if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
-              exit 0
-            fi
-            gsutil ls "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/"
-
-  dockerized-kdrivers:
-    <<: *defaultMachine
 
     steps:
     - initcommand
@@ -731,33 +622,17 @@ jobs:
     - run:
         name: Create docker context
         command: |
-          mkdir -p ~/workspace/go/src/github.com/stackrox/bundles
-
-          ## Get the bundle for the running machine
-          gsutil -m cp "gs://stackrox-kernel-bundles/bundle-$(uname -r).tgz" ~/workspace/go/src/github.com/stackrox/bundles
+          "${CI_ROOT}/upload-modules/create-docker-context.sh"
 
     - run:
         name: Build probes
         command: |
-          GIT_REF="${CIRCLE_BRANCH}"
-          if [[ -n "${CIRCLE_TAG}" ]]; then
-            GIT_REF="${CIRCLE_TAG}"
-          fi
-          docker build \
-            --build-arg BRANCH="${GIT_REF}" \
-            --build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
-            --build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}" \
-            --tag kernel-builder \
-            -f ~/workspace/go/src/github.com/stackrox/collector/kernel-modules/dockerized/Dockerfile \
-            ~/workspace/go/src/github.com/stackrox
+          "${CI_ROOT}/upload-modules/build-probes.sh"
 
     - run:
         name: Create test image
         command: |
-            docker build \
-                --tag "stackrox/collector:${COLLECTOR_TAG}-dockerized" \
-                --build-arg COLLECTOR_TAG="${COLLECTOR_TAG}-slim" \
-                ~/workspace/go/src/github.com/stackrox/collector/kernel-modules/dockerized/tests
+          "${CI_ROOT}/upload-modules/create-test-image.sh"
 
     - run:
         name: Push test image
