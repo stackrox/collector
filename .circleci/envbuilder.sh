@@ -189,6 +189,8 @@ setupGCPVM() {
   shift
   local GCP_IMAGE_FAMILY="$1"
   shift
+  local GCP_IMAGE_NAME="$1"
+  shift
   local GCP_SSH_KEY_FILE="$1"
   shift
   local GDOCKER_USER="$1"
@@ -206,16 +208,16 @@ setupGCPVM() {
     GCP_VM_USER="core"
   fi
 
-  if [[ "$GCP_VM_TYPE" != "flatcar" ]]; then
-    GCP_IMAGE_PROJECT="$GCP_VM_TYPE-cloud"
+  if [[ "$GCP_VM_TYPE" == "flatcar" ]]; then
+    GCP_IMAGE_PROJECT="kinvolk-public"
   elif [[ "$GCP_VM_TYPE" == "garden-linux" ]]; then
     GCP_IMAGE_PROJECT="sap-se-gcp-gardenlinux"
   else
-    GCP_IMAGE_PROJECT="kinvolk-public"
+    GCP_IMAGE_PROJECT="$GCP_VM_TYPE-cloud"
   fi
 
-  if [[ "$GCP_VM_TYPE" == "garden-linux" ]]; then
-    createGCPVMFromImage "$GCP_VM_NAME" "gardenlinux-gcp-cloud-gardener--prod-318-8-ae20c2" "$GCP_IMAGE_PROJECT"
+  if [[ -n "$GCP_IMAGE_NAME" ]]; then
+    createGCPVMFromImage "$GCP_VM_NAME" "$GCP_IMAGE_NAME" "$GCP_IMAGE_PROJECT"
   else
     createGCPVM "$GCP_VM_NAME" "$GCP_IMAGE_FAMILY" "$GCP_IMAGE_PROJECT"
   fi
