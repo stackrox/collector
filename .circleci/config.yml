@@ -614,6 +614,49 @@ jobs:
     <<: *defaultImage
 
     steps:
+      - initcommand
+      - gcloud-init
+
+      - run:
+          name: Remove failures file and shard output dirs
+          command: |
+            rm -rf "${WORKSPACE_ROOT}/ko-build/build-output/FAILURES"-* 2>/dev/null || true
+            rm -rf "${WORKSPACE_ROOT}/ko-build/build-output/shard"-* 2>/dev/null || true
+      - run:
+          name: Uploading Kernel modules
+          command: |
+            extra_args=()
+            target="${COLLECTOR_MODULES_BUCKET}"
+            if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+              target="gs://stackrox-collector-modules-staging/pr-builds/${CIRCLE_BRANCH}/${CIRCLE_BUILD_NUM}"
+            fi
+            shopt -s nullglob
+            shopt -s dotglob
+            for probes_dir in "${WORKSPACE_ROOT}/ko-build/built-probes"/*; do
+              files=("${probes_dir}"/*.{gz,unavail})
+              [[ "${#files[@]}" > 0 ]] || continue
+              printf '%s\n' "${files[@]}" | gsutil -m cp -n -I "${target}/$(basename "$probes_dir")/"
+            done
+            if [[ "$CIRCLE_BRANCH" == "master" || -n "$CIRCLE_TAG" ]]; then
+              # On PR/master builds, additionally upload modules from cache
+              for probes_dir in "${WORKSPACE_ROOT}/ko-build/cached-probes"/*; do
+                files=("${probes_dir}"/*.{gz,unavail})
+                [[ "${#files[@]}" > 0 ]] || continue
+                printf '%s\n' "${files[@]}" | gsutil -m cp -n -I "${target}/$(basename "$probes_dir")/"
+              done
+            fi
+      - run:
+          name: Sanity check
+          command: |
+            if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
+              exit 0
+            fi
+            gsutil ls "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/"
+                      
+  dockerized-kdrivers:
+    <<: *defaultImage
+
+    steps:
     - initcommand
     - gcloud-init
     - docker-login-push
@@ -622,17 +665,17 @@ jobs:
     - run:
         name: Create docker context
         command: |
-          "${CI_ROOT}/upload-modules/create-docker-context.sh"
+          "${CI_ROOT}/dockerized-kdrivers/create-docker-context.sh"
 
     - run:
         name: Build probes
         command: |
-          "${CI_ROOT}/upload-modules/build-probes.sh"
+          "${CI_ROOT}/dockerized-kdrivers/build-probes.sh"
 
     - run:
         name: Create test image
         command: |
-          "${CI_ROOT}/upload-modules/create-test-image.sh"
+          "${CI_ROOT}/dockerized-kdrivers/create-test-image.sh"
 
     - run:
         name: Push test image
