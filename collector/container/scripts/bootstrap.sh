@@ -322,7 +322,6 @@ function get_kernel_object() {
 function main() {
     
     # Get the host kernel version (or user defined env var)
-    #[ -n "$KERNEL_VERSION" ] || KERNEL_VERSION="$(uname -r)"
     if [[ ! -n "$KERNEL_VERSION" ]]; then
 	uname_a="$(echo "$(uname -a)" | awk '{print $7}')"
         if [[ "$uname_a" =~ "gardenlinux" ]]; then

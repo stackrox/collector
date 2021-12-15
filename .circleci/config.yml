@@ -570,13 +570,11 @@ jobs:
 
   kernels:
     <<: *defaultMachine
-    parallelism: 64
+    parallelism: 8
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
-      #- KERNEL_BUNDLES_STAGING_BUCKET: ""
-      #- KERNEL_BUNDLES_STAGING_BUCKET: "gs://stackrox-kernel-bundles-staging/mauro/support-garden-5.10.83/fd203090a8b029bcefb0f9a1f1d2f441901a14d6"
-    - KERNEL_BUNDLES_STAGING_BUCKET: "gs://stackrox-kernel-bundles-staging/mauro/support-garden-5.10.83/b751a02c6b0bd50562ed5e1dbbf421d51fd3938d"
+    - KERNEL_BUNDLES_STAGING_BUCKET: ""
 
     steps:
     - initcommand
