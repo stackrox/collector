@@ -607,7 +607,7 @@ jobs:
       - run:
           name: Consolidate modules built by sharded jobs
           command: |
-            "${CI_ROOT}/join-modules/consolidate-modules-build-by-sharded-jobs.sh"
+            "${CI_ROOT}/join-modules/consolidate-modules-built-by-sharded-jobs.sh"
           
       - persist_to_workspace:
           root: ~/workspace
