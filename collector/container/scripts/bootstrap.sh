@@ -323,9 +323,12 @@ function main() {
     
     # Get the host kernel version (or user defined env var)
     if [[ ! -n "$KERNEL_VERSION" ]]; then
-	uname_a="$(echo "$(uname -a)" | awk '{print $7}')"
+	uname_a="$(echo "$(uname -a)"
         if [[ "$uname_a" =~ "gardenlinux" ]]; then
-                KERNEL_VERSION=$uname_a
+		KERNEL_VERSION="$($uname_a) | awk '{print $7}'"
+		if [[ "$($uname_a | awk '{print $3}')" =~ "cloud" ]]; then
+			KERNEL_VERSION="${KERNEL_VERSION}-cloud"
+		fi
         else
                 KERNEL_VERSION="$(uname -r)"
         fi
