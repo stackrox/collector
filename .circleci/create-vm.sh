@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# shellcheck source=/dev/null
+
 set -e
 main() {
   local GCP_VM_NAME="$1"
