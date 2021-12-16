@@ -11,7 +11,8 @@ downloadBundlesListedInFile() {
 }
 
 getNumFailedDownloads() {
-    echo "$(ls "$bundles_dir"/*.gstmp 2>/dev/null | wc -l || true)"
+    ls "$bundles_dir"/*.gstmp 2>/dev/null | wc -l || true
+    #echo "$(ls "$bundles_dir"/*.gstmp 2>/dev/null | wc -l || true)" #Remove before merging
 }
 
 reportIfFailed() {
