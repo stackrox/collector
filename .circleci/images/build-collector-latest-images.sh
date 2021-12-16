@@ -1,4 +1,4 @@
-#/usr/bin/env bash
+#!/usr/bin/env bash
 set -eo pipefail
 
 collector_repos=(
@@ -6,7 +6,7 @@ collector_repos=(
 )
 
 # On PR branches, only build slim images
-if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-full-images" ]]; then
+if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && "$BUILD_FULL_IMAGES" == "false" ]]; then
   echo "Not building full images, re-tagging base images..."
   for collector_repo in "${collector_repos[@]}"; do
     docker_full_repo="${DOCKER_REPO}/${collector_repo}:${COLLECTOR_VERSION}"

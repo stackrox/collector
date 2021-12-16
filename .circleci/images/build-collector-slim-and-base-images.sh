@@ -1,4 +1,4 @@
-#/usr/bin/env bash
+#!/usr/bin/env bash
 set -eo pipefail
 
 build_args=(
@@ -19,5 +19,5 @@ docker build \
   -t "${QUAY_REPO}/collector:${COLLECTOR_VERSION}-base" \
   -t "${QUAY_REPO}/collector:${COLLECTOR_VERSION}-slim" \
   "${build_args[@]}" \
-  -f ${SOURCE_ROOT}/collector/container/rhel/Dockerfile \
+  -f "${SOURCE_ROOT}/collector/container/rhel/Dockerfile" \
   "$SOURCE_ROOT/collector/container/rhel"

@@ -199,6 +199,12 @@ jobs:
             echo 'export BUILD_LEGACY_PROBES=false' >> ~/workspace/shared-env
           fi
 
+          if [[ -f pr-metadata/labels/build-full-images ]]; then
+            echo 'export BUILD_FULL_IMAGES=true' >> ~/workspace/shared-env
+          else
+            echo 'export BUILD_FULL_IMAGES=false' >> ~/workspace/shared-env
+          fi
+
           if [[ -f pr-metadata/labels/debug ]]; then
             echo 'export CMAKE_BUILD_TYPE=Debug' >> ~/workspace/shared-env
           else
@@ -555,8 +561,7 @@ jobs:
     - run:
         name: Lint Dockerfile
         command: |
-          docker run --rm -i hadolint/hadolint < \
-            ${SOURCE_ROOT}/collector/container/Dockerfile.ubi
+          "${CI_ROOT}/ubi-images/lint-dockerfile.sh"
 
     - run:
         name: Build collector UBI images
@@ -577,13 +582,12 @@ jobs:
       - run:
           name: Save failures files
           command: |
-            mkdir /tmp/failures
-            cp -r "${WORKSPACE_ROOT}/ko-build/build-output/FAILURES"-*/. /tmp/failures || true
+            "${CI_ROOT}/kernel-module-build-failures-check/save-failures-files.sh"
 
       - run:
           name: Test for build failures
           command: |
-            "${CI_ROOT}/kernel-module-build-failures/test-for-build-failures.sh"
+            "${CI_ROOT}/kernel-module-build-failures-check/test-for-build-failures.sh"
 
       - store_artifacts:
           path: /tmp/failures
@@ -620,38 +624,17 @@ jobs:
       - run:
           name: Remove failures file and shard output dirs
           command: |
-            rm -rf "${WORKSPACE_ROOT}/ko-build/build-output/FAILURES"-* 2>/dev/null || true
-            rm -rf "${WORKSPACE_ROOT}/ko-build/build-output/shard"-* 2>/dev/null || true
+            "${CI_ROOT}/upload-modules/remove-failures-file-and-shard-output-dirs.sh"
+
       - run:
           name: Uploading Kernel modules
           command: |
-            extra_args=()
-            target="${COLLECTOR_MODULES_BUCKET}"
-            if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
-              target="gs://stackrox-collector-modules-staging/pr-builds/${CIRCLE_BRANCH}/${CIRCLE_BUILD_NUM}"
-            fi
-            shopt -s nullglob
-            shopt -s dotglob
-            for probes_dir in "${WORKSPACE_ROOT}/ko-build/built-probes"/*; do
-              files=("${probes_dir}"/*.{gz,unavail})
-              [[ "${#files[@]}" > 0 ]] || continue
-              printf '%s\n' "${files[@]}" | gsutil -m cp -n -I "${target}/$(basename "$probes_dir")/"
-            done
-            if [[ "$CIRCLE_BRANCH" == "master" || -n "$CIRCLE_TAG" ]]; then
-              # On PR/master builds, additionally upload modules from cache
-              for probes_dir in "${WORKSPACE_ROOT}/ko-build/cached-probes"/*; do
-                files=("${probes_dir}"/*.{gz,unavail})
-                [[ "${#files[@]}" > 0 ]] || continue
-                printf '%s\n' "${files[@]}" | gsutil -m cp -n -I "${target}/$(basename "$probes_dir")/"
-              done
-            fi
+            "${CI_ROOT}/upload-modules/uploading-kernel-modules.sh" "${CIRCLE_TAG}" "${CIRCLE_BRANCH}" "${CIRCLE_BUILD_NUM}"
+
       - run:
           name: Sanity check
           command: |
-            if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
-              exit 0
-            fi
-            gsutil ls "${COLLECTOR_MODULES_BUCKET}/${MODULE_VERSION}/"
+            "${CI_ROOT}/upload-modules/sanit-check.sh" "${CIRCLE_TAG}" "${CIRCLE_BRANCH}"
                       
   dockerized-kdrivers:
     <<: *defaultImage

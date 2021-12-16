@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 #!/bin/sh
+set -eo pipefail
 
 # This script is intended to be run in CircleCI, and tells you whether or not the pull request you're on has a label
 # passed in. The script exits with code
