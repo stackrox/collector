@@ -635,9 +635,10 @@ jobs:
           name: Sanity check
           command: |
             "${CI_ROOT}/upload-modules/sanity-check.sh" "${CIRCLE_TAG}" "${CIRCLE_BRANCH}"
-                      
+
+
   dockerized-kdrivers:
-    <<: *defaultImage
+    <<: *defaultMachine
 
     steps:
     - initcommand
@@ -648,22 +649,34 @@ jobs:
     - run:
         name: Create docker context
         command: |
-          "${CI_ROOT}/dockerized-kdrivers/create-docker-context.sh"
-
+          mkdir -p ~/workspace/go/src/github.com/stackrox/bundles
+          ## Get the bundle for the running machine
+          gsutil -m cp "gs://stackrox-kernel-bundles/bundle-$(uname -r).tgz" ~/workspace/go/src/github.com/stackrox/bundles
     - run:
         name: Build probes
         command: |
-          "${CI_ROOT}/dockerized-kdrivers/build-probes.sh"
-
+          GIT_REF="${CIRCLE_BRANCH}"
+          if [[ -n "${CIRCLE_TAG}" ]]; then
+            GIT_REF="${CIRCLE_TAG}"
+          fi
+          docker build \
+            --build-arg BRANCH="${GIT_REF}" \
+            --build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
+            --build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}" \
+            --tag kernel-builder \
+            -f ~/workspace/go/src/github.com/stackrox/collector/kernel-modules/dockerized/Dockerfile \
+            ~/workspace/go/src/github.com/stackrox
     - run:
         name: Create test image
         command: |
-          "${CI_ROOT}/dockerized-kdrivers/create-test-image.sh"
-
+            docker build \
+                --tag "stackrox/collector:${COLLECTOR_TAG}-dockerized" \
+                --build-arg COLLECTOR_TAG="${COLLECTOR_TAG}-slim" \
+                ~/workspace/go/src/github.com/stackrox/collector/kernel-modules/dockerized/tests
     - run:
         name: Push test image
         command: |
-            docker push "stackrox/collector:${COLLECTOR_TAG}-dockerized"
+            docker push "stackrox/collector:${COLLECTOR_TAG}-dockerized"            
 
   integration-test-local:
     parameters:
