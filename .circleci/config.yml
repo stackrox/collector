@@ -634,7 +634,7 @@ jobs:
       - run:
           name: Sanity check
           command: |
-            "${CI_ROOT}/upload-modules/sanit-check.sh" "${CIRCLE_TAG}" "${CIRCLE_BRANCH}"
+            "${CI_ROOT}/upload-modules/sanity-check.sh" "${CIRCLE_TAG}" "${CIRCLE_BRANCH}"
                       
   dockerized-kdrivers:
     <<: *defaultImage
