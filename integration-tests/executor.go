@@ -100,6 +100,12 @@ func isSelinuxPermissiveNeeded() bool {
 	if strings.Contains(vmType, "coreos") {
 		return true
 	}
+	if strings.Contains(vmType, "rhel-7") {
+		collectionMethod := ReadEnvVarWithDefault("COLLECTION_METHOD", "kernel_module")
+		if collectionMethod == "ebpf" {
+			return true
+		}
+	}
 	return false
 }
 

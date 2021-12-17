@@ -37,7 +37,7 @@ extern "C" {
 namespace collector {
 
 const int MIN_RHEL_BUILD_ID = 957;
-const int MAX_RHEL_BUILD_ID = 1062;
+const int MAX_RHEL_BUILD_ID = 1160;
 
 struct KernelVersion {
   KernelVersion() : kernel(0), major(0), minor(0), build_id(0) {}
