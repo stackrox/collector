@@ -98,7 +98,7 @@ std::string normalizeReleaseString(HostInfo& host) {
     // Currently assuming that all docker desktop kernels have UTC timestamps
     // to simplify parsing for this edge case. std::get_time does not support parsing
     // timezone information (%Z)
-    if (strptime(kernel.version.substr(smp + 4).c_str(), "%a %b %d %H:%M:%S UTC %Y", &tm) == NULL) {
+    if (strptime(kernel.version.substr(smp + 4).c_str(), "%a %b %d %H:%M:%S UTC %Y", &tm) == nullptr) {
       CLOG(FATAL) << "Failed to parse DockerDesktop kernel timestamp: '" << time_string << "'";
     }
     std::stringstream timestamp;
