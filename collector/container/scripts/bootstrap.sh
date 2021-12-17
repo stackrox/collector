@@ -194,7 +194,7 @@ function get_kernel_version_for_garden_linux() {
     if [[ "$(echo "$uname_a" | awk '{print $3}')" =~ "cloud" ]]; then
             local_kernel_version="${local_kernel_version}-cloud"
     fi
-    return "$local_kernel_version"
+    echo "$local_kernel_version"
 }
 
 function get_ubuntu_backport_version() {
