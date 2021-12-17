@@ -181,6 +181,22 @@ function dockerdesktop_host() {
     return 1
 }
 
+function garden_linux_host() {
+    if [[ "$OS_DISTRO" =~ ^Garden\ Linux ]]; then
+	return 0
+    fi
+    return 1
+}
+
+function get_kernel_version_for_garden_linux() {
+    uname_a="$(uname -a)"
+    local_kernel_version="$(echo "$uname_a" | awk '{print $7}')"
+    if [[ "$(echo "$uname_a" | awk '{print $3}')" =~ "cloud" ]]; then
+            local_kernel_version="${local_kernel_version}-cloud"
+    fi
+    return "$local_kernel_version"
+}
+
 function get_ubuntu_backport_version() {
     if [[ "$OS_ID" == "ubuntu" ]]; then
         local uname_version
@@ -322,17 +338,7 @@ function get_kernel_object() {
 function main() {
     
     # Get the host kernel version (or user defined env var)
-    if [[ ! -n "$KERNEL_VERSION" ]]; then
-        uname_a="$(uname -a)"
-        if [[ "$uname_a" =~ "gardenlinux" ]]; then
-                KERNEL_VERSION="$(echo "$uname_a" | awk '{print $7}')"
-                if [[ "$(echo "$uname_a" | awk '{print $3}')" =~ "cloud" ]]; then
-                        KERNEL_VERSION="${KERNEL_VERSION}-cloud"
-                fi
-        else
-                KERNEL_VERSION="$(uname -r)"
-        fi
-    fi
+    [ -n "$KERNEL_VERSION" ] || KERNEL_VERSION="$(uname -r)"
 
     # Get the kernel version
     KERNEL_MAJOR=$(echo "$KERNEL_VERSION" | cut -d. -f1)
@@ -380,6 +386,10 @@ function main() {
             log "Warning: ${OS_DISTRO} does not support ebpf, switching to kernel module based collection"
             COLLECTION_METHOD="KERNEL_MODULE"
         fi
+    fi
+
+    if garden_linux_host ; then
+      KERNEL_VERSION="$(get_kernel_version_for_garden_linux)"
     fi
 
     mkdir -p /module

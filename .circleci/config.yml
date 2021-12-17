@@ -1888,7 +1888,7 @@ workflows:
         matrix:
           parameters:
             collection_method: [module, ebpf]
-            dockerized: [false, true]
+            dockerized: [false]
     - integration-test-data:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
