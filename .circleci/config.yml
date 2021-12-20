@@ -754,7 +754,7 @@ jobs:
           fi
 
           ## Get the bundles for the running machine
-          "${SOURCE_ROOT}/.circleci/download-required-packages.sh" "${CIRCLE_TAG}" "${CIRCLE_BRANCH}" ~/workspace/go/src/github.com/stackrox "${this_shard_file}"
+          "${SOURCE_ROOT}/.circleci/kernels/download-required-packages.sh" "${CIRCLE_TAG}" "${CIRCLE_BRANCH}" ~/workspace/go/src/github.com/stackrox "${this_shard_file}"
 
     - run:
         name: Build drivers
