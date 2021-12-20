@@ -46,7 +46,7 @@ BoolEnvVar ports_feature_flag("ROX_NETWORK_GRAPH_PORTS", true);
 BoolEnvVar network_drop_ignored("ROX_NETWORK_DROP_IGNORED", true);
 
 // If true, attempt to download a kernel probe from within the collector binary.
-BoolEnvVar alternate_probe_download("ROX_COLLECTOR_ALT_PROBE_DOWNLOAD", false);
+BoolEnvVar alternate_probe_download("ROX_COLLECTOR_ALT_PROBE_DOWNLOAD", true);
 
 // If true, set curl to be verbose, adding further logging that might be useful for debugging.
 BoolEnvVar set_curl_verbose("ROX_COLLECTOR_SET_CURL_VERBOSE", false);

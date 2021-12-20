@@ -154,16 +154,20 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
 
   // first check for an existing compressed kernel object in the
   // kernel-modules directory.
+  CLOG(DEBUG) << "Checking for existence of " << expected_path_compressed
+              << " and " << expected_path;
   if (stat(expected_path_compressed.c_str(), &sb) == 0) {
-    CLOG(DEBUG) << "Found existing compressed kernel module.";
+    CLOG(DEBUG) << "Found existing compressed kernel object.";
     if (!GZFileHandle::DecompressFile(expected_path_compressed, module_path)) {
       CLOG(ERROR) << "Failed to decompress " << expected_path_compressed;
+      // don't delete the local /kernel-modules gzip file because it is on a read-only file system.
       return false;
     }
   }
   // then check if we have a decompressed object in the kernel-modules
   // directory. If it exists, copy it to modules directory.
   else if (stat(expected_path.c_str(), &sb) == 0) {
+    CLOG(DEBUG) << "Found existing kernel object " << expected_path;
     std::ifstream input_file(expected_path, std::ios::binary);
     if (!input_file.is_open()) {
       CLOG(ERROR) << "Failed to open " << expected_path << " - " << StrError();
@@ -183,13 +187,17 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
   // Otherwise there is no module in local storage, so we should download it.
   else {
     CLOG(INFO) << "Local storage does not contain " << kernel_module;
-    if (!DownloadKernelObject(hostname, tls_config, kernel_module, expected_path_compressed, verbose)) {
-      CLOG(WARNING) << "Unable to download kernel object " << kernel_module;
+    std::string downloadPath = module_path + ".gz";
+    if (!DownloadKernelObject(hostname, tls_config, kernel_module, downloadPath, verbose)) {
+      CLOG(WARNING) << "Unable to download kernel object " << kernel_module << " to " << downloadPath;
       return false;
     }
 
-    if (!GZFileHandle::DecompressFile(expected_path_compressed, module_path)) {
+    if (!GZFileHandle::DecompressFile(downloadPath, module_path)) {
       CLOG(WARNING) << "Failed to decompress downloaded kernel object";
+      // If the gzipped file is corrupted, delete it so we don't try to use it
+      // next time.
+      TryUnlink(downloadPath.c_str());
       return false;
     }
     CLOG(INFO) << "Successfully downloaded and decompressed " << module_path;

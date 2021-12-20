@@ -71,14 +71,13 @@ class CosHeuristic : public Heuristic {
 
     if (!config.UseEbpf()) {
       CLOG(ERROR) << host.GetDistro() << " does not support third-party kernel modules";
-    }
-
-    if (host.HasEBPFSupport()) {
-      CLOG(WARNING) << "switching to eBPF based collection, please set "
-                    << "collector.collectionMethod=EBPF to remove this message";
-      hconfig->SetCollectionMethod("ebpf");
-    } else {
-      CLOG(FATAL) << "unable to switch to eBPF collection on this host";
+      if (host.HasEBPFSupport()) {
+        CLOG(WARNING) << "switching to eBPF based collection, please set "
+                      << "collector.collectionMethod=EBPF to remove this message";
+        hconfig->SetCollectionMethod("ebpf");
+      } else {
+        CLOG(FATAL) << "unable to switch to eBPF collection on this host";
+      }
     }
   }
 };
