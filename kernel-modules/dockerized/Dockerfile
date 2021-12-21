@@ -58,7 +58,7 @@ COPY /collector/kernel-modules/KERNEL_VERSIONS /KERNEL_VERSIONS
 COPY --from=patcher /kobuild-tmp/versions-src /kobuild-tmp/versions-src
 COPY --from=cache /kernel-modules/ /kernel-modules/
 
-RUN /scripts/create-task-file.sh; rm -rf /bundles/ /kobuild-tmp/ /kernel-modules/
+RUN /scripts/get-build-tasks.sh; rm -rf /bundles/ /kobuild-tmp/ /kernel-modules/
 
 FROM rhel-8-base AS rhel-8-builder
 

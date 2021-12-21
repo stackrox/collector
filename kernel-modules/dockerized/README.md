@@ -78,7 +78,7 @@ This stage is responsible for creating a task file, detailing what combinations 
 
 The purpose of building the list of tasks using the `KERNEL_VERSIONS` file is for our CI to be able to extract it from a built container and pull any bundles needed from GCP, instead of downloading the complete cache of bundles for every build. If the list is being created from the available bundles, it will be assumed that all possible drivers for all existing bundles are being built.
 
-For further details, all logic used by this step can be found under `/collector/kernel-modules/dockerized/scripts/create-task-file.sh`.
+For further details, all logic used by this step can be found under `/collector/kernel-modules/dockerized/scripts/get-build-tasks.sh`.
 
 ## RHEL 7/8 Builders
 The builder stages are responsible for building all drivers listed in the `/build-tasks` created by the `task-master` stage. The RHEL 7 builder handles kernels v3 and below, the RHEL 8 builder handles v4 and up.
