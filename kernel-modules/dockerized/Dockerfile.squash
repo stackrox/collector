@@ -11,3 +11,6 @@ FROM registry.access.redhat.com/ubi8/ubi:8.5 as squashed-build
 
 COPY --from=base-build /CURRENT-FAILURES/ /FAILURES/
 COPY --from=base-build /kernel-modules/ /kernel-modules/
+
+# Remove empty directories from the failures directory
+RUN find /FAILURES/ -mindepth 1 -type d -empty -delete
