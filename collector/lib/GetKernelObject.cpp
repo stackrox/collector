@@ -57,6 +57,8 @@ bool DownloadKernelObjectFromURL(FileDownloader& downloader, const std::string& 
   std::string url(base_url + "/" + module_version + "/" + kernel_module + ".gz");
 
 #ifdef COLLECTOR_APPEND_CID
+  // This extra parameter will be dropped by sensor.
+  // Its only purpose is to filter alerts coming from our CI.
   url += "?cid=collector";
 #endif
 
