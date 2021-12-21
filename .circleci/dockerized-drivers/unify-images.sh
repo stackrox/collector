@@ -38,7 +38,7 @@ for ((i=0; i<SHARDS_COUNT; i++)); do
 	docker build \
 		--tag "${DRIVER_REPO}/collector-drivers:${COLLECTOR_DRIVERS_CACHE}" \
 		--build-arg BASE_TAG="${COLLECTOR_DRIVERS_CACHE}" \
-		--build-arg EXTRA_DRIVERS="${PARTIAL_DRIVERS_TAG}" \
+		--build-arg DRIVER_TAG="${PARTIAL_DRIVERS_TAG}" \
 		-f "${SOURCE_ROOT}/kernel-modules/dockerized/Dockerfile.merge" \
 		"${SOURCE_ROOT}/kernel-modules/dockerized"
 done
