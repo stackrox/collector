@@ -172,6 +172,9 @@ compile() {
 			echo >&2 "Unknown probe type ${probe_type}"
 		fi
 	done
+
+	# Remove empty directories
+	find /FAILURES/ -mindepth 1 -type d -empty -delete
 }
 
 # The input is in the form <kernel-version> <module-version> <driver-type>. Sort it to make sure that we first build all
