@@ -56,7 +56,7 @@ std::string GetModuleVersion() {
 bool DownloadKernelObjectFromURL(FileDownloader& downloader, const std::string& base_url, const std::string& kernel_module, const std::string& module_version) {
   std::string url(base_url + "/" + module_version + "/" + kernel_module + ".gz");
 
-#ifdef COLLECTOR_DEBUG_CID
+#ifdef COLLECTOR_APPEND_CID
   url += "?cid=collector";
 #endif
 

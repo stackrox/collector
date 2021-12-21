@@ -6,7 +6,7 @@ ldconfig -v
 cd /tmp/cmake-build
 CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-Release}"
 ADDRESS_SANITIZER="${ADDRESS_SANITIZER:-false}"
-COLLECTOR_DEBUG_CID="${COLLECTOR_DEBUG_CID:-false}"
+COLLECTOR_APPEND_CID="${COLLECTOR_APPEND_CID:-false}"
 
 if [ $ADDRESS_SANITIZER = "true" ]; then
   # Needed for address sanitizer to work. See https://github.com/grpc/grpc/issues/22238.
@@ -22,7 +22,7 @@ fi
 extra_flags=(
   -DCMAKE_BUILD_TYPE="$CMAKE_BUILD_TYPE"
   -DADDRESS_SANITIZER="$ADDRESS_SANITIZER"
-  -DCOLLECTOR_DEBUG_CID="$COLLECTOR_DEBUG_CID"
+  -DCOLLECTOR_APPEND_CID="$COLLECTOR_APPEND_CID"
 )
 
 cmake "${extra_flags[@]}" /src

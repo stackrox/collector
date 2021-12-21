@@ -15,8 +15,8 @@ if(ADDRESS_SANITIZER)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
 endif()
 
-if(COLLECTOR_DEBUG_CID)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCOLLECTOR_DEBUG_CID")
+if(COLLECTOR_APPEND_CID)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCOLLECTOR_APPEND_CID")
 endif()
 
 include_directories(${PROJECT_SOURCE_DIR}/lib)
