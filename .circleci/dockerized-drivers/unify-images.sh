@@ -28,8 +28,12 @@ for ((i=0; i<SHARDS_COUNT; i++)); do
 	PARTIAL_DRIVERS_TAG="${COLLECTOR_DRIVERS_TAG}-${i}"
 
 	if ! docker pull "${DRIVER_REPO}/collector-drivers:${PARTIAL_DRIVERS_TAG}"; then
-		# Failed to pull a partial image, either there was nothing to build (and we are fine)
-		# or an error occurred (and any drivers missed here will be added in a future run).
+		if [[ -s "${WORKSPACE_ROOT}/task-shard-${i}" ]]; then
+			echo >&2 "Failed to pull ${DRIVER_REPO}/collector-drivers:${PARTIAL_DRIVERS_TAG}"
+			exit 1
+		fi
+		# Failed to pull a partial image because it didn't need to build anything.
+		# We keep going.
 		continue
 	fi
 
