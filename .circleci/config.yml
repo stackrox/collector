@@ -179,6 +179,12 @@ jobs:
             export GCP_SSH_KEY_FILE="${GCP_SSH_KEY_FILE}"
           EOF
 
+          if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" ]]; then
+          cat >> ~/workspace/shared-env \<<- EOF
+            export COLLECTOR_APPEND_CID=true
+          EOF
+          fi
+
           if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -f pr-metadata/labels/build-builder-image && ! -f pr-metadata/labels/valgrind-unit-tests && ! -f pr-metadata/labels/valgrind-integration-tests ]]; then
           cat >> ~/workspace/shared-env \<<-EOF
             export COLLECTOR_BUILDER_TAG="cache"
@@ -456,7 +462,13 @@ jobs:
     - run:
         name: Build collector
         command: |
-          make -C "${SOURCE_ROOT}" collector CMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE USE_VALGRIND="$BUILD_USE_VALGRIND" ADDRESS_SANITIZER=$SANITIZER_TESTS
+          extra_flags=(
+            CMAKE_BUILD_TYPE="$CMAKE_BUILD_TYPE"
+            USE_VALGRIND="$BUILD_USE_VALGRIND"
+            ADDRESS_SANITIZER="$SANITIZER_TESTS"
+            COLLECTOR_APPEND_CID="$COLLECTOR_APPEND_CID"
+          )
+          make -C "${SOURCE_ROOT}" collector "${extra_flags[@]}"
 
     - run:
         name: Run collector unit tests

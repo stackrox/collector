@@ -6,6 +6,7 @@ ldconfig -v
 cd /tmp/cmake-build
 CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-Release}"
 ADDRESS_SANITIZER="${ADDRESS_SANITIZER:-false}"
+COLLECTOR_APPEND_CID="${COLLECTOR_APPEND_CID:-false}"
 
 if [ $ADDRESS_SANITIZER = "true" ]; then
   # Needed for address sanitizer to work. See https://github.com/grpc/grpc/issues/22238.
@@ -18,7 +19,13 @@ if [ $ADDRESS_SANITIZER = "true" ]; then
   done
 fi
 
-cmake -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE -DADDRESS_SANITIZER=$ADDRESS_SANITIZER /src
+extra_flags=(
+  -DCMAKE_BUILD_TYPE="$CMAKE_BUILD_TYPE"
+  -DADDRESS_SANITIZER="$ADDRESS_SANITIZER"
+  -DCOLLECTOR_APPEND_CID="$COLLECTOR_APPEND_CID"
+)
+
+cmake "${extra_flags[@]}" /src
 make -j "${NPROCS:-2}" all
 if [ $CMAKE_BUILD_TYPE = "Release" ]; then
   echo "Strip unneeded"

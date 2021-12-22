@@ -15,6 +15,10 @@ if(ADDRESS_SANITIZER)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
 endif()
 
+if(COLLECTOR_APPEND_CID)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCOLLECTOR_APPEND_CID")
+endif()
+
 include_directories(${PROJECT_SOURCE_DIR}/lib)
 include_directories(${PROJECT_SOURCE_DIR}/generated/proto)
 include_directories(${PROJECT_SOURCE_DIR}/generated/rox-proto)
