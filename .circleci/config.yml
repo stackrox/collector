@@ -733,6 +733,17 @@ jobs:
     steps:
     - initcommand
     - dockerized-check-drivers-built
+
+    - run:
+        name: Check shard needs to run
+        command: |
+          if [[ ! -s "${WORKSPACE_ROOT}/task-shard-$(printf '%02d' "$CIRCLE_NODE_INDEX")" ]]; then
+            echo "Nothing to be done for this shard."
+
+            circleci step halt
+            exit 0
+          fi
+
     - gcloud-init
     - docker-login-pull
     - quay-login-push
@@ -744,17 +755,12 @@ jobs:
           echo "Nodes total: $CIRCLE_NODE_TOTAL"
           echo "Node index:  $CIRCLE_NODE_INDEX"
 
-          this_shard_file=~/workspace/task-shard-"$(printf '%02d' "$CIRCLE_NODE_INDEX")"
-
-          if [[ ! -s "$this_shard_file" ]]; then
-            echo "Nothing to be done for this shard."
-
-            circleci step halt
-            exit 0
-          fi
-
           ## Get the bundles for the running machine
-          "${SOURCE_ROOT}/.circleci/kernels/download-required-packages.sh" "${CIRCLE_TAG}" "${CIRCLE_BRANCH}" ~/workspace/go/src/github.com/stackrox "${this_shard_file}"
+          "${SOURCE_ROOT}/.circleci/kernels/download-required-packages.sh" \
+            "${CIRCLE_TAG}" \
+            "${CIRCLE_BRANCH}" \
+            "${WORKSPACE_ROOT}/go/src/github.com/stackrox" \
+            "${WORKSPACE_ROOT}/task-shard-$(printf '%02d' "$CIRCLE_NODE_INDEX")"
 
     - run:
         name: Build drivers
