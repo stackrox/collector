@@ -146,7 +146,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   if (const uint32_t* uid = event_extractor_.get_uid(event)) signal->set_uid(*uid);
   if (const uint32_t* gid = event_extractor_.get_gid(event)) signal->set_gid(*gid);
 
-  //set time
+  // set time
   auto timestamp = Allocate<Timestamp>();
   *timestamp = TimeUtil::NanosecondsToTimestamp(event->get_ts());
   signal->set_allocated_time(timestamp);
@@ -204,7 +204,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   signal->set_uid(tinfo->m_uid);
   signal->set_gid(tinfo->m_gid);
 
-  //set time
+  // set time
   auto timestamp = Allocate<Timestamp>();
   *timestamp = TimeUtil::NanosecondsToTimestamp(tinfo->m_clone_ts);
   signal->set_allocated_time(timestamp);
@@ -291,7 +291,7 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
     if (pt->m_pid == 0) return false;
 
     // Only print lineage within the container
-    if (pt->m_pid == pt->m_vpid) return false;
+    if (pt->m_container_id.empty()) return false;
     if (pt->m_vpid == -1) return false;
 
     // Collapse parent child processes that have the same path
