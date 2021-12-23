@@ -53,6 +53,7 @@ extern "C" {
 #include "CollectorStatsExporter.h"
 #include "EventNames.h"
 #include "GRPC.h"
+#include "GRPCUtil.h"
 #include "GetKernelObject.h"
 #include "GetStatus.h"
 #include "LogLevel.h"
@@ -64,6 +65,8 @@ extern "C" {
 #define delete_module(name, flags) syscall(__NR_delete_module, name, flags)
 
 extern unsigned char g_bpf_drop_syscalls[];  // defined in libscap
+
+static const int MAX_GRPC_CONNECTION_POLLS = 10;
 
 using namespace collector;
 
@@ -234,7 +237,9 @@ std::shared_ptr<grpc::Channel> createChannel(CollectorArgs* args) {
 
 // attempts to connect to the GRPC server, up to a timeout
 bool attemptGRPCConnection(std::shared_ptr<grpc::Channel>& channel) {
-  return channel->WaitForConnected(std::chrono::system_clock::now() + std::chrono::seconds(1));
+  int polls = MAX_GRPC_CONNECTION_POLLS;
+  auto poll_check = [&polls] { return (polls-- > 0); };
+  return WaitForChannelReady(channel, poll_check);
 }
 
 void gplNotice() {
