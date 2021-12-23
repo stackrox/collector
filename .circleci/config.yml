@@ -1521,15 +1521,6 @@ workflows:
             image_family: [rhel-7, rhel-8]
             collection_method: [module, ebpf]
             dockerized: [false, true]
-              #exclude:
-            # TODO(rc) Enabled but bootstrap.sh forces fallback to kernel-module (ROX-3377)
-            #- image_family: rhel-7
-            #  collection_method: ebpf
-            #  dockerized: false
-            ## TODO(rc) Enabled but bootstrap.sh forces fallback to kernel-module (ROX-3377)
-            #- image_family: rhel-7
-            #  collection_method: ebpf
-            #  dockerized: true
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>

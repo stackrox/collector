@@ -290,7 +290,25 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
     if (pt == NULL) return false;
     if (pt->m_pid == 0) return false;
 
-    // Only print lineage within the container
+    //
+    // Collection of process lineage information should stop at the container
+    // boundary to avoid collecting host process information.
+    //
+    // Depending on the platform, there are various ways of identifying whether
+    // a given process is in a container:
+    //
+    // Kernels <4.1: m_vpid can be zero, because /proc/{pid}/status does not contain
+    //               namespace information. m_container_id is used in this case to
+    //               identify containerized processes.
+    //
+    // Kernels >4.1: vpid will be non-zero because /proc/{pid}/status contains namespace
+    //               information. If not containerized, vpid == pid.
+    //
+    // Currently the only supported kernel <4.1 is RHEL 7.
+    //
+    // Note: on kernel-module based collection a custom ioctl is used to get vpid, so
+    //       it is a reliable indicator, though the following checks will still apply.
+    //
     if (pt->m_vpid == 0) {
       if (pt->m_container_id.empty()) {
         return false;
