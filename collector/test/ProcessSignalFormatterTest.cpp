@@ -593,7 +593,7 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 0;
   tinfo->m_uid = 42;
-  tinfo->m_container_id = "id";
+  tinfo->m_container_id = "";
   tinfo->m_exepath = "qwerty";
 
   auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector.get());
@@ -611,7 +611,7 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
   tinfo3->m_ptid = 1;
   tinfo3->m_vpid = 0;
   tinfo3->m_uid = 8;
-  tinfo3->m_container_id = "";
+  tinfo3->m_container_id = "id";
   tinfo3->m_exepath = "uiop";
 
   inspector->add_thread(tinfo);
@@ -627,17 +627,14 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
   int stringTotal = collector_stats.GetCounter(CollectorStats::process_lineage_string_total);
 
   EXPECT_EQ(count, 1);
-  EXPECT_EQ(total, 2);
-  EXPECT_EQ(sqrTotal, 4);
-  EXPECT_EQ(stringTotal, 10);
+  EXPECT_EQ(total, 1);
+  EXPECT_EQ(sqrTotal, 1);
+  EXPECT_EQ(stringTotal, 4);
 
-  EXPECT_EQ(lineage.size(), 2);
+  EXPECT_EQ(lineage.size(), 1);
 
   EXPECT_EQ(lineage[0].parent_uid(), tinfo2->m_uid);
   EXPECT_EQ(lineage[0].parent_exec_file_path(), tinfo2->m_exepath);
-
-  EXPECT_EQ(lineage[1].parent_uid(), tinfo->m_uid);
-  EXPECT_EQ(lineage[1].parent_exec_file_path(), tinfo->m_exepath);
 
   CollectorStats::Reset();
 }
