@@ -39,7 +39,7 @@ bool isRHEL76(const KernelVersion& kernel, const std::string& os_id) {
     // build_id = 957
     if (kernel.release.find(".el7.") != std::string::npos) {
       if (kernel.kernel == 3 && kernel.major == 10) {
-        return kernel.build_id >= MIN_RHEL_BUILD_ID && kernel.build_id <= MAX_RHEL_BUILD_ID;
+        return kernel.build_id >= MIN_RHEL_BUILD_ID;
       }
     }
   }

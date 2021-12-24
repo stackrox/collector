@@ -313,10 +313,8 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
       if (pt->m_container_id.empty()) {
         return false;
       }
-    } else {
-      if (pt->m_pid == pt->m_vpid) {
-        return false;
-      }
+    } else if (pt->m_pid == pt->m_vpid) {
+      return false;
     }
 
     if (pt->m_vpid == -1) return false;
