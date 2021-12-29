@@ -66,6 +66,9 @@ std::vector<std::string> GetKernelCandidates();
 // Get base URL for kernel modules downloads from MODULE_DOWNLOAD_BASE_URL
 const char* GetModuleDownloadBaseURL();
 
+// Wrapper around unlink(2) to handle error conditions.
+void TryUnlink(const char* path);
+
 namespace impl {
 
 inline void StrAppend(std::ostringstream* os) {}

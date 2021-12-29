@@ -9,5 +9,5 @@ fi
 # Validate CircleCI configuration if it was modified and the CLI is available
 if command -v circleci >/dev/null && git diff --name-only --cached | grep -qE '^\.circleci/config\.yml$'; then
 	echo "Validating CircleCI configuration..."
-	circleci config validate
+	circleci config validate --org-slug gh/stackrox .circleci/config.yml
 fi

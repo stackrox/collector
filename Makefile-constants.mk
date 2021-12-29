@@ -14,6 +14,7 @@ endif
 USE_VALGRIND ?= false
 ADDRESS_SANITIZER ?= false
 CMAKE_BUILD_TYPE ?= Release
+COLLECTOR_APPEND_CID ?= false
 
 ifeq ($(USE_HELGRIND),true)
 	COLLECTOR_PRE_ARGUMENTS := valgrind --tool=helgrind

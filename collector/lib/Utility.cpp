@@ -87,17 +87,22 @@ std::string normalizeReleaseString(HostInfo& host) {
   }
 
   if (host.IsDockerDesktop()) {
-    auto smp = kernel.release.find("SMP ");
+    auto smp = kernel.version.find("SMP ");
     if (smp == std::string::npos) {
-      CLOG(FATAL) << "Unable to parse docker desktop kernel release: "
-                  << "'" << kernel.release << "'";
+      CLOG(FATAL) << "Unable to parse docker desktop kernel version: "
+                  << "'" << kernel.version << "'";
     }
 
-    std::stringstream timestamp(kernel.release.substr(smp + 4));
+    std::string time_string = kernel.version.substr(smp + 4);
     std::tm tm{};
-    timestamp >> std::get_time(&tm, "%a %b %d %H:%M:%S %Z %Y");
-    timestamp.clear();
-    timestamp << std::put_time(&tm, "+%Y-%m-%d-%H-%M-%S");
+    // Currently assuming that all docker desktop kernels have UTC timestamps
+    // to simplify parsing for this edge case. std::get_time does not support parsing
+    // timezone information (%Z)
+    if (strptime(kernel.version.substr(smp + 4).c_str(), "%a %b %d %H:%M:%S UTC %Y", &tm) == nullptr) {
+      CLOG(FATAL) << "Failed to parse DockerDesktop kernel timestamp: '" << time_string << "'";
+    }
+    std::stringstream timestamp;
+    timestamp << std::put_time(&tm, "%Y-%m-%d-%H-%M-%S");
     return kernel.ShortRelease() + "-dockerdesktop-" + timestamp.str();
   }
 
@@ -241,7 +246,7 @@ std::vector<std::string> GetKernelCandidates() {
   }
 
   HostInfo& host = HostInfo::Instance();
-  std::vector<std::string> candidates{normalizeReleaseString(host)};
+  std::vector<std::string> candidates;
 
   if (host.IsUbuntu()) {
     std::string backport = getUbuntuBackport(host);
@@ -249,6 +254,8 @@ std::vector<std::string> GetKernelCandidates() {
       candidates.push_back(backport);
     }
   }
+
+  candidates.push_back(normalizeReleaseString(host));
 
   return candidates;
 }
@@ -259,6 +266,12 @@ const char* GetModuleDownloadBaseURL() {
 
   CLOG(DEBUG) << "MODULE_DOWNLOAD_BASE_URL not set";
   return "";
+}
+
+void TryUnlink(const char* path) {
+  if (unlink(path) != 0) {
+    CLOG(WARNING) << "Failed to unlink '" << path << "': " << StrError();
+  }
 }
 
 }  // namespace collector

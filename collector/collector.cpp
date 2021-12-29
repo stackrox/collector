@@ -207,6 +207,15 @@ void setBPFDropSyscalls(const std::vector<std::string>& syscall_list) {
   }
 }
 
+void gplNotice() {
+  CLOG(INFO) << "";
+  CLOG(INFO) << "This product uses kernel module and ebpf subcomponents licensed under the GNU";
+  CLOG(INFO) << "GENERAL PURPOSE LICENSE Version 2 outlined in the /kernel-modules/LICENSE file.";
+  CLOG(INFO) << "Source code for the kernel module and ebpf subcomponents is available upon";
+  CLOG(INFO) << "request by contacting support@stackrox.com.";
+  CLOG(INFO) << "";
+}
+
 int main(int argc, char** argv) {
   if (!g_control.is_lock_free()) {
     CLOG(FATAL) << "Could not create a lock-free control variable!";
@@ -242,6 +251,11 @@ int main(int argc, char** argv) {
   }
 
   if (config.AlternateProbeDownload()) {
+    struct stat st;
+    if (stat("/module", &st) != 0 || !S_ISDIR(st.st_mode)) {
+      CLOG(FATAL) << "Unexpected image state. /module directory does not exist.";
+    }
+
     std::vector<std::string> kernel_candidates = GetKernelCandidates();
 
     if (kernel_candidates.empty()) {
@@ -279,15 +293,8 @@ int main(int argc, char** argv) {
       std::string kernel_module = kernel_object.name + "-" + kernel_candidate + kernel_object.extension;
 
       success = GetKernelObject(args->GRPCServer(), collectorConfig["tlsConfig"], kernel_module, kernel_object.path, config.CurlVerbose());
-
-      // Remove the gzipped file, we won't need it anymore
-      unlink((kernel_object.path + ".gz").c_str());
-
       if (!success) {
         CLOG(WARNING) << "Error getting kernel object: " << kernel_module;
-
-        // Remove downloaded files
-        unlink(kernel_object.path.c_str());
       } else {
         break;
       }
@@ -296,6 +303,9 @@ int main(int argc, char** argv) {
     if (!success) {
       CLOG(FATAL) << "No suitable kernel object downloaded";
     }
+
+    // output the GPL notice only once the kernel object has been found or downloaded
+    gplNotice();
   }
 
   if (config.UseEbpf()) {
