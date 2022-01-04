@@ -146,7 +146,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   if (const uint32_t* uid = event_extractor_.get_uid(event)) signal->set_uid(*uid);
   if (const uint32_t* gid = event_extractor_.get_gid(event)) signal->set_gid(*gid);
 
-  //set time
+  // set time
   auto timestamp = Allocate<Timestamp>();
   *timestamp = TimeUtil::NanosecondsToTimestamp(event->get_ts());
   signal->set_allocated_time(timestamp);
@@ -204,7 +204,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   signal->set_uid(tinfo->m_uid);
   signal->set_gid(tinfo->m_gid);
 
-  //set time
+  // set time
   auto timestamp = Allocate<Timestamp>();
   *timestamp = TimeUtil::NanosecondsToTimestamp(tinfo->m_clone_ts);
   signal->set_allocated_time(timestamp);
@@ -290,8 +290,25 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
     if (pt == NULL) return false;
     if (pt->m_pid == 0) return false;
 
-    // Only print lineage within the container
-    if (pt->m_pid == pt->m_vpid) return false;
+    //
+    // Collection of process lineage information should stop at the container
+    // boundary to avoid collecting host process information.
+    //
+    // In back-ported eBPF probes, `m_vpid` will not be set for containers
+    // running when collector comes online because /proc/{pid}/status does
+    // not contain namespace information, so `m_container_id` is checked
+    // instead. `m_container_id` is not enough on its own to identify
+    // containerized processes, because it is not guaranteed to be set on
+    // all platforms.
+    //
+    if (pt->m_vpid == 0) {
+      if (pt->m_container_id.empty()) {
+        return false;
+      }
+    } else if (pt->m_pid == pt->m_vpid) {
+      return false;
+    }
+
     if (pt->m_vpid == -1) return false;
 
     // Collapse parent child processes that have the same path

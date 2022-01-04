@@ -581,6 +581,64 @@ TEST(ProcessSignalFormatterTest, CountTwoCounterCallsTest) {
   CollectorStats::Reset();
 }
 
+TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
+  std::unique_ptr<sinsp> inspector(new_inspector());
+  CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+
+  ProcessSignalFormatter processSignalFormatter(inspector.get());
+
+  auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  tinfo->m_pid = 3;
+  tinfo->m_tid = 3;
+  tinfo->m_ptid = -1;
+  tinfo->m_vpid = 0;
+  tinfo->m_uid = 42;
+  tinfo->m_container_id = "";
+  tinfo->m_exepath = "qwerty";
+
+  auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  tinfo2->m_pid = 1;
+  tinfo2->m_tid = 1;
+  tinfo2->m_ptid = 3;
+  tinfo2->m_vpid = 0;
+  tinfo2->m_uid = 7;
+  tinfo2->m_container_id = "id";
+  tinfo2->m_exepath = "asdf";
+
+  auto tinfo3 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  tinfo3->m_pid = 4;
+  tinfo3->m_tid = 4;
+  tinfo3->m_ptid = 1;
+  tinfo3->m_vpid = 0;
+  tinfo3->m_uid = 8;
+  tinfo3->m_container_id = "id";
+  tinfo3->m_exepath = "uiop";
+
+  inspector->add_thread(tinfo);
+  inspector->add_thread(tinfo2);
+  inspector->add_thread(tinfo3);
+
+  std::vector<ProcessSignalFormatter::LineageInfo> lineage;
+  processSignalFormatter.GetProcessLineage(tinfo3.get(), lineage);
+
+  int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
+  int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
+  int sqrTotal = collector_stats.GetCounter(CollectorStats::process_lineage_sqr_total);
+  int stringTotal = collector_stats.GetCounter(CollectorStats::process_lineage_string_total);
+
+  EXPECT_EQ(count, 1);
+  EXPECT_EQ(total, 1);
+  EXPECT_EQ(sqrTotal, 1);
+  EXPECT_EQ(stringTotal, 4);
+
+  EXPECT_EQ(lineage.size(), 1);
+
+  EXPECT_EQ(lineage[0].parent_uid(), tinfo2->m_uid);
+  EXPECT_EQ(lineage[0].parent_exec_file_path(), tinfo2->m_exepath);
+
+  CollectorStats::Reset();
+}
+
 }  // namespace
 
 }  // namespace collector
