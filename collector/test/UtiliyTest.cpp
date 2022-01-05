@@ -37,13 +37,13 @@ class MockHostInfoLocal : public HostInfo {
  public:
   MockHostInfoLocal() = default;
 
-  MOCK_METHOD(std::string&, GetOSID, ());
-  MOCK_METHOD(std::string&, GetBuildID, ());
-  MOCK_METHOD(KernelVersion, GetKernelVersion, ());
-  MOCK_METHOD(bool, IsUbuntu, ());
-  MOCK_METHOD(bool, IsCOS, ());
-  MOCK_METHOD(bool, IsDockerDesktop, ());
-  MOCK_METHOD(bool, IsGarden, ());
+  MOCK_METHOD0(GetOSID, std::string&());
+  MOCK_METHOD0(GetBuildID, std::string&());
+  MOCK_METHOD0(GetKernelVersion, KernelVersion());
+  MOCK_METHOD0(IsUbuntu, bool());
+  MOCK_METHOD0(IsCOS, bool());
+  MOCK_METHOD0(IsDockerDesktop, bool());
+  MOCK_METHOD0(IsGarden, bool());
 };
 
 TEST(normalizeReleaseStringTest, FedoraKernel) {
