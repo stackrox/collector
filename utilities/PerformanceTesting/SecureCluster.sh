@@ -11,8 +11,8 @@ export KUBECONFIG=$artifacts_dir/kubeconfig
 
 helm install -n stackrox stackrox-secured-cluster-services rhacs/secured-cluster-services \
   -f perf-bundle.yml \
-  --set imagePullSecrets.username=$DOCKER_USERNAME \
-  --set imagePullSecrets.password=$DOCKER_PASSWORD \
+  --set imagePullSecrets.username="$DOCKER_USERNAME" \
+  --set imagePullSecrets.password="$DOCKER_PASSWORD" \
   --set clusterName=perf-test \
   --set image.collector.registry="$collector_image_registry" \
   --set image.collector.name=collector \
