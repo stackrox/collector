@@ -74,8 +74,8 @@ TEST(normalizeReleaseStringTest, COSKernel) {
 
   EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));
   EXPECT_CALL(host, IsCOS()).WillOnce(Return(true));
-  EXPECT_CALL(host, GetBuildID).WillOnce(ReturnRef(build));
-  EXPECT_CALL(host, GetOSID).WillOnce(ReturnRef(os_id));
+  EXPECT_CALL(host, GetBuildID()).WillOnce(ReturnRef(build));
+  EXPECT_CALL(host, GetOSID()).WillOnce(ReturnRef(os_id));
 
   auto normalized_kernel = normalizeReleaseString(host);
 
