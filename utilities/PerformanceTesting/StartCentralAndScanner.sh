@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eou pipefail
 
-echo "Starting central and sensor"
+echo "Starting central and scanner related pods"
 
 artifacts_dir=$1
 
