@@ -39,6 +39,7 @@ extern "C" {
 }
 
 #include <fstream>
+#include <regex>
 
 #include "HostInfo.h"
 #include "Logging.h"
@@ -104,6 +105,20 @@ std::string normalizeReleaseString(HostInfo& host) {
     std::stringstream timestamp;
     timestamp << std::put_time(&tm, "%Y-%m-%d-%H-%M-%S");
     return kernel.ShortRelease() + "-dockerdesktop-" + timestamp.str();
+  }
+
+  if (host.IsGarden()) {
+    // Garden linux uses a special kernel version in order to avoid
+    // overlapping with Debian.
+    std::regex garden_linux_kernel_re(R"(\d+\.\d+\.\d+-\w+)");
+    std::smatch match;
+
+    if (!std::regex_search(kernel.version, match, garden_linux_kernel_re)) {
+      CLOG(WARNING) << "Failed to match the Garden Linux kernel version.";
+      return kernel.release;
+    }
+
+    return kernel.release + "-gl-" + match.str();
   }
 
   return kernel.release;
