@@ -1888,6 +1888,9 @@ workflows:
           parameters:
             collection_method: [module, ebpf]
             dockerized: [false, true]
+          exclude:
+            - collection_method: module
+              dockerized: true
     - integration-test-data:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
