@@ -2,8 +2,8 @@
 set -eou pipefail
 
 artifacts_dir=$1
-collector_image_registry=${1:-docker.io/stackrox}
-collector_image_tag=${2:-3.5.x-76-gaca574d047}
+collector_image_registry=${2:-docker.io/stackrox}
+collector_image_tag=${3:-3.5.x-76-gaca574d047}
 
 echo "Starting secure cluster services"
 

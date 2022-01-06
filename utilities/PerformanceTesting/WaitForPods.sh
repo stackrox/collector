@@ -11,7 +11,7 @@ while true
 do
   npods="$(kubectl -n stackrox get pods | wc -l)"
   npods=$(( npods-1 ))
-  nrunning="$({ kubectl -n stackrox get pods | awk '{print $3}' | grep Running || true ; } | wc -l)"
+  nrunning="$({ kubectl -n stackrox get pods | awk '{print $2}' | awk -F "/" '{if ($1 == $2) print}' || true ; } | wc -l)"
   echo "npods= $npods nrunning= $nrunning"
   if [[ $npods == "$nrunning" ]]; then
     echo "All pods are running"
