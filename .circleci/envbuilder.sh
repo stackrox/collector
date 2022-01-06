@@ -51,7 +51,7 @@ createGCPVMFromImage() {
   shift
 
   [ -z "$GCP_VM_NAME" ] && echo "error: missing parameter GCP_VM_NAME" && return 1
-  [ -z "$GCP_IMAGE_NAME" ] && echo "error: missing parameter GCP_IMAGE_FAMILY" && return 1
+  [ -z "$GCP_IMAGE_NAME" ] && echo "error: missing parameter GCP_IMAGE_NAME" && return 1
   [ -z "$GCP_IMAGE_PROJECT" ] && echo "error: missing parameter GCP_IMAGE_PROJECT" && return 1
 
   success=false
@@ -216,7 +216,7 @@ setupGCPVM() {
     GCP_IMAGE_PROJECT="$GCP_VM_TYPE-cloud"
   fi
 
-  if [[ -n "$GCP_IMAGE_NAME" ]]; then
+  if [[ -n "$GCP_IMAGE_NAME" && "$GCP_IMAGE_NAME" != "unset" ]]; then
     createGCPVMFromImage "$GCP_VM_NAME" "$GCP_IMAGE_NAME" "$GCP_IMAGE_PROJECT"
   else
     createGCPVM "$GCP_VM_NAME" "$GCP_IMAGE_FAMILY" "$GCP_IMAGE_PROJECT"

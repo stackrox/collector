@@ -1231,7 +1231,7 @@ jobs:
         enum: [cos-beta, cos-dev, cos-stable, cos-89-lts, cos-85-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2104, sles-12, sles-15, sles-15-sp2-sap, flatcar-stable, fedora-coreos-stable, garden-linux]
       image_name:
         type: string
-        default: ""
+        default: "unset"
       offline:
         type: boolean
         default: false
@@ -1916,8 +1916,8 @@ workflows:
         - test-module-flatcar-stable
         - test-ebpf-fedora-coreos-stable
         - test-module-fedora-coreos-stable
-        - test-ebpf-garden-linux
-        - test-module-garden-linux
+        # - test-ebpf-garden-linux
+        # - test-module-garden-linux
     - reload-released-images:
         <<: *runOnAllTags
         context:
