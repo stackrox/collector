@@ -1891,6 +1891,8 @@ workflows:
           exclude:
             - collection_method: module
               dockerized: true
+            - collection_method: module
+              dockerized: false
     - integration-test-data:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
@@ -1919,7 +1921,7 @@ workflows:
         - test-module-flatcar-stable
         - test-ebpf-fedora-coreos-stable
         - test-module-fedora-coreos-stable
-        # - test-ebpf-garden-linux
+        - test-ebpf-garden-linux
         # - test-module-garden-linux
     - reload-released-images:
         <<: *runOnAllTags
