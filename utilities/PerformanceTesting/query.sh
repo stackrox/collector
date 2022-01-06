@@ -122,6 +122,34 @@ get_reports_for_sensor_network_flow() {
 
 }
 
+get_reports_for_cpu_and_mem_usage() {
+  echo ""
+  echo "#################"
+  echo "Report for cpu and memory usage"
+  echo ""
+
+  avg_cpu_query='avg by (job) (rate(container_cpu_usage_seconds_total{namespace="stackrox"}[1m]) * 100)'
+  max_cpu_query='max by (job) (rate(container_cpu_usage_seconds_total{namespace="stackrox"}[1m]) * 100)'
+  avg_mem_query='avg by (job) (container_memory_usage_bytes{namespace="stackrox"})'
+  max_mem_query='max by (job) (container_memory_usage_bytes{namespace="stackrox"})'
+
+  avg_cpu_value=$(do_prometheus_query_and_get_value "$avg_cpu_query")
+  max_cpu_value=$(do_prometheus_query_and_get_value "$max_cpu_query")
+  avg_mem_value=$(do_prometheus_query_and_get_value "$avg_mem_query")
+  max_mem_value=$(do_prometheus_query_and_get_value "$max_mem_query")
+
+  echo "Average cpu percentage usage: $avg_cpu_value"
+  echo "Maximum cpu percentage usage: $max_cpu_value"
+  echo ""
+  echo "Average memory usage (bytes): $avg_mem_value"
+  echo "Maximum memory usage (bytes): $max_mem_value"
+
+  echo ""
+  echo "#################"
+  echo ""
+
+}
+
 artifacts_dir=${1:-/tmp/artifacts}
 
 export KUBECONFIG=$artifacts_dir/kubeconfig
@@ -135,3 +163,4 @@ url="$(oc get routes -A | grep prometheus-k8s | awk '{print $3}' | head -1)"
 get_reports_for_collector_timers
 get_reports_for_collector_counters
 get_reports_for_sensor_network_flow
+get_reports_for_cpu_and_mem_usage
