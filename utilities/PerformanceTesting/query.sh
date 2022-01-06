@@ -42,13 +42,13 @@ get_reports_for_collector_timers() {
     total_max_time=$(echo "$total_max_time+$max_time" | bc)
 
     echo ""
-    echo "Average time taken by $timer: $avg_time"
-    echo "Maximum time taken by $timer in any pod: $max_time"
+    echo "Average time taken by $timer (microseconds): $avg_time"
+    echo "Maximum time taken by $timer in any pod (microseconds): $max_time"
     echo ""
   done
   
-  echo "Total time taken by collector timers in worst case (Sum of max times): $total_max_time"
-  echo "Total average time taken by collector timers: $total_avg_time"
+  echo "Total time taken by collector timers in worst case (Sum of max times in microseconds): $total_max_time"
+  echo "Total average time taken by collector timers (microseconds): $total_avg_time"
   echo ""
   echo "#################"
   echo ""
@@ -69,8 +69,8 @@ get_reports_for_collector_counters() {
     max=$(do_prometheus_query_and_get_value "$max_query")
 
     echo ""
-    echo "Average of $counter over pods: $avg"
-    echo "Maximum of $counter over pods: $max"
+    echo "Average of $counter over pods (microseconds): $avg"
+    echo "Maximum of $counter over pods (microseconds): $max"
     echo ""
 
   done
@@ -105,10 +105,14 @@ get_reports_for_sensor_network_flow() {
   for metric in rox_sensor_network_flow_host_connections_added rox_sensor_network_flow_host_connections_removed rox_sensor_network_flow_external_flows
   do
     query=$metric
+    rate_query='rate('$metric'[1m])'
+
     value=$(do_prometheus_query_and_get_value "$query")
+    rate_value=$(do_prometheus_query_and_get_value "$rate_query")
 
     echo ""
     echo "$metric: $value"
+    echo "Average $metric per second: $rate_value"
     echo ""
   done
 
