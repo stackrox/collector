@@ -5,8 +5,8 @@ parameters:
     default: "quay.io/rhacs-eng"
 
 defaultImage: &defaultImage
-  docker:
-  - image: "<< pipeline.parameters.quay-repo >>/apollo-ci:snapshot-collector-0.3.21-28-g58a71b043d" # TODO(do not merge): After upstream PR is merged, cut a tag and update this
+  docker: 
+  - image: "<< pipeline.parameters.quay-repo >>/apollo-ci:snapshot-collector-0.3.22-10-gb5ac40be83" # TODO(do not merge): After upstream PR is merged, cut a tag and update this
     auth:
       username: $QUAY_RHACS_ENG_RO_USERNAME
       password: $QUAY_RHACS_ENG_RO_PASSWORD
