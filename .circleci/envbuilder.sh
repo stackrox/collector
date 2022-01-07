@@ -162,7 +162,6 @@ gcpSSHReady() {
       && exitCode=0 && break || exitCode=$? && sleep 15
   done
 
-  #instance_id="$(gcloud compute instances describe $GCP_VM_NAME --format='get(id)')" #Remove before merging
   instance_id="$(gcloud compute instances describe "${GCP_VM_NAME}" --format='get(id)')"
   ssh-keygen -f "/home/circleci/.ssh/google_compute_known_hosts" -R "compute.${instance_id}"
   echo "Cleared existing ssh keys for compute.${instance_id}"
@@ -209,7 +208,6 @@ setupGCPVM() {
 
   local GCP_VM_USER
   GCP_VM_USER="$(whoami)"
-  #local GCP_VM_USER="$(whoami)" #Remove before merging
   if [[ "$GCP_VM_TYPE" =~ "coreos" ]]; then
     GCP_VM_USER="core"
   fi

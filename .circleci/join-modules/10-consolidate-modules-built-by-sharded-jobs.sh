@@ -7,8 +7,7 @@ shopt -s dotglob
 mkdir -p "${WORKSPACE_ROOT}/ko-build/built-probes"
 shard_dirs=("${WORKSPACE_ROOT}/ko-build/build-output/shard-"*)
 
-if [[ "${#shard_dirs[@]}" == 0 ]]; then #Wanted to bring attention to this
-#if [[ "{#shard_dirs[@]}" == 0 ]]; then
+if [[ "${#shard_dirs[@]}" == 0 ]]; then
   exit 0
 fi
 
@@ -21,8 +20,7 @@ for shard_dir in "${shard_dirs[@]}"; do
     mkdir -p "$out_dir"
     files=("${job_dir}"/*.{gz,unavail})
     echo "${#files[@]} files in ${job_dir}"
-    [[ "${#files[@]}" -gt 0 ]] || continue #Wanted to bring attention to this
-    #[[ "${#files[@]}" > 0 ]] || continue
+    [[ "${#files[@]}" -gt 0 ]] || continue
     mv "${job_dir}"/*.{gz,unavail} "$out_dir"
   done
 done

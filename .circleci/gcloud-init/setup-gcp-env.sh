@@ -19,5 +19,4 @@ gcloud config set compute/region us-central1
 gcloud config unset compute/zone
 gcloud config set core/disable_prompts True
 gcloud auth list
-#gsutil ls $bucket_permission_check/ || echo "ERROR: Could not ls bucket" #Remove before mergin
 gsutil ls "${bucket_permission_check}/" || echo "ERROR: Could not ls bucket"

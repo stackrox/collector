@@ -12,7 +12,6 @@ downloadBundlesListedInFile() {
 
 getNumFailedDownloads() {
     find "$bundles_dir"/*.gstmp 2>/dev/null | wc -l || true
-    #echo "$(ls "$bundles_dir"/*.gstmp 2>/dev/null | wc -l || true)" #Remove before merging
 }
 
 reportIfFailed() {
@@ -33,7 +32,6 @@ retryFailedDownloads() {
 
   max_attempts=5 #If you can't download it after 5 attempts you probably can't download it
   for ((i=0;i<max_attempts;i=i+1))
-  #for ((i=0;i<$max_attempts;i=i+1)) #Remove before merging
   do
     num_failed_downloads="$(getNumFailedDownloads)"
     if (( num_failed_downloads == 0 )); then
@@ -69,6 +67,5 @@ mkdir -p "$bundles_dir"
 downloadBundles "$KERNEL_BUNDLES_BUCKET"
 
 if [[ -z "$TAG" && "$BRANCH" != "master" && -n "$KERNEL_BUNDLES_STAGING_BUCKET" ]]; then
-#if [[ -z "$TAG" && "$BRANCH" != "master" && ! -z "$KERNEL_BUNDLES_STAGING_BUCKET" ]]; then #Remove before merging
   downloadBundles "$KERNEL_BUNDLES_STAGING_BUCKET"
 fi
