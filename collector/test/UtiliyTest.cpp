@@ -115,4 +115,21 @@ TEST(normalizeReleaseStringTest, GardenKernel) {
   EXPECT_EQ(normalized_kernel, expected_kernel);
 }
 
+TEST(normalizeReleaseStringTest, Garden318Kernel) {
+  MockHostInfoLocal host;
+  std::string release("5.4.0-6-cloud-amd64");
+  std::string version("#1 SMP Debian 5.4.93-1 (2021-02-09)");
+  std::string expected_kernel("5.4.0-6-cloud-amd64-gl-5.4.93-1");
+  KernelVersion kv(release, version);
+
+  EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));
+  EXPECT_CALL(host, IsCOS()).WillOnce(Return(false));
+  EXPECT_CALL(host, IsDockerDesktop()).WillOnce(Return(false));
+  EXPECT_CALL(host, IsGarden()).WillOnce(Return(true));
+
+  auto normalized_kernel = normalizeReleaseString(host);
+
+  EXPECT_EQ(normalized_kernel, expected_kernel);
+}
+
 }  // namespace collector
