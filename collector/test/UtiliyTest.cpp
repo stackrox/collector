@@ -119,7 +119,7 @@ TEST(normalizeReleaseStringTest, Garden318Kernel) {
   MockHostInfoLocal host;
   std::string release("5.4.0-6-cloud-amd64");
   std::string version("#1 SMP Debian 5.4.93-1 (2021-02-09)");
-  std::string expected_kernel("5.4.0-6-cloud-amd64-gl-5.4.93-1");
+  std::string expected_kernel("5.4.0-6-cloud-amd64");
   KernelVersion kv(release, version);
 
   EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));

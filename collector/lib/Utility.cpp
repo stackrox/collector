@@ -109,7 +109,11 @@ std::string normalizeReleaseString(HostInfo& host) {
 
   if (host.IsGarden()) {
     // Garden linux uses a special kernel version in order to avoid
-    // overlapping with Debian.
+    // overlapping with Debian for kernels >= 5.10.
+    if (kernel.kernel < 5 || (kernel.kernel == 5 && kernel.major < 10)) {
+      return kernel.release;
+    }
+
     std::regex garden_linux_kernel_re(R"(\d+\.\d+\.\d+-\w+)");
     std::smatch match;
 
