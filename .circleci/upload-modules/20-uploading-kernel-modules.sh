@@ -15,7 +15,7 @@ shopt -s dotglob
 for probes_dir in "${WORKSPACE_ROOT}/ko-build/built-probes"/*; do
   files=("${probes_dir}"/*.{gz,unavail})
   [[ "${#files[@]}" -gt 0 ]] || continue
-  #[[ "${#files[@]}" > 0 ]] || continue
+  #[[ "${#files[@]}" > 0 ]] || continue # Remove before merging
   printf '%s\n' "${files[@]}" | gsutil -m cp -n -I "${target}/$(basename "$probes_dir")/"
 done
 
