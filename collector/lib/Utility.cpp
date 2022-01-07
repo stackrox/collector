@@ -73,6 +73,24 @@ std::string getUbuntuBackport(HostInfo& host) {
   return "";
 }
 
+// Garden linux uses a special kernel version in order to avoid
+// overlapping with Debian. This function returns the appropriate
+// name for this candidate while keeping the possibility to use
+// the Debian driver if it doesn't exist.
+std::string getGardenLinuxCandidate(HostInfo& host) {
+  auto kernel = host.GetKernelVersion();
+
+  std::regex garden_linux_kernel_re(R"(\d+\.\d+\.\d+-\w+)");
+  std::smatch match;
+
+  if (!std::regex_search(kernel.version, match, garden_linux_kernel_re)) {
+    CLOG(WARNING) << "Failed to match the Garden Linux kernel version.";
+    return "";
+  }
+
+  return kernel.release + "-gl-" + match.str();
+}
+
 // Normalizes this host's release string into something collector can use
 // to download appropriate kernel objects from the webserver. If the release
 // string does not require normalization, it is simply returned.
@@ -105,24 +123,6 @@ std::string normalizeReleaseString(HostInfo& host) {
     std::stringstream timestamp;
     timestamp << std::put_time(&tm, "%Y-%m-%d-%H-%M-%S");
     return kernel.ShortRelease() + "-dockerdesktop-" + timestamp.str();
-  }
-
-  if (host.IsGarden()) {
-    // Garden linux uses a special kernel version in order to avoid
-    // overlapping with Debian for kernels >= 5.10.
-    if (kernel.kernel < 5 || (kernel.kernel == 5 && kernel.major < 10)) {
-      return kernel.release;
-    }
-
-    std::regex garden_linux_kernel_re(R"(\d+\.\d+\.\d+-\w+)");
-    std::smatch match;
-
-    if (!std::regex_search(kernel.version, match, garden_linux_kernel_re)) {
-      CLOG(WARNING) << "Failed to match the Garden Linux kernel version.";
-      return kernel.release;
-    }
-
-    return kernel.release + "-gl-" + match.str();
   }
 
   return kernel.release;
@@ -271,6 +271,14 @@ std::vector<std::string> GetKernelCandidates() {
     std::string backport = getUbuntuBackport(host);
     if (!backport.empty()) {
       candidates.push_back(backport);
+    }
+  }
+
+  if (host.IsGarden()) {
+    auto garden_candidate = getGardenLinuxCandidate(host);
+
+    if (!garden_candidate.empty()) {
+      candidates.push_back(garden_candidate);
     }
   }
 

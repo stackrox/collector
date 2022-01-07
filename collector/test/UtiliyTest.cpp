@@ -43,8 +43,35 @@ class MockHostInfoLocal : public HostInfo {
   MOCK_METHOD0(IsUbuntu, bool());
   MOCK_METHOD0(IsCOS, bool());
   MOCK_METHOD0(IsDockerDesktop, bool());
-  MOCK_METHOD0(IsGarden, bool());
 };
+
+TEST(getGardenLinuxCandidateTest, Garden576_1) {
+  MockHostInfoLocal host;
+  std::string release("5.10.0-9-cloud-amd64");
+  std::string version("#1 SMP Debian 5.10.83-1gardenlinux1 (2021-12-03)");
+  std::string expected_kernel("5.10.0-9-cloud-amd64-gl-5.10.83-1gardenlinux1");
+  KernelVersion kv(release, version);
+
+  EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));
+
+  auto candidate = getGardenLinuxCandidate(host);
+
+  EXPECT_EQ(candidate, expected_kernel);
+}
+
+TEST(getGardenLinuxCandidateTest, Garden318) {
+  MockHostInfoLocal host;
+  std::string release("5.4.0-6-cloud-amd64");
+  std::string version("#1 SMP Debian 5.4.93-1 (2021-02-09)");
+  std::string expected_kernel("5.4.0-6-cloud-amd64-gl-5.4.93-1");
+  KernelVersion kv(release, version);
+
+  EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));
+
+  auto candidate = getGardenLinuxCandidate(host);
+
+  EXPECT_EQ(candidate, expected_kernel);
+}
 
 TEST(normalizeReleaseStringTest, FedoraKernel) {
   MockHostInfoLocal host;
@@ -56,7 +83,6 @@ TEST(normalizeReleaseStringTest, FedoraKernel) {
   EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));
   EXPECT_CALL(host, IsCOS()).WillOnce(Return(false));
   EXPECT_CALL(host, IsDockerDesktop()).WillOnce(Return(false));
-  EXPECT_CALL(host, IsGarden()).WillOnce(Return(false));
 
   auto normalized_kernel = normalizeReleaseString(host);
 
@@ -102,13 +128,12 @@ TEST(normalizeReleaseStringTest, GardenKernel) {
   MockHostInfoLocal host;
   std::string release("5.10.0-9-cloud-amd64");
   std::string version("#1 SMP Debian 5.10.83-1gardenlinux1 (2021-12-03)");
-  std::string expected_kernel("5.10.0-9-cloud-amd64-gl-5.10.83-1gardenlinux1");
+  std::string expected_kernel("5.10.0-9-cloud-amd64");
   KernelVersion kv(release, version);
 
   EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));
   EXPECT_CALL(host, IsCOS()).WillOnce(Return(false));
   EXPECT_CALL(host, IsDockerDesktop()).WillOnce(Return(false));
-  EXPECT_CALL(host, IsGarden()).WillOnce(Return(true));
 
   auto normalized_kernel = normalizeReleaseString(host);
 
@@ -125,7 +150,6 @@ TEST(normalizeReleaseStringTest, Garden318Kernel) {
   EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));
   EXPECT_CALL(host, IsCOS()).WillOnce(Return(false));
   EXPECT_CALL(host, IsDockerDesktop()).WillOnce(Return(false));
-  EXPECT_CALL(host, IsGarden()).WillOnce(Return(true));
 
   auto normalized_kernel = normalizeReleaseString(host);
 
