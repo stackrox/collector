@@ -19,7 +19,8 @@ if [[ "$use_valgrind" == "true" ]]; then
 fi
 
 if [[ "$use_helgrind" == "true" ]]; then
-  data_race_lines="$({ grep ^==[0-9].*data\ race "$log_file" || true ; } | wc -l)"
+  data_race_lines="$({ grep "^==[0-9].*data\ race" "$log_file" || true ; } | wc -l)"
+  #data_race_lines="$({ grep ^==[0-9].*data\ race "$log_file" || true ; } | wc -l)" #Remove before merging
   if (( data_race_lines > 0 ))
   then
     echo "Found $data_race_lines possible data races"

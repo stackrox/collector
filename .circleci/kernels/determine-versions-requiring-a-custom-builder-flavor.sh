@@ -10,7 +10,7 @@ for bundle_file in ~/kobuild-tmp/bundles/bundle-*.tgz; do
   distro="$(< ~/kobuild-tmp/meta-inspect/BUNDLE_DISTRO)"
   kernel_version="$(< ~/kobuild-tmp/meta-inspect/BUNDLE_VERSION)"
   kernel_major="$(< ~/kobuild-tmp/meta-inspect/BUNDLE_MAJOR)"
-  flavor="$("${CI_ROOT}/kernels/get-builder-flavor.sh" $version $distro $kernel_version $kernel_major)"
+  flavor="$("${CI_ROOT}/kernels/get-builder-flavor.sh" "${version}" "${distro}" "${kernel_version}" "${kernel_major}")"
   if [[ "$flavor" != "default" ]]; then
     echo "$version" >>~/kobuild-tmp/custom-flavors/versions."$flavor"
   fi

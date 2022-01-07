@@ -68,7 +68,8 @@ rm -rf "${LEGACY_DIR}"
 
 shopt -s nullglob
 for i in "${WORKSPACE_ROOT}/ko-build/released-modules"/* ; do
-  version="$(basename $i .tgz)"
+  version="$(basename "$i" .tgz)"
+  #version="$(basename $i .tgz)" #Remove before merging
   [[ "$version" != "$MODULE_VERSION" ]] || continue
   echo "Building modules for legacy module version $version"
 done
