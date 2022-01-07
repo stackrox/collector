@@ -895,6 +895,9 @@ jobs:
       image_name:
         type: string
         default: "unset"
+      image_version:
+        type: string
+        default: ""
       offline:
         type: boolean
         default: false
@@ -1541,19 +1544,28 @@ workflows:
               dockerized: true
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-<< matrix.collection_method >>-garden-linux<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
+        name: test-<< matrix.collection_method >>-garden-linux-<< matrix.image_version >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
         image_family: garden-linux
-        image_name: gardenlinux-gcp-cloud-gardener--prod-576-1-0f7a5b
+        image_name: gardenlinux-gcp-cloud-gardener--prod-<< matrix.image_version >>
         vm_type: garden-linux
         matrix:
           parameters:
             collection_method: [module, ebpf]
             dockerized: [false, true]
+            image_version: [576-1-0f7a5b, 318-8-ae20c2]
           exclude:
             - collection_method: module
               dockerized: true
+              image_version: 576-1-0f7a5b
             - collection_method: ebpf
               dockerized: true
+              image_version: 576-1-0f7a5b
+            - collection_method: module
+              dockerized: true
+              image_version: 318-8-ae20c2
+            - collection_method: ebpf
+              dockerized: true
+              image_version: 318-8-ae20c2
     - integration-test-data:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
@@ -1582,8 +1594,10 @@ workflows:
         - test-module-flatcar-stable
         - test-ebpf-fedora-coreos-stable
         - test-module-fedora-coreos-stable
-        - test-ebpf-garden-linux
-        # - test-module-garden-linux
+        - test-ebpf-garden-linux-576-1-0f7a5b
+        - test-module-garden-linux-576-1-0f7a5b
+        - test-ebpf-garden-linux-318-8-ae20c2
+        - test-module-garden-linux-318-8-ae20c2
     - reload-released-images:
         <<: *runOnAllTags
         context:
