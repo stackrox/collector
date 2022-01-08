@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+set -eo pipefail
+
 createGCPVM() {
   local GCP_VM_NAME="$1"
   shift
@@ -159,7 +162,7 @@ gcpSSHReady() {
       && exitCode=0 && break || exitCode=$? && sleep 15
   done
 
-  instance_id="$(gcloud compute instances describe $GCP_VM_NAME --format='get(id)')"
+  instance_id="$(gcloud compute instances describe "${GCP_VM_NAME}" --format='get(id)')"
   ssh-keygen -f "/home/circleci/.ssh/google_compute_known_hosts" -R "compute.${instance_id}"
   echo "Cleared existing ssh keys for compute.${instance_id}"
 
@@ -203,7 +206,8 @@ setupGCPVM() {
     exit 1
   fi
 
-  local GCP_VM_USER="$(whoami)"
+  local GCP_VM_USER
+  GCP_VM_USER="$(whoami)"
   if [[ "$GCP_VM_TYPE" =~ "coreos" ]]; then
     GCP_VM_USER="core"
   fi

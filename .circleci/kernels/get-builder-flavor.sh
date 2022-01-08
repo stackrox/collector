@@ -61,7 +61,7 @@ fi
 
 flavor="default"
 # Ubuntu 20.04 backport
-if [[ "$distro" == "ubuntu" && "$version" =~ "~20.04" ]]; then
+if [[ "$distro" == "ubuntu" && "$version" =~ ~20.04 ]]; then
   flavor="modern"
 elif [[ "$distro" =~ ^dockerdesktop$ ]]; then
   flavor="modern"
@@ -81,7 +81,7 @@ elif [[ "$distro" == "redhat" && "$version" =~ ^.*(el8_[3-9]|[3-9][0-9][0-9][.0-
   flavor="modern"
 elif [[ "$distro" == "redhat" && "$version" == "4.18.0-293.el8.x86_64" ]]; then
   flavor="modern"
-elif grep -q "$distro" <$custom_build_flavors_all_file; then
+elif grep -q "$distro" < "$custom_build_flavors_all_file"; then
   flavor="$distro"
 fi
-echo $flavor
+echo "$flavor"
