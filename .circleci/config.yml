@@ -9,6 +9,9 @@ parameters:
   dockerized-cache-tag:
     type: string
     default: cache-v1
+  kernel-bundles-staging:
+    type: string
+    default: gs://stackrox-kernel-bundles-staging/mauro/crawl-garden-repo/4f773540352a286f3f8d2ac8d2279c79c47c544b
 
 defaultImage: &defaultImage
   docker:
@@ -441,7 +444,7 @@ jobs:
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
-    - KERNEL_BUNDLES_STAGING_BUCKET: "gs://stackrox-kernel-bundles-staging/mauro/crawl-garden-repo/4f773540352a286f3f8d2ac8d2279c79c47c544b"
+    - KERNEL_BUNDLES_STAGING_BUCKET: "<< pipeline.parameters.kernel-bundles-staging >>"
 
     steps:
     - initcommand
@@ -729,6 +732,8 @@ jobs:
   dockerized-build-drivers:
     <<: *defaultMachine
     parallelism: << pipeline.parameters.dockerized-parallel >>
+    environment:
+    - KERNEL_BUNDLES_STAGING_BUCKET: "<< pipeline.parameters.kernel-bundles-staging >>"
 
     steps:
     - initcommand
