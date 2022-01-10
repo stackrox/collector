@@ -20,9 +20,12 @@ if [[ ! -s ~/workspace/build-tasks ]]; then
 	exit 0
 fi
 
-# Create an empty base image
-docker pull registry.access.redhat.com/ubi8/ubi:8.5
-docker tag registry.access.redhat.com/ubi8/ubi:8.5 "${DRIVER_REPO}/collector-drivers:${COLLECTOR_DRIVERS_TAG}"
+if [[ "${COLLECTOR_DRIVERS_TAG}" != "${COLLECTOR_DRIVERS_CACHE}" ]]; then
+	# Create an empty base image if we are not building the cache
+	docker pull registry.access.redhat.com/ubi8/ubi:8.5
+	docker tag registry.access.redhat.com/ubi8/ubi:8.5 \
+		"${DRIVER_REPO}/collector-drivers:${COLLECTOR_DRIVERS_TAG}"
+fi
 
 for ((i=0; i<SHARDS_COUNT; i++)); do
 	PARTIAL_DRIVERS_TAG="${COLLECTOR_DRIVERS_TAG}-${i}"
