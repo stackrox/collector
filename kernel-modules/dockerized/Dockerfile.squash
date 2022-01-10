@@ -1,0 +1,13 @@
+# The way to aggregate kernel drivers leaves an image with a large number of layers.
+# In order to squash them down to just a couple, (without using experimental features),
+# We grab the aggregated image and copy the files we need onto a fresh UBI image.
+
+ARG DRIVER_TAG
+ARG DRIVER_REPO=quay.io/rhacs-eng
+
+FROM ${DRIVER_REPO}/collector-drivers:${DRIVER_TAG} as base-build
+
+FROM registry.access.redhat.com/ubi8/ubi:8.5 as squashed-build
+
+COPY --from=base-build /CURRENT-FAILURES/ /FAILURES/
+COPY --from=base-build /kernel-modules/ /kernel-modules/

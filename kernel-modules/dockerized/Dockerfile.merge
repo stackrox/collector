@@ -1,0 +1,10 @@
+ARG BASE_TAG
+ARG DRIVER_TAG=latest
+ARG DRIVER_REPO=quay.io/rhacs-eng
+
+FROM $DRIVER_REPO/collector-drivers:$DRIVER_TAG AS drivers
+
+FROM $DRIVER_REPO/collector-drivers:$BASE_TAG
+
+COPY --from=drivers /kernel-modules/ /kernel-modules/
+COPY --from=drivers /FAILURES/ /CURRENT-FAILURES/
