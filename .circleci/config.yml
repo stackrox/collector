@@ -1553,19 +1553,6 @@ workflows:
             collection_method: [module, ebpf]
             dockerized: [false, true]
             image_version: [576-1-0f7a5b, 318-8-ae20c2]
-          exclude:
-            - collection_method: module
-              dockerized: true
-              image_version: 576-1-0f7a5b
-            - collection_method: ebpf
-              dockerized: true
-              image_version: 576-1-0f7a5b
-            - collection_method: module
-              dockerized: true
-              image_version: 318-8-ae20c2
-            - collection_method: ebpf
-              dockerized: true
-              image_version: 318-8-ae20c2
     - integration-test-data:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
