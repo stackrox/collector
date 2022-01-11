@@ -32,11 +32,11 @@ check_if_branch_supports_kernel_version() {
 	kernel_version_file="kernel-modules/KERNEL_VERSIONS"
 	
 	nfound=$(git grep -w "$kernel" "$branch" -- "$kernel_version_file" | wc -l)
-	if [[ "$nfound" == "0" ]]; then
+	if ((nfound == 0)); then
 	        echo "Kernel $kernel NOT found in $kernel_version_file in the $branch branch"
-	elif [[ "$nfound" == "1" ]]; then
+	elif ((nfound == 1)); then
 	        echo "Kernel $kernel FOUND in $kernel_version_file in the $branch branch"
-	else [[ $nfound -gt 1 ]]
+	else
 	        echo "There is a bug in the code for checking if the kernel is listed in the KERNEL_VERSION file"
 	        exit 3
 	fi
