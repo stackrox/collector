@@ -180,7 +180,7 @@ class HostInfo {
 
   // Whether we're running on Garden Linux
   virtual bool IsGarden() {
-    return GetDistro().find("Garden Linux") == 0;
+    return GetDistro().rfind("Garden Linux", 0) == 0;
   }
 
   // Reads a named value from the os-release file (either in /etc/ or in /usr/lib)
