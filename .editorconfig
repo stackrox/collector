@@ -17,7 +17,7 @@ space_redirects    = true
 keep_padding       = true
 function_next_line = false
 
-[githooks/**]
+[{githooks,kernel-modules/build}/**]
 indent_style = space
 indent_size = 4
 
