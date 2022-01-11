@@ -52,9 +52,9 @@ check_if_probe_exists_for_module_version() {
 	echo ""
 
 	if [[ $probe_type == "mod" ]]; then
-		probe_file=gs://collector-modules/$bucket/$module_version/collector-$kernel.ko.gz
+		probe_file="gs://collector-modules/$bucket/$module_version/collector-${kernel}.ko.gz"
 	else
-		probe_file=gs://collector-modules/$bucket/$module_version/collector-ebpf-$kernel.o.gz
+		probe_file="gs://collector-modules/$bucket/$module_version/collector-ebpf-${kernel}.o.gz"
 	fi
 
 	if ! gsutil ls "$probe_file"; then
