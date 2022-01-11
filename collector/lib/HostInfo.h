@@ -180,7 +180,7 @@ class HostInfo {
 
   // Whether we're running on Garden Linux
   virtual bool IsGarden() {
-    return std::regex_match(GetDistro(), std::regex(R"(^Garden Linux \d+\.\d+)"));
+    return GetDistro().find("Garden Linux") == 0;
   }
 
   // Reads a named value from the os-release file (either in /etc/ or in /usr/lib)

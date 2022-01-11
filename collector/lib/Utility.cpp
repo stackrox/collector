@@ -88,6 +88,8 @@ std::string getGardenLinuxCandidate(HostInfo& host) {
     return "";
   }
 
+  // The Garden Linux specific candidate is of the form
+  // 5.10.0-9-cloud-amd64-gl-5.10.83-1gardenlinux1
   return kernel.release + "-gl-" + match.str();
 }
 
