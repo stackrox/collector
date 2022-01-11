@@ -1558,6 +1558,11 @@ workflows:
             collection_method: [module, ebpf]
             dockerized: [false, true]
             image_version: [576-1-0f7a5b, 318-8-ae20c2]
+          exclude:
+            # Failing due to dockerized module not being built (requires gcc-10).
+            - collection_method: module
+              dockerized: true
+              image_version: 576-1-0f7a5b
     - integration-test-data:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
