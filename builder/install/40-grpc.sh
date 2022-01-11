@@ -4,7 +4,7 @@ set -e
 
 CXXFLAGS=""
 if [ -f /etc/redhat-release ]; then
-	CXXFLAGS="-Wno-error=class-memaccess -Wno-ignored-qualifiers -Wno-stringop-truncation -Wno-cast-function-type"
+    CXXFLAGS="-Wno-error=class-memaccess -Wno-ignored-qualifiers -Wno-stringop-truncation -Wno-cast-function-type"
 fi
 
 if [ -n "${WITH_RHEL8_RPMS}" ]; then

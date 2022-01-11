@@ -39,14 +39,13 @@ ADDRESS_SANITIZER="${ADDRESS_SANITIZER:-false}"
 cp -a collector/generated src/generated
 
 if [ $ADDRESS_SANITIZER = "true" ]; then
-  # Needed for address sanitizer to work. See https://github.com/grpc/grpc/issues/22238.
-  # When Collector is built with address sanitizer it sets GRPC_ASAN_ENABLED, which changes a struct in the grpc library.
-  # If grpc is compiled without that flag and is then linked with Collector the struct will have
-  # two different definitions and Collector will crash when trying to connect to a grpc server.
-  for file in `grep -rl port_platform.h src/generated --include=*.h`
-  do
-  	sed -i 's|#include <grpc/impl/codegen/port_platform.h>|#include <grpc/impl/codegen/port_platform.h>\n#ifdef GRPC_ASAN_ENABLED\n#  undef GRPC_ASAN_ENABLED\n#endif|' $file
-  done
+    # Needed for address sanitizer to work. See https://github.com/grpc/grpc/issues/22238.
+    # When Collector is built with address sanitizer it sets GRPC_ASAN_ENABLED, which changes a struct in the grpc library.
+    # If grpc is compiled without that flag and is then linked with Collector the struct will have
+    # two different definitions and Collector will crash when trying to connect to a grpc server.
+    for file in $(grep -rl port_platform.h src/generated --include=*.h); do
+        sed -i 's|#include <grpc/impl/codegen/port_platform.h>|#include <grpc/impl/codegen/port_platform.h>\n#ifdef GRPC_ASAN_ENABLED\n#  undef GRPC_ASAN_ENABLED\n#endif|' $file
+    done
 fi
 
 echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
@@ -77,7 +76,7 @@ cmake \
         ../sysdig/src
 KERNELDIR=/dev/null make driver/fast 2> /dev/null || true
 cd ../sysdig/src/driver
-find . -type f \( -name 'Makefile' -o -name '*.c' -o -name '*.h' \) -print0 | \
-    LC_ALL=C sort -z | xargs -0 sha256sum | awk '{print$1 " " $2}' | sha256sum | awk '{print$1}' \
+find . -type f \( -name 'Makefile' -o -name '*.c' -o -name '*.h' \) -print0 \
+    | LC_ALL=C sort -z | xargs -0 sha256sum | awk '{print$1 " " $2}' | sha256sum | awk '{print$1}' \
     > /MODULE_VERSION.txt
 cd ../../..

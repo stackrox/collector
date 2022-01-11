@@ -1,21 +1,21 @@
 #!/bin/sh
 
 if ! make -C collector check-staged; then
-	echo "Format errors found! Run 'make -C collector format' in order to fix them."
-	echo "Use the '--no-verify' flag in order to bypass the pre-commit check altogether."
-	exit 1
+    echo "Format errors found! Run 'make -C collector format' in order to fix them."
+    echo "Use the '--no-verify' flag in order to bypass the pre-commit check altogether."
+    exit 1
 fi
 
 # Check staged scripts formatting
-if command -v shfmt --version >/dev/null; then
-	if ! git diff --name-only --cached --relative | grep -E '\.sh$$|^githooks/' | xargs shfmt -d; then
-		echo "Format errors found! Run 'make shfmt-format' in order to fix them."
-		echo "Use the '--no-verify' flag in order to bypass the pre-commit check altogether."
-	fi
+if command -v shfmt --version > /dev/null; then
+    if ! git diff --name-only --cached --relative | grep -E '\.sh$$|^githooks/' | xargs shfmt -d; then
+        echo "Format errors found! Run 'make shfmt-format' in order to fix them."
+        echo "Use the '--no-verify' flag in order to bypass the pre-commit check altogether."
+    fi
 fi
 
 # Validate CircleCI configuration if it was modified and the CLI is available
-if command -v circleci >/dev/null && git diff --name-only --cached | grep -qE '^\.circleci/config\.yml$'; then
-	echo "Validating CircleCI configuration..."
-	circleci config validate --org-slug gh/stackrox .circleci/config.yml
+if command -v circleci > /dev/null && git diff --name-only --cached | grep -qE '^\.circleci/config\.yml$'; then
+    echo "Validating CircleCI configuration..."
+    circleci config validate --org-slug gh/stackrox .circleci/config.yml
 fi

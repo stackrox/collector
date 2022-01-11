@@ -24,9 +24,9 @@ for version_dir in "${MD_DIR}/collector-versions"/*; do
         cd /kernel-modules &&
         head -n 1 MODULE_VERSION.txt &&
         ls *.gz
-    ' >"$tmp_output"
+    ' > "$tmp_output"
 
-    head -n 1 "$tmp_output" >"${version_dir}/MODULE_VERSION"
-    tail -n +2 "$tmp_output" >"${version_dir}/INVENTORY"
+    head -n 1 "$tmp_output" > "${version_dir}/MODULE_VERSION"
+    tail -n +2 "$tmp_output" > "${version_dir}/INVENTORY"
     rm -f "$tmp_output" || true
 done
