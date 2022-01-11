@@ -10,7 +10,7 @@ set -eo pipefail
 kernel=$1
 probe_type=$2
 module_version=$3
-bucket=612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656
+bucket=${4:-612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656}
 
 DIR=$(dirname "$0")
 
