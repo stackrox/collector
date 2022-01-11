@@ -205,7 +205,7 @@ CollectorArgs::checkCollectorConfig(const option::Option& option, bool msg) {
   bool parsingSuccessful = reader.parse(arg.c_str(), root);
   if (!parsingSuccessful) {
     if (msg) {
-      this->message = "A valid JSON configuration is required to start the collector. ";
+      this->message = "A valid JSON configuration is required to start the collector: ";
       this->message += reader.getFormattedErrorMessages();
     }
     return ARG_ILLEGAL;
