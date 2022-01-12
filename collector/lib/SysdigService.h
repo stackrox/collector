@@ -33,7 +33,7 @@ You should have received a copy of the GNU General Public License along with thi
 // clang-format off
 // sinsp.h needs to be included before chisel.h
 #include "libsinsp/sinsp.h"
-#include "libsinsp/chisel.h"
+#include "chisel.h"
 // clang-format on
 
 #include "CollectorService.h"

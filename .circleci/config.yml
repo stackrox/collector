@@ -437,7 +437,7 @@ jobs:
 
   kernels:
     <<: *defaultMachine
-    parallelism: 8
+    parallelism: 32
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
@@ -1082,6 +1082,7 @@ jobs:
       - setup_remote_docker:
           version: 20.10.11
       - stackrox-io-login
+      - docker-login-pull
       - gcloud-init
 
       - run:
@@ -1448,14 +1449,14 @@ workflows:
         requires:
         - images
         - upload-modules
-    - integration-test-local:
-        <<: *runOnAllTagsWithDockerIOPushCtx
-        name: integration-test-local-ubi
-        vm-config: rhel
-        use-ubi: true
-        requires:
-        - ubi-image
-        - upload-modules
+    # - integration-test-local:
+    #     <<: *runOnAllTagsWithDockerIOPushCtx
+    #     name: integration-test-local-ubi
+    #     vm-config: rhel
+    #     use-ubi: true
+    #     requires:
+    #     - ubi-image
+    #     - upload-modules
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>

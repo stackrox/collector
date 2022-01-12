@@ -2,33 +2,37 @@
 
 set -eo pipefail
 
-[[ -n "$SCRATCH_DIR" && -n "$SYSDIG_DIR" && -n "$OUTPUT_DIR" ]] || {
-	echo >&2 "SCRATCH_DIR, SYSDIG_DIR and OUTPUT_DIR all need to be set"
+[[ -n "$SCRATCH_DIR" && -n "$FALCO_DIR" && -n "$OUTPUT_DIR" ]] || {
+	echo >&2 "SCRATCH_DIR, FALCO_DIR and OUTPUT_DIR all need to be set"
 	exit 1
 }
 
-SYSDIG_SCRATCH="${SCRATCH_DIR}/sysdig-src"
+FALCO_SCRATCH="${SCRATCH_DIR}/sysdig-src"
 BUILD_SCRATCH="${SCRATCH_DIR}/cmake-build"
 
 
 modfiles0() (
-	local dir="${1:-${SYSDIG_SCRATCH}/driver}"
+	local dir="${1:-${FALCO_SCRATCH}/driver}"
     cd "$dir"
     find . -type f \( -name 'Makefile' -o -name '*.c' -o -name '*.h' \) -print0 | \
     	LC_ALL=C sort -z
 )
 
 get_module_version() (
-	modfiles0 "$@" | \
-		xargs -0 sha256sum | \
-		awk '{print$1 " " $2}' | \
-		sha256sum | \
-		awk '{print$1}'
+	if [[ -n "$MODULE_VERSION" ]]; then
+		echo "$MODULE_VERSION"
+	else
+		modfiles0 "$@" | \
+			xargs -0 sha256sum | \
+			awk '{print$1 " " $2}' | \
+			sha256sum | \
+			awk '{print$1}'
+	fi
 )
 
-rm -rf "$SYSDIG_SCRATCH" "$BUILD_SCRATCH" 2>/dev/null || true
-mkdir -p "$SYSDIG_SCRATCH" "$BUILD_SCRATCH"
-cp -r "${SYSDIG_DIR}/." "${SYSDIG_SCRATCH}"
+rm -rf "$FALCO_SCRATCH" "$BUILD_SCRATCH" 2>/dev/null || true
+mkdir -p "$FALCO_SCRATCH" "$BUILD_SCRATCH"
+cp -r "${FALCO_DIR}/." "${FALCO_SCRATCH}"
 
 cd "$BUILD_SCRATCH"
 cmake \
@@ -39,10 +43,10 @@ cmake \
     -DBUILD_DRIVER=ON \
     -DENABLE_DKMS=OFF \
     -DBUILD_BPF=ON \
-    "$SYSDIG_SCRATCH"
+    "$FALCO_SCRATCH"
 KERNELDIR=/dev/null make driver/fast >&2 || true
 
-cd "${SYSDIG_SCRATCH}/driver"
+cd "${FALCO_SCRATCH}/driver"
 module_version="$(get_module_version .)"
 echo "$module_version"
 
@@ -52,4 +56,3 @@ if [[ -s "$source_archive" ]]; then
 fi
 
 modfiles0 . | xargs -0 tar cfvz "$source_archive" >&2
-
