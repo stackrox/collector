@@ -27,6 +27,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "CollectorStats.h"
 #include "DuplexGRPC.h"
+#include "EnvVar.h"
 #include "GRPCUtil.h"
 #include "Profiler.h"
 #include "ProtoUtil.h"
@@ -36,6 +37,9 @@ You should have received a copy of the GNU General Public License along with thi
 namespace collector {
 
 namespace {
+
+// Disable normalization of client ports
+BoolEnvVar network_disable_normalization("ROX_COLLECTOR_NETWORK_DISABLE_NORMALIZATION", false);
 
 storage::L4Protocol TranslateL4Protocol(L4Proto proto) {
   switch (proto) {
@@ -225,10 +229,10 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
     ConnMap new_conn_state;
     ContainerEndpointMap new_cep_state;
     WITH_TIMER(CollectorStats::net_fetch_state) {
-      new_conn_state = conn_tracker_->FetchConnState(true, true);
+      new_conn_state = conn_tracker_->FetchConnState(!network_disable_normalization, true);
       ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
 
-      new_cep_state = conn_tracker_->FetchEndpointState(true, true);
+      new_cep_state = conn_tracker_->FetchEndpointState(!network_disable_normalization, true);
       ConnectionTracker::ComputeDelta(new_cep_state, &old_cep_state);
     }
 
