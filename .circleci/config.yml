@@ -896,7 +896,7 @@ jobs:
         enum: [cos, rhel, suse, suse-sap, ubuntu-os, flatcar, fedora-coreos, garden-linux]
       image_family:
         type: enum
-        enum: [cos-beta, cos-dev, cos-stable, cos-89-lts, cos-85-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2104, sles-12, sles-15, sles-15-sp2-sap, flatcar-stable, fedora-coreos-stable, garden-576-1-0f7a5b, garden-318-8-ae20c2]
+        enum: [cos-beta, cos-dev, cos-stable, cos-89-lts, cos-85-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2104, sles-12, sles-15, sles-15-sp2-sap, flatcar-stable, fedora-coreos-stable, garden-linux]
       image_name:
         type: string
         default: "unset"
@@ -1549,15 +1549,15 @@ workflows:
               dockerized: true
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-<< matrix.collection_method >>-garden-linux-<< matrix.image_version >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
-        image_family: garden-<< matrix.image_version >>
+        name: test-<< matrix.collection_method >>-garden-linux<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
+        image_family: garden-linux
         image_name: gardenlinux-gcp-cloud-gardener--prod-<< matrix.image_version >>
         vm_type: garden-linux
         matrix:
           parameters:
             collection_method: [module, ebpf]
             dockerized: [false, true]
-            image_version: [576-1-0f7a5b, 318-8-ae20c2]
+            image_version: [576-1-0f7a5b]
           exclude:
             # Failing due to dockerized module not being built (requires gcc-10).
             - collection_method: module
@@ -1591,10 +1591,8 @@ workflows:
         - test-module-flatcar-stable
         - test-ebpf-fedora-coreos-stable
         - test-module-fedora-coreos-stable
-        - test-ebpf-garden-linux-576-1-0f7a5b
-        - test-module-garden-linux-576-1-0f7a5b
-        - test-ebpf-garden-linux-318-8-ae20c2
-        - test-module-garden-linux-318-8-ae20c2
+        - test-ebpf-garden-linux
+        - test-module-garden-linux
     - reload-released-images:
         <<: *runOnAllTags
         context:
