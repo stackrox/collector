@@ -2,13 +2,15 @@ package integrationtests
 
 import (
 	"fmt"
-	"github.com/hashicorp/go-multierror"
 	"io/ioutil"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/boltdb/bolt"
 )
@@ -201,7 +203,25 @@ func (c *collectorManager) launchCollector() error {
 
 	output, err := c.executor.Exec(cmd...)
 	c.CollectorOutput = output
-	return err
+
+	if err != nil {
+		return err
+	}
+
+	for start := time.Now(); time.Since(start) < 65 * time.Second; {
+		healthy, err := c.executor.IsContainerHealthy("collector")
+		if err != nil {
+			return err
+		}
+
+		if healthy {
+			return nil;
+		}
+
+		time.Sleep(time.Second);
+	}
+
+	return fmt.Errorf("collector failed to start")
 }
 
 func (c *collectorManager) captureLogs(containerName string) (string, error) {

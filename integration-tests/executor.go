@@ -18,6 +18,7 @@ type Executor interface {
 	CopyFromHost(src string, dst string) (string, error)
 	PullImage(image string) error
 	IsContainerRunning(image string) (bool, error)
+	IsContainerHealthy(image string) (bool, error)
 	ExitCode(container string) (int, error)
 	Exec(args ...string) (string, error)
 	ExecRetry(args ...string) (string, error)
@@ -203,6 +204,15 @@ func (e *executor) IsContainerRunning(containerID string) (bool, error) {
 		return false, err
 	}
 	return strconv.ParseBool(strings.Trim(result, "\"'"))
+}
+
+func (e *executor) IsContainerHealthy(containerID string) (bool, error) {
+	result, err := e.Exec("docker", "inspect", containerID, "--format='{{.State.Health.Status}}'")
+	if err != nil {
+		return false, err
+	}
+
+	return strings.Trim(result, "\"'") == "healthy", nil
 }
 
 func (e *executor) ExitCode(containerID string) (int, error) {
