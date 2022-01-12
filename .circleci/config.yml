@@ -851,7 +851,6 @@ jobs:
           export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}"
           export USE_VALGRIND=$VALGRIND_INTEGRATION_TESTS
           export USE_HELGRIND=$HELGRIND_INTEGRATION_TESTS
-          export ROX_COLLECTOR_ALT_PROBE_DOWNLOAD=true
           make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
@@ -931,7 +930,6 @@ jobs:
           cat >>"$BASH_ENV" \<<-EOF
             export COLLECTION_METHOD="<< parameters.collection_method >>"
             export COLLECTOR_OFFLINE_MODE="<< parameters.offline >>"
-            export ROX_COLLECTOR_ALT_PROBE_DOWNLOAD=true
             export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
             export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
             export IMAGE_FAMILY=<< parameters.image_family >>

@@ -285,81 +285,80 @@ int main(int argc, char** argv) {
     useGRPC = true;
   }
 
-  if (config.AlternateProbeDownload()) {
-    struct stat st;
-    if (stat("/module", &st) != 0 || !S_ISDIR(st.st_mode)) {
-      CLOG(FATAL) << "Unexpected image state. /module directory does not exist.";
-    }
-
-    std::vector<std::string> kernel_candidates = GetKernelCandidates();
-
-    if (kernel_candidates.empty()) {
-      CLOG(FATAL) << "No kernel candidates available";
-    }
-
-    struct {
-      std::string path;
-      std::string name;
-      std::string extension;
-      std::string type;
-    } kernel_object;
-
-    if (config.UseEbpf()) {
-      kernel_object.path = SysdigService::kProbePath;
-      kernel_object.name = SysdigService::kProbeName;
-      kernel_object.extension = ".o";
-      kernel_object.type = "eBPF probe";
-    } else {
-      kernel_object.path = SysdigService::kModulePath;
-      kernel_object.name = SysdigService::kModuleName;
-      kernel_object.extension = ".ko";
-      kernel_object.type = "kernel module";
-    }
-
-    CLOG(INFO) << "Attempting to download " << kernel_object.type << " - Candidate kernel versions: ";
-    for (auto candidate : kernel_candidates) {
-      CLOG(INFO) << candidate;
-    }
-
-    bool success = false;
-    std::string kernel_candidate;
-
-    for (auto kernel_candidate : kernel_candidates) {
-      std::string kernel_module = kernel_object.name + "-" + kernel_candidate + kernel_object.extension;
-
-      success = GetKernelObject(args->GRPCServer(), collectorConfig["tlsConfig"], kernel_module, kernel_object.path, config.CurlVerbose());
-      if (!success) {
-        CLOG(WARNING) << "Error getting kernel object: " << kernel_module;
-      } else {
-        break;
-      }
-    }
-
-    if (!success) {
-      //
-      // If the download fails, attempt to connect to the GRPC server. This will
-      // help to distinguish between networking issues rather than nebulous
-      // download failures.
-      //
-      if (useGRPC) {
-        auto channel = createChannel(args);
-        CLOG(INFO) << "Attempting to connect to GRPC server";
-        if (!attemptGRPCConnection(channel)) {
-          CLOG(ERROR) << "Unable to connect to the GRPC server.";
-        } else {
-          CLOG(INFO) << "Successfully connected to the GRPC server.";
-        }
-      } else {
-        CLOG(INFO) << "GRPC not configured: unable to check connectivity.";
-      }
-      // Always exit regardless of GRPC connectivity because collector is unable
-      // to run without appropriate kernel probes.
-      CLOG(FATAL) << "No suitable kernel object downloaded";
-    }
-
-    // output the GPL notice only once the kernel object has been found or downloaded
-    gplNotice();
+  struct stat st;
+  if (stat("/module", &st) != 0 || !S_ISDIR(st.st_mode)) {
+    CLOG(FATAL) << "Unexpected image state. /module directory does not exist.";
   }
+
+  std::vector<std::string> kernel_candidates = GetKernelCandidates();
+
+  if (kernel_candidates.empty()) {
+    CLOG(FATAL) << "No kernel candidates available";
+  }
+
+  struct {
+    std::string path;
+    std::string name;
+    std::string extension;
+    std::string type;
+  } kernel_object;
+
+  if (config.UseEbpf()) {
+    kernel_object.path = SysdigService::kProbePath;
+    kernel_object.name = SysdigService::kProbeName;
+    kernel_object.extension = ".o";
+    kernel_object.type = "eBPF probe";
+  } else {
+    kernel_object.path = SysdigService::kModulePath;
+    kernel_object.name = SysdigService::kModuleName;
+    kernel_object.extension = ".ko";
+    kernel_object.type = "kernel module";
+  }
+
+  CLOG(INFO) << "Attempting to download " << kernel_object.type << " - Candidate kernel versions: ";
+  for (auto candidate : kernel_candidates) {
+    CLOG(INFO) << candidate;
+  }
+
+  bool success = false;
+  std::string kernel_candidate;
+
+  for (auto kernel_candidate : kernel_candidates) {
+    std::string kernel_module = kernel_object.name + "-" + kernel_candidate + kernel_object.extension;
+
+    success = GetKernelObject(args->GRPCServer(), collectorConfig["tlsConfig"], kernel_module, kernel_object.path,
+                              config.CurlVerbose());
+    if (!success) {
+      CLOG(WARNING) << "Error getting kernel object: " << kernel_module;
+    } else {
+      break;
+    }
+  }
+
+  if (!success) {
+    //
+    // If the download fails, attempt to connect to the GRPC server. This will
+    // help to distinguish between networking issues rather than nebulous
+    // download failures.
+    //
+    if (useGRPC) {
+      auto channel = createChannel(args);
+      CLOG(INFO) << "Attempting to connect to GRPC server";
+      if (!attemptGRPCConnection(channel)) {
+        CLOG(ERROR) << "Unable to connect to the GRPC server.";
+      } else {
+        CLOG(INFO) << "Successfully connected to the GRPC server.";
+      }
+    } else {
+      CLOG(INFO) << "GRPC not configured: unable to check connectivity.";
+    }
+    // Always exit regardless of GRPC connectivity because collector is unable
+    // to run without appropriate kernel probes.
+    CLOG(FATAL) << "No suitable kernel object downloaded";
+  }
+
+  // output the GPL notice only once the kernel object has been found or downloaded
+  gplNotice();
 
   if (config.UseEbpf()) {
     if (!verifyProbeConfiguration()) {
