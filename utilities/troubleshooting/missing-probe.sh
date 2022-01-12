@@ -58,7 +58,7 @@ check_if_branch_supports_kernel_version() {
 	elif ((nfound == 1)); then
 	        echo "Kernel $kernel FOUND in $kernel_version_file in the $local_branch branch"
 	else
-	        echo >&2 "${nfound} matches four for ${kernel} in KERNEL_VERSIONS, this might be a bug in the troubleshooting script"
+	        echo >&2 "${nfound} matches found for ${kernel} in KERNEL_VERSIONS, this might be a bug in the troubleshooting script"
 	        exit 3
 	fi
 
@@ -107,7 +107,7 @@ check_if_bundle_exists() {
 
 	print_header "Checking if bundle exists"
 
-	bundle_file=gs://stackrox-kernel-bundles/bundle-$kernel.tgz
+	bundle_file="gs://stackrox-kernel-bundles/bundle-$kernel.tgz"
 
 	if ! gsutil ls "$bundle_file"; then
 		echo "The bundle for $kernel does NOT exist"
