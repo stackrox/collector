@@ -25,7 +25,7 @@ You should have received a copy of the GNU General Public License along with thi
 // sinsp.h needs to be included before chisel.h
 #include <Utility.h>
 #include "libsinsp/sinsp.h"
-#include "libsinsp/chisel.h"
+#include "chisel.h"
 #include "libsinsp/wrapper.h"
 // clang-format on
 

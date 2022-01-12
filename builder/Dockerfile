@@ -49,9 +49,6 @@ RUN if [ $ADDRESS_SANITIZER == "true" ]; then \
 
 RUN yum clean all ;
 
-# /usr/local/lib is not in the library path by default
-RUN echo '/usr/local/lib' >/etc/ld.so.conf.d/usrlocallib.conf && ldconfig
-
 # We want to fail if the destination directory is there, hence mkdir (not -p).
 RUN mkdir install-tmp
 
@@ -60,7 +57,7 @@ COPY install/*.sh install-tmp/
 # Build dependencies from source
 RUN ./install-tmp/install.sh
 
-RUN ldconfig
+RUN echo '/usr/local/lib' >/etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 
 # Copy Makefile for generating protobuf code.
 COPY build/protogen.mk /

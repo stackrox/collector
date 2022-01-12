@@ -2,9 +2,10 @@
 set -eo pipefail
 
 mkdir -p ~/kobuild-tmp/versions-src
-SYSDIG_DIR="${SOURCE_ROOT}/sysdig/src" \
+FALCO_DIR="${SOURCE_ROOT}/falcosecurity-libs" \
     SCRATCH_DIR="${HOME}/scratch" \
     OUTPUT_DIR="${HOME}/kobuild-tmp/versions-src" \
+    MODULE_VERSION="$(cat "${SOURCE_ROOT}/kernel-modules/MODULE_VERSION")" \
     "${SOURCE_ROOT}/kernel-modules/build/prepare-src"
 
 versions=(~/kobuild-tmp/versions-src/*)

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
+# /usr/local/lib is not in the library path by default
+RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
+
 mv collector-wrapper.sh /usr/local/bin/
 chmod 700 bootstrap.sh
 dnf upgrade -y

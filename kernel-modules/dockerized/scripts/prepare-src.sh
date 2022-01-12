@@ -18,11 +18,15 @@ modfiles0() (
 )
 
 get_module_version() (
-    modfiles0 "$@" \
-        | xargs -0 sha256sum \
-        | awk '{print$1 " " $2}' \
-        | sha256sum \
-        | awk '{print$1}'
+    if [[ -n "$MODULE_VERSION" ]]; then
+        echo "$MODULE_VERSION"
+    else
+        modfiles0 "$@" \
+            | xargs -0 sha256sum \
+            | awk '{print$1 " " $2}' \
+            | sha256sum \
+            | awk '{print$1}'
+    fi
 )
 
 rm -rf "$SYSDIG_SCRATCH" "$BUILD_SCRATCH" 2> /dev/null

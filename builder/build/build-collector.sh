@@ -30,6 +30,6 @@ if [ "$CMAKE_BUILD_TYPE" = "Release" ]; then
     echo "Strip unneeded"
     strip --strip-unneeded \
         ./collector \
-        ./EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so
+        ./EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so
 fi
 cp -r /THIRD_PARTY_NOTICES .

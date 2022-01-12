@@ -1,7 +1,7 @@
 BASE_PATH = ./..
 include ../Makefile-constants.mk
 
-HDRS := $(wildcard lib/*.h) $(shell find sysdig/src/userspace -name '*.h')
+HDRS := $(wildcard lib/*.h) $(shell find falcosecurity-libs/userspace -name '*.h')
 
 SRCS := $(wildcard lib/*.cpp) collector.cpp
 
@@ -13,13 +13,13 @@ generated-srcs:
 		-v $(CURDIR)/../rox-proto:/collector/rox-proto:ro \
 		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) make -f protogen.mk generated-proto-srcs
 
-container/bin/collector: $(HDRS) $(SRCS) txt-files generated-srcs $(shell find sysdig/src/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
+container/bin/collector: $(HDRS) $(SRCS) txt-files generated-srcs $(shell find falcosecurity-libs/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
 	mkdir -p container/bin
 	mkdir -p container/libs
 	docker rm -fv build_collector || true
 	docker run --rm --name build_collector \
 		-v "$(CURDIR):/src" \
-		-v "$(CURDIR)/../sysdig/:/sysdig:ro" \
+		-v "$(CURDIR)/../falcosecurity-libs/:/falcosecurity-libs:ro" \
 		-v "$(CURDIR)/cmake-build:/tmp/cmake-build" \
 		-e CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
 		-e USE_VALGRIND=$(USE_VALGRIND) \
@@ -29,7 +29,7 @@ container/bin/collector: $(HDRS) $(SRCS) txt-files generated-srcs $(shell find s
 		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-collector.sh
 	cp cmake-build/collector container/bin/collector
 	cp -r cmake-build/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
-	cp cmake-build/EXCLUDE_FROM_DEFAULT_BUILD/userspace/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so
+	cp cmake-build/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so
 
 unittest:
 	docker rm -fv collector_unittest || true
@@ -81,8 +81,8 @@ pull-protos:
 clean: clean-generated-srcs
 	docker rm -fv build_collector || true
 	docker rm -fv container-stats benchmark collector grpc-server || true
-	rm -rf sysdig/cmake-build
-	rm -rf sysdig/sysdig-build
+	rm -rf falcosecurity-libs/cmake-build
+	rm -rf falcosecurity-libs/falcosecurity-libs-build
 	rm -rf cmake-build
 	rm -rf container/bin
 	rm -rf container/driver
