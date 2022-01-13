@@ -186,9 +186,9 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
       return false;
     }
 
-    std::copy(std::istream_iterator<char>(input_file),
-              std::istream_iterator<char>(),
-              std::ostream_iterator<char>(output_file));
+    std::copy(std::istreambuf_iterator<char>(input_file),
+              std::istreambuf_iterator<char>(),
+              std::ostreambuf_iterator<char>(output_file));
   }
   // Otherwise there is no module in local storage, so we should download it.
   else {
