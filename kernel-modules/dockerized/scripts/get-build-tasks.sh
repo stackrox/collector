@@ -67,13 +67,17 @@ for module_dir in /kobuild-tmp/versions-src/*/; do
 			kernel_version="${bundle%".tgz"}"
 			kernel_version="${kernel_version#"/bundles/bundle-"}"
 
-			# If the driver is cached, don't add it to the task file
-			if ! driver_is_cached "$kernel_version" "$module_dir" "mod"; then
-				append_task "$kernel_version" "$module_dir" "mod" /all-build-tasks
+			append_task "$kernel_version" "$module_dir" "mod" /all-build-tasks
+			# If the driver is cached, we prevent rebuilding it by adding it to '/redundant-build-tasks'
+			if driver_is_cached "$kernel_version" "$module_dir" "mod"; then
+				append_task "$kernel_version" "$module_dir" "mod" /redundant-build-tasks
 			fi
 
-			if [[ -d "${module_dir}/bpf" ]] && ! driver_is_cached "$kernel_version" "$module_dir" "bpf"; then
+			if [[ -d "${module_dir}/bpf" ]]; then
 				append_task "$kernel_version" "$module_dir" "bpf" /all-build-tasks
+				if driver_is_cached "$kernel_version" "$module_dir" "bpf"; then
+					append_task "$kernel_version" "$module_dir" "bpf" /redundant-build-tasks
+				fi
 			fi
 		done
 	fi
