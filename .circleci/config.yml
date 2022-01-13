@@ -11,7 +11,7 @@ parameters:
     default: cache-v1
   kernel-bundles-staging:
     type: string
-    default: gs://stackrox-kernel-bundles-staging/mauro/support-garden-5.10.83/5f26f442d0625f4d3246686439a22a608c3432e1
+    default: ""
 
 defaultImage: &defaultImage
   docker:
