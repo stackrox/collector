@@ -143,7 +143,7 @@ class HostInfo {
   void operator=(HostInfo const&) = delete;
 
   // Get the Kernel version information for the host.
-  KernelVersion GetKernelVersion();
+  virtual KernelVersion GetKernelVersion();
 
   // Get the host's hostname
   std::string& GetHostname();
@@ -153,29 +153,34 @@ class HostInfo {
   std::string& GetDistro();
 
   // Get the Build ID of the host.
-  std::string& GetBuildID();
+  virtual std::string& GetBuildID();
 
   // Get the OS ID of the host
-  std::string& GetOSID();
+  virtual std::string& GetOSID();
 
   // Whether we're running on a COS host
-  bool IsCOS() {
+  virtual bool IsCOS() {
     return GetOSID() == "cos" && !GetBuildID().empty();
   }
 
   // Whether we're running on a CoreOS host
-  bool IsCoreOS() {
+  virtual bool IsCoreOS() {
     return GetOSID() == "coreos";
   }
 
   // Whether we're running on Docker Desktop
-  bool IsDockerDesktop() {
+  virtual bool IsDockerDesktop() {
     return GetDistro() == "Docker Desktop";
   }
 
   // Whether we're running on Ubuntu
-  bool IsUbuntu() {
+  virtual bool IsUbuntu() {
     return GetOSID() == "ubuntu";
+  }
+
+  // Whether we're running on Garden Linux
+  virtual bool IsGarden() {
+    return GetDistro().rfind("Garden Linux", 0) == 0;
   }
 
   // Reads a named value from the os-release file (either in /etc/ or in /usr/lib)

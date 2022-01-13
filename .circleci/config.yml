@@ -9,6 +9,9 @@ parameters:
   dockerized-cache-tag:
     type: string
     default: cache-v1
+  kernel-bundles-staging:
+    type: string
+    default: ""
 
 defaultImage: &defaultImage
   docker:
@@ -441,7 +444,7 @@ jobs:
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
-    - KERNEL_BUNDLES_STAGING_BUCKET: ""
+    - KERNEL_BUNDLES_STAGING_BUCKET: "<< pipeline.parameters.kernel-bundles-staging >>"
 
     steps:
     - initcommand
@@ -729,6 +732,8 @@ jobs:
   dockerized-build-drivers:
     <<: *defaultMachine
     parallelism: << pipeline.parameters.dockerized-parallel >>
+    environment:
+    - KERNEL_BUNDLES_STAGING_BUCKET: "<< pipeline.parameters.kernel-bundles-staging >>"
 
     steps:
     - initcommand
@@ -895,6 +900,9 @@ jobs:
       image_name:
         type: string
         default: "unset"
+      image_version:
+        type: string
+        default: ""
       offline:
         type: boolean
         default: false
@@ -1543,17 +1551,18 @@ workflows:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-<< matrix.collection_method >>-garden-linux<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
         image_family: garden-linux
-        image_name: gardenlinux-gcp-cloud-gardener--prod-576-1-0f7a5b
+        image_name: gardenlinux-gcp-cloud-gardener--prod-<< matrix.image_version >>
         vm_type: garden-linux
         matrix:
           parameters:
             collection_method: [module, ebpf]
             dockerized: [false, true]
+            image_version: [576-2-9e22b9]
           exclude:
+            # Failing due to dockerized module not being built (requires gcc-10).
             - collection_method: module
               dockerized: true
-            - collection_method: module
-              dockerized: false
+              image_version: 576-2-9e22b9
     - integration-test-data:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
@@ -1583,7 +1592,7 @@ workflows:
         - test-ebpf-fedora-coreos-stable
         - test-module-fedora-coreos-stable
         - test-ebpf-garden-linux
-        # - test-module-garden-linux
+        - test-module-garden-linux
     - reload-released-images:
         <<: *runOnAllTags
         context:

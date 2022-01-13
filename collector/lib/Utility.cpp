@@ -39,6 +39,7 @@ extern "C" {
 }
 
 #include <fstream>
+#include <regex>
 
 #include "HostInfo.h"
 #include "Logging.h"
@@ -70,6 +71,26 @@ std::string getUbuntuBackport(HostInfo& host) {
   }
 
   return "";
+}
+
+// Garden linux uses a special kernel version in order to avoid
+// overlapping with Debian. This function returns the appropriate
+// name for this candidate while keeping the possibility to use
+// the Debian driver if it doesn't exist.
+std::string getGardenLinuxCandidate(HostInfo& host) {
+  auto kernel = host.GetKernelVersion();
+
+  std::regex garden_linux_kernel_re(R"(\d+\.\d+\.\d+-\w+)");
+  std::smatch match;
+
+  if (!std::regex_search(kernel.version, match, garden_linux_kernel_re)) {
+    CLOG(WARNING) << "Failed to match the Garden Linux kernel version.";
+    return "";
+  }
+
+  // The Garden Linux specific candidate is of the form
+  // 5.10.0-9-cloud-amd64-gl-5.10.83-1gardenlinux1
+  return kernel.release + "-gl-" + match.str();
 }
 
 // Normalizes this host's release string into something collector can use
@@ -252,6 +273,14 @@ std::vector<std::string> GetKernelCandidates() {
     std::string backport = getUbuntuBackport(host);
     if (!backport.empty()) {
       candidates.push_back(backport);
+    }
+  }
+
+  if (host.IsGarden()) {
+    auto garden_candidate = getGardenLinuxCandidate(host);
+
+    if (!garden_candidate.empty()) {
+      candidates.push_back(garden_candidate);
     }
   }
 

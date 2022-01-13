@@ -247,6 +247,20 @@ TEST(HostInfoTest, TestHostInfoIsNotDockerDesktop) {
   EXPECT_FALSE(host.IsDockerDesktop());
 }
 
+TEST(HostInfoTest, TestHostInfoIsGarden) {
+  MockHostInfo host;
+  EXPECT_CALL(host, GetOSReleaseValue(StrEq("PRETTY_NAME")))
+      .WillOnce(Return("Garden Linux 576.1"));
+  EXPECT_TRUE(host.IsGarden());
+}
+
+TEST(HostInfoTest, TestHostInfoIsNotGarden) {
+  MockHostInfo host;
+  EXPECT_CALL(host, GetOSReleaseValue(StrEq("PRETTY_NAME")))
+      .WillOnce(Return("coreos"));
+  EXPECT_FALSE(host.IsGarden());
+}
+
 TEST(HostInfoTest, TestFilterValueNoQuotes) {
   std::stringstream stream;
   stream << "KEY=Value\n";
