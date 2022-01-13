@@ -6,7 +6,12 @@ Feel free to remove this section if it is overkill for your PR, and the title of
 
 ## Checklist
 - [ ] Investigated and inspected CI test results
-- [ ] Unit test and regression tests added
+- [ ] Updated documentation accordingly
+
+**Automated testing**
+  - [ ] Added unit tests
+  - [ ] Added integration tests
+  - [ ] Added regression tests
 
 If any of these don't apply, please comment below.
 
