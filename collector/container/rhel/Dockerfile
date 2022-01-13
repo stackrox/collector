@@ -74,5 +74,3 @@ CMD collector-wrapper.sh \
     --collector-config=$COLLECTOR_CONFIG \
     --collection-method=$COLLECTION_METHOD \
     --grpc-server=$GRPC_SERVER
-
-HEALTHCHECK CMD curl --fail http://127.0.0.1:8080/ready || exit 1

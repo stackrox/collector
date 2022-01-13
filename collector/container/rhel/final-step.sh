@@ -11,7 +11,7 @@ if [ "$ADDRESS_SANITIZER" == "true" ]; then
 fi
 
 dnf clean all
-rpm --query --all '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' | xargs rpm -e --nodeps
+rpm --query --all 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' | xargs rpm -e --nodeps
 rm -rf /var/cache/dnf
 
 if [ "$USE_VALGRIND" == "true" ]; then

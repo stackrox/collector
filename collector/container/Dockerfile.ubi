@@ -104,7 +104,7 @@ RUN mv /collector-wrapper.sh /usr/local/bin/ && \
         microdnf -y install libasan; \
     fi && \
     microdnf clean all && \
-    rpm --query --all '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' |\
+    rpm --query --all 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' |\
       xargs rpm -e --nodeps && \
     rm -rf /var/cache/dnf
 
@@ -128,5 +128,3 @@ CMD collector-wrapper.sh \
     --collector-config=$COLLECTOR_CONFIG \
     --collection-method=$COLLECTION_METHOD \
     --grpc-server=$GRPC_SERVER
-
-HEALTHCHECK CMD curl --fail http://127.0.0.1:8080/ready || exit 1
