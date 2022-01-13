@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -exuo pipefail
 
 # all-build-tasks will contain all potentially possible build tasks, i.e., the cross
 # product between the set of kernel versions and the set of module versions
