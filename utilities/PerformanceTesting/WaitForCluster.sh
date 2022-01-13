@@ -7,8 +7,8 @@ echo "Waiting for infra cluster to be ready"
 
 while true
 do
-  state="$(infractl get "$name" | grep Status | awk '{print $2}')"
-  if [[ "$state" == "READY" ]]; then
+  ready="$({ infractl get "$name" | awk '{if ($1 == "Status:" && $2 == "READY") print}' || true ; } | wc -l)"
+  if (( ready == 1 )); then
     break
   fi
 done
