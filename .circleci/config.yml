@@ -350,11 +350,6 @@ jobs:
     - initcommand
 
     - run:
-        name: Install patch utility
-        command: |
-          sudo apt-get install patch
-
-    - run:
         name: Prepare source
         command: |
           "${CI_ROOT}/prepare-kernels/prepare-source.sh"
