@@ -117,11 +117,40 @@ class MinikubeHeuristic : public Heuristic {
   }
 };
 
+class SecureBootHeuristic : public Heuristic {
+ public:
+  // If the system is loaded in UEFI mode with Secure Boot feature enabled,
+  // the kernel does not permit the insertion of unsigned kernel modules.
+  // In this case switch to eBPF if configured to use kernel modules.
+  void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
+    SecureBootStatus sb_status;
+
+    // Do nothing if not booted with UEFI. This means legacy BIOS mode,
+    // where no Secure Boot available.
+    if (!host.IsUEFI()) {
+      return;
+    }
+
+    // Switch to eBPF in case if there is a chance Secure Boot is on,
+    // unless configured to enforce usage of kernel modules.
+    sb_status = host.HasSecureBoot();
+    if ((sb_status == SecureBootStatus::ENABLED ||
+         sb_status == SecureBootStatus::NOT_DETERMINED) &&
+        !config.UseEbpf() && !config.ForceKernelModules()) {
+      CLOG(WARNING) << host.GetDistro()
+                    << " has SecureBoot enabled preventing unsigned third-party "
+                    << "kernel modules, switching to eBPF based collection.";
+      hconfig->SetCollectionMethod("ebpf");
+    }
+  }
+};
+
 const std::unique_ptr<Heuristic> g_host_heuristics[] = {
     std::unique_ptr<Heuristic>(new CollectionHeuristic),
     std::unique_ptr<Heuristic>(new CosHeuristic),
     std::unique_ptr<Heuristic>(new DockerDesktopHeuristic),
     std::unique_ptr<Heuristic>(new MinikubeHeuristic),
+    std::unique_ptr<Heuristic>(new SecureBootHeuristic),
 };
 
 }  // namespace

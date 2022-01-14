@@ -160,4 +160,53 @@ bool HostInfo::HasEBPFSupport() {
   return collector::hasEBPFSupport(kernel, GetOSID());
 }
 
+bool HostInfo::IsUEFI() {
+  struct stat sb;
+  std::string efi_path = GetHostPath("/sys/firmware/efi");
+
+  if (stat(efi_path.c_str(), &sb) == -1) {
+    if (errno == ENOTDIR || errno == ENOENT) {
+      CLOG(INFO) << "Efi directory doesn't exist, legacy boot mode";
+      return false;
+
+    } else {
+      CLOG(WARNING) << "Could not stat " << efi_path << ": " << StrError()
+                    << ". No UEFI heuristic is performed.";
+      return false;
+    }
+  }
+
+  if (!S_ISDIR(sb.st_mode)) {
+    CLOG(WARNING) << "Efi path is not a directory, legacy boot mode";
+    return false;
+  }
+
+  CLOG(INFO) << "Efi directory exist, UEFI boot mode";
+  return true;
+}
+
+SecureBootStatus HostInfo::HasSecureBoot() {
+  std::uint8_t status;
+
+  std::ifstream boot_params(
+    GetHostPath("/sys/kernel/boot_params/data"),
+    std::ios::binary | std::ios::in);
+
+  if (!boot_params.is_open()) {
+    CLOG(WARNING) << "Failed to open boot_params file.";
+    return SecureBootStatus::NOT_DETERMINED;
+  }
+
+  boot_params.seekg(SECURE_BOOT_OFFSET);
+  boot_params.read(reinterpret_cast<char*>(&status), 1);
+
+  if (status < SecureBootStatus::NOT_DETERMINED ||
+      status > SecureBootStatus::ENABLED) {
+    CLOG(WARNING) << "Incorrect secure_boot param: " << status;
+    return SecureBootStatus::NOT_DETERMINED;
+  }
+
+  return static_cast<SecureBootStatus>(status);
+}
+
 }  // namespace collector

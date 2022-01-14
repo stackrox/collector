@@ -26,6 +26,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 extern "C" {
 #include <sys/utsname.h>
+#include <sys/stat.h>
 }
 
 #include <regex>
@@ -37,6 +38,17 @@ extern "C" {
 namespace collector {
 
 const int MIN_RHEL_BUILD_ID = 957;
+
+// An offset ofr secure_boot option in boot_params
+#define SECURE_BOOT_OFFSET 0x1EC
+
+enum SecureBootStatus {
+  ENABLED = 3,
+  DISABLED = 2,
+  NOT_DETERMINED = 1,     // Secure Boot seems to be disabled, but the boot loaded
+                          // does not provide enough information about it,
+                          // so it could be enabled without the kernel being aware.
+};
 
 struct KernelVersion {
   KernelVersion() : kernel(0), major(0), minor(0), build_id(0) {}
@@ -201,6 +213,13 @@ class HostInfo {
   // Only exception is RHEL 7.6, which does support eBPF but runs kernel 3.10 (which ordinarily does
   // not support eBPF)
   bool HasEBPFSupport();
+
+  // The system was booted in UEFI mode.
+  bool IsUEFI();
+
+  // Secure Boot feature prevents from loading unsigned kernel modules, so it's
+  // important to know its status.
+  SecureBootStatus HasSecureBoot();
 
  protected:
   // basic default constructor, doesn't need to do anything,
