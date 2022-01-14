@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -exuo pipefail
+set -euo pipefail
 
 # all-build-tasks will contain all potentially possible build tasks, i.e., the cross
 # product between the set of kernel versions and the set of module versions
@@ -34,13 +34,16 @@ driver_is_cached() {
 	version="$(basename "$module_dir")"
 
 	local driver
+	local unavailable
 	if [[ "$driver_type" == "mod" ]]; then
 		driver="collector-${kernel_version}.ko.gz"
+		unavailable="collector-${kernel_version}.unavail"
 	else
 		driver="collector-ebpf-${kernel_version}.o.gz"
+		unavailable="collector-ebpf-${kernel_version}.unavail"
 	fi
 
-	[ -f "/kernel-modules/${version}/${driver}" ]
+	[ -f "/kernel-modules/${version}/${driver}" ] || [ -f "/kernel-modules/${version}/${unavailable}" ]
 }
 
 process_driver() {
