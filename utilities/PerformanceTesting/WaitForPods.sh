@@ -12,7 +12,7 @@ do
   #npods="$(kubectl -n stackrox get pods | wc -l)"
   #npods=$(( npods-1 ))
   #nrunning="$({ kubectl -n stackrox get pods | awk '{print $2}' | awk -F "/" '{if ($1 == $2) print}' || true ; } | wc -l)"
-  pod_ready="$(ks get pod -o jsonpath='{.items[*].status.containerStatuses[*].ready}')"
+  pod_ready="$(kubectl -n stackrox get pod -o jsonpath='{.items[*].status.containerStatuses[*].ready}')"
   has_ready="$({ echo "$pod_ready" | grep true || true ; } | wc -l)"
   has_unready="$({ echo "$pod_ready" | grep false || true ; } | wc -l)"
   if [[ (( $has_ready == 1 )) && (( $has_unready == 0 )) ]]; then

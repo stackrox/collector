@@ -1,21 +1,33 @@
 #!/usr/bin/env bash
 set -eoux pipefail
 
-name=$1
-artifacts_dir=${2:-/tmp/artifacts}
-collector_image_registry=${3:-docker.io/stackrox}
-collector_image_tag=${4:-3.5.x-76-gaca574d047}
+cluster_name=$1
+test_name=$2
+collector_versions_file=${3:-collector_versions.txt}
+teardown_script=${4:-$TEARDOWN_SCRIPT}
+nrepeat=${5:-5}
+artifacts_dir=${6:-/tmp/artifacts}
+
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
-"$DIR"/CreateInfra.sh "$name" openshift-4 7h
-"$DIR"/WaitForCluster.sh "$name"
-"$DIR"/GetArtifactsDir.sh "$name" "$artifacts_dir"
-export KUBECONFIG="$artifacts_dir"/kubeconfig
-"$DIR"/StartCentralAndScanner.sh "$artifacts_dir"
-"$DIR"/WaitForPods.sh "$artifacts_dir"
-echo "Sleeping an additonal 120 seconds"
-sleep 120
-"$DIR"/GrabBundle.sh "$artifacts_dir"
-"$DIR"/SecureCluster.sh "$artifacts_dir" "$collector_image_registry" "$collector_image_tag"
-"$DIR"/TurnOnMonitoring.sh "$artifacts_dir"
+"$DIR"/CreateInfra.sh "$cluster_name" openshift-4 7h
+
+test_dir="$DIR/TestResults/$test_name"
+mkdir -p "$test_dir"
+
+for ((n=0;n<nrepeat;n=n+1))
+do
+	while read -r line;
+	do
+		collector_image_registry="$(echo "$line" | awk '{print $1}')"
+		collector_image_tag="$(echo "$line" | awk '{print $2}')"
+		nick_name="$(echo "$line" | awk '{print $3}')"
+		printf 'yes\n'  | $teardown_script
+		"$DIR"/StartRox.sh "$cluster_name" "$artifacts_dir" "$collector_image_registry" "$collector_image_tag" 
+		sleep 120
+		"$DIR"/query.sh "$artifacts_dir" > "$test_dir/results_${nick_name}_${n}.txt"
+	done < "$collector_versions_file"
+done
+
+printf 'yes\n'  | $teardown_script

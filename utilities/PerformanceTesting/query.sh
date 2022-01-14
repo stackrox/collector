@@ -69,8 +69,8 @@ get_reports_for_collector_counters() {
     max=$(do_prometheus_query_and_get_value "$max_query")
 
     echo ""
-    echo "Average of $counter over pods (microseconds): $avg"
-    echo "Maximum of $counter over pods (microseconds): $max"
+    echo "Average of $counter over pods: $avg"
+    echo "Maximum of $counter over pods: $max"
     echo ""
 
   done
@@ -138,8 +138,8 @@ get_reports_for_cpu_and_mem_usage() {
   avg_mem_value=$(do_prometheus_query_and_get_value "$avg_mem_query")
   max_mem_value=$(do_prometheus_query_and_get_value "$max_mem_query")
 
-  echo "Average cpu percentage usage: $avg_cpu_value"
-  echo "Maximum cpu percentage usage: $max_cpu_value"
+  echo "Average cpu usage: $avg_cpu_value"
+  echo "Maximum cpu usage: $max_cpu_value"
   echo ""
   echo "Average memory usage (bytes): $avg_mem_value"
   echo "Maximum memory usage (bytes): $max_mem_value"

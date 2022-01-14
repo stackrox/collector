@@ -5,6 +5,7 @@ integration-tests/perf.json
 sysdig/cmake-build
 sysdig/cmake-build-rhel
 kernel-modules/kobuild-tmp
+utilities/PerformanceTesting/TestResults
 
 # Mac OS hidden file
 .DS_Store
