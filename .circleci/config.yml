@@ -56,7 +56,7 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
   - images
   - ubi-image
   - integration-test-local
-  # - dockerized-build-collector
+  - dockerized-build-collector
 
 orbs:
   slack: circleci/slack@3.4.2
