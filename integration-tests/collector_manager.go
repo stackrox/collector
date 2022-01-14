@@ -33,14 +33,12 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 		collectionMethod = "kernel_module"
 	}
 	offlineMode, _ := strconv.ParseBool(ReadEnvVarWithDefault("COLLECTOR_OFFLINE_MODE", "false"))
-	alternateProbeDownload := ReadEnvVarWithDefault("ROX_COLLECTOR_ALT_PROBE_DOWNLOAD", "true")
 
 	env := map[string]string{
-		"GRPC_SERVER":                      "localhost:9999",
-		"COLLECTOR_CONFIG":                 `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}`,
-		"COLLECTION_METHOD":                collectionMethod,
-		"COLLECTOR_PRE_ARGUMENTS":          collectorPreArguments,
-		"ROX_COLLECTOR_ALT_PROBE_DOWNLOAD": alternateProbeDownload,
+		"GRPC_SERVER":             "localhost:9999",
+		"COLLECTOR_CONFIG":        `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}`,
+		"COLLECTION_METHOD":       collectionMethod,
+		"COLLECTOR_PRE_ARGUMENTS": collectorPreArguments,
 	}
 	if !offlineMode {
 		env["MODULE_DOWNLOAD_BASE_URL"] = "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"
@@ -54,7 +52,7 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 		"/host/dev:ro":                 "/dev",
 		// /module is an anonymous volume to reflect the way collector
 		// is usually run in kubernetes (with in-memory volume for /module)
-		"/module":                      "",
+		"/module": "",
 	}
 
 	collectorImage := ReadEnvVar("COLLECTOR_IMAGE")
