@@ -101,6 +101,7 @@ class ConnectionTracker {
   template <typename T>
   static void UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, const UnorderedMap<T, ConnStatus>& new_state, int64_t now, int64_t afterglow_period_micros);
   static bool WasRecentlyActive(const ConnStatus& conn, int64_t now, int64_t afterglow_period_micros);
+  static bool IsInAfterglowPeriod(const ConnStatus& conn, int64_t now, int64_t afterglow_period_micros);
   template <typename T>
   // ComputeDelta computes a diff between new_state and old_state
   static void ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, const UnorderedMap<T, ConnStatus>& old_state, UnorderedMap<T, ConnStatus>& delta, int64_t now, int64_t old_now, int64_t afterglow_period_micros);
@@ -206,7 +207,7 @@ void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_stat
 
   //Add everything in the old state that was in the active state and is not in the new state
   for (auto conn : old_state) {
-    if (new_state.find(conn.first) == new_state.end() && conn.second.IsActive()) {
+    if (new_state.find(conn.first) == new_state.end() && conn.second.IsActive() && !IsInAfterglowPeriod(conn.second, now, afterglow_period_micros)) {
       conn.second.SetActive(false);
       delta.insert(conn);
     }

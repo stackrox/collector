@@ -396,6 +396,28 @@ TEST(ConnTrackerTest, TestComputeDeltaSameState) {
   EXPECT_THAT(delta, IsEmpty());
 }
 
+TEST(ConnTrackerTest, TestComputeDeltaRemoveConnectionExpiredAfterglow) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+
+  int64_t now = 1000;
+  int64_t old_now = 500;
+  int64_t afterglow_period_micros = 20;
+
+  ConnMap new_state = {{conn2, ConnStatus(now, true)}};
+  ConnMap old_state = {{conn1, ConnStatus(old_now, true)},
+                       {conn2, ConnStatus(old_now, true)}};
+  ConnMap delta;
+
+  // Removing a connection from the active state should have it appear as inactive in the delta (with the previous
+  // timestamp), if the old connection is not in the afterglow period.
+  CT::ComputeDelta(new_state, old_state, delta, now, old_now, afterglow_period_micros);
+  EXPECT_THAT(delta, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(old_now, false))));
+}
+
 TEST(ConnTrackerTest, TestComputeDeltaRemoveConnection) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
@@ -412,10 +434,10 @@ TEST(ConnTrackerTest, TestComputeDeltaRemoveConnection) {
                        {conn2, ConnStatus(old_now, true)}};
   ConnMap delta;
 
-  // Removing a connection from the active state should have it appear as inactive in the delta (with the previous
-  // timestamp).
+  // Removing a connection from the active state should not have it appear in the delta if the afterglow period has not
+  // passed for the old state
   CT::ComputeDelta(new_state, old_state, delta, now, old_now, afterglow_period_micros);
-  EXPECT_THAT(delta, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(old_now, false))));
+  EXPECT_THAT(delta, IsEmpty());
 }
 
 TEST(ConnTrackerTest, TestComputeDeltaChangeTimeStamp) {
