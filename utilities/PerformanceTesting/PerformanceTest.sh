@@ -2,7 +2,7 @@
 set -eoux pipefail
 
 cluster_name=$1
-test_name=$2
+test_dir=$2
 collector_versions_file=${3:-collector_versions.txt}
 teardown_script=${4:-$TEARDOWN_SCRIPT}
 nrepeat=${5:-5}
@@ -13,7 +13,6 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 
 "$DIR"/CreateInfra.sh "$cluster_name" openshift-4 7h
 
-test_dir="$DIR/TestResults/$test_name"
 mkdir -p "$test_dir"
 
 for ((n=0;n<nrepeat;n=n+1))
