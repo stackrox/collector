@@ -9,9 +9,6 @@ export KUBECONFIG=$artifacts_dir/kubeconfig
 
 while true
 do
-  #npods="$(kubectl -n stackrox get pods | wc -l)"
-  #npods=$(( npods-1 ))
-  #nrunning="$({ kubectl -n stackrox get pods | awk '{print $2}' | awk -F "/" '{if ($1 == $2) print}' || true ; } | wc -l)"
   pod_ready="$(kubectl -n stackrox get pod -o jsonpath='{.items[*].status.containerStatuses[*].ready}')"
   has_ready="$({ echo "$pod_ready" | grep true || true ; } | wc -l)"
   has_unready="$({ echo "$pod_ready" | grep false || true ; } | wc -l)"
