@@ -1376,43 +1376,43 @@ workflows:
         <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - builder
-    # - dockerized-task-file:
-    #     <<: *runOnAllTags
-    #     context:
-    #       - docker-io-pull
-    #       - quay-rhacs-eng-readonly
-    #       - redhat-developer-account-login
-    #     requires:
-    #     - lint
-    # - dockerized-build-drivers:
-    #     <<: *runOnAllTags
-    #     context:
-    #       - docker-io-pull
-    #       - quay-rhacs-eng-readwrite
-    #       - redhat-developer-account-login
-    #     requires:
-    #     - dockerized-task-file
-    # - dockerized-unify-images:
-    #     <<: *runOnAllTags
-    #     context:
-    #       - docker-io-pull
-    #       - quay-rhacs-eng-readwrite
-    #     requires:
-    #       - dockerized-build-drivers
-    # - dockerized-check-failures:
-    #     <<: *runOnAllTags
-    #     context:
-    #       - quay-rhacs-eng-readonly
-    #     requires:
-    #       - dockerized-unify-images
-    # - dockerized-build-collector:
-    #     <<: *runOnAllTags
-    #     context:
-    #       - docker-io-push
-    #       - quay-rhacs-eng-readonly
-    #     requires:
-    #       - dockerized-unify-images
-    #       - images
+    - dockerized-task-file:
+        <<: *runOnAllTags
+        context:
+          - docker-io-pull
+          - quay-rhacs-eng-readonly
+          - redhat-developer-account-login
+        requires:
+        - lint
+    - dockerized-build-drivers:
+        <<: *runOnAllTags
+        context:
+          - docker-io-pull
+          - quay-rhacs-eng-readwrite
+          - redhat-developer-account-login
+        requires:
+        - dockerized-task-file
+    - dockerized-unify-images:
+        <<: *runOnAllTags
+        context:
+          - docker-io-pull
+          - quay-rhacs-eng-readwrite
+        requires:
+          - dockerized-build-drivers
+    - dockerized-check-failures:
+        <<: *runOnAllTags
+        context:
+          - quay-rhacs-eng-readonly
+        requires:
+          - dockerized-unify-images
+    - dockerized-build-collector:
+        <<: *runOnAllTags
+        context:
+          - docker-io-push
+          - quay-rhacs-eng-readonly
+        requires:
+          - dockerized-unify-images
+          - images
     - prepare-kernels:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
@@ -1470,7 +1470,7 @@ workflows:
         matrix:
           parameters:
             image_family: [cos-stable, cos-beta, cos-dev, cos-81-lts, cos-85-lts, cos-89-lts]
-            dockerized: [false]
+            dockerized: [false, true]
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
@@ -1479,7 +1479,7 @@ workflows:
           parameters:
             image_family: [rhel-7, rhel-8]
             collection_method: [module, ebpf]
-            dockerized: [false]
+            dockerized: [false, true]
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
@@ -1488,7 +1488,7 @@ workflows:
           parameters:
             image_family: [ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2104]
             collection_method: [module, ebpf]
-            dockerized: [false]
+            dockerized: [false, true]
           exclude:
             # Failing due to GLIC 2.33 not available on ubi 8
             - image_family: ubuntu-2104
@@ -1502,7 +1502,7 @@ workflows:
           parameters:
             image_family: [sles-12, sles-15]
             collection_method: [module, ebpf]
-            dockerized: [false]
+            dockerized: [false, true]
           exclude:
             - image_family: sles-12
               collection_method: ebpf
@@ -1518,7 +1518,7 @@ workflows:
         matrix:
           parameters:
             collection_method: [module, ebpf]
-            dockerized: [false]
+            dockerized: [false, true]
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-<< matrix.collection_method >>-flatcar-stable<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
@@ -1527,7 +1527,7 @@ workflows:
         matrix:
           parameters:
             collection_method: [module, ebpf]
-            dockerized: [false]
+            dockerized: [false, true]
           exclude:
             # Failing due to GLIC 2.33 not available on ubi 8
             - collection_method: module
@@ -1540,7 +1540,7 @@ workflows:
         matrix:
           parameters:
             collection_method: [module, ebpf]
-            dockerized: [false]
+            dockerized: [false, true]
           exclude:
             # Failing due to GLIC 2.33 not available on ubi 8
             - collection_method: module
@@ -1554,7 +1554,7 @@ workflows:
         matrix:
           parameters:
             collection_method: [module, ebpf]
-            dockerized: [false]
+            dockerized: [false, true]
             image_version: [576-2-9e22b9]
           exclude:
             # Failing due to dockerized module not being built (requires gcc-10).
