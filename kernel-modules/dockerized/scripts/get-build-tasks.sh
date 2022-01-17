@@ -6,12 +6,7 @@ set -euo pipefail
 # product between the set of kernel versions and the set of module versions
 echo >"/all-build-tasks"
 
-# redundant-build-tasks will contain all build tasks for which we already have the resulting
-# module.
-echo >"/redundant-build-tasks"
-
 echo >"/non-blocklisted-build-tasks"
-echo >"/global-non-blocklisted-build-tasks"
 
 append_task() {
 	local kernel_version="$1"
@@ -50,19 +45,12 @@ process_driver() {
 	local kernel_version="$1"
 	local module_dir="$2"
 
-	append_task "$kernel_version" "$module_dir" "mod" /all-build-tasks
-
-	# If the driver is cached, we prevent rebuilding it by adding it to '/redundant-build-tasks'
-	if driver_is_cached "$kernel_version" "$module_dir" "mod"; then
-		append_task "$kernel_version" "$module_dir" "mod" /redundant-build-tasks
+	if ! driver_is_cached "$kernel_version" "$module_dir" "mod"; then
+		append_task "$kernel_version" "$module_dir" "mod" /all-build-tasks
 	fi
 
-	if [[ -d "${module_dir}/bpf" ]]; then
+	if [[ -d "${module_dir}/bpf" ]] && ! driver_is_cached "$kernel_version" "$module_dir" "bpf"; then
 		append_task "$kernel_version" "$module_dir" "bpf" /all-build-tasks
-
-		if driver_is_cached "$kernel_version" "$module_dir" "bpf"; then
-			append_task "$kernel_version" "$module_dir" "bpf" /redundant-build-tasks
-		fi
 	fi
 }
 
@@ -82,10 +70,6 @@ for module_dir in /kobuild-tmp/versions-src/*/; do
 	fi
 done
 
-# blocklisted-build-tasks is populated from the BLOCKLIST file to exclude build tasks which would fail.
-/scripts/apply-blocklist.py /scripts/BLOCKLIST /all-build-tasks >/global-non-blocklisted-build-tasks
-/scripts/apply-blocklist.py /scripts/dockerized/BLOCKLIST /global-non-blocklisted-build-tasks >/non-blocklisted-build-tasks
-
-# Create the set of build tasks as the contents of `all-build-tasks` minus the redundant and blocklisted
-# build tasks.
-sort /non-blocklisted-build-tasks /redundant-build-tasks | awk NF | uniq -u >/build-tasks
+# non-blocklisted-build-tasks is populated from the BLOCKLIST file to exclude build tasks which would fail.
+/scripts/apply-blocklist.py /scripts/BLOCKLIST /all-build-tasks >/non-blocklisted-build-tasks
+/scripts/apply-blocklist.py /scripts/dockerized/BLOCKLIST /non-blocklisted-build-tasks >/build-tasks
