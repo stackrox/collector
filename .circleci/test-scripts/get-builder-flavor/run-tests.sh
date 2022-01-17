@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 SCRIPT_DIR=$(dirname "$0")
-script="${SCRIPT_DIR}/../../.circleci/kernels/get-builder-flavor.sh"
+script="${SCRIPT_DIR}/../../kernels/get-builder-flavor.sh"
 
 input=${1:-"$SCRIPT_DIR/TestInput.txt"}
 custom_build_flavors_all_file="$SCRIPT_DIR"/custom-build-flavors-all

@@ -330,6 +330,17 @@ jobs:
           go install mvdan.cc/sh/v3/cmd/shfmt@v3.4.1
           make -C "${SOURCE_ROOT}" shfmt-check
 
+  test-scripts:
+    <<: *defaultImage
+
+    steps:
+    - initcommand
+
+    - run:
+        name: Test get-builder-flavor
+        command: |
+          "${CI_ROOT}/test-scripts/get-builder-flavor/run-tests.sh"
+
   builder:
     <<: *defaultMachine
     resource_class: large
@@ -1364,6 +1375,10 @@ workflows:
         <<: *runOnAllTagsWithDockerIOPullCtx
     - lint:
         <<: *runOnAllTagsWithDockerIOPullCtx
+        requires:
+        - initjob
+    - test-scripts:
+        <<: *runOnAllTags
         requires:
         - initjob
     - builder:

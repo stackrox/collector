@@ -2268,7 +2268,7 @@
 5.10.22-100.fc32.x86_64 redhat hirsute
 5.10.22-200.fc33.x86_64 redhat hirsute
 5.10.23-200.fc33.x86_64 redhat hirsute
-5.10.25-dockerdesktop-2021-03-23-09-27-39 dockerdesktop hirsute
+5.10.25-dockerdesktop-2021-03-23-09-27-39 dockerdesktop modern
 5.10.25-flatcar coreos hirsute
 5.10.32-flatcar coreos hirsute
 5.10.37-flatcar coreos hirsute
