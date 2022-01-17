@@ -25,8 +25,8 @@ You should have received a copy of the GNU General Public License along with thi
 #define _HOSTINFO_H
 
 extern "C" {
-#include <sys/utsname.h>
 #include <sys/stat.h>
+#include <sys/utsname.h>
 }
 
 #include <regex>
@@ -45,9 +45,9 @@ const int MIN_RHEL_BUILD_ID = 957;
 enum SecureBootStatus {
   ENABLED = 3,
   DISABLED = 2,
-  NOT_DETERMINED = 1,     // Secure Boot seems to be disabled, but the boot loaded
-                          // does not provide enough information about it,
-                          // so it could be enabled without the kernel being aware.
+  NOT_DETERMINED = 1,  // Secure Boot seems to be disabled, but the boot loaded
+                       // does not provide enough information about it,
+                       // so it could be enabled without the kernel being aware.
 };
 
 struct KernelVersion {

@@ -189,8 +189,8 @@ SecureBootStatus HostInfo::HasSecureBoot() {
   std::uint8_t status;
 
   std::ifstream boot_params(
-    GetHostPath("/sys/kernel/boot_params/data"),
-    std::ios::binary | std::ios::in);
+      GetHostPath("/sys/kernel/boot_params/data"),
+      std::ios::binary | std::ios::in);
 
   if (!boot_params.is_open()) {
     CLOG(WARNING) << "Failed to open boot_params file.";
