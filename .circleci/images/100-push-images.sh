@@ -16,6 +16,6 @@ for repo in "${image_repos[@]}"; do
     image="${repo}:${tag}"
     echo "Pushing image ${image}"
     docker image inspect "${image}" >/dev/null
-    ${WORKSPACE_ROOT}/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${image}"
+    "${WORKSPACE_ROOT}/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh" "${image}"
   done
 done
