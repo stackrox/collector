@@ -1378,7 +1378,7 @@ workflows:
         requires:
         - initjob
     - test-scripts:
-        <<: *runOnAllTags
+        <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
         - initjob
     - builder:
