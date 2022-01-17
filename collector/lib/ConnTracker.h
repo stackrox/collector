@@ -169,7 +169,6 @@ void ConnectionTracker::UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, c
     auto& old_conn = *it;
     if (WasRecentlyActive(old_conn.second, now, afterglow_period_micros)) {
       ++it;
-      continue;
     } else {
       it = old_state->erase(it);
     }
