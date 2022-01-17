@@ -12,6 +12,10 @@ parameters:
   kernel-bundles-staging:
     type: string
     default: ""
+  default-machine-image:
+    type: string
+    # https://circleci.com/docs/2.0/configuration-reference/#available-machine-images
+    default: ubuntu-2004:202111-02
 
 defaultImage: &defaultImage
   docker:
@@ -25,7 +29,7 @@ defaultImage: &defaultImage
 
 defaultMachine: &defaultMachine
   machine:
-    image: ubuntu-2004:202104-01
+    image: << pipeline.parameters.default-machine-image >>
 
 runOnAllTags: &runOnAllTags
   filters:
@@ -610,7 +614,7 @@ jobs:
 
   ubi-image:
     machine:
-      image: ubuntu-2004:202111-02
+      image: << pipeline.parameters.default-machine-image >>
       docker_layer_caching: true
     resource_class: large
     environment:
