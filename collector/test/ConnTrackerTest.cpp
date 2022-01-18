@@ -487,6 +487,26 @@ TEST(ConnTrackerTest, TestComputeDeltaSetToInactive) {
   EXPECT_THAT(delta, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(now2, false))));
 }
 
+TEST(ConnTrackerTest, TestComputeDeltaOldAndNewAreInactive) {
+  // A connection that was already inactive no longer showing up at all in the new state should not appear in the delta.
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t time1 = 1000;
+  int64_t time2 = 2000;
+  int64_t time3 = 3000;
+  int64_t time4 = 4000;
+  int64_t afterglow_period_micros = 50;
+
+  ConnMap old_state = {{conn1, ConnStatus(time1, false)}};
+  ConnMap new_state = {{conn1, ConnStatus(time3, false)}};
+  ConnMap delta;
+  CT::ComputeDelta(new_state, old_state, delta, time2, time4, afterglow_period_micros);
+  EXPECT_THAT(delta, new_state);
+}
+
 TEST(ConnTrackerTest, TestComputeDeltaInactiveRemovedIsntInDelta) {
   // A connection that was already inactive no longer showing up at all in the new state should not appear in the delta.
   Endpoint a(Address(192, 168, 0, 1), 80);
