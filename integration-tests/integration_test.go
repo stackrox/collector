@@ -60,6 +60,7 @@ func TestRepeatedNetworkFlow(t *testing.T) {
 	//The second through tenth curl commands are ignored, because of afterglow
 	//Thus there are 2 networking events recorded
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
+		afterglowPeriod: 10,
 		numMetaIter: 1,
 		numIter: 10,
 		sleepBetweenCurlTime: 1,
@@ -71,10 +72,11 @@ func TestRepeatedNetworkFlow(t *testing.T) {
 
 func TestRepeatedNetworkFlowWithAfterglowExpiration(t *testing.T) {
 	//Perform two curl commands 15 seconds apart
-	//15 seconds is greater than the afterglow period so all openings
+	//15 seconds is greater than the afterglow period so all openings are 
 	//Every opening for the server and client are reported and there are two curls
 	//so we have 2*2=4 recoreded networking events
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
+		afterglowPeriod: 10,
 		numMetaIter: 1,
 		numIter: 2,
 		sleepBetweenCurlTime: 15,
@@ -86,13 +88,28 @@ func TestRepeatedNetworkFlowWithAfterglowExpiration(t *testing.T) {
 
 func TestRepeatedNetworkFlowWithMultipleAfterglowExpirations(t *testing.T) {
 	//Perform two curl commands 15 seconds apart
-	//15 seconds is greater than the afterglow period so all openings
+	//15 seconds is greater than the afterglow period so all openings are reported.
 	//Every opening for the server and client are reported and there are two curls
-	//so we have 2*2=4 recoreded networking events
+	//so we have 2*3=6 recoreded networking events
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
+		afterglowPeriod: 10,
 		numMetaIter: 1,
 		numIter: 3,
 		sleepBetweenCurlTime: 15,
+		sleepBetweenIterations: 1,
+		expectedReports: 6,
+	}
+	suite.Run(t, repeatedNetworkFlowTestSuite)
+}
+
+func TestRepeatedNetworkFlowWithZeroAfterglowPeriod(t *testing.T) {
+	//Afterglow period is set to 0 so all openings and closings are reported.
+	//There should be six reported events
+	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
+		afterglowPeriod: 0,
+		numMetaIter: 1,
+		numIter: 3,
+		sleepBetweenCurlTime: 3,
 		sleepBetweenIterations: 1,
 		expectedReports: 6,
 	}
@@ -154,6 +171,7 @@ type RepeatedNetworkFlowTestSuite struct {
 	serverContainer string
 	serverIP        string
 	serverPort      string
+	afterglowPeriod	int
 	numMetaIter	int
 	numIter		int
 	sleepBetweenCurlTime	int
@@ -433,6 +451,8 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.StartContainerStats()
 	s.collector = NewCollectorManager(s.executor, s.T().Name())
 
+	s.collector.Env["COLLECTOR_CONFIG"]=`{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2,"afterglowPeriod":` + strconv.Itoa(s.afterglowPeriod) + `}`
+
 	err := s.collector.Setup()
 	s.Require().NoError(err)
 
@@ -484,16 +504,12 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.clientIP, err = s.getIPAddress("nginx-curl")
 	s.Require().NoError(err)
 
-	//totalTime := s.sleepBetweenCurlTime * s.numIter * s.numMetaIter + s.sleepBetweenIterations * s.numMetaIter
-	//totalTime = totalTime + 20
-	//time.Sleep(time.Duration(totalTime) * time.Second)
-	time.Sleep(10 * time.Second)
+	totalTime := 20 + s.afterglowPeriod
+	time.Sleep(time.Duration(totalTime) * time.Second)
 	logLines := s.GetLogLines("grpc-server")
 	networkLines := CountNumMatchingPattern(logLines, "^Network")
 	s.observedReports = networkLines - networkLinesInitial
-	//This should be in TestRepeatedNetworkFlow, but I was unable to access the grpc-serve log files
-	//there, or get the number of recorded networking events in any other way
-	//assert.Equal(s.T(), s.expectedReports, networkLines)
+
 	err = s.collector.TearDown()
 	s.Require().NoError(err)
 
