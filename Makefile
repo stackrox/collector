@@ -110,3 +110,11 @@ teardown-dev:
 .PHONY: clean
 clean: teardown-dev
 	make -C collector clean
+
+.PHONY: shfmt-check
+shfmt-check:
+	shfmt -d $(CURDIR)
+
+.PHONY: shfmt-format
+shfmt-format:
+	shfmt -w $(CURDIR)

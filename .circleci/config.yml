@@ -331,6 +331,14 @@ jobs:
         command: |
            make -C "${COLLECTOR_SOURCE_ROOT}" check
 
+    - run:
+        name: Lint via shfmt
+        command: |
+          go install mvdan.cc/sh/v3/cmd/shfmt@v3.4.1
+          if ! make -C "${SOURCE_ROOT}" shfmt-check; then
+            echo >&2 "Formatting of shell scripts has failed, moving on..."
+          fi
+
   builder:
     <<: *defaultMachine
     resource_class: large
