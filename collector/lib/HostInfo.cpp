@@ -29,6 +29,9 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
+// An offset ofr secure_boot option in boot_params
+const int SECURE_BOOT_OFFSET = 0x1EC;
+
 namespace {
 
 // Helper method which checks whether the given kernel & os
@@ -166,7 +169,7 @@ bool HostInfo::IsUEFI() {
 
   if (stat(efi_path.c_str(), &sb) == -1) {
     if (errno == ENOTDIR || errno == ENOENT) {
-      CLOG(INFO) << "Efi directory doesn't exist, legacy boot mode";
+      CLOG(INFO) << "EFI directory doesn't exist, legacy boot mode";
       return false;
 
     } else {
@@ -177,16 +180,20 @@ bool HostInfo::IsUEFI() {
   }
 
   if (!S_ISDIR(sb.st_mode)) {
-    CLOG(WARNING) << "Efi path is not a directory, legacy boot mode";
+    CLOG(WARNING) << "EFI path is not a directory, legacy boot mode";
     return false;
   }
 
-  CLOG(INFO) << "Efi directory exist, UEFI boot mode";
+  CLOG(INFO) << "EFI directory exist, UEFI boot mode";
   return true;
 }
 
-SecureBootStatus HostInfo::HasSecureBoot() {
+SecureBootStatus HostInfo::GetSecureBootStatus() {
   std::uint8_t status;
+
+  if (secure_boot_status_ != SecureBootStatus::EMPTY) {
+    return secure_boot_status_;
+  }
 
   std::ifstream boot_params(
       GetHostPath("/sys/kernel/boot_params/data"),
@@ -206,7 +213,8 @@ SecureBootStatus HostInfo::HasSecureBoot() {
     return SecureBootStatus::NOT_DETERMINED;
   }
 
-  return static_cast<SecureBootStatus>(status);
+  secure_boot_status_ = static_cast<SecureBootStatus>(status);
+  return secure_boot_status_;
 }
 
 }  // namespace collector

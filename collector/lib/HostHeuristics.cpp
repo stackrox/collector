@@ -125,21 +125,21 @@ class SecureBootHeuristic : public Heuristic {
   void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
     SecureBootStatus sb_status;
 
-    // Do nothing if not booted with UEFI. This means legacy BIOS mode,
-    // where no Secure Boot available.
-    if (!host.IsUEFI()) {
+    // No switching from kernel modules to eBPF necessary if already use eBPF,
+    // or asked to force kernel modules, or not booted with UEFI. The latter
+    // means legacy BIOS mode, where no Secure Boot available.
+    if (config.UseEbpf() || config.ForceKernelModules() || !host.IsUEFI()) {
       return;
     }
 
-    // Switch to eBPF in case if there is a chance Secure Boot is on,
+    // Switch to eBPF in case there is a chance Secure Boot is on,
     // unless configured to enforce usage of kernel modules.
-    sb_status = host.HasSecureBoot();
+    sb_status = host.GetSecureBootStatus();
     if ((sb_status == SecureBootStatus::ENABLED ||
          sb_status == SecureBootStatus::NOT_DETERMINED) &&
         !config.UseEbpf() && !config.ForceKernelModules()) {
-      CLOG(WARNING) << host.GetDistro()
-                    << " has SecureBoot enabled preventing unsigned third-party "
-                    << "kernel modules, switching to eBPF based collection.";
+      CLOG(WARNING) << "SecureBoot is enabled preventing unsigned third-party "
+                    << "kernel modules. Switching to eBPF based collection.";
       hconfig->SetCollectionMethod("ebpf");
     }
   }

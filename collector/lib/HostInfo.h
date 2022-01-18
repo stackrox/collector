@@ -39,15 +39,14 @@ namespace collector {
 
 const int MIN_RHEL_BUILD_ID = 957;
 
-// An offset ofr secure_boot option in boot_params
-#define SECURE_BOOT_OFFSET 0x1EC
-
 enum SecureBootStatus {
   ENABLED = 3,
   DISABLED = 2,
   NOT_DETERMINED = 1,  // Secure Boot seems to be disabled, but the boot loaded
                        // does not provide enough information about it,
                        // so it could be enabled without the kernel being aware.
+
+  EMPTY = 0,  // No detection is performed yet
 };
 
 struct KernelVersion {
@@ -219,7 +218,7 @@ class HostInfo {
 
   // Secure Boot feature prevents from loading unsigned kernel modules, so it's
   // important to know its status.
-  SecureBootStatus HasSecureBoot();
+  virtual SecureBootStatus GetSecureBootStatus();
 
  protected:
   // basic default constructor, doesn't need to do anything,
@@ -237,6 +236,8 @@ class HostInfo {
   std::string build_id_;
   // the OS ID (from os-release file)
   std::string os_id_;
+  // the system SecureBoot status
+  SecureBootStatus secure_boot_status_;
 };
 
 }  // namespace collector
