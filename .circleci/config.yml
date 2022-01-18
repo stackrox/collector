@@ -12,6 +12,10 @@ parameters:
   kernel-bundles-staging:
     type: string
     default: ""
+  default-machine-image:
+    type: string
+    # https://circleci.com/docs/2.0/configuration-reference/#available-machine-images
+    default: ubuntu-2004:202111-02
 
 defaultImage: &defaultImage
   docker:
@@ -25,7 +29,7 @@ defaultImage: &defaultImage
 
 defaultMachine: &defaultMachine
   machine:
-    image: ubuntu-2004:202104-01
+    image: << pipeline.parameters.default-machine-image >>
 
 runOnAllTags: &runOnAllTags
   filters:
@@ -320,6 +324,14 @@ jobs:
         command: |
            make -C "${COLLECTOR_SOURCE_ROOT}" check
 
+    - run:
+        name: Lint via shfmt
+        command: |
+          go install mvdan.cc/sh/v3/cmd/shfmt@v3.4.1
+          if ! make -C "${SOURCE_ROOT}" shfmt-check; then
+            echo >&2 "Formatting of shell scripts has failed, moving on..."
+          fi
+
   builder:
     <<: *defaultMachine
     resource_class: large
@@ -598,7 +610,7 @@ jobs:
 
   ubi-image:
     machine:
-      image: ubuntu-2004:202010-01
+      image: << pipeline.parameters.default-machine-image >>
       docker_layer_caching: true
     resource_class: large
     environment:
@@ -844,7 +856,6 @@ jobs:
           export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}"
           export USE_VALGRIND=$VALGRIND_INTEGRATION_TESTS
           export USE_HELGRIND=$HELGRIND_INTEGRATION_TESTS
-          export ROX_COLLECTOR_ALT_PROBE_DOWNLOAD=true
           make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
@@ -927,7 +938,6 @@ jobs:
           cat >>"$BASH_ENV" \<<-EOF
             export COLLECTION_METHOD="<< parameters.collection_method >>"
             export COLLECTOR_OFFLINE_MODE="<< parameters.offline >>"
-            export ROX_COLLECTOR_ALT_PROBE_DOWNLOAD=true
             export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
             export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
             export IMAGE_FAMILY=<< parameters.image_family >>

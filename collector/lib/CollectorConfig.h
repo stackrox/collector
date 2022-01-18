@@ -95,7 +95,6 @@ end
   bool EnableSysdigLog() const { return enable_sysdig_log_; }
   bool DisableNetworkFlows() const { return disable_network_flows_; }
   const UnorderedSet<L4ProtoPortPair>& IgnoredL4ProtoPortPairs() const { return ignored_l4proto_port_pairs_; }
-  bool AlternateProbeDownload() const { return alternate_probe_download_; }
   bool CurlVerbose() const { return curl_verbose_; }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
@@ -113,7 +112,6 @@ end
   bool disable_network_flows_ = false;
   bool scrape_listen_endpoints_ = false;
   UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
-  bool alternate_probe_download_ = false;
   bool curl_verbose_ = false;
 
   bool enable_sysdig_log_ = false;

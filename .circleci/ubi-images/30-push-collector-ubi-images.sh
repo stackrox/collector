@@ -13,6 +13,6 @@ for repo in "${image_repos[@]}"; do
   for tag in "${image_tags[@]}"; do
     image="${repo}:${tag}"
     docker image tag "collector-test-cpaas:${COLLECTOR_VERSION}" "${image}"
-    docker push "${image}"
+    "${WORKSPACE_ROOT}/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh" "${image}"
   done
 done
