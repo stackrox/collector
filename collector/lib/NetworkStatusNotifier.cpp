@@ -201,7 +201,7 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
   ConnMap old_conn_state;
   ContainerEndpointMap old_cep_state;
   auto next_scrape = std::chrono::system_clock::now();
-  int64_t old_now = NowMicros();
+  int64_t time_at_last_scrape = NowMicros();
 
   while (writer->Sleep(next_scrape)) {
     next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(scrape_interval_);
@@ -228,10 +228,10 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
     ConnMap new_conn_state, delta_conn;
     WITH_TIMER(CollectorStats::net_fetch_state) {
       new_conn_state = conn_tracker_->FetchConnState(true, true);
-      ConnectionTracker::ComputeDelta(new_conn_state, old_conn_state, delta_conn, now, old_now, afterglow_period_micros_);
+      ConnectionTracker::ComputeDelta(new_conn_state, old_conn_state, delta_conn, now, time_at_last_scrape, afterglow_period_micros_);
 
       new_cep_state = conn_tracker_->FetchEndpointState(true, true);
-      ConnectionTracker::ComputeDelta(new_cep_state, old_cep_state, delta_cep, now, old_now, afterglow_period_micros_);
+      ConnectionTracker::ComputeDelta(new_cep_state, old_cep_state, delta_cep, now, time_at_last_scrape, afterglow_period_micros_);
     }
 
     WITH_TIMER(CollectorStats::net_create_message) {
@@ -240,7 +240,7 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
       //Add new connections to the old_state and remove inactive connections that are older than the afterglow period.
       ConnectionTracker::UpdateOldState(&old_conn_state, new_conn_state, now, afterglow_period_micros_);
       ConnectionTracker::UpdateOldState(&old_cep_state, new_cep_state, now, afterglow_period_micros_);
-      old_now = now;
+      time_at_last_scrape = now;
     }
 
     if (!msg) {

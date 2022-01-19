@@ -104,7 +104,7 @@ class ConnectionTracker {
   static bool IsInAfterglowPeriod(const ConnStatus& conn, int64_t now, int64_t afterglow_period_micros);
   template <typename T>
   // ComputeDelta computes a diff between new_state and old_state
-  static void ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, const UnorderedMap<T, ConnStatus>& old_state, UnorderedMap<T, ConnStatus>& delta, int64_t now, int64_t old_now, int64_t afterglow_period_micros);
+  static void ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, const UnorderedMap<T, ConnStatus>& old_state, UnorderedMap<T, ConnStatus>& delta, int64_t now, int64_t time_at_last_scrape, int64_t afterglow_period_micros);
 
   void UpdateKnownPublicIPs(UnorderedSet<Address>&& known_public_ips);
   void UpdateKnownIPNetworks(UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks);
@@ -183,12 +183,12 @@ void ConnectionTracker::UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, c
 }
 
 template <typename T>
-void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, const UnorderedMap<T, ConnStatus>& old_state, UnorderedMap<T, ConnStatus>& delta, int64_t now, int64_t old_now, int64_t afterglow_period_micros) {
+void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, const UnorderedMap<T, ConnStatus>& old_state, UnorderedMap<T, ConnStatus>& delta, int64_t now, int64_t time_at_last_scrape, int64_t afterglow_period_micros) {
   // Insert all objects from the new state, if anything changed about them.
   for (const auto& conn : new_state) {
     auto old_conn = old_state.find(conn.first);
     if (old_conn != old_state.end()) {
-      bool oldRecentlyActive = WasRecentlyActive(old_conn->second, old_now, afterglow_period_micros);  //Connections active within the afterglow period are considered to be active for the purpose of the delta.
+      bool oldRecentlyActive = WasRecentlyActive(old_conn->second, time_at_last_scrape, afterglow_period_micros);  //Connections active within the afterglow period are considered to be active for the purpose of the delta.
       bool newRecentlyActive = WasRecentlyActive(conn.second, now, afterglow_period_micros);
       if (newRecentlyActive != oldRecentlyActive) {
         // Object was either resurrected or newly closed. Update in either case.
