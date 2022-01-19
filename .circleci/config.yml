@@ -19,7 +19,7 @@ parameters:
 
 defaultImage: &defaultImage
   docker:
-  - image: "<< pipeline.parameters.quay-repo >>/apollo-ci:collector-0.3.24"
+  - image: "<< pipeline.parameters.quay-repo >>/apollo-ci:collector-0.3.25"
     auth:
       username: $QUAY_RHACS_ENG_RO_USERNAME
       password: $QUAY_RHACS_ENG_RO_PASSWORD
@@ -320,13 +320,6 @@ jobs:
     steps:
     - initcommand
     - run:
-        name: Install clang-format
-        command: |
-          sudo bash -c 'printf "deb http://deb.debian.org/debian/ buster-backports main contrib non-free" > /etc/apt/sources.list.d/backports.list'
-          sudo apt-get update
-          sudo apt-get install -y clang-format-11
-          sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-11 100
-    - run:
         name: Lint via clang-format
         command: |
            make -C "${COLLECTOR_SOURCE_ROOT}" check
@@ -365,11 +358,6 @@ jobs:
 
     steps:
     - initcommand
-
-    - run:
-        name: Install patch utility
-        command: |
-          sudo apt-get install patch
 
     - run:
         name: Prepare source
