@@ -355,6 +355,30 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
                           std::make_pair(conn5_normalized, ConnStatus(now, true))));
 }
 
+/*
+ * Start block of tests with at most one connection in old_state and at most ond connection in new_state
+ * The names of the tests specify what the state of the old connection is and what the state of the new connection is
+ * The format of the test names is as follows
+ *
+ * TestComputeDelta{old_state}Old{new_state}New
+ *
+ * The possible states are "Active", "InactiveUnexpired", "InactiveExpired", and "No"
+ *
+ * "Active" means that IsActive() returns true
+ * "InactiveUnexpired" means that IsActive() returns false, but WasRecentlyActive returns true, i.e the connection was closed within the afterglow period
+ * "InactiveExpired" means IsActive() returns false and WasRecentlyActive returns false, i.e the connection was closed outside of the afterglow period
+ * "No" means that there is no connection
+ *
+ * There is also a test with the name TestComputeDeltaInactiveExpiredOldInactiveExpiredNewDifferentTimeStamp. This specifies that WasRecentlyActive()
+ * returns false for both new and old connections and that they have different LastActiveTime().
+ *
+ * There is also a test with the name TestComputeDeltaInactiveExpiredOldInactiveExpiredNewSameTimeStamp. This specifies that WasRecentlyActive()
+ * returns false for both new and old connections and that they have the same LastActiveTime().
+ *
+ * Another exception is TestComputeDeltaInactiveUnexpiredWithinAfterglowOldNoNew. For the old connection IsActive() returns false, WasRecentlyActive()
+ * returns true, and IsInAfterglowPeriod(conn.second, now, afterglow_period_micros) returns false
+ */
+//
 TEST(ConnTrackerTest, TestComputeDeltaActiveOldActiveNew) {
   // If both old and new connections are active delta should be empty
   Endpoint a(Address(192, 168, 0, 1), 80);
@@ -677,6 +701,10 @@ TEST(ConnTrackerTest, TestComputeDeltaEmptyOldState) {
   CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_EQ(new_state, delta);
 }
+
+/*
+* End block of tests with at most one connection in old_state and at most ond connection in new_state
+*/
 
 TEST(ConnTrackerTest, TestComputeDeltaSameState) {
   Endpoint a(Address(192, 168, 0, 1), 80);
