@@ -361,7 +361,6 @@ TEST(ConnTrackerTest, TestComputeDeltaActiveOldActiveNew) {
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
-  Connection conn2("xzy", b, a, L4Proto::TCP, false);
   int64_t connection_time1 = 990;
   int64_t connection_time2 = 1990;
   int64_t now = 2000;
@@ -376,12 +375,10 @@ TEST(ConnTrackerTest, TestComputeDeltaActiveOldActiveNew) {
 }
 
 TEST(ConnTrackerTest, TestComputeDeltaActiveOldInactiveUnexpired) {
-  // If both old and new connections are active delta should be empty
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
-  Connection conn2("xzy", b, a, L4Proto::TCP, false);
   int64_t connection_time1 = 990;
   int64_t connection_time2 = 1990;
   int64_t now = 2000;
@@ -396,12 +393,10 @@ TEST(ConnTrackerTest, TestComputeDeltaActiveOldInactiveUnexpired) {
 }
 
 TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredOldActiveNew) {
-  // If the old connection is active and the new connection is inactive but unexpired the delta is empty
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
-  Connection conn2("xzy", b, a, L4Proto::TCP, false);
   int64_t connection_time1 = 990;
   int64_t connection_time2 = 1990;
   int64_t now = 2000;
@@ -416,12 +411,10 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredOldActiveNew) {
 }
 
 TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredOldInactiveUnexpiredNew) {
-  // If both old and new connections are inactive and unexpired the delta should be empty
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
-  Connection conn2("xzy", b, a, L4Proto::TCP, false);
   int64_t connection_time1 = 990;
   int64_t connection_time2 = 1990;
   int64_t now = 2000;
@@ -436,12 +429,10 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredOldInactiveUnexpiredNew) 
 }
 
 TEST(ConnTrackerTest, TestComputeDeltaActiveOldInactiveExpiredNew) {
-  // If both old and new connections are inactive and unexpired the delta should be empty
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
-  Connection conn2("xzy", b, a, L4Proto::TCP, false);
   int64_t connection_time1 = 990;
   int64_t connection_time2 = 1900;
   int64_t now = 2000;
@@ -456,12 +447,10 @@ TEST(ConnTrackerTest, TestComputeDeltaActiveOldInactiveExpiredNew) {
 }
 
 TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredOldInactiveExpiredNew) {
-  // If both old and new connections are inactive and unexpired the delta should be empty
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
-  Connection conn2("xzy", b, a, L4Proto::TCP, false);
   int64_t connection_time1 = 990;
   int64_t connection_time2 = 1900;
   int64_t now = 2000;
@@ -476,12 +465,10 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredOldInactiveExpiredNew) {
 }
 
 TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredOldActiveNew) {
-  // If both old and new connections are inactive and unexpired the delta should be empty
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
-  Connection conn2("xzy", b, a, L4Proto::TCP, false);
   int64_t connection_time1 = 900;
   int64_t connection_time2 = 1900;
   int64_t now = 2000;
@@ -496,12 +483,10 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredOldActiveNew) {
 }
 
 TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredOldInactiveUnexpiredNew) {
-  // If both old and new connections are inactive and unexpired the delta should be empty
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
-  Connection conn2("xzy", b, a, L4Proto::TCP, false);
   int64_t connection_time1 = 900;
   int64_t connection_time2 = 1990;
   int64_t now = 2000;
@@ -516,12 +501,10 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredOldInactiveUnexpiredNew) {
 }
 
 TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredOldInactiveExpiredNewDifferentTimeStamp) {
-  // If both old and new connections are inactive and unexpired the delta should be empty
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
-  Connection conn2("xzy", b, a, L4Proto::TCP, false);
   int64_t connection_time1 = 900;
   int64_t connection_time2 = 1900;
   int64_t now = 2000;
@@ -536,13 +519,11 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredOldInactiveExpiredNewDiffer
 }
 
 TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredOldInactiveExpiredNewSameTimeStamp) {
-  // If both old and new connections are inactive and unexpired the delta should be empty
   // This one is probably not possible in real life
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
-  Connection conn2("xzy", b, a, L4Proto::TCP, false);
   int64_t connection_time1 = 900;
   int64_t connection_time2 = 900;
   int64_t now = 2000;
@@ -557,12 +538,10 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredOldInactiveExpiredNewSameTi
 }
 
 TEST(ConnTrackerTest, TestComputeDeltaActiveOldNoNew) {
-  // If both old and new connections are inactive and unexpired the delta should be empty
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
-  Connection conn2("xzy", b, a, L4Proto::TCP, false);
   int64_t connection_time1 = 990;
   int64_t now = 2000;
   int64_t time_at_last_scrape = 1000;
@@ -577,12 +556,10 @@ TEST(ConnTrackerTest, TestComputeDeltaActiveOldNoNew) {
 }
 
 TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredNoNew) {
-  // If both old and new connections are inactive and unexpired the delta should be empty
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
-  Connection conn2("xzy", b, a, L4Proto::TCP, false);
   int64_t connection_time1 = 990;
   int64_t now = 2000;
   int64_t time_at_last_scrape = 1000;
@@ -596,12 +573,10 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredNoNew) {
 }
 
 TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredWithinAfterglowNoNew) {
-  // If both old and new connections are inactive and unexpired the delta should be empty
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
-  Connection conn2("xzy", b, a, L4Proto::TCP, false);
   int64_t connection_time1 = 990;
   int64_t now = 2000;
   int64_t time_at_last_scrape = 1000;
@@ -615,12 +590,10 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredWithinAfterglowNoNew) {
 }
 
 TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredNoNew) {
-  // If both old and new connections are inactive and unexpired the delta should be empty
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
-  Connection conn2("xzy", b, a, L4Proto::TCP, false);
   int64_t connection_time1 = 900;
   int64_t now = 2000;
   int64_t time_at_last_scrape = 1000;
@@ -634,12 +607,10 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredNoNew) {
 }
 
 TEST(ConnTrackerTest, TestComputeDeltaNoOldActiveNew) {
-  // If both old and new connections are inactive and unexpired the delta should be empty
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
-  Connection conn2("xzy", b, a, L4Proto::TCP, false);
   int64_t connection_time1 = 900;
   int64_t now = 2000;
   int64_t time_at_last_scrape = 1000;
@@ -653,12 +624,10 @@ TEST(ConnTrackerTest, TestComputeDeltaNoOldActiveNew) {
 }
 
 TEST(ConnTrackerTest, TestComputeDeltaNoOldInactiveUnexpiredNew) {
-  // If both old and new connections are inactive and unexpired the delta should be empty
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
-  Connection conn2("xzy", b, a, L4Proto::TCP, false);
   int64_t connection_time1 = 1990;
   int64_t now = 2000;
   int64_t time_at_last_scrape = 1000;
@@ -672,12 +641,10 @@ TEST(ConnTrackerTest, TestComputeDeltaNoOldInactiveUnexpiredNew) {
 }
 
 TEST(ConnTrackerTest, TestComputeDeltaNoOldInactiveExpiredNew) {
-  // If both old and new connections are inactive and unexpired the delta should be empty
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
-  Connection conn2("xzy", b, a, L4Proto::TCP, false);
   int64_t connection_time1 = 1900;
   int64_t now = 2000;
   int64_t time_at_last_scrape = 1000;
