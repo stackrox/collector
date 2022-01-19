@@ -9,7 +9,7 @@ create_unavailable_file() {
     local collector_version="$1"
     local kernel_version="$2"
 
-    touch "/kernel-modules/${collector_version}/collector-ebpf-${kernel_version}.unavail"
+    touch "/kernel-modules/${collector_version}/.collector-ebpf-${kernel_version}.unavail"
 }
 
 compile_driver() {
