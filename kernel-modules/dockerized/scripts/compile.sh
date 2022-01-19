@@ -171,6 +171,8 @@ compile() {
         else
             echo >&2 "Unknown probe type ${probe_type}"
         fi
+
+        rm -rf "${kernel_build}"
     done
 
     # Remove empty directories
