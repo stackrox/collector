@@ -3,8 +3,8 @@
 set -euo pipefail
 
 die() {
-  echo >&2 "$@"
-  exit 1
+    echo >&2 "$@"
+    exit 1
 }
 
 [[ "$#" == 1 ]] || die "Usage: $0 <image>"
@@ -20,13 +20,13 @@ docker tag "$image" "$arch_image"
 # Try pushing image a few times for the case when quay.io has issues such as "unknown blob"
 pushed=0
 for i in {1..5}; do
-  if docker push "$arch_image"; then
-    pushed=1
-    break
-  fi
-  sleep 10
+    if docker push "$arch_image"; then
+        pushed=1
+        break
+    fi
+    sleep 10
 done
-(( pushed ))
+((pushed))
 
 docker manifest create "$image" "$arch_image"
 

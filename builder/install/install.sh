@@ -8,6 +8,6 @@ mkdir -p "${LICENSE_DIR}"
 cd /install-tmp/
 source ./versions.sh
 for f in [0-9][0-9]-*.sh; do
-  ./"$f"
+    ./"$f"
 done
 cd && rm -rf /install-tmp

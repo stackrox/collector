@@ -6,4 +6,4 @@ mkdir -p "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}"
 mv -v \
     "/tmp/cache/kernel-modules/${MODULE_VERSION}"/* \
     "${WORKSPACE_ROOT}/ko-build/cached-probes/${MODULE_VERSION}/" \
-  || true
+    || true

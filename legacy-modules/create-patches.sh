@@ -18,5 +18,5 @@ for d in sources/*; do
     git -C "$clean_dir" commit --allow-empty -m "init"
     cp -r "$d"/* "$clean_dir"
     git -C "$clean_dir" add .
-    git -C "$clean_dir" diff HEAD >"patches/${version}.patch"
+    git -C "$clean_dir" diff HEAD > "patches/${version}.patch"
 done

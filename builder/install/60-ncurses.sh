@@ -2,7 +2,6 @@
 
 set -e
 
-
 wget "https://github.com/ThomasDickey/ncurses-snapshots/archive/v${NCURSES_VERSION}.tar.gz"
 tar -xzf "v${NCURSES_VERSION}.tar.gz"
 cd "ncurses-snapshots-${NCURSES_VERSION}"

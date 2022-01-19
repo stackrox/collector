@@ -10,8 +10,8 @@ gsutil ver
 gsutil ver -l | grep crcmod
 gcloud version
 cat ~/.boto || true
-echo '[Credentials]' >~/.boto
-echo 'gs_service_key_file = /tmp/gcp.json' >>~/.boto
+echo '[Credentials]' > ~/.boto
+echo 'gs_service_key_file = /tmp/gcp.json' >> ~/.boto
 echo "$service_account_env" > /tmp/gcp.json
 gcloud auth activate-service-account --key-file /tmp/gcp.json
 gcloud config set project stackrox-ci
