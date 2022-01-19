@@ -355,6 +355,341 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
                           std::make_pair(conn5_normalized, ConnStatus(now, true))));
 }
 
+TEST(ConnTrackerTest, TestComputeDeltaActiveOldActiveNew) {
+  // If both old and new connections are active delta should be empty
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t connection_time1 = 990;
+  int64_t connection_time2 = 1990;
+  int64_t now = 2000;
+  int64_t time_at_last_scrape = 1000;
+  int64_t afterglow_period_micros = 50;
+
+  ConnMap old_state = {{conn1, ConnStatus(connection_time1, true)}};
+  ConnMap new_state = {{conn1, ConnStatus(connection_time2, true)}};
+  ConnMap delta;
+  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  EXPECT_THAT(delta, IsEmpty());
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaActiveOldInactiveUnexpired) {
+  // If both old and new connections are active delta should be empty
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t connection_time1 = 990;
+  int64_t connection_time2 = 1990;
+  int64_t now = 2000;
+  int64_t time_at_last_scrape = 1000;
+  int64_t afterglow_period_micros = 50;
+
+  ConnMap old_state = {{conn1, ConnStatus(connection_time1, true)}};
+  ConnMap new_state = {{conn1, ConnStatus(connection_time2, false)}};
+  ConnMap delta;
+  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  EXPECT_THAT(delta, IsEmpty());
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredOldActiveNew) {
+  // If the old connection is active and the new connection is inactive but unexpired the delta is empty
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t connection_time1 = 990;
+  int64_t connection_time2 = 1990;
+  int64_t now = 2000;
+  int64_t time_at_last_scrape = 1000;
+  int64_t afterglow_period_micros = 50;
+
+  ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
+  ConnMap new_state = {{conn1, ConnStatus(connection_time2, true)}};
+  ConnMap delta;
+  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  EXPECT_THAT(delta, IsEmpty());
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredOldInactiveUnexpiredNew) {
+  // If both old and new connections are inactive and unexpired the delta should be empty
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t connection_time1 = 990;
+  int64_t connection_time2 = 1990;
+  int64_t now = 2000;
+  int64_t time_at_last_scrape = 1000;
+  int64_t afterglow_period_micros = 50;
+
+  ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
+  ConnMap new_state = {{conn1, ConnStatus(connection_time2, false)}};
+  ConnMap delta;
+  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  EXPECT_THAT(delta, IsEmpty());
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaActiveOldInactiveExpiredNew) {
+  // If both old and new connections are inactive and unexpired the delta should be empty
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t connection_time1 = 990;
+  int64_t connection_time2 = 1900;
+  int64_t now = 2000;
+  int64_t time_at_last_scrape = 1000;
+  int64_t afterglow_period_micros = 50;
+
+  ConnMap old_state = {{conn1, ConnStatus(connection_time1, true)}};
+  ConnMap new_state = {{conn1, ConnStatus(connection_time2, false)}};
+  ConnMap delta;
+  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  EXPECT_THAT(delta, new_state);
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredOldInactiveExpiredNew) {
+  // If both old and new connections are inactive and unexpired the delta should be empty
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t connection_time1 = 990;
+  int64_t connection_time2 = 1900;
+  int64_t now = 2000;
+  int64_t time_at_last_scrape = 1000;
+  int64_t afterglow_period_micros = 50;
+
+  ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
+  ConnMap new_state = {{conn1, ConnStatus(connection_time2, false)}};
+  ConnMap delta;
+  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  EXPECT_THAT(delta, new_state);
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredOldActiveNew) {
+  // If both old and new connections are inactive and unexpired the delta should be empty
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t connection_time1 = 900;
+  int64_t connection_time2 = 1900;
+  int64_t now = 2000;
+  int64_t time_at_last_scrape = 1000;
+  int64_t afterglow_period_micros = 50;
+
+  ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
+  ConnMap new_state = {{conn1, ConnStatus(connection_time2, true)}};
+  ConnMap delta;
+  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  EXPECT_THAT(delta, new_state);
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredOldInactiveUnexpiredNew) {
+  // If both old and new connections are inactive and unexpired the delta should be empty
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t connection_time1 = 900;
+  int64_t connection_time2 = 1990;
+  int64_t now = 2000;
+  int64_t time_at_last_scrape = 1000;
+  int64_t afterglow_period_micros = 50;
+
+  ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
+  ConnMap new_state = {{conn1, ConnStatus(connection_time2, false)}};
+  ConnMap delta;
+  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  EXPECT_THAT(delta, new_state);
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredOldInactiveExpiredNewDifferentTimeStamp) {
+  // If both old and new connections are inactive and unexpired the delta should be empty
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t connection_time1 = 900;
+  int64_t connection_time2 = 1900;
+  int64_t now = 2000;
+  int64_t time_at_last_scrape = 1000;
+  int64_t afterglow_period_micros = 50;
+
+  ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
+  ConnMap new_state = {{conn1, ConnStatus(connection_time2, false)}};
+  ConnMap delta;
+  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  EXPECT_THAT(delta, new_state);
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredOldInactiveExpiredNewSameTimeStamp) {
+  // If both old and new connections are inactive and unexpired the delta should be empty
+  // This one is probably not possible in real life
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t connection_time1 = 900;
+  int64_t connection_time2 = 900;
+  int64_t now = 2000;
+  int64_t time_at_last_scrape = 2000;
+  int64_t afterglow_period_micros = 50;
+
+  ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
+  ConnMap new_state = {{conn1, ConnStatus(connection_time2, false)}};
+  ConnMap delta;
+  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  EXPECT_THAT(delta, IsEmpty());
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaActiveOldNoNew) {
+  // If both old and new connections are inactive and unexpired the delta should be empty
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t connection_time1 = 990;
+  int64_t now = 2000;
+  int64_t time_at_last_scrape = 1000;
+  int64_t afterglow_period_micros = 50;
+
+  ConnMap old_state = {{conn1, ConnStatus(connection_time1, true)}};
+  ConnMap new_state;
+  ConnMap delta;
+  ConnMap expected_delta = {{conn1, ConnStatus(connection_time1, false)}};
+  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  EXPECT_THAT(delta, expected_delta);
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredNoNew) {
+  // If both old and new connections are inactive and unexpired the delta should be empty
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t connection_time1 = 990;
+  int64_t now = 2000;
+  int64_t time_at_last_scrape = 1000;
+  int64_t afterglow_period_micros = 50;
+
+  ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
+  ConnMap new_state;
+  ConnMap delta;
+  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  EXPECT_THAT(delta, old_state);
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredWithinAfterglowNoNew) {
+  // If both old and new connections are inactive and unexpired the delta should be empty
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t connection_time1 = 990;
+  int64_t now = 2000;
+  int64_t time_at_last_scrape = 1000;
+  int64_t afterglow_period_micros = 5000;
+
+  ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
+  ConnMap new_state;
+  ConnMap delta;
+  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  EXPECT_THAT(delta, IsEmpty());
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredNoNew) {
+  // If both old and new connections are inactive and unexpired the delta should be empty
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t connection_time1 = 900;
+  int64_t now = 2000;
+  int64_t time_at_last_scrape = 1000;
+  int64_t afterglow_period_micros = 50;
+
+  ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
+  ConnMap new_state;
+  ConnMap delta;
+  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  EXPECT_THAT(delta, IsEmpty());
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaNoOldActiveNew) {
+  // If both old and new connections are inactive and unexpired the delta should be empty
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t connection_time1 = 900;
+  int64_t now = 2000;
+  int64_t time_at_last_scrape = 1000;
+  int64_t afterglow_period_micros = 50;
+
+  ConnMap old_state;
+  ConnMap new_state = {{conn1, ConnStatus(connection_time1, true)}};
+  ConnMap delta;
+  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  EXPECT_THAT(delta, new_state);
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaNoOldInactiveUnexpiredNew) {
+  // If both old and new connections are inactive and unexpired the delta should be empty
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t connection_time1 = 1990;
+  int64_t now = 2000;
+  int64_t time_at_last_scrape = 1000;
+  int64_t afterglow_period_micros = 50;
+
+  ConnMap old_state;
+  ConnMap new_state = {{conn1, ConnStatus(connection_time1, false)}};
+  ConnMap delta;
+  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  EXPECT_THAT(delta, new_state);
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaNoOldInactiveExpiredNew) {
+  // If both old and new connections are inactive and unexpired the delta should be empty
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t connection_time1 = 1900;
+  int64_t now = 2000;
+  int64_t time_at_last_scrape = 1000;
+  int64_t afterglow_period_micros = 50;
+
+  ConnMap old_state;
+  ConnMap new_state = {{conn1, ConnStatus(connection_time1, false)}};
+  ConnMap delta;
+  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  EXPECT_THAT(delta, new_state);
+}
+
 TEST(ConnTrackerTest, TestComputeDeltaEmptyOldState) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
@@ -496,7 +831,7 @@ TEST(ConnTrackerTest, TestComputeDeltaSetToInactive) {
 }
 
 TEST(ConnTrackerTest, TestComputeDeltaOldAndNewAreInactive) {
-  // A connection that was already inactive no longer showing up at all in the new state should not appear in the delta.
+  // If both old and new connections are inactive and there is a timestamp change the new connection should be in the delta
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
