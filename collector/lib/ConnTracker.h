@@ -206,7 +206,8 @@ void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_stat
 
   //Add everything in the old state that was in the active state and is not in the new state
   for (auto conn : old_state) {
-    if (new_state.find(conn.first) == new_state.end() && conn.second.IsActive() && !IsInAfterglowPeriod(conn.second, now, afterglow_period_micros)) {
+    bool oldRecentlyActive = WasRecentlyActive(conn.second, time_at_last_scrape, afterglow_period_micros);
+    if (new_state.find(conn.first) == new_state.end() && oldRecentlyActive && !IsInAfterglowPeriod(conn.second, now, afterglow_period_micros)) {
       conn.second.SetActive(false);
       delta.insert(conn);
     }

@@ -569,7 +569,7 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredNoNew) {
   ConnMap new_state;
   ConnMap delta;
   CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
-  EXPECT_THAT(delta, IsEmpty());
+  EXPECT_THAT(delta, old_state);
 }
 
 TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredWithinAfterglowNoNew) {

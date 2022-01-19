@@ -65,7 +65,7 @@ func TestRepeatedNetworkFlow(t *testing.T) {
 		numIter: 10,
 		sleepBetweenCurlTime: 1,
 		sleepBetweenIterations: 1,
-		expectedReports: 2,
+		expectedReports: 4,
 	}
 	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
@@ -81,7 +81,7 @@ func TestRepeatedNetworkFlowWithAfterglowExpiration(t *testing.T) {
 		numIter: 2,
 		sleepBetweenCurlTime: 15,
 		sleepBetweenIterations: 1,
-		expectedReports: 4,
+		expectedReports: 8,
 	}
 	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
@@ -97,7 +97,7 @@ func TestRepeatedNetworkFlowWithMultipleAfterglowExpirations(t *testing.T) {
 		numIter: 3,
 		sleepBetweenCurlTime: 15,
 		sleepBetweenIterations: 1,
-		expectedReports: 6,
+		expectedReports: 12,
 	}
 	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
