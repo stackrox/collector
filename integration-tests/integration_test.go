@@ -54,11 +54,11 @@ func TestMissingProcScrape(t *testing.T) {
 }
 
 func TestRepeatedNetworkFlow(t *testing.T) {
-	//Perform 10 curl commands with a 1 second sleep between each curl command
-	//The first client to server connection is recorded
-	//The first server to client connection is recorded
-	//The second through tenth curl commands are ignored, because of afterglow
-	//Thus there are 2 networking events recorded
+	//Perform 10 curl commands with a 1 second sleep between each curl command.
+	//The first client to server connection is recorded.
+	//The first server to client connection is recorded.
+	//The second through tenth curl commands are ignored, because of afterglow.
+	//Thus there are 2 networking events recorded.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 10,
 		numMetaIter: 1,
@@ -71,10 +71,10 @@ func TestRepeatedNetworkFlow(t *testing.T) {
 }
 
 func TestRepeatedNetworkFlowWithAfterglowExpiration(t *testing.T) {
-	//Perform two curl commands 15 seconds apart
-	//15 seconds is greater than the afterglow period so all openings are 
+	//Perform two curl commands 15 seconds apart.
+	//15 seconds is greater than the afterglow period so all openings are reported.
 	//Every opening for the server and client are reported and there are two curls
-	//so we have 2*2=4 recoreded networking events
+	//so we have 2*2=4 recoreded networking events.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 10,
 		numMetaIter: 1,
@@ -87,10 +87,10 @@ func TestRepeatedNetworkFlowWithAfterglowExpiration(t *testing.T) {
 }
 
 func TestRepeatedNetworkFlowWithMultipleAfterglowExpirations(t *testing.T) {
-	//Perform two curl commands 15 seconds apart
+	//Perform three curl commands 15 seconds apart.
 	//15 seconds is greater than the afterglow period so all openings are reported.
 	//Every opening for the server and client are reported and there are two curls
-	//so we have 2*3=6 recoreded networking events
+	//so we have 2*3=6 recoreded networking events.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 10,
 		numMetaIter: 1,
@@ -103,8 +103,8 @@ func TestRepeatedNetworkFlowWithMultipleAfterglowExpirations(t *testing.T) {
 }
 
 func TestRepeatedNetworkFlowWithZeroAfterglowPeriod(t *testing.T) {
-	//Afterglow period is set to 0 so all openings and closings are reported.
-	//There should be six reported events
+	//Afterglow period is set to 0 so all openings are reported.
+	//There should be six reported events.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 0,
 		numMetaIter: 1,
