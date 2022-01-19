@@ -39,8 +39,8 @@ checkout_branch() (
 should_checkout="$(echo "${CHECKOUT_BEFORE_PATCHING}" | tr '[:upper:]' '[:lower:]')"
 
 if [[ "$should_checkout" == "true" ]]; then
-	# Prepare the sources for the work branch
-	checkout_branch "$WORK_BRANCH"
+    # Prepare the sources for the work branch
+    checkout_branch "$WORK_BRANCH"
 fi
 
 SYSDIG_DIR="/collector/${SYSDIG_REL_DIR}" \
