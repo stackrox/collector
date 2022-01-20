@@ -12,6 +12,9 @@ artifacts_dir=${6:-/tmp/artifacts}
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
 "$DIR"/CreateInfra.sh "$cluster_name" openshift-4 7h
+"$DIR"/WaitForCluster.sh "$cluster_name"
+"$DIR"/GetArtifactsDir.sh "$cluster_name" "$artifacts_dir"
+export KUBECONFIG="$artifacts_dir"/kubeconfig
 
 mkdir -p "$test_dir"
 

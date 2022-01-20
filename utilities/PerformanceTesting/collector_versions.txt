@@ -1,2 +1,4 @@
-docker.io/stackrox 3.5.x-76-gaca574d047 afterglow
+docker.io/stackrox 3.5.x-76-gaca574d047 afterglow_bug
 docker.io/stackrox 3.5.x-66-g2f9abb10c6 performance_test
+docker.io/stackrox 3.5.x-141-g071d0034de afterglow_WasRecentlyActive
+docker.io/stackrox 3.5.x-138-gf616f12c0a afterglow_IsActive
