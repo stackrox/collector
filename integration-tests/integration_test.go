@@ -119,7 +119,7 @@ func TestRepeatedNetworkFlowLongPauseNoAfterglow(t *testing.T) {
 		numIter: 2,
 		sleepBetweenCurlTime: 15,
 		sleepBetweenIterations: 1,
-		expectedReports: 8,
+		expectedReports: 4,
 	}
 	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
