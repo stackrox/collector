@@ -81,7 +81,7 @@ end
 
   std::string asString() const;
 
-  bool UseEbpf() const;
+  virtual bool UseEbpf() const;
   bool UseChiselCache() const;
   bool TurnOffScrape() const;
   bool ScrapeListenEndpoints() const { return scrape_listen_endpoints_; }
@@ -97,7 +97,7 @@ end
   bool DisableNetworkFlows() const { return disable_network_flows_; }
   const UnorderedSet<L4ProtoPortPair>& IgnoredL4ProtoPortPairs() const { return ignored_l4proto_port_pairs_; }
   bool CurlVerbose() const { return curl_verbose_; }
-  bool ForceKernelModules() const { return force_kernel_modules_; }
+  virtual bool ForceKernelModules() const { return force_kernel_modules_; }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 

@@ -135,9 +135,8 @@ class SecureBootHeuristic : public Heuristic {
     // Switch to eBPF in case there is a chance Secure Boot is on,
     // unless configured to enforce usage of kernel modules.
     sb_status = host.GetSecureBootStatus();
-    if ((sb_status == SecureBootStatus::ENABLED ||
-         sb_status == SecureBootStatus::NOT_DETERMINED) &&
-        !config.UseEbpf() && !config.ForceKernelModules()) {
+    if (sb_status == SecureBootStatus::ENABLED ||
+        sb_status == SecureBootStatus::NOT_DETERMINED) {
       CLOG(WARNING) << "SecureBoot is enabled preventing unsigned third-party "
                     << "kernel modules. Switching to eBPF based collection.";
       hconfig->SetCollectionMethod("ebpf");

@@ -214,7 +214,7 @@ class HostInfo {
   bool HasEBPFSupport();
 
   // The system was booted in UEFI mode.
-  bool IsUEFI();
+  virtual bool IsUEFI();
 
   // Secure Boot feature prevents from loading unsigned kernel modules, so it's
   // important to know its status.
