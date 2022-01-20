@@ -36,9 +36,7 @@ checkout_branch() (
     git -C /collector submodule update --init "${SYSDIG_REL_DIR}"
 )
 
-should_checkout="$(echo "${CHECKOUT_BEFORE_PATCHING}" | tr '[:upper:]' '[:lower:]')"
-
-if [[ "$should_checkout" == "true" ]]; then
+if [[ "${CHECKOUT_BEFORE_PATCHING,,}" == "true" ]]; then
     # Prepare the sources for the work branch
     checkout_branch "$WORK_BRANCH"
 fi
