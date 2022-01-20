@@ -360,7 +360,7 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
  * The names of the tests specify what the state of the old connection is and what the state of the new connection is
  * The format of the test names is as follows
  *
- * TestComputeDelta{old_state}Old{new_state}New
+ * TestComputeDeltaAfterglow{old_state}Old{new_state}New
  *
  * The possible states are "Active", "InactiveUnexpired", "InactiveExpired", and "No"
  *
@@ -369,17 +369,17 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
  * "InactiveExpired" means IsActive() returns false and WasRecentlyActive returns false, i.e the connection was closed outside of the afterglow period
  * "No" means that there is no connection
  *
- * There is also a test with the name TestComputeDeltaInactiveExpiredOldInactiveExpiredNewDifferentTimeStamp. This specifies that WasRecentlyActive()
+ * There is also a test with the name TestComputeDeltaAfterglowInactiveExpiredOldInactiveExpiredNewDifferentTimeStamp. This specifies that WasRecentlyActive()
  * returns false for both new and old connections and that they have different LastActiveTime().
  *
- * There is also a test with the name TestComputeDeltaInactiveExpiredOldInactiveExpiredNewSameTimeStamp. This specifies that WasRecentlyActive()
+ * There is also a test with the name TestComputeDeltaAfterglowInactiveExpiredOldInactiveExpiredNewSameTimeStamp. This specifies that WasRecentlyActive()
  * returns false for both new and old connections and that they have the same LastActiveTime().
  *
- * Another exception is TestComputeDeltaInactiveUnexpiredWithinAfterglowOldNoNew. For the old connection IsActive() returns false, WasRecentlyActive()
+ * Another exception is TestComputeDeltaAfterglowInactiveUnexpiredWithinAfterglowOldNoNew. For the old connection IsActive() returns false, WasRecentlyActive()
  * returns true, and IsInAfterglowPeriod(conn.second, now, afterglow_period_micros) returns false
  */
 //
-TEST(ConnTrackerTest, TestComputeDeltaActiveOldActiveNew) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowActiveOldActiveNew) {
   // If both old and new connections are active delta should be empty
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
@@ -394,11 +394,11 @@ TEST(ConnTrackerTest, TestComputeDeltaActiveOldActiveNew) {
   ConnMap old_state = {{conn1, ConnStatus(connection_time1, true)}};
   ConnMap new_state = {{conn1, ConnStatus(connection_time2, true)}};
   ConnMap delta;
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, IsEmpty());
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaActiveOldInactiveUnexpired) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowActiveOldInactiveUnexpired) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -412,11 +412,11 @@ TEST(ConnTrackerTest, TestComputeDeltaActiveOldInactiveUnexpired) {
   ConnMap old_state = {{conn1, ConnStatus(connection_time1, true)}};
   ConnMap new_state = {{conn1, ConnStatus(connection_time2, false)}};
   ConnMap delta;
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, IsEmpty());
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredOldActiveNew) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowInactiveUnexpiredOldActiveNew) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -430,11 +430,11 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredOldActiveNew) {
   ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
   ConnMap new_state = {{conn1, ConnStatus(connection_time2, true)}};
   ConnMap delta;
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, IsEmpty());
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredOldInactiveUnexpiredNew) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowInactiveUnexpiredOldInactiveUnexpiredNew) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -448,11 +448,11 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredOldInactiveUnexpiredNew) 
   ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
   ConnMap new_state = {{conn1, ConnStatus(connection_time2, false)}};
   ConnMap delta;
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, IsEmpty());
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaActiveOldInactiveExpiredNew) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowActiveOldInactiveExpiredNew) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -466,11 +466,11 @@ TEST(ConnTrackerTest, TestComputeDeltaActiveOldInactiveExpiredNew) {
   ConnMap old_state = {{conn1, ConnStatus(connection_time1, true)}};
   ConnMap new_state = {{conn1, ConnStatus(connection_time2, false)}};
   ConnMap delta;
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, new_state);
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredOldInactiveExpiredNew) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowInactiveUnexpiredOldInactiveExpiredNew) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -484,11 +484,11 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredOldInactiveExpiredNew) {
   ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
   ConnMap new_state = {{conn1, ConnStatus(connection_time2, false)}};
   ConnMap delta;
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, new_state);
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredOldActiveNew) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowInactiveExpiredOldActiveNew) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -502,11 +502,11 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredOldActiveNew) {
   ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
   ConnMap new_state = {{conn1, ConnStatus(connection_time2, true)}};
   ConnMap delta;
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, new_state);
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredOldInactiveUnexpiredNew) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowInactiveExpiredOldInactiveUnexpiredNew) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -520,11 +520,11 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredOldInactiveUnexpiredNew) {
   ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
   ConnMap new_state = {{conn1, ConnStatus(connection_time2, false)}};
   ConnMap delta;
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, new_state);
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredOldInactiveExpiredNewDifferentTimeStamp) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowInactiveExpiredOldInactiveExpiredNewDifferentTimeStamp) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -538,11 +538,11 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredOldInactiveExpiredNewDiffer
   ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
   ConnMap new_state = {{conn1, ConnStatus(connection_time2, false)}};
   ConnMap delta;
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, new_state);
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredOldInactiveExpiredNewSameTimeStamp) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowInactiveExpiredOldInactiveExpiredNewSameTimeStamp) {
   // This one is probably not possible in real life
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
@@ -557,11 +557,11 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredOldInactiveExpiredNewSameTi
   ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
   ConnMap new_state = {{conn1, ConnStatus(connection_time2, false)}};
   ConnMap delta;
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, IsEmpty());
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaActiveOldNoNew) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowActiveOldNoNew) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -575,11 +575,11 @@ TEST(ConnTrackerTest, TestComputeDeltaActiveOldNoNew) {
   ConnMap new_state;
   ConnMap delta;
   ConnMap expected_delta = {{conn1, ConnStatus(connection_time1, false)}};
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, expected_delta);
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredNoNew) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowInactiveUnexpiredNoNew) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -592,11 +592,11 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredNoNew) {
   ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
   ConnMap new_state;
   ConnMap delta;
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, old_state);
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredWithinAfterglowNoNew) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowInactiveUnexpiredWithinAfterglowNoNew) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -609,11 +609,11 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveUnexpiredWithinAfterglowNoNew) {
   ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
   ConnMap new_state;
   ConnMap delta;
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, IsEmpty());
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredNoNew) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowInactiveExpiredNoNew) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -626,11 +626,11 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveExpiredNoNew) {
   ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
   ConnMap new_state;
   ConnMap delta;
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, IsEmpty());
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaNoOldActiveNew) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowNoOldActiveNew) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -643,11 +643,11 @@ TEST(ConnTrackerTest, TestComputeDeltaNoOldActiveNew) {
   ConnMap old_state;
   ConnMap new_state = {{conn1, ConnStatus(connection_time1, true)}};
   ConnMap delta;
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, new_state);
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaNoOldInactiveUnexpiredNew) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowNoOldInactiveUnexpiredNew) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -660,11 +660,11 @@ TEST(ConnTrackerTest, TestComputeDeltaNoOldInactiveUnexpiredNew) {
   ConnMap old_state;
   ConnMap new_state = {{conn1, ConnStatus(connection_time1, false)}};
   ConnMap delta;
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, new_state);
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaNoOldInactiveExpiredNew) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowNoOldInactiveExpiredNew) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -677,11 +677,11 @@ TEST(ConnTrackerTest, TestComputeDeltaNoOldInactiveExpiredNew) {
   ConnMap old_state;
   ConnMap new_state = {{conn1, ConnStatus(connection_time1, false)}};
   ConnMap delta;
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, new_state);
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaEmptyOldState) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowEmptyOldState) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -697,8 +697,8 @@ TEST(ConnTrackerTest, TestComputeDeltaEmptyOldState) {
                        {conn2, ConnStatus(connection_time, true)}};
   ConnMap old_state, delta;
 
-  // ComputeDelta on an empty old state should just copy over the entire state.
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  // ComputeDeltaAfterglow on an empty old state should just copy over the entire state.
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_EQ(new_state, delta);
 }
 
@@ -706,7 +706,7 @@ TEST(ConnTrackerTest, TestComputeDeltaEmptyOldState) {
 * End block of tests with at most one connection in old_state and at most ond connection in new_state
 */
 
-TEST(ConnTrackerTest, TestComputeDeltaSameState) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowSameState) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -723,12 +723,12 @@ TEST(ConnTrackerTest, TestComputeDeltaSameState) {
   ConnMap old_state = new_state;
   ConnMap delta;
 
-  // ComputeDelta on two equal states should result in an empty delta.
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  // ComputeDeltaAfterglow on two equal states should result in an empty delta.
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, IsEmpty());
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaRemoveConnectionExpiredAfterglow) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowRemoveConnectionExpiredAfterglow) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -748,11 +748,11 @@ TEST(ConnTrackerTest, TestComputeDeltaRemoveConnectionExpiredAfterglow) {
 
   // Removing a connection from the active state should have it appear as inactive in the delta (with the previous
   // timestamp), if the old connection is not in the afterglow period.
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(connection_time1, false))));
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaRemoveConnection) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowRemoveConnection) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -772,11 +772,11 @@ TEST(ConnTrackerTest, TestComputeDeltaRemoveConnection) {
 
   // Removing a connection from the active state should not have it appear in the delta if the afterglow period has not
   // passed for the old state
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, IsEmpty());
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaChangeTimeStamp) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowChangeTimeStamp) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -798,11 +798,11 @@ TEST(ConnTrackerTest, TestComputeDeltaChangeTimeStamp) {
   new_state[conn1] = ConnStatus(connection_time1, true);
 
   // Just updating the timestamp of an active connection should not make it appear in the delta.
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, IsEmpty());
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaSetToInactive) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowSetToInactive) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -821,11 +821,11 @@ TEST(ConnTrackerTest, TestComputeDeltaSetToInactive) {
   ConnMap delta;
 
   // Marking a connection as inactive should make it appear as inactive in the delta if the connection has expired in the old_state
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, new_state);
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaOldAndNewAreInactive) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowOldAndNewAreInactive) {
   // If both old and new connections are inactive and there is a timestamp change the new connection should be in the delta
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
@@ -841,11 +841,11 @@ TEST(ConnTrackerTest, TestComputeDeltaOldAndNewAreInactive) {
   ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
   ConnMap new_state = {{conn1, ConnStatus(connection_time2, false)}};
   ConnMap delta;
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, new_state);
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaInactiveRemovedIsntInDelta) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowInactiveRemovedIsntInDelta) {
   // A connection that was already inactive no longer showing up at all in the new state should not appear in the delta.
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
@@ -862,11 +862,11 @@ TEST(ConnTrackerTest, TestComputeDeltaInactiveRemovedIsntInDelta) {
   ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)},
                        {conn2, ConnStatus(connection_time1, true)}};
   ConnMap delta;
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, IsEmpty());
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaWithAfterglow) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowWithAfterglow) {
   //Afterglow flips the inactive connection to active, so it does not show up in delta
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
@@ -885,11 +885,11 @@ TEST(ConnTrackerTest, TestComputeDeltaWithAfterglow) {
                        {conn2, ConnStatus(connection_time1, true)}};
   ConnMap delta;
 
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, IsEmpty());
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaWithZeroAfterglowPeriod) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowWithZeroAfterglowPeriod) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -907,11 +907,11 @@ TEST(ConnTrackerTest, TestComputeDeltaWithZeroAfterglowPeriod) {
                        {conn2, ConnStatus(connection_time1, true)}};
   ConnMap delta;
 
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, UnorderedElementsAre(std::make_pair(conn2, ConnStatus(now, false))));
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaWithZeroAfterglowPeriodEmptyNewState) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowWithZeroAfterglowPeriodEmptyNewState) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -929,10 +929,10 @@ TEST(ConnTrackerTest, TestComputeDeltaWithZeroAfterglowPeriodEmptyNewState) {
   ConnMap expected_delta = {{conn1, ConnStatus(connection_time, false)},
                             {conn2, ConnStatus(connection_time, false)}};
 
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, expected_delta);
 }
-TEST(ConnTrackerTest, TestComputeDeltaWithZeroAfterglowPeriodEmptyOldState) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowWithZeroAfterglowPeriodEmptyOldState) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -948,11 +948,11 @@ TEST(ConnTrackerTest, TestComputeDeltaWithZeroAfterglowPeriodEmptyOldState) {
   ConnMap old_state;
   ConnMap delta;
 
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, new_state);
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaWithZeroAfterglowPeriodNoChange) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowWithZeroAfterglowPeriodNoChange) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -970,11 +970,11 @@ TEST(ConnTrackerTest, TestComputeDeltaWithZeroAfterglowPeriodNoChange) {
                        {conn2, ConnStatus(connection_time1, true)}};
   ConnMap delta;
 
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, IsEmpty());
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaWithAfterglowExpired) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowWithAfterglowExpired) {
   //The inactive connection is outside of the afterglow period so it is not flipped to be in the active state
   //so it appears in delta
   Endpoint a(Address(192, 168, 0, 1), 80);
@@ -994,11 +994,11 @@ TEST(ConnTrackerTest, TestComputeDeltaWithAfterglowExpired) {
                        {conn2, ConnStatus(connection_time1, true)}};
   ConnMap delta;
 
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, UnorderedElementsAre(std::make_pair(conn2, ConnStatus(connection_time2, false))));
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaWithAfterglowPeriodShorterThanScrapingInterval) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowWithAfterglowPeriodShorterThanScrapingInterval) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -1013,7 +1013,7 @@ TEST(ConnTrackerTest, TestComputeDeltaWithAfterglowPeriodShorterThanScrapingInte
   ConnMap new_state = {{conn1, ConnStatus(connection_time2, true)}};
   ConnMap delta;
 
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, IsEmpty());
 }
 
@@ -1094,7 +1094,7 @@ TEST(ConnTrackerTest, TestUpdateOldStateBenchmark2) {
   std::cout << "Time taken by UpdateOldState= " << dur.count() << " ms\n";
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaBenchmark) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowBenchmark) {
   int num_endpoints = 500;
   int num_connections = 20000;
   int64_t now = 2000;
@@ -1104,15 +1104,15 @@ TEST(ConnTrackerTest, TestComputeDeltaBenchmark) {
 
   CreateFakeState(new_state, num_endpoints, num_connections, time_at_last_scrape);
   auto t1 = std::chrono::steady_clock::now();
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   auto t2 = std::chrono::steady_clock::now();
   std::chrono::duration<double, std::milli> dur = t2 - t1;
   std::cout << "old_state.size()= " << old_state.size() << std::endl;
   std::cout << "new_state.size()= " << new_state.size() << std::endl;
-  std::cout << "Time taken by ComputeDelta= " << dur.count() << " ms\n";
+  std::cout << "Time taken by ComputeDeltaAfterglow= " << dur.count() << " ms\n";
 }
 
-TEST(ConnTrackerTest, TestComputeDeltaBenchmark2) {
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowBenchmark2) {
   int num_endpoints = 500;
   int num_connections = 20000;
   int64_t now = 2000;
@@ -1123,12 +1123,12 @@ TEST(ConnTrackerTest, TestComputeDeltaBenchmark2) {
   CreateFakeState(new_state, num_endpoints, num_connections, now);
   CreateFakeState(new_state, num_endpoints, num_connections, time_at_last_scrape);
   auto t1 = std::chrono::steady_clock::now();
-  CT::ComputeDelta(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   auto t2 = std::chrono::steady_clock::now();
   std::chrono::duration<double, std::milli> dur = t2 - t1;
   std::cout << "old_state.size()= " << old_state.size() << std::endl;
   std::cout << "new_state.size()= " << new_state.size() << std::endl;
-  std::cout << "Time taken by ComputeDelta= " << dur.count() << " ms\n";
+  std::cout << "Time taken by ComputeDeltaAfterglow= " << dur.count() << " ms\n";
 }
 
 }  // namespace

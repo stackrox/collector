@@ -53,6 +53,7 @@ func TestMissingProcScrape(t *testing.T) {
 	}
 }
 
+//Need to update the comments in these tests
 func TestRepeatedNetworkFlow(t *testing.T) {
 	//Perform 10 curl commands with a 1 second sleep between each curl command.
 	//The first client to server connection is recorded.
@@ -61,11 +62,30 @@ func TestRepeatedNetworkFlow(t *testing.T) {
 	//Thus there are 2 networking events recorded.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 10,
+		useAfterglow: true,
 		numMetaIter: 1,
 		numIter: 10,
 		sleepBetweenCurlTime: 1,
 		sleepBetweenIterations: 1,
 		expectedReports: 4,
+	}
+	suite.Run(t, repeatedNetworkFlowTestSuite)
+}
+
+func TestRepeatedNetworkFlowNoAfteglow(t *testing.T) {
+	//Perform 10 curl commands with a 1 second sleep between each curl command.
+	//The first client to server connection is recorded.
+	//The first server to client connection is recorded.
+	//The second through tenth curl commands are ignored, because of afterglow.
+	//Thus there are 2 networking events recorded.
+	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
+		afterglowPeriod: 10,
+		useAfterglow: false,
+		numMetaIter: 1,
+		numIter: 10,
+		sleepBetweenCurlTime: 1,
+		sleepBetweenIterations: 1,
+		expectedReports: 12,
 	}
 	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
@@ -77,6 +97,24 @@ func TestRepeatedNetworkFlowWithAfterglowExpiration(t *testing.T) {
 	//so we have 2*2=4 recoreded networking events.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 10,
+		useAfterglow: true,
+		numMetaIter: 1,
+		numIter: 2,
+		sleepBetweenCurlTime: 15,
+		sleepBetweenIterations: 1,
+		expectedReports: 8,
+	}
+	suite.Run(t, repeatedNetworkFlowTestSuite)
+}
+
+func TestRepeatedNetworkFlowLongPauseNoAfterglow(t *testing.T) {
+	//Perform two curl commands 15 seconds apart.
+	//15 seconds is greater than the afterglow period so all openings are reported.
+	//Every opening for the server and client are reported and there are two curls
+	//so we have 2*2=4 recoreded networking events.
+	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
+		afterglowPeriod: 10,
+		useAfterglow: false,
 		numMetaIter: 1,
 		numIter: 2,
 		sleepBetweenCurlTime: 15,
@@ -93,6 +131,7 @@ func TestRepeatedNetworkFlowWithMultipleAfterglowExpirations(t *testing.T) {
 	//so we have 2*3=6 recoreded networking events.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 10,
+		useAfterglow: true,
 		numMetaIter: 1,
 		numIter: 3,
 		sleepBetweenCurlTime: 15,
@@ -107,6 +146,22 @@ func TestRepeatedNetworkFlowWithZeroAfterglowPeriod(t *testing.T) {
 	//There should be six reported events.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 0,
+		useAfterglow: true,
+		numMetaIter: 1,
+		numIter: 3,
+		sleepBetweenCurlTime: 3,
+		sleepBetweenIterations: 1,
+		expectedReports: 6,
+	}
+	suite.Run(t, repeatedNetworkFlowTestSuite)
+}
+
+func TestRepeatedNetworkFlowThreeCurlsNoAfterglow(t *testing.T) {
+	//Afterglow period is set to 0 so all openings are reported.
+	//There should be six reported events.
+	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
+		afterglowPeriod: 0,
+		useAfterglow: false,
 		numMetaIter: 1,
 		numIter: 3,
 		sleepBetweenCurlTime: 3,
@@ -171,6 +226,7 @@ type RepeatedNetworkFlowTestSuite struct {
 	serverContainer string
 	serverIP        string
 	serverPort      string
+	useAfterglow	bool
 	afterglowPeriod	int
 	numMetaIter	int
 	numIter		int
@@ -451,7 +507,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.StartContainerStats()
 	s.collector = NewCollectorManager(s.executor, s.T().Name())
 
-	s.collector.Env["COLLECTOR_CONFIG"]=`{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2,"afterglowPeriod":` + strconv.Itoa(s.afterglowPeriod) + `}`
+	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2,"afterglowPeriod":` + strconv.Itoa(s.afterglowPeriod) + `,"useAfterglow":` + strconv.FormatBool(s.useAfterglow) + `}`
 
 	err := s.collector.Setup()
 	s.Require().NoError(err)

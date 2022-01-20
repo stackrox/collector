@@ -109,6 +109,12 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
       CLOG(INFO) << "User configured afterglowPeriod=" << config["afterglowPeriod"].asString();
     }
 
+    // Use Afterglow
+    if (!config["useAfterglow"].empty()) {
+      use_afteglow_ = (bool)(config["useAfterglow"].asBool());
+      CLOG(INFO) << "User configured useAfterglow=" << config["useAfterglow"].asString();
+    }
+
     // Log Level
     if (!config["logLevel"].empty()) {
       logging::LogLevel level;

@@ -98,6 +98,7 @@ end
   const UnorderedSet<L4ProtoPortPair>& IgnoredL4ProtoPortPairs() const { return ignored_l4proto_port_pairs_; }
   bool AlternateProbeDownload() const { return alternate_probe_download_; }
   bool CurlVerbose() const { return curl_verbose_; }
+  bool UseAfterglow() const { return use_afteglow_; }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
@@ -119,6 +120,7 @@ end
   bool enable_sysdig_log_ = false;
   HostConfig host_config_;
   int64_t afterglow_period_micros_ = 20000000;  //20 seconds in microseconds
+  bool use_afteglow_ = false;
 };
 
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c);
