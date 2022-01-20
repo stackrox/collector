@@ -339,7 +339,7 @@ jobs:
     - run:
         name: Test get-builder-flavor
         command: |
-          "${CI_ROOT}/test-scripts/get-builder-flavor/run-tests.sh"
+          "${CI_ROOT}/test-scripts/get-builder-flavor/run-tests.sh" "${SOURCE_ROOT)"
 
   builder:
     <<: *defaultMachine
