@@ -127,6 +127,10 @@ std::string normalizeReleaseString(HostInfo& host) {
     return kernel.ShortRelease() + "-dockerdesktop-" + timestamp.str();
   }
 
+  if (host.IsMinikube()) {
+    return kernel.release + "-minikube";
+  }
+
   return kernel.release;
 }
 

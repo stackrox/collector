@@ -183,6 +183,10 @@ class HostInfo {
     return GetDistro().rfind("Garden Linux", 0) == 0;
   }
 
+  bool IsMinikube() {
+    return GetHostname() == "minikube";
+  }
+
   // Reads a named value from the os-release file (either in /etc/ or in /usr/lib)
   // and filters for a specific name. The file is in the format <NAME>="<VALUE>"
   // Quotes are removed from the value, if found. If not found, an empty string is returned.

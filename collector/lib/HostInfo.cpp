@@ -99,9 +99,10 @@ std::string& HostInfo::GetHostname() {
       CLOG(INFO) << "environment variable NODE_HOSTNAME not set";
       // if we can't get the hostname from the environment
       // we can look in /proc (mounted at /host/proc in the collector container)
-      std::ifstream file(GetHostPath("/proc/sys/kernel/hostname"));
+      std::string hostnameFile = GetHostPath("/etc/hostname");
+      std::ifstream file(hostnameFile);
       if (!file.is_open()) {
-        CLOG(INFO) << "sys/kernel/hostname file not found";
+        CLOG(INFO) << hostnameFile << " file not found";
         CLOG(WARNING) << "Failed to determine hostname";
         hostname_ = "unknown";
       } else {

@@ -70,7 +70,7 @@ function main() {
 
     # Get and export the node hostname from Docker,
     # and export because this env var is read by collector
-    export NODE_HOSTNAME="$(cat /host/proc/sys/kernel/hostname)"
+    export NODE_HOSTNAME="$(cat /host/etc/hostname)"
 
     # Export SNI_HOSTNAME and default it to sensor.stackrox
     export SNI_HOSTNAME="${SNI_HOSTNAME:-sensor.stackrox}"
