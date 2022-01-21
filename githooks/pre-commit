@@ -9,9 +9,7 @@ fi
 # Check staged scripts formatting
 if command -v shfmt --version > /dev/null; then
     readarray -t files < <(git diff --name-only --cached --relative | grep -E '\.sh$$|^githooks/')
-    echo "nfile= ${#files}"
-    echo ${files}
-    if ((${#files} > 0)); then
+    if ((${#files[@]} > 0)); then
         if ! find ${files[@]} | xargs shfmt -d; then
             echo "Format errors found! Run 'make shfmt-format' in order to fix them."
             echo "Use the '--no-verify' flag in order to bypass the pre-commit check altogether."
