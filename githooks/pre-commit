@@ -8,13 +8,18 @@ fi
 
 # Check staged scripts formatting
 if command -v shfmt --version > /dev/null; then
-    readarray -t files < <(git diff --name-only --cached --relative | grep -E '\.sh$$|^githooks/')
-    if ((${#files[@]} > 0)); then
-        if ! find ${files[@]} | xargs shfmt -d; then
-            echo "Format errors found! Run 'make shfmt-format' in order to fix them."
-            echo "Use the '--no-verify' flag in order to bypass the pre-commit check altogether."
-            exit 1
+    shfmt_status=0
+    while IFS="" read -r file || [[ -n "$file" ]]; do
+        [[ -n "$file" ]] || continue
+        if ! shfmt -d "$file"; then
+            shfmt_status=1
         fi
+    done < <(git diff --name-only --cached --relative | grep -E '\.sh$$|^githooks/')
+
+    if ((shfmt_status)); then
+        echo "Format errors found! Run 'make shfmt-format' in order to fix them."
+        echo "Use the '--no-verify' flag in order to bypass the pre-commit check altogether."
+        exit 1
     fi
 fi
 
