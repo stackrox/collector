@@ -190,7 +190,7 @@ bool HostInfo::IsUEFI() {
 }
 
 // Get SecureBoot status from reading a corresponding EFI variable. Every such
-// variable is a small file <key nama>-<vendor-guid> in efivarfs directory, and
+// variable is a small file <key name>-<vendor-guid> in efivarfs directory, and
 // its format is described in UEFI specification.
 SecureBootStatus HostInfo::GetSecureBootFromVars() {
   DIR* dir;
