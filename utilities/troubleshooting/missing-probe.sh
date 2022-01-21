@@ -19,7 +19,7 @@ cd "$DIR/../.."
 
 print_border() {
     echo ""
-    echo "################"
+      echo "################"
     echo ""
 }
 

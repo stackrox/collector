@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if ! make -C collector check-staged; then
     echo "Format errors found! Run 'make -C collector format' in order to fix them."
@@ -8,10 +8,15 @@ fi
 
 # Check staged scripts formatting
 if command -v shfmt --version > /dev/null; then
-    if ! git diff --name-only --cached --relative | grep -E '\.sh$$|^githooks/' | xargs shfmt -d; then
-        echo "Format errors found! Run 'make shfmt-format' in order to fix them."
-        echo "Use the '--no-verify' flag in order to bypass the pre-commit check altogether."
-        exit 1
+    readarray -t files < <(git diff --name-only --cached --relative | grep -E '\.sh$$|^githooks/')
+    echo "nfile= ${#files}"
+    echo ${files}
+    if ((${#files} > 0)); then
+        if ! find ${files[@]} | xargs shfmt -d; then
+            echo "Format errors found! Run 'make shfmt-format' in order to fix them."
+            echo "Use the '--no-verify' flag in order to bypass the pre-commit check altogether."
+            exit 1
+        fi
     fi
 fi
 
