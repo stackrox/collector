@@ -25,6 +25,8 @@ You should have received a copy of the GNU General Public License along with thi
 #define _HOSTINFO_H
 
 extern "C" {
+#include <dirent.h>
+
 #include <sys/stat.h>
 #include <sys/utsname.h>
 }
@@ -39,6 +41,7 @@ namespace collector {
 
 const int MIN_RHEL_BUILD_ID = 957;
 
+// The values are taken from efi_secureboot_mode in include/linux/efi.h
 enum SecureBootStatus {
   ENABLED = 3,
   DISABLED = 2,
@@ -46,7 +49,7 @@ enum SecureBootStatus {
                        // does not provide enough information about it,
                        // so it could be enabled without the kernel being aware.
 
-  EMPTY = 0,  // No detection is performed yet
+  UNSET = 0,  // No detection is performed yet
 };
 
 struct KernelVersion {
@@ -108,6 +111,15 @@ struct KernelVersion {
   // Anything before 4.14 doesn't have support, anything newer does.
   bool HasEBPFSupport() const {
     if (kernel < 4 || (kernel == 4 && major < 14)) {
+      return false;
+    }
+    return true;
+  }
+
+  // Whether or not the kernel has secure_boot option present in boot_params.
+  // It was introduced in v4.10-rc7 in commit de8cb458625c.
+  bool HasSecureBootParam() const {
+    if (kernel < 4 || (kernel == 4 && major < 11)) {
       return false;
     }
     return true;
@@ -219,6 +231,8 @@ class HostInfo {
   // Secure Boot feature prevents from loading unsigned kernel modules, so it's
   // important to know its status.
   virtual SecureBootStatus GetSecureBootStatus();
+  virtual SecureBootStatus GetSecureBootFromVars();
+  virtual SecureBootStatus GetSecureBootFromParams();
 
  protected:
   // basic default constructor, doesn't need to do anything,
