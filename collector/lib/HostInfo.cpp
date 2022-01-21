@@ -217,7 +217,7 @@ SecureBootStatus HostInfo::GetSecureBootFromVars() {
 
       std::ifstream secure_boot(path, std::ios::binary | std::ios::in);
       if (!secure_boot.is_open()) {
-        CLOG(WARNING) << "Failed to open SecureBoot key" << path;
+        CLOG(WARNING) << "Failed to open SecureBoot key " << path;
         return SecureBootStatus::NOT_DETERMINED;
       }
 
