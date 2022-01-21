@@ -39,3 +39,5 @@
 # TODO(ROX-??)
 5.14.0-1-amd64
 5.14.0-1-cloud-amd64
+# TODO(ROX-??)
+*-minikube * mod

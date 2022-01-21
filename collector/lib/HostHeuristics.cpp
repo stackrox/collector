@@ -98,10 +98,30 @@ class DockerDesktopHeuristic : public Heuristic {
   }
 };
 
+class MinikubeHeuristic : public Heuristic {
+ public:
+  // This is additional to the collection method heuristic above.
+  // If we're on Minikube, and configured to use kernel modules, we attempt
+  // to switch to eBPF collection if possible, otherwise we are unable
+  // to collect and must exit.
+  void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
+    if (!host.IsMinikube()) {
+      return;
+    }
+
+    if (!config.UseEbpf()) {
+      CLOG(WARNING) << host.GetHostname() << " does not support third-party kernel modules";
+      CLOG(WARNING) << "Switching to eBPF based collection, please set collector.collectionMethod=EBPF to remove this message";
+      hconfig->SetCollectionMethod("ebpf");
+    }
+  }
+};
+
 const std::unique_ptr<Heuristic> g_host_heuristics[] = {
     std::unique_ptr<Heuristic>(new CollectionHeuristic),
     std::unique_ptr<Heuristic>(new CosHeuristic),
     std::unique_ptr<Heuristic>(new DockerDesktopHeuristic),
+    std::unique_ptr<Heuristic>(new MinikubeHeuristic),
 };
 
 }  // namespace
