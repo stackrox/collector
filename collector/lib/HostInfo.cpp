@@ -228,11 +228,11 @@ SecureBootStatus HostInfo::GetSecureBootFromVars() {
       secure_boot.read(reinterpret_cast<char*>(&header), 4);
       secure_boot.read(reinterpret_cast<char*>(&status), 1);
 
+      // Pretty intuitively 0 means the feature is disabled, 1 enabled.
       // SecureBoot efi variable doesn't have NOT_DETERMINED value.
       // See https://uefi.org/sites/default/files/resources/UEFI_Spec_2_9_2021_03_18.pdf#page=86
-      if (status != SecureBootStatus::DISABLED &&
-          status != SecureBootStatus::ENABLED) {
-        CLOG(WARNING) << "Incorrect secure_boot param: " << status;
+      if (status != 0 && status != 1) {
+        CLOG(WARNING) << "Incorrect secure_boot param: " << int(status);
         return SecureBootStatus::NOT_DETERMINED;
       }
 
@@ -268,7 +268,7 @@ SecureBootStatus HostInfo::GetSecureBootFromParams() {
 
   if (status < SecureBootStatus::NOT_DETERMINED ||
       status > SecureBootStatus::ENABLED) {
-    CLOG(WARNING) << "Incorrect secure_boot param: " << status;
+    CLOG(WARNING) << "Incorrect secure_boot param: " << int(status);
     return SecureBootStatus::NOT_DETERMINED;
   }
 
