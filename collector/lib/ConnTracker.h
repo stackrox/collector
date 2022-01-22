@@ -39,20 +39,31 @@ namespace collector {
 class ConnStatus {
  private:
   static constexpr uint64_t kActiveFlag = 1UL << 63;
+  static constexpr uint64_t kSeenFlag = 1UL << 62;
 
   static inline uint64_t MakeActive(uint64_t data, bool active) {
     return active ? (data | kActiveFlag) : (data & ~kActiveFlag);
   }
 
+  static inline uint64_t MakeSeen(uint64_t data, bool seen) {
+    return seen ? (data | kSeenFlag) : (data & ~kSeenFlag);
+  }
+
  public:
   ConnStatus() : data_(0UL) {}
   ConnStatus(int64_t microtimestamp, bool active) : data_(MakeActive(static_cast<uint64_t>(microtimestamp), active)) {}
+  ConnStatus(int64_t microtimestamp, bool active, bool seen) : data_(MakeSeen(MakeActive(static_cast<uint64_t>(microtimestamp), active), seen)) {}
 
   int64_t LastActiveTime() const { return static_cast<int64_t>(data_ & ~kActiveFlag); }
   bool IsActive() const { return (data_ & kActiveFlag) != 0; }
+  bool IsSeen() const { return (data_ & kSeenFlag) != 0; }
 
   void SetActive(bool active) {
     data_ = MakeActive(data_, active);
+  }
+
+  void SetSeen(bool active) {
+    data_ = MakeSeen(data_, active);
   }
 
   void MergeFrom(const ConnStatus& other) {
@@ -182,6 +193,7 @@ void ConnectionTracker::UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, c
     if (!insert_res.second) {
       auto& old_conn = *insert_res.first;
       old_conn.second = conn.second;
+      old_conn.second.SetSeen(true);
     }
   }
 }
@@ -254,7 +266,7 @@ void ConnectionTracker::ComputeDeltaAfterglow(const UnorderedMap<T, ConnStatus>&
   //Add everything in the old state that was in the active state and is not in the new state
   for (auto conn : old_state) {
     bool oldRecentlyActive = WasRecentlyActive(conn.second, time_at_last_scrape, afterglow_period_micros);  // Or should conn.second.IsActive() be used
-    if (new_state.find(conn.first) == new_state.end() && oldRecentlyActive && !IsInAfterglowPeriod(conn.second, now, afterglow_period_micros)) {
+    if (new_state.find(conn.first) == new_state.end() && oldRecentlyActive && conn.second.IsSeen() && !IsInAfterglowPeriod(conn.second, now, afterglow_period_micros)) {
       conn.second.SetActive(false);
       delta.insert(conn);
     }

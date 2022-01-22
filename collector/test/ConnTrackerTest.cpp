@@ -571,10 +571,10 @@ TEST(ConnTrackerTest, TestComputeDeltaAfterglowActiveOldNoNew) {
   int64_t time_at_last_scrape = 1000;
   int64_t afterglow_period_micros = 50;
 
-  ConnMap old_state = {{conn1, ConnStatus(connection_time1, true)}};
+  ConnMap old_state = {{conn1, ConnStatus(connection_time1, true, true)}};
   ConnMap new_state;
   ConnMap delta;
-  ConnMap expected_delta = {{conn1, ConnStatus(connection_time1, false)}};
+  ConnMap expected_delta = {{conn1, ConnStatus(connection_time1, false, true)}};
   CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, expected_delta);
 }
