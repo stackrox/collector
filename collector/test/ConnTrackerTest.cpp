@@ -367,7 +367,8 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
  * "Active" means that IsActive() returns true
  * "InactiveUnexpired" means that IsActive() returns false, but WasRecentlyActive returns true, i.e the connection was closed within the afterglow period
  * "InactiveExpired" means IsActive() returns false and WasRecentlyActive returns false, i.e the connection was closed outside of the afterglow period
- * "No" means that there is no connection
+ * "No" means that there is no connection. Some tests have "NotSeen" in them, meaning that the seen flag is set to true and the connection has benn seen
+ * more than once.
  *
  * There is also a test with the name TestComputeDeltaAfterglowInactiveExpiredOldInactiveExpiredNewDifferentTimeStamp. This specifies that WasRecentlyActive()
  * returns false for both new and old connections and that they have different LastActiveTime().
@@ -379,6 +380,7 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
  * returns true, and IsInAfterglowPeriod(conn.second, now, afterglow_period_micros) returns false
  */
 //
+
 TEST(ConnTrackerTest, TestComputeDeltaAfterglowActiveOldActiveNew) {
   // If both old and new connections are active delta should be empty
   Endpoint a(Address(192, 168, 0, 1), 80);
@@ -579,6 +581,23 @@ TEST(ConnTrackerTest, TestComputeDeltaAfterglowActiveOldNoNew) {
   EXPECT_THAT(delta, expected_delta);
 }
 
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowActiveNotSeenOldNoNew) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  int64_t connection_time1 = 990;
+  int64_t now = 2000;
+  int64_t time_at_last_scrape = 1000;
+  int64_t afterglow_period_micros = 50;
+
+  ConnMap old_state = {{conn1, ConnStatus(connection_time1, true, false)}};
+  ConnMap new_state;
+  ConnMap delta;
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  EXPECT_THAT(delta, IsEmpty());
+}
+
 TEST(ConnTrackerTest, TestComputeDeltaAfterglowInactiveUnexpiredNoNew) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
@@ -589,7 +608,7 @@ TEST(ConnTrackerTest, TestComputeDeltaAfterglowInactiveUnexpiredNoNew) {
   int64_t time_at_last_scrape = 1000;
   int64_t afterglow_period_micros = 50;
 
-  ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
+  ConnMap old_state = {{conn1, ConnStatus(connection_time1, false, true)}};
   ConnMap new_state;
   ConnMap delta;
   CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
@@ -742,6 +761,30 @@ TEST(ConnTrackerTest, TestComputeDeltaAfterglowRemoveConnectionExpiredAfterglow)
   int64_t afterglow_period_micros = 20;
 
   ConnMap new_state = {{conn2, ConnStatus(connection_time2, true)}};
+  ConnMap old_state = {{conn1, ConnStatus(connection_time1, true, true)},
+                       {conn2, ConnStatus(connection_time1, true)}};
+  ConnMap delta;
+
+  // Removing a connection from the active state should have it appear as inactive in the delta (with the previous
+  // timestamp), if the old connection is not in the afterglow period.
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  EXPECT_THAT(delta, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(connection_time1, false, true))));
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowRemoveConnectionExpiredAfterglowNotSeen) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+
+  int64_t now = 1000;
+  int64_t time_at_last_scrape = 500;
+  int64_t connection_time1 = 490;
+  int64_t connection_time2 = 990;
+  int64_t afterglow_period_micros = 20;
+
+  ConnMap new_state = {{conn2, ConnStatus(connection_time2, true)}};
   ConnMap old_state = {{conn1, ConnStatus(connection_time1, true)},
                        {conn2, ConnStatus(connection_time1, true)}};
   ConnMap delta;
@@ -749,7 +792,7 @@ TEST(ConnTrackerTest, TestComputeDeltaAfterglowRemoveConnectionExpiredAfterglow)
   // Removing a connection from the active state should have it appear as inactive in the delta (with the previous
   // timestamp), if the old connection is not in the afterglow period.
   CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
-  EXPECT_THAT(delta, UnorderedElementsAre(std::make_pair(conn1, ConnStatus(connection_time1, false))));
+  EXPECT_THAT(delta, IsEmpty());
 }
 
 TEST(ConnTrackerTest, TestComputeDeltaAfterglowRemoveConnection) {
@@ -922,16 +965,37 @@ TEST(ConnTrackerTest, TestComputeDeltaAfterglowWithZeroAfterglowPeriodEmptyNewSt
   int64_t connection_time = 2;
   int64_t afterglow_period_micros = 0;
 
-  ConnMap old_state = {{conn1, ConnStatus(connection_time, true)},
-                       {conn2, ConnStatus(connection_time, true)}};
+  ConnMap old_state = {{conn1, ConnStatus(connection_time, true, true)},
+                       {conn2, ConnStatus(connection_time, true, true)}};
   ConnMap new_state;
   ConnMap delta;
-  ConnMap expected_delta = {{conn1, ConnStatus(connection_time, false)},
-                            {conn2, ConnStatus(connection_time, false)}};
+  ConnMap expected_delta = {{conn1, ConnStatus(connection_time, false, true)},
+                            {conn2, ConnStatus(connection_time, false, true)}};
 
   CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
   EXPECT_THAT(delta, expected_delta);
 }
+
+TEST(ConnTrackerTest, TestComputeDeltaAfterglowWithZeroAfterglowPeriodEmptyNotSeenNewState) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xzy", b, a, L4Proto::TCP, false);
+  int64_t now = 1000;
+  int64_t time_at_last_scrape = 3;
+  int64_t connection_time = 2;
+  int64_t afterglow_period_micros = 0;
+
+  ConnMap old_state = {{conn1, ConnStatus(connection_time, true, false)},
+                       {conn2, ConnStatus(connection_time, true, false)}};
+  ConnMap new_state;
+  ConnMap delta;
+
+  CT::ComputeDeltaAfterglow(new_state, old_state, delta, now, time_at_last_scrape, afterglow_period_micros);
+  EXPECT_THAT(delta, IsEmpty());
+}
+
 TEST(ConnTrackerTest, TestComputeDeltaAfterglowWithZeroAfterglowPeriodEmptyOldState) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);

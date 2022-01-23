@@ -54,7 +54,7 @@ class ConnStatus {
   ConnStatus(int64_t microtimestamp, bool active) : data_(MakeActive(static_cast<uint64_t>(microtimestamp), active)) {}
   ConnStatus(int64_t microtimestamp, bool active, bool seen) : data_(MakeSeen(MakeActive(static_cast<uint64_t>(microtimestamp), active), seen)) {}
 
-  int64_t LastActiveTime() const { return static_cast<int64_t>(data_ & ~kActiveFlag); }
+  int64_t LastActiveTime() const { return static_cast<int64_t>((data_ & ~kActiveFlag) & ~kSeenFlag); }
   bool IsActive() const { return (data_ & kActiveFlag) != 0; }
   bool IsSeen() const { return (data_ & kSeenFlag) != 0; }
 
