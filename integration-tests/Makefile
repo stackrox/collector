@@ -59,7 +59,7 @@ repeat-network: docker-clean
 	./scripts/create-fake-proc-dir.sh
 	go version
 	set -o pipefail ; \
-	go test -timeout 30m -count=1 -v \
+	go test -timeout 90m -count=1 -v \
 	  -run TestRepeatedNetworkFlow 2>&1 | tee -a integration-test.log
 
 .PHONY: report
