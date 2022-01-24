@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-while read f; do
+while read -r f; do
     [[ -f "$f" ]] || continue
     # Only strip executable files that are ELFs, as well as anything that looks like a
     # .so or .a file.

@@ -19,6 +19,7 @@ docker tag "$image" "$arch_image"
 
 # Try pushing image a few times for the case when quay.io has issues such as "unknown blob"
 pushed=0
+# shellcheck disable=SC2034 # This turns off the check for unused variables on the next line
 for i in {1..5}; do
     if docker push "$arch_image"; then
         pushed=1

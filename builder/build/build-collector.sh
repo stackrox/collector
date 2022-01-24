@@ -8,14 +8,14 @@ CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-Release}"
 ADDRESS_SANITIZER="${ADDRESS_SANITIZER:-false}"
 COLLECTOR_APPEND_CID="${COLLECTOR_APPEND_CID:-false}"
 
-if [ $ADDRESS_SANITIZER = "true" ]; then
+if [ "$ADDRESS_SANITIZER" = "true" ]; then
     # Needed for address sanitizer to work. See https://github.com/grpc/grpc/issues/22238.
     # When Collector is built with address sanitizer it sets GRPC_ASAN_ENABLED, which changes a struct in the grpc library.
     # If grpc is compiled without that flag and is then linked with Collector the struct will have
     # two different definitions and Collector will crash when trying to connect to a grpc server.
-    for file in $(grep -rl port_platform.h /src/generated --include=*.h); do
-        sed -i 's|#include <grpc/impl/codegen/port_platform.h>|#include <grpc/impl/codegen/port_platform.h>\n#ifdef GRPC_ASAN_ENABLED\n#  undef GRPC_ASAN_ENABLED\n#endif|' $file
-    done
+    while read -r file; do
+        sed -i 's|#include <grpc/impl/codegen/port_platform.h>|#include <grpc/impl/codegen/port_platform.h>\n#ifdef GRPC_ASAN_ENABLED\n#  undef GRPC_ASAN_ENABLED\n#endif|' "$file"
+    done < <(grep -rl port_platform.h /src/generated --include=*.h)
 fi
 
 extra_flags=(
@@ -26,7 +26,7 @@ extra_flags=(
 
 cmake "${extra_flags[@]}" /src
 make -j "${NPROCS:-2}" all
-if [ $CMAKE_BUILD_TYPE = "Release" ]; then
+if [ "$CMAKE_BUILD_TYPE" = "Release" ]; then
     echo "Strip unneeded"
     strip --strip-unneeded \
         ./collector \

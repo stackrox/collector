@@ -14,7 +14,6 @@ MD_DIR="$1"
 
 for version_dir in "${MD_DIR}/collector-versions"/*; do
     [[ -d "$version_dir" ]] || continue
-    version="$(basename "$version_dir")"
 
     module_version="$(< "${version_dir}/MODULE_VERSION")"
 
