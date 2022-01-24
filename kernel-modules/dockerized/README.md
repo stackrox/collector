@@ -95,8 +95,12 @@ The only purpose of this Dockerfile is to reduce the number of layers in the fin
 # Building a full collector image
 Once all drivers are merged into a single image, `Dockerfile.collector` can be used to create a full image of collector.
 
+# Building local changes.
+In order to include local changes in the kernel object build, ensure that you use `--build-arg CHECKOUT_BEFORE_PATCHING=false` to prevent overwriting your changes.
+
 ## Build arguments
 - `COLLECTOR_TAG`: The tag used to pull a collector image (normally a `-slim` variant to add all dockerized drivers into).
 - `COLLECTOR_REPO`: The repository to pull collector from, defaults to `quay.io/rhacs-eng`.
 - `DRIVERS_TAG`: The tag used to pull the drivers image, defaults to `latest` but it is heavily recommended to change it.
 - `DRIVERS_REPO`: The repository to pull drivers from, defaults to `quay.io/rhacs-eng`.
+- `CHECKOUT_BEFORE_PATCHING`: whether to checkout the repository sources before patching the probe files (if true, this will overwrite local changes)
