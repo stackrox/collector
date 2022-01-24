@@ -267,7 +267,7 @@ void NetworkStatusNotifier::RunSingleAfterglow(DuplexClientWriter<sensor::Networ
   ContainerEndpointMap old_cep_state;
   int scrape_num = 0;
   int scrapes_in_afterglow = afterglow_period_micros_ / (scrape_interval_ * 1000000);
-  ConnMap *new_conn_states;
+  ConnMap* new_conn_states;
   new_conn_states = new ConnMap[scrapes_in_afterglow];
   auto next_scrape = std::chrono::system_clock::now();
   int64_t time_at_last_scrape = NowMicros();
