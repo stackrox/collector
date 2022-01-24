@@ -71,7 +71,7 @@ class CosHeuristic : public Heuristic {
 
     if (!config.UseEbpf()) {
       CLOG(ERROR) << host.GetDistro() << " does not support third-party kernel modules";
-      if (host.HasEBPFSupport()) {
+      if (host.HasEBPFSupport() && !config.ForceKernelModules()) {
         CLOG(WARNING) << "switching to eBPF based collection, please set "
                       << "collector.collectionMethod=EBPF to remove this message";
         hconfig->SetCollectionMethod("ebpf");
@@ -132,13 +132,17 @@ class SecureBootHeuristic : public Heuristic {
       return;
     }
 
-    // Switch to eBPF in case there is a chance Secure Boot is on,
-    // unless configured to enforce usage of kernel modules.
+    // Switch to eBPF in case there is a chance Secure Boot is on
     sb_status = host.GetSecureBootStatus();
-    if (sb_status == SecureBootStatus::ENABLED ||
-        sb_status == SecureBootStatus::NOT_DETERMINED) {
+    if (sb_status == SecureBootStatus::ENABLED) {
       CLOG(WARNING) << "SecureBoot is enabled preventing unsigned third-party "
                     << "kernel modules. Switching to eBPF based collection.";
+      hconfig->SetCollectionMethod("ebpf");
+    }
+
+    if (sb_status == SecureBootStatus::NOT_DETERMINED) {
+      CLOG(WARNING) << "SecureBoot status could not be determined. "
+                    << "Switching to eBPF based collection.";
       hconfig->SetCollectionMethod("ebpf");
     }
   }

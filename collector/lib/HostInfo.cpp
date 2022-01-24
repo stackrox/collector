@@ -170,7 +170,7 @@ bool HostInfo::IsUEFI() {
 
   if (stat(efi_path.c_str(), &sb) == -1) {
     if (errno == ENOTDIR || errno == ENOENT) {
-      CLOG(INFO) << "EFI directory doesn't exist, legacy boot mode";
+      CLOG(DEBUG) << "EFI directory doesn't exist, legacy boot mode";
       return false;
 
     } else {
@@ -185,7 +185,7 @@ bool HostInfo::IsUEFI() {
     return false;
   }
 
-  CLOG(INFO) << "EFI directory exist, UEFI boot mode";
+  CLOG(DEBUG) << "EFI directory exist, UEFI boot mode";
   return true;
 }
 
@@ -193,28 +193,24 @@ bool HostInfo::IsUEFI() {
 // variable is a small file <key name>-<vendor-guid> in efivarfs directory, and
 // its format is described in UEFI specification.
 SecureBootStatus HostInfo::GetSecureBootFromVars() {
-  DIR* dir;
-  struct dirent* dp;
   std::uint8_t status;
   std::string efi_path = GetHostPath("/sys/firmware/efi/efivars");
+  DirHandle efivars = opendir(efi_path.c_str());
 
-  dir = opendir(efi_path.c_str());
-  if (dir == NULL) {
+  if (!efivars.valid()) {
     CLOG(INFO) << "Could not open " << efi_path << ": " << StrError();
     return SecureBootStatus::NOT_DETERMINED;
   }
 
-  while ((dp = readdir(dir)) != NULL) {
+  while (auto dp = efivars.read()) {
     std::string name(dp->d_name);
 
     if (name.rfind("SecureBoot-", 0) == 0) {
-      std::uint8_t header[4];
+      std::uint8_t efi_key[5];
       std::string path = efi_path + "/" + name;
 
       // There should be only one SecureBoot key, so it doesn't make sense to
       // search further in case if e.g. it couldn't be read.
-      closedir(dir);
-
       std::ifstream secure_boot(path, std::ios::binary | std::ios::in);
       if (!secure_boot.is_open()) {
         CLOG(WARNING) << "Failed to open SecureBoot key " << path;
@@ -225,24 +221,20 @@ SecureBootStatus HostInfo::GetSecureBootFromVars() {
       // actual value. The efivarfs doesn't support lseek, returning ESPIPE on
       // it, so read the header first, then the actual value.
       // See https://www.kernel.org/doc/html/latest/filesystems/efivarfs.html
-      secure_boot.read(reinterpret_cast<char*>(&header), 4);
-      secure_boot.read(reinterpret_cast<char*>(&status), 1);
+      secure_boot.read(reinterpret_cast<char*>(&efi_key), 5);
+      status = efi_key[4];
 
       // Pretty intuitively 0 means the feature is disabled, 1 enabled.
       // SecureBoot efi variable doesn't have NOT_DETERMINED value.
       // See https://uefi.org/sites/default/files/resources/UEFI_Spec_2_9_2021_03_18.pdf#page=86
       if (status != 0 && status != 1) {
-        CLOG(WARNING) << "Incorrect secure_boot param: " << int(status);
+        CLOG(WARNING) << "Incorrect secure_boot param: " << (unsigned int)status;
         return SecureBootStatus::NOT_DETERMINED;
       }
 
       return static_cast<SecureBootStatus>(status);
     }
   }
-
-  if (closedir(dir) == -1) {
-    CLOG(INFO) << "Could not close " << efi_path << ": " << StrError();
-  };
 
   // No SecureBoot key found
   return SecureBootStatus::NOT_DETERMINED;
@@ -253,13 +245,12 @@ SecureBootStatus HostInfo::GetSecureBootFromVars() {
 // determined.
 SecureBootStatus HostInfo::GetSecureBootFromParams() {
   std::uint8_t status;
+  std::string boot_params_path = GetHostPath("/sys/kernel/boot_params/data");
 
-  std::ifstream boot_params(
-      GetHostPath("/sys/kernel/boot_params/data"),
-      std::ios::binary | std::ios::in);
+  std::ifstream boot_params(boot_params_path, std::ios::binary | std::ios::in);
 
   if (!boot_params.is_open()) {
-    CLOG(WARNING) << "Failed to open boot_params file.";
+    CLOG(WARNING) << "Failed to open " << boot_params_path;
     return SecureBootStatus::NOT_DETERMINED;
   }
 
@@ -268,7 +259,7 @@ SecureBootStatus HostInfo::GetSecureBootFromParams() {
 
   if (status < SecureBootStatus::NOT_DETERMINED ||
       status > SecureBootStatus::ENABLED) {
-    CLOG(WARNING) << "Incorrect secure_boot param: " << int(status);
+    CLOG(WARNING) << "Incorrect secure_boot param: " << (unsigned int)status;
     return SecureBootStatus::NOT_DETERMINED;
   }
 

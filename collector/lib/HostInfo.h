@@ -25,8 +25,6 @@ You should have received a copy of the GNU General Public License along with thi
 #define _HOSTINFO_H
 
 extern "C" {
-#include <dirent.h>
-
 #include <sys/stat.h>
 #include <sys/utsname.h>
 }
@@ -34,6 +32,7 @@ extern "C" {
 #include <regex>
 #include <string>
 
+#include "FileSystem.h"
 #include "Logging.h"
 #include "Utility.h"
 
@@ -117,7 +116,7 @@ struct KernelVersion {
   }
 
   // Whether or not the kernel has secure_boot option present in boot_params.
-  // It was introduced in v4.10-rc7 in commit de8cb458625c.
+  // It was introduced in v4.11 in commit de8cb458625c.
   bool HasSecureBootParam() const {
     if (kernel < 4 || (kernel == 4 && major < 11)) {
       return false;
