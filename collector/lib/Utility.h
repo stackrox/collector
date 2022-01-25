@@ -66,6 +66,9 @@ std::vector<std::string> GetKernelCandidates();
 // Get base URL for kernel modules downloads from MODULE_DOWNLOAD_BASE_URL
 const char* GetModuleDownloadBaseURL();
 
+// Get the module version used by collector.
+std::string GetModuleVersion();
+
 // Wrapper around unlink(2) to handle error conditions.
 void TryUnlink(const char* path);
 
@@ -127,6 +130,8 @@ ScopedLock<Mutex> Lock(Mutex& mutex) {
 
 // ssizeof(x) returns the same value as sizeof(x), but as a signed integer.
 #define ssizeof(x) static_cast<ssize_t>(sizeof(x))
+
+extern const std::string kernelModulesDir;
 
 }  // namespace collector
 

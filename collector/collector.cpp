@@ -290,6 +290,8 @@ int main(int argc, char** argv) {
     CLOG(FATAL) << "Unexpected image state. /module directory does not exist.";
   }
 
+  CLOG(INFO) << "Module version: " << GetModuleVersion();
+
   std::vector<std::string> kernel_candidates = GetKernelCandidates();
 
   if (kernel_candidates.empty()) {

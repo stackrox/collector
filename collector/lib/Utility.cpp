@@ -301,6 +301,25 @@ const char* GetModuleDownloadBaseURL() {
   return "";
 }
 
+const std::string kernelModulesDir = "/kernel-modules";
+
+std::string GetModuleVersion() {
+  // This function is expected to be called a handful of times
+  // during initialization. If this condition changes, consider
+  // adding a lazy initialized static variable and prevent
+  // reading MODULE_VERSION.txt on every call.
+  std::ifstream file(kernelModulesDir + "/MODULE_VERSION.txt");
+  if (!file.is_open()) {
+    CLOG(WARNING) << "Failed to open '" << kernelModulesDir << "/MODULE_VERSION.txt'";
+    return "";
+  }
+
+  static std::string module_version;
+  getline(file, module_version);
+
+  return module_version;
+}
+
 void TryUnlink(const char* path) {
   if (unlink(path) != 0) {
     CLOG(WARNING) << "Failed to unlink '" << path << "': " << StrError();
