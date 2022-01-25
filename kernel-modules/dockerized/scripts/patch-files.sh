@@ -60,6 +60,7 @@ DRIVER_DIR="/collector/$(get_driver_relative_path)" \
 SCRATCH_DIR="/scratch" \
 OUTPUT_DIR="/kobuild-tmp/versions-src" \
 M_VERSION="$(get_module_version)" \
+DOCKERIZED=1 \
     /scripts/prepare-src.sh
 
 legacy="$(echo "$BUILD_LEGACY" | tr '[:upper:]' '[:lower:]')"
@@ -69,7 +70,6 @@ if [[ "$legacy" == "false" ]]; then
     exit 0
 fi
 
-# TODO: Support BLOCKLIST
 echo "Building legacy drivers"
 # Loop through collector versions and create the required patched sources.
 while IFS='' read -r line || [[ -n "$line" ]]; do
