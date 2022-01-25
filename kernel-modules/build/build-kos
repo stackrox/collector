@@ -160,6 +160,7 @@ if ((DOCKERIZED)); then
     FAILURE_DIR="/FAILURES"
     MODULE_BASE_DIR="/kernel-modules"
     mkdir -p "$FAILURE_DIR"
+    mkdir -p "$MODULE_BASE_DIR"
 else
     FAILURE_DIR="/output/FAILURES"
     MODULE_BASE_DIR="/output"
