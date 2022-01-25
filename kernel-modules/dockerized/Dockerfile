@@ -11,6 +11,8 @@ FROM registry.access.redhat.com/ubi8/ubi:8.5 AS rhel-8-base
 ARG REDHAT_USERNAME
 ARG REDHAT_PASSWORD
 
+ENV DOCKERIZED=1
+
 RUN subscription-manager register --username $REDHAT_USERNAME --password $REDHAT_PASSWORD && \
 	subscription-manager attach && \
 	# this pool id may be associated with the current test user account.
@@ -36,6 +38,7 @@ RUN subscription-manager register --username $REDHAT_USERNAME --password $REDHAT
 # This directory goes separately to prevent it from being modified/deleted when switching branches
 COPY /collector/kernel-modules/dockerized/scripts /scripts
 COPY /collector/kernel-modules/build/prepare-src /scripts/prepare-src.sh
+COPY /collector/kernel-modules/build/build-kos /scripts/compile.sh
 
 FROM rhel-8-base AS patcher
 
@@ -80,6 +83,8 @@ FROM registry.access.redhat.com/ubi7/ubi:7.9 AS rhel-7-base
 ARG REDHAT_USERNAME
 ARG REDHAT_PASSWORD
 
+ENV DOCKERIZED=1
+
 RUN subscription-manager register --username $REDHAT_USERNAME --password $REDHAT_PASSWORD && \
 	subscription-manager attach && \
 	# this pool id may be associated with the current test user account.
@@ -98,6 +103,7 @@ RUN subscription-manager register --username $REDHAT_USERNAME --password $REDHAT
 # This directory goes separately to prevent it from being modified/deleted when switching branches
 COPY /collector/kernel-modules/dockerized/scripts /scripts
 COPY /collector/kernel-modules/build/prepare-src /scripts/prepare-src.sh
+COPY /collector/kernel-modules/build/build-kos /scripts/compile.sh
 
 FROM rhel-7-base AS rhel-7-builder
 
