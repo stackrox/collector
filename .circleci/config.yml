@@ -5,7 +5,7 @@ parameters:
     default: "quay.io/rhacs-eng"
   dockerized-parallel:
     type: integer
-    default: 32
+    default: 8
   dockerized-cache-tag:
     type: string
     default: cache-v2
