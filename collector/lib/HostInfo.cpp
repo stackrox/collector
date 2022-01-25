@@ -29,6 +29,10 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
+// An offset for secure_boot option in boot_params.
+// See https://www.kernel.org/doc/html/latest/x86/zero-page.html
+const int SECURE_BOOT_OFFSET = 0x1EC;
+
 namespace {
 
 // Helper method which checks whether the given kernel & os
@@ -158,6 +162,128 @@ bool HostInfo::IsRHEL76() {
 bool HostInfo::HasEBPFSupport() {
   auto kernel = GetKernelVersion();
   return collector::hasEBPFSupport(kernel, GetOSID());
+}
+
+bool HostInfo::IsUEFI() {
+  struct stat sb;
+  std::string efi_path = GetHostPath("/sys/firmware/efi");
+
+  if (stat(efi_path.c_str(), &sb) == -1) {
+    if (errno == ENOTDIR || errno == ENOENT) {
+      CLOG(DEBUG) << "EFI directory doesn't exist, legacy boot mode";
+      return false;
+
+    } else {
+      CLOG(WARNING) << "Could not stat " << efi_path << ": " << StrError()
+                    << ". No UEFI heuristic is performed.";
+      return false;
+    }
+  }
+
+  if (!S_ISDIR(sb.st_mode)) {
+    CLOG(WARNING) << "EFI path is not a directory, legacy boot mode";
+    return false;
+  }
+
+  CLOG(DEBUG) << "EFI directory exist, UEFI boot mode";
+  return true;
+}
+
+// Get SecureBoot status from reading a corresponding EFI variable. Every such
+// variable is a small file <key name>-<vendor-guid> in efivarfs directory, and
+// its format is described in UEFI specification.
+SecureBootStatus HostInfo::GetSecureBootFromVars() {
+  std::uint8_t status;
+  std::string efi_path = GetHostPath("/sys/firmware/efi/efivars");
+  DirHandle efivars = opendir(efi_path.c_str());
+
+  if (!efivars.valid()) {
+    CLOG(INFO) << "Could not open " << efi_path << ": " << StrError();
+    return SecureBootStatus::NOT_DETERMINED;
+  }
+
+  while (auto dp = efivars.read()) {
+    std::string name(dp->d_name);
+
+    if (name.rfind("SecureBoot-", 0) == 0) {
+      std::uint8_t efi_key[5];
+      std::string path = efi_path + "/" + name;
+
+      // There should be only one SecureBoot key, so it doesn't make sense to
+      // search further in case if e.g. it couldn't be read.
+      std::ifstream secure_boot(path, std::ios::binary | std::ios::in);
+      if (!secure_boot.is_open()) {
+        CLOG(WARNING) << "Failed to open SecureBoot key " << path;
+        return SecureBootStatus::NOT_DETERMINED;
+      }
+
+      // An EFI variable contains 4 bytes with attributes, and 5th with the
+      // actual value. The efivarfs doesn't support lseek, returning ESPIPE on
+      // it, so read the header first, then the actual value.
+      // See https://www.kernel.org/doc/html/latest/filesystems/efivarfs.html
+      secure_boot.read(reinterpret_cast<char*>(&efi_key), 5);
+      status = efi_key[4];
+
+      // Pretty intuitively 0 means the feature is disabled, 1 enabled.
+      // SecureBoot efi variable doesn't have NOT_DETERMINED value.
+      // See https://uefi.org/sites/default/files/resources/UEFI_Spec_2_9_2021_03_18.pdf#page=86
+      if (status != 0 && status != 1) {
+        CLOG(WARNING) << "Incorrect secure_boot param: " << (unsigned int)status;
+        return SecureBootStatus::NOT_DETERMINED;
+      }
+
+      return static_cast<SecureBootStatus>(status);
+    }
+  }
+
+  // No SecureBoot key found
+  return SecureBootStatus::NOT_DETERMINED;
+}
+
+// Get SecureBoot status from reading boot_params structure. Not only it will
+// tell whether the SecureBoot is enabled or disabled, but also if could not be
+// determined.
+SecureBootStatus HostInfo::GetSecureBootFromParams() {
+  std::uint8_t status;
+  std::string boot_params_path = GetHostPath("/sys/kernel/boot_params/data");
+
+  std::ifstream boot_params(boot_params_path, std::ios::binary | std::ios::in);
+
+  if (!boot_params.is_open()) {
+    CLOG(WARNING) << "Failed to open " << boot_params_path;
+    return SecureBootStatus::NOT_DETERMINED;
+  }
+
+  boot_params.seekg(SECURE_BOOT_OFFSET);
+  boot_params.read(reinterpret_cast<char*>(&status), 1);
+
+  if (status < SecureBootStatus::NOT_DETERMINED ||
+      status > SecureBootStatus::ENABLED) {
+    CLOG(WARNING) << "Incorrect secure_boot param: " << (unsigned int)status;
+    return SecureBootStatus::NOT_DETERMINED;
+  }
+
+  return static_cast<SecureBootStatus>(status);
+}
+
+SecureBootStatus HostInfo::GetSecureBootStatus() {
+  std::uint8_t status;
+  auto kernel = GetKernelVersion();
+
+  if (secure_boot_status_ != SecureBootStatus::UNSET) {
+    return secure_boot_status_;
+  }
+
+  if (kernel.HasSecureBootParam()) {
+    status = GetSecureBootFromParams();
+  } else {
+    status = GetSecureBootFromVars();
+  }
+
+  secure_boot_status_ = static_cast<SecureBootStatus>(status);
+
+  CLOG(DEBUG) << "SecureBoot status is " << secure_boot_status_;
+  return secure_boot_status_;
 }
 
 }  // namespace collector

@@ -57,6 +57,7 @@ constexpr int CollectorConfig::kScrapeInterval;
 constexpr char CollectorConfig::kCollectionMethod[];
 constexpr char CollectorConfig::kChisel[];
 constexpr const char* CollectorConfig::kSyscalls[];
+constexpr bool CollectorConfig::kForceKernelModules;
 
 const UnorderedSet<L4ProtoPortPair> CollectorConfig::kIgnoredL4ProtoPortPairs = {{L4Proto::UDP, 9}};
 ;
@@ -69,6 +70,7 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   snap_len_ = kSnapLen;
   chisel_ = kChisel;
   collection_method_ = kCollectionMethod;
+  force_kernel_modules_ = kForceKernelModules;
 
   for (const auto& syscall : kSyscalls) {
     syscalls_.push_back(syscall);
@@ -140,6 +142,12 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
       // useEbpf (deprecated)
       collection_method_ = config["useEbpf"].asBool() ? "ebpf" : "kernel_module";
       CLOG(INFO) << "User configured useEbpf=" << config["useEbpf"].asBool();
+    }
+
+    // Force kernel modules collection method
+    if (!config["forceKernelModules"].empty()) {
+      force_kernel_modules_ = config["forceKernelModules"].asBool();
+      CLOG(INFO) << "User configured forceKernelModules=" << force_kernel_modules_;
     }
   }
 
