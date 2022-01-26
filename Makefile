@@ -65,6 +65,10 @@ image: collector unittest $(MOD_VER_FILE) $(CURDIR)/collector/container/rhel/bun
 integration-tests:
 	make -C integration-tests tests
 
+.PHONY: integration-tests-benchmark
+integration-tests-benchmark:
+	make -C integration-tests benchmark
+
 .PHONY: integration-tests-baseline
 integration-tests-baseline:
 	make -C integration-tests baseline
