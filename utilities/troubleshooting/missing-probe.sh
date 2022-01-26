@@ -157,7 +157,7 @@ else
     probe_type_array=("$probe_type")
 fi
 
-for pt in "${probe_type_array[@]}"; do	
+for pt in "${probe_type_array[@]}"; do
     check_if_probe_exists_for_module_version "$module_version" "$pt"
     check_if_probe_is_marked_unavailable_for_module_version "$module_version" "$pt"
     check_if_probe_exists_for_any_module_version "$pt"
