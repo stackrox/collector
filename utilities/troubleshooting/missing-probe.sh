@@ -66,14 +66,10 @@ check_if_branch_supports_kernel_version() {
 
     kernel_version_file="kernel-modules/KERNEL_VERSIONS"
 
-    nfound=$({ git grep -w "$kernel" "$local_branch" -- "$kernel_version_file" || true; } | wc -l)
-    if ((nfound == 0)); then
-         echo "Kernel $kernel NOT found in $kernel_version_file in the $local_branch branch"
-    elif ((nfound == 1)); then
-         echo "Kernel $kernel FOUND in $kernel_version_file in the $local_branch branch"
+    if ! git grep -w "$kernel" "$local_branch" -- "$kernel_version_file"; then
+        echo "Kernel $kernel NOT found in $kernel_version_file in the $local_branch branch"
     else
-         echo >&2 "${nfound} matches found for ${kernel} in KERNEL_VERSIONS, this might be a bug in the troubleshooting script"
-         exit 3
+        echo "Kernel $kernel FOUND in $kernel_version_file in the $local_branch branch"
     fi
 
     print_border
@@ -161,8 +157,7 @@ else
     probe_type_array=("$probe_type")
 fi
 
-for pt in "${probe_type_array[@]}"
-do	
+for pt in "${probe_type_array[@]}"; do	
     check_if_probe_exists_for_module_version "$module_version" "$pt"
     check_if_probe_is_marked_unavailable_for_module_version "$module_version" "$pt"
     check_if_probe_exists_for_any_module_version "$pt"
