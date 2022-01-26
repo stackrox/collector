@@ -74,13 +74,14 @@ function on_init()
 end
 )";
   static const UnorderedSet<L4ProtoPortPair> kIgnoredL4ProtoPortPairs;
+  static constexpr bool kForceKernelModules = false;
 
   CollectorConfig() = delete;
   CollectorConfig(CollectorArgs* collectorArgs);
 
   std::string asString() const;
 
-  bool UseEbpf() const;
+  virtual bool UseEbpf() const;
   bool UseChiselCache() const;
   bool TurnOffScrape() const;
   bool ScrapeListenEndpoints() const { return scrape_listen_endpoints_; }
@@ -96,6 +97,7 @@ end
   bool DisableNetworkFlows() const { return disable_network_flows_; }
   const UnorderedSet<L4ProtoPortPair>& IgnoredL4ProtoPortPairs() const { return ignored_l4proto_port_pairs_; }
   bool CurlVerbose() const { return curl_verbose_; }
+  virtual bool ForceKernelModules() const { return force_kernel_modules_; }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
@@ -113,6 +115,7 @@ end
   bool scrape_listen_endpoints_ = false;
   UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
   bool curl_verbose_ = false;
+  bool force_kernel_modules_ = false;
 
   bool enable_sysdig_log_ = false;
 

@@ -25,18 +25,31 @@ You should have received a copy of the GNU General Public License along with thi
 #define _HOSTINFO_H
 
 extern "C" {
+#include <sys/stat.h>
 #include <sys/utsname.h>
 }
 
 #include <regex>
 #include <string>
 
+#include "FileSystem.h"
 #include "Logging.h"
 #include "Utility.h"
 
 namespace collector {
 
 const int MIN_RHEL_BUILD_ID = 957;
+
+// The values are taken from efi_secureboot_mode in include/linux/efi.h
+enum SecureBootStatus {
+  ENABLED = 3,
+  DISABLED = 2,
+  NOT_DETERMINED = 1,  // Secure Boot seems to be disabled, but the boot loaded
+                       // does not provide enough information about it,
+                       // so it could be enabled without the kernel being aware.
+
+  UNSET = 0,  // No detection is performed yet
+};
 
 struct KernelVersion {
   KernelVersion() : kernel(0), major(0), minor(0), build_id(0) {}
@@ -97,6 +110,15 @@ struct KernelVersion {
   // Anything before 4.14 doesn't have support, anything newer does.
   bool HasEBPFSupport() const {
     if (kernel < 4 || (kernel == 4 && major < 14)) {
+      return false;
+    }
+    return true;
+  }
+
+  // Whether or not the kernel has secure_boot option present in boot_params.
+  // It was introduced in v4.11 in commit de8cb458625c.
+  bool HasSecureBootParam() const {
+    if (kernel < 4 || (kernel == 4 && major < 11)) {
       return false;
     }
     return true;
@@ -202,6 +224,15 @@ class HostInfo {
   // not support eBPF)
   bool HasEBPFSupport();
 
+  // The system was booted in UEFI mode.
+  virtual bool IsUEFI();
+
+  // Secure Boot feature prevents from loading unsigned kernel modules, so it's
+  // important to know its status.
+  virtual SecureBootStatus GetSecureBootStatus();
+  virtual SecureBootStatus GetSecureBootFromVars();
+  virtual SecureBootStatus GetSecureBootFromParams();
+
  protected:
   // basic default constructor, doesn't need to do anything,
   // since we're lazy-initializing internal state.
@@ -218,6 +249,8 @@ class HostInfo {
   std::string build_id_;
   // the OS ID (from os-release file)
   std::string os_id_;
+  // the system SecureBoot status
+  SecureBootStatus secure_boot_status_;
 };
 
 }  // namespace collector
