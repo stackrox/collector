@@ -9,8 +9,9 @@ set -eo pipefail
 
 kernel=$1
 module_version=$2
-bucket=${3:-612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656}
-branch=${4:-master}
+probe_type=${3:-both}
+bucket=${4:-612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656}
+branch=${5:-master}
 
 DIR=$(dirname "$0")
 
@@ -50,9 +51,9 @@ get_unavailable_probe_file() {
     local_kernel="$4"
 
     if [[ $local_probe_type == "mod" ]]; then
-        probe_file="gs://collector-modules/$local_bucket/$local_module_version/.collector-${local_kernel}.ko.unavail"
+        probe_file="gs://collector-modules/$local_bucket/$local_module_version/.collector-${local_kernel}.unavail"
     else
-        probe_file="gs://collector-modules/$local_bucket/$local_module_version/.collector-ebpf-${local_kernel}.o.unavail"
+        probe_file="gs://collector-modules/$local_bucket/$local_module_version/.collector-ebpf-${local_kernel}.unavail"
     fi
 
     echo "$probe_file"
@@ -111,9 +112,9 @@ check_if_probe_is_marked_unavailable_for_module_version() {
     probe_file="$(get_unavailable_probe_file "$local_probe_type" "$bucket" "$module_version" "$kernel")"
 
     if ! gsutil ls "$probe_file"; then
-        echo "The $local_probe_type probe for $kernel is not marked as unavailable for $module_version. That does not mean that it is available"
+        echo "The $local_probe_type probe for $kernel is not marked as unavailable for module_version $module_version. That does not mean that it is available"
     else
-        echo "The $local_probe_type probe for $kernel is marked as unavailable for $module_version"
+        echo "The $local_probe_type probe for $kernel is marked as unavailable for module_version $module_version"
     fi
 
     print_border
@@ -154,9 +155,15 @@ check_if_branch_supports_kernel_version "$branch"
 check_if_gsutil_is_installed
 check_if_bundle_exists
 
-for probe_type in mod bpf
+if [[ "$probe_type" == "both" ]]; then
+    probe_type_array=(mod bpf)
+else
+    probe_type_array=("$probe_type")
+fi
+
+for pt in "${probe_type_array[@]}"
 do	
-    check_if_probe_exists_for_module_version "$module_version" "$probe_type"
-    check_if_probe_is_marked_unavailable_for_module_version "$module_version" "$probe_type"
-    check_if_probe_exists_for_any_module_version "$probe_type"
+    check_if_probe_exists_for_module_version "$module_version" "$pt"
+    check_if_probe_is_marked_unavailable_for_module_version "$module_version" "$pt"
+    check_if_probe_exists_for_any_module_version "$pt"
 done
