@@ -2,7 +2,7 @@
 set -eo pipefail
 
 mkdir -p ~/kobuild-tmp/versions-src
-FALCO_DIR="${SOURCE_ROOT}/falcosecurity-libs" \
+DRIVER_DIR="${SOURCE_ROOT}/falcosecurity-libs" \
     SCRATCH_DIR="${HOME}/scratch" \
     OUTPUT_DIR="${HOME}/kobuild-tmp/versions-src" \
     MODULE_VERSION="$(cat "${SOURCE_ROOT}/kernel-modules/MODULE_VERSION")" \

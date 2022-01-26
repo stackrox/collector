@@ -64,8 +64,8 @@ cd ..
 
 ### MODULE_VERSION
 
-mkdir -p cmake-falco
-cd cmake-falco
+mkdir -p cmake-driver
+cd cmake-driver
 cmake \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_C_FLAGS="-fno-pie" \

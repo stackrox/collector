@@ -38,7 +38,7 @@ fi
 mkdir -p ~/.ssh
 echo "${GH_KEY}" > ~/.ssh/known_hosts
 
-LEGACY_DIR="/tmp/old-sysdig"
+LEGACY_DIR="/tmp/old-driver"
 git clone git@github.com:stackrox/collector "${LEGACY_DIR}"
 
 # Use 'git@github.com' so the RSA key is properly used for cloning.
@@ -69,7 +69,7 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
     git -C "${LEGACY_DIR}" submodule update --init "${DRIVER_REL_DIR}"
 
     mod_ver_file="${WORKSPACE_ROOT}/ko-build/released-collectors/${collector_ref}"
-    FALCO_DIR="${LEGACY_DIR}/${DRIVER_REL_DIR}" \
+    DRIVER_DIR="${LEGACY_DIR}/${DRIVER_REL_DIR}" \
         SCRATCH_DIR="${HOME}/scratch" \
         OUTPUT_DIR="${HOME}/kobuild-tmp/versions-src" \
         MODULE_VERSION="$(get_module_version)" \

@@ -54,7 +54,7 @@ checkout_branch() (
 # Prepare the sources for the work branch
 checkout_branch "$WORK_BRANCH"
 
-SYSDIG_DIR="/collector/$(get_driver_relative_path)" \
+DRIVER_DIR="/collector/$(get_driver_relative_path)" \
 SCRATCH_DIR="/scratch" \
 OUTPUT_DIR="/kobuild-tmp/versions-src" \
 MODULE_VERSION="$(get_module_version)" \
@@ -78,7 +78,7 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
 
     checkout_branch "$collector_ref"
 
-    SYSDIG_DIR="/collector/$(get_driver_relative_path)" \
+    DRIVER_DIR="/collector/$(get_driver_relative_path)" \
     SCRATCH_DIR="/scratch" \
     OUTPUT_DIR="/kobuild-tmp/versions-src" \
     MODULE_VERSION="$(get_module_version)" \

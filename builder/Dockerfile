@@ -62,7 +62,7 @@ RUN echo '/usr/local/lib' >/etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 # Copy Makefile for generating protobuf code.
 COPY build/protogen.mk /
 
-# Copy script for building collector and sysdig
+# Copy script for building collector
 COPY build/build-collector.sh /
 RUN chmod 700 /build-collector.sh
 
@@ -82,7 +82,7 @@ RUN ssh-keygen -A \
 RUN useradd -m remoteuser \
   && yes c0llectah | passwd remoteuser
 
-# Create directory to copy collector and sysdig source into builder container
+# Create directory to copy collector source into builder container
 RUN mkdir /src && chmod a+rwx /src
 
 CMD ["/usr/sbin/sshd", "-D", "-e", "-f", "/etc/ssh/sshd_config_remote_development"]
