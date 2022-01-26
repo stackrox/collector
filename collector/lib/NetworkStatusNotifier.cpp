@@ -297,9 +297,11 @@ void NetworkStatusNotifier::RunSingleAfterglow(DuplexClientWriter<sensor::Networ
     ConnMap new_conn_state, delta_conn;
     WITH_TIMER(CollectorStats::net_fetch_state) {
       new_conn_state = conn_tracker_->FetchConnState(true, true);
-      ConnectionTracker::ComputeDeltaAfterglowWithDelay(new_conn_state, old_conn_state, delta_conn, now, time_at_last_scrape, afterglow_period_micros_);
-      //ConnectionTracker::ComputeDeltaAfterglow(new_conn_state, old_conn_state, delta_conn, now, time_at_last_scrape, afterglow_period_micros_);
-
+      if (scrape_num > scrapes_in_afterglow) {
+        int idx = scrape_num % scrapes_in_afterglow;
+        ConnectionTracker::ComputeDeltaAfterglowWithDelay(new_conn_states, old_conn_state, idx, delta_conn, now, time_at_last_scrape, afterglow_period_micros_);
+        //ConnectionTracker::ComputeDeltaAfterglow(new_conn_state, old_conn_state, delta_conn, now, time_at_last_scrape, afterglow_period_micros_);
+      }
       new_cep_state = conn_tracker_->FetchEndpointState(true, true);
       ConnectionTracker::ComputeDeltaAfterglow(new_cep_state, old_cep_state, delta_cep, now, time_at_last_scrape, afterglow_period_micros_);
     }
@@ -312,10 +314,8 @@ void NetworkStatusNotifier::RunSingleAfterglow(DuplexClientWriter<sensor::Networ
       if (scrape_num > scrapes_in_afterglow) {
         int idx = (scrape_num + 1) % scrapes_in_afterglow;
         ConnectionTracker::UpdateOldState(&old_conn_state, new_conn_states[idx], now, afterglow_period_micros_);
-        ConnectionTracker::UpdateOldState(&old_cep_state, new_cep_state, now, afterglow_period_micros_);
-      } else {
-        ConnectionTracker::UpdateOldState(&old_conn_state, new_conn_state, now, afterglow_period_micros_);
       }
+      ConnectionTracker::UpdateOldState(&old_cep_state, new_cep_state, now, afterglow_period_micros_);
       time_at_last_scrape = now;
     }
 
