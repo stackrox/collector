@@ -149,9 +149,6 @@ build_kos() {
             rm "$failure_output_file"
         fi
     done
-
-    # Remove empty directories
-    ((DOCKERIZED)) && find "$FAILURE_DIR" -mindepth 1 -type d -empty -delete
 }
 
 DOCKERIZED=${DOCKERIZED:-0}
@@ -169,3 +166,8 @@ fi
 # The input is in the form <kernel-version> <module-version>. Sort it to make sure that we first build all modules
 # for a given kernel version before advancing to the next kernel version.
 sort | uniq | build_kos
+
+# Remove empty directories
+if ((DOCKERIZED)); then
+    find "$FAILURE_DIR" -mindepth 1 -type d -empty -delete
+fi
