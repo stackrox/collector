@@ -120,6 +120,23 @@ installESMUpdatesOnUbuntuAndReboot() {
     return 1
 }
 
+installFIPSOnUbuntuAndReboot() {
+    local GCP_VM_NAME="$1"
+    shift
+    local GCP_SSH_KEY_FILE="$1"
+    shift
+    for _ in {1..3}; do
+        if gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo ua enable --assume-yes fips"; then
+            gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo reboot" || true
+            return 0
+        fi
+        echo "Retrying in 5s ..."
+        sleep 5
+    done
+    echo "Failed to install FIPS after 3 retries"
+    return 1
+}
+
 installDockerOnRHELViaGCPSSH() {
     local GCP_VM_NAME="$1"
     shift
@@ -197,7 +214,7 @@ setupGCPVM() {
     local GDOCKER_PASS="$1"
     shift
 
-    if [[ ! "$GCP_VM_TYPE" =~ ^(coreos|cos|rhel|suse|suse-sap|ubuntu-os|flatcar|fedora-coreos|garden-linux)$ ]]; then
+    if [[ ! "$GCP_VM_TYPE" =~ ^(coreos|cos|rhel|suse|suse-sap|ubuntu-os-pro|ubuntu-os|flatcar|fedora-coreos|garden-linux)$ ]]; then
         echo "Unsupported GPC_VM_TYPE: $GCP_VM_TYPE"
         exit 1
     fi
@@ -227,7 +244,7 @@ setupGCPVM() {
         exit 1
     fi
 
-    if test "$GCP_VM_TYPE" = "ubuntu-os"; then
+    if [[ "$GCP_VM_TYPE" =~ ^ubuntu-os ]]; then
         installDockerOnUbuntuViaGCPSSH "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
     elif test "$GCP_VM_TYPE" = "rhel"; then
         installDockerOnRHELViaGCPSSH "$GCP_VM_NAME" "$GCP_IMAGE_FAMILY" "$GCP_SSH_KEY_FILE"
@@ -239,6 +256,10 @@ setupGCPVM() {
 
     if [[ "${GCP_VM_NAME}" =~ "ubuntu-1604-lts-esm" ]]; then
         installESMUpdatesOnUbuntuAndReboot "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
+        sleep 30
+    fi
+    if [[ "${GCP_VM_NAME}" =~ "ubuntu-pro-1804-lts" ]]; then
+        installFIPSOnUbuntuAndReboot "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
         sleep 30
     fi
 }
