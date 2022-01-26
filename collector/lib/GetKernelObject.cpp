@@ -139,7 +139,7 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
 }
 
 bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& module_path, bool verbose) {
-  std::string expected_path = kernelModulesDir + "/" + kernel_module;
+  std::string expected_path = kKernelModulesDir + "/" + kernel_module;
   std::string expected_path_compressed = expected_path + ".gz";
   struct stat sb;
 

@@ -82,12 +82,11 @@ COPY --from=builder ${BUILD_DIR}/src/container/scripts /
 
 # Switch shell to bash with pipefall to avoid hadolint warning DL4006
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-# /usr/local/lib is not in the library path by default
-RUN echo '/usr/local/lib' >/etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 
 RUN mv /collector-wrapper.sh /usr/local/bin/ && \
     chmod 700 bootstrap.sh && \
     echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
+    ldconfig && \
     mkdir /kernel-modules && \
     microdnf upgrade -y && \
     microdnf install -y \

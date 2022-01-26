@@ -131,7 +131,7 @@ ScopedLock<Mutex> Lock(Mutex& mutex) {
 // ssizeof(x) returns the same value as sizeof(x), but as a signed integer.
 #define ssizeof(x) static_cast<ssize_t>(sizeof(x))
 
-extern const std::string kernelModulesDir;
+extern const std::string kKernelModulesDir;
 
 }  // namespace collector
 
