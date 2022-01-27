@@ -1,0 +1,26 @@
+#!/bin/bash
+set -e
+
+# This script runs the netperf tcp_crr test via cillium/kubenetbench
+# with a user configured number of streams.
+
+die() {
+    echo >&2 "$@"
+    exit 1
+}
+
+log() {
+    echo "$*" >&2
+}
+
+artifacts_dir="$1"
+test_name="$2"
+num_streams="$3"
+knb_base_dir="$4"
+
+[[ -n "$artifacts_dir" && -n "$test_name" && -n "${num_streams}" && -n "${knb_base_dir}" ]] \
+    || die "Usage: $0 <artifacts-dir> <test-name> <num-streams> <knb-base-dir>"
+
+export KUBECONFIG="${artifacts_dir}/kubeconfig"
+log "run netperf tcp_crr with ${num_streams} streams"
+"${knb_base_dir}/kubenetbench-master/${test_name}/knb" pod2pod -b netperf --netperf-type tcp_crr --netperf-nstreams "${num_streams}"
