@@ -5,7 +5,7 @@ parameters:
     default: "quay.io/rhacs-eng"
   dockerized-parallel:
     type: integer
-    default: 32
+    default: 8
   dockerized-cache-tag:
     type: string
     default: cache-v1
@@ -449,7 +449,7 @@ jobs:
 
   kernels:
     <<: *defaultMachine
-    parallelism: 32
+    parallelism: 8
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
@@ -1097,7 +1097,6 @@ jobs:
       - setup_remote_docker:
           version: 20.10.11
       - stackrox-io-login
-      - docker-login-pull
       - gcloud-init
 
       - run:
