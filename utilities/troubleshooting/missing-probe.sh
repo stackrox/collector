@@ -8,8 +8,8 @@ set -eo pipefail
 # Checks if the bundle for the kernel exits
 
 kernel=$1
-probe_type=$2
-module_version=$3
+module_version=$2
+probe_type=${3:-both}
 bucket=${4:-612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656}
 branch=${5:-master}
 
@@ -44,6 +44,21 @@ get_probe_file() {
     echo "$probe_file"
 }
 
+get_unavailable_probe_file() {
+    local_probe_type="$1"
+    local_bucket="$2"
+    local_module_version="$3"
+    local_kernel="$4"
+
+    if [[ $local_probe_type == "mod" ]]; then
+        probe_file="gs://collector-modules/$local_bucket/$local_module_version/.collector-${local_kernel}.unavail"
+    else
+        probe_file="gs://collector-modules/$local_bucket/$local_module_version/.collector-ebpf-${local_kernel}.unavail"
+    fi
+
+    echo "$probe_file"
+}
+
 check_if_branch_supports_kernel_version() {
     local_branch=$1
 
@@ -51,14 +66,10 @@ check_if_branch_supports_kernel_version() {
 
     kernel_version_file="kernel-modules/KERNEL_VERSIONS"
 
-    nfound=$(git grep -w "$kernel" "$local_branch" -- "$kernel_version_file" | wc -l)
-    if ((nfound == 0)); then
-         echo "Kernel $kernel NOT found in $kernel_version_file in the $local_branch branch"
-    elif ((nfound == 1)); then
-         echo "Kernel $kernel FOUND in $kernel_version_file in the $local_branch branch"
+    if ! git grep -w "$kernel" "$local_branch" -- "$kernel_version_file"; then
+        echo "Kernel $kernel NOT found in $kernel_version_file in the $local_branch branch"
     else
-         echo >&2 "${nfound} matches found for ${kernel} in KERNEL_VERSIONS, this might be a bug in the troubleshooting script"
-         exit 3
+        echo "Kernel $kernel FOUND in $kernel_version_file in the $local_branch branch"
     fi
 
     print_border
@@ -73,30 +84,49 @@ check_if_gsutil_is_installed() {
 
 check_if_probe_exists_for_module_version() {
     module_version=$1
+    local_probe_type=$2
 
-    print_header "Checking if the probe exists for the module version"
+    print_header "Checking if the $local_probe_type probe exists for the module version"
 
-    probe_file="$(get_probe_file "$probe_type" "$bucket" "$module_version" "$kernel")"
+    probe_file="$(get_probe_file "$local_probe_type" "$bucket" "$module_version" "$kernel")"
 
     if ! gsutil ls "$probe_file"; then
-        echo "The probe for $kernel does NOT exist for module version $module_version"
+        echo "The $local_probe_type probe for $kernel does NOT exist for module version $module_version"
     else
-        echo "The probe for $kernel DOES exist for module version $module_version"
+        echo "The $local_probe_type probe for $kernel DOES exist for module version $module_version"
+    fi
+
+    print_border
+}
+
+check_if_probe_is_marked_unavailable_for_module_version() {
+    module_version=$1
+    local_probe_type=$2
+
+    print_header "Checking if the $local_probe_type probe is marked unavailable for the module version"
+
+    probe_file="$(get_unavailable_probe_file "$local_probe_type" "$bucket" "$module_version" "$kernel")"
+
+    if ! gsutil ls "$probe_file"; then
+        echo "The $local_probe_type probe for $kernel is not marked as unavailable for module_version $module_version. That does not mean that it is available"
+    else
+        echo "The $local_probe_type probe for $kernel is marked as unavailable for module_version $module_version"
     fi
 
     print_border
 }
 
 check_if_probe_exists_for_any_module_version() {
+    local_probe_type=$1
 
-    print_header "Checking if the probe exists for any module version"
+    print_header "Checking if the $local_probe_type probe exists for any module version"
 
-    probe_file="$(get_probe_file "$probe_type" "$bucket" "*" "$kernel")"
+    probe_file="$(get_probe_file "$local_probe_type" "$bucket" "*" "$kernel")"
 
     if ! gsutil ls "$probe_file"; then
-        echo "A probe for $kernel does NOT exist in any module version"
+        echo "A $local_probe_type probe for $kernel does NOT exist in any module version"
     else
-        echo "A probe for $kernel DOES exist in at least one module version"
+        echo "A $local_probe_type probe for $kernel DOES exist in at least one module version"
     fi
 
     print_border
@@ -119,6 +149,16 @@ check_if_bundle_exists() {
 
 check_if_branch_supports_kernel_version "$branch"
 check_if_gsutil_is_installed
-check_if_probe_exists_for_module_version "$module_version"
-check_if_probe_exists_for_any_module_version
 check_if_bundle_exists
+
+if [[ "$probe_type" == "both" ]]; then
+    probe_type_array=(mod bpf)
+else
+    probe_type_array=("$probe_type")
+fi
+
+for pt in "${probe_type_array[@]}"; do
+    check_if_probe_exists_for_module_version "$module_version" "$pt"
+    check_if_probe_is_marked_unavailable_for_module_version "$module_version" "$pt"
+    check_if_probe_exists_for_any_module_version "$pt"
+done
