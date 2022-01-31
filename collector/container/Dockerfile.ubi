@@ -79,7 +79,6 @@ ARG BUILD_DIR=/build
 COPY --from=builder ${BUILD_DIR}/cmake-collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so /usr/local/lib/
 COPY --from=builder ${BUILD_DIR}/cmake-collector/collector /usr/local/bin/
 COPY --from=builder ${BUILD_DIR}/src/container/scripts /
-COPY /kernel-modules/MODULE_VERSION.txt /MODULE_VERSION.txt
 
 # Switch shell to bash with pipefall to avoid hadolint warning DL4006
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -113,7 +112,7 @@ RUN mv /collector-wrapper.sh /usr/local/bin/ && \
 
 # Restore the default shell because "bootstrap.sh" expects a shell to be started with a single parameter
 SHELL ["/bin/sh", "-c"]
-COPY --from=builder /MODULE_VERSION.txt /kernel-modules/MODULE_VERSION.txt
+COPY /kernel-modules/MODULE_VERSION /kernel-modules/MODULE_VERSION.txt
 COPY --from=builder /THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES
 
 EXPOSE 8080 9090
