@@ -70,7 +70,8 @@ function main() {
 
     # Get and export the node hostname from Docker,
     # and export because this env var is read by collector
-    export NODE_HOSTNAME="$(cat /host/etc/hostname)"
+    node_hostname="$(cat /host/etc/hostname)"
+    export NODE_HOSTNAME=$node_hostname
 
     # Export SNI_HOSTNAME and default it to sensor.stackrox
     export SNI_HOSTNAME="${SNI_HOSTNAME:-sensor.stackrox}"
@@ -93,6 +94,7 @@ function main() {
     log "Starting StackRox Collector..."
     # Signal handler for SIGTERM
     trap 'clean_up' TERM QUIT INT
+    # shellcheck disable=SC2294 # Shellcheck usually does not allow eval to process arrays
     eval exec "$@" &
     PID=$!
     wait $PID
