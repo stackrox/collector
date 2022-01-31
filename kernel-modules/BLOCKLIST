@@ -41,3 +41,11 @@
 5.14.0-1-cloud-amd64
 # TODO(ROX-??)
 *-minikube * mod
+# TODO(ROX-??) - Failures after migrating to falco
+4.19.0-17-amd64
+4.19.0-17-cloud-amd64
+5.15.0-2-amd64
+5.15.0-2-cloud-amd64
+5.15.0-3-amd64
+5.15.0-3-cloud-amd64
+4.19.121-dockerdesktop-2021-01-21-15-36-34
