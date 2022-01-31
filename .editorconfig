@@ -29,5 +29,5 @@ keep_padding       = true
 function_next_line = false
 
 # Ignore submodules
-[{third_party,sysdig}/**]
+[{third_party,falcosecurity-libs}/**]
 ignore = true

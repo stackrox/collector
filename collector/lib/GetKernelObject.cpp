@@ -36,22 +36,7 @@ extern "C" {
 #include "Logging.h"
 #include "Utility.h"
 
-static const std::string kKernelModulesDir = "/kernel-modules";
-
 namespace collector {
-
-std::string GetModuleVersion() {
-  std::ifstream file(kKernelModulesDir + "/MODULE_VERSION.txt");
-  if (!file.is_open()) {
-    CLOG(WARNING) << "Failed to open '" << kKernelModulesDir << "/MODULE_VERSION.txt'";
-    return "";
-  }
-
-  std::string module_version;
-  getline(file, module_version);
-
-  return module_version;
-}
 
 bool DownloadKernelObjectFromURL(FileDownloader& downloader, const std::string& base_url, const std::string& kernel_module, const std::string& module_version) {
   std::string url(base_url + "/" + module_version + "/" + kernel_module + ".gz");

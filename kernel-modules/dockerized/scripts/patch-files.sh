@@ -4,10 +4,25 @@ set -euo pipefail
 
 WORK_BRANCH="${1:-master}"
 BUILD_LEGACY="${2:-false}"
-SYSDIG_REL_DIR="sysdig/src"
 
 mkdir -p /versions/{released-collectors,released-modules}
 mkdir -p /kobuild-tmp/versions-src
+
+get_driver_relative_path() (
+    if git config --list -f /collector/.gitmodules --name-only | grep -q "falcosecurity-libs"; then
+        echo "falcosecurity-libs"
+    else
+        echo "sysdig/src"
+    fi
+)
+
+get_module_version() (
+    if [[ -f /collector/kernel-modules/MODULE_VERSION ]]; then
+        cat /collector/kernel-modules/MODULE_VERSION
+    else
+        echo ""
+    fi
+)
 
 apply_patches() (
     for version_dir in /kobuild-tmp/versions-src/*; do
@@ -29,19 +44,20 @@ checkout_branch() (
         return
     fi
 
-    git -C /collector submodule deinit "${SYSDIG_REL_DIR}"
+    git -C /collector submodule deinit "$(get_driver_relative_path)"
     git -C /collector checkout "$branch"
     git -C /collector checkout -- .
     git -C /collector clean -xdf
-    git -C /collector submodule update --init "${SYSDIG_REL_DIR}"
+    git -C /collector submodule update --init "$(get_driver_relative_path)"
 )
 
 # Prepare the sources for the work branch
 checkout_branch "$WORK_BRANCH"
 
-SYSDIG_DIR="/collector/${SYSDIG_REL_DIR}" \
-    SCRATCH_DIR="/scratch" \
-    OUTPUT_DIR="/kobuild-tmp/versions-src" \
+DRIVER_DIR="/collector/$(get_driver_relative_path)" \
+SCRATCH_DIR="/scratch" \
+OUTPUT_DIR="/kobuild-tmp/versions-src" \
+MODULE_VERSION="$(get_module_version)" \
     /scripts/prepare-src.sh
 
 legacy="$(echo "$BUILD_LEGACY" | tr '[:upper:]' '[:lower:]')"
@@ -62,9 +78,10 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
 
     checkout_branch "$collector_ref"
 
-    SYSDIG_DIR="/collector/${SYSDIG_REL_DIR}" \
-        SCRATCH_DIR="/scratch" \
-        OUTPUT_DIR="/kobuild-tmp/versions-src" \
+    DRIVER_DIR="/collector/$(get_driver_relative_path)" \
+    SCRATCH_DIR="/scratch" \
+    OUTPUT_DIR="/kobuild-tmp/versions-src" \
+    MODULE_VERSION="$(get_module_version)" \
         /scripts/prepare-src.sh
 
 done < <(grep -v '^#' < /collector/RELEASED_VERSIONS | awk -F'#' '{print $1}' | awk 'NF==2 {print $1}' | sort | uniq)
