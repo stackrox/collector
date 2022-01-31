@@ -25,4 +25,3 @@
 [submodule "falcosecurity-libs"]
 	path = falcosecurity-libs
 	url = https://github.com/stackrox/falcosecurity-libs
-	branch = mauro/ROX-7482-migrate-sysdig-to-falco
