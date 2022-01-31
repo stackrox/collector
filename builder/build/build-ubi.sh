@@ -61,23 +61,3 @@ strip --strip-unneeded \
     ./collector \
     ./EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so
 cd ..
-
-### MODULE_VERSION
-
-mkdir -p cmake-driver
-cd cmake-driver
-cmake \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_C_FLAGS="-fno-pie" \
-        -DPROBE_NAME=collector \
-        -DBUILD_USERSPACE=OFF \
-        -DBUILD_DRIVER=ON \
-        -DENABLE_DKMS=OFF \
-        -DBUILD_BPF=ON \
-        ../falcosecurity-libs
-KERNELDIR=/dev/null make driver/fast 2> /dev/null || true
-cd ../falcosecurity-libs/driver
-find . -type f \( -name 'Makefile' -o -name '*.c' -o -name '*.h' \) -print0 \
-    | LC_ALL=C sort -z | xargs -0 sha256sum | awk '{print$1 " " $2}' | sha256sum | awk '{print$1}' \
-    > /MODULE_VERSION.txt
-cd ../../..
