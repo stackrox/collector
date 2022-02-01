@@ -1,0 +1,10 @@
+from alpine:latest
+
+RUN apk add --update bcc-tools bash
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
+COPY /tools /tools
+
+WORKDIR /root
+ENV PATH=/bin:/usr/bin:/usr/share/bcc/tools:/tools
+ENTRYPOINT ["bash", "-c"]

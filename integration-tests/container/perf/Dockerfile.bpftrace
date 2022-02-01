@@ -1,0 +1,7 @@
+FROM quay.io/iovisor/bpftrace:latest
+
+COPY /tools /tools
+COPY /scripts/run-bpftrace.sh /run-bpftrace.sh
+
+WORKDIR /root
+ENTRYPOINT ["bpftrace"]

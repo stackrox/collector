@@ -1,0 +1,8 @@
+FROM alpine:latest
+
+RUN apk add --update perf
+
+COPY /tools /tools
+
+WORKDIR /root
+ENTRYPOINT ["perf"]
