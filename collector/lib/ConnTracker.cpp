@@ -128,6 +128,18 @@ Connection ConnectionTracker::NormalizeConnectionNoLock(const Connection& conn) 
   return Connection(conn.container(), local, remote, conn.l4proto(), is_server);
 }
 
+bool ConnectionTracker::IsInAfterglowPeriod(const ConnStatus& conn, int64_t now, int64_t afterglow_period_micros) {
+  // Returns true if a connection was active during the afterglow period.
+  // This is helpful for not reporting frequent connections every time we see them.
+  return now - conn.LastActiveTime() < afterglow_period_micros;
+}
+
+bool ConnectionTracker::WasRecentlyActive(const ConnStatus& conn, int64_t now, int64_t afterglow_period_micros) {
+  // Returns true if a connection is active or was active during the afterglow period.
+  // This is helpful for not reporting frequent connections every time we see them.
+  return conn.IsActive() || IsInAfterglowPeriod(conn, now, afterglow_period_micros);
+}
+
 namespace {
 
 template <typename T>

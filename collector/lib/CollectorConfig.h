@@ -92,12 +92,14 @@ end
   std::string HostProc() const;
   std::string CollectionMethod() const;
   std::vector<std::string> Syscalls() const;
+  int64_t AfterglowPeriod() const;
   std::string LogLevel() const;
   bool EnableSysdigLog() const { return enable_sysdig_log_; }
   bool DisableNetworkFlows() const { return disable_network_flows_; }
   const UnorderedSet<L4ProtoPortPair>& IgnoredL4ProtoPortPairs() const { return ignored_l4proto_port_pairs_; }
   bool CurlVerbose() const { return curl_verbose_; }
   virtual bool ForceKernelModules() const { return force_kernel_modules_; }
+  bool UseAfterglow() const { return use_afteglow_; }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
@@ -118,8 +120,9 @@ end
   bool force_kernel_modules_ = false;
 
   bool enable_sysdig_log_ = false;
-
   HostConfig host_config_;
+  int64_t afterglow_period_micros_ = 20000000;  //20 seconds in microseconds
+  bool use_afteglow_ = false;
 };
 
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c);

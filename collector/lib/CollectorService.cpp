@@ -93,7 +93,8 @@ void CollectorService::RunForever() {
       net_status_notifier = MakeUnique<NetworkStatusNotifier>(config_.Hostname(), config_.HostProc(),
                                                               config_.ScrapeInterval(), config_.ScrapeListenEndpoints(),
                                                               config_.TurnOffScrape(),
-                                                              conn_tracker, config_.grpc_channel);
+                                                              conn_tracker, config_.grpc_channel,
+                                                              config_.AfterglowPeriod(), config_.UseAfterglow());
       net_status_notifier->Start();
     }
   }

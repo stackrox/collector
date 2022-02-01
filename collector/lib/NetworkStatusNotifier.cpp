@@ -162,7 +162,11 @@ void NetworkStatusNotifier::Run() {
         &sensor::NetworkConnectionInfoService::Stub::AsyncPushNetworkConnectionInfo,
         channel_, context_.get(), std::move(read_cb));
 
-    RunSingle(client_writer.get());
+    if (use_afterglow_) {
+      RunSingleAfterglow(client_writer.get());
+    } else {
+      RunSingle(client_writer.get());
+    }
     if (thread_.should_stop()) {
       return;
     }
@@ -236,6 +240,72 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
       msg = CreateInfoMessage(old_conn_state, old_cep_state);
       old_conn_state = std::move(new_conn_state);
       old_cep_state = std::move(new_cep_state);
+    }
+
+    if (!msg) {
+      continue;
+    }
+
+    WITH_TIMER(CollectorStats::net_write_message) {
+      if (!writer->Write(*msg, next_scrape)) {
+        CLOG(ERROR) << "Failed to write network connection info";
+        return;
+      }
+    }
+  }
+}
+
+void NetworkStatusNotifier::RunSingleAfterglow(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
+  if (!writer->WaitUntilStarted(std::chrono::seconds(100))) {
+    CLOG(ERROR) << "Failed to establish network connection info stream.";
+    return;
+  }
+
+  CLOG(INFO) << "Established network connection info stream.";
+
+  ConnMap old_conn_state;
+  ContainerEndpointMap old_cep_state;
+  auto next_scrape = std::chrono::system_clock::now();
+  int64_t time_at_last_scrape = NowMicros();
+
+  while (writer->Sleep(next_scrape)) {
+    next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(scrape_interval_);
+
+    if (!turn_off_scraping_) {
+      int64_t ts = NowMicros();
+      std::vector<Connection> all_conns;
+      std::vector<ContainerEndpoint> all_listen_endpoints;
+      WITH_TIMER(CollectorStats::net_scrape_read) {
+        bool success = conn_scraper_.Scrape(&all_conns, scrape_listen_endpoints_ ? &all_listen_endpoints : nullptr);
+        if (!success) {
+          CLOG(ERROR) << "Failed to scrape connections and no pending connections to send";
+          continue;
+        }
+      }
+      WITH_TIMER(CollectorStats::net_scrape_update) {
+        conn_tracker_->Update(all_conns, all_listen_endpoints, ts);
+      }
+    }
+
+    int64_t now = NowMicros();
+    const sensor::NetworkConnectionInfoMessage* msg;
+    ContainerEndpointMap new_cep_state, delta_cep;
+    ConnMap new_conn_state, delta_conn;
+    WITH_TIMER(CollectorStats::net_fetch_state) {
+      new_conn_state = conn_tracker_->FetchConnState(true, true);
+      ConnectionTracker::ComputeDeltaAfterglow(new_conn_state, old_conn_state, delta_conn, now, time_at_last_scrape, afterglow_period_micros_);
+
+      new_cep_state = conn_tracker_->FetchEndpointState(true, true);
+      ConnectionTracker::ComputeDeltaAfterglow(new_cep_state, old_cep_state, delta_cep, now, time_at_last_scrape, afterglow_period_micros_);
+    }
+
+    WITH_TIMER(CollectorStats::net_create_message) {
+      // Report the deltas
+      msg = CreateInfoMessage(delta_conn, delta_cep);
+      // Add new connections to the old_state and remove inactive connections that are older than the afterglow period.
+      ConnectionTracker::UpdateOldState(&old_conn_state, new_conn_state, now, afterglow_period_micros_);
+      ConnectionTracker::UpdateOldState(&old_cep_state, new_cep_state, now, afterglow_period_micros_);
+      time_at_last_scrape = now;
     }
 
     if (!msg) {
