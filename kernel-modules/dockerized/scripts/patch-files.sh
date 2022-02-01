@@ -51,8 +51,10 @@ checkout_branch() (
     git -C /collector submodule update --init "$(get_driver_relative_path)"
 )
 
-# Prepare the sources for the work branch
-checkout_branch "$WORK_BRANCH"
+if [[ "${CHECKOUT_BEFORE_PATCHING,,}" == "true" ]]; then
+    # Prepare the sources for the work branch
+    checkout_branch "$WORK_BRANCH"
+fi
 
 DRIVER_DIR="/collector/$(get_driver_relative_path)" \
 SCRATCH_DIR="/scratch" \
