@@ -180,7 +180,7 @@ void ConnectionTracker::UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, c
 
   for (const auto& conn : new_state) {
     auto insert_res = old_state->insert(conn);
-    if (!insert_res.second) { // Was already present. Update the connection.
+    if (!insert_res.second) {  // Was already present. Update the connection.
       auto& old_conn = *insert_res.first;
       old_conn.second = conn.second;
     }
