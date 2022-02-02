@@ -25,10 +25,6 @@ const (
 	parentExecFilePathStr    = "ParentExecFilePath"
 )
 
-func TestBenchmarkBaseline(t *testing.T) {
-	suite.Run(t, new(BenchmarkBaselineTestSuite))
-}
-
 func TestCollectorGRPC(t *testing.T) {
 	suite.Run(t, new(ProcessNetworkTestSuite))
 	suite.Run(t, new(BenchmarkCollectorTestSuite))
@@ -36,10 +32,6 @@ func TestCollectorGRPC(t *testing.T) {
 
 func TestProcessNetwork(t *testing.T) {
 	suite.Run(t, new(ProcessNetworkTestSuite))
-}
-
-func TestBenchmarkCollector(t *testing.T) {
-	suite.Run(t, new(BenchmarkCollectorTestSuite))
 }
 
 func TestImageLabelJSON(t *testing.T) {
@@ -138,14 +130,6 @@ type PerformanceResult struct {
 	ContainerStats   []ContainerStat
 }
 
-type BenchmarkCollectorTestSuite struct {
-	IntegrationTestSuiteBase
-}
-
-type BenchmarkBaselineTestSuite struct {
-	IntegrationTestSuiteBase
-}
-
 type MissingProcScrapeTestSuite struct {
 	IntegrationTestSuiteBase
 }
@@ -194,54 +178,6 @@ func (s *ImageLabelJSONTestSuite) TearDownSuite() {
 	s.db, err = s.collector.BoltDB()
 	s.Require().NoError(err)
 	s.cleanupContainer([]string{"collector", "grpc-server", "jsonlabel"})
-}
-
-func (s *BenchmarkCollectorTestSuite) SetupSuite() {
-	s.executor = NewExecutor()
-	s.StartContainerStats()
-	s.collector = NewCollectorManager(s.executor, s.T().Name())
-	s.metrics = map[string]float64{}
-
-	err := s.collector.Setup()
-	s.Require().NoError(err)
-
-	err = s.collector.Launch()
-	s.Require().NoError(err)
-
-}
-
-func (s *BenchmarkCollectorTestSuite) TestBenchmarkCollector() {
-	s.RunCollectorBenchmark()
-}
-
-func (s *BenchmarkCollectorTestSuite) TearDownSuite() {
-	err := s.collector.TearDown()
-	s.Require().NoError(err)
-
-	s.db, err = s.collector.BoltDB()
-	s.Require().NoError(err)
-
-	s.cleanupContainer([]string{"collector", "grpc-server", "benchmark"})
-	stats := s.GetContainerStats()
-	s.PrintContainerStats(stats)
-	s.WritePerfResults("collector_benchmark", stats, s.metrics)
-}
-
-func (s *BenchmarkBaselineTestSuite) SetupSuite() {
-	s.executor = NewExecutor()
-	s.metrics = map[string]float64{}
-	s.StartContainerStats()
-}
-
-func (s *BenchmarkBaselineTestSuite) TestBenchmarkBaseline() {
-	s.RunCollectorBenchmark()
-}
-
-func (s *BenchmarkBaselineTestSuite) TearDownSuite() {
-	s.cleanupContainer([]string{"benchmark"})
-	stats := s.GetContainerStats()
-	s.PrintContainerStats(stats)
-	s.WritePerfResults("baseline_benchmark", stats, s.metrics)
 }
 
 // Launches collector
@@ -596,6 +532,18 @@ func (s *IntegrationTestSuiteBase) execContainer(containerName string, command [
 func (s *IntegrationTestSuiteBase) cleanupContainer(containers []string) {
 	for _, container := range containers {
 		s.executor.Exec("docker", "kill", container)
+		s.executor.Exec("docker", "rm", container)
+	}
+}
+
+func (s *IntegrationTestSuiteBase) stopContainers(containers ...string) {
+	for _, container := range containers {
+		s.executor.Exec("docker", "stop", container)
+	}
+}
+
+func (s *IntegrationTestSuiteBase) removeContainers(containers ...string) {
+	for _, container := range containers {
 		s.executor.Exec("docker", "rm", container)
 	}
 }
