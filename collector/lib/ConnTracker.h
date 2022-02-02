@@ -59,6 +59,10 @@ class ConnStatus {
     data_ = std::max(data_, other.data_);
   }
 
+  void AddTimeToLastActiveTime(int64_t time) {
+    data_ += time;
+  }
+
   ConnStatus WithStatus(bool active) const {
     return ConnStatus(MakeActive(data_, active));
   }
@@ -106,6 +110,8 @@ class ConnectionTracker {
   // ComputeDelta computes a diff between new_state and old_state
   static void ComputeDeltaAfterglow(const UnorderedMap<T, ConnStatus>& new_state, const UnorderedMap<T, ConnStatus>& old_state, UnorderedMap<T, ConnStatus>& delta, int64_t now, int64_t time_at_last_scrape, int64_t afterglow_period_micros);
 
+  template <typename T>
+  static void AddAfteglowPeriodToLastActiveTimestamp(UnorderedMap<T, ConnStatus>* delta, int64_t afterglow_period_micros);
   // ComputeDelta computes a diff between new_state and *old_state, and stores the diff in *old_state.
   template <typename T>
   static void ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state);
@@ -188,6 +194,17 @@ void ConnectionTracker::UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, c
 }
 
 template <typename T>
+void ConnectionTracker::AddAfteglowPeriodToLastActiveTimestamp(UnorderedMap<T, ConnStatus>* delta, int64_t afterglow_period_micros) {
+  for (auto it = delta->begin(); it != delta->end();) {
+    auto& conn = *it;
+    if (!conn.second.IsActive()) {
+      conn.second.AddTimeToLastActiveTime(afterglow_period_micros);
+    }
+    ++it;
+  }
+}
+
+template <typename T>
 void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state) {
   // Insert all objects from the new state, if anything changed about them.
   for (const auto& conn : new_state) {
@@ -265,6 +282,8 @@ void ConnectionTracker::ComputeDeltaAfterglow(const UnorderedMap<T, ConnStatus>&
       delta.insert(conn);
     }
   }
+
+  AddAfteglowPeriodToLastActiveTimestamp(&delta, afterglow_period_micros);
 }
 
 }  // namespace collector
