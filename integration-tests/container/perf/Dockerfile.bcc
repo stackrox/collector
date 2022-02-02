@@ -1,10 +1,8 @@
-from alpine:latest
+FROM stackrox/collector-performance:base
 
-RUN apk add --update bcc-tools bash
+RUN apk add --update bcc-tools
 RUN ln -s /usr/bin/python3 /usr/bin/python
-
-COPY /tools /tools
 
 WORKDIR /root
 ENV PATH=/bin:/usr/bin:/usr/share/bcc/tools:/tools
-ENTRYPOINT ["bash", "-c"]
+ENTRYPOINT ["/scripts/run-tool.sh"]

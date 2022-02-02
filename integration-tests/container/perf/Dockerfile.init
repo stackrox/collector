@@ -1,20 +1,4 @@
-FROM alpine:latest
-
-RUN apk add --update \
-    bash \
-    bc \
-    build-base \
-    bison \
-    flex \
-    curl \
-    elfutils-dev \
-    linux-headers \
-    make \
-    openssl-dev \
-    diffutils
+FROM stackrox/collector-performance:base
 
 WORKDIR /
-
-COPY /scripts/init.sh /
-RUN chmod +x /init.sh
 ENTRYPOINT [ "/init.sh" ]

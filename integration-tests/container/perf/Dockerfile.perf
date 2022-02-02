@@ -1,8 +1,6 @@
-FROM alpine:latest
+FROM stackrox/collector-performance:base
 
 RUN apk add --update perf
-
-COPY /tools /tools
 
 WORKDIR /root
 ENTRYPOINT ["perf"]
