@@ -214,7 +214,7 @@ func (e *executor) ExitCode(containerID string) (int, error) {
 }
 
 func (e *localCommandBuilder) ExecCommand(execArgs ...string) *exec.Cmd {
-	return exec.Command(execArgs[0], execArgs[1:]...)
+	return exec.Command(execArgs[0], quoteArgs(execArgs[1:])...)
 }
 
 func (e *localCommandBuilder) RemoteCopyCommand(remoteSrc string, localDst string) *exec.Cmd {
@@ -235,14 +235,7 @@ func (e *gcloudCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
 		userInstance = e.user + "@" + e.instance
 	}
 	cmdArgs = append(cmdArgs, userInstance, "--", "-T")
-	for _, arg := range args {
-		argQuoted := strconv.Quote(arg)
-		argQuotedTrimmed := strings.Trim(argQuoted, "\"")
-		if arg != argQuotedTrimmed || strings.Contains(arg, " ") {
-			arg = argQuoted
-		}
-		cmdArgs = append(cmdArgs, arg)
-	}
+	cmdArgs = append(cmdArgs, quoteArgs(args)...)
 	return exec.Command("gcloud", cmdArgs...)
 }
 
@@ -264,14 +257,8 @@ func (e *sshCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
 	cmdArgs := []string{
 		"-o", "StrictHostKeyChecking=no", "-i", e.keyPath,
 		e.user + "@" + e.address}
-	for _, arg := range args {
-		argQuoted := strconv.Quote(arg)
-		argQuotedTrimmed := strings.Trim(argQuoted, "\"")
-		if arg != argQuotedTrimmed || strings.Contains(arg, " ") {
-			arg = argQuoted
-		}
-		cmdArgs = append(cmdArgs, arg)
-	}
+
+	cmdArgs = append(cmdArgs, quoteArgs(args)...)
 	return exec.Command("ssh", cmdArgs...)
 }
 
@@ -280,4 +267,18 @@ func (e *sshCommandBuilder) RemoteCopyCommand(remoteSrc string, localDst string)
 		"-o", "StrictHostKeyChecking=no", "-i", e.keyPath,
 		e.user + "@" + e.address + ":" + remoteSrc, localDst}
 	return exec.Command("scp", args...)
+}
+
+// quoteArgs will add quotes around any arguments require it for the shell.
+func quoteArgs(args []string) []string {
+	quotedArgs := []string{}
+	for _, arg := range args {
+		argQuoted := strconv.Quote(arg)
+		argQuotedTrimmed := strings.Trim(argQuoted, "\"")
+		if arg != argQuotedTrimmed || strings.Contains(arg, " ") {
+			arg = argQuoted
+		}
+		quotedArgs = append(quotedArgs, arg)
+	}
+	return quotedArgs
 }
