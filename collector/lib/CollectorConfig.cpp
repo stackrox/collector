@@ -109,9 +109,9 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
     }
 
     // Use Afterglow
-    if (!config["useAfterglow"].empty()) {
-      use_afteglow_ = (bool)(config["useAfterglow"].asBool());
-      CLOG(INFO) << "User configured useAfterglow=" << config["useAfterglow"].asString();
+    if (!config["enableAfterglow"].empty()) {
+      enable_afterglow_ = (bool)(config["enableAfterglow"].asBool());
+      CLOG(INFO) << "User configured enableAfterglow=" << config["enableAfterglow"].asString();
     }
 
     // Log Level

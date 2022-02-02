@@ -162,7 +162,7 @@ void NetworkStatusNotifier::Run() {
         &sensor::NetworkConnectionInfoService::Stub::AsyncPushNetworkConnectionInfo,
         channel_, context_.get(), std::move(read_cb));
 
-    if (use_afterglow_) {
+    if (enable_afterglow_) {
       RunSingleAfterglow(client_writer.get());
     } else {
       RunSingle(client_writer.get());
@@ -194,13 +194,36 @@ void NetworkStatusNotifier::Stop() {
   thread_.Stop();
 }
 
-void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
-  if (!writer->WaitUntilStarted(std::chrono::seconds(10))) {
+void NetworkStatusNotifier::WaitUntilWriterStarted(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer, int wait_time) {
+  if (!writer->WaitUntilStarted(std::chrono::seconds(wait_time))) {
     CLOG(ERROR) << "Failed to establish network connection info stream.";
     return;
   }
 
   CLOG(INFO) << "Established network connection info stream.";
+}
+
+bool NetworkStatusNotifier::UpdateAllConnsAndEndpoints() {
+  if (!turn_off_scraping_) {
+    int64_t ts = NowMicros();
+    std::vector<Connection> all_conns;
+    std::vector<ContainerEndpoint> all_listen_endpoints;
+    WITH_TIMER(CollectorStats::net_scrape_read) {
+      bool success = conn_scraper_.Scrape(&all_conns, scrape_listen_endpoints_ ? &all_listen_endpoints : nullptr);
+      if (!success) {
+        CLOG(ERROR) << "Failed to scrape connections and no pending connections to send";
+        return false;
+      }
+    }
+    WITH_TIMER(CollectorStats::net_scrape_update) {
+      conn_tracker_->Update(all_conns, all_listen_endpoints, ts);
+    }
+  }
+  return true;
+}
+
+void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
+  WaitUntilWriterStarted(writer, 10);
 
   ConnMap old_conn_state;
   ContainerEndpointMap old_cep_state;
@@ -209,21 +232,8 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
   while (writer->Sleep(next_scrape)) {
     next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(scrape_interval_);
 
-    if (!turn_off_scraping_) {
-      int64_t ts = NowMicros();
-      std::vector<Connection> all_conns;
-      std::vector<ContainerEndpoint> all_listen_endpoints;
-      WITH_TIMER(CollectorStats::net_scrape_read) {
-        bool success = conn_scraper_.Scrape(&all_conns, scrape_listen_endpoints_ ? &all_listen_endpoints : nullptr);
-        if (!success) {
-          CLOG(ERROR) << "Failed to scrape connections and no pending connections to send";
-          continue;
-        }
-      }
-      WITH_TIMER(CollectorStats::net_scrape_update) {
-        conn_tracker_->Update(all_conns, all_listen_endpoints, ts);
-      }
-    }
+    bool success = UpdateAllConnsAndEndpoints();
+    if (!success) continue;
 
     const sensor::NetworkConnectionInfoMessage* msg;
     ConnMap new_conn_state;
@@ -256,12 +266,7 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
 }
 
 void NetworkStatusNotifier::RunSingleAfterglow(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
-  if (!writer->WaitUntilStarted(std::chrono::seconds(100))) {
-    CLOG(ERROR) << "Failed to establish network connection info stream.";
-    return;
-  }
-
-  CLOG(INFO) << "Established network connection info stream.";
+  WaitUntilWriterStarted(writer, 100);
 
   ConnMap old_conn_state;
   ContainerEndpointMap old_cep_state;
@@ -271,21 +276,8 @@ void NetworkStatusNotifier::RunSingleAfterglow(DuplexClientWriter<sensor::Networ
   while (writer->Sleep(next_scrape)) {
     next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(scrape_interval_);
 
-    if (!turn_off_scraping_) {
-      int64_t ts = NowMicros();
-      std::vector<Connection> all_conns;
-      std::vector<ContainerEndpoint> all_listen_endpoints;
-      WITH_TIMER(CollectorStats::net_scrape_read) {
-        bool success = conn_scraper_.Scrape(&all_conns, scrape_listen_endpoints_ ? &all_listen_endpoints : nullptr);
-        if (!success) {
-          CLOG(ERROR) << "Failed to scrape connections and no pending connections to send";
-          continue;
-        }
-      }
-      WITH_TIMER(CollectorStats::net_scrape_update) {
-        conn_tracker_->Update(all_conns, all_listen_endpoints, ts);
-      }
-    }
+    bool success = UpdateAllConnsAndEndpoints();
+    if (!success) continue;
 
     int64_t now = NowMicros();
     const sensor::NetworkConnectionInfoMessage* msg;

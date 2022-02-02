@@ -55,7 +55,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
                         bool use_afterglow)
       : hostname_(std::move(hostname)), conn_scraper_(std::move(proc_dir)), scrape_interval_(scrape_interval), turn_off_scraping_(turn_off_scrape), scrape_listen_endpoints_(scrape_listen_endpoints), conn_tracker_(std::move(conn_tracker)), channel_(std::move(channel)), stub_(sensor::NetworkConnectionInfoService::NewStub(channel_)) {
     afterglow_period_micros_ = afterglow_period_micros;
-    use_afterglow_ = use_afterglow;
+    enable_afterglow_ = use_afterglow;
   }
 
   void Start();
@@ -81,6 +81,8 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   void OnRecvControlMessage(const sensor::NetworkFlowsControlMessage* msg);
 
   void Run();
+  void WaitUntilWriterStarted(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer, int wait_time);
+  bool UpdateAllConnsAndEndpoints();
   void RunSingle(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer);
   void RunSingleAfterglow(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer);
   void ReceivePublicIPs(const sensor::IPAddressList& public_ips);
@@ -102,7 +104,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   std::shared_ptr<grpc::Channel> channel_;
   std::unique_ptr<Stub> stub_;
   int64_t afterglow_period_micros_;
-  bool use_afterglow_;
+  bool enable_afterglow_;
 };
 
 }  // namespace collector

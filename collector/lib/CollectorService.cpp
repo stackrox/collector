@@ -94,7 +94,7 @@ void CollectorService::RunForever() {
                                                               config_.ScrapeInterval(), config_.ScrapeListenEndpoints(),
                                                               config_.TurnOffScrape(),
                                                               conn_tracker, config_.grpc_channel,
-                                                              config_.AfterglowPeriod(), config_.UseAfterglow());
+                                                              config_.AfterglowPeriod(), config_.EnableAfterglow());
       net_status_notifier->Start();
     }
   }

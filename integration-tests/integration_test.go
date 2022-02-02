@@ -64,7 +64,7 @@ func TestRepeatedNetworkFlow(t *testing.T) {
 	// Thus the reported connections are active, active, inactive inactive
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 10,
-		useAfterglow: true,
+		enableAfterglow: true,
 		numMetaIter: 1,
 		numIter: 10,
 		sleepBetweenCurlTime: 1,
@@ -81,7 +81,7 @@ func TestRepeatedNetworkFlowNoAfteglow(t *testing.T) {
 	// There are 12 reports of inactive connections.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 10,
-		useAfterglow: false,
+		enableAfterglow: false,
 		numMetaIter: 1,
 		numIter: 10,
 		sleepBetweenCurlTime: 1,
@@ -98,7 +98,7 @@ func TestRepeatedNetworkFlowWithAfterglowExpiration(t *testing.T) {
 	// The closings are also reported after a delay of the afterglow period.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 10,
-		useAfterglow: true,
+		enableAfterglow: true,
 		numMetaIter: 1,
 		numIter: 2,
 		sleepBetweenCurlTime: 15,
@@ -114,7 +114,7 @@ func TestRepeatedNetworkFlowLongPauseNoAfterglow(t *testing.T) {
 	// connections. Note that we actually see more reported connections in this case when afterglow is used.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 10,
-		useAfterglow: false,
+		enableAfterglow: false,
 		numMetaIter: 1,
 		numIter: 2,
 		sleepBetweenCurlTime: 15,
@@ -129,7 +129,7 @@ func TestRepeatedNetworkFlowWithMultipleAfterglowExpirations(t *testing.T) {
 	// The "active, active, inactive, inactive pattern is repeated three times instead of twice.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 10,
-		useAfterglow: true,
+		enableAfterglow: true,
 		numMetaIter: 1,
 		numIter: 3,
 		sleepBetweenCurlTime: 15,
@@ -144,7 +144,7 @@ func TestRepeatedNetworkFlowWithZeroAfterglowPeriod(t *testing.T) {
 	// instead of twice.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 0,
-		useAfterglow: true,
+		enableAfterglow: true,
 		numMetaIter: 1,
 		numIter: 3,
 		sleepBetweenCurlTime: 3,
@@ -158,7 +158,7 @@ func TestRepeatedNetworkFlowThreeCurlsNoAfterglow(t *testing.T) {
 	// The afterglow period is set to 0 so this has the same behavior as if afterglow was disabled.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 0,
-		useAfterglow: false,
+		enableAfterglow: false,
 		numMetaIter: 1,
 		numIter: 3,
 		sleepBetweenCurlTime: 3,
@@ -223,7 +223,7 @@ type RepeatedNetworkFlowTestSuite struct {
 	serverContainer string
 	serverIP        string
 	serverPort      string
-	useAfterglow	bool
+	enableAfterglow	bool
 	afterglowPeriod	int
 	numMetaIter	int
 	numIter		int
@@ -504,7 +504,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.StartContainerStats()
 	s.collector = NewCollectorManager(s.executor, s.T().Name())
 
-	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2,"afterglowPeriod":` + strconv.Itoa(s.afterglowPeriod) + `,"useAfterglow":` + strconv.FormatBool(s.useAfterglow) + `}`
+	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2,"afterglowPeriod":` + strconv.Itoa(s.afterglowPeriod) + `,"enableAfterglow":` + strconv.FormatBool(s.enableAfterglow) + `}`
 
 	err := s.collector.Setup()
 	s.Require().NoError(err)

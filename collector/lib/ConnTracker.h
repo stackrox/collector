@@ -250,16 +250,17 @@ void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_stat
 template <typename T>
 void ConnectionTracker::ComputeDeltaAfterglow(const UnorderedMap<T, ConnStatus>& new_state, const UnorderedMap<T, ConnStatus>& old_state, UnorderedMap<T, ConnStatus>& delta, int64_t now, int64_t time_at_last_scrape, int64_t afterglow_period_micros) {
   // Insert all objects from the new state, if anything changed about them.
-  for (const auto& conn : new_state) {
+  for (auto conn : new_state) {
+    //for (const auto& conn : new_state) {
     auto old_conn = old_state.find(conn.first);
+    bool newRecentlyActive = WasRecentlyActive(conn.second, now, afterglow_period_micros);
     if (old_conn != old_state.end()) {                                                                             // Was already present
       bool oldRecentlyActive = WasRecentlyActive(old_conn->second, time_at_last_scrape, afterglow_period_micros);  //Connections active within the afterglow period are considered to be active for the purpose of the delta.
-      bool newRecentlyActive = WasRecentlyActive(conn.second, now, afterglow_period_micros);
       if (newRecentlyActive != oldRecentlyActive) {
-        // Object was either resurrected or newly closed. Update in either case.
-        auto temp_conn = conn;
-        temp_conn.second.SetActive(newRecentlyActive);
-        delta.insert(temp_conn);
+        if (newRecentlyActive != conn.second.IsActive()) {
+          conn.second.SetActive(newRecentlyActive);
+        }
+        delta.insert(conn);
       } else if (!newRecentlyActive) {
         // Both objects are inactive. Update the timestamp if applicable, otherwise omit from delta.
         if (old_conn->second.LastActiveTime() < conn.second.LastActiveTime()) {
@@ -267,10 +268,10 @@ void ConnectionTracker::ComputeDeltaAfterglow(const UnorderedMap<T, ConnStatus>&
         }
       }
     } else {
-      auto temp_conn = conn;
-      bool newRecentlyActive = WasRecentlyActive(conn.second, now, afterglow_period_micros);
-      temp_conn.second.SetActive(newRecentlyActive);
-      delta.insert(temp_conn);
+      if (newRecentlyActive != conn.second.IsActive()) {
+        conn.second.SetActive(newRecentlyActive);
+      }
+      delta.insert(conn);
     }
   }
 
