@@ -1523,15 +1523,16 @@ workflows:
             - image_family: sles-12
               collection_method: ebpf
               dockerized: true
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-<< matrix.collection_method >>-sles-15-sp2-sap<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
-        vm_type: suse-sap
-        image_family: sles-15-sp2-sap
-        matrix:
-          parameters:
-            collection_method: [module, ebpf]
-            dockerized: [false, true]
+    # Removed while solving ROX-9180
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-<< matrix.collection_method >>-sles-15-sp2-sap<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
+    #     vm_type: suse-sap
+    #     image_family: sles-15-sp2-sap
+    #     matrix:
+    #       parameters:
+    #         collection_method: [module, ebpf]
+    #         dockerized: [false, true]
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-<< matrix.collection_method >>-flatcar-stable<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
@@ -1595,8 +1596,9 @@ workflows:
         - test-ebpf-sles-15
         - test-module-sles-15
         - test-module-sles-12
-        - test-ebpf-sles-15-sp2-sap
-        - test-module-sles-15-sp2-sap
+        # Removed while solving ROX-9180
+        # - test-ebpf-sles-15-sp2-sap
+        # - test-module-sles-15-sp2-sap
         - test-ebpf-flatcar-stable
         - test-module-flatcar-stable
         - test-ebpf-fedora-coreos-stable
