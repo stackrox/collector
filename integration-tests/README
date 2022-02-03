@@ -1,4 +1,4 @@
-Integration test runs as follows
+# Integration Tests
 
 * We bring up collector (which is built after code changes) and mock grpc server built off of next proto defs.
 
@@ -9,3 +9,41 @@ Integration test runs as follows
 * We bring down both the collector and mock grpc server to remove lock on DB file.
 
 * The integration test verifies we have the process signals from the DB file on disk.
+
+
+## Performance Measurement
+
+To facilitate easier performance testing and measurement of collector whilst under
+load, there are various ways to modify the behaviour of the benchmarks so that performance
+tools are executed alongside them. The following environment variables provide this feature:
+
+`COLLECTOR_BPFTRACE_COMMAND` - arguments to pass to a bpftrace command.
+
+`COLLECTOR_PERF_COMMAND` - arguments to pass to a perf command.
+
+`COLLECTOR_BCC_COMMAND` - arguments to pass to a BCC command.
+
+To support these commands, the host is automatically updated with the necessary kernel
+headers for the platform.
+
+The tools are run in tool-specific docker containers on the host, and contain existing
+scripts for use with the relevant tools. See the [perf containers documentation](container/perf/README)
+for details.
+
+`/tmp` is mounted in the containers to allow for extraction of data, if required.
+
+### Measurement Examples
+
+```bash
+# Capture the count of all syscalls executed during the benchmark baseline
+COLLECTOR_BPFTRACE_COMMAND="-e 'tracepoint:raw_syscalls:sys_enter { @syscalls = count(); }'" make baseline
+
+# Run the collector-syscall-count tool
+COLLECTOR_BPFTRACE_COMMAND='/tools/collector-syscalls-count.bt' make benchmark
+
+# Run the syscount BCC tool, measuring syscall latency
+COLLECTOR_BCC_COMMAND='syscount --latency' make benchmark
+
+# Record perf events, writing /tmp
+COLLECTOR_PERF_COMMAND='record -o /tmp/perf.data' make benchmark
+```
