@@ -23,6 +23,8 @@ const (
 	networkBucket            = "Network"
 	parentUIDStr             = "ParentUid"
 	parentExecFilePathStr    = "ParentExecFilePath"
+
+	defaultWaitTickSeconds = 30 * time.Second
 )
 
 func TestCollectorGRPC(t *testing.T) {
@@ -211,8 +213,8 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 
 	// invokes default nginx
 	containerID, err := s.launchContainer("nginx", "nginx:1.14-alpine")
-	s.Require().NoError(err)
-	s.serverContainer = containerID[0:12]
+	require.NoError(s.T(), err)
+	s.serverContainer = containerShortID(containerID)
 
 	// invokes "sleep" and "sh" and "ls"
 	_, err = s.execContainer("nginx", []string{"sleep", "5"})
@@ -222,8 +224,8 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 
 	// invokes another container
 	containerID, err = s.launchContainer("nginx-curl", "pstauffer/curl:latest", "sleep", "300")
-	s.Require().NoError(err)
-	s.clientContainer = containerID[0:12]
+	require.NoError(s.T(), err)
+	s.clientContainer = containerShortID(containerID)
 
 	s.serverIP, err = s.getIPAddress("nginx")
 	s.Require().NoError(err)
@@ -492,7 +494,7 @@ func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, erro
 	return outLines[len(outLines)-1], err
 }
 
-func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, containerID string) (bool, error) {
+func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, containerID string, tickSeconds time.Duration) (bool, error) {
 	cmd := []string{
 		"docker", "ps", "-qa",
 		"--filter", "id=" + containerID,
@@ -500,7 +502,7 @@ func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, contain
 	}
 
 	start := time.Now()
-	tick := time.Tick(30 * time.Second)
+	tick := time.Tick(tickSeconds)
 	tickElapsed := time.Tick(1 * time.Minute)
 	timeout := time.After(15 * time.Minute)
 	for {
@@ -508,7 +510,8 @@ func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, contain
 		case <-tick:
 			output, err := s.executor.Exec(cmd...)
 			outLines := strings.Split(output, "\n")
-			if outLines[len(outLines)-1] == containerID {
+			lastLine := outLines[len(outLines)-1]
+			if lastLine == containerShortID(containerID) {
 				return true, nil
 			}
 			if err != nil {
@@ -627,11 +630,10 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	}
 
 	containerID, err := s.launchContainer(benchmarkArgs...)
-	s.Require().NoError(err)
-	benchmarkContainerID := containerID[0:12]
+	require.NoError(s.T(), err)
 
-	_, err = s.waitForContainerToExit(benchmarkName, benchmarkContainerID)
-	s.Require().NoError(err)
+	_, err = s.waitForContainerToExit(benchmarkName, containerID, defaultWaitTickSeconds)
+	require.NoError(s.T(), err)
 
 	benchmarkLogs, err := s.containerLogs("benchmark")
 	re := regexp.MustCompile(`Average: ([0-9.]+) Seconds`)
@@ -657,9 +659,9 @@ func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
 		image,
 	}
 	containerID, err := s.launchContainer(args...)
-	s.Require().NoError(err)
-	_, err = s.waitForContainerToExit(name, containerID[0:12])
-	s.Require().NoError(err)
+	require.NoError(s.T(), err)
+	_, err = s.waitForContainerToExit(name, containerID, defaultWaitTickSeconds)
+	require.NoError(s.T(), err)
 }
 
 func (s *IntegrationTestSuiteBase) StartContainerStats() {

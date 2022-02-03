@@ -2,9 +2,12 @@ package integrationtests
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/google/shlex"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -23,15 +26,26 @@ type BenchmarkTestSuiteBase struct {
 }
 
 func (b *BenchmarkTestSuiteBase) StartPerfTools() {
-	if perf := ReadEnvVar("COLLECTOR_PERF_COMMAND"); perf != "" {
+	perf := ReadEnvVar("COLLECTOR_PERF_COMMAND")
+	bpftrace := ReadEnvVar("COLLECTOR_BPFTRACE_COMMAND")
+	bcc := ReadEnvVar("COLLECTOR_BCC_COMMAND")
+
+	skipInit, err := strconv.ParseBool(ReadEnvVarWithDefault("COLLECTOR_PERF_SKIP_INIT", "false"))
+	require.NoError(b.T(), err)
+
+	if !skipInit && (perf != "" || bpftrace != "" || bcc != "") {
+		b.RunInitContainer()
+	}
+
+	if perf != "" {
 		b.StartPerfContainer("perf", "stackrox/collector-performance:perf", perf)
 	}
 
-	if bpftrace := ReadEnvVar("COLLECTOR_BPFTRACE_COMMAND"); bpftrace != "" {
+	if bpftrace != "" {
 		b.StartPerfContainer("bpftrace", "stackrox/collector-performance:bpftrace", bpftrace)
 	}
 
-	if bcc := ReadEnvVar("COLLECTOR_BCC_COMMAND"); bcc != "" {
+	if bcc != "" {
 		b.StartPerfContainer("bcc", "stackrox/collector-performance:bcc", bcc)
 	}
 }
@@ -40,6 +54,25 @@ func (b *BenchmarkTestSuiteBase) StartPerfContainer(name string, image string, a
 	argsList, err := shlex.Split(args)
 	require.NoError(b.T(), err)
 	b.startContainer(name, image, argsList...)
+}
+
+func (b *BenchmarkTestSuiteBase) RunInitContainer() {
+	cmd := []string{
+		"host-init",
+		"-v", "/lib/modules:/host/lib/modules",
+		"-v", "/etc/os-release:/host/etc/os-release",
+		"-v", "/etc/lsb-release:/host/etc/lsb-release",
+		"-v", "/usr/src:/host/usr/src",
+		"stackrox/collector-performance:init",
+	}
+
+	containerID, err := b.launchContainer(cmd...)
+	require.NoError(b.T(), err)
+
+	if finished, _ := b.waitForContainerToExit("host-init", containerID, 5*time.Second); !finished {
+		assert.FailNow(b.T(), "Failed to initialize host for performance testing")
+	}
+	b.cleanupContainer([]string{containerID})
 }
 
 func (b *BenchmarkTestSuiteBase) startContainer(name string, image string, args ...string) {
