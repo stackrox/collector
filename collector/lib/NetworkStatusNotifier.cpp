@@ -240,22 +240,21 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
     ContainerEndpointMap new_cep_state;
     WITH_TIMER(CollectorStats::net_fetch_state) {
       new_conn_state = conn_tracker_->FetchConnState(true, true);
+      CLOG(INFO) << "";
+      CLOG(INFO) << "new_conn_state";
+      for (auto conn : new_conn_state) {
+        CLOG(INFO) << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(conn.second.LastActiveTime()) << "\t" << conn.second.IsActive();
+      }
+
+      CLOG(INFO) << "";
+      CLOG(INFO) << "old_conn_state";
+      for (auto conn : old_conn_state) {
+        CLOG(INFO) << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(conn.second.LastActiveTime()) << "\t" << conn.second.IsActive();
+      }
       ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
 
       new_cep_state = conn_tracker_->FetchEndpointState(true, true);
       ConnectionTracker::ComputeDelta(new_cep_state, &old_cep_state);
-    }
-
-    CLOG(INFO) << "";
-    CLOG(INFO) << "new_conn_state";
-    for (auto conn : new_conn_state) {
-      CLOG(INFO) << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(conn.second.LastActiveTime()) << "\t" << conn.second.IsActive();
-    }
-
-    CLOG(INFO) << "";
-    CLOG(INFO) << "old_conn_state";
-    for (auto conn : old_conn_state) {
-      CLOG(INFO) << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(conn.second.LastActiveTime()) << "\t" << conn.second.IsActive();
     }
 
     WITH_TIMER(CollectorStats::net_create_message) {
