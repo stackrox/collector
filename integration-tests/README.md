@@ -49,7 +49,7 @@ To support these commands, the host is automatically updated with the necessary 
 headers for the platform.
 
 The tools are run in tool-specific docker containers on the host, and contain existing
-scripts for use with the relevant tools. See the [perf containers documentation](container/perf/README)
+scripts for use with the relevant tools. See the [perf containers documentation](container/perf/README.md)
 for details.
 
 `/tmp` is mounted in the containers to allow for extraction of data, if required.
