@@ -16,33 +16,6 @@ build_ko() (
         [[ -d "$module_src_dir" ]] || cp -r "/sources/${module_version}" "$module_src_dir"
     fi
 
-    local kernel_src_dir="/scratch/kernel-src/${kernel_version}"
-    if [[ ! -d "$kernel_src_dir" ]]; then
-        rm -rf /scratch/kernel-src/* 2> /dev/null || true
-        mkdir -p "$kernel_src_dir"
-        tar -C "$kernel_src_dir" -xzf "/bundles/bundle-${kernel_version}.tgz"
-    fi
-
-    [[ -f "${kernel_src_dir}/BUNDLE_BUILD_DIR" ]] || {
-        echo "No BUNDLE_BUILD_DIR entry found in kernel source bundle!"
-        return 1
-    }
-
-    local kernel_build_dir
-    kernel_build_dir="${kernel_src_dir}/$(cat "${kernel_src_dir}/BUNDLE_BUILD_DIR")"
-
-    [[ -f "${kernel_src_dir}/BUNDLE_UNAME" ]] || {
-        echo "No BUNDLE_UNAME entry found in kernel source bundle!"
-        return 1
-    }
-
-    # Extract bundle details
-    local bundle_uname bundle_version bundle_major bundle_distro
-    bundle_uname="$(cat "${kernel_src_dir}/BUNDLE_UNAME")"
-    bundle_version="$(cat "${kernel_src_dir}/BUNDLE_VERSION")"
-    bundle_major="$(cat "${kernel_src_dir}/BUNDLE_MAJOR")"
-    bundle_distro="$(cat "${kernel_src_dir}/BUNDLE_DISTRO")"
-
     cd "$module_src_dir"
 
     local rhel7_kernel_with_ebpf=false
@@ -135,39 +108,9 @@ build_ko() (
     fi
 )
 
-build_kos() {
-    while read -r -a line || [[ "${#line[@]}" -gt 0 ]]; do
-        local kernel_version="${line[0]}"
-        local module_version="${line[1]}"
-        local probe_type="${line[2]}"
+# The input is in the form <kernel-version> <module-version> <probe-type>.
+kernel_version="$0"
+module_version="$1"
+probe_type="$2"
 
-        failure_output_file="${FAILURE_DIR}/${kernel_version}/${module_version}/${probe_type}.log"
-        mkdir -p "$(dirname "$failure_output_file")"
-        if ! build_ko "$kernel_version" "$module_version" "${probe_type}" 2> >(tee "$failure_output_file" >&2); then
-            echo >&2 "Failed to build ${probe_type} probe version ${module_version} for kernel ${kernel_version}"
-        else
-            rm "$failure_output_file"
-        fi
-    done
-}
-
-DOCKERIZED=${DOCKERIZED:-0}
-
-if ((DOCKERIZED)); then
-    FAILURE_DIR="/FAILURES"
-    MODULE_BASE_DIR="/kernel-modules"
-    mkdir -p "$FAILURE_DIR"
-    mkdir -p "$MODULE_BASE_DIR"
-else
-    FAILURE_DIR="/output/FAILURES"
-    MODULE_BASE_DIR="/output"
-fi
-
-# The input is in the form <kernel-version> <module-version>. Sort it to make sure that we first build all modules
-# for a given kernel version before advancing to the next kernel version.
-sort | uniq | build_kos
-
-# Remove empty directories
-if ((DOCKERIZED)); then
-    find "$FAILURE_DIR" -mindepth 1 -type d -empty -delete
-fi
+build_ko "$kernel_version" "$module_version" "${probe_type}"

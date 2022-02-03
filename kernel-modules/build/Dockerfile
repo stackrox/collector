@@ -38,6 +38,7 @@ RUN dpkg --compare-versions $(dpkg-query -f='${Version}' --show binutils) lt 2.3
 
 RUN mkdir -p /output
 COPY build-kos /usr/bin/
+COPY build-wrapper.sh /usr/bin/
 COPY prepare-src /usr/bin
 
 WORKDIR /scratch

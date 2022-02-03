@@ -21,6 +21,7 @@ RUN dnf update -y || true; \
     dnf autoremove -y
 
 COPY build-kos /usr/bin/
+COPY build-wrapper.sh /usr/bin/
 COPY prepare-src /usr/bin
 
 WORKDIR /scratch

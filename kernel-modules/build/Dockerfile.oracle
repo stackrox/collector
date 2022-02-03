@@ -20,6 +20,7 @@ RUN yum -y update && yum -y install yum-utils && \
 
 RUN mkdir -p /output
 COPY build-kos /usr/bin/
+COPY build-wrapper.sh /usr/bin/
 COPY prepare-src /usr/bin
 
 COPY oracle-entrypoint.sh /oracle-entrypoint.sh
