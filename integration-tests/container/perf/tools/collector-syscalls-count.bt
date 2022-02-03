@@ -6,10 +6,6 @@
 // actually processes or receives, but can be used to see what
 // the system is doing.
 
-#define PROC_EXIT_PROBE "tracepoint:syscalls:sys_enter_procexit"
-#define PROC_INFO_PROBE "tracepoint:syscalls:sys_enter_procinfo"
-#define PROBE_LEN 38
-
 tracepoint:syscalls:sys_enter_accept { @accept = count(); }
 tracepoint:syscalls:sys_enter_chdir { @chdir = count(); }
 tracepoint:syscalls:sys_enter_clone { @clone = count(); }
