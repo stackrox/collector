@@ -904,7 +904,7 @@ jobs:
         enum: [cos, rhel, suse, suse-sap, ubuntu-os, flatcar, fedora-coreos, garden-linux]
       image_family:
         type: enum
-        enum: [cos-beta, cos-dev, cos-stable, cos-89-lts, cos-85-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2104, sles-12, sles-15, sles-15-sp2-sap, flatcar-stable, fedora-coreos-stable, garden-linux]
+        enum: [cos-beta, cos-dev, cos-stable, cos-89-lts, cos-85-lts, cos-77-lts, rhel-7, rhel-8, ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2104, sles-12, sles-15, sles-15-sp2-sap, flatcar-stable, fedora-coreos-stable, garden-linux]
       image_name:
         type: string
         default: "unset"
@@ -1482,7 +1482,7 @@ workflows:
         collection_method: ebpf
         matrix:
           parameters:
-            image_family: [cos-stable, cos-beta, cos-dev, cos-81-lts, cos-85-lts, cos-89-lts]
+            image_family: [cos-stable, cos-beta, cos-dev, cos-85-lts, cos-89-lts]
             dockerized: [false, true]
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
@@ -1580,7 +1580,6 @@ workflows:
         - test-ebpf-cos-stable
         - test-ebpf-cos-beta
         - test-ebpf-cos-dev
-        - test-ebpf-cos-81-lts
         - test-ebpf-cos-85-lts
         - test-ebpf-cos-89-lts
         - test-module-rhel-7
