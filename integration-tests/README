@@ -1,16 +1,36 @@
 # Integration Tests
 
-* We bring up collector (which is built after code changes) and mock grpc server built off of next proto defs.
+The integration tests for collector attempt to simulate a constrained operation of collector, along
+with a mocked sensor (GRPC server) and some workload on the host. The mock GRPC server collects the 
+events from collector, dumping them to Bolt DB, and they are then verified against what is expected
+based on the workload that has run.
 
-* Launch nginx container; exec and run some command.
+There is also a benchmark test which runs a phoronix container to test system performance under
+a significant load, with and without collector running. This can give a ballpark idea of the 
+overhead of running collector on a host, and can be used to compare the two collector methods.
 
-* Mock grpc server dumps all the process indicators to Bolt DB.
+Further performance tooling can be run alongside the benchmarks for more specific performance measurements. 
+This tooling is detailed below.
 
-* We bring down both the collector and mock grpc server to remove lock on DB file.
+## Environment Variables
 
-* The integration test verifies we have the process signals from the DB file on disk.
+The integration test behavior is controlled by a range of environment variables, detailed below. In particular,
+the `REMOTE_HOST_TYPE` variable makes it possible to run the integration tests in a range of scenarios, from on
+the local machine for development, or on gcloud or over SSH for remote testing in VMs.
 
-
+| Variable Name            | Description                                                                             | Default (if applicable) |
+| ------------------------ | --------------------------------------------------------------------------------------- | ----------------------- |
+| `REMOTE_HOST_TYPE`       | the type of host to run the tests. One of (local, ssh, gcloud)                          | local                   |
+| `VM_CONFIG`              | the description of the VM. e.g. ubuntu.ubuntu-20.04                                     | N/A                     |
+| `COLLECTION_METHOD`      | the collection method for collector. One of (ebpf, kernel-module)                       | kernel-module           |
+| `SSH_USER`               | if `REMOTE_HOST_TYPE` is `ssh`, the user to connect as.                                 | N/A                     |
+| `SSH_ADDRESS`            | if `REMOTE_HOST_TYPE` is `ssh`, the address to connect to.                              | N/A                     |
+| `SSH_KEY_PATH`           | if `REMOTE_HOST_TYPE` is `ssh`, the path to the private key to connect with.            | N/A                     |
+| `GCLOUD_USER`            | if `REMOTE_HOST_TYPE` is `gcloud`, the user to connect as.                              | N/A                     |
+| `GCLOUD_INSTANCE`        | if `REMOTE_HOST_TYPE` is `gcloud`, the name of the VM to connect to.                    | N/A                     |
+| `GCLOUD_OPTIONS`         | if `REMOTE_HOST_TYPE` is `gcloud`, any additional options to pass to the gcloud command | N/A                     |
+| `COLLECTOR_OFFLINE_MODE` | whether to allow kernel-object downloads. (true/false)                                  | false                   |
+| `COLLECTOR_IMAGE`        | the name of the collector image to use.                                                 | N/A                     |
 ## Performance Measurement
 
 To facilitate easier performance testing and measurement of collector whilst under
@@ -22,6 +42,8 @@ tools are executed alongside them. The following environment variables provide t
 `COLLECTOR_PERF_COMMAND` - arguments to pass to a perf command.
 
 `COLLECTOR_BCC_COMMAND` - arguments to pass to a BCC command.
+
+`COLLECTOR_PERF_SKIP_INIT` - if set to `true`, do not run the init container.
 
 To support these commands, the host is automatically updated with the necessary kernel
 headers for the platform.
