@@ -246,6 +246,18 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
       ConnectionTracker::ComputeDelta(new_cep_state, &old_cep_state);
     }
 
+    CLOG(INFO) << "";
+    CLOG(INFO) << "new_conn_state";
+    for (auto conn : new_conn_state) {
+      CLOG(INFO) << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(conn.second.LastActiveTime()) << "\t" << conn.second.IsActive();
+    }
+
+    CLOG(INFO) << "";
+    CLOG(INFO) << "old_conn_state";
+    for (auto conn : old_conn_state) {
+      CLOG(INFO) << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(conn.second.LastActiveTime()) << "\t" << conn.second.IsActive();
+    }
+
     WITH_TIMER(CollectorStats::net_create_message) {
       msg = CreateInfoMessage(old_conn_state, old_cep_state);
       old_conn_state = std::move(new_conn_state);
