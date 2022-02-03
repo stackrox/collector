@@ -1,0 +1,34 @@
+// Counts number of syscall events specific to those that collector
+// is interested in. See collector/lib/CollectorConfig.h to see the
+// list of syscalls.
+// 
+// This does not necessarily equate to the events that collector 
+// actually processes or receives, but can be used to see what
+// the system is doing.
+
+#define PROC_EXIT_PROBE "tracepoint:syscalls:sys_enter_procexit"
+#define PROC_INFO_PROBE "tracepoint:syscalls:sys_enter_procinfo"
+#define PROBE_LEN 38
+
+tracepoint:syscalls:sys_enter_accept { @accept = count(); }
+tracepoint:syscalls:sys_enter_chdir { @chdir = count(); }
+tracepoint:syscalls:sys_enter_clone { @clone = count(); }
+tracepoint:syscalls:sys_enter_close { @close = count(); }
+tracepoint:syscalls:sys_enter_connect { @connect = count(); }
+tracepoint:syscalls:sys_enter_execve { @execve = count(); }
+tracepoint:syscalls:sys_enter_fchdir { @fchdir = count(); }
+tracepoint:syscalls:sys_enter_fork { @fork = count(); }
+
+// bpftrace does not currently have a way of ignoring unknown probes, 
+// and these do not always exist.
+// see https://github.com/iovisor/bpftrace/issues/1955 for tracking issue
+// tracepoint:syscalls:sys_enter_procinfo { @procinfo = count(); }
+// tracepoint:syscalls:sys_enter_procexit { @procexit = count(); }
+
+tracepoint:syscalls:sys_enter_setresgid { @setresgid = count(); }
+tracepoint:syscalls:sys_enter_setresuid { @setresuid = count(); }
+tracepoint:syscalls:sys_enter_setgid { @setgid = count(); }
+tracepoint:syscalls:sys_enter_setuid { @setuid = count(); }
+tracepoint:syscalls:sys_enter_shutdown { @shutdown = count(); }
+tracepoint:syscalls:sys_enter_socket { @socket = count(); }
+tracepoint:syscalls:sys_enter_vfork { @vfork = count(); }

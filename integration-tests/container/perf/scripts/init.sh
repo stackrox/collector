@@ -68,7 +68,7 @@ install_cos_linux_headers() {
             time generate_headers
             time rm -rf "${TARGET_DIR}${BUILD_DIR}"
             time mv "${BUILD_DIR}" "${TARGET_DIR}"
-            # touch "${SOURCES_DIR}/.installed"
+            touch "${SOURCES_DIR}/.installed"
         fi
     fi
 }
@@ -84,7 +84,7 @@ install_generic_linux_headers() {
         ls -lah /
         time rm -rf "${TARGET_DIR}${BUILD_DIR}"
         time mv "${BUILD_DIR}" "${TARGET_DIR}"
-        # touch "${SOURCES_DIR}/.installed"
+        touch "${SOURCES_DIR}/.installed"
     fi
 }
 
@@ -133,9 +133,14 @@ if [[ ! -e /lib/modules/.installed ]]; then
     mkdir -p "/lib/modules/${KERNEL_VERSION}"
     ln -sf "${HEADERS_TARGET}" "/lib/modules/${KERNEL_VERSION}/source"
     ln -sf "${HEADERS_TARGET}" "/lib/modules/${KERNEL_VERSION}/build"
-    # touch /lib/modules/.installed
+    touch /lib/modules/.installed
     exit 0
 else
     echo "Headers already installed"
     exit 0
+fi
+
+if [[ "$(sysctl -n kernel.kptr_restrict)" != "0" ]]; then
+    # If this is not zero, it can interfere with most of the tools
+    sysctl -w kernel.kptr_restrict=0
 fi

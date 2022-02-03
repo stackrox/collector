@@ -1,4 +1,4 @@
 FROM stackrox/collector-performance:base
 
 WORKDIR /
-ENTRYPOINT [ "/init.sh" ]
+CMD [ "/scripts/init.sh" ]
