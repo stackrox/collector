@@ -54,6 +54,13 @@ missing-proc-scrape: docker-clean
 	go test -timeout 30m -count=1 -v \
 	  -run TestMissingProcScrape 2>&1 | tee -a integration-test.log
 
+.PHONY: collector-logs
+collector-logs: docker-clean
+	go version
+	set -o pipefail ; \
+	go test -timeout 30m -count=1 -v \
+	  -run TestCollectorLogs
+
 .PHONY: report
 report:
 	go get -u github.com/jstemmer/go-junit-report
