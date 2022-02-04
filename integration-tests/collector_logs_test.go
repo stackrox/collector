@@ -13,9 +13,9 @@ import (
 )
 
 func TestCollectorLogs(t *testing.T) {
-	//if ReadEnvVarWithDefault("REMOTE_HOST_TYPE", "local") == "local" {
+	if ReadEnvVarWithDefault("REMOTE_HOST_TYPE", "local") == "local" {
 		suite.Run(t, new(CollectorLogsTestSuite))
-	//}
+	}
 }
 
 type CollectorLogsTestSuite struct {
