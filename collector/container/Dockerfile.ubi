@@ -112,7 +112,7 @@ RUN mv /collector-wrapper.sh /usr/local/bin/ && \
 
 # Restore the default shell because "bootstrap.sh" expects a shell to be started with a single parameter
 SHELL ["/bin/sh", "-c"]
-COPY --from=builder /MODULE_VERSION.txt /kernel-modules/MODULE_VERSION.txt
+COPY /kernel-modules/MODULE_VERSION /kernel-modules/MODULE_VERSION.txt
 COPY --from=builder /THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES
 
 EXPOSE 8080 9090
