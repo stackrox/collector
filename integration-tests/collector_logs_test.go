@@ -183,7 +183,7 @@ func (s *CollectorLogsTestSuite) TestCollectorLogs() {
 			}
 
 			err = collector.Launch()
-			time.Sleep(1 * time.Second)
+			time.Sleep(10 * time.Second)
 			if !tc.expectedExitError {
 				require.NoError(t, err)
 			}
@@ -191,7 +191,6 @@ func (s *CollectorLogsTestSuite) TestCollectorLogs() {
 				logs, err := collector.captureLogs("collector")
 				require.NoError(t, err)
 				assert.Regexp(t, logLine, logs)
-				//assert.Regexp(t, logLine, collector.CollectorOutput)
 			}
 
 			err = collector.TearDown()
