@@ -539,16 +539,26 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 
 	s.serverPort, err = s.getPort("nginx")
 	s.Require().NoError(err)
-	time.Sleep(120 * time.Second)
+	time.Sleep(30 * time.Second)
 
 	serverAddress := fmt.Sprintf("%s:%s", s.serverIP, s.serverPort)
 
 	for i := 0; i < s.numMetaIter; i++ {
-		for j := 0; j < s.numIter; j++ {
-			_, err = s.execContainer("nginx-curl", []string{"curl", serverAddress})
-			s.Require().NoError(err)
-			time.Sleep(time.Duration(s.sleepBetweenCurlTime) * time.Second)
-		}
+		tickerChannel := make(chan bool)
+		t1 := time.NewTicker(time.Duration(s.sleepBetweenCurlTime) * time.Second)
+		go func() {
+			for {
+				select {
+				case <-tickerChannel:
+					return
+				case tm := <-t1.C:
+				_, err = s.execContainer("nginx-curl", []string{"curl", serverAddress})
+				s.Require().NoError(err)
+				}
+			}
+		}()
+		time.Sleep(time.Duration(s.sleepBetweenCurlTime * s.numIter) * time.Second)
+		t1.Stop()
 		time.Sleep(time.Duration(s.sleepBetweenIterations) * time.Second)
 	}
 
