@@ -55,7 +55,8 @@ func TestMissingProcScrape(t *testing.T) {
 
 //Need to update the comments in these tests
 func TestRepeatedNetworkFlow(t *testing.T) {
-	// Perform 10 curl commands with a 1 second sleep between each curl command.
+	// Perform 11 curl commands with a 2 second sleep between each curl command.
+	// The scrapeInterval is increased to 4 seconds to reduce the chance that jiter will effect the results.
 	// The first client to server connection is recorded as being active.
 	// The first server to client connection is recorded as being active.
 	// The second through ninth curl commands are ignored, because of afterglow.
@@ -64,10 +65,11 @@ func TestRepeatedNetworkFlow(t *testing.T) {
 	// Thus the reported connections are active, active, inactive inactive
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 10,
+		scrapeInterval: 4,
 		enableAfterglow: true,
 		numMetaIter: 1,
-		numIter: 10,
-		sleepBetweenCurlTime: 1,
+		numIter: 11,
+		sleepBetweenCurlTime: 2,
 		sleepBetweenIterations: 1,
 		expectedReports: []bool{true, true, false, false},
 	}
@@ -81,10 +83,11 @@ func TestRepeatedNetworkFlowNoAfteglow(t *testing.T) {
 	// There are 12 reports of inactive connections.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 10,
+		scrapeInterval: 4,
 		enableAfterglow: false,
 		numMetaIter: 1,
-		numIter: 10,
-		sleepBetweenCurlTime: 1,
+		numIter: 11,
+		sleepBetweenCurlTime: 2,
 		sleepBetweenIterations: 1,
 		expectedReports: []bool{false, false, false, false, false, false, false, false, false, false, false, false},
 	}
@@ -98,6 +101,7 @@ func TestRepeatedNetworkFlowWithAfterglowExpiration(t *testing.T) {
 	// The closings are also reported after a delay of the afterglow period.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 10,
+		scrapeInterval: 2,
 		enableAfterglow: true,
 		numMetaIter: 1,
 		numIter: 2,
@@ -114,6 +118,7 @@ func TestRepeatedNetworkFlowLongPauseNoAfterglow(t *testing.T) {
 	// connections. Note that we actually see more reported connections in this case when afterglow is used.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 10,
+		scrapeInterval: 2,
 		enableAfterglow: false,
 		numMetaIter: 1,
 		numIter: 2,
@@ -129,6 +134,7 @@ func TestRepeatedNetworkFlowWithMultipleAfterglowExpirations(t *testing.T) {
 	// The "active, active, inactive, inactive pattern is repeated three times instead of twice.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 10,
+		scrapeInterval: 2,
 		enableAfterglow: true,
 		numMetaIter: 1,
 		numIter: 3,
@@ -144,6 +150,7 @@ func TestRepeatedNetworkFlowWithZeroAfterglowPeriod(t *testing.T) {
 	// instead of twice.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 0,
+		scrapeInterval: 2,
 		enableAfterglow: true,
 		numMetaIter: 1,
 		numIter: 3,
@@ -158,6 +165,7 @@ func TestRepeatedNetworkFlowThreeCurlsNoAfterglow(t *testing.T) {
 	// The afterglow period is set to 0 so this has the same behavior as if afterglow was disabled.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 0,
+		scrapeInterval: 2,
 		enableAfterglow: false,
 		numMetaIter: 1,
 		numIter: 3,
@@ -225,6 +233,7 @@ type RepeatedNetworkFlowTestSuite struct {
 	serverPort      string
 	enableAfterglow	bool
 	afterglowPeriod	int
+	scrapeInterval	int
 	numMetaIter	int
 	numIter		int
 	sleepBetweenCurlTime	int
@@ -504,7 +513,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.StartContainerStats()
 	s.collector = NewCollectorManager(s.executor, s.T().Name())
 
-	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2,"afterglowPeriod":` + strconv.Itoa(s.afterglowPeriod) + `,"enableAfterglow":` + strconv.FormatBool(s.enableAfterglow) + `}`
+	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":` + strconv.Itoa(s.scrapeInterval) + `,"afterglowPeriod":` + strconv.Itoa(s.afterglowPeriod) + `,"enableAfterglow":` + strconv.FormatBool(s.enableAfterglow) + `}`
 
 	err := s.collector.Setup()
 	s.Require().NoError(err)
