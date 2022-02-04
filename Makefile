@@ -81,10 +81,6 @@ integration-tests-missing-proc-scrape:
 integration-tests-image-label-json:
 	make -C integration-tests image-label-json
 
-.PHONY: integration-tests-collector-logs
-integration-tests-collector-logs:
-	make -C integration-tests collector-logs
-
 .PHONY: integration-tests-report
 integration-tests-report:
 	make -C integration-tests report

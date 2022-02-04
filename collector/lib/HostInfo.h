@@ -168,7 +168,7 @@ class HostInfo {
   virtual KernelVersion GetKernelVersion();
 
   // Get the host's hostname from a file
-  const std::string& GetHostnameFromFile(std::string& hostnamePath);
+  const std::string& GetHostnameFromFile(const std::string& hostnamePath);
 
   // Get the host's hostname
   const std::string& GetHostname();
