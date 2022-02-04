@@ -551,7 +551,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 				select {
 				case <-tickerChannel:
 					return
-				case tm := <-t1.C:
+				case <-t1.C:
 				_, err = s.execContainer("nginx-curl", []string{"curl", serverAddress})
 				s.Require().NoError(err)
 				}
