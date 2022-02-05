@@ -114,8 +114,8 @@ const std::string& HostInfo::GetHostname() {
     const char* hostname_env = std::getenv("NODE_HOSTNAME");
     if (hostname_env && *hostname_env) {
       hostname_ = std::string(hostname_env);
+      CLOG(INFO) << "Environment variable NODE_HOSTNAME is set to " << hostname_;
     } else {
-      CLOG(INFO) << "environment variable NODE_HOSTNAME not set";
       // if we can't get the hostname from the environment
       // we can look in /etc or /proc (mounted at /host/etc or /host/proc in the collector container)
       std::vector<std::string> hostnamePaths{"/etc/hostname", "/proc/sys/kernel/hostname"};
@@ -125,10 +125,6 @@ const std::string& HostInfo::GetHostname() {
       }
     }
     CLOG(INFO) << "Hostname: " << hostname_;
-  }
-
-  if (hostname_.empty()) {
-    CLOG(ERROR) << "Unable to determine the hostname";
   }
 
   return hostname_;
