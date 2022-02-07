@@ -222,7 +222,7 @@ func (e *executor) ExitCode(containerID string) (int, error) {
 }
 
 func (e *localCommandBuilder) ExecCommand(execArgs ...string) *exec.Cmd {
-	return exec.Command(execArgs[0], quoteArgs(execArgs[1:])...)
+	return exec.Command(execArgs[0], execArgs[1:]...)
 }
 
 func (e *localCommandBuilder) RemoteCopyCommand(remoteSrc string, localDst string) *exec.Cmd {

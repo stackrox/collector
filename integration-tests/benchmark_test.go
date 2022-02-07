@@ -59,7 +59,7 @@ func (b *BenchmarkTestSuiteBase) StartPerfTools() {
 func (b *BenchmarkTestSuiteBase) StartPerfContainer(name string, image string, args string) {
 	argsList, err := shlex.Split(args)
 	require.NoError(b.T(), err)
-	b.startContainer(name, image, argsList...)
+	b.startContainer(name, image, quoteArgs(argsList)...)
 }
 
 func (b *BenchmarkTestSuiteBase) RunInitContainer() {
