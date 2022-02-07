@@ -1,6 +1,0 @@
-FROM stackrox/collector-performance:base
-
-RUN apk add --update perf
-
-WORKDIR /root
-ENTRYPOINT ["perf"]

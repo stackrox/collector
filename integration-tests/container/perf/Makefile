@@ -1,11 +1,10 @@
 
 .PHONY: all
 all:
-	@docker build -t stackrox/collector-performance:base -f Dockerfile.base .
-	@docker build -t stackrox/collector-performance:init -f Dockerfile.init .
-	@docker build -t stackrox/collector-performance:perf -f Dockerfile.perf .
+	@docker build -t stackrox/collector-performance:init --target init -f Dockerfile .
+	@docker build -t stackrox/collector-performance:perf --target perf -f Dockerfile .
+	@docker build -t stackrox/collector-performance:bcc --target bcc -f Dockerfile .
 	@docker build -t stackrox/collector-performance:bpftrace -f Dockerfile.bpftrace .
-	@docker build -t stackrox/collector-performance:bcc -f Dockerfile.bcc .
 
 .PHONY: push-all
 push-all:

@@ -1,4 +1,0 @@
-FROM stackrox/collector-performance:base
-
-WORKDIR /
-CMD [ "/scripts/init.sh" ]

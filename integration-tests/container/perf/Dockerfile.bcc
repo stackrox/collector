@@ -1,8 +1,0 @@
-FROM stackrox/collector-performance:base
-
-RUN apk add --update bcc-tools
-RUN ln -s /usr/bin/python3 /usr/bin/python
-
-WORKDIR /root
-ENV PATH=/bin:/usr/bin:/usr/share/bcc/tools:/tools
-ENTRYPOINT ["/scripts/run-tool.sh"]
