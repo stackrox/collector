@@ -2,7 +2,6 @@ package integrationtests
 
 import (
 	"fmt"
-	"strconv"
 	"testing"
 	"time"
 
@@ -12,6 +11,19 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+type BenchmarkBaselineTestSuite struct {
+	BenchmarkTestSuiteBase
+}
+
+type BenchmarkCollectorTestSuite struct {
+	BenchmarkTestSuiteBase
+}
+
+type BenchmarkTestSuiteBase struct {
+	IntegrationTestSuiteBase
+	perfContainers []string
+}
+
 func TestBenchmarkBaseline(t *testing.T) {
 	suite.Run(t, new(BenchmarkBaselineTestSuite))
 }
@@ -20,18 +32,12 @@ func TestBenchmarkCollector(t *testing.T) {
 	suite.Run(t, new(BenchmarkCollectorTestSuite))
 }
 
-type BenchmarkTestSuiteBase struct {
-	IntegrationTestSuiteBase
-	perfContainers []string
-}
-
 func (b *BenchmarkTestSuiteBase) StartPerfTools() {
 	perf := ReadEnvVar("COLLECTOR_PERF_COMMAND")
 	bpftrace := ReadEnvVar("COLLECTOR_BPFTRACE_COMMAND")
 	bcc := ReadEnvVar("COLLECTOR_BCC_COMMAND")
 
-	skipInit, err := strconv.ParseBool(ReadEnvVarWithDefault("COLLECTOR_PERF_SKIP_INIT", "false"))
-	require.NoError(b.T(), err)
+	skipInit := ReadBoolEnvVar("COLLECTOR_PERF_SKIP_INIT")
 
 	if !skipInit && (perf != "" || bpftrace != "" || bcc != "") {
 		b.RunInitContainer()
@@ -108,14 +114,6 @@ func (b *BenchmarkTestSuiteBase) StopPerfTools() {
 
 	b.removeContainers(b.perfContainers...)
 	b.perfContainers = nil
-}
-
-type BenchmarkBaselineTestSuite struct {
-	BenchmarkTestSuiteBase
-}
-
-type BenchmarkCollectorTestSuite struct {
-	BenchmarkTestSuiteBase
 }
 
 func (s *BenchmarkCollectorTestSuite) SetupSuite() {

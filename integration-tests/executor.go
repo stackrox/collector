@@ -62,6 +62,14 @@ func ReadEnvVarWithDefault(env string, def string) string {
 	return def
 }
 
+func ReadBoolEnvVar(env string) bool {
+	e, err := strconv.ParseBool(ReadEnvVarWithDefault(env, "false"))
+	if err != nil {
+		return false
+	}
+	return e
+}
+
 func NewSSHCommandBuilder() CommandBuilder {
 	return &sshCommandBuilder{
 		user:    ReadEnvVar("SSH_USER"),
