@@ -59,7 +59,7 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
   requires:
   - images
   - ubi-image
-    #- integration-test-local
+  - integration-test-local
   - dockerized-build-collector
 
 orbs:
