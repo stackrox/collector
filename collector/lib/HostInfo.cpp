@@ -94,26 +94,39 @@ KernelVersion HostInfo::GetKernelVersion() {
   return kernel_version_;
 }
 
-std::string& HostInfo::GetHostname() {
+const std::string& HostInfo::GetHostnameFromFile(const std::string& hostnamePath) {
+  std::string hostnameFile = GetHostPath(hostnamePath);
+  std::ifstream file(hostnameFile);
+  if (!file.is_open()) {
+    CLOG(WARNING) << hostnameFile << " file not found";
+    CLOG(WARNING) << "Failed to determine hostname from " << hostnameFile;
+    hostname_ = "";
+  } else if (!std::getline(file, hostname_)) {
+    CLOG(WARNING) << hostnameFile << " is empty";
+    CLOG(WARNING) << "Failed to determine hostname from " << hostnameFile;
+    hostname_ = "";
+  }
+  return hostname_;
+}
+
+const std::string& HostInfo::GetHostname() {
   if (hostname_.empty()) {
     const char* hostname_env = std::getenv("NODE_HOSTNAME");
     if (hostname_env && *hostname_env) {
       hostname_ = std::string(hostname_env);
+      CLOG(INFO) << "Environment variable NODE_HOSTNAME is set to " << hostname_;
     } else {
-      CLOG(INFO) << "environment variable NODE_HOSTNAME not set";
       // if we can't get the hostname from the environment
-      // we can look in /proc (mounted at /host/proc in the collector container)
-      std::string hostnameFile = GetHostPath("/etc/hostname");
-      std::ifstream file(hostnameFile);
-      if (!file.is_open()) {
-        CLOG(INFO) << hostnameFile << " file not found";
-        CLOG(WARNING) << "Failed to determine hostname";
-        hostname_ = "unknown";
-      } else {
-        std::getline(file, hostname_);
+      // we can look in /etc or /proc (mounted at /host/etc or /host/proc in the collector container)
+      std::vector<std::string> hostnamePaths{"/etc/hostname", "/proc/sys/kernel/hostname"};
+      for (auto hostnamePath : hostnamePaths) {
+        GetHostnameFromFile(hostnamePath);
+        if (!hostname_.empty()) break;
       }
     }
+    CLOG(INFO) << "Hostname: " << hostname_;
   }
+
   return hostname_;
 }
 
