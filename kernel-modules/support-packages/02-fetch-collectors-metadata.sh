@@ -7,6 +7,26 @@ die() {
     exit 1
 }
 
+function retry {
+    local n=1
+    local max=5
+    local delay=5
+    while true; do
+        # shellcheck disable=SC2015 # an info note, break is needed here to stop
+        # after the command was successfully executed
+        "$@" && break || {
+            if [[ $n -lt $max ]]; then
+                ((n++))
+                echo "Command failed. Attempt $n/$max:"
+                sleep $delay
+            else
+                echo "The command has failed after $n attempts." >&2
+                exit 1
+            fi
+        }
+    done
+}
+
 MD_DIR="$1"
 
 [[ -n "$MD_DIR" ]] || die "Usage: $0 <metadata directory>"
@@ -17,7 +37,7 @@ for version_dir in "${MD_DIR}/collector-versions"/*; do
     version="$(basename "$version_dir")"
 
     collector_image="collector.stackrox.io/collector:${version}"
-    docker pull "$collector_image"
+    retry docker pull "$collector_image"
     tmp_output="$(mktemp)"
 
     docker run --rm --entrypoint /bin/bash "$collector_image" -c '

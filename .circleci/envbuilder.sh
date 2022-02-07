@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
+# shellcheck source=SCRIPTDIR/retry.sh
+source "retry.sh"
+
 createGCPVM() {
     local GCP_VM_NAME="$1"
     shift
@@ -17,7 +20,7 @@ createGCPVM() {
     for zone in us-central1-a us-central1-b; do
         echo "Trying zone $zone"
         gcloud config set compute/zone "${zone}"
-        if gcloud compute instances create \
+        if retry gcloud compute instances create \
             --image-family "$GCP_IMAGE_FAMILY" \
             --image-project "$GCP_IMAGE_PROJECT" \
             --service-account=circleci-collector@stackrox-ci.iam.gserviceaccount.com \
@@ -60,7 +63,7 @@ createGCPVMFromImage() {
     for zone in us-central1-a us-central1-b; do
         echo "Trying zone $zone"
         gcloud config set compute/zone "${zone}"
-        if gcloud compute instances create \
+        if retry gcloud compute instances create \
             --image "$GCP_IMAGE_NAME" \
             --image-project "$GCP_IMAGE_PROJECT" \
             --service-account=circleci-collector@stackrox-ci.iam.gserviceaccount.com \
