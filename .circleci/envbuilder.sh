@@ -127,7 +127,6 @@ installFIPSOnUbuntuAndReboot() {
     shift
     for _ in {1..3}; do
         if gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo ua enable --assume-yes fips"; then
-            gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo reboot" || true
             return 0
         fi
         echo "Retrying in 5s ..."
@@ -135,6 +134,42 @@ installFIPSOnUbuntuAndReboot() {
     done
     echo "Failed to install FIPS after 3 retries"
     return 1
+}
+
+rebootVM() {
+    local GCP_VM_NAME="$1"
+    shift
+    local GCP_SSH_KEY_FILE="$1"
+
+    local describe_result
+    local start_time
+    local previous_start_time
+    local status
+    local success=0
+
+    previous_start_time="$(gcloud compute instances describe "$GCP_VM_NAME" --format='json' | jq '.lastStartTimestamp')"
+
+    # Restart the VM
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo reboot" || true
+
+    for _ in {1..3}; do
+        sleep 10
+
+        describe_result="$(gcloud compute instances describe "$GCP_VM_NAME" --format='json')"
+        start_time="$(echo "$describe_result" | jq -r '.lastStartTimestamp')"
+        status="$(echo "$describe_result" | jq -r '.status')"
+
+        if [[ "$start_time" != "$previous_start_time" && "$status" == 'RUNNING' ]]; then
+            success=1
+            break
+        fi
+    done
+
+    if ((success == 0)); then
+        echo "Failed to reboot the VM"
+        return 1
+    fi
+
 }
 
 installDockerOnRHELViaGCPSSH() {
@@ -260,6 +295,6 @@ setupGCPVM() {
     fi
     if [[ "${GCP_VM_NAME}" =~ "ubuntu-pro-1804-lts" ]]; then
         installFIPSOnUbuntuAndReboot "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
-        sleep 30
+        rebootVM "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
     fi
 }
