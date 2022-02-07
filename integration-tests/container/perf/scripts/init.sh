@@ -2,7 +2,7 @@
 
 # Based on script from https://github.com/mclenhard/ebpf-summit/blob/c5197e8e975979dfac6bd12094ea07cfd680db52/init/fetch-linux-headers.sh
 
-set -ex
+set -eo pipefail
 
 function host_path() {
     echo "/host${1}"
@@ -21,8 +21,8 @@ generate_headers() {
     cd "${BUILD_DIR}"
     if [ -e /proc/config.gz ]; then
         zcat /proc/config.gz > .config
-    elif [ -e "$(host_path /boot/config-${KERNEL_VERSION})" ]; then
-        cp $(host_path "/boot/config-${KERNEL_VERSION}") .config
+    elif [ -e "$(host_path "/boot/config-${KERNEL_VERSION}")" ]; then
+        cp "$(host_path "/boot/config-${KERNEL_VERSION}")" .config
     fi
     make ARCH=x86 oldconfig > /dev/null
     make ARCH=x86 prepare > /dev/null
@@ -47,7 +47,7 @@ fetch_generic_linux_sources() {
 
     # Remove the '.0' as the intial kernel major release isn't published with a patch number.
     if [[ $kernel_version == *.0 ]]; then
-        kernel_version=$(echo $kernel_version | rev | sed s/0\.// | rev)
+        kernel_version="$(echo $kernel_version | rev | sed s/0\.// | rev)"
     fi
 
     echo "Fetching upstream kernel sources for ${kernel_version}."
@@ -64,10 +64,10 @@ install_cos_linux_headers() {
 
         if [[ ! -e "${SOURCES_DIR}/.installed" ]]; then
             echo "Installing kernel headers for COS build ${BUILD_ID}"
-            time fetch_cos_linux_sources
-            time generate_headers
-            time rm -rf "${TARGET_DIR}${BUILD_DIR}"
-            time mv "${BUILD_DIR}" "${TARGET_DIR}"
+            fetch_cos_linux_sources
+            generate_headers
+            rm -rf "${TARGET_DIR}${BUILD_DIR}"
+            mv "${BUILD_DIR}" "${TARGET_DIR}"
             touch "${SOURCES_DIR}/.installed"
         fi
     fi
@@ -79,11 +79,10 @@ install_generic_linux_headers() {
 
     if [[ ! -e "${SOURCES_DIR}/.installed" ]]; then
         echo "Installing kernel headers for generic kernel"
-        time fetch_generic_linux_sources
-        time generate_headers
-        ls -lah /
-        time rm -rf "${TARGET_DIR}${BUILD_DIR}"
-        time mv "${BUILD_DIR}" "${TARGET_DIR}"
+        fetch_generic_linux_sources
+        generate_headers
+        rm -rf "${TARGET_DIR}${BUILD_DIR}"
+        mv "${BUILD_DIR}" "${TARGET_DIR}"
         touch "${SOURCES_DIR}/.installed"
     fi
 }
