@@ -865,7 +865,7 @@ jobs:
           export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}"
           export USE_VALGRIND=$VALGRIND_INTEGRATION_TESTS
           export USE_HELGRIND=$HELGRIND_INTEGRATION_TESTS
-          make -C "${SOURCE_ROOT}" integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report
+          make -C "${SOURCE_ROOT}" integration-tests-repeat-network integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
     - run:
@@ -978,7 +978,7 @@ jobs:
         command: |
           <<# parameters.dockerized >>export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}-dockerized"<</ parameters.dockerized >>
           echo "Running tests with image '${COLLECTOR_IMAGE}'"
-          make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report
+          make -C "${SOURCE_ROOT}" integration-tests-repeat-network integration-tests-baseline integration-tests integration-tests-report
           cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp "${SOURCE_ROOT}/integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
