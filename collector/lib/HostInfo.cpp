@@ -118,7 +118,8 @@ const std::string& HostInfo::GetHostname() {
     } else {
       // if we can't get the hostname from the environment
       // we can look in /etc or /proc (mounted at /host/etc or /host/proc in the collector container)
-      std::vector<std::string> hostnamePaths{"/etc/hostname", "/proc/sys/kernel/hostname"};
+      std::vector<std::string> hostnamePaths{"/etc/hostname"};
+      //std::vector<std::string> hostnamePaths{"/etc/hostname", "/proc/sys/kernel/hostname"};
       for (auto hostnamePath : hostnamePaths) {
         GetHostnameFromFile(hostnamePath);
         if (!hostname_.empty()) break;
