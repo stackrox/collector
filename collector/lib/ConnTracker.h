@@ -233,7 +233,6 @@ void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_stat
 template <typename T>
 void ConnectionTracker::ComputeDeltaAfterglow(const UnorderedMap<T, ConnStatus>& new_state, const UnorderedMap<T, ConnStatus>& old_state, UnorderedMap<T, ConnStatus>& delta, int64_t time_micros, int64_t time_at_last_scrape, int64_t afterglow_period_micros) {
   // Insert all objects from the new state, if anything changed about them.
-  //for (auto conn : new_state) {
   for (const auto& conn : new_state) {
     auto old_conn = old_state.find(conn.first);
     bool newRecentlyActive = WasRecentlyActive(conn.second, time_micros, afterglow_period_micros);

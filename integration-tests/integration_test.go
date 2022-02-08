@@ -96,11 +96,11 @@ func TestRepeatedNetworkFlowThreeCurlsNoAfterglow(t *testing.T) {
 	// The afterglow period is set to 0 so this has the same behavior as if afterglow was disabled.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod: 0,
-		scrapeInterval: 2,
+		scrapeInterval: 4,
 		enableAfterglow: false,
 		numMetaIter: 1,
 		numIter: 3,
-		sleepBetweenCurlTime: 3,
+		sleepBetweenCurlTime: 6,
 		sleepBetweenIterations: 1,
 		expectedReports: []bool{false, false, false, false, false, false},
 	}
