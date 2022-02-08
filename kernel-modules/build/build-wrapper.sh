@@ -10,6 +10,7 @@ KERNEL_SRC_DIR=""
 extract_bundle() {
     local kernel_version="$1"
 
+    export KERNEL_SRC_DIR
     KERNEL_SRC_DIR="/scratch/kernel-src/${kernel_version}"
 
     if [[ ! -d "$KERNEL_SRC_DIR" ]]; then
@@ -51,6 +52,8 @@ clean_env_variables() {
     unset bundle_major
     unset bundle_distro
     unset kernel_build_dir
+
+    unset KERNEL_SRC_DIR
 }
 
 build() {
