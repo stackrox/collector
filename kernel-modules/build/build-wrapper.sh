@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -exuo pipefail
+set -euo pipefail
 
 # This script handles decompressing the bundles tarballs and setting environment
 # variables needed by the kernel driver compilation script.
@@ -27,6 +27,8 @@ extract_bundle() {
         echo "No BUNDLE_UNAME entry found in kernel source bundle!"
         return 1
     }
+
+    return 0
 }
 
 export_env_variables() {
