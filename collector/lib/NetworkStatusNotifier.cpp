@@ -194,8 +194,8 @@ void NetworkStatusNotifier::Stop() {
   thread_.Stop();
 }
 
-void NetworkStatusNotifier::WaitUntilWriterStarted(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer, int wait_time) {
-  if (!writer->WaitUntilStarted(std::chrono::seconds(wait_time))) {
+void NetworkStatusNotifier::WaitUntilWriterStarted(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer, int wait_time_seconds) {
+  if (!writer->WaitUntilStarted(std::chrono::seconds(wait_time_seconds))) {
     CLOG(ERROR) << "Failed to establish network connection info stream.";
     return;
   }
@@ -232,8 +232,9 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
   while (writer->Sleep(next_scrape)) {
     next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(scrape_interval_);
 
-    bool success = UpdateAllConnsAndEndpoints();
-    if (!success) continue;
+    if (!UpdateAllConnsAndEndpoints()) {
+      continue;
+    }
 
     const sensor::NetworkConnectionInfoMessage* msg;
     ConnMap new_conn_state;
@@ -276,8 +277,9 @@ void NetworkStatusNotifier::RunSingleAfterglow(DuplexClientWriter<sensor::Networ
   while (writer->Sleep(next_scrape)) {
     next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(scrape_interval_);
 
-    bool success = UpdateAllConnsAndEndpoints();
-    if (!success) continue;
+    if (!UpdateAllConnsAndEndpoints()) {
+      continue;
+    }
 
     int64_t time_micros = NowMicros();
     const sensor::NetworkConnectionInfoMessage* msg;

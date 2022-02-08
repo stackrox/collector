@@ -36,7 +36,7 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 
 	env := map[string]string{
 		"GRPC_SERVER":                      "localhost:9999",
-		"COLLECTOR_CONFIG":                 `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2,"afterglowPeriod":10}`,
+		"COLLECTOR_CONFIG":                 `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2,"afterglowPeriod":10,"enableAfterglow":false}`,
 		"COLLECTION_METHOD":                collectionMethod,
 		"COLLECTOR_PRE_ARGUMENTS":          collectorPreArguments,
 	}

@@ -110,7 +110,7 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
 
     // Use Afterglow
     if (!config["enableAfterglow"].empty()) {
-      enable_afterglow_ = (bool)(config["enableAfterglow"].asBool());
+      enable_afterglow_ = config["enableAfterglow"].asBool();
       CLOG(INFO) << "User configured enableAfterglow=" << config["enableAfterglow"].asString();
     }
 
