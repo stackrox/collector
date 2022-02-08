@@ -80,6 +80,8 @@ build() {
 
 DOCKERIZED=${DOCKERIZED:-0}
 
+export DOCKERIZED
+
 if ((DOCKERIZED)); then
     FAILURE_DIR="/FAILURES"
     export MODULE_BASE_DIR="/kernel-modules"
