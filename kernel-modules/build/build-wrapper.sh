@@ -59,7 +59,7 @@ build() {
         local module_version="${line[1]}"
         local probe_type="${line[2]}"
 
-        if extract_bundle "${kernel_version}"; then
+        if ! extract_bundle "${kernel_version}"; then
             echo >&2 "Failed to extract kernel bundle for version '${kernel_version}'"
             exit 1
         fi
