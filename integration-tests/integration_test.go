@@ -471,7 +471,8 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 
 	// invokes another container
 	//containerID, err = s.launchContainer("nginx-curl", "pstauffer/curl:latest", "sleep", "300")
-	containerID, err = s.launchContainer("nginx-curl-jv", "schedule:latest", "sleep", "300")
+	s.dockerBuild("schedule-curls", "schedule-curls")
+	containerID, err = s.launchContainer("nginx-curl", "schedule-curls", "sleep", "300")
 	s.Require().NoError(err)
 	s.clientContainer = containerID[0:12]
 
@@ -484,31 +485,14 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 
 	serverAddress := fmt.Sprintf("%s:%s", s.serverIP, s.serverPort)
 
-	//for i := 0; i < s.numMetaIter; i++ {
-	//	tickerChannel := make(chan bool)
-	//	t1 := time.NewTicker(time.Duration(s.sleepBetweenCurlTime) * time.Second)
-	//	go func() {
-	//		for {
-	//			select {
-	//			case <-tickerChannel:
-	//				return
-	//			case <-t1.C:
-	//			_, err = s.execContainer("nginx-curl", []string{"curl", serverAddress})
-	//			s.Require().NoError(err)
-	//			}
-	//		}
-	//	}()
-	//	time.Sleep(time.Duration(s.sleepBetweenCurlTime * s.numIter) * time.Second)
-	//	t1.Stop()
-	//	tickerChannel <- true
-	//	time.Sleep(time.Duration(s.sleepBetweenIterations) * time.Second)
-	//}
-	var log string
-	log, err = s.execContainer("nginx-curl-jv", []string{"5", "5", "1", "1", serverAddress})
-	//_, err = s.execContainer("schedule:latest", []string{"curl", serverAddress})
-	fmt.Println(log)
+	numMetaIter := strconv.Itoa(s.numMetaIter)
+	numIter := strconv.Itoa(s.numIter)
+	sleepBetweenCurlTime := strconv.Itoa(s.sleepBetweenCurlTime)
+	sleepBetweenIterations := strconv.Itoa(s.sleepBetweenIterations)
+	var logs string
+	logs, err = s.execContainer("nginx-curl", []string{"/usr/bin/schedule-curls.sh", numMetaIter, numIter, sleepBetweenCurlTime, sleepBetweenIterations, serverAddress})
 
-	s.clientIP, err = s.getIPAddress("nginx-curl-jv")
+	s.clientIP, err = s.getIPAddress("nginx-curl")
 	s.Require().NoError(err)
 
 	totalTime := 90 + s.afterglowPeriod
@@ -570,6 +554,13 @@ func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
 func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, error) {
 	cmd := []string{"docker", "run", "-d", "--name"}
 	cmd = append(cmd, args...)
+	output, err := s.executor.Exec(cmd...)
+	outLines := strings.Split(output, "\n")
+	return outLines[len(outLines)-1], err
+}
+
+func (s *IntegrationTestSuiteBase) dockerBuild(tag string, location string) (string, error) {
+	cmd := []string{"docker", "build", "-t", tag, location}
 	output, err := s.executor.Exec(cmd...)
 	outLines := strings.Split(output, "\n")
 	return outLines[len(outLines)-1], err

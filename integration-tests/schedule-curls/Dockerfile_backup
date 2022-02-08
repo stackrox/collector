@@ -6,8 +6,6 @@ RUN apt-get update \
 	curl;
 
 
-COPY entrypoint /usr/bin/entrypoint 
+COPY schedule-curls.sh /usr/bin/schedule-curls.sh 
 
-RUN ls -l /usr/bin/entrypoint 
-
-ENTRYPOINT ["/usr/bin/entrypoint"]
+RUN ls -l /usr/bin/schedule-curls.sh 
