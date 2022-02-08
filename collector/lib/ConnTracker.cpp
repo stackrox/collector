@@ -128,7 +128,6 @@ Connection ConnectionTracker::NormalizeConnectionNoLock(const Connection& conn) 
   return Connection(conn.container(), local, remote, conn.l4proto(), is_server);
 }
 
-
 namespace {
 
 template <typename T>
