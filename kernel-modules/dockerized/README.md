@@ -44,7 +44,7 @@ This stage is based in ubi8, provides all tooling needed for v4 and newer kernel
 
 ### Build arguments
 - `REDHAT_USERNAME`: A Red Hat developer account username, used to register the image.
-- `REDHAT_PASSWORD`: The password correspondig to the Red Hat developer account username provided, used to register the image.
+- `REDHAT_PASSWORD`: The password corresponding to the Red Hat developer account username provided, used to register the image.
 
 Both base images also copy a series of scripts into `/scripts`, this is done to prevent scripts from being modified when running the `patcher` stage (more on this in the following section).
 
