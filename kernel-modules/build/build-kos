@@ -109,8 +109,8 @@ build_ko() (
 )
 
 # The input is in the form <kernel-version> <module-version> <probe-type>.
-kernel_version="$0"
-module_version="$1"
-probe_type="$2"
+kernel_version="$1"
+module_version="$2"
+probe_type="$3"
 
 build_ko "$kernel_version" "$module_version" "${probe_type}"
