@@ -68,7 +68,7 @@ build() {
 
         failure_output_file="${FAILURE_DIR}/${kernel_version}/${module_version}/${probe_type}.log"
         mkdir -p "$(dirname "$failure_output_file")"
-        if ! ./build-kos "${kernel_version}" "${module_version}" "${probe_type}"; then
+        if ! build-kos "${kernel_version}" "${module_version}" "${probe_type}"; then
             echo >&2 "Failed to build ${probe_type} probe version ${module_version} for kernel ${kernel_version}"
         else
             rm "$failure_output_file"
