@@ -470,7 +470,8 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.serverContainer = containerID[0:12]
 
 	// invokes another container
-	containerID, err = s.launchContainer("nginx-curl", "pstauffer/curl:latest", "sleep", "300")
+	//containerID, err = s.launchContainer("nginx-curl", "pstauffer/curl:latest", "sleep", "300")
+	containerID, err = s.launchContainer("nginx-curl-jv", "schedule:latest", "sleep", "300")
 	s.Require().NoError(err)
 	s.clientContainer = containerID[0:12]
 
@@ -483,30 +484,34 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 
 	serverAddress := fmt.Sprintf("%s:%s", s.serverIP, s.serverPort)
 
-	for i := 0; i < s.numMetaIter; i++ {
-		tickerChannel := make(chan bool)
-		t1 := time.NewTicker(time.Duration(s.sleepBetweenCurlTime) * time.Second)
-		go func() {
-			for {
-				select {
-				case <-tickerChannel:
-					return
-				case <-t1.C:
-				_, err = s.execContainer("nginx-curl", []string{"curl", serverAddress})
-				s.Require().NoError(err)
-				}
-			}
-		}()
-		time.Sleep(time.Duration(s.sleepBetweenCurlTime * s.numIter) * time.Second)
-		t1.Stop()
-		tickerChannel <- true
-		time.Sleep(time.Duration(s.sleepBetweenIterations) * time.Second)
-	}
+	//for i := 0; i < s.numMetaIter; i++ {
+	//	tickerChannel := make(chan bool)
+	//	t1 := time.NewTicker(time.Duration(s.sleepBetweenCurlTime) * time.Second)
+	//	go func() {
+	//		for {
+	//			select {
+	//			case <-tickerChannel:
+	//				return
+	//			case <-t1.C:
+	//			_, err = s.execContainer("nginx-curl", []string{"curl", serverAddress})
+	//			s.Require().NoError(err)
+	//			}
+	//		}
+	//	}()
+	//	time.Sleep(time.Duration(s.sleepBetweenCurlTime * s.numIter) * time.Second)
+	//	t1.Stop()
+	//	tickerChannel <- true
+	//	time.Sleep(time.Duration(s.sleepBetweenIterations) * time.Second)
+	//}
+	var log string
+	log, err = s.execContainer("nginx-curl-jv", []string{"5", "5", "1", "1", serverAddress})
+	//_, err = s.execContainer("schedule:latest", []string{"curl", serverAddress})
+	fmt.Println(log)
 
-	s.clientIP, err = s.getIPAddress("nginx-curl")
+	s.clientIP, err = s.getIPAddress("nginx-curl-jv")
 	s.Require().NoError(err)
 
-	totalTime := 20 + s.afterglowPeriod
+	totalTime := 90 + s.afterglowPeriod
 	time.Sleep(time.Duration(totalTime) * time.Second)
 	logLines := s.GetLogLines("grpc-server")
 	s.observedReports = GetNetworkActivity(logLines)
