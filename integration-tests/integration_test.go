@@ -470,7 +470,6 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.serverContainer = containerID[0:12]
 
 	// invokes another container
-	//containerID, err = s.launchContainer("nginx-curl", "pstauffer/curl:latest", "sleep", "300")
 	s.dockerBuild("schedule-curls", "schedule-curls")
 	containerID, err = s.launchContainer("nginx-curl", "schedule-curls", "sleep", "300")
 	s.Require().NoError(err)
@@ -489,13 +488,12 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	numIter := strconv.Itoa(s.numIter)
 	sleepBetweenCurlTime := strconv.Itoa(s.sleepBetweenCurlTime)
 	sleepBetweenIterations := strconv.Itoa(s.sleepBetweenIterations)
-	var logs string
-	logs, err = s.execContainer("nginx-curl", []string{"/usr/bin/schedule-curls.sh", numMetaIter, numIter, sleepBetweenCurlTime, sleepBetweenIterations, serverAddress})
+	_, err = s.execContainer("nginx-curl", []string{"/usr/bin/schedule-curls.sh", numMetaIter, numIter, sleepBetweenCurlTime, sleepBetweenIterations, serverAddress})
 
 	s.clientIP, err = s.getIPAddress("nginx-curl")
 	s.Require().NoError(err)
 
-	totalTime := 90 + s.afterglowPeriod
+	totalTime := (s.sleepBetweenCurlTime * numIter + sleepBetweenIterations) * numMetaIter + s.afterglowPeriod + 10
 	time.Sleep(time.Duration(totalTime) * time.Second)
 	logLines := s.GetLogLines("grpc-server")
 	s.observedReports = GetNetworkActivity(logLines)
