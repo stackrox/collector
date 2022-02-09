@@ -79,7 +79,7 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   // Get hostname
   hostname_ = GetHostname();
   if (hostname_.empty()) {
-    CLOG(FATAL) << "Unable to determine the hostname";
+    CLOG(FATAL) << "Unable to determine the hostname. Consider setting the environment variable NODE_HOSTNAME";
   }
 
   // Get path to host proc dir

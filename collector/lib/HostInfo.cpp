@@ -85,6 +85,20 @@ std::string filterForKey(std::istream& stream, const char* name) {
   return "";
 }
 
+const std::string GetHostnameFromFile(const std::string& hostnamePath) {
+  std::string hostnameFile = GetHostPath(hostnamePath);
+  std::ifstream file(hostnameFile);
+  std::string hostname = "";
+  if (!file.is_open()) {
+    CLOG(DEBUG) << hostnameFile << " file not found";
+    CLOG(DEBUG) << "Failed to determine hostname from " << hostnameFile;
+  } else if (!std::getline(file, hostname)) {
+    CLOG(DEBUG) << hostnameFile << " is empty";
+    CLOG(DEBUG) << "Failed to determine hostname from " << hostnameFile;
+  }
+  return hostname;
+}
+
 }  // namespace
 
 KernelVersion HostInfo::GetKernelVersion() {
@@ -92,21 +106,6 @@ KernelVersion HostInfo::GetKernelVersion() {
     kernel_version_ = KernelVersion::FromHost();
   }
   return kernel_version_;
-}
-
-const std::string& HostInfo::GetHostnameFromFile(const std::string& hostnamePath) {
-  std::string hostnameFile = GetHostPath(hostnamePath);
-  std::ifstream file(hostnameFile);
-  if (!file.is_open()) {
-    CLOG(WARNING) << hostnameFile << " file not found";
-    CLOG(WARNING) << "Failed to determine hostname from " << hostnameFile;
-    hostname_ = "";
-  } else if (!std::getline(file, hostname_)) {
-    CLOG(WARNING) << hostnameFile << " is empty";
-    CLOG(WARNING) << "Failed to determine hostname from " << hostnameFile;
-    hostname_ = "";
-  }
-  return hostname_;
 }
 
 const std::string& HostInfo::GetHostname() {
@@ -120,11 +119,11 @@ const std::string& HostInfo::GetHostname() {
       // we can look in /etc or /proc (mounted at /host/etc or /host/proc in the collector container)
       std::vector<std::string> hostnamePaths{"/etc/hostname", "/proc/sys/kernel/hostname"};
       for (auto hostnamePath : hostnamePaths) {
-        GetHostnameFromFile(hostnamePath);
+        hostname_ = GetHostnameFromFile(hostnamePath);
         if (!hostname_.empty()) break;
       }
     }
-    CLOG(INFO) << "Hostname: " << hostname_;
+    CLOG(INFO) << "Hostname: '" << hostname_ << "'";
   }
 
   return hostname_;
