@@ -293,6 +293,7 @@ void NetworkStatusNotifier::RunSingleAfterglow(DuplexClientWriter<sensor::Networ
     if (!success) continue;
 
     int64_t time_micros = NowMicros();
+    CLOG(INFO) << "";
     CLOG(INFO) << "time_micros= " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(time_micros);
     const sensor::NetworkConnectionInfoMessage* msg;
     ContainerEndpointMap new_cep_state, delta_cep;
