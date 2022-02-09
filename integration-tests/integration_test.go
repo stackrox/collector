@@ -493,7 +493,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.clientIP, err = s.getIPAddress("nginx-curl")
 	s.Require().NoError(err)
 
-	totalTime := (s.sleepBetweenCurlTime * numIter + sleepBetweenIterations) * numMetaIter + s.afterglowPeriod + 10
+	totalTime := (s.sleepBetweenCurlTime * s.numIter + s.sleepBetweenIterations) * s.numMetaIter + s.afterglowPeriod + 10
 	time.Sleep(time.Duration(totalTime) * time.Second)
 	logLines := s.GetLogLines("grpc-server")
 	s.observedReports = GetNetworkActivity(logLines)

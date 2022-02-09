@@ -230,7 +230,7 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
   auto next_scrape = std::chrono::system_clock::now();
 
   while (writer->Sleep(next_scrape)) {
-    CLOG(INFO) << "next_scrape= " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(next_scrape);
+    //CLOG(INFO) << "next_scrape= " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(next_scrape);
     next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(scrape_interval_);
 
     bool success = UpdateAllConnsAndEndpoints();
@@ -239,6 +239,8 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
     const sensor::NetworkConnectionInfoMessage* msg;
     ConnMap new_conn_state;
     ContainerEndpointMap new_cep_state;
+    int64_t time_micros = NowMicros();
+    CLOG(INFO) << "time_micros= " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(time_micros);
     WITH_TIMER(CollectorStats::net_fetch_state) {
       new_conn_state = conn_tracker_->FetchConnState(true, true);
       CLOG(INFO) << "";
@@ -285,13 +287,13 @@ void NetworkStatusNotifier::RunSingleAfterglow(DuplexClientWriter<sensor::Networ
   int64_t time_at_last_scrape = NowMicros();
 
   while (writer->Sleep(next_scrape)) {
-    CLOG(INFO) << "next_scrape= " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(next_scrape);
     next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(scrape_interval_);
 
     bool success = UpdateAllConnsAndEndpoints();
     if (!success) continue;
 
     int64_t time_micros = NowMicros();
+    CLOG(INFO) << "time_micros= " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(time_micros);
     const sensor::NetworkConnectionInfoMessage* msg;
     ContainerEndpointMap new_cep_state, delta_cep;
     ConnMap new_conn_state, delta_conn;
