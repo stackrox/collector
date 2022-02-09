@@ -455,6 +455,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	images := []string{
 		"nginx:1.14-alpine",
 		"pstauffer/curl:latest",
+		"stackrox/qa:collector-schedule-curls",
 	}
 
 	for _, image := range images {
@@ -470,8 +471,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.serverContainer = containerID[0:12]
 
 	// invokes another container
-	s.dockerBuild("schedule-curls", "schedule-curls")
-	containerID, err = s.launchContainer("nginx-curl", "schedule-curls", "sleep", "300")
+	containerID, err = s.launchContainer("nginx-curl", "stackrox/qa:collector-schedule-curls", "sleep", "300")
 	s.Require().NoError(err)
 	s.clientContainer = containerID[0:12]
 
@@ -552,13 +552,6 @@ func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
 func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, error) {
 	cmd := []string{"docker", "run", "-d", "--name"}
 	cmd = append(cmd, args...)
-	output, err := s.executor.Exec(cmd...)
-	outLines := strings.Split(output, "\n")
-	return outLines[len(outLines)-1], err
-}
-
-func (s *IntegrationTestSuiteBase) dockerBuild(tag string, location string) (string, error) {
-	cmd := []string{"docker", "build", "-t", tag, location}
 	output, err := s.executor.Exec(cmd...)
 	outLines := strings.Split(output, "\n")
 	return outLines[len(outLines)-1], err
