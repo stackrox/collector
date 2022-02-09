@@ -2,7 +2,7 @@
 
 # Based on script from https://github.com/mclenhard/ebpf-summit/blob/c5197e8e975979dfac6bd12094ea07cfd680db52/init/fetch-linux-headers.sh
 
-set -eo pipefail
+set -exo pipefail
 
 function host_path() {
     echo "/host${1}"
@@ -27,7 +27,12 @@ generate_headers() {
     make ARCH=x86 oldconfig > /dev/null
     make ARCH=x86 prepare > /dev/null
 
-    # Clean up abundant non-header files to speed-up copying
+    # To ensure that all headers are copied, we can't use `make headers_install` or
+    # `make headers_install_all`, which only copies a subset of headers, and doesn't
+    # include some that are required by the various BPF tools.
+
+    # To speed up the copy to the /usr/src directory, we can remove non-header files from
+    # the source tree.
     find "${BUILD_DIR}" -regex '.*\.c\|.*\.txt\|.*Makefile\|.*Build\|.*Kconfig' -type f -delete
 }
 
@@ -122,16 +127,16 @@ check_headers() {
     return 0
 }
 
-if [[ ! -e /lib/modules/.installed ]]; then
+if [[ ! -e "$(host_path "/lib/modules/.installed")" ]]; then
     if check_headers "${HOST_MODULES_DIR}"; then
         HEADERS_TARGET="${HOST_MODULES_DIR}/source"
     else
         install_headers
     fi
 
-    mkdir -p "/lib/modules/${KERNEL_VERSION}"
-    ln -sf "${HEADERS_TARGET}" "/lib/modules/${KERNEL_VERSION}/source"
-    ln -sf "${HEADERS_TARGET}" "/lib/modules/${KERNEL_VERSION}/build"
+    mkdir -p "$(host_path "/lib/modules/${KERNEL_VERSION}")"
+    ln -sf "${HEADERS_TARGET}" "$(host_path "/lib/modules/${KERNEL_VERSION}/source")"
+    ln -sf "${HEADERS_TARGET}" "$(host_path "/lib/modules/${KERNEL_VERSION}/build")"
     touch /lib/modules/.installed
     exit 0
 else

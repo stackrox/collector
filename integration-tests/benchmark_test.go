@@ -76,6 +76,10 @@ func (b *BenchmarkTestSuiteBase) RunInitContainer() {
 	require.NoError(b.T(), err)
 
 	if finished, _ := b.waitForContainerToExit("host-init", containerID, 5*time.Second); !finished {
+		logs, err := b.containerLogs("host-init")
+		if err == nil {
+			fmt.Println(logs)
+		}
 		assert.FailNow(b.T(), "Failed to initialize host for performance testing")
 	}
 	b.cleanupContainer([]string{containerID})
