@@ -222,6 +222,39 @@ bool NetworkStatusNotifier::UpdateAllConnsAndEndpoints() {
   return true;
 }
 
+void CheckIfOldAndNewOverlap(ConnMap old_conn_state, ConnMap new_conn_state) {
+  for (auto old_conn : old_conn_state) {
+    for (auto new_conn : new_conn_state) {
+      if (old_conn.second.LastActiveTime() >= new_conn.second.LastActiveTime()) {
+        CLOG(INFO) << "";
+        CLOG(INFO) << "Warning new_conn has a connection younger or the same age as old_conn";
+        CLOG(INFO) << "new_conn: " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(new_conn.second.LastActiveTime());
+        CLOG(INFO) << "old_conn: " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(old_conn.second.LastActiveTime());
+        CLOG(INFO) << "";
+      }
+    }
+  }
+}
+
+void ConnectionDebugging(ConnMap old_conn_state, ConnMap new_conn_state) {
+  CLOG(INFO) << "";
+  if (new_conn_state.size() > 2) {
+    CLOG(INFO) << "Warning conn_state.size() is " << new_conn_state.size();
+  }
+  for (auto conn : new_conn_state) {
+    CLOG(INFO) << "new_conn_state: " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(conn.second.LastActiveTime());
+  }
+  CLOG(INFO) << "";
+  CLOG(INFO) << "old_conn_state";
+  if (old_conn_state.size() > 2) {
+    CLOG(INFO) << "Warning conn_state.size() is " << old_conn_state.size();
+  }
+  for (auto conn : old_conn_state) {
+    CLOG(INFO) << "old_conn_state: " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(conn.second.LastActiveTime());
+  }
+  CheckIfOldAndNewOverlap(old_conn_state, new_conn_state);
+}
+
 void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
   WaitUntilWriterStarted(writer, 10);
 
@@ -300,16 +333,7 @@ void NetworkStatusNotifier::RunSingleAfterglow(DuplexClientWriter<sensor::Networ
     ConnMap new_conn_state, delta_conn;
     WITH_TIMER(CollectorStats::net_fetch_state) {
       new_conn_state = conn_tracker_->FetchConnState(true, true);
-      CLOG(INFO) << "";
-      CLOG(INFO) << "new_conn_state";
-      for (auto conn : new_conn_state) {
-        CLOG(INFO) << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(conn.second.LastActiveTime());
-      }
-      CLOG(INFO) << "";
-      CLOG(INFO) << "old_conn_state";
-      for (auto conn : old_conn_state) {
-        CLOG(INFO) << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(conn.second.LastActiveTime());
-      }
+      ConnectionDebugging(old_conn_state, new_conn_state);
       ConnectionTracker::ComputeDeltaAfterglow(new_conn_state, old_conn_state, delta_conn, time_micros, time_at_last_scrape, afterglow_period_micros_);
 
       new_cep_state = conn_tracker_->FetchEndpointState(true, true);
