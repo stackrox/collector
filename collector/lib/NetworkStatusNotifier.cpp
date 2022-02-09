@@ -235,12 +235,24 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
     if (!UpdateAllConnsAndEndpoints()) {
       continue;
     }
+    int64_t time_micros = NowMicros();
+    CLOG(INFO) << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(time_micros);
 
     const sensor::NetworkConnectionInfoMessage* msg;
     ConnMap new_conn_state;
     ContainerEndpointMap new_cep_state;
     WITH_TIMER(CollectorStats::net_fetch_state) {
       new_conn_state = conn_tracker_->FetchConnState(true, true);
+      CLOG(INFO) << "";
+      CLOG(INFO) << "new_conn_state";
+      for (auto conn : new_conn_state) {
+        CLOG(INFO) << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(conn.second.LastActiveTime());
+      }
+      CLOG(INFO) << "";
+      CLOG(INFO) << "old_conn_state";
+      for (auto conn : old_conn_state) {
+        CLOG(INFO) << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(conn.second.LastActiveTime());
+      }
       ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
 
       new_cep_state = conn_tracker_->FetchEndpointState(true, true);
@@ -282,11 +294,22 @@ void NetworkStatusNotifier::RunSingleAfterglow(DuplexClientWriter<sensor::Networ
     }
 
     int64_t time_micros = NowMicros();
+    CLOG(INFO) << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(time_micros);
     const sensor::NetworkConnectionInfoMessage* msg;
     ContainerEndpointMap new_cep_state, delta_cep;
     ConnMap new_conn_state, delta_conn;
     WITH_TIMER(CollectorStats::net_fetch_state) {
       new_conn_state = conn_tracker_->FetchConnState(true, true);
+      CLOG(INFO) << "";
+      CLOG(INFO) << "new_conn_state";
+      for (auto conn : new_conn_state) {
+        CLOG(INFO) << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(conn.second.LastActiveTime());
+      }
+      CLOG(INFO) << "";
+      CLOG(INFO) << "old_conn_state";
+      for (auto conn : old_conn_state) {
+        CLOG(INFO) << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(conn.second.LastActiveTime());
+      }
       ConnectionTracker::ComputeDeltaAfterglow(new_conn_state, old_conn_state, delta_conn, time_micros, time_at_last_scrape, afterglow_period_micros_);
 
       new_cep_state = conn_tracker_->FetchEndpointState(true, true);
