@@ -252,11 +252,12 @@ void ConnectionTracker::ComputeDeltaAfterglow(const UnorderedMap<T, ConnStatus>&
     auto old_conn = old_state.find(conn.first);
     auto& conn_key = conn.first;
     auto& conn_status = conn.second;
+    auto& old_conn_status = old_conn->second;
     bool new_recently_active = conn_status.WasRecentlyActive(time_micros, afterglow_period_micros);
     // Was already present
     if (old_conn != old_state.end()) {
       //Connections active within the afterglow period are considered to be active for the purpose of the delta.
-      bool old_recently_active = old_conn->second.WasRecentlyActive(time_at_last_scrape, afterglow_period_micros);
+      bool old_recently_active = old_conn_status.WasRecentlyActive(time_at_last_scrape, afterglow_period_micros);
       if (new_recently_active != old_recently_active) {
         if (new_recently_active && !conn_status.IsActive()) {
           delta.insert(std::make_pair(conn_key, ConnStatus(conn_status.LastActiveTime(), true)));
@@ -265,7 +266,7 @@ void ConnectionTracker::ComputeDeltaAfterglow(const UnorderedMap<T, ConnStatus>&
         }
       } else if (!new_recently_active) {
         // Both objects are inactive. Update the timestamp if applicable, otherwise omit from delta.
-        if (old_conn->second.LastActiveTime() < conn_status.LastActiveTime()) {
+        if (old_conn_status.LastActiveTime() < conn_status.LastActiveTime()) {
           delta.insert(conn);
         }
       }
