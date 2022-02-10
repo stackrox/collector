@@ -18,6 +18,8 @@ modfiles0() (
 )
 
 get_module_version() (
+    # MODULE_VERSION would be more readable, but it would clash with a
+    # variable exported from our CI. Beware!
     if [[ -n "$M_VERSION" ]]; then
         echo "$M_VERSION"
     else
