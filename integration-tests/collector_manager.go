@@ -210,7 +210,7 @@ func (c *collectorManager) captureLogs(containerName string) (string, error) {
 	}
 	logDirectory := filepath.Join(".", "container-logs")
 	os.MkdirAll(logDirectory, os.ModePerm)
-	logFile := filepath.Join(logDirectory, c.TestName+"-"+containerName+".log")
+	logFile := filepath.Join(logDirectory, strings.ReplaceAll(c.TestName, "/", "_")+"-"+containerName+".log")
 	err = ioutil.WriteFile(logFile, []byte(logs), 0644)
 	if err != nil {
 		return "", err

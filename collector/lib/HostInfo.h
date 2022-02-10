@@ -168,7 +168,7 @@ class HostInfo {
   virtual KernelVersion GetKernelVersion();
 
   // Get the host's hostname
-  std::string& GetHostname();
+  const std::string& GetHostname();
 
   // Get the Linux distribution, if possible.
   // If not, default to "Linux"

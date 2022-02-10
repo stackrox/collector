@@ -68,11 +68,6 @@ function main() {
     # Get the host kernel version (or user defined env var)
     [ -n "$KERNEL_VERSION" ] || KERNEL_VERSION="$(uname -r)"
 
-    # Get and export the node hostname from Docker,
-    # and export because this env var is read by collector
-    node_hostname="$(cat /host/etc/hostname)"
-    export NODE_HOSTNAME=$node_hostname
-
     # Export SNI_HOSTNAME and default it to sensor.stackrox
     export SNI_HOSTNAME="${SNI_HOSTNAME:-sensor.stackrox}"
 
@@ -81,7 +76,6 @@ function main() {
 
     # Print node info
     log "Collector Version: ${COLLECTOR_VERSION}"
-    log "Hostname: ${NODE_HOSTNAME}"
     log "OS: ${OS_DISTRO}"
     log "Kernel Version: ${KERNEL_VERSION}"
 

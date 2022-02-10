@@ -76,8 +76,13 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
     syscalls_.push_back(syscall);
   }
 
-  // Get hostname and path to host proc dir
+  // Get hostname
   hostname_ = GetHostname();
+  if (hostname_.empty()) {
+    CLOG(FATAL) << "Unable to determine the hostname. Consider setting the environment variable NODE_HOSTNAME";
+  }
+
+  // Get path to host proc dir
   host_proc_ = GetHostPath("/proc");
 
   // Check user provided configuration
