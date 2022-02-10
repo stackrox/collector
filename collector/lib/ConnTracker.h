@@ -71,6 +71,18 @@ class ConnStatus {
     return !(*this == other);
   }
 
+  // Returns true if a connection was active during the afterglow period.
+  // This is helpful for not reporting frequent connections every time we see them.
+  bool IsInAfterglowPeriod(int64_t time_micros, int64_t afterglow_period_micros) const {
+    return time_micros - LastActiveTime() < afterglow_period_micros;
+  }
+
+  // Returns true if a connection is active or was active during the afterglow period.
+  // This is helpful for not reporting frequent connections every time we see them.
+  bool WasRecentlyActive(int64_t time_micros, int64_t afterglow_period_micros) const {
+    return IsActive() || IsInAfterglowPeriod(time_micros, afterglow_period_micros);
+  }
+
  private:
   explicit ConnStatus(uint64_t data) : data_(data) {}
 
@@ -100,8 +112,6 @@ class ConnectionTracker {
 
   template <typename T>
   static void UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, const UnorderedMap<T, ConnStatus>& new_state, int64_t time_micros, int64_t afterglow_period_micros);
-  static bool WasRecentlyActive(const ConnStatus& conn, int64_t time_micros, int64_t afterglow_period_micros);
-  static bool IsInAfterglowPeriod(const ConnStatus& conn, int64_t time_micros, int64_t afterglow_period_micros);
   template <typename T>
   // ComputeDelta computes a diff between new_state and old_state
   static void ComputeDeltaAfterglow(const UnorderedMap<T, ConnStatus>& new_state, const UnorderedMap<T, ConnStatus>& old_state, UnorderedMap<T, ConnStatus>& delta, int64_t time_micros, int64_t time_at_last_scrape, int64_t afterglow_period_micros);
@@ -171,7 +181,7 @@ void ConnectionTracker::UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, c
   // Remove inactive connections that are older than the afterglow period and add unexpired new connections to the old state
   for (auto it = old_state->begin(); it != old_state->end();) {
     auto& old_conn = *it;
-    if (WasRecentlyActive(old_conn.second, time_micros, afterglow_period_micros)) {
+    if (old_conn.second.WasRecentlyActive(time_micros, afterglow_period_micros)) {
       ++it;
     } else {
       it = old_state->erase(it);
@@ -235,9 +245,9 @@ void ConnectionTracker::ComputeDeltaAfterglow(const UnorderedMap<T, ConnStatus>&
   // Insert all objects from the new state, if anything changed about them.
   for (const auto& conn : new_state) {
     auto old_conn = old_state.find(conn.first);
-    bool newRecentlyActive = WasRecentlyActive(conn.second, time_micros, afterglow_period_micros);
-    if (old_conn != old_state.end()) {                                                                             // Was already present
-      bool oldRecentlyActive = WasRecentlyActive(old_conn->second, time_at_last_scrape, afterglow_period_micros);  //Connections active within the afterglow period are considered to be active for the purpose of the delta.
+    bool newRecentlyActive = conn.second.WasRecentlyActive(time_micros, afterglow_period_micros);
+    if (old_conn != old_state.end()) {                                                                            // Was already present
+      bool oldRecentlyActive = old_conn->second.WasRecentlyActive(time_at_last_scrape, afterglow_period_micros);  //Connections active within the afterglow period are considered to be active for the purpose of the delta.
       if (newRecentlyActive != oldRecentlyActive) {
         if (newRecentlyActive != conn.second.IsActive()) {
           delta.insert(std::make_pair(conn.first, ConnStatus(conn.second.LastActiveTime(), newRecentlyActive)));
@@ -261,8 +271,8 @@ void ConnectionTracker::ComputeDeltaAfterglow(const UnorderedMap<T, ConnStatus>&
 
   // Add everything in the old state that was in the active state and is not in the new state
   for (const auto& conn : old_state) {
-    bool oldRecentlyActive = WasRecentlyActive(conn.second, time_at_last_scrape, afterglow_period_micros);  // Or should conn.second.IsActive() be used
-    if (new_state.find(conn.first) == new_state.end() && oldRecentlyActive && !IsInAfterglowPeriod(conn.second, time_micros, afterglow_period_micros)) {
+    bool oldRecentlyActive = conn.second.WasRecentlyActive(time_at_last_scrape, afterglow_period_micros);  // Or should conn.second.IsActive() be used
+    if (new_state.find(conn.first) == new_state.end() && oldRecentlyActive && !conn.second.IsInAfterglowPeriod(time_micros, afterglow_period_micros)) {
       delta.insert(std::make_pair(conn.first, ConnStatus(conn.second.LastActiveTime(), false)));
     }
   }
