@@ -72,7 +72,7 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
     DRIVER_DIR="${LEGACY_DIR}/${DRIVER_REL_DIR}" \
         SCRATCH_DIR="${HOME}/scratch" \
         OUTPUT_DIR="${HOME}/kobuild-tmp/versions-src" \
-        MODULE_VERSION="$(get_module_version)" \
+        M_VERSION="$(get_module_version)" \
         ./kernel-modules/build/prepare-src | tail -n 1 \
         > "${mod_ver_file}"
 

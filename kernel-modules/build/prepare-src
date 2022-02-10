@@ -18,8 +18,10 @@ modfiles0() (
 )
 
 get_module_version() (
-    if [[ -n "$MODULE_VERSION" ]]; then
-        echo "$MODULE_VERSION"
+    # MODULE_VERSION would be more readable, but it would clash with a
+    # variable exported from our CI. Beware!
+    if [[ -n "$M_VERSION" ]]; then
+        echo "$M_VERSION"
     else
         modfiles0 "$@" \
             | xargs -0 sha256sum \

@@ -5,7 +5,7 @@ mkdir -p ~/kobuild-tmp/versions-src
 DRIVER_DIR="${SOURCE_ROOT}/falcosecurity-libs" \
     SCRATCH_DIR="${HOME}/scratch" \
     OUTPUT_DIR="${HOME}/kobuild-tmp/versions-src" \
-    MODULE_VERSION="$(cat "${SOURCE_ROOT}/kernel-modules/MODULE_VERSION")" \
+    M_VERSION="$(cat "${SOURCE_ROOT}/kernel-modules/MODULE_VERSION")" \
     "${SOURCE_ROOT}/kernel-modules/build/prepare-src"
 
 versions=(~/kobuild-tmp/versions-src/*)
