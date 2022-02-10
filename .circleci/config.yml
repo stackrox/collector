@@ -904,7 +904,26 @@ jobs:
         enum: [cos, rhel, suse, suse-sap, ubuntu-os-pro, ubuntu-os, flatcar, fedora-coreos, garden-linux]
       image_family:
         type: enum
-        enum: [cos-beta, cos-dev, cos-stable, cos-89-lts, cos-85-lts, cos-77-lts, rhel-7, rhel-8, ubuntu-pro-1804-lts, ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2104, sles-12, sles-15, sles-15-sp2-sap, flatcar-stable, fedora-coreos-stable, garden-linux]
+        enum: [
+          cos-77-lts,
+          cos-85-lts,
+          cos-89-lts,
+          cos-beta,
+          cos-dev,
+          cos-stable,
+          fedora-coreos-stable,
+          flatcar-stable,
+          garden-linux,
+          rhel-7,
+          rhel-8,
+          sles-12,
+          sles-15,
+          sles-15-sp2-sap,
+          ubuntu-1804-lts,
+          ubuntu-2004-lts,
+          ubuntu-2110,
+          ubuntu-pro-1804-lts
+        ]
       image_name:
         type: string
         default: "unset"
@@ -1499,12 +1518,12 @@ workflows:
         vm_type: ubuntu-os
         matrix:
           parameters:
-            image_family: [ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2104]
+            image_family: [ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2110]
             collection_method: [module, ebpf]
             dockerized: [false, true]
           exclude:
             # Failing due to GLIC 2.33 not available on ubi 8
-            - image_family: ubuntu-2104
+            - image_family: ubuntu-2110
               collection_method: module
               dockerized: true
     - integration-test:
@@ -1600,8 +1619,8 @@ workflows:
         - test-ebpf-ubuntu-1804-lts
         - test-module-ubuntu-2004-lts
         - test-ebpf-ubuntu-2004-lts
-        - test-module-ubuntu-2104
-        - test-ebpf-ubuntu-2104
+        - test-module-ubuntu-2110
+        - test-ebpf-ubuntu-2110
         - test-ebpf-sles-15
         - test-module-sles-15
         - test-module-sles-12
