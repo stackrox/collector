@@ -59,7 +59,7 @@ fi
 DRIVER_DIR="/collector/$(get_driver_relative_path)" \
 SCRATCH_DIR="/scratch" \
 OUTPUT_DIR="/kobuild-tmp/versions-src" \
-MODULE_VERSION="$(get_module_version)" \
+M_VERSION="$(get_module_version)" \
     /scripts/prepare-src.sh
 
 legacy="$(echo "$BUILD_LEGACY" | tr '[:upper:]' '[:lower:]')"
@@ -83,7 +83,7 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
     DRIVER_DIR="/collector/$(get_driver_relative_path)" \
     SCRATCH_DIR="/scratch" \
     OUTPUT_DIR="/kobuild-tmp/versions-src" \
-    MODULE_VERSION="$(get_module_version)" \
+    M_VERSION="$(get_module_version)" \
         /scripts/prepare-src.sh
 
 done < <(grep -v '^#' < /collector/RELEASED_VERSIONS | awk -F'#' '{print $1}' | awk 'NF==2 {print $1}' | sort | uniq)
