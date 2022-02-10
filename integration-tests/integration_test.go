@@ -444,7 +444,9 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.StartContainerStats()
 	s.collector = NewCollectorManager(s.executor, s.T().Name())
 
-	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":` + strconv.Itoa(s.scrapeInterval) + `,"afterglowPeriod":` + strconv.Itoa(s.afterglowPeriod) + `,"enableAfterglow":` + strconv.FormatBool(s.enableAfterglow) + `}`
+	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":` + strconv.Itoa(s.scrapeInterval) + `}`
+	s.collector.Env["ROX_AFTERGLOW_PERIOD"] = strconv.Itoa(s.afterglowPeriod)
+	s.collector.Env["ROX_ENABLE_AFTERGLOW"] = strconv.FormatBool(s.enableAfterglow)
 
 	err := s.collector.Setup()
 	s.Require().NoError(err)
@@ -455,6 +457,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	images := []string{
 		"nginx:1.14-alpine",
 		"pstauffer/curl:latest",
+		"stackrox/qa:collector-schedule-curls",
 	}
 
 	for _, image := range images {
@@ -470,8 +473,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.serverContainer = containerID[0:12]
 
 	// invokes another container
-	s.dockerBuild("schedule-curls", "schedule-curls")
-	containerID, err = s.launchContainer("nginx-curl", "schedule-curls", "sleep", "300")
+	containerID, err = s.launchContainer("nginx-curl", "stackrox/qa:collector-schedule-curls", "sleep", "300")
 	s.Require().NoError(err)
 	s.clientContainer = containerID[0:12]
 
@@ -552,13 +554,6 @@ func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
 func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, error) {
 	cmd := []string{"docker", "run", "-d", "--name"}
 	cmd = append(cmd, args...)
-	output, err := s.executor.Exec(cmd...)
-	outLines := strings.Split(output, "\n")
-	return outLines[len(outLines)-1], err
-}
-
-func (s *IntegrationTestSuiteBase) dockerBuild(tag string, location string) (string, error) {
-	cmd := []string{"docker", "build", "-t", tag, location}
 	output, err := s.executor.Exec(cmd...)
 	outLines := strings.Split(output, "\n")
 	return outLines[len(outLines)-1], err
