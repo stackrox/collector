@@ -74,13 +74,13 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
 
 
 COSIntegrationTest: &COSIntegrationTest
-  name: test-ebpf-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   vm_type: cos
   collection_method: ebpf
 
 BuildCOSIntegrationTest: &BuildCOSIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestRequires
   <<: *COSIntegrationTest
+  name: test-ebpf-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   matrix:
     parameters:
       image_family: [cos-stable, cos-beta, cos-dev, cos-85-lts, cos-89-lts]
@@ -90,6 +90,7 @@ NightlyCOSIntegrationTest: &NightlyCOSIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestContext
   <<: *NightlyIntegrationTestRequires
   <<: *COSIntegrationTest
+  name: test-ebpf-<< matrix.collector_tag >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   matrix:
     parameters:
       image_family: [cos-stable, cos-beta, cos-dev, cos-85-lts, cos-89-lts]
@@ -98,12 +99,12 @@ NightlyCOSIntegrationTest: &NightlyCOSIntegrationTest
 
 
 RHELIntegrationTest: &RHELIntegrationTest
-  name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   vm_type: rhel
 
 BuildRHELIntegrationTest: &BuildRHELIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestRequires
   <<: *RHELIntegrationTest
+  name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   matrix:
     parameters:
       image_family: [rhel-7, rhel-8]
@@ -114,6 +115,7 @@ NightlyRHELIntegrationTest: &NightlyRHELIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestContext
   <<: *NightlyIntegrationTestRequires
   <<: *RHELIntegrationTest
+  name: test-<< matrix.collection_method >>-<< matrix.collector_tag >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   matrix:
     parameters:
       image_family: [rhel-7, rhel-8]
@@ -123,12 +125,12 @@ NightlyRHELIntegrationTest: &NightlyRHELIntegrationTest
 
 
 UbuntuIntegrationTest: &UbuntuIntegrationTest
-  name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   vm_type: ubuntu-os
 
 BuildUbuntuIntegrationTest: &BuildUbuntuIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestRequires
   <<: *UbuntuIntegrationTest
+  name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   matrix:
     parameters:
       image_family: [ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2110]
@@ -144,6 +146,7 @@ NightlyUbuntuIntegrationTest: &NightlyUbuntuIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestContext
   <<: *NightlyIntegrationTestRequires
   <<: *UbuntuIntegrationTest
+  name: test-<< matrix.collection_method >>-<< matrix.collector_tag >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   matrix:
     parameters:
       image_family: [ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2110]
@@ -153,12 +156,12 @@ NightlyUbuntuIntegrationTest: &NightlyUbuntuIntegrationTest
 
 
 UbuntuProIntegrationTest: &UbuntuProIntegrationTest
-  name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   vm_type: ubuntu-os-pro
 
 BuildUbuntuProIntegrationTest: &BuildUbuntuProIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestRequires
   <<: *UbuntuProIntegrationTest
+  name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   matrix:
     parameters:
       image_family: [ubuntu-pro-1804-lts]
@@ -169,6 +172,7 @@ NightlyUbuntuProIntegrationTest: &NightlyUbuntuProIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestContext
   <<: *NightlyIntegrationTestRequires
   <<: *UbuntuProIntegrationTest
+  name: test-<< matrix.collection_method >>-<< matrix.collector_tag >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   matrix:
     parameters:
       image_family: [ubuntu-pro-1804-lts]
@@ -178,12 +182,12 @@ NightlyUbuntuProIntegrationTest: &NightlyUbuntuProIntegrationTest
 
 
 SUSEIntegrationTest: &SUSEIntegrationTest
-  name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   vm_type: suse
 
 BuildSUSEIntegrationTest: &BuildSUSEIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestRequires
   <<: *SUSEIntegrationTest
+  name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   matrix:
     parameters:
       image_family: [sles-12, sles-15]
@@ -201,6 +205,7 @@ NightlySUSEIntegrationTest: &NightlySUSEIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestContext
   <<: *NightlyIntegrationTestRequires
   <<: *SUSEIntegrationTest
+  name: test-<< matrix.collection_method >>-<< matrix.collector_tag >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   matrix:
     parameters:
       image_family: [sles-12, sles-15]
@@ -214,13 +219,13 @@ NightlySUSEIntegrationTest: &NightlySUSEIntegrationTest
 
 
 FlatcarIntegrationTest: &FlatcarIntegrationTest
-  name: test-<< matrix.collection_method >>-flatcar-stable<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   vm_type: flatcar
   image_family: flatcar-stable
 
 BuildFlatcarIntegrationTest: &BuildFlatcarIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestRequires
   <<: *FlatcarIntegrationTest
+  name: test-<< matrix.collection_method >>-flatcar-stable<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   matrix:
     parameters:
       collection_method: [module, ebpf]
@@ -234,6 +239,7 @@ NightlyFlatcarIntegrationTest: &NightlyFlatcarIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestContext
   <<: *NightlyIntegrationTestRequires
   <<: *FlatcarIntegrationTest
+  name: test-<< matrix.collection_method >>-<< matrix.collector_tag >>-flatcar-stable<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   matrix:
     parameters:
       collection_method: [module, ebpf]
@@ -242,13 +248,13 @@ NightlyFlatcarIntegrationTest: &NightlyFlatcarIntegrationTest
 
 
 FedoraIntegrationTest: &FedoraIntegrationTest
-  name: test-<< matrix.collection_method >>-fedora-coreos-stable<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   image_family: fedora-coreos-stable
   vm_type: fedora-coreos
 
 BuildFedoraIntegrationTest: &BuildFedoraIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestRequires
   <<: *FedoraIntegrationTest
+  name: test-<< matrix.collection_method >>-fedora-coreos-stable<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   matrix:
     parameters:
       collection_method: [module, ebpf]
@@ -262,6 +268,7 @@ NightlyFedoraIntegrationTest: &NightlyFedoraIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestContext
   <<: *NightlyIntegrationTestRequires
   <<: *FedoraIntegrationTest
+  name: test-<< matrix.collection_method >>-<< matrix.collector_tag >>-fedora-coreos-stable<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   matrix:
     parameters:
       collection_method: [module, ebpf]
@@ -270,7 +277,6 @@ NightlyFedoraIntegrationTest: &NightlyFedoraIntegrationTest
 
 
 GardenIntegrationTest: &GardenIntegrationTest
-  name: test-<< matrix.collection_method >>-garden-linux<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   image_family: garden-linux
   image_name: gardenlinux-gcp-cloud-gardener--prod-<< matrix.image_version >>
   vm_type: garden-linux
@@ -278,6 +284,7 @@ GardenIntegrationTest: &GardenIntegrationTest
 BuildGardenIntegrationTest: &BuildGardenIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestRequires
   <<: *GardenIntegrationTest
+  name: test-<< matrix.collection_method >>-garden-linux<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   matrix:
     parameters:
       collection_method: [module, ebpf]
@@ -293,6 +300,7 @@ NightlyGardenIntegrationTest: &NightlyGardenIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestContext
   <<: *NightlyIntegrationTestRequires
   <<: *GardenIntegrationTest
+  name: test-<< matrix.collection_method >>-<< matrix.collector_tag >>-garden-linux<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
   matrix:
     parameters:
       collection_method: [module, ebpf]
