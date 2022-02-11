@@ -1821,12 +1821,12 @@ workflows:
         <<: *NightlyFedoraIntegrationTest
     - integration-test:
         <<: *NightlyGardenIntegrationTest
-    triggers:
-    # Run everyday at 0:00
-    - schedule:
-        cron: "0 0 * * *"
-        filters:
-          branches:
-            only:
-            - master
-            - main
+    # triggers:
+    # # Run everyday at 0:00
+    # - schedule:
+    #     cron: "0 0 * * *"
+    #     filters:
+    #       branches:
+    #         only:
+    #         - master
+    #         - main
