@@ -89,6 +89,7 @@ NightlyCOSIntegrationTest: &NightlyCOSIntegrationTest
     parameters:
       image_family: [cos-stable, cos-beta, cos-dev, cos-85-lts, cos-89-lts]
       dockerized: [false]
+      collector_tag: [3.6.0-slim]
 
 
 RHELIntegrationTest: &RHELIntegrationTest
@@ -112,6 +113,7 @@ NightlyRHELIntegrationTest: &NightlyRHELIntegrationTest
       image_family: [rhel-7, rhel-8]
       collection_method: [module, ebpf]
       dockerized: [false]
+      collector_tag: [3.6.0-slim]
 
 
 UbuntuIntegrationTest: &UbuntuIntegrationTest
@@ -140,6 +142,7 @@ NightlyUbuntuIntegrationTest: &NightlyUbuntuIntegrationTest
       image_family: [ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2110]
       collection_method: [module, ebpf]
       dockerized: [false]
+      collector_tag: [3.6.0-slim]
 
 
 UbuntuProIntegrationTest: &UbuntuProIntegrationTest
@@ -163,6 +166,7 @@ NightlyUbuntuProIntegrationTest: &NightlyUbuntuProIntegrationTest
       image_family: [ubuntu-pro-1804-lts]
       collection_method: [module, ebpf]
       dockerized: [false]
+      collector_tag: [3.6.0-slim]
 
 
 SUSEIntegrationTest: &SUSEIntegrationTest
@@ -193,6 +197,7 @@ NightlySUSEIntegrationTest: &NightlySUSEIntegrationTest
       image_family: [sles-12, sles-15]
       collection_method: [module, ebpf]
       dockerized: [false]
+      collector_tag: [3.6.0-slim]
     exclude:
       - image_family: sles-12
         collection_method: ebpf
@@ -223,6 +228,7 @@ NightlyFlatcarIntegrationTest: &NightlyFlatcarIntegrationTest
     parameters:
       collection_method: [module, ebpf]
       dockerized: [false]
+      collector_tag: [3.6.0-slim]
 
 
 FedoraIntegrationTest: &FedoraIntegrationTest
@@ -249,6 +255,7 @@ NightlyFedoraIntegrationTest: &NightlyFedoraIntegrationTest
     parameters:
       collection_method: [module, ebpf]
       dockerized: [false]
+      collector_tag: [3.6.0-slim]
 
 
 GardenIntegrationTest: &GardenIntegrationTest
@@ -279,6 +286,7 @@ NightlyGardenIntegrationTest: &NightlyGardenIntegrationTest
       collection_method: [module, ebpf]
       dockerized: [false]
       image_version: [576-2-9e22b9]
+      collector_tag: [3.6.0-slim]
 
 
 orbs:
@@ -1155,6 +1163,9 @@ jobs:
       dockerized:
         type: boolean
         default: false
+      collector_tag:
+        type: string
+        default: ""
     <<: *defaultMachine
     working_directory: ~/workspace
 
@@ -1214,7 +1225,12 @@ jobs:
         name: "Running integration tests"
         no_output_timeout: 45m
         command: |
-          <<# parameters.dockerized >>export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}-dockerized"<</ parameters.dockerized >>
+          if [[ -n "<< parameters.collector_tag >>" ]]; then
+            export COLLECTOR_IMAGE="${COLLECTOR_REPO}:<< parameters.collector_tag >>"
+          else
+            <<# parameters.dockerized >>export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}-dockerized"<</ parameters.dockerized >>
+          fi
+
           echo "Running tests with image '${COLLECTOR_IMAGE}'"
           make -C "${SOURCE_ROOT}" integration-tests-baseline integration-tests integration-tests-report
           cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
