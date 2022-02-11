@@ -65,7 +65,7 @@ createGCPVMFromImage() {
             --image-project "$GCP_IMAGE_PROJECT" \
             --service-account=circleci-collector@stackrox-ci.iam.gserviceaccount.com \
             --machine-type e2-standard-2 \
-            --labels="stackrox-ci=true,stackrox-ci-job=${CIRCLE_JOB},stackrox-ci-workflow=${CIRCLE_WORKFLOW_ID}" \
+            --labels="stackrox-ci=true,stackrox-ci-job=${CIRCLE_JOB//./-},stackrox-ci-workflow=${CIRCLE_WORKFLOW_ID}" \
             --boot-disk-size=20GB \
             "$GCP_VM_NAME"; then
             success=true
