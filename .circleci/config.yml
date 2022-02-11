@@ -64,6 +64,10 @@ BuildIntegrationTestRequires: &BuildIntegrationTestRequires
   - integration-test-local
   - dockerized-build-collector
 
+NightlyIntegrationTestRequires: &NightlyIntegrationTestRequires
+  requires:
+  - initjob
+
 runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequires
   <<: *runOnAllTagsWithIntegrationTestContext
   <<: *BuildIntegrationTestRequires
@@ -84,6 +88,7 @@ BuildCOSIntegrationTest: &BuildCOSIntegrationTest
 
 NightlyCOSIntegrationTest: &NightlyCOSIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestContext
+  <<: *NightlyIntegrationTestRequires
   <<: *COSIntegrationTest
   matrix:
     parameters:
@@ -107,6 +112,7 @@ BuildRHELIntegrationTest: &BuildRHELIntegrationTest
 
 NightlyRHELIntegrationTest: &NightlyRHELIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestContext
+  <<: *NightlyIntegrationTestRequires
   <<: *RHELIntegrationTest
   matrix:
     parameters:
@@ -136,6 +142,7 @@ BuildUbuntuIntegrationTest: &BuildUbuntuIntegrationTest
 
 NightlyUbuntuIntegrationTest: &NightlyUbuntuIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestContext
+  <<: *NightlyIntegrationTestRequires
   <<: *UbuntuIntegrationTest
   matrix:
     parameters:
@@ -160,6 +167,7 @@ BuildUbuntuProIntegrationTest: &BuildUbuntuProIntegrationTest
 
 NightlyUbuntuProIntegrationTest: &NightlyUbuntuProIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestContext
+  <<: *NightlyIntegrationTestRequires
   <<: *UbuntuProIntegrationTest
   matrix:
     parameters:
@@ -191,6 +199,7 @@ BuildSUSEIntegrationTest: &BuildSUSEIntegrationTest
 
 NightlySUSEIntegrationTest: &NightlySUSEIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestContext
+  <<: *NightlyIntegrationTestRequires
   <<: *SUSEIntegrationTest
   matrix:
     parameters:
@@ -223,6 +232,7 @@ BuildFlatcarIntegrationTest: &BuildFlatcarIntegrationTest
 
 NightlyFlatcarIntegrationTest: &NightlyFlatcarIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestContext
+  <<: *NightlyIntegrationTestRequires
   <<: *FlatcarIntegrationTest
   matrix:
     parameters:
@@ -250,6 +260,7 @@ BuildFedoraIntegrationTest: &BuildFedoraIntegrationTest
 
 NightlyFedoraIntegrationTest: &NightlyFedoraIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestContext
+  <<: *NightlyIntegrationTestRequires
   <<: *FedoraIntegrationTest
   matrix:
     parameters:
@@ -280,6 +291,7 @@ BuildGardenIntegrationTest: &BuildGardenIntegrationTest
 
 NightlyGardenIntegrationTest: &NightlyGardenIntegrationTest
   <<: *runOnAllTagsWithIntegrationTestContext
+  <<: *NightlyIntegrationTestRequires
   <<: *GardenIntegrationTest
   matrix:
     parameters:
@@ -1805,6 +1817,8 @@ workflows:
 
   nightly:
     jobs:
+    - initjob:
+        <<: *runOnAllTagsWithDockerIOPullCtx
     - integration-test:
         <<: *NightlyCOSIntegrationTest
     - integration-test:
