@@ -49,18 +49,237 @@ runOnAllTagsWithDockerIOPushCtx: &runOnAllTagsWithDockerIOPushCtx
     - quay-rhacs-eng-readwrite
     - quay-rhacs-eng-readonly
 
-runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequires
+runOnAllTagsWithIntegrationTestContext: &runOnAllTagsWithIntegrationTestContext
   <<: *runOnAllTags
   context:
     - docker-io-pull
     - quay-rhacs-eng-readonly
     - ubuntu-esm-subscription-token # Provides environment variable UBUNTU_ESM_SUBSCRIPTION_TOKEN.
     - redhat-developer-account-login
+
+BuildIntegrationTestRequires: &BuildIntegrationTestRequires
   requires:
   - images
   - ubi-image
   - integration-test-local
   - dockerized-build-collector
+
+runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequires
+  <<: *runOnAllTagsWithIntegrationTestContext
+  <<: *BuildIntegrationTestRequires
+
+
+COSIntegrationTest: &COSIntegrationTest
+  name: test-ebpf-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
+  vm_type: cos
+  collection_method: ebpf
+
+BuildCOSIntegrationTest: &BuildCOSIntegrationTest
+  <<: *runOnAllTagsWithIntegrationTestRequires
+  <<: *COSIntegrationTest
+  matrix:
+    parameters:
+      image_family: [cos-stable, cos-beta, cos-dev, cos-85-lts, cos-89-lts]
+      dockerized: [false, true]
+
+NightlyCOSIntegrationTest: &NightlyCOSIntegrationTest
+  <<: *runOnAllTagsWithIntegrationTestContext
+  <<: *COSIntegrationTest
+  matrix:
+    parameters:
+      image_family: [cos-stable, cos-beta, cos-dev, cos-85-lts, cos-89-lts]
+      dockerized: [false]
+
+
+RHELIntegrationTest: &RHELIntegrationTest
+  name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
+  vm_type: rhel
+
+BuildRHELIntegrationTest: &BuildRHELIntegrationTest
+  <<: *runOnAllTagsWithIntegrationTestRequires
+  <<: *RHELIntegrationTest
+  matrix:
+    parameters:
+      image_family: [rhel-7, rhel-8]
+      collection_method: [module, ebpf]
+      dockerized: [false, true]
+
+NightlyRHELIntegrationTest: &NightlyRHELIntegrationTest
+  <<: *runOnAllTagsWithIntegrationTestContext
+  <<: *RHELIntegrationTest
+  matrix:
+    parameters:
+      image_family: [rhel-7, rhel-8]
+      collection_method: [module, ebpf]
+      dockerized: [false]
+
+
+UbuntuIntegrationTest: &UbuntuIntegrationTest
+  name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
+  vm_type: ubuntu-os
+
+BuildUbuntuIntegrationTest: &BuildUbuntuIntegrationTest
+  <<: *runOnAllTagsWithIntegrationTestRequires
+  <<: *UbuntuIntegrationTest
+  matrix:
+    parameters:
+      image_family: [ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2110]
+      collection_method: [module, ebpf]
+      dockerized: [false, true]
+    exclude:
+      # Failing due to GLIC 2.33 not available on ubi 8
+      - image_family: ubuntu-2110
+        collection_method: module
+        dockerized: true
+
+NightlyUbuntuIntegrationTest: &NightlyUbuntuIntegrationTest
+  <<: *runOnAllTagsWithIntegrationTestContext
+  <<: *UbuntuIntegrationTest
+  matrix:
+    parameters:
+      image_family: [ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2110]
+      collection_method: [module, ebpf]
+      dockerized: [false]
+
+
+UbuntuProIntegrationTest: &UbuntuProIntegrationTest
+  name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
+  vm_type: ubuntu-os-pro
+
+BuildUbuntuProIntegrationTest: &BuildUbuntuProIntegrationTest
+  <<: *runOnAllTagsWithIntegrationTestRequires
+  <<: *UbuntuProIntegrationTest
+  matrix:
+    parameters:
+      image_family: [ubuntu-pro-1804-lts]
+      collection_method: [module, ebpf]
+      dockerized: [false, true]
+
+NightlyUbuntuProIntegrationTest: &NightlyUbuntuProIntegrationTest
+  <<: *runOnAllTagsWithIntegrationTestContext
+  <<: *UbuntuProIntegrationTest
+  matrix:
+    parameters:
+      image_family: [ubuntu-pro-1804-lts]
+      collection_method: [module, ebpf]
+      dockerized: [false]
+
+
+SUSEIntegrationTest: &SUSEIntegrationTest
+  name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
+  vm_type: suse
+
+BuildSUSEIntegrationTest: &BuildSUSEIntegrationTest
+  <<: *runOnAllTagsWithIntegrationTestRequires
+  <<: *SUSEIntegrationTest
+  matrix:
+    parameters:
+      image_family: [sles-12, sles-15]
+      collection_method: [module, ebpf]
+      dockerized: [false, true]
+    exclude:
+      - image_family: sles-12
+        collection_method: ebpf
+        dockerized: false
+      - image_family: sles-12
+        collection_method: ebpf
+        dockerized: true
+
+NightlySUSEIntegrationTest: &NightlySUSEIntegrationTest
+  <<: *runOnAllTagsWithIntegrationTestContext
+  <<: *SUSEIntegrationTest
+  matrix:
+    parameters:
+      image_family: [sles-12, sles-15]
+      collection_method: [module, ebpf]
+      dockerized: [false]
+    exclude:
+      - image_family: sles-12
+        collection_method: ebpf
+        dockerized: false
+
+
+FlatcarIntegrationTest: &FlatcarIntegrationTest
+  name: test-<< matrix.collection_method >>-flatcar-stable<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
+  vm_type: flatcar
+  image_family: flatcar-stable
+
+BuildFlatcarIntegrationTest: &BuildFlatcarIntegrationTest
+  <<: *runOnAllTagsWithIntegrationTestRequires
+  <<: *FlatcarIntegrationTest
+  matrix:
+    parameters:
+      collection_method: [module, ebpf]
+      dockerized: [false, true]
+    exclude:
+      # Failing due to GLIC 2.33 not available on ubi 8
+      - collection_method: module
+        dockerized: true
+
+NightlyFlatcarIntegrationTest: &NightlyFlatcarIntegrationTest
+  <<: *runOnAllTagsWithIntegrationTestContext
+  <<: *FlatcarIntegrationTest
+  matrix:
+    parameters:
+      collection_method: [module, ebpf]
+      dockerized: [false]
+
+
+FedoraIntegrationTest: &FedoraIntegrationTest
+  name: test-<< matrix.collection_method >>-fedora-coreos-stable<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
+  image_family: fedora-coreos-stable
+  vm_type: fedora-coreos
+
+BuildFedoraIntegrationTest: &BuildFedoraIntegrationTest
+  <<: *runOnAllTagsWithIntegrationTestRequires
+  <<: *FedoraIntegrationTest
+  matrix:
+    parameters:
+      collection_method: [module, ebpf]
+      dockerized: [false, true]
+    exclude:
+      # Failing due to GLIC 2.33 not available on ubi 8
+      - collection_method: module
+        dockerized: true
+
+NightlyFedoraIntegrationTest: &NightlyFedoraIntegrationTest
+  <<: *runOnAllTagsWithIntegrationTestContext
+  <<: *FedoraIntegrationTest
+  matrix:
+    parameters:
+      collection_method: [module, ebpf]
+      dockerized: [false]
+
+
+GardenIntegrationTest: &GardenIntegrationTest
+  name: test-<< matrix.collection_method >>-garden-linux<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
+  image_family: garden-linux
+  image_name: gardenlinux-gcp-cloud-gardener--prod-<< matrix.image_version >>
+  vm_type: garden-linux
+
+BuildGardenIntegrationTest: &BuildGardenIntegrationTest
+  <<: *runOnAllTagsWithIntegrationTestRequires
+  <<: *GardenIntegrationTest
+  matrix:
+    parameters:
+      collection_method: [module, ebpf]
+      dockerized: [false, true]
+      image_version: [576-2-9e22b9]
+    exclude:
+      # Failing due to dockerized module not being built (requires gcc-10).
+      - collection_method: module
+        dockerized: true
+        image_version: 576-2-9e22b9
+
+NightlyGardenIntegrationTest: &NightlyGardenIntegrationTest
+  <<: *runOnAllTagsWithIntegrationTestContext
+  <<: *GardenIntegrationTest
+  matrix:
+    parameters:
+      collection_method: [module, ebpf]
+      dockerized: [false]
+      image_version: [576-2-9e22b9]
+
 
 orbs:
   slack: circleci/slack@3.4.2
@@ -1495,62 +1714,15 @@ workflows:
         - ubi-image
         - upload-modules
     - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-ebpf-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
-        vm_type: cos
-        collection_method: ebpf
-        matrix:
-          parameters:
-            image_family: [cos-stable, cos-beta, cos-dev, cos-85-lts, cos-89-lts]
-            dockerized: [false, true]
+        <<: *BuildCOSIntegrationTest
     - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
-        vm_type: rhel
-        matrix:
-          parameters:
-            image_family: [rhel-7, rhel-8]
-            collection_method: [module, ebpf]
-            dockerized: [false, true]
+        <<: *BuildRHELIntegrationTest
     - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
-        vm_type: ubuntu-os
-        matrix:
-          parameters:
-            image_family: [ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2110]
-            collection_method: [module, ebpf]
-            dockerized: [false, true]
-          exclude:
-            # Failing due to GLIC 2.33 not available on ubi 8
-            - image_family: ubuntu-2110
-              collection_method: module
-              dockerized: true
+        <<: *BuildUbuntuIntegrationTest
     - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
-        vm_type: ubuntu-os-pro
-        matrix:
-          parameters:
-            image_family: [ubuntu-pro-1804-lts]
-            collection_method: [module, ebpf]
-            dockerized: [false, true]
+        <<: *BuildUbuntuProIntegrationTest
     - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
-        vm_type: suse
-        matrix:
-          parameters:
-            image_family: [sles-12, sles-15]
-            collection_method: [module, ebpf]
-            dockerized: [false, true]
-          exclude:
-            - image_family: sles-12
-              collection_method: ebpf
-              dockerized: false
-            - image_family: sles-12
-              collection_method: ebpf
-              dockerized: true
+        <<: *BuildSUSEIntegrationTest
     # Removed while solving ROX-9180
     # - integration-test:
     #     <<: *runOnAllTagsWithIntegrationTestRequires
@@ -1562,47 +1734,11 @@ workflows:
     #         collection_method: [module, ebpf]
     #         dockerized: [false, true]
     - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-<< matrix.collection_method >>-flatcar-stable<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
-        vm_type: flatcar
-        image_family: flatcar-stable
-        matrix:
-          parameters:
-            collection_method: [module, ebpf]
-            dockerized: [false, true]
-          exclude:
-            # Failing due to GLIC 2.33 not available on ubi 8
-            - collection_method: module
-              dockerized: true
+        <<: *BuildFlatcarIntegrationTest
     - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-<< matrix.collection_method >>-fedora-coreos-stable<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
-        image_family: fedora-coreos-stable
-        vm_type: fedora-coreos
-        matrix:
-          parameters:
-            collection_method: [module, ebpf]
-            dockerized: [false, true]
-          exclude:
-            # Failing due to GLIC 2.33 not available on ubi 8
-            - collection_method: module
-              dockerized: true
+        <<: *BuildFedoraIntegrationTest
     - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-<< matrix.collection_method >>-garden-linux<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
-        image_family: garden-linux
-        image_name: gardenlinux-gcp-cloud-gardener--prod-<< matrix.image_version >>
-        vm_type: garden-linux
-        matrix:
-          parameters:
-            collection_method: [module, ebpf]
-            dockerized: [false, true]
-            image_version: [576-2-9e22b9]
-          exclude:
-            # Failing due to dockerized module not being built (requires gcc-10).
-            - collection_method: module
-              dockerized: true
-              image_version: 576-2-9e22b9
+        <<: *BuildGardenIntegrationTest
     - integration-test-data:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
@@ -1650,3 +1786,31 @@ workflows:
           - collector-support
         requires:
           - upload-modules
+
+  nightly:
+    jobs:
+    - integration-test:
+        <<: *NightlyCOSIntegrationTest
+    - integration-test:
+        <<: *NightlyRHELIntegrationTest
+    - integration-test:
+        <<: *NightlyUbuntuIntegrationTest
+    - integration-test:
+        <<: *NightlyUbuntuProIntegrationTest
+    - integration-test:
+        <<: *NightlySUSEIntegrationTest
+    - integration-test:
+        <<: *NightlyFlatcarIntegrationTest
+    - integration-test:
+        <<: *NightlyFedoraIntegrationTest
+    - integration-test:
+        <<: *NightlyGardenIntegrationTest
+    triggers:
+    # Run everyday at 0:00
+    - schedule:
+        cron: "0 0 * * *"
+        filters:
+          branches:
+            only:
+            - master
+            - main
