@@ -1237,10 +1237,10 @@ jobs:
         name: "Running integration tests"
         no_output_timeout: 45m
         command: |
+          <<# parameters.dockerized >>export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}-dockerized"<</ parameters.dockerized >>
+
           if [[ -n "<< parameters.collector_tag >>" ]]; then
             export COLLECTOR_IMAGE="${COLLECTOR_REPO}:<< parameters.collector_tag >>"
-          else
-            <<# parameters.dockerized >>export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}-dockerized"<</ parameters.dockerized >>
           fi
 
           echo "Running tests with image '${COLLECTOR_IMAGE}'"
