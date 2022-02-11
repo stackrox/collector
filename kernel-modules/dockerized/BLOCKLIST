@@ -11,6 +11,7 @@
 # for the time being
 *-dockerdesktop-*
 # Kernel modules requiring a specific GCC/GLIBC version
+# Tracked in RS-284 and RS-335
 4.9.0-0.bpo.6-amd64 * mod
 ~4\.9\.0-[0-9]+-amd64 * mod
 ~4\.19\.0-17(-cloud)?-amd64 * *
