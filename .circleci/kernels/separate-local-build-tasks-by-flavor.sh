@@ -5,9 +5,9 @@ set -eo pipefail
 shopt -s nullglob
 
 for f in ~/kobuild-tmp/custom-flavors/versions.*; do
-  flavor="$(basename "$f")"
-  flavor="${flavor#versions\.}"
-  join -1 1 -2 1 -o'1.1,1.2,1.3' <(sort -k 1b,1 <~/kobuild-tmp/local-build-tasks) <(sort -k 1b,1 <"$f") >~/kobuild-tmp/local-build-tasks."$flavor"
+    flavor="$(basename "$f")"
+    flavor="${flavor#versions\.}"
+    join -1 1 -2 1 -o'1.1,1.2,1.3' <(sort -k 1b,1 < ~/kobuild-tmp/local-build-tasks) <(sort -k 1b,1 < "$f") > ~/kobuild-tmp/local-build-tasks."$flavor"
 done
-cat ~/kobuild-tmp/local-build-tasks.* ~/kobuild-tmp/local-build-tasks | sort | uniq -u >~/kobuild-tmp/local-build-tasks.default
+cat ~/kobuild-tmp/local-build-tasks.* ~/kobuild-tmp/local-build-tasks | sort | uniq -u > ~/kobuild-tmp/local-build-tasks.default
 rm ~/kobuild-tmp/local-build-tasks

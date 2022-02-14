@@ -2,8 +2,8 @@
 .rox/
 integration-tests/*.logs
 integration-tests/perf.json
-sysdig/cmake-build
-sysdig/cmake-build-rhel
+falcosecurity-libs/cmake-build
+falcosecurity-libs/cmake-build-rhel
 kernel-modules/kobuild-tmp
 
 # Mac OS hidden file

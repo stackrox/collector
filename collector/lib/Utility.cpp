@@ -127,6 +127,10 @@ std::string normalizeReleaseString(HostInfo& host) {
     return kernel.ShortRelease() + "-dockerdesktop-" + timestamp.str();
   }
 
+  if (host.IsMinikube()) {
+    return kernel.release + "-minikube";
+  }
+
   return kernel.release;
 }
 
@@ -295,6 +299,25 @@ const char* GetModuleDownloadBaseURL() {
 
   CLOG(DEBUG) << "MODULE_DOWNLOAD_BASE_URL not set";
   return "";
+}
+
+const std::string kKernelModulesDir = "/kernel-modules";
+
+std::string GetModuleVersion() {
+  // This function is expected to be called a handful of times
+  // during initialization. If this condition changes, consider
+  // adding a lazy initialized static variable and prevent
+  // reading MODULE_VERSION.txt on every call.
+  std::ifstream file(kKernelModulesDir + "/MODULE_VERSION.txt");
+  if (!file.is_open()) {
+    CLOG(WARNING) << "Failed to open '" << kKernelModulesDir << "/MODULE_VERSION.txt'";
+    return "";
+  }
+
+  static std::string module_version;
+  getline(file, module_version);
+
+  return module_version;
 }
 
 void TryUnlink(const char* path) {

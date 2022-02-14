@@ -23,10 +23,11 @@ include_directories(${PROJECT_SOURCE_DIR}/lib)
 include_directories(${PROJECT_SOURCE_DIR}/generated/proto)
 include_directories(${PROJECT_SOURCE_DIR}/generated/rox-proto)
 include_directories(${PROJECT_SOURCE_DIR}/generated/googleapis)
-include_directories(${PROJECT_SOURCE_DIR}/sysdig/src/driver)
-include_directories(${PROJECT_SOURCE_DIR}/sysdig/src/userspace)
-include_directories(${PROJECT_SOURCE_DIR}/sysdig/src/userspace/libscap)
-include_directories(${PROJECT_SOURCE_DIR}/sysdig/src/userspace/libsinsp)
+include_directories(${PROJECT_SOURCE_DIR}/falcosecurity-libs/driver)
+include_directories(${PROJECT_SOURCE_DIR}/falcosecurity-libs/userspace)
+include_directories(${PROJECT_SOURCE_DIR}/falcosecurity-libs/userspace/libscap)
+include_directories(${PROJECT_SOURCE_DIR}/falcosecurity-libs/userspace/libsinsp)
+include_directories(${PROJECT_SOURCE_DIR}/falcosecurity-libs/userspace/chisel)
 include_directories(/usr/local/include)
 include_directories(/usr/local/include/grpc)
 include_directories(/usr/local/include/tbb)
@@ -34,13 +35,13 @@ include_directories(/usr/local/include/jsoncpp)
 include_directories(/usr/include/civetweb)
 include_directories(/usr/include/prometheus)
 include_directories(/usr/include/google/protobuf)
-set(SYSDIG_DRIVER_HEADERS ${PROJECT_SOURCE_DIR}/sysdig/src/driver/ppm_events_public.h ${PROJECT_SOURCE_DIR}/sysdig/src/driver/ppm_fillers.h)
+set(DRIVER_HEADERS ${PROJECT_SOURCE_DIR}/falcosecurity-libs/driver/ppm_events_public.h ${PROJECT_SOURCE_DIR}/falcosecurity-libs/driver/ppm_fillers.h)
 
 add_definitions(-DUSE_PROTO_ARENAS)
 
 file(GLOB COLLECTOR_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/lib/*.cpp)
 file(GLOB_RECURSE PROTO_SRC_FILES ${PROJECT_SOURCE_DIR}/generated/*.cc)
-add_library(collector_lib ${SYSDIG_DRIVER_HEADERS} ${COLLECTOR_LIB_SRC_FILES} ${PROTO_SRC_FILES})
+add_library(collector_lib ${DRIVER_HEADERS} ${COLLECTOR_LIB_SRC_FILES} ${PROTO_SRC_FILES})
 add_dependencies(collector_lib sinsp-wrapper)
 target_link_libraries(collector_lib sinsp-wrapper)
 target_link_libraries(collector_lib cap-ng)
@@ -53,7 +54,7 @@ else()
 	target_link_libraries(collector_lib libprotobuf.a libcares.a)
 endif()
 
-target_link_libraries(collector_lib z ssl crypto)
+target_link_libraries(collector_lib z ssl crypto curl)
 
 add_executable(collector collector.cpp)
 target_link_libraries(collector collector_lib)
@@ -89,8 +90,15 @@ endif()
 
 add_test(collector-tests runUnitTests)
 
-# Sysdig Wrapper Library
+# Falco Wrapper Library
 set(BUILD_DRIVER OFF CACHE BOOL "Build the driver on Linux" FORCE)
 set(USE_BUNDLED_DEPS OFF CACHE BOOL "Enable bundled dependencies instead of using the system ones" FORCE)
 set(NO_LINK_GRPC_LIBS ON CACHE BOOL "Do not link gRPC libraries" FORCE)
-add_subdirectory(${PROJECT_SOURCE_DIR}/sysdig/src EXCLUDE_FROM_DEFAULT_BUILD)
+set(WITH_CHISEL ON CACHE BOOL "Include chisel implementation" FORCE)
+
+# Turn OFF falco's unit tests and examples
+set(CREATE_TEST_TARGETS OFF CACHE BOOL "Enable make-targets for unit testing" FORCE)
+set(BUILD_LIBSCAP_EXAMPLES OFF CACHE BOOL "Build libscap examples" FORCE)
+set(BUILD_LIBSINSP_EXAMPLES OFF CACHE BOOL "Build libsinsp examples" FORCE)
+
+add_subdirectory(${PROJECT_SOURCE_DIR}/falcosecurity-libs EXCLUDE_FROM_DEFAULT_BUILD)

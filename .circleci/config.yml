@@ -12,10 +12,14 @@ parameters:
   kernel-bundles-staging:
     type: string
     default: ""
+  default-machine-image:
+    type: string
+    # https://circleci.com/docs/2.0/configuration-reference/#available-machine-images
+    default: ubuntu-2004:202111-02
 
 defaultImage: &defaultImage
   docker:
-  - image: "<< pipeline.parameters.quay-repo >>/apollo-ci:snapshot-collector-0.3.23-10-g0165faa5d3" # TODO(do not merge): After upstream PR is merged, cut a tag and update this
+  - image: "<< pipeline.parameters.quay-repo >>/apollo-ci:snapshot-collector-0.3.28-33-g8e63045e4a" # TODO(do not merge): After upstream PR is merged, cut a tag and update this
     auth:
       username: $QUAY_RHACS_ENG_RO_USERNAME
       password: $QUAY_RHACS_ENG_RO_PASSWORD
@@ -25,7 +29,7 @@ defaultImage: &defaultImage
 
 defaultMachine: &defaultMachine
   machine:
-    image: ubuntu-2004:202104-01
+    image: << pipeline.parameters.default-machine-image >>
 
 runOnAllTags: &runOnAllTags
   filters:
@@ -56,11 +60,11 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
   - images
   - ubi-image
   - integration-test-local
-  # - dockerized-build-collector
+  - dockerized-build-collector
 
 orbs:
   slack: circleci/slack@3.4.2
-  ci-artifacts: stackrox/ci-artifacts-orb@0.1.0
+  ci-artifacts: stackrox/ci-artifacts-orb@0.1.1
 
 commands:
   initcommand:
@@ -316,16 +320,26 @@ jobs:
     steps:
     - initcommand
     - run:
-        name: Install clang-format
-        command: |
-          sudo bash -c 'printf "deb http://deb.debian.org/debian/ buster-backports main contrib non-free" > /etc/apt/sources.list.d/backports.list'
-          sudo apt-get update
-          sudo apt-get install -y clang-format-11
-          sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-11 100
-    - run:
         name: Lint via clang-format
         command: |
            make -C "${COLLECTOR_SOURCE_ROOT}" check
+
+    - run:
+        name: Lint via shfmt
+        command: |
+          go install mvdan.cc/sh/v3/cmd/shfmt@v3.4.1
+          make -C "${SOURCE_ROOT}" shfmt-check
+
+  test-scripts:
+    <<: *defaultImage
+
+    steps:
+    - initcommand
+
+    - run:
+        name: Test get-builder-flavor
+        command: |
+          "${CI_ROOT}/test-scripts/get-builder-flavor/run-tests.sh" "${SOURCE_ROOT}"
 
   builder:
     <<: *defaultMachine
@@ -355,11 +369,6 @@ jobs:
 
     steps:
     - initcommand
-
-    - run:
-        name: Install patch utility
-        command: |
-          sudo apt-get install patch
 
     - run:
         name: Prepare source
@@ -610,7 +619,7 @@ jobs:
 
   ubi-image:
     machine:
-      image: ubuntu-2004:202010-01
+      image: << pipeline.parameters.default-machine-image >>
       docker_layer_caching: true
     resource_class: large
     environment:
@@ -892,10 +901,29 @@ jobs:
         enum: [module, ebpf]
       vm_type:
         type: enum
-        enum: [cos, rhel, suse, suse-sap, ubuntu-os, flatcar, fedora-coreos, garden-linux]
+        enum: [cos, rhel, suse, suse-sap, ubuntu-os-pro, ubuntu-os, flatcar, fedora-coreos, garden-linux]
       image_family:
         type: enum
-        enum: [cos-beta, cos-dev, cos-stable, cos-89-lts, cos-85-lts, cos-77-lts, cos-81-lts, rhel-7, rhel-8, ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2104, sles-12, sles-15, sles-15-sp2-sap, flatcar-stable, fedora-coreos-stable, garden-linux]
+        enum: [
+          cos-77-lts,
+          cos-85-lts,
+          cos-89-lts,
+          cos-beta,
+          cos-dev,
+          cos-stable,
+          fedora-coreos-stable,
+          flatcar-stable,
+          garden-linux,
+          rhel-7,
+          rhel-8,
+          sles-12,
+          sles-15,
+          sles-15-sp2-sap,
+          ubuntu-1804-lts,
+          ubuntu-2004-lts,
+          ubuntu-2110,
+          ubuntu-pro-1804-lts
+        ]
       image_name:
         type: string
         default: "unset"
@@ -1368,6 +1396,10 @@ workflows:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
         - initjob
+    - test-scripts:
+        <<: *runOnAllTagsWithDockerIOPullCtx
+        requires:
+        - initjob
     - builder:
         <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
@@ -1376,43 +1408,43 @@ workflows:
         <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - builder
-    # - dockerized-task-file:
-    #     <<: *runOnAllTags
-    #     context:
-    #       - docker-io-pull
-    #       - quay-rhacs-eng-readonly
-    #       - redhat-developer-account-login
-    #     requires:
-    #     - lint
-    # - dockerized-build-drivers:
-    #     <<: *runOnAllTags
-    #     context:
-    #       - docker-io-pull
-    #       - quay-rhacs-eng-readwrite
-    #       - redhat-developer-account-login
-    #     requires:
-    #     - dockerized-task-file
-    # - dockerized-unify-images:
-    #     <<: *runOnAllTags
-    #     context:
-    #       - docker-io-pull
-    #       - quay-rhacs-eng-readwrite
-    #     requires:
-    #       - dockerized-build-drivers
-    # - dockerized-check-failures:
-    #     <<: *runOnAllTags
-    #     context:
-    #       - quay-rhacs-eng-readonly
-    #     requires:
-    #       - dockerized-unify-images
-    # - dockerized-build-collector:
-    #     <<: *runOnAllTags
-    #     context:
-    #       - docker-io-push
-    #       - quay-rhacs-eng-readonly
-    #     requires:
-    #       - dockerized-unify-images
-    #       - images
+    - dockerized-task-file:
+        <<: *runOnAllTags
+        context:
+          - docker-io-pull
+          - quay-rhacs-eng-readonly
+          - redhat-developer-account-login
+        requires:
+        - lint
+    - dockerized-build-drivers:
+        <<: *runOnAllTags
+        context:
+          - docker-io-pull
+          - quay-rhacs-eng-readwrite
+          - redhat-developer-account-login
+        requires:
+        - dockerized-task-file
+    - dockerized-unify-images:
+        <<: *runOnAllTags
+        context:
+          - docker-io-pull
+          - quay-rhacs-eng-readwrite
+        requires:
+          - dockerized-build-drivers
+    - dockerized-check-failures:
+        <<: *runOnAllTags
+        context:
+          - quay-rhacs-eng-readonly
+        requires:
+          - dockerized-unify-images
+    - dockerized-build-collector:
+        <<: *runOnAllTags
+        context:
+          - docker-io-push
+          - quay-rhacs-eng-readonly
+        requires:
+          - dockerized-unify-images
+          - images
     - prepare-kernels:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
@@ -1469,8 +1501,8 @@ workflows:
         collection_method: ebpf
         matrix:
           parameters:
-            image_family: [cos-stable, cos-beta, cos-dev, cos-81-lts, cos-85-lts, cos-89-lts]
-            dockerized: [false]
+            image_family: [cos-stable, cos-beta, cos-dev, cos-85-lts, cos-89-lts]
+            dockerized: [false, true]
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
@@ -1479,21 +1511,30 @@ workflows:
           parameters:
             image_family: [rhel-7, rhel-8]
             collection_method: [module, ebpf]
-            dockerized: [false]
+            dockerized: [false, true]
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
         vm_type: ubuntu-os
         matrix:
           parameters:
-            image_family: [ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2104]
+            image_family: [ubuntu-1804-lts, ubuntu-2004-lts, ubuntu-2110]
             collection_method: [module, ebpf]
-            dockerized: [false]
+            dockerized: [false, true]
           exclude:
             # Failing due to GLIC 2.33 not available on ubi 8
-            - image_family: ubuntu-2104
+            - image_family: ubuntu-2110
               collection_method: module
               dockerized: true
+    - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
+        name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
+        vm_type: ubuntu-os-pro
+        matrix:
+          parameters:
+            image_family: [ubuntu-pro-1804-lts]
+            collection_method: [module, ebpf]
+            dockerized: [false, true]
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-<< matrix.collection_method >>-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
@@ -1502,7 +1543,7 @@ workflows:
           parameters:
             image_family: [sles-12, sles-15]
             collection_method: [module, ebpf]
-            dockerized: [false]
+            dockerized: [false, true]
           exclude:
             - image_family: sles-12
               collection_method: ebpf
@@ -1510,15 +1551,16 @@ workflows:
             - image_family: sles-12
               collection_method: ebpf
               dockerized: true
-    - integration-test:
-        <<: *runOnAllTagsWithIntegrationTestRequires
-        name: test-<< matrix.collection_method >>-sles-15-sp2-sap<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
-        vm_type: suse-sap
-        image_family: sles-15-sp2-sap
-        matrix:
-          parameters:
-            collection_method: [module, ebpf]
-            dockerized: [false]
+    # Removed while solving ROX-9180
+    # - integration-test:
+    #     <<: *runOnAllTagsWithIntegrationTestRequires
+    #     name: test-<< matrix.collection_method >>-sles-15-sp2-sap<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
+    #     vm_type: suse-sap
+    #     image_family: sles-15-sp2-sap
+    #     matrix:
+    #       parameters:
+    #         collection_method: [module, ebpf]
+    #         dockerized: [false, true]
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-<< matrix.collection_method >>-flatcar-stable<<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
@@ -1527,7 +1569,7 @@ workflows:
         matrix:
           parameters:
             collection_method: [module, ebpf]
-            dockerized: [false]
+            dockerized: [false, true]
           exclude:
             # Failing due to GLIC 2.33 not available on ubi 8
             - collection_method: module
@@ -1540,7 +1582,7 @@ workflows:
         matrix:
           parameters:
             collection_method: [module, ebpf]
-            dockerized: [false]
+            dockerized: [false, true]
           exclude:
             # Failing due to GLIC 2.33 not available on ubi 8
             - collection_method: module
@@ -1554,7 +1596,7 @@ workflows:
         matrix:
           parameters:
             collection_method: [module, ebpf]
-            dockerized: [false]
+            dockerized: [false, true]
             image_version: [576-2-9e22b9]
           exclude:
             # Failing due to dockerized module not being built (requires gcc-10).
@@ -1567,7 +1609,6 @@ workflows:
         - test-ebpf-cos-stable
         - test-ebpf-cos-beta
         - test-ebpf-cos-dev
-        - test-ebpf-cos-81-lts
         - test-ebpf-cos-85-lts
         - test-ebpf-cos-89-lts
         - test-module-rhel-7
@@ -1578,19 +1619,22 @@ workflows:
         - test-ebpf-ubuntu-1804-lts
         - test-module-ubuntu-2004-lts
         - test-ebpf-ubuntu-2004-lts
-        - test-module-ubuntu-2104
-        - test-ebpf-ubuntu-2104
+        - test-module-ubuntu-2110
+        - test-ebpf-ubuntu-2110
         - test-ebpf-sles-15
         - test-module-sles-15
         - test-module-sles-12
-        - test-ebpf-sles-15-sp2-sap
-        - test-module-sles-15-sp2-sap
+        # Removed while solving ROX-9180
+        # - test-ebpf-sles-15-sp2-sap
+        # - test-module-sles-15-sp2-sap
         - test-ebpf-flatcar-stable
         - test-module-flatcar-stable
         - test-ebpf-fedora-coreos-stable
         - test-module-fedora-coreos-stable
         - test-ebpf-garden-linux
         - test-module-garden-linux
+        - test-module-ubuntu-pro-1804-lts
+        - test-ebpf-ubuntu-pro-1804-lts
     - reload-released-images:
         <<: *runOnAllTags
         context:

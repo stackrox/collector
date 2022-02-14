@@ -21,6 +21,6 @@ for f in source-archives/*.tgz; do
     patch_file="${base_dir}/../kernel-modules/patches/${version}.patch"
     if [[ -f "$patch_file" ]]; then
         echo "Patching module version ${version} ..."
-        patch -p1 -d "sources/${version}" <"$patch_file"
+        patch -p1 -d "sources/${version}" < "$patch_file"
     fi
 done

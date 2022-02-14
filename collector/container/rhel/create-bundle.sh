@@ -13,11 +13,11 @@ MODULE_ARCHIVE="$2"
 OUTPUT_DIR="$3"
 
 [[ -n "$INPUT_ROOT" && -n "$MODULE_ARCHIVE" && -n "$OUTPUT_DIR" ]] \
-   || die "Usage: $0 <input-root> <module-archive> <output-dir>"
+    || die "Usage: $0 <input-root> <module-archive> <output-dir>"
 [[ -d "$INPUT_ROOT" ]] \
-   || die "Input root directory doesn't exist or is not a directory."
+    || die "Input root directory doesn't exist or is not a directory."
 [[ "$MODULE_ARCHIVE" == "-" || -f "$MODULE_ARCHIVE" ]] \
-   || die "Module archive doesn't exist."
+    || die "Module archive doesn't exist."
 [[ -d "$OUTPUT_DIR" ]] \
     || die "Output directory doesn't exist or is not a directory."
 
@@ -53,10 +53,10 @@ cp -p "${INPUT_ROOT}/bin/collector" "${bundle_root}/usr/local/bin/collector"
 # =============================================================================
 
 # Files should have owner/group equal to root:root
-if tar --version | grep -q "gnu" ; then
-  tar_chown_args=("--owner=root:0" "--group=root:0")
+if tar --version | grep -q "gnu"; then
+    tar_chown_args=("--owner=root:0" "--group=root:0")
 else
-  tar_chown_args=("--disable-copyfile")
+    tar_chown_args=("--disable-copyfile")
 fi
 
 # Create output bundle of all files in $bundle_root

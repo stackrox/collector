@@ -13,7 +13,7 @@ build_ko() (
 
     local kernel_src_dir="/scratch/kernel-src/${kernel_version}"
     if [[ ! -d "$kernel_src_dir" ]]; then
-        rm -rf /scratch/kernel-src/* 2>/dev/null || true
+        rm -rf /scratch/kernel-src/* 2> /dev/null || true
         mkdir -p "$kernel_src_dir"
         tar -C "$kernel_src_dir" -xzf "/bundles/bundle-${kernel_version}.tgz"
     fi
@@ -41,10 +41,10 @@ build_ko() (
     cd "$module_src_dir"
 
     local rhel7_kernel_with_ebpf=false
-    if (( bundle_version == 3 && bundle_major >= 10 )); then
+    if ((bundle_version == 3 && bundle_major >= 10)); then
         if [[ "$bundle_distro" == "redhat" ]]; then
             rhel_build_id="$(echo "$bundle_uname" | awk -F'[-.]' '{ print $4 }')"
-            if (( rhel_build_id >= 957 )); then
+            if ((rhel_build_id >= 957)); then
                 echo "Kernel ${bundle_uname} has backported eBPF support"
                 rhel7_kernel_with_ebpf=true
             fi
@@ -67,7 +67,7 @@ build_ko() (
         fi
 
         mkdir -p "/output/${module_version}"
-        gzip -c "$collector_ko" >"/output/${module_version}/collector-${kernel_version}.ko.gz"
+        gzip -c "$collector_ko" > "/output/${module_version}/collector-${kernel_version}.ko.gz"
         rm "$collector_ko"
     elif [[ "$probe_type" == "bpf" ]]; then
         # Build eBPF probe, if possible
@@ -94,7 +94,7 @@ build_ko() (
 
         # Check kernel version is at least 4.14 (unless RHEL 7.6 kernel detected)
         else
-            if (( bundle_version < 4 || (bundle_version == 4 && bundle_major < 14) )); then
+            if ((bundle_version < 4 || (bundle_version == 4 && bundle_major < 14))); then
                 echo "Kernel version ${kernel_version} does not support eBPF probe building, skipping ..."
                 mkdir -p "/output/${module_version}"
                 touch "/output/${module_version}/.collector-ebpf-${kernel_version}.unavail"
@@ -114,7 +114,7 @@ build_ko() (
         fi
 
         mkdir -p "/output/${module_version}"
-        gzip -c "$collector_probe" >"/output/${module_version}/collector-ebpf-${kernel_version}.o.gz"
+        gzip -c "$collector_probe" > "/output/${module_version}/collector-ebpf-${kernel_version}.o.gz"
         rm "$collector_probe"
 
     else

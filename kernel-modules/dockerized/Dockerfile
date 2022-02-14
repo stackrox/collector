@@ -4,6 +4,8 @@ ARG REDHAT_PASSWORD
 ARG CACHE_REPO
 ARG CACHE_TAG
 
+ARG CHECKOUT_BEFORE_PATCHING=true
+
 FROM registry.access.redhat.com/ubi8/ubi:8.5 AS rhel-8-base
 
 ARG REDHAT_USERNAME
@@ -41,6 +43,7 @@ ARG LEGACY_PROBES=false
 
 COPY /collector /collector
 
+ENV CHECKOUT_BEFORE_PATCHING=$CHECKOUT_BEFORE_PATCHING
 RUN /scripts/patch-files.sh $BRANCH $LEGACY_PROBES
 
 FROM $CACHE_REPO/collector-drivers:$CACHE_TAG AS cache

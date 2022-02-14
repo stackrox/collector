@@ -41,11 +41,7 @@ build-kernel-modules:
 $(MOD_VER_FILE): build-kernel-modules
 	rm -rf kernel-modules/kobuild-tmp/
 	mkdir -p kernel-modules/kobuild-tmp/versions-src
-	docker run --rm -i \
-	  -v "$(CURDIR)/sysdig:/sysdig:ro" \
-	  --tmpfs /scratch:exec --tmpfs /output:exec \
-	  --env SYSDIG_DIR=/sysdig/src --env SCRATCH_DIR=/scratch --env OUTPUT_DIR=/output \
-	  build-kernel-modules prepare-src 2> /dev/null | tail -n 1 > "$(MOD_VER_FILE)"
+	cp kernel-modules/MODULE_VERSION $(MOD_VER_FILE)
 
 .PHONY: $(CURDIR)/collector/container/rhel/bundle.tar.gz
 $(CURDIR)/collector/container/rhel/bundle.tar.gz:
@@ -110,3 +106,11 @@ teardown-dev:
 .PHONY: clean
 clean: teardown-dev
 	make -C collector clean
+
+.PHONY: shfmt-check
+shfmt-check:
+	shfmt -d $(CURDIR)
+
+.PHONY: shfmt-format
+shfmt-format:
+	shfmt -w $(CURDIR)

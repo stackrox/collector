@@ -14,7 +14,6 @@ MD_DIR="$1"
 
 for version_dir in "${MD_DIR}/collector-versions"/*; do
     [[ -d "$version_dir" ]] || continue
-    version="$(basename "$version_dir")"
 
     module_version="$(< "${version_dir}/MODULE_VERSION")"
 
@@ -22,6 +21,9 @@ for version_dir in "${MD_DIR}/collector-versions"/*; do
     mkdir -p "$mod_ver_dir"
 
     tmpfile="$(mktemp)"
-    ( cat "${version_dir}/ROX_VERSIONS" ; cat 2>/dev/null "${mod_ver_dir}/ROX_VERSIONS" || true ) | sort | uniq >"$tmpfile"
+    (   
+        cat "${version_dir}/ROX_VERSIONS"
+        cat 2> /dev/null "${mod_ver_dir}/ROX_VERSIONS" || true
+    ) | sort | uniq > "$tmpfile"
     mv "$tmpfile" "${mod_ver_dir}/ROX_VERSIONS"
 done

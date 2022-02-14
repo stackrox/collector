@@ -8,37 +8,37 @@ NODE_INDEX="$3"
 IMAGE_TAG="${DRIVER_REPO}/collector-drivers:${COLLECTOR_DRIVERS_TAG}-${NODE_INDEX}"
 
 push_with_retry() {
-	local image_tag="$1"
+    local image_tag="$1"
 
-	for ((retries=5; retries > 0; retries--)) {
-		if docker push "${image_tag}"; then
-			echo "Successfully pushed ${image_tag}"
-			break
-		fi
-		echo >&2 "Failed to push ${image_tag}"
-	}
+    for ((retries = 5; retries > 0; retries--)); do
+        if docker push "${image_tag}"; then
+            echo "Successfully pushed ${image_tag}"
+            break
+        fi
+        echo >&2 "Failed to push ${image_tag}"
+    done
 
-	if ((retries == 0)); then
-		return 1
-	fi
+    if ((retries == 0)); then
+        return 1
+    fi
 
-	return 0
+    return 0
 }
 
 # No bundles to build, nothing left to do
 if [[ -z "$(ls -A ~/workspace/go/src/github.com/stackrox/bundles)" ]]; then
-	exit 0
+    exit 0
 fi
 
 docker build \
-	--build-arg BRANCH="${GIT_REF}" \
-	--build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
-	--build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}" \
-	--build-arg CACHE_REPO="${DRIVER_REPO}" \
-	--build-arg CACHE_TAG="${COLLECTOR_DRIVERS_CACHE}" \
-	--tag "${IMAGE_TAG}" \
-	-f "${SOURCE_ROOT}/kernel-modules/dockerized/Dockerfile" \
-	~/workspace/go/src/github.com/stackrox
+    --build-arg BRANCH="${GIT_REF}" \
+    --build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
+    --build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}" \
+    --build-arg CACHE_REPO="${DRIVER_REPO}" \
+    --build-arg CACHE_TAG="${COLLECTOR_DRIVERS_CACHE}" \
+    --tag "${IMAGE_TAG}" \
+    -f "${SOURCE_ROOT}/kernel-modules/dockerized/Dockerfile" \
+    ~/workspace/go/src/github.com/stackrox
 
 push_with_retry "${IMAGE_TAG}"
 exit $?

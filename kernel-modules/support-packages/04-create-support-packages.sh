@@ -36,7 +36,10 @@ for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
 
     cp "${LICENSE_FILE}" "${probe_dir}"/LICENSE
 
-    ( cd "$package_root" ; zip -r "${package_out_dir}/${filename}" . )
+    (   
+        cd "$package_root"
+        zip -r "${package_out_dir}/${filename}" .
+    )
     cp "${package_out_dir}/${filename}" "${package_out_dir}/${latest_filename}"
     rm -rf "$package_root" || true
 done
