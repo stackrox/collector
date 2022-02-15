@@ -273,10 +273,13 @@ jobs:
             echo 'export BUILD_FULL_IMAGES=false' >> ~/workspace/shared-env
           fi
 
-          if [[ -f pr-metadata/labels/debug ]]; then
-            echo 'export CMAKE_BUILD_TYPE=Debug' >> ~/workspace/shared-env
-          else
+          # Use Debug for all PRs, except if specified otherwise via labels
+          if [[ -f pr-metadata/labels/release ]]; then
             echo 'export CMAKE_BUILD_TYPE=Release' >> ~/workspace/shared-env
+          elif [[ "$CIRCLE_BRANCH" == "master" ]]
+            echo 'export CMAKE_BUILD_TYPE=Release' >> ~/workspace/shared-env
+          else
+            echo 'export CMAKE_BUILD_TYPE=Debug' >> ~/workspace/shared-env
           fi
 
           # Loops over all possible types of Valgrind tests, checks the labels, and sets environment variables accordingly
