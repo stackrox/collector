@@ -276,7 +276,7 @@ jobs:
           # Use Debug for all PRs, except if specified otherwise via labels
           if [[ -f pr-metadata/labels/release ]]; then
             echo 'export CMAKE_BUILD_TYPE=Release' >> ~/workspace/shared-env
-          elif [[ "$CIRCLE_BRANCH" == "master" || -n "$CIRCLE_TAG"]]; then
+          elif [[ "$CIRCLE_BRANCH" == "master" || -n "$CIRCLE_TAG" ]]; then
             echo 'export CMAKE_BUILD_TYPE=Release' >> ~/workspace/shared-env
           else
             echo 'export CMAKE_BUILD_TYPE=Debug' >> ~/workspace/shared-env
