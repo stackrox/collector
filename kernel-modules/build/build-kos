@@ -7,9 +7,14 @@ build_ko() (
     local module_version="$2"
     local probe_type="$3"
 
-    mkdir -p /scratch/module-src
-    local module_src_dir="/scratch/module-src/${module_version}"
-    [[ -d "$module_src_dir" ]] || cp -r "/sources/${module_version}" "$module_src_dir"
+    local module_src_dir
+    if ((DOCKERIZED)); then
+        module_src_dir="/kobuild-tmp/versions-src/${module_version}"
+    else
+        mkdir -p /scratch/module-src
+        module_src_dir="/scratch/module-src/${module_version}"
+        [[ -d "$module_src_dir" ]] || cp -r "/sources/${module_version}" "$module_src_dir"
+    fi
 
     local kernel_src_dir="/scratch/kernel-src/${kernel_version}"
     if [[ ! -d "$kernel_src_dir" ]]; then
@@ -52,6 +57,13 @@ build_ko() (
     fi
 
     if [[ "$probe_type" == "mod" ]]; then
+        # Attempting to run modpost will fail if it requires glibc version newer than
+        # available in this distro. We skip building such kernel drivers for now.
+        if ((DOCKERIZED)) && ! "${kernel_build_dir}/scripts/mod/modpost"; then
+            echo >&2 "Failed to run kbuild tools, skipping module for ${kernel_version}"
+            return 1
+        fi
+
         echo "Building collector module for kernel version ${kernel_version} and module version ${module_version}."
 
         KERNELDIR="$kernel_build_dir" BUILD_ROOT="${kernel_src_dir}" make clean
@@ -66,15 +78,15 @@ build_ko() (
             return 1
         fi
 
-        mkdir -p "/output/${module_version}"
-        gzip -c "$collector_ko" > "/output/${module_version}/collector-${kernel_version}.ko.gz"
+        mkdir -p "${MODULE_BASE_DIR}/${module_version}"
+        gzip -c "$collector_ko" > "${MODULE_BASE_DIR}/${module_version}/collector-${kernel_version}.ko.gz"
         rm "$collector_ko"
     elif [[ "$probe_type" == "bpf" ]]; then
         # Build eBPF probe, if possible
 
         if [[ ! -d "${module_src_dir}/bpf" ]]; then
             echo "Module version does not support eBPF probe building, skipping ..."
-            touch "/output/${module_version}/.collector-ebpf-${kernel_version}.unavail"
+            touch "${MODULE_BASE_DIR}/${module_version}/.collector-ebpf-${kernel_version}.unavail"
             return 0
         fi
 
@@ -87,8 +99,8 @@ build_ko() (
         if [[ "$rhel7_kernel_with_ebpf" == true ]]; then
             if ! grep -qRIs "SUPPORTS_RHEL76_EBPF" "${module_src_dir}/bpf/quirks.h"; then
                 echo "Module version ${module_version} does not support eBPF on RHEL 7"
-                mkdir -p "/output/${module_version}"
-                touch "/output/${module_version}/.collector-ebpf-${kernel_version}.unavail"
+                mkdir -p "${MODULE_BASE_DIR}/${module_version}"
+                touch "${MODULE_BASE_DIR}/${module_version}/.collector-ebpf-${kernel_version}.unavail"
                 return 0
             fi
 
@@ -96,8 +108,8 @@ build_ko() (
         else
             if ((bundle_version < 4 || (bundle_version == 4 && bundle_major < 14))); then
                 echo "Kernel version ${kernel_version} does not support eBPF probe building, skipping ..."
-                mkdir -p "/output/${module_version}"
-                touch "/output/${module_version}/.collector-ebpf-${kernel_version}.unavail"
+                mkdir -p "${MODULE_BASE_DIR}/${module_version}"
+                touch "${MODULE_BASE_DIR}/${module_version}/.collector-ebpf-${kernel_version}.unavail"
                 return 0
             fi
         fi
@@ -113,8 +125,8 @@ build_ko() (
             return 1
         fi
 
-        mkdir -p "/output/${module_version}"
-        gzip -c "$collector_probe" > "/output/${module_version}/collector-ebpf-${kernel_version}.o.gz"
+        mkdir -p "${MODULE_BASE_DIR}/${module_version}"
+        gzip -c "$collector_probe" > "${MODULE_BASE_DIR}/${module_version}/collector-ebpf-${kernel_version}.o.gz"
         rm "$collector_probe"
 
     else
@@ -129,7 +141,7 @@ build_kos() {
         local module_version="${line[1]}"
         local probe_type="${line[2]}"
 
-        failure_output_file="/output/FAILURES/${kernel_version}/${module_version}/${probe_type}.log"
+        failure_output_file="${FAILURE_DIR}/${kernel_version}/${module_version}/${probe_type}.log"
         mkdir -p "$(dirname "$failure_output_file")"
         if ! build_ko "$kernel_version" "$module_version" "${probe_type}" 2> >(tee "$failure_output_file" >&2); then
             echo >&2 "Failed to build ${probe_type} probe version ${module_version} for kernel ${kernel_version}"
@@ -139,6 +151,23 @@ build_kos() {
     done
 }
 
+DOCKERIZED=${DOCKERIZED:-0}
+
+if ((DOCKERIZED)); then
+    FAILURE_DIR="/FAILURES"
+    MODULE_BASE_DIR="/kernel-modules"
+    mkdir -p "$FAILURE_DIR"
+    mkdir -p "$MODULE_BASE_DIR"
+else
+    FAILURE_DIR="/output/FAILURES"
+    MODULE_BASE_DIR="/output"
+fi
+
 # The input is in the form <kernel-version> <module-version>. Sort it to make sure that we first build all modules
 # for a given kernel version before advancing to the next kernel version.
 sort | uniq | build_kos
+
+# Remove empty directories
+if ((DOCKERIZED)); then
+    find "$FAILURE_DIR" -mindepth 1 -type d -empty -delete
+fi

@@ -32,10 +32,10 @@ driver_is_cached() {
     local unavailable
     if [[ "$driver_type" == "mod" ]]; then
         driver="collector-${kernel_version}.ko.gz"
-        unavailable="collector-${kernel_version}.unavail"
+        unavailable=".collector-${kernel_version}.unavail"
     else
         driver="collector-ebpf-${kernel_version}.o.gz"
-        unavailable="collector-ebpf-${kernel_version}.unavail"
+        unavailable=".collector-ebpf-${kernel_version}.unavail"
     fi
 
     [ -f "/kernel-modules/${version}/${driver}" ] || [ -f "/kernel-modules/${version}/${unavailable}" ]

@@ -69,7 +69,6 @@ if [[ "$legacy" == "false" ]]; then
     exit 0
 fi
 
-# TODO: Support BLOCKLIST
 echo "Building legacy drivers"
 # Loop through collector versions and create the required patched sources.
 while IFS='' read -r line || [[ -n "$line" ]]; do

@@ -8,7 +8,7 @@ parameters:
     default: 8
   dockerized-cache-tag:
     type: string
-    default: cache-v1
+    default: cache-v2
   kernel-bundles-staging:
     type: string
     default: ""
