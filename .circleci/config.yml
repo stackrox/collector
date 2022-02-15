@@ -5,7 +5,7 @@ parameters:
     default: "quay.io/rhacs-eng"
   dockerized-parallel:
     type: integer
-    default: 8
+    default: 32
   dockerized-cache-tag:
     type: string
     default: cache-v2
@@ -456,7 +456,7 @@ jobs:
 
   kernels:
     <<: *defaultMachine
-    parallelism: 8
+    parallelism: 32
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
