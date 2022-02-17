@@ -278,7 +278,7 @@ class DuplexClient {
     return PollAll(STARTED, time_spec);
   }
 
-  // Sleeps for the specified time, or until an error in the stream occurs. A return value of true indicates that no
+  // PollAny waits until the given time, or until an error in the stream occurs. A return value of true indicates that no
   // error occurred during the given time.
   template <typename TS = time_point>
   bool Sleep(const TS& time_spec = time_point::max()) {

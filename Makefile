@@ -77,6 +77,10 @@ integration-tests-process-network:
 integration-tests-missing-proc-scrape:
 	make -C integration-tests missing-proc-scrape
 
+.PHONY: integration-tests-repeat-network
+integration-tests-repeat-network:
+	make -C integration-tests repeat-network
+
 .PHONY: integration-tests-image-label-json
 integration-tests-image-label-json:
 	make -C integration-tests image-label-json

@@ -48,6 +48,8 @@ BoolEnvVar network_drop_ignored("ROX_NETWORK_DROP_IGNORED", true);
 // If true, set curl to be verbose, adding further logging that might be useful for debugging.
 BoolEnvVar set_curl_verbose("ROX_COLLECTOR_SET_CURL_VERBOSE", false);
 
+BoolEnvVar set_enable_afterglow("ROX_ENABLE_AFTERGLOW", true);
+
 }  // namespace
 
 constexpr bool CollectorConfig::kUseChiselCache;
@@ -180,7 +182,38 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
     curl_verbose_ = true;
   }
 
+  HandleAfterglowEnvVars();
+
   host_config_ = ProcessHostHeuristics(*this);
+}
+
+void CollectorConfig::HandleAfterglowEnvVars() {
+  if (!set_enable_afterglow) {
+    enable_afterglow_ = false;
+  }
+
+  if (const char* afterglow_period = std::getenv("ROX_AFTERGLOW_PERIOD")) {
+    afterglow_period_micros_ = static_cast<int64_t>(atof(afterglow_period) * 1000000);
+  }
+
+  if (enable_afterglow_ && afterglow_period_micros_ > 0) {
+    CLOG(INFO) << "Afterglow is enabled";
+    return;
+  }
+
+  if (!enable_afterglow_) {
+    CLOG(INFO) << "Afterglow is disabled";
+    return;
+  }
+
+  if (afterglow_period_micros_ < 0) {
+    CLOG(WARNING) << "Invalid afterglow period " << afterglow_period_micros_ / 1000000 << ". ROX_AFTERGLOW_PERIOD must be positive.";
+  } else {
+    CLOG(WARNING) << "Afterglow period set to 0";
+  }
+
+  enable_afterglow_ = false;
+  CLOG(INFO) << "Disabling afterglow";
 }
 
 bool CollectorConfig::UseChiselCache() const {
@@ -231,6 +264,10 @@ std::vector<std::string> CollectorConfig::Syscalls() const {
 
 std::string CollectorConfig::LogLevel() const {
   return logging::GetLogLevelName(logging::GetLogLevel());
+}
+
+int64_t CollectorConfig::AfterglowPeriod() const {
+  return afterglow_period_micros_;
 }
 
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
