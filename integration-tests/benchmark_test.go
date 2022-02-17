@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 	"time"
+	"os"
 
 	"github.com/google/shlex"
 	"github.com/stretchr/testify/assert"
