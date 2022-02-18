@@ -33,7 +33,7 @@ do
 		nick_name="$(echo "$line" | awk '{print $3}')"
 		printf 'yes\n'  | $teardown_script
 		"$DIR"/StartRox.sh "$cluster_name" "$artifacts_dir" "$collector_image_registry" "$collector_image_tag" 
-		sleep 90
+		sleep 1300
 		if ((num_streams > 0)); then
                     "$DIR/generate-load.sh" "$artifacts_dir" "$load_test_name" "$num_streams" "$knb_base_dir"
 	        fi

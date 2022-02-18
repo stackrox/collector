@@ -23,4 +23,4 @@ knb_base_dir="$4"
 
 export KUBECONFIG="${artifacts_dir}/kubeconfig"
 log "run netperf tcp_crr with ${num_streams} streams"
-"${knb_base_dir}/kubenetbench-master/${test_name}/knb" pod2pod -b netperf --netperf-type tcp_crr --netperf-nstreams "${num_streams}"
+"${knb_base_dir}/kubenetbench-master/${test_name}/knb" pod2pod -b netperf --netperf-type tcp_crr --netperf-nstreams "${num_streams}" -t 600

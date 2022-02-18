@@ -105,7 +105,7 @@ get_reports_for_sensor_network_flow() {
   for metric in rox_sensor_network_flow_host_connections_added rox_sensor_network_flow_host_connections_removed rox_sensor_network_flow_external_flows
   do
     query=$metric
-    rate_query='rate('$metric'[1m])'
+    rate_query='rate('$metric'[10m])'
 
     value=$(do_prometheus_query_and_get_value "$query")
     rate_value=$(do_prometheus_query_and_get_value "$rate_query")
@@ -122,27 +122,55 @@ get_reports_for_sensor_network_flow() {
 
 }
 
-get_reports_for_cpu_and_mem_usage() {
+get_reports_for_cpu_mem_and_network_usage() {
   echo ""
   echo "#################"
   echo "Report for cpu and memory usage"
   echo ""
 
-  avg_cpu_query='avg by (job) (rate(container_cpu_usage_seconds_total{namespace="stackrox"}[1m]) * 100)'
-  max_cpu_query='max by (job) (rate(container_cpu_usage_seconds_total{namespace="stackrox"}[1m]) * 100)'
+  avg_cpu_query='avg by (job) (rate(container_cpu_usage_seconds_total{namespace="stackrox"}[10m]) * 100)'
+  max_cpu_query='max by (job) (rate(container_cpu_usage_seconds_total{namespace="stackrox"}[10m]) * 100)'
   avg_mem_query='avg by (job) (container_memory_usage_bytes{namespace="stackrox"})'
   max_mem_query='max by (job) (container_memory_usage_bytes{namespace="stackrox"})'
+  avg_network_receive_query='avg by (job) (rate(container_network_receive_bytes_total{namespace="stackrox"}[10m]))'
+  max_network_receive_query='max by (job) (rate(container_network_receive_bytes_total{namespace="stackrox"}[10m]))'
+  avg_network_transmit_query='avg by (job) (rate(container_network_transmit_bytes_total{namespace="stackrox"}[10m]))'
+  max_network_transmit_query='max by (job) (rate(container_network_transmit_bytes_total{namespace="stackrox"}[10m]))'
+  avg_total_network_receive_query='avg by (job) (container_network_receive_bytes_total{namespace="stackrox"})'
+  max_total_network_receive_query='max by (job) (container_network_receive_bytes_total{namespace="stackrox"})'
+  avg_total_network_transmit_query='avg by (job) (container_network_transmit_bytes_total{namespace="stackrox"})'
+  max_total_network_transmit_query='max by (job) (container_network_transmit_bytes_total{namespace="stackrox"})'
 
   avg_cpu_value=$(do_prometheus_query_and_get_value "$avg_cpu_query")
   max_cpu_value=$(do_prometheus_query_and_get_value "$max_cpu_query")
   avg_mem_value=$(do_prometheus_query_and_get_value "$avg_mem_query")
   max_mem_value=$(do_prometheus_query_and_get_value "$max_mem_query")
+  avg_network_receive_value=$(do_prometheus_query_and_get_value "$avg_network_receive_query")
+  max_network_receive_value=$(do_prometheus_query_and_get_value "$max_network_receive_query")
+  avg_network_transmit_value=$(do_prometheus_query_and_get_value "$avg_network_transmit_query")
+  max_network_transmit_value=$(do_prometheus_query_and_get_value "$max_network_transmit_query")
+  avg_total_network_receive_value=$(do_prometheus_query_and_get_value "$avg_total_network_receive_query")
+  max_total_network_receive_value=$(do_prometheus_query_and_get_value "$max_total_network_receive_query")
+  avg_total_network_transmit_value=$(do_prometheus_query_and_get_value "$avg_total_network_transmit_query")
+  max_total_network_transmit_value=$(do_prometheus_query_and_get_value "$max_total_network_transmit_query")
 
   echo "Average cpu usage: $avg_cpu_value"
   echo "Maximum cpu usage: $max_cpu_value"
   echo ""
   echo "Average memory usage (bytes): $avg_mem_value"
   echo "Maximum memory usage (bytes): $max_mem_value"
+  echo ""
+  echo "Average network received (bytes per second): $avg_network_receive_value"
+  echo "Maximum network received (bytes per second): $max_network_receive_value"
+  echo ""
+  echo "Average network transmit (bytes per second): $avg_network_transmit_value"
+  echo "Maximum network transmit (bytes per second): $max_network_transmit_value"
+  echo ""
+  echo "Average total network received (bytes): $avg_total_network_receive_value"
+  echo "Maximum total network received (bytes): $max_total_network_receive_value"
+  echo ""
+  echo "Average total network transmit (bytes): $avg_total_network_transmit_value"
+  echo "Maximum total network transmit (bytes): $max_total_network_transmit_value"
 
   echo ""
   echo "#################"
@@ -163,4 +191,4 @@ url="$(oc get routes -A | grep prometheus-k8s | awk '{print $3}' | head -1)"
 get_reports_for_collector_timers
 get_reports_for_collector_counters
 get_reports_for_sensor_network_flow
-get_reports_for_cpu_and_mem_usage
+get_reports_for_cpu_mem_and_network_usage
