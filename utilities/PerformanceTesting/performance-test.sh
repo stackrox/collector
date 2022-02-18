@@ -13,9 +13,9 @@ artifacts_dir=${8:-/tmp/artifacts}
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
-"$DIR"/CreateInfra.sh "$cluster_name" openshift-4 7h
-"$DIR"/WaitForCluster.sh "$cluster_name"
-"$DIR"/GetArtifactsDir.sh "$cluster_name" "$artifacts_dir"
+"$DIR"/create-infra.sh "$cluster_name" openshift-4 7h
+"$DIR"/wait-for-cluster.sh "$cluster_name"
+"$DIR"/get-artifacts-dir.sh "$cluster_name" "$artifacts_dir"
 export KUBECONFIG="$artifacts_dir"/kubeconfig
 if ((num_streams > 0)); then
     knb_base_dir="$(mktemp -d)"
@@ -32,8 +32,8 @@ do
 		collector_image_tag="$(echo "$line" | awk '{print $2}')"
 		nick_name="$(echo "$line" | awk '{print $3}')"
 		printf 'yes\n'  | $teardown_script
-		"$DIR"/StartRox.sh "$cluster_name" "$artifacts_dir" "$collector_image_registry" "$collector_image_tag" 
-		sleep 1300
+		"$DIR"/start-stack-rox.sh "$cluster_name" "$artifacts_dir" "$collector_image_registry" "$collector_image_tag" 
+		sleep 600
 		if ((num_streams > 0)); then
                     "$DIR/generate-load.sh" "$artifacts_dir" "$load_test_name" "$num_streams" "$knb_base_dir"
 	        fi
