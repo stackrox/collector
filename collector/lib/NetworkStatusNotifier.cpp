@@ -270,7 +270,7 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
 }
 
 void NetworkStatusNotifier::RunSingleAfterglow(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
-  WaitUntilWriterStarted(writer, 100);
+  WaitUntilWriterStarted(writer, 10);
 
   ConnMap old_conn_state;
   ContainerEndpointMap old_cep_state;
