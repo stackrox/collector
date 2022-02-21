@@ -235,8 +235,9 @@ jobs:
           EOF
           else
           cat >> ~/workspace/shared-env \<<-EOF
-            export COLLECTOR_BUILDER_TAG="circle-build-${CIRCLE_WORKFLOW_ID}"
+          #export COLLECTOR_BUILDER_TAG="circle-build-${CIRCLE_WORKFLOW_ID}"
             #export BUILD_BUILDER_IMAGE=true
+            export COLLECTOR_BUILDER_TAG="cache"
           EOF
           fi
 
