@@ -198,6 +198,7 @@ void CollectorConfig::HandleAfterglowEnvVars() {
 
   if (enable_afterglow_ && afterglow_period_micros_ > 0) {
     CLOG(INFO) << "Afterglow is enabled";
+    CLOG(INFO) << "Afterglow period is " << afterglow_period_micros_ / 1000000 << " seconds";
     return;
   }
 
@@ -207,13 +208,10 @@ void CollectorConfig::HandleAfterglowEnvVars() {
   }
 
   if (afterglow_period_micros_ < 0) {
-    CLOG(WARNING) << "Invalid afterglow period " << afterglow_period_micros_ / 1000000 << ". ROX_AFTERGLOW_PERIOD must be positive.";
+    CLOG(WARNING) << "Invalid afterglow period " << afterglow_period_micros_ / 1000000 << " seconds. ROX_AFTERGLOW_PERIOD must be positive.";
   } else {
     CLOG(WARNING) << "Afterglow period set to 0";
   }
-
-  enable_afterglow_ = false;
-  CLOG(INFO) << "Disabling afterglow";
 }
 
 bool CollectorConfig::UseChiselCache() const {
