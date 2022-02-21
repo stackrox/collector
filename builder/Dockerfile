@@ -1,4 +1,4 @@
-FROM centos:8
+FROM registry.access.redhat.com/ubi8/ubi:8.5
 
 ARG NPROCS=6
 ARG USE_VALGRIND=false
@@ -46,6 +46,8 @@ RUN yum -y update \
 RUN if [ $ADDRESS_SANITIZER == "true" ]; then \
        yum -y install libasan; \
     fi ;
+
+RUN ulimit -c unlimited
 
 RUN yum clean all ;
 
