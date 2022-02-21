@@ -13,12 +13,12 @@ import argparse
 g_stats = defaultdict(list)
 
 
-def record_stats(cpu, data, size, bpf):
+def record_stats(cpu, data, size, bpf, output):
     if not bpf:
         raise RuntimeError("None bpf passed to record_stats")
 
     event = bpf['latency_events'].event(data)
-    if args.output == "-":
+    if output == "-":
         print(f"{event.id} {event.delta}")
     else:
         try:
@@ -44,7 +44,7 @@ def signal_handler(bpf, output, *args):
 
     if output != '-':
         with open(output, 'w+') as o:
-            o.write(json.dumps(g_stats))
+            json.dump(g_stats, o)
 
     os._exit(0)
 
@@ -77,7 +77,7 @@ def capture(output: str):
 
     # we're processing many millions of events, so make sure the perf
     # buffer is large enough.
-    bpf['latency_events'].open_perf_buffer(functools.partial(record_stats, bpf=bpf),
+    bpf['latency_events'].open_perf_buffer(functools.partial(record_stats, bpf=bpf, output=output),
                                            page_cnt=2048, lost_cb=lost)
 
     while True:
@@ -95,8 +95,4 @@ if __name__ == '__main__':
                                                           'Otherwise a json file is written to the location provided.'))
 
     args = parser.parse_args()
-
-    if not args.output:
-        args.output = "/tmp/data.json"
-
     capture(args.output)
