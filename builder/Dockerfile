@@ -1,4 +1,4 @@
-FROM centos:8
+FROM registry.access.redhat.com/ubi8/ubi:8.5
 
 ARG NPROCS=6
 ARG USE_VALGRIND=false
