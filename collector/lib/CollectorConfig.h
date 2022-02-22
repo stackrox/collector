@@ -82,6 +82,7 @@ end
   std::string asString() const;
 
   virtual bool UseEbpf() const;
+  void HandleAfterglowEnvVars();
   bool UseChiselCache() const;
   bool TurnOffScrape() const;
   bool ScrapeListenEndpoints() const { return scrape_listen_endpoints_; }
@@ -92,12 +93,14 @@ end
   std::string HostProc() const;
   std::string CollectionMethod() const;
   std::vector<std::string> Syscalls() const;
+  int64_t AfterglowPeriod() const;
   std::string LogLevel() const;
   bool EnableSysdigLog() const { return enable_sysdig_log_; }
   bool DisableNetworkFlows() const { return disable_network_flows_; }
   const UnorderedSet<L4ProtoPortPair>& IgnoredL4ProtoPortPairs() const { return ignored_l4proto_port_pairs_; }
   bool CurlVerbose() const { return curl_verbose_; }
   virtual bool ForceKernelModules() const { return force_kernel_modules_; }
+  bool EnableAfterglow() const { return enable_afterglow_; }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
@@ -118,8 +121,9 @@ end
   bool force_kernel_modules_ = false;
 
   bool enable_sysdig_log_ = false;
-
   HostConfig host_config_;
+  int64_t afterglow_period_micros_ = 300000000;  //5 minutes in microseconds
+  bool enable_afterglow_ = true;
 };
 
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c);

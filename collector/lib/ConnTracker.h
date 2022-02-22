@@ -71,6 +71,18 @@ class ConnStatus {
     return !(*this == other);
   }
 
+  // Returns true if a connection was active during the afterglow period.
+  // This is helpful for not reporting frequent connections every time we see them.
+  bool IsInAfterglowPeriod(int64_t time_micros, int64_t afterglow_period_micros) const {
+    return time_micros - LastActiveTime() < afterglow_period_micros;
+  }
+
+  // Returns true if a connection is active or was active during the afterglow period.
+  // This is helpful for not reporting frequent connections every time we see them.
+  bool WasRecentlyActive(int64_t time_micros, int64_t afterglow_period_micros) const {
+    return IsActive() || IsInAfterglowPeriod(time_micros, afterglow_period_micros);
+  }
+
  private:
   explicit ConnStatus(uint64_t data) : data_(data) {}
 
@@ -97,6 +109,29 @@ class ConnectionTracker {
   // Atomically fetch a snapshot of the current state, removing all inactive connections if requested.
   ConnMap FetchConnState(bool normalize = false, bool clear_inactive = true);
   ContainerEndpointMap FetchEndpointState(bool normalize = false, bool clear_inactive = true);
+
+  template <typename T>
+  static void UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, const UnorderedMap<T, ConnStatus>& new_state, int64_t time_micros, int64_t afterglow_period_micros);
+
+  // ComputeDelta computes a diff between new_state and old_state
+  template <typename T>
+  static void ComputeDeltaAfterglow(const UnorderedMap<T, ConnStatus>& new_state, const UnorderedMap<T, ConnStatus>& old_state, UnorderedMap<T, ConnStatus>& delta, int64_t time_micros, int64_t time_at_last_scrape, int64_t afterglow_period_micros);
+
+  // Handles the case when a connection appears in both the new and old states and afterglow is used
+  template <typename T>
+  void static ComputeDeltaForAConnectionInOldAndNewStates(const std::pair<const T, ConnStatus>& new_conn, const ConnStatus& old_conn_status, UnorderedMap<T, ConnStatus>& delta, int64_t time_micros, int64_t time_at_last_scrape, int64_t afterglow_period_micros);
+
+  // Determines if a connection being added to the delta should be set to active
+  template <typename T>
+  static std::pair<T, ConnStatus> ChangeConnToActiveIfNeeded(const std::pair<const T, ConnStatus>& new_conn, const T& conn_key, const ConnStatus& conn_status, bool new_recently_active);
+
+  // Handles the case when a connection appears in only the new state and afterglow is used
+  template <typename T>
+  void static ComputeDeltaForAConnectionInNewState(const std::pair<const T, ConnStatus>& new_conn, UnorderedMap<T, ConnStatus>& delta, int64_t time_micros, int64_t afterglow_period_micros);
+
+  // Determines if an old connection should be reported as being inactive
+  template <typename T>
+  static bool CheckIfOldConnShouldBeInactiveInDelta(const T& conn_key, const ConnStatus& conn_status, const UnorderedMap<T, ConnStatus>& new_state, int64_t time_micros, int64_t time_at_last_scrape, int64_t afterglow_period_micros);
 
   // ComputeDelta computes a diff between new_state and *old_state, and stores the diff in *old_state.
   template <typename T>
@@ -159,6 +194,27 @@ class ConnectionTracker {
 
 /* static */
 template <typename T>
+void ConnectionTracker::UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, const UnorderedMap<T, ConnStatus>& new_state, int64_t time_micros, int64_t afterglow_period_micros) {
+  // Remove inactive connections that are older than the afterglow period and add unexpired new connections to the old state
+  for (auto it = old_state->begin(); it != old_state->end();) {
+    auto& old_conn = *it;
+    if (old_conn.second.WasRecentlyActive(time_micros, afterglow_period_micros)) {
+      ++it;
+    } else {
+      it = old_state->erase(it);
+    }
+  }
+
+  for (const auto& conn : new_state) {
+    auto insert_res = old_state->insert(conn);
+    if (!insert_res.second) {  // Was already present. Update the connection.
+      auto& old_conn = *insert_res.first;
+      old_conn.second = conn.second;
+    }
+  }
+}
+
+template <typename T>
 void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state) {
   // Insert all objects from the new state, if anything changed about them.
   for (const auto& conn : new_state) {
@@ -199,6 +255,128 @@ void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_stat
       it = old_state->erase(it);
     }
   }
+}
+
+// This function takes in old network connections or endpoints (old_state) and the
+// connections that occurred in the last scrape interval (new_state) and returns
+// their difference or delta, which is then reported in NetworkStatusNotifier.cpp.
+// This also uses afterglow meaning that connection which were active within an
+// afterglow period (afterglow_period_micros) are treated as being active.
+// This function also takes in the time of the current scrape (time_micros) and
+// the time at the previous scrape (time_at_last_scrape). These are used to determine
+// if the new connections were active within the afterglow period of the current scrape
+// and if the old_connection were active within the afterglow period of the previous scrape
+template <typename T>
+void ConnectionTracker::ComputeDeltaAfterglow(const UnorderedMap<T, ConnStatus>& new_state,
+                                              const UnorderedMap<T, ConnStatus>& old_state,
+                                              UnorderedMap<T, ConnStatus>& delta,
+                                              int64_t time_micros,
+                                              int64_t time_at_last_scrape,
+                                              int64_t afterglow_period_micros) {
+  // Insert all objects from the new state, if anything changed about them.
+  for (const auto& new_conn : new_state) {
+    auto& conn_key = new_conn.first;
+    auto old_conn = old_state.find(conn_key);
+    // Was already present
+    if (old_conn != old_state.end()) {
+      ComputeDeltaForAConnectionInOldAndNewStates(new_conn, old_conn->second, delta, time_micros, time_at_last_scrape, afterglow_period_micros);
+    } else {
+      ComputeDeltaForAConnectionInNewState(new_conn, delta, time_micros, afterglow_period_micros);
+    }
+  }
+
+  // Add everything in the old state that was in the active state and is not in the new state
+  for (const auto& old_conn : old_state) {
+    auto& conn_key = old_conn.first;
+    auto& conn_status = old_conn.second;
+
+    if (CheckIfOldConnShouldBeInactiveInDelta(conn_key, conn_status, new_state, time_micros, time_at_last_scrape, afterglow_period_micros)) {
+      delta.insert(std::make_pair(conn_key, ConnStatus(conn_status.LastActiveTime(), false)));
+    }
+  }
+}
+
+// See ComputeDeltaAfterglow
+// Handles the case when a connection appears in both the new and old states and afterglow is used
+template <typename T>
+inline void ConnectionTracker::ComputeDeltaForAConnectionInOldAndNewStates(const std::pair<const T, ConnStatus>& new_conn,
+                                                                           const ConnStatus& old_conn_status,
+                                                                           UnorderedMap<T, ConnStatus>& delta,
+                                                                           int64_t time_micros,
+                                                                           int64_t time_at_last_scrape,
+                                                                           int64_t afterglow_period_micros) {
+  auto& conn_key = new_conn.first;
+  auto& conn_status = new_conn.second;
+
+  //Connections active within the afterglow period are considered to be active for the purpose of the delta.
+  bool new_recently_active = conn_status.WasRecentlyActive(time_micros, afterglow_period_micros);
+  bool old_recently_active = old_conn_status.WasRecentlyActive(time_at_last_scrape, afterglow_period_micros);
+
+  if (new_recently_active != old_recently_active) {
+    auto new_delta = ChangeConnToActiveIfNeeded(new_conn, conn_key, conn_status, new_recently_active);
+    delta.insert(new_delta);
+  } else if (!new_recently_active) {
+    // Both objects are inactive. Include the new status in the delta if it has shown activity more recently than in the old_state
+    if (old_conn_status.LastActiveTime() < conn_status.LastActiveTime()) {
+      delta.insert(new_conn);
+    }
+  }
+}
+
+// Invoked when the connection does not exist in the old state or is inactive in the old state. In this the connection should be set to
+// active if it was active within the afterglow period
+template <typename T>
+inline std::pair<T, ConnStatus> ConnectionTracker::ChangeConnToActiveIfNeeded(const std::pair<const T, ConnStatus>& new_conn,
+                                                                              const T& conn_key,
+                                                                              const ConnStatus& conn_status,
+                                                                              bool new_recently_active) {
+  if (new_recently_active && !conn_status.IsActive()) {
+    return std::make_pair(conn_key, ConnStatus(conn_status.LastActiveTime(), true));
+  }
+
+  return new_conn;
+}
+
+// See ComputeDeltaAfterglow
+// Handles the case when a connection appears in only the new state and afterglow is used
+template <typename T>
+inline void ConnectionTracker::ComputeDeltaForAConnectionInNewState(const std::pair<const T, ConnStatus>& new_conn,
+                                                                    UnorderedMap<T, ConnStatus>& delta,
+                                                                    int64_t time_micros,
+                                                                    int64_t afterglow_period_micros) {
+  auto& conn_key = new_conn.first;
+  auto& conn_status = new_conn.second;
+
+  bool new_recently_active = conn_status.WasRecentlyActive(time_micros, afterglow_period_micros);
+  auto new_delta = ChangeConnToActiveIfNeeded(new_conn, conn_key, conn_status, new_recently_active);
+  delta.insert(new_delta);
+}
+
+// If the connection is in the old_state, not in the new state, was active within the afterglow period of the previous scrape, and is now outside of the
+// afterglow period of the current state, it should be reported as being inactive.
+template <typename T>
+bool ConnectionTracker::CheckIfOldConnShouldBeInactiveInDelta(const T& conn_key,
+                                                              const ConnStatus& conn_status,
+                                                              const UnorderedMap<T, ConnStatus>& new_state,
+                                                              int64_t time_micros,
+                                                              int64_t time_at_last_scrape,
+                                                              int64_t afterglow_period_micros) {
+  bool is_old_conn_in_new_state = (new_state.find(conn_key) != new_state.end());
+  if (is_old_conn_in_new_state) {
+    return false;
+  }
+
+  bool old_recently_active = conn_status.WasRecentlyActive(time_at_last_scrape, afterglow_period_micros);
+  if (!old_recently_active) {
+    return false;
+  }
+
+  bool recently_active_at_time_micros = conn_status.IsInAfterglowPeriod(time_micros, afterglow_period_micros);
+  if (recently_active_at_time_micros) {
+    return false;
+  }
+
+  return true;
 }
 
 }  // namespace collector

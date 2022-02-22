@@ -35,10 +35,10 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 	offlineMode, _ := strconv.ParseBool(ReadEnvVarWithDefault("COLLECTOR_OFFLINE_MODE", "false"))
 
 	env := map[string]string{
-		"GRPC_SERVER":             "localhost:9999",
-		"COLLECTOR_CONFIG":        `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}`,
-		"COLLECTION_METHOD":       collectionMethod,
-		"COLLECTOR_PRE_ARGUMENTS": collectorPreArguments,
+		"GRPC_SERVER":                      "localhost:9999",
+		"COLLECTOR_CONFIG":                 `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}`,
+		"COLLECTION_METHOD":                collectionMethod,
+		"COLLECTOR_PRE_ARGUMENTS":          collectorPreArguments,
 	}
 	if !offlineMode {
 		env["MODULE_DOWNLOAD_BASE_URL"] = "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"
@@ -63,7 +63,7 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 		DisableGrpcServer: false,
 		BootstrapOnly:     false,
 		CollectorImage:    collectorImage,
-		GRPCServerImage:   "stackrox/grpc-server:3.0.41.x-159-ge581685bb9",
+		GRPCServerImage:   "stackrox/grpc-server:3.68.x-35-g12796a7c2d",
 		Env:               env,
 		Mounts:            mounts,
 		TestName:          name,
