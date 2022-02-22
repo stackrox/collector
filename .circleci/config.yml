@@ -59,7 +59,7 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
   requires:
   - images
   - ubi-image
-    #- integration-test-local
+  - integration-test-local
   - dockerized-build-collector
 
 orbs:
@@ -235,9 +235,8 @@ jobs:
           EOF
           else
           cat >> ~/workspace/shared-env \<<-EOF
-          #export COLLECTOR_BUILDER_TAG="circle-build-${CIRCLE_WORKFLOW_ID}"
-            #export BUILD_BUILDER_IMAGE=true
-            export COLLECTOR_BUILDER_TAG="cache"
+            export COLLECTOR_BUILDER_TAG="circle-build-${CIRCLE_WORKFLOW_ID}"
+            export BUILD_BUILDER_IMAGE=true
           EOF
           fi
 
@@ -1030,9 +1029,6 @@ jobs:
     - ci-artifacts/store:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml
         destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-integration-test-report.xml"
-    - ci-artifacts/store:
-        path: ~/
-        destination: "all"
     - ci-artifacts/store:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
         destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-container-logs"
