@@ -889,9 +889,6 @@ jobs:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml
         destination: "integration-test-report.xml"
     - ci-artifacts/store:
-        path: ~/
-        destination: "all"
-    - ci-artifacts/store:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
         destination: "container-logs"
     - ci-artifacts/store:
