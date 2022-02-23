@@ -28,3 +28,11 @@ if command -v circleci > /dev/null && git diff --name-only --cached | grep -qE '
     echo "Validating CircleCI configuration..."
     circleci config validate --org-slug gh/stackrox .circleci/config.yml
 fi
+
+# Check for shellcheck errors/smells
+toplevel_dir="$(git rev-parse --show-toplevel)"
+if command -v shellcheck > /dev/null; then
+    make -C "$toplevel_dir" shellcheck-all
+else
+    make -C "$toplevel_dir" shellcheck-all-dockerized
+fi

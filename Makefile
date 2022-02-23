@@ -122,3 +122,12 @@ shfmt-check:
 .PHONY: shfmt-format
 shfmt-format:
 	shfmt -w $(CURDIR)
+
+.PHONY: shellcheck-all
+shellcheck-all:
+	./utilities/shellcheck-all/shellcheck-all.sh
+
+.PHONY: shellcheck-all-dockerized
+shellcheck-all-dockerized:
+	docker build -t shellcheck-all $(CURDIR)/utilities/shellcheck-all
+	docker run --rm -v "$(CURDIR):/scripts" shellcheck-all:latest

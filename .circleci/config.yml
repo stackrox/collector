@@ -341,6 +341,13 @@ jobs:
         command: |
           "${CI_ROOT}/test-scripts/get-builder-flavor/run-tests.sh" "${SOURCE_ROOT}"
 
+    - run:
+        name: shellcheck-all
+        command: |
+          wget -qO- "https://github.com/koalaman/shellcheck/releases/download/stable/shellcheck-stable.linux.x86_64.tar.xz" | tar -xJv
+          sudo cp "shellcheck-stable/shellcheck" /usr/bin/
+          make -C "${SOURCE_ROOT}" shellcheck-all
+
   builder:
     <<: *defaultMachine
     resource_class: large
