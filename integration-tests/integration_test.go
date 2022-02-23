@@ -38,7 +38,7 @@ func TestProcessNetwork(t *testing.T) {
 	suite.Run(t, new(ProcessNetworkTestSuite))
 }
 
-func TestBenchmark(t *testing.T) {
+func TestBenchmarkCollector(t *testing.T) {
 	suite.Run(t, new(BenchmarkCollectorTestSuite))
 }
 

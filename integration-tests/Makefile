@@ -32,6 +32,13 @@ process-network: docker-clean
 	go test -timeout 30m -count=1 -v \
  	  -run TestProcessNetwork 2>&1 | tee -a integration-test.log
 
+.PHONY:
+benchmark: docker-clean
+	go version
+	set -o pipefail ; \
+	go test -timeout 30m -count=1 -v \
+	  -run TestBenchmarkCollector 2>&1 | tee -a integration-test.log
+
 .PHONY: baseline
 baseline: docker-clean
 	go version
