@@ -213,7 +213,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 
 	// invokes default nginx
 	containerID, err := s.launchContainer("nginx", "nginx:1.14-alpine")
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	s.serverContainer = containerShortID(containerID)
 
 	// invokes "sleep" and "sh" and "ls"
@@ -224,7 +224,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 
 	// invokes another container
 	containerID, err = s.launchContainer("nginx-curl", "pstauffer/curl:latest", "sleep", "300")
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	s.clientContainer = containerShortID(containerID)
 
 	s.serverIP, err = s.getIPAddress("nginx")
@@ -630,10 +630,10 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	}
 
 	containerID, err := s.launchContainer(benchmarkArgs...)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	_, err = s.waitForContainerToExit(benchmarkName, containerID, defaultWaitTickSeconds)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	benchmarkLogs, err := s.containerLogs("benchmark")
 	re := regexp.MustCompile(`Average: ([0-9.]+) Seconds`)
@@ -659,9 +659,9 @@ func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
 		image,
 	}
 	containerID, err := s.launchContainer(args...)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	_, err = s.waitForContainerToExit(name, containerID, defaultWaitTickSeconds)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 }
 
 func (s *IntegrationTestSuiteBase) StartContainerStats() {
