@@ -62,7 +62,7 @@ flavor="default"
 if [[ "$distro" == "minikube" && "$(compareVersions 4 18)" == "later" ]]; then
     flavor="modern"
 # Ubuntu 20.04 backport
-elif [[ "$distro" == "ubuntu" && "$version" =~ ~20.04 ]]; then
+elif [[ "$distro" == "ubuntu" && "$version" =~ \~20.04$ ]]; then
     flavor="modern"
 elif [[ "$distro" =~ ^dockerdesktop$ ]]; then
     flavor="modern"
