@@ -33,4 +33,4 @@
 [submodule "falcosecurity-libs"]
 	path = falcosecurity-libs
 	url = https://github.com/stackrox/falcosecurity-libs
-    branch = giles/ROX-9409-setting-probe-name-and-probe-version
+	branch = giles/ROX-9409-setting-probe-name-and-probe-version
