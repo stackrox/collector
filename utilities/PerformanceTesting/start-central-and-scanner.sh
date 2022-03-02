@@ -46,18 +46,3 @@ echo "${settings[@]}"
 
 helm install -n stackrox stackrox-central-services --create-namespace rhacs/central-services \
     "${settings[@]}"
-
-#helm install -n stackrox stackrox-central-services --create-namespace rhacs/central-services \
-#  --set central.exposure.route.enabled=true \
-#  --set central.adminPassword.value="$admin_password" \
-#  --set imagePullSecrets.username="$DOCKER_USERNAME" \
-#  --set imagePullSecrets.password="$DOCKER_PASSWORD" \
-#  --set enableOpenShiftMonitoring=true \
-#  --set central.exposeMonitoring=true \
-#  --set central.image.name=main \
-#  --set central.image.tag=3.68.x-198-g16f3ea3c01-dirty \
-#  --set scanner.dbImage.registry=docker.io/stackrox \
-#  --set scanner.dbImage.name=scanner-db \
-#  --set scanner.dbImage.tag=2.22.0-15-gcc3102a65d
-#  #--set central.image.tag=3.68.x-196-gc531c2675f
-

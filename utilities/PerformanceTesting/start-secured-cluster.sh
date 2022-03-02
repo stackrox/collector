@@ -10,7 +10,6 @@ echo "Starting secure cluster services"
 export KUBECONFIG=$artifacts_dir/kubeconfig
 
 settings=(
-    --set collector.roxAfterglowPeriod=10
     --set imagePullSecrets.username="$DOCKER_USERNAME"
     --set imagePullSecrets.password="$DOCKER_PASSWORD"
     --set clusterName=perf-test
