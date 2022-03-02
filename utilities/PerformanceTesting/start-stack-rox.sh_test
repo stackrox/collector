@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -eoux pipefail
+
+name=$1
+artifacts_dir=${2:-/tmp/artifacts}
+collector_image_registry=${3:-docker.io/stackrox}
+collector_image_tag=${4:-3.6.x-100-g7e35406315}
+
+DIR="$(cd "$(dirname "$0")" && pwd)"
+
+"$DIR"/wait-for-cluster.sh "$name"
+"$DIR"/get-artifacts-dir.sh "$name" "$artifacts_dir"
+export KUBECONFIG="$artifacts_dir"/kubeconfig
+"$DIR"/start-central-and-scanner.sh "$artifacts_dir"
+"$DIR"/wait-for-pods.sh "$artifacts_dir"
+"$DIR"/grab-bundle.sh "$artifacts_dir"
+"$DIR"/start-secured-cluster.sh_test "$artifacts_dir" "$collector_image_registry" "$collector_image_tag"
+"$DIR"/turn-on-monitoring.sh "$artifacts_dir"
