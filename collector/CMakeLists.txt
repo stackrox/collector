@@ -101,6 +101,6 @@ set(CREATE_TEST_TARGETS OFF CACHE BOOL "Enable make-targets for unit testing" FO
 set(BUILD_LIBSCAP_EXAMPLES OFF CACHE BOOL "Build libscap examples" FORCE)
 set(BUILD_LIBSINSP_EXAMPLES OFF CACHE BOOL "Build libsinsp examples" FORCE)
 
-set(DRIVER_NAME "collector")
+set(DRIVER_NAME "collector" CACHE STRING "falco driver name" FORCE)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/falcosecurity-libs EXCLUDE_FROM_DEFAULT_BUILD)
