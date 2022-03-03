@@ -42,6 +42,8 @@ class MockHostInfoHeuristics : public HostInfo {
 
   MOCK_METHOD0(IsUEFI, bool());
   MOCK_METHOD0(GetSecureBootStatus, SecureBootStatus());
+  MOCK_METHOD0(IsGarden, bool());
+  MOCK_METHOD0(GetDistro, std::string&());
 };
 
 // Note that in every test below, ProcessHostHeuristics will be called first
@@ -153,6 +155,75 @@ TEST(HostHeuristicsTest, TestSecureBootIncorrect) {
   secureBootHeuristics.Process(host, config, &hconfig);
 
   EXPECT_EQ(hconfig.CollectionMethod(), "kernel-module");
+}
+
+class MockGardenLinuxHeuristic : public GardenLinuxHeuristic {
+ public:
+  MockGardenLinuxHeuristic() = default;
+};
+
+TEST(GardenLinuxHeuristicsTest, NotGardenLinux) {
+  MockGardenLinuxHeuristic gardenLinuxHeuristic;
+  MockHostInfoHeuristics host;
+  CollectorArgs* args = CollectorArgs::getInstance();
+  MockCollectorConfig config(args);
+  HostConfig hconfig;
+
+  hconfig.SetCollectionMethod("kernel-module");
+  EXPECT_CALL(host, IsGarden()).WillOnce(Return(false));
+
+  gardenLinuxHeuristic.Process(host, config, &hconfig);
+
+  EXPECT_EQ(hconfig.CollectionMethod(), "kernel-module");
+}
+
+TEST(GardenLinuxHeuristicsTest, UsingEBPF) {
+  MockGardenLinuxHeuristic gardenLinuxHeuristic;
+  MockHostInfoHeuristics host;
+  CollectorArgs* args = CollectorArgs::getInstance();
+  MockCollectorConfig config(args);
+  HostConfig hconfig;
+
+  hconfig.SetCollectionMethod("ebpf");
+  EXPECT_CALL(host, IsGarden()).WillOnce(Return(true));
+  EXPECT_CALL(config, UseEbpf()).WillOnce(Return(true));
+
+  gardenLinuxHeuristic.Process(host, config, &hconfig);
+
+  EXPECT_EQ(hconfig.CollectionMethod(), "ebpf");
+}
+
+struct GardenLinuxTestCase {
+  GardenLinuxTestCase(const std::string& release, const std::string& collection_method)
+      : release(release), collection_method(collection_method) {}
+
+  std::string release;
+  std::string collection_method;
+};
+
+TEST(GardenLinuxHeuristicsTest, TestReleases) {
+  MockGardenLinuxHeuristic gardenLinuxHeuristic;
+  MockHostInfoHeuristics host;
+  CollectorArgs* args = CollectorArgs::getInstance();
+  MockCollectorConfig config(args);
+  HostConfig hconfig;
+
+  std::vector<GardenLinuxTestCase> test_cases = {
+      {"Garden Linux 318.9", "kernel_module"},
+      {"Garden Linux 576.2", "kernel_module"},
+      {"Garden Linux 576.3", "ebpf"},
+      {"Garden Linux 576.5", "ebpf"}};
+
+  for (auto test_case : test_cases) {
+    hconfig.SetCollectionMethod("kernel_module");
+    EXPECT_CALL(host, IsGarden()).WillOnce(Return(true));
+    EXPECT_CALL(config, UseEbpf()).WillOnce(Return(false));
+    EXPECT_CALL(host, GetDistro()).WillOnce(ReturnRef(test_case.release));
+
+    gardenLinuxHeuristic.Process(host, config, &hconfig);
+
+    EXPECT_EQ(hconfig.CollectionMethod(), test_case.collection_method);
+  }
 }
 
 }  // namespace collector
