@@ -473,7 +473,9 @@ jobs:
     - gcloud-init
     - run:
         name: Download required packages
+        no_output_timeout: 600
         command: |
+          sleep 10000
           "${CI_ROOT}/kernels/download-required-packages.sh" "${CIRCLE_TAG}" "${CIRCLE_BRANCH}" ~/kobuild-tmp
 
     - run:
