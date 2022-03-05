@@ -460,7 +460,7 @@ jobs:
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
-    - KERNEL_BUNDLES_STAGING_BUCKET: "<< pipeline.parameters.kernel-bundles-staging >>"
+    - KERNEL_BUNDLES_STAGING_BUCKET: "gs://stackrox-kernel-bundles-staging/jv/crawl-rhel-telecommunications-update-service/27e17aa37d79b2f65ef1a8cdf0f0c43823b8fa9e"
 
     steps:
     - initcommand
