@@ -59,7 +59,7 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
   requires:
   - images
   - ubi-image
-  - integration-test-local
+    #- integration-test-local
   - dockerized-build-collector
 
 orbs:
@@ -1052,7 +1052,9 @@ jobs:
 
     - run:
         name: "Destroy VM"
+        no_output_timeout: 450m
         command: |
+          sleep 10000
           gcloud compute instances delete $GCLOUD_INSTANCE
         when: always
 
@@ -1613,33 +1615,33 @@ workflows:
     - integration-test-data:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
-        - test-ebpf-cos-stable
-        - test-ebpf-cos-beta
-        - test-ebpf-cos-dev
-        - test-ebpf-cos-85-lts
-        - test-ebpf-cos-89-lts
-        - test-module-rhel-7
-        - test-ebpf-rhel-7
-        - test-module-rhel-8
-        - test-ebpf-rhel-8
-        - test-module-ubuntu-1804-lts
-        - test-ebpf-ubuntu-1804-lts
-        - test-module-ubuntu-2004-lts
-        - test-ebpf-ubuntu-2004-lts
-        - test-module-ubuntu-2110
-        - test-ebpf-ubuntu-2110
-        - test-ebpf-sles-15
-        - test-module-sles-15
-        - test-module-sles-12
-        # Removed while solving ROX-9180
-        # - test-ebpf-sles-15-sp2-sap
-        # - test-module-sles-15-sp2-sap
-        - test-ebpf-flatcar-stable
-        - test-module-flatcar-stable
-        - test-ebpf-fedora-coreos-stable
-        - test-module-fedora-coreos-stable
-        - test-ebpf-garden-linux
-        - test-module-garden-linux
+                #- test-ebpf-cos-stable
+                #- test-ebpf-cos-beta
+                #- test-ebpf-cos-dev
+                #- test-ebpf-cos-85-lts
+                #- test-ebpf-cos-89-lts
+                #- test-module-rhel-7
+                #- test-ebpf-rhel-7
+                #- test-module-rhel-8
+                #- test-ebpf-rhel-8
+                #- test-module-ubuntu-1804-lts
+                #- test-ebpf-ubuntu-1804-lts
+                #- test-module-ubuntu-2004-lts
+                #- test-ebpf-ubuntu-2004-lts
+                #- test-module-ubuntu-2110
+                #- test-ebpf-ubuntu-2110
+                #- test-ebpf-sles-15
+                #- test-module-sles-15
+                #- test-module-sles-12
+                ## Removed while solving ROX-9180
+                ## - test-ebpf-sles-15-sp2-sap
+                ## - test-module-sles-15-sp2-sap
+                #- test-ebpf-flatcar-stable
+                #- test-module-flatcar-stable
+                #- test-ebpf-fedora-coreos-stable
+                #- test-module-fedora-coreos-stable
+                #- test-ebpf-garden-linux
+                #- test-module-garden-linux
         - test-module-ubuntu-pro-1804-lts
         - test-ebpf-ubuntu-pro-1804-lts
     - reload-released-images:
