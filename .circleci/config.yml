@@ -11,7 +11,7 @@ parameters:
     default: cache-v2
   kernel-bundles-staging:
     type: string
-    default: ""
+    default: gs://stackrox-kernel-bundles-staging/mauro/ROX-9216-ubuntu-azure-fips/9727f7c1ad2a5b3c72eeb40269be93fd5b05847d
   default-machine-image:
     type: string
     # https://circleci.com/docs/2.0/configuration-reference/#available-machine-images
