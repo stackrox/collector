@@ -103,8 +103,12 @@ set(BUILD_LIBSINSP_EXAMPLES OFF CACHE BOOL "Build libsinsp examples" FORCE)
 
 set(DRIVER_NAME "collector" CACHE STRING "Falco driver name" FORCE)
 
+# no version set in existing built drivers. Consider setting a version in future
+set(DRIVER_VERSION "" CACHE STRING "Falco driver version" FORCE)
+
 # we need to set the driver name to sysdig for compatibility with existing built 
 # probes, but this should be removed once upstreaming has completed
 set(DRIVER_DEVICE_NAME "sysdig" CACHE STRING "Driver device name" FORCE)
+
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/falcosecurity-libs EXCLUDE_FROM_DEFAULT_BUILD)
