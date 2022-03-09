@@ -71,10 +71,11 @@ func (b *BenchmarkTestSuiteBase) StartPerfContainer(name string, image string, a
 func (b *BenchmarkTestSuiteBase) RunInitContainer() {
 	cmd := []string{
 		"host-init",
-		"-v", "/lib/modules:/host/lib/modules",
-		"-v", "/etc/os-release:/host/etc/os-release",
-		"-v", "/etc/lsb-release:/host/etc/lsb-release",
-		"-v", "/usr/src:/host/usr/src",
+		"-v", "/lib/modules:/lib/modules",
+		"-v", "/etc/os-release:/etc/os-release",
+		"-v", "/etc/lsb-release:/etc/lsb-release",
+		"-v", "/usr/src:/usr/src",
+		"-v", "/boot:/boot",
 		"stackrox/collector-performance:init",
 	}
 

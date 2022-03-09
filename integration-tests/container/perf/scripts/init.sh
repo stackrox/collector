@@ -4,14 +4,10 @@
 
 set -exo pipefail
 
-function host_path() {
-    echo "/host${1}"
-}
-
-LSB_FILE=$(host_path "/etc/lsb-release")
-OS_RELEASE_FILE=$(host_path "/etc/os-release")
-TARGET_DIR=$(host_path "/usr/src")
-HOST_MODULES_DIR=$(host_path "/lib/modules")
+LSB_FILE="/etc/lsb-release"
+OS_RELEASE_FILE="/etc/os-release"
+TARGET_DIR="/usr/src"
+HOST_MODULES_DIR="/lib/modules"
 
 KERNEL_VERSION="${KERNEL_VERSION:-$(uname -r)}"
 
@@ -21,10 +17,10 @@ generate_headers() {
     cd "${BUILD_DIR}"
     if [ -e /proc/config.gz ]; then
         zcat /proc/config.gz > .config
-    elif [ -e "$(host_path "/boot/config-${KERNEL_VERSION}")" ]; then
-        cp "$(host_path "/boot/config-${KERNEL_VERSION}")" .config
+    elif [ -e "/boot/config-${KERNEL_VERSION}" ]; then
+        cp "/boot/config-${KERNEL_VERSION}" .config
     fi
-    make ARCH=x86 oldconfig > /dev/null
+    make ARCH=x86 olddefconfig > /dev/null
     make ARCH=x86 prepare > /dev/null
 
     # To ensure that all headers are copied, we can't use `make headers_install` or
@@ -127,17 +123,17 @@ check_headers() {
     return 0
 }
 
-if [[ ! -e "$(host_path "/lib/modules/.installed")" ]]; then
+if [[ ! -e "/lib/modules/.installed" ]]; then
     if check_headers "${HOST_MODULES_DIR}"; then
         HEADERS_TARGET="${HOST_MODULES_DIR}/source"
     else
         install_headers
     fi
 
-    mkdir -p "$(host_path "/lib/modules/${KERNEL_VERSION}")"
-    ln -sf "${HEADERS_TARGET}" "$(host_path "/lib/modules/${KERNEL_VERSION}/source")"
-    ln -sf "${HEADERS_TARGET}" "$(host_path "/lib/modules/${KERNEL_VERSION}/build")"
-    touch /lib/modules/.installed
+    mkdir -p "/lib/modules/${KERNEL_VERSION}"
+    ln -sf "${HEADERS_TARGET}" "/lib/modules/${KERNEL_VERSION}/source"
+    ln -sf "${HEADERS_TARGET}" "/lib/modules/${KERNEL_VERSION}/build"
+    touch "/lib/modules/.installed"
     exit 0
 else
     echo "Headers already installed"
