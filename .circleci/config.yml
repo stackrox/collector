@@ -1054,7 +1054,6 @@ jobs:
         name: "Destroy VM"
         no_output_timeout: 450m
         command: |
-          sleep 10000
           gcloud compute instances delete $GCLOUD_INSTANCE
         when: always
 

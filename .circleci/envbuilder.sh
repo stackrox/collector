@@ -274,8 +274,8 @@ setupGCPVM() {
         installESMUpdatesOnUbuntuAndReboot "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
         sleep 30
     fi
-    #if [[ "${GCP_VM_NAME}" =~ "ubuntu-pro-1804-lts" ]]; then
-    #    installFIPSOnUbuntuAndReboot "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
-    #    rebootVM "$GCP_VM_USER" "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
-    #fi
+    if [[ "${GCP_VM_NAME}" =~ "ubuntu-pro-1804-lts" ]]; then
+        installFIPSOnUbuntuAndReboot "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
+        rebootVM "$GCP_VM_USER" "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
+    fi
 }
