@@ -73,7 +73,7 @@ cd "$BUILD_SCRATCH"
 cmake \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_C_FLAGS="-fno-pie" \
-    -DPROBE_NAME=collector \
+    -DDRIVER_NAME=collector \
     -DBUILD_USERSPACE=OFF \
     -DBUILD_DRIVER=ON \
     -DENABLE_DKMS=OFF \
