@@ -48,7 +48,7 @@ fetch_generic_linux_sources() {
 
     # Remove the '.0' as the intial kernel major release isn't published with a patch number.
     if [[ $kernel_version == *.0 ]]; then
-        kernel_version="$(echo $kernel_version | rev | sed s/0\.// | rev)"
+        kernel_version="$(echo "${kernel_version}" | rev | sed s/0\.// | rev)"
     fi
 
     echo "Fetching upstream kernel sources for ${kernel_version}."

@@ -24,7 +24,7 @@ function run_tool() {
     shift
     # make sure to background the task so we can set up the pid
     # and handle signals from docker
-    eval "$TOOL $@ 2>&1 &"
+    eval "$TOOL $* 2>&1 &"
     TOOL_PID=$!
 
     # This is where we block for the duration of tool execution
