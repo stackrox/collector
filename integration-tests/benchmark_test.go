@@ -38,10 +38,10 @@ func (b *BenchmarkTestSuiteBase) StartPerfTools() {
 	bpftrace := ReadEnvVar("COLLECTOR_BPFTRACE_COMMAND")
 	bcc := ReadEnvVar("COLLECTOR_BCC_COMMAND")
 
-	skipInit := ReadBoolEnvVar("COLLECTOR_PERF_SKIP_INIT")
+	skipInit := ReadBoolEnvVar("COLLECTOR_SKIP_HEADERS_INIT")
 
 	if skipInit && (perf == "" && bpftrace == "" && bcc == "") {
-		fmt.Fprintf(os.Stderr, "COLLECTOR_PERF_SKIP_INIT set, but no performance tool requested - ignoring.")
+		fmt.Fprintf(os.Stderr, "COLLECTOR_SKIP_HEADERS_INIT set, but no performance tool requested - ignoring.")
 		return
 	}
 

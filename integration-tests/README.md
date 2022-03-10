@@ -52,12 +52,12 @@ To facilitate easier performance testing and measurement of collector whilst und
 load, there are various ways to modify the behaviour of the benchmarks so that performance
 tools are executed alongside them. The following environment variables provide this feature:
 
-| Variable Name                | Description                                                                      |
-| ---------------------------- | -------------------------------------------------------------------------------- |
-| `COLLECTOR_BPFTRACE_COMMAND` | Arguments to pass to a bpftrace command.                                         |
-| `COLLECTOR_PERF_COMMAND`     | Arguments to pass to a perf command                                              |
-| `COLLECTOR_BCC_COMMAND`      | Arguments to pass to a BCC command                                               |
-| `COLLECTOR_PERF_SKIP_INIT`   | if set to `true`, do not run the init container (which pulls down kernel source) |
+| Variable Name                 | Description                                                                      |
+| ----------------------------- | -------------------------------------------------------------------------------- |
+| `COLLECTOR_BPFTRACE_COMMAND`  | Arguments to pass to a bpftrace command.                                         |
+| `COLLECTOR_PERF_COMMAND`      | Arguments to pass to a perf command                                              |
+| `COLLECTOR_BCC_COMMAND`       | Arguments to pass to a BCC command                                               |
+| `COLLECTOR_SKIP_HEADERS_INIT` | if set to `true`, do not run the init container (which pulls down kernel source) |
 
 To support these commands, the host is automatically updated with the necessary kernel
 headers for the platform.
