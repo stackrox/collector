@@ -74,6 +74,7 @@ cmake \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_C_FLAGS="-fno-pie" \
     -DDRIVER_NAME=collector \
+    -DDRIVER_DEVICE_NAME=sysdig \
     -DBUILD_USERSPACE=OFF \
     -DBUILD_DRIVER=ON \
     -DENABLE_DKMS=OFF \
