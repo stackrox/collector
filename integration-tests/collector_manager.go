@@ -2,13 +2,13 @@ package integrationtests
 
 import (
 	"fmt"
-	"github.com/hashicorp/go-multierror"
 	"io/ioutil"
 	"os"
 	"os/user"
 	"path/filepath"
-	"strconv"
 	"strings"
+
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/boltdb/bolt"
 )
@@ -32,7 +32,8 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 	if strings.Contains(collectionMethod, "module") {
 		collectionMethod = "kernel_module"
 	}
-	offlineMode, _ := strconv.ParseBool(ReadEnvVarWithDefault("COLLECTOR_OFFLINE_MODE", "false"))
+
+	offlineMode := ReadBoolEnvVar("COLLECTOR_OFFLINE_MODE")
 
 	env := map[string]string{
 		"GRPC_SERVER":                      "localhost:9999",

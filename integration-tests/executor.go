@@ -62,6 +62,14 @@ func ReadEnvVarWithDefault(env string, def string) string {
 	return def
 }
 
+func ReadBoolEnvVar(env string) bool {
+	e, err := strconv.ParseBool(ReadEnvVarWithDefault(env, "false"))
+	if err != nil {
+		return false
+	}
+	return e
+}
+
 func NewSSHCommandBuilder() CommandBuilder {
 	return &sshCommandBuilder{
 		user:    ReadEnvVar("SSH_USER"),
@@ -235,14 +243,7 @@ func (e *gcloudCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
 		userInstance = e.user + "@" + e.instance
 	}
 	cmdArgs = append(cmdArgs, userInstance, "--", "-T")
-	for _, arg := range args {
-		argQuoted := strconv.Quote(arg)
-		argQuotedTrimmed := strings.Trim(argQuoted, "\"")
-		if arg != argQuotedTrimmed || strings.Contains(arg, " ") {
-			arg = argQuoted
-		}
-		cmdArgs = append(cmdArgs, arg)
-	}
+	cmdArgs = append(cmdArgs, quoteArgs(args)...)
 	return exec.Command("gcloud", cmdArgs...)
 }
 
@@ -264,14 +265,8 @@ func (e *sshCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
 	cmdArgs := []string{
 		"-o", "StrictHostKeyChecking=no", "-i", e.keyPath,
 		e.user + "@" + e.address}
-	for _, arg := range args {
-		argQuoted := strconv.Quote(arg)
-		argQuotedTrimmed := strings.Trim(argQuoted, "\"")
-		if arg != argQuotedTrimmed || strings.Contains(arg, " ") {
-			arg = argQuoted
-		}
-		cmdArgs = append(cmdArgs, arg)
-	}
+
+	cmdArgs = append(cmdArgs, quoteArgs(args)...)
 	return exec.Command("ssh", cmdArgs...)
 }
 

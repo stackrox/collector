@@ -23,11 +23,9 @@ const (
 	networkBucket            = "Network"
 	parentUIDStr             = "ParentUid"
 	parentExecFilePathStr    = "ParentExecFilePath"
-)
 
-func TestBenchmarkBaseline(t *testing.T) {
-	suite.Run(t, new(BenchmarkBaselineTestSuite))
-}
+	defaultWaitTickSeconds = 30 * time.Second
+)
 
 func TestCollectorGRPC(t *testing.T) {
 	suite.Run(t, new(ProcessNetworkTestSuite))
@@ -36,10 +34,6 @@ func TestCollectorGRPC(t *testing.T) {
 
 func TestProcessNetwork(t *testing.T) {
 	suite.Run(t, new(ProcessNetworkTestSuite))
-}
-
-func TestBenchmarkCollector(t *testing.T) {
-	suite.Run(t, new(BenchmarkCollectorTestSuite))
 }
 
 func TestImageLabelJSON(t *testing.T) {
@@ -138,14 +132,6 @@ type PerformanceResult struct {
 	ContainerStats   []ContainerStat
 }
 
-type BenchmarkCollectorTestSuite struct {
-	IntegrationTestSuiteBase
-}
-
-type BenchmarkBaselineTestSuite struct {
-	IntegrationTestSuiteBase
-}
-
 type MissingProcScrapeTestSuite struct {
 	IntegrationTestSuiteBase
 }
@@ -196,54 +182,6 @@ func (s *ImageLabelJSONTestSuite) TearDownSuite() {
 	s.cleanupContainer([]string{"collector", "grpc-server", "jsonlabel"})
 }
 
-func (s *BenchmarkCollectorTestSuite) SetupSuite() {
-	s.executor = NewExecutor()
-	s.StartContainerStats()
-	s.collector = NewCollectorManager(s.executor, s.T().Name())
-	s.metrics = map[string]float64{}
-
-	err := s.collector.Setup()
-	s.Require().NoError(err)
-
-	err = s.collector.Launch()
-	s.Require().NoError(err)
-
-}
-
-func (s *BenchmarkCollectorTestSuite) TestBenchmarkCollector() {
-	s.RunCollectorBenchmark()
-}
-
-func (s *BenchmarkCollectorTestSuite) TearDownSuite() {
-	err := s.collector.TearDown()
-	s.Require().NoError(err)
-
-	s.db, err = s.collector.BoltDB()
-	s.Require().NoError(err)
-
-	s.cleanupContainer([]string{"collector", "grpc-server", "benchmark"})
-	stats := s.GetContainerStats()
-	s.PrintContainerStats(stats)
-	s.WritePerfResults("collector_benchmark", stats, s.metrics)
-}
-
-func (s *BenchmarkBaselineTestSuite) SetupSuite() {
-	s.executor = NewExecutor()
-	s.metrics = map[string]float64{}
-	s.StartContainerStats()
-}
-
-func (s *BenchmarkBaselineTestSuite) TestBenchmarkBaseline() {
-	s.RunCollectorBenchmark()
-}
-
-func (s *BenchmarkBaselineTestSuite) TearDownSuite() {
-	s.cleanupContainer([]string{"benchmark"})
-	stats := s.GetContainerStats()
-	s.PrintContainerStats(stats)
-	s.WritePerfResults("baseline_benchmark", stats, s.metrics)
-}
-
 // Launches collector
 // Launches gRPC server in insecure mode
 // Launches nginx container
@@ -276,7 +214,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	// invokes default nginx
 	containerID, err := s.launchContainer("nginx", "nginx:1.14-alpine")
 	s.Require().NoError(err)
-	s.serverContainer = containerID[0:12]
+	s.serverContainer = containerShortID(containerID)
 
 	// invokes "sleep" and "sh" and "ls"
 	_, err = s.execContainer("nginx", []string{"sleep", "5"})
@@ -287,7 +225,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	// invokes another container
 	containerID, err = s.launchContainer("nginx-curl", "pstauffer/curl:latest", "sleep", "300")
 	s.Require().NoError(err)
-	s.clientContainer = containerID[0:12]
+	s.clientContainer = containerShortID(containerID)
 
 	s.serverIP, err = s.getIPAddress("nginx")
 	s.Require().NoError(err)
@@ -556,7 +494,7 @@ func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, erro
 	return outLines[len(outLines)-1], err
 }
 
-func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, containerID string) (bool, error) {
+func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, containerID string, tickSeconds time.Duration) (bool, error) {
 	cmd := []string{
 		"docker", "ps", "-qa",
 		"--filter", "id=" + containerID,
@@ -564,7 +502,7 @@ func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, contain
 	}
 
 	start := time.Now()
-	tick := time.Tick(30 * time.Second)
+	tick := time.Tick(tickSeconds)
 	tickElapsed := time.Tick(1 * time.Minute)
 	timeout := time.After(15 * time.Minute)
 	for {
@@ -572,7 +510,8 @@ func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, contain
 		case <-tick:
 			output, err := s.executor.Exec(cmd...)
 			outLines := strings.Split(output, "\n")
-			if outLines[len(outLines)-1] == containerID {
+			lastLine := outLines[len(outLines)-1]
+			if lastLine == containerShortID(containerID) {
 				return true, nil
 			}
 			if err != nil {
@@ -596,6 +535,18 @@ func (s *IntegrationTestSuiteBase) execContainer(containerName string, command [
 func (s *IntegrationTestSuiteBase) cleanupContainer(containers []string) {
 	for _, container := range containers {
 		s.executor.Exec("docker", "kill", container)
+		s.executor.Exec("docker", "rm", container)
+	}
+}
+
+func (s *IntegrationTestSuiteBase) stopContainers(containers ...string) {
+	for _, container := range containers {
+		s.executor.Exec("docker", "stop", container)
+	}
+}
+
+func (s *IntegrationTestSuiteBase) removeContainers(containers ...string) {
+	for _, container := range containers {
 		s.executor.Exec("docker", "rm", container)
 	}
 }
@@ -680,9 +631,8 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 
 	containerID, err := s.launchContainer(benchmarkArgs...)
 	s.Require().NoError(err)
-	benchmarkContainerID := containerID[0:12]
 
-	_, err = s.waitForContainerToExit(benchmarkName, benchmarkContainerID)
+	_, err = s.waitForContainerToExit(benchmarkName, containerID, defaultWaitTickSeconds)
 	s.Require().NoError(err)
 
 	benchmarkLogs, err := s.containerLogs("benchmark")
@@ -710,7 +660,7 @@ func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
 	}
 	containerID, err := s.launchContainer(args...)
 	s.Require().NoError(err)
-	_, err = s.waitForContainerToExit(name, containerID[0:12])
+	_, err = s.waitForContainerToExit(name, containerID, defaultWaitTickSeconds)
 	s.Require().NoError(err)
 }
 
