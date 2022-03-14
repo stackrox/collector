@@ -85,6 +85,8 @@ elif [[ "$distro" == "redhat" ]]; then
         "$version" == "4.18.0-348.rt7.130.el8.x86_64" ||
         "$version" == "4.18.0-305.rt7.72.el8.x86_64" ]]; then
         flavor="modern"
+    else
+        flavor="redhat"
     fi
 elif grep -q "$distro" < "$custom_build_flavors_all_file"; then
     flavor="$distro"
