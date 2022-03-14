@@ -78,10 +78,14 @@ elif [[ "$distro" =~ ^suse$ ]]; then
     flavor="modern"
 # RHEL 8.3+ kernels require a newer gcc and can be compiled with modern builder
 #  Match kernels of the form 4.18.0-240.1.1.el8_3.x86_64 and 4.18.0-301.1.el8.x86_64
-elif [[ "$distro" == "redhat" && "$version" =~ ^.*(el8_[3-9]|[3-9][0-9][0-9][.0-9]+el8)\.x86_64$ ]]; then
-    flavor="modern"
-elif [[ "$distro" == "redhat" && "$version" == "4.18.0-293.el8.x86_64" ]]; then
-    flavor="modern"
+elif [[ "$distro" == "redhat" ]]; then
+    if [[ "$version" =~ ^.*(el8_[3-9]|[3-9][0-9][0-9][.0-9]+el8)\.x86_64$ ]]; then
+        flavor="modern"
+    elif [[ "$version" == "4.18.0-293.el8.x86_64" ||
+        "$version" == "4.18.0-348.rt7.130.el8.x86_64" ||
+        "$version" == "4.18.0-305.rt7.72.el8.x86_64" ]]; then
+        flavor="modern"
+    fi
 elif grep -q "$distro" < "$custom_build_flavors_all_file"; then
     flavor="$distro"
 fi

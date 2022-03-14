@@ -3380,3 +3380,5 @@
 5.15.0-60.fc36.x86_64 redhat impish
 4.19.94-minikube minikube modern
 4.19.182-minikube minikube modern
+4.18.0-305.rt7.72.el8.x86_64 redhat modern
+4.18.0-348.rt7.130.el8.x86_64 redhat modern
