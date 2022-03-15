@@ -60,7 +60,7 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
   - images
   - ubi-image
   - integration-test-local
-  # - dockerized-build-collector
+  - dockerized-build-collector
 
 orbs:
   slack: circleci/slack@3.4.2
@@ -1415,69 +1415,69 @@ workflows:
         <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - builder
-    # - dockerized-task-file:
-    #     <<: *runOnAllTags
-    #     context:
-    #       - docker-io-pull
-    #       - quay-rhacs-eng-readonly
-    #       - redhat-developer-account-login
-    #     requires:
-    #     - lint
-    # - dockerized-build-drivers:
-    #     <<: *runOnAllTags
-    #     context:
-    #       - docker-io-pull
-    #       - quay-rhacs-eng-readwrite
-    #       - redhat-developer-account-login
-    #     requires:
-    #     - dockerized-task-file
-    # - dockerized-unify-images:
-    #     <<: *runOnAllTags
-    #     context:
-    #       - docker-io-pull
-    #       - quay-rhacs-eng-readwrite
-    #     requires:
-    #       - dockerized-build-drivers
-    # - dockerized-check-failures:
-    #     <<: *runOnAllTags
-    #     context:
-    #       - quay-rhacs-eng-readonly
-    #     requires:
-    #       - dockerized-unify-images
-    # - dockerized-build-collector:
-    #     <<: *runOnAllTags
-    #     context:
-    #       - docker-io-push
-    #       - quay-rhacs-eng-readonly
-    #     requires:
-    #       - dockerized-unify-images
-    #       - images
-    # - prepare-kernels:
-    #     <<: *runOnAllTagsWithDockerIOPullCtx
-    #     requires:
-    #     - lint
-    # - kernels:
-    #     <<: *runOnAllTagsWithDockerIOPushCtx
-    #     requires:
-    #     - prepare-kernels
-    # - join-modules:
-    #     <<: *runOnAllTagsWithDockerIOPullCtx
-    #     requires:
-    #     - kernels
-    # - upload-modules:
-    #     <<: *runOnAllTagsWithDockerIOPullCtx
-    #     requires:
-    #     - join-modules
-    # - kernel-module-build-failures-check:
-    #     <<: *runOnAllTagsWithDockerIOPullCtx
-    #     requires:
-    #     - kernels
+    - dockerized-task-file:
+        <<: *runOnAllTags
+        context:
+          - docker-io-pull
+          - quay-rhacs-eng-readonly
+          - redhat-developer-account-login
+        requires:
+        - lint
+    - dockerized-build-drivers:
+        <<: *runOnAllTags
+        context:
+          - docker-io-pull
+          - quay-rhacs-eng-readwrite
+          - redhat-developer-account-login
+        requires:
+        - dockerized-task-file
+    - dockerized-unify-images:
+        <<: *runOnAllTags
+        context:
+          - docker-io-pull
+          - quay-rhacs-eng-readwrite
+        requires:
+          - dockerized-build-drivers
+    - dockerized-check-failures:
+        <<: *runOnAllTags
+        context:
+          - quay-rhacs-eng-readonly
+        requires:
+          - dockerized-unify-images
+    - dockerized-build-collector:
+        <<: *runOnAllTags
+        context:
+          - docker-io-push
+          - quay-rhacs-eng-readonly
+        requires:
+          - dockerized-unify-images
+          - images
+    - prepare-kernels:
+        <<: *runOnAllTagsWithDockerIOPullCtx
+        requires:
+        - lint
+    - kernels:
+        <<: *runOnAllTagsWithDockerIOPushCtx
+        requires:
+        - prepare-kernels
+    - join-modules:
+        <<: *runOnAllTagsWithDockerIOPullCtx
+        requires:
+        - kernels
+    - upload-modules:
+        <<: *runOnAllTagsWithDockerIOPullCtx
+        requires:
+        - join-modules
+    - kernel-module-build-failures-check:
+        <<: *runOnAllTagsWithDockerIOPullCtx
+        requires:
+        - kernels
     - images:
         <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - collector
-        # - kernels
-        # - join-modules
+        - kernels
+        - join-modules
     - ubi-image:
         <<: *runOnAllTags
         context:
@@ -1492,7 +1492,7 @@ workflows:
         vm-config: rhel
         requires:
         - images
-        # - upload-modules
+        - upload-modules
     - integration-test-local:
         <<: *runOnAllTagsWithDockerIOPushCtx
         name: integration-test-local-ubi
@@ -1500,7 +1500,7 @@ workflows:
         use-ubi: true
         requires:
         - ubi-image
-        # - upload-modules
+        - upload-modules
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
@@ -1655,5 +1655,5 @@ workflows:
           - docker-io-and-stackrox-io-push
           - quay-rhacs-eng-readonly
           - collector-support
-        # requires:
-        #   - upload-modules
+        requires:
+          - upload-modules
