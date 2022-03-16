@@ -32,15 +32,20 @@ def lost(count):
     print(f"lost {count}")
 
 
-def signal_handler(bpf, output, *args):
+def exit_handler(bpf, output, *args):
     """
     Since this tool is run via docker, we need to handle docker stop
     calls, and output our results before exiting. docker will send a
     SIGTERM, which gives us some time to write out output before docker will
     forcibly kill the container.
     """
-    bpf.detach_kprobe(event="do_syscall_64")
-    bpf.detach_kretprobe(event="do_syscall_64")
+    try:
+        bpf.detach_kprobe(event="do_syscall_64")
+        bpf.detach_kretprobe(event="do_syscall_64")
+    except Exception as e:
+        # this is a very broad, but unfortunately bcc raises a
+        # plain Exception so it is not possible to be more refined.
+        print(f"[*] detaching failed: {e}")
 
     if output != '-':
         with open(output, 'w+') as o:
@@ -62,7 +67,7 @@ def capture(output: str):
 
     # By using functools.partial() here we can populate the signal handler with additional
     # args that it needs, without haivng extra global state.
-    handler = functools.partial(signal_handler, bpf, output)
+    handler = functools.partial(exit_handler, bpf, output)
 
     signal.signal(signal.SIGTERM, handler)
     signal.signal(signal.SIGINT, handler)
@@ -85,6 +90,11 @@ def capture(output: str):
             bpf.perf_buffer_poll()
         except KeyboardInterrupt:
             break
+
+    # If we have got here, it is likely that this script is being run manually
+    # and SIGTERM/SIGINT have not fired, but KeyboardInterrupt has occured. 
+    # We still need to output and clean up out probes.
+    exit_handler(bpf, output)
 
 
 if __name__ == '__main__':

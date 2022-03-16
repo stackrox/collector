@@ -3,6 +3,7 @@ import argparse
 import sys
 import json
 import os
+import numpy
 
 g_collector_syscalls = [
     "accept",
@@ -25,30 +26,6 @@ g_collector_syscalls = [
 ]
 
 
-def p95(data):
-    """
-    :return: the 95th percentile value from the data set
-    """
-    idx = round(len(data) * 0.95)
-    if idx == len(data):
-        idx = idx - 1
-    return data[idx]
-
-
-def mean(data):
-    """
-    :return: the mean average from the set of data
-    """
-    return sum(data) / len(data)
-
-
-def median(data):
-    """
-    :return: the middle value in the set of data
-    """
-    return data[len(data) // 2]
-
-
 def results_file(root, kind, version, collection=None):
     """
     :param root: the root directory of the data files
@@ -59,6 +36,7 @@ def results_file(root, kind, version, collection=None):
     :return: the file path of the expected json data file
     """
     return os.path.join(root, f'{f"{collection}-" if collection else ""}{kind}-{version}.json')
+
 
 def load_dataset(root, name, version, collection=None):
     """
@@ -71,7 +49,8 @@ def load_dataset(root, name, version, collection=None):
     """
     filename = results_file(root, name, version, collection=collection)
     print(f"[*] loading {filename}")
-    return json.load(open(filename))
+    with open(filename) as data_file:
+        return json.load(data_file)
 
 
 def process(data_set):
@@ -85,18 +64,22 @@ def process(data_set):
     for key, values in data_set.items():
         values = sorted(values)
         results[key] = {
-            'mean': mean(values),
-            'median': median(values),
-            'p95': p95(values),
+            'mean': numpy.mean(values),
+            'median': numpy.median(values),
+            'p95': numpy.percentile(values, 95),
             'size': len(values),
         }
 
     return results
 
+
 def display(baseline_results, ebpf_results, ko_results):
-    headers = ["syscall", "baseline (mean/median/p95)", "ebpf (mean/median/p95)", "ko (mean/median/p95)"]
+    headers = ["syscall", "baseline (mean/median/p95)",
+               "ebpf (mean/median/p95)", "ko (mean/median/p95)"]
     table = []
 
+    # Sort based on number of captured latency values. This will display
+    # the most frequent at the bottom of the table.
     for key in sorted(baseline_results.keys(), key=lambda a: len(baseline[a])):
         try:
             base = baseline_results[key]
@@ -114,6 +97,7 @@ def display(baseline_results, ebpf_results, ko_results):
         ])
 
     print(tabulate.tabulate(table, headers=headers))
+
 
 g_epilog = """
 This tool processes json files that contain syscall latency information of the form:
@@ -151,6 +135,3 @@ if __name__ == '__main__':
     ko_results = process(ko)
 
     display(baseline_results, ebpf_results, ko_results)
-
-    
-
