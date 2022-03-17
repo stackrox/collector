@@ -14,6 +14,7 @@ RUN dnf -y update \
         ca-certificates \
         clang \
         cracklib-dicts \
+        diffutils \
         elfutils-libelf-devel \
         file \
         flex \
@@ -23,11 +24,11 @@ RUN dnf -y update \
         gettext \
         git \
         glibc-devel \
+        libasan \
         libcap-ng-devel \
         libcurl-devel \
         libtool \
         libuuid-devel \
-        libasan \
         make \
         openssh-server \
         openssl-devel \
@@ -38,9 +39,9 @@ RUN dnf -y update \
         rsync \
         tar \
         unzip \
+        valgrind \
         wget \
         which \
-    && dnf -y groupinstall "Development Tools" \
     && dnf clean all
 
 # We want to fail if the destination directory is there, hence mkdir (not -p).
