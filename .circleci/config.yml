@@ -856,7 +856,9 @@ jobs:
     - run:
         name: "Clone stackrox":
         command:
-          git clone 
+          sleep 60
+          #"${SOURCE_ROOT}/.circleci/run-stackrox-ci/10-run-stacrox-ci.sh"
+
 
   integration-test-local:
     parameters:
