@@ -1073,14 +1073,18 @@ jobs:
     - run:
         name: "Gather Data"
         command: |
-          echo "ls 1"
-          for i in "${WORKSPACE_ROOT}"/*perf.json; do
-            echo "Performance data file: $i"
-            cat $i >> ~/workspace/all-perf.json
-          done
+          jq -s 'flatten' ${WORKSPACE_ROOT}/*perf.json > ~/workspace/all-perf.json
+
           ## TODO put into script
-          cat all-perf.json | jq '. | select(.Metrics.hackbench_avg_time != null) | {kernel: .VmConfig, collection_method: .CollectionMethod, (.TestName): .Metrics.hackbench_avg_time } ' | jq -rs  ' group_by(.kernel) | .[] | group_by(.collection_method) | .[] | add | [.kernel, .collection_method, .baseline_benchmark, .collector_benchmark ] | @csv' > ~/workspace/benchmark.csv
+          cat all-perf.json | jq '.[] | select(.Metrics.hackbench_avg_time != null) | {kernel: .VmConfig, collection_method: .CollectionMethod, (.TestName): .Metrics.hackbench_avg_time } ' | jq -rs  ' group_by(.kernel) | .[] | group_by(.collection_method) | .[] | add | [.kernel, .collection_method, .baseline_benchmark, .collector_benchmark ] | @csv' > ~/workspace/benchmark.csv
           cat ~/workspace/benchmark.csv | sort | awk -v FS="," 'BEGIN{print "|Kernel|Method|Without Collector Time (secs)|With Collector Time (secs)|";print "|---|---|---|---|"}{printf "|%s|%s|%s|%s|%s",$1,$2,$3,$4,ORS}' > ~/workspace/benchmark.md
+
+          echo "Significance" >> ~/workspace/benchmark.md
+          ${CI_ROOT}/test-scripts/baseline/main.py -t all-perf.json >> ~/workspace/benchmark.md
+
+          if [[ -n "${UPDATE_BASELINE}" ]]; then
+              ${CI_ROOT}/test-scripts/baseline/main.py -u all-perf.json
+          fi
 
     - run:
         name: Comment on PR
