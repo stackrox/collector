@@ -1,14 +1,12 @@
-FROM centos:8
+FROM quay.io/centos/centos:stream8
 
 ARG NPROCS=6
-ARG USE_VALGRIND=false
-ARG ADDRESS_SANITIZER=false
 ENV NPROCS=$NPROCS
 
 ## Install packaged dependencies
 USER root
-RUN yum -y update \
-    && yum -y install \
+RUN dnf -y update \
+    && dnf -y install \
         autoconf \
         automake \
         binutils-devel \
@@ -29,6 +27,7 @@ RUN yum -y update \
         libcurl-devel \
         libtool \
         libuuid-devel \
+        libasan \
         make \
         openssh-server \
         openssl-devel \
@@ -41,13 +40,8 @@ RUN yum -y update \
         unzip \
         wget \
         which \
-    && yum -y groupinstall "Development Tools" ;
-
-RUN if [ $ADDRESS_SANITIZER == "true" ]; then \
-       yum -y install libasan; \
-    fi ;
-
-RUN yum clean all ;
+    && dnf -y groupinstall "Development Tools" \
+    && dnf clean all
 
 # We want to fail if the destination directory is there, hence mkdir (not -p).
 RUN mkdir install-tmp
