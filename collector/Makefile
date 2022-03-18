@@ -26,7 +26,7 @@ container/bin/collector: $(HDRS) $(SRCS) txt-files generated-srcs $(shell find f
 		-e ADDRESS_SANITIZER=$(ADDRESS_SANITIZER) \
 		-e COLLECTOR_APPEND_CID=$(COLLECTOR_APPEND_CID) \
 		-e DISABLE_PROFILING="true" \
-		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-collector.sh
+		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-collector.py --build-type $(CMAKE_BUILD_TYPE)
 	cp cmake-build/collector container/bin/collector
 	cp -r cmake-build/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
 	cp cmake-build/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so

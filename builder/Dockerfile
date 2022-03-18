@@ -42,6 +42,7 @@ RUN dnf -y update \
         valgrind \
         wget \
         which \
+        python3 \
     && dnf clean all
 
 # We want to fail if the destination directory is there, hence mkdir (not -p).
@@ -59,7 +60,10 @@ COPY build/protogen.mk /
 
 # Copy script for building collector
 COPY build/build-collector.sh /
+COPY build/build-collector.py /
+
 RUN chmod 700 /build-collector.sh
+RUN chmod 700 /build-collector.py
 
 # Set up ssh for remote development with IDE
 RUN ssh-keygen -A \

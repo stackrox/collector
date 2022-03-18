@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import glob
 import shutil
 import multiprocessing
 from subprocess import check_call
@@ -34,9 +35,14 @@ def file_contains(path: str, needle: str) -> bool:
     with open(path) as f:
         return needle in f.read()
 
+        
+def run(*args, shell=True):
+    print(f"[*] {' '.join(args)}")
+    check_call(args=args, shell=shell)
+
 
 if __name__ == '__main__':
-    parser = argparser.ArgumentParser(description='Collector Builder')
+    parser = argparse.ArgumentParser(description='Collector Builder')
     parser.add_argument('--build-type', choices=('Release', 'Debug'),
                         default='Release')
     parser.add_argument('--use-address-sanitizer', action='store_true',
@@ -45,6 +51,8 @@ if __name__ == '__main__':
                         help='Whether to append the CID')
 
     args = parser.parse_args()
+    
+    os.chdir("/tmp/cmake-build")
 
     if args.use_address_sanitizer:
         # Needed for address sanitizer to work. See https://github.com/grpc/grpc/issues/22238.
@@ -67,15 +75,17 @@ if __name__ == '__main__':
         "/src"
     ]
 
-    check_call(args=cmake_cmd, shell=True)
-    check_call(args=["make", f"-j{g_num_procs}", "all"], shell=True)
+    run(*cmake_cmd)
+    run("make", f"-j{g_num_procs}", "all")
 
-    if parser.build_type == "Release":
-        print("strip unneeded")
-        check_call(args=[
+    if args.build_type == "Release":
+        print("[*] strip unneeded")
+        run(
             "strip", "--strip-unneeded",
             "./collector",
-            "./EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so"
-        ])
+            "./EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so",
+            shell=False
+        )
 
-    shutil.copytree("/THIRD_PARTY_NOTICES", ".")
+    for file in glob.glob("/THIRD_PARTY_NOTICES/*"):
+        shutil.copy(file, os.getcwd())
