@@ -855,7 +855,7 @@ jobs:
 
     - run:
         name: Clone stackrox
-        command:
+        command: |
           "${SOURCE_ROOT}/.circleci/run-stackrox-ci/10-run-stacrox-ci.sh" "${CIRCLE_BRANCH}" "${CIRCLE_BUILD_NUM}"
 
 
