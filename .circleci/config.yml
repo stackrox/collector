@@ -1503,7 +1503,7 @@ workflows:
         requires:
         - initjob
     - run-stackrox-ci:
-        <<: *runOnAllTags
+        <<: *runOnAllTagsWithDockerIOPullCtx
         context:
           - github_temp
         requires:
