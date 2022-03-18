@@ -854,7 +854,7 @@ jobs:
         - "32:e2:6d:de:c3:bb:b8:a4:62:89:a1:df:7a:30:37:f2"
 
     - run:
-        name: "Clone stackrox"
+        name: Clone stackrox
         command:
           "${SOURCE_ROOT}/.circleci/run-stackrox-ci/10-run-stacrox-ci.sh" "${CIRCLE_BRANCH}" "${CIRCLE_BUILD_NUM}"
 
