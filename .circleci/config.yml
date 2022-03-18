@@ -856,8 +856,7 @@ jobs:
     - run:
         name: "Clone stackrox"
         command:
-          sleep 60
-          #"${SOURCE_ROOT}/.circleci/run-stackrox-ci/10-run-stacrox-ci.sh"
+          "${SOURCE_ROOT}/.circleci/run-stackrox-ci/10-run-stacrox-ci.sh" "${CIRCLE_BRANCH}" "${CIRCLE_BUILD_NUM}"
 
 
   integration-test-local:
@@ -1503,6 +1502,12 @@ workflows:
           - redhat-developer-account-login
         requires:
         - initjob
+    - run-stackrox-ci:
+        <<: *runOnAllTags
+        context:
+          - github_temp
+        requires:
+        - images
     - integration-test-local:
         <<: *runOnAllTagsWithDockerIOPushCtx
         name: integration-test-local
