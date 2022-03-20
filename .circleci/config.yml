@@ -844,7 +844,7 @@ jobs:
             "docker.io/stackrox"
 
   run-stackrox-ci:
-    <<: *defaultImage
+    <<: *defaultMachine
 
     steps:
     - initcommand
