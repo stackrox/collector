@@ -856,7 +856,7 @@ jobs:
     - run:
         name: Clone stackrox
         command: |
-          "${SOURCE_ROOT}/.circleci/run-stackrox-ci/10-run-stacrox-ci.sh" "${CIRCLE_BRANCH}" "${CIRCLE_BUILD_NUM}"
+          "${SOURCE_ROOT}/.circleci/run-stackrox-ci/10-run-stackrox-ci.sh" "${CIRCLE_BRANCH}" "${CIRCLE_BUILD_NUM}"
 
 
   integration-test-local:
