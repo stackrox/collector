@@ -59,7 +59,7 @@ services:
       - COLLECTION_METHOD=ebpf
       - MODULE_DOWNLOAD_BASE_URL=https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656
       - MODULE_VERSION=b6745d795b8497aaf387843dc8aa07463c944d3ad67288389b754daaebea4b62
-      - COLLECTOR_HOST_ROOT=/host
+      - SCAP_HOST_ROOT_ENV_VAR_NAME=/host
     volumes:
       - /var/run/docker.sock:/host/var/run/docker.sock:ro
       - /proc:/host/proc:ro

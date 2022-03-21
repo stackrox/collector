@@ -23,7 +23,7 @@ LABEL name="collector" \
 
 ENV COLLECTOR_VERSION=${collector_version} \
     MODULE_VERSION=${module_version} \
-    COLLECTOR_HOST_ROOT=/host
+    SCAP_HOST_ROOT_ENV_VAR_NAME=/host
 
 WORKDIR /
 

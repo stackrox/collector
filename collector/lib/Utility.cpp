@@ -237,8 +237,8 @@ std::string Base64Decode(std::string const& encoded_string) {
 }
 
 std::string GetHostPath(const std::string& file) {
-  const char* host_root = std::getenv("COLLECTOR_HOST_ROOT");
-  if (!host_root) host_root = "";
+  const char* host_root = scap_get_host_root();
+
   std::string host_file(host_root);
   // Check if we are joining paths without a seperator,
   if (host_file.length() && file.length() &&

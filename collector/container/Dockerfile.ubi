@@ -71,7 +71,7 @@ LABEL version="${COLLECTOR_VERSION}"
 ARG USE_VALGRIND=false
 ARG ADDRESS_SANITIZER=false
 
-ENV COLLECTOR_HOST_ROOT=/host
+ENV SCAP_HOST_ROOT_ENV_VAR_NAME=/host
 
 RUN rm -rf /etc/rhsm-host
 COPY --from=builder /etc/pki/entitlement /etc/pki/entitlement
