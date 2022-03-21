@@ -11,7 +11,7 @@ parameters:
     default: cache-v2
   kernel-bundles-staging:
     type: string
-    default: gs://stackrox-kernel-bundles-staging/mauro/ROX-9509-missing-gardenlinux-modules/b0b61fc74f8b3622d239ee919a156587d3518090
+    default: ""
   default-machine-image:
     type: string
     # https://circleci.com/docs/2.0/configuration-reference/#available-machine-images
@@ -1638,8 +1638,8 @@ workflows:
         - test-module-flatcar-stable
         - test-ebpf-fedora-coreos-stable
         - test-module-fedora-coreos-stable
-        - test-module-garden-linux
         - test-ebpf-garden-linux
+        - test-module-garden-linux
         - test-module-ubuntu-pro-1804-lts
         - test-ebpf-ubuntu-pro-1804-lts
     - reload-released-images:
