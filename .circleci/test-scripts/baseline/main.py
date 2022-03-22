@@ -40,6 +40,7 @@ from collections import Counter
 from scipy import stats
 
 from google.cloud import storage
+from google.api_core.exceptions import NotFound
 
 
 GCS_BUCKET = "stackrox-collector-benchmarks"
@@ -52,9 +53,25 @@ def load_baseline_file():
 
     bucket = storage_client.bucket(GCS_BUCKET)
     blob = bucket.blob(BASELINE_FILE)
-    contents = blob.download_as_string()
 
-    return json.loads(contents)
+    try:
+        contents = blob.download_as_string()
+        return json.loads(contents)
+
+    except NotFound as ex:
+        print(f"File gs://{GCS_BUCKET}/{BASELINE_FILE} not found. "
+               "Creating a new empty one.", file=sys.stderr)
+
+        blob.upload_from_string(json.dumps([]))
+        return []
+
+
+def save_baseline_file(data):
+    storage_client = storage.Client()
+
+    bucket = storage_client.bucket(GCS_BUCKET)
+    blob = bucket.blob(BASELINE_FILE)
+    blob.upload_from_string(json.dumps(data))
 
 
 def is_no_overhead(record):
@@ -66,34 +83,34 @@ def is_overhead(record):
 
 
 def add_to_baseline_file(input_file_name):
-    storage_client = storage.Client()
+    data = load_baseline_file()
 
-    bucket = storage_client.bucket(GCS_BUCKET)
-    blob = bucket.blob(BASELINE_FILE)
-    contents = blob.download_as_string()
-
-    data = json.loads(contents)
     with open(input_file_name, "r") as measure:
         new_measurement = json.load(measure)
-        verify_new_data(data, new_measurement)
 
-        # Each benchmark data contains two values, with and without collector,
-        # and the result array is a flattened version of it. The threshold is
-        # formulated in benchmarks, so double it.
-        if len(data) >= BASELINE_THRESHOLD * 2:
-            result = []
+        if data:
+            verify_new_data(data, new_measurement)
 
-            # Drop one oldest pair (no overhead, overhead) in every group
-            for _, values in group_data(data, "VmConfig", "CollectionMethod"):
-                ordered = sorted(values,
-                        key=itemgetter("Timestamp"), reverse=True)
+        result = []
+        for _, values in group_data(data, "VmConfig", "CollectionMethod"):
+            ordered = sorted(values,
+                    key=itemgetter("Timestamp"), reverse=True)
 
+            # Each benchmark data contains two values, with and without
+            # collector, and the result array is a flattened version of it. The
+            # threshold is formulated in benchmarks, so double it.
+            if len(ordered) >= BASELINE_THRESHOLD * 2:
+                # Drop one oldest pair (no overhead, overhead) in every group
                 _, *no_overhead = filter(is_no_overhead, ordered)
                 _, *overhead = filter(is_overhead, ordered)
-                result.extend(no_overhead + overhead)
+            else:
+                no_overhead = [*filter(is_no_overhead, ordered)]
+                overhead = [*filter(is_overhead, ordered)]
+
+            result.extend(no_overhead + overhead)
 
         result.extend(new_measurement)
-        blob.upload_from_string(json.dumps(result))
+        save_baseline_file(result)
 
 
 """
@@ -104,8 +121,12 @@ invariants needs to be maintained:
 
 * New data provides equal number of with/without collector benchmark runs
 
+The function expects baseline is not empty.
+
 """
 def verify_new_data(baseline_data, new_data):
+    assert baseline_data, "Baseline data must be not empty"
+
     baseline_groupped = process(baseline_data)
     new_groupped = process(new_data)
 
@@ -181,6 +202,11 @@ def collector_overhead(measurements):
 
 def compare(input_file_name):
     baseline_data = load_baseline_file()
+
+    if not baseline_data:
+        print(f"Baseline file is empty, nothing to compare.", file=sys.stderr)
+        return
+
     with open(input_file_name, "r") as measurement:
         test_data = json.load(measurement)
         verify_new_data(baseline_data, test_data)
@@ -192,7 +218,7 @@ def compare(input_file_name):
             bgroup, bvalues = baseline
             tgroup, tvalues = test
 
-            assert(bgroup == tgroup)
+            assert bgroup == tgroup, "Kernel/Method must not be differrent"
 
             baseline_overhead = collector_overhead(list(bvalues))
             test_overhead = collector_overhead(list(tvalues))[0]
