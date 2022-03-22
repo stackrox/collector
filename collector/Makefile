@@ -21,7 +21,7 @@ container/bin/collector: $(HDRS) $(SRCS) txt-files generated-srcs $(shell find f
 		-v "$(CURDIR):/src" \
 		-v "$(CURDIR)/../falcosecurity-libs/:/falcosecurity-libs:ro" \
 		-v "$(CURDIR)/cmake-build:/tmp/cmake-build" \
-		-v "$(CURDIR)/../kernel-modules/MODULE_VERSION:/src/MODULE_VERSION" \
+		-v "$(CURDIR)/../kernel-modules:/kernel-modules" \
 		-e CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
 		-e USE_VALGRIND=$(USE_VALGRIND) \
 		-e ADDRESS_SANITIZER=$(ADDRESS_SANITIZER) \
