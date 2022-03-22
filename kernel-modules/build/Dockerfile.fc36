@@ -17,13 +17,8 @@ RUN dnf update -y || true; \
         wget \
         golang-go \
         pkg-config || true ; \
-    mkdir -p /output
-
-
-# RUN ln -s /usr/bin/clang-12 /usr/bin/clang && \
-#     ln -s /usr/bin/llc-12 /usr/bin/llc
-
-# RUN apt-get autoremove -y
+    mkdir -p /output; \
+    dnf autoremove -y
 
 COPY build-kos /usr/bin/
 COPY prepare-src /usr/bin
