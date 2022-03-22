@@ -43,7 +43,7 @@ getFlavorForDebian() {
 
 getFlavorFor5_13_plus() {
     if [[ "$distro" == "ubuntu" ]]; then
-        flavor_local="impish"
+        flavor_local="fc36"
     elif [[ "$version" =~ ^5\.1[3-9]\.[0-9]+-[0-9]+\.fc3[5-9] ]]; then
         flavor_local="fc36"
     else
