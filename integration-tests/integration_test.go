@@ -126,6 +126,8 @@ type ContainerStat struct {
 
 type PerformanceResult struct {
 	TestName         string
+	Timestamp        string
+	InstanceType     string
 	VmConfig         string
 	CollectionMethod string
 	Metrics          map[string]float64
@@ -733,6 +735,8 @@ func (s *IntegrationTestSuiteBase) PrintContainerStats(stats []ContainerStat) {
 func (s *IntegrationTestSuiteBase) WritePerfResults(testName string, stats []ContainerStat, metrics map[string]float64) {
 	perf := PerformanceResult{
 		TestName:         testName,
+		Timestamp:        time.Now().Format("2006-01-02 15:04:05"),
+		InstanceType:     ReadEnvVarWithDefault("VM_INSTANCE_TYPE", "default"),
 		VmConfig:         ReadEnvVarWithDefault("VM_CONFIG", "default"),
 		CollectionMethod: ReadEnvVarWithDefault("COLLECTION_METHOD", "kernel_module"),
 		Metrics:          metrics,

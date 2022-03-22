@@ -34,7 +34,9 @@ import argparse
 import json
 import sys
 
-from itertools import groupby
+from itertools import groupby, zip_longest
+from operator import itemgetter
+from collections import Counter
 from scipy import stats
 
 from google.cloud import storage
@@ -55,6 +57,14 @@ def load_baseline_file():
     return json.loads(contents)
 
 
+def is_no_overhead(record):
+    return record.get("TestName") == "baseline_benchmark"
+
+
+def is_overhead(record):
+    return record.get("TestName") == "collector_benchmark"
+
+
 def add_to_baseline_file(input_file_name):
     storage_client = storage.Client()
 
@@ -64,18 +74,64 @@ def add_to_baseline_file(input_file_name):
 
     data = json.loads(contents)
     with open(input_file_name, "r") as measure:
-        result = data + json.load(measure)
+        new_measurement = json.load(measure)
+        verify_new_data(data, new_measurement)
 
         # Each benchmark data contains two values, with and without collector,
         # and the result array is a flattened version of it. The threshold is
         # formulated in benchmarks, so double it.
-        if len(result) > BASELINE_THRESHOLD * 2:
-            del result[0]
-            del result[0]
+        if len(data) >= BASELINE_THRESHOLD * 2:
+            result = []
 
+            # Drop one oldest pair (no overhead, overhead) in every group
+            for _, values in group_data(data, "VmConfig", "CollectionMethod"):
+                ordered = sorted(values,
+                        key=itemgetter("Timestamp"), reverse=True)
+
+                _, *no_overhead = filter(is_no_overhead, ordered)
+                _, *overhead = filter(is_overhead, ordered)
+                result.extend(no_overhead + overhead)
+
+        result.extend(new_measurement)
         blob.upload_from_string(json.dumps(result))
 
 
+"""
+Enforce compatibility between baseline data and a new chunk of numbers. Two
+invariants needs to be maintained:
+
+* both baseline and new data have the same set of (VmConfig, CollectionMethod)
+
+* New data provides equal number of with/without collector benchmark runs
+
+"""
+def verify_new_data(baseline_data, new_data):
+    baseline_groupped = process(baseline_data)
+    new_groupped = process(new_data)
+
+    for (baseline, new) in zip_longest(baseline_groupped, new_groupped):
+        bgroup, bvalues = baseline
+        ngroup, nvalues = new
+
+        if bgroup != ngroup:
+            raise Exception(f"Benchmark metrics do not match:"
+                             " {bgroup}, {ngroup} ")
+
+        counter = Counter()
+        for v in nvalues:
+            counter.update(v.keys())
+
+        no_overhead_count = counter.get("baseline_benchmark", 0)
+        overhead_count = counter.get("collector_benchmark", 0)
+
+        if (no_overhead_count != overhead_count):
+            raise Exception(f"Number of with/without overhead do not match:"
+                             " {no_overhead_count}, {overhead_count} ")
+
+
+"""
+Transform benchmark data into the format CI scripts work with.
+"""
 def process(content):
     data = [
         record for record in content
@@ -86,37 +142,40 @@ def process(content):
         {
             "kernel": record.get("VmConfig"),
             "collection_method": record.get("CollectionMethod"),
+            "timestamp": record.get("Timestamp"),
             record["TestName"]: record.get("Metrics").get("hackbench_avg_time")
         }
         for record in data
     ]
 
+    return group_data(processed, "kernel", "collection_method")
+
+
+def group_data(content, *columns):
     def record_id(record):
-        kernel = record.get("kernel")
-        method = record.get("collection_method")
-        return f"{kernel} {method}"
+        return " ".join([record.get(c) for c in columns])
 
     def group_by(records, fn):
         ordered = sorted(records, key=fn)
         return groupby(ordered, key=fn)
 
-    return group_by(processed, record_id)
+    return group_by(content, record_id)
 
 
 def collector_overhead(measurements):
-    empty = [
+    no_overhead = [
         m["baseline_benchmark"]
         for m in measurements
         if "baseline_benchmark" in m
     ]
-    with_overhead = [
+    overhead = [
         m["collector_benchmark"]
         for m in measurements
         if "collector_benchmark" in m
     ]
     return [
         round(100 * x / y, 2)
-        for (x, y) in zip(with_overhead, empty)
+        for (x, y) in zip(overhead, no_overhead)
     ]
 
 
@@ -124,6 +183,8 @@ def compare(input_file_name):
     baseline_data = load_baseline_file()
     with open(input_file_name, "r") as measurement:
         test_data = json.load(measurement)
+        verify_new_data(baseline_data, test_data)
+
         baseline_groupped = process(baseline_data)
         test_groupped = process(test_data)
 
@@ -131,11 +192,13 @@ def compare(input_file_name):
             bgroup, bvalues = baseline
             tgroup, tvalues = test
 
+            assert(bgroup == tgroup)
+
             baseline_overhead = collector_overhead(list(bvalues))
             test_overhead = collector_overhead(list(tvalues))[0]
             result, pvalue = stats.ttest_1samp(baseline_overhead,
                                                test_overhead)
-            print(pvalue)
+            print(f"{bgroup}: {pvalue}")
 
 
 if __name__ == "__main__":
