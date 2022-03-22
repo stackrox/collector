@@ -1430,6 +1430,7 @@
 4.15.0-1119-aws
 4.15.0-1119-azure
 4.15.0-1119-gcp
+4.15.0-1119-gcp~16.04
 4.15.0-112-generic
 4.15.0-1120-aws
 4.15.0-1120-azure
@@ -1535,6 +1536,7 @@
 4.15.0-172-generic
 4.15.0-173-generic
 4.15.0-173-generic~16.04
+4.15.0-174-generic
 4.15.0-20-generic
 4.15.0-2000-aws-fips
 4.15.0-2006-azure-fips
@@ -3461,6 +3463,8 @@
 5.15.0-1001-gcp
 5.15.0-1001-gke
 5.15.0-1002-aws
+5.15.0-1002-azure
+5.15.0-1003-aws
 5.15.0-11-generic
 5.15.0-12-generic
 5.15.0-13-generic
@@ -4005,6 +4009,7 @@
 5.4.0-38-generic
 5.4.0-39-generic
 5.4.0-4-cloud-amd64
+5.4.0-4-cloud-amd64-gl-5.4.19-1
 5.4.0-40-generic
 5.4.0-41-generic
 5.4.0-42-generic
@@ -4016,6 +4021,7 @@
 5.4.0-48-generic
 5.4.0-49-generic
 5.4.0-5-cloud-amd64
+5.4.0-5-cloud-amd64-gl-5.4.68-1
 5.4.0-51-generic
 5.4.0-52-generic
 5.4.0-53-generic
