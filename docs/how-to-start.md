@@ -4,7 +4,7 @@
 
 ## Run inside a container
 
-## Run in a Minikube
+## Run in Minikube
 
 ## Run as part of RHACS
 
