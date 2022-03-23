@@ -279,6 +279,12 @@ jobs:
             echo 'export CMAKE_BUILD_TYPE=Release' >> ~/workspace/shared-env
           fi
 
+          if [[ -f pr-metadata/labels/run-stackrox-ci ]]; then
+            echo 'export RUN_STACKROX_CI=true' >> ~/workspace/shared-env
+          else
+            echo 'export RUN_STACKROX_CI=false' >> ~/workspace/shared-env
+          fi
+
           # Loops over all possible types of Valgrind tests, checks the labels, and sets environment variables accordingly
           # Default is not to use Valgrind, but build with Valgrind if any Valgrind label is present
           BUILD_USE_VALGRIND="false"
@@ -848,6 +854,15 @@ jobs:
 
     steps:
     - initcommand
+
+    - run:
+        name: Check whether to run job
+        command: |
+          if [[ "${RUN_STACKROX_CI}" == "false" ]]; then
+            echo "Skipping job run-stackrox-ci."
+            circleci step halt
+            exit 0
+          fi
     
     - add_ssh_keys:
         fingerprints:

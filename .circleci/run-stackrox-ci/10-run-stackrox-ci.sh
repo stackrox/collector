@@ -35,3 +35,8 @@ if [ "$branch_exists" = "false" ]; then
 fi
 
 git push -f origin HEAD
+
+stackrox_branch_encoded="${stackrox_branch/\//%2F}"
+pr_url="https://app.circleci.com/pipelines/github/stackrox/stackrox?branch=${stackrox_branch_encoded}&filter=all"
+
+echo "You can find the CircleCI results here $pr_url"
