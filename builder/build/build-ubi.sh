@@ -36,6 +36,7 @@ cd ..
 export DISABLE_PROFILING="true"
 CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-Release}"
 ADDRESS_SANITIZER="${ADDRESS_SANITIZER:-false}"
+COLLECTOR_APPEND_CID="${COLLECTOR_APPEND_CID:-false}"
 
 cp -a collector/generated src/generated
 
@@ -52,7 +53,10 @@ fi
 echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 mkdir -p cmake-collector
 cd cmake-collector
-cmake -DCMAKE_BUILD_TYPE="$CMAKE_BUILD_TYPE" -DADDRESS_SANITIZER="$ADDRESS_SANITIZER" ../src
+cmake -DCMAKE_BUILD_TYPE="$CMAKE_BUILD_TYPE" \
+    -DADDRESS_SANITIZER="$ADDRESS_SANITIZER" \
+    -DCOLLECTOR_APPEND_CID="$COLLECTOR_APPEND_CID" \
+    ../src
 make -j "${NPROCS:-2}" all
 
 ./runUnitTests
