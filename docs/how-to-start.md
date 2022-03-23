@@ -6,7 +6,7 @@ To build Collector locally the first step is of course to fetch the repository
 with all the submodules:
 
 ```bash
-$ git clone --recurse-submodules git@github.com:stackrox/collector.git
+$ git clone --recurse-submodules https://github.com/stackrox/collector.git
 ```
 
 Inside the project you can find the `Makefile` containing most of the targets
