@@ -32,6 +32,7 @@ in practice needs to be verified empirically.
 
 import argparse
 import json
+import os
 import sys
 
 from itertools import groupby, zip_longest
@@ -39,20 +40,23 @@ from operator import itemgetter
 from collections import Counter
 from scipy import stats
 
+from google.oauth2 import service_account
 from google.cloud import storage
 from google.api_core.exceptions import NotFound
 
 
-GCS_BUCKET = "stackrox-collector-benchmarks"
-BASELINE_FILE = "baseline/all.json"
-BASELINE_THRESHOLD = 5
+DEFAULT_GCS_BUCKET = "stackrox-ci-results"
+DEFAULT_BASELINE_FILE = "circleci/collector/baseline/all.json"
+DEFAULT_BASELINE_THRESHOLD = 5
 
 
-def load_baseline_file():
-    storage_client = storage.Client()
+def load_baseline_file(bucket, baseline_file):
+    credentials = json.loads(os.environ["GOOGLE_CREDENTIALS_CIRCLECI_COLLECTOR"])
+    storage_credentials = service_account.Credentials.from_service_account_info(credentials)
+    storage_client = storage.Client(credentials=storage_credentials)
 
-    bucket = storage_client.bucket(GCS_BUCKET)
-    blob = bucket.blob(BASELINE_FILE)
+    bucket = storage_client.bucket(bucket)
+    blob = bucket.blob(baseline_file)
 
     try:
         contents = blob.download_as_string()
@@ -66,11 +70,13 @@ def load_baseline_file():
         return []
 
 
-def save_baseline_file(data):
-    storage_client = storage.Client()
+def save_baseline_file(bucket, baseline_file, data):
+    credentials = json.loads(os.environ["GOOGLE_CREDENTIALS_CIRCLECI_COLLECTOR"])
+    storage_credentials = service_account.Credentials.from_service_account_info(credentials)
+    storage_client = storage.Client(credentials=storage_credentials)
 
-    bucket = storage_client.bucket(GCS_BUCKET)
-    blob = bucket.blob(BASELINE_FILE)
+    bucket = storage_client.bucket(bucket)
+    blob = bucket.blob(baseline_file)
     blob.upload_from_string(json.dumps(data))
 
 
@@ -82,9 +88,7 @@ def is_overhead(record):
     return record.get("TestName") == "collector_benchmark"
 
 
-def add_to_baseline_file(input_file_name):
-    data = load_baseline_file()
-
+def add_to_baseline_file(input_file_name, data, threshold):
     with open(input_file_name, "r") as measure:
         new_measurement = json.load(measure)
 
@@ -99,7 +103,7 @@ def add_to_baseline_file(input_file_name):
             # Each benchmark data contains two values, with and without
             # collector, and the result array is a flattened version of it. The
             # threshold is formulated in benchmarks, so double it.
-            if len(ordered) >= BASELINE_THRESHOLD * 2:
+            if len(ordered) >= threshold * 2:
                 # Drop one oldest pair (no overhead, overhead) in every group
                 _, *no_overhead = filter(is_no_overhead, ordered)
                 _, *overhead = filter(is_overhead, ordered)
@@ -110,7 +114,7 @@ def add_to_baseline_file(input_file_name):
             result.extend(no_overhead + overhead)
 
         result.extend(new_measurement)
-        save_baseline_file(result)
+        return result
 
 
 """
@@ -200,9 +204,7 @@ def collector_overhead(measurements):
     ]
 
 
-def compare(input_file_name):
-    baseline_data = load_baseline_file()
-
+def compare(input_file_name, baseline_data):
     if not baseline_data:
         print(f"Baseline file is empty, nothing to compare.", file=sys.stderr)
         return
@@ -238,12 +240,27 @@ if __name__ == "__main__":
     parser.add_argument('--update', '-u',
                         help=('Perf data to add to the baseline.'))
 
+    parser.add_argument('--gcs-bucket', nargs='?', default=DEFAULT_GCS_BUCKET,
+                        help=('GCS bucket to store the data'))
+
+    parser.add_argument('--baseline-file', nargs='?',
+                        default=DEFAULT_BASELINE_FILE,
+                        help=('The file containing baseline data'))
+
+    parser.add_argument('--baseline-threshold', nargs='?',
+                        default=DEFAULT_BASELINE_THRESHOLD,
+                        help=('Maximum number of benchmark runs in baseline'))
+
     args = parser.parse_args()
 
     if args.test:
-        compare(args.test)
+        baseline_data = load_baseline_file(args.gcs_bucket, args.baseline_file)
+        compare(args.test, baseline_data)
         sys.exit(0)
 
     if args.update:
-        add_to_baseline_file(args.update)
+        baseline_data = load_baseline_file(args.gcs_bucket, args.baseline_file)
+        result = add_to_baseline_file(args.update, baseline_data,
+                args.baseline_threshold)
+        save_baseline_file(args.gcs_bucket, args.baseline_file, result)
         sys.exit(0)

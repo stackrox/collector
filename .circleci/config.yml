@@ -1073,6 +1073,8 @@ jobs:
     - run:
         name: "Gather Data"
         command: |
+          pip install --upgrade scipy google-cloud-storage
+
           jq -s 'flatten' ${WORKSPACE_ROOT}/*perf.json > ~/workspace/all-perf.json
 
           ## TODO put into script
