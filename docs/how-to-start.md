@@ -14,7 +14,7 @@ needed for a quick start. To build an image with Collector use target `image`:
 
 ```bash
 $ cd collector
-$ CMAKE_BUILD_TYPE=Debug make image
+$ make image
 ```
 
 This target will build necessary submodules (gRPC dependencies, Falco
