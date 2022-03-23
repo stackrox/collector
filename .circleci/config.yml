@@ -1081,10 +1081,7 @@ jobs:
 
           echo "Significance" >> ~/workspace/benchmark.md
           ${CI_ROOT}/test-scripts/baseline/main.py -t all-perf.json >> ~/workspace/benchmark.md
-
-          if [[ -n "${UPDATE_BASELINE}" ]]; then
-              ${CI_ROOT}/test-scripts/baseline/main.py -u all-perf.json
-          fi
+          ${CI_ROOT}/test-scripts/baseline/main.py -u all-perf.json
 
     - run:
         name: Comment on PR
