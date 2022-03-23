@@ -172,7 +172,7 @@ class HostInfo {
 
   // Get the Linux distribution, if possible.
   // If not, default to "Linux"
-  std::string& GetDistro();
+  virtual std::string& GetDistro();
 
   // Get the Build ID of the host.
   virtual std::string& GetBuildID();

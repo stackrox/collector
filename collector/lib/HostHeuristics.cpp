@@ -148,12 +148,50 @@ class SecureBootHeuristic : public Heuristic {
   }
 };
 
+class GardenLinuxHeuristic : public Heuristic {
+ public:
+  // Garden Linux stopped accepting kernel modules without a signature in
+  // version 576.3, anything newer than that will be configured to use eBPF.
+  void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
+    if (!host.IsGarden() || config.UseEbpf()) {
+      return;
+    }
+
+    const std::string& distro = host.GetDistro();
+    std::string::size_type minor_version_separator = distro.rfind(".");
+
+    if (minor_version_separator == std::string::npos) {
+      CLOG(WARNING) << "Failed to find minor separator - " << distro;
+      return;
+    }
+
+    std::string::size_type major_version_separator = distro.rfind(" ");
+
+    if (major_version_separator == std::string::npos) {
+      CLOG(WARNING) << "Failed to find major separator - " << distro;
+      return;
+    }
+
+    auto major_version = std::stoul(distro.substr(major_version_separator + 1, minor_version_separator));
+    auto minor_version = std::stoul(distro.substr(minor_version_separator + 1));
+
+    if (major_version > 576 || (major_version == 576 && minor_version >= 3)) {
+      CLOG(WARNING) << distro << " does not support kernel module based collection. "
+                    << "Switching to eBPF based collection, set "
+                    << "collector.collectionMethod=EBPF to remove this message";
+      hconfig->SetCollectionMethod("ebpf");
+      return;
+    }
+  }
+};
+
 const std::unique_ptr<Heuristic> g_host_heuristics[] = {
     std::unique_ptr<Heuristic>(new CollectionHeuristic),
     std::unique_ptr<Heuristic>(new CosHeuristic),
     std::unique_ptr<Heuristic>(new DockerDesktopHeuristic),
     std::unique_ptr<Heuristic>(new MinikubeHeuristic),
     std::unique_ptr<Heuristic>(new SecureBootHeuristic),
+    std::unique_ptr<Heuristic>(new GardenLinuxHeuristic),
 };
 
 }  // namespace
