@@ -70,9 +70,13 @@ mkdir -p "$DRIVER_SCRATCH" "$BUILD_SCRATCH"
 cp -r "${DRIVER_DIR}/." "${DRIVER_SCRATCH}"
 
 cd "$BUILD_SCRATCH"
+
+# Note: inclusion of PROBE_NAME and DRIVER_NAME in this command is to support both
+# new probes that don't use PROBE_NAME and older probes that do.
 cmake \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_C_FLAGS="-fno-pie" \
+    -DPROBE_NAME=collector \
     -DDRIVER_NAME=collector \
     -DDRIVER_DEVICE_NAME=collector \
     -DBUILD_USERSPACE=OFF \
