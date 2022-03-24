@@ -95,6 +95,7 @@ set(BUILD_DRIVER OFF CACHE BOOL "Build the driver on Linux" FORCE)
 set(USE_BUNDLED_DEPS OFF CACHE BOOL "Enable bundled dependencies instead of using the system ones" FORCE)
 set(NO_LINK_GRPC_LIBS ON CACHE BOOL "Do not link gRPC libraries" FORCE)
 set(WITH_CHISEL ON CACHE BOOL "Include chisel implementation" FORCE)
+set(RING_BUF_MULTIPLIER 16)
 
 # Turn OFF falco's unit tests and examples
 set(CREATE_TEST_TARGETS OFF CACHE BOOL "Enable make-targets for unit testing" FORCE)
