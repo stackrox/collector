@@ -226,7 +226,7 @@ def compare(input_file_name, baseline_data):
             test_overhead = collector_overhead(list(tvalues))[0]
             result, pvalue = stats.ttest_1samp(baseline_overhead,
                                                test_overhead)
-            print(f"{bgroup}: {pvalue}")
+            print(f"{bgroup} {pvalue}")
 
 
 if __name__ == "__main__":
