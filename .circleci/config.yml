@@ -1081,10 +1081,10 @@ jobs:
           cat all-perf.json | jq '.[] | select(.Metrics.hackbench_avg_time != null) | {kernel: .VmConfig, collection_method: .CollectionMethod, (.TestName): .Metrics.hackbench_avg_time } ' | jq -rs  ' group_by(.kernel) | .[] | group_by(.collection_method) | .[] | add | [.kernel, .collection_method, .baseline_benchmark, .collector_benchmark ] | @csv' > ~/workspace/benchmark.csv
           cat ~/workspace/benchmark.csv | sort | awk -v FS="," 'BEGIN{print "|Kernel|Method|Without Collector Time (secs)|With Collector Time (secs)|";print "|---|---|---|---|"}{printf "|%s|%s|%s|%s|%s",$1,$2,$3,$4,ORS}' > ~/workspace/benchmark.md
 
-          printf "\nSignificance\n" >> ~/workspace/benchmark.md
+          printf "\n**Significance**\n" >> ~/workspace/benchmark.md
           ${CI_ROOT}/test-scripts/baseline/main.py -t all-perf.json \
             | sort \
-            | awk -v 'BEGIN{print "|Kernel|Method|PValue|";print "|---|---|---|"}{printf "|%s|%s|%s|",$1,$2,$3,ORS}' >> ~/workspace/benchmark.md
+            | awk 'BEGIN{print "|Kernel|Method|PValue|";print "|---|---|---|"}{printf "|%s|%s|%s|%s",$1,$2,$3,ORS}' >> ~/workspace/benchmark.md
           ${CI_ROOT}/test-scripts/baseline/main.py -u all-perf.json
 
     - run:
