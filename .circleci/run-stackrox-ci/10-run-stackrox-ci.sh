@@ -13,28 +13,29 @@ git config user.name "$GITHUB_USER_EMAIL"
 stackrox_branch="${BRANCH}_CI"
 if git branch | grep stackrox_branch; then
     git checkout "$stackrox_branch"
-    branch_exists="true"
 else
     git checkout -b "$stackrox_branch"
-    branch_exists="false"
 fi
 
 echo "$COLLECTOR_VERSION" > COLLECTOR_VERSION
 git add COLLECTOR_VERSION
 git commit -m "Automatic commit ${BUILD_NUM}. Testing collector version ${COLLECTOR_VERSION}"
 
-if [ "$branch_exists" = "false" ]; then
-    git clone git@github.com:stackrox/rox-ci-image.git
-    cd rox-ci-image
-    git checkout 67b3694
-    cd ..
-    repo=stackrox
-    pr_title="$stackrox_branch"
-    pr_description_body="test"
-    rox-ci-image/images/static-contents/scripts/create_update_pr.sh "$stackrox_branch" "$repo" "$pr_title" "$pr_description_body"
-fi
-
 git push -f origin HEAD
+
+generate_data() {
+    cat << EOF
+    {
+         "branch": "$stackrox_branch",
+         "parameters": {
+             "trigger_on_demand": false
+         }
+    }
+EOF
+}
+
+curl -X POST --header 'Content-Type: application/json' \
+        --header "Circle-Token: $CIRCLE_TOKEN_ROXBOT" https://circleci.com/api/v2/project/github/stackrox/stackrox/pipeline -d "$(generate_data)"
 
 stackrox_branch_encoded="${stackrox_branch/\//%2F}"
 pr_url="https://app.circleci.com/pipelines/github/stackrox/stackrox?branch=${stackrox_branch_encoded}&filter=all"
