@@ -1,5 +1,8 @@
 .idea/
 .rox/
+
+integration-tests/container-logs/
+integration-tests/*.log
 integration-tests/*.logs
 integration-tests/perf.json
 falcosecurity-libs/cmake-build
