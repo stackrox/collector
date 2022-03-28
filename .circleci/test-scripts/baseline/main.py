@@ -50,12 +50,12 @@ DEFAULT_BASELINE_FILE = "circleci/collector/baseline/all.json"
 DEFAULT_BASELINE_THRESHOLD = 5
 
 
-def load_baseline_file(bucket, baseline_file):
+def load_baseline_file(bucket_name, baseline_file):
     credentials = json.loads(os.environ["GOOGLE_CREDENTIALS_CIRCLECI_COLLECTOR"])
     storage_credentials = service_account.Credentials.from_service_account_info(credentials)
     storage_client = storage.Client(credentials=storage_credentials)
 
-    bucket = storage_client.bucket(bucket)
+    bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(baseline_file)
 
     try:
@@ -63,7 +63,7 @@ def load_baseline_file(bucket, baseline_file):
         return json.loads(contents)
 
     except NotFound as ex:
-        print(f"File gs://{GCS_BUCKET}/{BASELINE_FILE} not found. "
+        print(f"File gs://{bucket_name}/{baseline_file} not found. "
                "Creating a new empty one.", file=sys.stderr)
 
         blob.upload_from_string(json.dumps([]))
@@ -222,11 +222,29 @@ def compare(input_file_name, baseline_data):
 
             assert bgroup == tgroup, "Kernel/Method must not be differrent"
 
-            baseline_overhead = collector_overhead(list(bvalues))
-            test_overhead = collector_overhead(list(tvalues))[0]
+            bvalues = list(bvalues)
+            tvalues = list(tvalues)
+
+            baseline_overhead = collector_overhead(bvalues)
+            test_overhead = collector_overhead(tvalues)[0]
             result, pvalue = stats.ttest_1samp(baseline_overhead,
                                                test_overhead)
-            print(f"{bgroup} {pvalue}")
+
+            test_baseline = [
+                m["baseline_benchmark"]
+                for m in tvalues
+                if "baseline_benchmark" in m
+            ]
+            test_collector = [
+                m["collector_benchmark"]
+                for m in tvalues
+                if "collector_benchmark" in m
+            ]
+
+            baseline_median = stats.tmean(test_baseline)
+
+            print(f"{bgroup} {test_baseline[0]} {test_collector[0]} "
+                  f"{baseline_median} {round(pvalue, 2)}")
 
 
 if __name__ == "__main__":
