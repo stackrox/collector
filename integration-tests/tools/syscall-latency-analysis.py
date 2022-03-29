@@ -3,7 +3,7 @@ import argparse
 import sys
 import json
 import os
-import numpy
+import numpy as np
 
 g_collector_syscalls = [
     "accept",
@@ -64,9 +64,9 @@ def process(data_set):
     for key, values in data_set.items():
         values = sorted(values)
         results[key] = {
-            'mean': numpy.mean(values),
-            'median': numpy.median(values),
-            'p95': numpy.percentile(values, 95),
+            'mean': np.mean(values),
+            'median': np.median(values),
+            'p95': np.percentile(values, 95),
             'size': len(values),
         }
 
