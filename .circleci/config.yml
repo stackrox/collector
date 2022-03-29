@@ -1077,7 +1077,7 @@ jobs:
 
           jq -s 'flatten' ${WORKSPACE_ROOT}/*perf.json > ~/workspace/all-perf.json
 
-		  export BASELINE="${CI_ROOT}/test-scripts/baseline/"
+          export BASELINE="${CI_ROOT}/test-scripts/baseline/"
           ${BASELINE}/main.py -t all-perf.json \
             | sort \
             | awk -f ${BASELINE}/format.awk > ~/workspace/benchmark.md
