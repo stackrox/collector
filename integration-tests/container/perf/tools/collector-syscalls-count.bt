@@ -6,6 +6,9 @@
 // actually processes or receives, but can be used to see what
 // the system is doing.
 
+tracepoint:raw_syscalls:sys_enter { @enter[args->id] = count(); }
+tracepoint:raw_syscalls:sys_exit { @exit[args->id] = count(); }
+
 tracepoint:syscalls:sys_enter_accept { @accept = count(); }
 tracepoint:syscalls:sys_enter_chdir { @chdir = count(); }
 tracepoint:syscalls:sys_enter_clone { @clone = count(); }
