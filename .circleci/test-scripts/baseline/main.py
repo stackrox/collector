@@ -232,12 +232,12 @@ def compare(input_file_name, baseline_data):
 
             benchmark_baseline = [
                 m["baseline_benchmark"]
-                for m in tvalues
+                for m in bvalues
                 if "baseline_benchmark" in m
             ]
             benchmark_collector = [
                 m["collector_benchmark"]
-                for m in tvalues
+                for m in bvalues
                 if "collector_benchmark" in m
             ]
 
@@ -252,8 +252,8 @@ def compare(input_file_name, baseline_data):
                 if "collector_benchmark" in m
             ]
 
-            baseline_median = stats.tmean(benchmark_baseline)
-            collector_median = stats.tmean(benchmark_collector)
+            baseline_median = round(stats.tmean(benchmark_baseline), 2)
+            collector_median = round(stats.tmean(benchmark_collector), 2)
 
             print(f"{bgroup} {test_baseline[0]} {test_collector[0]} "
                   f"{baseline_median} {collector_median} {round(pvalue, 2)}")
