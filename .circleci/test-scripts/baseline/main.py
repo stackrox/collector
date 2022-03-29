@@ -47,7 +47,7 @@ from google.api_core.exceptions import NotFound
 
 DEFAULT_GCS_BUCKET = "stackrox-ci-results"
 DEFAULT_BASELINE_FILE = "circleci/collector/baseline/all.json"
-DEFAULT_BASELINE_THRESHOLD = 5
+DEFAULT_BASELINE_THRESHOLD = 10
 
 
 def load_baseline_file(bucket_name, baseline_file):
