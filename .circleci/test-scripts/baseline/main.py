@@ -187,7 +187,7 @@ def group_data(content, *columns):
     return group_by(content, record_id)
 
 
-def collector_overhead(measurements):
+def split_benchmark(measurements):
     no_overhead = [
         m["baseline_benchmark"]
         for m in measurements
@@ -198,6 +198,13 @@ def collector_overhead(measurements):
         for m in measurements
         if "collector_benchmark" in m
     ]
+
+    return (no_overhead, overhead)
+
+
+def collector_overhead(measurements):
+    no_overhead, overhead = split_benchmark(measurements)
+
     return [
         round(100 * x / y, 2)
         for (x, y) in zip(overhead, no_overhead)
@@ -230,27 +237,8 @@ def compare(input_file_name, baseline_data):
             result, pvalue = stats.ttest_1samp(baseline_overhead,
                                                test_overhead)
 
-            benchmark_baseline = [
-                m["baseline_benchmark"]
-                for m in bvalues
-                if "baseline_benchmark" in m
-            ]
-            benchmark_collector = [
-                m["collector_benchmark"]
-                for m in bvalues
-                if "collector_benchmark" in m
-            ]
-
-            test_baseline = [
-                m["baseline_benchmark"]
-                for m in tvalues
-                if "baseline_benchmark" in m
-            ]
-            test_collector = [
-                m["collector_benchmark"]
-                for m in tvalues
-                if "collector_benchmark" in m
-            ]
+            benchmark_baseline, benchmark_collector = split_benchmark(bvalues)
+            test_baseline, test_collector = split_benchmark(tvalues)
 
             baseline_median = round(stats.tmean(benchmark_baseline), 2)
             collector_median = round(stats.tmean(benchmark_collector), 2)

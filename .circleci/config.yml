@@ -1077,10 +1077,11 @@ jobs:
 
           jq -s 'flatten' ${WORKSPACE_ROOT}/*perf.json > ~/workspace/all-perf.json
 
-          ${CI_ROOT}/test-scripts/baseline/main.py -t all-perf.json \
+		  export BASELINE="${CI_ROOT}/test-scripts/baseline/"
+          ${BASELINE}/main.py -t all-perf.json \
             | sort \
-            | awk 'BEGIN{print "|Kernel|Method|Without Collector Time (secs)| With Collector Time (secs)|Baseline median (secs)|Collector median (secs)|PValue|";print "|---|---|---|---|---|---|---|"}{printf "|%s|%s|%s|%s|%s|%s|%s|%s",$1,$2,$3,$4,$5,$6,$7,ORS}' > ~/workspace/benchmark.md
-          ${CI_ROOT}/test-scripts/baseline/main.py -u all-perf.json
+            | awk -f ${BASELINE}/format.awk > ~/workspace/benchmark.md
+          ${BASELINE}/main.py -u all-perf.json
 
     - run:
         name: Comment on PR
