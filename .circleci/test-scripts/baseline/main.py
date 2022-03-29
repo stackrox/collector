@@ -230,6 +230,17 @@ def compare(input_file_name, baseline_data):
             result, pvalue = stats.ttest_1samp(baseline_overhead,
                                                test_overhead)
 
+            benchmark_baseline = [
+                m["baseline_benchmark"]
+                for m in tvalues
+                if "baseline_benchmark" in m
+            ]
+            benchmark_collector = [
+                m["collector_benchmark"]
+                for m in tvalues
+                if "collector_benchmark" in m
+            ]
+
             test_baseline = [
                 m["baseline_benchmark"]
                 for m in tvalues
@@ -241,10 +252,11 @@ def compare(input_file_name, baseline_data):
                 if "collector_benchmark" in m
             ]
 
-            baseline_median = stats.tmean(test_baseline)
+            baseline_median = stats.tmean(benchmark_baseline)
+            collector_median = stats.tmean(benchmark_collector)
 
             print(f"{bgroup} {test_baseline[0]} {test_collector[0]} "
-                  f"{baseline_median} {round(pvalue, 2)}")
+                  f"{baseline_median} {collector_median} {round(pvalue, 2)}")
 
 
 if __name__ == "__main__":

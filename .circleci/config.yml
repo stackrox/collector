@@ -1079,7 +1079,7 @@ jobs:
 
           ${CI_ROOT}/test-scripts/baseline/main.py -t all-perf.json \
             | sort \
-            | awk 'BEGIN{print "|Kernel|Method|Without Collector Time (secs)| With Collector Time (secs)|Baseline median (secs)|PValue|";print "|---|---|---|---|---|---|"}{printf "|%s|%s|%s|%s|%s|%s|%s",$1,$2,$3,$4,$5,$6,ORS}' > ~/workspace/benchmark.md
+            | awk 'BEGIN{print "|Kernel|Method|Without Collector Time (secs)| With Collector Time (secs)|Baseline median (secs)|Collector median (secs)|PValue|";print "|---|---|---|---|---|---|---|"}{printf "|%s|%s|%s|%s|%s|%s|%s|%s",$1,$2,$3,$4,$5,$6,$7,ORS}' > ~/workspace/benchmark.md
           ${CI_ROOT}/test-scripts/baseline/main.py -u all-perf.json
 
     - run:
