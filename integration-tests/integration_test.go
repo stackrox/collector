@@ -29,6 +29,9 @@ const (
 	// defaultStopTimeoutSeconds is the amount of time to wait for a container
 	// to stop before forcibly killing it. It needs to be a string because it
 	// is passed directly to the docker command via the executor.
+	//
+	// 10 seconds is the default for docker stop when not providing a timeout
+	// argument. It is kept the same here to avoid changing behavior by default.
 	defaultStopTimeoutSeconds = "10"
 )
 
