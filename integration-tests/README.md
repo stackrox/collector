@@ -31,6 +31,7 @@ the local machine for development, or on gcloud or over SSH for remote testing i
 | `GCLOUD_OPTIONS`         | if `REMOTE_HOST_TYPE` is `gcloud`, any additional options to pass to the gcloud command | N/A                      |
 | `COLLECTOR_OFFLINE_MODE` | whether to allow kernel-object downloads.                                               | true, **false**          |
 | `COLLECTOR_IMAGE`        | the name of the collector image to use.                                                 | N/A                      |
+| `STOP_TIMEOUT`           | the number of seconds to wait for a container to stop before forcibly killing it        | **10**                   |
 
 `VM_CONFIG` is a construction of the VM type and the image family, delimited by a period (.) See the [CI config](../.circleci/config.yml#902-907)]
 for examples, and the following table lists the possible values:

@@ -25,6 +25,14 @@ const (
 	parentExecFilePathStr    = "ParentExecFilePath"
 
 	defaultWaitTickSeconds = 30 * time.Second
+	
+	// defaultStopTimeoutSeconds is the amount of time to wait for a container
+	// to stop before forcibly killing it. It needs to be a string because it
+	// is passed directly to the docker command via the executor.
+	//
+	// 10 seconds is the default for docker stop when not providing a timeout
+	// argument. It is kept the same here to avoid changing behavior by default.
+	defaultStopTimeoutSeconds = "10"
 )
 
 func TestCollectorGRPC(t *testing.T) {
@@ -540,8 +548,9 @@ func (s *IntegrationTestSuiteBase) cleanupContainer(containers []string) {
 }
 
 func (s *IntegrationTestSuiteBase) stopContainers(containers ...string) {
+	timeout := ReadEnvVarWithDefault("STOP_TIMEOUT", defaultStopTimeoutSeconds)
 	for _, container := range containers {
-		s.executor.Exec("docker", "stop", container)
+		s.executor.Exec("docker", "stop", "-t", timeout, container)
 	}
 }
 
