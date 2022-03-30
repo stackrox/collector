@@ -1075,13 +1075,13 @@ jobs:
         command: |
           pip install --upgrade scipy google-cloud-storage
 
-          jq -s 'flatten' ${WORKSPACE_ROOT}/*perf.json > ~/workspace/all-perf.json
+          jq -s 'flatten' ${WORKSPACE_ROOT}/*perf.json > ${WORKSPACE_ROOT}/all-perf.json
 
           export BASELINE="${CI_ROOT}/test-scripts/baseline/"
-          ${BASELINE}/main.py -t all-perf.json \
+          ${BASELINE}/main.py --test ${WORKSPACE_ROOT}/all-perf.json \
             | sort \
-            | awk -f ${BASELINE}/format.awk > ~/workspace/benchmark.md
-          ${BASELINE}/main.py -u all-perf.json
+            | awk -f ${BASELINE}/format.awk > ${WORKSPACE_ROOT}/benchmark.md
+          ${BASELINE}/main.py --update ${WORKSPACE_ROOT}/all-perf.json
 
     - run:
         name: Comment on PR

@@ -117,24 +117,25 @@ def add_to_baseline_file(input_file_name, data, threshold):
         return result
 
 
-"""
-Enforce compatibility between baseline data and a new chunk of numbers. Two
-invariants needs to be maintained:
-
-* both baseline and new data have the same set of (VmConfig, CollectionMethod)
-
-* New data provides equal number of with/without collector benchmark runs
-
-The function expects baseline is not empty.
-
-"""
 def verify_new_data(baseline_data, new_data):
+    """
+    Enforce compatibility between baseline data and a new chunk of numbers. Two
+    invariants needs to be maintained:
+
+    * both baseline and new data have the same set of (VmConfig, CollectionMethod)
+
+    * New data provides equal number of with/without collector benchmark runs
+
+    The function expects baseline is not empty.
+
+    """
+
     assert baseline_data, "Baseline data must be not empty"
 
-    baseline_groupped = process(baseline_data)
-    new_groupped = process(new_data)
+    baseline_grouped = process(baseline_data)
+    new_grouped = process(new_data)
 
-    for (baseline, new) in zip_longest(baseline_groupped, new_groupped):
+    for (baseline, new) in zip_longest(baseline_grouped, new_grouped):
         bgroup, bvalues = baseline
         ngroup, nvalues = new
 
@@ -154,10 +155,11 @@ def verify_new_data(baseline_data, new_data):
                              " {no_overhead_count}, {overhead_count} ")
 
 
-"""
-Transform benchmark data into the format CI scripts work with.
-"""
 def process(content):
+    """
+    Transform benchmark data into the format CI scripts work with.
+    """
+
     data = [
         record for record in content
         if record.get("Metrics", {}).get("hackbench_avg_time")
@@ -180,11 +182,8 @@ def group_data(content, *columns):
     def record_id(record):
         return " ".join([record.get(c) for c in columns])
 
-    def group_by(records, fn):
-        ordered = sorted(records, key=fn)
-        return groupby(ordered, key=fn)
-
-    return group_by(content, record_id)
+    ordered = sorted(content, key=record_id)
+    return groupby(ordered, key=record_id)
 
 
 def split_benchmark(measurements):
@@ -220,10 +219,10 @@ def compare(input_file_name, baseline_data):
         test_data = json.load(measurement)
         verify_new_data(baseline_data, test_data)
 
-        baseline_groupped = process(baseline_data)
-        test_groupped = process(test_data)
+        baseline_grouped = process(baseline_data)
+        test_grouped = process(test_data)
 
-        for (baseline, test) in zip(baseline_groupped, test_groupped):
+        for (baseline, test) in zip(baseline_grouped, test_grouped):
             bgroup, bvalues = baseline
             tgroup, tvalues = test
 
