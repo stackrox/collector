@@ -850,7 +850,7 @@ jobs:
             "docker.io/stackrox"
 
   run-stackrox-ci:
-    <<: *defaultMachine
+    <<: *defaultImage
 
     steps:
     - initcommand
