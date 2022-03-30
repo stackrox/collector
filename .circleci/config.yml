@@ -1051,7 +1051,7 @@ jobs:
 
       - setup_remote_docker:
           version: 20.10.11
-      - stackrox-io-login
+      - docker-login-push
       - gcloud-init
 
       - run:
@@ -1499,3 +1499,4 @@ workflows:
           - collector-support
         requires:
           - upload-modules
+          - images
