@@ -24,6 +24,7 @@ type collectorManager struct {
 	DisableGrpcServer bool
 	BootstrapOnly     bool
 	TestName          string
+	CoreDumpFile      string
 }
 
 func NewCollectorManager(e Executor, name string) *collectorManager {
@@ -40,6 +41,7 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 		"COLLECTOR_CONFIG":                 `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}`,
 		"COLLECTION_METHOD":                collectionMethod,
 		"COLLECTOR_PRE_ARGUMENTS":          collectorPreArguments,
+		"ENABLE_CORE_DUMP":                 "true",
 	}
 	if !offlineMode {
 		env["MODULE_DOWNLOAD_BASE_URL"] = "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"
@@ -51,6 +53,7 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 		"/host/usr/lib:ro":             "/usr/lib/",
 		"/host/sys:ro":                 "/sys/",
 		"/host/dev:ro":                 "/dev",
+		"/tmp":				"/tmp",
 		// /module is an anonymous volume to reflect the way collector
 		// is usually run in kubernetes (with in-memory volume for /module)
 		"/module": "",
@@ -68,6 +71,7 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 		Env:               env,
 		Mounts:            mounts,
 		TestName:          name,
+		CoreDumpFile:      "/tmp/core.out",
 	}
 }
 
@@ -98,8 +102,13 @@ func (c *collectorManager) Launch() error {
 }
 
 func (c *collectorManager) TearDown() error {
+	coreDumpErr := c.GetCoreDump(c.CoreDumpFile)
+	if coreDumpErr != nil {
+		return coreDumpErr
+	}
 	isRunning, err := c.executor.IsContainerRunning("collector")
 	if err != nil {
+		fmt.Println("Error: Checking if container running")
 		return err
 	}
 	if !isRunning {
@@ -107,6 +116,7 @@ func (c *collectorManager) TearDown() error {
 		// Check if collector container segfaulted or exited with error
 		exitCode, err := c.executor.ExitCode("collector")
 		if err != nil {
+			fmt.Println("Error: Container not running")
 			return err
 		}
 		if exitCode != 0 {
@@ -171,6 +181,11 @@ func (c *collectorManager) launchGRPCServer() error {
 }
 
 func (c *collectorManager) launchCollector() error {
+	coreDumpErr := c.SetCoreDumpPath(c.CoreDumpFile)
+	if coreDumpErr != nil {
+		return coreDumpErr
+	}
+
 	cmd := []string{"docker", "run",
 		"--name", "collector",
 		"--privileged",
@@ -237,4 +252,57 @@ func (c *collectorManager) killContainer(name string) error {
 func (c *collectorManager) stopContainer(name string) error {
 	_, err := c.executor.Exec("docker", "stop", "--time", "100", name)
 	return err
+}
+
+// Sets the path to where core dumps are saved to. This is specified in the core_pattern file
+// The core_pattern file is backed up, because we don't want to permanently change it
+func (c *collectorManager) SetCoreDumpPath(coreDumpFile string) error {
+	remote_host_type := ReadEnvVarWithDefault("REMOTE_HOST_TYPE", "local")
+	if remote_host_type != "local" {
+		corePatternFile := "/proc/sys/kernel/core_pattern"
+		corePatternBackupFile := "/tmp/core_pattern_backup"
+		cmdBackupCorePattern := []string{"sudo", "cp", corePatternFile, corePatternBackupFile}
+		cmdSetCoreDumpPath := []string{"echo", "'" + coreDumpFile + "'", "|", "sudo", "tee", corePatternFile}
+		var err error
+		_, err = c.executor.Exec(cmdBackupCorePattern...)
+		if err != nil {
+			fmt.Printf("Error: Unable to backup core_pattern file. %v\n", err)
+			return err
+		}
+		_, err = c.executor.Exec(cmdSetCoreDumpPath...)
+		if err != nil {
+			fmt.Printf("Error: Unable to set core dump file path in core_pattern. %v\n", err)
+			return err
+		}
+	}
+	return nil
+}
+
+// Restores the backed up core_pattern file, which sets the location where core dumps are written to.
+func (c *collectorManager) RestoreCoreDumpPath() error {
+	corePatternFile := "/proc/sys/kernel/core_pattern"
+	corePatternBackupFile := "/tmp/core_pattern_backup"
+	// cat is used to restore the backup instead of mv, becuase mv is not allowed.
+	cmdRestoreCorePattern := []string{"cat", corePatternBackupFile, "|", "sudo", "tee", corePatternFile}
+	_, err := c.executor.Exec(cmdRestoreCorePattern...)
+	if err != nil {
+		fmt.Printf("Error: Unable to restore core dump path. %v\n", err)
+		return err
+	}
+	return nil
+}
+
+// If the integration test is run on a remote host the core dump needs to be copied from the remote host
+// to the local maching
+func (c *collectorManager) GetCoreDump(coreDumpFile string) error {
+	if ReadEnvVarWithDefault("REMOTE_HOST_TYPE", "local") != "local" {
+		cmd := []string{"sudo", "chmod", "755", coreDumpFile}
+		c.executor.Exec(cmd...)
+		c.executor.CopyFromHost(coreDumpFile, coreDumpFile)
+		err := c.RestoreCoreDumpPath()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

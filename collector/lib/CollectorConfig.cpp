@@ -50,6 +50,8 @@ BoolEnvVar set_curl_verbose("ROX_COLLECTOR_SET_CURL_VERBOSE", false);
 
 BoolEnvVar set_enable_afterglow("ROX_ENABLE_AFTERGLOW", true);
 
+BoolEnvVar set_enable_core_dump("ENABLE_CORE_DUMP", false);
+
 }  // namespace
 
 constexpr bool CollectorConfig::kUseChiselCache;
@@ -182,6 +184,10 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
     curl_verbose_ = true;
   }
 
+  if (set_enable_core_dump) {
+    enable_core_dump_ = true;
+  }
+
   HandleAfterglowEnvVars();
 
   host_config_ = ProcessHostHeuristics(*this);
@@ -268,6 +274,10 @@ std::string CollectorConfig::LogLevel() const {
 
 int64_t CollectorConfig::AfterglowPeriod() const {
   return afterglow_period_micros_;
+}
+
+bool CollectorConfig::IsCoreDumpEnabled() const {
+  return enable_core_dump_;
 }
 
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
