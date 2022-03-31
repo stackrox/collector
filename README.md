@@ -72,3 +72,4 @@ Some basic git hooks can be found under the `githooks/` directory.
 In order to use them run `git config core.hooksPath ./githooks/` from the collector root directory.
 
 meaningless change
+meaningless change
