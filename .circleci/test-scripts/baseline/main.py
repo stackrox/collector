@@ -49,6 +49,12 @@ DEFAULT_GCS_BUCKET = "stackrox-ci-results"
 DEFAULT_BASELINE_FILE = "circleci/collector/baseline/all.json"
 DEFAULT_BASELINE_THRESHOLD = 10
 
+# For the sake of simplicity Baseline data stored on GCS is simply an array of
+# benchmark runs in json format. It maybe beneficial though to change it in the
+# future, depending on the incoming requirements. Encode the current structure
+# in the empty document to be explicit.
+EMPTY_BASELINE_STRUCTURE = []
+
 
 def load_baseline_file(bucket_name, baseline_file):
     credentials = json.loads(os.environ["GOOGLE_CREDENTIALS_CIRCLECI_COLLECTOR"])
@@ -66,7 +72,7 @@ def load_baseline_file(bucket_name, baseline_file):
         print(f"File gs://{bucket_name}/{baseline_file} not found. "
                "Creating a new empty one.", file=sys.stderr)
 
-        blob.upload_from_string(json.dumps([]))
+        blob.upload_from_string(json.dumps(EMPTY_BASELINE_STRUCTURE))
         return []
 
 
