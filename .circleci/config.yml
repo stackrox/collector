@@ -172,7 +172,7 @@ commands:
     - run:
         name: Check if dockerized job should run
         command: |
-          if [[ -f ~/workspace/pr-metadata/labels/run-dockerized-steps ]]; then
+          if [[ ! -f ~/workspace/pr-metadata/labels/run-dockerized-steps ]]; then
             echo "Skipping dockerized build jobs."
             circleci step halt
             exit 0
