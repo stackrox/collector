@@ -1,5 +1,7 @@
 # Collector
 
+The collector component of RHACS is responsible for collecting detailed host information regarding processes, networking and other node level system information. It is composed of two components. A C++ derived binary that runs in userspace (“collector”) and a kernel module or eBPF probe. Collector is deployed with administrator privileges (--privileged) which are required to either insert a kernel module or eBPF probe.
+
 ## Collector development
 
 ### Cloning the repo
