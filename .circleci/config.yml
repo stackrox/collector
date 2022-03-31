@@ -167,6 +167,15 @@ commands:
             exit 0
           fi
 
+  dockerized-should-run:
+    steps:
+    - run:
+        if [[ -f ~/workspace/pr-metadata/labels/run-dockerized-steps ]]; then
+          echo "Skipping dockerized build jobs."
+          circleci step halt
+          exit 0
+        fi
+
   stackrox-io-login:
     steps:
     - run:
@@ -721,6 +730,7 @@ jobs:
 
     steps:
     - initcommand
+    - dockerized-should-run
     - docker-login-pull
     - quay-login
     - dockerized-pull-cache-image
@@ -753,6 +763,7 @@ jobs:
 
     steps:
     - initcommand
+    - dockerized-should-run
     - dockerized-check-drivers-built
 
     - run:
@@ -801,6 +812,7 @@ jobs:
 
     steps:
     - initcommand
+    - dockerized-should-run
     - docker-login-pull
     - quay-login-push
     - dockerized-pull-cache-image
@@ -817,6 +829,7 @@ jobs:
 
     steps:
     - initcommand
+    - dockerized-should-run
     - dockerized-check-drivers-built
     - quay-login
 
@@ -834,6 +847,7 @@ jobs:
 
     steps:
     - initcommand
+    - dockerized-should-run
     - quay-login
     - docker-login-push
 
@@ -955,6 +969,12 @@ jobs:
         command: |
           if [[ -f ~/workspace/pr-metadata/labels/skip-integration-tests ]]; then
             echo "Skipping job with skip-integration-tests label."
+            circleci step halt
+            exit 0
+          fi
+
+          if [[ "<< parameters.dockerized >>" == "true" && ! -f ~/workspace/pr-metadata/labels/run-dockerized-steps ]]; then
+            echo "Skipping dockerized build jobs."
             circleci step halt
             exit 0
           fi
