@@ -24,10 +24,8 @@ git config user.name "$GITHUB_USER_EMAIL"
 stackrox_branch="${BRANCH}_CI"
 if git branch -a | grep "$stackrox_branch"; then
     git checkout "$stackrox_branch"
-    branch_already_existed=true
 else
     git checkout -b "$stackrox_branch"
-    branch_already_existed=false
 fi
 
 echo "$COLLECTOR_VERSION" > COLLECTOR_VERSION
@@ -35,17 +33,6 @@ git add COLLECTOR_VERSION
 git commit -m "Automatic commit ${BUILD_NUM}. Testing collector version ${COLLECTOR_VERSION}"
 
 git push -f origin HEAD
-
-#generate_data() {
-#    cat << EOF
-#    {
-#         "branch": "$stackrox_branch",
-#         "parameters": {
-#             "trigger_on_demand": false
-#         }
-#    }
-#EOF
-#}
 
 DATA=$(jq -cn --arg branch "$stackrox_branch" '{
     "branch": $branch,
@@ -59,9 +46,8 @@ ci_url="https://app.circleci.com/pipelines/github/stackrox/stackrox?branch=${sta
 
 echo "You can find the StackRox CircleCI results here $ci_url"
 
-if [ "$branch_already_existed" = "false" ]; then
-    endpoint=https://circleci.com/api/v2/project/github/stackrox/stackrox/pipeline
-    curl -X POST --header 'Content-Type: application/json' \
-            --header "Circle-Token: $CIRCLE_TOKEN_ROXBOT" "$endpoint" -d "$DATA"
-fi
+endpoint=https://circleci.com/api/v2/project/github/stackrox/stackrox/pipeline
+curl -X POST --header 'Content-Type: application/json' \
+        --header "Circle-Token: $CIRCLE_TOKEN_ROXBOT" "$endpoint" -d "$DATA"
+
 comment_on_pr_with_ci_link "$ci_url"
