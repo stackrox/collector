@@ -54,14 +54,14 @@ DATA=$(jq -cn --arg branch "$stackrox_branch" '{
     }
 }')
 
-if [ "$branch_already_existed" = "false" ]; then
-    curl -X POST --header 'Content-Type: application/json' \
-            --header "Circle-Token: $CIRCLE_TOKEN_ROXBOT" https://circleci.com/api/v2/project/github/stackrox/stackrox/pipeline -d "$DATA"
-fi
-
 stackrox_branch_encoded="${stackrox_branch/\//%2F}"
 ci_url="https://app.circleci.com/pipelines/github/stackrox/stackrox?branch=${stackrox_branch_encoded}&filter=all"
 
 echo "You can find the StackRox CircleCI results here $ci_url"
 
+if [ "$branch_already_existed" = "false" ]; then
+    endpoint=https://circleci.com/api/v2/project/github/stackrox/stackrox/pipeline
+    curl -X POST --header 'Content-Type: application/json' \
+            --header "Circle-Token: $CIRCLE_TOKEN_ROXBOT" "$endpoint" -d "$DATA"
+fi
 comment_on_pr_with_ci_link "$ci_url"
