@@ -101,6 +101,7 @@ end
   bool CurlVerbose() const { return curl_verbose_; }
   virtual bool ForceKernelModules() const { return force_kernel_modules_; }
   bool EnableAfterglow() const { return enable_afterglow_; }
+  bool IsCoreDumpEnabled() const;
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
@@ -124,6 +125,7 @@ end
   HostConfig host_config_;
   int64_t afterglow_period_micros_ = 300000000;  //5 minutes in microseconds
   bool enable_afterglow_ = true;
+  bool enable_core_dump_ = false;
 };
 
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c);

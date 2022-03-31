@@ -865,6 +865,8 @@ jobs:
         name: "Running integration tests"
         no_output_timeout: 45m
         command: |
+          sudo cp /proc/sys/kernel/core_pattern /tmp/core_pattern
+          echo '/tmp/core.out' | sudo tee /proc/sys/kernel/core_pattern
           export REMOTE_HOST_TYPE=local
           export COLLECTION_METHOD="kernel_module"
           export VM_CONFIG="circle_local_<< parameters.vm-config >>"
@@ -872,7 +874,13 @@ jobs:
           export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}"
           export USE_VALGRIND=$VALGRIND_INTEGRATION_TESTS
           export USE_HELGRIND=$HELGRIND_INTEGRATION_TESTS
-          make -C "${SOURCE_ROOT}" integration-tests-repeat-network integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report
+          make -C "${SOURCE_ROOT}" integration-tests-repeat-network integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report || exit_code=$?
+          if [ "${exit_code}" -ne 0 ]; then
+                  if [ -f /tmp/core.out ]; then
+                    sudo chmod 755 /tmp/core.out
+                  fi
+                  exit "${exit_code}"
+          fi
           [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
 
     - run:
@@ -889,6 +897,12 @@ jobs:
             "${CI_ROOT}/check-file-for-valgrind-errors.sh" "$file" "$VALGRIND_INTEGRATION_TESTS" "$HELGRIND_INTEGRATION_TESTS"
           done
 
+    - run:
+        name: "Resore core_dump file"
+        command: |
+          cat /tmp/core_pattern | sudo tee /proc/sys/kernel/core_pattern
+        when: always
+
     - store_test_results:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml
     - ci-artifacts/store:
@@ -900,6 +914,8 @@ jobs:
     - ci-artifacts/store:
         path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/perf.json
         destination: "kernel_module-circle_local_<< parameters.vm-config >>-perf.json"
+    - ci-artifacts/store:
+        path: /tmp/core.out
 
   integration-test:
     parameters:
@@ -1002,6 +1018,7 @@ jobs:
         name: "Running integration tests"
         no_output_timeout: 45m
         command: |
+          echo '/tmp/core.%e.%p' | sudo tee /proc/sys/kernel/core_pattern
           <<# parameters.dockerized >>export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}-dockerized"<</ parameters.dockerized >>
           echo "Running tests with image '${COLLECTOR_IMAGE}'"
           make -C "${SOURCE_ROOT}" integration-tests-repeat-network integration-tests-baseline integration-tests integration-tests-report
@@ -1044,6 +1061,8 @@ jobs:
         destination: "<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>-perf.json"
     - ci-artifacts/store:
         path: ~/workspace/serial-output
+    - ci-artifacts/store:
+        path: /tmp/core.out
 
     - persist_to_workspace:
         root: ~/workspace

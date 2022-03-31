@@ -242,6 +242,22 @@ bool attemptGRPCConnection(std::shared_ptr<grpc::Channel>& channel) {
   return WaitForChannelReady(channel, poll_check);
 }
 
+void setCoreDumpLimit(bool enableCoreDump) {
+  struct rlimit limit;
+  limit.rlim_cur = 0;
+  limit.rlim_max = 0;
+  if (enableCoreDump) {
+    limit.rlim_cur = RLIM_INFINITY;
+    limit.rlim_max = RLIM_INFINITY;
+    CLOG(DEBUG) << "Core dumps enabled";
+  } else {
+    CLOG(DEBUG) << "Core dump not enabled";
+  }
+  if (setrlimit(RLIMIT_CORE, &limit) != 0) {
+    CLOG(ERROR) << "setrlimit() failed: " << StrError();
+  }
+}
+
 void gplNotice() {
   CLOG(INFO) << "";
   CLOG(INFO) << "This product uses kernel module and ebpf subcomponents licensed under the GNU";
@@ -267,14 +283,7 @@ int main(int argc, char** argv) {
 
   CollectorConfig config(args);
 
-#ifdef COLLECTOR_CORE
-  struct rlimit limit;
-  limit.rlim_cur = RLIM_INFINITY;
-  limit.rlim_max = RLIM_INFINITY;
-  if (setrlimit(RLIMIT_CORE, &limit) != 0) {
-    CLOG(ERROR) << "setrlimit() failed: " << StrError();
-  }
-#endif
+  setCoreDumpLimit(config.IsCoreDumpEnabled());
 
   // insert the kernel module with options from the configuration
   Json::Value collectorConfig = args->CollectorConfig();
