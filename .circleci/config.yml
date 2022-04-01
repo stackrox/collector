@@ -1394,7 +1394,7 @@ jobs:
         webhook: '${SLACK_WEBHOOK_KERNEL_PROBE_BUILD_FAILURE}'
 
   trigger-nightly-build:
-    <<: *defaultImage
+    <<: *defaultMachine
     steps:
       - checkout
 
