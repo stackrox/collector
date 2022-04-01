@@ -48,6 +48,7 @@ runOnAllTagsWithDockerIOPushCtx: &runOnAllTagsWithDockerIOPushCtx
     - docker-io-push
     - quay-rhacs-eng-readwrite
     - quay-rhacs-eng-readonly
+    - quay-stackrox-io-readwrite
 
 runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequires
   <<: *runOnAllTags
@@ -572,6 +573,7 @@ jobs:
     - INSTALL_DIRECTORY: /tmp
     - QUAY_REPO: << pipeline.parameters.quay-repo >>
     - DOCKER_REPO: "docker.io/stackrox"
+    - PUBLIC_REPO: "quay.io/stackrox-io"
 
     steps:
     - initcommand

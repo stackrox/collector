@@ -14,10 +14,13 @@ if [[ "$BRANCH" != "master" && -z "$TAG" && "${BUILD_FULL_IMAGES,,}" == "false" 
     for collector_repo in "${collector_repos[@]}"; do
         docker_full_repo="${DOCKER_REPO}/${collector_repo}:${COLLECTOR_VERSION}"
         quay_full_repo="${QUAY_REPO}/${collector_repo}:${COLLECTOR_VERSION}"
+        public_full_repo="${PUBLIC_REPO}/${collector_repo}:${COLLECTOR_VERSION}"
         docker tag "${docker_full_repo}-base" "${docker_full_repo}"
         docker tag "${docker_full_repo}-base" "${docker_full_repo}-latest"
         docker tag "${quay_full_repo}-base" "${quay_full_repo}"
         docker tag "${quay_full_repo}-base" "${quay_full_repo}-latest"
+        docker tag "${public_full_repo}-base" "${public_full_repo}"
+        docker tag "${public_full_repo}-base" "${public_full_repo}-latest"
     done
     exit 0
 fi
@@ -40,6 +43,8 @@ for collector_repo in "${collector_repos[@]}"; do
         -t "${DOCKER_REPO}/${collector_repo}:${COLLECTOR_VERSION}-latest" \
         -t "${QUAY_REPO}/${collector_repo}:${COLLECTOR_VERSION}" \
         -t "${QUAY_REPO}/${collector_repo}:${COLLECTOR_VERSION}-latest" \
+        -t "${PUBLIC_REPO}/${collector_repo}:${COLLECTOR_VERSION}" \
+        -t "${PUBLIC_REPO}/${collector_repo}:${COLLECTOR_VERSION}-latest" \
         "${build_args[@]}" \
         "${container_build_dir}"
 done

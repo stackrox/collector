@@ -18,6 +18,8 @@ docker build \
     -t "${DOCKER_REPO}/collector:${COLLECTOR_VERSION}-slim" \
     -t "${QUAY_REPO}/collector:${COLLECTOR_VERSION}-base" \
     -t "${QUAY_REPO}/collector:${COLLECTOR_VERSION}-slim" \
+    -t "${PUBLIC_REPO}/collector:${COLLECTOR_VERSION}-base" \
+    -t "${PUBLIC_REPO}/collector:${COLLECTOR_VERSION}-slim" \
     "${build_args[@]}" \
     -f "${SOURCE_ROOT}/collector/container/rhel/Dockerfile" \
     "$SOURCE_ROOT/collector/container/rhel"
