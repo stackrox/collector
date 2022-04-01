@@ -16,9 +16,6 @@ var (
 
 type Executor interface {
 	CopyFromHost(src string, dst string) (string, error)
-	PullImage(image string) error
-	IsContainerRunning(image string) (bool, error)
-	ExitCode(container string) (int, error)
 	Exec(args ...string) (string, error)
 	ExecRetry(args ...string) (string, error)
 }
@@ -194,31 +191,6 @@ func (e *executor) CopyFromHost(src string, dst string) (res string, err error) 
 		}
 	}
 	return res, err
-}
-
-func (e *executor) PullImage(image string) error {
-	_, err := e.Exec("docker", "image", "inspect", image)
-	if err == nil {
-		return nil
-	}
-	_, err = e.ExecRetry("docker", "pull", image)
-	return err
-}
-
-func (e *executor) IsContainerRunning(containerID string) (bool, error) {
-	result, err := e.Exec("docker", "inspect", containerID, "--format='{{.State.Running}}'")
-	if err != nil {
-		return false, err
-	}
-	return strconv.ParseBool(strings.Trim(result, "\"'"))
-}
-
-func (e *executor) ExitCode(containerID string) (int, error) {
-	result, err := e.Exec("docker", "inspect", containerID, "--format='{{.State.ExitCode}}'")
-	if err != nil {
-		return -1, err
-	}
-	return strconv.Atoi(strings.Trim(result, "\"'"))
 }
 
 func (e *localCommandBuilder) ExecCommand(execArgs ...string) *exec.Cmd {

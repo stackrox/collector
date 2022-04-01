@@ -7,6 +7,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-multierror"
 
@@ -15,6 +16,7 @@ import (
 
 type collectorManager struct {
 	executor          Executor
+	docker            Docker
 	Mounts            map[string]string
 	Env               map[string]string
 	DBPath            string
@@ -37,11 +39,11 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 	offlineMode := ReadBoolEnvVar("COLLECTOR_OFFLINE_MODE")
 
 	env := map[string]string{
-		"GRPC_SERVER":                      "localhost:9999",
-		"COLLECTOR_CONFIG":                 `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}`,
-		"COLLECTION_METHOD":                collectionMethod,
-		"COLLECTOR_PRE_ARGUMENTS":          collectorPreArguments,
-		"ENABLE_CORE_DUMP":                 "true",
+		"GRPC_SERVER":             "localhost:9999",
+		"COLLECTOR_CONFIG":        `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}`,
+		"COLLECTION_METHOD":       collectionMethod,
+		"COLLECTOR_PRE_ARGUMENTS": collectorPreArguments,
+		"ENABLE_CORE_DUMP":        "true",
 	}
 	if !offlineMode {
 		env["MODULE_DOWNLOAD_BASE_URL"] = "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"
@@ -53,7 +55,7 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 		"/host/usr/lib:ro":             "/usr/lib/",
 		"/host/sys:ro":                 "/sys/",
 		"/host/dev:ro":                 "/dev",
-		"/tmp":				"/tmp",
+		"/tmp":                         "/tmp",
 		// /module is an anonymous volume to reflect the way collector
 		// is usually run in kubernetes (with in-memory volume for /module)
 		"/module": "",
@@ -64,6 +66,7 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 	return &collectorManager{
 		DBPath:            "/tmp/collector-test.db",
 		executor:          e,
+		docker:            Docker{e},
 		DisableGrpcServer: false,
 		BootstrapOnly:     false,
 		CollectorImage:    collectorImage,
@@ -76,12 +79,12 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 }
 
 func (c *collectorManager) Setup() error {
-	if err := c.executor.PullImage(c.CollectorImage); err != nil {
+	if err := c.docker.Pull(c.CollectorImage); err != nil {
 		return err
 	}
 
 	if !c.DisableGrpcServer {
-		if err := c.executor.PullImage(c.GRPCServerImage); err != nil {
+		if err := c.docker.Pull(c.GRPCServerImage); err != nil {
 			return err
 		}
 
@@ -106,7 +109,7 @@ func (c *collectorManager) TearDown() error {
 	if coreDumpErr != nil {
 		return coreDumpErr
 	}
-	isRunning, err := c.executor.IsContainerRunning("collector")
+	isRunning, err := c.docker.IsContainerRunning("collector")
 	if err != nil {
 		fmt.Println("Error: Checking if container running")
 		return err
@@ -114,7 +117,7 @@ func (c *collectorManager) TearDown() error {
 	if !isRunning {
 		c.captureLogs("collector")
 		// Check if collector container segfaulted or exited with error
-		exitCode, err := c.executor.ExitCode("collector")
+		exitCode, err := c.docker.ExitCode("collector")
 		if err != nil {
 			fmt.Println("Error: Container not running")
 			return err
@@ -167,16 +170,15 @@ func (c *collectorManager) launchGRPCServer() error {
 	if selinuxErr != nil {
 		return selinuxErr
 	}
-	cmd := []string{"docker", "run",
+	cmd := []string{
 		"-d",
 		"--rm",
-		"--name", "grpc-server",
 		"--network=host",
 		"-v", "/tmp:/tmp:rw",
 		"--user", user.Uid + ":" + user.Gid,
 		c.GRPCServerImage,
 	}
-	_, err := c.executor.Exec(cmd...)
+	_, err := c.docker.Run("grpc-server", cmd...)
 	return err
 }
 
@@ -186,10 +188,10 @@ func (c *collectorManager) launchCollector() error {
 		return coreDumpErr
 	}
 
-	cmd := []string{"docker", "run",
-		"--name", "collector",
+	cmd := []string{
 		"--privileged",
-		"--network=host"}
+		"--network=host",
+	}
 
 	if !c.BootstrapOnly {
 		cmd = append(cmd, "-d")
@@ -213,13 +215,13 @@ func (c *collectorManager) launchCollector() error {
 		cmd = append(cmd, "exit", "0")
 	}
 
-	output, err := c.executor.Exec(cmd...)
+	output, err := c.docker.Run("collector", cmd...)
 	c.CollectorOutput = output
 	return err
 }
 
 func (c *collectorManager) captureLogs(containerName string) (string, error) {
-	logs, err := c.executor.Exec("docker", "logs", containerName)
+	logs, err := c.docker.Logs(containerName)
 	if err != nil {
 		fmt.Printf("docker logs error (%v) for container %s\n", err, containerName)
 		return "", err
@@ -235,8 +237,8 @@ func (c *collectorManager) captureLogs(containerName string) (string, error) {
 }
 
 func (c *collectorManager) killContainer(name string) error {
-	_, err1 := c.executor.Exec("docker", "kill", name)
-	_, err2 := c.executor.Exec("docker", "rm", "-fv", name)
+	err1 := c.docker.Kill(name)
+	err2 := c.docker.Remove(name)
 
 	var result error
 	if err1 != nil {
@@ -250,8 +252,7 @@ func (c *collectorManager) killContainer(name string) error {
 }
 
 func (c *collectorManager) stopContainer(name string) error {
-	_, err := c.executor.Exec("docker", "stop", "--time", "100", name)
-	return err
+	return c.docker.Stop(100*time.Second, name)
 }
 
 // Sets the path to where core dumps are saved to. This is specified in the core_pattern file

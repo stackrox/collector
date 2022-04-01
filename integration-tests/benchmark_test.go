@@ -2,9 +2,9 @@ package integrationtests
 
 import (
 	"fmt"
+	"os"
 	"testing"
 	"time"
-	"os"
 
 	"github.com/google/shlex"
 	"github.com/stretchr/testify/assert"
@@ -70,7 +70,6 @@ func (b *BenchmarkTestSuiteBase) StartPerfContainer(name string, image string, a
 
 func (b *BenchmarkTestSuiteBase) RunInitContainer() {
 	cmd := []string{
-		"host-init",
 		"-v", "/lib/modules:/lib/modules",
 		"-v", "/etc/os-release:/etc/os-release",
 		"-v", "/etc/lsb-release:/etc/lsb-release",
@@ -79,7 +78,7 @@ func (b *BenchmarkTestSuiteBase) RunInitContainer() {
 		"stackrox/collector-performance:init",
 	}
 
-	containerID, err := b.launchContainer(cmd...)
+	containerID, err := b.launchContainer("host-init", cmd...)
 	require.NoError(b.T(), err)
 
 	if finished, _ := b.waitForContainerToExit("host-init", containerID, 5*time.Second); !finished {
@@ -89,12 +88,11 @@ func (b *BenchmarkTestSuiteBase) RunInitContainer() {
 		}
 		assert.FailNow(b.T(), "Failed to initialize host for performance testing")
 	}
-	b.cleanupContainer([]string{containerID})
+	b.cleanupContainers("host-init")
 }
 
 func (b *BenchmarkTestSuiteBase) startContainer(name string, image string, args ...string) {
 	cmd := []string{
-		name,
 		"--privileged",
 		"-v", "/sys:/sys",
 		"-v", "/usr/src:/usr/src",
@@ -107,7 +105,7 @@ func (b *BenchmarkTestSuiteBase) startContainer(name string, image string, args 
 
 	cmd = append(cmd, args...)
 
-	containerID, err := b.launchContainer(cmd...)
+	containerID, err := b.launchContainer(name, cmd...)
 	require.NoError(b.T(), err)
 
 	b.perfContainers = append(b.perfContainers, containerID)
@@ -155,7 +153,7 @@ func (s *BenchmarkCollectorTestSuite) TearDownSuite() {
 	s.db, err = s.collector.BoltDB()
 	require.NoError(s.T(), err)
 
-	s.cleanupContainer([]string{"collector", "grpc-server", "benchmark"})
+	s.cleanupContainers("collector", "grpc-server", "benchmark")
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
 	s.WritePerfResults("collector_benchmark", stats, s.metrics)
@@ -174,7 +172,7 @@ func (s *BenchmarkBaselineTestSuite) TestBenchmarkBaseline() {
 
 func (s *BenchmarkBaselineTestSuite) TearDownSuite() {
 	s.StopPerfTools()
-	s.cleanupContainer([]string{"benchmark"})
+	s.cleanupContainers("benchmark")
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
 	s.WritePerfResults("baseline_benchmark", stats, s.metrics)

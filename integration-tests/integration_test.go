@@ -25,7 +25,7 @@ const (
 	parentExecFilePathStr    = "ParentExecFilePath"
 
 	defaultWaitTickSeconds = 30 * time.Second
-	
+
 	// defaultStopTimeoutSeconds is the amount of time to wait for a container
 	// to stop before forcibly killing it. It needs to be a string because it
 	// is passed directly to the docker command via the executor.
@@ -64,14 +64,14 @@ func TestRepeatedNetworkFlow(t *testing.T) {
 	// The last server to client connection is recorded as being inacitve when the afterglow period has expired
 	// Thus the reported connections are active, inactive
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
-		afterglowPeriod: 10,
-		scrapeInterval: 4,
-		enableAfterglow: true,
-		numMetaIter: 1,
-		numIter: 11,
-		sleepBetweenCurlTime: 2,
+		afterglowPeriod:        10,
+		scrapeInterval:         4,
+		enableAfterglow:        true,
+		numMetaIter:            1,
+		numIter:                11,
+		sleepBetweenCurlTime:   2,
 		sleepBetweenIterations: 1,
-		expectedReports: []bool{true, false},
+		expectedReports:        []bool{true, false},
 	}
 	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
@@ -80,14 +80,14 @@ func TestRepeatedNetworkFlowWithZeroAfterglowPeriod(t *testing.T) {
 	// Afterglow is disables as the afterglowPeriod is 0
 	// All server to client connections are reported.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
-		afterglowPeriod: 0,
-		scrapeInterval: 2,
-		enableAfterglow: true,
-		numMetaIter: 1,
-		numIter: 3,
-		sleepBetweenCurlTime: 3,
+		afterglowPeriod:        0,
+		scrapeInterval:         2,
+		enableAfterglow:        true,
+		numMetaIter:            1,
+		numIter:                3,
+		sleepBetweenCurlTime:   3,
 		sleepBetweenIterations: 1,
-		expectedReports: []bool{false, false, false},
+		expectedReports:        []bool{false, false, false},
 	}
 	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
@@ -95,14 +95,14 @@ func TestRepeatedNetworkFlowWithZeroAfterglowPeriod(t *testing.T) {
 func TestRepeatedNetworkFlowThreeCurlsNoAfterglow(t *testing.T) {
 	// The afterglow period is set to 0 so this has the same behavior as if afterglow was disabled.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
-		afterglowPeriod: 0,
-		scrapeInterval: 4,
-		enableAfterglow: false,
-		numMetaIter: 1,
-		numIter: 3,
-		sleepBetweenCurlTime: 6,
+		afterglowPeriod:        0,
+		scrapeInterval:         4,
+		enableAfterglow:        false,
+		numMetaIter:            1,
+		numIter:                3,
+		sleepBetweenCurlTime:   6,
 		sleepBetweenIterations: 1,
-		expectedReports: []bool{false, false, false},
+		expectedReports:        []bool{false, false, false},
 	}
 	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
@@ -111,6 +111,7 @@ type IntegrationTestSuiteBase struct {
 	suite.Suite
 	db        *bolt.DB
 	executor  Executor
+	docker    Docker
 	collector *collectorManager
 	metrics   map[string]float64
 }
@@ -149,20 +150,20 @@ type RepeatedNetworkFlowTestSuite struct {
 	//networking events. Sometimes if a connection is made multiple times within a short time
 	//called an "afterglow" period, we only want to report the connection once.
 	IntegrationTestSuiteBase
-	clientContainer string
-	clientIP        string
-	serverContainer string
-	serverIP        string
-	serverPort      string
-	enableAfterglow	bool
-	afterglowPeriod	int
-	scrapeInterval	int
-	numMetaIter	int
-	numIter		int
-	sleepBetweenCurlTime	int
-	sleepBetweenIterations	int
-	expectedReports		[]bool // An array of booleans representing the connection. true is active. fasle is inactive.
-	observedReports		[]bool
+	clientContainer        string
+	clientIP               string
+	serverContainer        string
+	serverIP               string
+	serverPort             string
+	enableAfterglow        bool
+	afterglowPeriod        int
+	scrapeInterval         int
+	numMetaIter            int
+	numIter                int
+	sleepBetweenCurlTime   int
+	sleepBetweenIterations int
+	expectedReports        []bool // An array of booleans representing the connection. true is active. fasle is inactive.
+	observedReports        []bool
 }
 
 type ImageLabelJSONTestSuite struct {
@@ -171,6 +172,7 @@ type ImageLabelJSONTestSuite struct {
 
 func (s *ImageLabelJSONTestSuite) SetupSuite() {
 	s.executor = NewExecutor()
+	s.docker = NewDocker(s.executor)
 	s.collector = NewCollectorManager(s.executor, s.T().Name())
 	err := s.collector.Setup()
 	s.Require().NoError(err)
@@ -187,7 +189,7 @@ func (s *ImageLabelJSONTestSuite) TearDownSuite() {
 	s.Require().NoError(err)
 	s.db, err = s.collector.BoltDB()
 	s.Require().NoError(err)
-	s.cleanupContainer([]string{"collector", "grpc-server", "jsonlabel"})
+	s.cleanupContainers("collector", "grpc-server", "jsonlabel")
 }
 
 // Launches collector
@@ -198,6 +200,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 
 	s.metrics = map[string]float64{}
 	s.executor = NewExecutor()
+	s.docker = NewDocker(s.executor)
 	s.StartContainerStats()
 	s.collector = NewCollectorManager(s.executor, s.T().Name())
 
@@ -213,7 +216,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	}
 
 	for _, image := range images {
-		err := s.executor.PullImage(image)
+		err := s.docker.Pull(image)
 		s.Require().NoError(err)
 	}
 
@@ -257,7 +260,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 }
 
 func (s *ProcessNetworkTestSuite) TearDownSuite() {
-	s.cleanupContainer([]string{"nginx", "nginx-curl"})
+	s.cleanupContainers("nginx", "nginx-curl")
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
 	s.WritePerfResults("process_network", stats, s.metrics)
@@ -353,6 +356,7 @@ func (s *MissingProcScrapeTestSuite) SetupSuite() {
 	assert.False(s.T(), os.IsNotExist(err), "Missing fake proc directory")
 
 	s.executor = NewExecutor()
+	s.docker = NewDocker(s.executor)
 	s.collector = NewCollectorManager(s.executor, s.T().Name())
 
 	// Mount the fake proc directory created by 'create-fake-proc.sh'
@@ -368,7 +372,7 @@ func (s *MissingProcScrapeTestSuite) SetupSuite() {
 }
 
 func (s *MissingProcScrapeTestSuite) TestCollectorRunning() {
-	collectorRunning, err := s.executor.IsContainerRunning("collector")
+	collectorRunning, err := s.docker.IsContainerRunning("collector")
 	s.Require().NoError(err)
 	assert.True(s.T(), collectorRunning, "Collector isn't running")
 }
@@ -376,7 +380,7 @@ func (s *MissingProcScrapeTestSuite) TestCollectorRunning() {
 func (s *MissingProcScrapeTestSuite) TearDownSuite() {
 	err := s.collector.TearDown()
 	s.Require().NoError(err)
-	s.cleanupContainer([]string{"collector"})
+	s.cleanupContainers("collector")
 }
 
 // Launches collector
@@ -385,6 +389,7 @@ func (s *MissingProcScrapeTestSuite) TearDownSuite() {
 func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.metrics = map[string]float64{}
 	s.executor = NewExecutor()
+	s.docker = NewDocker(s.executor)
 	s.StartContainerStats()
 	s.collector = NewCollectorManager(s.executor, s.T().Name())
 
@@ -404,7 +409,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	}
 
 	for _, image := range images {
-		err := s.executor.PullImage(image)
+		err := s.docker.Pull(image)
 		s.Require().NoError(err)
 	}
 
@@ -438,7 +443,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.clientIP, err = s.getIPAddress("nginx-curl")
 	s.Require().NoError(err)
 
-	totalTime := (s.sleepBetweenCurlTime * s.numIter + s.sleepBetweenIterations) * s.numMetaIter + s.afterglowPeriod + 10
+	totalTime := (s.sleepBetweenCurlTime*s.numIter+s.sleepBetweenIterations)*s.numMetaIter + s.afterglowPeriod + 10
 	time.Sleep(time.Duration(totalTime) * time.Second)
 	logLines := s.GetLogLines("grpc-server")
 	s.observedReports = GetNetworkActivity(logLines, serverAddress)
@@ -451,7 +456,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 }
 
 func (s *RepeatedNetworkFlowTestSuite) TearDownSuite() {
-	s.cleanupContainer([]string{"nginx", "nginx-curl", "collector"})
+	s.cleanupContainers("nginx", "nginx-curl", "collector")
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
 	s.WritePerfResults("repeated_network_flow", stats, s.metrics)
@@ -494,17 +499,17 @@ func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
 	fmt.Printf("ClientDetails from test: %s %s\n", s.clientContainer, s.clientIP)
 }
 
-func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, error) {
-	cmd := []string{"docker", "run", "-d", "--name"}
+func (s *IntegrationTestSuiteBase) launchContainer(name string, args ...string) (string, error) {
+	cmd := []string{"-d"}
 	cmd = append(cmd, args...)
-	output, err := s.executor.Exec(cmd...)
+	output, err := s.docker.Run(name, cmd...)
 	outLines := strings.Split(output, "\n")
 	return outLines[len(outLines)-1], err
 }
 
 func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, containerID string, tickSeconds time.Duration) (bool, error) {
-	cmd := []string{
-		"docker", "ps", "-qa",
+	cmdArgs := []string{
+		"-qa",
 		"--filter", "id=" + containerID,
 		"--filter", "status=exited",
 	}
@@ -516,7 +521,7 @@ func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, contain
 	for {
 		select {
 		case <-tick:
-			output, err := s.executor.Exec(cmd...)
+			output, err := s.docker.PS(cmdArgs...)
 			outLines := strings.Split(output, "\n")
 			lastLine := outLines[len(outLines)-1]
 			if lastLine == containerShortID(containerID) {
@@ -534,43 +539,38 @@ func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, contain
 	}
 }
 
-func (s *IntegrationTestSuiteBase) execContainer(containerName string, command []string) (string, error) {
-	cmd := []string{"docker", "exec", containerName}
-	cmd = append(cmd, command...)
-	return s.executor.Exec(cmd...)
+func (s *IntegrationTestSuiteBase) execContainer(name string, command []string) (string, error) {
+	return s.docker.Exec(name, command...)
 }
 
-func (s *IntegrationTestSuiteBase) cleanupContainer(containers []string) {
-	for _, container := range containers {
-		s.executor.Exec("docker", "kill", container)
-		s.executor.Exec("docker", "rm", container)
-	}
+// cleanupContainers will kill and remove all containers given as arguments.
+// this can contain container names or ids
+func (s *IntegrationTestSuiteBase) cleanupContainers(containers ...string) {
+	s.docker.Kill(containers...)
+	s.docker.Remove(containers...)
 }
 
 func (s *IntegrationTestSuiteBase) stopContainers(containers ...string) {
-	timeout := ReadEnvVarWithDefault("STOP_TIMEOUT", defaultStopTimeoutSeconds)
-	for _, container := range containers {
-		s.executor.Exec("docker", "stop", "-t", timeout, container)
-	}
+	timeout, err := strconv.Atoi(ReadEnvVarWithDefault("STOP_TIMEOUT", defaultStopTimeoutSeconds))
+	s.Require().NoError(err)
+	s.docker.Stop(time.Duration(timeout)*time.Second, containers...)
 }
 
 func (s *IntegrationTestSuiteBase) removeContainers(containers ...string) {
-	for _, container := range containers {
-		s.executor.Exec("docker", "rm", container)
-	}
+	s.docker.Remove(containers...)
 }
 
-func (s *IntegrationTestSuiteBase) containerLogs(containerName string) (string, error) {
-	return s.executor.Exec("docker", "logs", containerName)
+func (s *IntegrationTestSuiteBase) containerLogs(name string) (string, error) {
+	return s.docker.Logs(name)
 }
 
-func (s *IntegrationTestSuiteBase) getIPAddress(containerName string) (string, error) {
-	stdoutStderr, err := s.executor.Exec("docker", "inspect", "--format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'", containerName)
+func (s *IntegrationTestSuiteBase) getIPAddress(name string) (string, error) {
+	stdoutStderr, err := s.docker.Inspect(name, "--format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'")
 	return strings.Replace(string(stdoutStderr), "'", "", -1), err
 }
 
-func (s *IntegrationTestSuiteBase) getPort(containerName string) (string, error) {
-	stdoutStderr, err := s.executor.Exec("docker", "inspect", "--format='{{json .NetworkSettings.Ports}}'", containerName)
+func (s *IntegrationTestSuiteBase) getPort(name string) (string, error) {
+	stdoutStderr, err := s.docker.Inspect(name, "--format='{{json .NetworkSettings.Ports}}'")
 	if err != nil {
 		return "", err
 	}
@@ -628,17 +628,16 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	benchmarkName := "benchmark"
 	benchmarkImage := "stackrox/benchmark-collector:phoronix"
 
-	err := s.executor.PullImage(benchmarkImage)
+	err := s.docker.Pull(benchmarkImage)
 	s.Require().NoError(err)
 
 	benchmarkArgs := []string{
-		benchmarkName,
 		"--env", "FORCE_TIMES_TO_RUN=1",
 		benchmarkImage,
 		"phoronix-test-suite", "batch-benchmark", "collector",
 	}
 
-	containerID, err := s.launchContainer(benchmarkArgs...)
+	containerID, err := s.launchContainer(benchmarkName, benchmarkArgs...)
 	s.Require().NoError(err)
 
 	_, err = s.waitForContainerToExit(benchmarkName, containerID, defaultWaitTickSeconds)
@@ -661,13 +660,9 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
 	name := "jsonlabel"
 	image := "stackrox/benchmark-collector:json-label"
-	err := s.executor.PullImage(image)
+	err := s.docker.Pull(image)
 	s.Require().NoError(err)
-	args := []string{
-		name,
-		image,
-	}
-	containerID, err := s.launchContainer(args...)
+	containerID, err := s.launchContainer(name, image)
 	s.Require().NoError(err)
 	_, err = s.waitForContainerToExit(name, containerID, defaultWaitTickSeconds)
 	s.Require().NoError(err)
@@ -676,18 +671,18 @@ func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
 func (s *IntegrationTestSuiteBase) StartContainerStats() {
 	name := "container-stats"
 	image := "stackrox/benchmark-collector:stats"
-	args := []string{name, "-v", "/var/run/docker.sock:/var/run/docker.sock", image}
+	args := []string{"-v", "/var/run/docker.sock:/var/run/docker.sock", image}
 
-	err := s.executor.PullImage(image)
+	err := s.docker.Pull(image)
 	s.Require().NoError(err)
 
-	_, err = s.launchContainer(args...)
+	_, err = s.launchContainer(name, args...)
 	s.Require().NoError(err)
 }
 
-func (s *IntegrationTestSuiteBase) GetLogLines(containerName string) ([]string) {
+func (s *IntegrationTestSuiteBase) GetLogLines(containerName string) []string {
 	logs, err := s.containerLogs(containerName)
-	s.Require().NoError(err, containerName + " failure")
+	s.Require().NoError(err, containerName+" failure")
 	logLines := strings.Split(logs, "\n")
 	return logLines
 }
@@ -721,7 +716,7 @@ func (s *IntegrationTestSuiteBase) GetContainerStats() (stats []ContainerStat) {
 		json.Unmarshal([]byte(line), &stat)
 		stats = append(stats, stat)
 	}
-	s.cleanupContainer([]string{"container-stats"})
+	s.cleanupContainers("container-stats")
 	return stats
 }
 
@@ -735,7 +730,8 @@ func (s *IntegrationTestSuiteBase) PrintContainerStats(stats []ContainerStat) {
 		s.metrics[fmt.Sprintf("%s_cpu_stddev", name)] = stat.StdDev(cpu, nil)
 
 		fmt.Printf("CPU: Container %s, Mean %v, StdDev %v\n",
-			name, stat.Mean(cpu, nil), stat.StdDev(cpu, nil))
+			strings.TrimPrefix(name, containerNamePrefix),
+			stat.Mean(cpu, nil), stat.StdDev(cpu, nil))
 	}
 }
 

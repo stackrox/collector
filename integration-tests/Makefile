@@ -16,7 +16,7 @@ export COLLECTOR_IMAGE
 
 .PHONY: docker-clean
 docker-clean:
-	docker rm -fv container-stats benchmark collector grpc-server || true
+	docker rm -fv $(shell docker ps -a --format '{{.Names}}' | grep 'collector-int-') 2>/dev/null || true
 
 .PHONY: tests
 tests: docker-clean
