@@ -37,7 +37,7 @@ RUN apt-get autoremove -y
 RUN dpkg --compare-versions $(dpkg-query -f='${Version}' --show binutils) lt 2.31
 
 RUN mkdir -p /output
-COPY build-kos /usr/bin/
+COPY build-kos /scripts/
 COPY build-wrapper.sh /usr/bin/
 COPY prepare-src /usr/bin
 

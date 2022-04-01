@@ -28,7 +28,7 @@ RUN apt-get update \
 RUN apt-get autoremove -y
 
 RUN mkdir -p /output
-COPY build-kos /usr/bin/
+COPY build-kos /scripts/
 COPY build-wrapper.sh /usr/bin/
 COPY prepare-src /usr/bin
 

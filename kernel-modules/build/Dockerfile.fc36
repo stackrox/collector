@@ -20,7 +20,7 @@ RUN dnf update -y || true; \
     mkdir -p /output; \
     dnf autoremove -y
 
-COPY build-kos /usr/bin/
+COPY build-kos /scripts/
 COPY build-wrapper.sh /usr/bin/
 COPY prepare-src /usr/bin
 
