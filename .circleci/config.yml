@@ -1692,7 +1692,7 @@ workflows:
   nightly:
     triggers:
       - schedule:
-          cron: "50 * * * *"
+          cron: "0 0 * * *"
           filters:
             branches:
               only: jv/ROX-9961-create-nightly-collector-circleci-job
