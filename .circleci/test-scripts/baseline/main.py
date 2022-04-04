@@ -62,7 +62,7 @@ def get_gcs_blob(bucket_name, filename):
     storage_client = storage.Client(credentials=storage_credentials)
 
     bucket = storage_client.bucket(bucket_name)
-    return bucket.blob(baseline_file)
+    return bucket.blob(filename)
 
 
 def load_baseline_file(bucket_name, baseline_file):
@@ -74,7 +74,7 @@ def load_baseline_file(bucket_name, baseline_file):
 
     except NotFound as ex:
         print(f"File gs://{bucket_name}/{baseline_file} not found. "
-               "Creating a new empty one.", file=sys.stderr)
+              f"Creating a new empty one.", file=sys.stderr)
 
         blob.upload_from_string(json.dumps(EMPTY_BASELINE_STRUCTURE))
         return []
@@ -114,7 +114,7 @@ def add_to_baseline_file(input_file_name, data, threshold):
             # Verify for each test type whithin the data, that its length is
             # not over the threshold. Drop the oldest items when needed.
             for t in test_names:
-                tests = [t for t in ordered if is_test(t)]
+                tests = [item for item in ordered if is_test(t, item)]
 
                 if len(tests) >= threshold:
                     cutoff = len(tests) - threshold
@@ -150,7 +150,7 @@ def verify_new_data(baseline_data, new_data):
 
         if bgroup != ngroup:
             raise Exception(f"Benchmark metrics do not match:"
-                             " {bgroup}, {ngroup} ")
+                            f" {bgroup}, {ngroup} ")
 
         counter = Counter()
         for v in nvalues:
@@ -164,7 +164,7 @@ def verify_new_data(baseline_data, new_data):
 
         if (no_overhead_count != overhead_count):
             raise Exception(f"Number of with/without overhead do not match:"
-                             " {no_overhead_count}, {overhead_count} ")
+                            f" {no_overhead_count}, {overhead_count} ")
 
 
 def process(content):
@@ -220,7 +220,7 @@ def collector_overhead(measurements):
 
 def compare(input_file_name, baseline_data):
     if not baseline_data:
-        print(f"Baseline file is empty, nothing to compare.", file=sys.stderr)
+        print("Baseline file is empty, nothing to compare.", file=sys.stderr)
         return
 
     with open(input_file_name, "r") as measurement:
@@ -286,6 +286,6 @@ if __name__ == "__main__":
     if args.update:
         baseline_data = load_baseline_file(args.gcs_bucket, args.baseline_file)
         result = add_to_baseline_file(args.update, baseline_data,
-                args.baseline_threshold)
+                                      args.baseline_threshold)
         save_baseline_file(args.gcs_bucket, args.baseline_file, result)
         sys.exit(0)
