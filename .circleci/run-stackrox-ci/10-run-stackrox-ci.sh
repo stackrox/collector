@@ -16,18 +16,18 @@ DATA=$(jq -cn --arg collector_version "$COLLECTOR_VERSION" '{
     "branch": "gavin/build-all-on-demand",
     "parameters": {
         "trigger_on_demand": true,
+	"workflow_name": "build_all",
 	"collector_version": "$collector_version"
     }
 }')
 
-stackrox_branch=jv/ROX-9202-run-stackrox-circleci-from-collector-circleci
-stackrox_branch_encoded="${stackrox_branch/\//%2F}"
-ci_url="https://app.circleci.com/pipelines/github/stackrox/stackrox?branch=${stackrox_branch_encoded}&filter=all"
+endpoint=https://circleci.com/api/v2/project/github/stackrox/stackrox/pipeline
+response="$(curl -X POST --header 'Content-Type: application/json' \
+        --header "Circle-Token: $CIRCLE_TOKEN_ROXBOT" "$endpoint" -d "$DATA")"
+
+build_num="$(echo "$response" | jq '.number')"
+ci_url="https://app.circleci.com/pipelines/github/stackrox/stackrox/$build_num"
 
 echo "You can find the StackRox CircleCI results here $ci_url"
-
-endpoint=https://circleci.com/api/v2/project/github/stackrox/stackrox/pipeline
-curl -X POST --header 'Content-Type: application/json' \
-        --header "Circle-Token: $CIRCLE_TOKEN_ROXBOT" "$endpoint" -d "$DATA"
 
 comment_on_pr_with_ci_link "$ci_url"
