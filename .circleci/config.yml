@@ -363,10 +363,15 @@ jobs:
   builder:
     <<: *defaultMachine
     resource_class: large
+    environment:
+    - QUAY_REPO: << pipeline.parameters.quay-repo >>
+    - DOCKER_REPO: "docker.io/stackrox"
+    - PUBLIC_REPO: "quay.io/stackrox-io"
 
     steps:
     - initcommand
     - docker-login-push
+    - quay-login-push
 
     - run:
         name: Restore collector-builder image
