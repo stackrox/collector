@@ -1,4 +1,4 @@
-#!/usr/env/bin bash
+#!/usr/bin/env bash
 set -eo pipefail
 
 pip install --upgrade scipy google-cloud-storage
