@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 set -eox pipefail
 
-BRANCH=$1
-BUILD_NUM=$2
-
 comment_on_pr_with_ci_link() {
     local ci_url=$1
 
@@ -15,32 +12,15 @@ comment_on_pr_with_ci_link() {
     hub-comment -template-file "${CI_ROOT}/run-stackrox-ci/ci-url-comment-template.tpl"
 }
 
-git clone git@github.com:stackrox/stackrox.git
-cd stackrox
-
-git config user.email "$GITHUB_USER_NAME"
-git config user.name "$GITHUB_USER_EMAIL"
-
-stackrox_branch="${BRANCH}_CI"
-if git branch -a | grep "$stackrox_branch"; then
-    git checkout "$stackrox_branch"
-else
-    git checkout -b "$stackrox_branch"
-fi
-
-echo "$COLLECTOR_VERSION" > COLLECTOR_VERSION
-git add COLLECTOR_VERSION
-git commit -m "Automatic commit ${BUILD_NUM}. Testing collector version ${COLLECTOR_VERSION}"
-
-git push -f origin HEAD
-
-DATA=$(jq -cn --arg branch "$stackrox_branch" '{
-    "branch": $branch,
+DATA=$(jq -cn --arg collector_version "$COLLECTOR_VERSION" '{
+    "branch": "gavin/build-all-on-demand",
     "parameters": {
-        "trigger_on_demand": false
+        "trigger_on_demand": true,
+	"collector_version": "$collector_version"
     }
 }')
 
+stackrox_branch=jv/ROX-9202-run-stackrox-circleci-from-collector-circleci
 stackrox_branch_encoded="${stackrox_branch/\//%2F}"
 ci_url="https://app.circleci.com/pipelines/github/stackrox/stackrox?branch=${stackrox_branch_encoded}&filter=all"
 
