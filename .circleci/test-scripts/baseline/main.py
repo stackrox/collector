@@ -34,9 +34,9 @@ import argparse
 import json
 import os
 import sys
+import time
 
 from itertools import groupby, zip_longest
-from operator import itemgetter
 from collections import Counter
 from scipy import stats
 
@@ -56,13 +56,17 @@ DEFAULT_BASELINE_THRESHOLD = 10
 EMPTY_BASELINE_STRUCTURE = []
 
 
-def load_baseline_file(bucket_name, baseline_file):
+def get_gcs_blob(bucket_name, filename):
     credentials = json.loads(os.environ["GOOGLE_CREDENTIALS_CIRCLECI_COLLECTOR"])
     storage_credentials = service_account.Credentials.from_service_account_info(credentials)
     storage_client = storage.Client(credentials=storage_credentials)
 
     bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(baseline_file)
+    return bucket.blob(baseline_file)
+
+
+def load_baseline_file(bucket_name, baseline_file):
+    blob = get_gcs_blob(bucket_name, baseline_file)
 
     try:
         contents = blob.download_as_string()
@@ -76,22 +80,19 @@ def load_baseline_file(bucket_name, baseline_file):
         return []
 
 
-def save_baseline_file(bucket, baseline_file, data):
-    credentials = json.loads(os.environ["GOOGLE_CREDENTIALS_CIRCLECI_COLLECTOR"])
-    storage_credentials = service_account.Credentials.from_service_account_info(credentials)
-    storage_client = storage.Client(credentials=storage_credentials)
-
-    bucket = storage_client.bucket(bucket)
-    blob = bucket.blob(baseline_file)
+def save_baseline_file(bucket_name, baseline_file, data):
+    blob = get_gcs_blob(bucket_name, baseline_file)
     blob.upload_from_string(json.dumps(data))
 
 
-def is_no_overhead(record):
-    return record.get("TestName") == "baseline_benchmark"
+def is_test(test_name, record):
+    return record.get("TestName") == test_name
 
 
-def is_overhead(record):
-    return record.get("TestName") == "collector_benchmark"
+def get_timestamp(record):
+    field = record.get("Timestamp")
+    parsed = time.strptime(field, "%Y-%m-%d %H:%M:%S")
+    return time.mktime(parsed)
 
 
 def add_to_baseline_file(input_file_name, data, threshold):
@@ -101,23 +102,25 @@ def add_to_baseline_file(input_file_name, data, threshold):
         if data:
             verify_new_data(data, new_measurement)
 
+        # Baseline contains several tests per one benchmark record
+        test_names = set(value["TestName"] for value in data)
+
         result = []
         for _, values in group_data(data, "VmConfig", "CollectionMethod"):
-            ordered = sorted(values,
-                    key=itemgetter("Timestamp"), reverse=True)
+            # For every group (vm, method) sort the records in ascending order
+            # to get rid of the oldest data (at the beginning or the list).
+            ordered = sorted(values, key=get_timestamp)
 
-            # Each benchmark data contains two values, with and without
-            # collector, and the result array is a flattened version of it. The
-            # threshold is formulated in benchmarks, so double it.
-            if len(ordered) >= threshold * 2:
-                # Drop one oldest pair (no overhead, overhead) in every group
-                _, *no_overhead = filter(is_no_overhead, ordered)
-                _, *overhead = filter(is_overhead, ordered)
-            else:
-                no_overhead = [*filter(is_no_overhead, ordered)]
-                overhead = [*filter(is_overhead, ordered)]
+            # Verify for each test type whithin the data, that its length is
+            # not over the threshold. Drop the oldest items when needed.
+            for t in test_names:
+                tests = [t for t in ordered if is_test(t)]
 
-            result.extend(no_overhead + overhead)
+                if len(tests) >= threshold:
+                    cutoff = len(tests) - threshold
+                    result.extend(tests[cutoff:])
+                else:
+                    result.extend(tests)
 
         result.extend(new_measurement)
         return result
@@ -153,6 +156,9 @@ def verify_new_data(baseline_data, new_data):
         for v in nvalues:
             counter.update(v.keys())
 
+        # We rely only on baseline/collector hackbench at the moment. As soon
+        # as data for more tests will be collected, this section has to be
+        # extended accordingly.
         no_overhead_count = counter.get("baseline_benchmark", 0)
         overhead_count = counter.get("collector_benchmark", 0)
 
@@ -166,11 +172,6 @@ def process(content):
     Transform benchmark data into the format CI scripts work with.
     """
 
-    data = [
-        record for record in content
-        if record.get("Metrics", {}).get("hackbench_avg_time")
-    ]
-
     processed = [
         {
             "kernel": record.get("VmConfig"),
@@ -178,7 +179,8 @@ def process(content):
             "timestamp": record.get("Timestamp"),
             record["TestName"]: record.get("Metrics").get("hackbench_avg_time")
         }
-        for record in data
+        for record in content
+        if record.get("Metrics", {}).get("hackbench_avg_time")
     ]
 
     return group_data(processed, "kernel", "collection_method")
