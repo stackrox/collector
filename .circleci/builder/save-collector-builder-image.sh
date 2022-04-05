@@ -20,13 +20,23 @@ for repo in "${image_repos[@]}"; do
     if [[ "${COLLECTOR_BUILDER_TAG}" != "cache" ]]; then
         # Push cache only if creating a new builder
         echo "Pushing image ${image}"
+
+        # Only Docker image is build at this point, retag it for others.
+        # Tagging Docker image doesn't make any changes.
+        docker tag "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}" "${image}"
+
         docker image inspect "${image}" > /dev/null
         "${WORKSPACE_ROOT}/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh" "${image}"
 
     fi
 
     if [[ "$BRANCH" == "master" ]]; then
-        docker tag "${image}" "${repo}:cache"
+        echo "Pushing image ${repo}:cache"
+
+        # Only Docker image is build at this point, retag it for others.
+        # Tagging Docker image doesn't make any changes.
+        docker tag "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}" "${repo}:cache"
+
         docker image inspect "${repo}:cache" > /dev/null
         "${WORKSPACE_ROOT}/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh" "${repo}:cache"
     fi
