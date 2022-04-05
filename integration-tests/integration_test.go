@@ -64,14 +64,14 @@ func TestRepeatedNetworkFlow(t *testing.T) {
 	// The last server to client connection is recorded as being inacitve when the afterglow period has expired
 	// Thus the reported connections are active, inactive
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
-		afterglowPeriod: 10,
-		scrapeInterval: 4,
-		enableAfterglow: true,
-		numMetaIter: 1,
-		numIter: 11,
-		sleepBetweenCurlTime: 2,
+		afterglowPeriod:        10,
+		scrapeInterval:         4,
+		enableAfterglow:        true,
+		numMetaIter:            1,
+		numIter:                11,
+		sleepBetweenCurlTime:   2,
 		sleepBetweenIterations: 1,
-		expectedReports: []bool{true, false},
+		expectedReports:        []bool{true, false},
 	}
 	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
@@ -80,14 +80,14 @@ func TestRepeatedNetworkFlowWithZeroAfterglowPeriod(t *testing.T) {
 	// Afterglow is disables as the afterglowPeriod is 0
 	// All server to client connections are reported.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
-		afterglowPeriod: 0,
-		scrapeInterval: 2,
-		enableAfterglow: true,
-		numMetaIter: 1,
-		numIter: 3,
-		sleepBetweenCurlTime: 3,
+		afterglowPeriod:        0,
+		scrapeInterval:         2,
+		enableAfterglow:        true,
+		numMetaIter:            1,
+		numIter:                3,
+		sleepBetweenCurlTime:   3,
 		sleepBetweenIterations: 1,
-		expectedReports: []bool{false, false, false},
+		expectedReports:        []bool{false, false, false},
 	}
 	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
@@ -95,14 +95,14 @@ func TestRepeatedNetworkFlowWithZeroAfterglowPeriod(t *testing.T) {
 func TestRepeatedNetworkFlowThreeCurlsNoAfterglow(t *testing.T) {
 	// The afterglow period is set to 0 so this has the same behavior as if afterglow was disabled.
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
-		afterglowPeriod: 0,
-		scrapeInterval: 4,
-		enableAfterglow: false,
-		numMetaIter: 1,
-		numIter: 3,
-		sleepBetweenCurlTime: 6,
+		afterglowPeriod:        0,
+		scrapeInterval:         4,
+		enableAfterglow:        false,
+		numMetaIter:            1,
+		numIter:                3,
+		sleepBetweenCurlTime:   6,
 		sleepBetweenIterations: 1,
-		expectedReports: []bool{false, false, false},
+		expectedReports:        []bool{false, false, false},
 	}
 	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
@@ -134,6 +134,8 @@ type ContainerStat struct {
 
 type PerformanceResult struct {
 	TestName         string
+	Timestamp        string
+	InstanceType     string
 	VmConfig         string
 	CollectionMethod string
 	Metrics          map[string]float64
@@ -149,20 +151,20 @@ type RepeatedNetworkFlowTestSuite struct {
 	//networking events. Sometimes if a connection is made multiple times within a short time
 	//called an "afterglow" period, we only want to report the connection once.
 	IntegrationTestSuiteBase
-	clientContainer string
-	clientIP        string
-	serverContainer string
-	serverIP        string
-	serverPort      string
-	enableAfterglow	bool
-	afterglowPeriod	int
-	scrapeInterval	int
-	numMetaIter	int
-	numIter		int
-	sleepBetweenCurlTime	int
-	sleepBetweenIterations	int
-	expectedReports		[]bool // An array of booleans representing the connection. true is active. fasle is inactive.
-	observedReports		[]bool
+	clientContainer        string
+	clientIP               string
+	serverContainer        string
+	serverIP               string
+	serverPort             string
+	enableAfterglow        bool
+	afterglowPeriod        int
+	scrapeInterval         int
+	numMetaIter            int
+	numIter                int
+	sleepBetweenCurlTime   int
+	sleepBetweenIterations int
+	expectedReports        []bool // An array of booleans representing the connection. true is active. fasle is inactive.
+	observedReports        []bool
 }
 
 type ImageLabelJSONTestSuite struct {
@@ -438,7 +440,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.clientIP, err = s.getIPAddress("nginx-curl")
 	s.Require().NoError(err)
 
-	totalTime := (s.sleepBetweenCurlTime * s.numIter + s.sleepBetweenIterations) * s.numMetaIter + s.afterglowPeriod + 10
+	totalTime := (s.sleepBetweenCurlTime*s.numIter+s.sleepBetweenIterations)*s.numMetaIter + s.afterglowPeriod + 10
 	time.Sleep(time.Duration(totalTime) * time.Second)
 	logLines := s.GetLogLines("grpc-server")
 	s.observedReports = GetNetworkActivity(logLines, serverAddress)
@@ -685,9 +687,9 @@ func (s *IntegrationTestSuiteBase) StartContainerStats() {
 	s.Require().NoError(err)
 }
 
-func (s *IntegrationTestSuiteBase) GetLogLines(containerName string) ([]string) {
+func (s *IntegrationTestSuiteBase) GetLogLines(containerName string) []string {
 	logs, err := s.containerLogs(containerName)
-	s.Require().NoError(err, containerName + " failure")
+	s.Require().NoError(err, containerName+" failure")
 	logLines := strings.Split(logs, "\n")
 	return logLines
 }
@@ -742,6 +744,8 @@ func (s *IntegrationTestSuiteBase) PrintContainerStats(stats []ContainerStat) {
 func (s *IntegrationTestSuiteBase) WritePerfResults(testName string, stats []ContainerStat, metrics map[string]float64) {
 	perf := PerformanceResult{
 		TestName:         testName,
+		Timestamp:        time.Now().Format("2006-01-02 15:04:05"),
+		InstanceType:     ReadEnvVarWithDefault("VM_INSTANCE_TYPE", "default"),
 		VmConfig:         ReadEnvVarWithDefault("VM_CONFIG", "default"),
 		CollectionMethod: ReadEnvVarWithDefault("COLLECTION_METHOD", "kernel_module"),
 		Metrics:          metrics,
