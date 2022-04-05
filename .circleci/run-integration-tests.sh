@@ -8,7 +8,20 @@ BUILD_NUM=$3
 echo "Running tests with image '${COLLECTOR_IMAGE}'"
 
 if [[ $remote_host_type != "local" ]]; then
-    make -C "${SOURCE_ROOT}" integration-tests-repeat-network integration-tests-baseline integration-tests integration-tests-report
+    if [[ "${MEASURE_DRIVER_PERFORMANCE}" == "true" ]]; then
+        make -C "${SOURCE_ROOT}/integration-tests/container/perf" all
+
+        COLLECTOR_BCC_COMMAND="/tools/do_syscall_64.py -o /tmp/baseline.json" make -C "${SOURCE_ROOT}" integration-tests-baseline
+        COLLECTOR_BCC_COMMAND="/tools/do_syscall_64.py -o /tmp/${COLLECTION_METHOD}-benchmark.json" make -C "${SOURCE_ROOT}" integration-tests-benchmark
+
+        make -C "${SOURCE_ROOT}" integration-tests-repeat-network integration-tests integration-tests-report
+
+        cp "/tmp/baseline.json" "${WORKSPACE_ROOT}/${TEST_NAME}-baseline.json"
+        cp "/tmp/${COLLECTION_METHOD}-benchmark.json" "${WORKSPACE_ROOT}/${TEST_NAME}-${COLLECTION_METHOD}-benchmark.json"
+    else
+        # I am not sure why there is a difference in the tests that are run locally and in VMs. Perhaps they should be the same
+        make -C "${SOURCE_ROOT}" integration-tests-repeat-network integration-tests-baseline integration-tests integration-tests-report
+    fi
 
     cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
 else

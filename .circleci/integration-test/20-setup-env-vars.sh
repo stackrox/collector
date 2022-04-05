@@ -37,3 +37,10 @@ if [[ "$dockerized" == "true" ]]; then
       export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}-dockerized"
 EOF
 fi
+
+# if "${CI_ROOT}/pr_has_label.sh" ci-record-driver-performance; then
+cat >> "$BASH_ENV" <<- EOF
+  export MEASURE_DRIVER_PERFORMANCE=true
+  export STOP_TIMEOUT=60
+EOF
+#fi
