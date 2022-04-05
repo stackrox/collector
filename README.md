@@ -1,5 +1,7 @@
 # Collector
 
+[![CircleCI](https://circleci.com/gh/stackrox/collector/tree/master.svg?style=shield)](https://circleci.com/gh/stackrox/collector/tree/master)
+
 ## Collector development
 
 ### Cloning the repo
