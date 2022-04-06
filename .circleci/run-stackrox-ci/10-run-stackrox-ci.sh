@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -eox pipefail
 
+BRANCH=$1
+BUILD_NUM=$2
+
 comment_on_pr_with_ci_link() {
     local ci_url=$1
 
@@ -12,12 +15,29 @@ comment_on_pr_with_ci_link() {
     hub-comment -template-file "${CI_ROOT}/run-stackrox-ci/ci-url-comment-template.tpl"
 }
 
-DATA=$(jq -cn --arg collector_version "$COLLECTOR_VERSION" '{
-    "branch": "master",
+git clone git@github.com:stackrox/stackrox.git
+cd stackrox
+
+git config user.email "$GITHUB_USER_NAME"
+git config user.name "$GITHUB_USER_EMAIL"
+
+stackrox_branch="${BRANCH}_COLLECTOR_CI"
+if git branch | grep stackrox_branch; then
+    git checkout "$stackrox_branch"
+else
+    git checkout -b "$stackrox_branch"
+fi
+
+echo "$COLLECTOR_VERSION" > COLLECTOR_VERSION
+git add COLLECTOR_VERSION
+git commit -m "Automatic commit ${BUILD_NUM}. Testing collector version ${COLLECTOR_VERSION}"
+
+git push -f origin HEAD
+
+DATA=$(jq -cn --arg branch "$stackrox_branch" '{
+    "branch": $branch,
     "parameters": {
-        "trigger_on_demand": true,
-	"workflow_name": "build_all",
-	"collector_version": $collector_version
+        "trigger_on_demand": false,
     }
 }')
 
