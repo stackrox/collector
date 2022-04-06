@@ -16,6 +16,7 @@ else
     sudo cp /proc/sys/kernel/core_pattern /tmp/core_pattern
     echo '/tmp/core.out' | sudo tee /proc/sys/kernel/core_pattern
 
+    echo "driver perf? ${MEASURE_DRIVER_PERFORMANCE}"
     if [[ "${MEASURE_DRIVER_PERFORMANCE}" == "true" ]]; then
         make -C "${SOURCE_ROOT}/integration-tests/container/perf" all
 
