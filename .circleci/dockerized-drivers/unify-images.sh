@@ -5,7 +5,7 @@ DRIVER_REPO="$1"
 SHARDS_COUNT="$2"
 
 # If nothing was built, we don't need to unify anything
-if [[ ! -s ~/workspace/build-tasks ]]; then
+if [[ ! -s "${WORKSPACE_ROOT}/build-tasks" ]]; then
     if [[ "${COLLECTOR_DRIVERS_TAG}" == "${COLLECTOR_DRIVERS_CACHE}" ]]; then
         exit 0
     fi
