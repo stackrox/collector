@@ -13,7 +13,7 @@ comment_on_pr_with_ci_link() {
 }
 
 DATA=$(jq -cn --arg collector_version "$COLLECTOR_VERSION" '{
-    "branch": "gavin/build-all-on-demand",
+    "branch": "master",
     "parameters": {
         "trigger_on_demand": true,
 	"workflow_name": "build_all",
