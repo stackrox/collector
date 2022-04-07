@@ -18,6 +18,8 @@ else
 
     echo "driver perf? ${MEASURE_DRIVER_PERFORMANCE}"
     if [[ "${MEASURE_DRIVER_PERFORMANCE}" == "true" ]]; then
+        mkdir "${SOURCE_ROOT}/integration-tests/performance-logs"
+
         make -C "${SOURCE_ROOT}/integration-tests/container/perf" all
 
         COLLECTOR_BCC_COMMAND="/tools/do_syscall_64.py -o /tmp/baseline.json" make -C "${SOURCE_ROOT}" integration-tests-baseline
@@ -25,8 +27,8 @@ else
 
         make -C "${SOURCE_ROOT}" integration-tests-repeat-network integration-tests integration-tests-report || exit_code=$?
 
-        cp "/tmp/baseline.json" "${SOURCE_ROOT}/integration-tests/baseline-${TEST_NAME}-${COLLECTION_METHOD}.json"
-        cp "/tmp/benchmark.json" "${SOURCE_ROOT}/integration-tests/benchmark-${TEST_NAME}-${COLLECTION_METHOD}.json"
+        cp "/tmp/baseline.json" "${SOURCE_ROOT}/integration-tests/performance-logs/baseline-${TEST_NAME}-${COLLECTION_METHOD}.json"
+        cp "/tmp/benchmark.json" "${SOURCE_ROOT}/integration-tests/performance-logs/benchmark-${TEST_NAME}-${COLLECTION_METHOD}.json"
     else
         make -C "${SOURCE_ROOT}" integration-tests-repeat-network integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report || exit_code=$?
     fi

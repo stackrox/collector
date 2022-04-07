@@ -867,9 +867,8 @@ jobs:
     - ci-artifacts/store:
         path: /tmp/core.out
     - ci-artifacts/store:
-        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/baseline-*.json
-    - ci-artifacts/store:
-        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/benchmark-*.json
+        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/performance-logs
+        destination: performance-logs
 
   integration-test:
     parameters:
