@@ -866,6 +866,12 @@ jobs:
         destination: "kernel_module-circle_local_<< parameters.vm-config >>-perf.json"
     - ci-artifacts/store:
         path: /tmp/core.out
+    - ci-artifacts/store:
+        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/baseline.json
+        destination: "baseline-<< parameters.vm-config >>.json"
+    - ci-artifacts/store:
+        path: ~/workspace/go/src/github.com/stackrox/collector/integration-tests/benchmark.json
+        destination: "benchmark-<< parameters.vm-config >>-collection.json"
 
   integration-test:
     parameters:

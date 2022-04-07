@@ -21,12 +21,12 @@ else
         make -C "${SOURCE_ROOT}/integration-tests/container/perf" all
 
         COLLECTOR_BCC_COMMAND="/tools/do_syscall_64.py -o /tmp/baseline.json" make -C "${SOURCE_ROOT}" integration-tests-baseline
-        COLLECTOR_BCC_COMMAND="/tools/do_syscall_64.py -o /tmp/${COLLECTION_METHOD}-benchmark.json" make -C "${SOURCE_ROOT}" integration-tests-benchmark
+        COLLECTOR_BCC_COMMAND="/tools/do_syscall_64.py -o /tmp/benchmark.json" make -C "${SOURCE_ROOT}" integration-tests-benchmark
 
         make -C "${SOURCE_ROOT}" integration-tests-repeat-network integration-tests integration-tests-report || exit_code=$?
 
-        cp "/tmp/baseline.json" "${WORKSPACE_ROOT}/${TEST_NAME}-baseline.json"
-        cp "/tmp/${COLLECTION_METHOD}-benchmark.json" "${WORKSPACE_ROOT}/${TEST_NAME}-${COLLECTION_METHOD}-benchmark.json"
+        cp "/tmp/baseline.json" "${SOURCE_ROOT}/integration-tests/baseline.json"
+        cp "/tmp/benchmark.json" "${SOURCE_ROOT}/integration-tests/benchmark.json"
     else
         make -C "${SOURCE_ROOT}" integration-tests-repeat-network integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report || exit_code=$?
     fi
