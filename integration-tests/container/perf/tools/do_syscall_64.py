@@ -10,7 +10,11 @@ import json
 import argparse
 
 
+# to record the individual events from the bpf probe
 g_stats = defaultdict(list)
+
+# to record the number of lost events
+g_lost_count = 0
 
 
 def record_stats(cpu, data, size, bpf, output):
@@ -29,7 +33,8 @@ def record_stats(cpu, data, size, bpf, output):
 
 
 def lost(count):
-    print(f"lost {count}")
+    global g_lost_count
+    g_lost_count += count
 
 
 def exit_handler(bpf, output, *args):
@@ -47,6 +52,7 @@ def exit_handler(bpf, output, *args):
         # plain Exception so it is not possible to be more refined.
         print(f"[*] detaching failed: {e}")
 
+    print(f"possibly lost {g_lost_count} events")
     if output != '-':
         with open(output, 'w+') as o:
             json.dump(g_stats, o)
