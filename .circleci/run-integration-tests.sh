@@ -25,8 +25,8 @@ else
 
         make -C "${SOURCE_ROOT}" integration-tests-repeat-network integration-tests integration-tests-report || exit_code=$?
 
-        cp "/tmp/baseline.json" "${SOURCE_ROOT}/integration-tests/baseline.json"
-        cp "/tmp/benchmark.json" "${SOURCE_ROOT}/integration-tests/benchmark.json"
+        cp "/tmp/baseline.json" "${SOURCE_ROOT}/integration-tests/baseline-${TEST_NAME}-${COLLECTION_METHOD}.json"
+        cp "/tmp/benchmark.json" "${SOURCE_ROOT}/integration-tests/benchmark-${TEST_NAME}-${COLLECTION_METHOD}.json"
     else
         make -C "${SOURCE_ROOT}" integration-tests-repeat-network integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report || exit_code=$?
     fi
