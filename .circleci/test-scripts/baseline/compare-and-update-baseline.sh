@@ -11,6 +11,7 @@ export BASELINE="${CI_ROOT}/test-scripts/baseline/"
     | awk -f "${BASELINE}"/format.awk > "${WORKSPACE_ROOT}"/benchmark.md
 
 # The baseline has to be updated only in the main branch.
-if [[ "$CIRCLE_BRANCH" == "master" || -n "$CIRCLE_TAG" ]]; then
+# Take into account that CIRCLE_TAG maybe not set.
+if [[ "$CIRCLE_BRANCH" == "master" || -n "${CIRCLE_TAG:-}" ]]; then
     "${BASELINE}"/main.py --update "${WORKSPACE_ROOT}"/all-perf.json
 fi
