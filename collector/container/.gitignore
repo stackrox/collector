@@ -1,4 +1,4 @@
 bundle.tar.gz
 bundle.tar.gz.sha512
-prebuild.sh
-/scripts/
+/rhel/scripts/
+/devel/scripts/

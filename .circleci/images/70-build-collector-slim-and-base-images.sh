@@ -8,10 +8,20 @@ build_args=(
     --build-arg ADDRESS_SANITIZER="$SANITIZER_TESTS"
 )
 
-"${SOURCE_ROOT}/collector/container/rhel/create-bundle.sh" \
+COLLECTOR_BUILD_CONTEXT="collector/container/rhel"
+if [[ "${SANITIZER_TESTS}" == "true" || "${BUILD_USE_VALGRIND}" == "true" ]]; then
+    COLLECTOR_BUILD_CONTEXT="collector/container/devel"
+    build_args+=(
+        --build-arg BASE_REGISTRY="quay.io"
+        --build-arg BASE_IMAGE="centos/centos"
+        --build-arg BASE_TAG="stream8"
+    )
+fi
+
+"${SOURCE_ROOT}/collector/container/create-bundle.sh" \
     "$SOURCE_ROOT/collector/container" \
     "-" \
-    "$SOURCE_ROOT/collector/container/rhel"
+    "$SOURCE_ROOT/${COLLECTOR_BUILD_CONTEXT}"
 
 docker build \
     -t "${DOCKER_REPO}/collector:${COLLECTOR_VERSION}-base" \
@@ -21,5 +31,5 @@ docker build \
     -t "${PUBLIC_REPO}/collector:${COLLECTOR_VERSION}-base" \
     -t "${PUBLIC_REPO}/collector:${COLLECTOR_VERSION}-slim" \
     "${build_args[@]}" \
-    -f "${SOURCE_ROOT}/collector/container/rhel/Dockerfile" \
-    "$SOURCE_ROOT/collector/container/rhel"
+    -f "${SOURCE_ROOT}/collector/container/Dockerfile" \
+    "$SOURCE_ROOT/${COLLECTOR_BUILD_CONTEXT}"

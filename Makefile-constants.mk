@@ -16,6 +16,8 @@ ADDRESS_SANITIZER ?= false
 CMAKE_BUILD_TYPE ?= Release
 COLLECTOR_APPEND_CID ?= false
 
+COLLECTOR_BUILD_CONTEXT = collector/container/rhel
+
 ifeq ($(USE_HELGRIND),true)
 	COLLECTOR_PRE_ARGUMENTS := valgrind --tool=helgrind
 	USE_VALGRIND := true
