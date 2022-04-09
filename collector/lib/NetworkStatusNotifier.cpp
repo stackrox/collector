@@ -270,6 +270,7 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
 }
 
 void NetworkStatusNotifier::RunSingleAfterglow(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
+  CLOG(INFO) << "asdf";
   WaitUntilWriterStarted(writer, 10);
 
   ConnMap old_conn_state;
