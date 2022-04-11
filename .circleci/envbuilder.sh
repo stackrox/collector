@@ -243,6 +243,7 @@ setupGCPVM() {
 
     if [[ "$GCP_VM_TYPE" == "flatcar" ]]; then
         GCP_IMAGE_PROJECT="kinvolk-public"
+        GCP_VM_USER="core"
     elif [[ "$GCP_VM_TYPE" == "garden-linux" ]]; then
         GCP_IMAGE_PROJECT="sap-se-gcp-gardenlinux"
     else
