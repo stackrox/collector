@@ -85,7 +85,7 @@ func NewGcloudCommandBuilder() CommandBuilder {
 		options:  ReadEnvVar("GCLOUD_OPTIONS"),
 		vmType:   ReadEnvVarWithDefault("VM_CONFIG", "default"),
 	}
-	if gcb.user == "" && strings.Contains(gcb.vmType, "coreos") {
+	if gcb.user == "" && (strings.Contains(gcb.vmType, "coreos") || strings.Contains(gcb.vmType, "flatcar")) {
 		gcb.user = "core"
 	}
 	return gcb
