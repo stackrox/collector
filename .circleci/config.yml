@@ -176,6 +176,13 @@ commands:
             -p "$STACKROX_IO_PUSH_PASSWORD" \
             collector.stackrox.io
 
+  install-hub-comment:
+    steps:
+    - run:
+        name: Install HUB comment
+        command: |
+          "${CI_ROOT}/install-hub-comment.sh"
+
 jobs:
   initjob:
     <<: *defaultImage
@@ -761,6 +768,33 @@ jobs:
           "${SOURCE_ROOT}/.circleci/dockerized-drivers/build-full-collector.sh" \
             "docker.io/stackrox"
 
+  run-stackrox-ci:
+    <<: *defaultImage
+
+    steps:
+    - initcommand
+
+    - run:
+        name: Check whether to run job
+        command: |
+          if [[ "${RUN_STACKROX_CI}" == "false" ]]; then
+            echo "Skipping job run-stackrox-ci."
+            circleci step halt
+            exit 0
+          fi
+
+    - install-hub-comment
+
+    - add_ssh_keys:
+        fingerprints:
+        - "32:e2:6d:de:c3:bb:b8:a4:62:89:a1:df:7a:30:37:f2"
+
+    - run:
+        name: Run Stackrox CI
+        command: |
+          "${SOURCE_ROOT}/.circleci/run-stackrox-ci/10-run-stackrox-ci.sh" "${CIRCLE_BRANCH}" "${CIRCLE_BUILD_NUM}"
+
+
   integration-test-local:
     parameters:
       vm-config:
@@ -975,6 +1009,8 @@ jobs:
         name: "Gather Perf Data"
         command: |
           "${CI_ROOT}/test-scripts/baseline/compare-and-update-baseline.sh"
+
+    - install-hub-comment
 
     - run:
         name: Comment on PR
@@ -1281,6 +1317,10 @@ workflows:
           - redhat-developer-account-login
         requires:
         - initjob
+    - run-stackrox-ci:
+        <<: *runOnAllTagsWithDockerIOPullCtx
+        requires:
+        - images
     - integration-test-local:
         <<: *runOnAllTagsWithDockerIOPushCtx
         name: integration-test-local

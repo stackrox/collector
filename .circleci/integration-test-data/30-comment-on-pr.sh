@@ -15,4 +15,4 @@ export COLLECTOR_TAG="${COLLECTOR_TAG}"
 export COLLECTOR_BUILDER_TAG="${COLLECTOR_BUILDER_TAG}"
 export PERF_TABLE="$perf_table"
 
-$hub_comment_bin -template-file "${CI_ROOT}/performance-comment-template.tpl"
+hub-comment -template-file "${CI_ROOT}/performance-comment-template.tpl"
