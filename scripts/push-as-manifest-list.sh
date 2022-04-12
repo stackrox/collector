@@ -29,6 +29,6 @@ for i in {1..5}; do
 done
 ((pushed))
 
-docker manifest create "$image" "$arch_image"
+docker manifest create "$image" "$arch_image" | cat
 
-docker manifest push "$image"
+docker manifest push "$image" | cat
