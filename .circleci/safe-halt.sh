@@ -4,7 +4,7 @@ set -euo pipefail
 
 circleci_halt() {
     if command -v circleci > /dev/null; then
-        circleci step halt
+        circleci-agent step halt
         exit 0
     fi
 }
