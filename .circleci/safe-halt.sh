@@ -3,7 +3,7 @@
 set -euo pipefail
 
 circleci_halt() {
-    if command -v circleci > /dev/null; then
+    if command -v circleci-agent > /dev/null; then
         circleci-agent step halt
         exit 0
     fi
@@ -16,5 +16,5 @@ for _ in {1..5}; do
     circleci_halt
 done
 
-echo >&2 "Failed to run 'circleci' command"
+echo >&2 "Failed to run 'circleci-agent' command"
 exit 1
