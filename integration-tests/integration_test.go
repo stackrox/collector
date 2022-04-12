@@ -37,7 +37,7 @@ const (
 
 func TestCollectorGRPC(t *testing.T) {
 	suite.Run(t, new(ProcessNetworkTestSuite))
-	suite.Run(t, new(BenchmarkCollectorTestSuite))
+	// suite.Run(t, new(BenchmarkCollectorTestSuite))
 }
 
 func TestProcessNetwork(t *testing.T) {
