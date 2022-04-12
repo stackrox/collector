@@ -7,7 +7,8 @@ RUN yum -y groupinstall "Development Tools" && \
     ;
 
 RUN mkdir -p /output
-COPY build-kos /usr/bin/
+COPY build-kos /scripts/
+COPY build-wrapper.sh /usr/bin/
 COPY prepare-src /usr/bin
 
 COPY redhat-entrypoint.sh /redhat-entrypoint.sh

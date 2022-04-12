@@ -38,7 +38,8 @@ RUN subscription-manager register --username $REDHAT_USERNAME --password $REDHAT
 # This directory goes separately to prevent it from being modified/deleted when switching branches
 COPY /collector/kernel-modules/dockerized/scripts /scripts
 COPY /collector/kernel-modules/build/prepare-src /scripts/prepare-src.sh
-COPY /collector/kernel-modules/build/build-kos /scripts/compile.sh
+COPY /collector/kernel-modules/build/build-kos /scripts/
+COPY /collector/kernel-modules/build/build-wrapper.sh /scripts/compile.sh
 
 FROM rhel-8-base AS patcher
 
@@ -103,7 +104,8 @@ RUN subscription-manager register --username $REDHAT_USERNAME --password $REDHAT
 # This directory goes separately to prevent it from being modified/deleted when switching branches
 COPY /collector/kernel-modules/dockerized/scripts /scripts
 COPY /collector/kernel-modules/build/prepare-src /scripts/prepare-src.sh
-COPY /collector/kernel-modules/build/build-kos /scripts/compile.sh
+COPY /collector/kernel-modules/build/build-kos /scripts/
+COPY /collector/kernel-modules/build/build-wrapper.sh /scripts/compile.sh
 
 FROM rhel-7-base AS rhel-7-builder
 

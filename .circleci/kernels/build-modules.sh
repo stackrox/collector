@@ -19,7 +19,7 @@ for task_file in ~/kobuild-tmp/local-build-tasks.*; do
         -v "${shard_output_dir}:/output" \
         --tmpfs /scratch:exec \
         "build-kernel-modules-${flavor}" \
-        build-kos < "$task_file"
+        build-wrapper.sh < "$task_file"
 done
 sudo chown -R "$(id -u):$(id -g)" "$shard_output_dir"
 find "${shard_output_dir}/FAILURES" -type d -empty -depth -exec rmdir {} \;

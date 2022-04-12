@@ -19,7 +19,8 @@ RUN yum -y update && yum -y install yum-utils && \
     yum install -y rh-dotnet20-clang rh-dotnet20-llvm
 
 RUN mkdir -p /output
-COPY build-kos /usr/bin/
+COPY build-kos /scripts/
+COPY build-wrapper.sh /usr/bin/
 COPY prepare-src /usr/bin
 
 COPY oracle-entrypoint.sh /oracle-entrypoint.sh

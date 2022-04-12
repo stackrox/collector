@@ -26,7 +26,8 @@ RUN rm -rf /usr/bin/clang \
  && ln -s /usr/bin/llc-7 /usr/bin/llc
 
 RUN mkdir -p /output
-COPY build-kos /usr/bin/
+COPY build-kos /scripts/
+COPY build-wrapper.sh /usr/bin/
 COPY prepare-src /usr/bin
 
 WORKDIR /scratch
