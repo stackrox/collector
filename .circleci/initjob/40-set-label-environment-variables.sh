@@ -21,6 +21,12 @@ else
     echo 'export CMAKE_BUILD_TYPE=Release' >> "$shared_env"
 fi
 
+if [[ -f pr-metadata/labels/run-stackrox-ci ]]; then
+    echo 'export RUN_STACKROX_CI=true' >> ~/workspace/shared-env
+else
+    echo 'export RUN_STACKROX_CI=false' >> ~/workspace/shared-env
+fi
+
 # Loops over all possible types of Valgrind tests, checks the labels, and sets environment variables accordingly
 # Default is not to use Valgrind, but build with Valgrind if any Valgrind label is present
 BUILD_USE_VALGRIND="false"
