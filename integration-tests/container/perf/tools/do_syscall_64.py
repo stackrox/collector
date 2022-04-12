@@ -55,7 +55,12 @@ def exit_handler(bpf, output, *args):
     print(f"possibly lost {g_lost_count} events")
     if output != '-':
         with open(output, 'w+') as o:
-            json.dump(g_stats, o)
+            # Not using json.dump(g_stats, o) here because it is significantly
+            # slower than buffering the json string in-memory (because it makes
+            # a lot of IO calls) and often results in partial writes to the file.
+            #
+            # It is expected that the string is 200-300 Mb
+            o.write(json.dumps(g_stats))
 
     os._exit(0)
 
