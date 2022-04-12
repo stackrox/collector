@@ -26,7 +26,7 @@ push_with_retry() {
 }
 
 # No bundles to build, nothing left to do
-if [[ -z "$(ls -A ~/workspace/go/src/github.com/stackrox/bundles)" ]]; then
+if [[ -z "$(ls -A "${STACKROX_ROOT}/bundles")" ]]; then
     exit 0
 fi
 
@@ -38,7 +38,7 @@ docker build \
     --build-arg CACHE_TAG="${COLLECTOR_DRIVERS_CACHE}" \
     --tag "${IMAGE_TAG}" \
     -f "${SOURCE_ROOT}/kernel-modules/dockerized/Dockerfile" \
-    ~/workspace/go/src/github.com/stackrox
+    "${STACKROX_ROOT}"
 
 push_with_retry "${IMAGE_TAG}"
 exit $?

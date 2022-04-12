@@ -85,7 +85,7 @@ commands:
     - run:
         name: Read PR metadata
         command: |
-          ~/workspace/go/src/github.com/stackrox/collector/.circleci/read-labels.sh pr-metadata/labels
+          "${SOURCE_ROOT}/.circleci/read-labels.sh" pr-metadata/labels
 
   gcloud-init:
     parameters:
@@ -95,6 +95,7 @@ commands:
       bucket-permission-check:
         type: string
         default: gs://collector-build-cache
+
     steps:
     - run:
         name: Install and configure gcloud
@@ -140,21 +141,7 @@ commands:
     - run:
         name: Pull cache image
         command: |
-          # If we are running with dockerized-no-cache, we create an empty image as base
-          if [[ "${COLLECTOR_DRIVERS_CACHE}" == "no-cache" ]]; then
-            docker run --name empty-cache registry.access.redhat.com/ubi8/ubi:8.5 mkdir -p /kernel-modules/
-            docker commit empty-cache "<< pipeline.parameters.quay-repo >>/collector-drivers:$COLLECTOR_DRIVERS_CACHE"
-            docker rm empty-cache
-            exit 0
-          fi
-
-          # If we can't pull the cache image, we are either working with no cache or creating the cache itself.
-          # In any case, we can create the empty image to account for this
-          if ! docker pull "<< pipeline.parameters.quay-repo >>/collector-drivers:$COLLECTOR_DRIVERS_CACHE"; then
-            docker run --name empty-cache registry.access.redhat.com/ubi8/ubi:8.5 mkdir -p /kernel-modules/
-            docker commit empty-cache "<< pipeline.parameters.quay-repo >>/collector-drivers:$COLLECTOR_DRIVERS_CACHE"
-            docker rm empty-cache
-          fi
+          "${CI_ROOT}/dockerized-pull-cache-image/10-pull-cache-image.sh" "${COLLECTOR_DRIVERS_CACHE}" << pipeline.parameters.quay-repo >>
 
   dockerized-check-drivers-built:
     steps:
@@ -192,6 +179,10 @@ commands:
 jobs:
   initjob:
     <<: *defaultImage
+    environment:
+    - SOURCE_ROOT: /home/circleci/workspace/go/src/github.com/stackrox/collector
+    - CI_ROOT: /home/circleci/workspace/go/src/github.com/stackrox/collector/.circleci
+    - SHARED_ENV: /home/circleci/workspace/shared-env 
 
     steps:
     - checkout:
@@ -204,121 +195,30 @@ jobs:
     - run:
         name: "Pull git submodule"
         command: |
-          git -C ~/workspace/go/src/github.com/stackrox/collector submodule update --init
+          "${CI_ROOT}/initjob/10-pull-git-submodule.sh" "${SOURCE_ROOT}"
 
     - run:
         name: Set up shared environment
         command: |
-          cat >~/workspace/shared-env \<<-"EOF"
-            export GOPATH="${WORKSPACE_ROOT}/go"
-            export SOURCE_ROOT="${GOPATH}/src/github.com/stackrox/collector"
-            export CI_ROOT="${SOURCE_ROOT}/.circleci"
-            export COLLECTOR_SOURCE_ROOT="${SOURCE_ROOT}/collector"
-            export PATH="${PATH}:${GOPATH}/bin:${WORKSPACE_ROOT}/bin"
-            export MAX_LAYER_MB=300
-          EOF
+          "${CI_ROOT}/initjob/20-set-up-shared-environment.sh" "${SHARED_ENV}"
 
     - read-pr-metadata
 
     - run:
         name: Set COLLECTOR_VERSION
         command: |
-          COLLECTOR_VERSION="$(make -s -C ~/workspace/go/src/github.com/stackrox/collector tag)"
-
-          COLLECTOR_TAG="${COLLECTOR_VERSION}"
-          GCLOUD_SSH_FINGERPRINT="$(echo ${GCLOUD_SSH_KEY_PUB} | awk '{print $2}' | base64 -d | md5sum | awk '{print $1}')"
-          GCP_SSH_KEY_FILE="${HOME}/.ssh/id_rsa_${GCLOUD_SSH_FINGERPRINT}"
-
-          cat >> ~/workspace/shared-env \<<-EOF
-            export COLLECTOR_VERSION="${COLLECTOR_VERSION}"
-            export COLLECTOR_TAG="${COLLECTOR_TAG}"
-            export GCP_SSH_KEY_FILE="${GCP_SSH_KEY_FILE}"
-          EOF
-
-          if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" ]]; then
-          cat >> ~/workspace/shared-env \<<- EOF
-            export COLLECTOR_APPEND_CID=true
-          EOF
-          fi
-
-          if [[ -z "$CIRCLE_TAG" && "$CIRCLE_BRANCH" != "master" && ! -f pr-metadata/labels/build-builder-image && ! -f pr-metadata/labels/valgrind-unit-tests && ! -f pr-metadata/labels/valgrind-integration-tests ]]; then
-          cat >> ~/workspace/shared-env \<<-EOF
-            export COLLECTOR_BUILDER_TAG="cache"
-          EOF
-          else
-          cat >> ~/workspace/shared-env \<<-EOF
-            export COLLECTOR_BUILDER_TAG="circle-build-${CIRCLE_WORKFLOW_ID}"
-            export BUILD_BUILDER_IMAGE=true
-          EOF
-          fi
-
-          COLLECTOR_DRIVERS_CACHE="<< pipeline.parameters.dockerized-cache-tag >>"
-          COLLECTOR_DRIVERS_TAG="circle-build-${CIRCLE_WORKFLOW_ID}"
-          if [[ -f pr-metadata/labels/dockerized-no-cache ]]; then
-            COLLECTOR_DRIVERS_CACHE="no-cache"
-          fi
-
-          if [[ -n "$CIRCLE_TAG" || "$CIRCLE_BRANCH" == "master" ]]; then
-            COLLECTOR_DRIVERS_CACHE="<< pipeline.parameters.dockerized-cache-tag >>"
-            COLLECTOR_DRIVERS_TAG="<< pipeline.parameters.dockerized-cache-tag >>"
-          fi
-
-          cat >> ~/workspace/shared-env \<<-EOF
-            export COLLECTOR_DRIVERS_CACHE="${COLLECTOR_DRIVERS_CACHE}"
-            export COLLECTOR_DRIVERS_TAG="${COLLECTOR_DRIVERS_TAG}"
-          EOF
-
-          cat ~/workspace/shared-env
+          "${CI_ROOT}/initjob/30-set-collector-version.sh" \
+            "${SHARED_ENV}" \
+            << pipeline.parameters.dockerized-cache-tag >> \
+            "circle-build-${WORKFLOW_ID}" \
+            "${CIRCLE_TAG}" \
+            "${CIRCLE_BRANCH}" \
+            "${SOURCE_ROOT}"
 
     - run:
         name: Set label environment variables
         command: |
-          if [[ -f pr-metadata/labels/build-legacy-probes ]]; then
-            echo 'export BUILD_LEGACY_PROBES=true' >> ~/workspace/shared-env
-          else
-            echo 'export BUILD_LEGACY_PROBES=false' >> ~/workspace/shared-env
-          fi
-
-          if [[ -f pr-metadata/labels/build-full-images ]]; then
-            echo 'export BUILD_FULL_IMAGES=true' >> ~/workspace/shared-env
-          else
-            echo 'export BUILD_FULL_IMAGES=false' >> ~/workspace/shared-env
-          fi
-
-          if [[ -f pr-metadata/labels/debug ]]; then
-            echo 'export CMAKE_BUILD_TYPE=Debug' >> ~/workspace/shared-env
-          else
-            echo 'export CMAKE_BUILD_TYPE=Release' >> ~/workspace/shared-env
-          fi
-
-          # Loops over all possible types of Valgrind tests, checks the labels, and sets environment variables accordingly
-          # Default is not to use Valgrind, but build with Valgrind if any Valgrind label is present
-          BUILD_USE_VALGRIND="false"
-          for test_type in unit-tests integration-tests
-          do
-            CHECK_VALGRIND="false"
-            for valgrind_test_type in helgrind valgrind
-            do
-              up_valgrind_test_type=${valgrind_test_type^^}
-              up_test_type="$(echo ${test_type^^} | sed 's|-|_|')"
-
-              if [[ -f pr-metadata/labels/${valgrind_test_type}-${test_type} ]]; then
-                echo "export ${up_valgrind_test_type}_${up_test_type}=true" >> ~/workspace/shared-env
-                CHECK_VALGRIND="true"
-                BUILD_USE_VALGRIND="true"
-              else
-                echo "export ${up_valgrind_test_type}_${up_test_type}=false" >> ~/workspace/shared-env
-              fi
-            done
-            echo "export CHECK_${up_valgrind_test_type}_${up_test_type}=$CHECK_VALGRIND" >> ~/workspace/shared-env
-          done
-          echo "export BUILD_USE_VALGRIND=$BUILD_USE_VALGRIND" >> ~/workspace/shared-env
-
-          if [[ -f pr-metadata/labels/address-sanitizer ]]; then
-            echo 'export SANITIZER_TESTS=true' >> ~/workspace/shared-env
-          else
-            echo 'export SANITIZER_TESTS=false' >> ~/workspace/shared-env
-          fi
+          "${CI_ROOT}/initjob/40-set-label-environment-variables.sh" "${SHARED_ENV}"
 
     - persist_to_workspace:
         root: ~/workspace
@@ -392,17 +292,17 @@ jobs:
     - run:
         name: Prepare source
         command: |
-          "${CI_ROOT}/prepare-kernels/prepare-source.sh"
+          "${CI_ROOT}/prepare-kernels/10-prepare-source.sh"
 
     - run:
         name: Prepare legacy sources
         command: |
-          "${CI_ROOT}/prepare-kernels/prepare-legacy-sources.sh" "${CIRCLE_TAG}" "${CIRCLE_BRANCH}"
+          "${CI_ROOT}/prepare-kernels/20-prepare-legacy-sources.sh" "${CIRCLE_TAG}" "${CIRCLE_BRANCH}"
 
     - run:
         name: Prepare Kernel module build cache lookup
         command: |
-          "${CI_ROOT}/prepare-kernels/prepare-kernel-module-build-cache-lookup.sh"
+          "${CI_ROOT}/prepare-kernels/30-prepare-kernel-module-build-cache-lookup.sh"
 
     - restore_cache:
         name: Restore Kernel module build cache
@@ -413,12 +313,12 @@ jobs:
     - run:
         name: Unpack module sources
         command: |
-          "${CI_ROOT}/prepare-kernels/unpack-module-sources.sh"
+          "${CI_ROOT}/prepare-kernels/40-unpack-module-sources.sh"
 
     - run:
         name: Copy cached modules to build output
         command: |
-          "${CI_ROOT}/prepare-kernels/copy-cached-modules-to-build-output.sh"
+          "${CI_ROOT}/prepare-kernels/50-copy-cached-modules-to-build-output.sh"
 
     - gcloud-init
 
@@ -430,32 +330,32 @@ jobs:
     - run:
         name: Download missing modules for CURRENT version from gcloud bucket
         command: |
-          "${CI_ROOT}/prepare-kernels/download-missing-modules-for-current-version-from-gcloud-bucket.sh"
+          "${CI_ROOT}/prepare-kernels/60-download-missing-modules-for-current-version-from-gcloud-bucket.sh"
 
     - run:
         name: Patch module sources
         command: |
-          "${CI_ROOT}/prepare-kernels/patch-module-sources.sh"
+          "${CI_ROOT}/prepare-kernels/70-patch-module-sources.sh"
 
     - run:
         name: Compile list of cached modules for CURRENT module version
         command: |
-          "${CI_ROOT}/prepare-kernels/compile-list-of-cached-modules-for-current-module-version.sh"
+          "${CI_ROOT}/prepare-kernels/80-compile-list-of-cached-modules-for-current-module-version.sh"
 
     - run:
         name: Compile list of existing modules for LEGACY module versions
         command: |
-          "${CI_ROOT}/prepare-kernels/compile-list-of-existing-modules-for-legacy-module-versions.sh"
+          "${CI_ROOT}/prepare-kernels/90-compile-list-of-existing-modules-for-legacy-module-versions.sh"
 
     - run:
         name: Generate list of all (source, kernel version) build combinations
         command: |
-          "${CI_ROOT}/prepare-kernels/generate-list-of-all-build-combinations.sh"
+          "${CI_ROOT}/prepare-kernels/100-generate-list-of-all-build-combinations.sh"
 
     - run:
         name: Print list of all (source, kernel version) build combinations
         command: |
-          "${CI_ROOT}/prepare-kernels/print-list-of-all-build-combinations.sh"
+          "${CI_ROOT}/prepare-kernels/110-print-list-of-all-build-combinations.sh"
 
     - ci-artifacts/store:
         path: ~/kobuild-tmp
@@ -480,23 +380,23 @@ jobs:
     - run:
         name: Determine tasks for current shard
         command: |
-          "${CI_ROOT}/kernels/determine-tasks-for-current-shard.sh" "${CIRCLE_NODE_TOTAL}" "${CIRCLE_NODE_INDEX}"
+          "${CI_ROOT}/kernels/10-determine-tasks-for-current-shard.sh" "${CIRCLE_NODE_TOTAL}" "${CIRCLE_NODE_INDEX}"
 
     - gcloud-init
     - run:
         name: Download required packages
         command: |
-          "${CI_ROOT}/kernels/download-required-packages.sh" "${CIRCLE_TAG}" "${CIRCLE_BRANCH}" ~/kobuild-tmp
+          "${CI_ROOT}/kernels/20-download-required-packages.sh" "${CIRCLE_TAG}" "${CIRCLE_BRANCH}" ~/kobuild-tmp
 
     - run:
         name: Determine versions requiring a custom builder flavor
         command: |
-          "${CI_ROOT}/kernels/determine-versions-requiring-a-custom-builder-flavor.sh" ~/kobuild-tmp
+          "${CI_ROOT}/kernels/30-determine-versions-requiring-a-custom-builder-flavor.sh" ~/kobuild-tmp
 
     - run:
         name: Separate local build tasks by flavor
         command: |
-          "${CI_ROOT}/kernels/separate-local-build-tasks-by-flavor.sh"
+          "${CI_ROOT}/kernels/40-separate-local-build-tasks-by-flavor.sh"
 
     - docker-login-push
 
@@ -508,7 +408,7 @@ jobs:
     - run:
         name: Build builder image
         command: |
-          "${CI_ROOT}/kernels/build-builder-image.sh"
+          "${CI_ROOT}/kernels/50-build-builder-image.sh"
 
     - run:
         name: Upload builder cache image
@@ -521,12 +421,12 @@ jobs:
     - run:
         name: Build modules
         command: |
-          "${CI_ROOT}/kernels/build-modules.sh" "${CIRCLE_NODE_INDEX}"
+          "${CI_ROOT}/kernels/60-build-modules.sh" "${CIRCLE_NODE_INDEX}"
 
     - run:
         name: Print built modules
         command: |
-          "${CI_ROOT}/kernels/print-built-modules.sh" "${CIRCLE_NODE_INDEX}"
+          "${CI_ROOT}/kernels/70-print-built-modules.sh" "${CIRCLE_NODE_INDEX}"
 
     - persist_to_workspace:
         root: ~/workspace
@@ -792,7 +692,7 @@ jobs:
           echo "Node index:  $CIRCLE_NODE_INDEX"
 
           ## Get the bundles for the running machine
-          "${SOURCE_ROOT}/.circleci/kernels/download-required-packages.sh" \
+          "${SOURCE_ROOT}/.circleci/kernels/20-download-required-packages.sh" \
             "${CIRCLE_TAG}" \
             "${CIRCLE_BRANCH}" \
             "${WORKSPACE_ROOT}/go/src/github.com/stackrox" \
@@ -880,45 +780,28 @@ jobs:
     - gcloud-init
 
     - run:
+        name: "Setup Env Vars Local"
+        command: |
+          "${CI_ROOT}/integration-test-local/10-setup-env-vars-local.sh" \
+            "cirlce_local_"<< parameters.vm-config >> \
+            << parameters.use-ubi >> \
+            kernel_module
+
+    - run:
         name: "Running integration tests"
         no_output_timeout: 45m
         command: |
-          sudo cp /proc/sys/kernel/core_pattern /tmp/core_pattern
-          echo '/tmp/core.out' | sudo tee /proc/sys/kernel/core_pattern
-          export REMOTE_HOST_TYPE=local
-          export COLLECTION_METHOD="kernel_module"
-          export VM_CONFIG="circle_local_<< parameters.vm-config >>"
-          export COLLECTOR_REPO="stackrox/collector<<# parameters.use-ubi>>-test-cpaas<</ parameters.use-ubi>>"
-          export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}"
-          export USE_VALGRIND=$VALGRIND_INTEGRATION_TESTS
-          export USE_HELGRIND=$HELGRIND_INTEGRATION_TESTS
-          make -C "${SOURCE_ROOT}" integration-tests-repeat-network integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report || exit_code=$?
-          if [ "${exit_code}" -ne 0 ]; then
-                  if [ -f /tmp/core.out ]; then
-                    sudo chmod 755 /tmp/core.out
-                  fi
-                  exit "${exit_code}"
-          fi
-          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp ~/workspace/go/src/github.com/stackrox/collector/integration-tests/integration-test-report.xml "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
+          "${CI_ROOT}/run-integration-tests.sh" local "$CIRCLE_BRANCH" "$CIRCLE_BUILD_NUM"
 
     - run:
         name: "Check Valgrind errors"
         command: |
-          if [[ "$CHECK_VALGRIND_INTEGRATION_TESTS" != "true" ]]; then
-            echo "Not using Valgrind. Not checking for Valgrind errors"
-            exit 0
-          fi
-          echo "Using Valgrind"
-          log_dir=~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
-          for file in "$log_dir"/*-collector.log
-          do
-            "${CI_ROOT}/check-file-for-valgrind-errors.sh" "$file" "$VALGRIND_INTEGRATION_TESTS" "$HELGRIND_INTEGRATION_TESTS"
-          done
+          "${CI_ROOT}/integration-test-local/20-check-valgrind-errors.sh"
 
     - run:
         name: "Resore core_dump file"
         command: |
-          cat /tmp/core_pattern | sudo tee /proc/sys/kernel/core_pattern
+          "${CI_ROOT}/integration-test-local/30-restore-core-dump-file.sh"
         when: always
 
     - store_test_results:
@@ -987,17 +870,18 @@ jobs:
     - run:
         name: Check whether to run job
         command: |
-          if [[ -f ~/workspace/pr-metadata/labels/skip-integration-tests ]]; then
+          if [[ -f "${WORKSPACE_ROOT}/pr-metadata/labels/skip-integration-tests" ]]; then
             echo "Skipping job with skip-integration-tests label."
             circleci step halt
             exit 0
           fi
 
-          if [[ "<< parameters.dockerized >>" == "true" && ! -f ~/workspace/pr-metadata/labels/run-dockerized-steps ]]; then
+          if [[ "<< parameters.dockerized >>" == "true" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/run-dockerized-steps" ]]; then
             echo "Skipping dockerized build jobs."
             circleci step halt
             exit 0
           fi
+
     - add_ssh_keys
     - read-pr-metadata
     - gcloud-init
@@ -1005,71 +889,45 @@ jobs:
     - run:
         name: "Setup env vars"
         command: |
-          COLLECTOR_REPO="stackrox/collector"
-          if "${CI_ROOT}/pr_has_label.sh" ci-run-against-ubi; then
-            COLLECTOR_REPO="stackrox/collector-test-cpaas"
-          fi
-          TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
-          cat >>"$BASH_ENV" \<<-EOF
-            export COLLECTION_METHOD="<< parameters.collection_method >>"
-            export COLLECTOR_OFFLINE_MODE="<< parameters.offline >>"
-            export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
-            export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
-            export IMAGE_FAMILY=<< parameters.image_family >>
-            export IMAGE_NAME=<< parameters.image_name >>
-            export REMOTE_HOST_TYPE=gcloud
-            export TEST_NAME="${TEST_NAME}"
-            export VM_CONFIG="<< parameters.vm_type >>.<< parameters.image_family >>"
-            export VM_TYPE=<< parameters.vm_type >>
-            export COLLECTOR_REPO="${COLLECTOR_REPO}"
-            export USE_VALGRIND=$VALGRIND_INTEGRATION_TESTS
-            export USE_HELGRIND=$HELGRIND_INTEGRATION_TESTS
-          EOF
+          "${CI_ROOT}/integration-test/20-setup-env-vars.sh" \
+            "<< parameters.collection_method >>" \
+            "<< parameters.vm_type >>" \
+            "<< parameters.offline >>" \
+            "<< parameters.image_family >>" \
+            "<< parameters.image_name >>" \
+            "<< parameters.dockerized >>" \
+            "$CIRCLE_BUILD_NUM"
 
     - run:
         name: "Extract gcp ssh public key from environment variable"
         command: |
-          echo "${GCLOUD_SSH_KEY_PUB}" > "${GCP_SSH_KEY_FILE}.pub"
-          chmod 0600 "${GCP_SSH_KEY_FILE}.pub"
+          "${CI_ROOT}/integration-test/30-extract-gcp-ssh-public-key-from-environment-variable.sh"
 
     - run:
         name: "Create VM"
         command: |
-          source $SOURCE_ROOT/.circleci/create-vm.sh
-          main "$GCLOUD_INSTANCE" "$VM_TYPE" "$IMAGE_FAMILY" "$IMAGE_NAME" "$GCP_SSH_KEY_FILE" "$DOCKER_IO_PULL_USERNAME" "$DOCKER_IO_PULL_PASSWORD"
+          "${CI_ROOT}/integration-test/40-create-vm.sh"
 
     - run:
         name: "Running integration tests"
         no_output_timeout: 45m
         command: |
-          echo '/tmp/core.%e.%p' | sudo tee /proc/sys/kernel/core_pattern
-          <<# parameters.dockerized >>export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}-dockerized"<</ parameters.dockerized >>
-          echo "Running tests with image '${COLLECTOR_IMAGE}'"
-          make -C "${SOURCE_ROOT}" integration-tests-repeat-network integration-tests-baseline integration-tests integration-tests-report
-          cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
-          [[ -z "$CIRCLE_BRANCH" ]] || gsutil cp "${SOURCE_ROOT}/integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${CIRCLE_BRANCH}/$(date +%Y-%m-%d)-${CIRCLE_BUILD_NUM}/"
+          "${CI_ROOT}/run-integration-tests.sh" gcloud "$CIRCLE_BRANCH" "$CIRCLE_BUILD_NUM"
 
     - run:
         name: "Check Valgrind errors"
         command: |
-          if [[ "$CHECK_VALGRIND_INTEGRATION_TESTS" != "true" ]]; then
-            echo "Not using Valgrind. Not checking for Valgrind errors"
-            exit 0
-          fi
-          echo "Using Valgrind"
-          log_dir=~/workspace/go/src/github.com/stackrox/collector/integration-tests/container-logs
-          for file in "$log_dir"/*-collector.log
-          do
-            "${CI_ROOT}/check-file-for-valgrind-errors.sh" "$file" "$VALGRIND_INTEGRATION_TESTS" "$HELGRIND_INTEGRATION_TESTS"
-          done
+          "${CI_ROOT}/integration-test/60-check-valgrind-errors.sh" "$SOURCE_ROOT" "$CI_ROOT"
 
     - run:
         name: "Get serial port output"
         command: |
-          export TEST_NAME="<< parameters.collection_method >>-<< parameters.vm_type >>-<< parameters.image_family >>"
-          export GCLOUD_INSTANCE="collector-ci-${TEST_NAME}-${CIRCLE_BUILD_NUM}"
-          mkdir -p ~/workspace/serial-output
-          gcloud compute instances get-serial-port-output "$GCLOUD_INSTANCE" > ~/workspace/serial-output/"$GCLOUD_INSTANCE"-serial-output.logs
+          "${CI_ROOT}/integration-test/70-get-serial-port-output.sh" \
+              "<< parameters.collection_method >>" \
+              "<< parameters.vm_type >>" \
+              "<< parameters.image_family >>" \
+              "$WORKSPACE_ROOT" \
+              "$CIRCLE_BUILD_NUM"
         when: always
 
     - store_test_results:
@@ -1096,7 +954,7 @@ jobs:
     - run:
         name: "Destroy VM"
         command: |
-          gcloud compute instances delete $GCLOUD_INSTANCE
+          "${CI_ROOT}/integration-test/80-destroy-vm.sh"
         when: always
 
   integration-test-data:
@@ -1107,27 +965,21 @@ jobs:
     - run:
         name: Check whether to run job
         command: |
-          if [[ -f ~/workspace/pr-metadata/labels/skip-integration-tests ]]; then
+          if [[ -f "${WORKSPACE_ROOT}/pr-metadata/labels/skip-integration-tests" ]]; then
             echo "Skipping job with skip-integration-tests label."
             circleci step halt
             exit 0
           fi
 
     - run:
-        name: "Gather Data"
+        name: "Gather Perf Data"
         command: |
           "${CI_ROOT}/test-scripts/baseline/compare-and-update-baseline.sh"
 
     - run:
         name: Comment on PR
         command: |
-          wget --quiet https://github.com/joshdk/hub-comment/releases/download/0.1.0-rc6/hub-comment_linux_amd64
-          sudo install hub-comment_linux_amd64 /usr/bin/hub-comment
-
-          export COLLECTOR_TAG="${COLLECTOR_TAG}"
-          export COLLECTOR_BUILDER_TAG="${COLLECTOR_BUILDER_TAG}"
-          export PERF_TABLE=$(cat ~/workspace/benchmark.md)
-          hub-comment -template-file "${CI_ROOT}/performance-comment-template.tpl"
+          "${CI_ROOT}/integration-test-data/30-comment-on-pr.sh"
 
     - ci-artifacts/store:
         path: ~/workspace/all-perf.json
@@ -1151,7 +1003,7 @@ jobs:
       - run:
           name: Check whether to run job
           command: |
-            if [[ "$CIRCLE_BRANCH" != "master" && ! -f ~/workspace/pr-metadata/labels/test-support-packages ]]; then
+            if [[ "$CIRCLE_BRANCH" != "master" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/test-support-packages" ]]; then
               echo "On a PR without the test-support-packages label. Not building support packages."
               circleci step halt
             fi
@@ -1278,10 +1130,11 @@ jobs:
     - initcommand
 
     - run:
-        name: Check if reload job should run and copy kernel objects
+        name: Check if reload job should run
         command: |
           shopt -s nullglob
           mod_build_dir="${WORKSPACE_ROOT}/ko-build/build-output"
+
           if [[ ( "$CIRCLE_BRANCH" != "master" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/reload-released-images" ) \
              || ( "$CIRCLE_BRANCH" == "master" && -z "$( find "${mod_build_dir}" -type f -name '*.gz' )" ) ]]; then
             echo "Not reloading released images"
@@ -1289,16 +1142,10 @@ jobs:
             exit 0
           fi
 
-          for mod_dir in "${WORKSPACE_ROOT}/ko-build/module-versions"/*/; do
-            mod_ver="$(basename "$mod_dir")"
-            echo "Checking for module version ${mod_ver}"
-            [[ -d "${mod_build_dir}/${mod_ver}" ]] || continue
-            [[ ! -z "$( find "${mod_build_dir}/${mod_ver}" -type f -name '*.gz' )" ]] || continue
-            echo "Copying into container build directory for module version ${mod_ver}"
-            container_build_dir="${WORKSPACE_ROOT}/images/${mod_ver}/container"
-            mkdir -p "${container_build_dir}/kernel-modules"
-            cp "${mod_build_dir}/${mod_ver}"/*.gz "${container_build_dir}/kernel-modules"
-          done
+    - run:
+        name: Copy kernel objects
+        command: |
+           "${CI_ROOT}/reload-released-images/20-copy-kernel-objects.sh"
 
     - docker-login-push
     - quay-login-push
@@ -1308,26 +1155,11 @@ jobs:
     - run:
         name: Determine collector versions that need reload
         command: |
-          mkdir -p "${RELOAD_MD_DIRECTORY}"
-          for collector_ver_file in "${WORKSPACE_ROOT}/ko-build/released-collectors"/*; do
-            collector_ver="$(basename "${collector_ver_file}")"
-            mod_ver="$(< "${collector_ver_file}")"
-            echo "Missing object check for module version: ${mod_ver} and collector version: ${collector_ver}"
-
-            released_latest_image="${DOCKER_REPO}/collector:${collector_ver}-latest"
-            docker pull -q "${released_latest_image}" | cat
-
-            "${SOURCE_ROOT}/reload/missing-kernel-objects.sh" \
-              "${collector_ver}" "${COLLECTOR_MODULES_BUCKET}" "${RELOAD_MD_DIRECTORY}"
-
-            missing_objs_file="${RELOAD_MD_DIRECTORY}/${collector_ver}/missing-probes"
-            if [[ ! -s "${missing_objs_file}" ]] ; then
-              echo "Image ${released_latest_image} contains up to date kernel objects"
-              continue
-            fi
-
-            echo "Found $(wc -l <"${missing_objs_file}") missing or updated kernel objects."
-          done
+          "${CI_ROOT}/reload-released-images/30-determine-collector-versions-that-need-reload.sh" \
+            "${SOURCE_ROOT}" \
+            "${RELOAD_MD_DIRECTORY}" \
+            "${DOCKER_REPO}" \
+            "${COLLECTOR_MODULES_BUCKET}"
 
     - ci-artifacts/store:
         path: /tmp/reload/collectors
@@ -1335,93 +1167,20 @@ jobs:
     - run:
         name: Sync module versions
         command: |
-          for collector_dir in "/tmp/reload/collectors"/*; do
-            cat "${collector_dir}/module-version"
-          done | sort | uniq > /tmp/reload/module-versions
-
-          while IFS='' read -r mod_ver || [[ -n "$mod_ver" ]]; do
-            container_build_dir="${WORKSPACE_ROOT}/images/${mod_ver}/container"
-
-            kernel_modules_dir="${container_build_dir}/kernel-modules"
-            mkdir -p "${kernel_modules_dir}"
-            echo "${mod_ver}" > "${kernel_modules_dir}/MODULE_VERSION.txt"
-
-            # Sync kernel objects from GCS
-            gsutil -m rsync -r -x ".*\.unavail$" \
-              "${COLLECTOR_MODULES_BUCKET}/${mod_ver}/" "${kernel_modules_dir}" | cat
-
-            # Copy Dockerfile and build scripts into build directory
-            cp "${SOURCE_ROOT}/kernel-modules/container/"* "${container_build_dir}"
-          done < /tmp/reload/module-versions
+          "${CI_ROOT}/reload-released-images/40-sync-module-versions.sh" "${SOURCE_ROOT}" "${COLLECTOR_MODULES_BUCKET}"
 
     - run:
         name: Reload collector images
         command: |
-          for collector_dir in "${RELOAD_MD_DIRECTORY}"/*; do
-            collector_ver="$(basename "${collector_dir}")"
-            mod_ver="$(< "${collector_dir}/module-version")"
-
-
-            container_build_dir="${WORKSPACE_ROOT}/images/${mod_ver}/container"
-            layer_count="$("${container_build_dir}/partition-probes.py" -1 "$MAX_LAYER_MB" "${container_build_dir}/kernel-modules" "-")"
-
-            echo "Reloading ${layer_count} image layers for collector ${collector_ver} (${mod_ver})"
-
-            dockerhub_repo="${DOCKER_REPO}/collector:${collector_ver}"
-            dockerhub_base_image="${dockerhub_repo}-base"
-            dockerhub_pr_image="${dockerhub_repo}-reload-latest"
-            dockerhub_image="${dockerhub_repo}-latest"
-
-            quay_base_repo="${QUAY_REPO}/collector:${collector_ver}"
-            quay_base_image="${quay_base_repo}-base"
-            quay_pr_image="${quay_base_repo}-reload-latest"
-            quay_image="${quay_base_repo}-latest"
-
-            stackrox_io_image="collector.stackrox.io/collector:${collector_ver}-latest"
-
-            image_list=(
-              "${dockerhub_image}"
-              "${dockerhub_base_image}"
-              "${dockerhub_pr_image}"
-              "${quay_image}"
-              "${quay_base_image}"
-              "${quay_pr_image}"
-              "${stackrox_io_image}"
-            )
-            build_args=(
-              --build-arg module_version="${mod_ver}"
-              --build-arg collector_version="${collector_ver}"
-              --build-arg collector_repo="${DOCKER_REPO}/collector"
-              --build-arg max_layer_depth="${layer_count}"
-              --build-arg max_layer_size="${MAX_LAYER_MB}"
-              --build-arg USE_VALGRIND="${BUILD_USE_VALGRIND}"
-              --build-arg ADDRESS_SANITIZER="${SANITIZER_TESTS}"
-            )
-            docker build -q \
-              --target="probe-layer-${layer_count}" \
-              -t "${stackrox_io_image}" \
-              -t "${dockerhub_image}" \
-              -t "${dockerhub_pr_image}" \
-              -t "${quay_pr_image}" \
-              -t "${quay_image}" \
-              "${build_args[@]}" \
-              "${container_build_dir}"
-
-            if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" ]]; then
-              ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${dockerhub_pr_image}" | cat
-              ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${quay_pr_image}" | cat
-              image_list+=("${dockerhub_pr_image}-amd64" "${quay_pr_image}-amd64")
-            else
-              ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${dockerhub_image}" | cat
-              ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${quay_image}" | cat
-              ~/workspace/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh "${stackrox_io_image}" | cat
-              image_list+=("${dockerhub_image}-amd64" "${quay_image}-amd64" "${stackrox_io_image}-amd64")
-            fi
-            # clean-up to reduce disk usage
-            docker image rm -f "${image_list[@]}"
-            docker image prune --force
-            docker images
-          done
+          "${CI_ROOT}/reload-released-images/50-reload-collector-images.sh" \
+            "${RELOAD_MD_DIRECTORY}" \
+            "${MAX_LAYER_MB}" \
+            "${DOCKER_REPO}" \
+            "${QUAY_REPO}" \
+            "${BUILD_USE_VALGRIND}" \
+            "${SANITIZER_TESTS}" \
+            "${CIRCLE_BRANCH}" \
+            "${CIRCLE_TAG}"
 
     - slack/status:
         fail_only: true
@@ -1682,14 +1441,8 @@ workflows:
         <<: *runOnAllTags
         context:
           - docker-io-and-stackrox-io-push
-          - quay-rhacs-eng-readwrite
-        requires:
-          - images
-    - update-support-packages:
-        <<: *runOnAllTags
-        context:
-          - docker-io-and-stackrox-io-push
           - quay-rhacs-eng-readonly
+          - quay-rhacs-eng-readwrite
           - collector-support
         requires:
           - upload-modules
