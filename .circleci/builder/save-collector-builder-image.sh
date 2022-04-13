@@ -38,6 +38,6 @@ for repo in "${image_repos[@]}"; do
         docker tag "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}" "${repo}:cache"
 
         docker image inspect "${repo}:cache" > /dev/null
-        "${WORKSPACE_ROOT}/go/src/github.com/stackrox/collector/scripts/push-as-manifest-list.sh" "${repo}:cache"
+        "${SOURCE_ROOT}/scripts/push-as-manifest-list.sh" "${repo}:cache"
     fi
 done
