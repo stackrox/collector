@@ -19,7 +19,7 @@ parameters:
 
 defaultImage: &defaultImage
   docker:
-  - image: "<< pipeline.parameters.quay-repo >>/apollo-ci:collector-0.3.35"
+  - image: "<< pipeline.parameters.quay-repo >>/apollo-ci:collector-0.3.35-4-g054943e4cd"
     auth:
       username: $QUAY_RHACS_ENG_RO_USERNAME
       password: $QUAY_RHACS_ENG_RO_PASSWORD
@@ -176,20 +176,13 @@ commands:
             -p "$STACKROX_IO_PUSH_PASSWORD" \
             collector.stackrox.io
 
-  install-hub-comment:
-    steps:
-    - run:
-        name: Install HUB comment
-        command: |
-          "${CI_ROOT}/install-hub-comment.sh"
-
 jobs:
   initjob:
     <<: *defaultImage
     environment:
     - SOURCE_ROOT: /home/circleci/workspace/go/src/github.com/stackrox/collector
     - CI_ROOT: /home/circleci/workspace/go/src/github.com/stackrox/collector/.circleci
-    - SHARED_ENV: /home/circleci/workspace/shared-env 
+    - SHARED_ENV: /home/circleci/workspace/shared-env
 
     steps:
     - checkout:
@@ -246,7 +239,6 @@ jobs:
     - run:
         name: Lint via shfmt
         command: |
-          go install mvdan.cc/sh/v3/cmd/shfmt@v3.4.1
           make -C "${SOURCE_ROOT}" shfmt-check
 
   test-scripts:
@@ -263,8 +255,6 @@ jobs:
     - run:
         name: shellcheck-all
         command: |
-          wget -qO- "https://github.com/koalaman/shellcheck/releases/download/stable/shellcheck-stable.linux.x86_64.tar.xz" | tar -xJv
-          sudo cp "shellcheck-stable/shellcheck" /usr/bin/
           make -C "${SOURCE_ROOT}" shellcheck-all
 
   builder:
@@ -783,8 +773,6 @@ jobs:
             exit 0
           fi
 
-    - install-hub-comment
-
     - add_ssh_keys:
         fingerprints:
         - "32:e2:6d:de:c3:bb:b8:a4:62:89:a1:df:7a:30:37:f2"
@@ -1009,8 +997,6 @@ jobs:
         name: "Gather Perf Data"
         command: |
           "${CI_ROOT}/test-scripts/baseline/compare-and-update-baseline.sh"
-
-    - install-hub-comment
 
     - run:
         name: Comment on PR
