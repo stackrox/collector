@@ -41,8 +41,7 @@ function run_tests() {
 
     if [[ "${MEASURE_DRIVER_PERFORMANCE}" == "true" ]]; then
         mkdir "${SOURCE_ROOT}/integration-tests/performance-logs"
-        echo "user: ${QUAY_STACKROX_IO_RO_USERNAME}"
-        docker login -u "${QUAY_STACKROX_IO_RO_USERNAME}" -p "${QUAY_STACKROX_IO_RO_PASSWORD}" quay.io
+        docker login -u "${QUAY_RHACS_ENG_RO_USERNAME}" -p "${QUAY_RHACS_ENG_RO_PASSWORD}" quay.io
         integration_tests_with_measurements
         exit_code=$?
 
