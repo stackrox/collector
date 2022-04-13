@@ -151,8 +151,8 @@ commands:
           if [[ ! -s ~/workspace/build-tasks ]]; then
             echo "Nothing was built, skipping this job"
 
-            circleci step halt
-            exit 0
+            "${CI_ROOT}/safe-halt.sh"
+            exit
           fi
 
   dockerized-should-run:
@@ -162,8 +162,8 @@ commands:
         command: |
           if [[ ! -f ~/workspace/pr-metadata/labels/run-dockerized-steps ]]; then
             echo "Skipping dockerized build jobs."
-            circleci step halt
-            exit 0
+            "${CI_ROOT}/safe-halt.sh"
+            exit
           fi
 
   stackrox-io-login:
@@ -688,8 +688,8 @@ jobs:
           if [[ ! -s "${WORKSPACE_ROOT}/task-shard-$(printf '%02d' "$CIRCLE_NODE_INDEX")" ]]; then
             echo "Nothing to be done for this shard."
 
-            circleci step halt
-            exit 0
+            "${CI_ROOT}/safe-halt.sh"
+            exit
           fi
 
     - gcloud-init
@@ -911,14 +911,14 @@ jobs:
         command: |
           if [[ -f "${WORKSPACE_ROOT}/pr-metadata/labels/skip-integration-tests" ]]; then
             echo "Skipping job with skip-integration-tests label."
-            circleci step halt
-            exit 0
+            "${CI_ROOT}/safe-halt.sh"
+            exit
           fi
 
           if [[ "<< parameters.dockerized >>" == "true" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/run-dockerized-steps" ]]; then
             echo "Skipping dockerized build jobs."
-            circleci step halt
-            exit 0
+            "${CI_ROOT}/safe-halt.sh"
+            exit
           fi
 
     - add_ssh_keys
@@ -1006,8 +1006,8 @@ jobs:
         command: |
           if [[ -f "${WORKSPACE_ROOT}/pr-metadata/labels/skip-integration-tests" ]]; then
             echo "Skipping job with skip-integration-tests label."
-            circleci step halt
-            exit 0
+            "${CI_ROOT}/safe-halt.sh"
+            exit
           fi
 
     - run:
@@ -1046,7 +1046,7 @@ jobs:
           command: |
             if [[ "$CIRCLE_BRANCH" != "master" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/test-support-packages" ]]; then
               echo "On a PR without the test-support-packages label. Not building support packages."
-              circleci step halt
+              "${CI_ROOT}/safe-halt.sh"
             fi
 
       - setup_remote_docker:
@@ -1179,8 +1179,8 @@ jobs:
           if [[ ( "$CIRCLE_BRANCH" != "master" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/reload-released-images" ) \
              || ( "$CIRCLE_BRANCH" == "master" && -z "$( find "${mod_build_dir}" -type f -name '*.gz' )" ) ]]; then
             echo "Not reloading released images"
-            circleci step halt
-            exit 0
+            "${CI_ROOT}/safe-halt.sh"
+            exit
           fi
 
     - run:

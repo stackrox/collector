@@ -22,8 +22,8 @@ this_shard_file=~/kobuild-tmp/task-shard-"$(printf '%02d' "$NODE_INDEX")"
 
 if [[ ! -s "$this_shard_file" ]]; then
     echo "Nothing to be done for this shard."
-    circleci step halt
-    exit 0
+    "${CI_ROOT}/safe-halt.sh"
+    exit
 fi
 
 mv "$this_shard_file" ~/kobuild-tmp/local-build-tasks
