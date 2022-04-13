@@ -135,3 +135,19 @@ shellcheck-all:
 shellcheck-all-dockerized:
 	docker build -t shellcheck-all $(CURDIR)/utilities/shellcheck-all
 	docker run --rm -v "$(CURDIR):/scripts" shellcheck-all:latest
+
+
+# This defines a macro that can be used to add pre-commit targets
+# to check staged files (check-<linter name>) or all files (check-<linter name>-all)
+define linter
+check-$(1):
+	pre-commit run $(1)
+check-$(1)-all:
+	pre-commit run --all-files $(1)
+endef
+
+$(eval $(call linter,flake8))
+$(eval $(call linter,clang-format))
+$(eval $(call linter,shellcheck))
+$(eval $(call linter,shfmt))
+$(eval $(call linter,circleci_validate))
