@@ -8,7 +8,7 @@ BUILD_NUM=$3
 echo "Running tests with image '${COLLECTOR_IMAGE}'"
 
 function performance_platform_supported() {
-    if [[ "${GCP_VM_TYPE}" == "flatcar" || "${GCP_VM_TYPE}" == "cos" ]]; then
+    if [[ "${VM_TYPE}" == "flatcar" || "${VM_TYPE}" == "cos" ]]; then
         return 1
     fi
     return 0
@@ -50,11 +50,11 @@ function run_tests() {
         exit_code=$?
 
         if [[ "$remote_host_type" == "local" ]]; then
-            cp "/tmp/baseline.json" "${SOURCE_ROOT}/integration-tests/performance-logs/baseline-local-${COLLECTION_METHOD}.json"
-            cp "/tmp/benchmark.json" "${SOURCE_ROOT}/integration-tests/performance-logs/benchmark-local-${COLLECTION_METHOD}.json"
+            cp "/tmp/baseline.json" "${SOURCE_ROOT}/integration-tests/performance-logs/baseline-${IMAGE_FAMILY}-${COLLECTION_METHOD}.json"
+            cp "/tmp/benchmark.json" "${SOURCE_ROOT}/integration-tests/performance-logs/benchmark-${IMAGE_FAMILY}-${COLLECTION_METHOD}.json"
         else
-            copy_from_vm "/tmp/baseline.json" "${SOURCE_ROOT}/integration-tests/performance-logs/baseline-${GCP_VM_TYPE}-${COLLECTION_METHOD}.json"
-            copy_from_vm "/tmp/benchmark.json" "${SOURCE_ROOT}/integration-tests/performance-logs/benchmark-${GCP_VM_TYPE}-${COLLECTION_METHOD}.json"
+            copy_from_vm "/tmp/baseline.json" "${SOURCE_ROOT}/integration-tests/performance-logs/baseline-${IMAGE_FAMILY}-${COLLECTION_METHOD}.json"
+            copy_from_vm "/tmp/benchmark.json" "${SOURCE_ROOT}/integration-tests/performance-logs/benchmark-${IMAGE_FAMILY}-${COLLECTION_METHOD}.json"
         fi
     else
         integration_tests_no_measurements
