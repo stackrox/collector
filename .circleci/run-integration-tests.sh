@@ -7,13 +7,18 @@ BUILD_NUM=$3
 
 echo "Running tests with image '${COLLECTOR_IMAGE}'"
 
+function performance_platform_supported() {
+    if [[ "${GCP_VM_TYPE}" == "flatcar" || "${GCP_VM_TYPE}" == "cos" ]]; then
+        return 1
+    fi
+    return 0
+}
+
 function integration_tests_with_measurements() {
     COLLECTOR_BCC_COMMAND="/tools/do_syscall_64.py -o /tmp/baseline.json" make -C "${SOURCE_ROOT}" integration-tests-baseline
     COLLECTOR_BCC_COMMAND="/tools/do_syscall_64.py -o /tmp/benchmark.json" make -C "${SOURCE_ROOT}" integration-tests-benchmark
 
-    make -C "${SOURCE_ROOT}" integration-tests-repeat-network integration-tests integration-tests-report || exit_code=$?
-
-    return $exit_code
+    make -C "${SOURCE_ROOT}" integration-tests-repeat-network integration-tests integration-tests-report
 }
 
 function integration_tests_no_measurements() {
@@ -39,18 +44,17 @@ function copy_from_vm() {
 function run_tests() {
     exit_code=0
 
-    if [[ "${MEASURE_DRIVER_PERFORMANCE}" == "true" ]]; then
+    if [[ "${MEASURE_DRIVER_PERFORMANCE}" == "true" ]] && performance_platform_supported; then
         mkdir "${SOURCE_ROOT}/integration-tests/performance-logs"
-        docker login -u "${QUAY_RHACS_ENG_RO_USERNAME}" -p "${QUAY_RHACS_ENG_RO_PASSWORD}" quay.io
         integration_tests_with_measurements
         exit_code=$?
 
         if [[ "$remote_host_type" == "local" ]]; then
-            cp "/tmp/baseline.json" "${SOURCE_ROOT}/integration-tests/performance-logs/baseline-${COLLECTION_METHOD}.json"
-            cp "/tmp/benchmark.json" "${SOURCE_ROOT}/integration-tests/performance-logs/benchmark-${COLLECTION_METHOD}.json"
+            cp "/tmp/baseline.json" "${SOURCE_ROOT}/integration-tests/performance-logs/baseline-local-${COLLECTION_METHOD}.json"
+            cp "/tmp/benchmark.json" "${SOURCE_ROOT}/integration-tests/performance-logs/benchmark-local-${COLLECTION_METHOD}.json"
         else
-            copy_from_vm "/tmp/baseline.json" "${SOURCE_ROOT}/integration-tests/performance-logs/baseline-${COLLECTION_METHOD}.json"
-            copy_from_vm "/tmp/benchmark.json" "${SOURCE_ROOT}/integration-tests/performance-logs/benchmark-${COLLECTION_METHOD}.json"
+            copy_from_vm "/tmp/baseline.json" "${SOURCE_ROOT}/integration-tests/performance-logs/baseline-${GCP_VM_TYPE}-${COLLECTION_METHOD}.json"
+            copy_from_vm "/tmp/benchmark.json" "${SOURCE_ROOT}/integration-tests/performance-logs/benchmark-${GCP_VM_TYPE}-${COLLECTION_METHOD}.json"
         fi
     else
         integration_tests_no_measurements
