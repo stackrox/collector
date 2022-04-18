@@ -4,6 +4,9 @@ project (collector)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall --std=c++11 -pthread -Wno-deprecated-declarations")
 
+# Error on warnings with exceptions
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra -Werror -Wno-unused-parameter -Wno-format-truncation")
+
 set(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-strict-aliasing -DNDEBUG")
 
@@ -101,4 +104,6 @@ set(CREATE_TEST_TARGETS OFF CACHE BOOL "Enable make-targets for unit testing" FO
 set(BUILD_LIBSCAP_EXAMPLES OFF CACHE BOOL "Build libscap examples" FORCE)
 set(BUILD_LIBSINSP_EXAMPLES OFF CACHE BOOL "Build libsinsp examples" FORCE)
 
+# Error on warnings in falco libs
+set(BUILD_WARNINGS_AS_ERRORS ON CACHE BOOL "Build warnings are errors" FORCE)
 add_subdirectory(${PROJECT_SOURCE_DIR}/falcosecurity-libs EXCLUDE_FROM_DEFAULT_BUILD)

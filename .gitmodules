@@ -31,6 +31,6 @@
 	url = https://github.com/libb64/libb64.git
 	branch = master
 [submodule "falcosecurity-libs"]
-	path = falcosecurity-libs
+	path = collector/falcosecurity-libs
 	url = https://github.com/stackrox/falcosecurity-libs
 	branch = master
