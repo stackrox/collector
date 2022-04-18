@@ -225,11 +225,25 @@ bool NetworkStatusNotifier::UpdateAllConnsAndEndpoints() {
   return true;
 }
 
+void NetworkStatusNotifier::AddToAllCep(ContainerEndpointMap* all_cep, const ContainerEndpointMap delta) {
+  for (auto cep : delta) {
+    auto& cep_key = cep.first;
+    auto delta_cep = all_cep->find(cep_key);
+    if (delta_cep != all_cep->end()) {
+      CLOG(INFO) << "Already sent " << delta_cep->second.LastActiveTime() << "\t" << delta_cep->first;
+    } else {
+      all_cep->insert(cep);
+      CLOG(INFO) << "First sent " << delta_cep->second.LastActiveTime() << "\t" << delta_cep->first;
+    }
+  }
+}
+
 void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
   WaitUntilWriterStarted(writer, 10);
 
   ConnMap old_conn_state;
   ContainerEndpointMap old_cep_state;
+  ContainerEndpointMap all_cep;
   auto next_scrape = std::chrono::system_clock::now();
 
   while (writer->Sleep(next_scrape)) {
@@ -248,6 +262,7 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
 
       new_cep_state = conn_tracker_->FetchEndpointState(true, true);
       ConnectionTracker::ComputeDelta(new_cep_state, &old_cep_state);
+      AddToAllCep(&all_cep, old_cep_state);
     }
 
     WITH_TIMER(CollectorStats::net_create_message) {

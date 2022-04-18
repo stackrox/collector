@@ -85,6 +85,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   void RunSingleAfterglow(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer);
   void ReceivePublicIPs(const sensor::IPAddressList& public_ips);
   void ReceiveIPNetworks(const sensor::IPNetworkList& networks);
+  void AddToAllCep(ContainerEndpointMap* all_cep, const ContainerEndpointMap delta);
 
   std::string hostname_;
 
