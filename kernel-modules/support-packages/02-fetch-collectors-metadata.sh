@@ -16,7 +16,7 @@ for version_dir in "${MD_DIR}/collector-versions"/*; do
     [[ -d "$version_dir" ]] || continue
     version="$(basename "$version_dir")"
 
-    collector_image="docker.io/stackrox/collector:${version}"
+    collector_image="quay.io/rhacs-eng/collector:${version}"
     docker pull "$collector_image"
     tmp_output="$(mktemp)"
 

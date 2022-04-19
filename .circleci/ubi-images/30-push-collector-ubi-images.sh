@@ -2,7 +2,6 @@
 set -eo pipefail
 
 image_repos=(
-    "${DOCKER_REPO}/collector-test-cpaas"
     "${QUAY_REPO}/collector-test-cpaas"
 )
 image_tags=(

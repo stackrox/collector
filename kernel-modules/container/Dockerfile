@@ -1,6 +1,6 @@
 ARG collector_version=xxx
-ARG collector_repo=stackrox/collector
-ARG base_image=${collector_repo}:${collector_version}-base
+ARG collector_repo=quay.io/rhacs-eng/collector
+ARG base_image=${collector_repo}:${collector_version}-slim
 
 FROM python:3 as kernel-modules
 ARG max_layer_size=xxx
