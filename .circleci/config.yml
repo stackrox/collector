@@ -1495,7 +1495,6 @@ workflows:
         <<: *runOnAllTags
         context:
           - docker-io-and-stackrox-io-push
-          - quay-rhacs-eng-readonly
           - collector-support
         requires:
           - upload-modules
