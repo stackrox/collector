@@ -515,7 +515,7 @@ func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, contain
 	start := time.Now()
 	tick := time.Tick(tickSeconds)
 	tickElapsed := time.Tick(1 * time.Minute)
-	timeout := time.After(15 * time.Minute)
+	timeout := time.After(30 * time.Minute)
 	for {
 		select {
 		case <-tick:
