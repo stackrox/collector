@@ -239,6 +239,7 @@ void NetworkStatusNotifier::AddToAllCep(ContainerEndpointMap* all_cep, const Con
 }
 
 void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
+  CLOG(INFO) << "In RunSingle";
   WaitUntilWriterStarted(writer, 10);
 
   ConnMap old_conn_state;
