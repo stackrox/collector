@@ -8,9 +8,11 @@ repos:
       - id: shellcheck
       
   - repo: git@github.com:zahorniak/pre-commit-circleci.git
-    rev: "v0.3"
+    rev: "v0.4"
     hooks:
       - id: circleci_validate
+        args:
+          - --org-slug gh/stackrox
 
   - repo: git@github.com:pycqa/flake8.git
     rev: "4.0.1"
