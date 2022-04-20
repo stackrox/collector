@@ -11,6 +11,7 @@ import jinja2
 
 VersionRange = namedtuple('VersionRange', 'min max')
 
+
 class SupportPackage(object):
     def __init__(self, module_version, rox_version_ranges, file_name, latest_file_name, last_update_time):
         self.module_version = module_version
@@ -33,7 +34,8 @@ class SupportPackage(object):
             'module_version=%s, rox_version_ranges=%s, file_name=%s, latest_file_name=%s, last_update_time=%d)' % (
                 self.module_version, self.rox_version_ranges, self.file_name, self.latest_file_name,
                 self.last_update_time
-               )
+            )
+
 
 def render_index(packages, out_dir, template_file='index.html'):
     curr_dir = str(Path(__file__).parent.absolute().resolve())
@@ -67,7 +69,7 @@ def load_support_packages(output_dir, mod_md_map):
         support_pkg_file_latest = 'support-pkg-%s-latest.zip' % (mod_ver[:6])
         try:
             os.stat(os.path.join(mod_out_dir, support_pkg_file_latest))
-        except:
+        except OSError:
             support_pkg_file_latest = None
 
         support_packages.append(SupportPackage(
@@ -79,6 +81,7 @@ def load_support_packages(output_dir, mod_md_map):
 
 def parse_version(ver):
     return [int(c) for c in ver.split('.')]
+
 
 def load_modules_metadata(md_dir):
     result = {}
@@ -95,6 +98,7 @@ def load_modules_metadata(md_dir):
         result[mod_ver] = rox_versions
 
     return result
+
 
 def compute_version_ranges(mod_ver_to_rox_vers):
     rox_ver_to_mod_ver = {}
@@ -121,8 +125,9 @@ def compute_version_ranges(mod_ver_to_rox_vers):
 
     return {
         mod_ver: [VersionRange(rox_ver_list[0], rox_ver_list[-1]) for rox_ver_list in rox_ver_lists]
-            for mod_ver, rox_ver_lists in ranges.items()
+        for mod_ver, rox_ver_lists in ranges.items()
     }
+
 
 def main(args):
     if len(args) != 3:
@@ -135,6 +140,7 @@ def main(args):
 
     support_packages = load_support_packages(out_dir, ranges)
     render_index(support_packages, out_dir)
+
 
 if __name__ == '__main__':
     main(sys.argv)

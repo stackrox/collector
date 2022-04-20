@@ -9,6 +9,7 @@ strip_comment_re = re.compile(r'\s*(?:#.*)?$')
 
 space_re = re.compile(r'\s+')
 
+
 def pattern_to_re(pat):
     if not pat:
         return ".*"
@@ -17,10 +18,12 @@ def pattern_to_re(pat):
     parts = pat.split('*')
     return '.*'.join(re.escape(part) for part in parts)
 
+
 def open_input(filename):
     if filename == '-':
         return sys.stdin
     return open(filename)
+
 
 def main(blocklist_file, tasks_file='-'):
     blocklist_regexes = []

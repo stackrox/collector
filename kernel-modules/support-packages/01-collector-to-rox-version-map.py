@@ -8,6 +8,7 @@ import sys
 strip_comment_re = re.compile(r'\s*(#.*)?$')
 space_re = re.compile(r'\s+')
 
+
 def parse_released_versions(f):
     result = collections.defaultdict(list)
 
@@ -24,6 +25,7 @@ def parse_released_versions(f):
         result[collector_version].append(rox_version)
 
     return result
+
 
 def write_versions_metadata(version_map, metadata_dir):
     collector_versions_dir = os.path.join(metadata_dir, 'collector-versions')
@@ -49,6 +51,7 @@ def main(args):
         version_map = parse_released_versions(f)
 
     write_versions_metadata(version_map, metadata_dir)
+
 
 if __name__ == '__main__':
     main(sys.argv)

@@ -72,7 +72,7 @@ def load_baseline_file(bucket_name, baseline_file):
         contents = blob.download_as_string()
         return json.loads(contents)
 
-    except NotFound as ex:
+    except NotFound:
         print(f"File gs://{bucket_name}/{baseline_file} not found. "
               f"Creating a new empty one.", file=sys.stderr)
 

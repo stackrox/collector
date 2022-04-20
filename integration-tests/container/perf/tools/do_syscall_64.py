@@ -4,7 +4,6 @@ import functools
 from bcc import BPF
 from bcc.syscall import syscalls
 from collections import defaultdict
-import time
 import os
 import json
 import argparse
@@ -92,7 +91,7 @@ def capture(output: str):
             break
 
     # If we have got here, it is likely that this script is being run manually
-    # and SIGTERM/SIGINT have not fired, but KeyboardInterrupt has occured. 
+    # and SIGTERM/SIGINT have not fired, but KeyboardInterrupt has occured.
     # We still need to output and clean up out probes.
     exit_handler(bpf, output)
 
