@@ -189,7 +189,7 @@ jobs:
     environment:
     - SOURCE_ROOT: /home/circleci/workspace/go/src/github.com/stackrox/collector
     - CI_ROOT: /home/circleci/workspace/go/src/github.com/stackrox/collector/.circleci
-    - SHARED_ENV: /home/circleci/workspace/shared-env 
+    - SHARED_ENV: /home/circleci/workspace/shared-env
 
     steps:
     - checkout:
@@ -1488,6 +1488,14 @@ workflows:
           - docker-io-and-stackrox-io-push
           - quay-rhacs-eng-readonly
           - quay-rhacs-eng-readwrite
+          - collector-support
+        requires:
+          - upload-modules
+    - update-support-packages:
+        <<: *runOnAllTags
+        context:
+          - docker-io-and-stackrox-io-push
+          - quay-rhacs-eng-readonly
           - collector-support
         requires:
           - upload-modules
