@@ -117,6 +117,9 @@ class ConnectionTracker {
   template <typename T>
   static void ComputeDeltaAfterglow(const UnorderedMap<T, ConnStatus>& new_state, const UnorderedMap<T, ConnStatus>& old_state, UnorderedMap<T, ConnStatus>& delta, int64_t time_micros, int64_t time_at_last_scrape, int64_t afterglow_period_micros);
 
+  template <typename T>
+  static void AddToAllCep(UnorderedMap<string, ConnStatus>* all_cep, UnorderedMap<T, ConnStatus> delta);
+
   // Handles the case when a connection appears in both the new and old states and afterglow is used
   template <typename T>
   void static ComputeDeltaForAConnectionInOldAndNewStates(const std::pair<const T, ConnStatus>& new_conn, const ConnStatus& old_conn_status, UnorderedMap<T, ConnStatus>& delta, int64_t time_micros, int64_t time_at_last_scrape, int64_t afterglow_period_micros);
@@ -377,6 +380,29 @@ bool ConnectionTracker::CheckIfOldConnShouldBeInactiveInDelta(const T& conn_key,
   }
 
   return true;
+}
+
+template <typename T>
+void ConnectionTracker::AddToAllCep(UnorderedMap<string, ConnStatus>* all_cep, UnorderedMap<T, ConnStatus> delta) {
+  for (auto cep : delta) {
+    auto& cep_key = cep.first;
+    std::stringstream ss;
+    ss << cep_key;
+    string cep_key_string;
+    ss >> cep_key_string;
+    ss << cep.second.LastActiveTime();
+    string lastActiveTimeString;
+    ss >> lastActiveTimeString;
+    cep_key_string += " " + lastActiveTimeString;
+    auto delta_cep = all_cep->find(cep_key_string);
+    if (delta_cep != all_cep->end()) {
+      CLOG(INFO) << "Already sent " << delta_cep->second.LastActiveTime() << "\t" << delta_cep->first;
+    } else {
+      CLOG(INFO) << "First sent " << cep.second.LastActiveTime() << "\t" << cep.first;
+      auto temp = std::make_pair(cep_key_string, cep.second);
+      all_cep->insert(temp);
+    }
+  }
 }
 
 }  // namespace collector
