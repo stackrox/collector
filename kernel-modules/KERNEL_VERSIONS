@@ -1566,6 +1566,7 @@
 4.15.0-175-generic~16.04
 4.15.0-176-generic
 4.15.0-176-generic~16.04
+4.15.0-177-generic
 4.15.0-20-generic
 4.15.0-2000-aws-fips
 4.15.0-2006-azure-fips
@@ -2530,6 +2531,7 @@
 4.4.180-94.150-default
 4.4.180-94.153-default
 4.4.180-94.156-default
+4.4.180-94.161-default
 4.4.181-1.el7.elrepo.x86_64
 4.4.182-1.el7.elrepo.x86_64
 4.4.183-1.el7.elrepo.x86_64
