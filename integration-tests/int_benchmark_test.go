@@ -127,6 +127,7 @@ func (b *BenchmarkTestSuiteBase) StopPerfTools() {
 
 func (s *BenchmarkCollectorTestSuite) SetupSuite() {
 	s.executor = NewExecutor()
+	s.docker = NewDocker(s.executor)
 	s.StartContainerStats()
 	s.collector = NewCollectorManager(s.executor, s.T().Name())
 	s.metrics = map[string]float64{}
