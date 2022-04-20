@@ -308,7 +308,7 @@ inline void ConnectionTracker::ComputeDeltaForAConnectionInOldAndNewStates(const
   auto& conn_key = new_conn.first;
   auto& conn_status = new_conn.second;
 
-  //Connections active within the afterglow period are considered to be active for the purpose of the delta.
+  // Connections active within the afterglow period are considered to be active for the purpose of the delta.
   bool new_recently_active = conn_status.WasRecentlyActive(time_micros, afterglow_period_micros);
   bool old_recently_active = old_conn_status.WasRecentlyActive(time_at_last_scrape, afterglow_period_micros);
 
@@ -381,4 +381,4 @@ bool ConnectionTracker::CheckIfOldConnShouldBeInactiveInDelta(const T& conn_key,
 
 }  // namespace collector
 
-#endif  //COLLECTOR_CONNTRACKER_H
+#endif  // COLLECTOR_CONNTRACKER_H

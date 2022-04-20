@@ -31,7 +31,7 @@
 
 namespace collector {
 
-//This is a singleton class which keeps track of metrics
+// This is a singleton class which keeps track of metrics
 class CollectorStats {
  public:
   CollectorStats(const CollectorStats&) = delete;
@@ -118,4 +118,4 @@ ScopedTimer<T> scoped_timer(T* timer_array, size_t index) {
 
 }  // namespace collector
 
-#endif  //COLLECTOR_COLLECTORSTATS_H
+#endif  // COLLECTOR_COLLECTORSTATS_H

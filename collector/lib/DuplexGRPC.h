@@ -684,4 +684,4 @@ using DuplexClientReaderWriter = grpc_duplex_impl::DuplexClientReaderWriter<W, R
 
 }  // namespace collector
 
-#endif  //COLLECTOR_DUPLEXGRPC_H
+#endif  // COLLECTOR_DUPLEXGRPC_H

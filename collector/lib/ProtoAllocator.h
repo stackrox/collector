@@ -127,4 +127,4 @@ using ProtoAllocator =
 
 }  // namespace collector
 
-#endif  //COLLECTOR_PROTOALLOCATOR_H
+#endif  // COLLECTOR_PROTOALLOCATOR_H

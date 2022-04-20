@@ -123,7 +123,7 @@ end
 
   bool enable_sysdig_log_ = false;
   HostConfig host_config_;
-  int64_t afterglow_period_micros_ = 300000000;  //5 minutes in microseconds
+  int64_t afterglow_period_micros_ = 300000000;  // 5 minutes in microseconds
   bool enable_afterglow_ = true;
   bool enable_core_dump_ = false;
 };

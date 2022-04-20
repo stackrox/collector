@@ -121,4 +121,4 @@ class NRadixTree {
 
 }  // namespace collector
 
-#endif  //COLLECTOR_NRADIX_H
+#endif  // COLLECTOR_NRADIX_H

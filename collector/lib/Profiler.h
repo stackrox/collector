@@ -63,4 +63,4 @@ class Profiler {
 }  // namespace collector
 #endif
 
-#endif  //COLLECTOR_PROFILER_H
+#endif  // COLLECTOR_PROFILER_H

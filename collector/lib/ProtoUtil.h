@@ -35,4 +35,4 @@ google::protobuf::Timestamp CurrentTimeProto();
 
 }  // namespace collector
 
-#endif  //COLLECTOR_PROTOUTIL_H
+#endif  // COLLECTOR_PROTOUTIL_H

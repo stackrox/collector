@@ -63,4 +63,4 @@ using BoolEnvVar = EnvVar<bool, internal::ParseBool>;
 
 }  // namespace collector
 
-#endif  //COLLECTOR_ENVVAR_H
+#endif  // COLLECTOR_ENVVAR_H

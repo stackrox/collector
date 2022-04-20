@@ -477,4 +477,4 @@ static inline const std::vector<IPNet>& PrivateNetworks() {
 
 }  // namespace collector
 
-#endif  //COLLECTOR_NETWORKCONNECTION_H
+#endif  // COLLECTOR_NETWORKCONNECTION_H
