@@ -7,7 +7,7 @@ set -euo pipefail
 
 KERNEL_SRC_DIR=""
 
-# shellcheck source=/dev/null
+# shellcheck source=SCRIPTDIR/build-kos
 source "/scripts/build-kos"
 
 extract_bundle() {

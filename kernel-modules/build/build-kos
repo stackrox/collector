@@ -20,7 +20,9 @@ build_ko() (
 
     local rhel7_kernel_with_ebpf=false
     if ((bundle_version == 3 && bundle_major >= 10)); then
+        # shellcheck disable=SC2154
         if [[ "$bundle_distro" == "redhat" ]]; then
+            # shellcheck disable=SC2154
             rhel_build_id="$(echo "$bundle_uname" | awk -F'[-.]' '{ print $4 }')"
             if ((rhel_build_id >= 957)); then
                 echo "Kernel ${bundle_uname} has backported eBPF support"
@@ -32,6 +34,7 @@ build_ko() (
     if [[ "$probe_type" == "mod" ]]; then
         # Attempting to run modpost will fail if it requires glibc version newer than
         # available in this distro. We skip building such kernel drivers for now.
+        # shellcheck disable=SC2154
         if ((DOCKERIZED)) && ! "${kernel_build_dir}/scripts/mod/modpost"; then
             echo >&2 "Failed to run kbuild tools, skipping module for ${kernel_version}"
             return 1
