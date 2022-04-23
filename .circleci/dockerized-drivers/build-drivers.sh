@@ -32,8 +32,8 @@ fi
 
 docker build \
     --build-arg BRANCH="${GIT_REF}" \
-    --build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
-    --build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}" \
+    --build-arg REDHAT_SUBSCRIPTION_ORG_ID="${REDHAT_SUBSCRIPTION_ORG_ID}" \
+    --build-arg REDHAT_SUBSCRIPTION_ACTIVATION_KEY="${REDHAT_SUBSCRIPTION_ACTIVATION_KEY}" \
     --build-arg CACHE_REPO="${DRIVER_REPO}" \
     --build-arg CACHE_TAG="${COLLECTOR_DRIVERS_CACHE}" \
     --tag "${IMAGE_TAG}" \

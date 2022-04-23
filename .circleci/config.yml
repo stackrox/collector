@@ -56,10 +56,10 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
     - docker-io-pull
     - quay-rhacs-eng-readonly
     - ubuntu-esm-subscription-token # Provides environment variable UBUNTU_ESM_SUBSCRIPTION_TOKEN.
-    - redhat-developer-account-login
+    - rhacs-automation-credentials
   requires:
   - images
-  # - ubi-image
+  - ubi-image
   - integration-test-local
   - dockerized-build-collector
 
@@ -1256,7 +1256,7 @@ workflows:
         context:
           - docker-io-pull
           - quay-rhacs-eng-readonly
-          - redhat-developer-account-login
+          - rhacs-automation-credentials
         requires:
         - lint
     - dockerized-build-drivers:
@@ -1264,7 +1264,7 @@ workflows:
         context:
           - docker-io-pull
           - quay-rhacs-eng-readwrite
-          - redhat-developer-account-login
+          - rhacs-automation-credentials
         requires:
         - dockerized-task-file
     - dockerized-unify-images:
@@ -1314,14 +1314,14 @@ workflows:
         - collector
         - kernels
         - join-modules
-    # - ubi-image:
-    #     <<: *runOnAllTags
-    #     context:
-    #       - docker-io-push
-    #       - quay-rhacs-eng-readwrite
-    #       - redhat-developer-account-login
-    #     requires:
-    #     - initjob
+    - ubi-image:
+        <<: *runOnAllTags
+        context:
+          - docker-io-push
+          - quay-rhacs-eng-readwrite
+          - rhacs-automation-credentials
+        requires:
+        - initjob
     - run-stackrox-ci:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
@@ -1333,14 +1333,14 @@ workflows:
         requires:
         - images
         - upload-modules
-    # - integration-test-local:
-    #     <<: *runOnAllTagsWithDockerIOPushCtx
-    #     name: integration-test-local-ubi
-    #     vm-config: rhel
-    #     use-ubi: true
-    #     requires:
-    #     - ubi-image
-    #     - upload-modules
+     - integration-test-local:
+         <<: *runOnAllTagsWithDockerIOPushCtx
+         name: integration-test-local-ubi
+         vm-config: rhel
+         use-ubi: true
+         requires:
+         - ubi-image
+         - upload-modules
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>

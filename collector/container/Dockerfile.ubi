@@ -1,20 +1,16 @@
 # This builds a collector container based on UBI with a reliance on Red Hat
-# subscription entitlements.
-FROM registry.access.redhat.com/ubi8/ubi:8.4 AS builder
+# subscription entitlements. Subscription registration is only needed to install
+# RHEL packages if on a non-RHEL host. (See https://access.redhat.com/solutions/5558771)
+FROM registry.access.redhat.com/ubi8/ubi:8.5 AS builder
 
-ARG REDHAT_USERNAME
-ARG REDHAT_PASSWORD
+ARG REDHAT_SUBSCRIPTION_ORG_ID
+ARG REDHAT_SUBSCRIPTION_ACTIVATION_KEY
 ARG USE_VALGRIND=false
 ARG ADDRESS_SANITIZER=false
 RUN rm -rf /etc/rhsm-host && \
-    subscription-manager register --username "${REDHAT_USERNAME}" --password "${REDHAT_PASSWORD}" && \
-    subscription-manager attach && \
-    # this pool id may be associated with the current test user account.
-    # if the account changes, use: `subscription-manager list --available` to find a valid id.
-    subscription-manager attach --pool=8a85f9a178d12e760178dba5bb1d2b43 && \
-    dnf config-manager --enable codeready-builder-for-rhel-8-x86_64-rpms && \
-    dnf config-manager --enable amq-clients-2-for-rhel-8-x86_64-rpms && \
-    dnf config-manager --enable rhocp-4.6-for-rhel-8-x86_64-rpms
+    subscription-manager register \
+    --org "${REDHAT_SUBSCRIPTION_ORG_ID}" \
+    --activationkey "${REDHAT_SUBSCRIPTION_ACTIVATION_KEY}"
 
 # hadolint ignore=DL3041
 RUN dnf -y update && \
@@ -31,12 +27,18 @@ RUN dnf -y update && \
         libtool \
         git \
         elfutils-libelf-devel \
-        gtest-devel \
-        gmock-devel \
-        jsoncpp-devel  \
         tbb-devel \
-        jq-devel \
         c-ares-devel && \
+    dnf config-manager --enable codeready-builder-for-rhel-8-x86_64-rpms && \
+    dnf -y install \
+        gmock-devel \
+        gtest-devel && \
+    dnf config-manager --enable amq-clients-2-for-rhel-8-x86_64-rpms && \
+    dnf -y install \
+        jsoncpp-devel && \
+    dnf config-manager --enable rhocp-4.6-for-rhel-8-x86_64-rpms && \
+    dnf -y install \
+        jq-devel && \
     if [ "$USE_VALGRIND" = "true" ]; then \
         dnf -y install valgrind; \
     fi && \
@@ -61,7 +63,7 @@ ARG NPROCS=2
 RUN NPROCS=${NPROCS} ./builder/build/build-ubi.sh
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.5
 
 WORKDIR /
 
@@ -85,32 +87,24 @@ COPY --from=builder ${BUILD_DIR}/src/container/scripts /
 # Switch shell to bash with pipefall to avoid hadolint warning DL4006
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# hadolint ignore=DL3041
+# hadolint ignore=DL3041,SC2046
 RUN mv /collector-wrapper.sh /usr/local/bin/ && \
     chmod 700 bootstrap.sh && \
     echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
     ldconfig && \
     mkdir /kernel-modules && \
-    microdnf upgrade -y && \
-    microdnf install -y \
-      --enablerepo=codeready-builder-for-rhel-8-x86_64-rpms \
-      --enablerepo=amq-clients-2-for-rhel-8-x86_64-rpms \
-      --enablerepo=rhocp-4.6-for-rhel-8-x86_64-rpms \
-      gzip \
-      kmod \
-      jsoncpp \
-      tbb \
-      jq \
-      c-ares && \
+    microdnf upgrade && \
+    microdnf -y install c-ares kmod tbb && \
+    microdnf -y install jsoncpp --enablerepo=amq-clients-2-for-rhel-8-x86_64-rpms && \
+    microdnf -y install jq --enablerepo=rhocp-4.6-for-rhel-8-x86_64-rpms && \
     if [ "$USE_VALGRIND" = "true" ]; then \
-      microdnf install -y valgrind; \
+      microdnf -y install valgrind; \
     fi && \
     if [ "$ADDRESS_SANITIZER" = "true" ]; then \
-        microdnf -y install libasan; \
+      microdnf -y install libasan; \
     fi && \
     microdnf clean all && \
-    rpm --query --all 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' |\
-      xargs rpm -e --nodeps && \
+    rpm -e --nodeps $(rpm -qa curl '*dnf' '*solv*' '*rpm*') && \
     rm -rf /var/cache/dnf
 
 # Restore the default shell because "bootstrap.sh" expects a shell to be started with a single parameter
