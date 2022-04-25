@@ -10,7 +10,7 @@ dockerized=$6
 BUILD_NUM=$7
 
 COLLECTOR_REPO="stackrox/collector"
-if [[ -f pr-metadata/labels/ci-run-against-ubi ]]; then
+if [[ -f pr-metadata/labels/ci-run-against-ubi && "$dockerized" != "true" ]]; then
     COLLECTOR_REPO="stackrox/collector-test-cpaas"
 fi
 
