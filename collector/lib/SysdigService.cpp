@@ -133,7 +133,10 @@ sinsp_evt* SysdigService::GetNext() {
   if (event->get_category() & EC_INTERNAL) return nullptr;
 
   // TODO (rc) not needed when syscall filtering implemented in the eBPF probe
-  if (useEbpf && !global_event_filter_[event->get_type()]) return nullptr;
+  // if (useEbpf && !global_event_filter_[event->get_type()]) {
+  //   CLOG(DEBUG) << "filtering cos ebpf?";
+  //   return nullptr;
+  // }
 
   userspace_stats_.event_parse_micros[event->get_type()] += (NowMicros() - parse_start);
   ++userspace_stats_.nUserspaceEvents[event->get_type()];
