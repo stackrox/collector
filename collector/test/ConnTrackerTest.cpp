@@ -1027,6 +1027,57 @@ TEST(ConnTrackerTest, TestComputeDeltaAfterglowWithAfterglowPeriodShorterThanScr
   EXPECT_THAT(delta, IsEmpty());
 }
 
+TEST(ConnTrackerTest, TestComputeDeltaUpdateTimeStamp) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  int64_t connection_time1 = 7;
+  int64_t connection_time2 = 17;
+
+  ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
+  ConnMap new_state = {{conn1, ConnStatus(connection_time2, false)}};
+  ConnMap expected_old_state = {{conn1, ConnStatus(connection_time2, false)}};
+
+  CT::ComputeDelta(new_state, &old_state);
+  EXPECT_THAT(old_state, expected_old_state);
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaUpdateLargeTimeStamp) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  int64_t connection_time1 = 16505159052049170;
+  int64_t connection_time2 = 16505159082136820;
+
+  ConnMap old_state = {{conn1, ConnStatus(connection_time1, false)}};
+  ConnMap new_state = {{conn1, ConnStatus(connection_time2, false)}};
+  ConnMap expected_old_state = {{conn1, ConnStatus(connection_time2, false)}};
+
+  CT::ComputeDelta(new_state, &old_state);
+  EXPECT_THAT(old_state, expected_old_state);
+}
+
+TEST(ConnTrackerTest, TestComputeDeltaUpdateLargeTimeStamp2) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("abc", b, a, L4Proto::TCP, true);
+  int64_t connection_time1a = 16505159052049170;
+  int64_t connection_time1b = 16505159052048940;
+  int64_t connection_time2a = 16505159082136820;
+  int64_t connection_time2b = 16505159082136580;
+
+  ConnMap old_state = {{conn1, ConnStatus(connection_time1a, false)}, {conn2, ConnStatus(connection_time1b, false)}};
+  ConnMap new_state = {{conn1, ConnStatus(connection_time2a, false)}, {conn2, ConnStatus(connection_time2b, false)}};
+  ConnMap expected_state = {{conn1, ConnStatus(connection_time2a, false)}, {conn2, ConnStatus(connection_time2b, false)}};
+
+  CT::ComputeDelta(new_state, &old_state);
+  EXPECT_THAT(old_state, expected_state);
+}
+
 TEST(ConnTrackerTest, TestUpdateOldStateInitialEmptyOldState) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);

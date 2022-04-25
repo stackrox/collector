@@ -230,10 +230,8 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
   WaitUntilWriterStarted(writer, 10);
 
   ConnMap old_conn_state;
-  //ConnMap all_conn;
   UnorderedMap<string, ConnStatus> all_conn;
   ContainerEndpointMap old_cep_state;
-  //ContainerEndpointMap all_cep;
   UnorderedMap<string, ConnStatus> all_cep;
   auto next_scrape = std::chrono::system_clock::now();
 
@@ -250,11 +248,11 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
     WITH_TIMER(CollectorStats::net_fetch_state) {
       new_conn_state = conn_tracker_->FetchConnState(true, true);
       ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
-      //ConnectionTracker::AddToAllCep(&all_conn, old_conn_state);
+      ConnectionTracker::AddToAllCep(&all_conn, old_conn_state);
 
       new_cep_state = conn_tracker_->FetchEndpointState(true, true);
       ConnectionTracker::ComputeDelta(new_cep_state, &old_cep_state);
-      ConnectionTracker::AddToAllCep(&all_cep, old_cep_state);
+      //ConnectionTracker::AddToAllCep(&all_cep, old_cep_state);
     }
 
     WITH_TIMER(CollectorStats::net_create_message) {

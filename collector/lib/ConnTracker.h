@@ -120,6 +120,9 @@ class ConnectionTracker {
   template <typename T>
   static void AddToAllCep(UnorderedMap<string, ConnStatus>* all_cep, UnorderedMap<T, ConnStatus> delta);
 
+  template <typename T>
+  static void PrintConnections(const UnorderedMap<T, ConnStatus> conns);
+
   // Handles the case when a connection appears in both the new and old states and afterglow is used
   template <typename T>
   void static ComputeDeltaForAConnectionInOldAndNewStates(const std::pair<const T, ConnStatus>& new_conn, const ConnStatus& old_conn_status, UnorderedMap<T, ConnStatus>& delta, int64_t time_micros, int64_t time_at_last_scrape, int64_t afterglow_period_micros);
@@ -219,6 +222,10 @@ void ConnectionTracker::UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, c
 
 template <typename T>
 void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state) {
+  CLOG(INFO) << "Print new_conn_state";
+  PrintConnections(new_state);
+  CLOG(INFO) << "Print old_conn_state";
+  PrintConnections(*old_state);
   // Insert all objects from the new state, if anything changed about them.
   for (const auto& conn : new_state) {
     auto insert_res = old_state->insert(conn);
@@ -232,8 +239,10 @@ void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_stat
         old_state->erase(insert_res.first);
       } else {
         // Both objects are inactive. Update the timestamp if applicable, otherwise omit from delta.
+        CLOG(INFO) << "old_conn.second.LastActiveTime()= " << old_conn.second.LastActiveTime() << " conn.second.LastActiveTime()= " << conn.second.LastActiveTime();
         if (old_conn.second.LastActiveTime() < conn.second.LastActiveTime()) {
           old_conn.second = conn.second;
+          CLOG(INFO) << "Updated timestamp";
         } else {
           old_state->erase(insert_res.first);
         }
@@ -258,6 +267,8 @@ void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_stat
       it = old_state->erase(it);
     }
   }
+  CLOG(INFO) << "Print old_conn_state";
+  PrintConnections(*old_state);
 }
 
 // This function takes in old network connections or endpoints (old_state) and the
@@ -383,22 +394,35 @@ bool ConnectionTracker::CheckIfOldConnShouldBeInactiveInDelta(const T& conn_key,
 }
 
 template <typename T>
+void ConnectionTracker::PrintConnections(const UnorderedMap<T, ConnStatus> conns) {
+  for (auto conn : conns) {
+    CLOG(INFO) << conn.first << "\t" << conn.second.LastActiveTime() << conn.second.IsActive();
+  }
+  CLOG(INFO) << " ";
+  CLOG(INFO) << " ";
+  CLOG(INFO) << " ";
+}
+
+template <typename T>
 void ConnectionTracker::AddToAllCep(UnorderedMap<string, ConnStatus>* all_cep, UnorderedMap<T, ConnStatus> delta) {
+  CLOG(INFO) << "delta";
+  PrintConnections(delta);
   for (auto cep : delta) {
     auto& cep_key = cep.first;
     std::stringstream ss;
     ss << cep_key;
     string cep_key_string;
     ss >> cep_key_string;
-    ss << cep.second.LastActiveTime();
+    std::stringstream lastActiveSS;
+    lastActiveSS << cep.second.LastActiveTime();
     string lastActiveTimeString;
-    ss >> lastActiveTimeString;
+    lastActiveSS >> lastActiveTimeString;
     cep_key_string += " " + lastActiveTimeString;
     auto delta_cep = all_cep->find(cep_key_string);
     if (delta_cep != all_cep->end()) {
-      CLOG(INFO) << "Already sent " << delta_cep->second.LastActiveTime() << "\t" << delta_cep->first;
+      CLOG(INFO) << "Already sent " << delta_cep->second.LastActiveTime() << "\t" << delta_cep->first << "\t" << delta_cep->second.IsActive() << "\t cep_key_string= " << cep_key_string;
     } else {
-      CLOG(INFO) << "First sent " << cep.second.LastActiveTime() << "\t" << cep.first;
+      CLOG(INFO) << "First sent " << cep.second.LastActiveTime() << "\t" << cep.first << "\t" << cep.second.IsActive() << "\t cep_key_string= " << cep_key_string;
       auto temp = std::make_pair(cep_key_string, cep.second);
       all_cep->insert(temp);
     }
