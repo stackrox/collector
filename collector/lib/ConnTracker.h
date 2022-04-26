@@ -118,7 +118,10 @@ class ConnectionTracker {
   static void ComputeDeltaAfterglow(const UnorderedMap<T, ConnStatus>& new_state, const UnorderedMap<T, ConnStatus>& old_state, UnorderedMap<T, ConnStatus>& delta, int64_t time_micros, int64_t time_at_last_scrape, int64_t afterglow_period_micros);
 
   template <typename T>
-  static void AddToAllCep(UnorderedMap<string, ConnStatus>* all_cep, UnorderedMap<T, ConnStatus> delta);
+  static void CheckForDuplicateNetworkingEvents(UnorderedMap<string, ConnStatus>* all_cep, UnorderedMap<T, ConnStatus> delta);
+
+  template <typename T>
+  static string GetConnStringKey(std::pair<T, ConnStatus> conn);
 
   template <typename T>
   static void PrintConnections(const UnorderedMap<T, ConnStatus> conns);
@@ -404,31 +407,29 @@ void ConnectionTracker::PrintConnections(const UnorderedMap<T, ConnStatus> conns
 }
 
 template <typename T>
-void ConnectionTracker::AddToAllCep(UnorderedMap<string, ConnStatus>* all_cep, UnorderedMap<T, ConnStatus> delta) {
+string ConnectionTracker::GetConnStringKey(std::pair<T, ConnStatus> conn) {
+  string conn_key_string;
+  string word;
+
+  auto& conn_key = conn.first;
+  std::stringstream ss;
+  ss << conn_key;
+  while (ss >> word) {
+    conn_key_string += word + " ";
+  }
+
+  conn_key_string += " " + std::to_string(conn.second.LastActiveTime());
+  conn_key_string += " " + std::to_string(conn.second.IsActive());
+
+  return conn_key_string;
+}
+
+template <typename T>
+void ConnectionTracker::CheckForDuplicateNetworkingEvents(UnorderedMap<string, ConnStatus>* all_cep, UnorderedMap<T, ConnStatus> delta) {
   CLOG(INFO) << "delta";
   PrintConnections(delta);
   for (auto cep : delta) {
-    auto& cep_key = cep.first;
-    std::stringstream ss;
-    ss << cep_key;
-    std::stringstream isActiveSS;
-    string cep_key_string, port_string, direction_string, ip_string;
-    ss >> cep_key_string;
-    ss >> port_string;
-    ss >> direction_string;
-    ss >> ip_string;
-    cep_key_string += " " + port_string;
-    cep_key_string += " " + direction_string;
-    cep_key_string += " " + ip_string;
-    std::stringstream lastActiveSS;
-    lastActiveSS << cep.second.LastActiveTime();
-    string lastActiveTimeString;
-    lastActiveSS >> lastActiveTimeString;
-    cep_key_string += " " + lastActiveTimeString;
-    isActiveSS << cep.second.IsActive();
-    string isActiveString;
-    isActiveSS >> isActiveString;
-    cep_key_string += " " + isActiveString;
+    string cep_key_string = GetConnStringKey(cep);
     auto delta_cep = all_cep->find(cep_key_string);
     if (delta_cep != all_cep->end()) {
       CLOG(INFO) << "Already sent " << delta_cep->second.LastActiveTime() << "\t" << delta_cep->first << "\t" << delta_cep->second.IsActive() << "\t cep_key_string= " << cep_key_string;
