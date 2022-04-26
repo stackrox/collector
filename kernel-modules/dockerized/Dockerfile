@@ -34,7 +34,6 @@ RUN subscription-manager register \
 	ln -s /usr/bin/gcc /usr/bin/gcc-8 && \
 	subscription-manager unregister
 
-
 # This directory goes separately to prevent it from being modified/deleted when switching branches
 COPY /collector/kernel-modules/dockerized/scripts /scripts
 COPY /collector/kernel-modules/build/prepare-src /scripts/prepare-src.sh
