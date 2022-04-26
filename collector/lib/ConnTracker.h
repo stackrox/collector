@@ -411,8 +411,12 @@ void ConnectionTracker::AddToAllCep(UnorderedMap<string, ConnStatus>* all_cep, U
     auto& cep_key = cep.first;
     std::stringstream ss;
     ss << cep_key;
-    string cep_key_string;
+    string cep_key_string, port_string, ip_string;
     ss >> cep_key_string;
+    ss >> port_string;
+    ss >> ip_string;
+    cep_key_string += port_string;
+    cep_key_string += ip_string;
     std::stringstream lastActiveSS;
     lastActiveSS << cep.second.LastActiveTime();
     string lastActiveTimeString;
