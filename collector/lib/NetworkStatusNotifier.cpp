@@ -252,7 +252,7 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
 
       new_cep_state = conn_tracker_->FetchEndpointState(true, true);
       ConnectionTracker::ComputeDelta(new_cep_state, &old_cep_state);
-      //ConnectionTracker::AddToAllCep(&all_cep, old_cep_state);
+      ConnectionTracker::AddToAllCep(&all_cep, old_cep_state);
     }
 
     WITH_TIMER(CollectorStats::net_create_message) {
