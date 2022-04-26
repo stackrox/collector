@@ -396,7 +396,7 @@ bool ConnectionTracker::CheckIfOldConnShouldBeInactiveInDelta(const T& conn_key,
 template <typename T>
 void ConnectionTracker::PrintConnections(const UnorderedMap<T, ConnStatus> conns) {
   for (auto conn : conns) {
-    CLOG(INFO) << conn.first << "\t" << conn.second.LastActiveTime() << conn.second.IsActive();
+    CLOG(INFO) << conn.first << "\t" << conn.second.LastActiveTime() << "\t" << conn.second.IsActive();
   }
   CLOG(INFO) << " ";
   CLOG(INFO) << " ";
@@ -411,6 +411,7 @@ void ConnectionTracker::AddToAllCep(UnorderedMap<string, ConnStatus>* all_cep, U
     auto& cep_key = cep.first;
     std::stringstream ss;
     ss << cep_key;
+    std::stringstream isActiveSS;
     string cep_key_string, port_string, direction_string, ip_string;
     ss >> cep_key_string;
     ss >> port_string;
@@ -424,6 +425,10 @@ void ConnectionTracker::AddToAllCep(UnorderedMap<string, ConnStatus>* all_cep, U
     string lastActiveTimeString;
     lastActiveSS >> lastActiveTimeString;
     cep_key_string += " " + lastActiveTimeString;
+    isActiveSS << cep.second.IsActive();
+    string isActiveString;
+    isActiveSS >> isActiveString;
+    cep_key_string += " " + isActiveString;
     auto delta_cep = all_cep->find(cep_key_string);
     if (delta_cep != all_cep->end()) {
       CLOG(INFO) << "Already sent " << delta_cep->second.LastActiveTime() << "\t" << delta_cep->first << "\t" << delta_cep->second.IsActive() << "\t cep_key_string= " << cep_key_string;
