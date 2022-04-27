@@ -29,15 +29,12 @@ RUN dnf -y update && \
         elfutils-libelf-devel \
         tbb-devel \
         c-ares-devel && \
-    dnf config-manager --enable codeready-builder-for-rhel-8-x86_64-rpms && \
-    dnf -y install \
+    dnf -y --enablerepo codeready-builder-for-rhel-8-x86_64-rpms install \
         gmock-devel \
         gtest-devel && \
-    dnf config-manager --enable amq-clients-2-for-rhel-8-x86_64-rpms && \
-    dnf -y install \
+    dnf -y --enablerepo amq-clients-2-for-rhel-8-x86_64-rpms install \
         jsoncpp-devel && \
-    dnf config-manager --enable rhocp-4.6-for-rhel-8-x86_64-rpms && \
-    dnf -y install \
+    dnf -y --enablerepo rhocp-4.6-for-rhel-8-x86_64-rpms install \
         jq-devel && \
     if [ "$USE_VALGRIND" = "true" ]; then \
         dnf -y install valgrind; \
@@ -105,7 +102,7 @@ RUN mv /collector-wrapper.sh /usr/local/bin/ && \
     fi && \
     microdnf clean all && \
     rpm --query --all 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'findutils' | xargs -t rpm -e --nodeps && \
-    rm -rf /var/cache/yum
+    rm -rf /var/cache/yum /etc/pki/entitlement /etc/rhsm
 
 # Restore the default shell because "bootstrap.sh" expects a shell to be started with a single parameter
 SHELL ["/bin/sh", "-c"]
