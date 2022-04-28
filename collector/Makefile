@@ -87,6 +87,10 @@ clean: clean-generated-srcs
 	rm -rf container/bin
 	rm -rf container/driver
 	rm -rf container/libs
+	rm -rf container/rhel/scripts
+	rm -rf container/rhel/bundle.tar.gz
+	rm -rf container/devel/scripts
+	rm -rf container/devel/bundle.tar.gz
 	rm -rf container/THIRD_PARTY_NOTICES
 
 .PHONY: clean-generated-srcs

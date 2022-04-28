@@ -9,8 +9,6 @@ chmod 700 bootstrap.sh
 dnf upgrade -y
 dnf install -y kmod
 
-dnf clean all
-rpm --query --all 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' | xargs rpm -e --nodeps
-rm -rf /var/cache/dnf
+dnf install -y libasan valgrind
 
 echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt

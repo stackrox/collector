@@ -41,23 +41,29 @@ $(MOD_VER_FILE): build-kernel-modules
 	mkdir -p kernel-modules/kobuild-tmp/versions-src
 	cp kernel-modules/MODULE_VERSION $(MOD_VER_FILE)
 
-.PHONY: $(CURDIR)/collector/container/rhel/bundle.tar.gz
-$(CURDIR)/collector/container/rhel/bundle.tar.gz:
-	$(CURDIR)/collector/container/rhel/create-bundle.sh $(CURDIR)/collector/container - $(CURDIR)/collector/container/rhel/
+.PHONY: $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/bundle.tar.gz
+$(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/bundle.tar.gz:
+	$(CURDIR)/collector/container/create-bundle.sh $(CURDIR)/collector/container - $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/
 
-.PHONY: $(CURDIR)/collector/container/rhel/prebuild.sh
-$(CURDIR)/collector/container/rhel/prebuild.sh:
-	$(CURDIR)/collector/container/rhel/create-prebuild.sh $@
-
-image: collector unittest $(MOD_VER_FILE) $(CURDIR)/collector/container/rhel/bundle.tar.gz
+image: collector unittest $(MOD_VER_FILE) $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/bundle.tar.gz
 	make -C collector txt-files
 	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
 		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
-		--build-arg USE_VALGRIND=$(USE_VALGRIND) \
-		--build-arg ADDRESS_SANITIZER=$(ADDRESS_SANITIZER) \
-		-f collector/container/rhel/Dockerfile \
+		-f collector/container/Dockerfile \
 		-t stackrox/collector:$(COLLECTOR_TAG) \
-		collector/container/rhel
+		$(COLLECTOR_BUILD_CONTEXT)
+
+image-dev: COLLECTOR_BUILD_CONTEXT=collector/container/devel
+image-dev: collector unittest $(MOD_VER_FILE) $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/bundle.tar.gz
+	make -C collector txt-files
+	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
+		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
+		--build-arg BASE_REGISTRY=quay.io \
+		--build-arg BASE_IMAGE=centos/centos \
+		--build-arg BASE_TAG=stream8 \
+		-f collector/container/Dockerfile \
+		-t stackrox/collector:$(COLLECTOR_TAG) \
+		$(COLLECTOR_BUILD_CONTEXT)
 
 .PHONY: integration-tests
 integration-tests:

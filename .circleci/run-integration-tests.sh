@@ -15,10 +15,15 @@ if [[ $remote_host_type != "local" ]]; then
 else
     sudo cp /proc/sys/kernel/core_pattern /tmp/core_pattern
     echo '/tmp/core.out' | sudo tee /proc/sys/kernel/core_pattern
-    make -C "${SOURCE_ROOT}" integration-tests-repeat-network integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report || exit_code=$?
+
+    exit_code=0
+    make -C "${SOURCE_ROOT}" integration-tests-repeat-network integration-tests-missing-proc-scrape integration-tests-image-label-json integration-tests integration-tests-report \
+        || exit_code=$?
+
     if [ -f /tmp/core.out ]; then
         sudo chmod 755 /tmp/core.out
     fi
+
     if [ "${exit_code}" -ne 0 ]; then
         exit "${exit_code}"
     fi
