@@ -1,12 +1,12 @@
 ARG BASE_REGISTRY=registry.access.redhat.com
-ARG BASE_IMAGE=ubi8/ubi
+ARG BASE_IMAGE=ubi8/ubi-minimal
 ARG BASE_TAG=8.5
-
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
 
 COPY bundle.tar.gz /
+COPY extract-bundle.sh /bundle/
 WORKDIR /bundle
-RUN tar -xzf /bundle.tar.gz
+RUN ./extract-bundle.sh
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
