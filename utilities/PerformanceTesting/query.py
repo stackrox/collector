@@ -119,8 +119,8 @@ def get_collector_timers(querier):
                 total_time[g_stat_names[stat]] += time_value
             except TypeError:
                 err_msg = "WARNING: The following query did not return a valid response\n"
-                sys.stderr.write(err_msg)
-                sys.stderr.write(time_query)
+                sys.stderr.write(f'{err_msg}\n')
+                sys.stderr.write(f'{time_query}\n')
 
     metric_name = 'collector_timers_total'
     res[metric_name] = total_time
@@ -206,12 +206,12 @@ def get_cpu_mem_network_usage(querier, query_window):
     res = {}
 
     cpu_query = f'(rate(container_cpu_usage_seconds_total{{namespace="stackrox"}}[{query_window}]) * 100)'
-    cpu_query_name = f'cpu_usage'
+    cpu_query_name = 'cpu_usage'
     res[cpu_query_name] = querier.get_stats_for_query(cpu_query)
     res[cpu_query_name]['units'] = 'bytes'
 
-    mem_query = f'(container_memory_usage_bytes{{namespace="stackrox"}})'
-    mem_query_name = f'mem_usage'
+    mem_query = '(container_memory_usage_bytes{namespace="stackrox"})'
+    mem_query_name = 'mem_usage'
     res[mem_query_name] = querier.get_stats_for_query(mem_query)
 
     metric_names = {

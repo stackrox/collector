@@ -25,7 +25,7 @@ def get_file_paths(file_prefix, num_files):
     return files
 
 
-def get_metricss(file_paths):
+def get_metrics_collections(file_paths):
     """
     Reads the json files to be averaged and returns the json contents
 
@@ -34,13 +34,13 @@ def get_metricss(file_paths):
     :return: A list of dictionaries, which represent the metrics obtained
     from one run of Collector
     """
-    metricss = []
+    metrics_collections = []
 
     for file_path in file_paths:
         with open(file_path) as f:
-            metricss.append(json.load(f))
+            metrics_collections.append(json.load(f))
 
-    return metricss
+    return metrics_collections
 
 
 def initialize_cumulative(metrics, cumulative):
@@ -81,18 +81,18 @@ def accumulate_metric_values_once(metrics, cumulative):
                     cumulative[metric_group][metric][key].append(value)
 
 
-def accumulate_metric_values(metricss, cumulative):
+def accumulate_metric_values(metrics_collections, cumulative):
     """
     Loops over a list of dictionaries with the same structure and creates a
     dictionary where each element in the dictionary with the key value is a
     list of the values found in the original list of dictionaries.
 
-    :param metricss: A list of dictionaries representing the results from
+    :param metrics_collections: A list of dictionaries representing the results from
     multiple runs of Collector and StackRox
     :param cumulative: A dictionary which will contain results from all runs
     of the performance tests for a particular version of Collector
     """
-    for metrics in metricss:
+    for metrics in metrics_collections:
         accumulate_metric_values_once(metrics, cumulative)
 
 
@@ -136,13 +136,13 @@ def calc_averages(file_prefix, num_files):
 
     file_paths = get_file_paths(file_prefix, num_files)
 
-    # metricss is a list of dictionaries, each of which represents the metrics
+    # metrics_collections is a list of dictionaries, each of which represents the metrics
     # obtained from one run of Collector
-    metricss = get_metricss(file_paths)
+    metrics_collections = get_metrics_collections(file_paths)
 
     cumulative = {}
-    initialize_cumulative(metricss[0], cumulative)
-    accumulate_metric_values(metricss, cumulative)
+    initialize_cumulative(metrics_collections[0], cumulative)
+    accumulate_metric_values(metrics_collections, cumulative)
     averages = calc_averages_from_cumulative(cumulative)
 
     return averages
@@ -174,6 +174,7 @@ The following is an example of what an input file might look like:
             "Average": 100571.83333333333,
             "Maximum": 140619.0
         }
+    }
 }
 """
 

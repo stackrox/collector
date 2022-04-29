@@ -29,7 +29,8 @@ To run StackRox on an openshift-4 cluster execute the following
 ./performance-test.sh <cluster_name> <test_dir> <load-test-name> <num-streams> <collector_versions_file> [teardown_script] [nrepeat] [sleep_after_stack_rox] [load_duration] [query_window] [artifacts_dir]
 ```
 
-Setting the environment variable TEARDOWN script is recommended. An alternative is to pass is to pass it as a parameter.
+The environment variables DOCKER_USERNAME and DOCKER_PASSWORD must be set.
+Setting the environment variable TEARDOWN script is recommended. An alternative is to pass it as a parameter.
 
 - `cluster_name`: Name of the openshift-4 cluster
 
