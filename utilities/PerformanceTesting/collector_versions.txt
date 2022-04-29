@@ -1,0 +1,2 @@
+docker.io/stackrox afterglow-enabled afterglow
+docker.io/stackrox 3.6.x-88-g95637907d0 master_20220210

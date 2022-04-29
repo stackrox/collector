@@ -8,6 +8,7 @@ integration-tests/perf.json
 falcosecurity-libs/cmake-build
 falcosecurity-libs/cmake-build-rhel
 kernel-modules/kobuild-tmp
+utilities/PerformanceTesting/TestResults
 
 # Mac OS hidden file
 .DS_Store
