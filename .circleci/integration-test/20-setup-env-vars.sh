@@ -38,7 +38,7 @@ if [[ "$dockerized" == "true" ]]; then
 EOF
 fi
 
-if "${CI_ROOT}/pr_has_label.sh" ci-benchmark-syscall-latency; then
+if [[ -f pr-metadata/labels/ci-benchmark-syscall-latency ]]; then
     cat >> "$BASH_ENV" <<- EOF
     export MEASURE_SYSCALL_LATENCY=true
     export STOP_TIMEOUT=60

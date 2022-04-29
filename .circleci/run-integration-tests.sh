@@ -65,10 +65,6 @@ function run_tests() {
 
 exit_code=0
 
-if [[ "${MEASURE_SYSCALL_LATENCY}" == "true" ]]; then
-    mkdir "${SOURCE_ROOT}/integration-tests/performance-logs"
-fi
-
 if [[ $remote_host_type != "local" ]]; then
     run_tests || exit_code=$?
     cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
