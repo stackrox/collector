@@ -20,7 +20,9 @@ cat >> "$BASH_ENV" <<- EOF
   export USE_HELGRIND="$HELGRIND_INTEGRATION_TESTS"
 EOF
 
-cat >> "$BASH_ENV" <<- EOF
-  export MEASURE_DRIVER_PERFORMANCE=true
-  export STOP_TIMEOUT=60
+if "${CI_ROOT}/pr_has_label.sh" ci-benchmark-syscall-latency; then
+    cat >> "$BASH_ENV" <<- EOF
+    export MEASURE_SYSCALL_LATENCY=true
+    export STOP_TIMEOUT=60
 EOF
+fi
