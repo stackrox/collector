@@ -208,11 +208,11 @@ def get_cpu_mem_network_usage(querier, query_window):
     cpu_query = f'(rate(container_cpu_usage_seconds_total{{namespace="stackrox"}}[{query_window}]) * 100)'
     cpu_query_name = 'cpu_usage'
     res[cpu_query_name] = querier.get_stats_for_query(cpu_query)
-    res[cpu_query_name]['units'] = 'bytes'
 
     mem_query = '(container_memory_usage_bytes{namespace="stackrox"})'
     mem_query_name = 'mem_usage'
     res[mem_query_name] = querier.get_stats_for_query(mem_query)
+    res[mem_query_name]['units'] = 'bytes'
 
     metric_names = {
             'container_network_receive_bytes_total':
