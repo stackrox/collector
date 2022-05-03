@@ -1,5 +1,5 @@
-ARG REDHAT_USERNAME
-ARG REDHAT_PASSWORD
+ARG REDHAT_SUBSCRIPTION_ORG_ID
+ARG REDHAT_SUBSCRIPTION_ACTIVATION_KEY
 
 ARG CACHE_REPO
 ARG CACHE_TAG
@@ -8,18 +8,16 @@ ARG CHECKOUT_BEFORE_PATCHING=true
 
 FROM registry.access.redhat.com/ubi8/ubi:8.5 AS rhel-8-base
 
-ARG REDHAT_USERNAME
-ARG REDHAT_PASSWORD
+ARG REDHAT_SUBSCRIPTION_ORG_ID
+ARG REDHAT_SUBSCRIPTION_ACTIVATION_KEY
 
 ENV DOCKERIZED=1
 
-RUN subscription-manager register --username $REDHAT_USERNAME --password $REDHAT_PASSWORD && \
-	subscription-manager attach && \
-	# this pool id may be associated with the current test user account.
-	# if the account changes, use: `subscription-manager list --available` to find a valid id.
-	subscription-manager attach --pool=8a85f9a178d12e760178dba5bb1d2b43 && \
-	dnf config-manager --enable rhel-8-for-x86_64-baseos-rpms && \
-	dnf config-manager --enable rhel-8-for-x86_64-appstream-rpms && \
+# Subscription registration is only needed to install RHEL packages
+# if on a non-RHEL host. (See https://access.redhat.com/solutions/5558771)
+RUN subscription-manager register \
+	--org "${REDHAT_SUBSCRIPTION_ORG_ID}" \
+	--activationkey "${REDHAT_SUBSCRIPTION_ACTIVATION_KEY}" && \
 	dnf -y update && \
 	dnf -y install \
 		make \
@@ -33,7 +31,8 @@ RUN subscription-manager register --username $REDHAT_USERNAME --password $REDHAT
 		git \
 		python3 \
 		kmod && \
-	ln -s /usr/bin/gcc /usr/bin/gcc-8
+	ln -s /usr/bin/gcc /usr/bin/gcc-8 && \
+	subscription-manager unregister
 
 # This directory goes separately to prevent it from being modified/deleted when switching branches
 COPY /collector/kernel-modules/dockerized/scripts /scripts
@@ -81,16 +80,16 @@ RUN sed -i '/^[0-3]\./d' /build-tasks; \
 
 FROM registry.access.redhat.com/ubi7/ubi:7.9 AS rhel-7-base
 
-ARG REDHAT_USERNAME
-ARG REDHAT_PASSWORD
+ARG REDHAT_SUBSCRIPTION_ORG_ID
+ARG REDHAT_SUBSCRIPTION_ACTIVATION_KEY
 
 ENV DOCKERIZED=1
 
-RUN subscription-manager register --username $REDHAT_USERNAME --password $REDHAT_PASSWORD && \
-	subscription-manager attach && \
-	# this pool id may be associated with the current test user account.
-	# if the account changes, use: `subscription-manager list --available` to find a valid id.
-	subscription-manager attach --pool=8a85f9a178d12e760178dba5bb1d2b43 && \
+# Subscription registration is only needed to install RHEL packages
+# if on a non-RHEL host. (See https://access.redhat.com/solutions/5558771)
+RUN subscription-manager register \
+	--org "${REDHAT_SUBSCRIPTION_ORG_ID}" \
+	--activationkey "${REDHAT_SUBSCRIPTION_ACTIVATION_KEY}" && \
 	subscription-manager repos --enable rhel-7-server-devtools-rpms && \
 	subscription-manager repos --enable rhel-server-rhscl-7-rpms && \
 	yum -y update && \
@@ -99,7 +98,8 @@ RUN subscription-manager register --username $REDHAT_USERNAME --password $REDHAT
 		gcc-c++ \
 		llvm-toolset-7.0 \
 		elfutils-libelf \
-		kmod
+		kmod && \
+	subscription-manager unregister
 
 # This directory goes separately to prevent it from being modified/deleted when switching branches
 COPY /collector/kernel-modules/dockerized/scripts /scripts
