@@ -68,5 +68,6 @@ Even though development containers is a supported feature of `Docker for Desktop
 - `make image` will create the Red Hat based collector image.
 
 ### Setting up git hooks
-Some basic git hooks can be found under the `githooks/` directory.
-In order to use them run `git config core.hooksPath ./githooks/` from the collector root directory.
+
+Git hooks are configured in the `.pre-commit-config.yaml` file using [pre-commit](https://pre-commit.com)
+In order to use them install pre-commit, and run `git config core.hooksPath ./githooks/` from the collector root directory.

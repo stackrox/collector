@@ -1,0 +1,25 @@
+repos:
+  - repo: git@github.com:syntaqx/git-hooks.git
+    rev: "v0.0.17"
+    hooks:
+      - id: shfmt
+        args:
+          - -d
+      - id: shellcheck
+      
+  - repo: git@github.com:zahorniak/pre-commit-circleci.git
+    rev: "v0.4"
+    hooks:
+      - id: circleci_validate
+        args:
+          - --org-slug gh/stackrox
+
+  - repo: git@github.com:pycqa/flake8.git
+    rev: "4.0.1"
+    hooks:
+      - id: flake8
+
+  - repo: git@github.com:doublify/pre-commit-clang-format
+    rev: "6230247"
+    hooks:
+      - id: clang-format

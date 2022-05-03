@@ -1,0 +1,6 @@
+[flake8]
+ignore = 
+    # line-too-long PEP8 errors (handled by the max-line-length field below)
+    E501
+max-line-length = 79
+max-complexity = 18

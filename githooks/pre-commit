@@ -1,38 +1,9 @@
 #!/bin/bash
 
-if ! make -C collector check-staged; then
-    echo "Format errors found! Run 'make -C collector format' in order to fix them."
-    echo "Use the '--no-verify' flag in order to bypass the pre-commit check altogether."
-    exit 1
-fi
-
-# Check staged scripts formatting
-if command -v shfmt --version > /dev/null; then
-    shfmt_status=0
-    while IFS="" read -r file || [[ -n "$file" ]]; do
-        [[ -n "$file" ]] || continue
-        if ! shfmt -d "$file"; then
-            shfmt_status=1
-        fi
-    done < <(git diff --name-only --cached --relative --diff-filter=d | grep -E '\.sh$$|^githooks/')
-
-    if ((shfmt_status)); then
-        echo "Format errors found! Run 'make shfmt-format' in order to fix them."
-        echo "Use the '--no-verify' flag in order to bypass the pre-commit check altogether."
-        exit 1
-    fi
-fi
-
-# Validate CircleCI configuration if it was modified and the CLI is available
-if command -v circleci > /dev/null && git diff --name-only --cached | grep -qE '^\.circleci/config\.yml$'; then
-    echo "Validating CircleCI configuration..."
-    circleci config validate --org-slug gh/stackrox .circleci/config.yml
-fi
-
-# Check for shellcheck errors/smells
-toplevel_dir="$(git rev-parse --show-toplevel)"
-if command -v shellcheck > /dev/null; then
-    make -C "$toplevel_dir" shellcheck-all
+if command -v pre-commit > /dev/null; then
+    pre-commit run
 else
-    make -C "$toplevel_dir" shellcheck-all-dockerized
+    echo "Install pre-commit to run configured pre-commit actions"
+    echo "https://pre-commit.com"
+    exit 1
 fi
