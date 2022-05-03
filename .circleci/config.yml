@@ -55,7 +55,7 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
     - docker-io-pull
     - quay-rhacs-eng-readonly
     - ubuntu-esm-subscription-token # Provides environment variable UBUNTU_ESM_SUBSCRIPTION_TOKEN.
-    - redhat-developer-account-login
+    - rhacs-automation-credentials
   requires:
   - images
   - ubi-image
@@ -1380,6 +1380,7 @@ workflows:
         <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - builder
+<<<<<<< HEAD
     # - dockerized-task-file:
     #     <<: *runOnAllTags
     #     context:
@@ -1448,7 +1449,7 @@ workflows:
         context:
           - docker-io-push
           - quay-rhacs-eng-readwrite
-          - redhat-developer-account-login
+          - rhacs-automation-credentials
         requires:
         - initjob
     - integration-test-local:
