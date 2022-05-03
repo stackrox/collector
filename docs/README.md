@@ -14,4 +14,5 @@ opportunities to catch in many areas, so let's start.
 1. [How to start](how-to-start.md)
 2. [Design overview](design-overview.md)
 3. [Roadmap](roadmap.md)
+3. [Release Process](release.md)
 4. [References](references.md)
