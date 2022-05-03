@@ -70,6 +70,15 @@ func ReadBoolEnvVar(env string) bool {
 	return e
 }
 
+func GetQATag(base_tag string) string {
+	collector_qa_tag := ReadEnvVar("COLLECTOR_QA_TAG")
+
+	if collector_qa_tag != "" {
+		return base_tag + "-" + collector_qa_tag;
+	}
+	return base_tag
+}
+
 func NewSSHCommandBuilder() CommandBuilder {
 	return &sshCommandBuilder{
 		user:    ReadEnvVar("SSH_USER"),

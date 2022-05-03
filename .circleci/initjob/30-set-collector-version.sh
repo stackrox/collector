@@ -75,4 +75,8 @@ cat >> "$shared_env" <<- EOF
     export COLLECTOR_DRIVERS_TAG="${COLLECTOR_DRIVERS_TAG}"
 EOF
 
+if [[ -f pr-metadata/labels/build-qa-containers ]]; then
+    echo "export COLLECTOR_QA_TAG=${build_tag}" >> "$shared_env"
+fi
+
 cat "$shared_env"

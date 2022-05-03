@@ -25,7 +25,7 @@ const (
 	parentExecFilePathStr    = "ParentExecFilePath"
 
 	defaultWaitTickSeconds = 30 * time.Second
-	
+
 	// defaultStopTimeoutSeconds is the amount of time to wait for a container
 	// to stop before forcibly killing it. It needs to be a string because it
 	// is passed directly to the docker command via the executor.
@@ -400,9 +400,11 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	err = s.collector.Launch()
 	s.Require().NoError(err)
 
+	scheduled_curls_image := "quay.io/rhacs-eng/qa:" + GetQATag("collector-schedule-curls")
+
 	images := []string{
 		"nginx:1.14-alpine",
-		"stackrox/qa:collector-schedule-curls",
+		scheduled_curls_image,
 	}
 
 	for _, image := range images {
@@ -418,7 +420,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.serverContainer = containerID[0:12]
 
 	// invokes another container
-	containerID, err = s.launchContainer("nginx-curl", "stackrox/qa:collector-schedule-curls", "sleep", "300")
+	containerID, err = s.launchContainer("nginx-curl", scheduled_curls_image, "sleep", "300")
 	s.Require().NoError(err)
 	s.clientContainer = containerID[0:12]
 
@@ -628,7 +630,7 @@ func (s *IntegrationTestSuiteBase) GetLineageInfo(processName string, key string
 
 func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	benchmarkName := "benchmark"
-	benchmarkImage := "stackrox/benchmark-collector:phoronix"
+	benchmarkImage := "quay.io/rhacs-eng/collector-performance:" + GetQATag("phoronix")
 
 	err := s.executor.PullImage(benchmarkImage)
 	s.Require().NoError(err)
@@ -637,7 +639,7 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 		benchmarkName,
 		"--env", "FORCE_TIMES_TO_RUN=1",
 		benchmarkImage,
-		"phoronix-test-suite", "batch-benchmark", "collector",
+		"batch-benchmark", "collector",
 	}
 
 	containerID, err := s.launchContainer(benchmarkArgs...)
@@ -662,7 +664,7 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 
 func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
 	name := "jsonlabel"
-	image := "stackrox/benchmark-collector:json-label"
+	image := "quay.io/rhacs-eng/collector-performance:" + GetQATag("json-label")
 	err := s.executor.PullImage(image)
 	s.Require().NoError(err)
 	args := []string{
@@ -677,7 +679,7 @@ func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
 
 func (s *IntegrationTestSuiteBase) StartContainerStats() {
 	name := "container-stats"
-	image := "stackrox/benchmark-collector:stats"
+	image := "quay.io/rhacs-eng/collector-performance:" + GetQATag("stats")
 	args := []string{name, "-v", "/var/run/docker.sock:/var/run/docker.sock", image}
 
 	err := s.executor.PullImage(image)
