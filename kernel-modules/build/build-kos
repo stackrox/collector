@@ -68,6 +68,11 @@ build_ko() (
             return 1
         }
 
+        # directory in which the probe source lives.
+        probe_directory="/probe/"
+        # resulting object file from the build
+        collector_probe="/probe/probe.o"
+
         # Check if this module version supports RHEL 7.6 with backported eBPF support
         if [[ "$rhel7_kernel_with_ebpf" == true ]]; then
             if ! grep -qRIs "SUPPORTS_RHEL76_EBPF" "${module_src_dir}/bpf/quirks.h"; then
@@ -82,24 +87,20 @@ build_ko() (
             # for the collector probe (specifically clone, execve, fork, and vfork)
             # so we just build the falco catch-all probe for this platform
             #
-
-            echo "Building collector eBPF probe for kernel version ${kernel_version} and module version ${module_version}."
-            KERNELDIR="$kernel_build_dir" BUILD_ROOT="${KERNEL_SRC_DIR}" make -j 6 -C bpf
-            collector_probe="bpf/probe.o"
-
-        # Check kernel version is at least 4.14 (unless RHEL 7.6 kernel detected)
+            probe_directory="$(pwd)/bpf"
+            collector_probe="$(pwd)/bpf/probe.o"
         else
+            # Check kernel version is at least 4.14 (unless RHEL 7.6 kernel detected)
             if ((bundle_version < 4 || (bundle_version == 4 && bundle_major < 14))); then
                 echo "Kernel version ${kernel_version} does not support eBPF probe building, skipping ..."
                 mkdir -p "${MODULE_BASE_DIR}/${module_version}"
                 touch "${MODULE_BASE_DIR}/${module_version}/.collector-ebpf-${kernel_version}.unavail"
                 return 0
             fi
-
-            echo "Building collector eBPF probe for kernel version ${kernel_version} and module version ${module_version}."
-            KERNELDIR="$kernel_build_dir" BUILD_ROOT="${KERNEL_SRC_DIR}" FALCO_DIR="$(pwd)/bpf" make -j 6 -C /probe
-            collector_probe="/probe/probe.o"
         fi
+
+        echo "Building collector eBPF probe for kernel version ${kernel_version} and module version ${module_version}."
+        KERNELDIR="$kernel_build_dir" BUILD_ROOT="${KERNEL_SRC_DIR}" FALCO_DIR="$(pwd)/bpf" make -j 6 -C "${probe_directory}"
 
         if [[ ! -f "$collector_probe" || ! -s "$collector_probe" ]]; then
             echo "Empty or missing compiled bpf output"
