@@ -846,6 +846,7 @@ jobs:
     steps:
     - initcommand
     - docker-login-push
+    - quay-login
     - read-pr-metadata
     - gcloud-init
 
@@ -936,6 +937,7 @@ jobs:
     steps:
     - initcommand
     - docker-login-pull
+    - quay-login
 
     - run:
         name: Check whether to run job
