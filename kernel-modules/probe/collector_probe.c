@@ -247,7 +247,6 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx) {
   struct sysdig_bpf_settings* settings = NULL;
   enum ppm_event_type evt_type = PPME_GENERIC_X;
   int drop_flags = UF_ALWAYS_DROP;
-  struct sys_exit_args stack_ctx = {.id = id};
 
   settings = get_bpf_settings();
   if (settings == NULL) {
@@ -268,16 +267,9 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx) {
   evt_type = sc_evt->exit_event_type;
   drop_flags = sc_evt->flags;
 
-  // As with the enter probe, we copy the context onto the stack
-  // to satisfy verification in later parts of the codebase.
-  stack_ctx.ret = _READ(ctx->ret);
-
   // the fillers contain syscall specific processing logic, so we simply
   // call into those and let the rest of falco deal with the event.
-  //
-  // It also handles the stack context problem, so we can pass both
-  // pointers through without issue.
-  call_filler(ctx, &stack_ctx, evt_type, settings, drop_flags);
+  call_filler(ctx, ctx, evt_type, settings, drop_flags);
   return 0;
 }
 

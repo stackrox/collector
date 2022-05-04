@@ -1,9 +1,7 @@
-#
-# Copyright (C) 2021 The Falco Authors.
-#
-# This file is dual licensed under either the MIT or GPL 2. See
-# MIT.txt or GPL.txt for full copies of the license.
-#
+# This file is largely duplicated from the Falco version, adjusted slightly for our specific
+# source file and includes.
+# See here for the original: 
+#   https://github.com/falcosecurity/libs/blob/2c8335ae64f1e775def9f9f7c97e5340319c85f0/driver/bpf/Makefile
 
 always-y += probe.o
 # kept for compatibility with kernels < 5.11
