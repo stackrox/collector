@@ -2,9 +2,9 @@ package integrationtests
 
 import (
 	"fmt"
+	"os"
 	"testing"
 	"time"
-	"os"
 
 	"github.com/google/shlex"
 	"github.com/stretchr/testify/assert"
@@ -50,15 +50,18 @@ func (b *BenchmarkTestSuiteBase) StartPerfTools() {
 	}
 
 	if perf != "" {
-		b.StartPerfContainer("perf", "stackrox/collector-performance:perf", perf)
+		perf_image := qaImage("quay.io/rhacs-eng/collector-performance", "perf")
+		b.StartPerfContainer("perf", perf_image, perf)
 	}
 
 	if bpftrace != "" {
-		b.StartPerfContainer("bpftrace", "stackrox/collector-performance:bpftrace", bpftrace)
+		bpftrace_image := qaImage("quay.io/rhacs-eng/collector-performance", "bpftrace")
+		b.StartPerfContainer("bpftrace", bpftrace_image, bpftrace)
 	}
 
 	if bcc != "" {
-		b.StartPerfContainer("bcc", "stackrox/collector-performance:bcc", bcc)
+		bcc_image := qaImage("quay.io/rhacs-eng/collector-performance", "bcc")
+		b.StartPerfContainer("bcc", bcc_image, bcc)
 	}
 }
 
@@ -69,6 +72,7 @@ func (b *BenchmarkTestSuiteBase) StartPerfContainer(name string, image string, a
 }
 
 func (b *BenchmarkTestSuiteBase) RunInitContainer() {
+	init_image := qaImage("quay.io/rhacs-eng/collector-performance", "init")
 	cmd := []string{
 		"host-init",
 		"-v", "/lib/modules:/lib/modules",
@@ -76,7 +80,7 @@ func (b *BenchmarkTestSuiteBase) RunInitContainer() {
 		"-v", "/etc/lsb-release:/etc/lsb-release",
 		"-v", "/usr/src:/usr/src",
 		"-v", "/boot:/boot",
-		"stackrox/collector-performance:init",
+		init_image,
 	}
 
 	containerID, err := b.launchContainer(cmd...)

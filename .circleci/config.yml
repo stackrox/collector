@@ -217,7 +217,7 @@ jobs:
           "${CI_ROOT}/initjob/30-set-collector-version.sh" \
             "${SHARED_ENV}" \
             << pipeline.parameters.dockerized-cache-tag >> \
-            "circle-build-${WORKFLOW_ID}" \
+            "circle-build-${CIRCLE_WORKFLOW_ID}" \
             "${CIRCLE_TAG}" \
             "${CIRCLE_BRANCH}" \
             "${SOURCE_ROOT}"
@@ -800,6 +800,37 @@ jobs:
           "${SOURCE_ROOT}/.circleci/run-stackrox-ci/10-run-stackrox-ci.sh" "${CIRCLE_BRANCH}" "${CIRCLE_BUILD_NUM}"
 
 
+  build-qa-containers:
+    <<: *defaultImage
+
+    steps:
+    - initcommand
+    - read-pr-metadata
+
+    - run:
+        name: Check step should run
+        command: |
+          if [[ "$CIRCLE_BRANCH" != "master" && -z "$CIRCLE_TAG" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-qa-containers" ]]; then
+            echo "Skipping build of QA helper containers"
+            "${CI_ROOT}/safe-halt.sh"
+            exit
+          fi
+    - setup_remote_docker:
+        version: 20.10.11
+        docker_layer_caching: true  # We don't expect these containers to change too often
+
+    - quay-login-push
+
+    - run:
+        name: Build containers
+        command: |
+          "${CI_ROOT}/build-qa-containers/10-build-containers.sh"
+    - run:
+        name: Push containers
+        command: |
+          "${CI_ROOT}/build-qa-containers/20-push-containers.sh"
+
+
   integration-test-local:
     parameters:
       vm-config:
@@ -815,6 +846,7 @@ jobs:
     steps:
     - initcommand
     - docker-login-push
+    - quay-login
     - read-pr-metadata
     - gcloud-init
 
@@ -822,7 +854,7 @@ jobs:
         name: "Setup Env Vars Local"
         command: |
           "${CI_ROOT}/integration-test-local/10-setup-env-vars-local.sh" \
-            "cirlce_local_"<< parameters.vm-config >> \
+            "circle_local_"<< parameters.vm-config >> \
             << parameters.use-ubi >> \
             kernel_module
 
@@ -904,7 +936,6 @@ jobs:
 
     steps:
     - initcommand
-    - docker-login-pull
 
     - run:
         name: Check whether to run job
@@ -1326,6 +1357,11 @@ workflows:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
         - images
+    - build-qa-containers:
+        <<: *runOnAllTagsWithDockerIOPushCtx
+        name: build-qa-containers
+        requires:
+        - initjob
     - integration-test-local:
         <<: *runOnAllTagsWithDockerIOPushCtx
         name: integration-test-local
@@ -1333,6 +1369,7 @@ workflows:
         requires:
         - images
         - upload-modules
+        - build-qa-containers
     - integration-test-local:
         <<: *runOnAllTagsWithDockerIOPushCtx
         name: integration-test-local-ubi
@@ -1341,6 +1378,7 @@ workflows:
         requires:
         - ubi-image
         - upload-modules
+        - build-qa-containers
     - integration-test:
         <<: *runOnAllTagsWithIntegrationTestRequires
         name: test-ebpf-<< matrix.image_family >><<# matrix.dockerized >>-dockerized<</ matrix.dockerized >>
