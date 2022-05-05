@@ -290,6 +290,10 @@ void ConnectionTracker::ComputeDeltaAfterglow(const UnorderedMap<T, ConnStatus>&
                                               int64_t time_micros,
                                               int64_t time_at_last_scrape,
                                               int64_t afterglow_period_micros) {
+  CLOG(INFO) << "Print new_conn_state";
+  PrintConnections(new_state);
+  CLOG(INFO) << "Print old_conn_state";
+  PrintConnections(old_state);
   // Insert all objects from the new state, if anything changed about them.
   for (const auto& new_conn : new_state) {
     auto& conn_key = new_conn.first;
@@ -311,6 +315,8 @@ void ConnectionTracker::ComputeDeltaAfterglow(const UnorderedMap<T, ConnStatus>&
       delta.insert(std::make_pair(conn_key, ConnStatus(conn_status.LastActiveTime(), false)));
     }
   }
+  CLOG(INFO) << "Print delta";
+  PrintConnections(delta);
 }
 
 // See ComputeDeltaAfterglow

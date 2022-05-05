@@ -56,25 +56,25 @@ func TestMissingProcScrape(t *testing.T) {
 }
 
 ////Need to update the comments in these tests
-//func TestRepeatedNetworkFlow(t *testing.T) {
-//	// Perform 11 curl commands with a 2 second sleep between each curl command.
-//	// The scrapeInterval is increased to 4 seconds to reduce the chance that jiter will effect the results.
-//	// The first server to client connection is recorded as being active.
-//	// The second through ninth curl commands are ignored, because of afterglow.
-//	// The last server to client connection is recorded as being inacitve when the afterglow period has expired
-//	// Thus the reported connections are active, inactive
-//	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
-//		afterglowPeriod:        10,
-//		scrapeInterval:         4,
-//		enableAfterglow:        true,
-//		numMetaIter:            1,
-//		numIter:                11,
-//		sleepBetweenCurlTime:   2,
-//		sleepBetweenIterations: 1,
-//		expectedReports:        []bool{true, false},
-//	}
-//	suite.Run(t, repeatedNetworkFlowTestSuite)
-//}
+func TestRepeatedNetworkFlow(t *testing.T) {
+	// Perform 11 curl commands with a 2 second sleep between each curl command.
+	// The scrapeInterval is increased to 4 seconds to reduce the chance that jiter will effect the results.
+	// The first server to client connection is recorded as being active.
+	// The second through ninth curl commands are ignored, because of afterglow.
+	// The last server to client connection is recorded as being inacitve when the afterglow period has expired
+	// Thus the reported connections are active, inactive
+	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
+		afterglowPeriod:        10,
+		scrapeInterval:         4,
+		enableAfterglow:        true,
+		numMetaIter:            1,
+		numIter:                11,
+		sleepBetweenCurlTime:   2,
+		sleepBetweenIterations: 1,
+		expectedReports:        []bool{true, false},
+	}
+	suite.Run(t, repeatedNetworkFlowTestSuite)
+}
 
 func TestRepeatedNetworkFlowWithZeroAfterglowPeriod(t *testing.T) {
 	// Afterglow is disables as the afterglowPeriod is 0
@@ -92,20 +92,20 @@ func TestRepeatedNetworkFlowWithZeroAfterglowPeriod(t *testing.T) {
 	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
 
-//func TestRepeatedNetworkFlowThreeCurlsNoAfterglow(t *testing.T) {
-//	// The afterglow period is set to 0 so this has the same behavior as if afterglow was disabled.
-//	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
-//		afterglowPeriod:        0,
-//		scrapeInterval:         4,
-//		enableAfterglow:        false,
-//		numMetaIter:            1,
-//		numIter:                3,
-//		sleepBetweenCurlTime:   6,
-//		sleepBetweenIterations: 1,
-//		expectedReports:        []bool{false, false, false},
-//	}
-//	suite.Run(t, repeatedNetworkFlowTestSuite)
-//}
+func TestRepeatedNetworkFlowThreeCurlsNoAfterglow(t *testing.T) {
+	// The afterglow period is set to 0 so this has the same behavior as if afterglow was disabled.
+	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
+		afterglowPeriod:        0,
+		scrapeInterval:         4,
+		enableAfterglow:        false,
+		numMetaIter:            1,
+		numIter:                3,
+		sleepBetweenCurlTime:   6,
+		sleepBetweenIterations: 1,
+		expectedReports:        []bool{false, false, false},
+	}
+	suite.Run(t, repeatedNetworkFlowTestSuite)
+}
 
 type IntegrationTestSuiteBase struct {
 	suite.Suite

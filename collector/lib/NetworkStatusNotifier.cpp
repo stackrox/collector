@@ -281,6 +281,8 @@ void NetworkStatusNotifier::RunSingleAfterglow(DuplexClientWriter<sensor::Networ
   ContainerEndpointMap old_cep_state;
   auto next_scrape = std::chrono::system_clock::now();
   int64_t time_at_last_scrape = NowMicros();
+  UnorderedMap<string, ConnStatus> all_conn;
+  UnorderedMap<string, ConnStatus> all_cep;
 
   while (writer->Sleep(next_scrape)) {
     next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(scrape_interval_);
@@ -296,9 +298,11 @@ void NetworkStatusNotifier::RunSingleAfterglow(DuplexClientWriter<sensor::Networ
     WITH_TIMER(CollectorStats::net_fetch_state) {
       new_conn_state = conn_tracker_->FetchConnState(true, true);
       ConnectionTracker::ComputeDeltaAfterglow(new_conn_state, old_conn_state, delta_conn, time_micros, time_at_last_scrape, afterglow_period_micros_);
+      ConnectionTracker::CheckForDuplicateNetworkingEvents(&all_conn, delta_conn);
 
       new_cep_state = conn_tracker_->FetchEndpointState(true, true);
       ConnectionTracker::ComputeDeltaAfterglow(new_cep_state, old_cep_state, delta_cep, time_micros, time_at_last_scrape, afterglow_period_micros_);
+      ConnectionTracker::CheckForDuplicateNetworkingEvents(&all_cep, delta_cep);
     }
 
     WITH_TIMER(CollectorStats::net_create_message) {
