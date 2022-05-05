@@ -182,7 +182,7 @@ def group_data(content, *columns):
         return " ".join([record.get(c) for c in columns])
 
     content.sort(key=record_id)
-    return [(key, [group]) for key, group in groupby(content, key=record_id)]
+    return [(key, list(group)) for key, group in groupby(content, key=record_id)]
 
 
 def split_benchmark(measurements):
@@ -223,9 +223,6 @@ def compare(input_file_name, baseline_data):
             tgroup, tvalues = test
 
             assert bgroup == tgroup, "Kernel/Method must not be differrent"
-
-            bvalues = list(bvalues)
-            tvalues = list(tvalues)
 
             baseline_overhead = collector_overhead(bvalues)
             test_overhead = collector_overhead(tvalues)[0]
