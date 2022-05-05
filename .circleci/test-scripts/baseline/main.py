@@ -105,7 +105,7 @@ def add_to_baseline_file(input_file_name, data, threshold):
         result = []
         for key, values in group_data(data, "VmConfig", "CollectionMethod"):
             if key not in new_measurement_keys:
-                # Drop removed VMs
+                # Drop removed tests
                 continue
 
             # For every group (vm, method) sort the records in ascending order
@@ -181,8 +181,11 @@ def group_data(content, *columns):
     def record_id(record):
         return " ".join([record.get(c) for c in columns])
 
-    content.sort(key=record_id)
-    return [(key, list(group)) for key, group in groupby(content, key=record_id)]
+    ordered = sorted(content, key=record_id)
+    return [
+        (key, list(group))
+        for key, group in groupby(ordered, key=record_id)
+    ]
 
 
 def split_benchmark(measurements):
