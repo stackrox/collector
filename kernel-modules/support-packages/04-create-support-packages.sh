@@ -39,7 +39,10 @@ for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
     (   
         cd "$package_root"
         zip -r "${package_out_dir}/${filename}" .
+        sha256sum "${package_out_dir}/${filename}" > "${package_out_dir}/${filename}.sig"
     )
+
     cp "${package_out_dir}/${filename}" "${package_out_dir}/${latest_filename}"
+    cp "${package_out_dir}/${filename}.sig" "${package_out_dir}/${latest_filename}.sig"
     rm -rf "$package_root" || true
 done

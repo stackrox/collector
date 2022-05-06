@@ -13,12 +13,21 @@ VersionRange = namedtuple('VersionRange', 'min max')
 
 
 class SupportPackage(object):
-    def __init__(self, module_version, rox_version_ranges, file_name, latest_file_name, last_update_time):
+    def __init__(self,
+                 module_version,
+                 rox_version_ranges,
+                 file_name,
+                 latest_file_name,
+                 last_update_time,
+                 sig_name,
+                 latest_sig_name):
         self.module_version = module_version
         self.rox_version_ranges = rox_version_ranges
         self.file_name = file_name
         self.latest_file_name = latest_file_name
         self.last_update_time = last_update_time
+        self.sig_name = sig_name
+        self.latest_sig_name = latest_sig_name
 
     @property
     def download_url(self):
@@ -27,6 +36,15 @@ class SupportPackage(object):
     @property
     def download_url_latest(self):
         return '%s/%s/%s' % (os.getenv('BASE_URL'), self.module_version, self.latest_file_name) \
+            if self.latest_file_name is not None else None
+
+    @property
+    def signature_url(self):
+        return '%s/%s/%s' % (os.getenv('BASE_URL'), self.module_version, self.sig_name)
+
+    @property
+    def signature_url_latest(self):
+        return '%s/%s/%s' % (os.getenv('BASE_URL'), self.module_version, self.latest_sig_name) \
             if self.latest_file_name is not None else None
 
     def __repr__(self):
@@ -73,11 +91,28 @@ def load_support_packages(output_dir, mod_md_map):
         support_pkg_file_latest = 'support-pkg-%s-latest.zip' % (mod_ver[:6])
         try:
             os.stat(os.path.join(mod_out_dir, support_pkg_file_latest))
-        except:
+        except (FileNotFoundError, PermissionError):
             support_pkg_file_latest = None
 
-        support_packages.append(SupportPackage(
-            mod_ver, rox_version_ranges, support_pkg_file, support_pkg_file_latest, last_mod_time))
+        support_pkg_sig = f'{support_pkg_file}.sig'
+        if not os.path.isfile(os.path.join(mod_out_dir, support_pkg_sig)):
+            # No signature available for package
+            continue
+
+        support_pkg_sig_latest = f'{support_pkg_file_latest}.sig'
+        if not os.path.isfile(os.path.join(mod_out_dir, support_pkg_sig_latest)):
+            # No signature available for package
+            support_pkg_sig_latest = None
+
+        support_packages.append(
+            SupportPackage(mod_ver,
+                           rox_version_ranges,
+                           support_pkg_file,
+                           support_pkg_file_latest,
+                           last_mod_time,
+                           support_pkg_sig,
+                           support_pkg_sig_latest)
+        )
 
     support_packages.sort(key=lambda p: p.rox_version_ranges[0].max, reverse=True)
     return support_packages
