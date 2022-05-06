@@ -34,7 +34,14 @@
 static __always_inline int enter_probe(long id, struct sys_enter_args* ctx);
 static __always_inline int exit_probe(long id, struct sys_exit_args* ctx);
 
+// defines the maximum number of args to copy from the context
+// to the stack. Matches up to the structure defined in types.h
 #define NUM_SYS_ENTER_ARGS 6
+
+// this can be passed to the enter or exit functions as the ID value
+// to pull the ID from the context. This is specifically useful when
+// we need to use the sys_enter/sys_exit tracepoints.
+#define LOOKUP_SYSCALL_ID -1
 
 /**
  * @brief Encapsulates the section definition and unified function signature. This is used
@@ -74,6 +81,24 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx);
   }
 
 /**
+ * @brief Defines the catch-all sys_enter program for older platforms
+ *        that do not support all the tracepoints we need.
+ */
+#define _COLLECTOR_SYS_ENTER_PROBE                              \
+  PROBE_SIGNATURE("raw_syscalls/", sys_enter, sys_enter_args) { \
+    return enter_probe(LOOKUP_SYSCALL_ID, ctx);                 \
+  }
+
+/**
+ * @brief Defines the catch-all sys_exit program for older platforms
+ *        that do not support all the tracepoints we need.
+ */
+#define _COLLECTOR_SYS_EXIT_PROBE                             \
+  PROBE_SIGNATURE("raw_syscalls/", sys_exit, sys_exit_args) { \
+    return exit_probe(LOOKUP_SYSCALL_ID, ctx);                \
+  }
+
+/**
  * @brief Brings together the enter and exit definitions, to define all programs
  *        for a given syscall.
  *
@@ -83,6 +108,19 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx);
 #define COLLECTOR_PROBE(name, syscall_id)  \
   _COLLECTOR_ENTER_PROBE(name, syscall_id) \
   _COLLECTOR_EXIT_PROBE(name, syscall_id)
+
+/**
+ * @brief brings together the sys_enter and sys_exit probes for legacy platforms
+ *        that do not support all the necessary tracepoints.
+ */
+#define COLLECTOR_LEGACY_PROBE() \
+  _COLLECTOR_SYS_ENTER_PROBE;    \
+  _COLLECTOR_SYS_EXIT_PROBE
+
+// this if statement relies on short circuiting to simplify the definition
+// of the tracepoints. i.e. RHEL_RELEASE_VERSION will not be defined unless
+// RHEL_RELEASE_CODE is defined.
+#if !defined(RHEL_RELEASE_CODE) || RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(8, 0)
 
 COLLECTOR_PROBE(chdir, __NR_chdir);
 COLLECTOR_PROBE(accept, __NR_accept);
@@ -100,6 +138,15 @@ COLLECTOR_PROBE(socket, __NR_socket);
 COLLECTOR_PROBE(fchdir, __NR_fchdir);
 COLLECTOR_PROBE(fork, __NR_fork);
 COLLECTOR_PROBE(vfork, __NR_vfork);
+
+#else
+
+// Unfortunately RHEL-7 does not have the necessary tracepoints that we require
+// for the collector probe (specifically clone, execve, fork, and vfork)
+// so we just build the falco catch-all probe for this platform
+COLLECTOR_LEGACY_PROBE();
+
+#endif
 
 /**
  * @brief program for handling sched_process_fork events. As the name suggests
@@ -199,6 +246,13 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
     return 0;
   }
 
+  if (id == LOOKUP_SYSCALL_ID) {
+    // this is to support sys_enter and sys_exit probes for older (RHEL 7)
+    // platforms. Just get the id from the context for this scenario.
+    id = bpf_syscall_get_nr(ctx);
+    stack_ctx.id = id;
+  }
+
   sc_evt = get_syscall_info(id);
   if (sc_evt == NULL) {
     return 0;
@@ -257,6 +311,12 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx) {
     // capture_enabled is usually false when we have loaded the probe
     // but not started capturing from a userspace perspective.
     return 0;
+  }
+
+  if (id == LOOKUP_SYSCALL_ID) {
+    // this is to support sys_enter and sys_exit probes for legacy (RHEL 7)
+    // platforms. Just get the id from the context for this scenario.
+    id = bpf_syscall_get_nr(ctx);
   }
 
   sc_evt = get_syscall_info(id);
