@@ -45,7 +45,7 @@ class SupportPackage(object):
     @property
     def signature_url_latest(self):
         return '%s/%s/%s' % (os.getenv('BASE_URL'), self.module_version, self.latest_sig_name) \
-            if self.latest_file_name is not None else None
+            if self.latest_sig_name is not None else None
 
     def __repr__(self):
         return 'SupportPackage(' + \
