@@ -1313,8 +1313,7 @@ workflows:
     - dockerized-build-collector:
         <<: *runOnAllTags
         context:
-          - docker-io-push
-          - quay-rhacs-eng-readonly
+          - quay-rhacs-eng-readwrite
         requires:
           - dockerized-unify-images
           - images
