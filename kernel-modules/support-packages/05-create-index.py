@@ -94,12 +94,12 @@ def load_support_packages(output_dir, mod_md_map):
         except (FileNotFoundError, PermissionError):
             support_pkg_file_latest = None
 
-        support_pkg_sig = f'{support_pkg_file}.sig'
+        support_pkg_sig = f'{support_pkg_file}.sha256'
         if not os.path.isfile(os.path.join(mod_out_dir, support_pkg_sig)):
             # No signature available for package
             continue
 
-        support_pkg_sig_latest = f'{support_pkg_file_latest}.sig'
+        support_pkg_sig_latest = f'{support_pkg_file_latest}.sha256'
         if not os.path.isfile(os.path.join(mod_out_dir, support_pkg_sig_latest)):
             # No signature available for package
             support_pkg_sig_latest = None
