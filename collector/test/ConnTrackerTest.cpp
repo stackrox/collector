@@ -1127,7 +1127,24 @@ TEST(ConnTrackerTest, TestUpdateOldStateSameConnectionInOldAndNew) {
   EXPECT_THAT(old_state, new_state);
 }
 
-TEST(ConnTrackerTest, TestUpdateOldStateActiveExpiredConnectionNotRemovedFromOldState) {
+//TEST(ConnTrackerTest, TestUpdateOldStateActiveExpiredConnectionNotRemovedFromOldState) {
+//  Endpoint a(Address(192, 168, 0, 1), 80);
+//  Endpoint b(Address(192, 168, 1, 10), 9999);
+//
+//  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+//  int64_t time_micros = 20;
+//  int64_t connection_time1 = 7;
+//  int64_t afterglow_period_micros = 5;
+//
+//  ConnMap old_state = {{conn1, ConnStatus(connection_time1, true)}};
+//  ConnMap new_state;
+//  ConnMap expected_old_state = {{conn1, ConnStatus(connection_time1, true)}};
+//
+//  CT::UpdateOldState(&old_state, new_state, time_micros, afterglow_period_micros);
+//  EXPECT_THAT(old_state, expected_old_state);
+//}
+
+TEST(ConnTrackerTest, TestUpdateOldStateActiveExpiredConnectionRemovedFromOldState) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -1141,7 +1158,7 @@ TEST(ConnTrackerTest, TestUpdateOldStateActiveExpiredConnectionNotRemovedFromOld
   ConnMap expected_old_state = {{conn1, ConnStatus(connection_time1, true)}};
 
   CT::UpdateOldState(&old_state, new_state, time_micros, afterglow_period_micros);
-  EXPECT_THAT(old_state, expected_old_state);
+  EXPECT_THAT(old_state, IsEmpty());
 }
 
 void GetNextAddress(int address_parts[4], int& port) {

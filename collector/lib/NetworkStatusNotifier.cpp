@@ -292,6 +292,7 @@ void NetworkStatusNotifier::RunSingleAfterglow(DuplexClientWriter<sensor::Networ
     }
 
     int64_t time_micros = NowMicros();
+    CLOG(INFO) << "time_micros= " << time_micros;
     const sensor::NetworkConnectionInfoMessage* msg;
     ContainerEndpointMap new_cep_state, delta_cep;
     ConnMap new_conn_state, delta_conn;

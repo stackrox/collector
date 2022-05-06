@@ -435,6 +435,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	numIter := strconv.Itoa(s.numIter)
 	sleepBetweenCurlTime := strconv.Itoa(s.sleepBetweenCurlTime)
 	sleepBetweenIterations := strconv.Itoa(s.sleepBetweenIterations)
+	fmt.Println("serverAddress= " + serverAddress)
 	_, err = s.execContainer("nginx-curl", []string{"/usr/bin/schedule-curls.sh", numMetaIter, numIter, sleepBetweenCurlTime, sleepBetweenIterations, serverAddress})
 
 	s.clientIP, err = s.getIPAddress("nginx-curl")

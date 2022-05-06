@@ -27,10 +27,13 @@ You should have received a copy of the GNU General Public License along with thi
 #include <mutex>
 #include <vector>
 
+#include <google/protobuf/util/time_util.h>
+
 #include "Containers.h"
 #include "Hash.h"
 #include "NRadix.h"
 #include "NetworkConnection.h"
+#include "ProtoUtil.h"
 
 namespace collector {
 
@@ -207,7 +210,7 @@ void ConnectionTracker::UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, c
   // Remove inactive connections that are older than the afterglow period and add unexpired new connections to the old state
   for (auto it = old_state->begin(); it != old_state->end();) {
     auto& old_conn = *it;
-    if (old_conn.second.WasRecentlyActive(time_micros, afterglow_period_micros)) {
+    if (old_conn.second.IsInAfterglowPeriod(time_micros, afterglow_period_micros)) {
       ++it;
     } else {
       it = old_state->erase(it);
@@ -425,6 +428,12 @@ string ConnectionTracker::GetConnStringKey(std::pair<T, ConnStatus> conn) {
   }
 
   conn_key_string += " " + std::to_string(conn.second.LastActiveTime());
+  std::stringstream ssTs;
+  ssTs << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(conn.second.LastActiveTime());
+std:
+  string tsString;
+  ssTs >> tsString;
+  conn_key_string += " " + tsString;
   conn_key_string += " " + std::to_string(conn.second.IsActive());
 
   return conn_key_string;
