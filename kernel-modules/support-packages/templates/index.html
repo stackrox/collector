@@ -3262,7 +3262,7 @@
                         </td>
                         <td>{{pkg.last_update_time}}</td>
                         <td><a href="{{pkg.download_url}}">Download</a>{% if pkg.download_url_latest %} (<a href="{{pkg.download_url_latest}}">stable link</a>){% endif %}</td>
-                        <td><a href="{{pkg.signature_url}}">SHA256</a>{% if pkg.signature_url_latest %} (<a href="{{pkg.signature_url_latest}}">stable link</a>){% endif %}</td>
+                        <td><a href="{{pkg.checksum_url}}">SHA256</a>{% if pkg.checksum_url_latest %} (<a href="{{pkg.checksum_url_latest}}">stable link</a>){% endif %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

@@ -7,7 +7,7 @@ die() {
     exit 1
 }
 
-generate_signature() {
+generate_checksum() {
     directory=$1
     file=$2
     pushd "${directory}"
@@ -47,10 +47,10 @@ for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
     (   
         cd "$package_root"
         zip -r "${package_out_dir}/${filename}" .
-        generate_signature "${package_out_dir}" "${filename}"
+        generate_checksum "${package_out_dir}" "${filename}"
     )
 
     cp "${package_out_dir}/${filename}" "${package_out_dir}/${latest_filename}"
-    generate_signature "${package_out_dir}" "${latest_filename}"
+    generate_checksum "${package_out_dir}" "${latest_filename}"
     rm -rf "$package_root" || true
 done

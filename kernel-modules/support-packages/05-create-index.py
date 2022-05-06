@@ -19,15 +19,15 @@ class SupportPackage(object):
                  file_name,
                  latest_file_name,
                  last_update_time,
-                 sig_name,
-                 latest_sig_name):
+                 chk_name,
+                 latest_chk_name):
         self.module_version = module_version
         self.rox_version_ranges = rox_version_ranges
         self.file_name = file_name
         self.latest_file_name = latest_file_name
         self.last_update_time = last_update_time
-        self.sig_name = sig_name
-        self.latest_sig_name = latest_sig_name
+        self.chk_name = chk_name
+        self.latest_chk_name = latest_chk_name
 
     @property
     def download_url(self):
@@ -39,13 +39,13 @@ class SupportPackage(object):
             if self.latest_file_name is not None else None
 
     @property
-    def signature_url(self):
-        return '%s/%s/%s' % (os.getenv('BASE_URL'), self.module_version, self.sig_name)
+    def checksum_url(self):
+        return '%s/%s/%s' % (os.getenv('BASE_URL'), self.module_version, self.chk_name)
 
     @property
-    def signature_url_latest(self):
-        return '%s/%s/%s' % (os.getenv('BASE_URL'), self.module_version, self.latest_sig_name) \
-            if self.latest_sig_name is not None else None
+    def checksum_url_latest(self):
+        return '%s/%s/%s' % (os.getenv('BASE_URL'), self.module_version, self.latest_chk_name) \
+            if self.latest_chk_name is not None else None
 
     def __repr__(self):
         return 'SupportPackage(' + \
@@ -94,15 +94,15 @@ def load_support_packages(output_dir, mod_md_map):
         except (FileNotFoundError, PermissionError):
             support_pkg_file_latest = None
 
-        support_pkg_sig = f'{support_pkg_file}.sha256'
-        if not os.path.isfile(os.path.join(mod_out_dir, support_pkg_sig)):
-            # No signature available for package
+        support_pkg_chk = f'{support_pkg_file}.sha256'
+        if not os.path.isfile(os.path.join(mod_out_dir, support_pkg_chk)):
+            # No checksum available for package
             continue
 
-        support_pkg_sig_latest = f'{support_pkg_file_latest}.sha256'
-        if not os.path.isfile(os.path.join(mod_out_dir, support_pkg_sig_latest)):
-            # No signature available for package
-            support_pkg_sig_latest = None
+        support_pkg_chk_latest = f'{support_pkg_file_latest}.sha256'
+        if not os.path.isfile(os.path.join(mod_out_dir, support_pkg_chk_latest)):
+            # No checksum available for package
+            support_pkg_chk_latest = None
 
         support_packages.append(
             SupportPackage(mod_ver,
@@ -110,8 +110,8 @@ def load_support_packages(output_dir, mod_md_map):
                            support_pkg_file,
                            support_pkg_file_latest,
                            last_mod_time,
-                           support_pkg_sig,
-                           support_pkg_sig_latest)
+                           support_pkg_chk,
+                           support_pkg_chk_latest)
         )
 
     support_packages.sort(key=lambda p: p.rox_version_ranges[0].max, reverse=True)
