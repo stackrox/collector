@@ -26,6 +26,10 @@ that contains all Rox versions that use a collector with the respective module v
 For every relevant module version, creates a file `OUTPUT/<module version>/<support package filename>.zip`
 containing the relevant probes.
 
+We also calculate the sha256 for each support package and dump it to files with the format
+`OUTPUT/<module version>/<support package filename>.zip.sha256`, making it possible to validate the integrity of the
+packages.
+
 5. Generate index.html file
 -------------------------------------------------
 Generates a file `OUTPUT/index.html` that contains an overview of support packages for all versions.

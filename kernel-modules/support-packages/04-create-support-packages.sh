@@ -7,6 +7,14 @@ die() {
     exit 1
 }
 
+generate_checksum() {
+    directory=$1
+    file=$2
+    pushd "${directory}"
+    sha256sum "${file}" > "${file}.sha256"
+    popd
+}
+
 LICENSE_FILE="$1"
 MD_DIR="$2"
 OUT_DIR="$3"
@@ -39,7 +47,10 @@ for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
     (   
         cd "$package_root"
         zip -r "${package_out_dir}/${filename}" .
+        generate_checksum "${package_out_dir}" "${filename}"
     )
+
     cp "${package_out_dir}/${filename}" "${package_out_dir}/${latest_filename}"
+    generate_checksum "${package_out_dir}" "${latest_filename}"
     rm -rf "$package_root" || true
 done
