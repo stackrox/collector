@@ -18,13 +18,6 @@ export COLLECTOR_IMAGE
 docker-clean:
 	docker rm -fv container-stats benchmark collector grpc-server || true
 
-.PHONY: tests
-tests: docker-clean
-	go version
-	set -o pipefail ; \
-	go test -timeout 60m -count=1 -v \
-	  -run TestCollectorGRPC 2>&1 | tee -a integration-test.log
-
 .PHONY: process-network
 process-network: docker-clean
 	go version

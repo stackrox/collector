@@ -113,6 +113,20 @@ integration-tests-image-label-json:
 integration-tests-report:
 	make -C integration-tests report
 
+.PHONY: ci-integration-tests
+ci-integration-tests: integration-tests-repeat-network \
+					  integration-tests-process-network \
+					  integration-tests-missing-proc-scrape \
+					  integration-tests-image-label-json \
+					  integration-tests-report
+
+.PHONY: ci-benchmarks
+ci-benchmarks: integration-tests-baseline \
+			   integration-tests-benchmark
+
+.PHONY: ci-all-tests
+ci-all-tests: ci-benchmarks ci-integration-tests
+
 $(DEV_SSH_SERVER_KEY):
 ifeq (,$(wildcard $(DEV_SSH_SERVER_KEY)))
 	ssh-keygen -t ed25519 -N '' -f $(DEV_SSH_SERVER_KEY) < /dev/null

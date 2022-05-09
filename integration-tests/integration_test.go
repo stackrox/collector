@@ -35,11 +35,6 @@ const (
 	defaultStopTimeoutSeconds = "10"
 )
 
-func TestCollectorGRPC(t *testing.T) {
-	suite.Run(t, new(ProcessNetworkTestSuite))
-	// suite.Run(t, new(BenchmarkCollectorTestSuite))
-}
-
 func TestProcessNetwork(t *testing.T) {
 	suite.Run(t, new(ProcessNetworkTestSuite))
 }

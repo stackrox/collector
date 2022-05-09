@@ -18,17 +18,7 @@ function integration_tests_with_measurements() {
     COLLECTOR_BCC_COMMAND="/tools/do_syscall_64.py -o /tmp/baseline.json" make -C "${SOURCE_ROOT}" integration-tests-baseline
     COLLECTOR_BCC_COMMAND="/tools/do_syscall_64.py -o /tmp/benchmark.json" make -C "${SOURCE_ROOT}" integration-tests-benchmark
 
-    make -C "${SOURCE_ROOT}" integration-tests-repeat-network integration-tests integration-tests-report
-}
-
-function integration_tests_no_measurements() {
-    make -C "${SOURCE_ROOT}" integration-tests-repeat-network \
-                             integration-tests-missing-proc-scrape \
-                             integration-tests-image-label-json \
-                             integration-tests-baseline \
-                             integration-tests-benchmark \
-                             integration-tests \
-                             integration-tests-report
+    make -C "${SOURCE_ROOT}" ci-integration-tests
 }
 
 function copy_from_vm() {
@@ -49,14 +39,14 @@ function run_tests() {
     exit_code=0
 
     if [[ "${MEASURE_SYSCALL_LATENCY}" == "true" ]] && performance_platform_supported; then
-        mkdir "${SOURCE_ROOT}/integration-tests/performance-logs"
+        mkdir -p "${SOURCE_ROOT}/integration-tests/performance-logs"
         integration_tests_with_measurements
         exit_code=$?
 
         copy_from_vm "/tmp/baseline.json" "${SOURCE_ROOT}/integration-tests/performance-logs/baseline-${IMAGE_FAMILY}-${COLLECTION_METHOD}.json"
         copy_from_vm "/tmp/benchmark.json" "${SOURCE_ROOT}/integration-tests/performance-logs/benchmark-${IMAGE_FAMILY}-${COLLECTION_METHOD}.json"
     else
-        integration_tests_no_measurements
+        make -C "${SOURCE_ROOT}" ci-all-tests
         exit_code=$?
     fi
 
