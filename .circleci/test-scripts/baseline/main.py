@@ -36,6 +36,7 @@ import os
 import sys
 import time
 
+from collections import Counter
 from itertools import groupby
 from scipy import stats
 
@@ -94,16 +95,21 @@ def get_timestamp(record):
     return time.mktime(parsed)
 
 
-def add_to_baseline_file(input_file_name, data, threshold):
+def add_to_baseline_file(input_file_name, baseline_data, threshold):
+    if baseline_data:
+        verify_data(baseline_data)
+
     with open(input_file_name, "r") as measure:
         new_measurement = json.load(measure)
+        verify_data(new_measurement)
+
         new_measurement_keys = [data[0] for data in group_data(measure, "VmConfig", "CollectionMethod")]
 
         # Baseline contains several tests per one benchmark record
-        test_names = set(value["TestName"] for value in data)
+        test_names = set(value["TestName"] for value in baseline_data)
 
         result = []
-        for key, values in group_data(data, "VmConfig", "CollectionMethod"):
+        for key, values in group_data(baseline_data, "VmConfig", "CollectionMethod"):
             if key not in new_measurement_keys:
                 # Drop removed tests
                 continue
@@ -127,7 +133,35 @@ def add_to_baseline_file(input_file_name, data, threshold):
         return result
 
 
-def process_data(baseline_data, new_data):
+def verify_data(data):
+    """
+    There are some assumptions made about the date we operate with for both
+    baseline series and new measurements, they're going to be verified below.
+    """
+
+    assert data, "Benchmark data must be not empty"
+
+    data_grouped = process(data)
+
+    for group, values in data_grouped:
+        counter = Counter()
+        for v in values:
+            counter.update(v.keys())
+
+        # Data provides equal number of with/without collector benchmark runs.
+        #
+        # NOTE: We rely only on baseline/collector hackbench at the moment. As
+        # soon as data for more tests will be collected, this section has to be
+        # extended accordingly.
+        no_overhead_count = counter.get("baseline_benchmark", 0)
+        overhead_count = counter.get("collector_benchmark", 0)
+
+        if (no_overhead_count != overhead_count):
+            raise Exception(f"Number of with/without overhead do not match:"
+                            f" {no_overhead_count}, {overhead_count} ")
+
+
+def intersection(baseline_data, new_data):
     """
     Remove any tests that are not found in both the baseline and the new data.
 
@@ -160,7 +194,8 @@ def process_data(baseline_data, new_data):
 
 def process(content):
     """
-    Transform benchmark data into the format CI scripts work with.
+    Transform benchmark data into the format CI scripts work with, and group by
+    VmConfig and CollectionMethod fields.
     """
 
     processed = [
@@ -217,9 +252,13 @@ def compare(input_file_name, baseline_data):
         print("Baseline file is empty, nothing to compare.", file=sys.stderr)
         return
 
+    verify_data(baseline_data)
+
     with open(input_file_name, "r") as measurement:
         test_data = json.load(measurement)
-        baseline_grouped, test_grouped = process_data(baseline_data, test_data)
+        verify_data(test_data)
+
+        baseline_grouped, test_grouped = intersection(baseline_data, test_data)
 
         for (baseline, test) in zip(baseline_grouped, test_grouped):
             bgroup, bvalues = baseline
