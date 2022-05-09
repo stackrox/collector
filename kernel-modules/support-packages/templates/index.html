@@ -3242,6 +3242,8 @@
             {% if support_packages %}
             <em>Note:</em> The "stable link" always points to the latest support package for a given version. It will retain
             its validity when a support package is updated, but the contents of the downloaded file change over time.
+            In order to check the integrity of the support package, download the corresponding checksum file to the same
+            directory you stored the package in and run: sha256sum -c &ltchecksum-file&gt
             <p></p>
             <table>
                 <thead>
