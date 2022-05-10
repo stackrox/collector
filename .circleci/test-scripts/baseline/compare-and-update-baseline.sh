@@ -5,7 +5,7 @@ pip install --upgrade scipy google-cloud-storage
 
 jq -s 'flatten' "${WORKSPACE_ROOT}"/*perf.json > "${WORKSPACE_ROOT}"/all-perf.json
 
-export BASELINE="${CI_ROOT}/test-scripts/baseline/"
+export BASELINE="${CI_ROOT}/test-scripts/baseline"
 "${BASELINE}"/main.py --test "${WORKSPACE_ROOT}"/all-perf.json \
     | sort \
     | awk -f "${BASELINE}"/format.awk > "${WORKSPACE_ROOT}"/benchmark.md

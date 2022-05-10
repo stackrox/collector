@@ -36,8 +36,8 @@ import os
 import sys
 import time
 
-from itertools import groupby, zip_longest
 from collections import Counter
+from itertools import groupby
 from scipy import stats
 
 from google.oauth2 import service_account
@@ -72,7 +72,7 @@ def load_baseline_file(bucket_name, baseline_file):
         contents = blob.download_as_string()
         return json.loads(contents)
 
-    except NotFound as ex:
+    except NotFound:
         print(f"File gs://{bucket_name}/{baseline_file} not found. "
               f"Creating a new empty one.", file=sys.stderr)
 
@@ -95,18 +95,25 @@ def get_timestamp(record):
     return time.mktime(parsed)
 
 
-def add_to_baseline_file(input_file_name, data, threshold):
+def add_to_baseline_file(input_file_name, baseline_data, threshold):
+    if baseline_data:
+        verify_data(baseline_data)
+
     with open(input_file_name, "r") as measure:
         new_measurement = json.load(measure)
+        verify_data(new_measurement)
 
-        if data:
-            verify_new_data(data, new_measurement)
+        new_measurement_keys = [data[0] for data in group_data(measure, "VmConfig", "CollectionMethod")]
 
         # Baseline contains several tests per one benchmark record
-        test_names = set(value["TestName"] for value in data)
+        test_names = set(value["TestName"] for value in baseline_data)
 
         result = []
-        for _, values in group_data(data, "VmConfig", "CollectionMethod"):
+        for key, values in group_data(baseline_data, "VmConfig", "CollectionMethod"):
+            if key not in new_measurement_keys:
+                # Drop removed tests
+                continue
+
             # For every group (vm, method) sort the records in ascending order
             # to get rid of the oldest data (at the beginning or the list).
             ordered = sorted(values, key=get_timestamp)
@@ -126,38 +133,25 @@ def add_to_baseline_file(input_file_name, data, threshold):
         return result
 
 
-def verify_new_data(baseline_data, new_data):
+def verify_data(data):
     """
-    Enforce compatibility between baseline data and a new chunk of numbers. Two
-    invariants needs to be maintained:
-
-    * both baseline and new data have the same set of (VmConfig, CollectionMethod)
-
-    * New data provides equal number of with/without collector benchmark runs
-
-    The function expects baseline is not empty.
-
+    There are some assumptions made about the date we operate with for both
+    baseline series and new measurements, they're going to be verified below.
     """
 
-    assert baseline_data, "Baseline data must be not empty"
+    assert data, "Benchmark data must be not empty"
 
-    baseline_grouped = process(baseline_data)
-    new_grouped = process(new_data)
+    data_grouped = process(data)
 
-    for (baseline, new) in zip_longest(baseline_grouped, new_grouped):
-        bgroup, bvalues = baseline
-        ngroup, nvalues = new
-
-        if bgroup != ngroup:
-            raise Exception(f"Benchmark metrics do not match:"
-                            f" {bgroup}, {ngroup} ")
-
+    for group, values in data_grouped:
         counter = Counter()
-        for v in nvalues:
+        for v in values:
             counter.update(v.keys())
 
-        # We rely only on baseline/collector hackbench at the moment. As soon
-        # as data for more tests will be collected, this section has to be
+        # Data provides equal number of with/without collector benchmark runs.
+        #
+        # NOTE: We rely only on baseline/collector hackbench at the moment. As
+        # soon as data for more tests will be collected, this section has to be
         # extended accordingly.
         no_overhead_count = counter.get("baseline_benchmark", 0)
         overhead_count = counter.get("collector_benchmark", 0)
@@ -167,9 +161,41 @@ def verify_new_data(baseline_data, new_data):
                             f" {no_overhead_count}, {overhead_count} ")
 
 
+def intersection(baseline_data, new_data):
+    """
+    Remove any tests that are not found in both the baseline and the new data.
+
+    This is done for 2 reasons:
+    - Data that shows up in the baseline but not in the new data is considered a
+      removed test. There is no point in processing this.
+    - Data that shows up in the new data but not in the baseline is considered
+      a new test that doesn't have an associated baseline yet. The baseline for
+      the new test will be added after it is merged into master.
+    """
+    assert baseline_data, "Baseline data must be not empty"
+
+    baseline_grouped = process(baseline_data)
+    new_grouped = process(new_data)
+
+    new_keys = [items[0] for items in new_grouped]
+    baseline_filtered = [
+        data for data in baseline_grouped
+        if data[0] in new_keys
+    ]
+
+    baseline_keys = [items[0] for items in baseline_filtered]
+    new_filtered = [
+        data for data in new_grouped
+        if data[0] in baseline_keys
+    ]
+
+    return (baseline_filtered, new_filtered)
+
+
 def process(content):
     """
-    Transform benchmark data into the format CI scripts work with.
+    Transform benchmark data into the format CI scripts work with, and group by
+    VmConfig and CollectionMethod fields.
     """
 
     processed = [
@@ -191,7 +217,10 @@ def group_data(content, *columns):
         return " ".join([record.get(c) for c in columns])
 
     ordered = sorted(content, key=record_id)
-    return groupby(ordered, key=record_id)
+    return [
+        (key, list(group))
+        for key, group in groupby(ordered, key=record_id)
+    ]
 
 
 def split_benchmark(measurements):
@@ -223,21 +252,19 @@ def compare(input_file_name, baseline_data):
         print("Baseline file is empty, nothing to compare.", file=sys.stderr)
         return
 
+    verify_data(baseline_data)
+
     with open(input_file_name, "r") as measurement:
         test_data = json.load(measurement)
-        verify_new_data(baseline_data, test_data)
+        verify_data(test_data)
 
-        baseline_grouped = process(baseline_data)
-        test_grouped = process(test_data)
+        baseline_grouped, test_grouped = intersection(baseline_data, test_data)
 
         for (baseline, test) in zip(baseline_grouped, test_grouped):
             bgroup, bvalues = baseline
             tgroup, tvalues = test
 
             assert bgroup == tgroup, "Kernel/Method must not be differrent"
-
-            bvalues = list(bvalues)
-            tvalues = list(tvalues)
 
             baseline_overhead = collector_overhead(bvalues)
             test_overhead = collector_overhead(tvalues)[0]
