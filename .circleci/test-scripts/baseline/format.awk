@@ -3,6 +3,6 @@ BEGIN {
     print "|---|---|---|---|---|---|---|"
 }
 {
-    warn = ($7<=0.05) ? " :question:" : "";
+    warn = ($7==1) ? " :question:" : "";
     printf "|%s|%s|%s|%s|%s|%s|%s%s|%s",$1,$2,$3,$4,$5,$6,$7,warn,ORS
 }
