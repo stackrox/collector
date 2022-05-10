@@ -239,12 +239,15 @@ def split_benchmark(measurements):
 
 
 def collector_overhead(measurements):
+    """
+    Express collector overhead in absolute difference in hackbench_avg_time.
+    Due to variance a relative difference (i.e. overhead / no overhead) will
+    also have higher variance, because the actual delta will be smaller/larger
+    relative to the total timing.
+    """
     no_overhead, overhead = split_benchmark(measurements)
 
-    return [
-        round(100 * x / y, 2)
-        for (x, y) in zip(overhead, no_overhead)
-    ]
+    return [x - y for (x, y) in zip(overhead, no_overhead)]
 
 
 def compare(input_file_name, baseline_data):
