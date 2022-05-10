@@ -166,6 +166,32 @@ commands:
         command: |
           "${CI_ROOT}/install-hub-comment.sh"
 
+  init-support-package:
+    parameters:
+      download_base_url:
+        type: string
+      relative_path:
+        type: string
+      gcloud_bucket:
+        type: string
+      public_relative_path:
+        type: string
+      public_gcloud_bucket:
+        type: string
+    steps:
+    - run:
+        name: Initialize environment
+        command: |
+          relative_path="<< parameters.relative_path >>"
+          if [[ "$CIRCLE_BRANCH" != "master" ]]; then
+            relative_path="${relative_path}/.test-${CIRCLE_BUILD_NUM}"
+          fi
+          cci-export BASE_URL "<< parameters.download_base_url >>/${relative_path}"
+          cci-export SUPPORT_PKG_SRC_ROOT "${SOURCE_ROOT}/kernel-modules/support-packages"
+          cci-export LICENSE_FILE "${SOURCE_ROOT}/collector/LICENSE-kernel-modules.txt"
+          cci-export GCLOUD_TARGET "<< parameters.gcloud_bucket >>/${relative_path}"
+          cci-export PUBLIC_GCLOUD_TARGET "<< parameters.public_gcloud_bucket >>/<< parameters.public_relative_path >>"
+
 jobs:
   initjob:
     <<: *defaultImage
@@ -1042,6 +1068,54 @@ jobs:
     - ci-artifacts/store:
         path: ~/workspace/benchmark.csv
 
+  cpaas-extract-drivers:
+    <<: *defaultMachine
+    steps:
+      - initcommand
+      - gcloud-init
+
+      - run:
+          name: Extract and upload drivers
+          command: |
+            "${CI_ROOT}/cpaas/10-extract-drivers.sh" \
+              "${CIRCLE_TAG}" \
+              "$CIRCLE_BRANCH"
+
+      - persist_to_workspace:
+          root: /tmp/cpaas-support-packages
+          paths:
+          - metadata
+
+  cpaas-support-package:
+    <<: *defaultImage
+    steps:
+      - initcommand
+      - gcloud-init
+
+      - attach_workspace:
+          at: /tmp/cpaas-support-packages
+
+      - init-support-package:
+          download_base_url: "https://install.stackrox.io"
+          relative_path: "collector/support-packages/cpaas"
+          gcloud_bucket: "gs://sr-roxc"
+          public_relative_path: "offline/v1/support-packages/cpaas"
+          public_gcloud_bucket: "gs://collector-support-public/cpaas"
+
+      - run:
+          name: Create support package files
+          command: |
+            "${SUPPORT_PKG_SRC_ROOT}/04-create-support-packages.sh" \
+              "${LICENSE_FILE}" \
+              /tmp/cpaas-support-packages/metadata \
+              /tmp/cpaas-support-packages/output \
+              "gs://stackrox-collector-modules-staging/cpaas/${CIRCLE_BRANCH}"
+
+      - run:
+          name: Upload to GCloud
+          command: |
+            gsutil -m rsync -r /tmp/cpaas-support-packages/output "$GCLOUD_TARGET"
+
   update-support-packages:
     <<: *defaultImage
     environment:
@@ -1067,18 +1141,12 @@ jobs:
       - quay-login
       - gcloud-init
 
-      - run:
-          name: Initialize environment
-          command: |
-            relative_path="$RELATIVE_PATH"
-            if [[ "$CIRCLE_BRANCH" != "master" ]]; then
-              relative_path="${relative_path}/.test-${CIRCLE_BUILD_NUM}"
-            fi
-            cci-export BASE_URL "${DOWNLOAD_BASE_URL}/${relative_path}"
-            cci-export SUPPORT_PKG_SRC_ROOT "${SOURCE_ROOT}/kernel-modules/support-packages"
-            cci-export LICENSE_FILE "${SOURCE_ROOT}/collector/LICENSE-kernel-modules.txt"
-            cci-export GCLOUD_TARGET "${GCLOUD_BUCKET}/${relative_path}"
-            cci-export PUBLIC_GCLOUD_TARGET "${PUBLIC_GCLOUD_BUCKET}/${PUBLIC_RELATIVE_PATH}"
+      - init-support-package:
+          download_base_url: "https://install.stackrox.io"
+          relative_path: "collector/support-packages"
+          gcloud_bucket: "gs://sr-roxc"
+          public_relative_path: "offline/v1/support-packages"
+          public_gcloud_bucket: "gs://collector-support-public"
 
       - run:
           name: Install Jinja2
@@ -1108,7 +1176,10 @@ jobs:
           name: Create support package files
           command: |
             "${SUPPORT_PKG_SRC_ROOT}/04-create-support-packages.sh" \
-              "${LICENSE_FILE}" /tmp/support-packages/metadata /tmp/support-packages/output
+              "${LICENSE_FILE}" \
+              /tmp/support-packages/metadata \
+              /tmp/support-packages/output \
+              "${COLLECTOR_MODULES_BUCKET}"
 
       - run:
           name: Create index file
@@ -1501,6 +1572,18 @@ reusejobs: &completeWorkflow
           - collector-support
         requires:
           - upload-modules
+    - cpaas-extract-drivers:
+        <<: *runOnAllTags
+        context:
+          - rhacs-automation-credentials
+        requires:
+          - initjob
+    - cpaas-support-package:
+        <<: *runOnAllTags
+        context:
+          - quay-rhacs-eng-readonly
+        requires:
+          - cpaas-extract-drivers
     - update-support-packages:
         <<: *runOnAllTags
         context:
