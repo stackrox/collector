@@ -42,3 +42,6 @@ COPY --from=kernel-modules /kernel-modules/6 /kernel-modules/
 
 FROM probe-layer-7 AS probe-layer-8
 COPY --from=kernel-modules /kernel-modules/7 /kernel-modules/
+
+FROM probe-layer-8 AS probe-layer-9
+COPY --from=kernel-modules /kernel-modules/8 /kernel-modules/
