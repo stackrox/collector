@@ -39,8 +39,13 @@ for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
 
     package_out_dir="${OUT_DIR}/${mod_ver}"
     mkdir -p "$package_out_dir"
-    filename="support-pkg-${mod_ver::6}-$(date '+%Y%m%d%H%M%S').zip"
-    latest_filename="support-pkg-${mod_ver::6}-latest.zip"
+    if [[ "${mod_ver}" =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
+        filename="support-pkg-${mod_ver}-$(date '+%Y%m%d%H%M%S').zip"
+        latest_filename="support-pkg-${mod_ver}-latest.zip"
+    else
+        filename="support-pkg-${mod_ver::6}-$(date '+%Y%m%d%H%M%S').zip"
+        latest_filename="support-pkg-${mod_ver::6}-latest.zip"
+    fi
 
     cp "${LICENSE_FILE}" "${probe_dir}"/LICENSE
 

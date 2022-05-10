@@ -70,6 +70,7 @@ def render_index(packages, out_dir, template_file='index.html'):
 
 def load_support_packages(output_dir, mod_md_map):
     support_packages = []
+    driver_version_re = re.compile(r'^\d+\.\d+\.\d+$')
 
     for mod_ver in os.listdir(output_dir):
         if mod_ver not in mod_md_map:
@@ -82,13 +83,19 @@ def load_support_packages(output_dir, mod_md_map):
 
         rox_version_ranges = sorted(mod_md_map[mod_ver], key=lambda r: r.max, reverse=True)
 
-        support_pkg_file_re = re.compile(r'^support-pkg-' + re.escape(mod_ver[:6]) + r'-\d+\.zip$')
+        if driver_version_re.match(mod_ver):
+            driver_version = mod_ver
+        else:
+            # Legacy version (truncated SHA value)
+            driver_version = mod_ver[:6]
+
+        support_pkg_file_re = re.compile(fr'^support-pkg-{re.escape(driver_version)}-\d+\.zip$')
         support_pkg_file = max(f for f in os.listdir(mod_out_dir) if support_pkg_file_re.match(f))
 
         st = os.stat(os.path.join(mod_out_dir, support_pkg_file))
         last_mod_time = datetime.utcfromtimestamp(st.st_mtime).strftime('%Y/%m/%d, %H:%M:%S')
 
-        support_pkg_file_latest = 'support-pkg-%s-latest.zip' % (mod_ver[:6])
+        support_pkg_file_latest = f'support-pkg-{driver_version}-latest.zip'
         try:
             os.stat(os.path.join(mod_out_dir, support_pkg_file_latest))
         except (FileNotFoundError, PermissionError):
