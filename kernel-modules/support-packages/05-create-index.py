@@ -89,13 +89,13 @@ def load_support_packages(output_dir, mod_md_map):
             # Legacy version (truncated SHA value)
             driver_version = mod_ver[:6]
 
-        support_pkg_file_re = re.compile(r'^support-pkg-' + re.escape(driver_version) + r'-\d+\.zip$')
+        support_pkg_file_re = re.compile(fr'^support-pkg-{re.escape(driver_version)}-\d+\.zip$')
         support_pkg_file = max(f for f in os.listdir(mod_out_dir) if support_pkg_file_re.match(f))
 
         st = os.stat(os.path.join(mod_out_dir, support_pkg_file))
         last_mod_time = datetime.utcfromtimestamp(st.st_mtime).strftime('%Y/%m/%d, %H:%M:%S')
 
-        support_pkg_file_latest = 'support-pkg-%s-latest.zip' % (driver_version)
+        support_pkg_file_latest = f'support-pkg-{driver_version}-latest.zip'
         try:
             os.stat(os.path.join(mod_out_dir, support_pkg_file_latest))
         except (FileNotFoundError, PermissionError):
