@@ -46,6 +46,10 @@ getFlavorFor5_13_plus() {
         flavor_local="fc36"
     elif [[ "$version" =~ ^5\.1[3-9]\.[0-9]+-[0-9]+\.fc3[5-9] ]]; then
         flavor_local="fc36"
+    elif [[ "$version" =~ ^5\.17\.[6-9]+-[0-9]+\.fc34 ]]; then
+        flavor_local="fc36"
+    elif [[ "$version" =~ ^5\.1[8-9]\.[0-9]+-[0-9]+\.fc34 ]]; then
+        flavor_local="fc36"
     else
         flavor_local="hirsute"
     fi
