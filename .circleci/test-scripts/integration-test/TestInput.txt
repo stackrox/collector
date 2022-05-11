@@ -1,0 +1,6 @@
+false fake_image_family commit fake_branch unset false
+false fake_image_family commit fake_branch fake_tag true
+false rhel-asdf commit fake_branch unset true
+false fake_image_family commit master unset true
+false fake_image_family schedule fake_branch unset true
+true rhel-asdf commit fake_branch unset false

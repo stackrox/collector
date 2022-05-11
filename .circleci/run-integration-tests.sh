@@ -8,7 +8,6 @@ BUILD_NUM=$3
 echo "Running tests with image '${COLLECTOR_IMAGE}'"
 
 if [[ $remote_host_type != "local" ]]; then
-    # I am not sure why there is a difference in the tests that are run locally and in VMs. Perhaps they should be the same
     make -C "${SOURCE_ROOT}" integration-tests-repeat-network integration-tests-baseline integration-tests integration-tests-report
 
     cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
