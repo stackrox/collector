@@ -6,7 +6,7 @@ echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 
 mv collector-wrapper.sh /usr/local/bin/
 chmod 700 bootstrap.sh
-dnf upgrade -y
+dnf upgrade --nobest -y
 dnf install -y kmod
 
 if [ "$ADDRESS_SANITIZER" == "true" ]; then

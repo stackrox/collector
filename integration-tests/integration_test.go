@@ -55,6 +55,16 @@ func TestMissingProcScrape(t *testing.T) {
 	}
 }
 
+func TestLongNetworkFlow(t *testing.T) {
+	longNetworkFlowTestSuite := &LongNetworkFlowTestSuite{
+		afterglowPeriod:        10,
+		scrapeInterval:         1,
+		enableAfterglow:        true,
+		expectedReports:        []bool{true, false},
+	}
+	suite.Run(t, longNetworkFlowTestSuite)
+}
+
 ////Need to update the comments in these tests
 func TestRepeatedNetworkFlow(t *testing.T) {
 	// Perform 11 curl commands with a 2 second sleep between each curl command.
@@ -144,6 +154,20 @@ type PerformanceResult struct {
 
 type MissingProcScrapeTestSuite struct {
 	IntegrationTestSuiteBase
+}
+
+type LongNetworkFlowTestSuite struct {
+	IntegrationTestSuiteBase
+	clientContainer        string
+	clientIP               string
+	serverContainer        string
+	serverIP               string
+	serverPort             string
+	enableAfterglow        bool
+	afterglowPeriod        int
+	scrapeInterval         int
+	expectedReports        []bool // An array of booleans representing the connection. true is active. fasle is inactive.
+	observedReports        []bool
 }
 
 type RepeatedNetworkFlowTestSuite struct {
@@ -379,6 +403,116 @@ func (s *MissingProcScrapeTestSuite) TearDownSuite() {
 	err := s.collector.TearDown()
 	s.Require().NoError(err)
 	s.cleanupContainer([]string{"collector"})
+}
+
+func (s *LongNetworkFlowTestSuite) SetupSuite() {
+	s.metrics = map[string]float64{}
+	s.executor = NewExecutor()
+	s.StartContainerStats()
+	s.collector = NewCollectorManager(s.executor, s.T().Name())
+
+	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":` + strconv.Itoa(s.scrapeInterval) + `}`
+	s.collector.Env["ROX_AFTERGLOW_PERIOD"] = strconv.Itoa(s.afterglowPeriod)
+	s.collector.Env["ROX_ENABLE_AFTERGLOW"] = strconv.FormatBool(s.enableAfterglow)
+
+	err := s.collector.Setup()
+	s.Require().NoError(err)
+
+	err = s.collector.Launch()
+	s.Require().NoError(err)
+
+	images := []string{
+		"large:nginx",
+		"stackrox/qa:collector-schedule-curls",
+	}
+
+	for _, image := range images {
+		err := s.executor.PullImage(image)
+		s.Require().NoError(err)
+	}
+
+	time.Sleep(10 * time.Second)
+
+	// invokes default nginx
+	containerID, err := s.launchContainer("nginx", "large:nginx")
+	s.Require().NoError(err)
+	s.serverContainer = containerID[0:12]
+
+	// invokes another container
+	containerID, err = s.launchContainer("nginx-curl", "pstauffer/curl:latest", "sleep", "300")
+	s.Require().NoError(err)
+	s.clientContainer = containerID[0:12]
+
+	s.serverIP, err = s.getIPAddress("nginx")
+	s.Require().NoError(err)
+
+	s.serverPort, err = s.getPort("nginx")
+	s.Require().NoError(err)
+	time.Sleep(30 * time.Second)
+
+	serverAddress := fmt.Sprintf("%s:%s", s.serverIP, s.serverPort)
+
+	fmt.Println("serverAddress= " + serverAddress)
+	//_, err = s.execContainer("nginx-curl", []string{"/usr/bin/schedule-curls.sh", numMetaIter, numIter, sleepBetweenCurlTime, sleepBetweenIterations, serverAddress})
+	_, err = s.execContainer("nginx-curl", []string{"curl", "--limit-rate", "100", serverAddress})
+
+	s.clientIP, err = s.getIPAddress("nginx-curl")
+	s.Require().NoError(err)
+
+	totalTime := 60
+	time.Sleep(time.Duration(totalTime) * time.Second)
+	logLines := s.GetLogLines("grpc-server")
+	s.observedReports = GetNetworkActivity(logLines, serverAddress)
+
+	err = s.collector.TearDown()
+	s.Require().NoError(err)
+
+	s.db, err = s.collector.BoltDB()
+	s.Require().NoError(err)
+}
+
+func (s *LongNetworkFlowTestSuite) TearDownSuite() {
+	s.cleanupContainer([]string{"nginx", "nginx-curl", "collector"})
+	stats := s.GetContainerStats()
+	s.PrintContainerStats(stats)
+	s.WritePerfResults("repeated_network_flow", stats, s.metrics)
+}
+
+func (s *LongNetworkFlowTestSuite) TestLongNetworkFlow() {
+	// Server side checks
+	assert.Equal(s.T(), s.expectedReports, s.observedReports)
+
+	val, err := s.Get(s.serverContainer, networkBucket)
+	s.Require().NoError(err)
+	actualValues := strings.Split(string(val), "|")
+
+	if len(actualValues) < 2 {
+		assert.FailNow(s.T(), "serverContainer networkBucket was missing data. ", "val=\"%s\"", val)
+	}
+	actualServerEndpoint := actualValues[0]
+	actualClientEndpoint := actualValues[1]
+
+	// From server perspective, network connection info only has local port and remote IP
+	assert.Equal(s.T(), fmt.Sprintf(":%s", s.serverPort), actualServerEndpoint)
+	assert.Equal(s.T(), s.clientIP, actualClientEndpoint)
+
+	fmt.Printf("ServerDetails from Bolt: %s %s\n", s.serverContainer, string(val))
+	fmt.Printf("ServerDetails from test: %s %s, Port: %s\n", s.serverContainer, s.serverIP, s.serverPort)
+
+	// client side checks
+	val, err = s.Get(s.clientContainer, networkBucket)
+	s.Require().NoError(err)
+	actualValues = strings.Split(string(val), "|")
+
+	actualClientEndpoint = actualValues[0]
+	actualServerEndpoint = actualValues[1]
+
+	// From client perspective, network connection info has no local endpoint and full remote endpoint
+	assert.Empty(s.T(), actualClientEndpoint)
+	assert.Equal(s.T(), fmt.Sprintf("%s:%s", s.serverIP, s.serverPort), actualServerEndpoint)
+
+	fmt.Printf("ClientDetails from Bolt: %s %s\n", s.clientContainer, string(val))
+	fmt.Printf("ClientDetails from test: %s %s\n", s.clientContainer, s.clientIP)
 }
 
 // Launches collector

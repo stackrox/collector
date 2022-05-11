@@ -67,6 +67,13 @@ repeat-network: docker-clean
 	set -o pipefail ; \
 	go test -timeout 90m -count=1 -v \
 	  -run TestRepeatedNetworkFlow 2>&1 | tee -a integration-test.log
+	
+.PHONY: long-network
+long-network: docker-clean
+	go version
+	set -o pipefail ; \
+	go test -timeout 90m -count=1 -v \
+	  -run TestLongNetworkFlow 2>&1 | tee -a integration-test.log
 
 .PHONY: report
 report:
