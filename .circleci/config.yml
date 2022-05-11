@@ -261,6 +261,11 @@ jobs:
           "${CI_ROOT}/test-scripts/get-builder-flavor/run-tests.sh" "${SOURCE_ROOT}"
 
     - run:
+        name: Test integration-test check-whether-to-run-job
+        command: |
+          "${CI_ROOT}/test-scripts/integration-test/test-check-whether-to-run-job.sh" "${SOURCE_ROOT}"
+
+    - run:
         name: shellcheck-all
         command: |
           wget -qO- "https://github.com/koalaman/shellcheck/releases/download/stable/shellcheck-stable.linux.x86_64.tar.xz" | tar -xJv
@@ -939,16 +944,14 @@ jobs:
     - run:
         name: Check whether to run job
         command: |
-          if [[ -f "${WORKSPACE_ROOT}/pr-metadata/labels/skip-integration-tests" ]]; then
-            echo "Skipping job with skip-integration-tests label."
-            "${CI_ROOT}/safe-halt.sh"
-            exit
-          fi
-
-          if [[ "<< parameters.dockerized >>" == "true" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/run-dockerized-steps" ]]; then
-            echo "Skipping dockerized build jobs."
-            "${CI_ROOT}/safe-halt.sh"
-            exit
+          if "${CI_ROOT}/integration-test/10-check-whether-to-run-job.sh" \
+                << parameters.dockerized >> \
+                << parameters.image_family >> \
+                << pipeline.trigger_source >> \
+                "$CIRCLE_BRANCH" \
+                "$CIRLCE_TAG"; then
+              "${CI_ROOT}/safe-halt.sh"
+              exit
           fi
 
     - add_ssh_keys
@@ -1259,10 +1262,7 @@ jobs:
         only_for_branches: master
         webhook: '${SLACK_WEBHOOK_KERNEL_PROBE_BUILD_FAILURE}'
 
-workflows:
-  version: 2
-  build:
-    jobs:
+reusejobs: &completeWorkflow
     - initjob:
         <<: *runOnAllTagsWithDockerIOPullCtx
     - lint:
@@ -1536,3 +1536,20 @@ workflows:
         requires:
           - upload-modules
           - images
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      *completeWorkflow
+
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only: jv/ROX-9961-create-nightly-collector-circleci-job
+
+    jobs:
+      *completeWorkflow
