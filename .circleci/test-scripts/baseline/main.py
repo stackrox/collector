@@ -29,6 +29,7 @@ import time
 from collections import Counter
 from itertools import groupby
 from scipy import stats
+import numpy as np
 
 from google.oauth2 import service_account
 from google.cloud import storage
@@ -264,7 +265,7 @@ def compare(input_file_name, baseline_data):
             # The original implementation used single sample ttest, but it's
             # too sensitive for such variance.
             # result, pvalue = stats.ttest_1samp(baseline_overhead,
-                                               # test_overhead)
+            #                                    test_overhead)
 
             # Test the new data to be a 1.5 outlier
             iqr = stats.iqr(baseline_overhead)
