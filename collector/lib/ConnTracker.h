@@ -195,10 +195,10 @@ class ConnectionTracker {
 /* static */
 template <typename T>
 void ConnectionTracker::UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, const UnorderedMap<T, ConnStatus>& new_state, int64_t time_micros, int64_t afterglow_period_micros) {
-  // Remove inactive connections that are older than the afterglow period and add unexpired new connections to the old state
+  // Remove connections that are older than the afterglow period and add unexpired new connections to the old state
   for (auto it = old_state->begin(); it != old_state->end();) {
     auto& old_conn = *it;
-    if (old_conn.second.WasRecentlyActive(time_micros, afterglow_period_micros)) {
+    if (old_conn.second.IsInAfterglowPeriod(time_micros, afterglow_period_micros)) {
       ++it;
     } else {
       it = old_state->erase(it);

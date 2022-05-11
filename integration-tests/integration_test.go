@@ -55,7 +55,6 @@ func TestMissingProcScrape(t *testing.T) {
 	}
 }
 
-//Need to update the comments in these tests
 func TestRepeatedNetworkFlow(t *testing.T) {
 	// Perform 11 curl commands with a 2 second sleep between each curl command.
 	// The scrapeInterval is increased to 4 seconds to reduce the chance that jiter will effect the results.
@@ -93,7 +92,7 @@ func TestRepeatedNetworkFlowWithZeroAfterglowPeriod(t *testing.T) {
 }
 
 func TestRepeatedNetworkFlowThreeCurlsNoAfterglow(t *testing.T) {
-	// The afterglow period is set to 0 so this has the same behavior as if afterglow was disabled.
+	// The afterglow period is set to 0 so afterglow is disabled
 	repeatedNetworkFlowTestSuite := &RepeatedNetworkFlowTestSuite{
 		afterglowPeriod:        0,
 		scrapeInterval:         4,
