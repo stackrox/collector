@@ -253,8 +253,6 @@ jobs:
     <<: *defaultImage
 
     steps:
-    - initcommand
-
     - run:
         name: Test get-builder-flavor
         command: |
