@@ -1512,8 +1512,9 @@ reusejobs: &completeWorkflow
         # - test-module-sles-15-sp2-sap
         - test-ebpf-flatcar-stable
         - test-module-flatcar-stable
-        - test-ebpf-fedora-coreos-stable
-        - test-module-fedora-coreos-stable
+        # Temporary ignore, waiting for falcosecurity/libs/pull/317
+        # - test-ebpf-fedora-coreos-stable
+        # - test-module-fedora-coreos-stable
         - test-ebpf-garden-linux
         - test-module-garden-linux
         - test-module-ubuntu-pro-1804-lts

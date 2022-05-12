@@ -13,21 +13,11 @@ overwrite existing baseline file on GCS.
 
 To compare a new benchmark with the baseline, use --test <new.json> command.
 This will fetch the baseline, and calculate an overhead captured in it and in
-the test file (with/without collector). Then it will do a t-test for mean
-values -- this will give the P-value, the probability of getting as or more
-extreme values assuming the null hypothesis is true (i.e. the value we're
-testing is different from the mean value from baseline only by chance). P-value
-is distributed between [0, 1], bigger values means that the new benchmark
-values differences from the baseline are not significant.
+the test file (with/without collector). Then it will perform an IQR test to
+find out if the test data is 1.5-outlier.
 
-The procedure described above is a bit cheating though. While we're most likely
-working with normally distributed values (hackbench_avg_time is an average, and
-averages of samples are distributed normally following central theorem), the
-test expects us to compare mean values, but we use a single sample as a second
-argument. Essentially it means t-test answers the question "how likely it is
-that the samples with mean M_0 has actual mean M_1", where M_0 is mean of the
-baseline, and M_1 is the current value we're testing. How much is this problem
-in practice needs to be verified empirically.
+NOTE: Originally it was doing t-test for mean values, but it seems to be too
+sensitive for such variance.
 """
 
 import argparse
@@ -39,6 +29,7 @@ import time
 from collections import Counter
 from itertools import groupby
 from scipy import stats
+import numpy as np
 
 from google.oauth2 import service_account
 from google.cloud import storage
@@ -239,12 +230,15 @@ def split_benchmark(measurements):
 
 
 def collector_overhead(measurements):
+    """
+    Express collector overhead in absolute difference in hackbench_avg_time.
+    Due to variance a relative difference (i.e. overhead / no overhead) will
+    also have higher variance, because the actual delta will be smaller/larger
+    relative to the total timing.
+    """
     no_overhead, overhead = split_benchmark(measurements)
 
-    return [
-        round(100 * x / y, 2)
-        for (x, y) in zip(overhead, no_overhead)
-    ]
+    return [x - y for (x, y) in zip(overhead, no_overhead)]
 
 
 def compare(input_file_name, baseline_data):
@@ -268,8 +262,17 @@ def compare(input_file_name, baseline_data):
 
             baseline_overhead = collector_overhead(bvalues)
             test_overhead = collector_overhead(tvalues)[0]
-            result, pvalue = stats.ttest_1samp(baseline_overhead,
-                                               test_overhead)
+            # The original implementation used single sample ttest, but it's
+            # too sensitive for such variance.
+            # result, pvalue = stats.ttest_1samp(baseline_overhead,
+            #                                    test_overhead)
+
+            # Test the new data to be a 1.5 outlier
+            iqr = stats.iqr(baseline_overhead)
+            q1, q3 = np.percentile(baseline_overhead, [25, 75])
+            lower = q1 - 1.5 * iqr
+            upper = q3 + 1.5 * iqr
+            outlier = 0 if lower < test_overhead < upper else 1
 
             benchmark_baseline, benchmark_collector = split_benchmark(bvalues)
             test_baseline, test_collector = split_benchmark(tvalues)
@@ -278,7 +281,7 @@ def compare(input_file_name, baseline_data):
             collector_median = round(stats.tmean(benchmark_collector), 2)
 
             print(f"{bgroup} {test_baseline[0]} {test_collector[0]} "
-                  f"{baseline_median} {collector_median} {round(pvalue, 2)}")
+                  f"{baseline_median} {collector_median} {outlier}")
 
 
 if __name__ == "__main__":
