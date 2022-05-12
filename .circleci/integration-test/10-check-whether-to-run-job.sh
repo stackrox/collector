@@ -20,7 +20,7 @@ if [[ "$dockerized" == "true" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/run-
 fi
 
 if [[ "$branch" != "master" && -z "$tag" && "$trigger_source" != "schedule" ]]; then
-    if [[ "$image_family" =~ (ubuntu|rhel) ]]; then
+    if [[ "$image_family" =~ (ubuntu|rhel) || -f "${WORKSPACE_ROOT}/pr-metadata/labels/all-integration-tests" ]]; then
         exit 1
     fi
     log "Skipping job for pr. Running only for master branch and nightly job." >&2
