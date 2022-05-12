@@ -253,6 +253,13 @@ jobs:
     <<: *defaultImage
 
     steps:
+    - initcommand
+
+    - run:
+        name: Remove all labels
+        command: |
+          rm -rf "${WORKSPACE_ROOT}/pr-metadata/labels/*
+
     - run:
         name: Test get-builder-flavor
         command: |
