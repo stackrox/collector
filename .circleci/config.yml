@@ -1485,12 +1485,12 @@ reusejobs: &completeWorkflow
           parameters:
             collection_method: [module, ebpf]
             dockerized: [false, true]
-            image_version: [576-8-7c12cd]
+            image_version: [576-9-229156]
           exclude:
             # Failing due to dockerized module not being built (requires gcc-10).
             - collection_method: module
               dockerized: true
-              image_version: 576-8-7c12cd
+              image_version: 576-9-229156
     - integration-test-data:
         <<: *runOnAllTagsWithDockerIOPullCtx
         requires:
