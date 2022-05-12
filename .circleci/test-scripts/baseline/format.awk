@@ -3,6 +3,6 @@ BEGIN {
     print "|---|---|---|---|---|---|---|"
 }
 {
-    warn = ($7==1) ? " :question:" : "";
-    printf "|%s|%s|%s|%s|%s|%s|%s%s|%s",$1,$2,$3,$4,$5,$6,$7,warn,ORS
+    warn = ($7==1) ? ":green_circle:" : ":red_circle:";
+    printf "|%s|%s|%s|%s|%s|%s|%s|%s",$1,$2,$3,$4,$5,$6,warn,ORS
 }
