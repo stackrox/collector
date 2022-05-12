@@ -256,6 +256,11 @@ jobs:
     - initcommand
 
     - run:
+        name: Remove all labels
+        command: |
+          rm -rf "${WORKSPACE_ROOT}/pr-metadata/labels"/*
+
+    - run:
         name: Test get-builder-flavor
         command: |
           "${CI_ROOT}/test-scripts/get-builder-flavor/run-tests.sh" "${SOURCE_ROOT}"
