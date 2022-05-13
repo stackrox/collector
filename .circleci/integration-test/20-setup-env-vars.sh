@@ -8,9 +8,10 @@ image_family=$4
 image_name=$5
 dockerized=$6
 BUILD_NUM=$7
+cpaas_drivers=$8
 
 COLLECTOR_REPO="quay.io/rhacs-eng/collector"
-if [[ -f pr-metadata/labels/ci-run-against-ubi && "$dockerized" != "true" ]]; then
+if [[ -f pr-metadata/labels/ci-run-against-ubi && "$dockerized" != "true" && "$cpaas_drivers" != "true" ]]; then
     COLLECTOR_REPO="quay.io/rhacs-eng/collector-test-cpaas"
 fi
 
@@ -35,5 +36,9 @@ EOF
 if [[ "$dockerized" == "true" ]]; then
     cat >> "$BASH_ENV" <<- EOF
       export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}-dockerized"
+EOF
+elif [[ "$cpaas_drivers" == "true" ]]; then
+    cat >> "$BASH_ENV" <<- EOF
+        export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}-cpaas"
 EOF
 fi

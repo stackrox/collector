@@ -941,6 +941,9 @@ jobs:
       dockerized:
         type: boolean
         default: false
+      cpaas_drivers:
+        type: boolean
+        default: false
     <<: *defaultMachine
     working_directory: ~/workspace
 
@@ -974,7 +977,8 @@ jobs:
             "<< parameters.image_family >>" \
             "<< parameters.image_name >>" \
             "<< parameters.dockerized >>" \
-            "$CIRCLE_BUILD_NUM"
+            "$CIRCLE_BUILD_NUM" \
+            "<< parameters.cpaas_drivers >>"
 
     - run:
         name: "Extract gcp ssh public key from environment variable"
@@ -1115,6 +1119,37 @@ jobs:
           name: Upload to GCloud
           command: |
             gsutil -m rsync -r /tmp/cpaas-support-packages/output "$GCLOUD_TARGET"
+
+  cpaas-build-collector:
+    <<: *defaultImage
+    environment:
+    - QUAY_REPO: << pipeline.parameters.quay-repo >>
+    - DOCKER_REPO: "docker.io/stackrox"
+    - PUBLIC_REPO: "quay.io/stackrox-io"
+
+    steps:
+      - initcommand
+      - gcloud-init
+
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - docker-login-push
+      - quay-login-push
+
+      - run:
+          name: Download drivers
+          command: |
+            "${CI_ROOT}/cpaas/collector/10-download-drivers.sh" "${CIRCLE_BRANCH}"
+
+      - run:
+          name: Build collector
+          command: |
+            "${CI_ROOT}/cpaas/collector/20-create-image.sh"
+
+      - run:
+          name: Push images
+          command: |
+            "${CI_ROOT}/cpaas/collector/30-push-images.sh"
 
   update-support-packages:
     <<: *defaultImage
@@ -1584,6 +1619,24 @@ reusejobs: &completeWorkflow
           - quay-rhacs-eng-readonly
         requires:
           - cpaas-extract-drivers
+    - cpaas-build-collector:
+        <<: *runOnAllTagsWithDockerIOPushCtx
+        requires:
+          - cpaas-extract-drivers
+          - images
+    - integration-test:
+        <<: *runOnAllTagsWithIntegrationTestRequires
+        requires:
+          - cpaas-build-collector
+        name: test-<< matrix.collection_method >>-<< matrix.image_family >>-cpaas
+        vm_type: rhel
+        cpaas_drivers: true
+        offline: true
+        matrix:
+          parameters:
+            image_family: [rhel-7, rhel-8]
+            collection_method: [module, ebpf]
+
     - update-support-packages:
         <<: *runOnAllTags
         context:
