@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-pip install --upgrade scipy google-cloud-storage
+pip -q install --upgrade scipy google-cloud-storage
 
 jq -s 'flatten' "${WORKSPACE_ROOT}"/*perf.json > "${WORKSPACE_ROOT}"/all-perf.json
 
