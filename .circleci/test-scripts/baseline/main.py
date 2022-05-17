@@ -94,7 +94,10 @@ def add_to_baseline_file(input_file_name, baseline_data, threshold):
         new_measurement = json.load(measure)
         verify_data(new_measurement)
 
-        new_measurement_keys = [data[0] for data in group_data(measure, "VmConfig", "CollectionMethod")]
+        new_measurement_keys = [
+            data[0] for data in group_data(new_measurement,
+                                           "VmConfig", "CollectionMethod")
+        ]
 
         # Baseline contains several tests per one benchmark record
         test_names = set(value["TestName"] for value in baseline_data)
