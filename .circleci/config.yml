@@ -390,7 +390,7 @@ jobs:
 
   kernels:
     <<: *defaultMachine
-    parallelism: 1
+    parallelism: 4
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
