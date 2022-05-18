@@ -625,10 +625,6 @@ jobs:
     - initcommand
     - docker-login-push
     - quay-login-push
-    - run:
-        name: Lint Dockerfile
-        command: |
-          "${CI_ROOT}/ubi-images/10-lint-dockerfile.sh"
 
     - run:
         name: Build collector UBI images
