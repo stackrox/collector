@@ -390,7 +390,7 @@ jobs:
 
   kernels:
     <<: *defaultMachine
-    parallelism: 8
+    parallelism: 1
     environment:
     - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
@@ -414,6 +414,7 @@ jobs:
         name: Determine versions requiring a custom builder flavor
         command: |
           "${CI_ROOT}/kernels/30-determine-versions-requiring-a-custom-builder-flavor.sh" ~/kobuild-tmp
+          "${CI_ROOT}/safe_halt.sh
 
     - run:
         name: Separate local build tasks by flavor
