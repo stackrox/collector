@@ -43,8 +43,9 @@ This stage is based in ubi7 and provides all tooling needed for v3 kernels to be
 This stage is based in ubi8, provides all tooling needed for v4 and newer kernels to be built and some additional tools needed by other stages.
 
 ### Build arguments
-- `REDHAT_USERNAME`: A Red Hat developer account username, used to register the image.
-- `REDHAT_PASSWORD`: The password corresponding to the Red Hat developer account username provided, used to register the image.
+The build [requires](https://access.redhat.com/solutions/5558771) subscription registration to install RHEL packages in the UBI image on a non-RHEL host.
+- `REDHAT_SUBSCRIPTION_ORG_ID`: The Red Hat subscription organization id to use during image build.
+- `REDHAT_SUBSCRIPTION_ACTIVATION_KEY`: The Red Hat subscription activation key to use during image build.
 
 Both base images also copy a series of scripts into `/scripts`, this is done to prevent scripts from being modified when running the `patcher` stage (more on this in the following section).
 
