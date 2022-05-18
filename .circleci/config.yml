@@ -1486,10 +1486,6 @@ workflows:
           - rhacs-automation-credentials
         requires:
         - initjob
-    - run-stackrox-ci:
-        <<: *runOnAllTagsWithDockerIOPullCtx
-        requires:
-        - initjob
     - integration-test-local:
         <<: *runOnAllTagsWithDockerIOPushCtx
         name: integration-test-local
