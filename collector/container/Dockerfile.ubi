@@ -1,6 +1,6 @@
 # This builds a collector container based on UBI with a reliance on Red Hat
 # subscription entitlements.
-FROM registry.access.redhat.com/ubi8/ubi:8.4 AS builder
+FROM registry.access.redhat.com/ubi8/ubi:8.5 AS builder
 
 ARG REDHAT_USERNAME
 ARG REDHAT_PASSWORD
