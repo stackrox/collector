@@ -6,7 +6,6 @@ BRANCH=$2
 
 if [[ -z "$TAG" && "$BRANCH" != "master" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-legacy-probes" ]]; then
   echo "Not preparing legacy sources for a tag"
-￼ exit 0
 fi
 
 cd "$SOURCE_ROOT"
