@@ -18,8 +18,6 @@ ifdef BUILD_BUILDER_IMAGE
 	docker build \
 		--cache-from stackrox/collector-builder:cache \
 		--cache-from stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) \
-		--build-arg USE_VALGRIND=$(USE_VALGRIND) \
-		--build-arg ADDRESS_SANITIZER=$(ADDRESS_SANITIZER) \
 		-t stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-f "$(CURDIR)/builder/Dockerfile" \
 		builder

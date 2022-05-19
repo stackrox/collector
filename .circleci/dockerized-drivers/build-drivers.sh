@@ -31,14 +31,14 @@ if [[ -z "$(ls -A ~/workspace/go/src/github.com/stackrox/bundles)" ]]; then
 fi
 
 docker build \
-	--build-arg BRANCH="${GIT_REF}" \
-	--build-arg REDHAT_USERNAME="${REDHAT_USERNAME}" \
-	--build-arg REDHAT_PASSWORD="${REDHAT_PASSWORD}" \
-	--build-arg CACHE_REPO="${DRIVER_REPO}" \
-	--build-arg CACHE_TAG="${COLLECTOR_DRIVERS_CACHE}" \
-	--tag "${IMAGE_TAG}" \
-	-f "${SOURCE_ROOT}/kernel-modules/dockerized/Dockerfile" \
-	~/workspace/go/src/github.com/stackrox
+    --build-arg BRANCH="${GIT_REF}" \
+    --build-arg REDHAT_SUBSCRIPTION_ORG_ID="${REDHAT_SUBSCRIPTION_ORG_ID}" \
+    --build-arg REDHAT_SUBSCRIPTION_ACTIVATION_KEY="${REDHAT_SUBSCRIPTION_ACTIVATION_KEY}" \
+    --build-arg CACHE_REPO="${DRIVER_REPO}" \
+    --build-arg CACHE_TAG="${COLLECTOR_DRIVERS_CACHE}" \
+    --tag "${IMAGE_TAG}" \
+    -f "${SOURCE_ROOT}/kernel-modules/dockerized/Dockerfile" \
+    "${STACKROX_ROOT}"
 
 push_with_retry "${IMAGE_TAG}"
 exit $?

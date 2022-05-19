@@ -55,7 +55,7 @@ runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequire
     - docker-io-pull
     - quay-rhacs-eng-readonly
     - ubuntu-esm-subscription-token # Provides environment variable UBUNTU_ESM_SUBSCRIPTION_TOKEN.
-    - redhat-developer-account-login
+    - rhacs-automation-credentials
   requires:
   - images
   - ubi-image
@@ -625,10 +625,6 @@ jobs:
     - initcommand
     - docker-login-push
     - quay-login-push
-    - run:
-        name: Lint Dockerfile
-        command: |
-          "${CI_ROOT}/ubi-images/10-lint-dockerfile.sh"
 
     - run:
         name: Build collector UBI images
@@ -1448,7 +1444,7 @@ workflows:
         context:
           - docker-io-push
           - quay-rhacs-eng-readwrite
-          - redhat-developer-account-login
+          - rhacs-automation-credentials
         requires:
         - initjob
     - integration-test-local:
