@@ -1380,7 +1380,6 @@ workflows:
         <<: *runOnAllTagsWithDockerIOPushCtx
         requires:
         - builder
-<<<<<<< HEAD
     # - dockerized-task-file:
     #     <<: *runOnAllTags
     #     context:
