@@ -414,7 +414,7 @@ jobs:
         name: Determine versions requiring a custom builder flavor
         command: |
           "${CI_ROOT}/kernels/30-determine-versions-requiring-a-custom-builder-flavor.sh" ~/kobuild-tmp
-          "${CI_ROOT}/safe_halt.sh
+          "${CI_ROOT}/safe-halt.sh
 
     - run:
         name: Separate local build tasks by flavor
