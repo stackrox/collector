@@ -4,6 +4,7 @@ set -eo pipefail
 TAG=$1
 BRANCH=$2
 
+exit 0
 if [[ -n "$TAG" && "$BRANCH" != "master" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/build-legacy-probes" ]]; then
   echo "Not preparing legacy sources for a tag"
   exit 0
