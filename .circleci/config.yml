@@ -371,11 +371,6 @@ jobs:
           "${CI_ROOT}/prepare-kernels/prepare-source.sh"
 
     - run:
-        name: Prepare legacy sources
-        command: |
-          "${CI_ROOT}/prepare-kernels/prepare-legacy-sources.sh" "${CIRCLE_TAG}" "${CIRCLE_BRANCH}"
-
-    - run:
         name: Prepare Kernel module build cache lookup
         command: |
           "${CI_ROOT}/prepare-kernels/prepare-kernel-module-build-cache-lookup.sh"
