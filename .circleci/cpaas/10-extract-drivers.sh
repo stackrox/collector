@@ -14,7 +14,7 @@ docker login \
 
 docker run --pull always --rm \
     -v "${WORKSPACE_ROOT}/cpaas/kernel-modules/":/output \
-    brew.registry.redhat.io/rh-osbs/rhacs-collector-drivers-rhel8:rhacs-0.1-rhel-8-containers-candidate-59258-20220510095241 \
+    brew.registry.redhat.io/rh-osbs/rhacs-collector-drivers-rhel8:rhacs-0.1-rhel-8-containers-candidate-41317-20220531103428 \
     "cp -r /kernel-modules/* /output/"
 
 ls -la "${WORKSPACE_ROOT}/cpaas/kernel-modules"/**

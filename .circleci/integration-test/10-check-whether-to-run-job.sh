@@ -6,6 +6,7 @@ image_family=$2
 trigger_source=$3
 branch=$4
 tag=$5
+cpaas=$6
 
 log() { echo "$*" >&2; }
 
@@ -16,6 +17,11 @@ fi
 
 if [[ "$dockerized" == "true" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/run-dockerized-steps" ]]; then
     log "Skipping dockerized build jobs." >&2
+    exit 0
+fi
+
+if [[ "$cpaas" == "true" && ! -f "${WORKSPACE_ROOT}/pr-metadata/labels/run-cpaas-steps" ]]; then
+    log "Skipping cpaas build jobs." >&2
     exit 0
 fi
 

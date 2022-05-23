@@ -149,6 +149,18 @@ commands:
             exit
           fi
 
+  cpaas-should-run:
+    steps:
+    - run:
+        name: Check if cPaaS job should run
+        command: |
+          echo "Trigger source: '<< pipeline.trigger_source >>'"
+          if [[ ! -f ~/workspace/pr-metadata/labels/run-cpaas-steps && "<< pipeline.trigger_source >>" != "scheduled_pipeline" ]]; then
+            echo "Skipping dockerized build jobs."
+            "${CI_ROOT}/safe-halt.sh"
+            exit
+          fi
+
   stackrox-io-login:
     steps:
     - run:
@@ -958,7 +970,8 @@ jobs:
                 << parameters.image_family >> \
                 << pipeline.trigger_source >> \
                 "$CIRCLE_BRANCH" \
-                "$CIRLCE_TAG"; then
+                "$CIRLCE_TAG" \
+                << parameters.cpaas_drivers >>; then
               "${CI_ROOT}/safe-halt.sh"
               exit
           fi
@@ -1076,6 +1089,7 @@ jobs:
     <<: *defaultMachine
     steps:
       - initcommand
+      - cpaas-should-run
       - gcloud-init
 
       - run:
@@ -1094,6 +1108,7 @@ jobs:
     <<: *defaultImage
     steps:
       - initcommand
+      - cpaas-should-run
       - gcloud-init
 
       - attach_workspace:
@@ -1129,6 +1144,7 @@ jobs:
 
     steps:
       - initcommand
+      - cpaas-should-run
       - gcloud-init
 
       - setup_remote_docker:
