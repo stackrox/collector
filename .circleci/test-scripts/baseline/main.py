@@ -105,7 +105,10 @@ def add_to_baseline_file(input_file_name, baseline_data, threshold):
         result = []
         for key, values in group_data(baseline_data, "VmConfig", "CollectionMethod"):
             if key not in new_measurement_keys:
-                # Drop removed tests
+                # Keep the original data in baseline, even if there is nothing
+                # like that in the new benchmark. No need for any kind of
+                # verification.
+                result.extend(values)
                 continue
 
             # For every group (vm, method) sort the records in ascending order
