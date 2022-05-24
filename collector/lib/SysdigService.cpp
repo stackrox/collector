@@ -139,9 +139,9 @@ sinsp_evt* SysdigService::GetNext() {
   // When using targeted tracepoints this filter has no effect because
   // the only events that the probe produces are of the types that we want to
   // process.
-  if (useEbpf && !global_event_filter_[event->get_type()]) {
-    return nullptr;
-  }
+  // if (useEbpf && !global_event_filter_[event->get_type()]) {
+  //   return nullptr;
+  // }
 
   userspace_stats_.event_parse_micros[event->get_type()] += (NowMicros() - parse_start);
   ++userspace_stats_.nUserspaceEvents[event->get_type()];
