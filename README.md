@@ -66,6 +66,8 @@ Even though development containers is a supported feature of `Docker for Desktop
 
 ### Building collector image(s) from the command-line
 - `make image` will create the Red Hat based collector image.
+- `make image-dev` will create a collector image based on CentOS Stream, the package manager in this image is available so additional developer tools can be installed.
+- `make image-dev-full` will extend the `image-dev` target and also compile and embed the kernel module and eBPF probes in the final image, making it easier to test changes in these components.
 
 ### Setting up git hooks
 

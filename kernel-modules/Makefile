@@ -1,5 +1,6 @@
 BUILD_CONTAINER_TAG ?= build-kernel-modules
 BUILD_CONTAINER_CACHE_IMAGES ?=
+DEV_DRIVER_BUILDER ?= fc36
 
 CUSTOM_FLAVORS := $(patsubst build/Dockerfile.%,%,$(wildcard build/Dockerfile.*))
 
@@ -40,3 +41,18 @@ push-build-containers: push-build-container $(CUSTOM_FLAVORS:%=push-build-contai
 .PHONY: print-custom-flavors
 print-custom-flavors:
 	@printf "%s\n" $(CUSTOM_FLAVORS)
+
+.PHONY: drivers
+drivers: build-container-$(DEV_DRIVER_BUILDER)
+	docker run --rm \
+		-v $(CURDIR)/..:/collector \
+		-v /usr/include/bpf:/usr/include/bpf:ro \
+		-v /lib/modules/:/lib/modules/:ro \
+		-v /usr/src/kernels/:/usr/src/kernels/:ro \
+		build-kernel-modules-$(DEV_DRIVER_BUILDER):latest \
+		/collector/kernel-modules/dev/build-drivers.sh
+
+.PHONY: clean-drivers
+clean-drivers:
+	rm -rf ../falcosecurity-libs/build/
+	rm -rf container/kernel-modules/

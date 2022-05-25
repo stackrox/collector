@@ -45,6 +45,10 @@ $(MOD_VER_FILE): build-kernel-modules
 $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/bundle.tar.gz:
 	$(CURDIR)/collector/container/create-bundle.sh $(CURDIR)/collector/container - $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/
 
+.PHONY: build-drivers
+build-drivers:
+	make -C kernel-modules drivers
+
 image: collector unittest $(MOD_VER_FILE) $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/bundle.tar.gz
 	make -C collector txt-files
 	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
@@ -64,6 +68,18 @@ image-dev: collector unittest $(MOD_VER_FILE) $(CURDIR)/$(COLLECTOR_BUILD_CONTEX
 		-f collector/container/Dockerfile \
 		-t stackrox/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
+
+image-dev-full: image-dev build-drivers
+	docker tag stackrox/collector:$(COLLECTOR_TAG) stackrox/collector:$(COLLECTOR_TAG)-base
+	docker build \
+		--target=probe-layer-1 \
+		--tag stackrox/collector:$(COLLECTOR_TAG)-full \
+		--build-arg collector_repo=stackrox/collector \
+		--build-arg collector_version=$(COLLECTOR_TAG) \
+		--build-arg module_version=$(shell cat $(CURDIR)/kernel-modules/MODULE_VERSION) \
+		--build-arg max_layer_size=300 \
+		--build-arg max_layer_depth=1 \
+		$(CURDIR)/kernel-modules/container
 
 .PHONY: integration-tests
 integration-tests:
