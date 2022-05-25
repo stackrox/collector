@@ -107,5 +107,6 @@ file(STRINGS "${PROJECT_SOURCE_DIR}/../kernel-modules/MODULE_VERSION" DRIVER_VER
 set(DRIVER_VERSION "${DRIVER_VERSION}" CACHE STRING "Falco driver version" FORCE)
 set(DRIVER_DEVICE_NAME "${DRIVER_NAME}" CACHE STRING "Driver device name" FORCE)
 
+set(SCAP_BPF_PROGS_MAX "256" CACHE STRING "Number of BPF progams supported in Falco" FORCE)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/falcosecurity-libs EXCLUDE_FROM_DEFAULT_BUILD)
