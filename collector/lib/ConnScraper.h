@@ -52,4 +52,4 @@ class ConnScraper {
 
 }  // namespace collector
 
-#endif  //COLLECTOR_CONNSCRAPER_H
+#endif  // COLLECTOR_CONNSCRAPER_H

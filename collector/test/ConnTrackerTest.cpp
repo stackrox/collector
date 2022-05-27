@@ -137,7 +137,7 @@ TEST(ConnTrackerTest, TestUpdateIgnoredL4ProtoPortPairs) {
                          std::make_pair(conn_ab, ConnStatus(time_micros, true)),
                          std::make_pair(conn_ba, ConnStatus(time_micros, true))));
 
-  //normalization, filter out udp/9
+  // normalization, filter out udp/9
   state = tracker.FetchConnState(true);
   EXPECT_THAT(state, UnorderedElementsAre(
                          std::make_pair(conn_ab_normalized, ConnStatus(time_micros, true)),
@@ -710,8 +710,8 @@ TEST(ConnTrackerTest, TestComputeDeltaAfterglowEmptyOldState) {
 }
 
 /*
-* End block of tests with at most one connection in old_state and at most ond connection in new_state
-*/
+ * End block of tests with at most one connection in old_state and at most ond connection in new_state
+ */
 
 TEST(ConnTrackerTest, TestComputeDeltaAfterglowSameState) {
   Endpoint a(Address(192, 168, 0, 1), 80);
@@ -815,7 +815,7 @@ TEST(ConnTrackerTest, TestComputeDeltaAfterglowSetToInactive) {
 
   Connection conn1("xyz", a, b, L4Proto::TCP, true);
   Connection conn2("xzy", b, a, L4Proto::TCP, false);
-  int64_t time_micros = 100000000;  //100 seconds
+  int64_t time_micros = 100000000;  // 100 seconds
   int64_t time_at_last_scrape = 2000;
   int64_t connection_time1 = 1000;
   int64_t connection_time2 = 3000;

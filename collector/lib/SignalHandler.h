@@ -52,4 +52,4 @@ class SignalHandler {
 
 }  // namespace collector
 
-#endif  //COLLECTOR_SIGNALHANDLER_H
+#endif  // COLLECTOR_SIGNALHANDLER_H

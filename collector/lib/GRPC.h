@@ -36,4 +36,4 @@ std::shared_ptr<grpc::Channel> CreateChannel(const std::string& server_address, 
 
 }  // namespace collector
 
-#endif  //COLLECTOR_GRPC_H
+#endif  // COLLECTOR_GRPC_H
