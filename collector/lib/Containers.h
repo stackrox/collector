@@ -66,4 +66,4 @@ MappedType<M>* Lookup(M& map, const typename M::key_type& key) {
 
 }  // namespace collector
 
-#endif  //COLLECTOR_CONTAINERS_H
+#endif  // COLLECTOR_CONTAINERS_H

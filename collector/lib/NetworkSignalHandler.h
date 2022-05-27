@@ -53,4 +53,4 @@ class NetworkSignalHandler final : public SignalHandler {
 
 }  // namespace collector
 
-#endif  //COLLECTOR_NETWORKSIGNALHANDLER_H
+#endif  // COLLECTOR_NETWORKSIGNALHANDLER_H

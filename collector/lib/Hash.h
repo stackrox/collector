@@ -125,4 +125,4 @@ using UnorderedMap = std::unordered_map<K, V, Hasher>;
 
 }  // namespace collector
 
-#endif  //COLLECTOR_HASH_H
+#endif  // COLLECTOR_HASH_H

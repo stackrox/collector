@@ -45,4 +45,4 @@ class ProfilerHandler : public CivetHandler {
 };
 }  // namespace collector
 
-#endif  //COLLECTOR_PROFILERHANDLER_H
+#endif  // COLLECTOR_PROFILERHANDLER_H

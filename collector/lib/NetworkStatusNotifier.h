@@ -107,4 +107,4 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
 
 }  // namespace collector
 
-#endif  //COLLECTOR_NETWORKSTATUSNOTIFIER_H
+#endif  // COLLECTOR_NETWORKSTATUSNOTIFIER_H
