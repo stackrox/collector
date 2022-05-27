@@ -70,11 +70,11 @@ image-dev: collector unittest $(MOD_VER_FILE) $(CURDIR)/$(COLLECTOR_BUILD_CONTEX
 		$(COLLECTOR_BUILD_CONTEXT)
 
 image-dev-full: image-dev build-drivers
-	docker tag stackrox/collector:$(COLLECTOR_TAG) stackrox/collector:$(COLLECTOR_TAG)-base
+	docker tag quay.io/stackrox-io/collector:$(COLLECTOR_TAG) quay.io/stackrox-io/collector:$(COLLECTOR_TAG)-slim
 	docker build \
 		--target=probe-layer-1 \
-		--tag stackrox/collector:$(COLLECTOR_TAG)-full \
-		--build-arg collector_repo=stackrox/collector \
+		--tag quay.io/stackrox-io/collector:$(COLLECTOR_TAG)-full \
+		--build-arg collector_repo=quay.io/stackrox-io/collector \
 		--build-arg collector_version=$(COLLECTOR_TAG) \
 		--build-arg module_version=$(shell cat $(CURDIR)/kernel-modules/MODULE_VERSION) \
 		--build-arg max_layer_size=300 \
