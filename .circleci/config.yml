@@ -98,12 +98,6 @@ commands:
 
     steps:
     - run:
-        name: Install and configure gcloud
-        working_directory: ~/.config/gcloud
-        command: |
-          "${CI_ROOT}/gcloud-init/install-and-configure-gcloud.sh"
-
-    - run:
         name: Setup GCP env
         command: |
           "${CI_ROOT}/gcloud-init/setup-gcp-env.sh" "${<< parameters.service-account-env >>}" << parameters.bucket-permission-check >>
