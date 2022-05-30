@@ -52,6 +52,7 @@ extern "C" {
 #include "CollectorService.h"
 #include "CollectorStatsExporter.h"
 #include "EventNames.h"
+#include "FileSystem.h"
 #include "GRPC.h"
 #include "GRPCUtil.h"
 #include "GetKernelObject.h"
@@ -183,10 +184,10 @@ void insertModule(const std::vector<std::string>& syscall_list) {
   CLOG(INFO) << "Done inserting kernel module " << SysdigService::kModulePath << ".";
 }
 
-bool verifyProbeConfiguration() {
-  int fd = open(SysdigService::kProbePath, O_RDONLY);
+bool verifyProbeConfiguration(const std::string& driverPath) {
+  int fd = open(driverPath.c_str(), O_RDONLY);
   if (fd < 0) {
-    CLOG(ERROR) << "Cannot open kernel probe:" << SysdigService::kProbePath;
+    CLOG(ERROR) << "Cannot open kernel probe:" << driverPath;
     return false;
   }
   close(fd);
@@ -267,31 +268,28 @@ void gplNotice() {
   CLOG(INFO) << "";
 }
 
-int main(int argc, char** argv) {
-  if (!g_control.is_lock_free()) {
-    CLOG(FATAL) << "Could not create a lock-free control variable!";
-  }
+std::string obtainDriver(const CollectorArgs* args, const CollectorConfig& config, const Json::Value& collectorConfig) {
+  const std::string& driver = args->Driver();
+  if (!driver.empty()) {
+    CLOG(INFO) << "Using provided driver: " << driver;
 
-  CollectorArgs* args = CollectorArgs::getInstance();
-  int exitCode = 0;
-  if (!args->parse(argc, argv, exitCode)) {
-    if (!args->Message().empty()) {
-      CLOG(FATAL) << args->Message();
+    if (driver.compare(driver.length() - 3, 3, ".gz") == 0) {
+      // Provided driver is compressed, we should extract it.
+      std::string output = driver.substr(0, driver.length() - 3);
+
+      struct stat st;
+      if (stat(output.c_str(), &st) == 0 && S_ISREG(st.st_mode)) {
+        CLOG(INFO) << "Found driver already decompressed.";
+        return output;
+      }
+
+      if (!GZFileHandle::DecompressFile(driver, output)) {
+        CLOG(WARNING) << "Failed to decompress " << driver;
+        return "";
+      }
+      return output;
     }
-    CLOG(FATAL) << "Error parsing arguments";
-  }
-
-  CollectorConfig config(args);
-
-  setCoreDumpLimit(config.IsCoreDumpEnabled());
-
-  // insert the kernel module with options from the configuration
-  Json::Value collectorConfig = args->CollectorConfig();
-
-  // Extract configuration options
-  bool useGRPC = false;
-  if (!args->GRPCServer().empty()) {
-    useGRPC = true;
+    return driver;
   }
 
   struct stat st;
@@ -342,11 +340,42 @@ int main(int argc, char** argv) {
     if (!success) {
       CLOG(WARNING) << "Error getting kernel object: " << kernel_module;
     } else {
-      break;
+      return kernel_module;
     }
   }
+  return "";
+}
 
-  if (!success) {
+int main(int argc, char** argv) {
+  if (!g_control.is_lock_free()) {
+    CLOG(FATAL) << "Could not create a lock-free control variable!";
+  }
+
+  CollectorArgs* args = CollectorArgs::getInstance();
+  int exitCode = 0;
+  if (!args->parse(argc, argv, exitCode)) {
+    if (!args->Message().empty()) {
+      CLOG(FATAL) << args->Message();
+    }
+    CLOG(FATAL) << "Error parsing arguments";
+  }
+
+  CollectorConfig config(args);
+
+  setCoreDumpLimit(config.IsCoreDumpEnabled());
+
+  // insert the kernel module with options from the configuration
+  Json::Value collectorConfig = args->CollectorConfig();
+
+  // Extract configuration options
+  bool useGRPC = false;
+  if (!args->GRPCServer().empty()) {
+    useGRPC = true;
+  }
+
+  std::string driver = obtainDriver(args, config, collectorConfig);
+
+  if (driver.empty()) {
     //
     // If the download fails, attempt to connect to the GRPC server. This will
     // help to distinguish between networking issues rather than nebulous
@@ -372,7 +401,7 @@ int main(int argc, char** argv) {
   gplNotice();
 
   if (config.UseEbpf()) {
-    if (!verifyProbeConfiguration()) {
+    if (!verifyProbeConfiguration(driver)) {
       CLOG(FATAL) << "Error verifying ebpf configuration. Aborting...";
     }
     setBPFDropSyscalls(config.Syscalls());

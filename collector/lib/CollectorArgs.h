@@ -44,12 +44,14 @@ class CollectorArgs {
   option::ArgStatus checkChisel(const option::Option& option, bool msg);
   option::ArgStatus checkGRPCServer(const option::Option& option, bool msg);
   option::ArgStatus checkOptionalNumeric(const option::Option& option, bool msg);
+  option::ArgStatus checkDriver(const option::Option& option, bool msg);
 
   const Json::Value& CollectorConfig() const;
   const std::string& CollectionMethod() const;
   const std::string& Chisel() const;
   const std::string& GRPCServer() const;
   const std::string& Message() const;
+  const std::string& Driver() const;
 
  private:
   CollectorArgs();
@@ -62,6 +64,7 @@ class CollectorArgs {
   std::string chisel;
   std::string message;
   std::string grpcServer;
+  std::string driver_;
 };
 
 } /* namespace collector */

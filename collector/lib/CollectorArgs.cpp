@@ -42,7 +42,8 @@ enum optionIndex {
   COLLECTOR_CONFIG,
   COLLECTION_METHOD,
   GRPC_SERVER,
-  CHISEL
+  CHISEL,
+  DRIVER
 };
 
 static option::ArgStatus
@@ -65,6 +66,11 @@ checkGRPCServer(const option::Option& option, bool msg) {
   return CollectorArgs::getInstance()->checkGRPCServer(option, msg);
 }
 
+static option::ArgStatus
+checkDriver(const option::Option& option, bool msg) {
+  return CollectorArgs::getInstance()->checkDriver(option, msg);
+}
+
 static const option::Descriptor usage[] =
     {
         {UNKNOWN, 0, "", "", option::Arg::None,
@@ -75,6 +81,7 @@ static const option::Descriptor usage[] =
         {COLLECTION_METHOD, 0, "", "collection-method", checkCollectionMethod, "  --collection-method   \tCollection method (kernel_module or ebpf)."},
         {CHISEL, 0, "", "chisel", checkChisel, "  --chisel              \tChisel is a base64 encoded string."},
         {GRPC_SERVER, 0, "", "grpc-server", checkGRPCServer, "  --grpc-server         \tREQUIRED: GRPC server endpoint string in the form HOST1:PORT1."},
+        {DRIVER, 0, "", "driver", checkDriver, "  --driver              \tDriver to be used."},
         {UNKNOWN, 0, "", "", option::Arg::None,
          "\nExamples:\n"
          "  collector --grpc-server=\"172.16.0.5:443\"\n"},
@@ -131,11 +138,12 @@ bool CollectorArgs::parse(int argc, char** argv, int& exitCode) {
     return true;
   }
 
-  stringstream out;
-  out << "Unknown option: " << options[UNKNOWN].name;
-  message = out.str();
-  exitCode = 1;
-  return false;
+  // stringstream out;
+  // out << "Unknown option: " << options[UNKNOWN].name;
+  // message = out.str();
+  // exitCode = 1;
+  CLOG(INFO) << "Running without gRPC server.";
+  return true;
 }
 
 option::ArgStatus
@@ -271,6 +279,24 @@ CollectorArgs::checkGRPCServer(const option::Option& option, bool msg) {
   return ARG_OK;
 }
 
+option::ArgStatus
+CollectorArgs::checkDriver(const option::Option& option, bool msg) {
+  using namespace option;
+  using std::string;
+
+  if (option.arg == NULL) {
+    if (msg) {
+      this->message = "Missing driver. Not loading driver from command line.";
+    }
+    return ARG_OK;
+  }
+
+  driver_ = option.arg;
+
+  CLOG(DEBUG) << "Using driver: " << driver_;
+  return ARG_OK;
+}
+
 const Json::Value&
 CollectorArgs::CollectorConfig() const {
   return collectorConfig;
@@ -294,6 +320,11 @@ CollectorArgs::GRPCServer() const {
 const std::string&
 CollectorArgs::Message() const {
   return message;
+}
+
+const std::string&
+CollectorArgs::Driver() const {
+  return driver_;
 }
 
 } /* namespace collector */

@@ -153,6 +153,21 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
       CLOG(INFO) << "User configured useEbpf=" << config["useEbpf"].asBool();
     }
 
+    // Running collector with --driver overrides collection method
+    const std::string& driver = args->Driver();
+    if (!driver.empty() && driver.length() > 6) {
+      if (driver.compare(driver.length() - 6, 6, ".ko.gz") == 0 ||
+          driver.compare(driver.length() - 3, 3, ".ko") == 0) {
+        collection_method_ = "kernel_module";
+      } else if (driver.compare(driver.length() - 5, 5, ".o.gz") == 0 ||
+                 driver.compare(driver.length() - 2, 2, ".o") == 0) {
+        collection_method_ = "ebpf";
+      } else {
+        CLOG(WARNING) << "Invalid driver format: " << driver;
+      }
+      CLOG(INFO) << "Overriding collection method to '" << collection_method_ << "'";
+    }
+
     // Force kernel modules collection method
     if (!config["forceKernelModules"].empty()) {
       force_kernel_modules_ = config["forceKernelModules"].asBool();
