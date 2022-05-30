@@ -824,11 +824,6 @@ jobs:
 
     steps:
     - initcommand
-<<<<<<< HEAD
-=======
-    - quay-login
-    - docker-login-push
->>>>>>> ceb0e853 (ROX-9223: misc improvments to performance integration tests)
     - quay-login
     - read-pr-metadata
     - gcloud-init
