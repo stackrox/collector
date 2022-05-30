@@ -49,7 +49,7 @@ following configuration:
 version: "3.9"
 services:
   collector:
-    image: stackrox/collector:<debuggable-collector-tag>
+    image: quay.io/stackrox-io/collector:<debuggable-collector-tag>
     container_name: collector-debug
     network_mode: host
     privileged: true

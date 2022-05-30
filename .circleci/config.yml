@@ -39,13 +39,11 @@ runOnAllTags: &runOnAllTags
 runOnAllTagsWithDockerIOPullCtx: &runOnAllTagsWithDockerIOPullCtx
   <<: *runOnAllTags
   context:
-    - docker-io-pull
     - quay-rhacs-eng-readonly
 
 runOnAllTagsWithDockerIOPushCtx: &runOnAllTagsWithDockerIOPushCtx
   <<: *runOnAllTags
   context:
-    - docker-io-push
     - quay-rhacs-eng-readwrite
     - quay-rhacs-eng-readonly
     - quay-stackrox-io-readwrite
@@ -53,7 +51,6 @@ runOnAllTagsWithDockerIOPushCtx: &runOnAllTagsWithDockerIOPushCtx
 runOnAllTagsWithIntegrationTestRequires: &runOnAllTagsWithIntegrationTestRequires
   <<: *runOnAllTags
   context:
-    - docker-io-pull
     - quay-rhacs-eng-readonly
     - ubuntu-esm-subscription-token # Provides environment variable UBUNTU_ESM_SUBSCRIPTION_TOKEN.
     - rhacs-automation-credentials
@@ -107,20 +104,6 @@ commands:
         name: Setup GCP env
         command: |
           "${CI_ROOT}/gcloud-init/setup-gcp-env.sh" "${<< parameters.service-account-env >>}" << parameters.bucket-permission-check >>
-
-  docker-login-pull:
-    steps:
-    - run:
-        name: Login to Docker Hub with pull credentials
-        command: |
-            docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
-
-  docker-login-push:
-    steps:
-    - run:
-        name: Login to Docker Hub with push credentials
-        command: |
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD"
 
   quay-login:
     steps:
@@ -282,18 +265,18 @@ jobs:
     resource_class: large
     environment:
     - QUAY_REPO: << pipeline.parameters.quay-repo >>
-    - DOCKER_REPO: "docker.io/stackrox"
     - PUBLIC_REPO: "quay.io/stackrox-io"
 
     steps:
     - initcommand
-    - docker-login-push
     - quay-login-push
 
     - run:
         name: Restore collector-builder image
         command: |
-          docker pull "stackrox/collector-builder:${COLLECTOR_BUILDER_TAG}" || docker pull stackrox/collector-builder:cache || true
+          docker pull "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}" \
+            || docker pull quay.io/stackrox-io/collector-builder:cache \
+            || true
 
     - run:
         name: Build collector-builder image
@@ -392,8 +375,8 @@ jobs:
     <<: *defaultMachine
     parallelism: 8
     environment:
-    - BUILD_CONTAINER_TAG: stackrox/collector-builder:kobuilder-cache
-    - BUILD_CONTAINER_CACHE_IMAGES: stackrox/collector-builder:kobuilder-cache
+    - BUILD_CONTAINER_TAG: quay.io/rhacs-eng/collector-builder:kobuilder-cache
+    - BUILD_CONTAINER_CACHE_IMAGES: quay.io/rhacs-eng/collector-builder:kobuilder-cache
     - KERNEL_BUNDLES_STAGING_BUCKET: "<< pipeline.parameters.kernel-bundles-staging >>"
 
     steps:
@@ -420,7 +403,7 @@ jobs:
         command: |
           "${CI_ROOT}/kernels/40-separate-local-build-tasks-by-flavor.sh"
 
-    - docker-login-push
+    - quay-login-push
 
     - run:
         name: Restore builder cache image(s)
@@ -465,7 +448,7 @@ jobs:
     steps:
     - initcommand
     - read-pr-metadata
-    - docker-login-push
+    - quay-login-push
 
     - run:
         name: Restore collector-builder image
@@ -494,12 +477,10 @@ jobs:
     environment:
     - INSTALL_DIRECTORY: /tmp
     - QUAY_REPO: << pipeline.parameters.quay-repo >>
-    - DOCKER_REPO: "docker.io/stackrox"
     - PUBLIC_REPO: "quay.io/stackrox-io"
 
     steps:
     - initcommand
-    - docker-login-push
     - quay-login-push
     - gcloud-init
 
@@ -566,11 +547,9 @@ jobs:
     resource_class: large
     environment:
     - QUAY_REPO: << pipeline.parameters.quay-repo >>
-    - DOCKER_REPO: "docker.io/stackrox"
 
     steps:
     - initcommand
-    - docker-login-push
     - quay-login-push
     - run:
         name: Lint Dockerfile
@@ -657,7 +636,6 @@ jobs:
     steps:
     - initcommand
     - dockerized-should-run
-    - docker-login-pull
     - quay-login
     - dockerized-pull-cache-image
 
@@ -703,7 +681,6 @@ jobs:
           fi
 
     - gcloud-init
-    - docker-login-pull
     - quay-login-push
     - dockerized-pull-cache-image
 
@@ -739,7 +716,6 @@ jobs:
     steps:
     - initcommand
     - dockerized-should-run
-    - docker-login-pull
     - quay-login-push
     - dockerized-pull-cache-image
 
@@ -854,7 +830,6 @@ jobs:
 
     steps:
     - initcommand
-    - docker-login-push
     - quay-login
     - read-pr-metadata
     - gcloud-init
@@ -1089,7 +1064,7 @@ jobs:
 
       - setup_remote_docker:
           version: 20.10.11
-      - docker-login-push
+      - quay-login
       - gcloud-init
 
       - run:
@@ -1202,7 +1177,6 @@ jobs:
     - RELOAD_MD_DIRECTORY: /tmp/reload/collectors
     - DOCKER_BUILDKIT: 1
     - QUAY_REPO: << pipeline.parameters.quay-repo >>
-    - DOCKER_REPO: "docker.io/stackrox"
     working_directory: ~/workspace
 
     steps:
@@ -1226,7 +1200,6 @@ jobs:
         command: |
            "${CI_ROOT}/reload-released-images/20-copy-kernel-objects.sh"
 
-    - docker-login-push
     - quay-login-push
     - stackrox-io-login
     - gcloud-init
@@ -1237,7 +1210,7 @@ jobs:
           "${CI_ROOT}/reload-released-images/30-determine-collector-versions-that-need-reload.sh" \
             "${SOURCE_ROOT}" \
             "${RELOAD_MD_DIRECTORY}" \
-            "${DOCKER_REPO}" \
+            "${QUAY_REPO}" \
             "${COLLECTOR_MODULES_BUCKET}"
 
     - ci-artifacts/store:
@@ -1254,7 +1227,6 @@ jobs:
           "${CI_ROOT}/reload-released-images/50-reload-collector-images.sh" \
             "${RELOAD_MD_DIRECTORY}" \
             "${MAX_LAYER_MB}" \
-            "${DOCKER_REPO}" \
             "${QUAY_REPO}" \
             "${BUILD_USE_VALGRIND}" \
             "${SANITIZER_TESTS}" \
@@ -1289,7 +1261,6 @@ reusejobs: &completeWorkflow
     - dockerized-task-file:
         <<: *runOnAllTags
         context:
-          - docker-io-pull
           - quay-rhacs-eng-readonly
           - rhacs-automation-credentials
         requires:
@@ -1297,7 +1268,6 @@ reusejobs: &completeWorkflow
     - dockerized-build-drivers:
         <<: *runOnAllTags
         context:
-          - docker-io-pull
           - quay-rhacs-eng-readwrite
           - rhacs-automation-credentials
         requires:
@@ -1305,7 +1275,6 @@ reusejobs: &completeWorkflow
     - dockerized-unify-images:
         <<: *runOnAllTags
         context:
-          - docker-io-pull
           - quay-rhacs-eng-readwrite
         requires:
           - dockerized-build-drivers
@@ -1351,7 +1320,6 @@ reusejobs: &completeWorkflow
     - ubi-image:
         <<: *runOnAllTags
         context:
-          - docker-io-push
           - quay-rhacs-eng-readwrite
           - rhacs-automation-credentials
         requires:
@@ -1527,7 +1495,7 @@ reusejobs: &completeWorkflow
     - reload-released-images:
         <<: *runOnAllTags
         context:
-          - docker-io-and-stackrox-io-push
+          - stackrox-io-push
           - quay-rhacs-eng-readonly
           - quay-rhacs-eng-readwrite
           - collector-support
@@ -1536,7 +1504,6 @@ reusejobs: &completeWorkflow
     - update-support-packages:
         <<: *runOnAllTags
         context:
-          - docker-io-and-stackrox-io-push
           - quay-rhacs-eng-readonly
           - collector-support
         requires:

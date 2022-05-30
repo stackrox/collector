@@ -24,8 +24,6 @@ fi
     "$SOURCE_ROOT/${COLLECTOR_BUILD_CONTEXT}"
 
 docker build \
-    -t "${DOCKER_REPO}/collector:${COLLECTOR_VERSION}-base" \
-    -t "${DOCKER_REPO}/collector:${COLLECTOR_VERSION}-slim" \
     -t "${QUAY_REPO}/collector:${COLLECTOR_VERSION}-base" \
     -t "${QUAY_REPO}/collector:${COLLECTOR_VERSION}-slim" \
     -t "${PUBLIC_REPO}/collector:${COLLECTOR_VERSION}-base" \

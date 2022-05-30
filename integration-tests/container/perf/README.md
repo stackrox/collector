@@ -1,6 +1,6 @@
 ## Performance Measurement Tooling via Docker
 
-The Dockerfiles listed here provide reusable images for performance testing and 
+The Dockerfiles listed here provide reusable images for performance testing and
 measurement. They are used by the benchmark tests to measure whilst collector is
 under load.
 
@@ -19,7 +19,7 @@ tool images. This includes downloading the correct kernel headers and ensuring
 $ make all
 
 # push all images
-$ make push-all
+$ make push
 ```
 
 ## Manually Running the Images
@@ -31,7 +31,7 @@ $ docker run --rm \
     -v /etc/os-release:/host/etc/os-release \
     -v /etc/lsb-release:/host/etc/lsb-release \
     -v /usr/src:/host/usr/src \
-    stackrox/collector-performance:init
+    quay.io/rhacs-eng/collector-performance:init
 
 # running one of the tools containers
 $ docker run --rm --privileged \
@@ -39,5 +39,5 @@ $ docker run --rm --privileged \
     -v /usr/src:/usr/src \
     -v /lib/modules:/lib/modules \
     -v /tmp:/tmp \
-    stackrox/collector-performance:<tool> <tool args>
+    quay.io/rhacs-eng/collector-performance:<tool> <tool args>
 ```

@@ -7,25 +7,6 @@
 # now-unsupported releases.
 # IMPORTANT: THIS FILE ALWAYS NEEDS TO END WITH A NEWLINE CHARACTER
 
-3.1.16 3.0.57.0  # Rox release 3.0.57.0 by connorgorman at Thu Mar 18 23:31:59 UTC 2021
-3.1.16 3.0.57.1  # Rox release 3.0.57.1 by connorgorman at Thu Mar 25 00:53:37 UTC 2021
-3.1.16 3.0.57.2  # Rox release 3.0.57.2 by misberner at Thu Mar 25 23:19:07 UTC 2021
-3.1.18 3.0.58.0  # Rox release 3.0.58.0 by connorgorman at Fri Apr  9 00:27:55 UTC 2021
-3.1.20 3.0.58.1  # Rox release 3.0.58.1 by connorgorman at Wed Apr 21 01:23:18 UTC 2021
-3.1.22 3.0.59.1  # Rox release 3.0.59.1 by misberner at Tue May  4 22:43:11 UTC 2021
-3.1.22 3.0.59.2  # Rox release 3.0.59.2 by viswajithiii at Fri May 14 00:11:52 UTC 2021
-3.1.22 3.0.60.0  # Rox release 3.0.60.0 by viswajithiii at Wed May 19 21:48:19 UTC 2021
-3.1.22 3.0.60.1  # Rox release 3.0.60.1 by connorgorman at Thu May 27 18:29:29 UTC 2021
-3.1.25 3.0.61.0  # Rox release 3.0.61.0 by ebensh at Thu Jun 10 22:13:53 UTC 2021
-3.1.25 3.0.61.1  # Rox release 3.0.61.1 by connorgorman at Tue Jun 22 18:25:01 UTC 2021
-3.1.27 3.0.62.0  # Rox release 3.0.62.0 by viswajithiii at Wed Jun 30 23:45:41 UTC 2021
-3.1.30 3.63.0  # Rox release 3.63.0 by msugakov at Mon Jul 26 08:51:00 UTC 2021
-3.2.0 3.64.0  # Rox release 3.64.0 by rukletsov at Thu Aug 11 20:48:58 UTC 2021
-3.1.32 3.0.62.1  # Rox release 3.0.62.1 by misberner at Thu Aug 12 22:08:22 UTC 2021
-3.2.2 3.64.1  # Rox release 3.64.1 by msugakov at Thu Aug 26 16:52:41 UTC 2021
-3.3.0 3.65.0  # Rox release 3.65.0 by Maddosaurus at Wed Sep  1 22:39:07 UTC 2021
-3.3.1 3.65.1  # Rox release 3.65.1 by misberner at Tue Sep 21 10:44:24 UTC 2021
-3.3.1 3.64.2  # Rox release 3.64.2 by misberner at Wed Sep 22 04:21:18 UTC 2021
 3.4.1 3.66.0  # Rox release 3.66.0 by ivan-degtiarenko at Thu Oct 14 21:39:55 UTC 2021
 3.4.1 3.66.1  # Rox release 3.66.1 by misberner at Wed Oct 20 16:40:51 UTC 2021
 3.5.0 3.67.0  # Rox release 3.67.0 by dhaus67 at Wed Dec  1 05:47:30 UTC 2021
