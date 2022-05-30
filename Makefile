@@ -16,13 +16,13 @@ tag:
 builder:
 ifdef BUILD_BUILDER_IMAGE
 	docker build \
-		--cache-from stackrox/collector-builder:cache \
-		--cache-from stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) \
-		-t stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG) \
+		--cache-from quay.io/stackrox-io/collector-builder:cache \
+		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
+		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-f "$(CURDIR)/builder/Dockerfile" \
 		builder
 else
-	docker pull stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG)
+	docker pull quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
 endif
 
 collector: builder
@@ -50,7 +50,7 @@ image: collector unittest $(MOD_VER_FILE) $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/b
 	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
 		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
 		-f collector/container/Dockerfile \
-		-t stackrox/collector:$(COLLECTOR_TAG) \
+		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
 
 image-dev: COLLECTOR_BUILD_CONTEXT=collector/container/devel
@@ -62,7 +62,7 @@ image-dev: collector unittest $(MOD_VER_FILE) $(CURDIR)/$(COLLECTOR_BUILD_CONTEX
 		--build-arg BASE_IMAGE=centos/centos \
 		--build-arg BASE_TAG=stream8 \
 		-f collector/container/Dockerfile \
-		-t stackrox/collector:$(COLLECTOR_TAG) \
+		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
 
 .PHONY: integration-tests
@@ -109,7 +109,7 @@ start-dev: builder teardown-dev $(DEV_SSH_SERVER_KEY)
 		--name collector_remote_dev \
 		--cap-add sys_ptrace -p127.0.0.1:$(LOCAL_SSH_PORT):22 \
 		-v $(DEV_SSH_SERVER_KEY):/etc/sshkeys/ssh_host_ed25519_key:ro \
-		stackrox/collector-builder:$(COLLECTOR_BUILDER_TAG)
+		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
 
 .PHONY: teardown-dev
 teardown-dev:

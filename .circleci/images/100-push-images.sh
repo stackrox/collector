@@ -2,7 +2,6 @@
 set -eo pipefail
 
 image_repos=(
-    "${DOCKER_REPO}/collector"
     "${QUAY_REPO}/collector"
     "${PUBLIC_REPO}/collector"
 )

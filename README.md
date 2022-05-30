@@ -49,11 +49,11 @@ Instructions for Linux
 #### Setup for C++ using devcontainers
 Visual Studio Code can be used as a development environment by leveraging its devcontainers feature.
 - Install the [remote-containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension.
-- Create a `.devcontainer.json` file under `collector` and set the `image` attribute to `stackrox/collector-builder:cache`
+- Create a `.devcontainer.json` file under `collector` and set the `image` attribute to `quay.io/stackrox-io/collector-builder:cache`
 ```json
 {
   "name": "collector-dev",
-  "image": "stackrox/collector-builder:cache"
+  "image": "quay.io/stackrox-io/collector-builder:cache"
 }
 ```
 - Open the `collector/` directory in a new instance of Visual Studio Code and when prompted select **Reopen In Container**, a new container should be created and the workspace directory will be mounted inside of it.

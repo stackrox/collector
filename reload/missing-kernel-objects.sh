@@ -21,7 +21,7 @@ output_dir="$3"
 
 mkdir -p "${output_dir}/${collector_version}"
 
-image="stackrox/collector:${collector_version}-latest"
+image="quay.io/rhacs-eng/collector:${collector_version}-latest"
 
 inspect_out="${output_dir}/${collector_version}/image-probes"
 docker run -i --rm --entrypoint /bin/sh "${image}" /dev/stdin > "${inspect_out}" << EOF

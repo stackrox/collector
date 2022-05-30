@@ -6,9 +6,9 @@ use_ubi=$2
 collection_method=$3
 
 if [[ "$use_ubi" == "true" ]]; then
-    export COLLECTOR_REPO="stackrox/collector-test-cpaas"
+    export COLLECTOR_REPO="quay.io/rhacs-eng/collector-test-cpaas"
 else
-    export COLLECTOR_REPO="stackrox/collector"
+    export COLLECTOR_REPO="quay.io/rhacs-eng/collector"
 fi
 
 cat >> "$BASH_ENV" <<- EOF
