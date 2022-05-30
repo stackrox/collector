@@ -71,11 +71,6 @@ build_ko() (
             return 1
         }
 
-        # directory in which the probe source lives.
-        probe_directory="/probe/"
-        # resulting object file from the build
-        collector_probe="/probe/probe.o"
-
         # Check if this module version supports RHEL 7.6 with backported eBPF support
         if [[ "$rhel7_kernel_with_ebpf" == true ]]; then
             if ! grep -qRIs "SUPPORTS_RHEL76_EBPF" "${module_src_dir}/bpf/quirks.h"; then
@@ -95,7 +90,10 @@ build_ko() (
         fi
 
         echo "Building collector eBPF probe for kernel version ${kernel_version} and module version ${module_version}."
-        KERNELDIR="$kernel_build_dir" BUILD_ROOT="${KERNEL_SRC_DIR}" FALCO_DIR="$(pwd)/bpf" make -j 6 -C "${probe_directory}"
+        KERNELDIR="$kernel_build_dir" BUILD_ROOT="${KERNEL_SRC_DIR}" FALCO_DIR="$(pwd)/bpf" make -j 6 -C "/probe/"
+
+        # resulting object file from the build
+        collector_probe="/probe/probe.o"
 
         if [[ ! -f "$collector_probe" || ! -s "$collector_probe" ]]; then
             echo "Empty or missing compiled bpf output"
