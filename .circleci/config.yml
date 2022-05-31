@@ -1139,7 +1139,6 @@ jobs:
     <<: *defaultImage
     environment:
     - QUAY_REPO: << pipeline.parameters.quay-repo >>
-    - DOCKER_REPO: "docker.io/stackrox"
     - PUBLIC_REPO: "quay.io/stackrox-io"
 
     steps:
@@ -1149,7 +1148,6 @@ jobs:
 
       - setup_remote_docker:
           docker_layer_caching: true
-      - docker-login-push
       - quay-login-push
 
       - run:
