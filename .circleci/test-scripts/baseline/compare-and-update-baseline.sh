@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-pip3 -q install --upgrade scipy google-cloud-storage
-
 jq -s 'flatten' "${WORKSPACE_ROOT}"/*perf.json > "${WORKSPACE_ROOT}"/all-perf.json
 
 export BASELINE="${CI_ROOT}/test-scripts/baseline"
