@@ -8,7 +8,9 @@ build_ko() (
     local probe_type="$3"
 
     local module_src_dir
-    if ((DOCKERIZED)); then
+    if ((OSCI_RUN)); then
+        module_src_dir="/kobuild-tmp/shards/${CURRENT_SHARD}/${module_version}"
+    elif ((DOCKERIZED)); then
         module_src_dir="/kobuild-tmp/versions-src/${module_version}"
     else
         mkdir -p /scratch/module-src

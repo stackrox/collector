@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -exuo pipefail
 
 WORK_BRANCH="${1:-master}"
 BUILD_LEGACY="${2:-false}"
@@ -59,6 +59,7 @@ fi
 DRIVER_DIR="/collector/$(get_driver_relative_path)" \
 SCRATCH_DIR="/scratch" \
 OUTPUT_DIR="/kobuild-tmp/versions-src" \
+LEGACY_DIR="/collector" \
 M_VERSION="$(get_module_version)" \
     /scripts/prepare-src.sh
 
@@ -82,6 +83,7 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
     DRIVER_DIR="/collector/$(get_driver_relative_path)" \
     SCRATCH_DIR="/scratch" \
     OUTPUT_DIR="/kobuild-tmp/versions-src" \
+    LEGACY_DIR="/collector" \
     M_VERSION="$(get_module_version)" \
         /scripts/prepare-src.sh
 

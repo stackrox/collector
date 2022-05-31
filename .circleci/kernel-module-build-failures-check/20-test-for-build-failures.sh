@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
+FAILURES_DIR=${FAILURES_DIR:-/tmp/failures}
+
 shopt -s nullglob
-cd /tmp/failures
+cd "$FAILURES_DIR"
 failure_files=(*/*/*.log)
 
 for failure_file in "${failure_files[@]}"; do
