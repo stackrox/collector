@@ -161,15 +161,19 @@ installDockerOnRHELViaGCPSSH() {
     local GCP_SSH_KEY_FILE="$1"
     shift
 
-    local retryCount=3
-    for _ in $(seq 1 $retryCount); do
-        gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum makecache" \
-            && exitCode=0 && break || exitCode=$? && sleep 5
-    done
+    if [[ "$GCP_IMAGE_FAMILY" == "rhel-8" ]]; then
+        # On RHEL-8 there are some flakey checksum errors when installing packages so
+        # try to reduce the likelihood of these by running makecache before hand.
+        local retryCount=3
+        for _ in $(seq 1 $retryCount); do
+            gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum makecache" \
+                && exitCode=0 && break || exitCode=$? && sleep 5
+        done
 
-    if [[ $exitCode != 0 ]]; then
-        echo "failed to makecache"
-        exit 1
+        if [[ $exitCode != 0 ]]; then
+            echo "failed to makecache"
+            exit 1
+        fi
     fi
 
     gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum install -y yum-utils device-mapper-persistent-data lvm2"
