@@ -27,7 +27,8 @@ mkdir -p "${DRIVER_DIR}/build"
 cmake -S ${DRIVER_DIR} \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_C_FLAGS="-fno-pie" \
-    -DPROBE_NAME=collector \
+    -DDRIVER_NAME=collector \
+    -DDRIVER_DEVICE_NAME=collector \
     -DBUILD_USERSPACE=OFF \
     -DBUILD_DRIVER=ON \
     -DENABLE_DKMS=OFF \

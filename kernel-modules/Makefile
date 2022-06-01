@@ -48,7 +48,7 @@ drivers: build-container-$(DEV_DRIVER_BUILDER)
 		-v $(CURDIR)/..:/collector \
 		-v /usr/include/bpf:/usr/include/bpf:ro \
 		-v /lib/modules/:/lib/modules/:ro \
-		-v /usr/src/kernels/:/usr/src/kernels/:ro \
+		-v /usr/src:/usr/src:ro \
 		build-kernel-modules-$(DEV_DRIVER_BUILDER):latest \
 		/collector/kernel-modules/dev/build-drivers.sh
 
