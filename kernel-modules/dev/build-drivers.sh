@@ -16,7 +16,7 @@ package_probe() {
     probe_object=$2
 
     gzip -c "${probe_object}" \
-        > "${OUTPUT_DIR}/collector-ebpf-${kernel}.ko.gz"
+        > "${OUTPUT_DIR}/collector-ebpf-${kernel}.o.gz"
 }
 
 KERNEL_VERSION="$(uname -r)"
