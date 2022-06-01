@@ -19,7 +19,7 @@ parameters:
 
 defaultImage: &defaultImage
   docker:
-  - image: "<< pipeline.parameters.quay-repo >>/apollo-ci:collector-0.3.35"
+  - image: "<< pipeline.parameters.quay-repo >>/apollo-ci:collector-0.3.38"
     auth:
       username: $QUAY_RHACS_ENG_RO_USERNAME
       password: $QUAY_RHACS_ENG_RO_PASSWORD
@@ -94,12 +94,6 @@ commands:
         default: gs://collector-build-cache
 
     steps:
-    - run:
-        name: Install and configure gcloud
-        working_directory: ~/.config/gcloud
-        command: |
-          "${CI_ROOT}/gcloud-init/install-and-configure-gcloud.sh"
-
     - run:
         name: Setup GCP env
         command: |
