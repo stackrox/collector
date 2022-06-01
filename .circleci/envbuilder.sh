@@ -170,7 +170,7 @@ installDockerOnRHELViaGCPSSH() {
                 && exitCode=0 && break || exitCode=$? && sleep 5
         done
 
-        if [[ $exitCode != 0 ]]; then
+        if [[ "$exitCode" != "0" ]]; then
             echo "failed to makecache"
             exit 1
         fi
