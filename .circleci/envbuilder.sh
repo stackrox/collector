@@ -165,9 +165,14 @@ installDockerOnRHELViaGCPSSH() {
         # On RHEL-8 there are some flakey checksum errors when installing packages so
         # try to reduce the likelihood of these by running makecache before hand.
         local retryCount=3
+        local exitCode=0
         for _ in $(seq 1 $retryCount); do
-            gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum makecache" \
-                && exitCode=0 && break || exitCode=$? && sleep 5
+            gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum makecache"
+            exitCode=$?
+            if [[ "$exitCode" == "0" ]]; then
+                break
+            fi
+            sleep 5
         done
 
         if [[ "$exitCode" != "0" ]]; then
