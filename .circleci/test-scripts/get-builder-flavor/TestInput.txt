@@ -4407,3 +4407,5 @@
 5.9.9-200.fc33.x86_64 redhat modern
 4.19.94-minikube minikube modern
 5.17.6-100.fc34.x86_64 redhat fc36
+5.17.12-100.fc34.x86_64 redhat fc36
+5.17.11-100.fc34.x86_64 redhat fc36
