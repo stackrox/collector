@@ -161,6 +161,17 @@ installDockerOnRHELViaGCPSSH() {
     local GCP_SSH_KEY_FILE="$1"
     shift
 
+    local retryCount=3
+    for _ in $(seq 1 $retryCount); do
+        gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum makecache" \
+            && exitCode=0 && break || exitCode=$? && sleep 5
+    done
+
+    if [[ $exitCode != 0 ]]; then
+        echo "failed to makecache"
+        exit 1
+    fi
+
     gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum install -y yum-utils device-mapper-persistent-data lvm2"
     gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo"
     gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum-config-manager --setopt=\"docker-ce-stable.baseurl=https://download.docker.com/linux/centos/${GCP_IMAGE_FAMILY: -1}/x86_64/stable\" --save"
