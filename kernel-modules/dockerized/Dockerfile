@@ -39,7 +39,6 @@ COPY /collector/kernel-modules/dockerized/scripts /scripts
 COPY /collector/kernel-modules/build/prepare-src /scripts/prepare-src.sh
 COPY /collector/kernel-modules/build/build-kos /scripts/
 COPY /collector/kernel-modules/build/build-wrapper.sh /scripts/compile.sh
-COPY /collector/kernel-modules/probe /probe
 
 FROM rhel-8-base AS patcher
 

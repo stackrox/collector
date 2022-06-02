@@ -89,11 +89,16 @@ build_ko() (
             fi
         fi
 
-        echo "Building collector eBPF probe for kernel version ${kernel_version} and module version ${module_version}."
-        KERNELDIR="$kernel_build_dir" BUILD_ROOT="${KERNEL_SRC_DIR}" FALCO_DIR="$(pwd)/bpf" make -j 6 -C "/probe/"
+        collector_probe="${module_src_dir}/bpf/probe.o"
+        probe_dir="${module_src_dir}/bpf"
 
-        # resulting object file from the build
-        collector_probe="/probe/probe.o"
+        if [[ -d "${module_src_dir}/collector-probe" ]]; then
+            collector_probe="${module_src_dir}/collector-probe/probe.o"
+            probe_dir="${module_src_dir}/collector-probe"
+        fi
+
+        echo "Building collector eBPF probe for kernel version ${kernel_version} and module version ${module_version}."
+        KERNELDIR="$kernel_build_dir" BUILD_ROOT="${KERNEL_SRC_DIR}" FALCO_DIR="$(pwd)/bpf" make -j 6 -C "${probe_dir}"
 
         if [[ ! -f "$collector_probe" || ! -s "$collector_probe" ]]; then
             echo "Empty or missing compiled bpf output"
