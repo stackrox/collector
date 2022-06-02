@@ -3,6 +3,8 @@ set -eo pipefail
 
 shared_env=$1
 
+echo "In initjob"
+
 cat > "$shared_env" <<- "EOF"
     export GOPATH="${WORKSPACE_ROOT}/go"
     export STACKROX_ROOT="${GOPATH}/src/github.com/stackrox"
