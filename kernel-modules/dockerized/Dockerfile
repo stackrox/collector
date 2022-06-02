@@ -6,7 +6,7 @@ ARG CACHE_TAG
 
 ARG CHECKOUT_BEFORE_PATCHING=true
 
-FROM registry.access.redhat.com/ubi8/ubi:8.5 AS rhel-8-base
+FROM registry.access.redhat.com/ubi8/ubi:8.6 AS rhel-8-base
 
 ARG REDHAT_SUBSCRIPTION_ORG_ID
 ARG REDHAT_SUBSCRIPTION_ACTIVATION_KEY
@@ -119,7 +119,7 @@ RUN sed -i '/^[4-9]\./d' /build-tasks; \
 	rm -rf /bundles/
 
 # Create a clean image leaving only the compiled kernel modules
-FROM registry.access.redhat.com/ubi8/ubi:8.5
+FROM registry.access.redhat.com/ubi8/ubi:8.6
 
 COPY --from=rhel-8-builder /kernel-modules /kernel-modules
 COPY --from=rhel-7-builder /kernel-modules /kernel-modules

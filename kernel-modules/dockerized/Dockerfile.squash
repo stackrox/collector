@@ -7,7 +7,7 @@ ARG DRIVER_REPO=quay.io/rhacs-eng
 
 FROM ${DRIVER_REPO}/collector-drivers:${DRIVER_TAG} as base-build
 
-FROM registry.access.redhat.com/ubi8/ubi:8.5 as squashed-build
+FROM registry.access.redhat.com/ubi8/ubi:8.6 as squashed-build
 
 COPY --from=base-build /CURRENT-FAILURES/ /FAILURES/
 COPY --from=base-build /kernel-modules/ /kernel-modules/
