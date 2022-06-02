@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-[[ -n "$SCRATCH_DIR" && -n "$DRIVER_DIR" && -n "$OUTPUT_DIR" ]] || {
+[[ -n "$SCRATCH_DIR" && -n "$DRIVER_DIR" && -n "$OUTPUT_DIR" && -n "$LEGACY_DIR" ]] || {
     echo >&2 "SCRATCH_DIR, DRIVER_DIR and OUTPUT_DIR all need to be set"
     exit 1
 }
@@ -10,8 +10,6 @@ set -eo pipefail
 DOCKERIZED=${DOCKERIZED:-0}
 DRIVER_SCRATCH="${SCRATCH_DIR}/src"
 BUILD_SCRATCH="${SCRATCH_DIR}/cmake-build"
-
-SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]:-$0}")" &> /dev/null && pwd 2> /dev/null)"
 
 modfiles0() (
     local dir="${1:-${DRIVER_SCRATCH}/driver}"
@@ -90,10 +88,10 @@ cmake \
 cp "${BUILD_SCRATCH}/driver/src/Makefile" "${DRIVER_SCRATCH}/driver/Makefile"
 cp "${BUILD_SCRATCH}/driver/src/driver_config.h" "${DRIVER_SCRATCH}/driver/driver_config.h"
 
-if [[ -d "${SCRIPT_DIR}/../probe" ]]; then
+if [[ -d "${LEGACY_DIR}/kernel-modules/probe" ]]; then
     mkdir -p "${DRIVER_SCRATCH}/driver/collector-probe"
-    cp "${SCRIPT_DIR}/../probe/Makefile" "${DRIVER_SCRATCH}/driver/collector-probe/Makefile"
-    cp "${SCRIPT_DIR}/../probe/collector_probe.c" "${DRIVER_SCRATCH}/driver/collector-probe/collector_probe.c"
+    cp "${LEGACY_DIR}/kernel-modules/probe/Makefile" "${DRIVER_SCRATCH}/driver/collector-probe/Makefile"
+    cp "${LEGACY_DIR}/kernel-modules/probe/collector_probe.c" "${DRIVER_SCRATCH}/driver/collector-probe/collector_probe.c"
 fi
 
 cd "${DRIVER_SCRATCH}/driver"

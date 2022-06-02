@@ -6,6 +6,7 @@ DRIVER_DIR="${SOURCE_ROOT}/falcosecurity-libs" \
     SCRATCH_DIR="${HOME}/scratch" \
     OUTPUT_DIR="${HOME}/kobuild-tmp/versions-src" \
     M_VERSION="$(cat "${SOURCE_ROOT}/kernel-modules/MODULE_VERSION")" \
+    LEGACY_DIR="${SOURCE_ROOT}" \
     "${SOURCE_ROOT}/kernel-modules/build/prepare-src"
 
 versions=(~/kobuild-tmp/versions-src/*)
