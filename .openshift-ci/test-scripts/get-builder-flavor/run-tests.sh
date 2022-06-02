@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 SOURCE_DIR=$1
-SCRIPT_DIR="${SOURCE_DIR}/.circleci/test-scripts/get-builder-flavor"
-script="${SOURCE_DIR}/.circleci/kernels/get-builder-flavor.sh"
+SCRIPT_DIR="${SOURCE_DIR}/.openshift-ci/test-scripts/get-builder-flavor"
+script="${SOURCE_DIR}/.openshift-ci/kernels/get-builder-flavor.sh"
 
 input=${2:-"$SCRIPT_DIR/TestInput.txt"}
 custom_build_flavors_all_file="$SCRIPT_DIR"/custom-build-flavors-all
