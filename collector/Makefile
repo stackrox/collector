@@ -1,5 +1,11 @@
-BASE_PATH = ./..
+BASE_PATH = $(realpath ./..)
 include ../Makefile-constants.mk
+
+CMAKE_BASE_DIR = cmake-build
+CMAKE_DIR= $(BASE_PATH)/$(CMAKE_BASE_DIR)
+COLLECTOR_BIN_DIR = $(CMAKE_DIR)/collector
+LIBSINSP_BIN_DIR = $(CMAKE_DIR)/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp
+SRC_MOUNT_DIR = /tmp/collector
 
 HDRS := $(wildcard lib/*.h) $(shell find falcosecurity-libs/userspace -name '*.h')
 
@@ -7,37 +13,39 @@ SRCS := $(wildcard lib/*.cpp) collector.cpp
 
 .SUFFIXES:
 
-generated-srcs:
+generated-srcs: $(shell find ../rox-proto -name '*.proto')
 	docker run --rm \
 		-v $(CURDIR):/collector/collector \
 		-v $(CURDIR)/../rox-proto:/collector/rox-proto:ro \
-		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) make -f protogen.mk generated-proto-srcs
+		-v $(CURDIR)/../third_party/googleapis:/collector/googleapis:ro \
+		-e BASE_PATH="/collector" \
+		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) make -f protogen.mk SKIP_GOOGLEAPI_FETCH=1 generated-proto-srcs
 
-container/bin/collector: $(HDRS) $(SRCS) txt-files generated-srcs $(shell find falcosecurity-libs/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
-	mkdir -p container/bin
-	mkdir -p container/libs
+cmake-build/collector: $(HDRS) $(SRCS) txt-files generated-srcs $(shell find falcosecurity-libs/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
 	docker rm -fv build_collector || true
 	docker run --rm --name build_collector \
-		-v "$(CURDIR):/src" \
-		-v "$(CURDIR)/../falcosecurity-libs/:/falcosecurity-libs:ro" \
-		-v "$(CURDIR)/cmake-build:/tmp/cmake-build" \
-		-v "$(CURDIR)/../kernel-modules:/kernel-modules" \
+		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
+		-e SRC_ROOT_DIR="$(SRC_MOUNT_DIR)" \
 		-e CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
 		-e USE_VALGRIND=$(USE_VALGRIND) \
 		-e ADDRESS_SANITIZER=$(ADDRESS_SANITIZER) \
 		-e COLLECTOR_APPEND_CID=$(COLLECTOR_APPEND_CID) \
 		-e DISABLE_PROFILING="true" \
 		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-collector.sh
-	cp cmake-build/collector container/bin/collector
-	cp -r cmake-build/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
-	cp cmake-build/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so container/libs/libsinsp-wrapper.so
+
+container/bin/collector: cmake-build/collector
+	mkdir -p container/bin
+	mkdir -p container/libs
+	cp "$(COLLECTOR_BIN_DIR)/collector" container/bin/collector
+	cp -r "$(CMAKE_DIR)"/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
+	cp "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so" container/libs/libsinsp-wrapper.so
 
 unittest:
 	docker rm -fv collector_unittest || true
 	docker run --rm --name collector_unittest \
-		-v "$(CURDIR)/container/libs/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
-		-v "$(CURDIR)/cmake-build:/src/cmake-build" \
-		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) $(COLLECTOR_PRE_ARGUMENTS) /src/cmake-build/runUnitTests
+		-v "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
+		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
+		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) $(COLLECTOR_PRE_ARGUMENTS) "$(SRC_MOUNT_DIR)/$(CMAKE_BASE_DIR)/collector/runUnitTests"
 
 .PHONY: txt-files
 txt-files:
