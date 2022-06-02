@@ -5,7 +5,7 @@ collector_drivers_cache=$1
 quay_repo=$2
 
 create_empty_image() {
-    docker run --name empty-cache registry.access.redhat.com/ubi8/ubi:8.5 mkdir -p /kernel-modules/
+    docker run --name empty-cache registry.access.redhat.com/ubi8/ubi:8.6 mkdir -p /kernel-modules/
     docker commit empty-cache "${quay_repo}/collector-drivers:$collector_drivers_cache"
     docker rm empty-cache
 }

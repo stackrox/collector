@@ -22,8 +22,8 @@ fi
 
 if [[ "${COLLECTOR_DRIVERS_TAG}" != "${COLLECTOR_DRIVERS_CACHE}" ]]; then
     # Create an empty base image if we are not building the cache
-    docker pull registry.access.redhat.com/ubi8/ubi:8.5
-    docker tag registry.access.redhat.com/ubi8/ubi:8.5 \
+    docker pull registry.access.redhat.com/ubi8/ubi:8.6
+    docker tag registry.access.redhat.com/ubi8/ubi:8.6 \
         "${DRIVER_REPO}/collector-drivers:${COLLECTOR_DRIVERS_TAG}"
 fi
 
