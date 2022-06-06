@@ -1,3 +1,9 @@
+ARG BUILD_DIR=/build
+ARG SRC_ROOT_DIR=${BUILD_DIR}
+ARG CMAKE_BUILD_DIR=${SRC_ROOT_DIR}/cmake-build
+ARG USE_VALGRIND=false
+ARG ADDRESS_SANITIZER=false
+
 # This builds a collector container based on UBI with a reliance on Red Hat
 # subscription entitlements. Subscription registration is only needed to install
 # RHEL packages if on a non-RHEL host. (See https://access.redhat.com/solutions/5558771)
@@ -5,8 +11,13 @@ FROM registry.access.redhat.com/ubi8/ubi:8.6 AS builder
 
 ARG REDHAT_SUBSCRIPTION_ORG_ID
 ARG REDHAT_SUBSCRIPTION_ACTIVATION_KEY
-ARG USE_VALGRIND=false
-ARG ADDRESS_SANITIZER=false
+
+ARG USE_VALGRIND
+ENV USE_VALGRIND=${USE_VALGRIND}
+
+ARG ADDRESS_SANITIZER
+ENV ADDRESS_SANITIZER=${ADDRESS_SANITIZER}
+
 RUN rm -rf /etc/rhsm-host && \
     subscription-manager register \
     --org "${REDHAT_SUBSCRIPTION_ORG_ID}" \
@@ -19,7 +30,6 @@ RUN dnf -y update && \
         cmake \
         gcc-c++ \
         openssl-devel \
-        ncurses-devel \
         curl-devel \
         libuuid-devel \
         libcap-ng-devel \
@@ -44,21 +54,39 @@ RUN dnf -y update && \
     fi && \
     dnf clean all
 
-ARG BUILD_DIR=/build
-RUN mkdir -p ${BUILD_DIR}
-WORKDIR ${BUILD_DIR}
-ARG CMAKE_BUILD_TYPE
+ARG BUILD_DIR
+ENV BUILD_DIR=${BUILD_DIR}
+
+ARG SRC_ROOT_DIR
+ENV SRC_ROOT_DIR=${SRC_ROOT_DIR}
+
+ARG CMAKE_BUILD_DIR
+ENV CMAKE_BUILD_DIR=${CMAKE_BUILD_DIR}
+
+ARG CMAKE_BUILD_TYPE=Release
 ENV CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+
 ARG COLLECTOR_APPEND_CID=false
 ENV COLLECTOR_APPEND_CID=${COLLECTOR_APPEND_CID}
+
+ARG NPROCS=8
+ENV NPROCS=${NPROCS}
+
+RUN mkdir -p ${BUILD_DIR}
+WORKDIR ${BUILD_DIR}
+
 COPY builder builder
-COPY collector src
 COPY kernel-modules/MODULE_VERSION kernel-modules/MODULE_VERSION
-COPY rox-proto rox-proto
+COPY collector collector
 COPY falcosecurity-libs falcosecurity-libs
 COPY third_party third_party
-ARG NPROCS=2
-RUN NPROCS=${NPROCS} ./builder/build/build-ubi.sh
+COPY CMakeLists.txt CMakeLists.txt
+
+ENV DISABLE_PROFILING=true
+ENV WITH_RHEL8_RPMS=true
+RUN ./builder/build/build-ubi-dependencies.sh && \
+    ./builder/build/build-collector.sh && \
+    "${CMAKE_BUILD_DIR}/collector/runUnitTests"
 
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.6
@@ -68,8 +96,10 @@ WORKDIR /
 ARG COLLECTOR_VERSION
 LABEL version="${COLLECTOR_VERSION}"
 
-ARG USE_VALGRIND=false
-ARG ADDRESS_SANITIZER=false
+ARG BUILD_DIR
+ARG CMAKE_BUILD_DIR
+ARG USE_VALGRIND
+ARG ADDRESS_SANITIZER
 
 ENV COLLECTOR_HOST_ROOT=/host
 
@@ -77,10 +107,9 @@ RUN rm -rf /etc/rhsm-host
 COPY --from=builder /etc/pki/entitlement /etc/pki/entitlement
 COPY --from=builder /etc/rhsm /etc/rhsm
 
-ARG BUILD_DIR=/build
-COPY --from=builder ${BUILD_DIR}/cmake-collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so /usr/local/lib/
-COPY --from=builder ${BUILD_DIR}/cmake-collector/collector /usr/local/bin/
-COPY --from=builder ${BUILD_DIR}/src/container/scripts /
+COPY --from=builder ${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so /usr/local/lib/
+COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
+COPY --from=builder ${BUILD_DIR}/collector/container/scripts /
 
 # Switch shell to bash with pipefall to avoid hadolint warning DL4006
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -96,10 +125,10 @@ RUN mv /collector-wrapper.sh /usr/local/bin/ && \
     microdnf -y install jsoncpp --enablerepo=amq-clients-2-for-rhel-8-x86_64-rpms && \
     microdnf -y install jq --enablerepo=rhocp-4.6-for-rhel-8-x86_64-rpms && \
     if [ "$USE_VALGRIND" = "true" ]; then \
-      microdnf -y install valgrind; \
+        microdnf -y install valgrind; \
     fi && \
     if [ "$ADDRESS_SANITIZER" = "true" ]; then \
-      microdnf -y install libasan; \
+        microdnf -y install libasan; \
     fi && \
     microdnf clean all && \
     rpm --query --all 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'findutils' | xargs -t rpm -e --nodeps && \

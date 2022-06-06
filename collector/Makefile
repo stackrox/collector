@@ -13,15 +13,7 @@ SRCS := $(wildcard lib/*.cpp) collector.cpp
 
 .SUFFIXES:
 
-generated-srcs: $(shell find ../rox-proto -name '*.proto')
-	docker run --rm \
-		-v $(CURDIR):/collector/collector \
-		-v $(CURDIR)/../rox-proto:/collector/rox-proto:ro \
-		-v $(CURDIR)/../third_party/googleapis:/collector/googleapis:ro \
-		-e BASE_PATH="/collector" \
-		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) make -f protogen.mk SKIP_GOOGLEAPI_FETCH=1 generated-proto-srcs
-
-cmake-build/collector: $(HDRS) $(SRCS) txt-files generated-srcs $(shell find falcosecurity-libs/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
+cmake-build/collector: $(HDRS) $(SRCS) txt-files $(shell find falcosecurity-libs/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
 	docker rm -fv build_collector || true
 	docker run --rm --name build_collector \
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
@@ -53,41 +45,8 @@ txt-files:
 	cp LICENSE-kernel-modules.txt container/
 	cp NOTICE-sysdig.txt container/THIRD_PARTY_NOTICES/sysdig
 
-.PHONY: distribution
-distribution: clean
-# Remove user-specific files but archive the rest of the repository for easy open-source distribution.
-# Makefile has references to StackRox. If you remove it from --exclude, first clean it up.
-	tar --dereference \
-			--exclude '.idea' \
-			--exclude '*.iml' \
-			--exclude '*.yml' \
-			--exclude '.git' \
-			--exclude '.DS_Store' \
-			--exclude 'Makefile' \
-			--exclude-from=.gitignore \
-			-czvf \
-			collector.tar.gz ./
-
-GENERATED_CPP_BASE_PATH := $(CURDIR)/generated
-
-ROX_URL := git@github.com:stackrox/rox.git
-ROX_WORKTREE := $(BASE_PATH)/.rox
-ROX_GITDIR := $(ROX_WORKTREE)/.git
-
-.PHONY: pull-protos
-pull-protos:
-	@echo Fetching protobufs from rox ...
-	@test -d $(ROX_WORKTREE) || git clone $(ROX_URL) $(ROX_WORKTREE)
-	@test $(shell git --git-dir $(ROX_GITDIR) remote get-url origin) == $(ROX_URL) || \
-		( echo >&2 "Your .rox git repo is not setup correctly (pointing to origin '$(shell git --git-dir $(ROX_GITDIR) remote get-url origin)')" ; exit 1 ; )
-	@git --git-dir $(ROX_GITDIR) fetch && git --git-dir $(ROX_GITDIR) --work-tree $(ROX_WORKTREE) checkout origin/master
-	@rm -rf $(BASE_PATH)/rox-proto/
-	@cp -r $(ROX_WORKTREE)/proto/ $(BASE_PATH)/rox-proto
-	@git --git-dir $(BASE_PATH)/.git --work-tree $(BASE_PATH) add $(BASE_PATH)/rox-proto/
-	@echo "Copied protos to $(BASE_PATH)/rox-proto and added to git index"
-
 .PHONY: clean
-clean: clean-generated-srcs
+clean:
 	docker rm -fv build_collector || true
 	docker rm -fv container-stats benchmark collector grpc-server || true
 	rm -rf falcosecurity-libs/cmake-build
@@ -101,10 +60,6 @@ clean: clean-generated-srcs
 	rm -rf container/devel/scripts
 	rm -rf container/devel/bundle.tar.gz
 	rm -rf container/THIRD_PARTY_NOTICES
-
-.PHONY: clean-generated-srcs
-clean-generated-srcs:
-	rm -rf $(GENERATED_CPP_BASE_PATH)
 
 .PHONY: check
 check:
