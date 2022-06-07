@@ -87,10 +87,11 @@ void CollectorService::RunForever() {
     CLOG(INFO) << "GRPC server connectivity is successful";
 
     if (!config_.DisableNetworkFlows()) {
+      std::shared_ptr<IConnScraper> conn_scraper = std::make_shared<ConnScraper>(config_.HostProc());
       conn_tracker = std::make_shared<ConnectionTracker>();
       UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs(config_.IgnoredL4ProtoPortPairs());
       conn_tracker->UpdateIgnoredL4ProtoPortPairs(std::move(ignored_l4proto_port_pairs));
-      net_status_notifier = MakeUnique<NetworkStatusNotifier>(config_.Hostname(), config_.HostProc(),
+      net_status_notifier = MakeUnique<NetworkStatusNotifier>(config_.Hostname(), conn_scraper,
                                                               config_.ScrapeInterval(), config_.ScrapeListenEndpoints(),
                                                               config_.TurnOffScrape(),
                                                               conn_tracker, config_.grpc_channel,
