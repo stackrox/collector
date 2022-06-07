@@ -1,0 +1,8 @@
+FROM quay.io/stackrox-io/collector-builder:circle-build-c3fbf69f-50e9-4e14-9a10-9021ecaae7a9
+
+COPY collector /tmp/collector
+RUN make -C /tmp/collector/collector cmake-build/collector
+
+RUN export DISABLE_PROFILING="true"
+RUN export SRC_ROOT_DIR=/tmp/collector
+RUN ./build-collector.sh

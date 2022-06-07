@@ -14,16 +14,17 @@ SRCS := $(wildcard lib/*.cpp) collector.cpp
 .SUFFIXES:
 
 cmake-build/collector: $(HDRS) $(SRCS) txt-files $(shell find falcosecurity-libs/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
-	docker rm -fv build_collector || true
-	docker run --rm --name build_collector \
-		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
-		-e SRC_ROOT_DIR="$(SRC_MOUNT_DIR)" \
-		-e CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
-		-e USE_VALGRIND=$(USE_VALGRIND) \
-		-e ADDRESS_SANITIZER=$(ADDRESS_SANITIZER) \
-		-e COLLECTOR_APPEND_CID=$(COLLECTOR_APPEND_CID) \
-		-e DISABLE_PROFILING="true" \
-		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-collector.sh
+	echo "hi"
+#	docker rm -fv build_collector || true
+#	docker run --rm --name build_collector \
+#		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
+#		-e SRC_ROOT_DIR="$(SRC_MOUNT_DIR)" \
+#		-e CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
+#		-e USE_VALGRIND=$(USE_VALGRIND) \
+#		-e ADDRESS_SANITIZER=$(ADDRESS_SANITIZER) \
+#		-e COLLECTOR_APPEND_CID=$(COLLECTOR_APPEND_CID) \
+#		-e DISABLE_PROFILING="true" \
+#		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-collector.sh
 
 container/bin/collector: cmake-build/collector
 	mkdir -p container/bin
