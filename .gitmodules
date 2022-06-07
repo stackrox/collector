@@ -37,7 +37,8 @@
 [submodule "collector/proto/third_party/gogoproto"]
 	path = collector/proto/third_party/gogoproto
 	url = https://github.com/gogo/protobuf
+	branch = master
 [submodule "collector/proto/third_party/stackrox"]
 	path = collector/proto/third_party/stackrox
 	url = https://github.com/stackrox/stackrox
-	branch = release/3.69.x
+	branch = master
