@@ -13,6 +13,7 @@ RUN dnf -y update \
         bison \
         ca-certificates \
         clang \
+        cmake \
         cracklib-dicts \
         diffutils \
         elfutils-libelf-devel \
@@ -53,9 +54,6 @@ COPY install/*.sh install-tmp/
 RUN ./install-tmp/install.sh
 
 RUN echo '/usr/local/lib' >/etc/ld.so.conf.d/usrlocallib.conf && ldconfig
-
-# Copy Makefile for generating protobuf code.
-COPY build/protogen.mk /
 
 # Copy script for building collector
 COPY build/build-collector.sh /
