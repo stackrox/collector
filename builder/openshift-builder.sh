@@ -46,6 +46,15 @@ dnf -y update \
 # We want to fail if the destination directory is there, hence mkdir (not -p).
 mkdir "${ROOT}/builder/install-tmp"
 
+echo "root= $ROOT"
+
+echo; echo;
+ls "$ROOT"
+echo; echo;
+ls "$ROOT/builder"
+echo; echo;
+ls "$ROOT/builder/install/*.sh"
+
 cp "${ROOT}/builder/install/*.sh" "${ROOT}/builder/install-tmp/"
 
 # Build dependencies from source
