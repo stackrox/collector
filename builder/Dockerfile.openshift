@@ -51,10 +51,10 @@ RUN dnf -y update \
 # We want to fail if the destination directory is there, hence mkdir (not -p).
 RUN mkdir install-tmp
 
-COPY install/*.sh install-tmp/
+COPY ./install/*.sh ./install-tmp/
 
 # Build dependencies from source
-RUN install-tmp/install.sh
+RUN ./install-tmp/install.sh
 
 RUN echo '/usr/local/lib' >/etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 
