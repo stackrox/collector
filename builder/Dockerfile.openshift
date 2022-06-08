@@ -11,11 +11,4 @@ USER root
 
 RUN ./builder/openshift-builder.sh
 
-# Add remote development user
-RUN useradd -m remoteuser \
-  && yes c0llectah | passwd remoteuser
-
-# Create directory to copy collector source into builder container
-RUN mkdir /src && chmod a+rwx /src
-
 CMD ["/usr/sbin/sshd", "-D", "-e", "-f", "/etc/ssh/sshd_config_remote_development"]
