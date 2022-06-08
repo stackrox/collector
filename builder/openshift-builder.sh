@@ -54,21 +54,5 @@ echo '/usr/local/lib' >/etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 cp "${ROOT}/builder/build/build-collector.sh" /
 chmod 700 /build-collector.sh
 
-# Set up ssh for remote development with IDE
-ssh-keygen -A \
-   && ( \
-    echo 'LogLevel DEBUG2'; \
-    echo 'PermitRootLogin yes'; \
-    echo 'PasswordAuthentication yes'; \
-    echo 'HostKey /etc/sshkeys/ssh_host_ed25519_key'; \
-    echo 'HostKeyAlgorithms ssh-ed25519'; \
-    echo 'Subsystem sftp /usr/libexec/openssh/sftp-server'; \
-  ) > /etc/ssh/sshd_config_remote_development \
-  && mkdir /run/sshd
-
-# Add remote development user
-useradd -m remoteuser \
-  && yes c0llectah | passwd remoteuser
-
 # Create directory to copy collector source into builder container
 mkdir /src && chmod a+rwx /src
