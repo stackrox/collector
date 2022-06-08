@@ -1,11 +1,5 @@
 FROM quay.io/stackrox-io/collector-builder:circle-build-c3fbf69f-50e9-4e14-9a10-9021ecaae7a9
 
-WORKDIR /go/src/github.com/stackrox
+WORKDIR /go/src/github.com/stackrox/collector
 
-COPY collector /tmp/collector
-RUN ls /tmp/collector
-RUN make -C /tmp/collector/collector cmake-build/collector
-
-ENV DISABLE_PROFILING="true"
-ENV SRC_ROOT_DIR=/tmp/collector
-RUN ./build-collector.sh
+RUN ./builder/openshift-build-collector.sh
