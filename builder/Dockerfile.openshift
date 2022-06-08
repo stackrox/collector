@@ -48,9 +48,9 @@ RUN dnf -y update \
     && dnf clean all
 
 # We want to fail if the destination directory is there, hence mkdir (not -p).
-RUN mkdir /go/src/github.com/stackrox/collector/install-tmp
+RUN mkdir /go/src/github.com/stackrox/collector/builder/install-tmp
 
-COPY /go/src/github.com/stackrox/stackrox/install/*.sh /go/src/github.com/stackrox/collector/install-tmp/
+COPY /go/src/github.com/stackrox/stackrox/builder/install/*.sh /go/src/github.com/stackrox/collector/builder/install-tmp/
 
 # Build dependencies from source
 RUN /go/src/github.com/stackrox/collector/install-tmp/install.sh
