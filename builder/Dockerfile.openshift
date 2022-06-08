@@ -9,7 +9,7 @@ WORKDIR /go/src/github.com/stackrox/collector
 ## Install packaged dependencies
 USER root
 
-./builder/openshift-builder.sh
+RUN ./builder/openshift-builder.sh
 
 # Add remote development user
 RUN useradd -m remoteuser \
