@@ -53,6 +53,8 @@ ls "$ROOT"
 echo; echo;
 ls "$ROOT/builder"
 echo; echo;
+ls "$ROOT/builder/install"
+echo; echo;
 ls "$ROOT/builder/install/*.sh"
 
 cp "${ROOT}/builder/install/*.sh" "${ROOT}/builder/install-tmp/"
