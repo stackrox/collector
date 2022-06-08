@@ -4,6 +4,7 @@ ARG NPROCS=6
 ENV NPROCS=$NPROCS
 
 COPY . /go/src/github.com/stackrox/collector
+WORKDIR /go/src/github.com/stackrox/collector/builder
 
 ## Install packaged dependencies
 USER root
@@ -48,12 +49,12 @@ RUN dnf -y update \
     && dnf clean all
 
 # We want to fail if the destination directory is there, hence mkdir (not -p).
-RUN mkdir /go/src/github.com/stackrox/collector/builder/install-tmp
+RUN mkdir install-tmp
 
-COPY /go/src/github.com/stackrox/stackrox/builder/install/*.sh /go/src/github.com/stackrox/collector/builder/install-tmp/
+COPY install/*.sh install-tmp/
 
 # Build dependencies from source
-RUN /go/src/github.com/stackrox/collector/install-tmp/install.sh
+RUN install-tmp/install.sh
 
 RUN echo '/usr/local/lib' >/etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 
