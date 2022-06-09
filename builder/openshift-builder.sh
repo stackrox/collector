@@ -46,10 +46,10 @@ dnf -y update \
 
 
 
-cp -r "${ROOT}"/builder/install "${ROOT}/builder/install-tmp"
+cp -r "${ROOT}"/builder/install "/install-tmp"
 
 # Build dependencies from source
-"${ROOT}/builder/install-tmp/install.sh"
+"/install-tmp/install.sh"
 
 echo '/usr/local/lib' >/etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 
