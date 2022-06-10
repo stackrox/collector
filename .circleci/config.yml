@@ -367,7 +367,7 @@ jobs:
 
   kernels:
     <<: *defaultMachine
-    parallelism: 8
+    parallelism: 32
     environment:
     - BUILD_CONTAINER_TAG: quay.io/rhacs-eng/collector-builder:kobuilder-cache
     - BUILD_CONTAINER_CACHE_IMAGES: quay.io/rhacs-eng/collector-builder:kobuilder-cache
