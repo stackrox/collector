@@ -10,6 +10,6 @@ WORKDIR /go/src/github.com/stackrox/collector
 
 USER root
 
-RUN ./build-builder.sh .
+RUN "${ROOT}"/build-builder.sh .
 
 CMD ["/usr/sbin/sshd", "-D", "-e", "-f", "/etc/ssh/sshd_config_remote_development"]
