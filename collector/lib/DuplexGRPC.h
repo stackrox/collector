@@ -62,6 +62,9 @@ namespace collector {
 namespace grpc_duplex_impl {
 
 // Forward declarations
+class IDuplexClient;
+template <typename W>
+class IDuplexClientWriter;
 class DuplexClient;
 template <typename W>
 class DuplexClientWriter;
@@ -233,6 +236,7 @@ class Result final {
         break;
     }
   }
+  explicit Result(OpDescriptor op_descr) : Result(op_descr.op_error) {}
 
   Status status_;
 
@@ -243,8 +247,80 @@ class Result final {
   friend class DuplexClientReaderWriter;
 };
 
+class IDuplexClient {
+ public:
+  virtual ~IDuplexClient() {}
+
+  virtual Result WaitUntilStarted(const gpr_timespec& deadline) = 0;
+  virtual bool Sleep(const gpr_timespec& deadline) = 0;
+  virtual Result WritesDoneAsync() = 0;
+  virtual Result WritesDone(const gpr_timespec& deadline) = 0;
+  virtual Result FinishAsync() = 0;
+  virtual Result WaitUntilFinished(const gpr_timespec& deadline) = 0;
+  virtual Result Finish(grpc::Status* status, const gpr_timespec& deadline) = 0;
+  virtual grpc::Status Finish(const gpr_timespec& deadline) = 0;
+  virtual void TryCancel() = 0;
+  virtual Result Shutdown() = 0;
+
+  // Templated and utility methods
+
+  // Wait for the specified time for the stream to become ready.
+  template <typename TS = time_point>
+  Result WaitUntilStarted(const TS& time_spec = time_point::max()) {
+    return WaitUntilStarted(ToDeadline(time_spec));
+  }
+
+  // Waits until the given time, or until an error in the stream occurs. A return value of true indicates that no
+  // error occurred during the given time.
+  template <typename TS = time_point>
+  bool Sleep(const TS& time_spec = time_point::max()) {
+    return Sleep(ToDeadline(time_spec));
+  }
+
+  template <typename TS = time_point>
+  Result WritesDone(const TS& time_spec = time_point::max()) {
+    return WritesDone(ToDeadline(time_spec));
+  }
+
+  template <typename TS = time_point>
+  Result WaitUntilFinished(const TS& time_spec = time_point::max()) {
+    return WaitUntilFinished(ToDeadline(time_spec));
+  }
+
+  template <typename TS = time_point>
+  Result Finish(grpc::Status* status, const TS& time_spec = time_point::max()) {
+    return Finish(status, ToDeadline(time_spec));
+  }
+
+  template <typename TS = time_point>
+  grpc::Status Finish(const TS& time_spec = time_point::max()) {
+    return Finish(ToDeadline(time_spec));
+  }
+
+  grpc::Status FinishNow() {
+    return Finish(time_point::min());
+  };
+};
+
+template <typename W>
+class IDuplexClientWriter : public virtual IDuplexClient {
+ public:
+  virtual ~IDuplexClientWriter() {}
+
+  virtual Result Write(const W& obj, const gpr_timespec& deadline) = 0;
+  virtual Result WriteAsync(const W& obj) = 0;
+
+  // Templated methods
+
+  template <typename TS = time_point>
+  Result Write(const W& obj,
+               const TS& time_spec = time_point::max()) {
+    return Write(obj, ToDeadline(time_spec));
+  }
+};
+
 // Base class for duplex clients.
-class DuplexClient {
+class DuplexClient : public virtual IDuplexClient {
  public:
   // Status flags. These are the only valid bits that may be checked for in a call to `Poll`.
   enum FlagValues : Flags {
@@ -273,16 +349,14 @@ class DuplexClient {
   DuplexClient& operator=(DuplexClient&&) = delete;
 
   // Wait for the specified time for the stream to become ready.
-  template <typename TS = time_point>
-  Result WaitUntilStarted(const TS& time_spec = time_point::max()) {
-    return PollAll(STARTED, time_spec);
+  Result WaitUntilStarted(const gpr_timespec& deadline) {
+    return PollAll(STARTED, deadline);
   }
 
   // PollAny waits until the given time, or until an error in the stream occurs. A return value of true indicates that no
   // error occurred during the given time.
-  template <typename TS = time_point>
-  bool Sleep(const TS& time_spec = time_point::max()) {
-    auto res = PollAny(STREAM_ERROR | FINISHED, time_spec);
+  bool Sleep(const gpr_timespec& deadline) {
+    auto res = PollAny(STREAM_ERROR | FINISHED, deadline);
     return res.IsTimeout();
   }
 
@@ -292,9 +366,8 @@ class DuplexClient {
     return Result(WritesDoneAsyncInternal().op_error);
   }
 
-  template <typename TS = time_point>
-  Result WritesDone(const TS& time_spec = time_point::max()) {
-    return DoSync(&DuplexClient::WritesDoneAsyncInternal, time_spec);
+  Result WritesDone(const gpr_timespec& deadline) {
+    return DoSync(&DuplexClient::WritesDoneAsyncInternal, deadline);
   }
 
   // Finish methods.
@@ -303,23 +376,20 @@ class DuplexClient {
     return Result(FinishAsyncInternal().op_error);
   }
 
-  template <typename TS = time_point>
-  Result WaitUntilFinished(const TS& time_spec = time_point::max()) {
-    return PollAll(FINISHED, time_spec);
+  Result WaitUntilFinished(const gpr_timespec& deadline) {
+    return PollAll(FINISHED, deadline);
   }
 
-  template <typename TS = time_point>
-  Result Finish(grpc::Status* status, const TS& time_spec = time_point::max()) {
-    auto res = DoSync<>(&DuplexClient::FinishAsyncInternal, time_spec);
+  Result Finish(grpc::Status* status, const gpr_timespec& deadline) {
+    auto res = DoSync<>(&DuplexClient::FinishAsyncInternal, deadline);
     if (res) {
       *status = status_;
     }
     return res;
   }
 
-  template <typename TS = time_point>
-  grpc::Status Finish(const TS& time_spec = time_point::max()) {
-    auto res = DoSync<>(&DuplexClient::FinishAsyncInternal, time_spec);
+  grpc::Status Finish(const gpr_timespec& deadline) {
+    auto res = DoSync<>(&DuplexClient::FinishAsyncInternal, deadline);
     if (res) {
       return status_;
     }
@@ -329,16 +399,10 @@ class DuplexClient {
     return grpc::Status(grpc::StatusCode::UNKNOWN, "unknown error retrieving status");
   }
 
-  // Finish immediately (note that the status might indicate a timeout).
-  grpc::Status FinishNow() {
-    return Finish(time_point::min());
-  }
-
   // Poll waits until the given time for the status flag to match flags_checker.
-  template <typename FlagsChecker, typename TS = time_point>
-  Result Poll(FlagsChecker&& flags_checker, const TS& time_spec = time_point::max()) {
+  template <typename FlagsChecker>
+  Result Poll(FlagsChecker&& flags_checker, const gpr_timespec& deadline) {
     Flags flags;
-    auto deadline = ToDeadline(time_spec);
 
     Result res = ProcessSingle(&flags, deadline, nullptr);
     while (res && !flags_checker(flags)) {
@@ -348,15 +412,13 @@ class DuplexClient {
   }
 
   // PollAny waits until the given time for *any* of the specified status flags to be satisfied.
-  template <typename TS = time_point>
-  Result PollAny(Flags desired, const TS& time_spec = time_point::max()) {
-    return Poll([desired](Flags fl) { return (fl & desired) != 0; }, time_spec);
+  Result PollAny(Flags desired, const gpr_timespec& deadline) {
+    return Poll([desired](Flags fl) { return (fl & desired) != 0; }, deadline);
   }
 
   // PollAll waits until the given time for *all* specified status flags to be satisfied.
-  template <typename TS = time_point>
-  Result PollAll(Flags desired, const TS& time_spec = time_point::max()) {
-    return Poll([desired](Flags fl) { return (fl & desired) == desired; }, time_spec);
+  Result PollAll(Flags desired, const gpr_timespec& deadline) {
+    return Poll([desired](Flags fl) { return (fl & desired) == desired; }, deadline);
   }
 
   // Try cancelling the underlying context.
@@ -439,10 +501,9 @@ class DuplexClient {
   }
 
   // Perform the asynchronous operation specified by async_method in a synchronous manner.
-  template <typename... Args, typename TS, typename D>
-  Result DoSync(OpDescriptor (D::*async_method)(Args...), Args... args, const TS& time_spec) {
+  template <typename... Args, typename D>
+  Result DoSync(OpDescriptor (D::*async_method)(Args...), Args... args, const gpr_timespec& deadline) {
     constexpr bool idempotent = is_empty<Args...>::value;
-    auto deadline = ToDeadline(time_spec);
 
     OpDescriptor op_desc = (static_cast<D*>(this)->*async_method)(std::forward<Args>(args)...);
     // If an operation is already pending, we act as if it had just been sent in case the operation is idempotent (i.e.,
@@ -474,15 +535,14 @@ class DuplexClient {
 };
 
 template <typename W>
-class DuplexClientWriter : public DuplexClient {
+class DuplexClientWriter : public DuplexClient, public IDuplexClientWriter<W> {
  public:
   ~DuplexClientWriter() override = default;
 
   // Write methods.
 
-  template <typename TS = time_point>
-  Result Write(const W& obj, const TS& time_spec = time_point::max()) {
-    return DoSync<const W&>(&DuplexClientWriter::WriteAsyncInternal, obj, time_spec);
+  Result Write(const W& obj, const gpr_timespec& deadline) {
+    return DoSync<const W&>(&DuplexClientWriter::WriteAsyncInternal, obj, deadline);
   }
 
   Result WriteAsync(const W& obj) {
@@ -676,6 +736,9 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
 
 // Export public definitions.
 
+using IDuplexClient = grpc_duplex_impl::IDuplexClient;
+template <typename W>
+using IDuplexClientWriter = grpc_duplex_impl::IDuplexClientWriter<W>;
 using DuplexClient = grpc_duplex_impl::DuplexClient;
 template <typename W>
 using DuplexClientWriter = grpc_duplex_impl::DuplexClientWriter<W>;

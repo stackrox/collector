@@ -141,6 +141,16 @@ void NetworkStatusNotifier::ReceiveIPNetworks(const sensor::IPNetworkList& netwo
   conn_tracker_->UpdateKnownIPNetworks(std::move(known_ip_networks));
 }
 
+std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> NetworkStatusNotifier::CreateWriter() {
+  std::function<void(const sensor::NetworkFlowsControlMessage*)> read_cb = [this](const sensor::NetworkFlowsControlMessage* msg) {
+    OnRecvControlMessage(msg);
+  };
+
+  return DuplexClient::CreateWithReadCallback(
+      &sensor::NetworkConnectionInfoService::Stub::AsyncPushNetworkConnectionInfo,
+      channel_, context_.get(), std::move(read_cb));
+}
+
 void NetworkStatusNotifier::Run() {
   Profiler::RegisterCPUThread();
   auto next_attempt = std::chrono::system_clock::now();
@@ -154,13 +164,7 @@ void NetworkStatusNotifier::Run() {
       break;
     }
 
-    std::function<void(const sensor::NetworkFlowsControlMessage*)> read_cb = [this](const sensor::NetworkFlowsControlMessage* msg) {
-      OnRecvControlMessage(msg);
-    };
-
-    auto client_writer = DuplexClient::CreateWithReadCallback(
-        &sensor::NetworkConnectionInfoService::Stub::AsyncPushNetworkConnectionInfo,
-        channel_, context_.get(), std::move(read_cb));
+    auto client_writer = CreateWriter();
 
     if (enable_afterglow_) {
       RunSingleAfterglow(client_writer.get());
@@ -194,7 +198,7 @@ void NetworkStatusNotifier::Stop() {
   thread_.Stop();
 }
 
-void NetworkStatusNotifier::WaitUntilWriterStarted(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer, int wait_time_seconds) {
+void NetworkStatusNotifier::WaitUntilWriterStarted(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer, int wait_time_seconds) {
   if (!writer->WaitUntilStarted(std::chrono::seconds(wait_time_seconds))) {
     CLOG(ERROR) << "Failed to establish network connection info stream.";
     return;
@@ -225,7 +229,7 @@ bool NetworkStatusNotifier::UpdateAllConnsAndEndpoints() {
   return true;
 }
 
-void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
+void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
   WaitUntilWriterStarted(writer, 10);
 
   ConnMap old_conn_state;
@@ -269,7 +273,7 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
   }
 }
 
-void NetworkStatusNotifier::RunSingleAfterglow(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
+void NetworkStatusNotifier::RunSingleAfterglow(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
   WaitUntilWriterStarted(writer, 10);
 
   ConnMap old_conn_state;

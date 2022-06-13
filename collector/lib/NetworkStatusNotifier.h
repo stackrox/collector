@@ -79,12 +79,14 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   void OnRecvControlMessage(const sensor::NetworkFlowsControlMessage* msg);
 
   void Run();
-  void WaitUntilWriterStarted(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer, int wait_time);
+  void WaitUntilWriterStarted(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer, int wait_time);
   bool UpdateAllConnsAndEndpoints();
-  void RunSingle(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer);
-  void RunSingleAfterglow(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer);
+  void RunSingle(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer);
+  void RunSingleAfterglow(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer);
   void ReceivePublicIPs(const sensor::IPAddressList& public_ips);
   void ReceiveIPNetworks(const sensor::IPNetworkList& networks);
+
+  virtual std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> CreateWriter();
 
   std::string hostname_;
 
