@@ -1,5 +1,6 @@
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
+#ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
+ROOT=$1
 
 dnf -y update \
 && dnf -y install \
@@ -40,11 +41,11 @@ dnf -y update \
     wget \
     which \
 && dnf clean all
-￼
+
 # We want to fail if the destination directory is there, hence mkdir (not -p).
-mkdir install-tmp
-￼
-cp -r "${ROOT}"/builder/install/*.sh "/install-tmp"
+mkdir /install-tmp
+
+cp -r "${ROOT}"/install/*.sh "/install-tmp"
 
 # Build dependencies from source
 "/install-tmp/install.sh"
@@ -52,7 +53,7 @@ cp -r "${ROOT}"/builder/install/*.sh "/install-tmp"
 echo '/usr/local/lib' >/etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 
 # Copy script for building collector
-cp "${ROOT}/builder/build/build-collector.sh" /
+cp "${ROOT}/build/build-collector.sh" /
 chmod 700 /build-collector.sh
 
 # Set up ssh for remote development with IDE
