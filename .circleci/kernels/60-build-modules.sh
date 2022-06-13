@@ -17,6 +17,7 @@ for task_file in ~/kobuild-tmp/local-build-tasks.*; do
         -v "${HOME}/kobuild-tmp/bundles:/bundles:ro" \
         -v "${WORKSPACE_ROOT}/ko-build/module-versions:/sources:ro" \
         -v "${shard_output_dir}:/output" \
+        -v "${SOURCE_ROOT}/kernel-modules/probe:/probe" \
         --tmpfs /scratch:exec \
         "build-kernel-modules-${flavor}" \
         build-wrapper.sh < "$task_file"

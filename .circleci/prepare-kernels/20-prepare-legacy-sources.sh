@@ -69,7 +69,11 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
     git -C "${LEGACY_DIR}" submodule update --init "${DRIVER_REL_DIR}"
 
     mod_ver_file="${WORKSPACE_ROOT}/ko-build/released-collectors/${collector_ref}"
-    DRIVER_DIR="${LEGACY_DIR}/${DRIVER_REL_DIR}" \
+
+    DRIVER_DIR="${LEGACY_DIR}/${DRIVER_REL_DIR}"
+
+    LEGACY_DIR="${LEGACY_DIR}" \
+        DRIVER_DIR="${DRIVER_DIR}" \
         SCRATCH_DIR="${HOME}/scratch" \
         OUTPUT_DIR="${HOME}/kobuild-tmp/versions-src" \
         M_VERSION="$(get_module_version)" \

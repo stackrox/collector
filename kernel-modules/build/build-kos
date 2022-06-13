@@ -20,7 +20,9 @@ build_ko() (
 
     local rhel7_kernel_with_ebpf=false
     if ((bundle_version == 3 && bundle_major >= 10)); then
+        # shellcheck disable=SC2154
         if [[ "$bundle_distro" == "redhat" ]]; then
+            # shellcheck disable=SC2154
             rhel_build_id="$(echo "$bundle_uname" | awk -F'[-.]' '{ print $4 }')"
             if ((rhel_build_id >= 957)); then
                 echo "Kernel ${bundle_uname} has backported eBPF support"
@@ -32,6 +34,7 @@ build_ko() (
     if [[ "$probe_type" == "mod" ]]; then
         # Attempting to run modpost will fail if it requires glibc version newer than
         # available in this distro. We skip building such kernel drivers for now.
+        # shellcheck disable=SC2154
         if ((DOCKERIZED)) && ! "${kernel_build_dir}/scripts/mod/modpost"; then
             echo >&2 "Failed to run kbuild tools, skipping module for ${kernel_version}"
             return 1
@@ -76,9 +79,8 @@ build_ko() (
                 touch "${MODULE_BASE_DIR}/${module_version}/.collector-ebpf-${kernel_version}.unavail"
                 return 0
             fi
-
-        # Check kernel version is at least 4.14 (unless RHEL 7.6 kernel detected)
         else
+            # Check kernel version is at least 4.14 (unless RHEL 7.6 kernel detected)
             if ((bundle_version < 4 || (bundle_version == 4 && bundle_major < 14))); then
                 echo "Kernel version ${kernel_version} does not support eBPF probe building, skipping ..."
                 mkdir -p "${MODULE_BASE_DIR}/${module_version}"
@@ -87,11 +89,16 @@ build_ko() (
             fi
         fi
 
+        collector_probe="${module_src_dir}/bpf/probe.o"
+        probe_dir="${module_src_dir}/bpf"
+
+        if [[ -d "${module_src_dir}/collector-probe" ]]; then
+            collector_probe="${module_src_dir}/collector-probe/probe.o"
+            probe_dir="${module_src_dir}/collector-probe"
+        fi
+
         echo "Building collector eBPF probe for kernel version ${kernel_version} and module version ${module_version}."
-
-        KERNELDIR="$kernel_build_dir" BUILD_ROOT="${KERNEL_SRC_DIR}" make -j 6 -C bpf
-
-        collector_probe="bpf/probe.o"
+        KERNELDIR="$kernel_build_dir" BUILD_ROOT="${KERNEL_SRC_DIR}" FALCO_DIR="$(pwd)/bpf" make -j 6 -C "${probe_dir}"
 
         if [[ ! -f "$collector_probe" || ! -s "$collector_probe" ]]; then
             echo "Empty or missing compiled bpf output"
