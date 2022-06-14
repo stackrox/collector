@@ -11,5 +11,5 @@ export SRC_ROOT_DIR=/tmp/collector
 
 make -C /tmp/collector/collector pre-build
 /build-collector.sh
-cp -r /tmp/collector/cmake "${ROOT}"
+cp -r /tmp/collector/cmake-build "${ROOT}"
 make -C /tmp/collector/collector post-build
