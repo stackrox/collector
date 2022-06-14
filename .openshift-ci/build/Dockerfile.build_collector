@@ -1,5 +1,5 @@
 FROM quay.io/centos/centos:stream8
-￼
+
 WORKDIR /go/src/github.com/stackrox/collector
 
 RUN ./.openshift-ci/build/build-collector.sh
