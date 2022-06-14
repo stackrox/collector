@@ -5,7 +5,6 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
 cp -r "${ROOT}" /tmp/collector
 
-
 export DISABLE_PROFILING="true"
 export SRC_ROOT_DIR=/tmp/collector
 
