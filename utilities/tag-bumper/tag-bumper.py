@@ -27,7 +27,7 @@ def validate_version(version: str):
 
 def get_repo_handle(path: str):
     if path != '':
-        return git.bake(path)
+        return git.bake('--no-pager', C=path)
     return git.bake('--no-pager', C=os.path.dirname(os.path.realpath(__file__)))
 
 
@@ -46,7 +46,6 @@ def fetch_all(repo):
 def get_branch(repo, version: str) -> str:
     release_branch = get_release_branch(version)
 
-    repo.fetch()
     try:
         repo('rev-parse', '--verify', release_branch)
     except ErrorReturnCode as e:
@@ -82,7 +81,7 @@ def find_tag_version(repo, version: str) -> str:
         print(f'Failed to find an existing tag for {".".join(version)}')
         sys.exit(1)
 
-    return f'{version}.{patch_version}'
+    return f'{version}.{patch_version + 1}'
 
 
 def create_empty_commit(repo):
@@ -94,7 +93,7 @@ def create_empty_commit(repo):
         sys.exit(1)
 
 
-def create_new_tag(repo, new_tag):
+def create_new_tag(repo, new_tag: str):
     print(f'Creating new tag: {new_tag}')
     try:
         git.tag(new_tag)
@@ -112,7 +111,7 @@ def push_branch(repo):
         sys.exit(1)
 
 
-def push_tag(repo, new_tag, remote):
+def push_tag(repo, new_tag: str, remote: str):
     print(f'Pushing {new_tag} to {remote}...')
     try:
         repo.push(remote, new_tag)
@@ -120,7 +119,7 @@ def push_tag(repo, new_tag, remote):
         print(f'Failed to push tag {new_tag} to {remote}. {e}')
 
 
-def main(version: str, dry_run: bool, push: bool, path, remote):
+def main(version: str, dry_run: bool, push: bool, path: str, remote: str):
     repo = get_repo_handle(path)
 
     new_tag = find_tag_version(repo, version)
@@ -141,7 +140,9 @@ def main(version: str, dry_run: bool, push: bool, path, remote):
 
     if not push:
         print(f'Created empty commit and new tag {new_tag}')
-        print(f"Run 'git push {get_release_branch(version)} && git push origin {new_tag}' to publish them")
+        print("Run")
+        print(f"git checkout {get_release_branch(version)} && git push && git push {remote} {new_tag}")
+        print("to publish them")
         return
 
     push_branch(repo)
@@ -149,8 +150,8 @@ def main(version: str, dry_run: bool, push: bool, path, remote):
 
 
 if __name__ == "__main__":
-    description = '''Creates a new patch tag with an empty commit.
-Useful when we need to simply rebuild a collector image.'''
+    description = """Creates a new patch tag with an empty commit.
+Useful when we need to simply rebuild a collector image."""
     parser = argparse.ArgumentParser(description=description,
                                      formatter_class=argparse.RawTextHelpFormatter)
 
