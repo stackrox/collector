@@ -9,14 +9,26 @@ import re
 
 
 def exit_handler(repo):
-    '''
-    Rollback the repo to the branch passed as an argument
-    '''
+    """
+    Rollback the repo to the branch passed as an argument.
+
+    Parameters:
+        repo: An sh.Command baked for git on the working repository.
+    """
     print('Rolling back to starting branch')
     repo.checkout('-')
 
 
 def validate_version(version: str):
+    """
+    Validates the provided version is in the form 'M.m'.
+
+    Returns:
+        The same string provided as input if the format is valid.
+
+    Raises:
+        ValueError If the provided version does not match the expected pattern.
+    """
     version_re = re.compile(r'(:?^\d+\.\d+$)')
 
     if not version_re.match(version):
@@ -26,16 +38,40 @@ def validate_version(version: str):
 
 
 def get_repo_handle(path: str):
+    """
+    Provides a sh.Command baked to run git commands on a repository.
+
+    Parameters:
+        path: A path to a repository, if it is empty, the returned handle points to the directory this script lives in.
+
+    Returns:
+        An sh.Command ready to run git commands.
+    """
     if path != '':
         return git.bake('--no-pager', C=path)
     return git.bake('--no-pager', C=os.path.dirname(os.path.realpath(__file__)))
 
 
 def get_release_branch(version: str) -> str:
+    """
+    Helper function, simply formats the release branch for the provided version.
+
+    Parameters:
+        version: A string with a valid version.
+
+    Returns:
+        A string with the name of the corresponding release branch.
+    """
     return f'release/{version}.x'
 
 
 def fetch_all(repo):
+    """
+    Fetches all branches and tags from all remotes configured in the repository.
+
+    Parameters:
+        repo: An sh.Command baked for git on the working repository.
+    """
     try:
         repo.fetch('--all', '--tags')
     except ErrorReturnCode as e:
@@ -44,6 +80,16 @@ def fetch_all(repo):
 
 
 def get_branch(repo, version: str) -> str:
+    """
+    Validates the release branch exists and returns a string with its name.
+
+    Parameters:
+        repo: An sh.Command baked for git on the working repository.
+        version: A string with a valid version.
+
+    Returns:
+        A string with the name of the release branch.
+    """
     release_branch = get_release_branch(version)
 
     try:
@@ -56,6 +102,13 @@ def get_branch(repo, version: str) -> str:
 
 
 def checkout_release_branch(repo, version: str):
+    """
+    Checks out the release branch for the provided version.
+
+    Parameters:
+        repo: An sh.Command baked for git on the working repository.
+        version: A string with a valid version.
+    """
     branch = get_branch(repo, version)
     print(f'Checking out {branch}')
 
@@ -67,6 +120,18 @@ def checkout_release_branch(repo, version: str):
 
 
 def find_tag_version(repo, version: str) -> str:
+    """
+    Finds the latest tag for the provided version.
+    This is done by iterating over the tags in the repository, checking against the provided major and minor versions
+    and using the highest patch number found once the iteration is done.
+
+    Parameters:
+        repo: An sh.Command baked for git on the working repository.
+        version: The major and minor versions we want to create a new tag for in the format 'M.m'
+
+    Returns:
+        The new tag to be created.
+    """
     patch_version = -1
     version_regex = re.compile(fr'^{re.escape(version)}\.(\d+)$')
 
@@ -85,6 +150,9 @@ def find_tag_version(repo, version: str) -> str:
 
 
 def create_empty_commit(repo):
+    """
+    Creates an empty commit on the current branch. Uses defaults for author, signature, etc.
+    """
     print('Creating empty commit.')
     try:
         repo.commit('--allow-empty', '-m', 'Empty commit')
@@ -94,6 +162,12 @@ def create_empty_commit(repo):
 
 
 def create_new_tag(repo, new_tag: str):
+    """
+    Creates a new tag on the current commit.
+
+    Parameters:
+        new_tag: The new tag to be created. i.e: 3.8.5
+    """
     print(f'Creating new tag: {new_tag}')
     try:
         git.tag(new_tag)
@@ -103,6 +177,12 @@ def create_new_tag(repo, new_tag: str):
 
 
 def push_branch(repo):
+    """
+    Executes a push on the current branch.
+
+    Parameters:
+        repo: An sh.Command baked for git on the working repository.
+    """
     print('Pushing release branch...')
     try:
         repo.push()
@@ -112,6 +192,14 @@ def push_branch(repo):
 
 
 def push_tag(repo, new_tag: str, remote: str):
+    """
+    Push a new tag to the provided remote.
+
+    Parameters:
+        repo: An sh.Command baked for git on the working repository.
+        new_tag: The new tag to be pushed. i.e: 3.8.5
+        remote: The remote in the repository the tag will be pushed to. i.e: origin
+    """
     print(f'Pushing {new_tag} to {remote}...')
     try:
         repo.push(remote, new_tag)
