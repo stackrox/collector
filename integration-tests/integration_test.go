@@ -35,11 +35,6 @@ const (
 	defaultStopTimeoutSeconds = "10"
 )
 
-func TestCollectorGRPC(t *testing.T) {
-	suite.Run(t, new(ProcessNetworkTestSuite))
-	suite.Run(t, new(BenchmarkCollectorTestSuite))
-}
-
 func TestProcessNetwork(t *testing.T) {
 	suite.Run(t, new(ProcessNetworkTestSuite))
 }
@@ -515,7 +510,7 @@ func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, contain
 	start := time.Now()
 	tick := time.Tick(tickSeconds)
 	tickElapsed := time.Tick(1 * time.Minute)
-	timeout := time.After(15 * time.Minute)
+	timeout := time.After(30 * time.Minute)
 	for {
 		select {
 		case <-tick:

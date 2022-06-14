@@ -19,3 +19,10 @@ cat >> "$BASH_ENV" <<- EOF
   export USE_VALGRIND="$VALGRIND_INTEGRATION_TESTS"
   export USE_HELGRIND="$HELGRIND_INTEGRATION_TESTS"
 EOF
+
+if [[ -f pr-metadata/labels/ci-benchmark-syscall-latency ]]; then
+    cat >> "$BASH_ENV" <<- EOF
+    export MEASURE_SYSCALL_LATENCY=true
+    export STOP_TIMEOUT=60
+EOF
+fi

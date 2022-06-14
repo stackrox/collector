@@ -37,3 +37,10 @@ if [[ "$dockerized" == "true" ]]; then
       export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${COLLECTOR_TAG}-dockerized"
 EOF
 fi
+
+if [[ -f pr-metadata/labels/ci-benchmark-syscall-latency ]]; then
+    cat >> "$BASH_ENV" <<- EOF
+    export MEASURE_SYSCALL_LATENCY=true
+    export STOP_TIMEOUT=60
+EOF
+fi
