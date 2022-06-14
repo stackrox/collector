@@ -16,19 +16,13 @@ def exit_handler(repo):
     repo.checkout('-')
 
 
-def parse_version(version: str) -> [str]:
-    split_version = version.split('.')
+def validate_version(version: str):
+    version_re = re.compile(r'(:?^\d+\.\d+$)')
 
-    if len(split_version) != 2:
-        print(f'Invalid version: {version}')
-        sys.exit(1)
+    if not version_re.match(version):
+        raise ValueError
 
-    for v in split_version:
-        if not v.isnumeric():
-            print(f'Invalid version: {version}')
-            sys.exit(1)
-
-    return split_version
+    return version
 
 
 def get_repo_handle(path: str):
@@ -73,9 +67,9 @@ def checkout_release_branch(repo, version: str):
         sys.exit(1)
 
 
-def find_tag_version(repo, version: [str]) -> str:
+def find_tag_version(repo, version: str) -> str:
     patch_version = -1
-    version_regex = re.compile(fr'^{version[0]}\.{version[1]}\.(\d+)$')
+    version_regex = re.compile(fr'^{re.escape(version)}\.(\d+)$')
 
     for tag in repo.tag().splitlines():
         matched = version_regex.match(tag)
@@ -88,9 +82,7 @@ def find_tag_version(repo, version: [str]) -> str:
         print(f'Failed to find an existing tag for {".".join(version)}')
         sys.exit(1)
 
-    version.append(str(patch_version + 1))
-
-    return '.'.join(version)
+    return f'{version}.{patch_version}'
 
 
 def create_empty_commit(repo):
@@ -129,10 +121,9 @@ def push_tag(repo, new_tag, remote):
 
 
 def main(version: str, dry_run: bool, push: bool, path, remote):
-    parsed_version = parse_version(version)
     repo = get_repo_handle(path)
 
-    new_tag = find_tag_version(repo, parsed_version)
+    new_tag = find_tag_version(repo, version)
 
     print(f'New tag to be created: {new_tag}')
 
@@ -163,7 +154,7 @@ Useful when we need to simply rebuild a collector image.'''
     parser = argparse.ArgumentParser(description=description,
                                      formatter_class=argparse.RawTextHelpFormatter)
 
-    parser.add_argument('version', help='Version to bump in the vormat X.Y')
+    parser.add_argument('version', help='Version to bump in the vormat X.Y', type=validate_version)
     parser.add_argument('-d', '--dry-run', help='Run all checks without actually modifying the repo',
                         default=False, action='store_true')
     parser.add_argument('-p', '--push', help="Push the newly create tag", default=False, action='store_true')
