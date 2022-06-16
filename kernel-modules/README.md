@@ -122,4 +122,4 @@ decide which version number to increase.
 For pre-release, the version should be appended with `-rcX` where `X` is a strictly
 increasing integer, starting from `1`. Upon release, the release candidate version
 will be dropped in favour of the final released version, as detailed in the [release
-documentation](docs/release.md).
+documentation](../docs/release.md).
