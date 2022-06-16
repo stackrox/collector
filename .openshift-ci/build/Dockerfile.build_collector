@@ -1,5 +1,6 @@
-FROM quay.io/centos/centos:stream8
+FROM will_be_replaced_by_openshift_ci
 
-WORKDIR /go/src/github.com/stackrox/collector
+ENV SRC_ROOT_DIR=/go/src/github.com/stackrox/collector
+WORKDIR $SRC_ROOT_DIR
 
-RUN ./.openshift-ci/build/build-collector.sh
+RUN ./.openshift-ci/build/build-collector.sh $SRC_ROOT_DIR

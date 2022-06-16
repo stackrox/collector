@@ -2,14 +2,63 @@ FROM quay.io/centos/centos:stream8
 
 ARG NPROCS=6
 ENV NPROCS=$NPROCS
-ARG ROOT=.
-ENV ROOT=$ROOT
+ARG BUILDER_ROOT_DIR=.
+ENV BUILDER_ROOT_DIR=$BUILDER_ROOT_DIR
 
 COPY . /go/src/github.com/stackrox/collector
 WORKDIR /go/src/github.com/stackrox/collector
 
 USER root
 
-RUN "${ROOT}"/build-builder.sh "$ROOT"
+RUN dnf -y update \
+    && dnf -y install \
+        autoconf \
+        automake \
+        binutils-devel \
+        bison \
+        ca-certificates \
+        clang \
+        cmake \
+        cracklib-dicts \
+        diffutils \
+        elfutils-libelf-devel \
+        file \
+        flex \
+        gcc \
+        gcc-c++ \
+        gdb \
+        gettext \
+        git \
+        glibc-devel \
+        libasan \
+        libcap-ng-devel \
+        libcurl-devel \
+        libtool \
+        libuuid-devel \
+        make \
+        openssh-server \
+        openssl-devel \
+        patchutils \
+        passwd \
+        pkgconfig \
+        python2 \
+        rsync \
+        tar \
+        unzip \
+        valgrind \
+        wget \
+        which \
+    && dnf clean all
+
+# We want to fail if the destination directory is there, hence mkdir (not -p).
+RUN mkdir /install-tmp
+
+RUN cp -r "${BUILDER_ROOT_DIR}"/install/*.sh "/install-tmp"
+
+# Build dependencies from source
+RUN "/install-tmp/install.sh"
+
+RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
+
 
 CMD ["/usr/sbin/sshd", "-D", "-e", "-f", "/etc/ssh/sshd_config_remote_development"]

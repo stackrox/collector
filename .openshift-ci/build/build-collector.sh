@@ -1,14 +1,10 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-
-cp -r "${ROOT}" /tmp/collector
-
+export SRC_ROOT_DIR=$1
 export DISABLE_PROFILING="true"
-export SRC_ROOT_DIR=/tmp/collector
+export CMAKE_BUILD_DIR="$SRC_ROOT_DIR/cmake-build"
 
 make -C /tmp/collector/collector pre-build
 /build-collector.sh
-cp -r /tmp/collector/cmake-build "${ROOT}"
 make -C /tmp/collector/collector post-build
