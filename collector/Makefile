@@ -16,7 +16,7 @@ SRCS := $(wildcard lib/*.cpp) collector.cpp
 .PHONY: pre-build
 pre-build: $(HDRS) $(SRCS) txt-files $(shell find falcosecurity-libs/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
 
-cmake-build/collector: pre-build
+cmake-build/collector:
 	docker rm -fv build_collector || true
 	docker run --rm --name build_collector \
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
@@ -36,7 +36,10 @@ post-build:
 	cp -r "$(CMAKE_DIR)"/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
 	cp "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so" container/libs/libsinsp-wrapper.so
 
-container/bin/collector: cmake-build/collector post-build
+container/bin/collector: 
+	pre-build
+	cmake-build/collector 
+	post-build
 
 unittest:
 	docker rm -fv collector_unittest || true
