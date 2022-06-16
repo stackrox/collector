@@ -195,8 +195,10 @@ class Result final {
     return status_ == Status::TIMEOUT;
   }
 
- private:
+  // made public for testing purpose
   explicit Result(bool ok) : status_(ok ? Status::OK : Status::ERROR) {}
+
+ private:
   explicit Result(Status status) : status_(status) {}
   explicit Result(grpc::CompletionQueue::NextStatus status) {
     switch (status) {
@@ -262,7 +264,10 @@ class IDuplexClient {
   virtual void TryCancel() = 0;
   virtual Result Shutdown() = 0;
 
-  // Templated and utility methods
+  /* Templated and utility methods.
+
+     We need to have these in this interface because templates and virtual methods don't mix.
+     Each templated method maps to one virtual method and calls it after converting time types. */
 
   // Wait for the specified time for the stream to become ready.
   template <typename TS = time_point>

@@ -26,18 +26,10 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <memory>
 
-#include <grpc/grpc.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/create_channel.h>
-#include <grpcpp/security/credentials.h>
-
-#include "internalapi/sensor/network_connection_iservice.grpc.pb.h"
-
 #include "CollectorStats.h"
 #include "ConnScraper.h"
 #include "ConnTracker.h"
-#include "DuplexGRPC.h"
+#include "NetworkConnectionInfoServiceComm.h"
 #include "ProtoAllocator.h"
 #include "StoppableThread.h"
 
@@ -45,27 +37,16 @@ namespace collector {
 
 class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnectionInfoMessage> {
  public:
-  using Stub = sensor::NetworkConnectionInfoService::Stub;
-
-  NetworkStatusNotifier(std::string hostname, std::shared_ptr<IConnScraper> conn_scraper, int scrape_interval, bool scrape_listen_endpoints,
-                        bool turn_off_scrape,
-                        std::shared_ptr<ConnectionTracker> conn_tracker,
-                        std::shared_ptr<grpc::Channel> channel,
-                        int64_t afterglow_period_micros,
-                        bool use_afterglow)
-      : hostname_(std::move(hostname)), conn_scraper_(conn_scraper), scrape_interval_(scrape_interval), turn_off_scraping_(turn_off_scrape), scrape_listen_endpoints_(scrape_listen_endpoints), conn_tracker_(std::move(conn_tracker)), channel_(std::move(channel)), stub_(sensor::NetworkConnectionInfoService::NewStub(channel_)), afterglow_period_micros_(afterglow_period_micros), enable_afterglow_(use_afterglow) {
+  NetworkStatusNotifier(std::shared_ptr<IConnScraper> conn_scraper, int scrape_interval, bool scrape_listen_endpoints, bool turn_off_scrape,
+                        std::shared_ptr<ConnectionTracker> conn_tracker, int64_t afterglow_period_micros, bool use_afterglow,
+                        std::shared_ptr<INetworkConnectionInfoServiceComm> comm)
+      : conn_scraper_(conn_scraper), scrape_interval_(scrape_interval), turn_off_scraping_(turn_off_scrape), scrape_listen_endpoints_(scrape_listen_endpoints), conn_tracker_(std::move(conn_tracker)), afterglow_period_micros_(afterglow_period_micros), enable_afterglow_(use_afterglow), comm_(comm) {
   }
 
   void Start();
   void Stop();
 
  private:
-  static constexpr char kHostnameMetadataKey[] = "rox-collector-hostname";
-  static constexpr char kCapsMetadataKey[] = "rox-collector-capabilities";
-
-  // Keep this updated with all capabilities supported. Format it as a comma-separated list with NO spaces.
-  static constexpr char kSupportedCaps[] = "public-ips,network-graph-external-srcs";
-
   sensor::NetworkConnectionInfoMessage* CreateInfoMessage(const ConnMap& conn_delta, const ContainerEndpointMap& cep_delta);
   void AddConnections(::google::protobuf::RepeatedPtrField<sensor::NetworkConnection>* updates, const ConnMap& delta);
   void AddContainerEndpoints(::google::protobuf::RepeatedPtrField<sensor::NetworkEndpoint>* updates, const ContainerEndpointMap& delta);
@@ -73,8 +54,6 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   sensor::NetworkConnection* ConnToProto(const Connection& conn);
   sensor::NetworkEndpoint* ContainerEndpointToProto(const ContainerEndpoint& cep);
   sensor::NetworkAddress* EndpointToProto(const Endpoint& endpoint);
-
-  std::unique_ptr<grpc::ClientContext> CreateClientContext() const;
 
   void OnRecvControlMessage(const sensor::NetworkFlowsControlMessage* msg);
 
@@ -86,14 +65,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   void ReceivePublicIPs(const sensor::IPAddressList& public_ips);
   void ReceiveIPNetworks(const sensor::IPNetworkList& networks);
 
-  virtual std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> CreateWriter();
-
-  std::string hostname_;
-
   StoppableThread thread_;
-
-  std::unique_ptr<grpc::ClientContext> context_;
-  std::mutex context_mutex_;
 
   std::shared_ptr<IConnScraper> conn_scraper_;
   int scrape_interval_;
@@ -101,10 +73,9 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   bool scrape_listen_endpoints_;
   std::shared_ptr<ConnectionTracker> conn_tracker_;
 
-  std::shared_ptr<grpc::Channel> channel_;
-  std::unique_ptr<Stub> stub_;
   int64_t afterglow_period_micros_;
   bool enable_afterglow_;
+  std::shared_ptr<INetworkConnectionInfoServiceComm> comm_;
 };
 
 }  // namespace collector

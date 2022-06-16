@@ -63,10 +63,6 @@ sensor::SocketFamily TranslateAddressFamily(Address::Family family) {
 
 }  // namespace
 
-constexpr char NetworkStatusNotifier::kHostnameMetadataKey[];
-constexpr char NetworkStatusNotifier::kCapsMetadataKey[];
-constexpr char NetworkStatusNotifier::kSupportedCaps[];
-
 std::vector<IPNet> readNetworks(const string& networks, Address::Family family) {
   int tuple_size = Address::Length(family) + 1;
   int num_nets = networks.size() / tuple_size;
@@ -80,13 +76,6 @@ std::vector<IPNet> readNetworks(const string& networks, Address::Family family) 
     ip_nets.push_back(net);
   }
   return ip_nets;
-}
-
-std::unique_ptr<grpc::ClientContext> NetworkStatusNotifier::CreateClientContext() const {
-  auto ctx = MakeUnique<grpc::ClientContext>();
-  ctx->AddMetadata(kHostnameMetadataKey, hostname_);
-  ctx->AddMetadata(kCapsMetadataKey, kSupportedCaps);
-  return ctx;
 }
 
 void NetworkStatusNotifier::OnRecvControlMessage(const sensor::NetworkFlowsControlMessage* msg) {
@@ -141,30 +130,18 @@ void NetworkStatusNotifier::ReceiveIPNetworks(const sensor::IPNetworkList& netwo
   conn_tracker_->UpdateKnownIPNetworks(std::move(known_ip_networks));
 }
 
-std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> NetworkStatusNotifier::CreateWriter() {
-  std::function<void(const sensor::NetworkFlowsControlMessage*)> read_cb = [this](const sensor::NetworkFlowsControlMessage* msg) {
-    OnRecvControlMessage(msg);
-  };
-
-  return DuplexClient::CreateWithReadCallback(
-      &sensor::NetworkConnectionInfoService::Stub::AsyncPushNetworkConnectionInfo,
-      channel_, context_.get(), std::move(read_cb));
-}
-
 void NetworkStatusNotifier::Run() {
   Profiler::RegisterCPUThread();
   auto next_attempt = std::chrono::system_clock::now();
 
   while (thread_.PauseUntil(next_attempt)) {
-    WITH_LOCK(context_mutex_) {
-      context_ = CreateClientContext();
-    }
+    comm_->ResetClientContext();
 
-    if (!WaitForChannelReady(channel_, [this] { return thread_.should_stop(); })) {
+    if (!comm_->WaitForConnectionReady([this] { return thread_.should_stop(); })) {
       break;
     }
 
-    auto client_writer = CreateWriter();
+    auto client_writer = comm_->PushNetworkConnectionInfoOpenStream([this](const sensor::NetworkFlowsControlMessage* msg) { OnRecvControlMessage(msg); });
 
     if (enable_afterglow_) {
       RunSingleAfterglow(client_writer.get());
@@ -192,9 +169,7 @@ void NetworkStatusNotifier::Start() {
 }
 
 void NetworkStatusNotifier::Stop() {
-  WITH_LOCK(context_mutex_) {
-    if (context_) context_->TryCancel();
-  }
+  comm_->TryCancel();
   thread_.Stop();
 }
 
