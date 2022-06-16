@@ -66,15 +66,15 @@ RUN chmod 700 /build-collector.sh
 
 # Set up ssh for remote development with IDE
 RUN ssh-keygen -A \
-     && (
-        echo 'LogLevel DEBUG2'
-        echo 'PermitRootLogin yes'
-        echo 'PasswordAuthentication yes'
-        echo 'HostKey /etc/sshkeys/ssh_host_ed25519_key'
-        echo 'HostKeyAlgorithms ssh-ed25519'
-        echo 'Subsystem sftp /usr/libexec/openssh/sftp-server'
-    ) > /etc/ssh/sshd_config_remote_development \
-    && mkdir /run/sshd
+   && ( \
+    echo 'LogLevel DEBUG2'; \
+    echo 'PermitRootLogin yes'; \
+    echo 'PasswordAuthentication yes'; \
+    echo 'HostKey /etc/sshkeys/ssh_host_ed25519_key'; \
+    echo 'HostKeyAlgorithms ssh-ed25519'; \
+    echo 'Subsystem sftp /usr/libexec/openssh/sftp-server'; \
+  ) > /etc/ssh/sshd_config_remote_development \
+  && mkdir /run/sshd
 
 # Add remote development user
 RUN useradd -m remoteuser \
