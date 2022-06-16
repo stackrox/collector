@@ -7,6 +7,11 @@
   - `git pull`
 2. Set the release environment variable, which should be incremented from the previous released version.
   - `export RELEASE=3.8`
+3. Drop any release candidate versions from the kernel-modules/MODULE_VERSION file
+  - `vim kernel-modules/MODULE_VERSION`
+  - `git add kernel-modules/MODULE_VERSION`
+  - `git commit -m 'Drops MODULE_VERSION release candidate for release'`
+  - `git push`
 3. Create an internal release tag to mark on the master branch where we forked for the release.
   - `git tag "${RELEASE}.x"`
   - `git push origin "${RELEASE}.x"`
