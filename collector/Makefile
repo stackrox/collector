@@ -37,9 +37,9 @@ post-build:
 	cp "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so" container/libs/libsinsp-wrapper.so
 
 container/bin/collector: 
-	pre-build
-	cmake-build/collector 
-	post-build
+	make pre-build
+	make cmake-build/collector 
+	make post-build
 
 unittest:
 	docker rm -fv collector_unittest || true
