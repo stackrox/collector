@@ -78,8 +78,8 @@ RUN ssh-keygen -A \
 
 # Add remote development user
 RUN useradd -m remoteuser \
-    && yes c0llectah | passwd remoteuser
-￼
+  && yes c0llectah | passwd remoteuser
+
 # Create directory to copy collector source into builder container
 RUN mkdir /src && chmod a+rwx /src
 

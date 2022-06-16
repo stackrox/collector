@@ -14,9 +14,9 @@ SRCS := $(wildcard lib/*.cpp) collector.cpp
 .SUFFIXES:
 
 .PHONY: pre-build
-pre-build: $(HDRS) $(SRCS) txt-files $(shell find falcosecurity-libs/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
+pre-build: txt-files
 
-cmake-build/collector:
+cmake-build/collector: $(HDRS) $(SRCS) $(shell find falcosecurity-libs/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
 	docker rm -fv build_collector || true
 	docker run --rm --name build_collector \
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
