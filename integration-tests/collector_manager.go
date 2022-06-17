@@ -29,7 +29,7 @@ type collectorManager struct {
 
 func NewCollectorManager(e Executor, name string) *collectorManager {
 	var collectorPreArguments = os.Getenv("COLLECTOR_PRE_ARGUMENTS")
-	collectionMethod := ReadEnvVarWithDefault("COLLECTION_METHOD", "kernel_module")
+	collectionMethod := ReadEnvVarWithDefault("COLLECTION_METHOD", "ebpf")
 	if strings.Contains(collectionMethod, "module") {
 		collectionMethod = "kernel_module"
 	}
