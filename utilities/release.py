@@ -15,6 +15,14 @@ class Repository:
         self.root = root
         self.dry_run = dry_run
         self.git = git.bake('--no-pager', C=root)
+        self.stored_branch = None
+
+    def __enter__(self):
+        self.stored_branch = self._run_git('branch', '--show-current').strip()
+
+    def __exit__(self, *args, **kwargs):
+        if self.stored_branch:
+            self._run_git('checkout', self.stored_branch)
 
     def reset(self):
         self._run_git('checkout', 'master')
@@ -56,28 +64,36 @@ class Repository:
         Args:
             command (str): the git command to call
             args (list(str)): any additional args to pass to git
+
+        Returns:
+            str: the stdout of the command (if successful)
         """
         print(f'[*] git {command} {" ".join(args)}')
         if self.dry_run:
             return
 
         try:
-            self.git(command, *args)
+            return self.git(command, *args).stdout.decode()
         except ErrorReturnCode as e:
             print(f'Failed to run "git {command} {" ".join(args)}": {e}')
             sys.exit(1)
 
 
 def main(version: VersionInfo, dry_run: bool, push: bool):
-    repo = Repository(dry_run=dry_run)
-    repo.reset()
-    repo.make_release_tag(version)
-    repo.checkout_release_branch(version)
-    repo.make_release_tag(version, patch='0')
+    with Repository(dry_run=dry_run) as repo:
+        repo = Repository(dry_run=dry_run)
+        repo.reset()
+        repo.make_release_tag(version)
+        repo.checkout_release_branch(version)
+        repo.make_release_tag(version, patch='0')
 
-    if push:
-        repo.push_release_tag()
-        repo.push_release_branch()
+        if push:
+            # push the tag on master
+            repo.push_release_tag(version)
+            # push the release branch
+            repo.push_release_branch(version)
+            # push the tag on the release branch
+            repo.push_release_tag(version, patch='0')
 
 
 if __name__ == '__main__':
