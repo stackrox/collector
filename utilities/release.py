@@ -7,6 +7,10 @@ import argparse
 
 
 class Repository:
+    """
+    Encapsulates some logic for running git commands within the repository,
+    particularly related to creating release tags/branches.
+    """
     def __init__(self, root='.', dry_run=False):
         self.root = root
         self.dry_run = dry_run
@@ -30,9 +34,29 @@ class Repository:
         self._run_git('commit', '--allow-empty', '-m', '"Empty commit"')
 
     def _full_version(self, base: VersionInfo, patch: str = None) -> str:
+        """
+        Generates the version string to be used for a tag or branch.
+        If patch is provided, it is used as the patch part of the version
+        string, otherwise 'x' is used.
+
+        Args:
+            base (VersionInfo): the base version
+            patch (str, optional): patch version to use
+
+        Returns:
+            str: a string representation that can be used as a tag or release branch
+        """
         return f'{base.major}.{base.minor}.{patch if patch else "x"}'
 
     def _run_git(self, command: str, *args):
+        """
+        Runs a given git command, with the provided args. If dry_run is set,
+        the command is simply echoed. If the command fails, we exit.
+
+        Args:
+            command (str): the git command to call
+            args (list(str)): any additional args to pass to git
+        """
         print(f'[*] git {command} {" ".join(args)}')
         if self.dry_run:
             return
@@ -57,7 +81,7 @@ def main(version: VersionInfo, dry_run: bool, push: bool):
 
 
 if __name__ == '__main__':
-    description = """Collector Release Management Tool"""
+    description = """Collector Release Branch Management Tool"""
     parser = argparse.ArgumentParser(description=description)
 
     def version_parser(vers: str) -> VersionInfo:
