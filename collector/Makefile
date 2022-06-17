@@ -26,7 +26,7 @@ cmake-build/collector: $(HDRS) $(SRCS) $(shell find falcosecurity-libs/ -name '*
 		-e ADDRESS_SANITIZER=$(ADDRESS_SANITIZER) \
 		-e COLLECTOR_APPEND_CID=$(COLLECTOR_APPEND_CID) \
 		-e DISABLE_PROFILING="true" \
-		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-collector.sh
+		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) "$(SRC_MOUNT_DIR)/builder/build/build-collector.sh
 
 .PHONY: post-build
 post-build:

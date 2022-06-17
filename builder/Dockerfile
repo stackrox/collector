@@ -77,8 +77,8 @@ RUN ssh-keygen -A \
   && mkdir /run/sshd
 
 # Add remote development user
-#RUN useradd -m remoteuser \
-#  && yes c0llectah | passwd remoteuser
+RUN useradd -m remoteuser \
+  && yes c0llectah | passwd remoteuser || if [[ $? -eq 141 ]]; then true; else exit $?; fi
 
 # Create directory to copy collector source into builder container
 RUN mkdir /src && chmod a+rwx /src
