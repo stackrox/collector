@@ -60,10 +60,6 @@ RUN "/install-tmp/install.sh"
 
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 
-# Copy script for building collector
-RUN cp "${BUILDER_ROOT_DIR}/build/build-collector.sh" /
-RUN chmod 700 /build-collector.sh
-
 # Set up ssh for remote development with IDE
 RUN ssh-keygen -A \
    && ( \
