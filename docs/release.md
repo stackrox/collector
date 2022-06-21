@@ -8,14 +8,16 @@
 2. Set the release environment variable, which should be incremented from the previous released version.
   - `export RELEASE=3.8`
 3. Drop any release candidate versions from the kernel-modules/MODULE_VERSION file
+  - `git checkout -b <branch name>`
   - `vim kernel-modules/MODULE_VERSION`
   - `git add kernel-modules/MODULE_VERSION`
   - `git commit -m 'Drops MODULE_VERSION release candidate for release'`
   - `git push`
-3. Create an internal release tag to mark on the master branch where we forked for the release.
+  - Create a PR for this change, merge once approved.
+4. Create an internal release tag to mark on the master branch where we forked for the release.
   - `git tag "${RELEASE}.x"`
   - `git push origin "${RELEASE}.x"`
-4. Create the release branch with an empty commit and push.
+5. Create the release branch with an empty commit and push.
   - `git checkout -b "release/${RELEASE}.x"`
   - `git commit --allow-empty -m "Empty commit to diverge ${RELEASE} from master"`
   - `git push --set-upstream origin "release/${RELEASE}.x"`
