@@ -2,9 +2,14 @@ FROM quay.io/centos/centos:stream8
 
 ARG NPROCS=6
 ENV NPROCS=$NPROCS
+ARG BUILDER_ROOT_DIR=.
+ENV BUILDER_ROOT_DIR=$BUILDER_ROOT_DIR
 
-## Install packaged dependencies
+COPY . /go/src/github.com/stackrox/collector
+WORKDIR /go/src/github.com/stackrox/collector
+
 USER root
+
 RUN dnf -y update \
     && dnf -y install \
         autoconf \
@@ -46,18 +51,14 @@ RUN dnf -y update \
     && dnf clean all
 
 # We want to fail if the destination directory is there, hence mkdir (not -p).
-RUN mkdir install-tmp
+RUN mkdir /install-tmp
 
-COPY install/*.sh install-tmp/
+RUN cp -r "${BUILDER_ROOT_DIR}"/install/*.sh "/install-tmp"
 
 # Build dependencies from source
-RUN ./install-tmp/install.sh
+RUN "/install-tmp/install.sh"
 
-RUN echo '/usr/local/lib' >/etc/ld.so.conf.d/usrlocallib.conf && ldconfig
-
-# Copy script for building collector
-COPY build/build-collector.sh /
-RUN chmod 700 /build-collector.sh
+RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 
 # Set up ssh for remote development with IDE
 RUN ssh-keygen -A \
@@ -73,7 +74,7 @@ RUN ssh-keygen -A \
 
 # Add remote development user
 RUN useradd -m remoteuser \
-  && yes c0llectah | passwd remoteuser
+  && yes c0llectah | passwd remoteuser || if [[ $? -eq 141 ]]; then true; else exit $?; fi
 
 # Create directory to copy collector source into builder container
 RUN mkdir /src && chmod a+rwx /src

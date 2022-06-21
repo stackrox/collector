@@ -2,10 +2,15 @@
 
 set -eo pipefail
 
-[[ -n "$SCRATCH_DIR" && -n "$DRIVER_DIR" && -n "$OUTPUT_DIR" && -n "$LEGACY_DIR" ]] || {
-    echo >&2 "SCRATCH_DIR, DRIVER_DIR and OUTPUT_DIR all need to be set"
+die() {
+    echo >&2 "$@"
     exit 1
 }
+
+[[ -n "$SCRATCH_DIR" ]] || die "SCRATCH_DIR is not set"
+[[ -n "$DRIVER_DIR" ]] || die "DRIVER_DIR is not set"
+[[ -n "$OUTPUT_DIR" ]] || die "OUTPUT_DIR is not set"
+[[ -n "$LEGACY_DIR" ]] || die "LEGACY_DIR is not set"
 
 DOCKERIZED=${DOCKERIZED:-0}
 DRIVER_SCRATCH="${SCRATCH_DIR}/src"

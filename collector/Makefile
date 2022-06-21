@@ -13,7 +13,10 @@ SRCS := $(wildcard lib/*.cpp) collector.cpp
 
 .SUFFIXES:
 
-cmake-build/collector: $(HDRS) $(SRCS) txt-files $(shell find falcosecurity-libs/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
+.PHONY: pre-build
+pre-build: txt-files
+
+cmake-build/collector: $(HDRS) $(SRCS) $(shell find falcosecurity-libs/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
 	docker rm -fv build_collector || true
 	docker run --rm --name build_collector \
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
@@ -23,14 +26,20 @@ cmake-build/collector: $(HDRS) $(SRCS) txt-files $(shell find falcosecurity-libs
 		-e ADDRESS_SANITIZER=$(ADDRESS_SANITIZER) \
 		-e COLLECTOR_APPEND_CID=$(COLLECTOR_APPEND_CID) \
 		-e DISABLE_PROFILING="true" \
-		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) /build-collector.sh
+		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) "$(SRC_MOUNT_DIR)/builder/build/build-collector.sh"
 
-container/bin/collector: cmake-build/collector
+.PHONY: post-build
+post-build:
 	mkdir -p container/bin
 	mkdir -p container/libs
 	cp "$(COLLECTOR_BIN_DIR)/collector" container/bin/collector
 	cp -r "$(CMAKE_DIR)"/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
 	cp "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so" container/libs/libsinsp-wrapper.so
+
+container/bin/collector: 
+	$(MAKE) pre-build
+	$(MAKE) cmake-build/collector 
+	$(MAKE) post-build
 
 unittest:
 	docker rm -fv collector_unittest || true
