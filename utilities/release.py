@@ -32,14 +32,14 @@ class Repository:
         self._run_git('push', 'origin', self._full_version(version))
 
     def push_release_branch(self, version: VersionInfo):
-        self._run_git('push', '--set-upstream', f'release/{self._full_version(version)}')
+        self._run_git('push', '--set-upstream', 'origin', f'release/{self._full_version(version)}')
 
     def make_release_tag(self, version: VersionInfo, patch: str = None):
         self._run_git('tag', self._full_version(version, patch))
 
     def checkout_release_branch(self, version: VersionInfo):
         self._run_git('checkout', '-b', f'release/{self._full_version(version)}')
-        self._run_git('commit', '--allow-empty', '-m', '"Empty commit"')
+        self._run_git('commit', '--allow-empty', '-m', 'Empty commit')
 
     def _full_version(self, base: VersionInfo, patch: str = None) -> str:
         """
@@ -81,7 +81,6 @@ class Repository:
 
 def main(version: VersionInfo, dry_run: bool, push: bool):
     with Repository(dry_run=dry_run) as repo:
-        repo = Repository(dry_run=dry_run)
         repo.reset()
         repo.make_release_tag(version)
         repo.checkout_release_branch(version)
@@ -97,7 +96,7 @@ def main(version: VersionInfo, dry_run: bool, push: bool):
 
 
 if __name__ == '__main__':
-    description = """Collector Release Branch Management Tool"""
+    description = 'Collector Release Branch Management Tool'
     parser = argparse.ArgumentParser(description=description)
 
     def version_parser(vers: str) -> VersionInfo:
