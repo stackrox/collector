@@ -17,6 +17,7 @@ $(error FALCO_DIR must be set)
 endif
 
 # DEBUG = -DBPF_DEBUG
+# BPF_DEBUG_SYMBOLS = -g
 
 #
 # https://chromium.googlesource.com/chromiumos/third_party/kernel/+/096925a44076ba5c52faa84d255a847130ff341e%5E%21/#F2
@@ -57,5 +58,5 @@ $(obj)/probe.o: $(src)/collector_probe.c
 		-fno-jump-tables \
 		-fno-stack-protector \
 		-Wno-tautological-compare \
-		-O2 -g -emit-llvm -c $< -o $(patsubst %.o,%.ll,$@)
+		-O2 $(BPF_DEBUG_SYMBOLS) -emit-llvm -c $< -o $(patsubst %.o,%.ll,$@)
 	$(LLC) -march=bpf -filetype=obj -o $@ $(patsubst %.o,%.ll,$@)
