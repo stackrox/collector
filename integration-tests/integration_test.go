@@ -260,52 +260,77 @@ func (s *ProcessNetworkTestSuite) TearDownSuite() {
 }
 
 func (s *ProcessNetworkTestSuite) TestProcessViz() {
-	processName := "nginx"
-	exeFilePath := "/usr/sbin/nginx"
-	expectedProcessInfo := fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
-	val, err := s.Get(processName, processBucket)
-	s.Require().NoError(err)
-	assert.Equal(s.T(), expectedProcessInfo, val)
+	expectedProcesses := []ProcessInfo {
+		ProcessInfo {
+			Name: "nginx",
+			ExePath: "/usr/sbin/nginx",
+			Uid: 0,
+			Gid: 0,
+			Args: "-g daemon off;",
+		},
+		ProcessInfo {
+			Name: "sh",
+			ExePath: "/bin/sh",
+			Uid: 0,
+			Gid: 0,
+			Args: "-c ls",
+		},
+		ProcessInfo {
+			Name: "sleep",
+			ExePath: "/bin/sleep",
+			Uid: 0,
+			Gid: 0,
+			Args: "1",
+		},
+	}
 
-	processName = "sh"
-	exeFilePath = "/bin/sh"
-	expectedProcessInfo = fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
-	val, err = s.Get(processName, processBucket)
-	s.Require().NoError(err)
-	assert.Equal(s.T(), expectedProcessInfo, val)
+	for _, expected := range expectedProcesses {
+		val, err := s.Get(expected.Name, processBucket)
+		s.Require().NoError(err)
+		processInfo, err := NewProcessInfo(val)
+		s.Require().NoError(err)
 
-	processName = "sleep"
-	exeFilePath = "/bin/sleep"
-	expectedProcessInfo = fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
-	val, err = s.Get(processName, processBucket)
-	s.Require().NoError(err)
-	assert.Equal(s.T(), expectedProcessInfo, val)
+		assert.Equal(s.T(), expected.Name, processInfo.Name)
+		assert.Equal(s.T(), expected.ExePath, processInfo.ExePath)
+		assert.Equal(s.T(), expected.Uid, processInfo.Uid)
+		assert.Equal(s.T(), expected.Gid, processInfo.Gid)
+		assert.Equal(s.T(), expected.Args, processInfo.Args)
+	}
 }
 
 func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
-	processName := "awk"
-	exeFilePath := "/usr/bin/awk"
-	parentFilePath := "/bin/busybox"
-	expectedProcessLineageInfo := fmt.Sprintf("%s:%s:%s:%d:%s:%s", processName, exeFilePath, parentUIDStr, 0, parentExecFilePathStr, parentFilePath)
-	val, err := s.GetLineageInfo(processName, "0", processLineageInfoBucket)
-	s.Require().NoError(err)
-	assert.Equal(s.T(), expectedProcessLineageInfo, val)
+	expectedLineages := []ProcessLineage {
+		ProcessLineage {
+			Name: "awk",
+			ExePath: "/usr/bin/awk",
+			ParentUid: 0,
+			ParentExePath: "/bin/busybox",
+		},
+		ProcessLineage {
+			Name: "grep",
+			ExePath: "/bin/grep",
+			ParentUid: 0,
+			ParentExePath: "/bin/busybox",
+		},
+		ProcessLineage {
+			Name: "sleep",
+			ExePath: "/bin/sleep",
+			ParentUid: 0,
+			ParentExePath: "/bin/busybox",
+		},
+	}
 
-	processName = "grep"
-	exeFilePath = "/bin/grep"
-	parentFilePath = "/bin/busybox"
-	expectedProcessLineageInfo = fmt.Sprintf("%s:%s:%s:%d:%s:%s", processName, exeFilePath, parentUIDStr, 0, parentExecFilePathStr, parentFilePath)
-	val, err = s.GetLineageInfo(processName, "0", processLineageInfoBucket)
-	s.Require().NoError(err)
-	assert.Equal(s.T(), expectedProcessLineageInfo, val)
+	for _, expected := range expectedLineages {
+		val, err := s.GetLineageInfo(expected.Name, "0", processLineageInfoBucket)
+		s.Require().NoError(err)
+		lineage, err := NewProcessLineage(val)
+		s.Require().NoError(err)
 
-	processName = "sleep"
-	exeFilePath = "/bin/sleep"
-	parentFilePath = "/bin/busybox"
-	expectedProcessLineageInfo = fmt.Sprintf("%s:%s:%s:%d:%s:%s", processName, exeFilePath, parentUIDStr, 0, parentExecFilePathStr, parentFilePath)
-	val, err = s.GetLineageInfo(processName, "0", processLineageInfoBucket)
-	s.Require().NoError(err)
-	assert.Equal(s.T(), expectedProcessLineageInfo, val)
+		assert.Equal(s.T(), expected.Name, lineage.Name)
+		assert.Equal(s.T(), expected.ExePath, lineage.ExePath)
+		assert.Equal(s.T(), expected.ParentUid, lineage.ParentUid)
+		assert.Equal(s.T(), expected.ParentExePath, lineage.ParentExePath)
+	}
 }
 
 func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
