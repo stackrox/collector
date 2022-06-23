@@ -284,17 +284,20 @@ func (s *ProcessNetworkTestSuite) TestProcessViz() {
 		},
 	}
 
+	assert := assert.New(s.T())
+
 	for _, expected := range expectedProcesses {
 		val, err := s.Get(expected.Name, processBucket)
 		s.Require().NoError(err)
 		processInfo, err := NewProcessInfo(val)
 		s.Require().NoError(err)
 
-		assert.Equal(s.T(), expected.Name, processInfo.Name)
-		assert.Equal(s.T(), expected.ExePath, processInfo.ExePath)
-		assert.Equal(s.T(), expected.Uid, processInfo.Uid)
-		assert.Equal(s.T(), expected.Gid, processInfo.Gid)
-		assert.Equal(s.T(), expected.Args, processInfo.Args)
+		assert.Equal(expected.Name, processInfo.Name)
+		assert.Equal(expected.ExePath, processInfo.ExePath)
+		assert.Equal(expected.Uid, processInfo.Uid)
+		assert.Equal(expected.Gid, processInfo.Gid)
+		assert.True(processInfo.Pid >= 0)
+		assert.Equal(expected.Args, processInfo.Args)
 	}
 }
 
@@ -320,16 +323,18 @@ func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
 		},
 	}
 
+	assert := assert.New(s.T())
+
 	for _, expected := range expectedLineages {
 		val, err := s.GetLineageInfo(expected.Name, "0", processLineageInfoBucket)
 		s.Require().NoError(err)
 		lineage, err := NewProcessLineage(val)
 		s.Require().NoError(err)
 
-		assert.Equal(s.T(), expected.Name, lineage.Name)
-		assert.Equal(s.T(), expected.ExePath, lineage.ExePath)
-		assert.Equal(s.T(), expected.ParentUid, lineage.ParentUid)
-		assert.Equal(s.T(), expected.ParentExePath, lineage.ParentExePath)
+		assert.Equal(expected.Name, lineage.Name)
+		assert.Equal(expected.ExePath, lineage.ExePath)
+		assert.Equal(expected.ParentUid, lineage.ParentUid)
+		assert.Equal(expected.ParentExePath, lineage.ParentExePath)
 	}
 }
 
