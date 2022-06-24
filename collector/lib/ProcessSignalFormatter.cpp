@@ -165,6 +165,8 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
     signal_lineage->set_parent_uid(p.parent_uid());
   }
 
+  CLOG(DEBUG) << "Process (" << signal->pid() << "): " << signal->name() << signal->args();
+
   return signal;
 }
 
@@ -221,6 +223,8 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
     signal_lineage->set_parent_exec_file_path(p.parent_exec_file_path());
     signal_lineage->set_parent_uid(p.parent_uid());
   }
+
+  CLOG(DEBUG) << "Process (" << signal->pid() << "): " << signal->name() << signal->args();
 
   return signal;
 }
