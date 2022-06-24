@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"sort"
 
 	"encoding/json"
 
@@ -262,6 +263,13 @@ func (s *ProcessNetworkTestSuite) TearDownSuite() {
 func (s *ProcessNetworkTestSuite) TestProcessViz() {
 	expectedProcesses := []ProcessInfo {
 		ProcessInfo {
+			Name: "ls",
+			ExePath: "/bin/ls",
+			Uid: 0,
+			Gid: 0,
+			Args: "",
+		},
+		ProcessInfo {
 			Name: "nginx",
 			ExePath: "/usr/sbin/nginx",
 			Uid: 0,
@@ -280,17 +288,24 @@ func (s *ProcessNetworkTestSuite) TestProcessViz() {
 			ExePath: "/bin/sleep",
 			Uid: 0,
 			Gid: 0,
-			Args: "1",
+			Args: "5",
 		},
 	}
 
-	for _, expected := range expectedProcesses {
-		val, err := s.Get(expected.Name, processBucket)
-		s.Require().NoError(err)
-		processInfo, err := NewProcessInfo(val)
+	actualProcesses, err := s.GetProcesses(s.serverContainer)
+	s.Require().NoError(err)
+
+	sort.Slice(actualProcesses, func(i, j int) bool {
+		return actualProcesses[i].Name < actualProcesses[j].Name
+	})
+
+	assert.Equal(s.T(), len(expectedProcesses), len(actualProcesses))
+
+	for i, expected := range expectedProcesses {
+		actual := actualProcesses[i]
 		s.Require().NoError(err)
 
-		s.AssertProcessInfoEqual(expected, *processInfo)
+		s.AssertProcessInfoEqual(expected, actual)
 	}
 }
 
@@ -617,6 +632,40 @@ func (s *IntegrationTestSuiteBase) Get(key string, bucket string) (val string, e
 		return nil
 	})
 	return
+}
+
+func (s *IntegrationTestSuiteBase) GetProcesses(containerID string) ([]ProcessInfo, error) {
+	if s.db == nil {
+		return nil, fmt.Errorf("Db %v is nil", s.db)
+	}
+
+	processes := make([]ProcessInfo, 0)
+	err := s.db.View(func(tx *bolt.Tx) error {
+		process := tx.Bucket([]byte(processBucket))
+		if process == nil {
+			return fmt.Errorf("Process bucket was not found!")
+		}
+		container := process.Bucket([]byte(containerID))
+		if container == nil {
+			return fmt.Errorf("Container bucket %s not found!", containerID)
+		}
+
+		container.ForEach(func(k, v []byte) error {
+			pinfo, err := NewProcessInfo(string(v))
+			if err != nil {
+				return err
+			}
+			processes = append(processes, *pinfo)
+			return nil
+		})
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return processes, nil
 }
 
 func (s *IntegrationTestSuiteBase) GetLineageInfo(processName string, key string, bucket string) (val string, err error) {
