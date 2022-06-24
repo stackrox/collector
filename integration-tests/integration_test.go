@@ -284,20 +284,13 @@ func (s *ProcessNetworkTestSuite) TestProcessViz() {
 		},
 	}
 
-	assert := assert.New(s.T())
-
 	for _, expected := range expectedProcesses {
 		val, err := s.Get(expected.Name, processBucket)
 		s.Require().NoError(err)
 		processInfo, err := NewProcessInfo(val)
 		s.Require().NoError(err)
 
-		assert.Equal(expected.Name, processInfo.Name)
-		assert.Equal(expected.ExePath, processInfo.ExePath)
-		assert.Equal(expected.Uid, processInfo.Uid)
-		assert.Equal(expected.Gid, processInfo.Gid)
-		assert.True(processInfo.Pid >= 0)
-		assert.Equal(expected.Args, processInfo.Args)
+		s.AssertProcessInfoEqual(expected, *processInfo)
 	}
 }
 
@@ -323,18 +316,13 @@ func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
 		},
 	}
 
-	assert := assert.New(s.T())
-
 	for _, expected := range expectedLineages {
 		val, err := s.GetLineageInfo(expected.Name, "0", processLineageInfoBucket)
 		s.Require().NoError(err)
 		lineage, err := NewProcessLineage(val)
 		s.Require().NoError(err)
 
-		assert.Equal(expected.Name, lineage.Name)
-		assert.Equal(expected.ExePath, lineage.ExePath)
-		assert.Equal(expected.ParentUid, lineage.ParentUid)
-		assert.Equal(expected.ParentExePath, lineage.ParentExePath)
+		assert.Equal(s.T(), expected, *lineage)
 	}
 }
 
@@ -788,4 +776,16 @@ func (s *IntegrationTestSuiteBase) WritePerfResults(testName string, stats []Con
 
 	_, err = f.WriteString(string(perfJson))
 	s.Require().NoError(err)
+}
+
+func (s *IntegrationTestSuiteBase) AssertProcessInfoEqual(expected, actual ProcessInfo) {
+	assert := assert.New(s.T())
+
+	assert.Equal(expected.Name, actual.Name)
+	assert.Equal(expected.ExePath, actual.ExePath)
+	assert.Equal(expected.Uid, actual.Uid)
+	assert.Equal(expected.Gid, actual.Gid)
+	// Pid is non-deterministic, so just check that it is set
+	assert.True(actual.Pid > 0)
+	assert.Equal(expected.Args, actual.Args)
 }

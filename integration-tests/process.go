@@ -19,7 +19,7 @@ func NewProcessInfo(line string) (*ProcessInfo, error) {
 	parts := strings.SplitN(line, ":", 6)
 
 	if len(parts) != 6 {
-		return nil, fmt.Errorf("not enough parts to gRPC process info string: %s", line)
+		return nil, fmt.Errorf("invalid gRPC string for process info: %s", line)
 	}
 
 	uid, err := strconv.Atoi(parts[2])
