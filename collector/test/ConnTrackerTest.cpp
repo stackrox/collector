@@ -355,6 +355,42 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
                           std::make_pair(conn5_normalized, ConnStatus(time_micros, true))));
 }
 
+TEST(ConnTrackerTest, TestUpdateNormalizedExternalDelta) {
+  Endpoint a(Address(10, 1, 1, 8), 9999);
+  Endpoint b(Address(139, 14, 171, 3), 54321);
+
+  EXPECT_TRUE(b.address().IsPublic());
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+
+  Connection conn1_normalized("xyz", Endpoint(IPNet(), 9999), Endpoint(IPNet(Address(255, 255, 255, 255), 0, true), 0), L4Proto::TCP, true);
+
+  int64_t time_micros = 1000;
+
+  ConnectionTracker tracker;
+  tracker.Update({conn1}, {}, time_micros);
+
+  auto state1 = tracker.FetchConnState(true);
+  EXPECT_THAT(state1, UnorderedElementsAre(
+                          std::make_pair(conn1_normalized, ConnStatus(time_micros, true))));
+
+  UnorderedMap<Address::Family, std::vector<IPNet>> known_networks = {{Address::Family::IPV4, {IPNet(Address(139, 14, 171, 0), 24)}}};
+
+  tracker.UpdateKnownIPNetworks(std::move(known_networks));
+
+  auto state2 = tracker.FetchConnState(true);
+
+  Connection conn2_normalized("xyz", Endpoint(IPNet(), 9999), Endpoint(IPNet(Address(139, 14, 171, 0), 24, false), 0), L4Proto::TCP, true);
+
+  EXPECT_THAT(state2, UnorderedElementsAre(std::make_pair(conn2_normalized, ConnStatus(time_micros, true))));
+
+  CT::ComputeDelta(state2, &state1);
+
+  EXPECT_THAT(state1, UnorderedElementsAre(
+                          std::make_pair(conn2_normalized, ConnStatus(time_micros, true)),
+                          std::make_pair(conn1_normalized, ConnStatus(time_micros, false))));
+}
+
 /*
  * Start block of tests with at most one connection in old_state and at most ond connection in new_state
  * The names of the tests specify what the state of the old connection is and what the state of the new connection is
