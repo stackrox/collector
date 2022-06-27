@@ -11,7 +11,7 @@ parameters:
     default: cache-v2
   kernel-bundles-staging:
     type: string
-    default: ""
+    default: gs://stackrox-kernel-bundles-staging/mauro/crawl-SLES-15-SP4/0e9b00eed92753937ffc5b1f1263a7ed5514f4fc
   default-machine-image:
     type: string
     # https://circleci.com/docs/2.0/configuration-reference/#available-machine-images
