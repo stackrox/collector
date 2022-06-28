@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"sort"
 
 	"encoding/json"
 
@@ -260,52 +261,84 @@ func (s *ProcessNetworkTestSuite) TearDownSuite() {
 }
 
 func (s *ProcessNetworkTestSuite) TestProcessViz() {
-	processName := "nginx"
-	exeFilePath := "/usr/sbin/nginx"
-	expectedProcessInfo := fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
-	val, err := s.Get(processName, processBucket)
-	s.Require().NoError(err)
-	assert.Equal(s.T(), expectedProcessInfo, val)
+	expectedProcesses := []ProcessInfo {
+		ProcessInfo {
+			Name: "ls",
+			ExePath: "/bin/ls",
+			Uid: 0,
+			Gid: 0,
+			Args: "",
+		},
+		ProcessInfo {
+			Name: "nginx",
+			ExePath: "/usr/sbin/nginx",
+			Uid: 0,
+			Gid: 0,
+			Args: "-g daemon off;",
+		},
+		ProcessInfo {
+			Name: "sh",
+			ExePath: "/bin/sh",
+			Uid: 0,
+			Gid: 0,
+			Args: "-c ls",
+		},
+		ProcessInfo {
+			Name: "sleep",
+			ExePath: "/bin/sleep",
+			Uid: 0,
+			Gid: 0,
+			Args: "5",
+		},
+	}
 
-	processName = "sh"
-	exeFilePath = "/bin/sh"
-	expectedProcessInfo = fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
-	val, err = s.Get(processName, processBucket)
+	actualProcesses, err := s.GetProcesses(s.serverContainer)
 	s.Require().NoError(err)
-	assert.Equal(s.T(), expectedProcessInfo, val)
 
-	processName = "sleep"
-	exeFilePath = "/bin/sleep"
-	expectedProcessInfo = fmt.Sprintf("%s:%s:%d:%d", processName, exeFilePath, 0, 0)
-	val, err = s.Get(processName, processBucket)
-	s.Require().NoError(err)
-	assert.Equal(s.T(), expectedProcessInfo, val)
+	sort.Slice(actualProcesses, func(i, j int) bool {
+		return actualProcesses[i].Name < actualProcesses[j].Name
+	})
+
+	assert.Equal(s.T(), len(expectedProcesses), len(actualProcesses))
+
+	for i, expected := range expectedProcesses {
+		actual := actualProcesses[i]
+		s.Require().NoError(err)
+
+		s.AssertProcessInfoEqual(expected, actual)
+	}
 }
 
 func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
-	processName := "awk"
-	exeFilePath := "/usr/bin/awk"
-	parentFilePath := "/bin/busybox"
-	expectedProcessLineageInfo := fmt.Sprintf("%s:%s:%s:%d:%s:%s", processName, exeFilePath, parentUIDStr, 0, parentExecFilePathStr, parentFilePath)
-	val, err := s.GetLineageInfo(processName, "0", processLineageInfoBucket)
-	s.Require().NoError(err)
-	assert.Equal(s.T(), expectedProcessLineageInfo, val)
+	expectedLineages := []ProcessLineage {
+		ProcessLineage {
+			Name: "awk",
+			ExePath: "/usr/bin/awk",
+			ParentUid: 0,
+			ParentExePath: "/bin/busybox",
+		},
+		ProcessLineage {
+			Name: "grep",
+			ExePath: "/bin/grep",
+			ParentUid: 0,
+			ParentExePath: "/bin/busybox",
+		},
+		ProcessLineage {
+			Name: "sleep",
+			ExePath: "/bin/sleep",
+			ParentUid: 0,
+			ParentExePath: "/bin/busybox",
+		},
+	}
 
-	processName = "grep"
-	exeFilePath = "/bin/grep"
-	parentFilePath = "/bin/busybox"
-	expectedProcessLineageInfo = fmt.Sprintf("%s:%s:%s:%d:%s:%s", processName, exeFilePath, parentUIDStr, 0, parentExecFilePathStr, parentFilePath)
-	val, err = s.GetLineageInfo(processName, "0", processLineageInfoBucket)
-	s.Require().NoError(err)
-	assert.Equal(s.T(), expectedProcessLineageInfo, val)
+	for _, expected := range expectedLineages {
+		val, err := s.GetLineageInfo(expected.Name, "0", processLineageInfoBucket)
+		s.Require().NoError(err)
+		lineage, err := NewProcessLineage(val)
+		s.Require().NoError(err)
 
-	processName = "sleep"
-	exeFilePath = "/bin/sleep"
-	parentFilePath = "/bin/busybox"
-	expectedProcessLineageInfo = fmt.Sprintf("%s:%s:%s:%d:%s:%s", processName, exeFilePath, parentUIDStr, 0, parentExecFilePathStr, parentFilePath)
-	val, err = s.GetLineageInfo(processName, "0", processLineageInfoBucket)
-	s.Require().NoError(err)
-	assert.Equal(s.T(), expectedProcessLineageInfo, val)
+		assert.Equal(s.T(), expected, *lineage)
+	}
 }
 
 func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
@@ -601,6 +634,57 @@ func (s *IntegrationTestSuiteBase) Get(key string, bucket string) (val string, e
 	return
 }
 
+func (s *IntegrationTestSuiteBase) GetProcesses(containerID string) ([]ProcessInfo, error) {
+	if s.db == nil {
+		return nil, fmt.Errorf("Db %v is nil", s.db)
+	}
+
+	processes := make([]ProcessInfo, 0)
+	err := s.db.View(func(tx *bolt.Tx) error {
+		process := tx.Bucket([]byte(processBucket))
+		if process == nil {
+			return fmt.Errorf("Process bucket was not found!")
+		}
+		container := process.Bucket([]byte(containerID))
+		if container == nil {
+			return fmt.Errorf("Container bucket %s not found!", containerID)
+		}
+
+		container.ForEach(func(k, v []byte) error {
+			pinfo, err := NewProcessInfo(string(v))
+			if err != nil {
+				return err
+			}
+
+			if strings.HasPrefix(pinfo.ExePath, "/proc/self") {
+				//
+				// There exists a potential race condition for the driver
+				// to capture very early container process events.
+				//
+				// This is known in falco, and somewhat documented here:
+				//     https://github.com/falcosecurity/falco/blob/555bf9971cdb79318917949a5e5f9bab5293b5e2/rules/falco_rules.yaml#L1961
+				//
+				// It is also filtered in sensor here:
+				//    https://github.com/stackrox/stackrox/blob/4d3fb539547d1935a35040e4a4e8c258a53a92e4/sensor/common/signal/signal_service.go#L90
+				//
+				// Further details can be found here https://issues.redhat.com/browse/ROX-11544
+				//
+				return nil
+			}
+
+			processes = append(processes, *pinfo)
+			return nil
+		})
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return processes, nil
+}
+
 func (s *IntegrationTestSuiteBase) GetLineageInfo(processName string, key string, bucket string) (val string, err error) {
 	if s.db == nil {
 		return "", fmt.Errorf("Db %v is nil", s.db)
@@ -758,4 +842,16 @@ func (s *IntegrationTestSuiteBase) WritePerfResults(testName string, stats []Con
 
 	_, err = f.WriteString(string(perfJson))
 	s.Require().NoError(err)
+}
+
+func (s *IntegrationTestSuiteBase) AssertProcessInfoEqual(expected, actual ProcessInfo) {
+	assert := assert.New(s.T())
+
+	assert.Equal(expected.Name, actual.Name)
+	assert.Equal(expected.ExePath, actual.ExePath)
+	assert.Equal(expected.Uid, actual.Uid)
+	assert.Equal(expected.Gid, actual.Gid)
+	// Pid is non-deterministic, so just check that it is set
+	assert.True(actual.Pid > 0)
+	assert.Equal(expected.Args, actual.Args)
 }
