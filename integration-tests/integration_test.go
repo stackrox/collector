@@ -655,6 +655,23 @@ func (s *IntegrationTestSuiteBase) GetProcesses(containerID string) ([]ProcessIn
 			if err != nil {
 				return err
 			}
+
+			if strings.HasPrefix(pinfo.ExePath, "/proc/self") {
+				//
+				// There exists a potential race condition for the driver
+				// to capture very early container process events.
+				//
+				// This is known in falco, and somewhat documented here:
+				//     https://github.com/falcosecurity/falco/blob/555bf9971cdb79318917949a5e5f9bab5293b5e2/rules/falco_rules.yaml#L1961
+				//
+				// It is also filtered in sensor here:
+				//    https://github.com/stackrox/stackrox/blob/4d3fb539547d1935a35040e4a4e8c258a53a92e4/sensor/common/signal/signal_service.go#L90
+				//
+				// Further details can be found here https://issues.redhat.com/browse/ROX-11544
+				//
+				return nil
+			}
+
 			processes = append(processes, *pinfo)
 			return nil
 		})
