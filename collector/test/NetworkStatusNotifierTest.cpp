@@ -34,7 +34,10 @@ You should have received a copy of the GNU General Public License along with thi
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-using namespace collector;
+namespace collector {
+
+namespace {
+
 using grpc_duplex_impl::Result;
 using grpc_duplex_impl::Status;
 using ::testing::Invoke;
@@ -162,3 +165,7 @@ TEST(NetworkStatusNotifier, SimpleStartStop) {
 
   SUCCEED();
 }
+
+}  // namespace
+
+}  // namespace collector
