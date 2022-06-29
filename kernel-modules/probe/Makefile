@@ -9,6 +9,7 @@ always = $(always-y)
 
 LLC ?= llc
 CLANG ?= clang
+BPF_ISA ?= probe
 
 KERNELDIR ?= /lib/modules/$(shell uname -r)/build
 
@@ -59,4 +60,9 @@ $(obj)/probe.o: $(src)/collector_probe.c
 		-fno-stack-protector \
 		-Wno-tautological-compare \
 		-O2 $(BPF_DEBUG_SYMBOLS) -emit-llvm -c $< -o $(patsubst %.o,%.ll,$@)
-	$(LLC) -march=bpf -filetype=obj -o $@ $(patsubst %.o,%.ll,$@)
+	$(LLC) \
+		-march=bpf \
+		-mcpu=$(BPF_ISA) \
+		-mattr=+alu32 \
+		-filetype=obj \
+		-o $@ $(patsubst %.o,%.ll,$@)
