@@ -61,8 +61,6 @@ sensor::SocketFamily TranslateAddressFamily(Address::Family family) {
   }
 }
 
-}  // namespace
-
 std::vector<IPNet> readNetworks(const string& networks, Address::Family family) {
   int tuple_size = Address::Length(family) + 1;
   int num_nets = networks.size() / tuple_size;
@@ -77,6 +75,8 @@ std::vector<IPNet> readNetworks(const string& networks, Address::Family family) 
   }
   return ip_nets;
 }
+
+}  // namespace
 
 void NetworkStatusNotifier::OnRecvControlMessage(const sensor::NetworkFlowsControlMessage* msg) {
   if (!msg) {
