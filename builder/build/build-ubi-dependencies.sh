@@ -15,6 +15,7 @@ mkdir -p "${LICENSE_DIR}"
 
 ### Dependencies
 cd third_party
+../builder/install/20-googletest.sh
 ../builder/install/40-grpc.sh
 ../builder/install/50-libb64.sh
 ../builder/install/50-luajit.sh
