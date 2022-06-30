@@ -52,6 +52,10 @@ BoolEnvVar set_enable_afterglow("ROX_ENABLE_AFTERGLOW", true);
 
 BoolEnvVar set_enable_core_dump("ENABLE_CORE_DUMP", false);
 
+// If false, do not wait for public network list before sending connections
+BoolEnvVar enable_hold_phase("ENABLE_HOLD", CollectorConfig::kEnableHoldPhase);
+IntEnvVar hold_phase_max_duration("HOLD_MAX_DURATION", CollectorConfig::kHoldPhaseMaxDuration);
+
 }  // namespace
 
 constexpr bool CollectorConfig::kUseChiselCache;
@@ -62,6 +66,8 @@ constexpr char CollectorConfig::kCollectionMethod[];
 constexpr char CollectorConfig::kChisel[];
 constexpr const char* CollectorConfig::kSyscalls[];
 constexpr bool CollectorConfig::kForceKernelModules;
+constexpr bool CollectorConfig::kEnableHoldPhase;
+constexpr int CollectorConfig::kHoldPhaseMaxDuration;
 
 const UnorderedSet<L4ProtoPortPair> CollectorConfig::kIgnoredL4ProtoPortPairs = {{L4Proto::UDP, 9}};
 ;
@@ -190,6 +196,9 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
 
   HandleAfterglowEnvVars();
 
+  enable_hold_phase_ = enable_hold_phase.value();
+  hold_phase_max_duration_ = hold_phase_max_duration.value();
+
   host_config_ = ProcessHostHeuristics(*this);
 }
 
@@ -280,6 +289,14 @@ bool CollectorConfig::IsCoreDumpEnabled() const {
   return enable_core_dump_;
 }
 
+bool CollectorConfig::EnableHoldPhase() const {
+  return enable_hold_phase_;
+}
+
+int CollectorConfig::HoldPhaseMaxDuration() const {
+  return hold_phase_max_duration_;
+}
+
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
   return os
          << "collection_method:" << c.CollectionMethod()
@@ -288,7 +305,9 @@ std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
          << ", scrape_interval:" << c.ScrapeInterval()
          << ", turn_off_scrape:" << c.TurnOffScrape()
          << ", hostname:" << c.Hostname()
-         << ", logLevel:" << c.LogLevel();
+         << ", logLevel:" << c.LogLevel()
+         << ", hold:" << c.EnableHoldPhase()
+         << ", holdMax" << c.HoldPhaseMaxDuration();
 }
 
 }  // namespace collector

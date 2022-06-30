@@ -75,6 +75,8 @@ end
 )";
   static const UnorderedSet<L4ProtoPortPair> kIgnoredL4ProtoPortPairs;
   static constexpr bool kForceKernelModules = false;
+  static constexpr bool kEnableHoldPhase = true;
+  static constexpr int kHoldPhaseMaxDuration = 60;
 
   CollectorConfig() = delete;
   CollectorConfig(CollectorArgs* collectorArgs);
@@ -102,6 +104,8 @@ end
   virtual bool ForceKernelModules() const { return force_kernel_modules_; }
   bool EnableAfterglow() const { return enable_afterglow_; }
   bool IsCoreDumpEnabled() const;
+  bool EnableHoldPhase() const;
+  int HoldPhaseMaxDuration() const;
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
@@ -126,6 +130,8 @@ end
   int64_t afterglow_period_micros_ = 300000000;  // 5 minutes in microseconds
   bool enable_afterglow_ = true;
   bool enable_core_dump_ = false;
+  bool enable_hold_phase_;
+  int hold_phase_max_duration_;
 };
 
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c);
