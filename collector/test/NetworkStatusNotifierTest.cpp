@@ -249,6 +249,7 @@ TEST(NetworkStatusNotifier, SimpleStartStop) {
                                                                config_.TurnOffScrape(),
                                                                conn_tracker,
                                                                config_.AfterglowPeriod(), config_.EnableAfterglow(),
+                                                               false, 0,
                                                                comm);
 
   net_status_notifier->Start();
@@ -351,6 +352,7 @@ TEST(NetworkStatusNotifier, UpdateIPnoAfterglow) {
                                                                config.TurnOffScrape(),
                                                                conn_tracker,
                                                                config.AfterglowPeriod(), config.EnableAfterglow(),
+                                                               false, 0,
                                                                comm);
 
   net_status_notifier->Start();

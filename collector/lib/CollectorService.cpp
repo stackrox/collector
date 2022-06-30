@@ -96,6 +96,7 @@ void CollectorService::RunForever() {
 
       net_status_notifier = MakeUnique<NetworkStatusNotifier>(conn_scraper, config_.ScrapeInterval(), config_.ScrapeListenEndpoints(), config_.TurnOffScrape(),
                                                               conn_tracker, config_.AfterglowPeriod(), config_.EnableAfterglow(),
+                                                              config_.EnableHoldPhase(), config_.HoldPhaseMaxDuration(),
                                                               network_connection_info_service_comm);
       net_status_notifier->Start();
     }

@@ -24,6 +24,7 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef COLLECTOR_NETWORKSTATUSNOTIFIER_H
 #define COLLECTOR_NETWORKSTATUSNOTIFIER_H
 
+#include <chrono>
 #include <memory>
 
 #include "CollectorStats.h"
@@ -39,9 +40,8 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
  public:
   NetworkStatusNotifier(std::shared_ptr<IConnScraper> conn_scraper, int scrape_interval, bool scrape_listen_endpoints, bool turn_off_scrape,
                         std::shared_ptr<ConnectionTracker> conn_tracker, int64_t afterglow_period_micros, bool use_afterglow,
-                        std::shared_ptr<INetworkConnectionInfoServiceComm> comm)
-      : conn_scraper_(conn_scraper), scrape_interval_(scrape_interval), turn_off_scraping_(turn_off_scrape), scrape_listen_endpoints_(scrape_listen_endpoints), conn_tracker_(std::move(conn_tracker)), afterglow_period_micros_(afterglow_period_micros), enable_afterglow_(use_afterglow), comm_(comm) {
-  }
+                        bool hold_sending_connections, int max_hold_duration,
+                        std::shared_ptr<INetworkConnectionInfoServiceComm> comm);
 
   void Start();
   void Stop();
@@ -76,6 +76,21 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   int64_t afterglow_period_micros_;
   bool enable_afterglow_;
   std::shared_ptr<INetworkConnectionInfoServiceComm> comm_;
+
+  // Used to track the Hold state.
+  class Phase {
+   public:
+    explicit Phase(int max_duration);
+    void Enter();
+    void Exit();
+    bool IsOngoing();
+
+   private:
+    int max_duration_;
+    bool is_ongoing_;
+    std::chrono::time_point<std::chrono::steady_clock> timeout_;
+  };  // std::optional<Phase> hold_; // TODO when we have C++-17
+  std::unique_ptr<Phase> hold_;
 };
 
 }  // namespace collector

@@ -78,6 +78,21 @@ std::vector<IPNet> readNetworks(const string& networks, Address::Family family) 
 
 }  // namespace
 
+NetworkStatusNotifier::NetworkStatusNotifier(std::shared_ptr<IConnScraper> conn_scraper, int scrape_interval, bool scrape_listen_endpoints, bool turn_off_scrape,
+                                             std::shared_ptr<ConnectionTracker> conn_tracker, int64_t afterglow_period_micros, bool use_afterglow,
+                                             bool hold_sending_connections, int max_hold_duration,
+                                             std::shared_ptr<INetworkConnectionInfoServiceComm> comm) : conn_scraper_(conn_scraper),
+                                                                                                        scrape_interval_(scrape_interval),
+                                                                                                        turn_off_scraping_(turn_off_scrape),
+                                                                                                        scrape_listen_endpoints_(scrape_listen_endpoints),
+                                                                                                        conn_tracker_(std::move(conn_tracker)),
+                                                                                                        afterglow_period_micros_(afterglow_period_micros),
+                                                                                                        enable_afterglow_(use_afterglow),
+                                                                                                        comm_(comm) {
+  if (hold_sending_connections)
+    hold_ = MakeUnique<Phase>(max_hold_duration);
+}
+
 void NetworkStatusNotifier::OnRecvControlMessage(const sensor::NetworkFlowsControlMessage* msg) {
   if (!msg) {
     return;
@@ -88,6 +103,9 @@ void NetworkStatusNotifier::OnRecvControlMessage(const sensor::NetworkFlowsContr
   if (msg->has_ip_networks()) {
     ReceiveIPNetworks(msg->ip_networks());
   }
+
+  // From this point, Sensor sent us what we needed to now about public networks/IPs. Any ongoing "hold" phase is completed.
+  if (hold_) hold_->Exit();
 }
 
 void NetworkStatusNotifier::ReceivePublicIPs(const sensor::IPAddressList& public_ips) {
@@ -133,6 +151,10 @@ void NetworkStatusNotifier::ReceiveIPNetworks(const sensor::IPNetworkList& netwo
 void NetworkStatusNotifier::Run() {
   Profiler::RegisterCPUThread();
   auto next_attempt = std::chrono::system_clock::now();
+
+  // Enter the hold phase if it was requested
+  if (hold_)
+    hold_->Enter();
 
   while (thread_.PauseUntil(next_attempt)) {
     comm_->ResetClientContext();
@@ -222,8 +244,12 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
     ConnMap new_conn_state;
     ContainerEndpointMap new_cep_state;
     WITH_TIMER(CollectorStats::net_fetch_state) {
-      new_conn_state = conn_tracker_->FetchConnState(true, true);
-      ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
+      if (hold_ && hold_->IsOngoing()) {
+        new_conn_state = old_conn_state;
+      } else {
+        new_conn_state = conn_tracker_->FetchConnState(true, true);
+        ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
+      }
 
       new_cep_state = conn_tracker_->FetchEndpointState(true, true);
       ConnectionTracker::ComputeDelta(new_cep_state, &old_cep_state);
@@ -268,8 +294,10 @@ void NetworkStatusNotifier::RunSingleAfterglow(IDuplexClientWriter<sensor::Netwo
     ContainerEndpointMap new_cep_state, delta_cep;
     ConnMap new_conn_state, delta_conn;
     WITH_TIMER(CollectorStats::net_fetch_state) {
-      new_conn_state = conn_tracker_->FetchConnState(true, true);
-      ConnectionTracker::ComputeDeltaAfterglow(new_conn_state, old_conn_state, delta_conn, time_micros, time_at_last_scrape, afterglow_period_micros_);
+      if (!hold_ || !hold_->IsOngoing()) {
+        new_conn_state = conn_tracker_->FetchConnState(true, true);
+        ConnectionTracker::ComputeDeltaAfterglow(new_conn_state, old_conn_state, delta_conn, time_micros, time_at_last_scrape, afterglow_period_micros_);
+      }
 
       new_cep_state = conn_tracker_->FetchEndpointState(true, true);
       ConnectionTracker::ComputeDeltaAfterglow(new_cep_state, old_cep_state, delta_cep, time_micros, time_at_last_scrape, afterglow_period_micros_);
@@ -279,7 +307,9 @@ void NetworkStatusNotifier::RunSingleAfterglow(IDuplexClientWriter<sensor::Netwo
       // Report the deltas
       msg = CreateInfoMessage(delta_conn, delta_cep);
       // Add new connections to the old_state and remove inactive connections that are older than the afterglow period.
-      ConnectionTracker::UpdateOldState(&old_conn_state, new_conn_state, time_micros, afterglow_period_micros_);
+      if (!hold_ || !hold_->IsOngoing()) {
+        ConnectionTracker::UpdateOldState(&old_conn_state, new_conn_state, time_micros, afterglow_period_micros_);
+      }
       ConnectionTracker::UpdateOldState(&old_cep_state, new_cep_state, time_micros, afterglow_period_micros_);
       time_at_last_scrape = time_micros;
     }
@@ -382,6 +412,27 @@ sensor::NetworkAddress* NetworkStatusNotifier::EndpointToProto(const collector::
   addr_proto->set_port(endpoint.port());
 
   return addr_proto;
+}
+
+NetworkStatusNotifier::Phase::Phase(int max_duration) : max_duration_(max_duration), is_ongoing_(false) {
+}
+
+void NetworkStatusNotifier::Phase::Enter() {
+  timeout_ = std::chrono::steady_clock::now() + std::chrono::seconds(max_duration_);
+  is_ongoing_ = true;
+}
+
+void NetworkStatusNotifier::Phase::Exit() {
+  is_ongoing_ = false;
+}
+
+bool NetworkStatusNotifier::Phase::IsOngoing() {
+  if (!is_ongoing_)
+    return false;
+
+  if (timeout_ < std::chrono::steady_clock::now()) Exit();
+
+  return is_ongoing_;
 }
 
 }  // namespace collector
