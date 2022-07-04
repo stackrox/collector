@@ -2,11 +2,8 @@ FROM quay.io/centos/centos:stream8
 
 ARG NPROCS=6
 ENV NPROCS=$NPROCS
-ARG BUILDER_ROOT_DIR=.
-ENV BUILDER_ROOT_DIR=$BUILDER_ROOT_DIR
 
-COPY . /go/src/github.com/stackrox/collector
-WORKDIR /go/src/github.com/stackrox/collector
+ARG BUILD_DIR=/install-tmp
 
 USER root
 
@@ -50,13 +47,15 @@ RUN dnf -y update \
         which \
     && dnf clean all
 
-# We want to fail if the destination directory is there, hence mkdir (not -p).
-RUN mkdir /install-tmp
-
-RUN cp -r "${BUILDER_ROOT_DIR}"/install/*.sh "/install-tmp"
-
 # Build dependencies from source
-RUN "/install-tmp/install.sh"
+WORKDIR ${BUILD_DIR}
+
+COPY builder builder
+COPY third_party third_party
+
+RUN "builder/install/install-dependencies.sh"
+
+RUN rm -rf ${BUILD_DIR}
 
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 

@@ -20,7 +20,7 @@ ifdef BUILD_BUILDER_IMAGE
 		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-f "$(CURDIR)/builder/Dockerfile" \
-		builder
+		.
 else
 	docker pull quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
 endif
