@@ -77,7 +77,7 @@ build() {
         if ! build_ko "$kernel_version" "$module_version" "${probe_type}" 2> >(tee "$failure_output_file" >&2); then
             echo >&2 "Failed to build ${probe_type} probe version ${module_version} for kernel ${kernel_version}"
         else
-            rm "$failure_output_file"
+            rm -f "$failure_output_file"
         fi
 
         clean_env_variables
