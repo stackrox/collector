@@ -24,7 +24,7 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _LOG_LEVEL_H_
 #define _LOG_LEVEL_H_
 
-#include "civetweb/CivetServer.h"
+#include "CivetServer.h"
 
 namespace collector {
 

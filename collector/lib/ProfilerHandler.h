@@ -4,8 +4,8 @@
 #include <memory>
 #include <mutex>
 
+#include "CivetServer.h"
 #include "Profiler.h"
-#include "civetweb/CivetServer.h"
 
 namespace collector {
 
