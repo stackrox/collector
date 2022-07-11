@@ -29,10 +29,10 @@ main() {
 }
 
 main \
-    "${GCLOUD_INSTANCE}" \
+    "collector-osci-${VM_TYPE}-integration-tests" \
     "${VM_TYPE}" \
     "${IMAGE_FAMILY}" \
     "${IMAGE_NAME}" \
-    "${GCP_SSH_KEY_FILE}" \
-    "${QUAY_RHACS_ENG_RO_USERNAME}" \
-    "${QUAY_RHACS_ENG_RO_PASSWORD}"
+    "/tmp/stackrox-collector-e2e-tests/gcp-ssh-key" \
+    "quay-username" \
+    "quay-password"
