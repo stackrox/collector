@@ -27,7 +27,7 @@ cmake \
     -DgRPC_BUILD_GRPC_RUBY_PLUGIN=OFF \
     -DCMAKE_BUILD_TYPE=Release \
     -DgRPC_INSTALL=ON \
-    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_INSTALL_PREFIX=/usr/local \
     ../..
 
 make ${NPROCS:+-j ${NPROCS}} CXXFLAGS="${CXXFLAGS}"
