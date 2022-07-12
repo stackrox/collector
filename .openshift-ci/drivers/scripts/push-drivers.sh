@@ -5,7 +5,7 @@ set -eo pipefail
 GCP_CREDS="$(cat /tmp/secrets/GOOGLE_CREDENTIALS_KERNEL_CACHE)"
 GCP_CHECK_BUCKET="gs://collector-build-cache"
 
-/scripts/setup-gcp-env "$GCP_CREDS" "$GCP_CHECK_BUCKET"
+/scripts/setup-gcp-env.sh "$GCP_CREDS" "$GCP_CHECK_BUCKET"
 
 target="gs://mauro-drivers-test/drivers"
 BRANCH="mauro-OSCI-driver-builds"
