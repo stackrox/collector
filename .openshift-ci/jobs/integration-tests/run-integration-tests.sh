@@ -62,7 +62,7 @@ exit_code=0
 
 if [[ $remote_host_type != "local" ]]; then
     run_tests || exit_code=$?
-    cp "${SOURCE_ROOT}/integration-tests/perf.json" "${WORKSPACE_ROOT}/${TEST_NAME}-perf.json"
+    _ cp "integration-tests/perf.json" "${ARTIFACTS_DIR}/${TEST_NAME}-perf.json"
 else
     _ sudo cp /proc/sys/kernel/core_pattern /tmp/core_pattern
     _ echo '/tmp/core.out' | _ sudo tee /proc/sys/kernel/core_pattern
