@@ -1,4 +1,4 @@
-FROM registry.fedoraproject.org/fedora:36
+FROM pipeline:fc36-base
 
 COPY --from=pre-build:latest /kernel-modules /kernel-modules
 COPY --from=fc36-drivers:latest /kernel-modules /kernel-modules

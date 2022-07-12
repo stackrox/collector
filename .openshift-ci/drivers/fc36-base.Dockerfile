@@ -16,6 +16,7 @@ RUN dnf -y install \
         git \
         python3 \
         kmod \
+        which \
         libxcrypt-compat.x86_64 && \
     # We trick Debian builds into thinking they have the required GCC binary
     ln -s /usr/bin/gcc /usr/bin/gcc-10 && \
