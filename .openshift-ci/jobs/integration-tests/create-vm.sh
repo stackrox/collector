@@ -25,11 +25,13 @@ main() {
     source "envbuilder.sh"
     popd
 
+    which gcloud || true
+
     setupGCPVM "$GCP_VM_NAME" "$GCP_VM_TYPE" "$GCP_IMAGE_FAMILY" "$GCP_IMAGE_NAME" "$GCP_SSH_KEY_FILE" "$GDOCKER_USER" "$GDOCKER_PASS"
 }
 
 main \
-    "collector-osci-${VM_TYPE}-integration-tests" \
+    "collector-osci-${VM_TYPE}-tests-${JOB_ID}" \
     "${VM_TYPE}" \
     "${IMAGE_FAMILY}" \
     "${IMAGE_NAME}" \
