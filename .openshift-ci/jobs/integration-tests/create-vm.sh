@@ -30,11 +30,13 @@ main() {
     setupGCPVM "$GCP_VM_NAME" "$GCP_VM_TYPE" "$GCP_IMAGE_FAMILY" "$GCP_IMAGE_NAME" "$GCP_SSH_KEY_FILE" "$GDOCKER_USER" "$GDOCKER_PASS"
 }
 
+ls -lah /tmp/secrets/stackrox-collector-e2e-tests/
+
 main \
     "collector-osci-${VM_TYPE}-tests-${JOB_ID}" \
     "${VM_TYPE}" \
     "${IMAGE_FAMILY}" \
     "${IMAGE_NAME}" \
-    "/tmp/stackrox-collector-e2e-tests/gcp-ssh-key" \
+    "/tmp/secret/stackrox-collector-e2e-tests/gcp-ssh-key" \
     "quay-username" \
     "quay-password"
