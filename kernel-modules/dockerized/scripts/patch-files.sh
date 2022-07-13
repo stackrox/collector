@@ -80,11 +80,18 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
 
     checkout_branch "$collector_ref"
 
-    DRIVER_DIR="/collector/$(get_driver_relative_path)" \
-    SCRATCH_DIR="/scratch" \
-    OUTPUT_DIR="/kobuild-tmp/versions-src" \
-    LEGACY_DIR="/collector" \
-    M_VERSION="$(get_module_version)" \
+    driver_relative_path="$(get_driver_relative_path)"
+
+    if ((OSCI_RUN)) && [[ "$driver_relative_path" == "sysdig/src" ]]; then
+        # For the time being we don't compile sysdig driver in OSCI
+        continue
+    fi
+
+    DRIVER_DIR="/collector/$driver_relative_path" \
+        SCRATCH_DIR="/scratch" \
+        OUTPUT_DIR="/kobuild-tmp/versions-src" \
+        LEGACY_DIR="/collector" \
+        M_VERSION="$(get_module_version)" \
         /scripts/prepare-src.sh
 
 done < <(grep -v '^#' < /collector/RELEASED_VERSIONS | awk -F'#' '{print $1}' | awk 'NF==2 {print $1}' | sort | uniq)
