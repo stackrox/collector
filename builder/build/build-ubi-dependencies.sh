@@ -14,6 +14,7 @@ export LICENSE_DIR="/THIRD_PARTY_NOTICES"
 mkdir -p "${LICENSE_DIR}"
 
 ### Dependencies
+builder/install/20-googletest.sh
 cd third_party
 ../builder/install/40-grpc.sh
 ../builder/install/50-libb64.sh

@@ -39,9 +39,6 @@ RUN dnf -y update && \
         elfutils-libelf-devel \
         tbb-devel \
         c-ares-devel && \
-    dnf -y --enablerepo codeready-builder-for-rhel-8-x86_64-rpms install \
-        gmock-devel \
-        gtest-devel && \
     dnf -y --enablerepo amq-clients-2-for-rhel-8-x86_64-rpms install \
         jsoncpp-devel && \
     dnf -y --enablerepo rhocp-4.6-for-rhel-8-x86_64-rpms install \
