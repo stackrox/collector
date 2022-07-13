@@ -61,16 +61,18 @@ checkout_branch() (
     return 0
 )
 
+driver_relative_path="$(get_driver_relative_path)"
+
 if [[ "${CHECKOUT_BEFORE_PATCHING,,}" == "true" ]]; then
     # Prepare the sources for the work branch
-    checkout_branch "$WORK_BRANCH"
+    checkout_branch "$WORK_BRANCH" "$driver_relative_path"
 fi
 
-DRIVER_DIR="/collector/$(get_driver_relative_path)" \
-SCRATCH_DIR="/scratch" \
-OUTPUT_DIR="/kobuild-tmp/versions-src" \
-LEGACY_DIR="/collector" \
-M_VERSION="$(get_module_version)" \
+DRIVER_DIR="/collector/$driver_relative_path" \
+    SCRATCH_DIR="/scratch" \
+    OUTPUT_DIR="/kobuild-tmp/versions-src" \
+    LEGACY_DIR="/collector" \
+    M_VERSION="$(get_module_version)" \
     /scripts/prepare-src.sh
 
 legacy="$(echo "$BUILD_LEGACY" | tr '[:upper:]' '[:lower:]')"
