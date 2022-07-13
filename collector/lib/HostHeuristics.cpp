@@ -20,8 +20,9 @@ You should have received a copy of the GNU General Public License along with thi
 * do not wish to do so, delete this exception statement from your
 * version.
 */
-
 #include "HostHeuristics.h"
+
+#include <linux/bpf.h>
 
 #include "Logging.h"
 
@@ -185,6 +186,66 @@ class GardenLinuxHeuristic : public Heuristic {
   }
 };
 
+class EBPFPermissionsHeuristic : public Heuristic {
+  // On some platforms, SELinux is known to cause some problems with map creation.
+  // This heuristic will check whether map creation is possible, and if not it
+  // will switch to Kernel Module based collection, logging this as a warning.
+  //
+  // While this issue is known to affect RHEL-7, the heuristic is platform
+  // agnostic to ensure coverage of all platforms.
+  void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
+    if (!config.UseEbpf() || !host.HasEBPFSupport()) {
+      return;
+    }
+
+    CLOG(DEBUG) << "Attempting to create eBPF map...";
+
+    if (canCreateMap()) {
+      CLOG(DEBUG) << "eBPF map creation successful.";
+      return;
+    }
+
+    CLOG(WARNING) << "Unable to create eBPF map, switching to KernelModule collection";
+    CLOG(WARNING) << "To enable eBPF, check your SELinux settings.";
+    hconfig->SetCollectionMethod("kernel-module");
+  }
+
+ private:
+  bool canCreateMap() const {
+    int map_fd = 0;
+    union bpf_attr attr = {0};
+
+    // it doesn't matter what type we use here, except for 0 (which is invalid)
+    attr.map_type = BPF_MAP_TYPE_HASH;
+    attr.key_size = sizeof(uint64_t);
+    attr.value_size = sizeof(uint64_t);
+    attr.max_entries = 1;
+    attr.map_flags = 0;
+
+    if ((map_fd = sys_bpf(BPF_MAP_CREATE, &attr, sizeof(attr))) < 0) {
+      if (errno == EPERM) {
+        CLOG(DEBUG) << "Insufficient permissions to create eBPF map (possibly SELinux)";
+        return false;
+      }
+      // This is very unlikely, and would normally indicate that the above
+      // bpf_attr union is incorrectly populated.
+      CLOG(DEBUG) << "Unexpected error from eBPF map creation: " << strerror(errno);
+      return false;
+    }
+
+    // map creation successful, so close the map and clean up.
+    // At this point we're confident that we have the necessary perms
+    // to run eBPF programs and create maps.
+    close(map_fd);
+    return true;
+  }
+
+  // Simple wrapper around the bpf syscall.
+  int sys_bpf(enum bpf_cmd cmd, union bpf_attr* attr, unsigned int size) const {
+    return syscall(__NR_bpf, cmd, attr, size);
+  }
+};
+
 const std::unique_ptr<Heuristic> g_host_heuristics[] = {
     std::unique_ptr<Heuristic>(new CollectionHeuristic),
     std::unique_ptr<Heuristic>(new CosHeuristic),
@@ -192,6 +253,7 @@ const std::unique_ptr<Heuristic> g_host_heuristics[] = {
     std::unique_ptr<Heuristic>(new MinikubeHeuristic),
     std::unique_ptr<Heuristic>(new SecureBootHeuristic),
     std::unique_ptr<Heuristic>(new GardenLinuxHeuristic),
+    std::unique_ptr<Heuristic>(new EBPFPermissionsHeuristic),
 };
 
 }  // namespace
