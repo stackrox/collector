@@ -75,17 +75,18 @@ echo "Building legacy drivers"
 while IFS='' read -r line || [[ -n "$line" ]]; do
     [[ -n "$line" ]] || continue
 
+    driver_relative_path="$(get_driver_relative_path)"
+
+    if ((OSCI_RUN)) && [[ "${driver_relative_path}" == "sysdig/src" ]]; then
+        # For the time being we don't compile sysdig drivers in OSCI
+        echo "Skipping module source archive for collector version ${collector_ref}"
+        continue
+    fi
+
     collector_ref="$line"
     echo "Preparing module source archive for collector version ${collector_ref}"
 
     checkout_branch "$collector_ref"
-
-    driver_relative_path="$(get_driver_relative_path)"
-
-    if ((OSCI_RUN)) && [[ "$driver_relative_path" == "sysdig/src" ]]; then
-        # For the time being we don't compile sysdig driver in OSCI
-        continue
-    fi
 
     DRIVER_DIR="/collector/$driver_relative_path" \
         SCRATCH_DIR="/scratch" \
