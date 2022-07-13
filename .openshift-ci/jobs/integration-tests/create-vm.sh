@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
 # shellcheck source=SCRIPTDIR/envbuilder.sh
+# shellcheck source=SCRIPTDIR/../../../third_party/stackrox/scripts/ci/lib.sh
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../../ && pwd)"
+source "$ROOT/third_party/stackrox/scripts/ci/lib.sh"
 
 set -e
 main() {
@@ -25,12 +29,12 @@ main() {
     source "envbuilder.sh"
     popd
 
-    which gcloud || true
-
     setupGCPVM "$GCP_VM_NAME" "$GCP_VM_TYPE" "$GCP_IMAGE_FAMILY" "$GCP_IMAGE_NAME" "$GCP_SSH_KEY_FILE" "$GDOCKER_USER" "$GDOCKER_PASS"
 }
 
-ls -lah /tmp/secrets/stackrox-collector-e2e-tests/
+which gcloud || true
+
+openshift_ci_import_creds
 
 main \
     "collector-osci-${VM_TYPE}-tests-${JOB_ID}" \
