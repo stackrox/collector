@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -exuo pipefail
+set -euo pipefail
 
 # shellcheck source=SCRIPTDIR/lib.sh
 source /scripts/lib.sh
@@ -14,7 +14,7 @@ BRANCH="$(get_base_ref)"
 export LEGACY_PROBES
 export NO_CACHE
 
-LEGACY_PROBES="false"
+LEGACY_PROBES="true"
 NO_CACHE=0
 
 if ! is_in_PR_context; then
