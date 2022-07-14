@@ -1,0 +1,13 @@
+FROM quay.io/centos/centos:stream8
+
+ENV SRC_ROOT_DIR=/go/src/github.com/stackrox/collector
+WORKDIR $SRC_ROOT_DIR
+
+RUN cp "${SRC_ROOT_DIR}"/.openshift-ci/build/install-gcloud-sdk.sh /
+RUN "${SRC_ROOT_DIR}"/.openshift-ci/build/install-gcloud-sdk.sh /
+RUN ls
+RUN /install-gcloud-sdk.sh
+
+RUN gsutil -m cp -r 'gs://collector-modules/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656/1.0.0/collector-3.10.0-1160.62.1.el7.x86_64.ko.gz' kernel-modules/
+
+RUN ls "${SRC_ROOT_DIR}/kernel-modules/"

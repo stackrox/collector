@@ -1,34 +1,46 @@
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8/ubi-minimal
 ARG BASE_TAG=8.6
+
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
 
-COPY bundle.tar.gz /
-COPY extract-bundle.sh /bundle/
+ARG ROOT_DIR=.
+
+ENV ROOT_DIR=$ROOT_DIR
+
+COPY . /go/src/github.com/stackrox/collector
+WORKDIR /go/src/github.com/stackrox/collector
+
+RUN mkdir -p /bundle/kernel-modules/
+
+RUN cp "${ROOT_DIR}/bundle.tar.gz" /
+RUN cp "${ROOT_DIR}/extract-bundle.sh" /bundle/
+RUN cp "${ROOT_DIR}"/scripts/* /
+
 WORKDIR /bundle
 RUN ./extract-bundle.sh
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
-ARG collector_version=xxx
-ARG module_version=xxx
+ARG ROOT_DIR=.
+
+ENV ROOT_DIR=$ROOT_DIR
+ENV COLLECTOR_VERSION="${COLLECTOR_VERSION}"
+ENV MODULE_VERSION="${MODULE_VERSION}"
+ENV COLLECTOR_HOST_ROOT=/host
 
 LABEL name="collector" \
       vendor="StackRox" \
       maintainer="support@stackrox.com" \
       summary="Runtime data collection for the StackRox Kubernetes Security Platform" \
       description="This image supports runtime data collection in the StackRox Kubernetes Security Platform." \
-      io.stackrox.collector.module-version="${module_version}" \
-      io.stackrox.collector.version="${collector_version}"
-
-ENV COLLECTOR_VERSION=${collector_version} \
-    MODULE_VERSION=${module_version} \
-    COLLECTOR_HOST_ROOT=/host
+      io.stackrox.collector.module-version="${MODULE_VERSION}" \
+      io.stackrox.collector.version="${COLLECTOR_VERSION}"
 
 WORKDIR /
 
-COPY scripts /
-
+COPY --from=extracted_bundle /collector-wrapper.sh /
+COPY --from=extracted_bundle /bootstrap.sh /
 COPY --from=extracted_bundle /bundle/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY --from=extracted_bundle /bundle/kernel-modules/ /kernel-modules/
 COPY --from=extracted_bundle /bundle/usr/local/lib/libsinsp-wrapper.so /usr/local/lib/
