@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 
 # shellcheck source=SCRIPTDIR/envbuilder.sh
-# shellcheck source=SCRIPTDIR/../../../third_party/stackrox/scripts/ci/lib.sh
-
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../../ && pwd)"
-source "$ROOT/third_party/stackrox/scripts/ci/lib.sh"
 
 set -e
 main() {
@@ -32,15 +28,13 @@ main() {
     setupGCPVM "$GCP_VM_NAME" "$GCP_VM_TYPE" "$GCP_IMAGE_FAMILY" "$GCP_IMAGE_NAME" "$GCP_SSH_KEY_FILE" "$GDOCKER_USER" "$GDOCKER_PASS"
 }
 
-which gcloud || true
-
-openshift_ci_import_creds
+ls -lah /tmp/secret/stackrox-collector-e2e-tests/
 
 main \
     "collector-osci-${VM_TYPE}-tests-${JOB_ID}" \
     "${VM_TYPE}" \
     "${IMAGE_FAMILY}" \
     "${IMAGE_NAME}" \
-    "/tmp/secret/stackrox-collector-e2e-tests/gcp-ssh-key" \
+    "/tmp/secret/stackrox-collector-e2e-tests/GCP_SSH_KEY" \
     "quay-username" \
     "quay-password"
