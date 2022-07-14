@@ -6,11 +6,20 @@ MOD_VER_FILE=$(CURDIR)/kernel-modules/kobuild-tmp/MODULE_VERSION.txt
 LOCAL_SSH_PORT ?= 2222
 DEV_SSH_SERVER_KEY ?= $(CURDIR)/.collector_dev_ssh_host_ed25519_key
 
+export COLLECTOR_VERSION := $(COLLECTOR_TAG)
+export MODULE_VERSION := $(shell cat $(CURDIR)/kernel-modules/MODULE_VERSION)
+
 dev-build: image integration-tests-process-network
 
 .PHONY: tag
 tag:
 	@echo "$(COLLECTOR_TAG)"
+
+.PHONY: container-dockerfile
+container-dockerfile:
+	envsubst '$${COLLECTOR_VERSION} $${MODULE_VERSION}' \
+		< $(CURDIR)/collector/container/Dockerfile.template > \
+		$(CURDIR)/collector/container/Dockerfile.gen
 
 .PHONY: builder
 builder:
@@ -49,23 +58,23 @@ $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/bundle.tar.gz:
 build-drivers:
 	make -C kernel-modules drivers
 
-image: collector unittest $(MOD_VER_FILE) $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/bundle.tar.gz
+image: collector unittest container-dockerfile $(MOD_VER_FILE) $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/bundle.tar.gz
 	make -C collector txt-files
 	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
 		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
-		-f collector/container/Dockerfile \
+		-f collector/container/Dockerfile.gen \
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
 
 image-dev: COLLECTOR_BUILD_CONTEXT=collector/container/devel
-image-dev: collector unittest $(MOD_VER_FILE) $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/bundle.tar.gz
+image-dev: collector unittest container-dockerfile $(MOD_VER_FILE) $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/bundle.tar.gz
 	make -C collector txt-files
 	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
 		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
 		--build-arg BASE_REGISTRY=quay.io \
 		--build-arg BASE_IMAGE=centos/centos \
 		--build-arg BASE_TAG=stream8 \
-		-f collector/container/Dockerfile \
+		-f collector/container/Dockerfile.gen \
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
 

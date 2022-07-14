@@ -23,11 +23,13 @@ fi
     "-" \
     "$SOURCE_ROOT/${COLLECTOR_BUILD_CONTEXT}"
 
+make -C "$SOURCE_ROOT" container-dockerfile
+
 docker build \
     -t "${QUAY_REPO}/collector:${COLLECTOR_VERSION}-base" \
     -t "${QUAY_REPO}/collector:${COLLECTOR_VERSION}-slim" \
     -t "${PUBLIC_REPO}/collector:${COLLECTOR_VERSION}-base" \
     -t "${PUBLIC_REPO}/collector:${COLLECTOR_VERSION}-slim" \
     "${build_args[@]}" \
-    -f "${SOURCE_ROOT}/collector/container/Dockerfile" \
+    -f "${SOURCE_ROOT}/collector/container/Dockerfile.gen" \
     "$SOURCE_ROOT/${COLLECTOR_BUILD_CONTEXT}"

@@ -1,6 +1,7 @@
 .idea/
 .rox/
 
+collector/container/Dockerfile.gen
 integration-tests/container-logs/
 integration-tests/*.log
 integration-tests/*.logs
