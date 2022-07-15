@@ -236,7 +236,7 @@ setupGCPVM() {
     shift
 
     if [[ ! "$GCP_VM_TYPE" =~ ^(coreos|cos|rhel|suse|suse-sap|ubuntu-os-pro|ubuntu-os|flatcar|fedora-coreos|garden-linux)$ ]]; then
-        echo "Unsupported GPC_VM_TYPE: $GCP_VM_TYPE"
+        echo "Unsupported GCP_VM_TYPE: $GCP_VM_TYPE"
         exit 1
     fi
 
