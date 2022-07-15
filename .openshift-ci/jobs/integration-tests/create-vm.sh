@@ -30,13 +30,19 @@ main() {
 
 ls -lah /tmp/secret/stackrox-collector-e2e-tests/
 
+cp /tmp/secret/stackrox-collector-e2e-tests/GCP_SSH_KEY /tmp/
+chmod 0600 /tmp/GCP_SSH_KEY
+
 env
+
+QUAY_RHACS_ENG_RO_USERNAME="$(cat /tmp/secret/stackrox-collector-e2e-tests/QUAY_RHACS_ENG_RO_USERNAME)"
+QUAY_RHACS_ENG_RO_PASSWORD="$(cat /tmp/secret/stackrox-collector-e2e-tests/QUAY_RHACS_ENG_RO_PASSWORD)"
 
 main \
     "collector-osci-${VM_TYPE}-tests-${JOB_ID}" \
     "${VM_TYPE}" \
     "${IMAGE_FAMILY}" \
     "${IMAGE_NAME}" \
-    "/tmp/secret/stackrox-collector-e2e-tests/GCP_SSH_KEY" \
-    "quay-username" \
-    "quay-password"
+    "/tmp/GCP_SSH_KEY" \
+    "${QUAY_RHACS_ENG_RO_USERNAME}" \
+    "${QUAY_RHACS_ENG_RO_PASSWORD}"
