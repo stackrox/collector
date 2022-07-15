@@ -30,6 +30,8 @@ main() {
 
 ls -lah /tmp/secret/stackrox-collector-e2e-tests/
 
+env
+
 main \
     "collector-osci-${VM_TYPE}-tests-${JOB_ID}" \
     "${VM_TYPE}" \
