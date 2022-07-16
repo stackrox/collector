@@ -11,22 +11,22 @@ registry_rw_login() {
     case "$registry" in
         docker.io/stackrox)
             if [[ -z "$DOCKER_IO_PUSH_USERNAME" ]]; then
-              echo "DOCKER_IO_PUSH_USERNAME is not defined"
-              exit 0 # Change to exit 1 later
+                echo "DOCKER_IO_PUSH_USERNAME is not defined"
+                exit 0 # Change to exit 1 later
             fi
             docker login --username "$DOCKER_IO_PUSH_USERNAME" --password-stdin docker.io <<< "$DOCKER_IO_PUSH_PASSWORD"
             ;;
         quay.io/rhacs-eng)
             if [[ -z "$QUAY_RHACS_ENG_RW_USERNAME" ]]; then
-              echo "QUAY_RHACS_ENG_RW_USERNAME is not defined"
-              exit 0 # Change to exit 1 later
+                echo "QUAY_RHACS_ENG_RW_USERNAME is not defined"
+                exit 0 # Change to exit 1 later
             fi
             docker login --username "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin quay.io <<< "$QUAY_RHACS_ENG_RW_PASSWORD"
             ;;
         quay.io/stackrox-io)
             if [[ -z "$QUAY_STACKROX_IO_RW_USERNAME" ]]; then
-              echo "QUAY_STACKROX_IO_RW_USERNAME is not defined"
-              exit 0 # Change to exit 1 later
+                echo "QUAY_STACKROX_IO_RW_USERNAME is not defined"
+                exit 0 # Change to exit 1 later
             fi
             docker login --username "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin quay.io <<< "$QUAY_STACKROX_IO_RW_PASSWORD"
             ;;
