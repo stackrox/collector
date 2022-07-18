@@ -121,6 +121,8 @@ class SysdigEventExtractor {
   TINFO_FIELD(exepath);
   TINFO_FIELD(pid);
   TINFO_FIELD(tid);
+  TINFO_FIELD_RAW(uid, user.uid, uint32_t);
+  TINFO_FIELD_RAW(gid, group.gid, uint32_t);
   FIELD_CSTR(proc_name, "proc.name");
   FIELD_CSTR(proc_pname, "proc.pname");
   FIELD_CSTR(proc_args, "proc.args");
@@ -130,22 +132,6 @@ class SysdigEventExtractor {
   FIELD_CSTR(cwd, "proc.cwd");
   FIELD_CSTR(evt_args, "evt.args");
   FIELD_RAW(ppid, "proc.ppid", int64_t);
-
- public:
-  const uint32_t* get_uid(sinsp_evt* event) {
-    if (!event) return nullptr;
-    sinsp_threadinfo* tinfo = event->get_thread_info(true);
-    if (!tinfo) return nullptr;
-    return &tinfo->m_user.uid;
-  }
-
- public:
-  const uint32_t* get_gid(sinsp_evt* event) {
-    if (!event) return nullptr;
-    sinsp_threadinfo* tinfo = event->get_thread_info(true);
-    if (!tinfo) return nullptr;
-    return &tinfo->m_group.gid;
-  }
 
  public:
   // General event information
