@@ -33,6 +33,9 @@ ls -lah /tmp/secret/stackrox-collector-e2e-tests/
 cp /tmp/secret/stackrox-collector-e2e-tests/GCP_SSH_KEY "${GCP_SSH_KEY_FILE}"
 chmod 0600 "${GCP_SSH_KEY_FILE}"
 
+cp /tmp/secret/stackrox-collector-e2e-tests/GCP_SSH_KEY_PUB "${GCP_SSH_KEY_FILE}.pub"
+chmod 0600 "${GCP_SSH_KEY_FILE}.pub"
+
 env
 
 QUAY_RHACS_ENG_RO_USERNAME="$(cat /tmp/secret/stackrox-collector-e2e-tests/QUAY_RHACS_ENG_RO_USERNAME)"
