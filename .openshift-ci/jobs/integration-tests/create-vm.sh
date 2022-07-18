@@ -30,8 +30,8 @@ main() {
 
 ls -lah /tmp/secret/stackrox-collector-e2e-tests/
 
-mkdir -p "$(basename "${GCP_SSH_KEY_FILE}")"
-chmod 0700 "$(basename "${GCP_SSH_KEY_FILE}")"
+mkdir -p "$(dirname "${GCP_SSH_KEY_FILE}")"
+chmod 0700 "$(dirname "${GCP_SSH_KEY_FILE}")"
 
 cp /tmp/secret/stackrox-collector-e2e-tests/GCP_SSH_KEY "${GCP_SSH_KEY_FILE}"
 chmod 0600 "${GCP_SSH_KEY_FILE}"
