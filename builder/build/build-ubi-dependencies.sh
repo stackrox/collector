@@ -18,4 +18,5 @@ cd third_party
 ../builder/install/40-grpc.sh
 ../builder/install/50-libb64.sh
 ../builder/install/50-luajit.sh
-../builder/install/50-prometheus.sh .
+../builder/install/50-prometheus.sh
+../builder/install/70-valijson.sh
