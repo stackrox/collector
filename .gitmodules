@@ -42,3 +42,7 @@
 	path = collector/proto/third_party/stackrox
 	url = https://github.com/stackrox/stackrox
 	branch = master
+[submodule "third_party/valijson"]
+	path = third_party/valijson
+	url = git@github.com:tristanpenman/valijson.git
+	branch = master
