@@ -30,8 +30,8 @@ main() {
 
 ls -lah /tmp/secret/stackrox-collector-e2e-tests/
 
-cp /tmp/secret/stackrox-collector-e2e-tests/GCP_SSH_KEY /tmp/
-chmod 0600 /tmp/GCP_SSH_KEY
+cp /tmp/secret/stackrox-collector-e2e-tests/GCP_SSH_KEY "${GCP_SSH_KEY_FILE}"
+chmod 0600 "${GCP_SSH_KEY_FILE}"
 
 env
 
@@ -43,6 +43,6 @@ main \
     "${VM_TYPE}" \
     "${IMAGE_FAMILY}" \
     "${IMAGE_NAME}" \
-    "/tmp/GCP_SSH_KEY" \
+    "${GCP_SSH_KEY_FILE}" \
     "${QUAY_RHACS_ENG_RO_USERNAME}" \
     "${QUAY_RHACS_ENG_RO_PASSWORD}"
