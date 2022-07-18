@@ -100,6 +100,9 @@ set(CREATE_TEST_TARGETS OFF CACHE BOOL "Enable make-targets for unit testing" FO
 set(BUILD_LIBSCAP_EXAMPLES OFF CACHE BOOL "Build libscap examples" FORCE)
 set(BUILD_LIBSINSP_EXAMPLES OFF CACHE BOOL "Build libsinsp examples" FORCE)
 
+# Instruct falco to use pre-built valijson
+set(VALIJSON_INCLUDE "/usr/include/valijson" CACHE STRING "Headers of valijson" FORCE)
+
 set(DRIVER_NAME "collector" CACHE STRING "Falco driver name" FORCE)
 
 file(STRINGS "${PROJECT_SOURCE_DIR}/../kernel-modules/MODULE_VERSION" DRIVER_VERSION)
