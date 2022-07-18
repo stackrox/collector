@@ -2,8 +2,8 @@
 set -eo pipefail
 
 function _() {
-    [ -n "${DRY_RUN}" ] && echo "$@" && return 0
-    "$@"
+    echo "$@"
+    [ -z "${DRY_RUN}" ] && "$@"
 }
 
 createGCPVM() {
