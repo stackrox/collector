@@ -192,8 +192,7 @@ gcpSSHReady() {
 
     local retryCount=6
     for _ in $(seq 1 $retryCount); do
-	sudo mkdir /.ssh
-        gcloud compute ssh --strict-host-key-checking=no --ssh-flag="-o PasswordAuthentication=no" --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCP_VM_NAME}" --command "whoami" \
+        _ gcloud compute ssh --strict-host-key-checking=no --ssh-flag="-o PasswordAuthentication=no" --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCP_VM_NAME}" --command "whoami" \
             && exitCode=0 && break || exitCode=$? && sleep 15
     done
 
@@ -242,7 +241,9 @@ setupGCPVM() {
     fi
 
     local GCP_VM_USER
-    GCP_VM_USER="$(whoami)"
+    #GCP_VM_USER="$(whoami)"
+    GCP_VM_USER="circleci"
+
     if [[ "$GCP_VM_TYPE" =~ "coreos" ]]; then
         GCP_VM_USER="core"
     fi
