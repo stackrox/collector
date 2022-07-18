@@ -38,7 +38,6 @@ apply_patches() (
 
 checkout_branch() (
     local branch="$1"
-    local driver_relative_path="$2"
 
     if [[ -z "$branch" ]]; then
         echo "Cannot checkout empty branch"
@@ -50,29 +49,30 @@ checkout_branch() (
     git -C /collector checkout -- .
     git -C /collector clean -xdf
 
+    local driver_relative_path
+    driver_relative_path="$(get_driver_relative_path)"
+
     if ((OSCI_RUN)) && [[ "${driver_relative_path}" == "sysdig/src" ]]; then
         # For the time being we don't compile sysdig drivers in OSCI
         echo "Skipping module source archive for collector version ${collector_ref}"
         return 1
     fi
 
-    git -C /collector submodule update --init "$(get_driver_relative_path)"
+    git -C /collector submodule update --init "${driver_relative_path}"
 
     return 0
 )
 
-driver_relative_path="$(get_driver_relative_path)"
-
 if [[ "${CHECKOUT_BEFORE_PATCHING,,}" == "true" ]]; then
     # Prepare the sources for the work branch
-    checkout_branch "$WORK_BRANCH" "$driver_relative_path"
+    checkout_branch "$WORK_BRANCH"
 fi
 
-DRIVER_DIR="/collector/$driver_relative_path" \
-    SCRATCH_DIR="/scratch" \
-    OUTPUT_DIR="/kobuild-tmp/versions-src" \
-    LEGACY_DIR="/collector" \
-    M_VERSION="$(get_module_version)" \
+DRIVER_DIR="/collector/$(get_driver_relative_path)" \
+SCRATCH_DIR="/scratch" \
+OUTPUT_DIR="/kobuild-tmp/versions-src" \
+LEGACY_DIR="/collector" \
+M_VERSION="$(get_module_version)" \
     /scripts/prepare-src.sh
 
 legacy="$(echo "$BUILD_LEGACY" | tr '[:upper:]' '[:lower:]')"
@@ -87,20 +87,18 @@ echo "Building legacy drivers"
 while IFS='' read -r line || [[ -n "$line" ]]; do
     [[ -n "$line" ]] || continue
 
-    driver_relative_path="$(get_driver_relative_path)"
-
     collector_ref="$line"
     echo "Preparing module source archive for collector version ${collector_ref}"
 
-    if ! checkout_branch "$collector_ref" "$driver_relative_path"; then
+    if ! checkout_branch "$collector_ref"; then
         continue
     fi
 
-    DRIVER_DIR="/collector/$driver_relative_path" \
-        SCRATCH_DIR="/scratch" \
-        OUTPUT_DIR="/kobuild-tmp/versions-src" \
-        LEGACY_DIR="/collector" \
-        M_VERSION="$(get_module_version)" \
+    DRIVER_DIR="/collector/$(get_driver_relative_path)" \
+    SCRATCH_DIR="/scratch" \
+    OUTPUT_DIR="/kobuild-tmp/versions-src" \
+    LEGACY_DIR="/collector" \
+    M_VERSION="$(get_module_version)" \
         /scripts/prepare-src.sh
 
 done < <(grep -v '^#' < /collector/RELEASED_VERSIONS | awk -F'#' '{print $1}' | awk 'NF==2 {print $1}' | sort | uniq)
