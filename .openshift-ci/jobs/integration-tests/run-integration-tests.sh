@@ -20,10 +20,10 @@ function performance_platform_supported() {
 }
 
 function integration_tests_with_measurements() {
-    COLLECTOR_BCC_COMMAND="/tools/do_syscall_64.py -o /tmp/baseline.json" _ make -C "${SOURCE_ROOT}" integration-tests-baseline
-    COLLECTOR_BCC_COMMAND="/tools/do_syscall_64.py -o /tmp/benchmark.json" _ make -C "${SOURCE_ROOT}" integration-tests-benchmark
+    COLLECTOR_BCC_COMMAND="/tools/do_syscall_64.py -o /tmp/baseline.json" _ make integration-tests-baseline
+    COLLECTOR_BCC_COMMAND="/tools/do_syscall_64.py -o /tmp/benchmark.json" _ make integration-tests-benchmark
 
-    _ make -C "${SOURCE_ROOT}" ci-integration-tests
+    _ make ci-integration-tests
 }
 
 function copy_from_vm() {
@@ -44,14 +44,14 @@ function run_tests() {
     exit_code=0
 
     if [[ "${MEASURE_SYSCALL_LATENCY}" == "true" ]] && performance_platform_supported; then
-        _ mkdir -p "${SOURCE_ROOT}/integration-tests/performance-logs"
+        _ mkdir -p "integration-tests/performance-logs"
         integration_tests_with_measurements
         exit_code=$?
 
-        copy_from_vm "/tmp/baseline.json" "${SOURCE_ROOT}/integration-tests/performance-logs/baseline-${IMAGE_FAMILY}-${COLLECTION_METHOD}.json"
-        copy_from_vm "/tmp/benchmark.json" "${SOURCE_ROOT}/integration-tests/performance-logs/benchmark-${IMAGE_FAMILY}-${COLLECTION_METHOD}.json"
+        copy_from_vm "/tmp/baseline.json" "integration-tests/performance-logs/baseline-${IMAGE_FAMILY}-${COLLECTION_METHOD}.json"
+        copy_from_vm "/tmp/benchmark.json" "integration-tests/performance-logs/benchmark-${IMAGE_FAMILY}-${COLLECTION_METHOD}.json"
     else
-        _ make -C "${SOURCE_ROOT}" ci-all-tests
+        _ make ci-all-tests
         exit_code=$?
     fi
 
@@ -78,4 +78,4 @@ else
     fi
 fi
 
-[[ -z "$BRANCH" ]] || _ gsutil cp "${SOURCE_ROOT}/integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${BRANCH}/$(date +%Y-%m-%d)-${BUILD_NUM}/"
+[[ -z "$BRANCH" ]] || _ gsutil cp "integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${BRANCH}/$(date +%Y-%m-%d)-${BUILD_NUM}/"
