@@ -49,8 +49,8 @@ class Builder:
     def _dump_all(self):
         raw_tasks = [
             f'{kernel} {module} {driver_type}\n'
-            for kernel, v in self.tasks.items()
-            for module, driver_type in v
+            for kernel, value in self.tasks.items()
+            for module, driver_type in value
         ]
 
         with open(os.path.join(self.output_dir, 'all'), 'w') as f:
@@ -64,13 +64,13 @@ class Builder:
 
         shard = 0
         raw_tasks = []
-        for i, (kernel, v) in enumerate(self.tasks.items()):
+        for i, (kernel, value) in enumerate(self.tasks.items()):
             raw_tasks.extend([
                 f'{kernel} {module} {driver_type}\n'
-                for module, driver_type in v
+                for module, driver_type in value
             ])
 
-            if i < self.get_tps() * (shard + 1):
+            if i < self.get_tasks_per_shard() * (shard + 1):
                 continue
 
             # filled up the shard, dump it and move on to the next one
@@ -94,7 +94,7 @@ class Builder:
         else:
             self.tasks[task.kernel].append((task.module, task.driver_type))
 
-    def get_tps(self):
+    def get_tasks_per_shard(self):
         if self.shards == 0:
             return -1
 
@@ -117,15 +117,7 @@ def distribute_shards(total_shards, *builders):
         used_shards += builder.shards
 
     while used_shards < total_shards:
-        min_builder = None
-
-        for builder in builders:
-            if min_builder is None:
-                min_builder = builder
-                continue
-
-            if min_builder.get_tps() > builder.get_tps():
-                min_builder = builder
+        min_builder = min(builders, key=lambda b: b.get_tasks_per_shard())
 
         min_builder.shards += 1
         used_shards += 1
@@ -142,26 +134,32 @@ def main(task_file):
     rhel7 = Builder('rhel7', fr'^{rhel7_kernels}')
     unknown = Builder('unknown', r'.*')
 
+    builders = [
+        fc36,
+        rhel8,
+        rhel7,
+    ]
+
     # Order is important in this for loop!
     # Kernels will be assigned to the first builder they match with, keep it in
     # mind when writing or dealing with overlapping regexes.
     for line in task_file.readlines():
+        matched = False
         task = Task.parse(line)
 
-        if fc36.match(task):
-            fc36.append(task)
+        if task is None:
+            print(f'Failed to parse line "{line.strip()}"')
             continue
 
-        if rhel8.match(task):
-            rhel8.append(task)
-            continue
+        for builder in builders:
+            if builder.match(task):
+                builder.append(task)
+                matched = True
+                break
 
-        if rhel7.match(task):
-            rhel7.append(task)
-            continue
-
-        print(f'No builder for "{line.strip()}"')
-        unknown.append(task)
+        if not matched:
+            print(f'No builder for "{line.strip()}"')
+            unknown.append(task)
 
     # Every builder will use parallel builds, figure out how many shards each of
     # them will use

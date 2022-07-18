@@ -7,6 +7,7 @@
 # Oracle Linux kernel modules require `libdtrace-ctf`,
 # which is unavailable in UBI/RHEL
 *.el7uek.* * mod
+#
 # We are not building dockerdesktop kernels with this method
 # for the time being
 *-dockerdesktop-*

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -exuo pipefail
+set -euo pipefail
 
 WORK_BRANCH="${1:-master}"
 BUILD_LEGACY="${2:-false}"
