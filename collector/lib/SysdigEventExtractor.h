@@ -133,7 +133,6 @@ class SysdigEventExtractor {
   FIELD_CSTR(evt_args, "evt.args");
   FIELD_RAW(ppid, "proc.ppid", int64_t);
 
- public:
   // General event information
   FIELD_RAW(event_rawres, "evt.rawres", int64_t);
   EVT_ARG(name);
