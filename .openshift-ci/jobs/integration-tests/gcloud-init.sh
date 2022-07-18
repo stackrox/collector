@@ -6,10 +6,10 @@ which gsutil
 gsutil ver
 gsutil ver -l | grep crcmod
 gcloud version
-cat ~/.boto || true
+cat ~/.boto 2> /dev/null || true
 echo '[Credentials]' > ~/.boto
-echo 'gs_service_key_file = /tmp/secret/stackrox-collector-kernel-packer-crawl/GOOGLE_CREDENTIALS_KERNEL_CACHE' >> ~/.boto
-gcloud auth activate-service-account --key-file /tmp/secret/stackrox-collector-kernel-packer-crawl/GOOGLE_CREDENTIALS_KERNEL_CACHE
+echo 'gs_service_key_file = /tmp/secret/stackrox-collector-e2e-tests/GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT' >> ~/.boto
+gcloud auth activate-service-account --key-file /tmp/secret/stackrox-collector-e2e-tests/GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT
 gcloud config set project stackrox-ci
 gcloud config set compute/region us-central1
 gcloud config unset compute/zone
