@@ -197,7 +197,7 @@ gcpSSHReady() {
     done
 
     instance_id="$(_ gcloud compute instances describe "${GCP_VM_NAME}" --format='get(id)')"
-    _ ssh-keygen -f "/home/circleci/.ssh/google_compute_known_hosts" -R "compute.${instance_id}"
+    _ ssh-keygen -f "$HOME/.ssh/google_compute_known_hosts" -R "compute.${instance_id}"
     echo "Cleared existing ssh keys for compute.${instance_id}"
 
     return $exitCode
