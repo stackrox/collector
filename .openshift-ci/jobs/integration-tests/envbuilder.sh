@@ -88,12 +88,14 @@ createGCPVMFromImage() {
 }
 
 installDockerOnUbuntuViaGCPSSH() {
+    local GCP_VM_USER="$1"
+    shift
     local GCP_VM_NAME="$1"
     shift
     local GCP_SSH_KEY_FILE="$1"
     shift
     for _ in {1..3}; do
-        if gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "(which docker || export DEBIAN_FRONTEND=noninteractive ; sudo apt update -y && sudo apt install -y docker.io )"; then
+        if gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_USER@$GCP_VM_NAME" --command "(which docker || export DEBIAN_FRONTEND=noninteractive ; sudo apt update -y && sudo apt install -y docker.io )"; then
             return 0
         fi
         echo "Retrying in 5s ..."
@@ -104,13 +106,15 @@ installDockerOnUbuntuViaGCPSSH() {
 }
 
 installESMUpdatesOnUbuntuAndReboot() {
+    local GCP_VM_USER="$1"
+    shift
     local GCP_VM_NAME="$1"
     shift
     local GCP_SSH_KEY_FILE="$1"
     shift
     for _ in {1..3}; do
-        if gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo apt update -y && sudo apt install -y ubuntu-advantage-tools && sudo ua attach ${UBUNTU_ESM_SUBSCRIPTION_TOKEN} && sudo apt update -y && sudo apt dist-upgrade -y"; then
-            gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo reboot" || true
+        if gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_USER@$GCP_VM_NAME" --command "sudo apt update -y && sudo apt install -y ubuntu-advantage-tools && sudo ua attach ${UBUNTU_ESM_SUBSCRIPTION_TOKEN} && sudo apt update -y && sudo apt dist-upgrade -y"; then
+            gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_USER@$GCP_VM_NAME" --command "sudo reboot" || true
             return 0
         fi
         echo "Retrying in 5s ..."
@@ -121,12 +125,14 @@ installESMUpdatesOnUbuntuAndReboot() {
 }
 
 installFIPSOnUbuntuAndReboot() {
+    local GCP_VM_USER="$1"
+    shift
     local GCP_VM_NAME="$1"
     shift
     local GCP_SSH_KEY_FILE="$1"
     shift
     for _ in {1..3}; do
-        if gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo ua enable --assume-yes fips"; then
+        if gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_USER@$GCP_VM_NAME" --command "sudo ua enable --assume-yes fips"; then
             return 0
         fi
         echo "Retrying in 5s ..."
@@ -154,6 +160,8 @@ rebootVM() {
 }
 
 installDockerOnRHELViaGCPSSH() {
+    local GCP_VM_USER="$1"
+    shift
     local GCP_VM_NAME="$1"
     shift
     local GCP_IMAGE_FAMILY="$1"
@@ -161,20 +169,22 @@ installDockerOnRHELViaGCPSSH() {
     local GCP_SSH_KEY_FILE="$1"
     shift
 
-    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "circleci@$GCP_VM_NAME" --command "sudo yum install -y yum-utils device-mapper-persistent-data lvm2"
-    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "circleci@$GCP_VM_NAME" --command "sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo"
-    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "circleci@$GCP_VM_NAME" --command "sudo yum-config-manager --setopt=\"docker-ce-stable.baseurl=https://download.docker.com/linux/centos/${GCP_IMAGE_FAMILY: -1}/x86_64/stable\" --save"
-    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "circleci@$GCP_VM_NAME" --command "sudo yum install -y docker-ce docker-ce-cli containerd.io"
-    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "circleci@$GCP_VM_NAME" --command "sudo systemctl start docker"
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_USER@$GCP_VM_NAME" --command "sudo yum install -y yum-utils device-mapper-persistent-data lvm2"
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_USER@$GCP_VM_NAME" --command "sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo"
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_USER@$GCP_VM_NAME" --command "sudo yum-config-manager --setopt=\"docker-ce-stable.baseurl=https://download.docker.com/linux/centos/${GCP_IMAGE_FAMILY: -1}/x86_64/stable\" --save"
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_USER@$GCP_VM_NAME" --command "sudo yum install -y docker-ce docker-ce-cli containerd.io"
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_USER@$GCP_VM_NAME" --command "sudo systemctl start docker"
 }
 
 setupDockerOnSUSEViaGCPSSH() {
+    local GCP_VM_USER="$1"
+    shift
     local GCP_VM_NAME="$1"
     shift
     local GCP_SSH_KEY_FILE="$1"
     shift
 
-    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo systemctl start docker"
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@$GCP_VM_NAME" --command "sudo systemctl start docker"
 }
 
 gcpSSHReady() {
@@ -188,7 +198,7 @@ gcpSSHReady() {
     local retryCount=6
     for _ in $(seq 1 $retryCount); do
         # gcloud compute ssh "${GCP_VM_USER}@${GCP_VM_NAME}" --project=stackrox-ci --troubleshoot
-        gcloud compute ssh --strict-host-key-checking=no --ssh-flag="-o PasswordAuthentication=no" "${GCP_VM_USER}@${GCP_VM_NAME}" --command "whoami" \
+        gcloud compute ssh --strict-host-key-checking=no --ssh-flag="-o PasswordAuthentication=no" --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCP_VM_NAME}" --command "whoami" \
             && exitCode=0 && break || exitCode=$? && sleep 15
     done
 
@@ -265,21 +275,21 @@ setupGCPVM() {
     fi
 
     if [[ "$GCP_VM_TYPE" =~ ^ubuntu-os ]]; then
-        installDockerOnUbuntuViaGCPSSH "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
+        installDockerOnUbuntuViaGCPSSH "$GCP_VM_USER" "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
     elif test "$GCP_VM_TYPE" = "rhel"; then
-        installDockerOnRHELViaGCPSSH "$GCP_VM_NAME" "$GCP_IMAGE_FAMILY" "$GCP_SSH_KEY_FILE"
+        installDockerOnRHELViaGCPSSH "$GCP_VM_USER" "$GCP_VM_NAME" "$GCP_IMAGE_FAMILY" "$GCP_SSH_KEY_FILE"
     elif [[ "$GCP_VM_TYPE" =~ "suse" ]]; then
-        setupDockerOnSUSEViaGCPSSH "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
+        setupDockerOnSUSEViaGCPSSH "$GCP_VM_USER" "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
     fi
 
     loginDockerViaGCPSSH "$GCP_VM_USER" "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE" "$GDOCKER_USER" "$GDOCKER_PASS"
 
     if [[ "${GCP_VM_NAME}" =~ "ubuntu-1604-lts-esm" ]]; then
-        installESMUpdatesOnUbuntuAndReboot "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
+        installESMUpdatesOnUbuntuAndReboot "$GCP_VM_USER" "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
         sleep 30
     fi
     if [[ "${GCP_VM_NAME}" =~ "ubuntu-pro-1804-lts" ]]; then
-        installFIPSOnUbuntuAndReboot "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
+        installFIPSOnUbuntuAndReboot "$GCP_VM_USER" "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
         rebootVM "$GCP_VM_USER" "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
     fi
 }
