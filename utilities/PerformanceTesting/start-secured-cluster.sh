@@ -2,7 +2,14 @@
 set -eou pipefail
 
 artifacts_dir=$1
-collector_image_registry=${2:-quay.io/rhacs-eng}
+ARCH=$(arch)
+if [ "$ARCH" = "x86_64" ]; then
+    collector_image_registry=${2:-quay.io/rhacs-eng}
+else
+    collector_image_registry=${2:-quay.io/rhacs-eng/$ARCH}
+fi
+
+
 collector_image_tag=${3:-3.7.3}
 
 echo "Starting secure cluster services"

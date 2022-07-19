@@ -16,7 +16,12 @@ for version_dir in "${MD_DIR}/collector-versions"/*; do
     [[ -d "$version_dir" ]] || continue
     version="$(basename "$version_dir")"
 
-    collector_image="quay.io/rhacs-eng/collector:${version}"
+    ARCH=$(arch)
+    if [ "$ARCH" = "x86_64" ]; then
+        collector_image="quay.io/rhacs-eng/collector:${version}"
+    else
+        collector_image="quay.io/rhacs-eng/$ARCH/collector:${version}"
+    fi
     docker pull "$collector_image"
     tmp_output="$(mktemp)"
 

@@ -1,8 +1,21 @@
+ARCH := $(shell arch)
+
+ifeq ($(ARCH),x86_64)
+ARCHDIR=
+ARCHEXTN=
+else ifeq ($(ARCH),amd64)
+ARCHDIR=
+ARCHEXTN=
+else
+ARCHDIR=/$(ARCH)
+ARCHEXTN=.$(ARCH)
+endif
+
 BASE_PATH = ./..
 include ../Makefile-constants.mk
 
 ifeq ($(COLLECTOR_REPO),)
-COLLECTOR_REPO=quay.io/stackrox-io/collector
+COLLECTOR_REPO=quay.io/stackrox-io$(ARCHDIR)/collector
 endif
 
 ifeq ($(COLLECTOR_IMAGE),)

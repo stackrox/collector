@@ -3,7 +3,12 @@ set -eou pipefail
 
 name=$1
 artifacts_dir=${2:-/tmp/artifacts}
-collector_image_registry=${3:-quay.io/rhacs-eng}
+ARCH=$(arch)
+if [ "$ARCH" = "x86_64" ]; then
+    collector_image_registry=${3:-quay.io/rhacs-eng}
+else
+    collector_image_registry=${3:-quay.io/rhacs-eng/$ARCH}
+fi
 collector_image_tag=${4:-3.7.3}
 
 DIR="$(cd "$(dirname "$0")" && pwd)"

@@ -1,3 +1,16 @@
+ARCH := $(shell arch)
+
+ifeq ($(ARCH),x86_64)
+ARCHDIR=
+ARCHEXTN=
+else ifeq ($(ARCH),amd64)
+ARCHDIR=
+ARCHEXTN=
+else
+ARCHDIR=/$(ARCH)
+ARCHEXTN=.$(ARCH)
+endif
+
 BASE_PATH = $(realpath ./..)
 include ../Makefile-constants.mk
 
@@ -26,7 +39,7 @@ cmake-build/collector: $(HDRS) $(SRCS) $(shell find falcosecurity-libs/ -name '*
 		-e ADDRESS_SANITIZER=$(ADDRESS_SANITIZER) \
 		-e COLLECTOR_APPEND_CID=$(COLLECTOR_APPEND_CID) \
 		-e DISABLE_PROFILING="true" \
-		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) "$(SRC_MOUNT_DIR)/builder/build/build-collector.sh"
+		quay.io/stackrox-io$(ARCHDIR)/collector-builder:$(COLLECTOR_BUILDER_TAG) "$(SRC_MOUNT_DIR)/builder/build/build-collector.sh"
 
 .PHONY: post-build
 post-build:
@@ -46,7 +59,7 @@ unittest:
 	docker run --rm --name collector_unittest \
 		-v "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
-		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) $(COLLECTOR_PRE_ARGUMENTS) "$(SRC_MOUNT_DIR)/$(CMAKE_BASE_DIR)/collector/runUnitTests"
+		quay.io/stackrox-io$(ARCHDIR)/collector-builder:$(COLLECTOR_BUILDER_TAG) $(COLLECTOR_PRE_ARGUMENTS) "$(SRC_MOUNT_DIR)/$(CMAKE_BASE_DIR)/collector/runUnitTests"
 
 .PHONY: txt-files
 txt-files:

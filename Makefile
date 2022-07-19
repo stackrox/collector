@@ -92,7 +92,7 @@ image-dev: collector unittest container-dockerfile $(MOD_VER_FILE) $(CURDIR)/$(C
 		$(COLLECTOR_BUILD_CONTEXT)
 
 image-dev-full: image-dev build-drivers
-	docker tag quay.io/stackrox-io/collector:$(COLLECTOR_TAG) quay.io/stackrox-io/collector:$(COLLECTOR_TAG)-slim
+	docker tag quay.io/stackrox-io$(ARCHDIR)/collector:$(COLLECTOR_TAG) quay.io/stackrox-io$(ARCHDIR)/collector:$(COLLECTOR_TAG)-slim
 	docker build \
 		--target=probe-layer-1 \
 		--tag quay.io/stackrox-io$(ARCHDIR)/collector:$(COLLECTOR_TAG)-full \
@@ -184,7 +184,7 @@ shellcheck-all:
 
 .PHONY: shellcheck-all-dockerized
 shellcheck-all-dockerized:
-	docker build -t -f Dockerfile$(ARCHEXTN) shellcheck-all $(CURDIR)/utilities/shellcheck-all
+	docker build -f Dockerfile$(ARCHEXTN) -t shellcheck-all $(CURDIR)/utilities/shellcheck-all
 	docker run --rm -v "$(CURDIR):/scripts" shellcheck-all:latest
 
 
