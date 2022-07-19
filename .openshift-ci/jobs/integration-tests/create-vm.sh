@@ -45,7 +45,7 @@ QUAY_RHACS_ENG_RO_USERNAME="$(cat /tmp/secret/stackrox-collector-e2e-tests/QUAY_
 QUAY_RHACS_ENG_RO_PASSWORD="$(cat /tmp/secret/stackrox-collector-e2e-tests/QUAY_RHACS_ENG_RO_PASSWORD)"
 
 main \
-    "collector-osci-${VM_TYPE}-tests-${JOB_ID}" \
+    "${GCLOUD_INSTANCE}" \
     "${VM_TYPE}" \
     "${IMAGE_FAMILY}" \
     "${IMAGE_NAME}" \
