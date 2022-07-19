@@ -12,7 +12,7 @@ echo 'gs_service_key_file = /tmp/secret/stackrox-collector-e2e-tests/GOOGLE_CRED
 gcloud auth activate-service-account --key-file /tmp/secret/stackrox-collector-e2e-tests/GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT
 gcloud config set project stackrox-ci
 gcloud config set compute/region us-central1
-gcloud config unset compute/zone
+gcloud config set compute/zone us-central1-a
 gcloud config set core/disable_prompts True
 gcloud auth list
 gsutil ls "gs://collector-build-cache" || echo "ERROR: Could not ls bucket"
