@@ -44,6 +44,8 @@ target_link_libraries(collector_lib sinsp-wrapper)
 target_link_libraries(collector_lib cap-ng)
 target_link_libraries(collector_lib uuid)
 target_link_libraries(collector_lib libgrpc++.a libgrpc.a libgpr.a libupb.a libabsl_bad_optional_access.a libabsl_base.a libabsl_dynamic_annotations.a libabsl_log_severity.a libabsl_spinlock_wait.a libabsl_str_format_internal.a libabsl_strings.a libabsl_strings_internal.a libabsl_throw_delegate.a libabsl_int128.a libabsl_raw_logging_internal.a libaddress_sorting.a)
+target_link_libraries(collector_lib civetweb-cpp civetweb)
+
 target_link_libraries(collector_lib rox-proto)
 
 if(DEFINED ENV{WITH_RHEL8_RPMS})
