@@ -427,7 +427,11 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	err = s.collector.Launch()
 	s.Require().NoError(err)
 
-	scheduled_curls_image := qaImage("quay.io/rhacs-eng/qa", "collector-schedule-curls");
+	image := "quay.io/rhacs-eng/qa"
+	if runtime.GOARCH != "amd64" {
+		image = "quay.io/rhacs-eng/" + runtime.GOARCH +"/qa"
+	}
+	scheduled_curls_image := qaImage(image, "collector-schedule-curls");
 
 	images := []string{
 		"nginx:1.14-alpine",
@@ -708,7 +712,11 @@ func (s *IntegrationTestSuiteBase) GetLineageInfo(processName string, key string
 
 func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	benchmarkName := "benchmark"
-	benchmarkImage := qaImage("quay.io/rhacs-eng/collector-performance", "phoronix");
+	image := "quay.io/rhacs-eng/collector-performance"
+	if runtime.GOARCH != "amd64" {
+		image = "quay.io/rhacs-eng/" + runtime.GOARCH +"/collector-performance"
+	}
+	benchmarkImage := qaImage(image, "phoronix");
 
 	err := s.executor.PullImage(benchmarkImage)
 	s.Require().NoError(err)
@@ -742,7 +750,11 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 
 func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
 	name := "jsonlabel"
-	image := qaImage("quay.io/rhacs-eng/collector-performance", "json-label");
+	jsonimage := "quay.io/rhacs-eng/collector-performance"
+	if runtime.GOARCH != "amd64" {
+		jsonimage = "quay.io/rhacs-eng/" + runtime.GOARCH +"/collector-performance"
+	}
+	image := qaImage(jsonimage, "json-label");
 	err := s.executor.PullImage(image)
 	s.Require().NoError(err)
 	args := []string{
@@ -757,7 +769,11 @@ func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
 
 func (s *IntegrationTestSuiteBase) StartContainerStats() {
 	name := "container-stats"
-	image := qaImage("quay.io/rhacs-eng/collector-performance", "stats");
+	containerImage := "quay.io/rhacs-eng/collector-performance"
+	if runtime.GOARCH != "amd64" {
+		containerImage = "quay.io/rhacs-eng/" + runtime.GOARCH +"/collector-performance"
+	}
+	image := qaImage(containerImage, "stats");
 	args := []string{name, "-v", "/var/run/docker.sock:/var/run/docker.sock", image}
 
 	err := s.executor.PullImage(image)

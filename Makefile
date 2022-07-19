@@ -1,3 +1,16 @@
+ARCH := $(shell arch)
+
+ifeq ($(ARCH),x86_64)
+ARCHDIR=
+ARCHEXTN=
+else ifeq ($(ARCH),amd64)
+ARCHDIR=
+ARCHEXTN=
+else
+ARCHDIR=/$(ARCH)
+ARCHEXTN=.$(ARCH)
+endif
+
 BASE_PATH = .
 include Makefile-constants.mk
 
@@ -171,7 +184,7 @@ shellcheck-all:
 
 .PHONY: shellcheck-all-dockerized
 shellcheck-all-dockerized:
-	docker build -t shellcheck-all $(CURDIR)/utilities/shellcheck-all
+	docker build -t -f Dockerfile$(ARCHEXTN) shellcheck-all $(CURDIR)/utilities/shellcheck-all
 	docker run --rm -v "$(CURDIR):/scripts" shellcheck-all:latest
 
 

@@ -60,14 +60,17 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 	}
 
 	collectorImage := ReadEnvVar("COLLECTOR_IMAGE")
-
+	grpcServerImage := "quay.io/rhacs-eng/grpc-server:3.70.x-468-g5d733366eb"
+	if runtime.GOARCH != "amd64" {
+		grpcServerImage = "quay.io/rhacs-eng/" + runtime.GOARCH + "/grpc-server:3.70.x-468-g5d733366eb"
+	}
 	return &collectorManager{
 		DBPath:            "/tmp/collector-test.db",
 		executor:          e,
 		DisableGrpcServer: false,
 		BootstrapOnly:     false,
 		CollectorImage:    collectorImage,
-		GRPCServerImage:   "quay.io/rhacs-eng/grpc-server:3.70.x-468-g5d733366eb",
+		GRPCServerImage:   grpcServerImage,
 		Env:               env,
 		Mounts:            mounts,
 		TestName:          name,
