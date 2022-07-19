@@ -10,6 +10,11 @@ export VM_CONFIG="${VM_TYPE}.${IMAGE_FAMILY}"
 export COLLECTOR_REPO="quay.io/rhacs-eng/collector"
 export COLLECTOR_IMAGE="${COLLECTOR_REPO}:3.9.0"
 
+ls -lah "$GOMODCACHE"
+
+mkdir -p "$HOME/mod-cache"
+export GOMODCACHE="$HOME/mod-cache"
+
 shopt -s nullglob
 for cred in /tmp/secret/**/[A-Z]*; do
     export "$(basename "$cred")"="$(cat "$cred")"
