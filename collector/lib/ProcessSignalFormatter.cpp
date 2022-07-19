@@ -203,8 +203,8 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   signal->set_pid(tinfo->m_pid);
 
   // set user and group id credentials
-  signal->set_uid(tinfo->m_uid);
-  signal->set_gid(tinfo->m_gid);
+  signal->set_uid(tinfo->m_user.uid);
+  signal->set_gid(tinfo->m_group.gid);
 
   // set time
   auto timestamp = Allocate<Timestamp>();
@@ -318,7 +318,7 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
     // Collapse parent child processes that have the same path
     if (lineage.empty() || (lineage.back().parent_exec_file_path() != pt->m_exepath)) {
       LineageInfo info;
-      info.set_parent_uid(pt->m_uid);
+      info.set_parent_uid(pt->m_user.uid);
       info.set_parent_exec_file_path(pt->m_exepath);
       lineage.push_back(info);
     }

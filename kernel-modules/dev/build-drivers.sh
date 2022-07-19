@@ -33,6 +33,7 @@ cmake -S ${DRIVER_DIR} \
     -DBUILD_USERSPACE=OFF \
     -DBUILD_DRIVER=ON \
     -DENABLE_DKMS=OFF \
+    -DCREATE_TEST_TARGETS=OFF \
     -B ${DRIVER_DIR}/build
 make -C ${DRIVER_DIR}/build/driver
 make -C ${PROBE_DIR} FALCO_DIR="${DRIVER_DIR}/driver/bpf"
