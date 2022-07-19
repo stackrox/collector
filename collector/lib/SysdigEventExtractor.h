@@ -89,16 +89,19 @@ class SysdigEventExtractor {
 #define EVT_ARG(name) FIELD_CSTR(evt_arg_##name, "evt.arg." #name)
 #define EVT_ARG_RAW(name, type) FIELD_RAW(evt_arg_##name, "evt.rawarg." #name, type)
 
-#define TINFO_FIELD(id)                                                                 \
- public:                                                                                \
-  const decltype(std::declval<sinsp_threadinfo>().m_##id)* get_##id(sinsp_evt* event) { \
-    if (!event) return nullptr;                                                         \
-    sinsp_threadinfo* tinfo = event->get_thread_info(true);                             \
-    if (!tinfo) return nullptr;                                                         \
-    return &tinfo->m_##id;                                                              \
+#define TINFO_FIELD_RAW(id, fieldname, type)                \
+ public:                                                    \
+  const type* get_##id(sinsp_evt* event) {                  \
+    if (!event) return nullptr;                             \
+    sinsp_threadinfo* tinfo = event->get_thread_info(true); \
+    if (!tinfo) return nullptr;                             \
+    return &tinfo->m_##fieldname;                           \
   }
 
+#define TINFO_FIELD(id) TINFO_FIELD_RAW(id, id, decltype(std::declval<sinsp_threadinfo>().m_##id))
+
   // Fields can be made available for querying by using a number of macros:
+  // - TINFO_FIELD_RAW(id, fieldname, type): exposes the m_<fieldname> field of threadinfo via get_<id>()
   // - TINFO_FIELD(name): exposes the m_<name> field of threadinfo via get_<name>()
   // - FIELD_CSTR(id, fieldname): exposes the sysdig field <fieldname> via get_<id>(), returning a null-terminated
   //   const char*.
@@ -118,8 +121,8 @@ class SysdigEventExtractor {
   TINFO_FIELD(exepath);
   TINFO_FIELD(pid);
   TINFO_FIELD(tid);
-  TINFO_FIELD(uid);
-  TINFO_FIELD(gid);
+  TINFO_FIELD_RAW(uid, user.uid, uint32_t);
+  TINFO_FIELD_RAW(gid, group.gid, uint32_t);
   FIELD_CSTR(proc_name, "proc.name");
   FIELD_CSTR(proc_pname, "proc.pname");
   FIELD_CSTR(proc_args, "proc.args");
