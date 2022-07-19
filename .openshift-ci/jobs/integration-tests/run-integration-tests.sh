@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
-set -eo pipefail
+set -exo pipefail
 
-remote_host_type=$1
-BRANCH=$2
-BUILD_NUM=$3
+BRANCH=""
 
 echo "Running tests with image '${COLLECTOR_IMAGE}'"
 
@@ -25,7 +23,7 @@ function copy_from_vm() {
     filename=$1
     destination=$2
 
-    if [[ "$remote_host_type" == "local" ]]; then
+    if [[ "$REMOTE_HOST_TYPE" == "local" ]]; then
         cp "$filename" "$destination"
     else
         # We want the shell to expand $GCLOUD_OPTIONS here, so they're treated as individual options
@@ -55,7 +53,7 @@ function run_tests() {
 
 exit_code=0
 
-if [[ $remote_host_type != "local" ]]; then
+if [[ $REMOTE_HOST_TYPE != "local" ]]; then
     run_tests || exit_code=$?
     cp "integration-tests/perf.json" "${ARTIFACTS_DIR}/${JOB_NAME_SAFE}-perf.json"
 else
@@ -73,4 +71,5 @@ else
     fi
 fi
 
-[[ -z "$BRANCH" ]] || gsutil cp "integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${BRANCH}/$(date +%Y-%m-%d)-${BUILD_NUM}/"
+[[ -z "$BRANCH" ]] || gsutil cp "integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${BRANCH}/$(date +%Y-%m-%d)-${PROW_JOB_ID}/"
+[[ -z "$BRANCH" ]] || cp "integration-tests/integration-test-report.xml" "${ARTIFACTS_DIR}"
