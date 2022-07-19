@@ -145,7 +145,7 @@ rebootVM() {
     shift
 
     # Restart the VM.
-    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo reboot" || true
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_USER@$GCP_VM_NAME" --command "sudo reboot" || true
 
     sleep 5
 
@@ -161,11 +161,11 @@ installDockerOnRHELViaGCPSSH() {
     local GCP_SSH_KEY_FILE="$1"
     shift
 
-    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum install -y yum-utils device-mapper-persistent-data lvm2"
-    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo"
-    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum-config-manager --setopt=\"docker-ce-stable.baseurl=https://download.docker.com/linux/centos/${GCP_IMAGE_FAMILY: -1}/x86_64/stable\" --save"
-    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum install -y docker-ce docker-ce-cli containerd.io"
-    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo systemctl start docker"
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "circleci@$GCP_VM_NAME" --command "sudo yum install -y yum-utils device-mapper-persistent-data lvm2"
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "circleci@$GCP_VM_NAME" --command "sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo"
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "circleci@$GCP_VM_NAME" --command "sudo yum-config-manager --setopt=\"docker-ce-stable.baseurl=https://download.docker.com/linux/centos/${GCP_IMAGE_FAMILY: -1}/x86_64/stable\" --save"
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "circleci@$GCP_VM_NAME" --command "sudo yum install -y docker-ce docker-ce-cli containerd.io"
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "circleci@$GCP_VM_NAME" --command "sudo systemctl start docker"
 }
 
 setupDockerOnSUSEViaGCPSSH() {
@@ -187,8 +187,8 @@ gcpSSHReady() {
 
     local retryCount=6
     for _ in $(seq 1 $retryCount); do
-        gcloud compute ssh "${GCP_VM_NAME}" --project=stackrox-ci --zone=us-central1-a --troubleshoot
-        gcloud compute ssh --strict-host-key-checking=no --ssh-flag="-o PasswordAuthentication=no" "${GCP_VM_NAME}" --command "whoami" \
+        # gcloud compute ssh "${GCP_VM_USER}@${GCP_VM_NAME}" --project=stackrox-ci --troubleshoot
+        gcloud compute ssh --strict-host-key-checking=no --ssh-flag="-o PasswordAuthentication=no" "${GCP_VM_USER}@${GCP_VM_NAME}" --command "whoami" \
             && exitCode=0 && break || exitCode=$? && sleep 15
     done
 

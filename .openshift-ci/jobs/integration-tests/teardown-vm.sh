@@ -2,4 +2,4 @@
 
 set -exo pipefail
 
-gcloud compute instances delete "${GCLOUD_INSTANCE}"
+gcloud compute instances delete "${GCLOUD_INSTANCE}" --zone us-central1-a
