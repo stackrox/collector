@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
-set -eo pipefail
-
-function _() {
-    echo "$@"
-    [ -z "${DRY_RUN}" ] && "$@"
-}
+set -exo pipefail
 
 createGCPVM() {
     local GCP_VM_NAME="$1"
@@ -21,8 +16,8 @@ createGCPVM() {
     success=false
     for zone in us-central1-a us-central1-b; do
         echo "Trying zone $zone"
-        _ gcloud config set compute/zone "${zone}"
-        if _ gcloud compute instances create \
+        gcloud config set compute/zone "${zone}"
+        if gcloud compute instances create \
             --image-family "$GCP_IMAGE_FAMILY" \
             --image-project "$GCP_IMAGE_PROJECT" \
             --service-account=circleci-collector@stackrox-ci.iam.gserviceaccount.com \
@@ -33,7 +28,7 @@ createGCPVM() {
             success=true
             break
         else
-            _ gcloud compute instances delete "$GCP_VM_NAME"
+            gcloud compute instances delete "$GCP_VM_NAME"
         fi
     done
 
@@ -42,8 +37,8 @@ createGCPVM() {
         return 1
     fi
 
-    _ gcloud compute instances add-metadata "$GCP_VM_NAME" --metadata serial-port-logging-enable=true
-    _ gcloud compute instances describe --format json "$GCP_VM_NAME"
+    gcloud compute instances add-metadata "$GCP_VM_NAME" --metadata serial-port-logging-enable=true
+    gcloud compute instances describe --format json "$GCP_VM_NAME"
     echo "Instance created successfully: $GCP_VM_NAME"
 
     return 0
@@ -64,8 +59,8 @@ createGCPVMFromImage() {
     success=false
     for zone in us-central1-a us-central1-b; do
         echo "Trying zone $zone"
-        _ gcloud config set compute/zone "${zone}"
-        if _ gcloud compute instances create \
+        gcloud config set compute/zone "${zone}"
+        if gcloud compute instances create \
             --image "$GCP_IMAGE_NAME" \
             --image-project "$GCP_IMAGE_PROJECT" \
             --service-account=circleci-collector@stackrox-ci.iam.gserviceaccount.com \
@@ -76,7 +71,7 @@ createGCPVMFromImage() {
             success=true
             break
         else
-            _ gcloud compute instances delete "$GCP_VM_NAME"
+            gcloud compute instances delete "$GCP_VM_NAME"
         fi
     done
 
@@ -85,8 +80,8 @@ createGCPVMFromImage() {
         return 1
     fi
 
-    _ gcloud compute instances add-metadata "$GCP_VM_NAME" --metadata serial-port-logging-enable=true
-    _ gcloud compute instances describe --format json "$GCP_VM_NAME"
+    gcloud compute instances add-metadata "$GCP_VM_NAME" --metadata serial-port-logging-enable=true
+    gcloud compute instances describe --format json "$GCP_VM_NAME"
     echo "Instance created successfully: $GCP_VM_NAME"
 
     return 0
@@ -98,7 +93,7 @@ installDockerOnUbuntuViaGCPSSH() {
     local GCP_SSH_KEY_FILE="$1"
     shift
     for _ in {1..3}; do
-        if _ gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "(which docker || export DEBIAN_FRONTEND=noninteractive ; sudo apt update -y && sudo apt install -y docker.io )"; then
+        if gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "(which docker || export DEBIAN_FRONTEND=noninteractive ; sudo apt update -y && sudo apt install -y docker.io )"; then
             return 0
         fi
         echo "Retrying in 5s ..."
@@ -114,8 +109,8 @@ installESMUpdatesOnUbuntuAndReboot() {
     local GCP_SSH_KEY_FILE="$1"
     shift
     for _ in {1..3}; do
-        if _ gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo apt update -y && sudo apt install -y ubuntu-advantage-tools && sudo ua attach ${UBUNTU_ESM_SUBSCRIPTION_TOKEN} && sudo apt update -y && sudo apt dist-upgrade -y"; then
-            _ gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo reboot" || true
+        if gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo apt update -y && sudo apt install -y ubuntu-advantage-tools && sudo ua attach ${UBUNTU_ESM_SUBSCRIPTION_TOKEN} && sudo apt update -y && sudo apt dist-upgrade -y"; then
+            gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo reboot" || true
             return 0
         fi
         echo "Retrying in 5s ..."
@@ -131,7 +126,7 @@ installFIPSOnUbuntuAndReboot() {
     local GCP_SSH_KEY_FILE="$1"
     shift
     for _ in {1..3}; do
-        if _ gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo ua enable --assume-yes fips"; then
+        if gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo ua enable --assume-yes fips"; then
             return 0
         fi
         echo "Retrying in 5s ..."
@@ -150,7 +145,7 @@ rebootVM() {
     shift
 
     # Restart the VM.
-    _ gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo reboot" || true
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo reboot" || true
 
     sleep 5
 
@@ -166,11 +161,11 @@ installDockerOnRHELViaGCPSSH() {
     local GCP_SSH_KEY_FILE="$1"
     shift
 
-    _ gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum install -y yum-utils device-mapper-persistent-data lvm2"
-    _ gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo"
-    _ gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum-config-manager --setopt=\"docker-ce-stable.baseurl=https://download.docker.com/linux/centos/${GCP_IMAGE_FAMILY: -1}/x86_64/stable\" --save"
-    _ gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum install -y docker-ce docker-ce-cli containerd.io"
-    _ gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo systemctl start docker"
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum install -y yum-utils device-mapper-persistent-data lvm2"
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo"
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum-config-manager --setopt=\"docker-ce-stable.baseurl=https://download.docker.com/linux/centos/${GCP_IMAGE_FAMILY: -1}/x86_64/stable\" --save"
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo yum install -y docker-ce docker-ce-cli containerd.io"
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo systemctl start docker"
 }
 
 setupDockerOnSUSEViaGCPSSH() {
@@ -179,7 +174,7 @@ setupDockerOnSUSEViaGCPSSH() {
     local GCP_SSH_KEY_FILE="$1"
     shift
 
-    _ gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo systemctl start docker"
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "$GCP_VM_NAME" --command "sudo systemctl start docker"
 }
 
 gcpSSHReady() {
@@ -192,15 +187,13 @@ gcpSSHReady() {
 
     local retryCount=6
     for _ in $(seq 1 $retryCount); do
-	gcloud compute ssh "${GCP_VM_NAME}" --project=stackrox-ci --zone=us-central1-a --ssh-key-file=/alabama/.ssh/GCP_SSH_KEY --troubleshoot
-	ls "${GCP_SSH_KEY_FILE}"
-	ls /.ssh
-        _ gcloud compute ssh --strict-host-key-checking=no --ssh-flag="-o PasswordAuthentication=no" --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCP_VM_NAME}" --command "whoami" \
+        gcloud compute ssh "${GCP_VM_USER}@${GCP_VM_NAME}" --project=stackrox-ci --zone=us-central1-a --ssh-key-file=/alabama/.ssh/GCP_SSH_KEY --troubleshoot
+        gcloud compute ssh --strict-host-key-checking=no --ssh-flag="-o PasswordAuthentication=no" --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCP_VM_NAME}" --command "whoami" \
             && exitCode=0 && break || exitCode=$? && sleep 15
     done
 
     instance_id="$(gcloud compute instances describe "${GCP_VM_NAME}" --format='get(id)')"
-    _ ssh-keygen -f "$HOME/.ssh/google_compute_known_hosts" -R "compute.${instance_id}"
+    ssh-keygen -f "$HOME/.ssh/google_compute_known_hosts" -R "compute.${instance_id}"
     echo "Cleared existing ssh keys for compute.${instance_id}"
 
     return $exitCode
@@ -218,8 +211,8 @@ loginDockerViaGCPSSH() {
     local DOCKER_PASS="$1"
     shift
 
-    _ gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCP_VM_NAME}" --command "sudo usermod -aG docker ${GCP_VM_USER}"
-    _ gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCP_VM_NAME}" --command "docker login -u '$DOCKER_USER' -p '$DOCKER_PASS' quay.io"
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCP_VM_NAME}" --command "sudo usermod -aG docker ${GCP_VM_USER}"
+    gcloud compute ssh --ssh-key-file="${GCP_SSH_KEY_FILE}" "${GCP_VM_USER}@${GCP_VM_NAME}" --command "docker login -u '$DOCKER_USER' -p '$DOCKER_PASS' quay.io"
 }
 
 setupGCPVM() {
