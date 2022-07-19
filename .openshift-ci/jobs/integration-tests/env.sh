@@ -8,3 +8,8 @@ export REMOTE_HOST_TYPE=gcloud
 export VM_CONFIG="${VM_TYPE}.${IMAGE_FAMILY}"
 export COLLECTOR_REPO="quay.io/rhacs-eng/collector"
 export COLLECTOR_IMAGE="${COLLECTOR_REPO}:3.9.0"
+
+shopt -s nullglob
+for cred in /tmp/secret/**/[A-Z]*; do
+    export "$(basename "$cred")"="$(cat "$cred")"
+done

@@ -28,8 +28,6 @@ main() {
     setupGCPVM "$GCP_VM_NAME" "$GCP_VM_TYPE" "$GCP_IMAGE_FAMILY" "$GCP_IMAGE_NAME" "$GCP_SSH_KEY_FILE" "$GDOCKER_USER" "$GDOCKER_PASS"
 }
 
-ls -lah /tmp/secret/stackrox-collector-e2e-tests/
-
 mkdir -p "$(dirname "${GCP_SSH_KEY_FILE}")"
 chmod 0700 "$(dirname "${GCP_SSH_KEY_FILE}")"
 
@@ -40,9 +38,6 @@ cp /tmp/secret/stackrox-collector-e2e-tests/GCP_SSH_KEY_PUB "${GCP_SSH_KEY_FILE}
 chmod 0600 "${GCP_SSH_KEY_FILE}.pub"
 
 env
-
-QUAY_RHACS_ENG_RO_USERNAME="$(cat /tmp/secret/stackrox-collector-e2e-tests/QUAY_RHACS_ENG_RO_USERNAME)"
-QUAY_RHACS_ENG_RO_PASSWORD="$(cat /tmp/secret/stackrox-collector-e2e-tests/QUAY_RHACS_ENG_RO_PASSWORD)"
 
 main \
     "${GCLOUD_INSTANCE}" \
