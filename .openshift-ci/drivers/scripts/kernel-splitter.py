@@ -101,12 +101,11 @@ class Builder:
         return len(self.tasks) / self.shards
 
 
-def distribute_shards(total_shards, *builders):
+def distribute_shards(total_shards, builders):
     total_tasks = 0
     used_shards = 0
 
-    for builder in builders:
-        total_tasks += len(builder)
+    total_tasks = sum(len(b) for b in builders)
 
     if total_tasks == 0:
         # No drivers left to build
@@ -164,11 +163,11 @@ def main(task_file):
     # Every builder will use parallel builds, figure out how many shards each of
     # them will use
     total_shards = int(os.environ.get('MAX_PARALLEL_BUILDS', 3))
-    distribute_shards(total_shards, fc36, rhel8, rhel7)
+    distribute_shards(total_shards, builders)
 
-    fc36.dump()
-    rhel8.dump()
-    rhel7.dump()
+    map(lambda b: b.dump(), builders)
+
+    # Dump kernels using an unknown builder
     unknown.dump()
 
 
