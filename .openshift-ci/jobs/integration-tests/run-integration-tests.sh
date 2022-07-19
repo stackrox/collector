@@ -53,6 +53,8 @@ function run_tests() {
 
 exit_code=0
 
+go env
+
 if [[ $REMOTE_HOST_TYPE != "local" ]]; then
     run_tests || exit_code=$?
     cp "integration-tests/perf.json" "${ARTIFACTS_DIR}/${JOB_NAME_SAFE}-perf.json"
