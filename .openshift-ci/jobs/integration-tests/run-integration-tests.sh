@@ -57,7 +57,7 @@ go env
 
 if [[ $REMOTE_HOST_TYPE != "local" ]]; then
     run_tests || exit_code=$?
-    cp "integration-tests/perf.json" "${ARTIFACTS_DIR}/${JOB_NAME_SAFE}-perf.json"
+    cp "integration-tests/perf.json" "${ARTIFACT_DIR}/${JOB_NAME_SAFE}-perf.json"
 else
     sudo cp /proc/sys/kernel/core_pattern /tmp/core_pattern
     echo '/tmp/core.out' | sudo tee /proc/sys/kernel/core_pattern
@@ -74,4 +74,4 @@ else
 fi
 
 [[ -z "$BRANCH" ]] || gsutil cp "integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${BRANCH}/$(date +%Y-%m-%d)-${PROW_JOB_ID}/"
-[[ -z "$BRANCH" ]] || cp "integration-tests/integration-test-report.xml" "${ARTIFACTS_DIR}"
+[[ -z "$BRANCH" ]] || cp "integration-tests/integration-test-report.xml" "${ARTIFACT_DIR}"
