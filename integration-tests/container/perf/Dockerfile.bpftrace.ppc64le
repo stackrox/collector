@@ -1,7 +1,9 @@
-FROM quay.io/iovisor/ppc64le/bpftrace:latest
+FROM centos:stream8
 
 COPY /scripts /scripts
 COPY /tools /tools
+
+RUN yum install -y bpftrace
 
 WORKDIR /root
 ENTRYPOINT ["/scripts/run-tool.sh", "bpftrace"]
