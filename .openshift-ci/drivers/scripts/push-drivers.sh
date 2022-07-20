@@ -2,16 +2,19 @@
 
 set -eo pipefail
 
+# shellcheck source=SCRIPTDIR/lib.sh
+source /scripts/lib.sh
+
 GCP_CREDS="$(cat /tmp/secrets/GOOGLE_CREDENTIALS_KERNEL_CACHE)"
-GCP_CHECK_BUCKET="gs://collector-build-cache"
+GCP_BASE_BUCKET="gs://collector-modules-osci"
 
-/scripts/setup-gcp-env.sh "$GCP_CREDS" "$GCP_CHECK_BUCKET"
+/scripts/setup-gcp-env.sh "${GCP_CREDS}" "${GCP_BASE_BUCKET}"
 
-target="gs://mauro-drivers-test/drivers"
-BRANCH="mauro-OSCI-driver-builds"
-BUILD_NUM=12345
-if [[ "$BRANCH" != "master" && -z "$TAG" ]]; then
-    target="gs://stackrox-collector-modules-staging/pr-builds/${BRANCH}/${BUILD_NUM}"
+target="${GCP_BASE_BUCKET}"
+
+if is_in_PR_context; then
+    BRANCH="$(get_base_ref)"
+    target="${GCP_BASE_BUCKET}/pr-builds/${BRANCH}/${BUILD_ID}"
 fi
 
 shopt -s nullglob

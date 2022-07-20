@@ -18,3 +18,7 @@ COPY /kernel-modules/build/build-wrapper.sh /scripts/compile.sh
 
 # OSCI specific scripts
 COPY /.openshift-ci/drivers/scripts/ /scripts/
+
+# post build validation and driver pushing scripts
+COPY /.circleci/kernel-module-build-failures-check/20-test-for-build-failures.sh /scripts/drivers-build-failures.sh
+COPY /.circleci/gcloud-init/setup-gcp-env.sh /scripts/setup-gcp-env.sh
