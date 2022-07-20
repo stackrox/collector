@@ -1,4 +1,4 @@
-FROM centos:stream8
+FROM quay.io/centos/centos:stream8
 
 COPY /scripts /scripts
 COPY /tools /tools
