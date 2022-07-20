@@ -7,7 +7,7 @@ export LC_ALL=C
 export JOB_ID="${PROW_JOB_ID:0:8}"
 export GCP_SSH_KEY_FILE="$HOME/.ssh/GCP_SSH_KEY"
 export GCLOUD_INSTANCE="collector-osci-${COLLECTION_METHOD}-${VM_TYPE}-${IMAGE_FAMILY}-${JOB_ID}"
-export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
+export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE} --ssh-flag=\"-o UserKnownHostsFile=/dev/null\" --strict-host-key-checking=no"
 export GCLOUD_USER="circleci"
 export REMOTE_HOST_TYPE=gcloud
 export VM_CONFIG="${VM_TYPE}.${IMAGE_FAMILY}"
