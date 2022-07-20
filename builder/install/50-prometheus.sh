@@ -2,24 +2,11 @@
 
 set -e
 
-if [ -n "${WITH_RHEL8_RPMS}" ]; then
-    cd prometheus-cpp
-    cd 3rdparty
-    rmdir civetweb
-    mv ../../civetweb .
-    cd ..
-else
-    git clone https://github.com/jupp0r/prometheus-cpp.git -b "$PROMETHEUS_CPP_REVISION" --depth 1
-    cd prometheus-cpp
-    git submodule update --init
-fi
+cd third_party/prometheus-cpp
 
-mkdir -p /usr/local/include
-cp -R 3rdparty/civetweb/include /usr/local/include/civetweb
-cat LICENSE 3rdparty/civetweb/LICENSE.md > "${LICENSE_DIR}/prometheus-${PROMETHEUS_CPP_REVISION}"
-mkdir build
-cd build
-cmake -DENABLE_TESTING=OFF -DCMAKE_BUILD_TYPE=Release ../
-make -j "${NPROCS:-2}"
-make install
-ldconfig
+cat LICENSE > "${LICENSE_DIR}/prometheus-${PROMETHEUS_CPP_REVISION}"
+
+mkdir cmake-build
+cd cmake-build
+cmake -DENABLE_TESTING=OFF -DUSE_THIRDPARTY_LIBRARIES=NO -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release ../
+cmake --build . --target install ${NPROCS:+-j ${NPROCS}}
