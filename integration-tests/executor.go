@@ -11,7 +11,9 @@ import (
 )
 
 var (
-	debug = false
+	debug             = false
+	defaultScpOptions = "--scp-flag=-oUserKnownHostsFile=/dev/null --strict-host-key-checking=no"
+	defaultSshOptions = "--ssh-flag=-oUserKnownHostsFile=/dev/null --strict-host-key-checking=no"
 )
 
 type Executor interface {
@@ -235,7 +237,7 @@ func (e *localCommandBuilder) RemoteCopyCommand(remoteSrc string, localDst strin
 func (e *gcloudCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
 	cmdArgs := []string{"compute", "ssh"}
 	if len(e.options) > 0 {
-		opts := strings.Split(e.options, " ")
+		opts := strings.Split(e.options+defaultSshOptions, " ")
 		cmdArgs = append(cmdArgs, opts...)
 	}
 	userInstance := e.instance
@@ -250,7 +252,7 @@ func (e *gcloudCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
 func (e *gcloudCommandBuilder) RemoteCopyCommand(remoteSrc string, localDst string) *exec.Cmd {
 	cmdArgs := []string{"compute", "scp"}
 	if len(e.options) > 0 {
-		opts := strings.Split(e.options, " ")
+		opts := strings.Split(e.options+defaultScpOptions, " ")
 		cmdArgs = append(cmdArgs, opts...)
 	}
 	userInstance := e.instance
