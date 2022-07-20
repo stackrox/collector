@@ -1,9 +1,9 @@
-FROM quay.io/centos/centos:stream8
+FROM ubuntu:focal
 
 COPY /scripts /scripts
 COPY /tools /tools
 
-RUN yum install -y bpftrace
+RUN apt-get update -y && apt-get install -y bpftrace && bpftrace -V
 
 WORKDIR /root
 ENTRYPOINT ["/scripts/run-tool.sh", "bpftrace"]
