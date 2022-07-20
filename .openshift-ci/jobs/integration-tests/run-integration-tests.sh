@@ -58,6 +58,9 @@ go env
 if [[ $REMOTE_HOST_TYPE != "local" ]]; then
     run_tests || exit_code=$?
     cp "integration-tests/perf.json" "${ARTIFACT_DIR}/${JOB_NAME_SAFE}-perf.json"
+    if [ "${exit_code}" -ne 0 ]; then
+        exit "${exit_code}"
+    fi
 else
     sudo cp /proc/sys/kernel/core_pattern /tmp/core_pattern
     echo '/tmp/core.out' | sudo tee /proc/sys/kernel/core_pattern
