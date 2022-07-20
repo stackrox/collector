@@ -29,6 +29,7 @@ extern "C" {
 
 #include <memory>
 
+#include "CivetServer.h"
 #include "CollectorStatsExporter.h"
 #include "ConnTracker.h"
 #include "Containers.h"
@@ -39,7 +40,6 @@ extern "C" {
 #include "ProfilerHandler.h"
 #include "SysdigService.h"
 #include "Utility.h"
-#include "civetweb/CivetServer.h"
 #include "prometheus/exposer.h"
 
 namespace collector {

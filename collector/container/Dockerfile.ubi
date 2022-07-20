@@ -81,7 +81,7 @@ COPY CMakeLists.txt CMakeLists.txt
 
 ENV DISABLE_PROFILING=true
 ENV WITH_RHEL8_RPMS=true
-RUN ./builder/build/build-ubi-dependencies.sh && \
+RUN ./builder/install/install-dependencies.sh && \
     ./builder/build/build-collector.sh && \
     "${CMAKE_BUILD_DIR}/collector/runUnitTests"
 

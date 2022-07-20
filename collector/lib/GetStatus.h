@@ -26,8 +26,8 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <string>
 
+#include "CivetServer.h"
 #include "Sysdig.h"
-#include "civetweb/CivetServer.h"
 
 namespace collector {
 
