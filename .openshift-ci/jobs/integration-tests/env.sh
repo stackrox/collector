@@ -14,9 +14,10 @@ export VM_CONFIG="${VM_TYPE}.${IMAGE_FAMILY}"
 export COLLECTOR_REPO="quay.io/rhacs-eng/collector"
 export COLLECTOR_IMAGE="${COLLECTOR_REPO}:3.9.0"
 
-sudo mkdir -p /.ssh
-sudo chown "$(whoami)" /.ssh
-chmod 0700 /.ssh
+#sudo mkdir -p /.ssh
+#sudo chown "$(whoami)" /.ssh
+#chmod 0700 /.ssh
+whoami
 
 ls -alh /go/pkg || true
 
