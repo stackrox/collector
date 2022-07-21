@@ -28,7 +28,7 @@ run_builder() {
 }
 
 # Create empty directories, in case no builds are necessary
-mkdir -p /kernel-modules
+mkdir -p /built-drivers
 mkdir -p /FAILURES
 
 # Run builders in parallel for every shard and wait for them to finish
