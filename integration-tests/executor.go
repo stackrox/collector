@@ -237,7 +237,7 @@ func (e *localCommandBuilder) RemoteCopyCommand(remoteSrc string, localDst strin
 func (e *gcloudCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
 	cmdArgs := []string{"compute", "ssh"}
 	if len(e.options) > 0 {
-		opts := strings.Split(e.options+defaultSshOptions, " ")
+		opts := strings.Split(e.options+" "+defaultSshOptions, " ")
 		cmdArgs = append(cmdArgs, opts...)
 	}
 	userInstance := e.instance
@@ -252,7 +252,7 @@ func (e *gcloudCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
 func (e *gcloudCommandBuilder) RemoteCopyCommand(remoteSrc string, localDst string) *exec.Cmd {
 	cmdArgs := []string{"compute", "scp"}
 	if len(e.options) > 0 {
-		opts := strings.Split(e.options+defaultScpOptions, " ")
+		opts := strings.Split(e.options+" "+defaultScpOptions, " ")
 		cmdArgs = append(cmdArgs, opts...)
 	}
 	userInstance := e.instance
