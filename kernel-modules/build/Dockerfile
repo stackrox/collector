@@ -4,6 +4,7 @@ RUN apt-get update \
  && apt-get upgrade -y \
  && apt-get install --no-install-recommends -y \
       binutils \
+      git \
       cmake \
       make \
       curl \
@@ -17,6 +18,14 @@ RUN apt-get update \
       golang-go \
       pkg-config \
  ;
+
+RUN git clone https://github.com/google/googletest.git && \
+    cd googletest && \
+    mkdir builddir && \
+    cd builddir && \
+    cmake -Dgtest_build_tests=ON .. && \
+    make && \
+    make install
 
 RUN sed s_stretch_jessie_g < /etc/apt/sources.list > /etc/apt/sources.list.d/jessie.list && \
     apt-get update && apt-get install --no-install-recommends -y \
