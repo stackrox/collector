@@ -25,7 +25,7 @@ RUN git clone https://github.com/google/googletest.git && \
     mkdir builddir && \
     cd builddir && \
     cmake -Dgtest_build_tests=ON .. && \
-    make && \
+    make -j$(nproc) && \
     make install
 
 RUN sed s_stretch_jessie_g < /etc/apt/sources.list > /etc/apt/sources.list.d/jessie.list && \
