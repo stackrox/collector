@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -exo pipefail
 
-BRANCH=""
+BRANCH="$(jq -r '.extra_refs[0].base_ref' <(echo "$JOB_SPEC"))"
 
 echo "Running tests with image '${COLLECTOR_IMAGE}'"
 
@@ -53,8 +53,6 @@ function run_tests() {
 
 exit_code=0
 
-go env
-
 if [[ $REMOTE_HOST_TYPE != "local" ]]; then
     run_tests || exit_code=$?
     cp "integration-tests/perf.json" "${ARTIFACT_DIR}/${JOB_NAME_SAFE}-perf.json"
@@ -62,6 +60,7 @@ if [[ $REMOTE_HOST_TYPE != "local" ]]; then
         exit "${exit_code}"
     fi
 else
+    # TODO: support local integration tests (or remove if not required)
     sudo cp /proc/sys/kernel/core_pattern /tmp/core_pattern
     echo '/tmp/core.out' | sudo tee /proc/sys/kernel/core_pattern
 
@@ -76,5 +75,6 @@ else
     fi
 fi
 
+# TODO: make generic CI directory in stackrox-ci-results
 [[ -z "$BRANCH" ]] || gsutil cp "integration-tests/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${BRANCH}/$(date +%Y-%m-%d)-${PROW_JOB_ID}/"
 [[ -z "$BRANCH" ]] || cp "integration-tests/integration-test-report.xml" "${ARTIFACT_DIR}"

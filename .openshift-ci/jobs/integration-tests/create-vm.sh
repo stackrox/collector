@@ -1,8 +1,18 @@
 #!/usr/bin/env bash
 
+set -exo pipefail
+
 # shellcheck source=SCRIPTDIR/envbuilder.sh
 
-set -e
+copy_secret() {
+    local NAME="$1"
+    local DEST="$2"
+    local PERMS="$3"
+
+    cp "/tmp/secret/stackrox-collector-e2e-tests/$NAME" "$DEST"
+    chmod "$PERMS" "$DEST"
+}
+
 main() {
     local GCP_VM_NAME="$1"
     shift
@@ -25,19 +35,14 @@ main() {
     source "envbuilder.sh"
     popd
 
+    mkdir -p "$(dirname "${GCP_SSH_KEY_FILE}")"
+    chmod 0700 "$(dirname "${GCP_SSH_KEY_FILE}")"
+
+    copy_secret GCP_SSH_KEY "${GCP_SSH_KEY_FILE}" 0600
+    copy_secret GCP_SSH_KEY_PUB "${GCP_SSH_KEY_FILE}.pub" 0600
+
     setupGCPVM "$GCP_VM_NAME" "$GCP_VM_TYPE" "$GCP_IMAGE_FAMILY" "$GCP_IMAGE_NAME" "$GCP_SSH_KEY_FILE" "$GDOCKER_USER" "$GDOCKER_PASS"
 }
-
-mkdir -p "$(dirname "${GCP_SSH_KEY_FILE}")"
-chmod 0700 "$(dirname "${GCP_SSH_KEY_FILE}")"
-
-cp /tmp/secret/stackrox-collector-e2e-tests/GCP_SSH_KEY "${GCP_SSH_KEY_FILE}"
-chmod 0600 "${GCP_SSH_KEY_FILE}"
-
-cp /tmp/secret/stackrox-collector-e2e-tests/GCP_SSH_KEY_PUB "${GCP_SSH_KEY_FILE}.pub"
-chmod 0600 "${GCP_SSH_KEY_FILE}.pub"
-
-env
 
 main \
     "${GCLOUD_INSTANCE}" \
