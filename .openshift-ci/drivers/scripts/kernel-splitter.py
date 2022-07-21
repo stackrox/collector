@@ -163,7 +163,8 @@ def main(task_file):
     total_shards = int(os.environ.get('MAX_PARALLEL_BUILDS', 3))
     distribute_shards(total_shards, builders)
 
-    map(lambda b: b.dump(), builders)
+    for builder in builders:
+        builder.dump()
 
     # Dump kernels using an unknown builder
     unknown.dump()

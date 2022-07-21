@@ -6,8 +6,8 @@ set -exo pipefail
 source /scripts/lib.sh
 
 upload_drivers() {
-    drivers_dir=$1
-    target=$2
+    local drivers_dir=$1
+    local target=$2
 
     for driver_version_dir in "${drivers_dir}"/*; do
         files=("${driver_version_dir}"/*.{gz,unavail})
