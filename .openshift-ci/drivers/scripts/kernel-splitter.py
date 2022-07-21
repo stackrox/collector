@@ -84,9 +84,7 @@ class Builder:
             self._dump_shard(shard, raw_tasks)
 
     def match(self, task):
-        if self.regex.match(task.kernel):
-            return True
-        return False
+        return self.regex.match(task.kernel) is not None
 
     def append(self, task):
         if task.kernel not in self.tasks:

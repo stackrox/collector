@@ -1,6 +1,6 @@
 FROM quay.io/centos/centos:centos7
 
-COPY --from=scripts:latest /scripts/ /scripts/
+COPY --from=replaced-by-osci:scripts /scripts/ /scripts/
 
 ENV DISTRO=rhel7
 

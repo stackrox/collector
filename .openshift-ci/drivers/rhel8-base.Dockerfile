@@ -1,6 +1,6 @@
 FROM quay.io/centos/centos:stream8 AS rhel-8-base
 
-COPY --from=scripts:latest /scripts/ /scripts/
+COPY --from=replaced-by-osci:scripts /scripts/ /scripts/
 
 ENV DISTRO=rhel8
 

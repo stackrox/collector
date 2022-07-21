@@ -8,7 +8,7 @@ build_cache() {
         mkdir -p "/kernel-modules/$module_version/"
 
         gsutil -m rsync -r \
-            "gs://collector-modules-public/$module_version/" \
+            "gs://collector-modules-osci-public/$module_version/" \
             "/kernel-modules/$module_version/" || true
     done
 

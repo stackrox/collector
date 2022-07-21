@@ -2,12 +2,12 @@ FROM pipeline:src
 
 ENV OSCI_RUN=1
 
-COPY --from=pre-build:latest /kernel-modules /kernel-modules
-COPY --from=fc36-drivers:latest /kernel-modules /kernel-modules
-COPY --from=fc36-drivers:latest /FAILURES /FAILURES
-COPY --from=rhel8-drivers:latest /kernel-modules /kernel-modules
-COPY --from=rhel8-drivers:latest /FAILURES /FAILURES
-COPY --from=rhel7-drivers:latest /kernel-modules /kernel-modules
-COPY --from=rhel7-drivers:latest /FAILURES /FAILURES
+COPY --from=replaced-by-osci:pre-build /kernel-modules /kernel-modules
+COPY --from=replaced-by-osci:fc36-drivers /built-drivers /built-drivers
+COPY --from=replaced-by-osci:fc36-drivers /FAILURES /FAILURES
+COPY --from=replaced-by-osci:rhel8-drivers /built-drivers /built-drivers
+COPY --from=replaced-by-osci:rhel8-drivers /FAILURES /FAILURES
+COPY --from=replaced-by-osci:rhel7-drivers /built-drivers /built-drivers
+COPY --from=replaced-by-osci:rhel7-drivers /FAILURES /FAILURES
 
-COPY --from=scripts:latest /scripts/ /scripts/
+COPY --from=replaced-by-osci:scripts /scripts/ /scripts/

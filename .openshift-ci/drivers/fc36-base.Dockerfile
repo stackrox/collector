@@ -1,6 +1,6 @@
 FROM registry.fedoraproject.org/fedora:36 AS builder
 
-COPY --from=scripts:latest /scripts/ /scripts/
+COPY --from=replaced-by-osci:scripts /scripts/ /scripts/
 
 ENV DISTRO=fc36
 

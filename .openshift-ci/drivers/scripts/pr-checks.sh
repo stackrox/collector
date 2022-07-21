@@ -19,7 +19,6 @@ NO_CACHE=0
 
 if ! is_in_PR_context; then
     LEGACY_PROBES="true"
-    NO_CACHE=1
 else
     if pr_has_label "build-legacy-probes"; then
         LEGACY_PROBES="true"

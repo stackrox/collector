@@ -6,7 +6,7 @@ ENV USE_KERNELS_FILE=true
 ENV OSCI_RUN=1
 ENV MAX_PARALLEL_BUILDS=32
 
-COPY --from=scripts:latest /scripts/ /scripts/
+COPY --from=replaced-by-osci:scripts /scripts/ /scripts/
 
 RUN dnf -y install jq && \
     ln -s /go/src/github.com/stackrox/collector/ /collector && \

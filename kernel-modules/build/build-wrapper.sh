@@ -132,7 +132,13 @@ export OSCI_RUN
 
 if ((DOCKERIZED)); then
     FAILURE_DIR="/FAILURES"
-    export MODULE_BASE_DIR="/kernel-modules"
+
+    if ((OSCI_RUN)); then
+        export MODULE_BASE_DIR="/built-drivers"
+    else
+        export MODULE_BASE_DIR="/kernel-modules"
+    fi
+
     mkdir -p "$FAILURE_DIR"
     mkdir -p "$MODULE_BASE_DIR"
 else

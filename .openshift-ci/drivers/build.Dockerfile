@@ -1,4 +1,4 @@
-FROM builder-base:latest AS builder
+FROM replaced-by-osci:builder-base AS builder
 
 ARG SHARDS_DIR
 ENV SHARDS_DIR=${SHARDS_DIR}
@@ -6,8 +6,8 @@ ENV SHARDS_DIR=${SHARDS_DIR}
 ENV DOCKERIZED=1
 ENV OSCI_RUN=1
 
-COPY --from=pre-build:latest /kobuild-tmp/versions-src /kobuild-tmp/versions-src
-COPY --from=pre-build:latest /tasks/ /tasks/
+COPY --from=replaced-by-osci:pre-build /kobuild-tmp/versions-src /kobuild-tmp/versions-src
+COPY --from=replaced-by-osci:pre-build /tasks/ /tasks/
 
 RUN /scripts/run-builders.sh
 
