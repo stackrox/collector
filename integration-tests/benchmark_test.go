@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 	"time"
+	"runtime"
 
 	"github.com/google/shlex"
 	"github.com/stretchr/testify/assert"

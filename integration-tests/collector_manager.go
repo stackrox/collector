@@ -7,6 +7,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
+	"runtime"
 
 	"github.com/hashicorp/go-multierror"
 
