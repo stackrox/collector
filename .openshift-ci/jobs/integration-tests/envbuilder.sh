@@ -246,17 +246,10 @@ setupGCPVM() {
         exit 1
     fi
 
-    local GCP_VM_USER
-    #GCP_VM_USER="$(whoami)"
-    GCP_VM_USER="circleci"
-
-    if [[ "$GCP_VM_TYPE" =~ "coreos" ]]; then
-        GCP_VM_USER="core"
-    fi
+    local GCP_VM_USER="${GCLOUD_USER}"
 
     if [[ "$GCP_VM_TYPE" == "flatcar" ]]; then
         GCP_IMAGE_PROJECT="kinvolk-public"
-        GCP_VM_USER="core"
     elif [[ "$GCP_VM_TYPE" == "garden-linux" ]]; then
         GCP_IMAGE_PROJECT="sap-se-gcp-gardenlinux"
     else
