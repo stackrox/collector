@@ -22,7 +22,7 @@ export COLLECTOR_REPO="quay.io/rhacs-eng/collector"
 
 # TODO: make change ci user on GCP vms
 export GCLOUD_USER="circleci"
-if [[ "$GCP_VM_TYPE" == "flatcar" || "$GCP_VM_TYPE" =~ "coreos" ]]; then
+if [[ "$VM_TYPE" == "flatcar" || "$VM_TYPE" =~ "coreos" ]]; then
     GCLOUD_USER="core"
 fi
 
