@@ -13,5 +13,5 @@ RUN /scripts/run-builders.sh
 
 FROM registry.fedoraproject.org/fedora:36
 
-COPY --from=builder /kernel-modules /kernel-modules
+COPY --from=builder /built-drivers /built-drivers
 COPY --from=builder /FAILURES /FAILURES
