@@ -9,7 +9,7 @@ else
     cd third_party
     git clone https://github.com/openresty/luajit2.git
     cd luajit2
-    git checkout v${LUAJIT2_VERSION}
+    git checkout v"${LUAJIT2_VERSION}"
 fi
 
 make ${NPROCS:+-j ${NPROCS}} install PREFIX=/usr/local CFLAGS=-fPIC
