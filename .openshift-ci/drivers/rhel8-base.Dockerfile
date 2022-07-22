@@ -15,6 +15,7 @@ RUN dnf -y update && \
         elfutils-libelf-devel \
         kmod && \
     # We trick Debian builds into thinking they have the required GCC binaries
+    ln -s /usr/bin/gcc /usr/bin/gcc-4.9 && \
     ln -s /usr/bin/gcc /usr/bin/gcc-6 && \
     ln -s /usr/bin/gcc /usr/bin/gcc-8 && \
     ln -s /usr/bin/gcc /usr/bin/gcc-9 && \
