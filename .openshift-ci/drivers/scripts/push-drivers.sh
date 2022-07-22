@@ -24,7 +24,7 @@ GCP_BASE_BUCKET="gs://collector-modules-osci"
 target="${GCP_BASE_BUCKET}"
 
 if is_in_PR_context; then
-    BRANCH="$(get_base_ref)"
+    BRANCH="$(get_branch)"
     target="gs://stackrox-collector-modules-staging/pr-builds/${BRANCH}/${BUILD_ID}"
 fi
 

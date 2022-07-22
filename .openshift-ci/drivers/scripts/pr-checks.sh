@@ -9,7 +9,7 @@ source /scripts/lib.sh
 # files and split tasks needed to build them
 
 export BRANCH
-BRANCH="$(get_base_ref)"
+BRANCH="$(get_branch)"
 
 export LEGACY_PROBES
 export NO_CACHE

@@ -40,13 +40,9 @@ is_openshift_CI_rehearse_PR() {
     [[ "$(get_repo_full_name)" == "openshift/release" ]]
 }
 
-get_base_ref() {
-    if [[ -n "${PULL_BASE_REF:-}" ]]; then
-        # presubmit, postsubmit and batch runs
-        # (ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables)
-        echo "${PULL_BASE_REF}"
-    elif [[ -n "${JOB_SPEC:-}" ]]; then
-        # periodics
+get_branch() {
+    # ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables
+    if [[ -n "${JOB_SPEC:-}" ]]; then
         # OpenShift CI adds 'extra_refs'
         local base_ref
         base_ref="$(jq -r '.extra_refs[0].base_ref' <<< "${JOB_SPEC}")" || die "invalid JOB_SPEC yaml"
@@ -62,6 +58,9 @@ get_base_ref() {
             die "expect: base_ref in JOB_SEC.extra_refs[0]"
         fi
         echo "${base_ref}"
+    elif [[ -n "${PULL_BASE_REF:-}" ]]; then
+        # last reort, use the base branch instead of the head
+        echo "${PULL_BASE_REF}"
     else
         die "Expect PULL_BASE_REF or JOB_SPEC"
     fi
