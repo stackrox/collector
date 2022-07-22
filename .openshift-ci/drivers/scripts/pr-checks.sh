@@ -17,11 +17,9 @@ export NO_CACHE
 LEGACY_PROBES="true"
 NO_CACHE=0
 
-if ! is_in_PR_context; then
-    LEGACY_PROBES="true"
-else
-    if pr_has_label "build-legacy-probes"; then
-        LEGACY_PROBES="true"
+if is_in_PR_context; then
+    if ! pr_has_label "build-legacy-probes"; then
+        LEGACY_PROBES="false"
     fi
 
     if pr_has_label "no-cache"; then
