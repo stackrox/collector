@@ -27,7 +27,7 @@ if [[ "$VM_TYPE" == "flatcar" || "$VM_TYPE" =~ "coreos" ]]; then
 fi
 
 # TODO: remove this once rebased against image-push functionality (to use image built in this PR)
-export COLLECTOR_IMAGE="${COLLECTOR_REPO}:3.9.0"
+export COLLECTOR_IMAGE="${COLLECTOR_REPO}:3.9.x-48-gd054065716-osci"
 
 # Ensure that all secrets are available in the environment
 shopt -s nullglob
