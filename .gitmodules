@@ -33,7 +33,7 @@
 [submodule "falcosecurity-libs"]
 	path = falcosecurity-libs
 	url = https://github.com/stackrox/falcosecurity-libs
-	branch = master
+	branch = 3bcacab26c021bcf70ec2239c27e8b43b3467174
 [submodule "collector/proto/third_party/gogoproto"]
 	path = collector/proto/third_party/gogoproto
 	url = https://github.com/gogo/protobuf
