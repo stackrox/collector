@@ -18,6 +18,7 @@ RUN dnf update -y || true; \
         kmod \
         wget \
         golang-go \
+        dwarves \
         pkg-config || true ; \
     mkdir -p /output; \
     dnf autoremove -y

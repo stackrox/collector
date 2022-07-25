@@ -92,10 +92,11 @@ add_test(collector-tests runUnitTests)
 
 # Falco Wrapper Library
 set(BUILD_DRIVER OFF CACHE BOOL "Build the driver on Linux" FORCE)
+set(USE_BUNDLED_DEPS OFF CACHE BOOL "Enable bundled dependencies instead of using the system ones" FORCE)
 if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64")
-	set(USE_BUNDLED_DEPS OFF CACHE BOOL "Enable bundled dependencies instead of using the system ones" FORCE)
+	set(USE_BUNDLED_LUAJIT OFF CACHE BOOL "Disable building of the bundled LuaJIT" FORCE)
 else()
-	set(USE_BUNDLED_DEPS ON CACHE BOOL "Enable bundled dependencies instead of using the system ones" FORCE)
+	set(USE_BUNDLED_LUAJIT ON CACHE BOOL "Enable building of the bundled LuaJIT" FORCE)
 endif()
 set(USE_BUNDLED_CARES OFF CACHE BOOL "Enable bundled dependencies instead of using the system ones" FORCE)
 set(NO_LINK_GRPC_LIBS ON CACHE BOOL "Do not link gRPC libraries" FORCE)
