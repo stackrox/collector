@@ -26,8 +26,9 @@ if [[ "$VM_TYPE" == "flatcar" || "$VM_TYPE" =~ "coreos" ]]; then
     GCLOUD_USER="core"
 fi
 
-# TODO: remove this once rebased against image-push functionality (to use image built in this PR)
-export COLLECTOR_IMAGE="${COLLECTOR_REPO}:3.9.x-48-gd054065716-osci"
+IMAGE_TAG="$(make tag)"
+
+export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${IMAGE_TAG}-osci"
 
 # Ensure that all secrets are available in the environment
 shopt -s nullglob
