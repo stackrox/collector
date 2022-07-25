@@ -12,8 +12,6 @@ import (
 
 var (
 	debug             = false
-	defaultScpOptions = "--scp-flag=-oUserKnownHostsFile=/dev/null --strict-host-key-checking=no"
-	defaultSshOptions = "--ssh-flag=-oUserKnownHostsFile=/dev/null --strict-host-key-checking=no"
 )
 
 type Executor interface {
