@@ -6,8 +6,6 @@ which gsutil
 gsutil ver
 gsutil ver -l | grep crcmod
 gcloud version
-gcloud components update
-gcloud version
 cat ~/.boto 2> /dev/null || true
 echo '[Credentials]' > ~/.boto
 echo 'gs_service_key_file = /tmp/secret/stackrox-collector-e2e-tests/GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT' >> ~/.boto
