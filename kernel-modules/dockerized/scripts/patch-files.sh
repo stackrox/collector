@@ -41,14 +41,26 @@ checkout_branch() (
 
     if [[ -z "$branch" ]]; then
         echo "Cannot checkout empty branch"
-        return
+        return 1
     fi
 
     git -C /collector submodule deinit "$(get_driver_relative_path)"
     git -C /collector checkout "$branch"
     git -C /collector checkout -- .
     git -C /collector clean -xdf
-    git -C /collector submodule update --init "$(get_driver_relative_path)"
+
+    local driver_relative_path
+    driver_relative_path="$(get_driver_relative_path)"
+
+    if ((OSCI_RUN)) && [[ "${driver_relative_path}" == "sysdig/src" ]]; then
+        # For the time being we don't compile sysdig drivers in OSCI
+        echo "Skipping module source archive for collector version ${collector_ref}"
+        return 1
+    fi
+
+    git -C /collector submodule update --init "${driver_relative_path}"
+
+    return 0
 )
 
 if [[ "${CHECKOUT_BEFORE_PATCHING,,}" == "true" ]]; then
@@ -59,6 +71,7 @@ fi
 DRIVER_DIR="/collector/$(get_driver_relative_path)" \
 SCRATCH_DIR="/scratch" \
 OUTPUT_DIR="/kobuild-tmp/versions-src" \
+LEGACY_DIR="/collector" \
 M_VERSION="$(get_module_version)" \
     /scripts/prepare-src.sh
 
@@ -77,11 +90,14 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
     collector_ref="$line"
     echo "Preparing module source archive for collector version ${collector_ref}"
 
-    checkout_branch "$collector_ref"
+    if ! checkout_branch "$collector_ref"; then
+        continue
+    fi
 
     DRIVER_DIR="/collector/$(get_driver_relative_path)" \
     SCRATCH_DIR="/scratch" \
     OUTPUT_DIR="/kobuild-tmp/versions-src" \
+    LEGACY_DIR="/collector" \
     M_VERSION="$(get_module_version)" \
         /scripts/prepare-src.sh
 

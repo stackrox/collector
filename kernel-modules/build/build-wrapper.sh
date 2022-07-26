@@ -10,16 +10,56 @@ KERNEL_SRC_DIR=""
 # shellcheck source=/dev/null
 source "/scripts/build-kos"
 
+download_bundle() {
+    local kernel_version="$1"
+
+    if [[ -f "/bundles/${CURRENT_SHARD}/bundle-${kernel_version}.tgz" ]]; then
+        return
+    fi
+
+    rm -rf "/bundles/${CURRENT_SHARD}"/* 2> /dev/null || true
+    mkdir -p "/bundles/${CURRENT_SHARD}"
+    gsutil -m cp "gs://collector-kernel-bundles-public/bundle-${kernel_version}.tgz" "/bundles/${CURRENT_SHARD}/bundle-${kernel_version}.tgz"
+}
+
+osci_handle_bundle() {
+    local kernel_version="$1"
+
+    download_bundle "$kernel_version"
+
+    KERNEL_SRC_DIR="/scratch/kernel-src/${CURRENT_SHARD}/${kernel_version}"
+
+    if [[ -d "$KERNEL_SRC_DIR" ]]; then
+        return
+    fi
+
+    rm -rf "/scratch/kernel-src/${CURRENT_SHARD}"/* 2> /dev/null || true
+    mkdir -p "$KERNEL_SRC_DIR"
+    tar -C "$KERNEL_SRC_DIR" -xzf "/bundles/${CURRENT_SHARD}/bundle-${kernel_version}.tgz"
+}
+
+handle_bundle() {
+    local kernel_version="$1"
+
+    KERNEL_SRC_DIR="/scratch/kernel-src/${kernel_version}"
+
+    if [[ -d "$KERNEL_SRC_DIR" ]]; then
+        return
+    fi
+
+    rm -rf /scratch/kernel-src/* 2> /dev/null || true
+    mkdir -p "$KERNEL_SRC_DIR"
+    tar -C "$KERNEL_SRC_DIR" -xzf "/bundles/bundle-${kernel_version}.tgz"
+}
+
 extract_bundle() {
     local kernel_version="$1"
 
     export KERNEL_SRC_DIR
-    KERNEL_SRC_DIR="/scratch/kernel-src/${kernel_version}"
-
-    if [[ ! -d "$KERNEL_SRC_DIR" ]]; then
-        rm -rf /scratch/kernel-src/* 2> /dev/null || true
-        mkdir -p "$KERNEL_SRC_DIR"
-        tar -C "$KERNEL_SRC_DIR" -xzf "/bundles/bundle-${kernel_version}.tgz"
+    if ((OSCI_RUN)); then
+        osci_handle_bundle "$kernel_version"
+    else
+        handle_bundle "$kernel_version"
     fi
 
     [[ -f "${KERNEL_SRC_DIR}/BUNDLE_BUILD_DIR" ]] || {
@@ -85,12 +125,20 @@ build() {
 }
 
 DOCKERIZED=${DOCKERIZED:-0}
+OSCI_RUN=${OSCI_RUN:-0}
 
 export DOCKERIZED
+export OSCI_RUN
 
 if ((DOCKERIZED)); then
     FAILURE_DIR="/FAILURES"
-    export MODULE_BASE_DIR="/kernel-modules"
+
+    if ((OSCI_RUN)); then
+        export MODULE_BASE_DIR="/built-drivers"
+    else
+        export MODULE_BASE_DIR="/kernel-modules"
+    fi
+
     mkdir -p "$FAILURE_DIR"
     mkdir -p "$MODULE_BASE_DIR"
 else

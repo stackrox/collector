@@ -8,6 +8,8 @@ echo > "/all-build-tasks"
 
 echo > "/non-blocklisted-build-tasks"
 
+KERNELS_FILE="${KERNELS_FILE:-/KERNEL_VERSIONS}"
+
 append_task() {
     local kernel_version="$1"
     local module_dir="$2"
@@ -59,7 +61,7 @@ for module_dir in /kobuild-tmp/versions-src/*/; do
     if [[ "${USE_KERNELS_FILE,,}" == "true" ]]; then
         while IFS="" read -r kernel_version || [[ -n "$kernel_version" ]]; do
             process_driver "$kernel_version" "$module_dir"
-        done < /KERNEL_VERSIONS
+        done < "$KERNELS_FILE"
     else
         for bundle in /bundles/bundle-*.tgz; do
             kernel_version="${bundle%".tgz"}"
