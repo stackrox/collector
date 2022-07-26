@@ -48,5 +48,5 @@
 	branch = main
 [submodule "third_party/valijson"]
 	path = third_party/valijson
-	url = git@github.com:tristanpenman/valijson.git
+	url = https://github.com/tristanpenman/valijson.git
 	branch = master
