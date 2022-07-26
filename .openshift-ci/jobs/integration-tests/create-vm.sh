@@ -2,8 +2,6 @@
 
 set -exo pipefail
 
-# shellcheck source=SCRIPTDIR/envbuilder.sh
-
 copy_secret() {
     local NAME="$1"
     local DEST="$2"
@@ -32,6 +30,7 @@ main() {
     DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"  > /dev/null 2>&1 && pwd)"
 
     pushd "$DIR"
+    # shellcheck source=SCRIPTDIR/envbuilder.sh
     source "envbuilder.sh"
     popd
 
