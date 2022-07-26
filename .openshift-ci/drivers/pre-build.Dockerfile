@@ -8,8 +8,9 @@ ENV MAX_PARALLEL_BUILDS=32
 
 COPY --from=replaced-by-osci:scripts /scripts/ /scripts/
 
-RUN dnf -y install jq && \
-    ln -s /go/src/github.com/stackrox/collector/ /collector && \
+USER root
+
+RUN ln -s /go/src/github.com/stackrox/collector/ /collector && \
     git -C /collector fetch --all && \
     . /scripts/pr-checks.sh && \
     /scripts/patch-files.sh $BRANCH $LEGACY_PROBES && \
