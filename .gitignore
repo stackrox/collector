@@ -1,5 +1,6 @@
 .idea/
 .rox/
+*.egg-info
 
 collector/container/Dockerfile.gen
 integration-tests/container-logs/
