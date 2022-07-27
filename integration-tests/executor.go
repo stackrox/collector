@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	debug = false
+    debug = false
 )
 
 type Executor interface {
