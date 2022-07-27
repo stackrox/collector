@@ -50,7 +50,7 @@ get_branch() {
             die "expect: base_ref in JOB_SEC.extra_refs[0]"
         fi
         echo "${base_ref}"
-    elif [[ -n "${CLONEREFS_OPTIONS}" ]]; then
+    elif [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
         # rehearsals
         local base_ref
         base_ref="$(jq -r '.refs[1].base_ref' <<< "${CLONEREFS_OPTIONS}")" || die "invalid CLONEREFS_OPTIONS json"

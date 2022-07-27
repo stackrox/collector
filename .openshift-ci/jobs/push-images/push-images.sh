@@ -24,7 +24,8 @@ image_repos=(
 )
 
 declare -A image_tags
-image_tags["$COLLECTOR_FULL"]="${COLLECTOR_VERSION}-osci"
+#image_tags["$COLLECTOR_FULL"]="${COLLECTOR_VERSION}-osci"
+image_tags["$DRIVERS"]="${COLLECTOR_VERSION}-drivers-osci"
 #image_tags["$COLLECTOR_BASE"]="${COLLECTOR_VERSION}-base"
 #image_tags["$COLLECTOR_SLIM"]="${COLLECTOR_VERSION}-slim"
 #image_tags["$COLLECTOR_LATEST"]="${COLLECTOR_VERSION}-latest"
