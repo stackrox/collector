@@ -101,7 +101,7 @@ installDockerOnUbuntuViaGCPSSH() {
         echo "Retrying in 5s ..."
         sleep 5
     done
-    echo "Failed to install Docker after 3 retries"
+    echo "Failed to install Docker after 3 attempts."
     return 1
 }
 
@@ -120,7 +120,7 @@ installESMUpdatesOnUbuntuAndReboot() {
         echo "Retrying in 5s ..."
         sleep 5
     done
-    echo "Failed to install ESM updates after 3 retries"
+    echo "Failed to install ESM updates after 3 attempts."
     return 1
 }
 
@@ -138,7 +138,7 @@ installFIPSOnUbuntuAndReboot() {
         echo "Retrying in 5s ..."
         sleep 5
     done
-    echo "Failed to install FIPS after 3 retries"
+    echo "Failed to install FIPS after 3 attempts."
     return 1
 }
 
