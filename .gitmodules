@@ -46,3 +46,7 @@
 	path = third_party/googletest
 	url = https://github.com/google/googletest.git
 	branch = main
+[submodule "third_party/valijson"]
+	path = third_party/valijson
+	url = https://github.com/tristanpenman/valijson.git
+	branch = master
