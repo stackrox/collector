@@ -8,7 +8,7 @@ ARG BUILD_DIR=/install-tmp
 USER root
 
 RUN dnf -y update \
-    && dnf -y install \
+    && dnf -y install --no-best \
         autoconf \
         automake \
         binutils-devel \
