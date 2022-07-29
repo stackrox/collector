@@ -18,10 +18,14 @@ ENV USE_VALGRIND=${USE_VALGRIND}
 ARG ADDRESS_SANITIZER
 ENV ADDRESS_SANITIZER=${ADDRESS_SANITIZER}
 
-#RUN rm -rf /etc/rhsm-host && \
-#    subscription-manager register \
-#    --org "${REDHAT_SUBSCRIPTION_ORG_ID}" \
-#    --activationkey "${REDHAT_SUBSCRIPTION_ACTIVATION_KEY}"
+ARG OPENSHIFT_CI=false
+
+RUN if [ "$OPENSHIT_CI" = "false"]; then
+        rm -rf /etc/rhsm-host && \
+        subscription-manager register \
+        --org "${REDHAT_SUBSCRIPTION_ORG_ID}" \
+        --activationkey "${REDHAT_SUBSCRIPTION_ACTIVATION_KEY}"; \
+    fi
 
 # hadolint ignore=DL3041
 RUN dnf -y update && \
