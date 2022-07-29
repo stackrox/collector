@@ -18,10 +18,6 @@
 	path = third_party/prometheus-cpp
 	url = https://github.com/jupp0r/prometheus-cpp
 	branch = master
-[submodule "third_party/civetweb"]
-	path = third_party/civetweb
-	url = https://github.com/civetweb/civetweb.git
-	branch = master
 [submodule "third_party/libb64"]
 	path = third_party/libb64
 	url = https://github.com/libb64/libb64.git
