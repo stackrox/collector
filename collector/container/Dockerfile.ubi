@@ -20,7 +20,7 @@ ENV ADDRESS_SANITIZER=${ADDRESS_SANITIZER}
 
 ARG OPENSHIFT_CI=false
 
-RUN if [ "$OPENSHIT_CI" = "false"]; then
+RUN if [ "$OPENSHIT_CI" = "false"]; then \
         rm -rf /etc/rhsm-host && \
         subscription-manager register \
         --org "${REDHAT_SUBSCRIPTION_ORG_ID}" \
