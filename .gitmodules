@@ -6,10 +6,6 @@
 	path = third_party/protobuf
 	url = https://github.com/protocolbuffers/protobuf.git
 	branch = main
-[submodule "third_party/googleapis"]
-	path = third_party/googleapis
-	url = https://github.com/googleapis/googleapis.git
-	branch = master
 [submodule "third_party/luajit"]
 	path = third_party/luajit
 	url = https://luajit.org/git/luajit.git
