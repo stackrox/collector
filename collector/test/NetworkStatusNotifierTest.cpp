@@ -133,10 +133,10 @@ TEST(NetworkStatusNotifier, SimpleStartStop) {
         std::cout << cnx.container_id() << std::endl;
       }
       sem.release();  // notify that the test should end
-      return Result(true);
+      return Result(Status::OK);
     });
     EXPECT_CALL(*duplex_writer, Sleep).WillRepeatedly(ReturnPointee(&running));
-    EXPECT_CALL(*duplex_writer, WaitUntilStarted).WillRepeatedly(Return(Result(true)));
+    EXPECT_CALL(*duplex_writer, WaitUntilStarted).WillRepeatedly(Return(Result(Status::OK)));
 
     return duplex_writer;
   });

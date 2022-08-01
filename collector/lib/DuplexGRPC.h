@@ -196,10 +196,10 @@ class Result final {
   }
 
   // made public for testing purpose
-  explicit Result(bool ok) : status_(ok ? Status::OK : Status::ERROR) {}
+  explicit Result(Status status) : status_(status) {}
 
  private:
-  explicit Result(Status status) : status_(status) {}
+  explicit Result(bool ok) : status_(ok ? Status::OK : Status::ERROR) {}
   explicit Result(grpc::CompletionQueue::NextStatus status) {
     switch (status) {
       case grpc::CompletionQueue::SHUTDOWN:
