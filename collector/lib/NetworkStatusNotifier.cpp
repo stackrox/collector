@@ -63,10 +63,6 @@ sensor::SocketFamily TranslateAddressFamily(Address::Family family) {
 
 }  // namespace
 
-constexpr char NetworkStatusNotifier::kHostnameMetadataKey[];
-constexpr char NetworkStatusNotifier::kCapsMetadataKey[];
-constexpr char NetworkStatusNotifier::kSupportedCaps[];
-
 std::vector<IPNet> readNetworks(const string& networks, Address::Family family) {
   int tuple_size = Address::Length(family) + 1;
   int num_nets = networks.size() / tuple_size;
@@ -80,13 +76,6 @@ std::vector<IPNet> readNetworks(const string& networks, Address::Family family) 
     ip_nets.push_back(net);
   }
   return ip_nets;
-}
-
-std::unique_ptr<grpc::ClientContext> NetworkStatusNotifier::CreateClientContext() const {
-  auto ctx = MakeUnique<grpc::ClientContext>();
-  ctx->AddMetadata(kHostnameMetadataKey, hostname_);
-  ctx->AddMetadata(kCapsMetadataKey, kSupportedCaps);
-  return ctx;
 }
 
 void NetworkStatusNotifier::OnRecvControlMessage(const sensor::NetworkFlowsControlMessage* msg) {
@@ -146,21 +135,13 @@ void NetworkStatusNotifier::Run() {
   auto next_attempt = std::chrono::system_clock::now();
 
   while (thread_.PauseUntil(next_attempt)) {
-    WITH_LOCK(context_mutex_) {
-      context_ = CreateClientContext();
-    }
+    comm_->ResetClientContext();
 
-    if (!WaitForChannelReady(channel_, [this] { return thread_.should_stop(); })) {
+    if (!comm_->WaitForConnectionReady([this] { return thread_.should_stop(); })) {
       break;
     }
 
-    std::function<void(const sensor::NetworkFlowsControlMessage*)> read_cb = [this](const sensor::NetworkFlowsControlMessage* msg) {
-      OnRecvControlMessage(msg);
-    };
-
-    auto client_writer = DuplexClient::CreateWithReadCallback(
-        &sensor::NetworkConnectionInfoService::Stub::AsyncPushNetworkConnectionInfo,
-        channel_, context_.get(), std::move(read_cb));
+    auto client_writer = comm_->PushNetworkConnectionInfoOpenStream([this](const sensor::NetworkFlowsControlMessage* msg) { OnRecvControlMessage(msg); });
 
     if (enable_afterglow_) {
       RunSingleAfterglow(client_writer.get());
@@ -188,13 +169,11 @@ void NetworkStatusNotifier::Start() {
 }
 
 void NetworkStatusNotifier::Stop() {
-  WITH_LOCK(context_mutex_) {
-    if (context_) context_->TryCancel();
-  }
+  comm_->TryCancel();
   thread_.Stop();
 }
 
-void NetworkStatusNotifier::WaitUntilWriterStarted(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer, int wait_time_seconds) {
+void NetworkStatusNotifier::WaitUntilWriterStarted(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer, int wait_time_seconds) {
   if (!writer->WaitUntilStarted(std::chrono::seconds(wait_time_seconds))) {
     CLOG(ERROR) << "Failed to establish network connection info stream.";
     return;
@@ -212,7 +191,7 @@ bool NetworkStatusNotifier::UpdateAllConnsAndEndpoints() {
   std::vector<Connection> all_conns;
   std::vector<ContainerEndpoint> all_listen_endpoints;
   WITH_TIMER(CollectorStats::net_scrape_read) {
-    bool success = conn_scraper_.Scrape(&all_conns, scrape_listen_endpoints_ ? &all_listen_endpoints : nullptr);
+    bool success = conn_scraper_->Scrape(&all_conns, scrape_listen_endpoints_ ? &all_listen_endpoints : nullptr);
     if (!success) {
       CLOG(ERROR) << "Failed to scrape connections and no pending connections to send";
       return false;
@@ -225,7 +204,7 @@ bool NetworkStatusNotifier::UpdateAllConnsAndEndpoints() {
   return true;
 }
 
-void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
+void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
   WaitUntilWriterStarted(writer, 10);
 
   ConnMap old_conn_state;
@@ -269,7 +248,7 @@ void NetworkStatusNotifier::RunSingle(DuplexClientWriter<sensor::NetworkConnecti
   }
 }
 
-void NetworkStatusNotifier::RunSingleAfterglow(DuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
+void NetworkStatusNotifier::RunSingleAfterglow(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
   WaitUntilWriterStarted(writer, 10);
 
   ConnMap old_conn_state;
