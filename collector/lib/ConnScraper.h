@@ -38,8 +38,15 @@ namespace collector {
 // ExtractContainerID tries to extract a container ID from a cgroup line. Exposed for testing.
 StringView ExtractContainerID(StringView cgroup_line);
 
+// Abstract interface for a ConnScraper. Useful to inject testing implementation.
+class IConnScraper {
+ public:
+  virtual bool Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) = 0;
+  virtual ~IConnScraper() {}
+};
+
 // ConnScraper is a class that allows scraping a `/proc`-like directory structure for active network connections.
-class ConnScraper {
+class ConnScraper : public IConnScraper {
  public:
   explicit ConnScraper(std::string proc_path) : proc_path_(std::move(proc_path)) {}
 

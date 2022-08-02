@@ -68,7 +68,7 @@ class SignalServiceClient {
 
   // This needs to have the same lifetime as the class.
   std::unique_ptr<grpc::ClientContext> context_;
-  std::unique_ptr<DuplexClientWriter<SignalStreamMessage>> writer_;
+  std::unique_ptr<IDuplexClientWriter<SignalStreamMessage>> writer_;
 
   bool first_write_;
 };

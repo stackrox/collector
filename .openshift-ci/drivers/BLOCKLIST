@@ -1,0 +1,13 @@
+# Kernel module build blocklist for OSCI builds.
+# The format of this file is the same found at
+# `kernel-modules/BLOCKLIST`, but its scope is limited
+# to kernel driver builds run on OSCI. Both of these
+# blocklists are applied to OSCI builds.
+#
+# Oracle Linux kernel modules require `libdtrace-ctf`,
+# which is unavailable in UBI/RHEL
+*.el7uek.* * mod
+#
+# We are not building dockerdesktop kernels with this method
+# for the time being
+*-dockerdesktop-*
