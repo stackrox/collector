@@ -1,5 +1,0 @@
-FROM ppc64le/docker:dind
-
-ADD stats.sh /
-
-ENTRYPOINT ["/stats.sh"]

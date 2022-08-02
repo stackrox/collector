@@ -1,5 +1,13 @@
-FROM alpine:3.12 AS base
+FROM --platform=linux/amd64 alpine:3.12 AS stage-amd64
+FROM --platform=linux/ppc64le ppc64le/alpine:3.13 AS stage-ppc64le
 
+# Declare TARGETARCH to make it available
+ARG TARGETARCH
+
+# Select final stage based on TARGETARCH ARG
+FROM stage-${TARGETARCH} as base
+
+# Commands run at final stage for all target platforms
 RUN apk add --update \
     bash \
     bc \
