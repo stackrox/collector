@@ -2,6 +2,15 @@
 
 set -x
 
+copy_secret() {
+    local NAME="$1"
+    local DEST="$2"
+    local PERMS="$3"
+
+    cp "/tmp/secret/stackrox-collector-e2e-tests/$NAME" "$DEST"
+    chmod "$PERMS" "$DEST"
+}
+
 # to ensure that the locale is consistent between GCP VMs
 # we need to set this here. If there are issues with the
 # locale, there can be some additional logging which
@@ -35,3 +44,6 @@ shopt -s nullglob
 for cred in /tmp/secret/**/[A-Z]*; do
     export "$(basename "$cred")"="$(cat "$cred")"
 done
+
+copy_secret GCP_SSH_KEY "${GCP_SSH_KEY_FILE}" 0600
+copy_secret GCP_SSH_KEY_PUB "${GCP_SSH_KEY_FILE}.pub" 0600
