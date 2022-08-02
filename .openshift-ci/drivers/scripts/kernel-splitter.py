@@ -26,6 +26,7 @@ class Task:
 
 class Builder:
     def __init__(self, name, regex, tasks={}):
+        self.name = name
         self.output_dir = os.path.join(TASKS_DIR, name)
         self.regex = re.compile(regex)
         self.tasks = tasks
