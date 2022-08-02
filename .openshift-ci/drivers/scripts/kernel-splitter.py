@@ -25,7 +25,7 @@ class Task:
 
 
 class Builder:
-    def __init__(self, name, regex, tasks={}):
+    def __init__(self, name, regex, tasks):
         self.name = name
         self.output_dir = os.path.join(TASKS_DIR, name)
         self.regex = re.compile(regex)
@@ -43,6 +43,9 @@ class Builder:
     @shards.setter
     def shards(self, s):
         self._shards = s if s > 0 else 1
+
+    def __repr__(self):
+        return f'{self.name}: {len(self)}'
 
     def _dump_shard(self, shard, tasks):
         output_file = os.path.join(self.output_dir, 'shards', str(shard))
@@ -114,9 +117,12 @@ class Builder:
         """
         chunk_size = ceil(len(self) / new_builders)
 
-        new_builders_tasks = [
-            tasks for tasks in list(islice(self.tasks, chunk_size))
-        ]
+        new_builders_tasks = []
+        for chunk in range(0, len(self), chunk_size):
+            new_builders_tasks.append({
+                task: self.tasks[task]
+                for task in islice(self.tasks, chunk, chunk + chunk_size)
+            })
 
         return [
             Builder(f'{self.name}/{i}', self.regex, tasks)
@@ -129,10 +135,10 @@ def main(task_file):
     rhel8_kernels = r'(?:(?:4|5)\.\d+\..*)'
     rhel7_kernels = r'(?:3\.\d+\..*)'
 
-    fc36 = Builder('fc36', fr'^{fc36_kernels}')
-    rhel8 = Builder('rhel8', fr'^{rhel8_kernels}')
-    rhel7 = Builder('rhel7', fr'^{rhel7_kernels}')
-    unknown = Builder('unknown', r'.*')
+    fc36 = Builder('fc36', fr'^{fc36_kernels}', {})
+    rhel8 = Builder('rhel8', fr'^{rhel8_kernels}', {})
+    rhel7 = Builder('rhel7', fr'^{rhel7_kernels}', {})
+    unknown = Builder('unknown', r'.*', {})
 
     builders = [
         fc36,
