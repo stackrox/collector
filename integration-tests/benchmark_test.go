@@ -5,7 +5,6 @@ import (
 	"os"
 	"testing"
 	"time"
-	"runtime"
 
 	"github.com/google/shlex"
 	"github.com/stretchr/testify/assert"
@@ -39,10 +38,6 @@ func (b *BenchmarkTestSuiteBase) StartPerfTools() {
 	bpftrace := ReadEnvVar("COLLECTOR_BPFTRACE_COMMAND")
 	bcc := ReadEnvVar("COLLECTOR_BCC_COMMAND")
 	image := "quay.io/rhacs-eng/collector-performance"
-
-	if runtime.GOARCH != "amd64" {
-		image = "quay.io/rhacs-eng/" + runtime.GOARCH + "/collector-performance"
-	}
 
 	skipInit := ReadBoolEnvVar("COLLECTOR_SKIP_HEADERS_INIT")
 
@@ -79,10 +74,6 @@ func (b *BenchmarkTestSuiteBase) StartPerfContainer(name string, image string, a
 
 func (b *BenchmarkTestSuiteBase) RunInitContainer() {
 	image := "quay.io/rhacs-eng/collector-performance"
-
-	if runtime.GOARCH != "amd64" {
-		image = "quay.io/rhacs-eng/" + runtime.GOARCH + "/collector-performance"
-	}
 	init_image := qaImage(image, "init")
 	cmd := []string{
 		"host-init",

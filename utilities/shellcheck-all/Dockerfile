@@ -10,8 +10,7 @@ RUN yum upgrade -y
 RUN yum install -y wget xz-utils
 RUN yum autoremove -y
 
-RUN wget -qO- "https://github.com/koalaman/shellcheck/releases/download/stable/shellcheck-stable.linux.x86_64.tar.xz" | tar -xJv &&\
-    cp "shellcheck-stable/shellcheck" /usr/bin/
+RUN yum install -y epel-release && yum install -y ShellCheck
 
 COPY shellcheck-all.sh /usr/bin/shellcheck-all.sh
 

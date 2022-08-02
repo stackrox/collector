@@ -21,12 +21,7 @@ output_dir="$3"
 
 mkdir -p "${output_dir}/${collector_version}"
 
-ARCH=$(arch)
-if [ "$ARCH" = "x86_64" ]; then
-    image="quay.io/rhacs-eng/collector:${collector_version}-latest"
-else
-    image="quay.io/rhacs-eng/$ARCH/collector:${collector_version}-latest"
-fi
+image="quay.io/rhacs-eng/collector:${collector_version}-latest"
 inspect_out="${output_dir}/${collector_version}/image-probes"
 docker run -i --rm --entrypoint /bin/sh "${image}" /dev/stdin > "${inspect_out}" << EOF
 set -e

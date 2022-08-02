@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 	"sort"
-	"runtime"
 
 	"encoding/json"
 
@@ -429,9 +428,6 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 
 	image := "quay.io/rhacs-eng/qa"
-	if runtime.GOARCH != "amd64" {
-		image = "quay.io/rhacs-eng/" + runtime.GOARCH +"/qa"
-	}
 	scheduled_curls_image := qaImage(image, "collector-schedule-curls");
 
 	images := []string{
@@ -714,9 +710,6 @@ func (s *IntegrationTestSuiteBase) GetLineageInfo(processName string, key string
 func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	benchmarkName := "benchmark"
 	image := "quay.io/rhacs-eng/collector-performance"
-	if runtime.GOARCH != "amd64" {
-		image = "quay.io/rhacs-eng/" + runtime.GOARCH +"/collector-performance"
-	}
 	benchmarkImage := qaImage(image, "phoronix");
 
 	err := s.executor.PullImage(benchmarkImage)
@@ -752,9 +745,6 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
 	name := "jsonlabel"
 	jsonimage := "quay.io/rhacs-eng/collector-performance"
-	if runtime.GOARCH != "amd64" {
-		jsonimage = "quay.io/rhacs-eng/" + runtime.GOARCH +"/collector-performance"
-	}
 	image := qaImage(jsonimage, "json-label");
 	err := s.executor.PullImage(image)
 	s.Require().NoError(err)
@@ -771,9 +761,6 @@ func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
 func (s *IntegrationTestSuiteBase) StartContainerStats() {
 	name := "container-stats"
 	containerImage := "quay.io/rhacs-eng/collector-performance"
-	if runtime.GOARCH != "amd64" {
-		containerImage = "quay.io/rhacs-eng/" + runtime.GOARCH +"/collector-performance"
-	}
 	image := qaImage(containerImage, "stats");
 	args := []string{name, "-v", "/var/run/docker.sock:/var/run/docker.sock", image}
 
