@@ -8,7 +8,7 @@ endif
 
 .PHONY: all
 all:
-	@docker buildx build --platform=linux/ppc64le,linux/amd64 -f Dockerfile -t quay.io/rhacs-eng$(ARCHDIR)/collector-performance:$(COLLECTOR_QA_STATS_TAG) .
+	@docker buildx build --platform=linux/ppc64le,linux/amd64 -f Dockerfile -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_STATS_TAG) .
 
 .PHONY: push
 push:

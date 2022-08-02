@@ -34,7 +34,7 @@ for collector_repo in "${collector_repos[@]}"; do
         --build-arg USE_VALGRIND="$BUILD_USE_VALGRIND"
         --build-arg ADDRESS_SANITIZER="$SANITIZER_TESTS"
     )
-    docker build \
+    docker buildx build --platform=linux/amd64,linux/ppc64le \
         --target="probe-layer-${layer_count}" \
         -t "${QUAY_REPO}/${collector_repo}:${COLLECTOR_VERSION}" \
         -t "${QUAY_REPO}/${collector_repo}:${COLLECTOR_VERSION}-latest" \

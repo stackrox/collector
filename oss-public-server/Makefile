@@ -7,7 +7,7 @@ all: image
 
 .PHONY: image
 image:
-	docker build -t $(IMAGE) container/
+	docker buildx build --platform=linux/amd64,linux/ppc64le -t $(IMAGE) container/
 
 .PHONY: run-local
 run-local: image
