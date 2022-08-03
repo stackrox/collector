@@ -42,7 +42,7 @@ for ((i = 0; i < SHARDS_COUNT; i++)); do
 
     DOCKER_BUILDKIT=1 \
         BUILDKIT_PROGRESS=plain \
-        docker buildx build --load --platform=linux/amd64,linux/ppc64le \
+        docker buildx build --push --platform=linux/amd64,linux/ppc64le \
         --tag "${DRIVER_REPO}/collector-drivers:${COLLECTOR_DRIVERS_CACHE}" \
         --build-arg BASE_TAG="${COLLECTOR_DRIVERS_CACHE}" \
         --build-arg DRIVER_TAG="${PARTIAL_DRIVERS_TAG}" \
@@ -53,7 +53,7 @@ done
 # Once we merged everything together, we squash the image and push it.
 DOCKER_BUILDKIT=1 \
     BUILDKIT_PROGRESS=plain \
-    docker buildx build --load --platform=linux/amd64,linux/ppc64le \
+    docker buildx build --push --platform=linux/amd64,linux/ppc64le \
     --tag "${DRIVER_REPO}/collector-drivers:${COLLECTOR_DRIVERS_TAG}" \
     --build-arg DRIVER_REPO="${DRIVER_REPO}" \
     --build-arg DRIVER_TAG="${COLLECTOR_DRIVERS_CACHE}" \

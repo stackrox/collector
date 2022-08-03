@@ -30,7 +30,7 @@ if [[ -z "$(ls -A "${STACKROX_ROOT}/bundles")" ]]; then
     exit 0
 fi
 
-docker buildx build --load --platform=linux/amd64,linux/ppc64le \
+docker buildx build --push --platform=linux/amd64,linux/ppc64le \
     --build-arg BRANCH="${GIT_REF}" \
     --build-arg REDHAT_SUBSCRIPTION_ORG_ID="${REDHAT_SUBSCRIPTION_ORG_ID}" \
     --build-arg REDHAT_SUBSCRIPTION_ACTIVATION_KEY="${REDHAT_SUBSCRIPTION_ACTIVATION_KEY}" \

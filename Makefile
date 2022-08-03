@@ -24,7 +24,7 @@ container-dockerfile:
 .PHONY: builder
 builder:
 ifdef BUILD_BUILDER_IMAGE
-	docker buildx build --load \
+	docker buildx build --push \
 		--cache-from quay.io/stackrox-io/collector-builder:cache \
 		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		--platform=linux/ppc64le,linux/amd64 \
@@ -61,7 +61,7 @@ build-drivers:
 
 image: collector unittest container-dockerfile $(MOD_VER_FILE) $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/bundle.tar.gz
 	make -C collector txt-files
-	docker buildx build --load --build-arg collector_version="$(COLLECTOR_TAG)" \
+	docker buildx build --push --build-arg collector_version="$(COLLECTOR_TAG)" \
 		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
 		--platform=linux/ppc64le,linux/amd64 \
 		-f collector/container/Dockerfile.gen \
@@ -71,7 +71,7 @@ image: collector unittest container-dockerfile $(MOD_VER_FILE) $(CURDIR)/$(COLLE
 image-dev: COLLECTOR_BUILD_CONTEXT=collector/container/devel
 image-dev: collector unittest container-dockerfile $(MOD_VER_FILE) $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/bundle.tar.gz
 	make -C collector txt-files
-	docker buildx build --load --build-arg collector_version="$(COLLECTOR_TAG)" \
+	docker buildx build --push --build-arg collector_version="$(COLLECTOR_TAG)" \
 		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
 		--build-arg BASE_REGISTRY=quay.io \
 		--build-arg BASE_IMAGE=centos/centos \
@@ -83,7 +83,7 @@ image-dev: collector unittest container-dockerfile $(MOD_VER_FILE) $(CURDIR)/$(C
 
 image-dev-full: image-dev build-drivers
 	docker tag quay.io/stackrox-io/collector:$(COLLECTOR_TAG) quay.io/stackrox-io/collector:$(COLLECTOR_TAG)-slim
-	docker buildx build --load \
+	docker buildx build --push \
 		--target=probe-layer-1 \
 		--tag quay.io/stackrox-io/collector:$(COLLECTOR_TAG)-full \
 		--build-arg collector_repo=quay.io/stackrox-io/collector \
@@ -175,7 +175,7 @@ shellcheck-all:
 
 .PHONY: shellcheck-all-dockerized
 shellcheck-all-dockerized:
-	docker buildx build --load --platform=linux/ppc64le,linux/amd64 -f Dockerfile -t shellcheck-all $(CURDIR)/utilities/shellcheck-all
+	docker buildx build --push --platform=linux/ppc64le,linux/amd64 -f Dockerfile -t shellcheck-all $(CURDIR)/utilities/shellcheck-all
 	docker run --rm -v "$(CURDIR):/scripts" shellcheck-all:latest
 
 
