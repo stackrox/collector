@@ -13,7 +13,7 @@ docker rm collector
 # Copy all drivers into the new image
 DOCKER_BUILDKIT=1 \
     BUILDKIT_PROGRESS=plain \
-    docker buildx build --push --platform=linux/amd64,linux/ppc64le \
+    docker buildx build --platform=linux/amd64,linux/ppc64le \
     --tag "${COLLECTOR_REPO}/collector:${COLLECTOR_TAG}-dockerized" \
     --build-arg COLLECTOR_TAG="${COLLECTOR_TAG}-slim" \
     --build-arg DRIVERS_TAG="${COLLECTOR_DRIVERS_TAG}" \
