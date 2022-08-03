@@ -17,6 +17,8 @@ image="$1"
 ARCH=$(arch)
 if [ "$ARCH" = "x86_64" ]; then
     arch_image="${image}-amd64"
+elif [ "$ARCH" = "aarch64" ]; then
+    arch_image="${image}-arm64"
 else
     arch_image="${image}-$ARCH"
 fi

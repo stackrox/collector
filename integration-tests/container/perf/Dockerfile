@@ -1,6 +1,5 @@
 FROM alpine:latest AS base
 
-# Commands run at final stage for all target platforms
 RUN apk add --update \
     bash \
     bc \
