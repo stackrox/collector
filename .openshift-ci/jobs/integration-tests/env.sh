@@ -45,5 +45,8 @@ for cred in /tmp/secret/**/[A-Z]*; do
     export "$(basename "$cred")"="$(cat "$cred")"
 done
 
+mkdir -p "$(dirname "${GCP_SSH_KEY_FILE}")"
+chmod 0700 "$(dirname "${GCP_SSH_KEY_FILE}")"
+
 copy_secret GCP_SSH_KEY "${GCP_SSH_KEY_FILE}" 0600
 copy_secret GCP_SSH_KEY_PUB "${GCP_SSH_KEY_FILE}.pub" 0600

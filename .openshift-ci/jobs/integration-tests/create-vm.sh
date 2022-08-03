@@ -25,9 +25,6 @@ main() {
     source "envbuilder.sh"
     popd
 
-    mkdir -p "$(dirname "${GCP_SSH_KEY_FILE}")"
-    chmod 0700 "$(dirname "${GCP_SSH_KEY_FILE}")"
-
     setupGCPVM "$GCP_VM_NAME" "$GCP_VM_TYPE" "$GCP_IMAGE_FAMILY" "$GCP_IMAGE_NAME" "$GCP_SSH_KEY_FILE" "$GDOCKER_USER" "$GDOCKER_PASS"
 }
 
