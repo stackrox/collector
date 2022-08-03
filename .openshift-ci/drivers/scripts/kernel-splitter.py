@@ -2,7 +2,8 @@
 
 import os
 import re
-from math import floor
+from math import ceil
+from itertools import islice
 
 TASKS_DIR = '/tasks'
 
@@ -24,11 +25,13 @@ class Task:
 
 
 class Builder:
-    def __init__(self, name, regex):
+    def __init__(self, name, regex, tasks):
+        self.name = name
         self.output_dir = os.path.join(TASKS_DIR, name)
         self.regex = re.compile(regex)
-        self.tasks = {}
-        self._shards = 0
+        self.tasks = tasks
+        # OSCI caps cpu cores to 10, so that's what each builder gets
+        self._shards = 10
 
     def __len__(self):
         return len(self.tasks)
@@ -40,6 +43,9 @@ class Builder:
     @shards.setter
     def shards(self, s):
         self._shards = s if s > 0 else 1
+
+    def __repr__(self):
+        return f'{self.name}: {len(self)}'
 
     def _dump_shard(self, shard, tasks):
         output_file = os.path.join(self.output_dir, 'shards', str(shard))
@@ -98,38 +104,41 @@ class Builder:
 
         return len(self.tasks) / self.shards
 
+    def split(self, new_builders: int) -> list:
+        """
+        Will split tasks among new builders and return a list holding those
+        builders.
 
-def distribute_shards(total_shards, builders):
-    total_tasks = 0
-    used_shards = 0
+        Parameters:
+            new_builders (int): the amount of builders the tasks should be split into
 
-    total_tasks = sum(len(b) for b in builders)
+        Returns:
+            The list of builders ready to be dumped
+        """
+        chunk_size = ceil(len(self) / new_builders)
 
-    if total_tasks == 0:
-        # No drivers left to build
-        return
+        new_builders_tasks = []
+        for chunk in range(0, len(self), chunk_size):
+            new_builders_tasks.append({
+                task: self.tasks[task]
+                for task in islice(self.tasks, chunk, chunk + chunk_size)
+            })
 
-    for builder in builders:
-        builder.shards = int(floor((len(builder) * total_shards) / total_tasks))
-        used_shards += builder.shards
-
-    while used_shards < total_shards:
-        min_builder = min(builders, key=lambda b: b.get_tasks_per_shard())
-
-        min_builder.shards += 1
-        used_shards += 1
+        return [
+            Builder(f'{self.name}/{i}', self.regex, tasks)
+            for i, tasks in enumerate(new_builders_tasks)
+        ]
 
 
 def main(task_file):
-    # suse4_kernels = r'(?:4\.\d+\.\d+-\d+\.\d+-default)'
     fc36_kernels = r'(?:5\.[1-9]\d+\..*)'
     rhel8_kernels = r'(?:(?:4|5)\.\d+\..*)'
     rhel7_kernels = r'(?:3\.\d+\..*)'
 
-    fc36 = Builder('fc36', fr'^{fc36_kernels}')
-    rhel8 = Builder('rhel8', fr'^{rhel8_kernels}')
-    rhel7 = Builder('rhel7', fr'^{rhel7_kernels}')
-    unknown = Builder('unknown', r'.*')
+    fc36 = Builder('fc36', fr'^{fc36_kernels}', {})
+    rhel8 = Builder('rhel8', fr'^{rhel8_kernels}', {})
+    rhel7 = Builder('rhel7', fr'^{rhel7_kernels}', {})
+    unknown = Builder('unknown', r'.*', {})
 
     builders = [
         fc36,
@@ -158,16 +167,18 @@ def main(task_file):
             print(f'No builder for "{line.strip()}"')
             unknown.append(task)
 
-    # Every builder will use parallel builds, figure out how many shards each of
-    # them will use
-    total_shards = int(os.environ.get('MAX_PARALLEL_BUILDS', 3))
-    distribute_shards(total_shards, builders)
+    # We split the rhel 8 builder to make better usage of OSCI
+    rhel8_builders_count = int(os.environ.get('RHEL8_BUILDERS', 4))
+    rhel8_builders = rhel8.split(rhel8_builders_count)
 
+    builders = [
+        fc36,
+        *rhel8_builders,
+        rhel7,
+        unknown
+    ]
     for builder in builders:
         builder.dump()
-
-    # Dump kernels using an unknown builder
-    unknown.dump()
 
 
 if __name__ == "__main__":
