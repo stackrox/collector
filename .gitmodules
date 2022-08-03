@@ -53,3 +53,4 @@
 [submodule "third_party/luajit2"]
 	path = third_party/luajit2
 	url = https://github.com/openresty/luajit2.git
+	branch = master
