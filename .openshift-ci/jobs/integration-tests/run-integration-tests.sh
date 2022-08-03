@@ -63,8 +63,8 @@ function save_artifacts() {
 exit_code=0
 
 if [[ $REMOTE_HOST_TYPE != "local" ]]; then
-
-    gcloud compute ssh "${GCLOUD_OPTIONS}" "${GCLOUD_USER}@${GCLOUD_INSTANCE}" -- "whoami"
+    echo "[*] $GCLOUD_OPTIONS"
+    echo "[*] " "$(cat "${GCP_SSH_KEY_FILE}")"
 
     run_tests || exit_code=$?
     save_artifacts
