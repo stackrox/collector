@@ -37,8 +37,6 @@ func (b *BenchmarkTestSuiteBase) StartPerfTools() {
 	perf := ReadEnvVar("COLLECTOR_PERF_COMMAND")
 	bpftrace := ReadEnvVar("COLLECTOR_BPFTRACE_COMMAND")
 	bcc := ReadEnvVar("COLLECTOR_BCC_COMMAND")
-	image := "quay.io/rhacs-eng/collector-performance"
-
 	skipInit := ReadBoolEnvVar("COLLECTOR_SKIP_HEADERS_INIT")
 
 	if skipInit && (perf == "" && bpftrace == "" && bcc == "") {
@@ -51,17 +49,17 @@ func (b *BenchmarkTestSuiteBase) StartPerfTools() {
 	}
 
 	if perf != "" {
-		perf_image := qaImage(image, "perf")
+		perf_image := qaImage("quay.io/rhacs-eng/collector-performance", "perf")
 		b.StartPerfContainer("perf", perf_image, perf)
 	}
 
 	if bpftrace != "" {
-		bpftrace_image := qaImage(image, "bpftrace")
+		bpftrace_image := qaImage("quay.io/rhacs-eng/collector-performance", "bpftrace")
 		b.StartPerfContainer("bpftrace", bpftrace_image, bpftrace)
 	}
 
 	if bcc != "" {
-		bcc_image := qaImage(image, "bcc")
+		bcc_image := qaImage("quay.io/rhacs-eng/collector-performance", "bcc")
 		b.StartPerfContainer("bcc", bcc_image, bcc)
 	}
 }
@@ -73,8 +71,7 @@ func (b *BenchmarkTestSuiteBase) StartPerfContainer(name string, image string, a
 }
 
 func (b *BenchmarkTestSuiteBase) RunInitContainer() {
-	image := "quay.io/rhacs-eng/collector-performance"
-	init_image := qaImage(image, "init")
+	init_image := qaImage("quay.io/rhacs-eng/collector-performance", "init")
 	cmd := []string{
 		"host-init",
 		"-v", "/lib/modules:/lib/modules",

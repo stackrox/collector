@@ -50,3 +50,7 @@
 	path = third_party/valijson
 	url = https://github.com/tristanpenman/valijson.git
 	branch = master
+[submodule "luajit2"]
+	path = luajit2
+	url = https://github.com/openresty/luajit2.git
+	branch = master

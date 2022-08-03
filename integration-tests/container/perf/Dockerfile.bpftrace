@@ -1,13 +1,6 @@
-FROM --platform=linux/amd64 quay.io/iovisor/bpftrace:latest AS stage-amd64
+FROM ubuntu:focal
 
-FROM --platform=linux/ppc64le ubuntu:focal AS stage-ppc64le
-RUN apt-get update -y && apt-get install -y bpftrace && bpftrace -V
-
-# Declare TARGETARCH to make it available
-ARG TARGETARCH
-
-# Select final stage based on TARGETARCH ARG
-FROM stage-${TARGETARCH} as final
+RUN apt-get update -y && apt-get install -y xz-utils bpftrace && bpftrace -V
 
 COPY /scripts /scripts
 COPY /tools /tools
