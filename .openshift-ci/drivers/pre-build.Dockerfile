@@ -8,9 +8,6 @@ ENV RHEL8_BUILDERS=4
 
 COPY --from=replaced-by-osci:scripts /scripts/ /scripts/
 
-RUN whoami
-USER root
-
 RUN ln -s /go/src/github.com/stackrox/collector/ /collector && \
     git -C /collector fetch --all && \
     . /scripts/pr-checks.sh && \
