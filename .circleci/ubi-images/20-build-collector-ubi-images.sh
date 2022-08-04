@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
-docker buildx build --platform=linux/amd64,linux/ppc64le \
+docker buildx build0 --platform=linux/amd64,linux/ppc64le \
     --build-arg COLLECTOR_VERSION="${COLLECTOR_VERSION}" \
     --build-arg REDHAT_SUBSCRIPTION_ORG_ID="${REDHAT_SUBSCRIPTION_ORG_ID}" \
     --build-arg REDHAT_SUBSCRIPTION_ACTIVATION_KEY="${REDHAT_SUBSCRIPTION_ACTIVATION_KEY}" \

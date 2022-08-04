@@ -22,9 +22,10 @@ RUN apt-get update \
 
 RUN git clone https://github.com/google/googletest.git && \
     cd googletest && \
+    git checkout v1.12.0 \
     mkdir builddir && \
     cd builddir && \
-    cmake -Dgtest_build_tests=ON .. && \
+    cmake .. && \
     make -j$(nproc) && \
     make install
 
