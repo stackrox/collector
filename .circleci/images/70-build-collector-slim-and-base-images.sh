@@ -20,7 +20,6 @@ fi
 
 "${SOURCE_ROOT}/collector/container/create-bundle.sh" \
     "$SOURCE_ROOT/collector/container" \
-    "-" \
     "$SOURCE_ROOT/${COLLECTOR_BUILD_CONTEXT}"
 
 make -C "$SOURCE_ROOT" container-dockerfile
