@@ -44,7 +44,8 @@ createGCPVM() {
     # Install SSH configs so we can use SSH directly instead of going
     # via gcloud compute ssh
     #
-    gcloud compute config-ssh
+    gcloud compute config-ssh --ssh-config-file=/.ssh/config
+    cat /.ssh/config || true
     echo "Instance created successfully: $GCP_VM_NAME"
 
     return 0
@@ -89,7 +90,8 @@ createGCPVMFromImage() {
     # Install SSH configs so we can use SSH directly instead of going
     # via gcloud compute ssh
     #
-    gcloud compute config-ssh
+    gcloud compute config-ssh --ssh-config-file=/.ssh/config
+    cat /.ssh/config || true
     echo "Instance created successfully: $GCP_VM_NAME"
 
     return 0

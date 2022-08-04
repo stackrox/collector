@@ -63,7 +63,9 @@ function save_artifacts() {
 exit_code=0
 
 if [[ $REMOTE_HOST_TYPE != "local" ]]; then
-    gcloud compute config-ssh
+    gcloud compute config-ssh --ssh-config-file=/.ssh/config
+
+    cat /.ssh/config || true
 
     run_tests || exit_code=$?
     save_artifacts
