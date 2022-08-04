@@ -22,17 +22,24 @@ export JOB_ID="${PROW_JOB_ID:0:8}"
 
 # Most of these are used by the integration tests themselves as well
 # as to create and configure the GCP VMs
-export GCP_SSH_KEY_FILE="$HOME/.ssh/GCP_SSH_KEY"
+export GCP_SSH_KEY_FILE="$HOME/.ssh/google_compute_engine"
+export GCLOUD_ZONE="us-central1-a"
+export GCLOUD_PROJECT="stackrox-ci"
 export GCLOUD_INSTANCE="collector-osci-${COLLECTION_METHOD}-${IMAGE_FAMILY}-${JOB_ID}"
 export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
-export REMOTE_HOST_TYPE=gcloud
 export VM_CONFIG="${VM_TYPE}.${IMAGE_FAMILY}"
 export COLLECTOR_REPO="quay.io/rhacs-eng/collector"
 
+export REMOTE_HOST_TYPE=ssh
+export SSH_ADDRESS="${GCLOUD_INSTANCE}.${GCLOUD_ZONE}.${GCLOUD_PROJECT}"
+export SSH_KEY_PATH="${GCP_SSH_KEY_FILE}"
+
 # TODO: make change ci user on GCP vms
 export GCLOUD_USER="circleci"
+export SSH_USER="circleci"
 if [[ "$VM_TYPE" == "flatcar" || "$VM_TYPE" =~ "coreos" ]]; then
     GCLOUD_USER="core"
+    SSH_USER="core"
 fi
 
 IMAGE_TAG="$(make tag)"

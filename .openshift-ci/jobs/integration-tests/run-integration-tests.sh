@@ -29,7 +29,7 @@ function copy_from_vm() {
         # We want the shell to expand $GCLOUD_OPTIONS here, so they're treated as individual options
         # instead of a single string.
         # shellcheck disable=SC2086
-        gcloud compute scp $GCLOUD_OPTIONS "${GCLOUD_USER}@${GCLOUD_INSTANCE}:${filename}" "${destination}"
+        scp "${SSH_USER}@${SSH_ADDRESS}:${filename}" "${destination}"
     fi
 }
 
@@ -63,8 +63,7 @@ function save_artifacts() {
 exit_code=0
 
 if [[ $REMOTE_HOST_TYPE != "local" ]]; then
-    echo "[*] $GCLOUD_OPTIONS"
-    echo "[*] " "$(cat "${GCP_SSH_KEY_FILE}")"
+    gcloud compute config-ssh
 
     run_tests || exit_code=$?
     save_artifacts

@@ -11,8 +11,6 @@ main() {
     shift
     local GCP_IMAGE_NAME="$1"
     shift
-    local GCP_SSH_KEY_FILE="$1"
-    shift
     local GDOCKER_USER="$1"
     shift
     local GDOCKER_PASS="$1"
@@ -25,7 +23,7 @@ main() {
     source "envbuilder.sh"
     popd
 
-    setupGCPVM "$GCP_VM_NAME" "$GCP_VM_TYPE" "$GCP_IMAGE_FAMILY" "$GCP_IMAGE_NAME" "$GCP_SSH_KEY_FILE" "$GDOCKER_USER" "$GDOCKER_PASS"
+    setupGCPVM "$GCP_VM_NAME" "$GCP_VM_TYPE" "$GCP_IMAGE_FAMILY" "$GCP_IMAGE_NAME" "$GDOCKER_USER" "$GDOCKER_PASS"
 }
 
 main \
@@ -33,6 +31,5 @@ main \
     "${VM_TYPE}" \
     "${IMAGE_FAMILY}" \
     "${IMAGE_NAME}" \
-    "${GCP_SSH_KEY_FILE}" \
     "${QUAY_RHACS_ENG_RO_USERNAME}" \
     "${QUAY_RHACS_ENG_RO_PASSWORD}"
