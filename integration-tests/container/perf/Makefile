@@ -14,10 +14,10 @@ endif
 
 .PHONY: all
 all:
-	@docker buildx build --no-cache --platform=linux/ppc64le,linux/amd64 -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_INIT_TAG) --target init -f Dockerfile .
-	@docker buildx build --no-cache --platform=linux/ppc64le,linux/amd64 -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_PERF_TAG) --target perf -f Dockerfile .
-	@docker buildx build --no-cache --platform=linux/ppc64le,linux/amd64 -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BCC_TAG) --target bcc -f Dockerfile .
-	@docker buildx build --no-cache --platform=linux/ppc64le,linux/amd64 -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BPFTRACE_TAG) -f Dockerfile.bpftrace .
+	@docker buildx build --push --platform=linux/ppc64le,linux/amd64 -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_INIT_TAG) --target init -f Dockerfile .
+	@docker buildx build --push --platform=linux/ppc64le,linux/amd64 -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_PERF_TAG) --target perf -f Dockerfile .
+	@docker buildx build --push --platform=linux/ppc64le,linux/amd64 -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BCC_TAG) --target bcc -f Dockerfile .
+	@docker buildx build --push --platform=linux/ppc64le,linux/amd64 -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BPFTRACE_TAG) -f Dockerfile.bpftrace .
 
 .PHONY: push
 push:

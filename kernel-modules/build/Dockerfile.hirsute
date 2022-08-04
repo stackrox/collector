@@ -25,12 +25,19 @@ RUN apt-get update \
       pkg-config \
  ;
 
+COPY third_party/googletest /googletest/
+WORKDIR /googletest
+RUN mkdir builddir && \
+    cd builddir && \
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local .. && \
+    cmake --build . --target install ${NPROCS:+-j ${NPROCS}}
+
 RUN apt-get autoremove -y
 
 RUN mkdir -p /output
-COPY build-kos /scripts/
-COPY build-wrapper.sh /usr/bin/
-COPY prepare-src /usr/bin
+COPY kernel-modules/build/build-kos /scripts/
+COPY kernel-modules/build/build-wrapper.sh /usr/bin/
+COPY kernel-modules/build/prepare-src /usr/bin
 
 WORKDIR /scratch
 ENTRYPOINT [ "/bin/bash", "-c" ]
