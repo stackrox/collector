@@ -5,6 +5,9 @@ set -euo pipefail
 # shellcheck source=SCRIPTDIR/lib.sh
 source /scripts/lib.sh
 
+# shellcheck source=/dev/null
+source /home/circleci/envvars.sh
+
 # This scripts checks and sets a number of varibales needed to patch driver
 # files and split tasks needed to build them
 
