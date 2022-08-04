@@ -10,10 +10,10 @@ all: build-container
 
 .PHONY: build-container
 build-container:
-	docker buildx build --platform=linux/amd64,linux/ppc64le $(BUILD_CONTAINER_CACHE_IMAGES:%=--cache-from=%) -t $(BUILD_CONTAINER_TAG) ./build
+	docker buildx build --platform=linux/amd64,linux/ppc64le $(BUILD_CONTAINER_CACHE_IMAGES:%=--cache-from=%) -t $(BUILD_CONTAINER_TAG) ../
 
 build-container-%: build/Dockerfile.%
-	docker buildx build --platform=linux/amd64,linux/ppc64le $(BUILD_CONTAINER_CACHE_IMAGES:%=--cache-from=%-$@) -t $(BUILD_CONTAINER_TAG)-$* ./build -f $<
+	docker buildx build --platform=linux/amd64,linux/ppc64le $(BUILD_CONTAINER_CACHE_IMAGES:%=--cache-from=%-$@) -t $(BUILD_CONTAINER_TAG)-$* ../ -f $<
 
 .PHONY: all-build-containers
 all-build-containers: build-container $(CUSTOM_FLAVORS:%=build-container-%)

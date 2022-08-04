@@ -23,18 +23,17 @@ RUN dnf update -y || true; \
     mkdir -p /output; \
     dnf autoremove -y
 
-RUN git clone https://github.com/google/googletest.git && \
-    cd googletest && \
-    git checkout v1.12.0 \
-    mkdir builddir && \
+COPY third_party/googletest /googletest/
+WORKDIR /googletest
+RUN mkdir builddir && \
     cd builddir && \
     cmake .. && \
     make -j$(nproc) && \
     make install
 
-COPY build-kos /scripts/
-COPY build-wrapper.sh /usr/bin/
-COPY prepare-src /usr/bin
+COPY kernel-modules/build-kos /scripts/
+COPY kernel-modules/build-wrapper.sh /usr/bin/
+COPY kernel-modules/prepare-src /usr/bin
 
 WORKDIR /scratch
 ENTRYPOINT [ "/bin/bash", "-c" ]

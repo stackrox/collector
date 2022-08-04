@@ -20,10 +20,9 @@ RUN apt-get update \
       pkg-config \
  ;
 
-RUN git clone https://github.com/google/googletest.git && \
-    cd googletest && \
-    git checkout v1.12.0 \
-    mkdir builddir && \
+COPY third_party/googletest /googletest/
+WORKDIR /googletest
+RUN mkdir builddir && \
     cd builddir && \
     cmake .. && \
     make -j$(nproc) && \
@@ -48,9 +47,9 @@ RUN apt-get autoremove -y
 RUN dpkg --compare-versions $(dpkg-query -f='${Version}' --show binutils) lt 2.31
 
 RUN mkdir -p /output
-COPY build-kos /scripts/
-COPY build-wrapper.sh /usr/bin/
-COPY prepare-src /usr/bin
+COPY kernel-modules/build-kos /scripts/
+COPY kernel-modules/build-wrapper.sh /usr/bin/
+COPY kernel-modules/prepare-src /usr/bin
 
 WORKDIR /scratch
 ENTRYPOINT [ "/bin/bash", "-c" ]
