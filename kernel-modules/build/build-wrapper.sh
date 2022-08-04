@@ -19,7 +19,9 @@ download_bundle() {
 
     rm -rf "/bundles/${CURRENT_SHARD}"/* 2> /dev/null || true
     mkdir -p "/bundles/${CURRENT_SHARD}"
-    gsutil -m cp "gs://collector-kernel-bundles-public/bundle-${kernel_version}.tgz" "/bundles/${CURRENT_SHARD}/bundle-${kernel_version}.tgz"
+    gsutil -m cp \
+        "gs://stackrox-kernel-bundles-staging/copy/bundle-${kernel_version}.tgz" \
+        "/bundles/${CURRENT_SHARD}/bundle-${kernel_version}.tgz"
 }
 
 osci_handle_bundle() {
