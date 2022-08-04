@@ -11,7 +11,7 @@ mkdir -p "${STACKROX_ROOT}/bundles"
 
 DOCKER_BUILDKIT=1 \
     BUILDKIT_PROGRESS=plain \
-    docker buildx build --platform=linux/amd64,linux/ppc64le \
+    docker buildx build --no-cache --platform=linux/amd64,linux/ppc64le \
     --build-arg BRANCH="${GIT_REF}" \
     --build-arg REDHAT_SUBSCRIPTION_ORG_ID="${REDHAT_SUBSCRIPTION_ORG_ID}" \
     --build-arg REDHAT_SUBSCRIPTION_ACTIVATION_KEY="${REDHAT_SUBSCRIPTION_ACTIVATION_KEY}" \
