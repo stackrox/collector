@@ -1,4 +1,4 @@
-FROM replaced-by-osci:drivers AS driver-cache
+FROM pipeline:drivers AS driver-cache
 
 COPY /kernel-modules/MODULE_VERSION.txt /MODULE_VERSION
 COPY /.openshift-ci/build/build-driver-cache.sh /scripts/build-driver-cache.sh
