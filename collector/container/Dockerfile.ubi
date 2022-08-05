@@ -21,8 +21,9 @@ ENV ADDRESS_SANITIZER=${ADDRESS_SANITIZER}
 ARG OPENSHIFT_CI=false
 
 RUN ls /etc/yum.repos.d/
+RUN cat /etc/yum.repos.d/ubi.repo
 
-RUN if [ "$OPENSHIT_CI" = "false"]; then \
+RUN if [ "$OPENSHIFT_CI" = "false"]; then \
         rm -rf /etc/rhsm-host && \
         subscription-manager register \
         --org "${REDHAT_SUBSCRIPTION_ORG_ID}" \
