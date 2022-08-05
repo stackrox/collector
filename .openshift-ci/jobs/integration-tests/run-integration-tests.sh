@@ -73,6 +73,7 @@ else
     sudo cp /proc/sys/kernel/core_pattern /tmp/core_pattern
     echo '/tmp/core.out' | sudo tee /proc/sys/kernel/core_pattern
 
+    whoami
     run_tests || exit_code=$?
 
     if [ -f /tmp/core.out ]; then
