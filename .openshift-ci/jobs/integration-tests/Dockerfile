@@ -10,9 +10,9 @@ RUN whoami
 # user.
 # TODO: adjust the base ci-image to allow reading/writing to these
 #       directories.
-RUN chmod -R o+w "$GOPATH" && \
-    chmod -R o+w "$GOCACHE" && \
-    chmod -R o+w "/go/pkg"
+RUN sudo chmod -R o+w "$GOPATH" && \
+    sudo chmod -R o+w "$GOCACHE" && \
+    sudo chmod -R o+w "/go/pkg"
 
 # The OpenShift CI user does not have a home directory
 # despite $HOME being set. The SSH client will fail
