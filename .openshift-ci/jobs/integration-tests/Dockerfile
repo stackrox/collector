@@ -2,6 +2,7 @@ FROM pipeline:src
 
 COPY scripts /scripts
 
+USER circleci
 RUN whoami
 
 # Temporary additional permissions to allow the OpenShift CI
