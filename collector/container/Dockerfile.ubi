@@ -20,6 +20,8 @@ ENV ADDRESS_SANITIZER=${ADDRESS_SANITIZER}
 
 ARG OPENSHIFT_CI=false
 
+RUN ls /etc/yum.repos.d/
+
 RUN if [ "$OPENSHIT_CI" = "false"]; then \
         rm -rf /etc/rhsm-host && \
         subscription-manager register \
