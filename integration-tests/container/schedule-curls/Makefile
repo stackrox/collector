@@ -8,7 +8,7 @@ endif
 
 .PHONY: all
 all:
-	@docker buildx buildbuild0 --push --platform=linux/ppc64le,linux/amd64 -f Dockerfile -t quay.io/rhacs-eng/qa:$(COLLECTOR_QA_SCHEDULE_CURLS_TAG) .
+	@docker buildx build --push --platform=linux/ppc64le,linux/amd64 -f Dockerfile -t quay.io/rhacs-eng/qa:$(COLLECTOR_QA_SCHEDULE_CURLS_TAG) .
 
 .PHONY: push
 push:
