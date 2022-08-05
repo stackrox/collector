@@ -1,6 +1,6 @@
 FROM replaced-by-osci:drivers AS driver-cache
 
-COPY /kernel-modules/MODULE_VERSION.txt /MODULE_VERSION
+COPY /kernel-modules/MODULE_VERSION /MODULE_VERSION
 COPY /.openshift-ci/build/build-driver-cache.sh /scripts/build-driver-cache.sh
 
 RUN /scripts/build-driver-cache.sh
