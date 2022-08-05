@@ -8,7 +8,7 @@ ENV GOCACHE="/linux-gocache"
 
 # Temporary additional permissions to allow the OpenShift CI
 # user to write to directories owned.
-RUN mkdir -p "$GOCACHE" &&
+RUN mkdir -p "$GOCACHE" && \
     chmod -R o+w "$GOCACHE" && \
     chmod -R o+w "$GOPATH" && \
     chmod -R o+w "/go/pkg"
