@@ -9,9 +9,9 @@ ENV GOCACHE="/linux-gocache"
 # Temporary additional permissions to allow the OpenShift CI
 # user to write to directories owned.
 RUN mkdir -p "$GOCACHE" && \
-    chmod -R o+w "$GOCACHE" && \
-    chmod -R o+w "$GOPATH" && \
-    chmod -R o+w "/go/pkg"
+    chmod -R o+rwx "$GOCACHE" && \
+    chmod -R o+rwx "$GOPATH" && \
+    chmod -R o+rwx "/go/pkg"
 
 # The OpenShift CI user does not have a home directory
 # despite $HOME being set. The SSH client will fail
@@ -20,4 +20,4 @@ RUN mkdir -p "$GOCACHE" && \
 #
 # to work around this, we have to create the directory
 # first.
-RUN mkdir /.ssh && chmod o+w /.ssh
+RUN mkdir /.ssh && chmod o+rwx /.ssh
