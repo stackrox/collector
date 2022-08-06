@@ -63,6 +63,7 @@ function save_artifacts() {
 exit_code=0
 
 if [[ $REMOTE_HOST_TYPE != "local" ]]; then
+    whoami
     run_tests || exit_code=$?
     save_artifacts
     if [ "${exit_code}" -ne 0 ]; then
@@ -73,7 +74,6 @@ else
     sudo cp /proc/sys/kernel/core_pattern /tmp/core_pattern
     echo '/tmp/core.out' | sudo tee /proc/sys/kernel/core_pattern
 
-    whoami
     run_tests || exit_code=$?
 
     if [ -f /tmp/core.out ]; then
