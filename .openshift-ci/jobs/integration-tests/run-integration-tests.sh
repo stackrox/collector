@@ -63,8 +63,9 @@ function save_artifacts() {
 exit_code=0
 
 if [[ $REMOTE_HOST_TYPE != "local" ]]; then
-    whoami
     run_tests || exit_code=$?
+    whoami
+    ls -al "${GOPATH}"
     save_artifacts
     if [ "${exit_code}" -ne 0 ]; then
         exit "${exit_code}"
