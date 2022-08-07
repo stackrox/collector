@@ -23,17 +23,16 @@ container-dockerfile:
 
 .PHONY: builder
 builder:
-	@echo "$(COLLECTOR_TAG)"
-#ifdef BUILD_BUILDER_IMAGE
-#	docker build \
-#		--cache-from quay.io/stackrox-io/collector-builder:cache \
-#		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
-#		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
-#		-f "$(CURDIR)/builder/Dockerfile" \
-#		.
-#else
-#	docker pull quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
-#endif
+ifdef BUILD_BUILDER_IMAGE
+	docker build \
+		--cache-from quay.io/stackrox-io/collector-builder:cache \
+		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
+		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
+		-f "$(CURDIR)/builder/Dockerfile" \
+		.
+else
+	docker pull quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
+endif
 
 collector: builder
 	make -C collector container/bin/collector

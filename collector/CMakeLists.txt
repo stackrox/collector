@@ -20,7 +20,7 @@ if(COLLECTOR_APPEND_CID)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCOLLECTOR_APPEND_CID")
 endif()
 
-set(CMAKE_CXX_FLAGS "/root/AFL/afl-g++ --disable-shared")
+#set(CMAKE_CXX_FLAGS "/root/AFL/afl-g++ --disable-shared")
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/proto)
 
