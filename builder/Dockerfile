@@ -47,6 +47,8 @@ RUN dnf -y update \
         which \
     && dnf clean all
 
+RUN cd /root/ && git clone https://github.com/google/AFL && cd AFL && make && make install
+
 # Build dependencies from source
 WORKDIR ${BUILD_DIR}
 
