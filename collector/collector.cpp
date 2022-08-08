@@ -33,6 +33,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <thread>
 
 #include <sys/wait.h>
+#include <stdlib.h>
 
 extern "C" {
 #include <assert.h>

@@ -9,8 +9,8 @@ chmod 700 bootstrap.sh
 microdnf upgrade -y
 microdnf install -y kmod findutils
 
-microdnf clean all
-rpm --query --all 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'findutils' | xargs -t rpm -e --nodeps
-rm -rf /var/cache/yum
+#microdnf clean all
+#rpm --query --all 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'findutils' | xargs -t rpm -e --nodeps
+#rm -rf /var/cache/yum
 
 echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt

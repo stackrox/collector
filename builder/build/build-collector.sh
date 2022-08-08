@@ -34,4 +34,9 @@ if [ "$CMAKE_BUILD_TYPE" = "Release" ]; then
         "${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so"
 fi
 
+cp -r /root/AFL "${CMAKE_BUILD_DIR}"
+
+echo "In build-collector.sh"
+ls "${CMAKE_BUILD_DIR}/"
+
 cp -r /THIRD_PARTY_NOTICES "${CMAKE_BUILD_DIR}/"

@@ -47,7 +47,12 @@ RUN dnf -y update \
         which \
     && dnf clean all
 
+RUN cp /usr/bin/python2 /usr/bin/python
+RUN dnf install glib2-devel -y
+RUN dnf install xz -y
+RUN dnf install patch -y
 RUN cd /root/ && git clone https://github.com/google/AFL && cd AFL && make && make install
+RUN cd /root/AFL/qemu_mode; ./build_qemu_support.sh
 
 # Build dependencies from source
 WORKDIR ${BUILD_DIR}

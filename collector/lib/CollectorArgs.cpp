@@ -245,6 +245,7 @@ CollectorArgs::checkGRPCServer(const option::Option& option, bool msg) {
   string arg(option.arg);
   string::size_type j = arg.find(':');
   if (j == string::npos) {
+      abort();
     if (msg) {
       this->message = "Malformed grpc server addr";
     }

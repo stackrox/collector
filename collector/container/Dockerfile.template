@@ -45,17 +45,8 @@ COPY --from=extracted_bundle /bundle/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY --from=extracted_bundle /bundle/kernel-modules/ /kernel-modules/
 COPY --from=extracted_bundle /bundle/usr/local/lib/libsinsp-wrapper.so /usr/local/lib/
 COPY --from=extracted_bundle /bundle/usr/local/bin/collector /usr/local/bin/
+COPY --from=extracted_bundle /bundle/usr/local/bin/AFL /usr/local/bin/AFL
 
 COPY final-step.sh /
 
 RUN ./final-step.sh && rm -f final-step.sh
-
-
-EXPOSE 8080 9090
-
-ENTRYPOINT ["/bootstrap.sh"]
-
-CMD collector-wrapper.sh \
-    --collector-config=$COLLECTOR_CONFIG \
-    --collection-method=$COLLECTION_METHOD \
-    --grpc-server=$GRPC_SERVER
