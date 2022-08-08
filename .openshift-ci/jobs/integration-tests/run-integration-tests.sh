@@ -65,6 +65,7 @@ exit_code=0
 if [[ $REMOTE_HOST_TYPE != "local" ]]; then
     run_tests || exit_code=$?
     whoami
+    id
     ls -al "${GOPATH}"
     save_artifacts
     if [ "${exit_code}" -ne 0 ]; then
