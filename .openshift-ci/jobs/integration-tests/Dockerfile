@@ -20,4 +20,4 @@ RUN mkdir -p "$GOCACHE" && \
 #
 # to work around this, we have to create the directory
 # first.
-RUN mkdir /.ssh && chmod o+rwx /.ssh
+RUN mkdir /.ssh && chmod g+rwx /.ssh
