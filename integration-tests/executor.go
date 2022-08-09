@@ -36,6 +36,7 @@ type sshCommandBuilder struct {
 	user    string
 	address string
 	keyPath string
+	port    string
 }
 
 type gcloudCommandBuilder struct {
@@ -75,6 +76,7 @@ func NewSSHCommandBuilder() CommandBuilder {
 		user:    ReadEnvVar("SSH_USER"),
 		address: ReadEnvVar("SSH_ADDRESS"),
 		keyPath: ReadEnvVar("SSH_KEY_PATH"),
+		port:    ReadEnvVar("SSH_PORT"),
 	}
 }
 
@@ -263,8 +265,15 @@ func (e *gcloudCommandBuilder) RemoteCopyCommand(remoteSrc string, localDst stri
 
 func (e *sshCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
 	cmdArgs := []string{
-		"-o", "StrictHostKeyChecking=no", "-i", e.keyPath,
+		"-o", "StrictHostKeyChecking=no",
+		"-o", "UserKnownHostsFile=/dev/null",
+		"-o", "LogLevel=ERROR",
+		"-i", e.keyPath,
 		e.user + "@" + e.address}
+
+	if e.port != "" {
+		cmdArgs = append(cmdArgs, "-p"+e.port)
+	}
 
 	cmdArgs = append(cmdArgs, quoteArgs(args)...)
 	return exec.Command("ssh", cmdArgs...)
@@ -272,7 +281,14 @@ func (e *sshCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
 
 func (e *sshCommandBuilder) RemoteCopyCommand(remoteSrc string, localDst string) *exec.Cmd {
 	args := []string{
-		"-o", "StrictHostKeyChecking=no", "-i", e.keyPath,
-		e.user + "@" + e.address + ":" + remoteSrc, localDst}
+		"-o", "StrictHostKeyChecking=no",
+		"-o", "UserKnownHostsFile=/dev/null",
+		"-o", "LogLevel=ERROR",
+		"-i", e.keyPath,
+	}
+	if e.port != "" {
+		args = append(args, "-P"+e.port)
+	}
+	args = append(args, e.user+"@"+e.address+":"+remoteSrc, localDst)
 	return exec.Command("scp", args...)
 }
