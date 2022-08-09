@@ -13,5 +13,6 @@ set -euo pipefail
 MODULE_VERSION="$(cat /MODULE_VERSION)"
 
 mkdir /driver-cache
+mkdir -p "/kernel-modules/${MODULE_VERSION}" "/built-drivers/${MODULE_VERSION}"
 find "/kernel-modules/${MODULE_VERSION}" -type f -not -path "*/.*" -exec cp {} /driver-cache \;
 find "/built-drivers/${MODULE_VERSION}" -type f -not -path "*/.*" -exec cp {} /driver-cache \;
