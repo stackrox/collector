@@ -1,0 +1,13 @@
+---
+- name: Provision Ubuntu
+  hosts: all
+  become: yes
+  tasks:
+    - name: Install docker
+      apt:
+        name: docker.io
+        update_cache: true
+
+    - name: Add user to docker group
+      shell: "usermod -aG docker {{ ansible_user }}"
+

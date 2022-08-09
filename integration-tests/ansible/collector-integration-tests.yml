@@ -1,0 +1,43 @@
+---
+- name: Run collector integration tests
+  hosts: all
+  strategy: free
+  tasks:
+    - name: Log into quay.io
+      shell: "docker login -u {{ quay_username }} -p {{ quay_password }} quay.io"
+
+    - name: Set collector tag
+      shell: "make -C {{ playbook_dir }}/../.. tag"
+      delegate_to: localhost
+      register: collector_tag
+
+    - name: Cleanup old containers
+      shell: "docker rm -f $(docker ps -aq) >/dev/null 2>&1 || true"
+
+    - name: Run Integration Tests
+      shell: "make -C {{ playbook_dir }}/.. process-network"
+      environment:
+        REMOTE_HOST_TYPE: ssh
+        VM_CONFIG: "ubuntu.ubuntu-20.04"
+        COLLECTION_METHOD: ebpf
+        SSH_USER: "{{ ansible_user }}"
+        SSH_ADDRESS: "{{ ansible_host }}"
+        SSH_PORT: "{{ ansible_port }}"
+        SSH_KEY_PATH: "{{ ansible_ssh_private_key_file }}"
+        COLLECTOR_IMAGE: "quay.io/stackrox-io/collector:3.9.0"
+      delegate_to: localhost
+      register: result
+
+    - name: Copy test log
+      copy:
+        src: "{{ playbook_dir }}/../integration-test.log"
+        dest: artifacts/{{ inventory_hostname }}/
+      delegate_to: localhost 
+
+    - name: Copy test artifacts
+      copy: 
+        src: "{{ playbook_dir }}/../container-logs"
+        dest: "artifacts/{{ inventory_hostname }}/"
+      delegate_to: localhost
+
+

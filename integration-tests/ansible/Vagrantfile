@@ -1,0 +1,72 @@
+require 'getoptlong'
+
+Vagrant.require_version ">= 1.8.0"
+
+machines = {
+  # "rhel-7" => "generic/rhel7",
+  # "rhel-8" => "generic/rhel8",
+  "ubuntu-2204" => {
+    "box" => "ubuntu/jammy64",
+    "image_family" => "ubuntu-2204",
+    "image_project" => "ubuntu-cloud"
+  },
+  "ubuntu-2004" => {
+    "box" => "ubuntu/focal64",
+    "image_family" => "ubuntu-2004",
+    "image_project" => "ubuntu-cloud"
+  }
+}
+
+username = ENV['USER']
+ssh_key_file = "~/.ssh/google_compute_engine"
+service_acct = nil
+
+opts = GetoptLong.new(
+  [ '--gcp-username', GetoptLong::OPTIONAL_ARGUMENT ],
+  [ '--gcp-ssh-key-file', GetoptLong::OPTIONAL_ARGUMENT ],
+  [ '--gcp-svc-acct', GetoptLong::OPTIONAL_ARGUMENT ]
+)
+
+opts.each do |opt, arg|
+  case opt
+  when '--gcp-username'
+    username = arg
+  when '--gcp-ssh-key-file'
+    ssh_key_file = arg
+  when '--gcp-svc-acct'
+    service_acct = arg
+  end
+end
+
+Vagrant.configure(2) do |config|
+  machines.each do |name, machine_cfg|
+    config.vm.define name do |machine|
+      machine.vm.box = machine_cfg['box']
+
+      machine.vm.provider "virtualbox" do | vbox, override |
+        # nothing to do for virtualbox, but this block prevents
+        # google from being the default
+      end
+
+      machine.vm.provider :google do |google, override|
+        google.google_project_id = "stackrox-dev"
+        google.image_family = machine_cfg['image_family']
+        google.image_project = machine_cfg['image_project']
+
+        if service_acct != nil
+          google.google_json_key_location = service_acct
+        end
+
+        override.vm.box = 'google/gce'
+        override.ssh.username = username
+        override.ssh.private_key_path = ssh_key_file
+      end
+
+      machine.vm.provision "ansible" do |ansible|
+        ansible.verbose = "v"
+        ansible.playbook = "provision/#{name.split(/-/, 2)[0]}-playbook.yml"
+      end
+
+    end
+  end
+end

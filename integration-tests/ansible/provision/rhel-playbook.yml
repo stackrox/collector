@@ -1,0 +1,38 @@
+---
+
+- name: install Docker
+  hosts: all
+  become: yes
+  tasks:
+    - name: Set distro
+      set_fact:
+        distro: "centos"
+
+    - name: Add signing key
+      rpm_key:
+        key: "https://download.docker.com/linux/{{ distro }}/gpg"
+        state: present
+
+    - name: Add repository
+      yum_repository:
+        name: docker
+        description: docker repository
+        baseurl: "https://download.docker.com/linux/{{ distro }}/$releasever/$basearch/stable"
+        enabled: true
+        gpgcheck: true
+        gpgkey: "https://download.docker.com/linux/{{ distro }}/gpg"
+
+    - name: Install docker
+      yum:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: latest
+        update_cache: true
+
+    - name: Start docker
+      service:
+        name: "docker"
+        enabled: true
+        state: started
