@@ -135,6 +135,7 @@ bool CollectorArgs::parse(int argc, char** argv, int& exitCode) {
   out << "Unknown option: " << options[UNKNOWN].name;
   message = out.str();
   exitCode = 1;
+  abort();
   return false;
 }
 

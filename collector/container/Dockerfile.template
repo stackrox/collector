@@ -45,7 +45,7 @@ COPY --from=extracted_bundle /bundle/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY --from=extracted_bundle /bundle/kernel-modules/ /kernel-modules/
 COPY --from=extracted_bundle /bundle/usr/local/lib/libsinsp-wrapper.so /usr/local/lib/
 COPY --from=extracted_bundle /bundle/usr/local/bin/collector /usr/local/bin/
-COPY --from=extracted_bundle /bundle/usr/local/bin/AFL /usr/local/bin/AFL
+COPY --from=extracted_bundle /bundle/usr/local/bin/AFLplusplus /usr/local/bin/AFLplusplus
 
 COPY final-step.sh /
 

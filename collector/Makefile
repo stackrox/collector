@@ -30,11 +30,11 @@ cmake-build/collector: $(HDRS) $(SRCS) $(shell find falcosecurity-libs/ -name '*
 
 .PHONY: post-build
 post-build:
-	mkdir -p container/bin/AFL
+	mkdir -p container/bin/AFLplusplus
 	mkdir -p container/libs
 	cp "$(COLLECTOR_BIN_DIR)/collector" container/bin/collector
 	cp -r "$(CMAKE_DIR)"/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
-	cp -r "$(CMAKE_DIR)"/AFL/* container/bin/AFL/
+	cp -r "$(CMAKE_DIR)"/AFLplusplus/* container/bin/AFLplusplus/
 	cp "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so" container/libs/libsinsp-wrapper.so
 
 container/bin/collector: 
@@ -52,7 +52,7 @@ unittest:
 .PHONY: txt-files
 txt-files:
 	mkdir -p container/THIRD_PARTY_NOTICES/
-	mkdir -p container/bin/AFL/
+	mkdir -p container/bin/AFLplusplus/
 	cp LICENSE-kernel-modules.txt container/
 	cp NOTICE-sysdig.txt container/THIRD_PARTY_NOTICES/sysdig
 

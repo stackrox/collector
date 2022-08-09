@@ -283,7 +283,8 @@ int main(int argc, char** argv) {
   }
 
   CollectorConfig config(args);
-
+  CLOG(INFO) << "Exiting early to make afl faster";
+  return 0;
   setCoreDumpLimit(config.IsCoreDumpEnabled());
 
   // insert the kernel module with options from the configuration

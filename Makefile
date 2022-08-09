@@ -23,24 +23,25 @@ container-dockerfile:
 
 .PHONY: builder
 builder:
+ifdef BUILD_BUILDER_IMAGE
+	docker build \
+		--cache-from quay.io/stackrox-io/collector-builder:cache \
+		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
+		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
+		-f "$(CURDIR)/builder/Dockerfile" \
+		.
+else
+	#docker pull quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
 	@echo "$(COLLECTOR_TAG)"
-#ifdef BUILD_BUILDER_IMAGE
-#	docker build \
-#		--cache-from quay.io/stackrox-io/collector-builder:cache \
-#		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
-#		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
-#		-f "$(CURDIR)/builder/Dockerfile" \
-#		.
-#else
-#	docker pull quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
-#endif
+endif
 
 collector: builder
 	make -C collector container/bin/collector
 
 .PHONY: unittest
 unittest:
-	make -C collector unittest
+	@echo "$(COLLECTOR_TAG)"
+	#make -C collector unittest
 
 .PHONY: build-kernel-modules
 build-kernel-modules:
@@ -97,8 +98,13 @@ fuzz:
 	docker run \
 		-v $(CURDIR)/fuzz/in:/in \
 		-v $(CURDIR)/fuzz/out:/out \
+		-v $(CURDIR)/fuzz/dict:/dict \
+		-e NODE_HOSTNAME=asdf \
 		quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
-		/usr/local/bin/AFL/afl-fuzz -Q -i /in -o /out -m 1000 -t 1000 /usr/local/bin/collector
+		/usr/local/bin/AFLplusplus/afl-fuzz -i /in -o /out -x /dict -m 1000 -t 1000 /usr/local/bin/collector
+
+.PHONY: build-and-fuzz
+build-and-fuzz: collector fuzz
 
 .PHONY: integration-tests
 integration-tests:

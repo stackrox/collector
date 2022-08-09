@@ -47,7 +47,7 @@ cp -p "${INPUT_ROOT}/scripts/bootstrap.sh" "${bundle_root}/bootstrap.sh"
 cp -p "${INPUT_ROOT}/scripts/collector-wrapper.sh" "${bundle_root}/usr/local/bin/"
 cp -r "${INPUT_ROOT}/THIRD_PARTY_NOTICES" "${bundle_root}/THIRD_PARTY_NOTICES"
 cp -r "${INPUT_ROOT}/LICENSE-kernel-modules.txt" "${bundle_root}/kernel-modules/LICENSE"
-cp -r "${INPUT_ROOT}/bin/AFL" "${bundle_root}/usr/local/bin/AFL"
+cp -r "${INPUT_ROOT}/bin/AFLplusplus" "${bundle_root}/usr/local/bin/AFLplusplus"
 cp -p "${INPUT_ROOT}/bin/collector" "${bundle_root}/usr/local/bin/collector"
 [[ "$MODULE_ARCHIVE" == "-" ]] || tar xzf "${MODULE_ARCHIVE}" -C "${bundle_root}/kernel-modules/"
 

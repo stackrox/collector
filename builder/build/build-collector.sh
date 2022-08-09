@@ -24,17 +24,20 @@ cmake_extra_flags=(
     -DADDRESS_SANITIZER="$ADDRESS_SANITIZER"
     -DCOLLECTOR_APPEND_CID="$COLLECTOR_APPEND_CID"
 )
-
+#export CXX=/root/AFL/afl-g++
+#export CC=/root/AFL/afl-gcc
+export CXX=/root/AFLplusplus/afl-g++
+export CC=/root/AFLplusplus/afl-gcc
 cmake "${cmake_extra_flags[@]}" -S "${SRC_ROOT_DIR}" -B "${CMAKE_BUILD_DIR}"
 cmake --build "${CMAKE_BUILD_DIR}" --target all -- -j "${NPROCS:-2}"
 
-if [ "$CMAKE_BUILD_TYPE" = "Release" ]; then
-    strip --strip-unneeded \
-        "${CMAKE_BUILD_DIR}/collector/collector" \
-        "${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so"
-fi
+#if [ "$CMAKE_BUILD_TYPE" = "Release" ]; then
+#    strip --strip-unneeded \
+#        "${CMAKE_BUILD_DIR}/collector/collector" \
+#        "${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so"
+#fi
 
-cp -r /root/AFL "${CMAKE_BUILD_DIR}"
+cp -r /root/AFLplusplus "${CMAKE_BUILD_DIR}"
 
 echo "In build-collector.sh"
 ls "${CMAKE_BUILD_DIR}/"
