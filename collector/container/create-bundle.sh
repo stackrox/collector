@@ -9,15 +9,12 @@ die() {
 }
 
 INPUT_ROOT="$1"
-MODULE_ARCHIVE="$2"
-OUTPUT_DIR="$3"
+OUTPUT_DIR="$2"
 
-[[ -n "$INPUT_ROOT" && -n "$MODULE_ARCHIVE" && -n "$OUTPUT_DIR" ]] \
+[[ -n "$INPUT_ROOT" && -n "$OUTPUT_DIR" ]] \
     || die "Usage: $0 <input-root> <module-archive> <output-dir>"
 [[ -d "$INPUT_ROOT" ]] \
     || die "Input root directory doesn't exist or is not a directory."
-[[ "$MODULE_ARCHIVE" == "-" || -f "$MODULE_ARCHIVE" ]] \
-    || die "Module archive doesn't exist."
 [[ -d "$OUTPUT_DIR" ]] \
     || die "Output directory doesn't exist or is not a directory."
 
@@ -48,7 +45,6 @@ cp -p "${INPUT_ROOT}/scripts/collector-wrapper.sh" "${bundle_root}/usr/local/bin
 cp -r "${INPUT_ROOT}/THIRD_PARTY_NOTICES" "${bundle_root}/THIRD_PARTY_NOTICES"
 cp -r "${INPUT_ROOT}/LICENSE-kernel-modules.txt" "${bundle_root}/kernel-modules/LICENSE"
 cp -p "${INPUT_ROOT}/bin/collector" "${bundle_root}/usr/local/bin/collector"
-[[ "$MODULE_ARCHIVE" == "-" ]] || tar xzf "${MODULE_ARCHIVE}" -C "${bundle_root}/kernel-modules/"
 
 # =============================================================================
 

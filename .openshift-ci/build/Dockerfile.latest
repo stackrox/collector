@@ -1,0 +1,10 @@
+FROM replaced-by-osci:drivers AS driver-cache
+
+COPY /kernel-modules/MODULE_VERSION /MODULE_VERSION
+COPY /.openshift-ci/build/build-driver-cache.sh /scripts/build-driver-cache.sh
+
+RUN /scripts/build-driver-cache.sh
+
+FROM replaced-by-osci:collector-slim
+
+COPY --from=driver-cache /driver-cache /kernel-modules

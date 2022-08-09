@@ -23,19 +23,29 @@ image_repos=(
     "${PUBLIC_REPO}"
 )
 
-declare -A image_tags
-image_tags["$COLLECTOR_FULL"]="${COLLECTOR_VERSION}-osci"
-#image_tags["$COLLECTOR_BASE"]="${COLLECTOR_VERSION}-base"
-#image_tags["$COLLECTOR_SLIM"]="${COLLECTOR_VERSION}-slim"
-#image_tags["$COLLECTOR_LATEST"]="${COLLECTOR_VERSION}-latest"
+full_tags=(
+    "${COLLECTOR_VERSION}-osci"
+    "${COLLECTOR_VERSION}-osci-latest"
+)
+
+base_tags=(
+    "${COLLECTOR_VERSION}-osci-slim"
+    "${COLLECTOR_VERSION}-osci-base"
+)
 
 oc registry login
 for repo in "${image_repos[@]}"; do
     registry_rw_login "$repo"
-    for key in "${!image_tags[@]}"; do
-        image="${repo}/collector:${image_tags[$key]}"
+
+    for tag in "${full_tags[@]}"; do
+        image="${repo}/collector:${tag}"
         echo "Pushing image ${image}"
-        osci_image="$key"
-        oc image mirror "$osci_image" "${image}"
+        oc image mirror "${COLLECTOR_FULL}" "${image}"
+    done
+
+    for tag in "${base_tags[@]}"; do
+        image="${repo}/collector:${tag}"
+        echo "Pushing image ${image}"
+        oc image mirror "${COLLECTOR_SLIM}" "${image}"
     done
 done

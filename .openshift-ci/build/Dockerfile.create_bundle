@@ -7,7 +7,6 @@ ENV COLLECTOR_BUILD_CONTEXT="collector/container/rhel"
 
 RUN "${SRC_ROOT_DIR}/collector/container/create-bundle.sh" \
     "$SRC_ROOT_DIR/collector/container" \
-    "-" \
     "$SRC_ROOT_DIR/${COLLECTOR_BUILD_CONTEXT}"
 
 

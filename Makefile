@@ -52,7 +52,7 @@ $(MOD_VER_FILE): build-kernel-modules
 
 .PHONY: $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/bundle.tar.gz
 $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/bundle.tar.gz:
-	$(CURDIR)/collector/container/create-bundle.sh $(CURDIR)/collector/container - $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/
+	$(CURDIR)/collector/container/create-bundle.sh $(CURDIR)/collector/container $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/
 
 .PHONY: build-drivers
 build-drivers:
