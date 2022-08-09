@@ -8,10 +8,6 @@ ENV RHEL8_BUILDERS=4
 
 COPY --from=replaced-by-osci:scripts /scripts/ /scripts/
 
-## DEBUG - remove before commit
-RUN wc -l /go/src/github.com/stackrox/collector/kernel-modules/KERNEL_VERSIONS
-RUN . /scripts/pr-checks.sh && echo "INFO: BRANCH=$BRANCH LEGACY_PROBES=$LEGACY_PROBES"
-
 RUN ln -s /go/src/github.com/stackrox/collector/ /collector && \
     git -C /collector fetch --all && \
     . /scripts/pr-checks.sh && \

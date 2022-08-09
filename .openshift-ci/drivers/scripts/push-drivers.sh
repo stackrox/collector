@@ -8,20 +8,11 @@ source /scripts/lib.sh
 upload_drivers() {
     local drivers_dir=$1
     local target=$2
-    echo "Uploading '${drivers_dir}' to '$target'"
 
     for driver_version_dir in "${drivers_dir}"/*; do
         files=("${driver_version_dir}"/*.{gz,unavail})
         [[ "${#files[@]}" -gt 0 ]] || continue
         printf '%s\n' "${files[@]}" | gsutil -m cp -n -I "${target}/$(basename "${driver_version_dir}")/"
-    done
-}
-
-list_drivers() {
-    local drivers_dir=$1
-    echo "Listing '${drivers_dir}'"
-    for driver_version_dir in "${drivers_dir}"/*; do
-        printf '%s\n' "${files[@]}"
     done
 }
 
@@ -35,8 +26,6 @@ target="${GCP_BASE_BUCKET}"
 if is_in_PR_context; then
     BRANCH="$(get_branch)"
     target="gs://stackrox-collector-modules-staging/pr-builds/${BRANCH}/${BUILD_ID}"
-else
-    echo "Not a PR."
 fi
 
 shopt -s nullglob
@@ -46,6 +35,4 @@ upload_drivers "/built-drivers/" "${target}"
 if ! is_in_PR_context; then
     # On tags/master builds, additionally upload modules from cache
     upload_drivers "/kernel-modules/" "${target}"
-else
-    list_drivers "/kernel-modules/"
 fi

@@ -7,10 +7,6 @@ build_cache() {
         module_version="$(basename "${module_version_dir}")"
         mkdir -p "/kernel-modules/$module_version/"
 
-        # DEBUG
-        echo "syncing cache: contents of /kernel-modules/$module_version/"
-        ls -al "/kernel-modules/$module_version/"
-
         gsutil -m rsync -r \
             "gs://collector-modules-osci-public/$module_version/" \
             "/kernel-modules/$module_version/" || true
