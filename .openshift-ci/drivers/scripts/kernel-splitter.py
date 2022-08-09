@@ -115,6 +115,9 @@ class Builder:
         Returns:
             The list of builders ready to be dumped
         """
+        if len(self) == 0:
+            return []
+
         chunk_size = ceil(len(self) / new_builders)
 
         new_builders_tasks = []
