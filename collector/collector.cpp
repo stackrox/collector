@@ -61,6 +61,7 @@ extern "C" {
 #include "Logging.h"
 #include "SysdigService.h"
 #include "Utility.h"
+#include "argv-fuzz-inl.h"
 
 #define finit_module(fd, opts, flags) syscall(__NR_finit_module, fd, opts, flags)
 #define delete_module(name, flags) syscall(__NR_delete_module, name, flags)
@@ -269,6 +270,11 @@ void gplNotice() {
 }
 
 int main(int argc, char** argv) {
+    std::cout << "Started collector";
+    AFL_INIT_ARGV();
+    for (int i=0;i<argc;i++) {
+        std::cout << argv[i] << std::endl;
+    }
   if (!g_control.is_lock_free()) {
     CLOG(FATAL) << "Could not create a lock-free control variable!";
   }

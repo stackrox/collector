@@ -135,7 +135,7 @@ bool CollectorArgs::parse(int argc, char** argv, int& exitCode) {
   out << "Unknown option: " << options[UNKNOWN].name;
   message = out.str();
   exitCode = 1;
-  abort();
+  //abort();
   return false;
 }
 
@@ -246,7 +246,7 @@ CollectorArgs::checkGRPCServer(const option::Option& option, bool msg) {
   string arg(option.arg);
   string::size_type j = arg.find(':');
   if (j == string::npos) {
-      abort();
+      //abort();
     if (msg) {
       this->message = "Malformed grpc server addr";
     }
