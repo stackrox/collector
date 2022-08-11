@@ -1,1 +1,0 @@
---collector-config '{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":"2"}' --grpc-server 127.0.0.1:888
