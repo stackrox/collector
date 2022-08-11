@@ -270,11 +270,7 @@ void gplNotice() {
 }
 
 int main(int argc, char** argv) {
-    std::cout << "Started collector";
-    AFL_INIT_ARGV();
-    for (int i=0;i<argc;i++) {
-        std::cout << argv[i] << std::endl;
-    }
+  AFL_INIT_ARGV(); // AFLplusplus fuzzes stdin, but we need to make it fuzz input arguments
   if (!g_control.is_lock_free()) {
     CLOG(FATAL) << "Could not create a lock-free control variable!";
   }
@@ -291,6 +287,7 @@ int main(int argc, char** argv) {
   CollectorConfig config(args);
   CLOG(INFO) << "Exiting early to make afl faster";
   return 0;
+
   setCoreDumpLimit(config.IsCoreDumpEnabled());
 
   // insert the kernel module with options from the configuration
