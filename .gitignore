@@ -10,6 +10,7 @@ falcosecurity-libs/cmake-build
 falcosecurity-libs/cmake-build-rhel
 kernel-modules/kobuild-tmp
 utilities/PerformanceTesting/TestResults
+fuzz/out/*
 
 # Mac OS hidden file
 .DS_Store
