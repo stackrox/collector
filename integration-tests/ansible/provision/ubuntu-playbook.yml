@@ -8,6 +8,5 @@
         name: docker.io
         update_cache: true
 
-    - name: Add user to docker group
-      shell: "usermod -aG docker {{ ansible_user }}"
+    - include_tasks: common.yml
 

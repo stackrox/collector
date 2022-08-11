@@ -1,0 +1,45 @@
+---
+gcp_project: stackrox-dev
+gcp_ssh_key: ~/.ssh/google_compute_engine
+gcp_zone: us-central1-a
+gcp_service_acct_json: null
+gcp_username: null
+
+vms:
+  - name: ubuntu-2204
+    type: ubuntu-os
+    box: ubuntu/jammy64
+    image_family: ubuntu-2204-lts
+    image_project: ubunut-os-cloud
+
+  - name: ubuntu-2004
+    type: ubuntu-os
+    box: ubuntu/focal64
+    image_family: ubuntu-2004-lts
+    image_project: ubuntu-os-cloud
+
+  - name: rhel-7
+    type: rhel
+    box: centos/7
+    image_family: rhel-7
+    image_project: rhel-cloud
+
+  - name: rhel-8
+    type: rhel
+    box: centos/stream8
+    image_family: rhel-8
+    image_project: rhel-cloud
+    
+  - name: fedora
+    type: fedora
+    box: generic/fedora28
+    image_family: fedora-coreos-stable
+    image_project: fedora-coreos-cloud
+    gcp_username: core
+
+  - name: cos-stable
+    type: cos
+    box: unknown
+    image_family: cos-stable
+    image_project: cos-cloud
+    

@@ -14,30 +14,40 @@
     - name: Cleanup old containers
       shell: "docker rm -f $(docker ps -aq) >/dev/null 2>&1 || true"
 
+    - name: Copy integration test binary
+      copy:
+        src: integration-tests.test
+        dest: .
+        mode: 0766
+
     - name: Run Integration Tests
-      shell: "make -C {{ playbook_dir }}/.. process-network"
+      shell: "./integration-tests.test -test.run ProcessNetwork 2>&1 integration-test.log"
       environment:
-        REMOTE_HOST_TYPE: ssh
-        VM_CONFIG: "ubuntu.ubuntu-20.04"
-        COLLECTION_METHOD: ebpf
-        SSH_USER: "{{ ansible_user }}"
-        SSH_ADDRESS: "{{ ansible_host }}"
-        SSH_PORT: "{{ ansible_port }}"
-        SSH_KEY_PATH: "{{ ansible_ssh_private_key_file }}"
+        REMOTE_HOST_TYPE: local
+        VM_CONFIG: "{{ vm_config }}"
+        COLLECTION_METHOD: "{{ item }}"
         COLLECTOR_IMAGE: "quay.io/stackrox-io/collector:3.9.0"
-      delegate_to: localhost
+      with_items:
+        - ebpf
+        - kernel-module
       register: result
 
+    - name: lookup files
+      shell: "(cd container-logs/; find . -maxdepth 1 -type f) | cut -d'/' -f2"
+      register: files_to_copy
+
     - name: Copy test log
-      copy:
-        src: "{{ playbook_dir }}/../integration-test.log"
-        dest: artifacts/{{ inventory_hostname }}/
-      delegate_to: localhost 
+      fetch:
+        src: "integration-test.log"
+        dest: artifacts/
+      tags:
+        - always
 
     - name: Copy test artifacts
-      copy: 
-        src: "{{ playbook_dir }}/../container-logs"
-        dest: "artifacts/{{ inventory_hostname }}/"
-      delegate_to: localhost
-
+      fetch:
+        src: "container-logs/{{ item }}"
+        dest: "artifacts/"
+      with_items: "{{ files_to_copy.stdout_lines }}"
+      tags:
+        - always
 

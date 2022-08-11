@@ -8,19 +8,11 @@
       set_fact:
         distro: "centos"
 
-    - name: Add signing key
-      rpm_key:
-        key: "https://download.docker.com/linux/{{ distro }}/gpg"
-        state: present
-
     - name: Add repository
-      yum_repository:
-        name: docker
-        description: docker repository
-        baseurl: "https://download.docker.com/linux/{{ distro }}/$releasever/$basearch/stable"
-        enabled: true
-        gpgcheck: true
-        gpgkey: "https://download.docker.com/linux/{{ distro }}/gpg"
+      shell: |
+        yum install -y yum-utils device-mapper-persistent-data lvm2
+        yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+        yum-config-manager --setopt="docker-ce-stable.baseurl=https://download.docker.com/linux/centos/\$releasever/\$basearch/stable" --save
 
     - name: Install docker
       yum:
@@ -31,8 +23,5 @@
         state: latest
         update_cache: true
 
-    - name: Start docker
-      service:
-        name: "docker"
-        enabled: true
-        state: started
+    - include_tasks: common.yml
+

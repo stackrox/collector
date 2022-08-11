@@ -1,0 +1,25 @@
+---
+
+- name: Provision Fedora
+  hosts: all
+  become: yes
+  tasks:
+    - name: Add docker repo
+      shell: |
+        dnf -y install dnf-plugins-core
+        dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+        dnf update
+
+    - name: Install docker
+      dnf:
+        pkg:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        update_cache: true
+
+    - name: Disable SELinux
+      shell: setenforce permissive
+
+    - include_tasks: common.yml
+

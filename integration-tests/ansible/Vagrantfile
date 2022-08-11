@@ -1,47 +1,14 @@
 require 'getoptlong'
+require 'yaml'
 
 Vagrant.require_version ">= 1.8.0"
 
-machines = {
-  # "rhel-7" => "generic/rhel7",
-  # "rhel-8" => "generic/rhel8",
-  "ubuntu-2204" => {
-    "box" => "ubuntu/jammy64",
-    "image_family" => "ubuntu-2204",
-    "image_project" => "ubuntu-cloud"
-  },
-  "ubuntu-2004" => {
-    "box" => "ubuntu/focal64",
-    "image_family" => "ubuntu-2004",
-    "image_project" => "ubuntu-cloud"
-  }
-}
+config = YAML.load_file(ENV.get('VM_CONFIG_FILE', 'vms.yml'))
 
-username = ENV['USER']
-ssh_key_file = "~/.ssh/google_compute_engine"
-service_acct = nil
-
-opts = GetoptLong.new(
-  [ '--gcp-username', GetoptLong::OPTIONAL_ARGUMENT ],
-  [ '--gcp-ssh-key-file', GetoptLong::OPTIONAL_ARGUMENT ],
-  [ '--gcp-svc-acct', GetoptLong::OPTIONAL_ARGUMENT ]
-)
-
-opts.each do |opt, arg|
-  case opt
-  when '--gcp-username'
-    username = arg
-  when '--gcp-ssh-key-file'
-    ssh_key_file = arg
-  when '--gcp-svc-acct'
-    service_acct = arg
-  end
-end
-
-Vagrant.configure(2) do |config|
-  machines.each do |name, machine_cfg|
-    config.vm.define name do |machine|
-      machine.vm.box = machine_cfg['box']
+Vagrant.configure(2) do |vagrant|
+  config['vms'].each do |vm_config|
+    vagrant.vm.define vm_config['name'] do |machine|
+      machine.vm.box = vm_config['box']
 
       machine.vm.provider "virtualbox" do | vbox, override |
         # nothing to do for virtualbox, but this block prevents
@@ -49,24 +16,36 @@ Vagrant.configure(2) do |config|
       end
 
       machine.vm.provider :google do |google, override|
-        google.google_project_id = "stackrox-dev"
-        google.image_family = machine_cfg['image_family']
-        google.image_project = machine_cfg['image_project']
+        username = config['gcp_username'] or ENV['USER']
 
-        if service_acct != nil
-          google.google_json_key_location = service_acct
-        end
+        google.google_project_id = config['gcp_project']
+        google.image_family = vm_config['image_family']
+        google.image_project_id = vm_config['image_project']
+
+        # TODO: add some random for uniqueness
+        google.name = "#{username}-#{vm_config['image_family']}-test"
+        google.disk_type = "pd-standard"
+        google.machine_type = "e2-standard-2"
+        google.zone = config['gcp_zone']
+
+        google.google_json_key_location = config.get('gcp_service_acct_json')
 
         override.vm.box = 'google/gce'
-        override.ssh.username = username
-        override.ssh.private_key_path = ssh_key_file
+        override.vm.username = vm.get('gcp_username', username)
+        override.ssh.private_key_path = config['gcp_ssh_key']
+        override.ssh.keys_only = false
       end
 
       machine.vm.provision "ansible" do |ansible|
         ansible.verbose = "v"
-        ansible.playbook = "provision/#{name.split(/-/, 2)[0]}-playbook.yml"
+        ansible.playbook = "provision/#{vm_config['name'].split(/-/, 2)[0]}-playbook.yml"
+        ansible.host_vars = {
+          vm_config['name'] => {
+            "vm_config" => "#{vm_config['type']}.#{vm_config['name']}"
+          }
+        }
       end
-
     end
   end
 end
+

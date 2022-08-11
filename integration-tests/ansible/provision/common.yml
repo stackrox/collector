@@ -1,0 +1,11 @@
+---
+
+- name: Start docker service
+  service:
+    name: "docker"
+    enabled: true
+    state: started
+
+- name: Add user to docker group
+  shell: "usermod -aG docker {{ ansible_user }}"
+

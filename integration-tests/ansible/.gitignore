@@ -1,2 +1,4 @@
 artifacts
 .vagrant
+integration-tests.test
+secrets.enc
