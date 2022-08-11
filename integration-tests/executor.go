@@ -244,7 +244,6 @@ func (e *gcloudCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
 	}
 	cmdArgs = append(cmdArgs, userInstance, "--", "-T")
 	cmdArgs = append(cmdArgs, quoteArgs(args)...)
-	fmt.Print(cmdArgs)
 	return exec.Command("gcloud", cmdArgs...)
 }
 

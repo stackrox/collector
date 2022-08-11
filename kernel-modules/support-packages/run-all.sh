@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eox pipefail
+set -eo pipefail
 
 SOURCE_ROOT=$1
 SUPPORT_PKG_SRC_ROOT=$2
