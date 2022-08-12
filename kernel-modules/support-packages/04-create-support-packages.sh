@@ -16,8 +16,9 @@ generate_checksum() {
 }
 
 LICENSE_FILE="$1"
-MD_DIR="$2"
-OUT_DIR="$3"
+COLLECTOR_MODULES_BUCKET="$2"
+MD_DIR="$3"
+OUT_DIR="$4"
 
 [[ -n "$LICENSE_FILE" && -n "$MD_DIR" && -n "$OUT_DIR" ]] || die "Usage: $0 <license-file> <metadata directory> <output directory>"
 [[ -d "$MD_DIR" ]] || die "Metadata directory $MD_DIR does not exist or is not a directory."

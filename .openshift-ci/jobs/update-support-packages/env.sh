@@ -14,7 +14,7 @@ export JOB_ID="${PROW_JOB_ID:0:8}"
 # Most of these are used by the integration tests themselves as well
 # as to create and configure the GCP VMs
 export GCP_SSH_KEY_FILE="$HOME/.ssh/GCP_SSH_KEY"
-export GCLOUD_INSTANCE="collector-osci-${IMAGE_FAMILY}-${JOB_ID}"
+export GCLOUD_INSTANCE="collector-osci-${IMAGE_FAMILY}-${JOB_ID}-update-support-packages"
 export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
 export REMOTE_HOST_TYPE=gcloud
 export VM_CONFIG="${VM_TYPE}.${IMAGE_FAMILY}"
@@ -26,9 +26,12 @@ if [[ "$VM_TYPE" == "flatcar" || "$VM_TYPE" =~ "coreos" ]]; then
     GCLOUD_USER="core"
 fi
 
-IMAGE_TAG="$(make tag)"
+"${WORKDIR}/.openshift-ci/jobs/integration-tests/gcloud-init.sh"
 
-export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${IMAGE_TAG}-osci"
+SOURCE_ROOT="./collector"
+SUPPORT_PKG_SRC_ROOT="$SOURCE_ROOT/kernel-modules/support-packages"
+
+secrets_dir=/tmp/secret
 
 # Ensure that all secrets are available in the environment
 shopt -s nullglob

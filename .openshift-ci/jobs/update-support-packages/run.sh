@@ -7,7 +7,9 @@ gcloud_command() {
 
 WORKDIR=/go/src/github.com/stackrox/collector
 
-BRANCH="$(echo "$JOB_SPEC" | jq -r '.extra_refs[0].base_ref')"
+source "$WORKDIR/.openshift-ci/drivers/scripts/lib.sh"
+
+BRANCH="$(get_branch)"
 
 # shellcheck source=SCRIPTDIR/../../drivers/scripts/lib.sh
 source "${WORKDIR}/.openshift-ci/drivers/scripts/lib.sh"
@@ -24,14 +26,6 @@ source "${WORKDIR}/.openshift-ci/jobs/update-support-packages/env.sh"
 
 env
 
-"${WORKDIR}/.openshift-ci/jobs/integration-tests/gcloud-init.sh"
-
-SOURCE_ROOT="./collector"
-SUPPORT_PKG_SRC_ROOT="$SOURCE_ROOT/kernel-modules/support-packages"
-LICENSE_FILE="${SOURCE_ROOT}/collector/LICENSE-kernel-modules.txt"
-COLLECTOR_MODULES_BUCKET="gs://collector-modules/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"
-
-secrets_dir=/tmp/secret
 
 gcloud_command "git clone https://github.com/stackrox/collector.git --single-branch --branch=$BRANCH --depth=1"
 
