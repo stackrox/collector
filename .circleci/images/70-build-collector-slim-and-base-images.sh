@@ -24,7 +24,7 @@ fi
 
 make -C "$SOURCE_ROOT" container-dockerfile
 
-docker buildx build --push --platform=linux/amd64,linux/ppc64le \
+docker build \
     -t "${QUAY_REPO}/collector:${COLLECTOR_VERSION}-base" \
     -t "${QUAY_REPO}/collector:${COLLECTOR_VERSION}-slim" \
     -t "${PUBLIC_REPO}/collector:${COLLECTOR_VERSION}-base" \

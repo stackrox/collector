@@ -42,7 +42,7 @@ for collector_dir in "${reload_md_directory}"/*; do
         --build-arg ADDRESS_SANITIZER="${sanitizer_tests}"
     )
 
-    docker buildx build --push --platform=linux/amd64,linux/ppc64le -q \
+    docker build -q \
         --target="probe-layer-${layer_count}" \
         -t "${stackrox_io_image}" \
         -t "${quay_pr_image}" \
