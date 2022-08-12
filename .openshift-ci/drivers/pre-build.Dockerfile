@@ -1,14 +1,12 @@
 FROM pipeline:src
 
-ENV CHECKOUT_BEFORE_PATCHING=true
+ENV CHECKOUT_BEFORE_PATCHING=false
 ENV DOCKERIZED=1
 ENV USE_KERNELS_FILE=true
 ENV OSCI_RUN=1
 ENV RHEL8_BUILDERS=4
 
 COPY --from=replaced-by-osci:scripts /scripts/ /scripts/
-
-USER root
 
 RUN ln -s /go/src/github.com/stackrox/collector/ /collector && \
     git -C /collector fetch --all && \

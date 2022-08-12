@@ -42,20 +42,11 @@ is_openshift_CI_rehearse_PR() {
 
 get_branch() {
     # ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables
-    if [[ -n "${JOB_SPEC:-}" ]]; then
-        # OpenShift CI adds 'extra_refs'
+    if [[ -n "${CLONEREFS_OPTIONS}" ]]; then
         local base_ref
-        base_ref="$(jq -r '.extra_refs[0].base_ref' <<< "${JOB_SPEC}")" || die "invalid JOB_SPEC yaml"
+        base_ref="$(jq -r '.refs[0].base_ref' <<< "${CLONEREFS_OPTIONS}")" || die "invalid CLONEREFS_OPTIONS json"
         if [[ "$base_ref" == "null" ]]; then
-            die "expect: base_ref in JOB_SEC.extra_refs[0]"
-        fi
-        echo "${base_ref}"
-    elif [[ -n "${CLONEREFS_OPTIONS}" ]]; then
-        # rehearsals
-        local base_ref
-        base_ref="$(jq -r '.refs[1].base_ref' <<< "${CLONEREFS_OPTIONS}")" || die "invalid CLONEREFS_OPTIONS json"
-        if [[ "$base_ref" == "null" ]]; then
-            die "expect: base_ref in JOB_SEC.extra_refs[0]"
+            die "expect: base_ref in CLONEREFS_OPTIONS.refs[0]"
         fi
         echo "${base_ref}"
     elif [[ -n "${PULL_BASE_REF:-}" ]]; then
