@@ -5,7 +5,7 @@ gcloud_command() {
     gcloud compute ssh --ssh-key-file="$GCP_SSH_KEY_FILE" "$GCLOUD_USER"@"$GCLOUD_INSTANCE" -- -T "$1"
 }
 
-WORKDIR=/go/src/github.com/stackrox/collector
+export WORKDIR=/go/src/github.com/stackrox/collector
 
 source "$WORKDIR/.openshift-ci/drivers/scripts/lib.sh"
 
