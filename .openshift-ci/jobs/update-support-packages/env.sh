@@ -27,6 +27,7 @@ if [[ "$VM_TYPE" == "flatcar" || "$VM_TYPE" =~ "coreos" ]]; then
 fi
 
 
+export WORKDIR=/go/src/github.com/stackrox/collector
 SOURCE_ROOT="./collector"
 SUPPORT_PKG_SRC_ROOT="$SOURCE_ROOT/kernel-modules/support-packages"
 
@@ -38,4 +39,4 @@ for cred in /tmp/secret/**/[A-Z]*; do
     export "$(basename "$cred")"="$(cat "$cred")"
 done
 
-"${SOURCE_ROOT}/.openshift-ci/jobs/integration-tests/gcloud-init.sh"
+"${WORKDIR}/.openshift-ci/jobs/integration-tests/gcloud-init.sh"
