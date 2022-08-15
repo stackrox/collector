@@ -26,7 +26,6 @@ if [[ "$VM_TYPE" == "flatcar" || "$VM_TYPE" =~ "coreos" ]]; then
     GCLOUD_USER="core"
 fi
 
-"${WORKDIR}/.openshift-ci/jobs/integration-tests/gcloud-init.sh"
 
 SOURCE_ROOT="./collector"
 SUPPORT_PKG_SRC_ROOT="$SOURCE_ROOT/kernel-modules/support-packages"
@@ -38,3 +37,5 @@ shopt -s nullglob
 for cred in /tmp/secret/**/[A-Z]*; do
     export "$(basename "$cred")"="$(cat "$cred")"
 done
+
+"${SOURCE_ROOT}/.openshift-ci/jobs/integration-tests/gcloud-init.sh"
