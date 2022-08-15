@@ -10,7 +10,7 @@ vms:
     type: ubuntu-os
     box: ubuntu/jammy64
     image_family: ubuntu-2204-lts
-    image_project: ubunut-os-cloud
+    image_project: ubuntu-os-cloud
 
   - name: ubuntu-2004
     type: ubuntu-os

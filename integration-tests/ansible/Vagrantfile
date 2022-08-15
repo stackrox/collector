@@ -3,7 +3,7 @@ require 'yaml'
 
 Vagrant.require_version ">= 1.8.0"
 
-config = YAML.load_file(ENV.get('VM_CONFIG_FILE', 'vms.yml'))
+config = YAML.load_file(ENV['VM_CONFIG_FILE'] || 'vms.yml')
 
 Vagrant.configure(2) do |vagrant|
   config['vms'].each do |vm_config|
@@ -16,7 +16,7 @@ Vagrant.configure(2) do |vagrant|
       end
 
       machine.vm.provider :google do |google, override|
-        username = config['gcp_username'] or ENV['USER']
+        username = config['gcp_username'] || ENV['USER']
 
         google.google_project_id = config['gcp_project']
         google.image_family = vm_config['image_family']
@@ -28,10 +28,10 @@ Vagrant.configure(2) do |vagrant|
         google.machine_type = "e2-standard-2"
         google.zone = config['gcp_zone']
 
-        google.google_json_key_location = config.get('gcp_service_acct_json')
+        google.google_json_key_location = config['gcp_service_acct_json'] || nil
 
         override.vm.box = 'google/gce'
-        override.vm.username = vm.get('gcp_username', username)
+        override.ssh.username = username
         override.ssh.private_key_path = config['gcp_ssh_key']
         override.ssh.keys_only = false
       end
