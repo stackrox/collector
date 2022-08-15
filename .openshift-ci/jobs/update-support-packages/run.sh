@@ -29,8 +29,7 @@ env
 
 gcloud_command "git clone https://github.com/stackrox/collector.git --single-branch --branch=$BRANCH --depth=1"
 
-gcloud compute scp --recurse "${secrets_dir}" "${GCLOUD_USER}@${GCLOUD_INSTANCE}:${secrets_dir}"
-gcloud_command "$SOURCE_ROOT/.openshift-ci/jobs/integration-tests/gcloud-init.sh"
+#gcloud_command "$SOURCE_ROOT/.openshift-ci/jobs/integration-tests/gcloud-init.sh"
 
 gcloud_command "sudo apt install zip -y"
 gcloud_command "export COLLECTOR_MODULES_BUCKET=$COLLECTOR_MODULES_BUCKET; export LICENSE_FILE=$LICENSE_FILE; $SUPPORT_PKG_SRC_ROOT/run-all.sh $SOURCE_ROOT $SUPPORT_PKG_SRC_ROOT"
