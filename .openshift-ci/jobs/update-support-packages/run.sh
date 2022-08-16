@@ -26,7 +26,6 @@ source "${WORKDIR}/.openshift-ci/jobs/update-support-packages/env.sh"
 
 env
 
-
 gcloud_command "git clone https://github.com/stackrox/collector.git --single-branch --branch=$BRANCH --depth=1"
 
 #gcloud_command "$SOURCE_ROOT/.openshift-ci/jobs/integration-tests/gcloud-init.sh"

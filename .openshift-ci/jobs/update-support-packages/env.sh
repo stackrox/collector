@@ -26,12 +26,9 @@ if [[ "$VM_TYPE" == "flatcar" || "$VM_TYPE" =~ "coreos" ]]; then
     GCLOUD_USER="core"
 fi
 
-
 export WORKDIR=/go/src/github.com/stackrox/collector
-SOURCE_ROOT="./collector"
-SUPPORT_PKG_SRC_ROOT="$SOURCE_ROOT/kernel-modules/support-packages"
-
-secrets_dir=/tmp/secret
+export SOURCE_ROOT="./collector"
+export SUPPORT_PKG_SRC_ROOT="$SOURCE_ROOT/kernel-modules/support-packages"
 
 # Ensure that all secrets are available in the environment
 shopt -s nullglob
