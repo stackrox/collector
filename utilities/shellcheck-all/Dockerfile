@@ -2,7 +2,7 @@ FROM centos:7
 
 # Used to run the shellcheck-all.sh script, which checks for potential errors/smells in all shell script files in a directory
 # To run 
-# docker run --rm -v "$DIRECTORY_TO_SCAN:/scripts" shellcheck-all:latest
+# docker run --rm -v "$DIRECTORY_TO_SCAN:/scripts" quay.io/stackrox-io/shellcheck-all:latest
 
 RUN yum update -y
 RUN yum upgrade -y
