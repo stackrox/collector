@@ -44,7 +44,7 @@ get_branch() {
     # ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables
     if [[ -n "${CLONEREFS_OPTIONS}" ]]; then
         local base_ref
-        base_ref="$(jq -r '.refs[0].base_ref' <<< "${CLONEREFS_OPTIONS}")" || die "invalid CLONEREFS_OPTIONS json"
+        base_ref="$(jq -r '.refs[] | select(.repo=="collector") | .base_ref' <<< "${CLONEREFS_OPTIONS}")" || die "invalid CLONEREFS_OPTIONS json"
         if [[ "$base_ref" == "null" ]]; then
             die "expect: base_ref in CLONEREFS_OPTIONS.refs[0]"
         fi
