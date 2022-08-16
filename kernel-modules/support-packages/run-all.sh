@@ -10,8 +10,6 @@ LICENSE_FILE=${4:-"${SOURCE_ROOT}/collector/LICENSE-kernel-modules.txt"}
         "${SOURCE_ROOT}/RELEASED_VERSIONS" \
         /tmp/support-packages/metadata
 
-ls /tmp/support-packages/metadata
-
 "${SUPPORT_PKG_SRC_ROOT}/02-fetch-collectors-metadata.sh" \
         /tmp/support-packages/metadata
 
