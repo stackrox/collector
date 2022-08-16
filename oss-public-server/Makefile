@@ -7,7 +7,11 @@ all: image
 
 .PHONY: image
 image:
+ifdef BUILD_UPLOAD_MULTIARCH_IMAGES
 	docker buildx build --push --platform=linux/amd64,linux/ppc64le -t $(IMAGE) container/
+else
+	docker build -t $(IMAGE) container/
+endif
 
 .PHONY: run-local
 run-local: image

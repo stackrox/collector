@@ -10,10 +10,18 @@ all: build-container
 
 .PHONY: build-container
 build-container:
+ifdef BUILD_UPLOAD_MULTIARCH_IMAGES
 	docker buildx build --push --platform=linux/amd64,linux/ppc64le $(BUILD_CONTAINER_CACHE_IMAGES:%=--cache-from=%) -t $(BUILD_CONTAINER_TAG) ../
+else
+	docker build $(BUILD_CONTAINER_CACHE_IMAGES:%=--cache-from=%) -t $(BUILD_CONTAINER_TAG) ../
+endif
 
 build-container-%: build/Dockerfile.%
+ifdef BUILD_UPLOAD_MULTIARCH_IMAGES
 	docker buildx build --push --platform=linux/amd64,linux/ppc64le $(BUILD_CONTAINER_CACHE_IMAGES:%=--cache-from=%-$@) -t $(BUILD_CONTAINER_TAG)-$* ../ -f $<
+else
+	docker build $(BUILD_CONTAINER_CACHE_IMAGES:%=--cache-from=%-$@) -t $(BUILD_CONTAINER_TAG)-$* ../ -f $<
+endif
 
 .PHONY: all-build-containers
 all-build-containers: build-container $(CUSTOM_FLAVORS:%=build-container-%)
