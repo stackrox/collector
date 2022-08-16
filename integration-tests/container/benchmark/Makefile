@@ -6,7 +6,7 @@ ifneq ($(COLLECTOR_QA_TAG),)
 COLLECTOR_QA_BENCHMARK_TAG=phoronix-$(COLLECTOR_QA_TAG)
 endif
 
-TARGETARCH := $(arch)
+TARGETARCH := $(shell arch)
 ifeq ($(ARCH),x86_64)
 TARGETARCH=amd64
 endif
