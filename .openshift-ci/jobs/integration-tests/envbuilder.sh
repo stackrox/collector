@@ -21,7 +21,7 @@ createGCPVM() {
             --image-family "$GCP_IMAGE_FAMILY" \
             --image-project "$GCP_IMAGE_PROJECT" \
             --service-account=circleci-collector@stackrox-ci.iam.gserviceaccount.com \
-	    --scopes="storage-rw,cloud-platform" \
+            --scopes="storage-rw,cloud-platform" \
             --machine-type e2-standard-2 \
             --labels="stackrox-ci=true,stackrox-ci-job=${JOB_NAME_SAFE},stackrox-ci-workflow=${PROW_JOB_ID}" \
             --boot-disk-size=20GB \
