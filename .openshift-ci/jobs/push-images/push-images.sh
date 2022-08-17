@@ -24,13 +24,13 @@ image_repos=(
 )
 
 full_tags=(
-    "${COLLECTOR_VERSION}-osci"
-    "${COLLECTOR_VERSION}-osci-latest"
+    "${COLLECTOR_VERSION}"
+    "${COLLECTOR_VERSION}-latest"
 )
 
 base_tags=(
-    "${COLLECTOR_VERSION}-osci-slim"
-    "${COLLECTOR_VERSION}-osci-base"
+    "${COLLECTOR_VERSION}-slim"
+    "${COLLECTOR_VERSION}-base"
 )
 
 oc registry login
