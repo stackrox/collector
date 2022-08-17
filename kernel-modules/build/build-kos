@@ -94,6 +94,9 @@ build_ko() (
         collector_probe="${module_src_dir}/bpf/probe.o"
         probe_dir="${module_src_dir}/bpf"
 
+        ls -lah "${module_src_dir}"
+        ls -lah "${module_src_dir}/collector-probe" || true
+
         if [[ -d "${module_src_dir}/collector-probe" ]]; then
             collector_probe="${module_src_dir}/collector-probe/probe.o"
             probe_dir="${module_src_dir}/collector-probe"
