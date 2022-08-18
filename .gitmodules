@@ -41,7 +41,7 @@
 [submodule "collector/proto/third_party/stackrox"]
 	path = collector/proto/third_party/stackrox
 	url = https://github.com/stackrox/stackrox
-	branch = master
+	branch = jv-ROX-12248-add-process-id-to-network-protobuf
 [submodule "third_party/googletest"]
 	path = third_party/googletest
 	url = https://github.com/google/googletest.git
