@@ -15,6 +15,7 @@ build_cache() {
     /scripts/sanitize-drivers.py
 }
 
+mkdir -p "/kernel-modules"
 ((NO_CACHE)) || build_cache
 
 # Create the tasks file
