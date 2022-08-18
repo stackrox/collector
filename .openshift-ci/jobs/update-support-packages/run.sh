@@ -28,8 +28,6 @@ env
 
 gcloud_command "git clone https://github.com/stackrox/collector.git --single-branch --branch=$BRANCH --depth=1"
 
-#gcloud_command "$SOURCE_ROOT/.openshift-ci/jobs/integration-tests/gcloud-init.sh"
-
 gcloud_command "sudo apt install zip -y"
 gcloud_command "$SUPPORT_PKG_SRC_ROOT/run-all.sh $SOURCE_ROOT $SUPPORT_PKG_SRC_ROOT"
 
