@@ -6,7 +6,7 @@
   - `git checkout master`
   - `git pull`
 2. Set the release environment variable, which should be incremented from the previous released version.
-  - `export RELEASE=3.8`
+  - `export COLLECTOR_RELEASE=3.8`
 3. Drop any release candidate versions from the kernel-modules/MODULE_VERSION file
   - `git checkout -b <branch name>`
   - `vim kernel-modules/MODULE_VERSION`
@@ -15,20 +15,34 @@
   - `git push`
   - Create a PR for this change, merge once approved.
 4. Create an internal release tag to mark on the master branch where we forked for the release.
-  - `git tag "${RELEASE}.x"`
-  - `git push origin "${RELEASE}.x"`
+  - `git tag "${COLLECTOR_RELEASE}.x"`
+  - `git push origin "${COLLECTOR_RELEASE}.x"`
 5. Create the release branch with an empty commit and push.
-  - `git checkout -b "release/${RELEASE}.x"`
-  - `git commit --allow-empty -m "Empty commit to diverge ${RELEASE} from master"`
-  - `git push --set-upstream origin "release/${RELEASE}.x"`
+  - `git checkout -b "release-${COLLECTOR_RELEASE}"`
+  - `git commit --allow-empty -m "Empty commit to diverge ${COLLECTOR_RELEASE} from master"`
+  - `git push --set-upstream origin "release-${COLLECTOR_RELEASE}"`
 
 **Tag and create the collector image release**
 
 1. Increment or set the patch number and release environment variables (if not set).
-  - `export PATCH_NUMBER=0`
-  - `export RELEASE=3.8`
-2. Tag and push the release. Check CI to ensure the triggered builds complete.
-  - `git tag "${RELEASE}.${PATCH_NUMBER}"`
-  - `git push origin "${RELEASE}.${PATCH_NUMBER}"`
-3. Create a pull request to update the `COLLECTOR_VERSION` file in the [stackrox/stackrox](https://github.com/stackrox/stackrox/) repo with the newly create release after CI images have been built.
+  - `export COLLECTOR_PATCH_NUMBER=0`
+  - `export COLLECTOR_RELEASE=3.8`
+2. Tag and push the release.
+  - `git tag "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"`
+  - `git push origin "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"`
+3. Create a corresponding PR in openshift/release. Go to a forked copy of the openshift/release repo
+  - `git checkout master`
+  - `git pull upstream master`
+  - `git checkout -b "release-${COLLECTOR_RELEASE}"`
+  - `cd ci-operator/config/stackrox/collector`
+  - `mv stackrox-collector-master.yaml stackrox-collector-release-${COLLECTOR_RELEASE}.yaml`
+  - `cd ../..`
+  - `make jobs`
+  - `git add ...`
+  - `git rm ...`
+  - `git commit -m "Changed branch to release-${COLLECTOR_RELEASE}`
+  - `git tag "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"`
+  - `git push origin "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"`
+  - `git push origin release-${COLLECTOR_RELEASE}` # Create the PR
+4. Create a pull request to update the `COLLECTOR_VERSION` file in the [stackrox/stackrox](https://github.com/stackrox/stackrox/) repo with the newly create release after CI images have been built.
 
