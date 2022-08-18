@@ -138,8 +138,7 @@ func (c *collectorManager) TearDown() error {
 }
 
 func (c *collectorManager) BoltDB() (db *bolt.DB, err error) {
-	opts := &bolt.Options{ReadOnly: true}
-	db, err = bolt.Open(c.DBPath, 0600, opts)
+	db, err = bolt.Open(c.DBPath, 0600, nil)
 	if err != nil {
 		fmt.Printf("Permission error. %v\n", err)
 	}

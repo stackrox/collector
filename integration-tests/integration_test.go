@@ -206,7 +206,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 
 	images := []string{
 		"nginx:1.14-alpine",
-		"pstauffer/curl:latest",
+		"curlimages/curl:latest",
 	}
 
 	for _, image := range images {
@@ -228,7 +228,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 
 	// invokes another container
-	containerID, err = s.launchContainer("nginx-curl", "pstauffer/curl:latest", "sleep", "300")
+	containerID, err = s.launchContainer("nginx-curl", "curlimages/curl:latest", "sleep", "300")
 	s.Require().NoError(err)
 	s.clientContainer = containerShortID(containerID)
 
