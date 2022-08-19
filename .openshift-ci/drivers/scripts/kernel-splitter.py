@@ -135,8 +135,8 @@ class Builder:
 
 def main(task_file):
     fc36_kernels = r'(?:5\.[1-9]\d+\..*)'
-    rhel8_kernels = r'(?:(?:4|5)\.\d+\..*)'
-    rhel7_kernels = r'(?:3\.\d+\..*)'
+    rhel8_kernels = r'(?:5\.\d+\..*)'
+    rhel7_kernels = r'(?:(?:3|4)\.\d+\..*)'
 
     fc36 = Builder('fc36', fr'^{fc36_kernels}', {})
     rhel8 = Builder('rhel8', fr'^{rhel8_kernels}', {})
