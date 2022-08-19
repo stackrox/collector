@@ -11,5 +11,10 @@ RUN yum makecache && \
         gcc-c++ \
         llvm-toolset-7.0 \
         elfutils-libelf \
+        elfutils-libelf-devel \
         kmod && \
     /scripts/gcloud-sdk-install.sh
+
+ENV BASH_ENV="/scripts/llvm-toolset-7-enable" \
+    ENV="/scripts/llvm-toolset-7-enable" \
+    PROMPT_COMMAND=". /scripts/llvm-toolset-7-enable"
