@@ -7,12 +7,6 @@
 # now-unsupported releases.
 # IMPORTANT: THIS FILE ALWAYS NEEDS TO END WITH A NEWLINE CHARACTER
 
-3.4.1 3.66.0  # Rox release 3.66.0 by ivan-degtiarenko at Thu Oct 14 21:39:55 UTC 2021
-3.4.1 3.66.1  # Rox release 3.66.1 by misberner at Wed Oct 20 16:40:51 UTC 2021
-3.5.0 3.67.0  # Rox release 3.67.0 by dhaus67 at Wed Dec  1 05:47:30 UTC 2021
-3.5.0 3.67.1  # Rox release 3.67.1 by dhaus67 at Mon Dec  6 13:37:46 UTC 2021
-3.6.0 3.68.0  # Rox release 3.68.0 by vikin91 at Thu Feb  3 08:58:34 UTC 2021
-3.6.0 3.68.1  # Rox release 3.68.1 by vikin91 at Thu Feb  10 21:08:34 UTC 2021
 3.7.0 3.69.0  # Rox release 3.69.0 by 0x656b694d at Tue Mar 15 17:01:36 UTC 2022
 3.7.3 3.69.1  # Rox release 3.69.1 by 0x656b694d at Wed Apr  6 21:13:36 UTC 2022
 3.8.1 3.70.0  # Rox release 3.70.0 by JoukoVirtanen at Fri May 27 21:22:32 UTC 2022
