@@ -21,35 +21,40 @@
         mode: 0766
 
     - name: Run Integration Tests
-      shell: "./integration-tests.test -test.run ProcessNetwork 2>&1 integration-test.log"
+      shell: "make -C ../ process-network"
       environment:
-        REMOTE_HOST_TYPE: local
+        REMOTE_HOST_TYPE: ssh
+        SSH_ADDRESS: "{{ ansible_host }}"
+        SSH_PORT: "{{ ansible_port }}"
+        SSH_USER: "{{ ansible_user }}"
+        SSH_KEY_PATH: "~/.ssh/google_compute_engine"
         VM_CONFIG: "{{ vm_config }}"
         COLLECTION_METHOD: "{{ item }}"
-        COLLECTOR_IMAGE: "quay.io/stackrox-io/collector:3.9.0"
+        COLLECTOR_IMAGE: "quay.io/stackrox-io/collector:{{ collector_tag }}"
       with_items:
         - ebpf
-        - kernel-module
+          #- kernel-module
       register: result
+      delegate_to: localhost
 
-    - name: lookup files
-      shell: "(cd container-logs/; find . -maxdepth 1 -type f) | cut -d'/' -f2"
-      register: files_to_copy
+      #- name: lookup files
+      #  shell: "(cd container-logs/; find . -maxdepth 1 -type f) | cut -d'/' -f2"
+      #  register: files_to_copy
 
-    - name: Copy test log
-      fetch:
-        src: "integration-test.log"
-        dest: artifacts/
-      tags:
-        - always
-      ignore_errors: true
+      #- name: Copy test log
+      #  fetch:
+      #    src: "integration-test.log"
+      #    dest: artifacts/
+      #  tags:
+      #    - always
+      #  ignore_errors: true
 
-    - name: Copy test artifacts
-      fetch:
-        src: "container-logs/{{ item }}"
-        dest: "artifacts/"
-      with_items: "{{ files_to_copy.stdout_lines }}"
-      tags:
-        - always
-      ignore_errors: true
+      #- name: Copy test artifacts
+      #  fetch:
+      #    src: "container-logs/{{ item }}"
+      #    dest: "artifacts/"
+      #  with_items: "{{ files_to_copy.stdout_lines }}"
+      #  tags:
+      #    - always
+      #ignore_errors: true
 

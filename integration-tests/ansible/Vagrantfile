@@ -25,6 +25,7 @@ Vagrant.configure(2) do |vagrant|
         # TODO: add some random for uniqueness
         google.name = "#{username}-#{vm_config['image_family']}-test"
         google.disk_type = "pd-standard"
+        google.disk_size = 20
         google.machine_type = "e2-standard-2"
         google.zone = config['gcp_zone']
 

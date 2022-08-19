@@ -43,3 +43,14 @@ vms:
     image_family: cos-stable
     image_project: cos-cloud
     
+  - name: rhel-8-sap
+    type: rhel-sap
+    box: unknown
+    image_family: rhel-8-6-sap-ha
+    image_project: rhel-sap-cloud
+
+  - name: rhel-84-sap
+    type: rhel-sap
+    box: unknown
+    image_family: rhel-8-4-sap-ha
+    image_project: rhel-sap-cloud
