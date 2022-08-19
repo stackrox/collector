@@ -4,13 +4,21 @@ COPY --from=replaced-by-osci:scripts /scripts/ /scripts/
 
 ENV DISTRO=rhel8
 
+ARG CLANG_VERSION=11.0.0-1.module_el8.4.0+587+5187cac0
+ARG LLVM_VERSION=11.0.0-2.module_el8.4.0+587+5187cac0
+#ARG CLANG_VERSION=12.0.0-1.module_el8.5.0+840+21214faf
+#ARG LLVM_VERSION=12.0.0-1.module_el8.5.0+840+21214faf
+
+ENV CLANG_VERSION="${CLANG_VERSION}"
+ENV LLVM_VERSION="${LLVM_VERSION}"
+
 RUN dnf -y update && \
     dnf -y install \
         make \
         cmake \
         gcc-c++ \
-        llvm \
-        clang \
+        llvm-${LLVM_VERSION} \
+        clang-${CLANG_VERSION} \
         elfutils-libelf \
         elfutils-libelf-devel \
         kmod && \

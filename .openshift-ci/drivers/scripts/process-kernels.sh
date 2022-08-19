@@ -8,8 +8,10 @@ build_cache() {
         mkdir -p "/kernel-modules/$module_version/"
 
         gsutil -m rsync -r \
+            -x "collector.*4\.18\.0\-305.*$" \
             "gs://collector-modules-osci-public/$module_version/" \
             "/kernel-modules/$module_version/" || true
+        ls -alh "/kernel-modules/$module_version/"
     done
 
     /scripts/sanitize-drivers.py
