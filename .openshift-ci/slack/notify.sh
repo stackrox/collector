@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
+# shellcheck disable=SC1091
 source .openshift-ci/env.sh
 
 WEBHOOK_URL=$SLACK_WEBHOOK_ONCALL
