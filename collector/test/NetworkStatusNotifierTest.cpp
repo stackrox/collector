@@ -144,6 +144,8 @@ class NetworkConnectionInfoMessageParser {
     }
   }
 
+  /* our internal model for connection life-cycle events uses the Connection object as the key for a hashmap.
+     The value in the hashmap describes the kind of event: true stands for a creation, false for a deletion. */
   const std::unordered_map<Connection, bool, Hasher>& get_updated_connections() const { return updated_connections_; }
 
  private:
