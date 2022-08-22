@@ -75,7 +75,7 @@ end
 )";
   static const UnorderedSet<L4ProtoPortPair> kIgnoredL4ProtoPortPairs;
   static constexpr bool kForceKernelModules = false;
-  static constexpr bool kEnableHoldPhase = true;
+  static constexpr bool kEnableHoldPhase = false;
   static constexpr int kHoldPhaseMaxDuration = 60;
 
   CollectorConfig() = delete;
