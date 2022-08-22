@@ -278,8 +278,6 @@ TEST(NetworkStatusNotifier, UpdateIPnoAfterglow) {
   // the same server connection normalized and grouped in a known subnet
   Connection conn3("containerId", Endpoint(Address(), 1024), Endpoint(IPNet(Address(139, 45, 0, 0), 16), 0), L4Proto::TCP, true);
 
-  UnorderedMap<Address::Family, std::vector<IPNet>> known_networks = {{Address::Family::IPV4, {IPNet(Address(139, 45, 0, 0), 16)}}};
-
   config.DisableAfterglow();
 
   // the connection is always ready
