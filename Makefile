@@ -40,7 +40,7 @@ collector: builder
 .PHONY: unittest
 unittest:
 	make -C collector unittest ||\
-		( .openshift-ci/slack/notify-if-needed.sh "unittest")
+		( .openshift-ci/slack/notify-if-needed.sh "unittest" $$? )
 
 .PHONY: build-kernel-modules
 build-kernel-modules:
@@ -98,32 +98,32 @@ integration-tests:
 .PHONY: integration-tests-benchmark
 integration-tests-benchmark:
 	make -C integration-tests benchmark ||\
-		( .openshift-ci/slack/notify-if-needed.sh "benchmark")
+		( .openshift-ci/slack/notify-if-needed.sh "benchmark" $$? )
 
 .PHONY: integration-tests-baseline
 integration-tests-baseline:
 	make -C integration-tests baseline ||\
-		( .openshift-ci/slack/notify-if-needed.sh "benchmark-baseline")
+		( .openshift-ci/slack/notify-if-needed.sh "benchmark-baseline" $$? )
 
 .PHONY: integration-tests-process-network
 integration-tests-process-network:
 	make -C integration-tests process-network ||\
-		( .openshift-ci/slack/notify-if-needed.sh "process-network")
+		( .openshift-ci/slack/notify-if-needed.sh "process-network" $$? )
 
 .PHONY: integration-tests-missing-proc-scrape
 integration-tests-missing-proc-scrape:
 	make -C integration-tests missing-proc-scrape ||\
-		( .openshift-ci/slack/notify-if-needed.sh "missing-proc-scrape")
+		( .openshift-ci/slack/notify-if-needed.sh "missing-proc-scrape" $$? )
 
 .PHONY: integration-tests-repeat-network
 integration-tests-repeat-network:
 	make -C integration-tests repeat-network ||\
-		( .openshift-ci/slack/notify-if-needed.sh "repeat-network")
+		( .openshift-ci/slack/notify-if-needed.sh "repeat-network" $$? )
 
 .PHONY: integration-tests-image-label-json
 integration-tests-image-label-json:
 	make -C integration-tests image-label-json ||\
-		( .openshift-ci/slack/notify-if-needed.sh "image-label-json")
+		( .openshift-ci/slack/notify-if-needed.sh "image-label-json" $$? )
 
 .PHONY: integration-tests-report
 integration-tests-report:
