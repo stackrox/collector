@@ -307,7 +307,7 @@ std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
          << ", hostname:" << c.Hostname()
          << ", logLevel:" << c.LogLevel()
          << ", hold:" << c.EnableHoldPhase()
-         << ", holdMax" << c.HoldPhaseMaxDuration();
+         << ", holdMax:" << c.HoldPhaseMaxDuration();
 }
 
 }  // namespace collector

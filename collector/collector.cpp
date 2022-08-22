@@ -283,6 +283,8 @@ int main(int argc, char** argv) {
 
   CollectorConfig config(args);
 
+  CLOG(INFO) << "Configuration: " << config;
+
   setCoreDumpLimit(config.IsCoreDumpEnabled());
 
   // insert the kernel module with options from the configuration
