@@ -23,15 +23,24 @@ class Task:
 
         return Task(task[0], task[1], task[2])
 
+    def is_ebpf(self):
+        return self.driver_type == "bpf"
+
+    def is_kernel_module(self):
+        return self.driver_type == "mod"
+
 
 class Builder:
-    def __init__(self, name, regex, tasks):
+    def __init__(self, name, regex, tasks, ebpf_only=False, ko_only=False):
         self.name = name
         self.output_dir = os.path.join(TASKS_DIR, name)
         self.regex = re.compile(regex)
         self.tasks = tasks
         # OSCI caps cpu cores to 10, so that's what each builder gets
         self._shards = 10
+
+        self.ebpf_only = ebpf_only
+        self.ko_only = ko_only
 
     def __len__(self):
         return len(self.tasks)
@@ -90,7 +99,13 @@ class Builder:
             self._dump_shard(shard, raw_tasks)
 
     def match(self, task):
-        return self.regex.match(task.kernel) is not None
+        if self.regex.match(task.kernel) is not None:
+            if self.ebpf_only and task.is_ebpf():
+                return True
+            if self.ko_only and task.is_kernel_module():
+                return True
+            return not any([self.ebpf_only, self.ko_only])
+        return False
 
     def append(self, task):
         if task.kernel not in self.tasks:
@@ -128,25 +143,31 @@ class Builder:
             })
 
         return [
-            Builder(f'{self.name}/{i}', self.regex, tasks)
+            Builder(f'{self.name}/{i}', self.regex, tasks, self.ebpf_only, self.ko_only)
             for i, tasks in enumerate(new_builders_tasks)
         ]
 
 
 def main(task_file):
-    fc36_kernels = r'(?:5\.[1-9]\d+\..*)'
-    rhel8_kernels = r'(?:(?:4|5)\.\d+\..*)'
-    rhel7_kernels = r'(?:3\.\d+\..*)'
+    fc36_kernels = r"(?:5\.[1-9]\d+\..*)"
+    rhel8_kernels = r"(?:(?:4|5)\.\d+\..*)"
+    rhel7_kernels = r"(?:3\.\d+\..*)"
+    # rhel8_ebpf_kernels = r'(?:5\.\d+\..*)'
+    rhel7_ebpf_kernels = r"(?:(?:3|4)\.\d+\..*)"
 
-    fc36 = Builder('fc36', fr'^{fc36_kernels}', {})
-    rhel8 = Builder('rhel8', fr'^{rhel8_kernels}', {})
-    rhel7 = Builder('rhel7', fr'^{rhel7_kernels}', {})
-    unknown = Builder('unknown', r'.*', {})
+    fc36 = Builder("fc36", rf"^{fc36_kernels}", {})
+    rhel8 = Builder("rhel8", rf"^{rhel8_kernels}", {})
+    # rhel8_ebpf = Builder('rhel8', fr'^{rhel8_ebpf_kernels}', {}, ebpf_only=True)
+    rhel7 = Builder("rhel7", rf"^{rhel7_kernels}", {})
+    rhel7_ebpf = Builder("rhel7", rf"^{rhel7_ebpf_kernels}", {}, ebpf_only=True)
+    unknown = Builder("unknown", r".*", {})
 
     builders = [
-        fc36,
-        rhel8,
-        rhel7,
+        fc36,  # 5.10+ any
+        # rhel8_ebpf, # 5+ ebpf
+        rhel7_ebpf,  # 3/4+ ebpf
+        rhel8,  # 4/5+ any
+        rhel7,  # 3+ any
     ]
 
     # Order is important in this for loop!
@@ -177,6 +198,7 @@ def main(task_file):
     builders = [
         fc36,
         *rhel8_builders,
+        rhel7_ebpf,
         rhel7,
         unknown
     ]
