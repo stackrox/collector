@@ -105,7 +105,7 @@ end
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
- private:
+ protected:
   bool use_chisel_cache_;
   int scrape_interval_;
   int snap_len_;
