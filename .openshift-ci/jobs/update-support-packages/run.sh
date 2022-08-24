@@ -6,7 +6,7 @@ gcloud_command() {
 }
 
 sleep_echo() {
-    for i in {1..120}; do
+    for _ in {1..120}; do
         sleep 1
         echo -n .
     done
@@ -23,9 +23,9 @@ BRANCH="$(get_branch)"
 source "${WORKDIR}/.openshift-ci/drivers/scripts/lib.sh"
 
 if ! pr_has_label "test-support-packages"; then
-   if [ "${BRANCH}" != "master" ]; then
-      exit 0
-   fi
+    if [ "${BRANCH}" != "master" ]; then
+        exit 0
+    fi
 fi
 
 # shellcheck source=SCRIPTDIR/../../jobs/update-support-packages/env.sh
@@ -68,4 +68,3 @@ fi
 gcloud_command "gsutil -m rsync -r /tmp/support-packages/output $PUBLIC_GCLOUD_TARGET"
 sleep_echo
 gcloud_command "gsutil -m rsync -n -r -d /tmp/support-packages/output $PUBLIC_GCLOUD_TARGET"
-
