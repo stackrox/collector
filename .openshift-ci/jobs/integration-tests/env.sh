@@ -28,7 +28,7 @@ fi
 
 IMAGE_TAG="$(make tag)"
 
-export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${IMAGE_TAG}"
+export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${IMAGE_TAG}-latest"
 
 # Ensure that all secrets are available in the environment
 shopt -s nullglob
