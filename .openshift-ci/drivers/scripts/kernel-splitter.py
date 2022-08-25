@@ -156,10 +156,10 @@ def main(task_file):
     # rhel8_ebpf_kernels = r'(?:5\.\d+\..*)'
     rhel7_ebpf_kernels = r"(?:(?:3|4|5)\.\d+\..*)"
 
-    fc36 = Builder("fc36", rf"^{fc36_kernels}", {}),
-    rhel7_ebpf = EBPFBuilder("rhel7", rf"^{rhel7_ebpf_kernels}", {}),
-    rhel8 = Builder("rhel8", rf"^{rhel8_kernels}", {}),
-    rhel7 = Builder("rhel7", rf"^{rhel7_kernels}", {}),
+    fc36 = Builder("fc36", rf"^{fc36_kernels}", {})
+    rhel7_ebpf = EBPFBuilder("rhel7", rf"^{rhel7_ebpf_kernels}", {})
+    rhel8 = Builder("rhel8", rf"^{rhel8_kernels}", {})
+    rhel7 = Builder("rhel7", rf"^{rhel7_kernels}", {})
     unknown = Builder("unknown", r".*", {})
 
     builders = [
