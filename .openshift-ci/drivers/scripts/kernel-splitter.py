@@ -134,7 +134,7 @@ class Builder:
             })
 
         return [
-            Builder(f'{self.name}/{i}', self.regex, tasks, self.ebpf_only, self.ko_only)
+            Builder(f'{self.name}/{i}', self.regex, tasks)
             for i, tasks in enumerate(new_builders_tasks)
         ]
 
