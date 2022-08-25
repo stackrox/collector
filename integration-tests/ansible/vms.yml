@@ -42,6 +42,12 @@ vms:
     box: unknown
     image_family: cos-stable
     image_project: cos-cloud
+
+  - name: cos-89
+    type: cos
+    box: unknown
+    image_family: cos-89-lts
+    image_project: cos-cloud
     
   - name: rhel-8-sap
     type: rhel-sap
