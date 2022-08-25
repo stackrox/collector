@@ -153,7 +153,7 @@ def main(task_file):
     rhel8_kernels = r"(?:(?:4|5)\.\d+\..*)"
     rhel7_kernels = r"(?:3\.\d+\..*)"
     # rhel8_ebpf_kernels = r'(?:5\.\d+\..*)'
-    rhel7_ebpf_kernels = r"(?:(?:3|4)\.\d+\..*)"
+    rhel7_ebpf_kernels = r"(?:(?:3|4|5)\.\d+\..*)"
 
     fc36 = Builder("fc36", rf"^{fc36_kernels}", {})
     rhel8 = Builder("rhel8", rf"^{rhel8_kernels}", {})
@@ -165,7 +165,7 @@ def main(task_file):
     builders = [
         fc36,  # 5.10+ any
         # rhel8_ebpf, # 5+ ebpf
-        rhel7_ebpf,  # 3/4+ ebpf
+        rhel7_ebpf,  # 3+/4+/5.0-5.9 ebpf
         rhel8,  # 4/5+ any
         rhel7,  # 3+ any
     ]
