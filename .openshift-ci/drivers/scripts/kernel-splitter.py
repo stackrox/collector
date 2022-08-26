@@ -55,7 +55,7 @@ class Builder:
 
     def _dump_shard(self, shard, tasks):
         output_file = os.path.join(self.output_dir, 'shards', str(shard))
-        with open(output_file, 'w') as f:
+        with open(output_file, 'a+') as f:
             f.writelines(tasks)
 
     def _dump_all(self):
@@ -65,7 +65,7 @@ class Builder:
             for module, driver_type in value
         ]
 
-        with open(os.path.join(self.output_dir, 'all'), 'w') as f:
+        with open(os.path.join(self.output_dir, 'all'), 'a+') as f:
             f.writelines(raw_tasks)
 
     def dump(self):
