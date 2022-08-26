@@ -194,11 +194,14 @@ def main(task_file):
     rhel8_builders_count = int(os.environ.get('RHEL8_BUILDERS', 4))
     rhel8_builders = rhel8.split(rhel8_builders_count)
 
+    rhel7_ebpf_builders = rhel7_ebpf.split(rhel8_builders_count)
+    rhel7_builders = rhel7.split(rhel8_builders_count)
+
     builders = [
         fc36,
         *rhel8_builders,
-        rhel7_ebpf,
-        rhel7,
+        *rhel7_ebpf_builders,
+        *rhel7_builders,
         unknown
     ]
     for builder in builders:
