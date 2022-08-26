@@ -13,7 +13,13 @@ COPY --from=replaced-by-osci:rhel8-2-drivers /built-drivers /built-drivers
 COPY --from=replaced-by-osci:rhel8-2-drivers /FAILURES /FAILURES
 COPY --from=replaced-by-osci:rhel8-3-drivers /built-drivers /built-drivers
 COPY --from=replaced-by-osci:rhel8-3-drivers /FAILURES /FAILURES
-COPY --from=replaced-by-osci:rhel7-drivers /built-drivers /built-drivers
-COPY --from=replaced-by-osci:rhel7-drivers /FAILURES /FAILURES
+COPY --from=replaced-by-osci:rhel7-0-drivers /built-drivers /built-drivers
+COPY --from=replaced-by-osci:rhel7-0-drivers /FAILURES /FAILURES
+COPY --from=replaced-by-osci:rhel7-1-drivers /built-drivers /built-drivers
+COPY --from=replaced-by-osci:rhel7-1-drivers /FAILURES /FAILURES
+COPY --from=replaced-by-osci:rhel7-2-drivers /built-drivers /built-drivers
+COPY --from=replaced-by-osci:rhel7-2-drivers /FAILURES /FAILURES
+COPY --from=replaced-by-osci:rhel7-3-drivers /built-drivers /built-drivers
+COPY --from=replaced-by-osci:rhel7-3-drivers /FAILURES /FAILURES
 
 COPY --from=replaced-by-osci:scripts /scripts/ /scripts/
