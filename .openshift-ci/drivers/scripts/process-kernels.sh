@@ -24,7 +24,11 @@ build_cache_from_gcs() {
 
 build_cache_from_branch() {
     branch_name="$(get_branch)"
-    build_cache_from_gcs "$BRANCH_DRIVER_CACHE/$branch_name/branch"
+    cache="$BRANCH_DRIVER_CACHE/${branch_name}"
+    if is_openshift_CI_rehearse_PR; then
+        cache="${cache}/rehearsal"
+    fi
+    build_cache_from_gcs "${cache}/branch"
 }
 
 build_cache_from_main() {
