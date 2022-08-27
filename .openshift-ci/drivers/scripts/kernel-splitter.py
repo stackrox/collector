@@ -149,15 +149,6 @@ class EBPFBuilder(Builder):
         return self.regex.match(task.kernel) and task.is_ebpf()
 
 
-class ModBuilder(Builder):
-    def __init__(self, name, regex, tasks):
-        Builder.__init__(self, name, regex, tasks)
-        self.driver_type = "mod"
-
-    def match(self, task):
-        return self.regex.match(task.kernel) and task.is_kernel_module()
-
-
 def main(task_file):
     fc36_kernels = r"(?:5\.[1-9]\d+\..*)"
     rhel8_kernels = r"(?:(?:4|5)\.\d+\..*)"
@@ -192,7 +183,7 @@ def main(task_file):
         for builder in builders:
             if builder.match(task):
                 builder.append(task)
-                print(f'{task.kernel} {task.module} {builder.name} {builder.driver_type}')
+                print(f'task {task.kernel}, {task.module}, {task.driver_type} | builder {builder.name}.{builder.driver_type}')
                 matched = True
                 break
 
