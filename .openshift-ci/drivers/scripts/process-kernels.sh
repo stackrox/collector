@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# shellcheck source=SCRIPTDIR/env.sh
+source /scripts/env.sh
 # shellcheck source=SCRIPTDIR/lib.sh
 source /scripts/lib.sh
-
-MAIN_DRIVER_CACHE="gs://collector-modules-osci-public/"
-BRANCH_DRIVER_CACHE="gs://stackrox-collector-modules-staging/pr-builds"
 
 # Download all cached driver for every version being built
 build_cache_from_gcs() {

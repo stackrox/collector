@@ -2,12 +2,12 @@
 
 set -eo pipefail
 
+# shellcheck source=SCRIPTDIR/env.sh
+source /scripts/env.sh
 # shellcheck source=SCRIPTDIR/lib.sh
 source /scripts/lib.sh
 # shellcheck source=SCRIPTDIR/pr-checks.sh
 source /scripts/pr-checks.sh
-
-BRANCH_DRIVER_CACHE="gs://stackrox-collector-modules-staging/pr-builds"
 
 upload_drivers() {
     local drivers_dir=$1
@@ -21,7 +21,6 @@ upload_drivers() {
 }
 
 GCP_CREDS="$(cat /tmp/secrets/GOOGLE_CREDENTIALS_KERNEL_CACHE)"
-GCP_BASE_BUCKET="gs://collector-modules-osci"
 
 /scripts/setup-gcp-env.sh "${GCP_CREDS}" "${GCP_BASE_BUCKET}"
 
