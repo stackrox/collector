@@ -32,7 +32,6 @@ class Task:
 
 class Builder:
     def __init__(self, name, regex, tasks):
-        self.driver_type = "all"
         self.name = name
         self.output_dir = os.path.join(TASKS_DIR, name)
         self.regex = re.compile(regex)
@@ -141,12 +140,13 @@ class Builder:
 
 
 class EBPFBuilder(Builder):
-    def __init__(self, name, regex, tasks):
-        Builder.__init__(self, name, regex, tasks)
-        self.driver_type = "bpf"
-
     def match(self, task):
         return self.regex.match(task.kernel) and task.is_ebpf()
+
+
+class ModBuilder(Builder):
+    def match(self, task):
+        return self.regex.match(task.kernel) and task.is_kernel_module()
 
 
 def main(task_file):
@@ -183,7 +183,6 @@ def main(task_file):
         for builder in builders:
             if builder.match(task):
                 builder.append(task)
-                print(f'task {task.kernel}, {task.module}, {task.driver_type} | builder {builder.name}.{builder.driver_type}')
                 matched = True
                 break
 
