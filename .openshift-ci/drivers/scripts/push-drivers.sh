@@ -4,6 +4,8 @@ set -eo pipefail
 
 # shellcheck source=SCRIPTDIR/lib.sh
 source /scripts/lib.sh
+# shellcheck source=SCRIPTDIR/pr-checks.sh
+source /scripts/pr-checks.sh
 
 BRANCH_DRIVER_CACHE="gs://stackrox-collector-modules-staging/pr-builds"
 
@@ -26,8 +28,10 @@ GCP_BASE_BUCKET="gs://collector-modules-osci"
 target="${GCP_BASE_BUCKET}"
 
 if is_in_PR_context; then
-    BRANCH="$(get_branch)"
     target_base="${BRANCH_DRIVER_CACHE}/${BRANCH}"
+    if is_openshift_CI_rehearse_PR; then
+        target_base="${target_base}/rehearsal"
+    fi
     if ((PER_BRANCH_CACHE)); then
         target="${target_base}/branch"
     else

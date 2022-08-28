@@ -28,10 +28,12 @@ build_cache_from_branch() {
     if is_openshift_CI_rehearse_PR; then
         cache="${cache}/rehearsal"
     fi
+    echo "building cache from ${cache}/branch"
     build_cache_from_gcs "${cache}/branch"
 }
 
 build_cache_from_main() {
+    echo "building cache from $MAIN_DRIVER_CACHE"
     build_cache_from_gcs "$MAIN_DRIVER_CACHE"
 }
 
