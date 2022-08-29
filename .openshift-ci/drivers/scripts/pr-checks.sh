@@ -13,9 +13,11 @@ BRANCH="$(get_branch)"
 
 export LEGACY_PROBES
 export NO_CACHE
+export PER_BRANCH_CACHE
 
 LEGACY_PROBES="true"
 NO_CACHE=0
+PER_BRANCH_CACHE=0
 
 if is_in_PR_context; then
     if ! pr_has_label "build-legacy-probes"; then
@@ -24,5 +26,9 @@ if is_in_PR_context; then
 
     if pr_has_label "no-cache"; then
         NO_CACHE=1
+    fi
+
+    if pr_has_label "per-branch-cache"; then
+        PER_BRANCH_CACHE=1
     fi
 fi
