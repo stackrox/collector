@@ -94,6 +94,11 @@ class MockCollectorConfig : public collector::CollectorConfig {
   void DisableAfterglow() {
     enable_afterglow_ = false;
   }
+
+  void SetHold(bool enabled, int duration) {
+    enable_hold_phase_ = enabled;
+    hold_phase_max_duration_ = duration;
+  }
 };
 
 class MockConnScraper : public IConnScraper {
@@ -359,6 +364,188 @@ TEST(NetworkStatusNotifier, UpdateIPnoAfterglow) {
 
   // Wait for the first scrape to occur
   EXPECT_TRUE(sem.try_acquire_for(std::chrono::seconds(5)));
+
+  net_status_notifier->Stop();
+}
+
+/* Verify that the hold mecanism prevents sending connections before we receive the network list.
+   - scrapper initialy reports a connection
+   - we feed a "known network" into the NetworkStatusNotifier
+   - the connection is sent with the right subnet */
+TEST(NetworkStatusNotifier, HoldNormalNoAfterglow) {
+  bool running = true;
+  MockCollectorConfig config;
+  std::shared_ptr<MockConnScraper> conn_scraper = std::make_shared<MockConnScraper>();
+  auto conn_tracker = std::make_shared<ConnectionTracker>();
+  auto comm = std::make_shared<MockNetworkConnectionInfoServiceComm>();
+  std::function<void(const sensor::NetworkFlowsControlMessage*)> network_flows_callback;
+  Semaphore sem(0);  // to wait for the service to accomplish its job.
+
+  // the connection as scrapped (public)
+  Connection conn1("containerId", Endpoint(Address(10, 0, 1, 32), 1024), Endpoint(Address(139, 45, 27, 4), 999), L4Proto::TCP, true);
+  // the same server connection normalized and grouped in a known subnet
+  Connection conn2("containerId", Endpoint(Address(), 1024), Endpoint(IPNet(Address(139, 45, 0, 0), 16), 0), L4Proto::TCP, true);
+
+  config.DisableAfterglow();
+  config.SetHold(true, 60);
+
+  // the connection is always ready
+  EXPECT_CALL(*comm, WaitForConnectionReady).WillRepeatedly(Return(true));
+  // gRPC shuts down the loop, so we will want writer->Sleep to return with false
+  EXPECT_CALL(*comm, TryCancel).Times(1).WillOnce([&running] { running = false; });
+
+  /* This is what NetworkStatusNotifier calls to create streams
+   receive_func is a callback that we can use to simulate messages coming from the sensor
+   We return an object that will get called when connections and endpoints are reported */
+  EXPECT_CALL(*comm, PushNetworkConnectionInfoOpenStream)
+      .Times(1)
+      .WillOnce([&sem,
+                 &running,
+                 &conn2,
+                 &network_flows_callback](std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func) -> std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> {
+        auto duplex_writer = MakeUnique<MockDuplexClientWriter>();
+        network_flows_callback = receive_func;
+
+        // the service is sending Sensor a message
+        EXPECT_CALL(*duplex_writer, Write)
+            .WillOnce([&conn2, &sem](const sensor::NetworkConnectionInfoMessage& msg, const gpr_timespec& deadline) -> Result {
+              // the connection reported by the scrapper is annouced as part of the public subnet declared
+              EXPECT_THAT(NetworkConnectionInfoMessageParser(msg).get_updated_connections(), UnorderedElementsAre(std::make_pair(conn2, true)));
+
+              // Done
+              sem.release();
+
+              return Result(Status::OK);
+            })
+            .WillRepeatedly(Return(Result(Status::OK)));
+
+        EXPECT_CALL(*duplex_writer, Sleep)
+            .WillOnce(ReturnPointee(&running))  // first time, we let the scrapper do its job
+            .WillOnce([&running, &network_flows_callback](const gpr_timespec& deadline) {
+              // The connection is known now, let's declare a "known network"
+              sensor::NetworkFlowsControlMessage msg;
+              unsigned char content[] = {139, 45, 0, 0, 16};  // address in network order, plus prefix length
+              std::string network((char*)content, sizeof(content));
+
+              auto ip_networks = msg.mutable_ip_networks();
+              ip_networks->set_ipv4_networks(network);
+
+              network_flows_callback(&msg);
+              return running;
+            })
+            .WillRepeatedly(ReturnPointee(&running));
+
+        EXPECT_CALL(*duplex_writer, WaitUntilStarted).WillRepeatedly(Return(Result(Status::OK)));
+
+        return duplex_writer;
+      });
+
+  // Connections/Endpoints returned by the scrapper (first detection of the connection)
+  EXPECT_CALL(*conn_scraper, Scrape).WillRepeatedly([&conn1](std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) -> bool {
+    connections->emplace_back(conn1);
+    return true;
+  });
+
+  auto net_status_notifier = MakeUnique<NetworkStatusNotifier>(conn_scraper,
+                                                               config.ScrapeInterval(), config.ScrapeListenEndpoints(),
+                                                               config.TurnOffScrape(),
+                                                               conn_tracker,
+                                                               config.AfterglowPeriod(), config.EnableAfterglow(),
+                                                               config.EnableHoldPhase(), config.HoldPhaseMaxDuration(),
+                                                               comm);
+
+  net_status_notifier->Start();
+
+  // Wait for the first scrape to occur
+  EXPECT_TRUE(sem.try_acquire_for(std::chrono::seconds(5)));
+
+  net_status_notifier->Stop();
+}
+
+/* Test the timeout behavior of the Hold phase (no network list provided by Sensor after the max wait time)
+   - scrapper initialy reports a connection
+   - the connection is not reported at first
+   - no "known network" is provided
+   - after some iterations, when the max duration is reached, the connection is sent normalized */
+TEST(NetworkStatusNotifier, HoldTimeoutNoAfterglow) {
+  bool running = true;
+  MockCollectorConfig config;
+  std::shared_ptr<MockConnScraper> conn_scraper = std::make_shared<MockConnScraper>();
+  auto conn_tracker = std::make_shared<ConnectionTracker>();
+  auto comm = std::make_shared<MockNetworkConnectionInfoServiceComm>();
+  Semaphore sem(0);  // to wait for the service to accomplish its job.
+
+  // the connection as scrapped (public)
+  Connection conn1("containerId", Endpoint(Address(10, 0, 1, 32), 1024), Endpoint(Address(139, 45, 27, 4), 999), L4Proto::TCP, true);
+  // the same server connection normalized
+  Connection conn2("containerId", Endpoint(Address(), 1024), Endpoint(Address(255, 255, 255, 255), 0), L4Proto::TCP, true);
+
+  config.DisableAfterglow();
+  config.SetHold(true, 3);
+
+  // the connection is always ready
+  EXPECT_CALL(*comm, WaitForConnectionReady).WillRepeatedly(Return(true));
+  // gRPC shuts down the loop, so we will want writer->Sleep to return with false
+  EXPECT_CALL(*comm, TryCancel).Times(1).WillOnce([&running] { running = false; });
+
+  /* This is what NetworkStatusNotifier calls to create streams
+   receive_func is a callback that we can use to simulate messages coming from the sensor
+   We return an object that will get called when connections and endpoints are reported */
+  EXPECT_CALL(*comm, PushNetworkConnectionInfoOpenStream)
+      .Times(1)
+      .WillOnce([&sem,
+                 &running,
+                 &conn2](std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func) -> std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> {
+        auto duplex_writer = MakeUnique<MockDuplexClientWriter>();
+
+        // the service is sending Sensor a message
+        EXPECT_CALL(*duplex_writer, Write)
+            .WillOnce([&conn2, &sem](const sensor::NetworkConnectionInfoMessage& msg, const gpr_timespec& deadline) -> Result {
+              // the connection reported by the scrapper is annouced as generic public
+              EXPECT_THAT(NetworkConnectionInfoMessageParser(msg).get_updated_connections(), UnorderedElementsAre(std::make_pair(conn2, true)));
+
+              // Done
+              sem.release();
+
+              return Result(Status::OK);
+            })
+            .WillRepeatedly(Return(Result(Status::OK)));
+
+        EXPECT_CALL(*duplex_writer, Sleep)
+            .WillOnce(ReturnPointee(&running))  // first time, we let the scrapper do its job
+            .WillOnce([&running](const gpr_timespec& deadline) {  // the connections is known, but we're still holding it
+              ::sleep(2);
+              return running;
+            })
+            .WillOnce([&running](const gpr_timespec& deadline) {  // the hold phase ends during this period
+              ::sleep(2);
+              return running;
+            })
+            .WillRepeatedly(ReturnPointee(&running));
+
+        EXPECT_CALL(*duplex_writer, WaitUntilStarted).WillRepeatedly(Return(Result(Status::OK)));
+
+        return duplex_writer;
+      });
+
+  // Connections/Endpoints returned by the scrapper (first detection of the connection)
+  EXPECT_CALL(*conn_scraper, Scrape).WillRepeatedly([&conn1](std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) -> bool {
+    connections->emplace_back(conn1);
+    return true;
+  });
+
+  auto net_status_notifier = MakeUnique<NetworkStatusNotifier>(conn_scraper,
+                                                               config.ScrapeInterval(), config.ScrapeListenEndpoints(),
+                                                               config.TurnOffScrape(),
+                                                               conn_tracker,
+                                                               config.AfterglowPeriod(), config.EnableAfterglow(),
+                                                               config.EnableHoldPhase(), config.HoldPhaseMaxDuration(),
+                                                               comm);
+
+  net_status_notifier->Start();
+
+  // Wait for the first scrape to occur
+  EXPECT_TRUE(sem.try_acquire_for(std::chrono::seconds(10)));
 
   net_status_notifier->Stop();
 }
