@@ -23,6 +23,12 @@ class Task:
 
         return Task(task[0], task[1], task[2])
 
+    def is_ebpf(self):
+        return self.driver_type == "bpf"
+
+    def is_kernel_module(self):
+        return self.driver_type == "mod"
+
 
 class Builder:
     def __init__(self, name, regex, tasks):
@@ -49,7 +55,7 @@ class Builder:
 
     def _dump_shard(self, shard, tasks):
         output_file = os.path.join(self.output_dir, 'shards', str(shard))
-        with open(output_file, 'w') as f:
+        with open(output_file, 'a+') as f:
             f.writelines(tasks)
 
     def _dump_all(self):
@@ -59,7 +65,7 @@ class Builder:
             for module, driver_type in value
         ]
 
-        with open(os.path.join(self.output_dir, 'all'), 'w') as f:
+        with open(os.path.join(self.output_dir, 'all'), 'a+') as f:
             f.writelines(raw_tasks)
 
     def dump(self):
@@ -133,20 +139,33 @@ class Builder:
         ]
 
 
-def main(task_file):
-    fc36_kernels = r'(?:5\.[1-9]\d+\..*)'
-    rhel8_kernels = r'(?:(?:4|5)\.\d+\..*)'
-    rhel7_kernels = r'(?:3\.\d+\..*)'
+class EBPFBuilder(Builder):
+    def match(self, task):
+        return self.regex.match(task.kernel) and task.is_ebpf()
 
-    fc36 = Builder('fc36', fr'^{fc36_kernels}', {})
-    rhel8 = Builder('rhel8', fr'^{rhel8_kernels}', {})
-    rhel7 = Builder('rhel7', fr'^{rhel7_kernels}', {})
-    unknown = Builder('unknown', r'.*', {})
+
+class ModBuilder(Builder):
+    def match(self, task):
+        return self.regex.match(task.kernel) and task.is_kernel_module()
+
+
+def main(task_file):
+    fc36_kernels = r"(?:5\.[1-9]\d+\..*)"
+    rhel8_kernels = r"(?:(?:4|5)\.\d+\..*)"
+    rhel7_kernels = r"(?:3\.\d+\..*)"
+    rhel7_ebpf_kernels = r"(?:(?:3|4|5)\.\d+\..*)"
+
+    fc36 = Builder("fc36", rf"^{fc36_kernels}", {})
+    rhel7_ebpf = EBPFBuilder("rhel7", rf"^{rhel7_ebpf_kernels}", {})
+    rhel8 = Builder("rhel8", rf"^{rhel8_kernels}", {})
+    rhel7 = Builder("rhel7", rf"^{rhel7_kernels}", {})
+    unknown = Builder("unknown", r".*", {})
 
     builders = [
         fc36,
+        rhel7_ebpf,
         rhel8,
-        rhel7,
+        rhel7
     ]
 
     # Order is important in this for loop!
@@ -174,10 +193,14 @@ def main(task_file):
     rhel8_builders_count = int(os.environ.get('RHEL8_BUILDERS', 4))
     rhel8_builders = rhel8.split(rhel8_builders_count)
 
+    rhel7_ebpf_builders = rhel7_ebpf.split(rhel8_builders_count)
+    rhel7_builders = rhel7.split(rhel8_builders_count)
+
     builders = [
         fc36,
         *rhel8_builders,
-        rhel7,
+        *rhel7_ebpf_builders,
+        *rhel7_builders,
         unknown
     ]
     for builder in builders:

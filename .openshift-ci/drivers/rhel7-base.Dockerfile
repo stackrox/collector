@@ -11,5 +11,6 @@ RUN yum makecache && \
         gcc-c++ \
         llvm-toolset-7.0 \
         elfutils-libelf \
+        elfutils-libelf-devel \
         kmod && \
     /scripts/gcloud-sdk-install.sh
