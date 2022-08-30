@@ -41,8 +41,6 @@
   - `git add ...`
   - `git rm ...`
   - `git commit -m "Changed branch to release-${COLLECTOR_RELEASE}`
-  - `git tag "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"`
-  - `git push origin "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"`
   - `git push origin release-${COLLECTOR_RELEASE}` # Create the PR, get it approved and merged once the tests have passed.
 4. Create a pull request to update the `COLLECTOR_VERSION` file in the [stackrox/stackrox](https://github.com/stackrox/stackrox/) repo with the newly create release after CI images have been built.
 
