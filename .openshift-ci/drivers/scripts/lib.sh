@@ -82,16 +82,16 @@ is_openshift_CI_rehearse_PR() {
 }
 
 get_branch() {
-    if [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
+    if is_in_PR_context; then
+        pr_details="$(get_pr_details)"
+        head_ref="$(jq -r '.head.ref' <<< "$pr_details")"
+        echo "${head_ref}"
+    elif [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
         # periodics - CLONEREFS_OPTIONS exists in binary_build_commands and images.
         local base_ref
-        if is_openshift_CI_rehearse_PR; then
-            base_ref="$(jq -r '.refs[] | select(.repo=="collector") | .base_ref' <<< "${CLONEREFS_OPTIONS}")" || die "invalid CLONEREFS_OPTIONS json"
-        else
-            base_ref="$(jq -r '.refs[0].base_ref' <<< "${CLONEREFS_OPTIONS}")" || die "invalid CLONEREFS_OPTIONS json"
-        fi
+        base_ref="$(jq -r '.refs[] | select(.repo=="collector") | .base_ref' <<< "${CLONEREFS_OPTIONS}")" || die "invalid CLONEREFS_OPTIONS json"
         if [[ "$base_ref" == "null" ]]; then
-            die "expect: base_ref in CLONEREFS_OPTIONS.refs[0]"
+            die "expect: base_ref in CLONEREFS_OPTIONS.refs[collector]"
         fi
         echo "${base_ref}"
     elif [[ -n "${PULL_BASE_REF:-}" ]]; then
