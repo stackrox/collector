@@ -85,7 +85,11 @@ get_branch() {
     if [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
         # periodics - CLONEREFS_OPTIONS exists in binary_build_commands and images.
         local base_ref
-        base_ref="$(jq -r '.refs[] | select(.repo=="collector") | .base_ref' <<< "${CLONEREFS_OPTIONS}")" || die "invalid CLONEREFS_OPTIONS json"
+        if is_openshift_CI_rehearse_PR; then
+            base_ref="$(jq -r '.refs[] | select(.repo=="collector") | .base_ref' <<< "${CLONEREFS_OPTIONS}")" || die "invalid CLONEREFS_OPTIONS json"
+        else
+            base_ref="$(jq -r '.refs[0].base_ref' <<< "${CLONEREFS_OPTIONS}")" || die "invalid CLONEREFS_OPTIONS json"
+        fi
         if [[ "$base_ref" == "null" ]]; then
             die "expect: base_ref in CLONEREFS_OPTIONS.refs[0]"
         fi
