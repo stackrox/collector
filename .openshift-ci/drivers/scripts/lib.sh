@@ -82,11 +82,7 @@ is_openshift_CI_rehearse_PR() {
 }
 
 get_branch() {
-    if [[ -n "${PULL_BASE_REF:-}" ]]; then
-        # presubmit, postsubmit and batch runs
-        # (ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables)
-        echo "${PULL_BASE_REF}"
-    elif [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
+    if [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
         # periodics - CLONEREFS_OPTIONS exists in binary_build_commands and images.
         local base_ref
         base_ref="$(jq -r '.refs[] | select(.repo=="collector") | .base_ref' <<< "${CLONEREFS_OPTIONS}")" || die "invalid CLONEREFS_OPTIONS json"
@@ -94,6 +90,10 @@ get_branch() {
             die "expect: base_ref in CLONEREFS_OPTIONS.refs[0]"
         fi
         echo "${base_ref}"
+    elif [[ -n "${PULL_BASE_REF:-}" ]]; then
+        # presubmit, postsubmit and batch runs
+        # (ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables)
+        echo "${PULL_BASE_REF}"
     else
         die "Expect PULL_BASE_REF or CLONEREFS_OPTIONS"
     fi
