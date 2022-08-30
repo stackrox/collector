@@ -36,11 +36,13 @@
   - `git checkout -b "release-${COLLECTOR_RELEASE}"`
   - `cd ci-operator/config/stackrox/collector`
   - `cp stackrox-collector-master.yaml stackrox-collector-release-${COLLECTOR_RELEASE}.yaml`
-  - `cd ../..`
+  - Change "branch: master" to "branch: release-3.8" or whatever the release branch is in the new config
+  - Remove the promotion stanza from the new config 
+  - `cd ../../../..`
   - `make jobs`
   - `git add ...`
   - `git rm ...`
-  - `git commit -m "Changed branch to release-${COLLECTOR_RELEASE}`
+  - `git commit -m "Add config for release-${COLLECTOR_RELEASE}"`
   - `git push origin release-${COLLECTOR_RELEASE}` # Create the PR, get it approved and merged once the tests have passed.
 4. Create a pull request to update the `COLLECTOR_VERSION` file in the [stackrox/stackrox](https://github.com/stackrox/stackrox/) repo with the newly create release after CI images have been built.
 
