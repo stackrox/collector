@@ -69,6 +69,9 @@ class LogMessage {
     }
     auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     auto nowTm = gmtime(&now);
+    if (level_ == LogLevel::FATAL) {
+      DumpDiagnosticInformation(std::cerr);
+    }
     std::cerr << GetGlobalLogPrefix()
               << "[" << GetLogLevelShortName(level_)
               << " " << std::put_time(nowTm, "%Y%m%d %H%M%S")
