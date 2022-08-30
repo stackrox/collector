@@ -269,7 +269,7 @@ setupGCPVM() {
 
     if [[ "$GCP_VM_TYPE" =~ ^ubuntu-os ]]; then
         installDockerOnUbuntuViaGCPSSH "$GCP_VM_USER" "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
-    elif test "$GCP_VM_TYPE" = "rhel"; then
+    elif [[ "$GCP_VM_TYPE" =~ ^rhel ]]; then
         installDockerOnRHELViaGCPSSH "$GCP_VM_USER" "$GCP_VM_NAME" "$GCP_IMAGE_FAMILY" "$GCP_SSH_KEY_FILE"
     elif [[ "$GCP_VM_TYPE" =~ "suse" ]]; then
         setupDockerOnSUSEViaGCPSSH "$GCP_VM_USER" "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"
