@@ -26,9 +26,9 @@ if [[ "$VM_TYPE" == "flatcar" || "$VM_TYPE" =~ "coreos" ]]; then
     GCLOUD_USER="core"
 fi
 
-IMAGE_TAG="$(make tag)"
+#IMAGE_TAG="$(make tag)"
 
-export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${IMAGE_TAG}"
+export COLLECTOR_IMAGE="quay.io/stackrox-io/collector:3.9.0-slim"
 
 # Ensure that all secrets are available in the environment
 shopt -s nullglob

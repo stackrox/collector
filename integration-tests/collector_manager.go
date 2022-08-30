@@ -44,7 +44,7 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 		"ENABLE_CORE_DUMP":                 "false",
 	}
 	if !offlineMode {
-		env["MODULE_DOWNLOAD_BASE_URL"] = "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"
+		env["MODULE_DOWNLOAD_BASE_URL"] = "http://storage.googleapis.com/collector-modules-osci-public"
 	}
 	mounts := map[string]string{
 		"/host/var/run/docker.sock:ro": "/var/run/docker.sock",
