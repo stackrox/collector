@@ -47,7 +47,7 @@ PUBLIC_GCLOUD_TARGET="${PUBLIC_GCLOUD_BUCKET}/${PUBLIC_RELATIVE_PATH}"
 relative_path="$RELATIVE_PATH"
 
 if [[ "$BRANCH" != "master" ]]; then
-    relative_path="${relative_path}/.test-${BUILD_ID}"
+    relative_path="${relative_path}/.test-${JOB_ID}"
 fi
 
 GCLOUD_TARGET="${GCLOUD_BUCKET}/${relative_path}"
