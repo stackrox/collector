@@ -34,7 +34,7 @@ source "${WORKDIR}/.openshift-ci/jobs/update-support-packages/env.sh"
 env
 
 gcloud_command "git clone https://github.com/stackrox/collector.git --depth=1"
-gcloud_command "cd $SOURCE_ROOT; git clone $BRANCH"
+gcloud_command "cd $SOURCE_ROOT; git checkout $BRANCH"
 
 gcloud_command "sudo apt install zip -y"
 gcloud_command "$SUPPORT_PKG_SRC_ROOT/run-all.sh $SOURCE_ROOT $SUPPORT_PKG_SRC_ROOT"
