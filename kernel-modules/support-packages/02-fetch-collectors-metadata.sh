@@ -31,3 +31,9 @@ for version_dir in "${MD_DIR}/collector-versions"/*; do
     rm -f "$tmp_output" || true
     docker image rm "$collector_image"
 done
+
+
+master_dir="${MD_DIR}/collector-versions/master"
+mkdir -p "${master_dir}"
+git checkout master -- "${SOURCE_ROOT}/kernel-modules/MODULE_VERSION"
+cp "${SOURCE_ROOT}/kernel-modules/MODULE_VERSION" "$master_dir"
