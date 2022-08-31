@@ -48,19 +48,22 @@ std::string readFileIfExists(const std::string& filename) {
   return "";
 }
 
+std::string readHostFileIfExists(const std::string& filename) {
+  return readFileIfExists(GetHostPath(filename));
+}
+
 /**
  * @brief checks whether the kernel supports unsigned Kernel Module
  *        insertion.
  */
 bool kernelSupportsModules() {
-  return readFileIfExists(GetHostPath("/proc/sys/kernel/modules_disabled")) == "0";
+  return readHostFileIfExists("/proc/sys/kernel/modules_disabled") == "0";
 }
 
 /**
  *
  */
-bool kernelSupportsEBPF(const HostInfo& host) {
-  return false;
+bool kernelSupportsUnsignedModules(const HostInfo& host) {
 }
 
 }  // namespace
@@ -68,8 +71,11 @@ bool kernelSupportsEBPF(const HostInfo& host) {
 void DumpDiagnosticInformation(std::ostream& output) {
   const HostInfo& host = HostInfo::Instance();
   output << "System Diagnostics:" << std::endl;
+  output << "Kernel version:                   " << host.GetKernelVersion().release;
+  // this can give clues about signed kernel modules and other kernel options.
+  output << "Kernel command line:              " << readHostFileIfExists("/proc/cmdline") << std::endl;
   output << "Kernel supports module insertion? " << kernelSupportsModules() << std::endl;
-  output << "Kernel supports eBPF?             " << kernelSupportsEBPF(host) << std::endl;
+  output << "Kernel supports eBPF?             " << host.GetKernelVersion().HasEBPFSupport() << std::endl;
 }
 
 }  // namespace collector
