@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -x
-
 # to ensure that the locale is consistent between GCP VMs
 # we need to set this here. If there are issues with the
 # locale, there can be some additional logging which

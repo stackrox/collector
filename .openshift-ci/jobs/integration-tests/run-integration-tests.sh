@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -exo pipefail
+set -eo pipefail
 
 BRANCH="$(jq -r '.extra_refs[0].base_ref' <(echo "$JOB_SPEC"))"
 

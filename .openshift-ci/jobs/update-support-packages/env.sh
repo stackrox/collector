@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -x
-
 export JOB_ID="${PROW_JOB_ID:0:8}"
 
 export GCP_SSH_KEY_FILE="$HOME/.ssh/GCP_SSH_KEY"

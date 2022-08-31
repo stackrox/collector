@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eoux pipefail
+set -eou pipefail
 
 gcloud_command() {
     gcloud compute ssh --ssh-key-file="$GCP_SSH_KEY_FILE" "$GCLOUD_USER"@"$GCLOUD_INSTANCE" -- -T "$1"

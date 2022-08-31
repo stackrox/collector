@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -exo pipefail
+set -eo pipefail
 
 createGCPVM() {
     local GCP_VM_NAME="$1"
