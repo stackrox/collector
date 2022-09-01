@@ -1,0 +1,9 @@
+FROM ubuntu:focal
+
+COPY /scripts /scripts
+COPY /tools /tools
+
+RUN apt-get update -y && apt-get install -y bpftrace && bpftrace -V
+
+WORKDIR /root
+ENTRYPOINT ["/scripts/run-tool.sh", "bpftrace"]

@@ -3,6 +3,8 @@ FROM fedora:36
 RUN dnf update -y || true; \
     dnf install -y \
         binutils \
+        git \
+        ca-certificates \
         cmake \
         make \
         curl \
@@ -16,9 +18,18 @@ RUN dnf update -y || true; \
         kmod \
         wget \
         golang-go \
+        dwarves \
         pkg-config || true ; \
     mkdir -p /output; \
     dnf autoremove -y
+
+RUN git clone https://github.com/google/googletest.git && \
+    cd googletest && \
+    mkdir builddir && \
+    cd builddir && \
+    cmake -Dgtest_build_tests=ON .. && \
+    make -j$(nproc) && \
+    make install
 
 COPY build-kos /scripts/
 COPY build-wrapper.sh /usr/bin/

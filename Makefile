@@ -1,3 +1,16 @@
+ARCH := $(shell arch)
+
+ifeq ($(ARCH),x86_64)
+ARCHDIR=
+ARCHEXTN=
+else ifeq ($(ARCH),amd64)
+ARCHDIR=
+ARCHEXTN=
+else
+ARCHDIR=/$(ARCH)
+ARCHEXTN=.$(ARCH)
+endif
+
 BASE_PATH = .
 include Makefile-constants.mk
 
@@ -25,13 +38,13 @@ container-dockerfile:
 builder:
 ifdef BUILD_BUILDER_IMAGE
 	docker build \
-		--cache-from quay.io/stackrox-io/collector-builder:cache \
-		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
-		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
-		-f "$(CURDIR)/builder/Dockerfile" \
+		--cache-from quay.io/stackrox-io$(ARCHDIR)/collector-builder:cache \
+		--cache-from quay.io/stackrox-io$(ARCHDIR)/collector-builder:$(COLLECTOR_BUILDER_TAG) \
+		-t quay.io/stackrox-io$(ARCHDIR)/collector-builder:$(COLLECTOR_BUILDER_TAG) \
+		-f "$(CURDIR)/builder/Dockerfile$(ARCHEXTN)" \
 		.
 else
-	docker pull quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
+	docker pull quay.io/stackrox-io$(ARCHDIR)/collector-builder:$(COLLECTOR_BUILDER_TAG)
 endif
 
 collector: builder
@@ -64,7 +77,7 @@ image: collector unittest container-dockerfile $(MOD_VER_FILE) $(CURDIR)/$(COLLE
 	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
 		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
 		-f collector/container/Dockerfile.gen \
-		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
+		-t quay.io/stackrox-io$(ARCHDIR)/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
 
 image-dev: COLLECTOR_BUILD_CONTEXT=collector/container/devel
@@ -76,15 +89,15 @@ image-dev: collector unittest container-dockerfile $(MOD_VER_FILE) $(CURDIR)/$(C
 		--build-arg BASE_IMAGE=centos/centos \
 		--build-arg BASE_TAG=stream8 \
 		-f collector/container/Dockerfile.gen \
-		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
+		-t quay.io/stackrox-io$(ARCHDIR)/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
 
 image-dev-full: image-dev build-drivers
-	docker tag quay.io/stackrox-io/collector:$(COLLECTOR_TAG) quay.io/stackrox-io/collector:$(COLLECTOR_TAG)-slim
+	docker tag quay.io/stackrox-io$(ARCHDIR)/collector:$(COLLECTOR_TAG) quay.io/stackrox-io$(ARCHDIR)/collector:$(COLLECTOR_TAG)-slim
 	docker build \
 		--target=probe-layer-1 \
-		--tag quay.io/stackrox-io/collector:$(COLLECTOR_TAG)-full \
-		--build-arg collector_repo=quay.io/stackrox-io/collector \
+		--tag quay.io/stackrox-io$(ARCHDIR)/collector:$(COLLECTOR_TAG)-full \
+		--build-arg collector_repo=quay.io/stackrox-io$(ARCHDIR)/collector \
 		--build-arg collector_version=$(COLLECTOR_TAG) \
 		--build-arg module_version=$(shell cat $(CURDIR)/kernel-modules/MODULE_VERSION) \
 		--build-arg max_layer_size=300 \
@@ -154,7 +167,7 @@ start-dev: builder teardown-dev $(DEV_SSH_SERVER_KEY)
 		--name collector_remote_dev \
 		--cap-add sys_ptrace -p127.0.0.1:$(LOCAL_SSH_PORT):22 \
 		-v $(DEV_SSH_SERVER_KEY):/etc/sshkeys/ssh_host_ed25519_key:ro \
-		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
+		quay.io/stackrox-io$(ARCHDIR)/collector-builder:$(COLLECTOR_BUILDER_TAG)
 
 .PHONY: teardown-dev
 teardown-dev:
@@ -178,7 +191,7 @@ shellcheck-all:
 
 .PHONY: shellcheck-all-dockerized
 shellcheck-all-dockerized:
-	docker build -t shellcheck-all $(CURDIR)/utilities/shellcheck-all
+	docker build -f Dockerfile$(ARCHEXTN) -t shellcheck-all $(CURDIR)/utilities/shellcheck-all
 	docker run --rm -v "$(CURDIR):/scripts" shellcheck-all:latest
 
 
