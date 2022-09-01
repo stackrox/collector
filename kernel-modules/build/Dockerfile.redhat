@@ -6,10 +6,17 @@ RUN yum -y groupinstall "Development Tools" && \
     yum -y install llvm-toolset-7.0 elfutils-libelf-devel \
     ;
 
+COPY third_party/googletest /googletest/
+WORKDIR /googletest
+RUN mkdir builddir && \
+    cd builddir && \
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local .. && \
+    cmake --build . --target install ${NPROCS:+-j ${NPROCS}}
+
 RUN mkdir -p /output
-COPY build-kos /scripts/
-COPY build-wrapper.sh /usr/bin/
-COPY prepare-src /usr/bin
+COPY kernel-modules/build/build-kos /scripts/
+COPY kernel-modules/build/build-wrapper.sh /usr/bin/
+COPY kernel-modules/build/prepare-src /usr/bin
 
 COPY redhat-entrypoint.sh /redhat-entrypoint.sh
 

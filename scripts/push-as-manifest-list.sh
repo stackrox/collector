@@ -14,7 +14,14 @@ image="$1"
 [[ -n "$image" ]] || die "No image specified"
 [[ "$image" == *:* ]] || die "Must specify a tagged image reference when using this script"
 
-arch_image="${image}-amd64"
+ARCH=$(arch)
+if [ "$ARCH" = "x86_64" ]; then
+    arch_image="${image}-amd64"
+elif [ "$ARCH" = "aarch64" ]; then
+    arch_image="${image}-arm64"
+else
+    arch_image="${image}-$ARCH"
+fi
 docker tag "$image" "$arch_image"
 
 # Try pushing image a few times for the case when quay.io has issues such as "unknown blob"

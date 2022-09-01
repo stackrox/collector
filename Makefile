@@ -24,12 +24,22 @@ container-dockerfile:
 .PHONY: builder
 builder:
 ifdef BUILD_BUILDER_IMAGE
+ifdef BUILD_UPLOAD_MULTIARCH_IMAGES
+	docker buildx build --push \
+		--cache-from quay.io/stackrox-io/collector-builder:cache \
+		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
+		--platform=linux/ppc64le,linux/amd64 \
+		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
+		-f "$(CURDIR)/builder/Dockerfile" \
+		.
+else
 	docker build \
 		--cache-from quay.io/stackrox-io/collector-builder:cache \
 		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-f "$(CURDIR)/builder/Dockerfile" \
 		.
+endif
 else
 	docker pull quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
 endif
@@ -61,15 +71,34 @@ build-drivers:
 
 image: collector unittest container-dockerfile $(MOD_VER_FILE) $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/bundle.tar.gz
 	make -C collector txt-files
+ifdef BUILD_UPLOAD_MULTIARCH_IMAGES
+	docker buildx build --push --build-arg collector_version="$(COLLECTOR_TAG)" \
+		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
+		--platform=linux/ppc64le,linux/amd64 \
+		-f collector/container/Dockerfile.gen \
+		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
+		$(COLLECTOR_BUILD_CONTEXT)
+else
 	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
 		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
 		-f collector/container/Dockerfile.gen \
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
-
+endif
 image-dev: COLLECTOR_BUILD_CONTEXT=collector/container/devel
 image-dev: collector unittest container-dockerfile $(MOD_VER_FILE) $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/bundle.tar.gz
 	make -C collector txt-files
+ifdef BUILD_UPLOAD_MULTIARCH_IMAGES
+	docker buildx build --push --build-arg collector_version="$(COLLECTOR_TAG)" \
+		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
+		--build-arg BASE_REGISTRY=quay.io \
+		--build-arg BASE_IMAGE=centos/centos \
+		--build-arg BASE_TAG=stream8 \
+		--platform=linux/ppc64le,linux/amd64 \
+		-f collector/container/Dockerfile.gen \
+		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
+		$(COLLECTOR_BUILD_CONTEXT)
+else
 	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
 		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
 		--build-arg BASE_REGISTRY=quay.io \
@@ -78,9 +107,22 @@ image-dev: collector unittest container-dockerfile $(MOD_VER_FILE) $(CURDIR)/$(C
 		-f collector/container/Dockerfile.gen \
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
+endif
 
 image-dev-full: image-dev build-drivers
 	docker tag quay.io/stackrox-io/collector:$(COLLECTOR_TAG) quay.io/stackrox-io/collector:$(COLLECTOR_TAG)-slim
+ifdef BUILD_UPLOAD_MULTIARCH_IMAGES
+	docker buildx build --push \
+		--target=probe-layer-1 \
+		--tag quay.io/stackrox-io/collector:$(COLLECTOR_TAG)-full \
+		--build-arg collector_repo=quay.io/stackrox-io/collector \
+		--build-arg collector_version=$(COLLECTOR_TAG) \
+		--build-arg module_version=$(shell cat $(CURDIR)/kernel-modules/MODULE_VERSION) \
+		--build-arg max_layer_size=300 \
+		--build-arg max_layer_depth=1 \
+		--platform=linux/ppc64le,linux/amd64 \
+		$(CURDIR)/kernel-modules/container
+else
 	docker build \
 		--target=probe-layer-1 \
 		--tag quay.io/stackrox-io/collector:$(COLLECTOR_TAG)-full \
@@ -90,6 +132,7 @@ image-dev-full: image-dev build-drivers
 		--build-arg max_layer_size=300 \
 		--build-arg max_layer_depth=1 \
 		$(CURDIR)/kernel-modules/container
+endif
 
 .PHONY: integration-tests
 integration-tests:
@@ -178,8 +221,12 @@ shellcheck-all:
 
 .PHONY: shellcheck-all-dockerized
 shellcheck-all-dockerized:
-	docker build -t shellcheck-all $(CURDIR)/utilities/shellcheck-all
-	docker run --rm -v "$(CURDIR):/scripts" shellcheck-all:latest
+ifdef BUILD_UPLOAD_MULTIARCH_IMAGES
+	docker buildx build --push --platform=linux/ppc64le,linux/amd64 -f Dockerfile -t quay.io/stackrox-io/shellcheck-all $(CURDIR)/utilities/shellcheck-all
+else
+	docker build -f Dockerfile -t quay.io/stackrox-io/shellcheck-all $(CURDIR)/utilities/shellcheck-all
+endif
+	docker run --rm -v "$(CURDIR):/scripts" quay.io/stackrox-io/shellcheck-all:latest
 
 
 # This defines a macro that can be used to add pre-commit targets

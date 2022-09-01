@@ -1,4 +1,4 @@
-FROM alpine:3.12 AS base
+FROM alpine:latest AS base
 
 RUN apk add --update \
     bash \

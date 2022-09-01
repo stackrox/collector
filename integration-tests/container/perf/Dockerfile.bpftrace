@@ -1,4 +1,6 @@
-FROM quay.io/iovisor/bpftrace:latest
+FROM ubuntu:focal
+
+RUN apt-get update -y && apt-get install -y xz-utils bpftrace && bpftrace -V
 
 COPY /scripts /scripts
 COPY /tools /tools

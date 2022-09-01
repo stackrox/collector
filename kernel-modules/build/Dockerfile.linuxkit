@@ -20,15 +20,22 @@ RUN apt-get update \
       pkg-config \
  ;
 
+COPY third_party/googletest /googletest/
+WORKDIR /googletest
+RUN mkdir builddir && \
+    cd builddir && \
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local .. && \
+    cmake --build . --target install ${NPROCS:+-j ${NPROCS}}
+
 RUN rm -rf /usr/bin/clang \
  && rm -rf /usr/bin/llc \
  && ln -s /usr/bin/clang-7 /usr/bin/clang \
  && ln -s /usr/bin/llc-7 /usr/bin/llc
 
 RUN mkdir -p /output
-COPY build-kos /scripts/
-COPY build-wrapper.sh /usr/bin/
-COPY prepare-src /usr/bin
+COPY kernel-modules/build/build-kos /scripts/
+COPY kernel-modules/build/build-wrapper.sh /usr/bin/
+COPY kernel-modules/build/prepare-src /usr/bin
 
 WORKDIR /scratch
 ENTRYPOINT [ "/bin/bash", "-c" ]

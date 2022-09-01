@@ -4,6 +4,8 @@ RUN apt-get update \
  && apt-get upgrade -y \
  && apt-get install --no-install-recommends -y \
       binutils \
+      git \
+      ca-certificates \
       cmake \
       make \
       curl \
@@ -17,6 +19,13 @@ RUN apt-get update \
       golang-go \
       pkg-config \
  ;
+
+COPY third_party/googletest /googletest/
+WORKDIR /googletest
+RUN mkdir builddir && \
+    cd builddir && \
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local .. && \
+    cmake --build . --target install ${NPROCS:+-j ${NPROCS}}
 
 RUN sed s_stretch_jessie_g < /etc/apt/sources.list > /etc/apt/sources.list.d/jessie.list && \
     apt-get update && apt-get install --no-install-recommends -y \
@@ -37,9 +46,9 @@ RUN apt-get autoremove -y
 RUN dpkg --compare-versions $(dpkg-query -f='${Version}' --show binutils) lt 2.31
 
 RUN mkdir -p /output
-COPY build-kos /scripts/
-COPY build-wrapper.sh /usr/bin/
-COPY prepare-src /usr/bin
+COPY kernel-modules/build/build-kos /scripts/
+COPY kernel-modules/build/build-wrapper.sh /usr/bin/
+COPY kernel-modules/build/prepare-src /usr/bin
 
 WORKDIR /scratch
 ENTRYPOINT [ "/bin/bash", "-c" ]

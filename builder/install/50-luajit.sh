@@ -2,8 +2,7 @@
 
 set -e
 
-cd third_party/luajit
-
-cp COPYRIGHT "${LICENSE_DIR}/LuaJIT-${LUAJIT_VERSION}"
+cd third_party/luajit2
+cp COPYRIGHT "${LICENSE_DIR}/LuaJIT-${LUAJIT2_VERSION}"
 
 make ${NPROCS:+-j ${NPROCS}} install PREFIX=/usr/local CFLAGS=-fPIC

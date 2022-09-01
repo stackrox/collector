@@ -18,10 +18,17 @@ RUN yum -y update && yum -y install yum-utils && \
     yum-config-manager --enable ol7_developer --enable ol7_developer_EPEL && \
     yum install -y rh-dotnet20-clang rh-dotnet20-llvm
 
+COPY third_party/googletest /googletest/
+WORKDIR /googletest
+RUN mkdir builddir && \
+    cd builddir && \
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local .. && \
+    cmake --build . --target install ${NPROCS:+-j ${NPROCS}}
+
 RUN mkdir -p /output
-COPY build-kos /scripts/
-COPY build-wrapper.sh /usr/bin/
-COPY prepare-src /usr/bin
+COPY kernel-modules/build/build-kos /scripts/
+COPY kernel-modules/build/build-wrapper.sh /usr/bin/
+COPY kernel-modules/build/prepare-src /usr/bin
 
 COPY oracle-entrypoint.sh /oracle-entrypoint.sh
 

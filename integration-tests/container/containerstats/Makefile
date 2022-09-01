@@ -6,9 +6,18 @@ ifneq ($(COLLECTOR_QA_TAG),)
 COLLECTOR_QA_STATS_TAG=stats-$(COLLECTOR_QA_TAG)
 endif
 
+TARGETARCH := $(shell arch)
+ifeq ($(ARCH),x86_64)
+TARGETARCH=amd64
+endif
+
 .PHONY: all
 all:
-	@docker build -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_STATS_TAG) .
+ifdef BUILD_UPLOAD_MULTIARCH_IMAGES
+	@docker buildx build --push --platform=linux/ppc64le,linux/amd64 -f Dockerfile -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_STATS_TAG) .
+else
+	@docker build --build-arg TARGETARCH=$(TARGETARCH) -f Dockerfile -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_STATS_TAG) .
+endif
 
 .PHONY: push
 push:
