@@ -25,7 +25,7 @@ createGCPVM() {
             --scopes="$SCOPES" \
             --machine-type e2-standard-2 \
             --labels="stackrox-ci=true,stackrox-ci-job=${JOB_NAME_SAFE},stackrox-ci-workflow=${PROW_JOB_ID}" \
-            --boot-disk-size=20GB \
+            --boot-disk-size=40GB \
             "$GCP_VM_NAME"; then
             success=true
             break
