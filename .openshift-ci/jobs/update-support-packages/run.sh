@@ -53,8 +53,8 @@ fi
 
 GCLOUD_TARGET="${GCLOUD_BUCKET}/${relative_path}"
 
+echo "GCLOUD_TARGET= $GCLOUD_TARGET"
 gcloud_command "gsutil -m rsync -r /tmp/support-packages/output $GCLOUD_TARGET"
-
 sleep_echo
 
 [[ "$GCLOUD_TARGET" =~ ^gs://[^/]+/.*collector.*/.*support-packages.*$ ]]
@@ -66,6 +66,7 @@ if [[ "$BRANCH" != "master" ]]; then
     exit 0
 fi
 
+echo "PUBLIC_GCLOUD_TARGET= $PUBLIC_GCLOUD_TARGET"
 gcloud_command "gsutil -m rsync -r /tmp/support-packages/output $PUBLIC_GCLOUD_TARGET"
 sleep_echo
 gcloud_command "gsutil -m rsync -n -r -d /tmp/support-packages/output $PUBLIC_GCLOUD_TARGET"
