@@ -28,10 +28,6 @@ get_repo_full_name() {
     fi
 }
 
-is_openshift_CI_rehearse_PR() {
-    [[ "$(get_repo_full_name)" == "openshift/release" ]]
-}
-
 pr_has_label() {
     if [[ -z "${1:-}" ]]; then
         die "usage: pr_has_label <expected label> [<pr details>]"
