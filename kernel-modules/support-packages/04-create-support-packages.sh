@@ -7,13 +7,20 @@ die() {
     exit 1
 }
 
-generate_checksum() {
+generate_checksum() (
     directory=$1
     file=$2
-    pushd "${directory}"
+    cd "${directory}"
     sha256sum "${file}" > "${file}.sha256"
-    popd
-}
+)
+
+compress_files() (
+    package_root=$1
+    output_file=$2
+
+    cd "${package_root}"
+    zip -r "${output_file}" .
+)
 
 LICENSE_FILE="$1"
 COLLECTOR_MODULES_BUCKET="$2"
@@ -23,7 +30,7 @@ OUT_DIR="$4"
 [[ -n "$LICENSE_FILE" && -n "$MD_DIR" && -n "$OUT_DIR" ]] || die "Usage: $0 <license-file> <metadata directory> <output directory>"
 [[ -d "$MD_DIR" ]] || die "Metadata directory $MD_DIR does not exist or is not a directory."
 
-[[ -n "${COLLECTOR_MODULES_BUCKET:-}" ]] || die "Must specify a COLLECTOR_MODULES_BUCKET"
+[[ -n "${GCP_BUCKET:-}" ]] || die "Must specify a COLLECTOR_MODULES_BUCKET"
 
 mkdir -p "$OUT_DIR" || die "Failed to create output directory ${OUT_DIR}."
 
@@ -36,11 +43,11 @@ for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
     # For now we create *full* kernel support packages, not only deltas, in order to
     # support the slim collector use-case.
     # Remains to be clarified; we might provide more fine granular download options in the future.
-    gsutil -m cp "${COLLECTOR_MODULES_BUCKET}/${mod_ver}/*.gz" "$probe_dir"
+    gsutil -m cp "${GCP_BUCKET}/${mod_ver}/*.gz" "$probe_dir"
 
     package_out_dir="${OUT_DIR}/${mod_ver}"
     mkdir -p "$package_out_dir"
-    if [[ "${mod_ver}" =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
+    if [[ "${mod_ver}" =~ [0-9]+\.[0-9]+\.[0-9]+(:?-rc[0-9])? ]]; then
         filename="support-pkg-${mod_ver}-$(date '+%Y%m%d%H%M%S').zip"
         latest_filename="support-pkg-${mod_ver}-latest.zip"
     else
@@ -50,11 +57,8 @@ for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
 
     cp "${LICENSE_FILE}" "${probe_dir}"/LICENSE
 
-    (   
-        cd "$package_root"
-        zip -r "${package_out_dir}/${filename}" .
-        generate_checksum "${package_out_dir}" "${filename}"
-    )
+    compress_files "$package_root" "${package_out_dir}/${filename}"
+    generate_checksum "${package_out_dir}" "${filename}"
 
     cp "${package_out_dir}/${filename}" "${package_out_dir}/${latest_filename}"
     generate_checksum "${package_out_dir}" "${latest_filename}"
