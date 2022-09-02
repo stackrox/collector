@@ -1,5 +1,8 @@
 # Release Process
 
+There is a script at utilities/release.py which performs the steps in the first section and the first two steps of the second section.
+Please keep in mind that this document and that script may have some differences.
+
 **Create the collector image release branch**
 
 1. Navigate to the local stackrox/collector git repository directory on the master branch and ensure the local checked out version is up to date.
