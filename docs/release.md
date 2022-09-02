@@ -3,11 +3,13 @@
 
 **Create the config in openshift/release**
 
-1. Create a release branch in openshift/release. Go to a forked copy of the openshift/release repo
+1. Set the release environment variable, which should be incremented from the previous released version.
+  - `export COLLECTOR_RELEASE=3.8`
+2. Create a release branch in openshift/release. Go to a forked copy of the openshift/release repo
   - `git checkout master`
   - `git pull upstream master`
   - `git checkout -b "release-${COLLECTOR_RELEASE}"`
-2. Create a config for the release
+3. Create a config for the release
   - `cd ci-operator/config/stackrox/collector`
   - `cp stackrox-collector-master.yaml stackrox-collector-release-${COLLECTOR_RELEASE}.yaml`
   - Change "branch: master" to "branch: release-3.8" or whatever the release branch is in the new config
@@ -15,17 +17,16 @@
   - Remove the non postsubmit: true tests from the new config
   - `cd ../../../..`
   - `make jobs`
-3. Commit and push the changes
+4. Commit and push the changes
   - `git add ...`
   - `git rm ...`
   - `git commit -m "Add config for release-${COLLECTOR_RELEASE}"`
-  - `git push origin release-${COLLECTOR_RELEASE}` # Create the PR, get it approved and merged once the tests have passed.
+  - `git push origin release-${COLLECTOR_RELEASE}` # Create the PR, get it approved and merged.
 
 **Create the collector image release branch**
 
 There is a script at utilities/release.py which needs to be updated to reflect the use of OSCI.
-The script performs the steps in the first section and the first two steps of the second section.
-Please keep in mind that this document and that script may have some differences.
+The script creates the tags for the release as well as the release branch
 
 1. Navigate to the local stackrox/collector git repository directory on the master branch and ensure the local checked out version is up to date.
   - `git checkout master`
