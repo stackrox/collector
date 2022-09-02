@@ -7,6 +7,27 @@ die() {
     exit 1
 }
 
+get_repo_full_name() {
+    if [[ -n "${REPO_OWNER:-}" ]]; then
+        # presubmit, postsubmit and batch runs
+        # (ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables)
+        [[ -n "${REPO_NAME:-}" ]] || die "expect: REPO_NAME"
+        echo "${REPO_OWNER}/${REPO_NAME}"
+    elif [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
+        # periodics - CLONEREFS_OPTIONS exists in binary_build_commands and images.
+        local org
+        local repo
+        org="$(jq -r '.refs[0].org' <<< "${CLONEREFS_OPTIONS}")" || die "invalid CLONEREFS_OPTIONS yaml"
+        repo="$(jq -r '.refs[0].repo' <<< "${CLONEREFS_OPTIONS}")" || die "invalid CLONEREFS_OPTIONS yaml"
+        if [[ "$org" == "null" ]] || [[ "$repo" == "null" ]]; then
+            die "expect: org and repo in CLONEREFS_OPTIONS.refs[0]"
+        fi
+        echo "${org}/${repo}"
+    else
+        die "Expect REPO_OWNER/NAME or CLONEREFS_OPTIONS"
+    fi
+}
+
 pr_has_label() {
     if [[ -z "${1:-}" ]]; then
         die "usage: pr_has_label <expected label> [<pr details>]"
@@ -18,9 +39,25 @@ pr_has_label() {
     pr_details="${2:-$(get_pr_details)}" || exitstatus="$?"
     if [[ "$exitstatus" != "0" ]]; then
         info "Warning: checking for a label in a non PR context"
-        false
+        return 1
     fi
-    jq '([.labels | .[].name]  // []) | .[]' -r <<< "$pr_details" | grep -qx "${expected_label}"
+
+    if is_openshift_CI_rehearse_PR; then
+        pr_has_label_in_body "${expected_label}" "$pr_details"
+    else
+        jq '([.labels | .[].name]  // []) | .[]' -r <<< "$pr_details" | grep -qx "${expected_label}"
+    fi
+}
+
+pr_has_label_in_body() {
+    if [[ "$#" -ne 2 ]]; then
+        die "usage: pr_has_label_in_body <expected label> <pr details>"
+    fi
+
+    local expected_label="$1"
+    local pr_details="$2"
+
+    [[ "$(jq -r '.body' <<< "$pr_details")" =~ \/label:[[:space:]]*$expected_label ]]
 }
 
 is_in_PR_context() {
@@ -41,19 +78,24 @@ is_openshift_CI_rehearse_PR() {
 }
 
 get_branch() {
-    # ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables
-    if [[ -n "${CLONEREFS_OPTIONS}" ]]; then
+    if is_in_PR_context; then
+        pr_details="$(get_pr_details)"
+        head_ref="$(jq -r '.head.ref' <<< "$pr_details")"
+        echo "${head_ref}"
+    elif [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
+        # periodics - CLONEREFS_OPTIONS exists in binary_build_commands and images.
         local base_ref
-        base_ref="$(jq -r '.refs[0].base_ref' <<< "${CLONEREFS_OPTIONS}")" || die "invalid CLONEREFS_OPTIONS json"
+        base_ref="$(jq -r '.refs[] | select(.repo=="collector") | .base_ref' <<< "${CLONEREFS_OPTIONS}")" || die "invalid CLONEREFS_OPTIONS json"
         if [[ "$base_ref" == "null" ]]; then
-            die "expect: base_ref in CLONEREFS_OPTIONS.refs[0]"
+            die "expect: base_ref in CLONEREFS_OPTIONS.refs[collector]"
         fi
         echo "${base_ref}"
     elif [[ -n "${PULL_BASE_REF:-}" ]]; then
-        # last reort, use the base branch instead of the head
+        # presubmit, postsubmit and batch runs
+        # (ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables)
         echo "${PULL_BASE_REF}"
     else
-        die "Expect PULL_BASE_REF or JOB_SPEC"
+        die "Expect PULL_BASE_REF or CLONEREFS_OPTIONS"
     fi
 }
 

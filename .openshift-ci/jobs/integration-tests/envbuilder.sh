@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -exo pipefail
+set -eo pipefail
 
 createGCPVM() {
     local GCP_VM_NAME="$1"
@@ -8,6 +8,7 @@ createGCPVM() {
     shift
     local GCP_IMAGE_PROJECT="$1"
     shift
+    local SCOPES="$1"
 
     [ -z "$GCP_VM_NAME" ] && echo "error: missing parameter GCP_VM_NAME" && return 1
     [ -z "$GCP_IMAGE_FAMILY" ] && echo "error: missing parameter GCP_IMAGE_FAMILY" && return 1
@@ -21,9 +22,10 @@ createGCPVM() {
             --image-family "$GCP_IMAGE_FAMILY" \
             --image-project "$GCP_IMAGE_PROJECT" \
             --service-account=circleci-collector@stackrox-ci.iam.gserviceaccount.com \
+            --scopes="$SCOPES" \
             --machine-type e2-standard-2 \
             --labels="stackrox-ci=true,stackrox-ci-job=${JOB_NAME_SAFE},stackrox-ci-workflow=${PROW_JOB_ID}" \
-            --boot-disk-size=20GB \
+            --boot-disk-size=40GB \
             "$GCP_VM_NAME"; then
             success=true
             break
@@ -245,6 +247,7 @@ setupGCPVM() {
     shift
     local GDOCKER_PASS="$1"
     shift
+    local SCOPES="${1:-storage-rw,cloud-platform}"
 
     if [[ ! "$GCP_VM_TYPE" =~ ^(coreos|cos|rhel|rhel-sap|suse|suse-sap|ubuntu-os-pro|ubuntu-os|flatcar|fedora-coreos|garden-linux)$ ]]; then
         echo "Unsupported GCP_VM_TYPE: $GCP_VM_TYPE"
@@ -264,7 +267,7 @@ setupGCPVM() {
     if [[ -n "$GCP_IMAGE_NAME" && "$GCP_IMAGE_NAME" != "unset" ]]; then
         createGCPVMFromImage "$GCP_VM_NAME" "$GCP_IMAGE_NAME" "$GCP_IMAGE_PROJECT"
     else
-        createGCPVM "$GCP_VM_NAME" "$GCP_IMAGE_FAMILY" "$GCP_IMAGE_PROJECT"
+        createGCPVM "$GCP_VM_NAME" "$GCP_IMAGE_FAMILY" "$GCP_IMAGE_PROJECT" "$SCOPES"
     fi
 
     if ! gcpSSHReady "$GCP_VM_USER" "$GCP_VM_NAME" "$GCP_SSH_KEY_FILE"; then
