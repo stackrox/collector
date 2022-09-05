@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+
+# shellcheck source=SCRIPTDIR/../../drivers/scripts/lib.sh
+source "$ROOT_DIR/drivers/scripts/lib.sh"
+
 # to ensure that the locale is consistent between GCP VMs
 # we need to set this here. If there are issues with the
 # locale, there can be some additional logging which
@@ -33,3 +38,13 @@ shopt -s nullglob
 for cred in /tmp/secret/**/[A-Z]*; do
     export "$(basename "$cred")"="$(cat "$cred")"
 done
+
+# only run all integration tests on master, or when the all-integration-tests
+# label is added. This is checked in this common env script because it allows
+# us to skip pre- and post- steps as well (which source this file)
+if ! pr_has_label "all-integration-tests" && [[ ! "$(get_branch)" =~ ^master\$ ]]; then
+    if [[ ! "$IMAGE_FAMILY" =~ (rhel-(7|8)|ubuntu-) ]]; then
+        echo "Not running integration tests for ${VM_CONFIG}"
+        exit 0
+    fi
+fi
