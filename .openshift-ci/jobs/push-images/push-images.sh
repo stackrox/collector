@@ -68,12 +68,6 @@ export QUAY_REPO=quay.io/rhacs-eng
 
 import_creds
 
-# shellcheck source=SCRIPTDIR/registry_rw_login.sh
-source "${PROJECT_DIR}/.openshift-ci/jobs/push-images/registry_rw_login.sh"
-
-# Note that shellcheck reports unused variable when arrays are passed as reference.
-# See https://github.com/koalaman/shellcheck/issues/1957
-# shellcheck disable=SC2034
 image_repos=(
     "${QUAY_REPO}"
     "${PUBLIC_REPO}"

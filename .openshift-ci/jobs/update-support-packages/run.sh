@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -eou pipefail
 
+CI_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+# shellcheck source=SCRIPTDIR=../../scripts/lib.sh
+source "${CI_ROOT}/scripts/lib.sh"
+
 gcloud_command() {
     gcloud compute ssh --ssh-key-file="$GCP_SSH_KEY_FILE" "$GCLOUD_USER"@"$GCLOUD_INSTANCE" -- -T "$1"
 }
@@ -15,12 +19,7 @@ sleep_echo() {
 
 export WORKDIR=/go/src/github.com/stackrox/collector
 
-source "$WORKDIR/.openshift-ci/drivers/scripts/lib.sh"
-
 BRANCH="$(get_branch)"
-
-# shellcheck source=SCRIPTDIR/../../drivers/scripts/lib.sh
-source "${WORKDIR}/.openshift-ci/drivers/scripts/lib.sh"
 
 if ! pr_has_label "test-support-packages"; then
     echo "Does not have test-support-packages label"
@@ -30,8 +29,8 @@ if ! pr_has_label "test-support-packages"; then
     fi
 fi
 
-# shellcheck source=SCRIPTDIR/../../jobs/update-support-packages/env.sh
-source "${WORKDIR}/.openshift-ci/jobs/update-support-packages/env.sh"
+# shellcheck source=SCRIPTDIR/env.sh
+source "${CI_ROOT}/jobs/update-support-packages/env.sh"
 
 env
 
