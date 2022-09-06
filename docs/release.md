@@ -1,28 +1,5 @@
 # Release Process
 
-
-**Create the config in openshift/release**
-
-1. Set the release environment variable, which should be incremented from the previous released version.
-  - `export COLLECTOR_RELEASE=3.8`
-2. Create a release branch in openshift/release. Go to a forked copy of the openshift/release repo
-  - `git checkout master`
-  - `git pull upstream master`
-  - `git checkout -b "release-${COLLECTOR_RELEASE}"`
-3. Create a config for the release
-  - `cd ci-operator/config/stackrox/collector`
-  - `cp stackrox-collector-master.yaml stackrox-collector-release-${COLLECTOR_RELEASE}.yaml`
-  - Change "branch: master" to "branch: release-3.8" or whatever the release branch is in the new config
-  - Remove the promotion stanza from the new config 
-  - Remove the non postsubmit: true tests from the new config
-  - `cd ../../../..`
-  - `make jobs`
-4. Commit and push the changes
-  - `git add ...`
-  - `git rm ...`
-  - `git commit -m "Add config for release-${COLLECTOR_RELEASE}"`
-  - `git push origin release-${COLLECTOR_RELEASE}` # Create the PR, get it approved and merged.
-
 **Create the collector image release branch**
 
 There is a script at utilities/release.py which needs to be updated to reflect the use of OSCI.
@@ -54,7 +31,29 @@ The script creates the tags for the release as well as the release branch
   - `git tag "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"`
   - `git push origin "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"`
   - `git push release-"${COLLECTOR_RELEASE}"`
-4. Create a pull request to update the `COLLECTOR_VERSION` file in the [stackrox/stackrox](https://github.com/stackrox/stackrox/) repo with the newly create release after CI images have been built.
+
+**Create the config in openshift/release**
+
+1. Set the release environment variable, which should be incremented from the previous released version.
+  - `export COLLECTOR_RELEASE=3.8`
+2. Create a release branch in openshift/release. Go to a forked copy of the openshift/release repo
+  - `git checkout master`
+  - `git pull upstream master`
+  - `git checkout -b "release-${COLLECTOR_RELEASE}"`
+3. Create a config for the release
+  - `cd ci-operator/config/stackrox/collector`
+  - `cp stackrox-collector-master.yaml stackrox-collector-release-${COLLECTOR_RELEASE}.yaml`
+  - Change "branch: master" to "branch: release-3.8" or whatever the release branch is in the new config
+  - Remove the promotion stanza from the new config 
+  - Remove the non postsubmit: true tests from the new config
+  - `cd ../../../..`
+  - `make jobs`
+4. Commit and push the changes
+  - `git add ...`
+  - `git rm ...`
+  - `git commit -m "Add config for release-${COLLECTOR_RELEASE}"`
+  - `git push origin release-${COLLECTOR_RELEASE}` # Create the PR, get it approved and merged.
+5. Create a pull request to update the `COLLECTOR_VERSION` file in the [stackrox/stackrox](https://github.com/stackrox/stackrox/) repo with the newly create release after CI images have been built.
 
 **Patch releases**
 
