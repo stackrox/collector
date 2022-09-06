@@ -140,3 +140,10 @@ get_pr_details() {
     _PR_DETAILS="$pr_details"
     echo "$pr_details"
 }
+
+import_creds() {
+    shopt -s nullopt
+    for cred in /tmp/secret/**/[A-Z]*; do
+        export "$(basename "$cred")"="$(cat "$cred")"
+    done
+}

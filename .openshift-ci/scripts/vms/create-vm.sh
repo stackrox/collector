@@ -27,12 +27,8 @@ main() {
     local GDOCKER_PASS="$1"
     shift
 
-    DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"  > /dev/null 2>&1 && pwd)"
-
-    pushd "$DIR"
-    # shellcheck source=SCRIPTDIR/envbuilder.sh
-    source "envbuilder.sh"
-    popd
+    # shellcheck source=SCRIPTDIR/provision.sh
+    source "provision.sh"
 
     mkdir -p "$(dirname "${GCP_SSH_KEY_FILE}")"
     chmod 0700 "$(dirname "${GCP_SSH_KEY_FILE}")"
