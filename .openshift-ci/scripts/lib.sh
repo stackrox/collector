@@ -142,7 +142,7 @@ get_pr_details() {
 }
 
 import_creds() {
-    shopt -s nullopt
+    shopt -s nullglob
     for cred in /tmp/secret/**/[A-Z]*; do
         export "$(basename "$cred")"="$(cat "$cred")"
     done
