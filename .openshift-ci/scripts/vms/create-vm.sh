@@ -2,6 +2,8 @@
 
 set -eo pipefail
 
+CI_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+
 copy_secret() {
     local NAME="$1"
     local DEST="$2"
@@ -28,7 +30,7 @@ main() {
     shift
 
     # shellcheck source=SCRIPTDIR/provision.sh
-    source "provision.sh"
+    source "${CI_ROOT}/provision.sh"
 
     mkdir -p "$(dirname "${GCP_SSH_KEY_FILE}")"
     chmod 0700 "$(dirname "${GCP_SSH_KEY_FILE}")"
