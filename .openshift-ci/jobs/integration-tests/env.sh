@@ -39,17 +39,17 @@ for cred in /tmp/secret/**/[A-Z]*; do
     export "$(basename "$cred")"="$(cat "$cred")"
 done
 
+if pr_has_label "skip-integration-tests"; then
+    echo "Skipping integration tests for ${VM_CONFIG}"
+    exit 0
+fi
+
 # only run all integration tests on master, or when the all-integration-tests
 # label is added. This is checked in this common env script because it allows
 # us to skip pre- and post- steps as well (which source this file)
-if ! pr_has_label "all-integration-tests" && is_in_PR_context; then
+if is_in_PR_context && ! pr_has_label "all-integration-tests"; then
     if [[ ! "$IMAGE_FAMILY" =~ (rhel-(7|8)|ubuntu-) ]]; then
         echo "Not running integration tests for ${VM_CONFIG}"
         exit 0
     fi
-fi
-
-if pr_has_label "skip-integration-tests"; then
-    echo "Skipping integration tests for ${VM_CONFIG}"
-    exit 0
 fi
