@@ -30,7 +30,7 @@ main() {
     shift
 
     # shellcheck source=SCRIPTDIR/provision.sh
-    source "${CI_ROOT}/provision.sh"
+    source "${CI_ROOT}/scripts/vms/provision.sh"
 
     mkdir -p "$(dirname "${GCP_SSH_KEY_FILE}")"
     chmod 0700 "$(dirname "${GCP_SSH_KEY_FILE}")"
