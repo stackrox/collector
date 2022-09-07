@@ -1,5 +1,9 @@
 # Stackrox Collector
 
+![GitHub branch checks state](https://img.shields.io/github/checks-status/stackrox/collector/master?style=for-the-badge)
+![GitHub](https://img.shields.io/github/license/stackrox/collector?style=for-the-badge)
+![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/stackrox/collector?sort=semver&style=for-the-badge)
+
 Welcome to the Stackrox Collector project documentation. Here you can learn
 more about idea behind the project, how to start guidelines, design overview
 and detailed references.
