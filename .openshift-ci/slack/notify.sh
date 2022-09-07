@@ -2,7 +2,7 @@
 set -eo pipefail
 
 CI_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
-# shellcheck source=SCRIPTDIR=../scripts/lib.sh
+# shellcheck source=SCRIPTDIR/../scripts/lib.sh
 source "${CI_ROOT}/scripts/lib.sh"
 
 import_creds
