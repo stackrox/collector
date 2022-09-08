@@ -3,7 +3,7 @@
 set -exuo pipefail
 
 METADATA_DIR="/tmp/cpaas-support-packages/metadata/module-versions/"
-OUTPUT_DIR=" /tmp/cpaas-support-packages/output/"
+OUTPUT_DIR="/tmp/cpaas-support-packages/output/"
 
 # Create the metadata directories
 for version in "/kernel-modules"/*/; do
