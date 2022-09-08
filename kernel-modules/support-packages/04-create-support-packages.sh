@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -exuo pipefail
 
 die() {
     echo >&2 "$@"
@@ -32,7 +32,7 @@ OUT_DIR="$4"
 
 [[ -n "${GCP_BUCKET:-}" ]] || die "Must specify a COLLECTOR_MODULES_BUCKET"
 
-mkdir -p "$OUT_DIR" || die "Failed to create output directory ${OUT_DIR}."
+mkdir -p "${OUT_DIR}" || die "Failed to create output directory '${OUT_DIR}'"
 
 for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
     mod_ver="$(basename "$mod_ver_dir")"

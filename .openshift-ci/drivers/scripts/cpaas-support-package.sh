@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-set -euo pipefail
+set -exuo pipefail
 
 METADATA_DIR="/tmp/cpaas-support-packages/metadata/module-versions/"
 OUTPUT_DIR=" /tmp/cpaas-support-packages/output/"
