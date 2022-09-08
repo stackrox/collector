@@ -9,8 +9,12 @@ keyed_groups:
   # This will group the VMs by their labels, which means that on
   # creation, we can use a unique identifier to group VMs 
   # based on Job ID, to avoid running on all CI VMs or on 
-  - prefix: ci_job_id
+  # specific platforms (for the provisioning playbooks)
+  - prefix: job_id
     key: labels.job_id
+
+  - prefix: platform
+    key: labels.platform
 auth_kind: serviceaccount
 # Can be overridden by GCP_SERVICE_ACCOUNT_FILE environment
 service_account_file: /tmp/serviceaccount.json
