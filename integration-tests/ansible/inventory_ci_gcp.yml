@@ -1,0 +1,21 @@
+---
+
+plugin: gcp_compute
+projects:
+  - stackrox-ci
+filters:
+  - name = collector-osci-*
+keyed_groups:
+  # This will group the VMs by their labels, which means that on
+  # creation, we can use a unique identifier to group VMs 
+  # based on Job ID, to avoid running on all CI VMs or on 
+  - prefix: ci_job_id
+    key: labels.job_id
+auth_kind: serviceaccount
+# Can be overridden by GCP_SERVICE_ACCOUNT_FILE environment
+service_account_file: /tmp/serviceaccount.json
+hostnames:
+  - name
+compose:
+  # use the public IP as the ansible host for SSH
+  ansible_host: networkInterfaces[0].accessConfigs[0].natIP

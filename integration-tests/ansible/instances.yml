@@ -1,0 +1,51 @@
+---
+
+virtual_machines:
+  groups:
+    rhel:
+      project: rhel-cloud
+      families:
+        - rhel-7
+        - rhel-8
+
+    rhel-sap:
+      project: rhel-sap-cloud
+      families:
+        - rhel-8-4-sap-ha
+        - rhel-8-6-sap-ha
+
+    cos:
+      project: cos-cloud
+      families:
+        - cos-stable
+        - cos-beta
+        - cos-dev
+        - cos-89-lts
+
+    sles:
+      project: sles-cloud
+      families:
+        - sles-12
+        - sles-15
+
+    ubuntu_os:
+      project: ubuntu-os-cloud
+      families:
+        - ubuntu-1804-lts
+        - ubuntu-2004-lts
+        - ubuntu-2204-lts
+
+    ubuntu_os_pro:
+      project: ubunut-os-pro-cloud
+      families:
+        - ubuntu-pro-1804-lts
+        
+    flatcar:
+      project: flatcar-cloud
+      families:
+        - flatcar-stable
+
+    garden_linux:
+      project: garden-linux-cloud
+      images:
+        - gardenlinux-gcp-cloud-gardener--prod-576-9-229156
