@@ -1,12 +1,20 @@
 ---
 
 - name: Provision VM
-  hosts: "job_id_{{ lookup('env', 'JOB_ID') | default(0) }}"
+  hosts: "job_id_{{ lookup('env', 'JOB_ID', default='1') }}"
+  strategy: free
   become: true
 
   tasks:
-    - name: Platform specific provisioning
-      include_tasks: "{{ ansible_facts['os_family'] | lower }}.yml"
+    - debug: msg="{{ ansible_facts['os_family'] }}"
+
+    - name: RedHat Provisioning
+      include_tasks: "redhat.yml"
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Ubuntu Provisioning
+      include_tasks: "ubuntu.yml"
+      when: ansible_facts['os_family'] == 'Ubuntu'
 
     - name: Start docker service
       service:

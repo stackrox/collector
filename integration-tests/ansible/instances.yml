@@ -1,10 +1,10 @@
 ---
 
 gcp_project: stackrox-dev
-gcp_auth: application
+gcp_auth_kind: application
 gcp_zone: us-central1-a
 
-job_id: "{{ lookup('env', 'JOB_ID') | default(0) }}"
+job_id: "{{ lookup('env', 'JOB_ID', default='1') }}"
 
 virtual_machines:
   - name: rhel
@@ -21,6 +21,7 @@ virtual_machines:
 
   - name: cos
     project: cos-cloud
+    username: core
     families:
       - cos-stable
       - cos-beta
@@ -33,24 +34,30 @@ virtual_machines:
       - sles-12
       - sles-15
 
-  - name: ubuntu_os
+  - name: ubuntu-os
     project: ubuntu-os-cloud
     families:
       - ubuntu-1804-lts
       - ubuntu-2004-lts
       - ubuntu-2204-lts
 
-  - name: ubuntu_os_pro
+  - name: ubuntu-os-pro
     project: ubunut-os-pro-cloud
     families:
       - ubuntu-pro-1804-lts
 
   - name: flatcar
-    project: flatcar-cloud
+    project: kinvolk-public
+    username: core
     families:
       - flatcar-stable
 
-  - name: garden_linux
-    project: garden-linux-cloud
+  - name: fedora-coreos
+    project: fedora-coreos-cloud
+    families:
+      - fedora-coreos
+
+  - name: garden-linux
+    project: sap-se-gcp-gardenlinux
     images:
       - gardenlinux-gcp-cloud-gardener--prod-576-9-229156
