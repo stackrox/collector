@@ -78,13 +78,5 @@ image_repos=(
     "${PUBLIC_REPO}"
 )
 
-image_name=$1
-
-if [[ "$image_name" == "collector" ]]; then
-    push_images
-elif [[ "$image_name" == "collector-builder" ]]; then
-    push_builder_image
-else
-    echo "Unknown image name $image_name"
-    exit 1
-fi
+push_images
+push_builder_image
