@@ -16,7 +16,7 @@ upload_drivers() {
     done
 }
 
-GCP_CREDS="$(cat /tmp/secrets/GOOGLE_CREDENTIALS_KERNEL_CACHE)"
+GCP_CREDS="$(get_secret_content GOOGLE_CREDENTIALS_KERNEL_CACHE)"
 GCP_BASE_BUCKET="gs://collector-modules-osci"
 
 /scripts/setup-gcp-env.sh "${GCP_CREDS}" "${GCP_BASE_BUCKET}"
