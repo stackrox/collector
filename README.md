@@ -32,5 +32,5 @@ There are opportunities to catch in many areas, so let's start.
 3. [Release Process](docs/release.md): Having troubles with the release? Here
    we have a few tips for you.
 
-4. [References](docs/references.md): Contains comprehensive list of
+4. [References](docs/references.md): Contains a comprehensive list of
    configuration options for the project.
