@@ -43,7 +43,7 @@ for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
     # For now we create *full* kernel support packages, not only deltas, in order to
     # support the slim collector use-case.
     # Remains to be clarified; we might provide more fine granular download options in the future.
-    gsutil -m cp "${GCP_BUCKET}/${mod_ver}/*.gz" "$probe_dir"
+    gsutil -m cp "${COLLECTOR_MODULES_BUCKET}/${mod_ver}/*.gz" "$probe_dir"
 
     package_out_dir="${OUT_DIR}/${mod_ver}"
     mkdir -p "$package_out_dir"
