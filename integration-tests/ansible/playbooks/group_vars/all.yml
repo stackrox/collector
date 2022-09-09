@@ -3,7 +3,9 @@
 gcp_project: "{{ lookup('env', 'GCP_PROJECT', default='stackrox-dev') }}"
 gcp_auth_kind: application
 gcp_zone: "{{ lookup('env', 'GCP_ZONE', default='us-central1-a') }}"
-gcp_ssh_key_file: "{{ lookup('env', 'GCP_SSH_KEY_FILE', default('~/.ssh/google_compute_engine')) }}"
+gcp_ssh_key_file: "{{ lookup('env', 'GCP_SSH_KEY_FILE', default='~/.ssh/google_compute_engine') }}"
+
+ansible_ssh_private_key_file: "{{ gcp_ssh_key_file }}"
 
 job_id: "{{ lookup('env', 'JOB_ID', default='1') }}"
 test_platform: "{{ lookup('env', 'VM_TYPE', default='all') }}"
@@ -57,7 +59,7 @@ virtual_machines:
   - name: fedora-coreos
     project: fedora-coreos-cloud
     families:
-      - fedora-coreos
+      - fedora-coreos-stable
 
   - name: garden-linux
     project: sap-se-gcp-gardenlinux
