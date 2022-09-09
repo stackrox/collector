@@ -512,7 +512,7 @@ TEST(NetworkStatusNotifier, HoldTimeoutNoAfterglow) {
             .WillRepeatedly(Return(Result(Status::OK)));
 
         EXPECT_CALL(*duplex_writer, Sleep)
-            .WillOnce(ReturnPointee(&running))  // first time, we let the scrapper do its job
+            .WillOnce(ReturnPointee(&running))                    // first time, we let the scrapper do its job
             .WillOnce([&running](const gpr_timespec& deadline) {  // the connections is known, but we're still holding it
               ::sleep(2);
               return running;
