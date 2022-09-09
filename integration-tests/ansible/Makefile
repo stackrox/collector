@@ -5,11 +5,11 @@ list-inventory:
 
 .PHONY: teardown
 teardown:
-	ansible-playbook -i inventory_ci_gcp.yml playbooks/teardown.yml
+	ansible-playbook -i inventory_ci_gcp.yml teardown.yml
 
 .PHONY: setup
 setup:
-	ansible-playbook -i inventory_ci_gcp.yml playbooks/setup.yml
+	ansible-playbook -i inventory_ci_gcp.yml setup.yml
 
 .PHONY: provision
 provision:
