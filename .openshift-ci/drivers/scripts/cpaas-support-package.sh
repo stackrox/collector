@@ -2,8 +2,8 @@
 
 set -exuo pipefail
 
-METADATA_DIR="/tmp/cpaas-support-packages/metadata/module-versions/"
-OUTPUT_DIR="/tmp/cpaas-support-packages/output/"
+METADATA_DIR="/tmp/cpaas-support-packages/metadata"
+OUTPUT_DIR="/tmp/cpaas-support-packages/output"
 
 # Create the metadata directories
 for version in "/kernel-modules"/*/; do
@@ -13,7 +13,7 @@ done
 
 /scripts/create-support-packages.sh \
       /LICENSE \
-      gs://stackrox-collector-modules-staging/cpaas/ \
+      gs://stackrox-collector-modules-staging/cpaas \
       "${METADATA_DIR}" \
       "${OUTPUT_DIR}"
 
