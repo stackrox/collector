@@ -37,11 +37,11 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 	offlineMode := ReadBoolEnvVar("COLLECTOR_OFFLINE_MODE")
 
 	env := map[string]string{
-		"GRPC_SERVER":                      "localhost:9999",
-		"COLLECTOR_CONFIG":                 `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}`,
-		"COLLECTION_METHOD":                collectionMethod,
-		"COLLECTOR_PRE_ARGUMENTS":          collectorPreArguments,
-		"ENABLE_CORE_DUMP":                 "false",
+		"GRPC_SERVER":             "localhost:9999",
+		"COLLECTOR_CONFIG":        `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}`,
+		"COLLECTION_METHOD":       collectionMethod,
+		"COLLECTOR_PRE_ARGUMENTS": collectorPreArguments,
+		"ENABLE_CORE_DUMP":        "false",
 	}
 	if !offlineMode {
 		env["MODULE_DOWNLOAD_BASE_URL"] = "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"
@@ -53,7 +53,7 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 		"/host/usr/lib:ro":             "/usr/lib/",
 		"/host/sys:ro":                 "/sys/",
 		"/host/dev:ro":                 "/dev",
-		"/tmp":				"/tmp",
+		"/tmp":                         "/tmp",
 		// /module is an anonymous volume to reflect the way collector
 		// is usually run in kubernetes (with in-memory volume for /module)
 		"/module": "",
@@ -226,7 +226,8 @@ func (c *collectorManager) captureLogs(containerName string) (string, error) {
 		fmt.Printf("docker logs error (%v) for container %s\n", err, containerName)
 		return "", err
 	}
-	logDirectory := filepath.Join(".", "container-logs")
+	vm_config := ReadEnvVarWithDefault("VM_CONFIG", "default")
+	logDirectory := filepath.Join(".", "container-logs", vm_config)
 	os.MkdirAll(logDirectory, os.ModePerm)
 	logFile := filepath.Join(logDirectory, strings.ReplaceAll(c.TestName, "/", "_")+"-"+containerName+".log")
 	err = ioutil.WriteFile(logFile, []byte(logs), 0644)

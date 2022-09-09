@@ -1,0 +1,38 @@
+---
+
+- name: Run integration tests
+  vars_files:
+    - group_vars/all.yml
+  hosts: "job_id_{{ job_id }}"
+  
+  tasks:
+    - name: whoami
+      shell: "whoami && id"
+      register: iam
+
+    - debug: msg={{ iam }}
+
+    - name: Log into quay.io
+      shell:
+        cmd: "docker login -u {{ quay_username }} --password-stdin quay.io"
+        stdin: "{{ quay_password }}"
+
+    - name: Cleanup old containers
+      shell: "docker rm -f $(docker ps -aq) >/dev/null 2>&1 || true"
+
+    - name: Run integration tests
+      delegate_to: localhost
+      shell: "make -C ../../ process-network"
+      environment:
+        REMOTE_HOST_TYPE: ssh
+        SSH_ADDRESS: "{{ ansible_host }}"
+        SSH_PORT: "{{ ansible_port }}"
+        SSH_USER: "{{ ansible_user }}"
+        SSH_KEY_PATH: "~/.ssh/google_compute_engine"
+        COLLECTION_METHOD: "{{ item }}"
+        COLLECTOR_IMAGE: "quay.io/rhacs-eng/collector:3.11.0"
+        VM_CONFIG: "{{ vm_config }}"
+      with_items:
+        - ebpf
+      register: test_result
+

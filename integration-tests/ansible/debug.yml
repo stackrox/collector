@@ -1,0 +1,11 @@
+---
+
+- name: thingy
+  hosts: localhost
+  tasks:
+    - include_vars:
+        file: instances.yml
+        name: instances
+
+    - debug: msg="{{ item.0.name }} {{ item.1 }}"
+      loop: "{{ instances.virtual_machines | subelements('families', skip_missing=True) }}"

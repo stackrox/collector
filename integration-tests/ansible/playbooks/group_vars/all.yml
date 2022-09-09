@@ -5,6 +5,7 @@ gcp_auth_kind: application
 gcp_zone: us-central1-a
 
 job_id: "{{ lookup('env', 'JOB_ID', default='1') }}"
+test_platform: "{{ lookup('env', 'TEST_PLATFORM', default='all') }}"
 
 virtual_machines:
   - name: rhel

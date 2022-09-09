@@ -1,0 +1,6 @@
+---
+
+- import_playbook: playbooks/create-vms.yml
+- import_playbook: playbooks/provision-vms.yml
+- import_playbook: playbooks/run-tests.yml
+- import_playbook: playbooks/delete-vms.yml
