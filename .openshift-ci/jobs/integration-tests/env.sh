@@ -17,7 +17,6 @@ export JOB_ID="${PROW_JOB_ID:0:8}"
 # as to create and configure the GCP VMs
 export GCP_SSH_KEY_FILE="$HOME/.ssh/GCP_SSH_KEY"
 export GCP_PROJECT="stackrox-ci"
-export VM_CONFIG="${VM_TYPE}.${IMAGE_FAMILY}"
 export COLLECTOR_REPO="quay.io/rhacs-eng/collector"
 
 IMAGE_TAG="$(make tag)"
@@ -37,17 +36,17 @@ echo "---" > integration-tests/ansible/secret.enc
 echo "quay_username: ${QUAY_RHACS_ENG_RO_USERNAME}" >> integration-tests/ansible/secret.enc
 echo "quay_password: ${QUAY_RHACS_ENG_RO_PASSWORD}" >> integration-tests/ansible/secret.enc
 
-if pr_has_label "skip-integration-tests"; then
-    echo "Skipping integration tests for ${VM_CONFIG}"
-    exit 0
-fi
-
-# only run all integration tests on master, or when the all-integration-tests
-# label is added. This is checked in this common env script because it allows
-# us to skip pre- and post- steps as well (which source this file)
-if is_in_PR_context && ! pr_has_label "all-integration-tests"; then
-    if [[ ! "$IMAGE_FAMILY" =~ (rhel-(7|8)|ubuntu-) ]]; then
-        echo "Not running integration tests for ${VM_CONFIG}"
-        exit 0
-    fi
-fi
+#if pr_has_label "skip-integration-tests"; then
+#    echo "Skipping integration tests for ${IMAGE_TYPE}"
+#    exit 0
+#fi
+#
+## only run all integration tests on master, or when the all-integration-tests
+## label is added. This is checked in this common env script because it allows
+## us to skip pre- and post- steps as well (which source this file)
+#if is_in_PR_context && ! pr_has_label "all-integration-tests"; then
+#    if [[ ! "$IMAGE_FAMILY" =~ (rhel-(7|8)|ubuntu-) ]]; then
+#        echo "Not running integration tests for ${IMAGE_TYPE}"
+#        exit 0
+#    fi
+#fi
