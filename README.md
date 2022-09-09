@@ -27,7 +27,7 @@ There are opportunities to catch in many areas, so let's start.
    understand how Collector works, and it's place in the grand scheme of
    things, you may want to look here.
 
-3. [Roadmap](docs/roadmap.md): Out plans and directions for future development.
+3. [Roadmap](docs/roadmap.md): Our plans and directions for future development.
 
 3. [Release Process](docs/release.md): Having troubles with the release? Here
    we have a few tips for you.
