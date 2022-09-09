@@ -22,8 +22,12 @@ You should have received a copy of the GNU General Public License along with thi
 */
 
 #include <chrono>
+#include <memory>
 #include <mutex>
 #include <string>
+
+#include <arpa/inet.h>
+#include <json/json.h>
 
 #include <google/protobuf/util/time_util.h>
 
@@ -331,6 +335,165 @@ TEST(NetworkStatusNotifier, UpdateIPnoAfterglow) {
               ip_networks->set_ipv4_networks(network);
 
               network_flows_callback(&msg);
+              return running;
+            })
+            .WillRepeatedly(ReturnPointee(&running));
+
+        EXPECT_CALL(*duplex_writer, WaitUntilStarted).WillRepeatedly(Return(Result(Status::OK)));
+
+        return duplex_writer;
+      });
+
+  // Connections/Endpoints returned by the scrapper (first detection of the connection)
+  EXPECT_CALL(*conn_scraper, Scrape).WillRepeatedly([&conn1](std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) -> bool {
+    connections->emplace_back(conn1);
+    return true;
+  });
+
+  auto net_status_notifier = MakeUnique<NetworkStatusNotifier>(conn_scraper,
+                                                               config.ScrapeInterval(), config.ScrapeListenEndpoints(),
+                                                               config.TurnOffScrape(),
+                                                               conn_tracker,
+                                                               config.AfterglowPeriod(), config.EnableAfterglow(),
+                                                               comm);
+
+  net_status_notifier->Start();
+
+  // Wait for the first scrape to occur
+  EXPECT_TRUE(sem.try_acquire_for(std::chrono::seconds(5)));
+
+  net_status_notifier->Stop();
+}
+
+namespace network_list {
+
+/* Created with:
+    latest_prefix="$(wget -q https://definitions.stackrox.io/external-networks/latest_prefix -O -)"
+    wget -O /tmp/networks "https://definitions.stackrox.io/${latest_prefix}/networks"
+*/
+static const char* big_one =
+#include "networks.json.inc"
+    ;
+
+template <int family, class storage>
+static void AppendIP(std::string& bytestream, const Json::Value& node) {
+  storage in_addr;
+  std::string prefix;
+  std::string prefix_len;
+  std::size_t slash;
+
+  if (!node.isString())
+    return;
+
+  std::string temp = node.asString();
+  slash = node.asString().find('/');
+  temp.resize(0);
+  ASSERT_NE(slash, std::string::npos);
+
+  prefix = node.asString().substr(0, slash);
+  prefix_len = node.asString().substr(slash + 1);
+
+  ASSERT_EQ(inet_pton(family, prefix.c_str(), &in_addr), 1);
+
+  for (unsigned int i = 0; i < sizeof(storage); i++)
+    bytestream.push_back(((char*)&in_addr)[i]);
+
+  bytestream.push_back((char)std::stoi(prefix_len.c_str()));
+}
+
+constexpr auto AppendIPv4 = AppendIP<AF_INET, struct in_addr>;
+constexpr auto AppendIPv6 = AppendIP<AF_INET6, struct in6_addr>;
+
+static std::unique_ptr<sensor::NetworkFlowsControlMessage> Parse(const char* json_document) {
+  Json::Reader reader;
+  Json::Value root;
+
+  std::string ipv4nets;
+  std::string ipv6nets;
+
+  std::unique_ptr<sensor::NetworkFlowsControlMessage> msg = MakeUnique<sensor::NetworkFlowsControlMessage>();
+
+  EXPECT_TRUE(reader.parse(json_document, root, false));
+
+  Json::Value providerNetworks = root.get("providerNetworks", Json::Value::null);
+  EXPECT_NE(providerNetworks, Json::Value::null);
+
+  for (const Json::Value& providerNetwork : providerNetworks) {
+    Json::Value regionNetworks = providerNetwork.get("regionNetworks", Json::Value::null);
+    EXPECT_NE(regionNetworks, Json::Value::null);
+
+    for (const Json::Value& regionNetwork : regionNetworks) {
+      Json::Value serviceNetworks = regionNetwork.get("serviceNetworks", Json::Value::null);
+      EXPECT_NE(serviceNetworks, Json::Value::null);
+
+      for (const Json::Value& serviceNetwork : serviceNetworks) {
+        for (const Json::Value& ipv4 : serviceNetwork.get("ipv4Prefixes", Json::Value::null))
+          AppendIPv4(ipv4nets, ipv4);
+
+        for (const Json::Value& ipv6 : serviceNetwork.get("ipv6Prefixes", Json::Value::null))
+          AppendIPv6(ipv6nets, ipv6);
+      }
+    }
+  }
+
+  msg->mutable_ip_networks()->set_ipv4_networks(ipv4nets);
+  msg->mutable_ip_networks()->set_ipv6_networks(ipv6nets);
+
+  return msg;
+}
+
+};  // namespace network_list
+
+/* Load a realistic public network list */
+TEST(NetworkStatusNotifier, LoadNetworkList) {
+  bool running = true;
+  MockCollectorConfig config;
+  std::shared_ptr<MockConnScraper> conn_scraper = std::make_shared<MockConnScraper>();
+  auto conn_tracker = std::make_shared<ConnectionTracker>();
+  auto comm = std::make_shared<MockNetworkConnectionInfoServiceComm>();
+  std::function<void(const sensor::NetworkFlowsControlMessage*)> network_flows_callback;
+  Semaphore sem(0);  // to wait for the service to accomplish its job.
+
+  // the connection as scrapped (public)
+  Connection conn1("containerId", Endpoint(Address(10, 0, 1, 32), 1024), Endpoint(Address(139, 45, 27, 4), 999), L4Proto::TCP, true);
+
+  std::unique_ptr<sensor::NetworkFlowsControlMessage> network_list_message = network_list::Parse(network_list::big_one);
+
+  config.DisableAfterglow();
+
+  // the connection is always ready
+  EXPECT_CALL(*comm, WaitForConnectionReady).WillRepeatedly(Return(true));
+  // gRPC shuts down the loop, so we will want writer->Sleep to return with false
+  EXPECT_CALL(*comm, TryCancel).Times(1).WillOnce([&running] { running = false; });
+
+  /* This is what NetworkStatusNotifier calls to create streams
+   receive_func is a callback that we can use to simulate messages coming from the sensor
+   We return an object that will get called when connections and endpoints are reported */
+  EXPECT_CALL(*comm, PushNetworkConnectionInfoOpenStream)
+      .Times(1)
+      .WillOnce([&sem,
+                 &running,
+                 &network_list_message,
+                 &network_flows_callback](std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func) -> std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> {
+        auto duplex_writer = MakeUnique<MockDuplexClientWriter>();
+        network_flows_callback = receive_func;
+
+        // the service is sending Sensor a message
+        EXPECT_CALL(*duplex_writer, Write)
+            .WillOnce([&sem](const sensor::NetworkConnectionInfoMessage& msg, const gpr_timespec& deadline) -> Result {
+              // Once here, we know that the connection has been searched in the huge list.
+
+              // Done
+              sem.release();
+
+              return Result(Status::OK);
+            })
+            .WillRepeatedly(Return(Result(Status::OK)));
+
+        EXPECT_CALL(*duplex_writer, Sleep)
+            .WillOnce([&running, &network_flows_callback, &network_list_message](const gpr_timespec& deadline) {
+              // before first iteration, the network list is received.
+              network_flows_callback(network_list_message.get());
               return running;
             })
             .WillRepeatedly(ReturnPointee(&running));
