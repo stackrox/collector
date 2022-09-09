@@ -32,8 +32,8 @@
 	branch = master
 [submodule "falcosecurity-libs"]
 	path = falcosecurity-libs
-	url = https://github.com/hbrueckner/falcosecurity-libs
-	branch = s390x-bpf-driver-20220908
+	url = https://github.com/stackrox/falcosecurity-libs
+	branch = mauro-test-s390x-required-changes
 [submodule "collector/proto/third_party/gogoproto"]
 	path = collector/proto/third_party/gogoproto
 	url = https://github.com/gogo/protobuf
