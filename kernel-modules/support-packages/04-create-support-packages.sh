@@ -30,7 +30,7 @@ OUT_DIR="$4"
 [[ -n "$LICENSE_FILE" && -n "$MD_DIR" && -n "$OUT_DIR" ]] || die "Usage: $0 <license-file> <metadata directory> <output directory>"
 [[ -d "$MD_DIR" ]] || die "Metadata directory $MD_DIR does not exist or is not a directory."
 
-[[ -n "${GCP_BUCKET:-}" ]] || die "Must specify a COLLECTOR_MODULES_BUCKET"
+[[ -n "${COLLECTOR_MODULES_BUCKET:-}" ]] || die "Must specify a COLLECTOR_MODULES_BUCKET"
 
 mkdir -p "${OUT_DIR}" || die "Failed to create output directory '${OUT_DIR}'"
 
