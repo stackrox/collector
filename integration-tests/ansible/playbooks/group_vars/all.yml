@@ -1,8 +1,8 @@
 ---
 
-gcp_project: stackrox-dev
+gcp_project: "{{ lookup('env', 'GCP_PROJECT', default='stackrox-dev') }}"
 gcp_auth_kind: application
-gcp_zone: us-central1-a
+gcp_zone: "{{ lookup('env', 'GCP_ZONE', default='us-central1-a') }}"
 gcp_ssh_key_file: "{{ lookup('env', 'GCP_SSH_KEY_FILE', default('~/.ssh/google_compute_engine')) }}"
 
 job_id: "{{ lookup('env', 'JOB_ID', default='1') }}"

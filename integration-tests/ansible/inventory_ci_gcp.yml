@@ -2,7 +2,13 @@
 
 plugin: gcp_compute
 projects:
+  # this means the inventory will look for VMs in both projects
+  # but does not mean it will necessarily find any.
+  #
+  # For use in CI, our VMs will exist in stackrox-ci, but we can
+  # also create them in stackrox-dev for more ad-hoc testing
   - stackrox-dev
+  - stackrox-ci
 filters:
   - name = collector-osci-giles-*
 keyed_groups:

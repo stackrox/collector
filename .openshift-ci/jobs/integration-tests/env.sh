@@ -16,6 +16,7 @@ export JOB_ID="${PROW_JOB_ID:0:8}"
 # Most of these are used by the integration tests themselves as well
 # as to create and configure the GCP VMs
 export GCP_SSH_KEY_FILE="$HOME/.ssh/GCP_SSH_KEY"
+export GCP_PROJECT="stackrox-ci"
 export VM_CONFIG="${VM_TYPE}.${IMAGE_FAMILY}"
 export COLLECTOR_REPO="quay.io/rhacs-eng/collector"
 
