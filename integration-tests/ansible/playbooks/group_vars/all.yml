@@ -3,9 +3,10 @@
 gcp_project: stackrox-dev
 gcp_auth_kind: application
 gcp_zone: us-central1-a
+gcp_ssh_key_file: "{{ lookup('env', 'GCP_SSH_KEY_FILE', default('~/.ssh/google_compute_engine')) }}"
 
 job_id: "{{ lookup('env', 'JOB_ID', default='1') }}"
-test_platform: "{{ lookup('env', 'TEST_PLATFORM', default='all') }}"
+test_platform: "{{ lookup('env', 'VM_TYPE', default='all') }}"
 
 virtual_machines:
   - name: rhel

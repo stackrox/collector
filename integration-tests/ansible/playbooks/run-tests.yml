@@ -28,7 +28,7 @@
         SSH_ADDRESS: "{{ ansible_host }}"
         SSH_PORT: "{{ ansible_port }}"
         SSH_USER: "{{ ansible_user }}"
-        SSH_KEY_PATH: "~/.ssh/google_compute_engine"
+        SSH_KEY_PATH: "{{ ansible_ssh_private_key_file }}"
         COLLECTION_METHOD: "{{ item }}"
         COLLECTOR_IMAGE: "quay.io/rhacs-eng/collector:3.11.0"
         VM_CONFIG: "{{ vm_config }}"

@@ -5,7 +5,11 @@ list-inventory:
 
 .PHONY: teardown
 teardown:
-	ansible-playbook -i inventory_ci_gcp.yml playbooks/delete-vms.yml
+	ansible-playbook -i inventory_ci_gcp.yml playbooks/teardown.yml
+
+.PHONY: setup
+setup:
+	ansible-playbook -i inventory_ci_gcp.yml playbooks/setup.yml
 
 .PHONY: provision
 provision:
@@ -21,7 +25,7 @@ run-tests:
 
 define runner
 run-$(1):
-	TEST_PLATFORM=$(1) ansible-playbook -i inventory_ci_gcp.yml -e @secrets.enc --ask-vault-pass main.yml
+	VM_TYPE=$(1) ansible-playbook -i inventory_ci_gcp.yml -e @secrets.enc --ask-vault-pass main.yml
 endef
 
 $(eval $(call runner,rhel))

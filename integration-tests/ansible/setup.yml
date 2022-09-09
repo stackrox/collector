@@ -1,0 +1,4 @@
+---
+
+- import_playbook: playbooks/create-vms.yml
+- import_playbook: playbooks/provision-vms.yml

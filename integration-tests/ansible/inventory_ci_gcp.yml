@@ -22,5 +22,6 @@ compose:
   # use the public IP as the ansible host for SSH
   ansible_host: networkInterfaces[0].accessConfigs[0].natIP
   ansible_user: labels.username
+  ansible_ssh_private_key_file: lookup('env', 'GCP_SSH_KEY_FILE', default='~/.ssh/google_compute_engine')
   ansible_port: 22
   vm_config: labels.vm_config
