@@ -12,7 +12,7 @@ Collector is a component of Stackrox responsible for gathering runtime data. In
 a few words it is an agent that runs on every node under strict performance
 limitations and gathers the data via kernel modules or eBPF probes (the default
 collection mode nowadays). To implement eBPF probes and collect data, the
-project leverages Falco libraries via custom
+project leverages the Falco libraries via a custom
 [fork](https://github.com/stackrox/falcosecurity-libs).
 
 There are opportunities to catch in many areas, so let's start.
