@@ -20,7 +20,7 @@ There are opportunities to catch in many areas, so let's start.
 ## Table of Contents
 
 1. [How to start](docs/how-to-start.md): If you want to contribute to the
-   project, it's the best place to start. This section covers building and
+   project, this is the best place to start. This section covers building and
    troubleshooting the project from scratch.
 
 2. [Design overview](docs/design-overview.md): When your goal is to better
