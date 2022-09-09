@@ -4,6 +4,8 @@ COPY scripts /scripts
 
 RUN whoami
 
+RUN dnf install -y ansible
+
 ENV GOCACHE="/linux-gocache"
 
 # Temporary additional permissions to allow the OpenShift CI

@@ -34,21 +34,7 @@ function copy_from_vm() {
 }
 
 function run_tests() {
-    exit_code=0
-
-    if [[ "${MEASURE_SYSCALL_LATENCY}" == "true" ]] && performance_platform_supported; then
-        mkdir -p "integration-tests/performance-logs"
-        integration_tests_with_measurements
-        exit_code=$?
-
-        copy_from_vm "/tmp/baseline.json" "integration-tests/performance-logs/baseline-${IMAGE_FAMILY}-${COLLECTION_METHOD}.json"
-        copy_from_vm "/tmp/benchmark.json" "integration-tests/performance-logs/benchmark-${IMAGE_FAMILY}-${COLLECTION_METHOD}.json"
-    else
-        make ci-all-tests
-        exit_code=$?
-    fi
-
-    return $exit_code
+    make -C integration-tests/ansible run-tests
 }
 
 function save_artifacts() {

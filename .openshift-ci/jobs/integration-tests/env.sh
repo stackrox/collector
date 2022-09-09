@@ -16,17 +16,8 @@ export JOB_ID="${PROW_JOB_ID:0:8}"
 # Most of these are used by the integration tests themselves as well
 # as to create and configure the GCP VMs
 export GCP_SSH_KEY_FILE="$HOME/.ssh/GCP_SSH_KEY"
-export GCLOUD_INSTANCE="collector-osci-${COLLECTION_METHOD}-${IMAGE_FAMILY}-${JOB_ID}"
-export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
-export REMOTE_HOST_TYPE=gcloud
 export VM_CONFIG="${VM_TYPE}.${IMAGE_FAMILY}"
 export COLLECTOR_REPO="quay.io/rhacs-eng/collector"
-
-# TODO: make change ci user on GCP vms
-export GCLOUD_USER="circleci"
-if [[ "$VM_TYPE" == "flatcar" || "$VM_TYPE" =~ "coreos" ]]; then
-    GCLOUD_USER="core"
-fi
 
 IMAGE_TAG="$(make tag)"
 
@@ -40,6 +31,10 @@ else
 fi
 
 import_creds
+
+echo "---" > integration-tests/ansible/secret.enc
+echo "quay_username: ${QUAY_RHACS_ENG_RO_USERNAME}" >> integration-tests/ansible/secret.enc
+echo "quay_password: ${QUAY_RHACS_ENG_RO_PASSWORD}" >> integration-tests/ansible/secret.enc
 
 if pr_has_label "skip-integration-tests"; then
     echo "Skipping integration tests for ${VM_CONFIG}"
