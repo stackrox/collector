@@ -32,7 +32,9 @@ shopt -s nullglob
 shopt -s dotglob
 upload_drivers "/built-drivers/" "${target}"
 
-if ! is_in_PR_context; then
+# Commented out the condition for tests, shouldn't be needed once merged since
+# periodics don't run in PR contexts and will always push '/kernel-modules/'
+# if ! is_in_PR_context; then
     # On tags/master builds, additionally upload modules from cache
     upload_drivers "/kernel-modules/" "${target}"
-fi
+# fi

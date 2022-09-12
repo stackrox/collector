@@ -8,7 +8,7 @@ OUTPUT_DIR="/tmp/cpaas-support-packages/output"
 # Create the metadata directories
 for version in "/kernel-modules"/*/; do
     md_version="$(basename "${version}")"
-    mkdir -p "${METADATA_DIR}/$md_version"
+    mkdir -p "${METADATA_DIR}/module-versions/$md_version"
 done
 
 /scripts/create-support-packages.sh \
