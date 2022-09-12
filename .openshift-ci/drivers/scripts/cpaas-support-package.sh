@@ -29,7 +29,7 @@ fi
       "${OUTPUT_DIR}"
 
 # Sync support packages
-gsutil -m rsync -r "${OUTPUT_DIR}" gs://sr-roxc/collector/support-packages/cpaas
+gsutil -m rsync -r "${OUTPUT_DIR}" "${target}/cpaas"
 
 # Sleep for 120s
 for _ in {1..120}; do
@@ -38,4 +38,4 @@ for _ in {1..120}; do
 done
 
 # Delete old files
-gsutil -m rsync -n -r -d "${OUTPUT_DIR}" gs://sr-roxc/collector/support-packages/cpaas
+gsutil -m rsync -n -r -d "${OUTPUT_DIR}" "${target}/cpaas"
