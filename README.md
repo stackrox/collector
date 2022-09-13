@@ -15,9 +15,9 @@ collection mode nowadays). To implement eBPF probes and collect data, the
 project leverages the Falco libraries via a custom
 [fork](https://github.com/stackrox/falcosecurity-libs).
 
-There are opportunities to catch in many areas, so let's start.
+## Useful links
 
-## Table of Contents
+Here are few links to get more details:
 
 1. [How to start](docs/how-to-start.md): If you want to contribute to the
    project, this is the best place to start. This section covers building and
