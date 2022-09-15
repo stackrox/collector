@@ -46,35 +46,24 @@ unittest:
 build-kernel-modules:
 	make -C kernel-modules build-container
 
-$(MOD_VER_FILE): build-kernel-modules
-	rm -rf kernel-modules/kobuild-tmp/
-	mkdir -p kernel-modules/kobuild-tmp/versions-src
-	cp kernel-modules/MODULE_VERSION $(MOD_VER_FILE)
-
-.PHONY: $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/bundle.tar.gz
-$(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/bundle.tar.gz:
-	$(CURDIR)/collector/container/create-bundle.sh $(CURDIR)/collector/container $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/
-
 .PHONY: build-drivers
 build-drivers:
 	make -C kernel-modules drivers
 
-image: collector unittest container-dockerfile $(MOD_VER_FILE) $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/bundle.tar.gz
+image: collector unittest container-dockerfile
 	make -C collector txt-files
 	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
-		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
 		-f collector/container/Dockerfile.gen \
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
 
-image-dev: COLLECTOR_BUILD_CONTEXT=collector/container/devel
-image-dev: collector unittest container-dockerfile $(MOD_VER_FILE) $(CURDIR)/$(COLLECTOR_BUILD_CONTEXT)/bundle.tar.gz
+image-dev: collector unittest container-dockerfile
 	make -C collector txt-files
 	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
-		--build-arg module_version="$(shell cat $(MOD_VER_FILE))" \
 		--build-arg BASE_REGISTRY=quay.io \
 		--build-arg BASE_IMAGE=centos/centos \
 		--build-arg BASE_TAG=stream8 \
+		--build-arg BUILD_TYPE=devel \
 		-f collector/container/Dockerfile.gen \
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
@@ -162,6 +151,7 @@ teardown-dev:
 
 .PHONY: clean
 clean: teardown-dev
+	rm -rf cmake-build/
 	make -C collector clean
 
 .PHONY: shfmt-check
@@ -196,3 +186,7 @@ $(eval $(call linter,clang-format))
 $(eval $(call linter,shellcheck))
 $(eval $(call linter,shfmt))
 $(eval $(call linter,circleci_validate))
+
+.PHONY: linters
+linters:
+	@$(CURDIR)/utilities/lint.sh

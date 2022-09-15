@@ -1,4 +1,4 @@
-FROM pipeline:src
+FROM pipeline:apollo-ci
 
 ENV OSCI_RUN=1
 

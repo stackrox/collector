@@ -1,4 +1,4 @@
-FROM pipeline:src
+FROM quay.io/stackrox-io/apollo-ci:collector-0.3.44-1-gb00ffc52af
 
 ENV CHECKOUT_BEFORE_PATCHING=false
 ENV DOCKERIZED=1

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eou pipefail
+set -exou pipefail
 
 CI_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 # shellcheck source=SCRIPTDIR/../../scripts/lib.sh
@@ -56,6 +56,9 @@ gcloud_command "sudo apt install zip -y"
 gcloud_command "$SUPPORT_PKG_SRC_ROOT/run-all.sh $SOURCE_ROOT $SUPPORT_PKG_SRC_ROOT $BASE_URL"
 
 GCLOUD_TARGET="${GCLOUD_BUCKET}/${relative_path}"
+
+# DEBUG: No pushing for the time being
+exit 0
 
 echo "GCLOUD_TARGET= $GCLOUD_TARGET"
 gcloud_command "gsutil -m rsync -r /tmp/support-packages/output $GCLOUD_TARGET"

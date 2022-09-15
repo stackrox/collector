@@ -36,9 +36,9 @@ post-build:
 	cp -r "$(CMAKE_DIR)"/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
 	cp "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so" container/libs/libsinsp-wrapper.so
 
-container/bin/collector: 
+container/bin/collector:
 	$(MAKE) pre-build
-	$(MAKE) cmake-build/collector 
+	$(MAKE) cmake-build/collector
 	$(MAKE) post-build
 
 unittest:
@@ -60,7 +60,6 @@ clean:
 	docker rm -fv container-stats benchmark collector grpc-server || true
 	rm -rf falcosecurity-libs/cmake-build
 	rm -rf falcosecurity-libs/falcosecurity-libs-build
-	rm -rf cmake-build
 	rm -rf container/bin
 	rm -rf container/driver
 	rm -rf container/libs
