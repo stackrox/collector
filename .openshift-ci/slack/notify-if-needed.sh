@@ -4,12 +4,13 @@ set -eo pipefail
 ERROR_MSG=$1
 ERROR_CODE=$2
 
-# TODO: Replace with get_branch as soon as scripts/lib.sh will be merged
-# shellcheck disable=SC2155
-export BRANCH="$(echo "$JOB_SPEC" | jq -r '.refs.base_ref')"
+export WORKDIR=/go/src/github.com/stackrox/collector
+
+# shellcheck source=SCRIPTDIR/../drivers/scripts/lib.sh
+source "$WORKDIR/.openshift-ci/drivers/scripts/lib.sh"
 
 # No notifications for feature branches
-if [[ ! "$BRANCH" =~ ^(master|main|release)$ ]]; then
+if is_in_PR_context; then
     echo "Suppress notifications: not on the main branch"
     exit "$ERROR_CODE"
 fi
