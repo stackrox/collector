@@ -23,7 +23,9 @@ BRANCH="$(get_branch)"
 source "${WORKDIR}/.openshift-ci/drivers/scripts/lib.sh"
 
 if ! pr_has_label "test-support-packages"; then
+    echo "Does not have test-support-packages label"
     if [ "${BRANCH}" != "master" ]; then
+        echo "Not running master branch. Not running update support packages"
         exit 0
     fi
 fi
@@ -32,12 +34,6 @@ fi
 source "${WORKDIR}/.openshift-ci/jobs/update-support-packages/env.sh"
 
 env
-
-gcloud_command "git clone https://github.com/stackrox/collector.git"
-gcloud_command "cd $SOURCE_ROOT; git checkout $BRANCH"
-
-gcloud_command "sudo apt install zip -y"
-gcloud_command "$SUPPORT_PKG_SRC_ROOT/run-all.sh $SOURCE_ROOT $SUPPORT_PKG_SRC_ROOT"
 
 RELATIVE_PATH="collector/support-packages"
 GCLOUD_BUCKET="gs://sr-roxc"
@@ -50,6 +46,15 @@ relative_path="$RELATIVE_PATH"
 if [[ "$BRANCH" != "master" ]]; then
     relative_path="${relative_path}/.test-${JOB_ID}"
 fi
+
+DOWNLOAD_BASE_URL="https://install.stackrox.io"
+BASE_URL="${DOWNLOAD_BASE_URL}/${relative_path}"
+
+gcloud_command "git clone https://github.com/stackrox/collector.git"
+gcloud_command "cd $SOURCE_ROOT; git checkout $BRANCH"
+
+gcloud_command "sudo apt install zip -y"
+gcloud_command "$SUPPORT_PKG_SRC_ROOT/run-all.sh $SOURCE_ROOT $SUPPORT_PKG_SRC_ROOT $BASE_URL"
 
 GCLOUD_TARGET="${GCLOUD_BUCKET}/${relative_path}"
 
