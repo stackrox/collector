@@ -23,7 +23,9 @@ BRANCH="$(get_branch)"
 source "${WORKDIR}/.openshift-ci/drivers/scripts/lib.sh"
 
 if ! pr_has_label "test-support-packages"; then
+    echo "Does not have test-support-packages label"
     if [ "${BRANCH}" != "master" ]; then
+        echo "Not running master branch. Not running update support packages"
         exit 0
     fi
 fi
