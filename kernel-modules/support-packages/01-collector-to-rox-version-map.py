@@ -86,7 +86,7 @@ def main(args):
     with open(released_versions_file) as f:
         version_map = parse_released_versions(f)
 
-    append_unreleased_tags(version_map, released_versions_file)
+    #append_unreleased_tags(version_map, released_versions_file)
 
     write_versions_metadata(version_map, metadata_dir)
 
