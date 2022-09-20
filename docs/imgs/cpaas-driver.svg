@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" height="792px" preserveAspectRatio="none" style="width:789px;height:792px;background:#FFFFFF;" version="1.1" viewBox="0 0 789 792" width="789px" zoomAndPan="magnify"><defs/><g><!--MD5=[6701fae3df526cca14a51b200d8bfe9a]
+cluster GCP--><g id="cluster_GCP"><rect fill="none" height="97" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:1.0;" width="436" x="138" y="689"/><path d="M177,689 L177,698.4883 L167,708.4883 L138,708.4883 " fill="none" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="29" x="141" y="703.5352">GCP</text></g><!--MD5=[415c2bb02834cd3c50edd3dea7e4cc45]
+cluster CPaaS--><g id="cluster_CPaaS"><rect fill="none" height="204" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:1.0;" width="394" x="153" y="7"/><path d="M206,7 L206,16.4883 L196,26.4883 L153,26.4883 " fill="none" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="43" x="156" y="21.5352">CPaaS</text></g><!--MD5=[acbf95ae80d0693cc6d8cb83815859b3]
+cluster OSCI--><g id="cluster_OSCI"><rect fill="none" height="396" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:1.0;" width="519" x="264" y="260"/><path d="M309,260 L309,269.4883 L299,279.4883 L264,279.4883 " fill="none" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="35" x="267" y="274.5352">OSCI</text></g><!--MD5=[05728344d6d7746cf5bd933e8bc19d4c]
+cluster images--><g id="cluster_images"><rect fill="none" height="97" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:1.0;" width="166" x="382" y="388"/><path d="M444,388 L444,397.4883 L434,407.4883 L382,407.4883 " fill="none" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="52" x="385" y="402.5352">images</text></g><!--MD5=[52a05effe668272d5671c3f0d259ac82]
+cluster tests--><g id="cluster_tests"><rect fill="none" height="114" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:1.0;" width="471" x="288" y="518"/><path d="M334,518 L334,527.4883 L324,537.4883 L288,537.4883 " fill="none" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="36" x="291" y="532.5352">tests</text></g><!--MD5=[7357bf0b102ac09de391a65b23a64b46]
+entity dcache--><g id="elem_dcache"><rect fill="#F1F1F1" height="46.4883" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="169" x="154.5" y="724"/><rect fill="#F1F1F1" height="10" style="stroke:#181818;stroke-width:0.5;" width="15" x="303.5" y="729"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="301.5" y="731"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="301.5" y="735"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="129" x="169.5" y="757.5352">CPaaS driver cache</text></g><!--MD5=[28c1dbe2e33f04a62df97c8f9c91add3]
+entity supabucket--><g id="elem_supabucket"><rect fill="#F1F1F1" height="46.4883" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="199" x="358.5" y="724"/><rect fill="#F1F1F1" height="10" style="stroke:#181818;stroke-width:0.5;" width="15" x="537.5" y="729"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="535.5" y="731"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="535.5" y="735"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="159" x="373.5" y="757.5352">Support package cache</text></g><!--MD5=[234f308416327b3a03d4c571121429a4]
+entity brewreg--><g id="elem_brewreg"><rect fill="#F1F1F1" height="46.4883" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="132" x="399" y="149"/><rect fill="#F1F1F1" height="10" style="stroke:#181818;stroke-width:0.5;" width="15" x="511" y="154"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="509" y="156"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="509" y="160"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="92" x="414" y="182.5352">Brew Registry</text></g><!--MD5=[0a2f9f34cf6f6d40980333b95b9f7068]
+entity Content Sets--><g id="elem_Content Sets"><rect fill="#F1F1F1" height="46.4883" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="127" x="380.5" y="42"/><rect fill="#F1F1F1" height="10" style="stroke:#181818;stroke-width:0.5;" width="15" x="487.5" y="47"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="485.5" y="49"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="485.5" y="53"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="87" x="395.5" y="75.5352">Content Sets</text></g><!--MD5=[0f0393d8d415f043cde3304330b7d866]
+entity Brew--><g id="elem_Brew"><ellipse cx="355" cy="172" fill="#F1F1F1" rx="8" ry="8" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="33" x="338.5" y="202.5352">Brew</text></g><!--MD5=[23f3d1775e811e43a493aa0b7bdb0fec]
+entity MidStream Repo--><g id="elem_MidStream Repo"><rect fill="#F1F1F1" height="46.4883" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="152" x="193" y="42"/><rect fill="#F1F1F1" height="10" style="stroke:#181818;stroke-width:0.5;" width="15" x="325" y="47"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="323" y="49"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="323" y="53"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="112" x="208" y="75.5352">MidStream Repo</text></g><g id="elem_GMN65"><path d="M169,159.5 L169,184.8105 A0,0 0 0 0 169,184.8105 L311,184.8105 A0,0 0 0 0 311,184.8105 L311,177.5 L345.81,172 L311,169.5 L311,169.5 L301,159.5 L169,159.5 A0,0 0 0 0 169,159.5 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M301,159.5 L301,169.5 L311,169.5 L301,159.5 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="121" x="175" y="177.0684">builds driver image</text></g><!--MD5=[519bee0895f416265ebcab9f8b4b5dae]
+entity oscireg--><g id="elem_oscireg"><rect fill="#F1F1F1" height="46.4883" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="152" x="389" y="295"/><rect fill="#F1F1F1" height="10" style="stroke:#181818;stroke-width:0.5;" width="15" x="521" y="300"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="519" y="302"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="519" y="306"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="112" x="404" y="328.5352">Internal Registry</text></g><!--MD5=[d51a610075795cde01a3fb600f36c077]
+entity cpaasdrivers--><g id="elem_cpaasdrivers"><rect fill="#F1F1F1" height="46.4883" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="134" x="398" y="423"/><rect fill="#F1F1F1" height="10" style="stroke:#181818;stroke-width:0.5;" width="15" x="512" y="428"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="510" y="430"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="510" y="434"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="94" x="413" y="456.5352">cpaas-drivers</text></g><!--MD5=[93d9e64225b8cefed8e9894e694fb480]
+entity buildandsupa--><g id="elem_buildandsupa"><rect fill="#F1F1F1" height="62.9766" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="194" x="304" y="553"/><rect fill="#F1F1F1" height="10" style="stroke:#181818;stroke-width:0.5;" width="15" x="478" y="558"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="476" y="560"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="476" y="564"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="98" x="319" y="586.5352">Push drivers &amp;</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="154" x="319" y="603.0234">build support package</text></g><!--MD5=[a581c92b07fadca0b4996acc0cf48a22]
+entity dtests--><g id="elem_dtests"><rect fill="#F1F1F1" height="46.4883" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="209" x="533.5" y="561.5"/><rect fill="#F1F1F1" height="10" style="stroke:#181818;stroke-width:0.5;" width="15" x="722.5" y="566.5"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="720.5" y="568.5"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="720.5" y="572.5"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="169" x="548.5" y="595.0352">Test Drivers Compilation</text></g><g id="elem_driverpushpull"><path d="M6,425.5 L6,466.1211 L248,466.1211 L248,435.5 L238,425.5 L6,425.5 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M238,425.5 L238,435.5 L248,435.5 L238,425.5 " fill="#FEFFDD" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="151" x="12" y="443.0684">New drivers are pushed.</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="221" x="12" y="458.3789">Drivers that are missing are pulled.</text></g><!--MD5=[b5d7fd6ed09df579853b977728ff719e]
+link Content Sets to Brew--><g id="link_Content Sets_Brew"><path d="M425.34,88.01 C407.11,109.52 380.02,141.48 365.35,158.79 " fill="none" id="Content Sets-to-Brew" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="361.9,162.86,370.7771,158.5941,365.1387,159.0507,364.6821,153.4123,361.9,162.86" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[ed78c0ad08d20b0d76443adbea804be7]
+link MidStream Repo to Brew--><g id="link_MidStream Repo_Brew"><path d="M287.03,88.01 C304.65,109.52 330.82,141.48 345,158.79 " fill="none" id="MidStream Repo-to-Brew" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="348.33,162.86,345.721,153.363,345.1615,158.9921,339.5324,158.4326,348.33,162.86" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[78576e79715c4339a2838cbd0d08336d]
+link Brew to brewreg--><g id="link_Brew_brewreg"><path d="M364.02,172 C373.88,172 383.73,172 393.58,172 " fill="none" id="Brew-to-brewreg" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="398.73,172,389.73,168,393.73,172,389.73,176,398.73,172" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[a9d77840cc913e5743fff6d5d0ca41e0]
+link brewreg to oscireg--><g id="link_brewreg_oscireg"><path d="M465,195.18 C465,220.48 465,261.86 465,289.27 " fill="none" id="brewreg-to-oscireg" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="465,294.55,469,285.55,465,289.55,461,285.55,465,294.55" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="75" x="466" y="240.5684">mirrors into</text></g><!--MD5=[19bb878a833c4d6276a51db837883bb8]
+link oscireg to cpaasdrivers--><g id="link_oscireg_cpaasdrivers"><path d="M465,341.24 C465,362.65 465,395.07 465,417.96 " fill="none" id="oscireg-to-cpaasdrivers" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="465,422.99,469,413.99,465,417.99,461,413.99,465,422.99" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[e37af690bf092346415f62007ea54262]
+link cpaasdrivers to buildandsupa--><g id="link_cpaasdrivers_buildandsupa"><path d="M454.57,469.23 C444.54,490.64 429.2,523.35 417.5,548.3 " fill="none" id="cpaasdrivers-to-buildandsupa" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="415.37,552.86,422.8185,546.4164,417.4969,548.3349,415.5784,543.0133,415.37,552.86" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[58a3af927253aefdb67d5f8ec188ecb8]
+link dcache to buildandsupa--><g id="link_dcache_buildandsupa"><path d="M251,723.9 C260,708.42 273.28,687.77 288,672 C306.34,652.36 329.49,633.8 350.05,618.94 " fill="none" id="dcache-to-buildandsupa" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="354.13,616.02,344.4834,618.0058,350.0642,618.9302,349.1398,624.511,354.13,616.02" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[15d9698e8200b8a5c4095ff5595c6b4e]
+link buildandsupa to dcache--><g id="link_buildandsupa_dcache"><path d="M370.15,616.07 C339.75,646.18 293.81,691.69 265.15,720.09 " fill="none" id="buildandsupa-to-dcache" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="261.4,723.81,270.6066,720.3116,264.9498,720.2888,264.9726,714.6319,261.4,723.81" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[7726d5c036b824e785ec4f480faffcbf]
+link buildandsupa to supabucket--><g id="link_buildandsupa_supabucket"><path d="M411.86,616.07 C422.42,645.82 438.32,690.58 448.42,719.04 " fill="none" id="buildandsupa-to-supabucket" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="450.12,723.81,450.8732,713.99,448.4447,719.099,443.3356,716.6705,450.12,723.81" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[5b1c9b18a81fa27e33229e5ff94fa9ab]
+link cpaasdrivers to dtests--><g id="link_cpaasdrivers_dtests"><path d="M493.18,469.23 C523.97,493.53 573.21,532.38 605.58,557.92 " fill="none" id="cpaasdrivers-to-dtests" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="609.83,561.27,605.2426,552.5548,605.9049,558.1727,600.2869,558.835,609.83,561.27" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[5888bc029da21b23edee141c3a326993]
+link driverpushpull to buildandsupa--><g id="link_driverpushpull_buildandsupa"><path d="M166.26,466.56 C211.54,489.11 286.54,526.48 339.57,552.9 " fill="none" id="driverpushpull-buildandsupa" style="stroke:#181818;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/></g><!--MD5=[50255e5238772b53f14846e9af5c655c]
+link driverpushpull to dcache--><g id="link_driverpushpull_dcache"><path d="M134.35,466.62 C154.35,520.02 209.68,667.71 230.72,723.91 " fill="none" id="driverpushpull-dcache" style="stroke:#181818;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/></g><!--MD5=[1592c2e9765cfb8a47fbfc7bfc4318d1]
+@startuml
+
+frame "GCP" {
+    component [CPaaS driver cache] as dcache
+    component [Support package cache] as supabucket
+}
+
+frame "CPaaS" {
+    component [Brew Registry] as brewreg
+
+    [Content Sets] - -> Brew
+    [MidStream Repo] - -> Brew
+    Brew -> brewreg
+
+    note left of Brew: builds driver image
+}
+
+frame "OSCI" {
+    component [Internal Registry] as oscireg
+
+    frame images {
+        component [cpaas-drivers] as cpaasdrivers
+    }
+
+    frame tests {
+        component [Push drivers &\nbuild support package] as buildandsupa
+        component [Test Drivers Compilation] as dtests
+    }
+
+    brewreg - -> oscireg: mirrors into
+    oscireg - -> cpaasdrivers
+    cpaasdrivers - -> buildandsupa
+    dcache - -> buildandsupa
+    buildandsupa - -> dcache
+    buildandsupa - -> supabucket
+    cpaasdrivers - -> dtests
+}
+
+note as driverpushpull
+    New drivers are pushed.
+    Drivers that are missing are pulled.
+end note
+
+driverpushpull .. buildandsupa
+driverpushpull .. dcache
+@enduml
+
+PlantUML version 1.2022.7(Mon Aug 22 19:01:30 CEST 2022)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Default Encoding: UTF-8
+Language: en
+Country: ES
+--></g></svg>
