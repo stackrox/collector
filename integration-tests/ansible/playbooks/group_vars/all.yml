@@ -25,12 +25,11 @@ virtual_machines:
 
   - name: cos
     project: cos-cloud
-    username: core
     families:
       - cos-stable
-      - cos-beta
-      - cos-dev
-      - cos-89-lts
+        # - cos-beta
+        # - cos-dev
+        # - cos-89-lts
 
   - name: sles
     project: sles-cloud
@@ -58,6 +57,7 @@ virtual_machines:
 
   - name: fedora-coreos
     project: fedora-coreos-cloud
+    username: core
     families:
       - fedora-coreos-stable
 

@@ -2,15 +2,9 @@
 
 plugin: gcp_compute
 projects:
-  # this means the inventory will look for VMs in both projects
-  # but does not mean it will necessarily find any.
-  #
-  # For use in CI, our VMs will exist in stackrox-ci, but we can
-  # also create them in stackrox-dev for more ad-hoc testing
-  - stackrox-dev
   - stackrox-ci
 filters:
-  - name = collector-osci-giles-*
+  - name = collector-ci-*
 keyed_groups:
   # This will group the VMs by their labels, which means that on
   # creation, we can use a unique identifier to group VMs 
@@ -21,7 +15,7 @@ keyed_groups:
 
   - prefix: platform
     key: labels.platform
-auth_kind: application
+auth_kind: serviceaccount
 hostnames:
   - name
 compose:
