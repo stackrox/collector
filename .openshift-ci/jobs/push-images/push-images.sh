@@ -6,8 +6,6 @@ CI_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "${CI_ROOT}/scripts/lib.sh"
 
 export PROJECT_DIR=/go/src/github.com/stackrox/collector
-# shellcheck source=SCRIPTDIR/../../drivers/scripts/lib.sh
-source "$PROJECT_DIR/.openshift-ci/drivers/scripts/lib.sh"
 
 push_images_to_repos() {
     local -n local_image_repos=$1
@@ -68,6 +66,9 @@ export QUAY_REPO=quay.io/rhacs-eng
 
 import_creds
 
+# Note that shellcheck reports unused variable when arrays are passed as reference.
+# See https://github.com/koalaman/shellcheck/issues/1957
+# shellcheck disable=SC2034
 image_repos=(
     "${QUAY_REPO}"
     "${PUBLIC_REPO}"
