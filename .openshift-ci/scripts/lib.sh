@@ -148,6 +148,9 @@ import_creds() {
     done
 }
 
+# Ensures that the given secret exists in the environment.
+# As a side effect, if the secret does not currently exist,
+# all secrets are imported (via import_creds) and then checked again.
 ensure_secret_exists() {
     local secret_name="$1"
 
