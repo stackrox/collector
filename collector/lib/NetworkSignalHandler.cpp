@@ -91,6 +91,13 @@ std::pair<Connection, bool> NetworkSignalHandler::GetConnection(sinsp_evt* evt) 
     default:
       return {{}, false};
   }
+    CLOG(INFO) << "m_pid= " << evt->get_thread_info()->m_pid;
+    CLOG(INFO) << "m_ptid= " << evt->get_thread_info()->m_ptid;
+    CLOG(INFO) << "name= " << evt->get_thread_info()->get_comm();
+    CLOG(INFO) << "exepath= " << evt->get_thread_info()->get_exepath();
+    for (auto arg : evt->get_thread_info()->m_args) {
+        CLOG(INFO) << "args= " << arg;
+    }
 
   const Endpoint* local = is_server ? &server : &client;
   const Endpoint* remote = is_server ? &client : &server;
@@ -102,12 +109,15 @@ std::pair<Connection, bool> NetworkSignalHandler::GetConnection(sinsp_evt* evt) 
 
 SignalHandler::Result NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
   auto modifier = modifiers[evt->get_type()];
-  if (modifier == Modifier::INVALID) return SignalHandler::IGNORED;
+  if (modifier == Modifier::INVALID) {
+      return SignalHandler::IGNORED;
+  }
 
   auto result = GetConnection(evt);
   if (!result.second || !IsRelevantConnection(result.first)) {
     return SignalHandler::IGNORED;
   }
+
 
   conn_tracker_->UpdateConnection(result.first, evt->get_ts() / 1000UL, modifier == Modifier::ADD);
   return SignalHandler::PROCESSED;
