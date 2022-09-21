@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-set -eo pipefail
+set -exo pipefail
 
 # shellcheck source=SCRIPTDIR/../../scripts/lib.sh
 source /scripts/lib.sh
