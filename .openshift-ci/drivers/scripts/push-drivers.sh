@@ -32,7 +32,8 @@ shopt -s nullglob
 shopt -s dotglob
 upload_drivers "/built-drivers/" "${target}"
 
-if ! is_in_PR_context; then
+# vvvvvvvv Rollback this comment before merging vvvvvvvv
+#if ! is_in_PR_context; then
     # On tags/master builds, additionally upload modules from cache
     upload_drivers "/kernel-modules/" "${target}"
-fi
+#fi
