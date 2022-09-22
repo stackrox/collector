@@ -1,0 +1,26 @@
+---
+
+plugin: gcp_compute
+projects:
+  - stackrox-dev
+filters:
+  - name = collector-dev-*
+keyed_groups:
+  # This will group the VMs by their labels, which means that on
+  # creation, we can use a unique identifier to group VMs 
+  # based on Job ID, to avoid running on all CI VMs or on 
+  # specific platforms (for the provisioning playbooks)
+  - prefix: job_id
+    key: labels.job_id
+
+  - prefix: platform
+    key: labels.platform
+auth_kind: application
+hostnames:
+  - name
+compose:
+  # use the public IP as the ansible host for SSH
+  ansible_host: networkInterfaces[0].accessConfigs[0].natIP
+  ansible_user: labels.username
+  ansible_port: 22
+  vm_config: labels.vm_config

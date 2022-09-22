@@ -16,6 +16,7 @@ keyed_groups:
   - prefix: platform
     key: labels.platform
 auth_kind: serviceaccount
+service_account_file: /tmp/secret/stackrox-collector-e2e-tests/GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT
 hostnames:
   - name
 compose:

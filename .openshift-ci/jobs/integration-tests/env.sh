@@ -32,10 +32,6 @@ fi
 
 import_creds
 
-echo "---" > integration-tests/ansible/secret.enc
-echo "quay_username: ${QUAY_RHACS_ENG_RO_USERNAME}" >> integration-tests/ansible/secret.enc
-echo "quay_password: ${QUAY_RHACS_ENG_RO_PASSWORD}" >> integration-tests/ansible/secret.enc
-
 #if pr_has_label "skip-integration-tests"; then
 #    echo "Skipping integration tests for ${IMAGE_TYPE}"
 #    exit 0

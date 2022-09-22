@@ -34,7 +34,7 @@ function copy_from_vm() {
 }
 
 function run_tests() {
-    make -C integration-tests/ansible run-tests
+    make -C integration-tests/ansible BUILD_TYPE=ci run-tests
 }
 
 function save_artifacts() {

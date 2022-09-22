@@ -1,31 +1,60 @@
+ifeq ($(BUILD_TYPE), ci)
+	CONTEXT=ci
+else
+	CONTEXT=dev
+endif
 
 .PHONY: list-inventory
 list-inventory:
-	ansible-inventory -i inventory_ci_gcp.yml --list
+	ansible-inventory -i $(CONTEXT)/inventory_gcp.yml --list
 
 .PHONY: teardown
 teardown:
-	ansible-playbook -i inventory_ci_gcp.yml teardown.yml
+	ansible-playbook \
+		-i $(CONTEXT)/inventory_gcp.yml \
+		-e @$(CONTEXT)/vars.yml \
+		teardown.yml
 
 .PHONY: setup
 setup:
-	ansible-playbook -i inventory_ci_gcp.yml setup.yml
+	ansible-playbook \
+		-i $(CONTEXT)/inventory_gcp.yml \
+		-e @$(CONTEXT)/vars.yml \
+		setup.yml
 
 .PHONY: provision
 provision:
-	ansible-playbook -i inventory_ci_gcp.yml -e @secrets.enc --ask-vault-pass playbooks/provision-vms.yml
+	ansible-playbook \
+		-i $(CONTEXT)/inventory_gcp.yml \
+		-e @$(CONTEXT)/vars.yml \
+		playbooks/provision-vms.yml
 
 .PHONY: run
-run:
-	ansible-playbook -i inventory_ci_gcp.yml -e @secrets.enc --ask-vault-pass main.yml
+run: secrets.yml
+	ansible-playbook \
+		-i $(CONTEXT)/inventory_gcp.yml \
+		-e @secrets.yml \
+		-e @$(CONTEXT)/vars.yml \
+		main.yml
 
 .PHONY: run-tests
-run-tests:
-	ansible-playbook -i inventory_ci_gcp.yml -e @secrets.enc --ask-vault-pass playbooks/run-tests.yml
+run-tests: secrets.yml
+	ansible-playbook \
+		-i $(CONTEXT)/inventory_gcp.yml \
+		-e @secrets.yml \
+		-e @$(CONTEXT)/vars.yml \
+		playbooks/run-tests.yml
+
+.PHONY: secrets-config
+secrets.yml:
+	@echo "---" > secrets.yml
+	@echo "quay_username: " $(QUAY_RHACS_ENG_RO_PASSWORD) >> secrets.yml
+	@echo "quay_password: " $(QUAY_RHACS_ENG_RO_PASSWORD) >> secrets.yml
 
 define runner
 run-$(1):
-	VM_TYPE=$(1) ansible-playbook -i inventory_ci_gcp.yml -e @secrets.enc --ask-vault-pass main.yml
+	export VM_TYPE=$(1)
+	ansible-playbook -i $(INVENTORY) -e secrets.yml main.yml
 endef
 
 $(eval $(call runner,rhel))

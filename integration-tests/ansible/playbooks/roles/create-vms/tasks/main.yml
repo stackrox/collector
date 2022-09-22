@@ -2,9 +2,10 @@
 
 - name: Create VMs From Family
   google.cloud.gcp_compute_instance:
-    name: "collector-osci-giles-{{ item.1 }}-{{ job_id }}"
+    name: "{{ gcp_instance_prefix }}-{{ item.1 }}-{{ job_id }}"
     project: "{{ gcp_project }}"
     auth_kind: "{{ gcp_auth_kind }}"
+    service_account_file: "{{ gcp_service_account_file }}"
     zone: "{{ gcp_zone }}"
     machine_type: e2-standard-2
     disks:
@@ -52,9 +53,10 @@
 #
 - name: Create VMs From Image
   google.cloud.gcp_compute_instance:
-    name: "collector-osci-giles-{{ item.0.name }}-{{ job_id }}"
+    name: "{{ gcp_instance_prefix }}-{{ item.0.name }}-{{ job_id }}"
     project: "{{ gcp_project }}"
     auth_kind: "{{ gcp_auth_kind }}"
+    service_account_file: "{{ gcp_service_account_file }}"
     zone: "{{ gcp_zone }}"
     machine_type: e2-standard-2
     disks:
