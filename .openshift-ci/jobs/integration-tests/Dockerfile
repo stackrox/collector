@@ -4,8 +4,7 @@ COPY scripts /scripts
 
 RUN whoami
 
-RUN dnf install -y ansible
-RUN python3 -m pip install requests
+RUN python3 -m pip install ansible
 
 ENV GOCACHE="/linux-gocache"
 
