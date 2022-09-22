@@ -73,10 +73,6 @@ is_in_PR_context() {
     return 1
 }
 
-is_openshift_CI_rehearse_PR() {
-    [[ "$(get_repo_full_name)" == "openshift/release" ]]
-}
-
 get_branch() {
     if is_in_PR_context; then
         pr_details="$(get_pr_details)"
