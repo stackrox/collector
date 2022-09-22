@@ -2,4 +2,4 @@
 
 set -eo pipefail
 
-make -C integration-tests/ansible teardown
+make -C integration-tests/ansible BUILD_TYPE=ci teardown
