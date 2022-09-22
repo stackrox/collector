@@ -11,6 +11,7 @@
         name: "{{ inventory_hostname }}"
         project: "{{ gcp_project }}"
         auth_kind: "{{ gcp_auth_kind }}"
+        service_account_file: "{{ gcp_service_account_file }}"
         zone: "{{ gcp_zone }}"
         state: absent
 
