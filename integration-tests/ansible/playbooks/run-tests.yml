@@ -6,12 +6,6 @@
   hosts: "job_id_{{ job_id }}"
   
   tasks:
-    - name: whoami
-      shell: "whoami && id"
-      register: iam
-
-    - debug: msg={{ iam }}
-
     - name: Log into quay.io
       shell:
         cmd: "docker login -u {{ quay_username }} --password-stdin quay.io"
@@ -35,4 +29,10 @@
       with_items:
         - ebpf
       register: test_result
+
+    - name: Write integration test log
+      copy:
+        content: "{{ test_result.output }}"
+        dest: ../../container-logs/{{ vm_config }}/integration-test.log
+      delegate_to: localhost
 
