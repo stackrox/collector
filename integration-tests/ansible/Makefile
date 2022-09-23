@@ -48,7 +48,7 @@ run-tests: secrets.yml
 .PHONY: secrets-config
 secrets.yml:
 	@echo "---" > secrets.yml
-	@echo "quay_username: " $(QUAY_RHACS_ENG_RO_PASSWORD) >> secrets.yml
+	@echo "quay_username: " $(QUAY_RHACS_ENG_RO_USERNAME) >> secrets.yml
 	@echo "quay_password: " $(QUAY_RHACS_ENG_RO_PASSWORD) >> secrets.yml
 
 define runner
