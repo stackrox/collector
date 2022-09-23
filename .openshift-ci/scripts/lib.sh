@@ -154,9 +154,9 @@ import_creds() {
 ensure_secret_exists() {
     local secret_name="$1"
 
-    if [[ -z "${secret_name}" ]]; then
+    if [[ -z "${!secret_name}" ]]; then
         import_creds
-        if [[ -z "${secret_name}" ]]; then
+        if [[ -z "${!secret_name}" ]]; then
             die "No such secret called ${secret_name}"
         fi
     fi
@@ -172,7 +172,7 @@ copy_secret_to_file() {
 
     ensure_secret_exists "$secret_name"
 
-    echo "${secret_name}" > "${destination}"
+    echo "${!secret_name}" > "${destination}"
     chmod "${permissions}" "${destination}"
 }
 
@@ -180,20 +180,20 @@ get_secret_content() {
     local secret_name="$1"
 
     ensure_secret_exists "$secret_name"
-    echo "${secret_name}"
+    echo "${!secret_name}"
 }
 
 get_secret_file() {
     local secret_name="$1"
 
     for cred in /tmp/secrets/**/[A-Z]*; do
-        if [[ "$cred" == "${secret_name}$" ]]; then
+        if [[ "$cred" =~ "${secret_name}"\$ ]]; then
             echo "${cred}"
             return
         fi
     done
 
-    die "No such secret called $secret_name}"
+    die "No such secret called $secret_name"
 }
 
 registry_rw_login() {
