@@ -32,6 +32,20 @@ fi
 
 import_creds
 
+copy_secret() {
+    local NAME="$1"
+    local DEST="$2"
+    local PERMS="$3"
+
+    cp "/tmp/secret/stackrox-collector-e2e-tests/$NAME" "$DEST"
+    chmod "$PERMS" "$DEST"
+}
+
+mkdir -p "$(dirname "${GCP_SSH_KEY_FILE}")"
+chmod 0700 "$(dirname "${GCP_SSH_KEY_FILE}")"
+copy_secret GCP_SSH_KEY "${GCP_SSH_KEY_FILE}" 0600
+copy_secret GCP_SSH_KEY_PUB "${GCP_SSH_KEY_FILE}.pub" 0600
+
 #if pr_has_label "skip-integration-tests"; then
 #    echo "Skipping integration tests for ${IMAGE_TYPE}"
 #    exit 0
