@@ -32,7 +32,7 @@
 
     - name: Write integration test log
       copy:
-        content: "{{ test_result.output }}"
+        content: "{{ test_result.stdout }}"
         dest: ../../container-logs/{{ vm_config }}/integration-test.log
       delegate_to: localhost
 
