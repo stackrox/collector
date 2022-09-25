@@ -195,7 +195,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 
 	s.metrics = map[string]float64{}
 	s.executor = NewExecutor()
-	s.StartContainerStats()
+	s.RunContainerStats()
 	s.collector = NewCollectorManager(s.executor, s.T().Name())
 
 	err := s.collector.Setup()
@@ -414,7 +414,7 @@ func (s *MissingProcScrapeTestSuite) TearDownSuite() {
 func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.metrics = map[string]float64{}
 	s.executor = NewExecutor()
-	s.StartContainerStats()
+	s.RunContainerStats()
 	s.collector = NewCollectorManager(s.executor, s.T().Name())
 
 	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":` + strconv.Itoa(s.scrapeInterval) + `}`
@@ -755,7 +755,7 @@ func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
 	s.Require().NoError(err)
 }
 
-func (s *IntegrationTestSuiteBase) StartContainerStats() {
+func (s *IntegrationTestSuiteBase) RunContainerStats() {
 	name := "container-stats"
 	image := qaImage("quay.io/rhacs-eng/collector-performance", "stats");
 	args := []string{name, "-v", "/var/run/docker.sock:/var/run/docker.sock", image}
@@ -794,7 +794,11 @@ func GetNetworkActivity(lines []string, serverAddress string) []bool {
 func (s *IntegrationTestSuiteBase) GetContainerStats() (stats []ContainerStat) {
 	logs, err := s.containerLogs("container-stats")
 	if err != nil {
-		assert.FailNow(s.T(), "container-stats failure")
+		assert.FailNow(s.T(), "container-stats failure: %s", err)
+
+		// Cleanup stats container to not leave it dangling and interfearing
+		// with other tests.
+		s.cleanupContainer([]string{"container-stats"})
 		return nil
 	}
 	logLines := strings.Split(logs, "\n")
