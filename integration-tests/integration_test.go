@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
-	"sort"
 
 	"encoding/json"
 
@@ -261,34 +261,34 @@ func (s *ProcessNetworkTestSuite) TearDownSuite() {
 }
 
 func (s *ProcessNetworkTestSuite) TestProcessViz() {
-	expectedProcesses := []ProcessInfo {
-		ProcessInfo {
-			Name: "ls",
+	expectedProcesses := []ProcessInfo{
+		ProcessInfo{
+			Name:    "ls",
 			ExePath: "/bin/ls",
-			Uid: 0,
-			Gid: 0,
-			Args: "",
+			Uid:     0,
+			Gid:     0,
+			Args:    "",
 		},
-		ProcessInfo {
-			Name: "nginx",
+		ProcessInfo{
+			Name:    "nginx",
 			ExePath: "/usr/sbin/nginx",
-			Uid: 0,
-			Gid: 0,
-			Args: "-g daemon off;",
+			Uid:     0,
+			Gid:     0,
+			Args:    "-g daemon off;",
 		},
-		ProcessInfo {
-			Name: "sh",
+		ProcessInfo{
+			Name:    "sh",
 			ExePath: "/bin/sh",
-			Uid: 0,
-			Gid: 0,
-			Args: "-c ls",
+			Uid:     0,
+			Gid:     0,
+			Args:    "-c ls",
 		},
-		ProcessInfo {
-			Name: "sleep",
+		ProcessInfo{
+			Name:    "sleep",
 			ExePath: "/bin/sleep",
-			Uid: 0,
-			Gid: 0,
-			Args: "5",
+			Uid:     0,
+			Gid:     0,
+			Args:    "5",
 		},
 	}
 
@@ -310,23 +310,23 @@ func (s *ProcessNetworkTestSuite) TestProcessViz() {
 }
 
 func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
-	expectedLineages := []ProcessLineage {
-		ProcessLineage {
-			Name: "awk",
-			ExePath: "/usr/bin/awk",
-			ParentUid: 0,
+	expectedLineages := []ProcessLineage{
+		ProcessLineage{
+			Name:          "awk",
+			ExePath:       "/usr/bin/awk",
+			ParentUid:     0,
 			ParentExePath: "/bin/busybox",
 		},
-		ProcessLineage {
-			Name: "grep",
-			ExePath: "/bin/grep",
-			ParentUid: 0,
+		ProcessLineage{
+			Name:          "grep",
+			ExePath:       "/bin/grep",
+			ParentUid:     0,
 			ParentExePath: "/bin/busybox",
 		},
-		ProcessLineage {
-			Name: "sleep",
-			ExePath: "/bin/sleep",
-			ParentUid: 0,
+		ProcessLineage{
+			Name:          "sleep",
+			ExePath:       "/bin/sleep",
+			ParentUid:     0,
 			ParentExePath: "/bin/busybox",
 		},
 	}
@@ -427,7 +427,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	err = s.collector.Launch()
 	s.Require().NoError(err)
 
-	scheduled_curls_image := qaImage("quay.io/rhacs-eng/qa", "collector-schedule-curls");
+	scheduled_curls_image := qaImage("quay.io/rhacs-eng/qa", "collector-schedule-curls")
 
 	images := []string{
 		"nginx:1.14-alpine",
@@ -708,7 +708,7 @@ func (s *IntegrationTestSuiteBase) GetLineageInfo(processName string, key string
 
 func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	benchmarkName := "benchmark"
-	benchmarkImage := qaImage("quay.io/rhacs-eng/collector-performance", "phoronix");
+	benchmarkImage := qaImage("quay.io/rhacs-eng/collector-performance", "phoronix")
 
 	err := s.executor.PullImage(benchmarkImage)
 	s.Require().NoError(err)
@@ -742,7 +742,7 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 
 func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
 	name := "jsonlabel"
-	image := qaImage("quay.io/rhacs-eng/collector-performance", "json-label");
+	image := qaImage("quay.io/rhacs-eng/collector-performance", "json-label")
 	err := s.executor.PullImage(image)
 	s.Require().NoError(err)
 	args := []string{
@@ -757,7 +757,7 @@ func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
 
 func (s *IntegrationTestSuiteBase) StartContainerStats() {
 	name := "container-stats"
-	image := qaImage("quay.io/rhacs-eng/collector-performance", "stats");
+	image := qaImage("quay.io/rhacs-eng/collector-performance", "stats")
 	args := []string{name, "-v", "/var/run/docker.sock:/var/run/docker.sock", image}
 
 	err := s.executor.PullImage(image)
