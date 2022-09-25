@@ -528,9 +528,10 @@ func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
 func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, error) {
 	cmd := []string{"docker", "run", "-d", "--name"}
 	cmd = append(cmd, args...)
-	output, err := s.executor.Exec(cmd...)
-	outLines := strings.Split(output, "\n")
-	return outLines[len(outLines)-1], err
+
+	return retry(func() (string, error) {
+		return s.executor.Exec(cmd...)
+	})
 }
 
 func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, containerID string, tickSeconds time.Duration) (bool, error) {
