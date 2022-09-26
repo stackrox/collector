@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-
-# shellcheck source=SCRIPTDIR/../../drivers/scripts/lib.sh
-source "$ROOT_DIR/drivers/scripts/lib.sh"
+CI_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+# shellcheck source=SCRIPTDIR=../../scripts/lib.sh
+source "${CI_ROOT}/scripts/lib.sh"
 
 # to ensure that the locale is consistent between GCP VMs
 # we need to set this here. If there are issues with the
@@ -33,11 +32,7 @@ IMAGE_TAG="$(make tag)"
 
 export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${IMAGE_TAG}"
 
-# Ensure that all secrets are available in the environment
-shopt -s nullglob
-for cred in /tmp/secret/**/[A-Z]*; do
-    export "$(basename "$cred")"="$(cat "$cred")"
-done
+import_creds
 
 if pr_has_label "skip-integration-tests"; then
     echo "Skipping integration tests for ${VM_CONFIG}"

@@ -140,3 +140,94 @@ get_pr_details() {
     _PR_DETAILS="$pr_details"
     echo "$pr_details"
 }
+
+import_creds() {
+    shopt -s nullglob
+    for cred in /tmp/secret/**/[A-Z]*; do
+        export "$(basename "$cred")"="$(cat "$cred")"
+    done
+}
+
+# Ensures that the given secret exists in the environment.
+# As a side effect, if the secret does not currently exist,
+# all secrets are imported (via import_creds) and then checked again.
+ensure_secret_exists() {
+    local secret_name="$1"
+
+    if [[ -z "${!secret_name}" ]]; then
+        import_creds
+        if [[ -z "${!secret_name}" ]]; then
+            die "No such secret called ${secret_name}"
+        fi
+    fi
+}
+
+copy_secret_to_file() {
+    local secret_name="$1"
+    shift
+    local destination="$1"
+    shift
+    local permissions="$1"
+    shift
+
+    ensure_secret_exists "$secret_name"
+
+    echo "${!secret_name}" > "${destination}"
+    chmod "${permissions}" "${destination}"
+}
+
+get_secret_content() {
+    local secret_name="$1"
+
+    ensure_secret_exists "$secret_name"
+    echo "${!secret_name}"
+}
+
+get_secret_file() {
+    local secret_name="$1"
+
+    for cred in /tmp/secrets/**/[A-Z]*; do
+        if [[ "$cred" =~ "${secret_name}"\$ ]]; then
+            echo "${cred}"
+            return
+        fi
+    done
+
+    die "No such secret called $secret_name"
+}
+
+registry_rw_login() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: registry_rw_login <registry>"
+    fi
+
+    local registry="$1"
+
+    case "$registry" in
+        quay.io/rhacs-eng)
+            if [[ -z "$QUAY_RHACS_ENG_RW_USERNAME" ]]; then
+                echo "QUAY_RHACS_ENG_RW_USERNAME is not defined"
+                exit 1
+            fi
+            if [[ -z "$QUAY_RHACS_ENG_RW_PASSWORD" ]]; then
+                echo "QUAY_RHACS_ENG_RW_PASSWORD is not defined"
+                exit 1
+            fi
+            docker login --username "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin quay.io <<< "$QUAY_RHACS_ENG_RW_PASSWORD"
+            ;;
+        quay.io/stackrox-io)
+            if [[ -z "$QUAY_STACKROX_IO_RW_USERNAME" ]]; then
+                echo "QUAY_STACKROX_IO_RW_USERNAME is not defined"
+                exit 1
+            fi
+            if [[ -z "$QUAY_STACKROX_IO_RW_PASSWORD" ]]; then
+                echo "QUAY_STACKROX_IO_RW_PASSWORD is not defined"
+                exit 1
+            fi
+            docker login --username "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin quay.io <<< "$QUAY_STACKROX_IO_RW_PASSWORD"
+            ;;
+        *)
+            echo "Unsupported registry login: $registry"
+            ;;
+    esac
+}

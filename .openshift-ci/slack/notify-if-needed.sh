@@ -6,8 +6,8 @@ ERROR_CODE=$2
 
 export WORKDIR=/go/src/github.com/stackrox/collector
 
-# shellcheck source=SCRIPTDIR/../drivers/scripts/lib.sh
-source "$WORKDIR/.openshift-ci/drivers/scripts/lib.sh"
+# shellcheck source=SCRIPTDIR/../scripts/lib.sh
+source "$WORKDIR/.openshift-ci/scripts/lib.sh"
 
 # No notifications for feature branches
 if is_in_PR_context; then

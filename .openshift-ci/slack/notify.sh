@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
-shopt -s nullglob
-for cred in /tmp/secret/**/[A-Z]*; do
-    export "$(basename "$cred")"="$(cat "$cred")"
-done
+CI_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
+# shellcheck source=SCRIPTDIR/../scripts/lib.sh
+source "${CI_ROOT}/scripts/lib.sh"
+
+import_creds
 
 WEBHOOK_URL=$SLACK_WEBHOOK_ONCALL
 JOB_URL="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME}/${BUILD_ID}"
