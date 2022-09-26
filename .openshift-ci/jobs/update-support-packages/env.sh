@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 CI_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-# shellcheck source=SCRIPTDIR=../../scripts/lib.sh
+# shellcheck source=SCRIPTDIR/../../scripts/lib.sh
 source "${CI_ROOT}/scripts/lib.sh"
 
 export JOB_ID="${PROW_JOB_ID:0:8}"
