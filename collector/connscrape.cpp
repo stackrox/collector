@@ -32,11 +32,13 @@ using namespace collector;
 
 namespace {
 
-BoolEnvVar scrape_endpoints("SCRAPE_ENDPOINTS", false);
+BoolEnvVar scrape_endpoints("SCRAPE_ENDPOINTS", true);
+    //BoolEnvVar scrape_endpoints("SCRAPE_ENDPOINTS", false);
 
 }  // namespace
 
 int main(int argc, char** argv) {
+  std::cout << "Running connscrape" << std::endl;
   const char* proc_dir = "/proc";
 
   if (argc > 1) {

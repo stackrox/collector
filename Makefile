@@ -42,6 +42,11 @@ unittest:
 	make -C collector unittest ||\
 		( .openshift-ci/slack/notify-if-needed.sh "unittest" $$? )
 
+.PHONY: connscrape
+connscrape:
+	make -C collector connscrape ||\
+		( .openshift-ci/slack/notify-if-needed.sh "connscrape" $$? )
+
 .PHONY: build-kernel-modules
 build-kernel-modules:
 	make -C kernel-modules build-container

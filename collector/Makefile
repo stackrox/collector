@@ -41,6 +41,28 @@ container/bin/collector:
 	$(MAKE) cmake-build/collector 
 	$(MAKE) post-build
 
+#connscrape:
+#	docker rm -fv collector_connscrape || true
+#	docker run --rm --name collector_connscrape \
+#		-v "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
+#		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
+#		-v $(CURDIR)/connscrape-test/test-fixtures/example_1/proc:/tmp/proc \
+#		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) $(SRC_MOUNT_DIR)/$(CMAKE_BASE_DIR)/collector/connscrape /tmp/proc
+
+#connscrape:
+#	docker rm -fv collector_connscrape || true
+#	docker run --rm --name collector_connscrape \
+#		-v "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
+#		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
+#		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) "$(SRC_MOUNT_DIR)/collector/connscrape-test/get-proc.sh" 
+
+connscrape:
+	docker rm -fv collector_connscrape || true
+	docker run --rm --name collector_connscrape \
+		-v "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
+		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
+		connscrape-test "$(SRC_MOUNT_DIR)/collector/connscrape-test/connscrape-test.sh" 
+
 unittest:
 	docker rm -fv collector_unittest || true
 	docker run --rm --name collector_unittest \
