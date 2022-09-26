@@ -187,7 +187,7 @@ get_secret_file() {
     local secret_name="$1"
 
     for cred in /tmp/secrets/**/[A-Z]*; do
-        if [[ "$cred" =~ "${secret_name}"\$ ]]; then
+        if [[ "$(basename "$cred")" == "${secret_name}" ]]; then
             echo "${cred}"
             return
         fi
