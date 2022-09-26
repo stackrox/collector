@@ -4,6 +4,14 @@
   vars_files:
     - group_vars/all.yml
   hosts: "job_id_{{ job_id }}"
+  environment:
+    REMOTE_HOST_TYPE: ssh
+    SSH_ADDRESS: "{{ ansible_host }}"
+    SSH_PORT: "{{ ansible_port }}"
+    SSH_USER: "{{ ansible_user }}"
+    SSH_KEY_PATH: "{{ ansible_ssh_private_key_file }}"
+    COLLECTOR_IMAGE: "quay.io/rhacs-eng/collector:3.11.0"
+    VM_CONFIG: "{{ vm_config }}"
   
   tasks:
     - name: Log into quay.io
@@ -16,23 +24,32 @@
 
     - name: Run integration tests
       delegate_to: localhost
-      shell: "make -C ../../ process-network"
+      shell: "make -C ../../ {{ collector_test | default('ci-integration-tests') }}"
       environment:
-        REMOTE_HOST_TYPE: ssh
-        SSH_ADDRESS: "{{ ansible_host }}"
-        SSH_PORT: "{{ ansible_port }}"
-        SSH_USER: "{{ ansible_user }}"
-        SSH_KEY_PATH: "{{ ansible_ssh_private_key_file }}"
         COLLECTION_METHOD: "{{ item }}"
-        COLLECTOR_IMAGE: "quay.io/rhacs-eng/collector:3.11.0"
-        VM_CONFIG: "{{ vm_config }}"
       with_items:
         - ebpf
       register: test_result
 
+    - name: Run benchmarks
+      delegate_to: localhost
+      shell: "make -C ../../ ci-benchmarks }}"
+      environment:
+        COLLECTION_METHOD: "{{ item }}"
+      with_items:
+        - ebpf
+      register: benchmark_result
+      when: run_benchmarks|bool == true
+
     - name: Write integration test log
       copy:
-        content: "{{ test_result.stdout }}"
+        content: "{{ test_result.results[0].stdout }}"
         dest: ../../container-logs/{{ vm_config }}/integration-test.log
+      delegate_to: localhost
+
+    - name: Write benchmark log
+      copy:
+        content: "{{ benchmark_result.results[0].stdout }}"
+        dest: ../../container-logs/{{ vm_config }}/benchmark.log
       delegate_to: localhost
 

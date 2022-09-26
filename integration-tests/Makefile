@@ -14,6 +14,9 @@ SHELL=/bin/bash
 # Environment variable COLLECTOR_IMAGE is used by integration-tests
 export COLLECTOR_IMAGE
 
+.PHONY: ci-integration-tests
+ci-integration-tests: process-network image-label-json missing-proc-scrape repeat-network
+
 .PHONY: docker-clean
 docker-clean:
 	docker rm -fv container-stats benchmark collector grpc-server || true
