@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-# shellcheck source=SCRIPTDIR/lib.sh
+# shellcheck source=SCRIPTDIR/../../scripts/lib.sh
 source /scripts/lib.sh
 
 upload_drivers() {

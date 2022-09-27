@@ -2,6 +2,8 @@
 
 # A library of CI related reusable bash functions
 
+SECRET_MOUNT_BASE=/tmp/secret
+
 die() {
     echo >&2 "$@"
     exit 1
@@ -143,7 +145,7 @@ get_pr_details() {
 
 import_creds() {
     shopt -s nullglob
-    for cred in /tmp/secret/**/[A-Z]*; do
+    for cred in "${SECRET_MOUNT_BASE}"/**/[A-Z]*; do
         export "$(basename "$cred")"="$(cat "$cred")"
     done
 }
@@ -186,7 +188,7 @@ get_secret_content() {
 get_secret_file() {
     local secret_name="$1"
 
-    for cred in /tmp/secrets/**/[A-Z]*; do
+    for cred in "${SECRET_MOUNT_BASE}"/**/[A-Z]*; do
         if [[ "$(basename "$cred")" == "${secret_name}" ]]; then
             echo "${cred}"
             return
