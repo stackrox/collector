@@ -51,6 +51,10 @@ func TestMissingProcScrape(t *testing.T) {
 	}
 }
 
+func TestConnscrape(t *testing.T) {
+	suite.Run(t, new(ConnscrapeTestSuite))
+}
+
 func TestRepeatedNetworkFlow(t *testing.T) {
 	// Perform 11 curl commands with a 2 second sleep between each curl command.
 	// The scrapeInterval is increased to 4 seconds to reduce the chance that jiter will effect the results.
@@ -101,6 +105,8 @@ func TestRepeatedNetworkFlowThreeCurlsNoAfterglow(t *testing.T) {
 	}
 	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
+
+
 
 type IntegrationTestSuiteBase struct {
 	suite.Suite
@@ -164,6 +170,11 @@ type RepeatedNetworkFlowTestSuite struct {
 
 type ImageLabelJSONTestSuite struct {
 	IntegrationTestSuiteBase
+}
+
+type ConnscrapeTestSuite struct {
+	IntegrationTestSuiteBase
+	containerID		string
 }
 
 func (s *ImageLabelJSONTestSuite) SetupSuite() {
@@ -406,6 +417,47 @@ func (s *MissingProcScrapeTestSuite) TearDownSuite() {
 	err := s.collector.TearDown()
 	s.Require().NoError(err)
 	s.cleanupContainer([]string{"collector"})
+}
+
+func (s *ConnscrapeTestSuite) SetupSuite() {
+	fmt.Println("In ConnscrapeTestSuite Setup")
+	// invokes default nginx
+	s.executor = NewExecutor()
+	fmt.Println("New executor")
+
+	var err error
+	s.containerID, err = s.launchContainer("nginx", "nginx:1.14-alpine")
+	fmt.Println("Launched nginx")
+	s.Require().NoError(err)
+	fmt.Println("Require no error")
+	s.containerID = s.containerID[0:12]
+
+	connscrapeID, connscrapeErr := s.launchContainer("connscrape", "-v", "/proc:/host/proc", "-v", "/home/jvirtane/projects/collector/cmake-build/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro", "-v", "/home/jvirtane/projects/collector:/tmp/collector", "quay.io/stackrox-io/collector-builder:cache", "/tmp/collector/cmake-build/collector/connscrape", "/host/proc")
+	s.Require().NoError(connscrapeErr)
+
+	//fmt.Println(serverContainer)
+	fmt.Println(s.containerID)
+	fmt.Println(connscrapeID)
+	fmt.Println("Leaving ConnscrapeTestSuite Setup")
+}
+
+func (s * ConnscrapeTestSuite) TearDownSuite() {
+
+}
+
+func (s * ConnscrapeTestSuite) TestConnscrape() {
+
+	logLines := s.GetLogLines("connscrape")
+	found := false
+	expectedLine := " " + s.containerID + ": 0.0.0.0:80"
+	fmt.Println(expectedLine)
+	for idx := range logLines {
+		fmt.Println(logLines[idx])
+		if logLines[idx] == expectedLine {
+			found = true
+		}
+	}
+	assert.True(s.T(), found, "Connscrape is not working")
 }
 
 // Launches collector

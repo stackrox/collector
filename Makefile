@@ -125,6 +125,11 @@ integration-tests-repeat-network:
 	make -C integration-tests repeat-network ||\
 		( .openshift-ci/slack/notify-if-needed.sh "repeat-network" $$? )
 
+.PHONY: integration-tests-connscrape
+integration-tests-connscrape:
+	make -C integration-tests connscrape ||\
+		( .openshift-ci/slack/notify-if-needed.sh "connscrape" $$? )
+
 .PHONY: integration-tests-image-label-json
 integration-tests-image-label-json:
 	make -C integration-tests image-label-json ||\

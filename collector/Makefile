@@ -58,9 +58,11 @@ container/bin/collector:
 
 connscrape:
 	docker rm -fv collector_connscrape || true
+	docker run -d netcat_for_connscrape
 	docker run --rm --name collector_connscrape \
 		-v "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
+		-v "/proc:/host/proc" \
 		connscrape-test "$(SRC_MOUNT_DIR)/collector/connscrape-test/connscrape-test.sh" 
 
 unittest:

@@ -61,6 +61,13 @@ repeat-network: docker-clean
 	go test -timeout 90m -count=1 -v \
 	  -run TestRepeatedNetworkFlow 2>&1 | tee -a integration-test.log
 
+.PHONY: connscrape
+connscrape: docker-clean
+	go version
+	set -o pipefail ; \
+	go test -timeout 90m -count=1 -v \
+	  -run TestConnscrape 2>&1 | tee -a integration-test.log
+
 .PHONY: report
 report:
 	go get -u github.com/jstemmer/go-junit-report
