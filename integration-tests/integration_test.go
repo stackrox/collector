@@ -102,6 +102,26 @@ func TestRepeatedNetworkFlowThreeCurlsNoAfterglow(t *testing.T) {
 	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
 
+// There is one test in which scraping is turned on and we expect to see
+// endpoints opened before collector is turned on. There is another test
+// in which scraping is turned off and we expect that we will not see
+// endpoint opened before collector is turned on.
+func TestConnScraper(t *testing.T) {
+	connScraperTestSuite := &ConnScraperTestSuite{
+		turnOffScrape:	false,
+		expectedResult:	true,
+	}
+	suite.Run(t, connScraperTestSuite)
+}
+
+func TestConnScraperNoScrape(t *testing.T) {
+	connScraperTestSuite := &ConnScraperTestSuite{
+		turnOffScrape:	true,
+		expectedResult:	false,
+	}
+	suite.Run(t, connScraperTestSuite)
+}
+
 type IntegrationTestSuiteBase struct {
 	suite.Suite
 	db        *bolt.DB
@@ -164,6 +184,14 @@ type RepeatedNetworkFlowTestSuite struct {
 
 type ImageLabelJSONTestSuite struct {
 	IntegrationTestSuiteBase
+}
+
+type ConnScraperTestSuite struct {
+	IntegrationTestSuiteBase
+	logLines		[]string
+	serverContainer		string
+	turnOffScrape		bool
+	expectedResult		bool
 }
 
 func (s *ImageLabelJSONTestSuite) SetupSuite() {
@@ -523,6 +551,75 @@ func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
 
 	fmt.Printf("ClientDetails from Bolt: %s %s\n", s.clientContainer, string(val))
 	fmt.Printf("ClientDetails from test: %s %s\n", s.clientContainer, s.clientIP)
+}
+
+// Launches nginx container
+// Launches gRPC server in insecure mode
+// Launches collector
+// Note it is important to launch the nginx container before collector, which is the opposite of 
+// other tests. The purpose is that we want ConnScraper to see the nginx endpoint and we do not want
+// NetworkSignalHandler to see the nginx endpoint.
+func (s *ConnScraperTestSuite) SetupSuite() {
+
+	s.metrics = map[string]float64{}
+	s.executor = NewExecutor()
+	s.StartContainerStats()
+	s.collector = NewCollectorManager(s.executor, s.T().Name())
+
+	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":` + strconv.FormatBool(s.turnOffScrape) + `,"scrapeInterval":2}`
+
+	s.launchNginx()
+
+	err := s.collector.Setup()
+	s.Require().NoError(err)
+
+	err = s.collector.Launch()
+	s.Require().NoError(err)
+
+	time.Sleep(10 * time.Second)
+
+
+	s.logLines = s.GetLogLines("grpc-server")
+
+	err = s.collector.TearDown()
+	s.Require().NoError(err)
+
+	s.db, err = s.collector.BoltDB()
+	s.Require().NoError(err)
+}
+
+func (s *ConnScraperTestSuite) launchNginx() {
+	image := "nginx:1.14-alpine"
+
+	err := s.executor.PullImage(image)
+	s.Require().NoError(err)
+
+	// invokes default nginx
+	containerID, err := s.launchContainer("nginx", image)
+	s.Require().NoError(err)
+	s.serverContainer = containerShortID(containerID)
+
+	time.Sleep(10 * time.Second)
+}
+
+func (s *ConnScraperTestSuite) TearDownSuite() {
+	s.cleanupContainer([]string{"nginx", "collector"})
+	stats := s.GetContainerStats()
+	s.PrintContainerStats(stats)
+	s.WritePerfResults("ConnScraper", stats, s.metrics)
+}
+
+func (s *ConnScraperTestSuite) TestConnScraper() {
+	found := false
+	pattern := "^EndpointInfo:.*" + s.serverContainer
+	for _, logLine := range s.logLines {
+
+		match, _ := regexp.MatchString(pattern, logLine)
+		if match {
+			found = true
+		}
+	}
+	assert.Equal(s.T(), s.expectedResult, found)
 }
 
 func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, error) {
