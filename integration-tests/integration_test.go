@@ -796,7 +796,7 @@ func (s *IntegrationTestSuiteBase) GetContainerStats() (stats []ContainerStat) {
 	if err != nil {
 		assert.FailNow(s.T(), "container-stats failure: %s", err)
 
-		// Cleanup stats container to not leave it dangling and interfearing
+		// Cleanup stats container to not leave it dangling and interfering
 		// with other tests.
 		s.cleanupContainer([]string{"container-stats"})
 		return nil
