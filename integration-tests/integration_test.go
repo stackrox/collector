@@ -425,14 +425,27 @@ func (s *ConnscrapeTestSuite) SetupSuite() {
 	s.executor = NewExecutor()
 	fmt.Println("New executor")
 
+	nginxRunning, _ := s.executor.IsContainerRunning("nginx")
+	if nginxRunning {
+		s.cleanupContainer([]string{"nginx"})
+	}
+
+	connscrapeRunning, _ := s.executor.IsContainerRunning("connscrape")
+	if connscrapeRunning {
+		s.cleanupContainer([]string{"connscrape"})
+	}
+
 	var err error
 	s.containerID, err = s.launchContainer("nginx", "nginx:1.14-alpine")
 	fmt.Println("Launched nginx")
 	s.Require().NoError(err)
 	fmt.Println("Require no error")
 	s.containerID = s.containerID[0:12]
+	var curdir = os.Getenv("CURDIR")
 
-	connscrapeID, connscrapeErr := s.launchContainer("connscrape", "-v", "/proc:/host/proc", "-v", "/home/jvirtane/projects/collector/cmake-build/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro", "-v", "/home/jvirtane/projects/collector:/tmp/collector", "quay.io/stackrox-io/collector-builder:cache", "/tmp/collector/cmake-build/collector/connscrape", "/host/proc")
+	libsinspDir := curdir + "/../cmake-build/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp"
+
+	connscrapeID, connscrapeErr := s.launchContainer("connscrape", "-v", "/proc:/host/proc", "-v", libsinspDir + "/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro", "-v", curdir + "/..:/tmp/collector", "quay.io/stackrox-io/collector-builder:cache", "/tmp/collector/cmake-build/collector/connscrape", "/host/proc")
 	s.Require().NoError(connscrapeErr)
 
 	//fmt.Println(serverContainer)
@@ -442,7 +455,8 @@ func (s *ConnscrapeTestSuite) SetupSuite() {
 }
 
 func (s * ConnscrapeTestSuite) TearDownSuite() {
-
+	s.cleanupContainer([]string{"nginx"})
+	s.cleanupContainer([]string{"connscrape"})
 }
 
 func (s * ConnscrapeTestSuite) TestConnscrape() {

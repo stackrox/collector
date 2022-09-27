@@ -13,6 +13,7 @@ SHELL=/bin/bash
 
 # Environment variable COLLECTOR_IMAGE is used by integration-tests
 export COLLECTOR_IMAGE
+export CURDIR
 
 .PHONY: docker-clean
 docker-clean:
