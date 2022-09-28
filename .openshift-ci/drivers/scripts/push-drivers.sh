@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-set -exo pipefail
+set -eo pipefail
 
 # shellcheck source=SCRIPTDIR/../../scripts/lib.sh
 source /scripts/lib.sh
@@ -27,9 +27,6 @@ if is_in_PR_context; then
     BRANCH="$(get_branch)"
     target="gs://stackrox-collector-modules-staging/pr-builds/${BRANCH}/${BUILD_ID}"
 fi
-
-# DEBUG: No pushing for now
-exit 0
 
 shopt -s nullglob
 shopt -s dotglob
