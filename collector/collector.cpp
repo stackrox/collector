@@ -110,7 +110,7 @@ int InsertModule(int fd, const std::unordered_map<std::string, std::string>& arg
   struct stat st;
   fstat(fd, &st);
   size_t image_size = st.st_size;
-  void *image = malloc(image_size);
+  void* image = malloc(image_size);
   read(fd, image, image_size);
   int res = init_module(image, image_size, args_str.c_str());
   free(image);
