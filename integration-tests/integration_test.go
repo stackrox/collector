@@ -617,6 +617,7 @@ func (s *ConnScraperTestSuite) TestConnScraper() {
 		match, _ := regexp.MatchString(pattern, logLine)
 		if match {
 			found = true
+			break
 		}
 	}
 	assert.Equal(s.T(), s.expectedResult, found)
