@@ -16,10 +16,10 @@ upload_drivers() {
     done
 }
 
-GCP_CREDS="$(get_secret_content GOOGLE_CREDENTIALS_KERNEL_CACHE)"
+GCP_CREDS="$(get_secret_file GOOGLE_CREDENTIALS_KERNEL_CACHE)"
 GCP_BASE_BUCKET="gs://collector-modules-osci"
 
-/scripts/setup-gcp-env.sh "${GCP_CREDS}" "${GCP_BASE_BUCKET}"
+/scripts/gcloud-init.sh "${GCP_CREDS}" "${GCP_BASE_BUCKET}"
 
 target="${GCP_BASE_BUCKET}"
 
