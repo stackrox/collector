@@ -61,7 +61,7 @@ extern "C" {
 #include "SysdigService.h"
 #include "Utility.h"
 
-#define finit_module(fd, opts, flags) syscall(__NR_finit_module, fd, opts, flags)
+#define init_module(module_image, len, param_values) syscall(__NR_init_module, module_image, len, param_values)
 #define delete_module(name, flags) syscall(__NR_delete_module, name, flags)
 
 extern unsigned char g_bpf_drop_syscalls[];  // defined in libscap
@@ -107,9 +107,14 @@ int InsertModule(int fd, const std::unordered_map<std::string, std::string>& arg
     args_str += entry.first + "=" + entry.second;
   }
   CLOG(DEBUG) << "Kernel module arguments: " << args_str;
-  int res = finit_module(fd, args_str.c_str(), 0);
-  if (res != 0) return res;
   struct stat st;
+  fstat(fd, &st);
+  size_t image_size = st.st_size;
+  void *image = malloc(image_size);
+  read(fd, image, image_size);
+  int res = init_module(image, image_size, args_str.c_str());
+  free(image);
+  if (res != 0) return res;
   std::string param_dir = GetHostPath(std::string("/sys/module/") + SysdigService::kModuleName + "/parameters/");
   res = stat(param_dir.c_str(), &st);
   if (res != 0) {

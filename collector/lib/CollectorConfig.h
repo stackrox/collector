@@ -60,6 +60,9 @@ class CollectorConfig {
       "setuid",
       "shutdown",
       "socket",
+#ifdef __s390x__
+      "syscall",
+#endif
       "vfork",
   };
   static constexpr char kChisel[] = R"(
