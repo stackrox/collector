@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-# shellcheck source=SCRIPTDIR/lib.sh
+# shellcheck source=SCRIPTDIR/../../scripts/lib.sh
 source /scripts/lib.sh
 
 METADATA_DIR="/tmp/cpaas-support-packages/metadata"
