@@ -380,7 +380,6 @@ void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const C
           if (const auto* ep = Lookup(ns_network_data->listen_endpoints, socket_inode)) {
             if (!IsRelevantEndpoint(ep->endpoint)) continue;
             listen_endpoints->emplace_back(container_id, ep->endpoint, ep->l4proto, ep->pid);
-              //listen_endpoints->emplace_back(container_id, ep->endpoint, ep->l4proto);
           }
         }
       }
