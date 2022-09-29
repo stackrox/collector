@@ -356,7 +356,8 @@ class ContainerEndpoint {
   const int pid() const { return pid_; }
 
   bool operator==(const ContainerEndpoint& other) const {
-    return container_ == other.container_ && endpoint_ == other.endpoint_ && l4proto_ == other.l4proto_;
+    return container_ == other.container_ && endpoint_ == other.endpoint_ && l4proto_ == other.l4proto_ &&
+           pid_ == other.pid_;
   }
 
   bool operator!=(const ContainerEndpoint& other) const {
