@@ -25,3 +25,6 @@ cmake-build/
 .vscode/
 .devcontainer/
 .devcontainer.json
+cmake-build/
+build/
+out/
