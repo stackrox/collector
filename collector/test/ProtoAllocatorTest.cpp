@@ -21,8 +21,6 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#include <forward_list>
-
 #include "internalapi/sensor/network_connection_iservice.grpc.pb.h"
 
 #include "ProtoAllocator.h"
@@ -33,12 +31,11 @@ namespace collector {
 
 namespace {
 
-TEST(ProtoAllocator, NormalAllocation) {
+TEST(ProtoAllocator, OverflowDefaultPool) {
   ProtoAllocator<sensor::NetworkConnectionInfoMessage> allocator;
-  std::forward_list<sensor::NetworkConnectionInfoMessage*> list;
 
-  for (int i; i < 100000; i++)
-    list.emplace_front(allocator.AllocateRoot());
+  for (unsigned int i = 0; i <= ProtoAllocator<sensor::NetworkConnectionInfoMessage>::kDefaultPoolSize / sizeof(sensor::NetworkConnectionInfoMessage); i++)
+    allocator.AllocateRoot();
 
   allocator.Reset();
 }
