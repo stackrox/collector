@@ -36,17 +36,10 @@ namespace internal {
 
 #ifdef USE_PROTO_ARENAS
 
-inline void* BlockAlloc(size_t size) {
-  static void* (*default_block_alloc)(size_t) = google::protobuf::ArenaOptions().block_alloc;
-  CLOG_THROTTLED(WARNING, std::chrono::seconds(5)) << "Allocating a memory block on the heap for the arena, this is inefficient and usually avoidable";
-  return (*default_block_alloc)(size);
-}
-
 inline google::protobuf::ArenaOptions ArenaOptionsForInitialBlock(char* storage, size_t size) {
   google::protobuf::ArenaOptions opts;
   opts.initial_block = storage;
   opts.initial_block_size = size;
-  opts.block_alloc = &BlockAlloc;
   return opts;
 }
 
