@@ -32,7 +32,7 @@ using namespace collector;
 
 namespace {
 
-BoolEnvVar scrape_endpoints("SCRAPE_ENDPOINTS", false);
+BoolEnvVar scrape_endpoints("SCRAPE_ENDPOINTS", true);
 
 }  // namespace
 
@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
     std::cout << std::endl
               << "Endpoints:" << std::endl;
     for (const auto& ep : endpoints) {
-      std::cout << " " << ep << std::endl;
+      std::cout << " " << ep << " " << ep.pid() << std::endl;
     }
   }
 

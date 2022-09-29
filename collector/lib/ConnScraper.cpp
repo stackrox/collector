@@ -209,6 +209,7 @@ struct ConnInfo {
 struct EndpointInfo {
   Endpoint endpoint;
   L4Proto l4proto;
+  int pid;
 };
 
 // ParseEndpoint parses an endpoint listed in the `net/tcp[6]` file.
@@ -285,7 +286,7 @@ bool LocalIsServer(const Endpoint& local, const Endpoint& remote, const Unordere
 }
 
 // ReadConnectionsFromFile reads all connections from a `net/tcp[6]` file and stores them by inode in the given map.
-bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE* f,
+bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, int pid, std::FILE* f,
                              UnorderedMap<ino_t, ConnInfo>* connections, UnorderedMap<ino_t, EndpointInfo>* listen_endpoints) {
   char line[512];
 
@@ -302,6 +303,7 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE*
         auto& endpoint_info = (*listen_endpoints)[data.inode];
         endpoint_info.endpoint = data.local;
         endpoint_info.l4proto = l4proto;
+        endpoint_info.pid = pid;
       }
       continue;
     }
@@ -324,13 +326,13 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE*
 
 // GetConnections reads all active connections (inode -> connection info mapping) for a given network NS, addressed by
 // the dir FD for a proc entry of a process in that network namespace.
-bool GetConnections(int dirfd, UnorderedMap<ino_t, ConnInfo>* connections, UnorderedMap<ino_t, EndpointInfo>* listen_endpoints) {
+bool GetConnections(int dirfd, int pid, UnorderedMap<ino_t, ConnInfo>* connections, UnorderedMap<ino_t, EndpointInfo>* listen_endpoints) {
   bool success = true;
   {
     FDHandle net_tcp_fd = openat(dirfd, "net/tcp", O_RDONLY);
     if (net_tcp_fd.valid()) {
       FileHandle net_tcp(std::move(net_tcp_fd), "r");
-      success = ReadConnectionsFromFile(Address::Family::IPV4, L4Proto::TCP, net_tcp, connections, listen_endpoints) && success;
+      success = ReadConnectionsFromFile(Address::Family::IPV4, L4Proto::TCP, pid, net_tcp, connections, listen_endpoints) && success;
     } else {
       success = false;  // there should always be a net/tcp file
     }
@@ -340,7 +342,7 @@ bool GetConnections(int dirfd, UnorderedMap<ino_t, ConnInfo>* connections, Unord
     FDHandle net_tcp6_fd = openat(dirfd, "net/tcp6", O_RDONLY);
     if (net_tcp6_fd.valid()) {
       FileHandle net_tcp6(std::move(net_tcp6_fd), "r");
-      success = ReadConnectionsFromFile(Address::Family::IPV6, L4Proto::TCP, net_tcp6, connections, listen_endpoints) && success;
+      success = ReadConnectionsFromFile(Address::Family::IPV6, L4Proto::TCP, pid, net_tcp6, connections, listen_endpoints) && success;
     } else {
       success = false;
     }
@@ -377,7 +379,7 @@ void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const C
         } else if (listen_endpoints) {
           if (const auto* ep = Lookup(ns_network_data->listen_endpoints, socket_inode)) {
             if (!IsRelevantEndpoint(ep->endpoint)) continue;
-            listen_endpoints->emplace_back(container_id, ep->endpoint, ep->l4proto);
+            listen_endpoints->emplace_back(container_id, ep->endpoint, ep->l4proto, ep->pid);
           }
         }
       }
@@ -400,6 +402,7 @@ bool ReadContainerConnections(const char* proc_path, std::vector<Connection>* co
   // Read all the information from proc.
   while (auto curr = procdir.read()) {
     if (!std::isdigit(curr->d_name[0])) continue;  // only look for <pid> entries
+    int pid = stoi(curr->d_name);
 
     FDHandle dirfd = procdir.openat(curr->d_name, O_RDONLY);
     if (!dirfd.valid()) {
@@ -430,7 +433,7 @@ bool ReadContainerConnections(const char* proc_path, std::vector<Connection>* co
       auto emplace_res = conns_by_ns.emplace(netns_inode, NSNetworkData());
       if (emplace_res.second) {
         auto& ns_network_data = emplace_res.first->second;
-        if (!GetConnections(dirfd, &ns_network_data.connections, listen_endpoints ? &ns_network_data.listen_endpoints : nullptr)) {
+        if (!GetConnections(dirfd, pid, &ns_network_data.connections, listen_endpoints ? &ns_network_data.listen_endpoints : nullptr)) {
           // If there was an error reading connections, that could be due to a number of reasons.
           // We need to differentiate persistent errors (e.g., expected net/tcp6 file not found)
           // from spurious/race condition errors caused by the process disappearing while reading
