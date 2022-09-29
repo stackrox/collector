@@ -37,6 +37,11 @@ endif
 collector: builder
 	make -C collector container/bin/collector
 
+.PHONY: connscrape
+connscrape:
+	make -C collector connscrape ||\
+		( .openshift-ci/slack/notify-if-needed.sh "connscrape" $$? )
+
 .PHONY: unittest
 unittest:
 	make -C collector unittest ||\

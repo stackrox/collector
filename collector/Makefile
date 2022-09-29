@@ -39,6 +39,17 @@ post-build:
 container/bin/collector: 
 	$(MAKE) pre-build
 	$(MAKE) cmake-build/collector 
+
+.PHONY: build-connscrape-test
+build-connscrape-test:
+	docker build -f $(CURDIR)/connscrape-test/Dockerfile -t connscrape-test $(CURDIR)/connscrape-test
+
+connscrape: build-connscrape-test
+	docker rm -fv collector_connscrape || true
+	docker run --rm --name collector_connscrape \
+		-v "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
+		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
+		connscrape-test "$(SRC_MOUNT_DIR)/collector/connscrape-test/connscrape-test.sh"
 	$(MAKE) post-build
 
 unittest:
