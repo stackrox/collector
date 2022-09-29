@@ -1,6 +1,8 @@
 BASE_PATH = .
 include Makefile-constants.mk
 
+NPROCS ?= 6
+
 MOD_VER_FILE=$(CURDIR)/kernel-modules/kobuild-tmp/MODULE_VERSION.txt
 
 LOCAL_SSH_PORT ?= 2222
@@ -25,6 +27,7 @@ container-dockerfile:
 builder:
 ifdef BUILD_BUILDER_IMAGE
 	docker build \
+		--build-arg NPROCS=$(NPROCS) \
 		--cache-from quay.io/stackrox-io/collector-builder:cache \
 		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
