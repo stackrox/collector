@@ -141,10 +141,6 @@ class ConnectionTracker {
   void UpdateKnownIPNetworks(UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks);
   void UpdateIgnoredL4ProtoPortPairs(UnorderedSet<L4ProtoPortPair>&& ignored_l4proto_port_pairs);
 
- private:
-  // NormalizeConnection transforms a connection into a normalized form.
-  Connection NormalizeConnectionNoLock(const Connection& conn) const;
-
   // Emplace a connection into the state ConnMap, or update its timestamp if the supplied timestamp is more recent
   // than the stored one.
   void EmplaceOrUpdateNoLock(const Connection& conn, ConnStatus status);
@@ -152,6 +148,10 @@ class ConnectionTracker {
   // Emplace a listen endpoint into the state ContainerEndpointMap, or update its timestamp if the supplied timestamp is more
   // recent than the stored one.
   void EmplaceOrUpdateNoLock(const ContainerEndpoint& ep, ConnStatus status);
+
+ private:
+  // NormalizeConnection transforms a connection into a normalized form.
+  Connection NormalizeConnectionNoLock(const Connection& conn) const;
 
   IPNet NormalizeAddressNoLock(const Address& address) const;
 
