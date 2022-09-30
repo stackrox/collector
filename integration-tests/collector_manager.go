@@ -86,7 +86,9 @@ func (c *collectorManager) Setup() error {
 		}
 
 		// remove previous db file
-		c.executor.Exec("rm", "-fv", c.DBPath)
+		if _, err := c.executor.Exec("rm", "-fv", c.DBPath); err != nil {
+			return err
+		}
 	}
 	return nil
 }
