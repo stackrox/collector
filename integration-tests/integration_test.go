@@ -22,6 +22,7 @@ const (
 	processBucket            = "Process"
 	processLineageInfoBucket = "LineageInfo"
 	networkBucket            = "Network"
+	endpointBucket           = "Endpoint"
 	parentUIDStr             = "ParentUid"
 	parentExecFilePathStr    = "ParentExecFilePath"
 
@@ -107,18 +108,12 @@ func TestRepeatedNetworkFlowThreeCurlsNoAfterglow(t *testing.T) {
 // in which scraping is turned off and we expect that we will not see
 // endpoint opened before collector is turned on.
 func TestConnScraper(t *testing.T) {
-	connScraperTestSuite := &ConnScraperTestSuite{
-		turnOffScrape:	false,
-		expectedResult:	true,
-	}
+	connScraperTestSuite := &ConnScraperTestSuite{turnOffScrape:	false}
 	suite.Run(t, connScraperTestSuite)
 }
 
 func TestConnScraperNoScrape(t *testing.T) {
-	connScraperTestSuite := &ConnScraperTestSuite{
-		turnOffScrape:	true,
-		expectedResult:	false,
-	}
+	connScraperTestSuite := &ConnScraperTestSuite{turnOffScrape:	true}
 	suite.Run(t, connScraperTestSuite)
 }
 
@@ -575,11 +570,7 @@ func (s *ConnScraperTestSuite) SetupSuite() {
 
 	err = s.collector.Launch()
 	s.Require().NoError(err)
-
 	time.Sleep(10 * time.Second)
-
-
-	s.logLines = s.GetLogLines("grpc-server")
 
 	err = s.collector.TearDown()
 	s.Require().NoError(err)
@@ -610,17 +601,21 @@ func (s *ConnScraperTestSuite) TearDownSuite() {
 }
 
 func (s *ConnScraperTestSuite) TestConnScraper() {
-	found := false
-	pattern := "^EndpointInfo:.*" + s.serverContainer
-	for _, logLine := range s.logLines {
+	val, err := s.Get(s.serverContainer, endpointBucket)
+	actualValues := strings.Split(string(val), "|")
+	if (!s.turnOffScrape) {
+		// If scraping is on we expect to find the nginx endpoint
+		s.Require().NoError(err)
+		assert.Equal(s.T(), len(actualValues), 4)
+		assert.Equal(s.T(), actualValues[0], "EndpointInfo: SOCKET_FAMILY_IPV4")
+		assert.Equal(s.T(), actualValues[1], "L4_PROTOCOL_TCP")
+		// Formating issues prevented me from having a test for the address here
+		assert.Equal(s.T(), actualValues[3], "(timestamp: nil Timestamp)\n")
 
-		match, _ := regexp.MatchString(pattern, logLine)
-		if match {
-			found = true
-			break
-		}
+	} else {
+		// If scraping is off we expect not to find the nginx endpoint and we should get an error
+		s.Require().Error(err)
 	}
-	assert.Equal(s.T(), s.expectedResult, found)
 }
 
 func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, error) {
