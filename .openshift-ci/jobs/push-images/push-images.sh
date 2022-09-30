@@ -49,6 +49,11 @@ push_images() {
     )
     push_images_to_repos image_repos full_tags collector "${COLLECTOR_FULL}"
 
+    if ((CPAAS_TEST)); then
+        # All done
+        return 0
+    fi
+
     # shellcheck disable=SC2034
     base_tags=(
         "${collector_version}-slim"
@@ -60,6 +65,10 @@ push_images() {
 cd "$PROJECT_DIR"
 
 collector_version="$(make tag)"
+
+if ((CPAAS_TEST)); then
+    collector_version="cpaas-${collector_version}"
+fi
 
 export PUBLIC_REPO=quay.io/stackrox-io
 export QUAY_REPO=quay.io/rhacs-eng
@@ -75,4 +84,10 @@ image_repos=(
 )
 
 push_images
+
+if ((CPAAS_TEST)); then
+    # All done
+    exit 0
+fi
+
 push_builder_image
