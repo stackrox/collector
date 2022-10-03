@@ -233,3 +233,10 @@ registry_rw_login() {
             ;;
     esac
 }
+
+if [[ "${CI_DATA:-}" == "" ]]; then
+    export CI_DATA="available"
+
+    # shellcheck source=/dev/null
+    source /ci-data/dump.sh
+fi

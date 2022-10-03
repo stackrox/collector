@@ -2,26 +2,9 @@ ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8/ubi-minimal
 ARG BASE_TAG=8.6
 
-FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
-
-ARG ROOT_DIR=.
-
-ENV ROOT_DIR=$ROOT_DIR
-
-COPY . /go/src/github.com/stackrox/collector
-WORKDIR /go/src/github.com/stackrox/collector
-
-RUN mkdir -p /bundle/kernel-modules/
-
-RUN cp "${ROOT_DIR}/bundle.tar.gz" /
-RUN cp "${ROOT_DIR}/extract-bundle.sh" /bundle/
-RUN cp "${ROOT_DIR}"/scripts/* /
-
-WORKDIR /bundle
-RUN ./extract-bundle.sh
-
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
+ARG BUILD_TYPE=rhel
 ARG ROOT_DIR=.
 
 ENV ROOT_DIR=$ROOT_DIR
@@ -39,14 +22,14 @@ LABEL name="collector" \
 
 WORKDIR /
 
-COPY --from=extracted_bundle /collector-wrapper.sh /
-COPY --from=extracted_bundle /bootstrap.sh /
-COPY --from=extracted_bundle /bundle/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
-COPY --from=extracted_bundle /bundle/kernel-modules/ /kernel-modules/
-COPY --from=extracted_bundle /bundle/usr/local/lib/libsinsp-wrapper.so /usr/local/lib/
-COPY --from=extracted_bundle /bundle/usr/local/bin/collector /usr/local/bin/
+COPY container/scripts/collector-wrapper.sh /
+COPY container/scripts/bootstrap.sh /
+COPY container/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
+COPY LICENSE-kernel-modules.txt /kernel-modules/LICENSE
+COPY container/libs/libsinsp-wrapper.so /usr/local/lib/
+COPY container/bin/collector /usr/local/bin/
 
-COPY final-step.sh /
+COPY container/${BUILD_TYPE}/final-step.sh /
 
 RUN ./final-step.sh && rm -f final-step.sh
 
