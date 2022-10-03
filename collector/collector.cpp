@@ -108,12 +108,27 @@ int InsertModule(int fd, const std::unordered_map<std::string, std::string>& arg
   }
   CLOG(DEBUG) << "Kernel module arguments: " << args_str;
   struct stat st;
-  fstat(fd, &st);
+  int res = fstat(fd, &st);
+  if (res != 0) {
+      CLOG(ERROR) << "Could not stat kernel module: " << StrError();
+      errno = EINVAL;
+      return -1;
+  }
   size_t image_size = st.st_size;
   void* image = malloc(image_size);
+  if (!image) {
+      CLOG(ERROR) << "Could not allocate memory for kernel module: " << StrError();
+      errno = EINVAL;
+      return -1;
+  }
   lseek(fd, 0, SEEK_SET);
-  read(fd, image, image_size);
-  int res = init_module(image, image_size, args_str.c_str());
+  size_t read_image_size = read(fd, image, image_size);
+  if (read_image_size != image_size) {
+      CLOG(ERROR) << "Could not read kernel module: " << StrError() << ".  Mismatch with number of bytes read and kernel module size.";
+      errno = EINVAL;
+      return -1;
+  }
+  res = init_module(image, image_size, args_str.c_str());
   free(image);
   if (res != 0) return res;
   std::string param_dir = GetHostPath(std::string("/sys/module/") + SysdigService::kModuleName + "/parameters/");
