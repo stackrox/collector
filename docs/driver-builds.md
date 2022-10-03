@@ -14,14 +14,14 @@ frame "GCP" {
     component VM
     component [support package cache] as supacache
 
-    VM --> supacache: Pushes created packages
+    VM -.> supacache: Pushes created packages
 }
 
 frame OSCI {
     frame images {
         component [Drivers Build] as dbuild
 
-        dbundles --> dbuild
+        dbundles ..> dbuild
         [collector-slim] -> [collector-full]
         dbuild --> [collector-full]
     }
@@ -31,10 +31,11 @@ frame OSCI {
         component [push drivers] as dpush
         component [update support package] as updatesupa
 
-        [collector-slim] --> its
+        [collector-full] --> its
         dbuild --> dpush
-        dpush --> dcache
-        dbuild --> updatesupa
+        dpush ..> dcache
+        dcache ..> dbuild
+        dbuild ..> updatesupa
         updatesupa --> VM : Runs on
     }
 }
@@ -70,13 +71,13 @@ frame OSCI {
             Pull one bundle at a time
         end note
 
-        dcache --> [pre-build] : Pull existing drivers
+        dcache -.> [pre-build] : Pull existing drivers
         [pre-build] --> rhel7
         [pre-build] --> rhel8
         [pre-build] --> fc36
-        dbundles --> rhel7
-        dbundles --> rhel8
-        dbundles --> fc36
+        dbundles ..> rhel7
+        dbundles ..> rhel8
+        dbundles ..> fc36
         rhel7 --> unified
         rhel8 --> unified
         fc36 --> unified
@@ -135,9 +136,9 @@ frame "OSCI" {
     brewreg --> oscireg: mirrors into
     oscireg --> cpaasdrivers
     cpaasdrivers --> buildandsupa
-    dcache --> buildandsupa
-    buildandsupa --> dcache
-    buildandsupa --> supabucket
+    dcache ..> buildandsupa
+    buildandsupa ..> dcache
+    buildandsupa ..> supabucket
     cpaasdrivers --> dtests
 }
 
