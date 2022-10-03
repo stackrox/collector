@@ -551,7 +551,7 @@ func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
 // Launches nginx container
 // Launches gRPC server in insecure mode
 // Launches collector
-// Note it is important to launch the nginx container before collector, which is the opposite of 
+// Note it is important to launch the nginx container before collector, which is the opposite of
 // other tests. The purpose is that we want ConnScraper to see the nginx endpoint and we do not want
 // NetworkSignalHandler to see the nginx endpoint.
 func (s *ConnScraperTestSuite) SetupSuite() {
@@ -613,22 +613,6 @@ func (s *ConnScraperTestSuite) TestConnScraper() {
 		// If scraping is off we expect not to find the nginx endpoint and we should get an error
 		s.Require().Error(err)
 	}
-
-	//val, err := s.Get(s.serverContainer, endpointBucket)
-	//actualValues := strings.Split(string(val), "|")
-	//if (!s.turnOffScrape) {
-	//	// If scraping is on we expect to find the nginx endpoint
-	//	s.Require().NoError(err)
-	//	assert.Equal(s.T(), len(actualValues), 4)
-	//	assert.Equal(s.T(), actualValues[0], "EndpointInfo: SOCKET_FAMILY_IPV4")
-	//	assert.Equal(s.T(), actualValues[1], "L4_PROTOCOL_TCP")
-	//	// Formating issues prevented me from having a test for the address here
-	//	assert.Equal(s.T(), actualValues[3], "(timestamp: nil Timestamp)\n")
-
-	//} else {
-	//	// If scraping is off we expect not to find the nginx endpoint and we should get an error
-	//	s.Require().Error(err)
-	//}
 }
 
 func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, error) {
