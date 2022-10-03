@@ -28,9 +28,8 @@ The script creates the tags for the release as well as the release branch
   - `export COLLECTOR_PATCH_NUMBER=0`
   - `export COLLECTOR_RELEASE=3.8`
 7. Tag and push the release.
-  - `git tag "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"`
-  - `git push origin "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"`
-  - `git push release-"${COLLECTOR_RELEASE}"`
+  - `git tag -a "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"`
+  - `git push --follow-tags`
 
 **Create the config in openshift/release**
 
@@ -46,14 +45,21 @@ The script creates the tags for the release as well as the release branch
   - Change "branch: master" to "branch: release-3.8" or whatever the release branch is in the new config
   - Remove the promotion stanza from the new config 
   - Remove the non postsubmit: true tests from the new config
-  - `cd ../../../..`
+4. Copy the step-registry
+  - `cd ci-operator/step-registry/stackrox/collector`
+  - `mkdir release-${COLLECTOR_RELEASE}`
+  - `cp !(release-*) release-${COLLECTOR_RELEASE}`
+  - Rename all files, step names, etc based on the release
+    e.g. stackrox-collector-integration-tests-ref.yaml -> stackrox-collector-release-${COLLECTOR_RELEASE}-integration-tests-ref.yaml
+  - Rename usages of each step in the release configuration file created in step 3
+5. Update the generated files
   - `make jobs`
-4. Commit and push the changes
+6. Commit and push the changes
   - `git add ...`
   - `git rm ...`
   - `git commit -m "Add config for release-${COLLECTOR_RELEASE}"`
   - `git push origin release-${COLLECTOR_RELEASE}` # Create the PR, get it approved and merged.
-5. Create a pull request to update the `COLLECTOR_VERSION` file in the [stackrox/stackrox](https://github.com/stackrox/stackrox/) repo with the newly create release after CI images have been built.
+7. Create a pull request to update the `COLLECTOR_VERSION` file in the [stackrox/stackrox](https://github.com/stackrox/stackrox/) repo with the newly create release after CI images have been built.
 
 **Patch releases**
 
@@ -62,12 +68,9 @@ That script is out of date and will be updated.
 
 1. Navigate to your local stackrox/collector repo 
 2. git checkout release-"${COLLECTOR_RELEASE}"
-3. Create a branch off of the release branch.
 4. Make changes by cherry-picking or otherwise and commit changes.
 5. Increment COLLECTOR_PATCH_NUMBER
 6. Tag and push the patch
-  - `git tag "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"`
-  - `git push origin "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"`
-  - `git push release-"${COLLECTOR_RELEASE}"`
-7. Create a PR and merge into the release branch once approved
+  - `git tag -a "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"`
+  - `git push --follow-tags`
 8. Create a pull request to update the `COLLECTOR_VERSION` file in the [stackrox/stackrox](https://github.com/stackrox/stackrox/) repo with the newly create release after CI images have been built.
