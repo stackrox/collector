@@ -112,7 +112,11 @@ struct KernelVersion {
     if (kernel < 4 || (kernel == 4 && major < 14)) {
       return false;
     }
+#ifdef __s390x__
+    return false;
+#else
     return true;
+#endif
   }
 
   // Whether or not the kernel has secure_boot option present in boot_params.
