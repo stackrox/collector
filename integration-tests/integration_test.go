@@ -601,21 +601,34 @@ func (s *ConnScraperTestSuite) TearDownSuite() {
 }
 
 func (s *ConnScraperTestSuite) TestConnScraper() {
-	val, err := s.Get(s.serverContainer, endpointBucket)
-	actualValues := strings.Split(string(val), "|")
+	endpoints, err := s.GetEndpoints(s.serverContainer)
 	if (!s.turnOffScrape) {
 		// If scraping is on we expect to find the nginx endpoint
 		s.Require().NoError(err)
-		assert.Equal(s.T(), len(actualValues), 4)
-		assert.Equal(s.T(), actualValues[0], "EndpointInfo: SOCKET_FAMILY_IPV4")
-		assert.Equal(s.T(), actualValues[1], "L4_PROTOCOL_TCP")
-		// Formating issues prevented me from having a test for the address here
-		assert.Equal(s.T(), actualValues[3], "(timestamp: nil Timestamp)\n")
+		assert.Equal(s.T(), len(endpoints), 1)
+		assert.Equal(s.T(), endpoints[0].Protocol, "L4_PROTOCOL_TCP")
+		assert.Equal(s.T(), endpoints[0].CloseTimestamp, "(timestamp: nil Timestamp)\n")
 
 	} else {
 		// If scraping is off we expect not to find the nginx endpoint and we should get an error
 		s.Require().Error(err)
 	}
+
+	//val, err := s.Get(s.serverContainer, endpointBucket)
+	//actualValues := strings.Split(string(val), "|")
+	//if (!s.turnOffScrape) {
+	//	// If scraping is on we expect to find the nginx endpoint
+	//	s.Require().NoError(err)
+	//	assert.Equal(s.T(), len(actualValues), 4)
+	//	assert.Equal(s.T(), actualValues[0], "EndpointInfo: SOCKET_FAMILY_IPV4")
+	//	assert.Equal(s.T(), actualValues[1], "L4_PROTOCOL_TCP")
+	//	// Formating issues prevented me from having a test for the address here
+	//	assert.Equal(s.T(), actualValues[3], "(timestamp: nil Timestamp)\n")
+
+	//} else {
+	//	// If scraping is off we expect not to find the nginx endpoint and we should get an error
+	//	s.Require().Error(err)
+	//}
 }
 
 func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, error) {
@@ -776,6 +789,41 @@ func (s *IntegrationTestSuiteBase) GetProcesses(containerID string) ([]ProcessIn
 	}
 
 	return processes, nil
+}
+
+func (s *IntegrationTestSuiteBase) GetEndpoints(containerID string) ([]EndpointInfo, error) {
+	if s.db == nil {
+		return nil, fmt.Errorf("Db %v is nil", s.db)
+	}
+
+	endpoints := make([]EndpointInfo, 0)
+	err := s.db.View(func(tx *bolt.Tx) error {
+		endpoint := tx.Bucket([]byte(endpointBucket))
+		if endpoint == nil {
+			return fmt.Errorf("Endpoint bucket was not found!")
+		}
+		container := endpoint.Bucket([]byte(containerID))
+		if container == nil {
+			return fmt.Errorf("Container bucket %s not found!", containerID)
+		}
+
+		container.ForEach(func(k, v []byte) error {
+			einfo, err := NewEndpointInfo(string(v))
+			if err != nil {
+				return err
+			}
+
+			endpoints = append(endpoints, *einfo)
+			return nil
+		})
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return endpoints, nil
 }
 
 func (s *IntegrationTestSuiteBase) GetLineageInfo(processName string, key string, bucket string) (val string, err error) {
