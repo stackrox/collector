@@ -21,8 +21,8 @@ link collector-full to its--><g id="link_collector-full_its"><path d="M325.01,23
 link dbuild to dpush--><g id="link_dbuild_dpush"><path d="M393.17,131.31 C411.15,146.2 432.12,167.5 442,192 C453.64,220.85 461.01,237.37 442,262 C423.75,285.64 403.64,265.5 377,279 C357.16,289.06 337.72,304.67 322.98,318.08 " fill="none" id="dbuild-to-dpush" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="318.94,321.8,328.2612,318.6196,322.6085,318.4027,322.8255,312.75,318.94,321.8" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[ec3e442ab35289260788a854c5933d1b]
 link dpush to dcache--><g id="link_dpush_dcache"><path d="M316.66,368.04 C331.72,383.62 353.79,403.83 377,416 C417.19,437.08 431.61,431.55 476,441 C496.3,445.32 503.14,440.34 522,449 C542.36,458.35 561.84,474.26 576.36,488.01 " fill="none" id="dpush-to-dcache" style="stroke:#181818;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#181818" points="580.32,491.82,576.6179,482.6934,576.7208,488.3493,571.0649,488.4522,580.32,491.82" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[74f9be47943cae95597936705d3c614a]
 link dcache to dbuild--><g id="link_dcache_dbuild"><path d="M609.94,491.99 C626.14,448.4 655.36,349.25 618,279 C578.75,205.2 491.66,158.06 429.99,132.59 " fill="none" id="dcache-to-dbuild" style="stroke:#181818;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#181818" points="425.22,130.64,432.0456,137.74,429.8505,132.5265,435.064,130.3313,425.22,130.64" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[e019f6c902ebfb7972e81a9b9b7cc335]
-link dbuild to updatesupa--><g id="link_dbuild_updatesupa"><path d="M398.69,131.14 C419.29,145.68 443.33,166.69 456,192 C476.51,232.96 488.15,285.31 493.76,316.66 " fill="none" id="dbuild-to-updatesupa" style="stroke:#181818;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#181818" points="494.67,321.89,497.0688,312.3377,493.8133,316.9639,489.1871,313.7085,494.67,321.89" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[d9dbfc1b0c02a5025910323858478565]
-link updatesupa to VM--><g id="link_updatesupa_VM"><path d="M494.81,368.31 C490.44,398.89 482.6,453.8 477.89,486.77 " fill="none" id="updatesupa-to-VM" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="477.16,491.87,482.3825,483.5198,477.8611,486.9194,474.4615,482.398,477.16,491.87" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="51" x="487" y="437.5684">Runs on</text></g><!--MD5=[763c4dc8aaf4a0752115fc53aca9ffa6]
+link dbuild to updatesupa--><g id="link_dbuild_updatesupa"><path d="M398.69,131.14 C419.29,145.68 443.33,166.69 456,192 C476.51,232.96 488.15,285.31 493.76,316.66 " fill="none" id="dbuild-to-updatesupa" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="494.67,321.89,497.0688,312.3377,493.8133,316.9639,489.1871,313.7085,494.67,321.89" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[d9dbfc1b0c02a5025910323858478565]
+link updatesupa to VM--><g id="link_updatesupa_VM"><path d="M494.81,368.31 C490.44,398.89 482.6,453.8 477.89,486.77 " fill="none" id="updatesupa-to-VM" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="477.16,491.87,482.3825,483.5198,477.8611,486.9194,474.4615,482.398,477.16,491.87" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="51" x="487" y="437.5684">Runs on</text></g><!--MD5=[9f26fb60f1f5aebbb5b3e3d08157f548]
 @startuml
 
 frame "GCP" {
@@ -52,7 +52,7 @@ frame OSCI {
         dbuild - -> dpush
         dpush ..> dcache
         dcache ..> dbuild
-        dbuild ..> updatesupa
+        dbuild - -> updatesupa
         updatesupa - -> VM : Runs on
     }
 }

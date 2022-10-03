@@ -35,7 +35,7 @@ frame OSCI {
         dbuild --> dpush
         dpush ..> dcache
         dcache ..> dbuild
-        dbuild ..> updatesupa
+        dbuild --> updatesupa
         updatesupa --> VM : Runs on
     }
 }
