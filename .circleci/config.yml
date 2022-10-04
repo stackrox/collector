@@ -740,14 +740,13 @@ jobs:
     steps:
     - initcommand
     - dockerized-should-run
-    - quay-login
-    - docker-login-push
+    - quay-login-push
 
     - run:
         name: Build full collector image
         command: |
           "${SOURCE_ROOT}/.circleci/dockerized-drivers/build-full-collector.sh" \
-            "docker.io/stackrox"
+            "<< pipeline.parameters.quay-repo >>"
 
   run-stackrox-ci:
     <<: *defaultImage
@@ -880,7 +879,6 @@ jobs:
 
     steps:
     - initcommand
-    - docker-login-pull
 
     - run:
         name: Check whether to run job
@@ -1253,8 +1251,7 @@ workflows:
     - dockerized-build-collector:
         <<: *runOnAllTags
         context:
-          - docker-io-push
-          - quay-rhacs-eng-readonly
+          - quay-rhacs-eng-readwrite
         requires:
           - dockerized-unify-images
           - images
