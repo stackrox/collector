@@ -9,29 +9,7 @@ BRANCH=$5
 SOURCE_ROOT=$6
 
 check_use_collector_builder_cache() {
-    use_cache="true"
-
-    if [[ -n "$TAG" ]]; then
-         use_cache="false"
-    fi
-
-    if [[ "$BRANCH" == "master" ]]; then
-         use_cache="false"
-    fi
-
-    if [[ -f pr-metadata/labels/build-builder-image ]]; then
-         use_cache="false"
-    fi
-
-    if [[ -f pr-metadata/labels/valgrind-unit-tests ]]; then
-         use_cache="false"
-    fi
-
-    if [[ -f pr-metadata/labels/valgrind-integration-tests ]]; then
-         use_cache="false"
-    fi
-
-    echo "${use_cache}"
+    echo "false"
 }
 
 COLLECTOR_VERSION="$(make -s -C "${SOURCE_ROOT}" tag)"

@@ -264,7 +264,7 @@ jobs:
     - run:
         name: Build collector-builder image
         command: |
-          BUILD_BUILDER_IMAGE=true make -C "${SOURCE_ROOT}" builder
+          make -C "${SOURCE_ROOT}" builder
 
     - run:
         name: Save collector-builder image
