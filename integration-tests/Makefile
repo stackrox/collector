@@ -2,7 +2,7 @@ BASE_PATH = ./..
 include ../Makefile-constants.mk
 
 ifeq ($(COLLECTOR_REPO),)
-COLLECTOR_REPO=stackrox/collector
+COLLECTOR_REPO=quay.io/stackrox-io/collector
 endif
 
 ifeq ($(COLLECTOR_IMAGE),)
@@ -84,4 +84,3 @@ report:
 	@-grep 'FAIL    github.com/stackrox/collector' integration-test.log || true
 	@echo
 	@testerror="$$(grep -e 'Unable to deploy' -e 'FAIL:' integration-test.log | wc -l)" && test $$testerror -eq 0
-

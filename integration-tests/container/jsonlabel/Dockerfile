@@ -1,5 +1,4 @@
 # ROX-6200 regression test: image to trigger JSON parsing error
-# docker build -t stackrox/benchmark-collector:json-label
 FROM alpine:latest
 
 LABEL "annotation.ad.datadoghq.com/account-service.instances"="[{  \"host\": \"%%host%%\",  \"port\": 13080,  \"tags\": {\"service\": \"zendesk_account_service\"},  \"refresh_beans\": 1,  \"conf\": [{    \"include\": {      \"bean_regex\": \"com\\\\.zaxxer\\\\.hikari[:]type=Pool\\\\s.+\"    }  },  {    \"include\": {      \"domain\": \"slick\"    }  },  {    \"include\": {      \"domain\": \"java.lang\",      \"type\": \"GarbageCollector\",      \"attribute\": {        \"LastGcInfo.duration\": {          \"metric_type\": \"gauge\"        }      }    }  }]}]" \

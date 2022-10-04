@@ -9,9 +9,9 @@ image_name=$5
 dockerized=$6
 BUILD_NUM=$7
 
-COLLECTOR_REPO="stackrox/collector"
+COLLECTOR_REPO="quay.io/rhacs-eng/collector"
 if [[ -f pr-metadata/labels/ci-run-against-ubi && "$dockerized" != "true" ]]; then
-    COLLECTOR_REPO="stackrox/collector-test-cpaas"
+    COLLECTOR_REPO="quay.io/rhacs-eng/collector-test-cpaas"
 fi
 
 TEST_NAME="${collection_method}-${vm_type}-${image_family}"
