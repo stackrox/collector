@@ -185,7 +185,6 @@ $(eval $(call linter,flake8))
 $(eval $(call linter,clang-format))
 $(eval $(call linter,shellcheck))
 $(eval $(call linter,shfmt))
-$(eval $(call linter,circleci_validate))
 
 .PHONY: linters
 linters:
