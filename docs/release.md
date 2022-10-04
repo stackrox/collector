@@ -68,9 +68,9 @@ That script is out of date and will be updated.
 
 1. Navigate to your local stackrox/collector repo 
 2. git checkout release-"${COLLECTOR_RELEASE}"
-4. Make changes by cherry-picking or otherwise and commit changes.
-5. Increment COLLECTOR_PATCH_NUMBER
-6. Tag and push the patch
+3. Make changes by cherry-picking or otherwise and commit changes.
+4. Increment COLLECTOR_PATCH_NUMBER
+5. Tag and push the patch
   - `git tag -a "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"`
   - `git push --follow-tags`
-8. Create a pull request to update the `COLLECTOR_VERSION` file in the [stackrox/stackrox](https://github.com/stackrox/stackrox/) repo with the newly create release after CI images have been built.
+6. Create a pull request to update the `COLLECTOR_VERSION` file in the [stackrox/stackrox](https://github.com/stackrox/stackrox/) repo with the newly create release after CI images have been built.
