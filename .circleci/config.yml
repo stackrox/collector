@@ -262,16 +262,9 @@ jobs:
     - quay-login-push
 
     - run:
-        name: Restore collector-builder image
-        command: |
-          docker pull "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}" \
-            || docker pull quay.io/stackrox-io/collector-builder:cache \
-            || true
-
-    - run:
         name: Build collector-builder image
         command: |
-          make -C "${SOURCE_ROOT}" builder
+          BUILD_BUILDER_IMAGE=true make -C "${SOURCE_ROOT}" builder
 
     - run:
         name: Save collector-builder image
