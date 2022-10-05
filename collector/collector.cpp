@@ -96,6 +96,25 @@ static void AbortHandler(int signum) {
   raise(signum);
 }
 
+static int __read(int fd, void* buf, int buflen) {
+  unsigned char* p = static_cast<unsigned char*>(buf);
+  int n, i = 0;
+  while (i < buflen) {
+    n = read(fd, p+i, buflen-i);
+    if (n < 0) {
+      if (errno == EINTR)
+        continue;
+      else
+        return n;
+    } else if (n == 0) {
+      return i;
+    } else {
+      i += n;
+    }
+  }
+  return i;
+}
+
 int InsertModule(int fd, const std::unordered_map<std::string, std::string>& args) {
   std::string args_str;
   bool first = true;
@@ -122,7 +141,7 @@ int InsertModule(int fd, const std::unordered_map<std::string, std::string>& arg
       return -1;
   }
   lseek(fd, 0, SEEK_SET);
-  size_t read_image_size = read(fd, image, image_size);
+  size_t read_image_size = __read(fd, image, image_size);
   if (read_image_size != image_size) {
       CLOG(ERROR) << "Could not read kernel module: " << StrError() << ".  Mismatch with number of bytes read and kernel module size.";
       errno = EINVAL;
