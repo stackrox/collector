@@ -1246,6 +1246,7 @@ TEST(ConnTrackerTest, TestComputeDeltaAfterglowBenchmark2) {
   std::cout << "Time taken by ComputeDeltaAfterglow= " << dur.count() << " ms\n";
 }
 
+/*
 TEST(ConnTrackerTest, TestEmplaceOrUpdateSameEndpointDifferentPids) {
   string container = "FakeContainer";
   int64_t connection_time1 = 1000;
@@ -1354,7 +1355,7 @@ TEST(ConnTrackerTest, TestDeltaForEndpointDifferentProtocols) {
   CT::ComputeDelta(new_state, &old_state);
   EXPECT_THAT(old_state, expected_delta);
 }
-
+*/
 }  // namespace
 
 }  // namespace collector
