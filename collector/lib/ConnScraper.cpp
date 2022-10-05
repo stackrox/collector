@@ -203,7 +203,7 @@ static void ReadProcessInfo(const char* process_id, int dirfd, struct ProcessInf
   // parse xx/exe
   ssize_t nread = readlinkat(dirfd, "exe", buffer, sizeof(buffer));
   if (nread > 0 && nread < ssizeof(buffer)) {
-    buffer[nread - 1] = '\0';  // remove \n
+    buffer[nread] = '\0';
 
     info.comm = info.exe_path = buffer;
 
@@ -216,22 +216,29 @@ static void ReadProcessInfo(const char* process_id, int dirfd, struct ProcessInf
   // parse xx/cmdline
   FileHandle cmdline(FDHandle(openat(dirfd, "cmdline", O_RDONLY)), "r");
   if (cmdline.valid()) {
-    std::stringstream argv;
-    do {
-      nread = fread(buffer, 1, sizeof(buffer), cmdline);
-      if (nread > 0)
-        argv.write(buffer, nread);
-    } while (!feof(cmdline) && (!ferror(cmdline)));
+    bool did_exe = false;
+    bool arg_completed = false;
+    std::stringbuf stringbuf;
+    int c;
 
-    // the first entry is the program name
-    info.exe = argv.str().c_str();  // reinterprete the \0
-
-    // consume the first entry
-    while (int c = argv.get())
-      if (c == EOF) break;
-
-    info.args = argv.str();
-    std::replace(info.args.begin(), info.args.end(), '\0', ' ');
+    while ((c = fgetc(cmdline)) != EOF) {
+      if (c != '\0') {
+        if (arg_completed) {
+          stringbuf.sputc(' ');
+          arg_completed = false;
+        }
+        stringbuf.sputc(c);
+      } else {
+        if (did_exe) {
+          arg_completed = true;
+        } else {
+          info.exe = stringbuf.str();
+          stringbuf = std::stringbuf();
+          did_exe = true;
+        }
+      }
+    }
+    info.args = stringbuf.str();
   } else {
     CLOG(ERROR) << "Could not read 'cmdline' for " << process_id << ": " << StrError();
   }
