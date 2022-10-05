@@ -55,24 +55,41 @@ bool ParseLogLevelName(std::string name, LogLevel* level);
 const char* GetGlobalLogPrefix();
 void SetGlobalLogPrefix(const char* prefix);
 
+const size_t LevelPaddingWidth = 7;
+
 class LogMessage {
  public:
   LogMessage(const char* file, int line, LogLevel level)
-      : file_(file), line_(line), level_(level) {}
+      : file_(file), line_(line), level_(level) {
+    // if in debug mode, output file names associated with log messages
+    include_file_ = CheckLogLevel(LogLevel::DEBUG);
+  }
 
   ~LogMessage() {
-    const char* basename = strrchr(file_, '/');
-    if (!basename) {
-      basename = file_;
-    } else {
-      ++basename;
-    }
     auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     auto nowTm = gmtime(&now);
-    std::cerr << GetGlobalLogPrefix()
-              << "[" << GetLogLevelShortName(level_)
-              << " " << std::put_time(nowTm, "%Y%m%d %H%M%S")
-              << " " << basename << ":" << line_ << "] " << buf_.str() << std::endl;
+
+    std::stringstream header;
+
+    header << GetGlobalLogPrefix()
+           << "[" << std::left << std::setw(LevelPaddingWidth) << GetLogLevelName(level_)
+           << " " << std::put_time(nowTm, "%Y/%m/%d %H:%M:%S");
+    header << "] ";
+
+    if (include_file_) {
+      const char* basename = strrchr(file_, '/');
+      if (!basename) {
+        basename = file_;
+      } else {
+        ++basename;
+      }
+      header << "(" << basename << ":" << line_ << ") ";
+    }
+
+    std::cerr << header.str()
+              << buf_.str()
+              << std::endl;
+
     if (level_ == LogLevel::FATAL) {
       exit(1);
     }
@@ -89,6 +106,7 @@ class LogMessage {
   int line_;
   LogLevel level_;
   std::stringstream buf_;
+  bool include_file_;
 };
 
 }  // namespace logging
