@@ -168,7 +168,7 @@ class ConnectionTracker {
   // NormalizeContainerEndpoint transforms a container endpoint into a normalized form.
   inline ContainerEndpoint NormalizeContainerEndpoint(const ContainerEndpoint& cep) const {
     const auto& ep = cep.endpoint();
-    return ContainerEndpoint(cep.container(), Endpoint(Address(ep.address().family()), ep.port()), cep.l4proto());
+    return ContainerEndpoint(cep.container(), Endpoint(Address(ep.address().family()), ep.port()), cep.l4proto(), cep.originator());
   }
 
   // Determine if a connection should be ignored

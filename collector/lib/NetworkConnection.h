@@ -38,6 +38,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <vector>
 
 #include "Hash.h"
+#include "Process.h"
 
 namespace collector {
 
@@ -347,17 +348,17 @@ size_t Hash(const L4ProtoPortPair& pp);
 
 class ContainerEndpoint {
  public:
-  ContainerEndpoint(std::string container, const Endpoint& endpoint, L4Proto l4proto, int pid = -1)
-      : container_(std::move(container)), endpoint_(endpoint), l4proto_(l4proto), pid_(pid) {}
+  ContainerEndpoint(std::string container, const Endpoint& endpoint, L4Proto l4proto, std::shared_ptr<Process> originator)
+      : container_(std::move(container)), endpoint_(endpoint), l4proto_(l4proto), originator_(originator) {}
 
   const std::string& container() const { return container_; }
   const Endpoint& endpoint() const { return endpoint_; }
   const L4Proto l4proto() const { return l4proto_; }
-  const int pid() const { return pid_; }
+  const std::shared_ptr<Process> originator() const { return originator_; }
 
   bool operator==(const ContainerEndpoint& other) const {
     return container_ == other.container_ && endpoint_ == other.endpoint_ && l4proto_ == other.l4proto_ &&
-           pid_ == other.pid_;
+           originator_ == other.originator_;
   }
 
   bool operator!=(const ContainerEndpoint& other) const {
@@ -370,7 +371,7 @@ class ContainerEndpoint {
   std::string container_;
   Endpoint endpoint_;
   L4Proto l4proto_;
-  int pid_;
+  std::shared_ptr<Process> originator_;
 };
 
 std::ostream& operator<<(std::ostream& os, const ContainerEndpoint& container_endpoint);

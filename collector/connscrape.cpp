@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
     std::cout << std::endl
               << "Endpoints:" << std::endl;
     for (const auto& ep : endpoints) {
-      std::cout << " " << ep << " " << ep.pid() << std::endl;
+      std::cout << " " << ep << " " << ep.originator()->getPid() << std::endl;
     }
   }
 

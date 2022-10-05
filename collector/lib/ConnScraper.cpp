@@ -190,6 +190,53 @@ int ReadHexBytes(const char* p, const char* endp, void* buf, int chunk_size, int
   return i;
 }
 
+struct ProcessInfo {
+  std::string comm;
+  std::string exe;
+  std::string exe_path;
+  std::string args;
+};
+
+static void ReadProcessInfo(const char* process_id, int dirfd, struct ProcessInfo& info) {
+  char buffer[PATH_MAX];
+
+  // parse xx/exe
+  ssize_t nread = readlinkat(dirfd, "exe", buffer, sizeof(buffer));
+  if (nread > 0 && nread < ssizeof(buffer)) {
+    buffer[nread - 1] = '\0';  // remove \n
+
+    info.comm = info.exe_path = buffer;
+
+    if (buffer[0] == '/')
+      info.comm = strrchr(buffer, '/') + 1;
+  } else {
+    CLOG(ERROR) << "Could not read 'exe' for " << process_id << ": " << StrError();
+  }
+
+  // parse xx/cmdline
+  FileHandle cmdline(FDHandle(openat(dirfd, "cmdline", O_RDONLY)), "r");
+  if (cmdline.valid()) {
+    std::stringstream argv;
+    do {
+      nread = fread(buffer, 1, sizeof(buffer), cmdline);
+      if (nread > 0)
+        argv.write(buffer, nread);
+    } while (!feof(cmdline) && (!ferror(cmdline)));
+
+    // the first entry is the program name
+    info.exe = argv.str().c_str();  // reinterprete the \0
+
+    // consume the first entry
+    while (int c = argv.get())
+      if (c == EOF) break;
+
+    info.args = argv.str();
+    std::replace(info.args.begin(), info.args.end(), '\0', ' ');
+  } else {
+    CLOG(ERROR) << "Could not read 'cmdline' for " << process_id << ": " << StrError();
+  }
+}
+
 // ConnLineData is the interesting (for our purposes) subset of the data stored in a single (non-header) line of
 // `net/tcp[6]`.
 struct ConnLineData {
@@ -209,7 +256,7 @@ struct ConnInfo {
 struct EndpointInfo {
   Endpoint endpoint;
   L4Proto l4proto;
-  int pid;
+  std::shared_ptr<Process> process;
 };
 
 // ParseEndpoint parses an endpoint listed in the `net/tcp[6]` file.
@@ -286,7 +333,7 @@ bool LocalIsServer(const Endpoint& local, const Endpoint& remote, const Unordere
 }
 
 // ReadConnectionsFromFile reads all connections from a `net/tcp[6]` file and stores them by inode in the given map.
-bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, int pid, std::FILE* f,
+bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::shared_ptr<Process> process, std::FILE* f,
                              UnorderedMap<ino_t, ConnInfo>* connections, UnorderedMap<ino_t, EndpointInfo>* listen_endpoints) {
   char line[512];
 
@@ -303,7 +350,7 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, int pid, s
         auto& endpoint_info = (*listen_endpoints)[data.inode];
         endpoint_info.endpoint = data.local;
         endpoint_info.l4proto = l4proto;
-        endpoint_info.pid = pid;
+        endpoint_info.process = process;
       }
       continue;
     }
@@ -326,13 +373,13 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, int pid, s
 
 // GetConnections reads all active connections (inode -> connection info mapping) for a given network NS, addressed by
 // the dir FD for a proc entry of a process in that network namespace.
-bool GetConnections(int dirfd, int pid, UnorderedMap<ino_t, ConnInfo>* connections, UnorderedMap<ino_t, EndpointInfo>* listen_endpoints) {
+bool GetConnections(int dirfd, std::shared_ptr<Process> process, UnorderedMap<ino_t, ConnInfo>* connections, UnorderedMap<ino_t, EndpointInfo>* listen_endpoints) {
   bool success = true;
   {
     FDHandle net_tcp_fd = openat(dirfd, "net/tcp", O_RDONLY);
     if (net_tcp_fd.valid()) {
       FileHandle net_tcp(std::move(net_tcp_fd), "r");
-      success = ReadConnectionsFromFile(Address::Family::IPV4, L4Proto::TCP, pid, net_tcp, connections, listen_endpoints) && success;
+      success = ReadConnectionsFromFile(Address::Family::IPV4, L4Proto::TCP, process, net_tcp, connections, listen_endpoints) && success;
     } else {
       success = false;  // there should always be a net/tcp file
     }
@@ -342,7 +389,7 @@ bool GetConnections(int dirfd, int pid, UnorderedMap<ino_t, ConnInfo>* connectio
     FDHandle net_tcp6_fd = openat(dirfd, "net/tcp6", O_RDONLY);
     if (net_tcp6_fd.valid()) {
       FileHandle net_tcp6(std::move(net_tcp6_fd), "r");
-      success = ReadConnectionsFromFile(Address::Family::IPV6, L4Proto::TCP, pid, net_tcp6, connections, listen_endpoints) && success;
+      success = ReadConnectionsFromFile(Address::Family::IPV6, L4Proto::TCP, process, net_tcp6, connections, listen_endpoints) && success;
     } else {
       success = false;
     }
@@ -379,7 +426,7 @@ void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const C
         } else if (listen_endpoints) {
           if (const auto* ep = Lookup(ns_network_data->listen_endpoints, socket_inode)) {
             if (!IsRelevantEndpoint(ep->endpoint)) continue;
-            listen_endpoints->emplace_back(container_id, ep->endpoint, ep->l4proto, ep->pid);
+            listen_endpoints->emplace_back(container_id, ep->endpoint, ep->l4proto, ep->process);
           }
         }
       }
@@ -433,7 +480,14 @@ bool ReadContainerConnections(const char* proc_path, std::vector<Connection>* co
       auto emplace_res = conns_by_ns.emplace(netns_inode, NSNetworkData());
       if (emplace_res.second) {
         auto& ns_network_data = emplace_res.first->second;
-        if (!GetConnections(dirfd, pid, &ns_network_data.connections, listen_endpoints ? &ns_network_data.listen_endpoints : nullptr)) {
+
+        ProcessInfo info;
+        ReadProcessInfo(curr->d_name, dirfd, info);
+
+        std::shared_ptr<Process> process =
+            ProcessStore::global_instance.FetchReference(Process(container_id, info.comm, info.exe, info.exe_path, info.args, pid));
+
+        if (!GetConnections(dirfd, process, &ns_network_data.connections, listen_endpoints ? &ns_network_data.listen_endpoints : nullptr)) {
           // If there was an error reading connections, that could be due to a number of reasons.
           // We need to differentiate persistent errors (e.g., expected net/tcp6 file not found)
           // from spurious/race condition errors caused by the process disappearing while reading
