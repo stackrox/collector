@@ -24,35 +24,46 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef COLLECTOR_PROCESS_H
 #define COLLECTOR_PROCESS_H
 
+#include <cstdint>
 #include <memory>
 #include <unordered_map>
-#include <cstdint>
 
 namespace collector {
 
 // A process
 class Process {
-  public:
-    Process(const std::string& container_id, const std::string& name, const std::string& exe_path, const std::string& args, uint64_t pid) :
-        container_id_(container_id), name_(name), exe_path_(exe_path), args_(args), pid_(pid) {}
-    virtual ~Process() {}
-  
-    const std::string& getContainerId() const { return container_id_; }
-    const std::string& getName() const { return name_; }
-    const std::string& getExePath() const { return exe_path_; }
-    const std::string& getArgs() const { return args_; }
-    uint64_t getPid() const { return pid_; }
+ public:
+  Process(const std::string& container_id,
+          const std::string& comm,
+          const std::string& exe,
+          const std::string& exe_path,
+          const std::string& args, uint64_t pid)
+      : container_id_(container_id),
+        comm_(comm),
+        exe_(exe),
+        exe_path_(exe_path),
+        args_(args),
+        pid_(pid) {}
+  virtual ~Process() {}
 
-    bool operator==(Process& other) {
-      return pid_ == other.pid_;
-    }
+  const std::string& getContainerId() const { return container_id_; }
+  const std::string& getComm() const { return comm_; }
+  const std::string& getExe() const { return exe_; }
+  const std::string& getExePath() const { return exe_path_; }
+  const std::string& getArgs() const { return args_; }
+  uint64_t getPid() const { return pid_; }
 
-  protected:
-    std::string container_id_;
-    std::string name_;
-    std::string exe_path_;
-    std::string args_;
-    uint64_t pid_;
+  bool operator==(Process& other) {
+    return pid_ == other.pid_;
+  }
+
+ protected:
+  std::string container_id_;
+  std::string comm_;      // binary name
+  std::string exe_;       // argv[0]
+  std::string exe_path_;  // full binary path
+  std::string args_;      // space separated concatenation of arguments
+  uint64_t pid_;
 };
 
 /* A Process object store used to deduplicate process information.
@@ -60,30 +71,30 @@ class Process {
    References are created by FetchReference, which will create the Process object
    if necessary as a side-effect. */
 class ProcessStore {
-  public:
-    static ProcessStore global_instance;
+ public:
+  static ProcessStore global_instance;
 
-    /* Get a reference to a matching Process stored in the cache.
-       The Process is created if it does not exist.
-       This method always returns a valid Process reference. */
-    const std::shared_ptr<Process> FetchReference(const Process& p);
+  /* Get a reference to a matching Process stored in the cache.
+     The Process is created if it does not exist.
+     This method always returns a valid Process reference. */
+  const std::shared_ptr<Process> FetchReference(const Process& p);
 
-    // Get a Process by PID if it exists in the store, null otherwise.
-    const std::shared_ptr<Process> FindByPid(uint64_t pid) const;
+  // Get a Process by PID if it exists in the store, null otherwise.
+  const std::shared_ptr<Process> FindByPid(uint64_t pid) const;
 
-  private:
-    class CachedProcess : public Process {
-      public:
-        CachedProcess(const Process& p, ProcessStore& store) : Process(p), store_(store) {}
-        ~CachedProcess();
+ private:
+  class CachedProcess : public Process {
+   public:
+    CachedProcess(const Process& p, ProcessStore& store) : Process(p), store_(store) {}
+    ~CachedProcess();
 
-      private:
-        ProcessStore& store_;
-    };
+   private:
+    ProcessStore& store_;
+  };
 
-    std::unordered_map<uint64_t, std::weak_ptr<CachedProcess>> cache_;
+  std::unordered_map<uint64_t, std::weak_ptr<CachedProcess>> cache_;
 };
 
-}
+}  // namespace collector
 
 #endif
