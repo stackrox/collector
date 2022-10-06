@@ -67,7 +67,7 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 		DisableGrpcServer: false,
 		BootstrapOnly:     false,
 		CollectorImage:    collectorImage,
-		GRPCServerImage:   "quay.io/rhacs-eng/grpc-server:3.72.x-129-g8e0c43c17a",
+		GRPCServerImage:   "quay.io/rhacs-eng/grpc-server:3.72.x-239-g0e734983a3-dirty",
 		Env:               env,
 		Mounts:            mounts,
 		TestName:          name,
@@ -86,7 +86,7 @@ func (c *collectorManager) Setup() error {
 		}
 
 		// remove previous db file
-		if _, err := c.executor.Exec("rm", "-fv", c.DBPath); err != nil {
+		if _, err := c.executor.Exec("sudo", "rm", "-fv", c.DBPath); err != nil {
 			return err
 		}
 	}
