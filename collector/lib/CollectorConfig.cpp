@@ -159,6 +159,10 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
       force_kernel_modules_ = config["forceKernelModules"].asBool();
       CLOG(INFO) << "User configured forceKernelModules=" << force_kernel_modules_;
     }
+
+    if (!config["tlsConfig"].empty()) {
+      tls_config_ = config["tlsConfig"];
+    }
   }
 
   if (const char* enable_sysdig_log = std::getenv("COLLECTOR_SD_LOG")) {

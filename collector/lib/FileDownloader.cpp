@@ -325,7 +325,8 @@ bool FileDownloader::Download() {
       CLOG_IF(!encountered_404, INFO) << "HTTP Request failed with error code 404";
       encountered_404 = true;
     } else if (download_data.http_status >= 400) {
-      CLOG(WARNING) << "Unexpected HTTP request failure (HTTP " << download_data.http_status << ")";
+      CLOG_THROTTLED(WARNING, std::chrono::seconds(10))
+          << "Unexpected HTTP request failure (HTTP " << download_data.http_status << ")";
     }
 
     if (max_attempts == 1) break;
