@@ -114,7 +114,7 @@ bool SysdigService::FilterEvent(sinsp_evt* event) {
   if (!useEbpf) {
     if (cache_status == BLOCKED_USERSPACE && event->get_type() != PPME_PROCEXIT_1_E) {
       if (!inspector_->ioctl(0, PPM_IOCTL_EXCLUDE_NS_OF_PID, reinterpret_cast<void*>(tinfo->m_pid))) {
-        CLOG(WARNING) << "Failed ioctl: " << inspector_->getlasterr();
+        CLOG(WARNING) << "Failed to exclude namespace for pid " << tinfo->m_pid << ": " << inspector_->getlasterr();
       } else {
         cache_status = BLOCKED_KERNEL;
       }

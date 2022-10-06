@@ -49,8 +49,8 @@ class CollectionHeuristic : public Heuristic {
         CLOG(FATAL) << host.GetDistro() << " does not support third-party kernel modules or the required eBPF features.";
       }
 
-      CLOG(ERROR) << host.GetDistro() << " " << host.GetKernelVersion().release
-                  << " does not support ebpf based collection.";
+      CLOG(WARNING) << host.GetDistro() << " " << host.GetKernelVersion().release
+                    << " does not support ebpf based collection.";
       CLOG(WARNING) << "Switching to kernel module based collection, please set "
                     << "collector.collectionMethod=KERNEL_MODULE to remove this message";
       hconfig->SetCollectionMethod("kernel-module");
@@ -72,11 +72,11 @@ class CosHeuristic : public Heuristic {
     if (!config.UseEbpf()) {
       CLOG(ERROR) << host.GetDistro() << " does not support third-party kernel modules";
       if (host.HasEBPFSupport() && !config.ForceKernelModules()) {
-        CLOG(WARNING) << "switching to eBPF based collection, please set "
+        CLOG(WARNING) << "Switching to eBPF based collection, please set "
                       << "collector.collectionMethod=EBPF to remove this message";
         hconfig->SetCollectionMethod("ebpf");
       } else {
-        CLOG(FATAL) << "unable to switch to eBPF collection on this host";
+        CLOG(FATAL) << "Unable to switch to eBPF collection on this host";
       }
     }
   }

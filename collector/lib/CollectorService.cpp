@@ -79,12 +79,12 @@ void CollectorService::RunForever() {
   CLOG(INFO) << "Network scrape interval set to " << config_.ScrapeInterval() << " seconds";
 
   if (config_.grpc_channel) {
-    CLOG(INFO) << "Waiting for GRPC server to become ready ...";
+    CLOG(INFO) << "Waiting for Sensor to become ready ...";
     if (!WaitForGRPCServer()) {
-      CLOG(INFO) << "Interrupted while waiting for GRPC server to become ready ...";
+      CLOG(INFO) << "Interrupted while waiting for Sensor to become ready ...";
       return;
     }
-    CLOG(INFO) << "GRPC server connectivity is successful";
+    CLOG(INFO) << "Sensor connectivity is successful";
 
     if (!config_.DisableNetworkFlows()) {
       std::shared_ptr<IConnScraper> conn_scraper = std::make_shared<ConnScraper>(config_.HostProc());
@@ -113,7 +113,7 @@ void CollectorService::RunForever() {
   ControlValue cv;
   while ((cv = control_->load(std::memory_order_relaxed)) != STOP_COLLECTOR) {
     sysdig.Run(*control_);
-    CLOG(INFO) << "Interrupted collector!";
+    CLOG(DEBUG) << "Interrupted collector!";
 
     std::lock_guard<std::mutex> lock(chisel_mutex_);
     if (update_chisel_) {

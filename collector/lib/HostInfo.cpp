@@ -113,14 +113,17 @@ const std::string& HostInfo::GetHostname() {
     const char* hostname_env = std::getenv("NODE_HOSTNAME");
     if (hostname_env && *hostname_env) {
       hostname_ = std::string(hostname_env);
-      CLOG(INFO) << "Environment variable NODE_HOSTNAME is set to " << hostname_;
+      CLOG(DEBUG) << "Found hostname in NODE_HOSTNAME environment variable";
     } else {
       // if we can't get the hostname from the environment
       // we can look in /etc or /proc (mounted at /host/etc or /host/proc in the collector container)
       std::vector<std::string> hostnamePaths{"/etc/hostname", "/proc/sys/kernel/hostname"};
       for (auto hostnamePath : hostnamePaths) {
         hostname_ = GetHostnameFromFile(hostnamePath);
-        if (!hostname_.empty()) break;
+        if (!hostname_.empty()) {
+          CLOG(DEBUG) << "Found hostname in " << hostnamePath;
+          break;
+        }
       }
     }
     CLOG(INFO) << "Hostname: '" << hostname_ << "'";
@@ -158,7 +161,7 @@ std::string HostInfo::GetOSReleaseValue(const char* name) {
   if (!release_file.is_open()) {
     release_file.open(GetHostPath("/usr/lib/os-release"));
     if (!release_file.is_open()) {
-      CLOG(ERROR) << "failed to open os-release file, unable to resolve OS information.";
+      CLOG(ERROR) << "Failed to open os-release file, unable to resolve OS information.";
       return "";
     }
   }
@@ -197,7 +200,7 @@ bool HostInfo::IsUEFI() {
     return false;
   }
 
-  CLOG(DEBUG) << "EFI directory exist, UEFI boot mode";
+  CLOG(DEBUG) << "EFI directory exists, UEFI boot mode";
   return true;
 }
 
@@ -210,7 +213,7 @@ SecureBootStatus HostInfo::GetSecureBootFromVars() {
   DirHandle efivars = opendir(efi_path.c_str());
 
   if (!efivars.valid()) {
-    CLOG(INFO) << "Could not open " << efi_path << ": " << StrError();
+    CLOG(WARNING) << "Could not open " << efi_path << ": " << StrError();
     return SecureBootStatus::NOT_DETERMINED;
   }
 

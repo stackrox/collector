@@ -73,7 +73,7 @@ bool ProfilerHandler::HandleCPURoute(struct mg_connection* conn, const std::stri
         if (!Profiler::StartCPUProfiler(kCPUProfileFilename)) {
           return ServerError(conn, "failed starting cpu profiler");
         }
-        CLOG(INFO) << "started cpu profiler";
+        CLOG(INFO) << "Started CPU profiler";
       }
     } else if (post_data == "off") {
       if (Profiler::IsCPUProfilerEnabled()) {
@@ -82,16 +82,16 @@ bool ProfilerHandler::HandleCPURoute(struct mg_connection* conn, const std::stri
         if (stat(kCPUProfileFilename.c_str(), &sdata) == 0) {
           cpu_profile_length_ = sdata.st_size;
         }
-        CLOG(INFO) << "stopped cpu profiler, bytes=" << cpu_profile_length_;
+        CLOG(INFO) << "Stopped CPU profiler. Profile size: " << cpu_profile_length_ << " bytes";
       }
     } else if (post_data == "empty") {
       if (cpu_profile_length_ != 0) {
         cpu_profile_length_ = 0;
         if (std::remove(kCPUProfileFilename.c_str()) != 0) {
-          CLOG(INFO) << "remove failed: " << StrError();
+          CLOG(ERROR) << "CPU profile removal failed: " << StrError();
           return ServerError(conn, "failure while deleting cpu profile");
         }
-        CLOG(INFO) << "cleared cpu profile";
+        CLOG(INFO) << "Cleared CPU profile";
       }
     } else {
       return ClientError(conn, "invalid post data");
@@ -105,7 +105,7 @@ bool ProfilerHandler::HandleHeapRoute(struct mg_connection* conn, const std::str
     if (post_data == "on") {
       if (!Profiler::IsHeapProfilerEnabled()) {
         Profiler::StartHeapProfiler();
-        CLOG(INFO) << "started heap profiler";
+        CLOG(INFO) << "Started heap profiler";
       }
     } else if (post_data == "off") {
       if (Profiler::IsHeapProfilerEnabled()) {
@@ -115,13 +115,13 @@ bool ProfilerHandler::HandleHeapRoute(struct mg_connection* conn, const std::str
         }
         heap_profile_length_ = strlen(heap_profile_.get());
         Profiler::StopHeapProfiler();
-        CLOG(INFO) << "stopped heap profiler, bytes=" << heap_profile_length_;
+        CLOG(INFO) << "Stopped heap profiler. Profile size: " << heap_profile_length_ << " bytes";
       }
     } else if (post_data == "empty") {
       if (heap_profile_length_ != 0) {
         heap_profile_length_ = 0;
         heap_profile_.reset();
-        CLOG(INFO) << "cleared heap profile";
+        CLOG(INFO) << "Cleared heap profile";
       }
     } else {
       return ClientError(conn, "invalid post data");

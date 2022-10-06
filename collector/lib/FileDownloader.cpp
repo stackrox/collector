@@ -23,6 +23,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "FileDownloader.h"
 
 #include <algorithm>
+#include <chrono>
 #include <fstream>
 #include <unistd.h>
 #include <utils.h>
@@ -50,7 +51,7 @@ size_t HeaderCallback(char* buffer, size_t size, size_t nitems, void* dd) {
     }
 
     download_data->http_status = std::stoul(data.substr(error_code_offset + 1, data.find(' ', error_code_offset + 1)).str());
-    CLOG(DEBUG) << "Set HTTP status code to '" << download_data->http_status << "'";
+    // CLOG(DEBUG) << "Set HTTP status code to '" << download_data->http_status << "'";
   }
 
   return buffer_size;
@@ -136,6 +137,9 @@ FileDownloader::~FileDownloader() {
 }
 
 bool FileDownloader::SetURL(const char* const url) {
+  url_path_ = std::string(url);
+  url_path_ = url_path_.substr(url_path_.find_last_of("/") + 1);
+
   auto result = curl_easy_setopt(curl_, CURLOPT_URL, url);
 
   if (result != CURLE_OK) {
@@ -288,11 +292,13 @@ bool FileDownloader::Download() {
     auto result = curl_easy_setopt(curl_, CURLOPT_CONNECT_TO, connect_to_);
 
     if (result != CURLE_OK) {
-      CLOG(INFO) << "Unable to set connection host, the download is likely to fail - " << curl_easy_strerror(result);
+      CLOG(WARNING) << "Unable to set connection host, the download is likely to fail - " << curl_easy_strerror(result);
     }
   }
 
   auto start_time = std::chrono::steady_clock::now();
+  int failures = 0;
+  bool encountered_404 = false;
 
   for (auto max_attempts = retry_.times; max_attempts; max_attempts--) {
     std::ofstream of(output_path_, std::ios::trunc | std::ios::binary);
@@ -313,9 +319,13 @@ bool FileDownloader::Download() {
       return true;
     }
 
-    CLOG(INFO) << "Fail to download " << output_path_ << " - " << ((error_[0] != '\0') ? error_.data() : curl_easy_strerror(result));
-    if (download_data.http_status >= 400) {
-      CLOG(INFO) << "HTTP Request failed with error code '" << download_data.http_status << "' - " << download_data.error_msg;
+    failures++;
+
+    if (download_data.http_status == 404) {
+      CLOG_IF(!encountered_404, INFO) << "HTTP Request failed with error code 404";
+      encountered_404 = true;
+    } else if (download_data.http_status >= 400) {
+      CLOG(WARNING) << "Unexpected HTTP request failure (HTTP " << download_data.http_status << ")";
     }
 
     if (max_attempts == 1) break;
@@ -324,12 +334,13 @@ bool FileDownloader::Download() {
 
     auto time_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - start_time);
     if (time_elapsed > retry_.max_time) {
-      CLOG(WARNING) << "Timeout while retrying to download " << output_path_;
+      CLOG(WARNING) << "Timeout while retrying to download " << url_path_;
       return false;
     }
   }
 
-  CLOG(WARNING) << "Failed to download " << output_path_;
+  CLOG(WARNING) << "Attempted to download " << url_path_ << " " << failures << " time(s)";
+  CLOG(WARNING) << "Failed to download from " << url_path_;
 
   return false;
 }

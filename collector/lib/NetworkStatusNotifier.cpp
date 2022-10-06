@@ -100,7 +100,7 @@ void NetworkStatusNotifier::ReceivePublicIPs(const sensor::IPAddressList& public
 
   auto ipv6_size = public_ips.ipv6_addresses_size();
   if (ipv6_size % 2 != 0) {
-    CLOG(WARNING) << "IPv6 address field has odd length " << ipv6_size << ". Ignoring IPv6 addresses...";
+    CLOG(WARNING) << "IPv6 address field has odd length (" << ipv6_size << "). Ignoring IPv6 addresses...";
   } else {
     for (int i = 0; i < ipv6_size; i += 2) {
       known_public_ips.emplace(htonll(public_ips.ipv6_addresses(i)), htonll(public_ips.ipv6_addresses(i + 1)));
@@ -114,7 +114,7 @@ void NetworkStatusNotifier::ReceiveIPNetworks(const sensor::IPNetworkList& netwo
   UnorderedMap<Address::Family, std::vector<IPNet>> known_ip_networks;
   auto ipv4_networks_size = networks.ipv4_networks().size();
   if (ipv4_networks_size % 5 != 0) {
-    CLOG(WARNING) << "IPv4 network field has incorrect length " << ipv4_networks_size << ". Ignoring IPv4 networks...";
+    CLOG(WARNING) << "IPv4 network field has incorrect length (" << ipv4_networks_size << "). Ignoring IPv4 networks...";
   } else {
     std::vector<IPNet> ipv4_networks = readNetworks(networks.ipv4_networks(), Address::Family::IPV4);
     known_ip_networks[Address::Family::IPV4] = ipv4_networks;
@@ -122,7 +122,7 @@ void NetworkStatusNotifier::ReceiveIPNetworks(const sensor::IPNetworkList& netwo
 
   auto ipv6_networks_size = networks.ipv6_networks().size();
   if (ipv6_networks_size % 17 != 0) {
-    CLOG(WARNING) << "IPv6 network field has incorrect length " << ipv6_networks_size << ". Ignoring IPv6 networks...";
+    CLOG(WARNING) << "IPv6 network field has incorrect length (" << ipv6_networks_size << "). Ignoring IPv6 networks...";
   } else {
     std::vector<IPNet> ipv6_networks = readNetworks(networks.ipv6_networks(), Address::Family::IPV6);
     known_ip_networks[Address::Family::IPV6] = ipv6_networks;
