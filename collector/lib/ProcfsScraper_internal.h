@@ -21,42 +21,16 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef COLLECTOR_CONNSCRAPER_H
-#define COLLECTOR_CONNSCRAPER_H
+#ifndef COLLECTOR_PROCFSSCRAPER_INTERNAL_H
+#define COLLECTOR_PROCFSSCRAPER_INTERNAL_H
 
-#include <cstring>
-#include <string>
-#include <vector>
-
-#include "FileSystem.h"
-#include "Hash.h"
-#include "NetworkConnection.h"
 #include "StringView.h"
 
 namespace collector {
 
-// ExtractContainerID tries to extract a container ID from a cgroup line. Exposed for testing.
+// ExtractContainerID tries to extract a container ID from a cgroup line.
 StringView ExtractContainerID(StringView cgroup_line);
 
-// Abstract interface for a ConnScraper. Useful to inject testing implementation.
-class IConnScraper {
- public:
-  virtual bool Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) = 0;
-  virtual ~IConnScraper() {}
-};
+}
 
-// ConnScraper is a class that allows scraping a `/proc`-like directory structure for active network connections.
-class ConnScraper : public IConnScraper {
- public:
-  explicit ConnScraper(std::string proc_path) : proc_path_(std::move(proc_path)) {}
-
-  // Scrape returns a snapshot of all active network connections in the given vector.
-  bool Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints);
-
- private:
-  std::string proc_path_;
-};
-
-}  // namespace collector
-
-#endif  // COLLECTOR_CONNSCRAPER_H
+#endif

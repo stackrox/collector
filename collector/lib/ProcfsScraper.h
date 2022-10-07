@@ -21,25 +21,51 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
+#ifndef COLLECTOR_PROCFSSCRAPER_H
+#define COLLECTOR_PROCFSSCRAPER_H
+
+#include <cstring>
+#include <string>
+#include <vector>
+
+#include "NetworkConnection.h"
 #include "Process.h"
 
 namespace collector {
 
-const std::shared_ptr<Process> ProcessStore::Fetch(uint64_t pid) {
-  auto cached_process_pair_iter = cache_.find(pid);
+// Abstract interface for a ConnScraper. Useful to inject testing implementation.
+class IConnScraper {
+ public:
+  virtual bool Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) = 0;
+  virtual ~IConnScraper() {}
+};
 
-  if (cached_process_pair_iter != cache_.end()) {
-    return cached_process_pair_iter->second.lock();
-  }
+// ConnScraper is a class that allows scraping a `/proc`-like directory structure for active network connections.
+class ConnScraper : public IConnScraper {
+ public:
+  explicit ConnScraper(std::string proc_path, std::shared_ptr<ProcessStore> process_store = 0)
+   : proc_path_(std::move(proc_path)),
+   process_store_(process_store) {}
 
-  std::shared_ptr<CachedProcess> cached_process = std::make_shared<CachedProcess>(process_source_->ByPID(pid), *this);
+  // Scrape returns a snapshot of all active network connections in the given vector.
+  bool Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints);
 
-  cache_.emplace(cached_process->pid(), cached_process);
-  return cached_process;
-}
+ private:
+  std::string proc_path_;
+  std::shared_ptr<ProcessStore> process_store_;
+};
 
-ProcessStore::CachedProcess::~CachedProcess() {
-  store_.cache_.erase(pid_);
-}
+class ProcessScraper : public ProcessStore::ISource {
+ public:
+  ProcessScraper(std::string proc_path) : proc_path_(std::move(proc_path)) {}
+
+  // implementation of ProcessStore::ISource
+  Process ByPID(uint64_t pid);
+
+ private:
+  std::string proc_path_;
+};
 
 }  // namespace collector
+
+#endif  // COLLECTOR_CONNSCRAPER_H

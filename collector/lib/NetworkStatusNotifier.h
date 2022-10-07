@@ -27,9 +27,9 @@ You should have received a copy of the GNU General Public License along with thi
 #include <memory>
 
 #include "CollectorStats.h"
-#include "ConnScraper.h"
 #include "ConnTracker.h"
 #include "NetworkConnectionInfoServiceComm.h"
+#include "ProcfsScraper.h"
 #include "ProtoAllocator.h"
 #include "StoppableThread.h"
 

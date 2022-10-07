@@ -21,7 +21,8 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#include "ConnScraper.h"
+#include "ProcfsScraper.h"
+#include "ProcfsScraper_internal.h"
 
 #include <cctype>
 #include <cinttypes>
@@ -33,6 +34,9 @@ You should have received a copy of the GNU General Public License along with thi
 #include "Containers.h"
 #include "Logging.h"
 #include "Utility.h"
+#include "FileSystem.h"
+#include "Hash.h"
+#include "StringView.h"
 
 namespace collector {
 
@@ -188,60 +192,6 @@ int ReadHexBytes(const char* p, const char* endp, void* buf, int chunk_size, int
   }
 
   return i;
-}
-
-struct ProcessInfo {
-  std::string comm;
-  std::string exe;
-  std::string exe_path;
-  std::string args;
-};
-
-static void ReadProcessInfo(const char* process_id, int dirfd, struct ProcessInfo& info) {
-  char buffer[PATH_MAX];
-
-  // parse xx/exe
-  ssize_t nread = readlinkat(dirfd, "exe", buffer, sizeof(buffer));
-  if (nread > 0 && nread < ssizeof(buffer)) {
-    buffer[nread] = '\0';
-
-    info.comm = info.exe_path = buffer;
-
-    if (buffer[0] == '/')
-      info.comm = strrchr(buffer, '/') + 1;
-  } else {
-    CLOG(ERROR) << "Could not read 'exe' for " << process_id << ": " << StrError();
-  }
-
-  // parse xx/cmdline
-  FileHandle cmdline(FDHandle(openat(dirfd, "cmdline", O_RDONLY)), "r");
-  if (cmdline.valid()) {
-    bool did_exe = false;
-    bool arg_completed = false;
-    std::stringbuf stringbuf;
-    int c;
-
-    while ((c = fgetc(cmdline)) != EOF) {
-      if (c != '\0') {
-        if (arg_completed) {
-          stringbuf.sputc(' ');
-          arg_completed = false;
-        }
-        stringbuf.sputc(c);
-      } else {
-        if (did_exe) {
-          arg_completed = true;
-        } else {
-          info.exe = stringbuf.str();
-          stringbuf = std::stringbuf();
-          did_exe = true;
-        }
-      }
-    }
-    info.args = stringbuf.str();
-  } else {
-    CLOG(ERROR) << "Could not read 'cmdline' for " << process_id << ": " << StrError();
-  }
 }
 
 // ConnLineData is the interesting (for our purposes) subset of the data stored in a single (non-header) line of
@@ -443,7 +393,8 @@ void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const C
 
 // ReadContainerConnections reads all container connection info from the given `/proc`-like directory. All connections
 // from non-container processes are ignored.
-bool ReadContainerConnections(const char* proc_path, std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) {
+// process_store, when provided, is used to to link the originator process of a ContainerEndpoint.
+bool ReadContainerConnections(const char* proc_path, ProcessStore* process_store, std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) {
   DirHandle procdir = opendir(proc_path);
   if (!procdir.valid()) {
     CLOG(ERROR) << "Could not open " << proc_path << ": " << StrError();
@@ -488,11 +439,9 @@ bool ReadContainerConnections(const char* proc_path, std::vector<Connection>* co
       if (emplace_res.second) {
         auto& ns_network_data = emplace_res.first->second;
 
-        ProcessInfo info;
-        ReadProcessInfo(curr->d_name, dirfd, info);
-
-        std::shared_ptr<Process> process =
-            ProcessStore::global_instance.FetchReference(Process(container_id, info.comm, info.exe, info.exe_path, info.args, pid));
+        std::shared_ptr<Process> process;
+        if (process_store)
+          process = process_store->Fetch(pid);
 
         if (!GetConnections(dirfd, process, &ns_network_data.connections, listen_endpoints ? &ns_network_data.listen_endpoints : nullptr)) {
           // If there was an error reading connections, that could be due to a number of reasons.
@@ -512,6 +461,59 @@ bool ReadContainerConnections(const char* proc_path, std::vector<Connection>* co
   }
 
   ResolveSocketInodes(sockets_by_container_and_ns, conns_by_ns, connections, listen_endpoints);
+  return true;
+}
+
+bool ReadProcessExe(const char* process_id, int dirfd, std::string& comm, std::string& exe_path) {
+  char buffer[PATH_MAX];
+
+  ssize_t nread = readlinkat(dirfd, "exe", buffer, sizeof(buffer));
+  if (nread <= 0 || nread >= ssizeof(buffer)) {
+    CLOG(ERROR) << "Could not read 'exe' for " << process_id << ": " << StrError();
+    return false;
+  }
+  
+  buffer[nread] = '\0';
+
+  comm = exe_path = buffer;
+
+  if (buffer[0] == '/')
+    comm = strrchr(buffer, '/') + 1;
+
+  return true;
+}
+
+bool ReadProcessCmdline(const char* process_id, int dirfd, std::string& exe, std::string& args) {
+  
+  FileHandle cmdline(FDHandle(openat(dirfd, "cmdline", O_RDONLY)), "r");
+  if (!cmdline.valid()) {
+    CLOG(ERROR) << "Could not read 'cmdline' for " << process_id << ": " << StrError();
+    return false;
+  }
+  bool did_exe = false;
+  bool arg_completed = false;
+  std::stringbuf stringbuf;
+  int c;
+
+  while ((c = fgetc(cmdline)) != EOF) {
+    if (c != '\0') {
+      if (arg_completed) {
+        stringbuf.sputc(' ');
+        arg_completed = false;
+      }
+      stringbuf.sputc(c);
+    } else {
+      if (did_exe) {
+        arg_completed = true;
+      } else {
+        exe = stringbuf.str();
+        stringbuf = std::stringbuf();
+        did_exe = true;
+      }
+    }
+  }
+  args = stringbuf.str();
+  
   return true;
 }
 
@@ -536,7 +538,36 @@ StringView ExtractContainerID(StringView cgroup_line) {
 }
 
 bool ConnScraper::Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) {
-  return ReadContainerConnections(proc_path_.c_str(), connections, listen_endpoints);
+  return ReadContainerConnections(proc_path_.c_str(), process_store_.get(), connections, listen_endpoints);
+}
+
+Process ProcessScraper::ByPID(uint64_t pid) {
+  char process_path[64];
+
+  std::string container_id;
+  std::string comm;
+  std::string exe;
+  std::string exe_path;
+  std::string args;
+
+  snprintf(process_path, sizeof(process_path), "%s/%ld", proc_path_.c_str(), pid);
+
+  FDHandle dirfd = open(process_path, O_DIRECTORY | O_RDONLY);
+
+  if (dirfd.valid()) {
+    GetContainerID(dirfd, &container_id);
+    ReadProcessExe(process_path, dirfd, comm, exe_path);
+    ReadProcessCmdline(process_path, dirfd, exe, args);
+  }
+
+  return Process(
+    std::move(container_id),
+    std::move(comm),
+    std::move(exe),
+    std::move(exe_path),
+    std::move(args),
+    pid
+  );
 }
 
 }  // namespace collector

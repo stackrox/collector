@@ -25,8 +25,8 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <iostream>
 
-#include "ConnScraper.h"
 #include "EnvVar.h"
+#include "ProcfsScraper.h"
 
 using namespace collector;
 
@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
     std::cout << std::endl
               << "Endpoints:" << std::endl;
     for (const auto& ep : endpoints) {
-      std::cout << " " << ep << " " << ep.originator()->getPid() << std::endl;
+      std::cout << " " << ep << std::endl;
     }
   }
 

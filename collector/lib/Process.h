@@ -26,6 +26,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <unordered_map>
 
 namespace collector {
@@ -46,12 +47,12 @@ class Process {
         pid_(pid) {}
   virtual ~Process() {}
 
-  const std::string& getContainerId() const { return container_id_; }
-  const std::string& getComm() const { return comm_; }
-  const std::string& getExe() const { return exe_; }
-  const std::string& getExePath() const { return exe_path_; }
-  const std::string& getArgs() const { return args_; }
-  uint64_t getPid() const { return pid_; }
+  const std::string& container_id() const { return container_id_; }
+  const std::string& comm() const { return comm_; }
+  const std::string& exe() const { return exe_; }
+  const std::string& exe_path() const { return exe_path_; }
+  const std::string& args() const { return args_; }
+  uint64_t pid() const { return pid_; }
 
   bool operator==(Process& other) {
     return pid_ == other.pid_;
@@ -68,21 +69,28 @@ class Process {
 
 /* A Process object store used to deduplicate process information.
    Processes are kept in the store as long as they are referenced from the outside.
-   References are created by FetchReference, which will create the Process object
-   if necessary as a side-effect. */
+   When a process cannot be found in the store, a provided ProcessStore::ISource
+   is used to create it as a side-effect. */
 class ProcessStore {
  public:
-  static ProcessStore global_instance;
+  // A provider of process objects ()
+  class ISource {
+   public:
+    virtual ~ISource() {}
+    virtual Process ByPID(uint64_t pid) = 0;
+  };
 
-  /* Get a reference to a matching Process stored in the cache.
-     The Process is created if it does not exist.
-     This method always returns a valid Process reference. */
-  const std::shared_ptr<Process> FetchReference(const Process& p);
+  /* The provided process_source is queried when
+     a requested PID cannot be found in the store */
+  ProcessStore(std::shared_ptr<ISource> process_source) : process_source_(process_source) {}
 
-  // Get a Process by PID if it exists in the store, null otherwise.
-  const std::shared_ptr<Process> FindByPid(uint64_t pid) const;
+  /* Get a Process by PID.
+     Returns a reference to the cached Process entry, which may have just been created
+     if it wasn't already known. */
+  const std::shared_ptr<Process> Fetch(uint64_t pid);
 
  private:
+  /* wrapper class to detect object deletion */
   class CachedProcess : public Process {
    public:
     CachedProcess(const Process& p, ProcessStore& store) : Process(p), store_(store) {}
@@ -92,6 +100,7 @@ class ProcessStore {
     ProcessStore& store_;
   };
 
+  std::shared_ptr<ISource> process_source_;
   std::unordered_map<uint64_t, std::weak_ptr<CachedProcess>> cache_;
 };
 
