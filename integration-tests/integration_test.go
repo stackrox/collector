@@ -22,6 +22,7 @@ const (
 	processBucket            = "Process"
 	processLineageInfoBucket = "LineageInfo"
 	networkBucket            = "Network"
+	endpointBucket           = "Endpoint"
 	parentUIDStr             = "ParentUid"
 	parentExecFilePathStr    = "ParentExecFilePath"
 
@@ -102,6 +103,20 @@ func TestRepeatedNetworkFlowThreeCurlsNoAfterglow(t *testing.T) {
 	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
 
+// There is one test in which scraping is turned on and we expect to see
+// endpoints opened before collector is turned on. There is another test
+// in which scraping is turned off and we expect that we will not see
+// endpoint opened before collector is turned on.
+func TestConnScraper(t *testing.T) {
+	connScraperTestSuite := &ConnScraperTestSuite{turnOffScrape:	false}
+	suite.Run(t, connScraperTestSuite)
+}
+
+func TestConnScraperNoScrape(t *testing.T) {
+	connScraperTestSuite := &ConnScraperTestSuite{turnOffScrape:	true}
+	suite.Run(t, connScraperTestSuite)
+}
+
 type IntegrationTestSuiteBase struct {
 	suite.Suite
 	db        *bolt.DB
@@ -164,6 +179,14 @@ type RepeatedNetworkFlowTestSuite struct {
 
 type ImageLabelJSONTestSuite struct {
 	IntegrationTestSuiteBase
+}
+
+type ConnScraperTestSuite struct {
+	IntegrationTestSuiteBase
+	logLines		[]string
+	serverContainer		string
+	turnOffScrape		bool
+	expectedResult		bool
 }
 
 func (s *ImageLabelJSONTestSuite) SetupSuite() {
@@ -525,6 +548,73 @@ func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
 	fmt.Printf("ClientDetails from test: %s %s\n", s.clientContainer, s.clientIP)
 }
 
+// Launches nginx container
+// Launches gRPC server in insecure mode
+// Launches collector
+// Note it is important to launch the nginx container before collector, which is the opposite of
+// other tests. The purpose is that we want ConnScraper to see the nginx endpoint and we do not want
+// NetworkSignalHandler to see the nginx endpoint.
+func (s *ConnScraperTestSuite) SetupSuite() {
+
+	s.metrics = map[string]float64{}
+	s.executor = NewExecutor()
+	s.StartContainerStats()
+	s.collector = NewCollectorManager(s.executor, s.T().Name())
+
+	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":` + strconv.FormatBool(s.turnOffScrape) + `,"scrapeInterval":2}`
+
+	s.launchNginx()
+
+	err := s.collector.Setup()
+	s.Require().NoError(err)
+
+	err = s.collector.Launch()
+	s.Require().NoError(err)
+	time.Sleep(10 * time.Second)
+
+	err = s.collector.TearDown()
+	s.Require().NoError(err)
+
+	s.db, err = s.collector.BoltDB()
+	s.Require().NoError(err)
+}
+
+func (s *ConnScraperTestSuite) launchNginx() {
+	image := "nginx:1.14-alpine"
+
+	err := s.executor.PullImage(image)
+	s.Require().NoError(err)
+
+	// invokes default nginx
+	containerID, err := s.launchContainer("nginx", image)
+	s.Require().NoError(err)
+	s.serverContainer = containerShortID(containerID)
+
+	time.Sleep(10 * time.Second)
+}
+
+func (s *ConnScraperTestSuite) TearDownSuite() {
+	s.cleanupContainer([]string{"nginx", "collector"})
+	stats := s.GetContainerStats()
+	s.PrintContainerStats(stats)
+	s.WritePerfResults("ConnScraper", stats, s.metrics)
+}
+
+func (s *ConnScraperTestSuite) TestConnScraper() {
+	endpoints, err := s.GetEndpoints(s.serverContainer)
+	if (!s.turnOffScrape) {
+		// If scraping is on we expect to find the nginx endpoint
+		s.Require().NoError(err)
+		assert.Equal(s.T(), len(endpoints), 1)
+		assert.Equal(s.T(), endpoints[0].Protocol, "L4_PROTOCOL_TCP")
+		assert.Equal(s.T(), endpoints[0].CloseTimestamp, "(timestamp: nil Timestamp)\n")
+
+	} else {
+		// If scraping is off we expect not to find the nginx endpoint and we should get an error
+		s.Require().Error(err)
+	}
+}
+
 func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, error) {
 	cmd := []string{"docker", "run", "-d", "--name"}
 	cmd = append(cmd, args...)
@@ -683,6 +773,41 @@ func (s *IntegrationTestSuiteBase) GetProcesses(containerID string) ([]ProcessIn
 	}
 
 	return processes, nil
+}
+
+func (s *IntegrationTestSuiteBase) GetEndpoints(containerID string) ([]EndpointInfo, error) {
+	if s.db == nil {
+		return nil, fmt.Errorf("Db %v is nil", s.db)
+	}
+
+	endpoints := make([]EndpointInfo, 0)
+	err := s.db.View(func(tx *bolt.Tx) error {
+		endpoint := tx.Bucket([]byte(endpointBucket))
+		if endpoint == nil {
+			return fmt.Errorf("Endpoint bucket was not found!")
+		}
+		container := endpoint.Bucket([]byte(containerID))
+		if container == nil {
+			return fmt.Errorf("Container bucket %s not found!", containerID)
+		}
+
+		container.ForEach(func(k, v []byte) error {
+			einfo, err := NewEndpointInfo(string(v))
+			if err != nil {
+				return err
+			}
+
+			endpoints = append(endpoints, *einfo)
+			return nil
+		})
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return endpoints, nil
 }
 
 func (s *IntegrationTestSuiteBase) GetLineageInfo(processName string, key string, bucket string) (val string, err error) {
