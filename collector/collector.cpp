@@ -61,7 +61,7 @@ extern "C" {
 #include "SysdigService.h"
 #include "Utility.h"
 
-#define finit_module(fd, opts, flags) syscall(__NR_finit_module, fd, opts, flags)
+#define init_module(module_image, len, param_values) syscall(__NR_init_module, module_image, len, param_values)
 #define delete_module(name, flags) syscall(__NR_delete_module, name, flags)
 
 extern unsigned char g_bpf_drop_syscalls[];  // defined in libscap
@@ -96,6 +96,25 @@ static void AbortHandler(int signum) {
   raise(signum);
 }
 
+static int read_module(int fd, void* buf, int buflen) {
+  unsigned char* p = static_cast<unsigned char*>(buf);
+  int n, i = 0;
+  while (i < buflen) {
+    n = read(fd, p+i, buflen-i);
+    if (n < 0) {
+      if (errno == EINTR)
+        continue;
+      else
+        return n;
+    } else if (n == 0) {
+      return i;
+    } else {
+      i += n;
+    }
+  }
+  return i;
+}
+
 int InsertModule(int fd, const std::unordered_map<std::string, std::string>& args) {
   std::string args_str;
   bool first = true;
@@ -107,9 +126,30 @@ int InsertModule(int fd, const std::unordered_map<std::string, std::string>& arg
     args_str += entry.first + "=" + entry.second;
   }
   CLOG(DEBUG) << "Kernel module arguments: " << args_str;
-  int res = finit_module(fd, args_str.c_str(), 0);
-  if (res != 0) return res;
   struct stat st;
+  int res = fstat(fd, &st);
+  if (res != 0) {
+      CLOG(ERROR) << "Could not stat kernel module: " << StrError();
+      errno = EINVAL;
+      return -1;
+  }
+  size_t image_size = st.st_size;
+  void* image = malloc(image_size);
+  if (!image) {
+      CLOG(ERROR) << "Could not allocate memory for kernel module: " << StrError();
+      errno = EINVAL;
+      return -1;
+  }
+  lseek(fd, 0, SEEK_SET);
+  size_t read_image_size = read_module(fd, image, image_size);
+  if (read_image_size != image_size) {
+      CLOG(ERROR) << "Could not read kernel module: " << StrError() << ".  Mismatch with number of bytes read and kernel module size.";
+      errno = EINVAL;
+      return -1;
+  }
+  res = init_module(image, image_size, args_str.c_str());
+  free(image);
+  if (res != 0) return res;
   std::string param_dir = GetHostPath(std::string("/sys/module/") + SysdigService::kModuleName + "/parameters/");
   res = stat(param_dir.c_str(), &st);
   if (res != 0) {
