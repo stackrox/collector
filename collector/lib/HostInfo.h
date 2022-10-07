@@ -97,10 +97,10 @@ struct KernelVersion {
         release = uts_buffer.release;
       }
       version = uts_buffer.version;
-      CLOG(DEBUG) << "identified kernel release: '" << release << "'";
-      CLOG(DEBUG) << "identified kernel version: '" << version << "'";
+      CLOG(DEBUG) << "Identified kernel release: '" << release << "'";
+      CLOG(DEBUG) << "Identified kernel version: '" << version << "'";
     } else {
-      CLOG(WARNING) << "uname failed (" << StrError() << ") unable to resolve kernel information";
+      CLOG(WARNING) << "Uname failed (" << StrError() << ") unable to resolve kernel information";
     }
 
     return {release, version};
