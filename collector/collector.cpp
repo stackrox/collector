@@ -53,6 +53,7 @@ extern "C" {
 #include "CollectorStatsExporter.h"
 #include "Diagnostics.h"
 #include "EventNames.h"
+#include "FileSystem.h"
 #include "GRPC.h"
 #include "GRPCUtil.h"
 #include "GetKernelObject.h"
@@ -158,8 +159,8 @@ bool insertModule(const std::vector<std::string>& syscall_list) {
   module_args["exclude_selfns"] = "1";
   module_args["verbose"] = "0";
 
-  int fd = open(SysdigService::kModulePath, O_RDONLY);
-  if (fd < 0) {
+  FDHandle fd = FDHandle(open(SysdigService::kModulePath, O_RDONLY));
+  if (fd.Invalid()) {
     CLOG(ERROR) << "Cannot open kernel module: " << SysdigService::kModulePath << ". Aborting...";
     return false;
   }
@@ -169,7 +170,7 @@ bool insertModule(const std::vector<std::string>& syscall_list) {
 
   // Attempt to insert the module. If it is already inserted then remove it and
   // try again
-  int result = InsertModule(fd, module_args);
+  int result = InsertModule(fd.get(), module_args);
   while (result != 0) {
     if (errno == EEXIST) {
       // note that we forcefully remove the kernel module whether or not it has a non-zero
@@ -182,9 +183,8 @@ bool insertModule(const std::vector<std::string>& syscall_list) {
                   << ". Aborting...";
       return false;
     }
-    result = InsertModule(fd, module_args);
+    result = InsertModule(fd.get(), module_args);
   }
-  close(fd);
 
   CLOG(INFO) << "Successfully inserted kernel module " << SysdigService::kModulePath << ".";
   return true;

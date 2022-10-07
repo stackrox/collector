@@ -69,12 +69,15 @@ class LogMessage {
     auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     auto nowTm = gmtime(&now);
 
-    std::stringstream header;
+    std::cerr << GetGlobalLogPrefix()
+              << "["
+              << std::left << std::setw(LevelPaddingWidth) << GetLogLevelName(level_)
+              << " " << std::put_time(nowTm, "%Y/%m/%d %H:%M:%S")
+              << "] ";
 
-    header << GetGlobalLogPrefix()
-           << "[" << std::left << std::setw(LevelPaddingWidth) << GetLogLevelName(level_)
-           << " " << std::put_time(nowTm, "%Y/%m/%d %H:%M:%S");
-    header << "] ";
+    if (throttled_) {
+      std::cerr << "[Throttled] ";
+    }
 
     if (include_file_) {
       const char* basename = strrchr(file_, '/');
@@ -83,15 +86,10 @@ class LogMessage {
       } else {
         ++basename;
       }
-      header << "(" << basename << ":" << line_ << ") ";
+      std::cerr << "(" << basename << ":" << line_ << ") ";
     }
 
-    if (throttled_) {
-      header << "[Throttled] ";
-    }
-
-    std::cerr << header.str()
-              << buf_.str()
+    std::cerr << buf_.str()
               << std::endl;
 
     if (level_ == LogLevel::FATAL) {

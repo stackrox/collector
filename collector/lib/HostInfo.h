@@ -100,7 +100,7 @@ struct KernelVersion {
       CLOG(DEBUG) << "Identified kernel release: '" << release << "'";
       CLOG(DEBUG) << "Identified kernel version: '" << version << "'";
     } else {
-      CLOG(WARNING) << "Uname failed (" << StrError() << ") unable to resolve kernel information";
+      CLOG(WARNING) << "uname() failed (" << StrError() << ") unable to resolve kernel information";
     }
 
     return {release, version};
