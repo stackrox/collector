@@ -4,11 +4,13 @@
 #include <sstream>
 #include <string>
 
+#include "Logging.h"
+
 namespace collector {
 
 class IDiagnostics {
  public:
-  virtual std::string Dump() = 0;
+  virtual void Log() = 0;
 };
 
 class StartupDiagnostics : public IDiagnostics {
@@ -18,15 +20,14 @@ class StartupDiagnostics : public IDiagnostics {
         kernelDriverDownloaded_(false),
         kernelDriverLoaded_(false) {}
 
-  std::string Dump() {
-    std::stringstream ss;
-    ss << std::endl;
-    ss << "== Collector Startup Diagnostics: ==" << std::endl;
-    ss << " Connected to Sensor?       " << std::boolalpha << connectedToSensor_ << std::endl;
-    ss << " Kernel driver available?   " << std::boolalpha << kernelDriverDownloaded_ << std::endl;
-    ss << " Driver loaded into kernel? " << std::boolalpha << kernelDriverLoaded_ << std::endl;
-    ss << "====================================";
-    return ss.str();
+  void Log() {
+    CLOG(INFO) << "";
+    CLOG(INFO) << "== Collector Startup Diagnostics: ==";
+    CLOG(INFO) << " Connected to Sensor?       " << std::boolalpha << connectedToSensor_;
+    CLOG(INFO) << " Kernel driver available?   " << std::boolalpha << kernelDriverDownloaded_;
+    CLOG(INFO) << " Driver loaded into kernel? " << std::boolalpha << kernelDriverLoaded_;
+    CLOG(INFO) << "====================================";
+    CLOG(INFO) << "";
   }
 
   void ConnectedToSensor() { connectedToSensor_ = true; }

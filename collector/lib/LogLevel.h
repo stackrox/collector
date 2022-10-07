@@ -28,7 +28,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-class LogLevel : public CivetHandler {
+class LogLevelHandler : public CivetHandler {
  public:
   bool handlePost(CivetServer* server, struct mg_connection* conn);
 };

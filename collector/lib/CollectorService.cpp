@@ -65,7 +65,7 @@ void CollectorService::RunForever() {
   std::shared_ptr<prometheus::Registry> registry = std::make_shared<prometheus::Registry>();
 
   server.addHandler("/ready", getStatus);
-  LogLevel setLogLevel;
+  LogLevelHandler setLogLevel;
   server.addHandler("/loglevel", setLogLevel);
 
   ProfilerHandler profiler_handler;

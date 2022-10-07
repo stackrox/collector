@@ -401,8 +401,8 @@ int main(int argc, char** argv) {
     sensor_connection = createChannel(args);
     CLOG(INFO) << "Attempting to connect to Sensor";
     if (attemptGRPCConnection(sensor_connection)) {
-      CLOG(ERROR) << "Unable to connect to Sensor.";
-      CLOG(FATAL) << g_startup_diagnostics.Dump();
+      g_startup_diagnostics.Log();
+      CLOG(FATAL) << "Unable to connect to Sensor.";
     } else {
       CLOG(INFO) << "Successfully connected to Sensor.";
     }
@@ -412,15 +412,15 @@ int main(int argc, char** argv) {
   }
 
   if (!downloadKernelDriver(args, config)) {
-    CLOG(ERROR) << "No suitable kernel object downloaded";
-    CLOG(FATAL) << g_startup_diagnostics.Dump();
+    g_startup_diagnostics.Log();
+    CLOG(FATAL) << "No suitable kernel object downloaded";
   }
 
   g_startup_diagnostics.KernelDriverDownloaded();
 
   if (!setupKernelDriver(config)) {
-    CLOG(ERROR) << "Failed to load kernel driver";
-    CLOG(FATAL) << g_startup_diagnostics.Dump();
+    g_startup_diagnostics.Log();
+    CLOG(FATAL) << "Failed to load kernel driver";
   }
 
   g_startup_diagnostics.KernelDriverLoaded();
@@ -433,7 +433,7 @@ int main(int argc, char** argv) {
 
   config.grpc_channel = std::move(sensor_connection);
 
-  CLOG(INFO) << g_startup_diagnostics.Dump();
+  g_startup_diagnostics.Log();
 
   CollectorService collector(config, &g_control, &g_signum);
   collector.RunForever();
