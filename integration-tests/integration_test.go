@@ -601,14 +601,15 @@ func (s *ConnScraperTestSuite) TearDownSuite() {
 }
 
 func (s *ConnScraperTestSuite) TestConnScraper() {
+	fmt.Println(s.serverContainer)
 	endpoints, err := s.GetEndpoints(s.serverContainer)
 	if (!s.turnOffScrape) {
 		// If scraping is on we expect to find the nginx endpoint
 		s.Require().NoError(err)
-		assert.Equal(s.T(), len(endpoints), 1)
-		assert.Equal(s.T(), endpoints[0].Protocol, "L4_PROTOCOL_TCP")
-		assert.Equal(s.T(), endpoints[0].CloseTimestamp, "(timestamp: nil Timestamp)\n")
-
+		assert.Equal(s.T(), 1, len(endpoints))
+		assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[0].Protocol)
+		assert.Equal(s.T(), "(timestamp: nil Timestamp)", endpoints[0].CloseTimestamp)
+		assert.Equal(s.T(), "process_name:nginx process_exec_file_path:/usr/bin/nginx process_args:\n", endpoints[0].Originator)
 	} else {
 		// If scraping is off we expect not to find the nginx endpoint and we should get an error
 		s.Require().Error(err)
