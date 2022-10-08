@@ -367,6 +367,11 @@ func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
 func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
 
 	// Server side checks
+
+	// NetworkSignalHandler does not currently report endpoints
+	_, err := s.GetEndpoints(s.serverContainer)
+	s.Require().Error(err)
+
 	val, err := s.Get(s.serverContainer, networkBucket)
 	s.Require().NoError(err)
 	actualValues := strings.Split(string(val), "|")
@@ -385,6 +390,11 @@ func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
 	fmt.Printf("ServerDetails from test: %s %s, Port: %s\n", s.serverContainer, s.serverIP, s.serverPort)
 
 	// client side checks
+
+	// NetworkSignalHandler does not currently report endpoints
+	_, err = s.GetEndpoints(s.clientContainer)
+	s.Require().Error(err)
+
 	val, err = s.Get(s.clientContainer, networkBucket)
 	s.Require().NoError(err)
 	actualValues = strings.Split(string(val), "|")
