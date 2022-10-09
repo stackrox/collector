@@ -67,6 +67,8 @@ class Process {
   uint64_t pid_;
 };
 
+std::ostream& operator<<(std::ostream& os, const Process& process);
+
 /* A Process object store used to deduplicate process information.
    Processes are kept in the store as long as they are referenced from the outside.
    When a process cannot be found in the store, a provided ProcessStore::ISource

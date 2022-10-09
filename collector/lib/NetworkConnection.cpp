@@ -23,6 +23,8 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "NetworkConnection.h"
 
+#include "Process.h"
+
 namespace collector {
 
 bool Address::IsPublic() const {
@@ -52,7 +54,7 @@ size_t Hash(const L4ProtoPortPair& pp) {
 }
 
 std::ostream& operator<<(std::ostream& os, const ContainerEndpoint& container_endpoint) {
-  return os << container_endpoint.container() << ": " << container_endpoint.endpoint();
+  return os << container_endpoint.container() << ": " << container_endpoint.endpoint() << ": " << *container_endpoint.originator();
 }
 
 std::ostream& operator<<(std::ostream& os, const Connection& conn) {

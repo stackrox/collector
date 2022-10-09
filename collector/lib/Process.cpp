@@ -38,6 +38,12 @@ const std::shared_ptr<Process> ProcessStore::Fetch(uint64_t pid) {
   return cached_process;
 }
 
+std::ostream& operator<<(std::ostream& os, const Process& process) {
+  std::string processString = "ContainerID: " + process.container_id() + " Exe: " + process.exe() + " ExePath: ";
+  processString += process.exe_path() + " Args: " + process.args() + " PID: " + std::to_string(process.pid());
+  return os << processString;
+}
+
 ProcessStore::CachedProcess::~CachedProcess() {
   store_.cache_.erase(pid_);
 }

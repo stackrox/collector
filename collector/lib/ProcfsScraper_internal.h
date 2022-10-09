@@ -31,6 +31,6 @@ namespace collector {
 // ExtractContainerID tries to extract a container ID from a cgroup line.
 StringView ExtractContainerID(StringView cgroup_line);
 
-}
+}  // namespace collector
 
 #endif

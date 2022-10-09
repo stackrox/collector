@@ -44,8 +44,8 @@ class IConnScraper {
 class ConnScraper : public IConnScraper {
  public:
   explicit ConnScraper(std::string proc_path, std::shared_ptr<ProcessStore> process_store = 0)
-   : proc_path_(std::move(proc_path)),
-   process_store_(process_store) {}
+      : proc_path_(std::move(proc_path)),
+        process_store_(process_store) {}
 
   // Scrape returns a snapshot of all active network connections in the given vector.
   bool Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints);

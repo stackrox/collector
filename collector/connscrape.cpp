@@ -43,7 +43,9 @@ int main(int argc, char** argv) {
     proc_dir = argv[1];
   }
 
-  ConnScraper scraper(proc_dir);
+  std::shared_ptr<ProcessScraper> process_scraper = std::make_shared<ProcessScraper>(proc_dir);
+  std::shared_ptr<ProcessStore> process_store = std::make_shared<ProcessStore>(process_scraper);
+  ConnScraper scraper(proc_dir, process_store);
   std::vector<Connection> conns;
   std::vector<ContainerEndpoint> endpoints;
 

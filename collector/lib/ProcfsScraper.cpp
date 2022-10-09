@@ -22,7 +22,6 @@ You should have received a copy of the GNU General Public License along with thi
 */
 
 #include "ProcfsScraper.h"
-#include "ProcfsScraper_internal.h"
 
 #include <cctype>
 #include <cinttypes>
@@ -32,11 +31,12 @@ You should have received a copy of the GNU General Public License along with thi
 #include <netinet/tcp.h>
 
 #include "Containers.h"
-#include "Logging.h"
-#include "Utility.h"
 #include "FileSystem.h"
 #include "Hash.h"
+#include "Logging.h"
+#include "ProcfsScraper_internal.h"
 #include "StringView.h"
+#include "Utility.h"
 
 namespace collector {
 
@@ -472,7 +472,7 @@ bool ReadProcessExe(const char* process_id, int dirfd, std::string& comm, std::s
     CLOG(ERROR) << "Could not read 'exe' for " << process_id << ": " << StrError();
     return false;
   }
-  
+
   buffer[nread] = '\0';
 
   comm = exe_path = buffer;
@@ -484,7 +484,6 @@ bool ReadProcessExe(const char* process_id, int dirfd, std::string& comm, std::s
 }
 
 bool ReadProcessCmdline(const char* process_id, int dirfd, std::string& exe, std::string& args) {
-  
   FileHandle cmdline(FDHandle(openat(dirfd, "cmdline", O_RDONLY)), "r");
   if (!cmdline.valid()) {
     CLOG(ERROR) << "Could not read 'cmdline' for " << process_id << ": " << StrError();
@@ -513,7 +512,7 @@ bool ReadProcessCmdline(const char* process_id, int dirfd, std::string& exe, std
     }
   }
   args = stringbuf.str();
-  
+
   return true;
 }
 
@@ -561,13 +560,12 @@ Process ProcessScraper::ByPID(uint64_t pid) {
   }
 
   return Process(
-    std::move(container_id),
-    std::move(comm),
-    std::move(exe),
-    std::move(exe_path),
-    std::move(args),
-    pid
-  );
+      std::move(container_id),
+      std::move(comm),
+      std::move(exe),
+      std::move(exe_path),
+      std::move(args),
+      pid);
 }
 
 }  // namespace collector
