@@ -31,6 +31,8 @@ fi
 IMAGE_TAG="$(make tag)"
 
 export COLLECTOR_IMAGE
+CPAAS_TEST=${CPAAS_TEST:-0}
+
 if ((CPAAS_TEST)); then
      COLLECTOR_IMAGE="${COLLECTOR_REPO}:cpaas-${IMAGE_TAG}"
 else

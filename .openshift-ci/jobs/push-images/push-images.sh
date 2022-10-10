@@ -65,6 +65,7 @@ push_images() {
 cd "$PROJECT_DIR"
 
 collector_version="$(make tag)"
+CPAAS_TEST=${CPAAS_TEST:-0}
 
 if ((CPAAS_TEST)); then
     collector_version="cpaas-${collector_version}"
