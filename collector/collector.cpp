@@ -160,7 +160,7 @@ bool insertModule(const std::vector<std::string>& syscall_list) {
   module_args["verbose"] = "0";
 
   FDHandle fd = FDHandle(open(SysdigService::kModulePath, O_RDONLY));
-  if (fd.Invalid()) {
+  if (!fd.valid()) {
     CLOG(ERROR) << "Cannot open kernel module: " << SysdigService::kModulePath << ". Aborting...";
     return false;
   }
