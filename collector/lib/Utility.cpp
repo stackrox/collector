@@ -310,7 +310,7 @@ std::string GetModuleVersion() {
   // reading MODULE_VERSION.txt on every call.
   std::ifstream file(kKernelModulesDir + "/MODULE_VERSION.txt");
   if (!file.is_open()) {
-    CLOG(WARNING) << "Failed to open '" << kKernelModulesDir << "/MODULE_VERSION.txt'";
+    CLOG(ERROR) << "Failed to open '" << kKernelModulesDir << "/MODULE_VERSION.txt'";
     return "";
   }
 

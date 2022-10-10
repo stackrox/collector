@@ -51,7 +51,9 @@ extern "C" {
 #include "CollectorArgs.h"
 #include "CollectorService.h"
 #include "CollectorStatsExporter.h"
+#include "Diagnostics.h"
 #include "EventNames.h"
+#include "FileSystem.h"
 #include "GRPC.h"
 #include "GRPCUtil.h"
 #include "GetKernelObject.h"
@@ -66,14 +68,17 @@ extern "C" {
 
 extern unsigned char g_bpf_drop_syscalls[];  // defined in libscap
 
-static const int MAX_GRPC_CONNECTION_POLLS = 10;
+static const int MAX_GRPC_CONNECTION_POLLS = 30;
 
 using namespace collector;
 
 static std::atomic<CollectorService::ControlValue> g_control(CollectorService::RUN);
 static std::atomic<int> g_signum(0);
 
-static void ShutdownHandler(int signum) {
+static StartupDiagnostics g_startup_diagnostics;
+
+static void
+ShutdownHandler(int signum) {
   // Only set the control variable; the collector service will take care of the rest.
   g_signum.store(signum);
   g_control.store(CollectorService::STOP_COLLECTOR);
@@ -175,7 +180,7 @@ int InsertModule(int fd, const std::unordered_map<std::string, std::string>& arg
 // Method to insert the kernel module. The options to the module are computed
 // from the collector configuration. Specifically, the syscalls that we should
 // extract
-void insertModule(const std::vector<std::string>& syscall_list) {
+bool insertModule(const std::vector<std::string>& syscall_list) {
   std::unordered_map<std::string, std::string> module_args;
 
   std::string& syscall_ids = module_args["s_syscallIds"];
@@ -194,9 +199,10 @@ void insertModule(const std::vector<std::string>& syscall_list) {
   module_args["exclude_selfns"] = "1";
   module_args["verbose"] = "0";
 
-  int fd = open(SysdigService::kModulePath, O_RDONLY);
-  if (fd < 0) {
-    CLOG(FATAL) << "Cannot open kernel module: " << SysdigService::kModulePath << ". Aborting...";
+  FDHandle fd = FDHandle(open(SysdigService::kModulePath, O_RDONLY));
+  if (!fd.valid()) {
+    CLOG(ERROR) << "Cannot open kernel module: " << SysdigService::kModulePath << ". Aborting...";
+    return false;
   }
 
   CLOG(INFO) << "Inserting kernel module " << SysdigService::kModulePath
@@ -204,7 +210,7 @@ void insertModule(const std::vector<std::string>& syscall_list) {
 
   // Attempt to insert the module. If it is already inserted then remove it and
   // try again
-  int result = InsertModule(fd, module_args);
+  int result = InsertModule(fd.get(), module_args);
   while (result != 0) {
     if (errno == EEXIST) {
       // note that we forcefully remove the kernel module whether or not it has a non-zero
@@ -213,14 +219,15 @@ void insertModule(const std::vector<std::string>& syscall_list) {
       delete_module(SysdigService::kModuleName, O_NONBLOCK | O_TRUNC);
       sleep(2);  // wait for 2s before trying again
     } else {
-      CLOG(FATAL) << "Error inserting kernel module: " << SysdigService::kModulePath << ": " << StrError()
+      CLOG(ERROR) << "Error inserting kernel module: " << SysdigService::kModulePath << ": " << StrError()
                   << ". Aborting...";
+      return false;
     }
-    result = InsertModule(fd, module_args);
+    result = InsertModule(fd.get(), module_args);
   }
-  close(fd);
 
-  CLOG(INFO) << "Done inserting kernel module " << SysdigService::kModulePath << ".";
+  CLOG(INFO) << "Successfully inserted kernel module " << SysdigService::kModulePath << ".";
+  return true;
 }
 
 bool verifyProbeConfiguration() {
@@ -252,7 +259,7 @@ void setBPFDropSyscalls(const std::vector<std::string>& syscall_list) {
 
 // creates a GRPC channel, using the tls configuration provided from the args.
 std::shared_ptr<grpc::Channel> createChannel(CollectorArgs* args) {
-  CLOG(INFO) << "gRPC server=" << args->GRPCServer();
+  CLOG(INFO) << "Sensor configured at address: " << args->GRPCServer();
   Json::Value collectorConfig = args->CollectorConfig();
 
   const auto& tls_config = collectorConfig["tlsConfig"];
@@ -278,7 +285,9 @@ std::shared_ptr<grpc::Channel> createChannel(CollectorArgs* args) {
 // attempts to connect to the GRPC server, up to a timeout
 bool attemptGRPCConnection(std::shared_ptr<grpc::Channel>& channel) {
   int polls = MAX_GRPC_CONNECTION_POLLS;
-  auto poll_check = [&polls] { return (polls-- > 0); };
+  auto poll_check = [&polls] {
+    return (polls-- > 0);
+  };
   return WaitForChannelReady(channel, poll_check);
 }
 
@@ -287,14 +296,14 @@ void setCoreDumpLimit(bool enableCoreDump) {
   limit.rlim_cur = 0;
   limit.rlim_max = 0;
   if (enableCoreDump) {
+    CLOG(DEBUG) << "Attempting to enable core dumps";
     limit.rlim_cur = RLIM_INFINITY;
     limit.rlim_max = RLIM_INFINITY;
-    CLOG(DEBUG) << "Core dumps enabled";
   } else {
-    CLOG(DEBUG) << "Core dump not enabled";
+    CLOG(DEBUG) << "Core dumps not enabled";
   }
   if (setrlimit(RLIMIT_CORE, &limit) != 0) {
-    CLOG(ERROR) << "setrlimit() failed: " << StrError();
+    CLOG(ERROR) << "Failed to enable core dumps: " << StrError();
   }
 }
 
@@ -307,44 +316,29 @@ void gplNotice() {
   CLOG(INFO) << "";
 }
 
-int main(int argc, char** argv) {
+bool initialChecks() {
   if (!g_control.is_lock_free()) {
-    CLOG(FATAL) << "Could not create a lock-free control variable!";
-  }
-
-  CollectorArgs* args = CollectorArgs::getInstance();
-  int exitCode = 0;
-  if (!args->parse(argc, argv, exitCode)) {
-    if (!args->Message().empty()) {
-      CLOG(FATAL) << args->Message();
-    }
-    CLOG(FATAL) << "Error parsing arguments";
-  }
-
-  CollectorConfig config(args);
-
-  setCoreDumpLimit(config.IsCoreDumpEnabled());
-
-  // insert the kernel module with options from the configuration
-  Json::Value collectorConfig = args->CollectorConfig();
-
-  // Extract configuration options
-  bool useGRPC = false;
-  if (!args->GRPCServer().empty()) {
-    useGRPC = true;
+    CLOG(ERROR) << "Could not create a lock-free control variable!";
+    return false;
   }
 
   struct stat st;
   if (stat("/module", &st) != 0 || !S_ISDIR(st.st_mode)) {
-    CLOG(FATAL) << "Unexpected image state. /module directory does not exist.";
+    CLOG(ERROR) << "/module directory does not exist.";
+    return false;
   }
 
+  return true;
+}
+
+bool downloadKernelDriver(const CollectorArgs* args, CollectorConfig& config) {
   CLOG(INFO) << "Module version: " << GetModuleVersion();
 
   std::vector<std::string> kernel_candidates = GetKernelCandidates();
 
   if (kernel_candidates.empty()) {
-    CLOG(FATAL) << "No kernel candidates available";
+    CLOG(ERROR) << "No kernel candidates available";
+    return false;
   }
 
   struct {
@@ -366,7 +360,7 @@ int main(int argc, char** argv) {
     kernel_object.type = "kernel module";
   }
 
-  CLOG(INFO) << "Attempting to download " << kernel_object.type << " - Candidate kernel versions: ";
+  CLOG(INFO) << "Attempting to find " << kernel_object.type << " - Candidate kernel versions: ";
   for (auto candidate : kernel_candidates) {
     CLOG(INFO) << candidate;
   }
@@ -377,43 +371,26 @@ int main(int argc, char** argv) {
   for (auto kernel_candidate : kernel_candidates) {
     std::string kernel_module = kernel_object.name + "-" + kernel_candidate + kernel_object.extension;
 
-    success = GetKernelObject(args->GRPCServer(), collectorConfig["tlsConfig"], kernel_module, kernel_object.path,
+    success = GetKernelObject(args->GRPCServer(), config.TLSConfiguration(), kernel_module, kernel_object.path,
                               config.CurlVerbose());
     if (!success) {
-      CLOG(WARNING) << "Error getting kernel object: " << kernel_module;
+      CLOG(ERROR) << "Error getting kernel object: " << kernel_module;
     } else {
       break;
     }
   }
 
-  if (!success) {
-    //
-    // If the download fails, attempt to connect to the GRPC server. This will
-    // help to distinguish between networking issues rather than nebulous
-    // download failures.
-    //
-    if (useGRPC) {
-      auto channel = createChannel(args);
-      CLOG(INFO) << "Attempting to connect to GRPC server";
-      if (!attemptGRPCConnection(channel)) {
-        CLOG(ERROR) << "Unable to connect to the GRPC server.";
-      } else {
-        CLOG(INFO) << "Successfully connected to the GRPC server.";
-      }
-    } else {
-      CLOG(INFO) << "GRPC not configured: unable to check connectivity.";
-    }
-    // Always exit regardless of GRPC connectivity because collector is unable
-    // to run without appropriate kernel probes.
-    CLOG(FATAL) << "No suitable kernel object downloaded";
-  }
+  return success;
+}
 
+bool setupKernelDriver(CollectorConfig& config) {
   // output the GPL notice only once the kernel object has been found or downloaded
   gplNotice();
 
   if (config.UseEbpf()) {
     if (!verifyProbeConfiguration()) {
-      CLOG(FATAL) << "Error verifying ebpf configuration. Aborting...";
+      CLOG(ERROR) << "Error verifying ebpf configuration. Aborting...";
+      return false;
     }
     setBPFDropSyscalls(config.Syscalls());
   } else {
@@ -435,22 +412,68 @@ int main(int argc, char** argv) {
     }
   }
 
-  if (!useGRPC) {
+  return true;
+}
+
+int main(int argc, char** argv) {
+  if (!initialChecks()) {
+    CLOG(FATAL) << "Initial start up checks failed!";
+  }
+
+  CollectorArgs* args = CollectorArgs::getInstance();
+  int exitCode = 0;
+  if (!args->parse(argc, argv, exitCode)) {
+    if (!args->Message().empty()) {
+      CLOG(FATAL) << args->Message();
+    }
+    CLOG(FATAL) << "Error parsing arguments";
+  }
+
+  CollectorConfig config(args);
+
+  setCoreDumpLimit(config.IsCoreDumpEnabled());
+
+  // Extract configuration options
+  bool useGRPC = !args->GRPCServer().empty();
+  std::shared_ptr<grpc::Channel> sensor_connection;
+
+  if (useGRPC) {
+    sensor_connection = createChannel(args);
+    CLOG(INFO) << "Attempting to connect to Sensor";
+    if (attemptGRPCConnection(sensor_connection)) {
+      g_startup_diagnostics.Log();
+      CLOG(FATAL) << "Unable to connect to Sensor.";
+    } else {
+      CLOG(INFO) << "Successfully connected to Sensor.";
+    }
+    g_startup_diagnostics.ConnectedToSensor();
+  } else {
     CLOG(INFO) << "GRPC is disabled. Specify GRPC_SERVER='server addr' env and signalFormat = 'signal_summary' and  signalOutput = 'grpc'";
   }
 
-  std::shared_ptr<grpc::Channel> grpc_channel;
-  if (useGRPC) {
-    grpc_channel = createChannel(args);
+  if (!downloadKernelDriver(args, config)) {
+    g_startup_diagnostics.Log();
+    CLOG(FATAL) << "No suitable kernel object downloaded";
   }
 
-  config.grpc_channel = std::move(grpc_channel);
+  g_startup_diagnostics.KernelDriverDownloaded();
+
+  if (!setupKernelDriver(config)) {
+    g_startup_diagnostics.Log();
+    CLOG(FATAL) << "Failed to load kernel driver";
+  }
+
+  g_startup_diagnostics.KernelDriverLoaded();
 
   // Register signal handlers
   signal(SIGABRT, AbortHandler);
   signal(SIGSEGV, AbortHandler);
   signal(SIGTERM, ShutdownHandler);
   signal(SIGINT, ShutdownHandler);
+
+  config.grpc_channel = std::move(sensor_connection);
+
+  g_startup_diagnostics.Log();
 
   CollectorService collector(config, &g_control, &g_signum);
   collector.RunForever();

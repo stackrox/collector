@@ -55,24 +55,43 @@ bool ParseLogLevelName(std::string name, LogLevel* level);
 const char* GetGlobalLogPrefix();
 void SetGlobalLogPrefix(const char* prefix);
 
+const size_t LevelPaddingWidth = 7;
+
 class LogMessage {
  public:
-  LogMessage(const char* file, int line, LogLevel level)
-      : file_(file), line_(line), level_(level) {}
+  LogMessage(const char* file, int line, bool throttled, LogLevel level)
+      : file_(file), line_(line), level_(level), throttled_(throttled) {
+    // if in debug mode, output file names associated with log messages
+    include_file_ = CheckLogLevel(LogLevel::DEBUG);
+  }
 
   ~LogMessage() {
-    const char* basename = strrchr(file_, '/');
-    if (!basename) {
-      basename = file_;
-    } else {
-      ++basename;
-    }
     auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     auto nowTm = gmtime(&now);
+
     std::cerr << GetGlobalLogPrefix()
-              << "[" << GetLogLevelShortName(level_)
-              << " " << std::put_time(nowTm, "%Y%m%d %H%M%S")
-              << " " << basename << ":" << line_ << "] " << buf_.str() << std::endl;
+              << "["
+              << std::left << std::setw(LevelPaddingWidth) << GetLogLevelName(level_)
+              << " " << std::put_time(nowTm, "%Y/%m/%d %H:%M:%S")
+              << "] ";
+
+    if (throttled_) {
+      std::cerr << "[Throttled] ";
+    }
+
+    if (include_file_) {
+      const char* basename = strrchr(file_, '/');
+      if (!basename) {
+        basename = file_;
+      } else {
+        ++basename;
+      }
+      std::cerr << "(" << basename << ":" << line_ << ") ";
+    }
+
+    std::cerr << buf_.str()
+              << std::endl;
+
     if (level_ == LogLevel::FATAL) {
       exit(1);
     }
@@ -89,6 +108,8 @@ class LogMessage {
   int line_;
   LogLevel level_;
   std::stringstream buf_;
+  bool include_file_;
+  bool throttled_;
 };
 
 }  // namespace logging
@@ -99,7 +120,7 @@ class LogMessage {
 
 #define CLOG_IF(cond, lvl)                                                            \
   if (collector::logging::CheckLogLevel(collector::logging::LogLevel::lvl) && (cond)) \
-  collector::logging::LogMessage(__FILE__, __LINE__, collector::logging::LogLevel::lvl)
+  collector::logging::LogMessage(__FILE__, __LINE__, false, collector::logging::LogLevel::lvl)
 
 #define CLOG(lvl) CLOG_IF(true, lvl)
 
@@ -108,7 +129,7 @@ class LogMessage {
   if (collector::logging::CheckLogLevel(collector::logging::LogLevel::lvl) && (cond) && \
       (std::chrono::steady_clock::now() - _clog_lastlog_##__LINE__ >= interval))        \
   _clog_lastlog_##__LINE__ = std::chrono::steady_clock::now(),                          \
-  collector::logging::LogMessage(__FILE__, __LINE__, collector::logging::LogLevel::lvl)
+  collector::logging::LogMessage(__FILE__, __LINE__, true, collector::logging::LogLevel::lvl)
 
 #define CLOG_THROTTLED(lvl, interval) CLOG_THROTTLED_IF(true, lvl, interval)
 

@@ -93,6 +93,18 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   if (args) {
     auto config = args->CollectorConfig();
 
+    // Log Level
+    // process this first to ensure logging behaves correctly
+    if (!config["logLevel"].empty()) {
+      logging::LogLevel level;
+      if (logging::ParseLogLevelName(config["logLevel"].asString(), &level)) {
+        logging::SetLogLevel(level);
+        CLOG(INFO) << "User configured logLevel=" << config["logLevel"].asString();
+      } else {
+        CLOG(INFO) << "User configured logLevel is invalid " << config["logLevel"].asString();
+      }
+    }
+
     // Chisel Cache
     if (!config["useChiselCache"].empty()) {
       use_chisel_cache_ = config["useChiselCache"].asBool();
@@ -109,17 +121,6 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
     if (!config["turnOffScrape"].empty()) {
       turn_off_scrape_ = config["turnOffScrape"].asBool();
       CLOG(INFO) << "User configured turnOffScrape=" << turn_off_scrape_;
-    }
-
-    // Log Level
-    if (!config["logLevel"].empty()) {
-      logging::LogLevel level;
-      if (logging::ParseLogLevelName(config["logLevel"].asString(), &level)) {
-        logging::SetLogLevel(level);
-        CLOG(INFO) << "User configured logLevel=" << config["logLevel"].asString();
-      } else {
-        CLOG(INFO) << "User configured logLevel is invalid " << config["logLevel"].asString();
-      }
     }
 
     // Chisel
@@ -157,6 +158,10 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
     if (!config["forceKernelModules"].empty()) {
       force_kernel_modules_ = config["forceKernelModules"].asBool();
       CLOG(INFO) << "User configured forceKernelModules=" << force_kernel_modules_;
+    }
+
+    if (!config["tlsConfig"].empty()) {
+      tls_config_ = config["tlsConfig"];
     }
   }
 

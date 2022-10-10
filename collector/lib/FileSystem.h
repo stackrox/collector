@@ -180,7 +180,7 @@ class GZFileHandle : public ResourceWrapper<gzFile, GZFileHandle> {
     } while (bytes_read == BUFFER_SIZE);
 
     if (bytes_read < 0 || !gzeof(resource)) {
-      CLOG(ERROR) << "Failed decompressing file " << ErrorMessage();
+      CLOG(ERROR) << "Failed to decompress file: " << ErrorMessage();
       return false;
     }
 
