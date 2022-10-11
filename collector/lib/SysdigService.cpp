@@ -32,6 +32,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "CollectorException.h"
 #include "EventNames.h"
 #include "HostInfo.h"
+#include "KernelDriver.h"
 #include "Logging.h"
 #include "NetworkSignalHandler.h"
 #include "ProcessSignalHandler.h"
@@ -50,18 +51,6 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
     throw CollectorException("Invalid state: SysdigService was already initialized");
   }
 
-  inspector_.reset(new_inspector());
-  inspector_->set_snaplen(config.SnapLen());
-
-  if (config.EnableSysdigLog()) {
-    inspector_->set_log_stderr();
-  }
-
-  if (config.UseEbpf()) {
-    useEbpf = true;
-    inspector_->set_bpf_probe(kProbePath);
-  }
-
   if (conn_tracker) {
     AddSignalHandler(MakeUnique<NetworkSignalHandler>(inspector_.get(), conn_tracker, &userspace_stats_));
   }
@@ -77,6 +66,34 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
   SetChisel(config.Chisel());
 
   use_chisel_cache_ = config.UseChiselCache();
+}
+
+bool SysdigService::InitKernel(const CollectorConfig& config) {
+  inspector_.reset(new_inspector());
+  inspector_->set_snaplen(config.SnapLen());
+
+  if (config.EnableSysdigLog()) {
+    inspector_->set_log_stderr();
+  }
+
+  if (config.UseEbpf()) {
+    useEbpf = true;
+    KernelDriverEBPF driver;
+    if (!driver.Setup(config, SysdigService::kProbePath)) {
+      CLOG(ERROR) << "Failed to setup eBPF probe";
+      return false;
+    }
+    inspector_->set_bpf_probe(kProbePath);
+  } else {
+    KernelDriverModule driver;
+    driver = KernelDriverModule();
+    if (!driver.Setup(config, SysdigService::kModulePath)) {
+      CLOG(ERROR) << "Failed to setup Kernel module";
+      return false;
+    }
+  }
+
+  return true;
 }
 
 bool SysdigService::FilterEvent(sinsp_evt* event) {
@@ -179,12 +196,12 @@ void SysdigService::Start() {
   running_ = true;
 }
 
-void SysdigService::Run(const std::atomic<CollectorService::ControlValue>& control) {
+void SysdigService::Run(const std::atomic<ControlValue>& control) {
   if (!inspector_ || !chisel_) {
     throw CollectorException("Invalid state: SysdigService was not initialized");
   }
 
-  while (control.load(std::memory_order_relaxed) == CollectorService::RUN) {
+  while (control.load(std::memory_order_relaxed) == ControlValue::RUN) {
     sinsp_evt* evt = GetNext();
     if (!evt) continue;
 

@@ -42,6 +42,8 @@ extern "C" {
 #include "Utility.h"
 #include "prometheus/exposer.h"
 
+extern unsigned char g_bpf_drop_syscalls[];  // defined in libscap
+
 namespace collector {
 
 CollectorService::CollectorService(const CollectorConfig& config, std::atomic<ControlValue>* control,
@@ -59,8 +61,7 @@ void CollectorService::RunForever() {
 
   std::shared_ptr<ConnectionTracker> conn_tracker;
 
-  SysdigService sysdig;
-  GetStatus getStatus(config_.Hostname(), &sysdig);
+  GetStatus getStatus(config_.Hostname(), &sysdig_);
 
   std::shared_ptr<prometheus::Registry> registry = std::make_shared<prometheus::Registry>();
 
@@ -106,24 +107,23 @@ void CollectorService::RunForever() {
     }
   }
 
-  sysdig.Init(config_, conn_tracker);
-
-  CollectorStatsExporter exporter(registry, &config_, &sysdig);
+  CollectorStatsExporter exporter(registry, &config_, &sysdig_);
   if (!exporter.start()) {
     CLOG(FATAL) << "Unable to start collector stats exporter";
   }
 
-  sysdig.Start();
+  sysdig_.Init(config_, conn_tracker);
+  sysdig_.Start();
 
   ControlValue cv;
   while ((cv = control_->load(std::memory_order_relaxed)) != STOP_COLLECTOR) {
-    sysdig.Run(*control_);
+    sysdig_.Run(*control_);
     CLOG(DEBUG) << "Interrupted collector!";
 
     std::lock_guard<std::mutex> lock(chisel_mutex_);
     if (update_chisel_) {
       CLOG(DEBUG) << "Updating chisel ...";
-      sysdig.SetChisel(chisel_);
+      sysdig_.SetChisel(chisel_);
       update_chisel_ = false;
       // Reset the control value to RUN, but abort if it has changed to STOP_COLLECTOR in the meantime.
       cv = control_->exchange(RUN, std::memory_order_relaxed);
@@ -146,7 +146,11 @@ void CollectorService::RunForever() {
   exporter.stop();
   server.close();
 
-  sysdig.CleanUp();
+  sysdig_.CleanUp();
+}
+
+bool CollectorService::InitKernel() {
+  return sysdig_.InitKernel(config_);
 }
 
 bool CollectorService::WaitForGRPCServer() {

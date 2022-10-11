@@ -28,8 +28,9 @@ You should have received a copy of the GNU General Public License along with thi
 #include <cstdint>
 #include <string>
 
-#include "CollectorService.h"
+#include "CollectorConfig.h"
 #include "ConnTracker.h"
+#include "Control.h"
 #include "ppm_events_public.h"
 
 namespace collector {
@@ -66,8 +67,9 @@ class Sysdig {
   virtual ~Sysdig() = default;
 
   virtual void Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) = 0;
+  virtual bool InitKernel(const CollectorConfig& config) = 0;
   virtual void Start() = 0;
-  virtual void Run(const std::atomic<CollectorService::ControlValue>& control) = 0;
+  virtual void Run(const std::atomic<ControlValue>& control) = 0;
   virtual void CleanUp() = 0;
 
   virtual bool GetStats(SysdigStats* stats) const = 0;
