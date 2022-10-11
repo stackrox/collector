@@ -1246,16 +1246,17 @@ TEST(ConnTrackerTest, TestComputeDeltaAfterglowBenchmark2) {
   std::cout << "Time taken by ComputeDeltaAfterglow= " << dur.count() << " ms\n";
 }
 
-/*
 TEST(ConnTrackerTest, TestEmplaceOrUpdateSameEndpointDifferentPids) {
   string container = "FakeContainer";
   int64_t connection_time1 = 1000;
   int64_t connection_time2 = 2000;
   Endpoint a(Address(192, 168, 0, 1), 80);
   ConnectionTracker connectionTracker;
+  std::shared_ptr<Process> process1 = std::make_shared<Process>(container, "comm", "exe", "exe_path", "args", 2);
+  std::shared_ptr<Process> process2 = std::make_shared<Process>(container, "comm", "exe", "exe_path", "args", 3);
 
-  ContainerEndpoint ce1(container, a, L4Proto::TCP, 2);
-  ContainerEndpoint ce2(container, a, L4Proto::TCP, 3);
+  ContainerEndpoint ce1(container, a, L4Proto::TCP, process1);
+  ContainerEndpoint ce2(container, a, L4Proto::TCP, process2);
 
   ConnStatus oldConnStatus(connection_time1, true);
   ConnStatus newConnStatus(connection_time2, true);
@@ -1268,7 +1269,7 @@ TEST(ConnTrackerTest, TestEmplaceOrUpdateSameEndpointDifferentPids) {
   EXPECT_THAT(observed_state, expected_state);
 
   ContainerEndpoint observed_endpoint = observed_state.find(ce2)->first;
-  int observedPid = observed_endpoint.pid();
+  int observedPid = observed_endpoint.originator()->pid();
 
   EXPECT_THAT(observedPid, 3);
 }
@@ -1279,8 +1280,9 @@ TEST(ConnTrackerTest, TestEmplaceOrUpdateSameEndpointAndPids) {
   int64_t connection_time2 = 2000;
   Endpoint a(Address(192, 168, 0, 1), 80);
   ConnectionTracker connectionTracker;
+  std::shared_ptr<Process> process1 = std::make_shared<Process>(container, "comm", "exe", "exe_path", "args", 2);
 
-  ContainerEndpoint ce1(container, a, L4Proto::TCP, 2);
+  ContainerEndpoint ce1(container, a, L4Proto::TCP, process1);
 
   ConnStatus oldConnStatus(connection_time1, true);
   ConnStatus newConnStatus(connection_time2, true);
@@ -1299,9 +1301,11 @@ TEST(ConnTrackerTest, TestDeltaForEndpointDifferentPids) {
   int64_t connection_time2 = 2000;
   Endpoint a(Address(192, 168, 0, 1), 80);
   ConnectionTracker connectionTracker;
+  std::shared_ptr<Process> process1 = std::make_shared<Process>(container, "comm", "exe", "exe_path", "args", 2);
+  std::shared_ptr<Process> process2 = std::make_shared<Process>(container, "comm", "exe", "exe_path", "args", 3);
 
-  ContainerEndpoint ce1(container, a, L4Proto::TCP, 2);
-  ContainerEndpoint ce2(container, a, L4Proto::TCP, 3);
+  ContainerEndpoint ce1(container, a, L4Proto::TCP, process1);
+  ContainerEndpoint ce2(container, a, L4Proto::TCP, process2);
 
   ConnStatus oldConnStatus(connection_time1, true);
   ConnStatus newConnStatus(connection_time2, true);
@@ -1321,8 +1325,9 @@ TEST(ConnTrackerTest, TestDeltaForEndpointSamePids) {
   int64_t connection_time2 = 2000;
   Endpoint a(Address(192, 168, 0, 1), 80);
   ConnectionTracker connectionTracker;
+  std::shared_ptr<Process> process1 = std::make_shared<Process>(container, "comm", "exe", "exe_path", "args", 2);
 
-  ContainerEndpoint ce1(container, a, L4Proto::TCP, 2);
+  ContainerEndpoint ce1(container, a, L4Proto::TCP, process1);
 
   ConnStatus oldConnStatus(connection_time1, true);
   ConnStatus newConnStatus(connection_time2, true);
@@ -1340,9 +1345,10 @@ TEST(ConnTrackerTest, TestDeltaForEndpointDifferentProtocols) {
   int64_t connection_time2 = 2000;
   Endpoint a(Address(192, 168, 0, 1), 80);
   ConnectionTracker connectionTracker;
+  std::shared_ptr<Process> process1 = std::make_shared<Process>(container, "comm", "exe", "exe_path", "args", 2);
 
-  ContainerEndpoint ce1(container, a, L4Proto::TCP, 2);
-  ContainerEndpoint ce2(container, a, L4Proto::UDP, 2);
+  ContainerEndpoint ce1(container, a, L4Proto::TCP, process1);
+  ContainerEndpoint ce2(container, a, L4Proto::UDP, process1);
 
   ConnStatus oldConnStatus(connection_time1, true);
   ConnStatus newConnStatus(connection_time2, true);
@@ -1355,7 +1361,7 @@ TEST(ConnTrackerTest, TestDeltaForEndpointDifferentProtocols) {
   CT::ComputeDelta(new_state, &old_state);
   EXPECT_THAT(old_state, expected_delta);
 }
-*/
+
 }  // namespace
 
 }  // namespace collector
