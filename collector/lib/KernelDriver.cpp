@@ -8,31 +8,15 @@ extern "C" {
 #include <sys/stat.h>
 }
 
+#include <fstream>
+#include <iterator>
+
 #define init_module(module_image, len, param_values) syscall(__NR_init_module, module_image, len, param_values)
 #define delete_module(name, flags) syscall(__NR_delete_module, name, flags)
 
 namespace collector {
 
 namespace {
-
-int read_module(int fd, void* buf, int buflen) {
-  unsigned char* p = static_cast<unsigned char*>(buf);
-  int n, i = 0;
-  while (i < buflen) {
-    n = read(fd, p + i, buflen - i);
-    if (n < 0) {
-      if (errno == EINTR)
-        continue;
-      else
-        return n;
-    } else if (n == 0) {
-      return i;
-    } else {
-      i += n;
-    }
-  }
-  return i;
-}
 
 std::string constructArgsStr(std::unordered_map<std::string, std::string>& args) {
   bool first = true;
@@ -50,33 +34,11 @@ std::string constructArgsStr(std::unordered_map<std::string, std::string>& args)
   return stream.str();
 }
 
-int doInsertModule(int fd, std::unordered_map<std::string, std::string>& args) {
+int doInsertModule(std::vector<char>& image, std::unordered_map<std::string, std::string>& args) {
   std::string args_str = constructArgsStr(args);
   CLOG(DEBUG) << "Kernel module arguments: " << args_str;
 
-  struct stat st;
-  int res = fstat(fd, &st);
-  if (res != 0) {
-    CLOG(ERROR) << "Could not stat kernel module: " << StrError();
-    errno = EINVAL;
-    return -1;
-  }
-  size_t image_size = st.st_size;
-  void* image = malloc(image_size);
-  if (!image) {
-    CLOG(ERROR) << "Could not allocate memory for kernel module: " << StrError();
-    errno = EINVAL;
-    return -1;
-  }
-  lseek(fd, 0, SEEK_SET);
-  size_t read_image_size = read_module(fd, image, image_size);
-  if (read_image_size != image_size) {
-    CLOG(ERROR) << "Could not read kernel module: " << StrError() << ".  Mismatch with number of bytes read and kernel module size.";
-    errno = EINVAL;
-    return -1;
-  }
-
-  int res = init_module(fd, args_str.c_str(), 0);
+  int res = init_module(&image.front(), image.size(), args_str.c_str());
   if (res != 0) {
     return res;
   }
@@ -84,6 +46,7 @@ int doInsertModule(int fd, std::unordered_map<std::string, std::string>& args) {
   std::string param_dir = GetHostPath(
       std::string("/sys/module/") + SysdigService::kModuleName + "/parameters");
 
+  struct stat st;
   if (stat(param_dir.c_str(), &st) != 0) {
     // This is not optimal, but don't fail hard on systems where
     // for whatever reason the above directory does not exist.
@@ -128,18 +91,31 @@ bool KernelDriverModule::insert(const std::vector<std::string>& syscalls, std::s
   module_args["exclude_selfns"] = "1";
   module_args["verbose"] = "0";
 
-  FDHandle fd = FDHandle(open(path.c_str(), O_RDONLY));
-  if (!fd.valid()) {
+  std::ifstream module(path, std::ios_base::binary);
+
+  if (!module.is_open()) {
     CLOG(ERROR) << "Cannot open kernel module: " << path << ". Aborting...";
     return false;
   }
 
-  CLOG(INFO) << "Inserting kernel module " << SysdigService::kModulePath
-             << " with indefinite removal and retry if required.";
+  module.seekg(0, std::ios_base::end);
+  size_t image_size = module.tellg();
+  module.seekg(0, std::ios_base::beg);
+
+  std::vector<char> image;
+  image.reserve(image_size);
+
+  std::copy(std::istreambuf_iterator<char>(module),
+            std::istreambuf_iterator<char>(),
+            std::back_inserter(image));
+
+  CLOG(INFO)
+      << "Inserting kernel module " << SysdigService::kModulePath
+      << " with indefinite removal and retry if required.";
 
   // Attempt to insert the module. If it is already inserted then remove it and
   // try again
-  int result = doInsertModule(fd.get(), module_args);
+  int result = doInsertModule(image, module_args);
   while (result != 0) {
     if (errno == EEXIST) {
       // note that we forcefully remove the kernel module whether or not it has a non-zero
@@ -152,7 +128,7 @@ bool KernelDriverModule::insert(const std::vector<std::string>& syscalls, std::s
                   << ". Aborting...";
       return false;
     }
-    result = doInsertModule(fd.get(), module_args);
+    result = doInsertModule(image, module_args);
   }
 
   CLOG(INFO) << "Successfully inserted kernel module " << path << ".";
