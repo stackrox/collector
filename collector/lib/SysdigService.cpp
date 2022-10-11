@@ -47,7 +47,7 @@ constexpr char SysdigService::kProbePath[];
 constexpr char SysdigService::kProbeName[];
 
 void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) {
-  if (inspector_ || chisel_) {
+  if (chisel_) {
     throw CollectorException("Invalid state: SysdigService was already initialized");
   }
 
@@ -69,6 +69,10 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
 }
 
 bool SysdigService::InitKernel(const CollectorConfig& config) {
+  if (inspector_) {
+    throw CollectorException("Invalid state: SysdigService kernel components are already initialized");
+  }
+
   inspector_.reset(new_inspector());
   inspector_->set_snaplen(config.SnapLen());
 
