@@ -356,6 +356,8 @@ sensor::NetworkEndpoint* NetworkStatusNotifier::ContainerEndpointToProto(const C
   endpoint_proto->set_allocated_listen_address(EndpointToProto(cep.endpoint()));
   endpoint_proto->set_allocated_originator(ProcessToProto(*cep.originator().get()));
 
+  CLOG(DEBUG) << cep;
+
   return endpoint_proto;
 }
 
