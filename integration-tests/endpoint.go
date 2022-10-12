@@ -16,7 +16,7 @@ func NewEndpointInfo(line string) (*EndpointInfo, error) {
 	parts := strings.Split(line, "|")
 
 	if len(parts) != 5 {
-		return nil, fmt.Errorf("invalid gRPC string for endpoint info: %s", line)
+		return nil, fmt.Errorf("Invalid gRPC string for endpoint info: %s", line)
 	}
 
 	return &EndpointInfo {

@@ -601,7 +601,6 @@ func (s *ConnScraperTestSuite) TearDownSuite() {
 }
 
 func (s *ConnScraperTestSuite) TestConnScraper() {
-	fmt.Println(s.serverContainer)
 	endpoints, err := s.GetEndpoints(s.serverContainer)
 	if (!s.turnOffScrape) {
 		// If scraping is on we expect to find the nginx endpoint
@@ -741,7 +740,7 @@ func (s *IntegrationTestSuiteBase) GetProcesses(containerID string) ([]ProcessIn
 			return fmt.Errorf("Container bucket %s not found!", containerID)
 		}
 
-		container.ForEach(func(k, v []byte) error {
+		return container.ForEach(func(k, v []byte) error {
 			pinfo, err := NewProcessInfo(string(v))
 			if err != nil {
 				return err
@@ -766,7 +765,6 @@ func (s *IntegrationTestSuiteBase) GetProcesses(containerID string) ([]ProcessIn
 			processes = append(processes, *pinfo)
 			return nil
 		})
-		return nil
 	})
 
 	if err != nil {
@@ -792,7 +790,7 @@ func (s *IntegrationTestSuiteBase) GetEndpoints(containerID string) ([]EndpointI
 			return fmt.Errorf("Container bucket %s not found!", containerID)
 		}
 
-		container.ForEach(func(k, v []byte) error {
+		return container.ForEach(func(k, v []byte) error {
 			einfo, err := NewEndpointInfo(string(v))
 			if err != nil {
 				return err
@@ -801,7 +799,6 @@ func (s *IntegrationTestSuiteBase) GetEndpoints(containerID string) ([]EndpointI
 			endpoints = append(endpoints, *einfo)
 			return nil
 		})
-		return nil
 	})
 
 	if err != nil {
