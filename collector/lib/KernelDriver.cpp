@@ -44,7 +44,7 @@ int doInsertModule(std::vector<char>& image, std::unordered_map<std::string, std
   }
 
   std::string param_dir = GetHostPath(
-      std::string("/sys/module/") + SysdigService::kModuleName + "/parameters");
+      std::string("/sys/module/") + SysdigService::kModuleName + "/parameters/");
 
   struct stat st;
   if (stat(param_dir.c_str(), &st) != 0) {
