@@ -2,4 +2,4 @@
 
 set -eo pipefail
 
-make -C ansible BUILD_TYPE=ci integration-tests-teardown
+gcloud compute instances delete "${GCLOUD_INSTANCE}" --zone us-central1-a
