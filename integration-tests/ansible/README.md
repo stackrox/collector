@@ -1,1 +1,0 @@
-# Collector Integration Tests Ansible

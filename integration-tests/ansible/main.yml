@@ -1,5 +1,0 @@
----
-
-- import_playbook: setup.yml
-- import_playbook: playbooks/run-tests.yml
-- import_playbook: teardown.yml

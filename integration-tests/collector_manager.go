@@ -18,6 +18,7 @@ type collectorManager struct {
 	Mounts            map[string]string
 	Env               map[string]string
 	DBPath            string
+	DBPathRemote      string
 	CollectorOutput   string
 	CollectorImage    string
 	GRPCServerImage   string
@@ -60,9 +61,11 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 	}
 
 	collectorImage := ReadEnvVar("COLLECTOR_IMAGE")
+	vm_config := ReadEnvVar("VM_CONFIG")
 
 	return &collectorManager{
-		DBPath:            "/tmp/collector-test.db",
+		DBPathRemote:      "/tmp/collector-test.db",
+		DBPath:            "/tmp/collector-test-" + vm_config + ".db",
 		executor:          e,
 		DisableGrpcServer: false,
 		BootstrapOnly:     false,
@@ -131,7 +134,7 @@ func (c *collectorManager) TearDown() error {
 	}
 	if !c.DisableGrpcServer {
 		c.captureLogs("grpc-server")
-		if _, err := c.executor.CopyFromHost(c.DBPath, c.DBPath); err != nil {
+		if _, err := c.executor.CopyFromHost(c.DBPathRemote, c.DBPath); err != nil {
 			return err
 		}
 		c.killContainer("grpc-server")

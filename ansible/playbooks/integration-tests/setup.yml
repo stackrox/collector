@@ -1,0 +1,79 @@
+--- 
+- name: Setup Integration Tests
+  vars_files:
+    - vars/all.yml
+  hosts: localhost
+  strategy: free
+  tasks:
+    - name: Create Integration Test VMs From Family
+      include_role:
+        name: create-vm
+      vars:
+        vm:
+          name: "{{ gcp_instance_prefix }}-{{ item.1 }}-{{ job_id }}"
+          project: "{{ item.0.project }}"
+          family: "{{ item.1 }}"
+          labels:
+            job_id: "{{ job_id }}"
+            platform: "{{ item.0.name }}"
+            vm_config: "{{ item.0.name }}_{{ item.1 }}"
+            username: "{{ item.0.username | default(gcp_default_user) }}"
+
+      #
+      # The loop will create the "item" variable, which can be used throughout the task
+      # and the subelements call will create a list that combines the project
+      # with all of the image families in that set
+      # e.g.
+      #   - name: rhel
+      #     families:
+      #      - rhel-7
+      #      - rhel-8
+      #
+      #  becomes:
+      #  [{'rhel', 'families': ['rhel-7', 'rhel-8']}, 'rhel-7']
+      #  [{'rhel', 'families': ['rhel-7', 'rhel-8']}, 'rhel-8']
+      #
+      #  This also allows us to filter based on specific test_platforms as seen
+      #  in the when clause
+      #
+      loop: "{{ virtual_machines | subelements('families', skip_missing=True) }}"
+      when: "test_platform == item.0.name or test_platform == 'all'"
+
+    - name: Create Integration Test VMs From Image
+      include_role:
+        name: create-vm
+      vars:
+        vm:
+          name: "{{ gcp_instance_prefix }}-{{ item.0.name }}-{{ job_id }}"
+          project: "{{ item.project }}"
+          image: "{{ item.0.image }}"
+          labels:
+            job_id: "{{ job_id }}"
+            platform: "{{ item.0.name }}"
+            vm_config: "{{ item.0.name }}_{{ item.1 }}"
+            username: "{{ item.0.username | default(gcp_default_user) }}"
+
+      #
+      # The loop will create the "item" variable, which can be used throughout the task
+      # and the subelements call will create a list that combines the project
+      # with all of the image families in that set
+      # e.g.
+      #   - name: rhel
+      #     families:
+      #      - rhel-7
+      #      - rhel-8
+      #
+      #  becomes:
+      #  [{'rhel', 'families': ['rhel-7', 'rhel-8']}, 'rhel-7']
+      #  [{'rhel', 'families': ['rhel-7', 'rhel-8']}, 'rhel-8']
+      #
+      #  This also allows us to filter based on specific test_platforms as seen
+      #  in the when clause
+      #
+      loop: "{{ virtual_machines | subelements('images', skip_missing=True) }}"
+      when: "test_platform == item.0.name or test_platform == 'all'"
+
+  post_tasks:
+    # We have all the VMs created now, so refresh the inventory - this allows
+    # us to use the provisioning role on the VMs we just created
+    - meta: refresh_inventory

@@ -1,9 +1,9 @@
 ---
-
 - name: Run integration tests
   vars_files:
-    - group_vars/all.yml
+    - vars/all.yml
   hosts: "job_id_{{ job_id }}"
+  strategy: free
   environment:
     REMOTE_HOST_TYPE: ssh
     SSH_ADDRESS: "{{ ansible_host }}"
@@ -14,6 +14,9 @@
     VM_CONFIG: "{{ vm_config }}"
   
   tasks:
+    - set_fact:
+        logs_root: "{{ collector_root }}/integration-tests/container-logs/{{ vm_config }}"
+
     - name: Log into quay.io
       shell:
         cmd: "docker login -u {{ quay_username }} --password-stdin quay.io"
@@ -23,33 +26,40 @@
       shell: "docker rm -f $(docker ps -aq) >/dev/null 2>&1 || true"
 
     - name: Run integration tests
-      delegate_to: localhost
-      shell: "make -C ../../ {{ collector_test | default('ci-integration-tests') }}"
+      shell: "make -C {{ collector_root }} {{ collector_test | default('ci-integration-tests') }}"
       environment:
         COLLECTION_METHOD: "{{ item }}"
       with_items:
         - ebpf
       register: test_result
+      delegate_to: localhost
+        
+    - name: Write integration test log
+      copy:
+        content: "{{ test_result.results[0].stdout }}"
+        dest: "{{ logs_root }}/integration-test.log"
+      delegate_to: localhost
 
     - name: Run benchmarks
-      delegate_to: localhost
-      shell: "make -C ../../ ci-benchmarks }}"
+      shell: "make -C {{ collector_root }} ci-benchmarks"
       environment:
         COLLECTION_METHOD: "{{ item }}"
       with_items:
         - ebpf
       register: benchmark_result
       when: run_benchmarks|bool == true
-
-    - name: Write integration test log
-      copy:
-        content: "{{ test_result.results[0].stdout }}"
-        dest: ../../container-logs/{{ vm_config }}/integration-test.log
       delegate_to: localhost
 
     - name: Write benchmark log
       copy:
         content: "{{ benchmark_result.results[0].stdout }}"
-        dest: ../../container-logs/{{ vm_config }}/benchmark.log
+        dest: "{{ logs_root }}/{{ vm_config }}/benchmark.log"
+      delegate_to: localhost
+      when: run_benchmarks|bool == true
+
+    - name: Report
+      shell: "make -C {{ collector_root }}/integration-tests report"
+      environment:
+        LOG_FILE: "{{ logs_root }}/integration-test.log"
       delegate_to: localhost
 

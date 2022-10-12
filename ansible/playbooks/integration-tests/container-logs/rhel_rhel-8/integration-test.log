@@ -1,0 +1,25 @@
+make -C integration-tests process-network ||\
+		( .openshift-ci/slack/notify-if-needed.sh "process-network" $? )
+docker rm -fv container-stats benchmark collector grpc-server 2>/dev/null || true
+go version
+go version go1.19 darwin/amd64
+set -o pipefail ; \
+	go test -timeout 60m -count=1 -v \
+ 	  -run TestProcessNetwork 2>&1 | tee -a integration-test.log
+=== RUN   TestProcessNetwork
+=== RUN   TestProcessNetwork/TestNetworkFlows
+ServerDetails from Bolt: dfdc21221550 :80|172.17.0.4|ROLE_SERVER|SOCKET_FAMILY_UNKNOWN|(timestamp: nil Timestamp)
+ServerDetails from test: dfdc21221550 172.17.0.3, Port: 80
+ClientDetails from Bolt: d3e36d97617c |172.17.0.3:80|ROLE_CLIENT|SOCKET_FAMILY_UNKNOWN|(timestamp: nil Timestamp)
+ClientDetails from test: d3e36d97617c 172.17.0.4
+=== RUN   TestProcessNetwork/TestProcessLineageInfo
+=== RUN   TestProcessNetwork/TestProcessViz
+CPU: Container grpc-server, Mean 0.0963157894736842, StdDev 0.3780242573979697
+CPU: Container collector, Mean 0.3126666666666667, StdDev 0.30938802882618516
+Writing perf.json
+--- PASS: TestProcessNetwork (88.22s)
+    --- PASS: TestProcessNetwork/TestNetworkFlows (0.00s)
+    --- PASS: TestProcessNetwork/TestProcessLineageInfo (0.00s)
+    --- PASS: TestProcessNetwork/TestProcessViz (0.00s)
+PASS
+ok  	github.com/stackrox/collector/integration-tests	88.403s

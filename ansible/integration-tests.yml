@@ -1,0 +1,14 @@
+---
+
+- import_playbook: playbooks/integration-tests/setup.yml
+  tags:
+    - setup
+- import_playbook: playbooks/integration-tests/provision.yml
+  tags:
+    - provision
+- import_playbook: playbooks/integration-tests/run.yml
+  tags:
+    - run-tests
+- import_playbook: playbooks/integration-tests/teardown.yml
+  tags:
+    - teardown

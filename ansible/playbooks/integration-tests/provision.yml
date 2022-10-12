@@ -1,0 +1,10 @@
+---
+
+- name: Provision VMs
+  vars_files:
+    - vars/all.yml
+  hosts: "job_id_{{ job_id }}"
+  gather_facts: no
+  become: yes
+  roles:
+    - provision-vm

@@ -1,0 +1,9 @@
+---
+
+- name: Teardown VMs
+  vars_files:
+    - vars/all.yml
+  hosts: "job_id_{{ job_id }}"
+  gather_facts: false
+  roles:
+    - destroy-vm

@@ -6,6 +6,9 @@ ansible_ssh_private_key_file: "{{ gcp_ssh_key_file }}"
 
 job_id: "{{ lookup('env', 'JOB_ID', default='1') }}"
 test_platform: "{{ lookup('env', 'VM_TYPE', default='all') }}"
+collector_root: "{{ playbook_dir }}/../../../"
+collector_test: "{{ lookup('env', 'COLLECTOR_TEST', default='ci-integration-tests') }}"
+run_benchmarks: false
 
 virtual_machines:
   - name: rhel
