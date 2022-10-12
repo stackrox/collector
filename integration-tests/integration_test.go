@@ -368,7 +368,13 @@ func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
 
 	// Server side checks
 
-	// NetworkSignalHandler does not currently report endpoints
+	// NetworkSignalHandler does not currently report endpoints.
+	// ConnScraper, which scrapes networking information from /proc reports endpoints and connections
+	// However NetworkSignalHandler, which gets networking information from Falco only reports connections.
+	// At some point in the future NetworkSignalHandler will report endpoints and connections.
+	// At that time this test and the similar test for the client container will need to be changed.
+	// The requirement should be NoError, instead of Error and there should be multiple asserts to
+	// check that the endpoints are what we expect them to be.
 	_, err := s.GetEndpoints(s.serverContainer)
 	s.Require().Error(err)
 
@@ -391,7 +397,8 @@ func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
 
 	// client side checks
 
-	// NetworkSignalHandler does not currently report endpoints
+	// NetworkSignalHandler does not currently report endpoints.
+	// See the comment above for the server container endpoint test for more info.
 	_, err = s.GetEndpoints(s.clientContainer)
 	s.Require().Error(err)
 
