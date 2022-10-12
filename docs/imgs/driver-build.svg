@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" height="537px" preserveAspectRatio="none" style="width:628px;height:537px;background:#FFFFFF;" version="1.1" viewBox="0 0 628 537" width="628px" zoomAndPan="magnify"><defs/><g><!--MD5=[6701fae3df526cca14a51b200d8bfe9a]
+cluster GCP--><g id="cluster_GCP"><rect fill="none" height="97" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:1.0;" width="330" x="73" y="7"/><path d="M112,7 L112,16.4883 L102,26.4883 L73,26.4883 " fill="none" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="29" x="76" y="21.5352">GCP</text></g><!--MD5=[acbf95ae80d0693cc6d8cb83815859b3]
+cluster OSCI--><g id="cluster_OSCI"><rect fill="none" height="378" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:1.0;" width="615" x="7" y="153"/><path d="M52,153 L52,162.4883 L42,172.4883 L7,172.4883 " fill="none" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="35" x="10" y="167.5352">OSCI</text></g><!--MD5=[2904773893452b18f0f67c123723de1f]
+cluster drivers build--><g id="cluster_drivers build"><rect fill="none" height="311" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:1.0;" width="567" x="31" y="196"/><path d="M133,196 L133,205.4883 L123,215.4883 L31,215.4883 " fill="none" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="92" x="34" y="210.5352">drivers build</text></g><!--MD5=[7357bf0b102ac09de391a65b23a64b46]
+entity dcache--><g id="elem_dcache"><rect fill="#F1F1F1" height="46.4883" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="123" x="89.5" y="42"/><rect fill="#F1F1F1" height="10" style="stroke:#181818;stroke-width:0.5;" width="15" x="192.5" y="47"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="190.5" y="49"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="190.5" y="53"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="83" x="104.5" y="75.5352">driver cache</text></g><!--MD5=[744e66bce1f48bd974828a8425acc557]
+entity dbundles--><g id="elem_dbundles"><rect fill="#F1F1F1" height="46.4883" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="139" x="247.5" y="42"/><rect fill="#F1F1F1" height="10" style="stroke:#181818;stroke-width:0.5;" width="15" x="366.5" y="47"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="364.5" y="49"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="364.5" y="53"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="99" x="262.5" y="75.5352">driver bundles</text></g><!--MD5=[953e7d94a3406af14ade7885c23860ce]
+entity rhel7--><g id="elem_rhel7"><rect fill="#F1F1F1" height="46.4883" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="147" x="252.5" y="338"/><rect fill="#F1F1F1" height="10" style="stroke:#181818;stroke-width:0.5;" width="15" x="379.5" y="343"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="377.5" y="345"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="377.5" y="349"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="107" x="267.5" y="371.5352">RHEL 7 builders</text></g><!--MD5=[bb228775709b3d953f7ed78115bad9c8]
+entity rhel8--><g id="elem_rhel8"><rect fill="#F1F1F1" height="46.4883" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="147" x="434.5" y="338"/><rect fill="#F1F1F1" height="10" style="stroke:#181818;stroke-width:0.5;" width="15" x="561.5" y="343"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="559.5" y="345"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="559.5" y="349"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="107" x="449.5" y="371.5352">RHEL 8 builders</text></g><!--MD5=[e18b2195c13ef9ee47b019fbef9720fb]
+entity fc36--><g id="elem_fc36"><rect fill="#F1F1F1" height="46.4883" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="170" x="47" y="338"/><rect fill="#F1F1F1" height="10" style="stroke:#181818;stroke-width:0.5;" width="15" x="197" y="343"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="195" y="345"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="195" y="349"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="130" x="62" y="371.5352">Fedora 36 builders</text></g><!--MD5=[e5c61ad1ce1a5608d8e2e18d0101be26]
+entity unified--><g id="elem_unified"><rect fill="#F1F1F1" height="46.4883" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="140" x="109" y="445"/><rect fill="#F1F1F1" height="10" style="stroke:#181818;stroke-width:0.5;" width="15" x="229" y="450"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="227" y="452"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="227" y="456"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="100" x="124" y="478.5352">Unified drivers</text></g><g id="elem_pullnote"><path d="M284.5,455.5 L284.5,480.8105 L461.5,480.8105 L461.5,465.5 L451.5,455.5 L284.5,455.5 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M451.5,455.5 L451.5,465.5 L461.5,465.5 L451.5,455.5 " fill="#FEFFDD" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="156" x="290.5" y="473.0684">Pull one bundle at a time</text></g><!--MD5=[fa1131bf4ea67a61526a7a338a32ea84]
+entity pre-build--><g id="elem_pre-build"><rect fill="#F1F1F1" height="46.4883" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="106" x="91" y="231"/><rect fill="#F1F1F1" height="10" style="stroke:#181818;stroke-width:0.5;" width="15" x="177" y="236"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="175" y="238"/><rect fill="#F1F1F1" height="2" style="stroke:#181818;stroke-width:0.5;" width="4" x="175" y="242"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="66" x="106" y="264.5352">pre-build</text></g><!--MD5=[3b3071be03ebccda6bb69a425a7a221f]
+link dcache to pre-build--><g id="link_dcache_pre-build"><path d="M135.43,88.03 C129.7,97.42 123.91,108.79 121,120 C111.65,156.09 122.8,198.69 132.59,225.77 " fill="none" id="dcache-to-pre-build" style="stroke:#181818;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#181818" points="134.39,230.64,135.0015,220.8101,132.6469,225.9537,127.5034,223.5991,134.39,230.64" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="125" x="122" y="133.5684">Pull existing drivers</text></g><!--MD5=[4a297bf57fe9c9430d9e471dbbda9c6d]
+link pre-build to rhel7--><g id="link_pre-build_rhel7"><path d="M173.63,277.24 C187.4,287.16 204.2,298.69 220,308 C236.63,317.8 255.36,327.42 272.4,335.68 " fill="none" id="pre-build-to-rhel7" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="277.16,337.97,270.7927,330.4562,272.6569,335.7971,267.316,337.6612,277.16,337.97" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[a8050278cec33dd40800e949bbd2a553]
+link pre-build to rhel8--><g id="link_pre-build_rhel8"><path d="M197.32,270.38 C258.45,288.01 359.24,317.09 429.37,337.32 " fill="none" id="pre-build-to-rhel8" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="434.37,338.76,426.8276,332.4266,429.5651,337.377,424.6147,340.1145,434.37,338.76" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[bf72c7cfba2f53c04a167c0f5cce249c]
+link pre-build to fc36--><g id="link_pre-build_fc36"><path d="M141.48,277.01 C139.64,293.14 137.13,315.15 135.15,332.45 " fill="none" id="pre-build-to-fc36" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="134.55,337.66,139.5516,329.1756,135.121,332.6927,131.6039,328.2621,134.55,337.66" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[986b36046773b8ea453715b8eb3ff379]
+link dbundles to rhel7--><g id="link_dbundles_rhel7"><path d="M317.68,88.1 C319.3,140.99 323.39,274.75 325.16,332.62 " fill="none" id="dbundles-to-rhel7" style="stroke:#181818;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#181818" points="325.32,337.65,329.0353,328.5288,325.1629,332.6525,321.0393,328.7801,325.32,337.65" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[b58a2edf4d2fc34f77e205f8ced5943d]
+link dbundles to rhel8--><g id="link_dbundles_rhel8"><path d="M331.36,88.1 C365.85,141.2 453.31,275.82 490.66,333.31 " fill="none" id="dbundles-to-rhel8" style="stroke:#181818;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#181818" points="493.48,337.65,491.9161,327.9261,490.7495,333.4614,485.2143,332.2949,493.48,337.65" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[97cefaa5f819a8341789cc2f6ff79895]
+link dbundles to fc36--><g id="link_dbundles_fc36"><path d="M309.09,88.28 C294.28,128.28 259.78,213.99 215,277 C199.85,298.31 179.04,319.11 162.05,334.55 " fill="none" id="dbundles-to-fc36" style="stroke:#181818;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#181818" points="158.26,337.96,167.6255,334.9125,161.9765,334.6152,162.2738,328.9661,158.26,337.96" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[3340c43597254d8b12d3eda67d88073f]
+link rhel7 to unified--><g id="link_rhel7_unified"><path d="M295.18,384.01 C271.55,400.89 238.9,424.22 214.23,441.84 " fill="none" id="rhel7-to-unified" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="210.03,444.84,219.6779,442.8606,214.0977,441.9325,215.0258,436.3523,210.03,444.84" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[9fb6abc91eb831ab3c497644133870b6]
+link rhel8 to unified--><g id="link_rhel8_unified"><path d="M439.03,384.01 C384.62,401.38 308.86,425.55 253.15,443.34 " fill="none" id="rhel8-to-unified" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="248.16,444.93,257.9522,445.985,252.9203,443.4004,255.5049,438.3685,248.16,444.93" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[33d181be4de2dd64fbbefbd9b225fc64]
+link fc36 to unified--><g id="link_fc36_unified"><path d="M141.85,384.01 C149.14,400.28 159.09,422.53 166.87,439.9 " fill="none" id="fc36-to-unified" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="169,444.66,168.9685,434.8112,166.9547,440.0975,161.6685,438.0836,169,444.66" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[cde8ce62b1c88f9679c0c2441fed8bb5]
+link rhel7 to pullnote--><g id="link_rhel7_pullnote"><path d="M335.85,384.01 C345.6,405.78 360.13,438.25 367.81,455.41 " fill="none" id="rhel7-pullnote" style="stroke:#181818;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/></g><!--MD5=[7b26e5b2cabc6f8a6b3262143bce4dd4]
+link rhel8 to pullnote--><g id="link_rhel8_pullnote"><path d="M483.56,384.25 C472.6,393.96 459.37,405.32 447,415 C428.33,429.61 405.94,445.08 390.71,455.31 " fill="none" id="rhel8-pullnote" style="stroke:#181818;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/></g><!--MD5=[c2c9cf1930f523630c66c7fe623f1a51]
+link fc36 to pullnote--><g id="link_fc36_pullnote"><path d="M182.52,384.01 C232.49,405.78 307.02,438.25 346.4,455.41 " fill="none" id="fc36-pullnote" style="stroke:#181818;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/></g><!--MD5=[6cc312b5454d8be59cdd17debb5d1d32]
+@startuml
+
+frame "GCP" {
+    component [driver cache] as dcache
+    component [driver bundles] as dbundles
+}
+
+frame OSCI {
+    frame "drivers build" {
+        component [RHEL 7 builders] as rhel7
+        component [RHEL 8 builders] as rhel8
+        component [Fedora 36 builders] as fc36
+        component [Unified drivers] as unified
+
+        note as pullnote
+            Pull one bundle at a time
+        end note
+
+        dcache -.> [pre-build] : Pull existing drivers
+        [pre-build] - -> rhel7
+        [pre-build] - -> rhel8
+        [pre-build] - -> fc36
+        dbundles ..> rhel7
+        dbundles ..> rhel8
+        dbundles ..> fc36
+        rhel7 - -> unified
+        rhel8 - -> unified
+        fc36 - -> unified
+
+        rhel7 .. pullnote
+        rhel8 .. pullnote
+        fc36 .. pullnote
+    }
+}
+@enduml
+
+PlantUML version 1.2022.8(Sun Sep 25 11:00:33 CEST 2022)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Default Encoding: UTF-8
+Language: en
+Country: ES
+--></g></svg>
