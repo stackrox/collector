@@ -13,7 +13,6 @@ type EndpointInfo struct {
 }
 
 func NewEndpointInfo(line string) (*EndpointInfo, error) {
-	fmt.Println(line)
 	parts := strings.Split(line, "|")
 
 	if len(parts) != 5 {

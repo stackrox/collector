@@ -608,7 +608,6 @@ func (s *ConnScraperTestSuite) TestConnScraper() {
 		assert.Equal(s.T(), 1, len(endpoints))
 		assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[0].Protocol)
 		assert.Equal(s.T(), "(timestamp: nil Timestamp)", endpoints[0].CloseTimestamp)
-		assert.Equal(s.T(), "process_name:nginx process_exec_file_path:/usr/bin/nginx process_args:\n", endpoints[0].Originator)
 
 		processes, err := s.GetProcesses(s.serverContainer)
 		s.Require().NoError(err)

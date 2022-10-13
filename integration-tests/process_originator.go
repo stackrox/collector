@@ -1,7 +1,7 @@
 package integrationtests
 
 import (
-	//"strings"
+	"strings"
 	"fmt"
 	"regexp"
 )
@@ -10,6 +10,17 @@ type ProcessOriginator struct {
 	ProcessName string
 	ProcessExecFilePath string
 	ProcessArgs string
+}
+
+func removeQuotesAndWhiteSpace(s string) string {
+	s = strings.TrimSpace(s)
+	if len(s) > 0 && s[0] == '"' {
+		s = s[1:]
+	}
+	if len(s) > 0 && s[len(s)-1] == '"' {
+		s = s[:len(s)-1]
+	}
+	return s
 }
 
 func NewProcessOriginator(line string) (*ProcessOriginator, error) {
@@ -22,25 +33,27 @@ func NewProcessOriginator(line string) (*ProcessOriginator, error) {
 	if len(processNameArr) !=2 {
 		return nil, fmt.Errorf("Could not find process_name in %s", line)
 	}
-	processName := processNameArr[1]
-	fmt.Println("processName= " + processName)
+	processName := removeQuotesAndWhiteSpace(processNameArr[1])
 
 	r = regexp.MustCompile("process_exec_file_path:(.*)process_args:")
 	processExecFilePathArr := r.FindStringSubmatch(line)
 	if len(processExecFilePathArr) !=2 {
-		return nil, fmt.Errorf("Could not find process_exec_file_path in %s", line)
+		r = regexp.MustCompile("process_exec_file_path:(.*)\n$")
+		processExecFilePathArr = r.FindStringSubmatch(line)
+		if len(processExecFilePathArr) !=2 {
+			return nil, fmt.Errorf("Could not find process_exec_file_path in %s", line)
+		}
 	}
-	processExecFilePath := processExecFilePathArr[1]
-	fmt.Println("processExecFilePath= " + processExecFilePath)
+	processExecFilePath := removeQuotesAndWhiteSpace(processExecFilePathArr[1])
 
-	r = regexp.MustCompile("process_args:(.*)$")
+	r = regexp.MustCompile("process_args:(.*)\n$")
 	processArgsArr := r.FindStringSubmatch(line)
+	var processArgs string
 	if len(processArgsArr) !=2 {
-		return nil, fmt.Errorf("Could not find process_args in %s", line)
+		processArgs = ""
+	} else {
+		processArgs = removeQuotesAndWhiteSpace(processArgsArr[1])
 	}
-	processArgs := processArgsArr[1]
-	fmt.Println("processArgs= " + processArgs)
-
 
 	return &ProcessOriginator {
 		ProcessName: processName,
