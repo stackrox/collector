@@ -33,8 +33,8 @@ func NewProcessOriginator(line string) (*ProcessOriginator, error) {
 	processArr := r.FindStringSubmatch(line)
 	if len(processArr) !=4 {
 		r := regexp.MustCompile("process_name:(.*)process_exec_file_path:(.*)\n$")
-		processArr := r.FindStringSubmatch(line)
-		if len(processArr) !=3 {
+		processArr = r.FindStringSubmatch(line)
+		if len(processArr) != 3 {
 			return nil, fmt.Errorf("Could not parse process originator %s", line)
 		}
 	} else {
