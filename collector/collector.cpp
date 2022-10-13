@@ -126,7 +126,9 @@ std::shared_ptr<grpc::Channel> createChannel(CollectorArgs* args) {
 bool attemptGRPCConnection(std::shared_ptr<grpc::Channel>& channel) {
   int polls = MAX_GRPC_CONNECTION_POLLS;
   auto poll_check = [&polls] {
-    return (polls-- > 0);
+    // this closure needs to return false until we wish to stop
+    // polling, so keep going until we hit 0
+    return (polls-- == 0);
   };
   return WaitForChannelReady(channel, poll_check);
 }
@@ -249,10 +251,10 @@ int main(int argc, char** argv) {
     sensor_connection = createChannel(args);
     CLOG(INFO) << "Attempting to connect to Sensor";
     if (attemptGRPCConnection(sensor_connection)) {
+      CLOG(INFO) << "Successfully connected to Sensor.";
+    } else {
       g_startup_diagnostics.Log();
       CLOG(FATAL) << "Unable to connect to Sensor.";
-    } else {
-      CLOG(INFO) << "Successfully connected to Sensor.";
     }
     g_startup_diagnostics.ConnectedToSensor();
   } else {
