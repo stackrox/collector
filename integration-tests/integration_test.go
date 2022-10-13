@@ -529,9 +529,12 @@ func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, erro
 	cmd := []string{"docker", "run", "-d", "--name"}
 	cmd = append(cmd, args...)
 
-	return retry(func() (string, error) {
+	output, err := retry(func() (string, error) {
 		return s.executor.Exec(cmd...)
 	})
+
+	outLines := strings.Split(output, "\n")
+	return outLines[len(outLines)-1], err
 }
 
 func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, containerID string, tickSeconds time.Duration) (bool, error) {
