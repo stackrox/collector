@@ -19,7 +19,11 @@ func NewEndpointInfo(line string) (*EndpointInfo, error) {
 		return nil, fmt.Errorf("Invalid gRPC string for endpoint info: %s", line)
 	}
 
-	originator, _ := NewProcessOriginator(parts[4])
+	originator, err := NewProcessOriginator(parts[4])
+
+	if err != nil {
+		return nil, err
+	}
 
 	return &EndpointInfo {
 		Protocol: parts[1],

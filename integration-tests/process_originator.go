@@ -28,32 +28,20 @@ func NewProcessOriginator(line string) (*ProcessOriginator, error) {
 		return nil, fmt.Errorf("ProcessOriginator is nil")
 	}
 
-	r := regexp.MustCompile("process_name:(.*)process_exec_file_path:")
-	processNameArr := r.FindStringSubmatch(line)
-	if len(processNameArr) !=2 {
-		return nil, fmt.Errorf("Could not find process_name in %s", line)
-	}
-	processName := removeQuotesAndWhiteSpace(processNameArr[1])
-
-	r = regexp.MustCompile("process_exec_file_path:(.*)process_args:")
-	processExecFilePathArr := r.FindStringSubmatch(line)
-	if len(processExecFilePathArr) !=2 {
-		r = regexp.MustCompile("process_exec_file_path:(.*)\n$")
-		processExecFilePathArr = r.FindStringSubmatch(line)
-		if len(processExecFilePathArr) !=2 {
-			return nil, fmt.Errorf("Could not find process_exec_file_path in %s", line)
-		}
-	}
-	processExecFilePath := removeQuotesAndWhiteSpace(processExecFilePathArr[1])
-
-	r = regexp.MustCompile("process_args:(.*)\n$")
-	processArgsArr := r.FindStringSubmatch(line)
 	var processArgs string
-	if len(processArgsArr) !=2 {
-		processArgs = ""
+	r := regexp.MustCompile("process_name:(.*)process_exec_file_path:(.*)process_args(.*)\n$")
+	processArr := r.FindStringSubmatch(line)
+	if len(processArr) !=4 {
+		r := regexp.MustCompile("process_name:(.*)process_exec_file_path:(.*)\n$")
+		processArr := r.FindStringSubmatch(line)
+		if len(processArr) !=3 {
+			return nil, fmt.Errorf("Could not parse process originator %s", line)
+		}
 	} else {
-		processArgs = removeQuotesAndWhiteSpace(processArgsArr[1])
+		processArgs = removeQuotesAndWhiteSpace(processArr[3])
 	}
+	processName := removeQuotesAndWhiteSpace(processArr[1])
+	processExecFilePath := removeQuotesAndWhiteSpace(processArr[2])
 
 	return &ProcessOriginator {
 		ProcessName: processName,
