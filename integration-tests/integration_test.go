@@ -609,6 +609,12 @@ func (s *ConnScraperTestSuite) TestConnScraper() {
 		assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[0].Protocol)
 		assert.Equal(s.T(), "(timestamp: nil Timestamp)", endpoints[0].CloseTimestamp)
 		assert.Equal(s.T(), "process_name:nginx process_exec_file_path:/usr/bin/nginx process_args:\n", endpoints[0].Originator)
+
+		processes, err := s.GetProcesses(s.serverContainer)
+		s.Require().NoError(err)
+		assert.Equal(s.T(), endpoints[0].Originator.ProcessName, processes[0].Name)
+		assert.Equal(s.T(), endpoints[0].Originator.ProcessExecFilePath, processes[0].ExePath)
+		assert.Equal(s.T(), endpoints[0].Originator.ProcessArgs, processes[0].Args)
 	} else {
 		// If scraping is off we expect not to find the nginx endpoint and we should get an error
 		s.Require().Error(err)
