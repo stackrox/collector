@@ -586,6 +586,9 @@ func (s *ConnScraperTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	time.Sleep(10 * time.Second)
 
+	s.cleanupContainer([]string{"nginx"})
+	time.Sleep(10 * time.Second)
+
 	err = s.collector.TearDown()
 	s.Require().NoError(err)
 
@@ -619,15 +622,21 @@ func (s *ConnScraperTestSuite) TestConnScraper() {
 	if (!s.turnOffScrape && s.roxProcessesListeningOnPort) {
 		// If scraping is on we expect to find the nginx endpoint
 		s.Require().NoError(err)
-		assert.Equal(s.T(), 1, len(endpoints))
-		assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[0].Protocol)
-		assert.Equal(s.T(), "(timestamp: nil Timestamp)", endpoints[0].CloseTimestamp)
-
+		assert.Equal(s.T(), 2, len(endpoints))
 		processes, err := s.GetProcesses(s.serverContainer)
 		s.Require().NoError(err)
+
+		assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[0].Protocol)
+		assert.Equal(s.T(), "(timestamp: nil Timestamp)", endpoints[0].CloseTimestamp)
 		assert.Equal(s.T(), endpoints[0].Originator.ProcessName, processes[0].Name)
 		assert.Equal(s.T(), endpoints[0].Originator.ProcessExecFilePath, processes[0].ExePath)
 		assert.Equal(s.T(), endpoints[0].Originator.ProcessArgs, processes[0].Args)
+
+		assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[1].Protocol)
+		assert.NotEqual(s.T(), "(timestamp: nil Timestamp)", endpoints[1].CloseTimestamp)
+		assert.Equal(s.T(), endpoints[1].Originator.ProcessName, processes[0].Name)
+		assert.Equal(s.T(), endpoints[1].Originator.ProcessExecFilePath, processes[0].ExePath)
+		assert.Equal(s.T(), endpoints[1].Originator.ProcessArgs, processes[0].Args)
 	} else {
 		// If scraping is off we expect not to find the nginx endpoint and we should get an error
 		s.Require().Error(err)
