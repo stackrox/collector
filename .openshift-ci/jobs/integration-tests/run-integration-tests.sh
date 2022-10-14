@@ -61,8 +61,6 @@ function save_artifacts() {
 }
 
 function propagate_ci_env() {
-    echo "${OFFLINE}"
-
     if [[ "${OFFLINE,,}" != "false" ]]; then
         export COLLECTOR_OFFLINE_MODE="true"
     fi
