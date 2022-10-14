@@ -108,12 +108,26 @@ func TestRepeatedNetworkFlowThreeCurlsNoAfterglow(t *testing.T) {
 // in which scraping is turned off and we expect that we will not see
 // endpoint opened before collector is turned on.
 func TestConnScraper(t *testing.T) {
-	connScraperTestSuite := &ConnScraperTestSuite{turnOffScrape:	false}
+	connScraperTestSuite := &ConnScraperTestSuite{
+		turnOffScrape:	false
+		roxProcessesListeningOnPort: true
+	}
 	suite.Run(t, connScraperTestSuite)
 }
 
 func TestConnScraperNoScrape(t *testing.T) {
-	connScraperTestSuite := &ConnScraperTestSuite{turnOffScrape:	true}
+	connScraperTestSuite := &ConnScraperTestSuite{
+		turnOffScrape:	true,
+		roxProcessesListeningOnPort: true,
+	}
+	suite.Run(t, connScraperTestSuite)
+}
+
+func TestConnScraperDisableFeatureFlag(t *testing.T) {
+	connScraperTestSuite := &ConnScraperTestSuite{
+		turnOffScrape:	false,
+		roxProcessesListeningOnPort: false,
+	}
 	suite.Run(t, connScraperTestSuite)
 }
 
@@ -183,10 +197,9 @@ type ImageLabelJSONTestSuite struct {
 
 type ConnScraperTestSuite struct {
 	IntegrationTestSuiteBase
-	logLines		[]string
-	serverContainer		string
-	turnOffScrape		bool
-	expectedResult		bool
+	serverContainer			string
+	turnOffScrape			bool
+	roxProcessesListeningOnPort	bool
 }
 
 func (s *ImageLabelJSONTestSuite) SetupSuite() {
@@ -562,6 +575,7 @@ func (s *ConnScraperTestSuite) SetupSuite() {
 	s.collector = NewCollectorManager(s.executor, s.T().Name())
 
 	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":` + strconv.FormatBool(s.turnOffScrape) + `,"scrapeInterval":2}`
+	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = s.RoxProcessesListeningOnPort
 
 	s.launchNginx()
 
@@ -602,7 +616,7 @@ func (s *ConnScraperTestSuite) TearDownSuite() {
 
 func (s *ConnScraperTestSuite) TestConnScraper() {
 	endpoints, err := s.GetEndpoints(s.serverContainer)
-	if (!s.turnOffScrape) {
+	if (!s.turnOffScrape && ) {
 		// If scraping is on we expect to find the nginx endpoint
 		s.Require().NoError(err)
 		assert.Equal(s.T(), 1, len(endpoints))
