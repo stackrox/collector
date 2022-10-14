@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
-BRANCH="$(jq -r '.extra_refs[0].base_ref' <(echo "$JOB_SPEC"))"
+#BRANCH="$(jq -r '.extra_refs[0].base_ref' <(echo "$JOB_SPEC"))"
 
 echo "Running tests with image '${COLLECTOR_IMAGE}'"
 
@@ -79,5 +79,5 @@ else
 fi
 
 # TODO: make generic CI directory in stackrox-ci-results
-[[ -z "$BRANCH" ]] || gsutil cp "integration-tests/container-logs/${VM_CONFIG}/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${BRANCH}/$(date +%Y-%m-%d)-${PROW_JOB_ID}/"
+#[[ -z "$BRANCH" ]] || gsutil cp "integration-tests/container-logs/${VM_CONFIG}/integration-test-report.xml" "gs://stackrox-ci-results/circleci/collector/${BRANCH}/$(date +%Y-%m-%d)-${PROW_JOB_ID}/"
 #[[ -z "$BRANCH" ]] || cp "integration-tests/container-logs/${VM_CONFIG}/integration-test-report.xml" "${ARTIFACT_DIR}"
