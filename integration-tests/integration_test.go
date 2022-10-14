@@ -109,8 +109,8 @@ func TestRepeatedNetworkFlowThreeCurlsNoAfterglow(t *testing.T) {
 // endpoint opened before collector is turned on.
 func TestConnScraper(t *testing.T) {
 	connScraperTestSuite := &ConnScraperTestSuite{
-		turnOffScrape:	false
-		roxProcessesListeningOnPort: true
+		turnOffScrape:	false,
+		roxProcessesListeningOnPort: true,
 	}
 	suite.Run(t, connScraperTestSuite)
 }
@@ -575,7 +575,7 @@ func (s *ConnScraperTestSuite) SetupSuite() {
 	s.collector = NewCollectorManager(s.executor, s.T().Name())
 
 	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":` + strconv.FormatBool(s.turnOffScrape) + `,"scrapeInterval":2}`
-	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = s.RoxProcessesListeningOnPort
+	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = strconv.FormatBool(s.roxProcessesListeningOnPort)
 
 	s.launchNginx()
 
@@ -616,7 +616,7 @@ func (s *ConnScraperTestSuite) TearDownSuite() {
 
 func (s *ConnScraperTestSuite) TestConnScraper() {
 	endpoints, err := s.GetEndpoints(s.serverContainer)
-	if (!s.turnOffScrape && ) {
+	if (!s.turnOffScrape && s.roxProcessesListeningOnPort) {
 		// If scraping is on we expect to find the nginx endpoint
 		s.Require().NoError(err)
 		assert.Equal(s.T(), 1, len(endpoints))
