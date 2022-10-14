@@ -30,7 +30,14 @@ fi
 
 IMAGE_TAG="$(make tag)"
 
-export COLLECTOR_IMAGE="${COLLECTOR_REPO}:${IMAGE_TAG}"
+export COLLECTOR_IMAGE
+CPAAS_TEST=${CPAAS_TEST:-0}
+
+if ((CPAAS_TEST)); then
+     COLLECTOR_IMAGE="${COLLECTOR_REPO}:cpaas-${IMAGE_TAG}"
+else
+     COLLECTOR_IMAGE="${COLLECTOR_REPO}:${IMAGE_TAG}"
+fi
 
 import_creds
 
