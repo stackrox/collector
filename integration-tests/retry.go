@@ -17,7 +17,7 @@ func retry(f retryable) (output string, err error) {
 		output, err = f()
 		if err == nil {
 			return output, nil
-		} else {
+		} else if i != max_retries - 1 {
 			time.Sleep(retry_wait_time)
 		}
 	}
