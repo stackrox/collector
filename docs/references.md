@@ -25,6 +25,10 @@ network system call events and reading of connection information from procfs.
 Mainly used in case of network-related performance degradation. The default is
 false.
 
+* `ROX_PROCESSES_LISTENING_ON_PORT`: Instructs Collector to add information
+about the originator process on all network listening-endpoint objects.
+The default is false.
+
 NOTE: Using environment variables is a preferred way of configuring Collector,
 so if you're adding a new configuration knob, keep this in mind.
 
