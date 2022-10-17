@@ -27,9 +27,9 @@ virtual_machines:
     project: cos-cloud
     families:
       - cos-stable
-        # - cos-beta
-        # - cos-dev
-        # - cos-89-lts
+      - cos-beta
+      - cos-dev
+      - cos-89-lts
 
   - name: sles
     project: sles-cloud
