@@ -60,6 +60,14 @@ function save_artifacts() {
     fi
 }
 
+function propagate_ci_env() {
+    if [[ "${OFFLINE,,}" != "false" ]]; then
+        export COLLECTOR_OFFLINE_MODE="true"
+    fi
+}
+
+propagate_ci_env
+
 exit_code=0
 
 if [[ $REMOTE_HOST_TYPE != "local" ]]; then
