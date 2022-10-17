@@ -1,0 +1,34 @@
+---
+
+#
+# Fedora CoreOS does not have python installed by default
+# but we can install it. The commands here are 'raw' and
+# therefore are somewhat more dangerous than the safe ansible-wrapped
+# commands via shell or cmd.
+#
+
+
+# Check for python first, because the following steps will fail if
+# python already exists so we just skip them if it's there already
+# (this is usually an indication that provisioning has run more than once,
+# and is likely to only happen during dev)
+- name: Check for python
+  raw: which python || true
+  args:
+    executable: /usr/bin/bash
+  register: which_python
+
+- set_fact:
+    python_exists: "{{ which_python.stdout.find('no python') == -1 | bool}}"
+
+- name: Install python3
+  raw: rpm-ostree install python3
+  args:
+    executable: /usr/bin/bash
+  when: not python_exists
+
+- name: Reboot
+  raw: systemctl reboot
+  args:
+    executable: /usr/bin/bash
+  when: not python_exists
