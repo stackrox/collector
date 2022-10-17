@@ -16,4 +16,5 @@ fi
 
 if ((errors)); then
     echo >&2 "${errors} linters have failed"
+    exit 1
 fi
