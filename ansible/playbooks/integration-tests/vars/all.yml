@@ -45,7 +45,7 @@ virtual_machines:
       - ubuntu-2204-lts
 
   - name: ubuntu-os-pro
-    project: ubunut-os-pro-cloud
+    project: ubuntu-os-pro-cloud
     families:
       - ubuntu-pro-1804-lts
 
