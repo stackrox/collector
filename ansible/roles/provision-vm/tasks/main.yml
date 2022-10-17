@@ -10,12 +10,13 @@
 # continues.
 #
 
+# set facts for weird platforms that report different families
 - set_fact:
-    is_coreos: "{{ vm_config.find('coreos') != -1 | bool }}"
+    is_coreos: "{{ vm_config.find('coreos') != -1 }}"
+    is_garden: "{{ vm_config == 'garden-linux_garden-linux' }}"
 
 - include_tasks: "fedora-coreos.yml"
-  when: is_coreos
-
+  when: is_coreos|bool
 
 # At this point, ansible should be able to run on the remote host
 
@@ -28,11 +29,11 @@
 
 - name: RedHat Provisioning
   include_tasks: "redhat.yml"
-  when: ansible_facts['os_family'] == 'RedHat' and not is_coreos
+  when: ansible_facts['os_family'] == 'RedHat' and not is_coreos|bool
 
 - name: Ubuntu Provisioning
   include_tasks: "ubuntu.yml"
-  when: ansible_facts['os_family'] == 'Ubuntu' or ansible_facts['os_family'] == 'Debian'
+  when: ansible_facts['os_family'] in ('Ubuntu', 'Debian') and not is_garden|bool
 
 # Common logic after this point must be able to run on all platforms.
 
