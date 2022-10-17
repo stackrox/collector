@@ -15,7 +15,7 @@
 
 - name: Ubuntu Provisioning
   include_tasks: "ubuntu.yml"
-  when: ansible_facts['os_family'] == 'Ubuntu'
+  when: ansible_facts['os_family'] == 'Ubuntu' or ansible_facts['os_family'] == 'Debian'
 
 - name: Start docker service
   service:
