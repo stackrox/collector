@@ -105,7 +105,7 @@ static int read_module(int fd, void* buf, int buflen) {
   unsigned char* p = static_cast<unsigned char*>(buf);
   int n, i = 0;
   while (i < buflen) {
-    n = read(fd, p+i, buflen-i);
+    n = read(fd, p + i, buflen - i);
     if (n < 0) {
       if (errno == EINTR)
         continue;
@@ -134,23 +134,23 @@ int InsertModule(int fd, const std::unordered_map<std::string, std::string>& arg
   struct stat st;
   int res = fstat(fd, &st);
   if (res != 0) {
-      CLOG(ERROR) << "Could not stat kernel module: " << StrError();
-      errno = EINVAL;
-      return -1;
+    CLOG(ERROR) << "Could not stat kernel module: " << StrError();
+    errno = EINVAL;
+    return -1;
   }
   size_t image_size = st.st_size;
   void* image = malloc(image_size);
   if (!image) {
-      CLOG(ERROR) << "Could not allocate memory for kernel module: " << StrError();
-      errno = EINVAL;
-      return -1;
+    CLOG(ERROR) << "Could not allocate memory for kernel module: " << StrError();
+    errno = EINVAL;
+    return -1;
   }
   lseek(fd, 0, SEEK_SET);
   size_t read_image_size = read_module(fd, image, image_size);
   if (read_image_size != image_size) {
-      CLOG(ERROR) << "Could not read kernel module: " << StrError() << ".  Mismatch with number of bytes read and kernel module size.";
-      errno = EINVAL;
-      return -1;
+    CLOG(ERROR) << "Could not read kernel module: " << StrError() << ".  Mismatch with number of bytes read and kernel module size.";
+    errno = EINVAL;
+    return -1;
   }
   res = init_module(image, image_size, args_str.c_str());
   free(image);
