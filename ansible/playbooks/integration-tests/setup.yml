@@ -45,12 +45,12 @@
       vars:
         vm:
           name: "{{ gcp_instance_prefix }}-{{ item.0.name }}-{{ job_id }}"
-          project: "{{ item.project }}"
-          image: "{{ item.0.image }}"
+          project: "{{ item.0.project }}"
+          image: "{{ item.1 }}"
           labels:
             job_id: "{{ job_id }}"
             platform: "{{ item.0.name }}"
-            vm_config: "{{ item.0.name }}_{{ item.1 }}"
+            vm_config: "{{ item.0.name }}_{{ item.0.name }}"
             username: "{{ item.0.username | default(gcp_default_user) }}"
 
       #
