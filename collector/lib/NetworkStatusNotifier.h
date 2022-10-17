@@ -27,9 +27,9 @@ You should have received a copy of the GNU General Public License along with thi
 #include <memory>
 
 #include "CollectorStats.h"
-#include "ConnScraper.h"
 #include "ConnTracker.h"
 #include "NetworkConnectionInfoServiceComm.h"
+#include "ProcfsScraper.h"
 #include "ProtoAllocator.h"
 #include "StoppableThread.h"
 
@@ -54,6 +54,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   sensor::NetworkConnection* ConnToProto(const Connection& conn);
   sensor::NetworkEndpoint* ContainerEndpointToProto(const ContainerEndpoint& cep);
   sensor::NetworkAddress* EndpointToProto(const Endpoint& endpoint);
+  storage::NetworkProcessUniqueKey* ProcessToProto(const collector::Process& process);
 
   void OnRecvControlMessage(const sensor::NetworkFlowsControlMessage* msg);
 

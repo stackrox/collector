@@ -87,7 +87,12 @@ void CollectorService::RunForever() {
     CLOG(INFO) << "Sensor connectivity is successful";
 
     if (!config_.DisableNetworkFlows()) {
-      std::shared_ptr<IConnScraper> conn_scraper = std::make_shared<ConnScraper>(config_.HostProc());
+      std::shared_ptr<ProcessStore> process_store;
+      if (config_.IsProcessesListeningOnPortsEnabled()) {
+        std::shared_ptr<ProcessScraper> process_scraper = std::make_shared<ProcessScraper>(config_.HostProc());
+        process_store = std::make_shared<ProcessStore>(process_scraper);
+      }
+      std::shared_ptr<IConnScraper> conn_scraper = std::make_shared<ConnScraper>(config_.HostProc(), process_store);
       conn_tracker = std::make_shared<ConnectionTracker>();
       UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs(config_.IgnoredL4ProtoPortPairs());
       conn_tracker->UpdateIgnoredL4ProtoPortPairs(std::move(ignored_l4proto_port_pairs));

@@ -25,14 +25,14 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <iostream>
 
-#include "ConnScraper.h"
 #include "EnvVar.h"
+#include "ProcfsScraper.h"
 
 using namespace collector;
 
 namespace {
 
-BoolEnvVar scrape_endpoints("SCRAPE_ENDPOINTS", false);
+BoolEnvVar scrape_endpoints("SCRAPE_ENDPOINTS", true);
 
 }  // namespace
 
@@ -43,7 +43,9 @@ int main(int argc, char** argv) {
     proc_dir = argv[1];
   }
 
-  ConnScraper scraper(proc_dir);
+  std::shared_ptr<ProcessScraper> process_scraper = std::make_shared<ProcessScraper>(proc_dir);
+  std::shared_ptr<ProcessStore> process_store = std::make_shared<ProcessStore>(process_scraper);
+  ConnScraper scraper(proc_dir, process_store);
   std::vector<Connection> conns;
   std::vector<ContainerEndpoint> endpoints;
 

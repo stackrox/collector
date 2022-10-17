@@ -21,58 +21,51 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#include "NetworkConnection.h"
+#ifndef COLLECTOR_PROCFSSCRAPER_H
+#define COLLECTOR_PROCFSSCRAPER_H
 
+#include <cstring>
+#include <string>
+#include <vector>
+
+#include "NetworkConnection.h"
 #include "Process.h"
 
 namespace collector {
 
-bool Address::IsPublic() const {
-  for (const auto& net : PrivateNetworks(family_)) {
-    if (net.Contains(*this)) {
-      return false;
-    }
-  }
-  return true;
-}
+// Abstract interface for a ConnScraper. Useful to inject testing implementation.
+class IConnScraper {
+ public:
+  virtual bool Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) = 0;
+  virtual ~IConnScraper() {}
+};
 
-std::ostream& operator<<(std::ostream& os, L4Proto l4proto) {
-  switch (l4proto) {
-    case L4Proto::TCP:
-      return os << "tcp";
-    case L4Proto::UDP:
-      return os << "udp";
-    case L4Proto::ICMP:
-      return os << "icmp";
-    default:
-      return os << "unknown(" << static_cast<uint8_t>(l4proto) << ")";
-  }
-}
+// ConnScraper is a class that allows scraping a `/proc`-like directory structure for active network connections.
+class ConnScraper : public IConnScraper {
+ public:
+  explicit ConnScraper(std::string proc_path, std::shared_ptr<ProcessStore> process_store = 0)
+      : proc_path_(std::move(proc_path)),
+        process_store_(process_store) {}
 
-size_t Hash(const L4ProtoPortPair& pp) {
-  return HashAll(pp.first, pp.second);
-}
+  // Scrape returns a snapshot of all active network connections in the given vector.
+  bool Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints);
 
-std::ostream& operator<<(std::ostream& os, const ContainerEndpoint& container_endpoint) {
-  if (container_endpoint.originator()) {
-    return os << container_endpoint.container() << ": " << container_endpoint.endpoint() << ": " << *container_endpoint.originator();
-  } else {
-    return os << container_endpoint.container() << ": " << container_endpoint.endpoint();
-  }
-}
+ private:
+  std::string proc_path_;
+  std::shared_ptr<ProcessStore> process_store_;
+};
 
-std::ostream& operator<<(std::ostream& os, const Connection& conn) {
-  os << conn.container() << ": " << conn.local();
-  if (conn.is_server()) {
-    os << " <- ";
-  } else {
-    os << " -> ";
-  }
-  os << conn.remote() << " [" << conn.l4proto();
-  if (conn.local().address().family() == Address::Family::IPV6) {
-    os << "6";
-  }
-  return os << "]";
-}
+class ProcessScraper : public ProcessStore::ISource {
+ public:
+  ProcessScraper(std::string proc_path) : proc_path_(std::move(proc_path)) {}
+
+  // implementation of ProcessStore::ISource
+  Process ByPID(uint64_t pid);
+
+ private:
+  std::string proc_path_;
+};
 
 }  // namespace collector
+
+#endif  // COLLECTOR_CONNSCRAPER_H

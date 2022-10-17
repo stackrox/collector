@@ -80,6 +80,7 @@ end
 )";
   static const UnorderedSet<L4ProtoPortPair> kIgnoredL4ProtoPortPairs;
   static constexpr bool kForceKernelModules = false;
+  static constexpr bool kEnableProcessesListeningOnPorts = false;
 
   CollectorConfig() = delete;
   CollectorConfig(CollectorArgs* collectorArgs);
@@ -108,6 +109,7 @@ end
   bool EnableAfterglow() const { return enable_afterglow_; }
   bool IsCoreDumpEnabled() const;
   Json::Value TLSConfiguration() const { return tls_config_; }
+  bool IsProcessesListeningOnPortsEnabled() const { return enable_processes_listening_on_ports_; }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
@@ -132,6 +134,7 @@ end
   int64_t afterglow_period_micros_ = 300000000;  // 5 minutes in microseconds
   bool enable_afterglow_ = true;
   bool enable_core_dump_ = false;
+  bool enable_processes_listening_on_ports_;
 
   Json::Value tls_config_;
 };

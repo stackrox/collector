@@ -354,6 +354,10 @@ sensor::NetworkEndpoint* NetworkStatusNotifier::ContainerEndpointToProto(const C
   endpoint_proto->set_protocol(TranslateL4Protocol(cep.l4proto()));
   endpoint_proto->set_socket_family(TranslateAddressFamily(cep.endpoint().address().family()));
   endpoint_proto->set_allocated_listen_address(EndpointToProto(cep.endpoint()));
+  if (cep.originator()) {
+    endpoint_proto->set_allocated_originator(ProcessToProto(*cep.originator().get()));
+  }
+  CLOG(DEBUG) << cep;
 
   return endpoint_proto;
 }
@@ -382,6 +386,16 @@ sensor::NetworkAddress* NetworkStatusNotifier::EndpointToProto(const collector::
   addr_proto->set_port(endpoint.port());
 
   return addr_proto;
+}
+
+storage::NetworkProcessUniqueKey* NetworkStatusNotifier::ProcessToProto(const collector::Process& process) {
+  auto* process_proto = Allocate<storage::NetworkProcessUniqueKey>();
+
+  process_proto->set_process_name(process.comm());
+  process_proto->set_process_exec_file_path(process.exe_path());
+  process_proto->set_process_args(process.args());
+
+  return process_proto;
 }
 
 }  // namespace collector

@@ -21,7 +21,7 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#include "ConnScraper.h"
+#include "ProcfsScraper.h"
 
 #include <cctype>
 #include <cinttypes>
@@ -31,7 +31,11 @@ You should have received a copy of the GNU General Public License along with thi
 #include <netinet/tcp.h>
 
 #include "Containers.h"
+#include "FileSystem.h"
+#include "Hash.h"
 #include "Logging.h"
+#include "ProcfsScraper_internal.h"
+#include "StringView.h"
 #include "Utility.h"
 
 namespace collector {
@@ -209,6 +213,7 @@ struct ConnInfo {
 struct EndpointInfo {
   Endpoint endpoint;
   L4Proto l4proto;
+  std::shared_ptr<Process> process;
 };
 
 // ParseEndpoint parses an endpoint listed in the `net/tcp[6]` file.
@@ -285,7 +290,7 @@ bool LocalIsServer(const Endpoint& local, const Endpoint& remote, const Unordere
 }
 
 // ReadConnectionsFromFile reads all connections from a `net/tcp[6]` file and stores them by inode in the given map.
-bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE* f,
+bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::shared_ptr<Process> process, std::FILE* f,
                              UnorderedMap<ino_t, ConnInfo>* connections, UnorderedMap<ino_t, EndpointInfo>* listen_endpoints) {
   char line[512];
 
@@ -302,6 +307,7 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE*
         auto& endpoint_info = (*listen_endpoints)[data.inode];
         endpoint_info.endpoint = data.local;
         endpoint_info.l4proto = l4proto;
+        endpoint_info.process = process;
       }
       continue;
     }
@@ -324,13 +330,13 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE*
 
 // GetConnections reads all active connections (inode -> connection info mapping) for a given network NS, addressed by
 // the dir FD for a proc entry of a process in that network namespace.
-bool GetConnections(int dirfd, UnorderedMap<ino_t, ConnInfo>* connections, UnorderedMap<ino_t, EndpointInfo>* listen_endpoints) {
+bool GetConnections(int dirfd, std::shared_ptr<Process> process, UnorderedMap<ino_t, ConnInfo>* connections, UnorderedMap<ino_t, EndpointInfo>* listen_endpoints) {
   bool success = true;
   {
     FDHandle net_tcp_fd = openat(dirfd, "net/tcp", O_RDONLY);
     if (net_tcp_fd.valid()) {
       FileHandle net_tcp(std::move(net_tcp_fd), "r");
-      success = ReadConnectionsFromFile(Address::Family::IPV4, L4Proto::TCP, net_tcp, connections, listen_endpoints) && success;
+      success = ReadConnectionsFromFile(Address::Family::IPV4, L4Proto::TCP, process, net_tcp, connections, listen_endpoints) && success;
     } else {
       success = false;  // there should always be a net/tcp file
     }
@@ -340,7 +346,7 @@ bool GetConnections(int dirfd, UnorderedMap<ino_t, ConnInfo>* connections, Unord
     FDHandle net_tcp6_fd = openat(dirfd, "net/tcp6", O_RDONLY);
     if (net_tcp6_fd.valid()) {
       FileHandle net_tcp6(std::move(net_tcp6_fd), "r");
-      success = ReadConnectionsFromFile(Address::Family::IPV6, L4Proto::TCP, net_tcp6, connections, listen_endpoints) && success;
+      success = ReadConnectionsFromFile(Address::Family::IPV6, L4Proto::TCP, process, net_tcp6, connections, listen_endpoints) && success;
     } else {
       success = false;
     }
@@ -377,7 +383,7 @@ void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const C
         } else if (listen_endpoints) {
           if (const auto* ep = Lookup(ns_network_data->listen_endpoints, socket_inode)) {
             if (!IsRelevantEndpoint(ep->endpoint)) continue;
-            listen_endpoints->emplace_back(container_id, ep->endpoint, ep->l4proto);
+            listen_endpoints->emplace_back(container_id, ep->endpoint, ep->l4proto, ep->process);
           }
         }
       }
@@ -387,7 +393,8 @@ void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const C
 
 // ReadContainerConnections reads all container connection info from the given `/proc`-like directory. All connections
 // from non-container processes are ignored.
-bool ReadContainerConnections(const char* proc_path, std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) {
+// process_store, when provided, is used to to link the originator process of a ContainerEndpoint.
+bool ReadContainerConnections(const char* proc_path, ProcessStore* process_store, std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) {
   DirHandle procdir = opendir(proc_path);
   if (!procdir.valid()) {
     CLOG(ERROR) << "Could not open " << proc_path << ": " << StrError();
@@ -400,6 +407,7 @@ bool ReadContainerConnections(const char* proc_path, std::vector<Connection>* co
   // Read all the information from proc.
   while (auto curr = procdir.read()) {
     if (!std::isdigit(curr->d_name[0])) continue;  // only look for <pid> entries
+    int pid = stoi(curr->d_name);
 
     FDHandle dirfd = procdir.openat(curr->d_name, O_RDONLY);
     if (!dirfd.valid()) {
@@ -430,7 +438,12 @@ bool ReadContainerConnections(const char* proc_path, std::vector<Connection>* co
       auto emplace_res = conns_by_ns.emplace(netns_inode, NSNetworkData());
       if (emplace_res.second) {
         auto& ns_network_data = emplace_res.first->second;
-        if (!GetConnections(dirfd, &ns_network_data.connections, listen_endpoints ? &ns_network_data.listen_endpoints : nullptr)) {
+
+        std::shared_ptr<Process> process;
+        if (process_store)
+          process = process_store->Fetch(pid);
+
+        if (!GetConnections(dirfd, process, &ns_network_data.connections, listen_endpoints ? &ns_network_data.listen_endpoints : nullptr)) {
           // If there was an error reading connections, that could be due to a number of reasons.
           // We need to differentiate persistent errors (e.g., expected net/tcp6 file not found)
           // from spurious/race condition errors caused by the process disappearing while reading
@@ -448,6 +461,58 @@ bool ReadContainerConnections(const char* proc_path, std::vector<Connection>* co
   }
 
   ResolveSocketInodes(sockets_by_container_and_ns, conns_by_ns, connections, listen_endpoints);
+  return true;
+}
+
+bool ReadProcessExe(const char* process_id, int dirfd, std::string& comm, std::string& exe_path) {
+  char buffer[PATH_MAX];
+
+  ssize_t nread = readlinkat(dirfd, "exe", buffer, sizeof(buffer));
+  if (nread <= 0 || nread >= ssizeof(buffer)) {
+    CLOG(ERROR) << "Could not read 'exe' for " << process_id << ": " << StrError();
+    return false;
+  }
+
+  buffer[nread] = '\0';
+
+  comm = exe_path = buffer;
+
+  if (buffer[0] == '/')
+    comm = strrchr(buffer, '/') + 1;
+
+  return true;
+}
+
+bool ReadProcessCmdline(const char* process_id, int dirfd, std::string& exe, std::string& args) {
+  FileHandle cmdline(FDHandle(openat(dirfd, "cmdline", O_RDONLY)), "r");
+  if (!cmdline.valid()) {
+    CLOG(ERROR) << "Could not read 'cmdline' for " << process_id << ": " << StrError();
+    return false;
+  }
+  bool did_exe = false;
+  bool arg_completed = false;
+  std::stringbuf stringbuf;
+  int c;
+
+  while ((c = fgetc(cmdline)) != EOF) {
+    if (c != '\0') {
+      if (arg_completed) {
+        stringbuf.sputc(' ');
+        arg_completed = false;
+      }
+      stringbuf.sputc(c);
+    } else {
+      if (did_exe) {
+        arg_completed = true;
+      } else {
+        exe = stringbuf.str();
+        stringbuf = std::stringbuf();
+        did_exe = true;
+      }
+    }
+  }
+  args = stringbuf.str();
+
   return true;
 }
 
@@ -472,7 +537,35 @@ StringView ExtractContainerID(StringView cgroup_line) {
 }
 
 bool ConnScraper::Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) {
-  return ReadContainerConnections(proc_path_.c_str(), connections, listen_endpoints);
+  return ReadContainerConnections(proc_path_.c_str(), process_store_.get(), connections, listen_endpoints);
+}
+
+Process ProcessScraper::ByPID(uint64_t pid) {
+  char process_path[64];
+
+  std::string container_id;
+  std::string comm;
+  std::string exe;
+  std::string exe_path;
+  std::string args;
+
+  snprintf(process_path, sizeof(process_path), "%s/%ld", proc_path_.c_str(), pid);
+
+  FDHandle dirfd = open(process_path, O_DIRECTORY | O_RDONLY);
+
+  if (dirfd.valid()) {
+    GetContainerID(dirfd, &container_id);
+    ReadProcessExe(process_path, dirfd, comm, exe_path);
+    ReadProcessCmdline(process_path, dirfd, exe, args);
+  }
+
+  return Process(
+      std::move(container_id),
+      std::move(comm),
+      std::move(exe),
+      std::move(exe_path),
+      std::move(args),
+      pid);
 }
 
 }  // namespace collector

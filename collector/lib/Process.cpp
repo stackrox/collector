@@ -21,58 +21,31 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#include "NetworkConnection.h"
-
 #include "Process.h"
 
 namespace collector {
 
-bool Address::IsPublic() const {
-  for (const auto& net : PrivateNetworks(family_)) {
-    if (net.Contains(*this)) {
-      return false;
-    }
+const std::shared_ptr<Process> ProcessStore::Fetch(uint64_t pid) {
+  auto cached_process_pair_iter = cache_.find(pid);
+
+  if (cached_process_pair_iter != cache_.end()) {
+    return cached_process_pair_iter->second.lock();
   }
-  return true;
+
+  std::shared_ptr<CachedProcess> cached_process = std::make_shared<CachedProcess>(process_source_->ByPID(pid), *this);
+
+  cache_.emplace(cached_process->pid(), cached_process);
+  return cached_process;
 }
 
-std::ostream& operator<<(std::ostream& os, L4Proto l4proto) {
-  switch (l4proto) {
-    case L4Proto::TCP:
-      return os << "tcp";
-    case L4Proto::UDP:
-      return os << "udp";
-    case L4Proto::ICMP:
-      return os << "icmp";
-    default:
-      return os << "unknown(" << static_cast<uint8_t>(l4proto) << ")";
-  }
+std::ostream& operator<<(std::ostream& os, const Process& process) {
+  std::string processString = "ContainerID: " + process.container_id() + " Exe: " + process.exe() + " ExePath: ";
+  processString += process.exe_path() + " Args: " + process.args() + " PID: " + std::to_string(process.pid());
+  return os << processString;
 }
 
-size_t Hash(const L4ProtoPortPair& pp) {
-  return HashAll(pp.first, pp.second);
-}
-
-std::ostream& operator<<(std::ostream& os, const ContainerEndpoint& container_endpoint) {
-  if (container_endpoint.originator()) {
-    return os << container_endpoint.container() << ": " << container_endpoint.endpoint() << ": " << *container_endpoint.originator();
-  } else {
-    return os << container_endpoint.container() << ": " << container_endpoint.endpoint();
-  }
-}
-
-std::ostream& operator<<(std::ostream& os, const Connection& conn) {
-  os << conn.container() << ": " << conn.local();
-  if (conn.is_server()) {
-    os << " <- ";
-  } else {
-    os << " -> ";
-  }
-  os << conn.remote() << " [" << conn.l4proto();
-  if (conn.local().address().family() == Address::Family::IPV6) {
-    os << "6";
-  }
-  return os << "]";
+ProcessStore::CachedProcess::~CachedProcess() {
+  store_.cache_.erase(pid_);
 }
 
 }  // namespace collector

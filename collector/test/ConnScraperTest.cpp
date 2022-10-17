@@ -21,7 +21,7 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#include "ConnScraper.h"
+#include "ProcfsScraper_internal.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
