@@ -140,8 +140,11 @@ func NewExecutor() Executor {
 	return &e
 }
 
+// Execute provided command with retries on error.
 func (e *executor) Exec(args ...string) (string, error) {
-	return e.RunCommand(e.builder.ExecCommand(args...))
+	return retry(func() (string, error) {
+		return e.RunCommand(e.builder.ExecCommand(args...))
+	})
 }
 
 func (e *executor) ExecRetry(args ...string) (res string, err error) {
