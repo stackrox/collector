@@ -25,15 +25,15 @@
   become: no
 
 - name: Decompress tar file
-  raw: '[ ! -d {{ core_home }}/{{ pypy_dir }} ] || tar -xf {{ pypy_file }}'
+  raw: '[ -d {{ core_home }}/{{ pypy_dir }} ] || tar -xf {{ pypy_file }}'
   become: no
 
 - name: Setup ncurses symlink
-  raw: '[ ! -e {{core_home}}/{{pypy_dir}}/lib/libtinfo.so.5 ] || ln -s /lib64/libncurses.so.5.9 "{{core_home}}/{{pypy_dir}}/lib/libtinfo.so.5"'
+  raw: '[ -e {{core_home}}/{{pypy_dir}}/lib/libtinfo.so.5 ] || ln -s /lib64/libncurses.so.5.9 "{{core_home}}/{{pypy_dir}}/lib/libtinfo.so.5"'
   become: no
 
 - name: Write Python Shim
-  raw: "[ ! -e {{core_home}}/bin/python ] || echo '{{pypy_shim}}' > {{core_home}}/bin/python && chmod 755 {{core_home}}/bin/python"
+  raw: "[ -e {{core_home}}/bin/python ] || (mkdir -p {{core_home}}/bin && echo '{{pypy_shim}}' > {{core_home}}/bin/python && chmod 755 {{core_home}}/bin/python)"
   become: no
 
 - name: Run python (sanity check)
