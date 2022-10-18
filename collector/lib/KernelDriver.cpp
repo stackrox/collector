@@ -34,7 +34,7 @@ std::string constructArgsStr(std::unordered_map<std::string, std::string>& args)
   return stream.str();
 }
 
-int doInsertModule(std::vector<char>& image, std::unordered_map<std::string, std::string>& args) {
+int insertModule(std::vector<char>& image, std::unordered_map<std::string, std::string>& args) {
   std::string args_str = constructArgsStr(args);
   CLOG(DEBUG) << "Kernel module arguments: " << args_str;
 
@@ -115,7 +115,7 @@ bool KernelDriverModule::insert(const std::vector<std::string>& syscalls, std::s
 
   // Attempt to insert the module. If it is already inserted then remove it and
   // try again
-  int result = doInsertModule(image, module_args);
+  int result = insertModule(image, module_args);
   while (result != 0) {
     if (errno == EEXIST) {
       // note that we forcefully remove the kernel module whether or not it has a non-zero
@@ -128,7 +128,7 @@ bool KernelDriverModule::insert(const std::vector<std::string>& syscalls, std::s
                   << ". Aborting...";
       return false;
     }
-    result = doInsertModule(image, module_args);
+    result = insertModule(image, module_args);
   }
 
   CLOG(INFO) << "Successfully inserted kernel module " << path << ".";
