@@ -140,11 +140,13 @@ class SecureBootHeuristic : public Heuristic {
       hconfig->SetCollectionMethod("ebpf");
     }
 
+#ifdef __x86_64__
     if (sb_status == SecureBootStatus::NOT_DETERMINED) {
       CLOG(WARNING) << "SecureBoot status could not be determined. "
                     << "Switching to eBPF based collection.";
       hconfig->SetCollectionMethod("ebpf");
     }
+#endif
   }
 };
 
