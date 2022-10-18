@@ -4,6 +4,10 @@ else
 	CONTEXT=dev
 endif
 
+.PHONY: install-deps
+install-deps:
+	ansible-galaxy install --roles-path=./galaxy-roles -r requirements.yml
+
 .PHONY: list-inventory
 list-inventory:
 	ansible-inventory -i $(CONTEXT)/inventory_gcp.yml --list
