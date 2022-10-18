@@ -1,0 +1,44 @@
+---
+
+- set_fact:
+    core_home: /home/core
+    pypy_file: pypy3.6-v7.3.3-linux64.tar.bz2
+    pypy_dir: pypy3.6-v7.3.3-linux64
+
+- set_fact:
+    pypy_shim: |
+      #!/bin/bash
+      LD_LIBRARY_PATH={{core_home}}/{{pypy_dir}}/lib:$LD_LIBRARY_PATH {{core_home}}/{{pypy_dir}}/bin/pypy "$@"
+    pip_shim: |
+      #!/bin/bash
+      LD_LIBRARY_PATH=$HOME/{{pypy_dir}}/lib:$LD_LIBRARY_PATH $HOME/{{pypy_dir}}/bin/$(basename $0) $@
+
+- raw: '[ -e {{ core_home }}/{{ pypy_file }} ]'
+  ignore_errors: yes
+  failed_when: false
+  register: has_pypy
+  become: no
+
+- name: Download portable python
+  raw: wget https://downloads.python.org/pypy/{{ pypy_file }}
+  when: has_pypy.rc != 0
+  become: no
+
+- name: Decompress tar file
+  raw: '[ ! -d {{ core_home }}/{{ pypy_dir }} ] || tar -xf {{ pypy_file }}'
+  become: no
+
+- name: Setup ncurses symlink
+  raw: '[ ! -e {{core_home}}/{{pypy_dir}}/lib/libtinfo.so.5 ] || ln -s /lib64/libncurses.so.5.9 "{{core_home}}/{{pypy_dir}}/lib/libtinfo.so.5"'
+  become: no
+
+- name: Write Python Shim
+  raw: "[ ! -e {{core_home}}/bin/python ] || echo '{{pypy_shim}}' > {{core_home}}/bin/python && chmod 755 {{core_home}}/bin/python"
+  become: no
+
+- name: Run python (sanity check)
+  raw: "{{core_home}}/bin/python --version"
+  become: no
+
+- name: Rediscover Facts
+  setup:

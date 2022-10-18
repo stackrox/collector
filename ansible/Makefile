@@ -10,38 +10,34 @@ install-deps:
 
 .PHONY: list-inventory
 list-inventory:
-	ansible-inventory -i $(CONTEXT)/inventory_gcp.yml --list
+	ansible-inventory -i $(CONTEXT) --list
 
 .PHONY: integration-tests-teardown
 integration-tests-teardown:
 	ansible-playbook \
-		-i $(CONTEXT)/inventory_gcp.yml \
-		-e @$(CONTEXT)/vars.yml \
+		-i $(CONTEXT) \
 		--tags teardown \
 		integration-tests.yml
 
 .PHONY: integration-tests-setup
 integration-tests-setup:
 	ansible-playbook \
-		-i $(CONTEXT)/inventory_gcp.yml \
-		-e @$(CONTEXT)/vars.yml \
+		-i $(CONTEXT) \
 		--tags setup \
 		integration-tests.yml
 
 .PHONY: integraion-tests-provision
 integration-tests-provision:
 	ansible-playbook \
-		-i $(CONTEXT)/inventory_gcp.yml \
-		-e @$(CONTEXT)/vars.yml \
+		-i $(CONTEXT) \
 		--tags provision \
 		integration-tests.yml
 
 .PHONY: integration-tests
 integration-tests: secrets.yml
 	ansible-playbook \
-		-i $(CONTEXT)/inventory_gcp.yml \
+		-i $(CONTEXT) \
 		-e @secrets.yml \
-		-e @$(CONTEXT)/vars.yml \
 		--tags run-tests \
 		integration-tests.yml
 

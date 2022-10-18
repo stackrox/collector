@@ -14,9 +14,13 @@
 - set_fact:
     is_coreos: "{{ vm_config.find('coreos') != -1 }}"
     is_garden: "{{ vm_config == 'garden-linux_garden-linux' }}"
+    is_flatcar: "{{ vm_config.find('flatcar') != -1 }}"
 
 - include_tasks: "fedora-coreos.yml"
   when: is_coreos|bool
+
+- include_tasks: "flatcar.yml"
+  when: is_flatcar|bool
 
 # At this point, ansible should be able to run on the remote host
 

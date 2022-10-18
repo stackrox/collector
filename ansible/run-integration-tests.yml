@@ -2,8 +2,9 @@
 - name: Run integration tests
   vars_files:
     - vars/all.yml
-  hosts: "job_id_{{ job_id }}"
+  hosts: "platform_*:&job_id_{{ job_id }}"
   strategy: free
+  gather_facts: false
   environment:
     REMOTE_HOST_TYPE: ssh
     SSH_ADDRESS: "{{ ansible_host }}"

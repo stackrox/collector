@@ -1,14 +1,14 @@
 ---
 
-- import_playbook: playbooks/integration-tests/setup.yml
+- import_playbook: create-vms.yml
   tags:
     - setup
-- import_playbook: playbooks/integration-tests/provision.yml
+- import_playbook: provision-vms.yml
   tags:
     - provision
-- import_playbook: playbooks/integration-tests/run.yml
+- import_playbook: run-integration-tests.yml
   tags:
     - run-tests
-- import_playbook: playbooks/integration-tests/teardown.yml
+- import_playbook: teardown-vms.yml
   tags:
     - teardown
