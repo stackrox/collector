@@ -7,7 +7,7 @@ COPY /.openshift-ci/build/build-driver-cache.sh /scripts/build-driver-cache.sh
 RUN export MODULE_VERSION="$(cat /MODULE_VERSION)" && \
     mkdir -p "/kernel-modules/${MODULE_VERSION}" && \
     gsutil -m rsync -r \
-        "gs://collector-modules-osci-public/cpaas//$MODULE_VERSION/" \
+        "gs://collector-modules-osci-public/cpaas/$MODULE_VERSION/" \
         "/kernel-modules/$MODULE_VERSION/" || true
 
 RUN /scripts/build-driver-cache.sh
