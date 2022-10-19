@@ -32,31 +32,22 @@ fi
 
 import_creds
 
-copy_secret() {
-    local NAME="$1"
-    local DEST="$2"
-    local PERMS="$3"
-
-    cp "/tmp/secret/stackrox-collector-e2e-tests/$NAME" "$DEST"
-    chmod "$PERMS" "$DEST"
-}
-
 mkdir -p "$(dirname "${GCP_SSH_KEY_FILE}")"
 chmod 0700 "$(dirname "${GCP_SSH_KEY_FILE}")"
-copy_secret GCP_SSH_KEY "${GCP_SSH_KEY_FILE}" 0600
-copy_secret GCP_SSH_KEY_PUB "${GCP_SSH_KEY_FILE}.pub" 0600
+copy_secret_to_file GCP_SSH_KEY "${GCP_SSH_KEY_FILE}" 0600
+copy_secret_to_file GCP_SSH_KEY_PUB "${GCP_SSH_KEY_FILE}.pub" 0600
 
-#if pr_has_label "skip-integration-tests"; then
-#    echo "Skipping integration tests for ${IMAGE_TYPE}"
-#    exit 0
-#fi
-#
-## only run all integration tests on master, or when the all-integration-tests
-## label is added. This is checked in this common env script because it allows
-## us to skip pre- and post- steps as well (which source this file)
-#if is_in_PR_context && ! pr_has_label "all-integration-tests"; then
-#    if [[ ! "$IMAGE_FAMILY" =~ (rhel-(7|8)|ubuntu-) ]]; then
-#        echo "Not running integration tests for ${IMAGE_TYPE}"
-#        exit 0
-#    fi
-#fi
+if pr_has_label "skip-integration-tests"; then
+    echo "Skipping integration tests for ${IMAGE_TYPE}"
+    exit 0
+fi
+
+# only run all integration tests on master, or when the all-integration-tests
+# label is added. This is checked in this common env script because it allows
+# us to skip pre- and post- steps as well (which source this file)
+if is_in_PR_context && ! pr_has_label "all-integration-tests"; then
+    if [[ ! "$VM_TYPE" =~ (rhel|ubuntu) ]]; then
+        echo "Not running integration tests for ${VM_TYPE}"
+        exit 0
+    fi
+fi
