@@ -52,9 +52,11 @@ fi
 
 # TODO: make generic CI directory in stackrox-ci-results
 if [[ -n "$BRANCH" ]]; then
-    gsutil cp "integration-tests/container-logs/${VM_CONFIG}/ebpf/integration-test-report.xml" \
-        "gs://stackrox-ci-results/circleci/collector/${BRANCH}/$(date +%Y-%m-%d)-${PROW_JOB_ID}/integration-test-report-ebpf.xml"
+    for vm_config in integration-tests/container-logs/*; do
+        gsutil cp "integration-tests/container-logs/${vm_config}/ebpf/integration-test-report.xml" \
+            "gs://stackrox-ci-results/circleci/collector/${BRANCH}/$(date +%Y-%m-%d)-${PROW_JOB_ID}/${vm_config}/integration-test-report-ebpf.xml"
 
-    gsutil cp "integration-tests/container-logs/${VM_CONFIG}/kernel-module/integration-test-report.xml" \
-        "gs://stackrox-ci-results/circleci/collector/${BRANCH}/$(date +%Y-%m-%d)-${PROW_JOB_ID}/integration-test-report-kernel-module.xml"
+        gsutil cp "integration-tests/container-logs/${vm_config}/kernel-module/integration-test-report.xml" \
+            "gs://stackrox-ci-results/circleci/collector/${BRANCH}/$(date +%Y-%m-%d)-${PROW_JOB_ID}/${vm_config}/integration-test-report-kernel-module.xml"
+    done
 fi
