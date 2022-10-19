@@ -50,7 +50,7 @@ summarized below:
 
 By specifying `VM_TYPE=<type>` the playbooks will create a VM for every family
 listed above. The name of the VMs is defined by the inventory-specific prefix,
-the VM family, and the unique ID.
+the VM family, and the unique ID (which defaults to the current username).
 
 ```
 <inventory prefix>-<family>-<id>
@@ -84,10 +84,33 @@ The following environment variables may be used to modify some behavior:
 | Variable | Description | Default |
 | -------- | ----------- | ------- |
 | GCP_SSH_KEY_FILE | The location of the private key file to use with GCP | ~/.ssh/google_compute_engine |
-| JOB_ID | A unique identifier to de-conflict VM names | 1 |
+| JOB_ID | A unique identifier to de-conflict VM names | the current user's username |
 | COLLECTOR_TEST | Which integration test make target to run. (e.g. integration-test-process-network) | ci-integration-tests |
-| COLLECTOR_RUN_BENCHMARK | Whether to run the benchmarks alongside the tests | false |
 | VM_TYPE | Which kind of VMs to create on GCP (as listed above) | all |
+
+## Secrets & Creds
+
+The make targets expect some secrets to exist within a secrets.yml file in the
+root of this directory structure. It should contain key/value pairs of variable
+names and credentials to be used in the playbooks. Currently, the only required
+credentials are quay_username and quay_password, which are created by make
+from the environment variables `QUAY_RHACS_ENG_RO_USERNAME` and `QUAY_RHACS_ENG_RO_PASSWORD`
+to match CI variables.
+
+To create your own, for dev the format should be:
+
+```yaml
+---
+quay_username: "<quay username>"
+quay_password: "<quay_password>"
+```
+
+You can also encrypt this file using ansible-vault, should you wish to password
+protect it, though you will need to input the password every time it is used.
+
+```bash
+$ ansible-vault encrypt secrets.yml
+```
 
 ## Available Roles
 
@@ -123,6 +146,8 @@ directory format](https://docs.ansible.com/ansible/2.8/user_guide/playbooks_best
 | group_vars | Variables for specific groups (or all groups), the filename is the group name. e.g. platform_flatcar.yml affects the platform_flatcar group |
 | ci, dev    | These are [inventory directories](https://docs.ansible.com/ansible/latest/user_guide/intro_dynamic_inventory.html#using-inventory-directories-and-multiple-inventory-sources) that contain different variables based on where the playbooks are running. |
 | vars       | Contains yaml files that can be imported into playbooks (via `import_vars`) |
+| tasks      | Yaml files that contain task lists |
+| .          | The root of this directory is where playbooks should exist |
 
 
 [^1]: there should be no CI related functionality within this directory

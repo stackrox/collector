@@ -1,5 +1,9 @@
 ---
 
+#
+# This will destroy every VM in the inventory.
+#
+
 - name: Teardown VMs
   vars_files:
     - vars/all.yml

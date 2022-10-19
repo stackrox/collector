@@ -1,11 +1,12 @@
 --- 
-- name: Setup Integration Tests
+
+- name: Create VMs
   vars_files:
     - vars/all.yml
   hosts: localhost
   strategy: free
   tasks:
-    - name: Create Integration Test VMs From Family
+    - name: Create VMs From Family
       include_role:
         name: create-vm
       vars:
@@ -14,6 +15,8 @@
           project: "{{ item.0.project }}"
           family: "{{ item.1 }}"
           labels:
+            # labels can be used to pass useful information to the dynamic
+            # inventory (which is populated after the VMs are created)
             job_id: "{{ job_id }}"
             platform: "{{ item.0.name }}"
             vm_config: "{{ item.0.name }}_{{ item.1 }}"
@@ -30,8 +33,8 @@
       #      - rhel-8
       #
       #  becomes:
-      #  [{'rhel', 'families': ['rhel-7', 'rhel-8']}, 'rhel-7']
-      #  [{'rhel', 'families': ['rhel-7', 'rhel-8']}, 'rhel-8']
+      #  [{'name': 'rhel', 'families': ['rhel-7', 'rhel-8']}, 'rhel-7']
+      #  [{'name': 'rhel', 'families': ['rhel-7', 'rhel-8']}, 'rhel-8']
       #
       #  This also allows us to filter based on specific test_platforms as seen
       #  in the when clause
@@ -39,7 +42,7 @@
       loop: "{{ virtual_machines | subelements('families', skip_missing=True) }}"
       when: "test_platform == item.0.name or test_platform == 'all'"
 
-    - name: Create Integration Test VMs From Image
+    - name: Create VMs From Image
       include_role:
         name: create-vm
       vars:
@@ -48,6 +51,8 @@
           project: "{{ item.0.project }}"
           image: "{{ item.1 }}"
           labels:
+            # labels can be used to pass useful information to the dynamic
+            # inventory (which is populated after the VMs are created)
             job_id: "{{ job_id }}"
             platform: "{{ item.0.name }}"
             vm_config: "{{ item.0.name }}_{{ item.0.name }}"
@@ -56,16 +61,16 @@
       #
       # The loop will create the "item" variable, which can be used throughout the task
       # and the subelements call will create a list that combines the project
-      # with all of the image families in that set
+      # with all of the images in that set
       # e.g.
       #   - name: rhel
-      #     families:
-      #      - rhel-7
-      #      - rhel-8
+      #     images:
+      #      - rhel-7-image
+      #      - rhel-8-image
       #
       #  becomes:
-      #  [{'rhel', 'families': ['rhel-7', 'rhel-8']}, 'rhel-7']
-      #  [{'rhel', 'families': ['rhel-7', 'rhel-8']}, 'rhel-8']
+      #  [{'name': 'rhel', 'images': ['rhel-7-image', 'rhel-8-image']}, 'rhel-7-image']
+      #  [{'name': 'rhel', 'images': ['rhel-7-image', 'rhel-8-image']}, 'rhel-8-image']
       #
       #  This also allows us to filter based on specific test_platforms as seen
       #  in the when clause

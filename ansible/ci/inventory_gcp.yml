@@ -20,8 +20,17 @@ service_account_file: /tmp/secret/stackrox-collector-e2e-tests/GOOGLE_CREDENTIAL
 hostnames:
   - name
 compose:
+  # The ansible_* variables are defaults, so we override them here to make sure
+  # SSH works correctly throughout the playbooks
+
   # use the public IP as the ansible host for SSH
   ansible_host: networkInterfaces[0].accessConfigs[0].natIP
+
+  # this can be the current user except for flatcar/fedora-coreos where it needs
+  # to be 'core' so just use the one from the VM label (expected to be set
+  # by the create-vm role)
   ansible_user: labels.username
   ansible_port: 22
+
+  # This is useful for VM identification later on
   vm_config: labels.vm_config
