@@ -38,7 +38,7 @@ copy_secret_to_file GCP_SSH_KEY "${GCP_SSH_KEY_FILE}" 0600
 copy_secret_to_file GCP_SSH_KEY_PUB "${GCP_SSH_KEY_FILE}.pub" 0600
 
 if pr_has_label "skip-integration-tests"; then
-    echo "Skipping integration tests for ${IMAGE_TYPE}"
+    echo "Skipping integration tests for ${VM_TYPE}"
     exit 0
 fi
 
