@@ -16,6 +16,15 @@
     is_garden: "{{ vm_config == 'garden-linux_garden-linux' }}"
     is_flatcar: "{{ vm_config.find('flatcar') != -1 }}"
 
+# Wait for SSH to be available on the remote host
+# This is agnostic of whether or not ansible is available at that end.
+- wait_for:
+    port: 22
+    host: "{{ ansible_host }}"
+    timeout: 100
+  delegate_to: localhost
+  become: no
+
 - include_tasks: "fedora-coreos.yml"
   when: is_coreos|bool
 
@@ -23,10 +32,6 @@
   when: is_flatcar|bool
 
 # At this point, ansible should be able to run on the remote host
-
-- wait_for_connection:
-    delay: 10
-    timeout: 60
 
 - name: Gather facts
   setup:
