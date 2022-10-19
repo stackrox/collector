@@ -7,14 +7,12 @@
   # flatcar where we need to use a custom python interpreter.
   hosts: "platform_*:&job_id_{{ job_id }}"
   strategy: free
-  gather_facts: false
   environment:
     REMOTE_HOST_TYPE: ssh
     SSH_ADDRESS: "{{ ansible_host }}"
     SSH_PORT: "{{ ansible_port }}"
     SSH_USER: "{{ ansible_user }}"
     SSH_KEY_PATH: "{{ ansible_ssh_private_key_file }}"
-    COLLECTOR_IMAGE: "quay.io/rhacs-eng/collector:3.11.0"
     VM_CONFIG: "{{ vm_config }}"
 
   tasks:

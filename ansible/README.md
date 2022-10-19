@@ -88,6 +88,9 @@ The following environment variables may be used to modify some behavior:
 | COLLECTOR_TEST | Which integration test make target to run. (e.g. integration-test-process-network) | ci-integration-tests |
 | VM_TYPE | Which kind of VMs to create on GCP (as listed above) | all |
 
+Note: other environment variables that may affect the operation of the integration tests
+can be used to modify behavior. See [the integration tests README](../integration-tests/README.md) for details.
+
 ## Secrets & Creds
 
 The make targets expect some secrets to exist within a secrets.yml file in the
