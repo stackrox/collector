@@ -1,0 +1,23 @@
+---
+
+- name: Cleanup old containers
+  shell: "docker rm -f $(docker ps -aq) >/dev/null 2>&1 || true"
+
+- name: Run integration tests
+  shell: "make -C {{ collector_root }}/integration-tests {{ collector_test | default('ci-integration-tests') }}"
+  environment:
+    COLLECTION_METHOD: "{{ collection_method }}"
+  register: test_result
+  delegate_to: localhost
+
+- name: Write integration test log
+  copy:
+    content: "{{ test_result.stdout }}"
+    dest: "{{ logs_root }}/{{ collection_method }}/integration-test.log"
+  delegate_to: localhost
+
+- name: Report
+  shell: "make -C {{ collector_root }}/integration-tests report"
+  environment:
+    LOG_FILE: "{{ logs_root }}/{{ collection_method }}/integration-test.log"
+  delegate_to: localhost

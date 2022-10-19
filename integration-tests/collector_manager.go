@@ -230,7 +230,8 @@ func (c *collectorManager) captureLogs(containerName string) (string, error) {
 		return "", err
 	}
 	vm_config := ReadEnvVarWithDefault("VM_CONFIG", "default")
-	logDirectory := filepath.Join(".", "container-logs", vm_config)
+	method := ReadEnvVar("COLLECTION_METHOD")
+	logDirectory := filepath.Join(".", "container-logs", vm_config, method)
 	os.MkdirAll(logDirectory, os.ModePerm)
 	logFile := filepath.Join(logDirectory, strings.ReplaceAll(c.TestName, "/", "_")+"-"+containerName+".log")
 	err = ioutil.WriteFile(logFile, []byte(logs), 0644)

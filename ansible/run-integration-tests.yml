@@ -2,6 +2,9 @@
 - name: Run integration tests
   vars_files:
     - vars/all.yml
+  # using platform_*:&job_id here ensures that ansible imports
+  # group_vars/platform_*.yml for the relevant platform, e.g.
+  # flatcar where we need to use a custom python interpreter.
   hosts: "platform_*:&job_id_{{ job_id }}"
   strategy: free
   gather_facts: false
@@ -23,44 +26,11 @@
         cmd: "docker login -u {{ quay_username }} --password-stdin quay.io"
         stdin: "{{ quay_password }}"
 
-    - name: Cleanup old containers
-      shell: "docker rm -f $(docker ps -aq) >/dev/null 2>&1 || true"
-
-    - name: Run integration tests
-      shell: "make -C {{ collector_root }} {{ collector_test | default('ci-integration-tests') }}"
-      environment:
-        COLLECTION_METHOD: "{{ item }}"
+    - name: Run Integration Tests
+      include_tasks: tasks/test-collection-method.yml
+      vars:
+        collection_method: "{{ item }}"
       with_items:
         - ebpf
-      register: test_result
-      delegate_to: localhost
-        
-    - name: Write integration test log
-      copy:
-        content: "{{ test_result.results[0].stdout }}"
-        dest: "{{ logs_root }}/integration-test.log"
-      delegate_to: localhost
-
-    - name: Run benchmarks
-      shell: "make -C {{ collector_root }} ci-benchmarks"
-      environment:
-        COLLECTION_METHOD: "{{ item }}"
-      with_items:
-        - ebpf
-      register: benchmark_result
-      when: run_benchmarks|bool == true
-      delegate_to: localhost
-
-    - name: Write benchmark log
-      copy:
-        content: "{{ benchmark_result.results[0].stdout }}"
-        dest: "{{ logs_root }}/{{ vm_config }}/benchmark.log"
-      delegate_to: localhost
-      when: run_benchmarks|bool == true
-
-    - name: Report
-      shell: "make -C {{ collector_root }}/integration-tests report"
-      environment:
-        LOG_FILE: "{{ logs_root }}/integration-test.log"
-      delegate_to: localhost
+        - kernel-module
 
