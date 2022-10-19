@@ -5,6 +5,7 @@
     - vars/all.yml
   hosts: "job_id_{{ job_id }}"
   gather_facts: no
+  strategy: free
   become: yes
   roles:
     - provision-vm
