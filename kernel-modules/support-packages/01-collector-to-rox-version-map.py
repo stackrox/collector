@@ -64,7 +64,7 @@ def append_unreleased_tags(version_map, released_versions_file):
 
 
 def append_master(version_map):
-￼    version_map["master"] = ["0.0.0"]
+    version_map["master"] = ["0.0.0"]
 
 
 def write_versions_metadata(version_map, metadata_dir):
