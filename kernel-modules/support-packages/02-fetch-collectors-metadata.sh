@@ -37,5 +37,6 @@ done
 
 master_dir="${MD_DIR}/collector-versions/master"
 mkdir -p "${master_dir}"
-git checkout master -- "${SOURCE_ROOT}/kernel-modules/MODULE_VERSION"
+cd ${SOURCE_ROOT}
+git checkout master -- "kernel-modules/MODULE_VERSION"
 cp "${SOURCE_ROOT}/kernel-modules/MODULE_VERSION" "$master_dir"
