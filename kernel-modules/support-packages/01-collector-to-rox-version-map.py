@@ -63,6 +63,10 @@ def append_unreleased_tags(version_map, released_versions_file):
         version_map[tag] = ["0.0.0"]
 
 
+def append_master(version_map):
+    version_map["master"] = ["0.0.0"]
+
+
 def write_versions_metadata(version_map, metadata_dir):
     collector_versions_dir = os.path.join(metadata_dir, 'collector-versions')
     os.makedirs(collector_versions_dir, exist_ok=True)
@@ -87,6 +91,7 @@ def main(args):
         version_map = parse_released_versions(f)
 
     append_unreleased_tags(version_map, released_versions_file)
+    append_master(version_map)
 
     write_versions_metadata(version_map, metadata_dir)
 

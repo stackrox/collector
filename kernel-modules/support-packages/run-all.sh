@@ -14,7 +14,7 @@ export BASE_URL="$base_url"
         /tmp/support-packages/metadata
 
 "${SUPPORT_PKG_SRC_ROOT}/02-fetch-collectors-metadata.sh" \
-        /tmp/support-packages/metadata
+        /tmp/support-packages/metadata "$SOURCE_ROOT"
 
 "${SUPPORT_PKG_SRC_ROOT}/03-group-by-module-version.sh" \
         /tmp/support-packages/metadata
