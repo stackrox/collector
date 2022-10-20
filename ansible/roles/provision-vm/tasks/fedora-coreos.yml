@@ -27,6 +27,8 @@
     executable: /usr/bin/bash
   when: not python_exists
 
+# A reboot is required because rpm-ostree does not install python until
+# the system reboots
 - name: Reboot
   raw: systemctl reboot
   args:

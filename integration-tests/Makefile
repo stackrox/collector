@@ -15,7 +15,9 @@ SHELL=/bin/bash
 export COLLECTOR_IMAGE
 
 .PHONY: ci-integration-tests
-ci-integration-tests: process-network image-label-json missing-proc-scrape repeat-network process-listening-on-port
+ci-integration-tests: process-network image-label-json 
+ci-integration-tests: repeat-network missing-proc-scrape connscraper
+ci-integration-tests: process-listening-on-port
 
 .PHONY: docker-clean
 docker-clean:

@@ -20,7 +20,6 @@
             job_id: "{{ job_id }}"
             platform: "{{ item.0.name }}"
             vm_config: "{{ item.0.name }}_{{ item.1 }}"
-            username: "{{ item.0.username | default(gcp_default_user) }}"
 
       #
       # The loop will create the "item" variable, which can be used throughout the task
@@ -56,7 +55,6 @@
             job_id: "{{ job_id }}"
             platform: "{{ item.0.name }}"
             vm_config: "{{ item.0.name }}_{{ item.0.name }}"
-            username: "{{ item.0.username | default(gcp_default_user) }}"
 
       #
       # The loop will create the "item" variable, which can be used throughout the task

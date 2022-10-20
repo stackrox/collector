@@ -26,6 +26,7 @@ type collectorManager struct {
 	BootstrapOnly     bool
 	TestName          string
 	CoreDumpFile      string
+	VmConfig          string
 }
 
 func NewCollectorManager(e Executor, name string) *collectorManager {
@@ -75,6 +76,7 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 		Mounts:            mounts,
 		TestName:          name,
 		CoreDumpFile:      "/tmp/core.out",
+		VmConfig:          vm_config,
 	}
 }
 
@@ -229,9 +231,7 @@ func (c *collectorManager) captureLogs(containerName string) (string, error) {
 		fmt.Printf("docker logs error (%v) for container %s\n", err, containerName)
 		return "", err
 	}
-	vm_config := ReadEnvVarWithDefault("VM_CONFIG", "default")
-	method := ReadEnvVar("COLLECTION_METHOD")
-	logDirectory := filepath.Join(".", "container-logs", vm_config, method)
+	logDirectory := filepath.Join(".", "container-logs", c.VmConfig, c.Env["COLLECTION_METHOD"])
 	os.MkdirAll(logDirectory, os.ModePerm)
 	logFile := filepath.Join(logDirectory, strings.ReplaceAll(c.TestName, "/", "_")+"-"+containerName+".log")
 	err = ioutil.WriteFile(logFile, []byte(logs), 0644)
