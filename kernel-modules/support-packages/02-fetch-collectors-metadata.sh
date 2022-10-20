@@ -8,6 +8,7 @@ die() {
 }
 
 MD_DIR="$1"
+SOURCE_ROOT="$2"
 
 [[ -n "$MD_DIR" ]] || die "Usage: $0 <metadata directory>"
 [[ -d "$MD_DIR" ]] || die "Metadata directory $MD_DIR does not exist or is not a directory."
