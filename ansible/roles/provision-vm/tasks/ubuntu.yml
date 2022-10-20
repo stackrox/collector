@@ -4,4 +4,8 @@
   apt:
     name: docker.io
     update_cache: true
+  register: install_result
+  until: install_result is not failed
+  retries: 5
+  delay: 10
 
