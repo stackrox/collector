@@ -76,7 +76,7 @@ class CosHeuristic : public Heuristic {
                       << "collector.collectionMethod=EBPF to remove this message";
         hconfig->SetCollectionMethod("ebpf");
       } else {
-        CLOG(FATAL) << "Unable to switch to eBPF collection on this host";
+        CLOG(FATAL) << "Unable to switch to eBPF collection on " << host.GetDistro();
       }
     }
   }

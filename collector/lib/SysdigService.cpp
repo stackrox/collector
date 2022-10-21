@@ -60,7 +60,7 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
   }
 
   if (signal_handlers_.empty()) {
-    CLOG(FATAL) << "There are no signal handlers";
+    CLOG(FATAL) << "Internal error: There are no signal handlers.";
   }
 
   SetChisel(config.Chisel());
