@@ -81,7 +81,7 @@ bool SysdigService::InitKernel(const CollectorConfig& config) {
   }
 
   if (config.UseEbpf()) {
-    useEbpf = true;
+    useEbpf_ = true;
     KernelDriverEBPF driver;
     if (!driver.Setup(config, SysdigService::kProbePath)) {
       CLOG(ERROR) << "Failed to setup eBPF probe";
@@ -90,7 +90,6 @@ bool SysdigService::InitKernel(const CollectorConfig& config) {
     inspector_->set_bpf_probe(kProbePath);
   } else {
     KernelDriverModule driver;
-    driver = KernelDriverModule();
     if (!driver.Setup(config, SysdigService::kModulePath)) {
       CLOG(ERROR) << "Failed to setup Kernel module";
       return false;
@@ -132,7 +131,7 @@ bool SysdigService::FilterEvent(sinsp_evt* event) {
     }
   }
 
-  if (!useEbpf) {
+  if (!useEbpf_) {
     if (cache_status == BLOCKED_USERSPACE && event->get_type() != PPME_PROCEXIT_1_E) {
       if (!inspector_->ioctl(0, PPM_IOCTL_EXCLUDE_NS_OF_PID, reinterpret_cast<void*>(tinfo->m_pid))) {
         CLOG(WARNING) << "Failed to exclude namespace for pid " << tinfo->m_pid << ": " << inspector_->getlasterr();
@@ -160,7 +159,7 @@ sinsp_evt* SysdigService::GetNext() {
   // from the eBPF probe. This can occur when using sys_enter and sys_exit
   // tracepoints rather than a targeted approach, which we currently only do
   // on RHEL7 with backported eBPF
-  if (useEbpf && host_info.IsRHEL76() && !global_event_filter_[event->get_type()]) {
+  if (useEbpf_ && host_info.IsRHEL76() && !global_event_filter_[event->get_type()]) {
     return nullptr;
   }
 
@@ -188,7 +187,7 @@ void SysdigService::Start() {
 
   inspector_->open("");
 
-  if (!useEbpf) {
+  if (!useEbpf_) {
     // Drop DAC_OVERRIDE capability after opening the device files.
     capng_updatev(CAPNG_DROP, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_DAC_OVERRIDE, -1);
     if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
@@ -286,7 +285,7 @@ void SysdigService::SetChisel(const std::string& chisel) {
   chisel_->on_init();
   chisel_cache_.clear();
 
-  if (!useEbpf) {
+  if (!useEbpf_) {
     std::lock_guard<std::mutex> lock(running_mutex_);
     if (running_) {
       // Reset kernel-level exclusion table.

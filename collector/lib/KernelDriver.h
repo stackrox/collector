@@ -27,7 +27,7 @@ class IKernelDriver {
 
 class KernelDriverModule : public IKernelDriver {
  public:
-  bool Setup(const CollectorConfig& config, std::string path) {
+  bool Setup(const CollectorConfig& config, std::string path) override {
     // First action: drop all capabilities except for:
     // SYS_MODULE (inserting the module),
     // SYS_PTRACE (reading from /proc),
@@ -72,7 +72,7 @@ class KernelDriverModule : public IKernelDriver {
 
 class KernelDriverEBPF : public IKernelDriver {
  public:
-  bool Setup(const CollectorConfig& config, std::string path) {
+  bool Setup(const CollectorConfig& config, std::string path) override {
     FDHandle fd = FDHandle(open(path.c_str(), O_RDONLY));
     if (!fd.valid()) {
       CLOG(ERROR) << "Cannot open eBPF probe at " << path;

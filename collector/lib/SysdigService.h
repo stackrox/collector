@@ -100,7 +100,7 @@ class SysdigService : public Sysdig {
 
   mutable std::mutex running_mutex_;
   bool running_ = false;
-  bool useEbpf = false;
+  bool useEbpf_ = false;
 };
 
 }  // namespace collector
