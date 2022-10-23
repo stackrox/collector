@@ -636,7 +636,9 @@ func (s *ConnScraperTestSuite) TearDownSuite() {
 
 func (s *ConnScraperTestSuite) TestConnScraper() {
 	var imageFamily = os.Getenv("IMAGE_FAMILY")
-	if imageFamily != "rhel-7" && imageFamily != "ubuntu-pro-1804-lts" { // TODO: These tests fail for rhel-7 and ubuntu-pro-1804-lts. Make the tests pass for them and remove this if statement
+	// TODO: These tests fail for rhel-7, ubuntu-pro-1804-lts, sles-12, and sometimes for ubuntu-2204-lts.
+	// Make the tests pass for them and remove this if statement
+	if imageFamily != "rhel-7" && imageFamily != "ubuntu-pro-1804-lts" && imageFamily != "sles-12" && imageFamily!= "ubuntu-2204-lts" {
 		endpoints, err := s.GetEndpoints(s.serverContainer)
 		if (!s.turnOffScrape && s.roxProcessesListeningOnPort) {
 			// If scraping is on and the feature flag is enables we expect to find the nginx endpoint

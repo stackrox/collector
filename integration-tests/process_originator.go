@@ -28,6 +28,10 @@ func NewProcessOriginator(line string) (*ProcessOriginator, error) {
 		return nil, fmt.Errorf("ProcessOriginator is nil")
 	}
 
+	if line == "\n" {
+		return nil, fmt.Errorf("ProcessOriginator is empty")
+	}
+
 	var processArgs string
 	r := regexp.MustCompile("process_name:(.*)process_exec_file_path:(.*)process_args(.*)\n$")
 	processArr := r.FindStringSubmatch(line)
