@@ -107,24 +107,24 @@ func TestRepeatedNetworkFlowThreeCurlsNoAfterglow(t *testing.T) {
 // endpoints opened before collector is turned on. There is another test
 // in which scraping is turned off and we expect that we will not see
 // endpoint opened before collector is turned on.
-func TestConnScraper(t *testing.T) {
-	connScraperTestSuite := &ConnScraperTestSuite{
+func TestProcfsScraper(t *testing.T) {
+	connScraperTestSuite := &ProcfsScraperTestSuite{
 		turnOffScrape:	false,
 		roxProcessesListeningOnPort: true,
 	}
 	suite.Run(t, connScraperTestSuite)
 }
 
-func TestConnScraperNoScrape(t *testing.T) {
-	connScraperTestSuite := &ConnScraperTestSuite{
+func TestProcfsScraperNoScrape(t *testing.T) {
+	connScraperTestSuite := &ProcfsScraperTestSuite{
 		turnOffScrape:	true,
 		roxProcessesListeningOnPort: true,
 	}
 	suite.Run(t, connScraperTestSuite)
 }
 
-func TestConnScraperDisableFeatureFlag(t *testing.T) {
-	connScraperTestSuite := &ConnScraperTestSuite{
+func TestProcfsScraperDisableFeatureFlag(t *testing.T) {
+	connScraperTestSuite := &ProcfsScraperTestSuite{
 		turnOffScrape:	false,
 		roxProcessesListeningOnPort: false,
 	}
@@ -195,7 +195,7 @@ type ImageLabelJSONTestSuite struct {
 	IntegrationTestSuiteBase
 }
 
-type ConnScraperTestSuite struct {
+type ProcfsScraperTestSuite struct {
 	IntegrationTestSuiteBase
 	serverContainer			string
 	turnOffScrape			bool
@@ -382,7 +382,7 @@ func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
 	// Server side checks
 
 	// NetworkSignalHandler does not currently report endpoints.
-	// ConnScraper, which scrapes networking information from /proc reports endpoints and connections
+	// ProcfsScraper, which scrapes networking information from /proc reports endpoints and connections
 	// However NetworkSignalHandler, which gets networking information from Falco only reports connections.
 	// At some point in the future NetworkSignalHandler will report endpoints and connections.
 	// At that time this test and the similar test for the client container will need to be changed.
@@ -582,9 +582,9 @@ func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
 // Launches gRPC server in insecure mode
 // Launches collector
 // Note it is important to launch the nginx container before collector, which is the opposite of
-// other tests. The purpose is that we want ConnScraper to see the nginx endpoint and we do not want
+// other tests. The purpose is that we want ProcfsScraper to see the nginx endpoint and we do not want
 // NetworkSignalHandler to see the nginx endpoint.
-func (s *ConnScraperTestSuite) SetupSuite() {
+func (s *ProcfsScraperTestSuite) SetupSuite() {
 
 	s.metrics = map[string]float64{}
 	s.executor = NewExecutor()
@@ -613,7 +613,7 @@ func (s *ConnScraperTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 }
 
-func (s *ConnScraperTestSuite) launchNginx() {
+func (s *ProcfsScraperTestSuite) launchNginx() {
 	image := "nginx:1.14-alpine"
 
 	err := s.executor.PullImage(image)
@@ -627,14 +627,14 @@ func (s *ConnScraperTestSuite) launchNginx() {
 	time.Sleep(10 * time.Second)
 }
 
-func (s *ConnScraperTestSuite) TearDownSuite() {
+func (s *ProcfsScraperTestSuite) TearDownSuite() {
 	s.cleanupContainer([]string{"nginx", "collector"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
-	s.WritePerfResults("ConnScraper", stats, s.metrics)
+	s.WritePerfResults("ProcfsScraper", stats, s.metrics)
 }
 
-func (s *ConnScraperTestSuite) TestConnScraper() {
+func (s *ProcfsScraperTestSuite) TestProcfsScraper() {
 	var imageFamily = os.Getenv("IMAGE_FAMILY")
 	// TODO: These tests fail for rhel-7, ubuntu-pro-1804-lts, sles-12, and sometimes for ubuntu-2204-lts.
 	// Make the tests pass for them and remove this if statement

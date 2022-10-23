@@ -119,10 +119,10 @@ integration-tests-image-label-json:
 	make -C integration-tests image-label-json ||\
 		( .openshift-ci/slack/notify-if-needed.sh "image-label-json" $$? )
 
-.PHONY: integration-tests-connscraper
-integration-tests-connscraper:
-	make -C integration-tests connscraper ||\
-		( .openshift-ci/slack/notify-if-needed.sh "connscraper" $$? )
+.PHONY: integration-tests-procfsscaper
+integration-tests-procfsscaper:
+	make -C integration-tests procfsscaper ||\
+		( .openshift-ci/slack/notify-if-needed.sh "procfsscaper" $$? )
 
 .PHONY: integration-tests-report
 integration-tests-report:
@@ -133,7 +133,7 @@ ci-integration-tests: integration-tests-repeat-network \
 					  integration-tests-process-network \
 					  integration-tests-missing-proc-scrape \
 					  integration-tests-image-label-json \
-					  integration-tests-connscraper \
+					  integration-tests-procfsscaper \
 					  integration-tests-report
 
 .PHONY: ci-benchmarks

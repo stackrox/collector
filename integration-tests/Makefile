@@ -61,12 +61,12 @@ repeat-network: docker-clean
 	go test -timeout 90m -count=1 -v \
 	  -run TestRepeatedNetworkFlow 2>&1 | tee -a integration-test.log
 
-.PHONY: connscraper
-connscraper: docker-clean
+.PHONY: procfsscraper
+procfsscraper: docker-clean
 	go version
 	set -o pipefail ; \
 	go test -timeout 90m -count=1 -v \
-	  -run TestConnScraper 2>&1 | tee -a integration-test.log
+	  -run TestProcfsScraper 2>&1 | tee -a integration-test.log
 
 .PHONY: report
 report:
