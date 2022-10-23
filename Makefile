@@ -121,7 +121,7 @@ integration-tests-image-label-json:
 
 .PHONY: integration-tests-procfsscaper
 integration-tests-procfsscaper:
-	make -C integration-tests procfsscaper ||\
+	make -C integration-tests procfsscraper ||\
 		( .openshift-ci/slack/notify-if-needed.sh "procfsscaper" $$? )
 
 .PHONY: integration-tests-report
