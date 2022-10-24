@@ -90,8 +90,7 @@ void CollectorService::RunForever() {
     if (!config_.DisableNetworkFlows()) {
       std::shared_ptr<ProcessStore> process_store;
       if (config_.IsProcessesListeningOnPortsEnabled()) {
-        std::shared_ptr<ProcessScraper> process_scraper = std::make_shared<ProcessScraper>(config_.HostProc());
-        process_store = std::make_shared<ProcessStore>(process_scraper);
+        process_store = std::make_shared<ProcessStore>(&sysdig_);
       }
       std::shared_ptr<IConnScraper> conn_scraper = std::make_shared<ConnScraper>(config_.HostProc(), process_store);
       conn_tracker = std::make_shared<ConnectionTracker>();

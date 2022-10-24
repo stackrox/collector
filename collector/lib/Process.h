@@ -85,7 +85,7 @@ class ProcessStore {
 
   /* The provided process_source is queried when
      a requested PID cannot be found in the store */
-  ProcessStore(std::shared_ptr<ISource> process_source) : process_source_(process_source) {}
+  ProcessStore(ISource* process_source) : process_source_(process_source) {}
 
   /* Get a Process by PID.
      Returns a reference to the cached Process entry, which may have just been created
@@ -103,7 +103,7 @@ class ProcessStore {
     ProcessStore& store_;
   };
 
-  std::shared_ptr<ISource> process_source_;
+  ISource* process_source_;
   std::unordered_map<uint64_t, std::weak_ptr<CachedProcess>> cache_;
 };
 
