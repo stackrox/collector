@@ -37,12 +37,13 @@ You should have received a copy of the GNU General Public License along with thi
 // clang-format on
 
 #include "Control.h"
+#include "Process.h"
 #include "SignalHandler.h"
 #include "Sysdig.h"
 
 namespace collector {
 
-class SysdigService : public Sysdig {
+class SysdigService : public Sysdig, public ProcessStore::ISource {
  public:
   static constexpr char kModulePath[] = "/module/collector.ko";
   static constexpr char kModuleName[] = "collector";
@@ -62,6 +63,9 @@ class SysdigService : public Sysdig {
   bool GetStats(SysdigStats* stats) const override;
 
   bool InitKernel(const CollectorConfig& config) override;
+
+  // implementation of ProcessStore::ISource
+  Process ByPID(uint64_t pid) override;
 
  private:
   enum ChiselCacheStatus : int {

@@ -46,6 +46,7 @@ class Process {
         args_(args),
         pid_(pid) {}
   virtual ~Process() {}
+  Process(uint64_t pid) : pid_(pid) {}
 
   const std::string& container_id() const { return container_id_; }
   const std::string& comm() const { return comm_; }

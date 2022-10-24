@@ -315,4 +315,22 @@ void SysdigService::AddSignalHandler(std::unique_ptr<SignalHandler> signal_handl
   signal_handlers_.emplace_back(std::move(signal_handler), event_filter);
 }
 
+Process SysdigService::ByPID(uint64_t pid) {
+  threadinfo_map_t::ptr_t th_ref = inspector_->get_thread_ref(pid, true);
+  if (th_ref) {
+    std::string args;
+    bool first_arg = true;
+    for (auto arg : th_ref->m_args) {
+      if (first_arg) {
+        first_arg = false;
+      } else {
+        args += " ";
+      }
+      args += arg;
+    }
+    return Process(th_ref->m_container_id, th_ref->get_comm(), th_ref->get_exe(), th_ref->get_exepath(), args, pid);
+  }
+  return Process(pid);
+}
+
 }  // namespace collector
