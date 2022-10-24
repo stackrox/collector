@@ -36,6 +36,8 @@ namespace logging {
 
 namespace {
 
+const char* TerminationLog = "/dev/termination-log";
+
 std::atomic<uint32_t> g_level(static_cast<uint32_t>(LogLevel::INFO));
 std::atomic<const char*> g_log_prefix("");
 

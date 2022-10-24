@@ -58,7 +58,6 @@ void SetGlobalLogPrefix(const char* prefix);
 void WriteTerminationLog(std::string message);
 
 const size_t LevelPaddingWidth = 7;
-const std::string TerminationLog = "/dev/termination-log";
 
 class LogMessage {
  public:
