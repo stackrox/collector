@@ -4,6 +4,22 @@ The files contained within this directory are [ansible](https://www.ansible.com/
 roles and playbooks written to simplify VM life-cycle control, and execution of testing, both
 during development and on CI systems[^1].
 
+## Prerequisites
+
+In order to run these playbooks you must have a python version >=3.9.
+To install ansible and the necessary dependencies, simply run:
+
+```
+$ pip3 install -r requirements.txt
+```
+
+On a Mac, the default python3 is 3.7, so use brew to install the latest ansible:
+
+```
+$ brew install ansible
+$ pip3 install -r requirements.txt
+```
+
 ## Overview
 
 The top-level yaml files define playbooks to perform various actions, and can 
