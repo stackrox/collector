@@ -5,5 +5,5 @@ gcp_auth_kind: "serviceaccount"
 gcp_service_account_file: /tmp/secret/stackrox-collector-e2e-tests/GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT
 gcp_zone: "us-central1-a"
 gcp_instance_prefix: collector-ci
-gcp_default_user: circleci
+ansible_user: circleci
 
