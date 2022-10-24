@@ -565,32 +565,25 @@ bool ConnScraper::Scrape(std::vector<Connection>* connections, std::vector<Conta
   return ReadContainerConnections(proc_path_.c_str(), process_store_, connections, listen_endpoints);
 }
 
-Process ProcessScraper::ByPID(uint64_t pid) {
+bool ProcessScraper::Scrape(uint64_t pid, ProcessInfo& pi) {
+  bool success_status = true;
   char process_path[64];
 
-  std::string container_id;
-  std::string comm;
-  std::string exe;
-  std::string exe_path;
-  std::string args;
+  pi.pid = pid;
 
   snprintf(process_path, sizeof(process_path), "%s/%ld", proc_path_.c_str(), pid);
 
   FDHandle dirfd = open(process_path, O_DIRECTORY | O_RDONLY);
 
   if (dirfd.valid()) {
-    GetContainerID(dirfd, &container_id);
-    ReadProcessExe(process_path, dirfd, comm, exe_path);
-    ReadProcessCmdline(process_path, dirfd, exe, args);
+    success_status &= GetContainerID(dirfd, &pi.container_id);
+    success_status &= ReadProcessExe(process_path, dirfd, pi.comm, pi.exe_path);
+    success_status &= ReadProcessCmdline(process_path, dirfd, pi.exe, pi.args);
+  } else {
+    success_status = false;
   }
 
-  return Process(
-      std::move(container_id),
-      std::move(comm),
-      std::move(exe),
-      std::move(exe_path),
-      std::move(args),
-      pid);
+  return success_status;
 }
 
 }  // namespace collector

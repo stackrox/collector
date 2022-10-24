@@ -23,29 +23,124 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "Process.h"
 
+#include <chrono>
+
+#include "SysdigService.h"
+
 namespace collector {
 
-const std::shared_ptr<Process> ProcessStore::Fetch(uint64_t pid) {
-  auto cached_process_pair_iter = cache_.find(pid);
+const std::string Process::NOT_AVAILABLE("N/A");
 
-  if (cached_process_pair_iter != cache_.end()) {
+ProcessStore::ProcessStore(SysdigService* falco_instance) : falco_instance_(falco_instance) {
+  cache_ = std::make_shared<std::unordered_map<uint64_t, std::weak_ptr<Process>>>();
+}
+
+const std::shared_ptr<Process> ProcessStore::Fetch(uint64_t pid) {
+  auto cached_process_pair_iter = cache_->find(pid);
+
+  if (cached_process_pair_iter != cache_->end()) {
     return cached_process_pair_iter->second.lock();
   }
 
-  std::shared_ptr<CachedProcess> cached_process = std::make_shared<CachedProcess>(process_source_->ByPID(pid), *this);
+  std::shared_ptr<Process> cached_process = std::make_shared<Process>(pid, cache_, falco_instance_);
 
-  cache_.emplace(cached_process->pid(), cached_process);
+  cache_->emplace(pid, cached_process);
   return cached_process;
+}
+
+std::string Process::container_id() const {
+  WaitForProcessInfo();
+
+  if (falco_threadinfo_) {
+    return falco_threadinfo_->m_container_id;
+  }
+
+  return NOT_AVAILABLE;
+}
+
+std::string Process::comm() const {
+  WaitForProcessInfo();
+
+  if (falco_threadinfo_) {
+    return falco_threadinfo_->get_comm();
+  }
+
+  return NOT_AVAILABLE;
+}
+
+std::string Process::exe() const {
+  WaitForProcessInfo();
+
+  if (falco_threadinfo_) {
+    return falco_threadinfo_->get_exe();
+  }
+
+  return NOT_AVAILABLE;
+}
+
+std::string Process::exe_path() const {
+  WaitForProcessInfo();
+
+  if (falco_threadinfo_) {
+    return falco_threadinfo_->get_exepath();
+  }
+
+  return NOT_AVAILABLE;
+}
+
+std::string Process::args() const {
+  WaitForProcessInfo();
+
+  if (falco_threadinfo_) {
+    if (falco_threadinfo_->m_args.empty()) return "";
+    std::ostringstream args;
+    for (auto it = falco_threadinfo_->m_args.begin(); it != falco_threadinfo_->m_args.end();) {
+      args << *it++;
+      if (it != falco_threadinfo_->m_args.end()) args << " ";
+    }
+    return args.str();
+  }
+
+  return NOT_AVAILABLE;
+}
+
+Process::Process(
+    uint64_t pid,
+    ProcessStore::MapRef cache,
+    SysdigService* falco_instance)
+    : pid_(pid),
+      cache_(cache),
+      falco_callback_(
+          new std::function<void(std::shared_ptr<sinsp_threadinfo>)>(
+              std::bind(&Process::ProcessInfoResolved, this, std::placeholders::_1))) {
+  falco_instance->GetProcessInformation(pid, falco_callback_);
+}
+
+Process::~Process() {
+  cache_->erase(pid_);
+}
+
+void Process::ProcessInfoResolved(std::shared_ptr<sinsp_threadinfo> process_info) {
+  std::unique_lock<std::mutex> lock(process_info_mutex_);
+
+  falco_threadinfo_ = process_info;
+  process_info_resolved_ = true;
+
+  process_info_condition_.notify_all();
+}
+
+void Process::WaitForProcessInfo() const {
+  std::unique_lock<std::mutex> lock(process_info_mutex_);
+
+  if (!process_info_resolved_) {
+    process_info_condition_.wait_for(lock, std::chrono::seconds(30));
+  }
 }
 
 std::ostream& operator<<(std::ostream& os, const Process& process) {
   std::string processString = "ContainerID: " + process.container_id() + " Exe: " + process.exe() + " ExePath: ";
   processString += process.exe_path() + " Args: " + process.args() + " PID: " + std::to_string(process.pid());
   return os << processString;
-}
-
-ProcessStore::CachedProcess::~CachedProcess() {
-  store_.cache_.erase(pid_);
 }
 
 }  // namespace collector

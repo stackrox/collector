@@ -145,6 +145,7 @@ bool SysdigService::FilterEvent(sinsp_evt* event) {
 }
 
 sinsp_evt* SysdigService::GetNext() {
+  std::lock_guard<std::mutex> lock(libsinsp_mutex_);
   sinsp_evt* event;
 
   auto parse_start = NowMicros();
@@ -175,6 +176,8 @@ sinsp_evt* SysdigService::GetNext() {
 }
 
 void SysdigService::Start() {
+  std::lock_guard<std::mutex> sysdig_lock(libsinsp_mutex_);
+
   if (!inspector_ || !chisel_) {
     throw CollectorException("Invalid state: SysdigService was not initialized");
   }
@@ -195,7 +198,7 @@ void SysdigService::Start() {
     }
   }
 
-  std::lock_guard<std::mutex> lock(running_mutex_);
+  std::lock_guard<std::mutex> running_lock(running_mutex_);
   running_ = true;
 }
 
@@ -205,6 +208,8 @@ void SysdigService::Run(const std::atomic<ControlValue>& control) {
   }
 
   while (control.load(std::memory_order_relaxed) == ControlValue::RUN) {
+    ServePendingProcessRequests();
+
     sinsp_evt* evt = GetNext();
     if (!evt) continue;
 
@@ -225,6 +230,8 @@ void SysdigService::Run(const std::atomic<ControlValue>& control) {
 }
 
 bool SysdigService::SendExistingProcesses(SignalHandler* handler) {
+  std::lock_guard<std::mutex> lock(libsinsp_mutex_);
+
   if (!inspector_ || !chisel_) {
     throw CollectorException("Invalid state: SysdigService was not initialized");
   }
@@ -249,7 +256,8 @@ bool SysdigService::SendExistingProcesses(SignalHandler* handler) {
 }
 
 void SysdigService::CleanUp() {
-  std::lock_guard<std::mutex> lock(running_mutex_);
+  std::lock_guard<std::mutex> sysdig_lock(libsinsp_mutex_);
+  std::lock_guard<std::mutex> running_lock(running_mutex_);
   running_ = false;
   inspector_->close();
   chisel_.reset();
@@ -265,7 +273,8 @@ void SysdigService::CleanUp() {
 }
 
 bool SysdigService::GetStats(SysdigStats* stats) const {
-  std::lock_guard<std::mutex> lock(running_mutex_);
+  std::lock_guard<std::mutex> sysdig_lock(libsinsp_mutex_);
+  std::lock_guard<std::mutex> running_lock(running_mutex_);
   if (!running_ || !inspector_) return false;
 
   scap_stats kernel_stats;
@@ -279,6 +288,7 @@ bool SysdigService::GetStats(SysdigStats* stats) const {
 }
 
 void SysdigService::SetChisel(const std::string& chisel) {
+  std::lock_guard<std::mutex> lock(libsinsp_mutex_);
   CLOG(DEBUG) << "Updating chisel and flushing chisel cache";
   CLOG(DEBUG) << "New chisel: " << chisel;
   chisel_.reset(new_chisel(inspector_.get(), chisel, false));
@@ -313,6 +323,29 @@ void SysdigService::AddSignalHandler(std::unique_ptr<SignalHandler> signal_handl
   }
 
   signal_handlers_.emplace_back(std::move(signal_handler), event_filter);
+}
+
+void SysdigService::GetProcessInformation(
+    uint64_t pid,
+    std::weak_ptr<std::function<void(threadinfo_map_t::ptr_t)>> callback) {
+  std::lock_guard<std::mutex> lock(process_requests_mutex_);
+
+  pending_process_requests_.emplace_back(pid, callback);
+}
+
+void SysdigService::ServePendingProcessRequests() {
+  std::lock_guard<std::mutex> lock(process_requests_mutex_);
+
+  while (!pending_process_requests_.empty()) {
+    auto& request = pending_process_requests_.front();
+    uint64_t pid = request.first;
+    auto callback = request.second.lock();
+
+    if (callback)
+      callback->operator()(inspector_->get_thread_ref(pid, true));
+
+    pending_process_requests_.pop_front();
+  }
 }
 
 }  // namespace collector
