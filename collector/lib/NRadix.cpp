@@ -73,8 +73,8 @@ bool NRadixTree::Insert(const IPNet& network) const {
       // Reset and move to lower part.
       bit = 0x8000000000000000ULL;
       if (network.bits() >= 64) {
-        *addr_p++;
-        *net_mask_p++;
+        addr_p++;
+        net_mask_p++;
       }
     }
   }
@@ -109,8 +109,8 @@ bool NRadixTree::Insert(const IPNet& network) const {
 
       bit = 0x8000000000000000ULL;
       if (network.bits() >= 64) {
-        *addr_p++;
-        *net_mask_p++;
+        addr_p++;
+        net_mask_p++;
       }
     }
   }
@@ -163,8 +163,8 @@ IPNet NRadixTree::Find(const IPNet& network) const {
 
       bit = 0x8000000000000000ULL;
       if (network.bits() >= 64) {
-        *addr_p++;
-        *net_mask_p++;
+        addr_p++;
+        net_mask_p++;
       }
     }
   }

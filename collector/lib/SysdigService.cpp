@@ -32,6 +32,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "CollectorException.h"
 #include "EventNames.h"
 #include "HostInfo.h"
+#include "KernelDriver.h"
 #include "Logging.h"
 #include "NetworkSignalHandler.h"
 #include "ProcessSignalHandler.h"
@@ -46,20 +47,8 @@ constexpr char SysdigService::kProbePath[];
 constexpr char SysdigService::kProbeName[];
 
 void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) {
-  if (inspector_ || chisel_) {
+  if (chisel_) {
     throw CollectorException("Invalid state: SysdigService was already initialized");
-  }
-
-  inspector_.reset(new_inspector());
-  inspector_->set_snaplen(config.SnapLen());
-
-  if (config.EnableSysdigLog()) {
-    inspector_->set_log_stderr();
-  }
-
-  if (config.UseEbpf()) {
-    useEbpf = true;
-    inspector_->set_bpf_probe(kProbePath);
   }
 
   if (conn_tracker) {
@@ -77,6 +66,37 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
   SetChisel(config.Chisel());
 
   use_chisel_cache_ = config.UseChiselCache();
+}
+
+bool SysdigService::InitKernel(const CollectorConfig& config) {
+  if (inspector_) {
+    throw CollectorException("Invalid state: SysdigService kernel components are already initialized");
+  }
+
+  inspector_.reset(new_inspector());
+  inspector_->set_snaplen(config.SnapLen());
+
+  if (config.EnableSysdigLog()) {
+    inspector_->set_log_stderr();
+  }
+
+  if (config.UseEbpf()) {
+    useEbpf_ = true;
+    KernelDriverEBPF driver;
+    if (!driver.Setup(config, SysdigService::kProbePath)) {
+      CLOG(ERROR) << "Failed to setup eBPF probe";
+      return false;
+    }
+    inspector_->set_bpf_probe(kProbePath);
+  } else {
+    KernelDriverModule driver;
+    if (!driver.Setup(config, SysdigService::kModulePath)) {
+      CLOG(ERROR) << "Failed to setup Kernel module";
+      return false;
+    }
+  }
+
+  return true;
 }
 
 bool SysdigService::FilterEvent(sinsp_evt* event) {
@@ -111,7 +131,7 @@ bool SysdigService::FilterEvent(sinsp_evt* event) {
     }
   }
 
-  if (!useEbpf) {
+  if (!useEbpf_) {
     if (cache_status == BLOCKED_USERSPACE && event->get_type() != PPME_PROCEXIT_1_E) {
       if (!inspector_->ioctl(0, PPM_IOCTL_EXCLUDE_NS_OF_PID, reinterpret_cast<void*>(tinfo->m_pid))) {
         CLOG(WARNING) << "Failed to exclude namespace for pid " << tinfo->m_pid << ": " << inspector_->getlasterr();
@@ -139,7 +159,7 @@ sinsp_evt* SysdigService::GetNext() {
   // from the eBPF probe. This can occur when using sys_enter and sys_exit
   // tracepoints rather than a targeted approach, which we currently only do
   // on RHEL7 with backported eBPF
-  if (useEbpf && host_info.IsRHEL76() && !global_event_filter_[event->get_type()]) {
+  if (useEbpf_ && host_info.IsRHEL76() && !global_event_filter_[event->get_type()]) {
     return nullptr;
   }
 
@@ -167,7 +187,7 @@ void SysdigService::Start() {
 
   inspector_->open("");
 
-  if (!useEbpf) {
+  if (!useEbpf_) {
     // Drop DAC_OVERRIDE capability after opening the device files.
     capng_updatev(CAPNG_DROP, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_DAC_OVERRIDE, -1);
     if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
@@ -179,12 +199,12 @@ void SysdigService::Start() {
   running_ = true;
 }
 
-void SysdigService::Run(const std::atomic<CollectorService::ControlValue>& control) {
+void SysdigService::Run(const std::atomic<ControlValue>& control) {
   if (!inspector_ || !chisel_) {
     throw CollectorException("Invalid state: SysdigService was not initialized");
   }
 
-  while (control.load(std::memory_order_relaxed) == CollectorService::RUN) {
+  while (control.load(std::memory_order_relaxed) == ControlValue::RUN) {
     sinsp_evt* evt = GetNext();
     if (!evt) continue;
 
@@ -265,7 +285,7 @@ void SysdigService::SetChisel(const std::string& chisel) {
   chisel_->on_init();
   chisel_cache_.clear();
 
-  if (!useEbpf) {
+  if (!useEbpf_) {
     std::lock_guard<std::mutex> lock(running_mutex_);
     if (running_) {
       // Reset kernel-level exclusion table.

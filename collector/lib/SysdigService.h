@@ -36,7 +36,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "chisel.h"
 // clang-format on
 
-#include "CollectorService.h"
+#include "Control.h"
 #include "SignalHandler.h"
 #include "Sysdig.h"
 
@@ -55,11 +55,13 @@ class SysdigService : public Sysdig {
 
   void Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) override;
   void Start() override;
-  void Run(const std::atomic<CollectorService::ControlValue>& control) override;
+  void Run(const std::atomic<ControlValue>& control) override;
   void SetChisel(const std::string& new_chisel);
   void CleanUp() override;
 
   bool GetStats(SysdigStats* stats) const override;
+
+  bool InitKernel(const CollectorConfig& config) override;
 
  private:
   enum ChiselCacheStatus : int {
@@ -98,7 +100,7 @@ class SysdigService : public Sysdig {
 
   mutable std::mutex running_mutex_;
   bool running_ = false;
-  bool useEbpf = false;
+  bool useEbpf_ = false;
 };
 
 }  // namespace collector

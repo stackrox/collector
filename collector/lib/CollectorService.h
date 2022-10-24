@@ -28,20 +28,20 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "CollectorConfig.h"
 #include "CollectorStats.h"
+#include "Control.h"
+#include "SysdigService.h"
 
 namespace collector {
 
+class SysdigService;
+
 class CollectorService {
  public:
-  enum ControlValue {
-    RUN = 0,           // Keep running
-    INTERRUPT_SYSDIG,  // Stop running sysdig, but resume collector operation (e.g., for chisel update)
-    STOP_COLLECTOR,    // Stop the collector (e.g., SIGINT or SIGTERM received).
-  };
-
   CollectorService(const CollectorConfig& config, std::atomic<ControlValue>* control, const std::atomic<int>* signum);
 
   void RunForever();
+
+  bool InitKernel();
 
  private:
   void OnChiselReceived(const std::string& chisel);
@@ -55,6 +55,8 @@ class CollectorService {
 
   std::atomic<ControlValue>* control_;
   const std::atomic<int>& signum_;
+
+  SysdigService sysdig_;
 };
 
 }  // namespace collector
