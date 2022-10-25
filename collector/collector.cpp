@@ -59,6 +59,7 @@ extern "C" {
 #include "GRPCUtil.h"
 #include "GetKernelObject.h"
 #include "GetStatus.h"
+#include "HostInfo.h"
 #include "LogLevel.h"
 #include "Logging.h"
 #include "SysdigService.h"
@@ -158,19 +159,15 @@ void gplNotice() {
   CLOG(INFO) << "";
 }
 
-bool initialChecks() {
+void initialChecks() {
   if (!g_control.is_lock_free()) {
-    CLOG(ERROR) << "Could not create a lock-free control variable!";
-    return false;
+    CLOG(FATAL) << "Internal error: could not create a lock-free control variable.";
   }
 
   struct stat st;
   if (stat("/module", &st) != 0 || !S_ISDIR(st.st_mode)) {
-    CLOG(ERROR) << "/module directory does not exist.";
-    return false;
+    CLOG(FATAL) << "Internal error: /module directory does not exist.";
   }
-
-  return true;
 }
 
 bool downloadKernelDriver(const CollectorArgs* args, CollectorConfig& config) {
@@ -226,9 +223,7 @@ bool downloadKernelDriver(const CollectorArgs* args, CollectorConfig& config) {
 }
 
 int main(int argc, char** argv) {
-  if (!initialChecks()) {
-    CLOG(FATAL) << "Initial start up checks failed!";
-  }
+  initialChecks();
 
   CollectorArgs* args = CollectorArgs::getInstance();
   int exitCode = 0;
@@ -254,7 +249,7 @@ int main(int argc, char** argv) {
       CLOG(INFO) << "Successfully connected to Sensor.";
     } else {
       g_startup_diagnostics.Log();
-      CLOG(FATAL) << "Unable to connect to Sensor.";
+      CLOG(FATAL) << "Unable to connect to Sensor at '" << args->GRPCServer() << "'.";
     }
     g_startup_diagnostics.ConnectedToSensor();
   } else {
@@ -263,7 +258,8 @@ int main(int argc, char** argv) {
 
   if (!downloadKernelDriver(args, config)) {
     g_startup_diagnostics.Log();
-    CLOG(FATAL) << "No suitable kernel object downloaded";
+    HostInfo& host = HostInfo::Instance();
+    CLOG(FATAL) << "No suitable kernel object downloaded for kernel " << host.GetKernelVersion().release;
   }
 
   g_startup_diagnostics.KernelDriverDownloaded();

@@ -26,6 +26,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <algorithm>
 #include <atomic>
 #include <cctype>
+#include <fstream>
 #include <string>
 #include <unordered_map>
 
@@ -34,6 +35,8 @@ namespace collector {
 namespace logging {
 
 namespace {
+
+const char* TerminationLog = "/dev/termination-log";
 
 std::atomic<uint32_t> g_level(static_cast<uint32_t>(LogLevel::INFO));
 std::atomic<const char*> g_log_prefix("");
@@ -125,6 +128,17 @@ const char* GetGlobalLogPrefix() {
 
 void SetGlobalLogPrefix(const char* prefix) {
   g_log_prefix.store(prefix, std::memory_order_relaxed);
+}
+
+void WriteTerminationLog(std::string message) {
+  std::ofstream tlog(TerminationLog);
+
+  // If the termination log does not exist it is likely that
+  // we're not running in k8s so otherwise do nothing. This
+  // diagnostic measure does not work in openshift.
+  if (tlog.is_open()) {
+    tlog.write(message.c_str(), message.size());
+  }
 }
 
 }  // namespace logging

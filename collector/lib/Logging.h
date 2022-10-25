@@ -55,6 +55,8 @@ bool ParseLogLevelName(std::string name, LogLevel* level);
 const char* GetGlobalLogPrefix();
 void SetGlobalLogPrefix(const char* prefix);
 
+void WriteTerminationLog(std::string message);
+
 const size_t LevelPaddingWidth = 7;
 
 class LogMessage {
@@ -93,6 +95,7 @@ class LogMessage {
               << std::endl;
 
     if (level_ == LogLevel::FATAL) {
+      WriteTerminationLog(buf_.str());
       exit(1);
     }
   }
