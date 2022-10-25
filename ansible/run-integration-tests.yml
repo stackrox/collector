@@ -33,5 +33,5 @@
         collection_method: "{{ item }}"
       with_items:
         - ebpf
-        - kernel-module
+        - kernel_module
 
