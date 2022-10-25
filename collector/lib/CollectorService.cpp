@@ -102,7 +102,6 @@ void CollectorService::RunForever() {
       net_status_notifier = MakeUnique<NetworkStatusNotifier>(conn_scraper, config_.ScrapeInterval(), config_.ScrapeListenEndpoints(), config_.TurnOffScrape(),
                                                               conn_tracker, config_.AfterglowPeriod(), config_.EnableAfterglow(),
                                                               network_connection_info_service_comm);
-      net_status_notifier->Start();
     }
   }
 
@@ -113,6 +112,11 @@ void CollectorService::RunForever() {
 
   sysdig_.Init(config_, conn_tracker);
   sysdig_.Start();
+
+  // Sysdig process list is available, we can start NetworkStatusNotifier
+  if (net_status_notifier) {
+    net_status_notifier->Start();
+  }
 
   ControlValue cv;
   while ((cv = control_->load(std::memory_order_relaxed)) != STOP_COLLECTOR) {
