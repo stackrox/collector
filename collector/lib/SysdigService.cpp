@@ -145,6 +145,7 @@ bool SysdigService::FilterEvent(sinsp_evt* event) {
 }
 
 sinsp_evt* SysdigService::GetNext() {
+  std::lock_guard<std::mutex> lock(running_mutex_);
   sinsp_evt* event;
 
   auto parse_start = NowMicros();
@@ -316,6 +317,7 @@ void SysdigService::AddSignalHandler(std::unique_ptr<SignalHandler> signal_handl
 }
 
 Process SysdigService::ByPID(uint64_t pid) {
+  std::lock_guard<std::mutex> lock(running_mutex_);
   threadinfo_map_t::ptr_t th_ref = inspector_->get_thread_ref(pid, true);
   if (th_ref) {
     std::string args;
