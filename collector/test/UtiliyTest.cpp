@@ -40,6 +40,7 @@ class MockHostInfoLocal : public HostInfo {
   MOCK_METHOD0(GetOSID, std::string&());
   MOCK_METHOD0(GetBuildID, std::string&());
   MOCK_METHOD0(GetKernelVersion, KernelVersion());
+  MOCK_METHOD0(GetMinikubeVersion, std::string());
   MOCK_METHOD0(IsUbuntu, bool());
   MOCK_METHOD0(IsCOS, bool());
   MOCK_METHOD0(IsDockerDesktop, bool());
@@ -69,6 +70,53 @@ TEST(getGardenLinuxCandidateTest, Garden318) {
   EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));
 
   auto candidate = getGardenLinuxCandidate(host);
+
+  EXPECT_EQ(candidate, expected_kernel);
+}
+
+TEST(getMinikubeCandidateTest, v1_27_1) {
+  MockHostInfoLocal host;
+  std::string release("5.10.57");
+  std::string version("#1 SMP Wed Oct 27 22:52:27 UTC 2021 x86_64 GNU/Linux");
+  std::string minikube_version("v1.27.1");
+  std::string expected_kernel("5.10.57-minikube-v1.27.1");
+  KernelVersion kv(release, version);
+
+  EXPECT_CALL(host, GetMinikubeVersion()).WillOnce(Return(minikube_version));
+  EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));
+
+  auto candidate = getMinikubeCandidate(host);
+
+  EXPECT_EQ(candidate, expected_kernel);
+}
+
+TEST(getMinikubeCandidateTest, v1_24_0) {
+  MockHostInfoLocal host;
+  std::string release("4.19.202");
+  std::string version("#1 SMP Wed Oct 27 22:52:27 UTC 2021 x86_64 GNU/Linux");
+  std::string minikube_version("v1.24.0");
+  std::string expected_kernel("4.19.202-minikube-v1.24.0");
+  KernelVersion kv(release, version);
+
+  EXPECT_CALL(host, GetMinikubeVersion()).WillOnce(Return(minikube_version));
+  EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));
+
+  auto candidate = getMinikubeCandidate(host);
+
+  EXPECT_EQ(candidate, expected_kernel);
+}
+
+TEST(getMinikubeCandidateTest, NoVersion) {
+  MockHostInfoLocal host;
+  std::string release("4.19.202");
+  std::string version("#1 SMP Wed Oct 27 22:52:27 UTC 2021 x86_64 GNU/Linux");
+  std::string minikube_version("");
+  std::string expected_kernel("");
+  KernelVersion kv(release, version);
+
+  EXPECT_CALL(host, GetMinikubeVersion()).WillOnce(Return(minikube_version));
+
+  auto candidate = getMinikubeCandidate(host);
 
   EXPECT_EQ(candidate, expected_kernel);
 }

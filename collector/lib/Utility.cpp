@@ -93,6 +93,23 @@ std::string getGardenLinuxCandidate(HostInfo& host) {
   return kernel.release + "-gl-" + match.str();
 }
 
+// The kvm driver for minikube uses a custom kernel built from
+// mostly vanilla kernel headers and its own configuration defined
+// in their repo. However, when using the docker driver, minikube
+// runs directly on the host, so we add the kvm kernel as a candidate
+// in order to give the chance for collector to use the host driver.
+std::string getMinikubeCandidate(HostInfo& host) {
+  auto minikube_version = host.GetMinikubeVersion();
+
+  if (minikube_version.empty()) {
+    return "";
+  }
+
+  auto kernel = host.GetKernelVersion();
+
+  return kernel.ShortRelease() + "-minikube-" + minikube_version;
+}
+
 // Normalizes this host's release string into something collector can use
 // to download appropriate kernel objects from the webserver. If the release
 // string does not require normalization, it is simply returned.
@@ -125,10 +142,6 @@ std::string normalizeReleaseString(HostInfo& host) {
     std::stringstream timestamp;
     timestamp << std::put_time(&tm, "%Y-%m-%d-%H-%M-%S");
     return kernel.ShortRelease() + "-dockerdesktop-" + timestamp.str();
-  }
-
-  if (host.IsMinikube()) {
-    return kernel.release + "-minikube";
   }
 
   return kernel.release;
@@ -289,6 +302,14 @@ std::vector<std::string> GetKernelCandidates() {
   }
 
   candidates.push_back(normalizeReleaseString(host));
+
+  if (host.IsMinikube()) {
+    auto minikube_candidate = getMinikubeCandidate(host);
+
+    if (!minikube_candidate.empty()) {
+      candidates.push_back(minikube_candidate);
+    }
+  }
 
   return candidates;
 }

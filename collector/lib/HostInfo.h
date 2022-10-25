@@ -215,6 +215,8 @@ class HostInfo {
     return GetHostname() == "minikube";
   }
 
+  virtual std::string GetMinikubeVersion();
+
   // Reads a named value from the os-release file (either in /etc/ or in /usr/lib)
   // and filters for a specific name. The file is in the format <NAME>="<VALUE>"
   // Quotes are removed from the value, if found. If not found, an empty string is returned.
