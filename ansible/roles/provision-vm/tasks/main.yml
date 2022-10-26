@@ -21,7 +21,7 @@
 - wait_for:
     port: 22
     host: "{{ ansible_host }}"
-    timeout: 100
+    timeout: 180
   delegate_to: localhost
   become: no
 
@@ -34,7 +34,7 @@
 # At this point, ansible should be able to run on the remote host
 
 - wait_for_connection:
-    timeout: 60
+    timeout: 180
 
 - name: Gather facts
   setup:
