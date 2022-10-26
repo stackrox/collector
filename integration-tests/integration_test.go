@@ -131,6 +131,10 @@ func TestProcfsScraperDisableFeatureFlag(t *testing.T) {
 	suite.Run(t, connScraperTestSuite)
 }
 
+func TestProcessListeningOnPort(t *testing.T) {
+	suite.Run(t, new(ProcessListeningOnPortTestSuite))
+}
+
 type IntegrationTestSuiteBase struct {
 	suite.Suite
 	db        *bolt.DB
@@ -200,6 +204,11 @@ type ProcfsScraperTestSuite struct {
 	serverContainer			string
 	turnOffScrape			bool
 	roxProcessesListeningOnPort	bool
+}
+
+type ProcessListeningOnPortTestSuite struct {
+	IntegrationTestSuiteBase
+	serverContainer		string
 }
 
 func (s *ImageLabelJSONTestSuite) SetupSuite() {
@@ -664,6 +673,101 @@ func (s *ProcfsScraperTestSuite) TestProcfsScraper() {
 			s.Require().Error(err)
 		}
 	}
+}
+
+func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
+
+	s.metrics = map[string]float64{}
+	s.executor = NewExecutor()
+	s.StartContainerStats()
+	s.collector = NewCollectorManager(s.executor, s.T().Name())
+
+	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
+	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
+
+	err := s.collector.Setup()
+	s.Require().NoError(err)
+
+	err = s.collector.Launch()
+	s.Require().NoError(err)
+	time.Sleep(10 * time.Second)
+
+	processImage := "quay.io/rhacs-eng/qa:collector-processes-listening-on-ports"
+	containerID, err := s.launchContainer("process-ports", "-v", "/tmp:/tmp", processImage)
+
+	s.Require().NoError(err)
+	s.serverContainer = containerShortID(containerID)
+
+	_, err = s.collector.executor.Exec("sh", "-c", "rm /tmp/action_file.txt || true")
+	_, err = s.collector.executor.Exec("sh", "-c", "echo open 8081 > /tmp/action_file.txt")
+	time.Sleep(2 * time.Second)
+	_, err = s.collector.executor.Exec("sh", "-c", "rm /tmp/action_file.txt || true")
+	_, err = s.collector.executor.Exec("sh", "-c", "echo open 9091 > /tmp/action_file.txt")
+
+	time.Sleep(6 * time.Second)
+
+	_, err = s.collector.executor.Exec("sh", "-c", "rm /tmp/action_file.txt || true")
+	_, err = s.collector.executor.Exec("sh", "-c", "echo close 8081 > /tmp/action_file.txt")
+	time.Sleep(2 * time.Second)
+	_, err = s.collector.executor.Exec("sh", "-c", "rm /tmp/action_file.txt || true")
+	_, err = s.collector.executor.Exec("sh", "-c", "echo close 9091 > /tmp/action_file.txt")
+
+	time.Sleep(6 * time.Second)
+	_, err = s.collector.executor.Exec("sh", "-c", "rm /tmp/action_file.txt || true")
+
+	err = s.collector.TearDown()
+	s.Require().NoError(err)
+
+	s.db, err = s.collector.BoltDB()
+	s.Require().NoError(err)
+}
+
+func (s *ProcessListeningOnPortTestSuite) TearDownSuite() {
+	s.cleanupContainer([]string{"process-ports", "collector"})
+	stats := s.GetContainerStats()
+	s.PrintContainerStats(stats)
+	s.WritePerfResults("ProcessListeningOnPort", stats, s.metrics)
+}
+
+func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
+	processes, err := s.GetProcesses(s.serverContainer)
+	s.Require().NoError(err)
+	endpoints, err := s.GetEndpoints(s.serverContainer)
+	s.Require().NoError(err)
+	assert.Equal(s.T(), 4, len(endpoints))
+	assert.Equal(s.T(), 2, len(processes))
+
+	assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[0].Protocol)
+	assert.Equal(s.T(), "(timestamp: nil Timestamp)", endpoints[0].CloseTimestamp)
+	assert.Equal(s.T(), 8081, endpoints[0].Address.Port)
+	// TODO
+	// There is a difference in the lengths of the process name
+	// The process stream truncates to 16 characters while endpoints does not.
+	// We need to decide which way to go and make these tests consistent with that.
+	//assert.Equal(s.T(), endpoints[0].Originator.ProcessName, processes[1].Name)
+	assert.Equal(s.T(), endpoints[0].Originator.ProcessExecFilePath, processes[1].ExePath)
+	assert.Equal(s.T(), endpoints[0].Originator.ProcessArgs, processes[1].Args)
+
+	assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[1].Protocol)
+	assert.Equal(s.T(), "(timestamp: nil Timestamp)", endpoints[1].CloseTimestamp)
+	assert.Equal(s.T(), 9091, endpoints[1].Address.Port)
+	//assert.Equal(s.T(), endpoints[1].Originator.ProcessName, processes[1].Name)
+	assert.Equal(s.T(), endpoints[1].Originator.ProcessExecFilePath, processes[1].ExePath)
+	assert.Equal(s.T(), endpoints[1].Originator.ProcessArgs, processes[1].Args)
+
+	assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[2].Protocol)
+	assert.NotEqual(s.T(), "(timestamp: nil Timestamp)", endpoints[2].CloseTimestamp)
+	assert.Equal(s.T(), 8081, endpoints[2].Address.Port)
+	//assert.Equal(s.T(), endpoints[2].Originator.ProcessName, processes[1].Name)
+	assert.Equal(s.T(), endpoints[2].Originator.ProcessExecFilePath, processes[1].ExePath)
+	assert.Equal(s.T(), endpoints[2].Originator.ProcessArgs, processes[1].Args)
+
+	assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[3].Protocol)
+	assert.NotEqual(s.T(), "(timestamp: nil Timestamp)", endpoints[3].CloseTimestamp)
+	assert.Equal(s.T(), 9091, endpoints[3].Address.Port)
+	//assert.Equal(s.T(), endpoints[3].Originator.ProcessName, processes[1].Name)
+	assert.Equal(s.T(), endpoints[3].Originator.ProcessExecFilePath, processes[1].ExePath)
+	assert.Equal(s.T(), endpoints[3].Originator.ProcessArgs, processes[1].Args)
 }
 
 func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, error) {
