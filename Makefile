@@ -139,6 +139,7 @@ ci-integration-tests: integration-tests-repeat-network \
 					  integration-tests-missing-proc-scrape \
 					  integration-tests-image-label-json \
 					  integration-tests-procfsscaper \
+					  integration-tests-process-listening-on-ports \
 					  integration-tests-report
 
 .PHONY: ci-benchmarks
