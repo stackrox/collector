@@ -1,8 +1,7 @@
 .DEFAULT_GOAL = all
 
-COLLECTOR_QA_PROCESSES_LISTENING_ON_PORTS := collector-processes-listening-on-ports
+COLLECTOR_QA_PROCESSES_LISTENING_ON_PORTS_TAG := collector-processes-listening-on-ports
 
-COLLECTOR_QA_PROCESSES_LISTENING_ON_PORTS_TAG=collector-processes-listening-on-ports
 ifneq ($(COLLECTOR_QA_TAG),)
 COLLECTOR_QA_PROCESSES_LISTENING_ON_PORTS_TAG=collector-processes-listening-on-ports-$(COLLECTOR_QA_TAG)
 endif

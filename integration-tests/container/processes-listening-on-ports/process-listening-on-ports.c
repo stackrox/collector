@@ -41,30 +41,12 @@ int openPort(int port) {
 }
 
 void closePort(int server_fd) {
-	shutdown(server_fd, SHUT_RDWR);
+	close(server_fd);
 }
 
-char *readToken(FILE *file)
-{
-    char *code;
-    size_t n = 0;
-    int c;
-
-    code = malloc(1000);
-
-    while ((c = fgetc(file)) != EOF)
-    {
-	if ((char) c == ' ') break;
-        code[n++] = (char) c;
-    }
-
-    code[n] = '\0';
-
-    return code;
-}
-
-char *getActionFromFile(char actionFile[], int *port) {
+int getActionFromFile(char actionFile[], char action[]) {
 	FILE* ptr;
+	int port;
 
 	ptr = fopen(actionFile, "r");
 
@@ -73,29 +55,23 @@ char *getActionFromFile(char actionFile[], int *port) {
 		ptr = fopen(actionFile, "r");
 	}
 
-	char *port_str = malloc(16 * sizeof(char));
-	char *action = malloc(16 * sizeof(char));
-
-	action = readToken(ptr);
-	port_str = readToken(ptr);
-
-	*port = atoi(port_str);
+	fscanf(ptr, "%s %d", action, &port);
 
 	fclose(ptr);
 	remove(actionFile);
 
-	return action;
+	return port;
 }
 
 int main(int argc, char const* argv[])
 {
 	int port;
 	int server_fd[65535];
-	char* action;
+	char *action = malloc(16 * sizeof(char));
 	char* actionFile = "/tmp/action_file.txt";
 
 	while (1) {
-		action = getActionFromFile(actionFile, &port);
+		port = getActionFromFile(actionFile, action);
 		printf("action= %s port= %i\n", action, port);
 		if (strcmp(action, "open") == 0) {
 			server_fd[port] = openPort(port);
@@ -105,7 +81,6 @@ int main(int argc, char const* argv[])
 			printf("Unknown action: %s\n", action);
 		}
 	}
-
 
 	return 0;
 }
