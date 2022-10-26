@@ -675,6 +675,24 @@ func (s *ProcfsScraperTestSuite) TestProcfsScraper() {
 	}
 }
 
+func waitForFileToBeDeleted(file string) (err error) {
+	count := 0
+	maxCount := 10
+
+	_, err = os.Stat(file)
+	for err == nil {
+		time.Sleep(1 * time.Second)
+		count += 1;
+		if count == maxCount {
+			return fmt.Errorf("Timed out waiting for %s to be deleted", file)
+		}
+		_, err = os.Stat(file)
+	}
+
+	return nil
+}
+
+
 func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 
 	s.metrics = map[string]float64{}
@@ -692,28 +710,37 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	time.Sleep(10 * time.Second)
 
-	processImage := "quay.io/rhacs-eng/qa:collector-processes-listening-on-ports"
+	var processImage string
+	collectorQaTag := os.Getenv("COLLECTOR_QA_TAG")
+	qaRepo := "quay.io/rhacs-eng/qa"
+	imageTagPrefix := "collector-processes-listening-on-ports"
+	if (collectorQaTag != "") {
+		processImage = qaRepo + ":" + imageTagPrefix + "-" + collectorQaTag
+	} else {
+		processImage = qaRepo + ":" + imageTagPrefix
+	}
+
 	containerID, err := s.launchContainer("process-ports", "-v", "/tmp:/tmp", processImage)
 
 	s.Require().NoError(err)
 	s.serverContainer = containerShortID(containerID)
 
-	_, err = s.collector.executor.Exec("sh", "-c", "rm /tmp/action_file.txt || true")
-	_, err = s.collector.executor.Exec("sh", "-c", "echo open 8081 > /tmp/action_file.txt")
-	time.Sleep(2 * time.Second)
-	_, err = s.collector.executor.Exec("sh", "-c", "rm /tmp/action_file.txt || true")
-	_, err = s.collector.executor.Exec("sh", "-c", "echo open 9091 > /tmp/action_file.txt")
+	actionFile := "/tmp/action_file.txt"
+
+	_, err = s.collector.executor.Exec("sh", "-c", "rm " + actionFile + " || true")
+
+	_, err = s.collector.executor.Exec("sh", "-c", "echo open 8081 > " + actionFile)
+	err = waitForFileToBeDeleted(actionFile)
+	_, err = s.collector.executor.Exec("sh", "-c", "echo open 9091 > " + actionFile)
 
 	time.Sleep(6 * time.Second)
 
-	_, err = s.collector.executor.Exec("sh", "-c", "rm /tmp/action_file.txt || true")
-	_, err = s.collector.executor.Exec("sh", "-c", "echo close 8081 > /tmp/action_file.txt")
-	time.Sleep(2 * time.Second)
-	_, err = s.collector.executor.Exec("sh", "-c", "rm /tmp/action_file.txt || true")
-	_, err = s.collector.executor.Exec("sh", "-c", "echo close 9091 > /tmp/action_file.txt")
+	_, err = s.collector.executor.Exec("sh", "-c", "echo close 8081 > " + actionFile)
+	err = waitForFileToBeDeleted(actionFile)
+	_, err = s.collector.executor.Exec("sh", "-c", "echo close 9091 > " + actionFile)
 
 	time.Sleep(6 * time.Second)
-	_, err = s.collector.executor.Exec("sh", "-c", "rm /tmp/action_file.txt || true")
+	_, err = s.collector.executor.Exec("sh", "-c", "rm " + actionFile + " || true")
 
 	err = s.collector.TearDown()
 	s.Require().NoError(err)
@@ -735,11 +762,15 @@ func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
 	endpoints, err := s.GetEndpoints(s.serverContainer)
 	s.Require().NoError(err)
 	assert.Equal(s.T(), 4, len(endpoints))
+	// Note that the first process is the shell and the second is the process-listening-on-ports program.
+	// All of these asserts check against the processes information of that program.
 	assert.Equal(s.T(), 2, len(processes))
+
+	possiblePorts := []string{"8081", "9091"}
 
 	assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[0].Protocol)
 	assert.Equal(s.T(), "(timestamp: nil Timestamp)", endpoints[0].CloseTimestamp)
-	assert.Equal(s.T(), 8081, endpoints[0].Address.Port)
+	assert.Contains(s.T(), possiblePorts, strconv.Itoa(endpoints[0].Address.Port))
 	// TODO
 	// There is a difference in the lengths of the process name
 	// The process stream truncates to 16 characters while endpoints does not.
@@ -750,24 +781,31 @@ func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
 
 	assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[1].Protocol)
 	assert.Equal(s.T(), "(timestamp: nil Timestamp)", endpoints[1].CloseTimestamp)
-	assert.Equal(s.T(), 9091, endpoints[1].Address.Port)
+	// We can't gaurantee the order in which collector reports the endpoints.
+	// Check that the port of the first endpoint is one of the two that were opened.
+	// Do the same for the second endpoint and make sure that the ports of the two endpoints are different.
+	assert.Contains(s.T(), possiblePorts, strconv.Itoa(endpoints[1].Address.Port))
 	//assert.Equal(s.T(), endpoints[1].Originator.ProcessName, processes[1].Name)
 	assert.Equal(s.T(), endpoints[1].Originator.ProcessExecFilePath, processes[1].ExePath)
 	assert.Equal(s.T(), endpoints[1].Originator.ProcessArgs, processes[1].Args)
 
+	assert.NotEqual(s.T(),  endpoints[0].Address.Port, endpoints[1].Address.Port)
+
 	assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[2].Protocol)
 	assert.NotEqual(s.T(), "(timestamp: nil Timestamp)", endpoints[2].CloseTimestamp)
-	assert.Equal(s.T(), 8081, endpoints[2].Address.Port)
+	assert.Contains(s.T(), possiblePorts, strconv.Itoa(endpoints[2].Address.Port))
 	//assert.Equal(s.T(), endpoints[2].Originator.ProcessName, processes[1].Name)
 	assert.Equal(s.T(), endpoints[2].Originator.ProcessExecFilePath, processes[1].ExePath)
 	assert.Equal(s.T(), endpoints[2].Originator.ProcessArgs, processes[1].Args)
 
 	assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[3].Protocol)
 	assert.NotEqual(s.T(), "(timestamp: nil Timestamp)", endpoints[3].CloseTimestamp)
-	assert.Equal(s.T(), 9091, endpoints[3].Address.Port)
+	assert.Contains(s.T(), possiblePorts, strconv.Itoa(endpoints[3].Address.Port))
 	//assert.Equal(s.T(), endpoints[3].Originator.ProcessName, processes[1].Name)
 	assert.Equal(s.T(), endpoints[3].Originator.ProcessExecFilePath, processes[1].ExePath)
 	assert.Equal(s.T(), endpoints[3].Originator.ProcessArgs, processes[1].Args)
+
+	assert.NotEqual(s.T(),  endpoints[2].Address.Port, endpoints[3].Address.Port)
 }
 
 func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, error) {
