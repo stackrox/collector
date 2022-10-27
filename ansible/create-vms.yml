@@ -10,16 +10,11 @@
       include_role:
         name: create-vm
       vars:
-        vm:
-          name: "{{ gcp_instance_prefix }}-{{ item.1 }}-{{ job_id }}"
-          project: "{{ item.0.project }}"
-          family: "{{ item.1 }}"
-          labels:
-            # labels can be used to pass useful information to the dynamic
-            # inventory (which is populated after the VMs are created)
-            job_id: "{{ job_id }}"
-            platform: "{{ item.0.name }}"
-            vm_config: "{{ item.0.name }}_{{ item.1 }}"
+        vm_name: "{{ gcp_instance_prefix }}-{{ item.1 }}-{{ job_id }}"
+        vm_project: "{{ item.0.project }}"
+        vm_family: "{{ item.1 }}"
+        vm_platform: "{{ item.0.name }}"
+        vm_config: "{{ item.0.name }}_{{ item.1 }}"
 
       #
       # The loop will create the "item" variable, which can be used throughout the task
@@ -45,16 +40,11 @@
       include_role:
         name: create-vm
       vars:
-        vm:
-          name: "{{ gcp_instance_prefix }}-{{ item.0.name }}-{{ job_id }}"
-          project: "{{ item.0.project }}"
-          image: "{{ item.1 }}"
-          labels:
-            # labels can be used to pass useful information to the dynamic
-            # inventory (which is populated after the VMs are created)
-            job_id: "{{ job_id }}"
-            platform: "{{ item.0.name }}"
-            vm_config: "{{ item.0.name }}_{{ item.0.name }}"
+        vm_name: "{{ gcp_instance_prefix }}-{{ item.0.name }}-{{ job_id }}"
+        vm_project: "{{ item.0.project }}"
+        vm_image: "{{ item.1 }}"
+        vm_platform: "{{ item.0.name }}"
+        vm_config: "{{ item.0.name }}_{{ item.0.name }}"
 
       #
       # The loop will create the "item" variable, which can be used throughout the task

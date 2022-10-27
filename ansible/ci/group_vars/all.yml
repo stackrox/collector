@@ -7,3 +7,6 @@ gcp_zone: "us-central1-a"
 gcp_instance_prefix: collector-ci
 ansible_user: circleci
 
+gcp_default_labels:
+  stackrox-ci: "true"
+

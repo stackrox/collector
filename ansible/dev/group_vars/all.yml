@@ -6,3 +6,7 @@ gcp_service_account_file: null
 gcp_zone: "us-central1-a"
 gcp_instance_prefix: collector-dev
 ansible_user: "{{ lookup('env', 'USER') }}"
+
+gcp_default_labels:
+  stackrox-ci: "false"
+
