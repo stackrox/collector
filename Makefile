@@ -88,10 +88,6 @@ image-dev-full: image-dev build-drivers
 		--build-arg max_layer_depth=1 \
 		$(CURDIR)/kernel-modules/container
 
-.PHONY: integration-tests
-integration-tests:
-	make -C integration-tests tests
-
 .PHONY: integration-tests-benchmark
 integration-tests-benchmark:
 	make -C integration-tests benchmark ||\
