@@ -44,7 +44,7 @@
 5.14.0-1-amd64
 5.14.0-1-cloud-amd64
 # TODO(ROX-??)
-*-minikube * mod
+*-minikube-* * mod
 # TODO(ROX-??) - Failures after migrating to falco
 4.19.0-17-amd64
 4.19.0-17-cloud-amd64
