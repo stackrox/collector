@@ -19,7 +19,7 @@
   register: which_python
 
 - set_fact:
-    python_exists: "{{ which_python.stdout.find('no python') == -1 | bool}}"
+    python_exists: "{{ which_python.stdout.find('no python') == -1 }}"
 
 - name: Install python3
   raw: rpm-ostree install python3
@@ -34,3 +34,9 @@
   args:
     executable: /usr/bin/bash
   when: not python_exists
+
+- name: Wait for reboot to complete
+  wait_for_connection:
+    delay: 10
+    sleep: 10
+    timeout: 60
