@@ -124,6 +124,11 @@ integration-tests-procfsscaper:
 	make -C integration-tests procfsscraper ||\
 		( .openshift-ci/slack/notify-if-needed.sh "procfsscaper" $$? )
 
+.PHONY: integration-tests-process-listening-on-port
+integration-tests-process-listening-on-port:
+	make -C integration-tests process-listening-on-port ||\
+		( .openshift-ci/slack/notify-if-needed.sh "process-listening-on-port" $$? )
+
 .PHONY: integration-tests-report
 integration-tests-report:
 	make -C integration-tests report
@@ -134,6 +139,7 @@ ci-integration-tests: integration-tests-repeat-network \
 					  integration-tests-missing-proc-scrape \
 					  integration-tests-image-label-json \
 					  integration-tests-procfsscaper \
+					  integration-tests-process-listening-on-port \
 					  integration-tests-report
 
 .PHONY: ci-benchmarks

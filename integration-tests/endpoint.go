@@ -7,7 +7,7 @@ import (
 
 type EndpointInfo struct {
 	Protocol string
-	ListenAddress string
+	Address *ListenAddress
 	CloseTimestamp string
 	Originator *ProcessOriginator
 }
@@ -25,9 +25,15 @@ func NewEndpointInfo(line string) (*EndpointInfo, error) {
 		return nil, err
 	}
 
+	listenAddress, err := NewListenAddress(parts[2])
+
+	if err != nil {
+		return nil, err
+	}
+
 	return &EndpointInfo {
 		Protocol: parts[1],
-		ListenAddress: parts[2],
+		Address: listenAddress,
 		CloseTimestamp: parts[3],
 		Originator: originator,
 	}, nil
