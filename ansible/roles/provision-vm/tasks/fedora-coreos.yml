@@ -34,6 +34,7 @@
   args:
     executable: /usr/bin/bash
   when: not python_exists
+  ignore_unreachable: true
 
 - name: Wait for reboot to complete
   wait_for_connection:
