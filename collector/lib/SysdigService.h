@@ -93,7 +93,7 @@ class SysdigService : public Sysdig, public ProcessStore::ISource {
 
   void AddSignalHandler(std::unique_ptr<SignalHandler> signal_handler);
 
-  mutable std::mutex sysdig_mutex_;
+  mutable std::mutex libsinsp_mutex_;
   std::unique_ptr<sinsp> inspector_;
   std::unique_ptr<sinsp_chisel> chisel_;
   std::vector<SignalHandlerEntry> signal_handlers_;
