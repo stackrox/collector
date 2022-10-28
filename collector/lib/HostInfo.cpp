@@ -311,9 +311,17 @@ std::string HostInfo::GetMinikubeVersion() {
   }
 
   std::string version;
+  std::regex version_re(R"(v\d+\.\d+\.\d+)");
+  std::smatch match;
+
   std::getline(version_file, version);
 
-  return version;
+  if (!std::regex_search(version, match, version_re)) {
+    CLOG(WARNING) << "Failed to match minikube version: " << version;
+    return "";
+  }
+
+  return match.str();
 }
 
 }  // namespace collector
