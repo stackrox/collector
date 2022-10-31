@@ -303,7 +303,8 @@ SecureBootStatus HostInfo::GetSecureBootStatus() {
 
 // Minikube keeps its version under /etc/VERSION
 std::string HostInfo::GetMinikubeVersion() {
-  std::ifstream version_file("/host/etc/VERSION");
+  std::string version_path = GetHostPath("/etc/VERSION");
+  std::ifstream version_file(version_path);
 
   if (!version_file.is_open()) {
     CLOG(WARNING) << "Failed to acquire minikube version";
