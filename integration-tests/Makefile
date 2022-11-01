@@ -16,7 +16,7 @@ export COLLECTOR_IMAGE
 
 .PHONY: ci-integration-tests
 ci-integration-tests: process-network image-label-json 
-ci-integration-tests: repeat-network missing-proc-scrape connscraper
+ci-integration-tests: repeat-network missing-proc-scrape procfsscraper
 ci-integration-tests: process-listening-on-port
 
 .PHONY: docker-clean
