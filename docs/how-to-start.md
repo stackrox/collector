@@ -145,7 +145,23 @@ Even though development containers is a supported feature of `Docker for Desktop
 
 Git hooks are configured in the `.pre-commit-config.yaml` file using [pre-commit](https://pre-commit.com)
 In order to use them install pre-commit, and run `git config core.hooksPath ./githooks/` from the collector root directory.
+
 ## Run in Minikube
+### Build the collector image
+Minikube comes with a pre-bundled docker engine that can be used to directly build the collector image and make it available to the cluster.
+If you are using the hyperkit driver, some amount of tinkering will be required for the collector repository to be shared with the underlying
+VM and it to be usable for building the image. You can use `nfs` to mount the repository, then use a symlink to adjust absolute paths:
+```sh
+$ minikube start --nfs-share='/path/to/collector'
+$ minikube ssh
+$ sudo ln -s /nfsshare/path/to/collector /path/to/collector
+```
+
+Then you can configure your host to use the bundled docker and build the image with the following commands:
+```sh
+$ eval $(minikube -p minikube docker-env)
+$ make image
+```
 
 ## Debugging
 
