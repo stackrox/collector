@@ -1,0 +1,31 @@
+---
+
+plugin: gcp_compute
+projects:
+  - stackrox-ci
+filters:
+  - name = collector-ci-*
+keyed_groups:
+  # This will group the VMs by their labels, which means that on
+  # creation, we can use a unique identifier to group VMs 
+  # based on Job ID, to avoid running on all CI VMs or on 
+  # specific platforms (for the provisioning playbooks)
+  - prefix: job_id
+    key: labels.job_id
+
+  - prefix: platform
+    key: labels.platform
+auth_kind: serviceaccount
+service_account_file: /tmp/secret/stackrox-collector-e2e-tests/GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT
+hostnames:
+  - name
+compose:
+  # The ansible_* variables are defaults, so we override them here to make sure
+  # SSH works correctly throughout the playbooks
+
+  # use the public IP as the ansible host for SSH
+  ansible_host: networkInterfaces[0].accessConfigs[0].natIP
+  ansible_port: 22
+
+  # This is useful for VM identification later on
+  vm_config: labels.vm_config

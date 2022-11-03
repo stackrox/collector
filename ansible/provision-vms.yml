@@ -1,0 +1,16 @@
+---
+#
+# This will run for every VM in the dynamic inventory (for this job)
+# and provision necessary tools, including docker. See the provision-vm
+# role for details of platform-specific provisioning.
+#
+
+- name: Provision VMs
+  vars_files:
+    - vars/all.yml
+  hosts: "job_id_{{ job_id }}"
+  gather_facts: no
+  strategy: free
+  become: yes
+  roles:
+    - provision-vm

@@ -1,0 +1,33 @@
+---
+#
+# This will run the steps for integration testing, for a given collection method.
+# and handles creating the report and writing necessary log files.
+#
+# Args:
+#   collection_method: ebpf or kernel-module
+#
+
+- set_fact:
+    logs_root: "{{ collector_root }}/integration-tests/container-logs/{{ vm_config }}/{{ collection_method }}"
+
+- name: Cleanup old containers
+  shell: "docker rm -f $(docker ps -aq) >/dev/null 2>&1 || true"
+
+- name: Run integration tests
+  shell: "make -C {{ collector_root }}/integration-tests {{ collector_test | default('ci-integration-tests') }}"
+  environment:
+    COLLECTION_METHOD: "{{ collection_method }}"
+  register: test_result
+  delegate_to: localhost
+
+- name: Write integration test log
+  copy:
+    content: "{{ test_result.stdout }}"
+    dest: "{{ logs_root }}/integration-test.log"
+  delegate_to: localhost
+
+- name: Report
+  shell: "make -C {{ collector_root }}/integration-tests report"
+  environment:
+    LOG_FILE: "{{ logs_root }}/integration-test.log"
+  delegate_to: localhost

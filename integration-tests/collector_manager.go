@@ -18,6 +18,7 @@ type collectorManager struct {
 	Mounts            map[string]string
 	Env               map[string]string
 	DBPath            string
+	DBPathRemote      string
 	CollectorOutput   string
 	CollectorImage    string
 	GRPCServerImage   string
@@ -25,6 +26,7 @@ type collectorManager struct {
 	BootstrapOnly     bool
 	TestName          string
 	CoreDumpFile      string
+	VmConfig          string
 }
 
 func NewCollectorManager(e Executor, name string) *collectorManager {
@@ -37,11 +39,11 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 	offlineMode := ReadBoolEnvVar("COLLECTOR_OFFLINE_MODE")
 
 	env := map[string]string{
-		"GRPC_SERVER":                      "localhost:9999",
-		"COLLECTOR_CONFIG":                 `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}`,
-		"COLLECTION_METHOD":                collectionMethod,
-		"COLLECTOR_PRE_ARGUMENTS":          collectorPreArguments,
-		"ENABLE_CORE_DUMP":                 "false",
+		"GRPC_SERVER":             "localhost:9999",
+		"COLLECTOR_CONFIG":        `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}`,
+		"COLLECTION_METHOD":       collectionMethod,
+		"COLLECTOR_PRE_ARGUMENTS": collectorPreArguments,
+		"ENABLE_CORE_DUMP":        "false",
 	}
 	if !offlineMode {
 		env["MODULE_DOWNLOAD_BASE_URL"] = "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"
@@ -53,16 +55,18 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 		"/host/usr/lib:ro":             "/usr/lib/",
 		"/host/sys:ro":                 "/sys/",
 		"/host/dev:ro":                 "/dev",
-		"/tmp":				"/tmp",
+		"/tmp":                         "/tmp",
 		// /module is an anonymous volume to reflect the way collector
 		// is usually run in kubernetes (with in-memory volume for /module)
 		"/module": "",
 	}
 
 	collectorImage := ReadEnvVar("COLLECTOR_IMAGE")
+	vm_config := ReadEnvVar("VM_CONFIG")
 
 	return &collectorManager{
-		DBPath:            "/tmp/collector-test.db",
+		DBPathRemote:      "/tmp/collector-test.db",
+		DBPath:            "/tmp/collector-test-" + vm_config + ".db",
 		executor:          e,
 		DisableGrpcServer: false,
 		BootstrapOnly:     false,
@@ -72,6 +76,7 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 		Mounts:            mounts,
 		TestName:          name,
 		CoreDumpFile:      "/tmp/core.out",
+		VmConfig:          vm_config,
 	}
 }
 
@@ -131,7 +136,7 @@ func (c *collectorManager) TearDown() error {
 	}
 	if !c.DisableGrpcServer {
 		c.captureLogs("grpc-server")
-		if _, err := c.executor.CopyFromHost(c.DBPath, c.DBPath); err != nil {
+		if _, err := c.executor.CopyFromHost(c.DBPathRemote, c.DBPath); err != nil {
 			return err
 		}
 		c.killContainer("grpc-server")
@@ -226,7 +231,7 @@ func (c *collectorManager) captureLogs(containerName string) (string, error) {
 		fmt.Printf("docker logs error (%v) for container %s\n", err, containerName)
 		return "", err
 	}
-	logDirectory := filepath.Join(".", "container-logs")
+	logDirectory := filepath.Join(".", "container-logs", c.VmConfig, c.Env["COLLECTION_METHOD"])
 	os.MkdirAll(logDirectory, os.ModePerm)
 	logFile := filepath.Join(logDirectory, strings.ReplaceAll(c.TestName, "/", "_")+"-"+containerName+".log")
 	err = ioutil.WriteFile(logFile, []byte(logs), 0644)

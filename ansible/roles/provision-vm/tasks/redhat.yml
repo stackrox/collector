@@ -1,0 +1,20 @@
+---
+- name: Set distro
+  set_fact:
+    distro: "centos"
+
+- name: Add repository
+  shell: |
+    yum install -y yum-utils device-mapper-persistent-data lvm2
+    yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+    yum-config-manager --setopt="docker-ce-stable.baseurl=https://download.docker.com/linux/centos/\$releasever/\$basearch/stable" --save
+
+- name: Install docker
+  yum:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+    state: latest
+    update_cache: true
+

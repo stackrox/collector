@@ -1,0 +1,37 @@
+---
+- name: Run integration tests
+  vars_files:
+    - vars/all.yml
+  # using platform_*:&job_id here ensures that ansible imports
+  # group_vars/platform_*.yml for the relevant platform, e.g.
+  # flatcar where we need to use a custom python interpreter.
+  hosts: "platform_*:&job_id_{{ job_id }}"
+  strategy: free
+  environment:
+    REMOTE_HOST_TYPE: ssh
+    SSH_ADDRESS: "{{ ansible_host }}"
+    SSH_PORT: "{{ ansible_port }}"
+    SSH_USER: "{{ ansible_user }}"
+    SSH_KEY_PATH: "{{ ansible_ssh_private_key_file }}"
+    VM_CONFIG: "{{ vm_config }}"
+
+  tasks:
+    - name: Log into quay.io
+      shell:
+        cmd: "docker login -u {{ quay_username }} --password-stdin quay.io"
+        stdin: "{{ quay_password }}"
+
+    #
+    # Separation of collection method is only possible with a separate
+    # task file, because we need to loop over a set of tasks to ensure
+    # the VM is in a consistent state between runs, and so we can
+    # store the log files appropriately for each collection method
+    #
+    - name: Run Integration Tests
+      include_tasks: tasks/test-collection-method.yml
+      vars:
+        collection_method: "{{ item }}"
+      with_items:
+        - ebpf
+        - kernel_module
+

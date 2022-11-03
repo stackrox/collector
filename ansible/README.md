@@ -1,0 +1,173 @@
+# Collector Ansible Tools
+
+The files contained within this directory are [ansible](https://www.ansible.com/resources/get-started)
+roles and playbooks written to simplify VM life-cycle control, and execution of testing, both
+during development and on CI systems[^1].
+
+## Prerequisites
+
+In order to run these playbooks you must have a python version >=3.9.
+To install ansible and the necessary dependencies, simply run:
+
+```
+$ pip3 install -r requirements.txt
+```
+
+On a Mac, the default python3 is 3.7, so use brew to install the latest ansible:
+
+```
+$ brew install ansible
+$ pip3 install -r requirements.txt
+```
+
+## Overview
+
+The top-level yaml files define playbooks to perform various actions, and can 
+be run either directly with `ansible-playbook` or through the Makefile targets.
+
+For example, to create and provision RHEL VMs for testing:
+
+```bash
+$ VM_TYPE=rhel ansible-playbook -i dev create-vms.yml
+
+# note you only need to specify VM_TYPE when creating VMs
+$ ansible-playbook -i dev provision-vms.yml
+```
+
+Alternatively you can use the `integration-tests.yml` playbook to run only 
+the creation and provisioning steps using their tags:
+
+```bash
+$ VM_TYPE=rhel ansible-playbook -i dev --tags setup,provision integration-tests.yml
+```
+
+If you simply wish to run everything:
+
+```bash
+$ VM_TYPE=rhel ansible-playbook -i dev --tags all integration-tests.yml
+```
+
+## VMs
+
+Within `vars/all.yml` there exists configuration for a variety of VM types,
+summarized below:
+
+| Type          | Families       |
+| ------------- | -------------- |
+| rhel          | rhel-7 <br> rhel-8 | 
+| rhel-sap      | rhel-8-4-sap-ha <br> rhel-8-6-sap-ha |
+| cos           | cos-stable <br> cos-beta <br> cos-dev <br> cos-89-lts |
+| sles          | sles-12 <br> sles-15 |
+| ubuntu-os     | ubuntu-1804-lts <br> ubuntu-2004-lts <br> ubuntu-2204-lts |
+| ubuntu-os-pro | ubuntu-pro-1804-lts |
+| fedora-coreos | fedora-coreos-stable |
+| flatcar       | flatcar-stable |
+| garden-linux  | n/a (built from a specific image, see `group_vars/all.yml` for details) |
+
+By specifying `VM_TYPE=<type>` the playbooks will create a VM for every family
+listed above. The name of the VMs is defined by the inventory-specific prefix,
+the VM family, and the unique ID (which defaults to the current username).
+
+```
+<inventory prefix>-<family>-<id>
+
+# e.g.
+
+# A rhel-7 dev VM
+collector-dev-rhel-7-12345
+
+# A flatcar-stable CI VM
+collector-ci-flatcar-stable-12345
+```
+
+## Inventory
+
+The inventory is [dynamic](https://docs.ansible.com/ansible/latest/user_guide/intro_dynamic_inventory.html)
+which means that the hosts and groups are all derived from GCP. The `ci/` and `dev/`
+subdirectories are [inventory directories](https://docs.ansible.com/ansible/latest/user_guide/intro_dynamic_inventory.html#using-inventory-directories-and-multiple-inventory-sources)
+and search the relevant GCP project for VMs that match the unique identifier. They are then grouped
+based on that identifier as well as their platform.
+
+The two groups are `job_id_<unique id>` and `platform_<vm type>` 
+
+These groups are used to run against only the VMs that have been created by the
+same user or CI job.
+
+## Environment Variables
+
+The following environment variables may be used to modify some behavior:
+
+| Variable | Description | Default |
+| -------- | ----------- | ------- |
+| GCP_SSH_KEY_FILE | The location of the private key file to use with GCP | ~/.ssh/google_compute_engine |
+| JOB_ID | A unique identifier to de-conflict VM names | the current user's username |
+| COLLECTOR_TEST | Which integration test make target to run. (e.g. integration-test-process-network) | ci-integration-tests |
+| VM_TYPE | Which kind of VMs to create on GCP (as listed above.) By default, will only build rhel VMs. Use 'all' to build an inventory containing every kind of VM. | rhel |
+
+Note: other environment variables that may affect the operation of the integration tests
+can be used to modify behavior. See [the integration tests README](../integration-tests/README.md) for details.
+
+## Secrets & Creds
+
+The make targets expect some secrets to exist within a secrets.yml file in the
+root of this directory structure. It should contain key/value pairs of variable
+names and credentials to be used in the playbooks. Currently, the only required
+credentials are quay_username and quay_password, which are created by make
+from the environment variables `QUAY_RHACS_ENG_RO_USERNAME` and `QUAY_RHACS_ENG_RO_PASSWORD`
+to match CI variables.
+
+To create your own, for dev the format should be:
+
+```yaml
+---
+quay_username: "<quay username>"
+quay_password: "<quay_password>"
+```
+
+You can also encrypt this file using ansible-vault, should you wish to password
+protect it, though you will need to input the password every time it is used.
+
+```bash
+$ ansible-vault encrypt secrets.yml
+```
+
+## Available Roles
+
+### create-vm
+
+This role allows a playbook to create a VM on GCP. It is expected to run on 
+a host that has the GCP SDK available (which is normally localhost)
+
+See [create-vms.yml](./create-vms.yml) for an example of how it's used.
+
+### provision-vm
+
+This role will setup a VM with docker and get it ready for testing. It includes
+platform-specific logic, as well as bootstrapping of python/ansible on Flatcar, which
+does not have python installed by default.
+
+See [provision-vms.yml](./provision-vms.yml) for an example of how it's used.
+
+### destroy-vm
+
+This role will delete a VM from GCP, based on its instance name.
+
+See [teardown-vms.yml](./teardown-vms.yml) for an example of how it's used.
+
+## Layout
+
+The structure of subdirectories and files largely conform to a common [ansible
+directory format](https://docs.ansible.com/ansible/2.8/user_guide/playbooks_best_practices.html#content-organization).
+
+| Directory  | Purpose                                            |
+| ---------  | -------------------------------------------------- |
+| roles      | Common sets of tasks that can be used by playbooks |
+| group_vars | Variables for specific groups (or all groups), the filename is the group name. e.g. platform_flatcar.yml affects the platform_flatcar group |
+| ci, dev    | These are [inventory directories](https://docs.ansible.com/ansible/latest/user_guide/intro_dynamic_inventory.html#using-inventory-directories-and-multiple-inventory-sources) that contain different variables based on where the playbooks are running. |
+| vars       | Contains yaml files that can be imported into playbooks (via `import_vars`) |
+| tasks      | Yaml files that contain task lists |
+| .          | The root of this directory is where playbooks should exist |
+
+
+[^1]: there should be no CI related functionality within this directory
+      outside the `ci/` inventory.

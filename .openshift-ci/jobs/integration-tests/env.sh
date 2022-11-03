@@ -16,17 +16,8 @@ export JOB_ID="${PROW_JOB_ID:0:8}"
 # Most of these are used by the integration tests themselves as well
 # as to create and configure the GCP VMs
 export GCP_SSH_KEY_FILE="$HOME/.ssh/GCP_SSH_KEY"
-export GCLOUD_INSTANCE="collector-osci-${COLLECTION_METHOD}-${IMAGE_FAMILY}-${JOB_ID}"
-export GCLOUD_OPTIONS="--ssh-key-file=${GCP_SSH_KEY_FILE}"
-export REMOTE_HOST_TYPE=gcloud
-export VM_CONFIG="${VM_TYPE}.${IMAGE_FAMILY}"
+export GCP_PROJECT="stackrox-ci"
 export COLLECTOR_REPO="quay.io/rhacs-eng/collector"
-
-# TODO: make change ci user on GCP vms
-export GCLOUD_USER="circleci"
-if [[ "$VM_TYPE" == "flatcar" || "$VM_TYPE" =~ "coreos" ]]; then
-    GCLOUD_USER="core"
-fi
 
 IMAGE_TAG="$(make tag)"
 
@@ -41,8 +32,13 @@ fi
 
 import_creds
 
-if pr_has_label "skip-integration-tests"; then
-    echo "Skipping integration tests for ${VM_CONFIG}"
+mkdir -p "$(dirname "${GCP_SSH_KEY_FILE}")"
+chmod 0700 "$(dirname "${GCP_SSH_KEY_FILE}")"
+copy_secret_to_file GCP_SSH_KEY "${GCP_SSH_KEY_FILE}" 0600
+copy_secret_to_file GCP_SSH_KEY_PUB "${GCP_SSH_KEY_FILE}.pub" 0600
+
+if pr_has_label "skip-integration-tests" || pr_has_label "skip-${VM_TYPE}-integration-tests"; then
+    echo "Skipping integration tests for ${VM_TYPE}"
     exit 0
 fi
 
@@ -50,8 +46,8 @@ fi
 # label is added. This is checked in this common env script because it allows
 # us to skip pre- and post- steps as well (which source this file)
 if is_in_PR_context && ! pr_has_label "all-integration-tests"; then
-    if [[ ! "$IMAGE_FAMILY" =~ (rhel-(7|8)|ubuntu-) ]]; then
-        echo "Not running integration tests for ${VM_CONFIG}"
+    if [[ ! "$VM_TYPE" =~ (rhel|ubuntu) ]]; then
+        echo "Not running integration tests for ${VM_TYPE}"
         exit 0
     fi
 fi

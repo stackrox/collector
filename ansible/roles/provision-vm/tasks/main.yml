@@ -1,0 +1,63 @@
+---
+
+#
+# Provisioning takes place once the VM is created. We need to handle a number
+# of platforms here, and the ordering of this logic is quite important
+# for the Container OS platforms like flatcar and fedora-coreos.
+#
+# For those platforms, Python does not exist (which is a requirement for 
+# ansible) so it is installed first, before the rest of the provisioning
+# continues.
+#
+
+# set facts for weird platforms that report different families
+- set_fact:
+    is_coreos: "{{ vm_config.find('coreos') != -1 }}"
+    is_garden: "{{ vm_config == 'garden-linux_garden-linux' }}"
+    is_flatcar: "{{ vm_config.find('flatcar') != -1 }}"
+
+# Wait for SSH to be available on the remote host
+# This is agnostic of whether or not ansible is available at that end.
+- wait_for:
+    port: 22
+    host: "{{ ansible_host }}"
+    timeout: 180
+  delegate_to: localhost
+  become: no
+
+- include_tasks: "fedora-coreos.yml"
+  when: is_coreos|bool
+
+- include_tasks: "flatcar.yml"
+  when: is_flatcar|bool
+
+# At this point, ansible should be able to run on the remote host
+
+- wait_for_connection:
+    timeout: 180
+
+- name: Gather facts
+  setup:
+
+- name: RedHat Provisioning
+  include_tasks: "redhat.yml"
+  when: ansible_facts['os_family'] == 'RedHat' and not is_coreos|bool
+
+- name: Ubuntu Provisioning
+  include_tasks: "ubuntu.yml"
+  when: ansible_facts['os_family'] in ('Ubuntu', 'Debian') and not is_garden|bool
+
+# Common logic after this point must be able to run on all platforms.
+
+- name: Start docker service
+  service:
+    name: "docker"
+    enabled: true
+    state: started
+
+- name: Add user to docker group
+  user:
+    name: "{{ ansible_user }}"
+    groups: docker
+    append: yes
+

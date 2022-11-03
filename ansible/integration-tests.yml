@@ -1,0 +1,14 @@
+---
+
+- import_playbook: create-vms.yml
+  tags:
+    - setup
+- import_playbook: provision-vms.yml
+  tags:
+    - provision
+- import_playbook: run-integration-tests.yml
+  tags:
+    - run-tests
+- import_playbook: teardown-vms.yml
+  tags:
+    - teardown
