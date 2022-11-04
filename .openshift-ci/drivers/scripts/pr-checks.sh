@@ -8,9 +8,6 @@ source /scripts/lib.sh
 # This scripts checks and sets a number of varibales needed to patch driver
 # files and split tasks needed to build them
 
-export BRANCH
-BRANCH="$(get_branch)"
-
 export LEGACY_PROBES
 export NO_CACHE
 
