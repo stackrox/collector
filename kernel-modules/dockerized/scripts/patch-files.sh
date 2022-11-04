@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -exuo pipefail
 
 WORK_BRANCH="${1:-master}"
 BUILD_LEGACY="${2:-false}"
@@ -67,6 +67,8 @@ if [[ "${CHECKOUT_BEFORE_PATCHING,,}" == "true" ]]; then
     # Prepare the sources for the work branch
     checkout_branch "$WORK_BRANCH"
 fi
+
+git status
 
 DRIVER_DIR="/collector/$(get_driver_relative_path)" \
 SCRATCH_DIR="/scratch" \
