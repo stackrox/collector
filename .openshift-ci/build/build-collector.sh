@@ -9,7 +9,7 @@ source "${CI_ROOT}/scripts/lib.sh"
 export DISABLE_PROFILING="true"
 export CMAKE_BUILD_DIR="$SRC_ROOT_DIR/cmake-build"
 
-if ! is_in_PR_context; then
+if is_in_PR_context; then
     export COLLECTOR_APPEND_CID=true
 fi
 
