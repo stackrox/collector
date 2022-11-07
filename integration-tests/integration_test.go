@@ -670,25 +670,26 @@ func (s *ProcfsScraperTestSuite) TestProcfsScraper() {
 			assert.Equal(s.T(), endpoints[1].Originator.ProcessExecFilePath, processes[0].ExePath)
 			assert.Equal(s.T(), endpoints[1].Originator.ProcessArgs, processes[0].Args)
 		} else {
-			// If scraping is off or the feature flag is disabled 
+			// If scraping is off or the feature flag is disabled
 			// we expect not to find the nginx endpoint and we should get an error
 			s.Require().Error(err)
 		}
 	}
 }
 
-func waitForFileToBeDeleted(file string) (err error) {
+func (s *ProcessListeningOnPortTestSuite) waitForFileToBeDeleted(file string) error {
 	count := 0
 	maxCount := 10
 
-	_, err = os.Stat(file)
-	for err == nil {
+	output, _ := s.executor.Exec("stat", file, "2>&1")
+	fmt.Println(output)
+	for !strings.Contains(output, "No such file or directory") {
 		time.Sleep(1 * time.Second)
-		count += 1;
+		count += 1
 		if count == maxCount {
 			return fmt.Errorf("Timed out waiting for %s to be deleted", file)
 		}
-		_, err = os.Stat(file)
+		output, _ = s.executor.Exec("stat", file, "2>&1")
 	}
 
 	return nil
@@ -709,17 +710,9 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 
 	err = s.collector.Launch()
 	s.Require().NoError(err)
-	time.Sleep(10 * time.Second)
+	time.Sleep(30 * time.Second)
 
-	var processImage string
-	collectorQaTag := os.Getenv("COLLECTOR_QA_TAG")
-	qaRepo := "quay.io/rhacs-eng/qa"
-	imageTagPrefix := "collector-processes-listening-on-ports"
-	if (collectorQaTag != "") {
-		processImage = qaRepo + ":" + imageTagPrefix + "-" + collectorQaTag
-	} else {
-		processImage = qaRepo + ":" + imageTagPrefix
-	}
+	processImage := qaImage("quay.io/rhacs-eng/qa", "collector-processes-listening-on-ports")
 
 	containerID, err := s.launchContainer("process-ports", "-v", "/tmp:/tmp", processImage)
 
@@ -731,18 +724,23 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 	_, err = s.collector.executor.Exec("sh", "-c", "rm "+actionFile+" || true")
 
 	_, err = s.collector.executor.Exec("sh", "-c", "echo open 8081 > "+actionFile)
-	err = waitForFileToBeDeleted(actionFile)
+	err = s.waitForFileToBeDeleted(actionFile)
+	s.Require().NoError(err)
 	_, err = s.collector.executor.Exec("sh", "-c", "echo open 9091 > "+actionFile)
+	err = s.waitForFileToBeDeleted(actionFile)
+	s.Require().NoError(err)
 
 	time.Sleep(6 * time.Second)
 
 	_, err = s.collector.executor.Exec("sh", "-c", "echo close 8081 > "+actionFile)
-	err = waitForFileToBeDeleted(actionFile)
+	err = s.waitForFileToBeDeleted(actionFile)
+	s.Require().NoError(err)
 	_, err = s.collector.executor.Exec("sh", "-c", "echo close 9091 > "+actionFile)
-	err = waitForFileToBeDeleted(actionFile)
+	err = s.waitForFileToBeDeleted(actionFile)
+	s.Require().NoError(err)
 
-	time.Sleep(30 * time.Second)
-	_, err = s.collector.executor.Exec("sh", "-c", "rm "+actionFile+" || true")
+	// time.Sleep(30 * time.Second)
+	// _, err = s.collector.executor.Exec("sh", "-c", "rm "+actionFile+" || true")
 
 	err = s.collector.TearDown()
 	s.Require().NoError(err)
@@ -819,7 +817,9 @@ func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
 	//
 	// It is also agnostic to the order in which the events are reported.
 	hasOpenAndClose := func(infos []EndpointInfo) bool {
-		assert.Len(s.T(), infos, 2)
+		if !assert.Len(s.T(), infos, 2) {
+			return false
+		}
 		return infos[0].CloseTimestamp != infos[1].CloseTimestamp &&
 			(infos[0].CloseTimestamp == nilTimestamp || infos[1].CloseTimestamp == nilTimestamp)
 	}
