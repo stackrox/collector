@@ -79,7 +79,7 @@ TEST(HostHeuristicsTest, TestSecureBootEnabled) {
 }
 
 // The SecureBoot feature is undetermined and could be enabled, triggering
-// switch to ebpf
+// switch to ebpf, unless we're on non-x86 architectures (Power/Z currently)
 TEST(HostHeuristicsTest, TestSecureBootNotDetermined) {
   MockSecureBootHeuristics secureBootHeuristics;
   MockHostInfoHeuristics host;
@@ -96,7 +96,13 @@ TEST(HostHeuristicsTest, TestSecureBootNotDetermined) {
 
   secureBootHeuristics.Process(host, config, &hconfig);
 
+#ifdef __x86_64__
   EXPECT_EQ(hconfig.CollectionMethod(), "ebpf");
+#else
+  // for non-x86 architectures we don't modify the collection method
+  // if secure boot not determined.
+  EXPECT_EQ(hconfig.CollectionMethod(), "kernel-module");
+#endif
 }
 
 // The SecureBoot feature is enabled, but the collector forced to use
