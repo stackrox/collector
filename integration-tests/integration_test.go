@@ -35,6 +35,8 @@ const (
 	// 10 seconds is the default for docker stop when not providing a timeout
 	// argument. It is kept the same here to avoid changing behavior by default.
 	defaultStopTimeoutSeconds = "10"
+
+	nilTimestamp = "(timestamp: nil Timestamp)"
 )
 
 func TestProcessNetwork(t *testing.T) {
@@ -692,7 +694,6 @@ func waitForFileToBeDeleted(file string) (err error) {
 	return nil
 }
 
-
 func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 
 	s.metrics = map[string]float64{}
@@ -727,20 +728,21 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 
 	actionFile := "/tmp/action_file.txt"
 
-	_, err = s.collector.executor.Exec("sh", "-c", "rm " + actionFile + " || true")
+	_, err = s.collector.executor.Exec("sh", "-c", "rm "+actionFile+" || true")
 
-	_, err = s.collector.executor.Exec("sh", "-c", "echo open 8081 > " + actionFile)
+	_, err = s.collector.executor.Exec("sh", "-c", "echo open 8081 > "+actionFile)
 	err = waitForFileToBeDeleted(actionFile)
-	_, err = s.collector.executor.Exec("sh", "-c", "echo open 9091 > " + actionFile)
+	_, err = s.collector.executor.Exec("sh", "-c", "echo open 9091 > "+actionFile)
 
 	time.Sleep(6 * time.Second)
 
-	_, err = s.collector.executor.Exec("sh", "-c", "echo close 8081 > " + actionFile)
+	_, err = s.collector.executor.Exec("sh", "-c", "echo close 8081 > "+actionFile)
 	err = waitForFileToBeDeleted(actionFile)
-	_, err = s.collector.executor.Exec("sh", "-c", "echo close 9091 > " + actionFile)
+	_, err = s.collector.executor.Exec("sh", "-c", "echo close 9091 > "+actionFile)
+	err = waitForFileToBeDeleted(actionFile)
 
-	time.Sleep(6 * time.Second)
-	_, err = s.collector.executor.Exec("sh", "-c", "rm " + actionFile + " || true")
+	time.Sleep(30 * time.Second)
+	_, err = s.collector.executor.Exec("sh", "-c", "rm "+actionFile+" || true")
 
 	err = s.collector.TearDown()
 	s.Require().NoError(err)
@@ -761,51 +763,69 @@ func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
 	s.Require().NoError(err)
 	endpoints, err := s.GetEndpoints(s.serverContainer)
 	s.Require().NoError(err)
-	assert.Equal(s.T(), 4, len(endpoints))
+
+	if !assert.Equal(s.T(), 4, len(endpoints)) {
+		// We can't continue if this is not the case, so panic immediately.
+		// It indicates an internal issue with this test and the non-deterministic
+		// way in which endpoints are reported.
+		assert.FailNowf(s.T(), "", "only retrieved %d endpoints (expect 4)", len(endpoints))
+	}
+
 	// Note that the first process is the shell and the second is the process-listening-on-ports program.
 	// All of these asserts check against the processes information of that program.
 	assert.Equal(s.T(), 2, len(processes))
+	process := processes[1]
 
-	possiblePorts := []string{"8081", "9091"}
+	possiblePorts := []int{8081, 9091}
 
-	assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[0].Protocol)
-	assert.Equal(s.T(), "(timestamp: nil Timestamp)", endpoints[0].CloseTimestamp)
-	assert.Contains(s.T(), possiblePorts, strconv.Itoa(endpoints[0].Address.Port))
-	// TODO
-	// There is a difference in the lengths of the process name
-	// The process stream truncates to 16 characters while endpoints does not.
-	// We need to decide which way to go and make these tests consistent with that.
-	//assert.Equal(s.T(), endpoints[0].Originator.ProcessName, processes[1].Name)
-	assert.Equal(s.T(), endpoints[0].Originator.ProcessExecFilePath, processes[1].ExePath)
-	assert.Equal(s.T(), endpoints[0].Originator.ProcessArgs, processes[1].Args)
+	// First verify that all endpoints have the expected metadata, that
+	// they are the correct protocol and come from the expected Originator
+	// process.
+	for _, endpoint := range endpoints {
+		assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoint.Protocol)
 
-	assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[1].Protocol)
-	assert.Equal(s.T(), "(timestamp: nil Timestamp)", endpoints[1].CloseTimestamp)
-	// We can't gaurantee the order in which collector reports the endpoints.
-	// Check that the port of the first endpoint is one of the two that were opened.
-	// Do the same for the second endpoint and make sure that the ports of the two endpoints are different.
-	assert.Contains(s.T(), possiblePorts, strconv.Itoa(endpoints[1].Address.Port))
-	//assert.Equal(s.T(), endpoints[1].Originator.ProcessName, processes[1].Name)
-	assert.Equal(s.T(), endpoints[1].Originator.ProcessExecFilePath, processes[1].ExePath)
-	assert.Equal(s.T(), endpoints[1].Originator.ProcessArgs, processes[1].Args)
+		// TODO
+		// There is a difference in the lengths of the process name
+		// The process stream truncates to 16 characters while endpoints does not.
+		// We need to decide which way to go and make these tests consistent with that.
+		//assert.Equal(s.T(), endpoint.Originator.ProcessName, process.Name)
+		assert.Equal(s.T(), endpoint.Originator.ProcessExecFilePath, process.ExePath)
+		assert.Equal(s.T(), endpoint.Originator.ProcessArgs, process.Args)
 
-	assert.NotEqual(s.T(),  endpoints[0].Address.Port, endpoints[1].Address.Port)
+		// assert that we haven't got any unexpected ports - further checking
+		// of this data will occur subsequently
+		assert.Contains(s.T(), possiblePorts, endpoint.Address.Port)
+	}
 
-	assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[2].Protocol)
-	assert.NotEqual(s.T(), "(timestamp: nil Timestamp)", endpoints[2].CloseTimestamp)
-	assert.Contains(s.T(), possiblePorts, strconv.Itoa(endpoints[2].Address.Port))
-	//assert.Equal(s.T(), endpoints[2].Originator.ProcessName, processes[1].Name)
-	assert.Equal(s.T(), endpoints[2].Originator.ProcessExecFilePath, processes[1].ExePath)
-	assert.Equal(s.T(), endpoints[2].Originator.ProcessArgs, processes[1].Args)
+	// We can't guarantee the order in which collector reports the endpoints.
+	// Check that we have precisely two pairs of endpoints, for opening
+	// and closing the port. A closed port will have a populated CloseTimestamp
 
-	assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[3].Protocol)
-	assert.NotEqual(s.T(), "(timestamp: nil Timestamp)", endpoints[3].CloseTimestamp)
-	assert.Contains(s.T(), possiblePorts, strconv.Itoa(endpoints[3].Address.Port))
-	//assert.Equal(s.T(), endpoints[3].Originator.ProcessName, processes[1].Name)
-	assert.Equal(s.T(), endpoints[3].Originator.ProcessExecFilePath, processes[1].ExePath)
-	assert.Equal(s.T(), endpoints[3].Originator.ProcessArgs, processes[1].Args)
+	endpoints8081 := make([]EndpointInfo, 0)
+	endpoints9091 := make([]EndpointInfo, 0)
+	for _, endpoint := range endpoints {
+		if endpoint.Address.Port == 8081 {
+			endpoints8081 = append(endpoints8081, endpoint)
+		} else {
+			endpoints9091 = append(endpoints9091, endpoint)
+		}
+		// other ports cannot exist at this point due to previous assertions
+	}
 
-	assert.NotEqual(s.T(),  endpoints[2].Address.Port, endpoints[3].Address.Port)
+	// This helper simplifies the assertions a fair bit, by checking that
+	// the recorded endpoints have an open event (CloseTimestamp == nil) and
+	// a close event (CloseTimestamp != nil) and not two close events or two open
+	// events.
+	//
+	// It is also agnostic to the order in which the events are reported.
+	hasOpenAndClose := func(infos []EndpointInfo) bool {
+		assert.Len(s.T(), infos, 2)
+		return infos[0].CloseTimestamp != infos[1].CloseTimestamp &&
+			(infos[0].CloseTimestamp == nilTimestamp || infos[1].CloseTimestamp == nilTimestamp)
+	}
+
+	assert.True(s.T(), hasOpenAndClose(endpoints8081), "Did not capture open and close events for port 8081")
+	assert.True(s.T(), hasOpenAndClose(endpoints9091), "Did not capture open and close events for port 9091")
 }
 
 func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, error) {
