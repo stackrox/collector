@@ -237,6 +237,8 @@ registry_rw_login() {
 if [[ "${CI_DATA:-}" == "" ]]; then
     export CI_DATA="available"
 
-    # shellcheck source=/dev/null
-    source /ci-data/dump.sh
+    if [[ -f /ci-data/dump.sh ]]; then
+        # shellcheck source=/dev/null
+        source /ci-data/dump.sh
+    fi
 fi
