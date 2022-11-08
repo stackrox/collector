@@ -11,14 +11,6 @@ g_config_root = "ci-operator/config/stackrox/collector"
 g_steps_root = "ci-operator/step-registry/stackrox/collector"
 
 
-def config(name):
-    return os.path.join(g_config_root, name)
-
-
-def step_file(*parts):
-    return os.path.join(g_steps_root, *parts)
-
-
 class OpenshiftRelease:
     def __init__(self, root, version, dry_run=False):
         self.root = root
@@ -42,7 +34,7 @@ class OpenshiftRelease:
         e.g. step_from_root('release-3.11/integration-tests')
              -> /path/to/repo/ci-operator/step-registry/stackrox/collector/release-3.11/integration-tests
         """
-        return self.from_root(step_file(*paths))
+        return self.from_root(g_steps_root, *paths)
 
     def config_from_root(self, name):
         """
@@ -52,7 +44,7 @@ class OpenshiftRelease:
         e.g. config_from_root('stackrox-collector-master.yaml')
              -> /path/to/repo/ci-operator/config/stackrox/collector/stackrox-collector-master.yaml
         """
-        return self.from_root(config(name))
+        return self.from_root(g_config_root, name)
 
     def copy(self, src: str, dest: str):
         """
@@ -101,22 +93,17 @@ class OpenshiftRelease:
             - remaining post-submit tests are modified to use versioned
               workflows.
         """
+        release_config_filename = f"stackrox-collector-{self.version_str}"
         master_config = self.config_from_root("stackrox-collector-master.yaml")
-        release_config = self.config_from_root(
-            f"stackrox-collector-{self.version_str}.yaml"
-        )
+        release_config = self.config_from_root(release_config_filename)
 
         self.copy(master_config, release_config)
 
         if self.dry_run:
-            print(
-                f"[WRITE] would modify references in stackrox-collector-{self.version_str}.yaml"
-            )
+            print(f"[WRITE] would modify references in {release_config_filename}")
             return
 
-        print(
-            f"[WRITE] modifying references in stackrox-collector-{self.version_str}.yaml"
-        )
+        print(f"[WRITE] modifying references in {release_config_filename}")
 
         with open(release_config) as config_file:
             cfg = yaml.load(config_file, Loader=yaml.Loader)
@@ -143,7 +130,7 @@ class OpenshiftRelease:
             cfg_data = yaml.dump(cfg, Dumper=yaml.Dumper)
 
         # dump the config back to disk
-        with open(release_config, "w+") as config_file:
+        with open(release_config, "w") as config_file:
             config_file.write(cfg_data)
 
     def copy_steps(self):
@@ -180,9 +167,9 @@ class OpenshiftRelease:
                     # and then tack it onto the end of the release directory
                     #
                     src = os.path.join(root, dir)
-                    rela = os.path.relpath(src, self.from_root(g_steps_root))
+                    relative_src = os.path.relpath(src, self.from_root(g_steps_root))
 
-                    self.mkdir(self.step_from_root(self.version_str, rela))
+                    self.mkdir(self.step_from_root(self.version_str, relative_src))
 
                 for file in files:
                     ext = os.path.splitext(file)[1]
