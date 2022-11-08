@@ -14,6 +14,7 @@
     SSH_USER: "{{ ansible_user }}"
     SSH_KEY_PATH: "{{ ansible_ssh_private_key_file }}"
     VM_CONFIG: "{{ vm_config }}"
+    IMAGE_FAMILY: "{{ vm_image_family }}"
 
   tasks:
     - name: Log into quay.io
