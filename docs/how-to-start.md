@@ -164,5 +164,52 @@ $ make image
 ```
 
 ## Debugging
+### Debugging on a k8s deployment
+First step for debugging collector on kubernetes is to have a debug enabled collector image with `gdb` installed.
+You can build such an image by running the following command at the root of the repository:
+```sh
+CMAKE_BUILD_TYPE=Debug make image-dev
+```
+
+You will also need a full deployment of Stackrox up and running. You can get precise instructions on how to deploy it
+[here](https://github.com/stackrox/stackrox/blob/master/README.md#deploying-stackrox).
+
+With the image built and Stackrox up and running, you can make the following changes to the collector daemonset by
+running `kubectl -n stackrox edit ds/collector`
+
+```yaml
+# ...
+spec:
+  template:
+    spec:
+      containers:
+      - env:
+        # Make sure this variable is edited like this for proper JSON escaping
+        - name: COLLECTOR_CONFIG
+          value: |
+            '{"tlsConfig":{"caCertPath":"/var/run/secrets/stackrox.io/certs/ca.pem","clientCertPath":"/var/run/secrets/stackrox.io/certs/cert.pem","clientKeyPath":"/var/run/secrets/stackrox.io/certs/key.pem"}}'
+        # This will direct collector to run under GDB
+        - name: COLLECTOR_PRE_ARGUMENTS
+          value: gdbserver 0.0.0.0:1337
+        image: quay.io/stackrox-io/collector:<your-built-tag-here>
+        # Expose the port GDB will be listening on
+        ports:
+        - containerPort: 1337
+          name: gdb
+          protocol: TCP
+```
+
+Once the configuration is applied, the collector pod will restart and wait for a GDB client to connect to it.
+In order to connect to collector, you can run the following two commands:
+```sh
+# Make the GDB port reachable from your host
+kubectl -n stackrox port-forward ds/collector 40000:1337 &
+# Connect to the remote GDB server and map collector symbols to your sources
+gdb -ex "target extended-remote localhost:40000"\
+    -ex "set substitute-path /tmp/collector /path/to/stackrox/collector"
+```
+
+You should now be attached to a debug session. If you need to restart the session, you will need to recreate
+both the collector pod and the port-forwarding process.
 
 ## Profiling
