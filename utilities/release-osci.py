@@ -93,7 +93,7 @@ class OpenshiftRelease:
             - remaining post-submit tests are modified to use versioned
               workflows.
         """
-        release_config_filename = f"stackrox-collector-{self.version_str}"
+        release_config_filename = f"stackrox-collector-{self.version_str}.yaml"
         master_config = self.config_from_root("stackrox-collector-master.yaml")
         release_config = self.config_from_root(release_config_filename)
 
