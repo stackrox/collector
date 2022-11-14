@@ -853,16 +853,10 @@ func (s *SocatTestSuite) SetupSuite() {
 
 	processImage := qaImage("quay.io/rhacs-eng/qa", "socat")
 
-	//containerID, err := s.launchContainer("socat", processImage)
-	containerID, err := s.launchContainer("socat", processImage, "socat", "TCP-LISTEN:80,fork", "STDOUT", "&", "socat", "TCP-LISTEN:8080,fork", "STDOUT")
+	containerID, err := s.launchContainer("socat", processImage, "/bin/sh", "-c", "socat TCP-LISTEN:80,fork STDOUT & socat TCP-LISTEN:8080,fork STDOUT")
 
 	s.Require().NoError(err)
 	s.serverContainer = containerShortID(containerID)
-
-
-	//_, err = s.execContainer("socat", []string{"socat", "TCP-LISTEN:80,fork", "STDOUT", "&", "socat", "TCP-LISTEN:8080,fork", "STDOUT"})
-	//_, err = s.collector.executor.Exec("socat", "TCP-LISTEN:80,fork", "STDOUT", "&", "socat", "TCP-LISTEN:8080,fork", "STDOUT")
-	s.Require().NoError(err)
 
 	time.Sleep(6 * time.Second)
 
@@ -893,8 +887,10 @@ func getEndpointByPort(endpoints []EndpointInfo, port int) (*EndpointInfo, error
 }
 
 func getProcessByPort(processes []ProcessInfo, port int) (*ProcessInfo, error) {
+	re := regexp.MustCompile(`:(` + strconv.Itoa(port) + `),`)
 	for _, process := range processes {
-		if strings.Contains(process.Args, strconv.Itoa(port)) {
+		portArr := re.FindStringSubmatch(process.Args)
+		if len(portArr) == 1 {
 			return &process, nil
 		}
 	}
@@ -917,7 +913,7 @@ func (s *SocatTestSuite) TestSocat() {
 		assert.FailNowf(s.T(), "", "only retrieved %d endpoints (expect 2)", len(endpoints))
 	}
 
-	assert.Equal(s.T(), 2, len(processes))
+	assert.Equal(s.T(), 3, len(processes))
 
 	endpoint80, err := getEndpointByPort(endpoints, 80)
 	s.Require().NoError(err)
