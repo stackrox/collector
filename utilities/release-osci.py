@@ -31,7 +31,7 @@ class OpenshiftRelease:
         Helper for getting a file relative to stackrox/collector's step
         registry.
 
-        e.g. step_from_root('release-3.11/integration-tests')
+        e.g. step_from_root('release-3.11', 'integration-tests')
              -> /path/to/repo/ci-operator/step-registry/stackrox/collector/release-3.11/integration-tests
         """
         return self.from_root(g_steps_root, *paths)
@@ -150,6 +150,7 @@ class OpenshiftRelease:
             ci-operator/step-registry/stackrox/collector/release-<version>/integration-tests/stackrox-collector-release-<version>-integration-tests-workflow.yaml
         """
         self.mkdir(self.step_from_root(self.version_str))
+        self.copy(self.step_from_root('OWNERS'), self.step_from_root(self.version_str, 'OWNERS'))
 
         # get all top-level steps that aren't release directories
         subdirs = next(os.walk(self.from_root(g_steps_root)))[1]
