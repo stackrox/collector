@@ -11,7 +11,8 @@ COPY --from=replaced-by-osci:scripts /scripts/ /scripts/
 RUN ln -s /go/src/github.com/stackrox/collector/ /collector && \
     git -C /collector fetch --all && \
     . /scripts/pr-checks.sh && \
-    /scripts/patch-files.sh master $LEGACY_PROBES && \
+    . /scripts/lib.sh && \
+    /scripts/patch-files.sh $(get_branch) $LEGACY_PROBES && \
     mkdir /kernels && \
     cp /collector/kernel-modules/KERNEL_VERSIONS /kernels/all && \
     /scripts/process-kernels.sh && \
