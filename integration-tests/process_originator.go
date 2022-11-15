@@ -33,7 +33,7 @@ func NewProcessOriginator(line string) (*ProcessOriginator, error) {
 	}
 
 	var processArgs string
-	r := regexp.MustCompile("process_name:(.*)process_exec_file_path:(.*)process_args(.*)\n$")
+	r := regexp.MustCompile("process_name:(.*)process_exec_file_path:(.*)process_args:(.*)\n$")
 	processArr := r.FindStringSubmatch(line)
 	if len(processArr) !=4 {
 		r := regexp.MustCompile("process_name:(.*)process_exec_file_path:(.*)\n$")
