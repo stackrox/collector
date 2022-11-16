@@ -68,7 +68,14 @@ int main(int argc, char const* argv[])
 	int port;
 	int server_fd[65535];
 	char *action = malloc(16 * sizeof(char));
-	char* actionFile = "/tmp/action_file.txt";
+	char actionFile[200];
+
+
+	if (argc == 2) {
+		strcpy(actionFile, argv[1]);
+	} else {
+		strcpy(actionFile, "/tmp/action_file.txt");
+	}
 
 	while (1) {
 		port = getActionFromFile(actionFile, action);

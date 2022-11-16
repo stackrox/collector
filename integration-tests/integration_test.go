@@ -748,6 +748,15 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 	err = s.waitForFileToBeDeleted(actionFile)
 	s.Require().NoError(err)
 
+	_, err = s.execContainer("process-ports", []string{"ln", "-s", "/process-listening-on-ports", "/plop"})
+	s.Require().NoError(err)
+
+	_, err = s.execContainer("process-ports", []string{"/bin/bash", "-c", "/plop /tmp/action_file_ln &"})
+	s.Require().NoError(err)
+	_, err = s.collector.executor.Exec("sh", "-c", "echo open 9092 > /tmp/action_file_ln")
+	err = s.waitForFileToBeDeleted("/tmp/action_file_ln")
+	s.Require().NoError(err)
+
 	err = s.collector.TearDown()
 	s.Require().NoError(err)
 
@@ -756,6 +765,7 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 }
 
 func (s *ProcessListeningOnPortTestSuite) TearDownSuite() {
+	//s.cleanupContainer([]string{"collector"})
 	s.cleanupContainer([]string{"process-ports", "collector"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
@@ -768,24 +778,38 @@ func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
 	endpoints, err := s.GetEndpoints(s.serverContainer)
 	s.Require().NoError(err)
 
-	if !assert.Equal(s.T(), 4, len(endpoints)) {
+	if !assert.Equal(s.T(), 5, len(endpoints)) {
 		// We can't continue if this is not the case, so panic immediately.
 		// It indicates an internal issue with this test and the non-deterministic
 		// way in which endpoints are reported.
-		assert.FailNowf(s.T(), "", "only retrieved %d endpoints (expect 4)", len(endpoints))
+		assert.FailNowf(s.T(), "", "only retrieved %d endpoints (expect 5)", len(endpoints))
 	}
 
-	// Note that the first process is the shell and the second is the process-listening-on-ports program.
-	// All of these asserts check against the processes information of that program.
-	assert.Equal(s.T(), 2, len(processes))
-	process := processes[1]
+	assert.Equal(s.T(), 5, len(processes))
 
 	possiblePorts := []int{8081, 9091}
+
+	endpointsMap := make(map[int][]EndpointInfo)
+	for _, endpoint := range endpoints {
+		port := endpoint.Address.Port
+		endpointsMap[port] = append(endpointsMap[port], endpoint)
+	}
+
+	processesMap := make(map[string][]ProcessInfo)
+	for _, process := range processes {
+		name := process.Name
+		processesMap[name] = append(processesMap[name], process)
+	}
+
+	endpoints1 := endpointsMap[8081]
+	endpoints1 = append(endpoints1, endpointsMap[9091]...)
+
+	process := processesMap["process-listeni"][0]
 
 	// First verify that all endpoints have the expected metadata, that
 	// they are the correct protocol and come from the expected Originator
 	// process.
-	for _, endpoint := range endpoints {
+	for _, endpoint := range endpoints1 {
 		assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoint.Protocol)
 
 		// TODO
@@ -799,21 +823,6 @@ func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
 		// assert that we haven't got any unexpected ports - further checking
 		// of this data will occur subsequently
 		assert.Contains(s.T(), possiblePorts, endpoint.Address.Port)
-	}
-
-	// We can't guarantee the order in which collector reports the endpoints.
-	// Check that we have precisely two pairs of endpoints, for opening
-	// and closing the port. A closed port will have a populated CloseTimestamp
-
-	endpoints8081 := make([]EndpointInfo, 0)
-	endpoints9091 := make([]EndpointInfo, 0)
-	for _, endpoint := range endpoints {
-		if endpoint.Address.Port == 8081 {
-			endpoints8081 = append(endpoints8081, endpoint)
-		} else {
-			endpoints9091 = append(endpoints9091, endpoint)
-		}
-		// other ports cannot exist at this point due to previous assertions
 	}
 
 	// This helper simplifies the assertions a fair bit, by checking that
@@ -830,8 +839,17 @@ func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
 			(infos[0].CloseTimestamp == nilTimestamp || infos[1].CloseTimestamp == nilTimestamp)
 	}
 
-	assert.True(s.T(), hasOpenAndClose(endpoints8081), "Did not capture open and close events for port 8081")
-	assert.True(s.T(), hasOpenAndClose(endpoints9091), "Did not capture open and close events for port 9091")
+	assert.True(s.T(), hasOpenAndClose(endpointsMap[8081]), "Did not capture open and close events for port 8081")
+	assert.True(s.T(), hasOpenAndClose(endpointsMap[9091]), "Did not capture open and close events for port 9091")
+
+	endpoint := endpointsMap[9092][0]
+	lnProcess := processesMap["plop"][0]
+	assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoint.Protocol)
+
+	assert.Equal(s.T(), endpoint.Originator.ProcessName, lnProcess.Name)
+	assert.Equal(s.T(), endpoint.Originator.ProcessExecFilePath, lnProcess.ExePath)
+	assert.Equal(s.T(), endpoint.Originator.ProcessArgs, lnProcess.Args)
+	assert.Equal(s.T(), 9092, endpoint.Address.Port)
 }
 
 func (s *SocatTestSuite) SetupSuite() {
