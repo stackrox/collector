@@ -1,18 +1,18 @@
-package integrationtests
+package common
 
 import (
-	"strings"
-	"strconv"
 	"fmt"
+	"strconv"
+	"strings"
 )
 
 type ProcessInfo struct {
-	Name string
+	Name    string
 	ExePath string
-	Uid int
-	Gid int
-	Pid int
-	Args string
+	Uid     int
+	Gid     int
+	Pid     int
+	Args    string
 }
 
 func NewProcessInfo(line string) (*ProcessInfo, error) {
@@ -37,20 +37,20 @@ func NewProcessInfo(line string) (*ProcessInfo, error) {
 		return nil, err
 	}
 
-	return &ProcessInfo {
-		Name: parts[0],
+	return &ProcessInfo{
+		Name:    parts[0],
 		ExePath: parts[1],
-		Uid: uid,
-		Gid: gid,
-		Pid: pid, 
-		Args: parts[5],
+		Uid:     uid,
+		Gid:     gid,
+		Pid:     pid,
+		Args:    parts[5],
 	}, nil
 }
 
 type ProcessLineage struct {
-	Name string
-	ExePath string
-	ParentUid int
+	Name          string
+	ExePath       string
+	ParentUid     int
 	ParentExePath string
 }
 
@@ -66,10 +66,10 @@ func NewProcessLineage(line string) (*ProcessLineage, error) {
 		return nil, err
 	}
 
-	return &ProcessLineage {
-		Name: parts[0],
-		ExePath: parts[1],
-		ParentUid: parentUid,
+	return &ProcessLineage{
+		Name:          parts[0],
+		ExePath:       parts[1],
+		ParentUid:     parentUid,
 		ParentExePath: parts[5],
 	}, nil
 }

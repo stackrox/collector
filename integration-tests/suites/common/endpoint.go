@@ -1,15 +1,15 @@
-package integrationtests
+package common
 
 import (
-	"strings"
 	"fmt"
+	"strings"
 )
 
 type EndpointInfo struct {
-	Protocol string
-	Address *ListenAddress
+	Protocol       string
+	Address        *ListenAddress
 	CloseTimestamp string
-	Originator *ProcessOriginator
+	Originator     *ProcessOriginator
 }
 
 func NewEndpointInfo(line string) (*EndpointInfo, error) {
@@ -31,10 +31,10 @@ func NewEndpointInfo(line string) (*EndpointInfo, error) {
 		return nil, err
 	}
 
-	return &EndpointInfo {
-		Protocol: parts[1],
-		Address: listenAddress,
+	return &EndpointInfo{
+		Protocol:       parts[1],
+		Address:        listenAddress,
 		CloseTimestamp: parts[3],
-		Originator: originator,
+		Originator:     originator,
 	}, nil
 }

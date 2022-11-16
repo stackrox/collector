@@ -1,4 +1,4 @@
-package integrationtests
+package suites
 
 import (
 	"fmt"
@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/stackrox/collector/integration-tests/suites/common"
 )
 
 type BenchmarkBaselineTestSuite struct {
@@ -34,11 +36,11 @@ func TestBenchmarkCollector(t *testing.T) {
 }
 
 func (b *BenchmarkTestSuiteBase) StartPerfTools() {
-	perf := ReadEnvVar("COLLECTOR_PERF_COMMAND")
-	bpftrace := ReadEnvVar("COLLECTOR_BPFTRACE_COMMAND")
-	bcc := ReadEnvVar("COLLECTOR_BCC_COMMAND")
+	perf := common.ReadEnvVar("COLLECTOR_PERF_COMMAND")
+	bpftrace := common.ReadEnvVar("COLLECTOR_BPFTRACE_COMMAND")
+	bcc := common.ReadEnvVar("COLLECTOR_BCC_COMMAND")
 
-	skipInit := ReadBoolEnvVar("COLLECTOR_SKIP_HEADERS_INIT")
+	skipInit := common.ReadBoolEnvVar("COLLECTOR_SKIP_HEADERS_INIT")
 
 	if skipInit && (perf == "" && bpftrace == "" && bcc == "") {
 		fmt.Fprintf(os.Stderr, "COLLECTOR_SKIP_HEADERS_INIT set, but no performance tool requested - ignoring.")
@@ -50,17 +52,17 @@ func (b *BenchmarkTestSuiteBase) StartPerfTools() {
 	}
 
 	if perf != "" {
-		perf_image := qaImage("quay.io/rhacs-eng/collector-performance", "perf")
+		perf_image := common.QaImage("quay.io/rhacs-eng/collector-performance", "perf")
 		b.StartPerfContainer("perf", perf_image, perf)
 	}
 
 	if bpftrace != "" {
-		bpftrace_image := qaImage("quay.io/rhacs-eng/collector-performance", "bpftrace")
+		bpftrace_image := common.QaImage("quay.io/rhacs-eng/collector-performance", "bpftrace")
 		b.StartPerfContainer("bpftrace", bpftrace_image, bpftrace)
 	}
 
 	if bcc != "" {
-		bcc_image := qaImage("quay.io/rhacs-eng/collector-performance", "bcc")
+		bcc_image := common.QaImage("quay.io/rhacs-eng/collector-performance", "bcc")
 		b.StartPerfContainer("bcc", bcc_image, bcc)
 	}
 }
@@ -68,11 +70,11 @@ func (b *BenchmarkTestSuiteBase) StartPerfTools() {
 func (b *BenchmarkTestSuiteBase) StartPerfContainer(name string, image string, args string) {
 	argsList, err := shlex.Split(args)
 	require.NoError(b.T(), err)
-	b.startContainer(name, image, quoteArgs(argsList)...)
+	b.startContainer(name, image, common.QuoteArgs(argsList)...)
 }
 
 func (b *BenchmarkTestSuiteBase) RunInitContainer() {
-	init_image := qaImage("quay.io/rhacs-eng/collector-performance", "init")
+	init_image := common.QaImage("quay.io/rhacs-eng/collector-performance", "init")
 	cmd := []string{
 		"host-init",
 		"-v", "/lib/modules:/lib/modules",
@@ -132,9 +134,9 @@ func (b *BenchmarkTestSuiteBase) StopPerfTools() {
 }
 
 func (s *BenchmarkCollectorTestSuite) SetupSuite() {
-	s.executor = NewExecutor()
+	s.executor = common.NewExecutor()
 	s.StartContainerStats()
-	s.collector = NewCollectorManager(s.executor, s.T().Name())
+	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
 	s.metrics = map[string]float64{}
 
 	err := s.collector.Setup()
@@ -166,7 +168,7 @@ func (s *BenchmarkCollectorTestSuite) TearDownSuite() {
 }
 
 func (s *BenchmarkBaselineTestSuite) SetupSuite() {
-	s.executor = NewExecutor()
+	s.executor = common.NewExecutor()
 	s.metrics = map[string]float64{}
 	s.StartContainerStats()
 	s.StartPerfTools()

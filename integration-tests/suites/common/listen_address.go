@@ -1,4 +1,4 @@
-package integrationtests
+package common
 
 import (
 	"fmt"
@@ -8,8 +8,8 @@ import (
 
 type ListenAddress struct {
 	AddressData string
-	Port int
-	IpNetwork string
+	Port        int
+	IpNetwork   string
 }
 
 func NewListenAddress(line string) (*ListenAddress, error) {
@@ -27,9 +27,9 @@ func NewListenAddress(line string) (*ListenAddress, error) {
 	port, _ := strconv.Atoi(listenAddressArr[2])
 	ipNetwork := listenAddressArr[3]
 
-	return &ListenAddress {
+	return &ListenAddress{
 		AddressData: addressData,
-		Port: port,
-		IpNetwork: ipNetwork,
+		Port:        port,
+		IpNetwork:   ipNetwork,
 	}, nil
 }

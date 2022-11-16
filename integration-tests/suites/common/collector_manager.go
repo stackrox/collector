@@ -1,4 +1,4 @@
-package integrationtests
+package common
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-type collectorManager struct {
+type CollectorManager struct {
 	executor          Executor
 	Mounts            map[string]string
 	Env               map[string]string
@@ -29,7 +29,7 @@ type collectorManager struct {
 	VmConfig          string
 }
 
-func NewCollectorManager(e Executor, name string) *collectorManager {
+func NewCollectorManager(e Executor, name string) *CollectorManager {
 	var collectorPreArguments = os.Getenv("COLLECTOR_PRE_ARGUMENTS")
 	collectionMethod := ReadEnvVarWithDefault("COLLECTION_METHOD", "kernel_module")
 	if strings.Contains(collectionMethod, "module") {
@@ -64,7 +64,7 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 	collectorImage := ReadEnvVar("COLLECTOR_IMAGE")
 	vm_config := ReadEnvVar("VM_CONFIG")
 
-	return &collectorManager{
+	return &CollectorManager{
 		DBPathRemote:      "/tmp/collector-test.db",
 		DBPath:            "/tmp/collector-test-" + vm_config + ".db",
 		executor:          e,
@@ -80,7 +80,7 @@ func NewCollectorManager(e Executor, name string) *collectorManager {
 	}
 }
 
-func (c *collectorManager) Setup() error {
+func (c *CollectorManager) Setup() error {
 	if err := c.executor.PullImage(c.CollectorImage); err != nil {
 		return err
 	}
@@ -98,7 +98,7 @@ func (c *collectorManager) Setup() error {
 	return nil
 }
 
-func (c *collectorManager) Launch() error {
+func (c *CollectorManager) Launch() error {
 	if !c.DisableGrpcServer {
 		err := c.launchGRPCServer()
 		if err != nil {
@@ -108,7 +108,7 @@ func (c *collectorManager) Launch() error {
 	return c.launchCollector()
 }
 
-func (c *collectorManager) TearDown() error {
+func (c *CollectorManager) TearDown() error {
 	coreDumpErr := c.GetCoreDump(c.CoreDumpFile)
 	if coreDumpErr != nil {
 		return coreDumpErr
@@ -144,7 +144,7 @@ func (c *collectorManager) TearDown() error {
 	return nil
 }
 
-func (c *collectorManager) BoltDB() (db *bolt.DB, err error) {
+func (c *CollectorManager) BoltDB() (db *bolt.DB, err error) {
 	opts := &bolt.Options{ReadOnly: true}
 	db, err = bolt.Open(c.DBPath, 0600, opts)
 	if err != nil {
@@ -154,21 +154,21 @@ func (c *collectorManager) BoltDB() (db *bolt.DB, err error) {
 }
 
 //These two methods might be useful in the future. I used them for debugging
-func (c *collectorManager) getContainers() (string, error) {
+func (c *CollectorManager) getContainers() (string, error) {
 	cmd := []string{"docker", "container", "ps"}
 	containers, err := c.executor.Exec(cmd...)
 
 	return containers, err
 }
 
-func (c *collectorManager) getAllContainers() (string, error) {
+func (c *CollectorManager) getAllContainers() (string, error) {
 	cmd := []string{"docker", "container", "ps", "-a"}
 	containers, err := c.executor.Exec(cmd...)
 
 	return containers, err
 }
 
-func (c *collectorManager) launchGRPCServer() error {
+func (c *CollectorManager) launchGRPCServer() error {
 	user, _ := user.Current()
 	selinuxErr := setSelinuxPermissiveIfNeeded()
 	if selinuxErr != nil {
@@ -187,7 +187,7 @@ func (c *collectorManager) launchGRPCServer() error {
 	return err
 }
 
-func (c *collectorManager) launchCollector() error {
+func (c *CollectorManager) launchCollector() error {
 	coreDumpErr := c.SetCoreDumpPath(c.CoreDumpFile)
 	if coreDumpErr != nil {
 		return coreDumpErr
@@ -225,7 +225,7 @@ func (c *collectorManager) launchCollector() error {
 	return err
 }
 
-func (c *collectorManager) captureLogs(containerName string) (string, error) {
+func (c *CollectorManager) captureLogs(containerName string) (string, error) {
 	logs, err := c.executor.Exec("docker", "logs", containerName)
 	if err != nil {
 		fmt.Printf("docker logs error (%v) for container %s\n", err, containerName)
@@ -241,7 +241,7 @@ func (c *collectorManager) captureLogs(containerName string) (string, error) {
 	return logs, nil
 }
 
-func (c *collectorManager) killContainer(name string) error {
+func (c *CollectorManager) killContainer(name string) error {
 	_, err1 := c.executor.Exec("docker", "kill", name)
 	_, err2 := c.executor.Exec("docker", "rm", "-fv", name)
 
@@ -256,14 +256,14 @@ func (c *collectorManager) killContainer(name string) error {
 	return result
 }
 
-func (c *collectorManager) stopContainer(name string) error {
+func (c *CollectorManager) stopContainer(name string) error {
 	_, err := c.executor.Exec("docker", "stop", "--time", "100", name)
 	return err
 }
 
 // Sets the path to where core dumps are saved to. This is specified in the core_pattern file
 // The core_pattern file is backed up, because we don't want to permanently change it
-func (c *collectorManager) SetCoreDumpPath(coreDumpFile string) error {
+func (c *CollectorManager) SetCoreDumpPath(coreDumpFile string) error {
 	remote_host_type := ReadEnvVarWithDefault("REMOTE_HOST_TYPE", "local")
 	if remote_host_type != "local" {
 		corePatternFile := "/proc/sys/kernel/core_pattern"
@@ -286,7 +286,7 @@ func (c *collectorManager) SetCoreDumpPath(coreDumpFile string) error {
 }
 
 // Restores the backed up core_pattern file, which sets the location where core dumps are written to.
-func (c *collectorManager) RestoreCoreDumpPath() error {
+func (c *CollectorManager) RestoreCoreDumpPath() error {
 	corePatternFile := "/proc/sys/kernel/core_pattern"
 	corePatternBackupFile := "/tmp/core_pattern_backup"
 	// cat is used to restore the backup instead of mv, becuase mv is not allowed.
@@ -301,7 +301,7 @@ func (c *collectorManager) RestoreCoreDumpPath() error {
 
 // If the integration test is run on a remote host the core dump needs to be copied from the remote host
 // to the local maching
-func (c *collectorManager) GetCoreDump(coreDumpFile string) error {
+func (c *CollectorManager) GetCoreDump(coreDumpFile string) error {
 	if c.Env["ENABLE_CORE_DUMP"] == "true" && ReadEnvVarWithDefault("REMOTE_HOST_TYPE", "local") != "local" {
 		cmd := []string{"sudo", "chmod", "755", coreDumpFile}
 		c.executor.Exec(cmd...)
