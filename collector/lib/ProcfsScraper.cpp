@@ -102,9 +102,22 @@ bool GetNetworkNamespace(int dirfd, ino_t* inode) {
   return ReadINode(dirfd, "ns/net", "net", inode);
 }
 
+struct SocketInfo {
+  ino_t inode;
+  uint64_t pid;
+
+  size_t Hash() const {
+    return std::hash<ino_t>()(inode);
+  }
+
+  bool operator==(const SocketInfo& o) const {
+    return inode == o.inode;
+  }
+};
+
 // GetSocketINodes returns a list of all socket inodes associated with open file descriptors of the process represented
 // by dirfd.
-bool GetSocketINodes(int dirfd, UnorderedSet<ino_t>* sock_inodes) {
+bool GetSocketINodes(int dirfd, uint64_t pid, UnorderedSet<SocketInfo>* sock_inodes) {
   DirHandle fd_dir = FDHandle(openat(dirfd, "fd", O_RDONLY));
   if (!fd_dir.valid()) {
     CLOG(ERROR) << "could not open fd directory";
@@ -114,9 +127,12 @@ bool GetSocketINodes(int dirfd, UnorderedSet<ino_t>* sock_inodes) {
   while (auto curr = fd_dir.read()) {
     if (!std::isdigit(curr->d_name[0])) continue;  // only look at fd entries, ignore '.' and '..'.
 
-    ino_t inode;
-    if (!ReadINode(fd_dir.fd(), curr->d_name, "socket", &inode)) continue;  // ignore non-socket fds
-    sock_inodes->insert(inode);
+    SocketInfo sock_info;
+    sock_info.pid = pid;
+
+    if (!ReadINode(fd_dir.fd(), curr->d_name, "socket", &(sock_info.inode))) continue;  // ignore non-socket fds
+
+    sock_inodes->insert(sock_info);
   }
 
   return true;
@@ -213,7 +229,6 @@ struct ConnInfo {
 struct EndpointInfo {
   Endpoint endpoint;
   L4Proto l4proto;
-  std::shared_ptr<Process> process;
 };
 
 // ParseEndpoint parses an endpoint listed in the `net/tcp[6]` file.
@@ -290,7 +305,7 @@ bool LocalIsServer(const Endpoint& local, const Endpoint& remote, const Unordere
 }
 
 // ReadConnectionsFromFile reads all connections from a `net/tcp[6]` file and stores them by inode in the given map.
-bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::shared_ptr<Process> process, std::FILE* f,
+bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE* f,
                              UnorderedMap<ino_t, ConnInfo>* connections, UnorderedMap<ino_t, EndpointInfo>* listen_endpoints) {
   char line[512];
 
@@ -307,7 +322,6 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::share
         auto& endpoint_info = (*listen_endpoints)[data.inode];
         endpoint_info.endpoint = data.local;
         endpoint_info.l4proto = l4proto;
-        endpoint_info.process = process;
       }
       continue;
     }
@@ -330,13 +344,13 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::share
 
 // GetConnections reads all active connections (inode -> connection info mapping) for a given network NS, addressed by
 // the dir FD for a proc entry of a process in that network namespace.
-bool GetConnections(int dirfd, std::shared_ptr<Process> process, UnorderedMap<ino_t, ConnInfo>* connections, UnorderedMap<ino_t, EndpointInfo>* listen_endpoints) {
+bool GetConnections(int dirfd, UnorderedMap<ino_t, ConnInfo>* connections, UnorderedMap<ino_t, EndpointInfo>* listen_endpoints) {
   bool success = true;
   {
     FDHandle net_tcp_fd = openat(dirfd, "net/tcp", O_RDONLY);
     if (net_tcp_fd.valid()) {
       FileHandle net_tcp(std::move(net_tcp_fd), "r");
-      success = ReadConnectionsFromFile(Address::Family::IPV4, L4Proto::TCP, process, net_tcp, connections, listen_endpoints) && success;
+      success = ReadConnectionsFromFile(Address::Family::IPV4, L4Proto::TCP, net_tcp, connections, listen_endpoints) && success;
     } else {
       success = false;  // there should always be a net/tcp file
     }
@@ -346,7 +360,7 @@ bool GetConnections(int dirfd, std::shared_ptr<Process> process, UnorderedMap<in
     FDHandle net_tcp6_fd = openat(dirfd, "net/tcp6", O_RDONLY);
     if (net_tcp6_fd.valid()) {
       FileHandle net_tcp6(std::move(net_tcp6_fd), "r");
-      success = ReadConnectionsFromFile(Address::Family::IPV6, L4Proto::TCP, process, net_tcp6, connections, listen_endpoints) && success;
+      success = ReadConnectionsFromFile(Address::Family::IPV6, L4Proto::TCP, net_tcp6, connections, listen_endpoints) && success;
     } else {
       success = false;
     }
@@ -362,28 +376,34 @@ struct NSNetworkData {
 
 // netns -> (inode -> connection info) mapping
 using ConnsByNS = UnorderedMap<ino_t, NSNetworkData>;
-// container id -> (netns -> socket inodes) mapping
-using SocketsByContainer = UnorderedMap<std::string, UnorderedMap<ino_t, UnorderedSet<ino_t>>>;
+// container id -> (netns -> socket) mapping
+using SocketsByContainer = UnorderedMap<std::string, UnorderedMap<ino_t, UnorderedSet<SocketInfo>>>;
 
 // ResolveSocketInodes takes a netns -> (inode -> connection info) mapping and a
-// container id -> (netns -> socket inodes) mapping, and synthesizes this to a list of (container id, connection info)
+// container id -> (netns -> socket) mapping, and synthesizes this to a list of (container id, connection info)
 // tuples.
-void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const ConnsByNS& conns_by_ns,
+void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const ConnsByNS& conns_by_ns, ProcessStore* process_store,
                          std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) {
   for (const auto& container_sockets : sockets_by_container) {
     const auto& container_id = container_sockets.first;
     for (const auto& netns_sockets : container_sockets.second) {
       const auto* ns_network_data = Lookup(conns_by_ns, netns_sockets.first);
       if (!ns_network_data) continue;
-      for (const auto& socket_inode : netns_sockets.second) {
-        if (const auto* conn = Lookup(ns_network_data->connections, socket_inode)) {
+      for (const auto& socket : netns_sockets.second) {
+        if (const auto* conn = Lookup(ns_network_data->connections, socket.inode)) {
           Connection connection(container_id, conn->local, conn->remote, conn->l4proto, conn->is_server);
           if (!IsRelevantConnection(connection)) continue;
           connections->push_back(std::move(connection));
         } else if (listen_endpoints) {
-          if (const auto* ep = Lookup(ns_network_data->listen_endpoints, socket_inode)) {
+          if (const auto* ep = Lookup(ns_network_data->listen_endpoints, socket.inode)) {
             if (!IsRelevantEndpoint(ep->endpoint)) continue;
-            listen_endpoints->emplace_back(container_id, ep->endpoint, ep->l4proto, ep->process);
+
+            std::shared_ptr<Process> process;
+
+            if (process_store)
+              process = process_store->Fetch(socket.pid);
+
+            listen_endpoints->emplace_back(container_id, ep->endpoint, ep->l4proto, process);
           }
         }
       }
@@ -427,7 +447,7 @@ bool ReadContainerConnections(const char* proc_path, ProcessStore* process_store
     auto& container_ns_sockets = sockets_by_container_and_ns[container_id][netns_inode];
     bool no_sockets = container_ns_sockets.empty();
 
-    if (!GetSocketINodes(dirfd, &container_ns_sockets)) {
+    if (!GetSocketINodes(dirfd, pid, &container_ns_sockets)) {
       CLOG(ERROR) << "Could not obtain socket inodes: " << StrError();
       continue;
     }
@@ -439,11 +459,7 @@ bool ReadContainerConnections(const char* proc_path, ProcessStore* process_store
       if (emplace_res.second) {
         auto& ns_network_data = emplace_res.first->second;
 
-        std::shared_ptr<Process> process;
-        if (process_store)
-          process = process_store->Fetch(pid);
-
-        if (!GetConnections(dirfd, process, &ns_network_data.connections, listen_endpoints ? &ns_network_data.listen_endpoints : nullptr)) {
+        if (!GetConnections(dirfd, &ns_network_data.connections, listen_endpoints ? &ns_network_data.listen_endpoints : nullptr)) {
           // If there was an error reading connections, that could be due to a number of reasons.
           // We need to differentiate persistent errors (e.g., expected net/tcp6 file not found)
           // from spurious/race condition errors caused by the process disappearing while reading
@@ -460,7 +476,7 @@ bool ReadContainerConnections(const char* proc_path, ProcessStore* process_store
     }
   }
 
-  ResolveSocketInodes(sockets_by_container_and_ns, conns_by_ns, connections, listen_endpoints);
+  ResolveSocketInodes(sockets_by_container_and_ns, conns_by_ns, process_store, connections, listen_endpoints);
   return true;
 }
 
