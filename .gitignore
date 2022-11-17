@@ -26,5 +26,4 @@ cmake-build/
 .devcontainer/
 .devcontainer.json
 cmake-build/
-build/
 out/
