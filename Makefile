@@ -1,7 +1,7 @@
 BASE_PATH = .
 include Makefile-constants.mk
 
-NPROCS ?= 6
+NPROCS ?= $(shell nproc)
 
 MOD_VER_FILE=$(CURDIR)/kernel-modules/kobuild-tmp/MODULE_VERSION.txt
 
