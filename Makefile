@@ -129,6 +129,11 @@ integration-tests-process-listening-on-port:
 	make -C integration-tests process-listening-on-port ||\
 		( .openshift-ci/slack/notify-if-needed.sh "process-listening-on-port" $$? )
 
+.PHONY: integration-tests-symbolic-link-process
+integration-tests-symbolic-link-process:
+	make -C integration-tests symbolic-link-process ||\
+		( .openshift-ci/slack/notify-if-needed.sh "symbolic-link-process" $$? )
+
 .PHONY: integration-tests-socat
 integration-tests-socat:
 	make -C integration-tests socat ||\
@@ -145,6 +150,7 @@ ci-integration-tests: integration-tests-repeat-network \
 					  integration-tests-image-label-json \
 					  integration-tests-procfsscaper \
 					  integration-tests-process-listening-on-port \
+					  integration-tests-symbolic-link-process \
 					  integration-tests-socat
 
 .PHONY: ci-benchmarks
