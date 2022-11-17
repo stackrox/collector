@@ -389,7 +389,8 @@ using SocketsByContainer = UnorderedMap<std::string, UnorderedMap<ino_t, Unorder
 // ResolveSocketInodes takes a netns -> (inode -> connection info) mapping and a
 // container id -> (netns -> socket) mapping, and synthesizes this to a list of (container id, connection info)
 // tuples.
-void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const ConnsByNS& conns_by_ns, ProcessStore* process_store,
+void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const ConnsByNS& conns_by_ns,
+                         std::shared_ptr<ProcessStore> process_store,
                          std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) {
   for (const auto& container_sockets : sockets_by_container) {
     const auto& container_id = container_sockets.first;
@@ -421,7 +422,8 @@ void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const C
 // ReadContainerConnections reads all container connection info from the given `/proc`-like directory. All connections
 // from non-container processes are ignored.
 // process_store, when provided, is used to to link the originator process of a ContainerEndpoint.
-bool ReadContainerConnections(const char* proc_path, ProcessStore* process_store, std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) {
+bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStore> process_store,
+                              std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) {
   DirHandle procdir = opendir(proc_path);
   if (!procdir.valid()) {
     CLOG(ERROR) << "Could not open " << proc_path << ": " << StrError();
@@ -560,7 +562,7 @@ StringView ExtractContainerID(StringView cgroup_line) {
 }
 
 bool ConnScraper::Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) {
-  return ReadContainerConnections(proc_path_.c_str(), process_store_.get(), connections, listen_endpoints);
+  return ReadContainerConnections(proc_path_.c_str(), process_store_, connections, listen_endpoints);
 }
 
 Process ProcessScraper::ByPID(uint64_t pid) {
