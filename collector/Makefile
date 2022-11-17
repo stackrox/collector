@@ -1,6 +1,8 @@
 BASE_PATH = $(realpath ./..)
 include ../Makefile-constants.mk
 
+NPROCS ?= $(shell nproc)
+
 CMAKE_BASE_DIR = cmake-build
 CMAKE_DIR= $(BASE_PATH)/$(CMAKE_BASE_DIR)
 COLLECTOR_BIN_DIR = $(CMAKE_DIR)/collector
@@ -20,6 +22,7 @@ cmake-build/collector: $(HDRS) $(SRCS) $(shell find falcosecurity-libs/ -name '*
 	docker rm -fv build_collector || true
 	docker run --rm --name build_collector \
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
+		-e NPROCS=$(NPROCS) \
 		-e SRC_ROOT_DIR="$(SRC_MOUNT_DIR)" \
 		-e CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
 		-e USE_VALGRIND=$(USE_VALGRIND) \
