@@ -102,17 +102,26 @@ bool GetNetworkNamespace(int dirfd, ino_t* inode) {
   return ReadINode(dirfd, "ns/net", "net", inode);
 }
 
-struct SocketInfo {
-  ino_t inode;
-  uint64_t pid;
+// This object represents an opened file-descriptor/socket
+// It also holds a mapping from this socket inode to the process which created it.
+class SocketInfo {
+ public:
+  SocketInfo(ino_t inode, uint64_t pid) : inode_(inode), pid_(pid) {}
+
+  inline ino_t inode() const { return inode_; }
+  inline uint64_t pid() const { return pid_; }
 
   size_t Hash() const {
-    return std::hash<ino_t>()(inode);
+    return std::hash<ino_t>()(inode_);
   }
 
   bool operator==(const SocketInfo& o) const {
-    return inode == o.inode;
+    return inode() == o.inode();
   }
+
+ private:
+  ino_t inode_;
+  uint64_t pid_;
 };
 
 // GetSocketINodes returns a list of all socket inodes associated with open file descriptors of the process represented
@@ -127,12 +136,10 @@ bool GetSocketINodes(int dirfd, uint64_t pid, UnorderedSet<SocketInfo>* sock_ino
   while (auto curr = fd_dir.read()) {
     if (!std::isdigit(curr->d_name[0])) continue;  // only look at fd entries, ignore '.' and '..'.
 
-    SocketInfo sock_info;
-    sock_info.pid = pid;
+    ino_t inode;
+    if (!ReadINode(fd_dir.fd(), curr->d_name, "socket", &inode)) continue;  // ignore non-socket fds
 
-    if (!ReadINode(fd_dir.fd(), curr->d_name, "socket", &(sock_info.inode))) continue;  // ignore non-socket fds
-
-    sock_inodes->insert(sock_info);
+    sock_inodes->emplace(inode, pid);
   }
 
   return true;
@@ -390,18 +397,18 @@ void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const C
       const auto* ns_network_data = Lookup(conns_by_ns, netns_sockets.first);
       if (!ns_network_data) continue;
       for (const auto& socket : netns_sockets.second) {
-        if (const auto* conn = Lookup(ns_network_data->connections, socket.inode)) {
+        if (const auto* conn = Lookup(ns_network_data->connections, socket.inode())) {
           Connection connection(container_id, conn->local, conn->remote, conn->l4proto, conn->is_server);
           if (!IsRelevantConnection(connection)) continue;
           connections->push_back(std::move(connection));
         } else if (listen_endpoints) {
-          if (const auto* ep = Lookup(ns_network_data->listen_endpoints, socket.inode)) {
+          if (const auto* ep = Lookup(ns_network_data->listen_endpoints, socket.inode())) {
             if (!IsRelevantEndpoint(ep->endpoint)) continue;
 
             std::shared_ptr<Process> process;
 
             if (process_store)
-              process = process_store->Fetch(socket.pid);
+              process = process_store->Fetch(socket.pid());
 
             listen_endpoints->emplace_back(container_id, ep->endpoint, ep->l4proto, process);
           }
