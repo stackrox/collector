@@ -821,6 +821,27 @@ func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
 			endpoints8081 = append(endpoints8081, endpoint)
 		} else {
 			endpoints9091 = append(endpoints9091, endpoint)
+		}
+		// other ports cannot exist at this point due to previous assertions
+	}
+
+	// This helper simplifies the assertions a fair bit, by checking that
+	// the recorded endpoints have an open event (CloseTimestamp == nil) and
+	// a close event (CloseTimestamp != nil) and not two close events or two open
+	// events.
+	//
+	// It is also agnostic to the order in which the events are reported.
+	hasOpenAndClose := func(infos []EndpointInfo) bool {
+		if !assert.Len(s.T(), infos, 2) {
+			return false
+		}
+		return infos[0].CloseTimestamp != infos[1].CloseTimestamp &&
+			(infos[0].CloseTimestamp == nilTimestamp || infos[1].CloseTimestamp == nilTimestamp)
+	}
+
+	assert.True(s.T(), hasOpenAndClose(endpoints8081), "Did not capture open and close events for port 8081")
+	assert.True(s.T(), hasOpenAndClose(endpoints9091), "Did not capture open and close events for port 9091")
+}
 
 func (s *SymbolicLinkProcessTestSuite) SetupSuite() {
 
