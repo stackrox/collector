@@ -4,11 +4,12 @@
   include_role:
     name: create-vm
   vars:
-    vm_name: "{{ gcp_instance_prefix }}-{{ item.1 }}-{{ job_id }}"
+    vm_name: "{{ gcp_instance_prefix }}-{{ collection_method | default('any') }}-{{ item.1 }}-{{ job_id }}"
     vm_project: "{{ item.0.value.project }}"
     vm_family: "{{ item.1 }}"
     vm_platform: "{{ item.0.key }}"
     vm_config: "{{ item.0.key }}_{{ item.1 }}"
+    vm_collection_method: "{{ collection_method | default('any') }}"
 
   #
   # The loop will create the "item" variable, which can be used throughout the task

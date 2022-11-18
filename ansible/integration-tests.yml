@@ -35,9 +35,9 @@
     - group_vars/all.yml
   strategy: free
   roles:
-    - run-integration-test-target
+    - run-test-target
   vars:
-    collector_test: "{{ collector_test | default('ci-integration-tests') }}"
+    collector_test: "{{ lookup('env', 'COLLECTOR_TEST', default='ci-integration-tests') }}"
   tags:
     - run-tests
 
