@@ -10,20 +10,24 @@ test_platform: "{{ lookup('env', 'VM_TYPE', default='rhel') }}"
 collector_root: "{{ playbook_dir }}/.."
 collector_test: "{{ lookup('env', 'COLLECTOR_TEST', default='ci-integration-tests') }}"
 
+benchmark_vm_types:
+  - rhel
+  - ubuntu-os
+
 virtual_machines:
-  - name: rhel
+  rhel:
     project: rhel-cloud
     families:
       - rhel-7
       - rhel-8
 
-  - name: rhel-sap
+  rhel-sap:
     project: rhel-sap-cloud
     families:
       - rhel-8-4-sap-ha
       - rhel-8-6-sap-ha
 
-  - name: cos
+  cos:
     project: cos-cloud
     families:
       - cos-stable
@@ -31,37 +35,37 @@ virtual_machines:
       - cos-dev
       - cos-89-lts
 
-  - name: sles
+  sles:
     project: suse-cloud
     families:
       - sles-12
       - sles-15
 
-  - name: ubuntu-os
+  ubuntu-os:
     project: ubuntu-os-cloud
     families:
       - ubuntu-1804-lts
       - ubuntu-2004-lts
       - ubuntu-2204-lts
 
-  - name: ubuntu-os-pro
+  ubuntu-os-pro:
     project: ubuntu-os-pro-cloud
     families:
       - ubuntu-pro-1804-lts
 
-  - name: flatcar
+  flatcar:
     project: kinvolk-public
     username: core
     families:
       - flatcar-stable
 
-  - name: fedora-coreos
+  fedora-coreos:
     project: fedora-coreos-cloud
     username: core
     families:
       - fedora-coreos-stable
 
-  - name: garden-linux
+  garden-linux:
     project: sap-se-gcp-gardenlinux
     images:
       - gardenlinux-gcp-cloud-gardener--prod-576-9-229156
