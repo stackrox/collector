@@ -1,0 +1,35 @@
+---
+
+- name: Create VMs
+  hosts: localhost
+  tags:
+    - setup
+  roles:
+    - create-all-vms
+  vars:
+    vm_list: "{{ virtual_machines }}"
+  post_tasks:
+    - meta: refresh_inventory
+
+- name: Provision VMs
+  hosts: "job_id_{{ job_id }}"
+  vars_files:
+    - group_vars/all.yml
+  roles:
+    - provision-vm
+  gather_facts: no
+  strategy: free
+  become: yes
+  tags:
+    - setup
+    - provision
+
+- name: Teardown VMs
+  hosts: "job_id_{{ job_id }}"
+  vars_files:
+    - group_vars/all.yml
+  roles:
+    - destroy-vm
+  tags:
+    - teardown
+
