@@ -928,8 +928,7 @@ func (s *SocatTestSuite) TestSocat() {
 	assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoint80.Protocol)
 	assert.Equal(s.T(), endpoint80.Originator.ProcessName, process80.Name)
 	assert.Equal(s.T(), endpoint80.Originator.ProcessExecFilePath, process80.ExePath)
-	// TODO Enable this assert
-	// assert.Equal(s.T(), endpoint80.Originator.ProcessArgs, process80.Args)
+	assert.Equal(s.T(), endpoint80.Originator.ProcessArgs, process80.Args)
 	assert.Equal(s.T(), 80, endpoint80.Address.Port)
 
 	assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoint8080.Protocol)
