@@ -16,6 +16,7 @@
       job_id: "{{ job_id }}"
       vm_config: "{{ vm_config }}"
       vm_image_family: "{{ vm_family }}"
+      vm_collection_method: "{{ vm_collection_method }}"
 
 - name: Create VM
   google.cloud.gcp_compute_instance:

@@ -1,0 +1,72 @@
+---
+- name: Create Benchmark VMs
+  hosts: localhost
+  tags:
+    - setup
+  tasks:
+    - name: Create VMs for each Collection Method
+      include_role: 
+        name: create-all-vms
+      vars:
+        # ensure that all listed VMs are created
+        test_platform: all
+        vm_list:
+          rhel: "{{ virtual_machines['rhel'] }}"
+          ubuntu-os: "{{ virtual_machines['ubuntu-os'] }}"
+        collection_method: "{{ method }}"
+      loop:
+        # We need to create a new VM for each platform, and each collection_method
+        # to allow a clean-slate upon which to run the benchmarks.
+        #
+        # create-all-vms will populate the name and labels which we 
+        # can then filter on later, to only run when we match a certain
+        # collection method
+        - ebpf
+        - kernel-module
+      loop_control:
+        # use a custom loop variable because ansible variables
+        # are global and "item" may be overwritten later on
+        # due to variable shadowing in each iteration of the loop
+        loop_var: method
+  post_tasks:
+    # We have all the VMs created now, so refresh the inventory - this allows
+    # us to use the provisioning role on the VMs we just created
+    - meta: refresh_inventory
+
+- name: Provision Benchmark VMs
+  hosts: "job_id_{{ job_id }}"
+  vars_files:
+    - group_vars/all.yml
+  roles: 
+    - provision-vm
+  gather_facts: no
+  strategy: free
+  become: yes
+  tags:
+    - setup
+    - provision
+
+- name: Run Benchmarks
+  # using platform_*:&job_id here ensures that ansible imports
+  # group_vars/platform_*.yml for the relevant platform, e.g.
+  # flatcar where we need to use a custom python interpreter.
+  hosts: "platform_*:&job_id_{{ job_id }}"
+  vars_files:
+    - group_vars/all.yml
+  strategy: free
+  roles:
+    - run-test-target
+  vars:
+    collector_test: ci-benchmarks
+  tags:
+    - run-benchmarks
+
+- name: Teardown Benchmark VMs
+  hosts: "job_id_{{ job_id }}"
+  vars_files:
+    - group_vars/all.yml
+  strategy: free
+  roles:
+    - destroy-vm
+  tags:
+    - teardown

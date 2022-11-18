@@ -15,7 +15,7 @@
 
 - block:
   - name: Run integration tests
-    shell: "make -C {{ collector_root }}/integration-tests {{ collector_test | default('ci-integration-tests') }}"
+    shell: "make -C {{ collector_root }}/integration-tests {{ collector_test }}"
     environment:
       COLLECTION_METHOD: "{{ collection_method }}"
       REMOTE_HOST_TYPE: ssh
@@ -44,3 +44,7 @@
   - name: Set tests as failed
     set_fact:
       success: false
+
+  # If this host is just for a certain collection method, skip running
+  # the test if we're not using that collection method.
+  when: vm_collection_method == collection_method or vm_collection_method == 'any'

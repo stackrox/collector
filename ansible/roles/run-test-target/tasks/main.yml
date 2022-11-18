@@ -17,11 +17,13 @@
 # the VM is in a consistent state between runs, and so we can
 # store the log files appropriately for each collection method
 #
+# It also allows us to run certain collection methods against
+# specific VMs (like in the benchmarks)
+#
 - name: Run Integration Tests
   include_tasks: test-collection-method.yml
   vars:
     collection_method: "{{ item }}"
-    collector_test: "{{ collector_test }}"
   with_items:
     - ebpf
     - kernel_module

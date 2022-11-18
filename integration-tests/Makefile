@@ -19,6 +19,10 @@ ci-integration-tests: process-network image-label-json
 ci-integration-tests: repeat-network missing-proc-scrape procfsscraper
 ci-integration-tests: process-listening-on-port
 
+.PHONY: ci-benchmarks
+ci-benchmarks: baseline
+ci-benchmarks: benchmark
+
 .PHONY: docker-clean
 docker-clean:
 	docker rm -fv container-stats benchmark collector grpc-server 2>/dev/null || true
