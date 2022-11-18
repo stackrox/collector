@@ -695,6 +695,10 @@ func (s *ProcfsScraperTestSuite) TestProcfsScraper() {
 	}
 }
 
+func getProcessListeningOnPortsImage() string {
+	return qaImage("quay.io/rhacs-eng/qa", "collector-processes-listening-on-ports-3.12.x-11-g64eeab9cbc")
+}
+
 func (s *IntegrationTestSuiteBase) waitForFileToBeDeleted(file string) error {
 	count := 0
 	maxCount := 10
@@ -730,7 +734,7 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	time.Sleep(30 * time.Second)
 
-	processImage := qaImage("quay.io/rhacs-eng/qa", "collector-processes-listening-on-ports")
+	processImage := getProcessListeningOnPortsImage()
 
 	containerID, err := s.launchContainer("process-ports", "-v", "/tmp:/tmp", processImage)
 
@@ -860,7 +864,7 @@ func (s *SymbolicLinkProcessTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	time.Sleep(30 * time.Second)
 
-	processImage := qaImage("quay.io/rhacs-eng/qa", "collector-processes-listening-on-ports")
+	processImage := getProcessListeningOnPortsImage()
 
 	containerID, err := s.launchContainer("process-ports", "-v", "/tmp:/tmp", processImage)
 
@@ -871,10 +875,7 @@ func (s *SymbolicLinkProcessTestSuite) SetupSuite() {
 
 	_, err = s.collector.executor.Exec("sh", "-c", "rm "+actionFile+" || true")
 
-	_, err = s.execContainer("process-ports", []string{"ln", "-s", "/process-listening-on-ports", "/plop"})
-	s.Require().NoError(err)
-
-	_, err = s.execContainer("process-ports", []string{"/bin/bash", "-c", "/plop " + actionFile + " &"})
+	_, err = s.execContainer("process-ports", []string{"/bin/bash", "-c", "./plop " + actionFile + " &"})
 	s.Require().NoError(err)
 	_, err = s.collector.executor.Exec("sh", "-c", "echo open 9092 > " + actionFile)
 	err = s.waitForFileToBeDeleted(actionFile)
@@ -909,7 +910,7 @@ func (s *SymbolicLinkProcessTestSuite) TestSymbolicLinkProcess() {
 		assert.FailNowf(s.T(), "", "retrieved %d endpoints (expect 1)", len(endpoints))
 	}
 
-	assert.Equal(s.T(), 5, len(processes))
+	assert.Equal(s.T(), 4, len(processes))
 
 	processesMap := make(map[string][]ProcessInfo)
 	for _, process := range processes {
