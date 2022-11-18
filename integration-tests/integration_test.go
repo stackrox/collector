@@ -866,17 +866,14 @@ func (s *SymbolicLinkProcessTestSuite) SetupSuite() {
 
 	processImage := getProcessListeningOnPortsImage()
 
-	containerID, err := s.launchContainer("process-ports", "-v", "/tmp:/tmp", processImage)
+	actionFile := "/tmp/action_file_ln.txt"
+	_, err = s.collector.executor.Exec("sh", "-c", "rm "+actionFile+" || true")
+
+	containerID, err := s.launchContainer("process-ports", "-v", "/tmp:/tmp", "--entrypoint", "./plop", processImage, actionFile)
 
 	s.Require().NoError(err)
 	s.serverContainer = containerShortID(containerID)
 
-	actionFile := "/tmp/action_file_ln.txt"
-
-	_, err = s.collector.executor.Exec("sh", "-c", "rm "+actionFile+" || true")
-
-	_, err = s.execContainer("process-ports", []string{"/bin/bash", "-c", "./plop " + actionFile + " &"})
-	s.Require().NoError(err)
 	_, err = s.collector.executor.Exec("sh", "-c", "echo open 9092 > " + actionFile)
 	err = s.waitForFileToBeDeleted(actionFile)
 	s.Require().NoError(err)
@@ -910,7 +907,7 @@ func (s *SymbolicLinkProcessTestSuite) TestSymbolicLinkProcess() {
 		assert.FailNowf(s.T(), "", "retrieved %d endpoints (expect 1)", len(endpoints))
 	}
 
-	assert.Equal(s.T(), 4, len(processes))
+	assert.Equal(s.T(), 1, len(processes))
 
 	processesMap := make(map[string][]ProcessInfo)
 	for _, process := range processes {
