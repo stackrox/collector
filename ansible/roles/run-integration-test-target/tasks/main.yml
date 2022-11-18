@@ -1,0 +1,32 @@
+---
+- name: Log into quay.io
+  shell:
+    cmd: "docker login -u {{ quay_username }} --password-stdin quay.io"
+    stdin: "{{ quay_password }}"
+
+# 'success' will be set to false in the Run Integration Tests step
+# if any test fails. After the tests run, the Check results step
+# will cause a global failure if 'success' is set to false.
+- name: Set tests as successful
+  set_fact:
+    success: true
+
+#
+# Separation of collection method is only possible with a separate
+# task file, because we need to loop over a set of tasks to ensure
+# the VM is in a consistent state between runs, and so we can
+# store the log files appropriately for each collection method
+#
+- name: Run Integration Tests
+  include_tasks: test-collection-method.yml
+  vars:
+    collection_method: "{{ item }}"
+    collector_test: "{{ collector_test }}"
+  with_items:
+    - ebpf
+    - kernel_module
+
+- name: Check results
+  ansible.builtin.fail:
+    msg: Tests failed
+  when: success == false

@@ -1,14 +1,52 @@
 ---
 
-- import_playbook: create-vms.yml
+- name: Create Integration Test VMs
+  hosts: localhost
+  roles: 
+    - create-all-vms
+  vars:
+    vm_list: "{{ virtual_machines }}"
   tags:
     - setup
-- import_playbook: provision-vms.yml
+  post_tasks:
+    # We have all the VMs created now, so refresh the inventory - this allows
+    # us to use the provisioning role on the VMs we just created
+    - meta: refresh_inventory
+
+- name: Provision Integration Test VMs
+  hosts: "job_id_{{ job_id }}"
+  vars_files:
+    - group_vars/all.yml
+  roles: 
+    - provision-vm
+  gather_facts: no
+  strategy: free
+  become: yes
   tags:
+    - setup
     - provision
-- import_playbook: run-integration-tests.yml
+
+- name: Run Integration Tests
+  # using platform_*:&job_id here ensures that ansible imports
+  # group_vars/platform_*.yml for the relevant platform, e.g.
+  # flatcar where we need to use a custom python interpreter.
+  hosts: "platform_*:&job_id_{{ job_id }}"
+  vars_files:
+    - group_vars/all.yml
+  strategy: free
+  roles:
+    - run-integration-test-target
+  vars:
+    collector_test: "{{ collector_test | default('ci-integration-tests') }}"
   tags:
     - run-tests
-- import_playbook: teardown-vms.yml
+
+- name: Teardown Integration Test VMs
+  hosts: "job_id_{{ job_id }}"
+  vars_files:
+    - group_vars/all.yml
+  strategy: free
+  roles:
+    - destroy-vm
   tags:
     - teardown
