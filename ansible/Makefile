@@ -44,7 +44,7 @@ benchmarks: secrets.yml
 .PHONY: create-benchmark-vms
 create-benchmark-vms:
 	ansible-playbook -i $(CONTEXT) \
-		--tags setup,provision
+		--tags setup,provision \
 		benchmarks.yml
 
 .PHONY: secrets-config

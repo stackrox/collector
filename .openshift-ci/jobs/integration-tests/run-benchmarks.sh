@@ -21,10 +21,12 @@ function save_artifacts() {
     fi
 }
 
+exit_code=0
+
 run_benchmarks || exit_code=$?
 save_artifacts
 
-if [ "${exit_code}" -ne 0 ]; then
+if ((exit_code)); then
     exit "${exit_code}"
 fi
 
