@@ -2,7 +2,11 @@
 
 set -eo pipefail
 
-BRANCH="$(jq -r '.extra_refs[0].base_ref' <(echo "$JOB_SPEC"))"
+CI_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+# shellcheck source=SCRIPTDIR/../../scripts/lib.sh
+source "${CI_ROOT}/scripts/lib.sh"
+
+BRANCH="$(get_branch)"
 
 function run_benchmarks() {
     make -C ansible BUILD_TYPE=ci benchmarks
@@ -32,13 +36,16 @@ BASELINE=.openshift-ci/scripts/baseline
 
 if [[ "$BRANCH" == "master" ]]; then
     "${BASELINE}"/main.py --update integration-tests/perf.json
-else
-    # perf_table=$(cat benchmark.md)
+elif ! is_openshift_CI_rehearse_PR; then
+    # only post the benchmark results if we're on a collector PR, as opposed to
+    # an openshift/release PR or on master.
+    perf_table=$(cat benchmark.md)
 
-    # export PERF_TABLE="$perf_table"
+    pr_id="$(get_pr_details | jq -r .id)"
 
-    # hub-comment -template-file "${BASELINE}/performance-comment-template.tpl"
-    #
-    # TODO: add github commenting
-    echo "Would comment on PR"
+    export PERF_TABLE="$perf_table"
+    export CIRCLE_BRANCH="$BRANCH"
+    export CIRCLE_PULL_REQUEST="https://github.com/stackrox/collector/pull/${pr_id}"
+
+    hub-comment -template-file "${BASELINE}/performance-comment-template.tpl"
 fi
