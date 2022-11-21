@@ -91,17 +91,20 @@ std::string Process::exe_path() const {
 std::string Process::args() const {
   WaitForProcessInfo();
 
-  if (falco_threadinfo_) {
-    if (falco_threadinfo_->m_args.empty()) return "";
-    std::ostringstream args;
-    for (auto it = falco_threadinfo_->m_args.begin(); it != falco_threadinfo_->m_args.end();) {
-      args << *it++;
-      if (it != falco_threadinfo_->m_args.end()) args << " ";
-    }
-    return args.str();
+  if (!falco_threadinfo_) {
+    return NOT_AVAILABLE;
   }
 
-  return NOT_AVAILABLE;
+  if (falco_threadinfo_->m_args.empty()) {
+    return "";
+  }
+
+  std::ostringstream args;
+  for (auto it = falco_threadinfo_->m_args.begin(); it != falco_threadinfo_->m_args.end();) {
+    args << *it++;
+    if (it != falco_threadinfo_->m_args.end()) args << " ";
+  }
+  return args.str();
 }
 
 Process::Process(
