@@ -63,7 +63,7 @@ class ProcessStore {
 // Information collected about a process.
 class Process {
  public:
-  uint64_t pid() const { return pid_; }
+  inline uint64_t pid() const { return pid_; }
   std::string container_id() const;
   std::string comm() const;
   std::string exe() const;
