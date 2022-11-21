@@ -341,8 +341,9 @@ void SysdigService::ServePendingProcessRequests() {
     uint64_t pid = request.first;
     auto callback = request.second.lock();
 
-    if (callback)
+    if (callback) {
       (*callback)(inspector_->get_thread_ref(pid, true));
+    }
 
     pending_process_requests_.pop_front();
   }

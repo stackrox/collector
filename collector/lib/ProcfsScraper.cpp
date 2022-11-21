@@ -408,8 +408,9 @@ void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const C
 
             std::shared_ptr<Process> process;
 
-            if (process_store)
+            if (process_store) {
               process = process_store->Fetch(socket.pid());
+            }
 
             listen_endpoints->emplace_back(container_id, ep->endpoint, ep->l4proto, process);
           }
