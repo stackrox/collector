@@ -18,6 +18,7 @@ export COLLECTOR_IMAGE
 ci-integration-tests: process-network image-label-json 
 ci-integration-tests: repeat-network missing-proc-scrape procfsscraper
 ci-integration-tests: process-listening-on-port
+ci-integration-tests: symbolic-link-process
 
 .PHONY: docker-clean
 docker-clean:
@@ -79,6 +80,13 @@ process-listening-on-port: docker-clean
 	set -o pipefail ; \
 	go test -timeout 90m -count=1 -v \
 	  -run TestProcessListeningOnPort 2>&1 | tee -a integration-test.log
+
+.PHONY: symbolic-link-process
+symbolic-link-process: docker-clean
+	go version
+	set -o pipefail ; \
+	go test -timeout 90m -count=1 -v \
+	  -run TestSymbolicLinkProcess 2>&1 | tee -a integration-test.log
 
 .PHONY: socat
 socat: docker-clean
