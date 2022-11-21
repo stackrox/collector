@@ -38,7 +38,7 @@ integration-tests: secrets.yml
 benchmarks: secrets.yml
 	ansible-playbook -i $(CONTEXT) \
 		-e @secrets.yml \
-		--tags run-benchmark \
+		--tags run-benchmarks \
 		benchmarks.yml
 
 .PHONY: create-benchmark-vms
