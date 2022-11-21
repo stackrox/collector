@@ -342,7 +342,7 @@ void SysdigService::ServePendingProcessRequests() {
     auto callback = request.second.lock();
 
     if (callback)
-      callback->operator()(inspector_->get_thread_ref(pid, true));
+      (*callback)(inspector_->get_thread_ref(pid, true));
 
     pending_process_requests_.pop_front();
   }
