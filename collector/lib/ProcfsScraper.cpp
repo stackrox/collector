@@ -437,7 +437,7 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
   // Read all the information from proc.
   while (auto curr = procdir.read()) {
     if (!std::isdigit(curr->d_name[0])) continue;  // only look for <pid> entries
-    int pid = stoi(curr->d_name);
+    long long pid = strtoll(curr->d_name, 0, 10);
 
     FDHandle dirfd = procdir.openat(curr->d_name, O_RDONLY);
     if (!dirfd.valid()) {
