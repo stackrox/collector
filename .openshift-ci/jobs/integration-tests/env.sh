@@ -20,6 +20,10 @@ export GCP_PROJECT="stackrox-ci"
 export COLLECTOR_REPO="quay.io/rhacs-eng/collector"
 
 IMAGE_TAG="$(make tag)"
+BUILDER_TAG="$(make builder-tag)"
+
+export COLLECTOR_TAG="${IMAGE_TAG}"
+export COLLECTOR_BUILDER_TAG="${BUILDER_TAG}"
 
 export COLLECTOR_IMAGE
 CPAAS_TEST=${CPAAS_TEST:-0}
