@@ -48,7 +48,7 @@ EMPTY_BASELINE_STRUCTURE = []
 
 
 def get_gcs_blob(bucket_name, filename):
-    credentials = json.loads(os.environ["GOOGLE_CREDENTIALS_CIRCLECI_COLLECTOR"])
+    credentials = json.loads(os.environ["GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT"])
     storage_credentials = service_account.Credentials.from_service_account_info(credentials)
     storage_client = storage.Client(credentials=storage_credentials)
 
