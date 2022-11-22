@@ -3,13 +3,11 @@ package suites
 import (
 	"fmt"
 	"os"
-	"testing"
 	"time"
 
 	"github.com/google/shlex"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
 )
@@ -25,14 +23,6 @@ type BenchmarkCollectorTestSuite struct {
 type BenchmarkTestSuiteBase struct {
 	IntegrationTestSuiteBase
 	perfContainers []string
-}
-
-func TestBenchmarkBaseline(t *testing.T) {
-	suite.Run(t, new(BenchmarkBaselineTestSuite))
-}
-
-func TestBenchmarkCollector(t *testing.T) {
-	suite.Run(t, new(BenchmarkCollectorTestSuite))
 }
 
 func (b *BenchmarkTestSuiteBase) StartPerfTools() {
