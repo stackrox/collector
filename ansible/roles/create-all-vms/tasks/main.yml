@@ -9,7 +9,7 @@
     vm_family: "{{ item.1 }}"
     vm_platform: "{{ item.0.key }}"
     vm_config: "{{ item.0.key }}_{{ item.1 }}"
-    vm_collection_method: "{{ collection_method | default('any') }}"
+    vm_collection_method: "{{ collection_method | default('any') | replace('-', '_') }}"
 
   #
   # The loop will create the "item" variable, which can be used throughout the task
@@ -43,6 +43,7 @@
     vm_image: "{{ item.1 }}"
     vm_platform: "{{ item.0.key }}"
     vm_config: "{{ item.0.key }}_{{ item.0.key }}"
+    vm_collection_method: "{{ collection_method | default('any') | replace('-', '_') }}"
 
   #
   # The loop will create the "item" variable, which can be used throughout the task
