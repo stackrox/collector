@@ -1,15 +1,15 @@
-package integrationtests
+package common
 
 import (
-	"strings"
 	"fmt"
 	"regexp"
+	"strings"
 )
 
 type ProcessOriginator struct {
-	ProcessName string
+	ProcessName         string
 	ProcessExecFilePath string
-	ProcessArgs string
+	ProcessArgs         string
 }
 
 func removeQuotesAndWhiteSpace(s string) string {
@@ -35,7 +35,7 @@ func NewProcessOriginator(line string) (*ProcessOriginator, error) {
 	var processArgs string
 	r := regexp.MustCompile("process_name:(.*)process_exec_file_path:(.*)process_args:(.*)\n$")
 	processArr := r.FindStringSubmatch(line)
-	if len(processArr) !=4 {
+	if len(processArr) != 4 {
 		r := regexp.MustCompile("process_name:(.*)process_exec_file_path:(.*)\n$")
 		processArr = r.FindStringSubmatch(line)
 		if len(processArr) != 3 {
@@ -47,9 +47,9 @@ func NewProcessOriginator(line string) (*ProcessOriginator, error) {
 	processName := removeQuotesAndWhiteSpace(processArr[1])
 	processExecFilePath := removeQuotesAndWhiteSpace(processArr[2])
 
-	return &ProcessOriginator {
-		ProcessName: processName,
+	return &ProcessOriginator{
+		ProcessName:         processName,
 		ProcessExecFilePath: processExecFilePath,
-		ProcessArgs: processArgs,
+		ProcessArgs:         processArgs,
 	}, nil
 }

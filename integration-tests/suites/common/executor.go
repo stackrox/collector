@@ -1,4 +1,4 @@
-package integrationtests
+package common
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 )
 
 var (
-    debug = false
+	debug = false
 )
 
 type Executor interface {
@@ -142,7 +142,7 @@ func NewExecutor() Executor {
 
 // Execute provided command with retries on error.
 func (e *executor) Exec(args ...string) (string, error) {
-	return retry(func() (string, error) {
+	return Retry(func() (string, error) {
 		return e.RunCommand(e.builder.ExecCommand(args...))
 	})
 }
@@ -246,7 +246,7 @@ func (e *gcloudCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
 		userInstance = e.user + "@" + e.instance
 	}
 	cmdArgs = append(cmdArgs, userInstance, "--", "-T")
-	cmdArgs = append(cmdArgs, quoteArgs(args)...)
+	cmdArgs = append(cmdArgs, QuoteArgs(args)...)
 	return exec.Command("gcloud", cmdArgs...)
 }
 
@@ -269,7 +269,7 @@ func (e *sshCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
 		"-o", "StrictHostKeyChecking=no", "-i", e.keyPath,
 		e.user + "@" + e.address}
 
-	cmdArgs = append(cmdArgs, quoteArgs(args)...)
+	cmdArgs = append(cmdArgs, QuoteArgs(args)...)
 	return exec.Command("ssh", cmdArgs...)
 }
 
