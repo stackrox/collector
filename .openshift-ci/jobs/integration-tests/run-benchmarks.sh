@@ -32,12 +32,14 @@ fi
 
 BASELINE=.openshift-ci/scripts/baseline
 
-"${BASELINE}"/main.py --test integration-tests/perf.json \
+jq -s 'flatten' integration-tests/perf.json > integration-tests/perf-all.json
+
+"${BASELINE}"/main.py --test integration-tests/perf-all.json \
     | sort \
     | awk -f "${BASELINE}"/format.awk > benchmark.md
 
 if [[ "$BRANCH" == "master" ]]; then
-    "${BASELINE}"/main.py --update integration-tests/perf.json
+    "${BASELINE}"/main.py --update integration-tests/perf-all.json
 elif ! is_openshift_CI_rehearse_PR; then
     # only post the benchmark results if we're on a collector PR, as opposed to
     # an openshift/release PR or on master.
