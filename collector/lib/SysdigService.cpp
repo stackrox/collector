@@ -236,13 +236,20 @@ bool SysdigService::SendExistingProcesses(SignalHandler* handler) {
   }
 
   return threads->loop([&](sinsp_threadinfo& tinfo) {
-    if (!tinfo.m_container_id.empty() && tinfo.is_main_thread()) {
+    if (tinfo.m_container_id.empty()) {
+      CLOG(DEBUG) << "Empty container ID";
+      return true;
+    }
+
+    if (tinfo.is_main_thread()) {
       auto result = handler->HandleExistingProcess(&tinfo);
       if (result == SignalHandler::ERROR || result == SignalHandler::NEEDS_REFRESH) {
         CLOG(WARNING) << "Failed to write existing process signal: " << &tinfo;
         return false;
       }
       CLOG(DEBUG) << "Found existing process: " << &tinfo;
+    } else {
+      CLOG(DEBUG) << "Non-main thread found: " << &tinfo;
     }
     return true;
   });
