@@ -32,6 +32,8 @@ fi
 
 BASELINE=.openshift-ci/scripts/baseline
 
+echo "$(get_pr_details) | jq"
+
 jq -s 'flatten' integration-tests/perf.json > integration-tests/perf-all.json
 
 "${BASELINE}"/main.py --test integration-tests/perf-all.json \
