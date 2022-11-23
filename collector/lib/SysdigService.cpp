@@ -270,6 +270,18 @@ void SysdigService::CleanUp() {
   }
 
   signal_handlers_.clear();
+
+  // Cancel all pending process requests
+  std::lock_guard<std::mutex> lock(process_requests_mutex_);
+
+  while (!pending_process_requests_.empty()) {
+    auto& request = pending_process_requests_.front();
+    auto callback = request.second.lock();
+
+    if (callback) (*callback)(0);
+
+    pending_process_requests_.pop_front();
+  }
 }
 
 bool SysdigService::GetStats(SysdigStats* stats) const {
