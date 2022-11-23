@@ -44,6 +44,7 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 		"COLLECTION_METHOD":       collectionMethod,
 		"COLLECTOR_PRE_ARGUMENTS": collectorPreArguments,
 		"ENABLE_CORE_DUMP":        "false",
+		"COLLECTOR_SD_LOG":        "true",
 	}
 	if !offlineMode {
 		env["MODULE_DOWNLOAD_BASE_URL"] = "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"
@@ -153,8 +154,8 @@ func (c *CollectorManager) BoltDB() (db *bolt.DB, err error) {
 	return db, err
 }
 
-//These two methods might be useful in the future. I used them for debugging
-func (c *CollectorManager) getContainers() (string, error) {
+// These two methods might be useful in the future. I used them for debugging
+func (c *collectorManager) getContainers() (string, error) {
 	cmd := []string{"docker", "container", "ps"}
 	containers, err := c.executor.Exec(cmd...)
 
