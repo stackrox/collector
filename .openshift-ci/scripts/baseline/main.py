@@ -197,7 +197,7 @@ def process(content):
 
     processed = [
         {
-            "kernel": record.get("VmConfig"),
+            "kernel": record.get("VmConfig").replace('_', '.'),
             "collection_method": record.get("CollectionMethod"),
             "timestamp": record.get("Timestamp"),
             record["TestName"]: record.get("Metrics").get("hackbench_avg_time")
