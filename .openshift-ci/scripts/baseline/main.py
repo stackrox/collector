@@ -189,6 +189,14 @@ def intersection(baseline_data, new_data):
     return (baseline_filtered, new_filtered)
 
 
+def normalize_collection_method(method):
+    if any(m in method for m in ('kernel', 'module')):
+        return 'module'
+    if 'ebpf' in method:
+        return 'ebpf'
+    raise Exception(f'Invalid collection method: {method}')
+
+
 def process(content):
     """
     Transform benchmark data into the format CI scripts work with, and group by
@@ -198,7 +206,7 @@ def process(content):
     processed = [
         {
             "kernel": record.get("VmConfig").replace('_', '.'),
-            "collection_method": record.get("CollectionMethod"),
+            "collection_method": normalize_collection_method(record.get("CollectionMethod")),
             "timestamp": record.get("Timestamp"),
             record["TestName"]: record.get("Metrics").get("hackbench_avg_time")
         }

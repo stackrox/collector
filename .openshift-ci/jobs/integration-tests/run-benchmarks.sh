@@ -51,5 +51,7 @@ elif ! is_openshift_CI_rehearse_PR; then
     export CIRCLE_BRANCH="$BRANCH"
     export CIRCLE_PULL_REQUEST="https://github.com/stackrox/collector/pull/${pr_id}"
 
+    echo "Posting perf results to ${CIRCLE_PULL_REQUEST}"
+
     hub-comment -template-file "${BASELINE}/performance-comment-template.tpl"
 fi
