@@ -66,7 +66,7 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 
 	return &CollectorManager{
 		DBPathRemote:      "/tmp/collector-test.db",
-		DBPath:            "/tmp/collector-test-" + vm_config + ".db",
+		DBPath:            "/tmp/collector-test-" + vm_config + "-" + collectionMethod + ".db",
 		executor:          e,
 		DisableGrpcServer: false,
 		BootstrapOnly:     false,
