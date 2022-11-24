@@ -14,11 +14,29 @@ SHELL=/bin/bash
 # Environment variable COLLECTOR_IMAGE is used by integration-tests
 export COLLECTOR_IMAGE
 
+ALL_TESTS = $(shell go test -list .)
+
+#
+# Macro to define a test-specific target, based on the list
+# of tests provided by the go test utility
+#
+define make-test-target
+$1: docker-clean
+	go version
+	set -o pipefail; \
+		go test -timeout 60m -count=1 -v \
+		-run $1 2>&1 | tee -a integration-test.log
+endef
+
+# Generates all the specific test targets
+$(foreach element,$(ALL_TESTS),$(eval $(call make-test-target,$(element))))
+
+# Run everything on CI, rather than specific tests.
 .PHONY: ci-integration-tests
-ci-integration-tests: process-network image-label-json 
-ci-integration-tests: repeat-network missing-proc-scrape procfsscraper
-ci-integration-tests: process-listening-on-port
-ci-integration-tests: symbolic-link-process
+ci-integration-tests: docker-clean
+	go version
+	set -o pipefail; \
+		go test -timeout 120m -v 2>&1 | tee -a integration-test.log
 
 .PHONY: ci-benchmarks
 ci-benchmarks: baseline
@@ -28,76 +46,11 @@ ci-benchmarks: benchmark
 docker-clean:
 	docker rm -fv container-stats benchmark collector grpc-server 2>/dev/null || true
 
-.PHONY: process-network
-process-network: docker-clean
-	go version
-	set -o pipefail ; \
-	go test -timeout 60m -count=1 -v \
- 	  -run TestProcessNetwork 2>&1 | tee -a integration-test.log
-
 .PHONY:
-benchmark: docker-clean
-	go version
-	set -o pipefail ; \
-	go test -timeout 60m -count=1 -v \
-	  -run TestBenchmarkCollector 2>&1 | tee -a integration-test.log
+benchmark: TestBenchmarkCollector
 
 .PHONY: baseline
-baseline: docker-clean
-	go version
-	set -o pipefail ; \
-	go test -timeout 60m -count=1 -v \
-	  -run TestBenchmarkBaseline 2>&1 | tee -a integration-test.log
-
-.PHONY: image-label-json
-image-label-json: docker-clean
-	go version
-	set -o pipefail ; \
-	go test -timeout 60m -count=1 -v \
-	  -run TestImageLabelJSON 2>&1 | tee -a integration-test.log
-
-.PHONY: missing-proc-scrape
-missing-proc-scrape: docker-clean
-	./scripts/create-fake-proc-dir.sh
-	go version
-	set -o pipefail ; \
-	go test -timeout 60m -count=1 -v \
-	  -run TestMissingProcScrape 2>&1 | tee -a integration-test.log
-
-.PHONY: repeat-network
-repeat-network: docker-clean
-	go version
-	set -o pipefail ; \
-	go test -timeout 90m -count=1 -v \
-	  -run TestRepeatedNetworkFlow 2>&1 | tee -a integration-test.log
-
-.PHONY: procfsscraper
-procfsscraper: docker-clean
-	go version
-	set -o pipefail ; \
-	go test -timeout 90m -count=1 -v \
-	  -run TestProcfsScraper 2>&1 | tee -a integration-test.log
-
-.PHONY: process-listening-on-port
-process-listening-on-port: docker-clean
-	go version
-	set -o pipefail ; \
-	go test -timeout 90m -count=1 -v \
-	  -run TestProcessListeningOnPort 2>&1 | tee -a integration-test.log
-
-.PHONY: symbolic-link-process
-symbolic-link-process: docker-clean
-	go version
-	set -o pipefail ; \
-	go test -timeout 90m -count=1 -v \
-	  -run TestSymbolicLinkProcess 2>&1 | tee -a integration-test.log
-
-.PHONY: socat
-socat: docker-clean
-	go version
-	set -o pipefail ; \
-	go test -timeout 90m -count=1 -v \
-	  -run TestSocat 2>&1 | tee -a integration-test.log
+baseline: TestBenchmarkBaseline
 
 LOG_FILE ?= integration-test.log
 .PHONY: report
