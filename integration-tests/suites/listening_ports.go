@@ -96,11 +96,7 @@ func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
 	for _, endpoint := range endpoints {
 		assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoint.Protocol)
 
-		// TODO
-		// There is a difference in the lengths of the process name
-		// The process stream truncates to 16 characters while endpoints does not.
-		// We need to decide which way to go and make these tests consistent with that.
-		//assert.Equal(s.T(), endpoint.Originator.ProcessName, process.Name)
+		assert.Equal(s.T(), endpoint.Originator.ProcessName, process.Name)
 		assert.Equal(s.T(), endpoint.Originator.ProcessExecFilePath, process.ExePath)
 		assert.Equal(s.T(), endpoint.Originator.ProcessArgs, process.Args)
 

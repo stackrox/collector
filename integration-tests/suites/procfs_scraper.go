@@ -73,33 +73,28 @@ func (s *ProcfsScraperTestSuite) TearDownSuite() {
 }
 
 func (s *ProcfsScraperTestSuite) TestProcfsScraper() {
-	var imageFamily = os.Getenv("IMAGE_FAMILY")
-	// TODO: These tests fail for rhel-7, ubuntu-pro-1804-lts, sles-12, and sometimes for ubuntu-2204-lts.
-	// Make the tests pass for them and remove this if statement
-	if imageFamily != "rhel-7" && imageFamily != "ubuntu-pro-1804-lts" && imageFamily != "sles-12" && imageFamily != "ubuntu-2204-lts" {
-		endpoints, err := s.GetEndpoints(s.ServerContainer)
-		if !s.TurnOffScrape && s.RoxProcessesListeningOnPort {
-			// If scraping is on and the feature flag is enables we expect to find the nginx endpoint
-			s.Require().NoError(err)
-			assert.Equal(s.T(), 2, len(endpoints))
-			processes, err := s.GetProcesses(s.ServerContainer)
-			s.Require().NoError(err)
+	endpoints, err := s.GetEndpoints(s.ServerContainer)
+	if !s.TurnOffScrape && s.RoxProcessesListeningOnPort {
+		// If scraping is on and the feature flag is enables we expect to find the nginx endpoint
+		s.Require().NoError(err)
+		assert.Equal(s.T(), 2, len(endpoints))
+		processes, err := s.GetProcesses(s.ServerContainer)
+		s.Require().NoError(err)
 
-			assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[0].Protocol)
-			assert.Equal(s.T(), "(timestamp: nil Timestamp)", endpoints[0].CloseTimestamp)
-			assert.Equal(s.T(), endpoints[0].Originator.ProcessName, processes[0].Name)
-			assert.Equal(s.T(), endpoints[0].Originator.ProcessExecFilePath, processes[0].ExePath)
-			assert.Equal(s.T(), endpoints[0].Originator.ProcessArgs, processes[0].Args)
+		assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[0].Protocol)
+		assert.Equal(s.T(), "(timestamp: nil Timestamp)", endpoints[0].CloseTimestamp)
+		assert.Equal(s.T(), endpoints[0].Originator.ProcessName, processes[0].Name)
+		assert.Equal(s.T(), endpoints[0].Originator.ProcessExecFilePath, processes[0].ExePath)
+		assert.Equal(s.T(), endpoints[0].Originator.ProcessArgs, processes[0].Args)
 
-			assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[1].Protocol)
-			assert.NotEqual(s.T(), "(timestamp: nil Timestamp)", endpoints[1].CloseTimestamp)
-			assert.Equal(s.T(), endpoints[1].Originator.ProcessName, processes[0].Name)
-			assert.Equal(s.T(), endpoints[1].Originator.ProcessExecFilePath, processes[0].ExePath)
-			assert.Equal(s.T(), endpoints[1].Originator.ProcessArgs, processes[0].Args)
-		} else {
-			// If scraping is off or the feature flag is disabled
-			// we expect not to find the nginx endpoint and we should get an error
-			s.Require().Error(err)
-		}
+		assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[1].Protocol)
+		assert.NotEqual(s.T(), "(timestamp: nil Timestamp)", endpoints[1].CloseTimestamp)
+		assert.Equal(s.T(), endpoints[1].Originator.ProcessName, processes[0].Name)
+		assert.Equal(s.T(), endpoints[1].Originator.ProcessExecFilePath, processes[0].ExePath)
+		assert.Equal(s.T(), endpoints[1].Originator.ProcessArgs, processes[0].Args)
+	} else {
+		// If scraping is off or the feature flag is disabled
+		// we expect not to find the nginx endpoint and we should get an error
+		s.Require().Error(err)
 	}
 }
