@@ -1,7 +1,6 @@
 package suites
 
 import (
-	"os"
 	"strconv"
 	"time"
 
