@@ -47,11 +47,12 @@ elif ! is_openshift_CI_rehearse_PR; then
     # an openshift/release PR or on master.
     perf_table=$(cat benchmark.md)
 
-    pr_id="$(get_pr_details | jq -r .id)"
+    # use `html_url` rather than `url` to ensure compatibility with hub-comment
+    pr_url="$(get_pr_details | jq -r .html_url)"
 
     export PERF_TABLE="$perf_table"
     export CIRCLE_BRANCH="$BRANCH"
-    export CIRCLE_PULL_REQUEST="https://github.com/stackrox/collector/pull/${pr_id}"
+    export CIRCLE_PULL_REQUEST="${pr_url}"
 
     echo "Posting perf results to ${CIRCLE_PULL_REQUEST}"
 
