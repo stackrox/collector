@@ -153,7 +153,7 @@ func (c *CollectorManager) BoltDB() (db *bolt.DB, err error) {
 	return db, err
 }
 
-//These two methods might be useful in the future. I used them for debugging
+// These two methods might be useful in the future. I used them for debugging
 func (c *CollectorManager) getContainers() (string, error) {
 	cmd := []string{"docker", "container", "ps"}
 	containers, err := c.executor.Exec(cmd...)
