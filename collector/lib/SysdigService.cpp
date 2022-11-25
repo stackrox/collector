@@ -87,7 +87,6 @@ bool SysdigService::InitKernel(const CollectorConfig& config) {
       CLOG(ERROR) << "Failed to setup eBPF probe";
       return false;
     }
-    inspector_->set_bpf_probe(kProbePath);
   } else {
     KernelDriverModule driver;
     if (!driver.Setup(config, SysdigService::kModulePath)) {
@@ -185,14 +184,20 @@ void SysdigService::Start() {
     }
   }
 
-  inspector_->open("");
+  /* Get only necessary tracepoints. */
+  std::unordered_set<uint32_t> tp_set = inspector_->enforce_sinsp_state_tp();
+  std::unordered_set<uint32_t> ppm_sc;
 
   if (!useEbpf_) {
+    inspector_->open_kmod(2 * DEFAULT_DRIVER_BUFFER_BYTES_DIM, ppm_sc, tp_set);
+
     // Drop DAC_OVERRIDE capability after opening the device files.
     capng_updatev(CAPNG_DROP, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_DAC_OVERRIDE, -1);
     if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
       CLOG(WARNING) << "Failed to drop DAC_OVERRIDE capability: " << StrError();
     }
+  } else {
+    inspector_->open_bpf(kProbePath, 2 * DEFAULT_DRIVER_BUFFER_BYTES_DIM, ppm_sc, tp_set);
   }
 
   std::lock_guard<std::mutex> lock(running_mutex_);

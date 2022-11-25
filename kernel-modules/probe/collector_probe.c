@@ -258,7 +258,7 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
   }
 
   sc_evt = get_syscall_info(id);
-  if (sc_evt == NULL || (sc_evt->flags & UF_USED) == 0 || (sc_evt->flags & UF_UNINTERESTING) != 0) {
+  if (sc_evt == NULL || (sc_evt->flags & UF_USED) == 0) {
     return 0;
   }
 
@@ -328,7 +328,7 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx) {
   }
 
   sc_evt = get_syscall_info(id);
-  if (sc_evt == NULL || (sc_evt->flags & UF_USED) == 0 || (sc_evt->flags & UF_UNINTERESTING) != 0) {
+  if (sc_evt == NULL || (sc_evt->flags & UF_USED) == 0) {
     return 0;
   }
 
