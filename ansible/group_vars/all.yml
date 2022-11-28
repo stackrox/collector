@@ -9,10 +9,6 @@ job_id: "{{ lookup('env', 'JOB_ID', default=current_user) }}"
 test_platform: "{{ lookup('env', 'VM_TYPE', default='rhel') }}"
 collector_root: "{{ playbook_dir }}/.."
 
-benchmark_vm_types:
-  - rhel
-  - ubuntu-os
-
 virtual_machines:
   rhel:
     project: rhel-cloud
