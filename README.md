@@ -27,10 +27,13 @@ Here are few links to get more details:
    understand how Collector works, and it's place in the grand scheme of
    things, you may want to look here.
 
-3. [Roadmap](docs/roadmap.md): Our plans and directions for future development.
+3. [Troubleshooting](docs/troubleshooting.md): For common startup errors,
+   ways of identifying and fixing them.
 
-3. [Release Process](docs/release.md): Having troubles with the release? Here
+4. [Roadmap](docs/roadmap.md): Our plans and directions for future development.
+
+5. [Release Process](docs/release.md): Having troubles with the release? Here
    we have a few tips for you.
 
-4. [References](docs/references.md): Contains a comprehensive list of
+6. [References](docs/references.md): Contains a comprehensive list of
    configuration options for the project.
