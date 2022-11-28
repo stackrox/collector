@@ -15,9 +15,16 @@
 
 - block:
   - name: Run integration tests
-    shell: "make -C {{ collector_root }}/integration-tests {{ collector_test | default('ci-integration-tests') }}"
+    shell: "make -C {{ collector_root }}/integration-tests {{ collector_test }}"
     environment:
       COLLECTION_METHOD: "{{ collection_method }}"
+      REMOTE_HOST_TYPE: ssh
+      SSH_ADDRESS: "{{ ansible_host }}"
+      SSH_PORT: "{{ ansible_port }}"
+      SSH_USER: "{{ ansible_user }}"
+      SSH_KEY_PATH: "{{ ansible_ssh_private_key_file }}"
+      VM_CONFIG: "{{ vm_config }}"
+      IMAGE_FAMILY: "{{ vm_image_family }}"
     register: test_result
     delegate_to: localhost
 
@@ -37,3 +44,7 @@
   - name: Set tests as failed
     set_fact:
       success: false
+
+  # If this host is just for a certain collection method, skip running
+  # the test if we're not using that collection method.
+  when: vm_collection_method == collection_method or vm_collection_method == 'any'

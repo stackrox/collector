@@ -28,24 +28,23 @@ be run either directly with `ansible-playbook` or through the Makefile targets.
 For example, to create and provision RHEL VMs for testing:
 
 ```bash
-$ VM_TYPE=rhel ansible-playbook -i dev create-vms.yml
+$ VM_TYPE=rhel ansible-playbook -i dev vm-lifecycle.yml --tags setup
 
 # note you only need to specify VM_TYPE when creating VMs
-$ ansible-playbook -i dev provision-vms.yml
+$ ansible-playbook -i dev vm-lifecycle.yml --tags provision
 ```
 
-Alternatively you can use the `integration-tests.yml` playbook to run only 
-the creation and provisioning steps using their tags:
+Alternatively you can use the `integration-tests.yml` playbook to handle 
+creation and deletion of VMs as well as running the integration tests against
+them:
 
 ```bash
-$ VM_TYPE=rhel ansible-playbook -i dev --tags setup,provision integration-tests.yml
+$ VM_TYPE=rhel ansible-playbook -i dev integration-tests.yml
 ```
 
-If you simply wish to run everything:
+Note: the `integration-tests.yml` playbook also supports the `setup`, `provision`
+`run-tests` and `teardown` tags to run each stage of the process.
 
-```bash
-$ VM_TYPE=rhel ansible-playbook -i dev --tags all integration-tests.yml
-```
 
 ## VMs
 
@@ -131,6 +130,9 @@ protect it, though you will need to input the password every time it is used.
 $ ansible-vault encrypt secrets.yml
 ```
 
+This will require some changes to any `ansible-playbook` commands, as you
+need to provide a password. Add `--ask-vault-pass` to any commands.
+
 ## Available Roles
 
 ### create-vm
@@ -138,7 +140,15 @@ $ ansible-vault encrypt secrets.yml
 This role allows a playbook to create a VM on GCP. It is expected to run on 
 a host that has the GCP SDK available (which is normally localhost)
 
-See [create-vms.yml](./create-vms.yml) for an example of how it's used.
+See [create-all-vms](./roles/create-all-vms/tasks/main.yml) for an example of how it's used.
+
+### create-all-vms
+
+Higher level role which creates all VMs from a given list. Calls into create
+VM for the heavy lifting.
+
+See [integration-tests.yml](./integration-tests.yml) or [benchmarks.yml](./benchmarks.yml) for
+examples of how it's used.
 
 ### provision-vm
 
@@ -146,13 +156,22 @@ This role will setup a VM with docker and get it ready for testing. It includes
 platform-specific logic, as well as bootstrapping of python/ansible on Flatcar, which
 does not have python installed by default.
 
-See [provision-vms.yml](./provision-vms.yml) for an example of how it's used.
+See [vm-lifecycle.yml](./vm-lifecycle.yml) for an example of how it's used.
 
 ### destroy-vm
 
 This role will delete a VM from GCP, based on its instance name.
 
-See [teardown-vms.yml](./teardown-vms.yml) for an example of how it's used.
+See [vm-lifecycle.yml](./vm-lifecycle.yml) for an example of how it's used.
+
+### run-test-target
+
+Handles running a make target in the [integration-tests](../integration-tests) directory
+in the repository. Will attempt to run the target for both eBPF and kernel-module collection
+except in cases where a VM is designated for a specific collection method (via the vm_collection_method label)
+
+See [integration-tests.yml](./integration-tests.yml) or [benchmarks.yml](./benchmarks.yml) for
+examples of how it's used.
 
 ## Layout
 
@@ -164,10 +183,10 @@ directory format](https://docs.ansible.com/ansible/2.8/user_guide/playbooks_best
 | roles      | Common sets of tasks that can be used by playbooks |
 | group_vars | Variables for specific groups (or all groups), the filename is the group name. e.g. platform_flatcar.yml affects the platform_flatcar group |
 | ci, dev    | These are [inventory directories](https://docs.ansible.com/ansible/latest/user_guide/intro_dynamic_inventory.html#using-inventory-directories-and-multiple-inventory-sources) that contain different variables based on where the playbooks are running. |
-| vars       | Contains yaml files that can be imported into playbooks (via `import_vars`) |
 | tasks      | Yaml files that contain task lists |
 | .          | The root of this directory is where playbooks should exist |
 
+To find VM definitions see [group_vars/all.yml](./group_vars/all.yml)
 
 [^1]: there should be no CI related functionality within this directory
       outside the `ci/` inventory.

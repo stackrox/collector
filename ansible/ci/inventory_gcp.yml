@@ -30,3 +30,4 @@ compose:
   # This is useful for VM identification later on
   vm_config: labels.vm_config
   vm_image_family: labels.vm_image_family
+  vm_collection_method: labels.vm_collection_method

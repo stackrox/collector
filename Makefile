@@ -17,6 +17,10 @@ dev-build: image integration-tests-process-network
 tag:
 	@echo "$(COLLECTOR_TAG)"
 
+.PHONY: builder-tag
+builder-tag:
+	@echo "$(COLLECTOR_BUILDER_TAG)"
+
 .PHONY: container-dockerfile
 container-dockerfile:
 	envsubst '$${COLLECTOR_VERSION} $${MODULE_VERSION}' \
