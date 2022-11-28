@@ -24,6 +24,3 @@ RUN mkdir -p "$GOCACHE" && \
 # first.
 RUN mkdir /.ssh && chmod g+rwx /.ssh
 
-# Install hub-comment for commenting on PRs
-RUN wget --quiet https://github.com/joshdk/hub-comment/releases/download/0.1.0-rc6/hub-comment_linux_amd64 && \
-    install hub-comment_linux_amd64 /usr/bin/hub-comment
