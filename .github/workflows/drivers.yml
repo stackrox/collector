@@ -79,7 +79,7 @@ jobs:
         run: |
           mkdir -p /tmp/output
 
-          for builder in "fc36 rhel8 rhel7"; do
+          for builder in fc36 rhel8 rhel7; do
             docker build --tag "${builder}:latest" \
               -f ${{ github.workspace }}/.github/driver-builders/${builder}.Dockerfile \
               ${{ github.workspace }}/kernel-modules/build/
