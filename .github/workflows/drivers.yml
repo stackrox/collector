@@ -19,7 +19,7 @@ jobs:
 
       - name: Patch files
         run: |
-          ${{ github.workspace }}/kernel-modules/dockerized/patch-files.sh \
+          ${{ github.workspace }}/kernel-modules/dockerized/scripts/patch-files.sh \
             ${{ github.ref_name }} false ${{ github.workspace }} kernel-modules/dockerized/scripts /tmp
 
       - name: Get build tasks
