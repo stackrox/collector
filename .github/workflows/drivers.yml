@@ -97,8 +97,8 @@ jobs:
 
             docker run --rm -i \
               -v /tmp/tasks:/tasks:ro \
-              -v /tmp/kobuild-tmp/versions-src:/kobuild-tmp/versions-src:ro \
-              -v /tmp/output:/output \
+              -v /tmp/kobuild-tmp/versions-src:/kobuild-tmp/versions-src \
+              -v /tmp/output:/kernel-modules \
               -v /tmp/bundles:/bundles:ro \
               -v /tmp/FAILURES:/FAILURES \
               -e DOCKERIZED=1 \
