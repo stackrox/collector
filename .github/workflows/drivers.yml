@@ -44,6 +44,7 @@ jobs:
           mv /tmp/build-tasks /tmp/tasks/all
 
           TASKS_DIR=/tmp/tasks \
+          RHEL8_BUILDERS=8 \
             ${{ github.workspace }}/.openshift-ci/drivers/scripts/kernel-splitter.py
 
-          ls -la /tmp/tasks/**
+          ls -la /tmp/tasks/**/**

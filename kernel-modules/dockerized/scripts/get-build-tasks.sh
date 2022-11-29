@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -exuo pipefail
+set -euo pipefail
 
 KERNELS_FILE="${KERNELS_FILE:-/KERNEL_VERSIONS}"
 OUTPUT_DIR="${OUTPUT_DIR:-}"
