@@ -7,12 +7,12 @@ on:
   pull_request:
     branches:
       - master
-
-inputs:
-  vm_type:
-    description: "Type of VM to run integration tests on. e.g. rhel or ubuntu-os"
-    required: true
-    default: 'rhel'
+  workflow_call:
+    inputs:
+      vm_type:
+        description: "Type of VM to run integration tests on. e.g. rhel or ubuntu-os"
+        required: true
+        default: 'rhel'
 
 jobs:
   integration-tests:
