@@ -48,6 +48,8 @@ jobs:
           chmod 0700 "$HOME/.ssh"
           echo "$GCP_SSH_KEY" >> "$HOME/.ssh/GCP_SSH_KEY"
           echo "$GCP_SSH_KEY_PUB" >> "$HOME/.ssh/GCP_SSH_KEY.pub"
+          chmod 0600 "$HOME/.ssh/GCP_SSH_KEY"
+          chmod 0600 "$HOME/.ssh/GCP_SSH_KEY.pub"
 
       - name: Setup GCP
         uses: 'google-github-actions/setup-gcloud@v1'
@@ -61,7 +63,7 @@ jobs:
         run: make -C "${{ github.workspace }}/ansible" integration-tests
 
       - name: Teardown VMs
-        if: steps.create-vms-step.outcome == 'success'
+        if: always()
         run: make -C "${{ github.workspace }}/ansible" destroy-vms
 
       - name: Store artifacts
