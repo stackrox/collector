@@ -75,10 +75,12 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: tasks-and-sources
+          path: /tmp
 
       - name: Build and run builders
         run: |
           mkdir -p /tmp/{output,bundles}
+          ls -la /tmp
 
           for builder in fc36 rhel8 rhel7; do
             docker build --tag "${builder}:latest" \
