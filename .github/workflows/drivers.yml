@@ -24,7 +24,11 @@ jobs:
 
           CHECKOUT_BEFORE_PATCHING=false \
           ${{ github.workspace }}/kernel-modules/dockerized/scripts/patch-files.sh \
-            ${{ github.head_ref }} false ${{ github.workspace }} kernel-modules/dockerized/scripts /tmp
+            ${{ github.head_ref }} \
+            false \
+            ${{ github.workspace }} \
+            kernel-modules/build/prepare-src \
+            /tmp
 
       - name: Get build tasks
         run: |
