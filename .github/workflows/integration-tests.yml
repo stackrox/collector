@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: ./.github/workflows/setup-runner.yml
+      - uses: ${{ github.workspace }}/.github/workflows/setup-runner.yml
 
       - name: Create VMs
         id: create-vms-step
