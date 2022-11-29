@@ -57,9 +57,18 @@ struct ParseBool {
   }
 };
 
+struct ParseInt {
+  int operator()(int* out, std::string str_val) const {
+    size_t idx;
+    *out = std::stoi(str_val, &idx, 0);
+    return idx == str_val.length();
+  }
+};
+
 }  // namespace internal
 
 using BoolEnvVar = EnvVar<bool, internal::ParseBool>;
+using IntEnvVar = EnvVar<int, internal::ParseInt>;
 
 }  // namespace collector
 
