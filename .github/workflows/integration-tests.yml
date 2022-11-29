@@ -21,6 +21,7 @@ jobs:
       JOB_ID: ${{ github.run_id }}
       GCP_SSH_KEY_FILE: "~/.ssh/GCP_SSH_KEY"
       COLLECTOR_REPO: "quay.io/rhacs-eng/collector"
+      COLLECTOR_IMAGE: "quay.io/rhacs-eng/collector:3.12.0"
       BUILD_TYPE: ci
       VM_TYPE: rhel
         #VM_TYPE: "${{ inputs.vm_type }}"
@@ -50,6 +51,9 @@ jobs:
           echo "$GCP_SSH_KEY_PUB" >> "$HOME/.ssh/GCP_SSH_KEY.pub"
           chmod 0600 "$HOME/.ssh/GCP_SSH_KEY"
           chmod 0600 "$HOME/.ssh/GCP_SSH_KEY.pub"
+        env:
+          GCP_SSH_KEY: ${{ secrets.GCP_SSH_KEY }}
+          GCP_SSH_KEY_PUB: ${{ secrets.GCP_SSH_KEY_PUB }}
 
       - name: Setup GCP
         uses: 'google-github-actions/setup-gcloud@v1'
@@ -61,6 +65,9 @@ jobs:
 
       - name: Run Tests
         run: make -C "${{ github.workspace }}/ansible" integration-tests
+        env:
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
       - name: Teardown VMs
         if: always()
