@@ -38,3 +38,12 @@ jobs:
         if: steps.create-vms-step.outcome == 'success'
         run: make -C "${{ github.workspace }}/ansible" destroy-vms
 
+      - name: Store artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          path: |
+            ${{ github.workspace }}/integration-tests/container-logs/**/*
+            ${{ github.workspace }}/integration-tests/perf.json
+            ${{ github.workspace }}/integration-tests/performance-logs/**/*
+
