@@ -37,6 +37,7 @@ jobs:
       - name: Create VMs
         id: create-vms-step
         run: |
+          env
           make -C "${{ github.workspace }}/ansible" create-vms
 
       - name: Run Tests
