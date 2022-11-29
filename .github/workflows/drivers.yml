@@ -106,7 +106,7 @@ jobs:
             awk '{ print "gs://collector-kernel-bundles-public/bundle-"$1".tgz" }' "/tmp/tasks/${builder}/${{ matrix.builder }}/all" |
               sort | uniq | gsutil -m cp -I /tmp/bundles
 
-            docker exec -it "${builder}" /scripts/compile.sh < "/tmp/tasks/${builder}/${{ matrix.builder }}/all"
+            docker exec "${builder}" /scripts/compile.sh < "/tmp/tasks/${builder}/${{ matrix.builder }}/all"
 
             rm -rf /tmp/bundles/*
           done
