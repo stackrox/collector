@@ -39,6 +39,11 @@ jobs:
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
+      - name: Copy SVC account to file
+        run: |
+          mkdir -p /tmp/secret
+          echo "${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}" >> /tmp/secret/gcp-account.json
+
       - name: Setup GCP
         uses: 'google-github-actions/setup-gcloud@v1'
 
