@@ -77,36 +77,32 @@ jobs:
           name: tasks-and-sources
           path: /tmp
 
-      - name: Build and run builders
+      - name: Build builders
         run: |
-          mkdir -p /tmp/{output,bundles}
-          ls -la /tmp
-
           for builder in fc36 rhel8 rhel7; do
             docker build --tag "${builder}:latest" \
               -f ${{ github.workspace }}/.github/driver-builders/${builder}.Dockerfile \
               ${{ github.workspace }}/kernel-modules/build/
-
-            docker run --rm -id \
-              -v /tmp/tasks:/tasks:ro \
-              -v /tmp/kobuild-tmp/versions-src:/kobuild-tmp/versions-src:ro \
-              -v /tmp/output:/output \
-              -v /tmp/bundles:/bundles \
-              -e DOCKERIZED=1 \
-              --name "${builder}" \
-              "${builder}:latest"
           done
-
-          docker ps
 
       - name: Build drivers
         run: |
+          mkdir -p /tmp/{output,bundles,FAILURES}
+
           for builder in fc36 rhel8 rhel7; do
             # Download bundles for current builder
             awk '{ print "gs://collector-kernel-bundles-public/bundle-"$1".tgz" }' "/tmp/tasks/${builder}/${{ matrix.builder }}/all" |
               sort | uniq | gsutil -m cp -I /tmp/bundles
 
-            docker exec "${builder}" /scripts/compile.sh < "/tmp/tasks/${builder}/${{ matrix.builder }}/all"
+            docker run --rm -i \
+              -v /tmp/tasks:/tasks:ro \
+              -v /tmp/kobuild-tmp/versions-src:/kobuild-tmp/versions-src:ro \
+              -v /tmp/output:/output \
+              -v /tmp/bundles:/bundles:ro \
+              -v /tmp/FAILURES:/FAILURES \
+              -e DOCKERIZED=1 \
+              --name "${builder}" \
+              "${builder}:latest" < "/tmp/tasks/${builder}/${{ matrix.builder }}/all"
 
             rm -rf /tmp/bundles/*
           done

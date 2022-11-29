@@ -14,3 +14,5 @@ RUN yum makecache && \
 
 COPY /build-kos /scripts/
 COPY /build-wrapper.sh /scripts/compile.sh
+
+ENTRYPOINT ["scl", "enable", "llvm-toolset-7.0", "/scripts/compile.sh"]

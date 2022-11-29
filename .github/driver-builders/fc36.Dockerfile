@@ -23,3 +23,5 @@ RUN dnf -y install \
 
 COPY /build-kos /scripts/
 COPY /build-wrapper.sh /scripts/compile.sh
+
+ENTRYPOINT /scripts/compile.sh
