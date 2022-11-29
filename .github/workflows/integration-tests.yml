@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: stackrox/collector/.github/workflows/setup-runner.yml
+      - uses: ./.github/workflows/setup-runner.yml
         secrets:
           GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT: "{}"
 
