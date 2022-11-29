@@ -34,6 +34,7 @@ jobs:
         run: |
           USE_KERNELS_FILE=true \
           KERNELS_FILE=${{ github.workspace }}/kernel-modules/KERNEL_VERSIONS \
+          DOCKERIZED=1 \
           OUTPUT_DIR=/tmp \
           CACHE_DIR=/tmp \
           BLOCKLIST_DIR=${{ github.workspace }}/kernel-modules \
@@ -77,7 +78,7 @@ jobs:
 
       - name: Build and run builders
         run: |
-          mkdir -p /tmp/output
+          mkdir -p /tmp/{output,bundles}
 
           for builder in fc36 rhel8 rhel7; do
             docker build --tag "${builder}:latest" \
@@ -88,7 +89,24 @@ jobs:
               -v /tmp/tasks:/tasks:ro \
               -v /tmp/kobuild-tmp/versions-src:/kobuild-tmp/versions-src:ro \
               -v /tmp/output:/output \
+              -v /tmp/bundles:/bundles \
+              -e DOCKERIZED=1 \
+              --name "${builder}" \
               "${builder}:latest"
           done
 
           docker ps
+
+      - name: Build drivers
+        run: |
+          for builder in fc36 rhel8 rhel7; do
+            # Download bundles for current builder
+            awk '{ print "gs://collector-kernel-bundles-public/bundle-"$1".tgz" }' "/tmp/tasks/${builder}/${{ matrix.builder }}/all" |
+              sort | uniq | gsutil -m cp -I /tmp/bundles
+
+            docker exec -it "${builder}" /scripts/compile.sh < "/tasks/${builder}/${{ matrix.builder }}/all"
+
+            rm -rf /tmp/bundles/*
+          done
+
+          ls -la /tmp/output
