@@ -11,8 +11,9 @@ on:
     inputs:
       vm_type:
         description: "Type of VM to run integration tests on. e.g. rhel or ubuntu-os"
+        type: string
         required: true
-        default: 'rhel'
+        default: rhel
 
 jobs:
   integration-tests:
