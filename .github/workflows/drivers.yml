@@ -1,0 +1,32 @@
+name: Build collector drivers
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  split-tasks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Patch files
+        run: |
+          ./kernel-modules/dockerized/patch-files.sh \
+            ${{ github.ref_name }} false "$(pwd)" kernel-modules/dockerized/scripts /tmp
+
+      - name: Get build tasks
+        run: |
+          KERNELS_FILE=./kernel-modules/KERNEL_VERSIONS \
+          OUTPUT_DIR=/tmp \
+          CACHE_DIR=/tmp \
+          BLOCK_LIST_DIR=./kernel-modules \
+          SCRIPTS_DIR=./kernel-modules/build \
+            ./kernel-modules/dockerized/get-build-tasks.sh

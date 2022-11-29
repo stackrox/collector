@@ -1,15 +1,23 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -exuo pipefail
 
 WORK_BRANCH="${1:-master}"
 BUILD_LEGACY="${2:-false}"
+SRC_DIR="${3:-/collector}"
+PREPARE_SRC_REL="${4:-}"
+OUT_DIR="${5:-}"
 
-mkdir -p /versions/{released-collectors,released-modules}
-mkdir -p /kobuild-tmp/versions-src
+PREPARE_SRC_SH=/scripts/prepare-src.sh
+if [[ -n "${PREPARE_SRC_REL}" ]]; then
+    PREPARE_SRC_SH="${SRC_DIR}/${PREPARE_SRC_REL}/prepare-src.sh"
+fi
+
+mkdir -p "${OUT_DIR}/versions/{released-collectors,released-modules}"
+mkdir -p "${OUT_DIR}/kobuild-tmp/versions-src"
 
 get_driver_relative_path() (
-    if git config --list -f /collector/.gitmodules --name-only | grep -q "falcosecurity-libs"; then
+    if git config --list -f "${SRC_DIR}/.gitmodules" --name-only | grep -q "falcosecurity-libs"; then
         echo "falcosecurity-libs"
     else
         echo "sysdig/src"
@@ -17,21 +25,21 @@ get_driver_relative_path() (
 )
 
 get_module_version() (
-    if [[ -f /collector/kernel-modules/MODULE_VERSION ]]; then
-        cat /collector/kernel-modules/MODULE_VERSION
+    if [[ -f "${SRC_DIR}/kernel-modules/MODULE_VERSION" ]]; then
+        cat "${SRC_DIR}/kernel-modules/MODULE_VERSION"
     else
         echo ""
     fi
 )
 
 apply_patches() (
-    for version_dir in /kobuild-tmp/versions-src/*; do
-        version="${version_dir#"/kobuild-tmp/versions-src/"}"
+    for version_dir in "${OUT_DIR}/kobuild-tmp/versions-src"/*; do
+        version="${version_dir#"${OUT_DIR}/kobuild-tmp/versions-src/"}"
         echo "Version directory: $version_dir"
         echo "Version: $version"
-        if [[ -f "/collector/kernel-modules/patches/${version}.patch" ]]; then
+        if [[ -f "${SRC_DIR}/kernel-modules/patches/${version}.patch" ]]; then
             echo "Applying patch for module version ${version} ..."
-            patch -p1 -d "/kobuild-tmp/versions-src/${version}" < "/collector/kernel-modules/patches/${version}.patch"
+            patch -p1 -d "${OUT_DIR}/kobuild-tmp/versions-src/${version}" < "${SRC_DIR}/kernel-modules/patches/${version}.patch"
         fi
     done
 )
@@ -44,10 +52,10 @@ checkout_branch() (
         return 1
     fi
 
-    git -C /collector submodule deinit "$(get_driver_relative_path)"
-    git -C /collector checkout "$branch"
-    git -C /collector checkout -- .
-    git -C /collector clean -xdf
+    git -C "${SRC_DIR}" submodule deinit "$(get_driver_relative_path)"
+    git -C "${SRC_DIR}" checkout "$branch"
+    git -C "${SRC_DIR}" checkout -- .
+    git -C "${SRC_DIR}" clean -xdf
 
     local driver_relative_path
     driver_relative_path="$(get_driver_relative_path)"
@@ -58,7 +66,7 @@ checkout_branch() (
         return 1
     fi
 
-    git -C /collector submodule update --init "${driver_relative_path}"
+    git -C "${SRC_DIR}" submodule update --init "${driver_relative_path}"
 
     return 0
 )
@@ -68,12 +76,12 @@ if [[ "${CHECKOUT_BEFORE_PATCHING,,}" == "true" ]]; then
     checkout_branch "$WORK_BRANCH"
 fi
 
-DRIVER_DIR="/collector/$(get_driver_relative_path)" \
-SCRATCH_DIR="/scratch" \
-OUTPUT_DIR="/kobuild-tmp/versions-src" \
-LEGACY_DIR="/collector" \
+DRIVER_DIR="${SRC_DIR}/$(get_driver_relative_path)" \
+SCRATCH_DIR="${OUT_DIR}/scratch" \
+OUTPUT_DIR="${OUT_DIR}/kobuild-tmp/versions-src" \
+LEGACY_DIR="${SRC_DIR}" \
 M_VERSION="$(get_module_version)" \
-    /scripts/prepare-src.sh
+    "${PREPARE_SRC_SH}"
 
 legacy="$(echo "$BUILD_LEGACY" | tr '[:upper:]' '[:lower:]')"
 if [[ "$legacy" == "false" ]]; then
@@ -94,14 +102,14 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
         continue
     fi
 
-    DRIVER_DIR="/collector/$(get_driver_relative_path)" \
-    SCRATCH_DIR="/scratch" \
-    OUTPUT_DIR="/kobuild-tmp/versions-src" \
-    LEGACY_DIR="/collector" \
+    DRIVER_DIR="${SRC_DIR}/$(get_driver_relative_path)" \
+    SCRATCH_DIR="${OUT_DIR}/scratch" \
+    OUTPUT_DIR="${OUT_DIR}/kobuild-tmp/versions-src" \
+    LEGACY_DIR="${SRC_DIR}" \
     M_VERSION="$(get_module_version)" \
-        /scripts/prepare-src.sh
+        "${PREPARE_SRC_SH}"
 
-done < <(grep -v '^#' < /collector/RELEASED_VERSIONS | awk -F'#' '{print $1}' | awk 'NF==2 {print $1}' | sort | uniq)
+done < <(grep -v '^#' < "${SRC_DIR}/RELEASED_VERSIONS" | awk -F'#' '{print $1}' | awk 'NF==2 {print $1}' | sort | uniq)
 
 apply_patches
 
