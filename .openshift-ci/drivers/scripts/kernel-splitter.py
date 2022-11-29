@@ -5,7 +5,7 @@ import re
 from math import ceil
 from itertools import islice
 
-TASKS_DIR = '/tasks'
+TASKS_DIR = os.environ.get('TASKS_DIR', '/tasks')
 
 
 class Task:

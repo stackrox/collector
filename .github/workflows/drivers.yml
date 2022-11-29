@@ -40,4 +40,10 @@ jobs:
           SCRIPTS_DIR=${{ github.workspace }}/kernel-modules/build \
             ${{ github.workspace }}/kernel-modules/dockerized/scripts/get-build-tasks.sh
 
-          cat /tmp/build-tasks
+          mkdir -p /tmp/tasks
+          mv /tmp/build-tasks /tmp/tasks/all
+
+          TASKS_DIR=/tmp/tasks \
+            ${{ github.workspace }}/.openshift-ci/drivers/scripts/kernel-splitter.py
+
+          ls -la /tmp/tasks/**
