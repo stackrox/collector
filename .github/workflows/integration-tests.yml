@@ -12,19 +12,15 @@ jobs:
   integration-tests:
     runs-on: ubuntu-latest
     env:
-      # TODO: make this not a prow thing
-      PROW_JOB_ID: ${{ github.run_id }}
+      JOB_ID: ${{ github.run_id }}
+      GCP_SSH_KEY_FILE: "~/.ssh/GCP_SSH_KEY"
+      COLLECTOR_REPO: "quay.io/rhacs-eng/collector"
     steps:
       - uses: actions/checkout@v3
-
-      - name: Setup environment
-        run: |
-          cat "${{ github.workspace }}/.openshift-ci/jobs/integration-tests/env.sh" >> $GITHUB_ENV
 
       - name: Create VMs
         id: create-vms-step
         run: |
-          echo "$JOB_ID"
           make -C "${{ github.workspace }}/ansible" create-vms
 
       - name: Run Tests
