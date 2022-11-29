@@ -15,6 +15,7 @@ jobs:
       JOB_ID: ${{ github.run_id }}
       GCP_SSH_KEY_FILE: "~/.ssh/GCP_SSH_KEY"
       COLLECTOR_REPO: "quay.io/rhacs-eng/collector"
+      BUILD_TYPE: ci
     steps:
       - uses: actions/checkout@v3
 
