@@ -20,3 +20,6 @@ RUN dnf -y install \
     ln -s /usr/bin/gcc /usr/bin/gcc-10 && \
     ln -s /usr/bin/gcc /usr/bin/gcc-11 && \
     ln -s /usr/bin/gcc /usr/bin/gcc-12
+
+COPY /build-kos /scripts/
+COPY /build-wrapper.sh /scripts/compile.sh
