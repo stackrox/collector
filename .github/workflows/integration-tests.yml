@@ -25,12 +25,12 @@ jobs:
       BUILD_TYPE: ci
       VM_TYPE: rhel
         #VM_TYPE: "${{ inputs.vm_type }}"
+    secrets:
+      GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT: "{}"
     steps:
       - uses: actions/checkout@v3
 
       - uses: ./.github/workflows/setup-runner.yml
-        secrets:
-          GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT: "{}"
 
       - name: Create VMs
         id: create-vms-step
