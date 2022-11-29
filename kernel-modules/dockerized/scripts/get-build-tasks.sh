@@ -63,10 +63,11 @@ process_driver() {
 }
 
 shopt -s nullglob
-for module_dir in "${CACHE_DIR}/kobuild-tmp/versions-src"/*/; do
+for module_dir in "${CACHE_DIR}/kobuild-tmp/versions-src"/*; do
     if [[ "${USE_KERNELS_FILE,,}" == "true" ]]; then
+        moddir="${module_dir%".tgz"}"
         while IFS="" read -r kernel_version || [[ -n "$kernel_version" ]]; do
-            process_driver "$kernel_version" "$module_dir"
+            process_driver "$kernel_version" "$moddir"
         done < "$KERNELS_FILE"
     else
         for bundle in "${CACHE_DIR}/bundles"/bundle-*.tgz; do
