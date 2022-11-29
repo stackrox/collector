@@ -66,6 +66,11 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
   SetChisel(config.Chisel());
 
   use_chisel_cache_ = config.UseChiselCache();
+
+  if (config.FalcoMaxThreadTableSize() > 0) {
+    CLOG(INFO) << "Thread table size limited to " << config.FalcoMaxThreadTableSize();
+    inspector_->m_thread_manager->set_max_thread_table_size(config.FalcoMaxThreadTableSize());
+  }
 }
 
 bool SysdigService::InitKernel(const CollectorConfig& config) {
