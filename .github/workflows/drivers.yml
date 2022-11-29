@@ -58,6 +58,7 @@ jobs:
           path: |
             /tmp/kobuild-tmp/versions-src/
             /tmp/tasks/**/**/all
+          retention-days: 7
 
   build-drivers:
     runs-on: ubuntu-latest
@@ -109,3 +110,10 @@ jobs:
           done
 
           ls -la /tmp/output
+
+      - name: Store built drivers
+        uses: actions/upload-artifact@v3
+        with:
+          name: built-drivers
+          path: /tmp/output
+          retention-days: 1
