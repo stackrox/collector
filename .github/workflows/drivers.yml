@@ -37,4 +37,4 @@ jobs:
           CACHE_DIR=/tmp \
           BLOCK_LIST_DIR=${{ github.workspace }}/kernel-modules \
           SCRIPTS_DIR=${{ github.workspace }}/kernel-modules/build \
-            ${{ github.workspace }}/kernel-modules/dockerized/get-build-tasks.sh
+            ${{ github.workspace }}/kernel-modules/dockerized/scripts/get-build-tasks.sh
