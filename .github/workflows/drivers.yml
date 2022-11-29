@@ -30,6 +30,8 @@ jobs:
             kernel-modules/build/prepare-src \
             /tmp
 
+          ls -la /tmp
+
       - name: Get build tasks
         run: |
           KERNELS_FILE=${{ github.workspace }}/kernel-modules/KERNEL_VERSIONS \
@@ -39,4 +41,5 @@ jobs:
           SCRIPTS_DIR=${{ github.workspace }}/kernel-modules/build \
             ${{ github.workspace }}/kernel-modules/dockerized/scripts/get-build-tasks.sh
 
+          ls -la /tmp
           cat /tmp/build-tasks
