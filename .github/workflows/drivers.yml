@@ -38,3 +38,5 @@ jobs:
           BLOCKLIST_DIR=${{ github.workspace }}/kernel-modules \
           SCRIPTS_DIR=${{ github.workspace }}/kernel-modules/build \
             ${{ github.workspace }}/kernel-modules/dockerized/scripts/get-build-tasks.sh
+
+          cat /tmp/build-tasks
