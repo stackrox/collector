@@ -48,3 +48,11 @@ jobs:
             ${{ github.workspace }}/.openshift-ci/drivers/scripts/kernel-splitter.py
 
           ls -la /tmp/tasks/**/**
+
+      - name: Store tasks and sources
+        uses: actions/upload-artifact@v3
+        with:
+          name: tasks-and-sources
+          path: |
+            /tmp/kobuild-tmp/versions-src/*.tgz
+            /tmp/tasks/**/**/all
