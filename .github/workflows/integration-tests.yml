@@ -27,7 +27,20 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: ${{ github.workspace }}/.github/workflows/setup-runner.yml
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+
+      - name: Install python dependencies
+        run: python -m pip install -r ansible/requirements.txt
+
+      - name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - name: Setup GCP
+        uses: 'google-github-actions/setup-gcloud@v1'
 
       - name: Create VMs
         id: create-vms-step
