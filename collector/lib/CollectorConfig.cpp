@@ -55,6 +55,9 @@ BoolEnvVar set_enable_core_dump("ENABLE_CORE_DUMP", false);
 // If true, add originator process information in NetworkEndpoint
 BoolEnvVar set_processes_listening_on_ports("ROX_PROCESSES_LISTENING_ON_PORT", CollectorConfig::kEnableProcessesListeningOnPorts);
 
+// Configures the maximum number of threads in falco's table
+IntEnvVar falco_max_thread_table_size("ROX_FALCO_MAX_THREAD_TABLE_SIZE", CollectorConfig::kFalcoMaxThreadTableSize);
+
 }  // namespace
 
 constexpr bool CollectorConfig::kUseChiselCache;
@@ -66,6 +69,7 @@ constexpr char CollectorConfig::kChisel[];
 constexpr const char* CollectorConfig::kSyscalls[];
 constexpr bool CollectorConfig::kForceKernelModules;
 constexpr bool CollectorConfig::kEnableProcessesListeningOnPorts;
+constexpr int CollectorConfig::kFalcoMaxThreadTableSize;
 
 const UnorderedSet<L4ProtoPortPair> CollectorConfig::kIgnoredL4ProtoPortPairs = {{L4Proto::UDP, 9}};
 ;
@@ -80,6 +84,7 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   collection_method_ = kCollectionMethod;
   force_kernel_modules_ = kForceKernelModules;
   enable_processes_listening_on_ports_ = set_processes_listening_on_ports.value();
+  falco_max_thread_table_size_ = falco_max_thread_table_size.value();
 
   for (const auto& syscall : kSyscalls) {
     syscalls_.push_back(syscall);

@@ -81,6 +81,7 @@ end
   static const UnorderedSet<L4ProtoPortPair> kIgnoredL4ProtoPortPairs;
   static constexpr bool kForceKernelModules = false;
   static constexpr bool kEnableProcessesListeningOnPorts = false;
+  static constexpr int kFalcoMaxThreadTableSize = -1;  // unafected by default
 
   CollectorConfig() = delete;
   CollectorConfig(CollectorArgs* collectorArgs);
@@ -101,6 +102,7 @@ end
   std::vector<std::string> Syscalls() const;
   int64_t AfterglowPeriod() const;
   std::string LogLevel() const;
+  int FalcoMaxThreadTableSize() const { return falco_max_thread_table_size_; }
   bool EnableSysdigLog() const { return enable_sysdig_log_; }
   bool DisableNetworkFlows() const { return disable_network_flows_; }
   const UnorderedSet<L4ProtoPortPair>& IgnoredL4ProtoPortPairs() const { return ignored_l4proto_port_pairs_; }
@@ -128,7 +130,7 @@ end
   UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
   bool curl_verbose_ = false;
   bool force_kernel_modules_ = false;
-
+  int falco_max_thread_table_size_;
   bool enable_sysdig_log_ = false;
   HostConfig host_config_;
   int64_t afterglow_period_micros_ = 300000000;  // 5 minutes in microseconds
