@@ -19,7 +19,10 @@ jobs:
 
       - name: Patch files
         run: |
-          CHECKOUT_BEFORE_PATCHING=true \
+          # Initialize just the falco submodule
+          git submodule update --init ${{ github.workspace }}/falcosecurity-libs
+
+          CHECKOUT_BEFORE_PATCHING=false \
           ${{ github.workspace }}/kernel-modules/dockerized/scripts/patch-files.sh \
             ${{ github.head_ref }} false ${{ github.workspace }} kernel-modules/dockerized/scripts /tmp
 
