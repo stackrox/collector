@@ -13,7 +13,6 @@ on:
         description: "Type of VM to run integration tests on. e.g. rhel or ubuntu-os"
         type: string
         required: true
-        default: 'rhel'
 
 jobs:
   integration-tests:
@@ -25,8 +24,6 @@ jobs:
       BUILD_TYPE: ci
       VM_TYPE: rhel
         #VM_TYPE: "${{ inputs.vm_type }}"
-    secrets:
-      GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT: "{}"
     steps:
       - uses: actions/checkout@v3
 
