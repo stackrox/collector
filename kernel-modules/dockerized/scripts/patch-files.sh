@@ -10,7 +10,7 @@ OUT_DIR="${5:-}"
 
 PREPARE_SRC_SH=/scripts/prepare-src.sh
 if [[ -n "${PREPARE_SRC_REL}" ]]; then
-    PREPARE_SRC_SH="${SRC_DIR}/${PREPARE_SRC_REL}/prepare-src.sh"
+    PREPARE_SRC_SH="${SRC_DIR}/${PREPARE_SRC_REL}"
 fi
 
 mkdir -p "${OUT_DIR}/versions/{released-collectors,released-modules}"
