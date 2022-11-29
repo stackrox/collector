@@ -23,6 +23,7 @@ jobs:
           git submodule update --init ${{ github.workspace }}/falcosecurity-libs
 
           CHECKOUT_BEFORE_PATCHING=false \
+          DOCKERIZED=1 \
           ${{ github.workspace }}/kernel-modules/dockerized/scripts/patch-files.sh \
             ${{ github.head_ref }} \
             false \
@@ -32,10 +33,9 @@ jobs:
 
       - name: Get build tasks
         run: |
-          export DOCKERIZED=1
-
           USE_KERNELS_FILE=true \
           KERNELS_FILE=${{ github.workspace }}/kernel-modules/KERNEL_VERSIONS \
+          DOCKERIZED=1 \
           OUTPUT_DIR=/tmp \
           CACHE_DIR=/tmp \
           BLOCKLIST_DIR=${{ github.workspace }}/kernel-modules \
