@@ -27,7 +27,7 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: '1.13' # to match the requirement in the integration tests
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v3
         with:
           python-version: "3.10"
 
@@ -39,29 +39,28 @@ jobs:
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
+      - name: Setup GCP
+        uses: 'google-github-actions/setup-gcloud@v1'
+
       - name: Copy creds files
         run: |
+          source ${{ github.workspace }}/.openshift-ci/scripts/lib.sh
+
           mkdir -p /tmp/secret
           cp "$GOOGLE_APPLICATION_CREDENTIALS" /tmp/secret/gcp-account.json
 
           mkdir -p "$HOME/.ssh"
           chmod 0700 "$HOME/.ssh"
-          echo "$GCP_SSH_KEY" >> "$HOME/.ssh/GCP_SSH_KEY"
-          echo "$GCP_SSH_KEY_PUB" >> "$HOME/.ssh/GCP_SSH_KEY.pub"
-          chmod 0600 "$HOME/.ssh/GCP_SSH_KEY"
-          chmod 0600 "$HOME/.ssh/GCP_SSH_KEY.pub"
+          copy_secret_to_file GCP_SSH_KEY "$GCP_SSH_KEY_FILE" 0600
+          copy_secret_to_file GCP_SSH_KEY_PUB "$GCP_SSH_KEY_FILE.pub" 0600
         env:
           GCP_SSH_KEY: ${{ secrets.GCP_SSH_KEY }}
           GCP_SSH_KEY_PUB: ${{ secrets.GCP_SSH_KEY_PUB }}
-
-      - name: Setup GCP
-        uses: 'google-github-actions/setup-gcloud@v1'
 
       - name: Normalize job ID
         run: |
           NORM_JOB_ID="${JOB_ID/-/}"
           echo "JOB_ID=${NORM_JOB_ID}" >> "$GITHUB_ENV"
-          cat "$GITHUB_ENV"
 
       - name: Create VMs
         id: create-vms-step
