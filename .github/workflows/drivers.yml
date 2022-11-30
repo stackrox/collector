@@ -57,6 +57,12 @@ jobs:
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
+      - name: Setup kernel driver cache
+        uses: actions/cache@v3
+        with:
+          path: /tmp/kernel-modules/
+          key: kernel-modules-test-v0
+
       - name: Build driver cache
         run: |
           for module_version_dir in /tmp/kobuild-tmp/versions-src/*; do
