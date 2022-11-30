@@ -57,6 +57,12 @@ jobs:
       - name: Setup GCP
         uses: 'google-github-actions/setup-gcloud@v1'
 
+      - name: Normalize job ID
+        run: |
+          NORM_JOB_ID="${JOB_ID/-/_}"
+          echo "JOB_ID=${NORM_JOB_ID}" >> "$GITHUB_ENV"
+          cat "$GITHUB_ENV"
+
       - name: Create VMs
         id: create-vms-step
         run: |
