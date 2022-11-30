@@ -49,8 +49,7 @@ jobs:
           import json
           import os
 
-          # TODO: parallel_jobs will be replaced by an input to this workflow
-          parallel_jobs=8
+          parallel_jobs=8 if "${{ contains(github.event.pull_request.labels.*.name, 'more-driver-builders' }}" == 'true' else 32
           parallel = [ a for a in range(parallel_jobs)]
 
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
@@ -105,6 +104,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: tasks-and-sources
+          if-no-files-found: ignore
           path: |
             /tmp/kobuild-tmp/versions-src/
             /tmp/tasks/**/**/all
