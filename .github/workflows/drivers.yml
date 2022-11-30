@@ -15,6 +15,7 @@ jobs:
       parallel-array: ${{ steps.set-parallel.outputs.parallel-array }}
     env:
       KERNELS_FILE: ${{ github.workspace }}/kernel-modules/KERNEL_VERSIONS
+      HEAD_REF: ${{ github.head_ref }}
 
     steps:
       - uses: actions/checkout@v3
@@ -23,7 +24,6 @@ jobs:
 
       - name: Patch files
         env:
-          HEAD_REF: ${{ github.head_ref }}
           BUILD_LEGACY_DRIVERS: ${{ contains(github.event.pull_request.labels.*.name, 'build-legacy-probes') || github.event_name == 'push' }}
           OSCI_RUN: 1
 
@@ -209,6 +209,7 @@ jobs:
         uses: 'google-github-actions/auth@v1'
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+          create_credentials_file: false
 
       - name: Choose destination bucket
         id: gcp-bucket
