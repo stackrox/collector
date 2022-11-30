@@ -61,3 +61,5 @@
     groups: docker
     append: yes
 
+- name: Reset SSH connection for group propagation
+  meta: reset_connection
