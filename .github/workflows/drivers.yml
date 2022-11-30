@@ -111,11 +111,11 @@ jobs:
             tasks="$(wc -l < "/tmp/tasks/${builder}/${{ matrix.builder }}/all")"
 
             if ((tasks)); then
-              builders+="${builder}"
+              builders+=("${builder}")
             fi
           done
 
-          echo "builders='${builders[*]}'" >> "$GITHUB_OUTPUT"
+          echo "builders=${builders[*]}" >> "$GITHUB_OUTPUT"
 
       - name: Authenticate with GCP
         uses: 'google-github-actions/auth@v1'
@@ -127,7 +127,7 @@ jobs:
         run: |
           for builder in ${{ steps.required-builders.outputs.builders }}; do
             docker build --tag "${builder}:latest" \
-              -f ${BUILDERS_DIR}/${builder}.Dockerfile \
+              -f "${BUILDERS_DIR}/${builder}.Dockerfile" \
               ${{ github.workspace }}/kernel-modules/build/
           done
 
