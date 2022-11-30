@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       JOB_ID: ${{ github.run_id }}${{ inputs.vm_type }}
-      GCP_SSH_KEY_FILE: "~/.ssh/GCP_SSH_KEY"
+      GCP_SSH_KEY_FILE: ~/.ssh/GCP_SSH_KEY
       COLLECTOR_REPO: "quay.io/rhacs-eng/collector"
       COLLECTOR_IMAGE: "quay.io/rhacs-eng/collector:${{ inputs.collector_tag }}"
       BUILD_TYPE: ci
@@ -51,8 +51,8 @@ jobs:
 
           mkdir -p "$HOME/.ssh"
           chmod 0700 "$HOME/.ssh"
-          copy_secret_to_file GCP_SSH_KEY "$GCP_SSH_KEY_FILE" 0600
-          copy_secret_to_file GCP_SSH_KEY_PUB "$GCP_SSH_KEY_FILE.pub" 0600
+          copy_secret_to_file GCP_SSH_KEY "$HOME/.ssh/GCP_SSH_KEY" 0600
+          copy_secret_to_file GCP_SSH_KEY_PUB "$HOME/.ssh/GCP_SSH_KEY.pub" 0600
         env:
           GCP_SSH_KEY: ${{ secrets.GCP_SSH_KEY }}
           GCP_SSH_KEY_PUB: ${{ secrets.GCP_SSH_KEY_PUB }}
