@@ -104,7 +104,7 @@ jobs:
               -v /tmp/FAILURES:/FAILURES \
               -e DOCKERIZED=1 \
               --name "${builder}" \
-              "${builder}:latest" < "/tmp/tasks/${builder}/${{ matrix.builder }}/all"
+              "${builder}:latest" < <(head -n1 "/tmp/tasks/${builder}/${{ matrix.builder }}/all")
 
             rm -rf /tmp/bundles/*
           done
