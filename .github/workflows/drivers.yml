@@ -25,6 +25,7 @@ jobs:
         env:
           HEAD_REF: ${{ github.head_ref }}
           BUILD_LEGACY_DRIVERS: ${{ contains(github.event.pull_request.labels.*.name, 'build-legacy-probes') || github.event_name == 'push' }}
+          OSCI_RUN: 0
 
         run: |
           git fetch
