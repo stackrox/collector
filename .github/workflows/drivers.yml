@@ -68,7 +68,8 @@ jobs:
               "/tmp/kernel-modules/$module_version/" || true
           done
 
-          /scripts/sanitize-drivers.py
+          BASE_DIR=/tmp \
+            ${{ github.workspace }}/.openshift-ci/drivers/scripts/sanitize-drivers.py
 
       - name: Get build tasks
         run: |
