@@ -44,11 +44,11 @@ jobs:
 
           # TODO: parallel_jobs will be replaced by an input to this workflow
           parallel_jobs=32
-
           parallel = [ a for a in range(parallel_jobs)]
+
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-            os.environ['GITHUB_OUTPUT']=f'parallel-jobs={parallel_jobs}\n'
-            os.environ['GITHUB_OUTPUT']=f'parallel-array={json.dumps(parallel)}\n'
+            f.write(f'parallel-jobs={parallel_jobs}\n')
+            f.write(f'parallel-array={json.dumps(parallel)}\n')
 
       - name: Get build tasks
         run: |
