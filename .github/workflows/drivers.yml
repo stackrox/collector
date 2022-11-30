@@ -128,6 +128,10 @@ jobs:
             builder="${builder_file%".Dockerfile"}"
             builder="${builder#"${BUILDERS_DIR}/"}"
 
+            if [[ ! -f  "/tmp/tasks/${builder}/${{ matrix.builder }}/all" ]]; then
+              continue
+            fi
+
             tasks="$(wc -l < "/tmp/tasks/${builder}/${{ matrix.builder }}/all")"
 
             if ((tasks)); then
