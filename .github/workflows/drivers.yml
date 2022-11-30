@@ -108,7 +108,7 @@ jobs:
             builder="${builder_file%".Dockerfile"}"
             builder="${builder#"${BUILDERS_DIR}/"}"
 
-            tasks="$(wc -l /tmp/tasks/${builder}/${{ matrix.builder }}/all)"
+            tasks="$(wc -l < "/tmp/tasks/${builder}/${{ matrix.builder }}/all")"
 
             if ((tasks)); then
               builders+="${builder}"
