@@ -59,11 +59,13 @@ jobs:
 
       - name: Setup kernel driver cache
         uses: actions/cache@v3
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-cache') }}
         with:
           path: /tmp/kernel-modules/
           key: kernel-modules-test-v0
 
       - name: Build driver cache
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-cache') }}
         run: |
           for module_version_dir in /tmp/kobuild-tmp/versions-src/*; do
             module_version="$(basename "${module_version_dir}")"
