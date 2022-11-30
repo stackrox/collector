@@ -27,6 +27,8 @@ jobs:
           BUILD_LEGACY_DRIVERS: ${{ contains(github.event.pull_request.labels.*.name, 'build-legacy-probes') || github.event_name == 'push' }}
 
         run: |
+          git fetch
+
           # Initialize just the falco submodule
           git submodule update --init ${{ github.workspace }}/falcosecurity-libs
 
