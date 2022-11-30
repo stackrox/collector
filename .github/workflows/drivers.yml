@@ -49,7 +49,7 @@ jobs:
           import json
           import os
 
-          parallel_jobs=8 if "${{ !contains(github.event.pull_request.labels.*.name, 'more-driver-builders') }}" == 'true' else 32
+          parallel_jobs=32 if "${{ contains(github.event.pull_request.labels.*.name, 'more-driver-builders') }}" == 'true' else 8
           parallel = [ a for a in range(parallel_jobs)]
 
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
@@ -191,4 +191,5 @@ jobs:
         with:
           name: built-drivers
           path: /tmp/output
+          if-no-files-found: ignore
           retention-days: 1
