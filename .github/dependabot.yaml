@@ -1,0 +1,39 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://help.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+
+version: 2
+updates:
+  - package-ecosystem: 'docker'
+    directory: .openshift-ci/drivers/
+  - package-ecosystem: 'docker'
+    directory: .openshift-ci/jobs/apollo-src/
+  - package-ecosystem: 'docker'
+    directory: .openshift-ci/jobs/integration-tests/
+  - package-ecosystem: 'docker'
+    directory: collector/connscrape-test/
+  - package-ecosystem: 'docker'
+    directory: collector/container/
+  - package-ecosystem: 'docker'
+    directory: collector/container/
+  - package-ecosystem: 'docker'
+    directory: integration-tests/container/benchmark/
+  - package-ecosystem: 'docker'
+    directory: integration-tests/container/containerstats/
+  - package-ecosystem: 'docker'
+    directory: integration-tests/container/jsonlabel/
+  - package-ecosystem: 'docker'
+    directory: integration-tests/container/perf/
+  - package-ecosystem: 'docker'
+    directory: integration-tests/container/processes-listening-on-ports/
+  - package-ecosystem: 'docker'
+    directory: integration-tests/container/schedule-curls/
+  - package-ecosystem: 'docker'
+    directory: kernel-modules/container/
+  - package-ecosystem: 'docker'
+    directory: kernel-modules/dockerized/
+  - package-ecosystem: 'docker'
+    directory: oss-public-server/container/
+  - package-ecosystem: 'docker'
+    directory: utilities/shellcheck-all/
