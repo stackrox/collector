@@ -24,6 +24,8 @@ jobs:
       - name: Patch files
         env:
           HEAD_REF: ${{ github.head_ref }}
+          BUILD_LEGACY_DRIVERS: ${{ contains(github.event.pull_request.labels.*.name, 'build-legacy-probes') || github.event_name == 'push' }}
+
         run: |
           # Initialize just the falco submodule
           git submodule update --init ${{ github.workspace }}/falcosecurity-libs
@@ -32,7 +34,7 @@ jobs:
           DOCKERIZED=1 \
           ${{ github.workspace }}/kernel-modules/dockerized/scripts/patch-files.sh \
             "${HEAD_REF}" \
-            false \
+            "${BUILD_LEGACY_DRIVERS}" \
             ${{ github.workspace }} \
             kernel-modules/build/prepare-src \
             /tmp
