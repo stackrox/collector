@@ -4,18 +4,12 @@ ENV DISTRO=fc36
 
 RUN dnf -y install \
         make \
-        cmake \
         gcc-c++ \
         llvm \
         clang \
-        patch \
         elfutils-libelf \
         elfutils-libelf-devel \
-        git \
-        python3 \
-        kmod \
-        which \
-        libxcrypt-compat.x86_64 && \
+        kmod  && \
     # We trick Debian builds into thinking they have the required GCC binary
     ln -s /usr/bin/gcc /usr/bin/gcc-10 && \
     ln -s /usr/bin/gcc /usr/bin/gcc-11 && \

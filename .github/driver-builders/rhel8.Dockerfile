@@ -5,7 +5,6 @@ ENV DISTRO=rhel8
 RUN dnf -y update && \
     dnf -y install \
         make \
-        cmake \
         gcc-c++ \
         llvm \
         clang \
