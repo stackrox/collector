@@ -20,14 +20,16 @@ jobs:
           submodules: false
 
       - name: Patch files
+        env:
+          HEAD_REF: ${{ github.head_ref }}
         run: |
           # Initialize just the falco submodule
-          git submodule update --init ${{ github.workspace }}/falcosecurity-libs
+          git submodule update --init ${{ github.workspace }}/falcosecurity-libs
 
           CHECKOUT_BEFORE_PATCHING=false \
           DOCKERIZED=1 \
           ${{ github.workspace }}/kernel-modules/dockerized/scripts/patch-files.sh \
-            ${{ github.head_ref }} \
+            "${HEAD_REF}" \
             false \
             ${{ github.workspace }} \
             kernel-modules/build/prepare-src \
@@ -78,12 +80,11 @@ jobs:
   build-drivers:
     runs-on: ubuntu-latest
     needs:
-      - parallel-builds
       - split-tasks
 
     strategy:
       matrix:
-        builder: ${{ fromJSON(needs.parallel-builds.outputs.parallel-array) }}
+        builder: ${{ fromJSON(needs.split-tasks.outputs.parallel-array) }}
 
     steps:
       - uses: actions/checkout@v3
