@@ -6,15 +6,7 @@
 version: 2
 updates:
   - package-ecosystem: 'docker'
-    directory: .openshift-ci/drivers/
-  - package-ecosystem: 'docker'
-    directory: .openshift-ci/jobs/apollo-src/
-  - package-ecosystem: 'docker'
-    directory: .openshift-ci/jobs/integration-tests/
-  - package-ecosystem: 'docker'
     directory: collector/connscrape-test/
-  - package-ecosystem: 'docker'
-    directory: collector/container/
   - package-ecosystem: 'docker'
     directory: collector/container/
   - package-ecosystem: 'docker'
@@ -29,10 +21,6 @@ updates:
     directory: integration-tests/container/processes-listening-on-ports/
   - package-ecosystem: 'docker'
     directory: integration-tests/container/schedule-curls/
-  - package-ecosystem: 'docker'
-    directory: kernel-modules/container/
-  - package-ecosystem: 'docker'
-    directory: kernel-modules/dockerized/
   - package-ecosystem: 'docker'
     directory: oss-public-server/container/
   - package-ecosystem: 'docker'
