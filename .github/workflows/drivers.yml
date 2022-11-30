@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       parallel-array: ${{ steps.set-parallel.outputs.parallel-array }}
+    env:
+      KERNELS_FILE=${{ github.workspace }}/kernel-modules/KERNEL_VERSIONS
 
     steps:
       - uses: actions/checkout@v3
@@ -50,10 +52,27 @@ jobs:
             f.write(f'parallel-jobs={parallel_jobs}\n')
             f.write(f'parallel-array={json.dumps(parallel)}\n')
 
+      - name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - name: Build driver cache
+        run: |
+          for module_version_dir in /tmp/kobuild-tmp/versions-src/*; do
+            module_version="$(basename "${module_version_dir}")"
+            mkdir -p "/tmp/kernel-modules/$module_version/"
+
+            gsutil -m rsync -r \
+              "gs://collector-modules-osci/$module_version/" \
+              "/tmp/kernel-modules/$module_version/" || true
+          done
+
+          /scripts/sanitize-drivers.py
+
       - name: Get build tasks
         run: |
           USE_KERNELS_FILE=true \
-          KERNELS_FILE=${{ github.workspace }}/kernel-modules/KERNEL_VERSIONS \
           DOCKERIZED=1 \
           OUTPUT_DIR=/tmp \
           CACHE_DIR=/tmp \
@@ -116,11 +135,6 @@ jobs:
           done
 
           echo "builders=${builders[*]}" >> "$GITHUB_OUTPUT"
-
-      - name: Authenticate with GCP
-        uses: 'google-github-actions/auth@v1'
-        with:
-          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
       - name: Build builders
         if: ${{ steps.required-builders.outputs.builders != '' }}

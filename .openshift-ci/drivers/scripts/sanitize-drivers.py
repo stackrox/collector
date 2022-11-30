@@ -5,6 +5,8 @@ import re
 unavailable_re = re.compile(r'^\.collector-(?:ebpf-)?(.*)\.unavail$')
 ebpf_re = re.compile(r'^collector-ebpf-(.*)\.o\.gz$')
 kmod_re = re.compile(r'^collector-(.*)\.ko\.gz$')
+base_dir = os.environ.get('BASE_DIR', '')
+kernels_file = os.environ.get('KERNELS_FILE', '/kernels/all')
 
 
 def get_kernel_version(driver):
@@ -24,7 +26,7 @@ def get_kernel_version(driver):
 
 
 def main(kernels):
-    for root, _, drivers in os.walk('/kernel-modules'):
+    for root, _, drivers in os.walk(f'{base_dir}/kernel-modules'):
         for driver in drivers:
             kernel_version = get_kernel_version(driver)
             driver_path = os.path.join(root, driver)
@@ -39,7 +41,7 @@ def main(kernels):
 
 
 if __name__ == '__main__':
-    with open('/kernels/all', 'r') as f:
+    with open(kernels_file, 'r') as f:
         kernels = f.read().split()
 
     main(kernels)
