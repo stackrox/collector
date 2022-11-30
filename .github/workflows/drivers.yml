@@ -203,7 +203,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: built-drivers
-          path: /tmp
+          path: /tmp/output/
 
       - name: Authenticate with GCP
         uses: 'google-github-actions/auth@v1'
