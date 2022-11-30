@@ -199,6 +199,10 @@ jobs:
     needs: build-drivers
 
     steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: false
+
       - name: Restore built drivers
         uses: actions/download-artifact@v3
         with:
@@ -218,7 +222,6 @@ jobs:
         uses: 'google-github-actions/auth@v1'
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
-          create_credentials_file: false
 
       - name: Push drivers
         uses: 'google-github-actions/upload-cloud-storage@v1'
