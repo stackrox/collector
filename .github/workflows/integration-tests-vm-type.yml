@@ -1,0 +1,81 @@
+name: Collector Integration Tests
+
+on:
+  workflow_call:
+    inputs:
+      vm_type:
+        description: "Type of VM to run integration tests on. e.g. rhel or ubuntu-os"
+        type: string
+        required: true
+      collector_tag: 
+        description: "The collector tag to test"
+        type: string
+        required: true
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    env:
+      JOB_ID: ${{ github.run_id }}
+      GCP_SSH_KEY_FILE: "~/.ssh/GCP_SSH_KEY"
+      COLLECTOR_REPO: "quay.io/rhacs-eng/collector"
+      COLLECTOR_IMAGE: "quay.io/rhacs-eng/collector:${{ inputs.collector_tag }}"
+      BUILD_TYPE: ci
+      VM_TYPE: "${{ inputs.vm_type }}"
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+
+      - name: Install python dependencies
+        run: python -m pip install -r ansible/requirements.txt
+
+      - name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - name: Copy creds files
+        run: |
+          mkdir -p /tmp/secret
+          cp "$GOOGLE_APPLICATION_CREDENTIALS" /tmp/secret/gcp-account.json
+
+          mkdir -p "$HOME/.ssh"
+          chmod 0700 "$HOME/.ssh"
+          echo "$GCP_SSH_KEY" >> "$HOME/.ssh/GCP_SSH_KEY"
+          echo "$GCP_SSH_KEY_PUB" >> "$HOME/.ssh/GCP_SSH_KEY.pub"
+          chmod 0600 "$HOME/.ssh/GCP_SSH_KEY"
+          chmod 0600 "$HOME/.ssh/GCP_SSH_KEY.pub"
+        env:
+          GCP_SSH_KEY: ${{ secrets.GCP_SSH_KEY }}
+          GCP_SSH_KEY_PUB: ${{ secrets.GCP_SSH_KEY_PUB }}
+
+      - name: Setup GCP
+        uses: 'google-github-actions/setup-gcloud@v1'
+
+      - name: Create VMs
+        id: create-vms-step
+        run: |
+          make -C "${{ github.workspace }}/ansible" create-vms
+
+      - name: Run Tests
+        run: make -C "${{ github.workspace }}/ansible" integration-tests
+        env:
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - name: Teardown VMs
+        if: always()
+        run: make -C "${{ github.workspace }}/ansible" destroy-vms
+
+      - name: Store artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          path: |
+            ${{ github.workspace }}/integration-tests/container-logs/**/*
+            ${{ github.workspace }}/integration-tests/perf.json
+            ${{ github.workspace }}/integration-tests/performance-logs/**/*
+
