@@ -43,7 +43,7 @@ jobs:
           import os
 
           # TODO: parallel_jobs will be replaced by an input to this workflow
-          parallel_jobs=32
+          parallel_jobs=8
           parallel = [ a for a in range(parallel_jobs)]
 
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
@@ -81,6 +81,8 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - split-tasks
+    env:
+      BUILDERS_DIR: ${{ github.workspace }}/.github/driver-builders
 
     strategy:
       matrix:
@@ -97,24 +99,44 @@ jobs:
           name: tasks-and-sources
           path: /tmp
 
+      - name: Set required builders
+        id: required-builders
+        run: |
+          builders=()
+
+          for builder_file in "${BUILDERS_DIR}/*.Dockerfile"; do
+            builder="${builder_file%".Dockerfile"}"
+            builder="${builder#"${BUILDERS_DIR}/"}"
+
+            tasks="$(wc -l /tmp/tasks/${builder}/${{ matrix.builder }}/all)"
+
+            if ((tasks)); then
+              builders+="${builder}"
+            fi
+          done
+
+          echo "builders='${builders[*]}'" >> "$GITHUB_OUTPUT"
+
       - name: Authenticate with GCP
         uses: 'google-github-actions/auth@v1'
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
       - name: Build builders
+        if: ${{ steps.required-builders.outputs.builders != '' }}
         run: |
-          for builder in fc36 rhel8 rhel7; do
+          for builder in ${{ steps.required-builders.outputs.builders }}; do
             docker build --tag "${builder}:latest" \
-              -f ${{ github.workspace }}/.github/driver-builders/${builder}.Dockerfile \
+              -f ${BUILDERS_DIR}/${builder}.Dockerfile \
               ${{ github.workspace }}/kernel-modules/build/
           done
 
       - name: Build drivers
+        if: ${{ steps.required-builders.outputs.builders != '' }}
         run: |
           mkdir -p /tmp/{output,bundles,FAILURES}
 
-          for builder in fc36 rhel8 rhel7; do
+          for builder in ${{ steps.required-builders.outputs.builders }}; do
             # Download bundles for current builder
             awk '{ print "gs://collector-kernel-bundles-public/bundle-"$1".tgz" }' "/tmp/tasks/${builder}/${{ matrix.builder }}/all" |
               sort | uniq | gsutil -m cp -I /tmp/bundles
@@ -131,8 +153,6 @@ jobs:
 
             rm -rf /tmp/bundles/*
           done
-
-          ls -la /tmp/output
 
       - name: Store built drivers
         uses: actions/upload-artifact@v3
