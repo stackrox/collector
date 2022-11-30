@@ -7,10 +7,6 @@ on:
         description: "Type of VM to run integration tests on. e.g. rhel or ubuntu-os"
         type: string
         required: true
-      collector_tag:
-        description: "The collector tag to test"
-        type: string
-        required: true
 
 jobs:
   integration-tests:
@@ -18,8 +14,8 @@ jobs:
     env:
       JOB_ID: ${{ github.run_id }}${{ inputs.vm_type }}
       GCP_SSH_KEY_FILE: ~/.ssh/GCP_SSH_KEY
-      COLLECTOR_REPO: "quay.io/rhacs-eng/collector"
-      COLLECTOR_IMAGE: "quay.io/rhacs-eng/collector:${{ inputs.collector_tag }}"
+      # temporary hard-code
+      COLLECTOR_TAG: 3.12.0
       BUILD_TYPE: ci
       VM_TYPE: "${{ inputs.vm_type }}"
     steps:
