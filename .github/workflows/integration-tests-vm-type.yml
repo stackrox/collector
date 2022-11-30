@@ -16,7 +16,7 @@ jobs:
   integration-tests:
     runs-on: ubuntu-latest
     env:
-      JOB_ID: ${{ github.run_id }}_${{ inputs.vm_type }}
+      JOB_ID: ${{ github.run_id }}${{ inputs.vm_type }}
       GCP_SSH_KEY_FILE: "~/.ssh/GCP_SSH_KEY"
       COLLECTOR_REPO: "quay.io/rhacs-eng/collector"
       COLLECTOR_IMAGE: "quay.io/rhacs-eng/collector:${{ inputs.collector_tag }}"
@@ -59,7 +59,7 @@ jobs:
 
       - name: Normalize job ID
         run: |
-          NORM_JOB_ID="${JOB_ID/-/_}"
+          NORM_JOB_ID="${JOB_ID/-/}"
           echo "JOB_ID=${NORM_JOB_ID}" >> "$GITHUB_ENV"
           cat "$GITHUB_ENV"
 
