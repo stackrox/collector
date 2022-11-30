@@ -7,7 +7,7 @@ on:
         description: "Type of VM to run integration tests on. e.g. rhel or ubuntu-os"
         type: string
         required: true
-      collector_tag: 
+      collector_tag:
         description: "The collector tag to test"
         type: string
         required: true
