@@ -1,5 +1,5 @@
 name: Collector Integration Tests
-  
+
 on: 
   pull_request:
     branches:
@@ -25,4 +25,5 @@ jobs:
     with:
       vm_type: ${{ matrix.vm_type }}
       collector_tag: 3.12.0
+    secrets: inherit
 
