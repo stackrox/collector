@@ -193,3 +193,37 @@ jobs:
           path: /tmp/output
           if-no-files-found: ignore
           retention-days: 1
+
+  upload-drivers:
+    runs-on: ubuntu-latest
+    needs: build-drivers
+
+    steps:
+      - name: Restore built drivers
+        uses: actions/download-artifact@v3
+        with:
+          name: built-drivers
+          path: /tmp
+
+      - name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - name: Choose destination bucket
+        id: gcp-bucket
+        run: |
+          if [[ "${{ github.event_name == 'pull_request' }}" == "true" ]]; then
+            echo "gcp-bucket=gs://mauro-drivers-test/pr-builds/${HEAD_REF}/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "gcp-bucket=gs://mauro-drivers-test/master" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Push drivers
+        run: |
+          for driver_version_dir in /tmp/output/*; do
+            files=("${driver_version_dir}"/*.{gz,unavail})
+            [[ "${#files[@]}" -gt 0 ]] || continue
+            printf '%s\n' "${files[@]}" |
+              gsutil -m cp -n -I "${{ steps.gcp-bucket.outputs.gcp-bucket }}/$(basename "${driver_version_dir}")/"
+          done
