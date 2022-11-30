@@ -9,6 +9,22 @@ on:
       - master
 
 jobs:
+  parallel-builds:
+    runs-on: ubuntu-latest
+    outputs:
+      parallel: ${{ steps.set-parallel.outputs.parallel }}
+
+    steps:
+      - name: Set number of parallel builds
+        id: set-parallel
+        shell: python
+        run : |
+          import json
+          parallel_jobs=32
+
+          parallel = [ a for a in range(parallel_jobs)]
+          print(f'::set-output name=parallel::{json.dumps(parallel)}')
+
   split-tasks:
     runs-on: ubuntu-latest
 
@@ -49,8 +65,6 @@ jobs:
           RHEL8_BUILDERS=8 \
             ${{ github.workspace }}/.openshift-ci/drivers/scripts/kernel-splitter.py
 
-          ls -la /tmp/tasks/**/**
-
       - name: Store tasks and sources
         uses: actions/upload-artifact@v3
         with:
@@ -62,11 +76,13 @@ jobs:
 
   build-drivers:
     runs-on: ubuntu-latest
-    needs: split-tasks
+    needs:
+      - parallel-builds
+      - split-tasks
 
     strategy:
       matrix:
-        builder: [0, 1, 2, 3, 4, 5, 6, 7]
+        builder: ${{ fromJSON(needs.parallel-builds.outputs.parallel) }}
 
     steps:
       - uses: actions/checkout@v3
@@ -78,6 +94,11 @@ jobs:
         with:
           name: tasks-and-sources
           path: /tmp
+
+      - name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
       - name: Build builders
         run: |
