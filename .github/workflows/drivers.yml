@@ -9,24 +9,10 @@ on:
       - master
 
 jobs:
-  parallel-builds:
-    runs-on: ubuntu-latest
-    outputs:
-      parallel: ${{ steps.set-parallel.outputs.parallel }}
-
-    steps:
-      - name: Set number of parallel builds
-        id: set-parallel
-        shell: python
-        run : |
-          import json
-          parallel_jobs=32
-
-          parallel = [ a for a in range(parallel_jobs)]
-          print(f'::set-output name=parallel::{json.dumps(parallel)}')
-
   split-tasks:
     runs-on: ubuntu-latest
+    outputs:
+      parallel-array: ${{ steps.set-parallel.outputs.parallel-array }}
 
     steps:
       - uses: actions/checkout@v3
@@ -47,6 +33,21 @@ jobs:
             kernel-modules/build/prepare-src \
             /tmp
 
+      - name: Set number of parallel builds
+        id: set-parallel
+        shell: python
+        run : |
+          import json
+          import os
+
+          # TODO: parallel_jobs will be replaced by an input to this workflow
+          parallel_jobs=32
+
+          parallel = [ a for a in range(parallel_jobs)]
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+            os.environ['GITHUB_OUTPUT']=f'parallel-jobs={parallel_jobs}\n'
+            os.environ['GITHUB_OUTPUT']=f'parallel-array={json.dumps(parallel)}\n'
+
       - name: Get build tasks
         run: |
           USE_KERNELS_FILE=true \
@@ -62,7 +63,7 @@ jobs:
           mv /tmp/build-tasks /tmp/tasks/all
 
           TASKS_DIR=/tmp/tasks \
-          RHEL8_BUILDERS=8 \
+          RHEL8_BUILDERS=${{ steps.set-parallel.outputs.parallel-jobs }} \
             ${{ github.workspace }}/.openshift-ci/drivers/scripts/kernel-splitter.py
 
       - name: Store tasks and sources
@@ -82,7 +83,7 @@ jobs:
 
     strategy:
       matrix:
-        builder: ${{ fromJSON(needs.parallel-builds.outputs.parallel) }}
+        builder: ${{ fromJSON(needs.parallel-builds.outputs.parallel-array) }}
 
     steps:
       - uses: actions/checkout@v3
