@@ -25,24 +25,31 @@ jobs:
           echo 'BUILD_BUILDER_IMAGE=true' >> "$GITHUB_ENV"
           echo 'COLLECTOR_BUILDER_TAG=cache' >> "$GITHUB_ENV"
 
-      - name: Build builder on PRs
-        if: ${{ contains(github.event.pull_request.labels.*.name, 'build-builder-image') }}
+      - name: PR checks for builder
+        if: ${{ github.event_name == 'pull_request' }}
         run: |
-          echo 'BUILD_BUILDER_IMAGE=true' >> "$GITHUB_ENV"
-          echo 'COLLECTOR_BUILDER_TAG=$(make tag)' >> "$GITHUB_ENV"
-
-      - name: Download cache image
-        if: ${{ !contains(github.event.pull_request.labels.*.name, 'build-builder-image') }}
-        run: |
-          docker pull quay.io/stackrox-io/collector-builder:cache
+          # We have 2 options:
+          # - We build the builder from scratch and give it a custom tag
+          # - We use the existing cache
+          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'build-builder-image') }}" == "true" ]]; then
+            echo 'BUILD_BUILDER_IMAGE=true' >> "$GITHUB_ENV"
+            echo 'COLLECTOR_BUILDER_TAG=$(make tag)' >> "$GITHUB_ENV"
+          else
+            echo "COLLECTOR_BUILDER_TAG=cache" >> "$GITHUB_ENV"
+            docker pull quay.io/stackrox-io/collector-builder:cache
+          fi
 
       - name: Set environment variables
         run: |
           echo "COLLECTOR_TAG=$(make tag)" >> "$GITHUB_ENV"
 
-          # If COLLECTOR_BUILDER_TAG is not set at this point, we are in a PR using the cached image
-          if [[ -z "${COLLECTOR_BUILDER_TAG}" ]]; then
-            echo "COLLECTOR_BUILDER_TAG=cache" >> "$GITHUB_ENV"
+      - name: PR specific environment variables
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          echo "COLLECTOR_APPEND_CID=true" >> "$GITHUB_ENV"
+
+          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'address-sanitizer') }}" == "true" ]]; then
+            echo "ADDRESS_SANITIZER=true" >> "$GITHUB_ENV"
           fi
 
       - name: Build images
@@ -61,7 +68,10 @@ jobs:
           docker --debug tag "quay.io/stackrox-io/collector:${COLLECTOR_TAG}" "quay.io/stackrox-io/collector:${COLLECTOR_TAG}-slim"
           docker --debug tag "quay.io/stackrox-io/collector:${COLLECTOR_TAG}" "quay.io/stackrox-io/collector:${COLLECTOR_TAG}-base"
 
-          docker push "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}"
+          # We only push the builder on pushes to master or if a PR built it with a custom tag
+          if [[ "${{ github.event_name == 'push' }}" == "true" || "${COLLECTOR_BUILDER_TAG}" != "cache" ]]; then
+            docker push "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}"
+          fi
           docker push "quay.io/stackrox-io/collector:${COLLECTOR_TAG}-slim"
           docker push "quay.io/stackrox-io/collector:${COLLECTOR_TAG}-base"
 
