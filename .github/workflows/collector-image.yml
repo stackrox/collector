@@ -19,10 +19,17 @@ jobs:
           submodules: true
           fetch-depth: 0
 
-      - name: Check if builder should use cache
-        if: ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'build-builder-image') }}
+      - name: Build builder on master
+        if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
         run: |
           echo 'BUILD_BUILDER_IMAGE=true' >> "$GITHUB_ENV"
+          echo 'COLLECTOR_BUILDER_TAG=cache' >> "$GITHUB_ENV"
+
+      - name: Build builder on PRs
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'build-builder-image') }}
+        run: |
+          echo 'BUILD_BUILDER_IMAGE=true' >> "$GITHUB_ENV"
+          echo 'COLLECTOR_BUILDER_TAG=$(make tag)' >> "$GITHUB_ENV"
 
       - name: Download cache image
         if: ${{ !contains(github.event.pull_request.labels.*.name, 'build-builder-image') }}
@@ -33,9 +40,8 @@ jobs:
         run: |
           echo "COLLECTOR_TAG=$(make tag)" >> "$GITHUB_ENV"
 
-          if [[ "${{ github.event_name == 'push' && github.ref_name == 'master' }}" == "true" ]]; then
-            echo "COLLECTOR_BUILDER_TAG=$(make tag)" >> "$GITHUB_ENV"
-          else
+          # If COLLECTOR_BUILDER_TAG is not set at this point, we are in a PR using the cached image
+          if [[ -n "${COLLECTOR_BUILDER_TAG}" ]]; then
             echo "COLLECTOR_BUILDER_TAG=cache" >> "$GITHUB_ENV"
           fi
 
@@ -51,14 +57,13 @@ jobs:
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
       - name: Retag and push stackrox-io
-        run:
+        run: |
           docker tag "quay.io/stackrox-io/collector:${COLLECTOR_TAG}" "quay.io/stackrox-io/collector:${COLLECTOR_TAG}-slim"
           docker tag "quay.io/stackrox-io/collector:${COLLECTOR_TAG}" "quay.io/stackrox-io/collector:${COLLECTOR_TAG}-base"
 
           docker push "quay.io/stackrox-io/collector-builder:${COLLECTOR_TAG}-slim"
           docker push "quay.io/stackrox-io/collector:${COLLECTOR_TAG}-slim"
           docker push "quay.io/stackrox-io/collector:${COLLECTOR_TAG}-base"
-
 
       - name: Login to quay.io/rhacs-eng
         uses: docker/login-action@v2
@@ -68,11 +73,9 @@ jobs:
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
       - name: Retag and push rhacs-eng
-        run:
-          docker tag "quay.io/stackrox-io/collector:${COLLECTOR_TAG}" \
-             "quay.io/rhacs-eng/collector:${COLLECTOR_TAG}-slim"
-          docker tag "quay.io/stackrox-io/collector:${COLLECTOR_TAG}" \
-             "quay.io/rhacs-eng/collector:${COLLECTOR_TAG}-base"
+        run: |
+          docker tag "quay.io/stackrox-io/collector:${COLLECTOR_TAG}" "quay.io/rhacs-eng/collector:${COLLECTOR_TAG}-slim"
+          docker tag "quay.io/stackrox-io/collector:${COLLECTOR_TAG}" "quay.io/rhacs-eng/collector:${COLLECTOR_TAG}-base"
 
           docker push "quay.io/rhacs-eng/collector:${COLLECTOR_TAG}-slim"
           docker push "quay.io/rhacs-eng/collector:${COLLECTOR_TAG}-base"
