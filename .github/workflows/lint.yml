@@ -1,11 +1,6 @@
 name: Lint
 
-on:
-  pull_request:
-  push:
-    branches:
-      - master
-      - release-*
+on: [pull-request]
 
 jobs:
   lint:
@@ -15,4 +10,7 @@ jobs:
       - uses: actions/setup-python@v3
       - uses: mfinelli/setup-shfmt@v2
       - uses: pre-commit/action@v3.0.0
+        with:
+          # ensure we're only linting the diff between the PR and the base ref
+          extra_args: --from-ref HEAD --to-ref ${{ github.event.pull_request.base.ref }}
   
