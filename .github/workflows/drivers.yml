@@ -160,6 +160,10 @@ jobs:
         run: |
           mkdir -p /tmp/{output,bundles,FAILURES}
 
+          # this is required for GHA to upload a build failures artifact when
+          # no build fails
+          touch /tmp/FAILURES/.dummy
+
           for builder in ${{ steps.required-builders.outputs.builders }}; do
             # Download bundles for current builder
             awk '{ print "gs://collector-kernel-bundles-public/bundle-"$1".tgz" }' "/tmp/tasks/${builder}/${{ matrix.builder }}/all" |
