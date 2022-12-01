@@ -43,8 +43,11 @@ jobs:
           import json
           import os
 
-          parallel_jobs=32 if "${{ contains(github.event.pull_request.labels.*.name, 'more-driver-builders') }}" == 'true' else 8
-          parallel = [ a for a in range(parallel_jobs)]
+          parallel_jobs=8
+          if "${{ contains(github.event.pull_request.labels.*.name, 'more-driver-builders') }}" == 'true':
+            parallel_jobs=32
+
+          parallel = [a for a in range(parallel_jobs)]
 
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
             f.write(f'parallel-jobs={parallel_jobs}\n')
@@ -202,6 +205,7 @@ jobs:
       - name: Choose destination bucket
         id: gcp-bucket
         run: |
+          # TODO: Move these buckets to the proper ones when we completely switch off OSCI
           if [[ "${{ github.event_name == 'pull_request' }}" == "true" ]]; then
             echo "gcp-bucket=mauro-drivers-test/pr-builds/${HEAD_REF}/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
           else
