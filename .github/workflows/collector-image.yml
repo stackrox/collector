@@ -33,7 +33,7 @@ jobs:
           # - We use the existing cache
           if [[ "${{ contains(github.event.pull_request.labels.*.name, 'build-builder-image') }}" == "true" ]]; then
             echo 'BUILD_BUILDER_IMAGE=true' >> "$GITHUB_ENV"
-            echo 'COLLECTOR_BUILDER_TAG=$(make tag)' >> "$GITHUB_ENV"
+            echo "COLLECTOR_BUILDER_TAG=$(make tag)" >> "$GITHUB_ENV"
           else
             echo "COLLECTOR_BUILDER_TAG=cache" >> "$GITHUB_ENV"
             docker pull quay.io/stackrox-io/collector-builder:cache
