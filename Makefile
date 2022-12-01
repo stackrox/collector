@@ -183,6 +183,7 @@ teardown-dev:
 .PHONY: clean
 clean: teardown-dev
 	rm -rf cmake-build/
+	rm -f collector/container/Dockerfile.gen
 	make -C collector clean
 
 .PHONY: shfmt-check
