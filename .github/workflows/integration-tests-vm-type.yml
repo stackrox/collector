@@ -78,7 +78,7 @@ jobs:
       - name: Create VMs
         id: create-vms-step
         run: |
-          make -C "${{ github.workspace }}/ansible" create-vms
+          make -C "${{ github.workspace }}/ansible" create-ci-vms
 
       - name: Run Tests
         run: make -C "${{ github.workspace }}/ansible" integration-tests
