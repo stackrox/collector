@@ -27,6 +27,8 @@ jobs:
           # Initialize just the falco submodule
           git submodule update --init ${{ github.workspace }}/falcosecurity-libs
 
+          git status
+
           CHECKOUT_BEFORE_PATCHING=false \
           DOCKERIZED=1 \
           ${{ github.workspace }}/kernel-modules/dockerized/scripts/patch-files.sh \
@@ -35,6 +37,8 @@ jobs:
             ${{ github.workspace }} \
             kernel-modules/build/prepare-src \
             /tmp
+
+          git status
 
       - name: Set number of parallel builds
         id: set-parallel
@@ -70,6 +74,8 @@ jobs:
 
       - name: Get build tasks
         run: |
+          git status
+
           USE_KERNELS_FILE=true \
           DOCKERIZED=1 \
           OUTPUT_DIR=/tmp \
@@ -78,12 +84,16 @@ jobs:
           SCRIPTS_DIR=${{ github.workspace }}/kernel-modules/build \
             ${{ github.workspace }}/kernel-modules/dockerized/scripts/get-build-tasks.sh
 
+          git status
+
           mkdir -p /tmp/tasks
           mv /tmp/build-tasks /tmp/tasks/all
 
           TASKS_DIR=/tmp/tasks \
           RHEL8_BUILDERS=${{ steps.set-parallel.outputs.parallel-jobs }} \
             ${{ github.workspace }}/.openshift-ci/drivers/scripts/kernel-splitter.py
+
+          git status
 
       - name: Store tasks and sources
         uses: actions/upload-artifact@v3
