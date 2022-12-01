@@ -2,12 +2,20 @@
 
 - name: Create Integration Test VMs
   hosts: localhost
-  roles: 
-    - create-all-vms
-  vars:
-    vm_list: "{{ virtual_machines }}"
   tags:
     - setup
+  tasks:
+    - name: Create VM for each collection method
+      include_role:
+        name: create-all-vms
+      vars:
+        vm_list: "{{ virtual_machines }}"
+        collection_method: "{{ method }}"
+      loop:
+        - ebpf
+        - kernel-module
+      loop_control:
+        loop_var: method
   post_tasks:
     # We have all the VMs created now, so refresh the inventory - this allows
     # us to use the provisioning role on the VMs we just created
