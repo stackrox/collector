@@ -20,7 +20,7 @@ jobs:
           fetch-depth: 0
 
       - name: Check if builder should use cache
-        if: ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'build-builder-image')}}
+        if: ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'build-builder-image') }}
         run: |
           echo 'BUILD_BUILDER_IMAGE=true' >> "$GITHUB_ENV"
 
@@ -33,7 +33,7 @@ jobs:
         run: |
           echo "COLLECTOR_TAG=$(make tag)" >> "$GITHUB_ENV"
 
-          if [[ "${{ github.event_name == 'push' && github.ref_name == 'master' }}" != "true" ]]; then
+          if [[ "${{ github.event_name == 'push' && github.ref_name == 'master' }}" == "true" ]]; then
             echo "COLLECTOR_BUILDER_TAG=$(make tag)" >> "$GITHUB_ENV"
           else
             echo "COLLECTOR_BUILDER_TAG=cache" >> "$GITHUB_ENV"
