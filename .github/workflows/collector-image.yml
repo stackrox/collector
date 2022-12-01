@@ -31,7 +31,7 @@ jobs:
       - name: Set environment variables
         run: |
           # Grab tag information
-          git fetch
+          git fetch --recurse-submodules=no
 
           echo "COLLECTOR_TAG=$(make tag)" >> "$GITHUB_ENV"
 
