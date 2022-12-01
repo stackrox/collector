@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -exuo pipefail
+set -euo pipefail
 
 # This script handles decompressing the bundles tarballs and setting environment
 # variables needed by the kernel driver compilation script.
