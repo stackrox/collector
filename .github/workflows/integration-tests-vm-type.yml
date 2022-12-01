@@ -12,6 +12,22 @@ jobs:
   integration-tests:
     runs-on: ubuntu-latest
     env:
+      #
+      # JOB_ID is a little odd in that it needs to be unique per vm_type,
+      # but GHA's run_id is only unique per job. Appending the vm_type
+      # makes it fit our requirements...
+      #
+      # but wait, there's more
+      #
+      # the job id is used both as part of a GCP instance name and label, but
+      # also as a group name in ansible, which means it has some restrictions:
+      #
+      # - must be alpha-numeric
+      # - must not contain underscores (because of GCP)
+      # - must not contain hyphens (because of ansible)
+      #
+      # vm_type may contain hyphens, so the id is normalized below
+      #
       JOB_ID: ${{ github.run_id }}${{ inputs.vm_type }}
       GCP_SSH_KEY_FILE: ~/.ssh/GCP_SSH_KEY
       # temporary hard-code
@@ -42,8 +58,9 @@ jobs:
         run: |
           source ${{ github.workspace }}/.openshift-ci/scripts/lib.sh
 
-          mkdir -p /tmp/secret
-          cp "$GOOGLE_APPLICATION_CREDENTIALS" /tmp/secret/gcp-account.json
+          # Temporary compatibility with OSCI
+          mkdir -p /tmp/secret/stackrox-collector-e2e-tests
+          cp "$GOOGLE_APPLICATION_CREDENTIALS" /tmp/secret/stackrox-collector-e2e-tests/GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT
 
           mkdir -p "$HOME/.ssh"
           chmod 0700 "$HOME/.ssh"
@@ -77,6 +94,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v3
         with:
+          name: ${{ inputs.vm_type }}-logs
           path: |
             ${{ github.workspace }}/integration-tests/container-logs/**/*
             ${{ github.workspace }}/integration-tests/perf.json
