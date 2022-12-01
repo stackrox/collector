@@ -83,6 +83,7 @@ jobs:
 
           TASKS_DIR=/tmp/tasks \
           RHEL8_BUILDERS=${{ steps.set-parallel.outputs.parallel-jobs }} \
+          FC36_BUILDERS=${{ steps.set-parallel.outputs.parallel-jobs }} \
             ${{ github.workspace }}/.openshift-ci/drivers/scripts/kernel-splitter.py
 
       - name: Store tasks and sources
