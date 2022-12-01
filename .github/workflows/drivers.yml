@@ -62,20 +62,8 @@ jobs:
           path: /tmp/kernel-modules/
           key: kernel-modules-test-v0
 
-      - name: Build driver cache
-        if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-cache') }}
-        run: |
-          for module_version_dir in /tmp/kobuild-tmp/versions-src/*; do
-            module_version="$(basename "${module_version_dir}")"
-            mkdir -p "/tmp/kernel-modules/$module_version/"
-
-            gsutil -m rsync -r \
-              "gs://collector-modules-osci/$module_version/" \
-              "/tmp/kernel-modules/$module_version/" || true
-          done
-
-          BASE_DIR=/tmp \
-            ${{ github.workspace }}/.openshift-ci/drivers/scripts/sanitize-drivers.py
+      - uses: ./.github/workflows/update-driver-cache.yml
+        if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
 
       - name: Get build tasks
         run: |
@@ -231,3 +219,21 @@ jobs:
           path: /tmp/output/
           parent: false
           destination: ${{ steps.gcp-bucket.outputs.gcp-bucket }}
+
+      # If we are running on master, we update the local cache
+      - name: Restore tasks and sources
+        uses: actions/download-artifact@v3
+        if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
+        with:
+          name: tasks-and-sources
+          path: /tmp
+
+      - name: Setup kernel driver cache
+        uses: actions/cache@v3
+        if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
+        with:
+          path: /tmp/kernel-modules/
+          key: kernel-modules-test-v0
+
+      - uses: ./.github/workflows/update-driver-cache.yml
+        if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
