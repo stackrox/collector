@@ -58,8 +58,10 @@ jobs:
 
       - name: Retag and push stackrox-io
         run: |
-          docker tag "quay.io/stackrox-io/collector:${COLLECTOR_TAG}" "quay.io/stackrox-io/collector:${COLLECTOR_TAG}-slim"
-          docker tag "quay.io/stackrox-io/collector:${COLLECTOR_TAG}" "quay.io/stackrox-io/collector:${COLLECTOR_TAG}-base"
+          set -x
+
+          docker --debug tag "quay.io/stackrox-io/collector:${COLLECTOR_TAG}" "quay.io/stackrox-io/collector:${COLLECTOR_TAG}-slim"
+          docker --debug tag "quay.io/stackrox-io/collector:${COLLECTOR_TAG}" "quay.io/stackrox-io/collector:${COLLECTOR_TAG}-base"
 
           docker push "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}"
           docker push "quay.io/stackrox-io/collector:${COLLECTOR_TAG}-slim"
