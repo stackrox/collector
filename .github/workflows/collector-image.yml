@@ -41,7 +41,7 @@ jobs:
           echo "COLLECTOR_TAG=$(make tag)" >> "$GITHUB_ENV"
 
           # If COLLECTOR_BUILDER_TAG is not set at this point, we are in a PR using the cached image
-          if [[ -n "${COLLECTOR_BUILDER_TAG}" ]]; then
+          if [[ -z "${COLLECTOR_BUILDER_TAG}" ]]; then
             echo "COLLECTOR_BUILDER_TAG=cache" >> "$GITHUB_ENV"
           fi
 
@@ -58,8 +58,6 @@ jobs:
 
       - name: Retag and push stackrox-io
         run: |
-          set -x
-
           docker --debug tag "quay.io/stackrox-io/collector:${COLLECTOR_TAG}" "quay.io/stackrox-io/collector:${COLLECTOR_TAG}-slim"
           docker --debug tag "quay.io/stackrox-io/collector:${COLLECTOR_TAG}" "quay.io/stackrox-io/collector:${COLLECTOR_TAG}-base"
 
