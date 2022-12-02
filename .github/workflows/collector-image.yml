@@ -39,7 +39,7 @@ jobs:
           # - We use the existing cache
           COLLECTOR_BUILDER_TAG="cache-gha"
           if [[ "${{ contains(github.event.pull_request.labels.*.name, 'build-builder-image') }}" == "true" ]]; then
-            COLLECTOR_BUILDER_TAG="${COLLECTOR_TAG}-gha"
+            COLLECTOR_BUILDER_TAG="${COLLECTOR_TAG}"
             echo 'BUILD_BUILDER_IMAGE=true' >> "$GITHUB_ENV"
           else
             docker pull quay.io/stackrox-io/collector-builder:cache-gha || true
