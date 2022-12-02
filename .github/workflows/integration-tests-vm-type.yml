@@ -72,8 +72,8 @@ jobs:
             chmod "$perms" "$destination"
           }
 
-          copy_secret_to_file GCP_SSH_KEY "$HOME/.ssh/GCP_SSH_KEY" 0600
-          copy_secret_to_file GCP_SSH_KEY_PUB "$HOME/.ssh/GCP_SSH_KEY.pub" 0600
+          copy_secret_to_file "$GCP_SSH_KEY" "$HOME/.ssh/GCP_SSH_KEY" 0600
+          copy_secret_to_file "$GCP_SSH_KEY_PUB" "$HOME/.ssh/GCP_SSH_KEY.pub" 0600
         env:
           GCP_SSH_KEY: ${{ secrets.GCP_SSH_KEY }}
           GCP_SSH_KEY_PUB: ${{ secrets.GCP_SSH_KEY_PUB }}
