@@ -200,12 +200,18 @@ def main(task_file):
     fc36_builders = fc36.split(fc36_builders_count)
 
     builders = [
-        *fc36_builders,
         *rhel8_builders,
         *rhel7_ebpf_builders,
         *rhel7_builders,
         unknown
     ]
+
+    # Handle OSCI specific case for fc36 builder
+    if fc36_builders_count == 1:
+        builders.append(fc36)
+    else:
+        builders.append(*fc36_builders)
+
     for builder in builders:
         builder.dump()
 
