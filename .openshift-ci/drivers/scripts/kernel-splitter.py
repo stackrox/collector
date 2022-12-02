@@ -210,7 +210,7 @@ def main(task_file):
     if fc36_builders_count == 1:
         builders.append(fc36)
     else:
-        builders.append(*fc36_builders)
+        builders.extend(fc36_builders)
 
     for builder in builders:
         builder.dump()
