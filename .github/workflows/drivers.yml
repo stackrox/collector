@@ -65,8 +65,10 @@ jobs:
           path: /tmp/kernel-modules/
           key: kernel-modules-test-v0
 
-      - uses: ./.github/workflows/update-driver-cache.yml
+      - name: Update driver cache
         if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
+        run: |
+          ${{ github.workspace }}/.github/drivers/update-cache.sh
 
       - name: Get build tasks
         run: |
@@ -101,7 +103,7 @@ jobs:
     needs:
       - split-tasks
     env:
-      BUILDERS_DIR: ${{ github.workspace }}/.github/driver-builders
+      BUILDERS_DIR: ${{ github.workspace }}/.github/drivers
 
     strategy:
       matrix:
@@ -240,5 +242,7 @@ jobs:
           path: /tmp/kernel-modules/
           key: kernel-modules-test-v0
 
-      - uses: ./.github/workflows/update-driver-cache.yml
+      - name: Update driver cache
         if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
+        run: |
+          ${{ github.workspace }}/.github/drivers/update-cache.sh
