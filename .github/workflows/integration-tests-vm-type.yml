@@ -56,14 +56,22 @@ jobs:
 
       - name: Copy creds files
         run: |
-          source ${{ github.workspace }}/.openshift-ci/scripts/lib.sh
-
           # Temporary compatibility with OSCI
           mkdir -p /tmp/secret/stackrox-collector-e2e-tests
           cp "$GOOGLE_APPLICATION_CREDENTIALS" /tmp/secret/stackrox-collector-e2e-tests/GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT
 
           mkdir -p "$HOME/.ssh"
           chmod 0700 "$HOME/.ssh"
+
+          function copy_secret_to_file() {
+            local secret="$1"
+            local destination="$2"
+            local perms="$3"
+
+            echo "$secret" > "$destination"
+            chmod "$perms" "$destination"
+          }
+
           copy_secret_to_file GCP_SSH_KEY "$HOME/.ssh/GCP_SSH_KEY" 0600
           copy_secret_to_file GCP_SSH_KEY_PUB "$HOME/.ssh/GCP_SSH_KEY.pub" 0600
         env:
