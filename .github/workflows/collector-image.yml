@@ -76,7 +76,7 @@ jobs:
       - name: Push builder to stackrox-io
         if: ${{ github.event_name == 'push' || steps.pr-checks.outputs.builder-tag != 'cache-gha' }}
         run: |
-          docker push "${{ inputs.TARGET_REGISTRY }}/collector-builder:${COLLECTOR_BUILDER_TAG}"
+          docker push "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}"
 
       - name: Login to quay.io/rhacs-eng
         uses: docker/login-action@v2
