@@ -1,10 +1,13 @@
 --- 
 
+- set_fact:
+    normalized_collection_method: "{{ collection_method | default('any') | replace('kernel-module', 'ko') }}"
+
 - name: Create VMs From Family
   include_role:
     name: create-vm
   vars:
-    vm_name: "{{ gcp_instance_prefix }}-{{ collection_method | default('any') }}-{{ item.1 }}-{{ job_id }}"
+    vm_name: "{{ gcp_instance_prefix }}-{{ normalized_collection_method }}-{{ item.1 }}-{{ job_id }}"
     vm_project: "{{ item.0.value.project }}"
     vm_family: "{{ item.1 }}"
     vm_platform: "{{ item.0.key }}"
@@ -35,7 +38,7 @@
   include_role:
     name: create-vm
   vars:
-    vm_name: "{{ gcp_instance_prefix }}-{{ item.0.key }}-{{ job_id }}"
+    vm_name: "{{ gcp_instance_prefix }}-{{ normalized_collection_method }}-{{ item.0.key }}-{{ job_id }}"
     vm_project: "{{ item.0.value.project }}"
     # still populate the family, since it is used as a label to differentiate
     # VMs
