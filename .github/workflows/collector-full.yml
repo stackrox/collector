@@ -9,6 +9,11 @@ on:
         description: |
           The tag used to build the collector image, usually extracted from the
           collector-slim.yml workflow
+      skip-built-drivers:
+        type: boolean
+        required: true
+        description: |
+          Skip built drivers if no new drivers were built.
 
 jobs:
   build-collector-full:
@@ -25,7 +30,7 @@ jobs:
 
       - name: Restore built drivers
         uses: actions/download-artifact@v3
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ github.event_name == 'pull_request' && !inputs.skip-built-drivers }}
         with:
           name: built-drivers
           path: /tmp/built-drivers/
