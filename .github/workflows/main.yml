@@ -17,11 +17,11 @@ jobs:
   check-drivers-build:
     runs-on: ubuntu-latest
     needs: build-drivers
+    if: ${{ needs.build-drivers.outputs.parallel-jobs > 0 }}
     steps:
       - uses: actions/checkout@v3
 
       - name: Restore failure files
-        if: ${{ needs.build-drivers.outputs.parallel-jobs > 0 }}
         uses: actions/download-artifact@v3
         with:
           name: driver-build-failures
