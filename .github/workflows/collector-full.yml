@@ -47,7 +47,9 @@ jobs:
 
           mkdir -p "${CONTEXT_DRIVERS_DIR}"
           find "${CACHED_DRIVERS_DIR}" -type f -exec mv -t "${CONTEXT_DRIVERS_DIR}" {} +
-          find "${BUILT_DRIVERS_DIR}" -type f -exec mv -t "${CONTEXT_DRIVERS_DIR}" {} +
+          if [[ -d "${BUILT_DRIVERS_DIR}" ]]; then
+            find "${BUILT_DRIVERS_DIR}" -type f -exec mv -t "${CONTEXT_DRIVERS_DIR}" {} +
+          fi
 
       - name: Pull slim image and build full image
         run: |
