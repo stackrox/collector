@@ -2,11 +2,18 @@ name: Collector image build
 
 on:
   workflow_call:
+    outputs:
+      collector-tag:
+        description: "The tag used when building collector"
+        value: ${{ jobs.build-collector-image.outputs.collector-tag }}
 
 jobs:
   build-collector-image:
     name: Build the collector slim image
     runs-on: ubuntu-latest
+    outputs:
+      collector-tag: ${{ steps.collector-tag.outputs.collector-tag }}
+
     steps:
       - uses: actions/checkout@v3
         with:
@@ -14,9 +21,11 @@ jobs:
           fetch-depth: 0
 
       - name: Set collector tag
+        id: collector-tag
         run: |
           COLLECTOR_TAG="$(make tag)-gha"
           echo "COLLECTOR_TAG=${COLLECTOR_TAG}" >> "$GITHUB_ENV"
+          echo "collector-tag=${COLLECTOR_TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Checks for main and release branches
         if: ${{ github.event_name == 'push' }}
