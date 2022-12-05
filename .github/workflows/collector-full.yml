@@ -45,6 +45,7 @@ jobs:
           BUILT_DRIVERS_DIR="/tmp/built-drivers/${DRIVER_VERSION}/"
           CONTEXT_DRIVERS_DIR="${{ github.workspace }}/kernel-modules/container/kernel-modules"
 
+          mkdir -p "${CONTEXT_DRIVERS_DIR}"
           find "${CACHED_DRIVERS_DIR}" -type f -exec mv -t "${CONTEXT_DRIVERS_DIR}" {} +
           find "${BUILT_DRIVERS_DIR}" -type f -exec mv -t "${CONTEXT_DRIVERS_DIR}" {} +
 
