@@ -2,6 +2,11 @@ name: Build collector drivers
 
 on:
   workflow_call:
+    outputs:
+      parallel-jobs:
+        description: |
+          Number of builders used to build drivers, 0 if no driver is built
+        value: ${{ jobs.split-tasks.outputs.parallel-jobs }}
 
 env:
   HEAD_REF: ${{ github.head_ref }}
