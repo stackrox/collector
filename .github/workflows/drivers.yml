@@ -36,23 +36,6 @@ jobs:
             kernel-modules/build/prepare-src \
             /tmp
 
-      - name: Set number of parallel builds
-        id: set-parallel
-        shell: python
-        run : |
-          import json
-          import os
-
-          parallel_jobs=8
-          if "${{ contains(github.event.pull_request.labels.*.name, 'more-driver-builders') }}" == 'true':
-            parallel_jobs=32
-
-          parallel = [a for a in range(parallel_jobs)]
-
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-            f.write(f'parallel-jobs={parallel_jobs}\n')
-            f.write(f'parallel-array={json.dumps(parallel)}\n')
-
       - name: Authenticate with GCP
         uses: 'google-github-actions/auth@v1'
         with:
@@ -83,6 +66,34 @@ jobs:
           mkdir -p /tmp/tasks
           mv /tmp/build-tasks /tmp/tasks/all
 
+      - name: Set number of parallel builds
+        id: set-parallel
+        shell: python
+        run : |
+          import json
+          import math
+          import os
+
+          kernels = set()
+
+          with open('./tasks/all', 'r') as tasks:
+            for line in tasks.readlines():
+              kernel = line.split()[0]
+              kernels.add(kernel)
+
+          # Add a parallel job every 10 kernels, capped to 32
+          parallel_jobs = math.ceil(len(kernels)/10)
+          if parallel_jobs > 32:
+            parallel_jobs=32
+
+          parallel = [a for a in range(parallel_jobs)]
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+            f.write(f'parallel-jobs={parallel_jobs}\n')
+            f.write(f'parallel-array={json.dumps(parallel)}\n')
+
+      - name: Split kernels
+        run: |
           TASKS_DIR=/tmp/tasks \
           RHEL8_BUILDERS=${{ steps.set-parallel.outputs.parallel-jobs }} \
           FC36_BUILDERS=${{ steps.set-parallel.outputs.parallel-jobs }} \
