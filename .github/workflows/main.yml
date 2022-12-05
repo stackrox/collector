@@ -37,6 +37,7 @@ jobs:
     uses: ./.github/workflows/collector-full.yml
     with:
       collector-tag: ${{ needs.build-collector-slim.outputs.collector-tag }}
+    secrets: inherit
     needs:
     - build-collector-slim
     - build-drivers
