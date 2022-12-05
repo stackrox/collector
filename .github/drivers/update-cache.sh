@@ -12,4 +12,4 @@ for module_version_dir in /tmp/kobuild-tmp/versions-src/*; do
 done
 
 BASE_DIR=/tmp \
-    "${GITHUB_WORSPACE}/.openshift-ci/drivers/scripts/sanitize-drivers.py"
+    "${GITHUB_WORKSPACE}/.openshift-ci/drivers/scripts/sanitize-drivers.py"
