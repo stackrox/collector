@@ -76,7 +76,7 @@ jobs:
 
           kernels = set()
 
-          with open('./tasks/all', 'r') as tasks:
+          with open('/tmp/tasks/all', 'r') as tasks:
             for line in tasks.readlines():
               kernel = line.split()[0]
               kernels.add(kernel)
