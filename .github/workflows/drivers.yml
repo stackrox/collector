@@ -14,6 +14,7 @@ jobs:
     outputs:
       parallel-jobs: ${{ steps.set-parallel.outputs.parallel-jobs }}
       parallel-array: ${{ steps.set-parallel.outputs.parallel-array }}
+      branch-name: ${{ steps.set-branch.outputs.branch-name }}
     env:
       KERNELS_FILE: ${{ github.workspace }}/kernel-modules/KERNEL_VERSIONS
 
@@ -216,7 +217,9 @@ jobs:
 
   upload-drivers:
     runs-on: ubuntu-latest
-    needs: build-drivers
+    needs:
+      - split-tasks
+      - build-drivers
 
     steps:
       - name: Restore built drivers
@@ -230,7 +233,7 @@ jobs:
         run: |
           # TODO: Move these buckets to the proper ones when we completely switch off OSCI
           if [[ "${{ github.event_name == 'pull_request' }}" == "true" ]]; then
-            echo "gcp-bucket=mauro-drivers-test/pr-builds/${{ steps.set-branch.outputs.branch-name }}/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
+            echo "gcp-bucket=mauro-drivers-test/pr-builds/${{ needs.split-tasks.outputs.branch-name }}/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
           else
             echo "gcp-bucket=mauro-drivers-test/master" >> "$GITHUB_OUTPUT"
           fi
