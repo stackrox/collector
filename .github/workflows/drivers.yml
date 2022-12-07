@@ -33,14 +33,15 @@ jobs:
         env:
           BUILD_LEGACY_DRIVERS: ${{ contains(github.event.pull_request.labels.*.name, 'build-legacy-probes') || github.event_name == 'push' }}
           OSCI_RUN: 1
+          DOCKERIZED: 1
+          CHECKOUT_BEFORE_PATCHING: false
+
         run: |
           git fetch
 
           # Initialize just the falco submodule
           git submodule update --init ${{ github.workspace }}/falcosecurity-libs
 
-          CHECKOUT_BEFORE_PATCHING=false \
-          DOCKERIZED=1 \
           ${{ github.workspace }}/kernel-modules/dockerized/scripts/patch-files.sh \
             ${{ steps.set-branch.outputs.branch-name }} \
             "${BUILD_LEGACY_DRIVERS}" \
@@ -53,28 +54,21 @@ jobs:
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
-      - name: Setup kernel driver cache
-        uses: actions/cache@v3
-        if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-cache') }}
-        with:
-          path: /tmp/kernel-modules/
-          key: kernel-modules-test-v0
-
-      - name: Update driver cache
-        # TODO: Rollback this comment
-        # if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
+      - name: Download existing drivers from GCP
         run: |
           ${{ github.workspace }}/.github/drivers/update-cache.sh
 
       - name: Get build tasks
+        env:
+          USE_KERNELS_FILE: true
+          DOCKERIZED: 1
+          OUTPUT_DIR: /tmp
+          CACHE_DIR: /tmp
+          BLOCKLIST_DIR: ${{ github.workspace }}/kernel-modules
+          SCRIPTS_DIR: ${{ github.workspace }}/kernel-modules/build
+
         run: |
-          USE_KERNELS_FILE=true \
-          DOCKERIZED=1 \
-          OUTPUT_DIR=/tmp \
-          CACHE_DIR=/tmp \
-          BLOCKLIST_DIR=${{ github.workspace }}/kernel-modules \
-          SCRIPTS_DIR=${{ github.workspace }}/kernel-modules/build \
-            ${{ github.workspace }}/kernel-modules/dockerized/scripts/get-build-tasks.sh
+          ${{ github.workspace }}/kernel-modules/dockerized/scripts/get-build-tasks.sh
 
           mkdir -p /tmp/tasks
           mv /tmp/build-tasks /tmp/tasks/all
@@ -106,11 +100,13 @@ jobs:
             f.write(f'parallel-array={json.dumps(parallel)}\n')
 
       - name: Split kernels
+        env:
+          TASKS_DIR: /tmp/tasks
+          RHEL8_BUILDERS: ${{ steps.set-parallel.outputs.parallel-jobs }}
+          FC36_BUILDERS: ${{ steps.set-parallel.outputs.parallel-jobs }}
+
         run: |
-          TASKS_DIR=/tmp/tasks \
-          RHEL8_BUILDERS=${{ steps.set-parallel.outputs.parallel-jobs }} \
-          FC36_BUILDERS=${{ steps.set-parallel.outputs.parallel-jobs }} \
-            ${{ github.workspace }}/.openshift-ci/drivers/scripts/kernel-splitter.py
+          ${{ github.workspace }}/.openshift-ci/drivers/scripts/kernel-splitter.py
 
       - name: Store tasks and sources
         uses: actions/upload-artifact@v3
@@ -251,26 +247,3 @@ jobs:
           path: /tmp/output/
           parent: false
           destination: ${{ steps.gcp-bucket.outputs.gcp-bucket }}
-
-      # If we are running on master, we update the local cache
-      - name: Restore tasks and sources
-        uses: actions/download-artifact@v3
-        # TODO: Rollback this comment
-        #if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
-        with:
-          name: tasks-and-sources
-          path: /tmp
-
-      - name: Setup kernel driver cache
-        uses: actions/cache@v3
-        # TODO: Rollback this comment
-        #if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
-        with:
-          path: /tmp/kernel-modules/
-          key: kernel-modules-test-v0
-
-      - name: Update driver cache
-        # TODO: Rollback this comment
-        #if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
-        run: |
-          ${{ github.workspace }}/.github/drivers/update-cache.sh
