@@ -8,9 +8,6 @@ on:
           Number of builders used to build drivers, 0 if no driver is built
         value: ${{ jobs.split-tasks.outputs.parallel-jobs }}
 
-env:
-  HEAD_REF: ${{ github.head_ref }}
-
 jobs:
   split-tasks:
     runs-on: ubuntu-latest
@@ -22,6 +19,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
+      - name: Set branch name
+        id: set-branch
+        run: |
+          if [[ ${{ github.event_name }} == "pull_request" ]]; then
+            echo "branch-name=${GITHUB_HEAD_REF}" >> "$GITHUB_OUTPUT"
+          else
+            echo "branch-name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Patch files
         env:
@@ -36,7 +42,7 @@ jobs:
           CHECKOUT_BEFORE_PATCHING=false \
           DOCKERIZED=1 \
           ${{ github.workspace }}/kernel-modules/dockerized/scripts/patch-files.sh \
-            "${HEAD_REF}" \
+            ${{ steps.set-branch.outputs.branch-name }} \
             "${BUILD_LEGACY_DRIVERS}" \
             ${{ github.workspace }} \
             kernel-modules/build/prepare-src \
@@ -228,7 +234,7 @@ jobs:
         run: |
           # TODO: Move these buckets to the proper ones when we completely switch off OSCI
           if [[ "${{ github.event_name == 'pull_request' }}" == "true" ]]; then
-            echo "gcp-bucket=mauro-drivers-test/pr-builds/${HEAD_REF}/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
+            echo "gcp-bucket=mauro-drivers-test/pr-builds/${{ steps.set-branch.outputs.branch-name }}/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
           else
             echo "gcp-bucket=mauro-drivers-test/master" >> "$GITHUB_OUTPUT"
           fi
