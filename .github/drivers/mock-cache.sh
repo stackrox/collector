@@ -10,7 +10,6 @@ for module_version_dir in /tmp/kobuild-tmp/versions-src/*; do
     mkdir -p "/tmp/kernel-modules/$module_version/"
 
     gsutil ls "gs://collector-modules-public/${module_version}/" \
-        | xargs basename \
-        | awk -v version="${module_version}" '{print "/tmp/kernel-modules/" version "/" $1}' \
+        | awk -F "/" -v version="${module_version}" '{print "/tmp/kernel-modules/" version "/" $1}' \
         | xargs touch
 done
