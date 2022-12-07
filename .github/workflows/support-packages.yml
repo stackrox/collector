@@ -36,6 +36,11 @@ jobs:
           ${{ github.workspace }}/kernel-modules/support-packages/03-group-by-module-version.sh \
             /tmp/support-packages/metadata
 
+      - name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
       - name: Create support-packages
         run: |
           ${{ github.workspace }}/kernel-modules/support-packages/04-create-support-packages.sh \
@@ -58,11 +63,6 @@ jobs:
           else
             echo "output-bucket=mauro-drivers-test/support-packages/master" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Authenticate with GCP
-        uses: 'google-github-actions/auth@v1'
-        with:
-          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
       - name: Push support-packages
         uses: 'google-github-actions/upload-cloud-storage@v1'
