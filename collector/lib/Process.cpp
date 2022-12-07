@@ -25,6 +25,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <chrono>
 
+#include "CollectorStats.h"
 #include "SysdigService.h"
 
 namespace collector {
@@ -126,6 +127,10 @@ Process::~Process() {
 void Process::ProcessInfoResolved(std::shared_ptr<sinsp_threadinfo> process_info) {
   std::unique_lock<std::mutex> lock(process_info_mutex_);
 
+  if (!process_info) {
+    CLOG(WARNING) << "Process-info request failed " << pid();
+  }
+
   falco_threadinfo_ = process_info;
   process_info_resolved_ = true;
 
@@ -134,6 +139,10 @@ void Process::ProcessInfoResolved(std::shared_ptr<sinsp_threadinfo> process_info
 
 void Process::WaitForProcessInfo() const {
   std::unique_lock<std::mutex> lock(process_info_mutex_);
+
+  COUNTER_ADD(
+      process_info_resolved_ ? CollectorStats::process_info_hit : CollectorStats::process_info_miss,
+      1);
 
   if (!process_info_resolved_) {
     process_info_condition_.wait_for(lock, std::chrono::seconds(30));
