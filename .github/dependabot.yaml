@@ -1,0 +1,47 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://help.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+
+version: 2
+updates:
+  - package-ecosystem: 'docker'
+    directory: collector/connscrape-test/
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: 'docker'
+    directory: collector/container/
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: 'docker'
+    directory: integration-tests/container/benchmark/
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: 'docker'
+    directory: integration-tests/container/containerstats/
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: 'docker'
+    directory: integration-tests/container/jsonlabel/
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: 'docker'
+    directory: integration-tests/container/perf/
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: 'docker'
+    directory: integration-tests/container/processes-listening-on-ports/
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: 'docker'
+    directory: integration-tests/container/schedule-curls/
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: 'docker'
+    directory: oss-public-server/container/
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: 'docker'
+    directory: utilities/shellcheck-all/
+    schedule:
+      interval: "weekly"
