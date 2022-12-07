@@ -54,9 +54,10 @@ jobs:
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
-      - name: Download existing drivers from GCP
+      - name: Create a mock cache
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-cache' }}
         run: |
-          ${{ github.workspace }}/.github/drivers/update-cache.sh
+          ${{ github.workspace }}/.github/drivers/mock-cache.sh
 
       - name: Get build tasks
         env:
