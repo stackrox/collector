@@ -176,7 +176,7 @@ sinsp_evt* SysdigService::GetNext() {
 }
 
 void SysdigService::Start() {
-  std::lock_guard<std::mutex> sysdig_lock(libsinsp_mutex_);
+  std::lock_guard<std::mutex> libsinsp_lock(libsinsp_mutex_);
 
   if (!inspector_ || !chisel_) {
     throw CollectorException("Invalid state: SysdigService was not initialized");
@@ -256,7 +256,7 @@ bool SysdigService::SendExistingProcesses(SignalHandler* handler) {
 }
 
 void SysdigService::CleanUp() {
-  std::lock_guard<std::mutex> sysdig_lock(libsinsp_mutex_);
+  std::lock_guard<std::mutex> libsinsp_lock(libsinsp_mutex_);
   std::lock_guard<std::mutex> running_lock(running_mutex_);
   running_ = false;
   inspector_->close();
@@ -285,7 +285,7 @@ void SysdigService::CleanUp() {
 }
 
 bool SysdigService::GetStats(SysdigStats* stats) const {
-  std::lock_guard<std::mutex> sysdig_lock(libsinsp_mutex_);
+  std::lock_guard<std::mutex> libsinsp_lock(libsinsp_mutex_);
   std::lock_guard<std::mutex> running_lock(running_mutex_);
   if (!running_ || !inspector_) return false;
 
