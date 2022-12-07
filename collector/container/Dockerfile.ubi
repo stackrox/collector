@@ -86,7 +86,7 @@ RUN ./builder/install/install-dependencies.sh && \
     "${CMAKE_BUILD_DIR}/collector/runUnitTests"
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.6
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.7
 
 WORKDIR /
 
