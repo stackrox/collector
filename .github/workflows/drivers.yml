@@ -219,8 +219,6 @@ jobs:
     needs: build-drivers
 
     steps:
-      - uses: actions/checkout@v3
-
       - name: Restore built drivers
         uses: actions/download-artifact@v3
         with:
