@@ -24,6 +24,11 @@ jobs:
             version="$(basename "$version_dir")"
             git checkout "${version}"
 
+            if [[ ! -f ${{ github.workspace }}/kernel-modules/MODULE_VERSION ]]; then
+              # Versions without this file are already unsupported, skip them
+              continue
+            fi
+
             driver_version="$(cat ${{ github.workspace }}/kernel-modules/MODULE_VERSION)"
             echo "${driver_version}" > "${version_dir}/MODULE_VERSION"
           done
