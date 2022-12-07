@@ -61,7 +61,8 @@ jobs:
           key: kernel-modules-test-v0
 
       - name: Update driver cache
-        if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
+        # TODO: Rollback this comment
+        # if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
         run: |
           ${{ github.workspace }}/.github/drivers/update-cache.sh
 
@@ -254,19 +255,22 @@ jobs:
       # If we are running on master, we update the local cache
       - name: Restore tasks and sources
         uses: actions/download-artifact@v3
-        if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
+        # TODO: Rollback this comment
+        #if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
         with:
           name: tasks-and-sources
           path: /tmp
 
       - name: Setup kernel driver cache
         uses: actions/cache@v3
-        if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
+        # TODO: Rollback this comment
+        #if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
         with:
           path: /tmp/kernel-modules/
           key: kernel-modules-test-v0
 
       - name: Update driver cache
-        if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
+        # TODO: Rollback this comment
+        #if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
         run: |
           ${{ github.workspace }}/.github/drivers/update-cache.sh
