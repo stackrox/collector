@@ -71,3 +71,7 @@ jobs:
     - build-collector-slim
     - build-collector-full
     secrets: inherit
+
+  build-support-packages:
+    uses: ./.github/workflows/support-packages.yml
+    if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'test-support-packages') }}

@@ -1,0 +1,72 @@
+name: Build and push support-packages
+
+on:
+  workflow_call:
+
+jobs:
+  build-support-packages:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: action/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Map collector to stackrox versions
+        run: |
+          ${{ github.workspace }}/kernel-modules/support-packages/01-collector-to-rox-version-map.py \
+            ${{ github.workspace }}/RELEASED_VERSIONS \
+            /tmp/support-packages/metadata
+
+      - name: Create driver version metadata
+        run: |
+          for version_dir in /tmp/support-packages/metadata/collector-versions/*; do
+            version="$(basename "$version_dir")"
+            git checkout "${version}"
+
+            driver_version="$(cat ${{ github.workspace }}/kernel-modules/MODULE_VERSION)"
+            echo "${driver_version}" > "${version_dir}/MODULE_VERSION"
+          done
+
+          # Checkout master to have the latest license file
+          git checkout master
+
+      - name: Group versions by driver version
+        run: |
+          ${{ github.workspace }}/kernel-modules/support-packages/03-group-by-module-version.sh \
+            /tmp/support-packages/metadata
+
+      - name: Create support-packages
+        run: |
+          ${{ github.workspace }}/kernel-modules/support-packages/04-create-support-packages.sh \
+            ${{ github.workspace }}/collector/LICENSE-kernel-modules.txt \
+            gs://collector-modules/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656 \
+            /tmp/support-packages/metadata \
+            /tmp/support-packages/output
+
+      - name: Create index file
+        run: |
+          ${{ github.workspace }}/kernel-modules/support-packages/05-create-index.py \
+            /tmp/support-packages/metadata \
+            /tmp/support-packages/output
+
+      - name: Set output bucket
+        id: output-bucket
+        run: |
+          if [[ "${{ github.event_name == 'pull_request' }}" == "true" ]]; then
+            echo "output-bucket=mauro-drivers-test/support-packages/${GITHUB_HEAD_NAME}/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "output-bucket=mauro-drivers-test/support-packages/master" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - name: Push support-packages
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        with:
+          path: /tmp/support-packages/output
+          parent: false
+          destination: ${{ steps.output-bucket.outputs.output-bucket }}
