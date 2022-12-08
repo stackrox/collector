@@ -114,6 +114,7 @@ Process::Process(
     SysdigService* falco_instance)
     : pid_(pid),
       cache_(cache),
+      process_info_resolved_(false),
       falco_callback_(
           new std::function<void(std::shared_ptr<sinsp_threadinfo>)>(
               std::bind(&Process::ProcessInfoResolved, this, std::placeholders::_1))) {
