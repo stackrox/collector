@@ -1,14 +1,15 @@
 name: Collector Integration Tests
 
 on: 
-  pull_request:
-    types: [opened, reopened, synchronize, labeled]
-    branches:
-      - master
-  push:
-    branches:
-      - master
-      - release-*
+  #  pull_request:
+  #    types: [opened, reopened, synchronize, labeled]
+  #    branches:
+  #      - master
+  #  push:
+  #    branches:
+  #      - master
+  #      - release-*
+  workflow_call:
 
 jobs:
   required-integration-tests:
