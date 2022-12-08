@@ -88,7 +88,7 @@ jobs:
 
       - name: Construct COLLECTOR_TAG
         run: |
-          COLLECTOR_TAG="$(make tag)-gha"
+          COLLECTOR_TAG="$(make tag)-gha-slim"
           echo "COLLECTOR_TAG=${COLLECTOR_TAG}" | tee -a "$GITHUB_ENV"
 
       - name: Create VMs
