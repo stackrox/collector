@@ -79,11 +79,12 @@ jobs:
       - name: Normalize job ID
         run: |
           NORM_JOB_ID="${JOB_ID/-/}"
-          echo "JOB_ID=${NORM_JOB_ID}" >> "$GITHUB_ENV"
+          echo "JOB_ID=${NORM_JOB_ID}" | tee -a "$GITHUB_ENV"
 
       - name: Construct COLLECTOR_TAG
         run: |
-          echo "COLLECTOR_TAG=$(make tag)-gha" >> "$GITHUB_ENV"
+          COLLECTOR_TAG="$(make tag)-gha"
+          echo "COLLECTOR_TAG=${COLLECTOR_TAG}" | tee -a "$GITHUB_ENV"
 
       - name: Create VMs
         id: create-vms-step
