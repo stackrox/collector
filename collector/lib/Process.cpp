@@ -127,8 +127,10 @@ Process::~Process() {
 void Process::ProcessInfoResolved(std::shared_ptr<sinsp_threadinfo> process_info) {
   std::unique_lock<std::mutex> lock(process_info_mutex_);
 
-  if (!process_info) {
-    CLOG(WARNING) << "Process-info request failed " << pid();
+  if (process_info) {
+    CLOG(DEBUG) << "Process-info resolved. PID: " << pid() << " Exe: " + process_info->get_exe();
+  } else {
+    CLOG(WARNING) << "Process-info request failed. PID: " << pid();
   }
 
   falco_threadinfo_ = process_info;
@@ -145,7 +147,11 @@ void Process::WaitForProcessInfo() const {
       1);
 
   if (!process_info_resolved_) {
-    process_info_condition_.wait_for(lock, std::chrono::seconds(30));
+    std::cv_status status;
+
+    status = process_info_condition_.wait_for(lock, std::chrono::seconds(30));
+
+    CLOG_IF(std::cv_status::timeout == status, ERROR) << "Timed-out waiting for process-info. PID: " << pid();
   }
 }
 
