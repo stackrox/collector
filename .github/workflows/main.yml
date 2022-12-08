@@ -30,3 +30,10 @@ jobs:
       - name: Check build failures
         run:
           FAILURES_DIR=/tmp/FAILURES/ ${{ github.workspace }}/.openshift-ci/drivers/scripts/drivers-build-failures.sh
+
+  build-collector:
+    uses: ./.github/workflows/collector-image.yml
+
+  integration-tests:
+    uses: ./.github/workflows/integration-tests.yml
+    needs: [build-collector]
