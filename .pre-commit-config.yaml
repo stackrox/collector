@@ -1,5 +1,5 @@
 repos:
-  - repo: git@github.com:syntaqx/git-hooks.git
+  - repo: https://github.com/syntaqx/git-hooks.git
     rev: "v0.0.17"
     hooks:
       - id: shfmt
@@ -7,12 +7,17 @@ repos:
           - -d
       - id: shellcheck
 
-  - repo: git@github.com:pycqa/flake8.git
+  - repo: https://github.com/pycqa/flake8.git
     rev: "4.0.1"
     hooks:
       - id: flake8
 
-  - repo: git@github.com:doublify/pre-commit-clang-format
+  - repo: https://github.com/doublify/pre-commit-clang-format.git
     rev: "6230247"
     hooks:
       - id: clang-format
+
+  - repo: https://github.com/rhysd/actionlint.git
+    rev: "v1.6.22"
+    hooks:
+      - id: actionlint-docker
