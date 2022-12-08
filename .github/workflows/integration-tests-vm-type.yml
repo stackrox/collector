@@ -34,6 +34,11 @@ jobs:
       VM_TYPE: "${{ inputs.vm_type }}"
     steps:
       - uses: actions/checkout@v3
+        with:
+          # checkout everything so we can identify the right
+          # collector tag to test
+          fetch-depth: 0
+
       - uses: actions/setup-go@v3
         with:
           go-version: '1.13' # to match the requirement in the integration tests
