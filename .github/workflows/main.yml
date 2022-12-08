@@ -33,7 +33,9 @@ jobs:
 
   build-collector:
     uses: ./.github/workflows/collector-image.yml
+    secrets: inherit
 
   integration-tests:
     uses: ./.github/workflows/integration-tests.yml
     needs: [build-collector]
+    secrets: inherit
