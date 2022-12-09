@@ -10,6 +10,12 @@
 // as expected for the kinds of tracepoints we are using.
 #ifdef BPF_SUPPORTS_RAW_TRACEPOINTS
 #  undef BPF_SUPPORTS_RAW_TRACEPOINTS
+/* The filler implementation for this tracepoint requires access to the
+ * TP_PROTO args which is only available wit BPF_SUPPORTS_RAW_TRACEPOINTS.
+ * Otherwise, the BPF verifier will fail with
+ * what():  libscap: bpf_load_program() err=13 event=filler/sched_prog_fork_3
+ */
+#  undef CAPTURE_SCHED_PROC_FORK
 #endif
 
 #include <generated/utsrelease.h>
@@ -148,6 +154,7 @@ COLLECTOR_LEGACY_PROBE();
 
 #endif
 
+#ifdef CAPTURE_SCHED_PROC_FORK
 /**
  * @brief program for handling sched_process_fork events. As the name suggests
  *        they occur when a process forks, and we get information here about
@@ -184,7 +191,9 @@ PROBE_SIGNATURE("sched/", sched_process_fork, sched_process_fork_args) {
   __stash_args(ctx->child_pid, args.args);
   return 0;
 }
+#endif
 
+#ifdef CAPTURE_SCHED_PROC_EXEC
 /**
  * @brief program for handling sched_process_exit events. As the name suggests
  *        they occur when a process exits. Minimal processing is performed here
@@ -216,6 +225,7 @@ PROBE_SIGNATURE("sched/", sched_process_exit, sched_process_exit_args) {
   call_filler(ctx, ctx, evt_type, settings, UF_NEVER_DROP);
   return 0;
 }
+#endif
 
 /**
  * @brief Generic sys_enter_* program for any system call. It is responsible for
