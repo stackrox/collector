@@ -156,6 +156,12 @@ COLLECTOR_PROBE(setgid, __NR_setgid);
 COLLECTOR_PROBE(setuid, __NR_setuid);
 COLLECTOR_PROBE(shutdown, __NR_shutdown);
 COLLECTOR_PROBE(socket, __NR_socket);
+#ifdef CAPTURE_SOCKETCALL
+// The socketcall handling in driver/bpf/plumbing_helpers.h will filter
+// socket calls based on those mentioned here.  Therefore, updates to
+// socket calls needs to be synchronized.
+COLLECTOR_PROBE(socketcall, __NR_socketcall)
+#endif
 COLLECTOR_PROBE(fchdir, __NR_fchdir);
 COLLECTOR_PROBE(fork, __NR_fork);
 COLLECTOR_PROBE(vfork, __NR_vfork);
@@ -358,6 +364,16 @@ struct sys_enter_socket_args
 	int protocol;
 };
 
+#ifdef CAPTURE_SOCKETCALL
+struct sys_enter_socketcall_args
+{
+	__u64 pad;
+	int __syscall_nr;
+	long call;
+	unsigned long *args;
+};
+#endif
+
 struct sys_enter_shutdown_args
 {
 	__u64 pad;
@@ -409,11 +425,20 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
 
   sc_evt = get_syscall_info(id);
   if (sc_evt == NULL || (sc_evt->flags & UF_USED) == 0) {
+#ifdef CAPTURE_SOCKETCALL
+    if (id != __NR_socketcall)
+      return 0;
+    // call_filler() and handle_socketcall() will change evt_type/drop_flags
+    // based on the detected socket call
+    evt_type = PPME_GENERIC_E;
+    drop_flags = UF_ALWAYS_DROP;
+#else
     return 0;
+#endif
+  } else {
+    evt_type = sc_evt->enter_event_type;
+    drop_flags = sc_evt->flags;
   }
-
-  evt_type = sc_evt->enter_event_type;
-  drop_flags = sc_evt->flags;
 
   /* Syscall tracepoints follow their own format (=structure) of arguments.
    * Copying all arguments, e.g. with
@@ -533,6 +558,28 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
 	stack_ctx.args[2] = (unsigned long)socket_args->protocol;
 	break;
   }
+#ifdef CAPTURE_SOCKETCALL
+  case __NR_socketcall: {
+	struct sys_enter_socketcall_args *socketcall_args = (struct sys_enter_socketcall_args *)ctx;
+	unsigned long socketcall_id = (unsigned long)socketcall_args->call;
+
+	stack_ctx.args[0] = socketcall_id;
+	stack_ctx.args[1] = (unsigned long)socketcall_args->args;
+
+	switch (socketcall_id) {
+	case SYS_ACCEPT:
+	case SYS_ACCEPT4:
+	case SYS_CONNECT:
+	case SYS_SHUTDOWN:
+	case SYS_SOCKET:
+		break;
+	default:
+		// Filter out any other socket calls
+		return 0;
+	}
+	break;
+  }
+#endif
   case __NR_shutdown: {
         struct sys_enter_shutdown_args *shutdown_args = (struct sys_enter_shutdown_args *)ctx;
         stack_ctx.args[0] = (unsigned long)shutdown_args->fd;
@@ -605,11 +652,20 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx) {
 
   sc_evt = get_syscall_info(id);
   if (sc_evt == NULL || (sc_evt->flags & UF_USED) == 0) {
+#ifdef CAPTURE_SOCKETCALL
+    if (id != __NR_socketcall)
+      return 0;
+    // call_filler() and handle_socketcall() will change evt_type/drop_flags
+    // based on the detected socket call
+    evt_type = PPME_GENERIC_X;
+    drop_flags = UF_ALWAYS_DROP;
+#else
     return 0;
+#endif
+  } else {
+    evt_type = sc_evt->exit_event_type;
+    drop_flags = sc_evt->flags;
   }
-
-  evt_type = sc_evt->exit_event_type;
-  drop_flags = sc_evt->flags;
 
   // the fillers contain syscall specific processing logic, so we simply
   // call into those and let the rest of falco deal with the event.
