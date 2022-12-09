@@ -337,9 +337,7 @@ void SysdigService::AddSignalHandler(std::unique_ptr<SignalHandler> signal_handl
   signal_handlers_.emplace_back(std::move(signal_handler), event_filter);
 }
 
-void SysdigService::GetProcessInformation(
-    uint64_t pid,
-    std::weak_ptr<std::function<void(threadinfo_map_t::ptr_t)>> callback) {
+void SysdigService::GetProcessInformation(uint64_t pid, ProcessInfoCallbackRef callback) {
   std::lock_guard<std::mutex> lock(process_requests_mutex_);
 
   pending_process_requests_.emplace_back(pid, callback);

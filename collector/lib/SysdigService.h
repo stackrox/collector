@@ -63,9 +63,9 @@ class SysdigService : public Sysdig {
 
   bool InitKernel(const CollectorConfig& config) override;
 
-  void GetProcessInformation(
-      uint64_t pid,
-      std::weak_ptr<std::function<void(threadinfo_map_t::ptr_t)>> callback);
+  typedef std::weak_ptr<std::function<void(threadinfo_map_t::ptr_t)>> ProcessInfoCallbackRef;
+
+  void GetProcessInformation(uint64_t pid, ProcessInfoCallbackRef callback);
 
  private:
   enum ChiselCacheStatus : int {
@@ -110,7 +110,7 @@ class SysdigService : public Sysdig {
   void ServePendingProcessRequests();
   mutable std::mutex process_requests_mutex_;
   // [ ( pid, callback ), ( pid, callback ), ... ]
-  std::list<std::pair<uint64_t, std::weak_ptr<std::function<void(threadinfo_map_t::ptr_t)>>>> pending_process_requests_;
+  std::list<std::pair<uint64_t, ProcessInfoCallbackRef>> pending_process_requests_;
 };
 
 }  // namespace collector
