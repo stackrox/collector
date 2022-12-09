@@ -21,6 +21,8 @@
 #include <generated/utsrelease.h>
 #include <linux/sched.h>
 #include <uapi/linux/bpf.h>
+#include <sys/syscall.h>
+
 
 // Unfortunately include order is important here, so turn clang-format
 // off to avoid reordering as part of reformatting.
@@ -129,7 +131,9 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx);
 #if !defined(RHEL_RELEASE_CODE) || RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(8, 0)
 
 COLLECTOR_PROBE(chdir, __NR_chdir);
+#ifdef __NR_accept
 COLLECTOR_PROBE(accept, __NR_accept);
+#endif
 COLLECTOR_PROBE(accept4, __NR_accept4);
 COLLECTOR_PROBE(clone, __NR_clone);
 COLLECTOR_PROBE(close, __NR_close);
@@ -227,6 +231,131 @@ PROBE_SIGNATURE("sched/", sched_process_exit, sched_process_exit_args) {
 }
 #endif
 
+////////////////////////////////////////////////////////////////////////////////////
+struct sys_enter_accept4_args
+{
+	__u64 pad;
+	int __syscall_nr;
+	int fd;
+	struct sockaddr *upeer_sockaddr;
+	int *upeer_len;
+	int flags;
+};
+
+struct sys_enter_chdir_args
+{
+	__u64 pad;
+	int __syscall_nr;
+	const char *filename;
+};
+
+struct sys_enter_fchdir_args
+{
+	__u64 pad;
+	int __syscall_nr;
+	int fd;
+};
+
+struct sys_enter_close_args
+{
+	__u64 pad;
+	int __syscall_nr;
+	int fd;
+};
+
+struct sys_enter_connect_args
+{
+	__u64 pad;
+	int __syscall_nr;
+	int fd;
+	struct sockaddr *uservaddr;
+	int addrlen;
+};
+
+struct sys_enter_clone_args
+{
+	__u64 pad;
+	int __syscall_nr;
+#ifdef __s390x__
+	unsigned long newsp;
+	unsigned long clone_flags;
+	int *parent_tidptr;
+	int *child_tidptr;
+	unsigned long tls;
+#elif __aarch64__	// TODO: verify on aarch64
+	unsigned long clone_flags
+	unsigned long newsp;
+	int *parent_tidptr;
+	unsigned long tls;
+	int *child_tidptr;
+#else
+	unsigned long clone_flags
+	unsigned long newsp;
+	int *parent_tidptr;
+	int *child_tidptr;
+	unsigned long tls;
+#endif
+};
+
+struct sys_enter_execve_args
+{
+	__u64 pad;
+	int __syscall_nr;
+	const char *filename;
+	const char *argv;
+	const char *envp;
+};
+
+struct sys_enter_setuid_args
+{
+	__u64 pad;
+	int __syscall_nr;
+	uid_t uid;
+};
+
+struct sys_enter_setgid_args
+{
+	__u64 pad;
+	int __syscall_nr;
+	gid_t gid;
+};
+
+struct sys_enter_setresuid_args
+{
+	__u64 pad;
+	int __syscall_nr;
+	uid_t ruid;
+	uid_t euid;
+	uid_t suid;
+};
+
+struct sys_enter_setresgid_args
+{
+	__u64 pad;
+	int __syscall_nr;
+	gid_t rgid;
+	gid_t egid;
+	gid_t sgid;
+};
+
+struct sys_enter_socket_args
+{
+	__u64 pad;
+	int __syscall_nr;
+	int family;
+	int type;
+	int protocol;
+};
+
+struct sys_enter_shutdown_args
+{
+	__u64 pad;
+	int __syscall_nr;
+	int fd;
+	int how;
+};
+////////////////////////////////////////////////////////////////////////////////////
+
 /**
  * @brief Generic sys_enter_* program for any system call. It is responsible for
  *        Verifying userspace settings and early processing of the syscall event.
@@ -275,9 +404,135 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
   evt_type = sc_evt->enter_event_type;
   drop_flags = sc_evt->flags;
 
-  // To satisfy some verifier requiremnts in later parts of the falco plumbing/fillers,
-  // it is necessary to copy the context onto the stack.
-  memcpy(stack_ctx.args, _READ(ctx->args), sizeof(unsigned long) * NUM_SYS_ENTER_ARGS);
+  /* Syscall tracepoints follow their own format (=structure) of arguments.
+   * Copying all arguments, e.g. with
+   *   memcpy(stack_ctx.args, _READ(ctx->args), sizeof(unsigned long) * NUM_SYS_ENTER_ARGS);
+   * would copy beyond the format and results in an EACCESS triggered by
+   * format/structure offset checking in the perf event subsystem when installing
+   * the BPF program.
+   * Also the system exit fillers require access to the arguments to fill event
+   * data.  Note that the syscall tracepoints do not provide any argument data
+   * in the syscall exit format.  Of course, trying to access argument data in
+   * filler results in BPF verifier errors.
+   *
+   * To provide arguments to the syscall enter and exit fillers, extract the
+   * arguments from syscall specific formats/structures to an sys_enter_args
+   * structure and use a BPF map to make them available to the enter/exit
+   * fillers.
+   */
+  switch (id)   /* maybe use sc_evt here..... */
+  {
+#ifdef __NR_accept
+  case __NR_accept: {
+	struct sys_enter_accept4_args *accept4_args = (struct sys_enter_accept4_args *)ctx;
+	stack_ctx.args[0] = (unsigned long)accept4_args->fd;
+	stack_ctx.args[1] = (unsigned long)accept4_args->upeer_sockaddr;
+	stack_ctx.args[2] = (unsigned long)accept4_args->upeer_len;
+	break;
+  }
+#endif
+  case __NR_accept4: {
+	struct sys_enter_accept4_args *accept4_args = (struct sys_enter_accept4_args *)ctx;
+	stack_ctx.args[0] = (unsigned long)accept4_args->fd;
+	stack_ctx.args[1] = (unsigned long)accept4_args->upeer_sockaddr;
+	stack_ctx.args[2] = (unsigned long)accept4_args->upeer_len;
+	stack_ctx.args[2] = (unsigned long)accept4_args->flags;
+	break;
+  }
+  case __NR_connect: {
+	struct sys_enter_connect_args *connect_args = (struct sys_enter_connect_args *)ctx;
+	stack_ctx.args[0] = (unsigned long)connect_args->fd;
+	stack_ctx.args[1] = (unsigned long)connect_args->uservaddr;
+	stack_ctx.args[2] = (unsigned long)connect_args->addrlen;
+	break;
+  }
+  case __NR_chdir: {
+        struct sys_enter_chdir_args *chdir_args = (struct sys_enter_chdir_args *)ctx;
+        stack_ctx.args[0] = (unsigned long)chdir_args->filename;
+        break;
+  }
+  case __NR_fchdir: {
+        struct sys_enter_fchdir_args *fchdir_args = (struct sys_enter_fchdir_args *)ctx;
+        stack_ctx.args[0] = (unsigned long)fchdir_args->fd;
+        break;
+  }
+  case __NR_clone: {
+        struct sys_enter_clone_args *clone_args = (struct sys_enter_clone_args *)ctx;
+#ifdef __s390x__
+        stack_ctx.args[0] = (unsigned long)clone_args->newsp;
+        stack_ctx.args[1] = (unsigned long)clone_args->clone_flags;
+        stack_ctx.args[2] = (unsigned long)clone_args->parent_tidptr;
+        stack_ctx.args[3] = (unsigned long)clone_args->child_tidptr;
+        stack_ctx.args[4] = (unsigned long)clone_args->tls;
+#elif __aarch64__
+        stack_ctx.args[0] = (unsigned long)clone_args->clone_flags;
+        stack_ctx.args[1] = (unsigned long)clone_args->newsp;
+        stack_ctx.args[2] = (unsigned long)clone_args->parent_tidptr;
+        stack_ctx.args[3] = (unsigned long)clone_args->tls;
+        stack_ctx.args[4] = (unsigned long)clone_args->child_tidptr;
+#else
+        stack_ctx.args[0] = (unsigned long)clone_args->clone_flags;
+        stack_ctx.args[1] = (unsigned long)clone_args->newsp;
+        stack_ctx.args[2] = (unsigned long)clone_args->parent_tidptr;
+        stack_ctx.args[3] = (unsigned long)clone_args->child_tidptr;
+        stack_ctx.args[4] = (unsigned long)clone_args->tls;
+#endif
+	break;
+  }
+  case __NR_execve: {
+        struct sys_enter_execve_args *execve_args = (struct sys_enter_execve_args *)ctx;
+        stack_ctx.args[0] = (unsigned long)execve_args->filename;
+        stack_ctx.args[1] = (unsigned long)execve_args->argv;
+        stack_ctx.args[2] = (unsigned long)execve_args->envp;
+	break;
+  }
+  case __NR_close: {
+        struct sys_enter_close_args *close_args = (struct sys_enter_close_args *)ctx;
+        stack_ctx.args[0] = (unsigned long)close_args->fd;
+        break;
+  }
+  case __NR_setuid: {
+	struct sys_enter_setuid_args *setuid_args = (struct sys_enter_setuid_args *)ctx;
+	stack_ctx.args[0] = (unsigned long)setuid_args->uid;
+        break;
+  }
+  case __NR_setgid: {
+	struct sys_enter_setgid_args *setgid_args = (struct sys_enter_setgid_args *)ctx;
+	stack_ctx.args[0] = (unsigned long)setgid_args->gid;
+        break;
+  }
+  case __NR_setresgid: {
+	struct sys_enter_setresgid_args *setresgid_args = (struct sys_enter_setresgid_args *)ctx;
+	stack_ctx.args[0] = (unsigned long)setresgid_args->rgid;
+	stack_ctx.args[1] = (unsigned long)setresgid_args->egid;
+	stack_ctx.args[2] = (unsigned long)setresgid_args->sgid;
+        break;
+  }
+  case __NR_setresuid: {
+	struct sys_enter_setresuid_args *setresuid_args = (struct sys_enter_setresuid_args *)ctx;
+	stack_ctx.args[0] = (unsigned long)setresuid_args->ruid;
+	stack_ctx.args[1] = (unsigned long)setresuid_args->euid;
+	stack_ctx.args[2] = (unsigned long)setresuid_args->suid;
+        break;
+  }
+  case __NR_socket: {
+	struct sys_enter_socket_args *socket_args = (struct sys_enter_socket_args *)ctx;
+	stack_ctx.args[0] = (unsigned long)socket_args->family;
+	stack_ctx.args[1] = (unsigned long)socket_args->type;
+	stack_ctx.args[2] = (unsigned long)socket_args->protocol;
+	break;
+  }
+  case __NR_shutdown: {
+        struct sys_enter_shutdown_args *shutdown_args = (struct sys_enter_shutdown_args *)ctx;
+        stack_ctx.args[0] = (unsigned long)shutdown_args->fd;
+        stack_ctx.args[1] = (unsigned long)shutdown_args->how;
+        break;
+  }
+  case __NR_fork:
+  case __NR_vfork:
+	// No arguments to copy
+	break;
+  }
 
   // stashing the args will copy it into a BPF map for later
   // processing. This is a required step for the enter probe,
