@@ -18,6 +18,17 @@
 #  undef CAPTURE_SCHED_PROC_FORK
 #endif
 
+// this if statement relies on short circuiting to simplify the definition
+// of the tracepoints. i.e. RHEL_RELEASE_VERSION will not be defined unless
+// RHEL_RELEASE_CODE is defined.
+// This enables the direct-attached BPF probes to specific syscalls.
+// Note that this needs to be define before including Falco libs includes
+// as there are syscall-specific vs. general syscall enter/exit format/structure
+// alignments necessary in Falco.
+#if !defined(RHEL_RELEASE_CODE) || RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(8, 0)
+#  define USE_COLLECTOR_CUSTOM_PROBES
+#endif
+
 #include <generated/utsrelease.h>
 #include <linux/sched.h>
 #include <uapi/linux/bpf.h>
@@ -128,7 +139,7 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx);
 // this if statement relies on short circuiting to simplify the definition
 // of the tracepoints. i.e. RHEL_RELEASE_VERSION will not be defined unless
 // RHEL_RELEASE_CODE is defined.
-#if !defined(RHEL_RELEASE_CODE) || RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(8, 0)
+#ifdef USE_COLLECTOR_CUSTOM_PROBES
 
 COLLECTOR_PROBE(chdir, __NR_chdir);
 #ifdef __NR_accept
