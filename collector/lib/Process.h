@@ -74,7 +74,9 @@ class Process {
     return pid() == other.pid();
   }
 
-  Process(uint64_t pid, ProcessStore::MapRef cache, SysdigService* falco_instance);
+  /* - when 'cache' is provided, this process will remove itself from it upon deletion.
+   * - 'falco_instance' is used to request the process information from the system. */
+  Process(uint64_t pid, ProcessStore::MapRef cache = 0, SysdigService* falco_instance = 0);
   ~Process();
 
  private:
@@ -84,7 +86,7 @@ class Process {
   // A cache we are referenced from. Remove ourselves upon deletion.
   ProcessStore::MapRef cache_;
 
-  bool process_info_resolved_;
+  bool process_info_pending_resolution_;
   mutable std::mutex process_info_mutex_;
   mutable std::condition_variable process_info_condition_;
 

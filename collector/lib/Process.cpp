@@ -114,15 +114,20 @@ Process::Process(
     SysdigService* falco_instance)
     : pid_(pid),
       cache_(cache),
-      process_info_resolved_(false),
+      process_info_pending_resolution_(false),
       falco_callback_(
           new std::function<void(std::shared_ptr<sinsp_threadinfo>)>(
               std::bind(&Process::ProcessInfoResolved, this, std::placeholders::_1))) {
-  falco_instance->GetProcessInformation(pid, falco_callback_);
+  if (falco_instance) {
+    process_info_pending_resolution_ = true;
+    falco_instance->GetProcessInformation(pid, falco_callback_);
+  }
 }
 
 Process::~Process() {
-  cache_->erase(pid_);
+  if (cache_) {
+    cache_->erase(pid_);
+  }
 }
 
 void Process::ProcessInfoResolved(std::shared_ptr<sinsp_threadinfo> process_info) {
@@ -135,7 +140,7 @@ void Process::ProcessInfoResolved(std::shared_ptr<sinsp_threadinfo> process_info
   }
 
   falco_threadinfo_ = process_info;
-  process_info_resolved_ = true;
+  process_info_pending_resolution_ = false;
 
   process_info_condition_.notify_all();
 }
@@ -144,10 +149,10 @@ void Process::WaitForProcessInfo() const {
   std::unique_lock<std::mutex> lock(process_info_mutex_);
 
   COUNTER_ADD(
-      process_info_resolved_ ? CollectorStats::process_info_hit : CollectorStats::process_info_miss,
+      process_info_pending_resolution_ ? CollectorStats::process_info_miss : CollectorStats::process_info_hit,
       1);
 
-  if (!process_info_resolved_) {
+  if (process_info_pending_resolution_) {
     std::cv_status status;
 
     status = process_info_condition_.wait_for(lock, std::chrono::seconds(30));
