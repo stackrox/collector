@@ -27,6 +27,8 @@
   X(process_lineage_total)        \
   X(process_lineage_sqr_total)    \
   X(process_lineage_string_total) \
+  X(process_info_hit)             \
+  X(process_info_miss)            \
   X(rate_limit_flushing_counts)
 
 namespace collector {

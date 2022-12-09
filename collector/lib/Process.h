@@ -24,87 +24,85 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef COLLECTOR_PROCESS_H
 #define COLLECTOR_PROCESS_H
 
+#include <condition_variable>
 #include <cstdint>
+#include <functional>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 
+// forward declarations
+class sinsp_threadinfo;
 namespace collector {
+class Process;
+class SysdigService;
+}  // namespace collector
 
-// A process
-class Process {
- public:
-  Process(const std::string& container_id,
-          const std::string& comm,
-          const std::string& exe,
-          const std::string& exe_path,
-          const std::string& args, uint64_t pid)
-      : container_id_(container_id),
-        comm_(comm),
-        exe_(exe),
-        exe_path_(exe_path),
-        args_(args),
-        pid_(pid) {}
-  virtual ~Process() {}
-
-  const std::string& container_id() const { return container_id_; }
-  const std::string& comm() const { return comm_; }
-  const std::string& exe() const { return exe_; }
-  const std::string& exe_path() const { return exe_path_; }
-  const std::string& args() const { return args_; }
-  uint64_t pid() const { return pid_; }
-
-  bool operator==(Process& other) {
-    return pid_ == other.pid_;
-  }
-
- protected:
-  std::string container_id_;
-  std::string comm_;      // binary name
-  std::string exe_;       // argv[0]
-  std::string exe_path_;  // full binary path
-  std::string args_;      // space separated concatenation of arguments
-  uint64_t pid_;
-};
-
-std::ostream& operator<<(std::ostream& os, const Process& process);
-
+namespace collector {
 /* A Process object store used to deduplicate process information.
    Processes are kept in the store as long as they are referenced from the outside.
-   When a process cannot be found in the store, a provided ProcessStore::ISource
-   is used to create it as a side-effect. */
+   When a process cannot be found in the store, it is fetched as a side-effect. */
 class ProcessStore {
  public:
-  // A provider of process objects ()
-  class ISource {
-   public:
-    virtual ~ISource() {}
-    virtual Process ByPID(uint64_t pid) = 0;
-  };
-
-  /* The provided process_source is queried when
-     a requested PID cannot be found in the store */
-  ProcessStore(std::shared_ptr<ISource> process_source) : process_source_(process_source) {}
+  /* falco_instance is the source of process information */
+  ProcessStore(SysdigService* falco_instance);
 
   /* Get a Process by PID.
      Returns a reference to the cached Process entry, which may have just been created
      if it wasn't already known. */
   const std::shared_ptr<Process> Fetch(uint64_t pid);
 
+  typedef std::shared_ptr<std::unordered_map<uint64_t, std::weak_ptr<Process>>> MapRef;
+
  private:
-  /* wrapper class to detect object deletion */
-  class CachedProcess : public Process {
-   public:
-    CachedProcess(const Process& p, ProcessStore& store) : Process(p), store_(store) {}
-    ~CachedProcess();
-
-   private:
-    ProcessStore& store_;
-  };
-
-  std::shared_ptr<ISource> process_source_;
-  std::unordered_map<uint64_t, std::weak_ptr<CachedProcess>> cache_;
+  SysdigService* falco_instance_;
+  MapRef cache_;
 };
+
+// Information collected about a process.
+class Process {
+ public:
+  inline uint64_t pid() const { return pid_; }
+  std::string container_id() const;
+  std::string comm() const;
+  std::string exe() const;
+  std::string exe_path() const;
+  std::string args() const;
+
+  bool operator==(Process& other) {
+    return pid() == other.pid();
+  }
+
+  /* - when 'cache' is provided, this process will remove itself from it upon deletion.
+   * - 'falco_instance' is used to request the process information from the system. */
+  Process(uint64_t pid, ProcessStore::MapRef cache = 0, SysdigService* falco_instance = 0);
+  ~Process();
+
+ private:
+  static const std::string NOT_AVAILABLE;  // = "N/A"
+
+  uint64_t pid_;
+  // A cache we are referenced from. Remove ourselves upon deletion.
+  ProcessStore::MapRef cache_;
+
+  bool process_info_pending_resolution_;
+  mutable std::mutex process_info_mutex_;
+  mutable std::condition_variable process_info_condition_;
+
+  // Underlying thread info provided asynchronously by Falco via falco_callback_
+  mutable std::shared_ptr<sinsp_threadinfo> falco_threadinfo_;
+  // use a shared pointer here to handle deletion while the callback is pending
+  std::shared_ptr<std::function<void(std::shared_ptr<sinsp_threadinfo>)>> falco_callback_;
+
+  // entry-point when Falco resolved the requested process info
+  void ProcessInfoResolved(std::shared_ptr<sinsp_threadinfo> process_info);
+
+  // block until process information is available, or timeout
+  void WaitForProcessInfo() const;
+};
+
+std::ostream& operator<<(std::ostream& os, const Process& process);
 
 }  // namespace collector
 

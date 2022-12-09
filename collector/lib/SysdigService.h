@@ -63,6 +63,10 @@ class SysdigService : public Sysdig {
 
   bool InitKernel(const CollectorConfig& config) override;
 
+  typedef std::weak_ptr<std::function<void(threadinfo_map_t::ptr_t)>> ProcessInfoCallbackRef;
+
+  void GetProcessInformation(uint64_t pid, ProcessInfoCallbackRef callback);
+
  private:
   enum ChiselCacheStatus : int {
     BLOCKED_USERSPACE,
@@ -89,6 +93,7 @@ class SysdigService : public Sysdig {
 
   void AddSignalHandler(std::unique_ptr<SignalHandler> signal_handler);
 
+  mutable std::mutex libsinsp_mutex_;
   std::unique_ptr<sinsp> inspector_;
   std::unique_ptr<sinsp_chisel> chisel_;
   std::vector<SignalHandlerEntry> signal_handlers_;
@@ -101,6 +106,11 @@ class SysdigService : public Sysdig {
   mutable std::mutex running_mutex_;
   bool running_ = false;
   bool useEbpf_ = false;
+
+  void ServePendingProcessRequests();
+  mutable std::mutex process_requests_mutex_;
+  // [ ( pid, callback ), ( pid, callback ), ... ]
+  std::list<std::pair<uint64_t, ProcessInfoCallbackRef>> pending_process_requests_;
 };
 
 }  // namespace collector

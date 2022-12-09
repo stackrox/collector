@@ -298,6 +298,7 @@ std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
          << ", scrape_interval:" << c.ScrapeInterval()
          << ", turn_off_scrape:" << c.TurnOffScrape()
          << ", hostname:" << c.Hostname()
+         << ", processesListeningOnPorts:" << c.IsProcessesListeningOnPortsEnabled()
          << ", logLevel:" << c.LogLevel();
 }
 

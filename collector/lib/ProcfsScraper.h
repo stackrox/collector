@@ -29,7 +29,6 @@ You should have received a copy of the GNU General Public License along with thi
 #include <vector>
 
 #include "NetworkConnection.h"
-#include "Process.h"
 
 namespace collector {
 
@@ -55,12 +54,21 @@ class ConnScraper : public IConnScraper {
   std::shared_ptr<ProcessStore> process_store_;
 };
 
-class ProcessScraper : public ProcessStore::ISource {
+class ProcessScraper {
  public:
   ProcessScraper(std::string proc_path) : proc_path_(std::move(proc_path)) {}
 
-  // implementation of ProcessStore::ISource
-  Process ByPID(uint64_t pid);
+  class ProcessInfo {
+   public:
+    std::string container_id;
+    std::string comm;      // binary name
+    std::string exe;       // argv[0]
+    std::string exe_path;  // full binary path
+    std::string args;      // space separated concatenation of arguments
+    uint64_t pid;
+  };
+
+  bool Scrape(uint64_t pid, ProcessInfo& pi);
 
  private:
   std::string proc_path_;

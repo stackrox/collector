@@ -1252,8 +1252,8 @@ TEST(ConnTrackerTest, TestEmplaceOrUpdateSameEndpointDifferentPids) {
   int64_t connection_time2 = 2000;
   Endpoint a(Address(192, 168, 0, 1), 80);
   ConnectionTracker connectionTracker;
-  std::shared_ptr<Process> process1 = std::make_shared<Process>(container, "comm", "exe", "exe_path", "args", 2);
-  std::shared_ptr<Process> process2 = std::make_shared<Process>(container, "comm", "exe", "exe_path", "args", 3);
+  std::shared_ptr<Process> process1 = std::make_shared<Process>(2);
+  std::shared_ptr<Process> process2 = std::make_shared<Process>(3);
 
   ContainerEndpoint ce1(container, a, L4Proto::TCP, process1);
   ContainerEndpoint ce2(container, a, L4Proto::TCP, process2);
@@ -1280,7 +1280,7 @@ TEST(ConnTrackerTest, TestEmplaceOrUpdateSameEndpointAndPids) {
   int64_t connection_time2 = 2000;
   Endpoint a(Address(192, 168, 0, 1), 80);
   ConnectionTracker connectionTracker;
-  std::shared_ptr<Process> process1 = std::make_shared<Process>(container, "comm", "exe", "exe_path", "args", 2);
+  std::shared_ptr<Process> process1 = std::make_shared<Process>(2);
 
   ContainerEndpoint ce1(container, a, L4Proto::TCP, process1);
 
@@ -1301,8 +1301,8 @@ TEST(ConnTrackerTest, TestDeltaForEndpointDifferentPids) {
   int64_t connection_time2 = 2000;
   Endpoint a(Address(192, 168, 0, 1), 80);
   ConnectionTracker connectionTracker;
-  std::shared_ptr<Process> process1 = std::make_shared<Process>(container, "comm", "exe", "exe_path", "args", 2);
-  std::shared_ptr<Process> process2 = std::make_shared<Process>(container, "comm", "exe", "exe_path", "args", 3);
+  std::shared_ptr<Process> process1 = std::make_shared<Process>(2);
+  std::shared_ptr<Process> process2 = std::make_shared<Process>(3);
 
   ContainerEndpoint ce1(container, a, L4Proto::TCP, process1);
   ContainerEndpoint ce2(container, a, L4Proto::TCP, process2);
@@ -1325,7 +1325,7 @@ TEST(ConnTrackerTest, TestDeltaForEndpointSamePids) {
   int64_t connection_time2 = 2000;
   Endpoint a(Address(192, 168, 0, 1), 80);
   ConnectionTracker connectionTracker;
-  std::shared_ptr<Process> process1 = std::make_shared<Process>(container, "comm", "exe", "exe_path", "args", 2);
+  std::shared_ptr<Process> process1 = std::make_shared<Process>(2);
 
   ContainerEndpoint ce1(container, a, L4Proto::TCP, process1);
 
@@ -1345,7 +1345,7 @@ TEST(ConnTrackerTest, TestDeltaForEndpointDifferentProtocols) {
   int64_t connection_time2 = 2000;
   Endpoint a(Address(192, 168, 0, 1), 80);
   ConnectionTracker connectionTracker;
-  std::shared_ptr<Process> process1 = std::make_shared<Process>(container, "comm", "exe", "exe_path", "args", 2);
+  std::shared_ptr<Process> process1 = std::make_shared<Process>(2);
 
   ContainerEndpoint ce1(container, a, L4Proto::TCP, process1);
   ContainerEndpoint ce2(container, a, L4Proto::UDP, process1);

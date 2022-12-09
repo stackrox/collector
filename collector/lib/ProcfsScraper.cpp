@@ -408,8 +408,9 @@ void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const C
 
             std::shared_ptr<Process> process;
 
-            if (process_store)
+            if (process_store) {
               process = process_store->Fetch(socket.pid());
+            }
 
             listen_endpoints->emplace_back(container_id, ep->endpoint, ep->l4proto, process);
           }
@@ -436,7 +437,7 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
   // Read all the information from proc.
   while (auto curr = procdir.read()) {
     if (!std::isdigit(curr->d_name[0])) continue;  // only look for <pid> entries
-    int pid = stoi(curr->d_name);
+    long long pid = strtoll(curr->d_name, 0, 10);
 
     FDHandle dirfd = procdir.openat(curr->d_name, O_RDONLY);
     if (!dirfd.valid()) {
@@ -565,32 +566,22 @@ bool ConnScraper::Scrape(std::vector<Connection>* connections, std::vector<Conta
   return ReadContainerConnections(proc_path_.c_str(), process_store_, connections, listen_endpoints);
 }
 
-Process ProcessScraper::ByPID(uint64_t pid) {
+bool ProcessScraper::Scrape(uint64_t pid, ProcessInfo& process_info) {
   char process_path[64];
 
-  std::string container_id;
-  std::string comm;
-  std::string exe;
-  std::string exe_path;
-  std::string args;
+  process_info.pid = pid;
 
   snprintf(process_path, sizeof(process_path), "%s/%ld", proc_path_.c_str(), pid);
 
   FDHandle dirfd = open(process_path, O_DIRECTORY | O_RDONLY);
 
-  if (dirfd.valid()) {
-    GetContainerID(dirfd, &container_id);
-    ReadProcessExe(process_path, dirfd, comm, exe_path);
-    ReadProcessCmdline(process_path, dirfd, exe, args);
+  if (!dirfd.valid()) {
+    return false;
   }
 
-  return Process(
-      std::move(container_id),
-      std::move(comm),
-      std::move(exe),
-      std::move(exe_path),
-      std::move(args),
-      pid);
+  return GetContainerID(dirfd, &process_info.container_id) &&
+         ReadProcessExe(process_path, dirfd, process_info.comm, process_info.exe_path) &&
+         ReadProcessCmdline(process_path, dirfd, process_info.exe, process_info.args);
 }
 
 }  // namespace collector
