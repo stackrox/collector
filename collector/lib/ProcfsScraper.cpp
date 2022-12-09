@@ -566,10 +566,10 @@ bool ConnScraper::Scrape(std::vector<Connection>* connections, std::vector<Conta
   return ReadContainerConnections(proc_path_.c_str(), process_store_, connections, listen_endpoints);
 }
 
-bool ProcessScraper::Scrape(uint64_t pid, ProcessInfo& pi) {
+bool ProcessScraper::Scrape(uint64_t pid, ProcessInfo& process_info) {
   char process_path[64];
 
-  pi.pid = pid;
+  process_info.pid = pid;
 
   snprintf(process_path, sizeof(process_path), "%s/%ld", proc_path_.c_str(), pid);
 
@@ -579,9 +579,9 @@ bool ProcessScraper::Scrape(uint64_t pid, ProcessInfo& pi) {
     return false;
   }
 
-  return GetContainerID(dirfd, &pi.container_id) &&
-         ReadProcessExe(process_path, dirfd, pi.comm, pi.exe_path) &&
-         ReadProcessCmdline(process_path, dirfd, pi.exe, pi.args);
+  return GetContainerID(dirfd, &process_info.container_id) &&
+         ReadProcessExe(process_path, dirfd, process_info.comm, process_info.exe_path) &&
+         ReadProcessCmdline(process_path, dirfd, process_info.exe, process_info.args);
 }
 
 }  // namespace collector
