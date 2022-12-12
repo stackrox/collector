@@ -17,6 +17,14 @@
 5.17.0-2-amd64
 5.19.0-2-amd64
 5.19.0-2-cloud-amd64
+6.0.0-1-amd64
+6.0.0-1-cloud-amd64
+6.0.0-2-amd64
+6.0.0-2-cloud-amd64
+6.0.0-5-amd64
+6.0.0-5-cloud-amd64
+6.1.0-0-amd64
+6.1.0-0-cloud-amd64
 # backport 5.8
 5.8.*20.04
 # TODO(ROX-6789) - backport 5.7+ patches to legacy collector versions
@@ -67,10 +75,3 @@
 ~^[6-9]\.[0-9]+\..* 2.0.1 mod
 ~^5\.14\.21-150400.*-default 2.0.1 mod
 ~^5\.14\.21-150400.*-default 1.0.0 mod
-# Broken 6.0 bundles
-6.0.0-1-amd64
-6.0.0-1-cloud-amd64
-6.0.0-2-amd64
-6.0.0-2-cloud-amd64
-6.1.0-0-amd64
-6.1.0-0-cloud-amd64
