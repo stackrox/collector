@@ -22,12 +22,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Setup kernel driver cache
-        uses: actions/cache@v3
-        with:
-          path: /tmp/kernel-modules/
-          key: kernel-modules-test-v0
-
       - name: Restore built drivers
         uses: actions/download-artifact@v3
         if: ${{ github.event_name == 'pull_request' && !inputs.skip-built-drivers }}
@@ -35,18 +29,22 @@ jobs:
           name: built-drivers
           path: /tmp/built-drivers/
 
-      - name: Set driver version
+      - name: Set environment variables
         run: |
           echo "DRIVER_VERSION=$(cat ${{ github.workspace }}/kernel-modules/MODULE_VERSION)" >> "$GITHUB_ENV"
+          echo "CONTEXT_DRIVERS_DIR=${{ github.workspace }}/kernel-modules/container/kernel-modules" >> "$GITHUB_ENV"
 
-      - name: Move drivers to the docker context
+      - name: Download drivers from GCP
         run: |
-          CACHED_DRIVERS_DIR="/tmp/kernel-modules/${DRIVER_VERSION}/"
-          BUILT_DRIVERS_DIR="/tmp/built-drivers/${DRIVER_VERSION}/"
-          CONTEXT_DRIVERS_DIR="${{ github.workspace }}/kernel-modules/container/kernel-modules"
-
           mkdir -p "${CONTEXT_DRIVERS_DIR}"
-          find "${CACHED_DRIVERS_DIR}" -type f -exec mv -t "${CONTEXT_DRIVERS_DIR}" {} +
+
+          gsutil -m rsync -r "gs://mauro-drivers-test/drivers/${DRIVER_VERSION}/" \
+            "${CONTEXT_DRIVERS_DIR}"
+
+      - name: Add built drivers
+        run: |
+          BUILT_DRIVERS_DIR="/tmp/built-drivers/${DRIVER_VERSION}/"
+
           if [[ -d "${BUILT_DRIVERS_DIR}" ]]; then
             find "${BUILT_DRIVERS_DIR}" -type f -exec mv -t "${CONTEXT_DRIVERS_DIR}" {} +
           fi
@@ -135,5 +133,9 @@ jobs:
           docker tag \
             quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-slim \
             quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
+          docker tag \
+            quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-slim \
+            quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-latest
 
           docker push quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
+          docker push quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-latest
