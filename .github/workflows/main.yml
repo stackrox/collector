@@ -37,5 +37,5 @@ jobs:
 
   integration-tests:
     uses: ./.github/workflows/integration-tests.yml
-    needs: [build-collector]
+    needs: build-collector
     secrets: inherit
