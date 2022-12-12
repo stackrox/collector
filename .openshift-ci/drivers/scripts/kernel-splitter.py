@@ -5,7 +5,7 @@ import re
 from math import ceil
 from itertools import islice
 
-TASKS_DIR = '/tasks'
+TASKS_DIR = os.environ.get('TASKS_DIR', '/tasks')
 
 
 class Task:
@@ -196,13 +196,22 @@ def main(task_file):
     rhel7_ebpf_builders = rhel7_ebpf.split(rhel8_builders_count)
     rhel7_builders = rhel7.split(rhel8_builders_count)
 
+    fc36_builders_count = int(os.environ.get('FC36_BUILDERS', 1))
+    fc36_builders = fc36.split(fc36_builders_count)
+
     builders = [
-        fc36,
         *rhel8_builders,
         *rhel7_ebpf_builders,
         *rhel7_builders,
         unknown
     ]
+
+    # Handle OSCI specific case for fc36 builder
+    if fc36_builders_count == 1:
+        builders.append(fc36)
+    else:
+        builders.extend(fc36_builders)
+
     for builder in builders:
         builder.dump()
 

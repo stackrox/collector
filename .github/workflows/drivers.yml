@@ -1,0 +1,257 @@
+name: Build collector drivers
+
+on:
+  workflow_call:
+    outputs:
+      parallel-jobs:
+        description: |
+          Number of builders used to build drivers, 0 if no driver is built
+        value: ${{ jobs.split-tasks.outputs.parallel-jobs }}
+
+jobs:
+  split-tasks:
+    runs-on: ubuntu-latest
+    outputs:
+      parallel-jobs: ${{ steps.set-parallel.outputs.parallel-jobs }}
+      parallel-array: ${{ steps.set-parallel.outputs.parallel-array }}
+      branch-name: ${{ steps.set-branch.outputs.branch-name }}
+    env:
+      KERNELS_FILE: ${{ github.workspace }}/kernel-modules/KERNEL_VERSIONS
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set branch name
+        id: set-branch
+        run: |
+          if [[ ${{ github.event_name }} == "pull_request" ]]; then
+            echo "branch-name=${GITHUB_HEAD_REF}" >> "$GITHUB_OUTPUT"
+          else
+            echo "branch-name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Patch files
+        env:
+          BUILD_LEGACY_DRIVERS: ${{ contains(github.event.pull_request.labels.*.name, 'build-legacy-probes') || github.event_name == 'push' }}
+          OSCI_RUN: 1
+          DOCKERIZED: 1
+          CHECKOUT_BEFORE_PATCHING: false
+
+        run: |
+          git fetch
+
+          # Initialize just the falco submodule
+          git submodule update --init ${{ github.workspace }}/falcosecurity-libs
+
+          ${{ github.workspace }}/kernel-modules/dockerized/scripts/patch-files.sh \
+            ${{ steps.set-branch.outputs.branch-name }} \
+            "${BUILD_LEGACY_DRIVERS}" \
+            ${{ github.workspace }} \
+            kernel-modules/build/prepare-src \
+            /tmp
+
+      - name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - name: Create a mock cache
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-cache') }}
+        run: |
+          ${{ github.workspace }}/.github/drivers/mock-cache.sh
+
+      - name: Get build tasks
+        env:
+          USE_KERNELS_FILE: true
+          DOCKERIZED: 1
+          OUTPUT_DIR: /tmp
+          CACHE_DIR: /tmp
+          BLOCKLIST_DIR: ${{ github.workspace }}/kernel-modules
+          SCRIPTS_DIR: ${{ github.workspace }}/kernel-modules/build
+
+        run: |
+          ${{ github.workspace }}/kernel-modules/dockerized/scripts/get-build-tasks.sh
+
+          mkdir -p /tmp/tasks
+          mv /tmp/build-tasks /tmp/tasks/all
+
+      - name: Set number of parallel builds
+        id: set-parallel
+        shell: python
+        run : |
+          import json
+          import math
+          import os
+
+          kernels = set()
+
+          with open('/tmp/tasks/all', 'r') as tasks:
+            for line in tasks.readlines():
+              kernel = line.split()[0]
+              kernels.add(kernel)
+
+          # Add a parallel job every 10 kernels, capped to 32
+          parallel_jobs = math.ceil(len(kernels)/10)
+          if parallel_jobs > 32:
+            parallel_jobs=32
+
+          parallel = [a for a in range(parallel_jobs)]
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+            f.write(f'parallel-jobs={parallel_jobs}\n')
+            f.write(f'parallel-array={json.dumps(parallel)}\n')
+
+      - name: Split kernels
+        env:
+          TASKS_DIR: /tmp/tasks
+          RHEL8_BUILDERS: ${{ steps.set-parallel.outputs.parallel-jobs }}
+          FC36_BUILDERS: ${{ steps.set-parallel.outputs.parallel-jobs }}
+
+        run: |
+          ${{ github.workspace }}/.openshift-ci/drivers/scripts/kernel-splitter.py
+
+      - name: Store tasks and sources
+        uses: actions/upload-artifact@v3
+        with:
+          name: tasks-and-sources
+          if-no-files-found: ignore
+          path: |
+            /tmp/kobuild-tmp/versions-src/
+            /tmp/tasks/**/**/all
+          retention-days: 7
+
+  build-drivers:
+    runs-on: ubuntu-latest
+    needs:
+      - split-tasks
+    if: ${{ needs.split-tasks.outputs.parallel-jobs > 0 }}
+    env:
+      BUILDERS_DIR: ${{ github.workspace }}/.github/drivers
+
+    strategy:
+      matrix:
+        builder: ${{ fromJSON(needs.split-tasks.outputs.parallel-array) }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Restore tasks and sources
+        uses: actions/download-artifact@v3
+        with:
+          name: tasks-and-sources
+          path: /tmp
+
+      - name: Set required builders
+        id: required-builders
+        run: |
+          builders=()
+
+          for builder_file in "${BUILDERS_DIR}/"*.Dockerfile; do
+            builder="${builder_file%".Dockerfile"}"
+            builder="${builder#"${BUILDERS_DIR}/"}"
+
+            if [[ ! -f  "/tmp/tasks/${builder}/${{ matrix.builder }}/all" ]]; then
+              continue
+            fi
+
+            tasks="$(wc -l < "/tmp/tasks/${builder}/${{ matrix.builder }}/all")"
+
+            if ((tasks)); then
+              builders+=("${builder}")
+            fi
+          done
+
+          echo "builders=${builders[*]}" >> "$GITHUB_OUTPUT"
+
+      - name: Build builders
+        if: ${{ steps.required-builders.outputs.builders != '' }}
+        run: |
+          # SC gets confused here, this for loop gets expanded to the
+          # builders and runs once for each of the needed ones
+          # shellcheck disable=SC2043
+          for builder in ${{ steps.required-builders.outputs.builders }}; do
+            docker build --tag "${builder}:latest" \
+              -f "${BUILDERS_DIR}/${builder}.Dockerfile" \
+              ${{ github.workspace }}/kernel-modules/build/
+          done
+
+      - name: Build drivers
+        if: ${{ steps.required-builders.outputs.builders != '' }}
+        run: |
+          mkdir -p /tmp/{output,bundles,FAILURES}
+
+          # this is required for GHA to upload a build failures artifact when
+          # no build fails
+          touch /tmp/FAILURES/.dummy
+
+          # SC gets confused here, this for loop gets expanded to the
+          # builders and runs once for each of the needed ones
+          # shellcheck disable=SC2043
+          for builder in ${{ steps.required-builders.outputs.builders }}; do
+            # Download bundles for current builder
+            awk '{ print "gs://collector-kernel-bundles-public/bundle-"$1".tgz" }' "/tmp/tasks/${builder}/${{ matrix.builder }}/all" |
+              sort | uniq | gsutil -m cp -I /tmp/bundles
+
+            docker run --rm -i \
+              -v /tmp/tasks:/tasks:ro \
+              -v /tmp/kobuild-tmp/versions-src:/kobuild-tmp/versions-src \
+              -v /tmp/output:/kernel-modules \
+              -v /tmp/bundles:/bundles:ro \
+              -v /tmp/FAILURES:/FAILURES \
+              -e DOCKERIZED=1 \
+              --name "${builder}" \
+              "${builder}:latest" < "/tmp/tasks/${builder}/${{ matrix.builder }}/all"
+
+            rm -rf /tmp/bundles/*
+          done
+
+      - name: Store built drivers
+        uses: actions/upload-artifact@v3
+        with:
+          name: built-drivers
+          path: /tmp/output
+          if-no-files-found: ignore
+          retention-days: 1
+
+      - name: Store build failures
+        uses: actions/upload-artifact@v3
+        with:
+          name: driver-build-failures
+          path: /tmp/FAILURES
+          if-no-files-found: ignore
+          retention-days: 1
+
+  upload-drivers:
+    runs-on: ubuntu-latest
+    needs:
+      - split-tasks
+      - build-drivers
+
+    steps:
+      - name: Restore built drivers
+        uses: actions/download-artifact@v3
+        with:
+          name: built-drivers
+          path: /tmp/output/
+
+      - name: Choose destination bucket
+        id: gcp-bucket
+        run: |
+          # TODO: Move these buckets to the proper ones when we completely switch off OSCI
+          if [[ "${{ github.event_name == 'pull_request' }}" == "true" ]]; then
+            echo "gcp-bucket=mauro-drivers-test/pr-builds/${{ needs.split-tasks.outputs.branch-name }}/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "gcp-bucket=mauro-drivers-test/master" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - name: Push drivers
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        with:
+          path: /tmp/output/
+          parent: false
+          destination: ${{ steps.gcp-bucket.outputs.gcp-bucket }}

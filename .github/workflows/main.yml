@@ -1,0 +1,32 @@
+name: Main collector CI
+
+on:
+  push:
+    branches:
+      - master
+      - release-*
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build-drivers:
+    uses: ./.github/workflows/drivers.yml
+    secrets: inherit
+
+  check-drivers-build:
+    runs-on: ubuntu-latest
+    needs: build-drivers
+    if: ${{ needs.build-drivers.outputs.parallel-jobs > 0 }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Restore failure files
+        uses: actions/download-artifact@v3
+        with:
+          name: driver-build-failures
+          path: /tmp/FAILURES
+
+      - name: Check build failures
+        run:
+          FAILURES_DIR=/tmp/FAILURES/ ${{ github.workspace }}/.openshift-ci/drivers/scripts/drivers-build-failures.sh
