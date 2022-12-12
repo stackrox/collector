@@ -166,6 +166,9 @@ jobs:
       - name: Build builders
         if: ${{ steps.required-builders.outputs.builders != '' }}
         run: |
+          # SC gets confused here, this for loop gets expanded to the
+          # builders and runs once for each of the needed ones
+          # shellcheck disable=SC2043
           for builder in ${{ steps.required-builders.outputs.builders }}; do
             docker build --tag "${builder}:latest" \
               -f "${BUILDERS_DIR}/${builder}.Dockerfile" \
@@ -181,6 +184,9 @@ jobs:
           # no build fails
           touch /tmp/FAILURES/.dummy
 
+          # SC gets confused here, this for loop gets expanded to the
+          # builders and runs once for each of the needed ones
+          # shellcheck disable=SC2043
           for builder in ${{ steps.required-builders.outputs.builders }}; do
             # Download bundles for current builder
             awk '{ print "gs://collector-kernel-bundles-public/bundle-"$1".tgz" }' "/tmp/tasks/${builder}/${{ matrix.builder }}/all" |
