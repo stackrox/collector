@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -exuo pipefail
+set -euo pipefail
 
 # TODO: Move the buckets back to the official ones once we are done testing
 
