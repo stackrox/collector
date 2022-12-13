@@ -12,7 +12,7 @@ for module_version_dir in /tmp/kobuild-tmp/versions-src/*; do
     mkdir -p "/tmp/kernel-modules/$module_version/"
 
     # If the bucket doesn't exist, we are building a new version of drivers
-    if ! gsutil ls "gs://mauro-drivers-test/drivers/${module_version}/" 1>&2 2> /dev/null; then
+    if ! gsutil ls "gs://mauro-drivers-test/drivers/${module_version}/" > /dev/null; then
         echo "Could not find cached drivers for '${module_version}'. Continuing with no cache"
         continue
     fi
