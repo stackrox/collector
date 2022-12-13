@@ -13,6 +13,7 @@ for module_version_dir in /tmp/kobuild-tmp/versions-src/*; do
 
     # If the bucket doesn't exist, we are building a new version of drivers
     if ! gsutil ls "gs://mauro-drivers-test/drivers/${module_version}/" 1>&2 2> /dev/null; then
+        echo "Could not find cached drivers for '${module_version}'. Continuing with no cache"
         continue
     fi
 
