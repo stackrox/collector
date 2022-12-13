@@ -23,7 +23,7 @@ Kubernetes is the easiest way to retrieve the logs, provided you have access to
 do so. 
 
 ```sh
-$ kubectl get pods -n stackrox | grep collector
+$ kubectl get pods -n stackrox -l app=collector
 collector-vclg5                      1/2     CrashLoopBackOff   2 (25s ago)   2m41s
 
 $ kubectl logs -n stackrox collector-vclg5 collector
@@ -40,7 +40,7 @@ Since the `oc` tool maintains compatibility with kubectl, the required commands 
 much the same.
 
 ```sh
-$ oc get pods -n stackrox | grep collector
+$ oc get pods -n stackrox -l app=collector
 collector-vclg5                      1/2     CrashLoopBackOff   2 (25s ago)   2m41s
 
 $ oc logs -n stackrox collector-vclg5 collector
@@ -84,7 +84,8 @@ and then start collecting events. The following diagram describes the main parts
 of this start-up process:
 
 <p align="center">
-  <img src="./imgs/collector-startup.png" />
+  <!-- To edit the diagram, open with app.diagrams.net -->
+  <img src="./imgs/collector-startup.drawio.png" />
 </p>
 
 If any part of the start-up procedure fails, a helpful diagnostic summary is written
