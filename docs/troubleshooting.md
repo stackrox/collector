@@ -27,7 +27,12 @@ $ kubectl get pods -n stackrox | grep collector
 collector-vclg5                      1/2     CrashLoopBackOff   2 (25s ago)   2m41s
 
 $ kubectl logs -n stackrox collector-vclg5 collector
+
+# sometimes it is also useful to view the previous logs of collector,
+# if the current restart is running
+$ kubectl logs -n stackrox collector-vclg5 collector --previous
 ```
+
 
 #### OC
 
@@ -39,6 +44,7 @@ $ oc get pods -n stackrox | grep collector
 collector-vclg5                      1/2     CrashLoopBackOff   2 (25s ago)   2m41s
 
 $ oc logs -n stackrox collector-vclg5 collector
+$ oc logs -n stackrox collector-vclg5 collector --previous
 ```
 
 #### Diagnostic Bundle
@@ -74,7 +80,7 @@ We can instantly see that the Collector has failed to download a kernel driver.
 
 The vast majority of errors occur during Collector startup, where Collector will
 configure itself, find or download an appropriate kernel driver for the system,
-and then start Collecting events. The following diagram describes the main parts
+and then start collecting events. The following diagram describes the main parts
 of this start-up process:
 
 <p align="center">
@@ -182,7 +188,7 @@ variety of error messages or exceptions. The same diagnostic summary is reported
 in the logs, and will indicate the failure of this step.
 
 If an error of this kind is encountered, it is unlikely that it can be easily 
-fixed, so should be reported to ACS support or in a GitHub issue.
+fixed, so should be reported to ACS support or in a [GitHub issue](https://github.com/stackrox/collector/issues).
 
 The following is a simple example of this occurring:
 
