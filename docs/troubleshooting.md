@@ -50,7 +50,7 @@ $ oc logs -n stackrox collector-vclg5 collector --previous
 #### Diagnostic Bundle
 
 An alternative method is to download a diagnostic bundle from the ACS UI, by
-following the instructions [here](https://access.redhat.com/documentation/en-us/red_hat_advanced_cluster_security_for_kubernetes/3.72/html-single/configuring/index#generate-diagnostic-bundle)
+following the instructions [here](https://docs.openshift.com/acs/configuration/generate-diagnostic-bundle.html)
 
 Within the downloaded bundle, the logs for all Collector pods will be available
 for inspection.
