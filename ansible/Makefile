@@ -47,6 +47,12 @@ create-benchmark-vms:
 		--tags setup,provision \
 		benchmarks.yml
 
+.PHONY: create-ci-vms
+create-ci-vms:
+	ansible-playbook -i $(CONTEXT) \
+		--tags setup,provision \
+		integration-tests.yml
+
 .PHONY: secrets-config
 secrets.yml:
 	@echo "---" > secrets.yml

@@ -1,13 +1,7 @@
 name: Collector image build
 
 on:
-  push:
-    branches:
-      - master
-      - release-*
-  pull_request:
-    branches:
-      - master
+  workflow_call:
 
 jobs:
   build-collector-image:

@@ -1,0 +1,38 @@
+name: Collector Integration Tests
+
+on: 
+  workflow_call:
+
+jobs:
+  required-integration-tests:
+    uses: ./.github/workflows/integration-tests-vm-type.yml
+    strategy:
+      # ensure that if one part of the matrix fails, the
+      # rest will continue
+      fail-fast: false
+      matrix:
+        vm_type:
+          - rhel
+          - ubuntu-os
+    with:
+      vm_type: ${{ matrix.vm_type }}
+    secrets: inherit
+
+  all-integration-tests:
+    uses: ./.github/workflows/integration-tests-vm-type.yml
+    if: contains(github.event.pull_request.labels.*.name, 'all-integration-tests') || github.event_name == 'push'
+    strategy:
+      # ensure that if one part of the matrix fails, the
+      # rest will continue
+      fail-fast: false
+      matrix:
+        vm_type:
+          - cos
+          - flatcar
+          - fedora-coreos
+          - rhel-sap
+          - sles
+          - garden-linux
+    with:
+      vm_type: ${{ matrix.vm_type }}
+    secrets: inherit

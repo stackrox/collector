@@ -1,0 +1,118 @@
+name: Collector Integration Tests
+
+on:
+  workflow_call:
+    inputs:
+      vm_type:
+        description: "Type of VM to run integration tests on. e.g. rhel or ubuntu-os"
+        type: string
+        required: true
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    env:
+      #
+      # JOB_ID is a little odd in that it needs to be unique per vm_type,
+      # but GHA's run_id is only unique per job. Appending the vm_type
+      # makes it fit our requirements...
+      #
+      # but wait, there's more
+      #
+      # the job id is used both as part of a GCP instance name and label, but
+      # also as a group name in ansible, which means it has some restrictions:
+      #
+      # - must be alpha-numeric
+      # - must not contain underscores (because of GCP)
+      # - must not contain hyphens (because of ansible)
+      #
+      # vm_type may contain hyphens, so the id is normalized below
+      #
+      JOB_ID: ${{ github.run_id }}${{ inputs.vm_type }}
+      GCP_SSH_KEY_FILE: ~/.ssh/GCP_SSH_KEY
+      BUILD_TYPE: ci
+      VM_TYPE: "${{ inputs.vm_type }}"
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          # checkout everything so we can identify the right
+          # collector tag to test
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.13' # to match the requirement in the integration tests
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+
+      - name: Install python dependencies
+        run: python -m pip install -r ansible/requirements.txt
+
+      - name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - name: Setup GCP
+        uses: 'google-github-actions/setup-gcloud@v1'
+
+      - name: Copy creds files
+        run: |
+          # Temporary compatibility with OSCI
+          mkdir -p /tmp/secret/stackrox-collector-e2e-tests
+          cp "$GOOGLE_APPLICATION_CREDENTIALS" /tmp/secret/stackrox-collector-e2e-tests/GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT
+
+          mkdir -p "$HOME/.ssh"
+          chmod 0700 "$HOME/.ssh"
+
+          function copy_secret_to_file() {
+            local secret="$1"
+            local destination="$2"
+            local perms="$3"
+
+            echo "$secret" > "$destination"
+            chmod "$perms" "$destination"
+          }
+
+          copy_secret_to_file "$GCP_SSH_KEY" "$HOME/.ssh/GCP_SSH_KEY" 0600
+          copy_secret_to_file "$GCP_SSH_KEY_PUB" "$HOME/.ssh/GCP_SSH_KEY.pub" 0600
+        env:
+          GCP_SSH_KEY: ${{ secrets.GCP_SSH_KEY }}
+          GCP_SSH_KEY_PUB: ${{ secrets.GCP_SSH_KEY_PUB }}
+
+      - name: Normalize job ID
+        run: |
+          NORM_JOB_ID="${JOB_ID/-/}"
+          echo "JOB_ID=${NORM_JOB_ID}" | tee -a "$GITHUB_ENV"
+
+      - name: Construct COLLECTOR_TAG
+        run: |
+          COLLECTOR_TAG="$(make tag)-gha-slim"
+          echo "COLLECTOR_TAG=${COLLECTOR_TAG}" | tee -a "$GITHUB_ENV"
+
+      - name: Create VMs
+        id: create-vms-step
+        run: |
+          make -C "${{ github.workspace }}/ansible" create-ci-vms
+
+      - name: Run Tests
+        run: make -C "${{ github.workspace }}/ansible" integration-tests
+        env:
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - name: Teardown VMs
+        if: always()
+        run: make -C "${{ github.workspace }}/ansible" destroy-vms
+
+      - name: Store artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ inputs.vm_type }}-logs
+          path: |
+            ${{ github.workspace }}/integration-tests/container-logs/**/*
+            ${{ github.workspace }}/integration-tests/perf.json
+            ${{ github.workspace }}/integration-tests/performance-logs/**/*
+

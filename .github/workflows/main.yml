@@ -6,8 +6,6 @@ on:
       - master
       - release-*
   pull_request:
-    branches:
-      - master
 
 jobs:
   build-drivers:
@@ -30,3 +28,13 @@ jobs:
       - name: Check build failures
         run:
           FAILURES_DIR=/tmp/FAILURES/ ${{ github.workspace }}/.openshift-ci/drivers/scripts/drivers-build-failures.sh
+
+  build-collector:
+    uses: ./.github/workflows/collector-image.yml
+    secrets: inherit
+
+  integration-tests:
+    uses: ./.github/workflows/integration-tests.yml
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
+    needs: build-collector
+    secrets: inherit
