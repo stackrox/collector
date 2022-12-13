@@ -4,7 +4,13 @@ on:
   workflow_call:
     inputs:
       vm_type:
-        description: "Type of VM to run integration tests on. e.g. rhel or ubuntu-os"
+        description: |
+          Type of VM to run integration tests on. e.g. rhel or ubuntu-os
+        type: string
+        required: true
+      collector-tag:
+        description: |
+          Tag used for running the integration tests
         type: string
         required: true
 
@@ -32,6 +38,7 @@ jobs:
       GCP_SSH_KEY_FILE: ~/.ssh/GCP_SSH_KEY
       BUILD_TYPE: ci
       VM_TYPE: "${{ inputs.vm_type }}"
+      COLLECTOR_TAG: ${{ inputs.collector-tag }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -86,11 +93,6 @@ jobs:
           NORM_JOB_ID="${JOB_ID/-/}"
           echo "JOB_ID=${NORM_JOB_ID}" | tee -a "$GITHUB_ENV"
 
-      - name: Construct COLLECTOR_TAG
-        run: |
-          COLLECTOR_TAG="$(make tag)-gha-slim"
-          echo "COLLECTOR_TAG=${COLLECTOR_TAG}" | tee -a "$GITHUB_ENV"
-
       - name: Create VMs
         id: create-vms-step
         run: |
@@ -115,4 +117,3 @@ jobs:
             ${{ github.workspace }}/integration-tests/container-logs/**/*
             ${{ github.workspace }}/integration-tests/perf.json
             ${{ github.workspace }}/integration-tests/performance-logs/**/*
-

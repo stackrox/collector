@@ -45,6 +45,10 @@ jobs:
 
   integration-tests:
     uses: ./.github/workflows/integration-tests.yml
+    with:
+      collector-tag: ${{ needs.build-collector-slim.outputs.collector-tag }}
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
-    needs: build-collector-full
+    needs:
+    - build-collector-slim
+    - build-collector-full
     secrets: inherit
