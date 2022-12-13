@@ -37,5 +37,6 @@ jobs:
 
   integration-tests:
     uses: ./.github/workflows/integration-tests.yml
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     needs: build-collector
     secrets: inherit
