@@ -241,7 +241,7 @@ jobs:
           if [[ "${{ github.event_name == 'pull_request' }}" == "true" ]]; then
             echo "gcp-bucket=mauro-drivers-test/pr-builds/${{ needs.split-tasks.outputs.branch-name }}/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
           else
-            echo "gcp-bucket=mauro-drivers-test/master" >> "$GITHUB_OUTPUT"
+            echo "gcp-bucket=mauro-drivers-test/drivers" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Authenticate with GCP
