@@ -63,7 +63,7 @@ jobs:
           make image
 
       - name: Retag and stackrox-io -slim
-        uses: ./.github/actions/retag-and-push/action.yml
+        uses: ./.github/actions/retag-and-push
         with:
           src-image: ${{ steps.collector-commons.outputs.collector-image }}
           dst-image: quay.io/stackrox-io/collector:${{ env.COLLECTOR_TAG }}-slim
@@ -71,7 +71,7 @@ jobs:
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
       - name: Retag and stackrox-io -base
-        uses: ./.github/actions/retag-and-push/action.yml
+        uses: ./.github/actions/retag-and-push
         with:
           src-image: ${{ steps.collector-commons.outputs.collector-image }}
           dst-image: quay.io/stackrox-io/collector:${{ env.COLLECTOR_TAG }}-base
@@ -84,7 +84,7 @@ jobs:
           docker push "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}"
 
       - name: Retag and rhacs-eng -slim
-        uses: ./.github/actions/retag-and-push/action.yml
+        uses: ./.github/actions/retag-and-push
         with:
           src-image: ${{ steps.collector-commons.outputs.collector-image }}
           dst-image: quay.io/rhacs-eng/collector:${{ env.COLLECTOR_TAG }}-slim
@@ -92,7 +92,7 @@ jobs:
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
       - name: Retag and rhacs-eng -base
-        uses: ./.github/actions/retag-and-push/action.yml
+        uses: ./.github/actions/retag-and-push
         with:
           src-image: ${{ steps.collector-commons.outputs.collector-image }}
           dst-image: quay.io/rhacs-eng/collector:${{ env.COLLECTOR_TAG }}-base
