@@ -110,6 +110,14 @@ jobs:
         run: |
           ${{ github.workspace }}/.openshift-ci/drivers/scripts/kernel-splitter.py
 
+          # TODO: This is a compatibility issue with OSCI, ideally all tasks
+          # should be in a consistent path. Ensure that happens once we remove
+          # OSCI
+          if [[ -f /tmp/tasks/fc36/all ]]; then
+            mkdir -p /tmp/tasks/fc36/0
+            mv /tmp/tasks/fc36/all /tmp/tasks/fc36/0/all
+          fi
+
       - name: Store tasks and sources
         uses: actions/upload-artifact@v3
         with:
