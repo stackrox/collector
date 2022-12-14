@@ -75,4 +75,5 @@ jobs:
   build-support-packages:
     uses: ./.github/workflows/support-packages.yml
     if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'test-support-packages') }}
+    needs: build-drivers
     secrets: inherit
