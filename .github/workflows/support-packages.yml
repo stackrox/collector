@@ -43,9 +43,10 @@ jobs:
 
       - name: Create support-packages
         run: |
+          # TODO: Change the bucket to the production one, once we are done testing
           ${{ github.workspace }}/kernel-modules/support-packages/04-create-support-packages.sh \
             ${{ github.workspace }}/collector/LICENSE-kernel-modules.txt \
-            gs://collector-modules/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656 \
+            gs://mauro-drivers-test/drivers \
             /tmp/support-packages/metadata \
             /tmp/support-packages/output
 
