@@ -21,7 +21,8 @@ jobs:
   check-drivers-build:
     runs-on: ubuntu-latest
     needs: build-drivers
-    if: ${{ needs.build-drivers.outputs.parallel-jobs > 0 }}
+    # TODO: Add back this check
+    #if: ${{ needs.build-drivers.outputs.parallel-jobs > 0 }}
     steps:
       - uses: actions/checkout@v3
 
@@ -32,8 +33,23 @@ jobs:
           path: /tmp/FAILURES
 
       - name: Check build failures
-        run:
+        run: |
           FAILURES_DIR=/tmp/FAILURES/ ${{ github.workspace }}/.openshift-ci/drivers/scripts/drivers-build-failures.sh
+
+          # TODO: Rollback this change
+          exit 1
+
+      - name: Slack notification
+        if: failure()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_ONCALL }}
+          SLACK_CHANNEL: oncall
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_LINK_NAMES: true
+          SLACK_TITLE: Driver build check failed
+          SLACK_MESSAGE: |
+            @collector-team
 
   build-collector-slim:
     uses: ./.github/workflows/collector-slim.yml
