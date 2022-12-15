@@ -1,7 +1,13 @@
 name: Collector Integration Tests
 
-on: 
+on:
   workflow_call:
+    inputs:
+      collector-tag:
+        description: |
+          Tag used for running the integration tests
+        type: string
+        required: true
 
 jobs:
   required-integration-tests:
@@ -16,6 +22,7 @@ jobs:
           - ubuntu-os
     with:
       vm_type: ${{ matrix.vm_type }}
+      collector-tag: ${{ inputs.collector-tag }}
     secrets: inherit
 
   all-integration-tests:
@@ -35,4 +42,5 @@ jobs:
           - garden-linux
     with:
       vm_type: ${{ matrix.vm_type }}
+      collector-tag: ${{ inputs.collector-tag }}
     secrets: inherit

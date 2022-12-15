@@ -2,11 +2,18 @@ name: Collector image build
 
 on:
   workflow_call:
+    outputs:
+      collector-tag:
+        description: "The tag used when building collector"
+        value: ${{ jobs.build-collector-image.outputs.collector-tag }}
 
 jobs:
   build-collector-image:
     name: Build the collector slim image
     runs-on: ubuntu-latest
+    outputs:
+      collector-tag: ${{ steps.collector-commons.outputs.collector-tag }}
+
     steps:
       - uses: actions/checkout@v3
         with:
@@ -14,9 +21,12 @@ jobs:
           fetch-depth: 0
 
       - name: Set collector tag
+        id: collector-commons
         run: |
           COLLECTOR_TAG="$(make tag)-gha"
           echo "COLLECTOR_TAG=${COLLECTOR_TAG}" >> "$GITHUB_ENV"
+          echo "collector-tag=${COLLECTOR_TAG}" >> "$GITHUB_OUTPUT"
+          echo "collector-image=quay.io/stackrox-io/collector:${COLLECTOR_TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Checks for main and release branches
         if: ${{ github.event_name == 'push' }}
@@ -52,40 +62,42 @@ jobs:
         run: |
           make image
 
-      - name: Login to quay.io/stackrox-io
-        uses: docker/login-action@v2
+      - name: Retag and push stackrox-io -slim
+        uses: ./.github/actions/retag-and-push
         with:
-          registry: quay.io
+          src-image: ${{ steps.collector-commons.outputs.collector-image }}
+          dst-image: quay.io/stackrox-io/collector:${{ env.COLLECTOR_TAG }}-slim
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
-      - name: Retag and push collector to stackrox-io
-        run: |
-          docker tag "quay.io/stackrox-io/collector:${COLLECTOR_TAG}" "quay.io/stackrox-io/collector:${COLLECTOR_TAG}-slim"
-          docker tag "quay.io/stackrox-io/collector:${COLLECTOR_TAG}" "quay.io/stackrox-io/collector:${COLLECTOR_TAG}-base"
-
-          docker push "quay.io/stackrox-io/collector:${COLLECTOR_TAG}-slim"
-          docker push "quay.io/stackrox-io/collector:${COLLECTOR_TAG}-base"
+      - name: Retag and push stackrox-io -base
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: ${{ steps.collector-commons.outputs.collector-image }}
+          dst-image: quay.io/stackrox-io/collector:${{ env.COLLECTOR_TAG }}-base
+          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
       - name: Push builder to stackrox-io
         if: ${{ github.event_name == 'push' || steps.pr-checks.outputs.builder-tag != 'cache-gha' }}
         run: |
           docker push "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}"
 
-      - name: Login to quay.io/rhacs-eng
-        uses: docker/login-action@v2
+      - name: Retag and push rhacs-eng -slim
+        uses: ./.github/actions/retag-and-push
         with:
-          registry: quay.io
+          src-image: ${{ steps.collector-commons.outputs.collector-image }}
+          dst-image: quay.io/rhacs-eng/collector:${{ env.COLLECTOR_TAG }}-slim
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
-      - name: Retag and push collector to rhacs-eng
-        run: |
-          docker tag "quay.io/stackrox-io/collector:${COLLECTOR_TAG}" "quay.io/rhacs-eng/collector:${COLLECTOR_TAG}-slim"
-          docker tag "quay.io/stackrox-io/collector:${COLLECTOR_TAG}" "quay.io/rhacs-eng/collector:${COLLECTOR_TAG}-base"
-
-          docker push "quay.io/rhacs-eng/collector:${COLLECTOR_TAG}-slim"
-          docker push "quay.io/rhacs-eng/collector:${COLLECTOR_TAG}-base"
+      - name: Retag and push rhacs-eng -base
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: ${{ steps.collector-commons.outputs.collector-image }}
+          dst-image: quay.io/rhacs-eng/collector:${{ env.COLLECTOR_TAG }}-base
+          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
       - name: Push builder to rhacs-eng
         if: ${{ github.event_name == 'push' || steps.pr-checks.outputs.builder-tag != 'cache-gha' }}
