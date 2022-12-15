@@ -119,9 +119,7 @@ jobs:
             ${{ github.workspace }}/integration-tests/performance-logs/**/*
 
       - name: Slack notification
-        # TODO: this is the correct if condition
-        #if: failure() && github.event_name == 'push'
-        if: always()
+        if: failure() && github.event_name == 'push'
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_ONCALL }}
