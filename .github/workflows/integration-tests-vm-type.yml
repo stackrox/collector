@@ -117,3 +117,18 @@ jobs:
             ${{ github.workspace }}/integration-tests/container-logs/**/*
             ${{ github.workspace }}/integration-tests/perf.json
             ${{ github.workspace }}/integration-tests/performance-logs/**/*
+
+      - name: Slack notification
+        # TODO: this is the correct if condition
+        #if: failure() && github.event_name == 'push'
+        if: always()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_ONCALL }}
+          SLACK_CHANNEL: oncall
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_LINK_NAMES: true
+          SLACK_TITLE: ${{ inputs.vm_type }} integration test failed
+          MSG_MINIMAL: actions url, commit
+          SLACK_MESSAGE: |
+            @collector-team
