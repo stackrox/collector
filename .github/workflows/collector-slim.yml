@@ -23,7 +23,12 @@ jobs:
       - name: Set collector tag
         id: collector-commons
         run: |
-          COLLECTOR_TAG="$(make tag)-gha"
+          if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" == "true" ]]; then
+            COLLECTOR_TAG="${{ github.ref_name }}-gha"
+          else
+            COLLECTOR_TAG="$(make tag)-gha"
+          fi
+
           echo "COLLECTOR_TAG=${COLLECTOR_TAG}" >> "$GITHUB_ENV"
           echo "collector-tag=${COLLECTOR_TAG}" >> "$GITHUB_OUTPUT"
           echo "collector-image=quay.io/stackrox-io/collector:${COLLECTOR_TAG}" >> "$GITHUB_OUTPUT"
