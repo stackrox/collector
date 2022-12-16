@@ -60,7 +60,7 @@ jobs:
         id: output-bucket
         run: |
           if [[ "${{ github.event_name == 'pull_request' }}" == "true" ]]; then
-            echo "output-bucket=mauro-drivers-test/support-packages/${GITHUB_HEAD_NAME}/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
+            echo "output-bucket=mauro-drivers-test/support-packages/${GITHUB_HEAD_REF}/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
           else
             echo "output-bucket=mauro-drivers-test/support-packages/master" >> "$GITHUB_OUTPUT"
           fi
