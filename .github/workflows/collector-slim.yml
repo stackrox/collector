@@ -2,17 +2,20 @@ name: Collector image build
 
 on:
   workflow_call:
-    outputs:
+    inputs:
       collector-tag:
-        description: "The tag used when building collector"
-        value: ${{ jobs.build-collector-image.outputs.collector-tag }}
+        type: string
+        required: true
+        description: |
+          The tag used to build the collector image
+
+env:
+  COLLECTOR_TAG: ${{ inputs.collector-tag }}
 
 jobs:
   build-collector-image:
     name: Build the collector slim image
     runs-on: ubuntu-latest
-    outputs:
-      collector-tag: ${{ steps.collector-commons.outputs.collector-tag }}
 
     steps:
       - uses: actions/checkout@v3
@@ -20,17 +23,9 @@ jobs:
           submodules: true
           fetch-depth: 0
 
-      - name: Set collector tag
+      - name: Set collector base image
         id: collector-commons
         run: |
-          if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" == "true" ]]; then
-            COLLECTOR_TAG="${{ github.ref_name }}-gha"
-          else
-            COLLECTOR_TAG="$(make tag)-gha"
-          fi
-
-          echo "COLLECTOR_TAG=${COLLECTOR_TAG}" >> "$GITHUB_ENV"
-          echo "collector-tag=${COLLECTOR_TAG}" >> "$GITHUB_OUTPUT"
           echo "collector-image=quay.io/stackrox-io/collector:${COLLECTOR_TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Checks for main and release branches

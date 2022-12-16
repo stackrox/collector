@@ -7,13 +7,17 @@ on:
         type: string
         required: true
         description: |
-          The tag used to build the collector image, usually extracted from the
-          collector-slim.yml workflow
+          The tag used to build the collector image
       skip-built-drivers:
         type: boolean
         required: true
         description: |
           Skip built drivers if no new drivers were built.
+      drivers-bucket:
+        type: string
+        required: true
+        description: |
+          GCP bucket to pull drivers from.
 
 jobs:
   build-collector-full:
@@ -41,7 +45,7 @@ jobs:
         run: |
           mkdir -p "${CONTEXT_DRIVERS_DIR}"
 
-          gsutil -m rsync -r "gs://mauro-drivers-test/drivers/${DRIVER_VERSION}/" \
+          gsutil -m rsync -r "gs://${{ inputs.drivers-bucket }}/${DRIVER_VERSION}/" \
             "${CONTEXT_DRIVERS_DIR}"
 
       - name: Add built drivers
