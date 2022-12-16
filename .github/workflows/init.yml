@@ -6,6 +6,10 @@ on:
       collector-tag:
         description: The tag used when building collector
         value: ${{ jobs.common-variables.outputs.collector-tag }}
+      collector-image:
+        description: |
+          The image built by running `make image` in the collector repo
+        value: ${{ jobs.common-variables.outputs.collector-image }}
       drivers-bucket:
         description: Bucket used to pull collector drivers from
         value: ${{ jobs.common-variables.outputs.drivers-bucket }}
@@ -21,7 +25,8 @@ jobs:
   common-variables:
     runs-on: ubuntu-latest
     outputs:
-      collector-tag: ${{ steps.collector-tag.outputs.collector-tag }}
+      collector-tag: ${{ steps.collector-env.outputs.collector-tag }}
+      collector-image: ${{ steps.collector-env.outputs.collector-image }}
       drivers-bucket: ${{ steps.gcp-buckets.outputs.drivers-bucket }}
       push-drivers-bucket: ${{ steps.gcp-buckets.outputs.push-drivers-bucket }}
       bundles-bucket: ${{ steps.gcp-buckets.outputs.bundles-bucket }}
@@ -32,8 +37,8 @@ jobs:
           submodules: true
           fetch-depth: 0
 
-      - name: Set collector tag
-        id: collector-tag
+      - name: Set collector environment variables
+        id: collector-env
         run: |
           if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" == "true" ]]; then
             COLLECTOR_TAG="${{ github.ref_name }}-gha"
@@ -42,6 +47,7 @@ jobs:
           fi
 
           echo "collector-tag=${COLLECTOR_TAG}" >> "$GITHUB_OUTPUT"
+          echo "collector-image=quay.io/stackrox-io/collector:${COLLECTOR_TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Set GCP buckets
         id: gcp-buckets

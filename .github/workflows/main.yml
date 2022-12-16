@@ -66,6 +66,7 @@ jobs:
     needs: init
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
+      collector-image: ${{ needs.init.outputs.collector-image }}
     secrets: inherit
 
   build-collector-full:
