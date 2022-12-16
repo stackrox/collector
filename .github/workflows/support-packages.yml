@@ -20,16 +20,7 @@ jobs:
 
       - name: Create driver version metadata
         run: |
-          for version_dir in /tmp/support-packages/metadata/collector-versions/*; do
-            version="$(basename "$version_dir")"
-            git checkout "${version}"
-
-            driver_version="$(cat ${{ github.workspace }}/kernel-modules/MODULE_VERSION)"
-            echo "${driver_version}" > "${version_dir}/MODULE_VERSION"
-          done
-
-          # Checkout master to have the latest license file
-          git checkout master
+          ./.github/support-packages/create-metadata-dir.sh
 
       - name: Group versions by driver version
         run: |
