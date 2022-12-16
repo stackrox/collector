@@ -27,7 +27,6 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: true
-          fetch-depth: 0
 
       - name: Checks for main and release branches
         if: ${{ github.event_name == 'push' }}
