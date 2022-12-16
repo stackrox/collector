@@ -2,6 +2,11 @@ name: Build and push support-packages
 
 on:
   workflow_call:
+    inputs:
+      branch-name:
+        type: string
+        required: true
+        description: Branch CI is running on
 
 jobs:
   build-support-packages:
@@ -19,6 +24,8 @@ jobs:
             /tmp/support-packages/metadata
 
       - name: Create driver version metadata
+        env:
+          BRANCH_NAME: ${{ inputs.branch-name }}
         run: |
           ./.github/support-packages/create-metadata-dir.sh
 

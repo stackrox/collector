@@ -7,6 +7,10 @@ on:
         description: |
           Number of builders used to build drivers, 0 if no driver is built
         value: ${{ jobs.split-tasks.outputs.parallel-jobs }}
+      branch-name:
+        description: |
+          Branch CI is running on
+        value: ${{ jobs.split-tasks.outputs.branch-name }}
 
 jobs:
   split-tasks:
