@@ -7,8 +7,6 @@ on:
       - release-*
     tags:
       - 3.*.*
-      # TODO: Remove this test pattern
-      - 99.*.*
   pull_request:
 
 jobs:
