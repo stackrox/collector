@@ -74,6 +74,9 @@ jobs:
 
   build-support-packages:
     uses: ./.github/workflows/support-packages.yml
-    if: ${{ always() && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'test-support-packages')) }}
+    # If you want to test this workflow in a PR, you will need to replace
+    # this condition with `${{ always() }}`, since skipping the upload of
+    # bundles will cause this workflow to skip as well.
+    if: ${{ github.event_name != 'pull_request' }}
     needs: upload-drivers
     secrets: inherit
