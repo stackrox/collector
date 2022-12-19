@@ -1,4 +1,4 @@
-FROM quay.io/centos/centos:stream8
+FROM quay.io/centos/centos:stream8 as builder
 
 ARG NPROCS=6
 ENV NPROCS=$NPROCS
@@ -12,19 +12,12 @@ RUN dnf -y update \
         autoconf \
         automake \
         binutils-devel \
-        bison \
-        ca-certificates \
-        clang \
         cmake-3.18.2-9.el8 \
-        cracklib-dicts \
         diffutils \
         elfutils-libelf-devel \
         file \
-        flex \
         gcc \
         gcc-c++ \
-        gdb \
-        gettext \
         git \
         glibc-devel \
         libasan \
@@ -33,31 +26,42 @@ RUN dnf -y update \
         libtool \
         libuuid-devel \
         make \
-        openssh-server \
         openssl-devel \
-        patchutils \
-        passwd \
         pkgconfig \
-        python2 \
-        rsync \
-        tar \
-        unzip \
         valgrind \
         wget \
-        which \
     && dnf clean all
 
 # Build dependencies from source
 WORKDIR ${BUILD_DIR}
 
-COPY builder builder
+COPY install builder/install
+COPY build builder/build
 COPY third_party third_party
 
-RUN "builder/install/install-dependencies.sh"
+RUN "builder/install/install-dependencies.sh" && \
+    rm -rf ${BUILD_DIR} && \
+    echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 
-RUN rm -rf ${BUILD_DIR}
+FROM builder as dev
 
-RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
+RUN dnf -y update \
+    && dnf -y install --nobest \
+        bison \
+        ca-certificates \
+        clang \
+        cracklib-dicts \
+        flex \
+        gdb \
+        gettext \
+        openssh-server \
+        patchutils \
+        passwd \
+        rsync \
+        tar \
+        unzip \
+        which \
+    && dnf clean all
 
 # Set up ssh for remote development with IDE
 RUN ssh-keygen -A \

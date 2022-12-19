@@ -31,15 +31,30 @@ container-dockerfile-dev:
 builder:
 ifdef BUILD_BUILDER_IMAGE
 	docker build \
+		--target builder \
 		--build-arg NPROCS=$(NPROCS) \
 		--cache-from quay.io/stackrox-io/collector-builder:cache \
 		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-f "$(CURDIR)/builder/Dockerfile" \
-		.
+		$(CURDIR)/builder/
 else
 	docker pull quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
 endif
+
+# For now we use the 'cache-gha' image, since it provides split layers which
+# allows for caching.
+.PHONY: dev-image
+dev-image:
+	docker build \
+		--target dev \
+		--build-arg NPROCS=$(NPROCS) \
+		--cache-from quay.io/stackrox-io/collector-builder:cache-gha \
+		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
+		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)-dev \
+		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)-dev \
+		-f "$(CURDIR)/builder/Dockerfile" \
+		$(CURDIR)/builder/
 
 collector: builder
 	make -C collector collector
@@ -110,12 +125,12 @@ ifeq (,$(wildcard $(DEV_SSH_SERVER_KEY)))
 endif
 
 .PHONY: start-dev
-start-dev: builder teardown-dev $(DEV_SSH_SERVER_KEY)
+start-dev: dev-image teardown-dev $(DEV_SSH_SERVER_KEY)
 	docker run -d \
 		--name collector_remote_dev \
 		--cap-add sys_ptrace -p127.0.0.1:$(LOCAL_SSH_PORT):22 \
 		-v $(DEV_SSH_SERVER_KEY):/etc/sshkeys/ssh_host_ed25519_key:ro \
-		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
+		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)-dev
 
 .PHONY: teardown-dev
 teardown-dev:
