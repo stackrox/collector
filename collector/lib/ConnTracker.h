@@ -134,8 +134,8 @@ class ConnectionTracker {
   static bool CheckIfOldConnShouldBeInactiveInDelta(const T& conn_key, const ConnStatus& conn_status, const UnorderedMap<T, ConnStatus>& new_state, int64_t time_micros, int64_t time_at_last_scrape, int64_t afterglow_period_micros);
 
   // ComputeDelta computes a diff between new_state and *old_state, and stores the diff in *old_state.
-  template <typename T>
-  static void ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state);
+  template <typename T, typename E>
+  static void ComputeDelta(const UnorderedMap<T, ConnStatus, E>& new_state, UnorderedMap<T, ConnStatus, E>* old_state);
 
   void UpdateKnownPublicIPs(UnorderedSet<Address>&& known_public_ips);
   void UpdateKnownIPNetworks(UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks);
@@ -214,8 +214,8 @@ void ConnectionTracker::UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, c
   }
 }
 
-template <typename T>
-void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus>& new_state, UnorderedMap<T, ConnStatus>* old_state) {
+template <typename T, typename E>
+void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus, E>& new_state, UnorderedMap<T, ConnStatus, E>* old_state) {
   // Insert all objects from the new state, if anything changed about them.
   for (const auto& conn : new_state) {
     auto insert_res = old_state->insert(conn);
