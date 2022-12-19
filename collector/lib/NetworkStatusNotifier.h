@@ -47,9 +47,24 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   void Stop();
 
  private:
-  sensor::NetworkConnectionInfoMessage* CreateInfoMessage(const ConnMap& conn_delta, const ContainerEndpointMap& cep_delta);
+  /* External Endpoint representation comparison operator. It matches when two endpoints are undistinguishable
+     as seen from the outside */
+  class ExternalContainerEndpointEquality {
+   public:
+    bool operator()(const ContainerEndpoint& lhs, const ContainerEndpoint& rhs) const;
+  };
+  // Shorthand for external Endpoint map
+  typedef UnorderedMap<ContainerEndpoint, ConnStatus, ExternalContainerEndpointEquality> ExternalContainerEndpointMap;
+
+  /* Our internal representation of endpoints identifies precisely the originator process (with its PID).
+     When sending endpoints to the network, however, their originator is only mentioned through its process-unique-key.
+     This conversion function translates between the two representations by squashing all endpoints which "look the same"
+     into the same instance. */
+  void ConvertContainerEndpointToExternalRepresentation(const ContainerEndpointMap& from, ExternalContainerEndpointMap& to);
+
+  sensor::NetworkConnectionInfoMessage* CreateInfoMessage(const ConnMap& conn_delta, const ExternalContainerEndpointMap& cep_delta);
   void AddConnections(::google::protobuf::RepeatedPtrField<sensor::NetworkConnection>* updates, const ConnMap& delta);
-  void AddContainerEndpoints(::google::protobuf::RepeatedPtrField<sensor::NetworkEndpoint>* updates, const ContainerEndpointMap& delta);
+  void AddContainerEndpoints(::google::protobuf::RepeatedPtrField<sensor::NetworkEndpoint>* updates, const ExternalContainerEndpointMap& delta);
 
   sensor::NetworkConnection* ConnToProto(const Connection& conn);
   sensor::NetworkEndpoint* ContainerEndpointToProto(const ContainerEndpoint& cep);
