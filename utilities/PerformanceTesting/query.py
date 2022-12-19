@@ -97,11 +97,11 @@ def get_collector_timers(querier):
     """
     res = {}
     timers = [
-                "net_scrape_update",
-                "net_scrape_read",
-                "net_write_message",
-                "net_create_message"
-            ]
+        "net_scrape_update",
+        "net_scrape_read",
+        "net_write_message",
+        "net_create_message"
+    ]
 
     total_time = {}
     for stat in g_stat_names:
@@ -172,10 +172,10 @@ def get_sensor_network_flows(querier, query_window):
             res[query_name]['description'] = f'Number of {flow_type} {protocol} network flows over pods'
 
     metrics = [
-                "rox_sensor_network_flow_host_connections_added",
-                "rox_sensor_network_flow_host_connections_removed",
-                "rox_sensor_network_flow_external_flows"
-            ]
+        "rox_sensor_network_flow_host_connections_added",
+        "rox_sensor_network_flow_host_connections_removed",
+        "rox_sensor_network_flow_external_flows"
+    ]
 
     for metric in metrics:
         query = metric
@@ -215,11 +215,11 @@ def get_cpu_mem_network_usage(querier, query_window):
     res[mem_query_name]['units'] = 'bytes'
 
     metric_names = {
-            'container_network_receive_bytes_total':
+        'container_network_receive_bytes_total':
             'network_received',
             'container_network_transmit_bytes_total':
             'network_transmited'
-            }
+    }
 
     for name in metric_names:
         query = f'({name}{{namespace="stackrox"}})'
@@ -254,10 +254,10 @@ def main(query_window, token, url, output_file):
     cpu_mem_network_usage = get_cpu_mem_network_usage(querier, query_window)
 
     json_output = {
-                    'collector_timers': collector_timers,
-                    'collector_counters': collector_counters,
-                    'sensor_network_flows': sensor_network_flows,
-                    'cpu_mem_network_usage': cpu_mem_network_usage
+        'collector_timers': collector_timers,
+        'collector_counters': collector_counters,
+        'sensor_network_flows': sensor_network_flows,
+        'cpu_mem_network_usage': cpu_mem_network_usage
     }
 
     with open(output_file, 'w') as json_file:
