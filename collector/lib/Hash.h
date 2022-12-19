@@ -120,8 +120,8 @@ size_t HashAll(const FirstArg& first, const RestArgs&... rest) {
 template <typename E>
 using UnorderedSet = std::unordered_set<E, Hasher>;
 
-template <typename K, typename V>
-using UnorderedMap = std::unordered_map<K, V, Hasher>;
+template <typename K, typename V, typename E = std::equal_to<K>>
+using UnorderedMap = std::unordered_map<K, V, Hasher, E>;
 
 }  // namespace collector
 
