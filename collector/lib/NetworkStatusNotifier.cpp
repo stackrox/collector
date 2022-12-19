@@ -328,6 +328,9 @@ void NetworkStatusNotifier::AddConnections(::google::protobuf::RepeatedPtrField<
 void NetworkStatusNotifier::AddContainerEndpoints(::google::protobuf::RepeatedPtrField<sensor::NetworkEndpoint>* updates, const ContainerEndpointMap& delta) {
   for (const auto& delta_entry : delta) {
     auto* endpoint_proto = ContainerEndpointToProto(delta_entry.first);
+
+    CLOG(DEBUG) << delta_entry.first << " active:" << delta_entry.second.IsActive();
+
     if (!delta_entry.second.IsActive()) {
       *endpoint_proto->mutable_close_timestamp() = google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(
           delta_entry.second.LastActiveTime());
@@ -357,7 +360,6 @@ sensor::NetworkEndpoint* NetworkStatusNotifier::ContainerEndpointToProto(const C
   if (cep.originator()) {
     endpoint_proto->set_allocated_originator(ProcessToProto(*cep.originator().get()));
   }
-  CLOG(DEBUG) << cep;
 
   return endpoint_proto;
 }
