@@ -61,14 +61,16 @@ jobs:
           MAIN_DRIVER_BUCKET="mauro-drivers-test/drivers"
           STAGING_DRIVER_BUCKET="mauro-drivers-test/pr-builds/${GITHUB_HEAD_REF}/${{ github.run_id }}"
           BUNDLES_BUCKET="collector-kernel-bundles-public"
+          SUPPORT_PACKAGES_BUCKET="mauro-drivers-test/support-packages/master"
+          STAGING_SUPPORT_PACKAGES_BUCKET="mauro-drivers-test/support-packages/${GITHUB_HEAD_REF}/${{ github.run_id }}"
 
           echo "drivers-bucket=${MAIN_DRIVER_BUCKET}" >> "$GITHUB_OUTPUT"
           echo "bundles-bucket=${BUNDLES_BUCKET}" >> "$GITHUB_OUTPUT"
 
           if [[ ${{ github.event_name }} == "pull_request" ]]; then
             echo "push-drivers-bucket=${STAGING_DRIVER_BUCKET}" >> "$GITHUB_OUTPUT"
-            echo "support-packages-bucket=mauro-drivers-test/support-packages/${GITHUB_HEAD_REF}/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
+            echo "support-packages-bucket=${STAGING_SUPPORT_PACKAGES_BUCKET}" >> "$GITHUB_OUTPUT"
           else
             echo "push-drivers-bucket=${MAIN_DRIVER_BUCKET}" >> "$GITHUB_OUTPUT"
-            echo "support-packages-bucket=mauro-drivers-test/support-packages/master" >> "$GITHUB_OUTPUT"
+            echo "support-packages-bucket=${SUPPORT_PACKAGES_BUCKET}" >> "$GITHUB_OUTPUT"
           fi

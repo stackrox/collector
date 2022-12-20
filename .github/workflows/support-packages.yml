@@ -52,7 +52,7 @@ jobs:
         run: |
           ${{ github.workspace }}/kernel-modules/support-packages/04-create-support-packages.sh \
             ${{ github.workspace }}/collector/LICENSE-kernel-modules.txt \
-            ${{ inputs.drivers-bucket }} \
+            gs://${{ inputs.drivers-bucket }} \
             /tmp/support-packages/metadata \
             /tmp/support-packages/output
 
