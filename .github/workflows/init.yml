@@ -20,6 +20,10 @@ on:
         description: |
           Bucket used to download kernel bundles when building drivers
         value: ${{ jobs.common-variables.outputs.bundles-bucket }}
+      support-packages-bucket:
+        description: |
+          Bucket to push built support-packages into
+        value: ${{ jobs.common-variables.outputs.support-packages-bucket }}
 
 jobs:
   common-variables:
@@ -30,6 +34,7 @@ jobs:
       drivers-bucket: ${{ steps.gcp-buckets.outputs.drivers-bucket }}
       push-drivers-bucket: ${{ steps.gcp-buckets.outputs.push-drivers-bucket }}
       bundles-bucket: ${{ steps.gcp-buckets.outputs.bundles-bucket }}
+      support-packages-bucket: ${{ steps.gcp-buckets.outputs.support-packages-bucket }}
 
     steps:
       - uses: actions/checkout@v3
@@ -62,6 +67,8 @@ jobs:
 
           if [[ ${{ github.event_name }} == "pull_request" ]]; then
             echo "push-drivers-bucket=${STAGING_DRIVER_BUCKET}" >> "$GITHUB_OUTPUT"
+            echo "support-packages-bucket=mauro-drivers-test/support-packages/${GITHUB_HEAD_REF}/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
           else
             echo "push-drivers-bucket=${MAIN_DRIVER_BUCKET}" >> "$GITHUB_OUTPUT"
+            echo "support-packages-bucket=mauro-drivers-test/support-packages/master" >> "$GITHUB_OUTPUT"
           fi
