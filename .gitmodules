@@ -32,8 +32,8 @@
 	branch = master
 [submodule "falcosecurity-libs"]
 	path = falcosecurity-libs
-	url = https://github.com/stackrox/falcosecurity-libs
-	branch = master
+	url = https://github.com/hbrueckner/stackrox-falcosecurity-libs
+	branch = s390x-collector-2023-12-20
 [submodule "collector/proto/third_party/gogoproto"]
 	path = collector/proto/third_party/gogoproto
 	url = https://github.com/gogo/protobuf
