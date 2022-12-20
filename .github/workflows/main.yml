@@ -101,7 +101,8 @@ jobs:
     # If you want to test this workflow in a PR, you will need to replace
     # this condition with `${{ always() }}`, since skipping the upload of
     # bundles will cause this workflow to skip as well.
-    if: ${{ github.event_name != 'pull_request' }}
+    # if: ${{ github.event_name != 'pull_request' }}
+    if: always()
     needs:
     - init
     - build-drivers
