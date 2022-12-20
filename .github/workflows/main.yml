@@ -73,3 +73,16 @@ jobs:
     - build-collector-slim
     - build-collector-full
     secrets: inherit
+
+  build-support-packages:
+    uses: ./.github/workflows/support-packages.yml
+    with:
+      branch-name: ${{ needs.build-drivers.outputs.branch-name }}
+    # If you want to test this workflow in a PR, you will need to replace
+    # this condition with `${{ always() }}`, since skipping the upload of
+    # bundles will cause this workflow to skip as well.
+    if: ${{ github.event_name != 'pull_request' }}
+    needs:
+    - build-drivers
+    - upload-drivers
+    secrets: inherit

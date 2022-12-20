@@ -1,0 +1,94 @@
+name: Build and push support-packages
+
+on:
+  workflow_call:
+    inputs:
+      branch-name:
+        type: string
+        required: true
+        description: Branch CI is running on
+
+jobs:
+  build-support-packages:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Map collector to stackrox versions
+        run: |
+          ${{ github.workspace }}/kernel-modules/support-packages/01-collector-to-rox-version-map.py \
+            ${{ github.workspace }}/RELEASED_VERSIONS \
+            /tmp/support-packages/metadata
+
+      - name: Create driver version metadata
+        env:
+          BRANCH_NAME: ${{ inputs.branch-name }}
+        run: |
+          ./.github/support-packages/create-metadata-dir.sh
+
+      - name: Group versions by driver version
+        run: |
+          ${{ github.workspace }}/kernel-modules/support-packages/03-group-by-module-version.sh \
+            /tmp/support-packages/metadata
+
+      - name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - name: Create support-packages
+        run: |
+          # TODO: Change the bucket to the production one, once we are done testing
+          ${{ github.workspace }}/kernel-modules/support-packages/04-create-support-packages.sh \
+            ${{ github.workspace }}/collector/LICENSE-kernel-modules.txt \
+            gs://mauro-drivers-test/drivers \
+            /tmp/support-packages/metadata \
+            /tmp/support-packages/output
+
+      - name: Create index file
+        run: |
+          relative_path="collector/support-packages"
+
+          if [[ "${{ github.event_name == 'pull_request' }}" == "true" ]]; then
+              relative_path="${relative_path}/${GITHUB_HEAD_REF}/${{ github.run_id }}"
+          fi
+
+          DOWNLOAD_BASE_URL="https://install.stackrox.io"
+          export BASE_URL="${DOWNLOAD_BASE_URL}/${relative_path}"
+
+          ${{ github.workspace }}/kernel-modules/support-packages/05-create-index.py \
+            /tmp/support-packages/metadata \
+            /tmp/support-packages/output
+
+      - name: Set output bucket
+        id: output-bucket
+        run: |
+          # TODO: Change the bucket to the production one, once we are done testing
+          if [[ "${{ github.event_name == 'pull_request' }}" == "true" ]]; then
+            echo "output-bucket=mauro-drivers-test/support-packages/${GITHUB_HEAD_REF}/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "output-bucket=mauro-drivers-test/support-packages/master" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Push support-packages
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        with:
+          path: /tmp/support-packages/output
+          parent: false
+          destination: ${{ steps.output-bucket.outputs.output-bucket }}
+
+      - name: Slack notification
+        if: failure() && github.event_name == 'push'
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_ONCALL }}
+          SLACK_CHANNEL: oncall
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_LINK_NAMES: true
+          SLACK_TITLE: Support package job failed
+          MSG_MINIMAL: actions url,commit
+          SLACK_MESSAGE: |
+            @collector-team
