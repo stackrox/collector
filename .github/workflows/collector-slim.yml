@@ -13,6 +13,11 @@ on:
         required: true
         description: |
           Basic stackrox-io image built
+      is-external:
+        type: boolean
+        description: |
+          Signals whether CI is running from a fork
+        default: false
 
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
@@ -70,6 +75,7 @@ jobs:
           dst-image: ${{ inputs.collector-image }}-slim
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+        if: ${{ !inputs.is-external }}
 
       - name: Retag and push stackrox-io -base
         uses: ./.github/actions/retag-and-push
@@ -78,9 +84,10 @@ jobs:
           dst-image: ${{ inputs.collector-image }}-base
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+        if: ${{ !inputs.is-external }}
 
       - name: Push builder to stackrox-io
-        if: github.event_name == 'push' || steps.pr-checks.outputs.builder-tag != env.DEFAULT_BUILDER_TAG
+        if: (github.event_name == 'push' || steps.pr-checks.outputs.builder-tag != env.DEFAULT_BUILDER_TAG) && !inputs.is-external
         run: |
           docker push "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}"
 
@@ -91,6 +98,7 @@ jobs:
           dst-image: ${{ env.RHACS_ENG_IMAGE }}-slim
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+        if: ${{ !inputs.is-external }}
 
       - name: Retag and push rhacs-eng -base
         uses: ./.github/actions/retag-and-push
@@ -99,9 +107,18 @@ jobs:
           dst-image: ${{ env.RHACS_ENG_IMAGE }}-base
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+        if: ${{ !inputs.is-external }}
 
       - name: Push builder to rhacs-eng
-        if: github.event_name == 'push' || steps.pr-checks.outputs.builder-tag != env.DEFAULT_BUILDER_TAG
+        if: (github.event_name == 'push' || steps.pr-checks.outputs.builder-tag != env.DEFAULT_BUILDER_TAG) && !inputs.is-external
         run: |
           docker tag "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}" "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}"
           docker push "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}"
+
+      - name: Retag and push to ghcr.io
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: ${{ inputs.collector-image }}
+          dst-image: ghcr.io/stackrox/collector:${{ inputs.collector-tag }}-slim
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
