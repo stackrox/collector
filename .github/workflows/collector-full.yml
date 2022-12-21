@@ -19,7 +19,7 @@ on:
         description: |
           GCP bucket to pull drivers from.
       is-external:
-        type: boolean
+        type: string
         description: |
           Signals whether CI is running from a fork
         default: false
@@ -27,7 +27,7 @@ on:
 jobs:
   build-collector-full:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'build-full-images') || inputs.is-external }}
+    if: ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'build-full-images') || inputs.is-external == 'true' }}
 
     steps:
       - uses: actions/checkout@v3
@@ -53,7 +53,7 @@ jobs:
           fi
 
       - name: Download drivers from GCP
-        if: ${{ !inputs.is-external }}
+        if: ${{ inputs.is-external == 'false' }}
         run: |
           mkdir -p "${CONTEXT_DRIVERS_DIR}"
 
@@ -85,20 +85,20 @@ jobs:
 
       - name: Login to quay.io/stackrox-io
         uses: docker/login-action@v2
-        if: ${{ !inputs.is-external }}
+        if: ${{ inputs.is-external == 'false' }}
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
       - name: Push stackrox-io full image
-        if: ${{ !inputs.is-external }}
+        if: ${{ inputs.is-external == 'false' }}
         run: |
           docker push "${COLLECTOR_IMAGE}"
 
       - name: Retag and push stackrox-io -latest
         uses: ./.github/actions/retag-and-push
-        if: ${{ !inputs.is-external }}
+        if: ${{ inputs.is-external == 'false' }}
         with:
           src-image: ${{ env.COLLECTOR_IMAGE }}
           dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-latest
@@ -107,7 +107,7 @@ jobs:
 
       - name: Retag and push rhacs-eng
         uses: ./.github/actions/retag-and-push
-        if: ${{ !inputs.is-external }}
+        if: ${{ inputs.is-external == 'false' }}
         with:
           src-image: ${{ env.COLLECTOR_IMAGE }}
           dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
@@ -116,7 +116,7 @@ jobs:
 
       - name: Retag and push rhacs-eng -latest
         uses: ./.github/actions/retag-and-push
-        if: ${{ !inputs.is-external }}
+        if: ${{ inputs.is-external == 'false' }}
         with:
           src-image: ${{ env.COLLECTOR_IMAGE }}
           dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-latest
@@ -125,12 +125,16 @@ jobs:
 
       - name: Login to ghcr.io
         uses: docker/login-action@v2
-        if: ${{ !inputs.is-external }}
+        if: ${{ inputs.is-external == 'true' }}
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Push ghcr.io full image
+        if: ${{ inputs.is-external == 'true' }}
+        run: |
+          docker push "${COLLECTOR_IMAGE}"
 
   retag-collector-full:
     runs-on: ubuntu-latest
