@@ -11,6 +11,10 @@ on:
         type: string
         required: true
         description: The GCP bucket to pull bundles from
+      is-external:
+        type: boolean
+        description: Signals whether CI is running from a fork
+        default: false
     outputs:
       parallel-jobs:
         description: |
@@ -31,8 +35,6 @@ jobs:
       parallel-jobs: ${{ steps.set-parallel.outputs.parallel-jobs }}
       parallel-array: ${{ steps.set-parallel.outputs.parallel-array }}
       branch-name: ${{ steps.set-branch.outputs.branch-name }}
-    env:
-      KERNELS_FILE: ${{ github.workspace }}/kernel-modules/KERNEL_VERSIONS
 
     steps:
       - uses: actions/checkout@v3
@@ -70,9 +72,10 @@ jobs:
         uses: 'google-github-actions/auth@v1'
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+        if: ${{ !inputs.is-external }}
 
       - name: Create a mock cache
-        if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-cache') }}
+        if: ${{ !inputs.is-external && !contains(github.event.pull_request.labels.*.name, 'no-cache') }}
         run: |
           ${{ github.workspace }}/.github/drivers/mock-cache.sh
 
@@ -86,6 +89,14 @@ jobs:
           SCRIPTS_DIR: ${{ github.workspace }}/kernel-modules/build
 
         run: |
+          if [[ "${{ inputs.is-external }}" == "false" ]]; then
+            export KERNELS_FILE="${{ github.workspace }}/kernel-modules/KERNEL_VERSIONS"
+          else
+            # for external PRs, we only build the driver for the GHA VM
+            uname -r >> /tmp/KERNELS_FILE
+            export KERNELS_FILE=/tmp/KERNELS_FILE
+          fi
+
           ${{ github.workspace }}/kernel-modules/dockerized/scripts/get-build-tasks.sh
 
           mkdir -p /tmp/tasks

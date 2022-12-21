@@ -24,6 +24,10 @@ on:
         description: |
           Bucket to push built support-packages into
         value: ${{ jobs.common-variables.outputs.support-packages-bucket }}
+      is-external:
+        description: |
+          Signals whether the current CI is running in a fork
+        value: ${{ jobs.common-variables.outputs.is-external }}
 
 jobs:
   common-variables:
@@ -35,6 +39,7 @@ jobs:
       push-drivers-bucket: ${{ steps.gcp-buckets.outputs.push-drivers-bucket }}
       bundles-bucket: ${{ steps.gcp-buckets.outputs.bundles-bucket }}
       support-packages-bucket: ${{ steps.gcp-buckets.outputs.support-packages-bucket }}
+      is-external: ${{ steps.external-pr.outputs.is-external }}
 
     steps:
       - uses: actions/checkout@v3
@@ -74,3 +79,10 @@ jobs:
             echo "push-drivers-bucket=${MAIN_DRIVER_BUCKET}" >> "$GITHUB_OUTPUT"
             echo "support-packages-bucket=${SUPPORT_PACKAGES_BUCKET}" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Check for external PR
+        id: external-pr
+        run: |
+          IS_EXTERNAL="${{ github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' }}"
+
+          echo "is-external=${IS_EXTERNAL}" >> "$GITHUB_OUTPUT"

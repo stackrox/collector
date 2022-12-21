@@ -20,13 +20,17 @@ inputs:
     description: |
       Password used to login to the repository the push is aimed at
     required: true
+  registry:
+    description:
+      Registry used for pushing the image
+    default: quay.io
 
 runs:
   using: "composite"
   steps:
     - uses: docker/login-action@v2
       with:
-        registry: quay.io
+        registry: ${{ inputs.registry }}
         username: ${{ inputs.username }}
         password: ${{ inputs.password }}
 
