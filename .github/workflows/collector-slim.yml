@@ -118,6 +118,7 @@ jobs:
       - name: Retag and push to ghcr.io
         uses: ./.github/actions/retag-and-push
         with:
+          registry: ghcr.io
           src-image: ${{ inputs.collector-image }}
           dst-image: ghcr.io/stackrox/collector:${{ inputs.collector-tag }}-slim
           username: ${{ github.actor }}
