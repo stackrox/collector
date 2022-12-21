@@ -119,6 +119,6 @@ jobs:
         with:
           registry: ghcr.io
           src-image: ${{ inputs.collector-image }}
-          dst-image: ghcr.io/stackrox/collector:${{ inputs.collector-tag }}-slim
+          dst-image: ghcr.io/${{ github.repository }}:${{ inputs.collector-tag }}-slim
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
