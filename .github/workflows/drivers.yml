@@ -16,7 +16,7 @@ on:
         required: true
         description: Branch CI is running on
       is-external:
-        type: boolean
+        type: string
         description: Signals whether CI is running from a fork
         default: false
     outputs:
@@ -64,10 +64,10 @@ jobs:
         uses: 'google-github-actions/auth@v1'
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
-        if: ${{ !inputs.is-external }}
+        if: ${{ inputs.is-external == 'false' }}
 
       - name: Create a mock cache
-        if: ${{ !inputs.is-external && !contains(github.event.pull_request.labels.*.name, 'no-cache') }}
+        if: ${{ inputs.is-external == 'false' && !contains(github.event.pull_request.labels.*.name, 'no-cache') }}
         run: |
           ${{ github.workspace }}/kernel-modules/build/mock-cache.sh
 
