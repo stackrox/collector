@@ -61,8 +61,8 @@ jobs:
             echo "COLLECTOR_REGISTRY=quay.io/stackrox-io/collector" >> "$GITHUB_ENV"
             echo "COLLECTOR_IMAGE=quay.io/stackrox-io/collector:${{ inputs.collector-tag }}" >> "$GITHUB_ENV"
           else
-            echo "COLLECTOR_REGISTRY=ghcr.io/${{ github.repository }}" >> "$GITHUB_ENV"
-            echo "COLLECTOR_IMAGE=ghcr.io/${{ github.repository }}:${{ inputs.collector-tag }}" >> "$GITHUB_ENV"
+            echo "COLLECTOR_REGISTRY=ghcr.io/${{ github.event.pull_request.head.repo.full_name }}" >> "$GITHUB_ENV"
+            echo "COLLECTOR_IMAGE=ghcr.io/${{ github.event.pull_request.head.repo.full_name }}:${{ inputs.collector-tag }}" >> "$GITHUB_ENV"
           fi
 
       - name: Download drivers from GCP
