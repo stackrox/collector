@@ -242,7 +242,7 @@ jobs:
 
   simplified-driver-build:
     runs-on: ubuntu-22.04
-    if: inputs.is-external == 'false'
+    if: inputs.is-external == 'true'
     steps:
       - uses: actions/checkout@v3
         with:
