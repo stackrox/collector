@@ -267,12 +267,12 @@ jobs:
 
       - name: Build the driver for the GHA VM
         run: |
-          mkdir -p ${{ github.workspace }}/kernel-modules/container/kernel-modules
+          DRIVERS_DIR="${{ github.workspace }}/kernel-modules/container/kernel-modules"
+          mkdir -p "${DRIVERS_DIR}"
 
           make -C ${{ github.workspace }}/kernel-modules drivers
 
           OUTPUT_DIR="/tmp/kernel-modules/$(cat ${{ github.workspace }}/kernel-modules/MODULE_VERSION)"
-          echo "OUTPUT_DIR=${OUTPUT_DIR}" >> "$GITHUB_ENV"
 
           mkdir -p "${OUTPUT_DIR}"
           mv ${{ github.workspace }}/kernel-modules/container/kernel-modules/* "${OUTPUT_DIR}"
