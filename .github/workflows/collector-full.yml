@@ -48,7 +48,7 @@ jobs:
 
       - name: Restore built drivers
         uses: actions/download-artifact@v3
-        if: ${{ !inputs.skip-built-drivers }}
+        if: ${{ !inputs.skip-built-drivers || inputs.is-external == 'true' }}
         with:
           name: built-drivers
           path: /tmp/built-drivers/
