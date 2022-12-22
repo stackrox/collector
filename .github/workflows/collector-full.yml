@@ -76,7 +76,7 @@ jobs:
       - name: Restore slim image
         if: inputs.is-external == 'true'
         run: |
-          docker load -i /tmp/collector.tar
+          docker load -i /tmp/collector-slim.tar
 
       - name: Pull slim image and build full image
         run: |
@@ -130,18 +130,20 @@ jobs:
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
-      - name: Login to ghcr.io
-        uses: docker/login-action@v2
-        if: ${{ inputs.is-external == 'true' }}
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Push ghcr.io full image
-        if: ${{ inputs.is-external == 'true' }}
+      # For PRs coming from a fork, we cheat a little, we just create a blob
+      # from the image and upload it as an artifact
+      - name: Save image
+        if: inputs.is-external == 'true'
         run: |
-          docker push "${COLLECTOR_IMAGE}"
+          docker save -o /tmp/collector-full.tar ${{ env.COLLECTOR_IMAGE }}
+
+      - name: Store built image
+        if: inputs.is-external == 'true'
+        uses: actions/upload-artifact@v3
+        with:
+          name: collector-full
+          path: /tmp/collector-full.tar
+          retention-days: 7
 
   retag-collector-full:
     runs-on: ubuntu-latest

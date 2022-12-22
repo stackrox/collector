@@ -123,6 +123,7 @@ jobs:
           docker save -o /tmp/collector-slim.tar ${{ inputs.collector-image }}-slim
 
       - name: Store built image
+        if: inputs.is-external == 'true'
         uses: actions/upload-artifact@v3
         with:
           name: collector-slim

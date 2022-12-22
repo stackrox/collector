@@ -61,11 +61,21 @@ jobs:
         - ebpf
         - kernel_module
     env:
-      COLLECTOR_IMAGE: ghcr.io/${{ github.event.pull_request.head.repo.full_name }}:${{ inputs.collector-tag }}
+      COLLECTOR_IMAGE: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
       COLLECTION_METHOD: ${{ matrix.collection-method }}
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: Download collector image blob
+      uses: actions/download-artifact@v3
+      with:
+        name: collector-full
+        path: /tmp/collector-full.tar
+
+    - name: Restore collector image
+      run: |
+        docker load -i /tmp/collector-full.tar
 
     - name: Run integration tests locally
       run: |
