@@ -1,0 +1,27 @@
+name: Notify MODULE_VERSION changed
+
+on:
+  push:
+    branches:
+    - master
+    - release-*
+    # TODO: Remove after testing
+    - mauro-*
+    paths:
+    - kernel-modules/MODULE_VERSION
+
+jobs:
+  notify:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Slack notification
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_ONCALL }}
+        SLACK_CHANNEL: oncall
+        SLACK_COLOR: ${{ job.status }}
+        SLACK_LINK_NAMES: true
+        SLACK_TITLE: MODULE_VERSION has changed!
+        MSG_MINIMAL: commit
+        SLACK_MESSAGE: |
+          @collector-team update the downstream sources accordingly.
