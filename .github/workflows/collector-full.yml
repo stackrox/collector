@@ -58,7 +58,7 @@ jobs:
         if: ${{ inputs.is-external == 'true' }}
         with:
           name: collector-slim
-          path: /tmp/collector-slim.tar
+          path: /tmp
 
       - name: Set environment variables
         run: |
