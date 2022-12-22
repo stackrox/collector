@@ -73,14 +73,20 @@ jobs:
 
       - name: Add built drivers
         run: |
+          set -x
+
           # Create the directory again, in case we are running from a fork
           mkdir -p "${CONTEXT_DRIVERS_DIR}"
 
           BUILT_DRIVERS_DIR="/tmp/built-drivers/${DRIVER_VERSION}/"
 
+          ls -la "${BUILT_DRIVERS_DIR}"
+
           if [[ -d "${BUILT_DRIVERS_DIR}" ]]; then
             find "${BUILT_DRIVERS_DIR}" -type f -exec mv -t "${CONTEXT_DRIVERS_DIR}" {} +
           fi
+
+          ls -la "${CONTEXT_DRIVERS_DIR}"
 
       - name: Restore slim image
         if: inputs.is-external == 'true'
