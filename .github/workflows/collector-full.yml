@@ -91,7 +91,7 @@ jobs:
 
           BUILT_DRIVERS_DIR="/tmp/built-drivers/${DRIVER_VERSION}/"
 
-          ls -la "${BUILT_DRIVERS_DIR}"
+          ls -la /tmp/**
 
           if [[ -d "${BUILT_DRIVERS_DIR}" ]]; then
             find "${BUILT_DRIVERS_DIR}" -type f -exec mv -t "${CONTEXT_DRIVERS_DIR}" {} +
