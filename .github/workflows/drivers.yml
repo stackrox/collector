@@ -31,6 +31,7 @@ env:
 jobs:
   split-tasks:
     runs-on: ubuntu-latest
+    if: inputs.is-external == 'false'
     outputs:
       parallel-jobs: ${{ steps.set-parallel.outputs.parallel-jobs }}
       parallel-array: ${{ steps.set-parallel.outputs.parallel-array }}
@@ -254,4 +255,23 @@ jobs:
           name: driver-build-failures
           path: /tmp/FAILURES
           if-no-files-found: ignore
+          retention-days: 1
+
+  simplified-driver-build:
+    runs-on: ubuntu-22.04
+    if: inputs.is-external == 'false'
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Build the driver for the GHA VM
+        run: |
+          make -C ${{ github.workspace }}/kernel-modules drivers
+
+      - name: Store built drivers
+        uses: actions/upload-artifact@v3
+        with:
+          name: built-drivers
+          path: ${{ github.workspace }}/kernel-modules/container/kernel-modules/
           retention-days: 1
