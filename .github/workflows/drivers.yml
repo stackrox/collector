@@ -281,5 +281,5 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: built-drivers
-          path: ${{ env.OUTPUT_DIR }}
+          path: /tmp/kernel-modules
           retention-days: 1
