@@ -54,6 +54,15 @@ jobs:
           echo "DRIVER_VERSION=$(cat ${{ github.workspace }}/kernel-modules/MODULE_VERSION)" >> "$GITHUB_ENV"
           echo "CONTEXT_DRIVERS_DIR=${{ github.workspace }}/kernel-modules/container/kernel-modules" >> "$GITHUB_ENV"
 
+          if [[ "${{ inputs.is-external }}" == "false" ]]; then
+            MAX_LAYER_DEPTH=5
+          else
+            MAX_LAYER_DEPTH=1
+          fi
+
+          echo "MAX_LAYER_DEPTH=${MAX_LAYER_DEPTH}" >> "$GITHUB_ENV"
+          echo "TARGET_LAYER=probe-layer-${MAX_LAYER_DEPTH}" >> "$GITHUB_ENV"
+
       - name: Download drivers from GCP
         if: ${{ inputs.is-external == 'false' }}
         run: |
@@ -81,13 +90,13 @@ jobs:
       - name: Pull slim image and build full image
         run: |
           docker build \
-            --target=probe-layer-5 \
+            --target="${TARGET_LAYER}" \
             --tag "${COLLECTOR_IMAGE}" \
             --build-arg "collector_repo=${COLLECTOR_REGISTRY}" \
             --build-arg collector_version=${{ inputs.collector-tag }} \
             --build-arg module_version="${DRIVER_VERSION}" \
             --build-arg max_layer_size=300 \
-            --build-arg max_layer_depth=5 \
+            --build-arg max_layer_depth="${MAX_LAYER_DEPTH}" \
             "${{ github.workspace }}/kernel-modules/container"
 
       - name: Login to quay.io/stackrox-io
