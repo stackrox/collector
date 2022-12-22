@@ -115,11 +115,17 @@ jobs:
           docker tag "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}" "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}"
           docker push "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}"
 
-      - name: Retag and push to ghcr.io
-        uses: ./.github/actions/retag-and-push
+      # For PRs coming from a fork, we cheat a little, we just create a blob
+      # from the image and upload it as an artifact
+      - name: Save slim image
+        if: inputs.is-external == 'true'
+        run: |
+          docker tag ${{ inputs.collector-image }} ${{ inputs.collector-image }}-slim
+          docker save -o /tmp/collector-slim.tar ${{ inputs.collector-image }}-slim
+
+      - name: Store built image
+        uses: actions/upload-artifact@v3
         with:
-          registry: ghcr.io
-          src-image: ${{ inputs.collector-image }}
-          dst-image: ghcr.io/${{ github.event.pull_request.head.repo.full_name }}:${{ inputs.collector-tag }}-slim
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          name: collector-slim
+          path: /tmp/collector-slim.tar
+          retention-days: 7

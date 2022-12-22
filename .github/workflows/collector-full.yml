@@ -41,6 +41,7 @@ jobs:
     if: inputs.build-full-image || inputs.is-external == 'true'
     env:
       COLLECTOR_IMAGE: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
+      COLLECTOR_REGISTRY: quay.io/stackrox-io/collector
 
     steps:
       - uses: actions/checkout@v3
@@ -52,18 +53,17 @@ jobs:
           name: built-drivers
           path: /tmp/built-drivers/
 
+      - name: Download slim collector image blob
+        uses: actions/download-artifact@v3
+        if: ${{ inputs.is-external == 'true' }}
+        with:
+          name: collector-slim
+          path: /tmp/collector-slim.tar
+
       - name: Set environment variables
         run: |
           echo "DRIVER_VERSION=$(cat ${{ github.workspace }}/kernel-modules/MODULE_VERSION)" >> "$GITHUB_ENV"
           echo "CONTEXT_DRIVERS_DIR=${{ github.workspace }}/kernel-modules/container/kernel-modules" >> "$GITHUB_ENV"
-
-          if [[ "${{ inputs.is-external }}" == false ]]; then
-            echo "COLLECTOR_REGISTRY=quay.io/stackrox-io/collector" >> "$GITHUB_ENV"
-            echo "COLLECTOR_IMAGE=quay.io/stackrox-io/collector:${{ inputs.collector-tag }}" >> "$GITHUB_ENV"
-          else
-            echo "COLLECTOR_REGISTRY=ghcr.io/${{ github.event.pull_request.head.repo.full_name }}" >> "$GITHUB_ENV"
-            echo "COLLECTOR_IMAGE=ghcr.io/${{ github.event.pull_request.head.repo.full_name }}:${{ inputs.collector-tag }}" >> "$GITHUB_ENV"
-          fi
 
       - name: Download drivers from GCP
         if: ${{ inputs.is-external == 'false' }}
@@ -83,6 +83,11 @@ jobs:
           if [[ -d "${BUILT_DRIVERS_DIR}" ]]; then
             find "${BUILT_DRIVERS_DIR}" -type f -exec mv -t "${CONTEXT_DRIVERS_DIR}" {} +
           fi
+
+      - name: Restore slim image
+        if: inputs.is-external == 'true'
+        run: |
+          docker load -i /tmp/collector.tar
 
       - name: Pull slim image and build full image
         run: |
