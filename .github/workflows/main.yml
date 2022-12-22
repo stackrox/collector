@@ -89,7 +89,7 @@ jobs:
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       is-external: ${{ needs.init.outputs.is-external }}
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') && needs.init.outputs.is-external == 'false' }}
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     needs:
     - init
     - build-collector-slim
