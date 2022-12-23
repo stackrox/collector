@@ -71,7 +71,7 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: collector-full
-        path: /tmp/collector-full.tar
+        path: /tmp
 
     - name: Restore collector image
       run: |
