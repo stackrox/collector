@@ -2,6 +2,11 @@ name: Upload drivers to GCP
 
 on:
   workflow_call:
+    inputs:
+      gcp-bucket:
+        type: string
+        required: true
+        description: GCP bucket to push drivers into
 
 jobs:
   upload-drivers:
@@ -14,16 +19,6 @@ jobs:
           name: built-drivers
           path: /tmp/output/
 
-      - name: Choose destination bucket
-        id: gcp-bucket
-        run: |
-          # TODO: Move these buckets to the proper ones when we completely switch off OSCI
-          if [[ ${{ github.event_name }} == "pull_request" ]]; then
-            echo "gcp-bucket=mauro-drivers-test/pr-builds/${GITHUB_HEAD_REF}/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "gcp-bucket=mauro-drivers-test/drivers" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Authenticate with GCP
         uses: 'google-github-actions/auth@v1'
         with:
@@ -34,4 +29,4 @@ jobs:
         with:
           path: /tmp/output/
           parent: false
-          destination: ${{ steps.gcp-bucket.outputs.gcp-bucket }}
+          destination: ${{ inputs.gcp-bucket }}

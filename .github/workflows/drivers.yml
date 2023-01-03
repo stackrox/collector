@@ -2,6 +2,15 @@ name: Build collector drivers
 
 on:
   workflow_call:
+    inputs:
+      drivers-bucket:
+        type: string
+        required: true
+        description: The GCP bucket to pull cached drivers from
+      bundles-bucket:
+        type: string
+        required: true
+        description: The GCP bucket to pull bundles from
     outputs:
       parallel-jobs:
         description: |
@@ -11,6 +20,9 @@ on:
         description: |
           Branch CI is running on
         value: ${{ jobs.split-tasks.outputs.branch-name }}
+
+env:
+  DRIVERS_BUCKET: ${{ inputs.drivers-bucket }}
 
 jobs:
   split-tasks:
@@ -201,7 +213,7 @@ jobs:
           # shellcheck disable=SC2043
           for builder in ${{ steps.required-builders.outputs.builders }}; do
             # Download bundles for current builder
-            awk '{ print "gs://collector-kernel-bundles-public/bundle-"$1".tgz" }' "/tmp/tasks/${builder}/${{ matrix.builder }}/all" |
+            awk '{ print "gs://${{ inputs.bundles-bucket }}/bundle-"$1".tgz" }' "/tmp/tasks/${builder}/${{ matrix.builder }}/all" |
               sort | uniq | gsutil -m cp -I /tmp/bundles
 
             docker run --rm -i \

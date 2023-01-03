@@ -1,0 +1,76 @@
+name: Run global initialization of CI
+
+on:
+  workflow_call:
+    outputs:
+      collector-tag:
+        description: The tag used when building collector
+        value: ${{ jobs.common-variables.outputs.collector-tag }}
+      collector-image:
+        description: |
+          The image built by running `make image` in the collector repo
+        value: ${{ jobs.common-variables.outputs.collector-image }}
+      drivers-bucket:
+        description: Bucket used to pull collector drivers from
+        value: ${{ jobs.common-variables.outputs.drivers-bucket }}
+      push-drivers-bucket:
+        description: Bucket used to push collector drivers into
+        value: ${{ jobs.common-variables.outputs.push-drivers-bucket }}
+      bundles-bucket:
+        description: |
+          Bucket used to download kernel bundles when building drivers
+        value: ${{ jobs.common-variables.outputs.bundles-bucket }}
+      support-packages-bucket:
+        description: |
+          Bucket to push built support-packages into
+        value: ${{ jobs.common-variables.outputs.support-packages-bucket }}
+
+jobs:
+  common-variables:
+    runs-on: ubuntu-latest
+    outputs:
+      collector-tag: ${{ steps.collector-env.outputs.collector-tag }}
+      collector-image: ${{ steps.collector-env.outputs.collector-image }}
+      drivers-bucket: ${{ steps.gcp-buckets.outputs.drivers-bucket }}
+      push-drivers-bucket: ${{ steps.gcp-buckets.outputs.push-drivers-bucket }}
+      bundles-bucket: ${{ steps.gcp-buckets.outputs.bundles-bucket }}
+      support-packages-bucket: ${{ steps.gcp-buckets.outputs.support-packages-bucket }}
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Set collector environment variables
+        id: collector-env
+        run: |
+          if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" == "true" ]]; then
+            COLLECTOR_TAG="${{ github.ref_name }}-gha"
+          else
+            COLLECTOR_TAG="$(make tag)-gha"
+          fi
+
+          echo "collector-tag=${COLLECTOR_TAG}" >> "$GITHUB_OUTPUT"
+          echo "collector-image=quay.io/stackrox-io/collector:${COLLECTOR_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Set GCP buckets
+        id: gcp-buckets
+        run: |
+          # TODO: Move these buckets to the proper ones when we completely switch off OSCI
+          MAIN_DRIVER_BUCKET="mauro-drivers-test/drivers"
+          STAGING_DRIVER_BUCKET="mauro-drivers-test/pr-builds/${GITHUB_HEAD_REF}/${{ github.run_id }}"
+          BUNDLES_BUCKET="collector-kernel-bundles-public"
+          SUPPORT_PACKAGES_BUCKET="mauro-drivers-test/support-packages/master"
+          STAGING_SUPPORT_PACKAGES_BUCKET="mauro-drivers-test/support-packages/${GITHUB_HEAD_REF}/${{ github.run_id }}"
+
+          echo "drivers-bucket=${MAIN_DRIVER_BUCKET}" >> "$GITHUB_OUTPUT"
+          echo "bundles-bucket=${BUNDLES_BUCKET}" >> "$GITHUB_OUTPUT"
+
+          if [[ ${{ github.event_name }} == "pull_request" ]]; then
+            echo "push-drivers-bucket=${STAGING_DRIVER_BUCKET}" >> "$GITHUB_OUTPUT"
+            echo "support-packages-bucket=${STAGING_SUPPORT_PACKAGES_BUCKET}" >> "$GITHUB_OUTPUT"
+          else
+            echo "push-drivers-bucket=${MAIN_DRIVER_BUCKET}" >> "$GITHUB_OUTPUT"
+            echo "support-packages-bucket=${SUPPORT_PACKAGES_BUCKET}" >> "$GITHUB_OUTPUT"
+          fi

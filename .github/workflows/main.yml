@@ -10,14 +10,25 @@ on:
   pull_request:
 
 jobs:
+  init:
+    uses: ./.github/workflows/init.yml
+
   build-drivers:
     uses: ./.github/workflows/drivers.yml
+    with:
+      drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
+      bundles-bucket: ${{ needs.init.outputs.bundles-bucket }}
+    needs: init
     secrets: inherit
 
   upload-drivers:
     uses: ./.github/workflows/upload-drivers.yml
+    with:
+      gcp-bucket: ${{ needs.init.outputs.push-drivers-bucket }}
     if: ${{ needs.build-drivers.outputs.parallel-jobs > 0 }}
-    needs: build-drivers
+    needs:
+    - init
+    - build-drivers
     secrets: inherit
 
   check-drivers-build:
@@ -52,24 +63,31 @@ jobs:
 
   build-collector-slim:
     uses: ./.github/workflows/collector-slim.yml
+    needs: init
+    with:
+      collector-tag: ${{ needs.init.outputs.collector-tag }}
+      collector-image: ${{ needs.init.outputs.collector-image }}
     secrets: inherit
 
   build-collector-full:
     uses: ./.github/workflows/collector-full.yml
     with:
-      collector-tag: ${{ needs.build-collector-slim.outputs.collector-tag }}
+      collector-tag: ${{ needs.init.outputs.collector-tag }}
+      drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
       skip-built-drivers: ${{ needs.build-drivers.outputs.parallel-jobs == 0 }}
     secrets: inherit
     needs:
+    - init
     - build-collector-slim
     - build-drivers
 
   integration-tests:
     uses: ./.github/workflows/integration-tests.yml
     with:
-      collector-tag: ${{ needs.build-collector-slim.outputs.collector-tag }}
+      collector-tag: ${{ needs.init.outputs.collector-tag }}
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     needs:
+    - init
     - build-collector-slim
     - build-collector-full
     secrets: inherit
@@ -78,11 +96,14 @@ jobs:
     uses: ./.github/workflows/support-packages.yml
     with:
       branch-name: ${{ needs.build-drivers.outputs.branch-name }}
+      drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
+      support-packages-bucket: ${{ needs.init.outputs.support-packages-bucket }}
     # If you want to test this workflow in a PR, you will need to replace
     # this condition with `${{ always() }}`, since skipping the upload of
     # bundles will cause this workflow to skip as well.
     if: ${{ github.event_name != 'pull_request' }}
     needs:
+    - init
     - build-drivers
     - upload-drivers
     secrets: inherit

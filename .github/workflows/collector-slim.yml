@@ -2,36 +2,31 @@ name: Collector image build
 
 on:
   workflow_call:
-    outputs:
+    inputs:
       collector-tag:
-        description: "The tag used when building collector"
-        value: ${{ jobs.build-collector-image.outputs.collector-tag }}
+        type: string
+        required: true
+        description: |
+          The tag used to build the collector image
+      collector-image:
+        type: string
+        required: true
+        description: |
+          Basic stackrox-io image built
+
+env:
+  COLLECTOR_TAG: ${{ inputs.collector-tag }}
+  RHACS_ENG_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
 
 jobs:
   build-collector-image:
     name: Build the collector slim image
     runs-on: ubuntu-latest
-    outputs:
-      collector-tag: ${{ steps.collector-commons.outputs.collector-tag }}
 
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: true
-          fetch-depth: 0
-
-      - name: Set collector tag
-        id: collector-commons
-        run: |
-          if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" == "true" ]]; then
-            COLLECTOR_TAG="${{ github.ref_name }}-gha"
-          else
-            COLLECTOR_TAG="$(make tag)-gha"
-          fi
-
-          echo "COLLECTOR_TAG=${COLLECTOR_TAG}" >> "$GITHUB_ENV"
-          echo "collector-tag=${COLLECTOR_TAG}" >> "$GITHUB_OUTPUT"
-          echo "collector-image=quay.io/stackrox-io/collector:${COLLECTOR_TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Checks for main and release branches
         if: ${{ github.event_name == 'push' }}
@@ -48,7 +43,7 @@ jobs:
           # - We use the existing cache
           COLLECTOR_BUILDER_TAG="cache-gha"
           if [[ "${{ contains(github.event.pull_request.labels.*.name, 'build-builder-image') }}" == "true" ]]; then
-            COLLECTOR_BUILDER_TAG="${COLLECTOR_TAG}"
+            COLLECTOR_BUILDER_TAG="${{ inputs.collector-tag }}"
             echo 'BUILD_BUILDER_IMAGE=true' >> "$GITHUB_ENV"
           else
             docker pull quay.io/stackrox-io/collector-builder:cache-gha || true
@@ -70,16 +65,16 @@ jobs:
       - name: Retag and push stackrox-io -slim
         uses: ./.github/actions/retag-and-push
         with:
-          src-image: ${{ steps.collector-commons.outputs.collector-image }}
-          dst-image: quay.io/stackrox-io/collector:${{ env.COLLECTOR_TAG }}-slim
+          src-image: ${{ inputs.collector-image }}
+          dst-image: ${{ inputs.collector-image }}-slim
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
       - name: Retag and push stackrox-io -base
         uses: ./.github/actions/retag-and-push
         with:
-          src-image: ${{ steps.collector-commons.outputs.collector-image }}
-          dst-image: quay.io/stackrox-io/collector:${{ env.COLLECTOR_TAG }}-base
+          src-image: ${{ inputs.collector-image }}
+          dst-image: ${{ inputs.collector-image }}-base
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
@@ -91,16 +86,16 @@ jobs:
       - name: Retag and push rhacs-eng -slim
         uses: ./.github/actions/retag-and-push
         with:
-          src-image: ${{ steps.collector-commons.outputs.collector-image }}
-          dst-image: quay.io/rhacs-eng/collector:${{ env.COLLECTOR_TAG }}-slim
+          src-image: ${{ inputs.collector-image }}
+          dst-image: ${{ env.RHACS_ENG_IMAGE }}-slim
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
       - name: Retag and push rhacs-eng -base
         uses: ./.github/actions/retag-and-push
         with:
-          src-image: ${{ steps.collector-commons.outputs.collector-image }}
-          dst-image: quay.io/rhacs-eng/collector:${{ env.COLLECTOR_TAG }}-base
+          src-image: ${{ inputs.collector-image }}
+          dst-image: ${{ env.RHACS_ENG_IMAGE }}-base
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 

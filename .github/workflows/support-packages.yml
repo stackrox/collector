@@ -7,6 +7,15 @@ on:
         type: string
         required: true
         description: Branch CI is running on
+      drivers-bucket:
+        type: string
+        required: true
+        description: Bucket holding the drivers to package
+      support-packages-bucket:
+        type: string
+        required: true
+        description: Bucket where support-packages will be pushed to
+
 
 jobs:
   build-support-packages:
@@ -41,10 +50,9 @@ jobs:
 
       - name: Create support-packages
         run: |
-          # TODO: Change the bucket to the production one, once we are done testing
           ${{ github.workspace }}/kernel-modules/support-packages/04-create-support-packages.sh \
             ${{ github.workspace }}/collector/LICENSE-kernel-modules.txt \
-            gs://mauro-drivers-test/drivers \
+            gs://${{ inputs.drivers-bucket }} \
             /tmp/support-packages/metadata \
             /tmp/support-packages/output
 
@@ -63,22 +71,12 @@ jobs:
             /tmp/support-packages/metadata \
             /tmp/support-packages/output
 
-      - name: Set output bucket
-        id: output-bucket
-        run: |
-          # TODO: Change the bucket to the production one, once we are done testing
-          if [[ "${{ github.event_name == 'pull_request' }}" == "true" ]]; then
-            echo "output-bucket=mauro-drivers-test/support-packages/${GITHUB_HEAD_REF}/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "output-bucket=mauro-drivers-test/support-packages/master" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Push support-packages
         uses: 'google-github-actions/upload-cloud-storage@v1'
         with:
           path: /tmp/support-packages/output
           parent: false
-          destination: ${{ steps.output-bucket.outputs.output-bucket }}
+          destination: ${{ inputs.support-packages-bucket }}
 
       - name: Slack notification
         if: failure() && github.event_name == 'push'
