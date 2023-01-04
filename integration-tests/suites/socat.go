@@ -34,9 +34,17 @@ func (s *SocatTestSuite) SetupSuite() {
 
 	processImage := common.QaImage("quay.io/rhacs-eng/qa", "socat")
 
-	containerID, err := s.launchContainer("socat", "-e", "PORT1=80", "-e", "PORT2=8080", processImage, "/bin/sh", "-c", "socat TCP-LISTEN:$PORT1,fork STDOUT & socat TCP-LISTEN:$PORT2,fork STDOUT")
-
+	// the socat container only needs to exist long enough for use to run both
+	// socat commands. 300 seconds should be more than long enough.
+	containerID, err := s.launchContainer("socat", processImage, "/bin/sh", "-c", "/bin/sleep 300")
 	s.Require().NoError(err)
+
+	_, err = s.execContainer("socat", []string{"/bin/sh", "-c", "socat TCP-LISTEN:80,fork STDOUT &"})
+	s.Require().NoError(err)
+
+	_, err = s.execContainer("socat", []string{"/bin/sh", "-c", "socat TCP-LISTEN:8080,fork STDOUT &"})
+	s.Require().NoError(err)
+
 	s.serverContainer = common.ContainerShortID(containerID)
 
 	time.Sleep(6 * time.Second)
@@ -68,7 +76,7 @@ func (s *SocatTestSuite) TestSocat() {
 		assert.FailNowf(s.T(), "", "only retrieved %d endpoints (expect 2)", len(endpoints))
 	}
 
-	assert.Equal(s.T(), 3, len(processes))
+	assert.Equal(s.T(), 6, len(processes))
 
 	endpoint80, err := getEndpointByPort(endpoints, 80)
 	s.Require().NoError(err)
@@ -110,7 +118,7 @@ func getProcessByPort(processes []common.ProcessInfo, port int) (*common.Process
 	re := regexp.MustCompile(`:(` + strconv.Itoa(port) + `),`)
 	for _, process := range processes {
 		portArr := re.FindStringSubmatch(process.Args)
-		if len(portArr) == 2 {
+		if len(portArr) == 2 && process.Name != "sh" {
 			return &process, nil
 		}
 	}
