@@ -11,7 +11,8 @@ DEV_SSH_SERVER_KEY ?= $(CURDIR)/.collector_dev_ssh_host_ed25519_key
 export COLLECTOR_VERSION := $(COLLECTOR_TAG)
 export MODULE_VERSION := $(shell cat $(CURDIR)/kernel-modules/MODULE_VERSION)
 
-dev-build: image integration-tests-process-network
+dev-build: image
+	make -C integration-tests TestProcessNetwork
 
 .PHONY: tag
 tag:
