@@ -99,11 +99,7 @@ jobs:
       drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
       support-packages-bucket: ${{ needs.init.outputs.support-packages-bucket }}
       public-support-packages-bucket: ${{ needs.init.outputs.public-support-packages-bucket }}
-    # If you want to test this workflow in a PR, you will need to replace
-    # this condition with `${{ always() }}`, since skipping the upload of
-    # bundles will cause this workflow to skip as well.
-    # if: ${{ github.event_name != 'pull_request' }}
-    if: always()
+    if: always() && (github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'test-support-packages'))
     needs:
     - init
     - build-drivers
