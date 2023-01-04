@@ -15,6 +15,10 @@ on:
         type: string
         required: true
         description: Bucket where support-packages will be pushed to
+      public-support-packages-bucket:
+        type: string
+        required: true
+        description: Public bucket where support-packages will be pushed to
 
 
 jobs:
@@ -77,6 +81,14 @@ jobs:
           path: /tmp/support-packages/output
           parent: false
           destination: ${{ inputs.support-packages-bucket }}
+
+      - name: Push support-packages to public bucket
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        if: github.event_name == 'push'
+        with:
+          path: /tmp/support-packages/output
+          parent: false
+          destination: ${{ inputs.public-support-packages-bucket }}
 
       - name: Slack notification
         if: failure() && github.event_name == 'push'

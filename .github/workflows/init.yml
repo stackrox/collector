@@ -24,6 +24,10 @@ on:
         description: |
           Bucket to push built support-packages into
         value: ${{ jobs.common-variables.outputs.support-packages-bucket }}
+      public-support-packages-bucket:
+        description: |
+          Public bucket to push built support-packages into
+        value: ${{ jobs.common-variables.outputs.public-support-packages-bucket }}
 
 jobs:
   common-variables:
@@ -35,6 +39,7 @@ jobs:
       push-drivers-bucket: ${{ steps.gcp-buckets.outputs.push-drivers-bucket }}
       bundles-bucket: ${{ steps.gcp-buckets.outputs.bundles-bucket }}
       support-packages-bucket: ${{ steps.gcp-buckets.outputs.support-packages-bucket }}
+      public-support-packages-bucket: ${{ steps.gcp-buckets.outputs.public-support-packages-bucket }}
 
     steps:
       - uses: actions/checkout@v3
@@ -46,9 +51,9 @@ jobs:
         id: collector-env
         run: |
           if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" == "true" ]]; then
-            COLLECTOR_TAG="${{ github.ref_name }}-gha"
+            COLLECTOR_TAG="${{ github.ref_name }}"
           else
-            COLLECTOR_TAG="$(make tag)-gha"
+            COLLECTOR_TAG="$(make tag)"
           fi
 
           echo "collector-tag=${COLLECTOR_TAG}" >> "$GITHUB_OUTPUT"
@@ -57,15 +62,18 @@ jobs:
       - name: Set GCP buckets
         id: gcp-buckets
         run: |
-          # TODO: Move these buckets to the proper ones when we completely switch off OSCI
-          MAIN_DRIVER_BUCKET="mauro-drivers-test/drivers"
-          STAGING_DRIVER_BUCKET="mauro-drivers-test/pr-builds/${GITHUB_HEAD_REF}/${{ github.run_id }}"
+          MAIN_DRIVER_BUCKET="collector-modules-osci"
+          STAGING_DRIVER_BUCKET="stackrox-collector-modules-staging/pr-builds/${GITHUB_HEAD_REF}/${{ github.run_id }}"
           BUNDLES_BUCKET="collector-kernel-bundles-public"
-          SUPPORT_PACKAGES_BUCKET="mauro-drivers-test/support-packages/master"
-          STAGING_SUPPORT_PACKAGES_BUCKET="mauro-drivers-test/support-packages/${GITHUB_HEAD_REF}/${{ github.run_id }}"
+          SUPPORT_PACKAGES_BUCKET="sr-roxc/collector/support-packages"
+          STAGING_SUPPORT_PACKAGES_BUCKET="sr-roxc/collector/support-packages/${GITHUB_HEAD_REF}/${{ github.run_id }}"
+          PUBLIC_SUPPORT_PACKAGES_BUCKET="collector-support-public/offline/v1/support-packages"
 
-          echo "drivers-bucket=${MAIN_DRIVER_BUCKET}" >> "$GITHUB_OUTPUT"
-          echo "bundles-bucket=${BUNDLES_BUCKET}" >> "$GITHUB_OUTPUT"
+          {
+            echo "drivers-bucket=${MAIN_DRIVER_BUCKET}"
+            echo "bundles-bucket=${BUNDLES_BUCKET}"
+            echo "public-support-packages-bucket=${PUBLIC_SUPPORT_PACKAGES_BUCKET}"
+          } >> "$GITHUB_OUTPUT"
 
           if [[ ${{ github.event_name }} == "pull_request" ]]; then
             echo "push-drivers-bucket=${STAGING_DRIVER_BUCKET}" >> "$GITHUB_OUTPUT"

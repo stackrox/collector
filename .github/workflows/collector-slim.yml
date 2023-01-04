@@ -16,6 +16,7 @@ on:
 
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
+  DEFAULT_BUILDER_TAG: cache
   RHACS_ENG_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
 
 jobs:
@@ -32,7 +33,7 @@ jobs:
         if: ${{ github.event_name == 'push' }}
         run: |
           echo 'BUILD_BUILDER_IMAGE=true' >> "$GITHUB_ENV"
-          echo 'COLLECTOR_BUILDER_TAG=cache-gha' >> "$GITHUB_ENV"
+          echo "COLLECTOR_BUILDER_TAG=${DEFAULT_BUILDER_TAG}" >> "$GITHUB_ENV"
 
       - name: PR checks
         id: pr-checks
@@ -41,12 +42,12 @@ jobs:
           # We have 2 options:
           # - We build the builder from scratch and give it a custom tag
           # - We use the existing cache
-          COLLECTOR_BUILDER_TAG="cache-gha"
+          COLLECTOR_BUILDER_TAG="${DEFAULT_BUILDER_TAG}"
           if [[ "${{ contains(github.event.pull_request.labels.*.name, 'build-builder-image') }}" == "true" ]]; then
             COLLECTOR_BUILDER_TAG="${{ inputs.collector-tag }}"
             echo 'BUILD_BUILDER_IMAGE=true' >> "$GITHUB_ENV"
           else
-            docker pull quay.io/stackrox-io/collector-builder:cache-gha || true
+            docker pull "quay.io/stackrox-io/collector-builder:${DEFAULT_BUILDER_TAG}" || true
           fi
 
           echo "COLLECTOR_BUILDER_TAG=$COLLECTOR_BUILDER_TAG" >> "$GITHUB_ENV"
@@ -79,7 +80,7 @@ jobs:
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
       - name: Push builder to stackrox-io
-        if: ${{ github.event_name == 'push' || steps.pr-checks.outputs.builder-tag != 'cache-gha' }}
+        if: github.event_name == 'push' || steps.pr-checks.outputs.builder-tag != env.DEFAULT_BUILDER_TAG
         run: |
           docker push "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}"
 
@@ -100,7 +101,7 @@ jobs:
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
       - name: Push builder to rhacs-eng
-        if: ${{ github.event_name == 'push' || steps.pr-checks.outputs.builder-tag != 'cache-gha' }}
+        if: github.event_name == 'push' || steps.pr-checks.outputs.builder-tag != env.DEFAULT_BUILDER_TAG
         run: |
           docker tag "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}" "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}"
           docker push "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}"
