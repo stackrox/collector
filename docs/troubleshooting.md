@@ -226,6 +226,8 @@ The runtime values are exposed via the Prometheus endpoint `/metrics` and can be
 
 ### CollectorStats timers -> rox_collector_timers
 
+Time is measured in microseconds.
+
 | Name                                             | Description                                                                                                                          |
 |--------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
 | net_scrape_read                                  | Time spent iterating over /proc content to retrieve connections and endpoints for each process.                                      |
