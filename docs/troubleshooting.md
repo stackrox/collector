@@ -224,9 +224,10 @@ The collector publishes some performance counters that can be used to investigat
 
 The runtime values are exposed via the Prometheus endpoint `/metrics` and can be accessed on port 9090.
 
-| CollectorStats timers -> rox_collector_timers    |                                                                                                                                      |
-|--------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+### CollectorStats timers -> rox_collector_timers
+
 | Name                                             | Description                                                                                                                          |
+|--------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
 | net_scrape_read                                  | Time spent iterating over /proc content to retrieve connections and endpoints for each process.                                      |
 | net_scrape_update                                | Time spent updating the internal model with information read from /proc (set removed entries as inactive, update activity timestamp) |
 | net_fetch_state                                  | Time spent to build a delta message content (connections + endpoints) to send to Sensor                                              |
@@ -234,9 +235,10 @@ The runtime values are exposed via the Prometheus endpoint `/metrics` and can be
 | net_write_message                                | Time spent sending the raw message content.                                                                                          |
 
 
-| ColletorStats counters -> rox_collector_counters |                                                                                                                                      |
-|--------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+### ColletorStats counters -> rox_collector_counters
+
 | Name                                             | Description                                                                                                                          |
+|--------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
 | net_conn_updates                                 | Each time a connection object is updated in the model (scrapes, and kernel events).                                                  |
 | net_conn_deltas                                  | Number of connection events sent to Sensor.                                                                                          |
 | net_conn_inactive                                | Accumulated number of connections destroyed (closed)                                                                                 |
@@ -254,9 +256,10 @@ The runtime values are exposed via the Prometheus endpoint `/metrics` and can be
 | rate_limit_flushing_counts                       | Number of overflows in the rate limiter used to send process signals.                                                                |
 
 
-| Sysdig stats -> rox_collector_events |                                                                                                     |
-|--------------------------------------|-----------------------------------------------------------------------------------------------------|
+### Sysdig stats -> rox_collector_events
+
 | Name                                 | Description                                                                                         |
+|--------------------------------------|-----------------------------------------------------------------------------------------------------|
 | kernel                               | number of received kernel events (by the probe)                                                     |
 | drops                                | number of dropped kernel events                                                                     |
 | preemptions                          | Number of preemptions (?)                                                                           |
