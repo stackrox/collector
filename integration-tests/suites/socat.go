@@ -10,6 +10,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+//
+// This test is to guard against behavior seen in Collector where multiple
+// process endpoints have incorrect originator process information due to a
+// bug in the PID processing for endpoints in the same container.
+//
+// https://issues.redhat.com/browse/ROX-13560
+//
+// The test will start two socat processes, with distinct listening ports
+// and check that their originators match the appropriate process.
+//
+
 type SocatTestSuite struct {
 	IntegrationTestSuiteBase
 	serverContainer string
