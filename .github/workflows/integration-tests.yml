@@ -47,7 +47,7 @@ jobs:
 
   notify:
     runs-on: ubuntu-latest
-    if: always() && contains(join(needs.*.result, ','), 'failure') # && github.event_name == 'push'
+    if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name == 'push'
     needs:
       - required-integration-tests
       - all-integration-tests
@@ -55,8 +55,8 @@ jobs:
       - name: Slack notification
         uses: rtCamp/action-slack-notify@v2
         env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_ONCALL }}
-          SLACK_CHANNEL: oncall
+          SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_NOTIFICATIONS_WEBHOOK }}
+          SLACK_CHANNEL: collector-notifications
           SLACK_COLOR: failure
           SLACK_LINK_NAMES: true
           SLACK_TITLE: "NOTIFICATION TEST: Integration tests failed."
