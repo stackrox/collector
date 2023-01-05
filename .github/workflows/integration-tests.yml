@@ -47,12 +47,12 @@ jobs:
 
   notify:
     runs-on: ubuntu-latest
+    if: always() && contains(join(needs.*.result, ','), 'failure') # && github.event_name == 'push'
     needs:
       - required-integration-tests
       - all-integration-tests
     steps:
       - name: Slack notification
-        if: always() #&& contains(join(needs.*.result, ','), 'failure') && github.event_name == 'push'
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_ONCALL }}
