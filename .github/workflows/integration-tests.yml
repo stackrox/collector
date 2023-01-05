@@ -52,14 +52,14 @@ jobs:
       - all-integration-tests
     steps:
       - name: Slack notification
-        if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name == 'push'
+        if: always() #&& contains(join(needs.*.result, ','), 'failure') && github.event_name == 'push'
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_ONCALL }}
           SLACK_CHANNEL: oncall
           SLACK_COLOR: failure
           SLACK_LINK_NAMES: true
-          SLACK_TITLE: Integration tests failed.
+          SLACK_TITLE: "NOTIFICATION TEST: Integration tests failed."
           MSG_MINIMAL: actions url,commit
           SLACK_MESSAGE: |
             @collector-team
