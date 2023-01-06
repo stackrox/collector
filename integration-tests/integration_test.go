@@ -118,3 +118,10 @@ func TestSocat(t *testing.T) {
 func TestDuplicateEndpoints(t *testing.T) {
 	suite.Run(t, new(suites.DuplicateEndpointsTestSuite))
 }
+
+func TestManyProcessesListeningOnPorts(t *testing.T) {
+	manyProcessesListeningOnPortsTestSuite := &suites.ManyProcessesListeningOnPortsTestSuite{
+		NumPorts: 1000,
+	}
+	suite.Run(t, manyProcessesListeningOnPortsTestSuite)
+}
