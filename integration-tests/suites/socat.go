@@ -75,9 +75,9 @@ func (s *SocatTestSuite) TestSocat() {
 	endpoint8080, err := getEndpointByPort(endpoints, 8080)
 	s.Require().NoError(err)
 
-	process80, err := getProcessByPort(processes, 80)
+	process80, err := getSocatProcessByPort(processes, 80)
 	s.Require().NoError(err)
-	process8080, err := getProcessByPort(processes, 8080)
+	process8080, err := getSocatProcessByPort(processes, 8080)
 	s.Require().NoError(err)
 
 	assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoint80.Protocol)
@@ -106,7 +106,7 @@ func getEndpointByPort(endpoints []common.EndpointInfo, port int) (*common.Endpo
 	return nil, err
 }
 
-func getProcessByPort(processes []common.ProcessInfo, port int) (*common.ProcessInfo, error) {
+func getSocatProcessByPort(processes []common.ProcessInfo, port int) (*common.ProcessInfo, error) {
 	re := regexp.MustCompile(`:(` + strconv.Itoa(port) + `),`)
 	for _, process := range processes {
 		portArr := re.FindStringSubmatch(process.Args)

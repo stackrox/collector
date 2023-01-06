@@ -122,3 +122,10 @@ func TestBenchmarkBaseline(t *testing.T) {
 func TestBenchmarkCollector(t *testing.T) {
 	suite.Run(t, new(suites.BenchmarkCollectorTestSuite))
 }
+
+func TestManyProcessesListeningOnPorts(t *testing.T) {
+	manyProcessesListeningOnPortsTestSuite := &suites.ManyProcessesListeningOnPortsTestSuite{
+		NumPorts:	1000,
+	}
+	suite.Run(t, manyProcessesListeningOnPortsTestSuite)
+}
