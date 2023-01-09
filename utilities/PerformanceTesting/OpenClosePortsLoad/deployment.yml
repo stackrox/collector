@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: open-close-ports-load
+  #namespace: ports-load-test
+  labels:
+    app: open-close-ports-load
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: open-close-ports-load
+  template:
+    metadata:
+      labels:
+        app: open-close-ports-load
+    spec:
+      imagePullSecrets:
+      - name: myregistrykey
+      containers:
+      - name: open-close-ports-load
+        image: quay.io/rhacs-eng/qa:collector-open-close-ports-load-3.11.x-136-g93f2d852b1-dirty

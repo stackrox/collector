@@ -4,6 +4,7 @@ set -eou pipefail
 artifacts_dir=$1
 collector_image_registry=${2:-quay.io/rhacs-eng}
 collector_image_tag=${3:-3.7.3}
+bundle=${4:-perf-bundle.yml}
 
 echo "Starting secure cluster services"
 
@@ -33,5 +34,5 @@ if [[ -n ${IMAGE_MAIN_TAG:-} ]]; then
 fi
 
 helm install -n stackrox stackrox-secured-cluster-services rhacs/secured-cluster-services \
-    -f perf-bundle.yml \
+    -f "$bundle" \
     "${settings[@]}"

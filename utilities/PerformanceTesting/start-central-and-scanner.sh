@@ -14,6 +14,7 @@ settings=(
     --set imagePullSecrets.username="$DOCKER_USERNAME"
     --set imagePullSecrets.password="$DOCKER_PASSWORD"
     --set enableOpenShiftMonitoring=true
+    --set central.db.enabled=true
 )
 
 if [[ -n ${CENTRAL_IMAGE_REGISTRY:-} ]]; then
@@ -39,6 +40,8 @@ fi
 if [[ -n ${SCANNER_DBIMAGE_TAG:-} ]]; then
     settings+=(--set scanner.dbImage.tag="$SCANNER_DBIMAGE_TAG")
 fi
+
+echo "${settings[@]}"
 
 helm install -n stackrox stackrox-central-services --create-namespace rhacs/central-services \
     "${settings[@]}"

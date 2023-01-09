@@ -4,6 +4,7 @@ import requests
 import sys
 
 g_stat_names = {'avg': 'Average', 'max': 'Maximum'}
+g_components= ['collector', 'sensor', 'central', 'central-db', 'scanner', 'scanner-db']
 
 
 class Querier:
@@ -64,6 +65,8 @@ class Querier:
             #     ]
             #   }
             # }
+
+            print(query)
 
             return float(response['data']['result'][0]['value'][1])
         except (KeyError, ValueError, IndexError):
@@ -141,6 +144,7 @@ def get_collector_counters(querier):
     """
     res = {}
     counters = ["net_conn_deltas", "net_conn_updates", "net_conn_inactive"]
+    counters += ["net_cep_deltas", "net_cep_updates", "net_cep_inactive"]
 
     for counter in counters:
         query = f'(rox_collector_counters{{type="{counter}"}})'
@@ -208,11 +212,28 @@ def get_cpu_mem_network_usage(querier, query_window):
     cpu_query = f'(rate(container_cpu_usage_seconds_total{{namespace="stackrox"}}[{query_window}]) * 100)'
     cpu_query_name = 'cpu_usage'
     res[cpu_query_name] = querier.get_stats_for_query(cpu_query)
+    res[cpu_query_name]['units'] = "% cpu usage per container"
 
     mem_query = '(container_memory_usage_bytes{namespace="stackrox"})'
     mem_query_name = 'mem_usage'
     res[mem_query_name] = querier.get_stats_for_query(mem_query)
     res[mem_query_name]['units'] = 'bytes'
+
+    #collector_cpu_query = f'(rate(container_cpu_usage_seconds_total{{pod=~"collector-.*"}}[{query_window}]) * 100)'
+    #collector_cpu_query_name = 'collector_cpu_usage'
+    #res[collector_cpu_query_name] = querier.get_stats_for_query(collector_cpu_query)
+
+
+    for component in g_components:
+        #component_cpu_query = f'(rate(container_cpu_usage_seconds_total{{pod=~"{component}"}}[{query_window}]) * 100)'
+        component_cpu_query = f'(rate(container_cpu_usage_seconds_total{{pod=~"{component}-[0-z]{{4}}.*"}}[{query_window}]) * 100)'
+        component_cpu_query_name = f'{component}_cpu_usage'
+        res[component_cpu_query_name] = querier.get_stats_for_query(component_cpu_query)
+
+        component_mem_query = f'(rate(container_memory_usage_bytes{{pod=~"{component}-[0-z]{{4}}.*"}}[{query_window}]))'
+        component_mem_query_name = f'{component}_mem_usage'
+        res[component_mem_query_name] = querier.get_stats_for_query(component_mem_query)
+
 
     metric_names = {
             'container_network_receive_bytes_total':
@@ -236,6 +257,53 @@ def get_cpu_mem_network_usage(querier, query_window):
     return res
 
 
+def get_pod_restarts(querier):
+    """
+    Performs Prometheus queries relevant to pod restarts
+
+    :param querier: An object containing information
+    needed to query the Prometheus API
+
+    :return: Json containing information about pod restarts
+    and network IO usage
+    """
+    res = {}
+
+    for component in g_components:
+        component_restarts_query = f'(kube_pod_container_status_restarts_total{{pod=~"{component}-[0-z]{{4}}.*"}})'
+        print(component_restarts_query)
+        component_restarts_query_name = f'{component}_restarts'
+        res[component_restarts_query_name] = querier.get_stats_for_query(component_restarts_query)
+        res[component_restarts_query_name]['units'] = 'num'
+
+    return res
+
+
+def get_central_metrics(querier):
+    """
+    Performs Prometheus queries relevant to processes listening on ports in central
+
+    :param querier: An object containing information
+    needed to query the Prometheus API
+
+    :return: Json containing information about processes listening on ports in central
+    """
+    res = {}
+
+    for operation in ['Remove', 'RemoveMany', 'UpdateMany']:
+        query = f'rox_central_postgres_op_duration_sum{{Operation="{operation}",Type="ProcessListeningOnPortStorage"}}'
+        query_name = f'postgres_op_duration_ProcessListeningOnPortStorage_{operation}'
+        res[query_name] = {'value': querier.query_and_get_value(query)}
+        res[query_name]['units'] = 'ms'
+
+    query = f'rox_central_datastore_function_duration_sum{{Function="AddProcessListeningOnPort",Type="ProcessListeningOnPort"}}'
+    query_name = f'datastore_function_duration_sum_AddProcessListeningOnPort'
+    res[query_name] = {'value': querier.query_and_get_value(query)}
+    res[query_name]['units'] = 'ms'
+
+
+    return res
+
 def main(query_window, token, url, output_file):
     """
     Performs Prometheus queries related to the performance of Collector
@@ -252,12 +320,16 @@ def main(query_window, token, url, output_file):
     collector_counters = get_collector_counters(querier)
     sensor_network_flows = get_sensor_network_flows(querier, query_window)
     cpu_mem_network_usage = get_cpu_mem_network_usage(querier, query_window)
+    pod_restarts = get_pod_restarts(querier)
+    central_metrics = get_central_metrics(querier)
 
     json_output = {
                     'collector_timers': collector_timers,
                     'collector_counters': collector_counters,
                     'sensor_network_flows': sensor_network_flows,
-                    'cpu_mem_network_usage': cpu_mem_network_usage
+                    'cpu_mem_network_usage': cpu_mem_network_usage,
+                    'pod_restarts': pod_restarts,
+                    'central_metrics': central_metrics
     }
 
     with open(output_file, 'w') as json_file:

@@ -58,7 +58,7 @@ def initialize_cumulative(metrics, cumulative):
             cumulative[metric_group][metric] = {}
             for key in metrics[metric_group][metric]:
                 value = metrics[metric_group][metric][key]
-                if type(value) is float or value is None:
+                if isinstance(value, (float, int)) or value is None:
                     cumulative[metric_group][metric][key] = []
                 else:
                     cumulative[metric_group][metric][key] = value

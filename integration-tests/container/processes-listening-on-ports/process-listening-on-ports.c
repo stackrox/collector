@@ -51,7 +51,7 @@ int getActionFromFile(char actionFile[], char action[]) {
 	ptr = fopen(actionFile, "r");
 
 	while (ptr == NULL) {
-		sleep(1);
+		sleep(0.1);
 		ptr = fopen(actionFile, "r");
 	}
 
@@ -77,13 +77,23 @@ int main(int argc, char const* argv[])
 		strcpy(actionFile, "/tmp/action_file.txt");
 	}
 
+	for (int i = 0; i < 65535; i++) {
+		server_fd[i] = -1;
+	}
+
 	while (1) {
 		port = getActionFromFile(actionFile, action);
 		printf("action= %s port= %i\n", action, port);
 		if (strcmp(action, "open") == 0) {
-			server_fd[port] = openPort(port);
+			if (server_fd[port] == -1) {
+				server_fd[port] = openPort(port);
+			} else {
+				closePort(server_fd[port]);
+				server_fd[port] = -1;
+			}
 		} else if (strcmp(action, "close") == 0) {
 			closePort(server_fd[port]);
+			server_fd[port] = -1;
 		} else {
 			printf("Unknown action: %s\n", action);
 		}
