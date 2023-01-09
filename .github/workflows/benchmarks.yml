@@ -19,6 +19,8 @@ jobs:
 
   calculate-baseline:
     runs-on: ubuntu-latest
+    needs:
+      - benchmarks
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
