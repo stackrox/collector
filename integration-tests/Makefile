@@ -14,7 +14,7 @@ SHELL=/bin/bash
 # Environment variable COLLECTOR_IMAGE is used by integration-tests
 export COLLECTOR_IMAGE
 
-ALL_TESTS = $(shell go test -list .)
+ALL_TESTS = $(shell go test -tags bench -list .)
 
 #
 # Macro to define a test-specific target, based on the list
@@ -24,7 +24,7 @@ define make-test-target
 $1: docker-clean
 	go version
 	set -o pipefail; \
-		go test -timeout 60m -count=1 -v \
+		go test -tags bench -timeout 60m -count=1 -v \
 		-run $1 2>&1 | tee -a integration-test.log
 endef
 
