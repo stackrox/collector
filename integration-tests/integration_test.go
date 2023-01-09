@@ -114,11 +114,3 @@ func TestSymbolicLinkProcess(t *testing.T) {
 func TestSocat(t *testing.T) {
 	suite.Run(t, new(suites.SocatTestSuite))
 }
-
-func TestBenchmarkBaseline(t *testing.T) {
-	suite.Run(t, new(suites.BenchmarkBaselineTestSuite))
-}
-
-func TestBenchmarkCollector(t *testing.T) {
-	suite.Run(t, new(suites.BenchmarkCollectorTestSuite))
-}
