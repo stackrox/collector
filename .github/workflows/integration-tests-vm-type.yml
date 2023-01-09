@@ -100,12 +100,12 @@ jobs:
           echo "JOB_ID=${NORM_JOB_ID}" | tee -a "$GITHUB_ENV"
 
       - name: Create VMs
-        if: ! inputs.run-benchmarks
+        if: ${{ ! inputs.run-benchmarks }}
         run: |
           make -C "${{ github.workspace }}/ansible" create-ci-vms
 
       - name: Run Tests
-        if: ! inputs.run-benchmarks
+        if: ${{ ! inputs.run-benchmarks }}
         run: |
           if [[ "${{ inputs.offline-mode }}" == "true" ]]; then
             export COLLECTOR_OFFLINE_MODE="true"
