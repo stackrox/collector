@@ -18,6 +18,11 @@ on:
           Set to true to enable collector running in offline mode
         type: boolean
         default: false
+      run-benchmarks:
+        description: |
+          Whether to run the benchmarks instead of the integration tests
+        type: boolean
+        default: false
 
 jobs:
   integration-tests:
@@ -95,17 +100,30 @@ jobs:
           echo "JOB_ID=${NORM_JOB_ID}" | tee -a "$GITHUB_ENV"
 
       - name: Create VMs
-        id: create-vms-step
+        if: ! inputs.run-benchmarks
         run: |
           make -C "${{ github.workspace }}/ansible" create-ci-vms
 
       - name: Run Tests
+        if: ! inputs.run-benchmarks
         run: |
           if [[ "${{ inputs.offline-mode }}" == "true" ]]; then
             export COLLECTOR_OFFLINE_MODE="true"
           fi
 
           make -C "${{ github.workspace }}/ansible" integration-tests
+        env:
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - name: Create Benchmark VMs
+        if: inputs.run-benchmarks
+        run: |
+          make -C "${{ github.workspace }}/ansible" create-benchmark-vms
+
+      - name: Run Benchmarks
+        if: inputs.run-benchmarks
+        run: make -C "${{ github.workspace }}/ansible" benchmarks
         env:
           QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}

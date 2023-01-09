@@ -1,0 +1,68 @@
+name: Collector Benchmarks
+
+on:
+  workflow_call:
+    inputs:
+      collector-tag:
+        description: |
+          Tag used for running the benchmarks
+        type: string
+        required: true
+
+jobs:
+  benchmarks:
+    uses: ./.github/workflows/integration-tests-vm-type.yml
+    with:
+      vm_type: benchmark
+      run-benchmarks: true
+      collector-tag: ${{ inputs.collector-tag }}
+
+  calculate-baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+
+      - uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - uses: 'google-github-actions/setup-gcloud@v1'
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: benchmark-logs
+          path: ${{ github.workspace }}
+
+      - name: Calculate Baseline
+        run: |
+          jq -s 'flatten' integration-tests/perf.json > integration-tests/perf-all.json
+
+          ./integration-tests/scripts/baseline/main.py --test integration-tests/perf-all.json \
+            | sort \
+            | awk -f ./integration-tests/scripts/baseline/format.awk > benchmark.md
+
+          echo "PERF_TABLE=$(cat benchmark.md)" | tee -a "$GITHUB_ENV"
+
+      - name: Update Baseline
+        if: github.ref == 'master'
+        run: |
+          ./integration-tests/scripts/baseline/main.py --update integration-tests/perf-all.json
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v5
+        with:
+          github-token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '${{ env.PERF_TABLE }}'
+            })
+
+
+
