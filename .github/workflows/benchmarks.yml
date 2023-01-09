@@ -16,6 +16,7 @@ jobs:
       vm_type: benchmark
       run-benchmarks: true
       collector-tag: ${{ inputs.collector-tag }}
+    secrets: inherit
 
   calculate-baseline:
     runs-on: ubuntu-latest

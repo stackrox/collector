@@ -25,7 +25,7 @@ on:
         default: false
 
 jobs:
-  integration-tests:
+  run:
     runs-on: ubuntu-latest
     env:
       #
