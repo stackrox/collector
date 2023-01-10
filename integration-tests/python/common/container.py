@@ -30,6 +30,13 @@ class Container(ABC):
     def exec(self, command, *args, **kwargs) -> (int, str):
         pass
 
+    @abstractmethod
+    def ip(self):
+        pass
+
+    @abstractmethod
+    def port(self):
+        pass
 
 class DockerContainer(Container):
     def __init__(self, handle):
@@ -55,3 +62,14 @@ class DockerContainer(Container):
 
     def exec(self, command, *args, **kwargs) -> (int, str):
         return self.handle.exec_run(command, *args, **kwargs)
+
+    def ip(self):
+        networks = self.handle.attrs['NetworkSettings']['Networks']
+        print(f"Networks: {networks}")
+        return networks[0]['IPAddress'].replace("'")
+
+    def port(self):
+        ports = self.handle.attrs['NetworkSettings']['Ports']
+        print(f"Ports: {ports}")
+        for k in ports:
+            return k.split('/')[0]

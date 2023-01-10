@@ -27,3 +27,5 @@ cmake-build/
 .devcontainer.json
 cmake-build/
 out/
+
+__pycache__/

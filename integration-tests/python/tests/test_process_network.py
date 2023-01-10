@@ -2,11 +2,18 @@ import pytest
 import time
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def nginx(runtime):
     nginx = runtime.run('nginx:1.14-alpine', name='nginx', remove=True)
     yield nginx
     nginx.kill()
+
+
+@pytest.fixture(scope='function')
+def curl(runtime):
+    curl = runtime.run('curl', 'pstauffer/curl:latest', command='sleep 300', remove=True)
+    yield curl
+    curl.kill()
 
 
 def test_processes_recorded(runtime, collector, events, nginx):
@@ -21,3 +28,11 @@ def test_processes_recorded(runtime, collector, events, nginx):
 
     for process in processes:
         print(process)
+
+
+def test_network_connections(runtime, collector, events, nginx, curl):
+    curl.exec(f"curl {nginx.ip()}:{nginx.port()}")
+
+    events.await_processes(container=curl.id(), timeout=60)
+
+    network = events.network(container=nginx.id())

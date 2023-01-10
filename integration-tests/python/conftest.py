@@ -38,10 +38,7 @@ def grpc_server(runtime: Runtime) -> Container:
     with open("/tmp/grpc.log", "w") as log:
         log.write(grpc_server.logs())
 
-    try:
-        grpc_server.kill()
-    except Exception:
-        pass
+    runtime.remove('grpc-server')
 
 
 @pytest.fixture(scope="function")

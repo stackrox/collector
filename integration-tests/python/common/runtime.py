@@ -12,6 +12,10 @@ class Runtime(ABC):
     def run(self, image, name=None, command=None, env=None, mounts=None, *args, **kwargs):
         pass
 
+    @abstractmethod
+    def remove(self, name):
+        pass
+
 
 class DockerRuntime(Runtime):
     def __init__(self):
@@ -41,3 +45,18 @@ class DockerRuntime(Runtime):
         )
 
         return DockerContainer(handle)
+
+    def remove(self, name):
+        containers = self.client.containers.list(filters={'name': name})
+        if len(containers) == 0:
+            return
+        
+        try:
+            # this is a little trick to avoid a timing problem between
+            # removing
+            containers[0].rename('to-delete')
+            containers[0].reload()
+            containers[0].remove(force=True)
+        except docker.errors.APIError as e:
+            print(e)
+            return
