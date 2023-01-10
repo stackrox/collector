@@ -1,12 +1,23 @@
+import pytest
 import time
 
-from boltdb import BoltDB
+
+@pytest.fixture
+def nginx(runtime):
+    nginx = runtime.run('nginx:1.14-alpine', name='nginx', remove=True)
+    yield nginx
+    nginx.kill()
 
 
-def test_collector(docker_client, collector, db_path):
-    docker_client.containers.run("hello-world:latest", remove=True)
+def test_processes_recorded(runtime, collector, events, nginx):
+    nginx.exec("ls -lah")
+    nginx.exec("sleep 5")
 
-    time.sleep(10)
+    events.await_processes(container=nginx.id(), timeout=60)
 
-    with BoltDB(db_path).view() as db:
-        db.bucket(b"Process")
+    processes = events.processes(container=nginx.id())
+
+    assert len(processes) == 4, f"Unexpected process count for container {nginx.id()}"
+
+    for process in processes:
+        print(process)

@@ -2,40 +2,41 @@ import docker
 import pytest
 import os
 import json
+import time
 
 from docker.client import DockerClient
 from docker.types import Mount
 
 from common.container import Container
+from common.runtime import Runtime, DockerRuntime
+from common.events import Events, BoltDBEvents
+
+from boltdb import BoltDB
 
 
 @pytest.fixture(scope="session", autouse=True)
-def docker_client() -> DockerClient:
+def runtime() -> Runtime:
     """
-    Creates a Docker client
-
-    @return client that can be used to interact with docker
+    Creates a container runtime based on the test configuration
     """
-    return docker.from_env()
-
+    return DockerRuntime()
 
 @pytest.fixture(scope="function")
-def grpc_server(docker_client: DockerClient) -> Container:
+def grpc_server(runtime: Runtime) -> Container:
 
-    grpc_server = docker_client.containers.run(
-        "quay.io/stackrox-io/grpc-server:3.72.x-281-g25a7abf818",
+    grpc_server = runtime.run(
+        "quay.io/rhacs-eng/grpc-server:3.72.x-281-g25a7abf818",
         name="grpc-server",
         remove=True,
         mounts=[Mount("/tmp", "/tmp", type="bind")],
         network="host",
-        detach=True,
         user=os.getuid(),
     )
 
     yield grpc_server
 
     with open("/tmp/grpc.log", "w") as log:
-        log.write(grpc_server.logs().decode())
+        log.write(grpc_server.logs())
 
     try:
         grpc_server.kill()
@@ -45,7 +46,7 @@ def grpc_server(docker_client: DockerClient) -> Container:
 
 @pytest.fixture(scope="function")
 def collector(
-    request, docker_client: DockerClient, grpc_server: Container
+    request, runtime: Runtime, grpc_server: Container
 ) -> Container:
     params = getattr(request, "param", {})
     assert isinstance(params, dict)
@@ -94,15 +95,16 @@ def collector(
 
     collector_image = "quay.io/stackrox-io/collector:3.12.0"
 
-    collector = docker_client.containers.run(
+    collector = runtime.run(
         collector_image,
-        detach=True,
         name="collector",
         privileged=True,
         network="host",
         mounts=list(mounts.values()),
-        environment=env,
+        env=env,
     )
+
+    time.sleep(30)
 
     yield collector
 
@@ -112,11 +114,13 @@ def collector(
         pass
 
     with open("/tmp/collector.log", "w") as log:
-        log.write(collector.logs().decode())
+        log.write(collector.logs())
 
     collector.remove()
 
 
 @pytest.fixture(scope="function")
-def db_path() -> str:
-    return "/tmp/collector-test.db"
+def events() -> Events:
+    yield BoltDBEvents()
+
+    os.remove('/tmp/collector-test.db')
