@@ -31,6 +31,23 @@ jobs:
       - name: Install helm
         run: sudo snap install helm --classic
 
+      - name: Install prerequisites
+        run: |
+          sudo snap install kubectl --classic
+          sudo apt-get install unzip make golang -y
+
+          curl --fail -sL https://infra.rox.systems/v1/cli/linux/amd64/upgrade | jq -r ".result.fileChunk" | base64 -d > $HOME/infractl
+          chmod 755 ~/infractl
+          sudo mv ~/infractl /usr/local/bin
+
+          wget https://github.com/openshift/origin/releases/download/v3.11.0/openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit.tar.gz
+          tar xzf openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit.tar.gz
+          sudo cp ~/openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit/oc /usr/local/bin
+
+          curl -O https://mirror.openshift.com/pub/rhacs/assets/latest/bin/Linux/roxctl
+          chmod 755 ~/roxctl
+          sudo cp ~/roxctl /usr/local/bin
+
       - name: Run performance tests
         run: |
           export DOCKER_USERNAME=${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
