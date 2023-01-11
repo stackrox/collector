@@ -428,7 +428,7 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
       stack_ctx.args[0] = (unsigned long)accept4_args->fd;
       stack_ctx.args[1] = (unsigned long)accept4_args->upeer_sockaddr;
       stack_ctx.args[2] = (unsigned long)accept4_args->upeer_len;
-      stack_ctx.args[2] = (unsigned long)accept4_args->flags;
+      stack_ctx.args[3] = (unsigned long)accept4_args->flags;
       break;
     }
     case __NR_connect: {
