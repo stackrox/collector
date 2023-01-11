@@ -1,0 +1,28 @@
+{
+	"cluster_name": "openshift-4-jouko-ci",
+	"test_dir": "__TEST_DIR__",
+	"nrepeat": 5,
+	"sleep_after_start_rox": 60,
+        "query_window": "10m",
+	"load": {
+		"load_duration": "600",
+		"kubenetbench_load": {
+			"num_streams": 32,
+			"load_test_name": "ci-test"
+		},
+		"open_close_ports_load": {
+			"num_ports": 0,
+			"num_per_second": 0
+		}
+	},
+	"versions": [
+		{
+			"nick_name": "ci",
+			"collector_image_registry": "quay.io/stackrox-io",
+			"collector_image_tag": "__COLLECTOR_IMAGE_TAG__",
+			"env_var_file": "__ENV_VAR_FILE__",
+			"patch_script": "__PATCH_SCRIPT__"
+		}
+	]
+
+}

@@ -1,0 +1,55 @@
+name: Performance Tests
+
+on: [pull_request]
+
+jobs:
+  performance-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: stackrox/actions/infra/install-infractl@v1
+
+        #- uses: stackrox/actions/infra/create-cluster@v1
+        #  with:
+        #    token: ${{ secrets.INFRA_TOKEN }}
+        #    flavor: openshift-4
+        #    name: openshift-4-jouko-ci
+        #    args: openshift-version=ocp/stable-4.10
+        #    lifespan: 48h
+        #    wait: true
+
+      - name: Get workflow scripts
+        run: git clone https://github.com/stackrox/workflow.git
+
+      - name: Get stackrox/stackrox
+        run: git clone https://github.com/stackrox/stackrox.git; pwd
+
+      - name: Run performance tests
+        run: |
+          export DOCKER_USERNAME=${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          export DOCKER_PASSWORD=${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          export TEARDOWN_SCRIPT=${{ github.workspace }}/workflow/scripts/runtime/teardown.sh
+          export INFRA_TOKEN=${{ secrets.INFRA_TOKEN }}
+          performance_dir=${{ github.workspace }}/utilities/PerformanceTesting
+          main_image_tag="$(make -C ${{ github.workspace }}/stackrox tag)"
+          scanner_image_tag="$(cat ${{ github.workspace }}/stackrox/SCANNER_VERSION)"
+          collector_image_tag="$(make tag)"
+          test_dir=${{ github.workspace }}/test_dir
+          mkdir -p "$test_dir"
+          template_env_var_file="$performance_dir"/env_template.sh
+          env_var_file="$test_dir"/env_var.sh
+          template_config_file="$performance_dir"/template.json
+          config_file="$test_dir"/config.json
+          patch_script="$performance_dir/empty_patch.sh"
+          new_json_config="$(cat "$template_config_file" | jq --arg test_dir "$test_dir" '.test_dir=$test_dir')"
+          new_json_config="$(echo "$new_json_config" | jq --arg collector_image_tag "$collector_image_tag" '.versions[0].collector_image_tag=$collector_image_tag')"
+          new_json_config="$(echo "$new_json_config" | jq --arg env_var_file "$env_var_file" '.versions[0].env_var_file=$env_var_file')"
+          new_json_config="$(echo "$new_json_config" | jq --arg patch_script "$patch_script" '.versions[0].patch_script=$patch_script')"
+          echo "$new_json_config" > "$config_file"
+          sed "s|__CENTRAL_IMAGE_TAG__|$main_image_tag|" "$template_end_var_file" | sed "s|__SCANNER_DBIMAGE_TAG__|$scanner_image_tag|" > "$env_var_file"
+          echo "new_json_config= $new_json_config"
+          "$performance_dir"/performance-test.sh "$config_file"

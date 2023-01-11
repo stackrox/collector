@@ -1,0 +1,11 @@
+export CENTRAL_IMAGE_REGISTRY=quay.io/stackrox-io
+export CENTRAL_IMAGE_NAME=main
+export CENTRAL_IMAGE_TAG=__CENTRAL_IMAGE_TAG__
+
+export SCANNER_DBIMAGE_REGISTRY=quay.io/stackrox-io
+export SCANNER_DBIMAGE_NAME=scanner-db
+export SCANNER_DBIMAGE_TAG=__SCANNER_DBIMAGE_TAG__
+
+export IMAGE_MAIN_REGISTRY=quay.io/stackrox-io
+export IMAGE_MAIN_NAME=main
+export IMAGE_MAIN_TAG=__CENTRAL_IMAGE_TAG__

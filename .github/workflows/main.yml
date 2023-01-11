@@ -92,6 +92,10 @@ jobs:
     - build-collector-full
     secrets: inherit
 
+  performance-tests:
+    uses: ./.github/workflows/performance-tests.yml
+    secrets: inherit
+
   build-support-packages:
     uses: ./.github/workflows/support-packages.yml
     with:
