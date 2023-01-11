@@ -11,7 +11,7 @@
 #ifdef BPF_SUPPORTS_RAW_TRACEPOINTS
 #  undef BPF_SUPPORTS_RAW_TRACEPOINTS
 /* The filler implementation for this tracepoint requires access to the
- * TP_PROTO args which is only available wit BPF_SUPPORTS_RAW_TRACEPOINTS.
+ * TP_PROTO args which is only available with BPF_SUPPORTS_RAW_TRACEPOINTS.
  * Otherwise, the BPF verifier will fail with
  * what():  libscap: bpf_load_program() err=13 event=filler/sched_prog_fork_3
  */
@@ -22,7 +22,7 @@
 // of the tracepoints. i.e. RHEL_RELEASE_VERSION will not be defined unless
 // RHEL_RELEASE_CODE is defined.
 // This enables the direct-attached BPF probes to specific syscalls.
-// Note that this needs to be define before including Falco libs includes
+// Note that this needs to be defined before including Falco libs includes
 // as there are syscall-specific vs. general syscall enter/exit format/structure
 // alignments necessary in Falco.
 #if !defined(RHEL_RELEASE_CODE) || RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(8, 0)
@@ -381,8 +381,9 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
   sc_evt = get_syscall_info(id);
   if (sc_evt == NULL || (sc_evt->flags & UF_USED) == 0) {
 #ifdef CAPTURE_SOCKETCALL
-    if (id != __NR_socketcall)
+    if (id != __NR_socketcall) {
       return 0;
+    }
     // call_filler() and handle_socketcall() will change evt_type/drop_flags
     // based on the detected socket call
     evt_type = PPME_GENERIC_E;
@@ -597,8 +598,9 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx) {
   sc_evt = get_syscall_info(id);
   if (sc_evt == NULL || (sc_evt->flags & UF_USED) == 0) {
 #ifdef CAPTURE_SOCKETCALL
-    if (id != __NR_socketcall)
+    if (id != __NR_socketcall) {
       return 0;
+    }
     // call_filler() and handle_socketcall() will change evt_type/drop_flags
     // based on the detected socket call
     evt_type = PPME_GENERIC_X;
