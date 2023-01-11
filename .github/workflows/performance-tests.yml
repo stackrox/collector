@@ -28,6 +28,9 @@ jobs:
       - name: Get stackrox/stackrox
         run: git clone https://github.com/stackrox/stackrox.git; pwd
 
+      - name: Install helm
+        run: sudo snap install helm --classic
+
       - name: Run performance tests
         run: |
           export DOCKER_USERNAME=${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
@@ -39,6 +42,9 @@ jobs:
           scanner_image_tag="$(cat ${{ github.workspace }}/stackrox/SCANNER_VERSION)"
           collector_image_tag="$(make tag)"
           test_dir=${{ github.workspace }}/test_dir
+
+          helm repo add rhacs https://mirror.openshift.com/pub/rhacs/charts
+
           mkdir -p "$test_dir"
           template_env_var_file="$performance_dir"/env_template.sh
           env_var_file="$test_dir"/env_var.sh
