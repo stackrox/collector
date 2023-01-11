@@ -42,7 +42,7 @@ jobs:
 
           wget https://github.com/openshift/origin/releases/download/v3.11.0/openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit.tar.gz
           tar xzf openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit.tar.gz
-          sudo cp ~/openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit/oc /usr/local/bin
+          sudo cp ${{ github.workspace}}/openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit/oc /usr/local/bin
 
           curl -O https://mirror.openshift.com/pub/rhacs/assets/latest/bin/Linux/roxctl
           chmod 755 ~/roxctl
