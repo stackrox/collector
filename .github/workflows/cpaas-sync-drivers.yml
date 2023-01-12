@@ -54,18 +54,16 @@ jobs:
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
-      - name: Sync drivers
-        run: |
-          for driver_version_dir in "${DRIVER_TMP_DIR}"/*; do
-              files=("${driver_version_dir}"/*.{gz,unavail})
-              [[ "${#files[@]}" -gt 0 ]] || continue
-              printf '%s\n' "${files[@]}" | \
-                gsutil -m cp -n -I "gs://${{ inputs.drivers-bucket }}/$(basename "${driver_version_dir}")/"
-          done
+      - name: Push drivers
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        with:
+          path: ${{ env.DRIVER_TMP_DIR }}/${{ github.run_id }}
+          parent: false
+          destination: ${{ inputs.drivers-bucket }}
 
       - name: Push support-packages
         uses: 'google-github-actions/upload-cloud-storage@v1'
         with:
-          path: ${{ env.SUPPORT_PACKAGE_TMP_DIR }}
+          path: ${{ env.SUPPORT_PACKAGE_TMP_DIR }}/${{ github.run_id }}
           parent: false
           destination: ${{ inputs.support-packages-bucket }}/${{ matrix.platform }}
