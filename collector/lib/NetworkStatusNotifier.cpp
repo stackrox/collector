@@ -205,14 +205,14 @@ bool NetworkStatusNotifier::UpdateAllConnsAndEndpoints() {
 }
 
 bool NetworkStatusNotifier::ExternalContainerEndpointEquality::operator()(const ContainerEndpoint& lhs, const ContainerEndpoint& rhs) const {
-  if (bool(lhs.originator()) != bool(lhs.originator())) {
+  if (bool(lhs.originator()) != bool(rhs.originator())) {
     return false;
   }
 
   if (lhs.originator()) {
-    auto& lhs_oritinator = *lhs.originator();
-    auto& rhs_oritinator = *rhs.originator();
-    if ((lhs_oritinator.comm() != rhs_oritinator.comm()) || (lhs_oritinator.exe_path() != rhs_oritinator.exe_path()) || (lhs_oritinator.args() != rhs_oritinator.args())) {
+    auto& lhs_originator = *lhs.originator();
+    auto& rhs_originator = *rhs.originator();
+    if ((lhs_originator.comm() != rhs_originator.comm()) || (lhs_originator.exe_path() != rhs_originator.exe_path()) || (lhs_originator.args() != rhs_originator.args())) {
       return false;
     }
   }
