@@ -1,0 +1,62 @@
+name: Sync CPaaS built drivers with GCP
+
+on:
+  workflow_call:
+    inputs:
+      support-packages-bucket:
+        type: string
+        required: true
+        description: |
+          Bucket where CPaaS support packages will be pushed to.
+      drivers-bucket:
+        type: string
+        required: true
+        description: |
+          Bucket where CPaaS drivers will be pushed to.
+
+jobs:
+  sync-drivers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/login-action@v2
+        with:
+          registry: brew.registry.redhat.io
+          username: ${{ secrets.REDHAT_USERNAME }}
+          password: ${{ secrets.REDHAT_PASSWORD }}
+
+      - name: Download driver image and extract files
+        run: |
+          docker create \
+            --name drivers \
+            --pull always \
+            brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:0.1.0
+
+          DRIVER_TMP_DIR="$(mktemp -d)"
+          echo "DRIVER_TMP_DIR=${DRIVER_TMP_DIR}" >> "$GITHUB_ENV"
+
+          SUPPORT_PACKAGE_TMP_DIR="$(mktemp -d)"
+          echo "SUPPORT_PACKAGE_TMP_DIR=${SUPPORT_PACKAGE_TMP_DIR}" >> "$GITHUB_ENV"
+
+          docker cp drivers:/kernel-modules/ "${DRIVER_TMP_DIR}"
+          docker cp drivers:/support-packages/ "${SUPPORT_PACKAGE_TMP_DIR}"
+
+      - name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - name: Sync drivers
+        run: |
+          for driver_version_dir in "${DRIVER_TMP_DIR}"/*; do
+              files=("${driver_version_dir}"/*.{gz,unavail})
+              [[ "${#files[@]}" -gt 0 ]] || continue
+              printf '%s\n' "${files[@]}" | \
+                gsutil -m cp -n -I "${{ inputs.drivers-bucket }}/$(basename "${driver_version_dir}")/"
+          done
+
+      - name: Push support-packages
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        with:
+          path: /tmp/support-packages/output
+          parent: false
+          destination: ${{ inputs.support-packages-bucket }}

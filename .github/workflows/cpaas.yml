@@ -1,0 +1,19 @@
+name: CPaaS related workflows
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  # TODO: Remove the PR trigger once done testing
+  pull_request:
+
+jobs:
+  init:
+    uses: ./.github/workflows/init.yml
+
+  sync-drivers-and-support-packages:
+    uses: ./.github/workflows/cpaas/sync-drivers.yml
+    needs: init
+    secrets: inherit
+    with:
+      support-packages-bucket: ${{ needs.init.outputs.cpaas-support-packages-bucket }}
+      drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
