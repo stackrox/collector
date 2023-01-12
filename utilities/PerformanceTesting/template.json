@@ -1,11 +1,11 @@
 {
 	"cluster_name": "openshift-4-jouko-ci-0111",
 	"test_dir": "__TEST_DIR__",
-	"nrepeat": 5,
+	"nrepeat": 2,
 	"sleep_after_start_rox": 60,
-        "query_window": "10m",
+        "query_window": "1m",
 	"load": {
-		"load_duration": "600",
+		"load_duration": "60",
 		"kubenetbench_load": {
 			"num_streams": 32,
 			"load_test_name": "ci-test"

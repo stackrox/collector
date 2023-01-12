@@ -76,3 +76,11 @@ jobs:
           sed "s|__CENTRAL_IMAGE_TAG__|$main_image_tag|" "$template_end_var_file" | sed "s|__SCANNER_DBIMAGE_TAG__|$scanner_image_tag|" > "$env_var_file"
           echo "new_json_config= $new_json_config"
           "$performance_dir"/performance-test.sh "$config_file"
+
+      - name: Store performance test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-test-tests
+          path: ${{ github.workspace }}/test_dir/Average_results_ci.json
+          if-no-files-found: ignore
+          retention-days: 1
