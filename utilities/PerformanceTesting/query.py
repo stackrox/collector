@@ -4,7 +4,7 @@ import requests
 import sys
 
 g_stat_names = {'avg': 'Average', 'max': 'Maximum'}
-g_components= ['collector', 'sensor', 'central', 'central-db', 'scanner', 'scanner-db']
+g_components= ['collector', 'sensor', 'central', 'central-db', 'scanner', 'scanner-db', 'admission-control']
 
 
 class Querier:
@@ -219,20 +219,17 @@ def get_cpu_mem_network_usage(querier, query_window):
     res[mem_query_name] = querier.get_stats_for_query(mem_query)
     res[mem_query_name]['units'] = 'bytes'
 
-    #collector_cpu_query = f'(rate(container_cpu_usage_seconds_total{{pod=~"collector-.*"}}[{query_window}]) * 100)'
-    #collector_cpu_query_name = 'collector_cpu_usage'
-    #res[collector_cpu_query_name] = querier.get_stats_for_query(collector_cpu_query)
-
-
     for component in g_components:
-        #component_cpu_query = f'(rate(container_cpu_usage_seconds_total{{pod=~"{component}"}}[{query_window}]) * 100)'
+        component_name = component.replace('-', '_')
         component_cpu_query = f'(rate(container_cpu_usage_seconds_total{{pod=~"{component}-[0-z]{{4}}.*"}}[{query_window}]) * 100)'
-        component_cpu_query_name = f'{component}_cpu_usage'
+        component_cpu_query_name = f'{component_name}_cpu_usage'
         res[component_cpu_query_name] = querier.get_stats_for_query(component_cpu_query)
+        res[cpu_query_name]['units'] = "% cpu usage per container"
 
         component_mem_query = f'(rate(container_memory_usage_bytes{{pod=~"{component}-[0-z]{{4}}.*"}}[{query_window}]))'
-        component_mem_query_name = f'{component}_mem_usage'
+        component_mem_query_name = f'{component_name}_mem_usage'
         res[component_mem_query_name] = querier.get_stats_for_query(component_mem_query)
+        res[mem_query_name]['units'] = 'bytes'
 
 
     metric_names = {
@@ -270,9 +267,9 @@ def get_pod_restarts(querier):
     res = {}
 
     for component in g_components:
+        component_name = component.replace('-', '_')
         component_restarts_query = f'(kube_pod_container_status_restarts_total{{pod=~"{component}-[0-z]{{4}}.*"}})'
-        print(component_restarts_query)
-        component_restarts_query_name = f'{component}_restarts'
+        component_restarts_query_name = f'{component_name}_restarts'
         res[component_restarts_query_name] = querier.get_stats_for_query(component_restarts_query)
         res[component_restarts_query_name]['units'] = 'num'
 

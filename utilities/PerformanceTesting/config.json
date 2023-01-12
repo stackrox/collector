@@ -2,6 +2,7 @@
 	"cluster_name": "jouko-1204",
 	"test_dir": "test/plop-open-close-ports-load-stackrox-version/num_ports_0",
 	"nrepeat": 5,
+	"nodes": 3,
 	"sleep_after_start_rox": 60,
         "query_window": "10m",
 	"load": {
@@ -11,6 +12,7 @@
 			"load_test_name": "plop-open-close-ports-load-stackrox-versions"
 		},
 		"open_close_ports_load": {
+			"num_pods": 6,
 			"num_ports": 0,
 			"num_per_second": 0
 		}

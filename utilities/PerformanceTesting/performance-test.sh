@@ -16,6 +16,18 @@ if [ "$test_dir" == "null" ]; then
     exit 1
 fi
 
+nrepeat="$(cat "$json_config_file" | jq .nrepeat | tr -d \")"
+if [ "$nrepeat" == "null" ]; then
+    nrepeat=5
+    echo "nrepeat set to $nrepeat"
+fi
+
+nodes="$(cat "$json_config_file" | jq .nodes | tr -d \")"
+if [ "$nodes" == "null" ]; then
+    nodes=3
+    echo "nodes set to $nodes"
+fi
+
 artifacts_dir="$(cat "$json_config_file" | jq .artifacts_dir | tr -d \")"
 if [ "$artifacts_dir" == "null" ]; then
     artifacts_dir="/tmp/artifacts-${cluster_name}"
@@ -45,13 +57,19 @@ open_close_ports_load="$(echo $load | jq .open_close_ports_load)"
 if [ "$open_close_ports_load" != null ]; then
     num_ports="$(echo "$open_close_ports_load" | jq .num_ports | tr -d \")"
     num_per_second="$(echo "$open_close_ports_load" | jq .num_per_second | tr -d \")"
+    num_pods="$(echo "$open_close_ports_load" | jq .num_pods | tr -d \")"
 
+    
     if [ "$num_ports" == "null" ]; then
         echo "If open_close_ports_load is defined num_ports must be defined"
 	exit 1
     fi
     if [ "$num_per_second" == "null" ]; then
         echo "If open_close_ports_load is defined num_per_second must be defined"
+	exit 1
+    fi
+    if [ "$num_pods" == "null" ]; then
+        echo "If open_close_ports_load is defined num_pods must be defined"
 	exit 1
     fi
 fi
@@ -63,11 +81,6 @@ if [ "$teardown_script" == "null" ]; then
     else
        teardown_script="$TEARDOWN_SCRIPT"
     fi
-fi
-
-nrepeat="$(cat "$json_config_file" | jq .nrepeat | tr -d \")"
-if [ "$nrepeat" == "null" ]; then
-    echo "nrepeat must be defined"
 fi
 
 sleep_after_start_rox="$(cat "$json_config_file" | jq .sleep_after_start_rox | tr -d \")"
@@ -112,7 +125,7 @@ for ((n = 0; n < nrepeat; n = n + 1)); do
 	env_var_file="$(echo $version | jq .env_var_file | tr -d \")"
         source "${env_var_file}"
         if [[ $open_close_ports_load != "null" && $num_ports -gt 0 ]]; then
-            "$DIR"/OpenClosePortsLoad/start-open-close-ports-load.sh "$artifacts_dir" "$num_ports" "$num_per_second"
+            "$DIR"/OpenClosePortsLoad/start-open-close-ports-load.sh "$artifacts_dir" "$num_ports" "$num_per_second" "$num_pods"
         fi
         printf 'yes\n'  | $teardown_script
         "$DIR"/start-stackrox-with-retry.sh "$teardown_script" "$cluster_name" "$artifacts_dir" "$collector_image_registry" "$collector_image_tag"

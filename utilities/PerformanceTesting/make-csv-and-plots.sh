@@ -71,25 +71,34 @@ plot_results() {
     gnuplot "$gnuplot_script"
 }
 
+get_header() {
+    header="num_ports"
+    for nick_name in ${nick_names[@]}; do
+        header="$header,$nick_name"
+    done
+    header="$(echo "$header" | sed 's|_| |')"
+
+    echo "$header"
+}
+
+header="$(get_header)"
 for metric in ${metrics[@]}; do
-	echo "metric= $metric"
-	top_level_metric="$(echo $metric | sed 's|.Average||' | sed 's|.value||')"
-	metric_name="$(echo "$top_level_metric" | sed 's|.*\.||')"
-	metric_csv_file="$metric_name".csv
-	units="$(cat $dir/num_ports_100/Average_results_plop_enabled_no_lifecycle.json | jq $top_level_metric.units)"
-	#echo $metric.Average,$units
-	header="num ports,plop enabled no lifecycle,plop disabled no lifecycle,plop enabled lifecycle,plop disabled lifecycle"
-	echo "$header"
-	echo "$header" > "$metric_name".csv
-	for ports in 100 200 400 800 1600 3200 6400 12800; do
-		line="$ports"
-		for nick_name in ${nick_names[@]}; do
-			line="$line,$(cat $dir/num_ports_${ports}/Average_results_"$nick_name".json | jq "$metric")"
-		done
-		echo "$line"
-		echo "$line" >> "$metric_csv_file"
-	done
-	plot_results "$metric_csv_file" "$metric_name" "$units"
-	echo
-	echo
+    top_level_metric="$(echo $metric | sed 's|.Average||' | sed 's|.value||')"
+    metric_name="$(echo "$top_level_metric" | sed 's|.*\.||')"
+    metric_csv_file="$metric_name".csv
+    units="$(cat $dir/num_ports_100/Average_results_plop_enabled_no_lifecycle.json | jq $top_level_metric.units)"
+    echo $metric.Average,$units
+    echo "$header"
+    echo "$header" > "$metric_name".csv
+    for ports in 100 200 400 800 1600 3200 6400 12800; do
+        line="$ports"
+        for nick_name in ${nick_names[@]}; do
+            line="$line,$(cat $dir/num_ports_${ports}/Average_results_"$nick_name".json | jq "$metric")"
+        done
+        echo "$line"
+        echo "$line" >> "$metric_csv_file"
+    done
+    plot_results "$metric_csv_file" "$metric_name" "$units"
+    echo
+    echo
 done

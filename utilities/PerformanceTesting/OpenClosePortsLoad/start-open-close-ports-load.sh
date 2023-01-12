@@ -4,6 +4,7 @@ set -eoux pipefail
 artifacts_dir=$1
 num_ports=$2
 num_per_second=$3
+num_pods=$4
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
@@ -13,6 +14,8 @@ start_deployment() {
     kubectl delete deployment open-close-ports-load || true
     kubectl create -f "$DIR"/docker_registry_secret.yml
     kubectl create -f "$DIR"/deployment.yml
+    kubectl scale deployment/open-close-ports-load --replicas="$num_pods"
+    sleep 2
 }
 
 wait_for_pod() {
@@ -42,7 +45,9 @@ get_pod() {
 
 start_load() {
     echo "Starting load"
-    kubectl exec "$pod" -- python3 /open-close-ports-load.py "$num_ports" "$num_per_second" &
+    for pod in `kubectl get pod | grep open-close-ports-load | awk '{print $1}'`; do
+        kubectl exec "$pod" -- python3 /open-close-ports-load.py "$num_ports" "$num_per_second" &
+    done
 }
 
 get_num_active_ports() {

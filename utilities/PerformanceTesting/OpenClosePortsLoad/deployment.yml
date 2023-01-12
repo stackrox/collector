@@ -6,7 +6,7 @@ metadata:
   labels:
     app: open-close-ports-load
 spec:
-  replicas: 1
+  replicas: 6
   selector:
     matchLabels:
       app: open-close-ports-load
@@ -19,4 +19,4 @@ spec:
       - name: myregistrykey
       containers:
       - name: open-close-ports-load
-        image: quay.io/rhacs-eng/qa:collector-open-close-ports-load-3.11.x-136-g93f2d852b1-dirty
+        image: quay.io/rhacs-eng/qa:collector-open-close-ports-load-3.12.x-105-g86df7514aa-dirty
