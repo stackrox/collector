@@ -1,0 +1,2 @@
+scipy
+google-cloud-storage==2.2.1

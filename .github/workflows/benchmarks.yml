@@ -39,9 +39,11 @@ jobs:
           name: benchmark-logs
           path: ${{ github.workspace }}
 
+      - name: Install python deps
+        run: python3 -m pip install -r ./integration-tests/scripts/baseline/requirements.txt
+
       - name: Calculate Baseline
         run: |
-          ls -lah
           jq -s 'flatten' perf.json > integration-tests/perf-all.json
 
           ./integration-tests/scripts/baseline/main.py --test integration-tests/perf-all.json \
