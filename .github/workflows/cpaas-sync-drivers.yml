@@ -26,6 +26,8 @@ jobs:
         - ppc64le
 
     steps:
+      - uses: actions/checkout@v3
+
       - uses: docker/login-action@v2
         with:
           registry: brew.registry.redhat.io
