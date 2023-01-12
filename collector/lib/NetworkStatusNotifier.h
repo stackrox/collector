@@ -47,24 +47,28 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   void Stop();
 
  private:
-  /* External Endpoint representation comparison operator. It matches when two endpoints are undistinguishable
-     as seen from the outside */
-  class ExternalContainerEndpointEquality {
+  /* Adverstised Endpoint representation comparison operator. It matches when two endpoints are undistinguishable
+     as seen from the Sensor (their originator process unique key is equal) */
+  class AdvertisedEndpointEquality {
    public:
     bool operator()(const ContainerEndpoint& lhs, const ContainerEndpoint& rhs) const;
   };
-  // Shorthand for external Endpoint map
-  typedef UnorderedMap<ContainerEndpoint, ConnStatus, ExternalContainerEndpointEquality> ExternalContainerEndpointMap;
+
+  /* Shorthand for advertised Endpoint map.
+     This is basically the same as collector::ContainerEndpointMap, except that the equality
+     operator is replaced with AdvertisedEndpointEquality, so that similar endpoints collide.
+     By inserting endpoints in a map of this type, we can merge similar endpoints. */
+  typedef UnorderedMap<ContainerEndpoint, ConnStatus, AdvertisedEndpointEquality> AdvertisedEndpointMap;
 
   /* Our internal representation of endpoints identifies precisely the originator process (with its PID).
      When sending endpoints to the network, however, their originator is only mentioned through its process-unique-key.
      This conversion function translates between the two representations by squashing all endpoints which "look the same"
      into the same instance. */
-  void ConvertContainerEndpointToExternalRepresentation(const ContainerEndpointMap& from, ExternalContainerEndpointMap& to);
+  void ConvertEndpointsToAdvertisedRepresentation(const ContainerEndpointMap& from, AdvertisedEndpointMap& to);
 
-  sensor::NetworkConnectionInfoMessage* CreateInfoMessage(const ConnMap& conn_delta, const ExternalContainerEndpointMap& cep_delta);
+  sensor::NetworkConnectionInfoMessage* CreateInfoMessage(const ConnMap& conn_delta, const AdvertisedEndpointMap& cep_delta);
   void AddConnections(::google::protobuf::RepeatedPtrField<sensor::NetworkConnection>* updates, const ConnMap& delta);
-  void AddContainerEndpoints(::google::protobuf::RepeatedPtrField<sensor::NetworkEndpoint>* updates, const ExternalContainerEndpointMap& delta);
+  void AddContainerEndpoints(::google::protobuf::RepeatedPtrField<sensor::NetworkEndpoint>* updates, const AdvertisedEndpointMap& delta);
 
   sensor::NetworkConnection* ConnToProto(const Connection& conn);
   sensor::NetworkEndpoint* ContainerEndpointToProto(const ContainerEndpoint& cep);

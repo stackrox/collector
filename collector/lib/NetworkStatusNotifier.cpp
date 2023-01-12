@@ -204,7 +204,7 @@ bool NetworkStatusNotifier::UpdateAllConnsAndEndpoints() {
   return true;
 }
 
-bool NetworkStatusNotifier::ExternalContainerEndpointEquality::operator()(const ContainerEndpoint& lhs, const ContainerEndpoint& rhs) const {
+bool NetworkStatusNotifier::AdvertisedEndpointEquality::operator()(const ContainerEndpoint& lhs, const ContainerEndpoint& rhs) const {
   if (bool(lhs.originator()) != bool(rhs.originator())) {
     return false;
   }
@@ -212,6 +212,8 @@ bool NetworkStatusNotifier::ExternalContainerEndpointEquality::operator()(const 
   if (lhs.originator()) {
     auto& lhs_originator = *lhs.originator();
     auto& rhs_originator = *rhs.originator();
+
+    // Here is the real difference with the comparator in ContainerEndpointMap, which makes a deep compare of originators. We only focus on process-unique-key.
     if ((lhs_originator.comm() != rhs_originator.comm()) || (lhs_originator.exe_path() != rhs_originator.exe_path()) || (lhs_originator.args() != rhs_originator.args())) {
       return false;
     }
@@ -220,12 +222,17 @@ bool NetworkStatusNotifier::ExternalContainerEndpointEquality::operator()(const 
   return lhs.container() == rhs.container() && lhs.endpoint() == rhs.endpoint() && lhs.l4proto() == rhs.l4proto();
 }
 
-void NetworkStatusNotifier::ConvertContainerEndpointToExternalRepresentation(const ContainerEndpointMap& from, ExternalContainerEndpointMap& to) {
-  // squash endpoints that look similar (same port and same process-unique-key)
+/* Squash endpoints that will look similar once advertised (same endpoint and same originator process-unique-key)
+   If several endpoints are equal with respect to the AdvertisedEndpointEquality comparator, then the advertised endpoints
+   will be marked 'active' if any of the source endpoints is 'active'. */
+void NetworkStatusNotifier::ConvertEndpointsToAdvertisedRepresentation(const ContainerEndpointMap& from, AdvertisedEndpointMap& to) {
   for (auto cep : from) {
     auto insert_result = to.insert(cep);
 
     if (!insert_result.second && cep.second.IsActive()) {
+      /* collision case
+         Replace the existing endpoint by the "active" one.
+         Since they are equal, replacing an active endpoint with an active one doesn't make any difference. */
       (*insert_result.first).second = cep.second;
     }
   }
@@ -235,7 +242,7 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
   WaitUntilWriterStarted(writer, 10);
 
   ConnMap old_conn_state;
-  ExternalContainerEndpointMap old_cep_state;
+  AdvertisedEndpointMap old_cep_state;
   auto next_scrape = std::chrono::system_clock::now();
 
   while (writer->Sleep(next_scrape)) {
@@ -247,7 +254,7 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
 
     const sensor::NetworkConnectionInfoMessage* msg;
     ConnMap new_conn_state;
-    ExternalContainerEndpointMap new_cep_state;
+    AdvertisedEndpointMap new_cep_state;
     WITH_TIMER(CollectorStats::net_fetch_state) {
       new_conn_state = conn_tracker_->FetchConnState(true, true);
       ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
@@ -255,7 +262,7 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
       ContainerEndpointMap current_cep_state;
       current_cep_state = conn_tracker_->FetchEndpointState(true, true);
 
-      ConvertContainerEndpointToExternalRepresentation(current_cep_state, new_cep_state);
+      ConvertEndpointsToAdvertisedRepresentation(current_cep_state, new_cep_state);
 
       ConnectionTracker::ComputeDelta(new_cep_state, &old_cep_state);
     }
@@ -283,7 +290,7 @@ void NetworkStatusNotifier::RunSingleAfterglow(IDuplexClientWriter<sensor::Netwo
   WaitUntilWriterStarted(writer, 10);
 
   ConnMap old_conn_state;
-  ExternalContainerEndpointMap old_cep_state;
+  AdvertisedEndpointMap old_cep_state;
   auto next_scrape = std::chrono::system_clock::now();
   int64_t time_at_last_scrape = NowMicros();
 
@@ -296,7 +303,7 @@ void NetworkStatusNotifier::RunSingleAfterglow(IDuplexClientWriter<sensor::Netwo
 
     int64_t time_micros = NowMicros();
     const sensor::NetworkConnectionInfoMessage* msg;
-    ExternalContainerEndpointMap new_cep_state;
+    AdvertisedEndpointMap new_cep_state;
     ConnMap new_conn_state, delta_conn;
     WITH_TIMER(CollectorStats::net_fetch_state) {
       new_conn_state = conn_tracker_->FetchConnState(true, true);
@@ -305,7 +312,7 @@ void NetworkStatusNotifier::RunSingleAfterglow(IDuplexClientWriter<sensor::Netwo
       ContainerEndpointMap current_cep_state;
       current_cep_state = conn_tracker_->FetchEndpointState(true, true);
 
-      ConvertContainerEndpointToExternalRepresentation(current_cep_state, new_cep_state);
+      ConvertEndpointsToAdvertisedRepresentation(current_cep_state, new_cep_state);
 
       ConnectionTracker::ComputeDelta(new_cep_state, &old_cep_state);
     }
@@ -332,7 +339,7 @@ void NetworkStatusNotifier::RunSingleAfterglow(IDuplexClientWriter<sensor::Netwo
   }
 }
 
-sensor::NetworkConnectionInfoMessage* NetworkStatusNotifier::CreateInfoMessage(const ConnMap& conn_delta, const ExternalContainerEndpointMap& endpoint_delta) {
+sensor::NetworkConnectionInfoMessage* NetworkStatusNotifier::CreateInfoMessage(const ConnMap& conn_delta, const AdvertisedEndpointMap& endpoint_delta) {
   if (conn_delta.empty() && endpoint_delta.empty()) return nullptr;
 
   Reset();
@@ -360,7 +367,7 @@ void NetworkStatusNotifier::AddConnections(::google::protobuf::RepeatedPtrField<
   }
 }
 
-void NetworkStatusNotifier::AddContainerEndpoints(::google::protobuf::RepeatedPtrField<sensor::NetworkEndpoint>* updates, const ExternalContainerEndpointMap& delta) {
+void NetworkStatusNotifier::AddContainerEndpoints(::google::protobuf::RepeatedPtrField<sensor::NetworkEndpoint>* updates, const AdvertisedEndpointMap& delta) {
   for (const auto& delta_entry : delta) {
     auto* endpoint_proto = ContainerEndpointToProto(delta_entry.first);
 
