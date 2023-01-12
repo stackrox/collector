@@ -84,3 +84,15 @@ jobs:
           path: ${{ github.workspace }}/test_dir/Average_results_ci.json
           if-no-files-found: ignore
           retention-days: 1
+
+      - name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - name: Push results
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        with:
+          path: ${{ github.workspace }}/test_dir/Average_results_ci.json
+          parent: false
+          destination: performance-tests/test/Average_results_ci.json
