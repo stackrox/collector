@@ -1,5 +1,5 @@
 {
-	"cluster_name": "openshift-4-jouko-ci",
+	"cluster_name": "openshift-4-jouko-ci-0111",
 	"test_dir": "__TEST_DIR__",
 	"nrepeat": 5,
 	"sleep_after_start_rox": 60,
