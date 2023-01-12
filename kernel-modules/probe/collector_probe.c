@@ -251,10 +251,10 @@ PROBE_SIGNATURE("sched/", sched_process_exit, sched_process_exit_args) {
 struct sys_enter_accept4_args {
   __u64 pad;
   int __syscall_nr;
-  int fd;
+  long fd;
   struct sockaddr* upeer_sockaddr;
   int* upeer_len;
-  int flags;
+  long flags;
 };
 
 struct sys_enter_chdir_args {
@@ -266,21 +266,21 @@ struct sys_enter_chdir_args {
 struct sys_enter_fchdir_args {
   __u64 pad;
   int __syscall_nr;
-  int fd;
+  long fd;
 };
 
 struct sys_enter_close_args {
   __u64 pad;
   int __syscall_nr;
-  int fd;
+  long fd;
 };
 
 struct sys_enter_connect_args {
   __u64 pad;
   int __syscall_nr;
-  int fd;
+  long fd;
   struct sockaddr* uservaddr;
-  int addrlen;
+  long addrlen;
 };
 
 struct sys_enter_clone_args {
@@ -346,9 +346,9 @@ struct sys_enter_setresgid_args {
 struct sys_enter_socket_args {
   __u64 pad;
   int __syscall_nr;
-  int family;
-  int type;
-  int protocol;
+  long family;
+  long type;
+  long protocol;
 };
 
 #ifdef CAPTURE_SOCKETCALL
@@ -363,8 +363,8 @@ struct sys_enter_socketcall_args {
 struct sys_enter_shutdown_args {
   __u64 pad;
   int __syscall_nr;
-  int fd;
-  int how;
+  long fd;
+  long how;
 };
 ////////////////////////////////////////////////////////////////////////////////////
 
