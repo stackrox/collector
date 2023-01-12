@@ -50,7 +50,7 @@ jobs:
             | sort \
             | awk -f ./integration-tests/scripts/baseline/format.awk > benchmark.md
 
-          echo "PERF_TABLE=$(cat benchmark.md)" | tee -a "$GITHUB_ENV"
+          echo "PERF_TABLE='$(cat benchmark.md)'" | tee -a "$GITHUB_ENV"
         env:
           GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT: "${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}"
 
