@@ -15,6 +15,7 @@ extern "C" {
 #include "GetKernelObject.h"
 #include "GetStatus.h"
 #include "LogLevel.h"
+#include "NetworkStatusInspector.h"
 #include "NetworkStatusNotifier.h"
 #include "ProfilerHandler.h"
 #include "Utility.h"
@@ -98,6 +99,9 @@ void CollectorService::RunForever() {
   if (!exporter.start()) {
     CLOG(FATAL) << "Unable to start collector stats exporter";
   }
+
+  NetworkStatusInspector networkStatusInspector(conn_tracker);
+  server.addHandler(networkStatusInspector.kBaseRoute, networkStatusInspector);
 
   system_inspector_.Init(config_, conn_tracker);
   system_inspector_.Start();
