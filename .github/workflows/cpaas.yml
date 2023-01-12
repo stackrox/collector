@@ -11,7 +11,7 @@ jobs:
     uses: ./.github/workflows/init.yml
 
   sync-drivers-and-support-packages:
-    uses: ./.github/workflows/cpaas/sync-drivers.yml
+    uses: ./.github/workflows/cpaas-sync-drivers.yml
     needs: init
     secrets: inherit
     with:
