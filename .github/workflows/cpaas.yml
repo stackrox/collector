@@ -35,7 +35,7 @@ jobs:
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
       drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
       skip-built-drivers: true
-      max-layer-depth: "0"
+      max-layer-depth: "1"
     secrets: inherit
     needs:
     - init
