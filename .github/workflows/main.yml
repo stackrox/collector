@@ -75,7 +75,6 @@ jobs:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
       skip-built-drivers: ${{ needs.build-drivers.outputs.parallel-jobs == 0 }}
-      max-layer-depth: "0"
     secrets: inherit
     needs:
     - init
