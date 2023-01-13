@@ -59,7 +59,8 @@ jobs:
 
       - name: Push drivers
         run : |
-          set -x
+          shopt -s nullglob
+          shopt -s dotglob
 
           for driver_version_dir in "${DRIVER_TMP_DIR}"/*; do
             files=("${driver_version_dir}"/*.{gz,unavail})
