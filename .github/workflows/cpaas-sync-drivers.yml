@@ -44,7 +44,7 @@ jobs:
 
           TMP_DIR="$(mktemp -d)"
           {
-            echo "FAILURES_TMP_DIR=${TMP_DIR}/FAILURES"
+            echo "FAILURES_DIR=${TMP_DIR}/FAILURES"
             echo "DRIVER_TMP_DIR=${TMP_DIR}/kernel-modules"
             echo "SUPPORT_PACKAGE_TMP_DIR=${TMP_DIR}/support-packages"
           } >> "$GITHUB_ENV"
@@ -83,7 +83,7 @@ jobs:
       - name: Check build failures
         id: drivers-build-failures
         run: |
-          FAILURES_DIR=/tmp/FAILURES/ ${{ github.workspace }}/.openshift-ci/drivers/scripts/drivers-build-failures.sh
+          ${{ github.workspace }}/.openshift-ci/drivers/scripts/drivers-build-failures.sh
 
       - name: Slack notification
         if: failure() && github.event_name == 'schedule'
