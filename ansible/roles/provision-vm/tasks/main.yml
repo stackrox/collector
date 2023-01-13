@@ -54,12 +54,14 @@
     name: "docker"
     enabled: true
     state: started
+  if: runtime_command == 'docker'
 
 - name: Add user to docker group
   user:
     name: "{{ ansible_user }}"
     groups: docker
     append: yes
+  if: runtime_command == 'docker'
 
 - name: Reset SSH connection for group propagation
   meta: reset_connection

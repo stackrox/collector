@@ -11,7 +11,7 @@
     logs_root: "{{ collector_root }}/integration-tests/container-logs/{{ vm_config }}/{{ collection_method }}"
 
 - name: Cleanup old containers
-  shell: "docker rm -f $(docker ps -aq) >/dev/null 2>&1 || true"
+  shell: "sudo {{ runtime_command }} rm -f $(sudo {{ runtime_command }} ps -aq) >/dev/null 2>&1 || true"
 
 - block:
   - name: Run integration tests
@@ -25,6 +25,9 @@
       SSH_KEY_PATH: "{{ ansible_ssh_private_key_file }}"
       VM_CONFIG: "{{ vm_config }}"
       IMAGE_FAMILY: "{{ vm_image_family }}"
+      RUNTIME_COMMAND: "{{ runtime_command }}"
+      RUNTIME_AS_ROOT: "{{ runtime_as_root }}"
+      RUNTIME_SOCKET: "{{ runtime_socket }}"
     register: test_result
     delegate_to: localhost
 

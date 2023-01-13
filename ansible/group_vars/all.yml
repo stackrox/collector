@@ -10,6 +10,12 @@ test_platform: "{{ lookup('env', 'VM_TYPE', default='rhel') }}"
 collector_root: "{{ playbook_dir }}/.."
 collector_repo: "quay.io/stackrox-io"
 
+# These control the container runtime used on the VMs.
+# They can be overridden in platform-specific group_vars files
+runtime_command: docker
+runtime_as_root: false
+runtime_socket: /var/run/docker.sock
+
 virtual_machines:
   rhel:
     project: rhel-cloud
@@ -22,6 +28,20 @@ virtual_machines:
     families:
       - rhel-8-4-sap-ha
       - rhel-8-6-sap-ha
+
+  rhcos:
+    project: rhcos-cloud
+    username: core
+    images:
+      - rhcos-411-86-202211291109-0-gcp-x86-64
+    ignition:
+      ignition:
+        version: 3.2.0
+      passwd:
+        users:
+          - name: core
+            sshAuthorizedKeys:
+              - "{{ lookup('file', gcp_ssh_key_file + '.pub') }}"
 
   cos:
     project: cos-cloud

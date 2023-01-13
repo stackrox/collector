@@ -39,6 +39,8 @@
           - name: External NAT
             type: ONE_TO_ONE_NAT
     labels: "{{ gcp_default_labels | combine(gcp_extra_labels) }}"
+    metadata:
+      user-data: "{{ vm_ignition | to_json }}"
 
   # This looks like a lot, and its mostly because ansible support
   # for "breaking" from a loop is not all that great at the moment.

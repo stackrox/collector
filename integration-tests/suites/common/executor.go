@@ -12,6 +12,12 @@ import (
 
 var (
 	debug = false
+
+	RuntimeCommand = ReadEnvVarWithDefault("RUNTIME_COMMAND", "docker")
+	// RuntimeSocket  = ReadEnvVarWithDefault("RUNTIME_SOCKET", "/run/user/1000/podman/podman.sock")
+	RuntimeSocket = ReadEnvVarWithDefault("RUNTIME_SOCKET", "/var/run/docker.sock")
+
+	RuntimeAsRoot = ReadBoolEnvVar("RUNTIME_AS_ROOT")
 )
 
 type Executor interface {
@@ -105,7 +111,7 @@ func setSelinuxPermissiveIfNeeded() error {
 
 func isSelinuxPermissiveNeeded() bool {
 	vmType := ReadEnvVarWithDefault("VM_CONFIG", "default")
-	if strings.Contains(vmType, "coreos") {
+	if strings.Contains(vmType, "coreos") || strings.Contains(vmType, "rhcos") {
 		return true
 	}
 	if strings.Contains(vmType, "rhel-7") {
@@ -142,6 +148,9 @@ func NewExecutor() Executor {
 
 // Execute provided command with retries on error.
 func (e *executor) Exec(args ...string) (string, error) {
+	if args[0] == RuntimeCommand && RuntimeAsRoot {
+		args = append([]string{"sudo"}, args...)
+	}
 	return Retry(func() (string, error) {
 		return e.RunCommand(e.builder.ExecCommand(args...))
 	})
@@ -200,16 +209,16 @@ func (e *executor) CopyFromHost(src string, dst string) (res string, err error) 
 }
 
 func (e *executor) PullImage(image string) error {
-	_, err := e.Exec("docker", "image", "inspect", image)
+	_, err := e.Exec(RuntimeCommand, "image", "inspect", image)
 	if err == nil {
 		return nil
 	}
-	_, err = e.ExecRetry("docker", "pull", image)
+	_, err = e.ExecRetry(RuntimeCommand, "pull", image)
 	return err
 }
 
 func (e *executor) IsContainerRunning(containerID string) (bool, error) {
-	result, err := e.Exec("docker", "inspect", containerID, "--format='{{.State.Running}}'")
+	result, err := e.Exec(RuntimeCommand, "inspect", containerID, "--format='{{.State.Running}}'")
 	if err != nil {
 		return false, err
 	}
@@ -217,7 +226,7 @@ func (e *executor) IsContainerRunning(containerID string) (bool, error) {
 }
 
 func (e *executor) ExitCode(containerID string) (int, error) {
-	result, err := e.Exec("docker", "inspect", containerID, "--format='{{.State.ExitCode}}'")
+	result, err := e.Exec(RuntimeCommand, "inspect", containerID, "--format='{{.State.ExitCode}}'")
 	if err != nil {
 		return -1, err
 	}
@@ -245,6 +254,7 @@ func (e *gcloudCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
 	if e.user != "" {
 		userInstance = e.user + "@" + e.instance
 	}
+
 	cmdArgs = append(cmdArgs, userInstance, "--", "-T")
 	cmdArgs = append(cmdArgs, QuoteArgs(args)...)
 	return exec.Command("gcloud", cmdArgs...)

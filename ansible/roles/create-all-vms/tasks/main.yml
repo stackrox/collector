@@ -1,4 +1,4 @@
---- 
+---
 
 - set_fact:
     normalized_collection_method: "{{ collection_method | default('any') | replace('kernel-module', 'ko') }}"
@@ -14,6 +14,7 @@
     vm_config: "{{ item.0.key }}_{{ item.1 }}"
     vm_collection_method: "{{ collection_method | default('any') | replace('-', '_') }}"
     vm_available_zones: "{{ gcp_available_zones }}"
+    vm_ignition: "{{ item.0.value.ignition | default({}) }}"
 
   #
   # The loop will create the "item" variable, which can be used throughout the task
@@ -49,6 +50,7 @@
     vm_config: "{{ item.0.key }}_{{ item.0.key }}"
     vm_collection_method: "{{ collection_method | default('any') | replace('-', '_') }}"
     vm_available_zones: "{{ gcp_available_zones }}"
+    vm_ignition: "{{ item.0.value.ignition | default({}) }}"
 
   #
   # The loop will create the "item" variable, which can be used throughout the task

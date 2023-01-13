@@ -18,8 +18,10 @@ jobs:
       fail-fast: false
       matrix:
         vm_type:
-          - rhel
-          - ubuntu-os
+          #- rhel
+          #- ubuntu-os
+            # TODO: move to all-integration-tests
+          - rhcos
     with:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ inputs.collector-tag }}
