@@ -55,11 +55,15 @@ jobs:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
       - name: Push drivers
-        uses: 'google-github-actions/upload-cloud-storage@v1'
-        with:
-          path: ${{ env.DRIVER_TMP_DIR }}
-          parent: false
-          destination: ${{ inputs.drivers-bucket }}/${{ github.run_id }}
+        run : |
+          set -x
+
+          for driver_version_dir in "${DRIVER_TMP_DIR}"/*; do
+            files=("${driver_version_dir}"/*.{gz,unavail})
+            [[ "${#files[@]}" -gt 0 ]] || continue
+            printf '%s\n' "${files[@]}" | \
+              gsutil -m cp -n -I "${{ inputs.drivers-bucket }}/$(basename "${driver_version_dir}")/"
+          done
 
       - name: Push support-packages
         uses: 'google-github-actions/upload-cloud-storage@v1'
