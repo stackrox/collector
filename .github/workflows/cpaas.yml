@@ -2,7 +2,7 @@ name: CPaaS related workflows
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 6 * * *'
   # TODO: Remove the PR trigger once done testing
   pull_request:
 
@@ -35,8 +35,29 @@ jobs:
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
       drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
       skip-built-drivers: true
+      max-layer-depth: "0"
     secrets: inherit
     needs:
     - init
     - build-collector-slim
     - sync-drivers-and-support-packages
+    if: github.event_name == 'schedule' || contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps')
+
+  integration-tests:
+    uses: ./.github/workflows/integration-tests-vm-type.yml
+    strategy:
+      # ensure that if one part of the matrix fails, the
+      # rest will continue
+      fail-fast: false
+      matrix:
+        vm_type:
+          - rhel
+          - rhel-sap
+    with:
+      vm_type: ${{ matrix.vm_type }}
+      collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
+    needs:
+    - init
+    - build-collector-full
+    secrets: inherit
+    if: github.event_name == 'schedule' || contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps')

@@ -18,6 +18,11 @@ on:
         required: true
         description: |
           GCP bucket to pull drivers from.
+      max-layer-depth:
+        type: string
+        default: "5"
+        description: |
+          Max layer the drivers will be split into
 
 jobs:
   build-collector-full:
@@ -63,13 +68,13 @@ jobs:
       - name: Pull slim image and build full image
         run: |
           docker build \
-            --target=probe-layer-5 \
+            --target=probe-layer-${{ inputs.max-layer-depth }} \
             --tag "${COLLECTOR_IMAGE}" \
             --build-arg collector_repo=quay.io/stackrox-io/collector \
             --build-arg collector_version=${{ inputs.collector-tag }} \
             --build-arg module_version="${DRIVER_VERSION}" \
             --build-arg max_layer_size=300 \
-            --build-arg max_layer_depth=5 \
+            --build-arg max_layer_depth=${{ inputs.max-layer-depth }} \
             "${{ github.workspace }}/kernel-modules/container"
 
       - name: Login to quay.io/stackrox-io
