@@ -62,7 +62,7 @@ jobs:
             files=("${driver_version_dir}"/*.{gz,unavail})
             [[ "${#files[@]}" -gt 0 ]] || continue
             printf '%s\n' "${files[@]}" | \
-              gsutil -m cp -n -I "${{ inputs.drivers-bucket }}/$(basename "${driver_version_dir}")/"
+          gsutil -m cp -n -I "gs://${{ inputs.drivers-bucket }}/$(basename "${driver_version_dir}")/"
           done
 
       - name: Push support-packages
