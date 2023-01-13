@@ -22,7 +22,11 @@ on:
 jobs:
   build-collector-full:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'build-full-images') }}
+    if: |
+      github.event_name == 'push' ||
+      github.event_name == 'schedule' ||
+      contains(github.event.pull_request.labels.*.name, 'build-full-images') ||
+      contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps')
     env:
       COLLECTOR_IMAGE: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
 
@@ -105,7 +109,10 @@ jobs:
 
   retag-collector-full:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'build-full-images') }}
+    if: |
+      github.event_name == 'pull_request' &&
+      !contains(github.event.pull_request.labels.*.name, 'build-full-images') &&
+      !contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps')
     env:
       COLLECTOR_IMAGE_SLIM: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-slim
 
