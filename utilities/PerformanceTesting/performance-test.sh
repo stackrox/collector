@@ -100,7 +100,7 @@ fi
 
 nversion="$(cat "$json_config_file" | jq '.versions | length')"
 
-"$DIR"/create-infra.sh "$cluster_name" openshift-4 48h
+"$DIR"/create-infra.sh "$cluster_name" "$nodes" openshift-4 48h
 "$DIR"/wait-for-cluster.sh "$cluster_name"
 "$DIR"/get-artifacts-dir.sh "$cluster_name" "$artifacts_dir"
 export KUBECONFIG="$artifacts_dir"/kubeconfig

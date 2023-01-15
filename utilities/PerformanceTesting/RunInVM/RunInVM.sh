@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eou pipefail
 
-vm_name=jouko-performance-test-2
+vm_name=$1
 test_dir=../test/vm-test
 
 image_family=ubuntu-2204-lts
@@ -14,7 +14,7 @@ vm_command() {
 }
 
 
-#gcloud compute instances create --image-family "$image_family" --image-project "$image_project" --project stackrox-dev --machine-type e2-standard-2 --boot-disk-size=20GB "$vm_name"
+gcloud compute instances create --image-family "$image_family" --image-project "$image_project" --project stackrox-dev --machine-type e2-standard-2 --boot-disk-size=20GB "$vm_name"
 gcloud compute scp "$test_dir" "$vm_name":~/test_dir --recurse --project stackrox-dev || true
 vm_command "git clone https://github.com/stackrox/collector.git"
 vm_command "git clone https://github.com/stackrox/workflow.git"
