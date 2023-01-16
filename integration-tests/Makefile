@@ -52,6 +52,13 @@ benchmark: TestBenchmarkCollector
 .PHONY: baseline
 baseline: TestBenchmarkBaseline
 
+.PHONY: check-duplicate-endpoints
+check-duplicate-endpoints: docker-clean
+	go version
+	set -o pipefail ; \
+	go test -timeout 90m -count=1 -v \
+	  -run TestCheckDuplicateEndpoints 2>&1 | tee -a integration-test.log
+
 LOG_FILE ?= integration-test.log
 .PHONY: report
 report:

@@ -1264,14 +1264,10 @@ TEST(ConnTrackerTest, TestEmplaceOrUpdateSameEndpointDifferentPids) {
   connectionTracker.EmplaceOrUpdateNoLock(ce1, oldConnStatus);
   connectionTracker.EmplaceOrUpdateNoLock(ce2, newConnStatus);
 
-  ContainerEndpointMap expected_state = {{ce1, oldConnStatus}, {ce2, newConnStatus}};
+  ContainerEndpointMap expected_state = {{ce1, newConnStatus}};
   ContainerEndpointMap observed_state = connectionTracker.FetchEndpointState(false, false);
+
   EXPECT_THAT(observed_state, expected_state);
-
-  ContainerEndpoint observed_endpoint = observed_state.find(ce2)->first;
-  int observedPid = observed_endpoint.originator()->pid();
-
-  EXPECT_THAT(observedPid, 3);
 }
 
 TEST(ConnTrackerTest, TestEmplaceOrUpdateSameEndpointAndPids) {
@@ -1316,7 +1312,7 @@ TEST(ConnTrackerTest, TestDeltaForEndpointDifferentPids) {
   ContainerEndpointMap expected_delta = {{ce1, ConnStatus(connection_time1, false)}, {ce2, newConnStatus}};
 
   CT::ComputeDelta(new_state, &old_state);
-  EXPECT_THAT(old_state, expected_delta);
+  EXPECT_THAT(old_state, IsEmpty());
 }
 
 TEST(ConnTrackerTest, TestDeltaForEndpointSamePids) {
