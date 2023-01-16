@@ -3,13 +3,11 @@ name: CPaaS related workflows
 on:
   schedule:
     - cron: '0 6 * * *'
-  # TODO: Remove the PR trigger once done testing
-  pull_request:
+  workflow_call:
 
 jobs:
   init:
     uses: ./.github/workflows/init.yml
-    if: github.event_name == 'schedule' || contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps')
 
   sync-drivers-and-support-packages:
     uses: ./.github/workflows/cpaas-sync-drivers.yml
@@ -18,7 +16,6 @@ jobs:
     with:
       support-packages-bucket: ${{ needs.init.outputs.cpaas-support-packages-bucket }}
       drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
-    if: github.event_name == 'schedule' || contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps')
 
   build-collector-slim:
     uses: ./.github/workflows/collector-slim.yml
@@ -27,7 +24,6 @@ jobs:
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
       collector-image: ${{ needs.init.outputs.collector-image }}-cpaas
     secrets: inherit
-    if: github.event_name == 'schedule' || contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps')
 
   build-collector-full:
     uses: ./.github/workflows/collector-full.yml
@@ -42,7 +38,6 @@ jobs:
     - init
     - build-collector-slim
     - sync-drivers-and-support-packages
-    if: github.event_name == 'schedule' || contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps')
 
   integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
@@ -62,4 +57,3 @@ jobs:
     - init
     - build-collector-full
     secrets: inherit
-    if: github.event_name == 'schedule' || contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps')
