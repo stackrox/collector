@@ -41,8 +41,8 @@ func (s *CheckDuplicateEndpointsTestSuite) killSocatProcess(port int) {
 // When this endpoint is reported in the mock grpc server we know that a scrape has occured. This is
 // time 0. We then start another process that opens a different port, 81 slightly after t=0.
 // The scrape interval is 8 seconds so at t=8 the endpoint with port 81 should be reported. At t=10
-// seconds the process is killed. At t=12 seconds an identical command that opened port 81 is 
-// executed. At t=16 at the second scrape interval nothing should be reported, since the port was 
+// seconds the process is killed. At t=10 seconds an identical command that opened port 81 is
+// executed. At t=16 at the second scrape interval nothing should be reported, since the port was
 // opened and closed in the same interval. We expect there to be two reported endpoints.
 func (s *CheckDuplicateEndpointsTestSuite) SetupSuite() {
 
