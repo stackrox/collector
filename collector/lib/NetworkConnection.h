@@ -358,10 +358,10 @@ class ContainerEndpoint {
 
   bool operator==(const ContainerEndpoint& other) const {
     return container_ == other.container_ && endpoint_ == other.endpoint_ && l4proto_ == other.l4proto_ &&
-	    originator_->container_id() == other.originator_->container_id() &&
-	    originator_->comm() == other.originator_->comm() &&
-	    originator_->exe_path() == other.originator_->exe_path() &&
-	    originator_->args() == other.originator_->args();
+           originator_->container_id() == other.originator_->container_id() &&
+           originator_->comm() == other.originator_->comm() &&
+           originator_->exe_path() == other.originator_->exe_path() &&
+           originator_->args() == other.originator_->args();
   }
 
   bool operator!=(const ContainerEndpoint& other) const {
