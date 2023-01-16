@@ -2,8 +2,8 @@ package suites
 
 import (
 	"strconv"
+	"strings"
 	"time"
-	"fmt"
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stretchr/testify/assert"
@@ -30,8 +30,10 @@ func (s *CheckDuplicateEndpointsTestSuite) waitForEndpoints() {
 }
 
 func (s *CheckDuplicateEndpointsTestSuite) killSocatProcess(port int) {
-	pid, err := s.execContainer("socat", []string{"/bin/sh", "-c", "ps | grep socat.*LISTEN:" + strconv.Itoa(port) + ",fork | head -1 | awk '{print $1}'"})
-	fmt.Println("pid= ", pid)
+	output, err := s.execContainer("socat", []string{"/bin/sh", "-c", "ps | grep socat.*LISTEN:" + strconv.Itoa(port) + ",fork | head -1 | awk '{print $1}'"})
+	outputReplaced := strings.Replace(output, "\"", "", -1)
+	outputTrimmed := strings.Trim(outputReplaced, " ")
+	pid := strings.Split(outputTrimmed, " ")[0]
 	s.Require().NoError(err)
 	_, err = s.execContainer("socat", []string{"/bin/sh", "-c", "kill -9 " + pid})
 	s.Require().NoError(err)
