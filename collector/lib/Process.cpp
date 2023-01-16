@@ -155,7 +155,9 @@ void Process::WaitForProcessInfo() const {
   if (process_info_pending_resolution_) {
     std::cv_status status;
 
-    status = process_info_condition_.wait_for(lock, std::chrono::seconds(30));
+    WITH_TIMER(CollectorStats::process_info_wait) {
+      status = process_info_condition_.wait_for(lock, std::chrono::seconds(30));
+    }
 
     CLOG_IF(std::cv_status::timeout == status, ERROR) << "Timed-out waiting for process-info. PID: " << pid();
   }
