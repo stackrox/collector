@@ -277,3 +277,21 @@ Time is measured in microseconds.
 | processRateLimitCount                | Count of processes not sent because of the rate limiting.                                           |
 | parse_micros[syscall]                | Total time used to retrieve an event of this type from falco                                        |
 | process_micros[syscall]              | Total time used to handle/send an event of this type (call the SignalHandler)                       |
+
+
+### Sysdig stats -> rox_collector_event_times_us_avg & rox_collector_event_times_us_total
+
+For each syscall, and in each direction, the total time consummed by every step ("process", "parse") is available, as well as the computed average duration in micro-second.
+
+```
+rox_collector_event_times_us_total{event_dir="<",event_type="accept",step="process"} 45994
+...
+rox_collector_event_times_us_avg{event_dir="<",event_type="accept",step="process"} 3
+```
+
+
+### Process lineage statistics
+
+- `lineage_avg_string_len`: overall average length of the lineage description string
+- `std_dev`: standard deviation of the lineage description string length
+
