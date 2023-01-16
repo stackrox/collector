@@ -33,9 +33,10 @@ jobs:
     uses: ./.github/workflows/collector-full.yml
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
-      drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
+      drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}/x86_64
       skip-built-drivers: true
       max-layer-depth: "1"
+      build-full-image: true
     secrets: inherit
     needs:
     - init

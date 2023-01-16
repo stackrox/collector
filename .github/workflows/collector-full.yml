@@ -8,6 +8,12 @@ on:
         required: true
         description: |
           The tag used to build the collector image
+      build-full-image:
+        type: boolean
+        required: true
+        description: |
+          If true, the full collector image will be built, else, the -slim
+          image of collector will be retagged.
       skip-built-drivers:
         type: boolean
         required: true
@@ -27,11 +33,7 @@ on:
 jobs:
   build-collector-full:
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'push' ||
-      github.event_name == 'schedule' ||
-      contains(github.event.pull_request.labels.*.name, 'build-full-images') ||
-      contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps')
+    if: inputs.build-full-image
     env:
       COLLECTOR_IMAGE: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
 
@@ -114,10 +116,7 @@ jobs:
 
   retag-collector-full:
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'pull_request' &&
-      !contains(github.event.pull_request.labels.*.name, 'build-full-images') &&
-      !contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps')
+    if: ${{ !inputs.build-full-image }}
     env:
       COLLECTOR_IMAGE_SLIM: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-slim
 

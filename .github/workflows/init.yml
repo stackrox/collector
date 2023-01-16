@@ -79,19 +79,27 @@ jobs:
           PUBLIC_SUPPORT_PACKAGES_BUCKET="collector-support-public/offline/v1/support-packages"
           CPAAS_DRIVERS_BUCKET="mauro-drivers-test/cpaas/drivers"
           CPAAS_SUPPORT_PACKAGES_BUCKET="mauro-drivers-test/cpaas/support-packages"
+          CPAAS_STAGING_DRIVERS_BUCKET="mauro-drivers-test/cpaas/staging/drivers"
+          CPAAS_STAGING_SUPPORT_PACKAGES_BUCKET="mauro-drivers-test/cpaas/staging/support-packages"
 
           {
             echo "drivers-bucket=${MAIN_DRIVER_BUCKET}"
             echo "bundles-bucket=${BUNDLES_BUCKET}"
             echo "public-support-packages-bucket=${PUBLIC_SUPPORT_PACKAGES_BUCKET}"
-            echo "cpaas-drivers-bucket=${CPAAS_DRIVERS_BUCKET}"
-            echo "cpaas-support-packages-bucket=${CPAAS_SUPPORT_PACKAGES_BUCKET}"
           } >> "$GITHUB_OUTPUT"
 
           if [[ ${{ github.event_name }} == "pull_request" ]]; then
-            echo "push-drivers-bucket=${STAGING_DRIVER_BUCKET}" >> "$GITHUB_OUTPUT"
-            echo "support-packages-bucket=${STAGING_SUPPORT_PACKAGES_BUCKET}" >> "$GITHUB_OUTPUT"
+            {
+              echo "push-drivers-bucket=${STAGING_DRIVER_BUCKET}"
+              echo "support-packages-bucket=${STAGING_SUPPORT_PACKAGES_BUCKET}"
+              echo "cpaas-drivers-bucket=${CPAAS_STAGING_DRIVERS_BUCKET}"
+              echo "cpaas-support-packages-bucket=${CPAAS_STAGING_SUPPORT_PACKAGES_BUCKET}"
+            } >> "$GITHUB_OUTPUT"
           else
-            echo "push-drivers-bucket=${MAIN_DRIVER_BUCKET}" >> "$GITHUB_OUTPUT"
-            echo "support-packages-bucket=${SUPPORT_PACKAGES_BUCKET}" >> "$GITHUB_OUTPUT"
+            {
+              echo "push-drivers-bucket=${MAIN_DRIVER_BUCKET}"
+              echo "support-packages-bucket=${SUPPORT_PACKAGES_BUCKET}"
+              echo "cpaas-drivers-bucket=${CPAAS_DRIVERS_BUCKET}"
+              echo "cpaas-support-packages-bucket=${CPAAS_SUPPORT_PACKAGES_BUCKET}"
+            } >> "$GITHUB_OUTPUT"
           fi
