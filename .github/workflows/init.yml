@@ -62,7 +62,7 @@ jobs:
       - name: Set GCP buckets
         id: gcp-buckets
         run: |
-          MAIN_DRIVER_BUCKET="collector-modules-osci"
+          MAIN_DRIVER_BUCKET="collector-modules/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"
           STAGING_DRIVER_BUCKET="stackrox-collector-modules-staging/pr-builds/${GITHUB_HEAD_REF}/${{ github.run_id }}"
           BUNDLES_BUCKET="collector-kernel-bundles-public"
           SUPPORT_PACKAGES_BUCKET="sr-roxc/collector/support-packages"
