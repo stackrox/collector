@@ -1,7 +1,6 @@
 package suites
 
 import (
-	"fmt"
 	"strconv"
 	"time"
 
@@ -32,7 +31,6 @@ func (s *CheckDuplicateEndpointsTestSuite) waitForEndpoints() {
 func (s *CheckDuplicateEndpointsTestSuite) killSocatProcess(port int) {
 	pid, err := s.execContainer("socat", []string{"/bin/sh", "-c", "ps | grep socat.*LISTEN:" + strconv.Itoa(port) + ",fork | head -1 | awk '{print $1}'"})
 	s.Require().NoError(err)
-	fmt.Println("pid= " + pid)
 	_, err = s.execContainer("socat", []string{"/bin/sh", "-c", "kill -9 " + pid})
 	s.Require().NoError(err)
 }
