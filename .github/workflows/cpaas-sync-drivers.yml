@@ -78,7 +78,7 @@ jobs:
         with:
           path: ${{ env.SUPPORT_PACKAGE_TMP_DIR }}
           parent: false
-          destination: ${{ inputs.support-packages-bucket }}/${{ github.run_id }}/${{ matrix.platform }}
+          destination: ${{ inputs.support-packages-bucket }}/${{ matrix.platform }}
 
       - name: Check build failures
         id: drivers-build-failures
