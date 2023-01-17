@@ -81,4 +81,3 @@ done
 
 # non-blocklisted-build-tasks is populated from the BLOCKLIST file to exclude build tasks which would fail.
 "${SCRIPTS_DIR}/apply-blocklist.py" "${BLOCKLIST_DIR}/BLOCKLIST" "${ALL_BUILD_TASKS}" > "${NON_BLOCKLISTED_TASKS}"
-"${SCRIPTS_DIR}/apply-blocklist.py" "${BLOCKLIST_DIR}/dockerized/BLOCKLIST" "${NON_BLOCKLISTED_TASKS}" > "${OUTPUT_DIR}/build-tasks"
