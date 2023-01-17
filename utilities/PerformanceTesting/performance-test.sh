@@ -5,35 +5,35 @@ json_config_file=$1
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
-cluster_name="$(cat "$json_config_file" | jq .cluster_name | tr -d \")"
+cluster_name="$(jq .cluster_name "$json_config_file" | tr -d \")"
 if [ "$cluster_name" == "null" ]; then
     echo "cluster_name must be defined"
 fi
 
-test_dir="$(cat "$json_config_file" | jq .test_dir | tr -d \")"
+test_dir="$(jq .test_dir "$json_config_file" | tr -d \")"
 if [ "$test_dir" == "null" ]; then
     echo "test_dir must be defined"
     exit 1
 fi
 
-nrepeat="$(cat "$json_config_file" | jq .nrepeat | tr -d \")"
+nrepeat="$(jq .nrepeat "$json_config_file" | tr -d \")"
 if [ "$nrepeat" == "null" ]; then
     nrepeat=5
     echo "nrepeat set to $nrepeat"
 fi
 
-nodes="$(cat "$json_config_file" | jq .nodes | tr -d \")"
+nodes="$(jq .nodes "$json_config_file" | tr -d \")"
 if [ "$nodes" == "null" ]; then
     nodes=3
     echo "nodes set to $nodes"
 fi
 
-artifacts_dir="$(cat "$json_config_file" | jq .artifacts_dir | tr -d \")"
+artifacts_dir="$(jq .artifacts_dir "$json_config_file" | tr -d \")"
 if [ "$artifacts_dir" == "null" ]; then
     artifacts_dir="/tmp/artifacts-${cluster_name}"
 fi
 
-load="$(cat "$json_config_file" | jq .load)"
+load="$(jq .load "$json_config_file")"
 if [ "$load" == "null" ]; then
     echo "load must be defined"
     exit 1
@@ -74,7 +74,7 @@ if [ "$open_close_ports_load" != null ]; then
     fi
 fi
 
-teardown_script="$(cat "$json_config_file" | jq .teardown_script | tr -d \")"
+teardown_script="$(jq .teardown_script "$json_config_file" | tr -d \")"
 if [ "$teardown_script" == "null" ]; then
     if [ -z "$TEARDOWN_SCRIPT" ]; then
        echo "Teardown script must be defined"
@@ -83,22 +83,22 @@ if [ "$teardown_script" == "null" ]; then
     fi
 fi
 
-sleep_after_start_rox="$(cat "$json_config_file" | jq .sleep_after_start_rox | tr -d \")"
+sleep_after_start_rox="$(jq .sleep_after_start_rox "$json_config_file" | tr -d \")"
 if [ "$sleep_after_start_rox" == "null" ]; then
     echo "sleep_after_start_rox must be defined"
 fi
 
-query_window="$(cat "$json_config_file" | jq .query_window | tr -d \")"
+query_window="$(jq .query_window "$json_config_file" | tr -d \")"
 if [ "$query_window" == "null" ]; then
     echo "query_window must be defined"
 fi
 
-versions="$(cat "$json_config_file" | jq .versions)"
+versions="$(jq .versions "$json_config_file")"
 if [ "$versions" == "null" ]; then
     echo "versions must be defined"
 fi
 
-nversion="$(cat "$json_config_file" | jq '.versions | length')"
+nversion="$(jq '.versions | length' "$json_config_file")"
 
 "$DIR"/create-infra.sh "$cluster_name" "$nodes" openshift-4 48h
 "$DIR"/wait-for-cluster.sh "$cluster_name"

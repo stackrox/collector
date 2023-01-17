@@ -52,7 +52,7 @@ start_load() {
 
 get_num_active_ports() {
     pod="$(kubectl get pod | grep open-close-ports-load | awk '{print $1}')"
-    num_active_ports="$(kubectl exec "$pod" -- lsof -i -P -n | grep LISTEN | wc -l)"
+    num_active_ports="$(kubectl exec "$pod" -- lsof -i -P -n | grep -c LISTEN)"
     echo "$num_active_ports"
 }
 

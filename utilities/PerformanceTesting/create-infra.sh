@@ -19,6 +19,6 @@ if does_cluster_exist; then
     echo "Unable to create cluster"
 else
     echo "Creating an infra cluster with name '$name' and flavor '$flavor'"
-    infractl create "$flavor" "$name" --description "Performance testing cluster --arg nodes=$nodes"
+    infractl create "$flavor" "$name" --description "Performance testing cluster" --arg worker-node-count="$nodes"
     infractl lifespan "$name" "$lifespan"
 fi

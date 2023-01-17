@@ -93,7 +93,7 @@ for metric in ${metrics[@]}; do
     for ports in 100 200 400 800 1600 3200 6400 12800; do
         line="$ports"
         for nick_name in ${nick_names[@]}; do
-            line="$line,$(cat $dir/num_ports_${ports}/Average_results_"$nick_name".json | jq "$metric")"
+            line="$line,$(cat "$dir"/num_ports_${ports}/Average_results_"$nick_name".json | jq "$metric")"
         done
         echo "$line"
         echo "$line" >> "$metric_csv_file"
