@@ -30,12 +30,21 @@ metrics=(
 	.central_metrics.datastore_function_duration_sum_AddProcessListeningOnPort.value
 )
 
-nick_names=(
-	plop_enabled_no_lifecycle
-	plop_disabled_no_lifecycle
-	plop_enabled_lifecycle
-	plop_disabled_lifecycle
-)
+get_nick_names() {
+    json_config_file="$dir/config.json"
+    versions="$(jq .versions "$json_config_file")"
+    nick_names=()
+    versions="$(jq .versions "$json_config_file")"
+    nversion="$(jq '.versions | length' "$json_config_file")"
+    for ((i = 0; i < nversion; i = i + 1)); do
+	version="$(echo $versions | jq .["$i"])"
+        nick_name="$(echo $version | jq .nick_name | tr -d \")"
+	nick_names+=($nick_name)
+    done
+    for nick_name in "${nick_names[@]}"; do
+            echo "nick_name= $nick_name"
+    done
+}
 
 plot_results() {
     local metric_csv_file=$1
@@ -73,7 +82,7 @@ plot_results() {
 
 get_header() {
     header="num_ports"
-    for nick_name in ${nick_names[@]}; do
+    for nick_name in "${nick_names[@]}"; do
         header="$header,$nick_name"
     done
     header="$(echo "$header" | sed 's|_| |')"
@@ -81,16 +90,18 @@ get_header() {
     echo "$header"
 }
 
+get_nick_names
 header="$(get_header)"
 for metric in ${metrics[@]}; do
     top_level_metric="$(echo $metric | sed 's|.Average||' | sed 's|.value||')"
     metric_name="$(echo "$top_level_metric" | sed 's|.*\.||')"
     metric_csv_file="$metric_name".csv
-    units="$(cat $dir/num_ports_100/Average_results_plop_enabled_no_lifecycle.json | jq $top_level_metric.units)"
+    units="$(cat $dir/num_ports_100/Average_results_"${nick_names[0]}".json | jq $top_level_metric.units)"
     echo $metric.Average,$units
     echo "$header"
     echo "$header" > "$metric_name".csv
-    for ports in 100 200 400 800 1600 3200 6400 12800; do
+    for ports in 100 200 400; do
+    #for ports in 100 200 400 800 1600 3200 6400 12800; do
         line="$ports"
         for nick_name in ${nick_names[@]}; do
             line="$line,$(cat "$dir"/num_ports_${ports}/Average_results_"$nick_name".json | jq "$metric")"
