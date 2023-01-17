@@ -13,9 +13,6 @@ SCRIPTS_DIR="${SCRIPTS_DIR:-/scripts}"
 ALL_BUILD_TASKS="${OUTPUT_DIR}/all-build-tasks"
 echo > "${ALL_BUILD_TASKS}"
 
-NON_BLOCKLISTED_TASKS="${OUTPUT_DIR}/non-blocklisted-build-tasks"
-echo > "${NON_BLOCKLISTED_TASKS}"
-
 append_task() {
     local kernel_version="$1"
     local module_dir="$2"
@@ -80,4 +77,4 @@ for module_dir in "${CACHE_DIR}/kobuild-tmp/versions-src"/*; do
 done
 
 # non-blocklisted-build-tasks is populated from the BLOCKLIST file to exclude build tasks which would fail.
-"${SCRIPTS_DIR}/apply-blocklist.py" "${BLOCKLIST_DIR}/BLOCKLIST" "${ALL_BUILD_TASKS}" > "${NON_BLOCKLISTED_TASKS}"
+"${SCRIPTS_DIR}/apply-blocklist.py" "${BLOCKLIST_DIR}/BLOCKLIST" "${ALL_BUILD_TASKS}" > "${OUTPUT_DIR}/build-tasks"
