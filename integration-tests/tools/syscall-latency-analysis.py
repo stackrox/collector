@@ -1,6 +1,5 @@
 import tabulate
 import argparse
-import sys
 import json
 import os
 import numpy as np
@@ -56,7 +55,7 @@ def load_dataset(root, name, version, collection=None):
 def process(data_set):
     """
     Goes through the data_set to process mean, median, and p95 values
-    for all syscalls in the set. 
+    for all syscalls in the set.
 
     :return: a new dictionary containing the processed results
     """

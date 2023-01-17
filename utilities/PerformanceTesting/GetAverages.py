@@ -1,7 +1,5 @@
 import argparse
-import copy
 import json
-import sys
 from argparse import RawTextHelpFormatter
 from statistics import mean
 
@@ -152,9 +150,9 @@ if __name__ == '__main__':
     description = ('Calculates the average of metrics '
                    'from multiple runs of StackRox')
     parser = argparse.ArgumentParser(
-                                    description=description,
-                                    formatter_class=RawTextHelpFormatter
-                                    )
+        description=description,
+        formatter_class=RawTextHelpFormatter
+    )
 
     file_prefix_help = \
         """The json file paths to be averaged over, not including

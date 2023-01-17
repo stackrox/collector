@@ -1,6 +1,11 @@
 name: Lint
 
-on: [pull_request]
+on:
+  push:
+    branches:
+    - master
+    - release-*
+  pull_request:
 
 jobs:
   lint:
@@ -12,8 +17,15 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-python@v3
       - uses: mfinelli/setup-shfmt@v2
+
+#       TODO: uncomment this block
+#       - uses: pre-commit/action@v3.0.0
+#        if: github.event_name == 'pull_request'
+#        with:
+#          # ensure we're only linting the diff between the PR and the base ref
+#          extra_args: --from-ref origin/${{ github.event.pull_request.base.ref }} --to-ref HEAD
+
+      # master and release branches will lint the entire repository
       - uses: pre-commit/action@v3.0.0
-        with:
-          # ensure we're only linting the diff between the PR and the base ref
-          extra_args: --from-ref origin/${{ github.event.pull_request.base.ref }} --to-ref HEAD
-  
+        # TODO: uncomment the following line
+        #if: github.event_name == 'push'
