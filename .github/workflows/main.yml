@@ -110,3 +110,4 @@ jobs:
   run-cpaas-steps:
     uses: ./.github/workflows/cpaas.yml
     if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps')
+    secrets: inherit
