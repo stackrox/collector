@@ -63,7 +63,6 @@
 5.15.0-2-cloud-amd64
 5.15.0-3-amd64
 5.15.0-3-cloud-amd64
-4.19.121-dockerdesktop-2021-01-21-15-36-34
 # TODO(ROX-10917)
 4.18.0-372.9.1.rt7.166.el8.x86_64 * mod
 # TODO(ROX-11190)
@@ -75,3 +74,9 @@
 ~^[6-9]\.[0-9]+\..* 2.0.1 mod
 ~^5\.14\.21-150400.*-default 2.0.1 mod
 ~^5\.14\.21-150400.*-default 1.0.0 mod
+# We no longer support docker desktop as a dev environment
+*-dockerdesktop-*
+# Oracle Linux kernel modules require `libdtrace-ctf`,
+# which is unavailable in UBI/RHEL, we could add a
+# dedicated builder if need be
+*.el7uek.* * mod
