@@ -151,6 +151,7 @@ def get_collector_counters(querier):
         query_name = f'{counter}'
 
         res[query_name] = querier.get_stats_for_query(query)
+        res[query_name]['units'] = "num"
 
     return res
 
@@ -174,6 +175,7 @@ def get_sensor_network_flows(querier, query_window):
 
             res[query_name] = querier.get_stats_for_query(query)
             res[query_name]['description'] = f'Number of {flow_type} {protocol} network flows over pods'
+            res[query_name]['units'] = "num"
 
     metrics = [
                 "rox_sensor_network_flow_host_connections_added",
