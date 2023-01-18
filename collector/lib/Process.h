@@ -71,7 +71,10 @@ class Process {
   std::string args() const;
 
   bool operator==(Process& other) {
-    return pid() == other.pid();
+    return container_id() == other.container_id() &&
+           comm() == other.comm() &&
+           exe_path() == other.exe_path() &&
+           args() == other.args();
   }
 
   /* - when 'cache' is provided, this process will remove itself from it upon deletion.

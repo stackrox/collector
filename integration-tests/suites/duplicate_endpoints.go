@@ -9,12 +9,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type CheckDuplicateEndpointsTestSuite struct {
+type DuplicateEndpointsTestSuite struct {
 	IntegrationTestSuiteBase
 	serverContainer string
 }
 
-func (s *CheckDuplicateEndpointsTestSuite) waitForEndpoints() {
+func (s *DuplicateEndpointsTestSuite) waitForEndpoints() {
 	_, err := s.GetEndpoints(s.serverContainer)
 	count := 0
 	maxCount := 60
@@ -29,8 +29,10 @@ func (s *CheckDuplicateEndpointsTestSuite) waitForEndpoints() {
 	}
 }
 
-func (s *CheckDuplicateEndpointsTestSuite) killSocatProcess(port int) {
-	output, err := s.execContainer("socat", []string{"/bin/sh", "-c", "ps | grep socat.*LISTEN:" + strconv.Itoa(port) + ",fork | head -1 | awk '{print $1}'"})
+func (s *DuplicateEndpointsTestSuite) killSocatProcess(port int) {
+	// Example output    13 root      0:00 socat TCP-LISTEN:81,fork STDOUT
+	output, err := s.execContainer("socat", []string{"/bin/sh", "-c", "ps | grep socat.*LISTEN:" + strconv.Itoa(port) + ",fork | head -1"})
+	// When running remotely there are quotes around the response
 	outputReplaced := strings.Replace(output, "\"", "", -1)
 	outputTrimmed := strings.Trim(outputReplaced, " ")
 	pid := strings.Split(outputTrimmed, " ")[0]
@@ -41,12 +43,16 @@ func (s *CheckDuplicateEndpointsTestSuite) killSocatProcess(port int) {
 
 // The desired time line of events in this test is the following. Start a process that opens a port.
 // When this endpoint is reported in the mock grpc server we know that a scrape has occured. This is
-// time 0. We then start another process that opens a different port, 81 slightly after t=0.
-// The scrape interval is 8 seconds so at t=8 the endpoint with port 81 should be reported. At t=10
-// seconds the process is killed. At t=10 seconds an identical command that opened port 81 is
-// executed. At t=16 at the second scrape interval nothing should be reported, since the port was
-// opened and closed in the same interval. We expect there to be two reported endpoints.
-func (s *CheckDuplicateEndpointsTestSuite) SetupSuite() {
+// time 0.
+//
+// 1. Start a process that opens a different port, 81, slight after t=0
+// 2. At t=8 (the scape interval), port 81 should be reported
+// 3. At t=10, kill the process
+// 4. At t=10, start an identical process that opens port 81
+// 5. At t=16 (the second scrape) nothing should be reported.
+//
+// The test expects only two reported endpoints.
+func (s *DuplicateEndpointsTestSuite) SetupSuite() {
 
 	s.metrics = map[string]float64{}
 	s.executor = common.NewExecutor()
@@ -71,12 +77,14 @@ func (s *CheckDuplicateEndpointsTestSuite) SetupSuite() {
 	s.serverContainer = common.ContainerShortID(containerID)
 	s.waitForEndpoints()
 
-	_, err = s.execContainer("socat", []string{"/bin/sh", "-c", "socat TCP-LISTEN:81,fork STDOUT &"})
+	command := []string{"/bin/sh", "-c", "socat TCP-LISTEN:81,fork STDOUT &"}
+
+	_, err = s.execContainer("socat", command)
 	s.Require().NoError(err)
 	time.Sleep(10 * time.Second)
 	s.killSocatProcess(81)
-	_, err = s.execContainer("socat", []string{"/bin/sh", "-c", "socat TCP-LISTEN:81,fork STDOUT &"})
-	s.Require().NoError(err)
+
+	_, err = s.execContainer("socat", command)
 
 	time.Sleep(20 * time.Second)
 
@@ -87,25 +95,19 @@ func (s *CheckDuplicateEndpointsTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 }
 
-func (s *CheckDuplicateEndpointsTestSuite) TearDownSuite() {
+func (s *DuplicateEndpointsTestSuite) TearDownSuite() {
 	s.cleanupContainer([]string{"socat", "collector"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
-	s.WritePerfResults("CheckDuplicateEndpoints", stats, s.metrics)
+	s.WritePerfResults("DuplicateEndpoints", stats, s.metrics)
 }
 
-func (s *CheckDuplicateEndpointsTestSuite) TestCheckDuplicateEndpoints() {
+func (s *DuplicateEndpointsTestSuite) TestDuplicateEndpoints() {
 	processes, err := s.GetProcesses(s.serverContainer)
 	s.Require().NoError(err)
 	endpoints, err := s.GetEndpoints(s.serverContainer)
 	s.Require().NoError(err)
 
-	if !assert.Equal(s.T(), 2, len(endpoints)) {
-		// We can't continue if this is not the case, so panic immediately.
-		// It indicates an internal issue with this test and the non-deterministic
-		// way in which endpoints are reported.
-		assert.FailNowf(s.T(), "", "only retrieved %d endpoints (expect 2)", len(endpoints))
-	}
-
-	assert.Equal(s.T(), 12, len(processes))
+	assert.Equal(s.T(), 2, len(endpoints))
+	assert.Equal(s.T(), 11, len(processes))
 }

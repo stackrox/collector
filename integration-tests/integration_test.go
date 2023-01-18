@@ -115,6 +115,6 @@ func TestSocat(t *testing.T) {
 	suite.Run(t, new(suites.SocatTestSuite))
 }
 
-func TestCheckDuplicateEndpoints(t *testing.T) {
-	suite.Run(t, new(suites.CheckDuplicateEndpointsTestSuite))
+func TestDuplicateEndpoints(t *testing.T) {
+	suite.Run(t, new(suites.DuplicateEndpointsTestSuite))
 }
