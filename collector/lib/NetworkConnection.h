@@ -363,7 +363,7 @@ class ContainerEndpoint {
       return other.originator_ == nullptr;
     }
     if (other.originator_ == nullptr) return false;
-    return *originator_ == *other.originator_; // Please note that the == operator for Process does not check the PID
+    return *originator_ == *other.originator_;  // Please note that the == operator for Process does not check the PID
   }
 
   bool operator!=(const ContainerEndpoint& other) const {
