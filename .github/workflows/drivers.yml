@@ -71,6 +71,8 @@ jobs:
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
+      - uses: google-github-actions/setup-gcloud@v1
+
       - name: Create a mock cache
         if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-cache') }}
         run: |
