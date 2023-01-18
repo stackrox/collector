@@ -229,11 +229,9 @@ void NetworkStatusNotifier::ConvertEndpointsToAdvertisedRepresentation(const Con
   for (auto cep : from) {
     auto insert_result = to.insert(cep);
 
-    if (!insert_result.second && cep.second.IsActive()) {
-      /* collision case
-         Replace the existing endpoint by the "active" one.
-         Since they are equal, replacing an active endpoint with an active one doesn't make any difference. */
-      (*insert_result.first).second = cep.second;
+    if (!insert_result.second) {
+      // collision case: keep the latest activity
+      (*insert_result.first).second.MergeFrom(cep.second);
     }
   }
 }
