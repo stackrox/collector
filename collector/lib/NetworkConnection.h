@@ -357,12 +357,13 @@ class ContainerEndpoint {
   const std::shared_ptr<Process> originator() const { return originator_; }
 
   bool operator==(const ContainerEndpoint& other) const {
+    if (other.originator_ == nullptr) return false;
+    if (container_ != other.container_ || endpoint_ != other.endpoint_ || l4proto_ != other.l4proto_) return false;
     if (originator_ == nullptr) {
       return other.originator_ == nullptr;
     }
     if (other.originator_ == nullptr) return false;
-    return container_ == other.container_ && endpoint_ == other.endpoint_ && l4proto_ == other.l4proto_ &&
-           *originator_ == *other.originator_;
+    return *originator_ == *other.originator_; // Please note that the == operator for Process does not check the PID
   }
 
   bool operator!=(const ContainerEndpoint& other) const {

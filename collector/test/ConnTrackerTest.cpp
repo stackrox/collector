@@ -1264,6 +1264,11 @@ TEST(ConnTrackerTest, TestEmplaceOrUpdateSameEndpointDifferentPids) {
   connectionTracker.EmplaceOrUpdateNoLock(ce1, oldConnStatus);
   connectionTracker.EmplaceOrUpdateNoLock(ce2, newConnStatus);
 
+  // Two ContainerEndpoints are considered the same if their
+  // containers, endpoints, protocol, process name, executable path,
+  // and process arguments are the same. The PID does not have to be
+  // the same for two endpoints to be considered to be the same.
+  // This is why there is only one endpoint in the expected state.
   ContainerEndpointMap expected_state = {{ce1, newConnStatus}};
   ContainerEndpointMap observed_state = connectionTracker.FetchEndpointState(false, false);
 
@@ -1309,8 +1314,12 @@ TEST(ConnTrackerTest, TestDeltaForEndpointDifferentPids) {
   ContainerEndpointMap old_state = {{ce1, oldConnStatus}};
   ContainerEndpointMap new_state = {{ce2, newConnStatus}};
 
-  ContainerEndpointMap expected_delta = {{ce1, ConnStatus(connection_time1, false)}, {ce2, newConnStatus}};
-
+  // Two ContainerEndpoints are considered the same if their
+  // containers, endpoints, protocol, process name, executable path,
+  // and process arguments are the same. The PID does not have to be
+  // the same for two endpoints to be considered to be the same.
+  // Hence these two endpoints are considered the same and there is
+  // nothing in the delta.
   CT::ComputeDelta(new_state, &old_state);
   EXPECT_THAT(old_state, IsEmpty());
 }

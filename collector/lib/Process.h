@@ -70,6 +70,7 @@ class Process {
   std::string exe_path() const;
   std::string args() const;
 
+  // Please note that the == operator for Process does not check the PID
   bool operator==(Process& other) {
     return container_id() == other.container_id() &&
            comm() == other.comm() &&
