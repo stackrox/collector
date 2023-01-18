@@ -32,18 +32,6 @@ get_module_version() (
     fi
 )
 
-apply_patches() (
-    for version_dir in "${OUT_DIR}/kobuild-tmp/versions-src"/*; do
-        version="${version_dir#"${OUT_DIR}/kobuild-tmp/versions-src/"}"
-        echo "Version directory: $version_dir"
-        echo "Version: $version"
-        if [[ -f "${SRC_DIR}/kernel-modules/patches/${version}.patch" ]]; then
-            echo "Applying patch for module version ${version} ..."
-            patch -p1 -d "${OUT_DIR}/kobuild-tmp/versions-src/${version}" < "${SRC_DIR}/kernel-modules/patches/${version}.patch"
-        fi
-    done
-)
-
 checkout_branch() (
     local branch="$1"
 
@@ -85,8 +73,7 @@ M_VERSION="$(get_module_version)" \
 
 legacy="$(echo "$BUILD_LEGACY" | tr '[:upper:]' '[:lower:]')"
 if [[ "$legacy" == "false" ]]; then
-    # We are not building legacy probes, patch and move on
-    apply_patches
+    # We are not building legacy probes, move on
     exit 0
 fi
 
@@ -110,8 +97,6 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
         "${PREPARE_SRC_SH}"
 
 done < <(grep -v '^#' < "${SRC_DIR}/RELEASED_VERSIONS" | awk -F'#' '{print $1}' | awk 'NF==2 {print $1}' | sort | uniq)
-
-apply_patches
 
 # Leave the collector repo as clean as possible
 checkout_branch "$WORK_BRANCH"
