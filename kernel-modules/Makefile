@@ -2,7 +2,7 @@ BUILD_CONTAINER_TAG ?= build-kernel-modules
 BUILD_CONTAINER_CACHE_IMAGES ?=
 DEV_DRIVER_BUILDER ?= fc36
 
-CUSTOM_FLAVORS := $(patsubst build/Dockerfile.%,%,$(wildcard build/Dockerfile.*))
+CUSTOM_FLAVORS := $(patsubst build/%.Dockerfile,%,$(wildcard build/*.Dockerfile))
 
 .DEFAULT_GOAL = all
 .PHONY: all
@@ -12,7 +12,7 @@ all: build-container
 build-container:
 	docker build $(BUILD_CONTAINER_CACHE_IMAGES:%=--cache-from=%) -t $(BUILD_CONTAINER_TAG) ./build
 
-build-container-%: build/Dockerfile.%
+build-container-%: build/%.Dockerfile
 	docker build $(BUILD_CONTAINER_CACHE_IMAGES:%=--cache-from=%-$@) -t $(BUILD_CONTAINER_TAG)-$* ./build -f $<
 
 .PHONY: all-build-containers
@@ -22,7 +22,7 @@ all-build-containers: build-container $(CUSTOM_FLAVORS:%=build-container-%)
 pull-build-container:
 	docker pull $(BUILD_CONTAINER_CACHE_IMAGES) || true
 
-pull-build-container-%: build/Dockerfile.%
+pull-build-container-%: build/%.Dockerfile
 	$(BUILD_CONTAINER_CACHE_IMAGES:%=docker pull %-$*) || true
 
 .PHONY: pull-build-containers
@@ -32,7 +32,7 @@ pull-build-containers: pull-build-container $(CUSTOM_FLAVORS:%=pull-build-contai
 push-build-container:
 	docker push $(BUILD_CONTAINER_CACHE_IMAGES) || true
 
-push-build-container-%: build/Dockerfile.%
+push-build-container-%: build/%.Dockerfile
 	$(BUILD_CONTAINER_CACHE_IMAGES:%=docker push %-$*) || true
 
 .PHONY: push-build-containers

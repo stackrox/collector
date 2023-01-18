@@ -74,7 +74,7 @@ jobs:
       - name: Create a mock cache
         if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-cache') }}
         run: |
-          ${{ github.workspace }}/.github/drivers/mock-cache.sh
+          ${{ github.workspace }}/kernel-modules/build/mock-cache.sh
 
       - name: Get build tasks
         env:
@@ -150,7 +150,7 @@ jobs:
       - split-tasks
     if: ${{ needs.split-tasks.outputs.parallel-jobs > 0 }}
     env:
-      BUILDERS_DIR: ${{ github.workspace }}/.github/drivers
+      BUILDERS_DIR: ${{ github.workspace }}/kernel-modules/build
 
     strategy:
       matrix:
