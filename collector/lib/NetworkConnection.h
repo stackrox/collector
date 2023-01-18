@@ -357,7 +357,6 @@ class ContainerEndpoint {
   const std::shared_ptr<Process> originator() const { return originator_; }
 
   bool operator==(const ContainerEndpoint& other) const {
-    if (other.originator_ == nullptr) return false;
     if (container_ != other.container_ || endpoint_ != other.endpoint_ || l4proto_ != other.l4proto_) return false;
     if (originator_ == nullptr) {
       return other.originator_ == nullptr;
