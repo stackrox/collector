@@ -16,20 +16,14 @@ fi
 mkdir -p "${OUT_DIR}/versions/{released-collectors,released-modules}"
 mkdir -p "${OUT_DIR}/kobuild-tmp/versions-src"
 
+# The only driver currently support is falco, but I'm keeping this function
+# in case this changes in the future.
 get_driver_relative_path() (
-    if git config --list -f "${SRC_DIR}/.gitmodules" --name-only | grep -q "falcosecurity-libs"; then
-        echo "falcosecurity-libs"
-    else
-        echo "sysdig/src"
-    fi
+    echo "falcosecurity-libs"
 )
 
 get_module_version() (
-    if [[ -f "${SRC_DIR}/kernel-modules/MODULE_VERSION" ]]; then
-        cat "${SRC_DIR}/kernel-modules/MODULE_VERSION"
-    else
-        echo ""
-    fi
+    cat "${SRC_DIR}/kernel-modules/MODULE_VERSION"
 )
 
 checkout_branch() (
@@ -47,12 +41,6 @@ checkout_branch() (
 
     local driver_relative_path
     driver_relative_path="$(get_driver_relative_path)"
-
-    if ((OSCI_RUN)) && [[ "${driver_relative_path}" == "sysdig/src" ]]; then
-        # For the time being we don't compile sysdig drivers in OSCI
-        echo "Skipping module source archive for collector version ${collector_ref}"
-        return 1
-    fi
 
     git -C "${SRC_DIR}" submodule update --init "${driver_relative_path}"
 
