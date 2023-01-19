@@ -1246,91 +1246,149 @@ TEST(ConnTrackerTest, TestComputeDeltaAfterglowBenchmark2) {
   std::cout << "Time taken by ComputeDeltaAfterglow= " << dur.count() << " ms\n";
 }
 
-TEST(ConnTrackerTest, TestEmplaceOrUpdateSameEndpointDifferentPids) {
-  string container = "FakeContainer";
-  int64_t connection_time1 = 1000;
-  int64_t connection_time2 = 2000;
+class FakeProcess : public IProcess {
+ public:
+  FakeProcess(
+      uint64_t pid,
+      std::string container_id,
+      std::string comm,
+      std::string exe,
+      std::string exe_path,
+      std::string args) : pid_(pid),
+                          container_id_(container_id),
+                          comm_(comm),
+                          exe_(exe),
+                          exe_path_(exe_path),
+                          args_(args) {}
+
+  uint64_t pid() const override { return pid_; }
+  std::string container_id() const override { return container_id_; }
+  std::string comm() const override { return comm_; }
+  std::string exe() const override { return exe_; }
+  std::string exe_path() const override { return exe_path_; }
+  std::string args() const override { return args_; }
+
+ private:
+  uint64_t pid_;
+  std::string container_id_;
+  std::string comm_;  // part of the process-unique-key
+  std::string exe_;
+  std::string exe_path_;  // part of the process-unique-key
+  std::string args_;      // part of the process-unique-key
+};
+
+/* Same endpoint, but opened by two processes having different process-unique-key.
+   We expect that the endpoint is reported once for each of the processes. */
+TEST(ConnTrackerTest, TestSameEndpointDifferentProcess) {
+  int64_t activity_time1 = 1000;
+  int64_t activity_time2 = 2000;
   Endpoint a(Address(192, 168, 0, 1), 80);
   ConnectionTracker connectionTracker;
-  std::shared_ptr<Process> process1 = std::make_shared<Process>(2);
-  std::shared_ptr<Process> process2 = std::make_shared<Process>(3);
+  std::shared_ptr<IProcess> process1 = std::make_shared<FakeProcess>(2, "container", "specific_comm1", "exe", "exe_path", "args");
+  std::shared_ptr<IProcess> process2 = std::make_shared<FakeProcess>(3, "container", "specific_comm2", "exe", "exe_path", "args");
 
-  ContainerEndpoint ce1(container, a, L4Proto::TCP, process1);
-  ContainerEndpoint ce2(container, a, L4Proto::TCP, process2);
+  ContainerEndpoint ce1("container", a, L4Proto::TCP, process1);
+  ContainerEndpoint ce2("container", a, L4Proto::TCP, process2);
 
-  ConnStatus oldConnStatus(connection_time1, true);
-  ConnStatus newConnStatus(connection_time2, true);
+  ConnStatus connStatus1(activity_time1, true);
+  ConnStatus connStatus2(activity_time2, true);
 
-  connectionTracker.EmplaceOrUpdateNoLock(ce1, oldConnStatus);
-  connectionTracker.EmplaceOrUpdateNoLock(ce2, newConnStatus);
+  connectionTracker.EmplaceOrUpdateNoLock(ce1, connStatus1);
+  connectionTracker.EmplaceOrUpdateNoLock(ce2, connStatus2);
 
-  ContainerEndpointMap expected_state = {{ce1, oldConnStatus}, {ce2, newConnStatus}};
-  ContainerEndpointMap observed_state = connectionTracker.FetchEndpointState(false, false);
-  EXPECT_THAT(observed_state, expected_state);
+  AdvertisedEndpointMap observed_state = connectionTracker.FetchEndpointState(false, false);
 
-  ContainerEndpoint observed_endpoint = observed_state.find(ce2)->first;
-  int observedPid = observed_endpoint.originator()->pid();
-
-  EXPECT_THAT(observedPid, 3);
+  EXPECT_THAT(observed_state, UnorderedElementsAre(std::make_pair(ce1, connStatus1), std::make_pair(ce2, connStatus2)));
 }
+/* Same endpoint, but opened by two processes having the same process-unique-key.
+   We expect that the endpoint is reported only once */
+TEST(ConnTrackerTest, TestSameEndpointSimilarProcess) {
+  int64_t activity_time1 = 1000;
+  int64_t activity_time2 = 2000;
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  ConnectionTracker connectionTracker;
+  std::shared_ptr<IProcess> process1 = std::make_shared<FakeProcess>(2, "container", "comm", "exe1", "exe_path", "args");
+  std::shared_ptr<IProcess> process2 = std::make_shared<FakeProcess>(3, "container", "comm", "exe2", "exe_path", "args");
 
+  ContainerEndpoint ce1("container", a, L4Proto::TCP, process1);
+  ContainerEndpoint ce2("container", a, L4Proto::TCP, process2);
+
+  ConnStatus connStatus1(activity_time1, true);
+  ConnStatus connStatus2(activity_time2, true);
+
+  connectionTracker.EmplaceOrUpdateNoLock(ce1, connStatus1);
+  connectionTracker.EmplaceOrUpdateNoLock(ce2, connStatus2);
+
+  AdvertisedEndpointMap observed_state = connectionTracker.FetchEndpointState(false, false);
+
+  EXPECT_THAT(observed_state.size(), 1);
+  EXPECT_THAT(observed_state.begin()->second.IsActive(), true);
+  EXPECT_THAT(observed_state.begin()->second.LastActiveTime(), 2000);
+}
+/* Same endpoint, same process, seen at two points in time.
+   We check that it is reported once, and that the activity is the most recent one */
 TEST(ConnTrackerTest, TestEmplaceOrUpdateSameEndpointAndPids) {
   string container = "FakeContainer";
-  int64_t connection_time1 = 1000;
-  int64_t connection_time2 = 2000;
+  int64_t activity_time1 = 1000;
+  int64_t activity_time2 = 2000;
   Endpoint a(Address(192, 168, 0, 1), 80);
   ConnectionTracker connectionTracker;
-  std::shared_ptr<Process> process1 = std::make_shared<Process>(2);
+  std::shared_ptr<IProcess> process1 = std::make_shared<FakeProcess>(2, "container", "comm", "exe", "exe_path", "args");
 
   ContainerEndpoint ce1(container, a, L4Proto::TCP, process1);
 
-  ConnStatus oldConnStatus(connection_time1, true);
-  ConnStatus newConnStatus(connection_time2, true);
+  ConnStatus oldConnStatus(activity_time1, true);
+  ConnStatus newConnStatus(activity_time2, true);
 
   connectionTracker.EmplaceOrUpdateNoLock(ce1, oldConnStatus);
   connectionTracker.EmplaceOrUpdateNoLock(ce1, newConnStatus);
 
-  ContainerEndpointMap expected_state = {{ce1, newConnStatus}};
-  ContainerEndpointMap observed_state = connectionTracker.FetchEndpointState(false, false);
+  AdvertisedEndpointMap expected_state = {{ce1, newConnStatus}};
+  AdvertisedEndpointMap observed_state = connectionTracker.FetchEndpointState(false, false);
   EXPECT_THAT(observed_state, expected_state);
 }
 
-TEST(ConnTrackerTest, TestDeltaForEndpointDifferentPids) {
+/* Same endpoint, successively opened by two different processes (first closes and second opens).
+   We expect that delta computation will return the first ep closed and the second opened. */
+TEST(ConnTrackerTest, TestDeltaForEndpointDifferentProcess) {
   string container = "FakeContainer";
-  int64_t connection_time1 = 1000;
-  int64_t connection_time2 = 2000;
+  int64_t activity_time1 = 1000;
+  int64_t activity_time2 = 2000;
   Endpoint a(Address(192, 168, 0, 1), 80);
   ConnectionTracker connectionTracker;
-  std::shared_ptr<Process> process1 = std::make_shared<Process>(2);
-  std::shared_ptr<Process> process2 = std::make_shared<Process>(3);
+  std::shared_ptr<IProcess> process1 = std::make_shared<FakeProcess>(2, "container", "comm", "exe", "exe_path1", "args");
+  std::shared_ptr<IProcess> process2 = std::make_shared<FakeProcess>(3, "container", "comm", "exe", "exe_path2", "args");
 
   ContainerEndpoint ce1(container, a, L4Proto::TCP, process1);
   ContainerEndpoint ce2(container, a, L4Proto::TCP, process2);
 
-  ConnStatus oldConnStatus(connection_time1, true);
-  ConnStatus newConnStatus(connection_time2, true);
+  ConnStatus oldConnStatus(activity_time1, true);
+  ConnStatus newConnStatus(activity_time2, true);
 
-  ContainerEndpointMap old_state = {{ce1, oldConnStatus}};
-  ContainerEndpointMap new_state = {{ce2, newConnStatus}};
+  AdvertisedEndpointMap old_state = {{ce1, oldConnStatus}};
+  AdvertisedEndpointMap new_state = {{ce2, newConnStatus}};
 
-  ContainerEndpointMap expected_delta = {{ce1, ConnStatus(connection_time1, false)}, {ce2, newConnStatus}};
+  AdvertisedEndpointMap expected_delta = {{ce1, ConnStatus(activity_time1, false)}, {ce2, newConnStatus}};
 
   CT::ComputeDelta(new_state, &old_state);
   EXPECT_THAT(old_state, expected_delta);
 }
 
+/* Same endpoint, successively opened by two processes looking similar (first closes and second opens).
+   We expect that delta computation will return an empty set. */
 TEST(ConnTrackerTest, TestDeltaForEndpointSamePids) {
   string container = "FakeContainer";
-  int64_t connection_time1 = 1000;
-  int64_t connection_time2 = 2000;
+  int64_t activity_time1 = 1000;
+  int64_t activity_time2 = 2000;
   Endpoint a(Address(192, 168, 0, 1), 80);
   ConnectionTracker connectionTracker;
-  std::shared_ptr<Process> process1 = std::make_shared<Process>(2);
+  std::shared_ptr<IProcess> process1 = std::make_shared<FakeProcess>(2, "container", "comm", "exe1", "exe_path", "args");
+  std::shared_ptr<IProcess> process2 = std::make_shared<FakeProcess>(3, "container", "comm", "exe2", "exe_path", "args");
 
   ContainerEndpoint ce1(container, a, L4Proto::TCP, process1);
 
-  ConnStatus oldConnStatus(connection_time1, true);
-  ConnStatus newConnStatus(connection_time2, true);
+  ConnStatus oldConnStatus(activity_time1, true);
+  ConnStatus newConnStatus(activity_time2, true);
 
   ContainerEndpointMap old_state = {{ce1, oldConnStatus}};
   ContainerEndpointMap new_state = {{ce1, newConnStatus}};

@@ -89,8 +89,16 @@ class ConnStatus {
   uint64_t data_;
 };
 
+/* Adverstised Endpoint representation comparison operator. It matches when two endpoints are undistinguishable
+  as seen from the Sensor (their originator process unique key is equal) */
+class AdvertisedEndpointEquality {
+ public:
+  bool operator()(const ContainerEndpoint& lhs, const ContainerEndpoint& rhs) const;
+};
+
 using ConnMap = UnorderedMap<Connection, ConnStatus>;
 using ContainerEndpointMap = UnorderedMap<ContainerEndpoint, ConnStatus>;
+using AdvertisedEndpointMap = UnorderedMap<ContainerEndpoint, ConnStatus, AdvertisedEndpointEquality>;
 
 class CollectorStats;
 
@@ -108,7 +116,7 @@ class ConnectionTracker {
 
   // Atomically fetch a snapshot of the current state, removing all inactive connections if requested.
   ConnMap FetchConnState(bool normalize = false, bool clear_inactive = true);
-  ContainerEndpointMap FetchEndpointState(bool normalize = false, bool clear_inactive = true);
+  AdvertisedEndpointMap FetchEndpointState(bool normalize = false, bool clear_inactive = true);
 
   template <typename T>
   static void UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, const UnorderedMap<T, ConnStatus>& new_state, int64_t time_micros, int64_t afterglow_period_micros);
