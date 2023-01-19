@@ -390,7 +390,7 @@ sensor::NetworkAddress* NetworkStatusNotifier::EndpointToProto(const collector::
   return addr_proto;
 }
 
-storage::NetworkProcessUniqueKey* NetworkStatusNotifier::ProcessToProto(const collector::Process& process) {
+storage::NetworkProcessUniqueKey* NetworkStatusNotifier::ProcessToProto(const collector::IProcess& process) {
   auto* process_proto = Allocate<storage::NetworkProcessUniqueKey>();
 
   process_proto->set_process_name(process.comm());

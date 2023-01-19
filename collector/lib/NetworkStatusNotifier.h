@@ -54,7 +54,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   sensor::NetworkConnection* ConnToProto(const Connection& conn);
   sensor::NetworkEndpoint* ContainerEndpointToProto(const ContainerEndpoint& cep);
   sensor::NetworkAddress* EndpointToProto(const Endpoint& endpoint);
-  storage::NetworkProcessUniqueKey* ProcessToProto(const collector::Process& process);
+  storage::NetworkProcessUniqueKey* ProcessToProto(const collector::IProcess& process);
 
   void OnRecvControlMessage(const sensor::NetworkFlowsControlMessage* msg);
 

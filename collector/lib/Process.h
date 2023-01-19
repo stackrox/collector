@@ -35,6 +35,7 @@ You should have received a copy of the GNU General Public License along with thi
 // forward declarations
 class sinsp_threadinfo;
 namespace collector {
+class IProcess;
 class Process;
 class SysdigService;
 }  // namespace collector
@@ -51,7 +52,7 @@ class ProcessStore {
   /* Get a Process by PID.
      Returns a reference to the cached Process entry, which may have just been created
      if it wasn't already known. */
-  const std::shared_ptr<Process> Fetch(uint64_t pid);
+  const std::shared_ptr<IProcess> Fetch(uint64_t pid);
 
   typedef std::shared_ptr<std::unordered_map<uint64_t, std::weak_ptr<Process>>> MapRef;
 
@@ -60,19 +61,31 @@ class ProcessStore {
   MapRef cache_;
 };
 
-// Information collected about a process.
-class Process {
+class IProcess {
  public:
-  inline uint64_t pid() const { return pid_; }
-  std::string container_id() const;
-  std::string comm() const;
-  std::string exe() const;
-  std::string exe_path() const;
-  std::string args() const;
+  virtual uint64_t pid() const = 0;
+  virtual std::string container_id() const = 0;
+  virtual std::string comm() const = 0;
+  virtual std::string exe() const = 0;
+  virtual std::string exe_path() const = 0;
+  virtual std::string args() const = 0;
 
-  bool operator==(Process& other) {
+  virtual bool operator==(IProcess& other) {
     return pid() == other.pid();
   }
+
+  virtual ~IProcess() {}
+};
+
+// Information collected about a process.
+class Process : public IProcess {
+ public:
+  inline uint64_t pid() const override { return pid_; }
+  std::string container_id() const override;
+  std::string comm() const override;
+  std::string exe() const override;
+  std::string exe_path() const override;
+  std::string args() const override;
 
   /* - when 'cache' is provided, this process will remove itself from it upon deletion.
    * - 'falco_instance' is used to request the process information from the system. */
@@ -102,7 +115,7 @@ class Process {
   void WaitForProcessInfo() const;
 };
 
-std::ostream& operator<<(std::ostream& os, const Process& process);
+std::ostream& operator<<(std::ostream& os, const IProcess& process);
 
 }  // namespace collector
 

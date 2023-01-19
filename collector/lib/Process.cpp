@@ -36,7 +36,7 @@ ProcessStore::ProcessStore(SysdigService* falco_instance) : falco_instance_(falc
   cache_ = std::make_shared<std::unordered_map<uint64_t, std::weak_ptr<Process>>>();
 }
 
-const std::shared_ptr<Process> ProcessStore::Fetch(uint64_t pid) {
+const std::shared_ptr<IProcess> ProcessStore::Fetch(uint64_t pid) {
   auto cached_process_pair_iter = cache_->find(pid);
 
   if (cached_process_pair_iter != cache_->end()) {
@@ -161,7 +161,7 @@ void Process::WaitForProcessInfo() const {
   }
 }
 
-std::ostream& operator<<(std::ostream& os, const Process& process) {
+std::ostream& operator<<(std::ostream& os, const IProcess& process) {
   std::string processString = "ContainerID: " + process.container_id() + " Exe: " + process.exe() + " ExePath: ";
   processString += process.exe_path() + " Args: " + process.args() + " PID: " + std::to_string(process.pid());
   return os << processString;
