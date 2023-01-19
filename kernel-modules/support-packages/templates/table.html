@@ -1,0 +1,27 @@
+<div class="pt-4">
+    <h3>{{ arch }}</h3>
+</div>
+<table>
+    <thead>
+        <tr><th>StackRox Version(s)</th><th>Last updated</th><th>Download Link</th><th>Checksum</th></tr>
+    </thead>
+    <tbody>
+        {% for pkg in sp %}
+        <tr>
+            <td>
+                {% for rng in pkg.rox_version_ranges %}
+                {% if rng.min == rng.max %}
+                {{rng.min}}
+                {% else %}
+                {{rng.min}}&ndash;{{rng.max}}
+                {% endif %}
+                <br>
+                {% endfor %}
+            </td>
+            <td>{{pkg.last_update_time}}</td>
+            <td><a href="{{pkg.download_url}}">Download</a>{% if pkg.download_url_latest %} (<a href="{{pkg.download_url_latest}}">stable link</a>){% endif %}</td>
+            <td><a href="{{pkg.checksum_url}}">SHA256</a>{% if pkg.checksum_url_latest %} (<a href="{{pkg.checksum_url_latest}}">stable link</a>){% endif %}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

@@ -3245,30 +3245,9 @@
             In order to check the integrity of the support package, download the corresponding checksum file to the same
             directory you stored the package in and run: sha256sum -c &ltchecksum-file&gt
             <p></p>
-            <table>
-                <thead>
-                    <tr><th>StackRox Version(s)</th><th>Last updated</th><th>Download Link</th><th>Checksum</th></tr>
-                </thead>
-                <tbody>
-                    {% for pkg in support_packages %}
-                    <tr>
-                        <td>
-                            {% for rng in pkg.rox_version_ranges %}
-                            {% if rng.min == rng.max %}
-                            {{rng.min}}
-                            {% else %}
-                            {{rng.min}}&ndash;{{rng.max}}
-                            {% endif %}
-                            <br>
-                            {% endfor %}
-                        </td>
-                        <td>{{pkg.last_update_time}}</td>
-                        <td><a href="{{pkg.download_url}}">Download</a>{% if pkg.download_url_latest %} (<a href="{{pkg.download_url_latest}}">stable link</a>){% endif %}</td>
-                        <td><a href="{{pkg.checksum_url}}">SHA256</a>{% if pkg.checksum_url_latest %} (<a href="{{pkg.checksum_url_latest}}">stable link</a>){% endif %}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            {% for arch, sp in support_packages.items() %}
+                {% include 'table.html' %}
+            {% endfor %}
             {% else %}
             <div class="border bg-base-200 border-base-400 border p-8">
                 <p class="text-alert-800 mb-0">Currently, no support packages are available. Please check back at a later time.</p>

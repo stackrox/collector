@@ -15,6 +15,7 @@ VersionRange = namedtuple('VersionRange', 'min max')
 class SupportPackage(object):
     def __init__(self,
                  module_version,
+                 architecture,
                  rox_version_ranges,
                  file_name,
                  latest_file_name,
@@ -22,6 +23,7 @@ class SupportPackage(object):
                  chk_name,
                  latest_chk_name):
         self.module_version = module_version
+        self.architecture = architecture
         self.rox_version_ranges = rox_version_ranges
         self.file_name = file_name
         self.latest_file_name = latest_file_name
@@ -31,20 +33,20 @@ class SupportPackage(object):
 
     @property
     def download_url(self):
-        return '%s/%s/%s' % (os.getenv('BASE_URL'), self.module_version, self.file_name)
+        return '%s/%s/%s/%s' % (os.getenv('BASE_URL'), self.architecture, self.module_version, self.file_name)
 
     @property
     def download_url_latest(self):
-        return '%s/%s/%s' % (os.getenv('BASE_URL'), self.module_version, self.latest_file_name) \
+        return '%s/%s/%s/%s' % (os.getenv('BASE_URL'), self.architecture, self.module_version, self.latest_file_name) \
             if self.latest_file_name is not None else None
 
     @property
     def checksum_url(self):
-        return '%s/%s/%s' % (os.getenv('BASE_URL'), self.module_version, self.chk_name)
+        return '%s/%s/%s%s' % (os.getenv('BASE_URL'), self.architecture, self.module_version, self.chk_name)
 
     @property
     def checksum_url_latest(self):
-        return '%s/%s/%s' % (os.getenv('BASE_URL'), self.module_version, self.latest_chk_name) \
+        return '%s/%s/%s%s' % (os.getenv('BASE_URL'), self.architecture, self.module_version, self.latest_chk_name) \
             if self.latest_chk_name is not None else None
 
     def __repr__(self):
@@ -68,7 +70,7 @@ def render_index(packages, out_dir, template_file='index.html'):
         f.write(output)
 
 
-def load_support_packages(output_dir, mod_md_map):
+def load_support_packages(output_dir, mod_md_map, arch):
     support_packages = []
     driver_version_re = re.compile(r'^\d+\.\d+\.\d+$')
 
@@ -113,6 +115,7 @@ def load_support_packages(output_dir, mod_md_map):
 
         support_packages.append(
             SupportPackage(mod_ver,
+                           arch,
                            rox_version_ranges,
                            support_pkg_file,
                            support_pkg_file_latest,
@@ -188,7 +191,11 @@ def main(args):
     modules_md = load_modules_metadata(md_dir)
     ranges = compute_version_ranges(modules_md)
 
-    support_packages = load_support_packages(out_dir, ranges)
+    support_packages = {
+        arch: load_support_packages(f'{out_dir}/{arch}', ranges, arch)
+        for arch in ['x86_64', 's390x', 'ppc64le']
+    }
+
     render_index(support_packages, out_dir)
 
 
