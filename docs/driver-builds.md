@@ -33,11 +33,6 @@ kernel bundles from GCP. The bundles are tarballs containing the required
 headers for each kernel version supported, these are created by our
 [crawler](https://github.com/stackrox/kernel-packer).
 
-Once building the drivers is done, 3 follow up steps will be triggered:
-- Check the log files containing compilation errors.
-- Push the built drivers to a GCP bucket.
-- Build support-packages with the newly built drivers and push them to GCP.
-
 #### Drivers build
 This is a more detailed look at the `Drivers Build` component from the previous graph
 
@@ -75,6 +70,13 @@ Some things worth of notice:
 
 - Built drivers and log files holding the compilation errors are stored as
   artifacts in order to be used by subsequent steps.
+
+#### Post-build jobs
+
+Once building the drivers is done, 3 follow up steps will be triggered:
+- Check the log files containing compilation errors.
+- Push the built drivers to a GCP bucket.
+- Build support-packages with the newly built drivers and push them to GCP.
 
 ### CPaaS drivers flow
 
