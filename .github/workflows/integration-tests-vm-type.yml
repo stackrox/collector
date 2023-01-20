@@ -64,6 +64,8 @@ jobs:
 
       - name: Copy creds files
         run: |
+          gcloud --version
+
           # Temporary compatibility with OSCI
           mkdir -p /tmp/secret/stackrox-collector-e2e-tests
           cp "$GOOGLE_APPLICATION_CREDENTIALS" /tmp/secret/stackrox-collector-e2e-tests/GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT
