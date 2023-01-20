@@ -57,6 +57,10 @@ jobs:
           docker cp drivers:/kernel-modules/ "${TMP_DIR}"
           docker cp drivers:/support-packages/ "${TMP_DIR}"
 
+          # This is empty file is needed for the failure artifact to be
+          # created when there are no failures
+          touch "${TMP_DIR}/FAILURES/.dummy"
+
       - name: Upload failure logs
         uses: actions/upload-artifact@v3
         with:
@@ -123,6 +127,8 @@ jobs:
     needs: sync-drivers
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Authenticate with GCP
         uses: 'google-github-actions/auth@v1'
