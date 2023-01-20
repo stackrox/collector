@@ -71,7 +71,7 @@ jobs:
       - name: Set GCP buckets
         id: gcp-buckets
         run: |
-          STAGING_RELATIVE_PATH="${GITHUB_HEAD_REF}/${{ github.run_id}}"
+          STAGING_RELATIVE_PATH="${GITHUB_HEAD_REF}/${{ github.run_id }}"
 
           MAIN_DRIVER_BUCKET="collector-modules-osci"
           STAGING_DRIVER_BUCKET="stackrox-collector-modules-staging/pr-builds/${STAGING_RELATIVE_PATH}"
