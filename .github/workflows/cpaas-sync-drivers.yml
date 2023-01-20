@@ -142,7 +142,7 @@ jobs:
         with:
           branch-name: ${{ inputs.branch-name }}
 
-      - uses: ./.github/actions/support-packages-index
+      - uses: ./.github/actions/support-package-index
         with:
           gcp-bucket: ${{ inputs.support-packages-bucket }}
           metadata-path: /tmp/support-packages/metadata
