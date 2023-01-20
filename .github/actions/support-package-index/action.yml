@@ -54,5 +54,5 @@ runs:
       export BASE_URL="${DOWNLOAD_BASE_URL}/${relative_path}"
 
       ${{ github.workspace }}/kernel-modules/support-packages/05-create-index.py \
-        ${{ inputs.metadata-path }}
+        ${{ inputs.metadata-path }} \
         ${{ inputs.output-path }}
