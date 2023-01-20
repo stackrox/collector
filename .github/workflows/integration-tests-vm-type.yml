@@ -59,6 +59,8 @@ jobs:
 
       - name: Setup GCP
         uses: 'google-github-actions/setup-gcloud@v1'
+        with:
+          version: "412.0.0"
 
       - name: Copy creds files
         run: |
@@ -100,9 +102,9 @@ jobs:
           QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
-            #- name: Teardown VMs
-            #  if: always()
-            #  run: make -C "${{ github.workspace }}/ansible" destroy-vms
+      - name: Teardown VMs
+        if: always()
+        run: make -C "${{ github.workspace }}/ansible" destroy-vms
 
       - name: Store artifacts
         if: always()
