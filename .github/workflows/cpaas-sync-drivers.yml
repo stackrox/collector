@@ -53,6 +53,15 @@ jobs:
           docker cp drivers:/kernel-modules/ "${TMP_DIR}"
           docker cp drivers:/support-packages/ "${TMP_DIR}"
 
+      - name: Store tasks and sources
+        uses: actions/upload-artifact@v3
+        with:
+          name: drivers-build-failures
+          if-no-files-found: ignore
+          path: |
+            ${{ env.FAILURES_DIR }}
+          retention-days: 7
+
       - name: Authenticate with GCP
         uses: 'google-github-actions/auth@v1'
         with:
@@ -73,6 +82,21 @@ jobs:
               gsutil -m cp -n -I "gs://${{ inputs.drivers-bucket }}/${{ matrix.platform }}/$(basename "${driver_version_dir}")/"
           done
 
+      - name: Generate 'latest' files
+        run: |
+          while read -r arch version original_file; do
+            VERSION_PATH="${SUPPORT_PACKAGE_PATH}/${arch}/${version}"
+            latest_file="support-pkg-${version}-latest.zip"
+
+            cp "${VERSION_PATH}/${original_file}" "${VERSION_PATH}/${latest_file}"
+            echo "${original_file}" > "${VERSION_PATH}/latest"
+            (
+              cd "${VERSION_PATH}"
+              sha256sum "${latest_file}" > "${latest_file}.sha256"
+            )
+          done < <(find "${SUPPORT_PACKAGE_TMP_DIR}" -name '*.zip' -type f |
+            awk '{split($0,array,"/"); print array[5] " " array[6] " " array[7]}')
+
       - name: Push support-packages
         uses: 'google-github-actions/upload-cloud-storage@v1'
         with:
@@ -80,7 +104,39 @@ jobs:
           parent: false
           destination: ${{ inputs.support-packages-bucket }}/${{ matrix.platform }}
 
-      - name: Check build failures
-        id: drivers-build-failures
-        run: |
-          ${{ github.workspace }}/.openshift-ci/drivers/scripts/drivers-build-failures.sh
+  check-drivers-failures:
+    uses: ./.github/workflows/check-drivers-failures.yml
+    needs: sync-drivers
+    secrets: inherit
+    with:
+      logs-artifact:
+        drivers-build-failures
+
+  update-index:
+    runs-on: ubuntu-latest
+    needs: sync-drivers
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v1'
+
+      - uses: ./.github/actions/support-package-metadata
+
+      - uses: ./.github/actions/support-packages-index
+        with:
+          gcp-bucket: ${{ inputs.support-packages-bucket }}
+          metadata-path: /tmp/support-packages/metadata
+          output-path: /tmp/support-packages/output
+
+      - name: Push index.html
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        with:
+          path: /tmp/support-packages/output/index.html
+          parent: false
+          destination: ${{ inputs.support-packages-bucket }}

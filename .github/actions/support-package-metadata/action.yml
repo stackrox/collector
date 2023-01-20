@@ -1,0 +1,35 @@
+name: Create support-packages metadata
+description: |
+  Creates all required metadata for building support-packages.
+inputs:
+  released-versions-file:
+    default: ${{ github.workspace }}/RELEASED_VERSIONS
+    description: |
+      File containing the mapping of collector to stackrox versions
+  metadata-directory:
+    default: /tmp/support-packages/metadata/
+    description: |
+      Output directory for generated metadata
+
+runs:
+  using: composite
+  steps:
+  - name: Map collector to stackrox versions
+    shell: bash
+    run: |
+      ${{ github.workspace }}/kernel-modules/support-packages/01-collector-to-rox-version-map.py \
+      ${{ inputs.released-versions-file }} \
+      "{{ inputs.metadata-directory }}
+
+  - name: Create driver version metadata
+    shell: bash
+    env:
+      BRANCH_NAME: ${{ inputs.branch-name }}
+    run: |
+      ./.github/support-packages/create-metadata-dir.sh
+
+  - name: Group versions by driver version
+    shell: bash
+    run: |
+      ${{ github.workspace }}/kernel-modules/support-packages/03-group-by-module-version.sh \
+      "{{ inputs.metadata-directory }}

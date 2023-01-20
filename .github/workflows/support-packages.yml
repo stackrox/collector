@@ -30,48 +30,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Map collector to stackrox versions
-        run: |
-          ${{ github.workspace }}/kernel-modules/support-packages/01-collector-to-rox-version-map.py \
-            ${{ github.workspace }}/RELEASED_VERSIONS \
-            /tmp/support-packages/metadata
-
-      - name: Create driver version metadata
-        env:
-          BRANCH_NAME: ${{ inputs.branch-name }}
-        run: |
-          ./.github/support-packages/create-metadata-dir.sh
-
-      - name: Group versions by driver version
-        run: |
-          ${{ github.workspace }}/kernel-modules/support-packages/03-group-by-module-version.sh \
-            /tmp/support-packages/metadata
-
       - name: Authenticate with GCP
         uses: 'google-github-actions/auth@v1'
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - uses: ./.github/actions/support-package-metadata
 
       - name: Create support-packages
         run: |
           ${{ github.workspace }}/kernel-modules/support-packages/04-create-support-packages.sh \
             ${{ github.workspace }}/collector/LICENSE-kernel-modules.txt \
             gs://${{ inputs.drivers-bucket }} \
-            /tmp/support-packages/metadata \
-            /tmp/support-packages/output
-
-      - name: Create index file
-        run: |
-          relative_path="collector/support-packages"
-
-          if [[ "${{ github.event_name == 'pull_request' }}" == "true" ]]; then
-              relative_path="${relative_path}/${GITHUB_HEAD_REF}/${{ github.run_id }}"
-          fi
-
-          DOWNLOAD_BASE_URL="https://install.stackrox.io"
-          export BASE_URL="${DOWNLOAD_BASE_URL}/${relative_path}"
-
-          ${{ github.workspace }}/kernel-modules/support-packages/05-create-index.py \
             /tmp/support-packages/metadata \
             /tmp/support-packages/output
 
@@ -87,6 +57,27 @@ jobs:
         if: github.event_name == 'push'
         with:
           path: /tmp/support-packages/output
+          parent: false
+          destination: ${{ inputs.public-support-packages-bucket }}
+
+      - uses: ./.github/actions/support-package-index
+        with:
+          gcp-bucket: ${{ inputs.support-packages-bucket }}
+          metadata-path: /tmp/support-packages/metadata
+          output-path: /tmp/support-packages/output
+
+      - name: Push index.html
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        with:
+          path: /tmp/support-packages/output/index.html
+          parent: false
+          destination: ${{ inputs.support-packages-bucket }}
+
+      - name: Push index.html to public bucket
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        if: github.event_name == 'push'
+        with:
+          path: /tmp/support-packages/output/index.html
           parent: false
           destination: ${{ inputs.public-support-packages-bucket }}
 
