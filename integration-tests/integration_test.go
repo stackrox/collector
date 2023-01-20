@@ -114,3 +114,7 @@ func TestSymbolicLinkProcess(t *testing.T) {
 func TestSocat(t *testing.T) {
 	suite.Run(t, new(suites.SocatTestSuite))
 }
+
+func TestDuplicateEndpoints(t *testing.T) {
+	suite.Run(t, new(suites.DuplicateEndpointsTestSuite))
+}
