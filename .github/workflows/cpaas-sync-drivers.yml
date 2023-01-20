@@ -53,7 +53,7 @@ jobs:
           docker cp drivers:/kernel-modules/ "${TMP_DIR}"
           docker cp drivers:/support-packages/ "${TMP_DIR}"
 
-      - name: Store tasks and sources
+      - name: Upload failure logs
         uses: actions/upload-artifact@v3
         with:
           name: drivers-build-failures
@@ -84,8 +84,10 @@ jobs:
 
       - name: Generate 'latest' files
         run: |
+          set -x
+
           while read -r arch version original_file; do
-            VERSION_PATH="${SUPPORT_PACKAGE_PATH}/${arch}/${version}"
+            VERSION_PATH="${SUPPORT_PACKAGE_TMP_DIR}/${arch}/${version}"
             latest_file="support-pkg-${version}-latest.zip"
 
             cp "${VERSION_PATH}/${original_file}" "${VERSION_PATH}/${latest_file}"
@@ -95,7 +97,7 @@ jobs:
               sha256sum "${latest_file}" > "${latest_file}.sha256"
             )
           done < <(find "${SUPPORT_PACKAGE_TMP_DIR}" -name '*.zip' -type f |
-            awk '{split($0,array,"/"); print array[5] " " array[6] " " array[7]}')
+            awk '{split($0,array,"/"); print array[4] " " array[5] " " array[6]}')
 
       - name: Push support-packages
         uses: 'google-github-actions/upload-cloud-storage@v1'
