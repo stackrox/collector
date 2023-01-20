@@ -36,6 +36,8 @@ jobs:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
       - uses: ./.github/actions/support-package-metadata
+        with:
+          branch-name: ${{ inputs.branch-name }}
 
       - name: Create support-packages
         run: |

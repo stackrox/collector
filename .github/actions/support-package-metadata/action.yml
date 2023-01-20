@@ -10,6 +10,10 @@ inputs:
     default: /tmp/support-packages/metadata/
     description: |
       Output directory for generated metadata
+  branch-name:
+    required: true
+    description: |
+      Branch CI is running on
 
 runs:
   using: composite

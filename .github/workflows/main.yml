@@ -18,6 +18,7 @@ jobs:
     with:
       drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
       bundles-bucket: ${{ needs.init.outputs.bundles-bucket }}
+      branch-name: ${{ needs.init.outputs.branch-name }}
     needs: init
     secrets: inherit
 
@@ -74,7 +75,7 @@ jobs:
   build-support-packages:
     uses: ./.github/workflows/support-packages.yml
     with:
-      branch-name: ${{ needs.build-drivers.outputs.branch-name }}
+      branch-name: ${{ needs.init.outputs.branch-name }}
       drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
       support-packages-bucket: ${{ needs.init.outputs.support-packages-bucket }}
       public-support-packages-bucket: ${{ needs.init.outputs.public-support-packages-bucket }}

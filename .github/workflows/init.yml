@@ -10,6 +10,10 @@ on:
         description: |
           The image built by running `make image` in the collector repo
         value: ${{ jobs.common-variables.outputs.collector-image }}
+      branch-name:
+        description: |
+          Branch CI is running on
+        value: ${{ jobs.common-variables.outputs.branch-name }}
       drivers-bucket:
         description: Bucket used to pull collector drivers from
         value: ${{ jobs.common-variables.outputs.drivers-bucket }}
@@ -36,12 +40,14 @@ on:
         description: |
           Bucket to push CPaaS built drivers into
         value: ${{ jobs.common-variables.outputs.cpaas-drivers-bucket }}
+
 jobs:
   common-variables:
     runs-on: ubuntu-latest
     outputs:
       collector-tag: ${{ steps.collector-env.outputs.collector-tag }}
       collector-image: ${{ steps.collector-env.outputs.collector-image }}
+      branch-name: ${{ steps.collector-env.outputs.branch-name }}
       drivers-bucket: ${{ steps.gcp-buckets.outputs.drivers-bucket }}
       push-drivers-bucket: ${{ steps.gcp-buckets.outputs.push-drivers-bucket }}
       bundles-bucket: ${{ steps.gcp-buckets.outputs.bundles-bucket }}
@@ -67,6 +73,12 @@ jobs:
 
           echo "collector-tag=${COLLECTOR_TAG}" >> "$GITHUB_OUTPUT"
           echo "collector-image=quay.io/stackrox-io/collector:${COLLECTOR_TAG}" >> "$GITHUB_OUTPUT"
+
+          if [[ ${{ github.event_name }} == "pull_request" ]]; then
+            echo "branch-name=${GITHUB_HEAD_REF}" >> "$GITHUB_OUTPUT"
+          else
+            echo "branch-name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Set GCP buckets
         id: gcp-buckets
