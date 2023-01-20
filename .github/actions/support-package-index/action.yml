@@ -25,11 +25,11 @@ runs:
     run: |
       for arch in x86_64 s390x ppc64le; do
         for version_path in ${{ inputs.metadata-path }}/module-versions/*; do
-          version="$(basename version_path)"
+          version="$(basename "${version_path}")"
           output_dir="${{ inputs.output-path }}/${arch}/${version}"
 
           mkdir -p "${output_dir}"
-          gsutil cp "${{ inputs.gcp-bucket }}/${arch}/${version}/latest" \
+          gsutil cp "gs://${{ inputs.gcp-bucket }}/${arch}/${version}/latest" \
             "${output_dir}/latest"
 
           latest_pkg="$(cat "${output_dir}/latest")"
