@@ -28,7 +28,14 @@ on:
         description: |
           Public bucket to push built support-packages into
         value: ${{ jobs.common-variables.outputs.public-support-packages-bucket }}
-
+      cpaas-support-packages-bucket:
+        description: |
+          Bucket to push CPaaS built support-packages into
+        value: ${{ jobs.common-variables.outputs.cpaas-support-packages-bucket }}
+      cpaas-drivers-bucket:
+        description: |
+          Bucket to push CPaaS built drivers into
+        value: ${{ jobs.common-variables.outputs.cpaas-drivers-bucket }}
 jobs:
   common-variables:
     runs-on: ubuntu-latest
@@ -40,6 +47,8 @@ jobs:
       bundles-bucket: ${{ steps.gcp-buckets.outputs.bundles-bucket }}
       support-packages-bucket: ${{ steps.gcp-buckets.outputs.support-packages-bucket }}
       public-support-packages-bucket: ${{ steps.gcp-buckets.outputs.public-support-packages-bucket }}
+      cpaas-drivers-bucket: ${{ steps.gcp-buckets.outputs.cpaas-drivers-bucket }}
+      cpaas-support-packages-bucket: ${{ steps.gcp-buckets.outputs.cpaas-support-packages-bucket }}
 
     steps:
       - uses: actions/checkout@v3
@@ -62,12 +71,19 @@ jobs:
       - name: Set GCP buckets
         id: gcp-buckets
         run: |
+          STAGING_RELATIVE_PATH="${GITHUB_HEAD_REF}/${{ github.run_id }}"
+
           MAIN_DRIVER_BUCKET="collector-modules-osci"
-          STAGING_DRIVER_BUCKET="stackrox-collector-modules-staging/pr-builds/${GITHUB_HEAD_REF}/${{ github.run_id }}"
+          STAGING_DRIVER_BUCKET="stackrox-collector-modules-staging/pr-builds/${STAGING_RELATIVE_PATH}"
           BUNDLES_BUCKET="collector-kernel-bundles-public"
           SUPPORT_PACKAGES_BUCKET="sr-roxc/collector/support-packages"
-          STAGING_SUPPORT_PACKAGES_BUCKET="sr-roxc/collector/support-packages/${GITHUB_HEAD_REF}/${{ github.run_id }}"
+          STAGING_SUPPORT_PACKAGES_BUCKET="sr-roxc/collector/support-packages/${STAGING_RELATIVE_PATH}"
           PUBLIC_SUPPORT_PACKAGES_BUCKET="collector-support-public/offline/v1/support-packages"
+
+          CPAAS_DRIVERS_BUCKET="mauro-drivers-test/cpaas/drivers"
+          CPAAS_SUPPORT_PACKAGES_BUCKET="mauro-drivers-test/cpaas/support-packages"
+          CPAAS_STAGING_DRIVERS_BUCKET="mauro-drivers-test/cpaas/staging/drivers/${STAGING_RELATIVE_PATH}"
+          CPAAS_STAGING_SUPPORT_PACKAGES_BUCKET="mauro-drivers-test/cpaas/staging/support-packages/${STAGING_RELATIVE_PATH}"
 
           {
             echo "drivers-bucket=${MAIN_DRIVER_BUCKET}"
@@ -76,9 +92,17 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
           if [[ ${{ github.event_name }} == "pull_request" ]]; then
-            echo "push-drivers-bucket=${STAGING_DRIVER_BUCKET}" >> "$GITHUB_OUTPUT"
-            echo "support-packages-bucket=${STAGING_SUPPORT_PACKAGES_BUCKET}" >> "$GITHUB_OUTPUT"
+            {
+              echo "push-drivers-bucket=${STAGING_DRIVER_BUCKET}"
+              echo "support-packages-bucket=${STAGING_SUPPORT_PACKAGES_BUCKET}"
+              echo "cpaas-drivers-bucket=${CPAAS_STAGING_DRIVERS_BUCKET}"
+              echo "cpaas-support-packages-bucket=${CPAAS_STAGING_SUPPORT_PACKAGES_BUCKET}"
+            } >> "$GITHUB_OUTPUT"
           else
-            echo "push-drivers-bucket=${MAIN_DRIVER_BUCKET}" >> "$GITHUB_OUTPUT"
-            echo "support-packages-bucket=${SUPPORT_PACKAGES_BUCKET}" >> "$GITHUB_OUTPUT"
+            {
+              echo "push-drivers-bucket=${MAIN_DRIVER_BUCKET}"
+              echo "support-packages-bucket=${SUPPORT_PACKAGES_BUCKET}"
+              echo "cpaas-drivers-bucket=${CPAAS_DRIVERS_BUCKET}"
+              echo "cpaas-support-packages-bucket=${CPAAS_SUPPORT_PACKAGES_BUCKET}"
+            } >> "$GITHUB_OUTPUT"
           fi

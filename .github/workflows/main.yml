@@ -75,6 +75,7 @@ jobs:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
       skip-built-drivers: ${{ needs.build-drivers.outputs.parallel-jobs == 0 }}
+      build-full-image: ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'build-full-images') }}
     secrets: inherit
     needs:
     - init
@@ -104,4 +105,9 @@ jobs:
     - init
     - build-drivers
     - upload-drivers
+    secrets: inherit
+
+  run-cpaas-steps:
+    uses: ./.github/workflows/cpaas.yml
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps')
     secrets: inherit

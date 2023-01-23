@@ -1,0 +1,99 @@
+name: Sync CPaaS built drivers with GCP
+
+on:
+  workflow_call:
+    inputs:
+      support-packages-bucket:
+        type: string
+        required: true
+        description: |
+          Bucket where CPaaS support packages will be pushed to.
+      drivers-bucket:
+        type: string
+        required: true
+        description: |
+          Bucket where CPaaS drivers will be pushed to.
+
+jobs:
+  sync-drivers:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+        - x86_64
+        - s390x
+        - ppc64le
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: docker/login-action@v2
+        with:
+          registry: brew.registry.redhat.io
+          username: ${{ secrets.REDHAT_USERNAME }}
+          password: ${{ secrets.REDHAT_PASSWORD }}
+
+      - name: Download driver image and extract files
+        run: |
+          docker create \
+            --platform linux/${{ matrix.platform }} \
+            --name drivers \
+            --pull always \
+            brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:0.1.0
+
+          TMP_DIR="$(mktemp -d)"
+          {
+            echo "FAILURES_DIR=${TMP_DIR}/FAILURES"
+            echo "DRIVER_TMP_DIR=${TMP_DIR}/kernel-modules"
+            echo "SUPPORT_PACKAGE_TMP_DIR=${TMP_DIR}/support-packages"
+          } >> "$GITHUB_ENV"
+
+          docker cp drivers:/FAILURES/ "${TMP_DIR}"
+          docker cp drivers:/kernel-modules/ "${TMP_DIR}"
+          docker cp drivers:/support-packages/ "${TMP_DIR}"
+
+      - name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v1'
+
+      - name: Push drivers
+        run : |
+          shopt -s nullglob
+          shopt -s dotglob
+
+          for driver_version_dir in "${DRIVER_TMP_DIR}"/*; do
+            files=("${driver_version_dir}"/*.{gz,unavail})
+            [[ "${#files[@]}" -gt 0 ]] || continue
+            printf '%s\n' "${files[@]}" | \
+              gsutil -m cp -n -I "gs://${{ inputs.drivers-bucket }}/${{ matrix.platform }}/$(basename "${driver_version_dir}")/"
+          done
+
+      - name: Push support-packages
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        with:
+          path: ${{ env.SUPPORT_PACKAGE_TMP_DIR }}
+          parent: false
+          destination: ${{ inputs.support-packages-bucket }}/${{ matrix.platform }}
+
+      - name: Check build failures
+        id: drivers-build-failures
+        run: |
+          ${{ github.workspace }}/.openshift-ci/drivers/scripts/drivers-build-failures.sh
+
+      - name: Slack notification
+        if: failure() && github.event_name == 'schedule'
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_ONCALL }}
+          SLACK_CHANNEL: oncall
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_LINK_NAMES: true
+          SLACK_TITLE: CPaaS driver build check failed
+          MSG_MINIMAL: actions url,commit
+          SLACK_MESSAGE: |
+            @collector-team

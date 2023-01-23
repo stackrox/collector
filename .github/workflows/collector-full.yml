@@ -8,6 +8,12 @@ on:
         required: true
         description: |
           The tag used to build the collector image
+      build-full-image:
+        type: boolean
+        required: true
+        description: |
+          If true, the full collector image will be built, else, the -slim
+          image of collector will be retagged.
       skip-built-drivers:
         type: boolean
         required: true
@@ -18,11 +24,16 @@ on:
         required: true
         description: |
           GCP bucket to pull drivers from.
+      max-layer-depth:
+        type: string
+        default: "5"
+        description: |
+          Max layer the drivers will be split into
 
 jobs:
   build-collector-full:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'build-full-images') }}
+    if: inputs.build-full-image
     env:
       COLLECTOR_IMAGE: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
 
@@ -59,13 +70,13 @@ jobs:
       - name: Pull slim image and build full image
         run: |
           docker build \
-            --target=probe-layer-5 \
+            --target=probe-layer-${{ inputs.max-layer-depth }} \
             --tag "${COLLECTOR_IMAGE}" \
             --build-arg collector_repo=quay.io/stackrox-io/collector \
             --build-arg collector_version=${{ inputs.collector-tag }} \
             --build-arg module_version="${DRIVER_VERSION}" \
             --build-arg max_layer_size=300 \
-            --build-arg max_layer_depth=5 \
+            --build-arg max_layer_depth=${{ inputs.max-layer-depth }} \
             "${{ github.workspace }}/kernel-modules/container"
 
       - name: Login to quay.io/stackrox-io
@@ -105,7 +116,7 @@ jobs:
 
   retag-collector-full:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'build-full-images') }}
+    if: ${{ !inputs.build-full-image }}
     env:
       COLLECTOR_IMAGE_SLIM: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-slim
 

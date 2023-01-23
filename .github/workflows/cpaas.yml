@@ -1,0 +1,59 @@
+name: CPaaS related workflows
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_call:
+
+jobs:
+  init:
+    uses: ./.github/workflows/init.yml
+
+  sync-drivers-and-support-packages:
+    uses: ./.github/workflows/cpaas-sync-drivers.yml
+    needs: init
+    secrets: inherit
+    with:
+      support-packages-bucket: ${{ needs.init.outputs.cpaas-support-packages-bucket }}
+      drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
+
+  build-collector-slim:
+    uses: ./.github/workflows/collector-slim.yml
+    needs: init
+    with:
+      collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
+      collector-image: ${{ needs.init.outputs.collector-image }}-cpaas
+    secrets: inherit
+
+  build-collector-full:
+    uses: ./.github/workflows/collector-full.yml
+    with:
+      collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
+      drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}/x86_64
+      skip-built-drivers: true
+      max-layer-depth: "1"
+      build-full-image: true
+    secrets: inherit
+    needs:
+    - init
+    - build-collector-slim
+    - sync-drivers-and-support-packages
+
+  integration-tests:
+    uses: ./.github/workflows/integration-tests-vm-type.yml
+    strategy:
+      # ensure that if one part of the matrix fails, the
+      # rest will continue
+      fail-fast: false
+      matrix:
+        vm_type:
+          - rhel
+          - rhel-sap
+    with:
+      vm_type: ${{ matrix.vm_type }}
+      collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
+      offline-mode: true
+    needs:
+    - init
+    - build-collector-full
+    secrets: inherit
