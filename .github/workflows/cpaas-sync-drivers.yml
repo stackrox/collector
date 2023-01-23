@@ -8,6 +8,11 @@ on:
         required: true
         description: |
           Bucket where CPaaS support packages will be pushed to.
+      public-support-packages-bucket:
+        type: string
+        required: true
+        description: |
+          Bucket where CPaaS support packages will be made available for users.
       drivers-bucket:
         type: string
         required: true
@@ -57,7 +62,7 @@ jobs:
           docker cp drivers:/kernel-modules/ "${TMP_DIR}"
           docker cp drivers:/support-packages/ "${TMP_DIR}"
 
-          # This is empty file is needed for the failure artifact to be
+          # This empty file is needed for the failure artifact to be
           # created when there are no failures
           touch "${TMP_DIR}/FAILURES/.dummy"
 
@@ -92,8 +97,6 @@ jobs:
 
       - name: Generate 'latest' files
         run: |
-          set -x
-
           while read -r version original_file; do
             VERSION_PATH="${SUPPORT_PACKAGE_TMP_DIR}/${version}"
             latest_file="support-pkg-${version}-latest.zip"
@@ -109,10 +112,19 @@ jobs:
 
       - name: Push support-packages
         uses: 'google-github-actions/upload-cloud-storage@v1'
+        if: matrix.platform != 'x86_64'
         with:
           path: ${{ env.SUPPORT_PACKAGE_TMP_DIR }}
           parent: false
           destination: ${{ inputs.support-packages-bucket }}/${{ matrix.platform }}
+
+      - name: Push support-packages to public bucket
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        if: github.event_name != 'pull_request' && matrix.platform != 'x86_64'
+        with:
+          path: ${{ env.SUPPORT_PACKAGE_TMP_DIR }}
+          parent: false
+          destination: ${{ inputs.public-support-packages-bucket }}/${{ matrix.platform }}
 
   check-drivers-failures:
     uses: ./.github/workflows/check-drivers-failures.yml
@@ -154,3 +166,11 @@ jobs:
           path: /tmp/support-packages/output/index.html
           parent: false
           destination: ${{ inputs.support-packages-bucket }}
+
+      - name: Push index.html to public bucket
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        if: github.event_name != 'pull_request'
+        with:
+          path: /tmp/support-packages/output/index.html
+          parent: false
+          destination: ${{ inputs.public-support-packages-bucket }}

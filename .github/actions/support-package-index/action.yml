@@ -29,8 +29,10 @@ runs:
           output_dir="${{ inputs.output-path }}/${arch}/${version}"
 
           mkdir -p "${output_dir}"
-          gsutil cp "gs://${{ inputs.gcp-bucket }}/${arch}/${version}/latest" \
-            "${output_dir}/latest"
+          if ! gsutil cp "gs://${{ inputs.gcp-bucket }}/${arch}/${version}/latest" \
+            "${output_dir}/latest"; then
+            continue
+          fi
 
           latest_pkg="$(cat "${output_dir}/latest")"
 
