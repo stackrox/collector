@@ -92,7 +92,12 @@ def load_support_packages(output_dir, mod_md_map, arch):
             driver_version = mod_ver[:6]
 
         support_pkg_file_re = re.compile(fr'^support-pkg-{re.escape(driver_version)}-\d+\.zip$')
-        support_pkg_file = max(f for f in os.listdir(mod_out_dir) if support_pkg_file_re.match(f))
+        support_pkgs = [f for f in os.listdir(mod_out_dir) if support_pkg_file_re.match(f)]
+        if len(support_pkgs) == 0:
+            # No valid support package for version
+            continue
+
+        support_pkg_file = max(support_pkgs)
 
         st = os.stat(os.path.join(mod_out_dir, support_pkg_file))
         last_mod_time = datetime.utcfromtimestamp(st.st_mtime).strftime('%Y/%m/%d, %H:%M:%S')
