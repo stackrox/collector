@@ -43,6 +43,7 @@ jobs:
 
   integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     strategy:
       # ensure that if one part of the matrix fails, the
       # rest will continue
