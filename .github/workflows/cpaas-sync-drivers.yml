@@ -96,6 +96,7 @@ jobs:
           done
 
       - name: Generate 'latest' files
+        if: matrix.platform != 'x86_64'
         run: |
           while read -r version original_file; do
             VERSION_PATH="${SUPPORT_PACKAGE_TMP_DIR}/${version}"
