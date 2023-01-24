@@ -132,14 +132,6 @@ jobs:
           parent: false
           destination: ${{ inputs.public-support-packages-bucket }}/${{ matrix.platform }}
 
-  check-drivers-failures:
-    uses: ./.github/workflows/check-drivers-failures.yml
-    needs: sync-drivers
-    secrets: inherit
-    with:
-      logs-artifact:
-        drivers-build-failures
-
   update-index:
     runs-on: ubuntu-latest
     needs: sync-drivers

@@ -20,6 +20,13 @@ jobs:
       drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
       branch-name: ${{ needs.init.outputs.branch-name }}
 
+  check-drivers-failures:
+    uses: ./.github/workflows/check-drivers-failures.yml
+    needs: sync-drivers-and-support-packages
+    with:
+      logs-artifact:
+        drivers-build-failures
+
   build-collector-slim:
     uses: ./.github/workflows/collector-slim.yml
     needs: init
