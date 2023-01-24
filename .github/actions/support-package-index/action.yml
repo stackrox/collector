@@ -23,25 +23,10 @@ runs:
   - name: Get latest support-packages
     shell: bash
     run: |
-      for arch in x86_64 s390x ppc64le; do
-        for version_path in ${{ inputs.metadata-path }}/module-versions/*; do
-          version="$(basename "${version_path}")"
-          output_dir="${{ inputs.output-path }}/${arch}/${version}"
-
-          mkdir -p "${output_dir}"
-          if ! gsutil cp "gs://${{ inputs.gcp-bucket }}/${arch}/${version}/latest" \
-            "${output_dir}/latest"; then
-            continue
-          fi
-
-          latest_pkg="$(cat "${output_dir}/latest")"
-
-          touch "${output_dir}/${latest_pkg}"
-          touch "${output_dir}/${latest_pkg}.sha256"
-          touch "${output_dir}/support-pkg-${version}-latest.zip"
-          touch "${output_dir}/support-pkg-${version}-latest.zip.sha256"
-        done
-      done
+      ${{ github.workspace }}/.github/support-packages/latest-support-packages.sh \
+        ${{ inputs.metadata-path }} \
+        ${{ inputs.output-path }} \
+        ${{ inputs.gcp-bucket }}
 
   - name: Create index file
     shell: bash
