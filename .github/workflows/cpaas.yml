@@ -73,7 +73,7 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_NOTIFICATIONS_WEBHOOK }}
           SLACK_CHANNEL: collector-notifications
-          SLACK_COLOR: ${{ job.status }}
+          SLACK_COLOR: failure
           SLACK_LINK_NAMES: true
           SLACK_TITLE: CPaaS driver build check failed
           MSG_MINIMAL: actions url,commit
