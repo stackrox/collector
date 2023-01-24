@@ -18,9 +18,17 @@ for arch in x86_64 s390x ppc64le; do
 
         latest_pkg="$(cat "${output_dir}/latest")"
 
-        touch "${output_dir}/${latest_pkg}"
-        touch "${output_dir}/${latest_pkg}.sha256"
-        touch "${output_dir}/support-pkg-${version}-latest.zip"
-        touch "${output_dir}/support-pkg-${version}-latest.zip.sha256"
+        files=(
+            "${latest_pkg}"
+            "${latest_pkg}.sha256"
+            "support-pkg-${version}-latest.zip"
+            "support-pkg-${version}-latest.zip.sha256"
+        )
+
+        for file in "${files[@]}"; do
+            if gsutil -q stat "gs://${GCP_BUCKET}/${arch}/${version}/${file}"; then
+                touch "${output_dir}/${file}"
+            fi
+        done
     done
 done
