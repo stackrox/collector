@@ -15,7 +15,7 @@ jobs:
     secrets: inherit
     with:
       support-packages-bucket: ${{ needs.init.outputs.cpaas-support-packages-bucket }}
-      public-support-packages-bucket: ${{ needs.init.outputs.cpaas-support-packages-bucket }}/public
+      public-support-packages-bucket: ${{ needs.init.outputs.public-support-packages-bucket }}
       drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
       branch-name: ${{ needs.init.outputs.branch-name }}
 

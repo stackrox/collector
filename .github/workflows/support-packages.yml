@@ -52,7 +52,7 @@ jobs:
         with:
           path: /tmp/support-packages/output
           parent: false
-          destination: ${{ inputs.support-packages-bucket }}
+          destination: ${{ inputs.support-packages-bucket }}/x86_64
 
       - name: Push support-packages to public bucket
         uses: 'google-github-actions/upload-cloud-storage@v1'
@@ -60,7 +60,7 @@ jobs:
         with:
           path: /tmp/support-packages/output
           parent: false
-          destination: ${{ inputs.public-support-packages-bucket }}
+          destination: ${{ inputs.public-support-packages-bucket }}/x86_64
 
       - uses: ./.github/actions/support-package-index
         with:

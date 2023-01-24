@@ -89,13 +89,13 @@ jobs:
           STAGING_DRIVER_BUCKET="stackrox-collector-modules-staging/pr-builds/${STAGING_RELATIVE_PATH}"
           BUNDLES_BUCKET="collector-kernel-bundles-public"
           SUPPORT_PACKAGES_BUCKET="sr-roxc/collector/support-packages"
-          STAGING_SUPPORT_PACKAGES_BUCKET="sr-roxc/collector/support-packages/${STAGING_RELATIVE_PATH}"
+          STAGING_SUPPORT_PACKAGES_BUCKET="${SUPPORT_PACKAGES_BUCKET}/${STAGING_RELATIVE_PATH}"
           PUBLIC_SUPPORT_PACKAGES_BUCKET="collector-support-public/offline/v1/support-packages"
 
-          CPAAS_DRIVERS_BUCKET="mauro-drivers-test/cpaas/drivers"
-          CPAAS_SUPPORT_PACKAGES_BUCKET="mauro-drivers-test/cpaas/support-packages"
-          CPAAS_STAGING_DRIVERS_BUCKET="mauro-drivers-test/cpaas/staging/drivers/${STAGING_RELATIVE_PATH}"
-          CPAAS_STAGING_SUPPORT_PACKAGES_BUCKET="mauro-drivers-test/cpaas/staging/support-packages/${STAGING_RELATIVE_PATH}"
+          CPAAS_DRIVERS_BUCKET="${MAIN_DRIVER_BUCKET}/cpaas"
+          CPAAS_STAGING_DRIVERS_BUCKET="${STAGING_DRIVER_BUCKET}/cpaas"
+          CPAAS_SUPPORT_PACKAGES_BUCKET="${SUPPORT_PACKAGES_BUCKET}/cpaas"
+          CPAAS_STAGING_SUPPORT_PACKAGES_BUCKET="${STAGING_SUPPORT_PACKAGES_BUCKET}/cpaas"
 
           {
             echo "drivers-bucket=${MAIN_DRIVER_BUCKET}"
