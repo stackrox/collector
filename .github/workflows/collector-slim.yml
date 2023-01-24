@@ -30,14 +30,14 @@ jobs:
           submodules: true
 
       - name: Checks for main and release branches
-        if: ${{ github.event_name == 'push' }}
+        if: github.event_name != 'pull_request'
         run: |
           echo 'BUILD_BUILDER_IMAGE=true' >> "$GITHUB_ENV"
           echo "COLLECTOR_BUILDER_TAG=${DEFAULT_BUILDER_TAG}" >> "$GITHUB_ENV"
 
       - name: PR checks
         id: pr-checks
-        if: ${{ github.event_name == 'pull_request' }}
+        if: github.event_name == 'pull_request'
         run: |
           # We have 2 options:
           # - We build the builder from scratch and give it a custom tag
