@@ -100,6 +100,8 @@ jobs:
               gsutil -m cp -n -I "gs://${{ inputs.drivers-bucket }}/${{ matrix.platform }}/$(basename "${driver_version_dir}")/"
           done
 
+      # x86 support packages will not be uploaded to GCP.
+      # This is to prevent mixing it up with the upstream built packages.
       - name: Generate 'latest' files
         if: matrix.platform != 'x86_64'
         run: |
