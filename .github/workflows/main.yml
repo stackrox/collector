@@ -78,6 +78,7 @@ jobs:
       branch-name: ${{ needs.init.outputs.branch-name }}
       drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
       support-packages-bucket: ${{ needs.init.outputs.support-packages-bucket }}
+      support-packages-index-bucket: ${{ needs.init.outputs.support-packages-index-bucket }}
       public-support-packages-bucket: ${{ needs.init.outputs.public-support-packages-bucket }}
     if: always() && (github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'test-support-packages'))
     needs:

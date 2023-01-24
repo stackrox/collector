@@ -19,6 +19,10 @@ on:
         type: string
         required: true
         description: Public bucket where support-packages will be pushed to
+      support-packages-index-bucket:
+        type: string
+        required: true
+        description: Bucket to push the generated support-packages index file into
 
 
 jobs:
@@ -73,7 +77,7 @@ jobs:
         with:
           path: /tmp/support-packages/output/index.html
           parent: false
-          destination: ${{ inputs.support-packages-bucket }}
+          destination: ${{ inputs.support-packages-index-bucket }}
 
       - name: Push index.html to public bucket
         uses: 'google-github-actions/upload-cloud-storage@v1'

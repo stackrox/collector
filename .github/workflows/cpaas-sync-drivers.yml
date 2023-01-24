@@ -8,6 +8,11 @@ on:
         required: true
         description: |
           Bucket where CPaaS support packages will be pushed to.
+      support-packages-index-bucket:
+        type: string
+        required: true
+        description: |
+          Bucket to push the generated support-packages index file into
       public-support-packages-bucket:
         type: string
         required: true
@@ -166,7 +171,7 @@ jobs:
         with:
           path: /tmp/support-packages/output/index.html
           parent: false
-          destination: ${{ inputs.support-packages-bucket }}
+          destination: ${{ inputs.support-packages-index-bucket }}
 
       - name: Push index.html to public bucket
         uses: 'google-github-actions/upload-cloud-storage@v1'

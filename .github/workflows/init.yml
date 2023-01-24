@@ -40,6 +40,10 @@ on:
         description: |
           Bucket to push CPaaS built drivers into
         value: ${{ jobs.common-variables.outputs.cpaas-drivers-bucket }}
+      support-packages-index-bucket:
+        description: |
+          Bucket to push the generated support-packages index file into
+        value: ${{ jobs.common-variables.outputs.support-packages-index-bucket }}
 
 jobs:
   common-variables:
@@ -55,6 +59,7 @@ jobs:
       public-support-packages-bucket: ${{ steps.gcp-buckets.outputs.public-support-packages-bucket }}
       cpaas-drivers-bucket: ${{ steps.gcp-buckets.outputs.cpaas-drivers-bucket }}
       cpaas-support-packages-bucket: ${{ steps.gcp-buckets.outputs.cpaas-support-packages-bucket }}
+      support-packages-index-bucket: ${{ steps.gcp-buckets.outputs.support-packages-index-bucket }}
 
     steps:
       - uses: actions/checkout@v3
@@ -109,6 +114,7 @@ jobs:
               echo "support-packages-bucket=${STAGING_SUPPORT_PACKAGES_BUCKET}"
               echo "cpaas-drivers-bucket=${CPAAS_STAGING_DRIVERS_BUCKET}"
               echo "cpaas-support-packages-bucket=${CPAAS_STAGING_SUPPORT_PACKAGES_BUCKET}"
+              echo "support-packages-index-bucket=${STAGING_SUPPORT_PACKAGES_BUCKET}"
             } >> "$GITHUB_OUTPUT"
           else
             {
@@ -116,5 +122,6 @@ jobs:
               echo "support-packages-bucket=${SUPPORT_PACKAGES_BUCKET}"
               echo "cpaas-drivers-bucket=${CPAAS_DRIVERS_BUCKET}"
               echo "cpaas-support-packages-bucket=${CPAAS_SUPPORT_PACKAGES_BUCKET}"
+              echo "support-packages-index-bucket=${SUPPORT_PACKAGES_BUCKET}"
             } >> "$GITHUB_OUTPUT"
           fi
