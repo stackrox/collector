@@ -287,6 +287,7 @@ the process exec file paths.
 | parse_micros[syscall]                | Total time used to retrieve an event of this type from falco                                        |
 | process_micros[syscall]              | Total time used to handle/send an event of this type (call the SignalHandler)                       |
 
+Note that the `[syscall]` suffix in a metric name means that it is instanciated for each syscall and directioni individually.
 
 ### Sysdig stats -> rox_collector_event_times_us_avg & rox_collector_event_times_us_total
 
