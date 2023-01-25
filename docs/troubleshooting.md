@@ -256,14 +256,16 @@ Time is measured in microseconds.
 | net_cep_inactive                                 | Accumulated number of endpoints destroyed (closed)                                                                                   |
 | net_known_ip_networks                            | Number of known-networks defined.                                                                                                    |
 | net_known_public_ips                             | Number of known public addresses defined.                                                                                            |
-| process_lineage_counts                           | Every time the lineage info of a process is created (signal emitted)                                                                 |
-| process_lineage_total                            | Total number of ancestors reported                                                                                                   |
-| process_lineage_sqr_total                        | Sum of squared number of ancestors reported                                                                                          |
-| process_lineage_string_total                     | Accumulated size of the lineage process exec file paths                                                                              |
+| process_lineage_counts                           | Every time the lineage info of a process is created (signal emitted) \[1\]                                                             |
+| process_lineage_total                            | Total number of ancestors reported \[1\]                                                                                               |
+| process_lineage_sqr_total                        | Sum of squared number of ancestors reported \[1\]                                                                                      |
+| process_lineage_string_total                     | Accumulated size of the lineage process exec file paths \[1\]                                                                          |
 | process_info_hit                                 | Accessing originator process info of an endpoint with data readily available.                                                        |
 | process_info_miss                                | Accessing originator process info of an endpoint ends-up waiting for Falco to resolve data.                                          |
 | rate_limit_flushing_counts                       | Number of overflows in the rate limiter used to send process signals.                                                                |
 
+\[1\] the process lineage information contains the ancestors list of a process. This attribute is formatted as a list of
+the process exec file paths.
 
 ### Sysdig stats -> rox_collector_events
 
