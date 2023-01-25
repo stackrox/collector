@@ -42,7 +42,7 @@ jobs:
 
       - name: Restore built drivers
         uses: actions/download-artifact@v3
-        if: ${{ github.event_name == 'pull_request' && !inputs.skip-built-drivers }}
+        if: ${{ !inputs.skip-built-drivers }}
         with:
           name: built-drivers
           path: /tmp/built-drivers/
