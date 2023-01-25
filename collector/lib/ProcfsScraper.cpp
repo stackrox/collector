@@ -441,7 +441,7 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
 
     FDHandle dirfd = procdir.openat(curr->d_name, O_RDONLY);
     if (!dirfd.valid()) {
-      CLOG(DEBUG) << "Could not open process directory " << curr->d_name << ": " << StrError();
+      CLOG_THROTTLED(DEBUG, std::chrono::seconds(1)) << "Could not open process directory " << curr->d_name << ": " << StrError();
       continue;
     }
 
