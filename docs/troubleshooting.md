@@ -217,3 +217,119 @@ The following is a simple example of this occurring:
 [INFO    2022/10/13 14:25:13]
 [FATAL   2022/10/13 14:25:13] Failed to initialize collector kernel components.
 ```
+
+## Troubleshooting using performance counters
+
+The collector publishes some performance counters that can be used to investigate runtime issues.
+
+The runtime values are exposed via the Prometheus endpoint `/metrics` and can be accessed on port 9090.
+
+Timers guard some portions of the code to measure the amount of time that is spent running their content.
+For each timer, 3 values are published. They are named after the name of the timer suffixed by:
+
+- `_events`: the total number of occurences the monitored code was run.
+- `_us_total`: accumulated time spent running the monitored code, in micro-seconds.
+- `_us_avg`: the mean duration, computed from the two previous values.
+
+### Network status notifier timers
+
+```
+Component: CollectorStats
+Prometheus name: rox_collector_timers
+Units: microseconds
+```
+
+| Name                                             | Description                                                                                                                          |
+|--------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+| net_scrape_read                                  | Time spent iterating over /proc content to retrieve connections and endpoints for each process.                                      |
+| net_scrape_update                                | Time spent updating the internal model with information read from /proc (set removed entries as inactive, update activity timestamp) |
+| net_fetch_state                                  | Time spent to build a delta message content (connections + endpoints) to send to Sensor                                              |
+| net_create_message                               | Time spent to serialize the delta message and store the resulting state for next computation.                                        |
+| net_write_message                                | Time spent sending the raw message content.                                                                                          |
+
+
+### Network status notifier counters
+
+```
+Component: CollectorStats
+Prometheus name: rox_collector_counters
+Units: occurence
+```
+
+| Name                                             | Description                                                                                                                          |
+|--------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+| net_conn_updates                                 | Each time a connection object is updated in the model (scrapes, and kernel events).                                                  |
+| net_conn_deltas                                  | Number of connection events sent to Sensor.                                                                                          |
+| net_conn_inactive                                | Accumulated number of connections destroyed (closed)                                                                                 |
+| net_cep_updates                                  | Each time an endpoint object is updated in the model (scrapes only).                                                                 |
+| net_cep_deltas                                   | Number of endpoint events sent to Sensor.                                                                                            |
+| net_cep_inactive                                 | Accumulated number of endpoints destroyed (closed)                                                                                   |
+| net_known_ip_networks                            | Number of known-networks defined.                                                                                                    |
+| net_known_public_ips                             | Number of known public addresses defined.                                                                                            |
+| process_lineage_counts                           | Every time the lineage info of a process is created (signal emitted) \[1\]                                                             |
+| process_lineage_total                            | Total number of ancestors reported \[1\]                                                                                               |
+| process_lineage_sqr_total                        | Sum of squared number of ancestors reported \[1\]                                                                                      |
+| process_lineage_string_total                     | Accumulated size of the lineage process exec file paths \[1\]                                                                          |
+| process_info_hit                                 | Accessing originator process info of an endpoint with data readily available.                                                        |
+| process_info_miss                                | Accessing originator process info of an endpoint ends-up waiting for Falco to resolve data.                                          |
+| rate_limit_flushing_counts                       | Number of overflows in the rate limiter used to send process signals.                                                                |
+
+\[1\] the process lineage information contains the ancestors list of a process. This attribute is formatted as a list of
+the process exec file paths.
+
+### Falco counters
+
+```
+Component: SysdigStats
+Prometheus name: rox_collector_events
+Units: occurence
+```
+
+| Name                                 | Description                                                                                         |
+|--------------------------------------|-----------------------------------------------------------------------------------------------------|
+| kernel                               | number of received kernel events (by the probe)                                                     |
+| drops                                | number of dropped kernel events                                                                     |
+| preemptions                          | Number of preemptions (?)                                                                           |
+| filtered[syscall]                    | Number of events after chisel filtering                                                             |
+| userspace[syscall]                   | Number of this kind of event before chisel filtering                                                |
+| chiselCacheHitsAccept[syscall]       | number of events accepted by the filter cache                                                       |
+| chiselCacheHitsReject[syscall]       | number of events rejected by the filter cache                                                       |
+| grpcSendFailures                     | (not used?)                                                                                         |
+| processSent                          | Process signal sent with success                                                                    |
+| processSendFailures                  | Failure upon sending a process signal                                                               |
+| processResolutionFailuresByEvt       | Count of invalid process signal events received, then ignored (invalid path or name, or not execve) |
+| processResolutionFailuresByTinfo     | Count of invalid process found parsed during initial iteration (existing processes)                 |
+| processRateLimitCount                | Count of processes not sent because of the rate limiting.                                           |
+| parse_micros[syscall]                | Total time used to retrieve an event of this type from falco                                        |
+| process_micros[syscall]              | Total time used to handle/send an event of this type (call the SignalHandler)                       |
+
+Note that the `[syscall]` suffix in a metric name means that it is instanciated for each syscall and direction individually.
+
+### Falco timers per syscall
+
+```
+Component: SysdigStats
+Prometheus name: rox_collector_events_typed
+Units: microseconds
+```
+
+For each syscall, and in each direction, the total time consummed by every step ("process", "parse") is available, as well as the computed average duration in micro-second.
+
+```
+rox_collector_event_times_us_total{event_dir="<",event_type="accept",step="process"} 45994
+...
+rox_collector_event_times_us_avg{event_dir="<",event_type="accept",step="process"} 3
+```
+
+
+### Process lineage statistics
+
+```
+Component: CollectorStats
+Prometheus name: rox_collector_process_lineage_info
+Units: bytes
+```
+
+- `lineage_avg_string_len`: overall average length of the lineage description string
+- `std_dev`: standard deviation of the lineage description string length
+
