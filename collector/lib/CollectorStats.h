@@ -29,7 +29,14 @@
   X(process_lineage_string_total) \
   X(process_info_hit)             \
   X(process_info_miss)            \
-  X(rate_limit_flushing_counts)
+  X(rate_limit_flushing_counts)   \
+  X(procfs_could_not_open_fd_dir) \
+  X(procfs_could_not_open_proc_dir) \
+  X(procfs_could_not_open_pid_dir) \
+  X(procfs_could_not_get_network_namespace) \
+  X(procfs_could_not_get_socket_inodes) \
+  X(procfs_could_not_read_exe) \
+  X(procfs_could_not_read_cmdline) \
 
 namespace collector {
 

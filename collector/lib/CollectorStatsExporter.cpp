@@ -127,10 +127,23 @@ void CollectorStatsExporter::run() {
                                           .Help("Collector process lineage info")
                                           .Register(*registry_);
 
-  prometheus::Gauge* lineage_count = &collectorProcessLineageInfo.Add({{"type", "lineage_count"}});
-  prometheus::Gauge* lineage_avg = &collectorProcessLineageInfo.Add({{"type", "lineage_avg"}});
-  prometheus::Gauge* lineage_std_dev = &collectorProcessLineageInfo.Add({{"type", "std_dev"}});
-  prometheus::Gauge* lineage_avg_string_len = &collectorProcessLineageInfo.Add({{"type", "lineage_avg_string_len"}});
+  auto& collectorProcfsScraperInfo = prometheus::BuildGauge()
+                                          .Name("rox_collector_procfs_scraper_info")
+                                          .Help("Collector ProcfsScraper counters")
+                                          .Register(*registry_);
+
+   prometheus::Gauge* lineage_count = &collectorProcessLineageInfo.Add({{"type", "lineage_count"}});
+   prometheus::Gauge* lineage_avg = &collectorProcessLineageInfo.Add({{"type", "lineage_avg"}});
+   prometheus::Gauge* lineage_std_dev = &collectorProcessLineageInfo.Add({{"type", "std_dev"}});
+   prometheus::Gauge* lineage_avg_string_len = &collectorProcessLineageInfo.Add({{"type", "lineage_avg_string_len"}});
+
+  //prometheus::Gauge* procfs_could_not_open_fd_dir_gauge = &collectorProcfsScraperInfo.Add({{"type", "procfs_could_not_open_fd_dir"}});
+  //prometheus::Gauge* procfs_could_not_open_proc_dir_gauge = &collectorProcfsScraperInfo.Add({{"type", "procfs_could_not_open_proc_dir"}});
+  //prometheus::Gauge* procfs_could_not_open_pid_dir_gauge = &collectorProcfsScraperInfo.Add({{"type", "procfs_could_not_open_pid_dir"}});
+  //prometheus::Gauge* procfs_could_not_get_network_namespace_gauge = &collectorProcfsScraperInfo.Add({{"type", "procfs_could_not_get_network_namespace"}});
+  //prometheus::Gauge* procfs_could_not_get_socket_inodes_gauge = &collectorProcfsScraperInfo.Add({{"type", "procfs_could_not_get_socket_inodes"}});
+  //prometheus::Gauge* procfs_could_not_read_exe_gauge = &collectorProcfsScraperInfo.Add({{"type", "procfs_could_not_read_exe"}});
+  //prometheus::Gauge* procfs_could_not_read_cmdline_gauge = &collectorProcfsScraperInfo.Add({{"type", "procfs_could_not_read_cmdline"}});
 
   struct {
     prometheus::Gauge* filtered = nullptr;
@@ -254,6 +267,23 @@ void CollectorStatsExporter::run() {
     lineage_avg->Set(lineage_count_avg);
     lineage_std_dev->Set(lineage_count_std_dev);
     lineage_avg_string_len->Set(lineage_count_string_avg);
+
+    //int64_t procfs_could_not_open_fd_dir = CollectorStats::GetOrCreate().GetCounter(CollectorStats::procfs_could_not_open_fd_dir);
+    //int64_t procfs_could_not_open_proc_dir = CollectorStats::GetOrCreate().GetCounter(CollectorStats::procfs_could_not_open_proc_dir);
+    //int64_t procfs_could_not_open_pid_dir = CollectorStats::GetOrCreate().GetCounter(CollectorStats::procfs_could_not_open_pid_dir);
+    //int64_t procfs_could_not_get_network_namespace = CollectorStats::GetOrCreate().GetCounter(CollectorStats::procfs_could_not_get_network_namespace);
+    //int64_t procfs_could_not_get_socket_inodes = CollectorStats::GetOrCreate().GetCounter(CollectorStats::procfs_could_not_get_socket_inodes);
+    //int64_t procfs_could_not_read_exe = CollectorStats::GetOrCreate().GetCounter(CollectorStats::procfs_could_not_read_exe);
+    //int64_t procfs_could_not_read_cmdline = CollectorStats::GetOrCreate().GetCounter(CollectorStats::procfs_could_not_read_cmdline);
+
+
+    //procfs_could_not_open_fd_dir_gauge->Set(procfs_could_not_open_fd_dir);
+    //procfs_could_not_open_proc_dir_gauge->Set(procfs_could_not_open_proc_dir);
+    //procfs_could_not_open_proc_dir_gauge->Set(procfs_could_not_open_pid_dir);
+    //procfs_could_not_open_proc_dir_gauge->Set(procfs_could_not_get_network_namespace);
+    //procfs_could_not_open_proc_dir_gauge->Set(procfs_could_not_get_socket_inodes);
+    //procfs_could_not_open_proc_dir_gauge->Set(procfs_could_not_open_proc_dir);
+    //procfs_could_not_open_proc_dir_gauge->Set(procfs_could_not_open_proc_dir);
   }
 }
 
