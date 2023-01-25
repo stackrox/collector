@@ -19,7 +19,9 @@ metrics=(
 	.cpu_mem_network_usage.collector_mem_usage.Average 
 	.cpu_mem_network_usage.sensor_mem_usage.Average 
 	.cpu_mem_network_usage.central_mem_usage.Average 
+	.cpu_mem_network_usage.central_db_mem_usage.Average
 	.cpu_mem_network_usage.scanner_mem_usage.Average 
+	.cpu_mem_network_usage.scanner_db_mem_usage.Average
 	.pod_restarts.collector_restarts.Average
 	.pod_restarts.sensor_restarts.Average
 	.pod_restarts.central_restarts.Average
