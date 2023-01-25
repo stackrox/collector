@@ -450,7 +450,7 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
     }
 
     std::string container_id;
-    //if (!GetContainerID(dirfd, &container_id)) continue;
+    if (!GetContainerID(dirfd, &container_id)) continue;
 
     uint64_t netns_inode;
     if (!GetNetworkNamespace(dirfd, &netns_inode)) {
