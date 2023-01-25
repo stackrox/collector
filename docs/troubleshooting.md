@@ -231,9 +231,13 @@ For each timer, 3 values are published. They are named after the name of the tim
 - `_us_total`: accumulated time spent running the monitored code, in micro-seconds.
 - `_us_avg`: the mean duration, computed from the two previous values.
 
-### CollectorStats timers -> rox_collector_timers
+### Network status notifier timers
 
-Time is measured in microseconds.
+Component: CollectorStats
+
+Prometheus name: rox_collector_timers
+
+Units: microseconds
 
 | Name                                             | Description                                                                                                                          |
 |--------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
@@ -244,7 +248,13 @@ Time is measured in microseconds.
 | net_write_message                                | Time spent sending the raw message content.                                                                                          |
 
 
-### ColletorStats counters -> rox_collector_counters
+### Network status notifier counters
+
+Component: CollectorStats
+
+Prometheus name: rox_collector_counters
+
+Units: occurence
 
 | Name                                             | Description                                                                                                                          |
 |--------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
@@ -267,8 +277,15 @@ Time is measured in microseconds.
 \[1\] the process lineage information contains the ancestors list of a process. This attribute is formatted as a list of
 the process exec file paths.
 
-### Sysdig stats -> rox_collector_events
+### Falco counters
 
+Component: SysdigStats
+
+Prometheus name: rox_collector_events
+
+Units: occurence
+
+| Name                                             | Description                                                                                                                          |
 | Name                                 | Description                                                                                         |
 |--------------------------------------|-----------------------------------------------------------------------------------------------------|
 | kernel                               | number of received kernel events (by the probe)                                                     |
@@ -289,7 +306,13 @@ the process exec file paths.
 
 Note that the `[syscall]` suffix in a metric name means that it is instanciated for each syscall and direction individually.
 
-### Sysdig stats -> rox_collector_event_times_us_avg & rox_collector_event_times_us_total
+### Falco timers per syscall
+
+Component: SysdigStats
+
+Prometheus name: rox_collector_events_typed
+
+Units: microseconds
 
 For each syscall, and in each direction, the total time consummed by every step ("process", "parse") is available, as well as the computed average duration in micro-second.
 
@@ -301,6 +324,12 @@ rox_collector_event_times_us_avg{event_dir="<",event_type="accept",step="process
 
 
 ### Process lineage statistics
+
+Component: CollectorStats
+
+Prometheus name: rox_collector_process_lineage_info
+
+Units: bytes
 
 - `lineage_avg_string_len`: overall average length of the lineage description string
 - `std_dev`: standard deviation of the lineage description string length
