@@ -224,6 +224,13 @@ The collector publishes some performance counters that can be used to investigat
 
 The runtime values are exposed via the Prometheus endpoint `/metrics` and can be accessed on port 9090.
 
+Timers guard some portions of the code to measure the amount of time that is spent running their content.
+For each timer, 3 values are published. They are named after the name of the timer suffixed by:
+
+- `_events`: the total number of occurences the monitored code was run.
+- `_us_total`: accumulated time spent running the monitored code, in micro-seconds.
+- `_us_avg`: the mean duration, computed from the two previous values.
+
 ### CollectorStats timers -> rox_collector_timers
 
 Time is measured in microseconds.
