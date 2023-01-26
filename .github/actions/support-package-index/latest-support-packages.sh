@@ -12,11 +12,11 @@ for arch in x86_64 s390x ppc64le; do
         output_dir="${OUTPUT_PATH}/${arch}/${version}"
 
         mkdir -p "${output_dir}"
-        if ! gsutil cp "gs://${GCP_BUCKET}/${arch}/${version}/latest" "${output_dir}/latest"; then
+        if ! gsutil cp "gs://${GCP_BUCKET}/${arch}/${version}/metadata.json" "${output_dir}/metadata.json"; then
             continue
         fi
 
-        latest_pkg="$(cat "${output_dir}/latest")"
+        latest_pkg="$(jq -r '.file_name' "${output_dir}/metadata.json")"
 
         files=(
             "${latest_pkg}"

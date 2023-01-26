@@ -126,6 +126,7 @@ jobs:
 
       - name: Create metadata.json
         uses: ./.github/actions/support-package-metadata-json
+        if: matrix.platform != 'x86_64'
         with:
           support-pkg-dir: ${{ env.SUPPORT_PACKAGE_TMP_DIR }}
 
