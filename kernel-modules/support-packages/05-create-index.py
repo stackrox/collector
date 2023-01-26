@@ -91,8 +91,13 @@ def load_support_packages(output_dir, mod_md_map, arch):
             # Legacy version (truncated SHA value)
             driver_version = mod_ver[:6]
 
+        metadata_path = os.path.join(mod_out_dir, 'metadata.json')
+        if not os.path.isfile(metadata_path):
+            # Skip versions with no metadata file
+            continue
+
         support_pkg_metadata = {}
-        with open(os.path.join(mod_out_dir, 'metadata.json'), 'r') as f:
+        with open(metadata_path, 'r') as f:
             support_pkg_metadata = json.load(f)
 
         support_pkg_file = support_pkg_metadata['file_name']
