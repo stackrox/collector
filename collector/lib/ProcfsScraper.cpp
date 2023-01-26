@@ -450,13 +450,14 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
     }
 
     std::string container_id;
-    if (!GetContainerID(dirfd, &container_id)) continue;
+    // if (!GetContainerID(dirfd, &container_id)) continue;
 
     uint64_t netns_inode;
     if (!GetNetworkNamespace(dirfd, &netns_inode)) {
       // TODO ROX-13962: Improve logging to indicate when a process is defunct.
       COUNTER_INC(CollectorStats::procfs_could_not_get_network_namespace);
       CLOG_THROTTLED(ERROR, std::chrono::seconds(1)) << "Could not determine network namespace: " << StrError();
+      CLOG(ERROR) << "Could not determine network namespace: " << StrError();
       continue;
     }
 
