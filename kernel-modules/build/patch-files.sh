@@ -16,32 +16,14 @@ fi
 mkdir -p "${OUT_DIR}/versions/{released-collectors,released-modules}"
 mkdir -p "${OUT_DIR}/kobuild-tmp/versions-src"
 
+# The only driver currently support is falco, but I'm keeping this function
+# in case this changes in the future.
 get_driver_relative_path() (
-    if git config --list -f "${SRC_DIR}/.gitmodules" --name-only | grep -q "falcosecurity-libs"; then
-        echo "falcosecurity-libs"
-    else
-        echo "sysdig/src"
-    fi
+    echo "falcosecurity-libs"
 )
 
 get_module_version() (
-    if [[ -f "${SRC_DIR}/kernel-modules/MODULE_VERSION" ]]; then
-        cat "${SRC_DIR}/kernel-modules/MODULE_VERSION"
-    else
-        echo ""
-    fi
-)
-
-apply_patches() (
-    for version_dir in "${OUT_DIR}/kobuild-tmp/versions-src"/*; do
-        version="${version_dir#"${OUT_DIR}/kobuild-tmp/versions-src/"}"
-        echo "Version directory: $version_dir"
-        echo "Version: $version"
-        if [[ -f "${SRC_DIR}/kernel-modules/patches/${version}.patch" ]]; then
-            echo "Applying patch for module version ${version} ..."
-            patch -p1 -d "${OUT_DIR}/kobuild-tmp/versions-src/${version}" < "${SRC_DIR}/kernel-modules/patches/${version}.patch"
-        fi
-    done
+    cat "${SRC_DIR}/kernel-modules/MODULE_VERSION"
 )
 
 checkout_branch() (
@@ -59,12 +41,6 @@ checkout_branch() (
 
     local driver_relative_path
     driver_relative_path="$(get_driver_relative_path)"
-
-    if ((OSCI_RUN)) && [[ "${driver_relative_path}" == "sysdig/src" ]]; then
-        # For the time being we don't compile sysdig drivers in OSCI
-        echo "Skipping module source archive for collector version ${collector_ref}"
-        return 1
-    fi
 
     git -C "${SRC_DIR}" submodule update --init "${driver_relative_path}"
 
@@ -85,8 +61,7 @@ M_VERSION="$(get_module_version)" \
 
 legacy="$(echo "$BUILD_LEGACY" | tr '[:upper:]' '[:lower:]')"
 if [[ "$legacy" == "false" ]]; then
-    # We are not building legacy probes, patch and move on
-    apply_patches
+    # We are not building legacy probes, move on
     exit 0
 fi
 
@@ -110,8 +85,6 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
         "${PREPARE_SRC_SH}"
 
 done < <(grep -v '^#' < "${SRC_DIR}/RELEASED_VERSIONS" | awk -F'#' '{print $1}' | awk 'NF==2 {print $1}' | sort | uniq)
-
-apply_patches
 
 # Leave the collector repo as clean as possible
 checkout_branch "$WORK_BRANCH"

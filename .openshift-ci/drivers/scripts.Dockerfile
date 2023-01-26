@@ -5,7 +5,8 @@ FROM registry.fedoraproject.org/fedora:36
 # COPY --from=scripts /scripts/ /scripts/
 
 # Files required for task files creation
-COPY /kernel-modules/dockerized/scripts/ /scripts/
+COPY /kernel-modules/build/get-build-tasks.sh /scripts/
+COPY /kernel-modules/build/patch-files.sh /scripts/
 COPY /kernel-modules/build/apply-blocklist.py /scripts/
 COPY /kernel-modules/BLOCKLIST /scripts/
 COPY /.openshift-ci/drivers/BLOCKLIST /scripts/dockerized/

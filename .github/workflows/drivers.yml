@@ -59,7 +59,7 @@ jobs:
           # Initialize just the falco submodule
           git submodule update --init ${{ github.workspace }}/falcosecurity-libs
 
-          ${{ github.workspace }}/kernel-modules/dockerized/scripts/patch-files.sh \
+          ${{ github.workspace }}/kernel-modules/build/patch-files.sh \
             ${{ steps.set-branch.outputs.branch-name }} \
             "${BUILD_LEGACY_DRIVERS}" \
             ${{ github.workspace }} \
@@ -74,7 +74,7 @@ jobs:
       - name: Create a mock cache
         if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-cache') }}
         run: |
-          ${{ github.workspace }}/.github/drivers/mock-cache.sh
+          ${{ github.workspace }}/kernel-modules/build/mock-cache.sh
 
       - name: Get build tasks
         env:
@@ -86,7 +86,7 @@ jobs:
           SCRIPTS_DIR: ${{ github.workspace }}/kernel-modules/build
 
         run: |
-          ${{ github.workspace }}/kernel-modules/dockerized/scripts/get-build-tasks.sh
+          ${{ github.workspace }}/kernel-modules/build/get-build-tasks.sh
 
           mkdir -p /tmp/tasks
           mv /tmp/build-tasks /tmp/tasks/all
@@ -150,7 +150,7 @@ jobs:
       - split-tasks
     if: ${{ needs.split-tasks.outputs.parallel-jobs > 0 }}
     env:
-      BUILDERS_DIR: ${{ github.workspace }}/.github/drivers
+      BUILDERS_DIR: ${{ github.workspace }}/kernel-modules/build
 
     strategy:
       matrix:
