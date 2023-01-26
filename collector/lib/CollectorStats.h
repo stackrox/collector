@@ -15,22 +15,29 @@
   X(net_write_message)  \
   X(process_info_wait)
 
-#define COUNTER_NAMES             \
-  X(net_conn_updates)             \
-  X(net_conn_deltas)              \
-  X(net_conn_inactive)            \
-  X(net_cep_updates)              \
-  X(net_cep_deltas)               \
-  X(net_cep_inactive)             \
-  X(net_known_ip_networks)        \
-  X(net_known_public_ips)         \
-  X(process_lineage_counts)       \
-  X(process_lineage_total)        \
-  X(process_lineage_sqr_total)    \
-  X(process_lineage_string_total) \
-  X(process_info_hit)             \
-  X(process_info_miss)            \
-  X(rate_limit_flushing_counts)
+#define COUNTER_NAMES                       \
+  X(net_conn_updates)                       \
+  X(net_conn_deltas)                        \
+  X(net_conn_inactive)                      \
+  X(net_cep_updates)                        \
+  X(net_cep_deltas)                         \
+  X(net_cep_inactive)                       \
+  X(net_known_ip_networks)                  \
+  X(net_known_public_ips)                   \
+  X(process_lineage_counts)                 \
+  X(process_lineage_total)                  \
+  X(process_lineage_sqr_total)              \
+  X(process_lineage_string_total)           \
+  X(process_info_hit)                       \
+  X(process_info_miss)                      \
+  X(rate_limit_flushing_counts)             \
+  X(procfs_could_not_open_fd_dir)           \
+  X(procfs_could_not_open_proc_dir)         \
+  X(procfs_could_not_open_pid_dir)          \
+  X(procfs_could_not_get_network_namespace) \
+  X(procfs_could_not_get_socket_inodes)     \
+  X(procfs_could_not_read_exe)              \
+  X(procfs_could_not_read_cmdline)
 
 namespace collector {
 

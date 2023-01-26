@@ -30,6 +30,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <netinet/tcp.h>
 
+#include "CollectorStats.h"
 #include "Containers.h"
 #include "FileSystem.h"
 #include "Hash.h"
@@ -129,6 +130,7 @@ class SocketInfo {
 bool GetSocketINodes(int dirfd, uint64_t pid, UnorderedSet<SocketInfo>* sock_inodes) {
   DirHandle fd_dir = FDHandle(openat(dirfd, "fd", O_RDONLY));
   if (!fd_dir.valid()) {
+    COUNTER_INC(CollectorStats::procfs_could_not_open_fd_dir);
     CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) << "could not open fd directory";
     return false;
   }
@@ -427,6 +429,7 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
                               std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) {
   DirHandle procdir = opendir(proc_path);
   if (!procdir.valid()) {
+    COUNTER_INC(CollectorStats::procfs_could_not_open_proc_dir);
     CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) << "Could not open " << proc_path << ": " << StrError();
     return false;
   }
@@ -441,6 +444,7 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
 
     FDHandle dirfd = procdir.openat(curr->d_name, O_RDONLY);
     if (!dirfd.valid()) {
+      COUNTER_INC(CollectorStats::procfs_could_not_open_pid_dir);
       CLOG(DEBUG) << "Could not open process directory " << curr->d_name << ": " << StrError();
       continue;
     }
@@ -450,8 +454,8 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
 
     uint64_t netns_inode;
     if (!GetNetworkNamespace(dirfd, &netns_inode)) {
-      // TODO ROX-13962: Add metrics for the logging statements in this source file.
-      // Improve logging to indicate when a process is defunct.
+      // TODO ROX-13962: Improve logging to indicate when a process is defunct.
+      COUNTER_INC(CollectorStats::procfs_could_not_get_network_namespace);
       CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) << "Could not determine network namespace: " << StrError();
       continue;
     }
@@ -460,6 +464,7 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
     bool no_sockets = container_ns_sockets.empty();
 
     if (!GetSocketINodes(dirfd, pid, &container_ns_sockets)) {
+      COUNTER_INC(CollectorStats::procfs_could_not_get_socket_inodes);
       CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) << "Could not obtain socket inodes: " << StrError();
       continue;
     }
@@ -497,6 +502,7 @@ bool ReadProcessExe(const char* process_id, int dirfd, std::string& comm, std::s
 
   ssize_t nread = readlinkat(dirfd, "exe", buffer, sizeof(buffer));
   if (nread <= 0 || nread >= ssizeof(buffer)) {
+    COUNTER_INC(CollectorStats::procfs_could_not_read_exe);
     CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) << "Could not read 'exe' for " << process_id << ": " << StrError();
     return false;
   }
@@ -514,6 +520,7 @@ bool ReadProcessExe(const char* process_id, int dirfd, std::string& comm, std::s
 bool ReadProcessCmdline(const char* process_id, int dirfd, std::string& exe, std::string& args) {
   FileHandle cmdline(FDHandle(openat(dirfd, "cmdline", O_RDONLY)), "r");
   if (!cmdline.valid()) {
+    COUNTER_INC(CollectorStats::procfs_could_not_read_cmdline);
     CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) << "Could not read 'cmdline' for " << process_id << ": " << StrError();
     return false;
   }
