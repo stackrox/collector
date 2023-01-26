@@ -7,7 +7,7 @@ ARG ADDRESS_SANITIZER=false
 # This builds a collector container based on UBI with a reliance on Red Hat
 # subscription entitlements. Subscription registration is only needed to install
 # RHEL packages if on a non-RHEL host. (See https://access.redhat.com/solutions/5558771)
-FROM registry.access.redhat.com/ubi8/ubi:8.6 AS builder
+FROM registry.access.redhat.com/ubi8/ubi:8.7 AS builder
 
 ARG REDHAT_SUBSCRIPTION_ORG_ID
 ARG REDHAT_SUBSCRIPTION_ACTIVATION_KEY
