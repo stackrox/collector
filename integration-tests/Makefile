@@ -13,6 +13,7 @@ SHELL=/bin/bash
 
 # Environment variable COLLECTOR_IMAGE is used by integration-tests
 export COLLECTOR_IMAGE
+export CUR_DIR=$(CURDIR)
 
 ALL_TESTS = $(shell go test -tags bench -list .)
 

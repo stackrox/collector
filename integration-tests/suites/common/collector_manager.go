@@ -48,9 +48,20 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 	if !offlineMode {
 		env["MODULE_DOWNLOAD_BASE_URL"] = "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"
 	}
+
+	ex, err := os.Executable()
+	if err != nil {
+	    panic(err)
+	}
+	exPath := filepath.Dir(ex)
+	fmt.Println(exPath)
+
+	var curDir = os.Getenv("CUR_DIR")
+	fmt.Println("curDir= " + curDir)
 	mounts := map[string]string{
 		"/host/var/run/docker.sock:ro": "/var/run/docker.sock",
-		"/host/proc:ro":                "/proc",
+		"/host/proc:ro":                curDir + "/container/make-fake-proc/fake_proc",
+		//"/host/proc:ro":                exPath + "/../../container/make-fake-proc/fake_proc",
 		"/host/etc:ro":                 "/etc/",
 		"/host/usr/lib:ro":             "/usr/lib/",
 		"/host/sys:ro":                 "/sys/",
