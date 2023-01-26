@@ -1,0 +1,18 @@
+name: Create metadata.json
+description: |
+  Create metadata.json. This file will hold:
+  - name: name for the latest support-package created, same as the 'latest' file
+  - last_modified: used as date of creation for the index.html file
+inputs:
+  support-pkg-dir:
+    description: |
+      Directory to the newly created support packages
+
+runs:
+  using: composite
+  steps:
+    - name: Create metadata.json
+      shell: bash
+      env:
+        SUPPORT_PACKAGE_TMP_DIR: ${{ inputs.support-pkg-dir }}
+      run: ${{ github.action_path }}/metadata.py

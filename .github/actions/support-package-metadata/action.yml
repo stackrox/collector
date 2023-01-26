@@ -30,7 +30,7 @@ runs:
     env:
       BRANCH_NAME: ${{ inputs.branch-name }}
     run: |
-      ./.github/support-packages/create-metadata-dir.sh
+      ${{ github.action_path }}/create-metadata-dir.sh
 
   - name: Group versions by driver version
     shell: bash

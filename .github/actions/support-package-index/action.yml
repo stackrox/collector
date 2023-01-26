@@ -23,7 +23,7 @@ runs:
   - name: Get latest support-packages
     shell: bash
     run: |
-      ${{ github.workspace }}/.github/support-packages/latest-support-packages.sh \
+      ${{ github.action_path }}/latest-support-packages.sh \
         ${{ inputs.metadata-path }} \
         ${{ inputs.output-path }} \
         ${{ inputs.gcp-bucket }}

@@ -2,10 +2,10 @@
 
 import collections
 from collections import namedtuple
-from datetime import datetime
 import os
 import re
 import sys
+import json
 from pathlib import Path
 import jinja2
 
@@ -91,16 +91,16 @@ def load_support_packages(output_dir, mod_md_map, arch):
             # Legacy version (truncated SHA value)
             driver_version = mod_ver[:6]
 
-        support_pkg_file_re = re.compile(fr'^support-pkg-{re.escape(driver_version)}-\d+\.zip$')
-        support_pkgs = [f for f in os.listdir(mod_out_dir) if support_pkg_file_re.match(f)]
-        if len(support_pkgs) == 0:
-            # No valid support package for version
-            continue
+        support_pkg_metadata = {}
+        with open(os.path.join(mod_out_dir, 'metadata.json'), 'r') as f:
+            support_pkg_metadata = json.load(f)
 
-        support_pkg_file = max(support_pkgs)
+        support_pkg_file = support_pkg_metadata['file_name']
+        last_mod_time = support_pkg_metadata['last_modified']
 
-        st = os.stat(os.path.join(mod_out_dir, support_pkg_file))
-        last_mod_time = datetime.utcfromtimestamp(st.st_mtime).strftime('%Y/%m/%d, %H:%M:%S')
+        # This double checks the file exists, which means the file is also
+        # uploaded in GCP, we error out otherwise
+        os.stat(os.path.join(mod_out_dir, support_pkg_file))
 
         support_pkg_file_latest = f'support-pkg-{driver_version}-latest.zip'
         try:

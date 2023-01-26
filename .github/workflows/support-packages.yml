@@ -54,6 +54,11 @@ jobs:
             /tmp/support-packages/metadata \
             /tmp/support-packages/output
 
+      - name: Create metadata.json
+        uses: ./.github/actions/support-package-metadata-json
+        with:
+          support-pkg-dir: /tmp/support-packages/output
+
       - name: Push support-packages
         uses: 'google-github-actions/upload-cloud-storage@v1'
         with:
