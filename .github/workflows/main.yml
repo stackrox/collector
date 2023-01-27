@@ -5,11 +5,30 @@ on:
     branches:
       - master
       - release-*
+    tags:
+      - 3.*.*
   pull_request:
 
 jobs:
+  init:
+    uses: ./.github/workflows/init.yml
+
   build-drivers:
     uses: ./.github/workflows/drivers.yml
+    with:
+      drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
+      bundles-bucket: ${{ needs.init.outputs.bundles-bucket }}
+    needs: init
+    secrets: inherit
+
+  upload-drivers:
+    uses: ./.github/workflows/upload-drivers.yml
+    with:
+      gcp-bucket: ${{ needs.init.outputs.push-drivers-bucket }}
+    if: ${{ needs.build-drivers.outputs.parallel-jobs > 0 }}
+    needs:
+    - init
+    - build-drivers
     secrets: inherit
 
   check-drivers-build:
@@ -26,15 +45,69 @@ jobs:
           path: /tmp/FAILURES
 
       - name: Check build failures
-        run:
+        run: |
           FAILURES_DIR=/tmp/FAILURES/ ${{ github.workspace }}/.openshift-ci/drivers/scripts/drivers-build-failures.sh
 
-  build-collector:
-    uses: ./.github/workflows/collector-image.yml
+      - name: Slack notification
+        if: failure() && github.event_name == 'push'
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_ONCALL }}
+          SLACK_CHANNEL: oncall
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_LINK_NAMES: true
+          SLACK_TITLE: Driver build check failed
+          MSG_MINIMAL: actions url,commit
+          SLACK_MESSAGE: |
+            @collector-team
+
+  build-collector-slim:
+    uses: ./.github/workflows/collector-slim.yml
+    needs: init
+    with:
+      collector-tag: ${{ needs.init.outputs.collector-tag }}
+      collector-image: ${{ needs.init.outputs.collector-image }}
     secrets: inherit
+
+  build-collector-full:
+    uses: ./.github/workflows/collector-full.yml
+    with:
+      collector-tag: ${{ needs.init.outputs.collector-tag }}
+      drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
+      skip-built-drivers: ${{ needs.build-drivers.outputs.parallel-jobs == 0 }}
+      build-full-image: ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'build-full-images') }}
+    secrets: inherit
+    needs:
+    - init
+    - build-collector-slim
+    - build-drivers
 
   integration-tests:
     uses: ./.github/workflows/integration-tests.yml
+    with:
+      collector-tag: ${{ needs.init.outputs.collector-tag }}
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
-    needs: build-collector
+    needs:
+    - init
+    - build-collector-slim
+    - build-collector-full
+    secrets: inherit
+
+  build-support-packages:
+    uses: ./.github/workflows/support-packages.yml
+    with:
+      branch-name: ${{ needs.build-drivers.outputs.branch-name }}
+      drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
+      support-packages-bucket: ${{ needs.init.outputs.support-packages-bucket }}
+      public-support-packages-bucket: ${{ needs.init.outputs.public-support-packages-bucket }}
+    if: always() && (github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'test-support-packages'))
+    needs:
+    - init
+    - build-drivers
+    - upload-drivers
+    secrets: inherit
+
+  run-cpaas-steps:
+    uses: ./.github/workflows/cpaas.yml
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps')
     secrets: inherit

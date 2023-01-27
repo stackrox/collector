@@ -2,11 +2,27 @@ name: Build collector drivers
 
 on:
   workflow_call:
+    inputs:
+      drivers-bucket:
+        type: string
+        required: true
+        description: The GCP bucket to pull cached drivers from
+      bundles-bucket:
+        type: string
+        required: true
+        description: The GCP bucket to pull bundles from
     outputs:
       parallel-jobs:
         description: |
           Number of builders used to build drivers, 0 if no driver is built
         value: ${{ jobs.split-tasks.outputs.parallel-jobs }}
+      branch-name:
+        description: |
+          Branch CI is running on
+        value: ${{ jobs.split-tasks.outputs.branch-name }}
+
+env:
+  DRIVERS_BUCKET: ${{ inputs.drivers-bucket }}
 
 jobs:
   split-tasks:
@@ -43,7 +59,7 @@ jobs:
           # Initialize just the falco submodule
           git submodule update --init ${{ github.workspace }}/falcosecurity-libs
 
-          ${{ github.workspace }}/kernel-modules/dockerized/scripts/patch-files.sh \
+          ${{ github.workspace }}/kernel-modules/build/patch-files.sh \
             ${{ steps.set-branch.outputs.branch-name }} \
             "${BUILD_LEGACY_DRIVERS}" \
             ${{ github.workspace }} \
@@ -58,7 +74,7 @@ jobs:
       - name: Create a mock cache
         if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-cache') }}
         run: |
-          ${{ github.workspace }}/.github/drivers/mock-cache.sh
+          ${{ github.workspace }}/kernel-modules/build/mock-cache.sh
 
       - name: Get build tasks
         env:
@@ -70,7 +86,7 @@ jobs:
           SCRIPTS_DIR: ${{ github.workspace }}/kernel-modules/build
 
         run: |
-          ${{ github.workspace }}/kernel-modules/dockerized/scripts/get-build-tasks.sh
+          ${{ github.workspace }}/kernel-modules/build/get-build-tasks.sh
 
           mkdir -p /tmp/tasks
           mv /tmp/build-tasks /tmp/tasks/all
@@ -110,6 +126,14 @@ jobs:
         run: |
           ${{ github.workspace }}/.openshift-ci/drivers/scripts/kernel-splitter.py
 
+          # TODO: This is a compatibility issue with OSCI, ideally all tasks
+          # should be in a consistent path. Ensure that happens once we remove
+          # OSCI
+          if [[ -f /tmp/tasks/fc36/all ]]; then
+            mkdir -p /tmp/tasks/fc36/0
+            mv /tmp/tasks/fc36/all /tmp/tasks/fc36/0/all
+          fi
+
       - name: Store tasks and sources
         uses: actions/upload-artifact@v3
         with:
@@ -126,7 +150,7 @@ jobs:
       - split-tasks
     if: ${{ needs.split-tasks.outputs.parallel-jobs > 0 }}
     env:
-      BUILDERS_DIR: ${{ github.workspace }}/.github/drivers
+      BUILDERS_DIR: ${{ github.workspace }}/kernel-modules/build
 
     strategy:
       matrix:
@@ -189,7 +213,7 @@ jobs:
           # shellcheck disable=SC2043
           for builder in ${{ steps.required-builders.outputs.builders }}; do
             # Download bundles for current builder
-            awk '{ print "gs://collector-kernel-bundles-public/bundle-"$1".tgz" }' "/tmp/tasks/${builder}/${{ matrix.builder }}/all" |
+            awk '{ print "gs://${{ inputs.bundles-bucket }}/bundle-"$1".tgz" }' "/tmp/tasks/${builder}/${{ matrix.builder }}/all" |
               sort | uniq | gsutil -m cp -I /tmp/bundles
 
             docker run --rm -i \
@@ -220,38 +244,3 @@ jobs:
           path: /tmp/FAILURES
           if-no-files-found: ignore
           retention-days: 1
-
-  upload-drivers:
-    runs-on: ubuntu-latest
-    needs:
-      - split-tasks
-      - build-drivers
-
-    steps:
-      - name: Restore built drivers
-        uses: actions/download-artifact@v3
-        with:
-          name: built-drivers
-          path: /tmp/output/
-
-      - name: Choose destination bucket
-        id: gcp-bucket
-        run: |
-          # TODO: Move these buckets to the proper ones when we completely switch off OSCI
-          if [[ "${{ github.event_name == 'pull_request' }}" == "true" ]]; then
-            echo "gcp-bucket=mauro-drivers-test/pr-builds/${{ needs.split-tasks.outputs.branch-name }}/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "gcp-bucket=mauro-drivers-test/drivers" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Authenticate with GCP
-        uses: 'google-github-actions/auth@v1'
-        with:
-          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
-
-      - name: Push drivers
-        uses: 'google-github-actions/upload-cloud-storage@v1'
-        with:
-          path: /tmp/output/
-          parent: false
-          destination: ${{ steps.gcp-bucket.outputs.gcp-bucket }}

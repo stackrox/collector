@@ -1,0 +1,32 @@
+name: Upload drivers to GCP
+
+on:
+  workflow_call:
+    inputs:
+      gcp-bucket:
+        type: string
+        required: true
+        description: GCP bucket to push drivers into
+
+jobs:
+  upload-drivers:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Restore built drivers
+        uses: actions/download-artifact@v3
+        with:
+          name: built-drivers
+          path: /tmp/output/
+
+      - name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - name: Push drivers
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        with:
+          path: /tmp/output/
+          parent: false
+          destination: ${{ inputs.gcp-bucket }}

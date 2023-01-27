@@ -4,9 +4,20 @@ on:
   workflow_call:
     inputs:
       vm_type:
-        description: "Type of VM to run integration tests on. e.g. rhel or ubuntu-os"
+        description: |
+          Type of VM to run integration tests on. e.g. rhel or ubuntu-os
         type: string
         required: true
+      collector-tag:
+        description: |
+          Tag used for running the integration tests
+        type: string
+        required: true
+      offline-mode:
+        description: |
+          Set to true to enable collector running in offline mode
+        type: boolean
+        default: false
 
 jobs:
   integration-tests:
@@ -32,12 +43,9 @@ jobs:
       GCP_SSH_KEY_FILE: ~/.ssh/GCP_SSH_KEY
       BUILD_TYPE: ci
       VM_TYPE: "${{ inputs.vm_type }}"
+      COLLECTOR_TAG: ${{ inputs.collector-tag }}
     steps:
       - uses: actions/checkout@v3
-        with:
-          # checkout everything so we can identify the right
-          # collector tag to test
-          fetch-depth: 0
 
       - uses: actions/setup-go@v3
         with:
@@ -86,18 +94,18 @@ jobs:
           NORM_JOB_ID="${JOB_ID/-/}"
           echo "JOB_ID=${NORM_JOB_ID}" | tee -a "$GITHUB_ENV"
 
-      - name: Construct COLLECTOR_TAG
-        run: |
-          COLLECTOR_TAG="$(make tag)-gha-slim"
-          echo "COLLECTOR_TAG=${COLLECTOR_TAG}" | tee -a "$GITHUB_ENV"
-
       - name: Create VMs
         id: create-vms-step
         run: |
           make -C "${{ github.workspace }}/ansible" create-ci-vms
 
       - name: Run Tests
-        run: make -C "${{ github.workspace }}/ansible" integration-tests
+        run: |
+          if [[ "${{ inputs.offline-mode }}" == "true" ]]; then
+            export COLLECTOR_OFFLINE_MODE="true"
+          fi
+
+          make -C "${{ github.workspace }}/ansible" integration-tests
         env:
           QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -115,4 +123,3 @@ jobs:
             ${{ github.workspace }}/integration-tests/container-logs/**/*
             ${{ github.workspace }}/integration-tests/perf.json
             ${{ github.workspace }}/integration-tests/performance-logs/**/*
-

@@ -1,7 +1,13 @@
 name: Collector Integration Tests
 
-on: 
+on:
   workflow_call:
+    inputs:
+      collector-tag:
+        description: |
+          Tag used for running the integration tests
+        type: string
+        required: true
 
 jobs:
   required-integration-tests:
@@ -16,6 +22,7 @@ jobs:
           - ubuntu-os
     with:
       vm_type: ${{ matrix.vm_type }}
+      collector-tag: ${{ inputs.collector-tag }}
     secrets: inherit
 
   all-integration-tests:
@@ -35,4 +42,24 @@ jobs:
           - garden-linux
     with:
       vm_type: ${{ matrix.vm_type }}
+      collector-tag: ${{ inputs.collector-tag }}
     secrets: inherit
+
+  notify:
+    runs-on: ubuntu-latest
+    if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name == 'push'
+    needs:
+      - required-integration-tests
+      - all-integration-tests
+    steps:
+      - name: Slack notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_NOTIFICATIONS_WEBHOOK }}
+          SLACK_CHANNEL: collector-notifications
+          SLACK_COLOR: failure
+          SLACK_LINK_NAMES: true
+          SLACK_TITLE: "Integration tests failed."
+          MSG_MINIMAL: actions url,commit
+          SLACK_MESSAGE: |
+            @collector-team

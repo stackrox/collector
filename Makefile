@@ -11,7 +11,8 @@ DEV_SSH_SERVER_KEY ?= $(CURDIR)/.collector_dev_ssh_host_ed25519_key
 export COLLECTOR_VERSION := $(COLLECTOR_TAG)
 export MODULE_VERSION := $(shell cat $(CURDIR)/kernel-modules/MODULE_VERSION)
 
-dev-build: image integration-tests-process-network
+dev-build: image
+	make -C integration-tests TestProcessNetwork
 
 .PHONY: tag
 tag:
@@ -92,73 +93,19 @@ image-dev-full: image-dev build-drivers
 		--build-arg max_layer_depth=1 \
 		$(CURDIR)/kernel-modules/container
 
-.PHONY: integration-tests-benchmark
-integration-tests-benchmark:
-	make -C integration-tests benchmark ||\
-		( .openshift-ci/slack/notify-if-needed.sh "benchmark" $$? )
-
-.PHONY: integration-tests-baseline
-integration-tests-baseline:
-	make -C integration-tests baseline ||\
-		( .openshift-ci/slack/notify-if-needed.sh "benchmark-baseline" $$? )
-
-.PHONY: integration-tests-process-network
-integration-tests-process-network:
-	make -C integration-tests process-network ||\
-		( .openshift-ci/slack/notify-if-needed.sh "process-network" $$? )
-
-.PHONY: integration-tests-missing-proc-scrape
-integration-tests-missing-proc-scrape:
-	make -C integration-tests missing-proc-scrape ||\
-		( .openshift-ci/slack/notify-if-needed.sh "missing-proc-scrape" $$? )
-
-.PHONY: integration-tests-repeat-network
-integration-tests-repeat-network:
-	make -C integration-tests repeat-network ||\
-		( .openshift-ci/slack/notify-if-needed.sh "repeat-network" $$? )
-
-.PHONY: integration-tests-image-label-json
-integration-tests-image-label-json:
-	make -C integration-tests image-label-json ||\
-		( .openshift-ci/slack/notify-if-needed.sh "image-label-json" $$? )
-
-.PHONY: integration-tests-procfsscaper
-integration-tests-procfsscaper:
-	make -C integration-tests procfsscraper ||\
-		( .openshift-ci/slack/notify-if-needed.sh "procfsscaper" $$? )
-
-.PHONY: integration-tests-process-listening-on-port
-integration-tests-process-listening-on-port:
-	make -C integration-tests process-listening-on-port ||\
-		( .openshift-ci/slack/notify-if-needed.sh "process-listening-on-port" $$? )
-
-.PHONY: integration-tests-symbolic-link-process
-integration-tests-symbolic-link-process:
-	make -C integration-tests symbolic-link-process ||\
-		( .openshift-ci/slack/notify-if-needed.sh "symbolic-link-process" $$? )
-
-.PHONY: integration-tests-socat
-integration-tests-socat:
-	make -C integration-tests socat ||\
-		( .openshift-ci/slack/notify-if-needed.sh "socat" $$? )
-
 .PHONY: integration-tests-report
 integration-tests-report:
 	make -C integration-tests report
 
 .PHONY: ci-integration-tests
-ci-integration-tests: integration-tests-repeat-network \
-					  integration-tests-process-network \
-					  integration-tests-missing-proc-scrape \
-					  integration-tests-image-label-json \
-					  integration-tests-procfsscaper \
-					  integration-tests-process-listening-on-port \
-					  integration-tests-symbolic-link-process \
-					  integration-tests-socat
+ci-integration-tests:
+	make -C integration-tests ci-integration-tests || \
+		( .openshift-ci/slack/notify-if-needed.sh "integration-tests" $$? )
 
 .PHONY: ci-benchmarks
-ci-benchmarks: integration-tests-baseline \
-			   integration-tests-benchmark
+ci-benchmarks:
+	make -C integration-tests ci-benchmarks || \
+		( .openshift-ci/slack/notify-if-needed.sh "benchmarks" $$? )
 
 .PHONY: ci-all-tests
 ci-all-tests: ci-benchmarks ci-integration-tests

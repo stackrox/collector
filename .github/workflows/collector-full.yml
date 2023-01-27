@@ -1,0 +1,160 @@
+name: Build the collector full image
+
+on:
+  workflow_call:
+    inputs:
+      collector-tag:
+        type: string
+        required: true
+        description: |
+          The tag used to build the collector image
+      build-full-image:
+        type: boolean
+        required: true
+        description: |
+          If true, the full collector image will be built, else, the -slim
+          image of collector will be retagged.
+      skip-built-drivers:
+        type: boolean
+        required: true
+        description: |
+          Skip built drivers if no new drivers were built.
+      drivers-bucket:
+        type: string
+        required: true
+        description: |
+          GCP bucket to pull drivers from.
+      max-layer-depth:
+        type: string
+        default: "5"
+        description: |
+          Max layer the drivers will be split into
+
+jobs:
+  build-collector-full:
+    runs-on: ubuntu-latest
+    if: inputs.build-full-image
+    env:
+      COLLECTOR_IMAGE: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Restore built drivers
+        uses: actions/download-artifact@v3
+        if: ${{ !inputs.skip-built-drivers }}
+        with:
+          name: built-drivers
+          path: /tmp/built-drivers/
+
+      - name: Set environment variables
+        run: |
+          echo "DRIVER_VERSION=$(cat ${{ github.workspace }}/kernel-modules/MODULE_VERSION)" >> "$GITHUB_ENV"
+          echo "CONTEXT_DRIVERS_DIR=${{ github.workspace }}/kernel-modules/container/kernel-modules" >> "$GITHUB_ENV"
+
+      - name: Download drivers from GCP
+        run: |
+          mkdir -p "${CONTEXT_DRIVERS_DIR}"
+
+          gsutil -m rsync -r "gs://${{ inputs.drivers-bucket }}/${DRIVER_VERSION}/" \
+            "${CONTEXT_DRIVERS_DIR}"
+
+      - name: Add built drivers
+        run: |
+          BUILT_DRIVERS_DIR="/tmp/built-drivers/${DRIVER_VERSION}/"
+
+          if [[ -d "${BUILT_DRIVERS_DIR}" ]]; then
+            find "${BUILT_DRIVERS_DIR}" -type f -exec mv -t "${CONTEXT_DRIVERS_DIR}" {} +
+          fi
+
+      - name: Pull slim image and build full image
+        run: |
+          docker build \
+            --target=probe-layer-${{ inputs.max-layer-depth }} \
+            --tag "${COLLECTOR_IMAGE}" \
+            --build-arg collector_repo=quay.io/stackrox-io/collector \
+            --build-arg collector_version=${{ inputs.collector-tag }} \
+            --build-arg module_version="${DRIVER_VERSION}" \
+            --build-arg max_layer_size=300 \
+            --build-arg max_layer_depth=${{ inputs.max-layer-depth }} \
+            "${{ github.workspace }}/kernel-modules/container"
+
+      - name: Login to quay.io/stackrox-io
+        uses: docker/login-action@v2
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+
+      - name: Push stackrox-io full image
+        run: |
+          docker push "${COLLECTOR_IMAGE}"
+
+      - name: Retag and push stackrox-io -latest
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: ${{ env.COLLECTOR_IMAGE }}
+          dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-latest
+          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+
+      - name: Retag and push rhacs-eng
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: ${{ env.COLLECTOR_IMAGE }}
+          dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
+          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+
+      - name: Retag and push rhacs-eng -latest
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: ${{ env.COLLECTOR_IMAGE }}
+          dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-latest
+          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+
+  retag-collector-full:
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.build-full-image }}
+    env:
+      COLLECTOR_IMAGE_SLIM: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-slim
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Pull slim image
+        run: |
+          docker pull "${COLLECTOR_IMAGE_SLIM}"
+
+      - name: Retag and push stackrox-io
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: ${{ env.COLLECTOR_IMAGE_SLIM }}
+          dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
+          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+
+      - name: Retag and push stackrox-io -latest
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: ${{ env.COLLECTOR_IMAGE_SLIM }}
+          dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-latest
+          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+
+      - name: Retag and push rhacs-eng
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: ${{ env.COLLECTOR_IMAGE_SLIM }}
+          dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
+          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+
+      - name: Retag and push rhacs-eng -latest
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: ${{ env.COLLECTOR_IMAGE_SLIM }}
+          dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-latest
+          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
