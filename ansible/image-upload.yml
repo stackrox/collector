@@ -1,0 +1,45 @@
+---
+
+- name: Push Collector Image to Hosts
+  vars_files:
+    - group_vars/all.yml
+  hosts: "platform_*:&job_id_{{ job_id }}"
+  strategy: free
+
+  tasks:
+    - name: Get Collector Image
+      shell: make -C "{{ collector_root }}" tag
+      register: collector_tag_result
+      delegate_to: localhost
+
+    - set_fact:
+        collector_tag: "{{ collector_tag_result.stdout | replace('\n', '') }}"
+
+    - name: Create tmp directory
+      tempfile:
+        state: directory
+      register: image_directory
+      delegate_to: localhost
+
+    - name: Save Collector Image
+      # we can't use the docker_image ansible tooling because it uses
+      # the local docker API directly, which doesn't work if you're
+      # using an SSH context or similar. It's safer and more robust
+      # to just call docker save directly.
+      shell: |
+        docker save -o {{ image_directory.path }}/collector.tar {{ collector_repo }}/collector:{{ collector_tag }}
+      delegate_to: localhost
+
+    - name: Copy Collector Image
+      copy:
+        src: "{{ image_directory.path }}/collector.tar"
+        dest: collector.tar
+
+    - name: Load Collector Image
+      shell:
+        cmd: docker load -i collector.tar
+
+    - name: Remove tmp directory
+      file:
+        path: "{{ image_directory.path }}"
+        state: absent
