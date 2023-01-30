@@ -12,7 +12,8 @@
   X(net_scrape_update)  \
   X(net_fetch_state)    \
   X(net_create_message) \
-  X(net_write_message)
+  X(net_write_message)  \
+  X(process_info_wait)
 
 #define COUNTER_NAMES             \
   X(net_conn_updates)             \

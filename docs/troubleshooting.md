@@ -246,6 +246,7 @@ Units: microseconds
 | net_fetch_state                                  | Time spent to build a delta message content (connections + endpoints) to send to Sensor                                              |
 | net_create_message                               | Time spent to serialize the delta message and store the resulting state for next computation.                                        |
 | net_write_message                                | Time spent sending the raw message content.                                                                                          |
+| process_info_wait                                | Time spent blocked waiting for process info to be resolved by Falco.                                                                 |
 
 
 ### Network status notifier counters
