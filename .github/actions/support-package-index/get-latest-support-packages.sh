@@ -13,6 +13,7 @@ for arch in x86_64 s390x ppc64le; do
 
         mkdir -p "${output_dir}"
         if ! gsutil cp "gs://${GCP_BUCKET}/${arch}/${version}/metadata.json" "${output_dir}/metadata.json"; then
+            echo "metadata.json not found for '${arch}/${version}'"
             continue
         fi
 
