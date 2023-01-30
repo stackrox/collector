@@ -286,25 +286,34 @@ Prometheus name: rox_collector_events
 Units: occurence
 ```
 
-| Name                                 | Description                                                                                         |
-|--------------------------------------|-----------------------------------------------------------------------------------------------------|
-| kernel                               | number of received kernel events (by the probe)                                                     |
-| drops                                | number of dropped kernel events                                                                     |
-| preemptions                          | Number of preemptions (?)                                                                           |
-| filtered[syscall]                    | Number of events after chisel filtering                                                             |
-| userspace[syscall]                   | Number of this kind of event before chisel filtering                                                |
-| chiselCacheHitsAccept[syscall]       | number of events accepted by the filter cache                                                       |
-| chiselCacheHitsReject[syscall]       | number of events rejected by the filter cache                                                       |
-| grpcSendFailures                     | (not used?)                                                                                         |
-| processSent                          | Process signal sent with success                                                                    |
-| processSendFailures                  | Failure upon sending a process signal                                                               |
-| processResolutionFailuresByEvt       | Count of invalid process signal events received, then ignored (invalid path or name, or not execve) |
-| processResolutionFailuresByTinfo     | Count of invalid process found parsed during initial iteration (existing processes)                 |
-| processRateLimitCount                | Count of processes not sent because of the rate limiting.                                           |
-| parse_micros[syscall]                | Total time used to retrieve an event of this type from falco                                        |
-| process_micros[syscall]              | Total time used to handle/send an event of this type (call the SignalHandler)                       |
+| Name                                   | Description                                                                                         |
+|----------------------------------------|-----------------------------------------------------------------------------------------------------|
+| kernel                                 | number of received kernel events (by the probe)                                                     |
+| drops                                  | number of dropped kernel events                                                                     |
+| preemptions                            | Number of preemptions (?)                                                                           |
+| filtered[syscall]                      | Number of events after chisel filtering                                                             |
+| userspace[syscall]                     | Number of this kind of event before chisel filtering                                                |
+| chiselCacheHitsAccept[syscall]         | number of events accepted by the filter cache                                                       |
+| chiselCacheHitsReject[syscall]         | number of events rejected by the filter cache                                                       |
+| grpcSendFailures                       | (not used?)                                                                                         |
+| processSent                            | Process signal sent with success                                                                    |
+| processSendFailures                    | Failure upon sending a process signal                                                               |
+| processResolutionFailuresByEvt         | Count of invalid process signal events received, then ignored (invalid path or name, or not execve) |
+| processResolutionFailuresByTinfo       | Count of invalid process found parsed during initial iteration (existing processes)                 |
+| processRateLimitCount                  | Count of processes not sent because of the rate limiting.                                           |
+| parse_micros[syscall]                  | Total time used to retrieve an event of this type from falco                                        |
+| process_micros[syscall]                | Total time used to handle/send an event of this type (call the SignalHandler)                       |
+| procfs_could_not_get_network_namespace | Count of the number of times that ProcfsScraper was unable to get the netwrok namespace             |
+| procfs_could_not_get_socket_inodes     | Count of the number of times that ProcfsScraper was unable to get the socket inodes                 |
+| procfs_could_not_open_fd_dir           | Count of the number of times that ProcfsScraper was unable to open /proc/{pid}/fd                   |
+| procfs_could_not_open_pid_dir          | Count of the number of times that ProcfsScraper was unable to open /proc/{pid}                      |
+| procfs_could_not_open_proc_dir         | Count of the number of times that ProcfsScraper was unable to open /proc                            |
+| procfs_could_not_read_cmdline          | Count of the number of times that ProcfsScraper was unable to read /proc/{pid}/cmdline              |
+| procfs_could_not_read_exe              | Count of the number of times that ProcfsScraper was unable to read /proc/{pid}/exe                  |
 
 Note that the `[syscall]` suffix in a metric name means that it is instanciated for each syscall and direction individually.
+
+Note that if ProcfsScraper is unable to open /proc it is not able to open any of the subdirectories, but only procfs_could_not_open_proc_dir will be incremented in that case.
 
 ### Falco timers per syscall
 
