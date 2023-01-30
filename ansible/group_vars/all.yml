@@ -8,6 +8,7 @@ current_user: "{{ lookup('env', 'USER') }}"
 job_id: "{{ lookup('env', 'JOB_ID', default=current_user) }}"
 test_platform: "{{ lookup('env', 'VM_TYPE', default='rhel') }}"
 collector_root: "{{ playbook_dir }}/.."
+collector_repo: "quay.io/stackrox-io"
 
 virtual_machines:
   rhel:

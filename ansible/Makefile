@@ -26,6 +26,10 @@ destroy-vms:
 		--tags teardown \
 		vm-lifecycle.yml
 
+.PHONY: image-upload
+image-upload:
+	ansible-playbook -i $(CONTEXT) image-upload.yml
+
 .PHONY: integration-tests
 integration-tests: secrets.yml
 	ansible-playbook \
