@@ -15,6 +15,9 @@
     - set_fact:
         collector_tag: "{{ collector_tag_result.stdout | replace('\n', '') }}"
 
+    - set_fact:
+        collector_tag: "{{ lookup('env', 'COLLECTOR_TAG') | default(collector_tag) }}"
+
     - name: Create tmp directory
       tempfile:
         state: directory
