@@ -129,7 +129,7 @@ class SocketInfo {
 bool GetSocketINodes(int dirfd, uint64_t pid, UnorderedSet<SocketInfo>* sock_inodes) {
   DirHandle fd_dir = FDHandle(openat(dirfd, "fd", O_RDONLY));
   if (!fd_dir.valid()) {
-    CLOG(ERROR) << "could not open fd directory";
+    CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) << "could not open fd directory";
     return false;
   }
 
@@ -427,7 +427,7 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
                               std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) {
   DirHandle procdir = opendir(proc_path);
   if (!procdir.valid()) {
-    CLOG(ERROR) << "Could not open " << proc_path << ": " << StrError();
+    CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) << "Could not open " << proc_path << ": " << StrError();
     return false;
   }
 
@@ -450,7 +450,9 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
 
     uint64_t netns_inode;
     if (!GetNetworkNamespace(dirfd, &netns_inode)) {
-      CLOG(ERROR) << "Could not determine network namespace: " << StrError();
+      // TODO ROX-13962: Add metrics for the logging statements in this source file.
+      // Improve logging to indicate when a process is defunct.
+      CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) << "Could not determine network namespace: " << StrError();
       continue;
     }
 
@@ -458,7 +460,7 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
     bool no_sockets = container_ns_sockets.empty();
 
     if (!GetSocketINodes(dirfd, pid, &container_ns_sockets)) {
-      CLOG(ERROR) << "Could not obtain socket inodes: " << StrError();
+      CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) << "Could not obtain socket inodes: " << StrError();
       continue;
     }
 
@@ -495,7 +497,7 @@ bool ReadProcessExe(const char* process_id, int dirfd, std::string& comm, std::s
 
   ssize_t nread = readlinkat(dirfd, "exe", buffer, sizeof(buffer));
   if (nread <= 0 || nread >= ssizeof(buffer)) {
-    CLOG(ERROR) << "Could not read 'exe' for " << process_id << ": " << StrError();
+    CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) << "Could not read 'exe' for " << process_id << ": " << StrError();
     return false;
   }
 
@@ -512,7 +514,7 @@ bool ReadProcessExe(const char* process_id, int dirfd, std::string& comm, std::s
 bool ReadProcessCmdline(const char* process_id, int dirfd, std::string& exe, std::string& args) {
   FileHandle cmdline(FDHandle(openat(dirfd, "cmdline", O_RDONLY)), "r");
   if (!cmdline.valid()) {
-    CLOG(ERROR) << "Could not read 'cmdline' for " << process_id << ": " << StrError();
+    CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) << "Could not read 'cmdline' for " << process_id << ": " << StrError();
     return false;
   }
   bool did_exe = false;
