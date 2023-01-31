@@ -25,7 +25,8 @@ git commit -m 'Drops MODULE_VERSION release candidate for release'
 git push
 ```
 
-  - Create a PR for this change, merge once approved.
+Create a PR for this change, merge once approved.
+
 4. Create an internal release tag to mark on the master branch where we forked for the release.
 
 ```sh
