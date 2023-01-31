@@ -1,6 +1,7 @@
 # Stackrox Collector
 
-![GitHub branch checks state](https://img.shields.io/github/checks-status/stackrox/collector/master?style=for-the-badge)
+![GitHub Workflow Status (with branch)](https://img.shields.io/github/actions/workflow/status/stackrox/collector/main.yml?style=for-the-badge)
+![GitHub Workflow Status (with branch)](https://img.shields.io/github/actions/workflow/status/stackrox/collector/cpaas.yml?label=Downstream%20Nightly&style=for-the-badge)
 ![GitHub](https://img.shields.io/github/license/stackrox/collector?style=for-the-badge)
 ![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/stackrox/collector?sort=semver&style=for-the-badge)
 
