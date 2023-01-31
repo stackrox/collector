@@ -4,6 +4,7 @@ ENV DISTRO=fc36
 
 RUN dnf -y install \
         make \
+        cmake \
         gcc-c++ \
         llvm \
         clang \

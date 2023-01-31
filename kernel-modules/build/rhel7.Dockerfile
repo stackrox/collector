@@ -6,6 +6,7 @@ RUN yum makecache && \
     yum install -y centos-release-scl && \
     yum -y install \
         make \
+        cmake \
         gcc-c++ \
         llvm-toolset-7.0 \
         elfutils-libelf \
