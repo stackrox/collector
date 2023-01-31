@@ -358,6 +358,9 @@ class ContainerEndpoint {
 
   bool operator==(const ContainerEndpoint& other) const {
     return container_ == other.container_ && endpoint_ == other.endpoint_ && l4proto_ == other.l4proto_ &&
+           /* Warning, the following equality uses the assumption that there can be only one Process
+              object per process in the system, and compares pointers directly for performance reasons.
+              This unicity is guaranteed by the ProcessStore. */
            originator_ == other.originator_;
   }
 
