@@ -26,7 +26,13 @@
   - `export COLLECTOR_RELEASE=3.8`
 7. Tag and push the release.
   - `git tag -a "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"`
-  - `git push --follow-tags`
+  - `git push origin "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"`
+8. Create and push a tag to the falcosecurity-libs repository
+  - `export DRIVER_VERSION="v$(cat kernel-modules/MODULE_VERSION)"`
+  - `git submodule update --init falcosecurity-libs`
+  - `cd falcosecurity-libs`
+  - `git tag "${DRIVER_VERSION}"`
+  - `git push origin "${DRIVER_VERSION}"`
 
 **Patch releases**
 
