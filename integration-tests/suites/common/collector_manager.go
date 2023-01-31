@@ -71,7 +71,7 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 		DisableGrpcServer: false,
 		BootstrapOnly:     false,
 		CollectorImage:    collectorImage,
-		GRPCServerImage:   "quay.io/rhacs-eng/grpc-server:3.72.x-281-g25a7abf818",
+		GRPCServerImage:   "quay.io/rhacs-eng/grpc-server:3.73.x-95-gd43176a427",
 		Env:               env,
 		Mounts:            mounts,
 		TestName:          name,
