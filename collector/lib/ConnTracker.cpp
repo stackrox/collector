@@ -49,7 +49,8 @@ bool AdvertisedEndpointEquality::operator()(const ContainerEndpoint& lhs, const 
     auto& lhs_originator = *lhs.originator();
     auto& rhs_originator = *rhs.originator();
 
-    // Here is the real difference with the comparator in ContainerEndpointMap, which makes a deep compare of originators. We only focus on process-unique-key.
+    /* Here is the real difference with the comparator in ContainerEndpointMap.
+       We only compare attributes that are part of the serialized originator process object: storage::NetworkProcessUniqueKey */
     if ((lhs_originator.comm() != rhs_originator.comm()) || (lhs_originator.exe_path() != rhs_originator.exe_path()) || (lhs_originator.args() != rhs_originator.args())) {
       return false;
     }

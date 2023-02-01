@@ -89,8 +89,11 @@ class ConnStatus {
   uint64_t data_;
 };
 
-/* Advertised Endpoint representation comparison operator. It matches when two endpoints are indistinguishable
-  as seen from the Sensor (their originator process unique key is equal) */
+/* Advertised Endpoint representation comparison operator.
+   When an endpoint is advertised (sent in serialized form), its originator process is descibed
+   using storage::NetworkProcessUniqueKey. This structure only contains a subset of the process
+   attributes. The AdvertisedEndpointEquality matches endpoints by comparing only the advertised
+   attributes for the originator process. */
 class AdvertisedEndpointEquality {
  public:
   bool operator()(const ContainerEndpoint& lhs, const ContainerEndpoint& rhs) const;
