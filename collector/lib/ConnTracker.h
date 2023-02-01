@@ -89,7 +89,7 @@ class ConnStatus {
   uint64_t data_;
 };
 
-/* Adverstised Endpoint representation comparison operator. It matches when two endpoints are undistinguishable
+/* Advertised Endpoint representation comparison operator. It matches when two endpoints are indistinguishable
   as seen from the Sensor (their originator process unique key is equal) */
 class AdvertisedEndpointEquality {
  public:
