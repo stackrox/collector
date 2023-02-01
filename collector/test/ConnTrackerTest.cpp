@@ -1420,6 +1420,61 @@ TEST(ConnTrackerTest, TestDeltaForEndpointDifferentProtocols) {
   EXPECT_THAT(old_state, expected_delta);
 }
 
+TEST(ConnTrackerTest, TestAdvertisedEndpointEquality) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 0, 2), 80);
+  std::shared_ptr<IProcess> referenceProcess = std::make_shared<FakeProcess>(2, "container", "comm", "exe", "exe_path", "args");
+  std::shared_ptr<IProcess> processLookingTheSame = std::make_shared<FakeProcess>(3, "container", "comm", "other exe", "exe_path", "args");
+  std::shared_ptr<IProcess> processWithDifferentComm = std::make_shared<FakeProcess>(3, "container", "other comm", "exe", "exe_path", "args");
+  std::shared_ptr<IProcess> processWithDifferentExePath = std::make_shared<FakeProcess>(3, "container", "comm", "exe", "not same path", "args");
+  std::shared_ptr<IProcess> processWithDifferentArgs = std::make_shared<FakeProcess>(3, "container", "comm", "exe", "exe_path", "different args");
+
+  // perfect equality
+  EXPECT_TRUE(AdvertisedEndpointEquality()(
+      ContainerEndpoint("container", a, L4Proto::TCP, referenceProcess),
+      ContainerEndpoint("container", a, L4Proto::TCP, referenceProcess)));
+
+  // container mismatch
+  EXPECT_FALSE(AdvertisedEndpointEquality()(
+      ContainerEndpoint("container", a, L4Proto::TCP, referenceProcess),
+      ContainerEndpoint("other container", a, L4Proto::TCP, referenceProcess)));
+
+  // proto mismatch
+  EXPECT_FALSE(AdvertisedEndpointEquality()(
+      ContainerEndpoint("container", a, L4Proto::TCP, referenceProcess),
+      ContainerEndpoint("container", a, L4Proto::UDP, referenceProcess)));
+
+  // endpoint mismatch
+  EXPECT_FALSE(AdvertisedEndpointEquality()(
+      ContainerEndpoint("container", a, L4Proto::TCP, referenceProcess),
+      ContainerEndpoint("container", b, L4Proto::TCP, referenceProcess)));
+
+  // process lookking the same
+  EXPECT_TRUE(AdvertisedEndpointEquality()(
+      ContainerEndpoint("container", a, L4Proto::TCP, referenceProcess),
+      ContainerEndpoint("container", a, L4Proto::TCP, processLookingTheSame)));
+
+  // originator comm mismatch
+  EXPECT_FALSE(AdvertisedEndpointEquality()(
+      ContainerEndpoint("container", a, L4Proto::TCP, referenceProcess),
+      ContainerEndpoint("container", a, L4Proto::TCP, processWithDifferentComm)));
+
+  // originator comm mismatch
+  EXPECT_FALSE(AdvertisedEndpointEquality()(
+      ContainerEndpoint("container", a, L4Proto::TCP, referenceProcess),
+      ContainerEndpoint("container", a, L4Proto::TCP, processWithDifferentComm)));
+
+  // originator exe-path mismatch
+  EXPECT_FALSE(AdvertisedEndpointEquality()(
+      ContainerEndpoint("container", a, L4Proto::TCP, referenceProcess),
+      ContainerEndpoint("container", a, L4Proto::TCP, processWithDifferentExePath)));
+
+  // originator args mismatch
+  EXPECT_FALSE(AdvertisedEndpointEquality()(
+      ContainerEndpoint("container", a, L4Proto::TCP, referenceProcess),
+      ContainerEndpoint("container", a, L4Proto::TCP, processWithDifferentArgs)));
+}
+
 }  // namespace
 
 }  // namespace collector
