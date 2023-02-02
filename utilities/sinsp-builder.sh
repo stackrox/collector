@@ -11,12 +11,13 @@ set -euo pipefail
 #       --privileged \
 #       -v /var/run/docker.sock:/var/run/docker.sock \
 #       -v /sys:/sys:ro \
+#       -v /dev:/dev \
 #       -v /tmp:/tmp \
 #       quay.io/stackrox-io/collector-builder:cache
 #
 # If you are running on an immutable system, create a docker volume then add
 # the following arguments:
-#   -v <your-volume>:/tmp/collector -e DEV_DRIVER_BUILDER=<your-volume>
+#   -v <your-volume>:/tmp/collector -e DEV_SHARED_VOLUME=<your-volume>
 #
 # If you are lazy like me, you don't need to clone the collector repo before
 # executing, you can simply run this inside the container:
@@ -45,6 +46,9 @@ set -euo pipefail
 # Install docker-cli, needed for DinD
 dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 dnf install -y docker-ce-cli
+
+# Buildkit misbehaves when running DinD sometimes
+export DOCKER_BUILDKIT=0
 
 if [[ "${COLLECTOR_DIR:-}" == "" ]]; then
     COLLECTOR_DIR=/tmp/collector

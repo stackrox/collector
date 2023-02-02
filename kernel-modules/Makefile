@@ -1,6 +1,6 @@
 BUILD_CONTAINER_TAG ?= build-kernel-modules
 BUILD_CONTAINER_CACHE_IMAGES ?=
-DEV_SHARED_VOLUME ?= $(CURDIR)
+DEV_SHARED_VOLUME ?= $(CURDIR)/..
 DEV_DRIVER_BUILDER ?= fc36
 
 CUSTOM_FLAVORS := $(patsubst build/%.Dockerfile,%,$(wildcard build/*.Dockerfile))
