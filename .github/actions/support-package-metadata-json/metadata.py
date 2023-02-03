@@ -12,7 +12,7 @@ def main():
         version_dir = os.path.join(support_pkg_dir, mod_ver)
 
         with open(os.path.join(version_dir, 'latest'), 'r') as f:
-            latest_file = f.read().splitlines()[0]
+            latest_file = f.readline().strip()
 
             st = os.stat(os.path.join(version_dir, latest_file))
             last_mod_time = datetime.utcfromtimestamp(st.st_mtime).strftime('%Y/%m/%d, %H:%M:%S')
