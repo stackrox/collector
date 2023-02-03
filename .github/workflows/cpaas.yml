@@ -75,7 +75,7 @@ jobs:
           SLACK_CHANNEL: collector-notifications
           SLACK_COLOR: failure
           SLACK_LINK_NAMES: true
-          SLACK_TITLE: CPaaS driver build check failed
+          SLACK_TITLE: Downstream nightly failed
           MSG_MINIMAL: actions url,commit
           SLACK_MESSAGE: |
             @collector-team
