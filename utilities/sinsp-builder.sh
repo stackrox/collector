@@ -63,10 +63,14 @@ make -C "${COLLECTOR_DIR}/kernel-modules" drivers
 mkdir -p "${COLLECTOR_DIR}"/falcosecurity-libs/build
 cd "${COLLECTOR_DIR}"/falcosecurity-libs/build
 
+if [[ "${SINSP_BUILD_DIR:-}" == "" ]]; then
+    SINSP_BUILD_DIR="$(mktemp -d)"
+fi
+
 cmake -DUSE_BUNDLED_DEPS=OFF \
     -S"${COLLECTOR_DIR}/falcosecurity-libs" \
-    -B"${COLLECTOR_DIR}/falcosecurity-libs/build"
-make -j"$(nproc)" -C "${COLLECTOR_DIR}/falcosecurity-libs/build" sinsp-example
+    -B"${SINSP_BUILD_DIR}"
+make -j"$(nproc)" -C "${SINSP_BUILD_DIR}" sinsp-example
 
 OUTPUT_DIR=/tmp/output
 mkdir -p "${OUTPUT_DIR}"
@@ -76,6 +80,11 @@ for driver_zip in "${COLLECTOR_DIR}/kernel-modules/container/kernel-modules"/*.g
     gunzip -c "${driver_zip}" > "${OUTPUT_DIR}/${driver}"
 done
 
-cp "${COLLECTOR_DIR}/falcosecurity-libs/build/libsinsp/examples/sinsp-example" "${OUTPUT_DIR}/sinsp-example"
+cp "${SINSP_BUILD_DIR}/libsinsp/examples/sinsp-example" "${OUTPUT_DIR}/sinsp-example"
 
+echo ""
 echo "All done! You should have everything you need under '${OUTPUT_DIR}'"
+echo ""
+echo "If you plan to keep running this script run the following command"
+echo "to prevent multiple build directories being used for sinsp-example:"
+echo "   export SINSP_BUILD_DIR=${SINSP_BUILD_DIR}"
