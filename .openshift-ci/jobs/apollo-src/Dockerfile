@@ -2,7 +2,7 @@ FROM replaced-by-osci:bin AS pr-data
 
 RUN .openshift-ci/jobs/apollo-src/dump-pr-data.sh
 
-FROM quay.io/stackrox-io/apollo-ci:collector-0.3.44-1-gb00ffc52af
+FROM quay.io/stackrox-io/apollo-ci:collector-0.3.56
 
 COPY --from=pr-data /ci-data/ /ci-data/
 COPY --from=pr-data /go/src/github.com/stackrox/collector/ /go/src/github.com/stackrox/collector/

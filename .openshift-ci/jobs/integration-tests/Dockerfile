@@ -1,4 +1,4 @@
-FROM quay.io/stackrox-io/apollo-ci:collector-0.3.44-1-gb00ffc52af
+FROM quay.io/stackrox-io/apollo-ci:collector-0.3.56
 
 COPY scripts /scripts
 

@@ -1,4 +1,4 @@
-FROM quay.io/stackrox-io/apollo-ci:collector-0.3.44-1-gb00ffc52af as driver-cache
+FROM quay.io/stackrox-io/apollo-ci:collector-0.3.56 as driver-cache
 
 COPY /kernel-modules/MODULE_VERSION /MODULE_VERSION
 COPY /.openshift-ci/build/build-driver-cache.sh /scripts/build-driver-cache.sh
