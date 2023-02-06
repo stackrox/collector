@@ -50,11 +50,18 @@ dnf install -y docker-ce-cli
 # Buildkit misbehaves when running DinD sometimes
 export DOCKER_BUILDKIT=0
 
+using_branch=1
 if [[ "${COLLECTOR_DIR:-}" == "" ]]; then
     COLLECTOR_DIR=/tmp/collector
 
-    git clone -b "${COLLECTOR_BRANCH:-master}" https://github.com/stackrox/collector "${COLLECTOR_DIR}"
-    git -C "${COLLECTOR_DIR}" submodule update --init falcosecurity-libs
+    if ! git -C "${COLLECTOR_DIR}" status &> /dev/null; then
+        git clone -b "${COLLECTOR_BRANCH:-master}" https://github.com/stackrox/collector "${COLLECTOR_DIR}"
+        git -C "${COLLECTOR_DIR}" submodule update --init falcosecurity-libs
+    fi
+elif [[ "${COLLECTOR_BRANCH:-}" != "" ]]; then
+    echo >&2 "Ignoring COLLECTOR_BRANCH variable."
+    echo >&2 "Using '${COLLECTOR_DIR}' as is"
+    using_branch=0
 fi
 
 # Build the drivers for the current system
@@ -85,6 +92,11 @@ cp "${SINSP_BUILD_DIR}/libsinsp/examples/sinsp-example" "${OUTPUT_DIR}/sinsp-exa
 echo ""
 echo "All done! You should have everything you need under '${OUTPUT_DIR}'"
 echo ""
+if ! ((using_branch)); then
+    echo >&2 "'COLLECTOR_BRANCH' variable has been ignored"
+    echo >&2 "Used '${COLLECTOR_DIR}' with no further changes"
+    echo ""
+fi
 echo "If you plan to keep running this script run the following command"
 echo "to prevent multiple build directories being used for sinsp-example:"
 echo "   export SINSP_BUILD_DIR=${SINSP_BUILD_DIR}"
