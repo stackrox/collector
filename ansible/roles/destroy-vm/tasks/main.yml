@@ -7,5 +7,6 @@
     project: "{{ gcp_project }}"
     auth_kind: "{{ gcp_auth_kind }}"
     service_account_file: "{{ gcp_service_account_file }}"
-    zone: "{{ gcp_zone }}"
+    # zone is set by the GCP inventory automatically
+    zone: "{{ zone }}"
     state: absent

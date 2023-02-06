@@ -33,10 +33,27 @@
           disk_size_gb: "{{ vm_disk_size | default(20) }}"
           source_image: "{{ gcp_source_image }}"
     network_interfaces:
-      - network: 
+      - network:
           name: "default"
         access_configs:
           - name: External NAT
             type: ONE_TO_ONE_NAT
     labels: "{{ gcp_default_labels | combine(gcp_extra_labels) }}"
 
+  # This looks like a lot, and its mostly because ansible support
+  # for "breaking" from a loop is not all that great at the moment.
+  # This approach has been taken from here:
+  #
+  # https://github.com/ansible/proposals/issues/140#issuecomment-649828067
+  loop: "{{ vm_available_zones }}"
+  loop_control:
+    loop_var: gcp_zone
+  register: instance_result
+  when: not condition
+  vars:
+    condition: "{{ (instance_result | default({'changed': false})).changed }}"
+
+# make sure to reset the instance_result otherwise subsequent VMs arent created
+- set_fact:
+    instance_result:
+      changed: false

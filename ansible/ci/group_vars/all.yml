@@ -3,8 +3,12 @@
 gcp_project: "stackrox-ci"
 gcp_auth_kind: "serviceaccount"
 gcp_service_account_file: /tmp/secret/stackrox-collector-e2e-tests/GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT
-gcp_zone: "us-central1-a"
 gcp_instance_prefix: collector-ci
+gcp_available_zones:
+  - us-central1-a
+  - us-central1-b
+  - us-central1-c
+  - us-central1-f
 ansible_user: deadbeef
 
 gcp_default_labels:
