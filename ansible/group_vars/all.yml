@@ -21,6 +21,7 @@ virtual_machines:
     families:
       - rhel-7
       - rhel-8
+      - rhel-9
 
   rhel-sap:
     project: rhel-sap-cloud
