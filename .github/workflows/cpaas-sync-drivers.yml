@@ -54,7 +54,7 @@ jobs:
             --platform linux/${{ matrix.platform }} \
             --name drivers \
             --pull always \
-            brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:0.1.0
+            brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:rhacs-0.1-rhel-8-containers-candidate-71038-20230206165122
 
           TMP_DIR="$(mktemp -d)"
           {
