@@ -1,6 +1,7 @@
 package suites
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -15,15 +16,19 @@ type DuplicateEndpointsTestSuite struct {
 }
 
 func (s *DuplicateEndpointsTestSuite) waitForEndpoints() {
+	s.executor.CopyFromHost(s.collector.DBPathRemote, s.collector.DBPath)
+	s.db, _ = s.collector.BoltDB()
 	_, err := s.GetEndpoints(s.serverContainer)
 	count := 0
 	maxCount := 60
 
 	for err != nil {
 		time.Sleep(1 * time.Second)
+		s.executor.CopyFromHost(s.collector.DBPathRemote, s.collector.DBPath)
 		_, err = s.GetEndpoints(s.serverContainer)
 		count += 1
 		if count == maxCount {
+			fmt.Println("Timedout waiting for endpoints")
 			break
 		}
 	}
