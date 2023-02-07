@@ -51,10 +51,10 @@ func (s *DuplicateEndpointsTestSuite) killSocatProcess(port int) {
 // time 0.
 //
 // 1. Start a process that opens a different port, 81, slight after t=0
-// 2. At t=8 (the scape interval), port 81 should be reported
-// 3. At t=10, kill the process
-// 4. At t=10, start an identical process that opens port 81
-// 5. At t=16 (the second scrape) nothing should be reported.
+// 2. At t=20 (the scape interval), port 81 should be reported
+// 3. At t=22, kill the process
+// 4. At t=22, start an identical process that opens port 81
+// 5. At t=40 (the second scrape) nothing should be reported.
 //
 // The test expects only two reported endpoints.
 func (s *DuplicateEndpointsTestSuite) SetupSuite() {
@@ -64,7 +64,7 @@ func (s *DuplicateEndpointsTestSuite) SetupSuite() {
 	s.StartContainerStats()
 	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
 
-	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":8}`
+	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":20}`
 	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
 
 	err := s.collector.Setup()
@@ -86,7 +86,7 @@ func (s *DuplicateEndpointsTestSuite) SetupSuite() {
 
 	_, err = s.execContainer("socat", command)
 	s.Require().NoError(err)
-	time.Sleep(10 * time.Second)
+	time.Sleep(22 * time.Second)
 	s.killSocatProcess(81)
 
 	_, err = s.execContainer("socat", command)
