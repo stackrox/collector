@@ -23,7 +23,7 @@ jobs:
 
       - name: Check build failures
         run: |
-          FAILURES_DIR=/tmp/FAILURES/ ${{ github.workspace }}/.openshift-ci/drivers/scripts/drivers-build-failures.sh
+          FAILURES_DIR=/tmp/FAILURES/ ${{ github.workspace }}/kernel-modules/build/drivers-build-failures.sh
 
       - name: Slack notification
         if: failure() && github.event_name != 'pull_request'

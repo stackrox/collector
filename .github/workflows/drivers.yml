@@ -114,7 +114,7 @@ jobs:
           FC36_BUILDERS: ${{ steps.set-parallel.outputs.parallel-jobs }}
 
         run: |
-          ${{ github.workspace }}/.openshift-ci/drivers/scripts/kernel-splitter.py
+          ${{ github.workspace }}/kernel-modules/build/kernel-splitter.py
 
           # TODO: This is a compatibility issue with OSCI, ideally all tasks
           # should be in a consistent path. Ensure that happens once we remove
