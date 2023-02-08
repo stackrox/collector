@@ -73,9 +73,6 @@ image: collector unittest container-dockerfile
 image-dev: collector unittest container-dockerfile
 	make -C collector txt-files
 	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
-		--build-arg BASE_REGISTRY=quay.io \
-		--build-arg BASE_IMAGE=centos/centos \
-		--build-arg BASE_TAG=stream8 \
 		--build-arg BUILD_TYPE=devel \
 		-f collector/container/Dockerfile.gen \
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
