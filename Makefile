@@ -5,9 +5,6 @@ NPROCS ?= $(shell nproc)
 
 MOD_VER_FILE=$(CURDIR)/kernel-modules/kobuild-tmp/MODULE_VERSION.txt
 
-LOCAL_SSH_PORT ?= 2222
-DEV_SSH_SERVER_KEY ?= $(CURDIR)/.collector_dev_ssh_host_ed25519_key
-
 export COLLECTOR_VERSION := $(COLLECTOR_TAG)
 export MODULE_VERSION := $(shell cat $(CURDIR)/kernel-modules/MODULE_VERSION)
 
@@ -42,14 +39,12 @@ else
 	docker pull quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
 endif
 
-# For now we use the 'cache-gha' image, since it provides split layers which
-# allows for caching.
 .PHONY: dev-image
-dev-image:
+dev-image: builder
 	docker build \
 		--target dev \
 		--build-arg NPROCS=$(NPROCS) \
-		--cache-from quay.io/stackrox-io/collector-builder:cache-gha \
+		--cache-from quay.io/stackrox-io/collector-builder:cache \
 		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)-dev \
 		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)-dev \
@@ -119,17 +114,10 @@ ci-benchmarks:
 .PHONY: ci-all-tests
 ci-all-tests: ci-benchmarks ci-integration-tests
 
-$(DEV_SSH_SERVER_KEY):
-ifeq (,$(wildcard $(DEV_SSH_SERVER_KEY)))
-	ssh-keygen -t ed25519 -N '' -f $(DEV_SSH_SERVER_KEY) < /dev/null
-endif
-
 .PHONY: start-dev
-start-dev: dev-image teardown-dev $(DEV_SSH_SERVER_KEY)
-	docker run -d \
+start-dev: dev-image teardown-dev
+	docker run -id \
 		--name collector_remote_dev \
-		--cap-add sys_ptrace -p127.0.0.1:$(LOCAL_SSH_PORT):22 \
-		-v $(DEV_SSH_SERVER_KEY):/etc/sshkeys/ssh_host_ed25519_key:ro \
 		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)-dev
 
 .PHONY: teardown-dev

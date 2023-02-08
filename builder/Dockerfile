@@ -28,7 +28,6 @@ RUN dnf -y update \
         make \
         openssl-devel \
         pkgconfig \
-        valgrind \
         wget \
     && dnf clean all
 
@@ -50,7 +49,7 @@ RUN dnf -y update \
         bison \
         ca-certificates \
         clang \
-        cracklib-dicts \
+        clang-tools-extra \
         flex \
         gdb \
         gettext \
@@ -60,26 +59,9 @@ RUN dnf -y update \
         rsync \
         tar \
         unzip \
+        valgrind \
         which \
     && dnf clean all
 
-# Set up ssh for remote development with IDE
-RUN ssh-keygen -A \
-   && ( \
-    echo 'LogLevel DEBUG2'; \
-    echo 'PermitRootLogin yes'; \
-    echo 'PasswordAuthentication yes'; \
-    echo 'HostKey /etc/sshkeys/ssh_host_ed25519_key'; \
-    echo 'HostKeyAlgorithms ssh-ed25519'; \
-    echo 'Subsystem sftp /usr/libexec/openssh/sftp-server'; \
-  ) > /etc/ssh/sshd_config_remote_development \
-  && mkdir /run/sshd
-
-# Add remote development user
-RUN useradd -m remoteuser \
-  && yes c0llectah | passwd remoteuser || if [[ $? -eq 141 ]]; then true; else exit $?; fi
-
 # Create directory to copy collector source into builder container
 RUN mkdir /src && chmod a+rwx /src
-
-CMD ["/usr/sbin/sshd", "-D", "-e", "-f", "/etc/ssh/sshd_config_remote_development"]
