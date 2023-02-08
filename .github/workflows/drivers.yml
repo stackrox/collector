@@ -11,15 +11,15 @@ on:
         type: string
         required: true
         description: The GCP bucket to pull bundles from
+      branch-name:
+        type: string
+        required: true
+        description: Branch CI is running on
     outputs:
       parallel-jobs:
         description: |
           Number of builders used to build drivers, 0 if no driver is built
         value: ${{ jobs.split-tasks.outputs.parallel-jobs }}
-      branch-name:
-        description: |
-          Branch CI is running on
-        value: ${{ jobs.split-tasks.outputs.branch-name }}
 
 env:
   DRIVERS_BUCKET: ${{ inputs.drivers-bucket }}
@@ -30,21 +30,11 @@ jobs:
     outputs:
       parallel-jobs: ${{ steps.set-parallel.outputs.parallel-jobs }}
       parallel-array: ${{ steps.set-parallel.outputs.parallel-array }}
-      branch-name: ${{ steps.set-branch.outputs.branch-name }}
     env:
       KERNELS_FILE: ${{ github.workspace }}/kernel-modules/KERNEL_VERSIONS
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Set branch name
-        id: set-branch
-        run: |
-          if [[ ${{ github.event_name }} == "pull_request" ]]; then
-            echo "branch-name=${GITHUB_HEAD_REF}" >> "$GITHUB_OUTPUT"
-          else
-            echo "branch-name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-          fi
 
       - name: Patch files
         env:
@@ -60,7 +50,7 @@ jobs:
           git submodule update --init ${{ github.workspace }}/falcosecurity-libs
 
           ${{ github.workspace }}/kernel-modules/build/patch-files.sh \
-            ${{ steps.set-branch.outputs.branch-name }} \
+            ${{ inputs.branch-name }} \
             "${BUILD_LEGACY_DRIVERS}" \
             ${{ github.workspace }} \
             kernel-modules/build/prepare-src \

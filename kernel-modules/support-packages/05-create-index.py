@@ -2,10 +2,10 @@
 
 import collections
 from collections import namedtuple
-from datetime import datetime
 import os
 import re
 import sys
+import json
 from pathlib import Path
 import jinja2
 
@@ -15,6 +15,7 @@ VersionRange = namedtuple('VersionRange', 'min max')
 class SupportPackage(object):
     def __init__(self,
                  module_version,
+                 architecture,
                  rox_version_ranges,
                  file_name,
                  latest_file_name,
@@ -22,6 +23,7 @@ class SupportPackage(object):
                  chk_name,
                  latest_chk_name):
         self.module_version = module_version
+        self.architecture = architecture
         self.rox_version_ranges = rox_version_ranges
         self.file_name = file_name
         self.latest_file_name = latest_file_name
@@ -31,20 +33,20 @@ class SupportPackage(object):
 
     @property
     def download_url(self):
-        return '%s/%s/%s' % (os.getenv('BASE_URL'), self.module_version, self.file_name)
+        return '%s/%s/%s/%s' % (os.getenv('BASE_URL'), self.architecture, self.module_version, self.file_name)
 
     @property
     def download_url_latest(self):
-        return '%s/%s/%s' % (os.getenv('BASE_URL'), self.module_version, self.latest_file_name) \
+        return '%s/%s/%s/%s' % (os.getenv('BASE_URL'), self.architecture, self.module_version, self.latest_file_name) \
             if self.latest_file_name is not None else None
 
     @property
     def checksum_url(self):
-        return '%s/%s/%s' % (os.getenv('BASE_URL'), self.module_version, self.chk_name)
+        return '%s/%s/%s%s' % (os.getenv('BASE_URL'), self.architecture, self.module_version, self.chk_name)
 
     @property
     def checksum_url_latest(self):
-        return '%s/%s/%s' % (os.getenv('BASE_URL'), self.module_version, self.latest_chk_name) \
+        return '%s/%s/%s%s' % (os.getenv('BASE_URL'), self.architecture, self.module_version, self.latest_chk_name) \
             if self.latest_chk_name is not None else None
 
     def __repr__(self):
@@ -68,7 +70,7 @@ def render_index(packages, out_dir, template_file='index.html'):
         f.write(output)
 
 
-def load_support_packages(output_dir, mod_md_map):
+def load_support_packages(output_dir, mod_md_map, arch):
     support_packages = []
     driver_version_re = re.compile(r'^\d+\.\d+\.\d+$')
 
@@ -89,11 +91,21 @@ def load_support_packages(output_dir, mod_md_map):
             # Legacy version (truncated SHA value)
             driver_version = mod_ver[:6]
 
-        support_pkg_file_re = re.compile(fr'^support-pkg-{re.escape(driver_version)}-\d+\.zip$')
-        support_pkg_file = max(f for f in os.listdir(mod_out_dir) if support_pkg_file_re.match(f))
+        metadata_path = os.path.join(mod_out_dir, 'metadata.json')
+        if not os.path.isfile(metadata_path):
+            # Skip versions with no metadata file
+            continue
 
-        st = os.stat(os.path.join(mod_out_dir, support_pkg_file))
-        last_mod_time = datetime.utcfromtimestamp(st.st_mtime).strftime('%Y/%m/%d, %H:%M:%S')
+        support_pkg_metadata = {}
+        with open(metadata_path, 'r') as f:
+            support_pkg_metadata = json.load(f)
+
+        support_pkg_file = support_pkg_metadata['file_name']
+        last_mod_time = support_pkg_metadata['last_modified']
+
+        # This double checks the file exists, which means the file is also
+        # uploaded in GCP, we error out otherwise
+        os.stat(os.path.join(mod_out_dir, support_pkg_file))
 
         support_pkg_file_latest = f'support-pkg-{driver_version}-latest.zip'
         try:
@@ -113,6 +125,7 @@ def load_support_packages(output_dir, mod_md_map):
 
         support_packages.append(
             SupportPackage(mod_ver,
+                           arch,
                            rox_version_ranges,
                            support_pkg_file,
                            support_pkg_file_latest,
@@ -188,7 +201,11 @@ def main(args):
     modules_md = load_modules_metadata(md_dir)
     ranges = compute_version_ranges(modules_md)
 
-    support_packages = load_support_packages(out_dir, ranges)
+    support_packages = {
+        arch: load_support_packages(f'{out_dir}/{arch}', ranges, arch)
+        for arch in ['x86_64', 's390x', 'ppc64le']
+    }
+
     render_index(support_packages, out_dir)
 
 

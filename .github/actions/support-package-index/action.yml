@@ -1,0 +1,45 @@
+name: Create support-package index.html
+description: |
+  Creates an index.html file by grabbing the latest version of support-packages
+  uploaded to GCP for all supported architectures.
+
+inputs:
+  gcp-bucket:
+    required: true
+    description: |
+      GCP bucket used for getting the latest versions of support-packages
+  metadata-path:
+    required: true
+    description: |
+      Path to generated collector metadata
+  output-path:
+    required: true
+    description: |
+      Path to generated artifacts
+
+runs:
+  using: composite
+  steps:
+  - name: Get latest support-packages
+    shell: bash
+    run: |
+      ${{ github.action_path }}/get-latest-support-packages.sh \
+        ${{ inputs.metadata-path }} \
+        ${{ inputs.output-path }} \
+        ${{ inputs.gcp-bucket }}
+
+  - name: Create index file
+    shell: bash
+    run: |
+      relative_path="collector/support-packages"
+
+      if [[ "${{ github.event_name == 'pull_request' }}" == "true" ]]; then
+          relative_path="${relative_path}/${GITHUB_HEAD_REF}/${{ github.run_id }}"
+      fi
+
+      DOWNLOAD_BASE_URL="https://install.stackrox.io"
+      export BASE_URL="${DOWNLOAD_BASE_URL}/${relative_path}"
+
+      ${{ github.workspace }}/kernel-modules/support-packages/05-create-index.py \
+        ${{ inputs.metadata-path }} \
+        ${{ inputs.output-path }}

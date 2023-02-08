@@ -10,6 +10,10 @@ on:
         description: |
           The image built by running `make image` in the collector repo
         value: ${{ jobs.common-variables.outputs.collector-image }}
+      branch-name:
+        description: |
+          Branch CI is running on
+        value: ${{ jobs.common-variables.outputs.branch-name }}
       drivers-bucket:
         description: Bucket used to pull collector drivers from
         value: ${{ jobs.common-variables.outputs.drivers-bucket }}
@@ -36,12 +40,18 @@ on:
         description: |
           Bucket to push CPaaS built drivers into
         value: ${{ jobs.common-variables.outputs.cpaas-drivers-bucket }}
+      support-packages-index-bucket:
+        description: |
+          Bucket to push the generated support-packages index file into
+        value: ${{ jobs.common-variables.outputs.support-packages-index-bucket }}
+
 jobs:
   common-variables:
     runs-on: ubuntu-latest
     outputs:
       collector-tag: ${{ steps.collector-env.outputs.collector-tag }}
       collector-image: ${{ steps.collector-env.outputs.collector-image }}
+      branch-name: ${{ steps.collector-env.outputs.branch-name }}
       drivers-bucket: ${{ steps.gcp-buckets.outputs.drivers-bucket }}
       push-drivers-bucket: ${{ steps.gcp-buckets.outputs.push-drivers-bucket }}
       bundles-bucket: ${{ steps.gcp-buckets.outputs.bundles-bucket }}
@@ -49,6 +59,7 @@ jobs:
       public-support-packages-bucket: ${{ steps.gcp-buckets.outputs.public-support-packages-bucket }}
       cpaas-drivers-bucket: ${{ steps.gcp-buckets.outputs.cpaas-drivers-bucket }}
       cpaas-support-packages-bucket: ${{ steps.gcp-buckets.outputs.cpaas-support-packages-bucket }}
+      support-packages-index-bucket: ${{ steps.gcp-buckets.outputs.support-packages-index-bucket }}
 
     steps:
       - uses: actions/checkout@v3
@@ -68,6 +79,12 @@ jobs:
           echo "collector-tag=${COLLECTOR_TAG}" >> "$GITHUB_OUTPUT"
           echo "collector-image=quay.io/stackrox-io/collector:${COLLECTOR_TAG}" >> "$GITHUB_OUTPUT"
 
+          if [[ ${{ github.event_name }} == "pull_request" ]]; then
+            echo "branch-name=${GITHUB_HEAD_REF}" >> "$GITHUB_OUTPUT"
+          else
+            echo "branch-name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Set GCP buckets
         id: gcp-buckets
         run: |
@@ -77,13 +94,13 @@ jobs:
           STAGING_DRIVER_BUCKET="stackrox-collector-modules-staging/pr-builds/${STAGING_RELATIVE_PATH}"
           BUNDLES_BUCKET="collector-kernel-bundles-public"
           SUPPORT_PACKAGES_BUCKET="sr-roxc/collector/support-packages"
-          STAGING_SUPPORT_PACKAGES_BUCKET="sr-roxc/collector/support-packages/${STAGING_RELATIVE_PATH}"
+          STAGING_SUPPORT_PACKAGES_BUCKET="${SUPPORT_PACKAGES_BUCKET}/${STAGING_RELATIVE_PATH}"
           PUBLIC_SUPPORT_PACKAGES_BUCKET="collector-support-public/offline/v1/support-packages"
 
-          CPAAS_DRIVERS_BUCKET="mauro-drivers-test/cpaas/drivers"
-          CPAAS_SUPPORT_PACKAGES_BUCKET="mauro-drivers-test/cpaas/support-packages"
-          CPAAS_STAGING_DRIVERS_BUCKET="mauro-drivers-test/cpaas/staging/drivers/${STAGING_RELATIVE_PATH}"
-          CPAAS_STAGING_SUPPORT_PACKAGES_BUCKET="mauro-drivers-test/cpaas/staging/support-packages/${STAGING_RELATIVE_PATH}"
+          CPAAS_DRIVERS_BUCKET="${MAIN_DRIVER_BUCKET}/cpaas"
+          CPAAS_STAGING_DRIVERS_BUCKET="${STAGING_DRIVER_BUCKET}/cpaas"
+          CPAAS_SUPPORT_PACKAGES_BUCKET="${SUPPORT_PACKAGES_BUCKET}"
+          CPAAS_STAGING_SUPPORT_PACKAGES_BUCKET="${STAGING_SUPPORT_PACKAGES_BUCKET}"
 
           {
             echo "drivers-bucket=${MAIN_DRIVER_BUCKET}"
@@ -97,6 +114,7 @@ jobs:
               echo "support-packages-bucket=${STAGING_SUPPORT_PACKAGES_BUCKET}"
               echo "cpaas-drivers-bucket=${CPAAS_STAGING_DRIVERS_BUCKET}"
               echo "cpaas-support-packages-bucket=${CPAAS_STAGING_SUPPORT_PACKAGES_BUCKET}"
+              echo "support-packages-index-bucket=${STAGING_SUPPORT_PACKAGES_BUCKET}"
             } >> "$GITHUB_OUTPUT"
           else
             {
@@ -104,5 +122,6 @@ jobs:
               echo "support-packages-bucket=${SUPPORT_PACKAGES_BUCKET}"
               echo "cpaas-drivers-bucket=${CPAAS_DRIVERS_BUCKET}"
               echo "cpaas-support-packages-bucket=${CPAAS_SUPPORT_PACKAGES_BUCKET}"
+              echo "support-packages-index-bucket=${SUPPORT_PACKAGES_BUCKET}"
             } >> "$GITHUB_OUTPUT"
           fi

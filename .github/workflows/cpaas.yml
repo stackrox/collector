@@ -15,7 +15,17 @@ jobs:
     secrets: inherit
     with:
       support-packages-bucket: ${{ needs.init.outputs.cpaas-support-packages-bucket }}
+      support-packages-index-bucket: ${{ needs.init.outputs.support-packages-index-bucket }}
+      public-support-packages-bucket: ${{ needs.init.outputs.public-support-packages-bucket }}
       drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
+      branch-name: ${{ needs.init.outputs.branch-name }}
+
+  check-drivers-failures:
+    uses: ./.github/workflows/check-drivers-failures.yml
+    needs: sync-drivers-and-support-packages
+    with:
+      logs-artifact:
+        drivers-build-failures
 
   build-collector-slim:
     uses: ./.github/workflows/collector-slim.yml
@@ -41,6 +51,7 @@ jobs:
 
   integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     strategy:
       # ensure that if one part of the matrix fails, the
       # rest will continue

@@ -18,6 +18,7 @@ jobs:
     with:
       drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
       bundles-bucket: ${{ needs.init.outputs.bundles-bucket }}
+      branch-name: ${{ needs.init.outputs.branch-name }}
     needs: init
     secrets: inherit
 
@@ -32,34 +33,12 @@ jobs:
     secrets: inherit
 
   check-drivers-build:
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/check-drivers-failures.yml
     needs: build-drivers
     if: ${{ needs.build-drivers.outputs.parallel-jobs > 0 }}
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Restore failure files
-        uses: actions/download-artifact@v3
-        with:
-          name: driver-build-failures
-          path: /tmp/FAILURES
-
-      - name: Check build failures
-        run: |
-          FAILURES_DIR=/tmp/FAILURES/ ${{ github.workspace }}/.openshift-ci/drivers/scripts/drivers-build-failures.sh
-
-      - name: Slack notification
-        if: failure() && github.event_name == 'push'
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_ONCALL }}
-          SLACK_CHANNEL: oncall
-          SLACK_COLOR: ${{ job.status }}
-          SLACK_LINK_NAMES: true
-          SLACK_TITLE: Driver build check failed
-          MSG_MINIMAL: actions url,commit
-          SLACK_MESSAGE: |
-            @collector-team
+    secrets: inherit
+    with:
+      logs-artifact: driver-build-failures
 
   build-collector-slim:
     uses: ./.github/workflows/collector-slim.yml
@@ -96,9 +75,10 @@ jobs:
   build-support-packages:
     uses: ./.github/workflows/support-packages.yml
     with:
-      branch-name: ${{ needs.build-drivers.outputs.branch-name }}
+      branch-name: ${{ needs.init.outputs.branch-name }}
       drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
       support-packages-bucket: ${{ needs.init.outputs.support-packages-bucket }}
+      support-packages-index-bucket: ${{ needs.init.outputs.support-packages-index-bucket }}
       public-support-packages-bucket: ${{ needs.init.outputs.public-support-packages-bucket }}
     if: always() && (github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'test-support-packages'))
     needs:
