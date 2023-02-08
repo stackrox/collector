@@ -1,5 +1,6 @@
 BUILD_CONTAINER_TAG ?= build-kernel-modules
 BUILD_CONTAINER_CACHE_IMAGES ?=
+DEV_SHARED_VOLUME ?= $(CURDIR)/..
 DEV_DRIVER_BUILDER ?= fc36
 
 CUSTOM_FLAVORS := $(patsubst build/%.Dockerfile,%,$(wildcard build/*.Dockerfile))
@@ -45,12 +46,12 @@ print-custom-flavors:
 .PHONY: drivers
 drivers: build-container-$(DEV_DRIVER_BUILDER)
 	docker run --rm \
-		-v $(CURDIR)/..:/collector \
-		-v /usr/include/bpf:/usr/include/bpf:ro \
+		--entrypoint "/bin/bash" \
+		-v $(DEV_SHARED_VOLUME):/collector \
 		-v /lib/modules/:/lib/modules/:ro \
 		-v /usr/src:/usr/src:ro \
 		build-kernel-modules-$(DEV_DRIVER_BUILDER):latest \
-		/collector/kernel-modules/dev/build-drivers.sh
+		-c /collector/kernel-modules/dev/build-drivers.sh
 
 .PHONY: clean-drivers
 clean-drivers:
