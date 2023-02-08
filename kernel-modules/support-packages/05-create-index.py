@@ -42,11 +42,11 @@ class SupportPackage(object):
 
     @property
     def checksum_url(self):
-        return '%s/%s/%s%s' % (os.getenv('BASE_URL'), self.architecture, self.module_version, self.chk_name)
+        return '%s/%s/%s/%s' % (os.getenv('BASE_URL'), self.architecture, self.module_version, self.chk_name)
 
     @property
     def checksum_url_latest(self):
-        return '%s/%s/%s%s' % (os.getenv('BASE_URL'), self.architecture, self.module_version, self.latest_chk_name) \
+        return '%s/%s/%s/%s' % (os.getenv('BASE_URL'), self.architecture, self.module_version, self.latest_chk_name) \
             if self.latest_chk_name is not None else None
 
     def __repr__(self):
