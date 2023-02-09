@@ -63,6 +63,8 @@ jobs:
         if: github.ref == 'master'
         run: |
           ./integration-tests/scripts/baseline/main.py --update integration-tests/perf-all.json
+        env:
+          GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT: "${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}"
 
       - name: Comment on PR
         if: github.event_name == 'pull_request'
