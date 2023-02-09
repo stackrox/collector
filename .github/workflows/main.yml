@@ -9,6 +9,9 @@ on:
       - 3.*.*
   pull_request:
 
+permissions:
+  pull-requests: write
+
 jobs:
   init:
     uses: ./.github/workflows/init.yml
@@ -94,8 +97,6 @@ jobs:
     secrets: inherit
 
   benchmarks:
-    permissions:
-      pull-requests: write
     uses: ./.github/workflows/benchmarks.yml
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}

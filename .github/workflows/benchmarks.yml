@@ -12,7 +12,6 @@ on:
 jobs:
   benchmarks:
     uses: ./.github/workflows/integration-tests-vm-type.yml
-    permissions: read-all
     with:
       vm_type: benchmark
       run-benchmarks: true
