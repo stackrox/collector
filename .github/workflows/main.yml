@@ -9,6 +9,9 @@ on:
       - 3.*.*
   pull_request:
 
+permissions:
+  pull-requests: write
+
 jobs:
   init:
     uses: ./.github/workflows/init.yml
@@ -63,6 +66,17 @@ jobs:
 
   integration-tests:
     uses: ./.github/workflows/integration-tests.yml
+    with:
+      collector-tag: ${{ needs.init.outputs.collector-tag }}
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
+    needs:
+    - init
+    - build-collector-slim
+    - build-collector-full
+    secrets: inherit
+
+  benchmarks:
+    uses: ./.github/workflows/benchmarks.yml
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}

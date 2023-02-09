@@ -1,0 +1,76 @@
+name: Collector Benchmarks
+
+on:
+  workflow_call:
+    inputs:
+      collector-tag:
+        description: |
+          Tag used for running the benchmarks
+        type: string
+        required: true
+
+jobs:
+  benchmarks:
+    uses: ./.github/workflows/integration-tests-vm-type.yml
+    with:
+      vm_type: benchmark
+      run-benchmarks: true
+      collector-tag: ${{ inputs.collector-tag }}
+    secrets: inherit
+
+  calculate-baseline:
+    runs-on: ubuntu-latest
+    needs:
+      - benchmarks
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+
+      - uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - uses: 'google-github-actions/setup-gcloud@v1'
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: benchmark-logs
+          path: ${{ github.workspace }}
+
+      - name: Install python deps
+        run: python3 -m pip install -r ./integration-tests/scripts/baseline/requirements.txt
+
+      - name: Calculate Baseline
+        run: |
+          jq -s 'flatten' perf.json > integration-tests/perf-all.json
+
+          ./integration-tests/scripts/baseline/main.py --test integration-tests/perf-all.json \
+            | sort \
+            | awk -f ./integration-tests/scripts/baseline/format.awk > benchmark.md
+
+          delimiter=$(openssl rand -hex 8)
+          {
+            echo "PERF_TABLE<<${delimiter}"
+            cat benchmark.md
+            echo "${delimiter}"
+          } >> "$GITHUB_ENV"
+        env:
+          GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT: "${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}"
+
+      - name: Update Baseline
+        if: github.ref == 'master'
+        run: |
+          ./integration-tests/scripts/baseline/main.py --update integration-tests/perf-all.json
+        env:
+          GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT: "${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}"
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: mshick/add-pr-comment@v2
+        with:
+          message: |
+            ${{ env.PERF_TABLE }}
+          message-id: performance-comment
+
