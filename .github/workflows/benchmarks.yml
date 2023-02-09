@@ -71,5 +71,4 @@ jobs:
           message: |
             ${{ env.PERF_TABLE }}
           message-id: performance-comment
-          repo-token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
 
