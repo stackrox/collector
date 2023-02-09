@@ -9,9 +9,6 @@ on:
         type: string
         required: true
 
-permissions:
-  pull-requests: write
-
 jobs:
   benchmarks:
     uses: ./.github/workflows/integration-tests-vm-type.yml

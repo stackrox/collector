@@ -94,6 +94,8 @@ jobs:
     secrets: inherit
 
   benchmarks:
+    permissions:
+      pull-requests: write
     uses: ./.github/workflows/benchmarks.yml
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
