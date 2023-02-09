@@ -28,6 +28,7 @@ RUN dnf -y update \
         make \
         openssl-devel \
         pkgconfig \
+        valgrind \
         wget \
     && dnf clean all
 
@@ -59,7 +60,6 @@ RUN dnf -y update \
         rsync \
         tar \
         unzip \
-        valgrind \
         which \
     && dnf clean all
 
