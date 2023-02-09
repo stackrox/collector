@@ -9,9 +9,13 @@ on:
         type: string
         required: true
 
+permissions:
+  pull-requests: write
+
 jobs:
   benchmarks:
     uses: ./.github/workflows/integration-tests-vm-type.yml
+    permissions: read-all
     with:
       vm_type: benchmark
       run-benchmarks: true
@@ -22,8 +26,6 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - benchmarks
-    permissions:
-      pull-requests: write
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
