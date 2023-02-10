@@ -44,6 +44,8 @@ RUN dnf -y update \
         unzip \
         valgrind \
         wget \
+        # for USDT support
+        systemtap-sdt-devel \
         which \
     && dnf clean all
 

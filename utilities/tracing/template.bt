@@ -1,0 +1,20 @@
+usdt:/usr/local/bin/collector:collector:${TRACEPOINT}__start
+{
+	@ts[tid] = nsecs;
+}
+
+usdt:/usr/local/bin/collector:collector:${TRACEPOINT}__end
+/@ts[tid] != 0/
+{
+	$lat_us = (nsecs - @ts[tid]) / 1000;
+	@stat = stats($lat_us);
+
+	delete(@ts[tid]);
+}
+
+interval:s:${INTERVAL} { exit(); }
+
+END
+{
+	clear(@ts);
+}

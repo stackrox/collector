@@ -237,6 +237,9 @@ ConnMap ConnectionTracker::FetchConnState(bool normalize, bool clear_inactive) {
 ContainerEndpointMap ConnectionTracker::FetchEndpointState(bool normalize, bool clear_inactive) {
   ContainerEndpointMap cem;
   size_t state_size;
+
+  DTRACE_PROBE(collector, fetch_endpoint_state__start);
+
   WITH_LOCK(mutex_) {
     state_size = conn_state_.size();
     if (HasConnectionStateFilters()) {
@@ -261,6 +264,8 @@ ContainerEndpointMap ConnectionTracker::FetchEndpointState(bool normalize, bool 
     }
     COUNTER_ADD(CollectorStats::net_cep_inactive, (state_size - endpoint_state_.size()));
   }
+
+  DTRACE_PROBE(collector, fetch_endpoint_state__end);
   return cem;
 }
 

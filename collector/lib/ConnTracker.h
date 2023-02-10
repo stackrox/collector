@@ -27,6 +27,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include <mutex>
 #include <vector>
 
+#include <sys/sdt.h>
+
 #include "Containers.h"
 #include "Hash.h"
 #include "NRadix.h"
