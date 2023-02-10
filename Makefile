@@ -47,13 +47,11 @@ collector: builder
 
 .PHONY: connscrape
 connscrape:
-	make -C collector connscrape ||\
-		( .openshift-ci/slack/notify-if-needed.sh "connscrape" $$? )
+	make -C collector connscrape
 
 .PHONY: unittest
 unittest:
-	make -C collector unittest ||\
-		( .openshift-ci/slack/notify-if-needed.sh "unittest" $$? )
+	make -C collector unittest
 
 .PHONY: build-kernel-modules
 build-kernel-modules:
@@ -99,13 +97,11 @@ integration-tests-report:
 
 .PHONY: ci-integration-tests
 ci-integration-tests:
-	make -C integration-tests ci-integration-tests || \
-		( .openshift-ci/slack/notify-if-needed.sh "integration-tests" $$? )
+	make -C integration-tests ci-integration-tests
 
 .PHONY: ci-benchmarks
 ci-benchmarks:
-	make -C integration-tests ci-benchmarks || \
-		( .openshift-ci/slack/notify-if-needed.sh "benchmarks" $$? )
+	make -C integration-tests ci-benchmarks
 
 .PHONY: ci-all-tests
 ci-all-tests: ci-benchmarks ci-integration-tests
