@@ -29,6 +29,13 @@ false.
 about the originator process on all network listening-endpoint objects.
 The default is false.
 
+* `ROX_FALCO_MAX_THREAD_TABLE_SIZE`: Prevent the Falco thread-table (list of
+known processes running on the system) from growing over the specified value.
+The limit defaults to 520K processes and lowering it will prevent Collector
+from running out of memory because of an important number of processes.
+When the limit is reached, information about endpoint originator processes
+will be incomplete.
+
 NOTE: Using environment variables is a preferred way of configuring Collector,
 so if you're adding a new configuration knob, keep this in mind.
 
