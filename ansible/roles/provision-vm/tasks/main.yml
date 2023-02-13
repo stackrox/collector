@@ -5,7 +5,7 @@
 # of platforms here, and the ordering of this logic is quite important
 # for the Container OS platforms like flatcar and fedora-coreos.
 #
-# For those platforms, Python does not exist (which is a requirement for 
+# For those platforms, Python does not exist (which is a requirement for
 # ansible) so it is installed first, before the rest of the provisioning
 # continues.
 #
@@ -15,6 +15,7 @@
     is_coreos: "{{ vm_config.find('coreos') != -1 }}"
     is_garden: "{{ vm_config == 'garden-linux_garden-linux' }}"
     is_flatcar: "{{ vm_config.find('flatcar') != -1 }}"
+    is_rhcos: "{{ vm_config.find('rhcos') != -1 }}"
 
 # Wait for SSH to be available on the remote host
 # This is agnostic of whether or not ansible is available at that end.
@@ -41,7 +42,7 @@
 
 - name: RedHat Provisioning
   include_tasks: "redhat.yml"
-  when: ansible_facts['os_family'] == 'RedHat' and not is_coreos|bool
+  when: ansible_facts['os_family'] == 'RedHat' and not is_coreos|bool and not is_rhcos|bool
 
 - name: Ubuntu Provisioning
   include_tasks: "ubuntu.yml"

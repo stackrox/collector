@@ -1,5 +1,15 @@
 ---
 
+- name: Get Target Hosts
+  hosts: localhost
+  vars_files:
+    - group_vars/all.yml
+  tasks:
+    - set_fact:
+        host_string: "platform_*:&job_id_{{ job_id }}"
+  tags:
+    - always
+
 - name: Create Integration Test VMs
   hosts: localhost
   tags:
@@ -25,7 +35,7 @@
   hosts: "job_id_{{ job_id }}"
   vars_files:
     - group_vars/all.yml
-  roles: 
+  roles:
     - provision-vm
   gather_facts: no
   strategy: free
@@ -38,9 +48,7 @@
   # using platform_*:&job_id here ensures that ansible imports
   # group_vars/platform_*.yml for the relevant platform, e.g.
   # flatcar where we need to use a custom python interpreter.
-  hosts: "platform_*:&job_id_{{ job_id }}"
-  vars_files:
-    - group_vars/all.yml
+  hosts: "{{ hostvars['localhost']['host_string'] }}"
   strategy: free
   roles:
     - run-test-target
