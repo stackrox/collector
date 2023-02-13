@@ -1,0 +1,6 @@
+---
+ansible_user: core
+
+runtime_command: podman
+runtime_as_root: true
+runtime_socket: /run/user/1000/podman/podman.sock
