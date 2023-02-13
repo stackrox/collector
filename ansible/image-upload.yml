@@ -1,8 +1,6 @@
 ---
 
 - name: Push Collector Image to Hosts
-  vars_files:
-    - group_vars/all.yml
   hosts: "platform_*:&job_id_{{ job_id }}"
   strategy: free
 

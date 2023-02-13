@@ -5,7 +5,7 @@
     - setup
   tasks:
     - name: Create VMs for each Collection Method
-      include_role: 
+      include_role:
         name: create-all-vms
       vars:
         # ensure that all listed VMs are created
@@ -18,7 +18,7 @@
         # We need to create a new VM for each platform, and each collection_method
         # to allow a clean-slate upon which to run the benchmarks.
         #
-        # create-all-vms will populate the name and labels which we 
+        # create-all-vms will populate the name and labels which we
         # can then filter on later, to only run when we match a certain
         # collection method
         - ebpf
@@ -35,9 +35,7 @@
 
 - name: Provision Benchmark VMs
   hosts: "job_id_{{ job_id }}"
-  vars_files:
-    - group_vars/all.yml
-  roles: 
+  roles:
     - provision-vm
   gather_facts: no
   strategy: free
@@ -51,8 +49,6 @@
   # group_vars/platform_*.yml for the relevant platform, e.g.
   # flatcar where we need to use a custom python interpreter.
   hosts: "platform_*:&job_id_{{ job_id }}"
-  vars_files:
-    - group_vars/all.yml
   strategy: free
   roles:
     - run-test-target
@@ -63,8 +59,6 @@
 
 - name: Teardown Benchmark VMs
   hosts: "job_id_{{ job_id }}"
-  vars_files:
-    - group_vars/all.yml
   strategy: free
   roles:
     - destroy-vm
