@@ -56,7 +56,7 @@ BoolEnvVar set_enable_core_dump("ENABLE_CORE_DUMP", false);
 BoolEnvVar set_processes_listening_on_ports("ROX_PROCESSES_LISTENING_ON_PORT", CollectorConfig::kEnableProcessesListeningOnPorts);
 
 // Configures the maximum number of threads in falco's table
-IntEnvVar falco_max_thread_table_size("ROX_FALCO_MAX_THREAD_TABLE_SIZE", CollectorConfig::kFalcoMaxThreadTableSize);
+IntEnvVar falco_max_thread_table_size("ROX_COLLECTOR_MAX_THREAD_TABLE_SIZE", CollectorConfig::kFalcoMaxThreadTableSize);
 
 }  // namespace
 
