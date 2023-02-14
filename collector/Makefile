@@ -13,12 +13,14 @@ HDRS := $(wildcard lib/*.h) $(shell find falcosecurity-libs/userspace -name '*.h
 
 SRCS := $(wildcard lib/*.cpp) collector.cpp
 
+COLLECTOR_BUILD_DEPS := $(HDRS) $(SRCS) $(shell find falcosecurity-libs -name '*.h' -o -name '*.cpp' -o -name '*.c')
+
 .SUFFIXES:
 
 .PHONY: pre-build
 pre-build: txt-files
 
-cmake-build/collector: $(HDRS) $(SRCS) $(shell find falcosecurity-libs/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
+cmake-build/collector: $(COLLECTOR_BUILD_DEPS)
 	docker rm -fv build_collector || true
 	docker run --rm --name build_collector \
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
@@ -39,7 +41,10 @@ post-build:
 	cp -r "$(CMAKE_DIR)"/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
 	cp "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so" container/libs/libsinsp-wrapper.so
 
-container/bin/collector: pre-build cmake-build/collector post-build
+container/bin/collector: $(COLLECTOR_BUILD_DEPS)
+	$(MAKE) pre-build
+	$(MAKE) cmake-build/collector
+	$(MAKE) post-build
 
 .PHONY: build-connscrape-test
 build-connscrape-test:
