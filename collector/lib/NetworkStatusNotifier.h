@@ -47,14 +47,14 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   void Stop();
 
  private:
-  sensor::NetworkConnectionInfoMessage* CreateInfoMessage(const ConnMap& conn_delta, const ContainerEndpointMap& cep_delta);
+  sensor::NetworkConnectionInfoMessage* CreateInfoMessage(const ConnMap& conn_delta, const AdvertisedEndpointMap& cep_delta);
   void AddConnections(::google::protobuf::RepeatedPtrField<sensor::NetworkConnection>* updates, const ConnMap& delta);
-  void AddContainerEndpoints(::google::protobuf::RepeatedPtrField<sensor::NetworkEndpoint>* updates, const ContainerEndpointMap& delta);
+  void AddContainerEndpoints(::google::protobuf::RepeatedPtrField<sensor::NetworkEndpoint>* updates, const AdvertisedEndpointMap& delta);
 
   sensor::NetworkConnection* ConnToProto(const Connection& conn);
   sensor::NetworkEndpoint* ContainerEndpointToProto(const ContainerEndpoint& cep);
   sensor::NetworkAddress* EndpointToProto(const Endpoint& endpoint);
-  storage::NetworkProcessUniqueKey* ProcessToProto(const collector::Process& process);
+  storage::NetworkProcessUniqueKey* ProcessToProto(const collector::IProcess& process);
 
   void OnRecvControlMessage(const sensor::NetworkFlowsControlMessage* msg);
 

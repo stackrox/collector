@@ -408,7 +408,7 @@ void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const C
           if (const auto* ep = Lookup(ns_network_data->listen_endpoints, socket.inode())) {
             if (!IsRelevantEndpoint(ep->endpoint)) continue;
 
-            std::shared_ptr<Process> process;
+            std::shared_ptr<IProcess> process;
 
             if (process_store) {
               process = process_store->Fetch(socket.pid());

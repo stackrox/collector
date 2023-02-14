@@ -208,7 +208,7 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
   WaitUntilWriterStarted(writer, 10);
 
   ConnMap old_conn_state;
-  ContainerEndpointMap old_cep_state;
+  AdvertisedEndpointMap old_cep_state;
   auto next_scrape = std::chrono::system_clock::now();
 
   while (writer->Sleep(next_scrape)) {
@@ -220,7 +220,7 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
 
     const sensor::NetworkConnectionInfoMessage* msg;
     ConnMap new_conn_state;
-    ContainerEndpointMap new_cep_state;
+    AdvertisedEndpointMap new_cep_state;
     WITH_TIMER(CollectorStats::net_fetch_state) {
       new_conn_state = conn_tracker_->FetchConnState(true, true);
       ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
@@ -252,7 +252,7 @@ void NetworkStatusNotifier::RunSingleAfterglow(IDuplexClientWriter<sensor::Netwo
   WaitUntilWriterStarted(writer, 10);
 
   ConnMap old_conn_state;
-  ContainerEndpointMap old_cep_state;
+  AdvertisedEndpointMap old_cep_state;
   auto next_scrape = std::chrono::system_clock::now();
   int64_t time_at_last_scrape = NowMicros();
 
@@ -265,7 +265,7 @@ void NetworkStatusNotifier::RunSingleAfterglow(IDuplexClientWriter<sensor::Netwo
 
     int64_t time_micros = NowMicros();
     const sensor::NetworkConnectionInfoMessage* msg;
-    ContainerEndpointMap new_cep_state;
+    AdvertisedEndpointMap new_cep_state;
     ConnMap new_conn_state, delta_conn;
     WITH_TIMER(CollectorStats::net_fetch_state) {
       new_conn_state = conn_tracker_->FetchConnState(true, true);
@@ -297,7 +297,7 @@ void NetworkStatusNotifier::RunSingleAfterglow(IDuplexClientWriter<sensor::Netwo
   }
 }
 
-sensor::NetworkConnectionInfoMessage* NetworkStatusNotifier::CreateInfoMessage(const ConnMap& conn_delta, const ContainerEndpointMap& endpoint_delta) {
+sensor::NetworkConnectionInfoMessage* NetworkStatusNotifier::CreateInfoMessage(const ConnMap& conn_delta, const AdvertisedEndpointMap& endpoint_delta) {
   if (conn_delta.empty() && endpoint_delta.empty()) return nullptr;
 
   Reset();
@@ -325,9 +325,12 @@ void NetworkStatusNotifier::AddConnections(::google::protobuf::RepeatedPtrField<
   }
 }
 
-void NetworkStatusNotifier::AddContainerEndpoints(::google::protobuf::RepeatedPtrField<sensor::NetworkEndpoint>* updates, const ContainerEndpointMap& delta) {
+void NetworkStatusNotifier::AddContainerEndpoints(::google::protobuf::RepeatedPtrField<sensor::NetworkEndpoint>* updates, const AdvertisedEndpointMap& delta) {
   for (const auto& delta_entry : delta) {
     auto* endpoint_proto = ContainerEndpointToProto(delta_entry.first);
+
+    CLOG(DEBUG) << delta_entry.first << " active:" << delta_entry.second.IsActive();
+
     if (!delta_entry.second.IsActive()) {
       *endpoint_proto->mutable_close_timestamp() = google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(
           delta_entry.second.LastActiveTime());
@@ -357,7 +360,6 @@ sensor::NetworkEndpoint* NetworkStatusNotifier::ContainerEndpointToProto(const C
   if (cep.originator()) {
     endpoint_proto->set_allocated_originator(ProcessToProto(*cep.originator().get()));
   }
-  CLOG(DEBUG) << cep;
 
   return endpoint_proto;
 }
@@ -388,7 +390,7 @@ sensor::NetworkAddress* NetworkStatusNotifier::EndpointToProto(const collector::
   return addr_proto;
 }
 
-storage::NetworkProcessUniqueKey* NetworkStatusNotifier::ProcessToProto(const collector::Process& process) {
+storage::NetworkProcessUniqueKey* NetworkStatusNotifier::ProcessToProto(const collector::IProcess& process) {
   auto* process_proto = Allocate<storage::NetworkProcessUniqueKey>();
 
   process_proto->set_process_name(process.comm());

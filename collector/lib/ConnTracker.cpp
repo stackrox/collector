@@ -40,6 +40,25 @@ static const NRadixTree private_networks_tree(PrivateNetworks());
 
 }  // namespace
 
+bool AdvertisedEndpointEquality::operator()(const ContainerEndpoint& lhs, const ContainerEndpoint& rhs) const {
+  if (bool(lhs.originator()) != bool(rhs.originator())) {
+    return false;
+  }
+
+  if (lhs.originator()) {
+    auto& lhs_originator = *lhs.originator();
+    auto& rhs_originator = *rhs.originator();
+
+    /* Here is the real difference with the comparator in ContainerEndpointMap.
+       We only compare attributes that are part of the serialized originator process object: storage::NetworkProcessUniqueKey */
+    if ((lhs_originator.comm() != rhs_originator.comm()) || (lhs_originator.exe_path() != rhs_originator.exe_path()) || (lhs_originator.args() != rhs_originator.args())) {
+      return false;
+    }
+  }
+
+  return lhs.container() == rhs.container() && lhs.endpoint() == rhs.endpoint() && lhs.l4proto() == rhs.l4proto();
+}
+
 bool ContainsPrivateNetwork(Address::Family family, NRadixTree tree) {
   return tree.IsAnyIPNetSubset(family, private_networks_tree) || private_networks_tree.IsAnyIPNetSubset(family, tree);
 }
@@ -166,17 +185,13 @@ struct dont_filter {
   }
 };
 
-template <typename T, typename ProcessFn, typename FilterFn>
-UnorderedMap<T, ConnStatus> FetchState(UnorderedMap<T, ConnStatus>* state, bool clear_inactive,
-                                       const ProcessFn& process_fn, const FilterFn& filter_fn) {
+template <typename T, typename ProcessFn, typename FilterFn, typename E = std::equal_to<T>>
+UnorderedMap<T, ConnStatus, E> FetchState(UnorderedMap<T, ConnStatus>* state, bool clear_inactive,
+                                          const ProcessFn& process_fn, const FilterFn& filter_fn) {
   constexpr bool normalize = !std::is_same<ProcessFn, dont_normalize>::value;
   constexpr bool filter = !std::is_same<FilterFn, dont_filter>::value;
 
-  UnorderedMap<T, ConnStatus> fetched_state;
-
-  if (!clear_inactive && !normalize && !filter) {
-    return *state;
-  }
+  UnorderedMap<T, ConnStatus, E> fetched_state;
 
   for (auto it = state->begin(); it != state->end();) {
     const auto& entry = *it;
@@ -234,29 +249,34 @@ ConnMap ConnectionTracker::FetchConnState(bool normalize, bool clear_inactive) {
   return cm;
 }
 
-ContainerEndpointMap ConnectionTracker::FetchEndpointState(bool normalize, bool clear_inactive) {
-  ContainerEndpointMap cem;
+AdvertisedEndpointMap ConnectionTracker::FetchEndpointState(bool normalize, bool clear_inactive) {
+  AdvertisedEndpointMap cem;
   size_t state_size;
   WITH_LOCK(mutex_) {
     state_size = conn_state_.size();
     if (HasConnectionStateFilters()) {
       if (normalize) {
-        cem = FetchState(
+        cem = FetchState<ContainerEndpoint, std::function<ContainerEndpoint(const ContainerEndpoint&)>, std::function<bool(const ContainerEndpoint&)>, AdvertisedEndpointEquality>(
             &endpoint_state_, clear_inactive,
             [this](const ContainerEndpoint& cep) { return this->NormalizeContainerEndpoint(cep); },
             [this](const ContainerEndpoint& cep) { return this->ShouldFetchContainerEndpoint(cep); });
       } else {
-        cem = FetchState(&endpoint_state_, clear_inactive, dont_normalize(),
-                         [this](const ContainerEndpoint& cep) { return this->ShouldFetchContainerEndpoint(cep); });
+        cem = FetchState<ContainerEndpoint, dont_normalize, std::function<bool(const ContainerEndpoint&)>, AdvertisedEndpointEquality>(
+            &endpoint_state_, clear_inactive,
+            dont_normalize(),
+            [this](const ContainerEndpoint& cep) { return this->ShouldFetchContainerEndpoint(cep); });
       }
     } else {
       if (normalize) {
-        cem = FetchState(
+        cem = FetchState<ContainerEndpoint, std::function<ContainerEndpoint(const ContainerEndpoint&)>, dont_filter, AdvertisedEndpointEquality>(
             &endpoint_state_, clear_inactive,
             [this](const ContainerEndpoint& cep) { return this->NormalizeContainerEndpoint(cep); },
             dont_filter());
       } else {
-        cem = FetchState(&endpoint_state_, clear_inactive, dont_normalize(), dont_filter());
+        cem = FetchState<ContainerEndpoint, dont_normalize, dont_filter, AdvertisedEndpointEquality>(
+            &endpoint_state_, clear_inactive,
+            dont_normalize(),
+            dont_filter());
       }
     }
     COUNTER_ADD(CollectorStats::net_cep_inactive, (state_size - endpoint_state_.size()));
