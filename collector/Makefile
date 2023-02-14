@@ -39,10 +39,7 @@ post-build:
 	cp -r "$(CMAKE_DIR)"/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
 	cp "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so" container/libs/libsinsp-wrapper.so
 
-container/bin/collector:
-	$(MAKE) pre-build
-	$(MAKE) cmake-build/collector
-	$(MAKE) post-build
+container/bin/collector: pre-build cmake-build/collector post-build
 
 .PHONY: build-connscrape-test
 build-connscrape-test:
