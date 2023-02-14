@@ -32,6 +32,7 @@
 - include_tasks: "flatcar.yml"
   when: is_flatcar|bool
 
+
 # At this point, ansible should be able to run on the remote host
 
 - wait_for_connection:
@@ -43,6 +44,9 @@
 - name: RedHat Provisioning
   include_tasks: "redhat.yml"
   when: ansible_facts['os_family'] == 'RedHat' and not is_coreos|bool and not is_rhcos|bool
+
+- include_tasks: rhcos.yml
+  when: is_rhcos|bool
 
 - name: Ubuntu Provisioning
   include_tasks: "ubuntu.yml"

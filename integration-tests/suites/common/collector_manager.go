@@ -50,6 +50,7 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 	}
 	mounts := map[string]string{
 		"/host/var/run/docker.sock:ro": RuntimeSocket,
+		"/run/podman/podman.sock:ro":   RuntimeSocket,
 		"/host/proc:ro":                "/proc",
 		"/host/etc:ro":                 "/etc/",
 		"/host/usr/lib:ro":             "/usr/lib/",
@@ -176,7 +177,7 @@ func (c *CollectorManager) launchGRPCServer() error {
 	}
 	cmd := []string{RuntimeCommand, "run",
 		"-d",
-		//"--rm",
+		"--rm",
 		"--name", "grpc-server",
 		"--network=host",
 		"--privileged",

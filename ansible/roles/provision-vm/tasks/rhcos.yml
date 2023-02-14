@@ -1,0 +1,6 @@
+---
+
+- name: Enable podman socket
+  systemd:
+    name: podman.socket
+    state: started
