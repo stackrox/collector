@@ -101,7 +101,7 @@ func NewLocalCommandBuilder() CommandBuilder {
 	return &localCommandBuilder{}
 }
 
-//SELinux needs to be set to permissive in order for the mock GRPC to work in fedora coreos
+// SELinux needs to be set to permissive in order for the mock GRPC to work in fedora coreos
 func setSelinuxPermissiveIfNeeded() error {
 	if isSelinuxPermissiveNeeded() {
 		return setSelinuxPermissive()
@@ -159,6 +159,11 @@ func (e *executor) Exec(args ...string) (string, error) {
 func (e *executor) ExecRetry(args ...string) (res string, err error) {
 	maxAttempts := 3
 	attempt := 0
+
+	if args[0] == RuntimeCommand && RuntimeAsRoot {
+		args = append([]string{"sudo"}, args...)
+	}
+
 	for attempt < maxAttempts {
 		if attempt > 0 {
 			fmt.Printf("Retrying (%v) (%d of %d) Error: %v\n", args, attempt, maxAttempts, err)
