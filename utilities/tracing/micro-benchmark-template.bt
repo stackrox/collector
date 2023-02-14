@@ -1,0 +1,18 @@
+usdt:${CMAKE_BUILD}/collector/runUnitTests:collector:${TRACEPOINT}__start
+{
+	@ts[tid] = nsecs;
+}
+
+usdt:${CMAKE_BUILD}/collector/runUnitTests:collector:${TRACEPOINT}__end
+/@ts[tid] != 0/
+{
+	$lat_us = (nsecs - @ts[tid]);
+	@stat = stats($lat_us);
+
+	delete(@ts[tid]);
+}
+
+END
+{
+	clear(@ts);
+}

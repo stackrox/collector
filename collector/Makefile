@@ -60,7 +60,17 @@ unittest:
 	docker run --rm --name collector_unittest \
 		-v "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
-		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) $(COLLECTOR_PRE_ARGUMENTS) "$(SRC_MOUNT_DIR)/$(CMAKE_BASE_DIR)/collector/runUnitTests"
+		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) $(COLLECTOR_PRE_ARGUMENTS) $(SRC_MOUNT_DIR)/$(CMAKE_BASE_DIR)/collector/runUnitTests --gtest_filter='-Benchmark*.*'
+
+microbenchmark: microbenchmark-fetch-endpoint-state
+
+microbenchmark-fetch-endpoint-state:
+	docker rm -fv collector_unittest || true
+	docker run --privileged --rm --name collector_unittest \
+		-v "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
+		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
+		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
+		$(SRC_MOUNT_DIR)/utilities/tracing/micro-benchmark.sh BenchmarkConnTracker.FetchEndpointState fetch_endpoint_state $(SRC_MOUNT_DIR)/$(CMAKE_BASE_DIR)
 
 .PHONY: txt-files
 txt-files:

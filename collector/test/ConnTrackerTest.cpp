@@ -1362,6 +1362,20 @@ TEST(ConnTrackerTest, TestDeltaForEndpointDifferentProtocols) {
   EXPECT_THAT(old_state, expected_delta);
 }
 
+TEST(BenchmarkConnTracker, FetchEndpointState) {
+  int num_endpoints = 500;
+  int num_connections = 20000;
+  int64_t time_micros1 = 1000;
+  ConnMap old_state, new_state;
+
+  ConnectionTracker connectionTracker;
+  CreateFakeState(old_state, num_endpoints, num_connections, time_micros1);
+
+  for (int i = 0; i < 10000; i++) {
+    connectionTracker.FetchEndpointState(false, false);
+  }
+}
+
 }  // namespace
 
 }  // namespace collector

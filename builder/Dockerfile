@@ -46,6 +46,8 @@ RUN dnf -y update \
         wget \
         # for USDT support
         systemtap-sdt-devel \
+        # for tracing in micro-benchmarks
+        bpftrace \
         which \
     && dnf clean all
 
