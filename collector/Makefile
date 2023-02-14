@@ -17,9 +17,6 @@ COLLECTOR_BUILD_DEPS := $(HDRS) $(SRCS) $(shell find falcosecurity-libs -name '*
 
 .SUFFIXES:
 
-.PHONY: pre-build
-pre-build: txt-files
-
 cmake-build/collector: $(COLLECTOR_BUILD_DEPS)
 	docker rm -fv build_collector || true
 	docker run --rm --name build_collector \
@@ -33,18 +30,15 @@ cmake-build/collector: $(COLLECTOR_BUILD_DEPS)
 		-e DISABLE_PROFILING="true" \
 		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) "$(SRC_MOUNT_DIR)/builder/build/build-collector.sh"
 
-.PHONY: post-build
-post-build:
+container/bin/collector: cmake-build/collector
 	mkdir -p container/bin
-	mkdir -p container/libs
 	cp "$(COLLECTOR_BIN_DIR)/collector" container/bin/collector
+
+.PHONY: collector
+collector: container/bin/collector txt-files
+	mkdir -p container/libs
 	cp -r "$(CMAKE_DIR)"/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
 	cp "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so" container/libs/libsinsp-wrapper.so
-
-container/bin/collector: $(COLLECTOR_BUILD_DEPS)
-	$(MAKE) pre-build
-	$(MAKE) cmake-build/collector
-	$(MAKE) post-build
 
 .PHONY: build-connscrape-test
 build-connscrape-test:
