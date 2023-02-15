@@ -43,7 +43,7 @@ else
 endif
 
 collector: builder
-	make -C collector container/bin/collector
+	make -C collector collector
 
 .PHONY: connscrape
 connscrape:

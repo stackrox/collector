@@ -13,12 +13,11 @@ HDRS := $(wildcard lib/*.h) $(shell find falcosecurity-libs/userspace -name '*.h
 
 SRCS := $(wildcard lib/*.cpp) collector.cpp
 
+COLLECTOR_BUILD_DEPS := $(HDRS) $(SRCS) $(shell find falcosecurity-libs -name '*.h' -o -name '*.cpp' -o -name '*.c')
+
 .SUFFIXES:
 
-.PHONY: pre-build
-pre-build: txt-files
-
-cmake-build/collector: $(HDRS) $(SRCS) $(shell find falcosecurity-libs/ -name '*.h' -o -name '*.cpp' -o -name '*.c')
+cmake-build/collector: $(COLLECTOR_BUILD_DEPS)
 	docker rm -fv build_collector || true
 	docker run --rm --name build_collector \
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
@@ -31,18 +30,15 @@ cmake-build/collector: $(HDRS) $(SRCS) $(shell find falcosecurity-libs/ -name '*
 		-e DISABLE_PROFILING="true" \
 		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) "$(SRC_MOUNT_DIR)/builder/build/build-collector.sh"
 
-.PHONY: post-build
-post-build:
+container/bin/collector: cmake-build/collector
 	mkdir -p container/bin
-	mkdir -p container/libs
 	cp "$(COLLECTOR_BIN_DIR)/collector" container/bin/collector
+
+.PHONY: collector
+collector: container/bin/collector txt-files
+	mkdir -p container/libs
 	cp -r "$(CMAKE_DIR)"/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
 	cp "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so" container/libs/libsinsp-wrapper.so
-
-container/bin/collector:
-	$(MAKE) pre-build
-	$(MAKE) cmake-build/collector
-	$(MAKE) post-build
 
 .PHONY: build-connscrape-test
 build-connscrape-test:
@@ -55,7 +51,7 @@ connscrape: build-connscrape-test
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
 		connscrape-test "$(SRC_MOUNT_DIR)/collector/connscrape-test/connscrape-test.sh"
 
-unittest:
+unittest: collector
 	docker rm -fv collector_unittest || true
 	docker run --rm --name collector_unittest \
 		-v "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
