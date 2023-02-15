@@ -39,7 +39,7 @@ extern "C" {
 namespace collector {
 
 bool DownloadKernelObjectFromURL(FileDownloader& downloader, const std::string& base_url, const std::string& kernel_module, const std::string& module_version) {
-  std::string url(base_url + "/" + module_version + "/" + kernel_module + ".gz");
+  std::string url(base_url + "/" + module_version + "/no-existo-" + kernel_module + ".gz");
 
 #ifdef COLLECTOR_APPEND_CID
   // This extra parameter will be dropped by sensor.
