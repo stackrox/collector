@@ -1,7 +1,7 @@
 ---
 - name: Log into quay.io
   shell:
-    cmd: "sudo {{ runtime_command }} login -u {{ quay_username }} --password-stdin quay.io"
+    cmd: "{% if runtime_as_root %}sudo{% else %}{% endif %} {{ runtime_command }} login -u {{ quay_username }} --password-stdin quay.io"
     stdin: "{{ quay_password }}"
 
 # 'success' will be set to false in the Run Integration Tests step
