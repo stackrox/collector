@@ -11,7 +11,8 @@
     logs_root: "{{ collector_root }}/integration-tests/container-logs/{{ vm_config }}/{{ collection_method }}"
 
 - name: Cleanup old containers
-  shell: "sudo {{ runtime_command }} rm -f $(sudo {{ runtime_command }} ps -aq) >/dev/null 2>&1 || true"
+  become: "{{ runtime_as_root }}"
+  shell: "{{ runtime_command }} rm -f $({{ runtime_command }} ps -aq) >/dev/null 2>&1 || true"
 
 - block:
   - name: Run integration tests
