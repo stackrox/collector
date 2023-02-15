@@ -51,7 +51,7 @@ connscrape: build-connscrape-test
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
 		connscrape-test "$(SRC_MOUNT_DIR)/collector/connscrape-test/connscrape-test.sh"
 
-unittest:
+unittest: collector
 	docker rm -fv collector_unittest || true
 	docker run --rm --name collector_unittest \
 		-v "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
