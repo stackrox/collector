@@ -335,7 +335,7 @@ TEST(NRadixTest, BenchMarkNetworkLookup) {
   // Generate IPv4 networks.
   UnorderedSet<IPNet> ipv4_network_set;
   ipv4_network_set.reserve(num_ipv4_nets);
-  for (int i = 0; i < num_ipv4_nets; i++) {
+  for (size_t i = 0; i < num_ipv4_nets; i++) {
     ipv4_network_set.insert(IPNet(Address(ip_distr(ip_gen)), mask_distr(mask_gen)));
   }
 
@@ -343,7 +343,7 @@ TEST(NRadixTest, BenchMarkNetworkLookup) {
   mask_distr = std::uniform_int_distribution<unsigned char>(0x21, 0x80);
   UnorderedSet<IPNet> ipv6_network_set;
   ipv6_network_set.reserve(num_ipv6_nets);
-  for (int i = 0; i < num_ipv6_nets; i++) {
+  for (size_t i = 0; i < num_ipv6_nets; i++) {
     ipv6_network_set.insert(IPNet(Address(ip_distr(ip_gen), ip_distr(ip_gen)), mask_distr(mask_gen)));
   }
 

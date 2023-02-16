@@ -44,7 +44,7 @@ bool ProfilerHandler::SendHeapProfile(struct mg_connection* conn) {
     if (mg_send_http_ok(conn, "application/octet-stream", heap_profile_length_) < 0) {
       return false;
     }
-    if (mg_write(conn, heap_profile_.get(), heap_profile_length_) != heap_profile_length_) {
+    if (mg_write(conn, heap_profile_.get(), heap_profile_length_) != (int)heap_profile_length_) {
       return false;
     }
   }
