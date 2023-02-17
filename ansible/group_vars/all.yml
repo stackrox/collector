@@ -32,7 +32,7 @@ virtual_machines:
     project: rhcos-cloud
     username: core
     images:
-      - rhcos-412-86-202211290909-0-gcp-x86-64
+      - rhcos-412-86-202302151644-0-gcp-x86-64
     ignition:
       ignition:
         version: 3.2.0
