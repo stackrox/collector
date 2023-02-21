@@ -22,7 +22,7 @@ jobs:
         SLACK_TITLE: MODULE_VERSION has changed!
         MSG_MINIMAL: commit
         SLACK_MESSAGE: |
-          @collector-team you should now update downstream with the new version and commit.
+          @acs-collector-team you should now update downstream with the new version and commit.
           1. Create a MR to <https://gitlab.cee.redhat.com/stackrox/rhacs-midstream/-/tree/rhacs-0.1-rhel-8|rhacs-0.1-rhel-8>
           adding this `MODULE_VERSION` to `upstream_sources.yml` and `distgit/containers/rhacs-drivers-build/container.yaml.in`.
           2. Once done, you will need to create another MR to <https://gitlab.cee.redhat.com/stackrox/rhacs-midstream/-/tree/rhacs-1.0-rhel-8|rhacs-1.0-rhel-8>

@@ -62,4 +62,4 @@ jobs:
           SLACK_TITLE: "Integration tests failed."
           MSG_MINIMAL: actions url,commit
           SLACK_MESSAGE: |
-            @collector-team
+            @acs-collector-team

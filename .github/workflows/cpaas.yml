@@ -89,4 +89,4 @@ jobs:
           SLACK_TITLE: Downstream nightly failed
           MSG_MINIMAL: actions url,commit
           SLACK_MESSAGE: |
-            @collector-team
+            @acs-collector-team

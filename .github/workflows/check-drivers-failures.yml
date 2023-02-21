@@ -36,4 +36,4 @@ jobs:
           SLACK_TITLE: Driver build check failed
           MSG_MINIMAL: actions url,commit
           SLACK_MESSAGE: |
-            @collector-team
+            @acs-collector-team
