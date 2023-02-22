@@ -43,11 +43,6 @@ class Builder:
     def __repr__(self):
         return f'{self.name}: {len(self)}'
 
-    def _dump_shard(self, shard, tasks):
-        output_file = os.path.join(self.output_dir, 'shards', str(shard))
-        with open(output_file, 'a+') as f:
-            f.writelines(tasks)
-
     def _dump_all(self):
         raw_tasks = [
             f'{kernel} {module} {driver_type}\n'
@@ -60,30 +55,8 @@ class Builder:
 
     def dump(self):
         # Create the directory for storing tasks and fill the 'all' tasks file
-        os.makedirs(os.path.join(self.output_dir, 'shards'), exist_ok=True)
-
+        os.makedirs(self.output_dir, exist_ok=True)
         self._dump_all()
-
-        shard = 0
-        raw_tasks = []
-        for i, (kernel, value) in enumerate(self.tasks.items()):
-            raw_tasks.extend([
-                f'{kernel} {module} {driver_type}\n'
-                for module, driver_type in value
-            ])
-
-            if i < self.get_tasks_per_shard() * (shard + 1):
-                continue
-
-            # filled up the shard, dump it and move on to the next one
-            self._dump_shard(shard, raw_tasks)
-
-            shard += 1
-            raw_tasks = []
-
-        # dump the remaining kernels
-        if len(raw_tasks):
-            self._dump_shard(shard, raw_tasks)
 
     def match(self, task):
         return self.regex.match(task.kernel) is not None
@@ -93,12 +66,6 @@ class Builder:
             self.tasks[task.kernel] = [(task.module, task.driver_type)]
         else:
             self.tasks[task.kernel].append((task.module, task.driver_type))
-
-    def get_tasks_per_shard(self):
-        if self.shards == 0:
-            return -1
-
-        return len(self.tasks) / self.shards
 
     def split(self, new_builders: int) -> list:
         """
