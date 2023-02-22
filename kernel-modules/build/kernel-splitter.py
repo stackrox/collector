@@ -36,19 +36,9 @@ class Builder:
         self.output_dir = os.path.join(TASKS_DIR, name)
         self.regex = re.compile(regex)
         self.tasks = tasks
-        # OSCI caps cpu cores to 10, so that's what each builder gets
-        self._shards = 10
 
     def __len__(self):
         return len(self.tasks)
-
-    @property
-    def shards(self):
-        return self._shards
-
-    @shards.setter
-    def shards(self, s):
-        self._shards = s if s > 0 else 1
 
     def __repr__(self):
         return f'{self.name}: {len(self)}'
@@ -189,28 +179,20 @@ def main(task_file):
             print(f'No builder for "{line.strip()}"')
             unknown.append(task)
 
-    # We split the rhel 8 builder to make better usage of OSCI
-    rhel8_builders_count = int(os.environ.get('RHEL8_BUILDERS', 4))
-    rhel8_builders = rhel8.split(rhel8_builders_count)
+    driver_builders = int(os.environ.get('DRIVER_BUILDERS', 1))
 
-    rhel7_ebpf_builders = rhel7_ebpf.split(rhel8_builders_count)
-    rhel7_builders = rhel7.split(rhel8_builders_count)
-
-    fc36_builders_count = int(os.environ.get('FC36_BUILDERS', 1))
-    fc36_builders = fc36.split(fc36_builders_count)
+    rhel8_builders = rhel8.split(driver_builders)
+    rhel7_ebpf_builders = rhel7_ebpf.split(driver_builders)
+    rhel7_builders = rhel7.split(driver_builders)
+    fc36_builders = fc36.split(driver_builders)
 
     builders = [
+        *fc36_builders,
         *rhel8_builders,
         *rhel7_ebpf_builders,
         *rhel7_builders,
         unknown
     ]
-
-    # Handle OSCI specific case for fc36 builder
-    if fc36_builders_count == 1:
-        builders.append(fc36)
-    else:
-        builders.extend(fc36_builders)
 
     for builder in builders:
         builder.dump()
