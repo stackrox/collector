@@ -81,4 +81,4 @@
 # dedicated builder if need be
 *.el7uek.* * mod
 # TODO(ROX-15280) - Fix compilation of driver on 6.2 kernels
-6.2.* * mod
+6.2.*
