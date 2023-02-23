@@ -14,8 +14,8 @@ jobs:
         id: validate
         with:
           path: .github/dependabot.yaml
-      - uses: marocchino/sticky-pull-request-comment@v2
-        if: always()
+      - name: Comment on PR
+        uses: mshick/add-pr-comment@v2
         with:
-          header: validate-dependabot
           message: ${{ steps.validate.outputs.markdown }}
+          message-id: dependabot-validate
