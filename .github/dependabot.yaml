@@ -13,6 +13,10 @@ updates:
     directory: collector/container/
     schedule:
       interval: "weekly"
+    ignore:
+    - dependency-name: registry.access.redhat.com/ubi8/ubi
+      versions:
+      - 8.x-x
   - package-ecosystem: 'docker'
     directory: integration-tests/container/benchmark/
     schedule:
