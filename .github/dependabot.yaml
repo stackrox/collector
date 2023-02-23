@@ -14,7 +14,10 @@ updates:
     schedule:
       interval: "weekly"
     ignore:
-    - dependency-name: registry.access.redhat.com/ubi8/ubi
+    - dependency-name: ubi8/ubi
+      versions:
+      - 8.x-x
+    - dependency-name: ubi8/ubi-minimal
       versions:
       - 8.x-x
   - package-ecosystem: 'docker'
