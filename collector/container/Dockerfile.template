@@ -1,8 +1,4 @@
-ARG BASE_REGISTRY=registry.access.redhat.com
-ARG BASE_IMAGE=ubi8/ubi-minimal
-ARG BASE_TAG=8.7
-
-FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.7
 
 ARG BUILD_TYPE=rhel
 ARG ROOT_DIR=.
