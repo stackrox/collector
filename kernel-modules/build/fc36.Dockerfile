@@ -14,7 +14,9 @@ RUN dnf -y install \
     # We trick Debian builds into thinking they have the required GCC binary
     ln -s /usr/bin/gcc /usr/bin/gcc-10 && \
     ln -s /usr/bin/gcc /usr/bin/gcc-11 && \
-    ln -s /usr/bin/gcc /usr/bin/gcc-12
+    ln -s /usr/bin/gcc /usr/bin/gcc-12 && \
+    # We also trick Amazon Linux
+    ln -s /usr/bin/gcc /usr/bin/gcc10-gcc
 
 COPY /build-kos /scripts/
 COPY /build-wrapper.sh /scripts/compile.sh
