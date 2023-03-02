@@ -1864,6 +1864,7 @@
 4.15.0-2067-azure-fips
 4.15.0-2068-azure-fips
 4.15.0-2069-aws-fips
+4.15.0-207-generic
 4.15.0-2070-azure-fips
 4.15.0-2072-aws-fips
 4.15.0-2075-aws-fips
@@ -5169,6 +5170,7 @@
 5.4.0-138-generic
 5.4.0-139-generic
 5.4.0-144-generic
+5.4.0-145-generic
 5.4.0-15-generic
 5.4.0-16-generic
 5.4.0-17-generic
