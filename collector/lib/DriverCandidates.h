@@ -21,18 +21,35 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef COLLECTOR_GETKERNELOBJECT_H
-#define COLLECTOR_GETKERNELOBJECT_H
+#ifndef _DRIVER_CANDIDATES_H_
+#define _DRIVER_CANDIDATES_H_
 
 #include <string>
-
-#include <json/json.h>
-
-#include "DriverCandidates.h"
+#include <vector>
 
 namespace collector {
 
-bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const DriverCandidate& kernel_module, const std::string& module_path, bool verbose);
+class DriverCandidate {
+ public:
+  DriverCandidate(const std::string& name, const std::string& shortName = "", const std::string& path = "/kernel-modules", bool downloadable = true) : name_(name), shortName_(shortName), path_(path), downloadable_(downloadable) {}
+
+  inline const std::string& getPath() const { return path_; }
+
+  inline const std::string& getName() const { return name_; }
+
+  inline const std::string& getShortName() const { return shortName_; }
+
+  inline bool isDownloadable() const { return downloadable_; }
+
+ private:
+  std::string name_;
+  std::string shortName_;
+  std::string path_;
+  bool downloadable_;
+};
+
+// Get kernel candidates
+std::vector<DriverCandidate> GetKernelCandidates(bool useEbpf);
 
 }  // namespace collector
-#endif  // COLLECTOR_GETKERNELOBJECT_H
+#endif  // _DRIVER_CANDIDATES_H_

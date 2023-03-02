@@ -53,6 +53,7 @@ extern "C" {
 #include "CollectorStatsExporter.h"
 #include "Control.h"
 #include "Diagnostics.h"
+#include "DriverCandidates.h"
 #include "EventNames.h"
 #include "FileSystem.h"
 #include "GRPC.h"
@@ -172,48 +173,31 @@ void initialChecks() {
 
 bool downloadKernelDriver(const CollectorArgs* args, CollectorConfig& config) {
   CLOG(INFO) << "Module version: " << GetModuleVersion();
+  bool useEbpf = config.UseEbpf();
 
-  std::vector<std::string> kernel_candidates = GetKernelCandidates();
+  std::vector<DriverCandidate> kernel_candidates = GetKernelCandidates(useEbpf);
 
   if (kernel_candidates.empty()) {
     CLOG(ERROR) << "No kernel candidates available";
     return false;
   }
 
-  struct {
-    std::string path;
-    std::string name;
-    std::string extension;
-    std::string type;
-  } kernel_object;
-
-  if (config.UseEbpf()) {
-    kernel_object.path = SysdigService::kProbePath;
-    kernel_object.name = SysdigService::kProbeName;
-    kernel_object.extension = ".o";
-    kernel_object.type = "eBPF probe";
-  } else {
-    kernel_object.path = SysdigService::kModulePath;
-    kernel_object.name = SysdigService::kModuleName;
-    kernel_object.extension = ".ko";
-    kernel_object.type = "kernel module";
-  }
-
-  CLOG(INFO) << "Attempting to find " << kernel_object.type << " - Candidate kernel versions: ";
-  for (auto candidate : kernel_candidates) {
-    CLOG(INFO) << candidate;
+  const char* type = useEbpf ? "eBPF probe" : "kernel module";
+  CLOG(INFO) << "Attempting to find " << type << " - Candidate kernel versions: ";
+  for (const auto& candidate : kernel_candidates) {
+    if (!candidate.getShortName().empty()) {
+      CLOG(INFO) << candidate.getShortName();
+    }
   }
 
   bool success = false;
-  std::string kernel_candidate;
 
-  for (auto kernel_candidate : kernel_candidates) {
-    std::string kernel_module = kernel_object.name + "-" + kernel_candidate + kernel_object.extension;
-
-    success = GetKernelObject(args->GRPCServer(), config.TLSConfiguration(), kernel_module, kernel_object.path,
+  for (const auto& candidate : kernel_candidates) {
+    success = GetKernelObject(args->GRPCServer(), config.TLSConfiguration(), candidate,
+                              useEbpf ? SysdigService::kProbePath : SysdigService::kModulePath,
                               config.CurlVerbose());
     if (!success) {
-      CLOG(ERROR) << "Error getting kernel object: " << kernel_module;
+      CLOG(ERROR) << "Error getting kernel object: " << candidate.getName();
     } else {
       break;
     }

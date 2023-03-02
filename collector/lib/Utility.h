@@ -60,9 +60,6 @@ const char* GetSNIHostname();
 // Get hostname from NODE_HOSTNAME env var
 std::string GetHostname();
 
-// Get kernel candidates from KERNEL_CANDIDATES env var
-std::vector<std::string> GetKernelCandidates();
-
 // Get base URL for kernel modules downloads from MODULE_DOWNLOAD_BASE_URL
 const char* GetModuleDownloadBaseURL();
 
