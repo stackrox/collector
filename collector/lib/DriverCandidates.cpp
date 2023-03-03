@@ -1,5 +1,7 @@
 #include "DriverCandidates.h"
 
+#include <optional>
+
 #include "HostInfo.h"
 #include "StringView.h"
 #include "SysdigService.h"
@@ -8,14 +10,17 @@ namespace collector {
 
 namespace {
 
+std::string driverFullName(const std::string& shortName, bool useEbpf) {
+  if (useEbpf) {
+    return std::string{SysdigService::kProbeName} + "-" + shortName + ".o";
+  }
+  return std::string{SysdigService::kModuleName} + "-" + shortName + ".ko";
+}
+
 // Retrieves the ubuntu backport version from the host kernel's release
 // string. If the host is not Ubuntu, or it is unable to find an appropriate
 // backport version, this function returns an empty string.
-std::string getUbuntuBackport(HostInfo& host) {
-  if (!host.IsUbuntu()) {
-    return "";
-  }
-
+std::optional<DriverCandidate> getUbuntuBackport(HostInfo& host, bool useEbpf) {
   static const char* candidates[] = {
       "~16.04",
       "~20.04",
@@ -24,18 +29,20 @@ std::string getUbuntuBackport(HostInfo& host) {
   auto kernel = host.GetKernelVersion();
   for (auto candidate : candidates) {
     if (kernel.version.find(candidate) != std::string::npos) {
-      return kernel.release + candidate;
+      std::string backport = kernel.release + candidate;
+      std::string name = driverFullName(backport, useEbpf);
+      return DriverCandidate(std::move(name), std::move(backport));
     }
   }
 
-  return "";
+  return {};
 }
 
 // Garden linux uses a special kernel version in order to avoid
 // overlapping with Debian. This function returns the appropriate
 // name for this candidate while keeping the possibility to use
 // the Debian driver if it doesn't exist.
-std::string getGardenLinuxCandidate(HostInfo& host) {
+std::optional<DriverCandidate> getGardenLinuxCandidate(HostInfo& host, bool useEbpf) {
   auto kernel = host.GetKernelVersion();
 
   std::regex garden_linux_kernel_re(R"(\d+\.\d+\.\d+-\w+)");
@@ -43,12 +50,15 @@ std::string getGardenLinuxCandidate(HostInfo& host) {
 
   if (!std::regex_search(kernel.version, match, garden_linux_kernel_re)) {
     CLOG(WARNING) << "Failed to match the Garden Linux kernel version.";
-    return "";
+    return {};
   }
 
   // The Garden Linux specific candidate is of the form
   // 5.10.0-9-cloud-amd64-gl-5.10.83-1gardenlinux1
-  return kernel.release + "-gl-" + match.str();
+  std::string shortName = kernel.release + "-gl-" + match.str();
+  std::string name = driverFullName(shortName, useEbpf);
+
+  return DriverCandidate(name, shortName);
 }
 
 // The kvm driver for minikube uses a custom kernel built from
@@ -56,16 +66,18 @@ std::string getGardenLinuxCandidate(HostInfo& host) {
 // in their repo. However, when using the docker driver, minikube
 // runs directly on the host, so we add the kvm kernel as a candidate
 // in order to give the chance for collector to use the host driver.
-std::string getMinikubeCandidate(HostInfo& host) {
+std::optional<DriverCandidate> getMinikubeCandidate(HostInfo& host, bool useEbpf) {
   auto minikube_version = host.GetMinikubeVersion();
 
   if (minikube_version.empty()) {
-    return "";
+    return {};
   }
 
   auto kernel = host.GetKernelVersion();
 
-  return kernel.ShortRelease() + "-minikube-" + minikube_version;
+  std::string shortName = kernel.ShortRelease() + "-minikube-" + minikube_version;
+  std::string name = driverFullName(shortName, useEbpf);
+  return DriverCandidate(name, shortName);
 }
 
 // Normalizes this host's release string into something collector can use
@@ -105,11 +117,11 @@ std::string normalizeReleaseString(HostInfo& host) {
   return kernel.release;
 }
 
-std::string driverFullName(const std::string& shortName, bool useEbpf) {
-  if (useEbpf) {
-    return std::string{SysdigService::kProbeName} + "-" + shortName + ".o";
-  }
-  return std::string{SysdigService::kModuleName} + "-" + shortName + ".ko";
+DriverCandidate getHostCandidate(HostInfo& host, bool useEbpf) {
+  std::string hostCandidate = normalizeReleaseString(host);
+  std::string hostCandidateFullName = driverFullName(hostCandidate, useEbpf);
+
+  return DriverCandidate(hostCandidateFullName, hostCandidate);
 }
 
 }  // namespace
@@ -132,32 +144,27 @@ std::vector<DriverCandidate> GetKernelCandidates(bool useEbpf) {
   HostInfo& host = HostInfo::Instance();
 
   if (host.IsUbuntu()) {
-    std::string backport = getUbuntuBackport(host);
-    if (!backport.empty()) {
-      std::string name = driverFullName(backport, useEbpf);
-      candidates.emplace_back(std::move(name), std::move(backport));
+    auto backport = getUbuntuBackport(host, useEbpf);
+    if (backport) {
+      candidates.push_back(std::move(*backport));
     }
   }
 
   if (host.IsGarden()) {
-    auto garden_candidate = getGardenLinuxCandidate(host);
+    auto garden_candidate = getGardenLinuxCandidate(host, useEbpf);
 
-    if (!garden_candidate.empty()) {
-      std::string name = driverFullName(garden_candidate, useEbpf);
-      candidates.emplace_back(std::move(name), std::move(garden_candidate));
+    if (garden_candidate) {
+      candidates.push_back(std::move(*garden_candidate));
     }
   }
 
-  std::string hostCandidate = normalizeReleaseString(host);
-  std::string hostCandidateFullName = driverFullName(hostCandidate, useEbpf);
-  candidates.emplace_back(std::move(hostCandidateFullName), std::move(hostCandidate));
+  candidates.push_back(getHostCandidate(host, useEbpf));
 
   if (host.IsMinikube()) {
-    auto minikube_candidate = getMinikubeCandidate(host);
+    auto minikube_candidate = getMinikubeCandidate(host, useEbpf);
 
-    if (!minikube_candidate.empty()) {
-      std::string name = driverFullName(minikube_candidate, useEbpf);
-      candidates.emplace_back(std::move(name), std::move(minikube_candidate));
+    if (minikube_candidate) {
+      candidates.push_back(std::move(*minikube_candidate));
     }
   }
 

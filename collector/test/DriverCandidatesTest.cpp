@@ -55,9 +55,10 @@ TEST(getGardenLinuxCandidateTest, Garden576_1) {
 
   EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));
 
-  auto candidate = getGardenLinuxCandidate(host);
+  auto candidate = getGardenLinuxCandidate(host, true);
 
-  EXPECT_EQ(candidate, expected_kernel);
+  EXPECT_TRUE(candidate);
+  EXPECT_EQ(candidate->getShortName(), expected_kernel);
 }
 
 TEST(getGardenLinuxCandidateTest, Garden318) {
@@ -69,9 +70,10 @@ TEST(getGardenLinuxCandidateTest, Garden318) {
 
   EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));
 
-  auto candidate = getGardenLinuxCandidate(host);
+  auto candidate = getGardenLinuxCandidate(host, true);
 
-  EXPECT_EQ(candidate, expected_kernel);
+  EXPECT_TRUE(candidate);
+  EXPECT_EQ(candidate->getShortName(), expected_kernel);
 }
 
 TEST(getMinikubeCandidateTest, v1_27_1) {
@@ -85,9 +87,10 @@ TEST(getMinikubeCandidateTest, v1_27_1) {
   EXPECT_CALL(host, GetMinikubeVersion()).WillOnce(Return(minikube_version));
   EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));
 
-  auto candidate = getMinikubeCandidate(host);
+  auto candidate = getMinikubeCandidate(host, true);
 
-  EXPECT_EQ(candidate, expected_kernel);
+  EXPECT_TRUE(candidate);
+  EXPECT_EQ(candidate->getShortName(), expected_kernel);
 }
 
 TEST(getMinikubeCandidateTest, v1_24_0) {
@@ -101,9 +104,10 @@ TEST(getMinikubeCandidateTest, v1_24_0) {
   EXPECT_CALL(host, GetMinikubeVersion()).WillOnce(Return(minikube_version));
   EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));
 
-  auto candidate = getMinikubeCandidate(host);
+  auto candidate = getMinikubeCandidate(host, true);
 
-  EXPECT_EQ(candidate, expected_kernel);
+  EXPECT_TRUE(candidate);
+  EXPECT_EQ(candidate->getShortName(), expected_kernel);
 }
 
 TEST(getMinikubeCandidateTest, NoVersion) {
@@ -111,14 +115,13 @@ TEST(getMinikubeCandidateTest, NoVersion) {
   std::string release("4.19.202");
   std::string version("#1 SMP Wed Oct 27 22:52:27 UTC 2021 x86_64 GNU/Linux");
   std::string minikube_version("");
-  std::string expected_kernel("");
   KernelVersion kv(release, version);
 
   EXPECT_CALL(host, GetMinikubeVersion()).WillOnce(Return(minikube_version));
 
-  auto candidate = getMinikubeCandidate(host);
+  auto ebpf_candidate = getMinikubeCandidate(host, true);
 
-  EXPECT_EQ(candidate, expected_kernel);
+  EXPECT_FALSE(ebpf_candidate);
 }
 
 TEST(normalizeReleaseStringTest, FedoraKernel) {
