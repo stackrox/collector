@@ -25,11 +25,11 @@ You should have received a copy of the GNU General Public License along with thi
 #include <algorithm>
 #include <chrono>
 #include <fstream>
+#include <string_view>
 #include <unistd.h>
 #include <utils.h>
 
 #include "Logging.h"
-#include "StringView.h"
 #include "Utility.h"
 
 namespace collector {
@@ -39,18 +39,18 @@ namespace {
 size_t HeaderCallback(char* buffer, size_t size, size_t nitems, void* dd) {
   auto download_data = static_cast<DownloadData*>(dd);
   size_t buffer_size = size * nitems;
-  StringView data(buffer, buffer_size);
+  std::string_view data(buffer, buffer_size);
 
   if (data.substr(0, 5) == "HTTP/") {
     size_t error_code_offset = data.find(' ');
 
-    if (error_code_offset == StringView::npos) {
+    if (error_code_offset == std::string_view::npos) {
       download_data->http_status = 500;
       download_data->error_msg = Str("Failed extracting HTTP status code (", data.substr(0, 1024), ")");
       return 0;  // Force the download to fail explicitly
     }
 
-    download_data->http_status = std::stoul(data.substr(error_code_offset + 1, data.find(' ', error_code_offset + 1)).str());
+    download_data->http_status = std::stoul(std::string(data.substr(error_code_offset + 1, data.find(' ', error_code_offset + 1))));
     // CLOG(DEBUG) << "Set HTTP status code to '" << download_data->http_status << "'";
   }
 
@@ -63,7 +63,7 @@ size_t WriteFile(void* content, size_t size, size_t nitems, void* dd) {
   const char* content_bytes = static_cast<const char*>(content);
 
   if (download_data->http_status >= 400) {
-    download_data->error_msg = Str("HTTP Body Response: ", StringView(content_bytes, std::min(content_size, 1024UL)));
+    download_data->error_msg = Str("HTTP Body Response: ", std::string_view(content_bytes, std::min(content_size, 1024UL)));
     return 0;  // Force the download to fail explicitly
   }
 

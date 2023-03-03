@@ -43,7 +43,6 @@ extern "C" {
 
 #include "HostInfo.h"
 #include "Logging.h"
-#include "StringView.h"
 #include "Utility.h"
 
 namespace collector {
@@ -276,11 +275,27 @@ std::string GetHostname() {
   return info.GetHostname();
 }
 
+std::vector<std::string> SplitStringView(const std::string_view sv, char delim = ' ') {
+  std::vector<std::string> parts;
+  std::string_view::size_type offset = 0;
+
+  for (auto n = sv.find(delim); n != std::string_view::npos; n = sv.find(delim, offset)) {
+    parts.push_back(std::string(sv.substr(offset, n - offset)));
+    offset = n + 1;
+  }
+
+  // Push remainder of the string. This may be empty if the string
+  // ends with a delimiter.
+  parts.push_back(std::string(sv.substr(offset)));
+
+  return parts;
+}
+
 std::vector<std::string> GetKernelCandidates() {
   const char* kernel_candidates = std::getenv("KERNEL_CANDIDATES");
   if (kernel_candidates && *kernel_candidates) {
-    StringView sview(kernel_candidates);
-    return sview.split(' ');
+    std::string_view sview(kernel_candidates);
+    return SplitStringView(sview);
   }
 
   HostInfo& host = HostInfo::Instance();

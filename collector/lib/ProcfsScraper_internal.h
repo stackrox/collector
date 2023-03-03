@@ -24,12 +24,12 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef COLLECTOR_PROCFSSCRAPER_INTERNAL_H
 #define COLLECTOR_PROCFSSCRAPER_INTERNAL_H
 
-#include "StringView.h"
+#include <string_view>
 
 namespace collector {
 
 // ExtractContainerID tries to extract a container ID from a cgroup line.
-StringView ExtractContainerID(StringView cgroup_line);
+std::string_view ExtractContainerID(std::string_view cgroup_line);
 
 }  // namespace collector
 
