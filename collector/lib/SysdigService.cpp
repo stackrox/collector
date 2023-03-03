@@ -190,6 +190,8 @@ void SysdigService::Start() {
     }
   }
 
+  inspector_->start_capture();
+
   std::lock_guard<std::mutex> running_lock(running_mutex_);
   running_ = true;
 }
