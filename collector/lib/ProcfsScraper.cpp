@@ -555,15 +555,15 @@ bool ReadProcessCmdline(const char* process_id, int dirfd, std::string& exe, std
 
 std::string_view ExtractContainerID(std::string_view cgroup_line) {
   auto start = rep_find(2, cgroup_line, ':');
-  if (start == std::string_view::npos) return {};
+  if (start == std::string_view::npos || cgroup_line.size() - start - 1 < 65) return {};
   std::string_view cgroup_path = cgroup_line.substr(start + 1);
 
   if (cgroup_path.substr(cgroup_path.size() - StrLen(".scope")) == ".scope") {
     cgroup_path.remove_suffix(StrLen(".scope"));
   }
 
+  if (cgroup_path.size() < 65) return {};
   auto container_id_part = cgroup_path.substr(cgroup_path.size() - 65);
-  if (container_id_part.size() != 65) return {};
   if (container_id_part[0] != '/' && container_id_part[0] != '-') return {};
   container_id_part.remove_prefix(1);
 
