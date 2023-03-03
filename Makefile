@@ -46,7 +46,6 @@ dev-image: builder
 		--build-arg NPROCS=$(NPROCS) \
 		--cache-from quay.io/stackrox-io/collector-builder:cache \
 		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
-		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)-dev \
 		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)-dev \
 		-f "$(CURDIR)/builder/Dockerfile" \
 		$(CURDIR)/builder/
@@ -118,6 +117,8 @@ ci-all-tests: ci-benchmarks ci-integration-tests
 start-dev: dev-image teardown-dev
 	docker run -id \
 		--name collector_remote_dev \
+		-v $(CURDIR):$(CURDIR) \
+		-w $(CURDIR) \
 		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)-dev
 
 .PHONY: teardown-dev

@@ -62,6 +62,3 @@ RUN dnf -y update \
         unzip \
         which \
     && dnf clean all
-
-# Create directory to copy collector source into builder container
-RUN mkdir /src && chmod a+rwx /src
