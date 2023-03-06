@@ -130,12 +130,13 @@ TEST(getUserDriverCandidate, RelativePath) {
   std::string expected_short_name("");
   std::string expected_path("/kernel-modules");
 
-  auto candidate = getUserDriverCandidate(user_input);
+  auto candidate = getUserDriverCandidate(user_input, true);
 
   EXPECT_EQ(candidate.getName(), expected_name);
   EXPECT_EQ(candidate.getShortName(), expected_short_name);
   EXPECT_EQ(candidate.getPath(), expected_path);
   EXPECT_FALSE(candidate.isDownloadable());
+  EXPECT_TRUE(candidate.isEbpf());
 }
 
 TEST(getUserDriverCandidate, FullPath) {
@@ -144,12 +145,13 @@ TEST(getUserDriverCandidate, FullPath) {
   std::string expected_short_name("");
   std::string expected_path("/some/path");
 
-  auto candidate = getUserDriverCandidate(user_input);
+  auto candidate = getUserDriverCandidate(user_input, false);
 
   EXPECT_EQ(candidate.getName(), expected_name);
   EXPECT_EQ(candidate.getShortName(), expected_short_name);
   EXPECT_EQ(candidate.getPath(), expected_path);
   EXPECT_FALSE(candidate.isDownloadable());
+  EXPECT_FALSE(candidate.isEbpf());
 }
 
 TEST(normalizeReleaseStringTest, FedoraKernel) {

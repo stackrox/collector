@@ -63,7 +63,6 @@ extern "C" {
 #include "HostInfo.h"
 #include "LogLevel.h"
 #include "Logging.h"
-#include "SysdigService.h"
 #include "Utility.h"
 
 static const int MAX_GRPC_CONNECTION_POLLS = 30;
@@ -193,9 +192,7 @@ bool downloadKernelDriver(const CollectorArgs* args, CollectorConfig& config) {
   bool success = false;
 
   for (const auto& candidate : kernel_candidates) {
-    success = GetKernelObject(args->GRPCServer(), config.TLSConfiguration(), candidate,
-                              useEbpf ? SysdigService::kProbePath : SysdigService::kModulePath,
-                              config.CurlVerbose());
+    success = GetKernelObject(args->GRPCServer(), config.TLSConfiguration(), candidate, config.CurlVerbose());
     if (!success) {
       CLOG(ERROR) << "Error getting kernel object: " << candidate.getName();
     } else {

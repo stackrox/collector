@@ -32,7 +32,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 namespace collector {
 
-bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const DriverCandidate& kernel_module, const std::string& module_path, bool verbose);
+bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const DriverCandidate& kernel_module, bool verbose);
 
 }  // namespace collector
 #endif  // COLLECTOR_GETKERNELOBJECT_H

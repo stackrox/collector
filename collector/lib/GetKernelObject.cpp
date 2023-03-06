@@ -25,6 +25,8 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <cstring>
 
+#include "SysdigService.h"
+
 extern "C" {
 #include <sys/stat.h>
 }
@@ -138,9 +140,10 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
   return false;
 }
 
-bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const DriverCandidate& candidate, const std::string& module_path, bool verbose) {
+bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const DriverCandidate& candidate, bool verbose) {
   std::string expected_path = candidate.getPath() + "/" + candidate.getName();
   std::string expected_path_compressed = expected_path + ".gz";
+  std::string module_path = candidate.isEbpf() ? SysdigService::kProbePath : SysdigService::kModulePath;
   struct stat sb;
 
   // first check for an existing compressed kernel object in the

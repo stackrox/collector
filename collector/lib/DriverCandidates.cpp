@@ -32,7 +32,7 @@ std::optional<DriverCandidate> getUbuntuBackport(HostInfo& host, bool useEbpf) {
     if (kernel.version.find(candidate) != std::string::npos) {
       std::string backport = kernel.release + candidate;
       std::string name = driverFullName(backport, useEbpf);
-      return DriverCandidate(std::move(name), std::move(backport));
+      return DriverCandidate(std::move(name), useEbpf, std::move(backport));
     }
   }
 
@@ -59,7 +59,7 @@ std::optional<DriverCandidate> getGardenLinuxCandidate(HostInfo& host, bool useE
   std::string shortName = kernel.release + "-gl-" + match.str();
   std::string name = driverFullName(shortName, useEbpf);
 
-  return DriverCandidate(name, shortName);
+  return DriverCandidate(name, useEbpf, shortName);
 }
 
 // The kvm driver for minikube uses a custom kernel built from
@@ -78,7 +78,7 @@ std::optional<DriverCandidate> getMinikubeCandidate(HostInfo& host, bool useEbpf
 
   std::string shortName = kernel.ShortRelease() + "-minikube-" + minikube_version;
   std::string name = driverFullName(shortName, useEbpf);
-  return DriverCandidate(name, shortName);
+  return DriverCandidate(name, useEbpf, shortName);
 }
 
 // Normalizes this host's release string into something collector can use
@@ -122,10 +122,10 @@ DriverCandidate getHostCandidate(HostInfo& host, bool useEbpf) {
   std::string hostCandidate = normalizeReleaseString(host);
   std::string hostCandidateFullName = driverFullName(hostCandidate, useEbpf);
 
-  return DriverCandidate(hostCandidateFullName, hostCandidate);
+  return DriverCandidate(hostCandidateFullName, useEbpf, hostCandidate);
 }
 
-DriverCandidate getUserDriverCandidate(const char* full_name) {
+DriverCandidate getUserDriverCandidate(const char* full_name, bool useEbpf) {
   std::string_view path(full_name);
 
   // if the name starts with '/' we assume a fully qualified path was provided
@@ -134,10 +134,10 @@ DriverCandidate getUserDriverCandidate(const char* full_name) {
     std::string name(path.substr(last_separator + 1));
     path.remove_suffix(path.size() - last_separator);
 
-    return DriverCandidate(std::move(name), "", std::move(std::string(path)), false);
+    return DriverCandidate(std::move(name), useEbpf, "", std::move(std::string(path)), false);
   }
 
-  return DriverCandidate(full_name, false);
+  return DriverCandidate(full_name, useEbpf, false);
 }
 }  // namespace
 
@@ -150,7 +150,7 @@ std::vector<DriverCandidate> GetKernelCandidates(bool useEbpf) {
 
     for (const auto& candidate_name : sview.split(' ')) {
       std::string name = driverFullName(candidate_name, useEbpf);
-      candidates.emplace_back(std::move(name), std::move(candidate_name));
+      candidates.emplace_back(std::move(name), useEbpf, std::move(candidate_name));
     }
 
     return candidates;
@@ -158,7 +158,7 @@ std::vector<DriverCandidate> GetKernelCandidates(bool useEbpf) {
 
   const char* user_driver = std::getenv("COLLECTOR_DRIVER");
   if (user_driver && *user_driver) {
-    candidates.push_back(getUserDriverCandidate(user_driver));
+    candidates.push_back(getUserDriverCandidate(user_driver, useEbpf));
   }
 
   HostInfo& host = HostInfo::Instance();
