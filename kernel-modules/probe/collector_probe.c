@@ -121,7 +121,7 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx);
 // this if statement relies on short circuiting to simplify the definition
 // of the tracepoints. i.e. RHEL_RELEASE_VERSION will not be defined unless
 // RHEL_RELEASE_CODE is defined.
-#if PPM_RHEL_RELEASE_CODE != 0 || PPM_RHEL_RELEASE_CODE >= PPM_RHEL_RELEASE_VERSION(8, 0)
+#if !defined(RHEL_RELEASE_CODE) || RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(8, 0)
 
 COLLECTOR_PROBE(chdir, __NR_chdir);
 COLLECTOR_PROBE(accept, __NR_accept);
