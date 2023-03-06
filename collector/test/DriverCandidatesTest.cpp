@@ -124,6 +124,34 @@ TEST(getMinikubeCandidateTest, NoVersion) {
   EXPECT_FALSE(ebpf_candidate);
 }
 
+TEST(getUserDriverCandidate, RelativePath) {
+  const char* user_input = "collector-mydriver.ko";
+  std::string expected_name(user_input);
+  std::string expected_short_name("");
+  std::string expected_path("/kernel-modules");
+
+  auto candidate = getUserDriverCandidate(user_input);
+
+  EXPECT_EQ(candidate.getName(), expected_name);
+  EXPECT_EQ(candidate.getShortName(), expected_short_name);
+  EXPECT_EQ(candidate.getPath(), expected_path);
+  EXPECT_FALSE(candidate.isDownloadable());
+}
+
+TEST(getUserDriverCandidate, FullPath) {
+  const char* user_input = "/some/path/collector-mydriver.ko";
+  std::string expected_name("collector-mydriver.ko");
+  std::string expected_short_name("");
+  std::string expected_path("/some/path");
+
+  auto candidate = getUserDriverCandidate(user_input);
+
+  EXPECT_EQ(candidate.getName(), expected_name);
+  EXPECT_EQ(candidate.getShortName(), expected_short_name);
+  EXPECT_EQ(candidate.getPath(), expected_path);
+  EXPECT_FALSE(candidate.isDownloadable());
+}
+
 TEST(normalizeReleaseStringTest, FedoraKernel) {
   MockHostInfoLocal host;
   std::string release("5.14.18-300.fc35.x86_64");

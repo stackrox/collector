@@ -1,6 +1,7 @@
 #include "DriverCandidates.h"
 
 #include <optional>
+#include <string_view>
 
 #include "HostInfo.h"
 #include "StringView.h"
@@ -124,6 +125,20 @@ DriverCandidate getHostCandidate(HostInfo& host, bool useEbpf) {
   return DriverCandidate(hostCandidateFullName, hostCandidate);
 }
 
+DriverCandidate getUserDriverCandidate(const char* full_name) {
+  std::string_view path(full_name);
+
+  // if the name starts with '/' we assume a fully qualified path was provided
+  if (path.rfind("/", 0) == 0) {
+    std::string_view::size_type last_separator = path.rfind('/');
+    std::string name(path.substr(last_separator + 1));
+    path.remove_suffix(path.size() - last_separator);
+
+    return DriverCandidate(std::move(name), "", std::move(std::string(path)), false);
+  }
+
+  return DriverCandidate(full_name, false);
+}
 }  // namespace
 
 std::vector<DriverCandidate> GetKernelCandidates(bool useEbpf) {
@@ -139,6 +154,11 @@ std::vector<DriverCandidate> GetKernelCandidates(bool useEbpf) {
     }
 
     return candidates;
+  }
+
+  const char* user_driver = std::getenv("COLLECTOR_DRIVER");
+  if (user_driver && *user_driver) {
+    candidates.push_back(getUserDriverCandidate(user_driver));
   }
 
   HostInfo& host = HostInfo::Instance();

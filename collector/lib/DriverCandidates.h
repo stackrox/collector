@@ -32,6 +32,7 @@ namespace collector {
 class DriverCandidate {
  public:
   DriverCandidate(const std::string& name, const std::string& shortName = "", const std::string& path = "/kernel-modules", bool downloadable = true) : name_(name), shortName_(shortName), path_(path), downloadable_(downloadable) {}
+  DriverCandidate(const std::string& name, bool downloadable = true) : DriverCandidate{name, "", "/kernel-modules", downloadable} {}
 
   inline const std::string& getPath() const { return path_; }
 
