@@ -6,7 +6,7 @@ end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[collector/{*.cpp,lib/*.cpp,lib/*.h}]
+[collector/{*.cpp,lib/*.cpp,lib/*.h,test/*.cpp}]
 indent_style = space
 indent_size = 2
 
