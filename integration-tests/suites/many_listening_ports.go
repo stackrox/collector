@@ -37,7 +37,7 @@ func (s *ManyProcessesListeningOnPortsTestSuite) SetupSuite() {
 	containerID, err := s.launchContainer("socat", processImage, "sleep", "10000")
 	s.Require().NoError(err)
 
-	_, err = s.execContainer("socat", []string{"/bin/sh", "-c", "for port in $(seq " + strconv.Itoa(s.NumPorts) + "); do socat TCP-LISTEN:${port},fork STDOUT & done"})
+	_, err = s.execContainerShellScript("socat", "for port in $(seq "+strconv.Itoa(s.NumPorts)+"); do socat TCP-LISTEN:${port},fork STDOUT & done")
 
 	s.Require().NoError(err)
 	s.serverContainer = common.ContainerShortID(containerID)
