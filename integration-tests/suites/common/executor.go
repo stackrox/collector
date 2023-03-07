@@ -14,10 +14,8 @@ var (
 	debug = false
 
 	RuntimeCommand = ReadEnvVarWithDefault("RUNTIME_COMMAND", "docker")
-	// RuntimeSocket  = ReadEnvVarWithDefault("RUNTIME_SOCKET", "/run/user/1000/podman/podman.sock")
-	RuntimeSocket = ReadEnvVarWithDefault("RUNTIME_SOCKET", "/var/run/docker.sock")
-
-	RuntimeAsRoot = ReadBoolEnvVar("RUNTIME_AS_ROOT")
+	RuntimeSocket  = ReadEnvVarWithDefault("RUNTIME_SOCKET", "/var/run/docker.sock")
+	RuntimeAsRoot  = ReadBoolEnvVar("RUNTIME_AS_ROOT")
 )
 
 type Executor interface {
