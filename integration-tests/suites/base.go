@@ -186,6 +186,11 @@ func (s *IntegrationTestSuiteBase) execContainer(containerName string, command [
 	return s.executor.Exec(cmd...)
 }
 
+func (s *IntegrationTestSuiteBase) execContainerShellScript(containerName string, script string) (string, error) {
+	cmd := []string{"docker", "exec", "-i", containerName, "/bin/sh"}
+	return s.executor.ExecWithStdin(script, cmd...)
+}
+
 func (s *IntegrationTestSuiteBase) cleanupContainer(containers []string) {
 	for _, container := range containers {
 		s.executor.Exec(common.RuntimeCommand, "kill", container)
