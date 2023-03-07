@@ -10,6 +10,20 @@
     gcp_source_image: "projects/{{ vm_project }}/global/images/{{ vm_image }}"
   when: vm_image is defined
 
+#
+# Set the metadata for those platforms that require a custom ignition
+# configuration.
+#
+# If the platform supports ignition but does not require a custom config
+# (fedora-coreos, flatcar) the user-data field can't be set to an empty dictionary,
+# and will hang the VM. In this case, no metadata is set.
+#
+- name: Set metadata
+  set_fact:
+    gcp_meta_data:
+      user-data: "{{ vm_ignition | to_json }}"
+  when: vm_ignition != {}
+
 - set_fact:
     gcp_extra_labels:
       platform: "{{ vm_platform }}"
@@ -39,8 +53,7 @@
           - name: External NAT
             type: ONE_TO_ONE_NAT
     labels: "{{ gcp_default_labels | combine(gcp_extra_labels) }}"
-    metadata:
-      user-data: "{{ vm_ignition | to_json }}"
+    metadata: "{{ gcp_meta_data | default({}) }}"
 
   # This looks like a lot, and its mostly because ansible support
   # for "breaking" from a loop is not all that great at the moment.
