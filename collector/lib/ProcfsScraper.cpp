@@ -27,6 +27,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <cinttypes>
 #include <cstring>
 #include <fcntl.h>
+#include <string_view>
 
 #include <netinet/tcp.h>
 
@@ -36,7 +37,6 @@ You should have received a copy of the GNU General Public License along with thi
 #include "Hash.h"
 #include "Logging.h"
 #include "ProcfsScraper_internal.h"
-#include "StringView.h"
 #include "Utility.h"
 
 namespace collector {
@@ -46,13 +46,13 @@ namespace {
 // String parsing helper functions
 
 // rep_find applies find n times, always advancing past the found character in each subsequent application.
-StringView::size_type rep_find(int n, StringView str, char c) {
-  if (n <= 0) return StringView::npos;
+std::string_view::size_type rep_find(int n, std::string_view str, char c) {
+  if (n <= 0) return std::string_view::npos;
 
-  StringView::size_type pos = 0;
+  std::string_view::size_type pos = 0;
   while (--n > 0) {
     pos = str.find(c, pos);
-    if (pos == StringView::npos) return StringView::npos;
+    if (pos == std::string_view::npos) return std::string_view::npos;
     pos++;
   }
   return str.find(c, pos);
@@ -148,7 +148,7 @@ bool GetSocketINodes(int dirfd, uint64_t pid, UnorderedSet<SocketInfo>* sock_ino
 }
 
 // IsContainerID returns whether the given string view represents a container ID.
-bool IsContainerID(StringView str) {
+bool IsContainerID(std::string_view str) {
   if (str.size() != 64) return false;
   for (auto c : str) {
     if (!std::isdigit(c) && (c < 'a' || c > 'f')) return false;
@@ -170,11 +170,11 @@ bool GetContainerID(int dirfd, std::string* container_id) {
     if (!line_len) continue;
     if (linebuf[line_len - 1] == '\n') line_len--;
 
-    StringView line(linebuf, line_len);
+    std::string_view line(linebuf, line_len);
     auto short_container_id = ExtractContainerID(line);
-    if (!short_container_id) continue;
+    if (short_container_id.empty()) continue;
 
-    *container_id = short_container_id.str();
+    *container_id = short_container_id;
     return true;
   }
 
@@ -553,17 +553,17 @@ bool ReadProcessCmdline(const char* process_id, int dirfd, std::string& exe, std
 
 }  // namespace
 
-StringView ExtractContainerID(StringView cgroup_line) {
+std::string_view ExtractContainerID(std::string_view cgroup_line) {
   auto start = rep_find(2, cgroup_line, ':');
-  if (start == StringView::npos) return {};
-  StringView cgroup_path = cgroup_line.substr(start + 1);
+  if (start == std::string_view::npos || cgroup_line.size() - start - 1 < 65) return {};
+  std::string_view cgroup_path = cgroup_line.substr(start + 1);
 
   if (cgroup_path.substr(cgroup_path.size() - StrLen(".scope")) == ".scope") {
     cgroup_path.remove_suffix(StrLen(".scope"));
   }
 
+  if (cgroup_path.size() < 65) return {};
   auto container_id_part = cgroup_path.substr(cgroup_path.size() - 65);
-  if (container_id_part.size() != 65) return {};
   if (container_id_part[0] != '/' && container_id_part[0] != '-') return {};
   container_id_part.remove_prefix(1);
 

@@ -21,6 +21,8 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
+#include <string_view>
+
 #include "ProcfsScraper_internal.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -31,7 +33,7 @@ namespace {
 
 TEST(ConnScraperTest, TestExtractContainerID) {
   struct TestCase {
-    StringView input, expected_output;
+    std::string_view input, expected_output;
   };
 
   TestCase cases[] = {
