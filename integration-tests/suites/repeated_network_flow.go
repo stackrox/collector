@@ -51,7 +51,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	err = s.collector.Launch()
 	s.Require().NoError(err)
 
-	scheduled_curls_image := common.QaImage("quay.io/rhacs-eng/qa", "collector-schedule-curls")
+	scheduled_curls_image := common.QaImage("pstauffer/curl", "latest")
 
 	images := []string{
 		"nginx:1.14-alpine",
@@ -88,7 +88,28 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	numIter := strconv.Itoa(s.NumIter)
 	sleepBetweenCurlTime := strconv.Itoa(s.SleepBetweenCurlTime)
 	sleepBetweenIterations := strconv.Itoa(s.SleepBetweenIterations)
-	_, err = s.execContainer("nginx-curl", []string{"/usr/bin/schedule-curls.sh", numMetaIter, numIter, sleepBetweenCurlTime, sleepBetweenIterations, serverAddress})
+	_, err = s.execContainerShellScript("nginx-curl", `
+		#!/usr/bin/env sh
+
+		num_meta_iter=$1
+		num_iter=$2
+		sleep_between_curl_time=$3
+		sleep_between_iterations=$4
+		url=$5
+
+		i=0
+		j=0
+
+		while [ "$i" -lt "$num_meta_iter" ]; do
+		    while [ "$j" -lt "$num_iter" ]; do
+		        curl "$url"
+		        sleep "$sleep_between_curl_time"
+		        j=$((j + 1))
+		    done
+		    sleep "$sleep_between_iterations"
+		    i=$((i + 1))
+		done`,
+		numMetaIter, numIter, sleepBetweenCurlTime, sleepBetweenIterations, serverAddress)
 
 	s.ClientIP, err = s.getIPAddress("nginx-curl")
 	s.Require().NoError(err)
