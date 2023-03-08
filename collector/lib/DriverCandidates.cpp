@@ -4,8 +4,8 @@
 #include <string_view>
 
 #include "HostInfo.h"
-#include "StringView.h"
 #include "SysdigService.h"
+#include "Utility.h"
 
 namespace collector {
 
@@ -146,9 +146,9 @@ std::vector<DriverCandidate> GetKernelCandidates(bool useEbpf) {
 
   const char* kernel_candidates = std::getenv("KERNEL_CANDIDATES");
   if (kernel_candidates && *kernel_candidates) {
-    StringView sview(kernel_candidates);
+    std::string_view sview(kernel_candidates);
 
-    for (const auto& candidate_name : sview.split(' ')) {
+    for (const auto& candidate_name : SplitStringView(sview)) {
       std::string name = driverFullName(candidate_name, useEbpf);
       candidates.emplace_back(std::move(name), useEbpf, std::move(candidate_name));
     }

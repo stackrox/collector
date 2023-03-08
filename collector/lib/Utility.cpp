@@ -174,7 +174,7 @@ std::string GetHostname() {
   return info.GetHostname();
 }
 
-std::vector<std::string> SplitStringView(const std::string_view sv, char delim = ' ') {
+std::vector<std::string> SplitStringView(const std::string_view sv, char delim) {
   std::vector<std::string> parts;
   std::string_view::size_type offset = 0;
 
