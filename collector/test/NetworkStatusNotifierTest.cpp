@@ -253,7 +253,7 @@ TEST(NetworkStatusNotifier, SimpleStartStop) {
 
   net_status_notifier->Start();
 
-  EXPECT_TRUE(sem.try_acquire_for(std::chrono::seconds(5)));
+  EXPECT_TRUE(sem.try_acquire_for(std::chrono::seconds(15)));
 
   net_status_notifier->Stop();
 }
@@ -356,7 +356,7 @@ TEST(NetworkStatusNotifier, UpdateIPnoAfterglow) {
   net_status_notifier->Start();
 
   // Wait for the first scrape to occur
-  EXPECT_TRUE(sem.try_acquire_for(std::chrono::seconds(5)));
+  EXPECT_TRUE(sem.try_acquire_for(std::chrono::seconds(15)));
 
   net_status_notifier->Stop();
 }

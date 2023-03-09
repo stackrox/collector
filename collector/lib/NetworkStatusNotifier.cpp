@@ -203,7 +203,7 @@ bool NetworkStatusNotifier::UpdateAllConnsAndEndpoints() {
      * and update the originator process information accordingly.
      * The race-condition involved (and this hack) should go away once
      * we move to an event-based discovery of endpoints. */
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::this_thread::sleep_for(std::chrono::seconds(5));
   }
 
   WITH_TIMER(CollectorStats::net_scrape_update) {
