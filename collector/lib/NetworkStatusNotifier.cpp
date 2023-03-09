@@ -197,6 +197,15 @@ bool NetworkStatusNotifier::UpdateAllConnsAndEndpoints() {
       return false;
     }
   }
+
+  if (scrape_listen_endpoints_) {
+    /* Allow some time to the falco event loop to process pending exec calls
+     * and update the originator process information accordingly.
+     * The race-condition involved (and this hack) should go away once
+     * we move to an event-based discovery of endpoints. */
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+  }
+
   WITH_TIMER(CollectorStats::net_scrape_update) {
     conn_tracker_->Update(all_conns, all_listen_endpoints, ts);
   }
