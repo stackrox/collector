@@ -141,9 +141,9 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
 }
 
 bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const DriverCandidate& candidate, bool verbose) {
-  std::string expected_path = candidate.getPath() + "/" + candidate.getName();
+  std::string expected_path = candidate.GetPath() + "/" + candidate.GetName();
   std::string expected_path_compressed = expected_path + ".gz";
-  std::string module_path = candidate.isEbpf() ? SysdigService::kProbePath : SysdigService::kModulePath;
+  std::string module_path = candidate.IsEbpf() ? SysdigService::kProbePath : SysdigService::kModulePath;
   struct stat sb;
 
   // first check for an existing compressed kernel object in the
@@ -179,11 +179,11 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
               std::ostreambuf_iterator<char>(output_file));
   }
   // Otherwise there is no module in local storage, so we should download it.
-  else if (candidate.isDownloadable()) {
-    CLOG(INFO) << "Attempting to download " << candidate.getName();
+  else if (candidate.IsDownloadable()) {
+    CLOG(INFO) << "Attempting to download " << candidate.GetName();
     std::string downloadPath = module_path + ".gz";
-    if (!DownloadKernelObject(hostname, tls_config, candidate.getName(), downloadPath, verbose)) {
-      CLOG(WARNING) << "Unable to download kernel object " << candidate.getName() << " to " << downloadPath;
+    if (!DownloadKernelObject(hostname, tls_config, candidate.GetName(), downloadPath, verbose)) {
+      CLOG(WARNING) << "Unable to download kernel object " << candidate.GetName() << " to " << downloadPath;
       return false;
     }
 
@@ -196,7 +196,7 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
     }
     CLOG(INFO) << "Successfully downloaded and decompressed " << module_path;
   } else {
-    CLOG(WARNING) << "Local storage does not contain " << candidate.getName();
+    CLOG(WARNING) << "Local storage does not contain " << candidate.GetName();
     return false;
   }
 

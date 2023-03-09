@@ -40,15 +40,15 @@ class DriverCandidate {
   }
   DriverCandidate(const std::string& name, bool useEbpf, bool downloadable = true) : DriverCandidate{name, useEbpf, "", "/kernel-modules", downloadable} {}
 
-  inline const std::string& getPath() const { return path_; }
+  inline const std::string& GetPath() const { return path_; }
 
-  inline const std::string& getName() const { return name_; }
+  inline const std::string& GetName() const { return name_; }
 
-  inline const std::string& getShortName() const { return shortName_; }
+  inline const std::string& GetShortName() const { return shortName_; }
 
-  inline bool isDownloadable() const { return downloadable_; }
+  inline bool IsDownloadable() const { return downloadable_; }
 
-  inline bool isEbpf() const { return collection_method_ == EBPF; }
+  inline bool IsEbpf() const { return collection_method_ == EBPF; }
 
  private:
   enum collectionMethod {

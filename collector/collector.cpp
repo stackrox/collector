@@ -184,8 +184,8 @@ bool downloadKernelDriver(const CollectorArgs* args, CollectorConfig& config) {
   const char* type = useEbpf ? "eBPF probe" : "kernel module";
   CLOG(INFO) << "Attempting to find " << type << " - Candidate kernel versions: ";
   for (const auto& candidate : kernel_candidates) {
-    if (!candidate.getShortName().empty()) {
-      CLOG(INFO) << candidate.getShortName();
+    if (!candidate.GetShortName().empty()) {
+      CLOG(INFO) << candidate.GetShortName();
     }
   }
 
@@ -194,7 +194,7 @@ bool downloadKernelDriver(const CollectorArgs* args, CollectorConfig& config) {
   for (const auto& candidate : kernel_candidates) {
     success = GetKernelObject(args->GRPCServer(), config.TLSConfiguration(), candidate, config.CurlVerbose());
     if (!success) {
-      CLOG(ERROR) << "Error getting kernel object: " << candidate.getName();
+      CLOG(ERROR) << "Error getting kernel object: " << candidate.GetName();
     } else {
       break;
     }

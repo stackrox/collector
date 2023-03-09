@@ -58,7 +58,7 @@ TEST(getGardenLinuxCandidateTest, Garden576_1) {
   auto candidate = getGardenLinuxCandidate(host, true);
 
   EXPECT_TRUE(candidate);
-  EXPECT_EQ(candidate->getShortName(), expected_kernel);
+  EXPECT_EQ(candidate->GetShortName(), expected_kernel);
 }
 
 TEST(getGardenLinuxCandidateTest, Garden318) {
@@ -73,7 +73,7 @@ TEST(getGardenLinuxCandidateTest, Garden318) {
   auto candidate = getGardenLinuxCandidate(host, true);
 
   EXPECT_TRUE(candidate);
-  EXPECT_EQ(candidate->getShortName(), expected_kernel);
+  EXPECT_EQ(candidate->GetShortName(), expected_kernel);
 }
 
 TEST(getMinikubeCandidateTest, v1_27_1) {
@@ -90,7 +90,7 @@ TEST(getMinikubeCandidateTest, v1_27_1) {
   auto candidate = getMinikubeCandidate(host, true);
 
   EXPECT_TRUE(candidate);
-  EXPECT_EQ(candidate->getShortName(), expected_kernel);
+  EXPECT_EQ(candidate->GetShortName(), expected_kernel);
 }
 
 TEST(getMinikubeCandidateTest, v1_24_0) {
@@ -107,7 +107,7 @@ TEST(getMinikubeCandidateTest, v1_24_0) {
   auto candidate = getMinikubeCandidate(host, true);
 
   EXPECT_TRUE(candidate);
-  EXPECT_EQ(candidate->getShortName(), expected_kernel);
+  EXPECT_EQ(candidate->GetShortName(), expected_kernel);
 }
 
 TEST(getMinikubeCandidateTest, NoVersion) {
@@ -132,11 +132,11 @@ TEST(getUserDriverCandidate, RelativePath) {
 
   auto candidate = getUserDriverCandidate(user_input, true);
 
-  EXPECT_EQ(candidate.getName(), expected_name);
-  EXPECT_EQ(candidate.getShortName(), expected_short_name);
-  EXPECT_EQ(candidate.getPath(), expected_path);
-  EXPECT_FALSE(candidate.isDownloadable());
-  EXPECT_TRUE(candidate.isEbpf());
+  EXPECT_EQ(candidate.GetName(), expected_name);
+  EXPECT_EQ(candidate.GetShortName(), expected_short_name);
+  EXPECT_EQ(candidate.GetPath(), expected_path);
+  EXPECT_FALSE(candidate.IsDownloadable());
+  EXPECT_TRUE(candidate.IsEbpf());
 }
 
 TEST(getUserDriverCandidate, FullPath) {
@@ -147,11 +147,11 @@ TEST(getUserDriverCandidate, FullPath) {
 
   auto candidate = getUserDriverCandidate(user_input, false);
 
-  EXPECT_EQ(candidate.getName(), expected_name);
-  EXPECT_EQ(candidate.getShortName(), expected_short_name);
-  EXPECT_EQ(candidate.getPath(), expected_path);
-  EXPECT_FALSE(candidate.isDownloadable());
-  EXPECT_FALSE(candidate.isEbpf());
+  EXPECT_EQ(candidate.GetName(), expected_name);
+  EXPECT_EQ(candidate.GetShortName(), expected_short_name);
+  EXPECT_EQ(candidate.GetPath(), expected_path);
+  EXPECT_FALSE(candidate.IsDownloadable());
+  EXPECT_FALSE(candidate.IsEbpf());
 }
 
 TEST(normalizeReleaseStringTest, FedoraKernel) {
