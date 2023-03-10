@@ -76,7 +76,7 @@ bool SysdigService::InitKernel(const CollectorConfig& config) {
   inspector_.reset(new_inspector());
   inspector_->set_snaplen(config.SnapLen());
 
-  if (config.EnableSysdigLog()) {
+  if (config.EnableExtraLogging()) {
     inspector_->set_log_stderr();
   }
 

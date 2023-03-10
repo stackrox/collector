@@ -101,7 +101,7 @@ end
   std::vector<std::string> Syscalls() const;
   int64_t AfterglowPeriod() const;
   std::string LogLevel() const;
-  bool EnableSysdigLog() const { return enable_sysdig_log_; }
+  bool EnableExtraLogging() const { return enable_extra_logging_; }
   bool DisableNetworkFlows() const { return disable_network_flows_; }
   const UnorderedSet<L4ProtoPortPair>& IgnoredL4ProtoPortPairs() const { return ignored_l4proto_port_pairs_; }
   bool CurlVerbose() const { return curl_verbose_; }
@@ -129,7 +129,7 @@ end
   bool curl_verbose_ = false;
   bool force_kernel_modules_ = false;
 
-  bool enable_sysdig_log_ = false;
+  bool enable_extra_logging_ = false;
   HostConfig host_config_;
   int64_t afterglow_period_micros_ = 300000000;  // 5 minutes in microseconds
   bool enable_afterglow_ = true;

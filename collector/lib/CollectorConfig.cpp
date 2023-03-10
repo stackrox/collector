@@ -170,12 +170,12 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
     }
   }
 
-  if (const char* enable_sysdig_log = std::getenv("COLLECTOR_SD_LOG")) {
-    std::string val(enable_sysdig_log);
+  if (const char* enable_extra_logging = std::getenv("COLLECTOR_EXTRA_LOGGING")) {
+    std::string val(enable_extra_logging);
     std::transform(val.begin(), val.end(), val.begin(), [](char c) {
       return std::tolower(c);
     });
-    enable_sysdig_log_ = (val == "true");
+    enable_extra_logging_ = (val == "true");
   }
 
   if (disable_network_flows) {
