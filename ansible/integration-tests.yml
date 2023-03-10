@@ -23,9 +23,7 @@
 
 - name: Provision Integration Test VMs
   hosts: "job_id_{{ job_id }}"
-  vars_files:
-    - group_vars/all.yml
-  roles: 
+  roles:
     - provision-vm
   gather_facts: no
   strategy: free
@@ -39,8 +37,6 @@
   # group_vars/platform_*.yml for the relevant platform, e.g.
   # flatcar where we need to use a custom python interpreter.
   hosts: "platform_*:&job_id_{{ job_id }}"
-  vars_files:
-    - group_vars/all.yml
   strategy: free
   roles:
     - run-test-target
@@ -51,8 +47,6 @@
 
 - name: Teardown Integration Test VMs
   hosts: "job_id_{{ job_id }}"
-  vars_files:
-    - group_vars/all.yml
   strategy: free
   roles:
     - destroy-vm

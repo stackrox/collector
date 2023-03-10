@@ -13,8 +13,6 @@
 
 - name: Provision VMs
   hosts: "job_id_{{ job_id }}"
-  vars_files:
-    - group_vars/all.yml
   roles:
     - provision-vm
   gather_facts: no
@@ -27,8 +25,6 @@
 - name: Teardown VMs
   hosts: "job_id_{{ job_id }}"
   gather_facts: no
-  vars_files:
-    - group_vars/all.yml
   roles:
     - destroy-vm
   tags:

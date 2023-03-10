@@ -4,6 +4,8 @@ else
 	CONTEXT=dev
 endif
 
+JOB_ID ?= $(USER)
+
 .PHONY: list-inventory
 list-inventory:
 	ansible-inventory -i $(CONTEXT) --list
@@ -12,18 +14,21 @@ list-inventory:
 create-vms:
 	ansible-playbook -i $(CONTEXT) \
 		--tags setup,provision \
+		-e job_id="$(JOB_ID)" \
 		vm-lifecycle.yml
 
 .PHONY: provision-vms
 provision-vms:
 	ansible-playbook -i $(CONTEXT) \
 		--tags provision \
+		-e job_id="$(JOB_ID)" \
 		vm-lifecycle.yml
 
 .PHONY: destroy-vms
 destroy-vms:
 	ansible-playbook -i $(CONTEXT) \
 		--tags teardown \
+		-e job_id="$(JOB_ID)" \
 		vm-lifecycle.yml
 
 .PHONY: image-upload
@@ -34,6 +39,7 @@ image-upload:
 integration-tests: secrets.yml
 	ansible-playbook \
 		-i $(CONTEXT) \
+		-e job_id="$(JOB_ID)" \
 		-e @secrets.yml \
 		--tags run-tests \
 		integration-tests.yml
@@ -41,6 +47,7 @@ integration-tests: secrets.yml
 .PHONY: benchmarks
 benchmarks: secrets.yml
 	ansible-playbook -i $(CONTEXT) \
+		-e job_id="$(JOB_ID)" \
 		-e @secrets.yml \
 		--tags run-benchmarks \
 		benchmarks.yml
@@ -48,12 +55,14 @@ benchmarks: secrets.yml
 .PHONY: create-benchmark-vms
 create-benchmark-vms:
 	ansible-playbook -i $(CONTEXT) \
+		-e job_id="$(JOB_ID)" \
 		--tags setup,provision \
 		benchmarks.yml
 
 .PHONY: create-ci-vms
 create-ci-vms:
 	ansible-playbook -i $(CONTEXT) \
+		-e job_id="$(JOB_ID)" \
 		--tags setup,provision \
 		integration-tests.yml
 

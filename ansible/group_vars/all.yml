@@ -5,10 +5,15 @@ gcp_ssh_key_file: "{{ lookup('env', 'GCP_SSH_KEY_FILE', default='~/.ssh/google_c
 ansible_ssh_private_key_file: "{{ gcp_ssh_key_file }}"
 
 current_user: "{{ lookup('env', 'USER') }}"
-job_id: "{{ lookup('env', 'JOB_ID', default=current_user) }}"
 test_platform: "{{ lookup('env', 'VM_TYPE', default='rhel') }}"
 collector_root: "{{ playbook_dir }}/.."
 collector_repo: "quay.io/stackrox-io"
+
+# These control the container runtime used on the VMs.
+# They can be overridden in platform-specific group_vars files
+runtime_command: docker
+runtime_as_root: false
+runtime_socket: /var/run/docker.sock
 
 virtual_machines:
   rhel:
@@ -22,6 +27,20 @@ virtual_machines:
     families:
       - rhel-8-4-sap-ha
       - rhel-8-6-sap-ha
+
+  rhcos:
+    project: rhcos-cloud
+    username: core
+    images:
+      - rhcos-412-86-202302211547-0-gcp-x86-64
+    ignition:
+      ignition:
+        version: 3.2.0
+      passwd:
+        users:
+          - name: core
+            sshAuthorizedKeys:
+              - "{{ lookup('file', gcp_ssh_key_file + '.pub') }}"
 
   cos:
     project: cos-cloud

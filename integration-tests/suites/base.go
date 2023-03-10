@@ -137,7 +137,7 @@ func (s *IntegrationTestSuiteBase) GetLogLines(containerName string) []string {
 }
 
 func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, error) {
-	cmd := []string{"docker", "run", "-d", "--name"}
+	cmd := []string{common.RuntimeCommand, "run", "-d", "--name"}
 	cmd = append(cmd, args...)
 
 	output, err := common.Retry(func() (string, error) {
@@ -150,7 +150,7 @@ func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, erro
 
 func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, containerID string, tickSeconds time.Duration) (bool, error) {
 	cmd := []string{
-		"docker", "ps", "-qa",
+		common.RuntimeCommand, "ps", "-qa",
 		"--filter", "id=" + containerID,
 		"--filter", "status=exited",
 	}
@@ -181,42 +181,42 @@ func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, contain
 }
 
 func (s *IntegrationTestSuiteBase) execContainer(containerName string, command []string) (string, error) {
-	cmd := []string{"docker", "exec", containerName}
+	cmd := []string{common.RuntimeCommand, "exec", containerName}
 	cmd = append(cmd, command...)
 	return s.executor.Exec(cmd...)
 }
 
 func (s *IntegrationTestSuiteBase) cleanupContainer(containers []string) {
 	for _, container := range containers {
-		s.executor.Exec("docker", "kill", container)
-		s.executor.Exec("docker", "rm", container)
+		s.executor.Exec(common.RuntimeCommand, "kill", container)
+		s.executor.Exec(common.RuntimeCommand, "rm", container)
 	}
 }
 
 func (s *IntegrationTestSuiteBase) stopContainers(containers ...string) {
 	timeout := common.ReadEnvVarWithDefault("STOP_TIMEOUT", defaultStopTimeoutSeconds)
 	for _, container := range containers {
-		s.executor.Exec("docker", "stop", "-t", timeout, container)
+		s.executor.Exec(common.RuntimeCommand, "stop", "-t", timeout, container)
 	}
 }
 
 func (s *IntegrationTestSuiteBase) removeContainers(containers ...string) {
 	for _, container := range containers {
-		s.executor.Exec("docker", "rm", container)
+		s.executor.Exec(common.RuntimeCommand, "rm", container)
 	}
 }
 
 func (s *IntegrationTestSuiteBase) containerLogs(containerName string) (string, error) {
-	return s.executor.Exec("docker", "logs", containerName)
+	return s.executor.Exec(common.RuntimeCommand, "logs", containerName)
 }
 
 func (s *IntegrationTestSuiteBase) getIPAddress(containerName string) (string, error) {
-	stdoutStderr, err := s.executor.Exec("docker", "inspect", "--format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'", containerName)
+	stdoutStderr, err := s.executor.Exec(common.RuntimeCommand, "inspect", "--format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'", containerName)
 	return strings.Replace(string(stdoutStderr), "'", "", -1), err
 }
 
 func (s *IntegrationTestSuiteBase) getPort(containerName string) (string, error) {
-	stdoutStderr, err := s.executor.Exec("docker", "inspect", "--format='{{json .NetworkSettings.Ports}}'", containerName)
+	stdoutStderr, err := s.executor.Exec(common.RuntimeCommand, "inspect", "--format='{{json .NetworkSettings.Ports}}'", containerName)
 	if err != nil {
 		return "", err
 	}
@@ -406,7 +406,7 @@ func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
 func (s *IntegrationTestSuiteBase) StartContainerStats() {
 	name := "container-stats"
 	image := common.QaImage("quay.io/rhacs-eng/collector-performance", "stats")
-	args := []string{name, "-v", "/var/run/docker.sock:/var/run/docker.sock", image}
+	args := []string{name, "-v", common.RuntimeSocket + ":/var/run/docker.sock", image}
 
 	err := s.executor.PullImage(image)
 	s.Require().NoError(err)

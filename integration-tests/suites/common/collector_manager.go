@@ -49,7 +49,8 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 		env["MODULE_DOWNLOAD_BASE_URL"] = "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"
 	}
 	mounts := map[string]string{
-		"/host/var/run/docker.sock:ro": "/var/run/docker.sock",
+		"/host/var/run/docker.sock:ro": RuntimeSocket,
+		"/run/podman/podman.sock:ro":   RuntimeSocket,
 		"/host/proc:ro":                "/proc",
 		"/host/etc:ro":                 "/etc/",
 		"/host/usr/lib:ro":             "/usr/lib/",
@@ -155,14 +156,14 @@ func (c *CollectorManager) BoltDB() (db *bolt.DB, err error) {
 
 // These two methods might be useful in the future. I used them for debugging
 func (c *CollectorManager) getContainers() (string, error) {
-	cmd := []string{"docker", "container", "ps"}
+	cmd := []string{RuntimeCommand, "container", "ps"}
 	containers, err := c.executor.Exec(cmd...)
 
 	return containers, err
 }
 
 func (c *CollectorManager) getAllContainers() (string, error) {
-	cmd := []string{"docker", "container", "ps", "-a"}
+	cmd := []string{RuntimeCommand, "container", "ps", "-a"}
 	containers, err := c.executor.Exec(cmd...)
 
 	return containers, err
@@ -174,11 +175,12 @@ func (c *CollectorManager) launchGRPCServer() error {
 	if selinuxErr != nil {
 		return selinuxErr
 	}
-	cmd := []string{"docker", "run",
+	cmd := []string{RuntimeCommand, "run",
 		"-d",
 		"--rm",
 		"--name", "grpc-server",
 		"--network=host",
+		"--privileged",
 		"-v", "/tmp:/tmp:rw",
 		"--user", user.Uid + ":" + user.Gid,
 		c.GRPCServerImage,
@@ -193,7 +195,7 @@ func (c *CollectorManager) launchCollector() error {
 		return coreDumpErr
 	}
 
-	cmd := []string{"docker", "run",
+	cmd := []string{RuntimeCommand, "run",
 		"--name", "collector",
 		"--privileged",
 		"--network=host"}
@@ -226,9 +228,9 @@ func (c *CollectorManager) launchCollector() error {
 }
 
 func (c *CollectorManager) captureLogs(containerName string) (string, error) {
-	logs, err := c.executor.Exec("docker", "logs", containerName)
+	logs, err := c.executor.Exec(RuntimeCommand, "logs", containerName)
 	if err != nil {
-		fmt.Printf("docker logs error (%v) for container %s\n", err, containerName)
+		fmt.Printf(RuntimeCommand+" logs error (%v) for container %s\n", err, containerName)
 		return "", err
 	}
 	logDirectory := filepath.Join(".", "container-logs", c.VmConfig, c.Env["COLLECTION_METHOD"])
@@ -242,8 +244,8 @@ func (c *CollectorManager) captureLogs(containerName string) (string, error) {
 }
 
 func (c *CollectorManager) killContainer(name string) error {
-	_, err1 := c.executor.Exec("docker", "kill", name)
-	_, err2 := c.executor.Exec("docker", "rm", "-fv", name)
+	_, err1 := c.executor.Exec(RuntimeCommand, "kill", name)
+	_, err2 := c.executor.Exec(RuntimeCommand, "rm", "-fv", name)
 
 	var result error
 	if err1 != nil {
@@ -257,7 +259,7 @@ func (c *CollectorManager) killContainer(name string) error {
 }
 
 func (c *CollectorManager) stopContainer(name string) error {
-	_, err := c.executor.Exec("docker", "stop", "--time", "100", name)
+	_, err := c.executor.Exec(RuntimeCommand, "stop", "--time", "100", name)
 	return err
 }
 

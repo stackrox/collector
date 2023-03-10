@@ -1,7 +1,8 @@
 ---
 - name: Log into quay.io
+  become: "{{ runtime_as_root }}"
   shell:
-    cmd: "docker login -u {{ quay_username }} --password-stdin quay.io"
+    cmd: "{{ runtime_command }} login -u {{ quay_username }} --password-stdin quay.io"
     stdin: "{{ quay_password }}"
 
 # 'success' will be set to false in the Run Integration Tests step
