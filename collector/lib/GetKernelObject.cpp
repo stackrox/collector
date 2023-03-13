@@ -153,7 +153,7 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
   if (stat(expected_path_compressed.c_str(), &sb) == 0) {
     CLOG(DEBUG) << "Found existing compressed kernel object.";
     if (!GZFileHandle::DecompressFile(expected_path_compressed, module_path)) {
-      CLOG(ERROR) << "Failed to decompress " << expected_path_compressed;
+      CLOG(WARNING) << "Failed to decompress " << expected_path_compressed;
       // don't delete the local /kernel-modules gzip file because it is on a read-only file system.
       return false;
     }
@@ -164,13 +164,13 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
     CLOG(DEBUG) << "Found existing kernel object " << expected_path;
     std::ifstream input_file(expected_path, std::ios::binary);
     if (!input_file.is_open()) {
-      CLOG(ERROR) << "Failed to open " << expected_path << " - " << StrError();
+      CLOG(WARNING) << "Failed to open " << expected_path << " - " << StrError();
       return false;
     }
 
     std::ofstream output_file(module_path, std::ios::binary);
     if (!output_file.is_open()) {
-      CLOG(ERROR) << "Failed to open " << module_path << " - " << StrError();
+      CLOG(WARNING) << "Failed to open " << module_path << " - " << StrError();
       return false;
     }
 

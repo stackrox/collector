@@ -189,18 +189,13 @@ bool downloadKernelDriver(const CollectorArgs* args, CollectorConfig& config) {
     }
   }
 
-  bool success = false;
-
   for (const auto& candidate : kernel_candidates) {
-    success = GetKernelObject(args->GRPCServer(), config.TLSConfiguration(), candidate, config.CurlVerbose());
-    if (!success) {
-      CLOG(ERROR) << "Error getting kernel object: " << candidate.GetName();
-    } else {
-      break;
+    if (GetKernelObject(args->GRPCServer(), config.TLSConfiguration(), candidate, config.CurlVerbose())) {
+      return true;
     }
   }
 
-  return success;
+  return false;
 }
 
 int main(int argc, char** argv) {
