@@ -50,7 +50,7 @@ TEST(getGardenLinuxCandidateTest, Garden576_1) {
   MockHostInfoLocal host;
   std::string release("5.10.0-9-cloud-amd64");
   std::string version("#1 SMP Debian 5.10.83-1gardenlinux1 (2021-12-03)");
-  std::string expected_kernel("5.10.0-9-cloud-amd64-gl-5.10.83-1gardenlinux1");
+  std::string expected_driver("collector-ebpf-5.10.0-9-cloud-amd64-gl-5.10.83-1gardenlinux1.o");
   KernelVersion kv(release, version);
 
   EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));
@@ -58,14 +58,14 @@ TEST(getGardenLinuxCandidateTest, Garden576_1) {
   auto candidate = getGardenLinuxCandidate(host, true);
 
   EXPECT_TRUE(candidate);
-  EXPECT_EQ(candidate->GetShortName(), expected_kernel);
+  EXPECT_EQ(candidate->GetName(), expected_driver);
 }
 
 TEST(getGardenLinuxCandidateTest, Garden318) {
   MockHostInfoLocal host;
   std::string release("5.4.0-6-cloud-amd64");
   std::string version("#1 SMP Debian 5.4.93-1 (2021-02-09)");
-  std::string expected_kernel("5.4.0-6-cloud-amd64-gl-5.4.93-1");
+  std::string expected_driver("collector-ebpf-5.4.0-6-cloud-amd64-gl-5.4.93-1.o");
   KernelVersion kv(release, version);
 
   EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));
@@ -73,7 +73,7 @@ TEST(getGardenLinuxCandidateTest, Garden318) {
   auto candidate = getGardenLinuxCandidate(host, true);
 
   EXPECT_TRUE(candidate);
-  EXPECT_EQ(candidate->GetShortName(), expected_kernel);
+  EXPECT_EQ(candidate->GetName(), expected_driver);
 }
 
 TEST(getMinikubeCandidateTest, v1_27_1) {
@@ -81,7 +81,7 @@ TEST(getMinikubeCandidateTest, v1_27_1) {
   std::string release("5.10.57");
   std::string version("#1 SMP Wed Oct 27 22:52:27 UTC 2021 x86_64 GNU/Linux");
   std::string minikube_version("v1.27.1");
-  std::string expected_kernel("5.10.57-minikube-v1.27.1");
+  std::string expected_driver("collector-ebpf-5.10.57-minikube-v1.27.1.o");
   KernelVersion kv(release, version);
 
   EXPECT_CALL(host, GetMinikubeVersion()).WillOnce(Return(minikube_version));
@@ -90,7 +90,7 @@ TEST(getMinikubeCandidateTest, v1_27_1) {
   auto candidate = getMinikubeCandidate(host, true);
 
   EXPECT_TRUE(candidate);
-  EXPECT_EQ(candidate->GetShortName(), expected_kernel);
+  EXPECT_EQ(candidate->GetName(), expected_driver);
 }
 
 TEST(getMinikubeCandidateTest, v1_24_0) {
@@ -98,7 +98,7 @@ TEST(getMinikubeCandidateTest, v1_24_0) {
   std::string release("4.19.202");
   std::string version("#1 SMP Wed Oct 27 22:52:27 UTC 2021 x86_64 GNU/Linux");
   std::string minikube_version("v1.24.0");
-  std::string expected_kernel("4.19.202-minikube-v1.24.0");
+  std::string expected_driver("collector-ebpf-4.19.202-minikube-v1.24.0.o");
   KernelVersion kv(release, version);
 
   EXPECT_CALL(host, GetMinikubeVersion()).WillOnce(Return(minikube_version));
@@ -107,7 +107,7 @@ TEST(getMinikubeCandidateTest, v1_24_0) {
   auto candidate = getMinikubeCandidate(host, true);
 
   EXPECT_TRUE(candidate);
-  EXPECT_EQ(candidate->GetShortName(), expected_kernel);
+  EXPECT_EQ(candidate->GetName(), expected_driver);
 }
 
 TEST(getMinikubeCandidateTest, NoVersion) {
@@ -127,13 +127,11 @@ TEST(getMinikubeCandidateTest, NoVersion) {
 TEST(getUserDriverCandidate, RelativePath) {
   const char* user_input = "collector-mydriver.ko";
   std::string expected_name(user_input);
-  std::string expected_short_name("");
   std::string expected_path("/kernel-modules");
 
   auto candidate = getUserDriverCandidate(user_input, true);
 
   EXPECT_EQ(candidate.GetName(), expected_name);
-  EXPECT_EQ(candidate.GetShortName(), expected_short_name);
   EXPECT_EQ(candidate.GetPath(), expected_path);
   EXPECT_FALSE(candidate.IsDownloadable());
   EXPECT_TRUE(candidate.IsEbpf());
@@ -142,13 +140,11 @@ TEST(getUserDriverCandidate, RelativePath) {
 TEST(getUserDriverCandidate, FullPath) {
   const char* user_input = "/some/path/collector-mydriver.ko";
   std::string expected_name("collector-mydriver.ko");
-  std::string expected_short_name("");
   std::string expected_path("/some/path");
 
   auto candidate = getUserDriverCandidate(user_input, false);
 
   EXPECT_EQ(candidate.GetName(), expected_name);
-  EXPECT_EQ(candidate.GetShortName(), expected_short_name);
   EXPECT_EQ(candidate.GetPath(), expected_path);
   EXPECT_FALSE(candidate.IsDownloadable());
   EXPECT_FALSE(candidate.IsEbpf());

@@ -130,7 +130,7 @@ DriverCandidate getUserDriverCandidate(const char* full_name, bool useEbpf) {
   std::filesystem::path driver_file(full_name);
 
   if (driver_file.is_absolute()) {
-    return DriverCandidate(driver_file.filename(), useEbpf, "", driver_file.parent_path(), false);
+    return DriverCandidate(driver_file.filename(), useEbpf, driver_file.parent_path(), false);
   }
 
   return DriverCandidate(driver_file, useEbpf, false);

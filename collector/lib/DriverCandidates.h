@@ -31,20 +31,18 @@ namespace collector {
 
 class DriverCandidate {
  public:
-  DriverCandidate(const std::string& name, bool useEbpf, const std::string& shortName = "", const std::string& path = "/kernel-modules", bool downloadable = true) : name_(name), shortName_(shortName), path_(path), downloadable_(downloadable) {
+  DriverCandidate(const std::string& name, bool useEbpf, const std::string& path = "/kernel-modules", bool downloadable = true) : name_(name), path_(path), downloadable_(downloadable) {
     if (useEbpf) {
       collection_method_ = EBPF;
     } else {
       collection_method_ = KERNEL_MODULE;
     }
   }
-  DriverCandidate(const std::string& name, bool useEbpf, bool downloadable = true) : DriverCandidate{name, useEbpf, "", "/kernel-modules", downloadable} {}
+  DriverCandidate(const std::string& name, bool useEbpf, bool downloadable = true) : DriverCandidate{name, useEbpf, "/kernel-modules", downloadable} {}
 
   inline const std::string& GetPath() const { return path_; }
 
   inline const std::string& GetName() const { return name_; }
-
-  inline const std::string& GetShortName() const { return shortName_; }
 
   inline bool IsDownloadable() const { return downloadable_; }
 
@@ -57,7 +55,6 @@ class DriverCandidate {
   };
 
   std::string name_;
-  std::string shortName_;
   std::string path_;
   bool downloadable_;
   collectionMethod collection_method_;

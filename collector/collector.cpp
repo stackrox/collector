@@ -182,11 +182,9 @@ bool downloadKernelDriver(const CollectorArgs* args, CollectorConfig& config) {
   }
 
   const char* type = useEbpf ? "eBPF probe" : "kernel module";
-  CLOG(INFO) << "Attempting to find " << type << " - Candidate kernel versions: ";
+  CLOG(INFO) << "Attempting to find " << type << " - Candidate versions: ";
   for (const auto& candidate : kernel_candidates) {
-    if (!candidate.GetShortName().empty()) {
-      CLOG(INFO) << candidate.GetShortName();
-    }
+    CLOG(INFO) << candidate.GetName();
   }
 
   for (const auto& candidate : kernel_candidates) {
