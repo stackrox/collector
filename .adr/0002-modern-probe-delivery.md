@@ -17,7 +17,7 @@ issues, but taking no benefits of it.
 
 ## Solution
 
-To make startup process more robust, embed the BTW aware probes into Collector
+To make startup process more robust, embed the BTF aware probes into Collector
 images. That means:
 
 * BTF aware probe has to be built as part of Collector build process. It's
