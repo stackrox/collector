@@ -1,9 +1,8 @@
 # BTF probes delivery mechanism
 
-- Status: Proposed
+- Status: Accepted
 - Contributors: Dmitrii Dolgov, Mauro Ezequiel Moltrasio, Robby Cochran, Giles Hutton
 - Date: 2023-03-13
-
 
 ## Problem
 
