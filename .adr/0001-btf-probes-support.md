@@ -45,7 +45,7 @@ is the following:
 
 * The following steps will be most likely about making our probes more
   flexible and utilize more BPF features. This will be defined in a separate
-  ADR.
+  [ADR][adr-probe-delivery].
 
 ## Pros & cons
 
@@ -125,7 +125,7 @@ To implement this we would need to:
   unsupported syscalls.
 
 * Modify build pipeline and probe delivery mechanism. This is a topic of a
-  separate ADR.
+  separate [ADR][adr-probe-delivery].
 
 * Collector has to be backward compatible in the sense that if it failed to
   load the new probe, it has to fallback to loading the legacy probes. This
@@ -195,3 +195,4 @@ itself.
 [vmlinux-btf-overview]: https://github.com/aquasecurity/btfhub/blob/main/docs/supported-distros.md
 [ring-buffers]: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=457f44363a8894135c85b7a9afd2bd8196db24ab
 [rhel-backpatch]: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/8.7_release_notes/available_bpf_features
+[adr-probe-delivery]: 0002-modern-probe-delivery.md
