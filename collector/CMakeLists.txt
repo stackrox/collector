@@ -42,6 +42,7 @@ file(GLOB COLLECTOR_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/lib/*.cpp)
 add_library(collector_lib ${DRIVER_HEADERS} ${COLLECTOR_LIB_SRC_FILES})
 add_dependencies(collector_lib sinsp-wrapper)
 target_link_libraries(collector_lib sinsp-wrapper)
+target_link_libraries(collector_lib stdc++fs) # This is needed for GCC-8 to link against the filesystem library
 target_link_libraries(collector_lib cap-ng)
 target_link_libraries(collector_lib uuid)
 target_link_libraries(collector_lib libgrpc++.a libgrpc.a libgpr.a libupb.a libabsl_bad_optional_access.a libabsl_base.a libabsl_dynamic_annotations.a libabsl_log_severity.a libabsl_spinlock_wait.a libabsl_str_format_internal.a libabsl_strings.a libabsl_strings_internal.a libabsl_throw_delegate.a libabsl_int128.a libabsl_raw_logging_internal.a libaddress_sorting.a)

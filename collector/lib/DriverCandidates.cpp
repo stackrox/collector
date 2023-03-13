@@ -1,5 +1,6 @@
 #include "DriverCandidates.h"
 
+#include <filesystem>
 #include <optional>
 #include <string_view>
 
@@ -19,8 +20,8 @@ std::string driverFullName(const std::string& shortName, bool useEbpf) {
 }
 
 // Retrieves the ubuntu backport version from the host kernel's release
-// string. If the host is not Ubuntu, or it is unable to find an appropriate
-// backport version, this function returns an empty string.
+// string. If an appropriate backport version is not found, this function
+// returns an empty std::optional.
 std::optional<DriverCandidate> getUbuntuBackport(HostInfo& host, bool useEbpf) {
   static const char* candidates[] = {
       "~16.04",
@@ -126,18 +127,13 @@ DriverCandidate getHostCandidate(HostInfo& host, bool useEbpf) {
 }
 
 DriverCandidate getUserDriverCandidate(const char* full_name, bool useEbpf) {
-  std::string_view path(full_name);
+  std::filesystem::path driver_file(full_name);
 
-  // if the name starts with '/' we assume a fully qualified path was provided
-  if (path.rfind("/", 0) == 0) {
-    std::string_view::size_type last_separator = path.rfind('/');
-    std::string name(path.substr(last_separator + 1));
-    path.remove_suffix(path.size() - last_separator);
-
-    return DriverCandidate(std::move(name), useEbpf, "", std::move(std::string(path)), false);
+  if (driver_file.is_absolute()) {
+    return DriverCandidate(driver_file.filename(), useEbpf, "", driver_file.parent_path(), false);
   }
 
-  return DriverCandidate(full_name, useEbpf, false);
+  return DriverCandidate(driver_file, useEbpf, false);
 }
 }  // namespace
 

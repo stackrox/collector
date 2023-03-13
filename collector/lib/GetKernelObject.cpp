@@ -196,7 +196,7 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
     }
     CLOG(INFO) << "Successfully downloaded and decompressed " << module_path;
   } else {
-    CLOG(WARNING) << "Local storage does not contain " << candidate.GetName();
+    CLOG(WARNING) << "Local storage does not contain " << candidate.GetName() << " and the candidate is not downloadable.";
     return false;
   }
 
