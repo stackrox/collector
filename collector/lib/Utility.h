@@ -31,6 +31,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <memory>
 #include <mutex>
 #include <sstream>
+#include <string_view>
 #include <utility>
 
 #include "libsinsp/sinsp.h"
@@ -60,9 +61,8 @@ const char* GetSNIHostname();
 // Get hostname from NODE_HOSTNAME env var
 std::string GetHostname();
 
-// Get kernel candidates from KERNEL_CANDIDATES env var
-std::vector<std::string> GetKernelCandidates();
-
+// Allows Splitting a std::string_view into a vector of strings
+std::vector<std::string> SplitStringView(const std::string_view sv, char delim = ' ');
 // Get base URL for kernel modules downloads from MODULE_DOWNLOAD_BASE_URL
 const char* GetModuleDownloadBaseURL();
 

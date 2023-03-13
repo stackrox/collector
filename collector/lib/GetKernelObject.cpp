@@ -25,6 +25,8 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <cstring>
 
+#include "SysdigService.h"
+
 extern "C" {
 #include <sys/stat.h>
 }
@@ -138,9 +140,10 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
   return false;
 }
 
-bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const std::string& kernel_module, const std::string& module_path, bool verbose) {
-  std::string expected_path = kKernelModulesDir + "/" + kernel_module;
+bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const DriverCandidate& candidate, bool verbose) {
+  std::string expected_path = candidate.GetPath() + "/" + candidate.GetName();
   std::string expected_path_compressed = expected_path + ".gz";
+  std::string module_path = candidate.IsEbpf() ? SysdigService::kProbePath : SysdigService::kModulePath;
   struct stat sb;
 
   // first check for an existing compressed kernel object in the
@@ -150,7 +153,7 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
   if (stat(expected_path_compressed.c_str(), &sb) == 0) {
     CLOG(DEBUG) << "Found existing compressed kernel object.";
     if (!GZFileHandle::DecompressFile(expected_path_compressed, module_path)) {
-      CLOG(ERROR) << "Failed to decompress " << expected_path_compressed;
+      CLOG(WARNING) << "Failed to decompress " << expected_path_compressed;
       // don't delete the local /kernel-modules gzip file because it is on a read-only file system.
       return false;
     }
@@ -161,13 +164,13 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
     CLOG(DEBUG) << "Found existing kernel object " << expected_path;
     std::ifstream input_file(expected_path, std::ios::binary);
     if (!input_file.is_open()) {
-      CLOG(ERROR) << "Failed to open " << expected_path << " - " << StrError();
+      CLOG(WARNING) << "Failed to open " << expected_path << " - " << StrError();
       return false;
     }
 
     std::ofstream output_file(module_path, std::ios::binary);
     if (!output_file.is_open()) {
-      CLOG(ERROR) << "Failed to open " << module_path << " - " << StrError();
+      CLOG(WARNING) << "Failed to open " << module_path << " - " << StrError();
       return false;
     }
 
@@ -176,11 +179,11 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
               std::ostreambuf_iterator<char>(output_file));
   }
   // Otherwise there is no module in local storage, so we should download it.
-  else {
-    CLOG(INFO) << "Local storage does not contain " << kernel_module;
+  else if (candidate.IsDownloadable()) {
+    CLOG(INFO) << "Attempting to download " << candidate.GetName();
     std::string downloadPath = module_path + ".gz";
-    if (!DownloadKernelObject(hostname, tls_config, kernel_module, downloadPath, verbose)) {
-      CLOG(WARNING) << "Unable to download kernel object " << kernel_module << " to " << downloadPath;
+    if (!DownloadKernelObject(hostname, tls_config, candidate.GetName(), downloadPath, verbose)) {
+      CLOG(WARNING) << "Unable to download kernel object " << candidate.GetName() << " to " << downloadPath;
       return false;
     }
 
@@ -192,6 +195,9 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
       return false;
     }
     CLOG(INFO) << "Successfully downloaded and decompressed " << module_path;
+  } else {
+    CLOG(WARNING) << "Local storage does not contain " << candidate.GetName() << " and the candidate is not downloadable.";
+    return false;
   }
 
   if (chmod(module_path.c_str(), 0444)) {

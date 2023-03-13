@@ -21,18 +21,47 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef COLLECTOR_GETKERNELOBJECT_H
-#define COLLECTOR_GETKERNELOBJECT_H
+#ifndef _DRIVER_CANDIDATES_H_
+#define _DRIVER_CANDIDATES_H_
 
 #include <string>
-
-#include <json/json.h>
-
-#include "DriverCandidates.h"
+#include <vector>
 
 namespace collector {
 
-bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const DriverCandidate& candidate, bool verbose);
+class DriverCandidate {
+ public:
+  DriverCandidate(const std::string& name, bool useEbpf, const std::string& path = "/kernel-modules", bool downloadable = true) : name_(name), path_(path), downloadable_(downloadable) {
+    if (useEbpf) {
+      collection_method_ = EBPF;
+    } else {
+      collection_method_ = KERNEL_MODULE;
+    }
+  }
+  DriverCandidate(const std::string& name, bool useEbpf, bool downloadable = true) : DriverCandidate{name, useEbpf, "/kernel-modules", downloadable} {}
+
+  inline const std::string& GetPath() const { return path_; }
+
+  inline const std::string& GetName() const { return name_; }
+
+  inline bool IsDownloadable() const { return downloadable_; }
+
+  inline bool IsEbpf() const { return collection_method_ == EBPF; }
+
+ private:
+  enum collectionMethod {
+    EBPF = 0,
+    KERNEL_MODULE,
+  };
+
+  std::string name_;
+  std::string path_;
+  bool downloadable_;
+  collectionMethod collection_method_;
+};
+
+// Get kernel candidates
+std::vector<DriverCandidate> GetKernelCandidates(bool useEbpf);
 
 }  // namespace collector
-#endif  // COLLECTOR_GETKERNELOBJECT_H
+#endif  // _DRIVER_CANDIDATES_H_
