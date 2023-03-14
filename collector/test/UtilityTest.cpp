@@ -21,46 +21,62 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef _DRIVER_CANDIDATES_H_
-#define _DRIVER_CANDIDATES_H_
+#include <gmock/gmock-actions.h>
+#include <gmock/gmock-spec-builders.h>
 
-#include <string>
-#include <vector>
+#include "Utility.cpp"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+
+using namespace testing;
 
 namespace collector {
 
-class DriverCandidate {
- public:
-  DriverCandidate(const std::string& name, bool useEbpf, bool downloadable = true, const std::string& path = "/kernel-modules") : name_(name), path_(path), downloadable_(downloadable) {
-    if (useEbpf) {
-      collection_method_ = EBPF;
-    } else {
-      collection_method_ = KERNEL_MODULE;
-    }
-  }
+TEST(SplitStringViewTest, TestSplitStr) {
+  std::string_view view("aaaa bbbb cccc dddd");
+  std::vector<std::string> splits = SplitStringView(view, ' ');
+  ASSERT_EQ(4, splits.size());
 
-  inline const std::string& GetPath() const { return path_; }
-
-  inline const std::string& GetName() const { return name_; }
-
-  inline bool IsDownloadable() const { return downloadable_; }
-
-  inline bool IsEbpf() const { return collection_method_ == EBPF; }
-
- private:
-  enum collectionMethod {
-    EBPF = 0,
-    KERNEL_MODULE,
+  std::vector<std::string> expected = {
+      "aaaa",
+      "bbbb",
+      "cccc",
+      "dddd",
   };
 
-  std::string name_;
-  std::string path_;
-  bool downloadable_;
-  collectionMethod collection_method_;
-};
+  for (std::string::size_type i = 0; i < splits.size(); i++) {
+    ASSERT_EQ(expected[i], splits[i]);
+  }
+}
 
-// Get kernel candidates
-std::vector<DriverCandidate> GetKernelCandidates(bool useEbpf);
+TEST(SplitStringViewTest, TestSplitStrNoDelimiter) {
+  std::string_view view("aaaa");
+  std::vector<std::string> splits = SplitStringView(view, ' ');
+  ASSERT_EQ(1, splits.size());
+  ASSERT_EQ("aaaa", splits[0]);
+}
 
+TEST(SplitStringViewTest, TestSplitDelimiterAtEnd) {
+  std::string_view view("a b c ");
+  std::vector<std::string> expected{
+      "a",
+      "b",
+      "c",
+      "",
+  };
+  std::vector<std::string> splits = SplitStringView(view, ' ');
+  ASSERT_EQ(expected, splits);
+}
+
+TEST(SplitStringViewTest, TestSplitDoubleDelimiter) {
+  std::string_view view("a b  c");
+  std::vector<std::string> expected{
+      "a",
+      "b",
+      "",
+      "c",
+  };
+  std::vector<std::string> splits = SplitStringView(view, ' ');
+  ASSERT_EQ(expected, splits);
+}
 }  // namespace collector
-#endif  // _DRIVER_CANDIDATES_H_

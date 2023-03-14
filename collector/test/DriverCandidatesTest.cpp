@@ -51,6 +51,7 @@ TEST(getGardenLinuxCandidateTest, Garden576_1) {
   std::string release("5.10.0-9-cloud-amd64");
   std::string version("#1 SMP Debian 5.10.83-1gardenlinux1 (2021-12-03)");
   std::string expected_driver("collector-ebpf-5.10.0-9-cloud-amd64-gl-5.10.83-1gardenlinux1.o");
+  std::string expected_path("/kernel-modules");
   KernelVersion kv(release, version);
 
   EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));
@@ -59,6 +60,9 @@ TEST(getGardenLinuxCandidateTest, Garden576_1) {
 
   EXPECT_TRUE(candidate);
   EXPECT_EQ(candidate->GetName(), expected_driver);
+  EXPECT_EQ(candidate->GetPath(), expected_path);
+  EXPECT_TRUE(candidate->IsEbpf());
+  EXPECT_TRUE(candidate->IsDownloadable());
 }
 
 TEST(getGardenLinuxCandidateTest, Garden318) {
@@ -66,6 +70,7 @@ TEST(getGardenLinuxCandidateTest, Garden318) {
   std::string release("5.4.0-6-cloud-amd64");
   std::string version("#1 SMP Debian 5.4.93-1 (2021-02-09)");
   std::string expected_driver("collector-ebpf-5.4.0-6-cloud-amd64-gl-5.4.93-1.o");
+  std::string expected_path("/kernel-modules");
   KernelVersion kv(release, version);
 
   EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));
@@ -74,6 +79,9 @@ TEST(getGardenLinuxCandidateTest, Garden318) {
 
   EXPECT_TRUE(candidate);
   EXPECT_EQ(candidate->GetName(), expected_driver);
+  EXPECT_EQ(candidate->GetPath(), expected_path);
+  EXPECT_TRUE(candidate->IsEbpf());
+  EXPECT_TRUE(candidate->IsDownloadable());
 }
 
 TEST(getMinikubeCandidateTest, v1_27_1) {
@@ -82,6 +90,7 @@ TEST(getMinikubeCandidateTest, v1_27_1) {
   std::string version("#1 SMP Wed Oct 27 22:52:27 UTC 2021 x86_64 GNU/Linux");
   std::string minikube_version("v1.27.1");
   std::string expected_driver("collector-ebpf-5.10.57-minikube-v1.27.1.o");
+  std::string expected_path("/kernel-modules");
   KernelVersion kv(release, version);
 
   EXPECT_CALL(host, GetMinikubeVersion()).WillOnce(Return(minikube_version));
@@ -91,6 +100,9 @@ TEST(getMinikubeCandidateTest, v1_27_1) {
 
   EXPECT_TRUE(candidate);
   EXPECT_EQ(candidate->GetName(), expected_driver);
+  EXPECT_EQ(candidate->GetPath(), expected_path);
+  EXPECT_TRUE(candidate->IsEbpf());
+  EXPECT_TRUE(candidate->IsDownloadable());
 }
 
 TEST(getMinikubeCandidateTest, v1_24_0) {
@@ -99,6 +111,7 @@ TEST(getMinikubeCandidateTest, v1_24_0) {
   std::string version("#1 SMP Wed Oct 27 22:52:27 UTC 2021 x86_64 GNU/Linux");
   std::string minikube_version("v1.24.0");
   std::string expected_driver("collector-ebpf-4.19.202-minikube-v1.24.0.o");
+  std::string expected_path("/kernel-modules");
   KernelVersion kv(release, version);
 
   EXPECT_CALL(host, GetMinikubeVersion()).WillOnce(Return(minikube_version));
@@ -108,6 +121,9 @@ TEST(getMinikubeCandidateTest, v1_24_0) {
 
   EXPECT_TRUE(candidate);
   EXPECT_EQ(candidate->GetName(), expected_driver);
+  EXPECT_EQ(candidate->GetPath(), expected_path);
+  EXPECT_TRUE(candidate->IsEbpf());
+  EXPECT_TRUE(candidate->IsDownloadable());
 }
 
 TEST(getMinikubeCandidateTest, NoVersion) {
@@ -231,53 +247,5 @@ TEST(normalizeReleaseStringTest, Garden318Kernel) {
   auto normalized_kernel = normalizeReleaseString(host);
 
   EXPECT_EQ(normalized_kernel, expected_kernel);
-}
-
-TEST(SplitStringViewTest, TestSplitStr) {
-  std::string_view view("aaaa bbbb cccc dddd");
-  std::vector<std::string> splits = SplitStringView(view, ' ');
-  ASSERT_EQ(4, splits.size());
-
-  std::vector<std::string> expected = {
-      "aaaa",
-      "bbbb",
-      "cccc",
-      "dddd",
-  };
-
-  for (std::string::size_type i = 0; i < splits.size(); i++) {
-    ASSERT_EQ(expected[i], splits[i]);
-  }
-}
-
-TEST(SplitStringViewTest, TestSplitStrNoDelimiter) {
-  std::string_view view("aaaa");
-  std::vector<std::string> splits = SplitStringView(view, ' ');
-  ASSERT_EQ(1, splits.size());
-  ASSERT_EQ("aaaa", splits[0]);
-}
-
-TEST(SplitStringViewTest, TestSplitDelimiterAtEnd) {
-  std::string_view view("a b c ");
-  std::vector<std::string> expected{
-      "a",
-      "b",
-      "c",
-      "",
-  };
-  std::vector<std::string> splits = SplitStringView(view, ' ');
-  ASSERT_EQ(expected, splits);
-}
-
-TEST(SplitStringViewTest, TestSplitDoubleDelimiter) {
-  std::string_view view("a b  c");
-  std::vector<std::string> expected{
-      "a",
-      "b",
-      "",
-      "c",
-  };
-  std::vector<std::string> splits = SplitStringView(view, ' ');
-  ASSERT_EQ(expected, splits);
 }
 }  // namespace collector
