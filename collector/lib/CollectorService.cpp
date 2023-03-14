@@ -156,13 +156,14 @@ bool CollectorService::InitKernel(const std::string& GRPCServer, const std::vect
   for (const auto& candidate : candidates) {
     if (!GetKernelObject(GRPCServer, config_.TLSConfiguration(), candidate, config_.CurlVerbose())) {
       CLOG(WARNING) << "No suitable kernel object downloaded for " << candidate.GetName();
+      startup_diagnostics.DriverUnavailable(candidate.GetName());
       continue;
     }
 
-    // startup_diagnostics.KernelDriverDownloaded();
+    startup_diagnostics.DriverAvailable(candidate.GetName());
 
     if (sysdig_.InitKernel(config_, candidate)) {
-      // startup_diagnostics.Log();
+      startup_diagnostics.DriverSuccess(candidate.GetName());
       return true;
     }
   }

@@ -218,8 +218,6 @@ int main(int argc, char** argv) {
     CLOG(INFO) << candidate.GetName();
   }
 
-  // startup_diagnostics.KernelDriverDownloaded();
-
   // Register signal handlers
   signal(SIGABRT, AbortHandler);
   signal(SIGSEGV, AbortHandler);
@@ -238,7 +236,6 @@ int main(int argc, char** argv) {
   // output the GPL notice only once the kernel object has been found or downloaded
   gplNotice();
 
-  startup_diagnostics.KernelDriverLoaded();
   startup_diagnostics.Log();
 
   collector.RunForever();

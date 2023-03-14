@@ -19,10 +19,16 @@ class StartupDiagnostics : public IDiagnostics {
     CLOG(INFO) << "";
     CLOG(INFO) << "== Collector Startup Diagnostics: ==";
     CLOG(INFO) << " Connected to Sensor?       " << std::boolalpha << connectedToSensor_;
-    CLOG(INFO) << " Kernel driver available?   " << std::boolalpha << kernelDriverDownloaded_;
-    CLOG(INFO) << " Driver loaded into kernel? " << std::boolalpha << kernelDriverLoaded_;
+
+    CLOG(INFO) << " Kernel driver candidates:";
+    for (const auto& line : driverDiagnostics_) {
+      CLOG(INFO) << line;
+    }
+
     CLOG(INFO) << "====================================";
     CLOG(INFO) << "";
+
+    driverDiagnostics_.clear();
   }
 
   static StartupDiagnostics& GetInstance() {
@@ -32,18 +38,31 @@ class StartupDiagnostics : public IDiagnostics {
   }
 
   void ConnectedToSensor() { connectedToSensor_ = true; }
-  void KernelDriverDownloaded() { kernelDriverDownloaded_ = true; }
-  void KernelDriverLoaded() { kernelDriverLoaded_ = true; }
+
+  void DriverUnavailable(const std::string& candidate) {
+    std::stringstream line;
+    line << "  " << candidate << " (unavailable)";
+    driverDiagnostics_.push_back(line.str());
+  }
+  void DriverAvailable(const std::string& candidate) {
+    std::stringstream line;
+    line << "  " << candidate << " (available)";
+    driverDiagnostics_.push_back(line.str());
+  }
+
+  void DriverSuccess(const std::string& candidate) {
+    std::stringstream line;
+    line << " Driver loaded into kernel: " << candidate;
+    driverDiagnostics_.push_back(line.str());
+  }
 
  private:
   bool connectedToSensor_;
-  bool kernelDriverDownloaded_;
-  bool kernelDriverLoaded_;
+  std::vector<std::string> driverDiagnostics_;
 
   StartupDiagnostics()
       : connectedToSensor_(false),
-        kernelDriverDownloaded_(false),
-        kernelDriverLoaded_(false) {}
+        driverDiagnostics_() {}
 };
 
 }  // namespace collector
