@@ -8,6 +8,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall --std=c++17 -pthread -Wno-de
 set(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-strict-aliasing -DNDEBUG")
 
+# Ensures that shared and static libraries are built as position
+# independent
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 if(NOT DEFINED ENV{DISABLE_PROFILING})
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCOLLECTOR_PROFILING")
 endif()
