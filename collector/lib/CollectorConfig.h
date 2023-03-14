@@ -41,7 +41,6 @@ class CollectorArgs;
 class CollectorConfig {
  public:
   static constexpr bool kUseChiselCache = true;
-  static constexpr bool kSnapLen = 0;
   static constexpr bool kTurnOffScrape = false;
   static constexpr int kScrapeInterval = 30;
   static constexpr char kCollectionMethod[] = "kernel-module";
@@ -93,7 +92,6 @@ end
   bool TurnOffScrape() const;
   bool ScrapeListenEndpoints() const { return scrape_listen_endpoints_; }
   int ScrapeInterval() const;
-  int SnapLen() const;
   std::string Chisel() const;
   std::string Hostname() const;
   std::string HostProc() const;
@@ -115,7 +113,6 @@ end
  protected:
   bool use_chisel_cache_;
   int scrape_interval_;
-  int snap_len_;
   std::string collection_method_;
   std::string chisel_;
   bool turn_off_scrape_;

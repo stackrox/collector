@@ -58,7 +58,6 @@ BoolEnvVar set_processes_listening_on_ports("ROX_PROCESSES_LISTENING_ON_PORT", C
 }  // namespace
 
 constexpr bool CollectorConfig::kUseChiselCache;
-constexpr bool CollectorConfig::kSnapLen;
 constexpr bool CollectorConfig::kTurnOffScrape;
 constexpr int CollectorConfig::kScrapeInterval;
 constexpr char CollectorConfig::kCollectionMethod[];
@@ -75,7 +74,6 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   use_chisel_cache_ = kUseChiselCache;
   scrape_interval_ = kScrapeInterval;
   turn_off_scrape_ = kTurnOffScrape;
-  snap_len_ = kSnapLen;
   chisel_ = kChisel;
   collection_method_ = kCollectionMethod;
   force_kernel_modules_ = kForceKernelModules;
@@ -243,10 +241,6 @@ int CollectorConfig::ScrapeInterval() const {
   return scrape_interval_;
 }
 
-int CollectorConfig::SnapLen() const {
-  return snap_len_;
-}
-
 std::string CollectorConfig::Chisel() const {
   return chisel_;
 }
@@ -286,7 +280,6 @@ std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
   return os
          << "collection_method:" << c.CollectionMethod()
          << ", useChiselCache:" << c.UseChiselCache()
-         << ", snapLen:" << c.SnapLen()
          << ", scrape_interval:" << c.ScrapeInterval()
          << ", turn_off_scrape:" << c.TurnOffScrape()
          << ", hostname:" << c.Hostname()

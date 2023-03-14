@@ -19,6 +19,11 @@ extern "C" {
 extern unsigned char g_bpf_drop_syscalls[];
 
 namespace collector {
+enum collectionMethod {
+  EBPF = 0,
+  CORE_BPF,
+  KERNEL_MODULE,
+};
 
 class IKernelDriver {
  public:
@@ -102,6 +107,13 @@ class KernelDriverEBPF : public IKernelDriver {
   }
 };
 
+class KernelDriverCOREEBPF : public IKernelDriver {
+ public:
+  bool Setup(const CollectorConfig& config, std::string path) override {
+    // TODO: implement CO.RE ebpf setup if needed
+    return false;
+  }
+};
 }  // namespace collector
 
 #endif

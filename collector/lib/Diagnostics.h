@@ -15,11 +15,6 @@ class IDiagnostics {
 
 class StartupDiagnostics : public IDiagnostics {
  public:
-  StartupDiagnostics()
-      : connectedToSensor_(false),
-        kernelDriverDownloaded_(false),
-        kernelDriverLoaded_(false) {}
-
   void Log() {
     CLOG(INFO) << "";
     CLOG(INFO) << "== Collector Startup Diagnostics: ==";
@@ -30,6 +25,12 @@ class StartupDiagnostics : public IDiagnostics {
     CLOG(INFO) << "";
   }
 
+  static StartupDiagnostics& GetInstance() {
+    static StartupDiagnostics instance;
+
+    return instance;
+  }
+
   void ConnectedToSensor() { connectedToSensor_ = true; }
   void KernelDriverDownloaded() { kernelDriverDownloaded_ = true; }
   void KernelDriverLoaded() { kernelDriverLoaded_ = true; }
@@ -38,6 +39,11 @@ class StartupDiagnostics : public IDiagnostics {
   bool connectedToSensor_;
   bool kernelDriverDownloaded_;
   bool kernelDriverLoaded_;
+
+  StartupDiagnostics()
+      : connectedToSensor_(false),
+        kernelDriverDownloaded_(false),
+        kernelDriverLoaded_(false) {}
 };
 
 }  // namespace collector

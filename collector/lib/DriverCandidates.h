@@ -27,6 +27,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include <string>
 #include <vector>
 
+#include "KernelDriver.h"
+
 namespace collector {
 
 class DriverCandidate {
@@ -45,14 +47,9 @@ class DriverCandidate {
 
   inline bool IsDownloadable() const { return downloadable_; }
 
-  inline bool IsEbpf() const { return collection_method_ == EBPF; }
+  inline collectionMethod GetCollectionMethod() const { return collection_method_; }
 
  private:
-  enum collectionMethod {
-    EBPF = 0,
-    KERNEL_MODULE,
-  };
-
   std::string name_;
   std::string path_;
   bool downloadable_;

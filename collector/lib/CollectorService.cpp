@@ -33,7 +33,9 @@ extern "C" {
 #include "CollectorStatsExporter.h"
 #include "ConnTracker.h"
 #include "Containers.h"
+#include "Diagnostics.h"
 #include "GRPCUtil.h"
+#include "GetKernelObject.h"
 #include "GetStatus.h"
 #include "LogLevel.h"
 #include "NetworkStatusNotifier.h"
@@ -148,8 +150,26 @@ void CollectorService::RunForever() {
   sysdig_.CleanUp();
 }
 
-bool CollectorService::InitKernel() {
-  return sysdig_.InitKernel(config_);
+bool CollectorService::InitKernel(const std::string& GRPCServer, const std::vector<DriverCandidate>& candidates) {
+  auto& startup_diagnostics = StartupDiagnostics::GetInstance();
+
+  for (const auto& candidate : candidates) {
+    if (!GetKernelObject(GRPCServer, config_.TLSConfiguration(), candidate, config_.CurlVerbose())) {
+      CLOG(WARNING) << "No suitable kernel object downloaded for " << candidate.GetName();
+      continue;
+    }
+
+    // startup_diagnostics.KernelDriverDownloaded();
+
+    if (sysdig_.InitKernel(config_, candidate)) {
+      // startup_diagnostics.Log();
+      return true;
+    }
+  }
+
+  CLOG(WARNING) << "Failed to initialize collector kernel components.";
+  // No candidate managed to create a working collector service.
+  return false;
 }
 
 bool CollectorService::WaitForGRPCServer() {

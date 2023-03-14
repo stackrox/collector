@@ -29,6 +29,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "CollectorConfig.h"
 #include "CollectorStats.h"
 #include "Control.h"
+#include "DriverCandidates.h"
 #include "SysdigService.h"
 
 namespace collector {
@@ -41,7 +42,7 @@ class CollectorService {
 
   void RunForever();
 
-  bool InitKernel();
+  bool InitKernel(const std::string& GRPCServer, const std::vector<DriverCandidate>& candidates);
 
  private:
   void OnChiselReceived(const std::string& chisel);

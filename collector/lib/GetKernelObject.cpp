@@ -25,6 +25,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <cstring>
 
+#include "KernelDriver.h"
 #include "SysdigService.h"
 
 extern "C" {
@@ -143,7 +144,7 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
 bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const DriverCandidate& candidate, bool verbose) {
   std::string expected_path = candidate.GetPath() + "/" + candidate.GetName();
   std::string expected_path_compressed = expected_path + ".gz";
-  std::string module_path = candidate.IsEbpf() ? SysdigService::kProbePath : SysdigService::kModulePath;
+  std::string module_path = candidate.GetCollectionMethod() == EBPF ? SysdigService::kProbePath : SysdigService::kModulePath;
   struct stat sb;
 
   // first check for an existing compressed kernel object in the

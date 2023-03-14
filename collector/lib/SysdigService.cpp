@@ -68,19 +68,19 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
   use_chisel_cache_ = config.UseChiselCache();
 }
 
-bool SysdigService::InitKernel(const CollectorConfig& config) {
+bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandidate& candidate) {
   if (inspector_) {
     throw CollectorException("Invalid state: SysdigService kernel components are already initialized");
   }
 
   inspector_.reset(new_inspector());
-  inspector_->set_snaplen(config.SnapLen());
+  inspector_->set_snaplen(0);
 
   if (logging::GetLogLevel() == logging::LogLevel::TRACE) {
     inspector_->set_log_stderr();
   }
 
-  if (config.UseEbpf()) {
+  if (candidate.GetCollectionMethod() == EBPF) {
     useEbpf_ = true;
     KernelDriverEBPF driver;
     if (!driver.Setup(config, SysdigService::kProbePath)) {
