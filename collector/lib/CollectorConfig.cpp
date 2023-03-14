@@ -170,14 +170,6 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
     }
   }
 
-  if (const char* enable_extra_logging = std::getenv("COLLECTOR_EXTRA_LOGGING")) {
-    std::string val(enable_extra_logging);
-    std::transform(val.begin(), val.end(), val.begin(), [](char c) {
-      return std::tolower(c);
-    });
-    enable_extra_logging_ = (val == "true");
-  }
-
   if (disable_network_flows) {
     disable_network_flows_ = true;
   }

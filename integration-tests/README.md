@@ -1,15 +1,15 @@
 # Integration Tests
 
 The integration tests for collector attempt to simulate a constrained operation of collector, along
-with a mocked sensor (GRPC server) and some workload on the host. The mock GRPC server collects the 
+with a mocked sensor (GRPC server) and some workload on the host. The mock GRPC server collects the
 events from collector, dumping them to Bolt DB, and they are then verified against what is expected
 based on the workload that has run.
 
 There is also a benchmark test which runs a phoronix container to test system performance under
-a significant load, with and without collector running. This can give a ballpark idea of the 
+a significant load, with and without collector running. This can give a ballpark idea of the
 overhead of running collector on a host, and can be used to compare the two collector methods.
 
-Further performance tooling can be run alongside the benchmarks for more specific performance measurements. 
+Further performance tooling can be run alongside the benchmarks for more specific performance measurements.
 This tooling is detailed below.
 
 ## Environment Variables
@@ -32,6 +32,7 @@ the local machine for development, or on gcloud or over SSH for remote testing i
 | `COLLECTOR_OFFLINE_MODE` | whether to allow kernel-object downloads.                                               | true, **false**          |
 | `COLLECTOR_IMAGE`        | the name of the collector image to use.                                                 | N/A                      |
 | `STOP_TIMEOUT`           | the number of seconds to wait for a container to stop before forcibly killing it        | **10**                   |
+| `COLLECTOR_LOG_LEVEL`    | the log level to set in the collector configuration                                     | **debug**                |
 
 `VM_CONFIG` is a construction of the VM type and the image family, delimited by a period (.) See the [CI config](../.circleci/config.yml#902-907)]
 for examples, and the following table lists the possible values:

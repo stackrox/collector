@@ -36,15 +36,15 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 		collectionMethod = "kernel_module"
 	}
 
+	logLevel := ReadEnvVarWithDefault("COLLECTOR_LOG_LEVEL", "debug")
 	offlineMode := ReadBoolEnvVar("COLLECTOR_OFFLINE_MODE")
 
 	env := map[string]string{
 		"GRPC_SERVER":             "localhost:9999",
-		"COLLECTOR_CONFIG":        `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}`,
+		"COLLECTOR_CONFIG":        fmt.Sprintf(`{"logLevel":"%s","turnOffScrape":true,"scrapeInterval":2}`, logLevel),
 		"COLLECTION_METHOD":       collectionMethod,
 		"COLLECTOR_PRE_ARGUMENTS": collectorPreArguments,
 		"ENABLE_CORE_DUMP":        "false",
-		"COLLECTOR_EXTRA_LOGGING": ReadEnvVarWithDefault("COLLECTOR_EXTRA_LOGGING", "false"),
 	}
 	if !offlineMode {
 		env["MODULE_DOWNLOAD_BASE_URL"] = "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"
