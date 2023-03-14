@@ -170,14 +170,6 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
     }
   }
 
-  if (const char* enable_sysdig_log = std::getenv("COLLECTOR_SD_LOG")) {
-    std::string val(enable_sysdig_log);
-    std::transform(val.begin(), val.end(), val.begin(), [](char c) {
-      return std::tolower(c);
-    });
-    enable_sysdig_log_ = (val == "true");
-  }
-
   if (disable_network_flows) {
     disable_network_flows_ = true;
   }

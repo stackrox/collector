@@ -94,10 +94,14 @@ jobs:
           GCP_SSH_KEY: ${{ secrets.GCP_SSH_KEY }}
           GCP_SSH_KEY_PUB: ${{ secrets.GCP_SSH_KEY_PUB }}
 
-      - name: Normalize job ID
+      - name: Set environment
         run: |
           NORM_JOB_ID="${JOB_ID/-/}"
           echo "JOB_ID=${NORM_JOB_ID}" | tee -a "$GITHUB_ENV"
+
+          if [[ '${{ contains(github.event.pull_request.labels.*.name, 'integration-tests-trace-logging') }}' == 'true' ]]; then
+            echo "COLLECTOR_LOG_LEVEL=trace" | tee -a "$GITHUB_ENV"
+          fi
 
       - name: Create VMs
         if: ${{ ! inputs.run-benchmarks }}
