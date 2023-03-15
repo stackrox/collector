@@ -21,32 +21,15 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef COLLECTOR_HOSTCONFIG_H
-#define COLLECTOR_HOSTCONFIG_H
+#ifndef COLLECTION_METHOD_H
+#define COLLECTION_METHOD_H
 
-#include <optional>
-#include <string>
-
-#include "CollectionMethod.h"
-
-//
-// The HostConfig is runtime-configured based on the host where
-// collector is running. It is intended to inform minor adjustments to
-// the CollectorConfig, in cases where we can fall back to other ways
-// of operating.
-//
-class HostConfig {
- public:
-  HostConfig() = default;
-
-  collector::collectionMethod CollectionMethod() const { return *collection_method_; }
-  bool HasCollectionMethod() const { return collection_method_.has_value(); }
-  void SetCollectionMethod(collector::collectionMethod method) {
-    collection_method_ = method;
-  }
-
- private:
-  std::optional<collector::collectionMethod> collection_method_;
+namespace collector {
+enum collectionMethod {
+  EBPF = 0,
+  CORE_BPF,
+  KERNEL_MODULE,
 };
+}  // namespace collector
 
-#endif  // COLLECTOR_HOSTCONFIG_H
+#endif  // COLLECTION_METHOD_H

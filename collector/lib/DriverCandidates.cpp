@@ -1,3 +1,26 @@
+/** collector
+
+A full notice with attributions is provided along with this source code.
+
+This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License version 2 as published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+* In addition, as a special exception, the copyright holders give
+* permission to link the code of portions of this program with the
+* OpenSSL library under certain conditions as described in each
+* individual source file, and distribute linked combinations
+* including the two.
+* You must obey the GNU General Public License in all respects
+* for all of the code used other than OpenSSL.  If you modify
+* file(s) with this exception, you may extend this exception to your
+* version of the file(s), but you are not obligated to do so.  If you
+* do not wish to do so, delete this exception statement from your
+* version.
+*/
+
 #include "DriverCandidates.h"
 
 #include <filesystem>
@@ -33,7 +56,7 @@ std::optional<DriverCandidate> getUbuntuBackport(HostInfo& host, bool useEbpf) {
     if (kernel.version.find(candidate) != std::string::npos) {
       std::string backport = kernel.release + candidate;
       std::string name = driverFullName(backport, useEbpf);
-      return DriverCandidate(std::move(name), useEbpf);
+      return DriverCandidate(std::move(name), useEbpf ? EBPF : KERNEL_MODULE);
     }
   }
 
@@ -60,7 +83,7 @@ std::optional<DriverCandidate> getGardenLinuxCandidate(HostInfo& host, bool useE
   std::string shortName = kernel.release + "-gl-" + match.str();
   std::string name = driverFullName(shortName, useEbpf);
 
-  return DriverCandidate(name, useEbpf);
+  return DriverCandidate(name, useEbpf ? EBPF : KERNEL_MODULE);
 }
 
 // The kvm driver for minikube uses a custom kernel built from
@@ -79,7 +102,7 @@ std::optional<DriverCandidate> getMinikubeCandidate(HostInfo& host, bool useEbpf
 
   std::string shortName = kernel.ShortRelease() + "-minikube-" + minikube_version;
   std::string name = driverFullName(shortName, useEbpf);
-  return DriverCandidate(name, useEbpf);
+  return DriverCandidate(name, useEbpf ? EBPF : KERNEL_MODULE);
 }
 
 // Normalizes this host's release string into something collector can use
@@ -119,26 +142,31 @@ std::string normalizeReleaseString(HostInfo& host) {
   return kernel.release;
 }
 
+DriverCandidate getCoreBpfCandidate() {
+  return DriverCandidate("CO.RE eBPF probe", CORE_BPF, false);
+}
+
 DriverCandidate getHostCandidate(HostInfo& host, bool useEbpf) {
   std::string hostCandidate = normalizeReleaseString(host);
   std::string hostCandidateFullName = driverFullName(hostCandidate, useEbpf);
 
-  return DriverCandidate(hostCandidateFullName, useEbpf);
+  return DriverCandidate(hostCandidateFullName, useEbpf ? EBPF : KERNEL_MODULE);
 }
 
 DriverCandidate getUserDriverCandidate(const char* full_name, bool useEbpf) {
   std::filesystem::path driver_file(full_name);
 
   if (driver_file.is_absolute()) {
-    return DriverCandidate(driver_file.filename(), useEbpf, false, driver_file.parent_path());
+    return DriverCandidate(driver_file.filename(), useEbpf ? EBPF : KERNEL_MODULE, false, driver_file.parent_path());
   }
 
-  return DriverCandidate(driver_file, useEbpf, false);
+  return DriverCandidate(driver_file, useEbpf ? EBPF : KERNEL_MODULE, false);
 }
 }  // namespace
 
-std::vector<DriverCandidate> GetKernelCandidates(bool useEbpf) {
+std::vector<DriverCandidate> GetKernelCandidates(collectionMethod cm) {
   std::vector<DriverCandidate> candidates;
+  bool useEbpf = cm == EBPF || cm == CORE_BPF;
 
   const char* kernel_candidates = std::getenv("KERNEL_CANDIDATES");
   if (kernel_candidates && *kernel_candidates) {
@@ -146,7 +174,7 @@ std::vector<DriverCandidate> GetKernelCandidates(bool useEbpf) {
 
     for (const auto& candidate_name : SplitStringView(sview)) {
       std::string name = driverFullName(candidate_name, useEbpf);
-      candidates.emplace_back(std::move(name), useEbpf);
+      candidates.emplace_back(std::move(name), useEbpf ? EBPF : KERNEL_MODULE);
     }
 
     return candidates;
@@ -155,6 +183,10 @@ std::vector<DriverCandidate> GetKernelCandidates(bool useEbpf) {
   const char* user_driver = std::getenv("COLLECTOR_DRIVER");
   if (user_driver && *user_driver) {
     candidates.push_back(getUserDriverCandidate(user_driver, useEbpf));
+  }
+
+  if (cm == CORE_BPF) {
+    candidates.push_back(getCoreBpfCandidate());
   }
 
   HostInfo& host = HostInfo::Instance();

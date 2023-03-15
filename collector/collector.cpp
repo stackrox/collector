@@ -206,7 +206,7 @@ int main(int argc, char** argv) {
 
   CLOG(INFO) << "Module version: " << GetModuleVersion();
 
-  std::vector<DriverCandidate> candidates = GetKernelCandidates(config.UseEbpf());
+  std::vector<DriverCandidate> candidates = GetKernelCandidates(config.CollectionMethod());
   if (candidates.empty()) {
     startup_diagnostics.Log();
     CLOG(FATAL) << "No kernel candidates available";

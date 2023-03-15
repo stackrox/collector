@@ -29,6 +29,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "libsinsp/wrapper.h"
 
+#include "CollectionMethod.h"
 #include "CollectorException.h"
 #include "EventNames.h"
 #include "HostInfo.h"
@@ -69,30 +70,30 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
 }
 
 bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandidate& candidate) {
-  if (inspector_) {
-    throw CollectorException("Invalid state: SysdigService kernel components are already initialized");
+  if (!inspector_) {
+    inspector_.reset(new_inspector());
+    inspector_->set_snaplen(0);
+
+    if (logging::GetLogLevel() == logging::LogLevel::TRACE) {
+      inspector_->set_log_stderr();
+    }
   }
 
-  inspector_.reset(new_inspector());
-  inspector_->set_snaplen(0);
-
-  if (logging::GetLogLevel() == logging::LogLevel::TRACE) {
-    inspector_->set_log_stderr();
-  }
-
+  std::unique_ptr<IKernelDriver> driver;
   if (candidate.GetCollectionMethod() == EBPF) {
     useEbpf_ = true;
-    KernelDriverEBPF driver;
-    if (!driver.Setup(config, SysdigService::kProbePath)) {
-      CLOG(ERROR) << "Failed to setup eBPF probe";
-      return false;
-    }
+    driver = std::make_unique<KernelDriverEBPF>(KernelDriverEBPF());
+  } else if (candidate.GetCollectionMethod() == CORE_BPF) {
+    useEbpf_ = true;
+    driver = std::make_unique<KernelDriverCOREEBPF>(KernelDriverCOREEBPF());
   } else {
-    KernelDriverModule driver;
-    if (!driver.Setup(config, SysdigService::kModulePath)) {
-      CLOG(ERROR) << "Failed to setup Kernel module";
-      return false;
-    }
+    useEbpf_ = false;
+    driver = std::make_unique<KernelDriverModule>(KernelDriverModule());
+  }
+
+  if (!driver->Setup(config)) {
+    CLOG(ERROR) << "Failed to setup " << candidate.GetName();
+    return false;
   }
 
   return true;

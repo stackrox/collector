@@ -60,7 +60,7 @@ BoolEnvVar set_processes_listening_on_ports("ROX_PROCESSES_LISTENING_ON_PORT", C
 constexpr bool CollectorConfig::kUseChiselCache;
 constexpr bool CollectorConfig::kTurnOffScrape;
 constexpr int CollectorConfig::kScrapeInterval;
-constexpr char CollectorConfig::kCollectionMethod[];
+constexpr collectionMethod CollectorConfig::kCollectionMethod;
 constexpr char CollectorConfig::kChisel[];
 constexpr const char* CollectorConfig::kSyscalls[];
 constexpr bool CollectorConfig::kForceKernelModules;
@@ -149,11 +149,18 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
 
     // Collection Method
     if (args->CollectionMethod().length() > 0) {
-      collection_method_ = args->CollectionMethod();
-      CLOG(INFO) << "User configured collection-method=" << collection_method_;
+      const auto& cm = args->CollectionMethod();
+
+      if (cm == "ebpf") {
+        collection_method_ = EBPF;
+      } else if (cm == "core_bpf") {
+        collection_method_ = CORE_BPF;
+      }
+
+      CLOG(INFO) << "User configured collection-method=" << cm;
     } else if (!config["useEbpf"].empty()) {
       // useEbpf (deprecated)
-      collection_method_ = config["useEbpf"].asBool() ? "ebpf" : "kernel_module";
+      collection_method_ = config["useEbpf"].asBool() ? EBPF : KERNEL_MODULE;
       CLOG(INFO) << "User configured useEbpf=" << config["useEbpf"].asBool();
     }
 
@@ -227,10 +234,8 @@ bool CollectorConfig::UseChiselCache() const {
 }
 
 bool CollectorConfig::UseEbpf() const {
-  if (host_config_.HasCollectionMethod()) {
-    return host_config_.CollectionMethod() == "ebpf";
-  }
-  return (collection_method_ == "ebpf");
+  collectionMethod cm = CollectionMethod();
+  return (cm == EBPF || cm == CORE_BPF);
 }
 
 bool CollectorConfig::TurnOffScrape() const {
@@ -245,7 +250,7 @@ std::string CollectorConfig::Chisel() const {
   return chisel_;
 }
 
-std::string CollectorConfig::CollectionMethod() const {
+collectionMethod CollectorConfig::CollectionMethod() const {
   if (host_config_.HasCollectionMethod()) {
     return host_config_.CollectionMethod();
   }

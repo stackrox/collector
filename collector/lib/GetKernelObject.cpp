@@ -25,9 +25,6 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <cstring>
 
-#include "KernelDriver.h"
-#include "SysdigService.h"
-
 extern "C" {
 #include <sys/stat.h>
 }
@@ -36,7 +33,9 @@ extern "C" {
 
 #include "FileDownloader.h"
 #include "FileSystem.h"
+#include "KernelDriver.h"
 #include "Logging.h"
+#include "SysdigService.h"
 #include "Utility.h"
 
 namespace collector {
@@ -142,6 +141,12 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
 }
 
 bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const DriverCandidate& candidate, bool verbose) {
+  if (candidate.GetCollectionMethod() == CORE_BPF) {
+    // for now CO.RE bpf probes are embedded in the collector binary, nothing
+    // to do here.
+    return true;
+  }
+
   std::string expected_path = candidate.GetPath() + "/" + candidate.GetName();
   std::string expected_path_compressed = expected_path + ".gz";
   std::string module_path = candidate.GetCollectionMethod() == EBPF ? SysdigService::kProbePath : SysdigService::kModulePath;

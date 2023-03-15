@@ -2,7 +2,6 @@
 #define COLLECTOR_KERNEL_DRIVER_H
 
 #include <string>
-
 extern "C" {
 #include <cap-ng.h>
 #include <stdio.h>
@@ -14,25 +13,22 @@ extern "C" {
 #include "EventNames.h"
 #include "FileSystem.h"
 #include "Logging.h"
+#include "SysdigService.h"
 #include "Utility.h"
 
 extern unsigned char g_bpf_drop_syscalls[];
 
 namespace collector {
-enum collectionMethod {
-  EBPF = 0,
-  CORE_BPF,
-  KERNEL_MODULE,
-};
-
 class IKernelDriver {
  public:
-  virtual bool Setup(const CollectorConfig& config, std::string path) = 0;
+  virtual bool Setup(const CollectorConfig& config) = 0;
 };
 
 class KernelDriverModule : public IKernelDriver {
  public:
-  bool Setup(const CollectorConfig& config, std::string path) override {
+  KernelDriverModule() = default;
+
+  bool Setup(const CollectorConfig& config) override {
     // First action: drop all capabilities except for:
     // SYS_MODULE (inserting the module),
     // SYS_PTRACE (reading from /proc),
@@ -51,7 +47,7 @@ class KernelDriverModule : public IKernelDriver {
       CLOG(WARNING) << "Failed to drop capabilities: " << StrError();
     }
 
-    if (!insert(config.Syscalls(), path)) {
+    if (!insert(config.Syscalls(), SysdigService::kModulePath)) {
       CLOG(ERROR) << "Failed to insert kernel module";
       return false;
     }
@@ -77,10 +73,12 @@ class KernelDriverModule : public IKernelDriver {
 
 class KernelDriverEBPF : public IKernelDriver {
  public:
-  bool Setup(const CollectorConfig& config, std::string path) override {
-    FDHandle fd = FDHandle(open(path.c_str(), O_RDONLY));
+  KernelDriverEBPF() = default;
+
+  bool Setup(const CollectorConfig& config) override {
+    FDHandle fd = FDHandle(open(SysdigService::kProbePath, O_RDONLY));
     if (!fd.valid()) {
-      CLOG(ERROR) << "Cannot open eBPF probe at " << path;
+      CLOG(ERROR) << "Cannot open eBPF probe at " << SysdigService::kProbePath;
       return false;
     }
     setDropSyscalls(config.Syscalls());
@@ -109,7 +107,9 @@ class KernelDriverEBPF : public IKernelDriver {
 
 class KernelDriverCOREEBPF : public IKernelDriver {
  public:
-  bool Setup(const CollectorConfig& config, std::string path) override {
+  KernelDriverCOREEBPF() = default;
+
+  bool Setup(const CollectorConfig& config) override {
     // TODO: implement CO.RE ebpf setup if needed
     return false;
   }
