@@ -230,7 +230,7 @@ int main(int argc, char** argv) {
 
   if (!collector.InitKernel(args->GRPCServer(), candidates)) {
     startup_diagnostics.Log();
-    CLOG(FATAL) << "Failed to initialize collector service.";
+    CLOG(FATAL) << "Failed to initialize collector kernel components.";
   }
 
   // output the GPL notice only once the kernel object has been found or downloaded

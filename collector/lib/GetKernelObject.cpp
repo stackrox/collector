@@ -31,9 +31,9 @@ extern "C" {
 
 #include <fstream>
 
+#include "CollectionMethod.h"
 #include "FileDownloader.h"
 #include "FileSystem.h"
-#include "KernelDriver.h"
 #include "Logging.h"
 #include "SysdigService.h"
 #include "Utility.h"

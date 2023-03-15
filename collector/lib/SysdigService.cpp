@@ -72,6 +72,8 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
 bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandidate& candidate) {
   if (!inspector_) {
     inspector_.reset(new_inspector());
+
+    // peeking into arguments has a big overhead, so we prevent it from happening
     inspector_->set_snaplen(0);
 
     if (logging::GetLogLevel() == logging::LogLevel::TRACE) {

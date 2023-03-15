@@ -41,12 +41,12 @@ class StartupDiagnostics : public IDiagnostics {
 
   void DriverUnavailable(const std::string& candidate) {
     std::stringstream line;
-    line << "  " << candidate << " (unavailable)";
+    line << "   " << candidate << " (unavailable)";
     driverDiagnostics_.push_back(line.str());
   }
   void DriverAvailable(const std::string& candidate) {
     std::stringstream line;
-    line << "  " << candidate << " (available)";
+    line << "   " << candidate << " (available)";
     driverDiagnostics_.push_back(line.str());
   }
 

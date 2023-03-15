@@ -24,9 +24,9 @@ You should have received a copy of the GNU General Public License along with thi
 #include <gmock/gmock-actions.h>
 #include <gmock/gmock-spec-builders.h>
 
+#include "CollectionMethod.h"
 #include "DriverCandidates.cpp"
 #include "HostInfo.h"
-#include "KernelDriver.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 

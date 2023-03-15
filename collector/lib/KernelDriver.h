@@ -2,6 +2,7 @@
 #define COLLECTOR_KERNEL_DRIVER_H
 
 #include <string>
+
 extern "C" {
 #include <cap-ng.h>
 #include <stdio.h>
