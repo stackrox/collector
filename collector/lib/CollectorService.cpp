@@ -165,6 +165,10 @@ bool CollectorService::InitKernel(const std::string& GRPCServer, const std::vect
     if (sysdig_.InitKernel(config_, candidate)) {
       startup_diagnostics.DriverSuccess(candidate.GetName());
       return true;
+    } else if (candidate.GetCollectionMethod() == KERNEL_MODULE) {
+      // Kernel module drops capabilities, so subsequent attempts could fail
+      // instead we use the legacy behaviour of failing.
+      break;
     }
   }
 
