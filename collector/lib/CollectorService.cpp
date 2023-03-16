@@ -209,7 +209,7 @@ bool SetupKernelDriver(CollectorService& collector, const std::string& GRPCServe
     }
   }
 
-  CLOG(WARNING) << "Failed to initialize collector kernel components.";
+  CLOG(ERROR) << "Failed to initialize collector kernel components.";
   // No candidate managed to create a working collector service.
   return false;
 }
