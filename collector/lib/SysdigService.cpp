@@ -27,8 +27,6 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <linux/ioctl.h>
 
-#include "libsinsp/wrapper.h"
-
 #include "CollectorException.h"
 #include "EventNames.h"
 #include "HostInfo.h"
@@ -73,7 +71,7 @@ bool SysdigService::InitKernel(const CollectorConfig& config) {
     throw CollectorException("Invalid state: SysdigService kernel components are already initialized");
   }
 
-  inspector_.reset(new_inspector());
+  inspector_.reset(new sinsp);
   inspector_->set_snaplen(config.SnapLen());
 
   if (logging::GetLogLevel() == logging::LogLevel::TRACE) {
@@ -308,7 +306,7 @@ void SysdigService::SetChisel(const std::string& chisel) {
   std::lock_guard<std::mutex> lock(libsinsp_mutex_);
   CLOG(DEBUG) << "Updating chisel and flushing chisel cache";
   CLOG(DEBUG) << "New chisel: " << chisel;
-  chisel_.reset(new_chisel(inspector_.get(), chisel, false));
+  chisel_.reset(new sinsp_chisel(inspector_.get(), chisel, false));
   chisel_->on_init();
   chisel_cache_.clear();
 

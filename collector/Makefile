@@ -38,7 +38,6 @@ container/bin/collector: cmake-build/collector
 collector: container/bin/collector txt-files
 	mkdir -p container/libs
 	cp -r "$(CMAKE_DIR)"/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
-	cp "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so" container/libs/libsinsp-wrapper.so
 
 .PHONY: build-connscrape-test
 build-connscrape-test:
@@ -47,14 +46,12 @@ build-connscrape-test:
 connscrape: build-connscrape-test
 	docker rm -fv collector_connscrape || true
 	docker run --rm --name collector_connscrape \
-		-v "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
 		connscrape-test "$(SRC_MOUNT_DIR)/collector/connscrape-test/connscrape-test.sh"
 
 unittest: collector
 	docker rm -fv collector_unittest || true
 	docker run --rm --name collector_unittest \
-		-v "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
 		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) $(COLLECTOR_PRE_ARGUMENTS) "$(SRC_MOUNT_DIR)/$(CMAKE_BASE_DIR)/collector/runUnitTests"
 

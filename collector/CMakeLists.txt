@@ -42,10 +42,17 @@ set(DRIVER_HEADERS ${PROJECT_SOURCE_DIR}/falcosecurity-libs/driver/ppm_events_pu
 
 add_definitions(-DUSE_PROTO_ARENAS)
 
+#
+# In order to ensure that the Falco structures we are using
+# are the correct size, we define HAS_CAPTURE which toggles specific
+# structures in libsinsp.
+#
+add_definitions(-DHAS_CAPTURE)
+
 file(GLOB COLLECTOR_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/lib/*.cpp)
 add_library(collector_lib ${DRIVER_HEADERS} ${COLLECTOR_LIB_SRC_FILES})
-add_dependencies(collector_lib sinsp-wrapper)
-target_link_libraries(collector_lib sinsp-wrapper)
+add_dependencies(collector_lib sinsp)
+target_link_libraries(collector_lib sinsp)
 target_link_libraries(collector_lib stdc++fs) # This is needed for GCC-8 to link against the filesystem library
 target_link_libraries(collector_lib cap-ng)
 target_link_libraries(collector_lib uuid)

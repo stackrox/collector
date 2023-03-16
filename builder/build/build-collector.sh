@@ -29,9 +29,7 @@ cmake "${cmake_extra_flags[@]}" -S "${SRC_ROOT_DIR}" -B "${CMAKE_BUILD_DIR}"
 cmake --build "${CMAKE_BUILD_DIR}" --target all -- -j "${NPROCS:-2}"
 
 if [ "$CMAKE_BUILD_TYPE" = "Release" ]; then
-    strip --strip-unneeded \
-        "${CMAKE_BUILD_DIR}/collector/collector" \
-        "${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so"
+    strip --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 fi
 
 cp -r /THIRD_PARTY_NOTICES "${CMAKE_BUILD_DIR}/"

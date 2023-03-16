@@ -26,7 +26,6 @@ You should have received a copy of the GNU General Public License along with thi
 #include <Utility.h>
 #include "libsinsp/sinsp.h"
 #include "chisel.h"
-#include "libsinsp/wrapper.h"
 // clang-format on
 
 #include "CollectorStats.h"
@@ -40,6 +39,10 @@ using ProcessSignal = ProcessSignalFormatter::ProcessSignal;
 using LineageInfo = ProcessSignalFormatter::LineageInfo;
 
 namespace {
+
+sinsp* SINSP_PUBLIC new_inspector() {
+  return new sinsp;
+}
 
 TEST(ProcessSignalFormatterTest, NoProcessTest) {
   sinsp* inspector = NULL;
