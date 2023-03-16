@@ -206,18 +206,6 @@ int main(int argc, char** argv) {
 
   CLOG(INFO) << "Module version: " << GetModuleVersion();
 
-  std::vector<DriverCandidate> candidates = GetKernelCandidates(config.GetCollectionMethod());
-  if (candidates.empty()) {
-    startup_diagnostics.Log();
-    CLOG(FATAL) << "No kernel candidates available";
-  }
-
-  const char* type = config.UseEbpf() ? "eBPF probe" : "kernel module";
-  CLOG(INFO) << "Attempting to find " << type << " - Candidate versions: ";
-  for (const auto& candidate : candidates) {
-    CLOG(INFO) << candidate.GetName();
-  }
-
   // Register signal handlers
   signal(SIGABRT, AbortHandler);
   signal(SIGSEGV, AbortHandler);
@@ -228,7 +216,7 @@ int main(int argc, char** argv) {
 
   CollectorService collector(config, &g_control, &g_signum);
 
-  if (!collector.InitKernel(args->GRPCServer(), candidates)) {
+  if (!SetupKernelDriver(collector, args->GRPCServer(), config)) {
     startup_diagnostics.Log();
     CLOG(FATAL) << "Failed to initialize collector kernel components.";
   }

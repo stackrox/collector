@@ -42,7 +42,7 @@ class CollectorService {
 
   void RunForever();
 
-  bool InitKernel(const std::string& GRPCServer, const std::vector<DriverCandidate>& candidates);
+  bool InitKernel(const DriverCandidate& candidate);
 
  private:
   void OnChiselReceived(const std::string& chisel);
@@ -59,6 +59,8 @@ class CollectorService {
 
   SysdigService sysdig_;
 };
+
+bool SetupKernelDriver(CollectorService& collector, const std::string& GRPCServer, const CollectorConfig& config);
 
 }  // namespace collector
 

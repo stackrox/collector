@@ -150,31 +150,8 @@ void CollectorService::RunForever() {
   sysdig_.CleanUp();
 }
 
-bool CollectorService::InitKernel(const std::string& GRPCServer, const std::vector<DriverCandidate>& candidates) {
-  auto& startup_diagnostics = StartupDiagnostics::GetInstance();
-
-  for (const auto& candidate : candidates) {
-    if (!GetKernelObject(GRPCServer, config_.TLSConfiguration(), candidate, config_.CurlVerbose())) {
-      CLOG(WARNING) << "No suitable kernel object downloaded for " << candidate.GetName();
-      startup_diagnostics.DriverUnavailable(candidate.GetName());
-      continue;
-    }
-
-    startup_diagnostics.DriverAvailable(candidate.GetName());
-
-    if (sysdig_.InitKernel(config_, candidate)) {
-      startup_diagnostics.DriverSuccess(candidate.GetName());
-      return true;
-    } else if (candidate.GetCollectionMethod() == KERNEL_MODULE) {
-      // Kernel module drops capabilities, so subsequent attempts could fail
-      // instead we use the legacy behaviour of failing.
-      break;
-    }
-  }
-
-  CLOG(WARNING) << "Failed to initialize collector kernel components.";
-  // No candidate managed to create a working collector service.
-  return false;
+bool CollectorService::InitKernel(const DriverCandidate& candidate) {
+  return sysdig_.InitKernel(config_, candidate);
 }
 
 bool CollectorService::WaitForGRPCServer() {
@@ -196,6 +173,45 @@ void CollectorService::OnChiselReceived(const std::string& new_chisel) {
 
   ControlValue cv = RUN;
   control_->compare_exchange_strong(cv, INTERRUPT_SYSDIG, std::memory_order_seq_cst);
+}
+
+bool SetupKernelDriver(CollectorService& collector, const std::string& GRPCServer, const CollectorConfig& config) {
+  auto& startup_diagnostics = StartupDiagnostics::GetInstance();
+
+  std::vector<DriverCandidate> candidates = GetKernelCandidates(config.GetCollectionMethod());
+  if (candidates.empty()) {
+    CLOG(ERROR) << "No kernel candidates available";
+    return false;
+  }
+
+  const char* type = config.UseEbpf() ? "eBPF probe" : "kernel module";
+  CLOG(INFO) << "Attempting to find " << type << " - Candidate versions: ";
+  for (const auto& candidate : candidates) {
+    CLOG(INFO) << candidate.GetName();
+  }
+
+  for (const auto& candidate : candidates) {
+    if (!GetKernelObject(GRPCServer, config.TLSConfiguration(), candidate, config.CurlVerbose())) {
+      CLOG(WARNING) << "No suitable kernel object downloaded for " << candidate.GetName();
+      startup_diagnostics.DriverUnavailable(candidate.GetName());
+      continue;
+    }
+
+    startup_diagnostics.DriverAvailable(candidate.GetName());
+
+    if (collector.InitKernel(candidate)) {
+      startup_diagnostics.DriverSuccess(candidate.GetName());
+      return true;
+    } else if (candidate.GetCollectionMethod() == KERNEL_MODULE) {
+      // Kernel module drops capabilities, so subsequent attempts could fail
+      // instead we use the legacy behaviour of failing.
+      break;
+    }
+  }
+
+  CLOG(WARNING) << "Failed to initialize collector kernel components.";
+  // No candidate managed to create a working collector service.
+  return false;
 }
 
 }  // namespace collector
