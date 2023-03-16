@@ -60,7 +60,7 @@ BoolEnvVar set_processes_listening_on_ports("ROX_PROCESSES_LISTENING_ON_PORT", C
 constexpr bool CollectorConfig::kUseChiselCache;
 constexpr bool CollectorConfig::kTurnOffScrape;
 constexpr int CollectorConfig::kScrapeInterval;
-constexpr collectionMethod CollectorConfig::kCollectionMethod;
+constexpr CollectionMethod CollectorConfig::kCollectionMethod;
 constexpr char CollectorConfig::kChisel[];
 constexpr const char* CollectorConfig::kSyscalls[];
 constexpr bool CollectorConfig::kForceKernelModules;
@@ -148,8 +148,8 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
     }
 
     // Collection Method
-    if (args->CollectionMethod().length() > 0) {
-      const auto& cm = args->CollectionMethod();
+    if (args->GetCollectionMethod().length() > 0) {
+      const auto& cm = args->GetCollectionMethod();
 
       if (cm == "ebpf") {
         collection_method_ = EBPF;
@@ -234,7 +234,7 @@ bool CollectorConfig::UseChiselCache() const {
 }
 
 bool CollectorConfig::UseEbpf() const {
-  collectionMethod cm = CollectionMethod();
+  CollectionMethod cm = GetCollectionMethod();
   return (cm == EBPF || cm == CORE_BPF);
 }
 
@@ -250,9 +250,9 @@ std::string CollectorConfig::Chisel() const {
   return chisel_;
 }
 
-collectionMethod CollectorConfig::CollectionMethod() const {
+CollectionMethod CollectorConfig::GetCollectionMethod() const {
   if (host_config_.HasCollectionMethod()) {
-    return host_config_.CollectionMethod();
+    return host_config_.GetCollectionMethod();
   }
   return collection_method_;
 }
@@ -283,7 +283,7 @@ bool CollectorConfig::IsCoreDumpEnabled() const {
 
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
   return os
-         << "collection_method:" << c.CollectionMethod()
+         << "collection_method:" << c.GetCollectionMethod()
          << ", useChiselCache:" << c.UseChiselCache()
          << ", scrape_interval:" << c.ScrapeInterval()
          << ", turn_off_scrape:" << c.TurnOffScrape()

@@ -164,7 +164,7 @@ DriverCandidate getUserDriverCandidate(const char* full_name, bool useEbpf) {
 }
 }  // namespace
 
-std::vector<DriverCandidate> GetKernelCandidates(collectionMethod cm) {
+std::vector<DriverCandidate> GetKernelCandidates(CollectionMethod cm) {
   std::vector<DriverCandidate> candidates;
   bool useEbpf = cm == EBPF || cm == CORE_BPF;
 

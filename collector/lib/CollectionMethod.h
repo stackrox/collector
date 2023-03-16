@@ -25,7 +25,7 @@ You should have received a copy of the GNU General Public License along with thi
 #define COLLECTION_METHOD_H
 
 namespace collector {
-enum collectionMethod {
+enum CollectionMethod {
   EBPF = 0,
   CORE_BPF,
   KERNEL_MODULE,

@@ -46,7 +46,7 @@ class CollectorArgs {
   option::ArgStatus checkOptionalNumeric(const option::Option& option, bool msg);
 
   const Json::Value& CollectorConfig() const;
-  const std::string& CollectionMethod() const;
+  const std::string& GetCollectionMethod() const;
   const std::string& Chisel() const;
   const std::string& GRPCServer() const;
   const std::string& Message() const;

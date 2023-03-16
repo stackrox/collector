@@ -75,7 +75,7 @@ TEST(HostHeuristicsTest, TestSecureBootEnabled) {
 
   secureBootHeuristics.Process(host, config, &hconfig);
 
-  EXPECT_EQ(hconfig.CollectionMethod(), EBPF);
+  EXPECT_EQ(hconfig.GetCollectionMethod(), EBPF);
 }
 
 // The SecureBoot feature is undetermined and could be enabled, triggering
@@ -97,11 +97,11 @@ TEST(HostHeuristicsTest, TestSecureBootNotDetermined) {
   secureBootHeuristics.Process(host, config, &hconfig);
 
 #ifdef __x86_64__
-  EXPECT_EQ(hconfig.CollectionMethod(), EBPF);
+  EXPECT_EQ(hconfig.GetCollectionMethod(), EBPF);
 #else
   // for non-x86 architectures we don't modify the collection method
   // if secure boot not determined.
-  EXPECT_EQ(hconfig.CollectionMethod(), KERNEL_MODULE);
+  EXPECT_EQ(hconfig.GetCollectionMethod(), KERNEL_MODULE);
 #endif
 }
 
@@ -122,7 +122,7 @@ TEST(HostHeuristicsTest, TestSecureBootKernelModuleForced) {
 
   secureBootHeuristics.Process(host, config, &hconfig);
 
-  EXPECT_EQ(hconfig.CollectionMethod(), KERNEL_MODULE);
+  EXPECT_EQ(hconfig.GetCollectionMethod(), KERNEL_MODULE);
 }
 
 // Booted in the legacy mode
@@ -140,7 +140,7 @@ TEST(HostHeuristicsTest, TestSecureBootLegacyBIOS) {
 
   secureBootHeuristics.Process(host, config, &hconfig);
 
-  EXPECT_EQ(hconfig.CollectionMethod(), KERNEL_MODULE);
+  EXPECT_EQ(hconfig.GetCollectionMethod(), KERNEL_MODULE);
 }
 
 // Garbage value is read from boot_param
@@ -160,7 +160,7 @@ TEST(HostHeuristicsTest, TestSecureBootIncorrect) {
 
   secureBootHeuristics.Process(host, config, &hconfig);
 
-  EXPECT_EQ(hconfig.CollectionMethod(), KERNEL_MODULE);
+  EXPECT_EQ(hconfig.GetCollectionMethod(), KERNEL_MODULE);
 }
 
 class MockGardenLinuxHeuristic : public GardenLinuxHeuristic {
@@ -180,7 +180,7 @@ TEST(GardenLinuxHeuristicsTest, NotGardenLinux) {
 
   gardenLinuxHeuristic.Process(host, config, &hconfig);
 
-  EXPECT_EQ(hconfig.CollectionMethod(), KERNEL_MODULE);
+  EXPECT_EQ(hconfig.GetCollectionMethod(), KERNEL_MODULE);
 }
 
 TEST(GardenLinuxHeuristicsTest, UsingEBPF) {
@@ -196,15 +196,15 @@ TEST(GardenLinuxHeuristicsTest, UsingEBPF) {
 
   gardenLinuxHeuristic.Process(host, config, &hconfig);
 
-  EXPECT_EQ(hconfig.CollectionMethod(), EBPF);
+  EXPECT_EQ(hconfig.GetCollectionMethod(), EBPF);
 }
 
 struct GardenLinuxTestCase {
-  GardenLinuxTestCase(const std::string& release, collectionMethod collection_method)
+  GardenLinuxTestCase(const std::string& release, CollectionMethod collection_method)
       : release(release), collection_method(collection_method) {}
 
   std::string release;
-  collectionMethod collection_method;
+  CollectionMethod collection_method;
 };
 
 TEST(GardenLinuxHeuristicsTest, TestReleases) {
@@ -228,7 +228,7 @@ TEST(GardenLinuxHeuristicsTest, TestReleases) {
 
     gardenLinuxHeuristic.Process(host, config, &hconfig);
 
-    EXPECT_EQ(hconfig.CollectionMethod(), test_case.collection_method);
+    EXPECT_EQ(hconfig.GetCollectionMethod(), test_case.collection_method);
   }
 }
 

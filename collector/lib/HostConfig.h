@@ -39,14 +39,14 @@ class HostConfig {
  public:
   HostConfig() = default;
 
-  collector::collectionMethod CollectionMethod() const { return *collection_method_; }
+  collector::CollectionMethod GetCollectionMethod() const { return *collection_method_; }
   bool HasCollectionMethod() const { return collection_method_.has_value(); }
-  void SetCollectionMethod(collector::collectionMethod method) {
+  void SetCollectionMethod(collector::CollectionMethod method) {
     collection_method_ = method;
   }
 
  private:
-  std::optional<collector::collectionMethod> collection_method_;
+  std::optional<collector::CollectionMethod> collection_method_;
 };
 
 #endif  // COLLECTOR_HOSTCONFIG_H

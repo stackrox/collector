@@ -44,7 +44,7 @@ class CollectorConfig {
   static constexpr bool kUseChiselCache = true;
   static constexpr bool kTurnOffScrape = false;
   static constexpr int kScrapeInterval = 30;
-  static constexpr collectionMethod kCollectionMethod = KERNEL_MODULE;
+  static constexpr CollectionMethod kCollectionMethod = KERNEL_MODULE;
   static constexpr const char* kSyscalls[] = {
       "accept",
       "chdir",
@@ -96,7 +96,7 @@ end
   std::string Chisel() const;
   std::string Hostname() const;
   std::string HostProc() const;
-  collectionMethod CollectionMethod() const;
+  CollectionMethod GetCollectionMethod() const;
   std::vector<std::string> Syscalls() const;
   int64_t AfterglowPeriod() const;
   std::string LogLevel() const;
@@ -114,7 +114,7 @@ end
  protected:
   bool use_chisel_cache_;
   int scrape_interval_;
-  collectionMethod collection_method_;
+  CollectionMethod collection_method_;
   std::string chisel_;
   bool turn_off_scrape_;
   std::vector<std::string> syscalls_;

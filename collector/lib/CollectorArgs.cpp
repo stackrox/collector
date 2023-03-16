@@ -277,7 +277,7 @@ CollectorArgs::CollectorConfig() const {
 }
 
 const std::string&
-CollectorArgs::CollectionMethod() const {
+CollectorArgs::GetCollectionMethod() const {
   return collectionMethod;
 }
 
