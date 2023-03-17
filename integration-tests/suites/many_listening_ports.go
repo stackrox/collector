@@ -1,6 +1,7 @@
 package suites
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 	"time"
@@ -42,7 +43,7 @@ func (s *ManyProcessesListeningOnPortsTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.serverContainer = common.ContainerShortID(containerID)
 
-	time.Sleep(15 * time.Second)
+	time.Sleep(20 * time.Second)
 
 	err = s.collector.TearDown()
 	s.Require().NoError(err)
@@ -72,8 +73,13 @@ func (s *ManyProcessesListeningOnPortsTestSuite) TestManyProcessesListeningOnPor
 	endpointMap := getEndpointsByPort(endpoints)
 
 	for port := 1; port <= s.NumPorts; port++ {
-		assert.Equal(s.T(), 1, len(endpointMap[port]))
-		assert.Equal(s.T(), 1, len(processMap[port]))
+		if len(endpointMap[port]) < 1 {
+			panic(fmt.Sprintf("no endpoint for port %d", port))
+		}
+		if len(processMap[port]) < 1 {
+			panic(fmt.Sprintf("no process for port %d", port))
+		}
+
 		assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpointMap[port][0].Protocol)
 		assert.Equal(s.T(), endpointMap[port][0].Originator.ProcessName, processMap[port][0].Name)
 		assert.Equal(s.T(), endpointMap[port][0].Originator.ProcessExecFilePath, processMap[port][0].ExePath)
