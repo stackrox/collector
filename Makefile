@@ -28,6 +28,11 @@ container-dockerfile:
 		< $(CURDIR)/collector/container/Dockerfile.template > \
 		$(CURDIR)/collector/container/Dockerfile.gen
 
+.PHONY: container-dockerfile-dev
+container-dockerfile-dev: container-dockerfile
+	sed '1s/ubi-minimal/ubi/' $(CURDIR)/collector/container/Dockerfile.gen > \
+		$(CURDIR)/collector/container/Dockerfile.dev
+
 .PHONY: builder
 builder:
 ifdef BUILD_BUILDER_IMAGE
@@ -68,11 +73,11 @@ image: collector unittest container-dockerfile
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
 
-image-dev: collector unittest container-dockerfile
+image-dev: collector unittest container-dockerfile-dev
 	make -C collector txt-files
 	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
 		--build-arg BUILD_TYPE=devel \
-		-f collector/container/Dockerfile.gen \
+		-f collector/container/Dockerfile.dev \
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
 
@@ -123,7 +128,6 @@ teardown-dev:
 .PHONY: clean
 clean: teardown-dev
 	rm -rf cmake-build/
-	rm -f collector/container/Dockerfile.gen
 	make -C collector clean
 
 .PHONY: shfmt-check
