@@ -22,14 +22,14 @@ extern unsigned char g_bpf_drop_syscalls[];
 namespace collector {
 class IKernelDriver {
  public:
-  virtual bool Setup(const CollectorConfig& config) = 0;
+  virtual bool Setup(const CollectorConfig& config, sinsp& inspector) = 0;
 };
 
 class KernelDriverModule : public IKernelDriver {
  public:
   KernelDriverModule() = default;
 
-  bool Setup(const CollectorConfig& config) override {
+  bool Setup(const CollectorConfig& config, sinsp& inspector) override {
     // First action: drop all capabilities except for:
     // SYS_MODULE (inserting the module),
     // SYS_PTRACE (reading from /proc),
@@ -65,6 +65,24 @@ class KernelDriverModule : public IKernelDriver {
       CLOG(WARNING) << "Failed to drop SYS_MODULE capability: " << StrError();
     }
 
+    /* Get only necessary tracepoints. */
+    std::unordered_set<uint32_t> tp_set = inspector.enforce_sinsp_state_tp();
+    std::unordered_set<uint32_t> ppm_sc;
+
+    try {
+      inspector.open_kmod(DEFAULT_DRIVER_BUFFER_BYTES_DIM, ppm_sc, tp_set);
+    } catch (const sinsp_exception& ex) {
+      CLOG(WARNING) << ex.what();
+      return false;
+    }
+
+    // Drop DAC_OVERRIDE capability after opening the device files.
+    capng_updatev(CAPNG_DROP, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_DAC_OVERRIDE, -1);
+    if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
+      CLOG(WARNING) << "Failed to drop DAC_OVERRIDE capability: " << StrError();
+      return false;
+    }
+
     return true;
   }
 
@@ -76,13 +94,25 @@ class KernelDriverEBPF : public IKernelDriver {
  public:
   KernelDriverEBPF() = default;
 
-  bool Setup(const CollectorConfig& config) override {
+  bool Setup(const CollectorConfig& config, sinsp& inspector) override {
     FDHandle fd = FDHandle(open(SysdigService::kProbePath, O_RDONLY));
     if (!fd.valid()) {
       CLOG(ERROR) << "Cannot open eBPF probe at " << SysdigService::kProbePath;
       return false;
     }
     setDropSyscalls(config.Syscalls());
+
+    /* Get only necessary tracepoints. */
+    std::unordered_set<uint32_t> tp_set = inspector.enforce_sinsp_state_tp();
+    std::unordered_set<uint32_t> ppm_sc;
+
+    try {
+      inspector.open_bpf(SysdigService::kProbePath, DEFAULT_DRIVER_BUFFER_BYTES_DIM, ppm_sc, tp_set);
+    } catch (const sinsp_exception& ex) {
+      CLOG(WARNING) << ex.what();
+      return false;
+    }
+
     return true;
   }
 
@@ -110,7 +140,7 @@ class KernelDriverCOREEBPF : public IKernelDriver {
  public:
   KernelDriverCOREEBPF() = default;
 
-  bool Setup(const CollectorConfig& config) override {
+  bool Setup(const CollectorConfig& config, sinsp& inspector) override {
     // TODO: implement CO.RE ebpf setup if needed
     return false;
   }
