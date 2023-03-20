@@ -83,4 +83,4 @@ virtual_machines:
   garden-linux:
     project: sap-se-gcp-gardenlinux
     images:
-      - gardenlinux-gcp-gardener-prod-amd64-934-5-59b6440
+      - gardenlinux-gcp-gardener-prod-amd64-934-6-76ea662
