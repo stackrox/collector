@@ -22,15 +22,9 @@ tag:
 builder-tag:
 	@echo "$(COLLECTOR_BUILDER_TAG)"
 
-.PHONY: container-dockerfile
-container-dockerfile:
-	envsubst '$${COLLECTOR_VERSION} $${MODULE_VERSION}' \
-		< $(CURDIR)/collector/container/Dockerfile.template > \
-		$(CURDIR)/collector/container/Dockerfile.gen
-
 .PHONY: container-dockerfile-dev
-container-dockerfile-dev: container-dockerfile
-	sed '1s/ubi-minimal/ubi/' $(CURDIR)/collector/container/Dockerfile.gen > \
+container-dockerfile-dev:
+	sed '1s/ubi-minimal/ubi/' $(CURDIR)/collector/container/Dockerfile > \
 		$(CURDIR)/collector/container/Dockerfile.dev
 
 .PHONY: builder
@@ -66,10 +60,12 @@ build-kernel-modules:
 build-drivers:
 	make -C kernel-modules drivers
 
-image: collector unittest container-dockerfile
+image: collector unittest
 	make -C collector txt-files
-	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
-		-f collector/container/Dockerfile.gen \
+	docker build \
+		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
+		--build-arg MODULE_VERSION="$(MODULE_VERSION)" \
+		-f collector/container/Dockerfile \
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
 
