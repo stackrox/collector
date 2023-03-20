@@ -6,9 +6,9 @@ echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 
 mv collector-wrapper.sh /usr/local/bin/
 chmod 700 bootstrap.sh
-microdnf upgrade -y
-microdnf install -y kmod
+dnf upgrade -y
+dnf install -y kmod
 
-microdnf install -y libasan
+dnf install -y libasan
 
 echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt
