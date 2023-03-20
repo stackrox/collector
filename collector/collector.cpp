@@ -100,7 +100,7 @@ static void AbortHandler(int signum) {
   //   reason was OOM)
   // * as the original implementation noted, use reentrant functions
   //
-  // The latter one was refering to snprintf, although it's not cleat if it is
+  // The latter one was refering to snprintf, although it's not clear if it is
   // reentrant. Libc docs says functions using I/O streams are potentially
   // non-reentrant [1], and it seems under the hood snprintf uses streams.
   //
