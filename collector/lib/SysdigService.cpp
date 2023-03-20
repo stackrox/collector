@@ -98,6 +98,36 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
     return false;
   }
 
+  /* Get only necessary tracepoints. */
+  std::unordered_set<uint32_t> tp_set = inspector_->enforce_sinsp_state_tp();
+  std::unordered_set<uint32_t> ppm_sc;
+
+  if (candidate.GetCollectionMethod() == KERNEL_MODULE) {
+    try {
+      inspector_->open_kmod(DEFAULT_DRIVER_BUFFER_BYTES_DIM, ppm_sc, tp_set);
+    } catch (const sinsp_exception& ex) {
+      CLOG(WARNING) << ex.what();
+      return false;
+    }
+
+    // Drop DAC_OVERRIDE capability after opening the device files.
+    capng_updatev(CAPNG_DROP, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_DAC_OVERRIDE, -1);
+    if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
+      CLOG(WARNING) << "Failed to drop DAC_OVERRIDE capability: " << StrError();
+      return false;
+    }
+  } else if (candidate.GetCollectionMethod() == CORE_BPF) {
+    // TODO: properly support CO.RE eBPF probe
+    return false;
+  } else {
+    try {
+      inspector_->open_bpf(kProbePath, DEFAULT_DRIVER_BUFFER_BYTES_DIM, ppm_sc, tp_set);
+    } catch (const sinsp_exception& ex) {
+      CLOG(WARNING) << ex.what();
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -188,22 +218,6 @@ void SysdigService::Start() {
     if (!signal_handler.handler->Start()) {
       CLOG(FATAL) << "Error starting signal handler " << signal_handler.handler->GetName();
     }
-  }
-
-  /* Get only necessary tracepoints. */
-  std::unordered_set<uint32_t> tp_set = inspector_->enforce_sinsp_state_tp();
-  std::unordered_set<uint32_t> ppm_sc;
-
-  if (!useEbpf_) {
-    inspector_->open_kmod(DEFAULT_DRIVER_BUFFER_BYTES_DIM, ppm_sc, tp_set);
-
-    // Drop DAC_OVERRIDE capability after opening the device files.
-    capng_updatev(CAPNG_DROP, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_DAC_OVERRIDE, -1);
-    if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
-      CLOG(WARNING) << "Failed to drop DAC_OVERRIDE capability: " << StrError();
-    }
-  } else {
-    inspector_->open_bpf(kProbePath, DEFAULT_DRIVER_BUFFER_BYTES_DIM, ppm_sc, tp_set);
   }
 
   std::lock_guard<std::mutex> running_lock(running_mutex_);
