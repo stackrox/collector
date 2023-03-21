@@ -58,7 +58,7 @@ static EventMap<ProcessSignalType> process_signals = {
     ProcessSignalType::UNKNOWN_PROCESS_TYPE,
 };
 
-string extract_proc_args(sinsp_threadinfo* tinfo) {
+std::string extract_proc_args(sinsp_threadinfo* tinfo) {
   if (tinfo->m_args.empty()) return "";
   std::ostringstream args;
   for (auto it = tinfo->m_args.begin(); it != tinfo->m_args.end();) {

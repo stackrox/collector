@@ -91,7 +91,7 @@ void CollectorStatsExporter::run() {
                                      .Name("rox_collector_timers")
                                      .Help("Collector timers")
                                      .Register(*registry_);
-  std::array<unique_ptr<CollectorTimerGauge>, CollectorStats::timer_type_max> collector_timers;
+  std::array<std::unique_ptr<CollectorTimerGauge>, CollectorStats::timer_type_max> collector_timers;
   for (int i = 0; i < CollectorStats::timer_type_max; i++) {
     auto tt = (CollectorStats::TimerType)(i);
     collector_timers[tt] = MakeUnique<CollectorTimerGauge>(collector_timers_gauge,

@@ -101,7 +101,7 @@ class SysdigService : public Sysdig {
   SysdigStats userspace_stats_;
   std::bitset<PPM_EVENT_MAX> global_event_filter_;
 
-  std::unordered_map<string, ChiselCacheStatus> chisel_cache_;
+  std::unordered_map<std::string, ChiselCacheStatus> chisel_cache_;
   bool use_chisel_cache_;
 
   mutable std::mutex running_mutex_;

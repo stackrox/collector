@@ -113,7 +113,7 @@ SignalHandler::Result NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
   return SignalHandler::PROCESSED;
 }
 
-std::vector<string> NetworkSignalHandler::GetRelevantEvents() {
+std::vector<std::string> NetworkSignalHandler::GetRelevantEvents() {
   return {"close<", "shutdown<", "connect<", "accept<"};
 }
 
