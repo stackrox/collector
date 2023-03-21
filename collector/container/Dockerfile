@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.7
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.7-1085
 
 ARG BUILD_TYPE=rhel
 ARG ROOT_DIR=.
