@@ -15,7 +15,6 @@ generated/
 collector/protoc-*
 
 # Generated dockerfiles
-container/Dockerfile.gen
 container/Dockerfile.dev
 
 # clangd specific files

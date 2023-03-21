@@ -78,7 +78,6 @@ clean:
 	rm -rf container/devel/scripts
 	rm -rf container/devel/bundle.tar.gz
 	rm -rf container/THIRD_PARTY_NOTICES
-	rm -f container/Dockerfile.gen
 	rm -f container/Dockerfile.dev
 
 .PHONY: check
