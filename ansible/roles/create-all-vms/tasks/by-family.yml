@@ -1,0 +1,15 @@
+---
+
+- name: Create VMs From Family
+  include_role:
+    name: create-vm
+  vars:
+    vm_name: "{{ gcp_instance_prefix }}-{{ normalized_collection_method }}-{{ item.1 }}-{{ job_id }}"
+    vm_project: "{{ item.0.value.project }}"
+    vm_family: "{{ item.1 }}"
+    vm_platform: "{{ item.0.key }}"
+    vm_config: "{{ item.0.key }}_{{ item.1 }}"
+    vm_collection_method: "{{ collection_method | default('any') | replace('-', '_') }}"
+    vm_available_zones: "{{ gcp_available_zones }}"
+    vm_ignition: "{{ item.0.value.ignition | default({}) }}"
+
