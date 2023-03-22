@@ -7,7 +7,7 @@
     vm_hashed_name: "{{ vm_hashable_name | hash('md5') }}"
 
 - set_fact:
-    vm_hashed_name_short: "{{ vm_hashed_name | regex_search('(.{8}).*', '\\1') | first }}"
+    vm_hashed_name_short: "{{ vm_hashed_name | truncate(8, True, '') }}"
 
 - name: Create VMs From Image
   include_role:
