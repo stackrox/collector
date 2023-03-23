@@ -4,18 +4,7 @@
     normalized_collection_method: "{{ collection_method | default('any') | replace('kernel-module', 'ko') }}"
 
 - name: Create VMs From Family
-  include_role:
-    name: create-vm
-  vars:
-    vm_name: "{{ gcp_instance_prefix }}-{{ normalized_collection_method }}-{{ item.1 }}-{{ job_id }}"
-    vm_project: "{{ item.0.value.project }}"
-    vm_family: "{{ item.1 }}"
-    vm_platform: "{{ item.0.key }}"
-    vm_config: "{{ item.0.key }}_{{ item.1 }}"
-    vm_collection_method: "{{ collection_method | default('any') | replace('-', '_') }}"
-    vm_available_zones: "{{ gcp_available_zones }}"
-    vm_ignition: "{{ item.0.value.ignition | default({}) }}"
-
+  include_tasks: by-family.yml
   #
   # The loop will create the "item" variable, which can be used throughout the task
   # and the subelements call will create a list that combines the project
@@ -36,22 +25,8 @@
   loop: "{{ vm_list | dict2items | subelements('value.families', skip_missing=True) }}"
   when: "test_platform == item.0.key or test_platform == 'all'"
 
-- name: Create VMs From Image
-  include_role:
-    name: create-vm
-  vars:
-    vm_name: "{{ gcp_instance_prefix }}-{{ normalized_collection_method }}-{{ item.0.key }}-{{ job_id }}"
-    vm_project: "{{ item.0.value.project }}"
-    # still populate the family, since it is used as a label to differentiate
-    # VMs
-    vm_family: "{{ item.0.key }}"
-    vm_image: "{{ item.1 }}"
-    vm_platform: "{{ item.0.key }}"
-    vm_config: "{{ item.0.key }}_{{ item.0.key }}"
-    vm_collection_method: "{{ collection_method | default('any') | replace('-', '_') }}"
-    vm_available_zones: "{{ gcp_available_zones }}"
-    vm_ignition: "{{ item.0.value.ignition | default({}) }}"
-
+- name: Create VM by image
+  include_tasks: by-image.yml
   #
   # The loop will create the "item" variable, which can be used throughout the task
   # and the subelements call will create a list that combines the project
