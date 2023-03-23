@@ -74,7 +74,7 @@
 ~^[6-9]\.[0-9]+\..* 2.0.1 mod
 ~^5\.14\.21-150400.*-default 2.0.1 mod
 ~^5\.14\.21-150400.*-default 1.0.0 mod
-~^5\.14\.0-.*el9_1.x86_64 2.0.1 mod
+~^5\.14\.0-.*el9.*.x86_64 2.0.1 mod
 # We no longer support docker desktop as a dev environment
 *-dockerdesktop-*
 # Oracle Linux kernel modules require `libdtrace-ctf`,
