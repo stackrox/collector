@@ -21,47 +21,15 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef _COLLECTOR_SERVICE_H_
-#define _COLLECTOR_SERVICE_H_
-
-#include <vector>
-
-#include "CollectorConfig.h"
-#include "CollectorStats.h"
-#include "Control.h"
-#include "DriverCandidates.h"
-#include "SysdigService.h"
+#ifndef COLLECTION_METHOD_H
+#define COLLECTION_METHOD_H
 
 namespace collector {
-
-class SysdigService;
-
-class CollectorService {
- public:
-  CollectorService(const CollectorConfig& config, std::atomic<ControlValue>* control, const std::atomic<int>* signum);
-
-  void RunForever();
-
-  bool InitKernel(const DriverCandidate& candidate);
-
- private:
-  void OnChiselReceived(const std::string& chisel);
-  bool WaitForGRPCServer();
-
-  CollectorConfig config_;
-
-  std::string chisel_;
-  bool update_chisel_ = false;
-  std::mutex chisel_mutex_;
-
-  std::atomic<ControlValue>* control_;
-  const std::atomic<int>& signum_;
-
-  SysdigService sysdig_;
+enum CollectionMethod {
+  EBPF = 0,
+  CORE_BPF,
+  KERNEL_MODULE,
 };
-
-bool SetupKernelDriver(CollectorService& collector, const std::string& GRPCServer, const CollectorConfig& config);
-
 }  // namespace collector
 
-#endif  // _COLLECTOR_SERVICE_H_
+#endif  // COLLECTION_METHOD_H

@@ -53,7 +53,7 @@ class CollectionHeuristic : public Heuristic {
                     << " does not support ebpf based collection.";
       CLOG(WARNING) << "Switching to kernel module based collection, please set "
                     << "collector.collectionMethod=KERNEL_MODULE to remove this message";
-      hconfig->SetCollectionMethod("kernel-module");
+      hconfig->SetCollectionMethod(KERNEL_MODULE);
     }
   }
 };
@@ -74,7 +74,7 @@ class CosHeuristic : public Heuristic {
       if (host.HasEBPFSupport() && !config.ForceKernelModules()) {
         CLOG(WARNING) << "Switching to eBPF based collection, please set "
                       << "collector.collectionMethod=EBPF to remove this message";
-        hconfig->SetCollectionMethod("ebpf");
+        hconfig->SetCollectionMethod(EBPF);
       } else {
         CLOG(FATAL) << "Unable to switch to eBPF collection on " << host.GetDistro();
       }
@@ -93,7 +93,7 @@ class DockerDesktopHeuristic : public Heuristic {
 
     if (config.UseEbpf()) {
       CLOG(WARNING) << host.GetDistro() << " does not support eBPF, switching to kernel module based collection.";
-      hconfig->SetCollectionMethod("kernel-module");
+      hconfig->SetCollectionMethod(KERNEL_MODULE);
     }
   }
 };
@@ -112,7 +112,7 @@ class MinikubeHeuristic : public Heuristic {
     if (!config.UseEbpf()) {
       CLOG(WARNING) << host.GetHostname() << " does not support third-party kernel modules";
       CLOG(WARNING) << "Switching to eBPF based collection, please set collector.collectionMethod=EBPF to remove this message";
-      hconfig->SetCollectionMethod("ebpf");
+      hconfig->SetCollectionMethod(EBPF);
     }
   }
 };
@@ -137,14 +137,14 @@ class SecureBootHeuristic : public Heuristic {
     if (sb_status == SecureBootStatus::ENABLED) {
       CLOG(WARNING) << "SecureBoot is enabled preventing unsigned third-party "
                     << "kernel modules. Switching to eBPF based collection.";
-      hconfig->SetCollectionMethod("ebpf");
+      hconfig->SetCollectionMethod(EBPF);
     }
 
 #ifdef __x86_64__
     if (sb_status == SecureBootStatus::NOT_DETERMINED) {
       CLOG(WARNING) << "SecureBoot status could not be determined. "
                     << "Switching to eBPF based collection.";
-      hconfig->SetCollectionMethod("ebpf");
+      hconfig->SetCollectionMethod(EBPF);
     }
 #endif
   }
@@ -181,7 +181,7 @@ class GardenLinuxHeuristic : public Heuristic {
       CLOG(WARNING) << distro << " does not support kernel module based collection. "
                     << "Switching to eBPF based collection, set "
                     << "collector.collectionMethod=EBPF to remove this message";
-      hconfig->SetCollectionMethod("ebpf");
+      hconfig->SetCollectionMethod(EBPF);
       return;
     }
   }

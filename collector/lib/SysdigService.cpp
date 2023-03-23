@@ -29,6 +29,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "libsinsp/wrapper.h"
 
+#include "CollectionMethod.h"
 #include "CollectorException.h"
 #include "EventNames.h"
 #include "HostInfo.h"
@@ -68,31 +69,33 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
   use_chisel_cache_ = config.UseChiselCache();
 }
 
-bool SysdigService::InitKernel(const CollectorConfig& config) {
-  if (inspector_) {
-    throw CollectorException("Invalid state: SysdigService kernel components are already initialized");
+bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandidate& candidate) {
+  if (!inspector_) {
+    inspector_.reset(new_inspector());
+
+    // peeking into arguments has a big overhead, so we prevent it from happening
+    inspector_->set_snaplen(0);
+
+    if (logging::GetLogLevel() == logging::LogLevel::TRACE) {
+      inspector_->set_log_stderr();
+    }
   }
 
-  inspector_.reset(new_inspector());
-  inspector_->set_snaplen(config.SnapLen());
-
-  if (logging::GetLogLevel() == logging::LogLevel::TRACE) {
-    inspector_->set_log_stderr();
-  }
-
-  if (config.UseEbpf()) {
+  std::unique_ptr<IKernelDriver> driver;
+  if (candidate.GetCollectionMethod() == EBPF) {
     useEbpf_ = true;
-    KernelDriverEBPF driver;
-    if (!driver.Setup(config, SysdigService::kProbePath)) {
-      CLOG(ERROR) << "Failed to setup eBPF probe";
-      return false;
-    }
+    driver = std::make_unique<KernelDriverEBPF>(KernelDriverEBPF());
+  } else if (candidate.GetCollectionMethod() == CORE_BPF) {
+    useEbpf_ = true;
+    driver = std::make_unique<KernelDriverCOREEBPF>(KernelDriverCOREEBPF());
   } else {
-    KernelDriverModule driver;
-    if (!driver.Setup(config, SysdigService::kModulePath)) {
-      CLOG(ERROR) << "Failed to setup Kernel module";
-      return false;
-    }
+    useEbpf_ = false;
+    driver = std::make_unique<KernelDriverModule>(KernelDriverModule());
+  }
+
+  if (!driver->Setup(config, *inspector_)) {
+    CLOG(ERROR) << "Failed to setup " << candidate.GetName();
+    return false;
   }
 
   return true;
@@ -185,22 +188,6 @@ void SysdigService::Start() {
     if (!signal_handler.handler->Start()) {
       CLOG(FATAL) << "Error starting signal handler " << signal_handler.handler->GetName();
     }
-  }
-
-  /* Get only necessary tracepoints. */
-  std::unordered_set<uint32_t> tp_set = inspector_->enforce_sinsp_state_tp();
-  std::unordered_set<uint32_t> ppm_sc;
-
-  if (!useEbpf_) {
-    inspector_->open_kmod(DEFAULT_DRIVER_BUFFER_BYTES_DIM, ppm_sc, tp_set);
-
-    // Drop DAC_OVERRIDE capability after opening the device files.
-    capng_updatev(CAPNG_DROP, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_DAC_OVERRIDE, -1);
-    if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
-      CLOG(WARNING) << "Failed to drop DAC_OVERRIDE capability: " << StrError();
-    }
-  } else {
-    inspector_->open_bpf(kProbePath, DEFAULT_DRIVER_BUFFER_BYTES_DIM, ppm_sc, tp_set);
   }
 
   std::lock_guard<std::mutex> running_lock(running_mutex_);

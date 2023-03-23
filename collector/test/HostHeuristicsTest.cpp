@@ -66,7 +66,7 @@ TEST(HostHeuristicsTest, TestSecureBootEnabled) {
   MockCollectorConfig config(args);
   HostConfig hconfig;
 
-  hconfig.SetCollectionMethod("kernel-module");
+  hconfig.SetCollectionMethod(KERNEL_MODULE);
   EXPECT_CALL(host, IsUEFI()).WillOnce(Return(true));
   EXPECT_CALL(host, GetSecureBootStatus())
       .WillOnce(Return(SecureBootStatus::ENABLED));
@@ -75,7 +75,7 @@ TEST(HostHeuristicsTest, TestSecureBootEnabled) {
 
   secureBootHeuristics.Process(host, config, &hconfig);
 
-  EXPECT_EQ(hconfig.CollectionMethod(), "ebpf");
+  EXPECT_EQ(hconfig.GetCollectionMethod(), EBPF);
 }
 
 // The SecureBoot feature is undetermined and could be enabled, triggering
@@ -87,7 +87,7 @@ TEST(HostHeuristicsTest, TestSecureBootNotDetermined) {
   MockCollectorConfig config(args);
   HostConfig hconfig;
 
-  hconfig.SetCollectionMethod("kernel-module");
+  hconfig.SetCollectionMethod(KERNEL_MODULE);
   EXPECT_CALL(host, IsUEFI()).WillOnce(Return(true));
   EXPECT_CALL(host, GetSecureBootStatus())
       .WillOnce(Return(SecureBootStatus::NOT_DETERMINED));
@@ -97,11 +97,11 @@ TEST(HostHeuristicsTest, TestSecureBootNotDetermined) {
   secureBootHeuristics.Process(host, config, &hconfig);
 
 #ifdef __x86_64__
-  EXPECT_EQ(hconfig.CollectionMethod(), "ebpf");
+  EXPECT_EQ(hconfig.GetCollectionMethod(), EBPF);
 #else
   // for non-x86 architectures we don't modify the collection method
   // if secure boot not determined.
-  EXPECT_EQ(hconfig.CollectionMethod(), "kernel-module");
+  EXPECT_EQ(hconfig.GetCollectionMethod(), KERNEL_MODULE);
 #endif
 }
 
@@ -116,13 +116,13 @@ TEST(HostHeuristicsTest, TestSecureBootKernelModuleForced) {
 
   // In this constellation neither IsUEFI nor GetSecureBootStatus are called,
   // as ForceKernelModules makes the decision earlier
-  hconfig.SetCollectionMethod("kernel-module");
+  hconfig.SetCollectionMethod(KERNEL_MODULE);
   EXPECT_CALL(config, UseEbpf()).WillRepeatedly(Return(false));
   EXPECT_CALL(config, ForceKernelModules()).WillOnce(Return(true));
 
   secureBootHeuristics.Process(host, config, &hconfig);
 
-  EXPECT_EQ(hconfig.CollectionMethod(), "kernel-module");
+  EXPECT_EQ(hconfig.GetCollectionMethod(), KERNEL_MODULE);
 }
 
 // Booted in the legacy mode
@@ -133,14 +133,14 @@ TEST(HostHeuristicsTest, TestSecureBootLegacyBIOS) {
   MockCollectorConfig config(args);
   HostConfig hconfig;
 
-  hconfig.SetCollectionMethod("kernel-module");
+  hconfig.SetCollectionMethod(KERNEL_MODULE);
   EXPECT_CALL(host, IsUEFI()).WillOnce(Return(false));
   EXPECT_CALL(config, UseEbpf()).WillRepeatedly(Return(false));
   EXPECT_CALL(config, ForceKernelModules()).WillOnce(Return(false));
 
   secureBootHeuristics.Process(host, config, &hconfig);
 
-  EXPECT_EQ(hconfig.CollectionMethod(), "kernel-module");
+  EXPECT_EQ(hconfig.GetCollectionMethod(), KERNEL_MODULE);
 }
 
 // Garbage value is read from boot_param
@@ -151,7 +151,7 @@ TEST(HostHeuristicsTest, TestSecureBootIncorrect) {
   MockCollectorConfig config(args);
   HostConfig hconfig;
 
-  hconfig.SetCollectionMethod("kernel-module");
+  hconfig.SetCollectionMethod(KERNEL_MODULE);
   EXPECT_CALL(host, IsUEFI()).WillOnce(Return(true));
   EXPECT_CALL(host, GetSecureBootStatus())
       .WillOnce(Return(static_cast<SecureBootStatus>(-1)));
@@ -160,7 +160,7 @@ TEST(HostHeuristicsTest, TestSecureBootIncorrect) {
 
   secureBootHeuristics.Process(host, config, &hconfig);
 
-  EXPECT_EQ(hconfig.CollectionMethod(), "kernel-module");
+  EXPECT_EQ(hconfig.GetCollectionMethod(), KERNEL_MODULE);
 }
 
 class MockGardenLinuxHeuristic : public GardenLinuxHeuristic {
@@ -175,12 +175,12 @@ TEST(GardenLinuxHeuristicsTest, NotGardenLinux) {
   MockCollectorConfig config(args);
   HostConfig hconfig;
 
-  hconfig.SetCollectionMethod("kernel-module");
+  hconfig.SetCollectionMethod(KERNEL_MODULE);
   EXPECT_CALL(host, IsGarden()).WillOnce(Return(false));
 
   gardenLinuxHeuristic.Process(host, config, &hconfig);
 
-  EXPECT_EQ(hconfig.CollectionMethod(), "kernel-module");
+  EXPECT_EQ(hconfig.GetCollectionMethod(), KERNEL_MODULE);
 }
 
 TEST(GardenLinuxHeuristicsTest, UsingEBPF) {
@@ -190,21 +190,21 @@ TEST(GardenLinuxHeuristicsTest, UsingEBPF) {
   MockCollectorConfig config(args);
   HostConfig hconfig;
 
-  hconfig.SetCollectionMethod("ebpf");
+  hconfig.SetCollectionMethod(EBPF);
   EXPECT_CALL(host, IsGarden()).WillOnce(Return(true));
   EXPECT_CALL(config, UseEbpf()).WillOnce(Return(true));
 
   gardenLinuxHeuristic.Process(host, config, &hconfig);
 
-  EXPECT_EQ(hconfig.CollectionMethod(), "ebpf");
+  EXPECT_EQ(hconfig.GetCollectionMethod(), EBPF);
 }
 
 struct GardenLinuxTestCase {
-  GardenLinuxTestCase(const std::string& release, const std::string& collection_method)
+  GardenLinuxTestCase(const std::string& release, CollectionMethod collection_method)
       : release(release), collection_method(collection_method) {}
 
   std::string release;
-  std::string collection_method;
+  CollectionMethod collection_method;
 };
 
 TEST(GardenLinuxHeuristicsTest, TestReleases) {
@@ -215,20 +215,20 @@ TEST(GardenLinuxHeuristicsTest, TestReleases) {
   HostConfig hconfig;
 
   std::vector<GardenLinuxTestCase> test_cases = {
-      {"Garden Linux 318.9", "kernel_module"},
-      {"Garden Linux 576.2", "kernel_module"},
-      {"Garden Linux 576.3", "ebpf"},
-      {"Garden Linux 576.5", "ebpf"}};
+      {"Garden Linux 318.9", KERNEL_MODULE},
+      {"Garden Linux 576.2", KERNEL_MODULE},
+      {"Garden Linux 576.3", EBPF},
+      {"Garden Linux 576.5", EBPF}};
 
   for (auto test_case : test_cases) {
-    hconfig.SetCollectionMethod("kernel_module");
+    hconfig.SetCollectionMethod(KERNEL_MODULE);
     EXPECT_CALL(host, IsGarden()).WillOnce(Return(true));
     EXPECT_CALL(config, UseEbpf()).WillOnce(Return(false));
     EXPECT_CALL(host, GetDistro()).WillOnce(ReturnRef(test_case.release));
 
     gardenLinuxHeuristic.Process(host, config, &hconfig);
 
-    EXPECT_EQ(hconfig.CollectionMethod(), test_case.collection_method);
+    EXPECT_EQ(hconfig.GetCollectionMethod(), test_case.collection_method);
   }
 }
 

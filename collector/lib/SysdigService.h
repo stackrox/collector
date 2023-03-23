@@ -33,6 +33,7 @@ You should have received a copy of the GNU General Public License along with thi
 // clang-format off
 // sinsp.h needs to be included before chisel.h
 #include "libsinsp/sinsp.h"
+#include "DriverCandidates.h"
 #include "chisel.h"
 // clang-format on
 
@@ -61,7 +62,7 @@ class SysdigService : public Sysdig {
 
   bool GetStats(SysdigStats* stats) const override;
 
-  bool InitKernel(const CollectorConfig& config) override;
+  bool InitKernel(const CollectorConfig& config, const DriverCandidate& candidate) override;
 
   typedef std::weak_ptr<std::function<void(threadinfo_map_t::ptr_t)>> ProcessInfoCallbackRef;
 

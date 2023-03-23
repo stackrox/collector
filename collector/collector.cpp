@@ -72,8 +72,6 @@ using namespace collector;
 static std::atomic<ControlValue> g_control(ControlValue::RUN);
 static std::atomic<int> g_signum(0);
 
-static StartupDiagnostics g_startup_diagnostics;
-
 static void
 ShutdownHandler(int signum) {
   // Only set the control variable; the collector service will take care of the rest.
@@ -154,8 +152,8 @@ void gplNotice() {
   CLOG(INFO) << "";
   CLOG(INFO) << "This product uses kernel module and ebpf subcomponents licensed under the GNU";
   CLOG(INFO) << "GENERAL PURPOSE LICENSE Version 2 outlined in the /kernel-modules/LICENSE file.";
-  CLOG(INFO) << "Source code for the kernel module and ebpf subcomponents is available upon";
-  CLOG(INFO) << "request by contacting support@stackrox.com.";
+  CLOG(INFO) << "Source code for the kernel module and ebpf subcomponents is available at";
+  CLOG(INFO) << "https://github.com/stackrox/falcosecurity-libs/";
   CLOG(INFO) << "";
 }
 
@@ -168,32 +166,6 @@ void initialChecks() {
   if (stat("/module", &st) != 0 || !S_ISDIR(st.st_mode)) {
     CLOG(FATAL) << "Internal error: /module directory does not exist.";
   }
-}
-
-bool downloadKernelDriver(const CollectorArgs* args, CollectorConfig& config) {
-  CLOG(INFO) << "Module version: " << GetModuleVersion();
-  bool useEbpf = config.UseEbpf();
-
-  std::vector<DriverCandidate> kernel_candidates = GetKernelCandidates(useEbpf);
-
-  if (kernel_candidates.empty()) {
-    CLOG(ERROR) << "No kernel candidates available";
-    return false;
-  }
-
-  const char* type = useEbpf ? "eBPF probe" : "kernel module";
-  CLOG(INFO) << "Attempting to find " << type << " - Candidate versions: ";
-  for (const auto& candidate : kernel_candidates) {
-    CLOG(INFO) << candidate.GetName();
-  }
-
-  for (const auto& candidate : kernel_candidates) {
-    if (GetKernelObject(args->GRPCServer(), config.TLSConfiguration(), candidate, config.CurlVerbose())) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 int main(int argc, char** argv) {
@@ -212,6 +184,8 @@ int main(int argc, char** argv) {
 
   setCoreDumpLimit(config.IsCoreDumpEnabled());
 
+  auto& startup_diagnostics = StartupDiagnostics::GetInstance();
+
   // Extract configuration options
   bool useGRPC = !args->GRPCServer().empty();
   std::shared_ptr<grpc::Channel> sensor_connection;
@@ -222,24 +196,15 @@ int main(int argc, char** argv) {
     if (attemptGRPCConnection(sensor_connection)) {
       CLOG(INFO) << "Successfully connected to Sensor.";
     } else {
-      g_startup_diagnostics.Log();
+      startup_diagnostics.Log();
       CLOG(FATAL) << "Unable to connect to Sensor at '" << args->GRPCServer() << "'.";
     }
-    g_startup_diagnostics.ConnectedToSensor();
+    startup_diagnostics.ConnectedToSensor();
   } else {
     CLOG(INFO) << "GRPC is disabled. Specify GRPC_SERVER='server addr' env and signalFormat = 'signal_summary' and  signalOutput = 'grpc'";
   }
 
-  if (!downloadKernelDriver(args, config)) {
-    g_startup_diagnostics.Log();
-    HostInfo& host = HostInfo::Instance();
-    CLOG(FATAL) << "No suitable kernel object downloaded for kernel " << host.GetKernelVersion().release;
-  }
-
-  g_startup_diagnostics.KernelDriverDownloaded();
-
-  // output the GPL notice only once the kernel object has been found or downloaded
-  gplNotice();
+  CLOG(INFO) << "Module version: " << GetModuleVersion();
 
   // Register signal handlers
   signal(SIGABRT, AbortHandler);
@@ -251,13 +216,15 @@ int main(int argc, char** argv) {
 
   CollectorService collector(config, &g_control, &g_signum);
 
-  if (!collector.InitKernel()) {
-    g_startup_diagnostics.Log();
+  if (!SetupKernelDriver(collector, args->GRPCServer(), config)) {
+    startup_diagnostics.Log();
     CLOG(FATAL) << "Failed to initialize collector kernel components.";
   }
 
-  g_startup_diagnostics.KernelDriverLoaded();
-  g_startup_diagnostics.Log();
+  // output the GPL notice only once the kernel object has been found or downloaded
+  gplNotice();
+
+  startup_diagnostics.Log();
 
   collector.RunForever();
 

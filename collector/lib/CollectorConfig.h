@@ -31,6 +31,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <grpcpp/channel.h>
 
+#include "CollectionMethod.h"
 #include "HostConfig.h"
 #include "NetworkConnection.h"
 
@@ -41,10 +42,9 @@ class CollectorArgs;
 class CollectorConfig {
  public:
   static constexpr bool kUseChiselCache = true;
-  static constexpr bool kSnapLen = 0;
   static constexpr bool kTurnOffScrape = false;
   static constexpr int kScrapeInterval = 30;
-  static constexpr char kCollectionMethod[] = "kernel-module";
+  static constexpr CollectionMethod kCollectionMethod = KERNEL_MODULE;
   static constexpr const char* kSyscalls[] = {
       "accept",
       "chdir",
@@ -93,11 +93,10 @@ end
   bool TurnOffScrape() const;
   bool ScrapeListenEndpoints() const { return scrape_listen_endpoints_; }
   int ScrapeInterval() const;
-  int SnapLen() const;
   std::string Chisel() const;
   std::string Hostname() const;
   std::string HostProc() const;
-  std::string CollectionMethod() const;
+  CollectionMethod GetCollectionMethod() const;
   std::vector<std::string> Syscalls() const;
   int64_t AfterglowPeriod() const;
   std::string LogLevel() const;
@@ -115,8 +114,7 @@ end
  protected:
   bool use_chisel_cache_;
   int scrape_interval_;
-  int snap_len_;
-  std::string collection_method_;
+  CollectionMethod collection_method_;
   std::string chisel_;
   bool turn_off_scrape_;
   std::vector<std::string> syscalls_;

@@ -58,10 +58,9 @@ BoolEnvVar set_processes_listening_on_ports("ROX_PROCESSES_LISTENING_ON_PORT", C
 }  // namespace
 
 constexpr bool CollectorConfig::kUseChiselCache;
-constexpr bool CollectorConfig::kSnapLen;
 constexpr bool CollectorConfig::kTurnOffScrape;
 constexpr int CollectorConfig::kScrapeInterval;
-constexpr char CollectorConfig::kCollectionMethod[];
+constexpr CollectionMethod CollectorConfig::kCollectionMethod;
 constexpr char CollectorConfig::kChisel[];
 constexpr const char* CollectorConfig::kSyscalls[];
 constexpr bool CollectorConfig::kForceKernelModules;
@@ -75,7 +74,6 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   use_chisel_cache_ = kUseChiselCache;
   scrape_interval_ = kScrapeInterval;
   turn_off_scrape_ = kTurnOffScrape;
-  snap_len_ = kSnapLen;
   chisel_ = kChisel;
   collection_method_ = kCollectionMethod;
   force_kernel_modules_ = kForceKernelModules;
@@ -150,12 +148,19 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
     }
 
     // Collection Method
-    if (args->CollectionMethod().length() > 0) {
-      collection_method_ = args->CollectionMethod();
-      CLOG(INFO) << "User configured collection-method=" << collection_method_;
+    if (args->GetCollectionMethod().length() > 0) {
+      const auto& cm = args->GetCollectionMethod();
+
+      if (cm == "ebpf") {
+        collection_method_ = EBPF;
+      } else if (cm == "core_bpf") {
+        collection_method_ = CORE_BPF;
+      }
+
+      CLOG(INFO) << "User configured collection-method=" << cm;
     } else if (!config["useEbpf"].empty()) {
       // useEbpf (deprecated)
-      collection_method_ = config["useEbpf"].asBool() ? "ebpf" : "kernel_module";
+      collection_method_ = config["useEbpf"].asBool() ? EBPF : KERNEL_MODULE;
       CLOG(INFO) << "User configured useEbpf=" << config["useEbpf"].asBool();
     }
 
@@ -229,10 +234,8 @@ bool CollectorConfig::UseChiselCache() const {
 }
 
 bool CollectorConfig::UseEbpf() const {
-  if (host_config_.HasCollectionMethod()) {
-    return host_config_.CollectionMethod() == "ebpf";
-  }
-  return (collection_method_ == "ebpf");
+  CollectionMethod cm = GetCollectionMethod();
+  return (cm == EBPF || cm == CORE_BPF);
 }
 
 bool CollectorConfig::TurnOffScrape() const {
@@ -243,17 +246,13 @@ int CollectorConfig::ScrapeInterval() const {
   return scrape_interval_;
 }
 
-int CollectorConfig::SnapLen() const {
-  return snap_len_;
-}
-
 std::string CollectorConfig::Chisel() const {
   return chisel_;
 }
 
-std::string CollectorConfig::CollectionMethod() const {
+CollectionMethod CollectorConfig::GetCollectionMethod() const {
   if (host_config_.HasCollectionMethod()) {
-    return host_config_.CollectionMethod();
+    return host_config_.GetCollectionMethod();
   }
   return collection_method_;
 }
@@ -284,9 +283,8 @@ bool CollectorConfig::IsCoreDumpEnabled() const {
 
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
   return os
-         << "collection_method:" << c.CollectionMethod()
+         << "collection_method:" << c.GetCollectionMethod()
          << ", useChiselCache:" << c.UseChiselCache()
-         << ", snapLen:" << c.SnapLen()
          << ", scrape_interval:" << c.ScrapeInterval()
          << ", turn_off_scrape:" << c.TurnOffScrape()
          << ", hostname:" << c.Hostname()

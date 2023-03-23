@@ -24,7 +24,10 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef COLLECTOR_HOSTCONFIG_H
 #define COLLECTOR_HOSTCONFIG_H
 
+#include <optional>
 #include <string>
+
+#include "CollectionMethod.h"
 
 //
 // The HostConfig is runtime-configured based on the host where
@@ -36,12 +39,14 @@ class HostConfig {
  public:
   HostConfig() = default;
 
-  const std::string& CollectionMethod() const { return collection_method_; }
-  bool HasCollectionMethod() const { return !collection_method_.empty(); }
-  void SetCollectionMethod(std::string method) { collection_method_ = std::move(method); }
+  collector::CollectionMethod GetCollectionMethod() const { return *collection_method_; }
+  bool HasCollectionMethod() const { return collection_method_.has_value(); }
+  void SetCollectionMethod(collector::CollectionMethod method) {
+    collection_method_ = method;
+  }
 
  private:
-  std::string collection_method_;
+  std::optional<collector::CollectionMethod> collection_method_;
 };
 
 #endif  // COLLECTOR_HOSTCONFIG_H
