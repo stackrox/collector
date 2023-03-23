@@ -20,7 +20,7 @@
     vm_family: "{{ item.0.key }}"
     vm_image: "{{ item.1 }}"
     vm_platform: "{{ item.0.key }}"
-    vm_config: "{{ item.0.key }}_{{ item.0.key }}"
+    vm_config: "{{ item.1 }}"
     vm_collection_method: "{{ collection_method | default('any') | replace('-', '_') }}"
     vm_available_zones: "{{ gcp_available_zones }}"
     vm_ignition: "{{ item.0.value.ignition | default({}) }}"
