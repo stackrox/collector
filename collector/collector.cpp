@@ -117,7 +117,7 @@ static void AbortHandler(int signum) {
   size_t max_frames = sizeof(buffer) / sizeof(buffer[0]);
   int message_buffer_size = sizeof(message_buffer);
 
-  for (size_t i = 1; i < n_frames; i++) {
+  for (size_t i = 0; i < n_frames; i++) {
     Dl_info info;
 
     if (dladdr(buffer[i], &info)) {
