@@ -359,7 +359,6 @@ struct sys_enter_shutdown_args {
  */
 static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
   const struct syscall_evt_pair* sc_evt = NULL;
-  struct scap_bpf_settings* settings = NULL;
   enum ppm_event_type evt_type = PPME_GENERIC_E;
   int drop_flags = UF_ALWAYS_DROP;
   struct sys_enter_args stack_ctx = {.id = id};
@@ -578,7 +577,6 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
  */
 static __always_inline int exit_probe(long id, struct sys_exit_args* ctx) {
   const struct syscall_evt_pair* sc_evt = NULL;
-  struct scap_bpf_settings* settings = NULL;
   enum ppm_event_type evt_type = PPME_GENERIC_X;
   int drop_flags = UF_ALWAYS_DROP;
 
