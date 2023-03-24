@@ -10,13 +10,6 @@
 // as expected for the kinds of tracepoints we are using.
 #ifdef BPF_SUPPORTS_RAW_TRACEPOINTS
 #  undef BPF_SUPPORTS_RAW_TRACEPOINTS
-/* The filler implementations for below tracepoint requires access to the
- * TP_PROTO args which is only available with BPF_SUPPORTS_RAW_TRACEPOINTS.
- * Otherwise, the BPF verifier will fail with
- * what():  libscap: bpf_load_program() err=13 event=filler/sched_prog_fork_3
- */
-#  undef CAPTURE_SCHED_PROC_FORK
-#  undef CAPTURE_SCHED_PROC_EXEC
 #endif
 
 // this if statement relies on short circuiting to simplify the definition
@@ -362,6 +355,7 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
   enum ppm_event_type evt_type = PPME_GENERIC_E;
   int drop_flags = UF_ALWAYS_DROP;
   struct sys_enter_args stack_ctx = {.id = id};
+  long mapped_id = id;
 
   if (bpf_in_ia32_syscall()) {
     return 0;
@@ -374,19 +368,16 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
     stack_ctx.id = id;
   }
 
-  sc_evt = get_syscall_info(id);
-  if (sc_evt == NULL || (sc_evt->flags & UF_USED) == 0) {
-#ifdef CAPTURE_SOCKETCALL
-    if (id != __NR_socketcall) {
-      return 0;
-    }
-    // call_filler() and handle_socketcall() will change evt_type/drop_flags
-    // based on the detected socket call
-    evt_type = PPME_GENERIC_E;
-    drop_flags = UF_ALWAYS_DROP;
-#else
-    return 0;
+#if defined(CAPTURE_SOCKETCALL)
+  if(id == __NR_socketcall)
+  {
+	  mapped_id = convert_network_syscalls(ctx);
+  }
 #endif
+
+  sc_evt = get_syscall_info(mapped_id);
+  if (sc_evt == NULL || (sc_evt->flags & UF_USED) == 0) {
+    return 0;
   } else {
     evt_type = sc_evt->enter_event_type;
     drop_flags = sc_evt->flags;
@@ -579,6 +570,7 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx) {
   const struct syscall_evt_pair* sc_evt = NULL;
   enum ppm_event_type evt_type = PPME_GENERIC_X;
   int drop_flags = UF_ALWAYS_DROP;
+  long mapped_id = id;
 
   if (bpf_in_ia32_syscall()) {
     return 0;
@@ -590,19 +582,16 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx) {
     id = bpf_syscall_get_nr(ctx);
   }
 
-  sc_evt = get_syscall_info(id);
-  if (sc_evt == NULL || (sc_evt->flags & UF_USED) == 0) {
-#ifdef CAPTURE_SOCKETCALL
-    if (id != __NR_socketcall) {
-      return 0;
-    }
-    // call_filler() and handle_socketcall() will change evt_type/drop_flags
-    // based on the detected socket call
-    evt_type = PPME_GENERIC_X;
-    drop_flags = UF_ALWAYS_DROP;
-#else
-    return 0;
+#if defined(CAPTURE_SOCKETCALL)
+  if(id == __NR_socketcall)
+  {
+	  mapped_id = convert_network_syscalls(ctx);
+  }
 #endif
+
+  sc_evt = get_syscall_info(mapped_id);
+  if (sc_evt == NULL || (sc_evt->flags & UF_USED) == 0) {
+    return 0;
   } else {
     evt_type = sc_evt->exit_event_type;
     drop_flags = sc_evt->flags;
