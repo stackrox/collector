@@ -31,9 +31,6 @@ void test_crash() {
 }
 
 TEST(AbortHandler, Crash) {
-  using namespace collector;
-  using ::testing::StartsWith;
-
   // Install the AbortHandler, and verify that the stderr output will contain
   // something that looks like a stacktrace with AbortHander & Crash_Test frames.
   signal(SIGSEGV, AbortHandler);
