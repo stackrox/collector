@@ -23,7 +23,8 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "AbortHandler.h"
 
-static void WriteBuffer(char* buffer, int num_bytes, int buffer_size) {
+namespace {
+void WriteBuffer(char* buffer, int num_bytes, int buffer_size) {
   if (num_bytes > buffer_size) {
     // the output was truncated, to keep it readable add a new line
     buffer[buffer_size - 1] = '\n';
@@ -31,6 +32,7 @@ static void WriteBuffer(char* buffer, int num_bytes, int buffer_size) {
   } else {
     write(STDERR_FILENO, buffer, num_bytes);
   }
+}
 }
 
 extern "C" void AbortHandler(int signum) {
