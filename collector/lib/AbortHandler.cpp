@@ -33,7 +33,7 @@ void WriteBuffer(char* buffer, int num_bytes, int buffer_size) {
     write(STDERR_FILENO, buffer, num_bytes);
   }
 }
-}
+}  // namespace
 
 extern "C" void AbortHandler(int signum) {
   // Write a stacktrace to stderr. Since the abort handler could be called
