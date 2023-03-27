@@ -1,0 +1,60 @@
+name: Garden Linux VM bumper
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  pull_request:
+
+jobs:
+  run-bumper:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Run bumper
+        run: |
+          pip3 install -r ${{ github.workspace }}/utilities/gardenlinux-bumper/requirements.txt
+
+          ${{ github.workspace }}/utilities/gardenlinux-bumper/bumper.py \
+            ${{ github.workspace }}/ansible/group_vars/gardenlinux-image.txt
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v4
+        with:
+          token: '${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}'
+          commit-message: Update Garden Linux VM
+          committer: RoxBot <roxbot@stackrox.com>
+          author: RoxBot <roxbot@stackrox.com>
+          branch: roxbot/gardenlinux-bump
+          signoff: false
+          delete-branch: true
+          title: Update Garden Linux VM
+          body: |
+            Update Garden Linux VM used for testing to the latest version.
+          labels: |
+            all-integration-tests
+          draft: false
+
+  notify:
+    runs-on: ubuntu-latest
+    if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name == 'schedule'
+    needs:
+    - run-bumper
+    steps:
+      - name: Slack notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_NOTIFICATIONS_WEBHOOK }}
+          SLACK_CHANNEL: team-acs-collector-notifications
+          SLACK_COLOR: failure
+          SLACK_LINK_NAMES: true
+          SLACK_TITLE: Garden Linux version bumper failed
+          MSG_MINIMAL: actions url,commit
+          SLACK_MESSAGE: |
+            @acs-collector-team
