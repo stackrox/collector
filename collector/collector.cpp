@@ -48,6 +48,7 @@ extern "C" {
 #include <sys/syscall.h>
 #include <sys/types.h>
 }
+#include "AbortHandler.h"
 #include "CollectorArgs.h"
 #include "CollectorService.h"
 #include "CollectorStatsExporter.h"
@@ -77,23 +78,6 @@ ShutdownHandler(int signum) {
   // Only set the control variable; the collector service will take care of the rest.
   g_signum.store(signum);
   g_control.store(ControlValue::STOP_COLLECTOR);
-}
-
-static void AbortHandler(int signum) {
-  // Write a stacktrace to stderr
-  void* buffer[32];
-  size_t size = backtrace(buffer, 32);
-  backtrace_symbols_fd(buffer, size, STDERR_FILENO);
-
-  // Write a message to stderr using only reentrant functions.
-  char message_buffer[256];
-  int num_bytes = snprintf(message_buffer, sizeof(message_buffer), "Caught signal %d (%s): %s\n",
-                           signum, SignalName(signum), strsignal(signum));
-  write(STDERR_FILENO, message_buffer, num_bytes);
-
-  // Re-raise the signal (this time routing it to the default handler) to make sure we get the correct exit code.
-  signal(signum, SIG_DFL);
-  raise(signum);
 }
 
 // creates a GRPC channel, using the tls configuration provided from the args.
