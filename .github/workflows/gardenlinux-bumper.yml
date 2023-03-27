@@ -37,6 +37,7 @@ jobs:
           signoff: false
           delete-branch: true
           title: Update Garden Linux VM
+          base: mauro/gardenlinux-vm-bumper
           body: |
             Update Garden Linux VM used for testing to the latest version.
           labels: |
