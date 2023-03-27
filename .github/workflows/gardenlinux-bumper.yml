@@ -32,9 +32,11 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4
         with:
-          token: '${{ secrets.GITHUB_TOKEN }}'
+          token: '${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}'
           commit-message: Update Garden Linux VM
-          branch: gha/gardenlinux-bump
+          committer: RoxBot <roxbot@stackrox.com>
+          author: RoxBot <roxbot@stackrox.com>
+          branch: roxbot/gardenlinux-bump
           signoff: false
           delete-branch: true
           title: Update Garden Linux VM
