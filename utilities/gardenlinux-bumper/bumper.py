@@ -54,13 +54,7 @@ def get_gardenlinux_image(version_data: (int, int, str)) -> str:
 
 
 def image_is_outdated(latest: (int, int, str), current: (int, int, str)):
-    latest_major = latest[0]
-    latest_minor = latest[1]
-
-    current_major = current[0]
-    current_minor = current[1]
-
-    return latest_major > current_major or (latest_major == current_major and latest_minor > current_minor)
+    return latest[:2] > current[:2]
 
 
 def main(image_file: str):
