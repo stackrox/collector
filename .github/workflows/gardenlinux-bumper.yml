@@ -11,6 +11,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: mauro/gardenlinux-vm-bumper
 
       - uses: actions/setup-python@v4
         with:
@@ -37,7 +39,6 @@ jobs:
           signoff: false
           delete-branch: true
           title: Update Garden Linux VM
-          base: mauro/gardenlinux-vm-bumper
           body: |
             Update Garden Linux VM used for testing to the latest version.
           labels: |
