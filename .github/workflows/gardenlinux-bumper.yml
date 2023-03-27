@@ -18,6 +18,8 @@ jobs:
           cache: 'pip'
 
       - name: Run bumper
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pip3 install -r ${{ github.workspace }}/utilities/gardenlinux-bumper/requirements.txt
 
