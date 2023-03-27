@@ -81,5 +81,7 @@
 # which is unavailable in UBI/RHEL, we could add a
 # dedicated builder if need be
 *.el7uek.* * mod
-# TODO(ROX-15280) - Fix compilation of driver on 6.2 kernels
-# 6.2.*
+6.2.* 2.3.0 *
+6.2.* 2.2.0 *
+6.2.* 2.1.0 *
+6.2.* 2.0.1 *
