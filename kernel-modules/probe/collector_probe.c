@@ -583,7 +583,7 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx) {
 
 #if defined(CAPTURE_SOCKETCALL)
   if (id == __NR_socketcall) {
-     mapped_id = convert_network_syscalls(ctx);
+    mapped_id = convert_network_syscalls(ctx);
   }
 #endif
 
