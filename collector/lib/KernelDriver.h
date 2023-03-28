@@ -66,8 +66,8 @@ class KernelDriverModule : public IKernelDriver {
     }
 
     /* Get only necessary tracepoints. */
-    std::unordered_set<uint32_t> tp_set = inspector.enforce_sinsp_state_tp();
-    std::unordered_set<uint32_t> ppm_sc;
+    auto tp_set = libsinsp::events::enforce_simple_tp_set();
+    std::unordered_set<ppm_sc_code> ppm_sc;
 
     try {
       inspector.open_kmod(DEFAULT_DRIVER_BUFFER_BYTES_DIM, ppm_sc, tp_set);
@@ -103,8 +103,8 @@ class KernelDriverEBPF : public IKernelDriver {
     setDropSyscalls(config.Syscalls());
 
     /* Get only necessary tracepoints. */
-    std::unordered_set<uint32_t> tp_set = inspector.enforce_sinsp_state_tp();
-    std::unordered_set<uint32_t> ppm_sc;
+    auto tp_set = libsinsp::events::enforce_simple_tp_set();
+    std::unordered_set<ppm_sc_code> ppm_sc;
 
     try {
       inspector.open_bpf(SysdigService::kProbePath, DEFAULT_DRIVER_BUFFER_BYTES_DIM, ppm_sc, tp_set);

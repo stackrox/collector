@@ -1148,8 +1148,8 @@ void GetNextAddress(int address_parts[4], int& port) {
 void CreateFakeState(ConnMap& afterglow_state, int num_endpoints, int num_connections, int64_t time_micros) {
   int address_parts[4] = {0, 0, 0, 0};
   int port = 0;
-  vector<Endpoint> endpoints(num_endpoints);
-  vector<Connection> connections(num_connections * 2);
+  std::vector<Endpoint> endpoints(num_endpoints);
+  std::vector<Connection> connections(num_connections * 2);
 
   for (int i = 0; i < num_endpoints; i++) {
     Address address(address_parts[0], address_parts[1], address_parts[2], address_parts[3]);
@@ -1328,7 +1328,7 @@ TEST(ConnTrackerTest, TestSameEndpointSimilarProcess) {
 /* Same endpoint, same process, seen at two points in time.
    We check that it is reported once, and that the activity is the most recent one */
 TEST(ConnTrackerTest, TestEmplaceOrUpdateSameEndpointAndPids) {
-  string container = "FakeContainer";
+  std::string container = "FakeContainer";
   int64_t activity_time1 = 1000;
   int64_t activity_time2 = 2000;
   Endpoint a(Address(192, 168, 0, 1), 80);
@@ -1351,7 +1351,7 @@ TEST(ConnTrackerTest, TestEmplaceOrUpdateSameEndpointAndPids) {
 /* Same endpoint, successively opened by two different processes (first closes and second opens).
    We expect that delta computation will return the first ep closed and the second opened. */
 TEST(ConnTrackerTest, TestDeltaForEndpointDifferentProcess) {
-  string container = "FakeContainer";
+  std::string container = "FakeContainer";
   int64_t activity_time1 = 1000;
   int64_t activity_time2 = 2000;
   Endpoint a(Address(192, 168, 0, 1), 80);
@@ -1377,7 +1377,7 @@ TEST(ConnTrackerTest, TestDeltaForEndpointDifferentProcess) {
 /* Same endpoint, successively opened by two processes looking similar (first closes and second opens).
    We expect that delta computation will return an empty set. */
 TEST(ConnTrackerTest, TestDeltaForEndpointSamePids) {
-  string container = "FakeContainer";
+  std::string container = "FakeContainer";
   int64_t activity_time1 = 1000;
   int64_t activity_time2 = 2000;
   Endpoint a(Address(192, 168, 0, 1), 80);
@@ -1398,7 +1398,7 @@ TEST(ConnTrackerTest, TestDeltaForEndpointSamePids) {
 }
 
 TEST(ConnTrackerTest, TestDeltaForEndpointDifferentProtocols) {
-  string container = "FakeContainer";
+  std::string container = "FakeContainer";
   int64_t connection_time1 = 1000;
   int64_t connection_time2 = 2000;
   Endpoint a(Address(192, 168, 0, 1), 80);

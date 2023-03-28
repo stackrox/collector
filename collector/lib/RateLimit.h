@@ -24,6 +24,8 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef _RATE_LIMIT_H_
 #define _RATE_LIMIT_H_
 
+#include <unordered_map>
+
 #include "Utility.h"
 
 namespace collector {
@@ -59,7 +61,7 @@ class RateLimitCache {
  private:
   size_t capacity_;
   std::unique_ptr<Limiter> limiter_;
-  unordered_map<std::string, TokenBucket> cache_;
+  std::unordered_map<std::string, TokenBucket> cache_;
 };
 }  // namespace collector
 

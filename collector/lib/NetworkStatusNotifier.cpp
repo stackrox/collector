@@ -63,7 +63,7 @@ sensor::SocketFamily TranslateAddressFamily(Address::Family family) {
 
 }  // namespace
 
-std::vector<IPNet> readNetworks(const string& networks, Address::Family family) {
+std::vector<IPNet> readNetworks(const std::string& networks, Address::Family family) {
   int tuple_size = Address::Length(family) + 1;
   int num_nets = networks.size() / tuple_size;
   std::vector<IPNet> ip_nets;
