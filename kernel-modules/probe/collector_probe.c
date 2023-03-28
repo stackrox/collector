@@ -369,9 +369,8 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
   }
 
 #if defined(CAPTURE_SOCKETCALL)
-  if(id == __NR_socketcall)
-  {
-	  mapped_id = convert_network_syscalls(ctx);
+  if (id == __NR_socketcall) {
+    mapped_id = convert_network_syscalls(ctx);
   }
 #endif
 
@@ -583,9 +582,8 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx) {
   }
 
 #if defined(CAPTURE_SOCKETCALL)
-  if(id == __NR_socketcall)
-  {
-	  mapped_id = convert_network_syscalls(ctx);
+  if (id == __NR_socketcall) {
+     mapped_id = convert_network_syscalls(ctx);
   }
 #endif
 
