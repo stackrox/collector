@@ -28,10 +28,10 @@ jobs:
           ${{ github.workspace }}/utilities/gardenlinux-bumper/bumper.py \
             ${{ github.workspace }}/ansible/group_vars/gardenlinux-image.txt
 
-      - name: Initialize mandatory git config
+      - name: Fix remote
         run: |
-          git config user.name RoxBot
-          git config user.email roxbot@stackrox.com
+          git remote rm origin
+          git remote add origin 'git@github.com:stackrox/collector.git'
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4
