@@ -11,8 +11,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
         with:
-          ref: mauro/gardenlinux-vm-bumper
+          python-version: '3.11'
+          cache: 'pip'
 
       - name: Run bumper
         env:
@@ -34,6 +37,7 @@ jobs:
           signoff: false
           delete-branch: true
           title: Update Garden Linux VM
+          base: mauro/gardenlinux-vm-bumper
           body: |
             Update Garden Linux VM used for testing to the latest version.
           labels: |
