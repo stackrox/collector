@@ -13,7 +13,6 @@ jobs:
       - uses: actions/checkout@v3
         with:
           ref: mauro/gardenlinux-vm-bumper
-          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
 
       - uses: actions/setup-python@v4
         with:
@@ -28,6 +27,11 @@ jobs:
 
           ${{ github.workspace }}/utilities/gardenlinux-bumper/bumper.py \
             ${{ github.workspace }}/ansible/group_vars/gardenlinux-image.txt
+
+      - name: Initialize mandatory git config
+        run: |
+          git config user.name RoxBot
+          git config user.email roxbot@stackrox.com
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4
