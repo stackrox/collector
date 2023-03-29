@@ -11,8 +11,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-        with:
-          repository: stackrox/collector
 
       - uses: actions/setup-python@v4
         with:
