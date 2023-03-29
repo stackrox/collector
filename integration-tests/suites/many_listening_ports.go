@@ -42,7 +42,7 @@ func (s *ManyProcessesListeningOnPortsTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.serverContainer = common.ContainerShortID(containerID)
 
-	time.Sleep(6 * time.Second)
+	time.Sleep(15 * time.Second)
 
 	err = s.collector.TearDown()
 	s.Require().NoError(err)
