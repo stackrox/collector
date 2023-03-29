@@ -53,7 +53,7 @@ def get_gardenlinux_image(version_data: (int, int, str)) -> str:
     return f'gardenlinux-gcp-gardener-prod-amd64-{major}-{minor}-{checksum}'
 
 
-def image_is_outdated(latest: (int, int, str), current: (int, int, str)):
+def image_is_outdated(latest: (int, int, str), current: (int, int, str)) -> bool:
     return latest[:2] > current[:2]
 
 
