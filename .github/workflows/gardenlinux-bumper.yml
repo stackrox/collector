@@ -28,10 +28,9 @@ jobs:
           ${{ github.workspace }}/utilities/gardenlinux-bumper/bumper.py \
             ${{ github.workspace }}/ansible/group_vars/gardenlinux-image.txt
 
-      - name: Fix remote
+      - name: Set auth token
         run: |
-          git remote rm origin
-          git remote add origin 'git@github.com:stackrox/collector.git'
+          git remote set-url origin https://x-access-token:${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}@github.com/stackrox/collector
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4
