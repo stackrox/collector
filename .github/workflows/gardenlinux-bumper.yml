@@ -14,11 +14,6 @@ jobs:
         with:
           ref: mauro/gardenlinux-vm-bumper
 
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
       - name: Run bumper
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -27,10 +22,6 @@ jobs:
 
           ${{ github.workspace }}/utilities/gardenlinux-bumper/bumper.py \
             ${{ github.workspace }}/ansible/group_vars/gardenlinux-image.txt
-
-      - name: Set auth token
-        run: |
-          git remote set-url origin https://x-access-token:${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}@github.com/stackrox/collector
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4
