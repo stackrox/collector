@@ -33,7 +33,7 @@ virtual_machines:
     username: core
     images:
       - rhcos-412-86-202303211731-0-gcp-x86-64
-      - rhcos-413-86-202303151429-0-gcp-x86-64
+      - rhcos-413-92-202303281804-0-gcp-x86-64
     ignition:
       ignition:
         version: 3.2.0
