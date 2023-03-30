@@ -135,11 +135,16 @@ void Process::ProcessInfoResolved(std::shared_ptr<sinsp_threadinfo> process_info
 
   if (process_info) {
     CLOG(DEBUG) << "Process-info resolved. PID: " << pid() << " Exe: " + process_info->get_exe();
+    falco_threadinfo_ = std::make_shared<sinsp_threadinfo>();
+    falco_threadinfo_->m_comm = process_info->m_comm;
+    falco_threadinfo_->m_exe = process_info->m_exe;
+    falco_threadinfo_->m_exepath = process_info->m_exepath;
+    falco_threadinfo_->m_args = process_info->m_args;
+    falco_threadinfo_->m_container_id = process_info->m_container_id;
   } else {
     CLOG(WARNING) << "Process-info request failed. PID: " << pid();
   }
 
-  falco_threadinfo_ = process_info;
   process_info_pending_resolution_ = false;
 
   process_info_condition_.notify_all();
