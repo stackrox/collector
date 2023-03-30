@@ -102,6 +102,14 @@ jobs:
           make -C "${container_dir}"
         done
 
+        # Build the grpc mock server
+        STACKROX_DIR="${{ github.workspace }}/collector/proto/third_party/stackrox/"
+        make -C "${STACKROX_DIR}" mock-grpc-server-image
+
+        TAG="$(make "${STACKROX_DIR}" tag)"
+        docker tag quay.io/rhacs-eng/grpc-server:"${TAG}" \
+          quay.io/rhacs-eng/grpc-server:3.73.x-95-gd43176a427
+
     - name: Run integration tests locally
       run: |
         make -C ${{ github.workspace }}/integration-tests ci-integration-tests
