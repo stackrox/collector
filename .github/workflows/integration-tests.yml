@@ -96,6 +96,12 @@ jobs:
       run: |
         docker load -i /tmp/collector-full.tar
 
+    - name: Build auxiliar containers for tests
+      run: |
+        for container_dir in ${{ github.workspace }}/integration-tests/container/*/; do
+          make -C "${container_dir}"
+        done
+
     - name: Run integration tests locally
       run: |
         make -C ${{ github.workspace }}/integration-tests ci-integration-tests
