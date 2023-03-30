@@ -104,7 +104,7 @@ jobs:
           fi
 
           if [[ '${{ contains(github.event.pull_request.labels.*.name, 'run-corebpf-tests') }}' == 'true' ]]; then
-            echo "COLLECTION_METHODS=ebpf,kernel-module,core_bpf" | tee -a "$GITHUB_ENV"
+            echo "COLLECTION_METHODS=ebpf,kernel_module,core_bpf" | tee -a "$GITHUB_ENV"
           fi
 
       - name: Create VMs
