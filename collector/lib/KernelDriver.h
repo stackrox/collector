@@ -134,8 +134,37 @@ class KernelDriverCOREEBPF : public IKernelDriver {
   KernelDriverCOREEBPF() = default;
 
   bool Setup(const CollectorConfig& config, sinsp& inspector) override {
-    // TODO: implement CO.RE ebpf setup if needed
-    return false;
+    /* Get only necessary tracepoints. */
+    auto tp_set = libsinsp::events::enforce_simple_tp_set();
+    std::unordered_set<ppm_sc_code> ppm_sc;
+
+    /*
+     * We need to configure ppm_sc to watch only for interesting syscalls,
+     * but the following doesn't work out of the box, looks like due to syscall
+     * id mismatch.
+     *
+     * const EventNames& event_names = EventNames::GetInstance();
+     * for (const auto& syscall_str : config.Syscalls()) {
+     *   for (ppm_event_type event_id : event_names.GetEventIDs(syscall_str)) {
+     *     uint16_t syscall_id = event_names.GetEventSyscallID(event_id);
+     *     if (!syscall_id) {
+     *       continue;
+     *     }
+     *     ppm_sc.insert((ppm_sc_code) syscall_id);
+     *   }
+     * }
+     */
+
+    try {
+      inspector.open_modern_bpf(DEFAULT_DRIVER_BUFFER_BYTES_DIM,
+                                DEFAULT_CPU_FOR_EACH_BUFFER,
+                                true, ppm_sc, tp_set);
+    } catch (const sinsp_exception& ex) {
+      CLOG(WARNING) << ex.what();
+      return false;
+    }
+
+    return true;
   }
 };
 }  // namespace collector

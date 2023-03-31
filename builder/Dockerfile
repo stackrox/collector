@@ -45,6 +45,7 @@ RUN dnf -y update \
         valgrind \
         wget \
         which \
+        bpftool \
     && dnf clean all
 
 # Build dependencies from source
