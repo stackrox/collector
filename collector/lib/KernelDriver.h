@@ -18,6 +18,7 @@ extern "C" {
 #include "Utility.h"
 
 extern unsigned char g_bpf_drop_syscalls[];
+extern const struct syscall_evt_pair g_syscall_table[];  // defined in libscap
 
 namespace collector {
 class IKernelDriver {
@@ -134,26 +135,26 @@ class KernelDriverCOREEBPF : public IKernelDriver {
   KernelDriverCOREEBPF() = default;
 
   bool Setup(const CollectorConfig& config, sinsp& inspector) override {
-    /* Get only necessary tracepoints. */
+    /* Capture only necessary tracepoints and syscalls. */
     auto tp_set = libsinsp::events::enforce_simple_tp_set();
     std::unordered_set<ppm_sc_code> ppm_sc;
 
     /*
-     * We need to configure ppm_sc to watch only for interesting syscalls,
-     * but the following doesn't work out of the box, looks like due to syscall
-     * id mismatch.
-     *
-     * const EventNames& event_names = EventNames::GetInstance();
-     * for (const auto& syscall_str : config.Syscalls()) {
-     *   for (ppm_event_type event_id : event_names.GetEventIDs(syscall_str)) {
-     *     uint16_t syscall_id = event_names.GetEventSyscallID(event_id);
-     *     if (!syscall_id) {
-     *       continue;
-     *     }
-     *     ppm_sc.insert((ppm_sc_code) syscall_id);
-     *   }
-     * }
+     * Convert text reprecentation of event type into an actual syscall code
+     * using g_syscall_table.
      */
+    const EventNames& event_names = EventNames::GetInstance();
+    for (const auto& syscall_str : config.Syscalls()) {
+      for (ppm_event_type event_id : event_names.GetEventIDs(syscall_str)) {
+        uint16_t syscall_id = event_names.GetEventSyscallID(event_id);
+        if (!syscall_id) {
+          continue;
+        }
+
+        syscall_evt_pair syscall = g_syscall_table[syscall_id];
+        ppm_sc.insert((ppm_sc_code)syscall.ppm_sc);
+      }
+    }
 
     try {
       inspector.open_modern_bpf(DEFAULT_DRIVER_BUFFER_BYTES_DIM,
