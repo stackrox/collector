@@ -31,7 +31,7 @@ jobs:
           submodules: true
 
       - name: Checks for main and release branches
-#         if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request'
         run: |
           echo 'BUILD_BUILDER_IMAGE=true' >> "$GITHUB_ENV"
           echo "COLLECTOR_BUILDER_TAG=${DEFAULT_BUILDER_TAG}" >> "$GITHUB_ENV"
