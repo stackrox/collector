@@ -18,6 +18,7 @@ env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
   DEFAULT_BUILDER_TAG: cache
   RHACS_ENG_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
+  ARCH: linux/ppc64le,linux/amd64
 
 jobs:
   build-collector-image:
