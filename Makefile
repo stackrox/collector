@@ -8,6 +8,8 @@ MOD_VER_FILE=$(CURDIR)/kernel-modules/kobuild-tmp/MODULE_VERSION.txt
 LOCAL_SSH_PORT ?= 2222
 DEV_SSH_SERVER_KEY ?= $(CURDIR)/.collector_dev_ssh_host_ed25519_key
 
+ARCH ?= linux/$(arch)
+
 export COLLECTOR_VERSION := $(COLLECTOR_TAG)
 export MODULE_VERSION := $(shell cat $(CURDIR)/kernel-modules/MODULE_VERSION)
 
@@ -30,7 +32,7 @@ container-dockerfile-dev:
 .PHONY: builder
 builder:
 ifdef BUILD_BUILDER_IMAGE
-	docker build \
+	docker buildx build --load --platform ${ARCH} \
 		--build-arg NPROCS=$(NPROCS) \
 		--cache-from quay.io/stackrox-io/collector-builder:cache \
 		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
@@ -62,7 +64,7 @@ build-drivers:
 
 image: collector unittest
 	make -C collector txt-files
-	docker build \
+	docker buildx build --load --platform ${ARCH} \
 		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
 		--build-arg MODULE_VERSION="$(MODULE_VERSION)" \
 		-f collector/container/Dockerfile \
@@ -71,7 +73,7 @@ image: collector unittest
 
 image-dev: collector unittest container-dockerfile-dev
 	make -C collector txt-files
-	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
+	docker buildx build --load --platform ${ARCH} --build-arg collector_version="$(COLLECTOR_TAG)" \
 		--build-arg BUILD_TYPE=devel \
 		-f collector/container/Dockerfile.dev \
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
@@ -79,7 +81,7 @@ image-dev: collector unittest container-dockerfile-dev
 
 image-dev-full: image-dev build-drivers
 	docker tag quay.io/stackrox-io/collector:$(COLLECTOR_TAG) quay.io/stackrox-io/collector:$(COLLECTOR_TAG)-slim
-	docker build \
+	docker buildx build --load --platform ${ARCH} \
 		--target=probe-layer-1 \
 		--tag quay.io/stackrox-io/collector:$(COLLECTOR_TAG)-full \
 		--build-arg collector_repo=quay.io/stackrox-io/collector \
