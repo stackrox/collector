@@ -370,6 +370,30 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
 
 #if defined(CAPTURE_SOCKETCALL)
   if (id == __NR_socketcall) {
+    // convert_network_syscalls uses the stashed args, so we stash early for
+    // socketcall.
+    struct sys_enter_socketcall_args* socketcall_args = (struct sys_enter_socketcall_args*)ctx;
+    unsigned long socketcall_id = (unsigned long)socketcall_args->call;
+
+    stack_ctx.args[0] = socketcall_id;
+    stack_ctx.args[1] = (unsigned long)socketcall_args->args;
+
+    switch (socketcall_id) {
+      case SYS_ACCEPT:
+      case SYS_ACCEPT4:
+      case SYS_CONNECT:
+      case SYS_SHUTDOWN:
+      case SYS_SOCKET:
+        break;
+      default:
+        // Filter out any other socket calls
+        return 0;
+    }
+
+    if (stash_args(stack_ctx.args)) {
+      return 0;
+    }
+
     mapped_id = convert_network_syscalls(ctx);
   }
 #endif
@@ -500,28 +524,6 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
       stack_ctx.args[2] = (unsigned long)socket_args->protocol;
       break;
     }
-#ifdef CAPTURE_SOCKETCALL
-    case __NR_socketcall: {
-      struct sys_enter_socketcall_args* socketcall_args = (struct sys_enter_socketcall_args*)ctx;
-      unsigned long socketcall_id = (unsigned long)socketcall_args->call;
-
-      stack_ctx.args[0] = socketcall_id;
-      stack_ctx.args[1] = (unsigned long)socketcall_args->args;
-
-      switch (socketcall_id) {
-        case SYS_ACCEPT:
-        case SYS_ACCEPT4:
-        case SYS_CONNECT:
-        case SYS_SHUTDOWN:
-        case SYS_SOCKET:
-          break;
-        default:
-          // Filter out any other socket calls
-          return 0;
-      }
-      break;
-    }
-#endif
     case __NR_shutdown: {
       struct sys_enter_shutdown_args* shutdown_args = (struct sys_enter_shutdown_args*)ctx;
       stack_ctx.args[0] = (unsigned long)shutdown_args->fd;
