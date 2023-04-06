@@ -80,7 +80,7 @@ end
 )";
   static const UnorderedSet<L4ProtoPortPair> kIgnoredL4ProtoPortPairs;
   static constexpr bool kForceKernelModules = false;
-  static constexpr bool kEnableProcessesListeningOnPorts = false;
+  static constexpr bool kEnableProcessesListeningOnPorts = true;
 
   CollectorConfig() = delete;
   CollectorConfig(CollectorArgs* collectorArgs);
