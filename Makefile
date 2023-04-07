@@ -32,11 +32,25 @@ container-dockerfile-dev:
 .PHONY: builder
 builder:
 ifdef BUILD_BUILDER_IMAGE
-	docker buildx build --push --platform ${ARCH} \
+	docker build \
 		--build-arg NPROCS=$(NPROCS) \
 		--cache-from quay.io/stackrox-io/collector-builder:cache \
 		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
-		-t localhost:5000/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
+		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
+		-f "$(CURDIR)/builder/Dockerfile" \
+		.
+else
+	docker pull quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
+endif
+
+.PHONY: ma-builder
+ma-builder:
+ifdef BUILD_BUILDER_IMAGE
+	docker-buildx build --push --platform ${ARCH} \
+		--build-arg NPROCS=$(NPROCS) \
+		--cache-from quay.io/stackrox-io/collector-builder:cache \
+		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
+		-t ${LOCAL_REGISTRY}/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-f "$(CURDIR)/builder/Dockerfile" \
 		.
 else
@@ -44,6 +58,9 @@ else
 endif
 
 collector: builder
+	make -C collector collector
+
+ma-collector: ma-builder
 	make -C collector collector
 
 .PHONY: connscrape
@@ -64,11 +81,20 @@ build-drivers:
 
 image: collector unittest
 	make -C collector txt-files
-	docker buildx build --push --platform ${ARCH} \
+	docker build \
 		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
 		--build-arg MODULE_VERSION="$(MODULE_VERSION)" \
 		-f collector/container/Dockerfile \
-		-t localhost:5000/stackrox-io/collector:$(COLLECTOR_TAG) \
+		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
+		$(COLLECTOR_BUILD_CONTEXT)
+
+ma-image: ma-collector unittest
+	make -C collector txt-files
+	docker-buildx build --push --platform ${ARCH} \
+		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
+		--build-arg MODULE_VERSION="$(MODULE_VERSION)" \
+		-f collector/container/Dockerfile \
+		-t ${LOCAL_REGISTRY}/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
 
 image-dev: collector unittest container-dockerfile-dev
