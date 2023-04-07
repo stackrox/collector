@@ -19,6 +19,8 @@ env:
   DEFAULT_BUILDER_TAG: cache
   RHACS_ENG_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
   ARCH: linux/amd64,linux/ppc64le
+  # local docker registry used for building multi arch images
+  LOCAL_REGISTRY: localhost:5000
 
 jobs:
   build-collector-image:
@@ -72,11 +74,9 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Build images
+      - name: Build multi-arch images
         run: |
-          make image
-
-      # - name: Push multiarch image to stackrox-io and rhacs-eng
+          make ma-image
 
       - name: Retag and push stackrox-io -slim
         uses: ./.github/actions/retag-and-push
