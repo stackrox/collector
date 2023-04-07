@@ -46,7 +46,7 @@ endif
 .PHONY: ma-builder
 ma-builder:
 ifdef BUILD_BUILDER_IMAGE
-	docker-buildx build --push --platform ${ARCH} \
+	docker buildx build --push --platform ${ARCH} \
 		--build-arg NPROCS=$(NPROCS) \
 		--cache-from quay.io/stackrox-io/collector-builder:cache \
 		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
@@ -90,7 +90,7 @@ image: collector unittest
 
 ma-image: ma-collector unittest
 	make -C collector txt-files
-	docker-buildx build --push --platform ${ARCH} \
+	docker buildx build --push --platform ${ARCH} \
 		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
 		--build-arg MODULE_VERSION="$(MODULE_VERSION)" \
 		-f collector/container/Dockerfile \
