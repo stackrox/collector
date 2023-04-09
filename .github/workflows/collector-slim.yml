@@ -19,19 +19,12 @@ env:
   DEFAULT_BUILDER_TAG: cache
   RHACS_ENG_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
   ARCH: linux/amd64,linux/ppc64le
-  # local docker registry used for building multi arch images
-  LOCAL_REGISTRY: localhost:5000
 
 jobs:
   build-collector-image:
 
     name: Build the collector slim image
     runs-on: ubuntu-latest
-    services:
-      registry:
-        image: registry:2
-        ports:
-          - 5000:5000
 
     steps:
       - uses: actions/checkout@v3
