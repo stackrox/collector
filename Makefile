@@ -50,7 +50,8 @@ ifdef BUILD_BUILDER_IMAGE
 		--build-arg NPROCS=$(NPROCS) \
 		--cache-from quay.io/stackrox-io/collector-builder:cache \
 		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
-		-t ${LOCAL_REGISTRY}/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
+		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
+		-t quay.io/rhacs-eng/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-f "$(CURDIR)/builder/Dockerfile" \
 		.
 else
@@ -94,7 +95,10 @@ ma-image: ma-collector unittest
 		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
 		--build-arg MODULE_VERSION="$(MODULE_VERSION)" \
 		-f collector/container/Dockerfile \
-		-t ${LOCAL_REGISTRY}/stackrox-io/collector:$(COLLECTOR_TAG) \
+		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG)-slim \
+		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG)-base \
+		-t quay.io/rhacs-eng/collector:$(COLLECTOR_TAG)-slim \
+		-t quay.io/rhacs-eng/collector:$(COLLECTOR_TAG)-base \
 		$(COLLECTOR_BUILD_CONTEXT)
 
 image-dev: collector unittest container-dockerfile-dev
