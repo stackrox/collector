@@ -97,8 +97,6 @@ ma-image: ma-collector unittest
 		-f collector/container/Dockerfile \
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG)-slim \
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG)-base \
-		-t quay.io/rhacs-eng/collector:$(COLLECTOR_TAG)-slim \
-		-t quay.io/rhacs-eng/collector:$(COLLECTOR_TAG)-base \
 		$(COLLECTOR_BUILD_CONTEXT)
 
 image-dev: collector unittest container-dockerfile-dev
