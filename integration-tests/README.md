@@ -38,7 +38,7 @@ for examples, and the following table lists the possible values:
 
 | VM Type       | Image Families                                        | `VM_CONFIG` Example                |
 | ------------- | ----------------------------------------------------- | ---------------------------------- |
-| cos           | cos-beta, cos-dev, cos-stable, cos-89-lts, cos-77-lts | cos.cos-89-lts                     |
+| cos           | cos-beta, cos-dev, cos-stable                         | cos.cos-stable                     |
 | rhel          | rhel-7, rhel-8                                        | rhel.rhel7                         |
 | suse          | sles-12, slex-15                                      | suse.sles-15                       |
 | suse-sap      | sles-15-sp2-sap                                       | suse-sap.sles-15-sp2-sap           |
