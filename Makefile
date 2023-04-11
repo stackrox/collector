@@ -14,15 +14,15 @@ export MODULE_VERSION := $(shell cat $(CURDIR)/kernel-modules/MODULE_VERSION)
 
 ifdef BUILD_MULTIARCH_IMAGE
 	ARCH = linux/amd64,linux/ppc64le
-	DOCKER_BUILD_CMD = docker buildx build --platform ${ARCH}
+	DOCKER_BUILD_CMD = docker buildx build --push --platform ${ARCH}
 	COLLECTOR_IMG_TAGS = -t quay.io/${REGISTRY_ORG}/collector:$(COLLECTOR_TAG) \
 						 -t quay.io/${REGISTRY_ORG}/collector:$(COLLECTOR_TAG)-slim \
 						 -t quay.io/${REGISTRY_ORG}/collector:$(COLLECTOR_TAG)-base
-	BUILDER_IMG_TAGS = -t quay.io/rhacs-eng/collector-builder:$(COLLECTOR_BUILDER_TAG) 
+	BUILDER_IMG_TAGS = -t quay.io/{REGISTRY_ORG}/collector-builder:$(COLLECTOR_BUILDER_TAG) 
 else
 	DOCKER_BUILD_CMD := docker build
-	COLLECTOR_IMG_TAGS = -t quay.io/stackrox-io/collector:$(COLLECTOR_TAG)
-	BUILDER_IMG_TAGS = -t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
+	COLLECTOR_IMG_TAGS = -t quay.io/{REGISTRY_ORG}/collector:$(COLLECTOR_TAG)
+	BUILDER_IMG_TAGS = -t quay.io/{REGISTRY_ORG}/collector-builder:$(COLLECTOR_BUILDER_TAG)
 endif
 
 dev-build: image
