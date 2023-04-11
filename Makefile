@@ -8,10 +8,22 @@ MOD_VER_FILE=$(CURDIR)/kernel-modules/kobuild-tmp/MODULE_VERSION.txt
 LOCAL_SSH_PORT ?= 2222
 DEV_SSH_SERVER_KEY ?= $(CURDIR)/.collector_dev_ssh_host_ed25519_key
 
-ARCH ?= linux/amd64
-
 export COLLECTOR_VERSION := $(COLLECTOR_TAG)
 export MODULE_VERSION := $(shell cat $(CURDIR)/kernel-modules/MODULE_VERSION)
+
+
+ifdef BUILD_MULTIARCH_IMAGE
+	ARCH = linux/amd64,linux/ppc64le
+	DOCKER_BUILD_CMD = docker buildx build --push --platform ${ARCH}
+	COLLECTOR_IMG_TAGS = -t quay.io/rhacs-eng/collector:$(COLLECTOR_TAG) \
+						 -t quay.io/rhacs-eng/collector:$(COLLECTOR_TAG)-slim \
+						 -t quay.io/rhacs-eng/collector:$(COLLECTOR_TAG)-base
+	BUILDER_IMG_TAGS = -t quay.io/rhacs-eng/collector-builder:$(COLLECTOR_BUILDER_TAG) 
+else
+	DOCKER_BUILD_CMD := docker build
+	COLLECTOR_IMG_TAGS = -t quay.io/stackrox-io/collector:$(COLLECTOR_TAG)
+	BUILDER_IMG_TAGS = -t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
+endif
 
 dev-build: image
 	make -C integration-tests TestProcessNetwork
@@ -32,26 +44,11 @@ container-dockerfile-dev:
 .PHONY: builder
 builder:
 ifdef BUILD_BUILDER_IMAGE
-	docker build \
+	$(DOCKER_BUILD_CMD) \
 		--build-arg NPROCS=$(NPROCS) \
 		--cache-from quay.io/stackrox-io/collector-builder:cache \
 		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
-		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
-		-f "$(CURDIR)/builder/Dockerfile" \
-		.
-else
-	docker pull quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
-endif
-
-.PHONY: ma-builder
-ma-builder:
-ifdef BUILD_BUILDER_IMAGE
-	docker buildx build --push --platform ${ARCH} \
-		--build-arg NPROCS=$(NPROCS) \
-		--cache-from quay.io/stackrox-io/collector-builder:cache \
-		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
-		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
-		-t quay.io/rhacs-eng/collector-builder:$(COLLECTOR_BUILDER_TAG) \
+		$(BUILDER_IMG_TAGS) \
 		-f "$(CURDIR)/builder/Dockerfile" \
 		.
 else
@@ -59,9 +56,6 @@ else
 endif
 
 collector: builder
-	make -C collector collector
-
-ma-collector: ma-builder
 	make -C collector collector
 
 .PHONY: connscrape
@@ -80,23 +74,12 @@ build-kernel-modules:
 build-drivers:
 	make -C kernel-modules drivers
 
-image: collector unittest
-	make -C collector txt-files
-	docker build \
+image:
+	$(DOCKER_BUILD_CMD) \
 		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
 		--build-arg MODULE_VERSION="$(MODULE_VERSION)" \
 		-f collector/container/Dockerfile \
-		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
-		$(COLLECTOR_BUILD_CONTEXT)
-
-ma-image: ma-collector unittest
-	make -C collector txt-files
-	docker buildx build --push --platform ${ARCH} \
-		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
-		--build-arg MODULE_VERSION="$(MODULE_VERSION)" \
-		-f collector/container/Dockerfile \
-		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG)-slim \
-		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG)-base \
+		$(COLLECTOR_IMG_TAGS) \
 		$(COLLECTOR_BUILD_CONTEXT)
 
 image-dev: collector unittest container-dockerfile-dev
