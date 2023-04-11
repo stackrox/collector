@@ -49,7 +49,6 @@ virtual_machines:
       - cos-stable
       - cos-beta
       - cos-dev
-      - cos-89-lts
 
   sles:
     project: suse-cloud
