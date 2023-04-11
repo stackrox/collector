@@ -37,8 +37,9 @@ Or pipe output of the make target:
 ```bash
 $ make image 2>&1 | sed -e "s|/src|${PWD}/collector/|g"
 ```
-*NOTE*: To build a multi-arch image, use the `ma-image` target instead which
-uses `docker buildx` to build and push the image to registry in a single step.
+*NOTE*: To build a multi-arch image, use the `build-multiarch-image` label for
+your PR. The targets will automatically build a multi-arch image and push to
+the appropriate registries using `docker buildx`, all in a single step.
 
 
 ## Run inside a container
