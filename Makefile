@@ -1,8 +1,6 @@
 BASE_PATH = .
 include Makefile-constants.mk
 
-NPROCS ?= $(shell nproc)
-
 MOD_VER_FILE=$(CURDIR)/kernel-modules/kobuild-tmp/MODULE_VERSION.txt
 
 export COLLECTOR_VERSION := $(COLLECTOR_TAG)
@@ -29,7 +27,6 @@ builder:
 ifdef BUILD_BUILDER_IMAGE
 	docker build \
 		--target builder \
-		--build-arg NPROCS=$(NPROCS) \
 		--cache-from quay.io/stackrox-io/collector-builder:cache \
 		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
@@ -43,7 +40,6 @@ endif
 dev-image: builder
 	docker build \
 		--target dev \
-		--build-arg NPROCS=$(NPROCS) \
 		--cache-from quay.io/stackrox-io/collector-builder:cache \
 		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)-dev \

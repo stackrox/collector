@@ -1,8 +1,5 @@
 FROM quay.io/centos/centos:stream8 as builder
 
-ARG NPROCS=6
-ENV NPROCS=$NPROCS
-
 ARG BUILD_DIR=/install-tmp
 
 USER root

@@ -4,6 +4,9 @@ set -e
 
 export LICENSE_DIR="/THIRD_PARTY_NOTICES"
 
+export NPROCS
+NPROCS="$(nproc)"
+
 mkdir -p "${LICENSE_DIR}"
 
 # shellcheck source=SCRIPTDIR/versions.sh
