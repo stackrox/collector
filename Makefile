@@ -74,7 +74,8 @@ build-kernel-modules:
 build-drivers:
 	make -C kernel-modules drivers
 
-image:
+image: collector unittest
+	make -C collector txt-files
 	$(DOCKER_BUILD_CMD) \
 		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
 		--build-arg MODULE_VERSION="$(MODULE_VERSION)" \
