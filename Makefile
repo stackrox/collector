@@ -10,9 +10,10 @@ DEV_SSH_SERVER_KEY ?= $(CURDIR)/.collector_dev_ssh_host_ed25519_key
 
 export COLLECTOR_VERSION := $(COLLECTOR_TAG)
 export MODULE_VERSION := $(shell cat $(CURDIR)/kernel-modules/MODULE_VERSION)
-
+REGISTRY_ORG ?= stackrox-io
 
 ifdef BUILD_MULTIARCH_IMAGE
+	export BUILD_PPC_BINARIES = true
 	ARCH = linux/amd64,linux/ppc64le
 	DOCKER_BUILD_CMD = docker buildx build --push --platform ${ARCH}
 	COLLECTOR_IMG_TAGS = -t quay.io/${REGISTRY_ORG}/collector:$(COLLECTOR_TAG) \

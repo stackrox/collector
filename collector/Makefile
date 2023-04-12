@@ -4,10 +4,17 @@ include ../Makefile-constants.mk
 NPROCS ?= $(shell nproc)
 
 CMAKE_BASE_DIR = cmake-build
-CMAKE_DIR= $(BASE_PATH)/$(CMAKE_BASE_DIR)
+CMAKE_DIR = $(BASE_PATH)/$(CMAKE_BASE_DIR)
 COLLECTOR_BIN_DIR = $(CMAKE_DIR)/collector
 LIBSINSP_BIN_DIR = $(CMAKE_DIR)/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp
 SRC_MOUNT_DIR = /tmp/collector
+
+ifdef BUILD_MULTIARCH_IMAGE
+	CMAKE_BASE_DIR_PPC = cmake-build-ppc64le
+	CMAKE_DIR_PPC = $(BASE_PATH)/$(CMAKE_BASE_DIR_PPC)
+	COLLECTOR_BIN_DIR_PPC = $(CMAKE_DIR_PPC)/collector
+	LIBSINSP_BIN_DIR_PPC = $(CMAKE_DIR_PPC)/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp
+endif
 
 HDRS := $(wildcard lib/*.h) $(shell find falcosecurity-libs/userspace -name '*.h')
 
@@ -28,11 +35,31 @@ cmake-build/collector: $(COLLECTOR_BUILD_DEPS)
 		-e ADDRESS_SANITIZER=$(ADDRESS_SANITIZER) \
 		-e COLLECTOR_APPEND_CID=$(COLLECTOR_APPEND_CID) \
 		-e DISABLE_PROFILING="true" \
+		-e BUILD_PPC_BINARIES="false" \
 		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) "$(SRC_MOUNT_DIR)/builder/build/build-collector.sh"
+
+ifdef BUILD_PPC_BINARIES
+	docker run --platform linux/ppc64le --rm --name build_collector \
+		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
+		-e NPROCS=$(NPROCS) \
+		-e SRC_ROOT_DIR="$(SRC_MOUNT_DIR)" \
+		-e CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
+		-e USE_VALGRIND=$(USE_VALGRIND) \
+		-e ADDRESS_SANITIZER=$(ADDRESS_SANITIZER) \
+		-e COLLECTOR_APPEND_CID=$(COLLECTOR_APPEND_CID) \
+		-e DISABLE_PROFILING="true" \
+		-e BUILD_PPC_BINARIES="true" \
+		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) "$(SRC_MOUNT_DIR)/builder/build/build-collector.sh"
+endif
 
 container/bin/collector: cmake-build/collector
 	mkdir -p container/bin
 	cp "$(COLLECTOR_BIN_DIR)/collector" container/bin/collector
+
+ifdef BUILD_MULTIARCH_IMAGE
+	mkdir -p container/bin-ppc64le
+	cp "$(COLLECTOR_BIN_DIR_PPC)/collector" container/bin-ppc64le/collector
+endif
 
 .PHONY: collector
 collector: container/bin/collector txt-files
@@ -40,9 +67,17 @@ collector: container/bin/collector txt-files
 	cp -r "$(CMAKE_DIR)"/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
 	cp "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so" container/libs/libsinsp-wrapper.so
 
+ifdef BUILD_MULTIARCH_IMAGE
+	mkdir -p container/libs-ppc64le
+	cp -r "$(CMAKE_DIR_PPC)"/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
+	cp "$(LIBSINSP_BIN_DIR_PPC)/libsinsp-wrapper.so" container/libs-ppc64le/libsinsp-wrapper.so
+endif
+
 .PHONY: build-connscrape-test
 build-connscrape-test:
 	docker build -f $(CURDIR)/connscrape-test/Dockerfile -t connscrape-test $(CURDIR)/connscrape-test
+
+	docker buildx build --load --platform linux/ppc64le -f $(CURDIR)/connscrape-test/Dockerfile -t connscrape-test-ppc $(CURDIR)/connscrape-test
 
 connscrape: build-connscrape-test
 	docker rm -fv collector_connscrape || true
@@ -51,12 +86,33 @@ connscrape: build-connscrape-test
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
 		connscrape-test "$(SRC_MOUNT_DIR)/collector/connscrape-test/connscrape-test.sh"
 
+ifdef BUILD_PPC_BINARIES
+	docker run --platform linux/ppc64le --rm --name collector_connscrape \
+		-v "$(LIBSINSP_BIN_DIR_PPC)/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
+		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
+		connscrape-test-ppc "$(SRC_MOUNT_DIR)/collector/connscrape-test/connscrape-test.sh"
+endif
+
 unittest: collector
 	docker rm -fv collector_unittest || true
 	docker run --rm --name collector_unittest \
 		-v "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
 		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) $(COLLECTOR_PRE_ARGUMENTS) "$(SRC_MOUNT_DIR)/$(CMAKE_BASE_DIR)/collector/runUnitTests"
+
+ifdef BUILD_PPC_BINARIES
+	docker run --platform linux/ppc64le --rm --name collector_unittest \
+		-v "$(LIBSINSP_BIN_DIR_PPC)/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
+		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
+		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) $(COLLECTOR_PRE_ARGUMENTS) "$(SRC_MOUNT_DIR)/$(CMAKE_BASE_DIR_PPC)/collector/runUnitTests"
+endif
+
+ifdef BUILD_PPC_BINARIES
+	docker run --platform linux/ppc64le --rm --name collector_unittest \
+		-v "$(LIBSINSP_BIN_DIR_PPC)/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
+		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
+		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) $(COLLECTOR_PRE_ARGUMENTS) "$(SRC_MOUNT_DIR)/$(CMAKE_BASE_DIR_PPC)/collector/runUnitTests"
+endif
 
 .PHONY: txt-files
 txt-files:
