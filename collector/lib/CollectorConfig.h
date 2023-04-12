@@ -73,7 +73,7 @@ function on_event()
     return true
 end
 function on_init()
-    filter = "not container.id = 'host'\n"
+    filter = "(container.id = 'host' and (proc.name = 'self-checks' or proc.name = 'collector')) or (not container.id = 'host')\n"
     chisel.set_filter(filter)
     return true
 end

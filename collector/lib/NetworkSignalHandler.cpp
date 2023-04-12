@@ -23,6 +23,8 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "NetworkSignalHandler.h"
 
+#include <optional>
+
 #include "EventMap.h"
 
 namespace collector {
@@ -47,19 +49,19 @@ EventMap<Modifier> modifiers = {
 
 }  // namespace
 
-std::pair<Connection, bool> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
+std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
   const int64_t* res = event_extractor_.get_event_rawres(evt);
   if (!res || *res < 0) {
     // ignore unsuccessful events for now.
-    return {{}, false};
+    return std::nullopt;
   }
 
   auto* fd_info = evt->get_fd_info();
-  if (!fd_info) return {{}, false};
+  if (!fd_info) return std::nullopt;
 
   bool is_server = fd_info->is_role_server();
   if (!is_server && !fd_info->is_role_client()) {
-    return {{}, false};
+    return std::nullopt;
   }
 
   L4Proto l4proto;
@@ -71,7 +73,7 @@ std::pair<Connection, bool> NetworkSignalHandler::GetConnection(sinsp_evt* evt) 
       l4proto = L4Proto::UDP;
       break;
     default:
-      return {{}, false};
+      return std::nullopt;
   }
 
   Endpoint client, server;
@@ -89,15 +91,15 @@ std::pair<Connection, bool> NetworkSignalHandler::GetConnection(sinsp_evt* evt) 
       break;
     }
     default:
-      return {{}, false};
+      return std::nullopt;
   }
 
   const Endpoint* local = is_server ? &server : &client;
   const Endpoint* remote = is_server ? &client : &server;
 
   const std::string* container_id = event_extractor_.get_container_id(evt);
-  if (!container_id) return {{}, false};
-  return {Connection(*container_id, *local, *remote, l4proto, is_server), true};
+  if (!container_id) return std::nullopt;
+  return {Connection(*container_id, *local, *remote, l4proto, is_server)};
 }
 
 SignalHandler::Result NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
@@ -105,11 +107,11 @@ SignalHandler::Result NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
   if (modifier == Modifier::INVALID) return SignalHandler::IGNORED;
 
   auto result = GetConnection(evt);
-  if (!result.second || !IsRelevantConnection(result.first)) {
+  if (!result.has_value() || !IsRelevantConnection(*result)) {
     return SignalHandler::IGNORED;
   }
 
-  conn_tracker_->UpdateConnection(result.first, evt->get_ts() / 1000UL, modifier == Modifier::ADD);
+  conn_tracker_->UpdateConnection(*result, evt->get_ts() / 1000UL, modifier == Modifier::ADD);
   return SignalHandler::PROCESSED;
 }
 

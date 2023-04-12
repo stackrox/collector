@@ -37,6 +37,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include "Logging.h"
 #include "NetworkSignalHandler.h"
 #include "ProcessSignalHandler.h"
+#include "SelfCheckHandler.h"
+#include "SelfChecks.h"
 #include "TimeUtil.h"
 #include "Utility.h"
 
@@ -51,6 +53,9 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
   if (chisel_) {
     throw CollectorException("Invalid state: SysdigService was already initialized");
   }
+
+  AddSignalHandler(MakeUnique<SelfCheckProcessHandler>(inspector_.get()));
+  AddSignalHandler(MakeUnique<SelfCheckNetworkHandler>(inspector_.get()));
 
   if (conn_tracker) {
     AddSignalHandler(MakeUnique<NetworkSignalHandler>(inspector_.get(), conn_tracker, &userspace_stats_));
@@ -192,6 +197,8 @@ void SysdigService::Start() {
 
   inspector_->start_capture();
 
+  self_checks::start_self_check_process();
+
   if (!useEbpf_) {
     // Drop DAC_OVERRIDE capability after opening the device files.
     capng_updatev(CAPNG_DROP, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_DAC_OVERRIDE, -1);
@@ -216,7 +223,8 @@ void SysdigService::Run(const std::atomic<ControlValue>& control) {
     if (!evt) continue;
 
     auto process_start = NowMicros();
-    for (auto& signal_handler : signal_handlers_) {
+    for (auto it = signal_handlers_.begin(); it != signal_handlers_.end(); it++) {
+      auto& signal_handler = *it;
       if (!signal_handler.ShouldHandle(evt)) continue;
       auto result = signal_handler.handler->HandleSignal(evt);
       if (result == SignalHandler::NEEDS_REFRESH) {
@@ -224,6 +232,12 @@ void SysdigService::Run(const std::atomic<ControlValue>& control) {
           continue;
         }
         result = signal_handler.handler->HandleSignal(evt);
+      } else if (result == SignalHandler::FINISHED) {
+        signal_handlers_.erase(it);
+        break;
+      } else if (result == SignalHandler::PROCESSED) {
+        // This event has been consumed, stop processing
+        break;
       }
     }
 

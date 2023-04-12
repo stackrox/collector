@@ -38,6 +38,7 @@ class SignalHandler {
     IGNORED,
     ERROR,
     NEEDS_REFRESH,
+    FINISHED,
   };
 
   virtual std::string GetName() = 0;
