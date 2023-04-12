@@ -1,6 +1,8 @@
 container/bin
+container/bin-ppc64le
 container/driver
 container/libs
+container/libs-ppc64le
 container/include
 container/COPYING.txt
 container/NOTICE-*.txt
@@ -10,6 +12,7 @@ tags
 collector.tar.gz
 build/
 cmake-build/
+cmale-build-ppc64le/
 cmake-build-rhel/
 generated/
 collector/protoc-*
