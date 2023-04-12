@@ -1,12 +1,15 @@
 package common
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-multierror"
 
@@ -226,6 +229,19 @@ func (c *CollectorManager) launchCollector() error {
 	output, err := c.executor.Exec(cmd...)
 	c.CollectorOutput = output
 	return err
+}
+
+func (c *CollectorManager) WaitForCollector(timeout int) error {
+	start := time.Now()
+
+	for time.Since(start) < time.Duration(timeout*int(time.Second)) {
+		resp, err := http.Get("http://localhost:8080/ready")
+		if err == nil && resp.StatusCode == 200 {
+			return nil
+		}
+		time.Sleep(time.Second)
+	}
+	return errors.New("Collector is not ready")
 }
 
 func (c *CollectorManager) captureLogs(containerName string) (string, error) {
