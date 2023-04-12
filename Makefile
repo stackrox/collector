@@ -19,11 +19,11 @@ ifdef BUILD_MULTIARCH_IMAGE
 	COLLECTOR_IMG_TAGS = -t quay.io/${REGISTRY_ORG}/collector:$(COLLECTOR_TAG) \
 						 -t quay.io/${REGISTRY_ORG}/collector:$(COLLECTOR_TAG)-slim \
 						 -t quay.io/${REGISTRY_ORG}/collector:$(COLLECTOR_TAG)-base
-	BUILDER_IMG_TAGS = -t quay.io/{REGISTRY_ORG}/collector-builder:$(COLLECTOR_BUILDER_TAG) 
+	BUILDER_IMG_TAGS = -t quay.io/${REGISTRY_ORG}/collector-builder:$(COLLECTOR_BUILDER_TAG) 
 else
 	DOCKER_BUILD_CMD := docker build
-	COLLECTOR_IMG_TAGS = -t quay.io/{REGISTRY_ORG}/collector:$(COLLECTOR_TAG)
-	BUILDER_IMG_TAGS = -t quay.io/{REGISTRY_ORG}/collector-builder:$(COLLECTOR_BUILDER_TAG)
+	COLLECTOR_IMG_TAGS = -t quay.io/${REGISTRY_ORG}/collector:$(COLLECTOR_TAG)
+	BUILDER_IMG_TAGS = -t quay.io/${REGISTRY_ORG}/collector-builder:$(COLLECTOR_BUILDER_TAG)
 endif
 
 dev-build: image
