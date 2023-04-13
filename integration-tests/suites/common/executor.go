@@ -25,7 +25,7 @@ type Executor interface {
 	IsContainerRunning(image string) (bool, error)
 	ExitCode(container string) (int, error)
 	Exec(args ...string) (string, error)
-	ExecWithStdin(pippedContent string, args ...string) (string, error)
+	ExecWithStdin(pipedContent string, args ...string) (string, error)
 	ExecRetry(args ...string) (string, error)
 }
 
@@ -196,7 +196,7 @@ func (e *executor) RunCommand(cmd *exec.Cmd) (string, error) {
 	return trimmed, err
 }
 
-func (e *executor) ExecWithStdin(pippedContent string, args ...string) (res string, err error) {
+func (e *executor) ExecWithStdin(pipedContent string, args ...string) (res string, err error) {
 	cmd := e.builder.ExecCommand(args...)
 
 	stdin, err := cmd.StdinPipe()
@@ -206,7 +206,7 @@ func (e *executor) ExecWithStdin(pippedContent string, args ...string) (res stri
 
 	go func() {
 		defer stdin.Close()
-		io.WriteString(stdin, pippedContent)
+		io.WriteString(stdin, pipedContent)
 	}()
 
 	return e.RunCommand(cmd)
