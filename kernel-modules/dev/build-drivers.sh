@@ -34,6 +34,7 @@ cmake -S ${DRIVER_DIR} \
     -DBUILD_DRIVER=ON \
     -DENABLE_DKMS=OFF \
     -DCREATE_TEST_TARGETS=OFF \
+    -D__MODERN_BPF_DEBUG__=ON \
     -DBUILD_LIBSCAP_MODERN_BPF=ON \
     -DMODERN_BPF_EXCLUDE_PROGS='^(openat2|ppoll|setsockopt|getsockopt|clone3|io_uring_setup|nanosleep)$' \
     -B ${DRIVER_DIR}/build
