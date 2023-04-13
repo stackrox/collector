@@ -8,23 +8,10 @@ MOD_VER_FILE=$(CURDIR)/kernel-modules/kobuild-tmp/MODULE_VERSION.txt
 LOCAL_SSH_PORT ?= 2222
 DEV_SSH_SERVER_KEY ?= $(CURDIR)/.collector_dev_ssh_host_ed25519_key
 
+ARCH ?= amd64
+
 export COLLECTOR_VERSION := $(COLLECTOR_TAG)
 export MODULE_VERSION := $(shell cat $(CURDIR)/kernel-modules/MODULE_VERSION)
-REGISTRY_ORG ?= stackrox-io
-
-ifdef BUILD_MULTIARCH_IMAGE
-	export BUILD_PPC_BINARIES = true
-	ARCH = linux/amd64,linux/ppc64le
-	DOCKER_BUILD_CMD = docker buildx build --push --platform ${ARCH}
-	COLLECTOR_IMG_TAGS = -t quay.io/${REGISTRY_ORG}/collector:$(COLLECTOR_TAG) \
-						 -t quay.io/${REGISTRY_ORG}/collector:$(COLLECTOR_TAG)-slim \
-						 -t quay.io/${REGISTRY_ORG}/collector:$(COLLECTOR_TAG)-base
-	BUILDER_IMG_TAGS = -t quay.io/${REGISTRY_ORG}/collector-builder:$(COLLECTOR_BUILDER_TAG) 
-else
-	DOCKER_BUILD_CMD := docker build
-	COLLECTOR_IMG_TAGS = -t quay.io/${REGISTRY_ORG}/collector:$(COLLECTOR_TAG)
-	BUILDER_IMG_TAGS = -t quay.io/${REGISTRY_ORG}/collector-builder:$(COLLECTOR_BUILDER_TAG)
-endif
 
 dev-build: image
 	make -C integration-tests TestProcessNetwork
@@ -45,15 +32,15 @@ container-dockerfile-dev:
 .PHONY: builder
 builder:
 ifdef BUILD_BUILDER_IMAGE
-	$(DOCKER_BUILD_CMD) \
+	docker buildx build --load --platform ${ARCH} \
 		--build-arg NPROCS=$(NPROCS) \
 		--cache-from quay.io/stackrox-io/collector-builder:cache \
 		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
-		$(BUILDER_IMG_TAGS) \
+		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-f "$(CURDIR)/builder/Dockerfile" \
 		.
 else
-	docker pull quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
+	docker pull --platform ${ARCH} quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
 endif
 
 collector: builder
@@ -77,11 +64,11 @@ build-drivers:
 
 image: collector unittest
 	make -C collector txt-files
-	$(DOCKER_BUILD_CMD) \
+	docker buildx build --load --platform ${ARCH} \
 		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
 		--build-arg MODULE_VERSION="$(MODULE_VERSION)" \
 		-f collector/container/Dockerfile \
-		$(COLLECTOR_IMG_TAGS) \
+		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
 
 image-dev: collector unittest container-dockerfile-dev
