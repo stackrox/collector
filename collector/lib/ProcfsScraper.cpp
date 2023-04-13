@@ -456,7 +456,9 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
     if (!GetNetworkNamespace(dirfd, &netns_inode)) {
       // TODO ROX-13962: Improve logging to indicate when a process is defunct.
       COUNTER_INC(CollectorStats::procfs_could_not_get_network_namespace);
-      CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) << "Could not determine network namespace: " << StrError();
+      CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) <<
+          "Could not determine network namespace for container_id=" << container_id <<
+          ", pid=" << pid << "; error=" << StrError();
       continue;
     }
 
@@ -465,7 +467,10 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
 
     if (!GetSocketINodes(dirfd, pid, &container_ns_sockets)) {
       COUNTER_INC(CollectorStats::procfs_could_not_get_socket_inodes);
-      CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) << "Could not obtain socket inodes: " << StrError();
+      CLOG_THROTTLED(ERROR,
+          std::chrono::seconds(10)) <<
+          "Could not obtain socket inodes for container_id=" << container_id <<
+          ", pid=" << pid << "; error=" << StrError();
       continue;
     }
 
