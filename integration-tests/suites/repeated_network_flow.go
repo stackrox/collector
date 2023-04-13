@@ -108,7 +108,8 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 		    done
 		    sleep "$sleep_between_iterations"
 		    i=$((i + 1))
-		done`,
+		done
+		`,
 		numMetaIter, numIter, sleepBetweenCurlTime, sleepBetweenIterations, serverAddress)
 
 	s.ClientIP, err = s.getIPAddress("nginx-curl")
