@@ -197,6 +197,11 @@ func (e *executor) RunCommand(cmd *exec.Cmd) (string, error) {
 }
 
 func (e *executor) ExecWithStdin(pipedContent string, args ...string) (res string, err error) {
+
+	if args[0] == RuntimeCommand && RuntimeAsRoot {
+		args = append([]string{"sudo"}, args...)
+	}
+
 	cmd := e.builder.ExecCommand(args...)
 
 	stdin, err := cmd.StdinPipe()
