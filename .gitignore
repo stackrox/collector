@@ -10,7 +10,7 @@ falcosecurity-libs/cmake-build-rhel
 kernel-modules/kobuild-tmp
 utilities/PerformanceTesting/TestResults
 cmake-build/
-cmake-build-ppc64le/
+
 # Mac OS hidden file
 .DS_Store
 
