@@ -76,13 +76,6 @@ class KernelDriverModule : public IKernelDriver {
       return false;
     }
 
-    // Drop DAC_OVERRIDE capability after opening the device files.
-    capng_updatev(CAPNG_DROP, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_DAC_OVERRIDE, -1);
-    if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
-      CLOG(WARNING) << "Failed to drop DAC_OVERRIDE capability: " << StrError();
-      return false;
-    }
-
     return true;
   }
 
