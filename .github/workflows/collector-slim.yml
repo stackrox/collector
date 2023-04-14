@@ -153,9 +153,9 @@ jobs:
       - name: Create and push multiarch manifest for builder to stackrox-io
         if: github.event_name == 'push' || steps.pr-checks.outputs.builder-tag != env.DEFAULT_BUILDER_TAG
         run: |
-          docker manifest create quay.io/stacrox-io/collector-builder:${COLLECTOR_BUILDER_TAG} \
-                                  quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-amd64 \
-                                  quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-ppc64le
+          docker manifest create "quay.io/stacrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}" \
+                                  "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-amd64" \
+                                  "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-ppc64le"
 
           docker manifest push "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}"
 
@@ -186,8 +186,8 @@ jobs:
       - name: Create and push multiarch manifest for builder to rhacs-eng
         if: github.event_name == 'push' || steps.pr-checks.outputs.builder-tag != env.DEFAULT_BUILDER_TAG
         run: |
-          docker manifest create quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG} \
-                                  quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}-amd64 \
-                                  quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}-ppc64le
+          docker manifest create "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}" \
+                                 "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}-amd64" \
+                                 "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}-ppc64le"
 
           docker manifest push "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}"
