@@ -40,7 +40,7 @@ SignalHandler::Result SelfCheckNetworkHandler::HandleSignal(sinsp_evt* evt) {
     return IGNORED;
   }
 
-  if (*server_port == 1337 && *client_port != (uint16_t)-1) {
+  if (*server_port == self_checks::kSelfCheckServerPort && *client_port != (uint16_t)-1) {
     CLOG(INFO) << "Found self-check connection event.";
     return FINISHED;
   }

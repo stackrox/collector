@@ -9,7 +9,6 @@
 #include <sys/select.h>
 #include <sys/wait.h>
 
-const uint16_t g_listening_port = 1337;
 const int g_connection_retries = 3;
 const int g_timeout_seconds = 3;
 const int g_sleep_seconds = 1;
@@ -98,11 +97,17 @@ err:
 }
 
 int main(int argc, char** argv) {
+  if (argc != 2) {
+    // expect port number as argument
+    return EINVAL;
+  }
+
+  int port = std::stoi(argv[1]);
   pid_t child = fork();
   int status = -1;
 
   if (child == 0) {
-    if (!startListeningPort(g_listening_port)) {
+    if (!startListeningPort(port)) {
       return errno;
     }
     return 0;
@@ -110,7 +115,7 @@ int main(int argc, char** argv) {
     // failed to fork for whatever reason
     return errno;
   } else {
-    if (!connectToPort(g_listening_port)) {
+    if (!connectToPort(port)) {
       return errno;
     }
 

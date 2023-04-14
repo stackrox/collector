@@ -1,5 +1,6 @@
 #include "SelfChecks.h"
 
+#include <cstdint>
 #include <unistd.h>
 
 #include <sys/wait.h>
@@ -13,6 +14,7 @@ namespace self_checks {
 
 const char* kSelfChecksExePath = "/usr/local/bin/self-checks";
 const char* kSelfChecksName = "self-checks";
+const uint16_t kSelfCheckServerPort = 1337;
 
 int start_self_check_process() {
   pid_t child = fork();
@@ -24,7 +26,8 @@ int start_self_check_process() {
       break;
     case 0: {
       // in the child process
-      char* argv[2] = {(char*)kSelfChecksExePath, NULL};
+      std::string port_str = std::to_string(kSelfCheckServerPort);
+      char* argv[] = {(char*)kSelfChecksExePath, (char*)port_str.c_str(), NULL};
       execve(kSelfChecksExePath, argv, NULL);
 
       // if execve fails for whatever reason, immediately exit
