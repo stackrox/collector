@@ -34,10 +34,15 @@ namespace collector {
 class SignalHandler {
  public:
   enum Result {
+    // The event was processed correctly
     PROCESSED = 0,
+    // The signal handler can't handle this event
     IGNORED,
+    // An error occurred when handling the event
     ERROR,
+    // Refresh the process table (handle existing processes)
     NEEDS_REFRESH,
+    // Processing has finished, unload this signal handler.
     FINISHED,
   };
 

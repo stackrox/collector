@@ -27,6 +27,14 @@ class SelfCheckHandler : public SignalHandler {
   std::chrono::time_point<std::chrono::steady_clock> start_;
   std::chrono::seconds timeout_;
 
+  /**
+   * @brief Verifies that a given event came from the self-check process,
+   * by checking the process name and the executable path.
+   *
+   * @note pid verification is not possible because the driver retrieves
+   *       the host pid, but when we fork the process we get the namespace
+   *       pid.
+   */
   bool isSelfCheckEvent(sinsp_evt* evt) {
     const std::string* name = event_extractor_.get_comm(evt);
     const std::string* exe = event_extractor_.get_exe(evt);
@@ -38,6 +46,10 @@ class SelfCheckHandler : public SignalHandler {
     return name->compare(self_checks::kSelfChecksName) == 0 && exe->compare(self_checks::kSelfChecksExePath) == 0;
   }
 
+  /**
+   * @brief simple check that the handler has timed out waiting for
+   *        self check events.
+   */
   bool hasTimedOut() {
     auto now = std::chrono::steady_clock::now();
     return now > (start_ + timeout_);
@@ -58,7 +70,6 @@ class SelfCheckProcessHandler : public SelfCheckHandler {
   }
 
   virtual Result HandleSignal(sinsp_evt* evt) override;
-  virtual Result HandleExistingProcess(sinsp_threadinfo* tinfo) override;
 };
 
 class SelfCheckNetworkHandler : public SelfCheckHandler {
@@ -81,7 +92,6 @@ class SelfCheckNetworkHandler : public SelfCheckHandler {
   }
 
   Result HandleSignal(sinsp_evt* evt) override;
-  Result HandleExistingProcess(sinsp_threadinfo* tinfo) override;
 };
 
 }  // namespace collector

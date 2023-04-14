@@ -54,6 +54,10 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
     throw CollectorException("Invalid state: SysdigService was already initialized");
   }
 
+  // The self-check handlers should only operate during start up,
+  // so they are added to the handler list first, so they have access
+  // to self-check events before the network and process handlers have
+  // a chance to process them and send them to Sensor.
   AddSignalHandler(MakeUnique<SelfCheckProcessHandler>(inspector_.get()));
   AddSignalHandler(MakeUnique<SelfCheckNetworkHandler>(inspector_.get()));
 
@@ -65,7 +69,9 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
     AddSignalHandler(MakeUnique<ProcessSignalHandler>(inspector_.get(), config.grpc_channel, &userspace_stats_));
   }
 
-  if (signal_handlers_.empty()) {
+  if (!conn_tracker && !config.grpc_channel) {
+    // self-check handlers do not count towards this check, because they
+    // do not send signals to Sensor.
     CLOG(FATAL) << "Internal error: There are no signal handlers.";
   }
 
@@ -197,6 +203,9 @@ void SysdigService::Start() {
 
   inspector_->start_capture();
 
+  // trigger the self check process only once capture has started,
+  // to verify the driver is working correctly. SelfCheckHandlers will
+  // verify the live events.
   self_checks::start_self_check_process();
 
   if (!useEbpf_) {
@@ -233,6 +242,8 @@ void SysdigService::Run(const std::atomic<ControlValue>& control) {
         }
         result = signal_handler.handler->HandleSignal(evt);
       } else if (result == SignalHandler::FINISHED) {
+        // This signal handler has finished processing events,
+        // so remove it from the signal handler list.
         signal_handlers_.erase(it);
         break;
       } else if (result == SignalHandler::PROCESSED) {

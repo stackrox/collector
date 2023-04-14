@@ -24,10 +24,6 @@ SignalHandler::Result SelfCheckProcessHandler::HandleSignal(sinsp_evt* evt) {
   return IGNORED;
 }
 
-SignalHandler::Result SelfCheckProcessHandler::HandleExistingProcess(sinsp_threadinfo* tinfo) {
-  return IGNORED;
-}
-
 SignalHandler::Result SelfCheckNetworkHandler::HandleSignal(sinsp_evt* evt) {
   if (!isSelfCheckEvent(evt)) {
     return IGNORED;
@@ -52,10 +48,6 @@ SignalHandler::Result SelfCheckNetworkHandler::HandleSignal(sinsp_evt* evt) {
     return FINISHED;
   }
 
-  return IGNORED;
-}
-
-SignalHandler::Result SelfCheckNetworkHandler::HandleExistingProcess(sinsp_threadinfo* tinfo) {
   return IGNORED;
 }
 
