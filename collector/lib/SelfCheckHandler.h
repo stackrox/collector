@@ -2,17 +2,30 @@
 #ifndef COLLECTOR_SELF_CHECK_HANDLE_H
 #define COLLECTOR_SELF_CHECK_HANDLE_H
 
+#include <chrono>
+
 #include "SelfChecks.h"
 #include "SignalHandler.h"
 #include "SysdigEventExtractor.h"
 
 namespace collector {
 
-class SelfCheckHandler {
+class SelfCheckHandler : public SignalHandler {
  public:
-  SelfCheckHandler(sinsp* inspector) : inspector_(inspector) {
+  SelfCheckHandler() {}
+  SelfCheckHandler(
+      sinsp* inspector,
+      std::chrono::seconds timeout = std::chrono::seconds(5)) : inspector_(inspector), timeout_(timeout) {
     event_extractor_.Init(inspector);
+    start_ = std::chrono::steady_clock::now();
   }
+
+ protected:
+  sinsp* inspector_;
+  SysdigEventExtractor event_extractor_;
+
+  std::chrono::time_point<std::chrono::steady_clock> start_;
+  std::chrono::seconds timeout_;
 
   bool isSelfCheckEvent(sinsp_evt* evt) {
     const std::string* name = event_extractor_.get_comm(evt);
@@ -22,19 +35,18 @@ class SelfCheckHandler {
       return false;
     }
 
-    return name->compare(self_checks::kSelfChecksName) == 0 && exe->compare(self_checks::kSelfChecksExePath);
+    return name->compare(self_checks::kSelfChecksName) == 0 && exe->compare(self_checks::kSelfChecksExePath) == 0;
   }
 
- protected:
-  sinsp* inspector_;
-  SysdigEventExtractor event_extractor_;
+  bool hasTimedOut() {
+    auto now = std::chrono::steady_clock::now();
+    return now > (start_ + timeout_);
+  }
 };
 
-class SelfCheckProcessHandler : public SelfCheckHandler, public SignalHandler {
+class SelfCheckProcessHandler : public SelfCheckHandler {
  public:
-  SelfCheckProcessHandler(sinsp* inspector) : SelfCheckHandler(inspector),
-                                              found_live_event_(false),
-                                              found_collector_process_(false) {
+  SelfCheckProcessHandler(sinsp* inspector) : SelfCheckHandler(inspector) {
   }
 
   std::string GetName() override {
@@ -45,19 +57,11 @@ class SelfCheckProcessHandler : public SelfCheckHandler, public SignalHandler {
     return {"execve<"};
   }
 
-  Result HandleSignal(sinsp_evt* evt) override;
-  Result HandleExistingProcess(sinsp_threadinfo* tinfo) override;
-
- private:
-  bool found_live_event_;
-  bool found_collector_process_;
-
-  bool Finished() const {
-    return found_live_event_ && found_collector_process_;
-  }
+  virtual Result HandleSignal(sinsp_evt* evt) override;
+  virtual Result HandleExistingProcess(sinsp_threadinfo* tinfo) override;
 };
 
-class SelfCheckNetworkHandler : public SelfCheckHandler, public SignalHandler {
+class SelfCheckNetworkHandler : public SelfCheckHandler {
  public:
   SelfCheckNetworkHandler(sinsp* inspector) : SelfCheckHandler(inspector) {
   }

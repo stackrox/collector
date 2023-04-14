@@ -5,6 +5,7 @@
 #include <sys/wait.h>
 
 #include "Logging.h"
+#include "Utility.h"
 
 namespace collector {
 
@@ -28,12 +29,15 @@ int start_self_check_process() {
 
       // if execve fails for whatever reason, immediately exit
       // from this process
-      exit(-1);
+      exit(errno);
       break;
     }
     default:
       waitpid(child, &status, 0);
-      CLOG(INFO) << "self-check (" << child << ") exitted with status: " << WEXITSTATUS(status);
+      CLOG(INFO) << "self-check (pid=" << child << ") exitted with status: " << WEXITSTATUS(status);
+      if (status != 0) {
+        CLOG(FATAL) << "self-checks failed to execute: " << StrError(WEXITSTATUS(status));
+      }
       break;
   }
 
