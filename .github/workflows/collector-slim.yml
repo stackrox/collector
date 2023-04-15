@@ -137,25 +137,25 @@ jobs:
       - name: Create and push multiarch manifest for stackrox-io -slim
         run: |
           docker manifest create quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-slim \
-                                quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-amd64-slim \
-                                quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-ppc64le-slim
+                                 quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-amd64-slim \
+                                 quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-ppc64le-slim
 
           docker manifest push quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-slim
 
       - name: Create and push multiarch manifest for stackrox-io -base
         run: |
           docker manifest create quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-base \
-                                quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-amd64-base \
-                                quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-ppc64le-base
+                                 quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-amd64-base \
+                                 quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-ppc64le-base
 
           docker manifest push quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-base
 
       - name: Create and push multiarch manifest for builder to stackrox-io
         if: github.event_name == 'push' || steps.pr-checks.outputs.builder-tag != env.DEFAULT_BUILDER_TAG
         run: |
-          docker manifest create "quay.io/stacrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}" \
-                                  "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-amd64" \
-                                  "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-ppc64le"
+          docker manifest create "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}" \
+                                 "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-amd64" \
+                                 "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-ppc64le"
 
           docker manifest push "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}"
 
