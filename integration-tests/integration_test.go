@@ -118,3 +118,7 @@ func TestSocat(t *testing.T) {
 func TestDuplicateEndpoints(t *testing.T) {
 	suite.Run(t, new(suites.DuplicateEndpointsTestSuite))
 }
+
+func TestConnectionsAndEndpoints(t *testing.T) {
+	suite.Run(t, new(suites.ConnectionsAndEndpointsTestSuite))
+}
