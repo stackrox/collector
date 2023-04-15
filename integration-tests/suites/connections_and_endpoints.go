@@ -60,14 +60,12 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 	//s.Require().NoError(err)
 	//time.Sleep(5 * time.Second)
 
-	_, err = s.execContainer("socat-listen", []string{"/bin/sh", "-c", "socat - TCP-LISTEN:80,reuseaddr,fork &"})
-	//_, err = s.execContainer("socat-listen", []string{"/bin/sh", "-c", "socat -d -d -v -T TCP4-LISTEN:80 TCP4:" + sendIP2 + ":80,keepalive=1 &> /socat-log.txt &"})
-	//_, err = s.execContainer("socat-listen", []string{"/bin/sh", "-c", "socat -d -d -v -T TCP4-LISTEN:80 TCP4:" + sendIP2 + ":80 &> /socat-log.txt &"})
+	_, err = s.execContainer("socat-listen", []string{"/bin/sh", "-c", "socat - TCP-LISTEN:80,reuseaddr &"})
+	//_, err = s.execContainer("socat-listen", []string{"/bin/sh", "-c", "socat - TCP-LISTEN:80,reuseaddr,fork &"})
 	s.Require().NoError(err)
 	time.Sleep(5 * time.Second)
 
 	_, err = s.execContainer("socat-sendto", []string{"/bin/sh", "-c", "echo hello | socat - TCP:" + listenIP + ":80 &"})
-	//_, err = s.execContainer("socat-sendto", []string{"/bin/sh", "-c", "echo Hello | socat -d -d -v TCP:" + listenIP + ":80 STDIN &> /socat-log.txt &"})
 	s.Require().NoError(err)
 
 	s.ListenContainer = common.ContainerShortID(containerListenID)

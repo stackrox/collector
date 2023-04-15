@@ -325,14 +325,14 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE*
   while (std::fgets(line, sizeof(line), f)) {
     ConnLineData data;
     if (!ParseConnLine(line, line + sizeof(line), family, &data)) continue;
-    if (data.state == TCP_LISTEN) {  // listen socket
+    if (data.state == TCP_LISTEN || data.state == TCP_ESTABLISHED) {  // listen socket
       all_listen_endpoints.insert(data.local);
       if (data.inode && listen_endpoints) {
         auto& endpoint_info = (*listen_endpoints)[data.inode];
         endpoint_info.endpoint = data.local;
         endpoint_info.l4proto = l4proto;
       }
-      continue;
+      if (data.state == TCP_LISTEN) continue;
     }
     if (data.state != TCP_ESTABLISHED) {
       continue;
