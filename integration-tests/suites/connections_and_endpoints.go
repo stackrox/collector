@@ -60,9 +60,8 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 	//s.Require().NoError(err)
 	//time.Sleep(5 * time.Second)
 
-	_, err = s.execContainer("socat-listen", []string{"/bin/sh", "-c", "socat - TCP-LISTEN:80,reuseaddr,fork &"})
-	//_, err = s.execContainer("socat-listen", []string{"/bin/sh", "-c", "socat -d -d -v -T TCP4-LISTEN:80 TCP4:" + sendIP2 + ":80,keepalive=1 &> /socat-log.txt &"})
-	//_, err = s.execContainer("socat-listen", []string{"/bin/sh", "-c", "socat -d -d -v -T TCP4-LISTEN:80 TCP4:" + sendIP2 + ":80 &> /socat-log.txt &"})
+	_, err = s.execContainer("socat-listen", []string{"/bin/sh", "-c", "socat - TCP-LISTEN:80,reuseaddr,fork &"}) // With fork endpoint stays opend. Test passes
+	//_, err = s.execContainer("socat-listen", []string{"/bin/sh", "-c", "socat - TCP-LISTEN:80,reuseaddr &"}) // Without fork endpoint is opened and closed. Test fails
 	s.Require().NoError(err)
 	time.Sleep(5 * time.Second)
 
