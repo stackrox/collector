@@ -14,9 +14,15 @@ type ConnectionsAndEndpointsTestSuite struct {
 	SendtoContainer  string
 }
 
-// This test checks if we are reporting UDP endpoints correctly. It launches collector and two
-// socat containers. One listens for UDP messages and the other is set up to send UDP messages.
-// We make sure that listening UDP endpoint is seen and that the sending UDP endpoint is not.
+func makeLongMessage() string {
+	var result string
+
+	for i := 0; i < 100; i++ {
+		result += "hello "
+	}
+
+	return result
+}
 
 func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 
@@ -27,6 +33,7 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 
 	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
 	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
+	s.collector.Env["ROX_AFTERGLOW_PERIOD"] = "0"
 
 	err := s.collector.Setup()
 	s.Require().NoError(err)
@@ -40,47 +47,22 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 	containerListenID, err := s.launchContainer("socat-listen", socatImage, "/bin/sh", "-c", "/bin/sleep 3000")
 	s.Require().NoError(err)
 
-	//containerListenID2, err := s.launchContainer("socat-listen-2", socatImage, "/bin/sh", "-c", "/bin/sleep 3000")
-	//s.Require().NoError(err)
-
-	containerSendtoID, err := s.launchContainer("socat-sendto", socatImage, "/bin/sh", "-c", "/bin/sleep 3000")
+	containerSendtoID, err := s.launchContainer("socat-send", socatImage, "/bin/sh", "-c", "/bin/sleep 3000")
 	s.Require().NoError(err)
 	time.Sleep(5 * time.Second)
 
 	listenIP, err := s.getIPAddress("socat-listen")
 	s.Require().NoError(err)
 
-	//listenIP2, err := s.getIPAddress("socat-listen-2")
-	//s.Require().NoError(err)
-
-	//sendIP2, err := s.getIPAddress("socat-sendto")
-	//s.Require().NoError(err)
-
-	//_, err = s.execContainer("socat-listen-2", []string{"/bin/sh", "-c", "socat -d -d -v TCP4-LISTEN:8888 - &> /socat-log.txt &"})
-	//s.Require().NoError(err)
-	//time.Sleep(5 * time.Second)
-
-	_, err = s.execContainer("socat-listen", []string{"/bin/sh", "-c", "socat - TCP-LISTEN:80,reuseaddr,fork &"}) // With fork endpoint stays opend. Test passes
-	//_, err = s.execContainer("socat-listen", []string{"/bin/sh", "-c", "socat - TCP-LISTEN:80,reuseaddr &"}) // Without fork endpoint is opened and closed. Test fails
+	_, err = s.execContainer("socat-listen", []string{"/bin/sh", "-c", "socat -d -d -v - TCP-LISTEN:80,reuseaddr >> /socat-log.txt &"}) // Without fork endpoint is opened and closed. Test fails
 	s.Require().NoError(err)
 	time.Sleep(5 * time.Second)
 
-	_, err = s.execContainer("socat-sendto", []string{"/bin/sh", "-c", "echo hello | socat - TCP:" + listenIP + ":80 &"})
-	//_, err = s.execContainer("socat-sendto", []string{"/bin/sh", "-c", "echo Hello | socat -d -d -v TCP:" + listenIP + ":80 STDIN &> /socat-log.txt &"})
+	_, err = s.execContainer("socat-send", []string{"/bin/sh", "-c", "while [ true ]; do echo hello ; sleep 1; done | socat -d -d -v - TCP:" + listenIP + ":80 &> /socat-log.txt &"})
 	s.Require().NoError(err)
 
 	s.ListenContainer = common.ContainerShortID(containerListenID)
-	//s.ListenContainer2 = common.ContainerShortID(containerListenID2)
 	s.SendtoContainer = common.ContainerShortID(containerSendtoID)
-
-	time.Sleep(6 * time.Second)
-
-	//_, err = s.execContainer("socat-sendto", []string{"/bin/sh", "-c", "pkill socat"})
-	//_, err = s.execContainer("socat-sendto", []string{"/bin/sh", "-c", "echo Hello | socat -d -d -v TCP:" + listenIP + ":80 STDIN &> /socat-log.txt &"})
-	//s.Require().NoError(err)
-
-	s.cleanupContainer([]string{"socat-sendto"})
-	time.Sleep(10 * time.Second)
 
 	time.Sleep(6 * time.Second)
 
@@ -92,7 +74,7 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 }
 
 func (s *ConnectionsAndEndpointsTestSuite) TearDownSuite() {
-	//s.cleanupContainer([]string{"socat-listen", "socat-listen-2", "socat-sendto", "collector"})
+	//s.cleanupContainer([]string{"socat-listen", "socat-send", "collector"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
 	s.WritePerfResults("ConnectionsAndEndpoints", stats, s.metrics)
@@ -104,14 +86,14 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 
 	assert.Equal(s.T(), 4, len(processes))
 
-	sendtoProcesses, err := s.GetProcesses(s.SendtoContainer)
+	sendProcesses, err := s.GetProcesses(s.SendtoContainer)
 	s.Require().NoError(err)
-	sendtoEndpoints, err := s.GetEndpoints(s.SendtoContainer)
+	sendEndpoints, err := s.GetEndpoints(s.SendtoContainer)
 	s.Require().Error(err)
 
 	// There should not be any UDP listening endpoints in the container sending UDP messages
-	assert.Equal(s.T(), 0, len(sendtoEndpoints))
-	assert.Equal(s.T(), 4, len(sendtoProcesses))
+	assert.Equal(s.T(), 0, len(sendEndpoints))
+	assert.Equal(s.T(), 4, len(sendProcesses))
 
 	endpoints, err := s.GetEndpoints(s.ListenContainer)
 	s.Require().NoError(err)
