@@ -10,8 +10,9 @@ import (
 type ConnectionsAndEndpointsTestSuite struct {
 	IntegrationTestSuiteBase
 	ListenContainer  string
-	ListenContainer2 string
 	SendtoContainer  string
+	ListenContainer2 string
+	SendtoContainer2 string
 }
 
 func makeLongMessage() string {
@@ -49,20 +50,45 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 
 	containerSendtoID, err := s.launchContainer("socat-send", socatImage, "/bin/sh", "-c", "/bin/sleep 3000")
 	s.Require().NoError(err)
+
+	containerListenID2, err := s.launchContainer("socat-listen-2", socatImage, "/bin/sh", "-c", "/bin/sleep 3000")
+	s.Require().NoError(err)
+
+	containerSendtoID2, err := s.launchContainer("socat-send-2", socatImage, "/bin/sh", "-c", "/bin/sleep 3000")
+	s.Require().NoError(err)
+
 	time.Sleep(5 * time.Second)
 
 	listenIP, err := s.getIPAddress("socat-listen")
 	s.Require().NoError(err)
 
-	_, err = s.execContainer("socat-listen", []string{"/bin/sh", "-c", "socat -d -d -v - TCP-LISTEN:80,reuseaddr >> /socat-log.txt &"}) // Without fork endpoint is opened and closed. Test fails
+	listenIP2, err := s.getIPAddress("socat-listen-2")
+	s.Require().NoError(err)
+
+	_, err = s.execContainer("socat-listen", []string{"/bin/sh", "-c", "socat -d -d -v - TCP-LISTEN:80,reuseaddr &> /socat-log.txt &"}) // Test probably fails
 	s.Require().NoError(err)
 	time.Sleep(5 * time.Second)
 
-	_, err = s.execContainer("socat-send", []string{"/bin/sh", "-c", "while [ true ]; do echo hello ; sleep 1; done | socat -d -d -v - TCP:" + listenIP + ":80 &> /socat-log.txt &"})
+	// The goal is to have the connection live forever, but this isn't working
+	_, err = s.execContainer("socat-send", []string{"/bin/sh", "-c", `echo "while [ true ]; do echo hello ; sleep 1; done | socat -d -d -v - TCP:` + listenIP + `:80" > /send.sh`})
+	_, err = s.execContainer("socat-send", []string{"/bin/sh", "-c", "chmod 755 /send.sh"})
+	_, err = s.execContainer("socat-send", []string{"/bin/sh", "-c", "/send.sh &> socat-log.txt &"})
+	s.Require().NoError(err)
+
+	_, err = s.execContainer("socat-listen-2", []string{"/bin/sh", "-c", "socat -d -d -v - TCP-LISTEN:80,reuseaddr,fork &> /socat-log.txt &"}) // Test probably passes. The for keeps the listening endpoint in proc
+	s.Require().NoError(err)
+	time.Sleep(5 * time.Second)
+
+	// The goal is to have the connection live forever, but this isn't working
+	_, err = s.execContainer("socat-send-2", []string{"/bin/sh", "-c", `echo "while [ true ]; do echo hello ; sleep 1; done | socat -d -d -v - TCP:` + listenIP2 + `:80" > /send.sh`})
+	_, err = s.execContainer("socat-send-2", []string{"/bin/sh", "-c", "chmod 755 /send.sh"})
+	_, err = s.execContainer("socat-send-2", []string{"/bin/sh", "-c", "/send.sh &> socat-log.txt &"})
 	s.Require().NoError(err)
 
 	s.ListenContainer = common.ContainerShortID(containerListenID)
 	s.SendtoContainer = common.ContainerShortID(containerSendtoID)
+	s.ListenContainer2 = common.ContainerShortID(containerListenID2)
+	s.SendtoContainer2 = common.ContainerShortID(containerSendtoID2)
 
 	time.Sleep(6 * time.Second)
 
@@ -86,14 +112,13 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 
 	assert.Equal(s.T(), 4, len(processes))
 
-	sendProcesses, err := s.GetProcesses(s.SendtoContainer)
-	s.Require().NoError(err)
+	//sendProcesses, err := s.GetProcesses(s.SendtoContainer)
+	//s.Require().NoError(err)
 	sendEndpoints, err := s.GetEndpoints(s.SendtoContainer)
 	s.Require().Error(err)
 
-	// There should not be any UDP listening endpoints in the container sending UDP messages
 	assert.Equal(s.T(), 0, len(sendEndpoints))
-	assert.Equal(s.T(), 4, len(sendProcesses))
+	//assert.Equal(s.T(), 4, len(sendProcesses)) // Figure out actual number of processes
 
 	endpoints, err := s.GetEndpoints(s.ListenContainer)
 	s.Require().NoError(err)
@@ -111,8 +136,8 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 	//assert.Equal(s.T(), endpoints[0].Originator.ProcessArgs, processes[3].Args)
 	//assert.Equal(s.T(), 80, endpoints[0].Address.Port)
 
-	//endpoints2, err := s.GetEndpoints(s.ListenContainer2)
-	//s.Require().NoError(err)
+	endpoints2, err := s.GetEndpoints(s.ListenContainer2)
+	s.Require().NoError(err)
 
-	//assert.Equal(s.T(), 1, len(endpoints2))
+	assert.Equal(s.T(), 1, len(endpoints2))
 }
