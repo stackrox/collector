@@ -36,7 +36,7 @@ jobs:
             echo 'build-builder-image=true' >> "$GITHUB_OUTPUT"
             echo "collector-builder-tag=${DEFAULT_BUILDER_TAG}" >> "$GITHUB_OUTPUT"
 
-          else if [[ "${{ github.event_name == 'pull_request' }}" ]]; then
+          elif [[ "${{ github.event_name == 'pull_request' }}" ]]; then
             #We have 2 options:
             #- We build the builder from scratch and give it a custom tag
             #- We use the existing cache
