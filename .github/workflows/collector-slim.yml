@@ -20,14 +20,31 @@ env:
   RHACS_ENG_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
 
 jobs:
+  set-environment:
+    name: Set environment variables
+    runs-on: ubuntu-latest
+    outputs:
+      build-builder-image: ${{ steps.set-env.outputs.build-builder-image }}
+      collector-builder-tag: ${{ steps.set-env.outputs.collector-builder-tag }}
+
+    steps:
+      - name: Checks for main and release branches
+        id: set-env
+        run: |
+          echo 'build-builder-image=true' >> "$GITHUB_OUTPUT"
+          echo "collector-builder-tag=${DEFAULT_BUILDER_TAG}" >> "$GITHUB_OUTPUT"
+
   build-collector-image:
     name: Build the collector slim image
+    needs: set-environment
     runs-on: ubuntu-latest
     strategy:
       matrix:
         arch: [amd64, ppc64le]
 
     env:
+      BUILD_BUILDER_IMAGE: ${{ needs.set-environment.outputs.build-builder-image }}
+      COLLECTOR_BUILDER_TAG: ${{ needs.set-environment.outputs.collector-builder-tag }}
       ARCH: ${{ matrix.arch }}
 
     steps:
@@ -120,9 +137,14 @@ jobs:
           docker push "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}-${{ matrix.arch }}"
 
   create-multiarch-manifest:
-    needs: build-collector-image
+    needs:
+    - set-enviroment
+    - build-collector-image
     name: Create Multiarch manifest
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-
+    env:
+      BUILD_BUILDER_IMAGE: ${{ needs.set-environment.outputs.build-builder-image }}
+      COLLECTOR_BUILDER_TAG: ${{ needs.set-environment.outputs.collector-builder-tag }}
 
     steps:
 
