@@ -9,15 +9,13 @@
 namespace collector {
 
 SignalHandler::Result SelfCheckProcessHandler::HandleSignal(sinsp_evt* evt) {
-  if (!isSelfCheckEvent(evt)) {
-    CLOG(INFO) << "Found self-check process event.";
+  if (hasTimedOut()) {
+    CLOG(WARNING) << "Failed to detect any self-check process events within the timeout.";
     return FINISHED;
   }
 
-  // check for timeout second, in case this event is from the self-check
-  // to avoid false negative.
-  if (hasTimedOut()) {
-    CLOG(WARNING) << "Failed to detect any self-check process events.";
+  if (isSelfCheckEvent(evt)) {
+    CLOG(INFO) << "Found self-check process event.";
     return FINISHED;
   }
 
@@ -25,6 +23,11 @@ SignalHandler::Result SelfCheckProcessHandler::HandleSignal(sinsp_evt* evt) {
 }
 
 SignalHandler::Result SelfCheckNetworkHandler::HandleSignal(sinsp_evt* evt) {
+  if (hasTimedOut()) {
+    CLOG(WARNING) << "Failed to detect any self-check networking events within the timeout.";
+    return FINISHED;
+  }
+
   if (!isSelfCheckEvent(evt)) {
     return IGNORED;
   }
@@ -38,13 +41,6 @@ SignalHandler::Result SelfCheckNetworkHandler::HandleSignal(sinsp_evt* evt) {
 
   if (*server_port == self_checks::kSelfCheckServerPort && *client_port != (uint16_t)-1) {
     CLOG(INFO) << "Found self-check connection event.";
-    return FINISHED;
-  }
-
-  // check for timeout last, in case this event is from the self-check
-  // to avoid false negative.
-  if (hasTimedOut()) {
-    CLOG(WARNING) << "Failed to detect any self-check networking events.";
     return FINISHED;
   }
 

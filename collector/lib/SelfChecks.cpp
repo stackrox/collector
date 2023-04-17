@@ -14,7 +14,7 @@ namespace self_checks {
 
 const char* kSelfChecksExePath = "/usr/local/bin/self-checks";
 const char* kSelfChecksName = "self-checks";
-const uint16_t kSelfCheckServerPort = 1337;
+const uint16_t kSelfCheckServerPort = 13037;
 
 void start_self_check_process() {
   pid_t child = fork();

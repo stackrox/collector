@@ -69,7 +69,7 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
     AddSignalHandler(MakeUnique<ProcessSignalHandler>(inspector_.get(), config.grpc_channel, &userspace_stats_));
   }
 
-  if (!conn_tracker && !config.grpc_channel) {
+  if (signal_handlers_.size() == 2) {
     // self-check handlers do not count towards this check, because they
     // do not send signals to Sensor.
     CLOG(FATAL) << "Internal error: There are no signal handlers.";
@@ -244,6 +244,9 @@ void SysdigService::Run(const std::atomic<ControlValue>& control) {
       } else if (result == SignalHandler::FINISHED) {
         // This signal handler has finished processing events,
         // so remove it from the signal handler list.
+        //
+        // We don't need to update the iterator post-deletion
+        // because we also stop iteration at this point.
         signal_handlers_.erase(it);
         break;
       } else if (result == SignalHandler::PROCESSED) {

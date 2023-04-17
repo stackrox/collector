@@ -64,7 +64,7 @@ err:
 }
 
 /**
- * Connects to the given port, on the loopback interface.
+ * @brief Connects to the given port, on the loopback interface.
  * Attempts a number of times, and then returns false if it is still unable to connect.
  */
 bool connectToPort(uint16_t port) {
