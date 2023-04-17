@@ -370,7 +370,9 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
 
 #if defined(CAPTURE_SOCKETCALL)
   if (id == __NR_socketcall) {
-    mapped_id = convert_network_syscalls(ctx);
+    struct sys_enter_socketcall_args* socketcall_args = (struct sys_enter_socketcall_args*)ctx;
+    unsigned long socketcall_id = (unsigned long)socketcall_args->call;
+    mapped_id = convert_network_syscalls_by_id(socketcall_id);
   }
 #endif
 
