@@ -4,7 +4,7 @@
 # and handles creating the report and writing necessary log files.
 #
 # Args:
-#   collection_method: ebpf or kernel-module
+#   collection_method: ebpf
 #
 
 - set_fact:
