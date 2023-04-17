@@ -40,7 +40,7 @@ ifdef BUILD_BUILDER_IMAGE
 		-f "$(CURDIR)/builder/Dockerfile" \
 		.
 else
-	docker pull --platform ${ARCH} quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
+	docker pull --platform linux/${ARCH} quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
 endif
 
 collector: builder
