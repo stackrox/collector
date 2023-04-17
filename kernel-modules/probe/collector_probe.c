@@ -295,7 +295,8 @@ struct sys_enter_setuid_args {
 struct sys_enter_setgid_args {
   __u64 pad;
   int __syscall_nr;
-  gid_t gid;
+  __u32 pad2;
+  unsigned long gid;
 };
 
 struct sys_enter_setresuid_args {
