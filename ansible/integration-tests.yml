@@ -11,9 +11,7 @@
       vars:
         vm_list: "{{ virtual_machines }}"
         collection_method: "{{ method }}"
-      loop:
-        - ebpf
-        - kernel-module
+      loop: "{{ lookup('env', 'COLLECTION_METHODS', default='core_bpf,ebpf,kernel_module') | split(',') }}"
       loop_control:
         loop_var: method
   post_tasks:
