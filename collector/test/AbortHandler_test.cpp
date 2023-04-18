@@ -31,10 +31,9 @@ void test_crash() {
 }
 
 TEST(AbortHandler, Crash) {
-
-  #if defined(__powerpc64__)
-    GTEST_SKIP() << "Skipping AbortHandler test on ppc64le";
-  #endif
+#if defined(__powerpc64__)
+  GTEST_SKIP() << "Skipping AbortHandler test on ppc64le";
+#endif
 
   // Install the AbortHandler, and verify that the stderr output will contain
   // something that looks like a stacktrace with AbortHander & Crash_Test frames.
