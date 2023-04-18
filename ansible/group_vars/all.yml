@@ -49,7 +49,6 @@ virtual_machines:
       - cos-stable
       - cos-beta
       - cos-dev
-      - cos-89-lts
 
   sles:
     project: suse-cloud
@@ -84,4 +83,4 @@ virtual_machines:
   garden-linux:
     project: sap-se-gcp-gardenlinux
     images:
-      - gardenlinux-gcp-gardener-prod-amd64-934-6-76ea662
+      - "{{ lookup('file', 'group_vars/gardenlinux-image.txt') }}"

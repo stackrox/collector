@@ -8,7 +8,7 @@ import subprocess
 
 strip_comment_re = re.compile(r'\s*(#.*)?$')
 space_re = re.compile(r'\s+')
-version_re = re.compile(r'(\d+)\.(\d+)\.(\d+)')
+version_re = re.compile(r'^(\d+)\.(\d+)\.(\d+)$')
 
 
 def parse_released_versions(f):

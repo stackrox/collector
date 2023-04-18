@@ -22,7 +22,7 @@ $ pip3 install -r requirements.txt
 
 ## Overview
 
-The top-level yaml files define playbooks to perform various actions, and can 
+The top-level yaml files define playbooks to perform various actions, and can
 be run either directly with `ansible-playbook` or through the Makefile targets.
 
 For example, to create and provision RHEL VMs for testing:
@@ -34,7 +34,7 @@ $ VM_TYPE=rhel ansible-playbook -i dev vm-lifecycle.yml --tags setup
 $ ansible-playbook -i dev vm-lifecycle.yml --tags provision
 ```
 
-Alternatively you can use the `integration-tests.yml` playbook to handle 
+Alternatively you can use the `integration-tests.yml` playbook to handle
 creation and deletion of VMs as well as running the integration tests against
 them:
 
@@ -53,9 +53,9 @@ summarized below:
 
 | Type          | Families       |
 | ------------- | -------------- |
-| rhel          | rhel-7 <br> rhel-8 | 
+| rhel          | rhel-7 <br> rhel-8 |
 | rhel-sap      | rhel-8-4-sap-ha <br> rhel-8-6-sap-ha |
-| cos           | cos-stable <br> cos-beta <br> cos-dev <br> cos-89-lts |
+| cos           | cos-stable <br> cos-beta <br> cos-dev |
 | sles          | sles-12 <br> sles-15 |
 | ubuntu-os     | ubuntu-1804-lts <br> ubuntu-2004-lts <br> ubuntu-2204-lts |
 | ubuntu-os-pro | ubuntu-pro-1804-lts |
@@ -87,7 +87,7 @@ subdirectories are [inventory directories](https://docs.ansible.com/ansible/late
 and search the relevant GCP project for VMs that match the unique identifier. They are then grouped
 based on that identifier as well as their platform.
 
-The two groups are `job_id_<unique id>` and `platform_<vm type>` 
+The two groups are `job_id_<unique id>` and `platform_<vm type>`
 
 These groups are used to run against only the VMs that have been created by the
 same user or CI job.
@@ -137,7 +137,7 @@ need to provide a password. Add `--ask-vault-pass` to any commands.
 
 ### create-vm
 
-This role allows a playbook to create a VM on GCP. It is expected to run on 
+This role allows a playbook to create a VM on GCP. It is expected to run on
 a host that has the GCP SDK available (which is normally localhost)
 
 See [create-all-vms](./roles/create-all-vms/tasks/main.yml) for an example of how it's used.
