@@ -30,7 +30,7 @@ container-dockerfile-dev:
 .PHONY: builder
 builder:
 ifdef BUILD_BUILDER_IMAGE
-	docker build --load --platform ${ARCH} \
+	docker buildx build --load --platform ${ARCH} \
 		--build-arg NPROCS=$(NPROCS) \
 		--cache-from quay.io/stackrox-io/collector-builder:cache \
 		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
@@ -62,7 +62,7 @@ build-drivers:
 
 image: collector unittest
 	make -C collector txt-files
-	docker build --load --platform ${ARCH} \
+	docker buildx build --load --platform ${ARCH} \
 		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
 		--build-arg MODULE_VERSION="$(MODULE_VERSION)" \
 		-f collector/container/Dockerfile \
