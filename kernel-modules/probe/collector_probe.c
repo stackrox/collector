@@ -289,30 +289,29 @@ struct sys_enter_execve_args {
 struct sys_enter_setuid_args {
   __u64 pad;
   int __syscall_nr;
-  uid_t uid;
+  unsigned long uid;
 };
 
 struct sys_enter_setgid_args {
   __u64 pad;
   int __syscall_nr;
-  __u32 pad2;
   unsigned long gid;
 };
 
 struct sys_enter_setresuid_args {
   __u64 pad;
   int __syscall_nr;
-  uid_t ruid;
-  uid_t euid;
-  uid_t suid;
+  unsigned long ruid;
+  unsigned long euid;
+  unsigned long  suid;
 };
 
 struct sys_enter_setresgid_args {
   __u64 pad;
   int __syscall_nr;
-  gid_t rgid;
-  gid_t egid;
-  gid_t sgid;
+  unsigned long rgid;
+  unsigned long egid;
+  unsigned long sgid;
 };
 
 struct sys_enter_socket_args {
