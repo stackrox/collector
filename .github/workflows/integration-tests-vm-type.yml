@@ -103,8 +103,6 @@ jobs:
             echo "COLLECTOR_LOG_LEVEL=trace" | tee -a "$GITHUB_ENV"
           fi
 
-          echo "COLLECTION_METHODS=ebpf,kernel_module,core_bpf" | tee -a "$GITHUB_ENV"
-
       - name: Create VMs
         if: ${{ ! inputs.run-benchmarks }}
         run: |
