@@ -60,9 +60,7 @@ class CollectionHeuristic : public Heuristic {
       }
 
       if (!host.HasBPFRingBufferSupport()) {
-        CLOG(FATAL) << "Missing BTF symbols, core_bpf is not available. "
-                    << "They can be provided by the kernel when configured with DEBUG_INFO_BTF, "
-                    << "or as file. "
+        CLOG(FATAL) << "Missing RingBuffer support, core_bpf is not available. "
                     << "You may alternatively want to use eBPF based collection "
                     << "with collector.collectionMethod=EBPF.";
       }
