@@ -39,12 +39,40 @@ class Heuristic {
 };
 
 class CollectionHeuristic : public Heuristic {
-  // If we're configured to use eBPF but the host we're running on
-  // does not support it, we can try to use kernel modules instead.
-  // The exception to this is COS, where third party modules are not
-  // supported, so there is nothing we can do and must exit.
   void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
-    if (config.UseEbpf() && !host.HasEBPFSupport()) {
+    // If we're configured to use eBPF with BTF, we try to be conservative
+    // and fail instead of falling-back to other methods.
+    if (config.GetCollectionMethod() == CORE_BPF) {
+      if (!host.HasEBPFSupport()) {
+        CLOG(FATAL) << host.GetDistro() << " " << host.GetKernelVersion().release
+                    << " does not support eBPF, which is a requirement for core_bpf collection. "
+                    << "You may want to use kernel module based collection "
+                    << "with collector.collectionMethod=KERNEL_MODULE.";
+      }
+
+      if (!host.HasBTFKernelSupport() && !host.HasBTFSymbols()) {
+        CLOG(FATAL) << "Missing BTF symbols, core_bpf is not available. "
+                    << "They can be provided by the kernel when configured with DEBUG_INFO_BTF, "
+                    << "or as file. "
+                    << "You may alternatively want to use eBPF based collection "
+                    << "with collector.collectionMethod=EBPF.";
+        ;
+      }
+
+      if (!host.HasBPFRingBufferSupport()) {
+        CLOG(FATAL) << "Missing BTF symbols, core_bpf is not available. "
+                    << "They can be provided by the kernel when configured with DEBUG_INFO_BTF, "
+                    << "or as file. "
+                    << "You may alternatively want to use eBPF based collection "
+                    << "with collector.collectionMethod=EBPF.";
+      }
+    }
+
+    // If we're configured to use eBPF but the host we're running on
+    // does not support it, we can try to use kernel modules instead.
+    // The exception to this is COS, where third party modules are not
+    // supported, so there is nothing we can do and must exit.
+    if ((config.GetCollectionMethod() == EBPF) && !host.HasEBPFSupport()) {
       if (host.IsCOS()) {
         CLOG(FATAL) << host.GetDistro() << " does not support third-party kernel modules or the required eBPF features.";
       }
