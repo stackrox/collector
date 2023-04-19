@@ -422,6 +422,18 @@ void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const C
   }
 }
 
+void ReadEphemeralPortsRange(const char* proc_path) {
+  std::ifstream file(std::string(proc_path) + "/sys/net/ipv4/ip_local_port_range");
+  if (file.is_open()) {
+    int start_port, end_port;
+    file >> start_port >> end_port;
+    CLOG(INFO) << "Ephemeral port range: " << start_port << " - " << end_port;
+    file.close();
+  } else {
+    CLOG(ERROR) << "Error opening file " << proc_path;
+  }
+}
+
 // ReadContainerConnections reads all container connection info from the given `/proc`-like directory. All connections
 // from non-container processes are ignored.
 // process_store, when provided, is used to to link the originator process of a ContainerEndpoint.
@@ -433,6 +445,8 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
     CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) << "Could not open " << proc_path << ": " << StrError();
     return false;
   }
+
+  ReadEphemeralPortsRange(proc_path);
 
   ConnsByNS conns_by_ns;
   SocketsByContainer sockets_by_container_and_ns;
