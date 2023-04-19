@@ -32,8 +32,8 @@
 	branch = master
 [submodule "falcosecurity-libs"]
 	path = falcosecurity-libs
-	url = https://github.com/kcrane/falcosecurity-libs
-	branch = rebase-2023-03-23
+	url = https://github.com/stackrox/falcosecurity-libs
+	branch = mauro/rebase-2023-03-23
 [submodule "collector/proto/third_party/gogoproto"]
 	path = collector/proto/third_party/gogoproto
 	url = https://github.com/gogo/protobuf
