@@ -303,7 +303,7 @@ struct sys_enter_setresuid_args {
   int __syscall_nr;
   unsigned long ruid;
   unsigned long euid;
-  unsigned long  suid;
+  unsigned long suid;
 };
 
 struct sys_enter_setresgid_args {
