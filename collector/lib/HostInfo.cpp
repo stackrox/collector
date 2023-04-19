@@ -239,7 +239,16 @@ bool HostInfo::HasBTFSymbols() {
 }
 
 bool HostInfo::HasBPFRingBufferSupport() {
-  return libbpf_probe_bpf_map_type(BPF_MAP_TYPE_RINGBUF, NULL) > 0;
+  int res;
+
+  res = libbpf_probe_bpf_map_type(BPF_MAP_TYPE_RINGBUF, NULL);
+
+  if (res < 0) {
+    CLOG(WARNING) << "Unable to check for the BPF RingBuffer availability. "
+                  << "Assuming it is available.";
+  }
+
+  return res != 0;
 }
 
 bool HostInfo::IsUEFI() {
