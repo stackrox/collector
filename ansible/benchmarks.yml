@@ -21,7 +21,7 @@
         # create-all-vms will populate the name and labels which we
         # can then filter on later, to only run when we match a certain
         # collection method
-        "{{ lookup('env', 'COLLECTION_METHODS', default='ebpf,kernel_module') | split(',') }}"
+        "{{ lookup('env', 'COLLECTION_METHODS', default='core_bpf,ebpf,kernel_module') | split(',') }}"
       loop_control:
         # use a custom loop variable because ansible variables
         # are global and "item" may be overwritten later on
