@@ -39,7 +39,7 @@ void start_self_check_process() {
       waitpid(child, &status, 0);
       CLOG(INFO) << "self-check (pid=" << child << ") exitted with status: " << WEXITSTATUS(status);
       if (status != 0) {
-        CLOG(ERROR) << "self-checks failed to execute: " << StrError(WEXITSTATUS(status));
+        CLOG(FATAL) << "self-checks failed to execute: " << StrError(WEXITSTATUS(status));
       }
       break;
   }

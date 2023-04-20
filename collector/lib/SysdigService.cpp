@@ -24,6 +24,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "SysdigService.h"
 
 #include <cap-ng.h>
+#include <thread>
 
 #include <linux/ioctl.h>
 
@@ -206,7 +207,8 @@ void SysdigService::Start() {
   // trigger the self check process only once capture has started,
   // to verify the driver is working correctly. SelfCheckHandlers will
   // verify the live events.
-  self_checks::start_self_check_process();
+  std::thread self_checks_thread(self_checks::start_self_check_process);
+  self_checks_thread.detach();
 
   if (!useEbpf_) {
     // Drop DAC_OVERRIDE capability after opening the device files.
