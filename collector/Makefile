@@ -19,7 +19,7 @@ COLLECTOR_BUILD_DEPS := $(HDRS) $(SRCS) $(shell find falcosecurity-libs -name '*
 
 cmake-build/collector: $(COLLECTOR_BUILD_DEPS)
 	docker rm -fv build_collector || true
-	docker run --rm --name build_collector \
+	docker run --rm --platform ${ARCH} --name build_collector \
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
 		-e NPROCS=$(NPROCS) \
 		-e SRC_ROOT_DIR="$(SRC_MOUNT_DIR)" \
@@ -46,14 +46,14 @@ build-connscrape-test:
 
 connscrape: build-connscrape-test
 	docker rm -fv collector_connscrape || true
-	docker run --rm --name collector_connscrape \
+	docker run --rm --platform ${ARCH} --name collector_connscrape \
 		-v "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
 		connscrape-test "$(SRC_MOUNT_DIR)/collector/connscrape-test/connscrape-test.sh"
 
 unittest: collector
 	docker rm -fv collector_unittest || true
-	docker run --rm --name collector_unittest \
+	docker run --rm --platform ${ARCH} --name collector_unittest \
 		-v "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
 		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) $(COLLECTOR_PRE_ARGUMENTS) "$(SRC_MOUNT_DIR)/$(CMAKE_BASE_DIR)/collector/runUnitTests"
