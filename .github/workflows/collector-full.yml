@@ -26,7 +26,7 @@ on:
           GCP bucket to pull drivers from.
       max-layer-depth:
         type: string
-        default: "6"
+        default: "4"
         description: |
           Max layer the drivers will be split into
 
