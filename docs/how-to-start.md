@@ -67,10 +67,12 @@ services:
       - /usr/lib:/host/usr/lib:ro
       - /sys/:/host/sys/:ro
       - /dev:/host/dev:ro
+      - type: tmpfs
+        target: /module
     depends_on:
       - grpc-server-debug
   grpc-server-debug:
-    image: stackrox/grpc-server:latest
+    image: quay.io/rhacs-eng/grpc-server:latest
     container_name: grpc-server
     network_mode: host
     user: 1000:1000
