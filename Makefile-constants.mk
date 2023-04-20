@@ -15,7 +15,7 @@ USE_VALGRIND ?= false
 ADDRESS_SANITIZER ?= false
 CMAKE_BUILD_TYPE ?= Release
 COLLECTOR_APPEND_CID ?= false
-ARCH ?= amd64
+PLATFORM ?= linux/amd64
 
 COLLECTOR_BUILD_CONTEXT = collector/
 
