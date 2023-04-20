@@ -65,7 +65,7 @@ jobs:
     env:
       BUILD_BUILDER_IMAGE: ${{ needs.set-environment.outputs.build-builder-image }}
       COLLECTOR_BUILDER_TAG: ${{ needs.set-environment.outputs.collector-builder-tag }}
-      ARCH: ${{ matrix.arch }}
+      PLATFORM: linux/${{ matrix.arch }}
 
     steps:
       - uses: actions/checkout@v3
@@ -143,7 +143,7 @@ jobs:
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}  
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
 
       - name: Create and push multiarch manifest for stackrox-io -slim
