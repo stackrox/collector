@@ -9,8 +9,8 @@
 #include <sys/select.h>
 #include <sys/wait.h>
 
-const int g_connection_retries = 3;
-const int g_timeout_seconds = 3;
+const int g_connection_retries = 5;
+const int g_timeout_seconds = 10;
 const int g_sleep_seconds = 1;
 
 /**
