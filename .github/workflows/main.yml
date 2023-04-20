@@ -22,6 +22,7 @@ jobs:
       drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
       bundles-bucket: ${{ needs.init.outputs.bundles-bucket }}
       branch-name: ${{ needs.init.outputs.branch-name }}
+      is-external: ${{ needs.init.outputs.is-external }}
     needs: init
     secrets: inherit
 
@@ -29,7 +30,7 @@ jobs:
     uses: ./.github/workflows/upload-drivers.yml
     with:
       gcp-bucket: ${{ needs.init.outputs.push-drivers-bucket }}
-    if: ${{ needs.build-drivers.outputs.parallel-jobs > 0 }}
+    if: ${{ needs.build-drivers.outputs.parallel-jobs > 0 && needs.init.outputs.is-external == 'false' }}
     needs:
     - init
     - build-drivers
@@ -49,6 +50,7 @@ jobs:
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       collector-image: ${{ needs.init.outputs.collector-image }}
+      is-external: ${{ needs.init.outputs.is-external }}
     secrets: inherit
 
   build-collector-full:
@@ -58,6 +60,7 @@ jobs:
       drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
       skip-built-drivers: ${{ needs.build-drivers.outputs.parallel-jobs == 0 }}
       build-full-image: ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'build-full-images') }}
+      is-external: ${{ needs.init.outputs.is-external }}
     secrets: inherit
     needs:
     - init
@@ -68,6 +71,7 @@ jobs:
     uses: ./.github/workflows/integration-tests.yml
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
+      is-external: ${{ needs.init.outputs.is-external }}
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     needs:
     - init
@@ -79,7 +83,7 @@ jobs:
     uses: ./.github/workflows/benchmarks.yml
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
+    if: ${{ !needs.init.outputs.is-external && !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     needs:
     - init
     - build-collector-slim

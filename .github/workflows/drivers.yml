@@ -15,6 +15,10 @@ on:
         type: string
         required: true
         description: Branch CI is running on
+      is-external:
+        type: string
+        description: Signals whether CI is running from a fork
+        default: false
     outputs:
       parallel-jobs:
         description: |
@@ -27,6 +31,7 @@ env:
 jobs:
   split-tasks:
     runs-on: ubuntu-latest
+    if: inputs.is-external == 'false'
     outputs:
       parallel-jobs: ${{ steps.set-parallel.outputs.parallel-jobs }}
       parallel-array: ${{ steps.set-parallel.outputs.parallel-array }}
@@ -60,9 +65,10 @@ jobs:
         uses: 'google-github-actions/auth@v1'
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+        if: ${{ inputs.is-external == 'false' }}
 
       - name: Create a mock cache
-        if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-cache') }}
+        if: ${{ inputs.is-external == 'false' && !contains(github.event.pull_request.labels.*.name, 'no-cache') }}
         run: |
           ${{ github.workspace }}/kernel-modules/build/mock-cache.sh
 
@@ -76,6 +82,14 @@ jobs:
           SCRIPTS_DIR: ${{ github.workspace }}/kernel-modules/build
 
         run: |
+          if [[ "${{ inputs.is-external }}" == "false" ]]; then
+            export KERNELS_FILE="${{ github.workspace }}/kernel-modules/KERNEL_VERSIONS"
+          else
+            # for external PRs, we only build the driver for the GHA VM
+            uname -r >> /tmp/KERNELS_FILE
+            export KERNELS_FILE=/tmp/KERNELS_FILE
+          fi
+
           ${{ github.workspace }}/kernel-modules/build/get-build-tasks.sh
 
           mkdir -p /tmp/tasks
@@ -224,4 +238,31 @@ jobs:
           name: driver-build-failures
           path: /tmp/FAILURES
           if-no-files-found: ignore
+          retention-days: 1
+
+  simplified-driver-build:
+    runs-on: ubuntu-22.04
+    if: inputs.is-external == 'true'
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Build the driver for the GHA VM
+        run: |
+          DRIVERS_DIR="${{ github.workspace }}/kernel-modules/container/kernel-modules"
+          mkdir -p "${DRIVERS_DIR}"
+
+          make -C ${{ github.workspace }}/kernel-modules drivers
+
+          OUTPUT_DIR="/tmp/kernel-modules/$(cat ${{ github.workspace }}/kernel-modules/MODULE_VERSION)"
+
+          mkdir -p "${OUTPUT_DIR}"
+          mv ${{ github.workspace }}/kernel-modules/container/kernel-modules/* "${OUTPUT_DIR}"
+
+      - name: Store built drivers
+        uses: actions/upload-artifact@v3
+        with:
+          name: built-drivers
+          path: /tmp/kernel-modules
           retention-days: 1

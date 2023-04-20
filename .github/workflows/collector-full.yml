@@ -29,30 +29,53 @@ on:
         default: "6"
         description: |
           Max layer the drivers will be split into
+      is-external:
+        type: string
+        description: |
+          Signals whether CI is running from a fork
+        default: false
 
 jobs:
   build-collector-full:
     runs-on: ubuntu-latest
-    if: inputs.build-full-image
+    if: inputs.build-full-image || inputs.is-external == 'true'
     env:
       COLLECTOR_IMAGE: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
+      COLLECTOR_REGISTRY: quay.io/stackrox-io/collector
 
     steps:
       - uses: actions/checkout@v3
 
       - name: Restore built drivers
         uses: actions/download-artifact@v3
-        if: ${{ !inputs.skip-built-drivers }}
+        if: ${{ !inputs.skip-built-drivers || inputs.is-external == 'true' }}
         with:
           name: built-drivers
           path: /tmp/built-drivers/
+
+      - name: Download slim collector image blob
+        uses: actions/download-artifact@v3
+        if: ${{ inputs.is-external == 'true' }}
+        with:
+          name: collector-slim
+          path: /tmp
 
       - name: Set environment variables
         run: |
           echo "DRIVER_VERSION=$(cat ${{ github.workspace }}/kernel-modules/MODULE_VERSION)" >> "$GITHUB_ENV"
           echo "CONTEXT_DRIVERS_DIR=${{ github.workspace }}/kernel-modules/container/kernel-modules" >> "$GITHUB_ENV"
 
+          if [[ "${{ inputs.is-external }}" == "false" ]]; then
+            MAX_LAYER_DEPTH=5
+          else
+            MAX_LAYER_DEPTH=1
+          fi
+
+          echo "MAX_LAYER_DEPTH=${MAX_LAYER_DEPTH}" >> "$GITHUB_ENV"
+          echo "TARGET_LAYER=probe-layer-${MAX_LAYER_DEPTH}" >> "$GITHUB_ENV"
+
       - name: Download drivers from GCP
+        if: ${{ inputs.is-external == 'false' }}
         run: |
           mkdir -p "${CONTEXT_DRIVERS_DIR}"
 
@@ -61,37 +84,54 @@ jobs:
 
       - name: Add built drivers
         run: |
+          set -x
+
+          # Create the directory again, in case we are running from a fork
+          mkdir -p "${CONTEXT_DRIVERS_DIR}"
+
           BUILT_DRIVERS_DIR="/tmp/built-drivers/${DRIVER_VERSION}/"
+
+          ls -la /tmp/built-drivers
 
           if [[ -d "${BUILT_DRIVERS_DIR}" ]]; then
             find "${BUILT_DRIVERS_DIR}" -type f -exec mv -t "${CONTEXT_DRIVERS_DIR}" {} +
           fi
 
+          ls -la "${CONTEXT_DRIVERS_DIR}"
+
+      - name: Restore slim image
+        if: inputs.is-external == 'true'
+        run: |
+          docker load -i /tmp/collector-slim.tar
+
       - name: Pull slim image and build full image
         run: |
           docker build \
-            --target=probe-layer-${{ inputs.max-layer-depth }} \
+            --target="${TARGET_LAYER}" \
             --tag "${COLLECTOR_IMAGE}" \
-            --build-arg collector_repo=quay.io/stackrox-io/collector \
+            --build-arg "collector_repo=${COLLECTOR_REGISTRY}" \
             --build-arg collector_version=${{ inputs.collector-tag }} \
             --build-arg module_version="${DRIVER_VERSION}" \
             --build-arg max_layer_size=300 \
-            --build-arg max_layer_depth=${{ inputs.max-layer-depth }} \
+            --build-arg max_layer_depth="${MAX_LAYER_DEPTH}" \
             "${{ github.workspace }}/kernel-modules/container"
 
       - name: Login to quay.io/stackrox-io
         uses: docker/login-action@v2
+        if: ${{ inputs.is-external == 'false' }}
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
       - name: Push stackrox-io full image
+        if: ${{ inputs.is-external == 'false' }}
         run: |
           docker push "${COLLECTOR_IMAGE}"
 
       - name: Retag and push stackrox-io -latest
         uses: ./.github/actions/retag-and-push
+        if: ${{ inputs.is-external == 'false' }}
         with:
           src-image: ${{ env.COLLECTOR_IMAGE }}
           dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-latest
@@ -100,6 +140,7 @@ jobs:
 
       - name: Retag and push rhacs-eng
         uses: ./.github/actions/retag-and-push
+        if: ${{ inputs.is-external == 'false' }}
         with:
           src-image: ${{ env.COLLECTOR_IMAGE }}
           dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
@@ -108,15 +149,31 @@ jobs:
 
       - name: Retag and push rhacs-eng -latest
         uses: ./.github/actions/retag-and-push
+        if: ${{ inputs.is-external == 'false' }}
         with:
           src-image: ${{ env.COLLECTOR_IMAGE }}
           dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-latest
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
+      # For PRs coming from a fork, we cheat a little, we just create a blob
+      # from the image and upload it as an artifact
+      - name: Save image
+        if: inputs.is-external == 'true'
+        run: |
+          docker save -o /tmp/collector-full.tar ${{ env.COLLECTOR_IMAGE }}
+
+      - name: Store built image
+        if: inputs.is-external == 'true'
+        uses: actions/upload-artifact@v3
+        with:
+          name: collector-full
+          path: /tmp/collector-full.tar
+          retention-days: 7
+
   retag-collector-full:
     runs-on: ubuntu-latest
-    if: ${{ !inputs.build-full-image }}
+    if: ${{ !inputs.build-full-image && !inputs.is-external }}
     env:
       COLLECTOR_IMAGE_SLIM: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-slim
 
