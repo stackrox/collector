@@ -145,6 +145,9 @@ func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, erro
 	})
 
 	outLines := strings.Split(output, "\n")
+	outLines2, err := s.execContainer(args[0], []string{"/bin/sh", "-c", "cat /proc/sys/net/ipv4/ip_local_port_range"})
+	fmt.Println("Container " + args[0] + " Ephemeral " + outLines2)
+
 	return outLines[len(outLines)-1], err
 }
 
