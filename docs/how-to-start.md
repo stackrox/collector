@@ -85,6 +85,10 @@ the host network in privileged mode. Collector in turn will try to download
 probes for your version of Linux kernel and start listening to events happening
 inside the container.
 
+The image `quay.io/rhacs-eng/grpc-server` can be built manually by running 
+`make mock-grpc-server-image` in the `https://github.com/stackrox/stackrox/`
+repository.
+
 ### Development with an IDE (CLion)
 
 #### Setup
