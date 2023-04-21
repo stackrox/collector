@@ -119,6 +119,84 @@ func TestDuplicateEndpoints(t *testing.T) {
 	suite.Run(t, new(suites.DuplicateEndpointsTestSuite))
 }
 
-func TestMixedUpEphemeralPorts(t *testing.T) {
-	suite.Run(t, new(suites.MixedUpEphemeralPortsTestSuite))
+func TestMixedUpEphemeralPortsHighLowPorts(t *testing.T) {
+	mixedHighLowPorts := &suites.MixedUpEphemeralPortsTestSuite{
+		Server: suites.Container{
+			Name:            "socat-server-0",
+			Cmd:             "socat TCP4-LISTEN:40000,reuseaddr,fork - &",
+			ExpectedNetwork: "ROLE_SERVER",
+			ExpectedEndpoint: []common.EndpointInfo{
+				{
+					Protocol: "L4_PROTOCOL_TCP",
+					Address: &common.ListenAddress{
+						AddressData: "0.0.0.0",
+						Port:        40000,
+					},
+				},
+			},
+		},
+		Client: suites.Container{
+			Name:             "socat-client-0",
+			Cmd:              "echo hello | socat - TCP4:LISTEN_IP:40000,sourceport=10000",
+			ExpectedNetwork:  "ROLE_CLIENT",
+			ExpectedEndpoint: nil,
+		},
+	}
+	suite.Run(t, mixedHighLowPorts)
+}
+
+func TestMixedUpEphemeralPortsNormal(t *testing.T) {
+	// Server uses a normal port. Client is assigned a port in the ephemeral range
+	normalPorts := &suites.MixedUpEphemeralPortsTestSuite{
+		Server: suites.Container{
+			Name:            "socat-server-1",
+			Cmd:             "socat TCP4-LISTEN:40,reuseaddr,fork - &",
+			ExpectedNetwork: "ROLE_SERVER",
+			ExpectedEndpoint: []common.EndpointInfo{
+				{
+					Protocol: "L4_PROTOCOL_TCP",
+					Address: &common.ListenAddress{
+						AddressData: "0.0.0.0",
+						Port:        40,
+					},
+				},
+			},
+		},
+		Client: suites.Container{
+			Name:             "socat-client-1",
+			Cmd:              "echo hello | socat - TCP4:LISTEN_IP:40",
+			ExpectedNetwork:  "ROLE_CLIENT",
+			ExpectedEndpoint: nil,
+		},
+	}
+	suite.Run(t, normalPorts)
+}
+
+func TestMixedUpEphemeralPortsPersistent(t *testing.T) {
+	// Client uses a port not in the ephemeral ports range as an ephemeral port and the connection is kept open.
+	// or at least that is the goal
+	persistentConnection := &suites.MixedUpEphemeralPortsTestSuite{
+		Server: suites.Container{
+			Name:            "socat-server-2",
+			Cmd:             "socat TCP4-LISTEN:50000,reuseaddr,fork - &",
+			ExpectedNetwork: "ROLE_SERVER",
+			ExpectedEndpoint: []common.EndpointInfo{
+				{
+					Protocol: "L4_PROTOCOL_TCP",
+					Address: &common.ListenAddress{
+						AddressData: "0.0.0.0",
+						Port:        50000,
+					},
+				},
+			},
+		},
+		Client: suites.Container{
+			Name: "socat-client-2",
+			Cmd:  "dd if=/dev/zero bs=1MB count=100000 | socat - TCP4:LISTEN_IP:50000,sourceport=20000 &",
+			//Cmd:              "tail -f /dev/null | socat - TCP4:LISTEN_IP:50000,sourceport=20000 &",
+			ExpectedNetwork:  "ROLE_CLIENT",
+			ExpectedEndpoint: nil,
+		},
+	}
+	suite.Run(t, persistentConnection)
 }

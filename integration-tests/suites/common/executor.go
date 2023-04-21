@@ -183,6 +183,7 @@ func (e *executor) RunCommand(cmd *exec.Cmd) (string, error) {
 	if debug {
 		fmt.Printf("Run: %s\n", commandLine)
 	}
+	fmt.Printf("Run: %s\n", commandLine)
 	stdoutStderr, err := cmd.CombinedOutput()
 	trimmed := strings.Trim(string(stdoutStderr), "\"\n")
 	if debug {

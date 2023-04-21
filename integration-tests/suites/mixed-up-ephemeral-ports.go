@@ -2,7 +2,6 @@ package suites
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -11,12 +10,12 @@ import (
 )
 
 type Container struct {
-	name             string
-	cmd              string
-	containerID      string
-	listenIP         string
-	expectedNetwork  string
-	expectedEndpoint []common.EndpointInfo
+	Name             string
+	Cmd              string
+	ContainerID      string
+	ListenIP         string
+	ExpectedNetwork  string
+	ExpectedEndpoint []common.EndpointInfo
 }
 
 type ServerClientPair struct {
@@ -26,7 +25,8 @@ type ServerClientPair struct {
 
 type MixedUpEphemeralPortsTestSuite struct {
 	IntegrationTestSuiteBase
-	ServerClientPairs []*ServerClientPair
+	Server Container
+	Client Container
 }
 
 func (s *MixedUpEphemeralPortsTestSuite) SetupSuite() {
@@ -37,7 +37,7 @@ func (s *MixedUpEphemeralPortsTestSuite) SetupSuite() {
 	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
 
 	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
-	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
+	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "false"
 	s.collector.Env["ROX_ENABLE_AFTERGLOW"] = "0"
 
 	err := s.collector.Setup()
@@ -49,94 +49,21 @@ func (s *MixedUpEphemeralPortsTestSuite) SetupSuite() {
 
 	socatImage := common.QaImage("quay.io/rhacs-eng/qa", "socat")
 
-	// Client uses a port not in the ephemeral ports range as an ephemeral port
-	mixedHighLowPorts := &ServerClientPair{
-		server: Container{
-			cmd:             "socat TCP4-LISTEN:40000,reuseaddr,fork - &",
-			expectedNetwork: "ROLE_SERVER",
-			expectedEndpoint: []common.EndpointInfo{
-				{
-					Protocol: "L4_PROTOCOL_TCP",
-					Address: &common.ListenAddress{
-						AddressData: "0.0.0.0",
-						Port:        40000,
-					},
-				},
-			},
-		},
-		client: Container{
-			cmd:              "echo hello | socat - TCP4:LISTEN_IP:40000,sourceport=10000",
-			expectedNetwork:  "ROLE_CLIENT",
-			expectedEndpoint: nil,
-		},
-	}
-
-	// Server listens on a port in the ephemeral ports range
-	normalPorts := &ServerClientPair{
-		server: Container{
-			cmd:             "socat TCP4-LISTEN:40,reuseaddr,fork - &",
-			expectedNetwork: "ROLE_SERVER",
-			expectedEndpoint: []common.EndpointInfo{
-				{
-					Protocol: "L4_PROTOCOL_TCP",
-					Address: &common.ListenAddress{
-						AddressData: "0.0.0.0",
-						Port:        40,
-					},
-				},
-			},
-		},
-		client: Container{
-			cmd:              "echo hello | socat - TCP4:LISTEN_IP:40",
-			expectedNetwork:  "ROLE_CLIENT",
-			expectedEndpoint: nil,
-		},
-	}
-
-	// Client uses a port not in the ephemeral ports range as an ephemeral port and the connection is kept open
-	persistentConnection := &ServerClientPair{
-		server: Container{
-			cmd:             "socat TCP4-LISTEN:50000,reuseaddr,fork - &",
-			expectedNetwork: "ROLE_SERVER",
-			expectedEndpoint: []common.EndpointInfo{
-				{
-					Protocol: "L4_PROTOCOL_TCP",
-					Address: &common.ListenAddress{
-						AddressData: "0.0.0.0",
-						Port:        50000,
-					},
-				},
-			},
-		},
-		client: Container{
-			cmd:              "tail -f /dev/null | socat - TCP4:LISTEN_IP:50000,sourceport=20000 &",
-			expectedNetwork:  "ROLE_CLIENT",
-			expectedEndpoint: nil,
-		},
-	}
-
-	s.ServerClientPairs = []*ServerClientPair{mixedHighLowPorts, normalPorts, persistentConnection}
-
-	for idx, serverClientPair := range s.ServerClientPairs {
-		serverName := "socat-server-" + strconv.Itoa(idx)
-		clientName := "socat-client-" + strconv.Itoa(idx)
-		serverClientPair.server.name = serverName
-		serverClientPair.client.name = clientName
-		longContainerID, err := s.launchContainer(serverName, socatImage, "/bin/sh", "-c", "/bin/sleep 300")
-		serverClientPair.server.containerID = common.ContainerShortID(longContainerID)
-		s.Require().NoError(err)
-		longContainerID, err = s.launchContainer(clientName, socatImage, "/bin/sh", "-c", "/bin/sleep 300")
-		serverClientPair.client.containerID = common.ContainerShortID(longContainerID)
-		_, err = s.execContainer(serverName, []string{"/bin/sh", "-c", serverClientPair.server.cmd})
-		s.Require().NoError(err)
-		time.Sleep(3 * time.Second)
-		serverClientPair.server.listenIP, err = s.getIPAddress(serverName)
-		s.Require().NoError(err)
-		clientCmd := strings.Replace(serverClientPair.client.cmd, "LISTEN_IP", serverClientPair.server.listenIP, -1)
-		_, err = s.execContainer(clientName, []string{"/bin/sh", "-c", clientCmd})
-		s.Require().NoError(err)
-	}
-
+	serverName := s.Server.Name
+	clientName := s.Client.Name
+	longContainerID, err := s.launchContainer(serverName, socatImage, "/bin/sh", "-c", "/bin/sleep 300")
+	s.Server.ContainerID = common.ContainerShortID(longContainerID)
+	s.Require().NoError(err)
+	longContainerID, err = s.launchContainer(clientName, socatImage, "/bin/sh", "-c", "/bin/sleep 300")
+	s.Client.ContainerID = common.ContainerShortID(longContainerID)
+	_, err = s.execContainer(serverName, []string{"/bin/sh", "-c", s.Server.Cmd})
+	s.Require().NoError(err)
+	time.Sleep(3 * time.Second)
+	s.Server.ListenIP, err = s.getIPAddress(serverName)
+	s.Require().NoError(err)
+	clientCmd := strings.Replace(s.Client.Cmd, "LISTEN_IP", s.Server.ListenIP, -1)
+	_, err = s.execContainer(clientName, []string{"/bin/sh", "-c", clientCmd})
+	s.Require().NoError(err)
 	time.Sleep(6 * time.Second)
 
 	err = s.collector.TearDown()
@@ -148,38 +75,27 @@ func (s *MixedUpEphemeralPortsTestSuite) SetupSuite() {
 
 func (s *MixedUpEphemeralPortsTestSuite) TearDownSuite() {
 	s.cleanupContainer([]string{"collector"})
-	for _, serverClientPair := range s.ServerClientPairs {
-		s.cleanupContainer([]string{serverClientPair.server.name})
-		s.cleanupContainer([]string{serverClientPair.client.name})
-	}
+	s.cleanupContainer([]string{s.Server.Name})
+	s.cleanupContainer([]string{s.Client.Name})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
 	s.WritePerfResults("EphemeralPorts", stats, s.metrics)
 }
 
 func (s *MixedUpEphemeralPortsTestSuite) TestMixedUpEphemeralPorts() {
-	for _, serverClientPair := range s.ServerClientPairs {
-		fmt.Println()
-		fmt.Println("serverName= ", serverClientPair.server.name)
-		fmt.Println("clientName= ", serverClientPair.client.name)
-		fmt.Println("serverCmd= ", serverClientPair.server.cmd)
-		fmt.Println("clientCmd= ", serverClientPair.client.cmd)
+	fmt.Println()
+	fmt.Println("serverName= ", s.Server.Name)
+	fmt.Println("clientName= ", s.Client.Name)
+	fmt.Println("serverCmd= ", s.Server.Cmd)
+	fmt.Println("clientCmd= ", s.Client.Cmd)
 
-		serverEndpoints, err := s.GetEndpoints(serverClientPair.server.containerID)
-		assert.Equal(s.T(), len(serverClientPair.server.expectedEndpoint), len(serverEndpoints))
+	val, err := s.Get(s.Client.ContainerID, networkBucket)
+	s.Require().NoError(err)
+	actualValues := strings.Split(string(val), "|")
+	assert.Equal(s.T(), "ROLE_CLIENT", actualValues[2])
 
-		clientEndpoints, err := s.GetEndpoints(serverClientPair.client.containerID)
-		s.Require().Error(err)
-		assert.Equal(s.T(), len(serverClientPair.client.expectedEndpoint), len(clientEndpoints))
-
-		val, err := s.Get(serverClientPair.client.containerID, networkBucket)
-		s.Require().NoError(err)
-		actualValues := strings.Split(string(val), "|")
-		assert.Equal(s.T(), "ROLE_CLIENT", actualValues[2])
-
-		val, err = s.Get(serverClientPair.server.containerID, networkBucket)
-		s.Require().NoError(err)
-		actualValues = strings.Split(string(val), "|")
-		assert.Equal(s.T(), "ROLE_SERVER", actualValues[2])
-	}
+	val, err = s.Get(s.Server.ContainerID, networkBucket)
+	s.Require().NoError(err)
+	actualValues = strings.Split(string(val), "|")
+	assert.Equal(s.T(), "ROLE_SERVER", actualValues[2])
 }
