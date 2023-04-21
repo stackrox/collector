@@ -20,21 +20,23 @@ if(COLLECTOR_APPEND_CID)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCOLLECTOR_APPEND_CID")
 endif()
 
+set(FALCO_DIR ${PROJECT_SOURCE_DIR}/../falcosecurity-libs)
+
 add_subdirectory(${PROJECT_SOURCE_DIR}/proto)
 
 include_directories(${PROJECT_SOURCE_DIR}/lib)
-include_directories(${PROJECT_SOURCE_DIR}/falcosecurity-libs/driver)
-include_directories(${PROJECT_SOURCE_DIR}/falcosecurity-libs/userspace)
-include_directories(${PROJECT_SOURCE_DIR}/falcosecurity-libs/userspace/libscap)
-include_directories(${PROJECT_SOURCE_DIR}/falcosecurity-libs/userspace/libsinsp)
-include_directories(${PROJECT_SOURCE_DIR}/falcosecurity-libs/userspace/chisel)
+include_directories(${FALCO_DIR}/driver)
+include_directories(${FALCO_DIR}/userspace)
+include_directories(${FALCO_DIR}/userspace/libscap)
+include_directories(${FALCO_DIR}/userspace/libsinsp)
+include_directories(${FALCO_DIR}/userspace/chisel)
 include_directories(${PROJECT_BINARY_DIR}/EXCLUDE_FROM_DEFAULT_BUILD/common)
 include_directories(/usr/local/include)
 include_directories(/usr/local/include/tbb)
 include_directories(/usr/local/include/jsoncpp)
 include_directories(/usr/local/include/civetweb)
 include_directories(/usr/local/include/prometheus)
-set(DRIVER_HEADERS ${PROJECT_SOURCE_DIR}/falcosecurity-libs/driver/ppm_events_public.h ${PROJECT_SOURCE_DIR}/falcosecurity-libs/driver/ppm_fillers.h)
+set(DRIVER_HEADERS ${FALCO_DIR}/driver/ppm_events_public.h ${FALCO_DIR}/driver/ppm_fillers.h)
 
 add_definitions(-DUSE_PROTO_ARENAS)
 
@@ -122,4 +124,4 @@ endif()
 
 set(MODERN_BPF_EXCLUDE_PROGS "^(openat2|ppoll|setsockopt|getsockopt|clone3|io_uring_setup|nanosleep)$" CACHE STRING "Set of syscalls to exclude from modern bpf engine " FORCE)
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/falcosecurity-libs EXCLUDE_FROM_DEFAULT_BUILD)
+add_subdirectory(${FALCO_DIR} EXCLUDE_FROM_DEFAULT_BUILD)
