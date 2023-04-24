@@ -46,7 +46,7 @@ class CollectionHeuristic : public Heuristic {
       if (!host.HasEBPFSupport()) {
         CLOG(FATAL) << host.GetDistro() << " " << host.GetKernelVersion().release
                     << " does not support eBPF, which is a requirement for core_bpf collection. "
-                    << "You may want to use kernel module based collection "
+                    << "HINT: You may want to use kernel module based collection "
                     << "with collector.collectionMethod=KERNEL_MODULE.";
       }
 
@@ -54,14 +54,14 @@ class CollectionHeuristic : public Heuristic {
         CLOG(FATAL) << "Missing BTF symbols, core_bpf is not available. "
                     << "They can be provided by the kernel when configured with DEBUG_INFO_BTF, "
                     << "or as file. "
-                    << "You may alternatively want to use eBPF based collection "
+                    << "HINT: You may alternatively want to use eBPF based collection "
                     << "with collector.collectionMethod=EBPF.";
         ;
       }
 
       if (!host.HasBPFRingBufferSupport()) {
         CLOG(FATAL) << "Missing RingBuffer support, core_bpf is not available. "
-                    << "You may alternatively want to use eBPF based collection "
+                    << "HINT: You may alternatively want to use eBPF based collection "
                     << "with collector.collectionMethod=EBPF.";
       }
     }
