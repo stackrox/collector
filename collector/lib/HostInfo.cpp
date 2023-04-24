@@ -183,6 +183,7 @@ bool HostInfo::HasEBPFSupport() {
 }
 
 bool HostInfo::HasBTFSymbols() {
+  // This list is taken from libbpf
   const char* locations[] = {
       /* try canonical vmlinux BTF through sysfs first */
       "/sys/kernel/btf/vmlinux",
