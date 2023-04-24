@@ -117,10 +117,7 @@ set(DRIVER_DEVICE_NAME "${DRIVER_NAME}" CACHE STRING "Driver device name" FORCE)
 set(SCAP_BPF_PROGS_MAX "256" CACHE STRING "Number of BPF progams supported in Falco" FORCE)
 set(SCAP_HOST_ROOT_ENV_VAR_NAME "COLLECTOR_HOST_ROOT" CACHE STRING "Host root environment variable name" FORCE)
 
-# ppc64le is not supported for the "modern" probe
-if(NOT CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "ppc64le")
-	set(BUILD_LIBSCAP_MODERN_BPF ON CACHE BOOL "Enable modern bpf engine" FORCE)
-endif()
+set(BUILD_LIBSCAP_MODERN_BPF ON CACHE BOOL "Enable modern bpf engine" FORCE)
 
 set(MODERN_BPF_EXCLUDE_PROGS "^(openat2|ppoll|setsockopt|getsockopt|clone3|io_uring_setup|nanosleep)$" CACHE STRING "Set of syscalls to exclude from modern bpf engine " FORCE)
 
