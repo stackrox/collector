@@ -32,8 +32,6 @@ builder:
 ifdef BUILD_BUILDER_IMAGE
 	docker buildx build --load --platform ${PLATFORM} \
 		--build-arg NPROCS=$(NPROCS) \
-		--cache-from quay.io/stackrox-io/collector-builder:cache \
-		--cache-from quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-f "$(CURDIR)/builder/Dockerfile" \
 		.
