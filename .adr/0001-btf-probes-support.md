@@ -130,19 +130,25 @@ To implement this we would need to:
 * Collector has to be backward compatible in the sense that if it failed to
   load the new probe, it has to fallback to loading the legacy probes. This
   comes hand in hand with the necessity for Collector to have some heuristic to
-  identify if BTF is supported or not. On top of simple heuristics we would
-  need to implement a set of smoke tests at runtime to make sure the probe is
-  functioning, e.g. to run a canary process and verify its impact is captured
-  via the probe.
+  identify if BTF is supported or not.
+
+  Note, that this describes how it should looks like after GA. For the MVP to
+  get better visibility on failures, when BTF is not supported it should be a
+  hard stop, requiring manual reconfiguration to some other collection method.
+
+* On top of simple heuristics we would need to implement a set of self-checks
+  at runtime to make sure the probe is functioning. This would involve running
+  a canary process that does some networking activity and verifying its impact
+  is captured via the probe.
 
 * Since the new probe is going to be loaded via `libbpf`, the Collector container
   has to have BTF for `vmlinux` mounted from the host. The usual path is
   `/sys/kernel/btf/vmlinux`, and `libbpf` will be able to pick it up
   automatically using this path. It's already present inside the Collector
   container, because of it's privileged nature, but still has to be proven if
-  it's the same `vmlinux` we get by mounting the host `sysfs`. Most likely would
-  have to tell `libbpf` exactly where to find it, which will require extending
-  modern probe to pass loading options to `libbpf`.
+  it's the same `vmlinux` we get by mounting the host `sysfs`. Most likely in
+  the future we would have to tell `libbpf` exactly where to find it, which
+  will require extending modern probe to pass loading options to `libbpf`.
 
 * Ideally the loading logic has to be refactored to make it more flexible and
   potentially allow delegating probe loading to an external component (e.g.
