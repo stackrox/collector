@@ -232,10 +232,7 @@ class HostInfo {
   // not support eBPF)
   bool HasEBPFSupport();
 
-  // Check for /sys/kernel/btf/vmlinux
-  bool HasBTFKernelSupport();
-
-  // Search for any source of BTF symbols (similar to what libbpf does)
+  // Search for a source of BTF symbols (similar to what libbpf does)
   bool HasBTFSymbols();
 
   // Check for RingBuffer support, which is required by the modern probe.

@@ -182,23 +182,6 @@ bool HostInfo::HasEBPFSupport() {
   return collector::hasEBPFSupport(kernel, GetOSID());
 }
 
-bool HostInfo::HasBTFKernelSupport() {
-  std::string btf_vmlinux_path = GetHostPath("/sys/kernel/btf/vmlinux");
-
-  if (faccessat(AT_FDCWD, btf_vmlinux_path.c_str(), R_OK, AT_EACCESS) == -1) {
-    if (errno == ENOTDIR || errno == ENOENT) {
-      CLOG(DEBUG) << "BTF debug symbols file not found in sysfs";
-    } else {
-      CLOG(WARNING) << "Unable to access " << btf_vmlinux_path << ": " << StrError();
-    }
-    return false;
-  }
-
-  CLOG(DEBUG) << "BTF debug symbols file found. Kernel BTF support available.";
-
-  return true;
-}
-
 bool HostInfo::HasBTFSymbols() {
   const char* locations[] = {
       /* try canonical vmlinux BTF through sysfs first */

@@ -50,7 +50,7 @@ class CollectionHeuristic : public Heuristic {
                     << "with collector.collectionMethod=KERNEL_MODULE.";
       }
 
-      if (!host.HasBTFKernelSupport() && !host.HasBTFSymbols()) {
+      if (!host.HasBTFSymbols()) {
         CLOG(FATAL) << "Missing BTF symbols, core_bpf is not available. "
                     << "They can be provided by the kernel when configured with DEBUG_INFO_BTF, "
                     << "or as file. "
