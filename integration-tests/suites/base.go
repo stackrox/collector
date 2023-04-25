@@ -186,8 +186,8 @@ func (s *IntegrationTestSuiteBase) execContainer(containerName string, command [
 	return s.executor.Exec(cmd...)
 }
 
-func (s *IntegrationTestSuiteBase) execContainerShellScript(containerName string, script string, args ...string) (string, error) {
-	cmd := []string{common.RuntimeCommand, "exec", "-i", containerName, "/bin/sh", "-s"}
+func (s *IntegrationTestSuiteBase) execContainerShellScript(containerName string, shell string, script string, args ...string) (string, error) {
+	cmd := []string{common.RuntimeCommand, "exec", "-i", containerName, shell, "-s"}
 	cmd = append(cmd, args...)
 	return s.executor.ExecWithStdin(script, cmd...)
 }

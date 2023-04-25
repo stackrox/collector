@@ -88,7 +88,9 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	numIter := strconv.Itoa(s.NumIter)
 	sleepBetweenCurlTime := strconv.Itoa(s.SleepBetweenCurlTime)
 	sleepBetweenIterations := strconv.Itoa(s.SleepBetweenIterations)
-	_, err = s.execContainerShellScript("nginx-curl", `
+	_, err = s.execContainerShellScript("nginx-curl",
+		"/bin/sh",
+		`
 		#!/usr/bin/env sh
 
 		num_meta_iter=$1
