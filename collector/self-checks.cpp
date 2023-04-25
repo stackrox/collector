@@ -82,10 +82,9 @@ bool connectToPort(uint16_t port) {
 
   for (int i = 0; i < g_connection_retries; i++) {
     if (connect(connection, (struct sockaddr*)(&server), sizeof(server)) < 0) {
-      if (errno == ECONNREFUSED) {
-        continue;
+      if (errno != ECONNREFUSED) {
+        goto err;
       }
-      goto err;
     }
 
     result = true;
