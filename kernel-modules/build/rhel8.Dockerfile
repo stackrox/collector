@@ -3,7 +3,7 @@ FROM quay.io/centos/centos:stream8 AS rhel-8-base
 ENV DISTRO=rhel8
 
 RUN dnf -y update && \
-    dnf -y install \
+    dnf -y install --nobest \
         make \
         cmake \
         gcc-c++ \
