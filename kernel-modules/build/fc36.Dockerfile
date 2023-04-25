@@ -2,7 +2,7 @@ FROM registry.fedoraproject.org/fedora:36 AS builder
 
 ENV DISTRO=fc36
 
-RUN dnf -y install \
+RUN dnf -y install --nobest \
         make \
         cmake \
         gcc-c++ \
