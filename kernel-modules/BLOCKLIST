@@ -66,3 +66,5 @@
 6.2.* 2.2.0 *
 6.2.* 2.1.0 *
 6.2.* 2.0.1 *
+# TODO(ROX-16705) - 6.3 kernel compilation errors
+6.3.*
