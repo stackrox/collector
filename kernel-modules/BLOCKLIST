@@ -21,8 +21,10 @@
 6.0.0-2-cloud-amd64
 6.0.0-5-amd64
 6.0.0-5-cloud-amd64
-~6\.1\.0-\d+-amd64
-~6\.1\.0-\d+-cloud-amd64
+6.1.0-0-amd64
+6.1.0-0-cloud-amd64
+6.1.0-7-amd64
+6.1.0-7-cloud-amd64
 # backport 5.8
 5.8.*20.04
 # TODO(ROX-??) Check broken modules compilation
