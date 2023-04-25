@@ -161,8 +161,12 @@ class KernelDriverCOREEBPF : public IKernelDriver {
                                 DEFAULT_CPU_FOR_EACH_BUFFER,
                                 true, ppm_sc, tp_set);
     } catch (const sinsp_exception& ex) {
-      CLOG(WARNING) << ex.what();
-      return false;
+      if (config.CoReBPFHardfail()) {
+        throw ex;
+      } else {
+        CLOG(WARNING) << ex.what();
+        return false;
+      }
     }
 
     return true;
