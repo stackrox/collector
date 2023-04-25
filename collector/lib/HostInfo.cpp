@@ -235,6 +235,19 @@ bool HostInfo::HasBPFRingBufferSupport() {
   return res != 0;
 }
 
+bool HostInfo::HasBPFTracingSupport() {
+  int res;
+
+  res = libbpf_probe_bpf_prog_type(BPF_PROG_TYPE_TRACING, NULL);
+
+  if (res < 0) {
+    CLOG(WARNING) << "Unable to check for the BPF tracepoint program type support. "
+                  << "Assuming it is available.";
+  }
+
+  return res != 0;
+}
+
 bool HostInfo::IsUEFI() {
   struct stat sb;
   std::string efi_path = GetHostPath("/sys/firmware/efi");

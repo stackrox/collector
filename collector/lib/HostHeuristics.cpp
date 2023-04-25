@@ -64,6 +64,10 @@ class CollectionHeuristic : public Heuristic {
                     << "HINT: You may alternatively want to use eBPF based collection "
                     << "with collector.collectionMethod=EBPF.";
       }
+
+      if (!host.HasBPFTracingSupport()) {
+        CLOG(FATAL) << "Missing BPF tracepoint support.";
+      }
     }
 
     // If we're configured to use eBPF but the host we're running on

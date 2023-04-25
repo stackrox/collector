@@ -238,6 +238,9 @@ class HostInfo {
   // Check for RingBuffer support, which is required by the modern probe.
   bool HasBPFRingBufferSupport();
 
+  // Check for BPF tracepoint program type support
+  bool HasBPFTracingSupport();
+
   // The system was booted in UEFI mode.
   virtual bool IsUEFI();
 
