@@ -8,7 +8,6 @@ RUN dnf -y install \
         gcc-c++ \
         llvm \
         clang \
-        elfutils-libelf \
         elfutils-libelf-devel \
         kmod  && \
     # We trick Debian builds into thinking they have the required GCC binary
