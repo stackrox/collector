@@ -232,6 +232,15 @@ class HostInfo {
   // not support eBPF)
   bool HasEBPFSupport();
 
+  // Search for a source of BTF symbols (similar to what libbpf does)
+  bool HasBTFSymbols();
+
+  // Check for RingBuffer support, which is required by the modern probe.
+  bool HasBPFRingBufferSupport();
+
+  // Check for BPF tracepoint program type support
+  bool HasBPFTracingSupport();
+
   // The system was booted in UEFI mode.
   virtual bool IsUEFI();
 

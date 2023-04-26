@@ -15,6 +15,9 @@ runtime_command: docker
 runtime_as_root: false
 runtime_socket: /var/run/docker.sock
 
+excluded_pairs:
+  - ['ubuntu-1804-lts', 'core_bpf']
+
 virtual_machines:
   rhel:
     project: rhel-cloud

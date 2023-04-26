@@ -58,7 +58,7 @@ else()
 	target_link_libraries(collector_lib libprotobuf.a libcares.a)
 endif()
 
-target_link_libraries(collector_lib z ssl crypto curl)
+target_link_libraries(collector_lib z ssl crypto curl bpf)
 
 add_executable(collector collector.cpp)
 target_link_libraries(collector collector_lib)
