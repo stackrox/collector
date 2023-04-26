@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strconv"
@@ -24,6 +25,7 @@ type Executor interface {
 	IsContainerRunning(image string) (bool, error)
 	ExitCode(container string) (int, error)
 	Exec(args ...string) (string, error)
+	ExecWithStdin(pipedContent string, args ...string) (string, error)
 	ExecRetry(args ...string) (string, error)
 }
 
@@ -192,6 +194,27 @@ func (e *executor) RunCommand(cmd *exec.Cmd) (string, error) {
 		err = errors.Wrapf(err, "Command Failed: %s\nOutput: %s\n", commandLine, trimmed)
 	}
 	return trimmed, err
+}
+
+func (e *executor) ExecWithStdin(pipedContent string, args ...string) (res string, err error) {
+
+	if args[0] == RuntimeCommand && RuntimeAsRoot {
+		args = append([]string{"sudo"}, args...)
+	}
+
+	cmd := e.builder.ExecCommand(args...)
+
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return "", err
+	}
+
+	go func() {
+		defer stdin.Close()
+		io.WriteString(stdin, pipedContent)
+	}()
+
+	return e.RunCommand(cmd)
 }
 
 func (e *executor) CopyFromHost(src string, dst string) (res string, err error) {
