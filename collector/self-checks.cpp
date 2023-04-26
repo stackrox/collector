@@ -87,9 +87,10 @@ bool connectToPort(uint16_t port) {
       }
     }
 
-    result = true;
     sleep(g_sleep_seconds);
   }
+
+  result = true;
 err:
   close(connection);
   return result;
