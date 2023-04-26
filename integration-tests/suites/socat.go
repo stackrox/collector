@@ -41,7 +41,9 @@ func (s *SocatTestSuite) SetupSuite() {
 
 	err = s.collector.Launch()
 	s.Require().NoError(err)
-	time.Sleep(30 * time.Second)
+
+	err = s.collector.WaitForCollector(30)
+	s.Require().NoError(err)
 
 	processImage := common.QaImage("quay.io/rhacs-eng/qa", "socat")
 

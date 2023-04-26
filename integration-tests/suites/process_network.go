@@ -37,6 +37,9 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	err = s.collector.Launch()
 	s.Require().NoError(err)
 
+	err = s.collector.WaitForCollector(30)
+	s.Require().NoError(err)
+
 	images := []string{
 		"nginx:1.14-alpine",
 		"pstauffer/curl:latest",

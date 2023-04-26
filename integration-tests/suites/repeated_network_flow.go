@@ -51,6 +51,9 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	err = s.collector.Launch()
 	s.Require().NoError(err)
 
+	err = s.collector.WaitForCollector(30)
+	s.Require().NoError(err)
+
 	scheduled_curls_image := common.QaImage("quay.io/rhacs-eng/qa", "collector-schedule-curls")
 
 	images := []string{
