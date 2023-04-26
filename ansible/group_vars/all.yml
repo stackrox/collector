@@ -53,7 +53,9 @@ virtual_machines:
   sles:
     project: suse-cloud
     families:
-      - sles-12
+      # Disable SLES-12 as it currently relies on kernel-modules
+      # that are no longer built.
+      #- sles-12
       - sles-15
 
   ubuntu-os:
