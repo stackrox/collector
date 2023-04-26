@@ -8,7 +8,6 @@ RUN yum makecache && \
         make \
         gcc-c++ \
         llvm-toolset-7.0 \
-        elfutils-libelf \
         elfutils-libelf-devel \
         kmod
 
