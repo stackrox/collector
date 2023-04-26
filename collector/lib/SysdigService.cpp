@@ -251,9 +251,6 @@ void SysdigService::Run(const std::atomic<ControlValue>& control) {
         // because we also stop iteration at this point.
         signal_handlers_.erase(it);
         break;
-      } else if (result == SignalHandler::PROCESSED) {
-        // This event has been consumed, stop processing
-        break;
       }
     }
 

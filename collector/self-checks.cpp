@@ -27,7 +27,7 @@ bool startListeningPort(uint16_t port) {
   int listener = socket(AF_INET, SOCK_STREAM, 0);
 
   if (listener < 0) {
-    return false;
+    goto err;
   }
 
   sock_addr.sin_family = AF_INET;
