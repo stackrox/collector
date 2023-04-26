@@ -33,7 +33,7 @@
 [submodule "falcosecurity-libs"]
 	path = falcosecurity-libs
 	url = https://github.com/stackrox/falcosecurity-libs
-	branch = master
+	branch = jv-ROX-16722-network-graph-reports-udp-port-0-with-kernel-module-probe
 [submodule "collector/proto/third_party/gogoproto"]
 	path = collector/proto/third_party/gogoproto
 	url = https://github.com/gogo/protobuf
