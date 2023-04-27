@@ -341,7 +341,7 @@ void SysdigService::AddSignalHandler(std::unique_ptr<SignalHandler> signal_handl
   } else {
     const EventNames& event_names = EventNames::GetInstance();
     for (const auto& event_name : relevant_events) {
-      for (ppm_event_type event_id : event_names.GetEventIDs(event_name)) {
+      for (ppm_event_code event_id : event_names.GetEventIDs(event_name)) {
         event_filter.set(event_id);
         global_event_filter_.set(event_id);
       }

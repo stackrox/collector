@@ -39,11 +39,11 @@ class KernelDriverEBPF : public IKernelDriver {
     setDropSyscalls(config.Syscalls());
 
     /* Get only necessary tracepoints. */
-    auto tp_set = libsinsp::events::enforce_simple_tp_set();
-    std::unordered_set<ppm_sc_code> ppm_sc;
+    // auto tp_set = libsinsp::events::enforce_simple_tp_set();
+    // std::unordered_set<ppm_sc_code> ppm_sc;
 
     try {
-      inspector.open_bpf(SysdigService::kProbePath, DEFAULT_DRIVER_BUFFER_BYTES_DIM, ppm_sc, tp_set);
+      inspector.open_bpf(SysdigService::kProbePath, DEFAULT_DRIVER_BUFFER_BYTES_DIM);
     } catch (const sinsp_exception& ex) {
       CLOG(WARNING) << ex.what();
       return false;
@@ -61,7 +61,7 @@ class KernelDriverEBPF : public IKernelDriver {
     // Do not drop syscalls from given list
     const EventNames& event_names = EventNames::GetInstance();
     for (const auto& syscall_str : syscalls) {
-      for (ppm_event_type event_id : event_names.GetEventIDs(syscall_str)) {
+      for (ppm_event_code event_id : event_names.GetEventIDs(syscall_str)) {
         uint16_t syscall_id = event_names.GetEventSyscallID(event_id);
         if (!syscall_id) {
           continue;
@@ -78,7 +78,6 @@ class KernelDriverCOREEBPF : public IKernelDriver {
 
   bool Setup(const CollectorConfig& config, sinsp& inspector) override {
     /* Capture only necessary tracepoints and syscalls. */
-    auto tp_set = libsinsp::events::enforce_simple_tp_set();
     std::unordered_set<ppm_sc_code> ppm_sc;
 
     /*
@@ -87,7 +86,7 @@ class KernelDriverCOREEBPF : public IKernelDriver {
      */
     const EventNames& event_names = EventNames::GetInstance();
     for (const auto& syscall_str : config.Syscalls()) {
-      for (ppm_event_type event_id : event_names.GetEventIDs(syscall_str)) {
+      for (ppm_event_code event_id : event_names.GetEventIDs(syscall_str)) {
         uint16_t syscall_id = event_names.GetEventSyscallID(event_id);
         if (!syscall_id) {
           continue;
@@ -101,7 +100,7 @@ class KernelDriverCOREEBPF : public IKernelDriver {
     try {
       inspector.open_modern_bpf(DEFAULT_DRIVER_BUFFER_BYTES_DIM,
                                 DEFAULT_CPU_FOR_EACH_BUFFER,
-                                true, ppm_sc, tp_set);
+                                true, ppm_sc);
     } catch (const sinsp_exception& ex) {
       if (config.CoReBPFHardfail()) {
         throw ex;
