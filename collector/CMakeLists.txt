@@ -73,6 +73,8 @@ target_link_libraries(collector libprometheus-cpp-core.a)
 add_executable(connscrape connscrape.cpp)
 target_link_libraries(connscrape collector_lib)
 
+add_executable(self-checks self-checks.cpp)
+
 # Setup testing
 enable_testing()
 
