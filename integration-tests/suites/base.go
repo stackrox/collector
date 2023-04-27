@@ -145,8 +145,6 @@ func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, erro
 	})
 
 	outLines := strings.Split(output, "\n")
-	fmt.Println("Creating container " + args[0])
-	fmt.Println(outLines)
 	return outLines[len(outLines)-1], err
 }
 

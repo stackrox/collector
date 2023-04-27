@@ -23,13 +23,13 @@ type ServerClientPair struct {
 	client Container
 }
 
-type MixedUpEphemeralPortsTestSuite struct {
+type ConnectionsAndEndpointsTestSuite struct {
 	IntegrationTestSuiteBase
 	Server Container
 	Client Container
 }
 
-func (s *MixedUpEphemeralPortsTestSuite) SetupSuite() {
+func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 
 	s.metrics = map[string]float64{}
 	s.executor = common.NewExecutor()
@@ -73,16 +73,16 @@ func (s *MixedUpEphemeralPortsTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 }
 
-func (s *MixedUpEphemeralPortsTestSuite) TearDownSuite() {
+func (s *ConnectionsAndEndpointsTestSuite) TearDownSuite() {
 	s.cleanupContainer([]string{"collector"})
 	s.cleanupContainer([]string{s.Server.Name})
 	s.cleanupContainer([]string{s.Client.Name})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
-	s.WritePerfResults("EphemeralPorts", stats, s.metrics)
+	s.WritePerfResults("ConnectionsAndEndpoints", stats, s.metrics)
 }
 
-func (s *MixedUpEphemeralPortsTestSuite) TestMixedUpEphemeralPorts() {
+func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 	fmt.Println()
 	fmt.Println("serverName= ", s.Server.Name)
 	fmt.Println("clientName= ", s.Client.Name)
