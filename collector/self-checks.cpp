@@ -85,6 +85,9 @@ bool connectToPort(uint16_t port) {
       if (errno != ECONNREFUSED) {
         goto err;
       }
+    } else {
+      // successfully connected
+      break;
     }
 
     sleep(g_sleep_seconds);
