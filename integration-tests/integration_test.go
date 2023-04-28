@@ -134,12 +134,13 @@ func TestConnectionsAndEndpointsNormal(t *testing.T) {
 					CloseTimestamp: "(timestamp: nil Timestamp)",
 				},
 			},
-			ExpectedEndpoint: []common.EndpointInfo{
+			ExpectedEndpoints: []common.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
 					Address: &common.ListenAddress{
-						AddressData: "0.0.0.0",
+						AddressData: `"\000\000\000\000"`,
 						Port:        40,
+						IpNetwork:   `"\000\000\000\000 " `,
 					},
 				},
 			},
@@ -156,7 +157,7 @@ func TestConnectionsAndEndpointsNormal(t *testing.T) {
 					CloseTimestamp: "(timestamp: nil Timestamp)",
 				},
 			},
-			ExpectedEndpoint: nil,
+			ExpectedEndpoints: nil,
 		},
 	}
 	suite.Run(t, normalPorts)
@@ -178,12 +179,13 @@ func TestConnectionsAndEndpointsHighLowPorts(t *testing.T) {
 					CloseTimestamp: "(timestamp: nil Timestamp)",
 				},
 			},
-			ExpectedEndpoint: []common.EndpointInfo{
+			ExpectedEndpoints: []common.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
 					Address: &common.ListenAddress{
-						AddressData: "0.0.0.0",
+						AddressData: `"\000\000\000\000"`,
 						Port:        40000,
+						IpNetwork:   `"\000\000\000\000 " `,
 					},
 				},
 			},
@@ -200,7 +202,7 @@ func TestConnectionsAndEndpointsHighLowPorts(t *testing.T) {
 					CloseTimestamp: "(timestamp: nil Timestamp)",
 				},
 			},
-			ExpectedEndpoint: nil,
+			ExpectedEndpoints: nil,
 		},
 	}
 	suite.Run(t, mixedHighLowPorts)
@@ -222,12 +224,13 @@ func TestConnectionsAndEndpointsServerHigh(t *testing.T) {
 					CloseTimestamp: "(timestamp: nil Timestamp)",
 				},
 			},
-			ExpectedEndpoint: []common.EndpointInfo{
+			ExpectedEndpoints: []common.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
 					Address: &common.ListenAddress{
-						AddressData: "0.0.0.0",
+						AddressData: `"\000\000\000\000"`,
 						Port:        60999,
+						IpNetwork:   `"\000\000\000\000 " `,
 					},
 				},
 			},
@@ -244,7 +247,7 @@ func TestConnectionsAndEndpointsServerHigh(t *testing.T) {
 					CloseTimestamp: "(timestamp: nil Timestamp)",
 				},
 			},
-			ExpectedEndpoint: nil,
+			ExpectedEndpoints: nil,
 		},
 	}
 	suite.Run(t, mixedHighLowPorts)
@@ -266,12 +269,13 @@ func TestConnectionsAndEndpointsSourcePort(t *testing.T) {
 					CloseTimestamp: "(timestamp: nil Timestamp)",
 				},
 			},
-			ExpectedEndpoint: []common.EndpointInfo{
+			ExpectedEndpoints: []common.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
 					Address: &common.ListenAddress{
-						AddressData: "0.0.0.0",
+						AddressData: `"\000\000\000\000"`,
 						Port:        10000,
+						IpNetwork:   `"\000\000\000\000 " `,
 					},
 				},
 			},
@@ -288,7 +292,7 @@ func TestConnectionsAndEndpointsSourcePort(t *testing.T) {
 					CloseTimestamp: "(timestamp: nil Timestamp)",
 				},
 			},
-			ExpectedEndpoint: nil,
+			ExpectedEndpoints: nil,
 		},
 	}
 	suite.Run(t, mixedHighLowPorts)
