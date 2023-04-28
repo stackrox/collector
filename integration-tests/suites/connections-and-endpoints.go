@@ -39,7 +39,6 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
 	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "false"
 	s.collector.Env["ROX_ENABLE_AFTERGLOW"] = "0"
-	s.collector.Env["COLLECTION_METHOD"] = "EBPF"
 
 	err := s.collector.Setup()
 	s.Require().NoError(err)
