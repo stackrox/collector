@@ -51,17 +51,23 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 
 	serverName := s.Server.Name
 	clientName := s.Client.Name
+	
 	longContainerID, err := s.launchContainer(serverName, socatImage, "/bin/sh", "-c", "/bin/sleep 300")
 	s.Server.ContainerID = common.ContainerShortID(longContainerID)
 	s.Require().NoError(err)
+	
 	longContainerID, err = s.launchContainer(clientName, socatImage, "/bin/sh", "-c", "/bin/sleep 300")
 	s.Client.ContainerID = common.ContainerShortID(longContainerID)
+	
 	_, err = s.execContainer(serverName, []string{"/bin/sh", "-c", s.Server.Cmd})
 	s.Require().NoError(err)
+	
 	time.Sleep(3 * time.Second)
+	
 	s.Server.IP, err = s.getIPAddress(serverName)
 	s.Client.IP, err = s.getIPAddress(clientName)
 	s.Require().NoError(err)
+	
 	clientCmd := strings.Replace(s.Client.Cmd, "SERVER_IP", s.Server.IP, -1)
 	_, err = s.execContainer(clientName, []string{"/bin/sh", "-c", clientCmd})
 	s.Require().NoError(err)
