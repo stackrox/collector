@@ -123,9 +123,17 @@ func TestConnectionsAndEndpointsNormal(t *testing.T) {
 	// Server uses a normal port. Client is assigned a port in the ephemeral range in the normal way
 	normalPorts := &suites.ConnectionsAndEndpointsTestSuite{
 		Server: suites.Container{
-			Name:            "socat-server-0",
-			Cmd:             "socat TCP4-LISTEN:40,reuseaddr,fork - &",
-			ExpectedNetwork: "ROLE_SERVER",
+			Name: "socat-server-0",
+			Cmd:  "socat TCP4-LISTEN:40,reuseaddr,fork - &",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   ":40",
+					RemoteAddress:  "CLIENT_IP",
+					Role:           "ROLE_SERVER",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
 			ExpectedEndpoint: []common.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
@@ -137,9 +145,17 @@ func TestConnectionsAndEndpointsNormal(t *testing.T) {
 			},
 		},
 		Client: suites.Container{
-			Name:             "socat-client-0",
-			Cmd:              "echo hello | socat - TCP4:LISTEN_IP:40",
-			ExpectedNetwork:  "ROLE_CLIENT",
+			Name: "socat-client-0",
+			Cmd:  "echo hello | socat - TCP4:SERVER_IP:40",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   "",
+					RemoteAddress:  "SERVER_IP:40",
+					Role:           "ROLE_CLIENT",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
 			ExpectedEndpoint: nil,
 		},
 	}
@@ -151,9 +167,17 @@ func TestConnectionsAndEndpointsHighLowPorts(t *testing.T) {
 	// The client is assigned a source port in a non-ephemeral ports range
 	mixedHighLowPorts := &suites.ConnectionsAndEndpointsTestSuite{
 		Server: suites.Container{
-			Name:            "socat-server-1",
-			Cmd:             "socat TCP4-LISTEN:40000,reuseaddr,fork - &",
-			ExpectedNetwork: "ROLE_SERVER",
+			Name: "socat-server-1",
+			Cmd:  "socat TCP4-LISTEN:40000,reuseaddr,fork - &",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   ":40000",
+					RemoteAddress:  "CLIENT_IP",
+					Role:           "ROLE_SERVER",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
 			ExpectedEndpoint: []common.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
@@ -165,9 +189,17 @@ func TestConnectionsAndEndpointsHighLowPorts(t *testing.T) {
 			},
 		},
 		Client: suites.Container{
-			Name:             "socat-client-1",
-			Cmd:              "echo hello | socat - TCP4:LISTEN_IP:40000,sourceport=10000",
-			ExpectedNetwork:  "ROLE_CLIENT",
+			Name: "socat-client-1",
+			Cmd:  "echo hello | socat - TCP4:SERVER_IP:40000,sourceport=10000",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   "",
+					RemoteAddress:  "SERVER_IP:40000",
+					Role:           "ROLE_CLIENT",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
 			ExpectedEndpoint: nil,
 		},
 	}
@@ -179,9 +211,17 @@ func TestConnectionsAndEndpointsServerHigh(t *testing.T) {
 	// The client is assigned a port in the ephemeral ports range in the normal way.
 	mixedHighLowPorts := &suites.ConnectionsAndEndpointsTestSuite{
 		Server: suites.Container{
-			Name:            "socat-server-2",
-			Cmd:             "socat TCP4-LISTEN:60999,reuseaddr,fork - &",
-			ExpectedNetwork: "ROLE_SERVER",
+			Name: "socat-server-2",
+			Cmd:  "socat TCP4-LISTEN:60999,reuseaddr,fork - &",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   ":60999",
+					RemoteAddress:  "CLIENT_IP",
+					Role:           "ROLE_SERVER",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
 			ExpectedEndpoint: []common.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
@@ -193,9 +233,17 @@ func TestConnectionsAndEndpointsServerHigh(t *testing.T) {
 			},
 		},
 		Client: suites.Container{
-			Name:             "socat-client-2",
-			Cmd:              "echo hello | socat - TCP4:LISTEN_IP:60999",
-			ExpectedNetwork:  "ROLE_CLIENT",
+			Name: "socat-client-2",
+			Cmd:  "echo hello | socat - TCP4:SERVER_IP:60999",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   "",
+					RemoteAddress:  "SERVER_IP:60999",
+					Role:           "ROLE_CLIENT",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
 			ExpectedEndpoint: nil,
 		},
 	}
@@ -207,9 +255,17 @@ func TestConnectionsAndEndpointsSourcePort(t *testing.T) {
 	// The client is assigned a source port in a non-ephemeral ports range
 	mixedHighLowPorts := &suites.ConnectionsAndEndpointsTestSuite{
 		Server: suites.Container{
-			Name:            "socat-server-1",
-			Cmd:             "socat TCP4-LISTEN:10000,reuseaddr,fork - &",
-			ExpectedNetwork: "ROLE_SERVER",
+			Name: "socat-server-1",
+			Cmd:  "socat TCP4-LISTEN:10000,reuseaddr,fork - &",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   ":10000",
+					RemoteAddress:  "CLIENT_IP",
+					Role:           "ROLE_SERVER",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
 			ExpectedEndpoint: []common.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
@@ -221,9 +277,17 @@ func TestConnectionsAndEndpointsSourcePort(t *testing.T) {
 			},
 		},
 		Client: suites.Container{
-			Name:             "socat-client-1",
-			Cmd:              "echo hello | socat - TCP4:LISTEN_IP:10000,sourceport=40000",
-			ExpectedNetwork:  "ROLE_CLIENT",
+			Name: "socat-client-1",
+			Cmd:  "echo hello | socat - TCP4:SERVER_IP:10000,sourceport=40000",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   "",
+					RemoteAddress:  "SERVER_IP:10000",
+					Role:           "ROLE_CLIENT",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
 			ExpectedEndpoint: nil,
 		},
 	}
