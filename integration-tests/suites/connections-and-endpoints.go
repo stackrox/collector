@@ -19,11 +19,6 @@ type Container struct {
 	ExpectedEndpoints []common.EndpointInfo
 }
 
-type ServerClientPair struct {
-	server Container
-	client Container
-}
-
 type ConnectionsAndEndpointsTestSuite struct {
 	IntegrationTestSuiteBase
 	Server Container
@@ -40,6 +35,7 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
 	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
 	s.collector.Env["ROX_ENABLE_AFTERGLOW"] = "0"
+	s.collector.Env["COLLECTION_METHOD"] = "EBPF"
 
 	err := s.collector.Setup()
 	s.Require().NoError(err)
@@ -61,17 +57,20 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.Client.ContainerID = common.ContainerShortID(longContainerID)
 
-	_, err = s.execContainer(serverName, []string{"/bin/sh", "-c", s.Server.Cmd})
-	s.Require().NoError(err)
-
-	time.Sleep(3 * time.Second)
-
 	s.Server.IP, err = s.getIPAddress(serverName)
 	s.Require().NoError(err)
 	s.Client.IP, err = s.getIPAddress(clientName)
 	s.Require().NoError(err)
 
+	serverCmd := strings.Replace(s.Server.Cmd, "CLIENT_IP", s.Client.IP, -1)
+	fmt.Println(serverCmd)
+	_, err = s.execContainer(serverName, []string{"/bin/sh", "-c", serverCmd})
+	s.Require().NoError(err)
+
+	time.Sleep(3 * time.Second)
+
 	clientCmd := strings.Replace(s.Client.Cmd, "SERVER_IP", s.Server.IP, -1)
+	fmt.Println(clientCmd)
 	_, err = s.execContainer(clientName, []string{"/bin/sh", "-c", clientCmd})
 	s.Require().NoError(err)
 	time.Sleep(6 * time.Second)
@@ -84,9 +83,9 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 }
 
 func (s *ConnectionsAndEndpointsTestSuite) TearDownSuite() {
-	s.cleanupContainer([]string{"collector"})
-	s.cleanupContainer([]string{s.Server.Name})
-	s.cleanupContainer([]string{s.Client.Name})
+	//s.cleanupContainer([]string{"collector"})
+	//s.cleanupContainer([]string{s.Server.Name})
+	//s.cleanupContainer([]string{s.Client.Name})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
 	s.WritePerfResults("ConnectionsAndEndpoints", stats, s.metrics)
