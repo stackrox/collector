@@ -334,7 +334,9 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE*
       }
       continue;
     }
+
     if (data.state != TCP_ESTABLISHED) {
+      CLOG(INFO) << "Not established connection between: local: " << data.local << " remote: " << data.remote;
       continue;
     }
 

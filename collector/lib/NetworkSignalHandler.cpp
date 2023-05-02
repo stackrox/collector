@@ -50,12 +50,6 @@ EventMap<Modifier> modifiers = {
 }  // namespace
 
 std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
-  const int64_t* res = event_extractor_.get_event_rawres(evt);
-  if (!res || *res < 0) {
-    // ignore unsuccessful events for now.
-    return std::nullopt;
-  }
-
   auto* fd_info = evt->get_fd_info();
   if (!fd_info) return std::nullopt;
 
@@ -99,7 +93,17 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
 
   const std::string* container_id = event_extractor_.get_container_id(evt);
   if (!container_id) return std::nullopt;
-  return {Connection(*container_id, *local, *remote, l4proto, is_server)};
+
+  auto conn = Connection(*container_id, *local, *remote, l4proto, is_server);
+
+  const int64_t* res = event_extractor_.get_event_rawres(evt);
+  if (!res || *res < 0) {
+    // ignore unsuccessful events for now.
+    CLOG(INFO) << "Failed connection: " << conn;
+    return std::nullopt;
+  }
+
+  return {conn};
 }
 
 SignalHandler::Result NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
