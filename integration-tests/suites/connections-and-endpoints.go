@@ -145,27 +145,21 @@ func endpointComparison(endpoint1 common.EndpointInfo, endpoint2 common.Endpoint
 		return true
 	}
 
-	if endpoint1.Address.AddressData < endpoint2.Address.AddressData {
+	addr1, addr2 := endpoint1.Address, endpoint2.Address
+
+	if addr1.AddressData < addr2.AddressData {
 		return true
 	}
 
-	if endpoint1.Address.AddressData > endpoint2.Address.AddressData {
+	if addr1.AddressData > addr2.AddressData {
 		return false
 	}
 
-	if endpoint1.Address.Port < endpoint2.Address.Port {
+	if addr1.Port < addr2.Port {
 		return true
 	}
 
-	if endpoint1.Address.Port > endpoint2.Address.Port {
-		return false
-	}
-
-	if endpoint1.Address.IpNetwork < endpoint2.Address.IpNetwork {
-		return true
-	}
-
-	if endpoint1.Address.IpNetwork > endpoint2.Address.IpNetwork {
+	if addr1.Port > addr2.Port {
 		return false
 	}
 
