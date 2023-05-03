@@ -19,11 +19,6 @@ type Container struct {
 	ExpectedEndpoints []common.EndpointInfo
 }
 
-type ServerClientPair struct {
-	server Container
-	client Container
-}
-
 type ConnectionsAndEndpointsTestSuite struct {
 	IntegrationTestSuiteBase
 	Server Container
@@ -61,17 +56,20 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.Client.ContainerID = common.ContainerShortID(longContainerID)
 
-	_, err = s.execContainer(serverName, []string{"/bin/sh", "-c", s.Server.Cmd})
-	s.Require().NoError(err)
-
-	time.Sleep(3 * time.Second)
-
 	s.Server.IP, err = s.getIPAddress(serverName)
 	s.Require().NoError(err)
 	s.Client.IP, err = s.getIPAddress(clientName)
 	s.Require().NoError(err)
 
+	serverCmd := strings.Replace(s.Server.Cmd, "CLIENT_IP", s.Client.IP, -1)
+	fmt.Println(serverCmd)
+	_, err = s.execContainer(serverName, []string{"/bin/sh", "-c", serverCmd})
+	s.Require().NoError(err)
+
+	time.Sleep(3 * time.Second)
+
 	clientCmd := strings.Replace(s.Client.Cmd, "SERVER_IP", s.Server.IP, -1)
+	fmt.Println(clientCmd)
 	_, err = s.execContainer(clientName, []string{"/bin/sh", "-c", clientCmd})
 	s.Require().NoError(err)
 	time.Sleep(6 * time.Second)
@@ -123,18 +121,23 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 	assert.Equal(s.T(), s.Server.ExpectedNetwork[0].SocketFamily, serverNetwork.SocketFamily)
 
 	serverEndpoints, err := s.GetEndpoints(s.Server.ContainerID)
-	s.Require().NoError(err)
-	assert.Equal(s.T(), len(s.Server.ExpectedEndpoints), len(serverEndpoints))
+	if s.Server.ExpectedEndpoints != nil {
+		s.Require().NoError(err)
+		assert.Equal(s.T(), len(s.Server.ExpectedEndpoints), len(serverEndpoints))
 
-	sort.Slice(s.Server.ExpectedEndpoints, func(i, j int) bool {
-		return endpointComparison(s.Server.ExpectedEndpoints[i], s.Server.ExpectedEndpoints[j])
-	})
-	sort.Slice(serverEndpoints, func(i, j int) bool { return endpointComparison(serverEndpoints[i], serverEndpoints[j]) })
+		sort.Slice(s.Server.ExpectedEndpoints, func(i, j int) bool {
+			return endpointComparison(s.Server.ExpectedEndpoints[i], s.Server.ExpectedEndpoints[j])
+		})
+		sort.Slice(serverEndpoints, func(i, j int) bool { return endpointComparison(serverEndpoints[i], serverEndpoints[j]) })
 
-	for idx := range serverEndpoints {
-		assert.Equal(s.T(), s.Server.ExpectedEndpoints[idx].Protocol, serverEndpoints[idx].Protocol)
-		assert.Equal(s.T(), s.Server.ExpectedEndpoints[idx].Address, serverEndpoints[idx].Address)
+		for idx := range serverEndpoints {
+			assert.Equal(s.T(), s.Server.ExpectedEndpoints[idx].Protocol, serverEndpoints[idx].Protocol)
+			assert.Equal(s.T(), s.Server.ExpectedEndpoints[idx].Address, serverEndpoints[idx].Address)
+		}
+	} else {
+		s.Require().Error(err)
 	}
+
 }
 
 func endpointComparison(endpoint1 common.EndpointInfo, endpoint2 common.EndpointInfo) bool {
@@ -145,21 +148,27 @@ func endpointComparison(endpoint1 common.EndpointInfo, endpoint2 common.Endpoint
 		return true
 	}
 
-	addr1, addr2 := endpoint1.Address, endpoint2.Address
-
-	if addr1.AddressData < addr2.AddressData {
+	if endpoint1.Address.AddressData < endpoint2.Address.AddressData {
 		return true
 	}
 
-	if addr1.AddressData > addr2.AddressData {
+	if endpoint1.Address.AddressData > endpoint2.Address.AddressData {
 		return false
 	}
 
-	if addr1.Port < addr2.Port {
+	if endpoint1.Address.Port < endpoint2.Address.Port {
 		return true
 	}
 
-	if addr1.Port > addr2.Port {
+	if endpoint1.Address.Port > endpoint2.Address.Port {
+		return false
+	}
+
+	if endpoint1.Address.IpNetwork < endpoint2.Address.IpNetwork {
+		return true
+	}
+
+	if endpoint1.Address.IpNetwork > endpoint2.Address.IpNetwork {
 		return false
 	}
 
