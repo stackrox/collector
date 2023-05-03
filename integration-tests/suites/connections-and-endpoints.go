@@ -32,7 +32,7 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 	s.StartContainerStats()
 	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
 
-	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
+	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"trace","turnOffScrape":false,"scrapeInterval":2}`
 	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
 	s.collector.Env["ROX_ENABLE_AFTERGLOW"] = "0"
 
