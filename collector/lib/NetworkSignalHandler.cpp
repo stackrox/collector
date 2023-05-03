@@ -97,7 +97,6 @@ std::pair<Connection, bool> NetworkSignalHandler::GetConnection(sinsp_evt* evt) 
 
   const std::string* container_id = event_extractor_.get_container_id(evt);
   if (!container_id) return {{}, false};
-  CLOG(INFO) << Connection(*container_id, *local, *remote, l4proto, is_server);
   return {Connection(*container_id, *local, *remote, l4proto, is_server), true};
 }
 

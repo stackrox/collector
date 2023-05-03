@@ -334,8 +334,8 @@ func TestConnectionsAndEndpointsUDP(t *testing.T) {
 	suite.Run(t, mixedHighLowPorts)
 }
 
-func TestConnectionsAndEndpointsUDP2(t *testing.T) {
-	// A test for UDP
+func TestConnectionsAndEndpointsUDPNoReuseaddr(t *testing.T) {
+	// A test for UDP without reuseaddr
 	mixedHighLowPorts := &suites.ConnectionsAndEndpointsTestSuite{
 		Server: suites.Container{
 			Name: "socat-server-udp",
@@ -371,7 +371,7 @@ func TestConnectionsAndEndpointsUDP2(t *testing.T) {
 }
 
 func TestConnectionsAndEndpointsUDPNoFork(t *testing.T) {
-	// A test for UDP
+	// A test for UDP without fork or reuseaddr
 	mixedHighLowPorts := &suites.ConnectionsAndEndpointsTestSuite{
 		Server: suites.Container{
 			Name: "socat-server-udp",
