@@ -39,11 +39,28 @@ class KernelDriverEBPF : public IKernelDriver {
     setDropSyscalls(config.Syscalls());
 
     /* Get only necessary tracepoints. */
-    // auto tp_set = libsinsp::events::enforce_simple_tp_set();
-    // std::unordered_set<ppm_sc_code> ppm_sc;
+    /* Capture only necessary tracepoints and syscalls. */
+    std::unordered_set<ppm_sc_code> ppm_sc;
+
+    /*
+     * Convert text reprecentation of event type into an actual syscall code
+     * using g_syscall_table.
+     */
+    const EventNames& event_names = EventNames::GetInstance();
+    for (const auto& syscall_str : config.Syscalls()) {
+      for (ppm_event_code event_id : event_names.GetEventIDs(syscall_str)) {
+        uint16_t syscall_id = event_names.GetEventSyscallID(event_id);
+        if (!syscall_id) {
+          continue;
+        }
+
+        syscall_evt_pair syscall = g_syscall_table[syscall_id];
+        ppm_sc.insert((ppm_sc_code)syscall.ppm_sc);
+      }
+    }
 
     try {
-      inspector.open_bpf(SysdigService::kProbePath, DEFAULT_DRIVER_BUFFER_BYTES_DIM);
+      inspector.open_bpf(SysdigService::kProbePath, DEFAULT_DRIVER_BUFFER_BYTES_DIM, ppm_sc);
     } catch (const sinsp_exception& ex) {
       CLOG(WARNING) << ex.what();
       return false;

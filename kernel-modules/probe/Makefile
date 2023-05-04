@@ -22,7 +22,7 @@ endif
 #
 # https://chromium.googlesource.com/chromiumos/third_party/kernel/+/096925a44076ba5c52faa84d255a847130ff341e%5E%21/#F2
 # This commit diverged the ChromiumOS kernel from stock in the area of audit information, which this probe accesses.
-# 
+#
 # This enables the workaround for this divergence.
 #
 NEEDS_COS_73_WORKAROUND = $(shell expr `grep -sc "^\s*struct\s\+audit_task_info\s\+\*audit;\s*$$" $(KERNELDIR)/include/linux/sched.h` = 1)
