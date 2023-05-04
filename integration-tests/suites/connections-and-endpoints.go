@@ -141,34 +141,36 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 }
 
 func endpointComparison(endpoint1 common.EndpointInfo, endpoint2 common.EndpointInfo) bool {
-	if endpoint1.Address == nil {
+	addr1, addr2 := endpoint1.Address, endpoint2.Address
+
+	if addr1 == nil {
 		return false
 	}
-	if endpoint2.Address == nil {
+	if addr2 == nil {
 		return true
 	}
 
-	if endpoint1.Address.AddressData < endpoint2.Address.AddressData {
+	if addr1.AddressData < addr2.AddressData {
 		return true
 	}
 
-	if endpoint1.Address.AddressData > endpoint2.Address.AddressData {
-		return false
-	}
-
-	if endpoint1.Address.Port < endpoint2.Address.Port {
-		return true
-	}
-
-	if endpoint1.Address.Port > endpoint2.Address.Port {
+	if addr1.AddressData > addr2.AddressData {
 		return false
 	}
 
-	if endpoint1.Address.IpNetwork < endpoint2.Address.IpNetwork {
+	if addr1.Port < addr2.Port {
 		return true
 	}
 
-	if endpoint1.Address.IpNetwork > endpoint2.Address.IpNetwork {
+	if addr1.Port > addr2.Port {
+		return false
+	}
+
+	if addr1.IpNetwork < addr2.IpNetwork {
+		return true
+	}
+
+	if addr1.IpNetwork > addr2.IpNetwork {
 		return false
 	}
 
