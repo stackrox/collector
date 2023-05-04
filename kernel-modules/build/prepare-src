@@ -41,6 +41,9 @@ archive_dockerized() {
         if [[ -d "./collector-probe" ]]; then
             mkdir "$source_archive"/collector-probe
             cp collector-probe/*.c collector-probe/Makefile "$source_archive"/collector-probe
+            if [[ -e "${LEGACY_DIR}/kernel-modules/probe/collector_probe.h" ]]; then
+                cp "${LEGACY_DIR}/kernel-modules/probe/collector_probe.h" "${DRIVER_SCRATCH}/driver/collector-probe/collector_probe.h"
+            fi            
         fi
         echo "Driver source archive - $source_archive"
         ls -alh "$source_archive"
