@@ -167,7 +167,7 @@ See [vm-lifecycle.yml](./vm-lifecycle.yml) for an example of how it's used.
 ### run-test-target
 
 Handles running a make target in the [integration-tests](../integration-tests) directory
-in the repository. Will attempt to run the target for both eBPF and kernel-module collection
+in the repository. Will attempt to run the target for eBPF collection
 except in cases where a VM is designated for a specific collection method (via the vm_collection_method label)
 
 See [integration-tests.yml](./integration-tests.yml) or [benchmarks.yml](./benchmarks.yml) for

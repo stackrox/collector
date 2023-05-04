@@ -24,6 +24,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include "SysdigService.h"
 
 #include <cap-ng.h>
+#include <thread>
 
 #include <linux/ioctl.h>
 
@@ -37,6 +38,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include "Logging.h"
 #include "NetworkSignalHandler.h"
 #include "ProcessSignalHandler.h"
+#include "SelfCheckHandler.h"
+#include "SelfChecks.h"
 #include "TimeUtil.h"
 #include "Utility.h"
 
@@ -52,6 +55,13 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
     throw CollectorException("Invalid state: SysdigService was already initialized");
   }
 
+  // The self-check handlers should only operate during start up,
+  // so they are added to the handler list first, so they have access
+  // to self-check events before the network and process handlers have
+  // a chance to process them and send them to Sensor.
+  AddSignalHandler(MakeUnique<SelfCheckProcessHandler>(inspector_.get()));
+  AddSignalHandler(MakeUnique<SelfCheckNetworkHandler>(inspector_.get()));
+
   if (conn_tracker) {
     AddSignalHandler(MakeUnique<NetworkSignalHandler>(inspector_.get(), conn_tracker, &userspace_stats_));
   }
@@ -60,7 +70,9 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
     AddSignalHandler(MakeUnique<ProcessSignalHandler>(inspector_.get(), config.grpc_channel, &userspace_stats_));
   }
 
-  if (signal_handlers_.empty()) {
+  if (signal_handlers_.size() == 2) {
+    // self-check handlers do not count towards this check, because they
+    // do not send signals to Sensor.
     CLOG(FATAL) << "Internal error: There are no signal handlers.";
   }
 
@@ -192,6 +204,12 @@ void SysdigService::Start() {
 
   inspector_->start_capture();
 
+  // trigger the self check process only once capture has started,
+  // to verify the driver is working correctly. SelfCheckHandlers will
+  // verify the live events.
+  std::thread self_checks_thread(self_checks::start_self_check_process);
+  self_checks_thread.detach();
+
   if (!useEbpf_) {
     // Drop DAC_OVERRIDE capability after opening the device files.
     capng_updatev(CAPNG_DROP, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_DAC_OVERRIDE, -1);
@@ -216,7 +234,8 @@ void SysdigService::Run(const std::atomic<ControlValue>& control) {
     if (!evt) continue;
 
     auto process_start = NowMicros();
-    for (auto& signal_handler : signal_handlers_) {
+    for (auto it = signal_handlers_.begin(); it != signal_handlers_.end(); it++) {
+      auto& signal_handler = *it;
       if (!signal_handler.ShouldHandle(evt)) continue;
       auto result = signal_handler.handler->HandleSignal(evt);
       if (result == SignalHandler::NEEDS_REFRESH) {
@@ -224,6 +243,14 @@ void SysdigService::Run(const std::atomic<ControlValue>& control) {
           continue;
         }
         result = signal_handler.handler->HandleSignal(evt);
+      } else if (result == SignalHandler::FINISHED) {
+        // This signal handler has finished processing events,
+        // so remove it from the signal handler list.
+        //
+        // We don't need to update the iterator post-deletion
+        // because we also stop iteration at this point.
+        signal_handlers_.erase(it);
+        break;
       }
     }
 

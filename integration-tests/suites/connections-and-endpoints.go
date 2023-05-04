@@ -34,7 +34,9 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 
 	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"trace","turnOffScrape":false,"scrapeInterval":2}`
 	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
-	s.collector.Env["ROX_ENABLE_AFTERGLOW"] = "0"
+	s.collector.Env["ROX_ENABLE_AFTERGLOW"] = "0"	
+  s.collector.Env["COLLECTION_METHOD"] = "KERNEL_MODULE"
+  
 
 	err := s.collector.Setup()
 	s.Require().NoError(err)
@@ -70,6 +72,7 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 
 	clientCmd := strings.Replace(s.Client.Cmd, "SERVER_IP", s.Server.IP, -1)
 	fmt.Println(clientCmd)
+
 	_, err = s.execContainer(clientName, []string{"/bin/sh", "-c", clientCmd})
 	s.Require().NoError(err)
 	time.Sleep(6 * time.Second)
@@ -137,7 +140,6 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 	} else {
 		s.Require().Error(err)
 	}
-
 }
 
 func endpointComparison(endpoint1 common.EndpointInfo, endpoint2 common.EndpointInfo) bool {

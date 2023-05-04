@@ -25,6 +25,9 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <fstream>
 
+#include <bpf/libbpf.h>
+#include <linux/bpf.h>
+
 #include "Logging.h"
 
 namespace collector {
@@ -177,6 +180,72 @@ bool HostInfo::IsRHEL76() {
 bool HostInfo::HasEBPFSupport() {
   auto kernel = GetKernelVersion();
   return collector::hasEBPFSupport(kernel, GetOSID());
+}
+
+bool HostInfo::HasBTFSymbols() {
+  // This list is taken from libbpf
+  const char* locations[] = {
+      /* try canonical vmlinux BTF through sysfs first */
+      "/sys/kernel/btf/vmlinux",
+      /* fall back to trying to find vmlinux on disk otherwise */
+      "/boot/vmlinux-%1$s",
+      "/lib/modules/%1$s/vmlinux-%1$s",
+      "/lib/modules/%1$s/build/vmlinux",
+      "/usr/lib/modules/%1$s/kernel/vmlinux",
+      "/usr/lib/debug/boot/vmlinux-%1$s",
+      "/usr/lib/debug/boot/vmlinux-%1$s.debug",
+      "/usr/lib/debug/lib/modules/%1$s/vmlinux",
+      0};
+
+  char path[PATH_MAX + 1];
+  const char* const* location;
+
+  for (location = locations; *location; location++) {
+    snprintf(path, PATH_MAX, *location, kernel_version_.release.c_str());
+    std::string host_path = GetHostPath(path);
+
+    if (faccessat(AT_FDCWD, host_path.c_str(), R_OK, AT_EACCESS) == 0) {
+      CLOG(DEBUG) << "BTF symbols found in " << host_path;
+      return true;
+
+    } else {
+      if (errno == ENOTDIR || errno == ENOENT) {
+        CLOG(DEBUG) << host_path << " does not exist";
+      } else {
+        CLOG(WARNING) << "Unable to access " << host_path << ": " << StrError();
+      }
+    }
+  }
+
+  CLOG(DEBUG) << "Unable to find BTF symbols in any of the usual locations.";
+
+  return false;
+}
+
+bool HostInfo::HasBPFRingBufferSupport() {
+  int res;
+
+  res = libbpf_probe_bpf_map_type(BPF_MAP_TYPE_RINGBUF, NULL);
+
+  if (res < 0) {
+    CLOG(WARNING) << "Unable to check for the BPF RingBuffer availability. "
+                  << "Assuming it is available.";
+  }
+
+  return res != 0;
+}
+
+bool HostInfo::HasBPFTracingSupport() {
+  int res;
+
+  res = libbpf_probe_bpf_prog_type(BPF_PROG_TYPE_TRACING, NULL);
+
+  if (res < 0) {
+    CLOG(WARNING) << "Unable to check for the BPF tracepoint program type support. "
+                  << "Assuming it is available.";
+  }
+
+  return res != 0;
 }
 
 bool HostInfo::IsUEFI() {

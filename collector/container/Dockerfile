@@ -26,6 +26,7 @@ COPY container/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY LICENSE-kernel-modules.txt /kernel-modules/LICENSE
 COPY container/libs/libsinsp-wrapper.so /usr/local/lib/
 COPY container/bin/collector /usr/local/bin/
+COPY container/bin/self-checks /usr/local/bin/self-checks
 
 COPY container/${BUILD_TYPE}/final-step.sh /
 
