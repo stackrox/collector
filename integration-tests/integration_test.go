@@ -406,49 +406,48 @@ func TestConnectionsAndEndpointsUDPNoFork(t *testing.T) {
 	suite.Run(t, mixedHighLowPorts)
 }
 
-// TODO Investigate why no connection is reported here
-//  func TestConnectionsAndEndpointsUDPRecvfrom(t *testing.T) {
-//  	socatTest := &suites.ConnectionsAndEndpointsTestSuite{
-//  		IntegrationTestSuiteBase: suites.IntegrationTestSuiteBase{},
-//  		Server: suites.Container{
-//  			Name: "socat-server-0",
-//  			Cmd:  "socat -d -d -v UDP4-RECVFROM:5143,fork - &> /socat-log.txt &",
-//  			ExpectedNetwork: []common.NetworkInfo{
-//  				{
-//  					LocalAddress:   "",
-//  					RemoteAddress:  "",
-//  					Role:           "ROLE_SERVER",
-//  					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-//  					CloseTimestamp: "(timestamp: nil Timestamp)",
-//  				},
-//  			},
-//  			// TODO UDP listening endpoints should be reported
-//  			ExpectedEndpoints: nil,
-//  		},
-//  		Client: suites.Container{
-//  			Name: "socat-client-0",
-//  			Cmd:  "echo hello | socat -d -d -v - UDP4-DATAGRAM:SERVER_IP:5143 &> /socat-log.txt",
-//  			ExpectedNetwork: []common.NetworkInfo{
-//  				{
-//  					LocalAddress:   "",
-//  					RemoteAddress:  "",
-//  					Role:           "ROLE_CLIENT",
-//  					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-//  					CloseTimestamp: "(timestamp: nil Timestamp)",
-//  				},
-//  			},
-//  			ExpectedEndpoints: []common.EndpointInfo{
-//  				{
-//  					Protocol: "L4_PROTOCOL_UDP",
-//  					Address: &common.ListenAddress{
-//  						AddressData: `"\000\000\000\001"`,
-//  						Port:        5143,
-//  						IpNetwork:   `"\000\000\000\000 " `,
-//  					},
-//  				},
-//  			},
-//  		},
-//  	}
-//
-//  	suite.Run(t, socatTest)
-//  }
+func TestConnectionsAndEndpointsUDPRecvfrom(t *testing.T) {
+	socatTest := &suites.ConnectionsAndEndpointsTestSuite{
+		IntegrationTestSuiteBase: suites.IntegrationTestSuiteBase{},
+		Server: suites.Container{
+			Name: "socat-server-0",
+			Cmd:  "socat -d -d -v UDP4-RECVFROM:5143,fork - &> /socat-log.txt &",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   "",
+					RemoteAddress:  "",
+					Role:           "ROLE_SERVER",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
+			// TODO UDP listening endpoints should be reported
+			ExpectedEndpoints: nil,
+		},
+		Client: suites.Container{
+			Name: "socat-client-0",
+			Cmd:  "echo hello | socat -d -d -v - UDP4-DATAGRAM:SERVER_IP:5143 &> /socat-log.txt",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   "",
+					RemoteAddress:  "",
+					Role:           "ROLE_CLIENT",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
+			ExpectedEndpoints: []common.EndpointInfo{
+				{
+					Protocol: "L4_PROTOCOL_UDP",
+					Address: &common.ListenAddress{
+						AddressData: `"\000\000\000\001"`,
+						Port:        5143,
+						IpNetwork:   `"\000\000\000\000 " `,
+					},
+				},
+			},
+		},
+	}
+
+	suite.Run(t, socatTest)
+}
