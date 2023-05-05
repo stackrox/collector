@@ -40,7 +40,7 @@ archive_dockerized() {
         cp bpf/*.c bpf/*.h bpf/Makefile "$source_archive"/bpf
         if [[ -d "./collector-probe" ]]; then
             mkdir "$source_archive"/collector-probe
-            cp collector-probe/*.c collector-probe/Makefile "$source_archive"/collector-probe
+            cp collector-probe/*.c collector-probe/*.h collector-probe/Makefile "$source_archive"/collector-probe
         fi
         echo "Driver source archive - $source_archive"
         ls -alh "$source_archive"
@@ -100,12 +100,13 @@ if [[ -d "${LEGACY_DIR}/kernel-modules/probe" ]]; then
     cp "${LEGACY_DIR}/kernel-modules/probe/collector_probe.c" "${DRIVER_SCRATCH}/driver/collector-probe/collector_probe.c"
     a=$PWD
     cd "${LEGACY_DIR}/kernel-modules/probe"
-    echo "KRC - prepare-src"
+    echo "KRC - prepare-src: ${LEGACY_DIR}/kernel-modules/probe"
     ls -lA
+    cd $a
     echo "KRC - end"
     if [[ -e "${LEGACY_DIR}/kernel-modules/probe/collector_probe.h" ]]; then
         cp "${LEGACY_DIR}/kernel-modules/probe/collector_probe.h" "${DRIVER_SCRATCH}/driver/collector-probe/collector_probe.h"
-        echo "KRC copied probe:"
+        echo "KRC copied probe: ${DRIVER_SCRATCH}/driver/collector-probe"
         ls -lA "${DRIVER_SCRATCH}/driver/collector-probe"
     fi            
 fi
