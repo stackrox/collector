@@ -102,12 +102,11 @@ if [[ -d "${LEGACY_DIR}/kernel-modules/probe" ]]; then
     cd "${LEGACY_DIR}/kernel-modules/probe"
     echo "KRC - prepare-src"
     ls -lA
-    git status
     echo "KRC - end"
     if [[ -e "${LEGACY_DIR}/kernel-modules/probe/collector_probe.h" ]]; then
         cp "${LEGACY_DIR}/kernel-modules/probe/collector_probe.h" "${DRIVER_SCRATCH}/driver/collector-probe/collector_probe.h"
         echo "KRC copied probe:"
-        ls "${DRIVER_SCRATCH}/driver/collector-probe"
+        ls -lA "${DRIVER_SCRATCH}/driver/collector-probe"
     fi            
 fi
 
