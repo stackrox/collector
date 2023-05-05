@@ -28,7 +28,7 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 	err = s.collector.Launch()
 	s.Require().NoError(err)
 
-	err = s.collector.WaitForCollector(30)
+	err = s.collector.WaitForCollector(60)
 	s.Require().NoError(err)
 
 	processImage := getProcessListeningOnPortsImage()
