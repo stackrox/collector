@@ -140,16 +140,6 @@ bool SysdigService::FilterEvent(sinsp_evt* event) {
     }
   }
 
-  if (!useEbpf_) {
-    if (cache_status == BLOCKED_USERSPACE && event->get_type() != PPME_PROCEXIT_1_E) {
-      if (!inspector_->ioctl(0, PPM_IOCTL_EXCLUDE_NS_OF_PID, reinterpret_cast<void*>(tinfo->m_pid))) {
-        CLOG(WARNING) << "Failed to exclude namespace for pid " << tinfo->m_pid << ": " << inspector_->getlasterr();
-      } else {
-        cache_status = BLOCKED_KERNEL;
-      }
-    }
-  }
-
   return res;
 }
 
@@ -169,7 +159,7 @@ sinsp_evt* SysdigService::GetNext() {
   // from the eBPF probe. This can occur when using sys_enter and sys_exit
   // tracepoints rather than a targeted approach, which we currently only do
   // on RHEL7 with backported eBPF
-  if (useEbpf_ && host_info.IsRHEL76() && !global_event_filter_[event->get_type()]) {
+  if (host_info.IsRHEL76() && !global_event_filter_[event->get_type()]) {
     return nullptr;
   }
 
@@ -204,14 +194,6 @@ void SysdigService::Start() {
   // verify the live events.
   std::thread self_checks_thread(self_checks::start_self_check_process);
   self_checks_thread.detach();
-
-  if (!useEbpf_) {
-    // Drop DAC_OVERRIDE capability after opening the device files.
-    capng_updatev(CAPNG_DROP, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_DAC_OVERRIDE, -1);
-    if (capng_apply(CAPNG_SELECT_BOTH) != 0) {
-      CLOG(WARNING) << "Failed to drop DAC_OVERRIDE capability: " << StrError();
-    }
-  }
 
   std::lock_guard<std::mutex> running_lock(running_mutex_);
   running_ = true;
@@ -330,17 +312,6 @@ void SysdigService::SetChisel(const std::string& chisel) {
   chisel_.reset(new_chisel(inspector_.get(), chisel, false));
   chisel_->on_init();
   chisel_cache_.clear();
-
-  if (!useEbpf_) {
-    std::lock_guard<std::mutex> lock(running_mutex_);
-    if (running_) {
-      // Reset kernel-level exclusion table.
-      if (!inspector_->ioctl(0, PPM_IOCTL_EXCLUDE_NS_OF_PID, 0)) {
-        CLOG(WARNING)
-            << "Failed to reset the kernel-level PID namespace exclusion table via ioctl(): " << inspector_->getlasterr();
-      }
-    }
-  }
 }
 
 void SysdigService::AddSignalHandler(std::unique_ptr<SignalHandler> signal_handler) {
