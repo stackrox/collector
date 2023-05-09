@@ -95,14 +95,9 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
 
   std::unique_ptr<IKernelDriver> driver;
   if (candidate.GetCollectionMethod() == EBPF) {
-    useEbpf_ = true;
     driver = std::make_unique<KernelDriverEBPF>(KernelDriverEBPF());
   } else if (candidate.GetCollectionMethod() == CORE_BPF) {
-    useEbpf_ = true;
     driver = std::make_unique<KernelDriverCOREEBPF>(KernelDriverCOREEBPF());
-  } else {
-    useEbpf_ = false;
-    driver = std::make_unique<KernelDriverModule>(KernelDriverModule());
   }
 
   if (!driver->Setup(config, *inspector_)) {
