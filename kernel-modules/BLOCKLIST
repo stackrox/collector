@@ -60,10 +60,6 @@
 4.18.0-372.9.1.rt7.166.el8.x86_64 * mod
 # We no longer support docker desktop as a dev environment
 *-dockerdesktop-*
-# Oracle Linux kernel modules require `libdtrace-ctf`,
-# which is unavailable in UBI/RHEL, we could add a
-# dedicated builder if need be
-*.el7uek.* * mod
 6.2.* 2.3.0 *
 6.2.* 2.2.0 *
 6.2.* 2.1.0 *
