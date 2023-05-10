@@ -154,7 +154,8 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
       } else if (cm == "core_bpf") {
         collection_method_ = CORE_BPF;
       } else {
-        CLOG(FATAL) << "Invalid collection-method: " << cm;
+        CLOG(WARNING) << "Invalid collection-method (" << cm << "), using eBPF";
+        collection_method_ = EBPF;
       }
 
       CLOG(INFO) << "User configured collection-method=" << cm;
