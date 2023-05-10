@@ -44,10 +44,9 @@ class NetworkSignalHandler final : public SignalHandler {
   Result HandleSignal(sinsp_evt* evt) override;
   std::vector<std::string> GetRelevantEvents() override;
   bool Stop() override;
-
- private:
   std::optional<Connection> GetConnection(sinsp_evt* evt);
 
+ private:
   SysdigEventExtractor event_extractor_;
   std::shared_ptr<ConnectionTracker> conn_tracker_;
   SysdigStats* stats_;
