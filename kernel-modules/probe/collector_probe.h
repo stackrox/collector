@@ -1,11 +1,24 @@
 #ifndef __COLLECTOR_PROBE_H
 #define __COLLECTOR_PROBE_H
 
-/* The structs below correspond to the syscall tracepoint format found 
- * in /sys/kernel/tracing/events/syscalls
+/* The structs below have been manually written to their corresponding syscall
+ * tracepoint format found in /sys/kernel/tracing/events/syscalls
  * example: cat /sys/kernel/tracing/events/syscalls/sys_enter_setgid/format
+ *
  * Note: will rely on implicit padding added by the compiler to ensure fields 
  * start at correct offset, otherwise, will explicitly define a pad.
+ * example: sys_enter_setgid gid field is defined as long so that it will be aligned
+ * on a QWORD boundary.  If defined as int the necessary padding between __syscall_nr
+ * and gid will not be added by compiler.
+ * name: sys_enter_setgid
+ * ID: 185
+ * format:
+ *	field:unsigned short common_type;	offset:0;	size:2;	signed:0;
+ *	field:unsigned char common_flags;	offset:2;	size:1;	signed:0;
+ *	field:unsigned char common_preempt_count;	offset:3;	size:1;	signed:0;
+ *	field:int common_pid;	offset:4;	size:4;	signed:1;
+ *	field:int __syscall_nr;	offset:8;	size:4;	signed:1;
+ *	field:gid_t gid;	offset:16;	size:8;	signed:0;
  */
 struct sys_enter_accept4_args {
   __u64 pad;
