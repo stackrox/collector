@@ -12,6 +12,10 @@ on:
 permissions:
   pull-requests: write
 
+concurrency:
+  group: ${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   init:
     uses: ./.github/workflows/init.yml
