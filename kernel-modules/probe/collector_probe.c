@@ -12,17 +12,6 @@
 #  undef BPF_SUPPORTS_RAW_TRACEPOINTS
 #endif
 
-// this if statement relies on short circuiting to simplify the definition
-// of the tracepoints. i.e. RHEL_RELEASE_VERSION will not be defined unless
-// RHEL_RELEASE_CODE is defined.
-// This enables the direct-attached BPF probes to specific syscalls.
-// Note that this needs to be defined before including Falco libs includes
-// as there are syscall-specific vs. general syscall enter/exit format/structure
-// alignments necessary in Falco.
-#if !defined(RHEL_RELEASE_CODE) || RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(8, 0)
-#  define USE_COLLECTOR_CUSTOM_PROBES
-#endif
-
 #include <generated/utsrelease.h>
 #include <linux/sched.h>
 #include <sys/syscall.h>
@@ -264,7 +253,15 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
     drop_flags = sc_evt->flags;
   }
 
+#ifdef __s390x__
   syscall_to_enter_args(id, ctx, &stack_ctx);
+#else
+  evt_type = sc_evt->enter_event_type;
+  drop_flags = sc_evt->flags;
+  // To satisfy some verifier requiremnts in later parts of the falco plumbing/fillers,
+  // it is necessary to copy the context onto the stack.
+  memcpy(stack_ctx.args, _READ(ctx->args), sizeof(unsigned long) * NUM_SYS_ENTER_ARGS);
+#endif
 
   // stashing the args will copy it into a BPF map for later
   // processing. This is a required step for the enter probe,
