@@ -43,6 +43,7 @@ class KernelDriverEBPF : public IKernelDriver {
     auto syscall_names = config.Syscalls();
     std::unordered_set<std::string> syscall_set(syscall_names.begin(), syscall_names.end());
     auto ppm_sc = libsinsp::events::sc_names_to_sc_set(syscall_set);
+    ppm_sc.insert(PPM_SC_SCHED_PROCESS_EXIT);
 
     try {
       inspector.open_bpf(SysdigService::kProbePath, DEFAULT_DRIVER_BUFFER_BYTES_DIM, ppm_sc);
@@ -64,6 +65,7 @@ class KernelDriverCOREEBPF : public IKernelDriver {
     auto syscall_names = config.Syscalls();
     std::unordered_set<std::string> syscall_set(syscall_names.begin(), syscall_names.end());
     auto ppm_sc = libsinsp::events::sc_names_to_sc_set(syscall_set);
+    ppm_sc.insert(PPM_SC_SCHED_PROCESS_EXIT);
 
     try {
       inspector.open_modern_bpf(DEFAULT_DRIVER_BUFFER_BYTES_DIM,
