@@ -43,6 +43,8 @@ EventMap<Modifier> modifiers = {
         {"shutdown<", Modifier::REMOVE},
         {"connect<", Modifier::ADD},
         {"accept<", Modifier::ADD},
+        {"bind<", Modifier::ADD},
+        {"bind>", Modifier::ADD},
     },
     Modifier::INVALID,
 };
@@ -58,6 +60,9 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
 
   auto* fd_info = evt->get_fd_info();
   if (!fd_info) return std::nullopt;
+  CLOG(INFO) << "Got fd_info";
+  CLOG(INFO) << "is_role_server= " << fd_info->is_role_server();
+  CLOG(INFO) << "is_role_client= " << fd_info->is_role_client();
 
   bool is_server = fd_info->is_role_server();
   if (!is_server && !fd_info->is_role_client()) {
@@ -68,29 +73,38 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
   switch (fd_info->get_l4proto()) {
     case SCAP_L4_TCP:
       l4proto = L4Proto::TCP;
+      CLOG(INFO) << "TCP";
       break;
     case SCAP_L4_UDP:
       l4proto = L4Proto::UDP;
+      CLOG(INFO) << "UDP";
       break;
     default:
-      return std::nullopt;
+      l4proto = L4Proto::UDP;
+      // return std::nullopt;
+      CLOG(INFO) << "Unable to determine l4protocol type";
   }
+
+  CLOG(INFO) << "type= " << evt->get_type();
 
   Endpoint client, server;
   switch (fd_info->m_type) {
     case SCAP_FD_IPV4_SOCK: {
+      CLOG(INFO) << "ipv4";
       const auto& ipv4_fields = fd_info->m_sockinfo.m_ipv4info.m_fields;
       client = Endpoint(Address(ipv4_fields.m_sip), ipv4_fields.m_sport);
       server = Endpoint(Address(ipv4_fields.m_dip), ipv4_fields.m_dport);
       break;
     }
     case SCAP_FD_IPV6_SOCK: {
+      CLOG(INFO) << "ipv6";
       const auto& ipv6_fields = fd_info->m_sockinfo.m_ipv6info.m_fields;
       client = Endpoint(Address(ipv6_fields.m_sip.m_b), ipv6_fields.m_sport);
       server = Endpoint(Address(ipv6_fields.m_dip.m_b), ipv6_fields.m_dport);
       break;
     }
     default:
+      CLOG(INFO) << "Unable to determine m_type";
       return std::nullopt;
   }
 
@@ -98,12 +112,17 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
   const Endpoint* remote = is_server ? &client : &server;
 
   const std::string* container_id = event_extractor_.get_container_id(evt);
-  if (!container_id) return std::nullopt;
+  if (!container_id) {
+    CLOG(INFO) << "Unable to get container id";
+    return std::nullopt;
+  }
   return {Connection(*container_id, *local, *remote, l4proto, is_server)};
 }
 
 SignalHandler::Result NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
   auto modifier = modifiers[evt->get_type()];
+  CLOG(INFO) << "evt->get_type()= " << evt->get_type();
+  // CLOG(INFO) << "modifier= " << modifier;
   if (modifier == Modifier::INVALID) return SignalHandler::IGNORED;
 
   auto result = GetConnection(evt);
@@ -116,7 +135,9 @@ SignalHandler::Result NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
 }
 
 std::vector<std::string> NetworkSignalHandler::GetRelevantEvents() {
-  return {"close<", "shutdown<", "connect<", "accept<"};
+  return {"close<", "shutdown<", "connect<", "accept<", "bind<", "bind>"};
+  // return {"close<", "shutdown<", "connect<", "accept<", "bind<"};
+  // return {"close<", "shutdown<", "connect<", "accept<"};
 }
 
 bool NetworkSignalHandler::Stop() {
