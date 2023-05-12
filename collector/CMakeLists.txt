@@ -30,6 +30,7 @@ include_directories(${FALCO_DIR}/userspace)
 include_directories(${FALCO_DIR}/userspace/libscap)
 include_directories(${FALCO_DIR}/userspace/libsinsp)
 include_directories(${FALCO_DIR}/userspace/chisel)
+include_directories(${FALCO_DIR}/userspace/libsinsp/test)
 include_directories(${PROJECT_BINARY_DIR}/EXCLUDE_FROM_DEFAULT_BUILD/common)
 include_directories(/usr/local/include)
 include_directories(/usr/local/include/tbb)
@@ -79,6 +80,7 @@ add_executable(self-checks self-checks.cpp)
 enable_testing()
 
 # Unit Tests
+#add_executable(test_utils ${FALCO_DIR}/userspace/libsinsp/test/test_utils.cpp)
 file(GLOB TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/test/*.cpp)
 add_executable(runUnitTests ${TEST_SRC_FILES})
 
@@ -86,7 +88,7 @@ if(NOT DEFINED ENV{DISABLE_PROFILING} AND (NOT DEFINED ENV{USE_VALGRIND} OR NOT 
 	target_link_libraries(runUnitTests profiler tcmalloc)
 endif()
 
-target_link_libraries(runUnitTests collector_lib)
+target_link_libraries(runUnitTests collector_lib libprometheus-cpp-pull.a libprometheus-cpp-core.a)
 
 if(DEFINED ENV{WITH_RHEL8_RPMS})
 	target_link_libraries(runUnitTests gtest gtest_main gmock gmock_main)
@@ -105,7 +107,7 @@ set(WITH_CHISEL ON CACHE BOOL "Include chisel implementation" FORCE)
 set(BUILD_LIBSCAP_GVISOR OFF CACHE BOOL "Do not build gVisor support" FORCE)
 
 # Turn OFF falco's unit tests and examples
-set(CREATE_TEST_TARGETS OFF CACHE BOOL "Enable make-targets for unit testing" FORCE)
+#set(CREATE_TEST_TARGETS OFF CACHE BOOL "Enable make-targets for unit testing" FORCE)
 set(BUILD_LIBSCAP_EXAMPLES OFF CACHE BOOL "Build libscap examples" FORCE)
 set(BUILD_LIBSINSP_EXAMPLES OFF CACHE BOOL "Build libsinsp examples" FORCE)
 
