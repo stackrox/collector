@@ -253,15 +253,7 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
     drop_flags = sc_evt->flags;
   }
 
-#ifdef __s390x__
   syscall_to_enter_args(id, ctx, &stack_ctx);
-#else
-  evt_type = sc_evt->enter_event_type;
-  drop_flags = sc_evt->flags;
-  // To satisfy some verifier requiremnts in later parts of the falco plumbing/fillers,
-  // it is necessary to copy the context onto the stack.
-  memcpy(stack_ctx.args, _READ(ctx->args), sizeof(unsigned long) * NUM_SYS_ENTER_ARGS);
-#endif
 
   // stashing the args will copy it into a BPF map for later
   // processing. This is a required step for the enter probe,
