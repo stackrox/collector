@@ -44,7 +44,7 @@ class CollectorConfig {
   static constexpr bool kUseChiselCache = true;
   static constexpr bool kTurnOffScrape = false;
   static constexpr int kScrapeInterval = 30;
-  static constexpr CollectionMethod kCollectionMethod = KERNEL_MODULE;
+  static constexpr CollectionMethod kCollectionMethod = EBPF;
   static constexpr const char* kSyscalls[] = {
       "accept",
       "chdir",
@@ -79,7 +79,6 @@ function on_init()
 end
 )";
   static const UnorderedSet<L4ProtoPortPair> kIgnoredL4ProtoPortPairs;
-  static constexpr bool kForceKernelModules = false;
   static constexpr bool kEnableProcessesListeningOnPorts = true;
 
   CollectorConfig() = delete;
@@ -103,7 +102,6 @@ end
   bool DisableNetworkFlows() const { return disable_network_flows_; }
   const UnorderedSet<L4ProtoPortPair>& IgnoredL4ProtoPortPairs() const { return ignored_l4proto_port_pairs_; }
   bool CurlVerbose() const { return curl_verbose_; }
-  virtual bool ForceKernelModules() const { return force_kernel_modules_; }
   bool EnableAfterglow() const { return enable_afterglow_; }
   bool IsCoreDumpEnabled() const;
   Json::Value TLSConfiguration() const { return tls_config_; }
@@ -124,7 +122,6 @@ end
   bool scrape_listen_endpoints_ = false;
   UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
   bool curl_verbose_ = false;
-  bool force_kernel_modules_ = false;
 
   HostConfig host_config_;
   int64_t afterglow_period_micros_ = 300000000;  // 5 minutes in microseconds

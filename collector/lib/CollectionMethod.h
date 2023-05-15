@@ -28,7 +28,6 @@ namespace collector {
 enum CollectionMethod {
   EBPF = 0,
   CORE_BPF,
-  KERNEL_MODULE,
 };
 }  // namespace collector
 

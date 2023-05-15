@@ -106,7 +106,6 @@ class SysdigService : public Sysdig {
 
   mutable std::mutex running_mutex_;
   bool running_ = false;
-  bool useEbpf_ = false;
 
   void ServePendingProcessRequests();
   mutable std::mutex process_requests_mutex_;
