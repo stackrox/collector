@@ -6,6 +6,7 @@ RUN yum -y update && yum -y install yum-utils && \
     gcc \
     gcc-c++ \
     autoconf \
+    file \
     make \
     cmake \
     libdtrace-ctf \
