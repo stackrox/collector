@@ -85,7 +85,7 @@ the host network in privileged mode. Collector in turn will try to download
 probes for your version of Linux kernel and start listening to events happening
 inside the container.
 
-The image `quay.io/rhacs-eng/grpc-server` can be built manually by running 
+The image `quay.io/rhacs-eng/grpc-server` can be built manually by running
 `make mock-grpc-server-image` in the `https://github.com/stackrox/stackrox/`
 repository.
 
@@ -145,7 +145,7 @@ Even though development containers is a supported feature of `Docker for Desktop
 ### Building collector image(s) from the command-line
 - `make image` will create the Red Hat based collector image.
 - `make image-dev` will create a collector image based on CentOS Stream, the package manager in this image is available so additional developer tools can be installed.
-- `make image-dev-full` will extend the `image-dev` target and also compile and embed the kernel module and eBPF probes in the final image, making it easier to test changes in these components.
+- `make image-dev-full` will extend the `image-dev` target and also compile and embed the eBPF probes in the final image, making it easier to test changes in these components.
 
 ### Setting up git hooks
 

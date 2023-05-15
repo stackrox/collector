@@ -89,7 +89,7 @@ class DockerDesktopHeuristic : public Heuristic {
     }
 
     if (config.UseEbpf()) {
-      CLOG(FATAL) << host.GetDistro() << " does not support eBPF, switching to kernel module based collection.";
+      CLOG(FATAL) << host.GetDistro() << " does not support eBPF.";
     }
   }
 };
