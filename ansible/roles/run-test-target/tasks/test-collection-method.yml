@@ -19,6 +19,7 @@
     shell: "make -C {{ collector_root }}/integration-tests {{ collector_test }}"
     environment:
       COLLECTION_METHOD: "{{ collection_method }}"
+      COLLECTOR_LOG_LEVEL: trace
       REMOTE_HOST_TYPE: ssh
       REMOTE_HOST_ADDRESS: "{{ ansible_host }}"
       REMOTE_HOST_USER: "{{ ansible_user }}"
