@@ -19,6 +19,7 @@ virtual_machines:
   rhel:
     project: rhel-cloud
     families:
+      - rhel-7
       - rhel-8
       - rhel-9
 
