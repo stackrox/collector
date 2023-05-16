@@ -5,7 +5,7 @@
  * tracepoint format found in /sys/kernel/tracing/events/syscalls
  * example: cat /sys/kernel/tracing/events/syscalls/sys_enter_setgid/format
  *
- * Note: will rely on implicit padding added by the compiler to ensure fields 
+ * Note: will rely on implicit padding added by the compiler to ensure fields
  * start at correct offset, otherwise, will explicitly define a pad.
  * example: sys_enter_setgid gid field is defined as long so that it will be aligned
  * on a QWORD boundary.  If defined as int the necessary padding between __syscall_nr
