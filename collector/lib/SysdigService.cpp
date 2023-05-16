@@ -90,6 +90,7 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
 
     if (logging::GetLogLevel() == logging::LogLevel::TRACE) {
       inspector_->set_log_stderr();
+      inspector_->set_min_log_severity(sinsp_logger::SEV_TRACE);
     }
 
     inspector_->set_import_users(config.ImportUsers());
