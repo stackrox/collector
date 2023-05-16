@@ -44,7 +44,7 @@ class CollectorConfig {
   static constexpr bool kUseChiselCache = true;
   static constexpr bool kTurnOffScrape = false;
   static constexpr int kScrapeInterval = 30;
-  static constexpr CollectionMethod kCollectionMethod = EBPF;
+  static constexpr CollectionMethod kCollectionMethod = CollectionMethod::EBPF;
   static constexpr const char* kSyscalls[] = {
       "accept",
       "chdir",

@@ -21,20 +21,19 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#ifndef COLLECTION_METHOD_H
-#define COLLECTION_METHOD_H
-
-#include <ostream>
+#include "CollectionMethod.h"
 
 namespace collector {
-enum class CollectionMethod : uint8_t {
-  EBPF = 0,
-  CORE_BPF,
 
-};
-
-std::ostream& operator<<(std::ostream& os, CollectionMethod method);
+std::ostream& operator<<(std::ostream& os, CollectionMethod method) {
+  switch (method) {
+    case CollectionMethod::EBPF:
+      return os << "ebpf";
+    case CollectionMethod::CORE_BPF:
+      return os << "core_bpf";
+    default:
+      return os << "unknown(" << static_cast<uint8_t>(method) << ")";
+  }
+}
 
 }  // namespace collector
-
-#endif  // COLLECTION_METHOD_H

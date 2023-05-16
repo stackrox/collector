@@ -145,7 +145,7 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
 }
 
 bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const DriverCandidate& candidate, bool verbose) {
-  if (candidate.GetCollectionMethod() == CORE_BPF) {
+  if (candidate.GetCollectionMethod() == CollectionMethod::CORE_BPF) {
     // for now CO.RE bpf probes are embedded in the collector binary, nothing
     // to do here.
     return true;
@@ -153,7 +153,7 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
 
   std::string expected_path = candidate.GetPath() + "/" + candidate.GetName();
   std::string expected_path_compressed = expected_path + ".gz";
-  std::string module_path = candidate.GetCollectionMethod() == EBPF ? SysdigService::kProbePath : SysdigService::kModulePath;
+  std::string module_path = candidate.GetCollectionMethod() == CollectionMethod::EBPF ? SysdigService::kProbePath : SysdigService::kModulePath;
   struct stat sb;
 
   // first check for an existing compressed kernel object in the

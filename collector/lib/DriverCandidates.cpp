@@ -53,7 +53,7 @@ std::optional<DriverCandidate> getUbuntuBackport(HostInfo& host) {
     if (kernel.version.find(candidate) != std::string::npos) {
       std::string backport = kernel.release + candidate;
       std::string name = driverFullName(backport);
-      return DriverCandidate(std::move(name), EBPF);
+      return DriverCandidate(std::move(name), CollectionMethod::EBPF);
     }
   }
 
@@ -80,7 +80,7 @@ std::optional<DriverCandidate> getGardenLinuxCandidate(HostInfo& host) {
   std::string shortName = kernel.release + "-gl-" + match.str();
   std::string name = driverFullName(shortName);
 
-  return DriverCandidate(name, EBPF);
+  return DriverCandidate(name, CollectionMethod::EBPF);
 }
 
 // The kvm driver for minikube uses a custom kernel built from
@@ -99,7 +99,7 @@ std::optional<DriverCandidate> getMinikubeCandidate(HostInfo& host) {
 
   std::string shortName = kernel.ShortRelease() + "-minikube-" + minikube_version;
   std::string name = driverFullName(shortName);
-  return DriverCandidate(name, EBPF);
+  return DriverCandidate(name, CollectionMethod::EBPF);
 }
 
 // Normalizes this host's release string into something collector can use
@@ -140,24 +140,24 @@ std::string normalizeReleaseString(HostInfo& host) {
 }
 
 DriverCandidate getCoreBpfCandidate() {
-  return DriverCandidate("CO.RE eBPF probe", CORE_BPF, false);
+  return DriverCandidate("CO.RE eBPF probe", CollectionMethod::CORE_BPF, false);
 }
 
 DriverCandidate getHostCandidate(HostInfo& host) {
   std::string hostCandidate = normalizeReleaseString(host);
   std::string hostCandidateFullName = driverFullName(hostCandidate);
 
-  return DriverCandidate(hostCandidateFullName, EBPF);
+  return DriverCandidate(hostCandidateFullName, CollectionMethod::EBPF);
 }
 
 DriverCandidate getUserDriverCandidate(const char* full_name) {
   std::filesystem::path driver_file(full_name);
 
   if (driver_file.is_absolute()) {
-    return DriverCandidate(driver_file.filename(), EBPF, false, driver_file.parent_path());
+    return DriverCandidate(driver_file.filename(), CollectionMethod::EBPF, false, driver_file.parent_path());
   }
 
-  return DriverCandidate(driver_file, EBPF, false);
+  return DriverCandidate(driver_file, CollectionMethod::EBPF, false);
 }
 }  // namespace
 
@@ -170,7 +170,7 @@ std::vector<DriverCandidate> GetKernelCandidates(CollectionMethod cm) {
 
     for (const auto& candidate_name : SplitStringView(sview)) {
       std::string name = driverFullName(candidate_name);
-      candidates.emplace_back(std::move(name), EBPF);
+      candidates.emplace_back(std::move(name), CollectionMethod::EBPF);
     }
 
     return candidates;
@@ -181,7 +181,7 @@ std::vector<DriverCandidate> GetKernelCandidates(CollectionMethod cm) {
     candidates.push_back(getUserDriverCandidate(user_driver));
   }
 
-  if (cm == CORE_BPF) {
+  if (cm == CollectionMethod::CORE_BPF) {
     candidates.push_back(getCoreBpfCandidate());
   }
 

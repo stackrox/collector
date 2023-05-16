@@ -154,12 +154,12 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
 
       CLOG(INFO) << "User configured collection-method=" << cm;
       if (cm == "ebpf") {
-        collection_method_ = EBPF;
+        collection_method_ = CollectionMethod::EBPF;
       } else if (cm == "core_bpf") {
-        collection_method_ = CORE_BPF;
+        collection_method_ = CollectionMethod::CORE_BPF;
       } else {
         CLOG(WARNING) << "Invalid collection-method (" << cm << "), using eBPF";
-        collection_method_ = EBPF;
+        collection_method_ = CollectionMethod::EBPF;
       }
     }
 
@@ -228,7 +228,7 @@ bool CollectorConfig::UseChiselCache() const {
 
 bool CollectorConfig::UseEbpf() const {
   CollectionMethod cm = GetCollectionMethod();
-  return (cm == EBPF || cm == CORE_BPF);
+  return (cm == CollectionMethod::EBPF || cm == CollectionMethod::CORE_BPF);
 }
 
 bool CollectorConfig::TurnOffScrape() const {
