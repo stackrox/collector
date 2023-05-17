@@ -55,6 +55,8 @@ BoolEnvVar set_enable_core_dump("ENABLE_CORE_DUMP", false);
 // If true, add originator process information in NetworkEndpoint
 BoolEnvVar set_processes_listening_on_ports("ROX_PROCESSES_LISTENING_ON_PORT", CollectorConfig::kEnableProcessesListeningOnPorts);
 
+BoolEnvVar core_bpf_hardfail("ROX_COLLECTOR_CORE_BPF_HARDFAIL", true);
+
 }  // namespace
 
 constexpr bool CollectorConfig::kUseChiselCache;
@@ -76,6 +78,7 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   chisel_ = kChisel;
   collection_method_ = kCollectionMethod;
   enable_processes_listening_on_ports_ = set_processes_listening_on_ports.value();
+  core_bpf_hardfail_ = core_bpf_hardfail.value();
 
   for (const auto& syscall : kSyscalls) {
     syscalls_.push_back(syscall);
