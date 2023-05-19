@@ -411,3 +411,99 @@ func TestConnectionsAndEndpointsUDPNoFork(t *testing.T) {
 	}
 	suite.Run(t, mixedHighLowPorts)
 }
+
+func TestConnectionsAndEndpointsUDPPersistent(t *testing.T) {
+	persistentConnection := &suites.ConnectionsAndEndpointsTestSuite{
+		Server: suites.Container{
+			Name: "socat-server-udp-persistent",
+			Cmd:  "socat -d -d -v -u UDP4-LISTEN:40,reuseaddr,fork - &> /socat-log.txt &",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   ":40",
+					RemoteAddress:  "CLIENT_IP",
+					Role:           "ROLE_SERVER",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
+			ExpectedEndpoints: []common.EndpointInfo{
+				{
+					Protocol: "L4_PROTOCOL_UDP",
+					Address: &common.ListenAddress{
+						AddressData: `"\000\000\000\000"`,
+						Port:        40,
+						IpNetwork:   `"\000\000\000\000 " `,
+					},
+				},
+			},
+		},
+		Client: suites.Container{
+			Name: "socat-client-udp-persistent",
+			Cmd:  "while [ true ]; do echo hello; sleep 1; done | socat -d -d -v -u - UDP4:SERVER_IP:40 &> /socat-log.txt &",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   "",
+					RemoteAddress:  "SERVER_IP:40",
+					Role:           "ROLE_CLIENT",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
+			ExpectedEndpoints: nil,
+		},
+	}
+	suite.Run(t, persistentConnection)
+}
+
+func TestConnectionsAndEndpointsUDPPersistent2(t *testing.T) {
+	persistentConnection := &suites.ConnectionsAndEndpointsTestSuite{
+		Server: suites.Container{
+			Name: "socat-server-udp-persistent",
+			Cmd:  "socat -d -d -v -u UDP4-LISTEN:40,reuseaddr,fork,bind=SERVER_IP - &> /socat-log.txt &",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   ":40",
+					RemoteAddress:  "CLIENT_IP",
+					Role:           "ROLE_SERVER",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
+			ExpectedEndpoints: []common.EndpointInfo{
+				{
+					Protocol: "L4_PROTOCOL_UDP",
+					Address: &common.ListenAddress{
+						AddressData: `"\000\000\000\000"`,
+						Port:        40,
+						IpNetwork:   `"\000\000\000\000 " `,
+					},
+				},
+			},
+		},
+		Client: suites.Container{
+			Name: "socat-client-udp-persistent",
+			Cmd:  "while [ true ]; do echo hello; sleep 1; done | socat -d -d -v -u - UDP4:SERVER_IP:40 &> /socat-log.txt &",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   "",
+					RemoteAddress:  "SERVER_IP:40",
+					Role:           "ROLE_CLIENT",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
+			ExpectedEndpoints: nil,
+		},
+	}
+	suite.Run(t, persistentConnection)
+}
+
+func TestUdp(t *testing.T) {
+	udpTestSuite := &suites.UdpTestSuite{CollectUdp: true}
+	suite.Run(t, udpTestSuite)
+}
+
+func TestUdpDisabled(t *testing.T) {
+	udpTestSuite := &suites.UdpTestSuite{CollectUdp: false}
+	suite.Run(t, udpTestSuite)
+}

@@ -55,9 +55,9 @@ size_t Hash(const L4ProtoPortPair& pp) {
 
 std::ostream& operator<<(std::ostream& os, const ContainerEndpoint& container_endpoint) {
   if (container_endpoint.originator()) {
-    return os << container_endpoint.container() << ": " << container_endpoint.endpoint() << ": " << *container_endpoint.originator();
+    return os << container_endpoint.container() << ": " << container_endpoint.endpoint() << ": " << container_endpoint.l4proto() << ": " << *container_endpoint.originator();
   } else {
-    return os << container_endpoint.container() << ": " << container_endpoint.endpoint();
+    return os << container_endpoint.container() << ": " << container_endpoint.endpoint() << ": " << container_endpoint.l4proto();
   }
 }
 

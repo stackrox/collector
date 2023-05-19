@@ -38,12 +38,13 @@ BoolEnvVar scrape_endpoints("SCRAPE_ENDPOINTS", true);
 
 int main(int argc, char** argv) {
   const char* proc_dir = "/proc";
+  bool collect_udp = true;
 
   if (argc > 1) {
     proc_dir = argv[1];
   }
 
-  ConnScraper scraper(proc_dir);
+  ConnScraper scraper(proc_dir, collect_udp);
   std::vector<Connection> conns;
   std::vector<ContainerEndpoint> endpoints;
 

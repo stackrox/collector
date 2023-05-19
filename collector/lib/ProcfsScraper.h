@@ -42,15 +42,15 @@ class IConnScraper {
 // ConnScraper is a class that allows scraping a `/proc`-like directory structure for active network connections.
 class ConnScraper : public IConnScraper {
  public:
-  explicit ConnScraper(std::string proc_path, std::shared_ptr<ProcessStore> process_store = 0)
-      : proc_path_(std::move(proc_path)),
-        process_store_(process_store) {}
+  explicit ConnScraper(std::string proc_path, bool are_udp_listening_endpoints_collected, std::shared_ptr<ProcessStore> process_store = 0)
+      : proc_path_(std::move(proc_path)), are_udp_listening_endpoints_collected_(are_udp_listening_endpoints_collected), process_store_(process_store) {}
 
   // Scrape returns a snapshot of all active network connections in the given vector.
   bool Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints);
 
  private:
   std::string proc_path_;
+  bool are_udp_listening_endpoints_collected_;
   std::shared_ptr<ProcessStore> process_store_;
 };
 

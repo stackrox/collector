@@ -94,7 +94,7 @@ void CollectorService::RunForever() {
       if (config_.IsProcessesListeningOnPortsEnabled()) {
         process_store = std::make_shared<ProcessStore>(&sysdig_);
       }
-      std::shared_ptr<IConnScraper> conn_scraper = std::make_shared<ConnScraper>(config_.HostProc(), process_store);
+      std::shared_ptr<IConnScraper> conn_scraper = std::make_shared<ConnScraper>(config_.HostProc(), config_.AreUdpListeningEndpointsCollected(), process_store);
       conn_tracker = std::make_shared<ConnectionTracker>();
       UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs(config_.IgnoredL4ProtoPortPairs());
       conn_tracker->UpdateIgnoredL4ProtoPortPairs(std::move(ignored_l4proto_port_pairs));

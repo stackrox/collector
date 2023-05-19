@@ -56,6 +56,8 @@ BoolEnvVar set_enable_core_dump("ENABLE_CORE_DUMP", false);
 BoolEnvVar set_processes_listening_on_ports("ROX_PROCESSES_LISTENING_ON_PORT", CollectorConfig::kEnableProcessesListeningOnPorts);
 
 BoolEnvVar core_bpf_hardfail("ROX_COLLECTOR_CORE_BPF_HARDFAIL", true);
+// If true, UDP listening endpoints will be reported
+BoolEnvVar set_are_udp_listening_endpoints_collected("ROX_COLLECT_UDP_LISTENING_ENDPOINTS", false);
 
 BoolEnvVar set_import_users("ROX_COLLECTOR_SET_IMPORT_USERS", false);
 
@@ -189,6 +191,13 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
 
   if (set_enable_core_dump) {
     enable_core_dump_ = true;
+  }
+
+  if (set_are_udp_listening_endpoints_collected) {
+    are_udp_listening_endpoints_collected_ = true;
+    CLOG(INFO) << "Collecting UDP listening endpoints";
+  } else {
+    CLOG(INFO) << "Not collecting UDP listening endpoints";
   }
 
   HandleAfterglowEnvVars();
