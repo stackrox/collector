@@ -88,7 +88,8 @@ if(NOT DEFINED ENV{DISABLE_PROFILING} AND (NOT DEFINED ENV{USE_VALGRIND} OR NOT 
 	target_link_libraries(runUnitTests profiler tcmalloc)
 endif()
 
-target_link_libraries(runUnitTests collector_lib libprometheus-cpp-pull.a libprometheus-cpp-core.a)
+target_link_libraries(runUnitTests collector_lib)
+#target_link_libraries(runUnitTests collector_lib libprometheus-cpp-pull.a libprometheus-cpp-core.a)
 
 if(DEFINED ENV{WITH_RHEL8_RPMS})
 	target_link_libraries(runUnitTests gtest gtest_main gmock gmock_main)
