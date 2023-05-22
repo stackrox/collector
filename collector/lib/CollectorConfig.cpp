@@ -152,6 +152,7 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
     if (args->GetCollectionMethod().length() > 0) {
       const auto& cm = args->GetCollectionMethod();
 
+      CLOG(INFO) << "User configured collection-method=" << cm;
       if (cm == "ebpf") {
         collection_method_ = EBPF;
       } else if (cm == "core_bpf") {
@@ -160,8 +161,6 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
         CLOG(WARNING) << "Invalid collection-method (" << cm << "), using eBPF";
         collection_method_ = EBPF;
       }
-
-      CLOG(INFO) << "User configured collection-method=" << cm;
     }
 
     if (!config["tlsConfig"].empty()) {
