@@ -40,8 +40,9 @@ extern "C" {
 
 namespace collector {
 
-const int kNumDownloadRetries = 90;
-const int kMaxDownloadRetriesTime = 90;
+const int kMaxDownloadRetriesTime = 180;
+const int kMaxDownloadRetriesInterval = 5;
+const int kNumDownloadRetries = kMaxDownloadRetriesTime / kMaxDownloadRetriesInterval;
 
 bool DownloadKernelObjectFromURL(FileDownloader& downloader, const std::string& base_url, const std::string& kernel_module, const std::string& module_version) {
   std::string url(base_url + "/" + module_version + "/" + kernel_module + ".gz");
@@ -114,7 +115,7 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
   }
 
   downloader.IPResolve(FileDownloader::ANY);
-  downloader.SetRetries(kNumDownloadRetries, 1, kMaxDownloadRetriesTime);
+  downloader.SetRetries(kNumDownloadRetries, kMaxDownloadRetriesInterval, kMaxDownloadRetriesTime);
   downloader.SetVerboseMode(verbose);
   downloader.OutputFile(compressed_module_path);
   if (!downloader.SetConnectionTimeout(2)) return false;
@@ -131,7 +132,7 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
 
   downloader.ResetCURL();
   downloader.IPResolve(FileDownloader::ANY);
-  downloader.SetRetries(kNumDownloadRetries, 1, kMaxDownloadRetriesTime);
+  downloader.SetRetries(kNumDownloadRetries, kMaxDownloadRetriesInterval, kMaxDownloadRetriesTime);
   downloader.SetVerboseMode(verbose);
   downloader.OutputFile(compressed_module_path);
   if (!downloader.SetConnectionTimeout(2)) return false;
