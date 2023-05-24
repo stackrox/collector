@@ -23,6 +23,8 @@
 6.0.0-5-cloud-amd64
 6.1.0-0-amd64
 6.1.0-0-cloud-amd64
+6.1.0-7-amd64
+6.1.0-7-cloud-amd64
 # backport 5.8
 5.8.*20.04
 # TODO(ROX-??) Check broken modules compilation
@@ -58,11 +60,12 @@
 4.18.0-372.9.1.rt7.166.el8.x86_64 * mod
 # We no longer support docker desktop as a dev environment
 *-dockerdesktop-*
-# Oracle Linux kernel modules require `libdtrace-ctf`,
-# which is unavailable in UBI/RHEL, we could add a
-# dedicated builder if need be
-*.el7uek.* * mod
 6.2.* 2.3.0 *
 6.2.* 2.2.0 *
 6.2.* 2.1.0 *
 6.2.* 2.0.1 *
+# TODO(ROX-16705) - 6.3 kernel compilation errors
+6.3.*
+# Block kernel module builds on all kernels
+# for module versions newer than 2.4.0
+* ~2\.[5-9]\.\d+(?:-rc\d+)? mod

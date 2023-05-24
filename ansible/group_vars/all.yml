@@ -15,6 +15,9 @@ runtime_command: docker
 runtime_as_root: false
 runtime_socket: /var/run/docker.sock
 
+excluded_pairs:
+  - ['ubuntu-1804-lts', 'core_bpf']
+
 virtual_machines:
   rhel:
     project: rhel-cloud
@@ -53,7 +56,10 @@ virtual_machines:
   sles:
     project: suse-cloud
     families:
-      - sles-12
+      # Disable SLES-12 as it currently relies on kernel-modules
+      # that are no longer built.
+      # See https://github.com/stackrox/collector/issues/1141 for details.
+      #- sles-12
       - sles-15
 
   ubuntu-os:

@@ -55,6 +55,8 @@ BoolEnvVar set_enable_core_dump("ENABLE_CORE_DUMP", false);
 // If true, add originator process information in NetworkEndpoint
 BoolEnvVar set_processes_listening_on_ports("ROX_PROCESSES_LISTENING_ON_PORT", CollectorConfig::kEnableProcessesListeningOnPorts);
 
+BoolEnvVar core_bpf_hardfail("ROX_COLLECTOR_CORE_BPF_HARDFAIL", true);
+
 }  // namespace
 
 constexpr bool CollectorConfig::kUseChiselCache;
@@ -63,7 +65,6 @@ constexpr int CollectorConfig::kScrapeInterval;
 constexpr CollectionMethod CollectorConfig::kCollectionMethod;
 constexpr char CollectorConfig::kChisel[];
 constexpr const char* CollectorConfig::kSyscalls[];
-constexpr bool CollectorConfig::kForceKernelModules;
 constexpr bool CollectorConfig::kEnableProcessesListeningOnPorts;
 
 const UnorderedSet<L4ProtoPortPair> CollectorConfig::kIgnoredL4ProtoPortPairs = {{L4Proto::UDP, 9}};
@@ -76,8 +77,8 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   turn_off_scrape_ = kTurnOffScrape;
   chisel_ = kChisel;
   collection_method_ = kCollectionMethod;
-  force_kernel_modules_ = kForceKernelModules;
   enable_processes_listening_on_ports_ = set_processes_listening_on_ports.value();
+  core_bpf_hardfail_ = core_bpf_hardfail.value();
 
   for (const auto& syscall : kSyscalls) {
     syscalls_.push_back(syscall);
@@ -151,23 +152,15 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
     if (args->GetCollectionMethod().length() > 0) {
       const auto& cm = args->GetCollectionMethod();
 
+      CLOG(INFO) << "User configured collection-method=" << cm;
       if (cm == "ebpf") {
         collection_method_ = EBPF;
       } else if (cm == "core_bpf") {
         collection_method_ = CORE_BPF;
+      } else {
+        CLOG(WARNING) << "Invalid collection-method (" << cm << "), using eBPF";
+        collection_method_ = EBPF;
       }
-
-      CLOG(INFO) << "User configured collection-method=" << cm;
-    } else if (!config["useEbpf"].empty()) {
-      // useEbpf (deprecated)
-      collection_method_ = config["useEbpf"].asBool() ? EBPF : KERNEL_MODULE;
-      CLOG(INFO) << "User configured useEbpf=" << config["useEbpf"].asBool();
-    }
-
-    // Force kernel modules collection method
-    if (!config["forceKernelModules"].empty()) {
-      force_kernel_modules_ = config["forceKernelModules"].asBool();
-      CLOG(INFO) << "User configured forceKernelModules=" << force_kernel_modules_;
     }
 
     if (!config["tlsConfig"].empty()) {

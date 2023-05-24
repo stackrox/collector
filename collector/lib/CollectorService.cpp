@@ -202,10 +202,6 @@ bool SetupKernelDriver(CollectorService& collector, const std::string& GRPCServe
     if (collector.InitKernel(candidate)) {
       startup_diagnostics.DriverSuccess(candidate.GetName());
       return true;
-    } else if (candidate.GetCollectionMethod() == KERNEL_MODULE) {
-      // Kernel module drops capabilities, so subsequent attempts could fail
-      // instead we use the legacy behaviour of failing.
-      break;
     }
   }
 

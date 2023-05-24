@@ -24,6 +24,8 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef COLLECTOR_NETWORKSIGNALHANDLER_H
 #define COLLECTOR_NETWORKSIGNALHANDLER_H
 
+#include <optional>
+
 #include "ConnTracker.h"
 #include "SignalHandler.h"
 #include "SysdigEventExtractor.h"
@@ -44,7 +46,7 @@ class NetworkSignalHandler final : public SignalHandler {
   bool Stop() override;
 
  private:
-  std::pair<Connection, bool> GetConnection(sinsp_evt* evt);
+  std::optional<Connection> GetConnection(sinsp_evt* evt);
 
   SysdigEventExtractor event_extractor_;
   std::shared_ptr<ConnectionTracker> conn_tracker_;
