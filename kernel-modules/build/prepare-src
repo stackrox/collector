@@ -100,7 +100,7 @@ if [[ -d "${LEGACY_DIR}/kernel-modules/probe" ]]; then
     cp "${LEGACY_DIR}/kernel-modules/probe/collector_probe.c" "${DRIVER_SCRATCH}/driver/collector-probe/collector_probe.c"
     if [[ -e "${LEGACY_DIR}/kernel-modules/probe/collector_probe.h" ]]; then
         cp "${LEGACY_DIR}/kernel-modules/probe/collector_probe.h" "${DRIVER_SCRATCH}/driver/collector-probe/collector_probe.h"
-    fi      
+    fi
 fi
 
 cd "${DRIVER_SCRATCH}/driver"
