@@ -120,11 +120,7 @@ TEST(KernelVersionTest, TestVersionStringPopulated) {
 
 TEST(KernelVersionTest, TestHasEBPFSupport) {
   KernelVersion new_kernel("5.10.0", "");
-#ifdef __s390x__
-  EXPECT_EQ(false, new_kernel.HasEBPFSupport());
-#else
   EXPECT_EQ(true, new_kernel.HasEBPFSupport());
-#endif
 
   KernelVersion old_kernel("2.6.0", "");
   EXPECT_EQ(false, old_kernel.HasEBPFSupport());
@@ -133,11 +129,7 @@ TEST(KernelVersionTest, TestHasEBPFSupport) {
   EXPECT_EQ(false, old_four_kernel.HasEBPFSupport());
 
   KernelVersion new_four_kernel("4.20.0", "");
-#ifdef __s390x__
-  EXPECT_EQ(false, new_four_kernel.HasEBPFSupport());
-#else
   EXPECT_EQ(true, new_four_kernel.HasEBPFSupport());
-#endif
 }
 
 TEST(HostInfoTest, TestIsRHEL76) {
@@ -161,11 +153,7 @@ TEST(HostInfoTest, TestHasEBPFSupport) {
   EXPECT_FALSE(hasEBPFSupport(kernel, os_id));
 
   kernel = KernelVersion("5.10.0", "");
-#ifdef __s390x__
-  EXPECT_FALSE(hasEBPFSupport(kernel, os_id));
-#else
   EXPECT_TRUE(hasEBPFSupport(kernel, os_id));
-#endif
 }
 
 TEST(HostInfoTest, TestHostInfoGetDistro) {
