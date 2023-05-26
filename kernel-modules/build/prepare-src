@@ -40,7 +40,7 @@ archive_dockerized() {
         cp bpf/*.c bpf/*.h bpf/Makefile "$source_archive"/bpf
         if [[ -d "./collector-probe" ]]; then
             mkdir "$source_archive"/collector-probe
-            cp collector-probe/*.c collector-probe/*.h collector-probe/Makefile "$source_archive"/collector-probe
+            cp collector-probe/*.{c,h} collector-probe/Makefile "$source_archive"/collector-probe
         fi
         echo "Driver source archive - $source_archive"
         # recursive ls to verify contents of all files in the archive
