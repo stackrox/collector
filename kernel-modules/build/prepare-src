@@ -43,7 +43,9 @@ archive_dockerized() {
             cp collector-probe/*.c collector-probe/*.h collector-probe/Makefile "$source_archive"/collector-probe
         fi
         echo "Driver source archive - $source_archive"
-        ls -alh "$source_archive"
+        # recursive ls to verify contents of all files in the archive
+        # (specifically collector_probe/)
+        ls -Ralh "$source_archive"
     else
         echo "Duplicate version '${module_version}' detected, skipping..."
     fi

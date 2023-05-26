@@ -97,6 +97,8 @@ build_ko() (
         if [[ -d "${module_src_dir}/collector-probe" ]]; then
             collector_probe="${module_src_dir}/collector-probe/probe.o"
             probe_dir="${module_src_dir}/collector-probe"
+            # minor verification of probe directory
+            ls -alh "$probe_dir"
         fi
 
         echo "Building collector eBPF probe for kernel version ${kernel_version} and module version ${module_version}."
