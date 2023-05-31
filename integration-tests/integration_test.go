@@ -79,7 +79,7 @@ func TestRepeatedNetworkFlowThreeCurlsNoAfterglow(t *testing.T) {
 // endpoints opened before collector is turned on. There is another test
 // in which scraping is turned off and we expect that we will not see
 // endpoint opened before collector is turned on.
-func TestProcfsScraper(t *testing.T) {
+func TestProcfsScraperEnabled(t *testing.T) {
 	connScraperTestSuite := &suites.ProcfsScraperTestSuite{
 		TurnOffScrape:               false,
 		RoxProcessesListeningOnPort: true,
