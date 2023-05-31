@@ -64,7 +64,7 @@ add_executable(collector collector.cpp)
 target_link_libraries(collector collector_lib)
 
 if(NOT DEFINED ENV{DISABLE_PROFILING})
-	target_link_libraries(collector profiler tcmalloc)
+	target_link_libraries(collector libprofiler.a libtcmalloc.a)
 endif()
 
 target_link_libraries(collector libprometheus-cpp-pull.a)

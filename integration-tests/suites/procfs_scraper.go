@@ -38,10 +38,10 @@ func (s *ProcfsScraperTestSuite) SetupSuite() {
 
 	err = s.collector.Launch()
 	s.Require().NoError(err)
-	time.Sleep(10 * time.Second)
+	time.Sleep(100 * time.Second)
 
 	s.cleanupContainer([]string{"nginx"})
-	time.Sleep(10 * time.Second)
+	time.Sleep(100 * time.Second)
 
 	err = s.collector.TearDown()
 	s.Require().NoError(err)
