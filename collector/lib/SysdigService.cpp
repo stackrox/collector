@@ -94,9 +94,9 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
   }
 
   std::unique_ptr<IKernelDriver> driver;
-  if (candidate.GetCollectionMethod() == EBPF) {
+  if (candidate.GetCollectionMethod() == CollectionMethod::EBPF) {
     driver = std::make_unique<KernelDriverEBPF>(KernelDriverEBPF());
-  } else if (candidate.GetCollectionMethod() == CORE_BPF) {
+  } else if (candidate.GetCollectionMethod() == CollectionMethod::CORE_BPF) {
     driver = std::make_unique<KernelDriverCOREEBPF>(KernelDriverCOREEBPF());
   }
 

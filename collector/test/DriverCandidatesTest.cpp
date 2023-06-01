@@ -62,7 +62,7 @@ TEST(getGardenLinuxCandidateTest, Garden576_1) {
   EXPECT_TRUE(candidate);
   EXPECT_EQ(candidate->GetName(), expected_driver);
   EXPECT_EQ(candidate->GetPath(), expected_path);
-  EXPECT_EQ(candidate->GetCollectionMethod(), EBPF);
+  EXPECT_EQ(candidate->GetCollectionMethod(), CollectionMethod::EBPF);
   EXPECT_TRUE(candidate->IsDownloadable());
 }
 
@@ -81,7 +81,7 @@ TEST(getGardenLinuxCandidateTest, Garden318) {
   EXPECT_TRUE(candidate);
   EXPECT_EQ(candidate->GetName(), expected_driver);
   EXPECT_EQ(candidate->GetPath(), expected_path);
-  EXPECT_EQ(candidate->GetCollectionMethod(), EBPF);
+  EXPECT_EQ(candidate->GetCollectionMethod(), CollectionMethod::EBPF);
   EXPECT_TRUE(candidate->IsDownloadable());
 }
 
@@ -102,7 +102,7 @@ TEST(getMinikubeCandidateTest, v1_27_1) {
   EXPECT_TRUE(candidate);
   EXPECT_EQ(candidate->GetName(), expected_driver);
   EXPECT_EQ(candidate->GetPath(), expected_path);
-  EXPECT_EQ(candidate->GetCollectionMethod(), EBPF);
+  EXPECT_EQ(candidate->GetCollectionMethod(), CollectionMethod::EBPF);
   EXPECT_TRUE(candidate->IsDownloadable());
 }
 
@@ -123,7 +123,7 @@ TEST(getMinikubeCandidateTest, v1_24_0) {
   EXPECT_TRUE(candidate);
   EXPECT_EQ(candidate->GetName(), expected_driver);
   EXPECT_EQ(candidate->GetPath(), expected_path);
-  EXPECT_EQ(candidate->GetCollectionMethod(), EBPF);
+  EXPECT_EQ(candidate->GetCollectionMethod(), CollectionMethod::EBPF);
   EXPECT_TRUE(candidate->IsDownloadable());
 }
 
@@ -151,7 +151,7 @@ TEST(getUserDriverCandidate, RelativePath) {
   EXPECT_EQ(candidate.GetName(), expected_name);
   EXPECT_EQ(candidate.GetPath(), expected_path);
   EXPECT_FALSE(candidate.IsDownloadable());
-  EXPECT_EQ(candidate.GetCollectionMethod(), EBPF);
+  EXPECT_EQ(candidate.GetCollectionMethod(), CollectionMethod::EBPF);
 }
 
 TEST(getUserDriverCandidate, FullPath) {
@@ -164,7 +164,7 @@ TEST(getUserDriverCandidate, FullPath) {
   EXPECT_EQ(candidate.GetName(), expected_name);
   EXPECT_EQ(candidate.GetPath(), expected_path);
   EXPECT_FALSE(candidate.IsDownloadable());
-  EXPECT_EQ(candidate.GetCollectionMethod(), EBPF);
+  EXPECT_EQ(candidate.GetCollectionMethod(), CollectionMethod::EBPF);
 }
 
 TEST(normalizeReleaseStringTest, FedoraKernel) {

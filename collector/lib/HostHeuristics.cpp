@@ -42,7 +42,7 @@ class CollectionHeuristic : public Heuristic {
   void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
     // If we're configured to use eBPF with BTF, we try to be conservative
     // and fail instead of falling-back to other methods.
-    if (config.GetCollectionMethod() == CORE_BPF) {
+    if (config.GetCollectionMethod() == CollectionMethod::CORE_BPF) {
       if (!host.HasEBPFSupport()) {
         CLOG(FATAL) << host.GetDistro() << " " << host.GetKernelVersion().release
                     << " does not support eBPF, which is a requirement for core_bpf collection.";
@@ -72,7 +72,7 @@ class CollectionHeuristic : public Heuristic {
     // does not support it, we can try to use kernel modules instead.
     // The exception to this is COS, where third party modules are not
     // supported, so there is nothing we can do and must exit.
-    if ((config.GetCollectionMethod() == EBPF) && !host.HasEBPFSupport()) {
+    if ((config.GetCollectionMethod() == CollectionMethod::EBPF) && !host.HasEBPFSupport()) {
       CLOG(FATAL) << host.GetDistro() << " " << host.GetKernelVersion().release
                   << " does not support ebpf based collection.";
     }
