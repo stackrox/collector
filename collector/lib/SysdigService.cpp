@@ -79,6 +79,8 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
     if (logging::GetLogLevel() == logging::LogLevel::TRACE) {
       inspector_->set_log_stderr();
     }
+
+    inspector_->set_import_users(false);
   }
 
   std::unique_ptr<IKernelDriver> driver;
