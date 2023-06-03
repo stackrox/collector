@@ -215,6 +215,7 @@ void SysdigService::Run(const std::atomic<ControlValue>& control) {
     auto process_start = NowMicros();
     for (auto it = signal_handlers_.begin(); it != signal_handlers_.end(); it++) {
       auto& signal_handler = *it;
+      CLOG(INFO) << "Before ShouldHandle evt->get_type()= " << evt->get_type();
       if (!signal_handler.ShouldHandle(evt)) continue;
       auto result = signal_handler.handler->HandleSignal(evt);
       if (result == SignalHandler::NEEDS_REFRESH) {

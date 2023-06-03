@@ -23,6 +23,8 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "EventNames.h"
 
+#include <iostream>
+
 extern const struct ppm_event_info g_event_info[];       // defined in libscap
 extern const struct syscall_evt_pair g_syscall_table[];  // defined in libscap
 
@@ -42,8 +44,12 @@ EventNames::EventNames() {
     events_by_name_[name].push_back(event_type);
     if (PPME_IS_ENTER(event_type)) {
       events_by_name_[name + ">"].push_back(event_type);
+      std::cout << "name= " << name + ">"
+                << " event_type= " << event_type << std::endl;
     } else {
       events_by_name_[name + "<"].push_back(event_type);
+      std::cout << "name= " << name + "<"
+                << " event_type= " << event_type << std::endl;
     }
   }
   for (int i = 0; i < SYSCALL_TABLE_SIZE; i++) {
