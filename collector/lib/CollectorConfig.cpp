@@ -57,6 +57,8 @@ BoolEnvVar set_processes_listening_on_ports("ROX_PROCESSES_LISTENING_ON_PORT", C
 
 BoolEnvVar core_bpf_hardfail("ROX_COLLECTOR_CORE_BPF_HARDFAIL", true);
 
+BoolEnvVar set_import_users("ROX_COLLECTOR_SET_IMPORT_USERS", false);
+
 }  // namespace
 
 constexpr bool CollectorConfig::kUseChiselCache;
@@ -79,6 +81,7 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   collection_method_ = kCollectionMethod;
   enable_processes_listening_on_ports_ = set_processes_listening_on_ports.value();
   core_bpf_hardfail_ = core_bpf_hardfail.value();
+  import_users_ = set_import_users.value();
 
   for (const auto& syscall : kSyscalls) {
     syscalls_.push_back(syscall);
@@ -282,7 +285,8 @@ std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
          << ", turn_off_scrape:" << c.TurnOffScrape()
          << ", hostname:" << c.Hostname()
          << ", processesListeningOnPorts:" << c.IsProcessesListeningOnPortsEnabled()
-         << ", logLevel:" << c.LogLevel();
+         << ", logLevel:" << c.LogLevel()
+         << ", set_import_users:" << c.ImportUsers();
 }
 
 }  // namespace collector
