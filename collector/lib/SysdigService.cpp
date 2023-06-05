@@ -92,7 +92,7 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
       inspector_->set_log_stderr();
     }
 
-    inspector_->set_import_users(false);
+    inspector_->set_import_users(config.ImportUsers());
   }
 
   std::unique_ptr<IKernelDriver> driver;
