@@ -108,6 +108,7 @@ end
   bool IsCoreDumpEnabled() const;
   Json::Value TLSConfiguration() const { return tls_config_; }
   bool IsProcessesListeningOnPortsEnabled() const { return enable_processes_listening_on_ports_; }
+  bool ImportUsers() const { return import_users_; }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
@@ -131,6 +132,7 @@ end
   bool enable_afterglow_ = true;
   bool enable_core_dump_ = false;
   bool enable_processes_listening_on_ports_;
+  bool import_users_;
 
   Json::Value tls_config_;
 };
