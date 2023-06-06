@@ -35,9 +35,6 @@ func (s *SocatTestSuite) SetupSuite() {
 
 	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
 	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
-	s.collector.Env["COLLECTION_METHOD"] = "ebpf"
-	s.collector.Env["HEAPCHECK"] = "normal"
-	s.collector.Env["HEAPPROFILE"] = "/tmp/collector.heap"
 
 	err := s.collector.Setup()
 	s.Require().NoError(err)
