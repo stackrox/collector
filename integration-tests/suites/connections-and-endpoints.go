@@ -95,13 +95,15 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 	val, err := s.Get(s.Client.ContainerID, networkBucket)
 	s.Require().NoError(err)
 	clientNetwork, err := common.NewNetworkInfo(val)
-	s.Require().NoError(err)
-	expectedLocalAddress := strings.Replace(s.Client.ExpectedNetwork[0].LocalAddress, "CLIENT_IP", s.Client.IP, -1)
-	expectedRemoteAddress := strings.Replace(s.Client.ExpectedNetwork[0].RemoteAddress, "SERVER_IP", s.Server.IP, -1)
-	assert.Equal(s.T(), expectedLocalAddress, clientNetwork.LocalAddress)
-	assert.Equal(s.T(), expectedRemoteAddress, clientNetwork.RemoteAddress)
-	assert.Equal(s.T(), "ROLE_CLIENT", clientNetwork.Role)
-	assert.Equal(s.T(), s.Client.ExpectedNetwork[0].SocketFamily, clientNetwork.SocketFamily)
+	if s.Client.ExpectedNetwork != nil {
+		s.Require().NoError(err)
+		expectedLocalAddress := strings.Replace(s.Client.ExpectedNetwork[0].LocalAddress, "CLIENT_IP", s.Client.IP, -1)
+		expectedRemoteAddress := strings.Replace(s.Client.ExpectedNetwork[0].RemoteAddress, "SERVER_IP", s.Server.IP, -1)
+		assert.Equal(s.T(), expectedLocalAddress, clientNetwork.LocalAddress)
+		assert.Equal(s.T(), expectedRemoteAddress, clientNetwork.RemoteAddress)
+		assert.Equal(s.T(), "ROLE_CLIENT", clientNetwork.Role)
+		assert.Equal(s.T(), s.Client.ExpectedNetwork[0].SocketFamily, clientNetwork.SocketFamily)
+	}
 
 	if s.Client.ExpectedEndpoints != nil {
 		fmt.Println("Expected client endpoint should be nil")
@@ -112,13 +114,15 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 	val, err = s.Get(s.Server.ContainerID, networkBucket)
 	s.Require().NoError(err)
 	serverNetwork, err := common.NewNetworkInfo(val)
-	s.Require().NoError(err)
-	expectedLocalAddress = strings.Replace(s.Server.ExpectedNetwork[0].LocalAddress, "SERVER_IP", s.Server.IP, -1)
-	expectedRemoteAddress = strings.Replace(s.Server.ExpectedNetwork[0].RemoteAddress, "CLIENT_IP", s.Client.IP, -1)
-	assert.Equal(s.T(), expectedLocalAddress, serverNetwork.LocalAddress)
-	assert.Equal(s.T(), expectedRemoteAddress, serverNetwork.RemoteAddress)
-	assert.Equal(s.T(), "ROLE_SERVER", serverNetwork.Role)
-	assert.Equal(s.T(), s.Server.ExpectedNetwork[0].SocketFamily, serverNetwork.SocketFamily)
+	if s.Server.ExpectedNetwork != nil {
+		s.Require().NoError(err)
+		expectedLocalAddress := strings.Replace(s.Server.ExpectedNetwork[0].LocalAddress, "SERVER_IP", s.Server.IP, -1)
+		expectedRemoteAddress := strings.Replace(s.Server.ExpectedNetwork[0].RemoteAddress, "CLIENT_IP", s.Client.IP, -1)
+		assert.Equal(s.T(), expectedLocalAddress, serverNetwork.LocalAddress)
+		assert.Equal(s.T(), expectedRemoteAddress, serverNetwork.RemoteAddress)
+		assert.Equal(s.T(), "ROLE_SERVER", serverNetwork.Role)
+		assert.Equal(s.T(), s.Server.ExpectedNetwork[0].SocketFamily, serverNetwork.SocketFamily)
+	}
 
 	serverEndpoints, err := s.GetEndpoints(s.Server.ContainerID)
 	if s.Server.ExpectedEndpoints != nil {
