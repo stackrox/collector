@@ -8,7 +8,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall --std=c++17 -pthread -Wno-de
 set(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-strict-aliasing -DNDEBUG")
 
-if(NOT DEFINED ENV{DISABLE_PROFILING})
+if(NOT DEFINED ENV{DISABLE_PROFILING} OR NOT "$ENV{DISABLE_PROFILING}")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCOLLECTOR_PROFILING")
 endif()
 
@@ -63,7 +63,7 @@ target_link_libraries(collector_lib z ssl crypto curl bpf)
 add_executable(collector collector.cpp)
 target_link_libraries(collector collector_lib)
 
-if(NOT DEFINED ENV{DISABLE_PROFILING})
+if(NOT DEFINED ENV{DISABLE_PROFILING} OR NOT "$ENV{DISABLE_PROFILING}")
 	target_link_libraries(collector libprofiler.a libtcmalloc.a)
 endif()
 
@@ -82,7 +82,7 @@ enable_testing()
 file(GLOB TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/test/*.cpp)
 add_executable(runUnitTests ${TEST_SRC_FILES})
 
-if(NOT DEFINED ENV{DISABLE_PROFILING} AND (NOT DEFINED ENV{USE_VALGRIND} OR NOT "$ENV{USE_VALGRIND}"))
+if((NOT DEFINED ENV{DISABLE_PROFILING} OR NOT "$ENV{DISABLE_PROFILING}") AND (NOT DEFINED ENV{USE_VALGRIND} OR NOT "$ENV{USE_VALGRIND}"))
 	target_link_libraries(runUnitTests profiler tcmalloc)
 endif()
 
