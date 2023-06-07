@@ -100,7 +100,16 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
     driver = std::make_unique<KernelDriverCOREEBPF>(KernelDriverCOREEBPF());
   }
 
-  if (!driver->Setup(config, *inspector_)) {
+  bool driver_success = false;
+  for (int i = 0; i < 5; i++) {
+    if (driver->Setup(config, *inspector_)) {
+      driver_success = true;
+      break;
+    } else if (i < 4) {
+      CLOG(WARNING) << "Failed to setup " << candidate.GetName() << ". Trying again.";
+    }
+  }
+  if (!driver_success) {
     CLOG(ERROR) << "Failed to setup " << candidate.GetName();
     return false;
   }
