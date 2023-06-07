@@ -62,14 +62,12 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 
 	serverCmd := strings.Replace(s.Server.Cmd, "CLIENT_IP", s.Client.IP, -1)
-	fmt.Println(serverCmd)
 	_, err = s.execContainer(serverName, []string{"/bin/sh", "-c", serverCmd})
 	s.Require().NoError(err)
 
 	time.Sleep(3 * time.Second)
 
 	clientCmd := strings.Replace(s.Client.Cmd, "SERVER_IP", s.Server.IP, -1)
-	fmt.Println(clientCmd)
 	_, err = s.execContainer(clientName, []string{"/bin/sh", "-c", clientCmd})
 	s.Require().NoError(err)
 	time.Sleep(6 * time.Second)
@@ -95,6 +93,7 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 	val, err := s.Get(s.Client.ContainerID, networkBucket)
 	s.Require().NoError(err)
 	clientNetwork, err := common.NewNetworkInfo(val)
+	// TODO If ExpectedNetwork is nil the test should check that it is actually nil
 	if s.Client.ExpectedNetwork != nil {
 		s.Require().NoError(err)
 		expectedLocalAddress := strings.Replace(s.Client.ExpectedNetwork[0].LocalAddress, "CLIENT_IP", s.Client.IP, -1)
@@ -114,6 +113,7 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 	val, err = s.Get(s.Server.ContainerID, networkBucket)
 	s.Require().NoError(err)
 	serverNetwork, err := common.NewNetworkInfo(val)
+	// TODO If ExpectedNetwork is nil the test should check that it is actually nil
 	if s.Server.ExpectedNetwork != nil {
 		s.Require().NoError(err)
 		expectedLocalAddress := strings.Replace(s.Server.ExpectedNetwork[0].LocalAddress, "SERVER_IP", s.Server.IP, -1)
@@ -167,14 +167,6 @@ func endpointComparison(endpoint1 common.EndpointInfo, endpoint2 common.Endpoint
 	}
 
 	if addr1.Port > addr2.Port {
-		return false
-	}
-
-	if addr1.IpNetwork < addr2.IpNetwork {
-		return true
-	}
-
-	if addr1.IpNetwork > addr2.IpNetwork {
 		return false
 	}
 

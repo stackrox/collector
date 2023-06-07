@@ -304,7 +304,7 @@ func TestConnectionsAndEndpointsUDPNormal(t *testing.T) {
 		Server: suites.Container{
 			Name: "socat-server-udp",
 			Cmd:  "socat UDP-LISTEN:53,reuseaddr,fork - &",
-			// TODO UDP connections are not always reported
+			// TODO UDP connections are not always reported on the server side
 			ExpectedNetwork: nil,
 			// ExpectedNetwork: []common.NetworkInfo{
 			// 	{
@@ -342,7 +342,7 @@ func TestConnectionsAndEndpointsUDPNoReuseaddr(t *testing.T) {
 		Server: suites.Container{
 			Name: "socat-server-udp",
 			Cmd:  "socat UDP-LISTEN:53,fork - &",
-			// TODO UDP connections are not always reported
+			// TODO UDP connections are not always reported on the server side
 			ExpectedNetwork: nil,
 			// ExpectedNetwork: []common.NetworkInfo{
 			// 	{
@@ -380,7 +380,7 @@ func TestConnectionsAndEndpointsUDPNoFork(t *testing.T) {
 		Server: suites.Container{
 			Name: "socat-server-udp",
 			Cmd:  "socat UDP-LISTEN:53 - &",
-			// TODO UDP connections are not always reported
+			// TODO UDP connections are not always reported on the server side
 			ExpectedNetwork: nil,
 			// ExpectedNetwork: []common.NetworkInfo{
 			// 	{
