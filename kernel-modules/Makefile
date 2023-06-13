@@ -43,8 +43,17 @@ push-build-containers: push-build-container $(CUSTOM_FLAVORS:%=push-build-contai
 print-custom-flavors:
 	@printf "%s\n" $(CUSTOM_FLAVORS)
 
-.PHONY: drivers
-drivers: build-container-$(DEV_DRIVER_BUILDER)
+.PHONY: drivers-rhel7
+drivers-rhel7: build-container-rhel7
+	docker run --rm \
+		--entrypoint "/bin/bash" \
+		-v $(DEV_SHARED_VOLUME):/collector \
+		-v /lib/modules/:/lib/modules/:ro \
+		-v /usr/src:/usr/src:ro \
+		build-kernel-modules-rhel7:latest \
+		-c 'scl enable llvm-toolset-7.0 /collector/kernel-modules/dev/build-drivers.sh'
+
+drivers-%: build-container-%
 	docker run --rm \
 		--entrypoint "/bin/bash" \
 		-v $(DEV_SHARED_VOLUME):/collector \
@@ -52,6 +61,9 @@ drivers: build-container-$(DEV_DRIVER_BUILDER)
 		-v /usr/src:/usr/src:ro \
 		build-kernel-modules-$(DEV_DRIVER_BUILDER):latest \
 		-c /collector/kernel-modules/dev/build-drivers.sh
+
+.PHONY: drivers
+drivers: drivers-$(DEV_DRIVER_BUILDER)
 
 .PHONY: clean-drivers
 clean-drivers:
