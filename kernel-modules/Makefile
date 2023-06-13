@@ -50,6 +50,7 @@ drivers: build-container-$(DEV_DRIVER_BUILDER)
 		-v $(DEV_SHARED_VOLUME):/collector \
 		-v /lib/modules/:/lib/modules/:ro \
 		-v /usr/src:/usr/src:ro \
+		-e BUILD_KERNEL_MODULE \
 		build-kernel-modules-$(DEV_DRIVER_BUILDER):latest \
 		-c /collector/kernel-modules/dev/build-drivers.sh
 
