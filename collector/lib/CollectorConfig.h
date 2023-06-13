@@ -132,11 +132,8 @@ end
   bool enable_core_dump_ = false;
   bool enable_processes_listening_on_ports_;
   bool core_bpf_hardfail_;
-<<<<<<< HEAD
   bool import_users_;
-=======
   bool are_udp_listening_endpoints_collected_ = false;
->>>>>>> a4040548 (X-Smart-Squash: Squashed 32 commits:)
 
   Json::Value tls_config_;
 };
