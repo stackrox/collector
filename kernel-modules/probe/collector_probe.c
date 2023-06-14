@@ -224,7 +224,6 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
   enum ppm_event_type evt_type = PPME_GENERIC_E;
   int drop_flags = UF_ALWAYS_DROP;
   struct sys_enter_args stack_ctx = {.id = id};
-  long mapped_id = id;
 
   if (bpf_in_ia32_syscall()) {
     return 0;
@@ -241,11 +240,11 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
   if (id == __NR_socketcall) {
     struct sys_enter_socketcall_args* socketcall_args = (struct sys_enter_socketcall_args*)ctx;
     unsigned long socketcall_id = (unsigned long)socketcall_args->call;
-    mapped_id = convert_network_syscalls_by_id(socketcall_id);
+    id = convert_network_syscalls_by_id(socketcall_id);
   }
 #endif
 
-  sc_evt = get_syscall_info(mapped_id);
+  sc_evt = get_syscall_info(id);
   if (sc_evt == NULL || (sc_evt->flags & UF_USED) == 0) {
     return 0;
   } else {
@@ -298,7 +297,6 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx) {
   const struct syscall_evt_pair* sc_evt = NULL;
   enum ppm_event_type evt_type = PPME_GENERIC_X;
   int drop_flags = UF_ALWAYS_DROP;
-  long mapped_id = id;
 
   if (bpf_in_ia32_syscall()) {
     return 0;
@@ -316,7 +314,7 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx) {
   }
 #endif
 
-  sc_evt = get_syscall_info(mapped_id);
+  sc_evt = get_syscall_info(id);
   if (sc_evt == NULL || (sc_evt->flags & UF_USED) == 0) {
     return 0;
   } else {
