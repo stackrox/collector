@@ -11,7 +11,7 @@ images:
 
   qa-socat: quay.io/rhacs-eng/qa:socat
   qa-plop: quay.io/rhacs-eng/qa:collector-processes-listening-on-ports-3.12.x-11-g64eeab9cbc
-  qa-schedule-curl: quay.io/rhacs-eng/qa:collector-schedule-curls
+  qa-schedule-curls: quay.io/rhacs-eng/qa:collector-schedule-curls
 
   nginx: nginx:1.14-alpine
   curl: pstauffer/curl:latest
