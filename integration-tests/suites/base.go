@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
+	"github.com/stackrox/collector/integration-tests/suites/config"
 )
 
 const (
@@ -98,9 +99,9 @@ func (s *IntegrationTestSuiteBase) WritePerfResults(testName string, stats []Con
 	perf := PerformanceResult{
 		TestName:         testName,
 		Timestamp:        time.Now().Format("2006-01-02 15:04:05"),
-		InstanceType:     common.ReadEnvVarWithDefault("VM_INSTANCE_TYPE", "default"),
-		VmConfig:         common.ReadEnvVarWithDefault("VM_CONFIG", "default"),
-		CollectionMethod: common.ReadEnvVarWithDefault("COLLECTION_METHOD", "kernel_module"),
+		InstanceType:     config.VMInfo().InstanceType,
+		VmConfig:         config.VMInfo().Config,
+		CollectionMethod: config.CollectionMethod(),
 		Metrics:          metrics,
 		ContainerStats:   stats,
 	}
@@ -362,7 +363,7 @@ func (s *IntegrationTestSuiteBase) GetLineageInfo(processName string, key string
 
 func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	benchmarkName := "benchmark"
-	benchmarkImage := common.QaImage("quay.io/rhacs-eng/collector-performance", "phoronix")
+	benchmarkImage := config.Images().QaImageByKey("performance-phoronix")
 
 	err := s.executor.PullImage(benchmarkImage)
 	s.Require().NoError(err)
@@ -396,7 +397,7 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 
 func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
 	name := "jsonlabel"
-	image := common.QaImage("quay.io/rhacs-eng/collector-performance", "json-label")
+	image := config.Images().QaImageByKey("performance-json-label")
 	err := s.executor.PullImage(image)
 	s.Require().NoError(err)
 	args := []string{
@@ -411,7 +412,7 @@ func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
 
 func (s *IntegrationTestSuiteBase) StartContainerStats() {
 	name := "container-stats"
-	image := common.QaImage("quay.io/rhacs-eng/collector-performance", "stats")
+	image := config.Images().QaImageByKey("performance-stats")
 	args := []string{name, "-v", common.RuntimeSocket + ":/var/run/docker.sock", image}
 
 	err := s.executor.PullImage(image)

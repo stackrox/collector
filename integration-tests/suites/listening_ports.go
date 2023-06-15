@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
+	"github.com/stackrox/collector/integration-tests/suites/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -139,5 +140,5 @@ func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
 }
 
 func getProcessListeningOnPortsImage() string {
-	return common.QaImage("quay.io/rhacs-eng/qa", "collector-processes-listening-on-ports-3.12.x-11-g64eeab9cbc")
+	return config.Images().QaImageByKey("qa-plop")
 }

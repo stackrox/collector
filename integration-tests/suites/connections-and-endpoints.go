@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
+	"github.com/stackrox/collector/integration-tests/suites/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,7 +44,7 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	time.Sleep(30 * time.Second)
 
-	socatImage := common.QaImage("quay.io/rhacs-eng/qa", "socat")
+	socatImage := config.Images().QaImageByKey("qa-socat")
 
 	serverName := s.Server.Name
 	clientName := s.Client.Name

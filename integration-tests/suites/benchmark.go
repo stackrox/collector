@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
+	"github.com/stackrox/collector/integration-tests/suites/config"
 )
 
 type BenchmarkBaselineTestSuite struct {
@@ -26,11 +27,11 @@ type BenchmarkTestSuiteBase struct {
 }
 
 func (b *BenchmarkTestSuiteBase) StartPerfTools() {
-	perf := common.ReadEnvVar("COLLECTOR_PERF_COMMAND")
-	bpftrace := common.ReadEnvVar("COLLECTOR_BPFTRACE_COMMAND")
-	bcc := common.ReadEnvVar("COLLECTOR_BCC_COMMAND")
+	perf := config.ReadEnvVar("COLLECTOR_PERF_COMMAND")
+	bpftrace := config.ReadEnvVar("COLLECTOR_BPFTRACE_COMMAND")
+	bcc := config.ReadEnvVar("COLLECTOR_BCC_COMMAND")
 
-	skipInit := common.ReadBoolEnvVar("COLLECTOR_SKIP_HEADERS_INIT")
+	skipInit := config.ReadBoolEnvVar("COLLECTOR_SKIP_HEADERS_INIT")
 
 	if skipInit && (perf == "" && bpftrace == "" && bcc == "") {
 		fmt.Fprintf(os.Stderr, "COLLECTOR_SKIP_HEADERS_INIT set, but no performance tool requested - ignoring.")
@@ -41,18 +42,20 @@ func (b *BenchmarkTestSuiteBase) StartPerfTools() {
 		b.RunInitContainer()
 	}
 
+	image_store := config.Images()
+
 	if perf != "" {
-		perf_image := common.QaImage("quay.io/rhacs-eng/collector-performance", "perf")
+		perf_image := image_store.QaImageByKey("performance-perf")
 		b.StartPerfContainer("perf", perf_image, perf)
 	}
 
 	if bpftrace != "" {
-		bpftrace_image := common.QaImage("quay.io/rhacs-eng/collector-performance", "bpftrace")
+		bpftrace_image := image_store.QaImageByKey("performance-bpftrace")
 		b.StartPerfContainer("bpftrace", bpftrace_image, bpftrace)
 	}
 
 	if bcc != "" {
-		bcc_image := common.QaImage("quay.io/rhacs-eng/collector-performance", "bcc")
+		bcc_image := image_store.QaImageByKey("performance-bcc")
 		b.StartPerfContainer("bcc", bcc_image, bcc)
 	}
 }
@@ -64,7 +67,7 @@ func (b *BenchmarkTestSuiteBase) StartPerfContainer(name string, image string, a
 }
 
 func (b *BenchmarkTestSuiteBase) RunInitContainer() {
-	init_image := common.QaImage("quay.io/rhacs-eng/collector-performance", "init")
+	init_image := config.Images().QaImageByKey("performance-init")
 	cmd := []string{
 		"host-init",
 		"-v", "/lib/modules:/lib/modules",

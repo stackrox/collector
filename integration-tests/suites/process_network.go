@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
+	"github.com/stackrox/collector/integration-tests/suites/config"
 )
 
 type ProcessNetworkTestSuite struct {
@@ -37,9 +38,11 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	err = s.collector.Launch()
 	s.Require().NoError(err)
 
+	image_store := config.Images()
+
 	images := []string{
-		"nginx:1.14-alpine",
-		"pstauffer/curl:latest",
+		image_store.ImageByKey("nginx"),
+		image_store.ImageByKey("curl"),
 	}
 
 	for _, image := range images {
@@ -50,7 +53,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	time.Sleep(10 * time.Second)
 
 	// invokes default nginx
-	containerID, err := s.launchContainer("nginx", "nginx:1.14-alpine")
+	containerID, err := s.launchContainer("nginx", image_store.ImageByKey("nginx"))
 	s.Require().NoError(err)
 	s.serverContainer = common.ContainerShortID(containerID)
 
@@ -61,7 +64,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 
 	// invokes another container
-	containerID, err = s.launchContainer("nginx-curl", "pstauffer/curl:latest", "sleep", "300")
+	containerID, err = s.launchContainer("nginx-curl", image_store.ImageByKey("curl"), "sleep", "300")
 	s.Require().NoError(err)
 	s.clientContainer = common.ContainerShortID(containerID)
 

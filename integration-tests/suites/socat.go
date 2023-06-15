@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
+	"github.com/stackrox/collector/integration-tests/suites/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,7 +44,7 @@ func (s *SocatTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	time.Sleep(30 * time.Second)
 
-	processImage := common.QaImage("quay.io/rhacs-eng/qa", "socat")
+	processImage := config.Images().QaImageByKey("qa-socat")
 
 	// the socat container only needs to exist long enough for use to run both
 	// socat commands. 300 seconds should be more than long enough.

@@ -9,14 +9,16 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+
+	"github.com/stackrox/collector/integration-tests/suites/config"
 )
 
 var (
 	debug = false
 
-	RuntimeCommand = ReadEnvVarWithDefault("RUNTIME_COMMAND", "docker")
-	RuntimeSocket  = ReadEnvVarWithDefault("RUNTIME_SOCKET", "/var/run/docker.sock")
-	RuntimeAsRoot  = ReadBoolEnvVar("RUNTIME_AS_ROOT")
+	RuntimeCommand = config.RuntimeInfo().Command
+	RuntimeSocket  = config.RuntimeInfo().Socket
+	RuntimeAsRoot  = config.RuntimeInfo().RunAsRoot
 )
 
 type Executor interface {
@@ -77,19 +79,21 @@ func ReadBoolEnvVar(env string) bool {
 }
 
 func NewSSHCommandBuilder() CommandBuilder {
+	host_info := config.HostInfo()
 	return &sshCommandBuilder{
-		user:    ReadEnvVar("SSH_USER"),
-		address: ReadEnvVar("SSH_ADDRESS"),
-		keyPath: ReadEnvVar("SSH_KEY_PATH"),
+		user:    host_info.User,
+		address: host_info.Address,
+		keyPath: host_info.Options,
 	}
 }
 
 func NewGcloudCommandBuilder() CommandBuilder {
+	host_info := config.HostInfo()
 	gcb := &gcloudCommandBuilder{
-		user:     ReadEnvVar("GCLOUD_USER"),
-		instance: ReadEnvVar("GCLOUD_INSTANCE"),
-		options:  ReadEnvVar("GCLOUD_OPTIONS"),
-		vmType:   ReadEnvVarWithDefault("VM_CONFIG", "default"),
+		user:     host_info.User,
+		instance: host_info.Address,
+		options:  host_info.Options,
+		vmType:   config.VMInfo().Config,
 	}
 	if gcb.user == "" && (strings.Contains(gcb.vmType, "coreos") || strings.Contains(gcb.vmType, "flatcar")) {
 		gcb.user = "core"
@@ -110,12 +114,12 @@ func setSelinuxPermissiveIfNeeded() error {
 }
 
 func isSelinuxPermissiveNeeded() bool {
-	vmType := ReadEnvVarWithDefault("VM_CONFIG", "default")
+	vmType := config.VMInfo().InstanceType
 	if strings.Contains(vmType, "coreos") || strings.Contains(vmType, "rhcos") {
 		return true
 	}
 	if strings.Contains(vmType, "rhel-7") {
-		collectionMethod := ReadEnvVarWithDefault("COLLECTION_METHOD", "kernel_module")
+		collectionMethod := config.CollectionMethod()
 		if collectionMethod == "ebpf" {
 			return true
 		}

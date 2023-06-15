@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
+	"github.com/stackrox/collector/integration-tests/suites/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -51,10 +52,11 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	err = s.collector.Launch()
 	s.Require().NoError(err)
 
-	scheduled_curls_image := common.QaImage("quay.io/rhacs-eng/qa", "collector-schedule-curls")
+	image_store := config.Images()
+	scheduled_curls_image := image_store.QaImageByKey("qa-schedule-curls")
 
 	images := []string{
-		"nginx:1.14-alpine",
+		image_store.ImageByKey("nginx"),
 		scheduled_curls_image,
 	}
 
@@ -66,7 +68,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	time.Sleep(10 * time.Second)
 
 	// invokes default nginx
-	containerID, err := s.launchContainer("nginx", "nginx:1.14-alpine")
+	containerID, err := s.launchContainer("nginx", image_store.ImageByKey("nginx"))
 	s.Require().NoError(err)
 	s.ServerContainer = containerID[0:12]
 
