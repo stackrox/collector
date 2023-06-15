@@ -31,6 +31,8 @@ const (
 	envBpftraceCommand = "COLLECTOR_BPFTRACE_COMMAND"
 	envBccCommand      = "COLLECTOR_BCC_COMMAND"
 	envSkipHeadersInit = "COLLECTOR_SKIP_HEADERS_INIT"
+
+	envStopTimeout = "STOP_TIMEOUT"
 )
 
 func ReadEnvVar(env string) string {

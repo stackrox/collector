@@ -265,8 +265,7 @@ func (c *CollectorManager) stopContainer(name string) error {
 // Sets the path to where core dumps are saved to. This is specified in the core_pattern file
 // The core_pattern file is backed up, because we don't want to permanently change it
 func (c *CollectorManager) SetCoreDumpPath(coreDumpFile string) error {
-	remote_host_type := config.HostInfo().Kind
-	if remote_host_type != "local" {
+	if !config.HostInfo().IsLocal() {
 		corePatternFile := "/proc/sys/kernel/core_pattern"
 		corePatternBackupFile := "/tmp/core_pattern_backup"
 		cmdBackupCorePattern := []string{"sudo", "cp", corePatternFile, corePatternBackupFile}
@@ -303,7 +302,7 @@ func (c *CollectorManager) RestoreCoreDumpPath() error {
 // If the integration test is run on a remote host the core dump needs to be copied from the remote host
 // to the local maching
 func (c *CollectorManager) GetCoreDump(coreDumpFile string) error {
-	if c.Env["ENABLE_CORE_DUMP"] == "true" && config.HostInfo().Kind != "local" {
+	if c.Env["ENABLE_CORE_DUMP"] == "true" && !config.HostInfo().IsLocal() {
 		cmd := []string{"sudo", "chmod", "755", coreDumpFile}
 		c.executor.Exec(cmd...)
 		c.executor.CopyFromHost(coreDumpFile, coreDumpFile)

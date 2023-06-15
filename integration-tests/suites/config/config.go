@@ -8,11 +8,20 @@ const (
 	runtimeDefaultSocket  = "/var/run/docker.sock"
 
 	imageStoreLocation = "images.yml"
+
+	// defaultStopTimeoutSeconds is the amount of time to wait for a container
+	// to stop before forcibly killing it. It needs to be a string because it
+	// is passed directly to the docker command via the executor.
+	//
+	// 10 seconds is the default for docker stop when not providing a timeout
+	// argument. It is kept the same here to avoid changing behavior by default.
+	defaultStopTimeoutSeconds = "10"
 )
 
 var (
 	qa_tag            = ReadEnvVar(envQATag)
 	collection_method = ReadEnvVarWithDefault(envCollectionMethod, CollectionMethodEBPF)
+	stop_timeout      = ReadEnvVarWithDefault(envStopTimeout, defaultStopTimeoutSeconds)
 
 	image_store       *ImageStore
 	collector_options *CollectorOptions
@@ -27,6 +36,10 @@ type Host struct {
 	User    string
 	Address string
 	Options string
+}
+
+func (h *Host) IsLocal() bool {
+	return h.Kind == "local"
 }
 
 type VM struct {
@@ -68,6 +81,10 @@ func Images() *ImageStore {
 
 func CollectionMethod() string {
 	return collection_method
+}
+
+func StopTimeout() string {
+	return stop_timeout
 }
 
 func HostInfo() *Host {

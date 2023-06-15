@@ -139,7 +139,7 @@ func setSelinuxPermissive() error {
 
 func NewExecutor() Executor {
 	e := executor{}
-	switch ReadEnvVarWithDefault("REMOTE_HOST_TYPE", "local") {
+	switch config.HostInfo().Kind {
 	case "ssh":
 		e.builder = NewSSHCommandBuilder()
 	case "gcloud":

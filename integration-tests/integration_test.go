@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/collector/integration-tests/suites"
 	"github.com/stackrox/collector/integration-tests/suites/common"
+	"github.com/stackrox/collector/integration-tests/suites/config"
 )
 
 func TestProcessNetwork(t *testing.T) {
@@ -19,7 +20,7 @@ func TestImageLabelJSON(t *testing.T) {
 
 // TestMissingProcScrape only works with local fake proc directory
 func TestMissingProcScrape(t *testing.T) {
-	if common.ReadEnvVarWithDefault("REMOTE_HOST_TYPE", "local") == "local" {
+	if config.HostInfo().IsLocal() {
 		suite.Run(t, new(suites.MissingProcScrapeTestSuite))
 	}
 }
