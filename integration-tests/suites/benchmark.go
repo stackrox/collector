@@ -27,11 +27,12 @@ type BenchmarkTestSuiteBase struct {
 }
 
 func (b *BenchmarkTestSuiteBase) StartPerfTools() {
-	perf := config.ReadEnvVar("COLLECTOR_PERF_COMMAND")
-	bpftrace := config.ReadEnvVar("COLLECTOR_BPFTRACE_COMMAND")
-	bcc := config.ReadEnvVar("COLLECTOR_BCC_COMMAND")
+	benchmark_options := config.BenchmarksInfo()
+	perf := benchmark_options.PerfCommand
+	bpftrace := benchmark_options.BpftraceCommand
+	bcc := benchmark_options.BccCommand
 
-	skipInit := config.ReadBoolEnvVar("COLLECTOR_SKIP_HEADERS_INIT")
+	skipInit := benchmark_options.SkipInit
 
 	if skipInit && (perf == "" && bpftrace == "" && bcc == "") {
 		fmt.Fprintf(os.Stderr, "COLLECTOR_SKIP_HEADERS_INIT set, but no performance tool requested - ignoring.")

@@ -26,6 +26,11 @@ const (
 	envRuntimeAsRoot  = "RUNTIME_AS_ROOT"
 
 	envQATag = "COLLECTOR_QA_TAG"
+
+	envPerfCommand     = "COLLECTOR_PERF_COMMAND"
+	envBpftraceCommand = "COLLECTOR_BPFTRACE_COMMAND"
+	envBccCommand      = "COLLECTOR_BCC_COMMAND"
+	envSkipHeadersInit = "COLLECTOR_SKIP_HEADERS_INIT"
 )
 
 func ReadEnvVar(env string) string {

@@ -19,6 +19,7 @@ var (
 	runtime_options   *Runtime
 	host_options      *Host
 	vm_options        *VM
+	benchmarks        *Benchmarks
 )
 
 type Host struct {
@@ -43,6 +44,13 @@ type CollectorOptions struct {
 	LogLevel     string
 	Offline      bool
 	PreArguments string
+}
+
+type Benchmarks struct {
+	BccCommand      string
+	BpftraceCommand string
+	PerfCommand     string
+	SkipInit        bool
 }
 
 func Images() *ImageStore {
@@ -105,4 +113,16 @@ func CollectorInfo() *CollectorOptions {
 		}
 	}
 	return collector_options
+}
+
+func BenchmarksInfo() *Benchmarks {
+	if benchmarks == nil {
+		benchmarks = &Benchmarks{
+			BccCommand:      ReadEnvVar(envBccCommand),
+			BpftraceCommand: ReadEnvVar(envBpftraceCommand),
+			PerfCommand:     ReadEnvVar(envPerfCommand),
+			SkipInit:        ReadBoolEnvVar(envSkipHeadersInit),
+		}
+	}
+	return benchmarks
 }
