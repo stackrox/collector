@@ -55,6 +55,8 @@ BoolEnvVar set_enable_core_dump("ENABLE_CORE_DUMP", false);
 // If true, add originator process information in NetworkEndpoint
 BoolEnvVar set_processes_listening_on_ports("ROX_PROCESSES_LISTENING_ON_PORT", CollectorConfig::kEnableProcessesListeningOnPorts);
 
+BoolEnvVar set_import_users("ROX_COLLECTOR_SET_IMPORT_USERS", false);
+
 }  // namespace
 
 constexpr bool CollectorConfig::kUseChiselCache;
@@ -78,6 +80,7 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   collection_method_ = kCollectionMethod;
   force_kernel_modules_ = kForceKernelModules;
   enable_processes_listening_on_ports_ = set_processes_listening_on_ports.value();
+  import_users_ = set_import_users.value();
 
   for (const auto& syscall : kSyscalls) {
     syscalls_.push_back(syscall);
@@ -289,7 +292,8 @@ std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
          << ", turn_off_scrape:" << c.TurnOffScrape()
          << ", hostname:" << c.Hostname()
          << ", processesListeningOnPorts:" << c.IsProcessesListeningOnPortsEnabled()
-         << ", logLevel:" << c.LogLevel();
+         << ", logLevel:" << c.LogLevel()
+         << ", set_import_users:" << c.ImportUsers();
 }
 
 }  // namespace collector
