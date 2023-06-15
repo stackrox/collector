@@ -20,7 +20,7 @@
     environment:
       COLLECTION_METHOD: "{{ collection_method }}"
       REMOTE_HOST_TYPE: ssh
-      REMMOTE_HOST_ADDRESS: "{{ ansible_host }}"
+      REMOTE_HOST_ADDRESS: "{{ ansible_host }}"
       REMOTE_HOST_USER: "{{ ansible_user }}"
       REMOTE_HOST_OPTIONS: "{{ ansible_ssh_private_key_file }}"
       VM_CONFIG: "{{ vm_config }}"
