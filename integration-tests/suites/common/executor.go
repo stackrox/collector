@@ -3,7 +3,6 @@ package common
 import (
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -54,28 +53,6 @@ type gcloudCommandBuilder struct {
 }
 
 type localCommandBuilder struct {
-}
-
-func ReadEnvVar(env string) string {
-	if e, ok := os.LookupEnv(env); ok {
-		return e
-	}
-	return ""
-}
-
-func ReadEnvVarWithDefault(env string, def string) string {
-	if e, ok := os.LookupEnv(env); ok {
-		return e
-	}
-	return def
-}
-
-func ReadBoolEnvVar(env string) bool {
-	e, err := strconv.ParseBool(ReadEnvVarWithDefault(env, "false"))
-	if err != nil {
-		return false
-	}
-	return e
 }
 
 func NewSSHCommandBuilder() CommandBuilder {
