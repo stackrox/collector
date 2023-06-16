@@ -35,6 +35,8 @@ const (
 	envStopTimeout = "STOP_TIMEOUT"
 )
 
+// ReadEnvVar safely reads a variable from the environment.
+// If the variable does not exist, an empty string is returned.
 func ReadEnvVar(env string) string {
 	if e, ok := os.LookupEnv(env); ok {
 		return e
@@ -42,6 +44,8 @@ func ReadEnvVar(env string) string {
 	return ""
 }
 
+// ReadEnvVarWithDefault safely reads a variable from the environment.
+// If the variable does not exist, the provided default is returned.
 func ReadEnvVarWithDefault(env string, def string) string {
 	if e, ok := os.LookupEnv(env); ok {
 		return e
@@ -49,6 +53,8 @@ func ReadEnvVarWithDefault(env string, def string) string {
 	return def
 }
 
+// ReadBoolEnvVar safely reads a boolean value from the environment,
+// parsed into a bool type. If the variable does not exist, the result is false
 func ReadBoolEnvVar(env string) bool {
 	e, err := strconv.ParseBool(ReadEnvVarWithDefault(env, "false"))
 	if err != nil {

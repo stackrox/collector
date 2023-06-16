@@ -15,6 +15,8 @@ func (i *ImageStore) CollectorImage() string {
 	return ReadEnvVar(envCollectorImage)
 }
 
+// ImageByKey looks up an image from the store, and panics
+// if the image does not exist.
 func (i *ImageStore) ImageByKey(key string) string {
 	if img, ok := i.Images[key]; ok {
 		return img
@@ -22,6 +24,9 @@ func (i *ImageStore) ImageByKey(key string) string {
 	panic("failed to find image: " + key)
 }
 
+// QaImageByKey looks up an image from the store, and appends
+// the QA tag. If the image does not exist in the store, this function
+// will panic.
 func (i *ImageStore) QaImageByKey(key string) string {
 	img := i.ImageByKey(key)
 	if img != "" {

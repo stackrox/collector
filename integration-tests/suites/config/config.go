@@ -31,6 +31,8 @@ var (
 	benchmarks        *Benchmarks
 )
 
+// Host contains information about how to connect to the host upon
+// which the tests are running
 type Host struct {
 	Kind    string
 	User    string
@@ -42,23 +44,35 @@ func (h *Host) IsLocal() bool {
 	return h.Kind == "local"
 }
 
+// VM contains metadata about the machine upon which the tests are
+// running.
 type VM struct {
 	InstanceType string
 	Config       string
 }
 
+// Runtime contains information related to the container runtime.
 type Runtime struct {
-	Command   string
-	Socket    string
+	// The command used to interact with the runtime. e.g. docker
+	Command string
+	// The path to the the runtime socket e.g. /var/run/docker.sock
+	Socket string
+	// Whether or not interactions with this runtime should be run
+	// as root
 	RunAsRoot bool
 }
 
+// CollectorOptions contains options related to running collector itself
 type CollectorOptions struct {
-	LogLevel     string
-	Offline      bool
+	// The collector log level, e.g. DEBUG, TRACE
+	LogLevel string
+	// Whether to run collector in offline mode
+	Offline bool
+	// Any arguments to prepend to the collector command
 	PreArguments string
 }
 
+// Benchmarks contains options related to interacting with the benchmarks
 type Benchmarks struct {
 	BccCommand      string
 	BpftraceCommand string

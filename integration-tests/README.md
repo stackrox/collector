@@ -18,21 +18,18 @@ The integration test behavior is controlled by a range of environment variables,
 the `REMOTE_HOST_TYPE` variable makes it possible to run the integration tests in a range of scenarios, from on
 the local machine for development, or on gcloud or over SSH for remote testing in VMs.
 
-| Variable Name            | Description                                                                             | Values (default in bold) |
-| ------------------------ | --------------------------------------------------------------------------------------- | ------------------------ |
-| `REMOTE_HOST_TYPE`       | the type of host to run the tests.                                                      | **local**, ssh, gcloud   |
-| `VM_CONFIG`              | the description of the VM. e.g. ubuntu.ubuntu-20.04.                                    | See table below.         |
-| `COLLECTION_METHOD`      | the collection method for collector.                                                    | **ebpf**, core-bpf       |
-| `SSH_USER`               | if `REMOTE_HOST_TYPE` is `ssh`, the user to connect as.                                 | N/A                      |
-| `SSH_ADDRESS`            | if `REMOTE_HOST_TYPE` is `ssh`, the address to connect to.                              | N/A                      |
-| `SSH_KEY_PATH`           | if `REMOTE_HOST_TYPE` is `ssh`, the path to the private key to connect with.            | N/A                      |
-| `GCLOUD_USER`            | if `REMOTE_HOST_TYPE` is `gcloud`, the user to connect as.                              | N/A                      |
-| `GCLOUD_INSTANCE`        | if `REMOTE_HOST_TYPE` is `gcloud`, the name of the VM to connect to.                    | N/A                      |
-| `GCLOUD_OPTIONS`         | if `REMOTE_HOST_TYPE` is `gcloud`, any additional options to pass to the gcloud command | N/A                      |
-| `COLLECTOR_OFFLINE_MODE` | whether to allow kernel-object downloads.                                               | true, **false**          |
-| `COLLECTOR_IMAGE`        | the name of the collector image to use.                                                 | N/A                      |
-| `STOP_TIMEOUT`           | the number of seconds to wait for a container to stop before forcibly killing it        | **10**                   |
-| `COLLECTOR_LOG_LEVEL`    | the log level to set in the collector configuration                                     | **debug**                |
+| Variable Name            | Description                                                                                      | Values (default in bold) |
+| ------------------------ | ------------------------------------------------------------------------------------------------ | ------------------------ |
+| `REMOTE_HOST_TYPE`       | the type of host to run the tests.                                                               | **local**, ssh, gcloud   |
+| `VM_CONFIG`              | the description of the VM. e.g. ubuntu.ubuntu-20.04.                                             | See table below.         |
+| `COLLECTION_METHOD`      | the collection method for collector.                                                             | **ebpf**, core-bpf       |
+| `REMOTE_HOST_USER`       | The user to use to connect to the remote host.                                                   | N/A                      |
+| `REMOTE_HOST_ADDRESS`    | The address of the remote host. Can be a GCP instance name.                                      | N/A                      |
+| `REMOTE_HOST_OPTIONS`    | Additional options for the remote host (SSH key, or GCP options, depending on `REMOTE_HOST_TYPE` | N/A                      |
+| `COLLECTOR_OFFLINE_MODE` | whether to allow kernel-object downloads.                                                        | true, **false**          |
+| `COLLECTOR_IMAGE`        | the name of the collector image to use.                                                          | N/A                      |
+| `STOP_TIMEOUT`           | the number of seconds to wait for a container to stop before forcibly killing it                 | **10**                   |
+| `COLLECTOR_LOG_LEVEL`    | the log level to set in the collector configuration                                              | **debug**                |
 
 `VM_CONFIG` is a construction of the VM type and the image family, delimited by a period (.) See the [CI config](../.circleci/config.yml#902-907)]
 for examples, and the following table lists the possible values:
