@@ -17,6 +17,7 @@ runtime_socket: /var/run/docker.sock
 
 excluded_pairs:
   # e.g. - ['ubuntu-1804-lts', 'core_bpf']
+  -
 
 virtual_machines:
   rhel:
