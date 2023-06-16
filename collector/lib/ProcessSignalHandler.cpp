@@ -44,12 +44,12 @@ std::string compute_process_key(const ::storage::ProcessSignal& s) {
 }
 
 bool ProcessSignalHandler::Start() {
-  client_.Start();
+  client_->Start();
   return true;
 }
 
 bool ProcessSignalHandler::Stop() {
-  client_.Stop();
+  client_->Stop();
   rate_limiter_.ResetRateLimitCache();
   return true;
 }
@@ -66,14 +66,14 @@ SignalHandler::Result ProcessSignalHandler::HandleSignal(sinsp_evt* evt) {
     return IGNORED;
   }
 
-  auto result = client_.PushSignals(*signal_msg);
+  auto result = client_->PushSignals(*signal_msg);
   if (result == SignalHandler::PROCESSED) {
     ++(stats_->nProcessSent);
   } else if (result == SignalHandler::ERROR) {
     ++(stats_->nProcessSendFailures);
   }
 
-  return result;
+  return SignalHandler::PROCESSED;
 }
 
 SignalHandler::Result ProcessSignalHandler::HandleExistingProcess(sinsp_threadinfo* tinfo) {
@@ -88,14 +88,14 @@ SignalHandler::Result ProcessSignalHandler::HandleExistingProcess(sinsp_threadin
     return IGNORED;
   }
 
-  auto result = client_.PushSignals(*signal_msg);
+  auto result = client_->PushSignals(*signal_msg);
   if (result == SignalHandler::PROCESSED) {
     ++(stats_->nProcessSent);
   } else if (result == SignalHandler::ERROR) {
     ++(stats_->nProcessSendFailures);
   }
 
-  return result;
+  return SignalHandler::PROCESSED;
 }
 
 std::vector<std::string> ProcessSignalHandler::GetRelevantEvents() {

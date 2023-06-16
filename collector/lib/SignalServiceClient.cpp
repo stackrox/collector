@@ -110,4 +110,11 @@ SignalHandler::Result SignalServiceClient::PushSignals(const SignalStreamMessage
   return SignalHandler::PROCESSED;
 }
 
+SignalHandler::Result StdoutSignalServiceClient::PushSignals(const SignalStreamMessage& msg) {
+  std::string output;
+  google::protobuf::util::MessageToJsonString(msg, &output, google::protobuf::util::JsonPrintOptions{});
+  CLOG(DEBUG) << "GRPC: " << output;
+  return SignalHandler::PROCESSED;
+}
+
 }  // namespace collector

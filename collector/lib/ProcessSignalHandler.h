@@ -33,15 +33,14 @@ You should have received a copy of the GNU General Public License along with thi
 #include "ProcessSignalFormatter.h"
 #include "RateLimit.h"
 #include "SignalHandler.h"
-#include "SignalServiceClient.h"
 #include "SysdigService.h"
 
 namespace collector {
 
 class ProcessSignalHandler : public SignalHandler {
  public:
-  ProcessSignalHandler(sinsp* inspector, std::shared_ptr<grpc::Channel> channel, SysdigStats* stats)
-      : client_(std::move(channel)), formatter_(inspector), stats_(stats) {}
+  ProcessSignalHandler(sinsp* inspector, ISignalServiceClient* client, SysdigStats* stats)
+      : client_(client), formatter_(inspector), stats_(stats) {}
 
   bool Start() override;
   bool Stop() override;
@@ -51,7 +50,7 @@ class ProcessSignalHandler : public SignalHandler {
   std::vector<std::string> GetRelevantEvents() override;
 
  private:
-  SignalServiceClient client_;
+  ISignalServiceClient* client_;
   ProcessSignalFormatter formatter_;
   SysdigStats* stats_;
   RateLimitCache rate_limiter_;

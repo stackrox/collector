@@ -126,16 +126,8 @@ bool CollectorArgs::parse(int argc, char** argv, int& exitCode) {
     return false;
   }
 
-  if (options[GRPC_SERVER]) {
-    exitCode = 0;
-    return true;
-  }
-
-  stringstream out;
-  out << "Unknown option: " << options[UNKNOWN].name;
-  message = out.str();
-  exitCode = 1;
-  return false;
+  exitCode = 0;
+  return true;
 }
 
 option::ArgStatus
