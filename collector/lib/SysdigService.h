@@ -96,6 +96,7 @@ class SysdigService : public Sysdig {
 
   mutable std::mutex libsinsp_mutex_;
   std::unique_ptr<sinsp> inspector_;
+  std::unique_ptr<sinsp_evt_formatter> default_formatter_;
   std::unique_ptr<sinsp_chisel> chisel_;
   std::vector<SignalHandlerEntry> signal_handlers_;
   SysdigStats userspace_stats_;
