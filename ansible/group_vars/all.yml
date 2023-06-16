@@ -16,7 +16,8 @@ runtime_as_root: false
 runtime_socket: /var/run/docker.sock
 
 excluded_pairs:
-  - ['ubuntu-1804-lts', 'core_bpf']
+  # e.g. - ['ubuntu-1804-lts', 'core_bpf']
+  -
 
 virtual_machines:
   rhel:
@@ -65,7 +66,6 @@ virtual_machines:
   ubuntu-os:
     project: ubuntu-os-cloud
     families:
-      - ubuntu-1804-lts
       - ubuntu-2004-lts
       - ubuntu-2204-lts
 
