@@ -15,10 +15,6 @@ func (i *ImageStore) CollectorImage() string {
 	return ReadEnvVar(envCollectorImage)
 }
 
-func (i *ImageStore) GRPCImage() string {
-	return i.ImageByKey("grpc-server")
-}
-
 func (i *ImageStore) ImageByKey(key string) string {
 	if img, ok := i.Images[key]; ok {
 		return img

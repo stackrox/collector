@@ -71,7 +71,7 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 		DisableGrpcServer: false,
 		BootstrapOnly:     false,
 		CollectorImage:    image_store.CollectorImage(),
-		GRPCServerImage:   image_store.GRPCImage(),
+		GRPCServerImage:   image_store.ImageByKey("grpc-server"),
 		Env:               env,
 		Mounts:            mounts,
 		TestName:          name,
