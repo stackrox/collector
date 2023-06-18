@@ -109,16 +109,10 @@ struct KernelVersion {
   // Whether or not the kernel has built-in eBPF support
   // Anything before 4.14 doesn't have support, anything newer does.
   bool HasEBPFSupport() const {
-#ifdef __s390x__
-    // TODO: only kernel module will ship with s390x until socketcall is handled in ebpf probe.
-    //       back out github.com/stackrox/collector/pull/855 when ebpf is ready to ship.
-    return false;
-#else
     if (kernel < 4 || (kernel == 4 && major < 14)) {
       return false;
     }
     return true;
-#endif
   }
 
   // Whether or not the kernel has secure_boot option present in boot_params.
@@ -231,6 +225,15 @@ class HostInfo {
   // Only exception is RHEL 7.6, which does support eBPF but runs kernel 3.10 (which ordinarily does
   // not support eBPF)
   bool HasEBPFSupport();
+
+  // Search for a source of BTF symbols (similar to what libbpf does)
+  bool HasBTFSymbols();
+
+  // Check for RingBuffer support, which is required by the modern probe.
+  bool HasBPFRingBufferSupport();
+
+  // Check for BPF tracepoint program type support
+  bool HasBPFTracingSupport();
 
   // The system was booted in UEFI mode.
   virtual bool IsUEFI();

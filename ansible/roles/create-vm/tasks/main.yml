@@ -64,7 +64,8 @@
   loop_control:
     loop_var: gcp_zone
   register: instance_result
-  when: not condition
+  when: >
+    not condition and [vm_family, vm_collection_method] not in excluded_pairs
   vars:
     condition: "{{ (instance_result | default({'changed': false})).changed }}"
 

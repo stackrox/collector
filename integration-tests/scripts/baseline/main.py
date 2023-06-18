@@ -194,6 +194,8 @@ def normalize_collection_method(method):
         return 'module'
     if 'ebpf' in method:
         return 'ebpf'
+    if 'core' in method:
+        return 'core-bpf'
     raise Exception(f'Invalid collection method: {method}')
 
 

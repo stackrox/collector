@@ -7,15 +7,16 @@
 # now-unsupported releases.
 # IMPORTANT: THIS FILE ALWAYS NEEDS TO END WITH A NEWLINE CHARACTER
 
-3.9.0 3.71.0  # Rox release 3.71.0 by roxbot at Thu Jul 21 09:58:32 UTC 2022
-3.11.0 3.72.0  # Rox release 3.72.0 by roxbot at Mon Sep 26 10:21:46 UTC 2022
-3.9.1 3.71.2  # Rox release 3.71.2 by roxbot at Thu Oct 13 20:24:23 UTC 2022
-3.11.1 3.72.1  # Rox release 3.72.1 by roxbot at Tue Oct 18 17:09:49 UTC 2022
-3.11.2 3.72.2  # Rox release 3.72.2 by roxbot at Wed Nov  9 17:41:06 UTC 2022
 3.12.0 3.73.0  # Rox release 3.73.0 by roxbot at Wed Nov 30 16:32:40 UTC 2022
-3.11.2 3.72.3  # Rox release 3.72.3 by roxbot at Thu Jan 12 22:05:44 UTC 2023
-3.9.2 3.71.3  # Rox release 3.71.3 by roxbot at Tue Dec 13 18:19:01 UTC 2022
 3.12.0 3.73.1  # Rox release 3.73.1 by roxbot at Wed Dec 19 11:38:00 UTC 2022
 3.12.1 3.73.2  # Rox release 3.73.2 by roxbot at Mon Feb  6 13:41:53 UTC 2023
 3.13.0 3.74.0  # Rox release 3.74.0 by roxbot at Mon Feb 27 17:15:27 UTC 2023
+3.12.2 3.73.3  # Rox release 3.73.3 by roxbot at Mon Mar  6 11:18:28 UTC 2023
 3.13.0 3.74.1  # Rox release 3.74.1 by roxbot at Mon Mar 20 09:11:10 UTC 2023
+3.12.3 3.73.4  # Rox release 3.73.4 by roxbot at Tue Apr 11 14:37:38 UTC 2023
+3.13.1 3.74.2  # Rox release 3.74.2 by roxbot at Thu Apr 13 07:29:36 UTC 2023
+3.14.1 4.0.0  # Rox release 4.0.0 by roxbot at Mon Apr 24 14:37:58 UTC 2023
+3.13.1 3.74.3  # Rox release 3.74.3 by roxbot at Tue May  2 08:12:18 UTC 2023
+3.14.1 4.0.1  # Rox release 4.0.1 by roxbot at Mon May 15 13:24:01 UTC 2023
+3.12.4 3.73.5  # Rox release 3.73.5 by roxbot at Wed May 31 08:01:12 UTC 2023
+3.13.2 3.74.4  # Rox release 3.74.4 by roxbot at Mon Jun  5 07:32:18 UTC 2023

@@ -57,12 +57,12 @@ TEST(getGardenLinuxCandidateTest, Garden576_1) {
 
   EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));
 
-  auto candidate = getGardenLinuxCandidate(host, true);
+  auto candidate = getGardenLinuxCandidate(host);
 
   EXPECT_TRUE(candidate);
   EXPECT_EQ(candidate->GetName(), expected_driver);
   EXPECT_EQ(candidate->GetPath(), expected_path);
-  EXPECT_EQ(candidate->GetCollectionMethod(), EBPF);
+  EXPECT_EQ(candidate->GetCollectionMethod(), CollectionMethod::EBPF);
   EXPECT_TRUE(candidate->IsDownloadable());
 }
 
@@ -76,12 +76,12 @@ TEST(getGardenLinuxCandidateTest, Garden318) {
 
   EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));
 
-  auto candidate = getGardenLinuxCandidate(host, true);
+  auto candidate = getGardenLinuxCandidate(host);
 
   EXPECT_TRUE(candidate);
   EXPECT_EQ(candidate->GetName(), expected_driver);
   EXPECT_EQ(candidate->GetPath(), expected_path);
-  EXPECT_EQ(candidate->GetCollectionMethod(), EBPF);
+  EXPECT_EQ(candidate->GetCollectionMethod(), CollectionMethod::EBPF);
   EXPECT_TRUE(candidate->IsDownloadable());
 }
 
@@ -97,12 +97,12 @@ TEST(getMinikubeCandidateTest, v1_27_1) {
   EXPECT_CALL(host, GetMinikubeVersion()).WillOnce(Return(minikube_version));
   EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));
 
-  auto candidate = getMinikubeCandidate(host, true);
+  auto candidate = getMinikubeCandidate(host);
 
   EXPECT_TRUE(candidate);
   EXPECT_EQ(candidate->GetName(), expected_driver);
   EXPECT_EQ(candidate->GetPath(), expected_path);
-  EXPECT_EQ(candidate->GetCollectionMethod(), EBPF);
+  EXPECT_EQ(candidate->GetCollectionMethod(), CollectionMethod::EBPF);
   EXPECT_TRUE(candidate->IsDownloadable());
 }
 
@@ -118,12 +118,12 @@ TEST(getMinikubeCandidateTest, v1_24_0) {
   EXPECT_CALL(host, GetMinikubeVersion()).WillOnce(Return(minikube_version));
   EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(kv));
 
-  auto candidate = getMinikubeCandidate(host, true);
+  auto candidate = getMinikubeCandidate(host);
 
   EXPECT_TRUE(candidate);
   EXPECT_EQ(candidate->GetName(), expected_driver);
   EXPECT_EQ(candidate->GetPath(), expected_path);
-  EXPECT_EQ(candidate->GetCollectionMethod(), EBPF);
+  EXPECT_EQ(candidate->GetCollectionMethod(), CollectionMethod::EBPF);
   EXPECT_TRUE(candidate->IsDownloadable());
 }
 
@@ -136,35 +136,35 @@ TEST(getMinikubeCandidateTest, NoVersion) {
 
   EXPECT_CALL(host, GetMinikubeVersion()).WillOnce(Return(minikube_version));
 
-  auto ebpf_candidate = getMinikubeCandidate(host, true);
+  auto ebpf_candidate = getMinikubeCandidate(host);
 
   EXPECT_FALSE(ebpf_candidate);
 }
 
 TEST(getUserDriverCandidate, RelativePath) {
-  const char* user_input = "collector-mydriver.ko";
+  const char* user_input = "collector-mydriver.o";
   std::string expected_name(user_input);
   std::string expected_path("/kernel-modules");
 
-  auto candidate = getUserDriverCandidate(user_input, true);
+  auto candidate = getUserDriverCandidate(user_input);
 
   EXPECT_EQ(candidate.GetName(), expected_name);
   EXPECT_EQ(candidate.GetPath(), expected_path);
   EXPECT_FALSE(candidate.IsDownloadable());
-  EXPECT_EQ(candidate.GetCollectionMethod(), EBPF);
+  EXPECT_EQ(candidate.GetCollectionMethod(), CollectionMethod::EBPF);
 }
 
 TEST(getUserDriverCandidate, FullPath) {
-  const char* user_input = "/some/path/collector-mydriver.ko";
-  std::string expected_name("collector-mydriver.ko");
+  const char* user_input = "/some/path/collector-mydriver.o";
+  std::string expected_name("collector-mydriver.o");
   std::string expected_path("/some/path");
 
-  auto candidate = getUserDriverCandidate(user_input, false);
+  auto candidate = getUserDriverCandidate(user_input);
 
   EXPECT_EQ(candidate.GetName(), expected_name);
   EXPECT_EQ(candidate.GetPath(), expected_path);
   EXPECT_FALSE(candidate.IsDownloadable());
-  EXPECT_EQ(candidate.GetCollectionMethod(), KERNEL_MODULE);
+  EXPECT_EQ(candidate.GetCollectionMethod(), CollectionMethod::EBPF);
 }
 
 TEST(normalizeReleaseStringTest, FedoraKernel) {

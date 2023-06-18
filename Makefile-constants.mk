@@ -15,8 +15,11 @@ USE_VALGRIND ?= false
 ADDRESS_SANITIZER ?= false
 CMAKE_BUILD_TYPE ?= Release
 COLLECTOR_APPEND_CID ?= false
+PLATFORM ?= linux/amd64
+TRACE_SINSP_EVENTS ?= false
 
 COLLECTOR_BUILD_CONTEXT = collector/
+
 
 ifeq ($(USE_HELGRIND),true)
 	COLLECTOR_PRE_ARGUMENTS := valgrind --tool=helgrind

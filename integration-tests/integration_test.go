@@ -118,3 +118,296 @@ func TestSocat(t *testing.T) {
 func TestDuplicateEndpoints(t *testing.T) {
 	suite.Run(t, new(suites.DuplicateEndpointsTestSuite))
 }
+
+func TestConnectionsAndEndpointsNormal(t *testing.T) {
+	// Server uses a normal port. Client is assigned a port in the ephemeral range in the normal way
+	normalPorts := &suites.ConnectionsAndEndpointsTestSuite{
+		Server: suites.Container{
+			Name: "socat-server-0",
+			Cmd:  "socat TCP4-LISTEN:40,reuseaddr,fork - &",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   ":40",
+					RemoteAddress:  "CLIENT_IP",
+					Role:           "ROLE_SERVER",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
+			ExpectedEndpoints: []common.EndpointInfo{
+				{
+					Protocol: "L4_PROTOCOL_TCP",
+					Address: &common.ListenAddress{
+						AddressData: `"\000\000\000\000"`,
+						Port:        40,
+						IpNetwork:   `"\000\000\000\000 " `,
+					},
+				},
+			},
+		},
+		Client: suites.Container{
+			Name: "socat-client-0",
+			Cmd:  "echo hello | socat - TCP4:SERVER_IP:40",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   "",
+					RemoteAddress:  "SERVER_IP:40",
+					Role:           "ROLE_CLIENT",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
+			ExpectedEndpoints: nil,
+		},
+	}
+	suite.Run(t, normalPorts)
+}
+
+func TestConnectionsAndEndpointsHighLowPorts(t *testing.T) {
+	// The server is assigned a port in the ephemeral ports range.
+	// The client is assigned a source port in a non-ephemeral ports range
+	mixedHighLowPorts := &suites.ConnectionsAndEndpointsTestSuite{
+		Server: suites.Container{
+			Name: "socat-server-1",
+			Cmd:  "socat TCP4-LISTEN:40000,reuseaddr,fork - &",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   ":40000",
+					RemoteAddress:  "CLIENT_IP",
+					Role:           "ROLE_SERVER",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
+			ExpectedEndpoints: []common.EndpointInfo{
+				{
+					Protocol: "L4_PROTOCOL_TCP",
+					Address: &common.ListenAddress{
+						AddressData: `"\000\000\000\000"`,
+						Port:        40000,
+						IpNetwork:   `"\000\000\000\000 " `,
+					},
+				},
+			},
+		},
+		Client: suites.Container{
+			Name: "socat-client-1",
+			Cmd:  "echo hello | socat - TCP4:SERVER_IP:40000,sourceport=10000",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   "",
+					RemoteAddress:  "SERVER_IP:40000",
+					Role:           "ROLE_CLIENT",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
+			ExpectedEndpoints: nil,
+		},
+	}
+	suite.Run(t, mixedHighLowPorts)
+}
+
+func TestConnectionsAndEndpointsServerHigh(t *testing.T) {
+	// The server is assigned a port in the ephemeral ports range.
+	// The client is assigned a port in the ephemeral ports range in the normal way.
+	mixedHighLowPorts := &suites.ConnectionsAndEndpointsTestSuite{
+		Server: suites.Container{
+			Name: "socat-server-2",
+			Cmd:  "socat TCP4-LISTEN:60999,reuseaddr,fork - &",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   ":60999",
+					RemoteAddress:  "CLIENT_IP",
+					Role:           "ROLE_SERVER",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
+			ExpectedEndpoints: []common.EndpointInfo{
+				{
+					Protocol: "L4_PROTOCOL_TCP",
+					Address: &common.ListenAddress{
+						AddressData: `"\000\000\000\000"`,
+						Port:        60999,
+						IpNetwork:   `"\000\000\000\000 " `,
+					},
+				},
+			},
+		},
+		Client: suites.Container{
+			Name: "socat-client-2",
+			Cmd:  "echo hello | socat - TCP4:SERVER_IP:60999",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   "",
+					RemoteAddress:  "SERVER_IP:60999",
+					Role:           "ROLE_CLIENT",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
+			ExpectedEndpoints: nil,
+		},
+	}
+	suite.Run(t, mixedHighLowPorts)
+}
+
+func TestConnectionsAndEndpointsSourcePort(t *testing.T) {
+	// The server is assigned a port in the ephemeral ports range.
+	// The client is assigned a source port in a non-ephemeral ports range
+	mixedHighLowPorts := &suites.ConnectionsAndEndpointsTestSuite{
+		Server: suites.Container{
+			Name: "socat-server-1",
+			Cmd:  "socat TCP4-LISTEN:10000,reuseaddr,fork - &",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   ":10000",
+					RemoteAddress:  "CLIENT_IP",
+					Role:           "ROLE_SERVER",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
+			ExpectedEndpoints: []common.EndpointInfo{
+				{
+					Protocol: "L4_PROTOCOL_TCP",
+					Address: &common.ListenAddress{
+						AddressData: `"\000\000\000\000"`,
+						Port:        10000,
+						IpNetwork:   `"\000\000\000\000 " `,
+					},
+				},
+			},
+		},
+		Client: suites.Container{
+			Name: "socat-client-1",
+			Cmd:  "echo hello | socat - TCP4:SERVER_IP:10000,sourceport=40000",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   "",
+					RemoteAddress:  "SERVER_IP:10000",
+					Role:           "ROLE_CLIENT",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
+			ExpectedEndpoints: nil,
+		},
+	}
+	suite.Run(t, mixedHighLowPorts)
+}
+
+func TestConnectionsAndEndpointsUDPNormal(t *testing.T) {
+	// A test for UDP
+	mixedHighLowPorts := &suites.ConnectionsAndEndpointsTestSuite{
+		Server: suites.Container{
+			Name: "socat-server-udp",
+			Cmd:  "socat UDP-LISTEN:53,reuseaddr,fork - &",
+			// TODO UDP connections are not always reported on the server side
+			ExpectedNetwork: nil,
+			// ExpectedNetwork: []common.NetworkInfo{
+			// 	{
+			// 		LocalAddress:   ":53",
+			// 		RemoteAddress:  "CLIENT_IP",
+			// 		Role:           "ROLE_SERVER",
+			// 		SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+			// 		CloseTimestamp: "(timestamp: nil Timestamp)",
+			// 	},
+			// },
+			// TODO UDP listening endpoints should be reported
+			ExpectedEndpoints: nil,
+		},
+		Client: suites.Container{
+			Name: "socat-client-udp",
+			Cmd:  "echo hello | socat - UDP:SERVER_IP:53",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   "",
+					RemoteAddress:  "SERVER_IP:53",
+					Role:           "ROLE_CLIENT",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
+			ExpectedEndpoints: nil,
+		},
+	}
+	suite.Run(t, mixedHighLowPorts)
+}
+
+func TestConnectionsAndEndpointsUDPNoReuseaddr(t *testing.T) {
+	// A test for UDP without reuseaddr
+	mixedHighLowPorts := &suites.ConnectionsAndEndpointsTestSuite{
+		Server: suites.Container{
+			Name: "socat-server-udp",
+			Cmd:  "socat UDP-LISTEN:53,fork - &",
+			// TODO UDP connections are not always reported on the server side
+			ExpectedNetwork: nil,
+			// ExpectedNetwork: []common.NetworkInfo{
+			// 	{
+			// 		LocalAddress:   ":53",
+			// 		RemoteAddress:  "CLIENT_IP",
+			// 		Role:           "ROLE_SERVER",
+			// 		SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+			// 		CloseTimestamp: "(timestamp: nil Timestamp)",
+			// 	},
+			// },
+			// TODO UDP listening endpoints should be reported
+			ExpectedEndpoints: nil,
+		},
+		Client: suites.Container{
+			Name: "socat-client-udp",
+			Cmd:  "echo hello | socat - UDP:SERVER_IP:53",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   "",
+					RemoteAddress:  "SERVER_IP:53",
+					Role:           "ROLE_CLIENT",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
+			ExpectedEndpoints: nil,
+		},
+	}
+	suite.Run(t, mixedHighLowPorts)
+}
+
+func TestConnectionsAndEndpointsUDPNoFork(t *testing.T) {
+	// A test for UDP without fork or reuseaddr
+	mixedHighLowPorts := &suites.ConnectionsAndEndpointsTestSuite{
+		Server: suites.Container{
+			Name: "socat-server-udp",
+			Cmd:  "socat UDP-LISTEN:53 - &",
+			// TODO UDP connections are not always reported on the server side
+			ExpectedNetwork: nil,
+			// ExpectedNetwork: []common.NetworkInfo{
+			// 	{
+			// 		LocalAddress:   ":53",
+			// 		RemoteAddress:  "CLIENT_IP",
+			// 		Role:           "ROLE_SERVER",
+			// 		SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+			// 		CloseTimestamp: "(timestamp: nil Timestamp)",
+			// 	},
+			// },
+			// TODO UDP listening endpoints should be reported
+			ExpectedEndpoints: nil,
+		},
+		Client: suites.Container{
+			Name: "socat-client-udp",
+			Cmd:  "echo hello | socat - UDP:SERVER_IP:53",
+			ExpectedNetwork: []common.NetworkInfo{
+				{
+					LocalAddress:   "",
+					RemoteAddress:  "SERVER_IP:53",
+					Role:           "ROLE_CLIENT",
+					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+					CloseTimestamp: "(timestamp: nil Timestamp)",
+				},
+			},
+			ExpectedEndpoints: nil,
+		},
+	}
+	suite.Run(t, mixedHighLowPorts)
+}

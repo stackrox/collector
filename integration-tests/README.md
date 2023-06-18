@@ -22,7 +22,7 @@ the local machine for development, or on gcloud or over SSH for remote testing i
 | ------------------------ | --------------------------------------------------------------------------------------- | ------------------------ |
 | `REMOTE_HOST_TYPE`       | the type of host to run the tests.                                                      | **local**, ssh, gcloud   |
 | `VM_CONFIG`              | the description of the VM. e.g. ubuntu.ubuntu-20.04.                                    | See table below.         |
-| `COLLECTION_METHOD`      | the collection method for collector.                                                    | **kernel-module**, ebpf  |
+| `COLLECTION_METHOD`      | the collection method for collector.                                                    | **ebpf**, core-bpf       |
 | `SSH_USER`               | if `REMOTE_HOST_TYPE` is `ssh`, the user to connect as.                                 | N/A                      |
 | `SSH_ADDRESS`            | if `REMOTE_HOST_TYPE` is `ssh`, the address to connect to.                              | N/A                      |
 | `SSH_KEY_PATH`           | if `REMOTE_HOST_TYPE` is `ssh`, the path to the private key to connect with.            | N/A                      |
@@ -39,7 +39,7 @@ for examples, and the following table lists the possible values:
 
 | VM Type       | Image Families                                        | `VM_CONFIG` Example                |
 | ------------- | ----------------------------------------------------- | ---------------------------------- |
-| cos           | cos-beta, cos-dev, cos-stable, cos-89-lts, cos-77-lts | cos.cos-89-lts                     |
+| cos           | cos-beta, cos-dev, cos-stable                         | cos.cos-stable                     |
 | rhel          | rhel-7, rhel-8                                        | rhel.rhel7                         |
 | suse          | sles-12, slex-15                                      | suse.sles-15                       |
 | suse-sap      | sles-15-sp2-sap                                       | suse-sap.sles-15-sp2-sap           |

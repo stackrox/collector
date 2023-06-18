@@ -4,8 +4,6 @@
 # Wildcards (*) can be used for glob-style pattern matching; if a pattern is
 # prefixed with ~, it is interpreted as a (Python) regex.
 # If <module-version> or <object type> is omitted, "*" is assumed
-# Docker Desktop enables randstruct which is not currently supported by llvm
-*dockerdesktop* * bpf
 ~3\.10\.0-1062(?:\.\d+)*\.el7.x86_64 * bpf
 *.el6.*
 # TODO(ROX-6615) - Kernel crawler deletes debian kernels
@@ -25,15 +23,10 @@
 6.0.0-5-cloud-amd64
 6.1.0-0-amd64
 6.1.0-0-cloud-amd64
+6.1.0-7-amd64
+6.1.0-7-cloud-amd64
 # backport 5.8
 5.8.*20.04
-# TODO(ROX-6789) - backport 5.7+ patches to legacy collector versions
-~5\.([7-9]|1[0-9])\..* 1123dde0458e72a49880b06922e135dbcd36fb784fed530ab84ddfa8924e5c05
-~5\.([7-9]|1[0-9])\..* 612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656
-~5\.([7-9]|1[0-9])\..* 7c30b6f295bae9ccf8695982687d871847dfecd12a1cfbc3edcfa93ceec6b5dc
-~5\.([7-9]|1[0-9])\..* 95eb0815c4e7b59e0e5d0e53adb1a4faa5d5d902ad4caef2a27ed57a7f6260c3
-~5\.([7-9]|1[0-9])\..* a409284ad5be9a95bfd65b9eac6f179094d5b36af9a6ba3548fa98ee4d23a7a5
-~5\.([7-9]|1[0-9])\..* f7bd36bc2f3299306385c1270805fa3705af934acd37c6d2395dbba567dd3c58
 # TODO(ROX-??) Check broken modules compilation
 4.14.131-linuxkit
 4.9.0-11-amd64
@@ -65,23 +58,15 @@
 5.15.0-3-cloud-amd64
 # TODO(ROX-10917)
 4.18.0-372.9.1.rt7.166.el8.x86_64 * mod
-# TODO(ROX-12427)
-~^5\.(18|19|[2-9][0-9])\..* b6745d795b8497aaf387843dc8aa07463c944d3ad67288389b754daaebea4b62 mod
-~^5\.(18|19|[2-9][0-9])\..* 1.0.0 mod
-~^5\.(18|19|[2-9][0-9])\..* 2.0.1 mod
-~^[6-9]\.[0-9]+\..* b6745d795b8497aaf387843dc8aa07463c944d3ad67288389b754daaebea4b62 mod
-~^[6-9]\.[0-9]+\..* 1.0.0 mod
-~^[6-9]\.[0-9]+\..* 2.0.1 mod
-~^5\.14\.21-150400.*-default 2.0.1 mod
-~^5\.14\.21-150400.*-default 1.0.0 mod
-~^5\.14\.0-.*el9.*.x86_64 2.0.1 mod
 # We no longer support docker desktop as a dev environment
 *-dockerdesktop-*
-# Oracle Linux kernel modules require `libdtrace-ctf`,
-# which is unavailable in UBI/RHEL, we could add a
-# dedicated builder if need be
-*.el7uek.* * mod
 6.2.* 2.3.0 *
 6.2.* 2.2.0 *
 6.2.* 2.1.0 *
 6.2.* 2.0.1 *
+# TODO(ROX-16705) - 6.3/6.4 kernel compilation errors
+6.3.*
+6.4.*
+# Block kernel module builds on all kernels
+# for module versions newer than 2.4.0
+* ~2\.[5-9]\.\d+(?:-rc\d+)? mod

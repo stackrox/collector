@@ -14,6 +14,7 @@
 
 #include <generated/utsrelease.h>
 #include <linux/sched.h>
+#include <sys/syscall.h>
 #include <uapi/linux/bpf.h>
 
 // Unfortunately include order is important here, so turn clang-format
@@ -30,6 +31,7 @@
 #include "filler_helpers.h"
 #include "fillers.h"
 #include "builtins.h"
+#include "collector_probe.h"
 // clang-format on
 
 static __always_inline int enter_probe(long id, struct sys_enter_args* ctx);
@@ -124,7 +126,9 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx);
 #if !defined(RHEL_RELEASE_CODE) || RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(8, 0)
 
 COLLECTOR_PROBE(chdir, __NR_chdir);
+#  ifdef __NR_accept
 COLLECTOR_PROBE(accept, __NR_accept);
+#  endif
 COLLECTOR_PROBE(accept4, __NR_accept4);
 COLLECTOR_PROBE(clone, __NR_clone);
 COLLECTOR_PROBE(close, __NR_close);
@@ -136,6 +140,12 @@ COLLECTOR_PROBE(setgid, __NR_setgid);
 COLLECTOR_PROBE(setuid, __NR_setuid);
 COLLECTOR_PROBE(shutdown, __NR_shutdown);
 COLLECTOR_PROBE(socket, __NR_socket);
+#  ifdef CAPTURE_SOCKETCALL
+// The socketcall handling in driver/bpf/plumbing_helpers.h will filter
+// socket calls based on those mentioned here.  Therefore, updates to
+// socket calls needs to be synchronized.
+COLLECTOR_PROBE(socketcall, __NR_socketcall)
+#  endif
 COLLECTOR_PROBE(fchdir, __NR_fchdir);
 COLLECTOR_PROBE(fork, __NR_fork);
 COLLECTOR_PROBE(vfork, __NR_vfork);
@@ -211,10 +221,10 @@ PROBE_SIGNATURE("sched/", sched_process_exit, sched_process_exit_args) {
  */
 static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
   const struct syscall_evt_pair* sc_evt = NULL;
-  struct scap_bpf_settings* settings = NULL;
   enum ppm_event_type evt_type = PPME_GENERIC_E;
   int drop_flags = UF_ALWAYS_DROP;
   struct sys_enter_args stack_ctx = {.id = id};
+  long mapped_id = id;
 
   if (bpf_in_ia32_syscall()) {
     return 0;
@@ -227,17 +237,31 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
     stack_ctx.id = id;
   }
 
-  sc_evt = get_syscall_info(id);
+#if defined(CAPTURE_SOCKETCALL)
+  if (id == __NR_socketcall) {
+    struct sys_enter_socketcall_args* socketcall_args = (struct sys_enter_socketcall_args*)ctx;
+    unsigned long socketcall_id = (unsigned long)socketcall_args->call;
+    mapped_id = convert_network_syscalls_by_id(socketcall_id);
+  }
+#endif
+
+  sc_evt = get_syscall_info(mapped_id);
   if (sc_evt == NULL || (sc_evt->flags & UF_USED) == 0) {
     return 0;
+  } else {
+    evt_type = sc_evt->enter_event_type;
+    drop_flags = sc_evt->flags;
   }
 
+#ifdef __s390x__
+  syscall_to_enter_args(id, ctx, &stack_ctx);
+#else
   evt_type = sc_evt->enter_event_type;
   drop_flags = sc_evt->flags;
-
   // To satisfy some verifier requiremnts in later parts of the falco plumbing/fillers,
   // it is necessary to copy the context onto the stack.
   memcpy(stack_ctx.args, _READ(ctx->args), sizeof(unsigned long) * NUM_SYS_ENTER_ARGS);
+#endif
 
   // stashing the args will copy it into a BPF map for later
   // processing. This is a required step for the enter probe,
@@ -272,9 +296,9 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
  */
 static __always_inline int exit_probe(long id, struct sys_exit_args* ctx) {
   const struct syscall_evt_pair* sc_evt = NULL;
-  struct scap_bpf_settings* settings = NULL;
   enum ppm_event_type evt_type = PPME_GENERIC_X;
   int drop_flags = UF_ALWAYS_DROP;
+  long mapped_id = id;
 
   if (bpf_in_ia32_syscall()) {
     return 0;
@@ -286,13 +310,19 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx) {
     id = bpf_syscall_get_nr(ctx);
   }
 
-  sc_evt = get_syscall_info(id);
+#if defined(CAPTURE_SOCKETCALL)
+  if (id == __NR_socketcall) {
+    mapped_id = convert_network_syscalls(ctx);
+  }
+#endif
+
+  sc_evt = get_syscall_info(mapped_id);
   if (sc_evt == NULL || (sc_evt->flags & UF_USED) == 0) {
     return 0;
+  } else {
+    evt_type = sc_evt->exit_event_type;
+    drop_flags = sc_evt->flags;
   }
-
-  evt_type = sc_evt->exit_event_type;
-  drop_flags = sc_evt->flags;
 
   // the fillers contain syscall specific processing logic, so we simply
   // call into those and let the rest of falco deal with the event.

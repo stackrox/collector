@@ -24,12 +24,17 @@ You should have received a copy of the GNU General Public License along with thi
 #ifndef COLLECTION_METHOD_H
 #define COLLECTION_METHOD_H
 
+#include <ostream>
+
 namespace collector {
-enum CollectionMethod {
+enum class CollectionMethod : uint8_t {
   EBPF = 0,
   CORE_BPF,
-  KERNEL_MODULE,
+
 };
+
+std::ostream& operator<<(std::ostream& os, CollectionMethod method);
+
 }  // namespace collector
 
 #endif  // COLLECTION_METHOD_H

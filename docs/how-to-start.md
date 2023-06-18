@@ -67,10 +67,12 @@ services:
       - /usr/lib:/host/usr/lib:ro
       - /sys/:/host/sys/:ro
       - /dev:/host/dev:ro
+      - type: tmpfs
+        target: /module
     depends_on:
       - grpc-server-debug
   grpc-server-debug:
-    image: stackrox/grpc-server:latest
+    image: quay.io/rhacs-eng/grpc-server:latest
     container_name: grpc-server
     network_mode: host
     user: 1000:1000
@@ -82,6 +84,10 @@ Using this configuration docker compose will spin up the Collector attached to
 the host network in privileged mode. Collector in turn will try to download
 probes for your version of Linux kernel and start listening to events happening
 inside the container.
+
+The image `quay.io/rhacs-eng/grpc-server` can be built manually by running
+`make mock-grpc-server-image` in the `https://github.com/stackrox/stackrox/`
+repository.
 
 ### Development with an IDE (CLion)
 
@@ -139,7 +145,7 @@ Even though development containers is a supported feature of `Docker for Desktop
 ### Building collector image(s) from the command-line
 - `make image` will create the Red Hat based collector image.
 - `make image-dev` will create a collector image based on CentOS Stream, the package manager in this image is available so additional developer tools can be installed.
-- `make image-dev-full` will extend the `image-dev` target and also compile and embed the kernel module and eBPF probes in the final image, making it easier to test changes in these components.
+- `make image-dev-full` will extend the `image-dev` target and also compile and embed the eBPF probes in the final image, making it easier to test changes in these components.
 
 ### Setting up git hooks
 

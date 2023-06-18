@@ -26,8 +26,7 @@
   vars:
     collection_method: "{{ item }}"
   with_items:
-    - ebpf
-    - kernel_module
+    "{{ lookup('env', 'COLLECTION_METHODS', default='core_bpf,ebpf') | split(',') }}"
 
 - name: Check results
   ansible.builtin.fail:

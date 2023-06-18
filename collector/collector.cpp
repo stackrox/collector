@@ -134,9 +134,9 @@ void setCoreDumpLimit(bool enableCoreDump) {
 
 void gplNotice() {
   CLOG(INFO) << "";
-  CLOG(INFO) << "This product uses kernel module and ebpf subcomponents licensed under the GNU";
+  CLOG(INFO) << "This product uses ebpf subcomponents licensed under the GNU";
   CLOG(INFO) << "GENERAL PURPOSE LICENSE Version 2 outlined in the /kernel-modules/LICENSE file.";
-  CLOG(INFO) << "Source code for the kernel module and ebpf subcomponents is available at";
+  CLOG(INFO) << "Source code for the ebpf subcomponents is available at";
   CLOG(INFO) << "https://github.com/stackrox/falcosecurity-libs/";
   CLOG(INFO) << "";
 }

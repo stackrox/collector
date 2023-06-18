@@ -44,7 +44,7 @@ class CollectorConfig {
   static constexpr bool kUseChiselCache = true;
   static constexpr bool kTurnOffScrape = false;
   static constexpr int kScrapeInterval = 30;
-  static constexpr CollectionMethod kCollectionMethod = KERNEL_MODULE;
+  static constexpr CollectionMethod kCollectionMethod = CollectionMethod::EBPF;
   static constexpr const char* kSyscalls[] = {
       "accept",
       "chdir",
@@ -73,14 +73,13 @@ function on_event()
     return true
 end
 function on_init()
-    filter = "not container.id = 'host'\n"
+    filter = "proc.name = 'self-checks' or container.id != 'host'\n"
     chisel.set_filter(filter)
     return true
 end
 )";
   static const UnorderedSet<L4ProtoPortPair> kIgnoredL4ProtoPortPairs;
-  static constexpr bool kForceKernelModules = false;
-  static constexpr bool kEnableProcessesListeningOnPorts = false;
+  static constexpr bool kEnableProcessesListeningOnPorts = true;
 
   CollectorConfig() = delete;
   CollectorConfig(CollectorArgs* collectorArgs);
@@ -103,11 +102,12 @@ end
   bool DisableNetworkFlows() const { return disable_network_flows_; }
   const UnorderedSet<L4ProtoPortPair>& IgnoredL4ProtoPortPairs() const { return ignored_l4proto_port_pairs_; }
   bool CurlVerbose() const { return curl_verbose_; }
-  virtual bool ForceKernelModules() const { return force_kernel_modules_; }
   bool EnableAfterglow() const { return enable_afterglow_; }
   bool IsCoreDumpEnabled() const;
   Json::Value TLSConfiguration() const { return tls_config_; }
   bool IsProcessesListeningOnPortsEnabled() const { return enable_processes_listening_on_ports_; }
+  bool CoReBPFHardfail() const { return core_bpf_hardfail_; }
+  bool ImportUsers() const { return import_users_; }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
@@ -124,13 +124,14 @@ end
   bool scrape_listen_endpoints_ = false;
   UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
   bool curl_verbose_ = false;
-  bool force_kernel_modules_ = false;
 
   HostConfig host_config_;
   int64_t afterglow_period_micros_ = 300000000;  // 5 minutes in microseconds
   bool enable_afterglow_ = true;
   bool enable_core_dump_ = false;
   bool enable_processes_listening_on_ports_;
+  bool core_bpf_hardfail_;
+  bool import_users_;
 
   Json::Value tls_config_;
 };
