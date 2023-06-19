@@ -73,7 +73,7 @@ SignalHandler::Result ProcessSignalHandler::HandleSignal(sinsp_evt* evt) {
     ++(stats_->nProcessSendFailures);
   }
 
-  return SignalHandler::PROCESSED;
+  return result;
 }
 
 SignalHandler::Result ProcessSignalHandler::HandleExistingProcess(sinsp_threadinfo* tinfo) {
@@ -95,7 +95,7 @@ SignalHandler::Result ProcessSignalHandler::HandleExistingProcess(sinsp_threadin
     ++(stats_->nProcessSendFailures);
   }
 
-  return SignalHandler::PROCESSED;
+  return result;
 }
 
 std::vector<std::string> ProcessSignalHandler::GetRelevantEvents() {

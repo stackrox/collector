@@ -99,7 +99,7 @@ class SysdigService : public Sysdig {
   std::unique_ptr<sinsp> inspector_;
   std::unique_ptr<sinsp_evt_formatter> default_formatter_;
   std::unique_ptr<sinsp_chisel> chisel_;
-  std::unique_ptr<ISignalServiceClient> grpc_client_;
+  std::unique_ptr<ISignalServiceClient> signal_client_;
   std::vector<SignalHandlerEntry> signal_handlers_;
   SysdigStats userspace_stats_;
   std::bitset<PPM_EVENT_MAX> global_event_filter_;

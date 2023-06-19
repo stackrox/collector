@@ -67,12 +67,12 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
   }
 
   if (config.grpc_channel) {
-    grpc_client_.reset(new SignalServiceClient(std::move(config.grpc_channel)));
+    signal_client_.reset(new SignalServiceClient(std::move(config.grpc_channel)));
   } else {
-    grpc_client_.reset(new StdoutSignalServiceClient());
+    signal_client_.reset(new StdoutSignalServiceClient());
   }
   AddSignalHandler(MakeUnique<ProcessSignalHandler>(inspector_.get(),
-                                                    grpc_client_.get(),
+                                                    signal_client_.get(),
                                                     &userspace_stats_));
 
   if (signal_handlers_.size() == 2) {
