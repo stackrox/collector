@@ -104,7 +104,7 @@ func StopTimeout() string {
 func HostInfo() *Host {
 	if host_options == nil {
 		host_options = &Host{
-			Kind:    ReadEnvVarWithDefault(envHostType, "default"),
+			Kind:    ReadEnvVarWithDefault(envHostType, "local"),
 			User:    ReadEnvVar(envHostUser),
 			Address: ReadEnvVar(envHostAddress),
 			Options: ReadEnvVar(envHostOptions),
