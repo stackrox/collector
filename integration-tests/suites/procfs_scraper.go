@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
+	"github.com/stackrox/collector/integration-tests/suites/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -51,7 +52,7 @@ func (s *ProcfsScraperTestSuite) SetupSuite() {
 }
 
 func (s *ProcfsScraperTestSuite) launchNginx() {
-	image := "nginx:1.14-alpine"
+	image := config.Images().ImageByKey("nginx")
 
 	err := s.executor.PullImage(image)
 	s.Require().NoError(err)

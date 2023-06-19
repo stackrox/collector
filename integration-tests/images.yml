@@ -1,0 +1,17 @@
+images:
+  grpc-server: quay.io/rhacs-eng/grpc-server:3.73.x-95-gd43176a427
+
+  performance-phoronix: quay.io/rhacs-eng/collector-performance:phoronix
+  performance-json-label: quay.io/rhacs-eng/collector-performance:json-label
+  performance-stats: quay.io/rhacs-eng/collector-performance:stats
+  performance-perf: quay.io/rhacs-eng/collector-performance:perf
+  performance-bpftrace: quay.io/rhacs-eng/collector-performance:bpftrace
+  performance-bcc: quay.io/rhacs-eng/collector-performance:bcc
+  performance-init: quay.io/rhacs-eng/collector-performance:init
+
+  qa-socat: quay.io/rhacs-eng/qa:socat
+  qa-plop: quay.io/rhacs-eng/qa:collector-processes-listening-on-ports-3.12.x-11-g64eeab9cbc
+  qa-schedule-curls: quay.io/rhacs-eng/qa:collector-schedule-curls
+
+  nginx: nginx:1.14-alpine
+  curl: pstauffer/curl:latest

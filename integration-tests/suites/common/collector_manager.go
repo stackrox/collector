@@ -11,6 +11,8 @@ import (
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/boltdb/bolt"
+
+	"github.com/stackrox/collector/integration-tests/suites/config"
 )
 
 type CollectorManager struct {
@@ -30,28 +32,25 @@ type CollectorManager struct {
 }
 
 func NewCollectorManager(e Executor, name string) *CollectorManager {
-	var collectorPreArguments = os.Getenv("COLLECTOR_PRE_ARGUMENTS")
-	collectionMethod := ReadEnvVarWithDefault("COLLECTION_METHOD", "ebpf")
-	if strings.Contains(collectionMethod, "module") {
-		collectionMethod = "kernel_module"
-	}
+	collectorOptions := config.CollectorInfo()
+	runtimeOptions := config.RuntimeInfo()
+	image_store := config.Images()
 
-	logLevel := ReadEnvVarWithDefault("COLLECTOR_LOG_LEVEL", "debug")
-	offlineMode := ReadBoolEnvVar("COLLECTOR_OFFLINE_MODE")
+	collectionMethod := config.CollectionMethod()
 
 	env := map[string]string{
 		"GRPC_SERVER":             "localhost:9999",
-		"COLLECTOR_CONFIG":        fmt.Sprintf(`{"logLevel":"%s","turnOffScrape":true,"scrapeInterval":2}`, logLevel),
+		"COLLECTOR_CONFIG":        fmt.Sprintf(`{"logLevel":"%s","turnOffScrape":true,"scrapeInterval":2}`, collectorOptions.LogLevel),
 		"COLLECTION_METHOD":       collectionMethod,
-		"COLLECTOR_PRE_ARGUMENTS": collectorPreArguments,
+		"COLLECTOR_PRE_ARGUMENTS": collectorOptions.PreArguments,
 		"ENABLE_CORE_DUMP":        "false",
 	}
-	if !offlineMode {
+	if !collectorOptions.Offline {
 		env["MODULE_DOWNLOAD_BASE_URL"] = "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"
 	}
 	mounts := map[string]string{
-		"/host/var/run/docker.sock:ro": RuntimeSocket,
-		"/run/podman/podman.sock:ro":   RuntimeSocket,
+		"/host/var/run/docker.sock:ro": runtimeOptions.Socket,
+		"/run/podman/podman.sock:ro":   runtimeOptions.Socket,
 		"/host/proc:ro":                "/proc",
 		"/host/etc:ro":                 "/etc/",
 		"/host/usr/lib:ro":             "/usr/lib/",
@@ -63,8 +62,7 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 		"/module": "",
 	}
 
-	collectorImage := ReadEnvVar("COLLECTOR_IMAGE")
-	vm_config := ReadEnvVar("VM_CONFIG")
+	vm_config := config.VMInfo().Config
 
 	return &CollectorManager{
 		DBPathRemote:      "/tmp/collector-test.db",
@@ -72,8 +70,8 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 		executor:          e,
 		DisableGrpcServer: false,
 		BootstrapOnly:     false,
-		CollectorImage:    collectorImage,
-		GRPCServerImage:   "quay.io/rhacs-eng/grpc-server:3.73.x-95-gd43176a427",
+		CollectorImage:    image_store.CollectorImage(),
+		GRPCServerImage:   image_store.ImageByKey("grpc-server"),
 		Env:               env,
 		Mounts:            mounts,
 		TestName:          name,
@@ -267,8 +265,7 @@ func (c *CollectorManager) stopContainer(name string) error {
 // Sets the path to where core dumps are saved to. This is specified in the core_pattern file
 // The core_pattern file is backed up, because we don't want to permanently change it
 func (c *CollectorManager) SetCoreDumpPath(coreDumpFile string) error {
-	remote_host_type := ReadEnvVarWithDefault("REMOTE_HOST_TYPE", "local")
-	if remote_host_type != "local" {
+	if !config.HostInfo().IsLocal() {
 		corePatternFile := "/proc/sys/kernel/core_pattern"
 		corePatternBackupFile := "/tmp/core_pattern_backup"
 		cmdBackupCorePattern := []string{"sudo", "cp", corePatternFile, corePatternBackupFile}
@@ -305,7 +302,7 @@ func (c *CollectorManager) RestoreCoreDumpPath() error {
 // If the integration test is run on a remote host the core dump needs to be copied from the remote host
 // to the local maching
 func (c *CollectorManager) GetCoreDump(coreDumpFile string) error {
-	if c.Env["ENABLE_CORE_DUMP"] == "true" && ReadEnvVarWithDefault("REMOTE_HOST_TYPE", "local") != "local" {
+	if c.Env["ENABLE_CORE_DUMP"] == "true" && !config.HostInfo().IsLocal() {
 		cmd := []string{"sudo", "chmod", "755", coreDumpFile}
 		c.executor.Exec(cmd...)
 		c.executor.CopyFromHost(coreDumpFile, coreDumpFile)
