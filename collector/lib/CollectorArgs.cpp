@@ -126,6 +126,18 @@ bool CollectorArgs::parse(int argc, char** argv, int& exitCode) {
     return false;
   }
 
+  for (int i = 0; i < parse.optionsCount(); ++i) {
+    option::Option& opt = buffer[i];
+    if (opt.index() == UNKNOWN) {
+      stringstream out;
+
+      out << "Unknown option: " << options[UNKNOWN].name;
+      message = out.str();
+      exitCode = 1;
+      return false;
+    }
+  }
+
   exitCode = 0;
   return true;
 }
