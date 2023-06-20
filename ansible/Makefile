@@ -66,6 +66,12 @@ create-ci-vms:
 		--tags setup,provision \
 		integration-tests.yml
 
+.PHONY: vm-local-dev
+vm-local-dev:
+	ansible-playbook -i $(CONTEXT) \
+		-e job_id="$(JOB_ID)" \
+		local-development.yml
+
 .PHONY: secrets-config
 secrets.yml:
 	@echo "---" > secrets.yml

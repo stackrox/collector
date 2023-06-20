@@ -1,0 +1,26 @@
+---
+
+- name: Set up VM for local development
+  hosts: "job_id_{{ job_id }}"
+  vars:
+    branch_name: "{{ lookup('env', 'COLLECTOR_BRANCH', default='master') }}"
+
+  tasks:
+    - name: Install packages
+      become: true
+      package:
+        name:
+          - git
+          - cmake
+          - make
+          - clang
+          - golang
+        state: present
+
+    - name: Clone Collector
+      git:
+        repo: https://github.com/stackrox/collector
+        dest: "{{ ansible_env.HOME }}/collector"
+        recursive: true
+        clone: true
+        version: "{{ branch_name }}"
