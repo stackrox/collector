@@ -30,6 +30,8 @@ You should have received a copy of the GNU General Public License along with thi
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/async_stream.h>
 
+#include "Logging.h"
+
 // This file defines an alternative client interface for bidirectional GRPC streams. The interface supports:
 // - simultaneous reading and writing without multithreading or low-level completion queue/tag work.
 // - both sync and async operations can be used at the same time.
@@ -68,6 +70,8 @@ class IDuplexClientWriter;
 class DuplexClient;
 template <typename W>
 class DuplexClientWriter;
+template <typename W>
+class StdoutDuplexClientWriter;
 template <typename W, typename R>
 class DuplexClientReaderWriter;
 
@@ -735,6 +739,75 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
   bool read_buf_valid_ = false;
 
   friend class DuplexClient;
+};
+
+template <typename W>
+class StdoutDuplexClientWriter : public IDuplexClientWriter<W> {
+ public:
+  ~StdoutDuplexClientWriter() override = default;
+
+  // Write methods.
+
+  Result Write(const W& obj, const gpr_timespec& deadline) {
+    std::string output;
+    google::protobuf::util::MessageToJsonString(obj, &output, google::protobuf::util::JsonPrintOptions{});
+    CLOG(DEBUG) << "GRPC: " << output;
+    return Result(Status::OK);
+  }
+
+  Result WriteAsync(const W& obj) {
+    std::string output;
+    google::protobuf::util::MessageToJsonString(obj, &output, google::protobuf::util::JsonPrintOptions{});
+    CLOG(DEBUG) << "GRPC: " << output;
+    return Result(Status::OK);
+  }
+
+  template <typename TS = time_point>
+  Result WaitUntilStarted(const TS& time_spec = time_point::max()) {
+    return Result(Status::OK);
+  }
+
+  bool Sleep(const gpr_timespec& deadline) {
+    return true;
+  }
+
+  Result WritesDoneAsync() {
+    return Result(Status::OK);
+  }
+
+  Result WritesDone(const gpr_timespec& deadline) {
+    return Result(Status::OK);
+  }
+
+  Result FinishAsync() {
+    return Result(Status::OK);
+  }
+
+  Result WaitUntilStarted(const gpr_timespec& deadline) {
+    return Result(Status::OK);
+  }
+
+  Result WaitUntilFinished(const gpr_timespec& deadline) {
+    return Result(Status::OK);
+  }
+
+  Result Finish(grpc::Status* status, const gpr_timespec& deadline) {
+    return Result(Status::OK);
+  }
+
+  grpc::Status Finish(const gpr_timespec& deadline) {
+    return grpc::Status(grpc::StatusCode::OK, "Ok");
+  }
+
+  void TryCancel() {}
+
+  Result Shutdown() {
+    return Result(Status::OK);
+  }
+
+  StdoutDuplexClientWriter() {}
+
+  // virtual OpDescriptor WriteAsyncInternal(const W& obj) = 0;
 };
 
 }  // namespace grpc_duplex_impl
