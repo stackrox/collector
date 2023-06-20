@@ -40,7 +40,6 @@ class Heuristic {
 
 class CollectionHeuristic : public Heuristic {
   void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
-
     // All our probes depend on eBPF.
     if (!host.HasEBPFSupport()) {
       CLOG(FATAL) << host.GetDistro() << " " << host.GetKernelVersion().release
