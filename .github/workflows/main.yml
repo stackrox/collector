@@ -47,12 +47,22 @@ jobs:
     with:
       logs-artifact: driver-build-failures
 
-  build-collector-slim:
+  build-collector-slim-amd64:
     uses: ./.github/workflows/collector-slim.yml
     needs: init
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       collector-image: ${{ needs.init.outputs.collector-image }}
+      arch: amd64
+    secrets: inherit
+
+  build-collector-slim-ppc64le:
+    uses: ./.github/workflows/collector-slim.yml
+    needs: init
+    with:
+      collector-tag: ${{ needs.init.outputs.collector-tag }}
+      collector-image: ${{ needs.init.outputs.collector-image }}
+      arch: ppc64le
     secrets: inherit
 
   build-collector-full:
@@ -65,7 +75,7 @@ jobs:
     secrets: inherit
     needs:
     - init
-    - build-collector-slim
+    - build-collector-slim-amd64
     - build-drivers
 
   integration-tests:
@@ -75,7 +85,7 @@ jobs:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     needs:
     - init
-    - build-collector-slim
+    - build-collector-slim-amd64
     - build-collector-full
     secrets: inherit
 
@@ -86,8 +96,18 @@ jobs:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     needs:
     - init
-    - build-collector-slim
+    - build-collector-slim-amd64
     - build-collector-full
+    secrets: inherit
+
+  multiarch-manifest:
+    uses: ./.github/workflows/multiarch-manifest.yml
+    with:
+      collector-tag: ${{ needs.init.outputs.collector-tag }}
+    needs:
+      - init
+      - build-collector-slim-amd64
+      - build-collector-slim-ppc64le
     secrets: inherit
 
   build-support-packages:
