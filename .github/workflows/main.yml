@@ -58,9 +58,7 @@ jobs:
 
   build-collector-slim-ppc64le:
     uses: ./.github/workflows/collector-slim.yml
-    needs:
-      - init
-      - build-collector-slim-amd64
+    needs: init
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       collector-image: ${{ needs.init.outputs.collector-image }}
