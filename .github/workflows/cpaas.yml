@@ -27,12 +27,32 @@ jobs:
       logs-artifact:
         drivers-build-failures
 
-  build-collector-slim:
+  build-collector-slim-amd64:
     uses: ./.github/workflows/collector-slim.yml
     needs: init
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
       collector-image: ${{ needs.init.outputs.collector-image }}-cpaas
+      arch: amd64
+    secrets: inherit
+
+  build-collector-slim-ppc64le:
+    uses: ./.github/workflows/collector-slim.yml
+    needs: init
+    with:
+      collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
+      collector-image: ${{ needs.init.outputs.collector-image }}-cpaas
+      arch: ppc64le
+    secrets: inherit
+
+  multiarch-manifest:
+    uses: ./.github/workflows/multiarch-manifest.yml
+    needs:
+      - init
+      - build-collector-slim-amd64
+      - build-collector-slim-ppc64le
+    with:
+      collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
     secrets: inherit
 
   build-collector-full:
@@ -46,7 +66,9 @@ jobs:
     secrets: inherit
     needs:
     - init
-    - build-collector-slim
+    - build-collector-slim-amd64
+    - build-collector-slim-ppc64le
+    - multiarch-manifest
     - sync-drivers-and-support-packages
 
   integration-tests:
@@ -75,7 +97,9 @@ jobs:
     needs:
     - init
     - sync-drivers-and-support-packages
-    - build-collector-slim
+    - build-collector-slim-amd64
+    - build-collector-slim-ppc64le
+    - multiarch-manifest
     - build-collector-full
     - integration-tests
     steps:
