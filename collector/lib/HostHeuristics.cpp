@@ -40,21 +40,22 @@ class Heuristic {
 
 class CollectionHeuristic : public Heuristic {
   void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
-    // If we're configured to use eBPF with BTF, we try to be conservative
-    // and fail instead of falling-back to other methods.
-    if (config.GetCollectionMethod() == CollectionMethod::CORE_BPF) {
-      if (!host.HasEBPFSupport()) {
-        CLOG(FATAL) << host.GetDistro() << " " << host.GetKernelVersion().release
-                    << " does not support eBPF, which is a requirement for core_bpf collection.";
-      }
 
+    // All our probes depend on eBPF.
+    if (!host.HasEBPFSupport()) {
+      CLOG(FATAL) << host.GetDistro() << " " << host.GetKernelVersion().release
+                  << " does not support eBPF, which is a requirement for Collector.";
+    }
+
+    // If we're configured to use eBPF with BTF, we try to be conservative
+    // and fail instead of falling-back to ebpf.
+    if (config.GetCollectionMethod() == CollectionMethod::CORE_BPF) {
       if (!host.HasBTFSymbols()) {
         CLOG(FATAL) << "Missing BTF symbols, core_bpf is not available. "
                     << "They can be provided by the kernel when configured with DEBUG_INFO_BTF, "
                     << "or as file. "
                     << "HINT: You may alternatively want to use eBPF based collection "
                     << "with collector.collectionMethod=EBPF.";
-        ;
       }
 
       if (!host.HasBPFRingBufferSupport()) {
@@ -67,28 +68,14 @@ class CollectionHeuristic : public Heuristic {
         CLOG(FATAL) << "Missing BPF tracepoint support.";
       }
     }
-
-    // If we're configured to use eBPF but the host we're running on
-    // does not support it, we can try to use kernel modules instead.
-    // The exception to this is COS, where third party modules are not
-    // supported, so there is nothing we can do and must exit.
-    if ((config.GetCollectionMethod() == CollectionMethod::EBPF) && !host.HasEBPFSupport()) {
-      CLOG(FATAL) << host.GetDistro() << " " << host.GetKernelVersion().release
-                  << " does not support ebpf based collection.";
-    }
   }
 };
 
 class DockerDesktopHeuristic : public Heuristic {
  public:
-  // Docker Desktop does not support eBPF so we switch to use kernel
-  // modules instead.
+  // Docker Desktop does not support eBPF so we don't support it.
   void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
-    if (!host.IsDockerDesktop()) {
-      return;
-    }
-
-    if (config.UseEbpf()) {
+    if (host.IsDockerDesktop()) {
       CLOG(FATAL) << host.GetDistro() << " does not support eBPF.";
     }
   }
