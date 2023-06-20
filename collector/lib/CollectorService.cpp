@@ -184,8 +184,7 @@ bool SetupKernelDriver(CollectorService& collector, const std::string& GRPCServe
     return false;
   }
 
-  const char* type = config.UseEbpf() ? "eBPF probe" : "kernel module";
-  CLOG(INFO) << "Attempting to find " << type << " - Candidate versions: ";
+  CLOG(INFO) << "Candidate drivers: ";
   for (const auto& candidate : candidates) {
     CLOG(INFO) << candidate.GetName();
   }

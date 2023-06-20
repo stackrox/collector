@@ -86,7 +86,6 @@ end
 
   std::string asString() const;
 
-  virtual bool UseEbpf() const;
   void HandleAfterglowEnvVars();
   bool UseChiselCache() const;
   bool TurnOffScrape() const;

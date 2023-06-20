@@ -229,11 +229,6 @@ bool CollectorConfig::UseChiselCache() const {
   return use_chisel_cache_;
 }
 
-bool CollectorConfig::UseEbpf() const {
-  CollectionMethod cm = GetCollectionMethod();
-  return (cm == CollectionMethod::EBPF || cm == CollectionMethod::CORE_BPF);
-}
-
 bool CollectorConfig::TurnOffScrape() const {
   return turn_off_scrape_;
 }
