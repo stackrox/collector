@@ -91,7 +91,7 @@ func setSelinuxPermissiveIfNeeded() error {
 }
 
 func isSelinuxPermissiveNeeded() bool {
-	vmType := config.VMInfo().InstanceType
+	vmType := config.VMInfo().Config
 	if strings.Contains(vmType, "coreos") || strings.Contains(vmType, "rhcos") {
 		return true
 	}
