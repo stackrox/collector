@@ -1,4 +1,4 @@
-FROM quay.io/centos/centos:stream8
+FROM quay.io/centos/centos:stream9
 
 ARG NPROCS=6
 ENV NPROCS=$NPROCS
@@ -38,7 +38,6 @@ RUN dnf -y update \
         patchutils \
         passwd \
         pkgconfig \
-        python2 \
         rsync \
         tar \
         unzip \
@@ -58,7 +57,7 @@ RUN "builder/install/install-dependencies.sh"
 
 RUN rm -rf ${BUILD_DIR}
 
-RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
+RUN echo -e '/usr/local/lib\n/usr/local/lib64' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 
 # Set up ssh for remote development with IDE
 RUN ssh-keygen -A \
