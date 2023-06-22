@@ -15,7 +15,7 @@ RUN dnf -y update \
         bison \
         ca-certificates \
         clang \
-        cmake-3.18.2-9.el8 \
+        cmake \
         cracklib-dicts \
         diffutils \
         elfutils-libelf-devel \
