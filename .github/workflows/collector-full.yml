@@ -73,7 +73,7 @@ jobs:
             --target=probe-layer-${{ inputs.max-layer-depth }} \
             --tag "${COLLECTOR_IMAGE}" \
             --build-arg collector_repo=quay.io/stackrox-io/collector \
-            --build-arg collector_version=${{ inputs.collector-tag }} \
+            --build-arg collector_version=${{ inputs.collector-tag }}-amd64 \
             --build-arg module_version="${DRIVER_VERSION}" \
             --build-arg max_layer_size=300 \
             --build-arg max_layer_depth=${{ inputs.max-layer-depth }} \
