@@ -227,6 +227,11 @@ bool HostInfo::HasBPFRingBufferSupport() {
 
   res = libbpf_probe_bpf_map_type(BPF_MAP_TYPE_RINGBUF, NULL);
 
+  if (res == 0) {
+    CLOG(INFO) << "BPF RingBuffer map type is not available (errno="
+               << StrError() << ")";
+  }
+
   if (res < 0) {
     CLOG(WARNING) << "Unable to check for the BPF RingBuffer availability. "
                   << "Assuming it is available.";
@@ -239,6 +244,11 @@ bool HostInfo::HasBPFTracingSupport() {
   int res;
 
   res = libbpf_probe_bpf_prog_type(BPF_PROG_TYPE_TRACING, NULL);
+
+  if (res == 0) {
+    CLOG(INFO) << "BPF tracepoint program type is not supported (errno="
+               << StrError() << ")";
+  }
 
   if (res < 0) {
     CLOG(WARNING) << "Unable to check for the BPF tracepoint program type support. "
