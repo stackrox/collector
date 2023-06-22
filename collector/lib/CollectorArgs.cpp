@@ -74,7 +74,7 @@ static const option::Descriptor usage[] =
         {COLLECTOR_CONFIG, 0, "", "collector-config", checkCollectorConfig, "  --collector-config    \tREQUIRED: Collector config as a JSON string. Please refer to documentation on the valid JSON format."},
         {COLLECTION_METHOD, 0, "", "collection-method", checkCollectionMethod, "  --collection-method   \tCollection method (kernel_module, ebpf or core_bpf)."},
         {CHISEL, 0, "", "chisel", checkChisel, "  --chisel              \tChisel is a base64 encoded string."},
-        {GRPC_SERVER, 0, "", "grpc-server", checkGRPCServer, "  --grpc-server         \tREQUIRED: GRPC server endpoint string in the form HOST1:PORT1."},
+        {GRPC_SERVER, 0, "", "grpc-server", checkGRPCServer, "  --grpc-server         \tGRPC server endpoint string in the form HOST1:PORT1."},
         {UNKNOWN, 0, "", "", option::Arg::None,
          "\nExamples:\n"
          "  collector --grpc-server=\"172.16.0.5:443\"\n"},
