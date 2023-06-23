@@ -89,6 +89,26 @@ The image `quay.io/rhacs-eng/grpc-server` can be built manually by running
 `make mock-grpc-server-image` in the `https://github.com/stackrox/stackrox/`
 repository.
 
+## Run in the standalone mode
+
+Collector supports the standalone mode, when it does not require a GRPC server
+to connect to. In this mode it will start up as normally, and output all the
+GRPC messages in json format into stdout. To use this mode, specify an empty
+`GRPC_SERVER` environment variable, i.e. in docker compose:
+
+```yaml
+    environment:
+      # note no quotes or such, they will be interpreted
+      # as a string with two characters in it.
+      - GRPC_SERVER=
+```
+
+Or similarly via a CLI parameter:
+
+```bash
+$ collector --grpc-server=
+```
+
 ### Development with an IDE (CLion)
 
 #### Setup

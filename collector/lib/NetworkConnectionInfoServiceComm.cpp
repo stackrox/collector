@@ -39,7 +39,10 @@ std::unique_ptr<grpc::ClientContext> NetworkConnectionInfoServiceComm::CreateCli
   return ctx;
 }
 
-NetworkConnectionInfoServiceComm::NetworkConnectionInfoServiceComm(std::string hostname, std::shared_ptr<grpc::Channel> channel) : hostname_(std::move(hostname)), channel_(std::move(channel)), stub_(sensor::NetworkConnectionInfoService::NewStub(channel_)) {
+NetworkConnectionInfoServiceComm::NetworkConnectionInfoServiceComm(std::string hostname, std::shared_ptr<grpc::Channel> channel) : hostname_(std::move(hostname)), channel_(std::move(channel)) {
+  if (channel_) {
+    stub_ = sensor::NetworkConnectionInfoService::NewStub(channel_);
+  }
 }
 
 void NetworkConnectionInfoServiceComm::ResetClientContext() {
@@ -49,6 +52,10 @@ void NetworkConnectionInfoServiceComm::ResetClientContext() {
 }
 
 bool NetworkConnectionInfoServiceComm::WaitForConnectionReady(const std::function<bool()>& check_interrupted) {
+  if (!channel_) {
+    return true;
+  }
+
   return WaitForChannelReady(channel_, check_interrupted);
 }
 
@@ -62,9 +69,13 @@ std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> Netwo
   if (!context_)
     ResetClientContext();
 
-  return DuplexClient::CreateWithReadCallback(
-      &sensor::NetworkConnectionInfoService::Stub::AsyncPushNetworkConnectionInfo,
-      channel_, context_.get(), std::move(receive_func));
+  if (channel_) {
+    return DuplexClient::CreateWithReadCallback(
+        &sensor::NetworkConnectionInfoService::Stub::AsyncPushNetworkConnectionInfo,
+        channel_, context_.get(), std::move(receive_func));
+  } else {
+    return MakeUnique<collector::grpc_duplex_impl::StdoutDuplexClientWriter<sensor::NetworkConnectionInfoMessage>>();
+  }
 }
 
 }  // namespace collector

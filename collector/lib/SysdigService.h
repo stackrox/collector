@@ -39,6 +39,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "Control.h"
 #include "SignalHandler.h"
+#include "SignalServiceClient.h"
 #include "Sysdig.h"
 
 namespace collector {
@@ -98,6 +99,7 @@ class SysdigService : public Sysdig {
   std::unique_ptr<sinsp> inspector_;
   std::unique_ptr<sinsp_evt_formatter> default_formatter_;
   std::unique_ptr<sinsp_chisel> chisel_;
+  std::unique_ptr<ISignalServiceClient> signal_client_;
   std::vector<SignalHandlerEntry> signal_handlers_;
   SysdigStats userspace_stats_;
   std::bitset<PPM_EVENT_MAX> global_event_filter_;

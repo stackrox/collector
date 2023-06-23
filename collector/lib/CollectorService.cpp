@@ -88,24 +88,27 @@ void CollectorService::RunForever() {
       return;
     }
     CLOG(INFO) << "Sensor connectivity is successful";
+  }
 
-    if (!config_.DisableNetworkFlows()) {
-      std::shared_ptr<ProcessStore> process_store;
-      if (config_.IsProcessesListeningOnPortsEnabled()) {
-        process_store = std::make_shared<ProcessStore>(&sysdig_);
-      }
-      std::shared_ptr<IConnScraper> conn_scraper = std::make_shared<ConnScraper>(config_.HostProc(), process_store);
-      conn_tracker = std::make_shared<ConnectionTracker>();
-      UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs(config_.IgnoredL4ProtoPortPairs());
-      conn_tracker->UpdateIgnoredL4ProtoPortPairs(std::move(ignored_l4proto_port_pairs));
-
-      auto network_connection_info_service_comm = std::make_shared<NetworkConnectionInfoServiceComm>(config_.Hostname(), config_.grpc_channel);
-
-      net_status_notifier = MakeUnique<NetworkStatusNotifier>(conn_scraper, config_.ScrapeInterval(), config_.ScrapeListenEndpoints(), config_.TurnOffScrape(),
-                                                              conn_tracker, config_.AfterglowPeriod(), config_.EnableAfterglow(),
-                                                              network_connection_info_service_comm);
-      net_status_notifier->Start();
+  if (!config_.grpc_channel || !config_.DisableNetworkFlows()) {
+    // In case if no GRPC is used, continue to setup networking infrasturcture
+    // with empty grpc_channel. NetworkConnectionInfoServiceComm will pick it
+    // up and use stdout instead.
+    std::shared_ptr<ProcessStore> process_store;
+    if (config_.IsProcessesListeningOnPortsEnabled()) {
+      process_store = std::make_shared<ProcessStore>(&sysdig_);
     }
+    std::shared_ptr<IConnScraper> conn_scraper = std::make_shared<ConnScraper>(config_.HostProc(), process_store);
+    conn_tracker = std::make_shared<ConnectionTracker>();
+    UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs(config_.IgnoredL4ProtoPortPairs());
+    conn_tracker->UpdateIgnoredL4ProtoPortPairs(std::move(ignored_l4proto_port_pairs));
+
+    auto network_connection_info_service_comm = std::make_shared<NetworkConnectionInfoServiceComm>(config_.Hostname(), config_.grpc_channel);
+
+    net_status_notifier = MakeUnique<NetworkStatusNotifier>(conn_scraper, config_.ScrapeInterval(), config_.ScrapeListenEndpoints(), config_.TurnOffScrape(),
+                                                            conn_tracker, config_.AfterglowPeriod(), config_.EnableAfterglow(),
+                                                            network_connection_info_service_comm);
+    net_status_notifier->Start();
   }
 
   CollectorStatsExporter exporter(registry, &config_, &sysdig_);

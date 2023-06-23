@@ -36,14 +36,24 @@ You should have received a copy of the GNU General Public License along with thi
 #include "api/v1/signal.pb.h"
 #include "internalapi/sensor/signal_iservice.grpc.pb.h"
 
-#include "CollectorService.h"
 #include "DuplexGRPC.h"
 #include "SignalHandler.h"
 #include "StoppableThread.h"
 
 namespace collector {
 
-class SignalServiceClient {
+class ISignalServiceClient {
+ public:
+  using SignalStreamMessage = sensor::SignalStreamMessage;
+
+  virtual void Start() = 0;
+  virtual void Stop() = 0;
+  virtual SignalHandler::Result PushSignals(const SignalStreamMessage& msg) = 0;
+
+  virtual ~ISignalServiceClient() {}
+};
+
+class SignalServiceClient : public ISignalServiceClient {
  public:
   using SignalService = sensor::SignalService;
   using SignalStreamMessage = sensor::SignalStreamMessage;
@@ -71,6 +81,18 @@ class SignalServiceClient {
   std::unique_ptr<IDuplexClientWriter<SignalStreamMessage>> writer_;
 
   bool first_write_;
+};
+
+class StdoutSignalServiceClient : public ISignalServiceClient {
+ public:
+  using SignalStreamMessage = sensor::SignalStreamMessage;
+
+  explicit StdoutSignalServiceClient() {}
+
+  void Start(){};
+  void Stop(){};
+
+  SignalHandler::Result PushSignals(const SignalStreamMessage& msg);
 };
 
 }  // namespace collector
