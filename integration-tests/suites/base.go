@@ -16,6 +16,7 @@ import (
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/suites/runtime"
 )
 
 const (
@@ -35,6 +36,7 @@ type IntegrationTestSuiteBase struct {
 	suite.Suite
 	db        *bolt.DB
 	executor  common.Executor
+	runtime   runtime.Runtime
 	collector *common.CollectorManager
 	metrics   map[string]float64
 }
@@ -55,6 +57,12 @@ type PerformanceResult struct {
 	CollectionMethod string
 	Metrics          map[string]float64
 	ContainerStats   []ContainerStat
+}
+
+func (s *IntegrationTestSuiteBase) Init() {
+	s.executor = common.NewExecutor()
+	s.runtime = runtime.NewRuntime(*config.RuntimeInfo(), s.executor)
+	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
 }
 
 func (s *IntegrationTestSuiteBase) GetContainerStats() (stats []ContainerStat) {
