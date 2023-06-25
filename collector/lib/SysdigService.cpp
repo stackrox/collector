@@ -7,6 +7,8 @@
 
 #include "libsinsp/wrapper.h"
 
+#include <google/protobuf/util/time_util.h>
+
 #include "CollectionMethod.h"
 #include "CollectorException.h"
 #include "EventNames.h"
@@ -200,6 +202,22 @@ void SysdigService::Start() {
   running_ = true;
 }
 
+void LogUnreasonableEventTime(int64_t time_micros, sinsp_evt* evt) {
+  int64_t time_diff;
+  int64_t evt_ts = evt->get_ts() / 1000UL;
+  int64_t max_past_time = 3600000000;  // One hour in microseconds. This is generous.
+  int64_t max_future_time = 5000000;   // 5 seconds in microseconds. A time in a little in the future is suspicious.
+
+  time_diff = time_micros - evt_ts;
+  if (time_diff > max_past_time) {
+    CLOG_THROTTLED(WARNING, std::chrono::seconds(10)) << "Event of type " << evt->get_type() << " is unreasonably old. It's timestamp is " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(evt_ts);
+  }
+
+  if (time_diff < -max_future_time) {
+    CLOG_THROTTLED(WARNING, std::chrono::seconds(10)) << "Event of type " << evt->get_type() << " is in the future. It's timestamp is " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(evt_ts);
+  }
+}
+
 void SysdigService::Run(const std::atomic<ControlValue>& control) {
   if (!inspector_ || !chisel_) {
     throw CollectorException("Invalid state: SysdigService was not initialized");
@@ -212,6 +230,7 @@ void SysdigService::Run(const std::atomic<ControlValue>& control) {
     if (!evt) continue;
 
     auto process_start = NowMicros();
+    LogUnreasonableEventTime(process_start, evt);
     for (auto it = signal_handlers_.begin(); it != signal_handlers_.end(); it++) {
       auto& signal_handler = *it;
       if (!signal_handler.ShouldHandle(evt)) continue;
