@@ -25,6 +25,8 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include <sstream>
 
+#include <sys/sdt.h>
+
 #include "storage/process_indicator.pb.h"
 
 #include "RateLimit.h"
@@ -56,6 +58,11 @@ bool ProcessSignalHandler::Stop() {
 
 SignalHandler::Result ProcessSignalHandler::HandleSignal(sinsp_evt* evt) {
   const auto* signal_msg = formatter_.ToProtoMessage(evt);
+  const char* name = signal_msg->signal().process_signal().name().c_str();
+  const int pid = signal_msg->signal().process_signal().pid();
+
+  DTRACE_PROBE2(collector, process_signal_handler, name, pid);
+
   if (!signal_msg) {
     ++(stats_->nProcessResolutionFailuresByEvt);
     return IGNORED;
