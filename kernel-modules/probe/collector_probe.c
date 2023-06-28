@@ -254,7 +254,157 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
   }
 
 #ifdef __s390x__
-  syscall_to_enter_args(id, ctx, &stack_ctx);
+  /* Syscall tracepoints follow their own format (=structure) of arguments.
+   * Copying all arguments, e.g. with
+   *   memcpy(stack_ctx.args, _READ(ctx->args), sizeof(unsigned long) * NUM_SYS_ENTER_ARGS);
+   * would copy beyond the format and results in an EACCESS triggered by
+   * format/structure offset checking in the perf event subsystem when installing
+   * the BPF program.
+   * Also the system exit fillers require access to the arguments to fill event
+   * data.  Note that the syscall tracepoints do not provide any argument data
+   * in the syscall exit format.  Of course, trying to access argument data in
+   * filler results in BPF verifier errors.
+   *
+   * To provide arguments to the syscall enter and exit fillers, extract the
+   * arguments from syscall specific formats/structures to an sys_enter_args
+   * structure and use a BPF map to make them available to the enter/exit
+   * fillers.
+   */
+  switch (id) /* maybe use sc_evt here..... */
+  {
+#  ifdef __NR_accept
+    case __NR_accept: {
+      struct sys_enter_accept4_args* accept4_args = (struct sys_enter_accept4_args*)ctx;
+      stack_ctx.args[0] = (unsigned long)accept4_args->fd;
+      stack_ctx.args[1] = (unsigned long)accept4_args->upeer_sockaddr;
+      stack_ctx.args[2] = (unsigned long)accept4_args->upeer_len;
+      break;
+    }
+#  endif
+    case __NR_accept4: {
+      struct sys_enter_accept4_args* accept4_args = (struct sys_enter_accept4_args*)ctx;
+      stack_ctx.args[0] = (unsigned long)accept4_args->fd;
+      stack_ctx.args[1] = (unsigned long)accept4_args->upeer_sockaddr;
+      stack_ctx.args[2] = (unsigned long)accept4_args->upeer_len;
+      stack_ctx.args[3] = (unsigned long)accept4_args->flags;
+      break;
+    }
+    case __NR_connect: {
+      struct sys_enter_connect_args* connect_args = (struct sys_enter_connect_args*)ctx;
+      stack_ctx.args[0] = (unsigned long)connect_args->fd;
+      stack_ctx.args[1] = (unsigned long)connect_args->uservaddr;
+      stack_ctx.args[2] = (unsigned long)connect_args->addrlen;
+      break;
+    }
+    case __NR_chdir: {
+      struct sys_enter_chdir_args* chdir_args = (struct sys_enter_chdir_args*)ctx;
+      stack_ctx.args[0] = (unsigned long)chdir_args->filename;
+      break;
+    }
+    case __NR_fchdir: {
+      struct sys_enter_fchdir_args* fchdir_args = (struct sys_enter_fchdir_args*)ctx;
+      stack_ctx.args[0] = (unsigned long)fchdir_args->fd;
+      break;
+    }
+    case __NR_clone: {
+      struct sys_enter_clone_args* clone_args = (struct sys_enter_clone_args*)ctx;
+#  ifdef __s390x__
+      stack_ctx.args[0] = (unsigned long)clone_args->newsp;
+      stack_ctx.args[1] = (unsigned long)clone_args->clone_flags;
+      stack_ctx.args[2] = (unsigned long)clone_args->parent_tidptr;
+      stack_ctx.args[3] = (unsigned long)clone_args->child_tidptr;
+      stack_ctx.args[4] = (unsigned long)clone_args->tls;
+#  elif __aarch64__
+      stack_ctx.args[0] = (unsigned long)clone_args->clone_flags;
+      stack_ctx.args[1] = (unsigned long)clone_args->newsp;
+      stack_ctx.args[2] = (unsigned long)clone_args->parent_tidptr;
+      stack_ctx.args[3] = (unsigned long)clone_args->tls;
+      stack_ctx.args[4] = (unsigned long)clone_args->child_tidptr;
+#  else
+      stack_ctx.args[0] = (unsigned long)clone_args->clone_flags;
+      stack_ctx.args[1] = (unsigned long)clone_args->newsp;
+      stack_ctx.args[2] = (unsigned long)clone_args->parent_tidptr;
+      stack_ctx.args[3] = (unsigned long)clone_args->child_tidptr;
+      stack_ctx.args[4] = (unsigned long)clone_args->tls;
+#  endif
+      break;
+    }
+    case __NR_execve: {
+      struct sys_enter_execve_args* execve_args = (struct sys_enter_execve_args*)ctx;
+      stack_ctx.args[0] = (unsigned long)execve_args->filename;
+      stack_ctx.args[1] = (unsigned long)execve_args->argv;
+      stack_ctx.args[2] = (unsigned long)execve_args->envp;
+      break;
+    }
+    case __NR_close: {
+      struct sys_enter_close_args* close_args = (struct sys_enter_close_args*)ctx;
+      stack_ctx.args[0] = (unsigned long)close_args->fd;
+      break;
+    }
+    case __NR_setuid: {
+      struct sys_enter_setuid_args* setuid_args = (struct sys_enter_setuid_args*)ctx;
+      stack_ctx.args[0] = (unsigned long)setuid_args->uid;
+      break;
+    }
+    case __NR_setgid: {
+      struct sys_enter_setgid_args* setgid_args = (struct sys_enter_setgid_args*)ctx;
+      stack_ctx.args[0] = (unsigned long)setgid_args->gid;
+      break;
+    }
+    case __NR_setresgid: {
+      struct sys_enter_setresgid_args* setresgid_args = (struct sys_enter_setresgid_args*)ctx;
+      stack_ctx.args[0] = (unsigned long)setresgid_args->rgid;
+      stack_ctx.args[1] = (unsigned long)setresgid_args->egid;
+      stack_ctx.args[2] = (unsigned long)setresgid_args->sgid;
+      break;
+    }
+    case __NR_setresuid: {
+      struct sys_enter_setresuid_args* setresuid_args = (struct sys_enter_setresuid_args*)ctx;
+      stack_ctx.args[0] = (unsigned long)setresuid_args->ruid;
+      stack_ctx.args[1] = (unsigned long)setresuid_args->euid;
+      stack_ctx.args[2] = (unsigned long)setresuid_args->suid;
+      break;
+    }
+    case __NR_socket: {
+      struct sys_enter_socket_args* socket_args = (struct sys_enter_socket_args*)ctx;
+      stack_ctx.args[0] = (unsigned long)socket_args->family;
+      stack_ctx.args[1] = (unsigned long)socket_args->type;
+      stack_ctx.args[2] = (unsigned long)socket_args->protocol;
+      break;
+    }
+#  ifdef CAPTURE_SOCKETCALL
+    case __NR_socketcall: {
+      struct sys_enter_socketcall_args* socketcall_args = (struct sys_enter_socketcall_args*)ctx;
+      unsigned long socketcall_id = (unsigned long)socketcall_args->call;
+
+      stack_ctx.args[0] = socketcall_id;
+      stack_ctx.args[1] = (unsigned long)socketcall_args->args;
+
+      switch (socketcall_id) {
+        case SYS_ACCEPT:
+        case SYS_ACCEPT4:
+        case SYS_CONNECT:
+        case SYS_SHUTDOWN:
+        case SYS_SOCKET:
+          break;
+        default:
+          // Filter out any other socket calls
+          return 0;
+      }
+      break;
+    }
+#  endif
+    case __NR_shutdown: {
+      struct sys_enter_shutdown_args* shutdown_args = (struct sys_enter_shutdown_args*)ctx;
+      stack_ctx.args[0] = (unsigned long)shutdown_args->fd;
+      stack_ctx.args[1] = (unsigned long)shutdown_args->how;
+      break;
+    }
+    case __NR_fork:
+    case __NR_vfork:
+      // No arguments to copy
+      break;
+  }
 #else
   evt_type = sc_evt->enter_event_type;
   drop_flags = sc_evt->flags;
