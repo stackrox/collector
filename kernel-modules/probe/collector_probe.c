@@ -380,19 +380,7 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
       stack_ctx.args[0] = socketcall_id;
       stack_ctx.args[1] = (unsigned long)socketcall_args->args;
 
-      switch (socketcall_id) {
-        case SYS_ACCEPT:
-        case SYS_ACCEPT4:
-        case SYS_CONNECT:
-        case SYS_SHUTDOWN:
-        case SYS_SOCKET:
-          break;
-        default:
-          // Filter out any other socket calls
-          return 0;
-      }
-      break;
-    }
+    } break;
 #  endif
     case __NR_shutdown: {
       struct sys_enter_shutdown_args* shutdown_args = (struct sys_enter_shutdown_args*)ctx;
