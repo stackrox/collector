@@ -26,6 +26,8 @@ endif()
 
 set(FALCO_DIR ${PROJECT_SOURCE_DIR}/../falcosecurity-libs)
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 add_subdirectory(${PROJECT_SOURCE_DIR}/proto)
 
 include_directories(${PROJECT_SOURCE_DIR}/lib)
