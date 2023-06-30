@@ -1,6 +1,7 @@
 project(collector-bin)
 
 find_package(Threads)
+find_package(CURL REQUIRED)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall --std=c++17 -pthread -Wno-deprecated-declarations -fno-omit-frame-pointer -rdynamic")
@@ -62,7 +63,7 @@ else()
 	target_link_libraries(collector_lib libprotobuf.a libcares.a)
 endif()
 
-target_link_libraries(collector_lib z ssl crypto curl bpf)
+target_link_libraries(collector_lib z ssl crypto CURL::libcurl bpf)
 
 add_executable(collector collector.cpp)
 target_link_libraries(collector collector_lib)
