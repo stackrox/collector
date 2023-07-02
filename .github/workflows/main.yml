@@ -1,12 +1,6 @@
 name: Main collector CI
 
 on:
-  push:
-    branches:
-      - master
-      - release-*
-    tags:
-      - 3.*.*
   pull_request:
 
 permissions:
