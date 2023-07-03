@@ -96,6 +96,7 @@ jobs:
               kernel = line.split()[0]
               kernels.add(kernel)
 
+          print("len(kernels)=", len(kernels))
           # Add a parallel job every 10 kernels, capped to 32
           parallel_jobs = math.ceil(len(kernels)/10)
           if parallel_jobs > 32:
@@ -103,6 +104,7 @@ jobs:
 
           parallel = [a for a in range(parallel_jobs)]
 
+          print("parallel_jobs=", parallel_jobs)
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
             f.write(f'parallel-jobs={parallel_jobs}\n')
             f.write(f'parallel-array={json.dumps(parallel)}\n')
