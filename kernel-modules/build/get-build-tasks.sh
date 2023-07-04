@@ -44,8 +44,8 @@ driver_is_cached() {
         unavailable=".collector-ebpf-${kernel_version}.unavail"
     fi
 
-    [ -f "${CACHE_DIR}/kewrnel-modules/${version}/${driver}" ] || [ -f "${CACHE_DIR}/kwernel-modules/${version}/${unavailable}" ]
-    #[ -f "${CACHE_DIR}/kernel-modules/${version}/${driver}" ] || [ -f "${CACHE_DIR}/kernel-modules/${version}/${unavailable}" ]
+    #[ -f "${CACHE_DIR}/kewrnel-modules/${version}/${driver}" ] || [ -f "${CACHE_DIR}/kwernel-modules/${version}/${unavailable}" ]
+    [ -f "${CACHE_DIR}/kernel-modules/${version}/${driver}" ] || [ -f "${CACHE_DIR}/kernel-modules/${version}/${unavailable}" ]
 }
 
 process_driver() {
