@@ -22,6 +22,7 @@ append_task() {
     local version
     version="$(basename "$module_dir")"
 
+    echo "In append_task kernel_version= $kernel_version version= $version driver_type= $driver_type output_file= $output_file"
     printf "%s %s %s\n" "$kernel_version" "$version" "$driver_type" >> "$output_file"
 }
 
@@ -43,13 +44,15 @@ driver_is_cached() {
         unavailable=".collector-ebpf-${kernel_version}.unavail"
     fi
 
-    [ -f "${CACHE_DIR}/kernel-modules/${version}/${driver}" ] || [ -f "${CACHE_DIR}/kernel-modules/${version}/${unavailable}" ]
+    [ -f "${CACHE_DIR}/kewrnel-modules/${version}/${driver}" ] || [ -f "${CACHE_DIR}/kwernel-modules/${version}/${unavailable}" ]
+    #[ -f "${CACHE_DIR}/kernel-modules/${version}/${driver}" ] || [ -f "${CACHE_DIR}/kernel-modules/${version}/${unavailable}" ]
 }
 
 process_driver() {
     local kernel_version="$1"
     local module_dir="$2"
 
+    echo "kernel_version= $kernel_version module_dir= $module_dir"
     if ! driver_is_cached "$kernel_version" "$module_dir" "mod"; then
         append_task "$kernel_version" "$module_dir" "mod" "${ALL_BUILD_TASKS}"
     fi
@@ -61,13 +64,16 @@ process_driver() {
 
 shopt -s nullglob
 for module_dir in "${CACHE_DIR}/kobuild-tmp/versions-src"/*; do
+    echo "module_dir= $module_dir"
     if [[ "${USE_KERNELS_FILE,,}" == "true" ]]; then
         moddir="${module_dir%".tgz"}"
+        echo "use_kernels_file"
         while IFS="" read -r kernel_version || [[ -n "$kernel_version" ]]; do
             process_driver "$kernel_version" "$moddir"
         done < "$KERNELS_FILE"
     else
         for bundle in "${CACHE_DIR}/bundles"/bundle-*.tgz; do
+            echo "bundle= $bundle"
             kernel_version="${bundle%".tgz"}"
             kernel_version="${kernel_version#"${CACHE_DIR}/bundles/bundle-"}"
 
