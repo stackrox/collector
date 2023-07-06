@@ -37,13 +37,15 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 	image_store := config.Images()
 
 	collectionMethod := config.CollectionMethod()
+	collectorConfig := fmt.Sprintf(`{"logLevel":"%s","turnOffScrape":true,"scrapeInterval":2}`, collectorOptions.LogLevel)
 
 	env := map[string]string{
-		"GRPC_SERVER":             "localhost:9999",
-		"COLLECTOR_CONFIG":        fmt.Sprintf(`{"logLevel":"%s","turnOffScrape":true,"scrapeInterval":2}`, collectorOptions.LogLevel),
-		"COLLECTION_METHOD":       collectionMethod,
-		"COLLECTOR_PRE_ARGUMENTS": collectorOptions.PreArguments,
-		"ENABLE_CORE_DUMP":        "false",
+		"GRPC_SERVER":                     "localhost:9999",
+		"COLLECTOR_CONFIG":                collectorConfig,
+		"COLLECTION_METHOD":               collectionMethod,
+		"COLLECTOR_PRE_ARGUMENTS":         collectorOptions.PreArguments,
+		"ENABLE_CORE_DUMP":                "false",
+		"ROX_COLLECTOR_CORE_BPF_HARDFAIL": "true",
 	}
 	if !collectorOptions.Offline {
 		env["MODULE_DOWNLOAD_BASE_URL"] = "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"
