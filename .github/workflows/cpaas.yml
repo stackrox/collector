@@ -43,7 +43,6 @@ jobs:
       downstream-drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}/x86_64
       use-downstream-drivers: true
       skip-built-drivers: true
-      max-layer-depth: "1"
       build-full-image: true
     secrets: inherit
     needs:
