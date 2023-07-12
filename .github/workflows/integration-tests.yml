@@ -8,6 +8,12 @@ on:
           Tag used for running the integration tests
         type: string
         required: true
+      job-tag:
+        description: |
+          Used to differentiate between different sources when creating
+          VMs in GCP.
+        type: string
+        default: ""
 
 jobs:
   required-integration-tests:
@@ -23,6 +29,7 @@ jobs:
     with:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ inputs.collector-tag }}
+      job-tag: ${{ inputs.job-tag}}
     secrets: inherit
 
   all-integration-tests:

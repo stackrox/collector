@@ -23,6 +23,12 @@ on:
           Whether to run the benchmarks instead of the integration tests
         type: boolean
         default: false
+      job-tag:
+        description: |
+          Used to differentiate between different sources when creating
+          VMs in GCP.
+        type: string
+        default: ""
 
 jobs:
   run:
@@ -44,7 +50,7 @@ jobs:
       #
       # vm_type may contain hyphens, so the id is normalized below
       #
-      JOB_ID: ${{ github.run_id }}${{ inputs.vm_type }}
+      JOB_ID: ${{ github.run_id }}${{ inputs.vm_type }}${{ inputs.job-tag }}
       GCP_SSH_KEY_FILE: ~/.ssh/GCP_SSH_KEY
       BUILD_TYPE: ci
       VM_TYPE: "${{ inputs.vm_type }}"

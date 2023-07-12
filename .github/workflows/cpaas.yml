@@ -65,6 +65,7 @@ jobs:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
       offline-mode: true
+      job-tag: cpaas
     needs:
     - init
     - build-collector-full
