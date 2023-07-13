@@ -31,6 +31,7 @@ class CollectorConfig {
       "execve",
       "fchdir",
       "fork",
+      "getsockopt",
       "procexit",
       "procinfo",
       "setresgid",

@@ -129,6 +129,6 @@ if(NOT CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "ppc64le")
 	set(BUILD_LIBSCAP_MODERN_BPF ON CACHE BOOL "Enable modern bpf engine" FORCE)
 endif()
 
-set(MODERN_BPF_EXCLUDE_PROGS "^(openat2|ppoll|setsockopt|getsockopt|clone3|io_uring_setup|nanosleep)$" CACHE STRING "Set of syscalls to exclude from modern bpf engine " FORCE)
+set(MODERN_BPF_EXCLUDE_PROGS "^(openat2|ppoll|setsockopt|clone3|io_uring_setup|nanosleep)$" CACHE STRING "Set of syscalls to exclude from modern bpf engine " FORCE)
 
 add_subdirectory(${FALCO_DIR} EXCLUDE_FROM_DEFAULT_BUILD)

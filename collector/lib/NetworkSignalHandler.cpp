@@ -20,6 +20,7 @@ EventMap<Modifier> modifiers = {
         {"shutdown<", Modifier::REMOVE},
         {"connect<", Modifier::ADD},
         {"accept<", Modifier::ADD},
+        {"getsockopt<", Modifier::ADD},
     },
     Modifier::INVALID,
 };
@@ -35,6 +36,15 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
 
   auto* fd_info = evt->get_fd_info();
   if (!fd_info) return std::nullopt;
+
+  if (fd_info->is_socket_failed()) {
+    return std::nullopt;
+  }
+
+  if (fd_info->is_socket_pending()) {
+    CLOG(TRACE) << "Ignoring pending connection until we determine its status.";
+    return std::nullopt;
+  }
 
   bool is_server = fd_info->is_role_server();
   if (!is_server && !fd_info->is_role_client()) {
@@ -93,7 +103,7 @@ SignalHandler::Result NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
 }
 
 std::vector<std::string> NetworkSignalHandler::GetRelevantEvents() {
-  return {"close<", "shutdown<", "connect<", "accept<"};
+  return {"close<", "shutdown<", "connect<", "accept<", "getsockopt<"};
 }
 
 bool NetworkSignalHandler::Stop() {
