@@ -28,12 +28,6 @@ EventMap<Modifier> modifiers = {
 }  // namespace
 
 std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
-  const int64_t* res = event_extractor_.get_event_rawres(evt);
-  if (!res || *res < 0) {
-    // ignore unsuccessful events for now.
-    return std::nullopt;
-  }
-
   auto* fd_info = evt->get_fd_info();
   if (!fd_info) return std::nullopt;
 
@@ -42,7 +36,13 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
   }
 
   if (fd_info->is_socket_pending()) {
-    CLOG(TRACE) << "Ignoring pending connection until we determine its status.";
+    CLOG(DEBUG) << "Ignoring pending connection until we determine its status.";
+    return std::nullopt;
+  }
+
+  const int64_t* res = event_extractor_.get_event_rawres(evt);
+  if (!res || *res < 0) {
+    // ignore unsuccessful events for now.
     return std::nullopt;
   }
 
