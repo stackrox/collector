@@ -5,6 +5,7 @@
 
 #include <linux/ioctl.h>
 
+#include "libsinsp/parsers.h"
 #include "libsinsp/wrapper.h"
 
 #include <google/protobuf/util/time_util.h>
@@ -78,6 +79,8 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
     }
 
     inspector_->set_import_users(config.ImportUsers());
+
+    inspector_->get_parser()->set_track_connection_status(true);
 
     default_formatter_.reset(new sinsp_evt_formatter(inspector_.get(),
                                                      DEFAULT_OUTPUT_STR));
