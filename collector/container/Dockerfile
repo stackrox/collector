@@ -20,7 +20,10 @@ LABEL name="collector" \
 
 WORKDIR /
 
-COPY container/scripts/collector-wrapper.sh /
+COPY container/${BUILD_TYPE}/install.sh /
+RUN ./install.sh && rm -f install.sh
+
+COPY container/scripts/collector-wrapper.sh /usr/local/bin
 COPY container/scripts/bootstrap.sh /
 COPY container/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY LICENSE-kernel-modules.txt /kernel-modules/LICENSE
@@ -28,10 +31,10 @@ COPY container/libs/libsinsp-wrapper.so /usr/local/lib/
 COPY container/bin/collector /usr/local/bin/
 COPY container/bin/self-checks /usr/local/bin/self-checks
 
-COPY container/${BUILD_TYPE}/final-step.sh /
-
-RUN ./final-step.sh && rm -f final-step.sh
-
+RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
+    ldconfig && \
+    echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt && \
+    chmod 700 bootstrap.sh
 
 EXPOSE 8080 9090
 
