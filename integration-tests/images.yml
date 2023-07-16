@@ -1,5 +1,5 @@
 images:
-  grpc-server: quay.io/rhacs-eng/grpc-server:3.73.x-95-gd43176a427
+  grpc-server: quay.io/rhacs-eng/grpc-server:4.0.x-658-g2922c23f34
 
   performance-phoronix: quay.io/rhacs-eng/collector-performance:phoronix
   performance-json-label: quay.io/rhacs-eng/collector-performance:json-label

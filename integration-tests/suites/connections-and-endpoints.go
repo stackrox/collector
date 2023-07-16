@@ -35,7 +35,8 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 
 	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
 	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
-	s.collector.Env["ROX_ENABLE_AFTERGLOW"] = "0"
+	s.collector.Env["ROX_ENABLE_AFTERGLOW"] = "true"
+	s.collector.Env["ROX_AFTERGLOW_PERIOD"] = "5"
 
 	err := s.collector.Setup()
 	s.Require().NoError(err)
@@ -91,38 +92,36 @@ func (s *ConnectionsAndEndpointsTestSuite) TearDownSuite() {
 
 func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 
-	val, err := s.Get(s.Client.ContainerID, networkBucket)
-	s.Require().NoError(err)
-	clientNetwork, err := common.NewNetworkInfo(val)
 	// TODO If ExpectedNetwork is nil the test should check that it is actually nil
 	if s.Client.ExpectedNetwork != nil {
+		clientNetworks, err := s.GetNetworks(s.Client.ContainerID)
 		s.Require().NoError(err)
+		assert.Equal(s.T(), 1, len(clientNetworks))
 		expectedLocalAddress := strings.Replace(s.Client.ExpectedNetwork[0].LocalAddress, "CLIENT_IP", s.Client.IP, -1)
 		expectedRemoteAddress := strings.Replace(s.Client.ExpectedNetwork[0].RemoteAddress, "SERVER_IP", s.Server.IP, -1)
-		assert.Equal(s.T(), expectedLocalAddress, clientNetwork.LocalAddress)
-		assert.Equal(s.T(), expectedRemoteAddress, clientNetwork.RemoteAddress)
-		assert.Equal(s.T(), "ROLE_CLIENT", clientNetwork.Role)
-		assert.Equal(s.T(), s.Client.ExpectedNetwork[0].SocketFamily, clientNetwork.SocketFamily)
+		assert.Equal(s.T(), expectedLocalAddress, clientNetworks[0].LocalAddress)
+		assert.Equal(s.T(), expectedRemoteAddress, clientNetworks[0].RemoteAddress)
+		assert.Equal(s.T(), "ROLE_CLIENT", clientNetworks[0].Role)
+		assert.Equal(s.T(), s.Client.ExpectedNetwork[0].SocketFamily, clientNetworks[0].SocketFamily)
 	}
 
 	if s.Client.ExpectedEndpoints != nil {
 		fmt.Println("Expected client endpoint should be nil")
 	}
-	_, err = s.GetEndpoints(s.Client.ContainerID)
+	_, err := s.GetEndpoints(s.Client.ContainerID)
 	s.Require().Error(err, "There should be no client endpoint")
 
-	val, err = s.Get(s.Server.ContainerID, networkBucket)
-	s.Require().NoError(err)
-	serverNetwork, err := common.NewNetworkInfo(val)
 	// TODO If ExpectedNetwork is nil the test should check that it is actually nil
 	if s.Server.ExpectedNetwork != nil {
+		serverNetworks, err := s.GetNetworks(s.Server.ContainerID)
 		s.Require().NoError(err)
+		assert.Equal(s.T(), 1, len(serverNetworks))
 		expectedLocalAddress := strings.Replace(s.Server.ExpectedNetwork[0].LocalAddress, "SERVER_IP", s.Server.IP, -1)
 		expectedRemoteAddress := strings.Replace(s.Server.ExpectedNetwork[0].RemoteAddress, "CLIENT_IP", s.Client.IP, -1)
-		assert.Equal(s.T(), expectedLocalAddress, serverNetwork.LocalAddress)
-		assert.Equal(s.T(), expectedRemoteAddress, serverNetwork.RemoteAddress)
-		assert.Equal(s.T(), "ROLE_SERVER", serverNetwork.Role)
-		assert.Equal(s.T(), s.Server.ExpectedNetwork[0].SocketFamily, serverNetwork.SocketFamily)
+		assert.Equal(s.T(), expectedLocalAddress, serverNetworks[0].LocalAddress)
+		assert.Equal(s.T(), expectedRemoteAddress, serverNetworks[0].RemoteAddress)
+		assert.Equal(s.T(), "ROLE_SERVER", serverNetworks[0].Role)
+		assert.Equal(s.T(), s.Server.ExpectedNetwork[0].SocketFamily, serverNetworks[0].SocketFamily)
 	}
 
 	serverEndpoints, err := s.GetEndpoints(s.Server.ContainerID)

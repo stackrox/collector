@@ -232,21 +232,6 @@ func (s *IntegrationTestSuiteBase) getPort(containerName string) (string, error)
 	return "", fmt.Errorf("no port mapping found: %v %v", rawString, portMap)
 }
 
-func (s *IntegrationTestSuiteBase) Get(key string, bucket string) (val string, err error) {
-	if s.db == nil {
-		return "", fmt.Errorf("Db %v is nil", s.db)
-	}
-	err = s.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(bucket))
-		if b == nil {
-			return fmt.Errorf("Bucket %s was not found", bucket)
-		}
-		val = string(b.Get([]byte(key)))
-		return nil
-	})
-	return
-}
-
 func (s *IntegrationTestSuiteBase) GetProcesses(containerID string) ([]common.ProcessInfo, error) {
 	if s.db == nil {
 		return nil, fmt.Errorf("Db %v is nil", s.db)
@@ -295,6 +280,40 @@ func (s *IntegrationTestSuiteBase) GetProcesses(containerID string) ([]common.Pr
 	}
 
 	return processes, nil
+}
+
+func (s *IntegrationTestSuiteBase) GetNetworks(containerID string) ([]common.NetworkInfo, error) {
+	if s.db == nil {
+		return nil, fmt.Errorf("Db %v is nil", s.db)
+	}
+
+	networks := make([]common.NetworkInfo, 0)
+	err := s.db.View(func(tx *bolt.Tx) error {
+		network := tx.Bucket([]byte(networkBucket))
+		if network == nil {
+			return fmt.Errorf("Network bucket was not found!")
+		}
+		container := network.Bucket([]byte(containerID))
+		if container == nil {
+			return fmt.Errorf("Container bucket %s not found!", containerID)
+		}
+
+		return container.ForEach(func(k, v []byte) error {
+			ninfo, err := common.NewNetworkInfo(string(v))
+			if err != nil {
+				return err
+			}
+
+			networks = append(networks, *ninfo)
+			return nil
+		})
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return networks, nil
 }
 
 func (s *IntegrationTestSuiteBase) GetEndpoints(containerID string) ([]common.EndpointInfo, error) {
