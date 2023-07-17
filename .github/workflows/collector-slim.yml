@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        arch: [amd64, ppc64le]
+        arch: [amd64, ppc64le, s390x]
 
     env:
       BUILD_BUILDER_IMAGE: ${{ needs.set-environment.outputs.build-builder-image }}
@@ -150,7 +150,8 @@ jobs:
         run: |
           docker manifest create quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-slim \
                                  quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-amd64-slim \
-                                 quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-ppc64le-slim
+                                 quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-ppc64le-slim \
+                                 quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-s390x-slim
 
           docker manifest push quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-slim
 
@@ -158,7 +159,9 @@ jobs:
         run: |
           docker manifest create quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-base \
                                  quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-amd64-base \
-                                 quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-ppc64le-base
+                                 quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-ppc64le-base \
+                                 quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-s390x-base \
+
 
           docker manifest push quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-base
 
@@ -167,7 +170,8 @@ jobs:
         run: |
           docker manifest create "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}" \
                                  "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-amd64" \
-                                 "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-ppc64le"
+                                 "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-ppc64le" \\
+                                 "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-s390x"
 
           docker manifest push "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}"
 
@@ -183,7 +187,8 @@ jobs:
         run: |
           docker manifest create quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-slim \
                                 quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-amd64-slim \
-                                quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-ppc64le-slim
+                                quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-ppc64le-slim \
+                                quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-s390x-slim
 
           docker manifest push quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-slim
 
@@ -191,7 +196,8 @@ jobs:
         run: |
           docker manifest create quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-base \
                                 quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-amd64-base \
-                                quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-ppc64le-base
+                                quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-ppc64le-base \
+                                quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-s390x-base
 
           docker manifest push quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-base
 
@@ -200,6 +206,7 @@ jobs:
         run: |
           docker manifest create "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}" \
                                  "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}-amd64" \
-                                 "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}-ppc64le"
+                                 "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}-ppc64le" \
+                                 "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}-s390x"
 
           docker manifest push "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}"
