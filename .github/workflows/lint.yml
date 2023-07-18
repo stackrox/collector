@@ -15,6 +15,7 @@ jobs:
 
       - name: Install actionlint
         run: |
+          # Install actionlint to ~/bin/, otherwise pre-commit won't be able to find the executable.
           GOBIN="${HOME}/bin/" go install github.com/rhysd/actionlint/cmd/actionlint@latest
 
       - uses: pre-commit/action@v3.0.0
