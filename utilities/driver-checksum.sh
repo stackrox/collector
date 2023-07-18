@@ -1,6 +1,21 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+# A small script for quickly validating driver SHA256 checksums.
+# See the 'usage' function or run './driver-checksum.sh -h' for a
+# comprehensive explanation on how to use the script.
+
+set -eo pipefail
+
+function usage() {
+    printf "usage: driver-checksum.sh source checksum driver\n"
+    printf "\n"
+    printf "    source\tSpecify if the drivers exists as a file or on gcp\n"
+    printf "          \t  Values: gcp, file\n"
+    printf "    checksum\tA SHA256 checksum to be compared against the driver's\n"
+    printf "    driver\tThe path to the driver on GCP or the local fs\n"
+    printf "\n"
+    printf "    -h, --help\tThis help message\n"
+}
 
 function process_gcp_driver() {
     checksum="${1}"
@@ -37,9 +52,35 @@ function process_file_driver() {
     return $retval
 }
 
-SOURCE=${1}
-CHECKSUM=${2}
-FILE=${3}
+args=()
+
+while test $# -gt 0; do
+    case "$1" in
+        -h | --help)
+            usage
+            exit 0
+            ;;
+        -*)
+            echo >&2 "Invalid argument '$1'"
+            usage
+            exit 1
+            ;;
+        *)
+            args+=("$1")
+            ;;
+    esac
+    shift
+done
+
+if ((${#args[@]} != 3)); then
+    echo >&2 "Wrong number of arguments"
+    usage
+    exit 1
+fi
+
+SOURCE=${args[0]}
+CHECKSUM=${args[1]}
+FILE=${args[2]}
 
 if ((${#CHECKSUM} != 64)); then
     echo >&2 "Invalid length for checksum '${#CHECKSUM}'"
