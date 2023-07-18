@@ -24,8 +24,10 @@ You should have received a copy of the GNU General Public License along with thi
 #include "GetKernelObject.h"
 
 #include <cstring>
+#include <filesystem>
 
 extern "C" {
+#include <openssl/sha.h>
 #include <sys/stat.h>
 }
 
@@ -144,6 +146,45 @@ bool DownloadKernelObject(const std::string& hostname, const Json::Value& tls_co
   return false;
 }
 
+std::string Sha256HashStream(std::istream& stream) {
+  unsigned char hash[SHA256_DIGEST_LENGTH];
+  char buffer[4096];
+  SHA256_CTX sha256;
+  char output[64];
+
+  SHA256_Init(&sha256);
+  while (stream) {
+    stream.read(buffer, 4096);
+
+    // The stream must have either read correctly or reached EOF
+    if (stream.good() || stream.eof()) {
+      SHA256_Update(&sha256, buffer, stream.gcount());
+    } else {
+      CLOG(WARNING) << "Failed to read stream during hash operation";
+      return "";
+    }
+  }
+
+  SHA256_Final(hash, &sha256);
+
+  for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+    sprintf(output + (i * 2), "%02x", hash[i]);
+  }
+
+  return std::string{output, 64};
+}
+
+std::string Sha256HashFile(const std::filesystem::path driver) {
+  std::ifstream file{driver.string(), std::ios::binary};
+
+  if (!file.is_open()) {
+    CLOG(WARNING) << "Failed to open " << driver;
+    return "";
+  }
+
+  return Sha256HashStream(file);
+}
+
 bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config, const DriverCandidate& candidate, bool verbose) {
   if (candidate.GetCollectionMethod() == CollectionMethod::CORE_BPF) {
     // for now CO.RE bpf probes are embedded in the collector binary, nothing
@@ -161,7 +202,7 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
   CLOG(DEBUG) << "Checking for existence of " << expected_path_compressed
               << " and " << expected_path;
   if (stat(expected_path_compressed.c_str(), &sb) == 0) {
-    CLOG(DEBUG) << "Found existing compressed kernel object.";
+    CLOG(INFO) << "Found existing compressed kernel object with sha256 hash: " << Sha256HashFile(expected_path_compressed) << ".";
     if (!GZFileHandle::DecompressFile(expected_path_compressed, module_path)) {
       CLOG(WARNING) << "Failed to decompress " << expected_path_compressed;
       // don't delete the local /kernel-modules gzip file because it is on a read-only file system.
@@ -196,6 +237,8 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
       CLOG(WARNING) << "Unable to download kernel object " << candidate.GetName() << " to " << downloadPath;
       return false;
     }
+
+    CLOG(INFO) << "Downloaded driver with sha256 hash: " << Sha256HashFile(downloadPath);
 
     if (!GZFileHandle::DecompressFile(downloadPath, module_path)) {
       CLOG(WARNING) << "Failed to decompress downloaded kernel object";
