@@ -12,8 +12,12 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-python@v3
       - uses: mfinelli/setup-shfmt@v2
+
+      - name: Install actionlint
+        run: |
+          GOBIN="${HOME}/bin/" go install github.com/rhysd/actionlint/cmd/actionlint@latest
+
       - uses: pre-commit/action@v3.0.0
         with:
           # ensure we're only linting the diff between the PR and the base ref
           extra_args: --from-ref origin/${{ github.event.pull_request.base.ref }} --to-ref HEAD
-  
