@@ -7,10 +7,14 @@ on:
         type: string
         required: true
         description: Branch CI is running on
-      drivers-bucket:
+      upstream-drivers-bucket:
         type: string
         required: true
-        description: Bucket holding the drivers to package
+        description: Bucket holding the upstream drivers to package
+      downstream-drivers-bucket:
+        type: string
+        required: true
+        description: Bucket holding the downstream drivers to package
       support-packages-bucket:
         type: string
         required: true
@@ -50,9 +54,10 @@ jobs:
         run: |
           ${{ github.workspace }}/kernel-modules/support-packages/04-create-support-packages.sh \
             ${{ github.workspace }}/collector/LICENSE-kernel-modules.txt \
-            gs://${{ inputs.drivers-bucket }} \
+            gs://${{ inputs.upstream-drivers-bucket }} \
             /tmp/support-packages/metadata \
-            /tmp/support-packages/output
+            /tmp/support-packages/output \
+            gs://${{ inputs.downstream-drivers-bucket }}
 
       - name: Create metadata.json
         uses: ./.github/actions/support-package-metadata-json
