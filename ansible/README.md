@@ -84,6 +84,7 @@ summarized below:
 | Type          | Families       |
 | ------------- | -------------- |
 | rhel          | rhel-7 <br> rhel-8 |
+| rhel-s390x    | rhel-8-6-s390x | 
 | rhel-sap      | rhel-8-4-sap-ha <br> rhel-8-6-sap-ha |
 | cos           | cos-stable <br> cos-beta <br> cos-dev |
 | sles          | sles-12 <br> sles-15 |
@@ -132,6 +133,9 @@ The following environment variables may be used to modify some behavior:
 | JOB_ID | A unique identifier to de-conflict VM names | the current user's username |
 | COLLECTOR_TEST | Which integration test make target to run. (e.g. integration-test-process-network) | ci-integration-tests |
 | VM_TYPE | Which kind of VMs to create on GCP (as listed above.) By default, will only build rhel VMs. Use 'all' to build an inventory containing every kind of VM. | rhel |
+| IC_API_KEY | API key for IBM Cloud. See [doc](https://cloud.ibm.com/docs/account?topic=account-userapikey&interface=ui) |
+| IC_REGION | The IBM Cloud region where you want to create your resources. See [doc](https://cloud.ibm.com/docs/workload-protection?topic=workload-protection-regions)|
+|||
 
 Note: other environment variables that may affect the operation of the integration tests
 can be used to modify behavior. See [the integration tests README](../integration-tests/README.md) for details.
@@ -143,7 +147,7 @@ root of this directory structure. It should contain key/value pairs of variable
 names and credentials to be used in the playbooks. Currently, the only required
 credentials are quay_username and quay_password, which are created by make
 from the environment variables `QUAY_RHACS_ENG_RO_USERNAME` and `QUAY_RHACS_ENG_RO_PASSWORD`
-to match CI variables.
+to match CI variables. If you are using IBM Cloud to create IBM Z RHEL instances, you will also need to specifiy enviroment variables `RHEL_SUBSCRIPTION_USERNAME` and `RHEL_SUBSCRIPTION_PASSWORD` to register your RHEL system.
 
 To create your own, for dev the format should be:
 

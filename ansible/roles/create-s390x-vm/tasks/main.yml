@@ -1,0 +1,74 @@
+- name: Fetch the variables from var file
+  include_vars:
+    file: vars.yml
+
+- name: Check for existing VSI
+  ibm.cloudcollection.ibm_is_instance_info:
+    name: "{{ vsi_name }}"
+  failed_when:
+    - vsi.rc != 0
+    - '"No Instance found" not in vsi.stderr'
+  register: vsi
+
+- name: Configure VSI
+  ibm.cloudcollection.ibm_is_instance:
+    name: "{{ vsi_name }}"
+    state: available
+    id: "{{ vsi.resource.id | default(omit) }}"
+    vpc: "{{ vpc_id }}"
+    profile: "{{ vsi_profile }}"
+    image: "{{ vsi_image_id }}"
+    resource_group: "{{ vsi_resource_group_id }}"
+    keys:
+      - "{{ ssh_key_id }}"
+    primary_network_interface:
+     - subnet: "{{ subnet_id }}"
+    zone: "{{ zone }}"
+  register: vsi
+
+- name: Check for existing Floating IP
+  ibm.cloudcollection.ibm_is_floating_ip_info:
+    name: "{{ vsi_name }}-fip"
+  failed_when:
+    - fip.rc != 0
+    - '"No floatingIP found" not in fip.stderr'
+  register: fip
+
+- name: Configure Floating IP Address
+  ibm.cloudcollection.ibm_is_floating_ip:
+    name: "{{ vsi_name }}-fip"
+    state: available
+    id: "{{ fip.resource.id | default(omit) }}"
+    resource_group: "{{ vsi_resource_group_id }}"
+    target: "{{ vsi.resource.primary_network_interface[0]['id'] }}"
+  register: fip
+
+- name: Print Floating IP Address
+  debug:
+    msg: "{{ vsi_name }} IP Address: {{ fip.resource.address }}"
+
+- name: Add VSI to Ansible inventory
+  add_host:
+    name: "{{ fip.resource.address }}"
+    ansible_user: root
+    groups:
+      - job_id_{{ job_id }}
+      - platform_{{ test_platform }}
+    ansible_ssh_extra_args: "-o StrictHostKeyChecking=no"
+    ansible_ssh_private_key_file: "~/.ssh/acs-sshkey_rsa.prv"
+    vm_config: "{{ vm_config }}"
+    vm_image_family: "{{ vm_image_family }}"
+    vm_collection_method: "{{ vm_collection_method }}"
+
+- name: Register server with Red Hat
+  tags: attach_subscription
+  community.general.redhat_subscription:
+    state: present
+    username: "{{ redhat_username }}"
+    password: "{{ redhat_password }}"
+    auto_attach: true
+  register: registration
+  retries: 2
+  delay: 30
+  until: registration is not failed
+  delegate_to: "{{ fip.resource.address }}"

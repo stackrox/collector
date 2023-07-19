@@ -27,6 +27,11 @@ virtual_machines:
       - rhel-8
       - rhel-9
 
+  rhel-s390x:
+    project: rhel-s390x-cloud
+    families:
+      - rhel-8-6-s390x
+
   rhel-sap:
     project: rhel-sap-cloud
     families:

@@ -32,7 +32,22 @@
       vm_image_family: "{{ vm_family }}"
       vm_collection_method: "{{ vm_collection_method }}"
 
-- name: Create VM
+- name: Determin the arch
+  set_fact:
+    arch: "{% if 's390x' in vm_name %}s390x{% else %}x86{% endif %}"
+
+- name: Create IBM Z VM
+  import_role: 
+    name: create-s390x-vm
+  vars:
+    vm_name: "{{ vm_name }}"
+    job_id: "{{ job_id}}"
+    vm_config: "{{ vm_config }}"
+    vm_image_family: "{{ vm_family }}"
+    vm_collection_method: "{{ vm_collection_method }}"
+  when: arch == "s390x"
+
+- name: Create X86 VM
   google.cloud.gcp_compute_instance:
     name: "{{ vm_name }}"
     project: "{{ gcp_project }}"
@@ -65,7 +80,7 @@
     loop_var: gcp_zone
   register: instance_result
   when: >
-    not condition and [vm_family, vm_collection_method] not in excluded_pairs
+    arch == "x86" and not condition and [vm_family, vm_collection_method] not in excluded_pairs
   vars:
     condition: "{{ (instance_result | default({'changed': false})).changed }}"
 
