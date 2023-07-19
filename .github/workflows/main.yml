@@ -59,7 +59,7 @@ jobs:
     uses: ./.github/workflows/collector-full.yml
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
-      drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
+      upstream-drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
       skip-built-drivers: ${{ needs.build-drivers.outputs.parallel-jobs == 0 }}
       build-full-image: ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'build-full-images') }}
     secrets: inherit

@@ -19,11 +19,21 @@ on:
         required: true
         description: |
           Skip built drivers if no new drivers were built.
-      drivers-bucket:
+      upstream-drivers-bucket:
         type: string
         required: true
         description: |
           GCP bucket to pull drivers from.
+      downstream-drivers-bucket:
+        type: string
+        description: |
+          GCP bucket to pull downstream built drivers from.
+      use-downstream-drivers:
+        type: boolean
+        default: false
+        description: |
+          If true, the downstream built drivers will be added to the final
+          image and overwrite any colliding drivers.
       max-layer-depth:
         type: string
         default: "5"
@@ -56,7 +66,7 @@ jobs:
         run: |
           mkdir -p "${CONTEXT_DRIVERS_DIR}"
 
-          gsutil -m rsync -r "gs://${{ inputs.drivers-bucket }}/${DRIVER_VERSION}/" \
+          gsutil -m rsync -r "gs://${{ inputs.upstream-drivers-bucket }}/${DRIVER_VERSION}/" \
             "${CONTEXT_DRIVERS_DIR}"
 
       - name: Add built drivers
@@ -66,6 +76,13 @@ jobs:
           if [[ -d "${BUILT_DRIVERS_DIR}" ]]; then
             find "${BUILT_DRIVERS_DIR}" -type f -exec mv -t "${CONTEXT_DRIVERS_DIR}" {} +
           fi
+
+      # Downstream built drivers take precedence over all others.
+      - name: Download downstream built drivers from GCP
+        if: inputs.use-downstream-drivers
+        run: |
+          gsutil -m rsync -r "gs://${{ inputs.downstream-drivers-bucket }}/${DRIVER_VERSION}/" \
+            "${CONTEXT_DRIVERS_DIR}"
 
       - name: Pull slim image and build full image
         run: |
