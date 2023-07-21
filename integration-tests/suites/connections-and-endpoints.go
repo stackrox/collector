@@ -132,8 +132,8 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 		}
 		lastNetwork := serverNetworks[nNetwork-1]
 		lastExpectedNetwork := s.Server.ExpectedNetwork[nExpectedNetwork-1]
-		expectedLocalAddress := strings.Replace(lastExpectedNetwork.LocalAddress, "CLIENT_IP", s.Server.IP, -1)
-		expectedRemoteAddress := strings.Replace(lastExpectedNetwork.RemoteAddress, "SERVER_IP", s.Server.IP, -1)
+		expectedLocalAddress := strings.Replace(lastExpectedNetwork.LocalAddress, "SERVER_IP", s.Server.IP, -1)
+		expectedRemoteAddress := strings.Replace(lastExpectedNetwork.RemoteAddress, "CLIENT_IP", s.Client.IP, -1)
 		assert.Equal(s.T(), expectedLocalAddress, lastNetwork.LocalAddress)
 		assert.Equal(s.T(), expectedRemoteAddress, lastNetwork.RemoteAddress)
 		assert.Equal(s.T(), "ROLE_SERVER", lastNetwork.Role)
