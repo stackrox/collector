@@ -109,11 +109,18 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
           if [[ ${{ github.event_name }} == "pull_request" ]]; then
+
             {
               echo "push-drivers-bucket=${STAGING_DRIVER_BUCKET}"
               echo "support-packages-bucket=${STAGING_SUPPORT_PACKAGES_BUCKET}"
-              echo "cpaas-drivers-bucket=${CPAAS_STAGING_DRIVERS_BUCKET}"
-              echo "cpaas-support-packages-bucket=${CPAAS_STAGING_SUPPORT_PACKAGES_BUCKET}"
+              if [[ ${{ contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps') }} == "true" ]]; then
+                  echo "cpaas-drivers-bucket=${CPAAS_STAGING_DRIVERS_BUCKET}"
+                  echo "cpaas-support-packages-bucket=${CPAAS_STAGING_SUPPORT_PACKAGES_BUCKET}"
+              else
+                  # When running on PRs withouth the 'run-cpaas-steps' label, use the main buckets
+                  echo "cpaas-drivers-bucket=${CPAAS_DRIVERS_BUCKET}"
+                  echo "cpaas-support-packages-bucket=${CPAAS_SUPPORT_PACKAGES_BUCKET}"
+              fi
               echo "support-packages-index-bucket=${STAGING_SUPPORT_PACKAGES_BUCKET}"
             } >> "$GITHUB_OUTPUT"
           else
