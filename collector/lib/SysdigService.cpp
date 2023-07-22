@@ -10,6 +10,7 @@
 #include <google/protobuf/util/time_util.h>
 
 #include "CollectionMethod.h"
+#include "CollectorAssert.h"
 #include "CollectorException.h"
 #include "EventNames.h"
 #include "HostInfo.h"
@@ -211,12 +212,16 @@ void LogUnreasonableEventTime(int64_t time_micros, sinsp_evt* evt) {
   time_diff = time_micros - evt_ts;
   if (time_diff > max_past_time) {
     CLOG_THROTTLED(WARNING, std::chrono::seconds(10)) << "Event of type " << evt->get_type() << " is unreasonably old. It's timestamp is " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(evt_ts);
-    ASSERT(false);
+    COLLECTOR_ASSERT(false);
+    assert(false);
+    CLOG(INFO) << "After assert";
   }
 
   if (time_diff < -max_future_time) {
     CLOG_THROTTLED(WARNING, std::chrono::seconds(10)) << "Event of type " << evt->get_type() << " is in the future. It's timestamp is " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(evt_ts);
-    ASSERT(false);
+    COLLECTOR_ASSERT(false);
+    assert(false);
+    CLOG(INFO) << "After assert";
   }
 }
 

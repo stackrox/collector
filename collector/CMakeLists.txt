@@ -25,6 +25,10 @@ if(TRACE_SINSP_EVENTS)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTRACE_SINSP_EVENTS")
 endif()
 
+if (COLLECTOR_ASSERT)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCOLLECTOR_ASSERT")
+endif()
+
 set(FALCO_DIR ${PROJECT_SOURCE_DIR}/../falcosecurity-libs)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/proto)
