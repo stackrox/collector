@@ -1,4 +1,4 @@
-FROM quay.io/centos/centos:stream8
+FROM quay.io/centos/centos:stream9
 
 ARG NPROCS=6
 ENV NPROCS=$NPROCS
@@ -38,8 +38,9 @@ RUN dnf -y update \
         patchutils \
         passwd \
         pkgconfig \
-        python2 \
+        python \
         rsync \
+	systemd-libs \
         tar \
         unzip \
         valgrind \
