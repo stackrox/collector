@@ -27,6 +27,11 @@ virtual_machines:
       - rhel-8
       - rhel-9
 
+  rhel-ppc64le:
+    project: rhel-ppc64le-cloud
+    families:
+      - rhel-92-ppc64le
+
   rhel-sap:
     project: rhel-sap-cloud
     families:
@@ -39,14 +44,14 @@ virtual_machines:
     images:
       - rhcos-412-86-202303211731-0-gcp-x86-64
       - rhcos-413-86-202303151429-0-gcp-x86-64
-    ignition:
-      ignition:
-        version: 3.2.0
-      passwd:
-        users:
-          - name: core
-            sshAuthorizedKeys:
-              - "{{ lookup('file', gcp_ssh_key_file + '.pub') }}"
+#    ignition:
+#      ignition:
+#        version: 3.2.0
+#      passwd:
+#        users:
+#          - name: core
+#            sshAuthorizedKeys:
+#              - "{{ lookup('file', gcp_ssh_key_file + '.pub') }}"
 
   cos:
     project: cos-cloud
@@ -87,7 +92,7 @@ virtual_machines:
     families:
       - fedora-coreos-stable
 
-  garden-linux:
-    project: sap-se-gcp-gardenlinux
-    images:
-      - "{{ lookup('file', 'group_vars/gardenlinux-image.txt') }}"
+  #garden-linux:
+  #  project: sap-se-gcp-gardenlinux
+  #  images:
+  #    - "{{ lookup('file', 'group_vars/gardenlinux-image.txt') }}"

@@ -1,6 +1,14 @@
 ---
 
-- name: Destroy VM
+- name: Get arch info
+  shell: arch
+  register: arch
+
+- name: Get hostname
+  shell: hostname
+  register: hostname
+
+- name: Destroy X86 VM
   delegate_to: localhost
   google.cloud.gcp_compute_instance:
     name: "{{ inventory_hostname }}"
@@ -10,3 +18,9 @@
     # zone is set by the GCP inventory automatically
     zone: "{{ zone }}"
     state: absent
+  when: arch.stdout == "x86_64"
+
+- name: Delete IBM POWER VSI
+  import_role: 
+    name: destroy-ppc64le-vm
+  when: arch.stdout == "ppc64le"

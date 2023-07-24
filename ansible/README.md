@@ -54,6 +54,7 @@ summarized below:
 | Type          | Families       |
 | ------------- | -------------- |
 | rhel          | rhel-7 <br> rhel-8 |
+| rhel-ppc64le  | rhel92-subscribed |
 | rhel-sap      | rhel-8-4-sap-ha <br> rhel-8-6-sap-ha |
 | cos           | cos-stable <br> cos-beta <br> cos-dev |
 | sles          | sles-12 <br> sles-15 |

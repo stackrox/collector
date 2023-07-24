@@ -1,0 +1,26 @@
+---
+
+- name: Get host name
+  shell: hostname
+  register: hostname
+
+- name: Check for existing VSI
+  delegate_to: localhost
+  ibm.cloudcollection.ibm_pi_instance_info:
+    name: "{{ hostname.stdout }}"
+  failed_when:
+    - vsi.rc != 0
+    - '"No Instance found" not in vsi.stderr'
+  register: vsi
+
+
+- name: Delete IBM POWER VSI
+  delegate_to: localhost
+  ibm.cloudcollection.ibm_pi_instance:
+    state: absent
+    id: "{{ pi_instance.resource.id | default(omit) }}"
+    pi_key_pair_name: []
+    zone: "{{ pi_instance.resource.zone }}"
+  when: pi_instance.resource.id is defined
+
+

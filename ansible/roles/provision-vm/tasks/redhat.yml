@@ -1,13 +1,15 @@
 ---
 - name: Set distro
-  set_fact:
-    distro: "centos"
+  #set_fact:
+   # distro: "centos"
+  shell: awk -F= '$1=="ID" { print $2 ;}' /etc/os-release
+  register: distro
 
 - name: Add repository
   shell: |
     yum install -y yum-utils device-mapper-persistent-data lvm2
-    yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-    yum-config-manager --setopt="docker-ce-stable.baseurl=https://download.docker.com/linux/centos/\$releasever/\$basearch/stable" --save
+    yum-config-manager --add-repo https://download.docker.com/linux/"{{ distro.stdout }}"/docker-ce.repo
+    yum-config-manager --setopt="docker-ce-stable.baseurl=https://download.docker.com/linux/"{{ distro.stdout }}"/\$releasever/\$basearch/stable" --save
 
 - name: Install docker
   yum:

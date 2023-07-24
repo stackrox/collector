@@ -12,7 +12,7 @@
     - meta: refresh_inventory
 
 - name: Provision VMs
-  hosts: "job_id_{{ job_id }}"
+  hosts: "job_id_1ppc6415"
   roles:
     - provision-vm
   gather_facts: no
