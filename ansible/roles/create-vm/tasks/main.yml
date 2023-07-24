@@ -32,7 +32,7 @@
       vm_image_family: "{{ vm_family }}"
       vm_collection_method: "{{ vm_collection_method }}"
 
-- name: Determin the arch
+- name: Determine the arch
   set_fact:
     arch: "{% if 's390x' in vm_name %}s390x{% else %}x86{% endif %}"
 
