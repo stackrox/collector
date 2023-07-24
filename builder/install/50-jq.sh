@@ -2,7 +2,7 @@
 
 set -e
 
-if [ -n "${WITH_RHEL9_RPMS}" ]; then
+if [ -n "${WITH_RHEL_RPMS}" ]; then
     # Already installed as an RPM, nothing more to do.
     exit 0
 fi

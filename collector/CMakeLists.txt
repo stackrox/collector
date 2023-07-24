@@ -57,7 +57,7 @@ target_link_libraries(collector_lib civetweb-cpp civetweb)
 
 target_link_libraries(collector_lib rox-proto)
 
-if(DEFINED ENV{WITH_RHEL9_RPMS})
+if(DEFINED ENV{WITH_RHEL_RPMS})
 	target_link_libraries(collector_lib protobuf cares)
 else()
 	target_link_libraries(collector_lib libprotobuf.a libcares.a)
@@ -93,7 +93,7 @@ endif()
 
 target_link_libraries(runUnitTests collector_lib)
 
-if(DEFINED ENV{WITH_RHEL9_RPMS})
+if(DEFINED ENV{WITH_RHEL_RPMS})
 	target_link_libraries(runUnitTests gtest gtest_main gmock gmock_main)
 else()
 	target_link_libraries(runUnitTests libgtest.a libgtest_main.a libgmock.a libgmock_main.a)
