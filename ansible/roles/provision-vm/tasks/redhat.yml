@@ -1,9 +1,24 @@
 ---
-- name: Set distro
-  # set_fact:
-  #   distro: "{{ ansible_distribution | lower }}" 
+- name: Get distro info
   shell: awk -F= '$1=="ID" { print $2 ;}' /etc/os-release
   register: distro
+
+- name: Get arch info
+  shell: arch
+  register: arch
+
+- name: Register server with Red Hat for IBM Z vms
+  tags: attach_subscription
+  community.general.redhat_subscription:
+    state: present
+    username: "{{ redhat_username }}"
+    password: "{{ redhat_password }}"
+    auto_attach: true
+  register: registration
+  retries: 2
+  delay: 30
+  until: registration is not failed
+  when: arch.stdout == "s390x"
 
 - name: Add repository
   shell: |

@@ -37,14 +37,9 @@
     arch: "{% if 's390x' in vm_name %}s390x{% else %}x86{% endif %}"
 
 - name: Create IBM Z VM
-  import_role: 
-    name: create-s390x-vm
+  include_tasks: create-s390x-vm.yml
   vars:
-    vm_name: "{{ vm_name }}"
-    job_id: "{{ job_id}}"
-    vm_config: "{{ vm_config }}"
-    vm_image_family: "{{ vm_family }}"
-    vm_collection_method: "{{ vm_collection_method }}"
+    vsi_name: "{{ vm_name }}"
   when: arch == "s390x"
 
 - name: Create X86 VM

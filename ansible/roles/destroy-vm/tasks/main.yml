@@ -20,7 +20,6 @@
     state: absent
   when: arch.stdout == "x86_64"
 
-- name: Delete IBM Z VSI
-  import_role: 
-    name: destroy-s390x-vm
+- name: Delete IBM Z VM
+  include_tasks: destroy-s390x-vm.yml
   when: arch.stdout == "s390x"
