@@ -213,15 +213,11 @@ void LogUnreasonableEventTime(int64_t time_micros, sinsp_evt* evt) {
   if (time_diff > max_past_time) {
     CLOG_THROTTLED(WARNING, std::chrono::seconds(10)) << "Event of type " << evt->get_type() << " is unreasonably old. It's timestamp is " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(evt_ts);
     COLLECTOR_ASSERT(false);
-    assert(false);
-    CLOG(INFO) << "After assert";
   }
 
   if (time_diff < -max_future_time) {
     CLOG_THROTTLED(WARNING, std::chrono::seconds(10)) << "Event of type " << evt->get_type() << " is in the future. It's timestamp is " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(evt_ts);
     COLLECTOR_ASSERT(false);
-    assert(false);
-    CLOG(INFO) << "After assert";
   }
 }
 
