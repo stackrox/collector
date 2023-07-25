@@ -54,8 +54,8 @@ enum SecureBootStatus {
 struct KernelVersion {
   KernelVersion() : kernel(0), major(0), minor(0), build_id(0) {}
 
-  KernelVersion(std::string release, std::string version)
-      : kernel(0), major(0), minor(0), build_id(0), release(std::move(release)), version(std::move(version)) {
+  KernelVersion(std::string release, std::string version, std::string machine)
+      : kernel(0), major(0), minor(0), build_id(0), release(std::move(release)), version(std::move(version)), machine(std::move(machine)) {
     // regex for parsing first parts of release version:
     // ^                   -> must match start of the string
     // (\d+)\.(\d+)\.(\d+) -> match and capture kernel, major, minor versions
@@ -85,6 +85,7 @@ struct KernelVersion {
   static KernelVersion FromHost() {
     std::string release;
     std::string version;
+    std::string machine;
 
     const char* kernel_version_env = std::getenv("KERNEL_VERSION");
     if (kernel_version_env && *kernel_version_env) {
@@ -97,13 +98,15 @@ struct KernelVersion {
         release = uts_buffer.release;
       }
       version = uts_buffer.version;
+      machine = uts_buffer.machine;
       CLOG(DEBUG) << "Identified kernel release: '" << release << "'";
       CLOG(DEBUG) << "Identified kernel version: '" << version << "'";
+      CLOG(DEBUG) << "Identified kernel machine: '" << machine << "'";
     } else {
       CLOG(WARNING) << "uname() failed (" << StrError() << ") unable to resolve kernel information";
     }
 
-    return {release, version};
+    return {release, version, machine};
   }
 
   // Whether or not the kernel has built-in eBPF support
@@ -146,6 +149,8 @@ struct KernelVersion {
   std::string release;
   // the entire version string (as in `uname -v`)
   std::string version;
+  // the kernel machine string (as in `uname -a`)
+  std::string machine;
 };
 
 // Singleton that provides ways of retrieving Host information to inform

@@ -57,9 +57,39 @@ class DockerDesktopHeuristic : public Heuristic {
   }
 };
 
+class S390XHeuristic : public Heuristic {
+ public:
+  // S390X does not support eBPF ealier than 4.18.0-348 (rhel8.5) so we switch to use corebpf
+  // instead.
+  void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
+    auto k = host.GetKernelVersion();
+    std::string os_id = host.GetOSID();
+
+    if (k.machine != "s390x") {
+      return;
+    }
+
+    if (os_id == "rhel" || os_id == "centos") {
+      // example release version: 4.18.0-305.88.1.el8_4.s390x
+      // build_id = 305
+      if (k.release.find(".el8.") != std::string::npos) {
+        if (k.kernel == 4 && k.major == 18 && k.minor == 0) {
+          // rhel 8.4 release according to https://access.redhat.com/articles/3078#RHEL8
+          // rhel 8.3 and earlier never supported on s390x
+          if (k.build_id >= 305 && k.build_id < 348) {
+            CLOG(WARNING) << "RHEL 8.4 on s390x does not support eBPF, switching to CO.RE eBPF module based collection.";
+            hconfig->SetCollectionMethod(CollectionMethod::CORE_BPF);
+          }
+        }
+      }
+    }
+  }
+};
+
 const std::unique_ptr<Heuristic> g_host_heuristics[] = {
     std::unique_ptr<Heuristic>(new CollectionHeuristic),
     std::unique_ptr<Heuristic>(new DockerDesktopHeuristic),
+    std::unique_ptr<Heuristic>(new S390XHeuristic),
 };
 
 }  // namespace
