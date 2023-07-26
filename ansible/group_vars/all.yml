@@ -18,6 +18,8 @@ runtime_socket: /var/run/docker.sock
 redhat_username: "{{ lookup('env', 'REDHAT_USERNAME', default='') }}"
 redhat_password: "{{ lookup('env', 'REDHAT_PASSWORD', default='') }}"
 
+arch_info: "{{ 's390x' if 's390x' in test_platform else 'x86'}}"
+
 excluded_pairs:
   # e.g. - ['ubuntu-1804-lts', 'core_bpf']
   - ['fedora-coreos-stable', 'core_bpf'] # Failing due to verifier errors
