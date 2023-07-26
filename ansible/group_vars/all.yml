@@ -17,7 +17,7 @@ runtime_socket: /var/run/docker.sock
 
 excluded_pairs:
   # e.g. - ['ubuntu-1804-lts', 'core_bpf']
-  - ['fedora-coreos-stable', 'core_bpf'] # Failing due to verifier errors
+  #- ['fedora-coreos-stable', 'core_bpf'] # Failing due to verifier errors
   - ['fedora-coreos-stable', 'ebpf'] # No drivers for kernel 6.3+, see ROX-16705
 
 virtual_machines:
