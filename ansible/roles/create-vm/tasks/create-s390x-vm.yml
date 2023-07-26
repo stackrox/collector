@@ -47,10 +47,6 @@
   debug:
     msg: "{{ vsi_name }} IP Address: {{ fip.resource.address }}"
 
-- name: Print vm_config
-  debug:
-    msg: "vm_config is {{ vm_config }}"
-
 - name: Add VSI to Ansible inventory
   add_host:
     name: "{{ fip.resource.address }}"
