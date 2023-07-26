@@ -2,6 +2,7 @@
 #define COLLECTOR_COLLECTORSTATS_H
 
 #include <atomic>
+#include <string>
 #include <unordered_map>
 #include <vector>
 

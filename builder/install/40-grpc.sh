@@ -18,6 +18,7 @@ cmake \
     -DgRPC_ZLIB_PROVIDER=package \
     -DgRPC_CARES_PROVIDER=package \
     -DgRPC_SSL_PROVIDER=package \
+    -DgRPC_RE2_PROVIDER=package \
     -DgRPC_ABSL_PROVIDER=package \
     -DgRPC_BUILD_GRPC_CSHARP_PLUGIN=OFF \
     -DgRPC_BUILD_GRPC_NODE_PLUGIN=OFF \
@@ -28,6 +29,7 @@ cmake \
     -DCMAKE_BUILD_TYPE=Release \
     -DgRPC_INSTALL=ON \
     -DCMAKE_INSTALL_PREFIX=/usr/local \
+    -DCMAKE_CXX_STANDARD=17 \
     ../..
 
 make ${NPROCS:+-j ${NPROCS}} CXXFLAGS="${CXXFLAGS}"
