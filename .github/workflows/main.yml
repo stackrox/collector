@@ -25,6 +25,7 @@ concurrency:
 jobs:
   init:
     uses: ./.github/workflows/init.yml
+    secrets: inherit
 
   build-drivers:
     uses: ./.github/workflows/drivers.yml

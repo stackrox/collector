@@ -163,4 +163,8 @@ jobs:
           SLACK_TITLE: "Releasing collector with no downstream drivers."
           MSG_MINIMAL: actions url,commit
           SLACK_MESSAGE: |
-            acs-collector-team
+            Building release version of collector without downstream drivers!!!
+            Please ensure the downstream drivers are built and uploaded to GCP
+            before proceeding.
+
+            @acs-collector-team
