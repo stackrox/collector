@@ -109,7 +109,6 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
           if [[ ${{ github.event_name }} == "pull_request" ]]; then
-
             {
               echo "push-drivers-bucket=${STAGING_DRIVER_BUCKET}"
               echo "support-packages-bucket=${STAGING_SUPPORT_PACKAGES_BUCKET}"
@@ -132,3 +131,38 @@ jobs:
               echo "support-packages-index-bucket=${SUPPORT_PACKAGES_BUCKET}"
             } >> "$GITHUB_OUTPUT"
           fi
+
+  downstream-check:
+    runs-on: ubuntu-latest
+    needs:
+    - common-variables
+    if: github.event_name == 'push' && (github.ref_type == 'tag' || startsWith(github.ref_name, 'release-'))
+    steps:
+      - name: Ensure downstream drivers exist for releases
+        id: downstream-check
+        run: |
+          DRIVER_VERSION="$(cat ${{ github.workspace }}/kernel-modules/MODULE_VERSION)"
+          DRIVER_COUNT="$(gsutil ls "gs://${{ needs.common-variables.outputs.cpaas-drivers-bucket }}/${DRIVER_VERSION}/" | wc -l)"
+
+          if ((DRIVER_COUNT == 0)); then
+            echo >&2 "Building release version of collector without downstream drivers!!!"
+            echo >&2 "Please ensure the downstream drivers are built and uploaded to GCP"
+            echo >&2 "before proceeding."
+
+            echo "downstream-check=false" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+          echo "downstream-check=true" >> "$GITHUB_OUTPUT"
+
+      - name: Slack notification
+        if: failure() && steps.downstream-check.outputs.downstream-check == 'false'
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_NOTIFICATIONS_WEBHOOK }}
+          SLACK_CHANNEL: team-acs-collector-notifications
+          SLACK_COLOR: failure
+          SLACK_LINK_NAMES: true
+          SLACK_TITLE: "Releasing collector with no downstream drivers."
+          MSG_MINIMAL: actions url,commit
+          SLACK_MESSAGE: |
+            acs-collector-team
