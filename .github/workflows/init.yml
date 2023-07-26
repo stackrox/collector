@@ -138,8 +138,8 @@ jobs:
     - common-variables
     if: github.event_name == 'push' && (github.ref_type == 'tag' || startsWith(github.ref_name, 'release-'))
     steps:
+      - uses: actions/checkout@v3
       - name: Ensure downstream drivers exist for releases
-        id: downstream-check
         run: |
           DRIVER_VERSION="$(cat ${{ github.workspace }}/kernel-modules/MODULE_VERSION)"
           DRIVER_COUNT="$(gsutil ls "gs://${{ needs.common-variables.outputs.cpaas-drivers-bucket }}/${DRIVER_VERSION}/" | wc -l)"
@@ -149,13 +149,11 @@ jobs:
             echo >&2 "Please ensure the downstream drivers are built and uploaded to GCP"
             echo >&2 "before proceeding."
 
-            echo "downstream-check=false" >> "$GITHUB_OUTPUT"
             exit 1
           fi
-          echo "downstream-check=true" >> "$GITHUB_OUTPUT"
 
       - name: Slack notification
-        if: failure() && steps.downstream-check.outputs.downstream-check == 'false'
+        if: failure()
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_NOTIFICATIONS_WEBHOOK }}
