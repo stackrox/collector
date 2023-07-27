@@ -48,6 +48,7 @@ jobs:
           - sles
           - garden-linux
           - rhcos
+          - rhel-s390x
     with:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ inputs.collector-tag }}
