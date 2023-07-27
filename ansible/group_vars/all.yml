@@ -1,8 +1,11 @@
 ---
 
-gcp_ssh_key_file: "{{ lookup('env', 'GCP_SSH_KEY_FILE', default='~/.ssh/google_compute_engine') }}"
+arch_info: "{{ 's390x' if 's390x' in test_platform else 'x86'}}"
 
-ansible_ssh_private_key_file: "{{ gcp_ssh_key_file }}"
+gcp_ssh_key_file: "{{ lookup('env', 'GCP_SSH_KEY_FILE', default='~/.ssh/google_compute_engine') }}"
+ibmcloud_ssh_key_file: "{{ lookup('env', 'IBMCLOUD_SSH_KEY_FILE', default='~/.ssh/acs-sshkey_rsa.prv') }}"
+
+ansible_ssh_private_key_file: "{{ ibmcloud_ssh_key_file if arch_info == 's390x' else gcp_ssh_key_file }}"
 
 current_user: "{{ lookup('env', 'USER') }}"
 test_platform: "{{ lookup('env', 'VM_TYPE', default='rhel') }}"
@@ -17,8 +20,6 @@ runtime_socket: /var/run/docker.sock
 
 redhat_username: "{{ lookup('env', 'REDHAT_USERNAME', default='') }}"
 redhat_password: "{{ lookup('env', 'REDHAT_PASSWORD', default='') }}"
-
-arch_info: "{{ 's390x' if 's390x' in test_platform else 'x86'}}"
 
 excluded_pairs:
   # e.g. - ['ubuntu-1804-lts', 'core_bpf']

@@ -41,3 +41,9 @@
     id: "{{ fip.resource.id }}"
     zone: "{{ fip.resource.zone }}"
   when: fip.resource.id is defined
+
+- name: Remove IBM inventory file (delete file)
+  delegate_to: localhost
+  file:
+    path: '{{ ibm_output_inventory_file }}'
+    state: absent

@@ -135,6 +135,7 @@ The following environment variables may be used to modify some behavior:
 | Variable | Description | Default |
 | -------- | ----------- | ------- |
 | GCP_SSH_KEY_FILE | The location of the private key file to use with GCP | ~/.ssh/google_compute_engine |
+| IBMCLOUD_SSH_KEY_FILE | The location of the private key file to use with IBM Cloud | ~/.ssh/acs-sshkey_rsa.prv |
 | JOB_ID | A unique identifier to de-conflict VM names | the current user's username |
 | COLLECTOR_TEST | Which integration test make target to run. (e.g. integration-test-process-network) | ci-integration-tests |
 | VM_TYPE | Which kind of VMs to create on GCP (as listed above.) By default, will only build rhel VMs. Use 'all' to build an inventory containing every kind of VM. | rhel |
