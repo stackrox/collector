@@ -68,6 +68,9 @@ jobs:
       - name: Install python dependencies
         run: python -m pip install -r ansible/requirements.txt
 
+      - name: Install ansible dependencies
+        run: ansible-galaxy collection install -r ansible/ansible-collections.yml
+
       - name: Authenticate with GCP
         uses: 'google-github-actions/auth@v1'
         with:
