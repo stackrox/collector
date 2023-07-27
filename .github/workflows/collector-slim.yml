@@ -160,7 +160,7 @@ jobs:
           docker manifest create quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-base \
                                  quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-amd64-base \
                                  quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-ppc64le-base \
-                                 quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-s390x-base \
+                                 quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-s390x-base
 
 
           docker manifest push quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-base
@@ -170,7 +170,7 @@ jobs:
         run: |
           docker manifest create "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}" \
                                  "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-amd64" \
-                                 "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-ppc64le" \\
+                                 "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-ppc64le" \
                                  "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-s390x"
 
           docker manifest push "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}"
