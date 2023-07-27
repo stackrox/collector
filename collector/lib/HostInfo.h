@@ -149,7 +149,7 @@ struct KernelVersion {
   std::string release;
   // the entire version string (as in `uname -v`)
   std::string version;
-  // the kernel machine string (as in `uname -a`)
+  // the kernel machine string (as in `uname -m`)
   std::string machine;
 };
 
