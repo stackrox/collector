@@ -63,13 +63,13 @@ for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
 
     # Update the driver matrix
     gsutil ls "${COLLECTOR_MODULES_BUCKET}/${mod_ver}/*" \
-        | "${SCRIPT_DIR}"/driver-matrix.py "${mod_ver}" -i /tmp/output.json
+        | "${SCRIPT_DIR}"/driver-matrix.py "${mod_ver}" -u /tmp/output.json
     if use_downstream "$mod_ver"; then
         gsutil -m cp "${DOWNSTREAM_MODULES_BUCKET}/${mod_ver}/*.gz" "$probe_dir"
 
         # Update the driver matrix
         gsutil ls "${DOWNSTREAM_MODULES_BUCKET}/${mod_ver}/*" \
-            | "${SCRIPT_DIR}"/driver-matrix.py "${mod_ver}" -i /tmp/output.json -d
+            | "${SCRIPT_DIR}"/driver-matrix.py "${mod_ver}" -u /tmp/output.json -d
     fi
 
     package_out_dir="${OUT_DIR}/${mod_ver}"
