@@ -11,5 +11,5 @@
   tasks:
     - name: Build the collector image
       community.general.make:
-        chdir: "{{ lookup('env', 'GOPATH') + '/src/github.com/stackrox/collector' }}"
+        chdir: "{{ lookup('env', 'GITHUB_WORKSPACE') }}"
         target: image
