@@ -16,6 +16,7 @@ repos:
     rev: "6230247"
     hooks:
       - id: clang-format
+        exclude: "optionparser.h"
 
   - repo: https://github.com/rhysd/actionlint.git
     rev: "v1.6.22"
