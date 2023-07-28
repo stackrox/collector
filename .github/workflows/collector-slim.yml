@@ -59,6 +59,7 @@ jobs:
     needs: set-environment
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         arch: [amd64, ppc64le]
 
@@ -81,17 +82,23 @@ jobs:
       - name: Create secrets.yml
         run: |
           {
+            echo "---"
             echo "stackrox_io_username='${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}'"
             echo "stackrox_io_password='${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}'"
-            echo "collector_image='${{ inputs.collector-image }}'"
-            echo "arch='${{ matrix.arch }}'"
           } > ansible/secrets.yml
 
       - name: Build images
         run: |
           ansible-galaxy collection install community.general
           ansible-galaxy collection install community.docker
-          ansible-playbook --connection local -i 127.0.0.1, --limit 127.0.0.1 -e @ansible/secrets.yml ansible/build-collector.yml
+          ansible-playbook \
+            --connection local \
+            -i localhost, \
+            --limit localhost \
+            -e collector_image='${{ inputs.collector-image }}' \
+            -e arch='${{ matrix.arch }}' \
+            -e @ansible/secrets.yml \
+            ansible/build-collector.yml
 
       - name: Push builder to stackrox-io
         if: github.event_name == 'push' || needs.set-environment.outputs.collector-builder-tag != env.DEFAULT_BUILDER_TAG
