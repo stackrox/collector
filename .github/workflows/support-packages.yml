@@ -50,6 +50,15 @@ jobs:
         with:
           branch-name: ${{ inputs.branch-name }}
 
+      - name: Create driver-matrix.json
+        uses: ./.github/actions/support-package-driver-matrix
+        with:
+          metadata-dir: /tmp/support-packages/metadata/module-versions
+          upstream-drivers-bucket: gs://${{ inputs.upstream-drivers-bucket }}
+          downstream-drivers-bucket: gs://${{ inputs.downstream-drivers-bucket }}
+
+      - run: jq . /tmp/driver-matrix.json
+
       - name: Create support-packages
         run: |
           ${{ github.workspace }}/kernel-modules/support-packages/04-create-support-packages.sh \
@@ -63,13 +72,6 @@ jobs:
         uses: ./.github/actions/support-package-metadata-json
         with:
           support-pkg-dir: /tmp/support-packages/output
-
-      - name: Create driver-matrix.json
-        uses: ./.github/actions/support-packages-driver-matrix
-        with:
-          metadata-dir: /tmp/support-packages/metadata/module-versions
-          upstream-drivers-bucket: gs://${{ inputs.upstream-drivers-bucket }}
-          downstream-drivers-bucket: gs://${{ inputs.downstream-drivers-bucket }}
 
       - name: Push support-packages
         uses: 'google-github-actions/upload-cloud-storage@v1'
