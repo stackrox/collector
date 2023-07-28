@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
-set -exuo pipefail
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+source "${SCRIPT_DIR}/utils.sh"
 
 die() {
     echo >&2 "$@"
@@ -23,19 +25,6 @@ compress_files() (
     cd "${package_root}"
     zip -r "${output_file}" .
 )
-
-use_downstream() {
-    IFS='.' read -ra version <<< "${1%-*}"
-    min_version=(2 6 0)
-
-    for ((i = 0; i < ${#min_version[@]}; i++)); do
-        if ((version[i] < min_version[i])); then
-            return 1
-        fi
-    done
-
-    return 0
-}
 
 LICENSE_FILE="$1"
 COLLECTOR_MODULES_BUCKET="$2"
@@ -60,16 +49,8 @@ for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
     # support the slim collector use-case.
     # Remains to be clarified; we might provide more fine granular download options in the future.
     gsutil -m cp "${COLLECTOR_MODULES_BUCKET}/${mod_ver}/*.gz" "$probe_dir"
-
-    # Update the driver matrix
-    gsutil ls "${COLLECTOR_MODULES_BUCKET}/${mod_ver}/*" \
-        | "${SCRIPT_DIR}"/driver-matrix.py "${mod_ver}" -u /tmp/output.json
     if use_downstream "$mod_ver"; then
         gsutil -m cp "${DOWNSTREAM_MODULES_BUCKET}/${mod_ver}/*.gz" "$probe_dir"
-
-        # Update the driver matrix
-        gsutil ls "${DOWNSTREAM_MODULES_BUCKET}/${mod_ver}/*" \
-            | "${SCRIPT_DIR}"/driver-matrix.py "${mod_ver}" -u /tmp/output.json -d
     fi
 
     package_out_dir="${OUT_DIR}/${mod_ver}"
@@ -89,5 +70,3 @@ for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
     generate_checksum "${package_out_dir}" "${latest_filename}"
     rm -rf "$package_root" || true
 done
-
-jq . /tmp/output.json

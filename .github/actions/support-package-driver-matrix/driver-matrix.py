@@ -7,8 +7,8 @@ import sys
 import re
 
 ebpf_re = re.compile(r'collector-ebpf-(\d+\.\d+\.\d+.*)\.o\.gz$')
-kmod_re = re.compile(r'collector-(\d+\.\d+\.\d+.*).ko.gz$')
-unavailable_re = re.compile(r'.collector-ebpf-(\d+\.\d+\.\d+.*).unavail$')
+kmod_re = re.compile(r'collector-(\d+\.\d+\.\d+.*)\.ko\.gz$')
+unavailable_re = re.compile(r'\.collector-ebpf-(\d+\.\d+\.\d+.*)\.unavail$')
 
 
 def update_kernel(kernel_list: dict,
@@ -80,6 +80,7 @@ if __name__ == '__main__':
     version = args.version
     available = 'downstream' if args.downstream else 'upstream'
     kernels = {}
+
     file = None
     if args.update:
         if os.path.isfile(args.update):
@@ -87,4 +88,5 @@ if __name__ == '__main__':
                 kernels = json.load(f)
 
         file = open(args.update, "w")
+
     main(kernels, version, file, available)
