@@ -19,6 +19,11 @@ On a Mac, the default python3 is 3.7, so use brew to install the latest ansible:
 $ brew install ansible
 $ pip3 install -r requirements.txt
 ```
+To manage IBM Z and Power VMs through IBM Cloud, you will also need to download and install the following ansible collection:
+```
+$ ansible-galaxy collection install ibm.cloudcollection
+
+```
 
 ## Overview
 
@@ -54,7 +59,7 @@ summarized below:
 | Type          | Families       |
 | ------------- | -------------- |
 | rhel          | rhel-7 <br> rhel-8 |
-| rhel-ppc64le  | rhel92-subscribed |
+| rhel-ppc64le  | rhel-8.8-05102023 |
 | rhel-sap      | rhel-8-4-sap-ha <br> rhel-8-6-sap-ha |
 | cos           | cos-stable <br> cos-beta <br> cos-dev |
 | sles          | sles-12 <br> sles-15 |
@@ -100,6 +105,7 @@ The following environment variables may be used to modify some behavior:
 | Variable | Description | Default |
 | -------- | ----------- | ------- |
 | GCP_SSH_KEY_FILE | The location of the private key file to use with GCP | ~/.ssh/google_compute_engine |
+| IBMCLOUD_SSH_KEY_FILE | The location of the private key file to use with IBM Cloud | ~/.ssh/acs-sshkey_rsa.prv |
 | JOB_ID | A unique identifier to de-conflict VM names | the current user's username |
 | COLLECTOR_TEST | Which integration test make target to run. (e.g. integration-test-process-network) | ci-integration-tests |
 | VM_TYPE | Which kind of VMs to create on GCP (as listed above.) By default, will only build rhel VMs. Use 'all' to build an inventory containing every kind of VM. | rhel |
@@ -115,6 +121,8 @@ names and credentials to be used in the playbooks. Currently, the only required
 credentials are quay_username and quay_password, which are created by make
 from the environment variables `QUAY_RHACS_ENG_RO_USERNAME` and `QUAY_RHACS_ENG_RO_PASSWORD`
 to match CI variables.
+
+If you are using IBM Cloud to create IBM Z and Power RHEL instances, you will also need to specifiy enviroment variables `REDHAT_USERNAME` and `REDHAT_PASSWORD` to register your RHEL system.
 
 To create your own, for dev the format should be:
 
@@ -164,6 +172,8 @@ See [vm-lifecycle.yml](./vm-lifecycle.yml) for an example of how it's used.
 This role will delete a VM from GCP, based on its instance name.
 
 See [vm-lifecycle.yml](./vm-lifecycle.yml) for an example of how it's used.
+
+Note that, for IBM POWER VMs, the destroy process will only delete the VM and release its subnet allocated and ssh key..
 
 ### run-test-target
 

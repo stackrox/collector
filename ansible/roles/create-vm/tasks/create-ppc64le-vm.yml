@@ -1,6 +1,6 @@
 - name: Fetch the variables from var file
   include_vars:
-    file: vars.yml
+    file: ppc64le-vars.yml
   collections:
    - ibm.cloudcollection
 
@@ -140,18 +140,14 @@
     ansible_ssh_extra_args: -o StrictHostKeyChecking=no
     ansible_ssh_private_key_file: "~/.ssh/acs-sshkey_rsa.prv"
     vm_config: "{{ vm_config }}"
-    vm_image_family: "{{ vm_image_family }}"
+    vm_image_family: "{{ vm_family }}"
     vm_collection_method: "{{ vm_collection_method }}"
 
-    #- name: Register server with Red Hat
-      #tags: attach_subscription
-      #community.general.redhat_subscription:
-        #state: present
-        #username: "{{ redhat_username }}"
-        #password: "{{ redhat_password }}"
-       # auto_attach: true
-      #register: registration
-      #retries: 2
-      #delay: 30
-      #until: registration is not failed
-      #delegate_to: "{{ pi_instance.addresses[0].external_ip }}"
+- name: generate provisioner inventory file
+  template:
+    src: 'ibm-cloud-inventory.j2'
+    dest: "{{ ibm_output_inventory_file }}"
+    mode: '0644'
+  when: 
+    - ibm_output_inventory_file != ""
+  delegate_to: localhost

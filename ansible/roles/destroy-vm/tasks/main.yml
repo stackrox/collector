@@ -21,6 +21,5 @@
   when: arch.stdout == "x86_64"
 
 - name: Delete IBM POWER VSI
-  import_role: 
-    name: destroy-ppc64le-vm
+  include_tasks: destroy-ppc64le-vm.yml
   when: arch.stdout == "ppc64le"

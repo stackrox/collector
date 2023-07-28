@@ -24,28 +24,22 @@
       user-data: "{{ vm_ignition | to_json }}"
   when: vm_ignition != {}
 
-#- set_fact:
-#    gcp_extra_labels:
-#      platform: "{{ vm_platform }}"
-#      job_id: "1rhelppc64le15"
-#      vm_config: "{{ vm_config }}"
-#      vm_image_family: "{{ vm_family }}"
-#      vm_collection_method: "{{ vm_collection_method }}"
+- set_fact:
+    gcp_extra_labels:
+      platform: "{{ vm_platform }}"
+      job_id: "{{ job_id }}"
+      vm_config: "{{ vm_config }}"
+      vm_image_family: "{{ vm_family }}"
+      vm_collection_method: "{{ vm_collection_method }}"
 
-- name: Determin the arch
-  set_fact:
-    arch: "{% if 'ppc64le' in vm_name %}ppc64le{% else %}x86{% endif %}"
   
 - name: Create IBM POWER VM
-  import_role:
-    name: create-ppc64le-vm
+  include_tasks: create-ppc64le-vm.yml
   vars:
-    vm_name: "{{ vm_name }}"
-    job_id: "1ppc6415"
-    vm_config: "{{ vm_config }}"
-    vm_image_family: "{{ vm_family }}"
-    vm_collection_method: "{{ vm_collection_method }}"
-  when: arch == "ppc64le"
+    pi_name: "{{ vm_name }}"
+    region: "osa"
+    zone: "osa21"
+  when: arch_info == "ppc64le"
 
 - name: Create X86 VM
   google.cloud.gcp_compute_instance:
@@ -80,7 +74,7 @@
     loop_var: gcp_zone
   register: instance_result
   when: >
-    arch == "x86" and not condition and [vm_family, vm_collection_method] not in excluded_pairs
+    arch_info == "x86" and not condition and [vm_family, vm_collection_method] not in excluded_pairs
   vars:
     condition: "{{ (instance_result | default({'changed': false})).changed }}"
 

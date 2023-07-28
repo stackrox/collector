@@ -26,3 +26,7 @@ cmake-build/
 .devcontainer.json
 cmake-build/
 out/
+
+# IBM Cloud dynamic inventory files
+ansible/dev/inventory_ibmcloud_ppc64le.yml
+ansible/ci/inventory_ibmcloud_ppc64le.yml
