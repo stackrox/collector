@@ -80,7 +80,8 @@ jobs:
 
       - name: Build images
         run: |
-          make image
+          ansible-galaxy collection install community.general
+          ansible-playbook --connection local -i localhost, --limit localhost ansible/build-collector.yml
 
       - name: Retag and push stackrox-io -slim
         uses: ./.github/actions/retag-and-push

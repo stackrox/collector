@@ -1,0 +1,15 @@
+---
+- name: Build and push collector image
+  hosts: all
+
+  environment:
+    BUILD_BUILDER_IMAGE: "{{ ansible_env.BUILD_BUILDER_IMAGE | default(omit) }}"
+    COLLECTOR_BUILDER_TAG: "{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
+    PLATFORM: "{{ ansible_env.PLATFORM }}"
+    COLLECTOR_TAG: "{{ ansible_env.COLLECTOR_TAG | default(omit) }}"
+
+  tasks:
+    - name: Build the collector image
+      community.general.make:
+        chdir: "{{ lookup('env', 'GOPATH') + '/src/github.com/stackrox/collector' }}"
+        target: image
