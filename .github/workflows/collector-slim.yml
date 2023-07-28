@@ -91,7 +91,7 @@ jobs:
         run: |
           ansible-galaxy collection install community.general
           ansible-galaxy collection install community.docker
-          ansible-playbook --connection local -i localhost, --limit localhost -e @ansible/secrets.yml ansible/build-collector.yml
+          ansible-playbook --connection local -i 127.0.0.1, --limit 127.0.0.1 -e @ansible/secrets.yml ansible/build-collector.yml
 
       - name: Push builder to stackrox-io
         if: github.event_name == 'push' || needs.set-environment.outputs.collector-builder-tag != env.DEFAULT_BUILDER_TAG
