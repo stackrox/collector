@@ -78,26 +78,20 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
+      - name: Create secrets.yml
+        run: |
+          {
+            echo "stackrox_io_username='${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}'"
+            echo "stackrox_io_password='${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}'"
+            echo "collector_image='${{ inputs.collector-image }}'"
+            echo "arch='${{ matrix.arch }}'"
+          } > ansible/secrets.yml
+
       - name: Build images
         run: |
           ansible-galaxy collection install community.general
-          ansible-playbook --connection local -i localhost, --limit localhost ansible/build-collector.yml
-
-      - name: Retag and push stackrox-io -slim
-        uses: ./.github/actions/retag-and-push
-        with:
-          src-image: ${{ inputs.collector-image }}
-          dst-image: ${{ inputs.collector-image }}-${{ matrix.arch }}-slim
-          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-
-      - name: Retag and push stackrox-io -base
-        uses: ./.github/actions/retag-and-push
-        with:
-          src-image: ${{ inputs.collector-image }}
-          dst-image: ${{ inputs.collector-image }}-${{ matrix.arch }}-base
-          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+          ansible-galaxy collection install community.docker
+          ansible-playbook --connection local -i localhost, --limit localhost -e @ansible/secrets.yml ansible/build-collector.yml
 
       - name: Push builder to stackrox-io
         if: github.event_name == 'push' || needs.set-environment.outputs.collector-builder-tag != env.DEFAULT_BUILDER_TAG

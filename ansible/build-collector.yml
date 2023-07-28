@@ -13,3 +13,22 @@
       community.general.make:
         chdir: "{{ lookup('env', 'GITHUB_WORKSPACE') }}"
         target: image
+
+    - name: Login to quay.io
+      community.docker.docker_login:
+        username: "{{ stackrox_io_username }}"
+        password: "{{ stackrox_io_password }}"
+
+    - name: Push slim to quay.io/stackrox-io
+      community.docker.docker_image:
+        name: "{{ collector_image }}"
+        repository: "{{ collector_image }}-{{ arch }}-slim"
+        push: true
+        source: local
+
+    - name: Push base to quay.io/stackrox-io
+      community.docker.docker_image:
+        name: "{{ collector_image }}"
+        repository: "{{ collector_image }}-{{ arch }}-base"
+        push: true
+        source: local
