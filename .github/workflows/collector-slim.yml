@@ -85,7 +85,7 @@ jobs:
             echo "---"
             echo "stackrox_io_username='${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}'"
             echo "stackrox_io_password='${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}'"
-          } > ansible/secrets.yml
+          } > ${{ github.workspace }}/ansible/secrets.yml
 
       - name: Build images
         run: |
@@ -97,7 +97,7 @@ jobs:
             --limit localhost \
             -e collector_image='${{ inputs.collector-image }}' \
             -e arch='${{ matrix.arch }}' \
-            -e @ansible/secrets.yml \
+            -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/build-collector.yml
 
       - name: Push builder to stackrox-io
