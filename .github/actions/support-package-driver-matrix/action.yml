@@ -27,12 +27,12 @@ runs:
           mod_ver="$(basename "$mod_ver_dir")"
 
           # Add the regular drivers
-          gsutil ls "${COLLECTOR_MODULES_BUCKET}/${mod_ver}/*" \
+          gsutil ls "${{ inputs.upstream-drivers-bucket }}/${mod_ver}/*" \
               | ${{ github.action_path }}/driver-matrix.py "${mod_ver}" -u /tmp/driver-matrix.json
 
           if use_downstream "$mod_ver"; then
             # Update the matrix with downstream drivers
-            gsutil ls "${DOWNSTREAM_MODULES_BUCKET}/${mod_ver}/*" \
+            gsutil ls "${{ inputs.downstream-drivers-bucket }}/${mod_ver}/*" \
                 | ${{ github.action_path }}/driver-matrix.py "${mod_ver}" -u /tmp/driver-matrix.json -d
           fi
         done
