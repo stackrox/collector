@@ -14,7 +14,7 @@ RUN dnf -y update \
         binutils-devel \
         bison \
         ca-certificates \
-        clang \
+        clang-16.0.1 \
         cmake \
         cracklib-dicts \
         diffutils \
