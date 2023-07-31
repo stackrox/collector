@@ -3,10 +3,10 @@
   hosts: all
 
   environment:
-    BUILD_BUILDER_IMAGE: "{{ ansible_env.BUILD_BUILDER_IMAGE | default(omit) }}"
+    BUILD_BUILDER_IMAGE: "{{ ansible_env.BUILD_BUILDER_IMAGE }}"
     COLLECTOR_BUILDER_TAG: "{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
     PLATFORM: "{{ ansible_env.PLATFORM }}"
-    COLLECTOR_TAG: "{{ ansible_env.COLLECTOR_TAG | default(omit) }}"
+    COLLECTOR_TAG: "{{ ansible_env.COLLECTOR_TAG }}"
 
   tasks:
     - name: Build the collector image
