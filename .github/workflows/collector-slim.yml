@@ -83,8 +83,8 @@ jobs:
         run: |
           {
             echo "---"
-            echo "stackrox_io_username='${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}'"
-            echo "stackrox_io_password='${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}'"
+            echo "stackrox_io_username: '${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}'"
+            echo "stackrox_io_password: '${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}'"
           } > ${{ github.workspace }}/ansible/secrets.yml
 
       - name: Build images
