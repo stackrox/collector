@@ -14,7 +14,7 @@ RUN dnf -y update \
         binutils-devel \
         bison \
         ca-certificates \
-        clang-16.0.1 \
+        clang-15.0.7 \
         cmake \
         cracklib-dicts \
         diffutils \
@@ -45,7 +45,8 @@ RUN dnf -y update \
         wget \
         which \
         bpftool \
-    && dnf clean all
+    && dnf clean all \
+    && clang -v -E - < /dev/null
 
 # Build dependencies from source
 WORKDIR ${BUILD_DIR}
