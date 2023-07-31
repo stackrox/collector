@@ -135,7 +135,6 @@ if __name__ == '__main__':
                         help='Mark available drivers as "downstream"')
     args = parser.parse_args()
 
-    version = args.version
     available = 'downstream' if args.downstream else 'upstream'
     kernels = {}
 
