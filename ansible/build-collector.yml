@@ -16,6 +16,7 @@
 
     - name: Login to quay.io
       community.docker.docker_login:
+        registry_url: quay.io
         username: "{{ stackrox_io_username }}"
         password: "{{ stackrox_io_password }}"
 
@@ -32,3 +33,9 @@
         repository: "{{ collector_image }}-{{ arch }}-base"
         push: true
         source: local
+
+    - name: Logout of quay.io
+      community.docker.docker_login:
+        registry_url: quay.io
+        state: absent
+      when: true

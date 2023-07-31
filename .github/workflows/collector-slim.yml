@@ -80,6 +80,8 @@ jobs:
             #- We use the existing cache
             if [[ "${{ contains(github.event.pull_request.labels.*.name, 'build-builder-image') }}" == "true" ]]; then
               echo 'BUILD_BUILDER_IMAGE=true' >> "$GITHUB_ENV"
+            else
+              echo 'BUILD_BUILDER_IMAGE=false' >> "$GITHUB_ENV"
             fi
 
             echo "COLLECTOR_APPEND_CID=true" >> "$GITHUB_ENV"
