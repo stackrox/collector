@@ -52,10 +52,10 @@ jobs:
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_NOTIFICATIONS_WEBHOOK }}
-          SLACK_CHANNEL: team-acs-collector-notifications
+          SLACK_CHANNEL: team-acs-collector-oncall
           SLACK_COLOR: failure
           SLACK_LINK_NAMES: true
           SLACK_TITLE: Garden Linux version bumper failed
           MSG_MINIMAL: actions url,commit
           SLACK_MESSAGE: |
-            @acs-collector-team
+            @acs-collector-oncall
