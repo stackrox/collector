@@ -98,7 +98,7 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 		s.Require().NoError(err)
 		nNetwork := len(clientNetworks)
 		nExpectedNetwork := len(s.Client.ExpectedNetwork)
-		// TODO Get this assert to pass reliably for these tests. Don't just do the asserts for the last connection
+		// TODO Get this assert to pass reliably for these tests. Don't just do the asserts for the last connection. https://issues.redhat.com/browse/ROX-17964
 		// assert.Equal(s.T(), nClientNetwork, nExpectedClientNetwork)
 		if nExpectedNetwork != nNetwork {
 			fmt.Println("WARNING: Expected " + strconv.Itoa(nExpectedNetwork) + " client network connections but found " + strconv.Itoa(nNetwork))
@@ -125,7 +125,7 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 		s.Require().NoError(err)
 		nNetwork := len(serverNetworks)
 		nExpectedNetwork := len(s.Server.ExpectedNetwork)
-		// TODO Get this assert to pass reliably for these tests. Don't just do the asserts for the last connection
+		// TODO Get this assert to pass reliably for these tests. Don't just do the asserts for the last connection. https://issues.redhat.com/browse/ROX-18803
 		// assert.Equal(s.T(), nServerNetwork, nExpectedServerNetwork)
 		if nExpectedNetwork != nNetwork {
 			fmt.Println("WARNING: Expected " + strconv.Itoa(nExpectedNetwork) + " server network connections but found " + strconv.Itoa(nNetwork))
