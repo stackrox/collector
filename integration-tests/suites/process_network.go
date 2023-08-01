@@ -3,7 +3,6 @@ package suites
 import (
 	"fmt"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -191,21 +190,19 @@ func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
 	_, err := s.GetEndpoints(s.serverContainer)
 	s.Require().Error(err)
 
-	val, err := s.Get(s.serverContainer, networkBucket)
+	networkInfos, err := s.GetNetworks(s.serverContainer)
 	s.Require().NoError(err)
-	actualValues := strings.Split(string(val), "|")
 
-	if len(actualValues) < 2 {
-		assert.FailNow(s.T(), "serverContainer networkBucket was missing data. ", "val=\"%s\"", val)
-	}
-	actualServerEndpoint := actualValues[0]
-	actualClientEndpoint := actualValues[1]
+	assert.Equal(s.T(), 1, len(networkInfos))
+
+	actualServerEndpoint := networkInfos[0].LocalAddress
+	actualClientEndpoint := networkInfos[0].RemoteAddress
 
 	// From server perspective, network connection info only has local port and remote IP
 	assert.Equal(s.T(), fmt.Sprintf(":%s", s.serverPort), actualServerEndpoint)
 	assert.Equal(s.T(), s.clientIP, actualClientEndpoint)
 
-	fmt.Printf("ServerDetails from Bolt: %s %s\n", s.serverContainer, string(val))
+	fmt.Printf("ServerDetails from Bolt: %s %+v\n", s.serverContainer, networkInfos[0])
 	fmt.Printf("ServerDetails from test: %s %s, Port: %s\n", s.serverContainer, s.serverIP, s.serverPort)
 
 	// client side checks
@@ -215,17 +212,18 @@ func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
 	_, err = s.GetEndpoints(s.clientContainer)
 	s.Require().Error(err)
 
-	val, err = s.Get(s.clientContainer, networkBucket)
+	networkInfos, err = s.GetNetworks(s.clientContainer)
 	s.Require().NoError(err)
-	actualValues = strings.Split(string(val), "|")
 
-	actualClientEndpoint = actualValues[0]
-	actualServerEndpoint = actualValues[1]
+	assert.Equal(s.T(), 1, len(networkInfos))
+
+	actualClientEndpoint = networkInfos[0].LocalAddress
+	actualServerEndpoint = networkInfos[0].RemoteAddress
 
 	// From client perspective, network connection info has no local endpoint and full remote endpoint
 	assert.Empty(s.T(), actualClientEndpoint)
 	assert.Equal(s.T(), fmt.Sprintf("%s:%s", s.serverIP, s.serverPort), actualServerEndpoint)
 
-	fmt.Printf("ClientDetails from Bolt: %s %s\n", s.clientContainer, string(val))
+	fmt.Printf("ClientDetails from Bolt: %s %+v\n", s.serverContainer, networkInfos[0])
 	fmt.Printf("ClientDetails from test: %s %s\n", s.clientContainer, s.clientIP)
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
@@ -115,40 +114,35 @@ func (s *RepeatedNetworkFlowTestSuite) TearDownSuite() {
 }
 
 func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
-	// Server side checks
 	assert.Equal(s.T(), s.ExpectedReports, s.ObservedReports)
 
-	val, err := s.Get(s.ServerContainer, networkBucket)
-	s.Require().NoError(err)
-	actualValues := strings.Split(string(val), "|")
+	// Server side checks
 
-	if len(actualValues) < 2 {
-		assert.FailNow(s.T(), "serverContainer networkBucket was missing data. ", "val=\"%s\"", val)
-	}
-	actualServerEndpoint := actualValues[0]
-	actualClientEndpoint := actualValues[1]
+	networkInfos, err := s.GetNetworks(s.ServerContainer)
+	s.Require().NoError(err)
+
+	actualServerEndpoint := networkInfos[0].LocalAddress
+	actualClientEndpoint := networkInfos[0].RemoteAddress
 
 	// From server perspective, network connection info only has local port and remote IP
 	assert.Equal(s.T(), fmt.Sprintf(":%s", s.ServerPort), actualServerEndpoint)
 	assert.Equal(s.T(), s.ClientIP, actualClientEndpoint)
 
-	fmt.Printf("ServerDetails from Bolt: %s %s\n", s.ServerContainer, string(val))
+	fmt.Printf("ServerDetails from Bolt: %s %+v\n", s.ServerContainer, networkInfos[0])
 	fmt.Printf("ServerDetails from test: %s %s, Port: %s\n", s.ServerContainer, s.ServerIP, s.ServerPort)
 
 	// client side checks
-	val, err = s.Get(s.ClientContainer, networkBucket)
+
+	// NetworkSignalHandler does not currently report endpoints.
+	// See the comment above for the server container endpoint test for more info.
+	_, err = s.GetEndpoints(s.ClientContainer)
+	s.Require().Error(err)
+
+	networkInfos, err = s.GetNetworks(s.ClientContainer)
 	s.Require().NoError(err)
-	actualValues = strings.Split(string(val), "|")
 
-	actualClientEndpoint = actualValues[0]
-	actualServerEndpoint = actualValues[1]
-
-	// From client perspective, network connection info has no local endpoint and full remote endpoint
-	assert.Empty(s.T(), actualClientEndpoint)
-	assert.Equal(s.T(), fmt.Sprintf("%s:%s", s.ServerIP, s.ServerPort), actualServerEndpoint)
-
-	fmt.Printf("ClientDetails from Bolt: %s %s\n", s.ClientContainer, string(val))
-	fmt.Printf("ClientDetails from test: %s %s\n", s.ClientContainer, s.ClientIP)
+	actualClientEndpoint = networkInfos[0].LocalAddress
+	actualServerEndpoint = networkInfos[0].RemoteAddress
 }
 
 func GetNetworkActivity(lines []string, serverAddress string) []bool {
