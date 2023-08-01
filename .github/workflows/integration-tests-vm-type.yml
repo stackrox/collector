@@ -99,9 +99,14 @@ jobs:
 
           copy_secret_to_file "$GCP_SSH_KEY" "$HOME/.ssh/GCP_SSH_KEY" 0600
           copy_secret_to_file "$GCP_SSH_KEY_PUB" "$HOME/.ssh/GCP_SSH_KEY.pub" 0600
+
+          if [[ '${{ inputs.vm_type }}' =~ s390x ]]; then
+            copy_secret_to_file "$IBM_S390X_SSH_KEY" "$HOME/.ssh/acs-sshkey_rsa.prv"
+          fi
         env:
           GCP_SSH_KEY: ${{ secrets.GCP_SSH_KEY }}
           GCP_SSH_KEY_PUB: ${{ secrets.GCP_SSH_KEY_PUB }}
+          IBM_S390X_SSH_KEY: ${{ secrets.IBM_CLOUD_S390X_SSH_PRIVATE_KEY }}
 
       - name: Set environment
         run: |
@@ -111,6 +116,15 @@ jobs:
           if [[ '${{ contains(github.event.pull_request.labels.*.name, 'integration-tests-trace-logging') }}' == 'true' ]]; then
             echo "COLLECTOR_LOG_LEVEL=trace" | tee -a "$GITHUB_ENV"
           fi
+
+          if [[ '${{ inputs.vm_type }}' =~ s390x ]]; then
+            {
+              echo "IC_API_KEY=${IBM_S390X_API_KEY}"
+              echo "IC_REGION=ca-tor"
+            } >> "${GITHUB_ENV}"
+          fi
+        env:
+          IBM_S390X_API_KEY: ${{ secrets.IBM_CLOUD_S390X_API_KEY }}
 
       - name: Create VMs
         if: ${{ ! inputs.run-benchmarks }}
