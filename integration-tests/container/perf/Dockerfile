@@ -1,17 +1,6 @@
-FROM alpine:3.12 AS base
+FROM quay.io/centos/centos:stream9 AS base
 
-RUN apk add --update \
-    bash \
-    bc \
-    build-base \
-    bison \
-    flex \
-    curl \
-    elfutils-dev \
-    linux-headers \
-    make \
-    openssl-dev \
-    diffutils
+RUN dnf install -y bash bc bison curl-minimal diffutils elfutils-devel flex kernel-devel make openssl-devel
 
 COPY tools /tools
 COPY scripts /scripts
@@ -27,12 +16,11 @@ WORKDIR /
 CMD ["/scripts/init.sh"]
 
 #
-# BCC image that contains bcc-tools
-# see: https://github.com/iovisor/bcc
+# Bcc image that contains bcc-tools
 #
 FROM base AS bcc
 
-RUN apk add --update bcc-tools && \
+RUN dnf install -y bcc-tools && \
     ln -s /usr/bin/python3 /usr/bin/python
 
 ENV PATH=/bin:/usr/bin:/usr/share/bcc/tools:/tools
@@ -43,6 +31,6 @@ ENTRYPOINT ["/scripts/run-tool.sh"]
 #
 FROM base AS perf
 
-RUN apk add --update perf
+RUN dnf install -y perf
 
 ENTRYPOINT ["/scripts/run-tool.sh", "perf"]
