@@ -156,8 +156,8 @@ jobs:
         if: failure()
         uses: rtCamp/action-slack-notify@v2
         env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_NOTIFICATIONS_WEBHOOK }}
-          SLACK_CHANNEL: team-acs-collector-notifications
+          SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_ONCALL_WEBHOOK }}
+          SLACK_CHANNEL: team-acs-collector-oncall
           SLACK_COLOR: failure
           SLACK_LINK_NAMES: true
           SLACK_TITLE: "Releasing collector with no downstream drivers."
