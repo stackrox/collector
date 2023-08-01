@@ -27,3 +27,10 @@ repos:
     rev: "v1.0.0-rc.1"
     hooks:
       - id: go-fmt
+
+  - repo: https://github.com/ansible/ansible-lint
+    rev: "v6.17.2"
+    files: ansible/**/*.{yaml,yml}
+    hooks:
+      - id: ansible-lint
+        args: ["--project-dir=ansible"]
