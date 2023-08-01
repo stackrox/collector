@@ -105,7 +105,7 @@ jobs:
         if: |
           github.event_name == 'push' ||
           matrix.arch == 'amd64' ||
-          !contains(github.event.pull_request.*.name, 'skip-multiarch-builds')
+          !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
         run: |
           ansible-galaxy collection install community.general
           ansible-galaxy collection install community.docker
@@ -129,7 +129,7 @@ jobs:
       COLLECTOR_BUILDER_TAG: ${{ needs.set-environment.outputs.collector-builder-tag }}
     if: |
       github.event_name == 'push' ||
-      !contains(github.event.pull_request.*.name, 'skip-multiarch-builds')
+      !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
 
     steps:
 
@@ -207,7 +207,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'pull_request' &&
-      contains(github.event.pull_request.*.name, 'skip-multiarch-builds')
+      contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
     steps:
       - name: Pull base slim image to retag
         run: docker pull ${{ inputs.collector-image }}-amd64-slim
