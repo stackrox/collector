@@ -22,6 +22,17 @@
     yum-config-manager --add-repo https://download.docker.com/linux/"{{ distro.stdout }}"/docker-ce.repo
     yum-config-manager --setopt="docker-ce-stable.baseurl=https://download.docker.com/linux/"{{ distro.stdout }}"/\$releasever/\$basearch/stable" --save
     yum update -y
+  when: arch_info == "s390x"
+
+- name: Add repository
+  shell: |
+    yum install -y yum-utils device-mapper-persistent-data lvm2
+    # this is a workaround because docker only has s390x repositories for RHEL, but
+    # keeps x86 repositories for centos that work.
+    yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+    yum-config-manager --setopt="docker-ce-stable.baseurl=https://download.docker.com/linux/centos/\$releasever/\$basearch/stable" --save
+    yum update -y
+  when: arch_info != "s390x"
 
 - name: Install docker
   yum:
