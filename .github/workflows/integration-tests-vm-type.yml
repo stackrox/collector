@@ -128,7 +128,7 @@ jobs:
             {
               echo "REDHAT_USERNAME=${REDHAT_USERNAME}"
               echo "REDHAT_PASSWORD=${REDHAT_PASSWORD}"
-            } > "${GITHUB_ENV}"
+            } >> "${GITHUB_ENV}"
           fi
         env:
           IBM_S390X_API_KEY: ${{ secrets.IBM_CLOUD_S390X_API_KEY }}
