@@ -139,6 +139,7 @@ jobs:
     if: github.event_name == 'push' && (github.ref_type == 'tag' || startsWith(github.ref_name, 'release-'))
     steps:
       - uses: actions/checkout@v3
+
       - name: Ensure downstream drivers exist for releases
         run: |
           DRIVER_VERSION="$(cat ${{ github.workspace }}/kernel-modules/MODULE_VERSION)"

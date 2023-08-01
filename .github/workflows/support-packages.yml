@@ -57,8 +57,6 @@ jobs:
           upstream-drivers-bucket: gs://${{ inputs.upstream-drivers-bucket }}
           downstream-drivers-bucket: gs://${{ inputs.downstream-drivers-bucket }}
 
-      - run: jq . /tmp/driver-matrix.json
-
       - name: Create support-packages
         run: |
           ${{ github.workspace }}/kernel-modules/support-packages/04-create-support-packages.sh \

@@ -60,56 +60,49 @@ import os
 import sys
 import re
 
-ebpf_re = re.compile(r'(\d+\.\d+\.\d+)/collector-ebpf-(\d+\.\d+\.\d+.*)\.o\.gz$')
-kmod_re = re.compile(r'(\d+\.\d+\.\d+)/collector-(\d+\.\d+\.\d+.*)\.ko\.gz$')
-unavailable_re = re.compile(r'(\d+\.\d+\.\d+)/\.collector-ebpf-(\d+\.\d+\.\d+.*)\.unavail$')
+kernel_version_re = re.compile(r'(\d+\.\d+\.\d+.*)\.(o|ko)\.gz$')
+unavailable_re = re.compile(r'\.collector-ebpf-(\d+\.\d+\.\d+.*)\.unavail$')
 
 
 def update_kernel(kernel_list: dict,
                   kernel_version: str,
                   driver_version: str,
                   driver_type: str,
-                  status: str):
+                  source: str):
     kernel = kernel_list.get(kernel_version)
     if kernel is None:
         kernel_list[kernel_version] = {
             driver_version: {
-                driver_type: status,
+                driver_type: source,
             }
         }
     else:
         dver = kernel.get(driver_version)
         if dver is None:
             kernel[driver_version] = {
-                driver_type: status,
+                driver_type: source,
             }
         else:
-            dver[driver_type] = status
+            dver[driver_type] = source
 
 
 def process_line(kernels: dict,
-                 available: str,
+                 source: str,
                  line: str):
-    match = ebpf_re.search(line)
+    (driver_path, driver) = os.path.split(line)
+    (_, driver_version) = os.path.split(driver_path)
+
+    match = kernel_version_re.search(driver)
     if match:
-        driver_version = match[1]
-        kernel_version = match[2]
+        kernel_version = match[1]
+        driver_type = 'kmod' if match[2] == 'ko' else 'ebpf'
         update_kernel(kernels, kernel_version,
-                      driver_version, 'ebpf', available)
+                      driver_version, driver_type, source)
         return
 
-    match = kmod_re.search(line)
+    match = unavailable_re.search(driver)
     if match:
-        driver_version = match[1]
-        kernel_version = match[2]
-        update_kernel(kernels, kernel_version,
-                      driver_version, 'kmod', available)
-        return
-
-    match = unavailable_re.search(line)
-    if match:
-        driver_version = match[1]
-        kernel_version = match[2]
+        kernel_version = match[1]
         update_kernel(kernels, kernel_version,
                       driver_version, 'ebpf', 'unavailable')
         return
@@ -117,15 +110,22 @@ def process_line(kernels: dict,
     print('Did not match any known drivers')
 
 
-def main(kernels: dict, file, available: str):
-    for line in sys.stdin:
-        line = line.rstrip()
-        process_line(kernels, available, line)
+def main(file: str, source: str):
+    kernels = {}
 
-    if file:
-        json.dump(kernels, file)
+    if file is None:
+        file = sys.stdout
     else:
-        print(json.dumps(kernels))
+        if os.path.isfile(file):
+            with open(file, 'r') as f:
+                kernels = json.load(f)
+
+        file = open(file, "w")
+
+    for line in sys.stdin:
+        process_line(kernels, source, line.rstrip())
+
+    json.dump(kernels, file)
 
 
 if __name__ == '__main__':
@@ -135,15 +135,7 @@ if __name__ == '__main__':
                         help='Mark available drivers as "downstream"')
     args = parser.parse_args()
 
-    available = 'downstream' if args.downstream else 'upstream'
-    kernels = {}
+    source = 'downstream' if args.downstream else 'upstream'
+    file = args.update
 
-    file = None
-    if args.update:
-        if os.path.isfile(args.update):
-            with open(args.update, 'r') as f:
-                kernels = json.load(f)
-
-        file = open(args.update, "w")
-
-    main(kernels, file, available)
+    main(file, source)

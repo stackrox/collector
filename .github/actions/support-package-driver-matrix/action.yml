@@ -28,11 +28,11 @@ runs:
 
           # Add the regular drivers
           gsutil ls "${{ inputs.upstream-drivers-bucket }}/${mod_ver}/*" \
-              | ${{ github.action_path }}/driver-matrix.py -u /tmp/driver-matrix.json
+              | ${{ github.action_path }}/driver-matrix.py --update /tmp/driver-matrix.json
 
           if use_downstream "$mod_ver"; then
             # Update the matrix with downstream drivers
             gsutil ls "${{ inputs.downstream-drivers-bucket }}/${mod_ver}/*" \
-                | ${{ github.action_path }}/driver-matrix.py -u /tmp/driver-matrix.json -d
+                | ${{ github.action_path }}/driver-matrix.py --update /tmp/driver-matrix.json --downstream
           fi
         done
