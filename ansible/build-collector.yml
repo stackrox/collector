@@ -64,7 +64,7 @@
 
     - name: Push builder image to quay.io/rhacs-eng
       community.docker.docker_image:
-        name: "quay.io/rhacs-eng/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
+        name: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
         repository: "quay.io/rhacs-eng/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
         push: true
         source: local
