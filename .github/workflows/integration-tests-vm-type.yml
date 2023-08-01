@@ -123,8 +123,17 @@ jobs:
               echo "IC_REGION=ca-tor"
             } >> "${GITHUB_ENV}"
           fi
+
+          if [[ '${{ inputs.vm_type }}' =~ rhel ]]; then
+            {
+              echo "REDHAT_USERNAME=${REDHAT_USERNAME}"
+              echo "REDHAT_PASSWORD=${REDHAT_PASSWORD}"
+            } > "${GITHUB_ENV}"
+          fi
         env:
           IBM_S390X_API_KEY: ${{ secrets.IBM_CLOUD_S390X_API_KEY }}
+          REDHAT_USERNAME: ${{ secrets.REDHAT_USERNAME }}
+          REDHAT_PASSWORD: ${{ secrets.REDHAT_PASSWORD }}
 
       - name: Create VMs
         if: ${{ ! inputs.run-benchmarks }}
