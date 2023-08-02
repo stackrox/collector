@@ -27,6 +27,7 @@
     yum update -y
 
     subscription-manager repos --list
+    subscription-manager repos --list-enabled
     subscription-manager repos --enable=rhel-8-server-extras-rpms
   when: arch_info == "s390x"
 
