@@ -85,6 +85,9 @@ jobs:
             echo "branch-name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Use output
+        run: |
+          echo ${{ steps.collector-env.outputs.branch-name }}
       - name: Set GCP buckets
         id: gcp-buckets
         run: |

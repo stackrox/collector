@@ -14,6 +14,19 @@
         chdir: "{{ lookup('env', 'GITHUB_WORKSPACE') }}"
         target: image
 
+    # Remove the 2 next blocks before merging
+    - name: Login to quay.io
+      community.docker.docker_login:
+        registry_url: quay.io
+        username: "{{ stackrox_io_username }}"
+        password: "{{ stackrox_io_password }}"
+
+    - name: Push current builder image
+      community.docker.docker_image:
+        name: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
+        push: true
+        source: local
+
     - name: Retag collector image to arch specific
       community.docker.docker_image:
         name: "{{ collector_image }}"
@@ -57,8 +70,7 @@
 
     - name: Push builder image to quay.io/stackrox-io
       community.docker.docker_image:
-        name: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
-        repository: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
+        name: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
         push: true
         source: local
       when: push_builder == "true"
@@ -85,7 +97,7 @@
 
     - name: Push builder image to quay.io/rhacs-eng
       community.docker.docker_image:
-        name: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
+        name: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
         repository: "quay.io/rhacs-eng/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
         push: true
         source: local
