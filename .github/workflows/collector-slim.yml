@@ -108,7 +108,7 @@ jobs:
           !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
         run: |
           ansible-galaxy install -r ansible/requirements.yml
-          ansible-playbook -v \
+          ansible-playbook \
             --connection local \
             -i localhost, \
             --limit localhost \
@@ -255,19 +255,19 @@ jobs:
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
-#       - name: Retag and push stackrox-io builder
-#         uses: ./.github/actions/retag-and-push
-#         with:
-#           src-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}-amd64
-#           dst-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
-#           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-#           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-#
-#       - name: Retag and push rhacs-eng builder
-#         uses: ./.github/actions/retag-and-push
-#         with:
-#           src-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}-amd64
-#           dst-image: quay.io/rhacs-eng/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
-#           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-#           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+      - name: Retag and push stackrox-io builder
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}-amd64
+          dst-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
+          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+
+      - name: Retag and push rhacs-eng builder
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}-amd64
+          dst-image: quay.io/rhacs-eng/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
+          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
