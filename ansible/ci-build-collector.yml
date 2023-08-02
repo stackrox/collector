@@ -1,0 +1,94 @@
+---
+- name: Build and push collector image
+  hosts: all
+
+  environment:
+    BUILD_BUILDER_IMAGE: "{{ ansible_env.BUILD_BUILDER_IMAGE }}"
+    COLLECTOR_BUILDER_TAG: "{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
+    PLATFORM: "{{ ansible_env.PLATFORM }}"
+    COLLECTOR_TAG: "{{ ansible_env.COLLECTOR_TAG }}"
+
+  tasks:
+    - name: Build the collector image
+      community.general.make:
+        chdir: "{{ lookup('env', 'GITHUB_WORKSPACE') }}"
+        target: image
+
+    - name: Login to quay.io
+      community.docker.docker_login:
+        registry_url: quay.io
+        username: "{{ stackrox_io_username }}"
+        password: "{{ stackrox_io_password }}"
+
+    - name: Push slim to quay.io/stackrox-io
+      community.docker.docker_image:
+        name: "{{ collector_image }}"
+        repository: "{{ collector_image }}-{{ arch }}-slim"
+        push: true
+        source: local
+
+    - name: Push base to quay.io/stackrox-io
+      community.docker.docker_image:
+        name: "{{ collector_image }}"
+        repository: "{{ collector_image }}-{{ arch }}-base"
+        push: true
+        source: local
+
+    - name: Push builder image to quay.io/stackrox-io
+      community.docker.docker_image:
+        name: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
+        repository: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
+        push: true
+        source: local
+      when: push_builder == "true"
+
+    - name: Login to quay.io
+      community.docker.docker_login:
+        registry_url: quay.io
+        username: "{{ rhacs_eng_username }}"
+        password: "{{ rhacs_eng_password }}"
+
+    - name: Push slim to quay.io/rhacs-eng
+      community.docker.docker_image:
+        name: "{{ collector_image }}"
+        repository: "{{ ansible_env.RHACS_ENG_IMAGE }}-{{ arch }}-slim"
+        push: true
+        source: local
+
+    - name: Push base to quay.io/stackrox-io
+      community.docker.docker_image:
+        name: "{{ collector_image }}"
+        repository: "{{ ansible_env.RHACS_ENG_IMAGE }}-{{ arch }}-base"
+        push: true
+        source: local
+
+    - name: Push builder image to quay.io/rhacs-eng
+      community.docker.docker_image:
+        name: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
+        repository: "quay.io/rhacs-eng/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
+        push: true
+        source: local
+      when: push_builder == "true"
+
+    - name: Print images pushed
+      debug:
+        msg:
+        - "Pushed the following images:"
+        - "  {{ collector_image }}-{{ arch }}-slim"
+        - "  {{ collector_image }}-{{ arch }}-base"
+        - "  {{ ansible_env.RHACS_ENG_IMAGE }}-{{ arch }}-slim"
+        - "  {{ ansible_env.RHACS_ENG_IMAGE }}-{{ arch }}-base"
+
+    - name: Print builder images pushed
+      debug:
+        msg:
+        - "Pushed the following builder images:"
+        - "  quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
+        - "  quay.io/rhacs-eng/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
+      when: push_builder == "true"
+
+    - name: Logout of quay.io
+      community.docker.docker_login:
+        registry_url: quay.io
+        state: absent
+      when: true

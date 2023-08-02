@@ -28,12 +28,11 @@ jobs:
       collector-builder-tag: ${{ steps.set-env.outputs.collector-builder-tag }}
 
     steps:
-      - name: Checks PR, main and release branches
+      - name: Define builder tag
         id: set-env
         run: |
 
           if [[ "${{ github.event_name }}" != 'pull_request' ]]; then
-            echo 'build-builder-image=true' >> "$GITHUB_OUTPUT"
             echo "collector-builder-tag=${DEFAULT_BUILDER_TAG}" >> "$GITHUB_OUTPUT"
           else
             #We have 2 options:
@@ -42,16 +41,9 @@ jobs:
             COLLECTOR_BUILDER_TAG="${DEFAULT_BUILDER_TAG}"
             if [[ "${{ contains(github.event.pull_request.labels.*.name, 'build-builder-image') }}" == "true" ]]; then
               COLLECTOR_BUILDER_TAG="${{ inputs.collector-tag }}"
-              echo 'build-builder-image=true' >> "$GITHUB_OUTPUT"
             fi
 
             echo "collector-builder-tag=$COLLECTOR_BUILDER_TAG" >> "$GITHUB_OUTPUT"
-
-            echo "COLLECTOR_APPEND_CID=true" >> "$GITHUB_ENV"
-
-            if [[ "${{ contains(github.event.pull_request.labels.*.name, 'address-sanitizer') }}" == "true" ]]; then
-              echo "ADDRESS_SANITIZER=true" >> "$GITHUB_ENV"
-            fi
           fi
 
   build-collector-image:
@@ -59,11 +51,11 @@ jobs:
     needs: set-environment
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         arch: [amd64, ppc64le, s390x]
 
     env:
-      BUILD_BUILDER_IMAGE: ${{ needs.set-environment.outputs.build-builder-image }}
       COLLECTOR_BUILDER_TAG: ${{ needs.set-environment.outputs.collector-builder-tag }}
       PLATFORM: linux/${{ matrix.arch }}
 
@@ -78,53 +70,53 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
+      - name: Checks PR, main and release branches
+        run: |
+          if [[ "${{ github.event_name }}" != 'pull_request' ]]; then
+            echo 'BUILD_BUILDER_IMAGE=true' >> "$GITHUB_ENV"
+          else
+            # We have 2 options:
+            # - We build the builder from scratch and give it a custom tag
+            # - We use the existing cache
+            if [[ "${{ contains(github.event.pull_request.labels.*.name, 'build-builder-image') }}" == "true" ]]; then
+              echo 'BUILD_BUILDER_IMAGE=true' >> "$GITHUB_ENV"
+            else
+              echo 'BUILD_BUILDER_IMAGE=false' >> "$GITHUB_ENV"
+            fi
+
+            echo "COLLECTOR_APPEND_CID=true" >> "$GITHUB_ENV"
+
+            if [[ "${{ contains(github.event.pull_request.labels.*.name, 'address-sanitizer') }}" == "true" ]]; then
+              echo "ADDRESS_SANITIZER=true" >> "$GITHUB_ENV"
+            fi
+          fi
+
+      - name: Create secrets.yml
+        run: |
+          {
+            echo "---"
+            echo "stackrox_io_username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}"
+            echo "stackrox_io_password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}"
+            echo "rhacs_eng_username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}"
+            echo "rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}"
+          } > ${{ github.workspace }}/ansible/secrets.yml
+
       - name: Build images
+        if: |
+          github.event_name == 'push' ||
+          matrix.arch == 'amd64' ||
+          !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
         run: |
-          make image
-
-      - name: Retag and push stackrox-io -slim
-        uses: ./.github/actions/retag-and-push
-        with:
-          src-image: ${{ inputs.collector-image }}
-          dst-image: ${{ inputs.collector-image }}-${{ matrix.arch }}-slim
-          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-
-      - name: Retag and push stackrox-io -base
-        uses: ./.github/actions/retag-and-push
-        with:
-          src-image: ${{ inputs.collector-image }}
-          dst-image: ${{ inputs.collector-image }}-${{ matrix.arch }}-base
-          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-
-      - name: Push builder to stackrox-io
-        if: github.event_name == 'push' || needs.set-environment.outputs.collector-builder-tag != env.DEFAULT_BUILDER_TAG
-        run: |
-          docker tag "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}" "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-${{ matrix.arch }}"
-          docker push "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-${{ matrix.arch }}"
-
-      - name: Retag and push rhacs-eng -slim
-        uses: ./.github/actions/retag-and-push
-        with:
-          src-image: ${{ inputs.collector-image }}
-          dst-image: ${{ env.RHACS_ENG_IMAGE }}-${{ matrix.arch }}-slim
-          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-
-      - name: Retag and push rhacs-eng -base
-        uses: ./.github/actions/retag-and-push
-        with:
-          src-image: ${{ inputs.collector-image }}
-          dst-image: ${{ env.RHACS_ENG_IMAGE }}-${{ matrix.arch }}-base
-          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-
-      - name: Push builder to rhacs-eng
-        if: github.event_name == 'push' || needs.set-environment.outputs.collector-builder-tag != env.DEFAULT_BUILDER_TAG
-        run: |
-          docker tag "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}" "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}-${{ matrix.arch }}"
-          docker push "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}-${{ matrix.arch }}"
+          ansible-galaxy install -r ansible/requirements.yml
+          ansible-playbook \
+            --connection local \
+            -i localhost, \
+            --limit localhost \
+            -e collector_image='${{ inputs.collector-image }}' \
+            -e arch='${{ matrix.arch }}' \
+            -e push_builder="${{ github.event_name == 'push' || needs.set-environment.outputs.collector-builder-tag != env.DEFAULT_BUILDER_TAG }}" \
+            -e @'${{ github.workspace }}/ansible/secrets.yml' \
+            ansible/ci-build-collector.yml
 
   create-multiarch-manifest:
     needs:
@@ -133,8 +125,10 @@ jobs:
     name: Create Multiarch manifest
     runs-on: ubuntu-latest
     env:
-      BUILD_BUILDER_IMAGE: ${{ needs.set-environment.outputs.build-builder-image }}
       COLLECTOR_BUILDER_TAG: ${{ needs.set-environment.outputs.collector-builder-tag }}
+    if: |
+      github.event_name == 'push' ||
+      !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
 
     steps:
 
@@ -210,3 +204,70 @@ jobs:
                                  "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}-s390x"
 
           docker manifest push "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}"
+
+  retag-x86-image:
+    needs:
+    - set-environment
+    - build-collector-image
+    name: Retag x86 slim image
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' &&
+      contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
+    env:
+      COLLECTOR_BUILDER_TAG: ${{ needs.set-environment.outputs.collector-builder-tag }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Pull images to retag
+        run: |
+          docker pull ${{ inputs.collector-image }}-amd64-slim
+          docker pull quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}-amd64
+
+      - name: Retag and push stackrox-io -slim
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: ${{ inputs.collector-image }}-amd64-slim
+          dst-image: ${{ inputs.collector-image }}-slim
+          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+
+      - name: Retag and push stackrox-io -base
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: ${{ inputs.collector-image }}-amd64-slim
+          dst-image: ${{ inputs.collector-image }}-base
+          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+
+      - name: Retag and push rhacs-eng -slim
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: ${{ inputs.collector-image }}-amd64-slim
+          dst-image: ${{ env.RHACS_ENG_IMAGE }}-slim
+          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+
+      - name: Retag and push rhacs-eng -base
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: ${{ inputs.collector-image }}-amd64-slim
+          dst-image: ${{ env.RHACS_ENG_IMAGE }}-base
+          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+
+      - name: Retag and push stackrox-io builder
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}-amd64
+          dst-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
+          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+
+      - name: Retag and push rhacs-eng builder
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}-amd64
+          dst-image: quay.io/rhacs-eng/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
+          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+
