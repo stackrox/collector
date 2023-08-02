@@ -55,7 +55,7 @@ jobs:
       matrix:
         # Waiting on ROX-XXXX
         # arch: [amd64, ppc64le, s390x]
-        arch: [amd64, ppc64le]
+        arch: [amd64]
 
     env:
       COLLECTOR_BUILDER_TAG: ${{ needs.set-environment.outputs.collector-builder-tag }}
