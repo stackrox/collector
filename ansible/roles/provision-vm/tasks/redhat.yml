@@ -38,7 +38,7 @@
   when: arch_info != "s390x"
 
 - name: Install docker
-  yum:
+  dnf:
     name:
       - docker-ce
       - docker-ce-cli
