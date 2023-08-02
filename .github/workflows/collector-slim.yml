@@ -147,30 +147,31 @@ jobs:
 
       - name: Create and push multiarch manifest for stackrox-io -slim
         run: |
+          set -x
           for arch in "${ARCHS[@]}"; do
-            images+="quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-${arch}-slim "
+            images+=("quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-${arch}-slim")
           done
 
-          docker manifest create quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-slim "${images}"
+          docker manifest create quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-slim "${images[@]}"
           docker manifest push quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-slim
 
       - name: Create and push multiarch manifest for stackrox-io -base
         run: |
           for arch in "${ARCHS[@]}"; do
-            images+="quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-${arch}-base "
+            images+=("quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-${arch}-base")
           done
 
-          docker manifest create quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-base "${images}"
+          docker manifest create quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-base "${images[@]}"
           docker manifest push quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-base
 
       - name: Create and push multiarch manifest for builder to stackrox-io
         if: github.event_name == 'push' || needs.set-environment.outputs.collector-builder-tag != env.DEFAULT_BUILDER_TAG
         run: |
           for arch in "${ARCHS[@]}"; do
-            images+="quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-${arch} "
+            images+=("quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-${arch}")
           done
 
-          docker manifest create "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}" "${images}"
+          docker manifest create "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}" "${images[@]}"
           docker manifest push "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}"
 
       - name: Login to quay.io/rhacs-eng
@@ -184,29 +185,29 @@ jobs:
       - name: Create and push multiarch manifest for rhacs-eng -slim
         run: |
           for arch in "${ARCHS[@]}"; do
-            images+="quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-${arch}-slim "
+            images+=("quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-${arch}-slim")
           done
 
-          docker manifest create quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-slim "${images}"
+          docker manifest create quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-slim "${images[@]}"
           docker manifest push quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-slim
 
       - name: Create and push multiarch manifest for rhacs-eng -base
         run: |
           for arch in "${ARCHS[@]}"; do
-            images+="quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-${arch}-base "
+            images+=("quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-${arch}-base")
           done
 
-          docker manifest create quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-base "${images}"
+          docker manifest create quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-base "${images[@]}"
           docker manifest push quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-base
 
       - name: Create and push multiarch manifest for builder to rhacs-eng
         if: github.event_name == 'push' || needs.set-environment.outputs.collector-builder-tag != env.DEFAULT_BUILDER_TAG
         run: |
           for arch in "${ARCHS[@]}"; do
-            images+="quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}-${arch} "
+            images+=("quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}-${arch}")
           done
 
-          docker manifest create "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}" "${images}"
+          docker manifest create "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}" "${images[@]}"
           docker manifest push "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}"
 
   retag-x86-image:
