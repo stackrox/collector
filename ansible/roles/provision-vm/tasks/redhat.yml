@@ -16,13 +16,6 @@
   until: registration is not failed
   when: arch_info == "s390x"
 
-- name: Enable extras repositories
-  tags: attach_subscription
-  community.general.rhsm_repository:
-    state: enabled
-    name: '*extras*'
-  when: arch_info == "s390x"
-
 - name: Update repository
   shell: yum makecache
 
@@ -32,6 +25,9 @@
     yum-config-manager --add-repo https://download.docker.com/linux/"{{ distro.stdout }}"/docker-ce.repo
     yum-config-manager --setopt="docker-ce-stable.baseurl=https://download.docker.com/linux/"{{ distro.stdout }}"/\$releasever/\$basearch/stable" --save
     yum update -y
+
+    subscription-manager repos --list
+    subscription-manager repos --enable=rhel-8-server-extras-rpms
   when: arch_info == "s390x"
 
 - name: Add repository
