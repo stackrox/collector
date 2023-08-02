@@ -16,6 +16,13 @@
   until: registration is not failed
   when: arch_info == "s390x"
 
+- name: Enable extras repositories
+  tags: attach_subscription
+  community.general.rhsm_repository:
+    state: enabled
+    name: '*extras*'
+  when: arch_info == "s390x"
+
 - name: Update repository
   shell: yum makecache
 
