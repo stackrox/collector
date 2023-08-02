@@ -1,0 +1,30 @@
+name: Create and push a multiarch manifest
+description: |
+  This action will create a multiarch manifest and push it to a remote registry.
+
+inputs:
+  base-image:
+    description:
+      The base tag to be used for the manifest
+    required: true
+  suffix:
+    description:
+      Optional suffix for the tags used and the manifest
+    default: ''
+  archs:
+    description:
+      Architectures to be included in the final manifest, separated by a space
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        set -x
+
+        read -ra archs <<< "${{ inputs.archs }}"
+        for arch in "${archs[@]}"; do
+          images+=("${{ inputs.base-image }}-${arch}${{ inputs.suffix }}")
+        done
+
+        docker manifest create ${{ inputs.base-image }} "${images[@]}"
+        docker manifest push ${{ inputs.base-image }}${{ inputs.suffix }}
