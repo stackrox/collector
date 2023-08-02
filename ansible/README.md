@@ -20,7 +20,37 @@ $ brew install ansible
 $ pip3 install -r requirements.txt
 ```
 
-## Overview
+## Image builds
+### Builder and slim collector images
+
+The `ci-build-collector.yml` playbook is meant to be used by CI, it handles the
+build process for the builder and slim collector images, as well as retagging
+and pushing of these images to quay.io.
+
+#### Environment variables used by the playbook
+
+| Name | Description |
+| ---  | ---         |
+| BUILD_BUILDER_IMAGE | Controls whether the builder image should be built or pulled from a remote registry. |
+| COLLECTOR_BUILDER_TAG | The tag used for the builder image. |
+| PLATFORM | The platform the images are being built for, currently the supported values are:<br>- linux/amd64<br>- linux/ppc64le<br>- linux/s390x |
+| COLLECTOR_TAG | The tag to be used with the collector image |
+| RHACS_ENG_IMAGE | Similar to the collector_image ansible variable, but for the quay.io/rhacs-eng registry |
+
+#### Ansible variables to be supplied to the playbook
+
+| Name | Description |
+| ---  | ---         |
+| collector_image | The collector image name to be built, including its tag |
+| arch | The architecture the images are being built for, currently the supported values are:<br>- amd64<br>- ppc64le<br>- s390x |
+| stackrox_io_username | Username used for pushing images to quay.io/stackrox-io |
+| stackrox_io_password | Password used for pushing images to quay.io/stackrox-io |
+| rhacs_eng_username | Username used for pushing images to quay.io/rhacs-eng |
+| rhacs_eng_password | Password used for pushing images to quay.io/rhacs-eng |
+| push_builder | If 'true', the builder will be pushed to the registries alongside the collector images |
+
+## Integration tests
+### Overview
 
 The top-level yaml files define playbooks to perform various actions, and can
 be run either directly with `ansible-playbook` or through the Makefile targets.
@@ -46,7 +76,7 @@ Note: the `integration-tests.yml` playbook also supports the `setup`, `provision
 `run-tests` and `teardown` tags to run each stage of the process.
 
 
-## VMs
+### VMs
 
 Within `vars/all.yml` there exists configuration for a variety of VM types,
 summarized below:
@@ -79,7 +109,7 @@ collector-dev-rhel-7-12345
 collector-ci-flatcar-stable-12345
 ```
 
-## Inventory
+### Inventory
 
 The inventory is [dynamic](https://docs.ansible.com/ansible/latest/user_guide/intro_dynamic_inventory.html)
 which means that the hosts and groups are all derived from GCP. The `ci/` and `dev/`
@@ -92,7 +122,7 @@ The two groups are `job_id_<unique id>` and `platform_<vm type>`
 These groups are used to run against only the VMs that have been created by the
 same user or CI job.
 
-## Environment Variables
+### Environment Variables
 
 The following environment variables may be used to modify some behavior:
 
@@ -106,7 +136,7 @@ The following environment variables may be used to modify some behavior:
 Note: other environment variables that may affect the operation of the integration tests
 can be used to modify behavior. See [the integration tests README](../integration-tests/README.md) for details.
 
-## Secrets & Creds
+### Secrets & Creds
 
 The make targets expect some secrets to exist within a secrets.yml file in the
 root of this directory structure. It should contain key/value pairs of variable
@@ -133,16 +163,16 @@ $ ansible-vault encrypt secrets.yml
 This will require some changes to any `ansible-playbook` commands, as you
 need to provide a password. Add `--ask-vault-pass` to any commands.
 
-## Available Roles
+### Available Roles
 
-### create-vm
+#### create-vm
 
 This role allows a playbook to create a VM on GCP. It is expected to run on
 a host that has the GCP SDK available (which is normally localhost)
 
 See [create-all-vms](./roles/create-all-vms/tasks/main.yml) for an example of how it's used.
 
-### create-all-vms
+#### create-all-vms
 
 Higher level role which creates all VMs from a given list. Calls into create
 VM for the heavy lifting.
@@ -150,7 +180,7 @@ VM for the heavy lifting.
 See [integration-tests.yml](./integration-tests.yml) or [benchmarks.yml](./benchmarks.yml) for
 examples of how it's used.
 
-### provision-vm
+#### provision-vm
 
 This role will setup a VM with docker and get it ready for testing. It includes
 platform-specific logic, as well as bootstrapping of python/ansible on Flatcar, which
@@ -158,13 +188,13 @@ does not have python installed by default.
 
 See [vm-lifecycle.yml](./vm-lifecycle.yml) for an example of how it's used.
 
-### destroy-vm
+#### destroy-vm
 
 This role will delete a VM from GCP, based on its instance name.
 
 See [vm-lifecycle.yml](./vm-lifecycle.yml) for an example of how it's used.
 
-### run-test-target
+#### run-test-target
 
 Handles running a make target in the [integration-tests](../integration-tests) directory
 in the repository. Will attempt to run the target for eBPF collection
@@ -173,7 +203,7 @@ except in cases where a VM is designated for a specific collection method (via t
 See [integration-tests.yml](./integration-tests.yml) or [benchmarks.yml](./benchmarks.yml) for
 examples of how it's used.
 
-## Layout
+### Layout
 
 The structure of subdirectories and files largely conform to a common [ansible
 directory format](https://docs.ansible.com/ansible/2.8/user_guide/playbooks_best_practices.html#content-organization).

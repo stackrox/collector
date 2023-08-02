@@ -75,9 +75,9 @@ jobs:
           if [[ "${{ github.event_name }}" != 'pull_request' ]]; then
             echo 'BUILD_BUILDER_IMAGE=true' >> "$GITHUB_ENV"
           else
-            #We have 2 options:
-            #- We build the builder from scratch and give it a custom tag
-            #- We use the existing cache
+            # We have 2 options:
+            # - We build the builder from scratch and give it a custom tag
+            # - We use the existing cache
             if [[ "${{ contains(github.event.pull_request.labels.*.name, 'build-builder-image') }}" == "true" ]]; then
               echo 'BUILD_BUILDER_IMAGE=true' >> "$GITHUB_ENV"
             else
@@ -107,8 +107,7 @@ jobs:
           matrix.arch == 'amd64' ||
           !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
         run: |
-          ansible-galaxy collection install community.general
-          ansible-galaxy collection install community.docker
+          ansible-galaxy install -r ansible/requirements.yml
           ansible-playbook \
             --connection local \
             -i localhost, \
@@ -117,7 +116,7 @@ jobs:
             -e arch='${{ matrix.arch }}' \
             -e push_builder="${{ github.event_name == 'push' || needs.set-environment.outputs.collector-builder-tag != env.DEFAULT_BUILDER_TAG }}" \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
-            ansible/build-collector.yml
+            ansible/ci-build-collector.yml
 
   create-multiarch-manifest:
     needs:
