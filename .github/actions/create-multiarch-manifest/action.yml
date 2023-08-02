@@ -26,5 +26,5 @@ runs:
           images+=("${{ inputs.base-image }}-${arch}${{ inputs.suffix }}")
         done
 
-        docker manifest create ${{ inputs.base-image }} "${images[@]}"
+        docker manifest create ${{ inputs.base-image }}${{ inputs.suffix }} "${images[@]}"
         docker manifest push ${{ inputs.base-image }}${{ inputs.suffix }}
