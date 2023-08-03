@@ -106,6 +106,8 @@ jobs:
           github.event_name == 'push' ||
           matrix.arch == 'amd64' ||
           !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
+        # s390x builds sometimes take for eeeeeeeever.
+        timeout-minutes: 480
         run: |
           ansible-galaxy install -r ansible/requirements.yml
           ansible-playbook \
