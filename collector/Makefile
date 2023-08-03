@@ -29,7 +29,6 @@ cmake-build/collector: $(COLLECTOR_BUILD_DEPS)
 		-e ADDRESS_SANITIZER=$(ADDRESS_SANITIZER) \
 		-e COLLECTOR_APPEND_CID=$(COLLECTOR_APPEND_CID) \
 		-e DISABLE_PROFILING="true" \
-		-e COLLECTOR_ASSERT=$(COLLECTOR_ASSERT) \
 		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) "$(SRC_MOUNT_DIR)/builder/build/build-collector.sh"
 
 container/bin/collector: cmake-build/collector

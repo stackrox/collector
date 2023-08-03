@@ -9,7 +9,6 @@ CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-Release}"
 ADDRESS_SANITIZER="${ADDRESS_SANITIZER:-false}"
 COLLECTOR_APPEND_CID="${COLLECTOR_APPEND_CID:-false}"
 TRACE_SINSP_EVENTS="${TRACE_SINSP_EVENTS:-false}"
-COLLECTOR_ASSERT="${COLLECTOR_ASSERT:-false}"
 
 if [ "$ADDRESS_SANITIZER" = "true" ]; then
     # Needed for address sanitizer to work. See https://github.com/grpc/grpc/issues/22238.
@@ -26,7 +25,6 @@ cmake_extra_flags=(
     -DADDRESS_SANITIZER="$ADDRESS_SANITIZER"
     -DCOLLECTOR_APPEND_CID="$COLLECTOR_APPEND_CID"
     -DTRACE_SINSP_EVENTS="$TRACE_SINSP_EVENTS"
-    -DCOLLECTOR_ASSERT="$COLLECTOR_ASSERT"
 )
 
 cmake "${cmake_extra_flags[@]}" -S "${SRC_ROOT_DIR}" -B "${CMAKE_BUILD_DIR}"

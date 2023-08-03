@@ -11,7 +11,6 @@
 #include <google/protobuf/util/time_util.h>
 
 #include "CollectionMethod.h"
-#include "CollectorAssert.h"
 #include "CollectorException.h"
 #include "CollectorStats.h"
 #include "EventNames.h"
