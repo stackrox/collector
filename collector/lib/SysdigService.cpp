@@ -1,7 +1,6 @@
 #include "SysdigService.h"
 
 #include <cap-ng.h>
-// #include <cstring>
 #include <thread>
 
 #include <linux/ioctl.h>
