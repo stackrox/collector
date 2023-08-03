@@ -89,8 +89,8 @@ def update_kernel(kernel_list: dict,
 def process_line(kernels: dict,
                  source: str,
                  line: str):
-    (driver_path, driver) = os.path.split(line)
-    (_, driver_version) = os.path.split(driver_path)
+    driver_path, driver = os.path.split(line)
+    _, driver_version = os.path.split(driver_path)
 
     match = kernel_version_re.search(driver)
     if match:
