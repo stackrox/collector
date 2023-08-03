@@ -14,19 +14,6 @@
         chdir: "{{ lookup('env', 'GITHUB_WORKSPACE') }}"
         target: image
 
-    # Remove the 2 next blocks before merging
-    - name: Login to quay.io
-      community.docker.docker_login:
-        registry_url: quay.io
-        username: "{{ stackrox_io_username }}"
-        password: "{{ stackrox_io_password }}"
-
-    - name: Push current builder image
-      community.docker.docker_image:
-        name: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
-        push: true
-        source: local
-
     - name: Retag collector image to arch specific
       community.docker.docker_image:
         name: "{{ collector_image }}"
