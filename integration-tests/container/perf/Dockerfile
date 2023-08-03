@@ -1,6 +1,16 @@
 FROM quay.io/centos/centos:stream9 AS base
 
-RUN dnf install -y bash bc bison curl-minimal diffutils elfutils-devel flex kernel-devel make openssl-devel
+RUN dnf install -y \
+    bash \
+    bc \
+    bison \
+    curl-minimal \
+    diffutils \
+    elfutils-devel \
+    flex \
+    kernel-devel \
+    make \
+    openssl-devel
 
 COPY tools /tools
 COPY scripts /scripts
