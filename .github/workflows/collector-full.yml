@@ -39,21 +39,44 @@ on:
         type: string
         default: "5"
         description: |
-          Max layer the drivers will be split into
+          Max layer the drivers will be split into for x86 images
 
 jobs:
   build-collector-full:
     runs-on: ubuntu-latest
     if: inputs.build-full-image
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+        - amd64
+        - ppc64le
+        - s390x
+        max-layer-depth:
+        - ${{ inputs.max-layer-depth }}
+        - 1
+        exclude:
+        - arch: amd64
+          max-layer-depth: 1
+        - arch: ppc64le
+          max-layer-depth: ${{ inputs.max-layer-depth }}
+        - arch: s390x
+          max-layer-depth: ${{ inputs.max-layer-depth }}
     env:
       COLLECTOR_IMAGE: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
 
     steps:
       - uses: actions/checkout@v3
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
       - name: Restore built drivers
         uses: actions/download-artifact@v3
-        if: ${{ !inputs.skip-built-drivers }}
+        if: matrix.arch == 'amd64' && !inputs.skip-built-drivers
         with:
           name: built-drivers
           path: /tmp/built-drivers/
@@ -64,6 +87,7 @@ jobs:
           echo "CONTEXT_DRIVERS_DIR=${{ github.workspace }}/kernel-modules/container/kernel-modules" >> "$GITHUB_ENV"
 
       - name: Download drivers from GCP
+        if: matrix.arch == 'amd64'
         run: |
           mkdir -p "${CONTEXT_DRIVERS_DIR}"
 
@@ -71,6 +95,7 @@ jobs:
             "${CONTEXT_DRIVERS_DIR}"
 
       - name: Add built drivers
+        if: matrix.arch == 'amd64'
         run: |
           BUILT_DRIVERS_DIR="/tmp/built-drivers/${DRIVER_VERSION}/"
 
@@ -82,19 +107,25 @@ jobs:
       - name: Download downstream built drivers from GCP
         if: inputs.use-optional-bucket
         run: |
-          gsutil -m rsync -r "gs://${{ inputs.optional-drivers-bucket }}/${DRIVER_VERSION}/" \
+          GCP_BUCKET="gs://${{ inputs.optional-drivers-bucket }}/${{ matrix.arch }}"
+          if [[ ${{ matrix.arch }} == "amd64" ]]; then
+            GCP_BUCKET="gs://${{ inputs.optional-drivers-bucket }}/x86_64"
+          fi
+
+          gsutil -m rsync -r "${GCP_BUCKET}/${DRIVER_VERSION}/" \
             "${CONTEXT_DRIVERS_DIR}"
 
       - name: Pull slim image and build full image
         run: |
           docker build \
-            --target=probe-layer-${{ inputs.max-layer-depth }} \
-            --tag "${COLLECTOR_IMAGE}" \
+            --platform linux/${{ matrix.arch }} \
+            --target=probe-layer-${{ matrix.max-layer-depth }} \
+            --tag "${COLLECTOR_IMAGE}-${{ matrix.arch }}" \
             --build-arg collector_repo=quay.io/stackrox-io/collector \
             --build-arg collector_version=${{ inputs.collector-tag }} \
             --build-arg module_version="${DRIVER_VERSION}" \
             --build-arg max_layer_size=300 \
-            --build-arg max_layer_depth=${{ inputs.max-layer-depth }} \
+            --build-arg max_layer_depth=${{ matrix.max-layer-depth }} \
             "${{ github.workspace }}/kernel-modules/container"
 
       - name: Login to quay.io/stackrox-io
@@ -106,31 +137,82 @@ jobs:
 
       - name: Push stackrox-io full image
         run: |
-          docker push "${COLLECTOR_IMAGE}"
+          docker push "${COLLECTOR_IMAGE}-${{ matrix.arch }}"
 
       - name: Retag and push stackrox-io -latest
         uses: ./.github/actions/retag-and-push
         with:
-          src-image: ${{ env.COLLECTOR_IMAGE }}
-          dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-latest
+          src-image: ${{ env.COLLECTOR_IMAGE }}-${{ matrix.arch }}
+          dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-${{ matrix.arch }}-latest
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
       - name: Retag and push rhacs-eng
         uses: ./.github/actions/retag-and-push
         with:
-          src-image: ${{ env.COLLECTOR_IMAGE }}
-          dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
+          src-image: ${{ env.COLLECTOR_IMAGE }}-${{ matrix.arch }}
+          dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-${{ matrix.arch }}
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
       - name: Retag and push rhacs-eng -latest
         uses: ./.github/actions/retag-and-push
         with:
-          src-image: ${{ env.COLLECTOR_IMAGE }}
-          dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-latest
+          src-image: ${{ env.COLLECTOR_IMAGE }}-${{ matrix.arch }}
+          dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-${{ matrix.arch }}-latest
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+
+  multiarch-manifests:
+    runs-on: ubuntu-latest
+    if: inputs.build-full-image
+    needs:
+    - build-collector-full
+    env:
+      ARCHS: amd64 ppc64le s390x
+      COLLECTOR_IMAGE: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Login to quay.io/stackrox-io
+        uses: docker/login-action@v2
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+
+      - name: Create and push multiarch manifest for stackrox-io
+        uses: ./.github/actions/create-multiarch-manifest
+        with:
+          base-image: ${{ env.COLLECTOR_IMAGE }}
+          archs: ${{ env.ARCHS }}
+
+      - name: Create and push multiarch manifest for stackrox-io -latest
+        uses: ./.github/actions/create-multiarch-manifest
+        with:
+          base-image: ${{ env.COLLECTOR_IMAGE }}
+          archs: ${{ env.ARCHS }}
+          suffix: -latest
+
+      - name: Login to quay.io/rhacs-eng
+        uses: docker/login-action@v2
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+
+      - name: Create and push multiarch manifest for rhacs-eng
+        uses: ./.github/actions/create-multiarch-manifest
+        with:
+          base-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
+          archs: ${{ env.ARCHS }}
+
+      - name: Create and push multiarch manifest for rhacs-eng -latest
+        uses: ./.github/actions/create-multiarch-manifest
+        with:
+          base-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
+          archs: ${{ env.ARCHS }}
+          suffix: -latest
 
   retag-collector-full:
     runs-on: ubuntu-latest
