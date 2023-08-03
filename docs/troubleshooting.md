@@ -310,6 +310,8 @@ Units: occurence
 | procfs_could_not_open_proc_dir         | Count of the number of times that ProcfsScraper was unable to open /proc                            |
 | procfs_could_not_read_cmdline          | Count of the number of times that ProcfsScraper was unable to read /proc/{pid}/cmdline              |
 | procfs_could_not_read_exe              | Count of the number of times that ProcfsScraper was unable to read /proc/{pid}/exe                  |
+| event_timestamp_distant_past           | Count of the number of times that an event timestamp older than an hour is seen                     |
+| event_timestamp_future                 | Count of the number of times that an event timestamp in the future is seen                          |
 
 Note that the `[syscall]` suffix in a metric name means that it is instanciated for each syscall and direction individually.
 
