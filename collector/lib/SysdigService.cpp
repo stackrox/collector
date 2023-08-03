@@ -1,6 +1,7 @@
 #include "SysdigService.h"
 
 #include <cap-ng.h>
+// #include <cstring>
 #include <thread>
 
 #include <linux/ioctl.h>
@@ -12,6 +13,7 @@
 #include "CollectionMethod.h"
 #include "CollectorAssert.h"
 #include "CollectorException.h"
+// #include "CollectorStats.h"
 #include "EventNames.h"
 #include "HostInfo.h"
 #include "KernelDriver.h"
@@ -212,11 +214,13 @@ void LogUnreasonableEventTime(int64_t time_micros, sinsp_evt* evt) {
   time_diff = time_micros - evt_ts;
   if (time_diff > max_past_time) {
     CLOG_THROTTLED(WARNING, std::chrono::seconds(10)) << "Event of type " << evt->get_type() << " is unreasonably old. It's timestamp is " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(evt_ts);
+    // COUNTER_INC(CollectorStats::event_timestamp_distant_past);
     COLLECTOR_ASSERT(false);
   }
 
   if (time_diff < -max_future_time) {
     CLOG_THROTTLED(WARNING, std::chrono::seconds(10)) << "Event of type " << evt->get_type() << " is in the future. It's timestamp is " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(evt_ts);
+    // COUNTER_INC(CollectorStats::event_timestamp_future);
     COLLECTOR_ASSERT(false);
   }
 }
