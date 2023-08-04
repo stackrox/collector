@@ -86,11 +86,12 @@ jobs:
           echo "DRIVER_VERSION=$(cat ${{ github.workspace }}/kernel-modules/MODULE_VERSION)" >> "$GITHUB_ENV"
           echo "CONTEXT_DRIVERS_DIR=${{ github.workspace }}/kernel-modules/container/kernel-modules" >> "$GITHUB_ENV"
 
+      - name: Create context directory
+        run: mkdir -p "${CONTEXT_DRIVERS_DIR}"
+
       - name: Download drivers from GCP
         if: matrix.arch == 'amd64'
         run: |
-          mkdir -p "${CONTEXT_DRIVERS_DIR}"
-
           gsutil -m rsync -r "gs://${{ inputs.drivers-bucket }}/${DRIVER_VERSION}/" \
             "${CONTEXT_DRIVERS_DIR}"
 
