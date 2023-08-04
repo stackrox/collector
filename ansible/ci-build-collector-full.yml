@@ -34,7 +34,7 @@
 
     - name: Retag and push stackrox-io -latest
       community.docker.docker_image:
-        name: "{{ collector_image }}"
+        name: "{{ collector_image }}-{{ arch }}"
         repository: "quay.io/stackrox-io/collector:{{ collector_tag }}-{{ arch }}-latest"
         push: true
         source: local
@@ -47,14 +47,14 @@
 
     - name: Retag and push rhacs-eng
       community.docker.docker_image:
-        name: "{{ collector_image }}"
+        name: "{{ collector_image }}-{{ arch }}"
         repository: "quay.io/rhacs-eng/collector:{{ collector_tag }}-{{ arch }}"
         push: true
         source: local
 
     - name: Retag and push rhacs-eng -latest
       community.docker.docker_image:
-        name: "{{ collector_image }}"
+        name: "{{ collector_image }}-{{ arch }}"
         repository: "quay.io/rhacs-eng/collector:{{ collector_tag }}-{{ arch }}-latest"
         push: true
         source: local
