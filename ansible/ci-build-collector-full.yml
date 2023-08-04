@@ -13,7 +13,8 @@
       community.docker.docker_image:
         name: "{{ collector_image }}-{{ arch }}-slim"
         source: pull
-        platform: "linux/{{ arch }}"
+        pull:
+          platform: "linux/{{ arch }}"
 
     - name: Build the collector full image
       community.docker.docker_image:
