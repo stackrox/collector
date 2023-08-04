@@ -2,6 +2,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+source "${SCRIPT_DIR}/utils.sh"
+
 die() {
     echo >&2 "$@"
     exit 1
@@ -26,6 +30,7 @@ LICENSE_FILE="$1"
 COLLECTOR_MODULES_BUCKET="$2"
 MD_DIR="$3"
 OUT_DIR="$4"
+DOWNSTREAM_MODULES_BUCKET="$5"
 
 [[ -n "$LICENSE_FILE" && -n "$MD_DIR" && -n "$OUT_DIR" ]] || die "Usage: $0 <license-file> <metadata directory> <output directory>"
 [[ -d "$MD_DIR" ]] || die "Metadata directory $MD_DIR does not exist or is not a directory."
@@ -44,16 +49,14 @@ for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
     # support the slim collector use-case.
     # Remains to be clarified; we might provide more fine granular download options in the future.
     gsutil -m cp "${COLLECTOR_MODULES_BUCKET}/${mod_ver}/*.gz" "$probe_dir"
+    if use_downstream "$mod_ver"; then
+        gsutil -m cp "${DOWNSTREAM_MODULES_BUCKET}/${mod_ver}/*.gz" "$probe_dir"
+    fi
 
     package_out_dir="${OUT_DIR}/${mod_ver}"
     mkdir -p "$package_out_dir"
-    if [[ "${mod_ver}" =~ [0-9]+\.[0-9]+\.[0-9]+(:?-rc[0-9])? ]]; then
-        filename="support-pkg-${mod_ver}-$(date '+%Y%m%d%H%M%S').zip"
-        latest_filename="support-pkg-${mod_ver}-latest.zip"
-    else
-        filename="support-pkg-${mod_ver::6}-$(date '+%Y%m%d%H%M%S').zip"
-        latest_filename="support-pkg-${mod_ver::6}-latest.zip"
-    fi
+    filename="support-pkg-${mod_ver}-$(date '+%Y%m%d%H%M%S').zip"
+    latest_filename="support-pkg-${mod_ver}-latest.zip"
 
     cp "${LICENSE_FILE}" "${probe_dir}"/LICENSE
 

@@ -7,10 +7,14 @@ on:
         type: string
         required: true
         description: Branch CI is running on
-      drivers-bucket:
+      upstream-drivers-bucket:
         type: string
         required: true
-        description: Bucket holding the drivers to package
+        description: Bucket holding the upstream drivers to package
+      downstream-drivers-bucket:
+        type: string
+        required: true
+        description: Bucket holding the downstream drivers to package
       support-packages-bucket:
         type: string
         required: true
@@ -46,13 +50,21 @@ jobs:
         with:
           branch-name: ${{ inputs.branch-name }}
 
+      - name: Create driver-matrix.json
+        uses: ./.github/actions/support-package-driver-matrix
+        with:
+          metadata-dir: /tmp/support-packages/metadata/module-versions
+          upstream-drivers-bucket: gs://${{ inputs.upstream-drivers-bucket }}
+          downstream-drivers-bucket: gs://${{ inputs.downstream-drivers-bucket }}
+
       - name: Create support-packages
         run: |
           ${{ github.workspace }}/kernel-modules/support-packages/04-create-support-packages.sh \
             ${{ github.workspace }}/collector/LICENSE-kernel-modules.txt \
-            gs://${{ inputs.drivers-bucket }} \
+            gs://${{ inputs.upstream-drivers-bucket }} \
             /tmp/support-packages/metadata \
-            /tmp/support-packages/output
+            /tmp/support-packages/output \
+            gs://${{ inputs.downstream-drivers-bucket }}
 
       - name: Create metadata.json
         uses: ./.github/actions/support-package-metadata-json
@@ -92,6 +104,21 @@ jobs:
         if: github.event_name == 'push'
         with:
           path: /tmp/support-packages/output/index.html
+          parent: false
+          destination: ${{ inputs.public-support-packages-bucket }}
+
+      - name: Push driver matrix
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        with:
+          path: /tmp/driver-matrix.json
+          parent: false
+          destination: ${{ inputs.support-packages-bucket }}
+
+      - name: Push index.html to public bucket
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        if: github.event_name == 'push'
+        with:
+          path: /tmp/driver-matrix.json
           parent: false
           destination: ${{ inputs.public-support-packages-bucket }}
 

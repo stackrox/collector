@@ -1,0 +1,38 @@
+name: Create driver-matrix.json
+description: |
+  Create driver-matrix.json. This file will hold a list of drivers,
+  holding a list of versions and for each driver type in that version it
+  will specify whether the driver is unavailable, used from upstream or
+  used from downstream.
+
+inputs:
+  metadata-dir:
+    description:
+      Directory holding the metadata created by the
+      support-package-metadata action.
+  upstream-drivers-bucket:
+    description: Bucket holding the upstream built drivers.
+  downstream-drivers-bucket:
+    description: Bucket holding the downstream built drivers.
+
+runs:
+  using: composite
+  steps:
+    - name: Create driver-matrix.json
+      shell: bash
+      run: |
+        source ${{ github.workspace }}/kernel-modules/support-packages/utils.sh
+
+        for mod_ver_dir in ${{ inputs.metadata-dir }}/*; do
+          mod_ver="$(basename "$mod_ver_dir")"
+
+          # Add the regular drivers
+          gsutil ls "${{ inputs.upstream-drivers-bucket }}/${mod_ver}/*" \
+              | ${{ github.action_path }}/driver-matrix.py --update /tmp/driver-matrix.json
+
+          if use_downstream "$mod_ver"; then
+            # Update the matrix with downstream drivers
+            gsutil ls "${{ inputs.downstream-drivers-bucket }}/${mod_ver}/*" \
+                | ${{ github.action_path }}/driver-matrix.py --update /tmp/driver-matrix.json --downstream
+          fi
+        done
