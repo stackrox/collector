@@ -126,13 +126,15 @@ jobs:
     - build-collector-image
     name: Create Multiarch manifest
     runs-on: ubuntu-latest
-    env:
-      COLLECTOR_BUILDER_TAG: ${{ needs.set-environment.outputs.collector-builder-tag }}
     if: |
       github.event_name == 'push' ||
       !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
+    env:
+      COLLECTOR_BUILDER_TAG: ${{ needs.set-environment.outputs.collector-builder-tag }}
+      ARCHS: amd64 ppc64le s390x
 
     steps:
+      - uses: actions/checkout@v3
 
       - name: Login to quay.io/stackrox-io
         uses: docker/login-action@v2
@@ -141,35 +143,26 @@ jobs:
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
-
       - name: Create and push multiarch manifest for stackrox-io -slim
-        run: |
-          docker manifest create quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-slim \
-                                 quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-amd64-slim \
-                                 quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-ppc64le-slim \
-                                 quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-s390x-slim
-
-          docker manifest push quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-slim
+        uses: ./.github/actions/create-multiarch-manifest
+        with:
+          base-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
+          archs: ${{ env.ARCHS }}
+          suffix: -slim
 
       - name: Create and push multiarch manifest for stackrox-io -base
-        run: |
-          docker manifest create quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-base \
-                                 quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-amd64-base \
-                                 quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-ppc64le-base \
-                                 quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-s390x-base
-
-
-          docker manifest push quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-base
+        uses: ./.github/actions/create-multiarch-manifest
+        with:
+          base-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
+          archs: ${{ env.ARCHS }}
+          suffix: -base
 
       - name: Create and push multiarch manifest for builder to stackrox-io
         if: github.event_name == 'push' || needs.set-environment.outputs.collector-builder-tag != env.DEFAULT_BUILDER_TAG
-        run: |
-          docker manifest create "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}" \
-                                 "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-amd64" \
-                                 "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-ppc64le" \
-                                 "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-s390x"
-
-          docker manifest push "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}"
+        uses: ./.github/actions/create-multiarch-manifest
+        with:
+          base-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
+          archs: ${{ env.ARCHS }}
 
       - name: Login to quay.io/rhacs-eng
         uses: docker/login-action@v2
@@ -178,34 +171,26 @@ jobs:
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
-
       - name: Create and push multiarch manifest for rhacs-eng -slim
-        run: |
-          docker manifest create quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-slim \
-                                quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-amd64-slim \
-                                quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-ppc64le-slim \
-                                quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-s390x-slim
-
-          docker manifest push quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-slim
+        uses: ./.github/actions/create-multiarch-manifest
+        with:
+          base-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
+          archs: ${{ env.ARCHS }}
+          suffix: -slim
 
       - name: Create and push multiarch manifest for rhacs-eng -base
-        run: |
-          docker manifest create quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-base \
-                                quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-amd64-base \
-                                quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-ppc64le-base \
-                                quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-s390x-base
-
-          docker manifest push quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-base
+        uses: ./.github/actions/create-multiarch-manifest
+        with:
+          base-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
+          archs: ${{ env.ARCHS }}
+          suffix: -base
 
       - name: Create and push multiarch manifest for builder to rhacs-eng
         if: github.event_name == 'push' || needs.set-environment.outputs.collector-builder-tag != env.DEFAULT_BUILDER_TAG
-        run: |
-          docker manifest create "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}" \
-                                 "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}-amd64" \
-                                 "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}-ppc64le" \
-                                 "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}-s390x"
-
-          docker manifest push "quay.io/rhacs-eng/collector-builder:${COLLECTOR_BUILDER_TAG}"
+        uses: ./.github/actions/create-multiarch-manifest
+        with:
+          base-image: quay.io/rhacs-eng/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
+          archs: ${{ env.ARCHS }}
 
   retag-x86-image:
     needs:
@@ -272,4 +257,3 @@ jobs:
           dst-image: quay.io/rhacs-eng/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-
