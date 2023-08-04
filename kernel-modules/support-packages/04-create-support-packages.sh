@@ -49,7 +49,7 @@ for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
     # support the slim collector use-case.
     # Remains to be clarified; we might provide more fine granular download options in the future.
     gsutil -m cp "${COLLECTOR_MODULES_BUCKET}/${mod_ver}/*.gz" "$probe_dir"
-    if use_downstream "$mod_ver"; then
+    if use_downstream "$mod_ver" && bucket_has_drivers "${DOWNSTREAM_MODULES_BUCKET}/${mod_ver}/*.gz"; then
         gsutil -m cp "${DOWNSTREAM_MODULES_BUCKET}/${mod_ver}/*.gz" "$probe_dir"
     fi
 

@@ -30,7 +30,7 @@ runs:
           gsutil ls "${{ inputs.upstream-drivers-bucket }}/${mod_ver}/*" \
               | ${{ github.action_path }}/driver-matrix.py --update /tmp/driver-matrix.json
 
-          if use_downstream "$mod_ver"; then
+          if use_downstream "$mod_ver" && bucket_has_drivers "${{ inputs.downstream-drivers-bucket }}/${mod_ver}/*"; then
             # Update the matrix with downstream drivers
             gsutil ls "${{ inputs.downstream-drivers-bucket }}/${mod_ver}/*" \
                 | ${{ github.action_path }}/driver-matrix.py --update /tmp/driver-matrix.json --downstream
