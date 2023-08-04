@@ -108,7 +108,6 @@ jobs:
       support-packages-bucket: ${{ needs.init.outputs.support-packages-bucket }}
       support-packages-index-bucket: ${{ needs.init.outputs.support-packages-index-bucket }}
       public-support-packages-bucket: ${{ needs.init.outputs.public-support-packages-bucket }}
-    # Skip support-package step when the workflow is cancelled only
     if: |
       always() &&
       (github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'test-support-packages'))
