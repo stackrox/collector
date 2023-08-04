@@ -244,6 +244,9 @@ jobs:
 
       - name: Retag and push stackrox-io builder
         uses: ./.github/actions/retag-and-push
+        if: |
+          github.event_name == 'push' ||
+          needs.set-environment.outputs.collector-builder-tag != env.DEFAULT_BUILDER_TAG
         with:
           src-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}-amd64
           dst-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
@@ -252,6 +255,9 @@ jobs:
 
       - name: Retag and push rhacs-eng builder
         uses: ./.github/actions/retag-and-push
+        if: |
+          github.event_name == 'push' ||
+          needs.set-environment.outputs.collector-builder-tag != env.DEFAULT_BUILDER_TAG
         with:
           src-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}-amd64
           dst-image: quay.io/rhacs-eng/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
