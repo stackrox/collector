@@ -17,3 +17,9 @@ use_downstream() {
 
     return 0
 }
+
+bucket_has_drivers() {
+    count=$(gsutil ls "$1" | wc -l)
+
+    ((count != 0))
+}
