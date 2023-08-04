@@ -116,57 +116,42 @@ jobs:
           gsutil -m rsync -r "${GCP_BUCKET}/${DRIVER_VERSION}/" \
             "${CONTEXT_DRIVERS_DIR}"
 
-      - name: Pull slim image and build full image
+      - name: Create secrets.yml
         run: |
-          docker build \
-            --platform linux/${{ matrix.arch }} \
-            --target=probe-layer-${{ matrix.max-layer-depth }} \
-            --tag "${COLLECTOR_IMAGE}-${{ matrix.arch }}" \
-            --build-arg collector_repo=quay.io/stackrox-io/collector \
-            --build-arg collector_version=${{ inputs.collector-tag }} \
-            --build-arg module_version="${DRIVER_VERSION}" \
-            --build-arg max_layer_size=300 \
-            --build-arg max_layer_depth=${{ matrix.max-layer-depth }} \
-            "${{ github.workspace }}/kernel-modules/container"
+          {
+            echo "---"
+            echo "stackrox_io_username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}"
+            echo "stackrox_io_password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}"
+            echo "rhacs_eng_username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}"
+            echo "rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}"
+          } > ${{ github.workspace }}/ansible/secrets.yml
 
-      - name: Login to quay.io/stackrox-io
-        uses: docker/login-action@v2
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-
-      - name: Push stackrox-io full image
+      # Ansible here is overkill, but GHA doesn't let me call a workflow from
+      # a step, so... Overkill it is!
+      - name: Build and push full images
+        if: |
+          matrix.arch == 'amd64' ||
+          !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
         run: |
-          docker push "${COLLECTOR_IMAGE}-${{ matrix.arch }}"
-
-      - name: Retag and push stackrox-io -latest
-        uses: ./.github/actions/retag-and-push
-        with:
-          src-image: ${{ env.COLLECTOR_IMAGE }}-${{ matrix.arch }}
-          dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-${{ matrix.arch }}-latest
-          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-
-      - name: Retag and push rhacs-eng
-        uses: ./.github/actions/retag-and-push
-        with:
-          src-image: ${{ env.COLLECTOR_IMAGE }}-${{ matrix.arch }}
-          dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-${{ matrix.arch }}
-          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-
-      - name: Retag and push rhacs-eng -latest
-        uses: ./.github/actions/retag-and-push
-        with:
-          src-image: ${{ env.COLLECTOR_IMAGE }}-${{ matrix.arch }}
-          dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-${{ matrix.arch }}-latest
-          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          ansible-galaxy install -r ansible/requirements.yml
+          ansible-playbook \
+            --connection local \
+            -i localhost, \
+            --limit localhost \
+            -e collector_image="${COLLECTOR_IMAGE}" \
+            -e arch="${{ matrix.arch }}" \
+            -e max_layer_depth="${{ matrix.max-layer-depth }}" \
+            -e collector_tag="${{ inputs.collector-tag }}" \
+            -e driver_version="${DRIVER_VERSION}" \
+            -e context_path="${{ github.workspace }}/kernel-modules/container" \
+            -e @'${{ github.workspace }}/ansible/secrets.yml' \
+            ansible/ci-build-collector-full.yml
 
   multiarch-manifests:
     runs-on: ubuntu-latest
-    if: inputs.build-full-image
+    if: |
+      inputs.build-full-image &&
+      !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
     needs:
     - build-collector-full
     env:
@@ -216,6 +201,52 @@ jobs:
           suffix: -latest
 
   retag-collector-full:
+    runs-on: ubuntu-latest
+    if: |
+      inputs.build-full-image &&
+      contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
+    needs:
+    - build-collector-full
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Pull full image
+        run: |
+          docker pull quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-amd64
+
+      - name: Retag and push stackrox-io
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-amd64
+          dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
+          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+
+      - name: Retag and push stackrox-io -latest
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-amd64
+          dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-latest
+          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+
+      - name: Retag and push rhacs-eng
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-amd64
+          dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
+          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+
+      - name: Retag and push rhacs-eng -latest
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-amd64
+          dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-latest
+          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+
+  retag-collector-slim:
     runs-on: ubuntu-latest
     if: ${{ !inputs.build-full-image }}
     env:

@@ -1,0 +1,65 @@
+---
+- name: Build and push collector image
+  hosts: all
+
+  tasks:
+    - name: Login to quay.io
+      community.docker.docker_login:
+        registry_url: quay.io
+        username: "{{ stackrox_io_username }}"
+        password: "{{ stackrox_io_password }}"
+
+    - name: Pull slim image
+      community.docker.docker_image:
+        name: "{{ collector_image }}-{{ arch }}-slim"
+        source: pull
+        platform: "linux/{{ arch }}"
+
+    - name: Build the collector full image
+      community.docker.docker_image:
+        name: "{{ collector_image }}-{{ arch }}"
+        build:
+          platform: "linux/{{ arch }}"
+          target: "probe-layer-{{ max_layer_depth }}"
+          args:
+            collector_repo: quay.io/stackrox-io/collector
+            collector_version: "{{ collector_tag }}"
+            module_version: "{{ driver_version }}"
+            max_layer_size: 300
+            max_layer_depth: "{{ max_layer_depth }}"
+          path: "{{ context_path }}"
+        push: true
+        source: build
+
+    - name: Retag and push stackrox-io -latest
+      community.docker.docker_image:
+        name: "{{ collector_image }}"
+        repository: "quay.io/stackrox-io/collector:{{ collector_tag }}-{{ arch }}-latest"
+        push: true
+        source: local
+
+    - name: Login to quay.io
+      community.docker.docker_login:
+        registry_url: quay.io
+        username: "{{ rhacs_eng_username }}"
+        password: "{{ rhacs_eng_password }}"
+
+    - name: Retag and push rhacs-eng
+      community.docker.docker_image:
+        name: "{{ collector_image }}"
+        repository: "quay.io/rhacs-eng/collector:{{ collector_tag }}-{{ arch }}"
+        push: true
+        source: local
+
+    - name: Retag and push rhacs-eng -latest
+      community.docker.docker_image:
+        name: "{{ collector_image }}"
+        repository: "quay.io/rhacs-eng/collector:{{ collector_tag }}-{{ arch }}-latest"
+        push: true
+        source: local
+
+    - name: Logout of quay.io
+      community.docker.docker_login:
+        registry_url: quay.io
+        state: absent
+      when: true
