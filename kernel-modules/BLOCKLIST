@@ -69,6 +69,8 @@
 6.2.* 2.2.0 *
 6.2.* 2.1.0 *
 6.2.* 2.0.1 *
+# TODO(ROX-16705) - 6.3/6.4 kernel compilation errors
+~6\.[3-9]\.\d+.* ~2\.[2-5]\.\d+(?:-rc\d+)?
 # Block kernel module builds on all kernels
 # for module versions newer than 2.4.0
 * ~2\.[5-9]\.\d+(?:-rc\d+)? mod
