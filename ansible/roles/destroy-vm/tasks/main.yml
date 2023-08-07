@@ -10,7 +10,7 @@
     # zone is set by the GCP inventory automatically
     zone: "{{ zone }}"
     state: absent
-  when: arch_info == "x86_64"
+  when: arch_info == "x86"
 
 - name: Delete IBM Z VM
   include_tasks: destroy-s390x-vm.yml
