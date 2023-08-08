@@ -64,7 +64,6 @@ create-ci-vms:
 	ansible-playbook -i $(CONTEXT) \
 		-e job_id="$(JOB_ID)" \
 		--tags setup,provision \
-		-vvvv \
 		integration-tests.yml
 
 .PHONY: vm-local-dev
