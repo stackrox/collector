@@ -108,6 +108,13 @@ jobs:
           GCP_SSH_KEY_PUB: ${{ secrets.GCP_SSH_KEY_PUB }}
           IBM_S390X_SSH_KEY: ${{ secrets.IBM_CLOUD_S390X_SSH_PRIVATE_KEY }}
 
+      - name: DEBUG verify ansible versions
+        run: |
+          ansible --version
+          ansible-galaxy collection list
+          python3 --version
+          python --version
+
       - name: Set environment
         run: |
           NORM_JOB_ID="${JOB_ID/-/}"
