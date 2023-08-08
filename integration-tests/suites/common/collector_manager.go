@@ -33,7 +33,6 @@ type CollectorManager struct {
 
 func NewCollectorManager(e Executor, name string) *CollectorManager {
 	collectorOptions := config.CollectorInfo()
-	runtimeOptions := config.RuntimeInfo()
 	image_store := config.Images()
 
 	collectionMethod := config.CollectionMethod()
@@ -51,14 +50,12 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 		env["MODULE_DOWNLOAD_BASE_URL"] = "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"
 	}
 	mounts := map[string]string{
-		"/host/var/run/docker.sock:ro": runtimeOptions.Socket,
-		"/run/podman/podman.sock:ro":   runtimeOptions.Socket,
-		"/host/proc:ro":                "/proc",
-		"/host/etc:ro":                 "/etc/",
-		"/host/usr/lib:ro":             "/usr/lib/",
-		"/host/sys:ro":                 "/sys/",
-		"/host/dev:ro":                 "/dev",
-		"/tmp":                         "/tmp",
+		"/host/proc:ro":    "/proc",
+		"/host/etc:ro":     "/etc/",
+		"/host/usr/lib:ro": "/usr/lib/",
+		"/host/sys:ro":     "/sys/",
+		"/host/dev:ro":     "/dev",
+		"/tmp":             "/tmp",
 		// /module is an anonymous volume to reflect the way collector
 		// is usually run in kubernetes (with in-memory volume for /module)
 		"/module": "",

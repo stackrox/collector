@@ -5,7 +5,6 @@ const (
 	CollectionMethodCoreBPF = "core-bpf"
 
 	runtimeDefaultCommand = "docker"
-	runtimeDefaultSocket  = "/var/run/docker.sock"
 
 	imageStoreLocation = "images.yml"
 
@@ -128,7 +127,6 @@ func RuntimeInfo() *Runtime {
 	if runtime_options == nil {
 		runtime_options = &Runtime{
 			Command:   ReadEnvVarWithDefault(envRuntimeCommand, runtimeDefaultCommand),
-			Socket:    ReadEnvVarWithDefault(envRuntimeSocket, runtimeDefaultSocket),
 			RunAsRoot: ReadBoolEnvVar(envRuntimeAsRoot),
 		}
 	}
