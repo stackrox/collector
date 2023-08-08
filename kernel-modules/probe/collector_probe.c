@@ -134,6 +134,7 @@ COLLECTOR_PROBE(clone, __NR_clone);
 COLLECTOR_PROBE(close, __NR_close);
 COLLECTOR_PROBE(connect, __NR_connect);
 COLLECTOR_PROBE(execve, __NR_execve);
+COLLECTOR_PROBE(getsockopt, __NR_getsockopt);
 COLLECTOR_PROBE(setresgid, __NR_setresgid);
 COLLECTOR_PROBE(setresuid, __NR_setresuid);
 COLLECTOR_PROBE(setgid, __NR_setgid);
