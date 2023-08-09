@@ -39,7 +39,7 @@ class MockHostInfo : public HostInfo {
 };
 
 TEST(KernelVersionTest, TestParseWithBuildID) {
-  KernelVersion version = KernelVersion("5.1.10-123", "");
+  KernelVersion version = KernelVersion("5.1.10-123", "", "");
   EXPECT_EQ(5, version.kernel);
   EXPECT_EQ(1, version.major);
   EXPECT_EQ(10, version.minor);
@@ -47,7 +47,7 @@ TEST(KernelVersionTest, TestParseWithBuildID) {
 }
 
 TEST(KernelVersionTest, TestParseWithoutBuildID) {
-  KernelVersion version = KernelVersion("5.1.10", "");
+  KernelVersion version = KernelVersion("5.1.10", "", "");
   EXPECT_EQ(5, version.kernel);
   EXPECT_EQ(1, version.major);
   EXPECT_EQ(10, version.minor);
@@ -55,7 +55,7 @@ TEST(KernelVersionTest, TestParseWithoutBuildID) {
 }
 
 TEST(KernelVersionTest, TestParseWithAdditional) {
-  KernelVersion version = KernelVersion("5.10.25-linuxkit", "");
+  KernelVersion version = KernelVersion("5.10.25-linuxkit", "", "");
   EXPECT_EQ(5, version.kernel);
   EXPECT_EQ(10, version.major);
   EXPECT_EQ(25, version.minor);
@@ -63,7 +63,7 @@ TEST(KernelVersionTest, TestParseWithAdditional) {
 }
 
 TEST(KernelVersionTest, TestParseWithBuildIDAndAdditional) {
-  KernelVersion version = KernelVersion("3.10.0-957.10.1.el7.x86_64", "");
+  KernelVersion version = KernelVersion("3.10.0-957.10.1.el7.x86_64", "", "");
   EXPECT_EQ(3, version.kernel);
   EXPECT_EQ(10, version.major);
   EXPECT_EQ(0, version.minor);
@@ -71,7 +71,7 @@ TEST(KernelVersionTest, TestParseWithBuildIDAndAdditional) {
 }
 
 TEST(KernelVersionTest, TestParseInvalidRelease) {
-  KernelVersion version = KernelVersion("not.a.release", "");
+  KernelVersion version = KernelVersion("not.a.release", "", "");
   EXPECT_EQ(0, version.kernel);
   EXPECT_EQ(0, version.major);
   EXPECT_EQ(0, version.minor);
@@ -101,7 +101,7 @@ TEST(KernelVersionTest, TestParseKnownReleaseStrings) {
   };
 
   for (auto k : test_data) {
-    KernelVersion version = KernelVersion(k.release_string, "");
+    KernelVersion version = KernelVersion(k.release_string, "", "");
     EXPECT_EQ(k.major, version.kernel);
     EXPECT_EQ(k.minor, version.major);
     EXPECT_EQ(k.patch, version.minor);
@@ -114,45 +114,50 @@ TEST(KernelVersionTest, TestVersionStringPopulated) {
   // We're not doing anything with the version string asside from storing it
   // for other things to process, so we can simply test that it is populated
   // correctly in the KernelVersion class
-  KernelVersion version = KernelVersion("5.10.3", "this-is-a-version-string");
+  KernelVersion version = KernelVersion("5.10.3", "this-is-a-version-string", "");
   EXPECT_EQ("this-is-a-version-string", version.version);
 }
 
+TEST(KernelVersionTest, TestMachineStringPopulated) {
+  KernelVersion version = KernelVersion("4.18.0", "", "s390x");
+  EXPECT_EQ("s390x", version.machine);
+}
+
 TEST(KernelVersionTest, TestHasEBPFSupport) {
-  KernelVersion new_kernel("5.10.0", "");
+  KernelVersion new_kernel("5.10.0", "", "");
   EXPECT_EQ(true, new_kernel.HasEBPFSupport());
 
-  KernelVersion old_kernel("2.6.0", "");
+  KernelVersion old_kernel("2.6.0", "", "");
   EXPECT_EQ(false, old_kernel.HasEBPFSupport());
 
-  KernelVersion old_four_kernel("4.10.0", "");
+  KernelVersion old_four_kernel("4.10.0", "", "");
   EXPECT_EQ(false, old_four_kernel.HasEBPFSupport());
 
-  KernelVersion new_four_kernel("4.20.0", "");
+  KernelVersion new_four_kernel("4.20.0", "", "");
   EXPECT_EQ(true, new_four_kernel.HasEBPFSupport());
 }
 
 TEST(HostInfoTest, TestIsRHEL76) {
-  KernelVersion kernel("3.10.0-957.10.1.el7.x86_64", "");
+  KernelVersion kernel("3.10.0-957.10.1.el7.x86_64", "", "");
   std::string os_id = "rhel";
   EXPECT_TRUE(isRHEL76(kernel, os_id));
 
   os_id = "coreos";
   EXPECT_FALSE(isRHEL76(kernel, os_id));
 
-  kernel = KernelVersion("5.10.0", "");
+  kernel = KernelVersion("5.10.0", "", "");
   EXPECT_FALSE(isRHEL76(kernel, os_id));
 }
 
 TEST(HostInfoTest, TestHasEBPFSupport) {
-  KernelVersion kernel("3.10.0-957.10.1.el7.x86_64", "");
+  KernelVersion kernel("3.10.0-957.10.1.el7.x86_64", "", "");
   std::string os_id = "rhel";
   EXPECT_TRUE(hasEBPFSupport(kernel, os_id));
 
   os_id = "coreos";
   EXPECT_FALSE(hasEBPFSupport(kernel, os_id));
 
-  kernel = KernelVersion("5.10.0", "");
+  kernel = KernelVersion("5.10.0", "", "");
   EXPECT_TRUE(hasEBPFSupport(kernel, os_id));
 }
 
