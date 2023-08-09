@@ -31,12 +31,18 @@ using namespace testing;
 
 namespace collector {
 
+class MockS390xHeuristics : public S390XHeuristic {
+  public:
+    MockS390xHeuristics() = default;
+};
+
 class MockHostInfoHeuristics : public HostInfo {
  public:
   MockHostInfoHeuristics() = default;
 
   MOCK_METHOD0(IsUEFI, bool());
   MOCK_METHOD0(GetSecureBootStatus, SecureBootStatus());
+  MOCK_METHOD0(GetKernelVersion, KernelVersion());
   MOCK_METHOD0(IsGarden, bool());
   MOCK_METHOD0(GetDistro, std::string&());
 };
@@ -51,5 +57,22 @@ class MockCollectorConfig : public CollectorConfig {
 
   MOCK_CONST_METHOD0(UseEbpf, bool());
 };
+
+TEST(HostHeuristicsTest, TestS390XRHEL84) {
+  MockS390xHeuristics s390xHeuristics;
+  MockHostInfoHeuristics host;
+  KernelVersion version = KernelVersion("4.18.0-305.88.1.el8_4.s390x", "", "s390x");
+  CollectorArgs* args = CollectorArgs::getInstance();
+  MockCollectorConfig config(args);
+  HostConfig hconfig;
+
+  hconfig.SetCollectionMethod(CollectionMethod::EBPF);
+  EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(version));
+
+  s390xHeuristics.Process(host, config, &hconfig);
+
+  EXPECT_EQ(hconfig.GetCollectionMethod(), CollectionMethod::CORE_BPF);
+}
+
 
 }  // namespace collector

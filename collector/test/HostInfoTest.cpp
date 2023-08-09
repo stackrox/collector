@@ -118,6 +118,11 @@ TEST(KernelVersionTest, TestVersionStringPopulated) {
   EXPECT_EQ("this-is-a-version-string", version.version);
 }
 
+TEST(KernelVersionTest, TestMachineStringPopulated) {
+  KernelVersion version = KernelVersion("4.18.0", "", "s390x");
+  EXPECT_EQ("s390x", version.machine);
+}
+
 TEST(KernelVersionTest, TestHasEBPFSupport) {
   KernelVersion new_kernel("5.10.0", "", "");
   EXPECT_EQ(true, new_kernel.HasEBPFSupport());
