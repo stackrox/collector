@@ -108,6 +108,7 @@ jobs:
           github.event_name == 'push' ||
           matrix.arch == 'amd64' ||
           !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
+        timeout-minutes: 480
         run: |
           ansible-galaxy install -r ansible/requirements.yml
           ansible-playbook \
