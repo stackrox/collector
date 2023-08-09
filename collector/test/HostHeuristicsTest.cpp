@@ -74,5 +74,4 @@ TEST(HostHeuristicsTest, TestS390XRHEL84) {
   EXPECT_EQ(hconfig.GetCollectionMethod(), CollectionMethod::CORE_BPF);
 }
 
-
 }  // namespace collector
