@@ -32,8 +32,8 @@ using namespace testing;
 namespace collector {
 
 class MockS390xHeuristics : public S390XHeuristic {
-  public:
-    MockS390xHeuristics() = default;
+ public:
+  MockS390xHeuristics() = default;
 };
 
 class MockHostInfoHeuristics : public HostInfo {
