@@ -28,12 +28,26 @@ jobs:
         drivers-build-failures
 
   build-collector-slim:
-    uses: ./.github/workflows/collector-slim.yml
+    runs-on: ubuntu-latest
     needs: init
-    with:
-      collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
-      collector-image: ${{ needs.init.outputs.collector-image }}-cpaas
-    secrets: inherit
+    steps:
+      - uses: docker/login-action@v2
+        with:
+          registry: brew.registry.redhat.io
+          username: ${{ secrets.REDHAT_USERNAME }}
+          password: ${{ secrets.REDHAT_PASSWORD }}
+
+      - name: Pull downstream slim collector
+        run: |
+          docker pull brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
+
+      - name: Retag and push stackrox-io -slim
+        uses: ./.github/actions/retag-and-push
+        with:
+          src-image: brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
+          dst-image: ${{ needs.init.outputs.collector-image }}-cpaas-slim
+          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
   build-collector-full:
     uses: ./.github/workflows/collector-full.yml
