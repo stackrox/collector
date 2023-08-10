@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerlist);
     curl_easy_setopt(curl, CURLOPT_MIMEPOST, form);
 
-    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 10);
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 5);
 
     curl_multi_add_handle(multi_handle, curl);
 
