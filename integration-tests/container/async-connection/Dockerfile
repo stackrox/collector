@@ -1,10 +1,10 @@
-FROM ubuntu:jammy AS target
+FROM quay.io/centos/centos:stream9 AS target
 
-RUN apt update -y && apt install -y libcurl4
+RUN dnf install -y --nobest libcurl
 
 FROM target AS build
 
-RUN apt install -y build-essential pkg-config libcurl4-openssl-dev
+RUN dnf install -y --nobest gcc libcurl-devel
 
 WORKDIR /
 
