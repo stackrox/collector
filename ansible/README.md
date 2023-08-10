@@ -19,7 +19,7 @@ On a Mac, the default python3 is 3.7, so use brew to install the latest ansible:
 $ brew install ansible
 $ pip3 install -r requirements.txt
 ```
-To manage IBM Z and Power VMs through IBM Cloud, you will also need to download and install the following ansible collection:
+To manage IBM Z and IBM Power VMs through IBM Cloud, you will also need to download and install the following ansible collection:
 ```
 $ ansible-galaxy collection install ibm.cloudcollection
 
