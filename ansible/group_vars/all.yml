@@ -18,6 +18,8 @@ runtime_command: docker
 runtime_as_root: false
 runtime_socket: /var/run/docker.sock
 
+redhat_username: "{{ lookup('env', 'REDHAT_USERNAME', default='') }}"
+redhat_password: "{{ lookup('env', 'REDHAT_PASSWORD', default='') }}"
 
 excluded_pairs:
   # e.g. - ['ubuntu-1804-lts', 'core_bpf']

@@ -61,6 +61,7 @@ jobs:
         vm_type:
           - rhel
           - rhel-sap
+          - rhel-ppc64le
     with:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
