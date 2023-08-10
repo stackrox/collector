@@ -1,9 +1,9 @@
 ---
-- name: Get distro info
-  shell: awk -F= '$1=="ID" { print $2 ;}' /etc/os-release
-  register: distro
+- set_fact:
+    distro: centos
 
-- name: Register server with Red Hat for IBM POWER vms
+
+- name: Register server with Red Hat for IBM Z vms
   tags: attach_subscription
   community.general.redhat_subscription:
     state: present
@@ -12,20 +12,28 @@
     auto_attach: true
   register: registration
   retries: 2
+  delay: 30
   until: registration is not failed
   when: arch_info == "ppc64le"
 
+- name: DEBUG list repos
+  shell: |
+    subscription-manager repos --list
+    subscription-manager repos --list-enabled
+  register: subscription
+  when: arch_info == "ppc64le"
 
-#added repository from centos as power is not supporting rhel distro. see more https://docs.docker.com/engine/install/rhel/ 
+- debug:
+    var: subscription
 
 - name: Add repository
   shell: |
-    yum install -y yum-utils device-mapper-persistent-data lvm2
-    yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-    yum-config-manager --setopt="docker-ce-stable.baseurl=https://download.docker.com/linux/centos/\$releasever/\$basearch/stable" --save 
- 
+    yum-config-manager --add-repo https://download.docker.com/linux/"{{ distro }}"/docker-ce.repo
+    yum-config-manager --setopt="docker-ce-stable.baseurl=https://download.docker.com/linux/"{{ distro }}"/\$releasever/\$basearch/stable" --save
+    yum update -y 
+
 - name: Install docker
-  yum:
+  dnf:
     name:
       - docker-ce
       - docker-ce-cli
