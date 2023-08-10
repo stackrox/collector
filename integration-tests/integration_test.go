@@ -412,3 +412,17 @@ func TestConnectionsAndEndpointsUDPNoFork(t *testing.T) {
 	}
 	suite.Run(t, mixedHighLowPorts)
 }
+
+func TestAsyncConnectionBlocked(t *testing.T) {
+	blockedAsyncConnection := &suites.AsyncConnectionTestSuite{
+		BlockConnection: true,
+	}
+	suite.Run(t, blockedAsyncConnection)
+}
+
+func TestAsyncConnectionSuccess(t *testing.T) {
+	asyncConnection := &suites.AsyncConnectionTestSuite{
+		BlockConnection: false,
+	}
+	suite.Run(t, asyncConnection)
+}
