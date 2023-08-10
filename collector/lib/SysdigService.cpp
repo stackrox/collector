@@ -233,10 +233,10 @@ void SysdigService::Run(const std::atomic<ControlValue>& control) {
     if (!evt) continue;
 
     auto process_start = NowMicros();
-    LogUnreasonableEventTime(process_start, evt);
     for (auto it = signal_handlers_.begin(); it != signal_handlers_.end(); it++) {
       auto& signal_handler = *it;
       if (!signal_handler.ShouldHandle(evt)) continue;
+      LogUnreasonableEventTime(process_start, evt);
       auto result = signal_handler.handler->HandleSignal(evt);
       if (result == SignalHandler::NEEDS_REFRESH) {
         if (!SendExistingProcesses(signal_handler.handler.get())) {
