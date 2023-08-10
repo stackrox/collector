@@ -26,17 +26,36 @@ EventMap<Modifier> modifiers = {
 };
 
 }  // namespace
-
+/*
+ * Socket connection life-cycle scenarii:
+ * - synchronous:
+ *   - events:  connect()/accept() >= 0 --> close()/shutdown() = 0
+ *     fd_info: connected                   connected
+ *     result:  ADD                         REMOVE
+ *   - events:  connect()/accept() < 0
+ *     fd_info: failed
+ *     result:  nil
+ *   - events:  accept() >= 0
+ * - asynchronous:
+ *   - events:  connect() < 0 (E_INPROGRESS) --> getsockopt() ok --> shared with synchronous
+ *     fd_info: pending                          connected
+ *     result:  nil                              ADD
+ *   - events:  connect() < 0 (other)
+ *     fd_info: failed
+ *     result:  nil
+ */
 std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
   auto* fd_info = evt->get_fd_info();
+
   if (!fd_info) return std::nullopt;
 
   if (fd_info->is_socket_failed()) {
+    // connect() failed or getsockopt(SO_ERROR) returned a failure
     return std::nullopt;
   }
 
   if (fd_info->is_socket_pending()) {
-    CLOG(DEBUG) << "Ignoring pending connection until we determine its status.";
+    // connect() returned E_INPROGRESS
     return std::nullopt;
   }
 
