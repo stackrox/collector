@@ -4,6 +4,7 @@
 mock_modules:
   - community.general.make
   - google.cloud.gcp_compute_instance
+  - community.docker.docker_image
 
 extra_vars:
   job_id: job_id
