@@ -8,7 +8,7 @@
   when: arch_info == "s390x"
 
 - set_fact:
-    distro: distro_id.stdout
+    distro: "{{ distro_id.stdout }}"
   when: arch_info == "s390x"
 
 - name: Register server with Red Hat for IBM Z vms
