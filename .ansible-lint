@@ -1,3 +1,4 @@
+# vi: filetype=yaml
 ---
 
 mock_modules:
@@ -6,3 +7,20 @@ mock_modules:
 
 extra_vars:
   job_id: job_id
+
+skip_list:
+  # Forces use of fully-qualified roles/modules
+  - fqcn
+  # Forces all tasks to be named
+  - name[missing]
+  # Forces 0 (zero) empty lines in the yaml files
+  - yaml[empty-lines]
+  # prevents the use of strategy: free
+  - run-once[play]
+  # prevents use of latest package versions
+  - package-latest
+  # restrictive naming convention
+  - var-naming[no-role-prefix]
+  # normally a non-fatal warning, disabled because ansible-lint
+  # is unable to resolve module arguments properly
+  - args[module]

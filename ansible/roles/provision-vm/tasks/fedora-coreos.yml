@@ -17,27 +17,34 @@
   args:
     executable: /usr/bin/bash
   register: which_python
+  # always run
+  changed_when: true
 
 - set_fact:
     python_exists: "{{ which_python.stdout.find('no python') == -1 }}"
 
-- name: Install python3
-  raw: rpm-ostree install python3
-  args:
-    executable: /usr/bin/bash
-  when: not python_exists
+- when: not python_exists
+  creates: /usr/bin/python3
+  block:
+    - name: Install python3
+      raw: rpm-ostree install python3
+      args:
+        executable: /usr/bin/bash
+      # always run - rely on when clause on the block
+      changed_when: true
 
-# A reboot is required because rpm-ostree does not install python until
-# the system reboots
-- name: Reboot
-  raw: systemctl reboot
-  args:
-    executable: /usr/bin/bash
-  when: not python_exists
-  ignore_unreachable: true
+    # A reboot is required because rpm-ostree does not install python until
+    # the system reboots
+    - name: Reboot
+      raw: systemctl reboot
+      args:
+        executable: /usr/bin/bash
+      ignore_unreachable: true
+      # always run - rely on when clause on the block
+      changed_when: true
 
-- name: Wait for reboot to complete
-  wait_for_connection:
-    delay: 10
-    sleep: 10
-    timeout: 120
+    - name: Wait for reboot to complete
+      wait_for_connection:
+        delay: 10
+        sleep: 10
+        timeout: 60

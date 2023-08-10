@@ -8,37 +8,51 @@
 - set_fact:
     pypy_shim: |
       #!/bin/bash
-      LD_LIBRARY_PATH={{core_home}}/{{pypy_dir}}/lib:$LD_LIBRARY_PATH {{core_home}}/{{pypy_dir}}/bin/pypy "$@"
+      LD_LIBRARY_PATH={{ core_home }}/{{ pypy_dir }}/lib:$LD_LIBRARY_PATH {{ core_home }}/{{ pypy_dir }}/bin/pypy "$@"
     pip_shim: |
       #!/bin/bash
-      LD_LIBRARY_PATH=$HOME/{{pypy_dir}}/lib:$LD_LIBRARY_PATH $HOME/{{pypy_dir}}/bin/$(basename $0) $@
+      LD_LIBRARY_PATH=$HOME/{{ pypy_dir }}/lib:$LD_LIBRARY_PATH $HOME/{{ pypy_dir }}/bin/$(basename $0) $@
 
 - raw: '[ -e {{ core_home }}/{{ pypy_file }} ]'
-  ignore_errors: yes
+  ignore_errors: true
   failed_when: false
   register: has_pypy
-  become: no
+  become: false
+  # force this to always run
+  changed_when: true
 
 - name: Download portable python
   raw: wget https://downloads.python.org/pypy/{{ pypy_file }}
   when: has_pypy.rc != 0
-  become: no
+  become: false
+  creates: "{{ pypy_file }}"
 
 - name: Decompress tar file
   raw: '[ -d {{ core_home }}/{{ pypy_dir }} ] || tar -xf {{ pypy_file }}'
-  become: no
+  become: false
+  creates: "{{ core_home }}/{{ pypy_dir }}"
 
 - name: Setup ncurses symlink
-  raw: '[ -e {{core_home}}/{{pypy_dir}}/lib/libtinfo.so.5 ] || ln -s /lib64/libncurses.so.5.9 "{{core_home}}/{{pypy_dir}}/lib/libtinfo.so.5"'
-  become: no
+  raw: |
+    [ -e {{ core_home }}/{{ pypy_dir }}/lib/libtinfo.so.5 ] || \
+    ln -s /lib64/libncurses.so.5.9 "{{ core_home }}/{{ pypy_dir }}/lib/libtinfo.so.5"
+  become: false
+  creates: "/lib64/libncurses.so.5.9"
 
 - name: Write Python Shim
-  raw: "[ -e {{core_home}}/bin/python ] || (mkdir -p {{core_home}}/bin && echo '{{pypy_shim}}' > {{core_home}}/bin/python && chmod 755 {{core_home}}/bin/python)"
-  become: no
+  raw: |
+    [ -e {{ core_home }}/bin/python ] || \
+    (mkdir -p {{ core_home }}/bin && \
+    echo '{{ pypy_shim }}' > {{ core_home }}/bin/python && \
+    chmod 755 {{ core_home }}/bin/python)"
+  become: false
+  creates: "{{ core_home }}/bin/python"
 
 - name: Run python (sanity check)
-  raw: "{{core_home}}/bin/python --version"
-  become: no
+  raw: "{{ core_home }}/bin/python --version"
+  become: false
+  # always run
+  changed_when: true
 
 - name: Rediscover Facts
   setup:

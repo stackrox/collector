@@ -10,7 +10,7 @@
   user:
     name: "{{ ansible_user }}"
     groups: docker
-    append: yes
+    append: true
 
 - name: Reset SSH connection for group propagation
   meta: reset_connection

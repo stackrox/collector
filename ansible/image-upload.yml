@@ -6,7 +6,9 @@
 
   tasks:
     - name: Get Collector Image
-      shell: make -C "{{ collector_root }}" tag
+      make:
+        chdir: "{{ collector_root }}"
+        target: tag
       register: collector_tag_result
       delegate_to: localhost
 
@@ -29,16 +31,21 @@
       # to just call docker save directly.
       shell: |
         docker save -o {{ image_directory.path }}/collector.tar {{ collector_repo }}/collector:{{ collector_tag }}
+      args:
+        creates: "{{ image_directory.path }}/collector.tar"
       delegate_to: localhost
 
     - name: Copy Collector Image
       copy:
         src: "{{ image_directory.path }}/collector.tar"
         dest: collector.tar
+        mode: preserve
 
     - name: Load Collector Image
-      shell:
+      command:
         cmd: docker load -i collector.tar
+      register: load_result
+      changed_when: load_result.rc != 0
 
     - name: Remove tmp directory
       file:
