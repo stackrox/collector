@@ -1,0 +1,8 @@
+---
+
+mock_modules:
+  - community.general.make
+  - google.cloud.gcp_compute_instance
+
+extra_vars:
+  job_id: job_id
