@@ -24,15 +24,8 @@
   until: registration is not failed
   when: arch_info == "s390x"
 
-- name: DEBUG list repos
-  shell: |
-    subscription-manager repos --list
-    subscription-manager repos --list-enabled
-  register: subscription
-  when: arch_info == "s390x"
-
 - debug:
-    var: subscription
+    var: distro
 
 - name: Add repository
   shell: |
