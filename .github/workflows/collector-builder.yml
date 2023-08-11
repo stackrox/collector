@@ -34,7 +34,7 @@ jobs:
               - third_party/**
 
   build-builder-image:
-    name: Build the collector slim image
+    name: Build the builder image
     runs-on: ubuntu-latest
     # Multiarch builds sometimes take for eeeeeeeeeever
     timeout-minutes: 480
