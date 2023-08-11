@@ -147,6 +147,8 @@ jobs:
         run: |
           make -C "${{ github.workspace }}/ansible" create-ci-vms
 
+          cat ansible/ci/inventory_ibmcloud_z.yml
+
       - name: Run Tests
         if: ${{ ! inputs.run-benchmarks }}
         run: |
