@@ -147,6 +147,10 @@ jobs:
         run: |
           make -C "${{ github.workspace }}/ansible" create-ci-vms
 
+          if [[ -f ansible/ci/inventory_ibmcloud_z.yml ]]; then
+            cat ansible/ci/inventory_ibmcloud_z.yml
+          fi
+
       - name: Run Tests
         if: ${{ ! inputs.run-benchmarks }}
         run: |
