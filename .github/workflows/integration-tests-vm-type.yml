@@ -121,6 +121,7 @@ jobs:
             {
               echo "IC_API_KEY=${IBM_PPC64LE_API_KEY}"
               echo "IC_REGION=osa"
+              echo "IC_ZONE=osa21"
             } >> "${GITHUB_ENV}"
           fi
 
@@ -131,7 +132,7 @@ jobs:
             } >> "${GITHUB_ENV}"
           fi
         env:
-          IBM_PPC64LE_API_KEY: ${{ secrets.IBM_CLOUD_PPC64LE_API_KEY }}
+          IBM_PPC64LE_API_KEY: ${{ secrets.IBM_CLOUD_POWER_API_KEY }}
           REDHAT_USERNAME: ${{ secrets.REDHAT_USERNAME }}
           REDHAT_PASSWORD: ${{ secrets.REDHAT_PASSWORD }}
 
