@@ -12,6 +12,8 @@
       community.general.make:
         chdir: "{{ lookup('env', 'GITHUB_WORKSPACE') }}"
         target: image
+      # ensure this action is printed
+      tags: [print_action]
 
     - name: Retag collector image to arch specific
       community.docker.docker_image:
@@ -71,6 +73,7 @@
         - "  {{ collector_image }}-{{ arch }}-base"
         - "  {{ ansible_env.RHACS_ENG_IMAGE }}-{{ arch }}-slim"
         - "  {{ ansible_env.RHACS_ENG_IMAGE }}-{{ arch }}-base"
+      tags: [print_action]
 
     - name: Logout of quay.io
       community.docker.docker_login:
