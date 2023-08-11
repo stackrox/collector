@@ -38,7 +38,9 @@
   X(procfs_could_not_get_network_namespace) \
   X(procfs_could_not_get_socket_inodes)     \
   X(procfs_could_not_read_exe)              \
-  X(procfs_could_not_read_cmdline)
+  X(procfs_could_not_read_cmdline)          \
+  X(event_timestamp_distant_past)           \
+  X(event_timestamp_future)
 
 namespace collector {
 
