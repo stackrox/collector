@@ -28,12 +28,13 @@
 
 - name: Add repository
   shell: |
+    yum install -y yum-utils device-mapper-persistent-data lvm2
     yum-config-manager --add-repo https://download.docker.com/linux/"{{ distro }}"/docker-ce.repo
     yum-config-manager --setopt="docker-ce-stable.baseurl=https://download.docker.com/linux/"{{ distro }}"/\$releasever/\$basearch/stable" --save
     yum update -y 
 
 - name: Install docker
-  dnf:
+  yum:
     name:
       - docker-ce
       - docker-ce-cli
