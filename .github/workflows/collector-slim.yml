@@ -13,10 +13,15 @@ on:
         required: true
         description: |
           Basic stackrox-io image built
+      collector-builder-tag:
+        type: string
+        required: true
+        description: |
+          The builder tag to use in the build
 
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
-  DEFAULT_BUILDER_TAG: cache
+  COLLECTOR_BUILDER_TAG: ${{ inputs.collector-builder-tag }}
   RHACS_ENG_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
 
 jobs:
@@ -44,10 +49,7 @@ jobs:
 
       - name: Checks PR, main and release branches
         run: |
-          if [[ "${{ github.event_name }}" != 'pull_request' ]]; then
-            echo "COLLECTOR_BUIDER_TAG=${DEFAULT_BUILDER_TAG}" >> "$GITHUB_ENV"
-          else
-            echo "COLLECTOR_BUIDER_TAG=${COLLECTOR_TAG}" >> "$GITHUB_ENV"
+          if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
             echo "COLLECTOR_APPEND_CID=true" >> "$GITHUB_ENV"
 
             if [[ "${{ contains(github.event.pull_request.labels.*.name, 'address-sanitizer') }}" == "true" ]]; then

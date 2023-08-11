@@ -8,6 +8,10 @@ on:
         required: true
         description: |
           The tag used to build the collector image
+    outputs:
+      collector-builder-tag:
+        description: The builder tag used by the build
+        value: ${{ jobs.build-builder-image.outputs.collector-builder-tag }}
 
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
