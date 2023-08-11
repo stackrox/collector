@@ -36,7 +36,7 @@ virtual_machines:
   rhel-ppc64le:
     project: rhel-ppc64le-cloud
     families:
-      - rhel-8-8-ppc64le
+      - rhel-8-8-ppc
 
   rhel-sap:
     project: rhel-sap-cloud
