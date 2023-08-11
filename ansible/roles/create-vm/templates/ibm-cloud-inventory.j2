@@ -2,6 +2,6 @@
 
 [{{item}}]
 {%   for entry in groups[item] %}
-{{ entry }}	ansible_user=root	ansible_ssh_private_key_file={{ ansible_ssh_private_key_file }} vm_config={{ vm_config }} vm_collection_method={{ vm_collection_method }} vm_image_family={{ vm_image_family }}
+{{ entry }}	ansible_user=root	ansible_ssh_private_key_file={{ ansible_ssh_private_key_file }} vm_config={{ hostvars[entry]['vm_config'] }} vm_collection_method={{ hostvars[entry]['vm_collection_method'] }} vm_image_family={{ hostvars[entry]['vm_image_family'] }}
 {%   endfor %}
 {% endfor %}
