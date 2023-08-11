@@ -33,6 +33,17 @@
     # ensure that this is printed
     tags: [print_action]
 
+  rescue:
+  - name: Set tests as failed
+    set_fact:
+      success: false
+
+  - name: Output integration test log
+    debug:
+      msg: "{{ test_result.stdout }}"
+    tags: [print_action]
+
+  always:
   - name: Write integration test log
     copy:
       content: "{{ test_result.stdout }}"
@@ -44,17 +55,6 @@
     environment:
       LOG_FILE: "{{ logs_root }}/integration-test.log"
     delegate_to: localhost
-
-  rescue:
-  - name: Set tests as failed
-    set_fact:
-      success: false
-
-  always:
-  - name: Output integration test log
-    debug:
-      msg: "{{ test_result.stdout }}"
-    tags: [print_action]
 
   # If this host is just for a certain collection method, skip running
   # the test if we're not using that collection method.
