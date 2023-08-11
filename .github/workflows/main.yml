@@ -54,9 +54,18 @@ jobs:
     with:
       logs-artifact: driver-build-failures
 
+  build-builder-image:
+    uses: ./.github/workflows/collector-builder.yml
+    needs: init
+    with:
+      collector-tag: ${{ needs.init.outputs.collector-tag }}
+    secrets: inherit
+
   build-collector-slim:
     uses: ./.github/workflows/collector-slim.yml
-    needs: init
+    needs:
+    - init
+    - build-builder-image
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       collector-image: ${{ needs.init.outputs.collector-image }}
