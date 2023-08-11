@@ -22,6 +22,10 @@
             msg: "{{ build_result.stdout }}"
           tags: [print_action]
 
+        # propagate the failure (otherwise the tasks below will run)
+        - ansible.builtin.fail:
+            msg: Build failed
+
     - name: Retag collector image to arch specific
       community.docker.docker_image:
         name: "{{ collector_image }}"
