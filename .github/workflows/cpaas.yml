@@ -59,6 +59,7 @@ jobs:
       use-downstream-drivers: false
       skip-built-drivers: true
       build-full-image: true
+      max-layer-depth: "1"
     secrets: inherit
     needs:
     - init
