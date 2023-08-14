@@ -282,24 +282,6 @@ func (s *IntegrationTestSuiteBase) GetProcesses(containerID string) ([]common.Pr
 	return processes, nil
 }
 
-func (s *IntegrationTestSuiteBase) HasNetworks(containerID string) (bool, error) {
-	if s.db == nil {
-		return false, fmt.Errorf("Db %v is nil", s.db)
-	}
-
-	hasNetworks := false
-
-	s.db.View(func(tx *bolt.Tx) error {
-		network := tx.Bucket([]byte(networkBucket))
-		if network != nil && network.Bucket([]byte(containerID)) != nil {
-			hasNetworks = true
-		}
-		return nil
-	})
-
-	return hasNetworks, nil
-}
-
 func (s *IntegrationTestSuiteBase) GetNetworks(containerID string) ([]common.NetworkInfo, error) {
 	if s.db == nil {
 		return nil, fmt.Errorf("Db %v is nil", s.db)

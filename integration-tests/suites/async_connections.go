@@ -79,18 +79,15 @@ func (s *AsyncConnectionTestSuite) TearDownSuite() {
 }
 
 func (s *AsyncConnectionTestSuite) TestNetworkFlows() {
+	networkInfos, err := s.GetNetworks(s.clientContainer)
 
 	if !s.BlockConnection {
 		// expect one connection
-		networkInfos, err := s.GetNetworks(s.clientContainer)
 		s.Require().NoError(err)
 
 		assert.Equal(s.T(), 1, len(networkInfos))
 	} else {
 		// expect no connections at all
-		hasNetwork, err := s.HasNetworks(s.clientContainer)
-		s.Require().NoError(err)
-
-		assert.True(s.T(), !hasNetwork, "A failed asynchronous connection should not be reported")
+		s.Require().Error(err)
 	}
 }
