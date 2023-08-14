@@ -5,7 +5,7 @@ arch_info: "{{ 's390x' if 's390x' in test_platform else 'x86'}}"
 gcp_ssh_key_file: "{{ lookup('env', 'GCP_SSH_KEY_FILE', default='~/.ssh/google_compute_engine') }}"
 ibmcloud_ssh_key_file: "{{ lookup('env', 'IBMCLOUD_SSH_KEY_FILE', default='~/.ssh/acs-sshkey_rsa.prv') }}"
 
-ansible_ssh_private_key_file: "{{ ibmcloud_ssh_key_file if arch_info == 's390x' else gcp_ssh_key_file }}"
+ansible_ssh_private_key_file: "{{ ibmcloud_ssh_key_file if arch_info != 'x86' else gcp_ssh_key_file }}"
 
 current_user: "{{ lookup('env', 'USER') }}"
 test_platform: "{{ lookup('env', 'VM_TYPE', default='rhel') }}"
@@ -113,4 +113,4 @@ zone: ca-tor-3
 # ssh_key_name: acs-sshkey
 ssh_key_id: r038-fb0260c7-c01d-45c8-8026-7d50042943b9
 # vsi_resource_group: stackrox-ci-resource-group
-vsi_resource_group_id: 1a33a6a9bd6e498f8115e9b1064bfa97 
+vsi_resource_group_id: 1a33a6a9bd6e498f8115e9b1064bfa97
