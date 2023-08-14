@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: '0 6 * * *'
   pull_request:
+    types:
+      - labeled
+      - unlabeled
+      - synchronize
+      - opened
+      - reopened
 
 jobs:
   should-run:
@@ -15,6 +21,7 @@ jobs:
         run: |
           SHOULD_RUN="${{ github.event_name == 'schedule' || contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps') }}"
           echo "should-run=${SHOULD_RUN}" >> "$GITHUB_OUTPUT"
+
   init:
     needs:
     - should-run
