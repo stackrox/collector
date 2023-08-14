@@ -6,10 +6,14 @@ ifneq ($(COLLECTOR_QA_TAG),)
 COLLECTOR_QA_SCHEDULE_CURLS_TAG=collector-schedule-curls-$(COLLECTOR_QA_TAG)
 endif
 
+PLATFORM ?= linux/amd64
+
 .PHONY: all
 all:
-	@docker build -t quay.io/rhacs-eng/qa:$(COLLECTOR_QA_SCHEDULE_CURLS_TAG) .
+	@docker buildx build --load --platform ${PLATFORM} \
+                -t quay.io/rhacs-eng/qa-multi-arch:$(COLLECTOR_QA_SCHEDULE_CURLS_TAG) .
 
 .PHONY: push
 push:
-	@docker push quay.io/rhacs-eng/qa:$(COLLECTOR_QA_SCHEDULE_CURLS_TAG)
+	@docker buildx build --push --platform ${PLATFORM} \
+                -t quay.io/rhacs-eng/qa-multi-arch:$(COLLECTOR_QA_SCHEDULE_CURLS_TAG) .
