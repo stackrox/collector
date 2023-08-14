@@ -1,11 +1,15 @@
-{% for item in groups %}
-
-[{{item}}]
-{%   for entry in groups[item] %}
-{%      if hostvars[entry].get('ibm_cloud_vm', False) %}
-
-{{ entry }}	ansible_user=root	ansible_ssh_private_key_file={{ ansible_ssh_private_key_file }} vm_config={{ hostvars[entry]['vm_config'] }} vm_collection_method={{ hostvars[entry]['vm_collection_method'] }} vm_image_family={{ hostvars[entry]['vm_image_family'] }} vm_ip_address={{ entry }}
-
-{%      endif %}
-{%   endfor %}
-{% endfor %}
+----
+{% for item, entries in groups.items() %}
+{{ item }}:
+  hosts:
+  {% for entry in entries %}
+    {% if hostvars[entry].get('ibm_cloud_vm', False) %}
+    {{ entry }}:
+      ansible_user: root
+      ansible_ssh_private_key_file: {{ ansible_ssh_private_key_file }}
+      vm_config: {{ hostvars[entry]['vm_config'] }}
+      vm_collection_method: {{ hostvars[entry]['vm_collection_method'] }}
+      vm_image_family: {{ hostvars[entry]['vm_image_family'] }}
+      vm_ip_address: {{ entry }}
+    {% endif %}
+  {% endfor %}
