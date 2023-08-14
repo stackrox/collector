@@ -1,6 +1,7 @@
 package suites
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -54,11 +55,14 @@ func (s *AsyncConnectionTestSuite) SetupSuite() {
 
 	time.Sleep(5 * time.Second) // TODO use the endpoint declaration
 
-	if !s.BlockConnection {
-		containerID, err = s.launchContainer("client", image_store.QaImageByKey("qa-async-connection"), s.serverIP)
-	} else {
-		containerID, err = s.launchContainer("client", image_store.QaImageByKey("qa-async-connection"))
+	target := s.serverIP
+
+	if s.BlockConnection {
+		target = "10.255.255.1"
 	}
+
+	containerID, err = s.launchContainer("client", image_store.QaImageByKey("qa-schedule-curls"), "curl", "--connect-timeout", "5", fmt.Sprintf("http://%s/", target))
+
 	s.Require().NoError(err)
 	s.clientContainer = common.ContainerShortID(containerID)
 
