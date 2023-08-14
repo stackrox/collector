@@ -5,7 +5,6 @@ ENV NPROCS=$NPROCS
 
 ARG BUILD_DIR=/install-tmp
 
-# Useless change for CI, rollback afterwards
 USER root
 
 # clang 15 is used here due to an error on clang 16 when running on QEMU
