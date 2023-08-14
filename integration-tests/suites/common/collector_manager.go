@@ -33,6 +33,7 @@ type CollectorManager struct {
 
 func NewCollectorManager(e Executor, name string) *CollectorManager {
 	collectorOptions := config.CollectorInfo()
+	runtimeOptions := config.RuntimeInfo()
 	image_store := config.Images()
 
 	collectionMethod := config.CollectionMethod()
@@ -50,9 +51,9 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 		env["MODULE_DOWNLOAD_BASE_URL"] = "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"
 	}
 	mounts := map[string]string{
-		// The presence of this file disables an optimisation, which turns off podman runtime parsing.
+		// The presence of this socket disables an optimisation, which would turn off podman runtime parsing.
 		// https://github.com/falcosecurity/libs/pull/296
-		"/run/podman/podman.sock:ro": "/tmp/dummy_podman_socket_mount",
+		"/run/podman/podman.sock:ro": runtimeOptions.Socket,
 		"/host/proc:ro":              "/proc",
 		"/host/etc:ro":               "/etc/",
 		"/host/usr/lib:ro":           "/usr/lib/",
