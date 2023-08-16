@@ -85,7 +85,7 @@ end
   bool IsProcessesListeningOnPortsEnabled() const { return enable_processes_listening_on_ports_; }
   bool CoReBPFHardfail() const { return core_bpf_hardfail_; }
   bool ImportUsers() const { return import_users_; }
-  bool ReportConnectionAttempts() const { return report_connection_attempts_; }
+  bool CollectConnectionStatus() const { return collect_connection_status_; }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
@@ -110,7 +110,7 @@ end
   bool enable_processes_listening_on_ports_;
   bool core_bpf_hardfail_;
   bool import_users_;
-  bool report_connection_attempts_;
+  bool collect_connection_status_;
 
   Json::Value tls_config_;
 };

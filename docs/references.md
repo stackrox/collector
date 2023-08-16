@@ -29,12 +29,10 @@ false.
 about the originator process on all network listening-endpoint objects.
 The default is false.
 
-* `ROX_COLLECTOR_REPORT_CONNECTION_ATTEMPTS`: Collector tries to distinguish
-between connections that are established, and those which are firewalled. It
-reports only succesful connections. In the particular case of asynchronous
-connections, the status is sometimes unavailable. This value sets whether
-asynchronous connection attempts should be always reported.
-The default is false.
+* `ROX_COLLECT_CONNECTION_STATUS`: Instruct Collector to track the network
+connections status. With this enabled, advertising of asynchronous connections
+will be postponed until their status is known and they are successful.
+The default is true.
 
 NOTE: Using environment variables is a preferred way of configuring Collector,
 so if you're adding a new configuration knob, keep this in mind.

@@ -12,9 +12,9 @@ import (
 
 type AsyncConnectionTestSuite struct {
 	IntegrationTestSuiteBase
-	SetReportConnectionAttemptsEnvVar bool
-	BlockConnection                   bool
-	ExpectToSeeTheConnection          bool
+	DisableConnectionStatusTracking bool
+	BlockConnection                 bool
+	ExpectToSeeTheConnection        bool
 
 	clientContainer string
 	serverContainer string
@@ -39,8 +39,8 @@ func (s *AsyncConnectionTestSuite) SetupSuite() {
 	// we need a short scrape interval to have it trigger after the connection is closed.
 	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
 
-	if s.SetReportConnectionAttemptsEnvVar {
-		s.collector.Env["ROX_COLLECTOR_REPORT_CONNECTION_ATTEMPTS"] = "true"
+	if s.DisableConnectionStatusTracking {
+		s.collector.Env["ROX_COLLECT_CONNECTION_STATUS"] = "false"
 	}
 
 	err := s.collector.Setup()

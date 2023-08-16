@@ -36,7 +36,7 @@ BoolEnvVar core_bpf_hardfail("ROX_COLLECTOR_CORE_BPF_HARDFAIL", false);
 
 BoolEnvVar set_import_users("ROX_COLLECTOR_SET_IMPORT_USERS", false);
 
-BoolEnvVar report_connection_attempts("ROX_COLLECTOR_REPORT_CONNECTION_ATTEMPTS", false);
+BoolEnvVar collect_connection_status("ROX_COLLECT_CONNECTION_STATUS", true);
 
 }  // namespace
 
@@ -61,7 +61,7 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   enable_processes_listening_on_ports_ = set_processes_listening_on_ports.value();
   core_bpf_hardfail_ = core_bpf_hardfail.value();
   import_users_ = set_import_users.value();
-  report_connection_attempts_ = report_connection_attempts.value();
+  collect_connection_status_ = collect_connection_status.value();
 
   for (const auto& syscall : kSyscalls) {
     syscalls_.push_back(syscall);
@@ -262,7 +262,7 @@ std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
          << ", processesListeningOnPorts:" << c.IsProcessesListeningOnPortsEnabled()
          << ", logLevel:" << c.LogLevel()
          << ", set_import_users:" << c.ImportUsers()
-         << ", report_connection_attempts:" << c.ReportConnectionAttempts();
+         << ", collect_connection_status:" << c.CollectConnectionStatus();
 }
 
 }  // namespace collector

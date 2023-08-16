@@ -416,9 +416,9 @@ func TestConnectionsAndEndpointsUDPNoFork(t *testing.T) {
 // By default, a failed connection is not reported.
 func TestAsyncConnectionBlocked(t *testing.T) {
 	blockedAsyncConnection := &suites.AsyncConnectionTestSuite{
-		SetReportConnectionAttemptsEnvVar: false,
-		BlockConnection:                   true,
-		ExpectToSeeTheConnection:          false,
+		DisableConnectionStatusTracking: false,
+		BlockConnection:                 true,
+		ExpectToSeeTheConnection:        false,
 	}
 	suite.Run(t, blockedAsyncConnection)
 }
@@ -426,29 +426,29 @@ func TestAsyncConnectionBlocked(t *testing.T) {
 // A successfull connection is always reported
 func TestAsyncConnectionSuccess(t *testing.T) {
 	asyncConnection := &suites.AsyncConnectionTestSuite{
-		SetReportConnectionAttemptsEnvVar: false,
-		BlockConnection:                   false,
-		ExpectToSeeTheConnection:          true,
+		DisableConnectionStatusTracking: false,
+		BlockConnection:                 false,
+		ExpectToSeeTheConnection:        true,
 	}
 	suite.Run(t, asyncConnection)
 }
 
-// With ReportConnectionAttempts set, failed async connections are reported.
-func TestAsyncConnectionBlockedWithReportAttempts(t *testing.T) {
+// With connection status tracking disabled, failed async connections are reported.
+func TestAsyncConnectionBlockedWithDisableTracking(t *testing.T) {
 	blockedAsyncConnection := &suites.AsyncConnectionTestSuite{
-		SetReportConnectionAttemptsEnvVar: true,
-		BlockConnection:                   true,
-		ExpectToSeeTheConnection:          true,
+		DisableConnectionStatusTracking: true,
+		BlockConnection:                 true,
+		ExpectToSeeTheConnection:        true,
 	}
 	suite.Run(t, blockedAsyncConnection)
 }
 
-// Even with ReportConnectionAttempts set, a successfull connection is always reported
-func TestAsyncConnectionSuccessWithReportAttempts(t *testing.T) {
+// With connection status tracking disabled, a successfull connection is always reported
+func TestAsyncConnectionSuccessWithDisableTracking(t *testing.T) {
 	asyncConnection := &suites.AsyncConnectionTestSuite{
-		SetReportConnectionAttemptsEnvVar: true,
-		BlockConnection:                   false,
-		ExpectToSeeTheConnection:          true,
+		DisableConnectionStatusTracking: true,
+		BlockConnection:                 false,
+		ExpectToSeeTheConnection:        true,
 	}
 	suite.Run(t, asyncConnection)
 }

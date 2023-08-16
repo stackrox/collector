@@ -46,7 +46,7 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
   if (conn_tracker) {
     auto network_signal_handler_ = MakeUnique<NetworkSignalHandler>(inspector_.get(), conn_tracker, &userspace_stats_);
 
-    network_signal_handler_->SetReportConnectionAttempts(config.ReportConnectionAttempts());
+    network_signal_handler_->SetCollectConnectionStatus(config.CollectConnectionStatus());
 
     AddSignalHandler(std::move(network_signal_handler_));
   }
@@ -87,7 +87,7 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
     // Connection status tracking is used in NetworkSignalHandler,
     // but only when trying to handle asynchronous connections
     // as a special case.
-    if (!config.ReportConnectionAttempts()) {
+    if (config.CollectConnectionStatus()) {
       inspector_->get_parser()->set_track_connection_status(true);
     }
 

@@ -13,7 +13,7 @@ namespace collector {
 class NetworkSignalHandler final : public SignalHandler {
  public:
   explicit NetworkSignalHandler(sinsp* inspector, std::shared_ptr<ConnectionTracker> conn_tracker, SysdigStats* stats)
-      : conn_tracker_(std::move(conn_tracker)), stats_(stats), report_connection_attemps_(false) {
+      : conn_tracker_(std::move(conn_tracker)), stats_(stats), collect_connection_status_(true) {
     event_extractor_.Init(inspector);
   }
 
@@ -22,7 +22,7 @@ class NetworkSignalHandler final : public SignalHandler {
   std::vector<std::string> GetRelevantEvents() override;
   bool Stop() override;
 
-  void SetReportConnectionAttempts(bool report_connection_attempts) { report_connection_attemps_ = report_connection_attempts; }
+  void SetCollectConnectionStatus(bool collect_connection_status) { collect_connection_status_ = collect_connection_status; }
 
  private:
   std::optional<Connection> GetConnection(sinsp_evt* evt);
@@ -31,7 +31,7 @@ class NetworkSignalHandler final : public SignalHandler {
   std::shared_ptr<ConnectionTracker> conn_tracker_;
   SysdigStats* stats_;
 
-  bool report_connection_attemps_;
+  bool collect_connection_status_;
 };
 
 }  // namespace collector
