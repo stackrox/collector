@@ -1,5 +1,7 @@
 on:
   push:
+    branches:
+    - master
   pull_request:
 
 jobs:
@@ -42,7 +44,11 @@ jobs:
         run: |
           dirs=$(dirname ${{ needs.test-containers.outputs.changed_files }} | sort | uniq )
 
-          echo "CONTAINER_DIRS='$dirs'" >> "$GITHUB_ENV"
+          {
+            echo "CONTAINER_DIRS=<<EOS"
+            echo "$dirs"
+            echo "EOS"
+          } >> "$GITHUB_ENV"
 
       - name: Build containers
         run: |
