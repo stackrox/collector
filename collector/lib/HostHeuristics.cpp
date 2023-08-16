@@ -51,7 +51,7 @@ class CollectionHeuristic : public Heuristic {
           host.HasBPFRingBufferSupport() &&
           host.HasBPFTracingSupport()) {
         CLOG(INFO) << "CORE_BPF collection method is available. "
-                   << "HINT: Check the documentation to compare features of "
+                   << "Check the documentation to compare features of "
                    << "available collection methods.";
       }
     }
