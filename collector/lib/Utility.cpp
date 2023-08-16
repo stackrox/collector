@@ -1,4 +1,3 @@
-#include <optional>
 extern "C" {
 
 #include <errno.h>
