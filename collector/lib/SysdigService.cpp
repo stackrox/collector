@@ -103,7 +103,7 @@ bool SysdigService::UpdateContainerID(sinsp_threadinfo* tinfo) {
     return true;
   }
 
-  for (auto cgroup : tinfo->cgroups()) {
+  for (const auto& cgroup : tinfo->cgroups()) {
     auto container_id = ExtractContainerIDFromCgroup(cgroup.second);
 
     if (container_id) {
@@ -113,6 +113,7 @@ bool SysdigService::UpdateContainerID(sinsp_threadinfo* tinfo) {
   }
   return false;
 }
+
 bool SysdigService::UpdateContainerID(sinsp_evt* event) {
   sinsp_threadinfo* tinfo = event->get_thread_info();
   return UpdateContainerID(tinfo);

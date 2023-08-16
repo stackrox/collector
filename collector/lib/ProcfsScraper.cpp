@@ -126,9 +126,9 @@ bool GetSocketINodes(int dirfd, uint64_t pid, UnorderedSet<SocketInfo>* sock_ino
 
 // GetContainerID retrieves the container ID of the process represented by dirfd. The container ID is extracted from
 // the cgroup.
-bool GetContainerID(int dirfd, std::string* container_id) {
+std::optional<std::string> GetContainerID(int dirfd) {
   FileHandle cgroups_file(FDHandle(openat(dirfd, "cgroup", O_RDONLY)), "r");
-  if (!cgroups_file.valid()) return false;
+  if (!cgroups_file.valid()) return {};
 
   thread_local char* linebuf;
   thread_local size_t linebuf_cap;
@@ -140,13 +140,12 @@ bool GetContainerID(int dirfd, std::string* container_id) {
 
     std::string_view line(linebuf, line_len);
     auto short_container_id = ExtractContainerID(line);
-    if (short_container_id.empty()) continue;
+    if (!short_container_id) continue;
 
-    *container_id = short_container_id;
-    return true;
+    return std::make_optional(std::string(*short_container_id));
   }
 
-  return false;
+  return {};
 }
 
 // Functions for parsing `net/tcp[6]` files
@@ -417,8 +416,8 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
       continue;
     }
 
-    std::string container_id;
-    if (!GetContainerID(dirfd, &container_id)) continue;
+    auto container_id = GetContainerID(dirfd);
+    if (!container_id) continue;
 
     uint64_t netns_inode;
     if (!GetNetworkNamespace(dirfd, &netns_inode)) {
@@ -428,7 +427,7 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
       continue;
     }
 
-    auto& container_ns_sockets = sockets_by_container_and_ns[container_id][netns_inode];
+    auto& container_ns_sockets = sockets_by_container_and_ns[*container_id][netns_inode];
     bool no_sockets = container_ns_sockets.empty();
 
     if (!GetSocketINodes(dirfd, pid, &container_ns_sockets)) {
@@ -521,18 +520,13 @@ bool ReadProcessCmdline(const char* process_id, int dirfd, std::string& exe, std
 
 }  // namespace
 
-std::string_view ExtractContainerID(std::string_view cgroup_line) {
+std::optional<std::string_view> ExtractContainerID(std::string_view cgroup_line) {
   auto start = rep_find(2, cgroup_line, ':');
   if (start == std::string_view::npos) return {};
 
   std::string_view cgroup_path = cgroup_line.substr(start + 1);
 
-  auto container_id_part = ExtractContainerIDFromCgroup(cgroup_path);
-
-  if (!container_id_part) {
-    return {};
-  }
-  return *container_id_part;
+  return ExtractContainerIDFromCgroup(cgroup_path);
 }
 
 bool ConnScraper::Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) {
@@ -552,7 +546,7 @@ bool ProcessScraper::Scrape(uint64_t pid, ProcessInfo& process_info) {
     return false;
   }
 
-  return GetContainerID(dirfd, &process_info.container_id) &&
+  return GetContainerID(dirfd) &&
          ReadProcessExe(process_path, dirfd, process_info.comm, process_info.exe_path) &&
          ReadProcessCmdline(process_path, dirfd, process_info.exe, process_info.args);
 }

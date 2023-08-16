@@ -204,10 +204,10 @@ void TryUnlink(const char* path) {
 // IsContainerID returns whether the given string view represents a container ID.
 bool IsContainerID(std::string_view str) {
   if (str.size() != 64) return false;
-  for (auto c : str) {
-    if (!std::isdigit(c) && (c < 'a' || c > 'f')) return false;
-  }
-  return true;
+
+  return std::all_of(str.begin(), str.end(), [](char c) -> bool {
+    return std::isxdigit(c);
+  });
 }
 
 std::optional<std::string_view> ExtractContainerIDFromCgroup(std::string_view cgroup) {
