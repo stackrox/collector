@@ -21,17 +21,39 @@ $ pip3 install -r requirements.txt
 ```
 
 ## Image builds
-### Builder and slim collector images
+### Builder image
 
-The `ci-build-collector.yml` playbook is meant to be used by CI, it handles the
-build process for the builder and slim collector images, as well as retagging
-and pushing of these images to quay.io.
+The `ci-build-builder.yml` playbook is meant to be used by CI, it handles the
+build process for the builder image, as well as retagging and pushing to
+quay.io.
 
 #### Environment variables used by the playbook
 
 | Name | Description |
 | ---  | ---         |
-| BUILD_BUILDER_IMAGE | Controls whether the builder image should be built or pulled from a remote registry. |
+| COLLECTOR_BUILDER_TAG | The tag used for the builder image. |
+| PLATFORM | The platform the images are being built for, currently the supported values are:<br>- linux/amd64<br>- linux/ppc64le<br>- linux/s390x |
+
+#### Ansible variables to be supplied to the playbook
+
+| Name | Description |
+| ---  | ---         |
+| arch | The architecture the images are being built for, currently the supported values are:<br>- amd64<br>- ppc64le<br>- s390x |
+| stackrox_io_username | Username used for pushing images to quay.io/stackrox-io |
+| stackrox_io_password | Password used for pushing images to quay.io/stackrox-io |
+| rhacs_eng_username | Username used for pushing images to quay.io/rhacs-eng |
+| rhacs_eng_password | Password used for pushing images to quay.io/rhacs-eng |
+
+### Slim collector image
+
+The `ci-build-collector.yml` playbook is meant to be used by CI, it handles the
+build process for the slim collector image, as well as retagging and pushing
+of these images to quay.io.
+
+#### Environment variables used by the playbook
+
+| Name | Description |
+| ---  | ---         |
 | COLLECTOR_BUILDER_TAG | The tag used for the builder image. |
 | PLATFORM | The platform the images are being built for, currently the supported values are:<br>- linux/amd64<br>- linux/ppc64le<br>- linux/s390x |
 | COLLECTOR_TAG | The tag to be used with the collector image |
@@ -47,7 +69,6 @@ and pushing of these images to quay.io.
 | stackrox_io_password | Password used for pushing images to quay.io/stackrox-io |
 | rhacs_eng_username | Username used for pushing images to quay.io/rhacs-eng |
 | rhacs_eng_password | Password used for pushing images to quay.io/rhacs-eng |
-| push_builder | If 'true', the builder will be pushed to the registries alongside the collector images |
 
 ## Integration tests
 ### Overview
