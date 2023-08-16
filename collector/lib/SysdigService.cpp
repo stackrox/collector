@@ -1,6 +1,7 @@
 #include "SysdigService.h"
 
 #include <cap-ng.h>
+#include <string_view>
 #include <thread>
 
 #include <linux/ioctl.h>
@@ -101,39 +102,21 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
   return true;
 }
 
-bool SysdigService::FilterEvent(sinsp_evt* event) {
-  if (!use_chisel_cache_) {
-    return chisel_->process(event);
-  }
-
+bool SysdigService::UpdateContainerID(sinsp_evt* event) {
   sinsp_threadinfo* tinfo = event->get_thread_info();
-  if (!tinfo || tinfo->m_container_id.empty()) {
+  if (!tinfo) {
     return false;
   }
 
-  auto pair = chisel_cache_.emplace(tinfo->m_container_id, ACCEPTED);
-  ChiselCacheStatus& cache_status = pair.first->second;
-  bool res;
+  for (auto cgroup : tinfo->cgroups()) {
+    auto container_id = ExtractContainerIDFromCgroup(cgroup.second);
 
-  if (pair.second) {  // was newly inserted
-    res = chisel_->process(event);
-    if (chisel_cache_.size() > 1024) {
-      CLOG(INFO) << "Flushing chisel cache";
-      chisel_cache_.clear();
-      return res;
-    }
-    cache_status = res ? ACCEPTED : BLOCKED_USERSPACE;
-  } else {
-    res = (cache_status == ACCEPTED);
-
-    if (res) {
-      ++userspace_stats_.nChiselCacheHitsAccept[event->get_type()];
-    } else {
-      ++userspace_stats_.nChiselCacheHitsReject[event->get_type()];
+    if (container_id) {
+      tinfo->m_container_id = *container_id;
+      return true;
     }
   }
-
-  return res;
+  return false;
 }
 
 sinsp_evt* SysdigService::GetNext() {
@@ -173,7 +156,7 @@ sinsp_evt* SysdigService::GetNext() {
   userspace_stats_.event_parse_micros[event->get_type()] += (NowMicros() - parse_start);
   ++userspace_stats_.nUserspaceEvents[event->get_type()];
 
-  if (!FilterEvent(event)) {
+  if (!UpdateContainerID(event)) {
     return nullptr;
   }
   ++userspace_stats_.nFilteredEvents[event->get_type()];

@@ -1,3 +1,4 @@
+#include <optional>
 extern "C" {
 
 #include <errno.h>
@@ -200,4 +201,34 @@ void TryUnlink(const char* path) {
   }
 }
 
+// IsContainerID returns whether the given string view represents a container ID.
+bool IsContainerID(std::string_view str) {
+  if (str.size() != 64) return false;
+  for (auto c : str) {
+    if (!std::isdigit(c) && (c < 'a' || c > 'f')) return false;
+  }
+  return true;
+}
+
+std::optional<std::string_view> ExtractContainerIDFromCgroup(std::string_view cgroup) {
+  if (cgroup.size() < 65) return {};
+
+  auto scope = cgroup.rfind(".scope");
+  if (scope != std::string_view::npos) {
+    cgroup.remove_suffix(cgroup.length() - scope);
+  }
+
+  if (cgroup.rfind("-conmon-") != std::string_view::npos) {
+    return {};
+  }
+
+  if (cgroup.size() < 65) return {};
+  auto container_id_part = cgroup.substr(cgroup.size() - 65);
+  if (container_id_part[0] != '/' && container_id_part[0] != '-') return {};
+
+  container_id_part.remove_prefix(1);
+
+  if (!IsContainerID(container_id_part)) return {};
+  return std::make_optional(container_id_part.substr(0, 12));
+}
 }  // namespace collector

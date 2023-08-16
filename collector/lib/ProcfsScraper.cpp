@@ -124,15 +124,6 @@ bool GetSocketINodes(int dirfd, uint64_t pid, UnorderedSet<SocketInfo>* sock_ino
   return true;
 }
 
-// IsContainerID returns whether the given string view represents a container ID.
-bool IsContainerID(std::string_view str) {
-  if (str.size() != 64) return false;
-  for (auto c : str) {
-    if (!std::isdigit(c) && (c < 'a' || c > 'f')) return false;
-  }
-  return true;
-}
-
 // GetContainerID retrieves the container ID of the process represented by dirfd. The container ID is extracted from
 // the cgroup.
 bool GetContainerID(int dirfd, std::string* container_id) {
@@ -532,20 +523,16 @@ bool ReadProcessCmdline(const char* process_id, int dirfd, std::string& exe, std
 
 std::string_view ExtractContainerID(std::string_view cgroup_line) {
   auto start = rep_find(2, cgroup_line, ':');
-  if (start == std::string_view::npos || cgroup_line.size() - start - 1 < 65) return {};
+  if (start == std::string_view::npos) return {};
+
   std::string_view cgroup_path = cgroup_line.substr(start + 1);
 
-  if (cgroup_path.substr(cgroup_path.size() - StrLen(".scope")) == ".scope") {
-    cgroup_path.remove_suffix(StrLen(".scope"));
+  auto container_id_part = ExtractContainerIDFromCgroup(cgroup_path);
+
+  if (!container_id_part) {
+    return {};
   }
-
-  if (cgroup_path.size() < 65) return {};
-  auto container_id_part = cgroup_path.substr(cgroup_path.size() - 65);
-  if (container_id_part[0] != '/' && container_id_part[0] != '-') return {};
-  container_id_part.remove_prefix(1);
-
-  if (!IsContainerID(container_id_part)) return {};
-  return container_id_part.substr(0, 12);
+  return *container_id_part;
 }
 
 bool ConnScraper::Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) {

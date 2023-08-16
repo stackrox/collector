@@ -67,7 +67,7 @@ class SysdigService : public Sysdig {
 
   sinsp_evt* GetNext();
 
-  bool FilterEvent(sinsp_evt* event);
+  bool UpdateContainerID(sinsp_evt* event);
   bool SendExistingProcesses(SignalHandler* handler);
 
   void AddSignalHandler(std::unique_ptr<SignalHandler> signal_handler);
