@@ -66,7 +66,7 @@ jobs:
           done
         env:
           PLATFORM: linux/${{ matrix.arch }}
-          IMAGE_SUFFIX: ${{ matrix.arch }}
+          IMAGE_SUFFIX: "-${{ matrix.arch }}"
 
       - name: Push containers
         if: github.event_name == 'push'
@@ -78,7 +78,7 @@ jobs:
           done
         env:
           PLATFORM: linux/${{ matrix.arch }}
-          IMAGE_SUFFIX: ${{ matrix.arch }}
+          IMAGE_SUFFIX: "-${{ matrix.arch }}"
 
   push-manifest:
     runs-on: ubuntu-latest
