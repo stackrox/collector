@@ -413,16 +413,42 @@ func TestConnectionsAndEndpointsUDPNoFork(t *testing.T) {
 	suite.Run(t, mixedHighLowPorts)
 }
 
+// By default, a failed connection is not reported.
 func TestAsyncConnectionBlocked(t *testing.T) {
 	blockedAsyncConnection := &suites.AsyncConnectionTestSuite{
-		BlockConnection: true,
+		SetReportConnectionAttemptsEnvVar: false,
+		BlockConnection:                   true,
+		ExpectToSeeTheConnection:          false,
 	}
 	suite.Run(t, blockedAsyncConnection)
 }
 
+// A successfull connection is always reported
 func TestAsyncConnectionSuccess(t *testing.T) {
 	asyncConnection := &suites.AsyncConnectionTestSuite{
-		BlockConnection: false,
+		SetReportConnectionAttemptsEnvVar: false,
+		BlockConnection:                   false,
+		ExpectToSeeTheConnection:          true,
+	}
+	suite.Run(t, asyncConnection)
+}
+
+// With ReportConnectionAttempts set, failed async connections are reported.
+func TestAsyncConnectionBlockedWithReportAttempts(t *testing.T) {
+	blockedAsyncConnection := &suites.AsyncConnectionTestSuite{
+		SetReportConnectionAttemptsEnvVar: true,
+		BlockConnection:                   true,
+		ExpectToSeeTheConnection:          true,
+	}
+	suite.Run(t, blockedAsyncConnection)
+}
+
+// Even with ReportConnectionAttempts set, a successfull connection is always reported
+func TestAsyncConnectionSuccessWithReportAttempts(t *testing.T) {
+	asyncConnection := &suites.AsyncConnectionTestSuite{
+		SetReportConnectionAttemptsEnvVar: true,
+		BlockConnection:                   false,
+		ExpectToSeeTheConnection:          true,
 	}
 	suite.Run(t, asyncConnection)
 }
