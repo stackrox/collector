@@ -4,6 +4,12 @@
   collections:
    - ibm.cloudcollection
 
+- debug:
+    var: ansible_ssh_private_key_file
+
+- debug:
+    msg: "{{ lookup('file', ansible_ssh_private_key_file) }}"
+
 - name: Check for existing SSH Key
   collections:
    - ibm.cloudcollection
