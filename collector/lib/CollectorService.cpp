@@ -100,18 +100,6 @@ void CollectorService::RunForever() {
   while ((cv = control_->load(std::memory_order_relaxed)) != STOP_COLLECTOR) {
     sysdig_.Run(*control_);
     CLOG(DEBUG) << "Interrupted collector!";
-
-    std::lock_guard<std::mutex> lock(chisel_mutex_);
-    if (update_chisel_) {
-      CLOG(DEBUG) << "Updating chisel ...";
-      sysdig_.SetChisel(chisel_);
-      update_chisel_ = false;
-      // Reset the control value to RUN, but abort if it has changed to STOP_COLLECTOR in the meantime.
-      cv = control_->exchange(RUN, std::memory_order_relaxed);
-      if (cv == STOP_COLLECTOR) {
-        break;
-      }
-    }
   }
 
   int signal = signum_.load();
@@ -138,21 +126,6 @@ bool CollectorService::WaitForGRPCServer() {
   std::string error_str;
   auto interrupt = [this] { return control_->load(std::memory_order_relaxed) == STOP_COLLECTOR; };
   return WaitForChannelReady(config_.grpc_channel, interrupt);
-}
-
-void CollectorService::OnChiselReceived(const std::string& new_chisel) {
-  {
-    std::lock_guard<std::mutex> lock(chisel_mutex_);
-    if (chisel_ == new_chisel) {
-      return;
-    }
-
-    chisel_ = new_chisel;
-    update_chisel_ = true;
-  }
-
-  ControlValue cv = RUN;
-  control_->compare_exchange_strong(cv, INTERRUPT_SYSDIG, std::memory_order_seq_cst);
 }
 
 bool SetupKernelDriver(CollectorService& collector, const std::string& GRPCServer, const CollectorConfig& config) {

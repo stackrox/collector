@@ -33,10 +33,6 @@ constexpr char SysdigService::kProbePath[];
 constexpr char SysdigService::kProbeName[];
 
 void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) {
-  if (chisel_) {
-    throw CollectorException("Invalid state: SysdigService was already initialized");
-  }
-
   // The self-check handlers should only operate during start up,
   // so they are added to the handler list first, so they have access
   // to self-check events before the network and process handlers have
@@ -62,10 +58,6 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
     // do not send signals to Sensor.
     CLOG(FATAL) << "Internal error: There are no signal handlers.";
   }
-
-  SetChisel(config.Chisel());
-
-  use_chisel_cache_ = config.UseChiselCache();
 }
 
 bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandidate& candidate) {
@@ -167,7 +159,7 @@ sinsp_evt* SysdigService::GetNext() {
 void SysdigService::Start() {
   std::lock_guard<std::mutex> libsinsp_lock(libsinsp_mutex_);
 
-  if (!inspector_ || !chisel_) {
+  if (!inspector_) {
     throw CollectorException("Invalid state: SysdigService was not initialized");
   }
 
@@ -208,7 +200,7 @@ void LogUnreasonableEventTime(int64_t time_micros, sinsp_evt* evt) {
 }
 
 void SysdigService::Run(const std::atomic<ControlValue>& control) {
-  if (!inspector_ || !chisel_) {
+  if (!inspector_) {
     throw CollectorException("Invalid state: SysdigService was not initialized");
   }
 
@@ -247,7 +239,7 @@ void SysdigService::Run(const std::atomic<ControlValue>& control) {
 bool SysdigService::SendExistingProcesses(SignalHandler* handler) {
   std::lock_guard<std::mutex> lock(libsinsp_mutex_);
 
-  if (!inspector_ || !chisel_) {
+  if (!inspector_) {
     throw CollectorException("Invalid state: SysdigService was not initialized");
   }
 
@@ -275,7 +267,6 @@ void SysdigService::CleanUp() {
   std::lock_guard<std::mutex> running_lock(running_mutex_);
   running_ = false;
   inspector_->close();
-  chisel_.reset();
   inspector_.reset();
 
   for (auto& signal_handler : signal_handlers_) {
@@ -312,15 +303,6 @@ bool SysdigService::GetStats(SysdigStats* stats) const {
   stats->nPreemptions = kernel_stats.n_preemptions;
 
   return true;
-}
-
-void SysdigService::SetChisel(const std::string& chisel) {
-  std::lock_guard<std::mutex> lock(libsinsp_mutex_);
-  CLOG(DEBUG) << "Updating chisel and flushing chisel cache";
-  CLOG(DEBUG) << "New chisel: " << chisel;
-  chisel_.reset(new_chisel(inspector_.get(), chisel, false));
-  chisel_->on_init();
-  chisel_cache_.clear();
 }
 
 void SysdigService::AddSignalHandler(std::unique_ptr<SignalHandler> signal_handler) {

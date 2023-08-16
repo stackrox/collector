@@ -8,10 +8,8 @@
 #include <string>
 
 // clang-format off
-// sinsp.h needs to be included before chisel.h
 #include "libsinsp/sinsp.h"
 #include "DriverCandidates.h"
-#include "chisel.h"
 // clang-format on
 
 #include "Control.h"
@@ -35,7 +33,6 @@ class SysdigService : public Sysdig {
   void Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) override;
   void Start() override;
   void Run(const std::atomic<ControlValue>& control) override;
-  void SetChisel(const std::string& new_chisel);
   void CleanUp() override;
 
   bool GetStats(SysdigStats* stats) const override;
@@ -47,12 +44,6 @@ class SysdigService : public Sysdig {
   void GetProcessInformation(uint64_t pid, ProcessInfoCallbackRef callback);
 
  private:
-  enum ChiselCacheStatus : int {
-    BLOCKED_USERSPACE,
-    BLOCKED_KERNEL,
-    ACCEPTED,
-  };
-
   struct SignalHandlerEntry {
     std::unique_ptr<SignalHandler> handler;
     std::bitset<PPM_EVENT_MAX> event_filter;
@@ -75,14 +66,10 @@ class SysdigService : public Sysdig {
   mutable std::mutex libsinsp_mutex_;
   std::unique_ptr<sinsp> inspector_;
   std::unique_ptr<sinsp_evt_formatter> default_formatter_;
-  std::unique_ptr<sinsp_chisel> chisel_;
   std::unique_ptr<ISignalServiceClient> signal_client_;
   std::vector<SignalHandlerEntry> signal_handlers_;
   SysdigStats userspace_stats_;
   std::bitset<PPM_EVENT_MAX> global_event_filter_;
-
-  std::unordered_map<std::string, ChiselCacheStatus> chisel_cache_;
-  bool use_chisel_cache_;
 
   mutable std::mutex running_mutex_;
   bool running_ = false;
