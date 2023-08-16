@@ -35,7 +35,6 @@ EventMap<Modifier> modifiers = {
  *   - events:  connect()/accept() < 0
  *     fd_info: failed
  *     result:  nil
- *   - events:  accept() >= 0
  * - asynchronous:
  *   - events:  connect() < 0 (E_INPROGRESS) --> getsockopt() ok --> shared with synchronous
  *     fd_info: pending                          connected
@@ -49,14 +48,18 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
 
   if (!fd_info) return std::nullopt;
 
-  if (fd_info->is_socket_failed()) {
-    // connect() failed or getsockopt(SO_ERROR) returned a failure
-    return std::nullopt;
-  }
+  // With report_connection_attemps_ set, we want to know about the connection
+  // even if we never know whether it succeeds.
+  if (!report_connection_attemps_) {
+    if (fd_info->is_socket_failed()) {
+      // connect() failed or getsockopt(SO_ERROR) returned a failure
+      return std::nullopt;
+    }
 
-  if (fd_info->is_socket_pending()) {
-    // connect() returned E_INPROGRESS
-    return std::nullopt;
+    if (fd_info->is_socket_pending()) {
+      // connect() returned E_INPROGRESS
+      return std::nullopt;
+    }
   }
 
   const int64_t* res = event_extractor_.get_event_rawres(evt);

@@ -44,7 +44,11 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
   AddSignalHandler(MakeUnique<SelfCheckNetworkHandler>(inspector_.get()));
 
   if (conn_tracker) {
-    AddSignalHandler(MakeUnique<NetworkSignalHandler>(inspector_.get(), conn_tracker, &userspace_stats_));
+    auto network_signal_handler_ = MakeUnique<NetworkSignalHandler>(inspector_.get(), conn_tracker, &userspace_stats_);
+
+    network_signal_handler_->SetReportConnectionAttempts(config.ReportConnectionAttempts());
+
+    AddSignalHandler(std::move(network_signal_handler_));
   }
 
   if (config.grpc_channel) {
