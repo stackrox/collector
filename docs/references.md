@@ -29,6 +29,11 @@ false.
 about the originator process on all network listening-endpoint objects.
 The default is false.
 
+* `ROX_COLLECT_CONNECTION_STATUS`: Instruct Collector to track the network
+connections status. With this enabled, advertising of asynchronous connections
+will be postponed until their status is known and they are successful.
+The default is true.
+
 NOTE: Using environment variables is a preferred way of configuring Collector,
 so if you're adding a new configuration knob, keep this in mind.
 

@@ -44,7 +44,11 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
   AddSignalHandler(MakeUnique<SelfCheckNetworkHandler>(inspector_.get()));
 
   if (conn_tracker) {
-    AddSignalHandler(MakeUnique<NetworkSignalHandler>(inspector_.get(), conn_tracker, &userspace_stats_));
+    auto network_signal_handler_ = MakeUnique<NetworkSignalHandler>(inspector_.get(), conn_tracker, &userspace_stats_);
+
+    network_signal_handler_->SetCollectConnectionStatus(config.CollectConnectionStatus());
+
+    AddSignalHandler(std::move(network_signal_handler_));
   }
 
   if (config.grpc_channel) {
@@ -80,7 +84,12 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
 
     inspector_->set_import_users(config.ImportUsers());
 
-    inspector_->get_parser()->set_track_connection_status(true);
+    // Connection status tracking is used in NetworkSignalHandler,
+    // but only when trying to handle asynchronous connections
+    // as a special case.
+    if (config.CollectConnectionStatus()) {
+      inspector_->get_parser()->set_track_connection_status(true);
+    }
 
     default_formatter_.reset(new sinsp_evt_formatter(inspector_.get(),
                                                      DEFAULT_OUTPUT_STR));
