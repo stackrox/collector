@@ -20,11 +20,6 @@ $ brew install ansible
 $ pip3 install -r requirements.txt
 ```
 
-To manage IBM Z VMs through IBM Cloud, you will also need to download and install the following ansible collection:
-```
-$ ansible-galaxy collection install ibm.cloudcollection
-```
-
 ## Image builds
 ### Builder image
 
@@ -74,6 +69,7 @@ of these images to quay.io.
 | stackrox_io_password | Password used for pushing images to quay.io/stackrox-io |
 | rhacs_eng_username | Username used for pushing images to quay.io/rhacs-eng |
 | rhacs_eng_password | Password used for pushing images to quay.io/rhacs-eng |
+<<<<<<< HEAD
 
 ### Full collector images
 The `ci-build-collector-full.yml` playbook is meant to be used by CI, it builds
@@ -94,6 +90,10 @@ in the final image need to be downloaded before calling the playbook.
 | stackrox_io_password | Password used for pushing images to quay.io/stackrox-io |
 | rhacs_eng_username | Username used for pushing images to quay.io/rhacs-eng |
 | rhacs_eng_password | Password used for pushing images to quay.io/rhacs-eng |
+||||||| parent of 73d433ec (Skip builder image build when it is unmodified (#1284))
+| push_builder | If 'true', the builder will be pushed to the registries alongside the collector images |
+=======
+>>>>>>> 73d433ec (Skip builder image build when it is unmodified (#1284))
 
 ### Full collector images
 The `ci-build-collector-full.yml` playbook is meant to be used by CI, it builds
