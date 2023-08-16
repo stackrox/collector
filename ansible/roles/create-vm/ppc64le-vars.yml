@@ -1,8 +1,6 @@
 ---
 
 #rhel-8.8-05102023
-region: pi_region
-zone : pi_zone
 pi_name: "{{ vm_name }}"
 sys_type: s922
 pi_image: "rhel92-subscribed"
@@ -11,4 +9,4 @@ processors: "0.25"
 memory: "2"
 storage_type: tier1
 pi_cloud_instance_id: "51a46537-a3a3-4e79-88ee-507feb47e7d0"
-ssh_public_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDHUJhMQWIStMlSZGjUZfxpbQEC1cXa6BA6BtAwlvlyPXvXU/QTh3JYwcNTgYodoNwzSY1nu9HjMib0fCn9YJmujoCvRYy9H1ha6KZDiKxlQ+i6WUb2WhQIopYAuzxlHvwWS6Gpz/k9SFJvhEeLnw2vgrnEAxC/vcRs3/eqQclPSkUDnYgNhLn5TrBp041nZ2YCPaLXR/DIa5vnblGKpcB2qIEwWvzUYfqyGDZKBNGMnPlDeVWR3vFEWNk0n9ruZYyNZbpc0UlZ0Ou93MS8LCTy78h75OCkdIEh2G3rmT5MRtjTz5NjPDQR+hK5qXirESPOPws83CuC4UQMMMEzkm1Y6t5BN+NC6Xff+NYAyWJi0GktlZzahi+WgqSarXznuFQ8ib9B9tn2XIur3eJP1Xd5ZlQPPEmlQF8/5tKZT+KJrNJew9IGj9MnaeQK2YRz54CgztTtC+fDXNkoFTkLATvrcxKNqyPShXhODikmLRWU/fIKUo1NVXfY+y8akDYET+rnodJC/t7VSLJDvewKProsZuwFyPRVGnzZBrTc9+arkMlLPOUCyFH673XmdSarjRGvDymTzkDzEKp/3rGlOyb3CbVnhSORMfpMWHjZrAEd4Rh3eEi1aQcQxnspYZhKEUJILtX9fDXcXBEuWi/LOfHqLKIumZbRa3jjfXKaDnMiHw== ashwini_kadam@persistent.com"
+ssh_public_key: "{{ lookup('env', 'IBM_CLOUD_POWER_SSH_PUBLIC_KEY') }}"
