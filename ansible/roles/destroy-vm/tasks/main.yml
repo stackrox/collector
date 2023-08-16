@@ -1,6 +1,6 @@
 ---
 
-- name: Destroy VM
+- name: Destroy x86 VM
   delegate_to: localhost
   google.cloud.gcp_compute_instance:
     name: "{{ inventory_hostname }}"
@@ -10,3 +10,8 @@
     # zone is set by the GCP inventory automatically
     zone: "{{ zone }}"
     state: absent
+  when: arch_info == "x86"
+
+- name: Delete IBM Z VM
+  include_tasks: destroy-s390x-vm.yml
+  when: arch_info == "s390x"

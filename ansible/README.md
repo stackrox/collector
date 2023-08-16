@@ -20,6 +20,11 @@ $ brew install ansible
 $ pip3 install -r requirements.txt
 ```
 
+To manage IBM Z VMs through IBM Cloud, you will also need to download and install the following ansible collection:
+```
+$ ansible-galaxy collection install ibm.cloudcollection
+```
+
 ## Image builds
 ### Builder image
 
@@ -105,6 +110,7 @@ summarized below:
 | Type          | Families       |
 | ------------- | -------------- |
 | rhel          | rhel-7 <br> rhel-8 |
+| rhel-s390x    | rhel-8-6-s390x |
 | rhel-sap      | rhel-8-4-sap-ha <br> rhel-8-6-sap-ha |
 | cos           | cos-stable <br> cos-beta <br> cos-dev |
 | sles          | sles-12 <br> sles-15 |
@@ -150,9 +156,12 @@ The following environment variables may be used to modify some behavior:
 | Variable | Description | Default |
 | -------- | ----------- | ------- |
 | GCP_SSH_KEY_FILE | The location of the private key file to use with GCP | ~/.ssh/google_compute_engine |
+| IBMCLOUD_SSH_KEY_FILE | The location of the private key file to use with IBM Cloud | ~/.ssh/acs-sshkey_rsa.prv |
 | JOB_ID | A unique identifier to de-conflict VM names | the current user's username |
 | COLLECTOR_TEST | Which integration test make target to run. (e.g. integration-test-process-network) | ci-integration-tests |
 | VM_TYPE | Which kind of VMs to create on GCP (as listed above.) By default, will only build rhel VMs. Use 'all' to build an inventory containing every kind of VM. | rhel |
+| IC_API_KEY | API key for IBM Cloud. See [doc](https://cloud.ibm.com/docs/account?topic=account-userapikey&interface=ui) |
+| IC_REGION | The IBM Cloud region where you want to create your resources. See [doc](https://cloud.ibm.com/docs/workload-protection?topic=workload-protection-regions)|
 
 Note: other environment variables that may affect the operation of the integration tests
 can be used to modify behavior. See [the integration tests README](../integration-tests/README.md) for details.
@@ -164,7 +173,7 @@ root of this directory structure. It should contain key/value pairs of variable
 names and credentials to be used in the playbooks. Currently, the only required
 credentials are quay_username and quay_password, which are created by make
 from the environment variables `QUAY_RHACS_ENG_RO_USERNAME` and `QUAY_RHACS_ENG_RO_PASSWORD`
-to match CI variables.
+to match CI variables. If you are using IBM Cloud to create IBM Z RHEL instances, you will also need to specifiy enviroment variables `REDHAT_USERNAME` and `REDHAT_PASSWORD` to register your RHEL system.
 
 To create your own, for dev the format should be:
 
@@ -188,10 +197,12 @@ need to provide a password. Add `--ask-vault-pass` to any commands.
 
 #### create-vm
 
-This role allows a playbook to create a VM on GCP. It is expected to run on
-a host that has the GCP SDK available (which is normally localhost)
+This role allows a playbook to create a VM on GCP or IBM Cloud (for IBM Z VMs). It is expected to run on
+a host that has the GCP SDK or IBM Cloud ansible collection available (which is normally localhost).
 
 See [create-all-vms](./roles/create-all-vms/tasks/main.yml) for an example of how it's used.
+
+Note that, for IBM Z VMs, the VM creation process utilizes some pre-created resources on IBM Cloud, such as [VPC](https://cloud.ibm.com/docs/vpc), [Resource Group](https://cloud.ibm.com/docs/account?topic=account-rgs&interface=ui), ssh-key pair, subnet, images. Once a VM is created, a [Floating IP](https://cloud.ibm.com/docs/vpc?topic=vpc-fip-about) will be created and assigned to the VM for public access.
 
 #### create-all-vms
 
@@ -211,9 +222,11 @@ See [vm-lifecycle.yml](./vm-lifecycle.yml) for an example of how it's used.
 
 #### destroy-vm
 
-This role will delete a VM from GCP, based on its instance name.
+This role will delete a VM from GCP or IBM Cloud, based on its instance name.
 
 See [vm-lifecycle.yml](./vm-lifecycle.yml) for an example of how it's used.
+
+Note that, for IBM Z VMs, the destroy process will only delete the VM and release its floating IP. Other shared resources mentioned in the creation process above will not be removed.
 
 #### run-test-target
 

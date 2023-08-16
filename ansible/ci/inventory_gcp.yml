@@ -7,8 +7,8 @@ filters:
   - name = collector-ci-*
 keyed_groups:
   # This will group the VMs by their labels, which means that on
-  # creation, we can use a unique identifier to group VMs 
-  # based on Job ID, to avoid running on all CI VMs or on 
+  # creation, we can use a unique identifier to group VMs
+  # based on Job ID, to avoid running on all CI VMs or on
   # specific platforms (for the provisioning playbooks)
   - prefix: job_id
     key: labels.job_id
@@ -31,3 +31,4 @@ compose:
   vm_config: labels.vm_config
   vm_image_family: labels.vm_image_family
   vm_collection_method: labels.vm_collection_method
+  vm_ip_address: networkInterfaces[0].accessConfigs[0].natIP

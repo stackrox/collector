@@ -68,6 +68,9 @@ jobs:
       - name: Install python dependencies
         run: python -m pip install -r ansible/requirements.txt
 
+      - name: Install ansible dependencies
+        run: ansible-galaxy collection install -r ansible/ansible-collections.yml
+
       - name: Authenticate with GCP
         uses: 'google-github-actions/auth@v1'
         with:
@@ -96,9 +99,11 @@ jobs:
 
           copy_secret_to_file "$GCP_SSH_KEY" "$HOME/.ssh/GCP_SSH_KEY" 0600
           copy_secret_to_file "$GCP_SSH_KEY_PUB" "$HOME/.ssh/GCP_SSH_KEY.pub" 0600
+          copy_secret_to_file "$IBM_S390X_SSH_KEY" "$HOME/.ssh/acs-sshkey_rsa.prv" 0600
         env:
           GCP_SSH_KEY: ${{ secrets.GCP_SSH_KEY }}
           GCP_SSH_KEY_PUB: ${{ secrets.GCP_SSH_KEY_PUB }}
+          IBM_S390X_SSH_KEY: ${{ secrets.IBM_CLOUD_S390X_SSH_PRIVATE_KEY }}
 
       - name: Set environment
         run: |
@@ -107,6 +112,20 @@ jobs:
 
           if [[ '${{ contains(github.event.pull_request.labels.*.name, 'integration-tests-trace-logging') }}' == 'true' ]]; then
             echo "COLLECTOR_LOG_LEVEL=trace" | tee -a "$GITHUB_ENV"
+          fi
+
+          if [[ '${{ inputs.vm_type }}' =~ s390x ]]; then
+            {
+              echo "IC_API_KEY=${{ secrets.IBM_CLOUD_S390X_API_KEY }}"
+              echo "IC_REGION=ca-tor"
+            } >> "${GITHUB_ENV}"
+          fi
+
+          if [[ '${{ inputs.vm_type }}' =~ rhel ]]; then
+            {
+              echo "REDHAT_USERNAME=${{ secrets.REDHAT_USERNAME }}"
+              echo "REDHAT_PASSWORD=${{ secrets.REDHAT_PASSWORD }}"
+            } >> "${GITHUB_ENV}"
           fi
 
       - name: Create VMs

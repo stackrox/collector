@@ -1,5 +1,6 @@
 ---
 
+# GCP setup
 gcp_project: "stackrox-dev"
 gcp_auth_kind: "application"
 gcp_service_account_file: null
@@ -14,3 +15,4 @@ ansible_user: "{{ lookup('env', 'USER') }}"
 gcp_default_labels:
   stackrox-ci: "false"
 
+ibm_output_inventory_file: "{{ lookup('env', 'PWD') }}/dev/inventory_ibmcloud_z.yml"
