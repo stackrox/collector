@@ -412,3 +412,20 @@ func TestConnectionsAndEndpointsUDPNoFork(t *testing.T) {
 	}
 	suite.Run(t, mixedHighLowPorts)
 }
+
+// TODO ROX-18736: reenable after aync-connections are fixed
+/*
+func TestAsyncConnectionBlocked(t *testing.T) {
+	blockedAsyncConnection := &suites.AsyncConnectionTestSuite{
+		BlockConnection: true,
+	}
+	suite.Run(t, blockedAsyncConnection)
+}
+*/
+
+func TestAsyncConnectionSuccess(t *testing.T) {
+	asyncConnection := &suites.AsyncConnectionTestSuite{
+		BlockConnection: false,
+	}
+	suite.Run(t, asyncConnection)
+}
