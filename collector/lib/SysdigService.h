@@ -58,6 +58,7 @@ class SysdigService : public Sysdig {
 
   sinsp_evt* GetNext();
 
+  bool UpdateContainerID(sinsp_threadinfo* event);
   bool UpdateContainerID(sinsp_evt* event);
   bool SendExistingProcesses(SignalHandler* handler);
 

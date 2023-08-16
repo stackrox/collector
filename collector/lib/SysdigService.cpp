@@ -94,10 +94,13 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
   return true;
 }
 
-bool SysdigService::UpdateContainerID(sinsp_evt* event) {
-  sinsp_threadinfo* tinfo = event->get_thread_info();
+bool SysdigService::UpdateContainerID(sinsp_threadinfo* tinfo) {
   if (!tinfo) {
     return false;
+  }
+
+  if (!tinfo->m_container_id.empty()) {
+    return true;
   }
 
   for (auto cgroup : tinfo->cgroups()) {
@@ -109,6 +112,10 @@ bool SysdigService::UpdateContainerID(sinsp_evt* event) {
     }
   }
   return false;
+}
+bool SysdigService::UpdateContainerID(sinsp_evt* event) {
+  sinsp_threadinfo* tinfo = event->get_thread_info();
+  return UpdateContainerID(tinfo);
 }
 
 sinsp_evt* SysdigService::GetNext() {
@@ -250,6 +257,10 @@ bool SysdigService::SendExistingProcesses(SignalHandler* handler) {
   }
 
   return threads->loop([&](sinsp_threadinfo& tinfo) {
+    if (tinfo.m_container_id.empty()) {
+      UpdateContainerID(&tinfo);
+    }
+
     if (!tinfo.m_container_id.empty() && tinfo.is_main_thread()) {
       auto result = handler->HandleExistingProcess(&tinfo);
       if (result == SignalHandler::ERROR || result == SignalHandler::NEEDS_REFRESH) {
