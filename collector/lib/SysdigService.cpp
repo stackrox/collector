@@ -84,7 +84,12 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
 
     inspector_->set_import_users(config.ImportUsers());
 
-    inspector_->get_parser()->set_track_connection_status(true);
+    // Connection status tracking is used in NetworkSignalHandler,
+    // but only when trying to handle asynchronous connections
+    // as a special case.
+    if (!config.ReportConnectionAttempts()) {
+      inspector_->get_parser()->set_track_connection_status(true);
+    }
 
     default_formatter_.reset(new sinsp_evt_formatter(inspector_.get(),
                                                      DEFAULT_OUTPUT_STR));
