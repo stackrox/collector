@@ -45,7 +45,7 @@ jobs:
           dirs=$(dirname ${{ needs.test-containers.outputs.changed_files }} | sort | uniq )
 
           {
-            echo "CONTAINER_DIRS=<<EOS"
+            echo "CONTAINER_DIRS<<EOS"
             echo "$dirs"
             echo "EOS"
           } >> "$GITHUB_ENV"
