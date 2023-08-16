@@ -20,21 +20,50 @@ EventMap<Modifier> modifiers = {
         {"shutdown<", Modifier::REMOVE},
         {"connect<", Modifier::ADD},
         {"accept<", Modifier::ADD},
+        {"getsockopt<", Modifier::ADD},
     },
     Modifier::INVALID,
 };
 
 }  // namespace
-
+/*
+ * Socket connection life-cycle scenarii:
+ * - synchronous:
+ *   - events:  connect()/accept() >= 0 --> close()/shutdown() = 0
+ *     fd_info: connected                   connected
+ *     result:  ADD                         REMOVE
+ *   - events:  connect()/accept() < 0
+ *     fd_info: failed
+ *     result:  nil
+ *   - events:  accept() >= 0
+ * - asynchronous:
+ *   - events:  connect() < 0 (E_INPROGRESS) --> getsockopt() ok --> shared with synchronous
+ *     fd_info: pending                          connected
+ *     result:  nil                              ADD
+ *   - events:  connect() < 0 (other)
+ *     fd_info: failed
+ *     result:  nil
+ */
 std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
+  auto* fd_info = evt->get_fd_info();
+
+  if (!fd_info) return std::nullopt;
+
+  if (fd_info->is_socket_failed()) {
+    // connect() failed or getsockopt(SO_ERROR) returned a failure
+    return std::nullopt;
+  }
+
+  if (fd_info->is_socket_pending()) {
+    // connect() returned E_INPROGRESS
+    return std::nullopt;
+  }
+
   const int64_t* res = event_extractor_.get_event_rawres(evt);
   if (!res || *res < 0) {
     // ignore unsuccessful events for now.
     return std::nullopt;
   }
-
-  auto* fd_info = evt->get_fd_info();
-  if (!fd_info) return std::nullopt;
 
   bool is_server = fd_info->is_role_server();
   if (!is_server && !fd_info->is_role_client()) {
@@ -93,7 +122,7 @@ SignalHandler::Result NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
 }
 
 std::vector<std::string> NetworkSignalHandler::GetRelevantEvents() {
-  return {"close<", "shutdown<", "connect<", "accept<"};
+  return {"close<", "shutdown<", "connect<", "accept<", "getsockopt<"};
 }
 
 bool NetworkSignalHandler::Stop() {
