@@ -150,19 +150,19 @@ func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
 			Name:          "awk",
 			ExePath:       "/usr/bin/awk",
 			ParentUid:     0,
-			ParentExePath: "/bin/busybox",
+			ParentExePath: "/usr/bin/bash",
 		},
 		common.ProcessLineage{
 			Name:          "grep",
-			ExePath:       "/bin/grep",
+			ExePath:       "/usr/bin/grep",
 			ParentUid:     0,
-			ParentExePath: "/bin/busybox",
+			ParentExePath: "/usr/bin/bash",
 		},
 		common.ProcessLineage{
 			Name:          "sleep",
-			ExePath:       "/bin/sleep",
+			ExePath:       "/usr/bin/sleep",
 			ParentUid:     0,
-			ParentExePath: "/bin/busybox",
+			ParentExePath: "/usr/bin/bash",
 		},
 	}
 
