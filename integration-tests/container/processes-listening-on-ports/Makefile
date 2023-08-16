@@ -10,7 +10,10 @@ COLLECTOR_QA_PROCESSES_LISTENING_ON_PORTS_TAG=collector-processes-listening-on-p
 endif
 
 .PHONY: all
-all:
+all: build
+
+.PHONY: build
+build:
 	@docker buildx build --load --platform ${PLATFORM} \
                 -t quay.io/rhacs-eng/qa-multi-arch:$(COLLECTOR_QA_PROCESSES_LISTENING_ON_PORTS_TAG) .
 

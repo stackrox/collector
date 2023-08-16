@@ -16,7 +16,10 @@ COLLECTOR_QA_BPFTRACE_TAG=bpftrace-$(COLLECTOR_QA_TAG)$(IMAGE_SUFFIX)
 endif
 
 .PHONY: all
-all:
+all: build
+
+.PHONY: build
+build:
 	@docker buildx build --load --platform ${PLATFORM} \
                 -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_INIT_TAG) --target init -f Dockerfile .
 	@docker buildx build --load --platform ${PLATFORM} \

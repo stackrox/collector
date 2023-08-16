@@ -10,7 +10,10 @@ COLLECTOR_QA_BENCHMARK_TAG=phoronix-$(COLLECTOR_QA_TAG)$(IMAGE_SUFFIX)
 endif
 
 .PHONY: all
-all:
+all: build
+
+.PHONY: build
+build:
 	@docker buildx build --load --platform ${PLATFORM} \
                 -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BENCHMARK_TAG)$(IMAGE_SUFFIX) .
 

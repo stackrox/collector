@@ -10,7 +10,10 @@ COLLECTOR_QA_SCHEDULE_CURLS_TAG=collector-schedule-curls-$(COLLECTOR_QA_TAG)$(IM
 endif
 
 .PHONY: all
-all:
+all: build
+
+.PHONY: build
+build:
 	@docker buildx build --load --platform ${PLATFORM} \
                 -t quay.io/rhacs-eng/qa-multi-arch:$(COLLECTOR_QA_SCHEDULE_CURLS_TAG) .
 
