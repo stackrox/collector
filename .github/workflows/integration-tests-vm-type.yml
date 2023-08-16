@@ -107,7 +107,6 @@ jobs:
           GCP_SSH_KEY: ${{ secrets.GCP_SSH_KEY }}
           GCP_SSH_KEY_PUB: ${{ secrets.GCP_SSH_KEY_PUB }}
           IBM_PPC64LE_SSH_KEY: ${{ secrets.IBM_CLOUD_POWER_SSH_PRIVATE_KEY }}
-          IBM_CLOUD_POWER_SSH_PUBLIC_KEY: ${{ secrets.IBM_CLOUD_POWER_SSH_PUBLIC_KEY }}
 
       - name: Set environment
         run: |
@@ -141,6 +140,8 @@ jobs:
         if: ${{ ! inputs.run-benchmarks }}
         run: |
           make -C "${{ github.workspace }}/ansible" create-ci-vms
+        env:
+          IBM_CLOUD_POWER_SSH_PUBLIC_KEY: ${{ secrets.IBM_CLOUD_POWER_SSH_PUBLIC_KEY }}
 
       - name: Run Tests
         if: ${{ ! inputs.run-benchmarks }}
