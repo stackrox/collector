@@ -53,8 +53,8 @@ jobs:
       - name: Build containers
         run: |
           for dir in $CONTAINER_DIRS; do
-            if [[ -f "integration-tests/container/$dir/Makefile" ]]; then
-              make -C "integration-tests/container/$dir" build
+            if [[ -f "$dir/Makefile" ]]; then
+              make -C "$dir" build
             fi
           done
         env:
@@ -65,8 +65,8 @@ jobs:
         if: github.event_name == 'push'
         run: |
           for dir in $CONTAINER_DIRS; do
-            if [[ -f "integration-tests/container/$dir/Makefile" ]]; then
-              make -C "integration-tests/container/$dir" push
+            if [[ -f "$dir/Makefile" ]]; then
+              make -C "$dir" push
             fi
           done
         env:
@@ -86,13 +86,17 @@ jobs:
         run: |
           dirs=$(dirname ${{ needs.test-containers.outputs.changed_files }} | sort | uniq )
 
-          echo "CONTAINER_DIRS='$dirs'" >> "$GITHUB_ENV"
+          {
+            echo "CONTAINER_DIRS<<EOS"
+            echo "$dirs"
+            echo "EOS"
+          } >> "$GITHUB_ENV"
 
       - name: Make manifests
         run: |
           for dir in $CONTAINER_DIRS; do
-            if [[ -f "integration-tests/container/$dir/Makefile" ]]; then
-              make -C "integration-tests/container/$dir" build
+            if [[ -f "$dir/Makefile" ]]; then
+              make -C "$dir" manifest
             fi
           done
 
