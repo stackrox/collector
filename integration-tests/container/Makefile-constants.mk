@@ -1,0 +1,2 @@
+PLATFORM ?= linux/amd64
+IMAGE_SUFFIX ?=
