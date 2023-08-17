@@ -44,6 +44,17 @@ class CollectionHeuristic : public Heuristic {
         CLOG(FATAL) << "Missing BPF tracepoint support.";
       }
     }
+
+    // If configured to use regular eBPF, still verify if CORE_BPF is supported.
+    if (config.GetCollectionMethod() == CollectionMethod::EBPF) {
+      if (host.HasBTFSymbols() &&
+          host.HasBPFRingBufferSupport() &&
+          host.HasBPFTracingSupport()) {
+        CLOG(INFO) << "CORE_BPF collection method is available. "
+                   << "Check the documentation to compare features of "
+                   << "available collection methods.";
+      }
+    }
   }
 };
 
