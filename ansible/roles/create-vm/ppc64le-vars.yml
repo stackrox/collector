@@ -1,0 +1,12 @@
+---
+
+#rhel-8.8-05102023
+pi_name: "{{ vm_name }}"
+sys_type: s922
+pi_image: "rhel92-subscribed"
+proc_type: shared
+processors: "0.25"
+memory: "2"
+storage_type: tier1
+pi_cloud_instance_id: "51a46537-a3a3-4e79-88ee-507feb47e7d0"
+ssh_public_key: "{{ lookup('env', 'IBM_CLOUD_POWER_SSH_PUBLIC_KEY') }}"

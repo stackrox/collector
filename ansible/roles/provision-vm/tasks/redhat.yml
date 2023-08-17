@@ -24,6 +24,19 @@
       delay: 30
       until: registration is not failed
 
+- name: Register server with Red Hat for IBM POWER vms
+  tags: attach_subscription
+  community.general.redhat_subscription:
+    state: present
+    username: "{{ redhat_username }}"
+    password: "{{ redhat_password }}"
+    auto_attach: true
+  register: registration
+  retries: 2
+  delay: 30
+  until: registration is not failed
+  when: arch_info == "ppc64le"
+
 - name: Add repository
   shell: |
     yum install -y yum-utils device-mapper-persistent-data lvm2
