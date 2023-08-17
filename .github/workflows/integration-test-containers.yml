@@ -40,7 +40,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Get changed containers
+      - name: Set environment
         run: |
           dirs=$(dirname ${{ needs.test-containers.outputs.changed_files }} | sort | uniq )
 
@@ -49,6 +49,10 @@ jobs:
             echo "$dirs"
             echo "EOS"
           } >> "$GITHUB_ENV"
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "COLLECTOR_QA_TAG=$(echo "${GITHUB_SHA}" | cut -c1-8)" >> "$GITHUB_ENV"
+          fi
 
       - name: Login to quay.io/rhacs-eng
         uses: docker/login-action@v2
@@ -66,10 +70,8 @@ jobs:
           done
         env:
           PLATFORM: linux/${{ matrix.arch }}
-          IMAGE_SUFFIX: "-${{ matrix.arch }}"
 
       - name: Push containers
-        if: github.event_name == 'push'
         run: |
           for dir in $CONTAINER_DIRS; do
             if [[ -f "$dir/Makefile" ]]; then
@@ -78,14 +80,13 @@ jobs:
           done
         env:
           PLATFORM: linux/${{ matrix.arch }}
-          IMAGE_SUFFIX: "-${{ matrix.arch }}"
 
   push-manifest:
     runs-on: ubuntu-latest
     needs:
       - rebuild-containers
       - test-containers
-    if: needs.test-containers.outputs.changed == 'true' && github.event_name == 'push'
+    if: needs.test-containers.outputs.changed == 'true'
     steps:
       - uses: actions/checkout@v3
 
@@ -98,6 +99,10 @@ jobs:
             echo "$dirs"
             echo "EOS"
           } >> "$GITHUB_ENV"
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "COLLECTOR_QA_TAG=$(echo "${GITHUB_SHA}" | cut -c1-8)" >> "$GITHUB_ENV"
+          fi
 
       - name: Login to quay.io/rhacs-eng
         uses: docker/login-action@v2

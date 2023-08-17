@@ -128,6 +128,10 @@ jobs:
             } >> "${GITHUB_ENV}"
           fi
 
+          if [[ '${{ github.event_name }}' == 'pull_request' ]]; then
+            echo "COLLECTOR_QA_TAG=$(echo "$GITHUB_SHA" | cut -c1-8)" >> "$GITHUB_ENV"
+          fi
+
       - name: Create VMs
         if: ${{ ! inputs.run-benchmarks }}
         run: |

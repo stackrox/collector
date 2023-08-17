@@ -1,2 +1,2 @@
 PLATFORM ?= linux/amd64
-IMAGE_SUFFIX ?=
+IMAGE_ARCH = $(word 2,$(subst /, ,$(PLATFORM)))
