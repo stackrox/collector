@@ -1,0 +1,2 @@
+---
+ansible_ssh_common_args: -c aes128-ctr

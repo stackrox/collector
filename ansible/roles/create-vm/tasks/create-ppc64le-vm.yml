@@ -1,0 +1,159 @@
+- name: Fetch the variables from var file
+  include_vars:
+    file: ppc64le-vars.yml
+  collections:
+   - ibm.cloudcollection
+
+- name: Check for existing SSH Key
+  ibm.cloudcollection.ibm_pi_key_info:
+    pi_key_name: "{{ pi_name }}-ssh-key"
+    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
+  failed_when:
+    - pi_ssh_key_existing_output.rc != 0
+    - '"does not exist" not in pi_ssh_key_existing_output.stderr'
+  register: pi_ssh_key_existing_output
+
+- set_fact:
+    ssh_key_exists: "{{ pi_ssh_key_existing_output.resource.id is defined }}"
+
+- name: Save existing SSH Key as fact
+  set_fact:
+    cacheable: True
+    pi_ssh_key: "{{ pi_ssh_key_existing_output.resource }}"
+  when: ssh_key_exists
+
+- name: Add new SSH Key
+  ibm.cloudcollection.ibm_pi_key:
+    pi_key_name: "{{ pi_name }}-ssh-key"
+    pi_ssh_key: "{{ ssh_public_key }}"
+    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
+  register: pi_ssh_key_create_output
+  when: not ssh_key_exists
+
+- name: Save new SSH Key as fact
+  set_fact:
+    cacheable: True
+    pi_ssh_key: "{{ pi_ssh_key_create_output.resource }}"
+  when: not ssh_key_exists
+
+- name: Retrieve image list
+  ibm.cloudcollection.ibm_pi_images_info:
+    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
+  register: images_list
+
+- name: Set VM image name/id dictionary fact
+  set_fact:
+    image_dict: "{{ images_list.resource.image_info |
+                        items2dict(key_name='name',
+                        value_name='id') }}"
+
+- name: Check for existing network
+  ibm.cloudcollection.ibm_pi_network_info:
+    pi_network_name: "{{ pi_name }}-network"
+    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
+  failed_when:
+    - pi_network_existing_output.rc != 0
+    - '"unable to get network" not in pi_network_existing_output.stderr'
+    - '"Error:item not found" not in pi_network_existing_output.stderr'
+  register: pi_network_existing_output
+
+- set_fact:
+    network_exists: "{{ pi_network_existing_output.resource.id is defined }}"
+
+- name: Save existing network as fact
+  set_fact:
+    cacheable: True
+    pi_network_id: "{{ pi_network_existing_output.resource.id }}"
+  when: network_exists
+
+- name: Add new network
+  ibm.cloudcollection.ibm_pi_network:
+    pi_network_name: "{{ pi_name }}-network"
+    pi_network_type: "pub-vlan"
+    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
+  register: pi_network_create_output
+  when: not network_exists
+
+- name: Save new network as fact
+  set_fact:
+    cacheable: True
+    pi_network_id: "{{ pi_network_create_output.resource.network_id }}"
+  when: not network_exists
+
+- name: Check for existing Virtual Server Instance
+  ibm.cloudcollection.ibm_pi_instance_info:
+    pi_instance_name: "{{ pi_name }}"
+    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
+  failed_when:
+    - pi_instance_existing_output.rc != 0
+    - '"does not exist" not in pi_instance_existing_output.stderr'
+  register: pi_instance_existing_output
+
+- name: Save existing Power VSI fact
+  set_fact:
+    cacheable: True
+    pi_instance: "{{ pi_instance_existing_output.resource }}"
+  when: pi_instance_existing_output.rc == 0
+
+- name: Create a POWER Virtual Server Instance
+  ibm.cloudcollection.ibm_pi_instance:
+    state: available
+    pi_memory: "{{ memory }}"
+    pi_processors: "{{ processors }}"
+    pi_instance_name: "{{ pi_name }}"
+    pi_proc_type: "{{ proc_type }}"
+    pi_image_id: "{{ image_dict[pi_image] }}"
+    pi_volume_ids: []
+    pi_network:
+      - network_id: "{{ pi_network_id }}"
+    pi_key_pair_name: "{{ pi_ssh_key.pi_key_name }}"
+    pi_sys_type: "{{ sys_type }}"
+    pi_storage_type: "{{ storage_type }}"
+    pi_replication_policy: none
+    pi_replication_scheme: suffix
+    pi_replicants: "1"
+    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
+    id: "{{ pi_instance.resource.id | default(omit) }}"
+  register: pi_instance_create_output
+  when: pi_instance_existing_output.rc != 0
+
+- name: Check for existing Virtual Server Instance
+  ibm.cloudcollection.ibm_pi_instance_info:
+    pi_instance_name: "{{ pi_name }}"
+    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
+  register: pi_instance_new_output
+  when: pi_instance_create_output.resource is defined
+
+- name: Save new Power VSI fact
+  set_fact:
+    cacheable: True
+    pi_instance: "{{ pi_instance_new_output.resource }}"
+  when: pi_instance_new_output.resource is defined
+
+- name: Print Public IP Address
+  debug:
+    var: pi_instance.addresses[0].external_ip
+
+- name: Add VSI to Ansible inventory
+  add_host:
+    name: "{{ pi_instance.addresses[0].external_ip }}"
+    #ansible_host: "{{ pi_instance.addresses[0].external_ip }}"
+    ansible_user: root
+    groups:
+      - job_id_{{ job_id }}
+      - platform_{{ test_platform }}
+    ansible_ssh_extra_args: -o StrictHostKeyChecking=no
+    ansible_ssh_private_key_file: "~/.ssh/acs-sshkey_rsa.prv"
+    vm_config: "{{ vm_config }}"
+    vm_image_family: "{{ vm_family }}"
+    vm_collection_method: "{{ vm_collection_method }}"
+    ibm_cloud_vm: true
+
+- name: generate provisioner inventory file
+  template:
+    src: 'ibm-cloud-inventory.j2'
+    dest: "{{ ibm_output_inventory_file }}"
+    mode: '0644'
+  when: 
+    - ibm_output_inventory_file != ""
+  delegate_to: localhost

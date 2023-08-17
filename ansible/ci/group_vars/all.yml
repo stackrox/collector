@@ -14,4 +14,4 @@ ansible_user: deadbeef
 gcp_default_labels:
   stackrox-ci: "true"
 
-ibm_output_inventory_file: "{{ lookup('env', 'PWD') }}/ci/inventory_ibmcloud_z.yml"
+ibm_output_inventory_file: "{{ lookup('env', 'PWD') }}/ci/inventory_ibmcloud.yml"

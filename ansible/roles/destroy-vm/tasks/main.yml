@@ -1,6 +1,6 @@
 ---
 
-- name: Destroy x86 VM
+- name: Destroy X86 VM
   delegate_to: localhost
   google.cloud.gcp_compute_instance:
     name: "{{ inventory_hostname }}"
@@ -15,3 +15,10 @@
 - name: Delete IBM Z VM
   include_tasks: destroy-s390x-vm.yml
   when: arch_info == "s390x"
+
+- name: Delete IBM Power VSI
+  include_tasks:
+    apply:
+      delegate_to: localhost
+    file: destroy-ppc64le-vm.yml
+  when: arch_info == "ppc64le"
