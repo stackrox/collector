@@ -30,3 +30,5 @@ out/
 # IBM Cloud dynamic inventory files
 ansible/dev/inventory_ibmcloud_z.yml
 ansible/ci/inventory_ibmcloud_z.yml
+ansible/dev/inventory_ibmcloud_ppc64le.yml
+ansible/ci/inventory_ibmcloud_ppc64le.yml

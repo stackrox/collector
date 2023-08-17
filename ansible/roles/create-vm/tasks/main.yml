@@ -37,6 +37,12 @@
   vars:
     vsi_name: "{{ vm_name }}"
   when: arch_info == "s390x"
+  
+- name: Create IBM POWER VM
+  include_tasks: create-ppc64le-vm.yml
+  vars:
+    pi_name: "{{ vm_name }}"
+  when: arch_info == "ppc64le"
 
 - name: Create X86 VM
   google.cloud.gcp_compute_instance:

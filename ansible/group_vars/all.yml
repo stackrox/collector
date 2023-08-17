@@ -1,10 +1,9 @@
 ---
 
-arch_info: "{{ 's390x' if 's390x' in test_platform else 'x86'}}"
+arch_info: "{{ 's390x' if 's390x' in test_platform else 'ppc64le' if 'ppc64le' in test_platform else 'x86'}}"
 
 gcp_ssh_key_file: "{{ lookup('env', 'GCP_SSH_KEY_FILE', default='~/.ssh/google_compute_engine') }}"
 ibmcloud_ssh_key_file: "{{ lookup('env', 'IBMCLOUD_SSH_KEY_FILE', default='~/.ssh/acs-sshkey_rsa.prv') }}"
-
 ansible_ssh_private_key_file: "{{ ibmcloud_ssh_key_file if arch_info != 'x86' else gcp_ssh_key_file }}"
 
 current_user: "{{ lookup('env', 'USER') }}"
@@ -36,6 +35,11 @@ virtual_machines:
     project: rhel-s390x-cloud
     families:
       - rhel-8-6-s390x
+  
+  rhel-ppc64le:
+    project: rhel-ppc64le-cloud
+    families:
+      - p
 
   rhel-sap:
     project: rhel-sap-cloud

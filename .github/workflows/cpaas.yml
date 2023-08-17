@@ -98,6 +98,7 @@ jobs:
             # Re-enable once s390x images exist for integration test
             # components
             #- rhel-s390x
+          - rhel-ppc64le
     with:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
