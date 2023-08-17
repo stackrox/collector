@@ -1,0 +1,84 @@
+---
+- name: Get host name
+  shell: hostname
+  register: hostname
+ 
+#Set fact that are required to destroy vsi instance 
+- set_fact:
+    region: "{{ lookup('env', 'IC_REGION') }}"
+    zone: "{{ lookup('env', 'IC_ZONE') }}"
+    pi_cloud_instance_id: "51a46537-a3a3-4e79-88ee-507feb47e7d0"
+    hostname: "{{ hostname.stdout|regex_replace('(.*)(\\.power.*)$', '\\1', ignorecase=True) }}"
+
+- name: Get instance id by name
+  environment:
+    IC_API_KEY: "{{ lookup('env', 'IC_API_KEY') }}"
+  ibm.cloudcollection.ibm_pi_instance_info:
+    region: "{{ region }}"
+    zone: "{{ zone }}"
+    pi_instance_name: "{{ hostname }}"
+    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
+  failed_when:
+    - pi_instance_existing_output.rc != 0
+    - '"does not exist" not in pi_instance_existing_output.stderr'
+  retries: 3
+  delay: 5
+  register: pi_instance_existing_output
+
+- name: Save existing Power VSI fact
+  set_fact:
+    cacheable: True
+    pi_instance: "{{ pi_instance_existing_output.resource }}"
+  when: pi_instance_existing_output.rc == 0
+
+- name: Save network details
+  set_fact:
+    public_subnet: "{{ pi_instance.addresses|rejectattr('external_ip', 'equalto', '') | list | first }}"
+  when: pi_instance_existing_output.rc == 0
+
+- name: Delete instance by id
+  ibm.cloudcollection.ibm_pi_instance:
+    region: "{{ region }}"
+    zone: "{{ zone }}"
+    state: absent
+    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
+    id: "{{ pi_instance.id }}"
+  retries: 3
+  delay: 5
+  register: delete_operation
+  until: delete_operation is success
+  ignore_errors: true
+  when: pi_instance_existing_output.rc == 0
+
+- name: Check for existing network
+  ibm.cloudcollection.ibm_pi_network_info:
+    region: "{{ region }}"
+    zone: "{{ zone }}"
+    pi_network_name: "{{ hostname }}-network"
+    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
+  failed_when:
+    - pi_network_existing_output.rc != 0
+    - '"unable to get network" not in pi_network_existing_output.stderr'
+  register: pi_network_existing_output
+
+- name: Save existing network as fact
+  set_fact:
+    cacheable: True
+    pi_network_id: "{{ pi_network_existing_output.resource.id }}"
+  when: pi_network_existing_output.resource.id is defined
+
+- name: Delete network
+  ibm.cloudcollection.ibm_pi_network:
+    region: "{{ region }}"
+    zone: "{{ zone }}"
+    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
+    state: absent
+    id: "{{ pi_network_id }}"
+  register: pi_network_create_output
+  when:
+    - pi_network_existing_output.resource.id is defined
+
+- name: Remove IBM inventory file (delete file)
+  file:
+    path: '{{ ibm_output_inventory_file }}'
+    state: absent
