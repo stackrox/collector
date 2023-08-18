@@ -24,7 +24,7 @@ push:
 
 .PHONY: manifest
 manifest:
-	@docker manifest create quay.io/rhacs-eng/collector:performance:$(COLLECTOR_QA_BENCHMARK_TAG) \
+	@docker manifest create quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BENCHMARK_TAG) \
 		quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BENCHMARK_TAG)-amd64 \
 		quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BENCHMARK_TAG)-s390x \
 		quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BENCHMARK_TAG)-ppc64le
