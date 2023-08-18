@@ -152,8 +152,8 @@
 - name: generate provisioner inventory file
   template:
     src: 'ibm-cloud-inventory.j2'
-    dest: "{{ ibm_output_inventory_file }}"
+    dest: "{{ ibm_output_inventory_file_ppc }}"
     mode: '0644'
   when: 
-    - ibm_output_inventory_file != ""
+    - ibm_output_inventory_file_ppc != ""
   delegate_to: localhost
