@@ -148,6 +148,7 @@
     vm_config: "{{ vm_config }}"
     vm_image_family: "{{ vm_family }}"
     vm_collection_method: "{{ vm_collection_method }}"
+    ibm_cloud_vm: true
 
 - name: generate provisioner inventory file
   template:
