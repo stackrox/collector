@@ -15,4 +15,4 @@ gcp_default_labels:
   stackrox-ci: "true"
 
 ibm_output_inventory_file: "{{ lookup('env', 'PWD') }}/ci/inventory_ibmcloud_z.yml"
-ibm_output_inventory_file_ppc: "{{ lookup('env', 'PWD') }}/ci/inventory_ibmcloud_ppc64le.yml"
+#ibm_output_inventory_file: "{{ lookup('env', 'PWD') }}/ci/inventory_ibmcloud_ppc64le.yml"
