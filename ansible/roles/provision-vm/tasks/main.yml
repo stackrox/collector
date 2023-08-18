@@ -36,7 +36,7 @@
 # At this point, ansible should be able to run on the remote host
 
 - wait_for_connection:
-    timeout: 180
+    timeout: 360
 
 - name: Gather facts
   setup:
