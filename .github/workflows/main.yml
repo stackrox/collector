@@ -108,11 +108,13 @@ jobs:
     uses: ./.github/workflows/benchmarks.yml
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
+      collector-qa-tag: ${{ needs.build-test-containers.outputs.qa-tag }}
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     needs:
     - init
     - build-collector-slim
     - build-collector-full
+    - build-test-containers
     secrets: inherit
 
   build-support-packages:

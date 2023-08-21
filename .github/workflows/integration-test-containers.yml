@@ -37,7 +37,11 @@ jobs:
       - name: Set variables
         id: variables
         run: |
-          dirs=$(dirname ${{ needs.test-containers.outputs.changed_files }} | sort | uniq )
+          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'build-qa-images') }}" == 'true' ]]; then
+            dirs=$(find integration-tests/container/ -type d)
+          else
+            dirs=$(dirname ${{ needs.test-containers.outputs.changed_files }} | sort | uniq )
+          fi
 
           {
             echo "build-dirs<<EOS"
@@ -56,7 +60,7 @@ jobs:
       - test-containers
       - common-variables
 
-    if: ${{ needs.test-containers.outputs.changed == 'true' }}
+    if: needs.test-containers.outputs.changed == 'true' || contains(github.event.pull_request.labels.*.name, 'build-qa-images')
     runs-on: ubuntu-latest
     env:
       CONTAINER_DIRS: ${{ needs.common-variables.outputs.build-dirs }}
@@ -98,7 +102,7 @@ jobs:
       - rebuild-containers
       - test-containers
       - common-variables
-    if: needs.test-containers.outputs.changed == 'true'
+    if: needs.test-containers.outputs.changed == 'true' || contains(github.event.pull_request.labels.*.name, 'build-qa-images')
     env:
       CONTAINER_DIRS: ${{ needs.common-variables.outputs.build-dirs }}
       COLLECTOR_QA_TAG: ${{ needs.common-variables.outputs.qa-tag }}
