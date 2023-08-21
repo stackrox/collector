@@ -17,8 +17,8 @@ build:
 	@docker buildx build --load --platform ${PLATFORM} \
                 -t quay.io/rhacs-eng/qa-multi-arch:$(COLLECTOR_QA_SCHEDULE_CURLS_TAG)-$(IMAGE_ARCH) .
 
-.PHONY: push
-push:
+.PHONY: build-and-push
+build-and-push:
 	@docker buildx build --push --platform ${PLATFORM} \
                 -t quay.io/rhacs-eng/qa-multi-arch:$(COLLECTOR_QA_SCHEDULE_CURLS_TAG)-$(IMAGE_ARCH) .
 

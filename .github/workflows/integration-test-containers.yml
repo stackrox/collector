@@ -63,21 +63,11 @@ jobs:
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
-      - name: Build containers
+      - name: Buld and Push containers
         run: |
           for dir in $CONTAINER_DIRS; do
             if [[ -f "$dir/Makefile" ]]; then
-              make -C "$dir" build
-            fi
-          done
-        env:
-          PLATFORM: linux/${{ matrix.arch }}
-
-      - name: Push containers
-        run: |
-          for dir in $CONTAINER_DIRS; do
-            if [[ -f "$dir/Makefile" ]]; then
-              make -C "$dir" push
+              make -C "$dir" build-and-push
             fi
           done
         env:
