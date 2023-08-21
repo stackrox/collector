@@ -19,7 +19,7 @@ build:
 
 .PHONY: build-and-push
 build-and-push: build
-	@docker quay.io/rhacs-eng/qa-multi-arch:$(COLLECTOR_QA_PROCESSES_LISTENING_ON_PORTS_TAG)-$(IMAGE_ARCH)
+	@docker push quay.io/rhacs-eng/qa-multi-arch:$(COLLECTOR_QA_PROCESSES_LISTENING_ON_PORTS_TAG)-$(IMAGE_ARCH)
 
 .PHONY: manifest
 manifest:
