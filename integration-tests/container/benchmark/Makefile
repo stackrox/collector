@@ -18,9 +18,8 @@ build:
                 -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BENCHMARK_TAG)-$(IMAGE_ARCH) .
 
 .PHONY: build-and-push
-build-and-push:
-	@docker buildx build --push --platform ${PLATFORM} \
-                -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BENCHMARK_TAG)-$(IMAGE_ARCH) .
+build-and-push: build
+	@docker push quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BENCHMARK_TAG)-$(IMAGE_ARCH)
 
 .PHONY: manifest
 manifest:
