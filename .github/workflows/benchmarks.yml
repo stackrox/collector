@@ -55,7 +55,7 @@ jobs:
       - name: Plot benchmark graphs
         if: github.event_name == 'pull_request'
         run: |
-          OBJECT_IN_BUCKET="mauro-perf-plot/${GITHUB_HEAD_REF}/${{ github.run_id }}"
+          OBJECT_IN_BUCKET="mauro-perf-plot/${GITHUB_HEAD_REF}/${{ github.run_id }}-${{ github.run_attempt}}.png"
           python3 -m pip install -r utilities/perf-plotter/requirements.txt
           ./utilities/perf-plotter/plot-perf.py integration-tests/perf-all.json -o /tmp/perf.png
 
