@@ -31,10 +31,10 @@ build:
 
 .PHONY: build-and-push
 build-and-push: build
-	@docker push quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_INIT_TAG)-$(IMAGE_ARCH) --target init -f Dockerfile
-	@docker push quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_PERF_TAG)-$(IMAGE_ARCH) --target perf -f Dockerfile
-	@docker push quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BCC_TAG)-$(IMAGE_ARCH) --target bcc -f Dockerfile
-	@docker push quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BPFTRACE_TAG)-$(IMAGE_ARCH) -f Dockerfile.bpftrace
+	@docker push quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_INIT_TAG)-$(IMAGE_ARCH)
+	@docker push quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_PERF_TAG)-$(IMAGE_ARCH)
+	@docker push quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BCC_TAG)-$(IMAGE_ARCH)
+	@docker push quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BPFTRACE_TAG)-$(IMAGE_ARCH)
 
 .PHONY: manifest
 manifest: manifest-bcc manifest-bpftrace manifest-perf manifest-init
