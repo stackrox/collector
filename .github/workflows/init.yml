@@ -143,7 +143,7 @@ jobs:
       - name: Ensure downstream drivers exist for releases
         run: |
           DRIVER_VERSION="$(cat ${{ github.workspace }}/kernel-modules/MODULE_VERSION)"
-          DRIVER_COUNT="$(gsutil ls "gs://${{ needs.common-variables.outputs.cpaas-drivers-bucket }}/${DRIVER_VERSION}/*.gz" | wc -l)"
+          DRIVER_COUNT="$(gsutil ls "gs://${{ needs.common-variables.outputs.cpaas-drivers-bucket }}/x86_64/${DRIVER_VERSION}/*.gz" | wc -l)"
 
           if ((DRIVER_COUNT == 0)); then
             echo >&2 "Building release version of collector without downstream drivers!!!"
