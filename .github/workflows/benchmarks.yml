@@ -55,11 +55,14 @@ jobs:
       - name: Plot benchmark graphs
         if: github.event_name == 'pull_request'
         run: |
+          OBJECT_IN_BUCKET="mauro-perf-plot/${GITHUB_HEAD_REF}/${{ github.run_id }}"
           python3 -m pip install -r utilities/perf-plotter/requirements.txt
           ./utilities/perf-plotter/plot-perf.py integration-tests/perf-all.json -o /tmp/perf.png
 
           # upload perf graph to public GCP bucket
-          gsutil cp /tmp/perf.png "gs://mauro-perf-plot/${GITHUB_HEAD_REF}/${{ github.run_id }}"
+          gsutil cp /tmp/perf.png "gs://${OBJECT_IN_BUCKET}"
+
+          echo "![Performance graph](https://storage.cloud.google.com/${OBJECT_IN_BUCKET})" > /tmp/perf-plot.md
 
       - name: Update Baseline
         if: github.ref == 'master'
@@ -74,5 +77,6 @@ jobs:
         with:
           message-path: |
             benchmark.md
+            /tmp/perf-plot.md
           message-id: performance-comment
 
