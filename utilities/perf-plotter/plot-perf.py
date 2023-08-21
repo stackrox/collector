@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+# Plot memory and CPU usage captured by the container-stats container.
+#
+# The script can be run interactively by downloading the benchmark artifact
+# from GHA, extract it and run the following command:
+#   jq -s 'flatten' perf.json | ./plot-perf.py -
+
 import argparse
 import json
 import sys
@@ -68,6 +74,9 @@ def main(input, output: str):
     fig.legend(handles, labels, loc='lower right')
     fig.set_figheight(12)
     fig.set_figwidth(12)
+
+    cpuplot.set_ylabel('CPU usage (%)')
+    memplot.set_ylabel('Memory usage (MiB)')
 
     if len(output) == 0:
         plt.show()
