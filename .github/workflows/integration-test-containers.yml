@@ -2,6 +2,10 @@ name: Build Integration Test Containers
 
 on:
   workflow_call:
+    outputs:
+      qa-tag:
+        description: The QA tag used to build the containers
+        value: ${{ jobs.common-variables.outputs.qa-tag }}
 
 jobs:
   test-containers:
@@ -20,11 +24,43 @@ jobs:
             container:
               - integration-tests/container/**
 
+  common-variables:
+    needs: test-containers
+    runs-on: ubuntu-latest
+    outputs:
+      qa-tag: ${{ steps.variables.outputs.qa-tag }}
+      build-dirs: ${{ steps.variables.outputs.build-dirs}}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set variables
+        id: variables
+        run: |
+          dirs=$(dirname ${{ needs.test-containers.outputs.changed_files }} | sort | uniq )
+
+          {
+            echo "build-dirs<<EOS"
+            echo "$dirs"
+            echo "EOS"
+          } >> "$GITHUB_OUTPUT"
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "qa-tag=$(echo "${GITHUB_SHA}" | cut -c1-8)" >> "$GITHUB_OUTPUT"
+          else
+            echo "qa-tag=" >> "$GITHUB_OUTPUT"
+          fi
 
   rebuild-containers:
-    needs: test-containers
+    needs:
+      - test-containers
+      - common-variables
+
     if: ${{ needs.test-containers.outputs.changed == 'true' }}
     runs-on: ubuntu-latest
+    env:
+      CONTAINER_DIRS: ${{ needs.common-variables.outputs.build-dirs }}
+      COLLECTOR_QA_TAG: ${{ needs.common-variables.outputs.qa-tag }}
     strategy:
       fail-fast: false
       matrix:
@@ -38,20 +74,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-
-      - name: Set environment
-        run: |
-          dirs=$(dirname ${{ needs.test-containers.outputs.changed_files }} | sort | uniq )
-
-          {
-            echo "CONTAINER_DIRS<<EOS"
-            echo "$dirs"
-            echo "EOS"
-          } >> "$GITHUB_ENV"
-
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "COLLECTOR_QA_TAG=$(echo "${GITHUB_SHA}" | cut -c1-8)" >> "$GITHUB_ENV"
-          fi
 
       - name: Login to quay.io/rhacs-eng
         uses: docker/login-action@v2
@@ -75,23 +97,13 @@ jobs:
     needs:
       - rebuild-containers
       - test-containers
+      - common-variables
     if: needs.test-containers.outputs.changed == 'true'
+    env:
+      CONTAINER_DIRS: ${{ needs.common-variables.outputs.build-dirs }}
+      COLLECTOR_QA_TAG: ${{ needs.common-variables.outputs.qa-tag }}
     steps:
       - uses: actions/checkout@v3
-
-      - name: Get changed containers
-        run: |
-          dirs=$(dirname ${{ needs.test-containers.outputs.changed_files }} | sort | uniq )
-
-          {
-            echo "CONTAINER_DIRS<<EOS"
-            echo "$dirs"
-            echo "EOS"
-          } >> "$GITHUB_ENV"
-
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "COLLECTOR_QA_TAG=$(echo "${GITHUB_SHA}" | cut -c1-8)" >> "$GITHUB_ENV"
-          fi
 
       - name: Login to quay.io/rhacs-eng
         uses: docker/login-action@v2

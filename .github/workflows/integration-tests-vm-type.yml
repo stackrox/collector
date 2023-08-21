@@ -13,6 +13,11 @@ on:
           Tag used for running the integration tests
         type: string
         required: true
+      collector-qa-tag:
+        description: |
+          The QA tag for test images
+        type: string
+        default: ""
       offline-mode:
         description: |
           Set to true to enable collector running in offline mode
@@ -127,11 +132,6 @@ jobs:
               echo "REDHAT_PASSWORD=${{ secrets.REDHAT_PASSWORD }}"
             } >> "${GITHUB_ENV}"
           fi
-
-          if [[ '${{ github.event_name }}' == 'pull_request' ]]; then
-            echo "COLLECTOR_QA_TAG=$(echo "$GITHUB_SHA" | cut -c1-8)" >> "$GITHUB_ENV"
-          fi
-
       - name: Create VMs
         if: ${{ ! inputs.run-benchmarks }}
         run: |
@@ -148,6 +148,7 @@ jobs:
         env:
           QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          COLLECTOR_QA_TAG: ${{ inputs.collector-qa-tag }}
 
       - name: Create Benchmark VMs
         if: inputs.run-benchmarks
