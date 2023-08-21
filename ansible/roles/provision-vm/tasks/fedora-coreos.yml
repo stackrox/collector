@@ -24,7 +24,6 @@
     python_exists: "{{ which_python.stdout.find('no python') == -1 }}"
 
 - when: not python_exists
-  creates: /usr/bin/python3
   block:
     - name: Install python3
       raw: rpm-ostree install python3

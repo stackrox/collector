@@ -25,19 +25,19 @@
   raw: wget https://downloads.python.org/pypy/{{ pypy_file }}
   when: has_pypy.rc != 0
   become: false
-  creates: "{{ pypy_file }}"
+  changed_when: true
 
 - name: Decompress tar file
   raw: '[ -d {{ core_home }}/{{ pypy_dir }} ] || tar -xf {{ pypy_file }}'
   become: false
-  creates: "{{ core_home }}/{{ pypy_dir }}"
+  changed_when: true
 
 - name: Setup ncurses symlink
   raw: |
     [ -e {{ core_home }}/{{ pypy_dir }}/lib/libtinfo.so.5 ] || \
     ln -s /lib64/libncurses.so.5.9 "{{ core_home }}/{{ pypy_dir }}/lib/libtinfo.so.5"
   become: false
-  creates: "/lib64/libncurses.so.5.9"
+  changed_when: true
 
 - name: Write Python Shim
   raw: |
@@ -46,7 +46,7 @@
     echo '{{ pypy_shim }}' > {{ core_home }}/bin/python && \
     chmod 755 {{ core_home }}/bin/python)"
   become: false
-  creates: "{{ core_home }}/bin/python"
+  changed_when: true
 
 - name: Run python (sanity check)
   raw: "{{ core_home }}/bin/python --version"
