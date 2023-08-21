@@ -64,6 +64,9 @@ jobs:
 
           echo "![Performance graph](https://storage.cloud.google.com/${OBJECT_IN_BUCKET})" > /tmp/perf-plot.md
 
+          # Wait for the image to be made publicly available
+          sleep 10
+
       - name: Update Baseline
         if: github.ref == 'master'
         run: |
