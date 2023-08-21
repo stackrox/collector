@@ -1,10 +1,7 @@
 name: Build Integration Test Containers
 
 on:
-  push:
-    branches:
-    - master
-  pull_request:
+  workflow_call:
 
 jobs:
   test-containers:
