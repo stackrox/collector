@@ -59,7 +59,8 @@ TEST(SplitStringViewTest, TestSplitDoubleDelimiter) {
 
 TEST(ExtractContainerIDFromCgroupTest, TestExtractContainerIDFromCgroup) {
   struct TestCase {
-    std::string_view input, expected_output;
+    std::string_view input;
+    std::optional<std::string_view> expected_output;
   };
 
   TestCase cases[] = {
@@ -96,6 +97,16 @@ TEST(ExtractContainerIDFromCgroupTest, TestExtractContainerIDFromCgroup) {
       {
           "/machine.slice/libpod-cbdfa0f1f08763b1963c30d98e11e1f052cb67f1e9b7c0ab8a6ca6c70cbcad69.scope/container/kubelet.slice/kubelet-kubepods.slice/kubelet-kubepods-besteffort.slice/kubelet-kubepods-besteffort-pod6eab3b7b_f0a6_4bb8_bff2_d5bc9017c04b.slice/cri-containerd-5ebf11e02dbde102cda4b76bc0e3849a65f9edac7a12bdabfd34db01b9556101.scope",
           "5ebf11e02dbd",
+      },
+      // conmon
+      {
+          "/machine.slice/libpod-conmon-b6ce30d02945df4bbf8e8b7193b2c56ebb3cd10227dd7e59d7f7cdc2cfa2a307.scope",
+          {},
+      },
+      // host process
+      {
+          "/",
+          {},
       },
   };
 

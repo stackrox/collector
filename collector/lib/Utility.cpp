@@ -215,15 +215,17 @@ std::optional<std::string_view> ExtractContainerIDFromCgroup(std::string_view cg
   auto scope = cgroup.rfind(".scope");
   if (scope != std::string_view::npos) {
     cgroup.remove_suffix(cgroup.length() - scope);
+    if (cgroup.size() < 65) return {};
   }
 
-  if (cgroup.rfind("-conmon-") != std::string_view::npos) {
-    return {};
-  }
-
-  if (cgroup.size() < 65) return {};
   auto container_id_part = cgroup.substr(cgroup.size() - 65);
   if (container_id_part[0] != '/' && container_id_part[0] != '-') return {};
+
+  cgroup.remove_suffix(65);
+  // conmon runs as its own container, we ignore it.
+  if (cgroup.find("-conmon", cgroup.size() - StrLen("-conmon")) != std::string_view::npos) {
+    return {};
+  }
 
   container_id_part.remove_prefix(1);
 
