@@ -147,6 +147,7 @@ jobs:
           make -C "${{ github.workspace }}/ansible" create-ci-vms
         env:
           IBM_CLOUD_POWER_SSH_PUBLIC_KEY: ${{ secrets.IBM_CLOUD_POWER_SSH_PUBLIC_KEY }}
+          ANSIBLE_VERBOSITY: 2
 
       - name: Run Tests
         if: ${{ ! inputs.run-benchmarks }}
