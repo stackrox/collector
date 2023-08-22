@@ -46,7 +46,7 @@ jobs:
             # If we're building all qa images (on a PR) we have to build everything, because the new images
             # are tagged, and that tag is passed to the integration test and applied to all images.
             #
-            dirs=$(find integration-tests/container/ -type d)
+            dirs=$(find integration-tests/container/ -type d -mindepth 1 -maxdepth 1)
             qa_tag="$(echo "${GITHUB_SHA}" | cut -c1-8)"
           else
             #
