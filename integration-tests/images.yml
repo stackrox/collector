@@ -10,7 +10,7 @@ images:
   performance-init: quay.io/rhacs-eng/collector-performance:init
 
   qa-socat: quay.io/rhacs-eng/qa-multi-arch:socat
-  qa-plop: quay.io/rhacs-eng/qa-multi-arch:collector-processes-listening-on-ports-3.12.x-11-g64eeab9cbc
+  qa-plop: quay.io/rhacs-eng/qa-multi-arch:collector-processes-listening-on-ports
   qa-schedule-curls: quay.io/rhacs-eng/qa-multi-arch:collector-schedule-curls
 
   nginx: nginx:1.14-alpine

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"io/ioutil"
 	"strings"
 
@@ -33,6 +34,7 @@ func (i *ImageStore) QaImageByKey(key string) string {
 		idx := strings.LastIndex(img, ":")
 		img = qaImage(img[:idx], img[idx+1:])
 	}
+	fmt.Println("img: " + img)
 	return img
 }
 
