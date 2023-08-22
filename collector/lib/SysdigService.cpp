@@ -94,13 +94,9 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
   return true;
 }
 
-bool SysdigService::UpdateContainerID(sinsp_threadinfo* tinfo) {
-  if (!tinfo) {
-    return false;
-  }
-
-  if (!tinfo->m_container_id.empty()) {
-    return true;
+void SysdigService::UpdateContainerID(sinsp_threadinfo* tinfo) {
+  if (!tinfo || !tinfo->m_container_id.empty()) {
+    return;
   }
 
   for (const auto& cgroup : tinfo->cgroups()) {
@@ -108,15 +104,19 @@ bool SysdigService::UpdateContainerID(sinsp_threadinfo* tinfo) {
 
     if (container_id) {
       tinfo->m_container_id = *container_id;
-      return true;
+      return;
     }
   }
-  return false;
+
+  // Event comes most likely from the host, mark it as such
+  tinfo->m_container_id = "host";
+  return;
 }
 
-bool SysdigService::UpdateContainerID(sinsp_evt* event) {
-  sinsp_threadinfo* tinfo = event->get_thread_info();
-  return UpdateContainerID(tinfo);
+bool SysdigService::FilterEvent(sinsp_evt* event) {
+  auto tinfo = event->get_thread_info();
+
+  return !tinfo || tinfo->m_container_id.length() != 12;
 }
 
 sinsp_evt* SysdigService::GetNext() {
@@ -156,7 +156,17 @@ sinsp_evt* SysdigService::GetNext() {
   userspace_stats_.event_parse_micros[event->get_type()] += (NowMicros() - parse_start);
   ++userspace_stats_.nUserspaceEvents[event->get_type()];
 
-  if (!UpdateContainerID(event)) {
+  auto tinfo = event->get_thread_info();
+
+  if (tinfo == nullptr) {
+    return nullptr;
+  }
+
+  if (tinfo->m_container_id.empty()) {
+    UpdateContainerID(tinfo);
+  }
+
+  if (FilterEvent(event)) {
     return nullptr;
   }
   ++userspace_stats_.nFilteredEvents[event->get_type()];
@@ -262,7 +272,7 @@ bool SysdigService::SendExistingProcesses(SignalHandler* handler) {
       UpdateContainerID(&tinfo);
     }
 
-    if (!tinfo.m_container_id.empty() && tinfo.is_main_thread()) {
+    if (tinfo.m_container_id.length() == 12 && tinfo.is_main_thread()) {
       auto result = handler->HandleExistingProcess(&tinfo);
       if (result == SignalHandler::ERROR || result == SignalHandler::NEEDS_REFRESH) {
         CLOG(WARNING) << "Failed to write existing process signal: " << &tinfo;
