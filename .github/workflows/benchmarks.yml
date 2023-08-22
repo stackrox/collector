@@ -53,11 +53,20 @@ jobs:
           GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT: "${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}"
 
       - name: Plot benchmark graphs
+        run: |
+          python3 -m pip install -r utilities/perf-plotter/requirements.txt
+          ./utilities/perf-plotter/plot-perf.py integration-tests/perf-all.json -o /tmp/perf.png
+
+      - name: Upload perf plot to artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: perf-plot
+          path: /tmp/perf.png
+
+      - name: Upload plot for PRs
         if: github.event_name == 'pull_request'
         run: |
           OBJECT_IN_BUCKET="mauro-perf-plot/${GITHUB_HEAD_REF}/${{ github.run_id }}-${{ github.run_attempt}}.png"
-          python3 -m pip install -r utilities/perf-plotter/requirements.txt
-          ./utilities/perf-plotter/plot-perf.py integration-tests/perf-all.json -o /tmp/perf.png
 
           # upload perf graph to public GCP bucket
           gsutil cp /tmp/perf.png "gs://${OBJECT_IN_BUCKET}"
