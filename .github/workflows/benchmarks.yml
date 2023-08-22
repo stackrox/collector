@@ -62,10 +62,7 @@ jobs:
           # upload perf graph to public GCP bucket
           gsutil cp /tmp/perf.png "gs://${OBJECT_IN_BUCKET}"
 
-          echo "![Performance graph](https://storage.cloud.google.com/${OBJECT_IN_BUCKET})" > /tmp/perf-plot.md
-
-          # Wait for the image to be made publicly available
-          curl --retry-delay 5 --retry 10 --silent --show-error "https://storage.cloud.google.com/${OBJECT_IN_BUCKET}"
+          echo "![Performance graph](https://storage.googleapis.com/${OBJECT_IN_BUCKET})" > /tmp/perf-plot.md
 
       - name: Update Baseline
         if: github.ref == 'master'
