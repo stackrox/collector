@@ -89,6 +89,10 @@ jobs:
 
   build-test-containers:
     uses: ./.github/workflows/integration-test-containers.yml
+    needs:
+      - init
+    with:
+      branch-name: ${{ needs.init.outputs.branch-name }}
     secrets: inherit
 
   integration-tests:
