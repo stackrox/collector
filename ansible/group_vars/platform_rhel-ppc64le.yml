@@ -1,5 +1,6 @@
 ---
 ansible_ssh_common_args: -c aes128-ctr
-scp_if_ssh: smart
+scp_if_ssh: yes
 transfer_method: smart
 pipelining: True
+ANSIBLE_SCP_IF_SSH: yes
