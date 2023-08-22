@@ -32,7 +32,7 @@ on:
 
 jobs:
   run:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       #
       # JOB_ID is a little odd in that it needs to be unique per vm_type,
@@ -147,8 +147,6 @@ jobs:
           make -C "${{ github.workspace }}/ansible" create-ci-vms
         env:
           IBM_CLOUD_POWER_SSH_PUBLIC_KEY: ${{ secrets.IBM_CLOUD_POWER_SSH_PUBLIC_KEY }}
-          ANSIBLE_VERBOSITY: 2
-          ANSIBLE_DEBUG: 1
 
       - name: Run Tests
         if: ${{ ! inputs.run-benchmarks }}
