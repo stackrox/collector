@@ -20,9 +20,13 @@ jobs:
         id: filter
         with:
           list-files: shell
+
+          # Filter on changes strictly in subdirectories within
+          # integration-test/container
+          # (i.e. exclude files in integration-tests/container itself)
           filters: |
             container:
-              - integration-tests/container/**
+              - integration-tests/container/*/**
 
   common-variables:
     needs: test-containers
@@ -37,30 +41,36 @@ jobs:
       - name: Set variables
         id: variables
         run: |
-          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'build-qa-images') }}" == 'true' ]]; then
+          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'build-qa-containers') }}" == 'true' ]]; then
+            #
+            # If we're building all qa images (on a PR) we have to build everything, because the new images
+            # are tagged, and that tag is passed to the integration test and applied to all images.
+            #
             dirs=$(find integration-tests/container/ -type d)
+            qa_tag="$(echo "${GITHUB_SHA}" | cut -c1-8)"
           else
-            dirs=$(dirname ${{ needs.test-containers.outputs.changed_files }} | sort | uniq )
+            #
+            # On master, we have the luxury of only building things that have changed,
+            # because the QA tag is not applied (instead we'll update the floating tags)
+            #
+            dirs=$(dirname ${{ needs.test-containers.outputs.changed_files }} | sort | uniq)
+            qa_tag=
           fi
 
           {
             echo "build-dirs<<EOS"
             echo "$dirs"
             echo "EOS"
-          } >> "$GITHUB_OUTPUT"
 
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "qa-tag=$(echo "${GITHUB_SHA}" | cut -c1-8)" >> "$GITHUB_OUTPUT"
-          else
-            echo "qa-tag=" >> "$GITHUB_OUTPUT"
-          fi
+            echo "qa-tag=$qa_tag"
+          } >> "$GITHUB_OUTPUT"
 
   rebuild-containers:
     needs:
       - test-containers
       - common-variables
 
-    if: needs.test-containers.outputs.changed == 'true' || contains(github.event.pull_request.labels.*.name, 'build-qa-images')
+    if: needs.test-containers.outputs.changed == 'true' || contains(github.event.pull_request.labels.*.name, 'build-qa-containers')
     runs-on: ubuntu-latest
     env:
       CONTAINER_DIRS: ${{ needs.common-variables.outputs.build-dirs }}
@@ -89,9 +99,7 @@ jobs:
       - name: Buld and Push containers
         run: |
           for dir in $CONTAINER_DIRS; do
-            if [[ -f "$dir/Makefile" ]]; then
-              make -C "$dir" build-and-push
-            fi
+            make -C "$dir" build-and-push
           done
         env:
           PLATFORM: linux/${{ matrix.arch }}
@@ -102,7 +110,8 @@ jobs:
       - rebuild-containers
       - test-containers
       - common-variables
-    if: needs.test-containers.outputs.changed == 'true' || contains(github.event.pull_request.labels.*.name, 'build-qa-images')
+    if: (needs.test-containers.outputs.changed == 'true' && github.event_name == 'push')
+      || contains(github.event.pull_request.labels.*.name, 'build-qa-containers')
     env:
       CONTAINER_DIRS: ${{ needs.common-variables.outputs.build-dirs }}
       COLLECTOR_QA_TAG: ${{ needs.common-variables.outputs.qa-tag }}
@@ -119,8 +128,6 @@ jobs:
       - name: Make manifests
         run: |
           for dir in $CONTAINER_DIRS; do
-            if [[ -f "$dir/Makefile" ]]; then
-              make -C "$dir" manifest
-            fi
+            make -C "$dir" manifest
           done
 
