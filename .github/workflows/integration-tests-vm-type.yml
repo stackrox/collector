@@ -55,7 +55,6 @@ jobs:
       BUILD_TYPE: ci
       VM_TYPE: "${{ inputs.vm_type }}"
       COLLECTOR_TAG: ${{ inputs.collector-tag }}
-      ANSIBLE_DEBUG: 1
     steps:
       - uses: actions/checkout@v3
 
