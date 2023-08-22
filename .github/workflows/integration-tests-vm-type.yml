@@ -17,7 +17,7 @@ on:
         description: |
           The QA tag for test images
         type: string
-        default: ""
+        required: true
       offline-mode:
         description: |
           Set to true to enable collector running in offline mode
