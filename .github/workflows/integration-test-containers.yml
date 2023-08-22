@@ -57,9 +57,12 @@ jobs:
             qa_tag=
           fi
 
+          # convert to json array so it can be used in the matrix
+          json_dirs="$(echo "$dirs" | jq --raw-input --slurp 'split("\n") | map(select(. != ""))')"
+
           {
             echo "build-dirs<<EOS"
-            echo "$dirs"
+            echo "$json_dirs"
             echo "EOS"
 
             echo "qa-tag=$qa_tag"
@@ -79,6 +82,7 @@ jobs:
       fail-fast: false
       matrix:
         arch: [amd64, ppc64le, s390x]
+        container: ${{ fromJSON(needs.common-variables.outputs.build-dirs) }}
 
     steps:
       - uses: actions/checkout@v3
@@ -96,11 +100,9 @@ jobs:
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
-      - name: Buld and Push containers
+      - name: Build and Push containers
         run: |
-          for dir in $CONTAINER_DIRS; do
-            make -C "$dir" build-and-push
-          done
+          make -C "${{ matrix.container }}" build-and-push
         env:
           PLATFORM: linux/${{ matrix.arch }}
 
@@ -115,6 +117,9 @@ jobs:
     env:
       CONTAINER_DIRS: ${{ needs.common-variables.outputs.build-dirs }}
       COLLECTOR_QA_TAG: ${{ needs.common-variables.outputs.qa-tag }}
+    strategy:
+      matrix:
+        container: ${{ fromJSON(needs.common-variables.outputs.build-dirs) }}
     steps:
       - uses: actions/checkout@v3
 
@@ -127,7 +132,5 @@ jobs:
 
       - name: Make manifests
         run: |
-          for dir in $CONTAINER_DIRS; do
-            make -C "$dir" manifest
-          done
+          make -C "${{ matrix.container }}" manifest
 
