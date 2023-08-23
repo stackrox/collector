@@ -36,12 +36,10 @@ jobs:
         id: variables
         run: |
           dirs=$(find integration-tests/container/ -type d -mindepth 1 -maxdepth 1)
-          # convert to json array so it can be used in the matrix
-          json_dirs="$(echo "$dirs" | jq --raw-input --slurp 'split("\n") | map(select(. != ""))')"
 
           {
             echo "build-dirs<<EOS"
-            echo "$json_dirs"
+            echo "$dirs"
             echo "EOS"
           } >> "$GITHUB_OUTPUT"
 
