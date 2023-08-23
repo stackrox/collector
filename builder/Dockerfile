@@ -12,6 +12,7 @@ RUN dnf -y update \
         bison \
         ca-certificates \
         clang-17.0.6 \
+        clang-analyzer-17.0.6 \
         cmake \
         cracklib-dicts \
         diffutils \

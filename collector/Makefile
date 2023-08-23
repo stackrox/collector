@@ -57,6 +57,28 @@ unittest: collector
 	docker exec $(COLLECTOR_BUILDER_NAME) \
 		ctest -V --test-dir $(CMAKE_DIR)
 
+.PHONY: scan-build/configure
+scan-build/configure:
+	docker exec $(COLLECTOR_BUILDER_NAME) \
+		scan-build cmake -S $(BASE_PATH) -B $(CMAKE_DIR) \
+			-DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
+			-DDISABLE_PROFILING=$(DISABLE_PROFILING) \
+			-DUSE_VALGRIND=$(USE_VALGRIND) \
+			-DADDRESS_SANITIZER=$(ADDRESS_SANITIZER) \
+			-DTRACE_SINSP_EVENTS=$(TRACE_SINSP_EVENTS) \
+			-DCOLLECTOR_APPEND_CID=$(COLLECTOR_APPEND_CID)
+
+.PHONY: scan-build
+scan-build: scan-build/configure
+	docker exec $(COLLECTOR_BUILDER_NAME) \
+		scan-build --exclude falcosecurity-libs \
+			--exclude cmake-build/skel_dir \
+			--status-bugs \
+			-maxloop 50 \
+			-o cmake-build/scan-build \
+			make -C cmake-build/ -j"$(nproc)" collector connscrape
+
+
 .PHONY: txt-files
 txt-files:
 	mkdir -p container/THIRD_PARTY_NOTICES/

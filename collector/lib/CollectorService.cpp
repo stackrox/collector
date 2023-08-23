@@ -103,7 +103,7 @@ void CollectorService::RunForever() {
   sysdig_.Start();
 
   ControlValue cv;
-  while ((cv = control_->load(std::memory_order_relaxed)) != STOP_COLLECTOR) {
+  while (control_->load(std::memory_order_relaxed) != STOP_COLLECTOR) {
     sysdig_.Run(*control_);
     CLOG(DEBUG) << "Interrupted collector!";
   }

@@ -165,3 +165,7 @@ $(eval $(call linter,shfmt))
 .PHONY: linters
 linters:
 	@$(CURDIR)/utilities/lint.sh
+
+.PHONY: scan-build
+scan-build: builder
+	make -C collector scan-build
