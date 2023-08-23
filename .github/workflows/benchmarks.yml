@@ -40,7 +40,9 @@ jobs:
           path: ${{ github.workspace }}
 
       - name: Install python deps
-        run: python3 -m pip install -r ./integration-tests/scripts/baseline/requirements.txt
+        run: |
+          python3 -m pip install -r ./integration-tests/scripts/baseline/requirements.txt
+          python3 -m pip install -r ./utilities/perf-plotter/requirements.txt
 
       - name: Calculate Baseline
         run: |
@@ -54,7 +56,6 @@ jobs:
 
       - name: Plot benchmark graphs
         run: |
-          python3 -m pip install -r utilities/perf-plotter/requirements.txt
           ./utilities/perf-plotter/plot-perf.py integration-tests/perf-all.json -o /tmp/perf.png
 
       - name: Upload perf plot to artifacts

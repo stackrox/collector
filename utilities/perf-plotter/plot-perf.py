@@ -18,18 +18,24 @@ import matplotlib.dates as md
 def bytes_to_float(bytes: str) -> float:
     """
     Transform a string representing bytes used by a process to a float
-    """
-    if bytes[-1] == 'B':
-        bytes = bytes[:-1]
 
-    if bytes[-1] == 'i':
-        bytes = bytes[:-1]
-        if bytes[-1] == 'M':
-            return float(bytes[:-1])
-        if bytes[-1] == 'K':
-            return float(bytes[:-1]) / 1000
-    else:
-        return float(bytes) / 1000000
+    Format of the input string is a floating point number followed by the
+    scale in bytes, similar to these:
+    - 0B
+    - 15.63MiB
+    """
+    scale = bytes[-3:]
+
+    if scale == 'GiB':
+        return float(bytes[:-3]) * 1000
+    if scale == 'MiB':
+        return float(bytes[:-3])
+    if scale == 'KiB':
+        return float(bytes[:-3]) / 1000
+
+    # If none of the previous matched, the number is most likely in the
+    # format 12.34B
+    return float(bytes[:-1]) / 1000000
 
 
 def load_data(input) -> dict:
@@ -78,10 +84,10 @@ def main(input, output: str):
     cpuplot.set_ylabel('CPU usage (%)')
     memplot.set_ylabel('Memory usage (MiB)')
 
-    if len(output) == 0:
-        plt.show()
-    else:
+    if output:
         plt.savefig(output)
+    else:
+        plt.show()
 
 
 if __name__ == '__main__':
