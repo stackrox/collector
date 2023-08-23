@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"io/ioutil"
 	"strings"
 
@@ -13,7 +12,8 @@ var (
 )
 
 type ImageStore struct {
-	Images map[string]string
+	Qa    map[string]string
+	NonQa map[string]string `yaml:"non_qa"`
 }
 
 func (i *ImageStore) CollectorImage() string {
@@ -23,7 +23,7 @@ func (i *ImageStore) CollectorImage() string {
 // ImageByKey looks up an image from the store, and panics
 // if the image does not exist.
 func (i *ImageStore) ImageByKey(key string) string {
-	if img, ok := i.Images[key]; ok {
+	if img, ok := i.NonQa[key]; ok {
 		return img
 	}
 	panic("failed to find image: " + key)
@@ -33,13 +33,13 @@ func (i *ImageStore) ImageByKey(key string) string {
 // the QA tag. If the image does not exist in the store, this function
 // will panic.
 func (i *ImageStore) QaImageByKey(key string) string {
-	img := i.ImageByKey(key)
-	if img != "" {
+	img, ok := i.Qa[key]
+	if ok {
 		idx := strings.LastIndex(img, ":")
 		img = qaImage(img[:idx], img[idx+1:])
+		return img
 	}
-	fmt.Println("img: " + img)
-	return img
+	panic("failed to find qa image: " + key)
 }
 
 func loadImageStore(location string) (*ImageStore, error) {

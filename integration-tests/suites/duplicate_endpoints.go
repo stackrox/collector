@@ -75,7 +75,7 @@ func (s *DuplicateEndpointsTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	time.Sleep(30 * time.Second)
 
-	processImage := config.Images().QaImageByKey("qa-socat")
+	processImage := config.Images().ImageByKey("socat")
 
 	containerID, err := s.launchContainer("socat", processImage, "/bin/sh", "-c", "socat TCP-LISTEN:80,fork STDOUT")
 

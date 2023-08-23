@@ -1,6 +1,4 @@
-images:
-  grpc-server: quay.io/rhacs-eng/grpc-server:4.0.x-658-g2922c23f34
-
+qa:
   performance-phoronix: quay.io/rhacs-eng/collector-performance:phoronix
   performance-json-label: quay.io/rhacs-eng/collector-performance:json-label
   performance-stats: quay.io/rhacs-eng/collector-performance:stats
@@ -9,9 +7,11 @@ images:
   performance-bcc: quay.io/rhacs-eng/collector-performance:bcc
   performance-init: quay.io/rhacs-eng/collector-performance:init
 
-  qa-socat: quay.io/rhacs-eng/qa-multi-arch:socat
   qa-plop: quay.io/rhacs-eng/qa-multi-arch:collector-processes-listening-on-ports
   qa-schedule-curls: quay.io/rhacs-eng/qa-multi-arch:collector-schedule-curls
 
+non_qa:
   nginx: nginx:1.14-alpine
   curl: quay.io/rhacs-eng/qa-multi-arch:pstauffer-docker-curl
+  grpc-server: quay.io/rhacs-eng/grpc-server:4.0.x-658-g2922c23f34
+  socat: quay.io/rhacs-eng/qa-multi-arch:socat
