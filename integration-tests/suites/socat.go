@@ -44,7 +44,7 @@ func (s *SocatTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	time.Sleep(30 * time.Second)
 
-	processImage := config.Images().ImageByKey("socat")
+	processImage := config.Images().QaImageByKey("qa-socat")
 
 	// the socat container only needs to exist long enough for use to run both
 	// socat commands. 300 seconds should be more than long enough.

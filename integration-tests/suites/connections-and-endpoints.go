@@ -45,7 +45,7 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	time.Sleep(30 * time.Second)
 
-	socatImage := config.Images().ImageByKey("socat")
+	socatImage := config.Images().QaImageByKey("qa-socat")
 
 	serverName := s.Server.Name
 	clientName := s.Client.Name
