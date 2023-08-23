@@ -66,7 +66,7 @@ func getQATag(base_tag string) string {
 		if err != nil {
 			panic(err)
 		}
-		collectorQATag = string(buf)
+		collectorQATag = strings.TrimSuffix(string(buf), "\n")
 	}
 	return base_tag + "-" + collectorQATag
 }
