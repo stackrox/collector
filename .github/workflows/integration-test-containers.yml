@@ -16,9 +16,7 @@ jobs:
         with:
           list-files: shell
 
-          # Filter on changes strictly in subdirectories within
-          # integration-test/container
-          # (i.e. exclude files in integration-tests/container itself)
+          # Only trigger a rebuild when the QA tag has changed
           filters: |
             container:
               - integration-tests/container/QA_TAG
