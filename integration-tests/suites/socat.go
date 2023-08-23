@@ -48,10 +48,7 @@ func (s *SocatTestSuite) SetupSuite() {
 
 	// the socat container only needs to exist long enough for use to run both
 	// socat commands. 300 seconds should be more than long enough.
-	containerID, err := s.launchContainer("socat", processImage, "/bin/sh", "-c", "/bin/sleep 300")
-	s.Require().NoError(err)
-
-	_, err = s.execContainer("socat", []string{"/bin/sh", "-c", "socat TCP-LISTEN:80,fork STDOUT &"})
+	containerID, err := s.launchContainer("socat", processImage, "TCP-LISTEN:80,fork", "STDOUT")
 	s.Require().NoError(err)
 
 	_, err = s.execContainer("socat", []string{"/bin/sh", "-c", "socat TCP-LISTEN:8080,fork STDOUT &"})
@@ -88,7 +85,7 @@ func (s *SocatTestSuite) TestSocat() {
 		assert.FailNowf(s.T(), "", "only retrieved %d endpoints (expect 2)", len(endpoints))
 	}
 
-	assert.Equal(s.T(), 6, len(processes))
+	assert.Equal(s.T(), 3, len(processes))
 
 	endpoint80, err := getEndpointByPort(endpoints, 80)
 	s.Require().NoError(err)
