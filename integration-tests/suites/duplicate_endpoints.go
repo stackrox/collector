@@ -77,7 +77,7 @@ func (s *DuplicateEndpointsTestSuite) SetupSuite() {
 
 	processImage := config.Images().ImageByKey("socat")
 
-	containerID, err := s.launchContainer("socat", processImage, "/bin/sh", "-c", "socat TCP-LISTEN:80,fork STDOUT")
+	containerID, err := s.launchContainer("socat", processImage, "TCP-LISTEN:80,fork STDOUT")
 
 	s.Require().NoError(err)
 	s.serverContainer = common.ContainerShortID(containerID)
