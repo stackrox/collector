@@ -32,7 +32,7 @@ on:
 
 jobs:
   run:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       #
       # JOB_ID is a little odd in that it needs to be unique per vm_type,
