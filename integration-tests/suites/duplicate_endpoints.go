@@ -77,7 +77,7 @@ func (s *DuplicateEndpointsTestSuite) SetupSuite() {
 
 	processImage := config.Images().ImageByKey("socat")
 
-	containerID, err := s.launchContainer("socat", processImage, "TCP-LISTEN:80,fork STDOUT")
+	containerID, err := s.launchContainer("socat", processImage, "TCP-LISTEN:80,fork", "STDOUT")
 
 	s.Require().NoError(err)
 	s.serverContainer = common.ContainerShortID(containerID)
@@ -115,5 +115,5 @@ func (s *DuplicateEndpointsTestSuite) TestDuplicateEndpoints() {
 	s.Require().NoError(err)
 
 	assert.Equal(s.T(), 2, len(endpoints))
-	assert.Equal(s.T(), 11, len(processes))
+	assert.Equal(s.T(), 10, len(processes))
 }
