@@ -89,17 +89,12 @@ jobs:
 
   build-test-containers:
     uses: ./.github/workflows/integration-test-containers.yml
-    needs:
-      - init
-    with:
-      branch-name: ${{ needs.init.outputs.branch-name }}
     secrets: inherit
 
   integration-tests:
     uses: ./.github/workflows/integration-tests.yml
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
-      collector-qa-tag: ${{ needs.build-test-containers.outputs.qa-tag }}
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     needs:
     - init
@@ -112,7 +107,6 @@ jobs:
     uses: ./.github/workflows/benchmarks.yml
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
-      collector-qa-tag: ${{ needs.build-test-containers.outputs.qa-tag }}
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     needs:
     - init

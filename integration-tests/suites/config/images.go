@@ -8,6 +8,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var (
+	collectorQATag string
+)
+
 type ImageStore struct {
 	Images map[string]string
 }
@@ -57,12 +61,14 @@ func loadImageStore(location string) (*ImageStore, error) {
 // the 'COLLECTOR_QA_TAG' environment variable if it exists. Return the base
 // tag as is otherwise.
 func getQATag(base_tag string) string {
-	collector_qa_tag := ReadEnvVar(envQATag)
-
-	if collector_qa_tag != "" {
-		return base_tag + "-" + collector_qa_tag
+	if collectorQATag == "" {
+		buf, err := ioutil.ReadFile("container/QA_TAG")
+		if err != nil {
+			panic(err)
+		}
+		collectorQATag = string(buf)
 	}
-	return base_tag
+	return base_tag + "-" + collectorQATag
 }
 
 // Return the full image to be used for a QA container from a given image name
