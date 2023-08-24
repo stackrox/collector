@@ -144,7 +144,7 @@
       - job_id_{{ job_id }}
       - platform_{{ test_platform }}
     ansible_ssh_extra_args: -o StrictHostKeyChecking=no
-    ansible_ssh_private_key_file: "~/.ssh/acs-sshkey_rsa_ppc64le.prv"
+    ansible_ssh_private_key_file: "~/.ssh/acs-sshkey_rsa.prv"
     vm_config: "{{ vm_config }}"
     vm_image_family: "{{ vm_family }}"
     vm_collection_method: "{{ vm_collection_method }}"
