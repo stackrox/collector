@@ -7,8 +7,13 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var (
+	collectorQATag string
+)
+
 type ImageStore struct {
-	Images map[string]string
+	Qa    map[string]string
+	NonQa map[string]string `yaml:"non_qa"`
 }
 
 func (i *ImageStore) CollectorImage() string {
@@ -18,7 +23,7 @@ func (i *ImageStore) CollectorImage() string {
 // ImageByKey looks up an image from the store, and panics
 // if the image does not exist.
 func (i *ImageStore) ImageByKey(key string) string {
-	if img, ok := i.Images[key]; ok {
+	if img, ok := i.NonQa[key]; ok {
 		return img
 	}
 	panic("failed to find image: " + key)
@@ -28,12 +33,13 @@ func (i *ImageStore) ImageByKey(key string) string {
 // the QA tag. If the image does not exist in the store, this function
 // will panic.
 func (i *ImageStore) QaImageByKey(key string) string {
-	img := i.ImageByKey(key)
-	if img != "" {
+	img, ok := i.Qa[key]
+	if ok {
 		idx := strings.LastIndex(img, ":")
 		img = qaImage(img[:idx], img[idx+1:])
+		return img
 	}
-	return img
+	panic("failed to find qa image: " + key)
 }
 
 func loadImageStore(location string) (*ImageStore, error) {
@@ -55,12 +61,14 @@ func loadImageStore(location string) (*ImageStore, error) {
 // the 'COLLECTOR_QA_TAG' environment variable if it exists. Return the base
 // tag as is otherwise.
 func getQATag(base_tag string) string {
-	collector_qa_tag := ReadEnvVar(envQATag)
-
-	if collector_qa_tag != "" {
-		return base_tag + "-" + collector_qa_tag
+	if collectorQATag == "" {
+		buf, err := ioutil.ReadFile("container/QA_TAG")
+		if err != nil {
+			panic(err)
+		}
+		collectorQATag = strings.TrimSuffix(string(buf), "\n")
 	}
-	return base_tag
+	return base_tag + "-" + collectorQATag
 }
 
 // Return the full image to be used for a QA container from a given image name

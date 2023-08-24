@@ -87,6 +87,10 @@ jobs:
     - build-collector-slim
     - build-drivers
 
+  build-test-containers:
+    uses: ./.github/workflows/integration-test-containers.yml
+    secrets: inherit
+
   integration-tests:
     uses: ./.github/workflows/integration-tests.yml
     with:
@@ -96,6 +100,7 @@ jobs:
     - init
     - build-collector-slim
     - build-collector-full
+    - build-test-containers
     secrets: inherit
 
   benchmarks:
@@ -107,6 +112,7 @@ jobs:
     - init
     - build-collector-slim
     - build-collector-full
+    - build-test-containers
     secrets: inherit
 
   build-support-packages:

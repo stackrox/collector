@@ -127,7 +127,6 @@ jobs:
               echo "REDHAT_PASSWORD=${{ secrets.REDHAT_PASSWORD }}"
             } >> "${GITHUB_ENV}"
           fi
-
       - name: Create VMs
         if: ${{ ! inputs.run-benchmarks }}
         run: |
