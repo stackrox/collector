@@ -204,5 +204,5 @@ jobs:
 
       - name: Copy files to merged bucket
         run: |
-          gsutil -m cp 'gs://${{ inputs.all-archs-drivers-bucket }}/*' \
+          gsutil -m cp -r 'gs://${{ inputs.all-archs-drivers-bucket }}/' \
             gs://${{ inputs.merged-drivers-bucket }}/
