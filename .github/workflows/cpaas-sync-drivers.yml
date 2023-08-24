@@ -23,6 +23,16 @@ on:
         required: true
         description: |
           Bucket where CPaaS drivers will be pushed to.
+      merged-drivers-bucket:
+        type: string
+        required: true
+        description: |
+          Bucket where all drivers will be pushed to.
+      all-archs-drivers-bucket:
+        type: string
+        required: true
+        description: |
+          Bucket where CPaaS drivers for all archs will be pushed to.
       branch-name:
         type: string
         required: true
@@ -93,11 +103,21 @@ jobs:
           shopt -s nullglob
           shopt -s dotglob
 
+          source ${{ github.workspace }}/kernel-modules/support-packages/utils.sh
+
           for driver_version_dir in "${DRIVER_TMP_DIR}"/*; do
             files=("${driver_version_dir}"/*.{gz,unavail})
+            driver_version="$(basename "${driver_version_dir}")"
             [[ "${#files[@]}" -gt 0 ]] || continue
             printf '%s\n' "${files[@]}" | \
-              gsutil -m cp -n -I "gs://${{ inputs.drivers-bucket }}/${{ matrix.platform }}/$(basename "${driver_version_dir}")/"
+              gsutil -m cp -n -I "gs://${{ inputs.drivers-bucket }}/${{ matrix.platform }}/${driver_version}/"
+
+            # Starting with version 2.6.0, we allow for direct download of all
+            # downstream built drivers.
+            if use_downstream "${driver_version}"; then
+              printf '%s\n' "${files[@]}" | \
+                gsutil -m cp -n -I "gs://${{ inputs.all-archs-drivers-bucket }}/${driver_version}/"
+            fi
           done
 
       # x86 support packages will not be uploaded to GCP.
@@ -168,3 +188,21 @@ jobs:
           path: /tmp/support-packages/output/index.html
           parent: false
           destination: ${{ inputs.public-support-packages-bucket }}
+
+  copy-to-merged-bucket:
+    runs-on: ubuntu-latest
+    needs:
+    - sync-drivers
+    steps:
+      - name: Authenticate with GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Copy files to merged bucket
+        run: |
+          gsutil -m cp 'gs://${{ inputs.all-archs-drivers-bucket }}/*' \
+            gs://${{ inputs.merged-drivers-bucket }}/

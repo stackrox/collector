@@ -7,6 +7,10 @@ on:
         type: string
         required: true
         description: GCP bucket to push drivers into
+      merged-drivers-bucket:
+        type: string
+        required: true
+        description: GCP bucket unifying upstream and downstream drivers
 
 jobs:
   upload-drivers:
@@ -30,3 +34,20 @@ jobs:
           path: /tmp/output/
           parent: false
           destination: ${{ inputs.gcp-bucket }}
+
+      - name: Push to merged bucket
+        run: |
+         shopt -s nullglob
+         shopt -s dotglob
+
+          # We use gsutil here because we need to ignore files that already
+          # exist in the bucket, if they are there it means downstream
+          # built it and has prevalence over this set of drivers.
+          for driver_version_dir in /tmp/output/*; do
+            files=("${driver_version_dir}"/*.{gz,unavail})
+            driver_version="$(basename "${driver_version_dir}")"
+            [[ "${#files[@]}" -gt 0 ]] || continue
+
+            printf '%s\n' "${files[@]}" | \
+              gsutil -m cp -n -I "gs://${{ inputs.merged-drivers-bucket }}/${driver_version}/"
+          done

@@ -40,6 +40,7 @@ jobs:
     uses: ./.github/workflows/upload-drivers.yml
     with:
       gcp-bucket: ${{ needs.init.outputs.push-drivers-bucket }}
+      merged-drivers-bucket: ${{ needs.init.outputs.merged-drivers-bucket }}
     if: ${{ needs.build-drivers.outputs.parallel-jobs > 0 }}
     needs:
     - init
