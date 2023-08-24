@@ -15,17 +15,10 @@ all: build
 .PHONY: build
 build:
 	@docker buildx build --load --platform ${PLATFORM} \
-                -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_JSON_LABEL_TAG)-$(IMAGE_ARCH) .
+                -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_JSON_LABEL_TAG) .
 
 .PHONY: build-and-push
-build-and-push: build
-	@docker push quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_JSON_LABEL_TAG)-$(IMAGE_ARCH)
+build-and-push:
+	@docker buildx build --push --platform ${PLATFORM} \
+		-t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_JSON_LABEL_TAG) .
 
-.PHONY: manifest
-manifest:
-	@docker manifest create quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_JSON_LABEL_TAG) \
-		quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_JSON_LABEL_TAG)-amd64 \
-		quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_JSON_LABEL_TAG)-s390x \
-		quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_JSON_LABEL_TAG)-ppc64le
-
-	@docker manifest push quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_JSON_LABEL_TAG)

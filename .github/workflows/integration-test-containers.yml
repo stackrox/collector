@@ -34,10 +34,11 @@ jobs:
         id: variables
         run: |
           dirs=$(find integration-tests/container/ -type d -mindepth 1 -maxdepth 1)
+          json_dirs="$(echo "$dirs" | jq --raw-input --slurp 'split("\n") | map(select(. != ""))')"
 
           {
             echo "build-dirs<<EOS"
-            echo "$dirs"
+            echo "$json_dirs"
             echo "EOS"
           } >> "$GITHUB_OUTPUT"
 
@@ -48,12 +49,12 @@ jobs:
 
     if: needs.test-containers.outputs.changed == 'true'
     runs-on: ubuntu-latest
-    env:
-      CONTAINER_DIRS: ${{ needs.common-variables.outputs.build-dirs }}
     strategy:
       fail-fast: false
       matrix:
-        arch: [amd64, ppc64le, s390x]
+        directory: ${{ fromJSON(needs.common-variables.outputs.build-dirs) }}
+    env:
+      PLATFORM: linux/amd64,linux/s390x,linux/ppc64le
 
     steps:
       - uses: actions/checkout@v3
@@ -73,34 +74,5 @@ jobs:
 
       - name: Build and Push containers
         run: |
-          for dir in $CONTAINER_DIRS; do
-            make -C "${dir}" build-and-push
-          done
-        env:
-          PLATFORM: linux/${{ matrix.arch }}
-
-  push-manifest:
-    runs-on: ubuntu-latest
-    needs:
-      - rebuild-containers
-      - test-containers
-      - common-variables
-    if: needs.test-containers.outputs.changed == 'true'
-    env:
-      CONTAINER_DIRS: ${{ needs.common-variables.outputs.build-dirs }}
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Login to quay.io/rhacs-eng
-        uses: docker/login-action@v2
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-
-      - name: Make manifests
-        run: |
-          for dir in $CONTAINER_DIRS; do
-            make -C "${dir}" manifest
-          done
+          make -C "${{ matrix.directory }}" build-and-push
 
