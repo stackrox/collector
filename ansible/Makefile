@@ -13,6 +13,7 @@ list-inventory:
 .PHONY: create-vms
 create-vms:
 	ansible-playbook -i $(CONTEXT) \
+		-vvvv \
 		--tags setup,provision \
 		-e job_id="$(JOB_ID)" \
 		vm-lifecycle.yml
