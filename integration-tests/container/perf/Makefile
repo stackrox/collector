@@ -20,57 +20,34 @@ all: build
 
 .PHONY: build
 build:
-	@docker buildx build --load --platform ${PLATFORM} \
-                -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_INIT_TAG)-$(IMAGE_ARCH) --target init -f Dockerfile .
-	@docker buildx build --load --platform ${PLATFORM} \
-                -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_PERF_TAG)-$(IMAGE_ARCH) --target perf -f Dockerfile .
-	@docker buildx build --load --platform ${PLATFORM} \
-                -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BCC_TAG)-$(IMAGE_ARCH) --target bcc -f Dockerfile .
-	@docker buildx build --load --platform ${PLATFORM} \
-                -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BPFTRACE_TAG)-$(IMAGE_ARCH) -f Dockerfile.bpftrace .
+	@docker buildx build --load --platform $(PLATFORM) \
+                -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_INIT_TAG) --target init -f Dockerfile .
+	@docker buildx build --load --platform $(PLATFORM) \
+                -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_PERF_TAG) --target perf -f Dockerfile .
+	@docker buildx build --load --platform $(PLATFORM) \
+                -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BCC_TAG) --target bcc -f Dockerfile .
+	@docker buildx build --load --platform $(PLATFORM) \
+                -t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BPFTRACE_TAG) -f Dockerfile.bpftrace .
 
 .PHONY: build-and-push
-build-and-push: build
-	@docker push quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_INIT_TAG)-$(IMAGE_ARCH)
-	@docker push quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_PERF_TAG)-$(IMAGE_ARCH)
-	@docker push quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BCC_TAG)-$(IMAGE_ARCH)
-	@docker push quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BPFTRACE_TAG)-$(IMAGE_ARCH)
+build-and-push: init perf bcc bpftrace
 
-.PHONY: manifest
-manifest: manifest-bcc manifest-bpftrace manifest-perf manifest-init
+.PHONY: init
+init:
+	docker buildx build --push --platform $(PLATFORM) \
+		-t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_INIT_TAG) --target init -f Dockerfile .
 
-.PHONY: manifest-bcc
-manifest-bcc:
-	@docker manifest create quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BCC_TAG) \
-		quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BCC_TAG)-amd64 \
-		quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BCC_TAG)-s390x \
-		quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BCC_TAG)-ppc64le
+.PHONY: perf
+perf:
+	docker buildx build --push --platform $(PLATFORM) \
+		-t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_PERF_TAG) --target perf -f Dockerfile .
 
-	@docker manifest push quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BCC_TAG)
+.PHONY: bcc
+bcc:
+	docker buildx build --push --platform $(PLATFORM) \
+		-t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BCC_TAG) --target bcc -f Dockerfile .
 
-.PHONY: manifest-perf
-manifest-perf:
-	@docker manifest create quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_PERF_TAG) \
-		quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_PERF_TAG)-amd64 \
-		quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_PERF_TAG)-s390x \
-		quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_PERF_TAG)-ppc64le
-
-	@docker manifest push quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_PERF_TAG)
-
-.PHONY: manifest-init
-manifest-init:
-	@docker manifest create quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_INIT_TAG) \
-		quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_INIT_TAG)-amd64 \
-		quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_INIT_TAG)-s390x \
-		quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_INIT_TAG)-ppc64le
-
-	@docker manifest push quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_INIT_TAG)
-
-.PHONY: manifest-bpftrace
-manifest-bpftrace:
-	@docker manifest create quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BPFTRACE_TAG) \
-		quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BPFTRACE_TAG)-amd64 \
-		quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BPFTRACE_TAG)-s390x \
-		quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BPFTRACE_TAG)-ppc64le
-
-	@docker manifest push quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BPFTRACE_TAG)
+.PHONY: bpftrace
+bpftrace:
+	docker buildx build --push --platform $(PLATFORM) \
+		-t quay.io/rhacs-eng/collector-performance:$(COLLECTOR_QA_BPFTRACE_TAG) -f Dockerfile.bpftrace .
