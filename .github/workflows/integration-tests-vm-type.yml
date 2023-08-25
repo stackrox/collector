@@ -134,8 +134,6 @@ jobs:
               echo "IC_ZONE=osa21"
               echo "IBM_CLOUD_POWER_SSH_PUBLIC_KEY=${{ secrets.IBM_CLOUD_POWER_SSH_PUBLIC_KEY }}"
             } >> "${GITHUB_ENV}"
-
-            sudo ifconfig eth0 mtu 1000 up
           fi
 
           if [[ '${{ inputs.vm_type }}' =~ rhel ]]; then
