@@ -71,7 +71,7 @@
     loop_var: gcp_zone
   register: instance_result
   when: >
-    arch_info == "x86" and not condition and [vm_family, vm_collection_method] not in excluded_pairs
+    arch_info == "amd64" and not condition and [vm_family, vm_collection_method] not in excluded_pairs
   vars:
     condition: "{{ (instance_result | default({'changed': false})).changed }}"
 

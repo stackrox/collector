@@ -1,11 +1,11 @@
 ---
 
-arch_info: "{{ 's390x' if 's390x' in test_platform else 'x86'}}"
+arch_info: "{{ 's390x' if 's390x' in test_platform else 'amd64'}}"
 
 gcp_ssh_key_file: "{{ lookup('env', 'GCP_SSH_KEY_FILE', default='~/.ssh/google_compute_engine') }}"
 ibmcloud_ssh_key_file: "{{ lookup('env', 'IBMCLOUD_SSH_KEY_FILE', default='~/.ssh/acs-sshkey_rsa.prv') }}"
 
-ansible_ssh_private_key_file: "{{ ibmcloud_ssh_key_file if arch_info != 'x86' else gcp_ssh_key_file }}"
+ansible_ssh_private_key_file: "{{ ibmcloud_ssh_key_file if arch_info != 'amd64' else gcp_ssh_key_file }}"
 
 current_user: "{{ lookup('env', 'USER') }}"
 test_platform: "{{ lookup('env', 'VM_TYPE', default='rhel') }}"

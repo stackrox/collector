@@ -12,6 +12,11 @@
   set_fact:
     success: true
 
+- name: Build tests
+  include_tasks: build-tests.yml
+  vars:
+    arch: "{{ arch_info }}"
+
 #
 # Separation of collection method is only possible with a separate
 # task file, because we need to loop over a set of tasks to ensure
