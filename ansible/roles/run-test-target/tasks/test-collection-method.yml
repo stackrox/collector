@@ -25,7 +25,7 @@
 - block:
   - name: Run integration tests
     shell: |
-      /tmp/collector-tests {{ run_args }} -test.v 2>&1
+      /tmp/collector-testing/collector-tests {{ run_args }} -test.v 2>&1
     args:
       chdir: /tmp/collector-testing/
     environment:
