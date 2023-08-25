@@ -17,6 +17,9 @@ on:
       drivers-bucket:
         description: Bucket used to pull collector drivers from
         value: ${{ jobs.common-variables.outputs.drivers-bucket }}
+      merged-drivers-bucket:
+        description: Bucket used to push collector drivers into
+        value: ${{ jobs.common-variables.outputs.merged-drivers-bucket }}
       push-drivers-bucket:
         description: Bucket used to push collector drivers into
         value: ${{ jobs.common-variables.outputs.push-drivers-bucket }}
@@ -40,6 +43,10 @@ on:
         description: |
           Bucket to push CPaaS built drivers into
         value: ${{ jobs.common-variables.outputs.cpaas-drivers-bucket }}
+      cpaas-all-archs-drivers-bucket:
+        description: |
+          Bucket to push CPaaS built drivers for all archs into
+        value: ${{ jobs.common-variables.outputs.cpaas-all-archs-drivers-bucket }}
       support-packages-index-bucket:
         description: |
           Bucket to push the generated support-packages index file into
@@ -53,11 +60,13 @@ jobs:
       collector-image: ${{ steps.collector-env.outputs.collector-image }}
       branch-name: ${{ steps.collector-env.outputs.branch-name }}
       drivers-bucket: ${{ steps.gcp-buckets.outputs.drivers-bucket }}
+      merged-drivers-bucket: ${{ steps.gcp-buckets.outputs.merged-drivers-bucket }}
       push-drivers-bucket: ${{ steps.gcp-buckets.outputs.push-drivers-bucket }}
       bundles-bucket: ${{ steps.gcp-buckets.outputs.bundles-bucket }}
       support-packages-bucket: ${{ steps.gcp-buckets.outputs.support-packages-bucket }}
       public-support-packages-bucket: ${{ steps.gcp-buckets.outputs.public-support-packages-bucket }}
       cpaas-drivers-bucket: ${{ steps.gcp-buckets.outputs.cpaas-drivers-bucket }}
+      cpaas-all-archs-drivers-bucket: ${{ steps.gcp-buckets.outputs.cpaas-all-archs-drivers-bucket }}
       cpaas-support-packages-bucket: ${{ steps.gcp-buckets.outputs.cpaas-support-packages-bucket }}
       support-packages-index-bucket: ${{ steps.gcp-buckets.outputs.support-packages-index-bucket }}
 
@@ -91,14 +100,18 @@ jobs:
           STAGING_RELATIVE_PATH="${GITHUB_HEAD_REF}/${{ github.run_id }}"
 
           MAIN_DRIVER_BUCKET="collector-modules-osci"
+          MERGED_DRIVER_BUCKET="${MAIN_DRIVER_BUCKET}/merged-build"
           STAGING_DRIVER_BUCKET="stackrox-collector-modules-staging/pr-builds/${STAGING_RELATIVE_PATH}"
+          STAGING_MERGED_DRIVER_BUCKET="${STAGING_DRIVER_BUCKET}/merged-build"
           BUNDLES_BUCKET="collector-kernel-bundles-public"
           SUPPORT_PACKAGES_BUCKET="sr-roxc/collector/support-packages"
           STAGING_SUPPORT_PACKAGES_BUCKET="${SUPPORT_PACKAGES_BUCKET}/${STAGING_RELATIVE_PATH}"
           PUBLIC_SUPPORT_PACKAGES_BUCKET="collector-support-public/offline/v1/support-packages"
 
           CPAAS_DRIVERS_BUCKET="${MAIN_DRIVER_BUCKET}/cpaas"
+          CPAAS_ALL_ARCHS_DRIVERS_BUCKET="${CPAAS_DRIVERS_BUCKET}/all-archs"
           CPAAS_STAGING_DRIVERS_BUCKET="${STAGING_DRIVER_BUCKET}/cpaas"
+          CPAAS_STAGING_ALL_ARCHS_DRIVERS_BUCKET="${CPAAS_STAGING_DRIVERS_BUCKET}/all-archs"
           CPAAS_SUPPORT_PACKAGES_BUCKET="${SUPPORT_PACKAGES_BUCKET}"
           CPAAS_STAGING_SUPPORT_PACKAGES_BUCKET="${STAGING_SUPPORT_PACKAGES_BUCKET}"
 
@@ -111,13 +124,16 @@ jobs:
           if [[ ${{ github.event_name }} == "pull_request" ]]; then
             {
               echo "push-drivers-bucket=${STAGING_DRIVER_BUCKET}"
+              echo "merged-drivers-bucket=${STAGING_MERGED_DRIVER_BUCKET}"
               echo "support-packages-bucket=${STAGING_SUPPORT_PACKAGES_BUCKET}"
               if [[ ${{ contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps') }} == "true" ]]; then
                   echo "cpaas-drivers-bucket=${CPAAS_STAGING_DRIVERS_BUCKET}"
+                  echo "cpaas-all-archs-drivers-bucket=${CPAAS_STAGING_ALL_ARCHS_DRIVERS_BUCKET}"
                   echo "cpaas-support-packages-bucket=${CPAAS_STAGING_SUPPORT_PACKAGES_BUCKET}"
               else
                   # When running on PRs withouth the 'run-cpaas-steps' label, use the main buckets
                   echo "cpaas-drivers-bucket=${CPAAS_DRIVERS_BUCKET}"
+                  echo "cpaas-all-archs-drivers-bucket=${CPAAS_ALL_ARCHS_DRIVERS_BUCKET}"
                   echo "cpaas-support-packages-bucket=${CPAAS_SUPPORT_PACKAGES_BUCKET}"
               fi
               echo "support-packages-index-bucket=${STAGING_SUPPORT_PACKAGES_BUCKET}"
@@ -125,8 +141,10 @@ jobs:
           else
             {
               echo "push-drivers-bucket=${MAIN_DRIVER_BUCKET}"
+              echo "merged-drivers-bucket=${MERGED_DRIVER_BUCKET}"
               echo "support-packages-bucket=${SUPPORT_PACKAGES_BUCKET}"
               echo "cpaas-drivers-bucket=${CPAAS_DRIVERS_BUCKET}"
+              echo "cpaas-all-archs-drivers-bucket=${CPAAS_ALL_ARCHS_DRIVERS_BUCKET}"
               echo "cpaas-support-packages-bucket=${CPAAS_SUPPORT_PACKAGES_BUCKET}"
               echo "support-packages-index-bucket=${SUPPORT_PACKAGES_BUCKET}"
             } >> "$GITHUB_OUTPUT"
