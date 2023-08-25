@@ -68,7 +68,7 @@ jobs:
           - rhel-s390x
     with:
       vm_type: ${{ matrix.vm_type }}
-      collector-tag: ${{ inputs.collector-tag }}
+      collector-tag: ${{ inputs.collector-tag }}-slim
     secrets: inherit
 
   notify:
