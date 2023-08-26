@@ -52,6 +52,11 @@
     tags: [print_action]
 
   always:
+  - name: Download container logs
+    fetch:
+      src: /tmp/collector-testing/container-logs/{{ vm_config }}/{{ collection_method }}/
+      dest: "{{ logs_root }}"
+
   - name: Write integration test log
     copy:
       content: "{{ test_result.stdout }}"
