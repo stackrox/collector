@@ -113,6 +113,7 @@
     zone: "{{ zone }}"
     state: absent
     id: "{{ pi_ssh_key_id }}"
+    pi_key_name: "{{ hostname }}-ssh-key"
     pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
   register: pi_ssh_key_create_output
   when: pi_ssh_key_existing_output.resource.id is defined
