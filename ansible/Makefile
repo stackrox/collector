@@ -33,7 +33,7 @@ destroy-vms:
 
 .PHONY: image-upload
 image-upload:
-	ansible-playbook -i $(CONTEXT) image-upload.yml
+	ansible-playbook -i $(CONTEXT) -e job_id="$(JOB_ID)" image-upload.yml
 
 .PHONY: integration-tests
 integration-tests: secrets.yml

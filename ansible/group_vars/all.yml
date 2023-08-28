@@ -71,7 +71,7 @@ virtual_machines:
       # Disable SLES-12 as it currently relies on kernel-modules
       # that are no longer built.
       # See https://github.com/stackrox/collector/issues/1141 for details.
-      #- sles-12
+      # - sles-12
       - sles-15
 
   ubuntu-os:

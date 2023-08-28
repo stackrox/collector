@@ -15,16 +15,16 @@
   hosts: "job_id_{{ job_id }}"
   roles:
     - provision-vm
-  gather_facts: no
+  gather_facts: false
   strategy: free
-  become: yes
+  become: true
   tags:
     - setup
     - provision
 
 - name: Teardown VMs
   hosts: "job_id_{{ job_id }}"
-  gather_facts: no
+  gather_facts: false
   roles:
     - destroy-vm
   tags:

@@ -1,9 +1,10 @@
 ---
 - name: Log into quay.io
   become: "{{ runtime_as_root }}"
-  shell:
+  command:
     cmd: "{{ runtime_command }} login -u {{ quay_username }} --password-stdin quay.io"
     stdin: "{{ quay_password }}"
+  changed_when: true
 
 # 'success' will be set to false in the Run Integration Tests step
 # if any test fails. After the tests run, the Check results step
@@ -31,4 +32,4 @@
 - name: Check results
   ansible.builtin.fail:
     msg: Tests failed
-  when: success == false
+  when: not success

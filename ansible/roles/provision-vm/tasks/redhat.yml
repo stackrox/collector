@@ -24,6 +24,13 @@
       delay: 30
       until: registration is not failed
 
+- name: Install yum utils
+  yum:
+    name:
+      - yum-utils
+      - device-mapper-persistent-data
+      - lvm2
+
 - name: Add repository
   shell: |
     yum install -y yum-utils device-mapper-persistent-data lvm2

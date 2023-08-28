@@ -24,7 +24,7 @@
     host: "{{ ansible_host }}"
     timeout: 180
   delegate_to: localhost
-  become: no
+  become: false
 
 - include_tasks: "fedora-coreos.yml"
   when: is_coreos|bool

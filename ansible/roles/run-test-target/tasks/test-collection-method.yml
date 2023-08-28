@@ -13,41 +13,48 @@
 - name: Cleanup old containers
   become: "{{ runtime_as_root }}"
   shell: "{{ runtime_command }} rm -f $({{ runtime_command }} ps -aq) >/dev/null 2>&1 || true"
-
-- block:
-  - name: Run integration tests
-    shell: "make -C {{ collector_root }}/integration-tests {{ collector_test }}"
-    environment:
-      COLLECTION_METHOD: "{{ collection_method }}"
-      REMOTE_HOST_TYPE: ssh
-      REMOTE_HOST_ADDRESS: "{{ vm_ip_address }}"
-      REMOTE_HOST_USER: "{{ ansible_user }}"
-      REMOTE_HOST_OPTIONS: "{{ ansible_ssh_private_key_file }}"
-      VM_CONFIG: "{{ vm_config }}"
-      IMAGE_FAMILY: "{{ vm_image_family }}"
-      RUNTIME_COMMAND: "{{ runtime_command }}"
-      RUNTIME_AS_ROOT: "{{ runtime_as_root }}"
-      RUNTIME_SOCKET: "{{ runtime_socket }}"
-    register: test_result
-    delegate_to: localhost
-
-  - name: Write integration test log
-    copy:
-      content: "{{ test_result.stdout }}"
-      dest: "{{ logs_root }}/integration-test.log"
-    delegate_to: localhost
-
-  - name: Report
-    shell: "make -C {{ collector_root }}/integration-tests report"
-    environment:
-      LOG_FILE: "{{ logs_root }}/integration-test.log"
-    delegate_to: localhost
-
-  rescue:
-  - name: Set tests as failed
-    set_fact:
-      success: false
+  # this task will always change something
+  changed_when: true
 
   # If this host is just for a certain collection method, skip running
   # the test if we're not using that collection method.
-  when: vm_collection_method == collection_method or vm_collection_method == 'any'
+- when: vm_collection_method == collection_method or vm_collection_method == 'any'
+  block:
+    - name: Run integration tests
+      make:
+        chdir: "{{ collector_root }}/integration-tests"
+        target: "{{ collector_test }}"
+      environment:
+        COLLECTION_METHOD: "{{ collection_method }}"
+        REMOTE_HOST_TYPE: ssh
+        REMOTE_HOST_ADDRESS: "{{ vm_ip_address }}"
+        REMOTE_HOST_USER: "{{ ansible_user }}"
+        REMOTE_HOST_OPTIONS: "{{ ansible_ssh_private_key_file }}"
+        VM_CONFIG: "{{ vm_config }}"
+        IMAGE_FAMILY: "{{ vm_image_family }}"
+        RUNTIME_COMMAND: "{{ runtime_command }}"
+        RUNTIME_AS_ROOT: "{{ runtime_as_root }}"
+        RUNTIME_SOCKET: "{{ runtime_socket }}"
+      register: test_result
+      delegate_to: localhost
+
+    - name: Write integration test log
+      copy:
+        content: "{{ test_result.stdout }}"
+        dest: "{{ logs_root }}/integration-test.log"
+        mode: "0600"
+      delegate_to: localhost
+
+    - name: Report
+      make:
+        chdir: "{{ collector_root }}/integration-tests"
+        target: report
+      environment:
+        LOG_FILE: "{{ logs_root }}/integration-test.log"
+      delegate_to: localhost
+
+  rescue:
+    - name: Set tests as failed
+      set_fact:
+        success: false
+

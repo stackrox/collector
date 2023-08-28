@@ -66,11 +66,11 @@
     - name: Print images pushed
       debug:
         msg:
-        - "Pushed the following images:"
-        - "  {{ collector_image }}-{{ arch }}-slim"
-        - "  {{ collector_image }}-{{ arch }}-base"
-        - "  {{ ansible_env.RHACS_ENG_IMAGE }}-{{ arch }}-slim"
-        - "  {{ ansible_env.RHACS_ENG_IMAGE }}-{{ arch }}-base"
+          - "Pushed the following images:"
+          - "  {{ collector_image }}-{{ arch }}-slim"
+          - "  {{ collector_image }}-{{ arch }}-base"
+          - "  {{ ansible_env.RHACS_ENG_IMAGE }}-{{ arch }}-slim"
+          - "  {{ ansible_env.RHACS_ENG_IMAGE }}-{{ arch }}-base"
 
     - name: Logout of quay.io
       community.docker.docker_login:

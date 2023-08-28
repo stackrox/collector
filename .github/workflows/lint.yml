@@ -22,3 +22,8 @@ jobs:
         with:
           # ensure we're only linting the diff between the PR and the base ref
           extra_args: --from-ref origin/${{ github.event.pull_request.base.ref }} --to-ref HEAD
+
+      - name: Run ansible-lint
+        uses: ansible/ansible-lint-action@main
+        with:
+          path: ansible/
