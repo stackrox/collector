@@ -103,7 +103,7 @@
   delegate_to: localhost
   set_fact:
     cacheable: True
-    pi_ssh_key_id: "{{ pi_ssh_key_existing_output.resource }}"
+    pi_ssh_key_id: "{{ pi_ssh_key_existing_output.resource.id }}"
   when: pi_ssh_key_existing_output.resource.id is defined
 
 - name: Delete SSH Key
