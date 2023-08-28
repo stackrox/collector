@@ -108,7 +108,7 @@
 
 - name: Delete SSH Key
   delegate_to: localhost
-  ibm_pi_key:
+  ibm.cloudcollection.ibm_pi_key:
     region: "{{ region }}"
     zone: "{{ zone }}"
     state: absent
