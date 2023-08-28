@@ -103,7 +103,7 @@
   delegate_to: localhost
   set_fact:
     cacheable: True
-    pi_ssh_key: "{{ pi_ssh_key_existing_output.resource }}"
+    pi_ssh_key_id: "{{ pi_ssh_key_existing_output.resource }}"
   when: pi_ssh_key_existing_output.resource.id is defined
 
 - name: Delete SSH Key
@@ -112,7 +112,7 @@
     region: "{{ region }}"
     zone: "{{ zone }}"
     state: absent
-    id: "{{ pi_ssh_key.id }}"
+    id: "{{ pi_ssh_key_id }}"
     pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
   register: pi_ssh_key_create_output
   when: pi_ssh_key_existing_output.resource.id is defined
