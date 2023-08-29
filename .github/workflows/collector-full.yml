@@ -109,7 +109,7 @@ jobs:
           docker push "${COLLECTOR_IMAGE}"
 
       - name: Retag and push stackrox-io -latest
-        uses: stackrox/actions/images/retag-and-push@jv-ROX-19084-github-action-to-retag-and-push-images
+        uses: stackrox/actions/images/retag-and-push@v1
         with:
           src-image: ${{ env.COLLECTOR_IMAGE }}
           dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-latest
@@ -117,7 +117,7 @@ jobs:
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
       - name: Retag and push rhacs-eng
-        uses: stackrox/actions/images/retag-and-push@jv-ROX-19084-github-action-to-retag-and-push-images
+        uses: stackrox/actions/images/retag-and-push@v1
         with:
           src-image: ${{ env.COLLECTOR_IMAGE }}
           dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
@@ -125,7 +125,7 @@ jobs:
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
       - name: Retag and push rhacs-eng -latest
-        uses: stackrox/actions/images/retag-and-push@jv-ROX-19084-github-action-to-retag-and-push-images
+        uses: stackrox/actions/images/retag-and-push@v1
         with:
           src-image: ${{ env.COLLECTOR_IMAGE }}
           dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-latest
@@ -146,7 +146,7 @@ jobs:
           docker pull "${COLLECTOR_IMAGE_SLIM}"
 
       - name: Retag and push stackrox-io
-        uses: stackrox/actions/images/retag-and-push@jv-ROX-19084-github-action-to-retag-and-push-images
+        uses: stackrox/actions/images/retag-and-push@v1
         with:
           src-image: ${{ env.COLLECTOR_IMAGE_SLIM }}
           dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
@@ -154,7 +154,7 @@ jobs:
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
       - name: Retag and push stackrox-io -latest
-        uses: stackrox/actions/images/retag-and-push@jv-ROX-19084-github-action-to-retag-and-push-images
+        uses: stackrox/actions/images/retag-and-push@v1
         with:
           src-image: ${{ env.COLLECTOR_IMAGE_SLIM }}
           dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-latest
@@ -162,7 +162,7 @@ jobs:
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
       - name: Retag and push rhacs-eng
-        uses: stackrox/actions/images/retag-and-push@jv-ROX-19084-github-action-to-retag-and-push-images
+        uses: stackrox/actions/images/retag-and-push@v1
         with:
           src-image: ${{ env.COLLECTOR_IMAGE_SLIM }}
           dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
@@ -170,7 +170,7 @@ jobs:
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
       - name: Retag and push rhacs-eng -latest
-        uses: stackrox/actions/images/retag-and-push@jv-ROX-19084-github-action-to-retag-and-push-images
+        uses: stackrox/actions/images/retag-and-push@v1
         with:
           src-image: ${{ env.COLLECTOR_IMAGE_SLIM }}
           dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-latest

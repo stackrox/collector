@@ -63,7 +63,7 @@ jobs:
           docker pull brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
 
       - name: Retag and push stackrox-io -slim
-        uses: stackrox/actions/images/retag-and-push@jv-ROX-19084-github-action-to-retag-and-push-images
+        uses: stackrox/actions/images/retag-and-push@v1
         with:
           src-image: brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
           dst-image: ${{ needs.init.outputs.collector-image }}-cpaas-slim
