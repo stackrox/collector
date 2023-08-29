@@ -19,6 +19,7 @@
     target: tag
     chdir: "{{ collector_root }}"
   register: collector_tag_result
+  delegate_to: localhost
 
 - set_fact:
     collector_image: "{{ lookup('env', 'COLLECTOR_IMAGE', default='quay.io/rhacs-eng/collector:' +  collector_tag_result.stdout) }}"
