@@ -8,7 +8,39 @@
     region: "osa"
     zone: "osa21"
     pi_cloud_instance_id: "51a46537-a3a3-4e79-88ee-507feb47e7d0"
-    hostname: "{{ hostname.stdout|regex_replace('(.*)(\\.power.*)$', '\\1', ignorecase=True) }}" 
+    hostname: "{{ hostname.stdout|regex_replace('(.*)(\\.power.*)$', '\\1', ignorecase=True) }}"
+    
+- name: Check for existing SSH Key
+  delegate_to: localhost
+  ibm.cloudcollection.ibm_pi_key_info:
+    region: "{{ region }}"
+    zone: "{{ zone }}"
+    pi_key_name: "{{ hostname }}-ssh-key"
+    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
+  failed_when:
+    - pi_ssh_key_existing_output.rc != 0
+    - '"does not exist" not in pi_ssh_key_existing_output.stderr'
+  register: pi_ssh_key_existing_output
+
+- name: Save existing SSH Key as fact
+  delegate_to: localhost
+  set_fact:
+    cacheable: True
+    pi_ssh_key: "{{ pi_ssh_key_existing_output.resource }}"
+  when: pi_ssh_key_existing_output.resource.id is defined
+
+- name: Delete SSH Key
+  delegate_to: localhost
+  ibm.cloudcollection.ibm_pi_key:
+    region: "{{ region }}"
+    zone: "{{ zone }}"
+    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
+    state: absent
+    pi_ssh_key: "{{ pi_ssh_key_existing_output.resource }}"
+    pi_key_name: "{{ hostname }}-ssh-key"
+    id: "{{ pi_ssh_key_existing_output.resource.id }}"
+  register: pi_ssh_key_create_output
+  when: pi_ssh_key_existing_output.resource.id is defined
 
 - name: Get instance id by name
   delegate_to: localhost
