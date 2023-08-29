@@ -1,6 +1,6 @@
 - name: Fetch the variables from var file
   include_vars:
-    file: s390x-vars.yml
+    file: s390x.yml
 
 - name: Check for existing VSI
   ibm.cloudcollection.ibm_is_instance_info:
@@ -49,8 +49,9 @@
 
 - name: Add VSI to Ansible inventory
   add_host:
-    name: "{{ fip.resource.address }}"
+    name: "{{ vsi_name }}"
     ansible_user: root
+    ansible_host: "{{ fip.resource.address }}"
     groups:
       - job_id_{{ job_id }}
       - platform_{{ test_platform }}
