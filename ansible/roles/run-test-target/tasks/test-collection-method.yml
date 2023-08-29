@@ -46,49 +46,45 @@
     set_fact:
       success: false
 
-  - name: Output integration test log
-    debug:
-      msg: "{{ test_result.stdout }}"
-    tags: [print_action]
-
   always:
-  - name: Make logs directories
-    file:
-      state: directory
-      path: "{{ logs_root }}"
-    delegate_to: localhost
+    - name: Make logs directories
+      file:
+        state: directory
+        path: "{{ logs_root }}"
+      delegate_to: localhost
 
-  - name: Get log files
-    find:
-      paths: "{{ remote_logs_root }}/{{ vm_config }}/{{ collection_method }}/"
-    register: remote_log_files
+    - name: Get log files
+      find:
+        paths: "{{ remote_logs_root }}/{{ vm_config }}/{{ collection_method }}/"
+      register: remote_log_files
 
-  - name: Fetch log files
-    fetch:
-      src: "{{ remote_log_path }}"
-      dest: "{{ logs_root }}/"
-      flat: true
-    loop: "{{ remote_log_files.files | map(attribute='path') | list }}"
-    loop_control:
-      loop_var: remote_log_path
+    - name: Fetch log files
+      fetch:
+        src: "{{ remote_log_path }}"
+        dest: "{{ logs_root }}/"
+        flat: true
+      loop: "{{ remote_log_files.files | map(attribute='path') | list }}"
+      loop_control:
+        loop_var: remote_log_path
 
-  - name: Download perf JSON
-    fetch:
-      src: "{{ remote_tests_root }}/perf.json"
-      dest: "{{ integration_tests_root }}/"
-      flat: true
+    - name: Download perf JSON
+      fetch:
+        src: "{{ remote_tests_root }}/perf.json"
+        dest: "{{ integration_tests_root }}/"
+        flat: true
+        fail_on_missing: false
 
-  - name: Write integration test log
-    copy:
-      content: "{{ test_result.stdout }}"
-      dest: "{{ logs_root }}/integration-test.log"
-    delegate_to: localhost
+    - name: Write integration test log
+      copy:
+        content: "{{ test_result.stdout }}"
+        dest: "{{ logs_root }}/integration-test.log"
+      delegate_to: localhost
 
-  - name: Report
-    shell: "make -C {{ integration_tests_root }} report"
-    environment:
-      LOG_FILE: "{{ logs_root }}/integration-test.log"
-    delegate_to: localhost
+    - name: Report
+      shell: "make -C {{ integration_tests_root }} report"
+      environment:
+        LOG_FILE: "{{ logs_root }}/integration-test.log"
+      delegate_to: localhost
 
   # If this host is just for a certain collection method, skip running
   # the test if we're not using that collection method.
