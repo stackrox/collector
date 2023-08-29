@@ -14,6 +14,15 @@
   become: "{{ runtime_as_root }}"
   shell: "{{ runtime_command }} rm -f $({{ runtime_command }} ps -aq) >/dev/null 2>&1 || true"
 
+- name: Get default collector tag
+  community.general.make:
+    target: tag
+    chdir: "{{ collector_root }}"
+  register: collector_tag_result
+
+- set_fact:
+    collector_image: "{{ lookup('env', 'COLLECTOR_IMAGE', default='quay.io/rhacs-eng/collector:' +  collector_tag_result.stdout) }}"
+
 - set_fact:
     run_args: -test.run {{ collector_test }} -test.timeout 60m -test.count=1
   when: collector_test != "ci-integration-tests"
@@ -35,7 +44,7 @@
       RUNTIME_COMMAND: "{{ runtime_command }}"
       RUNTIME_AS_ROOT: "{{ runtime_as_root }}"
       RUNTIME_SOCKET: "{{ runtime_socket }}"
-      COLLECTOR_IMAGE: "quay.io/rhacs-eng/collector:3.15.0"
+      COLLECTOR_IMAGE: "{{ collector_image }}"
       COLLECTOR_QA_TAG: "{{ lookup('file', integration_tests_root + '/container/QA_TAG') }}"
     register: test_result
     # ensure that this is printed
