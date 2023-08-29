@@ -83,6 +83,8 @@ jobs:
             -e arch='${{ matrix.arch }}' \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-collector.yml
+        env:
+          ANSIBLE_CONFIG: ansible/ansible.cfg
 
   create-multiarch-manifest:
     needs:
