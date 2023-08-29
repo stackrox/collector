@@ -2,26 +2,22 @@
 
 - name: Build test binary
   make:
-    chdir: "{{ collector_root }}/integration-tests"
+    chdir: "{{ integration_tests_root }}"
     target: build
     params:
       GOARCH: "{{ arch | default('amd64') }}"
       GOOS: linux
   delegate_to: localhost
 
-- name: Make directory structure
-  shell: |
-    mkdir -p /tmp/collector-testing/container
-
 - name: Upload test binary
   copy:
-    src: "{{ collector_root }}/integration-tests/bin/collector-tests"
-    dest: /tmp/collector-testing/
+    src: "{{ integration_tests_root }}/bin/collector-tests"
+    dest: "{{ remote_tests_root }}"
     mode: '0700'
 
 - name: Upload test files
   copy:
-    src: "{{ collector_root }}/integration-tests/images.yml"
-    dest: "/tmp/collector-testing/images.yml"
+    src: "{{ integration_tests_root }}/images.yml"
+    dest: "{{ remote_tests_root }}/images.yml"
     mode: '0600'
 
