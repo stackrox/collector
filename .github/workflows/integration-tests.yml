@@ -16,21 +16,21 @@ on:
         default: ""
 
 jobs:
-  required-integration-tests:
-    uses: ./.github/workflows/integration-tests-vm-type.yml
-    strategy:
-      # ensure that if one part of the matrix fails, the
-      # rest will continue
-      fail-fast: false
-      matrix:
-        vm_type:
-          - rhel
-          - ubuntu-os
-    with:
-      vm_type: ${{ matrix.vm_type }}
-      collector-tag: ${{ inputs.collector-tag }}
-      job-tag: ${{ inputs.job-tag }}
-    secrets: inherit
+  #required-integration-tests:
+  #  uses: ./.github/workflows/integration-tests-vm-type.yml
+  #  strategy:
+  #    # ensure that if one part of the matrix fails, the
+  #    # rest will continue
+  #    fail-fast: false
+  #    matrix:
+  #      vm_type:
+  #        - rhel
+  #        - ubuntu-os
+  #  with:
+  #    vm_type: ${{ matrix.vm_type }}
+  #    collector-tag: ${{ inputs.collector-tag }}
+  #    job-tag: ${{ inputs.job-tag }}
+  #  secrets: inherit
 
   all-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
@@ -58,7 +58,7 @@ jobs:
 
   multi-arch-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds') || github.event_name == 'push' }}
+      #if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds') || github.event_name == 'push' }}
     strategy:
       # ensure that if one part of the matrix fails, the
       # rest will continue
@@ -75,7 +75,7 @@ jobs:
     runs-on: ubuntu-latest
     if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name == 'push'
     needs:
-      - required-integration-tests
+      #- required-integration-tests
       - all-integration-tests
     steps:
       - name: Slack notification
