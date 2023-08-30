@@ -1,7 +1,6 @@
 #include "SysdigService.h"
 
 #include <cap-ng.h>
-#include <string_view>
 #include <thread>
 
 #include <linux/ioctl.h>
@@ -77,7 +76,7 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
     inspector_->get_parser()->set_track_connection_status(true);
 
     auto engine = std::make_shared<ContainerEngine>(inspector_->m_container_manager);
-    auto container_engines = inspector_->m_container_manager.get_container_engines();
+    auto* container_engines = inspector_->m_container_manager.get_container_engines();
     container_engines->push_back(engine);
 
     inspector_->set_filter("container.id != 'host'");

@@ -200,28 +200,39 @@ void TryUnlink(const char* path) {
   }
 }
 
+const static unsigned int CONTAINER_ID_LENGTH = 64;
+const static unsigned int SHORT_CONTAINER_ID_LENGTH = 12;
+
 // IsContainerID returns whether the given string view represents a container ID.
 bool IsContainerID(std::string_view str) {
-  if (str.size() != 64) return false;
+  if (str.size() != CONTAINER_ID_LENGTH) {
+    return false;
+  }
 
   return std::all_of(str.begin(), str.end(), [](char c) -> bool {
-    return std::isxdigit(c);
+    return std::isxdigit(c) != 0;
   });
 }
 
 std::optional<std::string_view> ExtractContainerIDFromCgroup(std::string_view cgroup) {
-  if (cgroup.size() < 65) return {};
+  if (cgroup.size() < CONTAINER_ID_LENGTH + 1) {
+    return {};
+  }
 
   auto scope = cgroup.rfind(".scope");
   if (scope != std::string_view::npos) {
     cgroup.remove_suffix(cgroup.length() - scope);
-    if (cgroup.size() < 65) return {};
+    if (cgroup.size() < CONTAINER_ID_LENGTH + 1) {
+      return {};
+    }
   }
 
-  auto container_id_part = cgroup.substr(cgroup.size() - 65);
-  if (container_id_part[0] != '/' && container_id_part[0] != '-') return {};
+  auto container_id_part = cgroup.substr(cgroup.size() - (CONTAINER_ID_LENGTH + 1));
+  if (container_id_part[0] != '/' && container_id_part[0] != '-') {
+    return {};
+  }
 
-  cgroup.remove_suffix(65);
+  cgroup.remove_suffix(CONTAINER_ID_LENGTH + 1);
   // conmon runs as its own container, we ignore it.
   if (cgroup.find("-conmon", cgroup.size() - StrLen("-conmon")) != std::string_view::npos) {
     return {};
@@ -229,7 +240,9 @@ std::optional<std::string_view> ExtractContainerIDFromCgroup(std::string_view cg
 
   container_id_part.remove_prefix(1);
 
-  if (!IsContainerID(container_id_part)) return {};
-  return std::make_optional(container_id_part.substr(0, 12));
+  if (!IsContainerID(container_id_part)) {
+    return {};
+  }
+  return std::make_optional(container_id_part.substr(0, SHORT_CONTAINER_ID_LENGTH));
 }
 }  // namespace collector

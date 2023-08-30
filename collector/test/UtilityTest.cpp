@@ -63,7 +63,7 @@ TEST(ExtractContainerIDFromCgroupTest, TestExtractContainerIDFromCgroup) {
     std::optional<std::string_view> expected_output;
   };
 
-  TestCase cases[] = {
+  std::vector<TestCase> cases{
       {
           "/mesos/3b1cf944-1d97-40a6-ac73-b156ac2f2bfe/mesos/077d75a1-d7b6-4e55-8114-13f925fe4f49/kubepods/besteffort/pod8e18d5f1-1421-42b7-8151-fb1c3be4bd4d/e73c55f3e7f5b6a9cfc32a89bf13e44d348bcc4fa7b079f804d61fb1532ddbe5",
           "e73c55f3e7f5",

@@ -7,12 +7,10 @@
 #include <mutex>
 #include <string>
 
-// clang-format off
 #include "libsinsp/sinsp.h"
-#include "DriverCandidates.h"
-// clang-format on
 
 #include "Control.h"
+#include "DriverCandidates.h"
 #include "SignalHandler.h"
 #include "SignalServiceClient.h"
 #include "Sysdig.h"

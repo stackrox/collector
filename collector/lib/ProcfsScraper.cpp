@@ -140,7 +140,9 @@ std::optional<std::string> GetContainerID(int dirfd) {
 
     std::string_view line(linebuf, line_len);
     auto short_container_id = ExtractContainerID(line);
-    if (!short_container_id) continue;
+    if (!short_container_id) {
+      continue;
+    }
 
     return std::make_optional(std::string(*short_container_id));
   }
@@ -417,7 +419,9 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
     }
 
     auto container_id = GetContainerID(dirfd);
-    if (!container_id) continue;
+    if (!container_id) {
+      continue;
+    }
 
     uint64_t netns_inode;
     if (!GetNetworkNamespace(dirfd, &netns_inode)) {
@@ -522,7 +526,9 @@ bool ReadProcessCmdline(const char* process_id, int dirfd, std::string& exe, std
 
 std::optional<std::string_view> ExtractContainerID(std::string_view cgroup_line) {
   auto start = rep_find(2, cgroup_line, ':');
-  if (start == std::string_view::npos) return {};
+  if (start == std::string_view::npos) {
+    return {};
+  }
 
   std::string_view cgroup_path = cgroup_line.substr(start + 1);
 
