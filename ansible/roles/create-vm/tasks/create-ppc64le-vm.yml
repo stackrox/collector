@@ -136,7 +136,7 @@
 
 - name: Add VSI to Ansible inventory
   add_host:
-    name: "{{ vm_name }}"
+    name: "{{ pi_name }}"
     ansible_host: "{{ pi_instance.addresses[0].external_ip }}"
     ansible_user: root
     groups:
