@@ -14,6 +14,7 @@
 #include "CollectionMethod.h"
 #include "CollectorException.h"
 #include "CollectorStats.h"
+#include "ContainerEngine.h"
 #include "EventNames.h"
 #include "HostInfo.h"
 #include "KernelDriver.h"
@@ -75,6 +76,12 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
 
     inspector_->get_parser()->set_track_connection_status(true);
 
+    auto engine = std::make_shared<ContainerEngine>(inspector_->m_container_manager);
+    auto container_engines = inspector_->m_container_manager.get_container_engines();
+    container_engines->push_back(engine);
+
+    inspector_->set_filter("container.id != 'host'");
+
     default_formatter_.reset(new sinsp_evt_formatter(inspector_.get(),
                                                      DEFAULT_OUTPUT_STR));
   }
@@ -92,31 +99,6 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
   }
 
   return true;
-}
-
-void SysdigService::UpdateContainerID(sinsp_threadinfo* tinfo) {
-  if (!tinfo || !tinfo->m_container_id.empty()) {
-    return;
-  }
-
-  for (const auto& cgroup : tinfo->cgroups()) {
-    auto container_id = ExtractContainerIDFromCgroup(cgroup.second);
-
-    if (container_id) {
-      tinfo->m_container_id = *container_id;
-      return;
-    }
-  }
-
-  // Event comes most likely from the host, mark it as such
-  tinfo->m_container_id = "host";
-  return;
-}
-
-bool SysdigService::FilterEvent(sinsp_evt* event) {
-  auto tinfo = event->get_thread_info();
-
-  return !tinfo || tinfo->m_container_id.length() != 12;
 }
 
 sinsp_evt* SysdigService::GetNext() {
@@ -155,20 +137,6 @@ sinsp_evt* SysdigService::GetNext() {
 
   userspace_stats_.event_parse_micros[event->get_type()] += (NowMicros() - parse_start);
   ++userspace_stats_.nUserspaceEvents[event->get_type()];
-
-  auto tinfo = event->get_thread_info();
-
-  if (tinfo == nullptr) {
-    return nullptr;
-  }
-
-  if (tinfo->m_container_id.empty()) {
-    UpdateContainerID(tinfo);
-  }
-
-  if (FilterEvent(event)) {
-    return nullptr;
-  }
   ++userspace_stats_.nFilteredEvents[event->get_type()];
 
   return event;
@@ -268,11 +236,7 @@ bool SysdigService::SendExistingProcesses(SignalHandler* handler) {
   }
 
   return threads->loop([&](sinsp_threadinfo& tinfo) {
-    if (tinfo.m_container_id.empty()) {
-      UpdateContainerID(&tinfo);
-    }
-
-    if (tinfo.m_container_id.length() == 12 && tinfo.is_main_thread()) {
+    if (!tinfo.m_container_id.empty() && tinfo.is_main_thread()) {
       auto result = handler->HandleExistingProcess(&tinfo);
       if (result == SignalHandler::ERROR || result == SignalHandler::NEEDS_REFRESH) {
         CLOG(WARNING) << "Failed to write existing process signal: " << &tinfo;
