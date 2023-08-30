@@ -5,7 +5,7 @@
     {{ entry }}:
       ansible_user: root
       ansible_ssh_private_key_file: {{ ansible_ssh_private_key_file }}
-      ansible_host: {{ hostvars[entry]['ansible_host'] }}
+      #ansible_host: {{ hostvars[entry]['ansible_host'] }}
       vm_config: {{ hostvars[entry]['vm_config'] }}
       vm_collection_method: {{ hostvars[entry]['vm_collection_method'] }}
       vm_image_family: {{ hostvars[entry]['vm_image_family'] }}
