@@ -132,11 +132,6 @@ jobs:
         run: |
           make -C "${{ github.workspace }}/ansible" create-ci-vms
 
-      - name: DEBUG
-        uses: lhotari/action-upterm@v1
-        with:
-          limit-access-to-actor: true
-
       - name: Run Tests
         if: ${{ ! inputs.run-benchmarks }}
         run: |

@@ -52,9 +52,14 @@
     tags: [print_action]
 
   rescue:
-  - name: Set tests as failed
-    set_fact:
-      success: false
+    - name: Set tests as failed
+      set_fact:
+        success: false
+
+    - name: Output test log
+      debug:
+        msg: "{{ test_result.stdout }}"
+      tags: [print_action]
 
   always:
     - name: Make logs directories
@@ -91,7 +96,9 @@
       delegate_to: localhost
 
     - name: Report
-      shell: "make -C {{ integration_tests_root }} report"
+      community.general.make:
+        chdir: "{{ integration_tests_root }}"
+        target: report
       environment:
         LOG_FILE: "{{ logs_root }}/integration-test.log"
       delegate_to: localhost
