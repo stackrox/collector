@@ -139,8 +139,6 @@ jobs:
       COLLECTOR_IMAGE_SLIM: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-slim
 
     steps:
-      - uses: actions/checkout@v3
-
       - name: Pull slim image
         run: |
           docker pull "${COLLECTOR_IMAGE_SLIM}"
