@@ -234,9 +234,7 @@ This role will delete a VM from GCP or IBM Cloud, based on its instance name.
 
 See [vm-lifecycle.yml](./vm-lifecycle.yml) for an example of how it's used.
 
-Note that, for IBM Z VMs, the destroy process will only delete the VM and release its floating IP. Other shared resources mentioned in the creation process above will not be removed.
-
-Note that, for IBM POWER VMs, the destroy process will only delete the VM and release its subnet allocated and ssh key..
+Note that, for IBM VMs, the destroy process will only delete the VM and release its floating IP. Other shared resources mentioned in the creation process above will not be removed.
 
 #### run-test-target
 

@@ -2,48 +2,15 @@
 - name: Get host name
   shell: hostname
   register: hostname
-
+ 
 #Set fact that are required to destroy vsi instance 
 - set_fact:
-    region: "osa"
-    zone: "osa21"
+    region: "{{ lookup('env', 'IC_REGION') }}"
+    zone: "{{ lookup('env', 'IC_ZONE') }}"
     pi_cloud_instance_id: "51a46537-a3a3-4e79-88ee-507feb47e7d0"
     hostname: "{{ hostname.stdout|regex_replace('(.*)(\\.power.*)$', '\\1', ignorecase=True) }}"
-    
-- name: Check for existing SSH Key
-  delegate_to: localhost
-  ibm.cloudcollection.ibm_pi_key_info:
-    region: "{{ region }}"
-    zone: "{{ zone }}"
-    pi_key_name: "{{ hostname }}-ssh-key"
-    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
-  failed_when:
-    - pi_ssh_key_existing_output.rc != 0
-    - '"does not exist" not in pi_ssh_key_existing_output.stderr'
-  register: pi_ssh_key_existing_output
-
-- name: Save existing SSH Key as fact
-  delegate_to: localhost
-  set_fact:
-    cacheable: True
-    pi_ssh_key: "{{ pi_ssh_key_existing_output.resource }}"
-  when: pi_ssh_key_existing_output.resource.id is defined
-
-- name: Delete SSH Key
-  delegate_to: localhost
-  ibm.cloudcollection.ibm_pi_key:
-    region: "{{ region }}"
-    zone: "{{ zone }}"
-    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
-    state: absent
-    pi_ssh_key: "{{ pi_ssh_key_existing_output.resource }}"
-    pi_key_name: "{{ hostname }}-ssh-key"
-    id: "{{ pi_ssh_key_existing_output.resource.id }}"
-  register: pi_ssh_key_create_output
-  when: pi_ssh_key_existing_output.resource.id is defined
 
 - name: Get instance id by name
-  delegate_to: localhost
   environment:
     IC_API_KEY: "{{ lookup('env', 'IC_API_KEY') }}"
   ibm.cloudcollection.ibm_pi_instance_info:
@@ -59,23 +26,17 @@
   register: pi_instance_existing_output
 
 - name: Save existing Power VSI fact
-  delegate_to: localhost
   set_fact:
     cacheable: True
     pi_instance: "{{ pi_instance_existing_output.resource }}"
   when: pi_instance_existing_output.rc == 0
 
 - name: Save network details
-  delegate_to: localhost
   set_fact:
     public_subnet: "{{ pi_instance.addresses|rejectattr('external_ip', 'equalto', '') | list | first }}"
   when: pi_instance_existing_output.rc == 0
 
-
-- meta: clear_host_errors
-
 - name: Delete instance by id
-  delegate_to: localhost
   ibm.cloudcollection.ibm_pi_instance:
     region: "{{ region }}"
     zone: "{{ zone }}"
@@ -90,7 +51,6 @@
   when: pi_instance_existing_output.rc == 0
 
 - name: Check for existing network
-  delegate_to: localhost
   ibm.cloudcollection.ibm_pi_network_info:
     region: "{{ region }}"
     zone: "{{ zone }}"
@@ -102,14 +62,12 @@
   register: pi_network_existing_output
 
 - name: Save existing network as fact
-  delegate_to: localhost
   set_fact:
     cacheable: True
     pi_network_id: "{{ pi_network_existing_output.resource.id }}"
   when: pi_network_existing_output.resource.id is defined
 
 - name: Delete network
-  delegate_to: localhost
   ibm.cloudcollection.ibm_pi_network:
     region: "{{ region }}"
     zone: "{{ zone }}"
@@ -121,7 +79,6 @@
     - pi_network_existing_output.resource.id is defined
 
 - name: Remove IBM inventory file (delete file)
-  delegate_to: localhost
   file:
     path: '{{ ibm_output_inventory_file }}'
     state: absent

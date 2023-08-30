@@ -4,16 +4,8 @@
   collections:
    - ibm.cloudcollection
 
-- debug:
-    var: ansible_ssh_private_key_file
-
-- debug:
-    msg: "{{ lookup('file', ansible_ssh_private_key_file) }}"
-
 - name: Check for existing SSH Key
-  collections:
-   - ibm.cloudcollection
-  ibm_pi_key_info:
+  ibm.cloudcollection.ibm_pi_key_info:
     pi_key_name: "{{ pi_name }}-ssh-key"
     pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
   failed_when:
@@ -21,11 +13,14 @@
     - '"does not exist" not in pi_ssh_key_existing_output.stderr'
   register: pi_ssh_key_existing_output
 
+- set_fact:
+    ssh_key_exists: "{{ pi_ssh_key_existing_output.resource.id is defined }}"
+
 - name: Save existing SSH Key as fact
   set_fact:
     cacheable: True
     pi_ssh_key: "{{ pi_ssh_key_existing_output.resource }}"
-  when: pi_ssh_key_existing_output.resource.id is defined
+  when: ssh_key_exists
 
 - name: Add new SSH Key
   ibm.cloudcollection.ibm_pi_key:
@@ -33,13 +28,13 @@
     pi_ssh_key: "{{ ssh_public_key }}"
     pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
   register: pi_ssh_key_create_output
-  when: pi_ssh_key_existing_output.resource.id is not defined
+  when: not ssh_key_exists
 
 - name: Save new SSH Key as fact
   set_fact:
     cacheable: True
     pi_ssh_key: "{{ pi_ssh_key_create_output.resource }}"
-  when: pi_ssh_key_existing_output.resource.id is not defined
+  when: not ssh_key_exists
 
 - name: Retrieve image list
   ibm.cloudcollection.ibm_pi_images_info:
@@ -62,11 +57,14 @@
     - '"Error:item not found" not in pi_network_existing_output.stderr'
   register: pi_network_existing_output
 
+- set_fact:
+    network_exists: "{{ pi_network_existing_output.resource.id is defined }}"
+
 - name: Save existing network as fact
   set_fact:
     cacheable: True
     pi_network_id: "{{ pi_network_existing_output.resource.id }}"
-  when: pi_network_existing_output.resource.id is defined
+  when: network_exists
 
 - name: Add new network
   ibm.cloudcollection.ibm_pi_network:
@@ -74,13 +72,13 @@
     pi_network_type: "pub-vlan"
     pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
   register: pi_network_create_output
-  when: pi_network_existing_output.resource.id is not defined
+  when: not network_exists
 
 - name: Save new network as fact
   set_fact:
     cacheable: True
     pi_network_id: "{{ pi_network_create_output.resource.network_id }}"
-  when: pi_network_existing_output.resource.id is not defined
+  when: not network_exists
 
 - name: Check for existing Virtual Server Instance
   ibm.cloudcollection.ibm_pi_instance_info:
@@ -138,7 +136,8 @@
 
 - name: Add VSI to Ansible inventory
   add_host:
-    name: "{{ pi_instance.addresses[0].external_ip }}"
+    name: "{{ vm_name }}"
+    ansible_host: "{{ pi_instance.addresses[0].external_ip }}"
     ansible_user: root
     groups:
       - job_id_{{ job_id }}
