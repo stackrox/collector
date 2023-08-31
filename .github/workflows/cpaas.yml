@@ -83,7 +83,8 @@ jobs:
       arch-drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
       skip-built-drivers: true
       build-full-image: true
-      max-layer-depth: "1"
+      use-optional-bucket: true
+      optional-drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
     secrets: inherit
     needs:
     - init
