@@ -1,7 +1,7 @@
 {% for item, entries in groups.items() %}
 {{ item }}:
   hosts:
-{% for entry in entries %}
+{% for entry in entries if hostvars[entry].get('ibm_cloud_vm') %}
     {{ entry }}:
       ansible_user: root
       ansible_ssh_private_key_file: {{ ansible_ssh_private_key_file }}
