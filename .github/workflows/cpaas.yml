@@ -84,7 +84,7 @@ jobs:
       skip-built-drivers: true
       build-full-image: true
       use-optional-bucket: true
-      max-layer-depth: 1
+      max-layer-depth: "1"
       optional-drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
     secrets: inherit
     needs:
