@@ -17,8 +17,5 @@
   when: arch_info == "s390x"
 
 - name: Delete IBM Power VSI
-  include_tasks:
-    apply:
-      delegate_to: localhost
-    file: destroy-ppc64le-vm.yml
+  include_tasks: destroy-ppc64le-vm.yml
   when: arch_info == "ppc64le"
