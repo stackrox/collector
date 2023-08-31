@@ -80,6 +80,7 @@
         - "  {{ collector_image }}-{{ arch }}-base"
         - "  {{ ansible_env.RHACS_ENG_IMAGE }}-{{ arch }}-slim"
         - "  {{ ansible_env.RHACS_ENG_IMAGE }}-{{ arch }}-base"
+      tags: [print_action]
 
     - name: Logout of quay.io
       community.docker.docker_login:
