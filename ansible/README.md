@@ -74,31 +74,6 @@ of these images to quay.io.
 | stackrox_io_password | Password used for pushing images to quay.io/stackrox-io |
 | rhacs_eng_username | Username used for pushing images to quay.io/rhacs-eng |
 | rhacs_eng_password | Password used for pushing images to quay.io/rhacs-eng |
-<<<<<<< HEAD
-
-### Full collector images
-The `ci-build-collector-full.yml` playbook is meant to be used by CI, it builds
-the full collector image for a given architecture. The drivers to be embedded
-in the final image need to be downloaded before calling the playbook.
-
-#### Ansible variables to be supplied to the playbook
-
-| Name | Description |
-| ---  | ---         |
-| collector_image | The collector image name to be built, including its tag but excluding the arch |
-| arch | The architecture the images are being built for, currently the supported values are:<br>- amd64<br>- ppc64le<br>- s390x |
-| max_layer-depth | The maximum number of layers expected to be used for the drivers |
-| collector_tag | The tag being used for the image |
-| driver_version | The driver version that will be used by the built image |
-| context_path | The path to the context for the image build |
-| stackrox_io_username | Username used for pushing images to quay.io/stackrox-io |
-| stackrox_io_password | Password used for pushing images to quay.io/stackrox-io |
-| rhacs_eng_username | Username used for pushing images to quay.io/rhacs-eng |
-| rhacs_eng_password | Password used for pushing images to quay.io/rhacs-eng |
-||||||| parent of 73d433ec (Skip builder image build when it is unmodified (#1284))
-| push_builder | If 'true', the builder will be pushed to the registries alongside the collector images |
-=======
->>>>>>> 73d433ec (Skip builder image build when it is unmodified (#1284))
 
 ### Full collector images
 The `ci-build-collector-full.yml` playbook is meant to be used by CI, it builds
