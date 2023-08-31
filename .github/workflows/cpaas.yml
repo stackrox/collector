@@ -104,7 +104,7 @@ jobs:
           - rhel-s390x
     with:
       vm_type: ${{ matrix.vm_type }}
-      collector-tag: ${{ needs.init.outputs.collector-image }}-cpaas
+      collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
       offline-mode: true
       job-tag: cpaas
     needs:
