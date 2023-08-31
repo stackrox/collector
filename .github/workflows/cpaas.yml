@@ -54,9 +54,9 @@ jobs:
     strategy:
       matrix:
         arch:
-        - amd64
-        - s390x
-        - ppc64le
+          - amd64
+          - s390x
+          - ppc64le
     steps:
       - uses: docker/login-action@v2
         with:
