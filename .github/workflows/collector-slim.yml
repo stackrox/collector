@@ -151,13 +151,12 @@ jobs:
       github.event_name == 'pull_request' &&
       contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
     steps:
-      - uses: actions/checkout@v3
       - name: Pull image to retag
         run: |
           docker pull ${{ inputs.collector-image }}-amd64-slim
 
       - name: Retag and push stackrox-io -slim
-        uses: ./.github/actions/retag-and-push
+        uses: stackrox/actions/images/retag-and-push@v1
         with:
           src-image: ${{ inputs.collector-image }}-amd64-slim
           dst-image: ${{ inputs.collector-image }}-slim
@@ -165,7 +164,7 @@ jobs:
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
       - name: Retag and push stackrox-io -base
-        uses: ./.github/actions/retag-and-push
+        uses: stackrox/actions/images/retag-and-push@v1
         with:
           src-image: ${{ inputs.collector-image }}-amd64-slim
           dst-image: ${{ inputs.collector-image }}-base
@@ -173,7 +172,7 @@ jobs:
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
       - name: Retag and push rhacs-eng -slim
-        uses: ./.github/actions/retag-and-push
+        uses: stackrox/actions/images/retag-and-push@v1
         with:
           src-image: ${{ inputs.collector-image }}-amd64-slim
           dst-image: ${{ env.RHACS_ENG_IMAGE }}-slim
@@ -181,7 +180,7 @@ jobs:
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
       - name: Retag and push rhacs-eng -base
-        uses: ./.github/actions/retag-and-push
+        uses: stackrox/actions/images/retag-and-push@v1
         with:
           src-image: ${{ inputs.collector-image }}-amd64-slim
           dst-image: ${{ env.RHACS_ENG_IMAGE }}-base
