@@ -12,15 +12,25 @@ type MissingProcScrapeTestSuite struct {
 	IntegrationTestSuiteBase
 }
 
+const fakeProcDir = "/tmp/fake-proc"
+
 func (s *MissingProcScrapeTestSuite) SetupSuite() {
-	_, err := os.Stat("/tmp/fake-proc")
-	assert.False(s.T(), os.IsNotExist(err), "Missing fake proc directory")
+	_, err := os.Stat(fakeProcDir)
+	if os.IsNotExist(err) {
+		err = os.MkdirAll(fakeProcDir, os.ModePerm)
+		s.Require().NoError(err, "Failed to create fake proc directory")
+	}
 
 	s.executor = common.NewExecutor()
 	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
 
 	// Mount the fake proc directory created by 'create-fake-proc.sh'
-	s.collector.Mounts["/host/proc:ro"] = "/tmp/fake-proc"
+	s.collector.Mounts["/host/proc:ro"] = fakeProcDir
+
+	// if /etc/hostname is empty collector will read /proc/sys/kernel/hostname
+	// which will also be empty because of the fake proc, so collector will exit.
+	// to avoid this, set NODE_HOSTNAME
+	s.collector.Env["NODE_HOSTNAME"] = "collector-missing-proc-host"
 
 	err = s.collector.Setup()
 	s.Require().NoError(err)
