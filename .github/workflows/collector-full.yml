@@ -48,7 +48,7 @@ jobs:
         - ppc64le
         - s390x
     env:
-      COLLECTOR_IMAGE: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
+      COLLECTOR_IMAGE: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-${{ matrix.arch }}
 
     steps:
       - uses: actions/checkout@v3
