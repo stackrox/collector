@@ -2,7 +2,7 @@ package suites
 
 import (
 	"fmt"
-	"sort"
+	// "sort"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -49,7 +49,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 		s.Require().NoError(err)
 	}
 
-	time.Sleep(10 * time.Second)
+	//	time.Sleep(10 * time.Second)
 
 	// invokes default nginx
 	containerID, err := s.launchContainer("nginx", image_store.ImageByKey("nginx"))
@@ -79,16 +79,17 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	s.clientIP, err = s.getIPAddress("nginx-curl")
 	s.Require().NoError(err)
 
-	time.Sleep(10 * time.Second)
+	//time.Sleep(10 * time.Second)
 
-	err = s.collector.TearDown()
-	s.Require().NoError(err)
+	//err = s.collector.TearDown()
+	//s.Require().NoError(err)
 
-	s.db, err = s.collector.BoltDB()
-	s.Require().NoError(err)
+	//s.db, err = s.collector.BoltDB()
+	//s.Require().NoError(err)
 }
 
 func (s *ProcessNetworkTestSuite) TearDownSuite() {
+	_ = s.collector.TearDown()
 	s.cleanupContainer([]string{"nginx", "nginx-curl"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
@@ -127,21 +128,23 @@ func (s *ProcessNetworkTestSuite) TestProcessViz() {
 		},
 	}
 
-	actualProcesses, err := s.GetProcesses(s.serverContainer)
-	s.Require().NoError(err)
+	s.collector.ExpectProcesses(s.T(), s.serverContainer, 30*time.Second, expectedProcesses...)
 
-	sort.Slice(actualProcesses, func(i, j int) bool {
-		return actualProcesses[i].Name < actualProcesses[j].Name
-	})
+	// actualProcesses, err := s.GetProcesses(s.serverContainer)
+	// s.Require().NoError(err)
 
-	assert.Equal(s.T(), len(expectedProcesses), len(actualProcesses))
+	// sort.Slice(actualProcesses, func(i, j int) bool {
+	// 	return actualProcesses[i].Name < actualProcesses[j].Name
+	// })
 
-	for i, expected := range expectedProcesses {
-		actual := actualProcesses[i]
-		s.Require().NoError(err)
+	// assert.Equal(s.T(), len(expectedProcesses), len(actualProcesses))
 
-		s.AssertProcessInfoEqual(expected, actual)
-	}
+	// for i, expected := range expectedProcesses {
+	// 	actual := actualProcesses[i]
+	// 	s.Require().NoError(err)
+
+	// 	s.AssertProcessInfoEqual(expected, actual)
+	// }
 }
 
 func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {

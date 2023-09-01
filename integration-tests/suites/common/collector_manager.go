@@ -4,15 +4,20 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/user"
+	"testing"
+	"time"
+
+	// "os/user"
 	"path/filepath"
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/boltdb/bolt"
 
 	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/suites/mock_sensor"
 )
 
 type CollectorManager struct {
@@ -29,6 +34,8 @@ type CollectorManager struct {
 	TestName          string
 	CoreDumpFile      string
 	VmConfig          string
+
+	Sensor *mock_sensor.MockSensor
 }
 
 func NewCollectorManager(e Executor, name string) *CollectorManager {
@@ -80,6 +87,8 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 		TestName:          name,
 		CoreDumpFile:      "/tmp/core.out",
 		VmConfig:          vm_config,
+
+		Sensor: mock_sensor.NewMockSensor(),
 	}
 }
 
@@ -172,23 +181,25 @@ func (c *CollectorManager) getAllContainers() (string, error) {
 }
 
 func (c *CollectorManager) launchGRPCServer() error {
-	user, _ := user.Current()
-	selinuxErr := setSelinuxPermissiveIfNeeded()
-	if selinuxErr != nil {
-		return selinuxErr
-	}
-	cmd := []string{RuntimeCommand, "run",
-		"-d",
-		"--rm",
-		"--name", "grpc-server",
-		"--network=host",
-		"--privileged",
-		"-v", "/tmp:/tmp:rw",
-		"--user", user.Uid + ":" + user.Gid,
-		c.GRPCServerImage,
-	}
-	_, err := c.executor.Exec(cmd...)
-	return err
+	//	user, _ := user.Current()
+	//	selinuxErr := setSelinuxPermissiveIfNeeded()
+	//	if selinuxErr != nil {
+	//		return selinuxErr
+	//	}
+	//	cmd := []string{RuntimeCommand, "run",
+	//		"-d",
+	//		"--rm",
+	//		"--name", "grpc-server",
+	//		"--network=host",
+	//		"--privileged",
+	//		"-v", "/tmp:/tmp:rw",
+	//		"--user", user.Uid + ":" + user.Gid,
+	//		c.GRPCServerImage,
+	//	}
+	//	_, err := c.executor.Exec(cmd...)
+	//	return err
+	c.Sensor.Start()
+	return nil
 }
 
 func (c *CollectorManager) launchCollector() error {
@@ -315,4 +326,45 @@ func (c *CollectorManager) GetCoreDump(coreDumpFile string) error {
 		}
 	}
 	return nil
+}
+
+func (c *CollectorManager) ExpectProcesses(
+	t *testing.T, containerID string, timeout time.Duration, expected ...ProcessInfo) bool {
+
+	collected := make([]ProcessInfo, 0)
+loop:
+	for {
+		select {
+		default:
+		case <-time.After(timeout * time.Second):
+			return assert.Fail(t, "timed out waiting for processes")
+
+		case process := <-c.Sensor.Processes():
+			processInfo := fmt.Sprintf("%s:%s:%d:%d:%d:%s", process.GetName(), process.GetExecFilePath(), process.GetUid(), process.GetGid(), process.GetPid(), process.GetArgs())
+			fmt.Printf("ProcessInfo: %s\n", processInfo)
+			if process.GetContainerId() != containerID {
+				processInfo := fmt.Sprintf("%s:%s:%d:%d:%d:%s", process.GetName(), process.GetExecFilePath(), process.GetUid(), process.GetGid(), process.GetPid(), process.GetArgs())
+				fmt.Printf("- ProcessInfo: %s\n", processInfo)
+				continue loop
+			}
+
+			info := ProcessInfo{
+				Name:    process.GetName(),
+				ExePath: process.GetExecFilePath(),
+				// Pid:     int(process.GetPid()),
+				Uid:  int(process.GetUid()),
+				Gid:  int(process.GetGid()),
+				Args: process.GetArgs(),
+			}
+
+			collected = append(collected, info)
+
+			if len(collected) == len(expected) {
+				// got them all?
+				break loop
+			}
+		}
+	}
+
+	return assert.ElementsMatch(t, expected, collected)
 }
