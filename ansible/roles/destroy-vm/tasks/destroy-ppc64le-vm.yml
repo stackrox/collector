@@ -5,8 +5,8 @@
  
 #Set fact that are required to destroy vsi instance 
 - set_fact:
-    region: "osa"
-    zone: "osa21"
+    region: "{{ lookup('env', 'IC_REGION') }}"
+    zone: "{{ lookup('env', 'IC_ZONE') }}"
     pi_cloud_instance_id: "51a46537-a3a3-4e79-88ee-507feb47e7d0"
     hostname: "{{ hostname.stdout|regex_replace('(.*)(\\.power.*)$', '\\1', ignorecase=True) }}"
 
