@@ -24,7 +24,6 @@ func (s *MissingProcScrapeTestSuite) SetupSuite() {
 	s.executor = common.NewExecutor()
 	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
 
-	// Mount the fake proc directory created by 'create-fake-proc.sh'
 	s.collector.Mounts["/host/proc:ro"] = fakeProcDir
 
 	// if /etc/hostname is empty collector will read /proc/sys/kernel/hostname

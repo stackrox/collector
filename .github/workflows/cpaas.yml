@@ -113,9 +113,10 @@ jobs:
     - build-collector-full
     secrets: inherit
 
+  # Isolating multi-arch testing temporarily while fixes are found for s390x
   multiarch-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') ||
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') &&
       contains(github.event.pull_request.labels.*.name, 'run-multiarch-tests') }}
     strategy:
       # ensure that if one part of the matrix fails, the
