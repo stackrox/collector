@@ -1,6 +1,6 @@
 
 ifeq ($(COLLECTOR_BUILDER_TAG),)
-COLLECTOR_BUILDER_TAG=cache
+COLLECTOR_BUILDER_TAG=master
 endif
 
 ifeq ($(COLLECTOR_TAG),)
