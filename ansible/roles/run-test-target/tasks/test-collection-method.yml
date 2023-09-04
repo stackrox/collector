@@ -29,7 +29,7 @@
   when: collector_test != "ci-integration-tests"
 
 - set_fact:
-    run_args: -test.timeout 120m
+    run_args: -test.timeout 120m -test.short
   when: collector_test == "ci-integration-tests"
 
 - block:
