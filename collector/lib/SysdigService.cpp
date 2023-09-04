@@ -136,7 +136,6 @@ sinsp_evt* SysdigService::GetNext() {
 
   userspace_stats_.event_parse_micros[event->get_type()] += (NowMicros() - parse_start);
   ++userspace_stats_.nUserspaceEvents[event->get_type()];
-  ++userspace_stats_.nFilteredEvents[event->get_type()];
 
   return event;
 }

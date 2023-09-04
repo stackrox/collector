@@ -18,7 +18,6 @@ class CollectorArgs;
 
 class CollectorConfig {
  public:
-  static constexpr bool kUseChiselCache = true;
   static constexpr bool kTurnOffScrape = false;
   static constexpr int kScrapeInterval = 30;
   static constexpr CollectionMethod kCollectionMethod = CollectionMethod::EBPF;
@@ -54,11 +53,9 @@ class CollectorConfig {
   std::string asString() const;
 
   void HandleAfterglowEnvVars();
-  bool UseChiselCache() const;
   bool TurnOffScrape() const;
   bool ScrapeListenEndpoints() const { return scrape_listen_endpoints_; }
   int ScrapeInterval() const;
-  std::string Chisel() const;
   std::string Hostname() const;
   std::string HostProc() const;
   CollectionMethod GetCollectionMethod() const;
@@ -78,7 +75,6 @@ class CollectorConfig {
   std::shared_ptr<grpc::Channel> grpc_channel;
 
  protected:
-  bool use_chisel_cache_;
   int scrape_interval_;
   CollectionMethod collection_method_;
   bool turn_off_scrape_;

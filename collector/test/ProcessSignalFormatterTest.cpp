@@ -1,8 +1,6 @@
 // clang-format off
-// sinsp.h needs to be included before chisel.h
 #include <Utility.h>
 #include "libsinsp/sinsp.h"
-#include "chisel.h"
 #include "libsinsp/wrapper.h"
 // clang-format on
 

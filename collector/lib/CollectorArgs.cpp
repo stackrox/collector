@@ -9,8 +9,6 @@
 #include "Logging.h"
 #include "optionparser.h"
 
-#define MAX_CHISEL_LENGTH 8192
-
 namespace collector {
 
 enum optionIndex {
@@ -19,7 +17,6 @@ enum optionIndex {
   COLLECTOR_CONFIG,
   COLLECTION_METHOD,
   GRPC_SERVER,
-  CHISEL
 };
 
 static option::ArgStatus
@@ -30,11 +27,6 @@ checkCollectorConfig(const option::Option& option, bool msg) {
 static option::ArgStatus
 checkCollectionMethod(const option::Option& option, bool msg) {
   return CollectorArgs::getInstance()->checkCollectionMethod(option, msg);
-}
-
-static option::ArgStatus
-checkChisel(const option::Option& option, bool msg) {
-  return CollectorArgs::getInstance()->checkChisel(option, msg);
 }
 
 static option::ArgStatus
@@ -50,7 +42,6 @@ static const option::Descriptor usage[] =
         {HELP, 0, "", "help", option::Arg::None, "  --help                \tPrint usage and exit."},
         {COLLECTOR_CONFIG, 0, "", "collector-config", checkCollectorConfig, "  --collector-config    \tREQUIRED: Collector config as a JSON string. Please refer to documentation on the valid JSON format."},
         {COLLECTION_METHOD, 0, "", "collection-method", checkCollectionMethod, "  --collection-method   \tCollection method (kernel_module, ebpf or core_bpf)."},
-        {CHISEL, 0, "", "chisel", checkChisel, "  --chisel              \tChisel is a base64 encoded string."},
         {GRPC_SERVER, 0, "", "grpc-server", checkGRPCServer, "  --grpc-server         \tGRPC server endpoint string in the form HOST1:PORT1."},
         {UNKNOWN, 0, "", "", option::Arg::None,
          "\nExamples:\n"
@@ -139,30 +130,6 @@ CollectorArgs::checkCollectionMethod(const option::Option& option, bool msg) {
 
   CLOG(DEBUG) << "CollectionMethod: " << collectionMethod;
 
-  return ARG_OK;
-}
-
-option::ArgStatus
-CollectorArgs::checkChisel(const option::Option& option, bool msg) {
-  using namespace option;
-  using std::string;
-
-  if (option.arg == NULL) {
-    if (msg) {
-      this->message = "Missing chisel. No chisel will be used.";
-    }
-    return ARG_OK;
-  }
-  chisel = option.arg;
-  int chiselEncodedLength = chisel.length();
-  if (chiselEncodedLength > MAX_CHISEL_LENGTH) {
-    if (msg) {
-      this->message = "Chisel encoded length cannot exceed " + std::to_string(MAX_CHISEL_LENGTH) + ".";
-    }
-    return ARG_ILLEGAL;
-  }
-
-  CLOG(DEBUG) << "Chisel: " << chisel;
   return ARG_OK;
 }
 
@@ -260,11 +227,6 @@ CollectorArgs::CollectorConfig() const {
 const std::string&
 CollectorArgs::GetCollectionMethod() const {
   return collectionMethod;
-}
-
-const std::string&
-CollectorArgs::Chisel() const {
-  return chisel;
 }
 
 const std::string&

@@ -22,7 +22,6 @@ class CollectorService {
   bool InitKernel(const DriverCandidate& candidate);
 
  private:
-  void OnChiselReceived(const std::string& chisel);
   bool WaitForGRPCServer();
 
   CollectorConfig config_;

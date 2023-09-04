@@ -44,9 +44,6 @@ seconds. The default value is 30 seconds.
 
 * `logLevel`: Sets logging level. The default is INFO.
 
-* `useChiselCache`: Whether to use cache for Chisel. For more details see
-[Chisel](design-overview.md#Chisel) section.
-
 ### Other arguments
 
 * `--collection-method`: Which technology to use for data gathering. Either
@@ -54,9 +51,6 @@ seconds. The default value is 30 seconds.
 
 * `--grpc-server`: GRPC server endpoint for Collector to communicate, in the
 form "host:port".
-
-* `--chisel`: Whether or not to use Chisel. Again, for more details see
-[Chisel](design-overview.md#Chisel) section.
 
 ## Supported systems
 
