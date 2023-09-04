@@ -15,7 +15,7 @@ on:
 
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
-  DEFAULT_BUILDER_TAG: cache
+  DEFAULT_BUILDER_TAG: master
 
 jobs:
   builder-needs-rebuilding:
@@ -71,7 +71,9 @@ jobs:
         id: builder-tag
         run: |
           COLLECTOR_BUILDER_TAG="${DEFAULT_BUILDER_TAG}"
-          if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
+          if [[ "${{ github.event_name }}" == 'pull_request' || \
+                "${{ github.ref_type }}" == 'tag' || \
+                "${{ github.ref_name }}" =~ ^release- ]]; then
             COLLECTOR_BUILDER_TAG="${{ inputs.collector-tag }}"
           fi
 
