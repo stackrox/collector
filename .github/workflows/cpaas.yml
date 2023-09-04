@@ -103,6 +103,26 @@ jobs:
         vm_type:
           - rhel
           - rhel-sap
+    with:
+      vm_type: ${{ matrix.vm_type }}
+      collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
+      offline-mode: true
+      job-tag: cpaas
+    needs:
+    - init
+    - build-collector-full
+    secrets: inherit
+
+  multiarch-integration-tests:
+    uses: ./.github/workflows/integration-tests-vm-type.yml
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') ||
+      contains(github.event.pull_request.labels.*.name, 'run-multiarch-tests') }}
+    strategy:
+      # ensure that if one part of the matrix fails, the
+      # rest will continue
+      fail-fast: false
+      matrix:
+        vm_type:
           - rhel-s390x
     with:
       vm_type: ${{ matrix.vm_type }}
@@ -123,6 +143,7 @@ jobs:
     - build-collector-slim
     - build-collector-full
     - integration-tests
+    - multiarch-integration-tests
     steps:
       - name: Slack notification
         uses: rtCamp/action-slack-notify@v2
