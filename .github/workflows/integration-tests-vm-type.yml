@@ -100,7 +100,6 @@ jobs:
           copy_secret_to_file "$GCP_SSH_KEY" "$HOME/.ssh/GCP_SSH_KEY" 0600
           copy_secret_to_file "$GCP_SSH_KEY_PUB" "$HOME/.ssh/GCP_SSH_KEY.pub" 0600
           copy_secret_to_file "$IBM_S390X_SSH_KEY" "$HOME/.ssh/acs-sshkey_rsa.prv" 0600
-          copy_secret_to_file "$IBM_PPC64LE_SSH_KEY" "$HOME/.ssh/acs-sshkey_rsa.prv" 0600
           
           if [[ '${{ inputs.vm_type }}' =~ ppc64le ]]; then
             copy_secret_to_file "$IBM_PPC64LE_SSH_KEY" "$HOME/.ssh/acs-sshkey_rsa.prv" 0600
