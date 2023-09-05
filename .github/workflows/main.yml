@@ -132,3 +132,7 @@ jobs:
     - build-drivers
     - upload-drivers
     secrets: inherit
+
+  cpaas-steps:
+    uses: ./.github/workflows/cpaas.yml
+    secrets: inherit
