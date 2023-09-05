@@ -51,6 +51,12 @@ jobs:
   build-collector-slim:
     runs-on: ubuntu-latest
     needs: init
+    strategy:
+      matrix:
+        arch:
+        - amd64
+        - s390x
+        - ppc64le
     steps:
       - uses: docker/login-action@v2
         with:
@@ -60,13 +66,13 @@ jobs:
 
       - name: Pull downstream slim collector
         run: |
-          docker pull brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
+          docker pull --platform linux/${{ matrix.arch }} brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
 
-      - name: Retag and push stackrox-io -slim
+      - name: Retag and push stackrox-io -amd64-slim
         uses: stackrox/actions/images/retag-and-push@v1
         with:
           src-image: brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
-          dst-image: ${{ needs.init.outputs.collector-image }}-cpaas-slim
+          dst-image: ${{ needs.init.outputs.collector-image }}-cpaas-${{ matrix.arch }}-slim
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
@@ -74,7 +80,7 @@ jobs:
     uses: ./.github/workflows/collector-full.yml
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
-      drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}/x86_64
+      arch-drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
       skip-built-drivers: true
       build-full-image: true
       max-layer-depth: "1"
