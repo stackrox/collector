@@ -40,11 +40,9 @@ BoolEnvVar collect_connection_status("ROX_COLLECT_CONNECTION_STATUS", true);
 
 }  // namespace
 
-constexpr bool CollectorConfig::kUseChiselCache;
 constexpr bool CollectorConfig::kTurnOffScrape;
 constexpr int CollectorConfig::kScrapeInterval;
 constexpr CollectionMethod CollectorConfig::kCollectionMethod;
-constexpr char CollectorConfig::kChisel[];
 constexpr const char* CollectorConfig::kSyscalls[];
 constexpr bool CollectorConfig::kEnableProcessesListeningOnPorts;
 
@@ -53,10 +51,8 @@ const UnorderedSet<L4ProtoPortPair> CollectorConfig::kIgnoredL4ProtoPortPairs = 
 
 CollectorConfig::CollectorConfig(CollectorArgs* args) {
   // Set default configuration values
-  use_chisel_cache_ = kUseChiselCache;
   scrape_interval_ = kScrapeInterval;
   turn_off_scrape_ = kTurnOffScrape;
-  chisel_ = kChisel;
   collection_method_ = kCollectionMethod;
   enable_processes_listening_on_ports_ = set_processes_listening_on_ports.value();
   core_bpf_hardfail_ = core_bpf_hardfail.value();
@@ -92,12 +88,6 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
       }
     }
 
-    // Chisel Cache
-    if (!config["useChiselCache"].empty()) {
-      use_chisel_cache_ = config["useChiselCache"].asBool();
-      CLOG(INFO) << "User configured useChiselCache=" << use_chisel_cache_;
-    }
-
     // Scrape Interval
     if (!config["scrapeInterval"].empty()) {
       scrape_interval_ = std::stoi(config["scrapeInterval"].asString());
@@ -108,13 +98,6 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
     if (!config["turnOffScrape"].empty()) {
       turn_off_scrape_ = config["turnOffScrape"].asBool();
       CLOG(INFO) << "User configured turnOffScrape=" << turn_off_scrape_;
-    }
-
-    // Chisel
-    if (args->Chisel().length()) {
-      auto chiselB64 = args->Chisel();
-      CLOG(INFO) << "User configured chisel=" << chiselB64;
-      chisel_ = Base64Decode(chiselB64);
     }
 
     // Syscalls
@@ -205,20 +188,12 @@ void CollectorConfig::HandleAfterglowEnvVars() {
   CLOG(INFO) << "Disabling afterglow";
 }
 
-bool CollectorConfig::UseChiselCache() const {
-  return use_chisel_cache_;
-}
-
 bool CollectorConfig::TurnOffScrape() const {
   return turn_off_scrape_;
 }
 
 int CollectorConfig::ScrapeInterval() const {
   return scrape_interval_;
-}
-
-std::string CollectorConfig::Chisel() const {
-  return chisel_;
 }
 
 CollectionMethod CollectorConfig::GetCollectionMethod() const {
@@ -255,7 +230,6 @@ bool CollectorConfig::IsCoreDumpEnabled() const {
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
   return os
          << "collection_method:" << c.GetCollectionMethod()
-         << ", useChiselCache:" << c.UseChiselCache()
          << ", scrape_interval:" << c.ScrapeInterval()
          << ", turn_off_scrape:" << c.TurnOffScrape()
          << ", hostname:" << c.Hostname()

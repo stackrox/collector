@@ -20,7 +20,7 @@ Depending on the environment, and accesses, you can get these in a number of way
 #### Kubectl
 
 Kubernetes is the easiest way to retrieve the logs, provided you have access to
-do so. 
+do so.
 
 ```sh
 $ kubectl get pods -n stackrox -l app=collector
@@ -138,7 +138,7 @@ correctly.
 
 Collector will check whether it has available a kernel driver for the kernel version
 of the node. First it checks local storage for a driver of the right version and type
-and then, attempts to download one from Sensor. If there is no local kernel driver, 
+and then, attempts to download one from Sensor. If there is no local kernel driver,
 and Sensor does not provide one, Collector is unable to run and will enter CrashLoopBackOff.
 
 ```
@@ -175,9 +175,9 @@ Starting StackRox Collector...
 [FATAL   2022/10/13 13:33:35]  No suitable kernel object downloaded for kernel 5.10.109-0-virt
 ```
 
-The logs will first show the attempts at finding the module locally, and then 
+The logs will first show the attempts at finding the module locally, and then
 any attempts at downloading the driver from Sensor. The 404 errors above indicate
-that there is no kernel driver for the node's kernel. 
+that there is no kernel driver for the node's kernel.
 
 All supported kernel versions are listed in the [KERNEL_VERSIONS](../kernel-modules/KERNEL_VERSIONS) file.
 
@@ -188,7 +188,7 @@ final step before Collector is fully up and running, and failures can result in 
 variety of error messages or exceptions. The same diagnostic summary is reported
 in the logs, and will indicate the failure of this step.
 
-If an error of this kind is encountered, it is unlikely that it can be easily 
+If an error of this kind is encountered, it is unlikely that it can be easily
 fixed, so should be reported to ACS support or in a [GitHub issue](https://github.com/stackrox/collector/issues).
 
 The following is a simple example of this occurring:
@@ -291,10 +291,7 @@ Units: occurence
 | kernel                                 | number of received kernel events (by the probe)                                                     |
 | drops                                  | number of dropped kernel events                                                                     |
 | preemptions                            | Number of preemptions (?)                                                                           |
-| filtered[syscall]                      | Number of events after chisel filtering                                                             |
-| userspace[syscall]                     | Number of this kind of event before chisel filtering                                                |
-| chiselCacheHitsAccept[syscall]         | number of events accepted by the filter cache                                                       |
-| chiselCacheHitsReject[syscall]         | number of events rejected by the filter cache                                                       |
+| userspace[syscall]                     | Number of this kind of event                                                                        |
 | grpcSendFailures                       | (not used?)                                                                                         |
 | processSent                            | Process signal sent with success                                                                    |
 | processSendFailures                    | Failure upon sending a process signal                                                               |

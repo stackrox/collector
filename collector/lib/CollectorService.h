@@ -22,14 +22,9 @@ class CollectorService {
   bool InitKernel(const DriverCandidate& candidate);
 
  private:
-  void OnChiselReceived(const std::string& chisel);
   bool WaitForGRPCServer();
 
   CollectorConfig config_;
-
-  std::string chisel_;
-  bool update_chisel_ = false;
-  std::mutex chisel_mutex_;
 
   std::atomic<ControlValue>* control_;
   const std::atomic<int>& signum_;

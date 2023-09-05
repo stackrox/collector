@@ -18,7 +18,6 @@ class CollectorArgs;
 
 class CollectorConfig {
  public:
-  static constexpr bool kUseChiselCache = true;
   static constexpr bool kTurnOffScrape = false;
   static constexpr int kScrapeInterval = 30;
   static constexpr CollectionMethod kCollectionMethod = CollectionMethod::EBPF;
@@ -45,17 +44,6 @@ class CollectorConfig {
 #endif
       "vfork",
   };
-  static constexpr char kChisel[] = R"(
-args = {}
-function on_event()
-    return true
-end
-function on_init()
-    filter = "proc.name = 'self-checks' or container.id != 'host'\n"
-    chisel.set_filter(filter)
-    return true
-end
-)";
   static const UnorderedSet<L4ProtoPortPair> kIgnoredL4ProtoPortPairs;
   static constexpr bool kEnableProcessesListeningOnPorts = true;
 
@@ -65,11 +53,9 @@ end
   std::string asString() const;
 
   void HandleAfterglowEnvVars();
-  bool UseChiselCache() const;
   bool TurnOffScrape() const;
   bool ScrapeListenEndpoints() const { return scrape_listen_endpoints_; }
   int ScrapeInterval() const;
-  std::string Chisel() const;
   std::string Hostname() const;
   std::string HostProc() const;
   CollectionMethod GetCollectionMethod() const;
@@ -90,10 +76,8 @@ end
   std::shared_ptr<grpc::Channel> grpc_channel;
 
  protected:
-  bool use_chisel_cache_;
   int scrape_interval_;
   CollectionMethod collection_method_;
-  std::string chisel_;
   bool turn_off_scrape_;
   std::vector<std::string> syscalls_;
   std::string hostname_;

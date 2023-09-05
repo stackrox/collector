@@ -52,10 +52,7 @@ void CollectorStatsExporter::run() {
   auto& kernel = collectorEventCounters.Add({{"type", "kernel"}});
   auto& drops = collectorEventCounters.Add({{"type", "drops"}});
   auto& preemptions = collectorEventCounters.Add({{"type", "preemptions"}});
-  auto& filtered = collectorEventCounters.Add({{"type", "filtered"}});
   auto& userspaceEvents = collectorEventCounters.Add({{"type", "userspace"}});
-  auto& chiselCacheHitsAccept = collectorEventCounters.Add({{"type", "chiselCacheHitsAccept"}});
-  auto& chiselCacheHitsReject = collectorEventCounters.Add({{"type", "chiselCacheHitsReject"}});
   auto& grpcSendFailures = collectorEventCounters.Add({{"type", "grpcSendFailures"}});
 
   auto& processSent = collectorEventCounters.Add({{"type", "processSent"}});
@@ -110,10 +107,7 @@ void CollectorStatsExporter::run() {
   prometheus::Gauge* lineage_avg_string_len = &collectorProcessLineageInfo.Add({{"type", "lineage_avg_string_len"}});
 
   struct {
-    prometheus::Gauge* filtered = nullptr;
     prometheus::Gauge* userspace = nullptr;
-    prometheus::Gauge* chiselCacheHitsAccept = nullptr;
-    prometheus::Gauge* chiselCacheHitsReject = nullptr;
 
     prometheus::Gauge* parse_micros_total = nullptr;
     prometheus::Gauge* process_micros_total = nullptr;
@@ -135,14 +129,8 @@ void CollectorStatsExporter::run() {
 
     const char* event_dir = PPME_IS_ENTER(i) ? ">" : "<";
 
-    typed[i].filtered = &collectorTypedEventCounters.Add(
-        std::map<std::string, std::string>{{"quantity", "filtered"}, {"event_type", event_name}, {"event_dir", event_dir}});
     typed[i].userspace = &collectorTypedEventCounters.Add(
         std::map<std::string, std::string>{{"quantity", "userspace"}, {"event_type", event_name}, {"event_dir", event_dir}});
-    typed[i].chiselCacheHitsAccept = &collectorTypedEventCounters.Add(
-        std::map<std::string, std::string>{{"quantity", "chiselCacheHitsAccept"}, {"event_type", event_name}, {"event_dir", event_dir}});
-    typed[i].chiselCacheHitsReject = &collectorTypedEventCounters.Add(
-        std::map<std::string, std::string>{{"quantity", "chiselCacheHitsReject"}, {"event_type", event_name}, {"event_dir", event_dir}});
 
     typed[i].parse_micros_total = &collectorTypedEventTimesTotal.Add(
         std::map<std::string, std::string>{{"step", "parse"}, {"event_type", event_name}, {"event_dir", event_dir}});
@@ -165,38 +153,25 @@ void CollectorStatsExporter::run() {
     drops.Set(stats.nDrops);
     preemptions.Set(stats.nPreemptions);
 
-    uint64_t nFiltered = 0, nUserspace = 0, nChiselCacheHitsAccept = 0, nChiselCacheHitsReject = 0;
+    uint64_t nUserspace = 0;
     for (int i = 0; i < PPM_EVENT_MAX; i++) {
       auto& counters = typed[i];
 
-      auto filtered = stats.nFilteredEvents[i];
       auto userspace = stats.nUserspaceEvents[i];
-      auto chiselCacheHitsAccept = stats.nChiselCacheHitsAccept[i];
-      auto chiselCacheHitsReject = stats.nChiselCacheHitsReject[i];
       auto parse_micros_total = stats.event_parse_micros[i];
       auto process_micros_total = stats.event_process_micros[i];
 
-      nFiltered += filtered;
       nUserspace += userspace;
-      nChiselCacheHitsAccept += chiselCacheHitsAccept;
-      nChiselCacheHitsReject += chiselCacheHitsReject;
 
-      if (counters.filtered) counters.filtered->Set(filtered);
       if (counters.userspace) counters.userspace->Set(userspace);
-      if (counters.chiselCacheHitsAccept) counters.chiselCacheHitsAccept->Set(chiselCacheHitsAccept);
-      if (counters.chiselCacheHitsReject) counters.chiselCacheHitsReject->Set(chiselCacheHitsReject);
 
       if (counters.parse_micros_total) counters.parse_micros_total->Set(parse_micros_total);
       if (counters.process_micros_total) counters.process_micros_total->Set(process_micros_total);
 
       if (counters.parse_micros_avg) counters.parse_micros_avg->Set(userspace ? parse_micros_total / userspace : 0);
-      if (counters.process_micros_avg) counters.process_micros_avg->Set(filtered ? process_micros_total / filtered : 0);
     }
 
-    filtered.Set(nFiltered);
     userspaceEvents.Set(nUserspace);
-    chiselCacheHitsAccept.Set(nChiselCacheHitsAccept);
-    chiselCacheHitsReject.Set(nChiselCacheHitsReject);
 
     grpcSendFailures.Set(stats.nGRPCSendFailures);
 

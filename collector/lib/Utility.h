@@ -9,6 +9,7 @@
 #include <iostream>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <sstream>
 #include <string_view>
 #include <utility>
@@ -112,6 +113,7 @@ ScopedLock<Mutex> Lock(Mutex& mutex) {
 
 extern const std::string kKernelModulesDir;
 
+std::optional<std::string_view> ExtractContainerIDFromCgroup(std::string_view cgroup);
 }  // namespace collector
 
 #endif  // _UTILITY_H_

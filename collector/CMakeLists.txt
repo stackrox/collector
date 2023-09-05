@@ -106,8 +106,9 @@ set(BUILD_DRIVER OFF CACHE BOOL "Build the driver on Linux" FORCE)
 set(USE_BUNDLED_DEPS OFF CACHE BOOL "Enable bundled dependencies instead of using the system ones" FORCE)
 set(USE_BUNDLED_CARES OFF CACHE BOOL "Enable bundled dependencies instead of using the system ones" FORCE)
 set(NO_LINK_GRPC_LIBS ON CACHE BOOL "Do not link gRPC libraries" FORCE)
-set(WITH_CHISEL ON CACHE BOOL "Include chisel implementation" FORCE)
+set(WITH_CHISEL OFF CACHE BOOL "Include chisel implementation" FORCE)
 set(BUILD_LIBSCAP_GVISOR OFF CACHE BOOL "Do not build gVisor support" FORCE)
+set(MINIMAL_BUILD_WITH_EBPF ON CACHE BOOL "Minimal" FORCE)
 
 # Turn OFF falco's unit tests and examples
 set(CREATE_TEST_TARGETS OFF CACHE BOOL "Enable make-targets for unit testing" FORCE)
