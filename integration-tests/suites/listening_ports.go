@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/suites/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -110,8 +111,8 @@ func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
 	// Check that we have precisely two pairs of endpoints, for opening
 	// and closing the port. A closed port will have a populated CloseTimestamp
 
-	endpoints8081 := make([]common.EndpointInfo, 0)
-	endpoints9091 := make([]common.EndpointInfo, 0)
+	endpoints8081 := make([]types.EndpointInfo, 0)
+	endpoints9091 := make([]types.EndpointInfo, 0)
 	for _, endpoint := range endpoints {
 		if endpoint.Address.Port == 8081 {
 			endpoints8081 = append(endpoints8081, endpoint)
@@ -127,7 +128,7 @@ func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
 	// events.
 	//
 	// It is also agnostic to the order in which the events are reported.
-	hasOpenAndClose := func(infos []common.EndpointInfo) bool {
+	hasOpenAndClose := func(infos []types.EndpointInfo) bool {
 		if !assert.Len(s.T(), infos, 2) {
 			return false
 		}

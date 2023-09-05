@@ -6,9 +6,9 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/stackrox/collector/integration-tests/suites"
-	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stackrox/collector/integration-tests/suites/config"
 	"github.com/stackrox/collector/integration-tests/suites/mock_sensor"
+	"github.com/stackrox/collector/integration-tests/suites/types"
 )
 
 func TestProcessNetwork(t *testing.T) {
@@ -127,7 +127,7 @@ func TestConnectionsAndEndpointsNormal(t *testing.T) {
 		Server: suites.Container{
 			Name: "socat-server-0",
 			Cmd:  "socat TCP4-LISTEN:40,reuseaddr,fork - &",
-			ExpectedNetwork: []common.NetworkInfo{
+			ExpectedNetwork: []types.NetworkInfo{
 				{
 					LocalAddress:   ":40",
 					RemoteAddress:  "CLIENT_IP",
@@ -136,10 +136,10 @@ func TestConnectionsAndEndpointsNormal(t *testing.T) {
 					CloseTimestamp: "(timestamp: nil Timestamp)",
 				},
 			},
-			ExpectedEndpoints: []common.EndpointInfo{
+			ExpectedEndpoints: []types.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
-					Address: &common.ListenAddress{
+					Address: &types.ListenAddress{
 						AddressData: `"\000\000\000\000"`,
 						Port:        40,
 						IpNetwork:   `"\000\000\000\000 " `,
@@ -150,7 +150,7 @@ func TestConnectionsAndEndpointsNormal(t *testing.T) {
 		Client: suites.Container{
 			Name: "socat-client-0",
 			Cmd:  "echo hello | socat - TCP4:SERVER_IP:40",
-			ExpectedNetwork: []common.NetworkInfo{
+			ExpectedNetwork: []types.NetworkInfo{
 				{
 					LocalAddress:   "",
 					RemoteAddress:  "SERVER_IP:40",
@@ -172,7 +172,7 @@ func TestConnectionsAndEndpointsHighLowPorts(t *testing.T) {
 		Server: suites.Container{
 			Name: "socat-server-1",
 			Cmd:  "socat TCP4-LISTEN:40000,reuseaddr,fork - &",
-			ExpectedNetwork: []common.NetworkInfo{
+			ExpectedNetwork: []types.NetworkInfo{
 				{
 					LocalAddress:   ":40000",
 					RemoteAddress:  "CLIENT_IP",
@@ -181,10 +181,10 @@ func TestConnectionsAndEndpointsHighLowPorts(t *testing.T) {
 					CloseTimestamp: "(timestamp: nil Timestamp)",
 				},
 			},
-			ExpectedEndpoints: []common.EndpointInfo{
+			ExpectedEndpoints: []types.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
-					Address: &common.ListenAddress{
+					Address: &types.ListenAddress{
 						AddressData: `"\000\000\000\000"`,
 						Port:        40000,
 						IpNetwork:   `"\000\000\000\000 " `,
@@ -195,7 +195,7 @@ func TestConnectionsAndEndpointsHighLowPorts(t *testing.T) {
 		Client: suites.Container{
 			Name: "socat-client-1",
 			Cmd:  "echo hello | socat - TCP4:SERVER_IP:40000,sourceport=10000",
-			ExpectedNetwork: []common.NetworkInfo{
+			ExpectedNetwork: []types.NetworkInfo{
 				{
 					LocalAddress:   "",
 					RemoteAddress:  "SERVER_IP:40000",
@@ -217,7 +217,7 @@ func TestConnectionsAndEndpointsServerHigh(t *testing.T) {
 		Server: suites.Container{
 			Name: "socat-server-2",
 			Cmd:  "socat TCP4-LISTEN:60999,reuseaddr,fork - &",
-			ExpectedNetwork: []common.NetworkInfo{
+			ExpectedNetwork: []types.NetworkInfo{
 				{
 					LocalAddress:   ":60999",
 					RemoteAddress:  "CLIENT_IP",
@@ -226,10 +226,10 @@ func TestConnectionsAndEndpointsServerHigh(t *testing.T) {
 					CloseTimestamp: "(timestamp: nil Timestamp)",
 				},
 			},
-			ExpectedEndpoints: []common.EndpointInfo{
+			ExpectedEndpoints: []types.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
-					Address: &common.ListenAddress{
+					Address: &types.ListenAddress{
 						AddressData: `"\000\000\000\000"`,
 						Port:        60999,
 						IpNetwork:   `"\000\000\000\000 " `,
@@ -240,7 +240,7 @@ func TestConnectionsAndEndpointsServerHigh(t *testing.T) {
 		Client: suites.Container{
 			Name: "socat-client-2",
 			Cmd:  "echo hello | socat - TCP4:SERVER_IP:60999",
-			ExpectedNetwork: []common.NetworkInfo{
+			ExpectedNetwork: []types.NetworkInfo{
 				{
 					LocalAddress:   "",
 					RemoteAddress:  "SERVER_IP:60999",
@@ -262,7 +262,7 @@ func TestConnectionsAndEndpointsSourcePort(t *testing.T) {
 		Server: suites.Container{
 			Name: "socat-server-1",
 			Cmd:  "socat TCP4-LISTEN:10000,reuseaddr,fork - &",
-			ExpectedNetwork: []common.NetworkInfo{
+			ExpectedNetwork: []types.NetworkInfo{
 				{
 					LocalAddress:   ":10000",
 					RemoteAddress:  "CLIENT_IP",
@@ -271,10 +271,10 @@ func TestConnectionsAndEndpointsSourcePort(t *testing.T) {
 					CloseTimestamp: "(timestamp: nil Timestamp)",
 				},
 			},
-			ExpectedEndpoints: []common.EndpointInfo{
+			ExpectedEndpoints: []types.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
-					Address: &common.ListenAddress{
+					Address: &types.ListenAddress{
 						AddressData: `"\000\000\000\000"`,
 						Port:        10000,
 						IpNetwork:   `"\000\000\000\000 " `,
@@ -285,7 +285,7 @@ func TestConnectionsAndEndpointsSourcePort(t *testing.T) {
 		Client: suites.Container{
 			Name: "socat-client-1",
 			Cmd:  "echo hello | socat - TCP4:SERVER_IP:10000,sourceport=40000",
-			ExpectedNetwork: []common.NetworkInfo{
+			ExpectedNetwork: []types.NetworkInfo{
 				{
 					LocalAddress:   "",
 					RemoteAddress:  "SERVER_IP:10000",
@@ -308,7 +308,7 @@ func TestConnectionsAndEndpointsUDPNormal(t *testing.T) {
 			Cmd:  "socat UDP-LISTEN:53,reuseaddr,fork - &",
 			// TODO UDP connections are not always reported on the server side
 			ExpectedNetwork: nil,
-			// ExpectedNetwork: []common.NetworkInfo{
+			// ExpectedNetwork: []types.NetworkInfo{
 			// 	{
 			// 		LocalAddress:   ":53",
 			// 		RemoteAddress:  "CLIENT_IP",
@@ -323,7 +323,7 @@ func TestConnectionsAndEndpointsUDPNormal(t *testing.T) {
 		Client: suites.Container{
 			Name: "socat-client-udp",
 			Cmd:  "echo hello | socat - UDP:SERVER_IP:53",
-			ExpectedNetwork: []common.NetworkInfo{
+			ExpectedNetwork: []types.NetworkInfo{
 				{
 					LocalAddress:   "",
 					RemoteAddress:  "SERVER_IP:53",
@@ -346,7 +346,7 @@ func TestConnectionsAndEndpointsUDPNoReuseaddr(t *testing.T) {
 			Cmd:  "socat UDP-LISTEN:53,fork - &",
 			// TODO UDP connections are not always reported on the server side
 			ExpectedNetwork: nil,
-			// ExpectedNetwork: []common.NetworkInfo{
+			// ExpectedNetwork: []types.NetworkInfo{
 			// 	{
 			// 		LocalAddress:   ":53",
 			// 		RemoteAddress:  "CLIENT_IP",
@@ -361,7 +361,7 @@ func TestConnectionsAndEndpointsUDPNoReuseaddr(t *testing.T) {
 		Client: suites.Container{
 			Name: "socat-client-udp",
 			Cmd:  "echo hello | socat - UDP:SERVER_IP:53",
-			ExpectedNetwork: []common.NetworkInfo{
+			ExpectedNetwork: []types.NetworkInfo{
 				{
 					LocalAddress:   "",
 					RemoteAddress:  "SERVER_IP:53",
@@ -384,7 +384,7 @@ func TestConnectionsAndEndpointsUDPNoFork(t *testing.T) {
 			Cmd:  "socat UDP-LISTEN:53 - &",
 			// TODO UDP connections are not always reported on the server side
 			ExpectedNetwork: nil,
-			// ExpectedNetwork: []common.NetworkInfo{
+			// ExpectedNetwork: []types.NetworkInfo{
 			// 	{
 			// 		LocalAddress:   ":53",
 			// 		RemoteAddress:  "CLIENT_IP",
@@ -399,7 +399,7 @@ func TestConnectionsAndEndpointsUDPNoFork(t *testing.T) {
 		Client: suites.Container{
 			Name: "socat-client-udp",
 			Cmd:  "echo hello | socat - UDP:SERVER_IP:53",
-			ExpectedNetwork: []common.NetworkInfo{
+			ExpectedNetwork: []types.NetworkInfo{
 				{
 					LocalAddress:   "",
 					RemoteAddress:  "SERVER_IP:53",

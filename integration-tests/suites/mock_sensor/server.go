@@ -8,15 +8,23 @@ import (
 	"time"
 
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
+	utils "github.com/stackrox/rox/pkg/net"
+
 	"github.com/stackrox/rox/generated/storage"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
+
+	"github.com/stackrox/collector/integration-tests/suites/types"
 )
 
 const (
 	gMockSensorPort = 9999
 	gMaxMsgSize     = 12 * 1024 * 1024
 )
+
+type ProcessMap map[types.ProcessInfo]interface{}
+type ConnMap map[types.NetworkInfo]interface{}
+type EndpointMap map[types.EndpointInfo]interface{}
 
 type MockSensor struct {
 	sensorAPI.UnimplementedSignalServiceServer
@@ -25,14 +33,12 @@ type MockSensor struct {
 	listener   net.Listener
 	grpcServer *grpc.Server
 
-	processes       map[string][]*storage.ProcessSignal
-	processMutex    sync.Mutex
-	processWatchers []<-chan interface{}
+	processes    map[string]ProcessMap
+	processMutex sync.Mutex
 
-	connections     map[string][]*sensorAPI.NetworkConnection
-	endpoints       map[string][]*sensorAPI.NetworkEndpoint
-	networkMutex    sync.Mutex
-	networkWatchers []<-chan interface{}
+	connections  map[string]ConnMap
+	endpoints    map[string]EndpointMap
+	networkMutex sync.Mutex
 
 	processChannel    chan *storage.ProcessSignal
 	connectionChannel chan *sensorAPI.NetworkConnection
@@ -41,9 +47,9 @@ type MockSensor struct {
 
 func NewMockSensor() *MockSensor {
 	return &MockSensor{
-		processes:   make(map[string][]*storage.ProcessSignal),
-		connections: make(map[string][]*sensorAPI.NetworkConnection),
-		endpoints:   make(map[string][]*sensorAPI.NetworkEndpoint),
+		processes:   make(map[string]ProcessMap),
+		connections: make(map[string]ConnMap),
+		endpoints:   make(map[string]EndpointMap),
 
 		processChannel:    make(chan *storage.ProcessSignal, 32),
 		connectionChannel: make(chan *sensorAPI.NetworkConnection, 32),
@@ -51,12 +57,58 @@ func NewMockSensor() *MockSensor {
 	}
 }
 
-func (m *MockSensor) Processes() <-chan *storage.ProcessSignal {
+func (m *MockSensor) LiveProcesses() <-chan *storage.ProcessSignal {
 	return m.processChannel
 }
 
-func (m *MockSensor) Connections() <-chan *sensorAPI.NetworkConnection {
+func (m *MockSensor) Processes(containerID string) []types.ProcessInfo {
+	if processes, ok := m.processes[containerID]; ok {
+		keys := make([]types.ProcessInfo, 0, len(processes))
+		for k := range processes {
+			keys = append(keys, k)
+		}
+		return keys
+	}
+	return make([]types.ProcessInfo, 0)
+}
+
+func (m *MockSensor) HasProcess(containerID string, process types.ProcessInfo) bool {
+	m.processMutex.Lock()
+	defer m.processMutex.Unlock()
+
+	if processes, ok := m.processes[containerID]; ok {
+		_, exists := processes[process]
+		return exists
+	}
+
+	return false
+}
+
+func (m *MockSensor) Connections(containerID string) []types.NetworkInfo {
+	if connections, ok := m.connections[containerID]; ok {
+		keys := make([]types.NetworkInfo, 0, len(connections))
+		for k := range connections {
+			keys = append(keys, k)
+		}
+		return keys
+	}
+	return make([]types.NetworkInfo, 0)
+}
+
+func (m *MockSensor) LiveConnections() <-chan *sensorAPI.NetworkConnection {
 	return m.connectionChannel
+}
+
+func (m *MockSensor) HasConnection(containerID string, conn types.NetworkInfo) bool {
+	m.networkMutex.Lock()
+	defer m.networkMutex.Unlock()
+
+	if conns, ok := m.connections[containerID]; ok {
+		_, exists := conns[conn]
+		return exists
+	}
+
+	return false
 }
 
 func (m *MockSensor) Endpoints() <-chan *sensorAPI.NetworkEndpoint {
@@ -95,9 +147,9 @@ func (m *MockSensor) Stop() {
 	m.grpcServer.Stop()
 	m.listener.Close()
 
-	m.processes = make(map[string][]*storage.ProcessSignal)
-	m.connections = make(map[string][]*sensorAPI.NetworkConnection)
-	m.endpoints = make(map[string][]*sensorAPI.NetworkEndpoint)
+	m.processes = make(map[string]ProcessMap)
+	m.connections = make(map[string]ConnMap)
+	m.endpoints = make(map[string]EndpointMap)
 }
 
 func (m *MockSensor) PushSignals(stream sensorAPI.SignalService_PushSignalsServer) error {
@@ -109,10 +161,8 @@ func (m *MockSensor) PushSignals(stream sensorAPI.SignalService_PushSignalsServe
 
 		if signal != nil && signal.GetSignal() != nil && signal.GetSignal().GetProcessSignal() != nil {
 			processSignal := signal.GetSignal().GetProcessSignal()
-			processInfo := fmt.Sprintf("%s:%s:%d:%d:%d:%s", processSignal.GetName(), processSignal.GetExecFilePath(), processSignal.GetUid(), processSignal.GetGid(), processSignal.GetPid(), processSignal.GetArgs())
-			fmt.Printf("+ ProcessInfo: %s\n", processInfo)
+			m.pushProcess(processSignal.GetContainerId(), processSignal)
 			m.processChannel <- processSignal
-			// m.pushProcess(processSignal.GetContainerId(), processSignal)
 		}
 	}
 }
@@ -129,16 +179,12 @@ func (m *MockSensor) PushNetworkConnectionInfo(stream sensorAPI.NetworkConnectio
 		endpoints := networkConnInfo.GetUpdatedEndpoints()
 
 		for _, endpoint := range endpoints {
-			endpointInfo := fmt.Sprintf("EndpointInfo: %s|%s|%s|%s|%s\n", endpoint.GetSocketFamily().String(), endpoint.GetProtocol().String(), endpoint.GetListenAddress().String(), endpoint.GetCloseTimestamp().String(), endpoint.GetOriginator().String())
-			fmt.Printf("EndpointInfo: %s %s\n", endpoint.GetContainerId(), endpointInfo)
-			// m.pushEndpoint(endpoint.GetContainerId(), endpoint)
+			m.pushEndpoint(endpoint.GetContainerId(), endpoint)
 			m.endpointChannel <- endpoint
 		}
 
 		for _, connection := range connections {
-			networkInfo := fmt.Sprintf("%v|%s|%s|%s|%s", connection.GetLocalAddress(), connection.GetRemoteAddress(), connection.GetRole().String(), connection.GetSocketFamily().String(), connection.GetCloseTimestamp().String())
-			fmt.Printf("NetworkInfo: %s %s\n", connection.GetContainerId(), networkInfo)
-			// m.pushConnection(connection.GetContainerId(), connection)
+			m.pushConnection(connection.GetContainerId(), connection)
 			m.connectionChannel <- connection
 		}
 	}
@@ -152,10 +198,16 @@ func (m *MockSensor) pushProcess(containerID string, processSignal *storage.Proc
 	m.processMutex.Lock()
 	defer m.processMutex.Unlock()
 
+	process := types.ProcessInfo{
+		Name:    processSignal.GetName(),
+		ExePath: processSignal.GetExecFilePath(),
+		Args:    processSignal.GetArgs(),
+	}
+
 	if processes, ok := m.processes[containerID]; ok {
-		processes = append(processes, processSignal)
+		processes[process] = true
 	} else {
-		processes := []*storage.ProcessSignal{processSignal}
+		processes := ProcessMap{process: true}
 		m.processes[containerID] = processes
 	}
 }
@@ -164,10 +216,15 @@ func (m *MockSensor) pushConnection(containerID string, connection *sensorAPI.Ne
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
 
+	conn := types.NetworkInfo{
+		LocalAddress:  m.translateAddress(connection.LocalAddress),
+		RemoteAddress: m.translateAddress(connection.RemoteAddress),
+	}
+
 	if connections, ok := m.connections[containerID]; ok {
-		connections = append(connections, connection)
+		connections[conn] = true
 	} else {
-		connections := []*sensorAPI.NetworkConnection{connection}
+		connections := ConnMap{conn: true}
 		m.connections[containerID] = connections
 	}
 }
@@ -176,10 +233,22 @@ func (m *MockSensor) pushEndpoint(containerID string, endpoint *sensorAPI.Networ
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
 
+	ep := types.EndpointInfo{
+		Protocol: endpoint.GetProtocol().String(),
+	}
+
 	if endpoints, ok := m.endpoints[containerID]; ok {
-		endpoints = append(endpoints, endpoint)
+		endpoints[ep] = true
 	} else {
-		endpoints := []*sensorAPI.NetworkEndpoint{endpoint}
+		endpoints := EndpointMap{ep: true}
 		m.endpoints[containerID] = endpoints
 	}
+}
+
+func (m *MockSensor) translateAddress(addr *sensorAPI.NetworkAddress) string {
+	ipPortPair := utils.NetworkPeerID{
+		Address: utils.IPFromBytes(addr.GetAddressData()),
+		Port:    uint16(addr.GetPort()),
+	}
+	return ipPortPair.String()
 }

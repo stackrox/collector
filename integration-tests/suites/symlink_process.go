@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
+	"github.com/stackrox/collector/integration-tests/suites/types"
 )
 
 type SymbolicLinkProcessTestSuite struct {
@@ -75,7 +76,7 @@ func (s *SymbolicLinkProcessTestSuite) TestSymbolicLinkProcess() {
 
 	assert.Equal(s.T(), 1, len(processes))
 
-	processesMap := make(map[string][]common.ProcessInfo)
+	processesMap := make(map[string][]types.ProcessInfo)
 	for _, process := range processes {
 		name := process.Name
 		processesMap[name] = append(processesMap[name], process)

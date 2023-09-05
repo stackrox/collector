@@ -16,6 +16,7 @@ import (
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/suites/types"
 )
 
 const (
@@ -110,7 +111,7 @@ func (s *IntegrationTestSuiteBase) WritePerfResults(testName string, stats []Con
 	s.Require().NoError(err)
 }
 
-func (s *IntegrationTestSuiteBase) AssertProcessInfoEqual(expected, actual common.ProcessInfo) {
+func (s *IntegrationTestSuiteBase) AssertProcessInfoEqual(expected, actual types.ProcessInfo) {
 	assert := assert.New(s.T())
 
 	assert.Equal(expected.Name, actual.Name)
@@ -232,12 +233,12 @@ func (s *IntegrationTestSuiteBase) getPort(containerName string) (string, error)
 	return "", fmt.Errorf("no port mapping found: %v %v", rawString, portMap)
 }
 
-func (s *IntegrationTestSuiteBase) GetProcesses(containerID string) ([]common.ProcessInfo, error) {
+func (s *IntegrationTestSuiteBase) GetProcesses(containerID string) ([]types.ProcessInfo, error) {
 	if s.db == nil {
 		return nil, fmt.Errorf("Db %v is nil", s.db)
 	}
 
-	processes := make([]common.ProcessInfo, 0)
+	processes := make([]types.ProcessInfo, 0)
 	err := s.db.View(func(tx *bolt.Tx) error {
 		process := tx.Bucket([]byte(processBucket))
 		if process == nil {
@@ -249,7 +250,7 @@ func (s *IntegrationTestSuiteBase) GetProcesses(containerID string) ([]common.Pr
 		}
 
 		return container.ForEach(func(k, v []byte) error {
-			pinfo, err := common.NewProcessInfo(string(v))
+			pinfo, err := types.NewProcessInfo(string(v))
 			if err != nil {
 				return err
 			}
@@ -282,12 +283,12 @@ func (s *IntegrationTestSuiteBase) GetProcesses(containerID string) ([]common.Pr
 	return processes, nil
 }
 
-func (s *IntegrationTestSuiteBase) GetNetworks(containerID string) ([]common.NetworkInfo, error) {
+func (s *IntegrationTestSuiteBase) GetNetworks(containerID string) ([]types.NetworkInfo, error) {
 	if s.db == nil {
 		return nil, fmt.Errorf("Db %v is nil", s.db)
 	}
 
-	networks := make([]common.NetworkInfo, 0)
+	networks := make([]types.NetworkInfo, 0)
 	err := s.db.View(func(tx *bolt.Tx) error {
 		network := tx.Bucket([]byte(networkBucket))
 		if network == nil {
@@ -299,7 +300,7 @@ func (s *IntegrationTestSuiteBase) GetNetworks(containerID string) ([]common.Net
 		}
 
 		return container.ForEach(func(k, v []byte) error {
-			ninfo, err := common.NewNetworkInfo(string(v))
+			ninfo, err := types.NewNetworkInfo(string(v))
 			if err != nil {
 				return err
 			}
@@ -316,12 +317,12 @@ func (s *IntegrationTestSuiteBase) GetNetworks(containerID string) ([]common.Net
 	return networks, nil
 }
 
-func (s *IntegrationTestSuiteBase) GetEndpoints(containerID string) ([]common.EndpointInfo, error) {
+func (s *IntegrationTestSuiteBase) GetEndpoints(containerID string) ([]types.EndpointInfo, error) {
 	if s.db == nil {
 		return nil, fmt.Errorf("Db %v is nil", s.db)
 	}
 
-	endpoints := make([]common.EndpointInfo, 0)
+	endpoints := make([]types.EndpointInfo, 0)
 	err := s.db.View(func(tx *bolt.Tx) error {
 		endpoint := tx.Bucket([]byte(endpointBucket))
 		if endpoint == nil {
@@ -333,7 +334,7 @@ func (s *IntegrationTestSuiteBase) GetEndpoints(containerID string) ([]common.En
 		}
 
 		return container.ForEach(func(k, v []byte) error {
-			einfo, err := common.NewEndpointInfo(string(v))
+			einfo, err := types.NewEndpointInfo(string(v))
 			if err != nil {
 				return err
 			}

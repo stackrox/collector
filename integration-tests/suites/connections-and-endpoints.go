@@ -9,6 +9,7 @@ import (
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/suites/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,8 +18,8 @@ type Container struct {
 	Cmd               string
 	ContainerID       string
 	IP                string
-	ExpectedNetwork   []common.NetworkInfo
-	ExpectedEndpoints []common.EndpointInfo
+	ExpectedNetwork   []types.NetworkInfo
+	ExpectedEndpoints []types.EndpointInfo
 }
 
 type ConnectionsAndEndpointsTestSuite struct {
@@ -160,7 +161,7 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 
 }
 
-func endpointComparison(endpoint1 common.EndpointInfo, endpoint2 common.EndpointInfo) bool {
+func endpointComparison(endpoint1 types.EndpointInfo, endpoint2 types.EndpointInfo) bool {
 	addr1, addr2 := endpoint1.Address, endpoint2.Address
 
 	if addr1 == nil {

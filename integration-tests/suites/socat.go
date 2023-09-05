@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/suites/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -111,7 +112,7 @@ func (s *SocatTestSuite) TestSocat() {
 	assert.Equal(s.T(), 8080, endpoint8080.Address.Port)
 }
 
-func getEndpointByPort(endpoints []common.EndpointInfo, port int) (*common.EndpointInfo, error) {
+func getEndpointByPort(endpoints []types.EndpointInfo, port int) (*types.EndpointInfo, error) {
 	for _, endpoint := range endpoints {
 		if endpoint.Address.Port == port {
 			return &endpoint, nil
@@ -123,7 +124,7 @@ func getEndpointByPort(endpoints []common.EndpointInfo, port int) (*common.Endpo
 	return nil, err
 }
 
-func getProcessByPort(processes []common.ProcessInfo, port int) (*common.ProcessInfo, error) {
+func getProcessByPort(processes []types.ProcessInfo, port int) (*types.ProcessInfo, error) {
 	re := regexp.MustCompile(`:(` + strconv.Itoa(port) + `),`)
 	for _, process := range processes {
 		portArr := re.FindStringSubmatch(process.Args)

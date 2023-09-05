@@ -4,15 +4,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"testing"
-	"time"
 
 	// "os/user"
 	"path/filepath"
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/boltdb/bolt"
 
@@ -125,11 +122,13 @@ func (c *CollectorManager) TearDown() error {
 	if coreDumpErr != nil {
 		return coreDumpErr
 	}
+
 	isRunning, err := c.executor.IsContainerRunning("collector")
 	if err != nil {
 		fmt.Println("Error: Checking if container running")
 		return err
 	}
+
 	if !isRunning {
 		c.captureLogs("collector")
 		// Check if collector container segfaulted or exited with error
@@ -146,12 +145,9 @@ func (c *CollectorManager) TearDown() error {
 		c.captureLogs("collector")
 		c.killContainer("collector")
 	}
+
 	if !c.DisableGrpcServer {
-		c.captureLogs("grpc-server")
-		if _, err := c.executor.CopyFromHost(c.DBPathRemote, c.DBPath); err != nil {
-			return err
-		}
-		c.killContainer("grpc-server")
+		c.Sensor.Stop()
 	}
 	return nil
 }
@@ -181,23 +177,6 @@ func (c *CollectorManager) getAllContainers() (string, error) {
 }
 
 func (c *CollectorManager) launchGRPCServer() error {
-	//	user, _ := user.Current()
-	//	selinuxErr := setSelinuxPermissiveIfNeeded()
-	//	if selinuxErr != nil {
-	//		return selinuxErr
-	//	}
-	//	cmd := []string{RuntimeCommand, "run",
-	//		"-d",
-	//		"--rm",
-	//		"--name", "grpc-server",
-	//		"--network=host",
-	//		"--privileged",
-	//		"-v", "/tmp:/tmp:rw",
-	//		"--user", user.Uid + ":" + user.Gid,
-	//		c.GRPCServerImage,
-	//	}
-	//	_, err := c.executor.Exec(cmd...)
-	//	return err
 	c.Sensor.Start()
 	return nil
 }
@@ -326,45 +305,4 @@ func (c *CollectorManager) GetCoreDump(coreDumpFile string) error {
 		}
 	}
 	return nil
-}
-
-func (c *CollectorManager) ExpectProcesses(
-	t *testing.T, containerID string, timeout time.Duration, expected ...ProcessInfo) bool {
-
-	collected := make([]ProcessInfo, 0)
-loop:
-	for {
-		select {
-		default:
-		case <-time.After(timeout * time.Second):
-			return assert.Fail(t, "timed out waiting for processes")
-
-		case process := <-c.Sensor.Processes():
-			processInfo := fmt.Sprintf("%s:%s:%d:%d:%d:%s", process.GetName(), process.GetExecFilePath(), process.GetUid(), process.GetGid(), process.GetPid(), process.GetArgs())
-			fmt.Printf("ProcessInfo: %s\n", processInfo)
-			if process.GetContainerId() != containerID {
-				processInfo := fmt.Sprintf("%s:%s:%d:%d:%d:%s", process.GetName(), process.GetExecFilePath(), process.GetUid(), process.GetGid(), process.GetPid(), process.GetArgs())
-				fmt.Printf("- ProcessInfo: %s\n", processInfo)
-				continue loop
-			}
-
-			info := ProcessInfo{
-				Name:    process.GetName(),
-				ExePath: process.GetExecFilePath(),
-				// Pid:     int(process.GetPid()),
-				Uid:  int(process.GetUid()),
-				Gid:  int(process.GetGid()),
-				Args: process.GetArgs(),
-			}
-
-			collected = append(collected, info)
-
-			if len(collected) == len(expected) {
-				// got them all?
-				break loop
-			}
-		}
-	}
-
-	return assert.ElementsMatch(t, expected, collected)
 }
