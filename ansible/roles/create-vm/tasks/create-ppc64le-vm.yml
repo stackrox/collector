@@ -1,6 +1,6 @@
 - name: Fetch the variables from var file
   include_vars:
-    file: ppc64le-vars.yml
+    file: ppc64le.yml
   collections:
    - ibm.cloudcollection
 
