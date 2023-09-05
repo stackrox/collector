@@ -22,6 +22,9 @@ const (
 	gMaxMsgSize     = 12 * 1024 * 1024
 )
 
+// Using maps in this way allows us a very quick
+// way of identifying when specific events arrive. (Go allows
+// us to use any comparable type as the key)
 type ProcessMap map[types.ProcessInfo]interface{}
 type LineageMap map[types.ProcessLineage]interface{}
 type ConnMap map[types.NetworkInfo]interface{}
@@ -42,6 +45,9 @@ type MockSensor struct {
 	endpoints    map[string]EndpointMap
 	networkMutex sync.Mutex
 
+	// every event will be forwarded to these channels, to allow
+	// tests to look directly at the incoming data without
+	// losing anything underneath
 	processChannel    chan *storage.ProcessSignal
 	lineageChannel    chan *storage.ProcessSignal_LineageInfo
 	connectionChannel chan *sensorAPI.NetworkConnection
@@ -62,10 +68,14 @@ func NewMockSensor() *MockSensor {
 	}
 }
 
+// LiveProcesses returns a channel that can be used to read live
+// process events
 func (m *MockSensor) LiveProcesses() <-chan *storage.ProcessSignal {
 	return m.processChannel
 }
 
+// Processes returns a list of all processes that have been receieved for
+// a given container ID
 func (m *MockSensor) Processes(containerID string) []types.ProcessInfo {
 	if processes, ok := m.processes[containerID]; ok {
 		keys := make([]types.ProcessInfo, 0, len(processes))
@@ -77,6 +87,8 @@ func (m *MockSensor) Processes(containerID string) []types.ProcessInfo {
 	return make([]types.ProcessInfo, 0)
 }
 
+// HasProcess returns whether a given process has been seen for a given
+// container ID.
 func (m *MockSensor) HasProcess(containerID string, process types.ProcessInfo) bool {
 	m.processMutex.Lock()
 	defer m.processMutex.Unlock()
@@ -89,10 +101,14 @@ func (m *MockSensor) HasProcess(containerID string, process types.ProcessInfo) b
 	return false
 }
 
+// LiveLineages returns a channel that can be used to read live
+// process lineage events
 func (m *MockSensor) LiveLineages() <-chan *storage.ProcessSignal_LineageInfo {
 	return m.lineageChannel
 }
 
+// ProcessLineages returns a list of all processes that have been received for
+// a given container ID
 func (m *MockSensor) ProcessLineages(containerID string) []types.ProcessLineage {
 	if lineages, ok := m.processLineages[containerID]; ok {
 		keys := make([]types.ProcessLineage, 0, len(lineages))
@@ -104,6 +120,8 @@ func (m *MockSensor) ProcessLineages(containerID string) []types.ProcessLineage 
 	return make([]types.ProcessLineage, 0)
 }
 
+// HasLineage returns whether a given process lineage has been seen for a given
+// container ID
 func (m *MockSensor) HasLineage(containerID string, lineage types.ProcessLineage) bool {
 	m.processMutex.Lock()
 	defer m.processMutex.Unlock()
@@ -116,10 +134,14 @@ func (m *MockSensor) HasLineage(containerID string, lineage types.ProcessLineage
 	return false
 }
 
+// LiveConnections returns a channel that can be used to read live
+// connection events
 func (m *MockSensor) LiveConnections() <-chan *sensorAPI.NetworkConnection {
 	return m.connectionChannel
 }
 
+// Connections returns a list of all connections that have been received for
+// a given container ID
 func (m *MockSensor) Connections(containerID string) []types.NetworkInfo {
 	if connections, ok := m.connections[containerID]; ok {
 		keys := make([]types.NetworkInfo, 0, len(connections))
@@ -131,6 +153,8 @@ func (m *MockSensor) Connections(containerID string) []types.NetworkInfo {
 	return make([]types.NetworkInfo, 0)
 }
 
+// HasConnection returns whether a given connection has been seen for a given
+// container ID
 func (m *MockSensor) HasConnection(containerID string, conn types.NetworkInfo) bool {
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
@@ -143,10 +167,14 @@ func (m *MockSensor) HasConnection(containerID string, conn types.NetworkInfo) b
 	return false
 }
 
+// Liveendpoints returns a channel that can be used to read live
+// endpoint events
 func (m *MockSensor) LiveEndpoints() <-chan *sensorAPI.NetworkEndpoint {
 	return m.endpointChannel
 }
 
+// Endpoints returns a list of all endpoints that have been received for
+// a given container ID
 func (m *MockSensor) Endpoints(containerID string) []types.EndpointInfo {
 	if endpoints, ok := m.endpoints[containerID]; ok {
 		keys := make([]types.EndpointInfo, 0, len(endpoints))
@@ -158,6 +186,8 @@ func (m *MockSensor) Endpoints(containerID string) []types.EndpointInfo {
 	return make([]types.EndpointInfo, 0)
 }
 
+// HasEndpoint returns whether a given endpoint has been seen for a given
+// container ID
 func (m *MockSensor) HasEndpoint(containerID string, endpoint types.EndpointInfo) bool {
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
@@ -170,6 +200,8 @@ func (m *MockSensor) HasEndpoint(containerID string, endpoint types.EndpointInfo
 	return false
 }
 
+// Start will initialize the gRPC server and begin serving
+// The server itself runs in a separate thread.
 func (m *MockSensor) Start() {
 	var err error
 	m.listener, err = net.Listen("tcp", fmt.Sprintf(":%d", gMockSensorPort))
@@ -192,21 +224,26 @@ func (m *MockSensor) Start() {
 	sensorAPI.RegisterNetworkConnectionInfoServiceServer(m.grpcServer, m)
 
 	go func() {
-		if err := m.serve(); err != nil {
+		if err := m.grpcServer.Serve(m.listener); err != nil {
 			log.Fatalf("failed to serve: %v", err)
 		}
 	}()
 }
 
+// Stop will shut down the gRPC server and clear the internal store of
+// all events
 func (m *MockSensor) Stop() {
 	m.grpcServer.Stop()
 	m.listener.Close()
 
 	m.processes = make(map[string]ProcessMap)
+	m.processLineages = make(map[string]LineageMap)
 	m.connections = make(map[string]ConnMap)
 	m.endpoints = make(map[string]EndpointMap)
 }
 
+// PushSignals conforms to the Sensor API. It is here that process signals and
+// process lineage information is handled and stored/sent to the relevant channel
 func (m *MockSensor) PushSignals(stream sensorAPI.SignalService_PushSignalsServer) error {
 	for {
 		signal, err := stream.Recv()
@@ -227,6 +264,8 @@ func (m *MockSensor) PushSignals(stream sensorAPI.SignalService_PushSignalsServe
 	}
 }
 
+// PushNetworkConnectionInfo conforms to the Sensor API. It is here that networking
+// events (connections and endpoints) are handled and stored/sent to the relevant channel
 func (m *MockSensor) PushNetworkConnectionInfo(stream sensorAPI.NetworkConnectionInfoService_PushNetworkConnectionInfoServer) error {
 	for {
 		signal, err := stream.Recv()
@@ -250,10 +289,8 @@ func (m *MockSensor) PushNetworkConnectionInfo(stream sensorAPI.NetworkConnectio
 	}
 }
 
-func (m *MockSensor) serve() error {
-	return m.grpcServer.Serve(m.listener)
-}
-
+// pushProcess converts a process signal into the test's own structure
+// and stores it
 func (m *MockSensor) pushProcess(containerID string, processSignal *storage.ProcessSignal) {
 	m.processMutex.Lock()
 	defer m.processMutex.Unlock()
@@ -274,6 +311,8 @@ func (m *MockSensor) pushProcess(containerID string, processSignal *storage.Proc
 	}
 }
 
+// pushLineage converts a process lineage into the test's own structure
+// and stores it
 func (m *MockSensor) pushLineage(containerID string, process *storage.ProcessSignal, lineage *storage.ProcessSignal_LineageInfo) {
 	m.processMutex.Lock()
 	defer m.processMutex.Unlock()
@@ -292,6 +331,8 @@ func (m *MockSensor) pushLineage(containerID string, process *storage.ProcessSig
 	}
 }
 
+// pushConnection converts a connection event into the test's own structure
+// and stores it
 func (m *MockSensor) pushConnection(containerID string, connection *sensorAPI.NetworkConnection) {
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
@@ -309,6 +350,8 @@ func (m *MockSensor) pushConnection(containerID string, connection *sensorAPI.Ne
 	}
 }
 
+// pushEndpoint converts an endpoint event into the test's own structure
+// and stores it
 func (m *MockSensor) pushEndpoint(containerID string, endpoint *sensorAPI.NetworkEndpoint) {
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
@@ -325,6 +368,8 @@ func (m *MockSensor) pushEndpoint(containerID string, endpoint *sensorAPI.Networ
 	}
 }
 
+// translateAddress is a helper function for converting binary representations
+// of network addresses (in the signals) to usable forms for testing
 func (m *MockSensor) translateAddress(addr *sensorAPI.NetworkAddress) string {
 	ipPortPair := utils.NetworkPeerID{
 		Address: utils.IPFromBytes(addr.GetAddressData()),
