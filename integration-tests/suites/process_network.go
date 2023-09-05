@@ -2,10 +2,7 @@ package suites
 
 import (
 	"fmt"
-	// "sort"
 	"time"
-
-	"github.com/stretchr/testify/assert"
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stackrox/collector/integration-tests/suites/config"
@@ -49,8 +46,6 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 		err := s.executor.PullImage(image)
 		s.Require().NoError(err)
 	}
-
-	//	time.Sleep(10 * time.Second)
 
 	// invokes default nginx
 	containerID, err := s.launchContainer("nginx", image_store.ImageByKey("nginx"))
@@ -129,7 +124,7 @@ func (s *ProcessNetworkTestSuite) TestProcessViz() {
 		},
 	}
 
-	s.collector.ExpectProcesses(s.T(), s.serverContainer, 30*time.Second, expectedProcesses...)
+	s.collector.ExpectProcesses(s.T(), s.serverContainer, 10*time.Second, expectedProcesses...)
 }
 
 func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
@@ -155,77 +150,22 @@ func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
 	}
 
 	for _, expected := range expectedLineages {
-		val, err := s.GetLineageInfo(expected.Name, "0", processLineageInfoBucket)
-		s.Require().NoError(err)
-		lineage, err := types.NewProcessLineage(val)
-		s.Require().NoError(err)
-
-		assert.Equal(s.T(), expected, *lineage)
+		s.collector.ExpectLineages(s.T(), s.serverContainer, 10*time.Second, expected.Name, expected)
 	}
 }
 
 func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
-
-	// Server side checks
-
-	s.collector.ExpectNetworks(s.T(), s.serverContainer, 10*time.Second,
+	s.collector.ExpectConnections(s.T(), s.serverContainer, 10*time.Second,
 		types.NetworkInfo{
 			LocalAddress:  fmt.Sprintf("%s:%d", s.clientIP, 0),
 			RemoteAddress: fmt.Sprintf(":%s", s.serverPort),
 		},
 	)
 
-	s.collector.ExpectNetworks(s.T(), s.clientContainer, 10*time.Second,
+	s.collector.ExpectConnections(s.T(), s.clientContainer, 10*time.Second,
 		types.NetworkInfo{
 			LocalAddress:  "",
 			RemoteAddress: fmt.Sprintf("%s:%s", s.serverIP, s.serverPort),
 		},
 	)
-
-	// NetworkSignalHandler does not currently report endpoints.
-	// ProcfsScraper, which scrapes networking information from /proc reports endpoints and connections
-	// However NetworkSignalHandler, which gets networking information from Falco only reports connections.
-	// At some point in the future NetworkSignalHandler will report endpoints and connections.
-	// At that time this test and the similar test for the client container will need to be changed.
-	// The requirement should be NoError, instead of Error and there should be multiple asserts to
-	// check that the endpoints are what we expect them to be.
-	//	_, err := s.GetEndpoints(s.serverContainer)
-	//	s.Require().Error(err)
-	//
-	//	networkInfos, err := s.GetNetworks(s.serverContainer)
-	//	s.Require().NoError(err)
-	//
-	//	assert.Equal(s.T(), 1, len(networkInfos))
-	//
-	//	actualServerEndpoint := networkInfos[0].LocalAddress
-	//	actualClientEndpoint := networkInfos[0].RemoteAddress
-	//
-	//	// From server perspective, network connection info only has local port and remote IP
-	//	assert.Equal(s.T(), fmt.Sprintf(":%s", s.serverPort), actualServerEndpoint)
-	//	assert.Equal(s.T(), s.clientIP, actualClientEndpoint)
-	//
-	//	fmt.Printf("ServerDetails from Bolt: %s %+v\n", s.serverContainer, networkInfos[0])
-	//	fmt.Printf("ServerDetails from test: %s %s, Port: %s\n", s.serverContainer, s.serverIP, s.serverPort)
-	//
-	//	// client side checks
-	//
-	//	// NetworkSignalHandler does not currently report endpoints.
-	//	// See the comment above for the server container endpoint test for more info.
-	//	_, err = s.GetEndpoints(s.clientContainer)
-	//	s.Require().Error(err)
-	//
-	//	networkInfos, err = s.GetNetworks(s.clientContainer)
-	//	s.Require().NoError(err)
-	//
-	//	assert.Equal(s.T(), 1, len(networkInfos))
-	//
-	//	actualClientEndpoint = networkInfos[0].LocalAddress
-	//	actualServerEndpoint = networkInfos[0].RemoteAddress
-	//
-	//	// From client perspective, network connection info has no local endpoint and full remote endpoint
-	//	assert.Empty(s.T(), actualClientEndpoint)
-	//	assert.Equal(s.T(), fmt.Sprintf("%s:%s", s.serverIP, s.serverPort), actualServerEndpoint)
-	//
-	//	fmt.Printf("ClientDetails from Bolt: %s %+v\n", s.serverContainer, networkInfos[0])
-	//	fmt.Printf("ClientDetails from test: %s %s\n", s.clientContainer, s.clientIP)
 }

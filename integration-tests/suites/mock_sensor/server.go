@@ -23,6 +23,7 @@ const (
 )
 
 type ProcessMap map[types.ProcessInfo]interface{}
+type LineageMap map[types.ProcessLineage]interface{}
 type ConnMap map[types.NetworkInfo]interface{}
 type EndpointMap map[types.EndpointInfo]interface{}
 
@@ -33,25 +34,29 @@ type MockSensor struct {
 	listener   net.Listener
 	grpcServer *grpc.Server
 
-	processes    map[string]ProcessMap
-	processMutex sync.Mutex
+	processes       map[string]ProcessMap
+	processLineages map[string]LineageMap
+	processMutex    sync.Mutex
 
 	connections  map[string]ConnMap
 	endpoints    map[string]EndpointMap
 	networkMutex sync.Mutex
 
 	processChannel    chan *storage.ProcessSignal
+	lineageChannel    chan *storage.ProcessSignal_LineageInfo
 	connectionChannel chan *sensorAPI.NetworkConnection
 	endpointChannel   chan *sensorAPI.NetworkEndpoint
 }
 
 func NewMockSensor() *MockSensor {
 	return &MockSensor{
-		processes:   make(map[string]ProcessMap),
-		connections: make(map[string]ConnMap),
-		endpoints:   make(map[string]EndpointMap),
+		processes:       make(map[string]ProcessMap),
+		processLineages: make(map[string]LineageMap),
+		connections:     make(map[string]ConnMap),
+		endpoints:       make(map[string]EndpointMap),
 
 		processChannel:    make(chan *storage.ProcessSignal, 32),
+		lineageChannel:    make(chan *storage.ProcessSignal_LineageInfo, 32),
 		connectionChannel: make(chan *sensorAPI.NetworkConnection, 32),
 		endpointChannel:   make(chan *sensorAPI.NetworkEndpoint, 32),
 	}
@@ -84,6 +89,37 @@ func (m *MockSensor) HasProcess(containerID string, process types.ProcessInfo) b
 	return false
 }
 
+func (m *MockSensor) LiveLineages() <-chan *storage.ProcessSignal_LineageInfo {
+	return m.lineageChannel
+}
+
+func (m *MockSensor) ProcessLineages(containerID string) []types.ProcessLineage {
+	if lineages, ok := m.processLineages[containerID]; ok {
+		keys := make([]types.ProcessLineage, 0, len(lineages))
+		for k := range lineages {
+			keys = append(keys, k)
+		}
+		return keys
+	}
+	return make([]types.ProcessLineage, 0)
+}
+
+func (m *MockSensor) HasLineage(containerID string, lineage types.ProcessLineage) bool {
+	m.processMutex.Lock()
+	defer m.processMutex.Unlock()
+
+	if lineages, ok := m.processLineages[containerID]; ok {
+		_, exists := lineages[lineage]
+		return exists
+	}
+
+	return false
+}
+
+func (m *MockSensor) LiveConnections() <-chan *sensorAPI.NetworkConnection {
+	return m.connectionChannel
+}
+
 func (m *MockSensor) Connections(containerID string) []types.NetworkInfo {
 	if connections, ok := m.connections[containerID]; ok {
 		keys := make([]types.NetworkInfo, 0, len(connections))
@@ -93,10 +129,6 @@ func (m *MockSensor) Connections(containerID string) []types.NetworkInfo {
 		return keys
 	}
 	return make([]types.NetworkInfo, 0)
-}
-
-func (m *MockSensor) LiveConnections() <-chan *sensorAPI.NetworkConnection {
-	return m.connectionChannel
 }
 
 func (m *MockSensor) HasConnection(containerID string, conn types.NetworkInfo) bool {
@@ -111,8 +143,31 @@ func (m *MockSensor) HasConnection(containerID string, conn types.NetworkInfo) b
 	return false
 }
 
-func (m *MockSensor) Endpoints() <-chan *sensorAPI.NetworkEndpoint {
+func (m *MockSensor) LiveEndpoints() <-chan *sensorAPI.NetworkEndpoint {
 	return m.endpointChannel
+}
+
+func (m *MockSensor) Endpoints(containerID string) []types.EndpointInfo {
+	if endpoints, ok := m.endpoints[containerID]; ok {
+		keys := make([]types.EndpointInfo, 0, len(endpoints))
+		for k := range endpoints {
+			keys = append(keys, k)
+		}
+		return keys
+	}
+	return make([]types.EndpointInfo, 0)
+}
+
+func (m *MockSensor) HasEndpoint(containerID string, endpoint types.EndpointInfo) bool {
+	m.networkMutex.Lock()
+	defer m.networkMutex.Unlock()
+
+	if endpoints, ok := m.endpoints[containerID]; ok {
+		_, exists := endpoints[endpoint]
+		return exists
+	}
+
+	return false
 }
 
 func (m *MockSensor) Start() {
@@ -163,6 +218,11 @@ func (m *MockSensor) PushSignals(stream sensorAPI.SignalService_PushSignalsServe
 			processSignal := signal.GetSignal().GetProcessSignal()
 			m.pushProcess(processSignal.GetContainerId(), processSignal)
 			m.processChannel <- processSignal
+
+			for _, lineage := range processSignal.GetLineageInfo() {
+				m.pushLineage(processSignal.GetContainerId(), processSignal, lineage)
+				m.lineageChannel <- lineage
+			}
 		}
 	}
 }
@@ -201,6 +261,8 @@ func (m *MockSensor) pushProcess(containerID string, processSignal *storage.Proc
 	process := types.ProcessInfo{
 		Name:    processSignal.GetName(),
 		ExePath: processSignal.GetExecFilePath(),
+		Uid:     int(processSignal.GetUid()),
+		Gid:     int(processSignal.GetGid()),
 		Args:    processSignal.GetArgs(),
 	}
 
@@ -209,6 +271,24 @@ func (m *MockSensor) pushProcess(containerID string, processSignal *storage.Proc
 	} else {
 		processes := ProcessMap{process: true}
 		m.processes[containerID] = processes
+	}
+}
+
+func (m *MockSensor) pushLineage(containerID string, process *storage.ProcessSignal, lineage *storage.ProcessSignal_LineageInfo) {
+	m.processMutex.Lock()
+	defer m.processMutex.Unlock()
+
+	lin := types.ProcessLineage{
+		Name:          process.GetName(),
+		ParentExePath: lineage.GetParentExecFilePath(),
+		ParentUid:     int(lineage.GetParentUid()),
+	}
+
+	if lineages, ok := m.processLineages[containerID]; ok {
+		lineages[lin] = true
+	} else {
+		lineages := LineageMap{lin: true}
+		m.processLineages[containerID] = lineages
 	}
 }
 

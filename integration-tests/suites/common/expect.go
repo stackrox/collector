@@ -48,7 +48,7 @@ loop:
 				return x != info
 			}).([]types.ProcessInfo)
 
-			if len(expected) == 0 {
+			if len(to_find) == 0 {
 				return true
 			}
 		}
@@ -57,7 +57,41 @@ loop:
 	return assert.ElementsMatch(t, expected, c.Sensor.Processes(containerID), "Not all processes received")
 }
 
-func (c *CollectorManager) ExpectNetworks(t *testing.T, containerID string, timeout time.Duration, expected ...types.NetworkInfo) bool {
+func (c *CollectorManager) ExpectLineages(t *testing.T, containerID string, timeout time.Duration, processName string, expected ...types.ProcessLineage) bool {
+	to_find := funk.Filter(expected, func(x types.ProcessLineage) bool {
+		return c.Sensor.HasLineage(containerID, x)
+	}).([]types.ProcessLineage)
+
+	if len(to_find) == 0 {
+		return true
+	}
+
+loop:
+	for {
+		select {
+		case <-time.After(timeout):
+			break loop
+		case lineage := <-c.Sensor.LiveLineages():
+			info := types.ProcessLineage{
+				Name:          processName,
+				ParentExePath: lineage.GetParentExecFilePath(),
+				ParentUid:     int(lineage.GetParentUid()),
+			}
+
+			to_find = funk.Filter(to_find, func(x types.ProcessLineage) bool {
+				return x != info
+			}).([]types.ProcessLineage)
+
+			if len(to_find) == 0 {
+				return true
+			}
+		}
+	}
+
+	return assert.ElementsMatch(t, expected, c.Sensor.ProcessLineages(containerID), "Not all process lineages received")
+}
+
+func (c *CollectorManager) ExpectConnections(t *testing.T, containerID string, timeout time.Duration, expected ...types.NetworkInfo) bool {
 
 	to_find := funk.Filter(expected, func(x types.NetworkInfo) bool {
 		return c.Sensor.HasConnection(containerID, x)
