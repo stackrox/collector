@@ -21,20 +21,15 @@ on:
           Skip built drivers if no new drivers were built.
       drivers-bucket:
         type: string
-        required: true
+        default: ''
         description: |
           GCP bucket to pull drivers from.
-      optional-drivers-bucket:
+      arch-drivers-bucket:
         type: string
+        default: ''
         description: |
-          Optional GCP bucket. When used, the drivers in this bucket will
-          take precendence over the one in drivers-bucket.
-      use-optional-bucket:
-        type: boolean
-        default: false
-        description: |
-          If true, the optional drivers will be added to the final image
-          and overwrite any colliding drivers.
+          Architecture dependent drivers bucket. When used, the drivers in this
+          bucket will take precendence over the one in drivers-bucket.
       max-layer-depth:
         type: string
         default: "5"
@@ -52,16 +47,6 @@ jobs:
         - amd64
         - ppc64le
         - s390x
-        max-layer-depth:
-        - ${{ inputs.max-layer-depth }}
-        - 1
-        exclude:
-        - arch: amd64
-          max-layer-depth: 1
-        - arch: ppc64le
-          max-layer-depth: ${{ inputs.max-layer-depth }}
-        - arch: s390x
-          max-layer-depth: ${{ inputs.max-layer-depth }}
     env:
       COLLECTOR_IMAGE: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
 
@@ -86,11 +71,17 @@ jobs:
           echo "DRIVER_VERSION=$(cat ${{ github.workspace }}/kernel-modules/MODULE_VERSION)" >> "$GITHUB_ENV"
           echo "CONTEXT_DRIVERS_DIR=${{ github.workspace }}/kernel-modules/container/kernel-modules" >> "$GITHUB_ENV"
 
+          if [[ "${{ matrix.arch }}" == "amd64" ]]; then
+            echo "LAYER_DEPTH=${{ inputs.max-layer-depth }}" >> "$GITHUB_ENV"
+          else
+            echo "LAYER_DEPTH=1" >> "$GITHUB_ENV"
+          fi
+
       - name: Create context directory
         run: mkdir -p "${CONTEXT_DRIVERS_DIR}"
 
       - name: Download drivers from GCP
-        if: matrix.arch == 'amd64'
+        if: matrix.arch == 'amd64' && inputs.drivers-bucket != ''
         run: |
           gsutil -m rsync -r "gs://${{ inputs.drivers-bucket }}/${DRIVER_VERSION}/" \
             "${CONTEXT_DRIVERS_DIR}"
@@ -106,11 +97,11 @@ jobs:
 
       # Downstream built drivers take precedence over all others.
       - name: Download downstream built drivers from GCP
-        if: inputs.use-optional-bucket
+        if: inputs.arch-drivers-bucket != ''
         run: |
-          GCP_BUCKET="gs://${{ inputs.optional-drivers-bucket }}/${{ matrix.arch }}"
+          GCP_BUCKET="gs://${{ inputs.arch-drivers-bucket }}/${{ matrix.arch }}"
           if [[ ${{ matrix.arch }} == "amd64" ]]; then
-            GCP_BUCKET="gs://${{ inputs.optional-drivers-bucket }}/x86_64"
+            GCP_BUCKET="gs://${{ inputs.arch-drivers-bucket }}/x86_64"
           fi
 
           gsutil -m rsync -r "${GCP_BUCKET}/${DRIVER_VERSION}/" \
@@ -140,7 +131,7 @@ jobs:
             --limit localhost \
             -e collector_image="${COLLECTOR_IMAGE}" \
             -e arch="${{ matrix.arch }}" \
-            -e max_layer_depth="${{ matrix.max-layer-depth }}" \
+            -e max_layer_depth="${LAYER_DEPTH}" \
             -e collector_tag="${{ inputs.collector-tag }}" \
             -e driver_version="${DRIVER_VERSION}" \
             -e context_path="${{ github.workspace }}/kernel-modules/container" \

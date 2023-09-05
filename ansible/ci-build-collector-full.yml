@@ -24,7 +24,7 @@
           target: "probe-layer-{{ max_layer_depth }}"
           args:
             collector_repo: quay.io/stackrox-io/collector
-            collector_version: "{{ collector_tag }}"
+            collector_version: "{{ collector_tag }}-{{ arch }}"
             module_version: "{{ driver_version }}"
             max_layer_size: 300
             max_layer_depth: "{{ max_layer_depth }}"
