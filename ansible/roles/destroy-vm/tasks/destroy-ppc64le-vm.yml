@@ -110,8 +110,8 @@
     pi_ssh_key: "{{ pi_ssh_key_existing_output.resource }}"
     pi_key_name: "{{ hostname }}-ssh-key"
     id: "{{ pi_ssh_key_existing_output.resource.id }}"
-  retries: 3
-  delay: 5
+  retries: 5
+  delay: 10
   register: pi_ssh_key_create_output
   when: pi_ssh_key_existing_output.resource.id is defined
 
