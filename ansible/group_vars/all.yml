@@ -37,6 +37,7 @@ virtual_machines:
     families:
       - rhel-8-6-s390x
   
+#We have taken families name as "p" only there is limit on chars in instance name  in ibm cloud with 56 chars most
   rhel-ppc64le:
     project: rhel-ppc64le-cloud
     families:

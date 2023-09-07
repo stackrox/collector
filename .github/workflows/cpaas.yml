@@ -99,8 +99,8 @@ jobs:
       fail-fast: false
       matrix:
         vm_type:
-          #- rhel
-          #- rhel-sap
+          - rhel
+          - rhel-sap
             # Re-enable once s390x images exist for integration test
             # components
             #- rhel-s390x
