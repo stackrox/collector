@@ -120,3 +120,5 @@
   file:
     path: '{{ ibm_output_inventory_file }}'
     state: absent
+  retries: 5
+  delay: 10
