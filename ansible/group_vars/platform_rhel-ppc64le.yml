@@ -1,4 +1,4 @@
 ---
 ansible_ssh_common_args: -c aes128-ctr
-#This is workaround in power case as there is issue with ssh connection between ubuntu vm in azure to power vsi
+#This is workaround in ppc64le vsi creation case as there is issue with ssh connection between ubuntu vm in azure to power vsi
 #reference link https://askubuntu.com/questions/1229456/ssh-fails-with-connection-timed-out-in-vpn-and-hangs-here-expecting-ssh2-msg
