@@ -51,36 +51,6 @@
   ignore_errors: true
   when: pi_instance_existing_output.rc == 0
 
-- name: Check for existing network
-  delegate_to: localhost
-  ibm.cloudcollection.ibm_pi_network_info:
-    region: "{{ region }}"
-    zone: "{{ zone }}"
-    pi_network_name: "{{ hostname }}-network"
-    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
-  failed_when:
-    - pi_network_existing_output.rc != 0
-    - '"unable to get network" not in pi_network_existing_output.stderr'
-  register: pi_network_existing_output
-
-- name: Save existing network as fact
-  delegate_to: localhost
-  set_fact:
-    cacheable: True
-    pi_network_id: "{{ pi_network_existing_output.resource.id }}"
-  when: pi_network_existing_output.resource.id is defined
-
-- name: Delete network
-  delegate_to: localhost
-  ibm.cloudcollection.ibm_pi_network:
-    region: "{{ region }}"
-    zone: "{{ zone }}"
-    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
-    state: absent
-    id: "{{ pi_network_id }}"
-  register: pi_network_create_output
-  when:
-    - pi_network_existing_output.resource.id is defined
 - name: Check for existing SSH Key
   delegate_to: localhost
   ibm.cloudcollection.ibm_pi_key_info:
@@ -114,6 +84,37 @@
   delay: 30
   register: pi_ssh_key_create_output
   when: pi_ssh_key_existing_output.resource.id is defined
+  
+- name: Check for existing network
+  delegate_to: localhost
+  ibm.cloudcollection.ibm_pi_network_info:
+    region: "{{ region }}"
+    zone: "{{ zone }}"
+    pi_network_name: "{{ hostname }}-network"
+    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
+  failed_when:
+    - pi_network_existing_output.rc != 0
+    - '"unable to get network" not in pi_network_existing_output.stderr'
+  register: pi_network_existing_output
+
+- name: Save existing network as fact
+  delegate_to: localhost
+  set_fact:
+    cacheable: True
+    pi_network_id: "{{ pi_network_existing_output.resource.id }}"
+  when: pi_network_existing_output.resource.id is defined
+
+- name: Delete network
+  delegate_to: localhost
+  ibm.cloudcollection.ibm_pi_network:
+    region: "{{ region }}"
+    zone: "{{ zone }}"
+    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
+    state: absent
+    id: "{{ pi_network_id }}"
+  register: pi_network_create_output
+  when:
+    - pi_network_existing_output.resource.id is defined
 
 - name: Remove IBM inventory file (delete file)
   delegate_to: localhost
