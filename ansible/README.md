@@ -25,11 +25,6 @@ $ ansible-galaxy collection install ibm.cloudcollection
 
 ```
 
-To manage IBM Z VMs through IBM Cloud, you will also need to download and install the following ansible collection:
-```
-$ ansible-galaxy collection install ibm.cloudcollection
-```
-
 ## Image builds
 ### Builder image
 

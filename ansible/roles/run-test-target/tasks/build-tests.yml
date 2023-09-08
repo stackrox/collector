@@ -1,0 +1,23 @@
+---
+
+- name: Build test binary
+  make:
+    chdir: "{{ integration_tests_root }}"
+    target: build
+    params:
+      GOARCH: "{{ arch | default('amd64') }}"
+      GOOS: linux
+  delegate_to: localhost
+
+- name: Upload test binary
+  copy:
+    src: "{{ integration_tests_root }}/bin/collector-tests"
+    dest: "{{ remote_tests_root }}"
+    mode: '0700'
+
+- name: Upload test files
+  copy:
+    src: "{{ integration_tests_root }}/images.yml"
+    dest: "{{ remote_tests_root }}/images.yml"
+    mode: '0600'
+

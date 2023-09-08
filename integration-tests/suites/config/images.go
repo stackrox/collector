@@ -62,11 +62,7 @@ func loadImageStore(location string) (*ImageStore, error) {
 // tag as is otherwise.
 func getQATag(base_tag string) string {
 	if collectorQATag == "" {
-		buf, err := ioutil.ReadFile("container/QA_TAG")
-		if err != nil {
-			panic(err)
-		}
-		collectorQATag = strings.TrimSuffix(string(buf), "\n")
+		collectorQATag = ReadEnvVar("COLLECTOR_QA_TAG")
 	}
 	return base_tag + "-" + collectorQATag
 }

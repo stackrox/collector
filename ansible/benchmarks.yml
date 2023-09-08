@@ -52,7 +52,7 @@
   roles:
     - run-test-target
   vars:
-    collector_test: ci-benchmarks
+    collector_test: TestBenchmark
   tags:
     - run-benchmarks
 

@@ -14,47 +14,94 @@
   become: "{{ runtime_as_root }}"
   shell: "{{ runtime_command }} rm -f $({{ runtime_command }} ps -aq) >/dev/null 2>&1 || true"
 
+- name: Get default collector tag
+  community.general.make:
+    target: tag
+    chdir: "{{ collector_root }}"
+  register: collector_tag_result
+  delegate_to: localhost
+
+- set_fact:
+    collector_image: "{{ lookup('env', 'COLLECTOR_IMAGE', default='quay.io/rhacs-eng/collector:' +  collector_tag_result.stdout) }}"
+
+- set_fact:
+    run_args: -test.run {{ collector_test }} -test.timeout 60m -test.count=1
+  when: collector_test != "ci-integration-tests"
+
+- set_fact:
+    run_args: -test.timeout 120m -test.short
+  when: collector_test == "ci-integration-tests"
+
 - block:
   - name: Run integration tests
-    shell: "make -C {{ collector_root }}/integration-tests {{ collector_test }}"
+    shell: |
+      {{ remote_tests_binary }} {{ run_args }} -test.v 2>&1
+    args:
+      chdir: "{{ remote_tests_root }}"
     environment:
       COLLECTION_METHOD: "{{ collection_method }}"
-      REMOTE_HOST_TYPE: ssh
-      REMOTE_HOST_ADDRESS: "{{ vm_ip_address }}"
-      REMOTE_HOST_USER: "{{ ansible_user }}"
-      REMOTE_HOST_OPTIONS: "{{ ansible_ssh_private_key_file }}"
       VM_CONFIG: "{{ vm_config }}"
       IMAGE_FAMILY: "{{ vm_image_family }}"
       RUNTIME_COMMAND: "{{ runtime_command }}"
       RUNTIME_AS_ROOT: "{{ runtime_as_root }}"
       RUNTIME_SOCKET: "{{ runtime_socket }}"
+      COLLECTOR_IMAGE: "{{ collector_image }}"
+      COLLECTOR_QA_TAG: "{{ lookup('file', integration_tests_root + '/container/QA_TAG') }}"
     register: test_result
-    delegate_to: localhost
     # ensure that this is printed
     tags: [print_action]
 
   rescue:
-  - name: Set tests as failed
-    set_fact:
-      success: false
+    - name: Set tests as failed
+      set_fact:
+        success: false
 
-  - name: Output integration test log
-    debug:
-      msg: "{{ test_result.stdout }}"
-    tags: [print_action]
+    - name: Output test log
+      debug:
+        msg: "{{ test_result.stdout }}"
+      tags: [print_action]
 
   always:
-  - name: Write integration test log
-    copy:
-      content: "{{ test_result.stdout }}"
-      dest: "{{ logs_root }}/integration-test.log"
-    delegate_to: localhost
+    - name: Make logs directories
+      file:
+        state: directory
+        path: "{{ logs_root }}"
+      delegate_to: localhost
 
-  - name: Report
-    shell: "make -C {{ collector_root }}/integration-tests report"
-    environment:
-      LOG_FILE: "{{ logs_root }}/integration-test.log"
-    delegate_to: localhost
+    - name: Get log files
+      find:
+        paths: "{{ remote_logs_root }}/{{ vm_config }}/{{ collection_method }}/"
+      register: remote_log_files
+
+    - name: Fetch log files
+      fetch:
+        src: "{{ remote_log_path }}"
+        dest: "{{ logs_root }}/"
+        flat: true
+      loop: "{{ remote_log_files.files | map(attribute='path') | list }}"
+      loop_control:
+        loop_var: remote_log_path
+
+    - name: Download perf JSON
+      fetch:
+        src: "{{ remote_tests_root }}/perf.json"
+        dest: "{{ integration_tests_root }}/"
+        flat: true
+        fail_on_missing: false
+
+    - name: Write integration test log
+      copy:
+        content: "{{ test_result.stdout }}"
+        dest: "{{ logs_root }}/integration-test.log"
+      delegate_to: localhost
+
+    - name: Report
+      community.general.make:
+        chdir: "{{ integration_tests_root }}"
+        target: report
+      environment:
+        LOG_FILE: "{{ logs_root }}/integration-test.log"
+      delegate_to: localhost
 
   # If this host is just for a certain collection method, skip running
   # the test if we're not using that collection method.
