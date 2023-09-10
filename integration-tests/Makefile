@@ -31,6 +31,11 @@ endef
 # Generates all the specific test targets
 $(foreach element,$(ALL_TESTS),$(eval $(call make-test-target,$(element))))
 
+.PHONY: build
+build:
+	mkdir -p bin
+	go test -tags bench -c -o bin/collector-tests
+
 # Run everything on CI, rather than specific tests.
 .PHONY: ci-integration-tests
 ci-integration-tests: docker-clean

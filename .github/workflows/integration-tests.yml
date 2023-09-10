@@ -51,6 +51,7 @@ jobs:
     with:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ inputs.collector-tag }}
+      job-tag: ${{ inputs.job-tag }}
     secrets: inherit
 
   notify:

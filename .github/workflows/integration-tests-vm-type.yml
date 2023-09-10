@@ -54,7 +54,7 @@ jobs:
       GCP_SSH_KEY_FILE: ~/.ssh/GCP_SSH_KEY
       BUILD_TYPE: ci
       VM_TYPE: "${{ inputs.vm_type }}"
-      COLLECTOR_TAG: ${{ inputs.collector-tag }}
+      COLLECTOR_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
     steps:
       - uses: actions/checkout@v3
 

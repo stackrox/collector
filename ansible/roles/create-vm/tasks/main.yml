@@ -36,7 +36,7 @@
   include_tasks: create-s390x-vm.yml
   vars:
     vsi_name: "{{ vm_name }}"
-  when: arch_info == "s390x"
+  when: arch_info == "s390x" and [vm_family, vm_collection_method] not in excluded_pairs
 
 - name: Create X86 VM
   google.cloud.gcp_compute_instance:
@@ -71,7 +71,7 @@
     loop_var: gcp_zone
   register: instance_result
   when: >
-    arch_info == "x86" and not condition and [vm_family, vm_collection_method] not in excluded_pairs
+    arch_info == "amd64" and not condition and [vm_family, vm_collection_method] not in excluded_pairs
   vars:
     condition: "{{ (instance_result | default({'changed': false})).changed }}"
 
