@@ -9,7 +9,7 @@ set -eo pipefail
 
 kernel=$1
 module_version=$2
-probe_type=${3:-both}
+probe_type=${3:-bpf}
 bucket=${4:-612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656}
 branch=${5:-master}
 
@@ -136,7 +136,7 @@ check_if_bundle_exists() {
 
     print_header "Checking if bundle exists"
 
-    bundle_file="gs://stackrox-kernel-bundles/bundle-$kernel.tgz"
+    bundle_file="gs://collector-kernel-bundles-public/bundle-$kernel.tgz"
 
     if ! gsutil ls "$bundle_file"; then
         echo "The bundle for $kernel does NOT exist"
