@@ -3,14 +3,6 @@ set -euo pipefail
 
 OUTPUT_DIR="/collector/kernel-modules/container/kernel-modules"
 
-package_kmod() {
-    kernel=$1
-    probe_object=$2
-
-    gzip -c "${probe_object}" \
-        > "${OUTPUT_DIR}/collector-${kernel}.ko.gz"
-}
-
 package_probe() {
     kernel=$1
     probe_object=$2
@@ -38,11 +30,9 @@ cmake -S ${DRIVER_DIR} \
     -DBUILD_LIBSCAP_MODERN_BPF=ON \
     -DMODERN_BPF_EXCLUDE_PROGS='^(openat2|ppoll|setsockopt|getsockopt|clone3|io_uring_setup|nanosleep)$' \
     -B ${DRIVER_DIR}/build
-make -C ${DRIVER_DIR}/build/driver
 make -C ${PROBE_DIR} FALCO_DIR="${DRIVER_DIR}/driver/bpf"
 
 mkdir -p "${OUTPUT_DIR}"
-package_kmod "$KERNEL_VERSION" "$DRIVER_DIR/build/driver/collector.ko"
 package_probe "$KERNEL_VERSION" "$PROBE_DIR/probe.o"
 
 # No reason to leave this hanging about
