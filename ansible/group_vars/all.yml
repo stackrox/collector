@@ -23,7 +23,7 @@ redhat_password: "{{ lookup('env', 'REDHAT_PASSWORD', default='') }}"
 excluded_pairs:
   # e.g. - ['ubuntu-1804-lts', 'core_bpf']
   # This can be removed once we have downloadable s390x eBPF drivers
-  - [ 'rhel-8-6-s390x', 'ebpf' ]
+  - [ 'rhel-8-8-s390x', 'ebpf' ]
 
 virtual_machines:
   rhel:
@@ -35,7 +35,7 @@ virtual_machines:
   rhel-s390x:
     project: rhel-s390x-cloud
     families:
-      - rhel-8-6-s390x
+      - rhel-8-8-s390x
 
   rhel-sap:
     project: rhel-sap-cloud
