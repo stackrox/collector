@@ -1,4 +1,6 @@
 ---
 #rhel-8-6-s390x
-vsi_image_id: r038-0d89bf54-c28f-4dc4-bec0-0f8e03a74de3
+#vsi_image_id: r038-0d89bf54-c28f-4dc4-bec0-0f8e03a74de3
+#rhel-8-8-s390x
+vsi_image_id: r038-a02662f2-ae0d-4308-929b-d327f008d136
 vsi_profile: bz2-2x8
