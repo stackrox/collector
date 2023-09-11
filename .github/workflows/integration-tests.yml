@@ -41,7 +41,9 @@ jobs:
       fail-fast: false
       matrix:
         vm_type:
-          - cos
+          # COS testing is disabled until ROX-15295 is completed
+          # due to noexec flags on the file system mounts
+          #- cos
           - flatcar
           - fedora-coreos
           - rhel-sap
