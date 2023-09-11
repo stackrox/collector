@@ -68,6 +68,7 @@ func (s *ListeningEndpointChildProcessTestSuite) TestListeningEndpointChildProce
 	fmt.Println()
 	for _, endpoint := range endpoints {
 		fmt.Printf("%+v \n", endpoint)
+		fmt.Printf("%+v \n", *endpoint.Originator)
 	}
 
 	assert.Equal(s.T(), 1, len(endpoints))
