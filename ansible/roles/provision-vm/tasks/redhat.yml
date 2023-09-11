@@ -32,7 +32,7 @@
     yum update -y
 
 - name: Install docker
-  yum:
+  dnf:
     name:
       - docker-ce
       - docker-ce-cli
