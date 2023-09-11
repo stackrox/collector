@@ -1,6 +1,6 @@
 ---
 
 integration_tests_root: "{{ collector_root }}/integration-tests"
-remote_tests_root: /tmp/collector-tests/
+remote_tests_root: "{{ ansible_env.HOME }}/collector-tests/"
 remote_tests_binary: "{{ remote_tests_root }}/collector-tests"
 remote_logs_root: "{{ remote_tests_root }}/container-logs"
