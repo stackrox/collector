@@ -140,7 +140,7 @@ jobs:
               echo "REDHAT_PASSWORD=${{ secrets.REDHAT_PASSWORD }}"
             } >> "${GITHUB_ENV}"
           fi
-      
+#added workaround for ssh connection issue with power vm from ubuntu machine , changing mtu works successfully ssh to power vms      
       - name: Set MTU for Power VMs
         if: ${{ contains(inputs.vm_type, 'ppc64le') }}
         run: sudo ifconfig eth0 mtu 1000 up  
