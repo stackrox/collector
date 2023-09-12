@@ -132,8 +132,6 @@ jobs:
               echo "IC_REGION=osa"
               echo "IC_ZONE=osa21"
             } >> "${GITHUB_ENV}"
-          
-            sudo ifconfig eth0 mtu 1000 up
           fi
 
           if [[ '${{ inputs.vm_type }}' =~ rhel ]]; then
