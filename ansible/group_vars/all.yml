@@ -24,6 +24,7 @@ excluded_pairs:
   # e.g. - ['ubuntu-1804-lts', 'core_bpf']
   # This can be removed once we have downloadable s390x eBPF drivers
   - [ 'rhel-8-6-s390x', 'ebpf' ]
+  - [ 'p', 'ebpf' ]
 
 virtual_machines:
   rhel:
@@ -37,7 +38,8 @@ virtual_machines:
     families:
       - rhel-8-6-s390x
   
-#We have taken families name as "p" only there is limit on chars in instance name  in ibm cloud with 56 chars most
+  #We have taken families name as "p" since there is a character limit for instance name  
+  #in ibm cloud(56 chars max)
   rhel-ppc64le:
     project: rhel-ppc64le-cloud
     families:

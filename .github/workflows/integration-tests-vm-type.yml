@@ -131,6 +131,7 @@ jobs:
               echo "IC_API_KEY=${{ secrets.IBM_CLOUD_POWER_API_KEY }}"
               echo "IC_REGION=osa"
               echo "IC_ZONE=osa21"
+              echo "IBM_CLOUD_POWER_SSH_PUBLIC_KEY=${{ secrets.IBM_CLOUD_POWER_SSH_PUBLIC_KEY }}"
             } >> "${GITHUB_ENV}"
           fi
 
@@ -140,7 +141,8 @@ jobs:
               echo "REDHAT_PASSWORD=${{ secrets.REDHAT_PASSWORD }}"
             } >> "${GITHUB_ENV}"
           fi
-#added workaround for ssh connection issue with power vm from ubuntu machine , changing mtu works successfully ssh to power vms      
+      #Added workaround for ssh connection issue with power vm from ubuntu machine.
+      #Changing mtu works in resolving the issue   
       - name: Set MTU for Power VMs
         if: ${{ contains(inputs.vm_type, 'ppc64le') }}
         run: sudo ifconfig eth0 mtu 1000 up  
@@ -149,8 +151,6 @@ jobs:
         if: ${{ ! inputs.run-benchmarks }}
         run: |
           make -C "${{ github.workspace }}/ansible" create-ci-vms
-        env:
-          IBM_CLOUD_POWER_SSH_PUBLIC_KEY: ${{ secrets.IBM_CLOUD_POWER_SSH_PUBLIC_KEY }}
 
       - name: Run Tests
         if: ${{ ! inputs.run-benchmarks }}
