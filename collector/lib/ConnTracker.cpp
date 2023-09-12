@@ -91,15 +91,19 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
     return network;
   }
 
-  // Otherwise, associate it to "rest of the internet".
-  switch (address.family()) {
-    case Address::Family::IPV4:
-      return IPNet(canonical_external_ipv4_addr, 0, true);
-    case Address::Family::IPV6:
-      return IPNet(canonical_external_ipv6_addr, 0, true);
-    default:
-      return {};
+  if (aggregateUnmatchedIp_) {
+    // associate it to "rest of the internet".
+    switch (address.family()) {
+      case Address::Family::IPV4:
+        return IPNet(canonical_external_ipv4_addr, 0, true);
+      case Address::Family::IPV6:
+        return IPNet(canonical_external_ipv6_addr, 0, true);
+      default:
+        return {};
+    }
   }
+
+  return IPNet(address, 0, true);
 }
 
 Connection ConnectionTracker::NormalizeConnectionNoLock(const Connection& conn) const {
