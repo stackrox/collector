@@ -91,7 +91,7 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
     return network;
   }
 
-  if (aggregateUnmatchedIp_) {
+  if (aggregate_unmatched_ip_) {
     // associate it to "rest of the internet".
     switch (address.family()) {
       case Address::Family::IPV4:
