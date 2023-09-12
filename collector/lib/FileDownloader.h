@@ -6,6 +6,7 @@
 #include <ostream>
 
 #include <curl/curl.h>
+#include <curl/urlapi.h>
 
 namespace collector {
 
@@ -15,6 +16,11 @@ struct DownloadData {
   std::ostream* os;
 };
 
+/**
+ * Wrapper aroung libcurl for downloading files.
+ * See https://curl.se/libcurl/c/libcurl-easy.html for details about specific
+ * methods
+ */
 class FileDownloader {
  public:
   enum resolve_t {
@@ -41,15 +47,23 @@ class FileDownloader {
   bool ConnectTo(const char* const entry);
   void SetVerboseMode(bool verbose);
 
+  std::string GetURL() { return GetURLPart(CURLUPART_URL); }
+  std::string GetHost() { return GetURLPart(CURLUPART_HOST); }
+  std::string GetPort() { return GetURLPart(CURLUPART_PORT); }
+  std::string GetScheme() { return GetURLPart(CURLUPART_SCHEME); }
+  std::string GetPath() { return GetURLPart(CURLUPART_PATH); }
+  std::string GetEffectiveURL();
+
   void ResetCURL();
   bool IsReady();
   bool Download();
 
  private:
   CURL* curl_;
+  CURLU* url_;
   curl_slist* connect_to_;
   std::string output_path_;
-  std::string url_path_;
+  std::string file_path_;
   std::array<char, CURL_ERROR_SIZE> error_;
   struct {
     unsigned int times;
@@ -58,6 +72,7 @@ class FileDownloader {
   } retry_;
 
   void SetDefaultOptions();
+  std::string GetURLPart(CURLUPart part);
 };
 
 }  // namespace collector

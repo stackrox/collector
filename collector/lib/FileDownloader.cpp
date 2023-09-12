@@ -101,6 +101,7 @@ FileDownloader::FileDownloader() : connect_to_(nullptr) {
     SetDefaultOptions();
   }
 
+  url_ = curl_url();
   error_.fill('\0');
   retry_ = {.times = 0, .delay = 0, .max_time = std::chrono::seconds(0)};
 }
@@ -110,16 +111,25 @@ FileDownloader::~FileDownloader() {
     curl_easy_cleanup(curl_);
   }
 
+  if (url_ != nullptr) {
+    curl_url_cleanup(url_);
+  }
+
   curl_global_cleanup();
 
   curl_slist_free_all(connect_to_);
 }
 
 bool FileDownloader::SetURL(const char* const url) {
-  url_path_ = std::string(url);
-  url_path_ = url_path_.substr(url_path_.find_last_of("/") + 1);
+  std::string_view file_path{url};
+  file_path_ = file_path.substr(file_path.find_last_of('/') + 1);
 
-  auto result = curl_easy_setopt(curl_, CURLOPT_URL, url);
+  if (curl_url_set(url_, CURLUPART_URL, url, 0) != CURLUE_OK) {
+    CLOG(WARNING) << "Unable to set URL '" << url << "'";
+    return false;
+  }
+
+  auto result = curl_easy_setopt(curl_, CURLOPT_CURLU, url_);
 
   if (result != CURLE_OK) {
     CLOG(WARNING) << "Unable to set URL '" << url << "' - " << curl_easy_strerror(result);
@@ -243,8 +253,56 @@ void FileDownloader::SetVerboseMode(bool verbose) {
   }
 }
 
+std::string FileDownloader::GetEffectiveURL() {
+  // For the time being, we can only have a single connect_to_ object,
+  // if it's not set, the download will go to the set URL.
+  if (connect_to_ == nullptr || connect_to_->data == nullptr) {
+    return GetURL();
+  }
+
+  // Format for the connect_to field is:
+  //   HOST:PORT:CONNECT-TO-HOST:CONNECT-TO-PORT
+  std::string_view connect_to{connect_to_->data};
+
+  auto marker = connect_to.find(':');
+  if (marker == std::string_view::npos) {
+    CLOG(WARNING) << "Malformed connect_to_: " << connect_to_;
+    return GetURL();
+  }
+  auto host = connect_to.substr(0, marker);
+  connect_to.remove_prefix(marker + 1);
+
+  marker = connect_to.find(':');
+  if (marker == std::string_view::npos) {
+    CLOG(WARNING) << "Malformed connect_to_: " << connect_to_;
+    return GetURL();
+  }
+  auto port = connect_to.substr(0, marker);
+  connect_to.remove_prefix(marker + 1);
+
+  marker = connect_to.find(':');
+  if (marker == std::string_view::npos) {
+    CLOG(WARNING) << "Malformed connect_to_: " << connect_to_;
+    return GetURL();
+  }
+
+  auto connect_to_host = connect_to.substr(0, marker);
+  auto connect_to_port = connect_to.substr(marker + 1);
+
+  if (port != GetPort() || host != GetHost()) {
+    return GetURL();
+  }
+
+  return GetScheme() + "://" + std::string{connect_to_host} + ":" + std::string{connect_to_port} + GetPath();
+}
+
 void FileDownloader::ResetCURL() {
   curl_easy_reset(curl_);
+
+  if (url_ != nullptr) {
+    curl_url_cleanup(url_);
+  }
+  url_ = curl_url();
 
   SetDefaultOptions();
 
@@ -314,13 +372,13 @@ bool FileDownloader::Download() {
 
     auto time_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - start_time);
     if (time_elapsed > retry_.max_time) {
-      CLOG(WARNING) << "Timeout while retrying to download " << url_path_;
+      CLOG(WARNING) << "Timeout while retrying to download " << file_path_;
       return false;
     }
   }
 
-  CLOG(WARNING) << "Attempted to download " << url_path_ << " " << failures << " time(s)";
-  CLOG(WARNING) << "Failed to download from " << url_path_;
+  CLOG(WARNING) << "Attempted to download " << file_path_ << " " << failures << " time(s)";
+  CLOG(WARNING) << "Failed to download from " << file_path_;
 
   return false;
 }
@@ -329,6 +387,20 @@ void FileDownloader::SetDefaultOptions() {
   curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, WriteFile);
   curl_easy_setopt(curl_, CURLOPT_HEADERFUNCTION, HeaderCallback);
   curl_easy_setopt(curl_, CURLOPT_ERRORBUFFER, error_.data());
+}
+
+std::string FileDownloader::GetURLPart(CURLUPart part) {
+  char* url = nullptr;
+  auto rc = curl_url_get(url_, part, &url, 0);
+
+  if (rc != CURLUE_OK) {
+    CLOG(WARNING) << "Failed to get part " << part << " (" << rc << ")";
+    return "";
+  }
+
+  std::string ret{url};
+  curl_free(url);
+  return ret;
 }
 
 }  // namespace collector

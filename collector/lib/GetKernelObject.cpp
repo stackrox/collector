@@ -32,10 +32,15 @@ bool DownloadKernelObjectFromURL(FileDownloader& downloader, const std::string& 
   url += "?cid=collector";
 #endif
 
-  CLOG(INFO) << "Attempting to download kernel object from " << url;
+  if (!downloader.SetURL(url)) {
+    return false;
+  }
 
-  if (!downloader.SetURL(url)) return false;
-  if (!downloader.Download()) return false;
+  CLOG(INFO) << "Attempting to download kernel object from " << downloader.GetEffectiveURL();
+
+  if (!downloader.Download()) {
+    return false;
+  }
 
   CLOG(DEBUG) << "Downloaded kernel object from " << url;
 
