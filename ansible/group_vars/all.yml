@@ -5,7 +5,7 @@ ibmcloud_ssh_key_file: "{{ lookup('env', 'IBMCLOUD_SSH_KEY_FILE', default='~/.ss
 
 current_user: "{{ lookup('env', 'USER') }}"
 test_platform: "{{ lookup('env', 'VM_TYPE', default='rhel') }}"
-arch_info: "{{ 's390x' if 's390x' in test_platform else 'ppc64le' if 'ppc64le' in test_platform else 'x86'}}"
+arch_info: "{{ 's390x' if 's390x' in test_platform else 'ppc64le' if 'ppc64le' in test_platform else 'amd64'}}"
 collector_root: "{{ playbook_dir }}/.."
 collector_repo: "quay.io/stackrox-io"
 
