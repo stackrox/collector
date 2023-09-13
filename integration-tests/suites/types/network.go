@@ -28,3 +28,8 @@ func NewNetworkInfo(line string) (*NetworkInfo, error) {
 		CloseTimestamp: parts[4],
 	}, nil
 }
+
+func (n *NetworkInfo) IsActive() bool {
+	// no close timestamp means the connection is open, and active
+	return n.CloseTimestamp == "(timestamp: nil Timestamp)"
+}

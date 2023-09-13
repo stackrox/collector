@@ -4,7 +4,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,21 +20,15 @@ func (s *MissingProcScrapeTestSuite) SetupSuite() {
 		s.Require().NoError(err, "Failed to create fake proc directory")
 	}
 
-	s.executor = common.NewExecutor()
-	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
-
-	s.collector.Mounts["/host/proc:ro"] = fakeProcDir
+	// Mount the fake proc directory created by 'create-fake-proc.sh'
+	s.Collector().Mounts["/host/proc:ro"] = fakeProcDir
 
 	// if /etc/hostname is empty collector will read /proc/sys/kernel/hostname
 	// which will also be empty because of the fake proc, so collector will exit.
 	// to avoid this, set NODE_HOSTNAME
-	s.collector.Env["NODE_HOSTNAME"] = "collector-missing-proc-host"
+	s.Collector().Env["NODE_HOSTNAME"] = "collector-missing-proc-host"
 
-	err = s.collector.Setup()
-	s.Require().NoError(err)
-
-	err = s.collector.Launch()
-	s.Require().NoError(err)
+	s.StartCollector(false)
 
 	time.Sleep(10 * time.Second)
 }
@@ -47,7 +40,6 @@ func (s *MissingProcScrapeTestSuite) TestCollectorRunning() {
 }
 
 func (s *MissingProcScrapeTestSuite) TearDownSuite() {
-	err := s.collector.TearDown()
-	s.Require().NoError(err)
+	s.StopCollector()
 	s.cleanupContainer([]string{"collector"})
 }

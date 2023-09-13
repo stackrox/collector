@@ -31,19 +31,15 @@ type ConnectionsAndEndpointsTestSuite struct {
 func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 
 	s.metrics = map[string]float64{}
-	s.executor = common.NewExecutor()
 	s.StartContainerStats()
-	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
+	collector := s.Collector()
 
-	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
-	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
-	s.collector.Env["ROX_ENABLE_AFTERGLOW"] = "false"
+	collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
+	collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
+	collector.Env["ROX_ENABLE_AFTERGLOW"] = "false"
 
-	err := s.collector.Setup()
-	s.Require().NoError(err)
+	s.StartCollector(false)
 
-	err = s.collector.Launch()
-	s.Require().NoError(err)
 	time.Sleep(30 * time.Second)
 
 	socatImage := config.Images().QaImageByKey("qa-socat")
@@ -74,15 +70,10 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 	_, err = s.execContainer(clientName, []string{"/bin/sh", "-c", clientCmd})
 	s.Require().NoError(err)
 	time.Sleep(6 * time.Second)
-
-	err = s.collector.TearDown()
-	s.Require().NoError(err)
-
-	s.db, err = s.collector.BoltDB()
-	s.Require().NoError(err)
 }
 
 func (s *ConnectionsAndEndpointsTestSuite) TearDownSuite() {
+	s.StopCollector()
 	s.cleanupContainer([]string{"collector"})
 	s.cleanupContainer([]string{s.Server.Name})
 	s.cleanupContainer([]string{s.Client.Name})
@@ -95,8 +86,7 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 
 	// TODO If ExpectedNetwork is nil the test should check that it is actually nil
 	if s.Client.ExpectedNetwork != nil {
-		clientNetworks, err := s.GetNetworks(s.Client.ContainerID)
-		s.Require().NoError(err)
+		clientNetworks := s.sensor.Connections(s.Client.ContainerID)
 		nNetwork := len(clientNetworks)
 		nExpectedNetwork := len(s.Client.ExpectedNetwork)
 		// TODO Get this assert to pass reliably for these tests. Don't just do the asserts for the last connection. https://issues.redhat.com/browse/ROX-17964
@@ -117,13 +107,13 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 	if s.Client.ExpectedEndpoints != nil {
 		fmt.Println("Expected client endpoint should be nil")
 	}
-	_, err := s.GetEndpoints(s.Client.ContainerID)
-	s.Require().Error(err, "There should be no client endpoint")
+
+	endpoints := s.sensor.Endpoints(s.Client.ContainerID)
+	assert.Equal(s.T(), 0, len(endpoints))
 
 	// TODO If ExpectedNetwork is nil the test should check that it is actually nil
 	if s.Server.ExpectedNetwork != nil {
-		serverNetworks, err := s.GetNetworks(s.Server.ContainerID)
-		s.Require().NoError(err)
+		serverNetworks := s.sensor.Connections(s.Server.ContainerID)
 		nNetwork := len(serverNetworks)
 		nExpectedNetwork := len(s.Server.ExpectedNetwork)
 		// TODO Get this assert to pass reliably for these tests. Don't just do the asserts for the last connection. https://issues.redhat.com/browse/ROX-18803
@@ -141,9 +131,8 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 		assert.Equal(s.T(), lastExpectedNetwork.SocketFamily, lastNetwork.SocketFamily)
 	}
 
-	serverEndpoints, err := s.GetEndpoints(s.Server.ContainerID)
+	serverEndpoints := s.sensor.Endpoints(s.Server.ContainerID)
 	if s.Server.ExpectedEndpoints != nil {
-		s.Require().NoError(err)
 		assert.Equal(s.T(), len(s.Server.ExpectedEndpoints), len(serverEndpoints))
 
 		sort.Slice(s.Server.ExpectedEndpoints, func(i, j int) bool {
@@ -156,7 +145,7 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 			assert.Equal(s.T(), s.Server.ExpectedEndpoints[idx].Address, serverEndpoints[idx].Address)
 		}
 	} else {
-		s.Require().Error(err)
+		assert.Equal(s.T(), 1, len(serverEndpoints))
 	}
 
 }

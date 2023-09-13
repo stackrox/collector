@@ -17,19 +17,18 @@ import (
 )
 
 type CollectorManager struct {
-	executor          Executor
-	Mounts            map[string]string
-	Env               map[string]string
-	DBPath            string
-	DBPathRemote      string
-	CollectorOutput   string
-	CollectorImage    string
-	GRPCServerImage   string
-	DisableGrpcServer bool
-	BootstrapOnly     bool
-	TestName          string
-	CoreDumpFile      string
-	VmConfig          string
+	executor        Executor
+	Mounts          map[string]string
+	Env             map[string]string
+	DBPath          string
+	DBPathRemote    string
+	CollectorOutput string
+	CollectorImage  string
+	GRPCServerImage string
+	BootstrapOnly   bool
+	TestName        string
+	CoreDumpFile    string
+	VmConfig        string
 }
 
 func NewCollectorManager(e Executor, name string) *CollectorManager {
@@ -69,46 +68,25 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 	vm_config := config.VMInfo().Config
 
 	return &CollectorManager{
-		DBPathRemote:      "/tmp/collector-test.db",
-		DBPath:            "/tmp/collector-test-" + vm_config + "-" + collectionMethod + ".db",
-		executor:          e,
-		DisableGrpcServer: false,
-		BootstrapOnly:     false,
-		CollectorImage:    image_store.CollectorImage(),
-		GRPCServerImage:   image_store.ImageByKey("grpc-server"),
-		Env:               env,
-		Mounts:            mounts,
-		TestName:          name,
-		CoreDumpFile:      "/tmp/core.out",
-		VmConfig:          vm_config,
+		DBPathRemote:    "/tmp/collector-test.db",
+		DBPath:          "/tmp/collector-test-" + vm_config + "-" + collectionMethod + ".db",
+		executor:        e,
+		BootstrapOnly:   false,
+		CollectorImage:  image_store.CollectorImage(),
+		GRPCServerImage: image_store.ImageByKey("grpc-server"),
+		Env:             env,
+		Mounts:          mounts,
+		TestName:        name,
+		CoreDumpFile:    "/tmp/core.out",
+		VmConfig:        vm_config,
 	}
 }
 
 func (c *CollectorManager) Setup() error {
-	if err := c.executor.PullImage(c.CollectorImage); err != nil {
-		return err
-	}
-
-	if !c.DisableGrpcServer {
-		if err := c.executor.PullImage(c.GRPCServerImage); err != nil {
-			return err
-		}
-
-		// remove previous db file
-		if _, err := c.executor.Exec("sudo", "rm", "-fv", c.DBPath); err != nil {
-			return err
-		}
-	}
-	return nil
+	return c.executor.PullImage(c.CollectorImage)
 }
 
 func (c *CollectorManager) Launch() error {
-	//	if !c.DisableGrpcServer {
-	//		err := c.launchGRPCServer()
-	//		if err != nil {
-	//			return err
-	//		}
-	//	}
 	return c.launchCollector()
 }
 
@@ -141,9 +119,6 @@ func (c *CollectorManager) TearDown() error {
 		c.killContainer("collector")
 	}
 
-	if !c.DisableGrpcServer {
-		// c.Sensor.Stop()
-	}
 	return nil
 }
 

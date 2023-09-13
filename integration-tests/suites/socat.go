@@ -31,18 +31,13 @@ type SocatTestSuite struct {
 func (s *SocatTestSuite) SetupSuite() {
 
 	s.metrics = map[string]float64{}
-	s.executor = common.NewExecutor()
 	s.StartContainerStats()
-	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
 
-	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
-	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
+	s.Collector().Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
+	s.Collector().Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
 
-	err := s.collector.Setup()
-	s.Require().NoError(err)
+	s.StartCollector(false)
 
-	err = s.collector.Launch()
-	s.Require().NoError(err)
 	time.Sleep(30 * time.Second)
 
 	processImage := config.Images().QaImageByKey("qa-socat")
@@ -59,14 +54,10 @@ func (s *SocatTestSuite) SetupSuite() {
 
 	time.Sleep(6 * time.Second)
 
-	err = s.collector.TearDown()
-	s.Require().NoError(err)
-
-	s.db, err = s.collector.BoltDB()
-	s.Require().NoError(err)
 }
 
 func (s *SocatTestSuite) TearDownSuite() {
+	s.StopCollector()
 	s.cleanupContainer([]string{"socat", "collector"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
@@ -74,10 +65,8 @@ func (s *SocatTestSuite) TearDownSuite() {
 }
 
 func (s *SocatTestSuite) TestSocat() {
-	processes, err := s.GetProcesses(s.serverContainer)
-	s.Require().NoError(err)
-	endpoints, err := s.GetEndpoints(s.serverContainer)
-	s.Require().NoError(err)
+	processes := s.Sensor().Processes(s.serverContainer)
+	endpoints := s.Sensor().Endpoints(s.serverContainer)
 
 	if !assert.Equal(s.T(), 2, len(endpoints)) {
 		// We can't continue if this is not the case, so panic immediately.

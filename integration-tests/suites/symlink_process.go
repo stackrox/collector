@@ -17,24 +17,19 @@ type SymbolicLinkProcessTestSuite struct {
 func (s *SymbolicLinkProcessTestSuite) SetupSuite() {
 
 	s.metrics = map[string]float64{}
-	s.executor = common.NewExecutor()
 	s.StartContainerStats()
-	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
 
-	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
-	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
+	s.Collector().Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
+	s.Collector().Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
 
-	err := s.collector.Setup()
-	s.Require().NoError(err)
+	s.StartCollector(false)
 
-	err = s.collector.Launch()
-	s.Require().NoError(err)
 	time.Sleep(30 * time.Second)
 
 	processImage := getProcessListeningOnPortsImage()
 
 	actionFile := "/tmp/action_file_ln.txt"
-	_, err = s.executor.Exec("sh", "-c", "rm "+actionFile+" || true")
+	_, err := s.executor.Exec("sh", "-c", "rm "+actionFile+" || true")
 
 	containerID, err := s.launchContainer("process-ports", "-v", "/tmp:/tmp", "--entrypoint", "./plop", processImage, actionFile)
 
@@ -46,15 +41,10 @@ func (s *SymbolicLinkProcessTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 
 	time.Sleep(6 * time.Second)
-
-	err = s.collector.TearDown()
-	s.Require().NoError(err)
-
-	s.db, err = s.collector.BoltDB()
-	s.Require().NoError(err)
 }
 
 func (s *SymbolicLinkProcessTestSuite) TearDownSuite() {
+	s.StopCollector()
 	s.cleanupContainer([]string{"process-ports", "collector"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
@@ -62,10 +52,8 @@ func (s *SymbolicLinkProcessTestSuite) TearDownSuite() {
 }
 
 func (s *SymbolicLinkProcessTestSuite) TestSymbolicLinkProcess() {
-	processes, err := s.GetProcesses(s.serverContainer)
-	s.Require().NoError(err)
-	endpoints, err := s.GetEndpoints(s.serverContainer)
-	s.Require().NoError(err)
+	processes := s.Sensor().Processes(s.serverContainer)
+	endpoints := s.Sensor().Endpoints(s.serverContainer)
 
 	if !assert.Equal(s.T(), 1, len(endpoints)) {
 		// We can't continue if this is not the case, so panic immediately.

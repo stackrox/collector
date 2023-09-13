@@ -125,3 +125,75 @@ loop:
 	// ElementsMatch we get much better logging about the differences
 	return assert.ElementsMatch(t, expected, s.Connections(containerID))
 }
+
+func (s *MockSensor) ExpectNConnections(t *testing.T, containerID string, timeout time.Duration, n int) bool {
+	if len(s.Connections(containerID)) == n {
+		return true
+	}
+
+loop:
+	for {
+		select {
+		case <-time.After(timeout):
+			return assert.Failf(t, "timed out", "Only found %d/%d connections", len(s.Connections(containerID)), n)
+		case conn := <-s.LiveConnections():
+			if conn.GetContainerId() != containerID {
+				continue loop
+			}
+
+			if len(s.Connections(containerID)) == n {
+				break loop
+			}
+		}
+	}
+
+	return true
+}
+
+func (s *MockSensor) ExpectNEndpoints(t *testing.T, containerID string, timeout time.Duration, n int) bool {
+	if len(s.Endpoints(containerID)) == n {
+		return true
+	}
+
+loop:
+	for {
+		select {
+		case <-time.After(timeout):
+			return assert.Failf(t, "timed out", "Only found %d/%d connections", len(s.Endpoints(containerID)), n)
+		case ep := <-s.LiveEndpoints():
+			if ep.GetContainerId() != containerID {
+				continue loop
+			}
+
+			if len(s.Endpoints(containerID)) == n {
+				break loop
+			}
+		}
+	}
+
+	return true
+}
+
+func (s *MockSensor) ExpectNProcesses(t *testing.T, containerID string, timeout time.Duration, n int) bool {
+	if len(s.Processes(containerID)) == n {
+		return true
+	}
+
+loop:
+	for {
+		select {
+		case <-time.After(timeout):
+			return assert.Failf(t, "timed out", "Only found %d/%d processes", len(s.Processes(containerID)), n)
+		case proc := <-s.LiveProcesses():
+			if proc.GetContainerId() != containerID {
+				continue loop
+			}
+
+			if len(s.Processes(containerID)) == n {
+				break loop
+			}
+		}
+	}
+
+	return true
+}

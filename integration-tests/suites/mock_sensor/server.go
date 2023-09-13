@@ -338,8 +338,11 @@ func (m *MockSensor) pushConnection(containerID string, connection *sensorAPI.Ne
 	defer m.networkMutex.Unlock()
 
 	conn := types.NetworkInfo{
-		LocalAddress:  m.translateAddress(connection.LocalAddress),
-		RemoteAddress: m.translateAddress(connection.RemoteAddress),
+		LocalAddress:   m.translateAddress(connection.LocalAddress),
+		RemoteAddress:  m.translateAddress(connection.RemoteAddress),
+		Role:           connection.GetRole().String(),
+		SocketFamily:   connection.GetSocketFamily().String(),
+		CloseTimestamp: connection.GetCloseTimestamp().String(),
 	}
 
 	if connections, ok := m.connections[containerID]; ok {
@@ -356,8 +359,29 @@ func (m *MockSensor) pushEndpoint(containerID string, endpoint *sensorAPI.Networ
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
 
+	var originator types.ProcessOriginator
+	if endpoint.GetOriginator() != nil {
+		originator = types.ProcessOriginator{
+			ProcessName:         endpoint.GetOriginator().ProcessName,
+			ProcessArgs:         endpoint.GetOriginator().ProcessArgs,
+			ProcessExecFilePath: endpoint.GetOriginator().ProcessExecFilePath,
+		}
+	}
+
+	var listen types.ListenAddress
+	if endpoint.GetListenAddress() != nil {
+		listen = types.ListenAddress{
+			AddressData: string(endpoint.GetListenAddress().GetAddressData()),
+			Port:        int(endpoint.GetListenAddress().GetPort()),
+			IpNetwork:   string(endpoint.GetListenAddress().GetIpNetwork()),
+		}
+	}
+
 	ep := types.EndpointInfo{
-		Protocol: endpoint.GetProtocol().String(),
+		Protocol:       endpoint.GetProtocol().String(),
+		Originator:     &originator,
+		CloseTimestamp: endpoint.GetCloseTimestamp().String(),
+		Address:        &listen,
 	}
 
 	if endpoints, ok := m.endpoints[containerID]; ok {

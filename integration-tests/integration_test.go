@@ -7,7 +7,6 @@ import (
 
 	"github.com/stackrox/collector/integration-tests/suites"
 	"github.com/stackrox/collector/integration-tests/suites/config"
-	"github.com/stackrox/collector/integration-tests/suites/mock_sensor"
 	"github.com/stackrox/collector/integration-tests/suites/types"
 )
 
@@ -452,8 +451,4 @@ func TestAsyncConnectionSuccessWithDisableTracking(t *testing.T) {
 		ExpectToSeeTheConnection:        true,
 	}
 	suite.Run(t, asyncConnection)
-}
-
-func TestGiles(t *testing.T) {
-	_ = mock_sensor.NewMockSensor()
 }

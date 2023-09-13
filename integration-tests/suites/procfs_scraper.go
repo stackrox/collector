@@ -25,30 +25,19 @@ type ProcfsScraperTestSuite struct {
 func (s *ProcfsScraperTestSuite) SetupSuite() {
 
 	s.metrics = map[string]float64{}
-	s.executor = common.NewExecutor()
 	s.StartContainerStats()
-	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
 
-	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":` + strconv.FormatBool(s.TurnOffScrape) + `,"scrapeInterval":2}`
-	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = strconv.FormatBool(s.RoxProcessesListeningOnPort)
+	s.Collector().Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":` + strconv.FormatBool(s.TurnOffScrape) + `,"scrapeInterval":2}`
+	s.Collector().Env["ROX_PROCESSES_LISTENING_ON_PORT"] = strconv.FormatBool(s.RoxProcessesListeningOnPort)
 
 	s.launchNginx()
 
-	err := s.collector.Setup()
-	s.Require().NoError(err)
-
-	err = s.collector.Launch()
-	s.Require().NoError(err)
 	time.Sleep(10 * time.Second)
+
+	s.StartCollector(false)
 
 	s.cleanupContainer([]string{"nginx"})
 	time.Sleep(10 * time.Second)
-
-	err = s.collector.TearDown()
-	s.Require().NoError(err)
-
-	s.db, err = s.collector.BoltDB()
-	s.Require().NoError(err)
 }
 
 func (s *ProcfsScraperTestSuite) launchNginx() {
@@ -66,6 +55,7 @@ func (s *ProcfsScraperTestSuite) launchNginx() {
 }
 
 func (s *ProcfsScraperTestSuite) TearDownSuite() {
+	s.StopCollector()
 	s.cleanupContainer([]string{"nginx", "collector"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
@@ -73,13 +63,14 @@ func (s *ProcfsScraperTestSuite) TearDownSuite() {
 }
 
 func (s *ProcfsScraperTestSuite) TestProcfsScraper() {
-	endpoints, err := s.GetEndpoints(s.ServerContainer)
+	endpoints := s.Sensor().Endpoints(s.ServerContainer)
 	if !s.TurnOffScrape && s.RoxProcessesListeningOnPort {
+		if len(endpoints) != 2 {
+			assert.FailNowf(s.T(), "incorrect number of endpoints reported", "Expected 2 endpoints, got %d", len(endpoints))
+		}
+
 		// If scraping is on and the feature flag is enables we expect to find the nginx endpoint
-		s.Require().NoError(err)
-		assert.Equal(s.T(), 2, len(endpoints))
-		processes, err := s.GetProcesses(s.ServerContainer)
-		s.Require().NoError(err)
+		processes := s.Sensor().Processes(s.ServerContainer)
 
 		assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[0].Protocol)
 		assert.Equal(s.T(), "(timestamp: nil Timestamp)", endpoints[0].CloseTimestamp)
@@ -94,7 +85,7 @@ func (s *ProcfsScraperTestSuite) TestProcfsScraper() {
 		assert.Equal(s.T(), endpoints[1].Originator.ProcessArgs, processes[0].Args)
 	} else {
 		// If scraping is off or the feature flag is disabled
-		// we expect not to find the nginx endpoint and we should get an error
-		s.Require().Error(err)
+		// we expect not to find the nginx endpoint
+		assert.Equal(s.T(), 0, len(endpoints))
 	}
 }

@@ -1,38 +1,17 @@
 package suites
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stackrox/collector/integration-tests/suites/config"
-	"github.com/stretchr/testify/assert"
 )
 
 type DuplicateEndpointsTestSuite struct {
 	IntegrationTestSuiteBase
 	serverContainer string
-}
-
-func (s *DuplicateEndpointsTestSuite) waitForEndpoints() {
-	s.executor.CopyFromHost(s.collector.DBPathRemote, s.collector.DBPath)
-	s.db, _ = s.collector.BoltDB()
-	_, err := s.GetEndpoints(s.serverContainer)
-	count := 0
-	maxCount := 60
-
-	for err != nil {
-		time.Sleep(1 * time.Second)
-		s.executor.CopyFromHost(s.collector.DBPathRemote, s.collector.DBPath)
-		_, err = s.GetEndpoints(s.serverContainer)
-		count += 1
-		if count == maxCount {
-			fmt.Println("Timedout waiting for endpoints")
-			break
-		}
-	}
 }
 
 func (s *DuplicateEndpointsTestSuite) killSocatProcess(port int) {
@@ -61,27 +40,23 @@ func (s *DuplicateEndpointsTestSuite) killSocatProcess(port int) {
 func (s *DuplicateEndpointsTestSuite) SetupSuite() {
 
 	s.metrics = map[string]float64{}
-	s.executor = common.NewExecutor()
 	s.StartContainerStats()
-	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
 
-	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":20}`
-	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
+	collector := s.Collector()
 
-	err := s.collector.Setup()
-	s.Require().NoError(err)
+	collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":20}`
+	collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
 
-	err = s.collector.Launch()
-	s.Require().NoError(err)
+	s.StartCollector(false)
+
 	time.Sleep(30 * time.Second)
 
 	processImage := config.Images().QaImageByKey("qa-socat")
 
 	containerID, err := s.launchContainer("socat", processImage, "TCP-LISTEN:80,fork", "STDOUT")
-
 	s.Require().NoError(err)
+
 	s.serverContainer = common.ContainerShortID(containerID)
-	s.waitForEndpoints()
 
 	command := []string{"/bin/sh", "-c", "socat TCP-LISTEN:81,fork STDOUT &"}
 
@@ -93,15 +68,10 @@ func (s *DuplicateEndpointsTestSuite) SetupSuite() {
 	_, err = s.execContainer("socat", command)
 
 	time.Sleep(20 * time.Second)
-
-	err = s.collector.TearDown()
-	s.Require().NoError(err)
-
-	s.db, err = s.collector.BoltDB()
-	s.Require().NoError(err)
 }
 
 func (s *DuplicateEndpointsTestSuite) TearDownSuite() {
+	s.StopCollector()
 	s.cleanupContainer([]string{"socat", "collector"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
@@ -109,11 +79,6 @@ func (s *DuplicateEndpointsTestSuite) TearDownSuite() {
 }
 
 func (s *DuplicateEndpointsTestSuite) TestDuplicateEndpoints() {
-	processes, err := s.GetProcesses(s.serverContainer)
-	s.Require().NoError(err)
-	endpoints, err := s.GetEndpoints(s.serverContainer)
-	s.Require().NoError(err)
-
-	assert.Equal(s.T(), 2, len(endpoints))
-	assert.Equal(s.T(), 10, len(processes))
+	s.Sensor().ExpectNProcesses(s.T(), s.serverContainer, 10*time.Second, 10)
+	s.Sensor().ExpectNEndpoints(s.T(), s.serverContainer, 10*time.Second, 2)
 }

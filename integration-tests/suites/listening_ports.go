@@ -17,18 +17,15 @@ type ProcessListeningOnPortTestSuite struct {
 func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 
 	s.metrics = map[string]float64{}
-	s.executor = common.NewExecutor()
 	s.StartContainerStats()
-	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
 
-	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
-	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
+	collector := s.Collector()
 
-	err := s.collector.Setup()
-	s.Require().NoError(err)
+	collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
+	collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
 
-	err = s.collector.Launch()
-	s.Require().NoError(err)
+	s.StartCollector(false)
+
 	time.Sleep(30 * time.Second)
 
 	processImage := getProcessListeningOnPortsImage()
@@ -57,15 +54,10 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 	_, err = s.executor.Exec("sh", "-c", "echo close 9091 > "+actionFile)
 	err = s.waitForFileToBeDeleted(actionFile)
 	s.Require().NoError(err)
-
-	err = s.collector.TearDown()
-	s.Require().NoError(err)
-
-	s.db, err = s.collector.BoltDB()
-	s.Require().NoError(err)
 }
 
 func (s *ProcessListeningOnPortTestSuite) TearDownSuite() {
+	s.StopCollector()
 	s.cleanupContainer([]string{"process-ports", "collector"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
@@ -73,10 +65,8 @@ func (s *ProcessListeningOnPortTestSuite) TearDownSuite() {
 }
 
 func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
-	processes, err := s.GetProcesses(s.serverContainer)
-	s.Require().NoError(err)
-	endpoints, err := s.GetEndpoints(s.serverContainer)
-	s.Require().NoError(err)
+	processes := s.Sensor().Processes(s.serverContainer)
+	endpoints := s.Sensor().Endpoints(s.serverContainer)
 
 	if !assert.Equal(s.T(), 4, len(endpoints)) {
 		// We can't continue if this is not the case, so panic immediately.
