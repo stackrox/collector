@@ -126,74 +126,68 @@ loop:
 	return assert.ElementsMatch(t, expected, s.Connections(containerID))
 }
 
-func (s *MockSensor) ExpectNConnections(t *testing.T, containerID string, timeout time.Duration, n int) bool {
+func (s *MockSensor) ExpectNConnections(t *testing.T, containerID string, timeout time.Duration, n int) []types.NetworkInfo {
 	if len(s.Connections(containerID)) == n {
-		return true
+		return s.Connections(containerID)
 	}
 
 loop:
 	for {
 		select {
 		case <-time.After(timeout):
-			return assert.Failf(t, "timed out", "Only found %d/%d connections", len(s.Connections(containerID)), n)
+			assert.FailNowf(t, "timed out", "Only found %d/%d connections", len(s.Connections(containerID)), n)
 		case conn := <-s.LiveConnections():
 			if conn.GetContainerId() != containerID {
 				continue loop
 			}
 
 			if len(s.Connections(containerID)) == n {
-				break loop
+				return s.Connections(containerID)
 			}
 		}
 	}
-
-	return true
 }
 
-func (s *MockSensor) ExpectNEndpoints(t *testing.T, containerID string, timeout time.Duration, n int) bool {
+func (s *MockSensor) ExpectNEndpoints(t *testing.T, containerID string, timeout time.Duration, n int) []types.EndpointInfo {
 	if len(s.Endpoints(containerID)) == n {
-		return true
+		return s.Endpoints(containerID)
 	}
 
 loop:
 	for {
 		select {
 		case <-time.After(timeout):
-			return assert.Failf(t, "timed out", "Only found %d/%d connections", len(s.Endpoints(containerID)), n)
+			assert.FailNowf(t, "timed out", "Only found %d/%d connections", len(s.Endpoints(containerID)), n)
 		case ep := <-s.LiveEndpoints():
 			if ep.GetContainerId() != containerID {
 				continue loop
 			}
 
 			if len(s.Endpoints(containerID)) == n {
-				break loop
+				return s.Endpoints(containerID)
 			}
 		}
 	}
-
-	return true
 }
 
-func (s *MockSensor) ExpectNProcesses(t *testing.T, containerID string, timeout time.Duration, n int) bool {
+func (s *MockSensor) ExpectNProcesses(t *testing.T, containerID string, timeout time.Duration, n int) []types.ProcessInfo {
 	if len(s.Processes(containerID)) == n {
-		return true
+		return s.Processes(containerID)
 	}
 
 loop:
 	for {
 		select {
 		case <-time.After(timeout):
-			return assert.Failf(t, "timed out", "Only found %d/%d processes", len(s.Processes(containerID)), n)
+			assert.FailNowf(t, "timed out", "Only found %d/%d processes", len(s.Processes(containerID)), n)
 		case proc := <-s.LiveProcesses():
 			if proc.GetContainerId() != containerID {
 				continue loop
 			}
 
 			if len(s.Processes(containerID)) == n {
-				break loop
+				return s.Processes(containerID)
 			}
 		}
 	}
-
-	return true
 }

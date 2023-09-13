@@ -99,8 +99,7 @@ func (s *RepeatedNetworkFlowTestSuite) TearDownSuite() {
 }
 
 func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
-	s.Sensor().ExpectNConnections(s.T(), s.ServerContainer, 10*time.Second, len(s.ExpectedReports))
-	networkInfos := s.Sensor().Connections(s.ServerContainer)
+	networkInfos := s.Sensor().ExpectNConnections(s.T(), s.ServerContainer, 10*time.Second, len(s.ExpectedReports))
 
 	observed := make([]bool, 0, len(s.ExpectedReports))
 

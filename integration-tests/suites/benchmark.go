@@ -128,18 +128,12 @@ func (b *BenchmarkTestSuiteBase) StopPerfTools() {
 }
 
 func (s *BenchmarkCollectorTestSuite) SetupSuite() {
-	s.executor = common.NewExecutor()
 	s.StartContainerStats()
-	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
 	s.metrics = map[string]float64{}
-
-	err := s.collector.Setup()
-	require.NoError(s.T(), err)
 
 	s.StartPerfTools()
 
-	err = s.collector.Launch()
-	require.NoError(s.T(), err)
+	s.StartCollector(false)
 }
 
 func (s *BenchmarkCollectorTestSuite) TestBenchmarkCollector() {
@@ -149,11 +143,7 @@ func (s *BenchmarkCollectorTestSuite) TestBenchmarkCollector() {
 func (s *BenchmarkCollectorTestSuite) TearDownSuite() {
 	s.StopPerfTools()
 
-	err := s.collector.TearDown()
-	require.NoError(s.T(), err)
-
-	s.db, err = s.collector.BoltDB()
-	require.NoError(s.T(), err)
+	s.StopCollector()
 
 	s.cleanupContainer([]string{"collector", "grpc-server", "benchmark"})
 	stats := s.GetContainerStats()
@@ -162,7 +152,6 @@ func (s *BenchmarkCollectorTestSuite) TearDownSuite() {
 }
 
 func (s *BenchmarkBaselineTestSuite) SetupSuite() {
-	s.executor = common.NewExecutor()
 	s.metrics = map[string]float64{}
 	s.StartContainerStats()
 	s.StartPerfTools()

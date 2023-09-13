@@ -52,17 +52,8 @@ func (s *SymbolicLinkProcessTestSuite) TearDownSuite() {
 }
 
 func (s *SymbolicLinkProcessTestSuite) TestSymbolicLinkProcess() {
-	processes := s.Sensor().Processes(s.serverContainer)
-	endpoints := s.Sensor().Endpoints(s.serverContainer)
-
-	if !assert.Equal(s.T(), 1, len(endpoints)) {
-		// We can't continue if this is not the case, so panic immediately.
-		// It indicates an internal issue with this test and the non-deterministic
-		// way in which endpoints are reported.
-		assert.FailNowf(s.T(), "", "retrieved %d endpoints (expect 1)", len(endpoints))
-	}
-
-	assert.Equal(s.T(), 1, len(processes))
+	processes := s.Sensor().ExpectNProcesses(s.T(), s.serverContainer, 10*time.Second, 1)
+	endpoints := s.Sensor().ExpectNEndpoints(s.T(), s.serverContainer, 10*time.Second, 1)
 
 	processesMap := make(map[string][]types.ProcessInfo)
 	for _, process := range processes {

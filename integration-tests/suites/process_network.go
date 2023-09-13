@@ -118,7 +118,7 @@ func (s *ProcessNetworkTestSuite) TestProcessViz() {
 		},
 	}
 
-	s.sensor.ExpectProcesses(s.T(), s.serverContainer, 10*time.Second, expectedProcesses...)
+	s.Sensor().ExpectProcesses(s.T(), s.serverContainer, 10*time.Second, expectedProcesses...)
 }
 
 func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
@@ -144,19 +144,19 @@ func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
 	}
 
 	for _, expected := range expectedLineages {
-		s.sensor.ExpectLineages(s.T(), s.serverContainer, 10*time.Second, expected.Name, expected)
+		s.Sensor().ExpectLineages(s.T(), s.serverContainer, 10*time.Second, expected.Name, expected)
 	}
 }
 
 func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
-	s.sensor.ExpectConnections(s.T(), s.serverContainer, 10*time.Second,
+	s.Sensor().ExpectConnections(s.T(), s.serverContainer, 10*time.Second,
 		types.NetworkInfo{
 			LocalAddress:  fmt.Sprintf("%s:%d", s.clientIP, 0),
 			RemoteAddress: fmt.Sprintf(":%s", s.serverPort),
 		},
 	)
 
-	s.sensor.ExpectConnections(s.T(), s.clientContainer, 10*time.Second,
+	s.Sensor().ExpectConnections(s.T(), s.clientContainer, 10*time.Second,
 		types.NetworkInfo{
 			LocalAddress:  "",
 			RemoteAddress: fmt.Sprintf("%s:%s", s.serverIP, s.serverPort),

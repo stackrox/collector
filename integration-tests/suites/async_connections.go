@@ -81,7 +81,7 @@ func (s *AsyncConnectionTestSuite) TearDownSuite() {
 }
 
 func (s *AsyncConnectionTestSuite) TestNetworkFlows() {
-	networkInfos := s.sensor.Connections(s.clientContainer)
+	networkInfos := s.Sensor().Connections(s.clientContainer)
 
 	if s.ExpectToSeeTheConnection {
 		// expect one connection
