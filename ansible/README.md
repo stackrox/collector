@@ -131,7 +131,7 @@ summarized below:
 | ------------- | -------------- |
 | rhel          | rhel-7 <br> rhel-8 |
 | rhel-s390x    | rhel-8-6-s390x |
-| rhel-ppc64le  | rhel-8.8-05102023 |
+| rhel-ppc64le  | rhel-8.6-05102023 |
 | rhel-sap      | rhel-8-4-sap-ha <br> rhel-8-6-sap-ha |
 | cos           | cos-stable <br> cos-beta <br> cos-dev |
 | sles          | sles-12 <br> sles-15 |
