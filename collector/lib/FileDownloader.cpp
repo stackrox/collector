@@ -317,7 +317,6 @@ bool FileDownloader::Download() {
 
     if (result != CURLE_OK) {
       CLOG(WARNING) << "Unable to set connection host, the download is likely to fail - " << curl_easy_strerror(result);
-      return false;
     }
   }
 
