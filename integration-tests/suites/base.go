@@ -16,6 +16,7 @@ import (
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/suites/mock_sensor"
 	"github.com/stackrox/collector/integration-tests/suites/types"
 )
 
@@ -37,6 +38,7 @@ type IntegrationTestSuiteBase struct {
 	db        *bolt.DB
 	executor  common.Executor
 	collector *common.CollectorManager
+	sensor    *mock_sensor.MockSensor
 	metrics   map[string]float64
 }
 
@@ -56,6 +58,28 @@ type PerformanceResult struct {
 	CollectionMethod string
 	Metrics          map[string]float64
 	ContainerStats   []ContainerStat
+}
+
+// StartCollector will start the collector container and optionally
+// start the MockSensor, if disableGRPC is false.
+func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool) error {
+	if !disableGRPC {
+		s.sensor = mock_sensor.NewMockSensor()
+		s.sensor.Start()
+	}
+
+	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
+	s.Require().NoError(s.collector.Setup())
+	return s.collector.Launch()
+}
+
+// StopCollector will tear down the collector container and stop
+// the MockSensor if it was started.
+func (s *IntegrationTestSuiteBase) StopCollector() {
+	s.Require().NoError(s.collector.TearDown())
+	if s.sensor != nil {
+		s.sensor.Stop()
+	}
 }
 
 func (s *IntegrationTestSuiteBase) GetContainerStats() (stats []ContainerStat) {

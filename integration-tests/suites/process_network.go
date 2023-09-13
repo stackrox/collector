@@ -27,13 +27,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	s.metrics = map[string]float64{}
 	s.executor = common.NewExecutor()
 	s.StartContainerStats()
-	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
-
-	err := s.collector.Setup()
-	s.Require().NoError(err)
-
-	err = s.collector.Launch()
-	s.Require().NoError(err)
+	s.StartCollector(false)
 
 	image_store := config.Images()
 
@@ -85,7 +79,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 }
 
 func (s *ProcessNetworkTestSuite) TearDownSuite() {
-	_ = s.collector.TearDown()
+	s.StopCollector()
 	s.cleanupContainer([]string{"nginx", "nginx-curl"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
@@ -124,7 +118,7 @@ func (s *ProcessNetworkTestSuite) TestProcessViz() {
 		},
 	}
 
-	s.collector.ExpectProcesses(s.T(), s.serverContainer, 10*time.Second, expectedProcesses...)
+	s.sensor.ExpectProcesses(s.T(), s.serverContainer, 10*time.Second, expectedProcesses...)
 }
 
 func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
@@ -150,19 +144,19 @@ func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
 	}
 
 	for _, expected := range expectedLineages {
-		s.collector.ExpectLineages(s.T(), s.serverContainer, 10*time.Second, expected.Name, expected)
+		s.sensor.ExpectLineages(s.T(), s.serverContainer, 10*time.Second, expected.Name, expected)
 	}
 }
 
 func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
-	s.collector.ExpectConnections(s.T(), s.serverContainer, 10*time.Second,
+	s.sensor.ExpectConnections(s.T(), s.serverContainer, 10*time.Second,
 		types.NetworkInfo{
 			LocalAddress:  fmt.Sprintf("%s:%d", s.clientIP, 0),
 			RemoteAddress: fmt.Sprintf(":%s", s.serverPort),
 		},
 	)
 
-	s.collector.ExpectConnections(s.T(), s.clientContainer, 10*time.Second,
+	s.sensor.ExpectConnections(s.T(), s.clientContainer, 10*time.Second,
 		types.NetworkInfo{
 			LocalAddress:  "",
 			RemoteAddress: fmt.Sprintf("%s:%s", s.serverIP, s.serverPort),

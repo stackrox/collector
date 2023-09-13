@@ -14,7 +14,6 @@ import (
 	"github.com/boltdb/bolt"
 
 	"github.com/stackrox/collector/integration-tests/suites/config"
-	"github.com/stackrox/collector/integration-tests/suites/mock_sensor"
 )
 
 type CollectorManager struct {
@@ -31,8 +30,6 @@ type CollectorManager struct {
 	TestName          string
 	CoreDumpFile      string
 	VmConfig          string
-
-	Sensor *mock_sensor.MockSensor
 }
 
 func NewCollectorManager(e Executor, name string) *CollectorManager {
@@ -84,8 +81,6 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 		TestName:          name,
 		CoreDumpFile:      "/tmp/core.out",
 		VmConfig:          vm_config,
-
-		Sensor: mock_sensor.NewMockSensor(),
 	}
 }
 
@@ -108,12 +103,12 @@ func (c *CollectorManager) Setup() error {
 }
 
 func (c *CollectorManager) Launch() error {
-	if !c.DisableGrpcServer {
-		err := c.launchGRPCServer()
-		if err != nil {
-			return err
-		}
-	}
+	//	if !c.DisableGrpcServer {
+	//		err := c.launchGRPCServer()
+	//		if err != nil {
+	//			return err
+	//		}
+	//	}
 	return c.launchCollector()
 }
 
@@ -147,7 +142,7 @@ func (c *CollectorManager) TearDown() error {
 	}
 
 	if !c.DisableGrpcServer {
-		c.Sensor.Stop()
+		// c.Sensor.Stop()
 	}
 	return nil
 }
@@ -177,7 +172,7 @@ func (c *CollectorManager) getAllContainers() (string, error) {
 }
 
 func (c *CollectorManager) launchGRPCServer() error {
-	c.Sensor.Start()
+	// c.Sensor.Start()
 	return nil
 }
 

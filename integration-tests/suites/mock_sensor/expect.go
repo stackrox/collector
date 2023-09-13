@@ -1,4 +1,4 @@
-package common
+package mock_sensor
 
 import (
 	"testing"
@@ -11,12 +11,12 @@ import (
 	"github.com/stackrox/collector/integration-tests/suites/types"
 )
 
-func (c *CollectorManager) ExpectProcesses(
+func (s *MockSensor) ExpectProcesses(
 	t *testing.T, containerID string, timeout time.Duration, expected ...types.ProcessInfo) bool {
 
 	// might have already seen some of the events
 	to_find := funk.Filter(expected, func(x types.ProcessInfo) bool {
-		return c.Sensor.HasProcess(containerID, x)
+		return s.HasProcess(containerID, x)
 	}).([]types.ProcessInfo)
 
 	if len(to_find) == 0 {
@@ -30,7 +30,7 @@ loop:
 		case <-time.After(timeout):
 			break loop
 
-		case process := <-c.Sensor.LiveProcesses():
+		case process := <-s.LiveProcesses():
 			if process.GetContainerId() != containerID {
 				continue loop
 			}
@@ -54,12 +54,12 @@ loop:
 		}
 	}
 
-	return assert.ElementsMatch(t, expected, c.Sensor.Processes(containerID), "Not all processes received")
+	return assert.ElementsMatch(t, expected, s.Processes(containerID), "Not all processes received")
 }
 
-func (c *CollectorManager) ExpectLineages(t *testing.T, containerID string, timeout time.Duration, processName string, expected ...types.ProcessLineage) bool {
+func (s *MockSensor) ExpectLineages(t *testing.T, containerID string, timeout time.Duration, processName string, expected ...types.ProcessLineage) bool {
 	to_find := funk.Filter(expected, func(x types.ProcessLineage) bool {
-		return c.Sensor.HasLineage(containerID, x)
+		return s.HasLineage(containerID, x)
 	}).([]types.ProcessLineage)
 
 	if len(to_find) == 0 {
@@ -71,7 +71,7 @@ loop:
 		select {
 		case <-time.After(timeout):
 			break loop
-		case lineage := <-c.Sensor.LiveLineages():
+		case lineage := <-s.LiveLineages():
 			info := types.ProcessLineage{
 				Name:          processName,
 				ParentExePath: lineage.GetParentExecFilePath(),
@@ -88,13 +88,13 @@ loop:
 		}
 	}
 
-	return assert.ElementsMatch(t, expected, c.Sensor.ProcessLineages(containerID), "Not all process lineages received")
+	return assert.ElementsMatch(t, expected, s.ProcessLineages(containerID), "Not all process lineages received")
 }
 
-func (c *CollectorManager) ExpectConnections(t *testing.T, containerID string, timeout time.Duration, expected ...types.NetworkInfo) bool {
+func (s *MockSensor) ExpectConnections(t *testing.T, containerID string, timeout time.Duration, expected ...types.NetworkInfo) bool {
 
 	to_find := funk.Filter(expected, func(x types.NetworkInfo) bool {
-		return c.Sensor.HasConnection(containerID, x)
+		return s.HasConnection(containerID, x)
 	}).([]types.NetworkInfo)
 
 	if len(to_find) == 0 {
@@ -106,13 +106,13 @@ loop:
 		select {
 		case <-time.After(timeout):
 			return assert.Fail(t, "timed out waiting for networks")
-		case network := <-c.Sensor.LiveConnections():
+		case network := <-s.LiveConnections():
 			if network.GetContainerId() != containerID {
 				continue loop
 			}
 
 			to_find = funk.Filter(expected, func(x types.NetworkInfo) bool {
-				return c.Sensor.HasConnection(containerID, x)
+				return s.HasConnection(containerID, x)
 			}).([]types.NetworkInfo)
 
 			if len(to_find) == 0 {
@@ -123,5 +123,5 @@ loop:
 
 	// technically we know they don't match at this point, but by using
 	// ElementsMatch we get much better logging about the differences
-	return assert.ElementsMatch(t, expected, c.Sensor.Connections(containerID))
+	return assert.ElementsMatch(t, expected, s.Connections(containerID))
 }
