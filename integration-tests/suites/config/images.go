@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"io/ioutil"
 	"strings"
 
@@ -62,7 +63,16 @@ func loadImageStore(location string) (*ImageStore, error) {
 // tag as is otherwise.
 func getQATag(base_tag string) string {
 	if collectorQATag == "" {
-		collectorQATag = ReadEnvVar("COLLECTOR_QA_TAG")
+		collectorQATag = ReadEnvVar(envQATag)
+
+		if collectorQATag == "" {
+			bytes, err := ioutil.ReadFile("container/QA_TAG")
+			if err != nil {
+				panic(fmt.Sprintf("failed to read QA_TAG file: %v", err))
+			}
+
+			collectorQATag = strings.TrimSpace(string(bytes))
+		}
 	}
 	return base_tag + "-" + collectorQATag
 }
