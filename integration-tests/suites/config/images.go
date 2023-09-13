@@ -7,10 +7,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var (
-	collectorQATag string
-)
-
 type ImageStore struct {
 	qaTag string
 	Qa    map[string]string
@@ -58,14 +54,12 @@ func loadImageStore(location string) (*ImageStore, error) {
 	store.qaTag = ReadEnvVar(envQATag)
 
 	if store.qaTag == "" {
-		if collectorQATag == "" {
-			bytes, err := ioutil.ReadFile("container/QA_TAG")
-			if err != nil {
-				return nil, err
-			}
-
-			store.qaTag = strings.TrimSpace(string(bytes))
+		bytes, err := ioutil.ReadFile("container/QA_TAG")
+		if err != nil {
+			return nil, err
 		}
+
+		store.qaTag = strings.TrimSpace(string(bytes))
 	}
 
 	return &store, nil
