@@ -9,6 +9,10 @@ ifeq ($(COLLECTOR_IMAGE),)
 COLLECTOR_IMAGE=$(COLLECTOR_REPO):$(COLLECTOR_TAG)
 endif
 
+ifeq ($(COLLECTOR_QA_TAG),)
+COLLECTOR_QA_TAG=$(shell cat container/QA_TAG | tr -d '\n')
+endif
+
 SHELL=/bin/bash
 
 # Environment variable COLLECTOR_IMAGE is used by integration-tests
