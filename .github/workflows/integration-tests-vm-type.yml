@@ -142,7 +142,7 @@ jobs:
             } >> "${GITHUB_ENV}"
           fi
       #Added workaround for ssh connection issue with power vm from ubuntu machine.
-      #Changing mtu works in resolving the issue   
+      #Changing mtu works in resolving the issue.   
       - name: Set MTU for Power VMs
         if: ${{ contains(inputs.vm_type, 'ppc64le') }}
         run: sudo ifconfig eth0 mtu 1000 up  
