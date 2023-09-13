@@ -72,5 +72,5 @@ func (s *ListeningEndpointChildProcessTestSuite) TestListeningEndpointChildProce
 	}
 
 	assert.Equal(s.T(), 1, len(endpoints))
-	assert.Equal(s.T(), 2, len(processes))
+	assert.Equal(s.T(), 3, len(processes))
 }
