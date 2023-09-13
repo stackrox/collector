@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"io/ioutil"
 	"strings"
 
@@ -13,6 +12,7 @@ var (
 )
 
 type ImageStore struct {
+	qaTag string
 	Qa    map[string]string
 	NonQa map[string]string `yaml:"non_qa"`
 }
@@ -37,7 +37,7 @@ func (i *ImageStore) QaImageByKey(key string) string {
 	img, ok := i.Qa[key]
 	if ok {
 		idx := strings.LastIndex(img, ":")
-		img = qaImage(img[:idx], img[idx+1:])
+		img = i.qaImage(img[:idx], img[idx+1:])
 		return img
 	}
 	panic("failed to find qa image: " + key)
@@ -55,31 +55,32 @@ func loadImageStore(location string) (*ImageStore, error) {
 		return nil, err
 	}
 
+	store.qaTag = ReadEnvVar(envQATag)
+
+	if store.qaTag == "" {
+		if collectorQATag == "" {
+			bytes, err := ioutil.ReadFile("container/QA_TAG")
+			if err != nil {
+				return nil, err
+			}
+
+			store.qaTag = strings.TrimSpace(string(bytes))
+		}
+	}
+
 	return &store, nil
 }
 
 // Generate the QA tag to be used for containers by attaching the contents of
 // the 'COLLECTOR_QA_TAG' environment variable if it exists. Return the base
 // tag as is otherwise.
-func getQATag(base_tag string) string {
-	if collectorQATag == "" {
-		collectorQATag = ReadEnvVar(envQATag)
-
-		if collectorQATag == "" {
-			bytes, err := ioutil.ReadFile("container/QA_TAG")
-			if err != nil {
-				panic(fmt.Sprintf("failed to read QA_TAG file: %v", err))
-			}
-
-			collectorQATag = strings.TrimSpace(string(bytes))
-		}
-	}
-	return base_tag + "-" + collectorQATag
+func (i *ImageStore) getQATag(base_tag string) string {
+	return base_tag + "-" + i.qaTag
 }
 
 // Return the full image to be used for a QA container from a given image name
 // and a tag. The tag will be adjusted accordingly to the description of
 // 'getQaTag'
-func qaImage(image string, tag string) string {
-	return image + ":" + getQATag(tag)
+func (i *ImageStore) qaImage(image string, tag string) string {
+	return image + ":" + i.getQATag(tag)
 }
