@@ -3,7 +3,11 @@
 
 #include <array>
 #include <chrono>
+#include <memory>
+#include <optional>
 #include <ostream>
+#include <string_view>
+#include <utility>
 
 #include <curl/curl.h>
 #include <curl/urlapi.h>
@@ -14,6 +18,32 @@ struct DownloadData {
   unsigned int http_status;
   std::string error_msg;
   std::ostream* os;
+};
+
+class ConnectTo {
+ public:
+  ConnectTo() : connect_to_(nullptr, curl_slist_free_all) {}
+  ConnectTo(std::string_view host, std::string_view connect_to);
+  ConnectTo(ConnectTo&) = delete;
+  ConnectTo(ConnectTo&&) = default;
+  ~ConnectTo() = default;
+
+  const curl_slist* GetList() { return connect_to_.get(); };
+
+  const std::string& GetHost() { return host_; };
+  const std::string& GetPort() { return port_; };
+  const std::string& GetConnectToHost() { return connect_to_host_; };
+  const std::string& GetConnectToPort() { return connect_to_port_; };
+
+  ConnectTo& operator=(const ConnectTo& other) = delete;
+  ConnectTo& operator=(ConnectTo&& other) = default;
+
+ private:
+  std::unique_ptr<curl_slist, void (*)(curl_slist*)> connect_to_;
+  std::string host_;
+  std::string port_;
+  std::string connect_to_host_;
+  std::string connect_to_port_;
 };
 
 /**
@@ -43,8 +73,7 @@ class FileDownloader {
   bool CACert(const char* const path);
   bool Cert(const char* const path);
   bool Key(const char* const path);
-  bool ConnectTo(const std::string& entry);
-  bool ConnectTo(const char* const entry);
+  bool SetConnectTo(const std::string& host, const std::string& target);
   void SetVerboseMode(bool verbose);
 
   std::string GetURL() { return GetURLPart(CURLUPART_URL); }
@@ -61,7 +90,7 @@ class FileDownloader {
  private:
   CURL* curl_;
   CURLU* url_;
-  curl_slist* connect_to_;
+  std::optional<ConnectTo> connect_to_;
   std::string output_path_;
   std::string file_path_;
   std::array<char, CURL_ERROR_SIZE> error_;

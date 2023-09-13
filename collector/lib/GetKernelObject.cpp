@@ -71,9 +71,10 @@ bool DownloadKernelObjectFromHostname(FileDownloader& downloader, const Json::Va
 
   std::string server_hostname;
   if (hostname.compare(0, port_offset, SNI_hostname) != 0) {
+    downloader.SetConnectTo(SNI_hostname, hostname);
+
     const std::string server_port(hostname.substr(port_offset + 1));
     server_hostname = SNI_hostname + ":" + server_port;
-    downloader.ConnectTo(SNI_hostname + ":" + server_port + ":" + hostname);
   } else {
     server_hostname = hostname;
   }

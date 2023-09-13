@@ -113,23 +113,25 @@ TEST(FileDownloaderTest, EffectiveURLBasic) {
 
 TEST(FileDownloaderTest, EffectiveURLConnectTo) {
   std::string url = "https://sensor.stackrox.svc:443/some-file.o.gz";
-  std::string target = "sensor.stackrox.svc:443:sensor.rhacs-operator.svc:443";
+  std::string host = "sensor.stackrox.svc";
+  std::string connect_to = "sensor.rhacs-operator.svc:443";
   std::string expected_url = "https://sensor.rhacs-operator.svc:443/some-file.o.gz";
   FileDownloader fd;
 
   fd.SetURL(url);
-  fd.ConnectTo(target);
+  fd.SetConnectTo(host, connect_to);
 
   ASSERT_EQ(expected_url, fd.GetEffectiveURL());
 }
 TEST(FileDownloaderTest, EffectiveURLConnectToNoMatch) {
   std::string url = "https://sensor.stackrox.svc:8443/some-file.o.gz";
-  std::string target = "sensor.stackrox.svc:443:sensor.rhacs-operator.svc:443";
+  std::string host = "sensor.stackrox.svc";
+  std::string connect_to = "sensor.rhacs-operator.svc:443";
   std::string_view expected_url = url;
   FileDownloader fd;
 
   fd.SetURL(url);
-  fd.ConnectTo(target);
+  fd.SetConnectTo(host, connect_to);
 
   ASSERT_EQ(expected_url, fd.GetEffectiveURL());
 }

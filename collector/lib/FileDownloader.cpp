@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <chrono>
 #include <fstream>
+#include <optional>
 #include <string_view>
 #include <unistd.h>
 #include <utils.h>
@@ -94,7 +95,35 @@ int DebugCallback(CURL*, curl_infotype type, char* data, size_t size, void*) {
 
 }  // namespace
 
-FileDownloader::FileDownloader() : connect_to_(nullptr) {
+ConnectTo::ConnectTo(std::string_view host, std::string_view connect_to) : connect_to_(nullptr, curl_slist_free_all) {
+  auto marker = connect_to.find(':');
+  if (marker == std::string_view::npos) {
+    connect_to_host_ = connect_to;
+    connect_to_port_ = "";
+  } else {
+    connect_to_host_ = connect_to.substr(0, marker);
+    connect_to_port_ = connect_to.substr(marker + 1);
+  }
+
+  marker = host.find(':');
+  if (marker == std::string_view::npos) {
+    host_ = host;
+    port_ = connect_to_port_;
+  } else {
+    host_ = host.substr(0, marker);
+    port_ = host.substr(marker + 1);
+  }
+
+  std::string entry{host_ + ":" + port_ + ":" + connect_to_host_ + ":" + connect_to_port_};
+
+  connect_to_.reset(curl_slist_append(nullptr, entry.c_str()));
+  if (connect_to_ == nullptr) {
+    CLOG(WARNING) << "Failed to create connect_to list";
+    return;
+  }
+}
+
+FileDownloader::FileDownloader() : connect_to_(std::nullopt) {
   curl_ = curl_easy_init();
 
   if (curl_) {
@@ -117,7 +146,7 @@ FileDownloader::~FileDownloader() {
 
   curl_global_cleanup();
 
-  curl_slist_free_all(connect_to_);
+  connect_to_.reset();
 }
 
 bool FileDownloader::SetURL(const char* const url) {
@@ -227,20 +256,10 @@ bool FileDownloader::Key(const char* const path) {
   return true;
 }
 
-bool FileDownloader::ConnectTo(const std::string& entry) {
-  return ConnectTo(entry.c_str());
-}
-
-bool FileDownloader::ConnectTo(const char* const entry) {
-  curl_slist* temp = curl_slist_append(connect_to_, entry);
-
-  if (temp == nullptr) {
-    CLOG(WARNING) << "Unable to set option to connect to '" << entry;
-    return false;
+bool FileDownloader::SetConnectTo(const std::string& host, const std::string& target) {
+  if (!host.empty() && !target.empty() && host != target) {
+    connect_to_ = ConnectTo(host, target);
   }
-
-  connect_to_ = temp;
-
   return true;
 }
 
@@ -256,44 +275,15 @@ void FileDownloader::SetVerboseMode(bool verbose) {
 std::string FileDownloader::GetEffectiveURL() {
   // For the time being, we can only have a single connect_to_ object,
   // if it's not set, the download will go to the set URL.
-  if (connect_to_ == nullptr || connect_to_->data == nullptr) {
+  if (!connect_to_) {
     return GetURL();
   }
 
-  // Format for the connect_to field is:
-  //   HOST:PORT:CONNECT-TO-HOST:CONNECT-TO-PORT
-  std::string_view connect_to{connect_to_->data};
-
-  auto marker = connect_to.find(':');
-  if (marker == std::string_view::npos) {
-    CLOG(WARNING) << "Malformed connect_to_: " << connect_to_;
-    return GetURL();
-  }
-  auto host = connect_to.substr(0, marker);
-  connect_to.remove_prefix(marker + 1);
-
-  marker = connect_to.find(':');
-  if (marker == std::string_view::npos) {
-    CLOG(WARNING) << "Malformed connect_to_: " << connect_to_;
-    return GetURL();
-  }
-  auto port = connect_to.substr(0, marker);
-  connect_to.remove_prefix(marker + 1);
-
-  marker = connect_to.find(':');
-  if (marker == std::string_view::npos) {
-    CLOG(WARNING) << "Malformed connect_to_: " << connect_to_;
+  if (connect_to_->GetPort() != GetPort() || connect_to_->GetHost() != GetHost()) {
     return GetURL();
   }
 
-  auto connect_to_host = connect_to.substr(0, marker);
-  auto connect_to_port = connect_to.substr(marker + 1);
-
-  if (port != GetPort() || host != GetHost()) {
-    return GetURL();
-  }
-
-  return GetScheme() + "://" + std::string{connect_to_host} + ":" + std::string{connect_to_port} + GetPath();
+  return GetScheme() + "://" + connect_to_->GetConnectToHost() + ":" + connect_to_->GetConnectToPort() + GetPath();
 }
 
 void FileDownloader::ResetCURL() {
@@ -306,8 +296,7 @@ void FileDownloader::ResetCURL() {
 
   SetDefaultOptions();
 
-  curl_slist_free_all(connect_to_);
-  connect_to_ = nullptr;
+  connect_to_ = std::nullopt;
 }
 
 bool FileDownloader::IsReady() {
@@ -326,10 +315,11 @@ bool FileDownloader::Download() {
   }
 
   if (connect_to_) {
-    auto result = curl_easy_setopt(curl_, CURLOPT_CONNECT_TO, connect_to_);
+    auto result = curl_easy_setopt(curl_, CURLOPT_CONNECT_TO, connect_to_->GetList());
 
     if (result != CURLE_OK) {
       CLOG(WARNING) << "Unable to set connection host, the download is likely to fail - " << curl_easy_strerror(result);
+      return false;
     }
   }
 
