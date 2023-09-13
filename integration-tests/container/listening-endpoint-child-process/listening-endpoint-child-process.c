@@ -1,160 +1,82 @@
-#include <fcntl.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 
-#include <arpa/inet.h>
 #include <netinet/in.h>
-#include <netinet/tcp.h>  // For TCP socket options
 #include <sys/socket.h>
+#include <sys/types.h>
 
-#define PORT 8082
+int main(int argc, char* argv[]) {
+  int sockfd;
+  bool is_parent = true;
 
-int main() {
-  int server_socket, client_socket;
-  struct sockaddr_in server_addr, client_addr;
-  socklen_t client_addr_len = sizeof(client_addr);
+  // Check if sockfd is provided as a command line argument
+  if (argc == 2) {
+    sockfd = atoi(argv[1]);
+    is_parent = false;
+  } else {
+    // Create a socket if sockfd is not provided as an argument
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd == -1) {
+      perror("Socket creation failed");
+      exit(EXIT_FAILURE);
+    }
 
-  // Create socket
-  server_socket = socket(AF_INET, SOCK_STREAM, 0);
-  if (server_socket == -1) {
-    perror("Error creating socket");
-    return EXIT_FAILURE;
-  }
+    // Bind the socket to a port
+    struct sockaddr_in server_addr;
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(8082);
+    server_addr.sin_addr.s_addr = INADDR_ANY;
 
-  int flags = fcntl(server_socket, F_GETFL, 0);
-  if (flags == -1) {
-    perror("fcntl");
-    exit(EXIT_FAILURE);
-  }
-  if (fcntl(server_socket, F_SETFL, flags) == -1) {
-    perror("fcntl");
-    exit(EXIT_FAILURE);
-  }
-
-  // Set up server address
-  server_addr.sin_family = AF_INET;
-  server_addr.sin_port = htons(PORT);
-  server_addr.sin_addr.s_addr = INADDR_ANY;
-
-  // Enable SO_REUSEADDR option to allow multiple sockets to bind to the same port
-  int reuseaddr = 1;
-  if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof(int)) == -1) {
-    perror("Error setting SO_REUSEADDR");
-    close(server_socket);
-    return EXIT_FAILURE;
-  }
-
-  // Bind socket to the server address
-  if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
-    perror("Error binding");
-    close(server_socket);
-    return EXIT_FAILURE;
+    if (bind(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
+      perror("Binding failed");
+      close(sockfd);
+      exit(EXIT_FAILURE);
+    }
   }
 
   // Listen for incoming connections
-  if (listen(server_socket, 5) == -1) {
-    perror("Error listening");
-    close(server_socket);
-    return EXIT_FAILURE;
+  if (listen(sockfd, 5) == -1) {
+    perror("Listening failed");
+    close(sockfd);
+    exit(EXIT_FAILURE);
   }
 
-  pid_t child_pid = fork();
-  printf("%i\n", child_pid);
+  printf("Listening on port 8082...\n");
 
-  if (child_pid == -1) {
-    perror("Error forking");
-  } else if (child_pid == 0) {
-    // Child process
-    printf("%s", "Hello (Child)\n");
-
-    // Listen for incoming connections
-    if (listen(server_socket, 5) == -1) {
-      perror("Error listening");
-      close(server_socket);
-      return EXIT_FAILURE;
+  if (is_parent) {
+    // Create a child process
+    pid_t child_pid = fork();
+    if (child_pid == -1) {
+      perror("Fork failed");
+      close(sockfd);
+      exit(EXIT_FAILURE);
     }
 
-    //// Accept connections in the child process
-    // client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &client_addr_len);
-    // if (client_socket == -1) {
-    //   perror("Error accepting connection in child process");
-    //   close(server_socket);
-    //   return EXIT_FAILURE;
-    // }
+    if (child_pid == 0) {
+      // This is the child process
 
-    // Handle the connection in the child process as needed
-    sleep(10);
+      // Pass the socket file descriptor to the child
+      char sockfd_str[32];
+      snprintf(sockfd_str, sizeof(sockfd_str), "%d", sockfd);
+      char* const child_args[] = {"listening-endpoint-child-process-exec", sockfd_str, NULL};
 
-    // close(client_socket);  // Close the client socket when done
-    // close(server_socket);  // Close the server socket in the child process
-  } else {
-    printf("%s", "Bye (Parent)\n");
+      // Replace the child process with a new program
+      if (execve("./listening-endpoint-child-process-exec", child_args, NULL) == -1) {
+        perror("Execve failed");
+        close(sockfd);
+        exit(EXIT_FAILURE);
+      }
+    } else {
+      sleep(100);
 
-    //// Accept connections in the parent process
-    // client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &client_addr_len);
-    // if (client_socket == -1) {
-    //   perror("Error accepting connection in parent process");
-    //   close(server_socket);
-    //   return EXIT_FAILURE;
-    // }
-    //
-    //// Handle the connection in the parent process as needed
-    //
-    // close(client_socket);  // Close the client socket when done
-    // close(server_socket);  // Close the server socket in the parent process
-    sleep(10);
-    exit(EXIT_SUCCESS);
-  }
-
-  pid_t child_pid2 = fork();
-  printf("%i\n", child_pid2);
-
-  if (child_pid2 == -1) {
-    perror("Error forking");
-  } else if (child_pid2 == 0) {
-    // Child process
-    printf("%s", "Hello (Child)\n");
-
-    // Listen for incoming connections
-    if (listen(server_socket, 5) == -1) {
-      perror("Error listening");
-      close(server_socket);
-      return EXIT_FAILURE;
+      // Close the socket in the parent process
+      close(sockfd);
     }
-
-    //// Accept connections in the child process
-    // client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &client_addr_len);
-    // if (client_socket == -1) {
-    //   perror("Error accepting connection in child process");
-    //   close(server_socket);
-    //   return EXIT_FAILURE;
-    // }
-
-    // Handle the connection in the child process as needed
-    sleep(10);
-
-    // close(client_socket);  // Close the client socket when done
-    // close(server_socket);  // Close the server socket in the child process
-  } else {
-    printf("%s", "Bye (Parent)\n");
-
-    //// Accept connections in the parent process
-    // client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &client_addr_len);
-    // if (client_socket == -1) {
-    //   perror("Error accepting connection in parent process");
-    //   close(server_socket);
-    //   return EXIT_FAILURE;
-    // }
-    //
-    //// Handle the connection in the parent process as needed
-    //
-    // close(client_socket);  // Close the client socket when done
-    // close(server_socket);  // Close the server socket in the parent process
-    sleep(10);
-    exit(EXIT_SUCCESS);
   }
 
-  return EXIT_SUCCESS;
+  sleep(100);
+
+  return 0;
 }
