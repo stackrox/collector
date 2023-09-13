@@ -145,8 +145,6 @@ FileDownloader::~FileDownloader() {
   }
 
   curl_global_cleanup();
-
-  connect_to_.reset();
 }
 
 bool FileDownloader::SetURL(const char* const url) {
