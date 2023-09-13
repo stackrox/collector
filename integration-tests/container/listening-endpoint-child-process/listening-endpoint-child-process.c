@@ -69,14 +69,14 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
       }
     } else {
-      sleep(100);
+      sleep(10000);
 
       // Close the socket in the parent process
       close(sockfd);
     }
   }
 
-  sleep(100);
+  sleep(10000);
 
   return 0;
 }
