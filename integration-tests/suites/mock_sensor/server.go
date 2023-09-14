@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,6 +17,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 
+	"github.com/stackrox/collector/integration-tests/suites/config"
 	"github.com/stackrox/collector/integration-tests/suites/types"
 )
 
@@ -31,6 +35,9 @@ type ConnMap map[types.NetworkInfo]interface{}
 type EndpointMap map[types.EndpointInfo]interface{}
 
 type MockSensor struct {
+	testName string
+	logFile  *os.File
+
 	sensorAPI.UnimplementedSignalServiceServer
 	sensorAPI.UnimplementedNetworkConnectionInfoServiceServer
 
@@ -54,8 +61,19 @@ type MockSensor struct {
 	endpointChannel   chan *sensorAPI.NetworkEndpoint
 }
 
-func NewMockSensor() *MockSensor {
+func NewMockSensor(test string) *MockSensor {
+	log, err := os.OpenFile(
+		filepath.Join(config.LogPath(), strings.ReplaceAll(test, "/", "_")+"-events.log"),
+		os.O_CREATE|os.O_WRONLY, 0644,
+	)
+
+	if err != nil {
+		panic(err)
+	}
+
 	return &MockSensor{
+		testName:        test,
+		logFile:         log,
 		processes:       make(map[string]ProcessMap),
 		processLineages: make(map[string]LineageMap),
 		connections:     make(map[string]ConnMap),
@@ -235,6 +253,7 @@ func (m *MockSensor) Start() {
 func (m *MockSensor) Stop() {
 	m.grpcServer.Stop()
 	m.listener.Close()
+	m.logFile.Close()
 
 	m.processes = make(map[string]ProcessMap)
 	m.processLineages = make(map[string]LineageMap)
@@ -295,6 +314,15 @@ func (m *MockSensor) pushProcess(containerID string, processSignal *storage.Proc
 	m.processMutex.Lock()
 	defer m.processMutex.Unlock()
 
+	m.logEvent("ProcessInfo: %s %s:%s:%d:%d:%d:%s",
+		processSignal.GetContainerId(),
+		processSignal.GetName(),
+		processSignal.GetExecFilePath(),
+		processSignal.GetUid(),
+		processSignal.GetGid(),
+		processSignal.GetPid(),
+		processSignal.GetArgs())
+
 	process := types.ProcessInfo{
 		Name:    processSignal.GetName(),
 		ExePath: processSignal.GetExecFilePath(),
@@ -317,6 +345,13 @@ func (m *MockSensor) pushLineage(containerID string, process *storage.ProcessSig
 	m.processMutex.Lock()
 	defer m.processMutex.Unlock()
 
+	m.logEvent("ProcessLineageInfo: %s %s:%s:%s:%d:%s:%s",
+		process.GetContainerId(),
+		process.GetName(),
+		process.GetExecFilePath(),
+		"ParentUid", lineage.GetParentUid(),
+		"ParentExecFilePath", lineage.GetParentExecFilePath())
+
 	lin := types.ProcessLineage{
 		Name:          process.GetName(),
 		ParentExePath: lineage.GetParentExecFilePath(),
@@ -336,6 +371,14 @@ func (m *MockSensor) pushLineage(containerID string, process *storage.ProcessSig
 func (m *MockSensor) pushConnection(containerID string, connection *sensorAPI.NetworkConnection) {
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
+
+	m.logEvent("NetworkInfo: %s %s|%s|%s|%s|%s",
+		connection.GetContainerId(),
+		m.translateAddress(connection.GetLocalAddress()),
+		m.translateAddress(connection.GetRemoteAddress()),
+		connection.GetRole().String(),
+		connection.GetSocketFamily().String(),
+		connection.GetCloseTimestamp().String())
 
 	conn := types.NetworkInfo{
 		LocalAddress:   m.translateAddress(connection.LocalAddress),
@@ -358,6 +401,13 @@ func (m *MockSensor) pushConnection(containerID string, connection *sensorAPI.Ne
 func (m *MockSensor) pushEndpoint(containerID string, endpoint *sensorAPI.NetworkEndpoint) {
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
+
+	m.logEvent("EndpointInfo: %s|%s|%s|%s|%s",
+		endpoint.GetSocketFamily().String(),
+		endpoint.GetProtocol().String(),
+		endpoint.GetListenAddress().String(),
+		endpoint.GetCloseTimestamp().String(),
+		endpoint.GetOriginator().String())
 
 	var originator types.ProcessOriginator
 	if endpoint.GetOriginator() != nil {
@@ -400,4 +450,8 @@ func (m *MockSensor) translateAddress(addr *sensorAPI.NetworkAddress) string {
 		Port:    uint16(addr.GetPort()),
 	}
 	return ipPortPair.String()
+}
+
+func (m *MockSensor) logEvent(format string, args ...interface{}) {
+	m.logFile.WriteString(fmt.Sprintf(format+"\n", args...))
 }

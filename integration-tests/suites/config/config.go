@@ -1,5 +1,10 @@
 package config
 
+import (
+	"os"
+	"path/filepath"
+)
+
 const (
 	CollectionMethodEBPF    = "ebpf"
 	CollectionMethodCoreBPF = "core-bpf"
@@ -30,6 +35,15 @@ var (
 	vm_options        *VM
 	benchmarks        *Benchmarks
 )
+
+func init() {
+	if _, err := os.Stat(LogPath()); os.IsNotExist(err) {
+		err = os.MkdirAll(LogPath(), os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
 
 // Host contains information about how to connect to the host upon
 // which the tests are running
@@ -156,4 +170,8 @@ func BenchmarksInfo() *Benchmarks {
 		}
 	}
 	return benchmarks
+}
+
+func LogPath() string {
+	return filepath.Join(".", "container-logs", VMInfo().Config, CollectionMethod())
 }
