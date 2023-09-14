@@ -355,7 +355,7 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
                           std::make_pair(conn5_normalized, ConnStatus(time_micros, true))));
 }
 
-TEST(ConnTrackerTest, TestNormalizedNoAggregate) {
+TEST(ConnTrackerTest, TestNormalizedEnableExternalIPs) {
   Endpoint a(Address(10, 1, 1, 8), 9999);
   Endpoint b(Address(10, 1, 1, 42), 9999);
   Endpoint c(Address(35, 127, 0, 15), 54321);
@@ -374,7 +374,7 @@ TEST(ConnTrackerTest, TestNormalizedNoAggregate) {
   int64_t time_micros = 1000;
 
   ConnectionTracker tracker;
-  tracker.AggregateUnmatchedIp(false);
+  tracker.EnableExternalIPs(true);
 
   UnorderedMap<Address::Family, std::vector<IPNet>> known_networks = {{Address::Family::IPV4, {IPNet(Address(35, 127, 1, 0), 24)}}};
   tracker.UpdateKnownIPNetworks(std::move(known_networks));
