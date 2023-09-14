@@ -3,7 +3,7 @@
 #rhel-8.6-05102023
 pi_name: "{{ vm_name }}"
 sys_type: s922
-pi_image: "rhel-86-05162022"
+pi_image: "rhel-8.8-05102023"
 proc_type: shared
 processors: "0.25"
 memory: "16"
