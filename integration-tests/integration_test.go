@@ -139,9 +139,9 @@ func TestConnectionsAndEndpointsNormal(t *testing.T) {
 				{
 					Protocol: "L4_PROTOCOL_TCP",
 					Address: &types.ListenAddress{
-						AddressData: `"\000\000\000\000"`,
+						AddressData: "\x00\x00\x00\x00",
 						Port:        40,
-						IpNetwork:   `"\000\000\000\000 " `,
+						IpNetwork:   "\x00\x00\x00\x00 ",
 					},
 				},
 			},
@@ -184,9 +184,9 @@ func TestConnectionsAndEndpointsHighLowPorts(t *testing.T) {
 				{
 					Protocol: "L4_PROTOCOL_TCP",
 					Address: &types.ListenAddress{
-						AddressData: `"\000\000\000\000"`,
+						AddressData: "\x00\x00\x00\x00",
 						Port:        40000,
-						IpNetwork:   `"\000\000\000\000 " `,
+						IpNetwork:   "\x00\x00\x00\x00 ",
 					},
 				},
 			},
@@ -229,9 +229,9 @@ func TestConnectionsAndEndpointsServerHigh(t *testing.T) {
 				{
 					Protocol: "L4_PROTOCOL_TCP",
 					Address: &types.ListenAddress{
-						AddressData: `"\000\000\000\000"`,
+						AddressData: "\x00\x00\x00\x00",
 						Port:        60999,
-						IpNetwork:   `"\000\000\000\000 " `,
+						IpNetwork:   "\x00\x00\x00\x00 ",
 					},
 				},
 			},
@@ -274,9 +274,9 @@ func TestConnectionsAndEndpointsSourcePort(t *testing.T) {
 				{
 					Protocol: "L4_PROTOCOL_TCP",
 					Address: &types.ListenAddress{
-						AddressData: `"\000\000\000\000"`,
+						AddressData: "\x00\x00\x00\x00",
 						Port:        10000,
-						IpNetwork:   `"\000\000\000\000 " `,
+						IpNetwork:   "\x00\x00\x00\x00 ",
 					},
 				},
 			},
