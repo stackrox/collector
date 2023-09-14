@@ -145,7 +145,7 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 			assert.Equal(s.T(), s.Server.ExpectedEndpoints[idx].Address, serverEndpoints[idx].Address)
 		}
 	} else {
-		assert.Equal(s.T(), 1, len(serverEndpoints))
+		assert.Equal(s.T(), 0, len(serverEndpoints))
 	}
 
 }

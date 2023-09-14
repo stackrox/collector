@@ -68,14 +68,6 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 
 	s.clientIP, err = s.getIPAddress("nginx-curl")
 	s.Require().NoError(err)
-
-	//time.Sleep(10 * time.Second)
-
-	//err = s.collector.TearDown()
-	//s.Require().NoError(err)
-
-	//s.db, err = s.collector.BoltDB()
-	//s.Require().NoError(err)
 }
 
 func (s *ProcessNetworkTestSuite) TearDownSuite() {
