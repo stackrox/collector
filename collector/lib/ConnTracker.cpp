@@ -95,7 +95,7 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
     return IPNet(address, 0, true);
   }
 
-  // associate it to "rest of the internet".
+  // Otherwise, associate it to "rest of the internet".
   switch (address.family()) {
     case Address::Family::IPV4:
       return IPNet(canonical_external_ipv4_addr, 0, true);
