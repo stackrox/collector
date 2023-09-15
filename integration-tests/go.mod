@@ -28,7 +28,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.1 // indirect
-	github.com/jstemmer/go-junit-report v1.0.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stackrox/scanner v0.0.0-20230203220100-227fe5f4c75c // indirect
 	go.uber.org/atomic v1.10.0 // indirect
@@ -45,6 +44,7 @@ require (
 )
 
 replace (
+	github.com/fullsailor/pkcs7 => github.com/stackrox/pkcs7 v0.0.0-20220914154527-cfdb0aa47179
 	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20210115205927-b892c1b298f7
 	github.com/stackrox/rox => github.com/stackrox/stackrox v0.0.0-20230301153935-a7fafd5bc0bd
 	go.uber.org/zap => github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f
