@@ -10,9 +10,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
-
-	"github.com/boltdb/bolt"
-
 	"github.com/stackrox/collector/integration-tests/suites/config"
 )
 
@@ -20,11 +17,8 @@ type CollectorManager struct {
 	executor        Executor
 	Mounts          map[string]string
 	Env             map[string]string
-	DBPath          string
-	DBPathRemote    string
 	CollectorOutput string
 	CollectorImage  string
-	GRPCServerImage string
 	BootstrapOnly   bool
 	TestName        string
 	CoreDumpFile    string
@@ -68,17 +62,14 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 	vm_config := config.VMInfo().Config
 
 	return &CollectorManager{
-		DBPathRemote:    "/tmp/collector-test.db",
-		DBPath:          "/tmp/collector-test-" + vm_config + "-" + collectionMethod + ".db",
-		executor:        e,
-		BootstrapOnly:   false,
-		CollectorImage:  image_store.CollectorImage(),
-		GRPCServerImage: image_store.ImageByKey("grpc-server"),
-		Env:             env,
-		Mounts:          mounts,
-		TestName:        name,
-		CoreDumpFile:    "/tmp/core.out",
-		VmConfig:        vm_config,
+		executor:       e,
+		BootstrapOnly:  false,
+		CollectorImage: image_store.CollectorImage(),
+		Env:            env,
+		Mounts:         mounts,
+		TestName:       name,
+		CoreDumpFile:   "/tmp/core.out",
+		VmConfig:       vm_config,
 	}
 }
 
@@ -122,15 +113,6 @@ func (c *CollectorManager) TearDown() error {
 	return nil
 }
 
-func (c *CollectorManager) BoltDB() (db *bolt.DB, err error) {
-	opts := &bolt.Options{ReadOnly: true}
-	db, err = bolt.Open(c.DBPath, 0600, opts)
-	if err != nil {
-		fmt.Printf("Permission error. %v\n", err)
-	}
-	return db, err
-}
-
 // These two methods might be useful in the future. I used them for debugging
 func (c *CollectorManager) getContainers() (string, error) {
 	cmd := []string{RuntimeCommand, "container", "ps"}
@@ -144,11 +126,6 @@ func (c *CollectorManager) getAllContainers() (string, error) {
 	containers, err := c.executor.Exec(cmd...)
 
 	return containers, err
-}
-
-func (c *CollectorManager) launchGRPCServer() error {
-	// c.Sensor.Start()
-	return nil
 }
 
 func (c *CollectorManager) launchCollector() error {

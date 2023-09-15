@@ -35,11 +35,12 @@ type ConnMap map[types.NetworkInfo]interface{}
 type EndpointMap map[types.EndpointInfo]interface{}
 
 type MockSensor struct {
-	testName string
-	logFile  *os.File
-
 	sensorAPI.UnimplementedSignalServiceServer
 	sensorAPI.UnimplementedNetworkConnectionInfoServiceServer
+
+	testName string
+	logger   *log.Logger
+	logFile  *os.File
 
 	listener   net.Listener
 	grpcServer *grpc.Server
@@ -121,6 +122,9 @@ func (m *MockSensor) LiveLineages() <-chan *storage.ProcessSignal_LineageInfo {
 // ProcessLineages returns a list of all processes that have been received for
 // a given container ID
 func (m *MockSensor) ProcessLineages(containerID string) []types.ProcessLineage {
+	m.processMutex.Lock()
+	defer m.processMutex.Unlock()
+
 	if lineages, ok := m.processLineages[containerID]; ok {
 		keys := make([]types.ProcessLineage, 0, len(lineages))
 		for k := range lineages {
@@ -154,6 +158,9 @@ func (m *MockSensor) LiveConnections() <-chan *sensorAPI.NetworkConnection {
 // Connections returns a list of all connections that have been received for
 // a given container ID
 func (m *MockSensor) Connections(containerID string) []types.NetworkInfo {
+	m.networkMutex.Lock()
+	defer m.networkMutex.Unlock()
+
 	if connections, ok := m.connections[containerID]; ok {
 		keys := make([]types.NetworkInfo, 0, len(connections))
 		for k := range connections {
@@ -187,6 +194,9 @@ func (m *MockSensor) LiveEndpoints() <-chan *sensorAPI.NetworkEndpoint {
 // Endpoints returns a list of all endpoints that have been received for
 // a given container ID
 func (m *MockSensor) Endpoints(containerID string) []types.EndpointInfo {
+	m.networkMutex.Lock()
+	defer m.networkMutex.Unlock()
+
 	if endpoints, ok := m.endpoints[containerID]; ok {
 		keys := make([]types.EndpointInfo, 0, len(endpoints))
 		for k := range endpoints {
@@ -225,6 +235,8 @@ func (m *MockSensor) Start() {
 		log.Fatalf("failed to open log file: %v", err)
 	}
 
+	m.logger = log.New(m.logFile, "", log.LstdFlags)
+
 	m.listener, err = net.Listen("tcp", fmt.Sprintf(":%d", gMockSensorPort))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -257,6 +269,7 @@ func (m *MockSensor) Stop() {
 	m.grpcServer.Stop()
 	m.listener.Close()
 	m.logFile.Close()
+	m.logger = nil
 
 	m.processes = make(map[string]ProcessMap)
 	m.processLineages = make(map[string]LineageMap)
@@ -317,7 +330,7 @@ func (m *MockSensor) pushProcess(containerID string, processSignal *storage.Proc
 	m.processMutex.Lock()
 	defer m.processMutex.Unlock()
 
-	m.logEvent("ProcessInfo: %s %s:%s:%d:%d:%d:%s",
+	m.logger.Printf("ProcessInfo: %s %s:%s:%d:%d:%d:%s\n",
 		processSignal.GetContainerId(),
 		processSignal.GetName(),
 		processSignal.GetExecFilePath(),
@@ -348,7 +361,7 @@ func (m *MockSensor) pushLineage(containerID string, process *storage.ProcessSig
 	m.processMutex.Lock()
 	defer m.processMutex.Unlock()
 
-	m.logEvent("ProcessLineageInfo: %s %s:%s:%s:%d:%s:%s",
+	m.logger.Printf("ProcessLineageInfo: %s %s:%s:%s:%d:%s:%s\n",
 		process.GetContainerId(),
 		process.GetName(),
 		process.GetExecFilePath(),
@@ -375,7 +388,7 @@ func (m *MockSensor) pushConnection(containerID string, connection *sensorAPI.Ne
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
 
-	m.logEvent("NetworkInfo: %s %s|%s|%s|%s|%s",
+	m.logger.Printf("NetworkInfo: %s %s|%s|%s|%s|%s\n",
 		connection.GetContainerId(),
 		m.translateAddress(connection.GetLocalAddress()),
 		m.translateAddress(connection.GetRemoteAddress()),
@@ -405,7 +418,7 @@ func (m *MockSensor) pushEndpoint(containerID string, endpoint *sensorAPI.Networ
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
 
-	m.logEvent("EndpointInfo: %s|%s|%s|%s|%s",
+	m.logger.Printf("EndpointInfo: %s|%s|%s|%s|%s\n",
 		endpoint.GetSocketFamily().String(),
 		endpoint.GetProtocol().String(),
 		endpoint.GetListenAddress().String(),
@@ -453,8 +466,4 @@ func (m *MockSensor) translateAddress(addr *sensorAPI.NetworkAddress) string {
 		Port:    uint16(addr.GetPort()),
 	}
 	return ipPortPair.String()
-}
-
-func (m *MockSensor) logEvent(format string, args ...interface{}) {
-	m.logFile.WriteString(fmt.Sprintf(format+"\n", args...))
 }
