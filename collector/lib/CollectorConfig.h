@@ -72,6 +72,7 @@ class CollectorConfig {
   bool CoReBPFHardfail() const { return core_bpf_hardfail_; }
   bool ImportUsers() const { return import_users_; }
   bool CollectConnectionStatus() const { return collect_connection_status_; }
+  bool EnableExternalIPs() const { return enable_external_ips_; }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
@@ -95,6 +96,7 @@ class CollectorConfig {
   bool core_bpf_hardfail_;
   bool import_users_;
   bool collect_connection_status_;
+  bool enable_external_ips_;
 
   Json::Value tls_config_;
 };

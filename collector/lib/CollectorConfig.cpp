@@ -38,6 +38,8 @@ BoolEnvVar set_import_users("ROX_COLLECTOR_SET_IMPORT_USERS", false);
 
 BoolEnvVar collect_connection_status("ROX_COLLECT_CONNECTION_STATUS", true);
 
+BoolEnvVar enable_external_ips("ROX_ENABLE_EXTERNAL_IPS", false);
+
 }  // namespace
 
 constexpr bool CollectorConfig::kTurnOffScrape;
@@ -58,6 +60,7 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   core_bpf_hardfail_ = core_bpf_hardfail.value();
   import_users_ = set_import_users.value();
   collect_connection_status_ = collect_connection_status.value();
+  enable_external_ips_ = enable_external_ips.value();
 
   for (const auto& syscall : kSyscalls) {
     syscalls_.push_back(syscall);
@@ -236,7 +239,8 @@ std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
          << ", processesListeningOnPorts:" << c.IsProcessesListeningOnPortsEnabled()
          << ", logLevel:" << c.LogLevel()
          << ", set_import_users:" << c.ImportUsers()
-         << ", collect_connection_status:" << c.CollectConnectionStatus();
+         << ", collect_connection_status:" << c.CollectConnectionStatus()
+         << ", enable_external_ips:" << c.EnableExternalIPs();
 }
 
 }  // namespace collector
