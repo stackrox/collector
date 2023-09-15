@@ -62,18 +62,8 @@ type MockSensor struct {
 }
 
 func NewMockSensor(test string) *MockSensor {
-	log, err := os.OpenFile(
-		filepath.Join(config.LogPath(), strings.ReplaceAll(test, "/", "_")+"-events.log"),
-		os.O_CREATE|os.O_WRONLY, 0644,
-	)
-
-	if err != nil {
-		panic(err)
-	}
-
 	return &MockSensor{
 		testName:        test,
-		logFile:         log,
 		processes:       make(map[string]ProcessMap),
 		processLineages: make(map[string]LineageMap),
 		connections:     make(map[string]ConnMap),
@@ -95,6 +85,9 @@ func (m *MockSensor) LiveProcesses() <-chan *storage.ProcessSignal {
 // Processes returns a list of all processes that have been receieved for
 // a given container ID
 func (m *MockSensor) Processes(containerID string) []types.ProcessInfo {
+	m.processMutex.Lock()
+	defer m.processMutex.Unlock()
+
 	if processes, ok := m.processes[containerID]; ok {
 		keys := make([]types.ProcessInfo, 0, len(processes))
 		for k := range processes {
@@ -222,6 +215,16 @@ func (m *MockSensor) HasEndpoint(containerID string, endpoint types.EndpointInfo
 // The server itself runs in a separate thread.
 func (m *MockSensor) Start() {
 	var err error
+
+	m.logFile, err = os.OpenFile(
+		filepath.Join(config.LogPath(), strings.ReplaceAll(m.testName, "/", "_")+"-events.log"),
+		os.O_CREATE|os.O_WRONLY, 0644,
+	)
+
+	if err != nil {
+		log.Fatalf("failed to open log file: %v", err)
+	}
+
 	m.listener, err = net.Listen("tcp", fmt.Sprintf(":%d", gMockSensorPort))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)

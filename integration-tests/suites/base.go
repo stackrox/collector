@@ -349,15 +349,14 @@ func (s *IntegrationTestSuiteBase) waitForFileToBeDeleted(file string) error {
 	count := 0
 	maxCount := 10
 
-	output, _ := s.Executor().Exec("stat", file, "2>&1")
-	fmt.Println(output)
+	output, _ := s.Executor().Exec("stat", file)
 	for !strings.Contains(output, "No such file or directory") {
 		time.Sleep(1 * time.Second)
 		count += 1
 		if count == maxCount {
 			return fmt.Errorf("Timed out waiting for %s to be deleted", file)
 		}
-		output, _ = s.Executor().Exec("stat", file, "2>&1")
+		output, _ = s.Executor().Exec("stat", file)
 	}
 
 	return nil

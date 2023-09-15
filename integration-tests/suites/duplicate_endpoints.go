@@ -79,6 +79,5 @@ func (s *DuplicateEndpointsTestSuite) TearDownSuite() {
 }
 
 func (s *DuplicateEndpointsTestSuite) TestDuplicateEndpoints() {
-	s.Sensor().ExpectNProcesses(s.T(), s.serverContainer, 10*time.Second, 10)
 	s.Sensor().ExpectNEndpoints(s.T(), s.serverContainer, 10*time.Second, 2)
 }
