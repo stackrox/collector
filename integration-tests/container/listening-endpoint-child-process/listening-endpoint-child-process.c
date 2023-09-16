@@ -60,10 +60,10 @@ int main(int argc, char* argv[]) {
       // Pass the socket file descriptor to the child
       char sockfd_str[32];
       snprintf(sockfd_str, sizeof(sockfd_str), "%d", sockfd);
-      char* const child_args[] = {"listening-endpoint-child-process-exec", sockfd_str, NULL};
+      char* const child_args[] = {"listening-endpoint-child-process", sockfd_str, NULL};
 
       // Replace the child process with a new program
-      if (execve("./listening-endpoint-child-process-exec", child_args, NULL) == -1) {
+      if (execve("./listening-endpoint-child-process", child_args, NULL) == -1) {
         perror("Execve failed");
         close(sockfd);
         exit(EXIT_FAILURE);
