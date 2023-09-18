@@ -54,7 +54,7 @@ func (s *SymbolicLinkProcessTestSuite) TearDownSuite() {
 
 func (s *SymbolicLinkProcessTestSuite) TestSymbolicLinkProcess() {
 	// processes := s.Sensor().ExpectNProcesses(s.T(), s.serverContainer, 10*time.Second, 1)
-	endpoints := s.Sensor().ExpectNEndpoints(s.T(), s.serverContainer, 10*time.Second, 1)
+	endpoints := s.Sensor().ExpectEndpointsN(s.T(), s.serverContainer, 10*time.Second, 1)
 
 	//processesMap := make(map[string][]types.ProcessInfo)
 	// for _, process := range processes {

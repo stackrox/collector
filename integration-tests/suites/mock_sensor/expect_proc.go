@@ -11,6 +11,16 @@ import (
 	"github.com/stackrox/collector/integration-tests/suites/types"
 )
 
+func (s *MockSensor) ExpectProcessesN(t *testing.T, containerID string, timeout time.Duration, n int) []types.ProcessInfo {
+	return s.waitProcessesN(func() {
+		assert.FailNowf(t, "timed out", "only retrieved %d processes, expected %d", len(s.Processes(containerID)), n)
+	}, containerID, timeout, n)
+}
+
+func (s *MockSensor) WaitProcessesN(containerID string, timeout time.Duration, n int) bool {
+	return len(s.waitProcessesN(func() {}, containerID, timeout, n)) == n
+}
+
 func (s *MockSensor) ExpectProcesses(
 	t *testing.T, containerID string, timeout time.Duration, expected ...types.ProcessInfo) bool {
 
@@ -91,86 +101,7 @@ loop:
 	return assert.ElementsMatch(t, expected, s.ProcessLineages(containerID), "Not all process lineages received")
 }
 
-func (s *MockSensor) ExpectConnections(t *testing.T, containerID string, timeout time.Duration, expected ...types.NetworkInfo) bool {
-
-	to_find := funk.Filter(expected, func(x types.NetworkInfo) bool {
-		return s.HasConnection(containerID, x)
-	}).([]types.NetworkInfo)
-
-	if len(to_find) == 0 {
-		return true
-	}
-
-loop:
-	for {
-		select {
-		case <-time.After(timeout):
-			return assert.Fail(t, "timed out waiting for networks")
-		case network := <-s.LiveConnections():
-			if network.GetContainerId() != containerID {
-				continue loop
-			}
-
-			to_find = funk.Filter(expected, func(x types.NetworkInfo) bool {
-				return s.HasConnection(containerID, x)
-			}).([]types.NetworkInfo)
-
-			if len(to_find) == 0 {
-				return true
-			}
-		}
-	}
-
-	// technically we know they don't match at this point, but by using
-	// ElementsMatch we get much better logging about the differences
-	return assert.ElementsMatch(t, expected, s.Connections(containerID))
-}
-
-func (s *MockSensor) ExpectNConnections(t *testing.T, containerID string, timeout time.Duration, n int) []types.NetworkInfo {
-	if len(s.Connections(containerID)) == n {
-		return s.Connections(containerID)
-	}
-
-loop:
-	for {
-		select {
-		case <-time.After(timeout):
-			assert.FailNowf(t, "timed out", "Only found %d/%d connections", len(s.Connections(containerID)), n)
-		case conn := <-s.LiveConnections():
-			if conn.GetContainerId() != containerID {
-				continue loop
-			}
-
-			if len(s.Connections(containerID)) == n {
-				return s.Connections(containerID)
-			}
-		}
-	}
-}
-
-func (s *MockSensor) ExpectNEndpoints(t *testing.T, containerID string, timeout time.Duration, n int) []types.EndpointInfo {
-	if len(s.Endpoints(containerID)) == n {
-		return s.Endpoints(containerID)
-	}
-
-loop:
-	for {
-		select {
-		case <-time.After(timeout):
-			assert.FailNowf(t, "timed out", "Only found %d/%d connections", len(s.Endpoints(containerID)), n)
-		case ep := <-s.LiveEndpoints():
-			if ep.GetContainerId() != containerID {
-				continue loop
-			}
-
-			if len(s.Endpoints(containerID)) == n {
-				return s.Endpoints(containerID)
-			}
-		}
-	}
-}
-
-func (s *MockSensor) ExpectNProcesses(t *testing.T, containerID string, timeout time.Duration, n int) []types.ProcessInfo {
+func (s *MockSensor) waitProcessesN(timeoutFn func(), containerID string, timeout time.Duration, n int) []types.ProcessInfo {
 	if len(s.Processes(containerID)) == n {
 		return s.Processes(containerID)
 	}
@@ -179,7 +110,8 @@ loop:
 	for {
 		select {
 		case <-time.After(timeout):
-			assert.FailNowf(t, "timed out", "Only found %d/%d processes", len(s.Processes(containerID)), n)
+			timeoutFn()
+			return make([]types.ProcessInfo, 0)
 		case proc := <-s.LiveProcesses():
 			if proc.GetContainerId() != containerID {
 				continue loop

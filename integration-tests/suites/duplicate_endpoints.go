@@ -57,6 +57,7 @@ func (s *DuplicateEndpointsTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 
 	s.serverContainer = common.ContainerShortID(containerID)
+	s.Sensor().ExpectEndpointsN(s.T(), s.serverContainer, 60*time.Second, 1)
 
 	command := []string{"/bin/sh", "-c", "socat TCP-LISTEN:81,fork STDOUT &"}
 
@@ -79,5 +80,6 @@ func (s *DuplicateEndpointsTestSuite) TearDownSuite() {
 }
 
 func (s *DuplicateEndpointsTestSuite) TestDuplicateEndpoints() {
-	s.Sensor().ExpectNEndpoints(s.T(), s.serverContainer, 10*time.Second, 2)
+	s.Sensor().ExpectEndpointsN(s.T(), s.serverContainer, 10*time.Second, 2)
+	// s.Sensor().ExpectProcessesN(s.T(), s.serverContainer, 10*time.Second, 10)
 }
