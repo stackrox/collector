@@ -10,7 +10,6 @@
 #include <utility>
 
 #include <curl/curl.h>
-#include <curl/urlapi.h>
 
 namespace collector {
 
@@ -62,7 +61,6 @@ class FileDownloader {
   FileDownloader();
   ~FileDownloader();
 
-  bool SetURL(const char* const url);
   bool SetURL(const std::string& url);
   void IPResolve(resolve_t version);
   void SetRetries(unsigned int times, unsigned int delay, unsigned int max_time);
@@ -76,11 +74,11 @@ class FileDownloader {
   bool SetConnectTo(const std::string& host, const std::string& target);
   void SetVerboseMode(bool verbose);
 
-  std::string GetURL() { return GetURLPart(CURLUPART_URL); }
-  std::string GetHost() { return GetURLPart(CURLUPART_HOST); }
-  std::string GetPort() { return GetURLPart(CURLUPART_PORT); }
-  std::string GetScheme() { return GetURLPart(CURLUPART_SCHEME); }
-  std::string GetPath() { return GetURLPart(CURLUPART_PATH); }
+  std::string GetURL() { return url_.GetURL(); }
+  std::string GetHost() { return url_.GetHost(); }
+  std::string GetPort() { return url_.GetPort(); }
+  std::string GetScheme() { return url_.GetScheme(); }
+  std::string GetPath() { return url_.GetPath(); }
   std::string GetEffectiveURL();
 
   void ResetCURL();
@@ -89,7 +87,6 @@ class FileDownloader {
 
  private:
   CURL* curl_;
-  CURLU* url_;
   std::optional<ConnectTo> connect_to_;
   std::string output_path_;
   std::string file_path_;
@@ -99,6 +96,36 @@ class FileDownloader {
     unsigned int delay;
     std::chrono::seconds max_time;
   } retry_;
+
+  class URL {
+   public:
+    bool SetURL(const std::string& url);
+
+    std::string GetURL() {
+      auto url = scheme_ + "://" + hostname_;
+      if (!port_.empty()) {
+        url += ":" + port_;
+      }
+      return url + path_;
+    }
+    const std::string& GetScheme() { return scheme_; };
+    const std::string& GetHost() { return hostname_; };
+    const std::string& GetPort() { return port_; };
+    const std::string& GetPath() { return path_; };
+
+    void reset() {
+      scheme_.clear();
+      hostname_.clear();
+      port_.clear();
+      path_.clear();
+    }
+
+   private:
+    std::string scheme_;
+    std::string hostname_;
+    std::string port_;
+    std::string path_;
+  } url_;
 
   void SetDefaultOptions();
   std::string GetURLPart(CURLUPart part);
