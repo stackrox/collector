@@ -385,12 +385,16 @@ bool FileDownloader::URL::SetURL(const std::string& _url) {
   if (marker != std::string_view::npos) {
     path_ = url.substr(marker);
     url.remove_suffix(url.length() - marker);
+  } else {
+    path_.clear();
   }
 
   marker = url.find(':');
   if (marker != std::string_view::npos) {
     port_ = url.substr(marker + 1);
     url.remove_suffix(url.length() - marker);
+  } else {
+    port_.clear();
   }
 
   hostname_ = url;
