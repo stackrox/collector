@@ -2,7 +2,6 @@ package suites
 
 import (
 	"os"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
