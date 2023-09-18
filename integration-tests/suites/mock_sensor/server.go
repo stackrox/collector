@@ -288,6 +288,40 @@ func (m *MockSensor) PushSignals(stream sensorAPI.SignalService_PushSignalsServe
 
 		if signal != nil && signal.GetSignal() != nil && signal.GetSignal().GetProcessSignal() != nil {
 			processSignal := signal.GetSignal().GetProcessSignal()
+
+			if strings.HasPrefix(processSignal.GetExecFilePath(), "/proc/self") {
+				//
+				// There exists a potential race condition for the driver
+				// to capture very early container process events.
+				//
+				// This is known in falco, and somewhat documented here:
+				//     https://github.com/falcosecurity/falco/blob/555bf9971cdb79318917949a5e5f9bab5293b5e2/rules/falco_rules.yaml#L1961
+				//
+				// It is also filtered in sensor here:
+				//    https://github.com/stackrox/stackrox/blob/4d3fb539547d1935a35040e4a4e8c258a53a92e4/sensor/common/signal/signal_service.go#L90
+				//
+				// Further details can be found here https://issues.redhat.com/browse/ROX-11544
+				//
+				m.logger.Printf("runtime-process: %s %s:%s:%d:%d:%d:%s\n",
+					processSignal.GetContainerId(),
+					processSignal.GetName(),
+					processSignal.GetExecFilePath(),
+					processSignal.GetUid(),
+					processSignal.GetGid(),
+					processSignal.GetPid(),
+					processSignal.GetArgs())
+				continue
+			}
+
+			fmt.Printf("%s %s:%s:%d:%d:%d:%s\n",
+				processSignal.GetContainerId(),
+				processSignal.GetName(),
+				processSignal.GetExecFilePath(),
+				processSignal.GetUid(),
+				processSignal.GetGid(),
+				processSignal.GetPid(),
+				processSignal.GetArgs())
+
 			m.pushProcess(processSignal.GetContainerId(), processSignal)
 			m.processChannel <- processSignal
 

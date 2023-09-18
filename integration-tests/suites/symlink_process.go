@@ -24,8 +24,6 @@ func (s *SymbolicLinkProcessTestSuite) SetupSuite() {
 
 	s.StartCollector(false)
 
-	time.Sleep(30 * time.Second)
-
 	processImage := getProcessListeningOnPortsImage()
 
 	actionFile := "/tmp/action_file_ln.txt"

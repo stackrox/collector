@@ -25,7 +25,6 @@ type ProcessNetworkTestSuite struct {
 func (s *ProcessNetworkTestSuite) SetupSuite() {
 
 	s.metrics = map[string]float64{}
-	s.executor = common.NewExecutor()
 	s.StartContainerStats()
 	s.StartCollector(false)
 

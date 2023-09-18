@@ -62,13 +62,13 @@ type PerformanceResult struct {
 
 // StartCollector will start the collector container and optionally
 // start the MockSensor, if disableGRPC is false.
-func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool) error {
+func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool) {
 	if !disableGRPC {
 		s.Sensor().Start()
 	}
 
 	s.Require().NoError(s.Collector().Setup())
-	return s.Collector().Launch()
+	s.Require().NoError(s.Collector().Launch())
 }
 
 // StopCollector will tear down the collector container and stop

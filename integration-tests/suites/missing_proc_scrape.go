@@ -29,8 +29,6 @@ func (s *MissingProcScrapeTestSuite) SetupSuite() {
 	s.Collector().Env["NODE_HOSTNAME"] = "collector-missing-proc-host"
 
 	s.StartCollector(false)
-
-	time.Sleep(10 * time.Second)
 }
 
 func (s *MissingProcScrapeTestSuite) TestCollectorRunning() {

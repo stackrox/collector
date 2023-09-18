@@ -26,8 +26,6 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 
 	s.StartCollector(false)
 
-	time.Sleep(60 * time.Second)
-
 	processImage := getProcessListeningOnPortsImage()
 
 	containerID, err := s.launchContainer("process-ports", "-v", "/tmp:/tmp", processImage)
@@ -67,29 +65,29 @@ func (s *ProcessListeningOnPortTestSuite) TearDownSuite() {
 }
 
 func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
-	// processes := s.Sensor().ExpectNProcesses(s.T(), s.serverContainer, 10*time.Second, 2)
-	endpoints := s.Sensor().ExpectNEndpoints(s.T(), s.serverContainer, 10*time.Second, 4)
+	processes := s.Sensor().ExpectProcessesN(s.T(), s.serverContainer, 10*time.Second, 2)
+	endpoints := s.Sensor().ExpectEndpointsN(s.T(), s.serverContainer, 10*time.Second, 4)
 
 	// Note that the first process is the shell and the second is the process-listening-on-ports program.
 	// All of these asserts check against the processes information of that program.
-	// process := processes[1]
+	process := processes[1]
 
-	//possiblePorts := []int{8081, 9091}
+	possiblePorts := []int{8081, 9091}
 
 	// First verify that all endpoints have the expected metadata, that
 	// they are the correct protocol and come from the expected Originator
 	// process.
-	// for _, endpoint := range endpoints {
-	// 	assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoint.Protocol)
+	for _, endpoint := range endpoints {
+		assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoint.Protocol)
 
-	// 	assert.Equal(s.T(), endpoint.Originator.ProcessName, process.Name)
-	// 	assert.Equal(s.T(), endpoint.Originator.ProcessExecFilePath, process.ExePath)
-	// 	assert.Equal(s.T(), endpoint.Originator.ProcessArgs, process.Args)
+		assert.Equal(s.T(), endpoint.Originator.ProcessName, process.Name)
+		assert.Equal(s.T(), endpoint.Originator.ProcessExecFilePath, process.ExePath)
+		assert.Equal(s.T(), endpoint.Originator.ProcessArgs, process.Args)
 
-	// 	// assert that we haven't got any unexpected ports - further checking
-	// 	// of this data will occur subsequently
-	// 	assert.Contains(s.T(), possiblePorts, endpoint.Address.Port)
-	// }
+		// assert that we haven't got any unexpected ports - further checking
+		// of this data will occur subsequently
+		assert.Contains(s.T(), possiblePorts, endpoint.Address.Port)
+	}
 
 	// We can't guarantee the order in which collector reports the endpoints.
 	// Check that we have precisely two pairs of endpoints, for opening

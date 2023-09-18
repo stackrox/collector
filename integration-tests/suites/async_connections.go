@@ -45,8 +45,6 @@ func (s *AsyncConnectionTestSuite) SetupSuite() {
 
 	s.StartCollector(false)
 
-	time.Sleep(30 * time.Second) // TODO use readiness
-
 	image_store := config.Images()
 
 	containerID, err := s.launchContainer("server", image_store.ImageByKey("nginx"))

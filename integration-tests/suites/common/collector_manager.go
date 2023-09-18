@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 
 	// "os/user"
 	"path/filepath"
@@ -78,7 +79,12 @@ func (c *CollectorManager) Setup() error {
 }
 
 func (c *CollectorManager) Launch() error {
-	return c.launchCollector()
+	err := c.launchCollector()
+	if err != nil {
+		return nil
+	}
+
+	return c.waitCollectorStarted()
 }
 
 func (c *CollectorManager) TearDown() error {
@@ -111,6 +117,33 @@ func (c *CollectorManager) TearDown() error {
 	}
 
 	return nil
+}
+
+func (c *CollectorManager) waitCollectorStarted() error {
+	output, err := c.captureLogs("collector")
+	if err != nil {
+		return err
+	}
+
+	if strings.Contains(output, "Driver loaded into kernel") {
+		return nil
+	}
+
+	for {
+		select {
+		case <-time.After(30 * time.Second):
+			return fmt.Errorf("timed out waiting for collector to start")
+		case <-time.Tick(1 * time.Second):
+			output, err := c.captureLogs("collector")
+			if err != nil {
+				return err
+			}
+
+			if strings.Contains(output, "Driver loaded into kernel") {
+				return nil
+			}
+		}
+	}
 }
 
 // These two methods might be useful in the future. I used them for debugging

@@ -38,8 +38,6 @@ func (s *SocatTestSuite) SetupSuite() {
 
 	s.StartCollector(false)
 
-	time.Sleep(30 * time.Second)
-
 	processImage := config.Images().QaImageByKey("qa-socat")
 
 	// the socat container only needs to exist long enough for use to run both
@@ -64,10 +62,10 @@ func (s *SocatTestSuite) TearDownSuite() {
 }
 
 func (s *SocatTestSuite) TestSocat() {
-	// processes := s.Sensor().Processes(s.serverContainer)
+	processes := s.Sensor().Processes(s.serverContainer)
 	endpoints := s.Sensor().ExpectEndpointsN(s.T(), s.serverContainer, 10*time.Second, 2)
 
-	// assert.Equal(s.T(), 3, len(processes))
+	assert.Equal(s.T(), 3, len(processes))
 
 	endpoint80, err := getEndpointByPort(endpoints, 80)
 	s.Require().NoError(err)

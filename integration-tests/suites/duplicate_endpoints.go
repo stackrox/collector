@@ -49,8 +49,6 @@ func (s *DuplicateEndpointsTestSuite) SetupSuite() {
 
 	s.StartCollector(false)
 
-	time.Sleep(30 * time.Second)
-
 	processImage := config.Images().QaImageByKey("qa-socat")
 
 	containerID, err := s.launchContainer("socat", processImage, "TCP-LISTEN:80,fork", "STDOUT")
@@ -81,5 +79,5 @@ func (s *DuplicateEndpointsTestSuite) TearDownSuite() {
 
 func (s *DuplicateEndpointsTestSuite) TestDuplicateEndpoints() {
 	s.Sensor().ExpectEndpointsN(s.T(), s.serverContainer, 10*time.Second, 2)
-	// s.Sensor().ExpectProcessesN(s.T(), s.serverContainer, 10*time.Second, 10)
+	s.Sensor().ExpectProcessesN(s.T(), s.serverContainer, 10*time.Second, 10)
 }

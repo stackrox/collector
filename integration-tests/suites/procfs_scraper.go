@@ -37,7 +37,6 @@ func (s *ProcfsScraperTestSuite) SetupSuite() {
 	s.StartCollector(false)
 
 	s.cleanupContainer([]string{"nginx"})
-	time.Sleep(10 * time.Second)
 }
 
 func (s *ProcfsScraperTestSuite) launchNginx() {

@@ -452,3 +452,7 @@ func TestAsyncConnectionSuccessWithDisableTracking(t *testing.T) {
 	}
 	suite.Run(t, asyncConnection)
 }
+
+func TestCollectorStartup(t *testing.T) {
+	suite.Run(t, new(suites.CollectorStartupTestSuite))
+}
