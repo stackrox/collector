@@ -8,24 +8,13 @@
     COLLECTOR_TAG: "{{ ansible_env.COLLECTOR_TAG }}"
 
   tasks:
-    - block:
-        - name: Build the collector image
-          community.general.make:
-            chdir: "{{ lookup('env', 'GITHUB_WORKSPACE') }}"
-            target: image
-          register: build_result
-          # ensure this action is printed
-          tags: [print_action]
-      always:
-        - name: Output built log
-          debug:
-            msg: "{{ build_result.stdout }}"
-          tags: [print_action]
-
-        - name: Build Errors
-          debug:
-            msg: "{{ build_result.stderr }}"
-          tags: [print_action]
+    - name: Build the collector image
+      community.general.make:
+        chdir: "{{ lookup('env', 'GITHUB_WORKSPACE') }}"
+        target: image
+      register: build_result
+      # ensure this action is printed
+      tags: [print_action]
 
     - name: Retag collector image to arch specific
       community.docker.docker_image:
