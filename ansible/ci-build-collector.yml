@@ -22,6 +22,11 @@
             msg: "{{ build_result.stdout }}"
           tags: [print_action]
 
+        - name: Build Errors
+          debug:
+            msg: "{{ build_result.stderr }}"
+          tags: [print_action]
+
     - name: Retag collector image to arch specific
       community.docker.docker_image:
         name: "{{ collector_image }}"
