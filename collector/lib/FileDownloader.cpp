@@ -141,8 +141,8 @@ FileDownloader::~FileDownloader() {
 }
 
 bool FileDownloader::SetURL(const std::string& url) {
-  std::string_view file_path{url};
-  file_path_ = file_path.substr(file_path.find_last_of('/') + 1);
+  file_path_ = url.substr(url.find_last_of('/') + 1);
+
   if (!url_.SetURL(url)) {
     CLOG(WARNING) << "Unable to set URL '" << url << "'";
     return false;
