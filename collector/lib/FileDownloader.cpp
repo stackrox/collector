@@ -123,14 +123,11 @@ ConnectTo::ConnectTo(std::string_view host, std::string_view connect_to) : conne
   }
 }
 
-FileDownloader::FileDownloader() : connect_to_(std::nullopt) {
-  curl_ = curl_easy_init();
-
-  if (curl_) {
+FileDownloader::FileDownloader() : curl_(curl_easy_init()), connect_to_(std::nullopt) {
+  if (curl_ != nullptr) {
     SetDefaultOptions();
   }
 
-  url_ = curl_url();
   error_.fill('\0');
   retry_ = {.times = 0, .delay = 0, .max_time = std::chrono::seconds(0)};
 }
@@ -140,23 +137,18 @@ FileDownloader::~FileDownloader() {
     curl_easy_cleanup(curl_);
   }
 
-  if (url_ != nullptr) {
-    curl_url_cleanup(url_);
-  }
-
   curl_global_cleanup();
 }
 
-bool FileDownloader::SetURL(const char* const url) {
-  std::string_view file_path{url};
-  file_path_ = file_path.substr(file_path.find_last_of('/') + 1);
+bool FileDownloader::SetURL(const std::string& url) {
+  file_path_ = url.substr(url.find_last_of('/') + 1);
 
-  if (curl_url_set(url_, CURLUPART_URL, url, 0) != CURLUE_OK) {
+  if (!url_.SetURL(url)) {
     CLOG(WARNING) << "Unable to set URL '" << url << "'";
     return false;
   }
 
-  auto result = curl_easy_setopt(curl_, CURLOPT_CURLU, url_);
+  auto result = curl_easy_setopt(curl_, CURLOPT_URL, url_.GetURL().c_str());
 
   if (result != CURLE_OK) {
     CLOG(WARNING) << "Unable to set URL '" << url << "' - " << curl_easy_strerror(result);
@@ -164,10 +156,6 @@ bool FileDownloader::SetURL(const char* const url) {
   }
 
   return true;
-}
-
-bool FileDownloader::SetURL(const std::string& url) {
-  return SetURL(url.c_str());
 }
 
 void FileDownloader::IPResolve(FileDownloader::resolve_t version) {
@@ -287,10 +275,7 @@ std::string FileDownloader::GetEffectiveURL() {
 void FileDownloader::ResetCURL() {
   curl_easy_reset(curl_);
 
-  if (url_ != nullptr) {
-    curl_url_cleanup(url_);
-  }
-  url_ = curl_url();
+  url_.reset();
 
   SetDefaultOptions();
 
@@ -376,18 +361,44 @@ void FileDownloader::SetDefaultOptions() {
   curl_easy_setopt(curl_, CURLOPT_ERRORBUFFER, error_.data());
 }
 
-std::string FileDownloader::GetURLPart(CURLUPart part) {
-  char* url = nullptr;
-  auto rc = curl_url_get(url_, part, &url, 0);
-
-  if (rc != CURLUE_OK) {
-    CLOG(WARNING) << "Failed to get part " << part << " (" << rc << ")";
-    return "";
+bool FileDownloader::URL::SetURL(const std::string& _url) {
+  std::string_view url{_url};
+  auto marker = url.find(':');
+  if (marker == std::string_view::npos) {
+    CLOG(WARNING) << "Invalid URL: " << url;
+    return false;
   }
 
-  std::string ret{url};
-  curl_free(url);
-  return ret;
+  auto scheme = url.substr(0, marker);
+  url.remove_prefix(marker + 1);
+  if (url.length() < 3 || url[0] != '/' || url[1] != '/') {
+    CLOG(WARNING) << "Invalid URL: " << url;
+    return false;
+  }
+
+  // at this point we have a valid URL (though not strictly conforming to the standard).
+  scheme_ = scheme;
+
+  url.remove_prefix(2);
+  marker = url.find('/');
+
+  if (marker != std::string_view::npos) {
+    path_ = url.substr(marker);
+    url.remove_suffix(url.length() - marker);
+  } else {
+    path_.clear();
+  }
+
+  marker = url.find(':');
+  if (marker != std::string_view::npos) {
+    port_ = url.substr(marker + 1);
+    url.remove_suffix(url.length() - marker);
+  } else {
+    port_.clear();
+  }
+
+  hostname_ = url;
+  return true;
 }
 
 }  // namespace collector
