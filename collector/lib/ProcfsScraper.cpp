@@ -300,6 +300,7 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE*
         auto& endpoint_info = (*listen_endpoints)[data.inode];
         endpoint_info.endpoint = data.local;
         endpoint_info.l4proto = l4proto;
+        CLOG(INFO) << "endpoint_info.endpoint= " << endpoint_info.endpoint;
       }
       continue;
     }
@@ -410,6 +411,8 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
   while (auto curr = procdir.read()) {
     if (!std::isdigit(curr->d_name[0])) continue;  // only look for <pid> entries
     long long pid = strtoll(curr->d_name, 0, 10);
+
+    CLOG(INFO) << "pid= " << pid;
 
     FDHandle dirfd = procdir.openat(curr->d_name, O_RDONLY);
     if (!dirfd.valid()) {
