@@ -441,6 +441,8 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
       continue;
     }
 
+    CLOG(INFO) << "After GetNetworkNamespace";
+
     auto& container_ns_sockets = sockets_by_container_and_ns[*container_id][netns_inode];
     bool no_sockets = container_ns_sockets.empty();
 
@@ -450,11 +452,16 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
       continue;
     }
 
+    CLOG(INFO) << "After GetSocketINodes";
+
     if (no_sockets && !container_ns_sockets.empty()) {
       // These are the first sockets for this (container, netns) pair. Make sure we actually have the information about
       // connections in this network namespace.
+
+      CLOG(INFO) << "if (no_sockets && !container_ns_sockets.empty()) {";
       auto emplace_res = conns_by_ns.emplace(netns_inode, NSNetworkData());
       if (emplace_res.second) {
+        CLOG(INFO) << "if (emplace_res.second) {";
         auto& ns_network_data = emplace_res.first->second;
 
         if (!GetConnections(dirfd, &ns_network_data.connections, listen_endpoints ? &ns_network_data.listen_endpoints : nullptr)) {
