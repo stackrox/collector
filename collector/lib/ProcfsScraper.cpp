@@ -261,7 +261,9 @@ bool ParseConnLine(const char* p, const char* endp, Address::Family family, Conn
   // 9: inode
   char* parse_endp;
   uintmax_t inode = strtoumax(p, &parse_endp, 10);
+  CLOG(INFO) << "inode= " << inode;
   if (*parse_endp && !std::isspace(*parse_endp)) return false;
+  CLOG(INFO) << "About to set inode";
   data->inode = static_cast<ino_t>(inode);
 
   return true;
@@ -294,7 +296,9 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE*
   while (std::fgets(line, sizeof(line), f)) {
     ConnLineData data;
     if (!ParseConnLine(line, line + sizeof(line), family, &data)) continue;
+    CLOG(INFO) << "After ParseConnLine";
     if (data.state == TCP_LISTEN) {  // listen socket
+      CLOG(INFO) << "data.state == TCP_LISTEN";
       all_listen_endpoints.insert(data.local);
       if (data.inode && listen_endpoints) {
         auto& endpoint_info = (*listen_endpoints)[data.inode];
@@ -328,6 +332,7 @@ bool GetConnections(int dirfd, UnorderedMap<ino_t, ConnInfo>* connections, Unord
   {
     FDHandle net_tcp_fd = openat(dirfd, "net/tcp", O_RDONLY);
     if (net_tcp_fd.valid()) {
+      CLOG(INFO) << "About to read net/tcp file";
       FileHandle net_tcp(std::move(net_tcp_fd), "r");
       success = ReadConnectionsFromFile(Address::Family::IPV4, L4Proto::TCP, net_tcp, connections, listen_endpoints) && success;
     } else {
@@ -425,6 +430,8 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
     if (!container_id) {
       continue;
     }
+
+    CLOG(INFO) << "In container";
 
     uint64_t netns_inode;
     if (!GetNetworkNamespace(dirfd, &netns_inode)) {
