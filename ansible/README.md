@@ -20,6 +20,11 @@ $ brew install ansible
 $ pip3 install -r requirements.txt
 ```
 
+To manage IBM Z and Power VMs through IBM Cloud, you will also need to download and install the following ansible collection:
+```
+$ ansible-galaxy collection install ibm.cloudcollection
+```
+
 ## Image builds
 ### Builder image
 
@@ -126,6 +131,7 @@ summarized below:
 | ------------- | -------------- |
 | rhel          | rhel-7 <br> rhel-8 |
 | rhel-s390x    | rhel-8-6-s390x |
+| rhel-ppc64le  | rhel-8.8-05102023 |
 | rhel-sap      | rhel-8-4-sap-ha <br> rhel-8-6-sap-ha |
 | cos           | cos-stable <br> cos-beta <br> cos-dev |
 | sles          | sles-12 <br> sles-15 |
@@ -188,7 +194,7 @@ root of this directory structure. It should contain key/value pairs of variable
 names and credentials to be used in the playbooks. Currently, the only required
 credentials are quay_username and quay_password, which are created by make
 from the environment variables `QUAY_RHACS_ENG_RO_USERNAME` and `QUAY_RHACS_ENG_RO_PASSWORD`
-to match CI variables. If you are using IBM Cloud to create IBM Z RHEL instances, you will also need to specifiy enviroment variables `REDHAT_USERNAME` and `REDHAT_PASSWORD` to register your RHEL system.
+to match CI variables. If you are using IBM Cloud to create IBM  RHEL instances, you will also need to specifiy enviroment variables `REDHAT_USERNAME` and `REDHAT_PASSWORD` to register your RHEL system.
 
 To create your own, for dev the format should be:
 
@@ -241,7 +247,7 @@ This role will delete a VM from GCP or IBM Cloud, based on its instance name.
 
 See [vm-lifecycle.yml](./vm-lifecycle.yml) for an example of how it's used.
 
-Note that, for IBM Z VMs, the destroy process will only delete the VM and release its floating IP. Other shared resources mentioned in the creation process above will not be removed.
+Note that, for IBM VMs, the destroy process will only delete the VM and release its floating IP. Other shared resources mentioned in the creation process above will not be removed.
 
 #### run-test-target
 

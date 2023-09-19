@@ -100,10 +100,15 @@ jobs:
           copy_secret_to_file "$GCP_SSH_KEY" "$HOME/.ssh/GCP_SSH_KEY" 0600
           copy_secret_to_file "$GCP_SSH_KEY_PUB" "$HOME/.ssh/GCP_SSH_KEY.pub" 0600
           copy_secret_to_file "$IBM_S390X_SSH_KEY" "$HOME/.ssh/acs-sshkey_rsa.prv" 0600
+          
+          if [[ '${{ inputs.vm_type }}' =~ ppc64le ]]; then
+            copy_secret_to_file "$IBM_PPC64LE_SSH_KEY" "$HOME/.ssh/acs-sshkey_rsa.prv" 0600
+          fi
         env:
           GCP_SSH_KEY: ${{ secrets.GCP_SSH_KEY }}
           GCP_SSH_KEY_PUB: ${{ secrets.GCP_SSH_KEY_PUB }}
           IBM_S390X_SSH_KEY: ${{ secrets.IBM_CLOUD_S390X_SSH_PRIVATE_KEY }}
+          IBM_PPC64LE_SSH_KEY: ${{ secrets.IBM_CLOUD_POWER_SSH_PRIVATE_KEY }}
 
       - name: Set environment
         run: |
@@ -113,11 +118,20 @@ jobs:
           if [[ '${{ contains(github.event.pull_request.labels.*.name, 'integration-tests-trace-logging') }}' == 'true' ]]; then
             echo "COLLECTOR_LOG_LEVEL=trace" | tee -a "$GITHUB_ENV"
           fi
-
+          
           if [[ '${{ inputs.vm_type }}' =~ s390x ]]; then
             {
               echo "IC_API_KEY=${{ secrets.IBM_CLOUD_S390X_API_KEY }}"
               echo "IC_REGION=ca-tor"
+            } >> "${GITHUB_ENV}"
+          fi
+
+          if [[ '${{ inputs.vm_type }}' =~ ppc64le ]]; then
+            {
+              echo "IC_API_KEY=${{ secrets.IBM_CLOUD_POWER_API_KEY }}"
+              echo "IC_REGION=osa"
+              echo "IC_ZONE=osa21"
+              echo "IBM_CLOUD_POWER_SSH_PUBLIC_KEY=${{ secrets.IBM_CLOUD_POWER_SSH_PUBLIC_KEY }}"
             } >> "${GITHUB_ENV}"
           fi
 
@@ -127,6 +141,12 @@ jobs:
               echo "REDHAT_PASSWORD=${{ secrets.REDHAT_PASSWORD }}"
             } >> "${GITHUB_ENV}"
           fi
+      #Added workaround for ssh connection issue with power vm from ubuntu machine.
+      #Changing mtu works in resolving the issue   
+      - name: Set MTU for Power VMs
+        if: ${{ contains(inputs.vm_type, 'ppc64le') }}
+        run: sudo ifconfig eth0 mtu 1000 up  
+  
       - name: Create VMs
         if: ${{ ! inputs.run-benchmarks }}
         run: |
