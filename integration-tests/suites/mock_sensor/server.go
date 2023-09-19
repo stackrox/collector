@@ -24,6 +24,8 @@ import (
 const (
 	gMockSensorPort = 9999
 	gMaxMsgSize     = 12 * 1024 * 1024
+
+	gDefaultRingSize = 32
 )
 
 // Using maps in this way allows us a very quick
@@ -35,9 +37,6 @@ type ConnMap map[types.NetworkInfo]interface{}
 type EndpointMap map[types.EndpointInfo]interface{}
 
 type MockSensor struct {
-	sensorAPI.UnimplementedSignalServiceServer
-	sensorAPI.UnimplementedNetworkConnectionInfoServiceServer
-
 	testName string
 	logger   *log.Logger
 	logFile  *os.File
@@ -56,10 +55,10 @@ type MockSensor struct {
 	// every event will be forwarded to these channels, to allow
 	// tests to look directly at the incoming data without
 	// losing anything underneath
-	processChannel    chan *storage.ProcessSignal
-	lineageChannel    chan *storage.ProcessSignal_LineageInfo
-	connectionChannel chan *sensorAPI.NetworkConnection
-	endpointChannel   chan *sensorAPI.NetworkEndpoint
+	processChannel    RingChan[*storage.ProcessSignal]
+	lineageChannel    RingChan[*storage.ProcessSignal_LineageInfo]
+	connectionChannel RingChan[*sensorAPI.NetworkConnection]
+	endpointChannel   RingChan[*sensorAPI.NetworkEndpoint]
 }
 
 func NewMockSensor(test string) *MockSensor {
@@ -69,18 +68,13 @@ func NewMockSensor(test string) *MockSensor {
 		processLineages: make(map[string]LineageMap),
 		connections:     make(map[string]ConnMap),
 		endpoints:       make(map[string]EndpointMap),
-
-		processChannel:    make(chan *storage.ProcessSignal, 32),
-		lineageChannel:    make(chan *storage.ProcessSignal_LineageInfo, 32),
-		connectionChannel: make(chan *sensorAPI.NetworkConnection, 32),
-		endpointChannel:   make(chan *sensorAPI.NetworkEndpoint, 32),
 	}
 }
 
 // LiveProcesses returns a channel that can be used to read live
 // process events
 func (m *MockSensor) LiveProcesses() <-chan *storage.ProcessSignal {
-	return m.processChannel
+	return m.processChannel.Stream()
 }
 
 // Processes returns a list of all processes that have been receieved for
@@ -116,7 +110,7 @@ func (m *MockSensor) HasProcess(containerID string, process types.ProcessInfo) b
 // LiveLineages returns a channel that can be used to read live
 // process lineage events
 func (m *MockSensor) LiveLineages() <-chan *storage.ProcessSignal_LineageInfo {
-	return m.lineageChannel
+	return m.lineageChannel.Stream()
 }
 
 // ProcessLineages returns a list of all processes that have been received for
@@ -152,7 +146,7 @@ func (m *MockSensor) HasLineage(containerID string, lineage types.ProcessLineage
 // LiveConnections returns a channel that can be used to read live
 // connection events
 func (m *MockSensor) LiveConnections() <-chan *sensorAPI.NetworkConnection {
-	return m.connectionChannel
+	return m.connectionChannel.Stream()
 }
 
 // Connections returns a list of all connections that have been received for
@@ -188,7 +182,7 @@ func (m *MockSensor) HasConnection(containerID string, conn types.NetworkInfo) b
 // Liveendpoints returns a channel that can be used to read live
 // endpoint events
 func (m *MockSensor) LiveEndpoints() <-chan *sensorAPI.NetworkEndpoint {
-	return m.endpointChannel
+	return m.endpointChannel.Stream()
 }
 
 // Endpoints returns a list of all endpoints that have been received for
@@ -256,6 +250,11 @@ func (m *MockSensor) Start() {
 	sensorAPI.RegisterSignalServiceServer(m.grpcServer, m)
 	sensorAPI.RegisterNetworkConnectionInfoServiceServer(m.grpcServer, m)
 
+	m.processChannel = NewRingChan[*storage.ProcessSignal](gDefaultRingSize)
+	m.lineageChannel = NewRingChan[*storage.ProcessSignal_LineageInfo](gDefaultRingSize)
+	m.connectionChannel = NewRingChan[*sensorAPI.NetworkConnection](gDefaultRingSize)
+	m.endpointChannel = NewRingChan[*sensorAPI.NetworkEndpoint](gDefaultRingSize)
+
 	go func() {
 		if err := m.grpcServer.Serve(m.listener); err != nil {
 			log.Fatalf("failed to serve: %v", err)
@@ -275,6 +274,11 @@ func (m *MockSensor) Stop() {
 	m.processLineages = make(map[string]LineageMap)
 	m.connections = make(map[string]ConnMap)
 	m.endpoints = make(map[string]EndpointMap)
+
+	m.processChannel.Stop()
+	m.lineageChannel.Stop()
+	m.connectionChannel.Stop()
+	m.endpointChannel.Stop()
 }
 
 // PushSignals conforms to the Sensor API. It is here that process signals and
@@ -313,21 +317,12 @@ func (m *MockSensor) PushSignals(stream sensorAPI.SignalService_PushSignalsServe
 				continue
 			}
 
-			fmt.Printf("%s %s:%s:%d:%d:%d:%s\n",
-				processSignal.GetContainerId(),
-				processSignal.GetName(),
-				processSignal.GetExecFilePath(),
-				processSignal.GetUid(),
-				processSignal.GetGid(),
-				processSignal.GetPid(),
-				processSignal.GetArgs())
-
 			m.pushProcess(processSignal.GetContainerId(), processSignal)
-			m.processChannel <- processSignal
+			m.processChannel.Write(processSignal)
 
 			for _, lineage := range processSignal.GetLineageInfo() {
 				m.pushLineage(processSignal.GetContainerId(), processSignal, lineage)
-				m.lineageChannel <- lineage
+				m.lineageChannel.Write(lineage)
 			}
 		}
 	}
@@ -348,12 +343,12 @@ func (m *MockSensor) PushNetworkConnectionInfo(stream sensorAPI.NetworkConnectio
 
 		for _, endpoint := range endpoints {
 			m.pushEndpoint(endpoint.GetContainerId(), endpoint)
-			m.endpointChannel <- endpoint
+			m.endpointChannel.Write(endpoint)
 		}
 
 		for _, connection := range connections {
 			m.pushConnection(connection.GetContainerId(), connection)
-			m.connectionChannel <- connection
+			m.connectionChannel.Write(connection)
 		}
 	}
 }

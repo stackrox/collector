@@ -72,21 +72,21 @@ func (s *SocatTestSuite) TestSocat() {
 	endpoint8080, err := getEndpointByPort(endpoints, 8080)
 	s.Require().NoError(err)
 
-	// process80, err := getProcessByPort(processes, 80)
-	// s.Require().NoError(err)
-	// process8080, err := getProcessByPort(processes, 8080)
-	// s.Require().NoError(err)
+	process80, err := getProcessByPort(processes, 80)
+	s.Require().NoError(err)
+	process8080, err := getProcessByPort(processes, 8080)
+	s.Require().NoError(err)
 
 	assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoint80.Protocol)
-	assert.Equal(s.T(), endpoint80.Originator.ProcessName, "socat")
-	assert.Equal(s.T(), endpoint80.Originator.ProcessExecFilePath, "/usr/bin/socat")
-	assert.Equal(s.T(), endpoint80.Originator.ProcessArgs, "TCP-LISTEN:80,fork STDOUT")
+	assert.Equal(s.T(), endpoint80.Originator.ProcessName, process80.Name)
+	assert.Equal(s.T(), endpoint80.Originator.ProcessExecFilePath, process80.ExePath)
+	assert.Equal(s.T(), endpoint80.Originator.ProcessArgs, process80.Args)
 	assert.Equal(s.T(), 80, endpoint80.Address.Port)
 
 	assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoint8080.Protocol)
-	assert.Equal(s.T(), endpoint8080.Originator.ProcessName, "socat")
-	assert.Equal(s.T(), endpoint8080.Originator.ProcessExecFilePath, "/usr/bin/socat")
-	assert.Equal(s.T(), endpoint8080.Originator.ProcessArgs, "TCP-LISTEN:8080,fork STDOUT")
+	assert.Equal(s.T(), endpoint8080.Originator.ProcessName, process8080.Name)
+	assert.Equal(s.T(), endpoint8080.Originator.ProcessExecFilePath, process8080.ExePath)
+	assert.Equal(s.T(), endpoint8080.Originator.ProcessArgs, process8080.Args)
 	assert.Equal(s.T(), 8080, endpoint8080.Address.Port)
 }
 

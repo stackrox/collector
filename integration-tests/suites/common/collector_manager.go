@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"time"
 
-	// "os/user"
 	"path/filepath"
 	"strings"
 
@@ -24,6 +22,7 @@ type CollectorManager struct {
 	TestName        string
 	CoreDumpFile    string
 	VmConfig        string
+	ContainerID     string
 }
 
 func NewCollectorManager(e Executor, name string) *CollectorManager {
@@ -79,12 +78,7 @@ func (c *CollectorManager) Setup() error {
 }
 
 func (c *CollectorManager) Launch() error {
-	err := c.launchCollector()
-	if err != nil {
-		return nil
-	}
-
-	return c.waitCollectorStarted()
+	return c.launchCollector()
 }
 
 func (c *CollectorManager) TearDown() error {
@@ -117,33 +111,6 @@ func (c *CollectorManager) TearDown() error {
 	}
 
 	return nil
-}
-
-func (c *CollectorManager) waitCollectorStarted() error {
-	output, err := c.captureLogs("collector")
-	if err != nil {
-		return err
-	}
-
-	if strings.Contains(output, "Driver loaded into kernel") {
-		return nil
-	}
-
-	for {
-		select {
-		case <-time.After(30 * time.Second):
-			return fmt.Errorf("timed out waiting for collector to start")
-		case <-time.Tick(1 * time.Second):
-			output, err := c.captureLogs("collector")
-			if err != nil {
-				return err
-			}
-
-			if strings.Contains(output, "Driver loaded into kernel") {
-				return nil
-			}
-		}
-	}
 }
 
 // These two methods might be useful in the future. I used them for debugging
@@ -196,6 +163,9 @@ func (c *CollectorManager) launchCollector() error {
 
 	output, err := c.executor.Exec(cmd...)
 	c.CollectorOutput = output
+
+	outLines := strings.Split(output, "\n")
+	c.ContainerID = string(output[len(outLines)-1])
 	return err
 }
 

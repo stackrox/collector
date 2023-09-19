@@ -69,6 +69,12 @@ func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool) {
 
 	s.Require().NoError(s.Collector().Setup())
 	s.Require().NoError(s.Collector().Launch())
+
+	// wait for self-check process to guarantee collector is started
+	s.Sensor().ExpectProcesses(s.T(), s.Collector().ContainerID, 30*time.Second, types.ProcessInfo{
+		Name:    "self-check",
+		ExePath: "/usr/bin/self-check",
+	})
 }
 
 // StopCollector will tear down the collector container and stop
