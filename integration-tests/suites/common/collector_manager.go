@@ -165,7 +165,7 @@ func (c *CollectorManager) launchCollector() error {
 	c.CollectorOutput = output
 
 	outLines := strings.Split(output, "\n")
-	c.ContainerID = string(output[len(outLines)-1])
+	c.ContainerID = ContainerShortID(string(outLines[len(outLines)-1]))
 	return err
 }
 

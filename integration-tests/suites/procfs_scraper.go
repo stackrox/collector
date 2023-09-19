@@ -32,8 +32,6 @@ func (s *ProcfsScraperTestSuite) SetupSuite() {
 
 	s.launchNginx()
 
-	time.Sleep(10 * time.Second)
-
 	s.StartCollector(false)
 
 	s.cleanupContainer([]string{"nginx"})
@@ -49,13 +47,11 @@ func (s *ProcfsScraperTestSuite) launchNginx() {
 	containerID, err := s.launchContainer("nginx", image)
 	s.Require().NoError(err)
 	s.ServerContainer = common.ContainerShortID(containerID)
-
-	time.Sleep(10 * time.Second)
 }
 
 func (s *ProcfsScraperTestSuite) TearDownSuite() {
 	s.StopCollector()
-	s.cleanupContainer([]string{"nginx", "collector"})
+	s.cleanupContainer([]string{"nginx"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
 	s.WritePerfResults("ProcfsScraper", stats, s.metrics)

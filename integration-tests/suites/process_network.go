@@ -91,7 +91,7 @@ func (s *ProcessNetworkTestSuite) TestProcessViz() {
 			ExePath: "/usr/sbin/nginx",
 			Uid:     0,
 			Gid:     0,
-			Args:    "",
+			Args:    "-g daemon off;",
 		},
 		types.ProcessInfo{
 			Name:    "sh",

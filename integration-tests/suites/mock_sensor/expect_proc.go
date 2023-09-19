@@ -26,7 +26,7 @@ func (s *MockSensor) ExpectProcesses(
 
 	// might have already seen some of the events
 	to_find := funk.Filter(expected, func(x types.ProcessInfo) bool {
-		return s.HasProcess(containerID, x)
+		return !s.HasProcess(containerID, x)
 	}).([]types.ProcessInfo)
 
 	if len(to_find) == 0 {

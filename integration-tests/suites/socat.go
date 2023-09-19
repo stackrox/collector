@@ -62,10 +62,8 @@ func (s *SocatTestSuite) TearDownSuite() {
 }
 
 func (s *SocatTestSuite) TestSocat() {
-	processes := s.Sensor().Processes(s.serverContainer)
+	processes := s.Sensor().ExpectProcessesN(s.T(), s.serverContainer, 10*time.Second, 2)
 	endpoints := s.Sensor().ExpectEndpointsN(s.T(), s.serverContainer, 10*time.Second, 2)
-
-	assert.Equal(s.T(), 3, len(processes))
 
 	endpoint80, err := getEndpointByPort(endpoints, 80)
 	s.Require().NoError(err)

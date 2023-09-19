@@ -2,8 +2,6 @@ package suites
 
 type CollectorStartupTestSuite struct {
 	IntegrationTestSuiteBase
-
-	nginxContainer string
 }
 
 func (s *CollectorStartupTestSuite) SetupSuite() {
