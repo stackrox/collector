@@ -75,10 +75,10 @@ class FileDownloader {
   void SetVerboseMode(bool verbose);
 
   std::string GetURL() { return url_.GetURL(); }
-  std::string GetHost() { return url_.GetHost(); }
-  std::string GetPort() { return url_.GetPort(); }
-  std::string GetScheme() { return url_.GetScheme(); }
-  std::string GetPath() { return url_.GetPath(); }
+  const std::string& GetHost() { return url_.GetHost(); }
+  const std::string& GetPort() { return url_.GetPort(); }
+  const std::string& GetScheme() { return url_.GetScheme(); }
+  const std::string& GetPath() { return url_.GetPath(); }
   std::string GetEffectiveURL();
 
   void ResetCURL();
