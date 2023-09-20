@@ -2,6 +2,7 @@ package suites
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stackrox/collector/integration-tests/suites/config"
@@ -56,32 +57,33 @@ func (s *ProcfsScraperTestSuite) TearDownSuite() {
 }
 
 func (s *ProcfsScraperTestSuite) TestProcfsScraper() {
-	endpoints := s.Sensor().Endpoints(s.ServerContainer)
 	if !s.TurnOffScrape && s.RoxProcessesListeningOnPort {
-		if len(endpoints) != 2 {
-			assert.FailNowf(s.T(), "incorrect number of endpoints reported", "Expected 2 endpoints, got %d", len(endpoints))
-		}
-
 		// If scraping is on and the feature flag is enables we expect to find the nginx endpoint
 		processes := s.Sensor().Processes(s.ServerContainer)
 
-		assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[0].Protocol)
-		assert.Equal(s.T(), "(timestamp: nil Timestamp)", endpoints[0].CloseTimestamp)
-		assert.Equal(s.T(), endpoints[0].Originator.ProcessName, processes[0].Name)
-		assert.Equal(s.T(), endpoints[0].Originator.ProcessExecFilePath, processes[0].ExePath)
-		assert.Equal(s.T(), endpoints[0].Originator.ProcessArgs, processes[0].Args)
-
-		assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[1].Protocol)
-		assert.NotEqual(s.T(), "(timestamp: nil Timestamp)", endpoints[1].CloseTimestamp)
-		assert.Equal(s.T(), endpoints[1].Originator.ProcessName, processes[0].Name)
-		assert.Equal(s.T(), endpoints[1].Originator.ProcessExecFilePath, processes[0].ExePath)
-		assert.Equal(s.T(), endpoints[1].Originator.ProcessArgs, processes[0].Args)
+		s.Sensor().ExpectEndpoints(s.T(), s.ServerContainer, 10*time.Second, types.EndpointInfo{
+			Protocol:       "L4_PROTOCOL_TCP",
+			CloseTimestamp: nilTimestamp,
+			Originator: &types.ProcessOriginator{
+				ProcessName:         processes[0].Name,
+				ProcessExecFilePath: processes[0].ExePath,
+				ProcessArgs:         processes[0].Args,
+			},
+		}, types.EndpointInfo{
+			Protocol:       "L4_PROTOCOL_TCP",
+			CloseTimestamp: nilTimestamp,
+			Originator: &types.ProcessOriginator{
+				ProcessName:         processes[0].Name,
+				ProcessExecFilePath: processes[0].ExePath,
+				ProcessArgs:         processes[0].Args,
+			},
+		})
 	} else {
 		// If scraping is off or the feature flag is disabled
 		// we expect not to find the nginx endpoint
 
 		// ElementsMatch gives us a nice description of any mis-reported endpoints
 		// rather than assert.Equal(t, 0, len(endpoints)) which gives us very little
-		assert.ElementsMatch(s.T(), []types.EndpointInfo{}, endpoints)
+		assert.ElementsMatch(s.T(), []types.EndpointInfo{}, s.Sensor().Endpoints(s.ServerContainer))
 	}
 }

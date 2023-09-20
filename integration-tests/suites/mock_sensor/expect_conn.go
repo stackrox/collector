@@ -79,6 +79,45 @@ loop:
 	}
 }
 
+// ExpectEndpoints waits up to the timeout for the gRPC server to receive
+// the list of expected Endpoints. It will first check to see if the endpoints
+// have been received already, and then monitor the live feed of endpoints
+// until timeout or until all the events have been received.
+func (s *MockSensor) ExpectEndpoints(t *testing.T, containerID string, timeout time.Duration, expected ...types.EndpointInfo) bool {
+
+	to_find := funk.Filter(expected, func(x types.EndpointInfo) bool {
+		return s.HasEndpoint(containerID, x)
+	}).([]types.EndpointInfo)
+
+	if len(to_find) == 0 {
+		return true
+	}
+
+loop:
+	for {
+		select {
+		case <-time.After(timeout):
+			return assert.Fail(t, "timed out waiting for networks")
+		case network := <-s.LiveEndpoints():
+			if network.GetContainerId() != containerID {
+				continue loop
+			}
+
+			to_find = funk.Filter(expected, func(x types.EndpointInfo) bool {
+				return s.HasEndpoint(containerID, x)
+			}).([]types.EndpointInfo)
+
+			if len(to_find) == 0 {
+				return true
+			}
+		}
+	}
+
+	// technically we know they don't match at this point, but by using
+	// ElementsMatch we get much better logging about the differences
+	return assert.ElementsMatch(t, expected, s.Endpoints(containerID))
+}
+
 // ExpectEndpointsN waits up to the timeout for the gRPC server to receive
 // the a set number of endpoints. It will first check to see if the endpoints
 // have been received already, and then monitor the live feed of endpoints
