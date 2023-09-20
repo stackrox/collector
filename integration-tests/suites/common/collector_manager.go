@@ -201,7 +201,7 @@ func (c *CollectorManager) killContainer(name string) error {
 }
 
 func (c *CollectorManager) stopContainer(name string) error {
-	_, err := c.executor.Exec(RuntimeCommand, "stop", "--time", "100", name)
+	_, err := c.executor.Exec(RuntimeCommand, "stop", name)
 	return err
 }
 
