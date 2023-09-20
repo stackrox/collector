@@ -2,10 +2,10 @@ package suites
 
 import (
 	"strconv"
-	"time"
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/suites/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -81,6 +81,9 @@ func (s *ProcfsScraperTestSuite) TestProcfsScraper() {
 	} else {
 		// If scraping is off or the feature flag is disabled
 		// we expect not to find the nginx endpoint
-		assert.Equal(s.T(), 0, len(endpoints))
+
+		// ElementsMatch gives us a nice description of any mis-reported endpoints
+		// rather than assert.Equal(t, 0, len(endpoints)) which gives us very little
+		assert.ElementsMatch(s.T(), []types.EndpointInfo{}, endpoints)
 	}
 }
