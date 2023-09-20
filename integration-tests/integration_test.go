@@ -123,6 +123,10 @@ func TestDuplicateEndpoints(t *testing.T) {
 	suite.Run(t, new(suites.DuplicateEndpointsTestSuite))
 }
 
+func TestChangeProcessName(t *testing.T) {
+	suite.Run(t, new(suites.ChangeProcessNameTestSuite))
+}
+
 func TestConnectionsAndEndpointsNormal(t *testing.T) {
 	// Server uses a normal port. Client is assigned a port in the ephemeral range in the normal way
 	normalPorts := &suites.ConnectionsAndEndpointsTestSuite{
