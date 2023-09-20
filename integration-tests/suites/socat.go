@@ -60,7 +60,7 @@ func (s *SocatTestSuite) TearDownSuite() {
 }
 
 func (s *SocatTestSuite) TestSocat() {
-	processes := s.Sensor().ExpectProcessesN(s.T(), s.serverContainer, 10*time.Second, 2)
+	processes := s.Sensor().ExpectProcessesN(s.T(), s.serverContainer, 10*time.Second, 3)
 	endpoints := s.Sensor().ExpectEndpointsN(s.T(), s.serverContainer, 10*time.Second, 2)
 
 	endpoint80, err := getEndpointByPort(endpoints, 80)
