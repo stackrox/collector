@@ -31,9 +31,8 @@ func (s *ChangeProcessNameTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	time.Sleep(30 * time.Second)
 
-	changeProcessNameImage := config.Images().QaImageByKey("qa-change-process-name")
-
-	containerID, err := s.launchContainer("changeProcessName", changeProcessNameImage)
+	changeProcessNameImage := config.Images().QaImageByKey("qa-plop")
+	containerID, err := s.launchContainer("change-process-name", "--entrypoint", "./change-process-name", changeProcessNameImage)
 
 	s.Require().NoError(err)
 	s.serverContainer = common.ContainerShortID(containerID)
@@ -60,17 +59,17 @@ func (s *ChangeProcessNameTestSuite) TestChangeProcessName() {
 	endpoints, err := s.GetEndpoints(s.serverContainer)
 	s.Require().NoError(err)
 
-	for _, process := range processes {
-		fmt.Printf("%+v \n", process)
-	}
-	fmt.Println()
-	fmt.Println()
-	fmt.Println()
-	for _, endpoint := range endpoints {
-		fmt.Printf("%+v \n", endpoint)
-		fmt.Printf("%+v \n", *endpoint.Originator)
-	}
-
 	assert.Equal(s.T(), 1, len(endpoints))
-	assert.Equal(s.T(), 3, len(processes))
+	assert.Equal(s.T(), 1, len(processes))
+
+	assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[0].Protocol)
+	assert.Equal(s.T(), endpoints[0].Originator.ProcessName, processes[0].Name)
+	assert.Equal(s.T(), endpoints[0].Originator.ProcessExecFilePath, processes[0].ExePath)
+	assert.Equal(s.T(), endpoints[0].Originator.ProcessArgs, processes[0].Args)
+	assert.Equal(s.T(), 8082, endpoints[0].Address.Port)
+
+	assert.Equal(s.T(), processes[0].Name, "change-process-")
+	assert.Equal(s.T(), processes[0].Uid, 0)
+	assert.Equal(s.T(), processes[0].Gid, 0)
+	assert.Equal(s.T(), processes[0].Args, "")
 }
