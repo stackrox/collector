@@ -358,17 +358,24 @@ func (s *IntegrationTestSuiteBase) StartContainerStats() {
 }
 
 func (s *IntegrationTestSuiteBase) waitForFileToBeDeleted(file string) error {
-	count := 0
 	maxCount := 10
 
-	output, _ := s.Executor().Exec("stat", file)
-	for !strings.Contains(output, "No such file or directory") {
-		time.Sleep(1 * time.Second)
-		count += 1
-		if count == maxCount {
+	for {
+		select {
+		case <-time.After(time.Duration(maxCount) * time.Second):
 			return fmt.Errorf("Timed out waiting for %s to be deleted", file)
+		case <-time.Tick(time.Second):
+			if config.HostInfo().Kind == "local" {
+				if _, err := os.Stat(file); os.IsNotExist(err) {
+					return nil
+				}
+			} else {
+				output, _ := s.Executor().Exec("stat", file)
+				if strings.Contains(output, "No such file or directory") {
+					return nil
+				}
+			}
 		}
-		output, _ = s.Executor().Exec("stat", file)
 	}
 
 	return nil
