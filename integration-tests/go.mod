@@ -3,10 +3,8 @@ module github.com/stackrox/collector/integration-tests
 go 1.19
 
 require (
-	github.com/boltdb/bolt v1.3.1
 	github.com/gonum/stat v0.0.0-20181125101827-41a0da705a5b
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
-	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/pkg/errors v0.9.1
 	github.com/stackrox/rox v0.0.0-20210914215712-9ac265932e28
@@ -31,7 +29,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.6 // indirect
-	github.com/jstemmer/go-junit-report v1.0.0 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stackrox/scanner v0.0.0-20230411230651-f2265de65ce4 // indirect

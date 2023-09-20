@@ -64,7 +64,7 @@ baseline: TestBenchmarkBaseline
 LOG_FILE ?= integration-test.log
 .PHONY: report
 report:
-	go get -u github.com/jstemmer/go-junit-report
+	go install github.com/jstemmer/go-junit-report/v2@latest
 	@echo "+ $@"
 	@cat $(LOG_FILE) | go-junit-report > `dirname $(LOG_FILE)`/integration-test-report.xml
 	@echo
