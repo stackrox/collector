@@ -1,7 +1,6 @@
 package suites
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
@@ -32,6 +31,7 @@ func (s *ChangeProcessNameTestSuite) SetupSuite() {
 	time.Sleep(30 * time.Second)
 
 	changeProcessNameImage := config.Images().QaImageByKey("qa-plop")
+	// TODO pass arbitrary commands here
 	containerID, err := s.launchContainer("change-process-name", "--entrypoint", "./change-process-name", changeProcessNameImage)
 
 	s.Require().NoError(err)
@@ -47,7 +47,7 @@ func (s *ChangeProcessNameTestSuite) SetupSuite() {
 }
 
 func (s *ChangeProcessNameTestSuite) TearDownSuite() {
-	//s.cleanupContainer([]string{"changeProcessName", "collector"})
+	s.cleanupContainer([]string{"change-process-name", "collector"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
 	s.WritePerfResults("ChangeProcessName", stats, s.metrics)
