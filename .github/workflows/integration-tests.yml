@@ -63,6 +63,20 @@ jobs:
       job-tag: ${{ inputs.job-tag }}
     secrets: inherit
 
+  multi-arch-integration-tests:
+    uses: ./.github/workflows/integration-tests-vm-type.yml
+    if: github.event_name == 'push' || !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
+    strategy:
+      fail-fast: false
+      matrix:
+        vm_type:
+          - rhel-s390x
+    with:
+      vm_type: ${{ matrix.vm_type }}
+      collector-tag: ${{ inputs.collector-tag }}
+      job-tag: ${{ inputs.job-tag }}
+    secrets: inherit
+
   notify:
     runs-on: ubuntu-latest
     if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name == 'push'
