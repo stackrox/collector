@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/boltdb/bolt"
 	"github.com/gonum/stat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -35,7 +34,6 @@ const (
 
 type IntegrationTestSuiteBase struct {
 	suite.Suite
-	db        *bolt.DB
 	executor  common.Executor
 	collector *common.CollectorManager
 	sensor    *mock_sensor.MockSensor
@@ -112,6 +110,17 @@ func (s *IntegrationTestSuiteBase) Sensor() *mock_sensor.MockSensor {
 	return s.sensor
 }
 
+// AddMetric wraps access to the metrics map, to avoid nil pointers
+// lazy initialization is necessary due to limitations around
+// suite setup.
+func (s *IntegrationTestSuiteBase) AddMetric(key string, value float64) {
+	if s.metrics == nil {
+		s.metrics = make(map[string]float64)
+	}
+
+	s.metrics[key] = value
+}
+
 func (s *IntegrationTestSuiteBase) GetContainerStats() (stats []ContainerStat) {
 	logs, err := s.containerLogs("container-stats")
 	if err != nil {
@@ -134,8 +143,8 @@ func (s *IntegrationTestSuiteBase) PrintContainerStats(stats []ContainerStat) {
 		cpuStats[stat.Name] = append(cpuStats[stat.Name], stat.Cpu)
 	}
 	for name, cpu := range cpuStats {
-		s.metrics[fmt.Sprintf("%s_cpu_mean", name)] = stat.Mean(cpu, nil)
-		s.metrics[fmt.Sprintf("%s_cpu_stddev", name)] = stat.StdDev(cpu, nil)
+		s.AddMetric(fmt.Sprintf("%s_cpu_mean", name), stat.Mean(cpu, nil))
+		s.AddMetric(fmt.Sprintf("%s_cpu_stddev", name), stat.StdDev(cpu, nil))
 
 		fmt.Printf("CPU: Container %s, Mean %v, StdDev %v\n",
 			name, stat.Mean(cpu, nil), stat.StdDev(cpu, nil))
@@ -314,7 +323,7 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 		fmt.Printf("Benchmark Time: %s\n", matches[1])
 		f, err := strconv.ParseFloat(string(matches[1]), 64)
 		s.Require().NoError(err)
-		s.metrics["hackbench_avg_time"] = f
+		s.AddMetric("hackbench_avg_time", f)
 	} else {
 		fmt.Printf("Benchmark Time: Not found! Logs: %s\n", benchmarkLogs)
 		assert.FailNow(s.T(), "Benchmark Time not found")

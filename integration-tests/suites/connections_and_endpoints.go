@@ -29,8 +29,6 @@ type ConnectionsAndEndpointsTestSuite struct {
 }
 
 func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
-
-	s.metrics = map[string]float64{}
 	s.StartContainerStats()
 	collector := s.Collector()
 

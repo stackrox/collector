@@ -34,7 +34,6 @@ type RepeatedNetworkFlowTestSuite struct {
 // Launches gRPC server in insecure mode
 // Launches nginx container
 func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
-	s.metrics = map[string]float64{}
 	s.StartContainerStats()
 
 	s.Collector().Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":` + strconv.Itoa(s.ScrapeInterval) + `}`

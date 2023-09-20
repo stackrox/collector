@@ -129,7 +129,6 @@ func (b *BenchmarkTestSuiteBase) StopPerfTools() {
 
 func (s *BenchmarkCollectorTestSuite) SetupSuite() {
 	s.StartContainerStats()
-	s.metrics = map[string]float64{}
 
 	s.StartPerfTools()
 
@@ -152,7 +151,6 @@ func (s *BenchmarkCollectorTestSuite) TearDownSuite() {
 }
 
 func (s *BenchmarkBaselineTestSuite) SetupSuite() {
-	s.metrics = map[string]float64{}
 	s.StartContainerStats()
 	s.StartPerfTools()
 }

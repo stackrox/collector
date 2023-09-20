@@ -38,8 +38,6 @@ func (s *DuplicateEndpointsTestSuite) killSocatProcess(port int) {
 //
 // The test expects only two reported endpoints.
 func (s *DuplicateEndpointsTestSuite) SetupSuite() {
-
-	s.metrics = map[string]float64{}
 	s.StartContainerStats()
 
 	collector := s.Collector()

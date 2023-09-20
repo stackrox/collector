@@ -30,8 +30,6 @@ type AsyncConnectionTestSuite struct {
  *     a dummy address.
  */
 func (s *AsyncConnectionTestSuite) SetupSuite() {
-
-	s.metrics = map[string]float64{}
 	s.StartContainerStats()
 
 	collector := s.Collector()
