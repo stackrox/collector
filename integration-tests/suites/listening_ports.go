@@ -1,6 +1,7 @@
 package suites
 
 import (
+	"sort"
 	"time"
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
@@ -27,10 +28,8 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 	processImage := getProcessListeningOnPortsImage()
 
 	containerID, err := s.launchContainer("process-ports", "-v", "/tmp:/tmp", processImage)
-
-	time.Sleep(10 * time.Second)
-
 	s.Require().NoError(err)
+
 	s.serverContainer = common.ContainerShortID(containerID)
 
 	actionFile := "/tmp/action_file.txt"
@@ -40,6 +39,7 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 	_, err = s.executor.Exec("sh", "-c", "echo open 8081 > "+actionFile)
 	err = s.waitForFileToBeDeleted(actionFile)
 	s.Require().NoError(err)
+
 	_, err = s.executor.Exec("sh", "-c", "echo open 9091 > "+actionFile)
 	err = s.waitForFileToBeDeleted(actionFile)
 	s.Require().NoError(err)
@@ -63,12 +63,17 @@ func (s *ProcessListeningOnPortTestSuite) TearDownSuite() {
 }
 
 func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
-	processes := s.Sensor().ExpectProcessesN(s.T(), s.serverContainer, 10*time.Second, 2)
-	endpoints := s.Sensor().ExpectEndpointsN(s.T(), s.serverContainer, 10*time.Second, 4)
+	processes := s.Sensor().ExpectProcessesN(s.T(), s.serverContainer, 30*time.Second, 2)
+	endpoints := s.Sensor().ExpectEndpointsN(s.T(), s.serverContainer, 30*time.Second, 4)
 
-	// Note that the first process is the shell and the second is the process-listening-on-ports program.
+	// sort by name to ensure processes[0] is the plop process (the other
+	// is the shell)
 	// All of these asserts check against the processes information of that program.
-	process := processes[1]
+	sort.Slice(processes, func(i, j int) bool {
+		return processes[i].Name < processes[j].Name
+	})
+
+	process := processes[0]
 
 	possiblePorts := []int{8081, 9091}
 

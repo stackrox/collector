@@ -82,38 +82,6 @@ func NewLocalCommandBuilder() CommandBuilder {
 	return &localCommandBuilder{}
 }
 
-// SELinux needs to be set to permissive in order for the mock GRPC to work in fedora coreos
-func setSelinuxPermissiveIfNeeded() error {
-	if isSelinuxPermissiveNeeded() {
-		return setSelinuxPermissive()
-	}
-	return nil
-}
-
-func isSelinuxPermissiveNeeded() bool {
-	vmType := config.VMInfo().Config
-	if strings.Contains(vmType, "coreos") || strings.Contains(vmType, "rhcos") {
-		return true
-	}
-	if strings.Contains(vmType, "rhel-7") {
-		collectionMethod := config.CollectionMethod()
-		if collectionMethod == "ebpf" {
-			return true
-		}
-	}
-	return false
-}
-
-func setSelinuxPermissive() error {
-	cmd := []string{"sudo", "setenforce", "0"}
-	e := NewExecutor()
-	_, err := e.Exec(cmd...)
-	if err != nil {
-		fmt.Printf("Error: Unable to set SELinux to permissive. %v\n", err)
-	}
-	return err
-}
-
 func NewExecutor() Executor {
 	e := executor{}
 	switch config.HostInfo().Kind {

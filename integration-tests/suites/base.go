@@ -65,6 +65,7 @@ func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool) {
 		s.Sensor().Start()
 	}
 
+	s.Require().NoError(s.SetSelinuxPermissiveIfNeeded())
 	s.Require().NoError(s.Collector().Setup())
 	s.Require().NoError(s.Collector().Launch())
 
@@ -119,6 +120,16 @@ func (s *IntegrationTestSuiteBase) AddMetric(key string, value float64) {
 	}
 
 	s.metrics[key] = value
+}
+
+// SetSelinuxPermissiveIfNeeded will disable SELinux enforcing mode
+// on platforms that require it, to enable all integration test components
+// to run correctly
+func (s *IntegrationTestSuiteBase) SetSelinuxPermissiveIfNeeded() error {
+	if s.isSelinuxPermissiveNeeded() {
+		return s.setSelinuxPermissive()
+	}
+	return nil
 }
 
 func (s *IntegrationTestSuiteBase) GetContainerStats() (stats []ContainerStat) {
@@ -381,4 +392,30 @@ func (s *IntegrationTestSuiteBase) waitForFileToBeDeleted(file string) error {
 	}
 
 	return nil
+}
+
+// isSelinuxPermissiveNeeded returns whether or not a given VM requires
+// SELinux permissive mode. e.g. rhel, or fedora-coreos
+func (s *IntegrationTestSuiteBase) isSelinuxPermissiveNeeded() bool {
+	vmType := config.VMInfo().Config
+	if strings.Contains(vmType, "coreos") || strings.Contains(vmType, "rhcos") {
+		return true
+	}
+	if strings.Contains(vmType, "rhel-7") {
+		collectionMethod := config.CollectionMethod()
+		if collectionMethod == "ebpf" {
+			return true
+		}
+	}
+	return false
+}
+
+// setSelinuxPermissive sets the VM's SELinux mode to permissive
+func (s *IntegrationTestSuiteBase) setSelinuxPermissive() error {
+	cmd := []string{"sudo", "setenforce", "0"}
+	_, err := s.Executor().Exec(cmd...)
+	if err != nil {
+		fmt.Printf("Error: Unable to set SELinux to permissive. %v\n", err)
+	}
+	return err
 }
