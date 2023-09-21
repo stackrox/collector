@@ -25,10 +25,12 @@ func (s *MockSensor) ExpectConnections(t *testing.T, containerID string, timeout
 		return true
 	}
 
+	timer := time.After(timeout)
+
 loop:
 	for {
 		select {
-		case <-time.After(timeout):
+		case <-timer:
 			return assert.Fail(t, "timed out waiting for networks")
 		case network := <-s.LiveConnections():
 			if network.GetContainerId() != containerID {
@@ -62,10 +64,11 @@ func (s *MockSensor) ExpectConnectionsN(t *testing.T, containerID string, timeou
 		return s.Connections(containerID)
 	}
 
+	timer := time.After(timeout)
 loop:
 	for {
 		select {
-		case <-time.After(timeout):
+		case <-timer:
 			assert.FailNowf(t, "timed out", "Only found %d/%d connections", len(s.Connections(containerID)), n)
 		case conn := <-s.LiveConnections():
 			if conn.GetContainerId() != containerID {
@@ -93,10 +96,12 @@ func (s *MockSensor) ExpectEndpoints(t *testing.T, containerID string, timeout t
 		return true
 	}
 
+	timer := time.After(timeout)
+
 loop:
 	for {
 		select {
-		case <-time.After(timeout):
+		case <-timer:
 			return assert.Fail(t, "timed out waiting for networks")
 		case network := <-s.LiveEndpoints():
 			if network.GetContainerId() != containerID {
@@ -144,10 +149,11 @@ func (s *MockSensor) waitEndpointsN(timeoutFn func(), containerID string, timeou
 		return s.Endpoints(containerID)
 	}
 
+	timer := time.After(timeout)
 loop:
 	for {
 		select {
-		case <-time.After(timeout):
+		case <-timer:
 			timeoutFn()
 			return make([]types.EndpointInfo, 0)
 		case ep := <-s.LiveEndpoints():
