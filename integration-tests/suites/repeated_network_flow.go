@@ -26,8 +26,8 @@ type RepeatedNetworkFlowTestSuite struct {
 	NumIter                int
 	SleepBetweenCurlTime   int
 	SleepBetweenIterations int
-	ExpectedReports        []bool
-	ObservedReports        []bool
+	ExpectedActive         int // number of active connections expected
+	ExpectedInactive       int // number of inactive connections expected
 }
 
 // Launches collector
@@ -98,15 +98,21 @@ func (s *RepeatedNetworkFlowTestSuite) TearDownSuite() {
 }
 
 func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
-	networkInfos := s.Sensor().ExpectConnectionsN(s.T(), s.ServerContainer, 10*time.Second, len(s.ExpectedReports))
+	networkInfos := s.Sensor().ExpectConnectionsN(s.T(), s.ServerContainer, 10*time.Second, s.ExpectedActive+s.ExpectedInactive)
 
-	observed := make([]bool, 0, len(s.ExpectedReports))
+	observedActive := 0
+	observedInactive := 0
 
 	for _, info := range networkInfos {
-		observed = append(observed, info.IsActive())
+		if info.IsActive() {
+			observedActive++
+		} else {
+			observedInactive++
+		}
 	}
 
-	assert.Equal(s.T(), s.ExpectedReports, observed)
+	assert.Equal(s.T(), s.ExpectedActive, observedActive, "Unexpected number of active connections reported")
+	assert.Equal(s.T(), s.ExpectedInactive, observedInactive, "Unexpected number of inactive connections reported")
 
 	// Server side checks
 
@@ -116,9 +122,6 @@ func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
 	// From server perspective, network connection info only has local port and remote IP
 	assert.Equal(s.T(), fmt.Sprintf(":%s", s.ServerPort), actualServerEndpoint)
 	assert.Equal(s.T(), s.ClientIP, actualClientEndpoint)
-
-	fmt.Printf("ServerDetails from Bolt: %s %+v\n", s.ServerContainer, networkInfos[0])
-	fmt.Printf("ServerDetails from test: %s %s, Port: %s\n", s.ServerContainer, s.ServerIP, s.ServerPort)
 
 	// client side checks
 
