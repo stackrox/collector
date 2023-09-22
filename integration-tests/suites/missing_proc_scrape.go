@@ -19,7 +19,6 @@ func (s *MissingProcScrapeTestSuite) SetupSuite() {
 		s.Require().NoError(err, "Failed to create fake proc directory")
 	}
 
-	// Mount the fake proc directory created by 'create-fake-proc.sh'
 	s.Collector().Mounts["/host/proc:ro"] = fakeProcDir
 
 	// if /etc/hostname is empty collector will read /proc/sys/kernel/hostname

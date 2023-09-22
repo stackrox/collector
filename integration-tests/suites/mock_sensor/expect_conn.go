@@ -31,7 +31,9 @@ loop:
 	for {
 		select {
 		case <-timer:
-			return assert.Fail(t, "timed out waiting for networks")
+			// we know they don't match at this point, but by using
+			// ElementsMatch we get much better logging about the differences
+			return assert.ElementsMatch(t, expected, s.Connections(containerID), "timed out waiting for networks")
 		case network := <-s.LiveConnections():
 			if network.GetContainerId() != containerID {
 				continue loop
@@ -46,10 +48,6 @@ loop:
 			}
 		}
 	}
-
-	// technically we know they don't match at this point, but by using
-	// ElementsMatch we get much better logging about the differences
-	return assert.ElementsMatch(t, expected, s.Connections(containerID))
 }
 
 // ExpectConnectionsN waits up to the timeout for the gRPC server to receive
@@ -102,7 +100,9 @@ loop:
 	for {
 		select {
 		case <-timer:
-			return assert.Fail(t, "timed out waiting for networks")
+			// we know they don't match at this point, but by using
+			// ElementsMatch we get much better logging about the differences
+			return assert.ElementsMatch(t, expected, s.Endpoints(containerID), "timed out waiting for networks")
 		case network := <-s.LiveEndpoints():
 			if network.GetContainerId() != containerID {
 				continue loop
@@ -117,10 +117,6 @@ loop:
 			}
 		}
 	}
-
-	// technically we know they don't match at this point, but by using
-	// ElementsMatch we get much better logging about the differences
-	return assert.ElementsMatch(t, expected, s.Endpoints(containerID))
 }
 
 // ExpectEndpointsN waits up to the timeout for the gRPC server to receive

@@ -34,12 +34,13 @@ func (s *MockSensor) ExpectProcesses(
 		return true
 	}
 
+	timer := time.After(timeout)
+
 loop:
 	for {
 		select {
-		case <-time.After(timeout):
-			break loop
-
+		case <-timer:
+			return assert.ElementsMatch(t, expected, s.Processes(containerID), "Not all processes received")
 		case process := <-s.LiveProcesses():
 			if process.GetContainerId() != containerID {
 				continue loop
@@ -63,8 +64,6 @@ loop:
 			}
 		}
 	}
-
-	return assert.ElementsMatch(t, expected, s.Processes(containerID), "Not all processes received")
 }
 
 func (s *MockSensor) ExpectLineages(t *testing.T, containerID string, timeout time.Duration, processName string, expected ...types.ProcessLineage) bool {
@@ -76,11 +75,12 @@ func (s *MockSensor) ExpectLineages(t *testing.T, containerID string, timeout ti
 		return true
 	}
 
-loop:
+	timer := time.After(timeout)
+
 	for {
 		select {
-		case <-time.After(timeout):
-			break loop
+		case <-timer:
+			return assert.ElementsMatch(t, expected, s.ProcessLineages(containerID), "Not all process lineages received")
 		case lineage := <-s.LiveLineages():
 			info := types.ProcessLineage{
 				Name:          processName,
@@ -89,7 +89,7 @@ loop:
 			}
 
 			to_find = funk.Filter(to_find, func(x types.ProcessLineage) bool {
-				return x != info
+				return s.HasLineage(containerID, info)
 			}).([]types.ProcessLineage)
 
 			if len(to_find) == 0 {
@@ -98,7 +98,6 @@ loop:
 		}
 	}
 
-	return assert.ElementsMatch(t, expected, s.ProcessLineages(containerID), "Not all process lineages received")
 }
 
 func (s *MockSensor) waitProcessesN(timeoutFn func(), containerID string, timeout time.Duration, n int) []types.ProcessInfo {
