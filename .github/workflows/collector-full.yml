@@ -199,14 +199,12 @@ jobs:
     needs:
     - build-collector-full
     steps:
-      - uses: actions/checkout@v3
-
       - name: Pull full image
         run: |
           docker pull quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-amd64
 
       - name: Retag and push stackrox-io
-        uses: ./.github/actions/retag-and-push
+        uses: stackrox/actions/images/retag-and-push@v1
         with:
           src-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-amd64
           dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
