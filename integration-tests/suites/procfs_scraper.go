@@ -79,7 +79,7 @@ func (s *ProcfsScraperTestSuite) TestProcfsScraper() {
 		})
 	} else {
 		// If scraping is off or the feature flag is disabled
-		// we expect not to find the endpoint but with no originator process
+		// we expect to find the endpoint but with no originator process
 		s.Sensor().ExpectEndpoints(s.T(), s.ServerContainer, 10*time.Second, types.EndpointInfo{
 			Protocol:       "L4_PROTOCOL_TCP",
 			CloseTimestamp: nilTimestamp,

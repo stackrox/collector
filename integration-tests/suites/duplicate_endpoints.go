@@ -61,7 +61,7 @@ func (s *DuplicateEndpointsTestSuite) TearDownSuite() {
 // 1. Start a process that opens a port, 80
 // 2. Wait for the endpoint to be reported, this is t=0
 // 3. Start a process that opens a different port, 81
-// 4. At t=i (the scape interval), port 81 should be reported
+// 4. At t=i (the scrape interval), port 81 should be reported
 // 5. At t=(i+2), kill the process
 // 6. At t=(i+2), start an identical process that opens port 81
 // 7. At t=2i (the second scrape) nothing should be reported.
