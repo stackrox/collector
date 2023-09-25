@@ -101,7 +101,7 @@ func TestProcfsScraperNoScrape(t *testing.T) {
 
 func TestProcfsScraperDisableFeatureFlag(t *testing.T) {
 	connScraperTestSuite := &suites.ProcfsScraperTestSuite{
-		TurnOffScrape:               true,
+		TurnOffScrape:               false,
 		RoxProcessesListeningOnPort: false,
 	}
 	suite.Run(t, connScraperTestSuite)

@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stackrox/collector/integration-tests/suites/config"
 	"github.com/stackrox/collector/integration-tests/suites/types"
-	"github.com/stretchr/testify/assert"
 )
 
 type ProcfsScraperTestSuite struct {
@@ -80,10 +79,15 @@ func (s *ProcfsScraperTestSuite) TestProcfsScraper() {
 		})
 	} else {
 		// If scraping is off or the feature flag is disabled
-		// we expect not to find the nginx endpoint
-
-		// ElementsMatch gives us a nice description of any mis-reported endpoints
-		// rather than assert.Equal(t, 0, len(endpoints)) which gives us very little
-		assert.ElementsMatch(s.T(), []types.EndpointInfo{}, s.Sensor().Endpoints(s.ServerContainer))
+		// we expect not to find the endpoint but with no originator process
+		s.Sensor().ExpectEndpoints(s.T(), s.ServerContainer, 10*time.Second, types.EndpointInfo{
+			Protocol:       "L4_PROTOCOL_TCP",
+			CloseTimestamp: nilTimestamp,
+			Originator: &types.ProcessOriginator{
+				ProcessName:         "",
+				ProcessExecFilePath: "",
+				ProcessArgs:         "",
+			},
+		})
 	}
 }
