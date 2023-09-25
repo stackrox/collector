@@ -11,8 +11,8 @@ bool GetStatus::handleGet(CivetServer* server, struct mg_connection* conn) {
 
   Json::Value status(Json::objectValue);
 
-  SysdigStats stats;
-  bool ready = sysdig_->GetStats(&stats);
+  system_inspector::Stats stats;
+  bool ready = system_inspector_->GetStats(&stats);
 
   if (ready) {
     status["status"] = "ok";

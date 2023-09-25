@@ -32,7 +32,7 @@ std::unique_ptr<T> MakeUnique(Args&&... args) {
 // Return string decoded from base 64
 std::string Base64Decode(std::string const& encoded_string);
 
-// Get path using host prefix from SYSDIG_HOST_ROOT env var
+// Get path using host prefix from COLLECTOR_HOST_ROOT env var
 std::string GetHostPath(const std::string& file);
 
 // Get SNI hostname from SNI_HOSTNAME env var

@@ -1,5 +1,5 @@
-#ifndef _SYSDIG_SERVICE_H_
-#define _SYSDIG_SERVICE_H_
+#ifndef _SYSTEM_INSPECTOR_SERVICE_H_
+#define _SYSTEM_INSPECTOR_SERVICE_H_
 
 #include <atomic>
 #include <bitset>
@@ -15,12 +15,12 @@
 #include "DriverCandidates.h"
 #include "SignalHandler.h"
 #include "SignalServiceClient.h"
-#include "Sysdig.h"
+#include "SystemInspector.h"
 #include "threadinfo.h"
 
-namespace collector {
+namespace collector::system_inspector {
 
-class SysdigService : public Sysdig {
+class Service : public SystemInspector {
  public:
   static constexpr char kModulePath[] = "/module/collector.ko";
   static constexpr char kModuleName[] = "collector";
@@ -29,14 +29,14 @@ class SysdigService : public Sysdig {
   static constexpr int kMessageBufferSize = 8192;
   static constexpr int kKeyBufferSize = 48;
 
-  SysdigService() = default;
+  Service() = default;
 
   void Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) override;
   void Start() override;
   void Run(const std::atomic<ControlValue>& control) override;
   void CleanUp() override;
 
-  bool GetStats(SysdigStats* stats) const override;
+  bool GetStats(Stats* stats) const override;
 
   bool InitKernel(const CollectorConfig& config, const DriverCandidate& candidate) override;
 
@@ -45,7 +45,7 @@ class SysdigService : public Sysdig {
   void GetProcessInformation(uint64_t pid, ProcessInfoCallbackRef callback);
 
  private:
-  FRIEND_TEST(SysdigServiceTest, FilterEvent);
+  FRIEND_TEST(SystemInspectorServiceTest, FilterEvent);
 
   struct SignalHandlerEntry {
     std::unique_ptr<SignalHandler> handler;
@@ -72,7 +72,7 @@ class SysdigService : public Sysdig {
   std::unique_ptr<sinsp_evt_formatter> default_formatter_;
   std::unique_ptr<ISignalServiceClient> signal_client_;
   std::vector<SignalHandlerEntry> signal_handlers_;
-  SysdigStats userspace_stats_;
+  Stats userspace_stats_;
   std::bitset<PPM_EVENT_MAX> global_event_filter_;
 
   mutable std::mutex running_mutex_;
@@ -84,6 +84,6 @@ class SysdigService : public Sysdig {
   std::list<std::pair<uint64_t, ProcessInfoCallbackRef>> pending_process_requests_;
 };
 
-}  // namespace collector
+}  // namespace collector::system_inspector
 
-#endif  // _SYSDIG_SERVICE_H_
+#endif  // _SYSTEM_INSPECTOR_SERVICE_H_

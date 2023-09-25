@@ -51,7 +51,7 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
   // With collect_connection_status_ set, we can prevent reporting of asynchronous
   // connections which fail.
   if (collect_connection_status_) {
-    // note: connection status tracking enablement is managed in SysdigService
+    // note: connection status tracking enablement is managed in system_inspector::Service
     if (fd_info->is_socket_failed()) {
       // connect() failed or getsockopt(SO_ERROR) returned a failure
       return std::nullopt;

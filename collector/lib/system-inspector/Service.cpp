@@ -1,4 +1,4 @@
-#include "SysdigService.h"
+#include "Service.h"
 
 #include <cap-ng.h>
 #include <thread>
@@ -25,14 +25,14 @@
 #include "Utility.h"
 #include "logger.h"
 
-namespace collector {
+namespace collector::system_inspector {
 
-constexpr char SysdigService::kModulePath[];
-constexpr char SysdigService::kModuleName[];
-constexpr char SysdigService::kProbePath[];
-constexpr char SysdigService::kProbeName[];
+constexpr char Service::kModulePath[];
+constexpr char Service::kModuleName[];
+constexpr char Service::kProbePath[];
+constexpr char Service::kProbeName[];
 
-void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) {
+void Service::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) {
   // The self-check handlers should only operate during start up,
   // so they are added to the handler list first, so they have access
   // to self-check events before the network and process handlers have
@@ -64,7 +64,7 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
   }
 }
 
-bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandidate& candidate) {
+bool Service::InitKernel(const CollectorConfig& config, const DriverCandidate& candidate) {
   if (!inspector_) {
     inspector_.reset(new sinsp());
 
@@ -113,7 +113,7 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
   return true;
 }
 
-sinsp_evt* SysdigService::GetNext() {
+sinsp_evt* Service::GetNext() {
   std::lock_guard<std::mutex> lock(libsinsp_mutex_);
   sinsp_evt* event = nullptr;
 
@@ -158,13 +158,13 @@ sinsp_evt* SysdigService::GetNext() {
   return event;
 }
 
-bool SysdigService::FilterEvent(sinsp_evt* event) {
+bool Service::FilterEvent(sinsp_evt* event) {
   const auto* tinfo = event->get_thread_info();
 
   return FilterEvent(tinfo);
 }
 
-bool SysdigService::FilterEvent(const sinsp_threadinfo* tinfo) {
+bool Service::FilterEvent(const sinsp_threadinfo* tinfo) {
   if (tinfo == nullptr) {
     return false;
   }
@@ -185,11 +185,11 @@ bool SysdigService::FilterEvent(const sinsp_threadinfo* tinfo) {
   return exepath_sv.rfind("/proc/self", 0) != 0;
 }
 
-void SysdigService::Start() {
+void Service::Start() {
   std::lock_guard<std::mutex> libsinsp_lock(libsinsp_mutex_);
 
   if (!inspector_) {
-    throw CollectorException("Invalid state: SysdigService was not initialized");
+    throw CollectorException("Invalid state: system inspector was not initialized");
   }
 
   for (auto& signal_handler : signal_handlers_) {
@@ -228,9 +228,9 @@ void LogUnreasonableEventTime(int64_t time_micros, sinsp_evt* evt) {
   }
 }
 
-void SysdigService::Run(const std::atomic<ControlValue>& control) {
+void Service::Run(const std::atomic<ControlValue>& control) {
   if (!inspector_) {
-    throw CollectorException("Invalid state: SysdigService was not initialized");
+    throw CollectorException("Invalid state: system inspector was not initialized");
   }
 
   while (control.load(std::memory_order_relaxed) == ControlValue::RUN) {
@@ -265,11 +265,11 @@ void SysdigService::Run(const std::atomic<ControlValue>& control) {
   }
 }
 
-bool SysdigService::SendExistingProcesses(SignalHandler* handler) {
+bool Service::SendExistingProcesses(SignalHandler* handler) {
   std::lock_guard<std::mutex> lock(libsinsp_mutex_);
 
   if (!inspector_) {
-    throw CollectorException("Invalid state: SysdigService was not initialized");
+    throw CollectorException("Invalid state: system inspector was not initialized");
   }
 
   auto threads = inspector_->m_thread_manager->get_threads();
@@ -291,7 +291,7 @@ bool SysdigService::SendExistingProcesses(SignalHandler* handler) {
   });
 }
 
-void SysdigService::CleanUp() {
+void Service::CleanUp() {
   std::lock_guard<std::mutex> libsinsp_lock(libsinsp_mutex_);
   std::lock_guard<std::mutex> running_lock(running_mutex_);
   running_ = false;
@@ -319,7 +319,7 @@ void SysdigService::CleanUp() {
   }
 }
 
-bool SysdigService::GetStats(SysdigStats* stats) const {
+bool Service::GetStats(system_inspector::Stats* stats) const {
   std::lock_guard<std::mutex> libsinsp_lock(libsinsp_mutex_);
   std::lock_guard<std::mutex> running_lock(running_mutex_);
   if (!running_ || !inspector_) return false;
@@ -335,7 +335,7 @@ bool SysdigService::GetStats(SysdigStats* stats) const {
   return true;
 }
 
-void SysdigService::AddSignalHandler(std::unique_ptr<SignalHandler> signal_handler) {
+void Service::AddSignalHandler(std::unique_ptr<SignalHandler> signal_handler) {
   std::bitset<PPM_EVENT_MAX> event_filter;
   const auto& relevant_events = signal_handler->GetRelevantEvents();
   if (relevant_events.empty()) {
@@ -353,13 +353,13 @@ void SysdigService::AddSignalHandler(std::unique_ptr<SignalHandler> signal_handl
   signal_handlers_.emplace_back(std::move(signal_handler), event_filter);
 }
 
-void SysdigService::GetProcessInformation(uint64_t pid, ProcessInfoCallbackRef callback) {
+void Service::GetProcessInformation(uint64_t pid, ProcessInfoCallbackRef callback) {
   std::lock_guard<std::mutex> lock(process_requests_mutex_);
 
   pending_process_requests_.emplace_back(pid, callback);
 }
 
-void SysdigService::ServePendingProcessRequests() {
+void Service::ServePendingProcessRequests() {
   std::lock_guard<std::mutex> lock(process_requests_mutex_);
 
   while (!pending_process_requests_.empty()) {
@@ -375,4 +375,4 @@ void SysdigService::ServePendingProcessRequests() {
   }
 }
 
-}  // namespace collector
+}  // namespace collector::system_inspector

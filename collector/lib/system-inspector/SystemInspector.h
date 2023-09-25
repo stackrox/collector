@@ -1,5 +1,5 @@
-#ifndef _SYSDIG_
-#define _SYSDIG_
+#ifndef _SYSTEM_INSPECTOR_
+#define _SYSTEM_INSPECTOR_
 
 #include <atomic>
 #include <cstdint>
@@ -11,9 +11,9 @@
 #include "DriverCandidates.h"
 #include "ppm_events_public.h"
 
-namespace collector {
+namespace collector::system_inspector {
 
-struct SysdigStats {
+struct Stats {
   using uint64_t = std::uint64_t;
 
   // stats gathered in kernel space
@@ -39,9 +39,9 @@ struct SysdigStats {
   volatile uint64_t event_process_micros[PPM_EVENT_MAX] = {0};  // total microseconds spent processing event type (correlates w/ nFilteredevents)
 };
 
-class Sysdig {
+class SystemInspector {
  public:
-  virtual ~Sysdig() = default;
+  virtual ~SystemInspector() = default;
 
   virtual void Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) = 0;
   virtual bool InitKernel(const CollectorConfig& config, const DriverCandidate& candidate) = 0;
@@ -49,9 +49,9 @@ class Sysdig {
   virtual void Run(const std::atomic<ControlValue>& control) = 0;
   virtual void CleanUp() = 0;
 
-  virtual bool GetStats(SysdigStats* stats) const = 0;
+  virtual bool GetStats(Stats* stats) const = 0;
 };
 
-} /* namespace collector */
+}  // namespace collector::system_inspector
 
-#endif /* _SYSDIG_ */
+#endif /* _SYSTEM_INSPECTOR_ */

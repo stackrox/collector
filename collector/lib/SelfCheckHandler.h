@@ -6,7 +6,7 @@
 
 #include "SelfChecks.h"
 #include "SignalHandler.h"
-#include "SysdigEventExtractor.h"
+#include "system-inspector/EventExtractor.h"
 
 namespace collector {
 
@@ -22,7 +22,7 @@ class SelfCheckHandler : public SignalHandler {
 
  protected:
   sinsp* inspector_;
-  SysdigEventExtractor event_extractor_;
+  EventExtractor event_extractor_;
 
   std::chrono::time_point<std::chrono::steady_clock> start_;
   std::chrono::seconds timeout_;

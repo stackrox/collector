@@ -5,14 +5,14 @@
 
 #include "ConnTracker.h"
 #include "SignalHandler.h"
-#include "SysdigEventExtractor.h"
-#include "SysdigService.h"
+#include "system-inspector/EventExtractor.h"
+#include "system-inspector/SystemInspector.h"
 
 namespace collector {
 
 class NetworkSignalHandler final : public SignalHandler {
  public:
-  explicit NetworkSignalHandler(sinsp* inspector, std::shared_ptr<ConnectionTracker> conn_tracker, SysdigStats* stats)
+  explicit NetworkSignalHandler(sinsp* inspector, std::shared_ptr<ConnectionTracker> conn_tracker, system_inspector::Stats* stats)
       : conn_tracker_(std::move(conn_tracker)), stats_(stats), collect_connection_status_(true) {
     event_extractor_.Init(inspector);
   }
@@ -27,9 +27,9 @@ class NetworkSignalHandler final : public SignalHandler {
  private:
   std::optional<Connection> GetConnection(sinsp_evt* evt);
 
-  SysdigEventExtractor event_extractor_;
+  EventExtractor event_extractor_;
   std::shared_ptr<ConnectionTracker> conn_tracker_;
-  SysdigStats* stats_;
+  system_inspector::Stats* stats_;
 
   bool collect_connection_status_;
 };
