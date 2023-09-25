@@ -29,18 +29,12 @@ COPY container/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY LICENSE-kernel-modules.txt /kernel-modules/LICENSE
 COPY container/libs/libsinsp-wrapper.so /usr/local/lib/
 COPY container/bin/collector /usr/local/bin/
+COPY container/bin/conntracker /usr/local/bin/conntracker
 COPY container/bin/self-checks /usr/local/bin/self-checks
+COPY container/bin/AFLplusplus /usr/local/bin/AFLplusplus
 
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
     ldconfig && \
     echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt && \
     chmod 700 bootstrap.sh
 
-EXPOSE 8080 9090
-
-ENTRYPOINT ["/bootstrap.sh"]
-
-CMD collector-wrapper.sh \
-    --collector-config=$COLLECTOR_CONFIG \
-    --collection-method=$COLLECTION_METHOD \
-    --grpc-server=$GRPC_SERVER

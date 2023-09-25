@@ -27,6 +27,9 @@ cmake_extra_flags=(
     -DTRACE_SINSP_EVENTS="$TRACE_SINSP_EVENTS"
 )
 
+export CXX=/root/AFLplusplus/afl-g++
+export CC=/root/AFLplusplus/afl-gcc
+
 cmake "${cmake_extra_flags[@]}" -S "${SRC_ROOT_DIR}" -B "${CMAKE_BUILD_DIR}"
 cmake --build "${CMAKE_BUILD_DIR}" --target all -- -j "${NPROCS:-2}"
 
@@ -35,5 +38,7 @@ if [ "$CMAKE_BUILD_TYPE" = "Release" ]; then
         "${CMAKE_BUILD_DIR}/collector/collector" \
         "${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so"
 fi
+
+cp -r /root/AFLplusplus "${CMAKE_BUILD_DIR}"
 
 cp -r /THIRD_PARTY_NOTICES "${CMAKE_BUILD_DIR}/"

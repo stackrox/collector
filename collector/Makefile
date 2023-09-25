@@ -32,7 +32,7 @@ cmake-build/collector: $(COLLECTOR_BUILD_DEPS)
 		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) "$(SRC_MOUNT_DIR)/builder/build/build-collector.sh"
 
 container/bin/collector: cmake-build/collector
-	mkdir -p container/bin
+	mkdir -p container/bin/AFLplusplus
 	cp "$(COLLECTOR_BIN_DIR)/collector" container/bin/collector
 	cp "$(COLLECTOR_BIN_DIR)/self-checks" container/bin/self-checks
 
@@ -40,6 +40,7 @@ container/bin/collector: cmake-build/collector
 collector: container/bin/collector txt-files
 	mkdir -p container/libs
 	cp -r "$(CMAKE_DIR)"/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
+	cp -r "$(CMAKE_DIR)"/AFLplusplus/* container/bin/AFLplusplus/
 	cp "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so" container/libs/libsinsp-wrapper.so
 
 .PHONY: build-connscrape-test

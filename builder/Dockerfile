@@ -51,6 +51,13 @@ RUN dnf -y update \
         bpftool \
     && dnf clean all
 
+RUN cp /usr/bin/python2 /usr/bin/python
+RUN dnf install glib2-devel -y
+RUN dnf install xz -y
+RUN dnf install patch -y
+
+RUN cd /root/ && git clone https://github.com/AFLplusplus/AFLplusplus && cd AFLplusplus && make source-only && make install
+
 # Build dependencies from source
 WORKDIR ${BUILD_DIR}
 

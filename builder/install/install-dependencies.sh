@@ -10,6 +10,8 @@ mkdir -p "${LICENSE_DIR}"
 source builder/install/versions.sh
 for f in builder/install/[0-9][0-9]-*.sh; do
     echo "=== $f ==="
+    export CXX=/root/AFLplusplus/afl-g++
+    export CC=/root/AFLplusplus/afl-gcc
     ./"$f"
     ldconfig
 done
