@@ -390,24 +390,13 @@ func (s *IntegrationTestSuiteBase) waitForFileToBeDeleted(file string) error {
 			}
 		}
 	}
-
-	return nil
 }
 
 // isSelinuxPermissiveNeeded returns whether or not a given VM requires
 // SELinux permissive mode. e.g. rhel, or fedora-coreos
 func (s *IntegrationTestSuiteBase) isSelinuxPermissiveNeeded() bool {
 	vmType := config.VMInfo().Config
-	if strings.Contains(vmType, "coreos") || strings.Contains(vmType, "rhcos") {
-		return true
-	}
-	if strings.Contains(vmType, "rhel-7") {
-		collectionMethod := config.CollectionMethod()
-		if collectionMethod == "ebpf" {
-			return true
-		}
-	}
-	return false
+	return strings.Contains(vmType, "coreos") || strings.Contains(vmType, "rhcos")
 }
 
 // setSelinuxPermissive sets the VM's SELinux mode to permissive
