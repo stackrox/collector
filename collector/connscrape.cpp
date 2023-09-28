@@ -15,16 +15,19 @@ BoolEnvVar scrape_endpoints("SCRAPE_ENDPOINTS", true);
 
 int main(int argc, char** argv) {
   const char* proc_dir = "/proc";
+  const char* tcp_file_path = "/proc/1/net/tcp";
 
   if (argc > 1) {
     proc_dir = argv[1];
+    tcp_file_path = argv[2];
   }
 
   ConnScraper scraper(proc_dir);
   std::vector<Connection> conns;
   std::vector<ContainerEndpoint> endpoints;
 
-  if (!scraper.Scrape(&conns, scrape_endpoints ? &endpoints : nullptr)) {
+  std::string str_tcp_file_path = tcp_file_path;
+  if (!scraper.Scrape(&conns, scrape_endpoints ? &endpoints : nullptr, str_tcp_file_path)) {
     std::cerr << "Failed to scrape :(" << std::endl;
     return 1;
   }

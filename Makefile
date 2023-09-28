@@ -13,7 +13,8 @@ export COLLECTOR_VERSION := $(COLLECTOR_TAG)
 export MODULE_VERSION := $(shell cat $(CURDIR)/kernel-modules/MODULE_VERSION)
 
 dev-build: image
-	make -C integration-tests TestProcessNetwork
+	#make -C integration-tests TestProcessNetwork
+	@echo "$(COLLECTOR_TAG)"
 
 .PHONY: tag
 tag:
@@ -37,7 +38,8 @@ ifneq ($(BUILD_BUILDER_IMAGE), false)
 		-f "$(CURDIR)/builder/Dockerfile" \
 		.
 else
-	docker pull --platform ${PLATFORM} quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
+	#docker pull --platform ${PLATFORM} quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
+	@echo "$(COLLECTOR_TAG)"
 endif
 
 collector: builder
@@ -50,18 +52,18 @@ connscrape:
 .PHONY: unittest
 unittest:
 	#make -C collector unittest
-	@echo "$(COLLECTOR_TAG)
+	@echo "$(COLLECTOR_TAG)"
 
 .PHONY: fuzz
 fuzz:
 	rm -rf $(CURDIR)/fuzz/out
-	docker run \
+	docker run -it \
 		-v $(CURDIR)/fuzz/in:/in \
 		-v $(CURDIR)/fuzz/out:/out \
 		-v $(CURDIR)/fuzz/dict:/dict \
 		-e NODE_HOSTNAME=asdf \
 		quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
-		/usr/local/bin/AFLplusplus/afl-fuzz -i /in -o /out -x /dict -m 1000 -t 1000 /usr/local/bin/conntracker
+		/usr/local/bin/AFLplusplus/afl-fuzz -i /in/fake_proc/1/net -o /out -x /dict -m 1000 -t 1000 -D /usr/local/bin/connscrape /in/fake_proc @@
 
 .PHONY: build-and-fuzz
 build-and-fuzz: collector fuzz

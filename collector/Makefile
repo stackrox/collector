@@ -34,6 +34,7 @@ cmake-build/collector: $(COLLECTOR_BUILD_DEPS)
 container/bin/collector: cmake-build/collector
 	mkdir -p container/bin/AFLplusplus
 	cp "$(COLLECTOR_BIN_DIR)/collector" container/bin/collector
+	cp "$(COLLECTOR_BIN_DIR)/connscrape" container/bin/connscrape
 	cp "$(COLLECTOR_BIN_DIR)/self-checks" container/bin/self-checks
 
 .PHONY: collector

@@ -168,7 +168,8 @@ bool NetworkStatusNotifier::UpdateAllConnsAndEndpoints() {
   std::vector<Connection> all_conns;
   std::vector<ContainerEndpoint> all_listen_endpoints;
   WITH_TIMER(CollectorStats::net_scrape_read) {
-    bool success = conn_scraper_->Scrape(&all_conns, scrape_listen_endpoints_ ? &all_listen_endpoints : nullptr);
+    std::string tcp_file_path = "";
+    bool success = conn_scraper_->Scrape(&all_conns, scrape_listen_endpoints_ ? &all_listen_endpoints : nullptr, tcp_file_path);
     if (!success) {
       CLOG(ERROR) << "Failed to scrape connections and no pending connections to send";
       return false;

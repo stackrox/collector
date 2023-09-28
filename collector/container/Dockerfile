@@ -29,7 +29,7 @@ COPY container/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY LICENSE-kernel-modules.txt /kernel-modules/LICENSE
 COPY container/libs/libsinsp-wrapper.so /usr/local/lib/
 COPY container/bin/collector /usr/local/bin/
-COPY container/bin/conntracker /usr/local/bin/conntracker
+COPY container/bin/connscrape /usr/local/bin/connscrape
 COPY container/bin/self-checks /usr/local/bin/self-checks
 COPY container/bin/AFLplusplus /usr/local/bin/AFLplusplus
 

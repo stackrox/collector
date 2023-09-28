@@ -51,7 +51,7 @@ RUN dnf -y update \
         bpftool \
     && dnf clean all
 
-RUN cp /usr/bin/python2 /usr/bin/python
+#RUN cp /usr/bin/python2 /usr/bin/python
 RUN dnf install glib2-devel -y
 RUN dnf install xz -y
 RUN dnf install patch -y

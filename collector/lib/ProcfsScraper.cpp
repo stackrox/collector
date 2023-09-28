@@ -288,6 +288,10 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE*
   char line[512];
 
   if (!std::fgets(line, sizeof(line), f)) return false;  // ignore the first *header) line.
+  // if ( line[0] == 'a') {
+  //   int* ptr = nullptr;
+  //   *ptr = 1;
+  // }
 
   UnorderedSet<Endpoint> all_listen_endpoints;
 
@@ -322,12 +326,14 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE*
 
 // GetConnections reads all active connections (inode -> connection info mapping) for a given network NS, addressed by
 // the dir FD for a proc entry of a process in that network namespace.
-bool GetConnections(int dirfd, UnorderedMap<ino_t, ConnInfo>* connections, UnorderedMap<ino_t, EndpointInfo>* listen_endpoints) {
+bool GetConnections(int dirfd, UnorderedMap<ino_t, ConnInfo>* connections, UnorderedMap<ino_t, EndpointInfo>* listen_endpoints, std::string tcp_file_path) {
   bool success = true;
   {
     FDHandle net_tcp_fd = openat(dirfd, "net/tcp", O_RDONLY);
     if (net_tcp_fd.valid()) {
-      FileHandle net_tcp(std::move(net_tcp_fd), "r");
+      // FileHandle net_tcp(std::move(net_tcp_fd), "r");
+      const char* c_tcp_file_path = tcp_file_path.c_str();
+      std::FILE* net_tcp = std::fopen(c_tcp_file_path, "r");
       success = ReadConnectionsFromFile(Address::Family::IPV4, L4Proto::TCP, net_tcp, connections, listen_endpoints) && success;
     } else {
       success = false;  // there should always be a net/tcp file
@@ -395,7 +401,7 @@ void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const C
 // from non-container processes are ignored.
 // process_store, when provided, is used to to link the originator process of a ContainerEndpoint.
 bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStore> process_store,
-                              std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) {
+                              std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints, std::string tcp_file_path) {
   DirHandle procdir = opendir(proc_path);
   if (!procdir.valid()) {
     COUNTER_INC(CollectorStats::procfs_could_not_open_proc_dir);
@@ -418,27 +424,32 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
       continue;
     }
 
-    auto container_id = GetContainerID(dirfd);
-    if (!container_id) {
-      continue;
-    }
+    // auto container_id = GetContainerID(dirfd);
+    std::optional<std::string> container_id = "asdfasdf";
+    // if (!container_id) {
+    //   continue;
+    // }
 
     uint64_t netns_inode;
-    if (!GetNetworkNamespace(dirfd, &netns_inode)) {
-      // TODO ROX-13962: Improve logging to indicate when a process is defunct.
-      COUNTER_INC(CollectorStats::procfs_could_not_get_network_namespace);
-      CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) << "Could not determine network namespace: " << StrError();
-      continue;
-    }
+    netns_inode = 42;
+    // if (!GetNetworkNamespace(dirfd, &netns_inode)) {
+    //   // TODO ROX-13962: Improve logging to indicate when a process is defunct.
+    //   COUNTER_INC(CollectorStats::procfs_could_not_get_network_namespace);
+    //   CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) << "Could not determine network namespace: " << StrError();
+    //   continue;
+    // }
 
     auto& container_ns_sockets = sockets_by_container_and_ns[*container_id][netns_inode];
     bool no_sockets = container_ns_sockets.empty();
 
-    if (!GetSocketINodes(dirfd, pid, &container_ns_sockets)) {
-      COUNTER_INC(CollectorStats::procfs_could_not_get_socket_inodes);
-      CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) << "Could not obtain socket inodes: " << StrError();
-      continue;
-    }
+    ino_t inode = 43;
+    container_ns_sockets.emplace(inode, pid);
+
+    // if (!GetSocketINodes(dirfd, pid, &container_ns_sockets)) {
+    //   COUNTER_INC(CollectorStats::procfs_could_not_get_socket_inodes);
+    //   CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) << "Could not obtain socket inodes: " << StrError();
+    //   continue;
+    // }
 
     if (no_sockets && !container_ns_sockets.empty()) {
       // These are the first sockets for this (container, netns) pair. Make sure we actually have the information about
@@ -447,7 +458,7 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
       if (emplace_res.second) {
         auto& ns_network_data = emplace_res.first->second;
 
-        if (!GetConnections(dirfd, &ns_network_data.connections, listen_endpoints ? &ns_network_data.listen_endpoints : nullptr)) {
+        if (!GetConnections(dirfd, &ns_network_data.connections, listen_endpoints ? &ns_network_data.listen_endpoints : nullptr, tcp_file_path)) {
           // If there was an error reading connections, that could be due to a number of reasons.
           // We need to differentiate persistent errors (e.g., expected net/tcp6 file not found)
           // from spurious/race condition errors caused by the process disappearing while reading
@@ -535,8 +546,8 @@ std::optional<std::string_view> ExtractContainerID(std::string_view cgroup_line)
   return ExtractContainerIDFromCgroup(cgroup_path);
 }
 
-bool ConnScraper::Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) {
-  return ReadContainerConnections(proc_path_.c_str(), process_store_, connections, listen_endpoints);
+bool ConnScraper::Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints, std::string tcp_file_path) {
+  return ReadContainerConnections(proc_path_.c_str(), process_store_, connections, listen_endpoints, tcp_file_path);
 }
 
 bool ProcessScraper::Scrape(uint64_t pid, ProcessInfo& process_info) {

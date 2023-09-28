@@ -12,7 +12,7 @@ namespace collector {
 // Abstract interface for a ConnScraper. Useful to inject testing implementation.
 class IConnScraper {
  public:
-  virtual bool Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) = 0;
+  virtual bool Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints, std::string tcp_file_path) = 0;
   virtual ~IConnScraper() {}
 };
 
@@ -24,7 +24,7 @@ class ConnScraper : public IConnScraper {
         process_store_(process_store) {}
 
   // Scrape returns a snapshot of all active network connections in the given vector.
-  bool Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints);
+  bool Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints, std::string tcp_file_path);
 
  private:
   std::string proc_path_;

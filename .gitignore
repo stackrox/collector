@@ -1,5 +1,6 @@
 .idea/
 .rox/
+fuzz/out/*
 
 integration-tests/container-logs/
 integration-tests/*.log
