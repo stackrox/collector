@@ -1,0 +1,39 @@
+---
+
+- name: Load image info
+  set_fact:
+    images: "{{ lookup('file', collector_root + '/integration-tests/images.yml') | from_yaml }}"
+    qa_tag: "{{ lookup('file', collector_root + '/integration-tests/container/QA_TAG') }}"
+  delegate_to: localhost
+
+- name: Pull QA images
+  command: "docker pull {{ item.value }}-{{ qa_tag }}"
+  loop: "{{ images.qa | dict2items }}"
+  # parallel for speeeeed
+  async: 300
+  poll: 0
+  register: qa_result
+
+- name: Pull non-QA images
+  command: "docker pull {{ item.value }}"
+  loop: "{{ images.non_qa | dict2items }}"
+  # parallel for speeeeed
+  async: 300
+  poll: 0
+  register: non_qa_result
+
+- name: Await QA
+  async_status:
+    jid: "{{ item.ansible_job_id }}"
+  loop: "{{ qa_result.results }}"
+  register: await_qa
+  until: await_qa.finished
+  retries: 30
+
+- name: Await non-QA
+  async_status:
+    jid: "{{ item.ansible_job_id }}"
+  loop: "{{ non_qa_result.results }}"
+  register: await_non_qa
+  until: await_non_qa.finished
+  retries: 30

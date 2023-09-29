@@ -17,6 +17,15 @@
   vars:
     arch: "{{ arch_info }}"
 
+- name: Pull test images
+  include_tasks: pull-images.yml
+  # only pull all images when we're running all tests.
+  # The performance penalty is several minutes
+  # which is quite significant for a specific test suite
+  # (i.e. when testing during development) but is only
+  # minor when running on CI
+  when: collector_test == 'ci-integration-tests'
+
 #
 # Separation of collection method is only possible with a separate
 # task file, because we need to loop over a set of tasks to ensure
