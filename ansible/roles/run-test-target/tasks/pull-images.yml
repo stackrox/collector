@@ -7,7 +7,7 @@
   delegate_to: localhost
 
 - name: Pull QA images
-  command: "docker pull {{ item.value }}-{{ qa_tag }}"
+  command: "{{ runtime_command }} pull {{ item.value }}-{{ qa_tag }}"
   loop: "{{ images.qa | dict2items }}"
   # parallel for speeeeed
   async: 300
@@ -15,7 +15,7 @@
   register: qa_result
 
 - name: Pull non-QA images
-  command: "docker pull {{ item.value }}"
+  command: "{{ runtime_command }} pull {{ item.value }}"
   loop: "{{ images.non_qa | dict2items }}"
   # parallel for speeeeed
   async: 300
