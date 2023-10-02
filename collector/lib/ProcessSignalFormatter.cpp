@@ -206,14 +206,6 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   return signal;
 }
 
-bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_threadinfo* tinfo) {
-  if (tinfo->m_exepath == "<NA>" && tinfo->get_comm() == "<NA>") {
-    return false;
-  }
-
-  return true;
-}
-
 std::string ProcessSignalFormatter::ProcessDetails(sinsp_evt* event) {
   std::stringstream ss;
   const std::string* path = event_extractor_.get_exepath(event);
@@ -231,15 +223,35 @@ std::string ProcessSignalFormatter::ProcessDetails(sinsp_evt* event) {
   return ss.str();
 }
 
-bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
-  const std::string* path = event_extractor_.get_exepath(event);
-  const std::string* name = event_extractor_.get_comm(event);
-
-  if ((path == nullptr || *path == "<NA>") && (name == nullptr || *name == "<NA>")) {
+bool ProcessSignalFormatter::ValidateProcessDetails(const sinsp_threadinfo* tinfo) {
+  if (tinfo == nullptr) {
     return false;
   }
 
-  return true;
+  std::string comm = tinfo->get_comm();
+
+  if (tinfo->m_exepath == "<NA>" && comm == "<NA>") {
+    return false;
+  }
+
+  // exclude runc events
+  if (tinfo->m_exepath == "runc" && comm == "6") {
+    return false;
+  }
+
+  std::string_view exepath_sv{tinfo->m_exepath};
+  auto marker = exepath_sv.rfind(':');
+  if (marker != std::string_view::npos) {
+    exepath_sv.remove_prefix(marker + 1);
+  }
+
+  return exepath_sv.rfind("/proc/self", 0) != 0;
+}
+
+bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
+  const sinsp_threadinfo* tinfo = event->get_thread_info();
+
+  return ValidateProcessDetails(tinfo);
 }
 
 int ProcessSignalFormatter::GetTotalStringLength(const std::vector<LineageInfo>& lineage) {

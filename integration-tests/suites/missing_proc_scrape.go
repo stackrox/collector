@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stretchr/testify/assert"
