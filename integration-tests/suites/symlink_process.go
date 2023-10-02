@@ -15,6 +15,7 @@ type SymbolicLinkProcessTestSuite struct {
 }
 
 func (s *SymbolicLinkProcessTestSuite) SetupSuite() {
+	defer s.RecoverSetup("process-ports")
 	s.StartContainerStats()
 
 	s.Collector().Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
@@ -42,7 +43,7 @@ func (s *SymbolicLinkProcessTestSuite) SetupSuite() {
 
 func (s *SymbolicLinkProcessTestSuite) TearDownSuite() {
 	s.StopCollector()
-	s.cleanupContainer([]string{"process-ports", "collector"})
+	s.cleanupContainer([]string{"process-ports"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
 	s.WritePerfResults("SymbolicLinkProcess", stats, s.metrics)

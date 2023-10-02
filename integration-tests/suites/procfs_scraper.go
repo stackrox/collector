@@ -23,6 +23,8 @@ type ProcfsScraperTestSuite struct {
 // other tests. The purpose is that we want ProcfsScraper to see the nginx endpoint and we do not want
 // NetworkSignalHandler to see the nginx endpoint.
 func (s *ProcfsScraperTestSuite) SetupSuite() {
+	defer s.RecoverSetup("nginx")
+
 	s.StartContainerStats()
 
 	s.Collector().Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":` + strconv.FormatBool(s.TurnOffScrape) + `,"scrapeInterval":2}`

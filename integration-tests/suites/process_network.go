@@ -23,6 +23,7 @@ type ProcessNetworkTestSuite struct {
 // Launches nginx container
 // Execs into nginx and does a sleep
 func (s *ProcessNetworkTestSuite) SetupSuite() {
+	defer s.RecoverSetup("nginx", "nginx-curl")
 	s.StartContainerStats()
 	s.StartCollector(false)
 

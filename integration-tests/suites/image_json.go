@@ -5,6 +5,7 @@ type ImageLabelJSONTestSuite struct {
 }
 
 func (s *ImageLabelJSONTestSuite) SetupSuite() {
+	defer s.RecoverSetup()
 	s.StartCollector(false)
 }
 
@@ -14,5 +15,5 @@ func (s *ImageLabelJSONTestSuite) TestRunImageWithJSONLabel() {
 
 func (s *ImageLabelJSONTestSuite) TearDownSuite() {
 	s.StopCollector()
-	s.cleanupContainer([]string{"collector", "grpc-server", "jsonlabel"})
+	s.cleanupContainer([]string{"grpc-server", "jsonlabel"})
 }

@@ -5,6 +5,7 @@ type CollectorStartupTestSuite struct {
 }
 
 func (s *CollectorStartupTestSuite) SetupSuite() {
+	defer s.RecoverSetup()
 	s.StartCollector(false)
 }
 

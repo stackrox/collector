@@ -30,6 +30,7 @@ type AsyncConnectionTestSuite struct {
  *     a dummy address.
  */
 func (s *AsyncConnectionTestSuite) SetupSuite() {
+	defer s.RecoverSetup("server", "client")
 	s.StartContainerStats()
 
 	collector := s.Collector()

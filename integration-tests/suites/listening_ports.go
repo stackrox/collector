@@ -16,6 +16,7 @@ type ProcessListeningOnPortTestSuite struct {
 }
 
 func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
+	defer s.RecoverSetup("process-ports")
 	s.StartContainerStats()
 
 	collector := s.Collector()
@@ -56,7 +57,7 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 
 func (s *ProcessListeningOnPortTestSuite) TearDownSuite() {
 	s.StopCollector()
-	s.cleanupContainer([]string{"process-ports", "collector"})
+	s.cleanupContainer([]string{"process-ports"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
 	s.WritePerfResults("ProcessListeningOnPort", stats, s.metrics)
