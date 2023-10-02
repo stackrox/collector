@@ -28,8 +28,6 @@ const (
 	parentExecFilePathStr    = "ParentExecFilePath"
 
 	defaultWaitTickSeconds = 30 * time.Second
-
-	nilTimestamp = "(timestamp: nil Timestamp)"
 )
 
 type IntegrationTestSuiteBase struct {

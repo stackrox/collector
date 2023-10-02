@@ -1,5 +1,9 @@
 package types
 
+const (
+	NilTimestamp = "(timestamp: nil Timestamp)"
+)
+
 type NetworkInfo struct {
 	LocalAddress   string
 	RemoteAddress  string
@@ -10,5 +14,5 @@ type NetworkInfo struct {
 
 func (n *NetworkInfo) IsActive() bool {
 	// no close timestamp means the connection is open, and active
-	return n.CloseTimestamp == "(timestamp: nil Timestamp)"
+	return n.CloseTimestamp == NilTimestamp
 }

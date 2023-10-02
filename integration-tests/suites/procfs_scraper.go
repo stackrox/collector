@@ -62,7 +62,7 @@ func (s *ProcfsScraperTestSuite) TestProcfsScraper() {
 
 		s.Sensor().ExpectEndpoints(s.T(), s.ServerContainer, 10*time.Second, types.EndpointInfo{
 			Protocol:       "L4_PROTOCOL_TCP",
-			CloseTimestamp: nilTimestamp,
+			CloseTimestamp: types.NilTimestamp,
 			Originator: &types.ProcessOriginator{
 				ProcessName:         processes[0].Name,
 				ProcessExecFilePath: processes[0].ExePath,
@@ -70,7 +70,7 @@ func (s *ProcfsScraperTestSuite) TestProcfsScraper() {
 			},
 		}, types.EndpointInfo{
 			Protocol:       "L4_PROTOCOL_TCP",
-			CloseTimestamp: nilTimestamp,
+			CloseTimestamp: types.NilTimestamp,
 			Originator: &types.ProcessOriginator{
 				ProcessName:         processes[0].Name,
 				ProcessExecFilePath: processes[0].ExePath,
@@ -82,7 +82,7 @@ func (s *ProcfsScraperTestSuite) TestProcfsScraper() {
 		// we expect to find the endpoint but with no originator process
 		s.Sensor().ExpectEndpoints(s.T(), s.ServerContainer, 10*time.Second, types.EndpointInfo{
 			Protocol:       "L4_PROTOCOL_TCP",
-			CloseTimestamp: nilTimestamp,
+			CloseTimestamp: types.NilTimestamp,
 			Originator: &types.ProcessOriginator{
 				ProcessName:         "",
 				ProcessExecFilePath: "",
