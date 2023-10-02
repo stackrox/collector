@@ -46,7 +46,8 @@ TEST(ProcessSignalFormatterTest, ProcessWithoutParentTest) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get());
 
-  auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo = new sinsp_threadinfo(inspector.get());
   tinfo->m_pid = 0;
   tinfo->m_tid = 0;
   tinfo->m_ptid = -1;
@@ -54,10 +55,10 @@ TEST(ProcessSignalFormatterTest, ProcessWithoutParentTest) {
   tinfo->m_user.uid = 7;
   tinfo->m_exepath = "qwerty";
 
-  inspector->add_thread(tinfo.get());
+  inspector->add_thread(tinfo);
   std::vector<LineageInfo> lineage;
 
-  processSignalFormatter.GetProcessLineage(tinfo.get(), lineage);
+  processSignalFormatter.GetProcessLineage(tinfo, lineage);
 
   int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
   int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
@@ -80,24 +81,26 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentTest) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get());
 
-  auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo = new sinsp_threadinfo(inspector.get());
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
   tinfo->m_user.uid = 42;
   tinfo->m_exepath = "asdf";
-  auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo2 = new sinsp_threadinfo(inspector.get());
   tinfo2->m_pid = 1;
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
   tinfo2->m_user.uid = 7;
   tinfo2->m_exepath = "qwerty";
-  inspector->add_thread(tinfo.get());
-  inspector->add_thread(tinfo2.get());
+  inspector->add_thread(tinfo);
+  inspector->add_thread(tinfo2);
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
-  processSignalFormatter.GetProcessLineage(tinfo2.get(), lineage);
+  processSignalFormatter.GetProcessLineage(tinfo2, lineage);
 
   int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
   int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
@@ -123,22 +126,24 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentWithPid0Test) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get());
 
-  auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo = new sinsp_threadinfo(inspector.get());
   tinfo->m_pid = 0;
   tinfo->m_tid = 0;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
   tinfo->m_exepath = "asdf";
-  auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo2 = new sinsp_threadinfo(inspector.get());
   tinfo2->m_pid = 1;
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 0;
   tinfo2->m_vpid = 2;
   tinfo2->m_exepath = "qwerty";
-  inspector->add_thread(tinfo.get());
-  inspector->add_thread(tinfo2.get());
+  inspector->add_thread(tinfo);
+  inspector->add_thread(tinfo2);
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
-  processSignalFormatter.GetProcessLineage(tinfo2.get(), lineage);
+  processSignalFormatter.GetProcessLineage(tinfo2, lineage);
 
   int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
   int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
@@ -161,24 +166,26 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentWithSameNameTest) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get());
 
-  auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo = new sinsp_threadinfo(inspector.get());
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
   tinfo->m_user.uid = 43;
   tinfo->m_exepath = "asdf";
-  auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo2 = new sinsp_threadinfo(inspector.get());
   tinfo2->m_pid = 1;
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
   tinfo2->m_user.uid = 42;
   tinfo2->m_exepath = "asdf";
-  inspector->add_thread(tinfo.get());
-  inspector->add_thread(tinfo2.get());
+  inspector->add_thread(tinfo);
+  inspector->add_thread(tinfo2);
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
-  processSignalFormatter.GetProcessLineage(tinfo2.get(), lineage);
+  processSignalFormatter.GetProcessLineage(tinfo2, lineage);
 
   int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
   int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
@@ -204,7 +211,8 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get());
 
-  auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo = new sinsp_threadinfo(inspector.get());
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
@@ -212,7 +220,8 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
   tinfo->m_user.uid = 42;
   tinfo->m_exepath = "asdf";
 
-  auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo2 = new sinsp_threadinfo(inspector.get());
   tinfo2->m_pid = 1;
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
@@ -220,7 +229,8 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
   tinfo2->m_user.uid = 7;
   tinfo2->m_exepath = "qwerty";
 
-  auto tinfo3 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo3 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo3 = new sinsp_threadinfo(inspector.get());
   tinfo3->m_pid = 4;
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
@@ -228,12 +238,12 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
   tinfo3->m_user.uid = 8;
   tinfo3->m_exepath = "uiop";
 
-  inspector->add_thread(tinfo.get());
-  inspector->add_thread(tinfo2.get());
-  inspector->add_thread(tinfo3.get());
+  inspector->add_thread(tinfo);
+  inspector->add_thread(tinfo2);
+  inspector->add_thread(tinfo3);
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
-  processSignalFormatter.GetProcessLineage(tinfo3.get(), lineage);
+  processSignalFormatter.GetProcessLineage(tinfo3, lineage);
 
   int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
   int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
@@ -262,7 +272,8 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get());
 
-  auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo = new sinsp_threadinfo(inspector.get());
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
@@ -270,7 +281,8 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
   tinfo->m_user.uid = 42;
   tinfo->m_exepath = "asdf";
 
-  auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo2 = new sinsp_threadinfo(inspector.get());
   tinfo2->m_pid = 1;
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
@@ -278,7 +290,8 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
   tinfo2->m_user.uid = 7;
   tinfo2->m_exepath = "asdf";
 
-  auto tinfo3 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo3 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo3 = new sinsp_threadinfo(inspector.get());
   tinfo3->m_pid = 4;
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
@@ -286,12 +299,12 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
   tinfo3->m_user.uid = 8;
   tinfo3->m_exepath = "asdf";
 
-  inspector->add_thread(tinfo.get());
-  inspector->add_thread(tinfo2.get());
-  inspector->add_thread(tinfo3.get());
+  inspector->add_thread(tinfo);
+  inspector->add_thread(tinfo2);
+  inspector->add_thread(tinfo3);
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
-  processSignalFormatter.GetProcessLineage(tinfo3.get(), lineage);
+  processSignalFormatter.GetProcessLineage(tinfo3, lineage);
 
   int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
   int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
@@ -317,7 +330,8 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get());
 
-  auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo = new sinsp_threadinfo(inspector.get());
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
@@ -325,7 +339,8 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
   tinfo->m_user.uid = 42;
   tinfo->m_exepath = "asdf";
 
-  auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo2 = new sinsp_threadinfo(inspector.get());
   tinfo2->m_pid = 1;
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
@@ -333,7 +348,8 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
   tinfo2->m_user.uid = 7;
   tinfo2->m_exepath = "asdf";
 
-  auto tinfo3 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo3 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo3 = new sinsp_threadinfo(inspector.get());
   tinfo3->m_pid = 4;
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
@@ -341,7 +357,8 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
   tinfo3->m_user.uid = 8;
   tinfo3->m_exepath = "asdf";
 
-  auto tinfo4 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo4 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo4 = new sinsp_threadinfo(inspector.get());
   tinfo4->m_pid = 5;
   tinfo4->m_tid = 5;
   tinfo4->m_ptid = 4;
@@ -349,13 +366,13 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
   tinfo4->m_user.uid = 9;
   tinfo4->m_exepath = "qwerty";
 
-  inspector->add_thread(tinfo.get());
-  inspector->add_thread(tinfo2.get());
-  inspector->add_thread(tinfo3.get());
-  inspector->add_thread(tinfo4.get());
+  inspector->add_thread(tinfo);
+  inspector->add_thread(tinfo2);
+  inspector->add_thread(tinfo3);
+  inspector->add_thread(tinfo4);
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
-  processSignalFormatter.GetProcessLineage(tinfo4.get(), lineage);
+  processSignalFormatter.GetProcessLineage(tinfo4, lineage);
 
   int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
   int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
@@ -381,7 +398,8 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get());
 
-  auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo = new sinsp_threadinfo(inspector.get());
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
@@ -389,7 +407,8 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
   tinfo->m_user.uid = 42;
   tinfo->m_exepath = "qwerty";
 
-  auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo2 = new sinsp_threadinfo(inspector.get());
   tinfo2->m_pid = 1;
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
@@ -397,7 +416,8 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
   tinfo2->m_user.uid = 7;
   tinfo2->m_exepath = "asdf";
 
-  auto tinfo3 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo3 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo3 = new sinsp_threadinfo(inspector.get());
   tinfo3->m_pid = 4;
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
@@ -405,7 +425,8 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
   tinfo3->m_user.uid = 8;
   tinfo3->m_exepath = "asdf";
 
-  auto tinfo4 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo4 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo4 = new sinsp_threadinfo(inspector.get());
   tinfo4->m_pid = 5;
   tinfo4->m_tid = 5;
   tinfo4->m_ptid = 4;
@@ -413,13 +434,13 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
   tinfo4->m_user.uid = 9;
   tinfo4->m_exepath = "asdf";
 
-  inspector->add_thread(tinfo.get());
-  inspector->add_thread(tinfo2.get());
-  inspector->add_thread(tinfo3.get());
-  inspector->add_thread(tinfo4.get());
+  inspector->add_thread(tinfo);
+  inspector->add_thread(tinfo2);
+  inspector->add_thread(tinfo3);
+  inspector->add_thread(tinfo4);
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
-  processSignalFormatter.GetProcessLineage(tinfo4.get(), lineage);
+  processSignalFormatter.GetProcessLineage(tinfo4, lineage);
 
   int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
   int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
@@ -448,7 +469,8 @@ TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get());
 
-  auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo = new sinsp_threadinfo(inspector.get());
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
@@ -456,7 +478,8 @@ TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
   tinfo->m_user.uid = 42;
   tinfo->m_exepath = "qwerty";
 
-  auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo2 = new sinsp_threadinfo(inspector.get());
   tinfo2->m_pid = 1;
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
@@ -464,7 +487,8 @@ TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
   tinfo2->m_user.uid = 7;
   tinfo2->m_exepath = "asdf";
 
-  auto tinfo3 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo3 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo3 = new sinsp_threadinfo(inspector.get());
   tinfo3->m_pid = 4;
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
@@ -472,7 +496,8 @@ TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
   tinfo3->m_user.uid = 8;
   tinfo3->m_exepath = "uiop";
 
-  auto tinfo4 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo4 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo4 = new sinsp_threadinfo(inspector.get());
   tinfo4->m_pid = 5;
   tinfo4->m_tid = 5;
   tinfo4->m_ptid = 555;
@@ -480,13 +505,13 @@ TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
   tinfo4->m_user.uid = 9;
   tinfo4->m_exepath = "jkl;";
 
-  inspector->add_thread(tinfo.get());
-  inspector->add_thread(tinfo2.get());
-  inspector->add_thread(tinfo3.get());
-  inspector->add_thread(tinfo4.get());
+  inspector->add_thread(tinfo);
+  inspector->add_thread(tinfo2);
+  inspector->add_thread(tinfo3);
+  inspector->add_thread(tinfo4);
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
-  processSignalFormatter.GetProcessLineage(tinfo3.get(), lineage);
+  processSignalFormatter.GetProcessLineage(tinfo3, lineage);
 
   int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
   int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
@@ -515,7 +540,8 @@ TEST(ProcessSignalFormatterTest, CountTwoCounterCallsTest) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get());
 
-  auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo = new sinsp_threadinfo(inspector.get());
   tinfo->m_pid = 1;
   tinfo->m_tid = 1;
   tinfo->m_ptid = 555;
@@ -523,12 +549,13 @@ TEST(ProcessSignalFormatterTest, CountTwoCounterCallsTest) {
   tinfo->m_user.uid = 9;
   tinfo->m_exepath = "jkl;";
 
-  inspector->add_thread(tinfo.get());
+  inspector->add_thread(tinfo);
   std::vector<LineageInfo> lineage;
 
-  processSignalFormatter.GetProcessLineage(tinfo.get(), lineage);
+  processSignalFormatter.GetProcessLineage(tinfo, lineage);
 
-  auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo2 = new sinsp_threadinfo(inspector.get());
   tinfo2->m_pid = 2;
   tinfo2->m_tid = 2;
   tinfo2->m_ptid = 555;
@@ -536,10 +563,10 @@ TEST(ProcessSignalFormatterTest, CountTwoCounterCallsTest) {
   tinfo2->m_user.uid = 9;
   tinfo2->m_exepath = "jkl;";
 
-  inspector->add_thread(tinfo2.get());
+  inspector->add_thread(tinfo2);
   std::vector<LineageInfo> lineage2;
 
-  processSignalFormatter.GetProcessLineage(tinfo.get(), lineage2);
+  processSignalFormatter.GetProcessLineage(tinfo, lineage2);
 
   int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
   int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
@@ -562,7 +589,8 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get());
 
-  auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo = new sinsp_threadinfo(inspector.get());
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
@@ -571,7 +599,8 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
   tinfo->m_container_id = "";
   tinfo->m_exepath = "qwerty";
 
-  auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo2 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo2 = new sinsp_threadinfo(inspector.get());
   tinfo2->m_pid = 1;
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
@@ -580,7 +609,8 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
   tinfo2->m_container_id = "id";
   tinfo2->m_exepath = "asdf";
 
-  auto tinfo3 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  // auto tinfo3 = std::make_shared<sinsp_threadinfo>(inspector.get());
+  auto tinfo3 = new sinsp_threadinfo(inspector.get());
   tinfo3->m_pid = 4;
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
@@ -589,12 +619,12 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
   tinfo3->m_container_id = "id";
   tinfo3->m_exepath = "uiop";
 
-  inspector->add_thread(tinfo.get());
-  inspector->add_thread(tinfo2.get());
-  inspector->add_thread(tinfo3.get());
+  inspector->add_thread(tinfo);
+  inspector->add_thread(tinfo2);
+  inspector->add_thread(tinfo3);
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
-  processSignalFormatter.GetProcessLineage(tinfo3.get(), lineage);
+  processSignalFormatter.GetProcessLineage(tinfo3, lineage);
 
   int count = collector_stats.GetCounter(CollectorStats::process_lineage_counts);
   int total = collector_stats.GetCounter(CollectorStats::process_lineage_total);
