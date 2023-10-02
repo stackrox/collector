@@ -9,13 +9,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/boltdb/bolt"
 	"github.com/gonum/stat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/suites/mock_sensor"
+	"github.com/stackrox/collector/integration-tests/suites/types"
 )
 
 const (
@@ -27,15 +28,13 @@ const (
 	parentExecFilePathStr    = "ParentExecFilePath"
 
 	defaultWaitTickSeconds = 30 * time.Second
-
-	nilTimestamp = "(timestamp: nil Timestamp)"
 )
 
 type IntegrationTestSuiteBase struct {
 	suite.Suite
-	db        *bolt.DB
 	executor  common.Executor
 	collector *common.CollectorManager
+	sensor    *mock_sensor.MockSensor
 	metrics   map[string]float64
 }
 
@@ -55,6 +54,80 @@ type PerformanceResult struct {
 	CollectionMethod string
 	Metrics          map[string]float64
 	ContainerStats   []ContainerStat
+}
+
+// StartCollector will start the collector container and optionally
+// start the MockSensor, if disableGRPC is false.
+func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool) {
+	if !disableGRPC {
+		s.Sensor().Start()
+	}
+
+	s.Require().NoError(s.SetSelinuxPermissiveIfNeeded())
+	s.Require().NoError(s.Collector().Setup())
+	s.Require().NoError(s.Collector().Launch())
+
+	// wait for self-check process to guarantee collector is started
+	s.Sensor().WaitProcessesN(s.Collector().ContainerID, 30*time.Second, 1)
+}
+
+// StopCollector will tear down the collector container and stop
+// the MockSensor if it was started.
+func (s *IntegrationTestSuiteBase) StopCollector() {
+	s.Require().NoError(s.collector.TearDown())
+	if s.sensor != nil {
+		s.sensor.Stop()
+	}
+}
+
+// Collector returns the current collector object, or initializes a new
+// one if it is nil. This function can be used to get the object before
+// the container is launched, so that Collector settings can be adjusted
+// by individual test suites
+func (s *IntegrationTestSuiteBase) Collector() *common.CollectorManager {
+	if s.collector == nil {
+		s.collector = common.NewCollectorManager(s.Executor(), s.T().Name())
+	}
+	return s.collector
+}
+
+// Executor returns the current executor object, or initializes a new one
+// if it is nil.
+func (s *IntegrationTestSuiteBase) Executor() common.Executor {
+	if s.executor == nil {
+		s.executor = common.NewExecutor()
+	}
+	return s.executor
+}
+
+// Sensor returns the current mock sensor object, or initializes a new one
+// if it is nil.
+func (s *IntegrationTestSuiteBase) Sensor() *mock_sensor.MockSensor {
+	if s.sensor == nil {
+		s.sensor = mock_sensor.NewMockSensor(s.T().Name())
+	}
+	return s.sensor
+}
+
+// AddMetric wraps access to the metrics map, to avoid nil pointers
+// lazy initialization is necessary due to limitations around
+// suite setup.
+func (s *IntegrationTestSuiteBase) AddMetric(key string, value float64) {
+	if s.metrics == nil {
+		s.metrics = make(map[string]float64)
+	}
+
+	s.metrics[key] = value
+}
+
+// SetSelinuxPermissiveIfNeeded will disable SELinux enforcing mode
+// on platforms that require it, to enable all integration test components
+// to run correctly
+func (s *IntegrationTestSuiteBase) SetSelinuxPermissiveIfNeeded() error {
+	if s.isSelinuxPermissiveNeeded() {
+		return s.setSelinuxPermissive()
+	}
+	return nil
 }
 
 func (s *IntegrationTestSuiteBase) GetContainerStats() (stats []ContainerStat) {
@@ -79,8 +152,8 @@ func (s *IntegrationTestSuiteBase) PrintContainerStats(stats []ContainerStat) {
 		cpuStats[stat.Name] = append(cpuStats[stat.Name], stat.Cpu)
 	}
 	for name, cpu := range cpuStats {
-		s.metrics[fmt.Sprintf("%s_cpu_mean", name)] = stat.Mean(cpu, nil)
-		s.metrics[fmt.Sprintf("%s_cpu_stddev", name)] = stat.StdDev(cpu, nil)
+		s.AddMetric(fmt.Sprintf("%s_cpu_mean", name), stat.Mean(cpu, nil))
+		s.AddMetric(fmt.Sprintf("%s_cpu_stddev", name), stat.StdDev(cpu, nil))
 
 		fmt.Printf("CPU: Container %s, Mean %v, StdDev %v\n",
 			name, stat.Mean(cpu, nil), stat.StdDev(cpu, nil))
@@ -110,7 +183,7 @@ func (s *IntegrationTestSuiteBase) WritePerfResults(testName string, stats []Con
 	s.Require().NoError(err)
 }
 
-func (s *IntegrationTestSuiteBase) AssertProcessInfoEqual(expected, actual common.ProcessInfo) {
+func (s *IntegrationTestSuiteBase) AssertProcessInfoEqual(expected, actual types.ProcessInfo) {
 	assert := assert.New(s.T())
 
 	assert.Equal(expected.Name, actual.Name)
@@ -134,7 +207,7 @@ func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, erro
 	cmd = append(cmd, args...)
 
 	output, err := common.Retry(func() (string, error) {
-		return s.executor.Exec(cmd...)
+		return s.Executor().Exec(cmd...)
 	})
 
 	outLines := strings.Split(output, "\n")
@@ -155,7 +228,7 @@ func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, contain
 	for {
 		select {
 		case <-tick:
-			output, err := s.executor.Exec(cmd...)
+			output, err := s.Executor().Exec(cmd...)
 			outLines := strings.Split(output, "\n")
 			lastLine := outLines[len(outLines)-1]
 			if lastLine == common.ContainerShortID(containerID) {
@@ -176,45 +249,45 @@ func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, contain
 func (s *IntegrationTestSuiteBase) execContainer(containerName string, command []string) (string, error) {
 	cmd := []string{common.RuntimeCommand, "exec", containerName}
 	cmd = append(cmd, command...)
-	return s.executor.Exec(cmd...)
+	return s.Executor().Exec(cmd...)
 }
 
 func (s *IntegrationTestSuiteBase) execContainerShellScript(containerName string, shell string, script string, args ...string) (string, error) {
 	cmd := []string{common.RuntimeCommand, "exec", "-i", containerName, shell, "-s"}
 	cmd = append(cmd, args...)
-	return s.executor.ExecWithStdin(script, cmd...)
+	return s.Executor().ExecWithStdin(script, cmd...)
 }
 
 func (s *IntegrationTestSuiteBase) cleanupContainer(containers []string) {
 	for _, container := range containers {
-		s.executor.Exec(common.RuntimeCommand, "kill", container)
-		s.executor.Exec(common.RuntimeCommand, "rm", container)
+		s.Executor().Exec(common.RuntimeCommand, "kill", container)
+		s.Executor().Exec(common.RuntimeCommand, "rm", container)
 	}
 }
 
 func (s *IntegrationTestSuiteBase) stopContainers(containers ...string) {
 	for _, container := range containers {
-		s.executor.Exec(common.RuntimeCommand, "stop", "-t", config.StopTimeout(), container)
+		s.Executor().Exec(common.RuntimeCommand, "stop", "-t", config.StopTimeout(), container)
 	}
 }
 
 func (s *IntegrationTestSuiteBase) removeContainers(containers ...string) {
 	for _, container := range containers {
-		s.executor.Exec(common.RuntimeCommand, "rm", container)
+		s.Executor().Exec(common.RuntimeCommand, "rm", container)
 	}
 }
 
 func (s *IntegrationTestSuiteBase) containerLogs(containerName string) (string, error) {
-	return s.executor.Exec(common.RuntimeCommand, "logs", containerName)
+	return s.Executor().Exec(common.RuntimeCommand, "logs", containerName)
 }
 
 func (s *IntegrationTestSuiteBase) getIPAddress(containerName string) (string, error) {
-	stdoutStderr, err := s.executor.Exec(common.RuntimeCommand, "inspect", "--format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'", containerName)
+	stdoutStderr, err := s.Executor().Exec(common.RuntimeCommand, "inspect", "--format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'", containerName)
 	return strings.Replace(string(stdoutStderr), "'", "", -1), err
 }
 
 func (s *IntegrationTestSuiteBase) getPort(containerName string) (string, error) {
-	stdoutStderr, err := s.executor.Exec(common.RuntimeCommand, "inspect", "--format='{{json .NetworkSettings.Ports}}'", containerName)
+	stdoutStderr, err := s.Executor().Exec(common.RuntimeCommand, "inspect", "--format='{{json .NetworkSettings.Ports}}'", containerName)
 	if err != nil {
 		return "", err
 	}
@@ -232,150 +305,11 @@ func (s *IntegrationTestSuiteBase) getPort(containerName string) (string, error)
 	return "", fmt.Errorf("no port mapping found: %v %v", rawString, portMap)
 }
 
-func (s *IntegrationTestSuiteBase) GetProcesses(containerID string) ([]common.ProcessInfo, error) {
-	if s.db == nil {
-		return nil, fmt.Errorf("Db %v is nil", s.db)
-	}
-
-	processes := make([]common.ProcessInfo, 0)
-	err := s.db.View(func(tx *bolt.Tx) error {
-		process := tx.Bucket([]byte(processBucket))
-		if process == nil {
-			return fmt.Errorf("Process bucket was not found!")
-		}
-		container := process.Bucket([]byte(containerID))
-		if container == nil {
-			return fmt.Errorf("Container bucket %s not found!", containerID)
-		}
-
-		return container.ForEach(func(k, v []byte) error {
-			pinfo, err := common.NewProcessInfo(string(v))
-			if err != nil {
-				return err
-			}
-
-			if strings.HasPrefix(pinfo.ExePath, "/proc/self") {
-				//
-				// There exists a potential race condition for the driver
-				// to capture very early container process events.
-				//
-				// This is known in falco, and somewhat documented here:
-				//     https://github.com/falcosecurity/falco/blob/555bf9971cdb79318917949a5e5f9bab5293b5e2/rules/falco_rules.yaml#L1961
-				//
-				// It is also filtered in sensor here:
-				//    https://github.com/stackrox/stackrox/blob/4d3fb539547d1935a35040e4a4e8c258a53a92e4/sensor/common/signal/signal_service.go#L90
-				//
-				// Further details can be found here https://issues.redhat.com/browse/ROX-11544
-				//
-				return nil
-			}
-
-			processes = append(processes, *pinfo)
-			return nil
-		})
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	return processes, nil
-}
-
-func (s *IntegrationTestSuiteBase) GetNetworks(containerID string) ([]common.NetworkInfo, error) {
-	if s.db == nil {
-		return nil, fmt.Errorf("Db %v is nil", s.db)
-	}
-
-	networks := make([]common.NetworkInfo, 0)
-	err := s.db.View(func(tx *bolt.Tx) error {
-		network := tx.Bucket([]byte(networkBucket))
-		if network == nil {
-			return fmt.Errorf("Network bucket was not found!")
-		}
-		container := network.Bucket([]byte(containerID))
-		if container == nil {
-			return fmt.Errorf("Container bucket %s not found!", containerID)
-		}
-
-		return container.ForEach(func(k, v []byte) error {
-			ninfo, err := common.NewNetworkInfo(string(v))
-			if err != nil {
-				return err
-			}
-
-			networks = append(networks, *ninfo)
-			return nil
-		})
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	return networks, nil
-}
-
-func (s *IntegrationTestSuiteBase) GetEndpoints(containerID string) ([]common.EndpointInfo, error) {
-	if s.db == nil {
-		return nil, fmt.Errorf("Db %v is nil", s.db)
-	}
-
-	endpoints := make([]common.EndpointInfo, 0)
-	err := s.db.View(func(tx *bolt.Tx) error {
-		endpoint := tx.Bucket([]byte(endpointBucket))
-		if endpoint == nil {
-			return fmt.Errorf("Endpoint bucket was not found!")
-		}
-		container := endpoint.Bucket([]byte(containerID))
-		if container == nil {
-			return fmt.Errorf("Container bucket %s not found!", containerID)
-		}
-
-		return container.ForEach(func(k, v []byte) error {
-			einfo, err := common.NewEndpointInfo(string(v))
-			if err != nil {
-				return err
-			}
-
-			endpoints = append(endpoints, *einfo)
-			return nil
-		})
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	return endpoints, nil
-}
-
-func (s *IntegrationTestSuiteBase) GetLineageInfo(processName string, key string, bucket string) (val string, err error) {
-	if s.db == nil {
-		return "", fmt.Errorf("Db %v is nil", s.db)
-	}
-	err = s.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(bucket))
-
-		if b == nil {
-			return fmt.Errorf("Bucket %s was not found", bucket)
-		}
-
-		processBucket := b.Bucket([]byte(processName))
-		if processBucket == nil {
-			return fmt.Errorf("Process bucket %s was not found", processName)
-		}
-		val = string(processBucket.Get([]byte(key)))
-		return nil
-	})
-	return
-}
-
 func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	benchmarkName := "benchmark"
 	benchmarkImage := config.Images().QaImageByKey("performance-phoronix")
 
-	err := s.executor.PullImage(benchmarkImage)
+	err := s.Executor().PullImage(benchmarkImage)
 	s.Require().NoError(err)
 
 	benchmarkArgs := []string{
@@ -398,7 +332,7 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 		fmt.Printf("Benchmark Time: %s\n", matches[1])
 		f, err := strconv.ParseFloat(string(matches[1]), 64)
 		s.Require().NoError(err)
-		s.metrics["hackbench_avg_time"] = f
+		s.AddMetric("hackbench_avg_time", f)
 	} else {
 		fmt.Printf("Benchmark Time: Not found! Logs: %s\n", benchmarkLogs)
 		assert.FailNow(s.T(), "Benchmark Time not found")
@@ -408,7 +342,7 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
 	name := "jsonlabel"
 	image := config.Images().QaImageByKey("performance-json-label")
-	err := s.executor.PullImage(image)
+	err := s.Executor().PullImage(image)
 	s.Require().NoError(err)
 	args := []string{
 		name,
@@ -425,7 +359,7 @@ func (s *IntegrationTestSuiteBase) StartContainerStats() {
 	image := config.Images().QaImageByKey("performance-stats")
 	args := []string{name, "-v", common.RuntimeSocket + ":/var/run/docker.sock", image}
 
-	err := s.executor.PullImage(image)
+	err := s.Executor().PullImage(image)
 	s.Require().NoError(err)
 
 	_, err = s.launchContainer(args...)
@@ -433,19 +367,42 @@ func (s *IntegrationTestSuiteBase) StartContainerStats() {
 }
 
 func (s *IntegrationTestSuiteBase) waitForFileToBeDeleted(file string) error {
-	count := 0
-	maxCount := 10
+	timer := time.After(10 * time.Second)
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
 
-	output, _ := s.executor.Exec("stat", file, "2>&1")
-	fmt.Println(output)
-	for !strings.Contains(output, "No such file or directory") {
-		time.Sleep(1 * time.Second)
-		count += 1
-		if count == maxCount {
+	for {
+		select {
+		case <-timer:
 			return fmt.Errorf("Timed out waiting for %s to be deleted", file)
+		case <-ticker.C:
+			if config.HostInfo().Kind == "local" {
+				if _, err := os.Stat(file); os.IsNotExist(err) {
+					return nil
+				}
+			} else {
+				output, _ := s.Executor().Exec("stat", file)
+				if strings.Contains(output, "No such file or directory") {
+					return nil
+				}
+			}
 		}
-		output, _ = s.executor.Exec("stat", file, "2>&1")
 	}
+}
 
-	return nil
+// isSelinuxPermissiveNeeded returns whether or not a given VM requires
+// SELinux permissive mode. e.g. rhel, or fedora-coreos
+func (s *IntegrationTestSuiteBase) isSelinuxPermissiveNeeded() bool {
+	vmType := config.VMInfo().Config
+	return strings.Contains(vmType, "coreos") || strings.Contains(vmType, "rhcos")
+}
+
+// setSelinuxPermissive sets the VM's SELinux mode to permissive
+func (s *IntegrationTestSuiteBase) setSelinuxPermissive() error {
+	cmd := []string{"sudo", "setenforce", "0"}
+	_, err := s.Executor().Exec(cmd...)
+	if err != nil {
+		fmt.Printf("Error: Unable to set SELinux to permissive. %v\n", err)
+	}
+	return err
 }

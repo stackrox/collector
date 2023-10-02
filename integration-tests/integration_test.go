@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/stackrox/collector/integration-tests/suites"
-	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/suites/types"
 )
 
 func TestProcessNetwork(t *testing.T) {
@@ -40,7 +40,8 @@ func TestRepeatedNetworkFlow(t *testing.T) {
 		NumIter:                11,
 		SleepBetweenCurlTime:   2,
 		SleepBetweenIterations: 1,
-		ExpectedReports:        []bool{true, false},
+		ExpectedActive:         1,
+		ExpectedInactive:       1,
 	}
 	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
@@ -56,7 +57,8 @@ func TestRepeatedNetworkFlowWithZeroAfterglowPeriod(t *testing.T) {
 		NumIter:                3,
 		SleepBetweenCurlTime:   3,
 		SleepBetweenIterations: 1,
-		ExpectedReports:        []bool{false, false, false},
+		ExpectedActive:         0,
+		ExpectedInactive:       3,
 	}
 	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
@@ -71,7 +73,8 @@ func TestRepeatedNetworkFlowThreeCurlsNoAfterglow(t *testing.T) {
 		NumIter:                3,
 		SleepBetweenCurlTime:   6,
 		SleepBetweenIterations: 1,
-		ExpectedReports:        []bool{false, false, false},
+		ExpectedActive:         0,
+		ExpectedInactive:       3,
 	}
 	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
@@ -126,22 +129,22 @@ func TestConnectionsAndEndpointsNormal(t *testing.T) {
 		Server: suites.Container{
 			Name: "socat-server-0",
 			Cmd:  "socat TCP4-LISTEN:40,reuseaddr,fork - &",
-			ExpectedNetwork: []common.NetworkInfo{
+			ExpectedNetwork: []types.NetworkInfo{
 				{
 					LocalAddress:   ":40",
 					RemoteAddress:  "CLIENT_IP",
 					Role:           "ROLE_SERVER",
 					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-					CloseTimestamp: "(timestamp: nil Timestamp)",
+					CloseTimestamp: types.NilTimestamp,
 				},
 			},
-			ExpectedEndpoints: []common.EndpointInfo{
+			ExpectedEndpoints: []types.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
-					Address: &common.ListenAddress{
-						AddressData: `"\000\000\000\000"`,
+					Address: &types.ListenAddress{
+						AddressData: "\x00\x00\x00\x00",
 						Port:        40,
-						IpNetwork:   `"\000\000\000\000 " `,
+						IpNetwork:   "\x00\x00\x00\x00 ",
 					},
 				},
 			},
@@ -149,13 +152,13 @@ func TestConnectionsAndEndpointsNormal(t *testing.T) {
 		Client: suites.Container{
 			Name: "socat-client-0",
 			Cmd:  "echo hello | socat - TCP4:SERVER_IP:40",
-			ExpectedNetwork: []common.NetworkInfo{
+			ExpectedNetwork: []types.NetworkInfo{
 				{
 					LocalAddress:   "",
 					RemoteAddress:  "SERVER_IP:40",
 					Role:           "ROLE_CLIENT",
 					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-					CloseTimestamp: "(timestamp: nil Timestamp)",
+					CloseTimestamp: types.NilTimestamp,
 				},
 			},
 			ExpectedEndpoints: nil,
@@ -171,22 +174,22 @@ func TestConnectionsAndEndpointsHighLowPorts(t *testing.T) {
 		Server: suites.Container{
 			Name: "socat-server-1",
 			Cmd:  "socat TCP4-LISTEN:40000,reuseaddr,fork - &",
-			ExpectedNetwork: []common.NetworkInfo{
+			ExpectedNetwork: []types.NetworkInfo{
 				{
 					LocalAddress:   ":40000",
 					RemoteAddress:  "CLIENT_IP",
 					Role:           "ROLE_SERVER",
 					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-					CloseTimestamp: "(timestamp: nil Timestamp)",
+					CloseTimestamp: types.NilTimestamp,
 				},
 			},
-			ExpectedEndpoints: []common.EndpointInfo{
+			ExpectedEndpoints: []types.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
-					Address: &common.ListenAddress{
-						AddressData: `"\000\000\000\000"`,
+					Address: &types.ListenAddress{
+						AddressData: "\x00\x00\x00\x00",
 						Port:        40000,
-						IpNetwork:   `"\000\000\000\000 " `,
+						IpNetwork:   "\x00\x00\x00\x00 ",
 					},
 				},
 			},
@@ -194,13 +197,13 @@ func TestConnectionsAndEndpointsHighLowPorts(t *testing.T) {
 		Client: suites.Container{
 			Name: "socat-client-1",
 			Cmd:  "echo hello | socat - TCP4:SERVER_IP:40000,sourceport=10000",
-			ExpectedNetwork: []common.NetworkInfo{
+			ExpectedNetwork: []types.NetworkInfo{
 				{
 					LocalAddress:   "",
 					RemoteAddress:  "SERVER_IP:40000",
 					Role:           "ROLE_CLIENT",
 					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-					CloseTimestamp: "(timestamp: nil Timestamp)",
+					CloseTimestamp: types.NilTimestamp,
 				},
 			},
 			ExpectedEndpoints: nil,
@@ -216,22 +219,22 @@ func TestConnectionsAndEndpointsServerHigh(t *testing.T) {
 		Server: suites.Container{
 			Name: "socat-server-2",
 			Cmd:  "socat TCP4-LISTEN:60999,reuseaddr,fork - &",
-			ExpectedNetwork: []common.NetworkInfo{
+			ExpectedNetwork: []types.NetworkInfo{
 				{
 					LocalAddress:   ":60999",
 					RemoteAddress:  "CLIENT_IP",
 					Role:           "ROLE_SERVER",
 					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-					CloseTimestamp: "(timestamp: nil Timestamp)",
+					CloseTimestamp: types.NilTimestamp,
 				},
 			},
-			ExpectedEndpoints: []common.EndpointInfo{
+			ExpectedEndpoints: []types.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
-					Address: &common.ListenAddress{
-						AddressData: `"\000\000\000\000"`,
+					Address: &types.ListenAddress{
+						AddressData: "\x00\x00\x00\x00",
 						Port:        60999,
-						IpNetwork:   `"\000\000\000\000 " `,
+						IpNetwork:   "\x00\x00\x00\x00 ",
 					},
 				},
 			},
@@ -239,13 +242,13 @@ func TestConnectionsAndEndpointsServerHigh(t *testing.T) {
 		Client: suites.Container{
 			Name: "socat-client-2",
 			Cmd:  "echo hello | socat - TCP4:SERVER_IP:60999",
-			ExpectedNetwork: []common.NetworkInfo{
+			ExpectedNetwork: []types.NetworkInfo{
 				{
 					LocalAddress:   "",
 					RemoteAddress:  "SERVER_IP:60999",
 					Role:           "ROLE_CLIENT",
 					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-					CloseTimestamp: "(timestamp: nil Timestamp)",
+					CloseTimestamp: types.NilTimestamp,
 				},
 			},
 			ExpectedEndpoints: nil,
@@ -261,22 +264,22 @@ func TestConnectionsAndEndpointsSourcePort(t *testing.T) {
 		Server: suites.Container{
 			Name: "socat-server-1",
 			Cmd:  "socat TCP4-LISTEN:10000,reuseaddr,fork - &",
-			ExpectedNetwork: []common.NetworkInfo{
+			ExpectedNetwork: []types.NetworkInfo{
 				{
 					LocalAddress:   ":10000",
 					RemoteAddress:  "CLIENT_IP",
 					Role:           "ROLE_SERVER",
 					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-					CloseTimestamp: "(timestamp: nil Timestamp)",
+					CloseTimestamp: types.NilTimestamp,
 				},
 			},
-			ExpectedEndpoints: []common.EndpointInfo{
+			ExpectedEndpoints: []types.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
-					Address: &common.ListenAddress{
-						AddressData: `"\000\000\000\000"`,
+					Address: &types.ListenAddress{
+						AddressData: "\x00\x00\x00\x00",
 						Port:        10000,
-						IpNetwork:   `"\000\000\000\000 " `,
+						IpNetwork:   "\x00\x00\x00\x00 ",
 					},
 				},
 			},
@@ -284,13 +287,13 @@ func TestConnectionsAndEndpointsSourcePort(t *testing.T) {
 		Client: suites.Container{
 			Name: "socat-client-1",
 			Cmd:  "echo hello | socat - TCP4:SERVER_IP:10000,sourceport=40000",
-			ExpectedNetwork: []common.NetworkInfo{
+			ExpectedNetwork: []types.NetworkInfo{
 				{
 					LocalAddress:   "",
 					RemoteAddress:  "SERVER_IP:10000",
 					Role:           "ROLE_CLIENT",
 					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-					CloseTimestamp: "(timestamp: nil Timestamp)",
+					CloseTimestamp: types.NilTimestamp,
 				},
 			},
 			ExpectedEndpoints: nil,
@@ -307,13 +310,13 @@ func TestConnectionsAndEndpointsUDPNormal(t *testing.T) {
 			Cmd:  "socat UDP-LISTEN:53,reuseaddr,fork - &",
 			// TODO UDP connections are not always reported on the server side
 			ExpectedNetwork: nil,
-			// ExpectedNetwork: []common.NetworkInfo{
+			// ExpectedNetwork: []types.NetworkInfo{
 			// 	{
 			// 		LocalAddress:   ":53",
 			// 		RemoteAddress:  "CLIENT_IP",
 			// 		Role:           "ROLE_SERVER",
 			// 		SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-			// 		CloseTimestamp: "(timestamp: nil Timestamp)",
+			// 		CloseTimestamp: types.NilTimestamp,
 			// 	},
 			// },
 			// TODO UDP listening endpoints should be reported
@@ -322,13 +325,13 @@ func TestConnectionsAndEndpointsUDPNormal(t *testing.T) {
 		Client: suites.Container{
 			Name: "socat-client-udp",
 			Cmd:  "echo hello | socat - UDP:SERVER_IP:53",
-			ExpectedNetwork: []common.NetworkInfo{
+			ExpectedNetwork: []types.NetworkInfo{
 				{
 					LocalAddress:   "",
 					RemoteAddress:  "SERVER_IP:53",
 					Role:           "ROLE_CLIENT",
 					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-					CloseTimestamp: "(timestamp: nil Timestamp)",
+					CloseTimestamp: types.NilTimestamp,
 				},
 			},
 			ExpectedEndpoints: nil,
@@ -345,13 +348,13 @@ func TestConnectionsAndEndpointsUDPNoReuseaddr(t *testing.T) {
 			Cmd:  "socat UDP-LISTEN:53,fork - &",
 			// TODO UDP connections are not always reported on the server side
 			ExpectedNetwork: nil,
-			// ExpectedNetwork: []common.NetworkInfo{
+			// ExpectedNetwork: []types.NetworkInfo{
 			// 	{
 			// 		LocalAddress:   ":53",
 			// 		RemoteAddress:  "CLIENT_IP",
 			// 		Role:           "ROLE_SERVER",
 			// 		SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-			// 		CloseTimestamp: "(timestamp: nil Timestamp)",
+			// 		CloseTimestamp: types.NilTimestamp,
 			// 	},
 			// },
 			// TODO UDP listening endpoints should be reported
@@ -360,13 +363,13 @@ func TestConnectionsAndEndpointsUDPNoReuseaddr(t *testing.T) {
 		Client: suites.Container{
 			Name: "socat-client-udp",
 			Cmd:  "echo hello | socat - UDP:SERVER_IP:53",
-			ExpectedNetwork: []common.NetworkInfo{
+			ExpectedNetwork: []types.NetworkInfo{
 				{
 					LocalAddress:   "",
 					RemoteAddress:  "SERVER_IP:53",
 					Role:           "ROLE_CLIENT",
 					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-					CloseTimestamp: "(timestamp: nil Timestamp)",
+					CloseTimestamp: types.NilTimestamp,
 				},
 			},
 			ExpectedEndpoints: nil,
@@ -383,13 +386,13 @@ func TestConnectionsAndEndpointsUDPNoFork(t *testing.T) {
 			Cmd:  "socat UDP-LISTEN:53 - &",
 			// TODO UDP connections are not always reported on the server side
 			ExpectedNetwork: nil,
-			// ExpectedNetwork: []common.NetworkInfo{
+			// ExpectedNetwork: []types.NetworkInfo{
 			// 	{
 			// 		LocalAddress:   ":53",
 			// 		RemoteAddress:  "CLIENT_IP",
 			// 		Role:           "ROLE_SERVER",
 			// 		SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-			// 		CloseTimestamp: "(timestamp: nil Timestamp)",
+			// 		CloseTimestamp: types.NilTimestamp,
 			// 	},
 			// },
 			// TODO UDP listening endpoints should be reported
@@ -398,13 +401,13 @@ func TestConnectionsAndEndpointsUDPNoFork(t *testing.T) {
 		Client: suites.Container{
 			Name: "socat-client-udp",
 			Cmd:  "echo hello | socat - UDP:SERVER_IP:53",
-			ExpectedNetwork: []common.NetworkInfo{
+			ExpectedNetwork: []types.NetworkInfo{
 				{
 					LocalAddress:   "",
 					RemoteAddress:  "SERVER_IP:53",
 					Role:           "ROLE_CLIENT",
 					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-					CloseTimestamp: "(timestamp: nil Timestamp)",
+					CloseTimestamp: types.NilTimestamp,
 				},
 			},
 			ExpectedEndpoints: nil,
@@ -451,4 +454,8 @@ func TestAsyncConnectionSuccessWithDisableTracking(t *testing.T) {
 		ExpectToSeeTheConnection:        true,
 	}
 	suite.Run(t, asyncConnection)
+}
+
+func TestCollectorStartup(t *testing.T) {
+	suite.Run(t, new(suites.CollectorStartupTestSuite))
 }

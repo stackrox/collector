@@ -4,31 +4,24 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/user"
 	"path/filepath"
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
-
-	"github.com/boltdb/bolt"
-
 	"github.com/stackrox/collector/integration-tests/suites/config"
 )
 
 type CollectorManager struct {
-	executor          Executor
-	Mounts            map[string]string
-	Env               map[string]string
-	DBPath            string
-	DBPathRemote      string
-	CollectorOutput   string
-	CollectorImage    string
-	GRPCServerImage   string
-	DisableGrpcServer bool
-	BootstrapOnly     bool
-	TestName          string
-	CoreDumpFile      string
-	VmConfig          string
+	executor        Executor
+	Mounts          map[string]string
+	Env             map[string]string
+	CollectorOutput string
+	CollectorImage  string
+	BootstrapOnly   bool
+	TestName        string
+	CoreDumpFile    string
+	VmConfig        string
+	ContainerID     string
 }
 
 func NewCollectorManager(e Executor, name string) *CollectorManager {
@@ -68,46 +61,22 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 	vm_config := config.VMInfo().Config
 
 	return &CollectorManager{
-		DBPathRemote:      "/tmp/collector-test.db",
-		DBPath:            "/tmp/collector-test-" + vm_config + "-" + collectionMethod + ".db",
-		executor:          e,
-		DisableGrpcServer: false,
-		BootstrapOnly:     false,
-		CollectorImage:    image_store.CollectorImage(),
-		GRPCServerImage:   image_store.ImageByKey("grpc-server"),
-		Env:               env,
-		Mounts:            mounts,
-		TestName:          name,
-		CoreDumpFile:      "/tmp/core.out",
-		VmConfig:          vm_config,
+		executor:       e,
+		BootstrapOnly:  false,
+		CollectorImage: image_store.CollectorImage(),
+		Env:            env,
+		Mounts:         mounts,
+		TestName:       name,
+		CoreDumpFile:   "/tmp/core.out",
+		VmConfig:       vm_config,
 	}
 }
 
 func (c *CollectorManager) Setup() error {
-	if err := c.executor.PullImage(c.CollectorImage); err != nil {
-		return err
-	}
-
-	if !c.DisableGrpcServer {
-		if err := c.executor.PullImage(c.GRPCServerImage); err != nil {
-			return err
-		}
-
-		// remove previous db file
-		if _, err := c.executor.Exec("sudo", "rm", "-fv", c.DBPath); err != nil {
-			return err
-		}
-	}
-	return nil
+	return c.executor.PullImage(c.CollectorImage)
 }
 
 func (c *CollectorManager) Launch() error {
-	if !c.DisableGrpcServer {
-		err := c.launchGRPCServer()
-		if err != nil {
-			return err
-		}
-	}
 	return c.launchCollector()
 }
 
@@ -116,11 +85,13 @@ func (c *CollectorManager) TearDown() error {
 	if coreDumpErr != nil {
 		return coreDumpErr
 	}
+
 	isRunning, err := c.executor.IsContainerRunning("collector")
 	if err != nil {
 		fmt.Println("Error: Checking if container running")
 		return err
 	}
+
 	if !isRunning {
 		c.captureLogs("collector")
 		// Check if collector container segfaulted or exited with error
@@ -137,23 +108,8 @@ func (c *CollectorManager) TearDown() error {
 		c.captureLogs("collector")
 		c.killContainer("collector")
 	}
-	if !c.DisableGrpcServer {
-		c.captureLogs("grpc-server")
-		if _, err := c.executor.CopyFromHost(c.DBPathRemote, c.DBPath); err != nil {
-			return err
-		}
-		c.killContainer("grpc-server")
-	}
-	return nil
-}
 
-func (c *CollectorManager) BoltDB() (db *bolt.DB, err error) {
-	opts := &bolt.Options{ReadOnly: true}
-	db, err = bolt.Open(c.DBPath, 0600, opts)
-	if err != nil {
-		fmt.Printf("Permission error. %v\n", err)
-	}
-	return db, err
+	return nil
 }
 
 // These two methods might be useful in the future. I used them for debugging
@@ -169,26 +125,6 @@ func (c *CollectorManager) getAllContainers() (string, error) {
 	containers, err := c.executor.Exec(cmd...)
 
 	return containers, err
-}
-
-func (c *CollectorManager) launchGRPCServer() error {
-	user, _ := user.Current()
-	selinuxErr := setSelinuxPermissiveIfNeeded()
-	if selinuxErr != nil {
-		return selinuxErr
-	}
-	cmd := []string{RuntimeCommand, "run",
-		"-d",
-		"--rm",
-		"--name", "grpc-server",
-		"--network=host",
-		"--privileged",
-		"-v", "/tmp:/tmp:rw",
-		"--user", user.Uid + ":" + user.Gid,
-		c.GRPCServerImage,
-	}
-	_, err := c.executor.Exec(cmd...)
-	return err
 }
 
 func (c *CollectorManager) launchCollector() error {
@@ -226,6 +162,9 @@ func (c *CollectorManager) launchCollector() error {
 
 	output, err := c.executor.Exec(cmd...)
 	c.CollectorOutput = output
+
+	outLines := strings.Split(output, "\n")
+	c.ContainerID = ContainerShortID(string(outLines[len(outLines)-1]))
 	return err
 }
 
@@ -261,7 +200,7 @@ func (c *CollectorManager) killContainer(name string) error {
 }
 
 func (c *CollectorManager) stopContainer(name string) error {
-	_, err := c.executor.Exec(RuntimeCommand, "stop", "--time", "100", name)
+	_, err := c.executor.Exec(RuntimeCommand, "stop", name)
 	return err
 }
 

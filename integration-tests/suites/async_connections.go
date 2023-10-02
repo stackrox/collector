@@ -30,25 +30,18 @@ type AsyncConnectionTestSuite struct {
  *     a dummy address.
  */
 func (s *AsyncConnectionTestSuite) SetupSuite() {
-
-	s.metrics = map[string]float64{}
-	s.executor = common.NewExecutor()
 	s.StartContainerStats()
-	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
+
+	collector := s.Collector()
 
 	// we need a short scrape interval to have it trigger after the connection is closed.
-	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
+	collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
 
 	if s.DisableConnectionStatusTracking {
-		s.collector.Env["ROX_COLLECT_CONNECTION_STATUS"] = "false"
+		collector.Env["ROX_COLLECT_CONNECTION_STATUS"] = "false"
 	}
 
-	err := s.collector.Setup()
-	s.Require().NoError(err)
-
-	err = s.collector.Launch()
-	s.Require().NoError(err)
-	time.Sleep(30 * time.Second) // TODO use readiness
+	s.StartCollector(false)
 
 	image_store := config.Images()
 
@@ -73,15 +66,10 @@ func (s *AsyncConnectionTestSuite) SetupSuite() {
 	s.clientContainer = common.ContainerShortID(containerID)
 
 	time.Sleep(10 * time.Second) // give some time to the connection to fail
-
-	err = s.collector.TearDown()
-	s.Require().NoError(err)
-
-	s.db, err = s.collector.BoltDB()
-	s.Require().NoError(err)
 }
 
 func (s *AsyncConnectionTestSuite) TearDownSuite() {
+	s.StopCollector()
 	s.cleanupContainer([]string{"server", "client"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
@@ -89,15 +77,13 @@ func (s *AsyncConnectionTestSuite) TearDownSuite() {
 }
 
 func (s *AsyncConnectionTestSuite) TestNetworkFlows() {
-	networkInfos, err := s.GetNetworks(s.clientContainer)
+	networkInfos := s.Sensor().Connections(s.clientContainer)
 
 	if s.ExpectToSeeTheConnection {
 		// expect one connection
-		s.Require().NoError(err)
-
 		assert.Equal(s.T(), 1, len(networkInfos))
 	} else {
 		// expect no connections at all
-		s.Require().Error(err)
+		assert.Equal(s.T(), 0, len(networkInfos))
 	}
 }

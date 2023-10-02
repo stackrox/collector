@@ -2,11 +2,9 @@ package suites
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
 	"time"
 
-	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stackrox/collector/integration-tests/suites/config"
 	"github.com/stretchr/testify/assert"
 )
@@ -28,28 +26,21 @@ type RepeatedNetworkFlowTestSuite struct {
 	NumIter                int
 	SleepBetweenCurlTime   int
 	SleepBetweenIterations int
-	ExpectedReports        []bool // An array of booleans representing the connection. true is active. fasle is inactive.
-	ObservedReports        []bool
+	ExpectedActive         int // number of active connections expected
+	ExpectedInactive       int // number of inactive connections expected
 }
 
 // Launches collector
 // Launches gRPC server in insecure mode
 // Launches nginx container
 func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
-	s.metrics = map[string]float64{}
-	s.executor = common.NewExecutor()
 	s.StartContainerStats()
-	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
 
-	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":` + strconv.Itoa(s.ScrapeInterval) + `}`
-	s.collector.Env["ROX_AFTERGLOW_PERIOD"] = strconv.Itoa(s.AfterglowPeriod)
-	s.collector.Env["ROX_ENABLE_AFTERGLOW"] = strconv.FormatBool(s.EnableAfterglow)
+	s.Collector().Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":` + strconv.Itoa(s.ScrapeInterval) + `}`
+	s.Collector().Env["ROX_AFTERGLOW_PERIOD"] = strconv.Itoa(s.AfterglowPeriod)
+	s.Collector().Env["ROX_ENABLE_AFTERGLOW"] = strconv.FormatBool(s.EnableAfterglow)
 
-	err := s.collector.Setup()
-	s.Require().NoError(err)
-
-	err = s.collector.Launch()
-	s.Require().NoError(err)
+	s.StartCollector(false)
 
 	image_store := config.Images()
 	scheduled_curls_image := image_store.QaImageByKey("qa-schedule-curls")
@@ -96,17 +87,10 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 
 	totalTime := (s.SleepBetweenCurlTime*s.NumIter+s.SleepBetweenIterations)*s.NumMetaIter + s.AfterglowPeriod + 10
 	time.Sleep(time.Duration(totalTime) * time.Second)
-	logLines := s.GetLogLines("grpc-server")
-	s.ObservedReports = GetNetworkActivity(logLines, serverAddress)
-
-	err = s.collector.TearDown()
-	s.Require().NoError(err)
-
-	s.db, err = s.collector.BoltDB()
-	s.Require().NoError(err)
 }
 
 func (s *RepeatedNetworkFlowTestSuite) TearDownSuite() {
+	s.StopCollector()
 	s.cleanupContainer([]string{"nginx", "nginx-curl", "collector"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
@@ -114,12 +98,23 @@ func (s *RepeatedNetworkFlowTestSuite) TearDownSuite() {
 }
 
 func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
-	assert.Equal(s.T(), s.ExpectedReports, s.ObservedReports)
+	networkInfos := s.Sensor().ExpectConnectionsN(s.T(), s.ServerContainer, 10*time.Second, s.ExpectedActive+s.ExpectedInactive)
+
+	observedActive := 0
+	observedInactive := 0
+
+	for _, info := range networkInfos {
+		if info.IsActive() {
+			observedActive++
+		} else {
+			observedInactive++
+		}
+	}
+
+	assert.Equal(s.T(), s.ExpectedActive, observedActive, "Unexpected number of active connections reported")
+	assert.Equal(s.T(), s.ExpectedInactive, observedInactive, "Unexpected number of inactive connections reported")
 
 	// Server side checks
-
-	networkInfos, err := s.GetNetworks(s.ServerContainer)
-	s.Require().NoError(err)
 
 	actualServerEndpoint := networkInfos[0].LocalAddress
 	actualClientEndpoint := networkInfos[0].RemoteAddress
@@ -128,36 +123,14 @@ func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
 	assert.Equal(s.T(), fmt.Sprintf(":%s", s.ServerPort), actualServerEndpoint)
 	assert.Equal(s.T(), s.ClientIP, actualClientEndpoint)
 
-	fmt.Printf("ServerDetails from Bolt: %s %+v\n", s.ServerContainer, networkInfos[0])
-	fmt.Printf("ServerDetails from test: %s %s, Port: %s\n", s.ServerContainer, s.ServerIP, s.ServerPort)
-
 	// client side checks
 
 	// NetworkSignalHandler does not currently report endpoints.
 	// See the comment above for the server container endpoint test for more info.
-	_, err = s.GetEndpoints(s.ClientContainer)
-	s.Require().Error(err)
+	assert.Equal(s.T(), 0, len(s.Sensor().Endpoints(s.ClientContainer)))
 
-	networkInfos, err = s.GetNetworks(s.ClientContainer)
-	s.Require().NoError(err)
+	networkInfos = s.Sensor().Connections(s.ClientContainer)
 
 	actualClientEndpoint = networkInfos[0].LocalAddress
 	actualServerEndpoint = networkInfos[0].RemoteAddress
-}
-
-func GetNetworkActivity(lines []string, serverAddress string) []bool {
-	var networkActivity []bool
-	inactivePattern := "^Network.*" + serverAddress + ".*Z$"
-	activePattern := "^Network.*" + serverAddress + ".*nil Timestamp.$"
-	for _, line := range lines {
-		activeMatch, _ := regexp.MatchString(activePattern, line)
-		inactiveMatch, _ := regexp.MatchString(inactivePattern, line)
-		if activeMatch {
-			networkActivity = append(networkActivity, true)
-		} else if inactiveMatch {
-			networkActivity = append(networkActivity, false)
-		}
-
-	}
-	return networkActivity
 }

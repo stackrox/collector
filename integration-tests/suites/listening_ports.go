@@ -1,10 +1,12 @@
 package suites
 
 import (
+	"sort"
 	"time"
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/suites/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,27 +16,20 @@ type ProcessListeningOnPortTestSuite struct {
 }
 
 func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
-
-	s.metrics = map[string]float64{}
-	s.executor = common.NewExecutor()
 	s.StartContainerStats()
-	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
 
-	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
-	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
+	collector := s.Collector()
 
-	err := s.collector.Setup()
-	s.Require().NoError(err)
+	collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":1}`
+	collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
 
-	err = s.collector.Launch()
-	s.Require().NoError(err)
-	time.Sleep(30 * time.Second)
+	s.StartCollector(false)
 
 	processImage := getProcessListeningOnPortsImage()
 
 	containerID, err := s.launchContainer("process-ports", "-v", "/tmp:/tmp", processImage)
-
 	s.Require().NoError(err)
+
 	s.serverContainer = common.ContainerShortID(containerID)
 
 	actionFile := "/tmp/action_file.txt"
@@ -44,6 +39,7 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 	_, err = s.executor.Exec("sh", "-c", "echo open 8081 > "+actionFile)
 	err = s.waitForFileToBeDeleted(actionFile)
 	s.Require().NoError(err)
+
 	_, err = s.executor.Exec("sh", "-c", "echo open 9091 > "+actionFile)
 	err = s.waitForFileToBeDeleted(actionFile)
 	s.Require().NoError(err)
@@ -56,15 +52,10 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 	_, err = s.executor.Exec("sh", "-c", "echo close 9091 > "+actionFile)
 	err = s.waitForFileToBeDeleted(actionFile)
 	s.Require().NoError(err)
-
-	err = s.collector.TearDown()
-	s.Require().NoError(err)
-
-	s.db, err = s.collector.BoltDB()
-	s.Require().NoError(err)
 }
 
 func (s *ProcessListeningOnPortTestSuite) TearDownSuite() {
+	s.StopCollector()
 	s.cleanupContainer([]string{"process-ports", "collector"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
@@ -72,22 +63,17 @@ func (s *ProcessListeningOnPortTestSuite) TearDownSuite() {
 }
 
 func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
-	processes, err := s.GetProcesses(s.serverContainer)
-	s.Require().NoError(err)
-	endpoints, err := s.GetEndpoints(s.serverContainer)
-	s.Require().NoError(err)
+	processes := s.Sensor().ExpectProcessesN(s.T(), s.serverContainer, 30*time.Second, 2)
+	endpoints := s.Sensor().ExpectEndpointsN(s.T(), s.serverContainer, 30*time.Second, 4)
 
-	if !assert.Equal(s.T(), 4, len(endpoints)) {
-		// We can't continue if this is not the case, so panic immediately.
-		// It indicates an internal issue with this test and the non-deterministic
-		// way in which endpoints are reported.
-		assert.FailNowf(s.T(), "", "only retrieved %d endpoints (expect 4)", len(endpoints))
-	}
-
-	// Note that the first process is the shell and the second is the process-listening-on-ports program.
+	// sort by name to ensure processes[0] is the plop process (the other
+	// is the shell)
 	// All of these asserts check against the processes information of that program.
-	assert.Equal(s.T(), 2, len(processes))
-	process := processes[1]
+	sort.Slice(processes, func(i, j int) bool {
+		return processes[i].Name < processes[j].Name
+	})
+
+	process := processes[0]
 
 	possiblePorts := []int{8081, 9091}
 
@@ -110,8 +96,8 @@ func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
 	// Check that we have precisely two pairs of endpoints, for opening
 	// and closing the port. A closed port will have a populated CloseTimestamp
 
-	endpoints8081 := make([]common.EndpointInfo, 0)
-	endpoints9091 := make([]common.EndpointInfo, 0)
+	endpoints8081 := make([]types.EndpointInfo, 0)
+	endpoints9091 := make([]types.EndpointInfo, 0)
 	for _, endpoint := range endpoints {
 		if endpoint.Address.Port == 8081 {
 			endpoints8081 = append(endpoints8081, endpoint)
@@ -127,12 +113,12 @@ func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
 	// events.
 	//
 	// It is also agnostic to the order in which the events are reported.
-	hasOpenAndClose := func(infos []common.EndpointInfo) bool {
+	hasOpenAndClose := func(infos []types.EndpointInfo) bool {
 		if !assert.Len(s.T(), infos, 2) {
 			return false
 		}
 		return infos[0].CloseTimestamp != infos[1].CloseTimestamp &&
-			(infos[0].CloseTimestamp == nilTimestamp || infos[1].CloseTimestamp == nilTimestamp)
+			(infos[0].CloseTimestamp == types.NilTimestamp || infos[1].CloseTimestamp == types.NilTimestamp)
 	}
 
 	assert.True(s.T(), hasOpenAndClose(endpoints8081), "Did not capture open and close events for port 8081")

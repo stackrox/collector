@@ -8,31 +8,14 @@ import (
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stackrox/collector/integration-tests/suites/config"
-	"github.com/stretchr/testify/assert"
+)
+
+const (
+	gScrapeInterval = 10
 )
 
 type DuplicateEndpointsTestSuite struct {
 	IntegrationTestSuiteBase
-	serverContainer string
-}
-
-func (s *DuplicateEndpointsTestSuite) waitForEndpoints() {
-	s.executor.CopyFromHost(s.collector.DBPathRemote, s.collector.DBPath)
-	s.db, _ = s.collector.BoltDB()
-	_, err := s.GetEndpoints(s.serverContainer)
-	count := 0
-	maxCount := 60
-
-	for err != nil {
-		time.Sleep(1 * time.Second)
-		s.executor.CopyFromHost(s.collector.DBPathRemote, s.collector.DBPath)
-		_, err = s.GetEndpoints(s.serverContainer)
-		count += 1
-		if count == maxCount {
-			fmt.Println("Timedout waiting for endpoints")
-			break
-		}
-	}
 }
 
 func (s *DuplicateEndpointsTestSuite) killSocatProcess(port int) {
@@ -47,73 +30,79 @@ func (s *DuplicateEndpointsTestSuite) killSocatProcess(port int) {
 	s.Require().NoError(err)
 }
 
-// The desired time line of events in this test is the following. Start a process that opens a port.
-// When this endpoint is reported in the mock grpc server we know that a scrape has occured. This is
-// time 0.
-//
-// 1. Start a process that opens a different port, 81, slight after t=0
-// 2. At t=20 (the scape interval), port 81 should be reported
-// 3. At t=22, kill the process
-// 4. At t=22, start an identical process that opens port 81
-// 5. At t=40 (the second scrape) nothing should be reported.
-//
-// The test expects only two reported endpoints.
 func (s *DuplicateEndpointsTestSuite) SetupSuite() {
-
-	s.metrics = map[string]float64{}
-	s.executor = common.NewExecutor()
 	s.StartContainerStats()
-	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
 
-	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":20}`
-	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
+	collector := s.Collector()
 
-	err := s.collector.Setup()
-	s.Require().NoError(err)
+	collector.Env["COLLECTOR_CONFIG"] = fmt.Sprintf(`{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":%d}`, gScrapeInterval)
+	collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
 
-	err = s.collector.Launch()
-	s.Require().NoError(err)
-	time.Sleep(30 * time.Second)
-
-	processImage := config.Images().QaImageByKey("qa-socat")
-
-	containerID, err := s.launchContainer("socat", processImage, "TCP-LISTEN:80,fork", "STDOUT")
-
-	s.Require().NoError(err)
-	s.serverContainer = common.ContainerShortID(containerID)
-	s.waitForEndpoints()
-
-	command := []string{"/bin/sh", "-c", "socat TCP-LISTEN:81,fork STDOUT &"}
-
-	_, err = s.execContainer("socat", command)
-	s.Require().NoError(err)
-	time.Sleep(22 * time.Second)
-	s.killSocatProcess(81)
-
-	_, err = s.execContainer("socat", command)
-
-	time.Sleep(20 * time.Second)
-
-	err = s.collector.TearDown()
-	s.Require().NoError(err)
-
-	s.db, err = s.collector.BoltDB()
-	s.Require().NoError(err)
+	s.StartCollector(false)
 }
 
 func (s *DuplicateEndpointsTestSuite) TearDownSuite() {
-	s.cleanupContainer([]string{"socat", "collector"})
+	s.StopCollector()
+	s.cleanupContainer([]string{"socat"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
 	s.WritePerfResults("DuplicateEndpoints", stats, s.metrics)
 }
 
+// https://issues.redhat.com/browse/ROX-13628
+//
+// Endpoints are only reported by collector as a result of procfs scraping,
+// therefore this test is strictly concerned with the scrape interval.
+//
+// The desired time line of events in this test is the following:
+//
+// for time (t), and scrape interval (i)
+//
+// 1. Start a process that opens a port, 80
+// 2. Wait for the endpoint to be reported, this is t=0
+// 3. Start a process that opens a different port, 81
+// 4. At t=i (the scrape interval), port 81 should be reported
+// 5. At t=(i+2), kill the process
+// 6. At t=(i+2), start an identical process that opens port 81
+// 7. At t=2i (the second scrape) nothing should be reported.
+//
+// The test expects only two reported endpoints.
 func (s *DuplicateEndpointsTestSuite) TestDuplicateEndpoints() {
-	processes, err := s.GetProcesses(s.serverContainer)
-	s.Require().NoError(err)
-	endpoints, err := s.GetEndpoints(s.serverContainer)
+	image := config.Images().QaImageByKey("qa-socat")
+	// (1) start a process that opens port 80
+	containerID, err := s.launchContainer("socat", image, "TCP-LISTEN:80,fork", "STDOUT")
 	s.Require().NoError(err)
 
-	assert.Equal(s.T(), 2, len(endpoints))
-	assert.Equal(s.T(), 10, len(processes))
+	containerID = common.ContainerShortID(containerID)
+	socatCommand := []string{
+		"/bin/sh", "-c", "socat TCP-LISTEN:81,fork STDOUT &",
+	}
+
+	// (2) wait for the endpoint to be reported
+	// wait up to twice the scrape interval, to avoid flakes
+	s.Sensor().ExpectEndpointsN(s.T(), containerID, 2*gScrapeInterval*time.Second, 1)
+
+	// (3) start the new endpoint, opening a different port
+	_, err = s.execContainer("socat", socatCommand)
+	s.Require().NoError(err)
+
+	// (4) wait for the endpoint to be reported
+	// expecting two endpoints because that is the total expected for the container
+	s.Sensor().ExpectEndpointsN(s.T(), containerID, gScrapeInterval*time.Second, 2)
+
+	// (5) kill the process after a delay
+	time.Sleep(2 * time.Second)
+	s.killSocatProcess(81)
+
+	// (6) start an idential process
+	_, err = s.execContainer("socat", socatCommand)
+	s.Require().NoError(err)
+
+	// (7) wait for another scrape interval, and verify we have still only
+	// seen 2 endpoints
+	time.Sleep(gScrapeInterval * time.Second)
+	s.Assert().Len(s.Sensor().Endpoints(containerID), 2, "Got more endpoints than expected")
+
+	// additional final check to ensure there are no additional reports
+	s.Assert().Len(s.Sensor().Processes(containerID), 8, "Got more processes than expected")
 }
