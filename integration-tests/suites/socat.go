@@ -29,6 +29,7 @@ type SocatTestSuite struct {
 }
 
 func (s *SocatTestSuite) SetupSuite() {
+	defer s.RecoverSetup("socat")
 	s.StartContainerStats()
 
 	s.Collector().Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
@@ -53,7 +54,7 @@ func (s *SocatTestSuite) SetupSuite() {
 
 func (s *SocatTestSuite) TearDownSuite() {
 	s.StopCollector()
-	s.cleanupContainer([]string{"socat", "collector"})
+	s.cleanupContainer([]string{"socat"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
 	s.WritePerfResults("Socat", stats, s.metrics)

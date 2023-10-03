@@ -128,6 +128,7 @@ func (b *BenchmarkTestSuiteBase) StopPerfTools() {
 }
 
 func (s *BenchmarkCollectorTestSuite) SetupSuite() {
+	defer s.RecoverSetup("perf", "bcc", "bpftrace", "init")
 	s.StartContainerStats()
 
 	s.StartPerfTools()

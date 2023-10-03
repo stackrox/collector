@@ -34,6 +34,7 @@ type RepeatedNetworkFlowTestSuite struct {
 // Launches gRPC server in insecure mode
 // Launches nginx container
 func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
+	defer s.RecoverSetup("nginx", "nginx-curl")
 	s.StartContainerStats()
 
 	s.Collector().Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":` + strconv.Itoa(s.ScrapeInterval) + `}`
@@ -91,7 +92,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 
 func (s *RepeatedNetworkFlowTestSuite) TearDownSuite() {
 	s.StopCollector()
-	s.cleanupContainer([]string{"nginx", "nginx-curl", "collector"})
+	s.cleanupContainer([]string{"nginx", "nginx-curl"})
 	stats := s.GetContainerStats()
 	s.PrintContainerStats(stats)
 	s.WritePerfResults("repeated_network_flow", stats, s.metrics)

@@ -27,6 +27,8 @@ const (
 	parentUIDStr             = "ParentUid"
 	parentExecFilePathStr    = "ParentExecFilePath"
 
+	containerStatsName = "container-stats"
+
 	defaultWaitTickSeconds = 30 * time.Second
 )
 
@@ -130,8 +132,21 @@ func (s *IntegrationTestSuiteBase) SetSelinuxPermissiveIfNeeded() error {
 	return nil
 }
 
+// RecoverSetup wraps common recovery functionality that tests can use
+// in cases where SetupSuite may fail (panic). It should be deferred:
+//
+// defer s.RecoverSetup("nginx", "nginx-curl")
+func (s *IntegrationTestSuiteBase) RecoverSetup(containers ...string) {
+	if r := recover(); r != nil {
+		containers = append(containers, containerStatsName)
+		s.cleanupContainer(containers)
+		s.StopCollector()
+		panic(r)
+	}
+}
+
 func (s *IntegrationTestSuiteBase) GetContainerStats() (stats []ContainerStat) {
-	logs, err := s.containerLogs("container-stats")
+	logs, err := s.containerLogs(containerStatsName)
 	if err != nil {
 		assert.FailNow(s.T(), "container-stats failure")
 		return nil
@@ -142,7 +157,7 @@ func (s *IntegrationTestSuiteBase) GetContainerStats() (stats []ContainerStat) {
 		json.Unmarshal([]byte(line), &stat)
 		stats = append(stats, stat)
 	}
-	s.cleanupContainer([]string{"container-stats"})
+	s.cleanupContainer([]string{containerStatsName})
 	return stats
 }
 
@@ -355,9 +370,8 @@ func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
 }
 
 func (s *IntegrationTestSuiteBase) StartContainerStats() {
-	name := "container-stats"
 	image := config.Images().QaImageByKey("performance-stats")
-	args := []string{name, "-v", common.RuntimeSocket + ":/var/run/docker.sock", image}
+	args := []string{containerStatsName, "-v", common.RuntimeSocket + ":/var/run/docker.sock", image}
 
 	err := s.Executor().PullImage(image)
 	s.Require().NoError(err)
