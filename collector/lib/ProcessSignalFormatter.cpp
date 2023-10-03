@@ -232,18 +232,7 @@ bool ProcessSignalFormatter::ValidateProcessDetails(const sinsp_threadinfo* tinf
     return false;
   }
 
-  // exclude runc events
-  if (tinfo->m_exepath == "runc" && tinfo->m_comm == "6") {
-    return false;
-  }
-
-  std::string_view exepath_sv{tinfo->m_exepath};
-  auto marker = exepath_sv.rfind(':');
-  if (marker != std::string_view::npos) {
-    exepath_sv.remove_prefix(marker + 1);
-  }
-
-  return exepath_sv.rfind("/proc/self", 0) != 0;
+  return true;
 }
 
 bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {

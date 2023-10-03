@@ -150,7 +150,37 @@ sinsp_evt* SysdigService::GetNext() {
   userspace_stats_.event_parse_micros[event->get_type()] += (NowMicros() - parse_start);
   ++userspace_stats_.nUserspaceEvents[event->get_type()];
 
+  if (!FilterEvent(event)) {
+    return nullptr;
+  }
+  ++userspace_stats_.nFilteredEvents[event->get_type()];
+
   return event;
+}
+
+bool SysdigService::FilterEvent(sinsp_evt* event) {
+  const auto* tinfo = event->get_thread_info();
+
+  return FilterEvent(tinfo);
+}
+
+bool SysdigService::FilterEvent(const sinsp_threadinfo* tinfo) {
+  if (tinfo == nullptr) {
+    return false;
+  }
+
+  // exclude runc events
+  if (tinfo->m_exepath == "runc" && tinfo->m_comm == "6") {
+    return false;
+  }
+
+  std::string_view exepath_sv{tinfo->m_exepath};
+  auto marker = exepath_sv.rfind(':');
+  if (marker != std::string_view::npos) {
+    exepath_sv.remove_prefix(marker + 1);
+  }
+
+  return exepath_sv.rfind("/proc/self", 0) != 0;
 }
 
 void SysdigService::Start() {

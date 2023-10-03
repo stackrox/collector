@@ -1,8 +1,6 @@
 #ifndef _PROCESS_SIGNAL_FORMATTER_H_
 #define _PROCESS_SIGNAL_FORMATTER_H_
 
-#include <gtest/gtest_prod.h>
-
 #include "api/v1/signal.pb.h"
 #include "internalapi/sensor/signal_iservice.pb.h"
 #include "storage/process_indicator.pb.h"
@@ -30,8 +28,6 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
   void GetProcessLineage(sinsp_threadinfo* tinfo, std::vector<LineageInfo>& lineage);
 
  private:
-  FRIEND_TEST(ProcessSignalFormatterTest, ValidateProcessDetails);
-
   Signal* CreateSignal(sinsp_evt* event);
   ProcessSignal* CreateProcessSignal(sinsp_evt* event);
   bool ValidateProcessDetails(const sinsp_threadinfo* tinfo);

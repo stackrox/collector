@@ -1,6 +1,5 @@
 // clang-format off
 #include <Utility.h>
-#include <ostream>
 #include "libsinsp/sinsp.h"
 // clang-format on
 
@@ -616,39 +615,4 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
 
 }  // namespace
 
-TEST(ProcessSignalFormatterTest, ValidateProcessDetails) {
-  std::unique_ptr<sinsp> inspector(new sinsp());
-  ProcessSignalFormatter psf(inspector.get());
-
-  sinsp_threadinfo regular_process(inspector.get());
-  regular_process.m_exepath = "/bin/busybox";
-  regular_process.m_comm = "sleep";
-
-  sinsp_threadinfo runc_process(inspector.get());
-  runc_process.m_exepath = "runc";
-  runc_process.m_comm = "6";
-
-  sinsp_threadinfo proc_self_process(inspector.get());
-  proc_self_process.m_exepath = "/proc/self/exe";
-  proc_self_process.m_comm = "runc";
-
-  sinsp_threadinfo memfd_process(inspector.get());
-  memfd_process.m_exepath = "memfd:runc_cloned:/proc/self/exe";
-  memfd_process.m_comm = "6";
-
-  struct test_t {
-    const sinsp_threadinfo& tinfo;
-    bool expected;
-  };
-  std::vector<test_t> tests{
-      {regular_process, true},
-      {runc_process, false},
-      {proc_self_process, false},
-      {memfd_process, false},
-  };
-
-  for (const auto& t : tests) {
-    ASSERT_EQ(psf.ValidateProcessDetails(&t.tinfo), t.expected);
-  }
-}
 }  // namespace collector

@@ -22,6 +22,7 @@ struct SysdigStats {
   volatile uint64_t nPreemptions = 0;  // the number of preemptions
 
   // stats gathered in user space
+  volatile uint64_t nFilteredEvents[PPM_EVENT_MAX] = {0};   // events post filtering
   volatile uint64_t nUserspaceEvents[PPM_EVENT_MAX] = {0};  // events processed by userspace
   volatile uint64_t nGRPCSendFailures = 0;                  // number of signals that were not sent on GRPC
 
