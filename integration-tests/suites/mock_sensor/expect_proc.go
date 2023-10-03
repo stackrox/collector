@@ -13,7 +13,7 @@ import (
 
 func (s *MockSensor) ExpectProcessesN(t *testing.T, containerID string, timeout time.Duration, n int) []types.ProcessInfo {
 	return s.waitProcessesN(func() {
-		assert.FailNowf(t, "timed out", "only retrieved %d processes, expected %d", len(s.Processes(containerID)), n)
+		assert.FailNowf(t, "timed out", "found %d processes (expected %d)", len(s.Processes(containerID)), n)
 	}, containerID, timeout, n)
 }
 
