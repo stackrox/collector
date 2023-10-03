@@ -38,6 +38,7 @@ type IntegrationTestSuiteBase struct {
 	collector *common.CollectorManager
 	sensor    *mock_sensor.MockSensor
 	metrics   map[string]float64
+	stats     []ContainerStat
 }
 
 type ContainerStat struct {
@@ -145,27 +146,41 @@ func (s *IntegrationTestSuiteBase) RecoverSetup(containers ...string) {
 	}
 }
 
-func (s *IntegrationTestSuiteBase) GetContainerStats() (stats []ContainerStat) {
-	logs, err := s.containerLogs(containerStatsName)
-	if err != nil {
-		assert.FailNow(s.T(), "container-stats failure")
-		return nil
+func (s *IntegrationTestSuiteBase) GetContainerStats() []ContainerStat {
+	if s.stats == nil {
+		s.stats = make([]ContainerStat, 0)
+
+		logs, err := s.containerLogs(containerStatsName)
+		if err != nil {
+			assert.FailNow(s.T(), "container-stats failure")
+			return nil
+		}
+
+		logLines := strings.Split(logs, "\n")
+		for _, line := range logLines {
+			var stat ContainerStat
+
+			err := json.Unmarshal([]byte(line), &stat)
+			if err != nil {
+				fmt.Errorf("failed to unmarshall stats line: %v", err)
+			}
+
+			s.stats = append(s.stats, stat)
+		}
+
+		s.cleanupContainer([]string{containerStatsName})
 	}
-	logLines := strings.Split(logs, "\n")
-	for _, line := range logLines {
-		var stat ContainerStat
-		json.Unmarshal([]byte(line), &stat)
-		stats = append(stats, stat)
-	}
-	s.cleanupContainer([]string{containerStatsName})
-	return stats
+
+	return s.stats
 }
 
-func (s *IntegrationTestSuiteBase) PrintContainerStats(stats []ContainerStat) {
+func (s *IntegrationTestSuiteBase) PrintContainerStats() {
 	cpuStats := map[string][]float64{}
-	for _, stat := range stats {
+
+	for _, stat := range s.GetContainerStats() {
 		cpuStats[stat.Name] = append(cpuStats[stat.Name], stat.Cpu)
 	}
+
 	for name, cpu := range cpuStats {
 		s.AddMetric(fmt.Sprintf("%s_cpu_mean", name), stat.Mean(cpu, nil))
 		s.AddMetric(fmt.Sprintf("%s_cpu_stddev", name), stat.StdDev(cpu, nil))
@@ -175,15 +190,17 @@ func (s *IntegrationTestSuiteBase) PrintContainerStats(stats []ContainerStat) {
 	}
 }
 
-func (s *IntegrationTestSuiteBase) WritePerfResults(testName string, stats []ContainerStat, metrics map[string]float64) {
+func (s *IntegrationTestSuiteBase) WritePerfResults(testName string) {
+	s.PrintContainerStats()
+
 	perf := PerformanceResult{
 		TestName:         testName,
 		Timestamp:        time.Now().Format("2006-01-02 15:04:05"),
 		InstanceType:     config.VMInfo().InstanceType,
 		VmConfig:         config.VMInfo().Config,
 		CollectionMethod: config.CollectionMethod(),
-		Metrics:          metrics,
-		ContainerStats:   stats,
+		Metrics:          s.metrics,
+		ContainerStats:   s.GetContainerStats(),
 	}
 
 	perfJson, _ := json.Marshal(perf)

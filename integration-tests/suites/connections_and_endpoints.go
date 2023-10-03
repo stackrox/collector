@@ -74,9 +74,7 @@ func (s *ConnectionsAndEndpointsTestSuite) TearDownSuite() {
 	s.cleanupContainer([]string{"collector"})
 	s.cleanupContainer([]string{s.Server.Name})
 	s.cleanupContainer([]string{s.Client.Name})
-	stats := s.GetContainerStats()
-	s.PrintContainerStats(stats)
-	s.WritePerfResults("ConnectionsAndEndpoints", stats, s.metrics)
+	s.WritePerfResults("ConnectionsAndEndpoints")
 }
 
 func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {

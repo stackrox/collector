@@ -93,9 +93,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 func (s *RepeatedNetworkFlowTestSuite) TearDownSuite() {
 	s.StopCollector()
 	s.cleanupContainer([]string{"nginx", "nginx-curl"})
-	stats := s.GetContainerStats()
-	s.PrintContainerStats(stats)
-	s.WritePerfResults("repeated_network_flow", stats, s.metrics)
+	s.WritePerfResults("repeated_network_flow")
 }
 
 func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {

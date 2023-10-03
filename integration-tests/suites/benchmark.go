@@ -146,9 +146,7 @@ func (s *BenchmarkCollectorTestSuite) TearDownSuite() {
 	s.StopCollector()
 
 	s.cleanupContainer([]string{"collector", "grpc-server", "benchmark"})
-	stats := s.GetContainerStats()
-	s.PrintContainerStats(stats)
-	s.WritePerfResults("collector_benchmark", stats, s.metrics)
+	s.WritePerfResults("collector_benchmark")
 }
 
 func (s *BenchmarkBaselineTestSuite) SetupSuite() {
@@ -163,7 +161,5 @@ func (s *BenchmarkBaselineTestSuite) TestBenchmarkBaseline() {
 func (s *BenchmarkBaselineTestSuite) TearDownSuite() {
 	s.StopPerfTools()
 	s.cleanupContainer([]string{"benchmark"})
-	stats := s.GetContainerStats()
-	s.PrintContainerStats(stats)
-	s.WritePerfResults("baseline_benchmark", stats, s.metrics)
+	s.WritePerfResults("baseline_benchmark")
 }

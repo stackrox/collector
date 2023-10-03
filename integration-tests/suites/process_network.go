@@ -71,9 +71,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 func (s *ProcessNetworkTestSuite) TearDownSuite() {
 	s.StopCollector()
 	s.cleanupContainer([]string{"nginx", "nginx-curl"})
-	stats := s.GetContainerStats()
-	s.PrintContainerStats(stats)
-	s.WritePerfResults("process_network", stats, s.metrics)
+	s.WritePerfResults("process_network")
 }
 
 func (s *ProcessNetworkTestSuite) TestProcessViz() {

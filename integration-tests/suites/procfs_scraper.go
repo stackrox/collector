@@ -52,9 +52,7 @@ func (s *ProcfsScraperTestSuite) launchNginx() {
 func (s *ProcfsScraperTestSuite) TearDownSuite() {
 	s.StopCollector()
 	s.cleanupContainer([]string{"nginx"})
-	stats := s.GetContainerStats()
-	s.PrintContainerStats(stats)
-	s.WritePerfResults("ProcfsScraper", stats, s.metrics)
+	s.WritePerfResults("ProcfsScraper")
 }
 
 func (s *ProcfsScraperTestSuite) TestProcfsScraper() {

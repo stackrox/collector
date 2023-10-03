@@ -44,9 +44,7 @@ func (s *SymbolicLinkProcessTestSuite) SetupSuite() {
 func (s *SymbolicLinkProcessTestSuite) TearDownSuite() {
 	s.StopCollector()
 	s.cleanupContainer([]string{"process-ports"})
-	stats := s.GetContainerStats()
-	s.PrintContainerStats(stats)
-	s.WritePerfResults("SymbolicLinkProcess", stats, s.metrics)
+	s.WritePerfResults("SymbolicLinkProcess")
 }
 
 func (s *SymbolicLinkProcessTestSuite) TestSymbolicLinkProcess() {
