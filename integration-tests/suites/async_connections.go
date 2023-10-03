@@ -2,6 +2,7 @@ package suites
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -33,16 +34,19 @@ func (s *AsyncConnectionTestSuite) SetupSuite() {
 	defer s.RecoverSetup("server", "client")
 	s.StartContainerStats()
 
-	collector := s.Collector()
-
-	// we need a short scrape interval to have it trigger after the connection is closed.
-	collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
-
-	if s.DisableConnectionStatusTracking {
-		collector.Env["ROX_COLLECT_CONNECTION_STATUS"] = "false"
+	collectorOptions := common.CollectorStartupOptions{
+		Env: map[string]string{
+			"ROX_COLLECT_CONNECTION_STATUS": strconv.FormatBool(!s.DisableConnectionStatusTracking),
+		},
+		Config: map[string]any{
+			"turnOffScrape": true,
+			// we need a short scrape interval to have it trigger
+			// after the connection is closed.
+			"scrapeInterval": 2,
+		},
 	}
 
-	s.StartCollector(false)
+	s.StartCollector(false, &collectorOptions)
 
 	image_store := config.Images()
 

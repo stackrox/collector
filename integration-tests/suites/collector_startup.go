@@ -6,7 +6,7 @@ type CollectorStartupTestSuite struct {
 
 func (s *CollectorStartupTestSuite) SetupSuite() {
 	defer s.RecoverSetup()
-	s.StartCollector(false)
+	s.StartCollector(false, nil)
 }
 
 func (s *CollectorStartupTestSuite) TearDownSuite() {

@@ -27,12 +27,18 @@ func (s *ProcfsScraperTestSuite) SetupSuite() {
 
 	s.StartContainerStats()
 
-	s.Collector().Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":` + strconv.FormatBool(s.TurnOffScrape) + `,"scrapeInterval":2}`
-	s.Collector().Env["ROX_PROCESSES_LISTENING_ON_PORT"] = strconv.FormatBool(s.RoxProcessesListeningOnPort)
+	collectorOptions := common.CollectorStartupOptions{
+		Env: map[string]string{
+			"ROX_PROCESSES_LISTENING_ON_PORT": strconv.FormatBool(s.RoxProcessesListeningOnPort),
+		},
+		Config: map[string]any{
+			"turnOffScrape": s.TurnOffScrape,
+		},
+	}
 
 	s.launchNginx()
 
-	s.StartCollector(false)
+	s.StartCollector(false, &collectorOptions)
 
 	s.cleanupContainer([]string{"nginx"})
 }

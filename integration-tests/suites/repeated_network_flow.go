@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stackrox/collector/integration-tests/suites/config"
 	"github.com/stretchr/testify/assert"
 )
@@ -37,11 +38,18 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	defer s.RecoverSetup("nginx", "nginx-curl")
 	s.StartContainerStats()
 
-	s.Collector().Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":true,"scrapeInterval":` + strconv.Itoa(s.ScrapeInterval) + `}`
-	s.Collector().Env["ROX_AFTERGLOW_PERIOD"] = strconv.Itoa(s.AfterglowPeriod)
-	s.Collector().Env["ROX_ENABLE_AFTERGLOW"] = strconv.FormatBool(s.EnableAfterglow)
+	collectorOptions := common.CollectorStartupOptions{
+		Config: map[string]any{
+			"turnOffScrape":  false,
+			"scrapeInterval": s.ScrapeInterval,
+		},
+		Env: map[string]string{
+			"ROX_AFTERGLOW_PERIOD": strconv.Itoa(s.AfterglowPeriod),
+			"ROX_ENABLE_AFTERGLOW": strconv.FormatBool(s.EnableAfterglow),
+		},
+	}
 
-	s.StartCollector(false)
+	s.StartCollector(false, &collectorOptions)
 
 	image_store := config.Images()
 	scheduled_curls_image := image_store.QaImageByKey("qa-schedule-curls")
