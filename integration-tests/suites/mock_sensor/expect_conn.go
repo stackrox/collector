@@ -67,7 +67,7 @@ loop:
 	for {
 		select {
 		case <-timer:
-			assert.FailNowf(t, "timed out", "Only found %d/%d connections", len(s.Connections(containerID)), n)
+			assert.FailNowf(t, "timed out", "found %d connections (expected %d)", len(s.Connections(containerID)), n)
 		case conn := <-s.LiveConnections():
 			if conn.GetContainerId() != containerID {
 				continue loop
@@ -102,7 +102,7 @@ loop:
 		case <-timer:
 			// we know they don't match at this point, but by using
 			// ElementsMatch we get much better logging about the differences
-			return assert.ElementsMatch(t, expected, s.Endpoints(containerID), "timed out waiting for networks")
+			return assert.ElementsMatch(t, expected, s.Endpoints(containerID), "timed out waiting for endpoints")
 		case network := <-s.LiveEndpoints():
 			if network.GetContainerId() != containerID {
 				continue loop
@@ -128,7 +128,7 @@ loop:
 // have been received
 func (s *MockSensor) ExpectEndpointsN(t *testing.T, containerID string, timeout time.Duration, n int) []types.EndpointInfo {
 	return s.waitEndpointsN(func() {
-		assert.FailNowf(t, "timed out", "Only found %d/%d connections", len(s.Endpoints(containerID)), n)
+		assert.FailNowf(t, "timed out", "found %d endpoints (expected %d)", len(s.Endpoints(containerID)), n)
 	}, containerID, timeout, n)
 }
 
