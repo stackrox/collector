@@ -13,6 +13,13 @@ on:
           Tag used for QA containers
         type: string
         required: true
+
+      multi-arch-tests:
+        description: |
+          whether to run multi-arch testing
+        type: boolean
+        required: true
+
       job-tag:
         description: |
           Used to differentiate between different sources when creating
@@ -65,7 +72,7 @@ jobs:
 
   multi-arch-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
-    if: github.event_name == 'push' || !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
+    if: inputs.multi-arch-tests
     strategy:
       fail-fast: false
       matrix:
