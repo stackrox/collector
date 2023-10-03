@@ -160,10 +160,7 @@ func (s *IntegrationTestSuiteBase) GetContainerStats() []ContainerStat {
 		for _, line := range logLines {
 			var stat ContainerStat
 
-			err := json.Unmarshal([]byte(line), &stat)
-			if err != nil {
-				fmt.Errorf("failed to unmarshall stats line: %v", err)
-			}
+			_ = json.Unmarshal([]byte(line), &stat)
 
 			s.stats = append(s.stats, stat)
 		}
