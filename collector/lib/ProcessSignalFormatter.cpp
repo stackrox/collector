@@ -228,14 +228,12 @@ bool ProcessSignalFormatter::ValidateProcessDetails(const sinsp_threadinfo* tinf
     return false;
   }
 
-  std::string comm = tinfo->get_comm();
-
-  if (tinfo->m_exepath == "<NA>" && comm == "<NA>") {
+  if (tinfo->m_exepath == "<NA>" && tinfo->m_comm == "<NA>") {
     return false;
   }
 
   // exclude runc events
-  if (tinfo->m_exepath == "runc" && comm == "6") {
+  if (tinfo->m_exepath == "runc" && tinfo->m_comm == "6") {
     return false;
   }
 

@@ -18,6 +18,7 @@ extern "C" {
 #include "Utility.h"
 
 extern const struct syscall_evt_pair g_syscall_table[];  // defined in libscap
+static const unsigned long DRIVER_BUFFER_DIM = 16UL * 1024UL * 1024UL;
 
 namespace collector {
 class IKernelDriver {
