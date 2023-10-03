@@ -3,18 +3,11 @@ include Makefile-constants.mk
 
 SHELL := /bin/bash
 
-.PHONY: build-all
-build-all:
-	@set -eou pipefail; \
-	mapfile -t container_dirs < <(ls -d */); \
-	for container_dir in "$${container_dirs[@]}"; do \
-		make -C "$$container_dir" build; \
-	done
+TARGETS := build build-and-push
+DIRS := $(wildcard ./*/)
 
-.PHONY: build-and-push-all
-build-and-push-all:
-	@set -eou pipefail; \
-	mapfile -t container_dirs < <(ls -d */); \
-	for container_dir in "$${container_dirs[@]}"; do \
-		make -C "$$container_dir" build-and-push; \
-	done
+$(TARGETS): $(DIRS)
+$(DIRS):
+	$(MAKE) -C $@ $(MAKECMDGOALS)
+
+.PHONY: $(TARGETS) $(DIRS)
