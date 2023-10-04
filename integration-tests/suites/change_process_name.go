@@ -24,7 +24,9 @@ func (s *ChangeProcessNameTestSuite) SetupSuite() {
 
 	changeProcessNameImage := config.Images().QaImageByKey("qa-plop")
 	// TODO pass arbitrary commands here
-	containerID, err := s.launchContainer("change-process-name", "--entrypoint", "./change-process-name", changeProcessNameImage)
+	//containerID, err := s.launchContainer("change-process-name", "--entrypoint", "./change-process-name", changeProcessNameImage)
+	//containerID, err := s.launchContainer("change-process-name", "--entrypoint", "./change-executable-file-path", changeProcessNameImage)
+	containerID, err := s.launchContainer("change-executable-file-path", "--entrypoint", "./change-executable-file-path", changeProcessNameImage)
 
 	s.Require().NoError(err)
 	s.serverContainer = common.ContainerShortID(containerID)
@@ -49,7 +51,7 @@ func (s *ChangeProcessNameTestSuite) TestChangeProcessName() {
 	assert.Equal(s.T(), endpoints[0].Originator.ProcessArgs, processes[0].Args)
 	assert.Equal(s.T(), 8082, endpoints[0].Address.Port)
 
-	assert.Equal(s.T(), processes[0].Name, "change-process-")
+	assert.Equal(s.T(), processes[0].Name, "change-executab")
 	assert.Equal(s.T(), processes[0].Uid, 0)
 	assert.Equal(s.T(), processes[0].Gid, 0)
 	assert.Equal(s.T(), processes[0].Args, "")
