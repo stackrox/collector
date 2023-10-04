@@ -192,6 +192,7 @@ PROBE_SIGNATURE("sched/", sched_process_fork, sched_process_fork_args) {
  *        instead, we defer to the appropriate filler.
  */
 PROBE_SIGNATURE("sched/", sched_process_exit, sched_process_exit_args) {
+  ppm_event_code evt_type = PPME_PROCEXIT_1_E;
   struct task_struct* task = NULL;
   unsigned int flags = 0;
 
@@ -220,6 +221,7 @@ PROBE_SIGNATURE("sched/", sched_process_exit, sched_process_exit_args) {
  */
 static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
   const struct syscall_evt_pair* sc_evt = NULL;
+  ppm_event_code evt_type = PPME_GENERIC_E;
   int drop_flags = UF_ALWAYS_DROP;
   struct sys_enter_args stack_ctx = {.id = id};
   long mapped_id = id;
@@ -294,6 +296,7 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
  */
 static __always_inline int exit_probe(long id, struct sys_exit_args* ctx) {
   const struct syscall_evt_pair* sc_evt = NULL;
+  ppm_event_code evt_type = PPME_GENERIC_X;
   int drop_flags = UF_ALWAYS_DROP;
   long mapped_id = id;
 
