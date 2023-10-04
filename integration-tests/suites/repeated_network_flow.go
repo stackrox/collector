@@ -40,7 +40,8 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 
 	collectorOptions := common.CollectorStartupOptions{
 		Config: map[string]any{
-			"turnOffScrape":  false,
+			// turnOffScrape will be true, but the scrapeInterval
+			// also controls the reporting interval for network events
 			"scrapeInterval": s.ScrapeInterval,
 		},
 		Env: map[string]string{
