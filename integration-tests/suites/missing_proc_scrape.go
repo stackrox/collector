@@ -39,5 +39,4 @@ func (s *MissingProcScrapeTestSuite) TestCollectorRunning() {
 
 func (s *MissingProcScrapeTestSuite) TearDownSuite() {
 	s.StopCollector()
-	s.cleanupContainer([]string{"collector"})
 }

@@ -71,8 +71,8 @@ func (s *AsyncConnectionTestSuite) SetupSuite() {
 
 func (s *AsyncConnectionTestSuite) TearDownSuite() {
 	s.StopCollector()
-	s.cleanupContainer([]string{"server", "client"})
-	s.WritePerfResults("AsyncConnection")
+	s.cleanupContainers("server", "client")
+	s.WritePerfResults()
 }
 
 func (s *AsyncConnectionTestSuite) TestNetworkFlows() {

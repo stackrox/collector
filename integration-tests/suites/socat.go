@@ -54,8 +54,8 @@ func (s *SocatTestSuite) SetupSuite() {
 
 func (s *SocatTestSuite) TearDownSuite() {
 	s.StopCollector()
-	s.cleanupContainer([]string{"socat"})
-	s.WritePerfResults("Socat")
+	s.cleanupContainers("socat")
+	s.WritePerfResults()
 }
 
 func (s *SocatTestSuite) TestSocat() {

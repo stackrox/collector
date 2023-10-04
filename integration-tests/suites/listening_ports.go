@@ -57,8 +57,8 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 
 func (s *ProcessListeningOnPortTestSuite) TearDownSuite() {
 	s.StopCollector()
-	s.cleanupContainer([]string{"process-ports"})
-	s.WritePerfResults("ProcessListeningOnPort")
+	s.cleanupContainers("process-ports")
+	s.WritePerfResults()
 }
 
 func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {

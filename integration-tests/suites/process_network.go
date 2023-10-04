@@ -70,8 +70,8 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 
 func (s *ProcessNetworkTestSuite) TearDownSuite() {
 	s.StopCollector()
-	s.cleanupContainer([]string{"nginx", "nginx-curl"})
-	s.WritePerfResults("process_network")
+	s.cleanupContainers("nginx", "nginx-curl")
+	s.WritePerfResults()
 }
 
 func (s *ProcessNetworkTestSuite) TestProcessViz() {

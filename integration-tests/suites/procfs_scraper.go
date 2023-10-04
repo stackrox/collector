@@ -34,7 +34,7 @@ func (s *ProcfsScraperTestSuite) SetupSuite() {
 
 	s.StartCollector(false)
 
-	s.cleanupContainer([]string{"nginx"})
+	s.cleanupContainers("nginx")
 }
 
 func (s *ProcfsScraperTestSuite) launchNginx() {
@@ -51,8 +51,8 @@ func (s *ProcfsScraperTestSuite) launchNginx() {
 
 func (s *ProcfsScraperTestSuite) TearDownSuite() {
 	s.StopCollector()
-	s.cleanupContainer([]string{"nginx"})
-	s.WritePerfResults("ProcfsScraper")
+	s.cleanupContainers("nginx")
+	s.WritePerfResults()
 }
 
 func (s *ProcfsScraperTestSuite) TestProcfsScraper() {

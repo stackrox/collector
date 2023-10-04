@@ -140,7 +140,7 @@ func (s *IntegrationTestSuiteBase) SetSelinuxPermissiveIfNeeded() error {
 func (s *IntegrationTestSuiteBase) RecoverSetup(containers ...string) {
 	if r := recover(); r != nil {
 		containers = append(containers, containerStatsName)
-		s.cleanupContainer(containers)
+		s.cleanupContainers(containers...)
 		s.StopCollector()
 		panic(r)
 	}
@@ -165,7 +165,7 @@ func (s *IntegrationTestSuiteBase) GetContainerStats() []ContainerStat {
 			s.stats = append(s.stats, stat)
 		}
 
-		s.cleanupContainer([]string{containerStatsName})
+		s.cleanupContainers(containerStatsName)
 	}
 
 	return s.stats
@@ -187,11 +187,11 @@ func (s *IntegrationTestSuiteBase) PrintContainerStats() {
 	}
 }
 
-func (s *IntegrationTestSuiteBase) WritePerfResults(testName string) {
+func (s *IntegrationTestSuiteBase) WritePerfResults() {
 	s.PrintContainerStats()
 
 	perf := PerformanceResult{
-		TestName:         testName,
+		TestName:         s.T().Name(),
 		Timestamp:        time.Now().Format("2006-01-02 15:04:05"),
 		InstanceType:     config.VMInfo().InstanceType,
 		VmConfig:         config.VMInfo().Config,
@@ -231,8 +231,8 @@ func (s *IntegrationTestSuiteBase) GetLogLines(containerName string) []string {
 	return logLines
 }
 
-func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, error) {
-	cmd := []string{common.RuntimeCommand, "run", "-d", "--name"}
+func (s *IntegrationTestSuiteBase) launchContainer(name string, args ...string) (string, error) {
+	cmd := []string{common.RuntimeCommand, "run", "-d", "--name", name}
 	cmd = append(cmd, args...)
 
 	output, err := common.Retry(func() (string, error) {
@@ -287,7 +287,7 @@ func (s *IntegrationTestSuiteBase) execContainerShellScript(containerName string
 	return s.Executor().ExecWithStdin(script, cmd...)
 }
 
-func (s *IntegrationTestSuiteBase) cleanupContainer(containers []string) {
+func (s *IntegrationTestSuiteBase) cleanupContainers(containers ...string) {
 	for _, container := range containers {
 		s.Executor().Exec(common.RuntimeCommand, "kill", container)
 		s.Executor().Exec(common.RuntimeCommand, "rm", container)
@@ -342,13 +342,12 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	s.Require().NoError(err)
 
 	benchmarkArgs := []string{
-		benchmarkName,
 		"--env", "FORCE_TIMES_TO_RUN=1",
 		benchmarkImage,
 		"batch-benchmark", "collector",
 	}
 
-	containerID, err := s.launchContainer(benchmarkArgs...)
+	containerID, err := s.launchContainer(benchmarkName, benchmarkArgs...)
 	s.Require().NoError(err)
 
 	_, err = s.waitForContainerToExit(benchmarkName, containerID, defaultWaitTickSeconds)
@@ -368,29 +367,14 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	}
 }
 
-func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
-	name := "jsonlabel"
-	image := config.Images().QaImageByKey("performance-json-label")
-	err := s.Executor().PullImage(image)
-	s.Require().NoError(err)
-	args := []string{
-		name,
-		image,
-	}
-	containerID, err := s.launchContainer(args...)
-	s.Require().NoError(err)
-	_, err = s.waitForContainerToExit(name, containerID, defaultWaitTickSeconds)
-	s.Require().NoError(err)
-}
-
 func (s *IntegrationTestSuiteBase) StartContainerStats() {
 	image := config.Images().QaImageByKey("performance-stats")
-	args := []string{containerStatsName, "-v", common.RuntimeSocket + ":/var/run/docker.sock", image}
+	args := []string{"-v", common.RuntimeSocket + ":/var/run/docker.sock", image}
 
 	err := s.Executor().PullImage(image)
 	s.Require().NoError(err)
 
-	_, err = s.launchContainer(args...)
+	_, err = s.launchContainer(containerStatsName, args...)
 	s.Require().NoError(err)
 }
 
