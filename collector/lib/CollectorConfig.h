@@ -23,6 +23,7 @@ class CollectorConfig {
   static constexpr CollectionMethod kCollectionMethod = CollectionMethod::EBPF;
   static constexpr const char* kSyscalls[] = {
       "accept",
+      "accept4",
       "chdir",
       "clone",
       "close",

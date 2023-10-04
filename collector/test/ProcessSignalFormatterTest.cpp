@@ -54,7 +54,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithoutParentTest) {
   tinfo->m_user.uid = 7;
   tinfo->m_exepath = "qwerty";
 
-  inspector->add_thread(tinfo);
+  inspector->add_thread(tinfo.get());
   std::vector<LineageInfo> lineage;
 
   processSignalFormatter.GetProcessLineage(tinfo.get(), lineage);
@@ -94,8 +94,8 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentTest) {
   tinfo2->m_vpid = 2;
   tinfo2->m_user.uid = 7;
   tinfo2->m_exepath = "qwerty";
-  inspector->add_thread(tinfo);
-  inspector->add_thread(tinfo2);
+  inspector->add_thread(tinfo.get());
+  inspector->add_thread(tinfo2.get());
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(tinfo2.get(), lineage);
 
@@ -135,8 +135,8 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentWithPid0Test) {
   tinfo2->m_ptid = 0;
   tinfo2->m_vpid = 2;
   tinfo2->m_exepath = "qwerty";
-  inspector->add_thread(tinfo);
-  inspector->add_thread(tinfo2);
+  inspector->add_thread(tinfo.get());
+  inspector->add_thread(tinfo2.get());
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(tinfo2.get(), lineage);
 
@@ -175,8 +175,8 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentWithSameNameTest) {
   tinfo2->m_vpid = 2;
   tinfo2->m_user.uid = 42;
   tinfo2->m_exepath = "asdf";
-  inspector->add_thread(tinfo);
-  inspector->add_thread(tinfo2);
+  inspector->add_thread(tinfo.get());
+  inspector->add_thread(tinfo2.get());
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(tinfo2.get(), lineage);
 
@@ -228,9 +228,9 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
   tinfo3->m_user.uid = 8;
   tinfo3->m_exepath = "uiop";
 
-  inspector->add_thread(tinfo);
-  inspector->add_thread(tinfo2);
-  inspector->add_thread(tinfo3);
+  inspector->add_thread(tinfo.get());
+  inspector->add_thread(tinfo2.get());
+  inspector->add_thread(tinfo3.get());
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(tinfo3.get(), lineage);
@@ -286,9 +286,9 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
   tinfo3->m_user.uid = 8;
   tinfo3->m_exepath = "asdf";
 
-  inspector->add_thread(tinfo);
-  inspector->add_thread(tinfo2);
-  inspector->add_thread(tinfo3);
+  inspector->add_thread(tinfo.get());
+  inspector->add_thread(tinfo2.get());
+  inspector->add_thread(tinfo3.get());
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(tinfo3.get(), lineage);
@@ -349,10 +349,10 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
   tinfo4->m_user.uid = 9;
   tinfo4->m_exepath = "qwerty";
 
-  inspector->add_thread(tinfo);
-  inspector->add_thread(tinfo2);
-  inspector->add_thread(tinfo3);
-  inspector->add_thread(tinfo4);
+  inspector->add_thread(tinfo.get());
+  inspector->add_thread(tinfo2.get());
+  inspector->add_thread(tinfo3.get());
+  inspector->add_thread(tinfo4.get());
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(tinfo4.get(), lineage);
@@ -413,10 +413,10 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
   tinfo4->m_user.uid = 9;
   tinfo4->m_exepath = "asdf";
 
-  inspector->add_thread(tinfo);
-  inspector->add_thread(tinfo2);
-  inspector->add_thread(tinfo3);
-  inspector->add_thread(tinfo4);
+  inspector->add_thread(tinfo.get());
+  inspector->add_thread(tinfo2.get());
+  inspector->add_thread(tinfo3.get());
+  inspector->add_thread(tinfo4.get());
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(tinfo4.get(), lineage);
@@ -480,10 +480,10 @@ TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
   tinfo4->m_user.uid = 9;
   tinfo4->m_exepath = "jkl;";
 
-  inspector->add_thread(tinfo);
-  inspector->add_thread(tinfo2);
-  inspector->add_thread(tinfo3);
-  inspector->add_thread(tinfo4);
+  inspector->add_thread(tinfo.get());
+  inspector->add_thread(tinfo2.get());
+  inspector->add_thread(tinfo3.get());
+  inspector->add_thread(tinfo4.get());
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(tinfo3.get(), lineage);
@@ -523,7 +523,7 @@ TEST(ProcessSignalFormatterTest, CountTwoCounterCallsTest) {
   tinfo->m_user.uid = 9;
   tinfo->m_exepath = "jkl;";
 
-  inspector->add_thread(tinfo);
+  inspector->add_thread(tinfo.get());
   std::vector<LineageInfo> lineage;
 
   processSignalFormatter.GetProcessLineage(tinfo.get(), lineage);
@@ -536,7 +536,7 @@ TEST(ProcessSignalFormatterTest, CountTwoCounterCallsTest) {
   tinfo2->m_user.uid = 9;
   tinfo2->m_exepath = "jkl;";
 
-  inspector->add_thread(tinfo2);
+  inspector->add_thread(tinfo2.get());
   std::vector<LineageInfo> lineage2;
 
   processSignalFormatter.GetProcessLineage(tinfo.get(), lineage2);
@@ -589,9 +589,9 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
   tinfo3->m_container_id = "id";
   tinfo3->m_exepath = "uiop";
 
-  inspector->add_thread(tinfo);
-  inspector->add_thread(tinfo2);
-  inspector->add_thread(tinfo3);
+  inspector->add_thread(tinfo.get());
+  inspector->add_thread(tinfo2.get());
+  inspector->add_thread(tinfo3.get());
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(tinfo3.get(), lineage);
