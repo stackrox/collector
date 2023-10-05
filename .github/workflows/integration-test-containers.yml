@@ -54,6 +54,7 @@ jobs:
             --connection local -i localhost, --limit localhost \
             -e collector_tag='${{ inputs.collector-tag }}' \
             -e arch='${{ matrix.arch }}' \
+            -e test_image='quay.io/stackrox-io/collector-tests:${{ inputs.collector-tag }}' \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-tests.yml
 
