@@ -1,7 +1,6 @@
 package suites
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -34,12 +33,17 @@ func (s *DuplicateEndpointsTestSuite) SetupSuite() {
 	defer s.RecoverSetup("socat")
 	s.StartContainerStats()
 
-	collector := s.Collector()
+	collectorOptions := common.CollectorStartupOptions{
+		Config: map[string]any{
+			"turnOffScrape":  false,
+			"scrapeInterval": gScrapeInterval,
+		},
+		Env: map[string]string{
+			"ROX_PROCESSES_LISTENING_ON_PORT": "true",
+		},
+	}
 
-	collector.Env["COLLECTOR_CONFIG"] = fmt.Sprintf(`{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":%d}`, gScrapeInterval)
-	collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
-
-	s.StartCollector(false)
+	s.StartCollector(false, &collectorOptions)
 }
 
 func (s *DuplicateEndpointsTestSuite) TearDownSuite() {

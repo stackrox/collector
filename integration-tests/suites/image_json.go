@@ -6,7 +6,7 @@ type ImageLabelJSONTestSuite struct {
 
 func (s *ImageLabelJSONTestSuite) SetupSuite() {
 	defer s.RecoverSetup()
-	s.StartCollector(false)
+	s.StartCollector(false, nil)
 }
 
 func (s *ImageLabelJSONTestSuite) TestRunImageWithJSONLabel() {

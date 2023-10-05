@@ -19,12 +19,17 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 	defer s.RecoverSetup("process-ports")
 	s.StartContainerStats()
 
-	collector := s.Collector()
+	collectorOptions := common.CollectorStartupOptions{
+		Config: map[string]any{
+			"turnOffScrape":  false,
+			"scrapeInterval": 1,
+		},
+		Env: map[string]string{
+			"ROX_PROCESSES_LISTENING_ON_PORT": "true",
+		},
+	}
 
-	collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":1}`
-	collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
-
-	s.StartCollector(false)
+	s.StartCollector(false, &collectorOptions)
 
 	processImage := getProcessListeningOnPortsImage()
 

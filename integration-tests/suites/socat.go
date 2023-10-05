@@ -32,10 +32,16 @@ func (s *SocatTestSuite) SetupSuite() {
 	defer s.RecoverSetup("socat")
 	s.StartContainerStats()
 
-	s.Collector().Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
-	s.Collector().Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
+	collectorOptions := common.CollectorStartupOptions{
+		Config: map[string]any{
+			"turnOffScrape": false,
+		},
+		Env: map[string]string{
+			"ROX_PROCESSES_LISTENING_ON_PORT": "true",
+		},
+	}
 
-	s.StartCollector(false)
+	s.StartCollector(false, &collectorOptions)
 
 	processImage := config.Images().QaImageByKey("qa-socat")
 

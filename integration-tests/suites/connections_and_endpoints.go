@@ -31,13 +31,18 @@ type ConnectionsAndEndpointsTestSuite struct {
 func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 	defer s.RecoverSetup(s.Server.Name, s.Client.Name)
 	s.StartContainerStats()
-	collector := s.Collector()
 
-	collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
-	collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
-	collector.Env["ROX_ENABLE_AFTERGLOW"] = "false"
+	collectorOptions := common.CollectorStartupOptions{
+		Env: map[string]string{
+			"ROX_PROCESSES_LISTENING_ON_PORT": "true",
+			"ROX_ENABLE_AFTERGLOW":            "false",
+		},
+		Config: map[string]any{
+			"turnOffScrape": false,
+		},
+	}
 
-	s.StartCollector(false)
+	s.StartCollector(false, &collectorOptions)
 
 	socatImage := config.Images().QaImageByKey("qa-socat")
 

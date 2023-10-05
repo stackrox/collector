@@ -133,7 +133,7 @@ func (s *BenchmarkCollectorTestSuite) SetupSuite() {
 
 	s.StartPerfTools()
 
-	s.StartCollector(false)
+	s.StartCollector(false, nil)
 }
 
 func (s *BenchmarkCollectorTestSuite) TestBenchmarkCollector() {

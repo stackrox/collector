@@ -25,7 +25,7 @@ type ProcessNetworkTestSuite struct {
 func (s *ProcessNetworkTestSuite) SetupSuite() {
 	defer s.RecoverSetup("nginx", "nginx-curl")
 	s.StartContainerStats()
-	s.StartCollector(false)
+	s.StartCollector(false, nil)
 
 	image_store := config.Images()
 
