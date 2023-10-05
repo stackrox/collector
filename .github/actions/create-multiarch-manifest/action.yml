@@ -19,6 +19,8 @@ runs:
   steps:
     - shell: bash
       run: |
+        set -x
+
         read -ra archs <<< "${{ inputs.archs }}"
         for arch in "${archs[@]}"; do
           images+=("${{ inputs.base-image }}-${arch}${{ inputs.suffix }}")
