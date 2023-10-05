@@ -73,7 +73,7 @@ jobs:
 
       - uses: ./.github/actions/create-multiarch-manifest
         with:
-          base-image: quay.io/rhacs-eng/qa-multi-arch:collector-tests-${{ inputs.collector-tag }}'
+          base-image: quay.io/rhacs-eng/qa-multi-arch:collector-tests-${{ inputs.collector-tag }}
           archs: amd64 ppc64le s390x
 
   common-variables:
