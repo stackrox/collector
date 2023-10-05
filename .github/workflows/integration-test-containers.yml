@@ -58,6 +58,16 @@ jobs:
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-tests.yml
 
+  test-image-manifest:
+    name: Create integration test image manifest
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: ./.github/actions/create-multiarch-manifest
+        with:
+          base-image: quay.io/stackrox-io/collector-tests:${{ inputs.collector-tag }}'
+          archs: amd64 ppc64le s390x
+
   common-variables:
     runs-on: ubuntu-latest
     outputs:
