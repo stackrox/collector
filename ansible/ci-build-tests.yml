@@ -1,0 +1,49 @@
+---
+- name: Build Collector Integration Test image
+  hosts: all
+
+  environment:
+    COLLECTOR_TAG: "{{ collector_tag }}"
+    PLATFORM: "{{ ansible_env.PLATFORM }}"
+
+  tasks:
+
+    - name: Build the test image
+      make:
+        chdir: "{{ lookup('env', 'GITHUB_WORKSPACE') }}/integration-tests"
+        target: build-image
+      register: build_result
+
+    - name: Retag to arch specific image
+      community.docker.docker_image:
+        name: "{{ test_image }}"
+        repository: "{{ test_image }}-{{ arch }}"
+        source: local
+
+    - name: Untag image to prevent issues with multiarch
+      community.docker.docker_image:
+        name: "{{ test_image }}"
+        state: absent
+
+    - name: Login to quay.io
+      community.docker.docker_login:
+        registry_url: quay.io
+        username: "{{ stackrox_io_username }}"
+        password: "{{ stackrox_io_password }}"
+
+    - name: Push to quay.io/stackrox-io
+      community.docker.docker_image:
+        name: "{{ test_image }}-{{ arch }}"
+        push: true
+        source: local
+
+    - debug:
+        msg: |
+          Pushed {{ test_image }}-{{ arch }}
+
+    - name: Logout of quay.io
+      community.docker.docker_login:
+        registry_url: quay.io
+        state: absent
+      when: true
+
