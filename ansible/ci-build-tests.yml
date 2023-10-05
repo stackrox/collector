@@ -28,8 +28,8 @@
     - name: Login to quay.io
       community.docker.docker_login:
         registry_url: quay.io
-        username: "{{ stackrox_io_username }}"
-        password: "{{ stackrox_io_password }}"
+        username: "{{ rhacs_eng_username }}"
+        password: "{{ rhacs_eng_password }}"
 
     - name: Push to quay.io/stackrox-io
       community.docker.docker_image:

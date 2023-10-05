@@ -14,11 +14,11 @@ COLLECTOR_QA_TAG=$(shell cat container/QA_TAG | tr -d '\n')
 endif
 
 ifeq ($(COLLECTOR_TESTS_REPO),)
-COLLECTOR_TESTS_REPO=quay.io/stackrox-io/collector-tests
+COLLECTOR_TESTS_REPO=quay.io/rhacs-eng/qa-multi-arch
 endif
 
 ifeq ($(COLLECTOR_TESTS_IMAGE),)
-COLLECTOR_TESTS_IMAGE=$(COLLECTOR_TESTS_REPO):$(COLLECTOR_TAG)
+COLLECTOR_TESTS_IMAGE=$(COLLECTOR_TESTS_REPO):collector-tests-$(COLLECTOR_TAG)
 endif
 
 SHELL=/bin/bash
