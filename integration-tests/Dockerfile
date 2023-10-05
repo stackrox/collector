@@ -1,6 +1,6 @@
-FROM quay.io/stackrox-io/apollo-ci:collector-0.3.60
+FROM --platform=$BUILDPLATFORM golang:1.19
 
-ARG TEST_ROOT="/tests/"
+ARG TEST_ROOT="/tests"
 ARG QA_TAG
 ARG COLLECTOR_IMAGE
 

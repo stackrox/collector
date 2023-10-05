@@ -18,6 +18,45 @@ on:
         description: Whether the QA containers should be rebuilt
 
 jobs:
+  build-test-image:
+    name: Build the integration test image
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        arch: [amd64, ppc64le, s390x]
+
+    env:
+      PLATFORM: linux/${{ matrix.arch }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Create secrets.yml
+        run: |
+          {
+            echo "---"
+            echo "stackrox_io_username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}"
+            echo "stackrox_io_password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}"
+          } > ${{ github.workspace }}/ansible/secrets.yml
+
+      - name: Build images
+        run: |
+          ansible-galaxy install -r ansible/requirements.yml
+
+          ansible-playbook \
+            --connection local -i localhost --limit localhost \
+            -e collector_tag='${{ inputs.collector-tag }}' \
+            -e arch='${{ matrix.arch }}' \
+            -e @'${{ github.workspace }}/ansible/secrets.yml' \
+            ansible/ci-build-tests.yml
+
   common-variables:
     runs-on: ubuntu-latest
     outputs:

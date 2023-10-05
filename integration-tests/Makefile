@@ -50,7 +50,7 @@ build:
 
 .PHONY: build-image
 build-image:
-	docker build -t $(COLLECTOR_TESTS_IMAGE) \
+	docker build --platform $(PLATFORM) -t $(COLLECTOR_TESTS_IMAGE) \
 		--build-arg QA_TAG=$(shell cat container/QA_TAG) \
 		--build-arg COLLECTOR_IMAGE=$(COLLECTOR_IMAGE) \
 		.
