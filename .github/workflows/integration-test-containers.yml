@@ -51,7 +51,7 @@ jobs:
           ansible-galaxy install -r ansible/requirements.yml
 
           ansible-playbook \
-            --connection local -i localhost --limit localhost \
+            --connection local -i localhost, --limit localhost \
             -e collector_tag='${{ inputs.collector-tag }}' \
             -e arch='${{ matrix.arch }}' \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
