@@ -38,6 +38,7 @@ type IntegrationTestSuiteBase struct {
 	collector *common.CollectorManager
 	sensor    *mock_sensor.MockSensor
 	metrics   map[string]float64
+	stats     []ContainerStat
 }
 
 type ContainerStat struct {
@@ -139,33 +140,44 @@ func (s *IntegrationTestSuiteBase) SetSelinuxPermissiveIfNeeded() error {
 func (s *IntegrationTestSuiteBase) RecoverSetup(containers ...string) {
 	if r := recover(); r != nil {
 		containers = append(containers, containerStatsName)
-		s.cleanupContainer(containers)
+		s.cleanupContainers(containers...)
 		s.StopCollector()
 		panic(r)
 	}
 }
 
-func (s *IntegrationTestSuiteBase) GetContainerStats() (stats []ContainerStat) {
-	logs, err := s.containerLogs(containerStatsName)
-	if err != nil {
-		assert.FailNow(s.T(), "container-stats failure")
-		return nil
+func (s *IntegrationTestSuiteBase) GetContainerStats() []ContainerStat {
+	if s.stats == nil {
+		s.stats = make([]ContainerStat, 0)
+
+		logs, err := s.containerLogs(containerStatsName)
+		if err != nil {
+			assert.FailNow(s.T(), "container-stats failure")
+			return nil
+		}
+
+		logLines := strings.Split(logs, "\n")
+		for _, line := range logLines {
+			var stat ContainerStat
+
+			_ = json.Unmarshal([]byte(line), &stat)
+
+			s.stats = append(s.stats, stat)
+		}
+
+		s.cleanupContainers(containerStatsName)
 	}
-	logLines := strings.Split(logs, "\n")
-	for _, line := range logLines {
-		var stat ContainerStat
-		json.Unmarshal([]byte(line), &stat)
-		stats = append(stats, stat)
-	}
-	s.cleanupContainer([]string{containerStatsName})
-	return stats
+
+	return s.stats
 }
 
-func (s *IntegrationTestSuiteBase) PrintContainerStats(stats []ContainerStat) {
+func (s *IntegrationTestSuiteBase) PrintContainerStats() {
 	cpuStats := map[string][]float64{}
-	for _, stat := range stats {
+
+	for _, stat := range s.GetContainerStats() {
 		cpuStats[stat.Name] = append(cpuStats[stat.Name], stat.Cpu)
 	}
+
 	for name, cpu := range cpuStats {
 		s.AddMetric(fmt.Sprintf("%s_cpu_mean", name), stat.Mean(cpu, nil))
 		s.AddMetric(fmt.Sprintf("%s_cpu_stddev", name), stat.StdDev(cpu, nil))
@@ -175,15 +187,17 @@ func (s *IntegrationTestSuiteBase) PrintContainerStats(stats []ContainerStat) {
 	}
 }
 
-func (s *IntegrationTestSuiteBase) WritePerfResults(testName string, stats []ContainerStat, metrics map[string]float64) {
+func (s *IntegrationTestSuiteBase) WritePerfResults() {
+	s.PrintContainerStats()
+
 	perf := PerformanceResult{
-		TestName:         testName,
+		TestName:         s.T().Name(),
 		Timestamp:        time.Now().Format("2006-01-02 15:04:05"),
 		InstanceType:     config.VMInfo().InstanceType,
 		VmConfig:         config.VMInfo().Config,
 		CollectionMethod: config.CollectionMethod(),
-		Metrics:          metrics,
-		ContainerStats:   stats,
+		Metrics:          s.metrics,
+		ContainerStats:   s.GetContainerStats(),
 	}
 
 	perfJson, _ := json.Marshal(perf)
@@ -217,8 +231,8 @@ func (s *IntegrationTestSuiteBase) GetLogLines(containerName string) []string {
 	return logLines
 }
 
-func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, error) {
-	cmd := []string{common.RuntimeCommand, "run", "-d", "--name"}
+func (s *IntegrationTestSuiteBase) launchContainer(name string, args ...string) (string, error) {
+	cmd := []string{common.RuntimeCommand, "run", "-d", "--name", name}
 	cmd = append(cmd, args...)
 
 	output, err := common.Retry(func() (string, error) {
@@ -273,7 +287,7 @@ func (s *IntegrationTestSuiteBase) execContainerShellScript(containerName string
 	return s.Executor().ExecWithStdin(script, cmd...)
 }
 
-func (s *IntegrationTestSuiteBase) cleanupContainer(containers []string) {
+func (s *IntegrationTestSuiteBase) cleanupContainers(containers ...string) {
 	for _, container := range containers {
 		s.Executor().Exec(common.RuntimeCommand, "kill", container)
 		s.Executor().Exec(common.RuntimeCommand, "rm", container)
@@ -328,13 +342,12 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	s.Require().NoError(err)
 
 	benchmarkArgs := []string{
-		benchmarkName,
 		"--env", "FORCE_TIMES_TO_RUN=1",
 		benchmarkImage,
 		"batch-benchmark", "collector",
 	}
 
-	containerID, err := s.launchContainer(benchmarkArgs...)
+	containerID, err := s.launchContainer(benchmarkName, benchmarkArgs...)
 	s.Require().NoError(err)
 
 	_, err = s.waitForContainerToExit(benchmarkName, containerID, defaultWaitTickSeconds)
@@ -354,29 +367,14 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	}
 }
 
-func (s *IntegrationTestSuiteBase) RunImageWithJSONLabels() {
-	name := "jsonlabel"
-	image := config.Images().QaImageByKey("performance-json-label")
-	err := s.Executor().PullImage(image)
-	s.Require().NoError(err)
-	args := []string{
-		name,
-		image,
-	}
-	containerID, err := s.launchContainer(args...)
-	s.Require().NoError(err)
-	_, err = s.waitForContainerToExit(name, containerID, defaultWaitTickSeconds)
-	s.Require().NoError(err)
-}
-
 func (s *IntegrationTestSuiteBase) StartContainerStats() {
 	image := config.Images().QaImageByKey("performance-stats")
-	args := []string{containerStatsName, "-v", common.RuntimeSocket + ":/var/run/docker.sock", image}
+	args := []string{"-v", common.RuntimeSocket + ":/var/run/docker.sock", image}
 
 	err := s.Executor().PullImage(image)
 	s.Require().NoError(err)
 
-	_, err = s.launchContainer(args...)
+	_, err = s.launchContainer(containerStatsName, args...)
 	s.Require().NoError(err)
 }
 

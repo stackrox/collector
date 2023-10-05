@@ -62,10 +62,8 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 
 func (s *ProcessListeningOnPortTestSuite) TearDownSuite() {
 	s.StopCollector()
-	s.cleanupContainer([]string{"process-ports"})
-	stats := s.GetContainerStats()
-	s.PrintContainerStats(stats)
-	s.WritePerfResults("ProcessListeningOnPort", stats, s.metrics)
+	s.cleanupContainers("process-ports")
+	s.WritePerfResults()
 }
 
 func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {

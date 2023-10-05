@@ -48,10 +48,8 @@ func (s *DuplicateEndpointsTestSuite) SetupSuite() {
 
 func (s *DuplicateEndpointsTestSuite) TearDownSuite() {
 	s.StopCollector()
-	s.cleanupContainer([]string{"socat"})
-	stats := s.GetContainerStats()
-	s.PrintContainerStats(stats)
-	s.WritePerfResults("DuplicateEndpoints", stats, s.metrics)
+	s.cleanupContainers("socat")
+	s.WritePerfResults()
 }
 
 // https://issues.redhat.com/browse/ROX-13628
