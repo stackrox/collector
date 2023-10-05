@@ -123,8 +123,70 @@ func TestDuplicateEndpoints(t *testing.T) {
 	suite.Run(t, new(suites.DuplicateEndpointsTestSuite))
 }
 
-func TestChangeProcessName(t *testing.T) {
-	suite.Run(t, new(suites.ChangeProcessNameTestSuite))
+//func TestChangeProcessName(t *testing.T) {
+//	suite.Run(t, new(suites.ChangeProcessNameTestSuite))
+//}
+
+func TestChangeProcessName1(t *testing.T) {
+	changeProcessName := &suites.ChangeProcessNameTestSuite{
+		Executable:    "./change-process-name",
+		ContainerName: "change-process-name",
+		ExpectedEndpoints: []types.EndpointInfo{
+			{
+				Protocol:       "L4_PROTOCOL_TCP",
+				CloseTimestamp: types.NilTimestamp,
+				Address: &types.ListenAddress{
+					AddressData: "\x00\x00\x00\x00",
+					Port:        8082,
+					IpNetwork:   "\x00\x00\x00\x00 ",
+				},
+				Originator: &types.ProcessOriginator{
+					ProcessName:         "change-process-",
+					ProcessExecFilePath: "/change-process-name",
+					ProcessArgs:         "",
+				},
+			},
+		},
+		ExpectedProcesses: []types.ProcessInfo{
+			{
+				Name:    "change-process-",
+				ExePath: "/change-process-name",
+				Args:    "",
+			},
+		},
+	}
+	suite.Run(t, changeProcessName)
+}
+
+func TestChangeProcessName2(t *testing.T) {
+	changeProcessName := &suites.ChangeProcessNameTestSuite{
+		Executable:    "./change-executable-file-path",
+		ContainerName: "change-executable-file-path",
+		ExpectedEndpoints: []types.EndpointInfo{
+			{
+				Protocol:       "L4_PROTOCOL_TCP",
+				CloseTimestamp: types.NilTimestamp,
+				Address: &types.ListenAddress{
+					AddressData: "\x00\x00\x00\x00",
+					Port:        8082,
+					IpNetwork:   "\x00\x00\x00\x00 ",
+				},
+				Originator: &types.ProcessOriginator{
+					ProcessName:         "change-executab",
+					ProcessExecFilePath: "/change-executable-file-path",
+					ProcessArgs:         "",
+				},
+			},
+		},
+		ExpectedProcesses: []types.ProcessInfo{
+			{
+				Name:    "change-executab",
+				ExePath: "/change-executable-file-path",
+				Args:    "",
+			},
+		},
+	}
+	suite.Run(t, changeProcessName)
 }
 
 func TestConnectionsAndEndpointsNormal(t *testing.T) {

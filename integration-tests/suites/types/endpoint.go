@@ -6,3 +6,8 @@ type EndpointInfo struct {
 	CloseTimestamp string
 	Originator     *ProcessOriginator
 }
+
+func (n *EndpointInfo) IsActive() bool {
+	// no close timestamp means the connection is open, and active
+	return n.CloseTimestamp == NilTimestamp
+}
