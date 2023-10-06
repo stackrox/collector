@@ -84,7 +84,7 @@
 
     - name: Get log files
       find:
-        paths: "{{ remote_log_mount}}/{{ vm_config }}/{{ collection_method }}/"
+        paths: "{{ remote_log_mount }}/{{ vm_config }}/{{ collection_method }}/"
       register: remote_log_files
 
     - name: Fetch log files
@@ -98,7 +98,7 @@
 
     - name: Download perf JSON
       fetch:
-        src: "{{ remote_log_mount}}/perf.json"
+        src: "{{ remote_log_mount }}/perf.json"
         dest: "{{ integration_tests_root }}/"
         flat: true
         fail_on_missing: false
