@@ -2,3 +2,14 @@
 #rhel-8-6-s390x
 vsi_image_id: r038-0d89bf54-c28f-4dc4-bec0-0f8e03a74de3
 vsi_profile: bz2-2x8
+
+# IBM Cloud setup
+# vpc_name: lei-vpc-toronto
+s390x_vpc_id: r038-c4f8e233-4b56-44bd-af71-140ebd1664e9
+# subnet_name: stackrox-ci-sn3
+s390x_subnet_id: 02s7-0fca7f4f-7e53-40d5-a087-f8cb5d7ab682
+s390x_zone: ca-tor-3
+# ssh_key_name: acs-sshkey
+s390x_ssh_key_id: r038-fb0260c7-c01d-45c8-8026-7d50042943b9
+# vsi_resource_group: stackrox-ci-resource-group
+s390x_vsi_resource_group_id: 1a33a6a9bd6e498f8115e9b1064bfa97

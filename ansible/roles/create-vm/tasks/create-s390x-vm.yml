@@ -15,15 +15,15 @@
     name: "{{ vsi_name }}"
     state: available
     id: "{{ vsi.resource.id | default(omit) }}"
-    vpc: "{{ vpc_id }}"
+    vpc: "{{ s390x_vpc_id }}"
     profile: "{{ vsi_profile }}"
     image: "{{ vsi_image_id }}"
-    resource_group: "{{ vsi_resource_group_id }}"
+    resource_group: "{{ s390x_vsi_resource_group_id }}"
     keys:
-      - "{{ ssh_key_id }}"
+      - "{{ s390x_ssh_key_id }}"
     primary_network_interface:
-     - subnet: "{{ subnet_id }}"
-    zone: "{{ zone }}"
+     - subnet: "{{ s390x_subnet_id }}"
+    zone: "{{ s390x_zone }}"
   register: vsi
 
 - name: Check for existing Floating IP
@@ -39,7 +39,7 @@
     name: "{{ vsi_name }}-fip"
     state: available
     id: "{{ fip.resource.id | default(omit) }}"
-    resource_group: "{{ vsi_resource_group_id }}"
+    resource_group: "{{ s390x_vsi_resource_group_id }}"
     target: "{{ vsi.resource.primary_network_interface[0]['id'] }}"
   register: fip
 

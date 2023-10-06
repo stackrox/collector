@@ -24,6 +24,7 @@ excluded_pairs:
   # e.g. - ['ubuntu-1804-lts', 'core_bpf']
   # This can be removed once we have downloadable s390x eBPF drivers
   - [ 'rhel-8-6-s390x', 'ebpf' ]
+  # Also exclude Power & core_bpf, since it is currently unsupported
   - [ 'p', 'core_bpf' ]
 
 virtual_machines:
@@ -37,9 +38,9 @@ virtual_machines:
     project: rhel-s390x-cloud
     families:
       - rhel-8-6-s390x
-  
-  #We have taken families name as "p" since there is a character limit for instance name  
-  #in ibm cloud(56 chars max)
+
+  # We have taken families name as "p" since there is a character limit for instance name
+  # in ibm cloud (56 chars max)
   rhel-ppc64le:
     project: rhel-ppc64le-cloud
     families:
@@ -109,15 +110,3 @@ virtual_machines:
     project: sap-se-gcp-gardenlinux
     images:
       - "{{ lookup('file', 'group_vars/gardenlinux-image.txt') }}"
-
-
-# IBM Cloud setup
-# vpc_name: lei-vpc-toronto
-vpc_id: r038-c4f8e233-4b56-44bd-af71-140ebd1664e9
-# subnet_name: stackrox-ci-sn3
-subnet_id: 02s7-0fca7f4f-7e53-40d5-a087-f8cb5d7ab682
-zone: ca-tor-3
-# ssh_key_name: acs-sshkey
-ssh_key_id: r038-fb0260c7-c01d-45c8-8026-7d50042943b9
-# vsi_resource_group: stackrox-ci-resource-group
-vsi_resource_group_id: 1a33a6a9bd6e498f8115e9b1064bfa97
