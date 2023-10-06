@@ -123,10 +123,6 @@ func TestDuplicateEndpoints(t *testing.T) {
 	suite.Run(t, new(suites.DuplicateEndpointsTestSuite))
 }
 
-//func TestChangeProcessName(t *testing.T) {
-//	suite.Run(t, new(suites.ChangeProcessNameTestSuite))
-//}
-
 func TestChangeProcessName1(t *testing.T) {
 	changeProcessName := &suites.ChangeProcessNameTestSuite{
 		Executable:    "./change-process-name",

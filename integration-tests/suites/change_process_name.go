@@ -37,7 +37,9 @@ func (s *ChangeProcessNameTestSuite) SetupSuite() {
 }
 
 func (s *ChangeProcessNameTestSuite) TearDownSuite() {
-	s.cleanupContainer([]string{s.ContainerName, "collector"})
+	s.StopCollector()
+	s.cleanupContainer([]string{"collector"})
+	s.cleanupContainer([]string{s.ContainerName})
 }
 
 func (s *ChangeProcessNameTestSuite) TestChangeProcessName() {

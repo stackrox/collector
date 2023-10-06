@@ -41,22 +41,10 @@ int main(int argc, char* argv[]) {
 
   sleep(10);
 
-  char newName[] = "NewProcessName";
-
   // Change the process name
-
-  // argv[0] = newName;
   argv[0][0] = 'a';
 
-  printf("Process name changed to: %s\n", newName);
   printf("Process name changed to: %s\n", argv[0]);
-
-  // if (prctl(PR_SET_NAME, newName) == 0) {
-  //   printf("Process name changed to: %s\n", newName);
-  // } else {
-  //   perror("prctl");
-  //   return 1;
-  // }
 
   sleep(10000);
 
