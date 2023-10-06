@@ -111,6 +111,7 @@ set(NO_LINK_GRPC_LIBS ON CACHE BOOL "Do not link gRPC libraries" FORCE)
 set(WITH_CHISEL OFF CACHE BOOL "Include chisel implementation" FORCE)
 set(BUILD_LIBSCAP_GVISOR OFF CACHE BOOL "Do not build gVisor support" FORCE)
 set(MINIMAL_BUILD_WITH_EBPF ON CACHE BOOL "Minimal" FORCE)
+set(LIBELF_LIB_SUFFIX ".so" CACHE STRING "Use libelf.so" FORCE)
 
 # Turn OFF falco's unit tests and examples
 set(CREATE_TEST_TARGETS OFF CACHE BOOL "Enable make-targets for unit testing" FORCE)
