@@ -52,7 +52,6 @@ build:
 build-image:
 	docker build --platform $(PLATFORM) -t $(COLLECTOR_TESTS_IMAGE) \
 		--build-arg QA_TAG=$(shell cat container/QA_TAG) \
-		--build-arg COLLECTOR_IMAGE=$(COLLECTOR_IMAGE) \
 		.
 
 # Run everything on CI, rather than specific tests.

@@ -21,13 +21,6 @@ jobs:
   build-test-image:
     name: Build the integration test image
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: true
-      matrix:
-        arch: [amd64, ppc64le, s390x]
-
-    env:
-      PLATFORM: linux/${{ matrix.arch }}
 
     steps:
       - uses: actions/checkout@v3
@@ -52,8 +45,6 @@ jobs:
 
           ansible-playbook \
             --connection local -i localhost, --limit localhost \
-            -e collector_tag='${{ inputs.collector-tag }}' \
-            -e arch='${{ matrix.arch }}' \
             -e test_image='quay.io/rhacs-eng/qa-multi-arch:collector-tests-${{ inputs.collector-tag }}' \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-tests.yml
