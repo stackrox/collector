@@ -17,6 +17,12 @@
 
     - name: Build the test image
       shell:
+        # Reasons for not using community.docker.docker_image:
+        #   - it does not support multiple platforms (we could parallelize
+        #     via GHA, but the build is fast enough without, so this is simpler)
+        # Reasons for not using the build-image make target
+        #   - we can push the images and manifest in a single command. The make
+        #     target can be used for local development and testing.
         docker buildx build --push \
           --platform "${PLATFORMS}" \
           --build-arg QA_TAG="{{ lookup('file', collector_root + '/integration-tests/container/QA_TAG') }}" \
