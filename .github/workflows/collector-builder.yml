@@ -89,6 +89,10 @@ jobs:
           } > ${{ github.workspace }}/ansible/secrets.yml
 
       - name: Build images
+        if: |
+          github.event_name == 'push' ||
+          matrix.arch == 'amd64' ||
+          !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
         timeout-minutes: 480
         run: |
           ansible-galaxy install -r ansible/requirements.yml
@@ -107,7 +111,8 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' ||
-      needs.build-builder-image.outputs.collector-builder-tag != 'cache'
+      (needs.build-builder-image.outputs.collector-builder-tag != 'cache' &&
+       !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds'))
     env:
       COLLECTOR_BUILDER_TAG: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
       ARCHS: amd64 ppc64le s390x
@@ -141,3 +146,34 @@ jobs:
           base-image: quay.io/rhacs-eng/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
           archs: ${{ env.ARCHS }}
 
+  retag-x86-image:
+    needs:
+    - build-builder-image
+    name: Retag x86 builder image
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' &&
+      needs.build-builder-image.outputs.collector-builder-tag != 'cache' &&
+      contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
+    env:
+      COLLECTOR_BUILDER_TAG: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
+    steps:
+      - name: Pull image to retag
+        run: |
+          docker pull "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-amd64"
+
+      - name: Retag and push stackrox-io
+        uses: stackrox/actions/images/retag-and-push@v1
+        with:
+          src-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}-amd64
+          dst-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
+          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+
+      - name: Retag and push rhacs-eng
+        uses: stackrox/actions/images/retag-and-push@v1
+        with:
+          src-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}-amd64
+          dst-image: quay.io/rhacs-eng/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
+          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
