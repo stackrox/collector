@@ -54,7 +54,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [amd64, ppc64le, s390x]
+        arch: [amd64, ppc64le, s390x, arm64]
 
     env:
       PLATFORM: linux/${{ matrix.arch }}
@@ -120,7 +120,7 @@ jobs:
        contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds'))
     env:
       COLLECTOR_BUILDER_TAG: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
-      ARCHS: amd64 ppc64le s390x
+      ARCHS: amd64 ppc64le s390x arm64
 
     steps:
       - uses: actions/checkout@v3

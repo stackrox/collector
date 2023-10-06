@@ -31,7 +31,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [amd64, ppc64le, s390x]
+        arch: [amd64, ppc64le, s390x, arm64]
 
     env:
       PLATFORM: linux/${{ matrix.arch }}
@@ -95,7 +95,7 @@ jobs:
       github.event_name == 'push' ||
       contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
     env:
-      ARCHS: amd64 ppc64le s390x
+      ARCHS: amd64 ppc64le s390x arm64
 
     steps:
       - uses: actions/checkout@v3
