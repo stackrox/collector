@@ -8,7 +8,9 @@ USER root
 # emulating s390x on a x86 host (which is our case on GHA), see:
 # - https://bugzilla.redhat.com/show_bug.cgi?id=2209635
 # - https://bugzilla.redhat.com/show_bug.cgi?id=2211472
-RUN dnf install -y epel-release && \
+RUN dnf install -y dnf-plugins-core && \
+    dnf config-manager --set-enabled crb && \
+    dnf install -y epel-release && \
     dnf -y update \
     && dnf -y install --nobest \
         autoconf \
