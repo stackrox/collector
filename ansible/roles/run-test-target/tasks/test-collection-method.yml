@@ -38,9 +38,10 @@
     shell: |
       {% if runtime_as_root %}sudo{% endif %} \
         {{ runtime_command }} run -it --rm \
-          -v /tmp:{{ remote_logs_root }} \
+          -v {{ remote_log_mount }}:{{ container_logs_root }} \
           -v ~/.docker:/root/.docker \
           -v {{ runtime_socket }}:/var/run/docker.sock \
+          --network=host \
           -e COLLECTION_METHOD \
           -e VM_CONFIG \
           -e IMAGE_FAMILY \
@@ -83,7 +84,7 @@
 
     - name: Get log files
       find:
-        paths: "{{ remote_logs_root }}/{{ vm_config }}/{{ collection_method }}/"
+        paths: "{{ remote_log_mount}}/{{ vm_config }}/{{ collection_method }}/"
       register: remote_log_files
 
     - name: Fetch log files
@@ -97,7 +98,7 @@
 
     - name: Download perf JSON
       fetch:
-        src: "{{ remote_tests_root }}/perf.json"
+        src: "{{ remote_log_mount}}/perf.json"
         dest: "{{ integration_tests_root }}/"
         flat: true
         fail_on_missing: false
