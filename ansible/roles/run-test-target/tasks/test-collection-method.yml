@@ -23,33 +23,43 @@
 
 - set_fact:
     collector_image: "{{ lookup('env', 'COLLECTOR_IMAGE', default='quay.io/rhacs-eng/collector:' +  collector_tag_result.stdout) }}"
-    integration_tests_image: "{{ lookup('env', 'TEST_IMAGE', default='quay.io/rhacs-eng/qa-multi-arch:collector-tests-' + collector_tag_result.stdout }}"
+    integration_tests_image: "{{ lookup('env', 'TEST_IMAGE', default='quay.io/rhacs-eng/qa-multi-arch:collector-tests-' + collector_tag_result.stdout) }}"
 
 - set_fact:
-    run_args: -run {{ collector_test }} -timeout 60m -count=1
+    run_args: -test.run {{ collector_test }} -test.timeout 60m -test.count=1
   when: collector_test != "ci-integration-tests"
 
 - set_fact:
-    run_args: -timeout 120m -short
+    run_args: -test.timeout 120m -test.short
   when: collector_test == "ci-integration-tests"
 
 - block:
   - name: Run integration tests
     shell: |
       {% if runtime_as_root %}sudo{% endif %} \
-        {{ runtime_command }} -it --rm \
+        {{ runtime_command }} run -it --rm \
           -v /tmp:{{ remote_logs_root }} \
           -v ~/.docker:/root/.docker \
-          -e COLLECTION_METHOD='{{ collection_method }}' \
-          -e VM_CONFIG='{{ vm_config }}' \
-          -e IMAGE_FAMILY='{{ vm_image_family }}' \
-          -e RUNTIME_COMMAND='{{ runtime_command }}' \
-          -e RUNTIME_AS_ROOT='{{ runtime_as_root }}' \
-          -e RUNTIME_SOCKET='{{ runtime_socket }}' \
-          -e COLLECTOR_IMAGE='{{ collector_image }}' \
-          -e COLLECTOR_QA_TAG='{{ lookup('env', 'COLLECTOR_QA_TAG', default=lookup('file', integration_tests_root + '/container/QA_TAG')) }}'
+          -v {{ runtime_socket }}:/var/run/docker.sock \
+          -e COLLECTION_METHOD \
+          -e VM_CONFIG \
+          -e IMAGE_FAMILY \
+          -e RUNTIME_COMMAND \
+          -e RUNTIME_AS_ROOT \
+          -e RUNTIME_SOCKET \
+          -e COLLECTOR_IMAGE \
+          -e COLLECTOR_QA_TAG \
           {{ integration_tests_image }} \
-          {{ run_args }} -v 2>&1
+          {{ run_args }} -test.v 2>&1
+    environment:
+      COLLECTION_METHOD: "{{ collection_method }}"
+      VM_CONFIG: "{{ vm_config }}"
+      IMAGE_FAMILY: "{{ vm_image_family }}"
+      RUNTIME_COMMAND: "{{ runtime_command }}"
+      RUNTIME_AS_ROOT: "{{ runtime_as_root }}"
+      RUNTIME_SOCKET: "{{ runtime_socket }}"
+      COLLECTOR_IMAGE: "{{ collector_image }}"
+      COLLECTOR_QA_TAG: "{{ lookup('env', 'COLLECTOR_QA_TAG', default=lookup('file', integration_tests_root + '/container/QA_TAG')) }}"
     register: test_result
     # ensure that this is printed
     tags: [print_action]
