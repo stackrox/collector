@@ -252,6 +252,42 @@ func TestChangeProcessNameChildProcessNoExec(t *testing.T) {
 	suite.Run(t, changeProcessName)
 }
 
+func TestChangeProcessNameChildProcessNoFork(t *testing.T) {
+	changeProcessName := &suites.ChangeProcessNameTestSuite{
+		Executable:    "./listening-endpoint-child-process-no-fork",
+		ContainerName: "listening-endpoint-child-process-no-fork",
+		ExpectedEndpoints: []types.EndpointInfo{
+			{
+				Protocol:       "L4_PROTOCOL_TCP",
+				CloseTimestamp: types.NilTimestamp,
+				Address: &types.ListenAddress{
+					AddressData: "\x00\x00\x00\x00",
+					Port:        8082,
+					IpNetwork:   "\x00\x00\x00\x00 ",
+				},
+				Originator: &types.ProcessOriginator{
+					ProcessName:         "listening-endpo",
+					ProcessExecFilePath: "/listening-endpoint-child-process-no-fork",
+					ProcessArgs:         "3",
+				},
+			},
+		},
+		ExpectedProcesses: []types.ProcessInfo{
+			{
+				Name:    "listening-endpo",
+				ExePath: "/listening-endpoint-child-process-no-fork",
+				Args:    "",
+			},
+			{
+				Name:    "listening-endpo",
+				ExePath: "/listening-endpoint-child-process-no-fork",
+				Args:    "3",
+			},
+		},
+	}
+	suite.Run(t, changeProcessName)
+}
+
 func TestConnectionsAndEndpointsNormal(t *testing.T) {
 	// Server uses a normal port. Client is assigned a port in the ephemeral range in the normal way
 	normalPorts := &suites.ConnectionsAndEndpointsTestSuite{
