@@ -59,4 +59,4 @@
 
 - name: Permissive SELinux
   shell: sudo setenforce 0
-  when: needs_selinux_permissive
+  when: needs_selinux_permissive is defined and needs_selinux_permissive
