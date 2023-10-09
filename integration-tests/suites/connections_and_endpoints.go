@@ -29,7 +29,7 @@ type ConnectionsAndEndpointsTestSuite struct {
 }
 
 func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
-	defer s.RecoverSetup(s.Server.Name, s.Client.Name)
+	s.RegisterCleanup(s.Server.Name, s.Client.Name)
 	s.StartContainerStats()
 
 	collectorOptions := common.CollectorStartupOptions{

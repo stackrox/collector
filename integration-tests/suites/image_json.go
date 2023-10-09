@@ -9,7 +9,7 @@ type ImageLabelJSONTestSuite struct {
 }
 
 func (s *ImageLabelJSONTestSuite) SetupSuite() {
-	defer s.RecoverSetup()
+	s.RegisterCleanup()
 	s.StartCollector(false, nil)
 }
 

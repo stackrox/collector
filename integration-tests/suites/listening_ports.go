@@ -16,7 +16,7 @@ type ProcessListeningOnPortTestSuite struct {
 }
 
 func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
-	defer s.RecoverSetup("process-ports")
+	s.RegisterCleanup("process-ports")
 	s.StartContainerStats()
 
 	collectorOptions := common.CollectorStartupOptions{

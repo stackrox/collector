@@ -35,7 +35,7 @@ type RepeatedNetworkFlowTestSuite struct {
 // Launches gRPC server in insecure mode
 // Launches nginx container
 func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
-	defer s.RecoverSetup("nginx", "nginx-curl")
+	s.RegisterCleanup("nginx", "nginx-curl")
 	s.StartContainerStats()
 
 	collectorOptions := common.CollectorStartupOptions{
