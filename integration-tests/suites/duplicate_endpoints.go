@@ -30,7 +30,7 @@ func (s *DuplicateEndpointsTestSuite) killSocatProcess(port int) {
 }
 
 func (s *DuplicateEndpointsTestSuite) SetupSuite() {
-	defer s.RecoverSetup("socat")
+	s.RegisterCleanup("socat")
 	s.StartContainerStats()
 
 	collectorOptions := common.CollectorStartupOptions{

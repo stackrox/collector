@@ -133,17 +133,19 @@ func (s *IntegrationTestSuiteBase) SetSelinuxPermissiveIfNeeded() error {
 	return nil
 }
 
-// RecoverSetup wraps common recovery functionality that tests can use
-// in cases where SetupSuite may fail (panic). It should be deferred:
-//
-// defer s.RecoverSetup("nginx", "nginx-curl")
-func (s *IntegrationTestSuiteBase) RecoverSetup(containers ...string) {
-	if r := recover(); r != nil {
+// RegisterCleanup registers a cleanup function with the testing structures,
+// to cleanup all containers started by a test / suite (provided as args)
+func (s *IntegrationTestSuiteBase) RegisterCleanup(containers ...string) {
+	s.T().Cleanup(func() {
+		// If the test is successful, this clean up function is still run
+		// but everything should be clean already, so this should not fail
+		// if resources are already gone.
 		containers = append(containers, containerStatsName)
 		s.cleanupContainers(containers...)
-		s.StopCollector()
-		panic(r)
-	}
+		if running, _ := s.Collector().IsRunning(); running {
+			s.StopCollector()
+		}
+	})
 }
 
 func (s *IntegrationTestSuiteBase) GetContainerStats() []ContainerStat {

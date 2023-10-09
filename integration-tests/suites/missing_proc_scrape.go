@@ -14,7 +14,7 @@ type MissingProcScrapeTestSuite struct {
 const fakeProcDir = "/tmp/fake-proc"
 
 func (s *MissingProcScrapeTestSuite) SetupSuite() {
-	defer s.RecoverSetup()
+	s.RegisterCleanup()
 
 	_, err := os.Stat(fakeProcDir)
 	if os.IsNotExist(err) {

@@ -15,7 +15,7 @@ type SymbolicLinkProcessTestSuite struct {
 }
 
 func (s *SymbolicLinkProcessTestSuite) SetupSuite() {
-	defer s.RecoverSetup("process-ports")
+	s.RegisterCleanup("process-ports")
 	s.StartContainerStats()
 
 	collectorOptions := common.CollectorStartupOptions{

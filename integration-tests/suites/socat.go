@@ -29,7 +29,7 @@ type SocatTestSuite struct {
 }
 
 func (s *SocatTestSuite) SetupSuite() {
-	defer s.RecoverSetup("socat")
+	s.RegisterCleanup("socat")
 	s.StartContainerStats()
 
 	collectorOptions := common.CollectorStartupOptions{

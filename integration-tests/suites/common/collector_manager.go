@@ -116,7 +116,7 @@ func (c *CollectorManager) TearDown() error {
 		return coreDumpErr
 	}
 
-	isRunning, err := c.executor.IsContainerRunning("collector")
+	isRunning, err := c.IsRunning()
 	if err != nil {
 		fmt.Println("Error: Checking if container running")
 		return err
@@ -140,6 +140,10 @@ func (c *CollectorManager) TearDown() error {
 	}
 
 	return nil
+}
+
+func (c *CollectorManager) IsRunning() (bool, error) {
+	return c.executor.IsContainerRunning("collector")
 }
 
 // These two methods might be useful in the future. I used them for debugging
