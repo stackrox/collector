@@ -32,7 +32,7 @@ on:
           bucket will take precendence over the one in drivers-bucket.
       max-layer-depth:
         type: string
-        default: "5"
+        default: "4"
         description: |
           Max layer the drivers will be split into for x86 images
 
