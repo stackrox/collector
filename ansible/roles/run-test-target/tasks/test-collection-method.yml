@@ -33,6 +33,12 @@
     run_args: -test.timeout 120m -test.short
   when: collector_test == "ci-integration-tests"
 
+- name: Make logs directory
+  file:
+    path: "{{ remote_log_mount }}"
+    state: directory
+    mode: '0777'
+
 - block:
   - name: Run integration tests
     shell: |
@@ -40,6 +46,7 @@
         {{ runtime_command }} run -it --rm \
           -v {{ remote_log_mount }}:{{ container_logs_root }} \
           -v ~/.docker:/root/.docker \
+          -v /tmp/:/tmp \
           -v {{ runtime_socket }}:/var/run/docker.sock \
           --network=host \
           -e COLLECTION_METHOD \
