@@ -30,20 +30,20 @@ func (s *PerfEventOpenTestSuite) TestReadingTracepoints() {
 	containerID, err := s.launchContainer("perf-event-open", image, "", "STDOUT")
 	s.Require().NoError(err)
 
-	if finished, _ := b.waitForContainerToExit("perf-event-open", containerID, 5*time.Second); finished {
-		logs, err := b.containerLogs("perf-event-open")
+	if finished, _ := s.waitForContainerToExit("perf-event-open", containerID, 5*time.Second); finished {
+		logs, err := s.containerLogs("perf-event-open")
 		if err != nil {
 			fmt.Println(logs)
-			assert.FailNow(b.T(), "Failed to initialize host for performance testing")
+			assert.FailNow(s.T(), "Failed to initialize host for performance testing")
 		}
 
 		count, err := strconv.Atoi(logs)
 		if err != nil {
 			fmt.Println(logs)
-			assert.FailNow(b.T(), "Cannot convert result to the integer type")
+			assert.FailNow(s.T(), "Cannot convert result to the integer type")
 		}
 
-		assert.Assert(s.T(), count > 0, "Number of captured tracepoint events is zero")
+		s.Assert(s.T(), count > 0, "Number of captured tracepoint events is zero")
 	}
-	b.cleanupContainers(containerID)
+	s.cleanupContainers(containerID)
 }
