@@ -37,7 +37,7 @@
   vars:
     vsi_name: "{{ vm_name }}"
   when: arch_info == "s390x" and [vm_family, vm_collection_method] not in excluded_pairs
-  
+
 - name: Create IBM POWER VM
   include_tasks: create-ppc64le-vm.yml
   vars:

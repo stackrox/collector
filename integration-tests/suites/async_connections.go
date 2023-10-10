@@ -65,7 +65,7 @@ func (s *AsyncConnectionTestSuite) SetupSuite() {
 		target = "10.255.255.1"
 	}
 
-	containerID, err = s.launchContainer("client", image_store.ImageByKey("curl"), "curl", "--connect-timeout", "5", fmt.Sprintf("http://%s/", target))
+	containerID, err = s.launchContainer("client", image_store.QaImageByKey("qa-alpine-curl"), "curl", "--connect-timeout", "5", fmt.Sprintf("http://%s/", target))
 
 	s.Require().NoError(err)
 	s.clientContainer = common.ContainerShortID(containerID)
