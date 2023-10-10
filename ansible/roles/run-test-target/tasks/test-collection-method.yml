@@ -54,7 +54,7 @@
 
     # Some considerations for running the test container:
     #   1. the runtime auth must be mounted to allow the tests
-    #      to pull images.
+    #      to pull images. (~/.docker/config.json)
     #   2. /tmp is mounted to allow a common mount point for
     #      communication between containers (see listening ports test for
     #      an example.
