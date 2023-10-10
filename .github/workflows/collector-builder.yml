@@ -76,14 +76,13 @@ jobs:
           path: deps-ccache
           key: deps-ccache-${{ matrix.arch }}-${{ github.head_ref || github.ref_name }}
           restore-keys: |
-            deps-ccache-${{ matrix.arch }}-b57e7706065cb32ef659bc60cf06bd9f563f3579e1af2a8b895ffeee07432a24
             deps-ccache-${{ matrix.arch }}-
 
       - name: inject deps-ccache into docker
         uses: reproducible-containers/buildkit-cache-dance@v2.1.2
         with:
           cache-source: deps-ccache
-          cache-target: /root/.ccache
+          cache-target: /root/.cache
 
       - name: Define builder tag
         id: builder-tag

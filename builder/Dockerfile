@@ -51,15 +51,16 @@ RUN dnf -y update \
 # Build dependencies from source
 WORKDIR ${BUILD_DIR}
 
-COPY install builder/install
-COPY third_party third_party
-
 # Install ccache before the rest of dependencies
+COPY third_party/ccache third_party/ccache
 RUN mkdir -p third_party/ccache/build && \
     cd third_party/ccache/build && \
     cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTING=OFF -DENABLE_DOCUMENTATION=OFF -DREDIS_STORAGE_BACKEND=OFF .. && \
     make && \
     make install
+
+COPY builder builder
+COPY third_party third_party
 
 RUN --mount=type=cache,target=/root/.ccache/ "builder/install/install-dependencies.sh" && \
     rm -rf ${BUILD_DIR} && \
