@@ -43,7 +43,7 @@ func (s *PerfEventOpenTestSuite) TestReadingTracepoints() {
 			assert.FailNow(s.T(), "Cannot convert result to the integer type")
 		}
 
-		s.Assert(s.T(), count > 0, "Number of captured tracepoint events is zero")
+		s.Assert().Greater(s.T(), count, 0, "Number of captured tracepoint events is zero")
 	}
 	s.cleanupContainers(containerID)
 }
