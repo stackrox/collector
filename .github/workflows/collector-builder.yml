@@ -115,7 +115,7 @@ jobs:
         timeout-minutes: 480
         run: |
           ansible-galaxy install -r ansible/requirements.yml
-          ansible-playbook \
+          ansible-playbook -vvv \
             --connection local \
             -i localhost, \
             --limit localhost \
