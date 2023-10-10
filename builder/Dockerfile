@@ -1,8 +1,5 @@
 FROM quay.io/centos/centos:stream9
 
-ARG NPROCS=6
-ENV NPROCS=$NPROCS
-
 ARG BUILD_DIR=/install-tmp
 
 USER root
@@ -54,14 +51,12 @@ RUN dnf -y update \
 # Build dependencies from source
 WORKDIR ${BUILD_DIR}
 
-COPY builder builder
+COPY install builder/install
 COPY third_party third_party
 
-RUN "builder/install/install-dependencies.sh"
-
-RUN rm -rf ${BUILD_DIR}
-
-RUN echo -e '/usr/local/lib\n/usr/local/lib64' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
+RUN "builder/install/install-dependencies.sh" && \
+    rm -rf ${BUILD_DIR} && \
+    echo -e '/usr/local/lib\n/usr/local/lib64' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 
 # Set up ssh for remote development with IDE
 RUN ssh-keygen -A \

@@ -15,7 +15,7 @@ on:
 
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
-  DEFAULT_BUILDER_TAG: cache
+  DEFAULT_BUILDER_TAG: master
 
 jobs:
   builder-needs-rebuilding:
@@ -32,8 +32,9 @@ jobs:
         with:
           filters: |
             builder-changed:
-              - builder/**
-              - third_party/**
+              - builder/install/**
+              - builder/third_party/**
+              - builder/Dockerfile
 
   build-builder-image:
     name: Build the builder image
@@ -44,7 +45,9 @@ jobs:
     - builder-needs-rebuilding
     if: |
       needs.builder-needs-rebuilding.outputs.build-image == 'true' ||
-      (github.event_name == 'push' && github.ref_type == 'tag') ||
+      (github.event_name == 'push' && (
+        github.ref_type == 'tag' || startsWith(github.ref_name, 'release-')
+      )) ||
       contains(github.event.pull_request.labels.*.name, 'build-builder-image')
     outputs:
       collector-builder-tag: ${{ steps.builder-tag.outputs.collector-builder-tag }}
@@ -71,7 +74,9 @@ jobs:
         id: builder-tag
         run: |
           COLLECTOR_BUILDER_TAG="${DEFAULT_BUILDER_TAG}"
-          if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
+          if [[ "${{ github.event_name }}" == 'pull_request' || \
+                "${{ github.ref_type }}" == 'tag' || \
+                "${{ github.ref_name }}" =~ ^release- ]]; then
             COLLECTOR_BUILDER_TAG="${{ inputs.collector-tag }}"
           fi
 

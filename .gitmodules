@@ -1,33 +1,29 @@
 [submodule "grpc"]
-	path = third_party/grpc
+	path = builder/third_party/grpc
 	url = https://github.com/grpc/grpc
 	branch = master
 [submodule "third_party/abseil-cpp"]
-	path = third_party/abseil-cpp
+	path = builder/third_party/abseil-cpp
 	url = https://github.com/abseil/abseil-cpp.git
 	branch = master
 [submodule "third_party/protobuf"]
-	path = third_party/protobuf
+	path = builder/third_party/protobuf
 	url = https://github.com/protocolbuffers/protobuf.git
 	branch = main
 [submodule "third_party/googleapis"]
-	path = third_party/googleapis
+	path = builder/third_party/googleapis
 	url = https://github.com/googleapis/googleapis.git
 	branch = master
-[submodule "third_party/luajit2"]
-	path = third_party/luajit2
-	url = https://github.com/openresty/luajit2.git
-	branch = v2.1-agentzh
 [submodule "third_party/prometheus-cpp"]
-	path = third_party/prometheus-cpp
+	path = builder/third_party/prometheus-cpp
 	url = https://github.com/jupp0r/prometheus-cpp
 	branch = master
 [submodule "third_party/civetweb"]
-	path = third_party/civetweb
+	path = builder/third_party/civetweb
 	url = https://github.com/civetweb/civetweb.git
 	branch = master
 [submodule "third_party/libb64"]
-	path = third_party/libb64
+	path = builder/third_party/libb64
 	url = https://github.com/libb64/libb64.git
 	branch = master
 [submodule "falcosecurity-libs"]
@@ -43,21 +39,21 @@
 	url = https://github.com/stackrox/stackrox
 	branch = master
 [submodule "third_party/googletest"]
-	path = third_party/googletest
+	path = builder/third_party/googletest
 	url = https://github.com/google/googletest.git
 	branch = main
 [submodule "third_party/valijson"]
-	path = third_party/valijson
+	path = builder/third_party/valijson
 	url = https://github.com/tristanpenman/valijson.git
 	branch = master
 [submodule "third_party/jsoncpp"]
-	path = third_party/jsoncpp
+	path = builder/third_party/jsoncpp
 	url = https://github.com/open-source-parsers/jsoncpp.git
 [submodule "third_party/re2"]
-	path = third_party/re2
+	path = builder/third_party/re2
 	url = https://github.com/google/re2.git
 	branch = main
 [submodule "third_party/libbpf"]
-	path = third_party/libbpf
+	path = builder/third_party/libbpf
 	url = https://github.com/libbpf/libbpf
 	branch = v1.1.0
