@@ -153,8 +153,8 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   // set id
   signal->set_id(UUIDStr());
 
-  auto name = tinfo->get_comm();
-  auto exepath = tinfo->m_exepath;
+  const auto& name = tinfo->m_comm;
+  const auto& exepath = tinfo->m_exepath;
 
   // set name (if name is missing or empty, try to use exec_file_path)
   if (!name.empty() && name != "<NA>") {
