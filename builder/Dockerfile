@@ -61,6 +61,7 @@ RUN mkdir -p third_party/ccache/build && \
 
 ENV CMAKE_C_COMPILER_LAUNCHER=ccache
 ENV CMAKE_CXX_COMPILER_LAUNCHER=ccache
+ENV CCACHE_NOINODECACHE=true
 
 COPY builder builder
 COPY third_party third_party
