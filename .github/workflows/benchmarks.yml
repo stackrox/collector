@@ -50,7 +50,7 @@ jobs:
 
       - name: Calculate Baseline
         run: |
-          jq -s 'flatten' perf.json > integration-tests/perf-all.json
+          jq -s 'flatten' container-logs/**/perf.json > integration-tests/perf-all.json
 
           ./integration-tests/scripts/baseline/main.py --test integration-tests/perf-all.json \
             | sort \

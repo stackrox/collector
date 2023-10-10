@@ -119,13 +119,6 @@
       loop_control:
         loop_var: remote_log_path
 
-    - name: Download perf JSON
-      fetch:
-        src: "{{ remote_log_mount }}/perf.json"
-        dest: "{{ integration_tests_root }}/"
-        flat: true
-        fail_on_missing: false
-
     - name: Write integration test log
       copy:
         content: "{{ test_result.stdout }}"

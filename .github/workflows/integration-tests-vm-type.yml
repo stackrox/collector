@@ -194,5 +194,4 @@ jobs:
           name: ${{ inputs.vm_type }}-logs
           path: |
             ${{ github.workspace }}/integration-tests/container-logs/**/*
-            ${{ github.workspace }}/integration-tests/perf.json
             ${{ github.workspace }}/integration-tests/performance-logs/**/*

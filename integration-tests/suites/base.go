@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -192,7 +193,7 @@ func (s *IntegrationTestSuiteBase) WritePerfResults() {
 	}
 
 	perfJson, _ := json.Marshal(perf)
-	perfFilename := "perf.json"
+	perfFilename := filepath.Join(config.LogPath(), "perf.json")
 
 	fmt.Printf("Writing %s\n", perfFilename)
 	f, err := os.OpenFile(perfFilename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
