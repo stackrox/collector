@@ -15,7 +15,7 @@ COPY partition-probes.py /
 WORKDIR /kernel-modules
 
 # Split probes into directories containing at most max_layer_size bytes.
-RUN /partition-probes.py "${max_layer_depth}" "${max_layer_size}" "." "/layers" && \
+RUN /partition-probes.py "${max_layer_depth}" "${max_layer_size}" "." "/layers" "True" && \
   for i in "/layers"/*; do mkdir -p "$(basename "$i")"; xargs -a "$i" mv -t "$(basename "$i")" ; done
 
 # Probes are split across multiple layers to limit blob size
