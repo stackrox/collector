@@ -3,8 +3,6 @@
 set -e
 
 export LICENSE_DIR="/THIRD_PARTY_NOTICES"
-export CMAKE_C_COMPILER_LAUNCHER=ccache
-export CMAKE_CXX_COMPILER_LAUNCHER=ccache
 
 mkdir -p "${LICENSE_DIR}"
 

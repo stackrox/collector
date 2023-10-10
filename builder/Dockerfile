@@ -56,8 +56,11 @@ COPY third_party/ccache third_party/ccache
 RUN mkdir -p third_party/ccache/build && \
     cd third_party/ccache/build && \
     cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTING=OFF -DENABLE_DOCUMENTATION=OFF -DREDIS_STORAGE_BACKEND=OFF .. && \
-    make && \
+    make -j${NPROCS} && \
     make install
+
+ENV CMAKE_C_COMPILER_LAUNCHER=ccache
+ENV CMAKE_CXX_COMPILER_LAUNCHER=ccache
 
 COPY builder builder
 COPY third_party third_party
