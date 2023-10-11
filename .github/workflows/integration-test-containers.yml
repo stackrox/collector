@@ -53,7 +53,7 @@ jobs:
             echo "EOS"
           } >> "$GITHUB_OUTPUT"
 
-          COLLECTOR_QA_TAG="$(cat integration-tests/QA_TAG)"
+          COLLECTOR_QA_TAG="$(cat integration-tests/container/QA_TAG)"
           if [[ "${GITHUB_EVENT_NAME}" == "pull_request" && ${{ needs.test-containers.outputs.changed }} == "true" ]]; then
             COLLECTOR_QA_TAG="${COLLECTOR_QA_TAG}-${{ inputs.collector-tag }}"
           fi

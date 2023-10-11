@@ -91,7 +91,7 @@ jobs:
 
           {
             echo "collector-tag=${COLLECTOR_TAG}"
-            echo "collector-qa-tag=$(cat integration-tests/QA_TAG)"
+            echo "collector-qa-tag=$(cat integration-tests/container/QA_TAG)"
             echo "collector-image=quay.io/stackrox-io/collector:${COLLECTOR_TAG}"
           } >> "$GITHUB_OUTPUT"
 
