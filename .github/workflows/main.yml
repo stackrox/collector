@@ -102,13 +102,7 @@ jobs:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
       multi-arch-tests: |
-        ${{
-          github.event_name == 'push' ||
-          (
-            !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds') &&
-            contains(github.event.pull_request.labels.*.name, 'build-full-images')
-          )
-        }}
+          github.event_name == 'push' || !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     needs:
     - init

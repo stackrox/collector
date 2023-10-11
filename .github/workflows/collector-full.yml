@@ -228,7 +228,8 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'pull_request' &&
-      !contains(github.event.pull_request.labels.*.name, 'build-full-images')
+      !contains(github.event.pull_request.labels.*.name, 'build-full-images') &&
+      contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
     env:
       COLLECTOR_IMAGE_SLIM: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-slim
 
@@ -268,3 +269,52 @@ jobs:
           dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-latest
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+
+  slim-multiarch-manifests:
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.build-full-image && !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds') }}
+    needs: retag-collector-slim
+    env:
+      BASE_IMAGE: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
+      ARCHS: amd64 ppc64le s390x
+
+    steps:
+      - name: Login to quay.io/stackrox-io
+        uses: docker/login-action@v2
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+
+      - name: Create multi-arch manifest stackrox-io
+        uses: ./.github/actions/create-multiarch-manifest
+        with:
+          base-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
+          archs: ${{ env.ARCHS }}
+
+      - name: Create multi-arch manifest stackrox-io -latest
+        uses: ./.github/actions/create-multiarch-manifest
+        with:
+          base-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
+          archs: ${{ env.ARCHS }}
+          suffix: -latest
+
+      - name: Login to quay.io/rhacs-eng
+        uses: docker/login-action@v2
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+
+      - name: Create multi-arch manifest rhacs-eng
+        uses: ./.github/actions/create-multiarch-manifest
+        with:
+          base-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
+          archs: ${{ env.ARCHS }}
+
+      - name: Create multi-arch manifest rhacs-eng -latest
+        uses: ./.github/actions/create-multiarch-manifest
+        with:
+          base-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
+          archs: ${{ env.ARCHS }}
+          suffix: -latest
