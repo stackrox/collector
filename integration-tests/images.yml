@@ -14,4 +14,3 @@ qa:
 
 non_qa:
   nginx: nginx:1.14-alpine
-  grpc-server: quay.io/rhacs-eng/grpc-server:4.1.x-780-g5d8b38fe4d
