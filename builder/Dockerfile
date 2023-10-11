@@ -63,7 +63,7 @@ ENV CMAKE_C_COMPILER_LAUNCHER=ccache
 ENV CMAKE_CXX_COMPILER_LAUNCHER=ccache
 ENV CCACHE_NOINODECACHE=true
 
-COPY builder builder
+COPY install builder/install
 COPY third_party third_party
 
 RUN --mount=type=cache,target=/root/.ccache/ "builder/install/install-dependencies.sh" && \
