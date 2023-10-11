@@ -8,6 +8,11 @@ on:
           Tag used for running the integration tests
         type: string
         required: true
+      collector-qa-tag:
+        description: |
+          Tag used for QA containers
+        type: string
+        required: true
       job-tag:
         description: |
           Used to differentiate between different sources when creating
@@ -29,6 +34,7 @@ jobs:
     with:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ inputs.collector-tag }}
+      collector-qa-tag: ${{ inputs.collector-qa-tag }}
       job-tag: ${{ inputs.job-tag }}
     secrets: inherit
 
@@ -53,6 +59,7 @@ jobs:
     with:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ inputs.collector-tag }}
+      collector-qa-tag: ${{ inputs.collector-qa-tag }}
       job-tag: ${{ inputs.job-tag }}
     secrets: inherit
 

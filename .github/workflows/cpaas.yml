@@ -104,6 +104,7 @@ jobs:
     with:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
+      collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
       offline-mode: true
       job-tag: cpaas
     needs:
@@ -127,6 +128,7 @@ jobs:
     with:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
+      collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
       offline-mode: true
       job-tag: cpaas
     needs:

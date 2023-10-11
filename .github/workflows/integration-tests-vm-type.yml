@@ -13,6 +13,11 @@ on:
           Tag used for running the integration tests
         type: string
         required: true
+      collector-qa-tag:
+        description: |
+          Tag used for QA containers
+        type: string
+        required: true
       offline-mode:
         description: |
           Set to true to enable collector running in offline mode
@@ -55,6 +60,7 @@ jobs:
       BUILD_TYPE: ci
       VM_TYPE: "${{ inputs.vm_type }}"
       COLLECTOR_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
+      COLLECTOR_QA_TAG: ${{ inputs.collector-qa-tag }}
     steps:
       - uses: actions/checkout@v3
 

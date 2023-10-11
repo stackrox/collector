@@ -2,6 +2,16 @@ name: Build Integration Test Containers
 
 on:
   workflow_call:
+    inputs:
+      collector-tag:
+        type: string
+        required: true
+        description: |
+          The tag used to build the collector image
+    outputs:
+      collector-qa-tag:
+        description: Tag used for QA containers
+        value: ${{ jobs.common-variables.outputs.collector-qa-tag }}
 
 jobs:
   test-containers:
@@ -26,6 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       build-dirs: ${{ steps.variables.outputs.build-dirs }}
+      collector-qa-tag: ${{ steps.variables.outputs.collector-qa-tag }}
 
     steps:
       - uses: actions/checkout@v3
@@ -42,6 +53,12 @@ jobs:
             echo "EOS"
           } >> "$GITHUB_OUTPUT"
 
+          COLLECTOR_QA_TAG="$(cat integration-tests/QA_TAG)"
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" && ${{ needs.test-containers.outputs.changed }} == "true" ]]; then
+            COLLECTOR_QA_TAG="${COLLECTOR_QA_TAG}-${{ inputs.collector-tag }}"
+          fi
+          echo "collector-qa-tag=${COLLECTOR_QA_TAG}" >> "$GITHUB_OUTPUT"
+
   rebuild-containers:
     needs:
       - test-containers
@@ -55,6 +72,7 @@ jobs:
         directory: ${{ fromJSON(needs.common-variables.outputs.build-dirs) }}
     env:
       PLATFORM: linux/amd64,linux/s390x,linux/ppc64le
+      COLLECTOR_QA_TAG: ${{ needs.common-variables.outputs.collector-qa-tag }}
 
     steps:
       - uses: actions/checkout@v3
