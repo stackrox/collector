@@ -234,7 +234,7 @@ func (s *IntegrationTestSuiteBase) GetLogLines(containerName string) []string {
 }
 
 func (s *IntegrationTestSuiteBase) launchContainer(name string, args ...string) (string, error) {
-	cmd := []string{common.RuntimeCommand, "run", "-d", "--name", name}
+	cmd := []string{common.RuntimeCommand, "run", "-d", "--name", name, "--privileged"}
 	cmd = append(cmd, args...)
 
 	output, err := common.Retry(func() (string, error) {
