@@ -13,6 +13,7 @@ type ChangeProcessNameTestSuite struct {
 	IntegrationTestSuiteBase
 	container         string
 	Executable        string
+	Args              []string
 	ExpectedEndpoints []types.EndpointInfo
 	ExpectedProcesses []types.ProcessInfo
 	ContainerName     string
@@ -28,7 +29,9 @@ func (s *ChangeProcessNameTestSuite) SetupSuite() {
 	s.StartCollector(false)
 
 	image := config.Images().QaImageByKey("qa-plop")
-	containerID, err := s.launchContainer(s.ContainerName, "--entrypoint", s.Executable, image)
+	cmd := []string{s.ContainerName, "--entrypoint", s.Executable, image}
+	cmd = append(cmd, s.Args...)
+	containerID, err := s.launchContainer(cmd...)
 
 	s.Require().NoError(err)
 	s.container = common.ContainerShortID(containerID)
@@ -49,7 +52,11 @@ func (s *ChangeProcessNameTestSuite) TestChangeProcessName() {
 	assert.Equal(s.T(), len(s.ExpectedEndpoints), len(endpoints))
 	assert.Equal(s.T(), len(s.ExpectedProcesses), len(processes))
 
-	for idx := range s.ExpectedEndpoints {
+	minEndpoints := common.Min(len(s.ExpectedEndpoints), len(endpoints))
+
+	types.SortEndpoints(endpoints)
+
+	for idx := 0; idx < minEndpoints; idx++ {
 		assert.Equal(s.T(), s.ExpectedEndpoints[idx].Protocol, endpoints[idx].Protocol)
 		assert.Equal(s.T(), s.ExpectedEndpoints[idx].Address.AddressData, endpoints[idx].Address.AddressData)
 		assert.Equal(s.T(), s.ExpectedEndpoints[idx].Address.Port, endpoints[idx].Address.Port)
@@ -60,7 +67,9 @@ func (s *ChangeProcessNameTestSuite) TestChangeProcessName() {
 		assert.Equal(s.T(), s.ExpectedEndpoints[idx].Originator.ProcessArgs, endpoints[idx].Originator.ProcessArgs)
 	}
 
-	for idx := range s.ExpectedProcesses {
+	minProcesses := common.Min(len(s.ExpectedProcesses), len(processes))
+
+	for idx := 0; idx < minProcesses; idx++ {
 		assert.Equal(s.T(), s.ExpectedProcesses[idx].Name, processes[idx].Name)
 		assert.Equal(s.T(), s.ExpectedProcesses[idx].ExePath, processes[idx].ExePath)
 		assert.Equal(s.T(), s.ExpectedProcesses[idx].Args, processes[idx].Args)

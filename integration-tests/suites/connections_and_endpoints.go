@@ -2,7 +2,6 @@ package suites
 
 import (
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -132,10 +131,12 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 	if s.Server.ExpectedEndpoints != nil {
 		assert.Equal(s.T(), len(s.Server.ExpectedEndpoints), len(serverEndpoints))
 
-		sort.Slice(s.Server.ExpectedEndpoints, func(i, j int) bool {
-			return endpointComparison(s.Server.ExpectedEndpoints[i], s.Server.ExpectedEndpoints[j])
-		})
-		sort.Slice(serverEndpoints, func(i, j int) bool { return endpointComparison(serverEndpoints[i], serverEndpoints[j]) })
+		types.SortEndpoints(s.Server.ExpectedEndpoints)
+		types.SortEndpoints(serverEndpoints)
+		//sort.Slice(s.Server.ExpectedEndpoints, func(i, j int) bool {
+		//	return endpointComparison(s.Server.ExpectedEndpoints[i], s.Server.ExpectedEndpoints[j])
+		//})
+		//sort.Slice(serverEndpoints, func(i, j int) bool { return endpointComparison(serverEndpoints[i], serverEndpoints[j]) })
 
 		for idx := range serverEndpoints {
 			assert.Equal(s.T(), s.Server.ExpectedEndpoints[idx].Protocol, serverEndpoints[idx].Protocol)
@@ -145,37 +146,4 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 		assert.Equal(s.T(), 0, len(serverEndpoints))
 	}
 
-}
-
-func endpointComparison(endpoint1 types.EndpointInfo, endpoint2 types.EndpointInfo) bool {
-	addr1, addr2 := endpoint1.Address, endpoint2.Address
-
-	if addr1 == nil {
-		return false
-	}
-	if addr2 == nil {
-		return true
-	}
-
-	if addr1.AddressData < addr2.AddressData {
-		return true
-	}
-
-	if addr1.AddressData > addr2.AddressData {
-		return false
-	}
-
-	if addr1.Port < addr2.Port {
-		return true
-	}
-
-	if addr1.Port > addr2.Port {
-		return false
-	}
-
-	if endpoint1.Protocol < endpoint2.Protocol {
-		return true
-	}
-
-	return false
 }

@@ -9,11 +9,14 @@
 
 int main(int argc, char* argv[]) {
   int sockfd;
+  int sleep_before_child;
   bool is_parent = true;
 
+  sleep_before_child = atoi(argv[1]);
+
   // Check if sockfd is provided as a command line argument
-  if (argc == 2) {
-    sockfd = atoi(argv[1]);
+  if (argc == 3) {
+    sockfd = atoi(argv[2]);
     is_parent = false;
   } else {
     // Create a socket if sockfd is not provided as an argument
@@ -45,11 +48,15 @@ int main(int argc, char* argv[]) {
 
   printf("Listening on port 8082...\n");
 
+  sleep(sleep_before_child);
+
   if (is_parent) {
     // Pass the socket file descriptor to the child
     char sockfd_str[32];
     snprintf(sockfd_str, sizeof(sockfd_str), "%d", sockfd);
-    char* const child_args[] = {"listening-endpoint-child-process-no-fork", sockfd_str, NULL};
+    char sleep_before_child_str[32];
+    sprintf(sleep_before_child_str, "%d", sleep_before_child);
+    char* const child_args[] = {"listening-endpoint-child-process-no-fork", sleep_before_child_str, sockfd_str, NULL};
 
     // Replace the child process with a new program
     if (execve("./listening-endpoint-child-process-no-fork", child_args, NULL) == -1) {

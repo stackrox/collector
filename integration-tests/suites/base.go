@@ -220,6 +220,7 @@ func (s *IntegrationTestSuiteBase) GetLogLines(containerName string) []string {
 func (s *IntegrationTestSuiteBase) launchContainer(args ...string) (string, error) {
 	cmd := []string{common.RuntimeCommand, "run", "-d", "--name"}
 	cmd = append(cmd, args...)
+	fmt.Println(cmd)
 
 	output, err := common.Retry(func() (string, error) {
 		return s.Executor().Exec(cmd...)
