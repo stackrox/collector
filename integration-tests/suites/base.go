@@ -236,6 +236,7 @@ func (s *IntegrationTestSuiteBase) GetLogLines(containerName string) []string {
 func (s *IntegrationTestSuiteBase) launchContainer(name string, args ...string) (string, error) {
 	cmd := []string{common.RuntimeCommand, "run", "-d", "--name", name}
 	cmd = append(cmd, args...)
+	fmt.Println(cmd)
 
 	output, err := common.Retry(func() (string, error) {
 		return s.Executor().Exec(cmd...)

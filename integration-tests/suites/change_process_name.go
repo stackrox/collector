@@ -5,12 +5,18 @@ import (
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/suites/types"
 	"github.com/stretchr/testify/assert"
 )
 
 type ChangeProcessNameTestSuite struct {
 	IntegrationTestSuiteBase
-	serverContainer string
+	container         string
+	Executable        string
+	Args              []string
+	ExpectedEndpoints []types.EndpointInfo
+	ExpectedProcesses []types.ProcessInfo
+	ContainerName     string
 }
 
 func (s *ChangeProcessNameTestSuite) SetupSuite() {
@@ -22,35 +28,50 @@ func (s *ChangeProcessNameTestSuite) SetupSuite() {
 
 	s.StartCollector(false)
 
-	changeProcessNameImage := config.Images().QaImageByKey("qa-plop")
-	// TODO pass arbitrary commands here
-	containerID, err := s.launchContainer("change-process-name", "--entrypoint", "./change-process-name", changeProcessNameImage)
+	image := config.Images().QaImageByKey("qa-plop")
+	cmd := []string{s.ContainerName, "--entrypoint", s.Executable, image}
+	cmd = append(cmd, s.Args...)
+	containerID, err := s.launchContainer(cmd...)
 
 	s.Require().NoError(err)
-	s.serverContainer = common.ContainerShortID(containerID)
+	s.container = common.ContainerShortID(containerID)
 
 	time.Sleep(20 * time.Second)
 }
 
 func (s *ChangeProcessNameTestSuite) TearDownSuite() {
-	s.cleanupContainer([]string{"change-process-name", "collector"})
+	s.StopCollector()
+	s.cleanupContainer([]string{"collector"})
+	s.cleanupContainer([]string{s.ContainerName})
 }
 
 func (s *ChangeProcessNameTestSuite) TestChangeProcessName() {
-	processes := s.Sensor().Processes(s.serverContainer)
-	endpoints := s.Sensor().Endpoints(s.serverContainer)
+	processes := s.Sensor().Processes(s.container)
+	endpoints := s.Sensor().Endpoints(s.container)
 
-	assert.Equal(s.T(), 1, len(endpoints))
-	assert.Equal(s.T(), 1, len(processes))
+	assert.Equal(s.T(), len(s.ExpectedEndpoints), len(endpoints))
+	assert.Equal(s.T(), len(s.ExpectedProcesses), len(processes))
 
-	assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoints[0].Protocol)
-	assert.Equal(s.T(), endpoints[0].Originator.ProcessName, processes[0].Name)
-	assert.Equal(s.T(), endpoints[0].Originator.ProcessExecFilePath, processes[0].ExePath)
-	assert.Equal(s.T(), endpoints[0].Originator.ProcessArgs, processes[0].Args)
-	assert.Equal(s.T(), 8082, endpoints[0].Address.Port)
+	minEndpoints := common.Min(len(s.ExpectedEndpoints), len(endpoints))
 
-	assert.Equal(s.T(), processes[0].Name, "change-process-")
-	assert.Equal(s.T(), processes[0].Uid, 0)
-	assert.Equal(s.T(), processes[0].Gid, 0)
-	assert.Equal(s.T(), processes[0].Args, "")
+	types.SortEndpoints(endpoints)
+
+	for idx := 0; idx < minEndpoints; idx++ {
+		assert.Equal(s.T(), s.ExpectedEndpoints[idx].Protocol, endpoints[idx].Protocol)
+		assert.Equal(s.T(), s.ExpectedEndpoints[idx].Address.AddressData, endpoints[idx].Address.AddressData)
+		assert.Equal(s.T(), s.ExpectedEndpoints[idx].Address.Port, endpoints[idx].Address.Port)
+		assert.Equal(s.T(), s.ExpectedEndpoints[idx].Address.IpNetwork, endpoints[idx].Address.IpNetwork)
+		assert.Equal(s.T(), s.ExpectedEndpoints[idx].IsActive(), endpoints[idx].IsActive())
+		assert.Equal(s.T(), s.ExpectedEndpoints[idx].Originator.ProcessName, endpoints[idx].Originator.ProcessName)
+		assert.Equal(s.T(), s.ExpectedEndpoints[idx].Originator.ProcessExecFilePath, endpoints[idx].Originator.ProcessExecFilePath)
+		assert.Equal(s.T(), s.ExpectedEndpoints[idx].Originator.ProcessArgs, endpoints[idx].Originator.ProcessArgs)
+	}
+
+	minProcesses := common.Min(len(s.ExpectedProcesses), len(processes))
+
+	for idx := 0; idx < minProcesses; idx++ {
+		assert.Equal(s.T(), s.ExpectedProcesses[idx].Name, processes[idx].Name)
+		assert.Equal(s.T(), s.ExpectedProcesses[idx].ExePath, processes[idx].ExePath)
+		assert.Equal(s.T(), s.ExpectedProcesses[idx].Args, processes[idx].Args)
+	}
 }
