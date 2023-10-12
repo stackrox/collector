@@ -53,16 +53,25 @@ jobs:
           IFS=$'\n' read -r -d '' -a perf_files < <(find container-logs -name 'perf.json')
           jq -s 'flatten' "${perf_files[@]}" > integration-tests/perf-all.json
 
+          echo "Flattened."
+          cat integration-tests/perf-all.json
+
           ./integration-tests/scripts/baseline/main.py --test integration-tests/perf-all.json \
             | sort \
             | awk -f ./integration-tests/scripts/baseline/format.awk > benchmark.md
 
+          echo "Run baseline script"
+
           delimiter=$(openssl rand -hex 8)
+          echo "Run openssl"
+
           {
             echo "PERF_TABLE<<${delimiter}"
             cat benchmark.md
             echo "${delimiter}"
           } >> "$GITHUB_ENV"
+
+          echo "Done"
         env:
           GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT: "${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}"
 
