@@ -13,12 +13,12 @@ type PerfEventOpenTestSuite struct {
 	IntegrationTestSuiteBase
 }
 
-func (s *DuplicateEndpointsTestSuite) SetupSuite() {
+func (s *PerfEventOpenTestSuite) SetupSuite() {
 	s.RegisterCleanup("perf-event-open")
 	s.StartCollector(false, nil)
 }
 
-func (s *DuplicateEndpointsTestSuite) TearDownSuite() {
+func (s *PerfEventOpenTestSuite) TearDownSuite() {
 	s.StopCollector()
 	s.cleanupContainers("perf-event-open")
 }
