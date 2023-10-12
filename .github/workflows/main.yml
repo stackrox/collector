@@ -114,7 +114,9 @@ jobs:
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
+    # Temporarily disable benchmarks due to baseline calculation
+    # inconsistencies. This will be fixed and re-enabled in the future.
+    if: false # ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     needs:
     - init
     - build-collector-slim
