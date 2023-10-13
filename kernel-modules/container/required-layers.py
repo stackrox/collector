@@ -24,7 +24,7 @@ if __name__ == '__main__':
 
     probe_sizes = get_probe_sizes(args.probe_dir)
 
-    buckets = 1
+    buckets = 0
     remaining_bucket_bytes = bytes_per_layer
     for size in probe_sizes:
         if remaining_bucket_bytes - size < 0:
