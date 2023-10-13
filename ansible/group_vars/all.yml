@@ -39,7 +39,6 @@ virtual_machines:
   ubuntu-os:
     project: ubuntu-os-cloud
     families:
-      - ubuntu-1804-lts
       - ubuntu-2004-lts
       - ubuntu-2204-lts
 
