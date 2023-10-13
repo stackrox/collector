@@ -29,7 +29,7 @@
         name: "{{ collector_image }}-{{ arch }}"
         build:
           platform: "linux/{{ arch }}"
-          target: "final"
+          target: "probe-layer-{{ required_layers }}"
           args:
             collector_repo: quay.io/stackrox-io/collector
             collector_version: "{{ collector_tag }}-{{ arch }}"
