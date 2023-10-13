@@ -15,7 +15,7 @@ def get_probe_sizes(probe_dir):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('probe-dir', help='The path to the downloaded probes')
+    parser.add_argument('probe_dir', metavar='probe-dir', help='The path to the downloaded probes')
     parser.add_argument('--mb-per-layer', '-m', type=int, default=300, help='Number of megabytes per layer')
 
     args = parser.parse_args()
