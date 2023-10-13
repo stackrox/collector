@@ -35,7 +35,6 @@
             collector_version: "{{ collector_tag }}-{{ arch }}"
             module_version: "{{ driver_version }}"
             max_layer_size: 300
-            max_layer_depth: "{{ max_layer_depth }}"
             required_layers: "{{ required_layers }}"
           path: "{{ context_path }}"
         push: true
