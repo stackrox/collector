@@ -18,7 +18,7 @@
 
     - name: Calculate required layers
       shell:
-        cmd: "{{ context_path }}/required-layers.py -m 300 kernel-modules"
+        cmd: "{{ context_path }}/required-layers.py -m 300 {{ context_path }}/kernel-modules"
       register: required_layers
 
     - set_fact:
