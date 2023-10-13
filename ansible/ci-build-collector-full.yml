@@ -16,18 +16,27 @@
         pull:
           platform: "linux/{{ arch }}"
 
+    - name: Calculate required layers
+      shell:
+        cmd: "{{ context_path }}/required-layers.py -m 300 kernel-modules"
+      register: required_layers
+
+    - set_fact:
+        required_layers: "{{ required_layers.stdout }}"
+
     - name: Build the collector full image
       community.docker.docker_image:
         name: "{{ collector_image }}-{{ arch }}"
         build:
           platform: "linux/{{ arch }}"
-          target: "probe-layer-{{ max_layer_depth }}"
+          target: "final"
           args:
             collector_repo: quay.io/stackrox-io/collector
             collector_version: "{{ collector_tag }}-{{ arch }}"
             module_version: "{{ driver_version }}"
             max_layer_size: 300
             max_layer_depth: "{{ max_layer_depth }}"
+            required_layers: "{{ required_layers }}"
           path: "{{ context_path }}"
         push: true
         source: build

@@ -4,7 +4,7 @@ ARG base_image=${collector_repo}:${collector_version}-slim
 
 FROM python:3 as kernel-modules
 ARG max_layer_size=xxx
-ARG max_layer_depth=xxx
+ARG required_layers=xxx
 
 # Increase the value in this check if additional hardcoded layers are added below.
 RUN test "${max_layer_depth}" -le 9
@@ -15,7 +15,7 @@ COPY partition-probes.py /
 WORKDIR /kernel-modules
 
 # Split probes into directories containing at most max_layer_size bytes.
-RUN /partition-probes.py "${max_layer_depth}" "${max_layer_size}" "." "/layers" && \
+RUN /partition-probes.py "${required_layers}" "${max_layer_size}" "." "/layers" && \
   for i in "/layers"/*; do mkdir -p "$(basename "$i")"; xargs -a "$i" mv -t "$(basename "$i")" ; done
 
 # Probes are split across multiple layers to limit blob size
@@ -45,3 +45,5 @@ COPY --from=kernel-modules /kernel-modules/7 /kernel-modules/
 
 FROM probe-layer-8 AS probe-layer-9
 COPY --from=kernel-modules /kernel-modules/8 /kernel-modules/
+
+FROM probe-layer-${required_layers} AS final
