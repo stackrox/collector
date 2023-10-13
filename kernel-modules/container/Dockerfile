@@ -7,7 +7,7 @@ ARG max_layer_size=xxx
 ARG required_layers=xxx
 
 # Increase the value in this check if additional hardcoded layers are added below.
-RUN test "${max_layer_depth}" -le 9
+RUN test "${required_layers}" -le 9
 
 COPY kernel-modules/ /kernel-modules
 COPY partition-probes.py /
