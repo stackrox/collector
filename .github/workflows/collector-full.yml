@@ -278,6 +278,8 @@ jobs:
       ARCHS: amd64 ppc64le s390x
 
     steps:
+      - uses: actions/checkout@v3
+
       - name: Login to quay.io/stackrox-io
         uses: docker/login-action@v2
         with:
