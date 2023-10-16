@@ -54,6 +54,10 @@ on:
         description: |
           Bucket to push the generated support-packages index file into
         value: ${{ jobs.common-variables.outputs.support-packages-index-bucket }}
+      rebuild-qa-containers:
+        description: |
+          Trigger rebuild of QA containers
+        value: ${{ jobs.common-variables.outputs.rebuild-qa-containers }}
 
 jobs:
   common-variables:
@@ -73,12 +77,23 @@ jobs:
       cpaas-all-archs-drivers-bucket: ${{ steps.gcp-buckets.outputs.cpaas-all-archs-drivers-bucket }}
       cpaas-support-packages-bucket: ${{ steps.gcp-buckets.outputs.cpaas-support-packages-bucket }}
       support-packages-index-bucket: ${{ steps.gcp-buckets.outputs.support-packages-index-bucket }}
+      rebuild-qa-containers: ${{ steps.filter.outputs.container }}
 
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: true
           fetch-depth: 0
+
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          list-files: shell
+
+          # Only trigger a rebuild when the QA tag has changed
+          filters: |
+            container:
+              - integration-tests/container/QA_TAG
 
       - name: Set collector environment variables
         id: collector-env
@@ -89,9 +104,14 @@ jobs:
             COLLECTOR_TAG="$(make tag)"
           fi
 
+          COLLECTOR_QA_TAG="$(cat integration-tests/container/QA_TAG)"
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" && ${{ steps.filter.outputs.container }} == "true" ]]; then
+            COLLECTOR_QA_TAG="${COLLECTOR_QA_TAG}-${COLLECTOR_TAG}"
+          fi
+
           {
             echo "collector-tag=${COLLECTOR_TAG}"
-            echo "collector-qa-tag=$(cat integration-tests/container/QA_TAG)"
+            echo "collector-qa-tag=${COLLECTOR_QA_TAG}"
             echo "collector-image=quay.io/stackrox-io/collector:${COLLECTOR_TAG}"
           } >> "$GITHUB_OUTPUT"
 
