@@ -366,10 +366,3 @@ jobs:
         with:
           base-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
           archs: ${{ env.ARCHS }}
-
-      - name: Create multi-arch manifest rhacs-eng -latest
-        uses: ./.github/actions/create-multiarch-manifest
-        with:
-          base-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
-          archs: ${{ env.ARCHS }}
-          suffix: -latest
