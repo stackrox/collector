@@ -16,7 +16,7 @@ def get_probe_sizes(probe_dir: str) -> list:
 def main(bytes_per_layer: int, probe_dir: str):
     probe_sizes = get_probe_sizes(probe_dir)
 
-    buckets = 0
+    buckets = 1
     remaining_bucket_bytes = bytes_per_layer
     for size in probe_sizes:
         if remaining_bucket_bytes - size < 0:
