@@ -280,6 +280,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Pull slim images
+        run: |
+          docker pull "${BASE_IMAGE}-amd64-slim"
+          docker pull "${BASE_IMAGE}-s390x-slim"
+          docker pull "${BASE_IMAGE}-ppc64le-slim"
+
       - name: Login to quay.io/stackrox-io
         uses: docker/login-action@v2
         with:
@@ -290,7 +296,7 @@ jobs:
       - name: Retag slim amd64
         uses: stackrox/actions/images/retag-and-push@v1
         with:
-          src-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-amd64-slim
+          src-image: ${{ env.BASE_IMAGE }}-amd64-slim
           dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-amd64
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
@@ -298,7 +304,7 @@ jobs:
       - name: Retag slim ppc64le
         uses: stackrox/actions/images/retag-and-push@v1
         with:
-          src-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-ppc64le-slim
+          src-image: ${{ env.BASE_IMAGE }}-ppc64le-slim
           dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-ppc64le
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
@@ -306,7 +312,7 @@ jobs:
       - name: Retag slim s390x
         uses: stackrox/actions/images/retag-and-push@v1
         with:
-          src-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-s390x-slim
+          src-image: ${{ env.BASE_IMAGE }}-s390x-slim
           dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-s390x
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
@@ -334,7 +340,7 @@ jobs:
       - name: Retag slim amd64
         uses: stackrox/actions/images/retag-and-push@v1
         with:
-          src-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-amd64-slim
+          src-image: ${{ env.BASE_IMAGE }}-amd64-slim
           dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-amd64
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
@@ -342,7 +348,7 @@ jobs:
       - name: Retag slim ppc64le
         uses: stackrox/actions/images/retag-and-push@v1
         with:
-          src-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-ppc64le-slim
+          src-image: ${{ env.BASE_IMAGE }}-ppc64le-slim
           dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-ppc64le
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
@@ -350,7 +356,7 @@ jobs:
       - name: Retag slim s390x
         uses: stackrox/actions/images/retag-and-push@v1
         with:
-          src-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-s390x-slim
+          src-image: ${{ env.BASE_IMAGE }}-s390x-slim
           dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-s390x
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
