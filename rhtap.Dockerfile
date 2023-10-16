@@ -6,7 +6,7 @@ ARG USE_VALGRIND=false
 ARG ADDRESS_SANITIZER=false
 
 #@follow_tag(registry.access.redhat.com/ubi8/ubi:latest)
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS builder
+FROM registry.access.redhat.com/ubi8/ubi:latest AS builder
 
 COPY . ${REMOTE_SOURCES_DIR}
 
