@@ -7,10 +7,24 @@ import re
 probe_name_re = re.compile(r'^collector.*.gz$')
 
 
-def get_probe_sizes(probe_dir):
+def get_probe_sizes(probe_dir: str) -> list:
     return [
         f.stat().st_size for f in os.scandir(probe_dir) if probe_name_re.match(f.name)
     ]
+
+
+def main(bytes_per_layer: int, probe_dir: str):
+    probe_sizes = get_probe_sizes(probe_dir)
+
+    buckets = 0
+    remaining_bucket_bytes = bytes_per_layer
+    for size in probe_sizes:
+        if remaining_bucket_bytes - size < 0:
+            buckets += 1
+            remaining_bucket_bytes = bytes_per_layer
+        remaining_bucket_bytes -= size
+
+    print(buckets)
 
 
 if __name__ == '__main__':
@@ -22,14 +36,4 @@ if __name__ == '__main__':
 
     bytes_per_layer = args.mb_per_layer * 1024 * 1024
 
-    probe_sizes = get_probe_sizes(args.probe_dir)
-
-    buckets = 0
-    remaining_bucket_bytes = bytes_per_layer
-    for size in probe_sizes:
-        if remaining_bucket_bytes - size < 0:
-            buckets += 1
-            remaining_bucket_bytes = bytes_per_layer
-        remaining_bucket_bytes -= size
-
-    print(buckets)
+    main(bytes_per_layer, args.probe_dir)
