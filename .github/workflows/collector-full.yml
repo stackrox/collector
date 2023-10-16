@@ -323,13 +323,6 @@ jobs:
           base-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
           archs: ${{ env.ARCHS }}
 
-      - name: Create multi-arch manifest stackrox-io -latest
-        uses: ./.github/actions/create-multiarch-manifest
-        with:
-          base-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
-          archs: ${{ env.ARCHS }}
-          suffix: -latest
-
       - name: Login to quay.io/rhacs-eng
         uses: docker/login-action@v2
         with:
