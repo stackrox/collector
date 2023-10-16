@@ -34,26 +34,6 @@ jobs:
   run:
     runs-on: ubuntu-latest
     env:
-      #
-      # JOB_ID is a little odd in that it needs to be unique per vm_type,
-      # but GHA's run_id is only unique per job. Appending the vm_type
-      # makes it fit our requirements...
-      #
-      # but wait, there's more
-      #
-      # the job id is used both as part of a GCP instance name and label, but
-      # also as a group name in ansible, which means it has some restrictions:
-      #
-      # - must be alpha-numeric
-      # - must not contain underscores (because of GCP)
-      # - must not contain hyphens (because of ansible)
-      #
-      # vm_type may contain hyphens, so the id is normalized below
-      #
-      JOB_ID: ${{ github.run_id }}${{ inputs.vm_type }}${{ inputs.job-tag }}
-      GCP_SSH_KEY_FILE: ~/.ssh/GCP_SSH_KEY
-      BUILD_TYPE: ci
-      VM_TYPE: "${{ inputs.vm_type }}"
       COLLECTOR_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
     steps:
       - uses: actions/checkout@v3
@@ -79,78 +59,41 @@ jobs:
       - name: Setup GCP
         uses: 'google-github-actions/setup-gcloud@v1'
 
-      - name: Copy creds files
-        run: |
-          # Temporary compatibility with OSCI
-          mkdir -p /tmp/secret/stackrox-collector-e2e-tests
-          cp "$GOOGLE_APPLICATION_CREDENTIALS" /tmp/secret/stackrox-collector-e2e-tests/GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT
-
-          mkdir -p "$HOME/.ssh"
-          chmod 0700 "$HOME/.ssh"
-
-          function copy_secret_to_file() {
-            local secret="$1"
-            local destination="$2"
-            local perms="$3"
-
-            echo "$secret" > "$destination"
-            chmod "$perms" "$destination"
-          }
-
-          copy_secret_to_file "$GCP_SSH_KEY" "$HOME/.ssh/GCP_SSH_KEY" 0600
-          copy_secret_to_file "$GCP_SSH_KEY_PUB" "$HOME/.ssh/GCP_SSH_KEY.pub" 0600
-          copy_secret_to_file "$IBM_S390X_SSH_KEY" "$HOME/.ssh/acs-sshkey_rsa.prv" 0600
-
-          if [[ '${{ inputs.vm_type }}' =~ ppc64le ]]; then
-            copy_secret_to_file "$IBM_PPC64LE_SSH_KEY" "$HOME/.ssh/acs-sshkey_rsa.prv" 0600
-          fi
-        env:
-          GCP_SSH_KEY: ${{ secrets.GCP_SSH_KEY }}
-          GCP_SSH_KEY_PUB: ${{ secrets.GCP_SSH_KEY_PUB }}
-          IBM_S390X_SSH_KEY: ${{ secrets.IBM_CLOUD_S390X_SSH_PRIVATE_KEY }}
-          IBM_PPC64LE_SSH_KEY: ${{ secrets.IBM_CLOUD_POWER_SSH_PRIVATE_KEY }}
-
       - name: Set environment
         run: |
-          NORM_JOB_ID="${JOB_ID//-/}"
-          echo "JOB_ID=${NORM_JOB_ID}" | tee -a "$GITHUB_ENV"
-
           if [[ '${{ contains(github.event.pull_request.labels.*.name, 'integration-tests-trace-logging') }}' == 'true' ]]; then
             echo "COLLECTOR_LOG_LEVEL=trace" | tee -a "$GITHUB_ENV"
           fi
 
-          if [[ '${{ inputs.vm_type }}' =~ s390x ]]; then
+          if [[ "${{ inputs.vm_type }}" =~ s390x ]]; then
             {
-              echo "IC_API_KEY=${{ secrets.IBM_CLOUD_S390X_API_KEY }}"
-              echo "IC_REGION=ca-tor"
+              echo "IBM_CLOUD_SSH_KEY=${{ secrets.IBM_CLOUD_S390X_PRIVATE_KEY }}"
+              echo "IBM_CLOUD_SSH_PUB_KEY="
+              echo "IBM_API_KEY=${{ secrets.IBM_CLOUD_S390X_API_KEY }}"
             } >> "${GITHUB_ENV}"
           fi
 
-          if [[ '${{ inputs.vm_type }}' =~ ppc64le ]]; then
+          if [[ "${{ inputs.vm_type }}" =~ ppc64le ]]; then
             {
-              echo "IC_API_KEY=${{ secrets.IBM_CLOUD_POWER_API_KEY }}"
-              echo "IC_REGION=osa"
-              echo "IC_ZONE=osa21"
-              echo "IBM_CLOUD_POWER_SSH_PUBLIC_KEY=${{ secrets.IBM_CLOUD_POWER_SSH_PUBLIC_KEY }}"
+              echo "IBM_CLOUD_SSH_KEY=${{ secrets.IBM_CLOUD_POWER_PRIVATE_KEY }}"
+              echo "IBM_CLOUD_SSH_PUB_KEY=${{ secrets.IBM_CLOUD_POWER_PUBLIC_KEY }}"
+              echo "IBM_API_KEY=${{ secrets.IBM_CLOUD_POWER_API_KEY }}"
             } >> "${GITHUB_ENV}"
           fi
-
-          if [[ '${{ inputs.vm_type }}' =~ rhel ]]; then
-            {
-              echo "REDHAT_USERNAME=${{ secrets.REDHAT_USERNAME }}"
-              echo "REDHAT_PASSWORD=${{ secrets.REDHAT_PASSWORD }}"
-            } >> "${GITHUB_ENV}"
-          fi
-      #Added workaround for ssh connection issue with power vm from ubuntu machine.
-      #Changing mtu works in resolving the issue
-      - name: Set MTU for Power VMs
-        if: ${{ contains(inputs.vm_type, 'ppc64le') }}
-        run: sudo ifconfig eth0 mtu 1000 up
 
       - name: Create VMs
-        if: ${{ ! inputs.run-benchmarks }}
-        run: |
-          make -C "${{ github.workspace }}/ansible" create-ci-vms
+        uses: ./.github/actions/create-vm
+        with:
+          vm-type: ${{ inputs.vm_type }}
+          job-tag: ${{ inputs.job-tag }}
+          gcp-service-acct: ${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}
+          gcp-ssh-key: ${{ secrets.GCP_SSH_KEY }}
+          gcp-ssh-pub-key: ${{ secrets.GCP_SSH_KEY_PUB }}
+          ibm-ssh-key: ${{ env.IBM_CLOUD_SSH_KEY }}
+          ibm-ssh-pub-key: ${{ env.IBM_CLOUD_SSH_PUB_KEY }}
+          ibm-api-key: ${{ env.IBM_API_KEY }}
+          redhat-username: ${{ secrets.REDHAT_USERNAME }}
+          redhat-password: ${{ secrets.REDHAT_PASSWORD }}
 
       - name: Run Tests
         if: ${{ ! inputs.run-benchmarks }}
@@ -178,7 +121,7 @@ jobs:
 
       - name: Teardown VMs
         if: always()
-        run: make -C "${{ github.workspace }}/ansible" destroy-vms
+        uses: ./.github/actions/destroy-vms
 
       - name: Store artifacts
         if: always()

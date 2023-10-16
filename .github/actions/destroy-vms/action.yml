@@ -1,0 +1,9 @@
+name: Destroy VMs
+description: Destroys all VMs created by the create-vm action
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        make -C "${{ github.workspace }}/ansible" destroy-vms
