@@ -82,6 +82,7 @@ jobs:
           fi
 
       - name: Create VMs
+        id: create-vms
         uses: ./.github/actions/create-vm
         with:
           vm-type: ${{ inputs.vm_type }}
@@ -94,6 +95,7 @@ jobs:
           ibm-api-key: ${{ env.IBM_API_KEY }}
           redhat-username: ${{ secrets.REDHAT_USERNAME }}
           redhat-password: ${{ secrets.REDHAT_PASSWORD }}
+          create-benchmark-vms: ${{ inputs.run-benchmarks }}
 
       - name: Run Tests
         if: ${{ ! inputs.run-benchmarks }}
@@ -106,11 +108,8 @@ jobs:
         env:
           QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-
-      - name: Create Benchmark VMs
-        if: inputs.run-benchmarks
-        run: |
-          make -C "${{ github.workspace }}/ansible" create-benchmark-vms
+          JOB_ID: ${{ steps.create-vms.outputs.job-id }}
+          BUILD_TYPE: ci
 
       - name: Run Benchmarks
         if: inputs.run-benchmarks
@@ -118,10 +117,14 @@ jobs:
         env:
           QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          JOB_ID: ${{ steps.create-vms.outputs.job-id }}
+          BUILD_TYPE: ci
 
       - name: Teardown VMs
         if: always()
         uses: ./.github/actions/destroy-vms
+        with:
+          job-id: ${{ steps.create-vms.outputs.job-id }}
 
       - name: Store artifacts
         if: always()

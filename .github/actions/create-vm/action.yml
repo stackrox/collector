@@ -11,8 +11,10 @@ inputs:
     description: |
       Used to differentiate between different sources when creating
       VMs.
-    type: string
     default: ""
+  create-benchmark-vms:
+    description: Whether to create benchmark VMs
+    default: false
 
   gcp-service-acct:
     description: |
@@ -46,30 +48,29 @@ inputs:
     description: |
       Password for interaction with RHEL subscriptions
 
+outputs:
+  job-id:
+    description: "The job id used to uniquely tag the VMs"
+    value: ${{ steps.setup-env.outputs.job-id }}
+
 runs:
   using: composite
-  env:
-    VM_TYPE: ${{ inputs.vm-type }}
-    BUILD_TYPE: ci
-    GCP_SSH_KEY_FILE: ~/.ssh/GCP_SSH_KEY
-    #
-    # JOB_ID is a little odd in that it needs to be unique per vm_type,
-    # but GHA's run_id is only unique per job. Appending the vm_type
-    # makes it fit our requirements...
-    #
-    # but wait, there's more
-    #
-    # the job id is used both as part of a GCP instance name and label, but
-    # also as a group name in ansible, which means it has some restrictions:
-    #
-    # - must be alpha-numeric
-    # - must not contain underscores (because of GCP)
-    # - must not contain hyphens (because of ansible)
-    #
-    # vm_type may contain hyphens, so the id is normalized below
-    #
-    JOB_ID: ${{ github.run_id }}${{ inputs.vm_type }}${{ inputs.job-tag }}
   steps:
+    - name: Setup Env
+      id: setup-env
+      shell: bash
+      run: |
+        JOB_ID="${{ github.run_id }}${{ inputs.vm_type }}${{ inputs.job-tag }}"
+        NORM_JOB_ID="${JOB_ID//-/}"
+
+        echo "job-id=${NORM_JOB_ID}" >> "${GITHUB_OUTPUT}"
+
+        {
+          echo "GCP_SSH_KEY_FILE=~/.ssh/GCP_SSH_KEY"
+          echo "BUILD_TYPE=ci"
+          echo "VM_TYPE=${{ inputs.vm-type }}"
+        } >> "${GITHUB_ENV}"
+
     - name: Copy creds files
       shell: bash
       run: |
@@ -137,6 +138,11 @@ runs:
       shell: bash
 
     - name: Create VMs
-      if: ${{ ! inputs.run-benchmarks }}
+      if: ${{ ! inputs.create-benchmark-vms }}
       run: make -C "${{ github.workspace }}/ansible" create-ci-vms
       shell: bash
+
+    - name: Create Benchmark VMs
+      if: inputs.create-benchmark-vms
+      run: |
+        make -C "${{ github.workspace }}/ansible" create-benchmark-vms
