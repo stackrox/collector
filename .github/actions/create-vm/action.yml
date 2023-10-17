@@ -144,5 +144,6 @@ runs:
 
     - name: Create Benchmark VMs
       if: inputs.create-benchmark-vms
+      shell: bash
       run: |
         make -C "${{ github.workspace }}/ansible" create-benchmark-vms
