@@ -30,11 +30,6 @@ on:
         description: |
           Architecture dependent drivers bucket. When used, the drivers in this
           bucket will take precendence over the one in drivers-bucket.
-      max-layer-depth:
-        type: string
-        default: "5"
-        description: |
-          Max layer the drivers will be split into for x86 images
 
 jobs:
   build-collector-full:
@@ -70,12 +65,6 @@ jobs:
         run: |
           echo "DRIVER_VERSION=$(cat ${{ github.workspace }}/kernel-modules/MODULE_VERSION)" >> "$GITHUB_ENV"
           echo "CONTEXT_DRIVERS_DIR=${{ github.workspace }}/kernel-modules/container/kernel-modules" >> "$GITHUB_ENV"
-
-          if [[ "${{ matrix.arch }}" == "amd64" ]]; then
-            echo "LAYER_DEPTH=${{ inputs.max-layer-depth }}" >> "$GITHUB_ENV"
-          else
-            echo "LAYER_DEPTH=1" >> "$GITHUB_ENV"
-          fi
 
       - name: Create context directory
         run: mkdir -p "${CONTEXT_DRIVERS_DIR}"
@@ -131,7 +120,6 @@ jobs:
             --limit localhost \
             -e collector_image="${COLLECTOR_IMAGE}" \
             -e arch="${{ matrix.arch }}" \
-            -e max_layer_depth="${LAYER_DEPTH}" \
             -e collector_tag="${{ inputs.collector-tag }}" \
             -e driver_version="${DRIVER_VERSION}" \
             -e context_path="${{ github.workspace }}/kernel-modules/container" \
