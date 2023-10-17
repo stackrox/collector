@@ -4,4 +4,5 @@
 while true; do taskset -c 0 ls &> /dev/null; done &
 
 # start capturing
-/sched_process_exit
+SCHED_PROCESS_EXIT_ID=$(cat /sys/kernel/debug/tracing/events/sched/sched_process_exit/id)
+/sched_process_exit 10 "${SCHED_PROCESS_EXIT_ID}"
