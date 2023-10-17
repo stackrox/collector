@@ -1,17 +1,9 @@
 name: Destroy VMs
 description: Destroys all VMs created by the create-vm action
 
-inputs:
-  job-id:
-    description: The job id used to create the VMs
-    required: true
-
 runs:
   using: composite
   steps:
     - shell: bash
       run: |
         make -C "${{ github.workspace }}/ansible" destroy-vms
-      env:
-        JOB_ID: ${{ inputs.job-id }}
-        BUILD_TYPE: ci

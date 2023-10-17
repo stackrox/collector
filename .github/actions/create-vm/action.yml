@@ -16,10 +16,6 @@ inputs:
     description: Whether to create benchmark VMs
     default: false
 
-  gcp-service-acct:
-    description: |
-      The GCP service account details for GCP VMs
-
   gcp-ssh-key:
     description: |
       The private key component of the GCP SSH key
@@ -48,11 +44,6 @@ inputs:
     description: |
       Password for interaction with RHEL subscriptions
 
-outputs:
-  job-id:
-    description: "The job id used to uniquely tag the VMs"
-    value: ${{ steps.setup-env.outputs.job-id }}
-
 runs:
   using: composite
   steps:
@@ -63,12 +54,11 @@ runs:
         JOB_ID="${{ github.run_id }}${{ inputs.vm_type }}${{ inputs.job-tag }}"
         NORM_JOB_ID="${JOB_ID//-/}"
 
-        echo "job-id=${NORM_JOB_ID}" >> "${GITHUB_OUTPUT}"
-
         {
           echo "GCP_SSH_KEY_FILE=~/.ssh/GCP_SSH_KEY"
           echo "BUILD_TYPE=ci"
           echo "VM_TYPE=${{ inputs.vm-type }}"
+          echo "JOB_ID=$NORM_JOB_ID"
         } >> "${GITHUB_ENV}"
 
         echo "IC_API_KEY=${{ inputs.ibm-api-key }}" >> "${GITHUB_ENV}"
@@ -83,7 +73,7 @@ runs:
           {
             echo "IC_REGION=osa"
             echo "IC_ZONE=osa21"
-            echo "IBM_CLOUD_POWER_SSH_PUBLIC_KEY=$IBM_CLOUD_PUB_KEY"
+            echo "IBM_CLOUD_POWER_SSH_PUBLIC_KEY=${{ inputs.ibm-ssh-pub-key }}"
           } >> "${GITHUB_ENV}"
         fi
 
@@ -93,16 +83,10 @@ runs:
             echo "REDHAT_PASSWORD=${{ inputs.redhat-password }}"
           } >> "${GITHUB_ENV}"
         fi
-      env:
-        IBM_CLOUD_PUB_KEY: ${{ inputs.ibm-ssh-pub-key }}
 
     - name: Copy creds files
       shell: bash
       run: |
-        # Temporary compatibility with OSCI
-        mkdir -p /tmp/secret/stackrox-collector-e2e-tests
-        cp "$GOOGLE_APPLICATION_CREDENTIALS" /tmp/secret/stackrox-collector-e2e-tests/GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT
-
         mkdir -p "$HOME/.ssh"
         chmod 0700 "$HOME/.ssh"
 
