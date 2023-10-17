@@ -126,7 +126,8 @@ jobs:
       public-support-packages-bucket: ${{ needs.init.outputs.public-support-packages-bucket }}
     if: |
       always() &&
-      (github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'test-support-packages'))
+      ((github.event_name == 'push' && github.ref_name == 'master') ||
+      contains(github.event.pull_request.labels.*.name, 'test-support-packages'))
     needs:
     - init
     - build-drivers
