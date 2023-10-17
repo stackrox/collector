@@ -57,6 +57,9 @@ add_definitions(-DASSERT_TO_LOG)
 # Optimization, only process socket file descriptors
 add_definitions(-DSCAP_SOCKET_ONLY_FD)
 
+# Filter out some cgroup subsys
+add_definitions("-DINTERESTING_SUBSYS=\"perf_event\", \"cpu\", \"cpuset\", \"memory\"")
+
 file(GLOB COLLECTOR_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/lib/*.cpp)
 add_library(collector_lib ${DRIVER_HEADERS} ${COLLECTOR_LIB_SRC_FILES})
 add_dependencies(collector_lib sinsp)
