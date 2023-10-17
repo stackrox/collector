@@ -20,7 +20,6 @@ on:
 jobs:
   common-variables:
     runs-on: ubuntu-latest
-    if: inputs.rebuild-qa-containers
     outputs:
       build-dirs: ${{ steps.variables.outputs.build-dirs }}
 
@@ -43,6 +42,7 @@ jobs:
     needs:
       - common-variables
 
+    if: inputs.rebuild-qa-containers
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -71,4 +71,3 @@ jobs:
       - name: Build and Push containers
         run: |
           make -C "${{ matrix.directory }}" build-and-push
-
