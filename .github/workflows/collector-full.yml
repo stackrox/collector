@@ -270,92 +270,92 @@ jobs:
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
-  slim-multiarch-manifests:
-    runs-on: ubuntu-latest
-    if: ${{ !inputs.build-full-image && !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds') }}
-    env:
-      BASE_IMAGE: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
-      ARCHS: amd64 ppc64le s390x
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Pull slim images
-        run: |
-          docker pull "${BASE_IMAGE}-amd64-slim"
-          docker pull "${BASE_IMAGE}-s390x-slim"
-          docker pull "${BASE_IMAGE}-ppc64le-slim"
-
-      - name: Login to quay.io/stackrox-io
-        uses: docker/login-action@v2
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-
-      - name: Retag slim amd64
-        uses: stackrox/actions/images/retag-and-push@v1
-        with:
-          src-image: ${{ env.BASE_IMAGE }}-amd64-slim
-          dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-amd64
-          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-
-      - name: Retag slim ppc64le
-        uses: stackrox/actions/images/retag-and-push@v1
-        with:
-          src-image: ${{ env.BASE_IMAGE }}-ppc64le-slim
-          dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-ppc64le
-          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-
-      - name: Retag slim s390x
-        uses: stackrox/actions/images/retag-and-push@v1
-        with:
-          src-image: ${{ env.BASE_IMAGE }}-s390x-slim
-          dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-s390x
-          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-
-      - name: Create multi-arch manifest stackrox-io
-        uses: ./.github/actions/create-multiarch-manifest
-        with:
-          base-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
-          archs: ${{ env.ARCHS }}
-
-      - name: Retag slim amd64
-        uses: stackrox/actions/images/retag-and-push@v1
-        with:
-          src-image: ${{ env.BASE_IMAGE }}-amd64-slim
-          dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-amd64
-          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-
-      - name: Retag slim ppc64le
-        uses: stackrox/actions/images/retag-and-push@v1
-        with:
-          src-image: ${{ env.BASE_IMAGE }}-ppc64le-slim
-          dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-ppc64le
-          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-
-      - name: Retag slim s390x
-        uses: stackrox/actions/images/retag-and-push@v1
-        with:
-          src-image: ${{ env.BASE_IMAGE }}-s390x-slim
-          dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-s390x
-          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-
-      - name: Login to quay.io/rhacs-eng
-        uses: docker/login-action@v2
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-
-      - name: Create multi-arch manifest rhacs-eng
-        uses: ./.github/actions/create-multiarch-manifest
-        with:
-          base-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
-          archs: ${{ env.ARCHS }}
+            #  slim-multiarch-manifests:
+            #    runs-on: ubuntu-latest
+            #    if: ${{ !inputs.build-full-image && !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds') }}
+            #    env:
+            #      BASE_IMAGE: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
+            #      ARCHS: amd64 ppc64le s390x
+            #
+            #    steps:
+            #      - uses: actions/checkout@v3
+            #
+            #      - name: Pull slim images
+            #        run: |
+            #          docker pull "${BASE_IMAGE}-amd64-slim"
+            #          docker pull "${BASE_IMAGE}-s390x-slim"
+            #          docker pull "${BASE_IMAGE}-ppc64le-slim"
+            #
+            #      - name: Login to quay.io/stackrox-io
+            #        uses: docker/login-action@v2
+            #        with:
+            #          registry: quay.io
+            #          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+            #          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+            #
+            #      - name: Retag slim amd64
+            #        uses: stackrox/actions/images/retag-and-push@v1
+            #        with:
+            #          src-image: ${{ env.BASE_IMAGE }}-amd64-slim
+            #          dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-amd64
+            #          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+            #          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+            #
+            #      - name: Retag slim ppc64le
+            #        uses: stackrox/actions/images/retag-and-push@v1
+            #        with:
+            #          src-image: ${{ env.BASE_IMAGE }}-ppc64le-slim
+            #          dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-ppc64le
+            #          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+            #          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+            #
+            #      - name: Retag slim s390x
+            #        uses: stackrox/actions/images/retag-and-push@v1
+            #        with:
+            #          src-image: ${{ env.BASE_IMAGE }}-s390x-slim
+            #          dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-s390x
+            #          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+            #          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+            #
+            #      - name: Create multi-arch manifest stackrox-io
+            #        uses: ./.github/actions/create-multiarch-manifest
+            #        with:
+            #          base-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
+            #          archs: ${{ env.ARCHS }}
+            #
+            #      - name: Retag slim amd64
+            #        uses: stackrox/actions/images/retag-and-push@v1
+            #        with:
+            #          src-image: ${{ env.BASE_IMAGE }}-amd64-slim
+            #          dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-amd64
+            #          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+            #          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+            #
+            #      - name: Retag slim ppc64le
+            #        uses: stackrox/actions/images/retag-and-push@v1
+            #        with:
+            #          src-image: ${{ env.BASE_IMAGE }}-ppc64le-slim
+            #          dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-ppc64le
+            #          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+            #          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+            #
+            #      - name: Retag slim s390x
+            #        uses: stackrox/actions/images/retag-and-push@v1
+            #        with:
+            #          src-image: ${{ env.BASE_IMAGE }}-s390x-slim
+            #          dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-s390x
+            #          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+            #          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+            #
+            #      - name: Login to quay.io/rhacs-eng
+            #        uses: docker/login-action@v2
+            #        with:
+            #          registry: quay.io
+            #          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+            #          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+            #
+            #      - name: Create multi-arch manifest rhacs-eng
+            #        uses: ./.github/actions/create-multiarch-manifest
+            #        with:
+            #          base-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
+            #          archs: ${{ env.ARCHS }}
