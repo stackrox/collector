@@ -97,7 +97,7 @@ jobs:
         if: |
           github.event_name == 'push' ||
           matrix.arch == 'amd64' ||
-          !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
+          contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
         timeout-minutes: 480
         run: |
           ansible-galaxy install -r ansible/requirements.yml
@@ -117,7 +117,7 @@ jobs:
     if: |
       github.event_name == 'push' ||
       (needs.build-builder-image.outputs.collector-builder-tag != 'cache' &&
-       !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds'))
+       contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds'))
     env:
       COLLECTOR_BUILDER_TAG: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
       ARCHS: amd64 ppc64le s390x
@@ -159,7 +159,7 @@ jobs:
     if: |
       github.event_name == 'pull_request' &&
       needs.build-builder-image.outputs.collector-builder-tag != 'cache' &&
-      contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
+      !contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
     env:
       COLLECTOR_BUILDER_TAG: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
     steps:
