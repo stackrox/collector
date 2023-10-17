@@ -98,14 +98,16 @@ jobs:
       - name: Set collector environment variables
         id: collector-env
         run: |
+          set -x
+
           if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" == "true" ]]; then
             COLLECTOR_TAG="${{ github.ref_name }}"
           else
             COLLECTOR_TAG="$(make tag)"
           fi
 
-          COLLECTOR_QA_TAG="$(cat integration-tests/container/QA_TAG)"
-          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" && ${{ steps.filter.outputs.container }} == "true" ]]; then
+          COLLECTOR_QA_TAG="$(cat ${{ github.workspace }}/integration-tests/container/QA_TAG)"
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" && "${{ steps.filter.outputs.container }}" == "true" ]]; then
             COLLECTOR_QA_TAG="${COLLECTOR_QA_TAG}-${COLLECTOR_TAG}"
           fi
 
