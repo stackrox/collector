@@ -8,7 +8,7 @@ on:
         value: ${{ jobs.common-variables.outputs.collector-tag }}
       collector-qa-tag:
         description: The tag used for QA containers
-        value: ${{ jobs.common-variables.outputs.collector-tag }}
+        value: ${{ jobs.common-variables.outputs.collector-qa-tag }}
       collector-image:
         description: |
           The image built by running `make image` in the collector repo
@@ -98,8 +98,6 @@ jobs:
       - name: Set collector environment variables
         id: collector-env
         run: |
-          set -x
-
           if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" == "true" ]]; then
             COLLECTOR_TAG="${{ github.ref_name }}"
           else
