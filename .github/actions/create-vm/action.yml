@@ -51,7 +51,7 @@ runs:
       id: setup-env
       shell: bash
       run: |
-        JOB_ID="${{ github.run_id }}${{ inputs.vm_type }}${{ inputs.job-tag }}"
+        JOB_ID="${{ github.run_id }}${{ inputs.vm-type }}${{ inputs.job-tag }}"
         NORM_JOB_ID="${JOB_ID//-/}"
 
         {
