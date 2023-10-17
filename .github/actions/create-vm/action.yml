@@ -71,6 +71,31 @@ runs:
           echo "VM_TYPE=${{ inputs.vm-type }}"
         } >> "${GITHUB_ENV}"
 
+        echo "IC_API_KEY=${{ inputs.ibm-api-key }}" >> "${GITHUB_ENV}"
+
+        if [[ '${{ inputs.vm_type }}' =~ s390x ]]; then
+          {
+            echo "IC_REGION=ca-tor"
+          } >> "${GITHUB_ENV}"
+        fi
+
+        if [[ '${{ inputs.vm_type }}' =~ ppc64le ]]; then
+          {
+            echo "IC_REGION=osa"
+            echo "IC_ZONE=osa21"
+            echo "IBM_CLOUD_POWER_SSH_PUBLIC_KEY=$IBM_CLOUD_PUB_KEY"
+          } >> "${GITHUB_ENV}"
+        fi
+
+        if [[ '${{ inputs.vm_type }}' =~ rhel ]]; then
+          {
+            echo "REDHAT_USERNAME=${{ inputs.redhat-username }}"
+            echo "REDHAT_PASSWORD=${{ inputs.redhat-password }}"
+          } >> "${GITHUB_ENV}"
+        fi
+      env:
+        IBM_CLOUD_PUB_KEY: ${{ inputs.ibm-ssh-pub-key }}
+
     - name: Copy creds files
       shell: bash
       run: |
@@ -97,38 +122,6 @@ runs:
         GCP_SSH_KEY: ${{ inputs.gcp-ssh-key }}
         GCP_SSH_KEY_PUB: ${{ inputs.gcp-ssh-pub-key }}
         IBM_CLOUD_KEY: ${{ inputs.ibm-ssh-key }}
-
-
-    - name: Set environment
-      shell: bash
-      run: |
-        NORM_JOB_ID="${JOB_ID//-/}"
-        echo "JOB_ID=${NORM_JOB_ID}" | tee -a "$GITHUB_ENV"
-
-        echo "IC_API_KEY=${{ inputs.ibm-api-key }}" >> "${GITHUB_ENV}"
-
-        if [[ '${{ inputs.vm_type }}' =~ s390x ]]; then
-          {
-            echo "IC_REGION=ca-tor"
-          } >> "${GITHUB_ENV}"
-        fi
-
-        if [[ '${{ inputs.vm_type }}' =~ ppc64le ]]; then
-          {
-            echo "IC_REGION=osa"
-            echo "IC_ZONE=osa21"
-            echo "IBM_CLOUD_POWER_SSH_PUBLIC_KEY=$IBM_CLOUD_PUB_KEY"
-          } >> "${GITHUB_ENV}"
-        fi
-
-        if [[ '${{ inputs.vm_type }}' =~ rhel ]]; then
-          {
-            echo "REDHAT_USERNAME=${{ inputs.redhat-username }}"
-            echo "REDHAT_PASSWORD=${{ inputs.redhat-password }}"
-          } >> "${GITHUB_ENV}"
-        fi
-      env:
-        IBM_CLOUD_PUB_KEY: ${{ inputs.ibm-ssh-pub-key }}
 
     # Added workaround for ssh connection issue with power vm from ubuntu machine.
     # Changing mtu works in resolving the issue
