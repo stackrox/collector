@@ -91,10 +91,10 @@ jobs:
     uses: ./.github/workflows/integration-test-containers.yml
     needs:
     - init
-    if: needs.init.outputs.rebuild-qa-containers == 'true'
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
+      rebuild-qa-containers: ${{ needs.init.outputs.rebuild-qa-containers == 'true' }}
     secrets: inherit
 
   integration-tests:

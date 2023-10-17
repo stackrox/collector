@@ -12,10 +12,15 @@ on:
         type: string
         required: true
         description: Tag used for QA containers
+      rebuild-qa-containers:
+        type: boolean
+        required: true
+        description: Whether the QA containers should be rebuilt
 
 jobs:
   common-variables:
     runs-on: ubuntu-latest
+    if: inputs.rebuild-qa-containers
     outputs:
       build-dirs: ${{ steps.variables.outputs.build-dirs }}
 
