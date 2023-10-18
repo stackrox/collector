@@ -82,20 +82,28 @@ jobs:
             } >> "${GITHUB_ENV}"
           fi
 
-      - name: Create VMs
-        id: create-vms
-        uses: ./.github/actions/create-vm
+      - name: Setup Ansible
+        uses: ./.github/actions/setup-ansible-env
         with:
           vm-type: ${{ inputs.vm_type }}
           job-tag: ${{ inputs.job-tag }}
           gcp-ssh-key: ${{ secrets.GCP_SSH_KEY }}
           gcp-ssh-pub-key: ${{ secrets.GCP_SSH_KEY_PUB }}
+          redhat-username: ${{ secrets.REDHAT_USERNAME }}
+          redhat-password: ${{ secrets.REDHAT_PASSWORD }}
           ibm-ssh-key: ${{ env.IBM_CLOUD_SSH_KEY }}
           ibm-ssh-pub-key: ${{ env.IBM_CLOUD_SSH_PUB_KEY }}
           ibm-api-key: ${{ env.IBM_API_KEY }}
-          redhat-username: ${{ secrets.REDHAT_USERNAME }}
-          redhat-password: ${{ secrets.REDHAT_PASSWORD }}
-          create-benchmark-vms: ${{ inputs.run-benchmarks }}
+
+      - name: Create Test VMs
+        if: ${{ ! inputs.run-benchmarks }}
+        run: |
+          make -C "{{ github.workspace }}/ansible" create-ci-vms
+
+      - name: Create Benchmark VMs
+        if: inputs.run-benchmarks
+        run: |
+          make -C "{{ github.workspace }}/ansible" create-benchmark-vms
 
       - name: Run Tests
         if: ${{ ! inputs.run-benchmarks }}
@@ -118,7 +126,8 @@ jobs:
 
       - name: Teardown VMs
         if: always()
-        uses: ./.github/actions/destroy-vms
+        run: |
+          make -C "{{ github.workspace }}/ansible" destroy-vms
 
       - name: Store artifacts
         if: always()

@@ -117,14 +117,3 @@ runs:
       if: ${{ contains(inputs.vm_type, 'ppc64le') }}
       run: sudo ifconfig eth0 mtu 1000 up
       shell: bash
-
-    - name: Create VMs
-      if: ${{ ! inputs.create-benchmark-vms }}
-      run: make -C "${{ github.workspace }}/ansible" create-ci-vms
-      shell: bash
-
-    - name: Create Benchmark VMs
-      if: inputs.create-benchmark-vms
-      shell: bash
-      run: |
-        make -C "${{ github.workspace }}/ansible" create-benchmark-vms

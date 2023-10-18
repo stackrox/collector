@@ -41,11 +41,62 @@ jobs:
         with:
           submodules: true
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+      - name: Install python dependencies
+        run: python -m pip install -r ansible/requirements.txt
+
+      - name: Install ansible dependencies
+        run: ansible-galaxy collection install -r ansible/ansible-collections.yml
+
+      - name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - name: Setup GCP
+        uses: 'google-github-actions/setup-gcloud@v1'
+
+      - name: Set environment
+        if: matrix.arch != 'amd64'
+        run: |
+          if [[ "${{ matrix.arch }}" == 's390x' ]]; then
+            {
+              echo "IBM_CLOUD_SSH_KEY=${{ secrets.IBM_CLOUD_S390X_PRIVATE_KEY }}"
+              echo "IBM_CLOUD_SSH_PUB_KEY="
+              echo "IBM_API_KEY=${{ secrets.IBM_CLOUD_S390X_API_KEY }}"
+              echo "VM_TYPE=rhel-s390x"
+            } >> "${GITHUB_ENV}"
+          fi
+
+          if [[ "${{ matrix.arch }}" == 'ppc64le' ]]; then
+            {
+              echo "IBM_CLOUD_SSH_KEY=${{ secrets.IBM_CLOUD_POWER_PRIVATE_KEY }}"
+              echo "IBM_CLOUD_SSH_PUB_KEY=${{ secrets.IBM_CLOUD_POWER_PUBLIC_KEY }}"
+              echo "IBM_API_KEY=${{ secrets.IBM_CLOUD_POWER_API_KEY }}"
+              echo "VM_TYPE=rhel-ppc64le"
+            } >> "${GITHUB_ENV}"
+          fi
+
+      - name: Setup Ansible
+        uses: ./.github/actions/setup-ansible-env
+        with:
+          vm-type: ${{ env.VM_TYPE }}
+          job-tag: "builder"
+          gcp-ssh-key: ${{ secrets.GCP_SSH_KEY }}
+          gcp-ssh-pub-key: ${{ secrets.GCP_SSH_KEY_PUB }}
+          redhat-username: ${{ secrets.REDHAT_USERNAME }}
+          redhat-password: ${{ secrets.REDHAT_PASSWORD }}
+          ibm-ssh-key: ${{ env.IBM_CLOUD_SSH_KEY }}
+          ibm-ssh-pub-key: ${{ env.IBM_CLOUD_SSH_PUB_KEY }}
+          ibm-api-key: ${{ env.IBM_API_KEY }}
+
+      - name: Create VM
+        if: matrix.arch != 'amd64'
+        run: |
+          make -C "${{ github.workspace }}/ansible" create-vms
 
       - name: Checks PR, main and release branches
         run: |
@@ -69,9 +120,7 @@ jobs:
 
       - name: Build images
         if: |
-          github.event_name == 'push' ||
-          matrix.arch == 'amd64' ||
-          !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
+          github.event_name == 'push' || matrix.arch == 'amd64'
         timeout-minutes: 480
         run: |
           ansible-galaxy install -r ansible/requirements.yml
@@ -85,6 +134,26 @@ jobs:
             ansible/ci-build-collector.yml
         env:
           ANSIBLE_CONFIG: ansible/ansible.cfg
+
+      - name: Build images
+        if: |
+          github.event_name == 'push' ||
+          matrix.arch != 'amd64' ||
+          !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
+        working-directory: ansible
+        run: |
+          ansible-galaxy install -r ansible/requirements.yml
+          ansible-playbook \
+            -i ci \
+            -e collector_image='${{ inputs.collector-image }}' \
+            -e arch='${{ matrix.arch }}' \
+            -e @secrets.yml \
+            ci-build-collector.yml
+
+      - name: Destroy VMs
+        if: always() && matrix.arch != 'amd64'
+        run: |
+          make -C "${{ github.workspace }}/ansible" destroy-vms
 
   create-multiarch-manifest:
     needs:
