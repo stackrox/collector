@@ -5,7 +5,7 @@
     - name: Upload source
       ansible.posix.synchronize:
         src: "{{ lookup('env', 'GITHUB_WORKSPACE') }}"
-        dest: "{{ ansible_env.HOME }}/collector/"
+        dest: "{{ ansible_env.HOME }}/collector/collector/"
 
     - name: LS
       shell: ls -lah "{{ ansible_env.HOME }}" && ls -lah "{{ ansible_env.HOME }}/collector/"
@@ -25,7 +25,7 @@
   tasks:
     - name: Build the collector image
       community.general.make:
-        chdir: "{{ ansible_env.HOME }}/collector/"
+        chdir: "{{ ansible_env.HOME }}/collector/collector/"
         target: image
       register: build_result
       # ensure this action is printed
