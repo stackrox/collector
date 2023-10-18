@@ -1,0 +1,119 @@
+name: Create VM from Type
+description: |
+  Creates a VM or set of VMs from a given VM type, on GCP or IBM cloud
+
+inputs:
+  vm-type:
+    description: |
+      The type of VM to create. e.g. rhel
+    required: true
+  job-tag:
+    description: |
+      Used to differentiate between different sources when creating
+      VMs.
+    default: ""
+  create-benchmark-vms:
+    description: Whether to create benchmark VMs
+    default: false
+
+  gcp-ssh-key:
+    description: |
+      The private key component of the GCP SSH key
+
+  gcp-ssh-pub-key:
+    description: |
+      The public key component of the GCP SSH key
+
+  ibm-ssh-key:
+    description: |
+      The private key component of the IBM cloud SSH key
+
+  ibm-ssh-pub-key:
+    description: |
+      The public key component of the IBM cloud SSH key
+
+  ibm-api-key:
+    description: |
+      The API key used to interact with IBM cloud
+
+  redhat-username:
+    description: |
+      Username for interaction with RHEL subscriptions
+
+  redhat-password:
+    description: |
+      Password for interaction with RHEL subscriptions
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Env
+      id: setup-env
+      shell: bash
+      run: |
+        JOB_ID="${{ github.run_id }}${{ inputs.vm-type }}${{ inputs.job-tag }}"
+        NORM_JOB_ID="${JOB_ID//-/}"
+
+        {
+          echo "GCP_SSH_KEY_FILE=~/.ssh/GCP_SSH_KEY"
+          echo "BUILD_TYPE=ci"
+          echo "VM_TYPE=${{ inputs.vm-type }}"
+          echo "JOB_ID=$NORM_JOB_ID"
+        } >> "${GITHUB_ENV}"
+
+        echo "IC_API_KEY=${{ inputs.ibm-api-key }}" >> "${GITHUB_ENV}"
+
+        if [[ '${{ inputs.vm-type }}' =~ s390x ]]; then
+          {
+            echo "IC_REGION=ca-tor"
+          } >> "${GITHUB_ENV}"
+        fi
+
+        if [[ '${{ inputs.vm-type }}' =~ ppc64le ]]; then
+          {
+            echo "IC_REGION=osa"
+            echo "IC_ZONE=osa21"
+            echo "IBM_CLOUD_POWER_SSH_PUBLIC_KEY=${{ inputs.ibm-ssh-pub-key }}"
+          } >> "${GITHUB_ENV}"
+        fi
+
+        if [[ '${{ inputs.vm-type }}' =~ rhel ]]; then
+          {
+            echo "REDHAT_USERNAME=${{ inputs.redhat-username }}"
+            echo "REDHAT_PASSWORD=${{ inputs.redhat-password }}"
+          } >> "${GITHUB_ENV}"
+        fi
+
+    - name: Copy creds files
+      shell: bash
+      run: |
+        # Temporary compatibility with OSCI
+        mkdir -p /tmp/secret/stackrox-collector-e2e-tests
+        cp "$GOOGLE_APPLICATION_CREDENTIALS" /tmp/secret/stackrox-collector-e2e-tests/GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT
+
+        mkdir -p "$HOME/.ssh"
+        chmod 0700 "$HOME/.ssh"
+
+        function copy_secret_to_file() {
+          local secret="$1"
+          local destination="$2"
+          local perms="$3"
+
+          echo "$secret" > "$destination"
+          chmod "$perms" "$destination"
+        }
+
+        copy_secret_to_file "$GCP_SSH_KEY" "$HOME/.ssh/GCP_SSH_KEY" 0600
+        copy_secret_to_file "$GCP_SSH_KEY_PUB" "$HOME/.ssh/GCP_SSH_KEY.pub" 0600
+        copy_secret_to_file "$IBM_CLOUD_KEY" "$HOME/.ssh/acs-sshkey_rsa.prv" 0600
+      env:
+        GCP_SSH_KEY: ${{ inputs.gcp-ssh-key }}
+        GCP_SSH_KEY_PUB: ${{ inputs.gcp-ssh-pub-key }}
+        IBM_CLOUD_KEY: ${{ inputs.ibm-ssh-key }}
+
+    # Added workaround for ssh connection issue with power vm from ubuntu machine.
+    # Changing mtu works in resolving the issue
+    - name: Set MTU for Power VMs
+      if: ${{ contains(inputs.vm_type, 'ppc64le') }}
+      run: sudo ifconfig eth0 mtu 1000 up
+      shell: bash
