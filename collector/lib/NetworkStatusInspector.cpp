@@ -10,20 +10,20 @@ namespace collector {
 
 class HTTPChunkedSender : public std::stringbuf {
  public:
-  HTTPChunkedSender(struct mg_connection* conn) : stringbuf(), conn_(conn) {}
+  HTTPChunkedSender(struct mg_connection* conn) : std::stringbuf(), conn_(conn) {}
 
   virtual int sync() override {
     mg_send_chunk(conn_, this->str().c_str(), this->str().length());
     this->str().clear();
 
-    return stringbuf::sync();
+    return std::stringbuf::sync();
   }
 
   virtual int overflow(int c) override {
     if (this->str().length() > 1024)
       sync();
 
-    return stringbuf::overflow(c);
+    return std::stringbuf::overflow(c);
   }
 
  private:
