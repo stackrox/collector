@@ -81,6 +81,7 @@ jobs:
     with:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ inputs.collector-tag }}
+      collector-qa-tag: ${{ inputs.collector-qa-tag }}
       job-tag: ${{ inputs.job-tag }}
     secrets: inherit
 
