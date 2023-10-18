@@ -64,7 +64,10 @@ jobs:
         run: |
           if [[ "${{ matrix.arch }}" == 's390x' ]]; then
             {
-              echo "IBM_CLOUD_SSH_KEY=${{ secrets.IBM_CLOUD_S390X_SSH_PRIVATE_KEY }}"
+              echo "IBM_CLOUD_SSH_LEY<<EOS"
+              echo "${{ secrets.IBM_CLOUD_S390X_SSH_PRIVATE_KEY }}"
+              echo "EOS"
+
               echo "IBM_CLOUD_SSH_PUB_KEY="
               echo "IBM_API_KEY=${{ secrets.IBM_CLOUD_S390X_API_KEY }}"
               echo "VM_TYPE=rhel-s390x"
@@ -73,7 +76,10 @@ jobs:
 
           if [[ "${{ matrix.arch }}" == 'ppc64le' ]]; then
             {
-              echo "IBM_CLOUD_SSH_KEY=${{ secrets.IBM_CLOUD_POWER_SSH_PRIVATE_KEY }}"
+              echo "IBM_CLOUD_SSH_LEY<<EOS"
+              echo "${{ secrets.IBM_CLOUD_POWER_SSH_PRIVATE_KEY }}"
+              echo "EOS"
+
               echo "IBM_CLOUD_SSH_PUB_KEY=${{ secrets.IBM_CLOUD_POWER_SSH_PUBLIC_KEY }}"
               echo "IBM_API_KEY=${{ secrets.IBM_CLOUD_POWER_API_KEY }}"
               echo "VM_TYPE=rhel-ppc64le"
