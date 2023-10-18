@@ -9,6 +9,10 @@
 
     - name: LS
       shell: ls -lah "{{ ansible_env.HOME }}" && ls -lah "{{ ansible_env.HOME }}/collector/"
+      register: ls_result
+
+    - debug:
+        var: ls_result
 
 - name: Build and push collector image
   hosts: all

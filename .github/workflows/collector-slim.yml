@@ -76,7 +76,7 @@ jobs:
 
           if [[ "${{ matrix.arch }}" == 'ppc64le' ]]; then
             {
-              echo "IBM_CLOUD_SSH_LEY<<EOS"
+              echo "IBM_CLOUD_SSH_KEY<<EOS"
               echo "${{ secrets.IBM_CLOUD_POWER_SSH_PRIVATE_KEY }}"
               echo "EOS"
 
