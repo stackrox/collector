@@ -63,13 +63,13 @@ runs:
 
         echo "IC_API_KEY=${{ inputs.ibm-api-key }}" >> "${GITHUB_ENV}"
 
-        if [[ '${{ inputs.vm_type }}' =~ s390x ]]; then
+        if [[ '${{ inputs.vm-type }}' =~ s390x ]]; then
           {
             echo "IC_REGION=ca-tor"
           } >> "${GITHUB_ENV}"
         fi
 
-        if [[ '${{ inputs.vm_type }}' =~ ppc64le ]]; then
+        if [[ '${{ inputs.vm-type }}' =~ ppc64le ]]; then
           {
             echo "IC_REGION=osa"
             echo "IC_ZONE=osa21"
@@ -77,7 +77,7 @@ runs:
           } >> "${GITHUB_ENV}"
         fi
 
-        if [[ '${{ inputs.vm_type }}' =~ rhel ]]; then
+        if [[ '${{ inputs.vm-type }}' =~ rhel ]]; then
           {
             echo "REDHAT_USERNAME=${{ inputs.redhat-username }}"
             echo "REDHAT_PASSWORD=${{ inputs.redhat-password }}"

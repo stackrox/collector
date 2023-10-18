@@ -82,9 +82,10 @@ jobs:
 
       - name: Setup Ansible
         uses: ./.github/actions/setup-ansible-env
+        if: matrix.arch != 'amd64'
         with:
           vm-type: ${{ env.VM_TYPE }}
-          job-tag: "builder"
+          job-tag: ""
           gcp-ssh-key: ${{ secrets.GCP_SSH_KEY }}
           gcp-ssh-pub-key: ${{ secrets.GCP_SSH_KEY_PUB }}
           redhat-username: ${{ secrets.REDHAT_USERNAME }}
@@ -138,8 +139,8 @@ jobs:
       - name: Build images
         if: |
           github.event_name == 'push' ||
-          matrix.arch != 'amd64' ||
-          !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
+          (matrix.arch != 'amd64' &&
+          !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds'))
         working-directory: ansible
         run: |
           ansible-galaxy install -r ansible/requirements.yml
