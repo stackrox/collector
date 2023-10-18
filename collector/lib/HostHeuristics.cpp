@@ -87,10 +87,23 @@ class S390XHeuristic : public Heuristic {
   }
 };
 
+class ARM64Heuristic : public Heuristic {
+ public:
+  void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
+    auto kernel = host.GetKernelVersion();
+
+    if (kernel.machine == "aarch64" && config.GetCollectionMethod() == CollectionMethod::EBPF) {
+      CLOG(WARNING) << "eBPF collection method is not supported on ARM, switching to CO-RE BPF collection method.";
+      hconfig->SetCollectionMethod(CollectionMethod::CORE_BPF);
+    }
+  }
+};
+
 const std::unique_ptr<Heuristic> g_host_heuristics[] = {
     std::unique_ptr<Heuristic>(new CollectionHeuristic),
     std::unique_ptr<Heuristic>(new DockerDesktopHeuristic),
     std::unique_ptr<Heuristic>(new S390XHeuristic),
+    std::unique_ptr<Heuristic>(new ARM64Heuristic),
 };
 
 }  // namespace
