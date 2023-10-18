@@ -46,6 +46,8 @@ BoolEnvVar enable_connection_stats("ROX_COLLECTOR_ENABLE_CONNECTION_STATS", true
 
 BoolEnvVar enable_detailed_metrics("ROX_COLLECTOR_ENABLE_DETAILED_METRICS", true);
 
+BoolEnvVar enable_introspection("ROX_COLLECTOR_ENABLE_INTROSPECTION", false);
+
 }  // namespace
 
 constexpr bool CollectorConfig::kTurnOffScrape;
@@ -71,6 +73,7 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   enable_external_ips_ = enable_external_ips.value();
   enable_connection_stats_ = enable_connection_stats.value();
   enable_detailed_metrics_ = enable_detailed_metrics.value();
+  enable_introspection_ = enable_introspection.value();
 
   for (const auto& syscall : kSyscalls) {
     syscalls_.push_back(syscall);

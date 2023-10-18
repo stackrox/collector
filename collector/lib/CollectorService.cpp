@@ -101,7 +101,10 @@ void CollectorService::RunForever() {
   }
 
   NetworkStatusInspector networkStatusInspector(conn_tracker);
-  server.addHandler(networkStatusInspector.kBaseRoute, networkStatusInspector);
+
+  if (config_.IsIntrospectionEnabled()) {
+    server.addHandler(networkStatusInspector.kBaseRoute, networkStatusInspector);
+  }
 
   system_inspector_.Init(config_, conn_tracker);
   system_inspector_.Start();

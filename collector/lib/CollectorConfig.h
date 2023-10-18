@@ -81,6 +81,7 @@ class CollectorConfig {
   unsigned int GetSinspBufferSize() const { return sinsp_buffer_size_; }
   unsigned int GetSinspCpuPerBuffer() const { return sinsp_cpu_per_buffer_; }
   unsigned int GetSinspThreadCacheSize() const { return sinsp_thread_cache_size_; }
+  bool IsIntrospectionEnabled() const { return enable_introspection_; }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
@@ -110,6 +111,7 @@ class CollectorConfig {
   std::vector<double> connection_stats_quantiles_;
   double connection_stats_error_;
   unsigned int connection_stats_window_;
+  bool enable_introspection_;
 
   // One ring buffer will be initialized for this many CPUs
   unsigned int sinsp_cpu_per_buffer_;
