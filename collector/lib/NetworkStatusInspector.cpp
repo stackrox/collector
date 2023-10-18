@@ -91,7 +91,7 @@ static void SerializeEndpoint(const Endpoint& ep, Json::Value& node) {
 }
 
 bool NetworkStatusInspector::handleGetEndpoints(struct mg_connection* conn) {
-  collector::ContainerEndpointMap endpointStates = conntracker_->FetchEndpointState(true, false);
+  collector::AdvertisedEndpointMap endpointStates = conntracker_->FetchEndpointState(true, false);
   Json::Value bodyRoot(Json::arrayValue);
 
   for (auto endpointState : endpointStates) {
