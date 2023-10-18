@@ -7,6 +7,9 @@
         src: "{{ lookup('env', 'GITHUB_WORKSPACE') }}"
         dest: "{{ ansible_env.HOME }}/collector/"
 
+    - name: LS
+      shell: ls -lah "{{ ansible_env.HOME }}" && ls -lah "{{ ansible_env.HOME }}/collector/"
+
 - name: Build and push collector image
   hosts: all
 
