@@ -2,27 +2,23 @@ name: Build Integration Test Containers
 
 on:
   workflow_call:
+    inputs:
+      collector-tag:
+        type: string
+        required: true
+        description: |
+          The tag used to build the collector image
+      collector-qa-tag:
+        type: string
+        required: true
+        description: Tag used for QA containers
+      rebuild-qa-containers:
+        type: boolean
+        required: true
+        description: Whether the QA containers should be rebuilt
 
 jobs:
-  test-containers:
-    runs-on: ubuntu-latest
-    outputs:
-      changed: ${{ steps.filter.outputs.container }}
-    steps:
-      - uses: actions/checkout@v3
-
-      - uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          list-files: shell
-
-          # Only trigger a rebuild when the QA tag has changed
-          filters: |
-            container:
-              - integration-tests/container/QA_TAG
-
   common-variables:
-    needs: test-containers
     runs-on: ubuntu-latest
     outputs:
       build-dirs: ${{ steps.variables.outputs.build-dirs }}
@@ -44,10 +40,9 @@ jobs:
 
   rebuild-containers:
     needs:
-      - test-containers
       - common-variables
 
-    if: needs.test-containers.outputs.changed == 'true'
+    if: inputs.rebuild-qa-containers
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -55,6 +50,7 @@ jobs:
         directory: ${{ fromJSON(needs.common-variables.outputs.build-dirs) }}
     env:
       PLATFORM: linux/amd64,linux/s390x,linux/ppc64le
+      COLLECTOR_QA_TAG: ${{ inputs.collector-qa-tag }}
 
     steps:
       - uses: actions/checkout@v3
@@ -75,4 +71,3 @@ jobs:
       - name: Build and Push containers
         run: |
           make -C "${{ matrix.directory }}" build-and-push
-

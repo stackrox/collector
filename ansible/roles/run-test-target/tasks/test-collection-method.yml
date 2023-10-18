@@ -46,7 +46,7 @@
       RUNTIME_AS_ROOT: "{{ runtime_as_root }}"
       RUNTIME_SOCKET: "{{ runtime_socket }}"
       COLLECTOR_IMAGE: "{{ collector_image }}"
-      COLLECTOR_QA_TAG: "{{ lookup('file', integration_tests_root + '/container/QA_TAG') }}"
+      COLLECTOR_QA_TAG: "{{ lookup('env', 'COLLECTOR_QA_TAG', default=lookup('file', integration_tests_root + '/container/QA_TAG')) }}"
     register: test_result
     # ensure that this is printed
     tags: [print_action]

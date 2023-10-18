@@ -8,6 +8,11 @@ on:
           Tag used for running the benchmarks
         type: string
         required: true
+      collector-qa-tag:
+        description: |
+          Tag used for QA containers
+        type: string
+        required: true
 
 jobs:
   benchmarks:
@@ -16,6 +21,7 @@ jobs:
       vm_type: benchmark
       run-benchmarks: true
       collector-tag: ${{ inputs.collector-tag }}
+      collector-qa-tag: ${{ inputs.collector-qa-tag }}
     secrets: inherit
 
   calculate-baseline:
