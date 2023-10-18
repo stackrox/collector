@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Need debugfs to get the tracepoint id
+mount -t debugfs none /sys/kernel/debug
+
 # start workload to generate sched:sched_process_exit on cpu 0
 while true; do taskset -c 0 ls &> /dev/null; done &
 

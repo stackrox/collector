@@ -15,7 +15,7 @@ on:
 
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
-  DEFAULT_BUILDER_TAG: cache
+  DEFAULT_BUILDER_TAG: master
 
 jobs:
   builder-needs-rebuilding:
