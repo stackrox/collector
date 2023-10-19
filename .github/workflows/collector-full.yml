@@ -272,7 +272,7 @@ jobs:
 
   slim-multiarch-manifests:
     runs-on: ubuntu-latest
-    if: ${{ !inputs.build-full-image && !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds') }}
+    if: ${{ !inputs.build-full-image && contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') }}
     env:
       BASE_IMAGE: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
       ARCHS: amd64 ppc64le s390x
