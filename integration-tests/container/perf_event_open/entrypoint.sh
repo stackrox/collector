@@ -7,5 +7,6 @@ mount -t debugfs none /sys/kernel/debug
 while true; do taskset -c 0 ls &> /dev/null; done &
 
 # start capturing
-SCHED_PROCESS_EXIT_ID=$(cat /sys/kernel/debug/tracing/events/sched/sched_process_exit/id)
+#SCHED_PROCESS_EXIT_ID=$(cat /sys/kernel/debug/tracing/events/sched/sched_process_exit/id)
+SCHED_PROCESS_EXIT_ID=$(cat /sys/kernel/debug/tracing/events/sched/sched_process_exec/id)
 /sched_process_exit 10 "${SCHED_PROCESS_EXIT_ID}"
