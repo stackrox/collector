@@ -71,7 +71,7 @@ jobs:
         if: |
           github.event_name == 'push' ||
           matrix.arch == 'amd64' ||
-          !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
+          contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
         timeout-minutes: 480
         run: |
           ansible-galaxy install -r ansible/requirements.yml
@@ -93,7 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' ||
-      !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
+      contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
     env:
       ARCHS: amd64 ppc64le s390x
 
@@ -149,7 +149,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'pull_request' &&
-      contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
+      !contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
     steps:
       - name: Pull image to retag
         run: |

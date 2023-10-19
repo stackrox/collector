@@ -111,7 +111,7 @@ jobs:
       - name: Build and push full images
         if: |
           matrix.arch == 'amd64' ||
-          !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
+          contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
         run: |
           ansible-galaxy install -r ansible/requirements.yml
           ansible-playbook \
@@ -130,7 +130,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       inputs.build-full-image &&
-      !contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
+      contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
     needs:
     - build-collector-full
     env:
@@ -183,7 +183,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       inputs.build-full-image &&
-      contains(github.event.pull_request.labels.*.name, 'skip-multiarch-builds')
+      !contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
     needs:
     - build-collector-full
     steps:
