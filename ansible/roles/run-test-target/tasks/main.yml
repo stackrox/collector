@@ -15,7 +15,7 @@
 - name: Build tests
   include_tasks: build-tests.yml
   vars:
-    arch: "{{ arch_info }}"
+    arch: "{{ vm_arch }}"
 
 - name: Pull test images
   include_tasks: pull-images.yml

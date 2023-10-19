@@ -5,7 +5,6 @@ ibmcloud_ssh_key_file: "{{ lookup('env', 'IBMCLOUD_SSH_KEY_FILE', default='~/.ss
 
 current_user: "{{ lookup('env', 'USER') }}"
 test_platform: "{{ lookup('env', 'VM_TYPE', default='rhel') }}"
-arch_info: "{{ virtual_machines[test_platform].arch | default('amd64') }}"
 collector_root: "{{ playbook_dir }}/.."
 collector_repo: "quay.io/stackrox-io"
 
@@ -58,7 +57,6 @@ virtual_machines:
 
   rhcos:
     project: rhcos-cloud
-    username: core
     images:
       - rhcos-412-86-202303211731-0-gcp-x86-64
       - rhcos-413-86-202303151429-0-gcp-x86-64
@@ -100,13 +98,11 @@ virtual_machines:
 
   flatcar:
     project: kinvolk-public
-    username: core
     families:
       - flatcar-stable
 
   fedora-coreos:
     project: fedora-coreos-cloud
-    username: core
     families:
       - fedora-coreos-stable
 
