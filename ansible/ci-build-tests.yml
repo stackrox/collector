@@ -25,7 +25,6 @@
         #     target can be used for local development and testing.
         docker buildx build --push \
           --platform "${PLATFORMS}" \
-          --build-arg QA_TAG="{{ lookup('file', collector_root + '/integration-tests/container/QA_TAG') }}" \
           -t '{{ test_image }}' \
           {{ collector_root }}/integration-tests
       register: build_result

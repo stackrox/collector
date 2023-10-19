@@ -49,24 +49,6 @@ jobs:
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-tests.yml
 
-  test-image-manifest:
-    name: Create integration test image manifest
-    runs-on: ubuntu-latest
-    needs: build-test-image
-    steps:
-      - uses: actions/checkout@v3
-
-      - uses: docker/login-action@v2
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-
-      - uses: ./.github/actions/create-multiarch-manifest
-        with:
-          base-image: quay.io/rhacs-eng/qa-multi-arch:collector-tests-${{ inputs.collector-tag }}
-          archs: amd64 ppc64le s390x
-
   common-variables:
     runs-on: ubuntu-latest
     outputs:

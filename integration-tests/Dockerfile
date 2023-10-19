@@ -16,9 +16,6 @@ RUN CGO_ENABLED=0 go test -tags bench -c -o collector-tests
 FROM --platform=$BUILDPLATFORM alpine:3.18
 
 ARG TEST_ROOT="/tests"
-ARG QA_TAG
-
-ENV COLLECTOR_QA_TAG="$QA_TAG"
 
 RUN apk add docker
 
