@@ -80,7 +80,6 @@ jobs:
       drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
       arch-drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
       skip-built-drivers: ${{ needs.build-drivers.outputs.parallel-jobs == 0 }}
-      build-full-image: ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'build-full-images') }}
     secrets: inherit
     needs:
     - init

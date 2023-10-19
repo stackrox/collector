@@ -82,7 +82,6 @@ jobs:
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
       arch-drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
       skip-built-drivers: true
-      build-full-image: true
     secrets: inherit
     needs:
     - init

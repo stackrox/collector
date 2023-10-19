@@ -8,12 +8,6 @@ on:
         required: true
         description: |
           The tag used to build the collector image
-      build-full-image:
-        type: boolean
-        required: true
-        description: |
-          If true, the full collector image will be built, else, the -slim
-          image of collector will be retagged.
       skip-built-drivers:
         type: boolean
         required: true
@@ -34,7 +28,9 @@ on:
 jobs:
   build-collector-full:
     runs-on: ubuntu-latest
-    if: inputs.build-full-image
+    if: |
+      github.event_name != 'pull_request' ||
+      contains(github.event.pull_request.labels.*.name, 'build-full-images')
     strategy:
       fail-fast: false
       matrix:
@@ -110,6 +106,7 @@ jobs:
       # a step, so... Overkill it is!
       - name: Build and push full images
         if: |
+          github.event_name == 'push' ||
           matrix.arch == 'amd64' ||
           contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
         run: |
@@ -129,8 +126,9 @@ jobs:
   multiarch-manifests:
     runs-on: ubuntu-latest
     if: |
-      inputs.build-full-image &&
-      contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
+      github.event_name != 'pull_request' ||
+      ( contains(github.event.pull_request.labels.*.name, 'build-full-images') &&
+        contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') )
     needs:
     - build-collector-full
     env:
@@ -182,8 +180,9 @@ jobs:
   retag-collector-full:
     runs-on: ubuntu-latest
     if: |
-      inputs.build-full-image &&
-      !contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
+      github.event_name == 'pull_request' &&
+      ( contains(github.event.pull_request.labels.*.name, 'build-full-images') &&
+        !contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') )
     needs:
     - build-collector-full
     steps:
@@ -224,8 +223,12 @@ jobs:
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
   retag-collector-slim:
+    # TODO: Runing without build-full-images and with run-multiarch-builds
+    # should create manifests based on the slim images.
     runs-on: ubuntu-latest
-    if: ${{ !inputs.build-full-image }}
+    if: |
+      github.event_name == 'pull_request' &&
+      !contains(github.event.pull_request.labels.*.name, 'build-full-images')
     env:
       COLLECTOR_IMAGE_SLIM: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}-slim
 
