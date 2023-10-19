@@ -5,7 +5,6 @@ on:
     branches:
       - master
       - release-*
-      - mauro/fix-multiarch-retagging
     tags:
       - 3.*.*
   pull_request:
