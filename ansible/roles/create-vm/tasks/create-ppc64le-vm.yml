@@ -147,6 +147,7 @@
     vm_config: "{{ vm_config }}"
     vm_image_family: "{{ vm_family }}"
     vm_collection_method: "{{ vm_collection_method }}"
+    vm_arch: "{{ vm_arch }}"
     ibm_cloud_vm: true
 
 - name: generate provisioner inventory file
@@ -154,6 +155,6 @@
     src: 'ibm-cloud-inventory.j2'
     dest: "{{ ibm_output_inventory_file }}"
     mode: '0644'
-  when: 
+  when:
     - ibm_output_inventory_file != ""
   delegate_to: localhost
