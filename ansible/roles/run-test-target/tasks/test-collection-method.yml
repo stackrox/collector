@@ -39,7 +39,7 @@
     state: directory
     mode: '0777'
 
-- name: Copy podmand auth
+- name: Copy podman auth
   become: "{{ runtime_as_root }}"
   shell:
     cmd: |
@@ -59,9 +59,9 @@
     #      communication between containers (see listening ports test for
     #      an example.
     #
-    # One or both of these should be improved in the future. Moving auth
-    # into the container would solve (1) and better defined inter-container
-    # comms would solve (2)
+    # One or both of these should be improved in the future. Letting the
+    # container authenticate itself would solve (1) and better defined
+    # inter-container comms would solve (2)
   - name: Run integration tests
     become: "{{ runtime_as_root }}"
     shell: |

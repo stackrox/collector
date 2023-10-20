@@ -52,7 +52,7 @@ build:
 build-image:
 	docker build --platform $(PLATFORM) -t $(COLLECTOR_TESTS_IMAGE) \
 		--build-arg QA_TAG=$(shell cat container/QA_TAG) \
-		.
+		$(CURDIR)
 
 # Run everything on CI, rather than specific tests.
 .PHONY: ci-integration-tests
