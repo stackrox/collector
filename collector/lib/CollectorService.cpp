@@ -54,6 +54,8 @@ void CollectorService::RunForever() {
   prometheus::Exposer exposer("9090");
   exposer.RegisterCollectable(registry);
 
+  CollectorStatsExporter exporter(registry, &config_, &sysdig_);
+
   std::unique_ptr<NetworkStatusNotifier> net_status_notifier;
 
   CLOG(INFO) << "Network scrape interval set to " << config_.ScrapeInterval() << " seconds";
@@ -85,11 +87,12 @@ void CollectorService::RunForever() {
 
     net_status_notifier = MakeUnique<NetworkStatusNotifier>(conn_scraper, config_.ScrapeInterval(), config_.ScrapeListenEndpoints(), config_.TurnOffScrape(),
                                                             conn_tracker, config_.AfterglowPeriod(), config_.EnableAfterglow(),
-                                                            network_connection_info_service_comm);
+                                                            network_connection_info_service_comm,
+                                                            exporter.GetConnectionsTotalReporter(),
+                                                            exporter.GetConnectionsRateReporter());
     net_status_notifier->Start();
   }
 
-  CollectorStatsExporter exporter(registry, &config_, &sysdig_);
   if (!exporter.start()) {
     CLOG(FATAL) << "Unable to start collector stats exporter";
   }

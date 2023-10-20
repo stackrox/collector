@@ -16,8 +16,19 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
  public:
   NetworkStatusNotifier(std::shared_ptr<IConnScraper> conn_scraper, int scrape_interval, bool scrape_listen_endpoints, bool turn_off_scrape,
                         std::shared_ptr<ConnectionTracker> conn_tracker, int64_t afterglow_period_micros, bool use_afterglow,
-                        std::shared_ptr<INetworkConnectionInfoServiceComm> comm)
-      : conn_scraper_(conn_scraper), scrape_interval_(scrape_interval), turn_off_scraping_(turn_off_scrape), scrape_listen_endpoints_(scrape_listen_endpoints), conn_tracker_(std::move(conn_tracker)), afterglow_period_micros_(afterglow_period_micros), enable_afterglow_(use_afterglow), comm_(comm) {
+                        std::shared_ptr<INetworkConnectionInfoServiceComm> comm,
+                        std::shared_ptr<CollectorConnectionStats<unsigned int>> connections_total_reporter = 0,
+                        std::shared_ptr<CollectorConnectionStats<float>> connections_rate_reporter = 0)
+      : conn_scraper_(conn_scraper),
+        scrape_interval_(scrape_interval),
+        turn_off_scraping_(turn_off_scrape),
+        scrape_listen_endpoints_(scrape_listen_endpoints),
+        conn_tracker_(std::move(conn_tracker)),
+        afterglow_period_micros_(afterglow_period_micros),
+        enable_afterglow_(use_afterglow),
+        comm_(comm),
+        connections_total_reporter_(connections_total_reporter),
+        connections_rate_reporter_(connections_rate_reporter) {
   }
 
   void Start();
@@ -54,6 +65,12 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   int64_t afterglow_period_micros_;
   bool enable_afterglow_;
   std::shared_ptr<INetworkConnectionInfoServiceComm> comm_;
+
+  std::shared_ptr<CollectorConnectionStats<unsigned int>> connections_total_reporter_;
+  std::shared_ptr<CollectorConnectionStats<float>> connections_rate_reporter_;
+  std::chrono::steady_clock::time_point connections_last_report_time_;     // time delta between the current reporting and the previous (rate computation)
+  std::optional<ConnectionTracker::Stats> connections_rate_counter_last_;  // previous counter values (rate computation)
+  void ReportConnectionStats();
 };
 
 }  // namespace collector
