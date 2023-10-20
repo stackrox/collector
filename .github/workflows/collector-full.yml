@@ -106,7 +106,7 @@ jobs:
       # a step, so... Overkill it is!
       - name: Build and push full images
         if: |
-          github.event_name == 'push' ||
+          github.event_name != 'pull_request' ||
           matrix.arch == 'amd64' ||
           contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
         run: |
