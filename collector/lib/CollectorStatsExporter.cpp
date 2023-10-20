@@ -10,11 +10,40 @@
 #include "SysdigService.h"
 #include "Utility.h"
 #include "prometheus/gauge.h"
+#include "prometheus/summary.h"
 
 namespace collector {
 
+template <typename T>
+class CollectorConnectionStatsPrometheus : public CollectorConnectionStats<T> {
+ public:
+  CollectorConnectionStatsPrometheus(std::shared_ptr<prometheus::Registry> registry, std::string name, std::string help, std::chrono::milliseconds max_age)
+      : family_(prometheus::BuildSummary()
+                    .Name(name)
+                    .Help(help)
+                    .Register(*registry)),
+        inbound_private_summary_(family_.Add({{"dir", "in"}, {"peer", "private"}}, prometheus::Summary::Quantiles{{0.5, 0.01}, {0.9, 0.01}, {0.95, 0.01}}, max_age)),
+        inbound_public_summary_(family_.Add({{"dir", "in"}, {"peer", "public"}}, prometheus::Summary::Quantiles{{0.5, 0.01}, {0.9, 0.01}, {0.95, 0.01}}, max_age)),
+        outbound_private_summary_(family_.Add({{"dir", "out"}, {"peer", "private"}}, prometheus::Summary::Quantiles{{0.5, 0.01}, {0.9, 0.01}, {0.95, 0.01}}, max_age)),
+        outbound_public_summary_(family_.Add({{"dir", "out"}, {"peer", "public"}}, prometheus::Summary::Quantiles{{0.5, 0.01}, {0.9, 0.01}, {0.95, 0.01}}, max_age)) {}
+
+  void Observe(T inbound_private, T inbound_public, T outbound_private, T outbound_public) override {
+  }
+
+ private:
+  prometheus::Family<prometheus::Summary>& family_;
+  prometheus::Summary& inbound_private_summary_;
+  prometheus::Summary& inbound_public_summary_;
+  prometheus::Summary& outbound_private_summary_;
+  prometheus::Summary& outbound_public_summary_;
+};
+
 CollectorStatsExporter::CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, const CollectorConfig* config, SysdigService* sysdig)
-    : registry_(std::move(registry)), config_(config), sysdig_(sysdig) {}
+    : registry_(std::move(registry)),
+      config_(config),
+      sysdig_(sysdig),
+      connections_total_reporter_(std::make_shared<CollectorConnectionStatsPrometheus<unsigned int>>(registry_, "rox_connections_total", "Amount of stored connections over time", std::chrono::hours{1})),
+      connections_rate_reporter_(std::make_shared<CollectorConnectionStatsPrometheus<float>>(registry_, "rox_connections_rate", "Rate of connections over time", std::chrono::hours{1})) {}
 
 bool CollectorStatsExporter::start() {
   if (!thread_.Start(&CollectorStatsExporter::run, this)) {
