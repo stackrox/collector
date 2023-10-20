@@ -130,19 +130,23 @@ Connection ConnectionTracker::NormalizeConnectionNoLock(const Connection& conn) 
 
 namespace {
 
+/* return: true if the element has been added */
 template <typename T>
-void EmplaceOrUpdate(UnorderedMap<T, ConnStatus>* m, const T& obj, ConnStatus status) {
+bool EmplaceOrUpdate(UnorderedMap<T, ConnStatus>* m, const T& obj, ConnStatus status) {
   auto emplace_res = m->emplace(obj, status);
   if (!emplace_res.second && status.LastActiveTime() > emplace_res.first->second.LastActiveTime()) {
     emplace_res.first->second = status;
   }
+  return emplace_res.second;
 }
 
 }  // namespace
 
 void ConnectionTracker::EmplaceOrUpdateNoLock(const Connection& conn, ConnStatus status) {
   COUNTER_INC(CollectorStats::net_conn_updates);
-  EmplaceOrUpdate(&conn_state_, conn, status);
+  if (EmplaceOrUpdate(&conn_state_, conn, status)) {
+    ClassifyConnectionStats(conn, inserted_connections_counters_);
+  }
 }
 
 void ConnectionTracker::EmplaceOrUpdateNoLock(const ContainerEndpoint& ep, ConnStatus status) {
@@ -318,5 +322,44 @@ void ConnectionTracker::UpdateIgnoredL4ProtoPortPairs(UnorderedSet<L4ProtoPortPa
       }
     }
   }
+}
+
+// Increment the stat counter matching the connection's characteristics
+inline void ConnectionTracker::ClassifyConnectionStats(Connection conn, ConnectionTracker::Stats& stats) const {
+  auto& direction = conn.is_server() ? stats.inbound : stats.outbound;
+
+  if (!ShouldFetchConnection(conn)) {
+    // This connection will not be sent, so don't count it.
+    return;
+  }
+
+  if (conn.remote().address().IsPublic()) {
+    direction.public_++;
+  } else {
+    direction.private_++;
+  }
+}
+
+// Retrieve the number of connections currently known to ConnTracker, indexed by in/out and public/private nature.
+ConnectionTracker::Stats ConnectionTracker::GetConnectionStats_StoredConnections() {
+  ConnectionTracker::Stats stats = {};
+
+  WITH_LOCK(mutex_) {
+    for (auto& conn : conn_state_) {
+      ClassifyConnectionStats(conn.first, stats);
+    }
+  }
+
+  return stats;
+}
+
+// Retrieve the value of the ever-increasing counters of new connection insertion, indexed by in/out and public/private nature.
+ConnectionTracker::Stats ConnectionTracker::GetConnectionStats_NewConnectionCounters() {
+  ConnectionTracker::Stats stats;
+
+  WITH_LOCK(mutex_) {
+    stats = inserted_connections_counters_;
+  }
+  return stats;
 }
 }  // namespace collector
