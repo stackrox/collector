@@ -58,6 +58,13 @@ RUN "builder/install/install-dependencies.sh" && \
     rm -rf ${BUILD_DIR} && \
     echo -e '/usr/local/lib\n/usr/local/lib64' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 
+RUN dnf install -y epel-release && \
+    dnf install -y ccache && \
+    dnf remove -y epel-release && \
+    ln -s $(which ccache) /usr/local/bin/gcc && \
+    ln -s $(which ccache) /usr/local/bin/g++ && \
+    echo "" > /etc/profile.d/ccache.sh
+
 # Set up ssh for remote development with IDE
 RUN ssh-keygen -A \
    && ( \
@@ -76,5 +83,8 @@ RUN useradd -m remoteuser \
 
 # Create directory to copy collector source into builder container
 RUN mkdir /src && chmod a+rwx /src
+
+ENV CC=/usr/local/bin/gcc
+ENV CXX=/usr/local/bin/g++
 
 CMD ["/usr/sbin/sshd", "-D", "-e", "-f", "/etc/ssh/sshd_config_remote_development"]

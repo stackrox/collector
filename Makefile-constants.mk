@@ -17,6 +17,7 @@ CMAKE_BUILD_TYPE ?= Release
 COLLECTOR_APPEND_CID ?= false
 PLATFORM ?= linux/amd64
 TRACE_SINSP_EVENTS ?= false
+COLLECTOR_CCACHE_VOLUME ?= collector-ccache
 
 COLLECTOR_BUILD_CONTEXT = collector/
 

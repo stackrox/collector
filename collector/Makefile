@@ -20,6 +20,8 @@ COLLECTOR_BUILD_DEPS := $(HDRS) $(SRCS) $(shell find falcosecurity-libs -name '*
 cmake-build/collector: $(COLLECTOR_BUILD_DEPS)
 	docker rm -fv build_collector || true
 	docker run --rm --platform ${PLATFORM} --name build_collector \
+		--pull never \
+		-v ${COLLECTOR_CCACHE_VOLUME}:/root/.cache/ccache \
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
 		-e NPROCS=$(NPROCS) \
 		-e SRC_ROOT_DIR="$(SRC_MOUNT_DIR)" \
@@ -56,6 +58,7 @@ connscrape: build-connscrape-test
 unittest: collector
 	docker rm -fv collector_unittest || true
 	docker run --rm --platform ${PLATFORM} --name collector_unittest \
+		--pull never \
 		-v "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
 		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) $(COLLECTOR_PRE_ARGUMENTS) "$(SRC_MOUNT_DIR)/$(CMAKE_BASE_DIR)/collector/runUnitTests"

@@ -27,8 +27,10 @@ cmake_extra_flags=(
     -DTRACE_SINSP_EVENTS="$TRACE_SINSP_EVENTS"
 )
 
+ccache -z
 cmake "${cmake_extra_flags[@]}" -S "${SRC_ROOT_DIR}" -B "${CMAKE_BUILD_DIR}"
 cmake --build "${CMAKE_BUILD_DIR}" --target all -- -j "${NPROCS:-2}"
+ccache -s
 
 if [ "$CMAKE_BUILD_TYPE" = "Release" ]; then
     strip --strip-unneeded \
