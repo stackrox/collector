@@ -36,7 +36,7 @@ virtual_machines:
   rhel-s390x:
     project: rhel-s390x-cloud
     arch: s390x
-    ssh_key_file: ibmcloud_ssh_key_file
+    ssh_key_file: "{{ ibmcloud_ssh_key_file }}"
     families:
       - rhel-8-6-s390x
 
@@ -45,7 +45,7 @@ virtual_machines:
   rhel-ppc64le:
     project: rhel-ppc64le-cloud
     arch: ppc64le
-    ssh_key_file: ibmcloud_ssh_key_file
+    ssh_key_file: "{{ ibmcloud_ssh_key_file }}"
     families:
       - p
 

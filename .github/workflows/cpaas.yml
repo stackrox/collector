@@ -99,6 +99,7 @@ jobs:
         vm_type:
           - rhel
           - rhel-sap
+          - rhel-s390x
     with:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
@@ -110,7 +111,7 @@ jobs:
     - build-collector-full
     secrets: inherit
 
-  # Isolating multi-arch testing temporarily while fixes are found for s390x
+  # Isolating multi-arch testing temporarily while fixes are found for ppc64le
   multiarch-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') &&
@@ -121,7 +122,6 @@ jobs:
       fail-fast: false
       matrix:
         vm_type:
-          - rhel-s390x
           - rhel-ppc64le
     with:
       vm_type: ${{ matrix.vm_type }}
