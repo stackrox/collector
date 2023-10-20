@@ -28,6 +28,10 @@ class CollectorConnectionStatsPrometheus : public CollectorConnectionStats<T> {
         outbound_public_summary_(family_.Add({{"dir", "out"}, {"peer", "public"}}, prometheus::Summary::Quantiles{{0.5, 0.01}, {0.9, 0.01}, {0.95, 0.01}}, max_age)) {}
 
   void Observe(T inbound_private, T inbound_public, T outbound_private, T outbound_public) override {
+    inbound_private_summary_.Observe(inbound_private);
+    inbound_public_summary_.Observe(inbound_public);
+    outbound_private_summary_.Observe(outbound_private);
+    outbound_public_summary_.Observe(outbound_public);
   }
 
  private:
