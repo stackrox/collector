@@ -24,20 +24,40 @@ on:
         description: |
           Architecture dependent drivers bucket. When used, the drivers in this
           bucket will take precendence over the one in drivers-bucket.
+      archs:
+        type: string
+        required: true
+        description: |
+          List of architectures to build images for, separated by spaces.
 
 jobs:
+  init:
+    runs-on: ubuntu-latest
+    outputs:
+      archs-json: ${{ steps.archs-json.outputs.archs-json }}
+    steps:
+      - name: archs string to JSON array
+        id: archs-json
+        shell: python
+        run: |
+          import json
+          import os
+
+          archs="${{ inputs.archs }}".split()
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+            f.write(f'archs-json={json.dumps(archs)}\n')
+
   build-collector-full:
     runs-on: ubuntu-latest
+    needs:
+    - init
     if: |
       github.event_name != 'pull_request' ||
       contains(github.event.pull_request.labels.*.name, 'build-full-images')
     strategy:
       fail-fast: false
       matrix:
-        arch:
-        - amd64
-        - ppc64le
-        - s390x
+        arch: ${{ fromJSON(needs.init.outputs.archs-json) }}
     env:
       COLLECTOR_IMAGE: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
 
@@ -82,7 +102,7 @@ jobs:
 
       # Downstream built drivers take precedence over all others.
       - name: Download downstream built drivers from GCP
-        if: inputs.arch-drivers-bucket != ''
+        if: inputs.arch-drivers-bucket != '' && matrix.arch != 'arm64'
         run: |
           GCP_BUCKET="gs://${{ inputs.arch-drivers-bucket }}/${{ matrix.arch }}"
           if [[ ${{ matrix.arch }} == "amd64" ]]; then
@@ -123,55 +143,6 @@ jobs:
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-collector-full.yml
 
-  # ARM doesn't have a full version, so we retag the slim/base image to
-  # take its place
-  retag-arm-image:
-    name: Retag arm slim image
-    runs-on: ubuntu-latest
-    if: |
-      github.event_name != 'pull_request' ||
-      ( contains(github.event.pull_request.labels.*.name, 'build-full-images') &&
-        contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') )
-    env:
-      COLLECTOR_IMAGE: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
-      RHACS_ENG_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
-    steps:
-      - name: Pull image to retag
-        run: |
-          docker pull ${{ env.COLLECTOR_IMAGE }}-arm64-slim
-
-      - name: Retag and push stackrox-io
-        uses: stackrox/actions/images/retag-and-push@v1
-        with:
-          src-image: ${{ env.COLLECTOR_IMAGE }}-arm64-slim
-          dst-image: ${{ env.COLLECTOR_IMAGE }}-arm64
-          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-
-      - name: Retag and push stackrox-io -latest
-        uses: stackrox/actions/images/retag-and-push@v1
-        with:
-          src-image: ${{ env.COLLECTOR_IMAGE }}-arm64-slim
-          dst-image: ${{ env.COLLECTOR_IMAGE }}-arm64-latest
-          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-
-      - name: Retag and push rhacs-eng
-        uses: stackrox/actions/images/retag-and-push@v1
-        with:
-          src-image: ${{ env.COLLECTOR_IMAGE }}-arm64-slim
-          dst-image: ${{ env.RHACS_ENG_IMAGE }}-arm64
-          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-
-      - name: Retag and push rhacs-eng -latest
-        uses: stackrox/actions/images/retag-and-push@v1
-        with:
-          src-image: ${{ env.COLLECTOR_IMAGE }}-arm64-slim
-          dst-image: ${{ env.RHACS_ENG_IMAGE }}-arm64-latest
-          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-
   multiarch-manifests:
     runs-on: ubuntu-latest
     if: |
@@ -180,9 +151,8 @@ jobs:
         contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') )
     needs:
     - build-collector-full
-    - retag-arm-image
     env:
-      ARCHS: amd64 ppc64le s390x arm64
+      ARCHS: ${{ inputs.archs }}
       COLLECTOR_IMAGE: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
     steps:
       - uses: actions/checkout@v3
