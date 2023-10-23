@@ -16,3 +16,4 @@ gcp_default_labels:
   stackrox-ci: "false"
 
 ibm_output_inventory_file: "{{ lookup('env', 'PWD') }}/dev/inventory_ibmcloud.yml"
+ibm_disk_size: 20
