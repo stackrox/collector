@@ -88,8 +88,8 @@ void CollectorService::RunForever() {
     net_status_notifier = MakeUnique<NetworkStatusNotifier>(conn_scraper, config_.ScrapeInterval(), config_.ScrapeListenEndpoints(), config_.TurnOffScrape(),
                                                             conn_tracker, config_.AfterglowPeriod(), config_.EnableAfterglow(),
                                                             network_connection_info_service_comm,
-                                                            exporter.GetConnectionsTotalReporter(),
-                                                            exporter.GetConnectionsRateReporter());
+                                                            config_.EnableConnectionStats() ? exporter.GetConnectionsTotalReporter() : 0,
+                                                            config_.EnableConnectionStats() ? exporter.GetConnectionsRateReporter() : 0);
     net_status_notifier->Start();
   }
 

@@ -40,6 +40,8 @@ BoolEnvVar collect_connection_status("ROX_COLLECT_CONNECTION_STATUS", true);
 
 BoolEnvVar enable_external_ips("ROX_ENABLE_EXTERNAL_IPS", false);
 
+BoolEnvVar enable_connection_stats("ROX_COLLECTOR_ENABLE_CONNECTION_STATS", true);
+
 }  // namespace
 
 constexpr bool CollectorConfig::kTurnOffScrape;
@@ -61,6 +63,7 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   import_users_ = set_import_users.value();
   collect_connection_status_ = collect_connection_status.value();
   enable_external_ips_ = enable_external_ips.value();
+  enable_connection_stats_ = enable_connection_stats.value();
 
   for (const auto& syscall : kSyscalls) {
     syscalls_.push_back(syscall);
@@ -160,6 +163,48 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   HandleAfterglowEnvVars();
 
   host_config_ = ProcessHostHeuristics(*this);
+
+  const char* envvar;
+
+  connection_stats_quantiles_ = {0.50, 0.90, 0.95};
+
+  if ((envvar = std::getenv("ROX_COLLECTOR_CONNECTION_STATS_QUANTILES")) != NULL) {
+    connection_stats_quantiles_.clear();
+    std::stringstream quantiles(envvar);
+    while (quantiles.good()) {
+      std::string quantile;
+      std::getline(quantiles, quantile, ',');
+      try {
+        double v = std::stod(quantile);
+        connection_stats_quantiles_.push_back(v);
+        CLOG(INFO) << "Connection statistics quantile: " << v;
+      } catch (...) {
+        CLOG(ERROR) << "Invalid quantile value: '" << quantile << "'";
+      }
+    }
+  }
+
+  connection_stats_error_ = 0.01;
+
+  if ((envvar = std::getenv("ROX_COLLECTOR_CONNECTION_STATS_ERROR")) != NULL) {
+    try {
+      connection_stats_error_ = std::stod(envvar);
+      CLOG(INFO) << "Connection statistics error value: " << connection_stats_error_;
+    } catch (...) {
+      CLOG(ERROR) << "Invalid quantile error value: '" << envvar << "'";
+    }
+  }
+
+  connection_stats_window_ = 60;
+
+  if ((envvar = std::getenv("ROX_COLLECTOR_CONNECTION_STATS_WINDOW")) != NULL) {
+    try {
+      connection_stats_window_ = std::stoi(envvar);
+      CLOG(INFO) << "Connection statistics window: " << connection_stats_window_;
+    } catch (...) {
+      CLOG(ERROR) << "Invalid window length value: '" << envvar << "'";
+    }
+  }
 }
 
 void CollectorConfig::HandleAfterglowEnvVars() {

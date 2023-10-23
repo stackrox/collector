@@ -17,15 +17,17 @@ namespace collector {
 template <typename T>
 class CollectorConnectionStatsPrometheus : public CollectorConnectionStats<T> {
  public:
-  CollectorConnectionStatsPrometheus(std::shared_ptr<prometheus::Registry> registry, std::string name, std::string help, std::chrono::milliseconds max_age)
-      : family_(prometheus::BuildSummary()
-                    .Name(name)
-                    .Help(help)
-                    .Register(*registry)),
-        inbound_private_summary_(family_.Add({{"dir", "in"}, {"peer", "private"}}, prometheus::Summary::Quantiles{{0.5, 0.01}, {0.9, 0.01}, {0.95, 0.01}}, max_age)),
-        inbound_public_summary_(family_.Add({{"dir", "in"}, {"peer", "public"}}, prometheus::Summary::Quantiles{{0.5, 0.01}, {0.9, 0.01}, {0.95, 0.01}}, max_age)),
-        outbound_private_summary_(family_.Add({{"dir", "out"}, {"peer", "private"}}, prometheus::Summary::Quantiles{{0.5, 0.01}, {0.9, 0.01}, {0.95, 0.01}}, max_age)),
-        outbound_public_summary_(family_.Add({{"dir", "out"}, {"peer", "public"}}, prometheus::Summary::Quantiles{{0.5, 0.01}, {0.9, 0.01}, {0.95, 0.01}}, max_age)) {}
+  CollectorConnectionStatsPrometheus(
+      std::shared_ptr<prometheus::Registry> registry,
+      std::string name,
+      std::string help,
+      std::chrono::milliseconds max_age,
+      const std::vector<double>& quantiles,
+      double error) : family_(prometheus::BuildSummary().Name(name).Help(help).Register(*registry)),
+                      inbound_private_summary_(family_.Add({{"dir", "in"}, {"peer", "private"}}, MakeQuantiles(quantiles, error), max_age)),
+                      inbound_public_summary_(family_.Add({{"dir", "in"}, {"peer", "public"}}, MakeQuantiles(quantiles, error), max_age)),
+                      outbound_private_summary_(family_.Add({{"dir", "out"}, {"peer", "private"}}, MakeQuantiles(quantiles, error), max_age)),
+                      outbound_public_summary_(family_.Add({{"dir", "out"}, {"peer", "public"}}, MakeQuantiles(quantiles, error), max_age)) {}
 
   void Observe(T inbound_private, T inbound_public, T outbound_private, T outbound_public) override {
     inbound_private_summary_.Observe(inbound_private);
@@ -40,14 +42,38 @@ class CollectorConnectionStatsPrometheus : public CollectorConnectionStats<T> {
   prometheus::Summary& inbound_public_summary_;
   prometheus::Summary& outbound_private_summary_;
   prometheus::Summary& outbound_public_summary_;
+
+  prometheus::Summary::Quantiles MakeQuantiles(std::vector<double> quantiles, double error) {
+    prometheus::Summary::Quantiles result;
+
+    result.reserve(quantiles.size());
+
+    std::transform(quantiles.begin(), quantiles.end(), std::back_inserter(result),
+                   [error](double q) -> prometheus::detail::CKMSQuantiles::Quantile {
+                     return {q, error};
+                   });
+    return result;
+  }
 };
 
 CollectorStatsExporter::CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, const CollectorConfig* config, SysdigService* sysdig)
     : registry_(std::move(registry)),
       config_(config),
       sysdig_(sysdig),
-      connections_total_reporter_(std::make_shared<CollectorConnectionStatsPrometheus<unsigned int>>(registry_, "rox_connections_total", "Amount of stored connections over time", std::chrono::hours{1})),
-      connections_rate_reporter_(std::make_shared<CollectorConnectionStatsPrometheus<float>>(registry_, "rox_connections_rate", "Rate of connections over time", std::chrono::hours{1})) {}
+      connections_total_reporter_(std::make_shared<CollectorConnectionStatsPrometheus<unsigned int>>(
+          registry_,
+          "rox_connections_total",
+          "Amount of stored connections over time",
+          std::chrono::minutes{config->GetConnectionStatsWindow()},
+          config->GetConnectionStatsQuantiles(),
+          config->GetConnectionStatsError())),
+      connections_rate_reporter_(std::make_shared<CollectorConnectionStatsPrometheus<float>>(
+          registry_,
+          "rox_connections_rate",
+          "Rate of connections over time",
+          std::chrono::minutes{config->GetConnectionStatsWindow()},
+          config->GetConnectionStatsQuantiles(),
+          config->GetConnectionStatsError())) {}
 
 bool CollectorStatsExporter::start() {
   if (!thread_.Start(&CollectorStatsExporter::run, this)) {

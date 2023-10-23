@@ -73,6 +73,10 @@ class CollectorConfig {
   bool ImportUsers() const { return import_users_; }
   bool CollectConnectionStatus() const { return collect_connection_status_; }
   bool EnableExternalIPs() const { return enable_external_ips_; }
+  bool EnableConnectionStats() const { return enable_connection_stats_; }
+  const std::vector<double>& GetConnectionStatsQuantiles() const { return connection_stats_quantiles_; }
+  double GetConnectionStatsError() const { return connection_stats_error_; }
+  unsigned int GetConnectionStatsWindow() const { return connection_stats_window_; }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
@@ -97,6 +101,10 @@ class CollectorConfig {
   bool import_users_;
   bool collect_connection_status_;
   bool enable_external_ips_;
+  bool enable_connection_stats_;
+  std::vector<double> connection_stats_quantiles_;
+  double connection_stats_error_;
+  unsigned int connection_stats_window_;
 
   Json::Value tls_config_;
 };
