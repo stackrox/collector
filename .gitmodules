@@ -57,3 +57,6 @@
 	path = builder/third_party/libbpf
 	url = https://github.com/libbpf/libbpf
 	branch = v1.1.0
+[submodule "builder/third_party/ccache"]
+	path = builder/third_party/ccache
+	url = https://github.com/ccache/ccache.git

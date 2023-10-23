@@ -55,15 +55,19 @@ COPY install builder/install
 COPY third_party third_party
 
 RUN "builder/install/install-dependencies.sh" && \
-    rm -rf ${BUILD_DIR} && \
-    echo -e '/usr/local/lib\n/usr/local/lib64' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
-
-RUN dnf install -y epel-release && \
-    dnf install -y ccache && \
-    dnf remove -y epel-release && \
+    mkdir -p third_party/ccache/build && \
+    cmake -DCMAKE_BUILD_TYPE=Release \
+        -DENABLE_TESTING=OFF \
+        -DENABLE_DOCUMENTATION=OFF \
+        -DREDIS_STORAGE_BACKEND=OFF \
+        -S third_party/ccache \
+        -B third_party/ccache/build && \
+    make -C third_party/ccache/build -j${NPROCS} && \
+    make -C third_party/ccache/build install && \
     ln -s $(which ccache) /usr/local/bin/gcc && \
     ln -s $(which ccache) /usr/local/bin/g++ && \
-    echo "" > /etc/profile.d/ccache.sh
+    rm -rf ${BUILD_DIR} && \
+    echo -e '/usr/local/lib\n/usr/local/lib64' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 
 # Set up ssh for remote development with IDE
 RUN ssh-keygen -A \
