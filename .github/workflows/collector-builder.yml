@@ -15,7 +15,7 @@ on:
 
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
-  DEFAULT_BUILDER_TAG: master
+  DEFAULT_BUILDER_TAG: 3.16.x-186-g9232ab014f
 
 jobs:
   builder-needs-rebuilding:
