@@ -33,8 +33,8 @@ jobs:
           filters: |
             builder-changed:
               - builder/install/**
-              - builder/third_party/**
-              - builder/Dockerfile
+#               - builder/third_party/**
+#               - builder/Dockerfile
 
   build-builder-image:
     name: Build the builder image
