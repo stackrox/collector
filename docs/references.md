@@ -37,8 +37,17 @@ The default is true.
 * `ROX_COLLECTOR_ENABLE_CONNECTION_STATS`: Instructs Collector to harvest
 and publish metrics regarding the
 [network connections](troubleshooting.md#connection-statistics) handled by the
-connection tracker.
-The default is true.
+connection tracker. The data is summarized in quantiles published by prometheus.
+This is enabled by default.
+
+  - `ROX_COLLECTOR_CONNECTION_STATS_QUANTILES`: a coma separated list of decimals
+    defining the quantiles for all connection metrics. Default: `0.5,0.90,0.95`
+
+  - `ROX_COLLECTOR_CONNECTION_STATS_ERROR`: the allowed error for the quantiles
+    (used to aggregate observations). Default: `0.01`
+
+  - `ROX_COLLECTOR_CONNECTION_STATS_WINDOW`: the length of the sliding time window
+    in minutes. Default: `60`
 
 NOTE: Using environment variables is a preferred way of configuring Collector,
 so if you're adding a new configuration knob, keep this in mind.

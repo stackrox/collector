@@ -347,16 +347,8 @@ Units: bytes
 Those metrics sample values regarding connections stored in the ConnectionTracker
 at every reporting interval (=scrape interval), and over a sliding time window.
 
-They are enabled by default and can be disabled with the
-`ROX_COLLECTOR_ENABLE_CONNECTION_STATS` environment variable.
-
-Parameters:
-- `ROX_COLLECTOR_CONNECTION_STATS_QUANTILES`: a coma separated list of decimals
-  defining the quantiles for all connection metrics. Default: `0.5,0.90,0.95`.
-- `ROX_COLLECTOR_CONNECTION_STATS_ERROR`: the allowed error for the quantiles
-  (used to aggregate observations). Default: `0.01`
-- `ROX_COLLECTOR_CONNECTION_STATS_WINDOW`: the length of the sliding time window
-  in minutes. Default: `60`.
+They configured using [environment variables](references.md#environment-variables)
+(`ROX_COLLECTOR_CONNECTION_STATS*`).
 
 Each metric is declined for both ingoing/outgoing direction, and private/public
 peer location. Corresponding labels are added to the reported values.
