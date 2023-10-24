@@ -459,3 +459,7 @@ func TestAsyncConnectionSuccessWithDisableTracking(t *testing.T) {
 func TestCollectorStartup(t *testing.T) {
 	suite.Run(t, new(suites.CollectorStartupTestSuite))
 }
+
+func TestPerfEvent(t *testing.T) {
+	suite.Run(t, new(suites.PerfEventOpenTestSuite))
+}
