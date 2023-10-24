@@ -48,10 +48,12 @@ class CollectorConnectionStatsPrometheus : public CollectorConnectionStats<T> {
 
     result.reserve(quantiles.size());
 
-    std::transform(quantiles.begin(), quantiles.end(), std::back_inserter(result),
-                   [error](double q) -> prometheus::detail::CKMSQuantiles::Quantile {
-                     return {q, error};
-                   });
+    auto make_quantile = [error](double q) -> prometheus::detail::CKMSQuantiles::Quantile {
+      return {q, error};
+    };
+
+    std::transform(quantiles.begin(), quantiles.end(), std::back_inserter(result), make_quantile);
+
     return result;
   }
 };
