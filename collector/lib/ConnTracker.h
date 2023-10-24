@@ -185,7 +185,7 @@ class ConnectionTracker {
     return !IsIgnoredL4ProtoPortPair(L4ProtoPortPair(cep.l4proto(), cep.endpoint().port()));
   }
 
-  inline void ClassifyConnectionStats(Connection conn, ConnectionTracker::Stats& stats) const;
+  inline void IncrementConnectionStats(Connection conn, ConnectionTracker::Stats& stats) const;
 
   std::mutex mutex_;
   ConnMap conn_state_;

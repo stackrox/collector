@@ -145,7 +145,7 @@ bool EmplaceOrUpdate(UnorderedMap<T, ConnStatus>* m, const T& obj, ConnStatus st
 void ConnectionTracker::EmplaceOrUpdateNoLock(const Connection& conn, ConnStatus status) {
   COUNTER_INC(CollectorStats::net_conn_updates);
   if (EmplaceOrUpdate(&conn_state_, conn, status)) {
-    ClassifyConnectionStats(conn, inserted_connections_counters_);
+    IncrementConnectionStats(conn, inserted_connections_counters_);
   }
 }
 
@@ -325,7 +325,7 @@ void ConnectionTracker::UpdateIgnoredL4ProtoPortPairs(UnorderedSet<L4ProtoPortPa
 }
 
 // Increment the stat counter matching the connection's characteristics
-inline void ConnectionTracker::ClassifyConnectionStats(Connection conn, ConnectionTracker::Stats& stats) const {
+inline void ConnectionTracker::IncrementConnectionStats(Connection conn, ConnectionTracker::Stats& stats) const {
   auto& direction = conn.is_server() ? stats.inbound : stats.outbound;
 
   if (!ShouldFetchConnection(conn)) {
@@ -346,7 +346,7 @@ ConnectionTracker::Stats ConnectionTracker::GetConnectionStats_StoredConnections
 
   WITH_LOCK(mutex_) {
     for (auto& conn : conn_state_) {
-      ClassifyConnectionStats(conn.first, stats);
+      IncrementConnectionStats(conn.first, stats);
     }
   }
 
