@@ -1,3 +1,5 @@
+// Loosely based on the example from man 2 perf_event_open
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,10 +30,13 @@ int main(int argc, char** argv) {
   // /sys/kernel/debug/tracing/events/sched/sched_process_exit/id
   int tracepoint_code = 310;
 
-  if (argc == 3) {
-    wait_interval = atoi(argv[1]);
-    tracepoint_code = atoi(argv[2]);
+  if (argc != 3) {
+    fprintf(stderr, "Expected 2 arguments, got: %d", argc - 1);
+    exit(EXIT_FAILURE);
   }
+
+  wait_interval = atoi(argv[1]);
+  tracepoint_code = atoi(argv[2]);
 
   memset(&pe, 0, sizeof(struct perf_event_attr));
   pe.type = PERF_TYPE_TRACEPOINT;
@@ -39,9 +44,6 @@ int main(int argc, char** argv) {
   // /sys/kernel/debug/tracing/events/sched/sched_process_exit/id
   pe.config = tracepoint_code;
   pe.disabled = 1;
-  pe.sample_period = 1;
-  pe.sample_type = PERF_SAMPLE_TID | PERF_SAMPLE_RAW;
-  pe.comm = 1;
 
   fd = perf_event_open(&pe, -1, 0, -1, PERF_FLAG_FD_CLOEXEC);
   if (fd == -1) {
