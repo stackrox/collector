@@ -147,9 +147,10 @@ class ConnectionTracker {
       unsigned int private_;
     } inbound, outbound;
   };
-  // Retrieve the number of connections currently known to ConnTracker, indexed by in/out and public/private nature.
+  // Retrieve the number of connections currently stored in ConnTracker, indexed by in/out and public/private nature.
   Stats GetConnectionStats_StoredConnections();
   // Retrieve the value of the ever-increasing counters of new connection insertion, indexed by in/out and public/private nature.
+  // Those counters are updated as new connections are reported by the system.
   Stats GetConnectionStats_NewConnectionCounters();
 
  private:
