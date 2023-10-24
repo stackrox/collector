@@ -1586,6 +1586,22 @@ TEST(ConnTrackerTest, TestConnectionStats) {
   EXPECT_EQ(stats.inbound.public_, 2);
   EXPECT_EQ(stats.outbound.private_, 1);
   EXPECT_EQ(stats.outbound.public_, 2);
+
+  tracker.Update({conn1, conn2, conn3, conn4, conn6}, {}, 0);
+  tracker.UpdateConnection(conn5, 0, true);  // inserted
+  tracker.UpdateConnection(conn3, 0, true);  // already known
+
+  stats = tracker.GetConnectionStats_StoredConnections();
+  EXPECT_EQ(stats.inbound.private_, 1);
+  EXPECT_EQ(stats.inbound.public_, 2);
+  EXPECT_EQ(stats.outbound.private_, 1);
+  EXPECT_EQ(stats.outbound.public_, 2);
+
+  stats = tracker.GetConnectionStats_NewConnectionCounters();
+  EXPECT_EQ(stats.inbound.private_, 2);
+  EXPECT_EQ(stats.inbound.public_, 4);
+  EXPECT_EQ(stats.outbound.private_, 2);
+  EXPECT_EQ(stats.outbound.public_, 4);
 }
 
 }  // namespace
