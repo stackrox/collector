@@ -161,9 +161,41 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   }
 
   HandleAfterglowEnvVars();
+  HandleConnectionStatsEnvVars();
 
   host_config_ = ProcessHostHeuristics(*this);
+}
 
+void CollectorConfig::HandleAfterglowEnvVars() {
+  if (!set_enable_afterglow) {
+    enable_afterglow_ = false;
+  }
+
+  if (const char* afterglow_period = std::getenv("ROX_AFTERGLOW_PERIOD")) {
+    afterglow_period_micros_ = static_cast<int64_t>(atof(afterglow_period) * 1000000);
+  }
+
+  if (enable_afterglow_ && afterglow_period_micros_ > 0) {
+    CLOG(INFO) << "Afterglow is enabled";
+    return;
+  }
+
+  if (!enable_afterglow_) {
+    CLOG(INFO) << "Afterglow is disabled";
+    return;
+  }
+
+  if (afterglow_period_micros_ < 0) {
+    CLOG(WARNING) << "Invalid afterglow period " << afterglow_period_micros_ / 1000000 << ". ROX_AFTERGLOW_PERIOD must be positive.";
+  } else {
+    CLOG(WARNING) << "Afterglow period set to 0";
+  }
+
+  enable_afterglow_ = false;
+  CLOG(INFO) << "Disabling afterglow";
+}
+
+void CollectorConfig::HandleConnectionStatsEnvVars() {
   const char* envvar;
 
   connection_stats_quantiles_ = {0.50, 0.90, 0.95};
@@ -205,35 +237,6 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
       CLOG(ERROR) << "Invalid window length value: '" << envvar << "'";
     }
   }
-}
-
-void CollectorConfig::HandleAfterglowEnvVars() {
-  if (!set_enable_afterglow) {
-    enable_afterglow_ = false;
-  }
-
-  if (const char* afterglow_period = std::getenv("ROX_AFTERGLOW_PERIOD")) {
-    afterglow_period_micros_ = static_cast<int64_t>(atof(afterglow_period) * 1000000);
-  }
-
-  if (enable_afterglow_ && afterglow_period_micros_ > 0) {
-    CLOG(INFO) << "Afterglow is enabled";
-    return;
-  }
-
-  if (!enable_afterglow_) {
-    CLOG(INFO) << "Afterglow is disabled";
-    return;
-  }
-
-  if (afterglow_period_micros_ < 0) {
-    CLOG(WARNING) << "Invalid afterglow period " << afterglow_period_micros_ / 1000000 << ". ROX_AFTERGLOW_PERIOD must be positive.";
-  } else {
-    CLOG(WARNING) << "Afterglow period set to 0";
-  }
-
-  enable_afterglow_ = false;
-  CLOG(INFO) << "Disabling afterglow";
 }
 
 bool CollectorConfig::TurnOffScrape() const {

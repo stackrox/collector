@@ -52,7 +52,6 @@ class CollectorConfig {
 
   std::string asString() const;
 
-  void HandleAfterglowEnvVars();
   bool TurnOffScrape() const;
   bool ScrapeListenEndpoints() const { return scrape_listen_endpoints_; }
   int ScrapeInterval() const;
@@ -107,6 +106,9 @@ class CollectorConfig {
   unsigned int connection_stats_window_;
 
   Json::Value tls_config_;
+
+  void HandleAfterglowEnvVars();
+  void HandleConnectionStatsEnvVars();
 };
 
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c);
