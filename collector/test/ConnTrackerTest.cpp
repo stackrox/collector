@@ -1525,6 +1525,85 @@ TEST(ConnTrackerTest, TestAdvertisedEndpointEquality) {
       ContainerEndpoint("container", a, L4Proto::TCP, processWithDifferentArgs)));
 }
 
+TEST(ConnTrackerTest, TestConnectionStats) {
+  Endpoint local_ep(Address(10, 1, 1, 8), 1234);
+  Endpoint remote_pub(Address(35, 127, 0, 15), 1234);
+  Endpoint remote_priv(Address(10, 1, 1, 9), 1234);
+  Endpoint remote_altpub(Address(35, 127, 0, 16), 1234);
+
+  // Connection(container, local, remote, proto, is_server)
+  Connection conn1("xyz", local_ep, remote_pub, L4Proto::TCP, true);
+  Connection conn2("xyz", local_ep, remote_priv, L4Proto::TCP, true);
+  Connection conn3("xyz", local_ep, remote_pub, L4Proto::TCP, false);
+  Connection conn4("xyz", local_ep, remote_priv, L4Proto::TCP, false);
+  Connection conn5("xyz", local_ep, remote_altpub, L4Proto::TCP, false);
+  Connection conn6("xyz", local_ep, remote_altpub, L4Proto::TCP, true);
+
+  ConnectionTracker tracker;
+  tracker.Update({conn1, conn2, conn3, conn4}, {}, 0);
+
+  ConnectionTracker::Stats stats;
+
+  stats = tracker.GetConnectionStats_StoredConnections();
+  EXPECT_EQ(stats.inbound.private_, 1);
+  EXPECT_EQ(stats.inbound.public_, 1);
+  EXPECT_EQ(stats.outbound.private_, 1);
+  EXPECT_EQ(stats.outbound.public_, 1);
+
+  stats = tracker.GetConnectionStats_NewConnectionCounters();
+  EXPECT_EQ(stats.inbound.private_, 1);
+  EXPECT_EQ(stats.inbound.public_, 1);
+  EXPECT_EQ(stats.outbound.private_, 1);
+  EXPECT_EQ(stats.outbound.public_, 1);
+
+  tracker.Update({conn1, conn2, conn3, conn4, conn5}, {}, 0);
+  tracker.UpdateConnection(conn6, 0, true);  // inserted
+  tracker.UpdateConnection(conn1, 0, true);  // already known
+
+  stats = tracker.GetConnectionStats_StoredConnections();
+  EXPECT_EQ(stats.inbound.private_, 1);
+  EXPECT_EQ(stats.inbound.public_, 2);
+  EXPECT_EQ(stats.outbound.private_, 1);
+  EXPECT_EQ(stats.outbound.public_, 2);
+
+  stats = tracker.GetConnectionStats_NewConnectionCounters();
+  EXPECT_EQ(stats.inbound.private_, 1);
+  EXPECT_EQ(stats.inbound.public_, 2);
+  EXPECT_EQ(stats.outbound.private_, 1);
+  EXPECT_EQ(stats.outbound.public_, 2);
+
+  tracker.Update({}, {}, 0);
+  tracker.FetchConnState(true);  // clear
+
+  stats = tracker.GetConnectionStats_StoredConnections();
+  EXPECT_EQ(stats.inbound.private_, 0);
+  EXPECT_EQ(stats.inbound.public_, 0);
+  EXPECT_EQ(stats.outbound.private_, 0);
+  EXPECT_EQ(stats.outbound.public_, 0);
+
+  stats = tracker.GetConnectionStats_NewConnectionCounters();
+  EXPECT_EQ(stats.inbound.private_, 1);
+  EXPECT_EQ(stats.inbound.public_, 2);
+  EXPECT_EQ(stats.outbound.private_, 1);
+  EXPECT_EQ(stats.outbound.public_, 2);
+
+  tracker.Update({conn1, conn2, conn3, conn4, conn6}, {}, 0);
+  tracker.UpdateConnection(conn5, 0, true);  // inserted
+  tracker.UpdateConnection(conn3, 0, true);  // already known
+
+  stats = tracker.GetConnectionStats_StoredConnections();
+  EXPECT_EQ(stats.inbound.private_, 1);
+  EXPECT_EQ(stats.inbound.public_, 2);
+  EXPECT_EQ(stats.outbound.private_, 1);
+  EXPECT_EQ(stats.outbound.public_, 2);
+
+  stats = tracker.GetConnectionStats_NewConnectionCounters();
+  EXPECT_EQ(stats.inbound.private_, 2);
+  EXPECT_EQ(stats.inbound.public_, 4);
+  EXPECT_EQ(stats.outbound.private_, 2);
+  EXPECT_EQ(stats.outbound.public_, 4);
+}
+
 }  // namespace
 
 }  // namespace collector

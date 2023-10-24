@@ -342,3 +342,90 @@ Units: bytes
 - `lineage_avg_string_len`: overall average length of the lineage description string
 - `std_dev`: standard deviation of the lineage description string length
 
+### Connection statistics
+
+Those metrics sample values regarding connections stored in the ConnectionTracker
+at every reporting interval (=scrape interval), and over a sliding time window.
+
+They can be configured using
+[environment variables](references.md#environment-variables)(`ROX_COLLECTOR_CONNECTION_STATS*`).
+
+Each metric keeps track of both incoming/outgoing direction, and private/public
+peer location. Corresponding labels are added to the reported values.
+
+#### Total number of known connections
+
+```
+Component: ConnectionTracker
+Prometheus names: rox_connections_total
+Units: count
+```
+
+This is the number of connections known to the ConnectionTracker during a reporting interval.
+
+Example: `rox_connections_total{dir="in",peer="private",quantile="0.5"} 101`
+means that 50% of the values for the number of connections are lower than 101 in the time window
+(typically 1 hour). This specific entry reflects the connections received by the host (`in`), from
+a private IP.
+
+Example output:
+```
+# HELP rox_connections_total Amount of stored connections over time
+# TYPE rox_connections_total summary
+rox_connections_total_count{dir="out",peer="public"} 36
+rox_connections_total_sum{dir="out",peer="public"} 18
+rox_connections_total{dir="out",peer="public",quantile="0.5"} 0
+rox_connections_total{dir="out",peer="public",quantile="0.9"} 1
+rox_connections_total{dir="out",peer="public",quantile="0.95"} 3
+rox_connections_total_count{dir="out",peer="private"} 36
+rox_connections_total_sum{dir="out",peer="private"} 59537
+rox_connections_total{dir="out",peer="private",quantile="0.5"} 1558
+rox_connections_total{dir="out",peer="private",quantile="0.9"} 2067
+rox_connections_total{dir="out",peer="private",quantile="0.95"} 2119
+rox_connections_total_count{dir="in",peer="public"} 36
+rox_connections_total_sum{dir="in",peer="public"} 0
+rox_connections_total{dir="in",peer="public",quantile="0.5"} 0
+rox_connections_total{dir="in",peer="public",quantile="0.9"} 0
+rox_connections_total{dir="in",peer="public",quantile="0.95"} 0
+rox_connections_total_count{dir="in",peer="private"} 36
+rox_connections_total_sum{dir="in",peer="private"} 5009
+rox_connections_total{dir="in",peer="private",quantile="0.5"} 101
+rox_connections_total{dir="in",peer="private",quantile="0.9"} 179
+rox_connections_total{dir="in",peer="private",quantile="0.95"} 180
+```
+
+#### Rate of connection creation
+
+```
+Component: ConnectionTracker
+Prometheus names: rox_connections_rate
+Units: connections per second
+```
+
+This is the rate of connections created during a reporting interval.
+
+Example output:
+```
+# HELP rox_connections_rate Rate of connections over time
+# TYPE rox_connections_rate summary
+rox_connections_rate_count{dir="out",peer="public"} 35
+rox_connections_rate_sum{dir="out",peer="public"} 0.06666667014360428
+rox_connections_rate{dir="out",peer="public",quantile="0.5"} 0
+rox_connections_rate{dir="out",peer="public",quantile="0.9"} 0
+rox_connections_rate{dir="out",peer="public",quantile="0.95"} 0
+rox_connections_rate_count{dir="out",peer="private"} 35
+rox_connections_rate_sum{dir="out",peer="private"} 1947.28048324585
+rox_connections_rate{dir="out",peer="private",quantile="0.5"} 51.43333435058594
+rox_connections_rate{dir="out",peer="private",quantile="0.9"} 67.80000305175781
+rox_connections_rate{dir="out",peer="private",quantile="0.95"} 69.53333282470703
+rox_connections_rate_count{dir="in",peer="public"} 35
+rox_connections_rate_sum{dir="in",peer="public"} 0
+rox_connections_rate{dir="in",peer="public",quantile="0.5"} 0
+rox_connections_rate{dir="in",peer="public",quantile="0.9"} 0
+rox_connections_rate{dir="in",peer="public",quantile="0.95"} 0
+rox_connections_rate_count{dir="in",peer="private"} 35
+rox_connections_rate_sum{dir="in",peer="private"} 119.9425313472748
+rox_connections_rate{dir="in",peer="private",quantile="0.5"} 2.17241382598877
+rox_connections_rate{dir="in",peer="private",quantile="0.9"} 4.800000190734863
+rox_connections_rate{dir="in",peer="private",quantile="0.95"} 4.833333492279053
+```
