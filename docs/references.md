@@ -34,6 +34,12 @@ connections status. With this enabled, advertising of asynchronous connections
 will be postponed until their status is known and they are successful.
 The default is true.
 
+* `ROX_COLLECTOR_ENABLE_CONNECTION_STATS`: Instructs Collector to harvest
+and publish metrics regarding the
+[network connections](troubleshooting.md#connection-statistics) handled by the
+connection tracker.
+The default is true.
+
 NOTE: Using environment variables is a preferred way of configuring Collector,
 so if you're adding a new configuration knob, keep this in mind.
 
