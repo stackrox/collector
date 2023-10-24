@@ -27,7 +27,7 @@ func (s *PerfEventOpenTestSuite) TearDownSuite() {
 func (s *PerfEventOpenTestSuite) TestReadingTracepoints() {
 	image := config.Images().QaImageByKey("qa-perf-event-open")
 	// attach to sched:sched_process_exit and count events
-	containerID, err := s.launchContainer("perf-event-open", image, "", "STDOUT", "--privileged")
+	containerID, err := s.launchContainer("perf-event-open", "--privileged", image, "", "STDOUT")
 	s.Require().NoError(err)
 
 	if finished, _ := s.waitForContainerToExit("perf-event-open", containerID, 5*time.Second); finished {
