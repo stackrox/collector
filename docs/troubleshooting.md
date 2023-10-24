@@ -350,7 +350,7 @@ at every reporting interval (=scrape interval), and over a sliding time window.
 They can be configured using
 [environment variables](references.md#environment-variables)(`ROX_COLLECTOR_CONNECTION_STATS*`).
 
-Each metric is declined for both ingoing/outgoing direction, and private/public
+Each metric keeps track of both incoming/outgoing direction, and private/public
 peer location. Corresponding labels are added to the reported values.
 
 #### Total number of known connections
@@ -362,6 +362,11 @@ Units: count
 ```
 
 This is the number of connections known to the ConnectionTracker during a reporting interval.
+
+Example: `rox_connections_total{dir="in",peer="private",quantile="0.5"} 101`
+means that 50% of the values for the number of connections are lower than 101 in the time window
+(typically 1 hour). This specific entry reflects the connections received by the host (`in`), from
+a private IP.
 
 Example output:
 ```
