@@ -27,6 +27,8 @@ jobs:
     - should-run
     if: needs.should-run.outputs.should-run == 'true'
     uses: ./.github/workflows/init.yml
+    with:
+      cpaas-workflow: true
 
   sync-drivers-and-support-packages:
     uses: ./.github/workflows/cpaas-sync-drivers.yml
