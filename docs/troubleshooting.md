@@ -347,8 +347,8 @@ Units: bytes
 Those metrics sample values regarding connections stored in the ConnectionTracker
 at every reporting interval (=scrape interval), and over a sliding time window.
 
-They configured using [environment variables](references.md#environment-variables)
-(`ROX_COLLECTOR_CONNECTION_STATS*`).
+They can be configured using
+[environment variables](references.md#environment-variables)(`ROX_COLLECTOR_CONNECTION_STATS*`).
 
 Each metric is declined for both ingoing/outgoing direction, and private/public
 peer location. Corresponding labels are added to the reported values.
