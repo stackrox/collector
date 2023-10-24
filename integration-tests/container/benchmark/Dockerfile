@@ -1,6 +1,6 @@
 # Based on https://github.com/phoronix-test-suite/phoronix-test-suite/blob/1fc8fbe76e256a6d438b05f6b8f04edd9f35c5e4/deploy/docker/ubuntu-pts-docker-build.sh
 
-FROM ubuntu:20.04 as base
+FROM ubuntu:22.04 as base
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y php-cli php-xml php-zip git
@@ -12,7 +12,7 @@ RUN git checkout v10.8.4 && \
     ./phoronix-test-suite make-openbenchmarking-cache lean
 RUN rm -f /var/lib/phoronix-test-suite/core.pt2so
 
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt update && \
