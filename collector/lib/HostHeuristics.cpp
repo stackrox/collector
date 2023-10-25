@@ -29,7 +29,7 @@ class CollectionHeuristic : public Heuristic {
     if (config.GetCollectionMethod() == CollectionMethod::CORE_BPF) {
       if (kernel.machine == "ppc64le") {
         CLOG(FATAL) << "CORE_BPF collection method is not supported on ppc64le. "
-                    << "Please set collector.collectionMethod=EBPF.";
+                    << "HINT: Change collection method to eBPF with collector.collectionMethod=EBPF.";
       }
 
       if (!host.HasBTFSymbols()) {
@@ -42,8 +42,7 @@ class CollectionHeuristic : public Heuristic {
 
       if (!host.HasBPFRingBufferSupport()) {
         CLOG(FATAL) << "Missing RingBuffer support, core_bpf is not available. "
-                    << "HINT: You may alternatively want to use eBPF based collection "
-                    << "with collector.collectionMethod=EBPF.";
+                    << "HINT: Change collection method to eBPF with collector.collectionMethod=EBPF.";
       }
 
       if (!host.HasBPFTracingSupport()) {
