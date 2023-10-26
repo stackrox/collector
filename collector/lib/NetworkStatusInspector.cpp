@@ -55,17 +55,14 @@ static std::string Proto2str(L4Proto proto) {
   return "UNKNOWN";
 }
 
-static void SerializeAddress(const Address& addr, Json::Value& node) {
-  node["address"] = IP2str(addr);
-  node["is_local"] = addr.IsLocal();
-  node["is_public"] = addr.IsPublic();
-}
-
 static void SerializeEndpoint(const Endpoint& ep, Json::Value& node) {
-  node["address"] = Json::objectValue;
-  SerializeAddress(ep.address(), node["address"]);
+  if (ep.network().IsAddress()) {
+    node["address"] = IP2str(ep.address());
+  }
+  if (ep.network().bits() > 0) {
+    node["network"] = IP2str(ep.network().address()) + "/" + std::to_string(ep.network().bits());
+  }
   node["port"] = ep.port();
-  node["network"] = IP2str(ep.network().address()) + (ep.network().IsAddress() ? "" : "/" + std::to_string(ep.network().bits()));
 }
 
 bool NetworkStatusInspector::handleGetEndpoints(struct mg_connection* conn) {
