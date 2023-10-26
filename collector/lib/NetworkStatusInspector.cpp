@@ -8,28 +8,6 @@
 
 namespace collector {
 
-class HTTPChunkedSender : public std::stringbuf {
- public:
-  HTTPChunkedSender(struct mg_connection* conn) : std::stringbuf(), conn_(conn) {}
-
-  virtual int sync() override {
-    mg_send_chunk(conn_, this->str().c_str(), this->str().length());
-    this->str().clear();
-
-    return std::stringbuf::sync();
-  }
-
-  virtual int overflow(int c) override {
-    if (this->str().length() > 1024)
-      sync();
-
-    return std::stringbuf::overflow(c);
-  }
-
- private:
-  struct mg_connection* conn_;
-};
-
 const std::string NetworkStatusInspector::kBaseRoute = "/state/network";
 const std::string NetworkStatusInspector::kEndpointRoute = kBaseRoute + "/endpoint";
 const std::string NetworkStatusInspector::kConnectionRoute = kBaseRoute + "/connection";
@@ -108,16 +86,11 @@ bool NetworkStatusInspector::handleGetEndpoints(struct mg_connection* conn) {
     bodyRoot.append(endpointNode);
   }
 
-  mg_send_http_ok(conn, "application/json", -1);
+  std::string buffer = Json::writeString(jsonStreamWriterBuilder_, bodyRoot);
 
-  std::unique_ptr<Json::StreamWriter> writer(jsonStreamWriterBuilder_.newStreamWriter());
+  mg_send_http_ok(conn, "application/json", buffer.size());
 
-  HTTPChunkedSender buffer(conn);
-  std::ostream stream(&buffer);
-
-  writer->write(bodyRoot, &stream);
-  stream << std::flush;
-  mg_send_chunk(conn, NULL, 0);
+  mg_write(conn, buffer.c_str(), buffer.size());
 
   return true;
 }
@@ -146,16 +119,11 @@ bool NetworkStatusInspector::handleGetConnections(struct mg_connection* conn) {
     bodyRoot.append(connectionNode);
   }
 
-  mg_send_http_ok(conn, "application/json", -1);
+  std::string buffer = Json::writeString(jsonStreamWriterBuilder_, bodyRoot);
 
-  std::unique_ptr<Json::StreamWriter> writer(jsonStreamWriterBuilder_.newStreamWriter());
+  mg_send_http_ok(conn, "application/json", buffer.size());
 
-  HTTPChunkedSender buffer(conn);
-  std::ostream stream(&buffer);
-
-  writer->write(bodyRoot, &stream);
-  stream << std::flush;
-  mg_send_chunk(conn, NULL, 0);
+  mg_write(conn, buffer.c_str(), buffer.size());
 
   return true;
 }
