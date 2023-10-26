@@ -55,13 +55,12 @@ static std::string Proto2str(L4Proto proto) {
   return "UNKNOWN";
 }
 
+static std::string IPNet2str(const IPNet& net) {
+  return IP2str(net.address()) + (net.bits() == 0 ? "" : "/" + std::to_string(net.bits()));
+}
+
 static void SerializeEndpoint(const Endpoint& ep, Json::Value& node) {
-  if (ep.network().IsAddress()) {
-    node["address"] = IP2str(ep.address());
-  }
-  if (ep.network().bits() > 0) {
-    node["network"] = IP2str(ep.network().address()) + "/" + std::to_string(ep.network().bits());
-  }
+  node["address"] = IPNet2str(ep.network());
   node["port"] = ep.port();
 }
 
@@ -105,13 +104,13 @@ bool NetworkStatusInspector::handleGetConnections(struct mg_connection* conn) {
 
     connectionNode["l4proto"] = Proto2str(connectionState.first.l4proto());
 
-    connectionNode["is_server"] = connectionState.first.is_server();
-
-    connectionNode["local"] = Json::objectValue;
-    SerializeEndpoint(connectionState.first.local(), connectionNode["local"]);
-
-    connectionNode["remote"] = Json::objectValue;
-    SerializeEndpoint(connectionState.first.remote(), connectionNode["remote"]);
+    if (connectionState.first.is_server()) {
+      connectionNode["from"] = IPNet2str(connectionState.first.remote().network());
+      connectionNode["port"] = connectionState.first.local().port();
+    } else {
+      connectionNode["to"] = IPNet2str(connectionState.first.remote().network());
+      connectionNode["port"] = connectionState.first.remote().port();
+    }
 
     bodyRoot.append(connectionNode);
   }
