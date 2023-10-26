@@ -1,6 +1,8 @@
 #include "NetworkStatusInspector.h"
 
+#include <forward_list>
 #include <string>
+#include <unordered_map>
 
 #include <arpa/inet.h>
 
@@ -93,26 +95,41 @@ bool NetworkStatusInspector::handleGetEndpoints(struct mg_connection* conn) {
 
 bool NetworkStatusInspector::handleGetConnections(struct mg_connection* conn) {
   collector::ConnMap connectionStates = conntracker_->FetchConnState(true, false);
-  Json::Value bodyRoot(Json::arrayValue);
+  Json::Value bodyRoot(Json::objectValue);
 
-  for (auto connectionState : connectionStates) {
-    Json::Value connectionNode(Json::objectValue);
-    std::string l4proto;
+  std::unordered_map<std::string, std::forward_list<collector::ConnMap::value_type*>> byContainer;
 
-    connectionNode["active"] = connectionState.second.IsActive();
-    connectionNode["container"] = connectionState.first.container();
+  for (auto& connectionState : connectionStates) {
+    byContainer[connectionState.first.container()].push_front(&connectionState);
+  }
 
-    connectionNode["l4proto"] = Proto2str(connectionState.first.l4proto());
+  for (auto& container : byContainer) {
+    const std::string& containerId = container.first;
 
-    if (connectionState.first.is_server()) {
-      connectionNode["from"] = IPNet2str(connectionState.first.remote().network());
-      connectionNode["port"] = connectionState.first.local().port();
-    } else {
-      connectionNode["to"] = IPNet2str(connectionState.first.remote().network());
-      connectionNode["port"] = connectionState.first.remote().port();
+    Json::Value containerArray(Json::arrayValue);
+
+    for (auto connectionState : container.second) {
+      const collector::Connection& connection = connectionState->first;
+      const collector::ConnStatus& status = connectionState->second;
+
+      Json::Value connectionNode(Json::objectValue);
+      std::string l4proto;
+
+      connectionNode["active"] = status.IsActive();
+
+      connectionNode["l4proto"] = Proto2str(connection.l4proto());
+
+      if (connection.is_server()) {
+        connectionNode["from"] = IPNet2str(connection.remote().network());
+        connectionNode["port"] = connection.local().port();
+      } else {
+        connectionNode["to"] = IPNet2str(connection.remote().network());
+        connectionNode["port"] = connection.remote().port();
+      }
+
+      containerArray.append(connectionNode);
     }
-
-    bodyRoot.append(connectionNode);
+    bodyRoot[containerId] = containerArray;
   }
 
   std::string buffer = Json::writeString(jsonStreamWriterBuilder_, bodyRoot);
