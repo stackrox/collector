@@ -100,6 +100,56 @@ bool ParseLogLevelName(std::string name, LogLevel* level) {
   return true;
 }
 
+void InspectorLogCallback(std::string&& msg, sinsp_logger::severity severity) {
+  auto collector_severity = logging::InspectorSeverityToLogLevel(severity);
+
+  if (!collector_severity) {
+    return;
+  }
+
+  collector::logging::LogMessage(__FILE__, __LINE__, false, *collector_severity) << msg;
+}
+
+std::optional<sinsp_logger::severity> LogLevelToInspectorSeverity(LogLevel level) {
+  switch (level) {
+    case LogLevel::TRACE:
+      return sinsp_logger::SEV_TRACE;
+    case LogLevel::DEBUG:
+      return sinsp_logger::SEV_DEBUG;
+    case LogLevel::INFO:
+      return sinsp_logger::SEV_INFO;
+    case LogLevel::WARNING:
+      return sinsp_logger::SEV_WARNING;
+    case LogLevel::ERROR:
+      return sinsp_logger::SEV_ERROR;
+    case LogLevel::FATAL:
+      return sinsp_logger::SEV_FATAL;
+    default:
+      return {};
+  };
+}
+
+std::optional<LogLevel> InspectorSeverityToLogLevel(sinsp_logger::severity severity) {
+  switch (severity) {
+    case sinsp_logger::SEV_FATAL:
+      return LogLevel::FATAL;
+    case sinsp_logger::SEV_CRITICAL:
+    case sinsp_logger::SEV_ERROR:
+      return LogLevel::ERROR;
+    case sinsp_logger::SEV_WARNING:
+      return LogLevel::WARNING;
+    case sinsp_logger::SEV_NOTICE:
+    case sinsp_logger::SEV_INFO:
+      return LogLevel::INFO;
+    case sinsp_logger::SEV_DEBUG:
+      return LogLevel::DEBUG;
+    case sinsp_logger::SEV_TRACE:
+      return LogLevel::TRACE;
+    default:
+      return {};
+  }
+}
+
 const char* GetGlobalLogPrefix() {
   return g_log_prefix.load(std::memory_order_relaxed);
 }

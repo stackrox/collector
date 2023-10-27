@@ -5,8 +5,11 @@
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <string.h>
+
+#include "logger.h"
 
 namespace collector {
 
@@ -28,6 +31,10 @@ bool CheckLogLevel(LogLevel level);
 const char* GetLogLevelName(LogLevel level);
 char GetLogLevelShortName(LogLevel level);
 bool ParseLogLevelName(std::string name, LogLevel* level);
+
+void InspectorLogCallback(std::string&& msg, sinsp_logger::severity severity);
+std::optional<sinsp_logger::severity> LogLevelToInspectorSeverity(LogLevel level);
+std::optional<LogLevel> InspectorSeverityToLogLevel(sinsp_logger::severity severity);
 
 const char* GetGlobalLogPrefix();
 void SetGlobalLogPrefix(const char* prefix);

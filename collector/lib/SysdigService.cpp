@@ -24,6 +24,7 @@
 #include "SelfChecks.h"
 #include "TimeUtil.h"
 #include "Utility.h"
+#include "logger.h"
 
 namespace collector {
 
@@ -71,8 +72,11 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
     // peeking into arguments has a big overhead, so we prevent it from happening
     inspector_->set_snaplen(0);
 
-    if (logging::GetLogLevel() == logging::LogLevel::TRACE) {
-      inspector_->set_log_stderr();
+    auto log_level = logging::LogLevelToInspectorSeverity(logging::GetLogLevel());
+    if (log_level) {
+      inspector_->set_min_log_severity(*log_level);
+      inspector_->disable_log_timestamps();
+      inspector_->set_log_callback(logging::InspectorLogCallback);
     }
 
     inspector_->set_import_users(config.ImportUsers());
