@@ -70,14 +70,14 @@ else()
 	target_link_libraries(collector_lib libprotobuf.a libcares.a)
 endif()
 
+if(NOT DISABLE_PROFILING)
+	target_link_libraries(collector_lib profiler tcmalloc)
+endif()
+
 target_link_libraries(collector_lib z ssl crypto CURL::libcurl bpf)
 
 add_executable(collector collector.cpp)
 target_link_libraries(collector collector_lib)
-
-if(NOT DISABLE_PROFILING)
-	target_link_libraries(collector_lib profiler tcmalloc)
-endif()
 
 target_link_libraries(collector libprometheus-cpp-pull.a)
 target_link_libraries(collector libprometheus-cpp-core.a)
