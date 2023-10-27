@@ -57,3 +57,6 @@
 	path = builder/third_party/libbpf
 	url = https://github.com/libbpf/libbpf
 	branch = v1.1.0
+[submodule "builder/third_party/gperftools"]
+	path = builder/third_party/gperftools
+	url = https://github.com/gperftools/gperftools.git

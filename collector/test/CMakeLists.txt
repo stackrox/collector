@@ -7,10 +7,6 @@ foreach(test_file ${TEST_SRC_FILES})
     get_filename_component(test_name ${test_file} NAME_WE)
     add_executable("${test_name}" "${test_file}")
 
-    if(NOT DISABLE_PROFILING)
-        target_link_libraries(${test_name} profiler tcmalloc)
-    endif()
-
     target_link_libraries(${test_name} collector_lib)
 
     if(DEFINED ENV{WITH_RHEL_RPMS})
