@@ -35,6 +35,7 @@ jobs:
               - builder/install/**
               - builder/third_party/**
               - builder/Dockerfile
+              - .github/workflows/collector-builder.yml
 
   build-builder-image:
     name: Build the builder image
