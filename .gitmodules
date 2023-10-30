@@ -60,3 +60,4 @@
 [submodule "builder/third_party/gperftools"]
 	path = builder/third_party/gperftools
 	url = https://github.com/gperftools/gperftools.git
+	branch = master
