@@ -16,13 +16,27 @@ namespace collector {
 namespace logging {
 
 enum class LogLevel : uint32_t {
-  TRACE = 10,
-  DEBUG = 20,
-  INFO = 30,
-  WARNING = 40,
-  ERROR = 50,
-  FATAL = 60
+  FATAL = 1,
+  CRITICAL = 2,
+  ERROR = 3,
+  WARNING = 4,
+  NOTICE = 5,
+  INFO = 6,
+  DEBUG = 7,
+  TRACE = 8,
 };
+
+// Static checks helping to keep the inspector and our logging levels synced.
+static_assert(static_cast<int>(LogLevel::TRACE) == sinsp_logger::SEV_TRACE);
+static_assert(static_cast<int>(LogLevel::DEBUG) == sinsp_logger::SEV_DEBUG);
+static_assert(static_cast<int>(LogLevel::INFO) == sinsp_logger::SEV_INFO);
+static_assert(static_cast<int>(LogLevel::NOTICE) == sinsp_logger::SEV_NOTICE);
+static_assert(static_cast<int>(LogLevel::WARNING) == sinsp_logger::SEV_WARNING);
+static_assert(static_cast<int>(LogLevel::ERROR) == sinsp_logger::SEV_ERROR);
+static_assert(static_cast<int>(LogLevel::CRITICAL) == sinsp_logger::SEV_CRITICAL);
+static_assert(static_cast<int>(LogLevel::FATAL) == sinsp_logger::SEV_FATAL);
+static_assert(static_cast<int>(LogLevel::FATAL) == sinsp_logger::SEV_MIN);
+static_assert(static_cast<int>(LogLevel::TRACE) == sinsp_logger::SEV_MAX);
 
 LogLevel GetLogLevel();
 void SetLogLevel(LogLevel level);
@@ -33,8 +47,6 @@ char GetLogLevelShortName(LogLevel level);
 bool ParseLogLevelName(std::string name, LogLevel* level);
 
 void InspectorLogCallback(std::string&& msg, sinsp_logger::severity severity);
-std::optional<sinsp_logger::severity> LogLevelToInspectorSeverity(LogLevel level);
-std::optional<LogLevel> InspectorSeverityToLogLevel(sinsp_logger::severity severity);
 
 const char* GetGlobalLogPrefix();
 void SetGlobalLogPrefix(const char* prefix);

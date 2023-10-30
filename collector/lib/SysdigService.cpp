@@ -72,12 +72,10 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
     // peeking into arguments has a big overhead, so we prevent it from happening
     inspector_->set_snaplen(0);
 
-    auto log_level = logging::LogLevelToInspectorSeverity(logging::GetLogLevel());
-    if (log_level) {
-      inspector_->set_min_log_severity(*log_level);
-      inspector_->disable_log_timestamps();
-      inspector_->set_log_callback(logging::InspectorLogCallback);
-    }
+    auto log_level = (sinsp_logger::severity)logging::GetLogLevel();
+    inspector_->set_min_log_severity(log_level);
+    inspector_->disable_log_timestamps();
+    inspector_->set_log_callback(logging::InspectorLogCallback);
 
     inspector_->set_import_users(config.ImportUsers());
 
