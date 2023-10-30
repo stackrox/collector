@@ -84,18 +84,11 @@ jobs:
       job-tag: ${{ inputs.job-tag }}
     secrets: inherit
 
-  multiarch-integration-tests:
+  s390x-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
     if: contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') || github.event_name == 'push'
-    strategy:
-      # ensure that if one part of the matrix fails, the
-      # rest will continue
-      fail-fast: false
-      matrix:
-        vm_type:
-          - rhel-s390x
     with:
-      vm_type: ${{ matrix.vm_type }}
+      vm_type: rhel-s390x
       collector-tag: ${{ inputs.collector-tag }}
       collector-qa-tag: ${{ inputs.collector-qa-tag }}
       job-tag: ${{ inputs.job-tag }}
@@ -107,7 +100,7 @@ jobs:
       - amd64-required-integration-tests
       - amd64-all-integration-tests
       - arm64-integration-tests
-      - multiarch-integration-tests
+      - s390x-integration-tests
     steps:
       - name: Slack notification
         uses: rtCamp/action-slack-notify@v2
