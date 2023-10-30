@@ -23,6 +23,18 @@ The intention of this version number is to ensure consistency across master
 testing and release testing, whereby releases are pegged to a specific QA image
 version.
 
+To build all images run
+
+`make build`
+
+in this directory
+
+To build and push all images run
+
+`make build-and-push`
+
+in this directory
+
 ## stackrox/benchmark-collector:phoronix
 - This is preconfigured version of phoronix that runs the hackbench process workload -- the configuration XML files were created by running phoronix manually to create the batch configuration files and extracting the generated xml files.
 
