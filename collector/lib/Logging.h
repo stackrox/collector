@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
-#include <optional>
 #include <sstream>
 #include <string.h>
 
