@@ -25,13 +25,13 @@ version.
 
 To build all images run
 
-`make build-all`
+`make build`
 
 in this directory
 
 To build and push all images run
 
-`make build-and-push-all`
+`make build-and-push`
 
 in this directory
 
