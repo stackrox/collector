@@ -60,7 +60,7 @@ int DebugCallback(CURL*, curl_infotype type, char* data, size_t size, void*) {
     return CURLE_OK;
   }
 
-  if (logging::GetLogLevel() > logging::LogLevel::TRACE) {
+  if (!logging::CheckLogLevel(logging::LogLevel::TRACE)) {
     // Skip other types of messages if we are not tracing
     return CURLE_OK;
   }
@@ -250,7 +250,7 @@ bool FileDownloader::SetConnectTo(const std::string& host, const std::string& ta
 }
 
 void FileDownloader::SetVerboseMode(bool verbose) {
-  if (logging::GetLogLevel() <= logging::LogLevel::DEBUG && verbose) {
+  if (logging::CheckLogLevel(logging::LogLevel::DEBUG) && verbose) {
     curl_easy_setopt(curl_, CURLOPT_VERBOSE, 1L);
     curl_easy_setopt(curl_, CURLOPT_DEBUGFUNCTION, DebugCallback);
   } else {
