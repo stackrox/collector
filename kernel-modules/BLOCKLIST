@@ -72,7 +72,7 @@
 6.2.* 2.2.0 *
 6.2.* 2.1.0 *
 6.2.* 2.0.1 *
-# TODO(ROX-16705) - 6.3/6.4 kernel compilation errors
+# ROX-16705 - 6.3/6.4 kernel compilation errors
 ~6\.[3-9]\.\d+.* ~2\.[2-5]\.\d+(?:-rc\d+)?
 # TODO(ROX-20541) - 6.6 kernel compilation errors
 6.6.* *
