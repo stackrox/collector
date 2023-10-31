@@ -43,6 +43,38 @@ jobs:
       architectures: ${{ needs.init.outputs.architectures }}
     secrets: inherit
 
+  clang-tidy:
+    needs: build-builder-image
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/collector-builder:${{ needs.build-builder-image.outputs.collector-builder-tag }}
+      env:
+        CMAKE_EXPORT_COMPILE_COMMANDS: ON
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - uses: dorny/paths-filter@v2
+        id: changed
+        with:
+          list-files: shell
+          filters: |
+            collector:
+              - collector/*.cpp
+              - collector/lib/*.cpp
+              - collector/lib/*.h
+              - collector/test/*.cpp
+
+      - name: Run clang-tidy
+        if: steps.changed.outputs.collector
+        run: |
+          mkdir -p cmake-build/
+          cmake -S . -B cmake-build/ -DDISABLE_PROFILING=ON
+          # rox-proto generates some files required for clang-tidy to fully work
+          make -C cmake-build/ rox-proto
+          clang-tidy -p cmake-build/ ${{ steps.changed.outputs.collector_files }}
+
   build-collector:
     uses: ./.github/workflows/collector.yml
     needs:

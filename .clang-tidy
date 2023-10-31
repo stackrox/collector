@@ -1,0 +1,31 @@
+---
+Checks: |
+  bugprone-*
+  clang-analyzer-*
+  concurrency-*
+  cppcoreguidelines-*
+  -cppcoreguidelines-avoid-magic-numbers
+  modernize-*
+  -modernize-use-nodiscard
+  -modernize-use-trailing-return-type
+  -modernize-avoid-c-arrays
+  performance-*
+  readability-*
+  -readability-identifier-length
+  -readability-magic-numbers
+ExtraArgsBefore:
+ - -Wno-unused-command-line-argument
+WarningsAsErrors: '*'
+# readability-identifier-naming options can be found here:
+# https://clang.llvm.org/extra/clang-tidy/checks/readability/identifier-naming.html
+CheckOptions:
+  readability-identifier-naming.NamespaceCase: lower_case
+  readability-identifier-naming.ClassCase: CamelCase
+  readability-identifier-naming.MethodCase: CamelCase
+  readability-identifier-naming.MemberCase: lower_case
+  readability-identifier-naming.ProtectedMemberSuffix: _
+  readability-identifier-naming.PrivateMemberSuffix: _
+  readability-identifier-naming.StructCase: CamelCase
+  readability-identifier-naming.FunctionCase: CamelCase
+  readability-identifier-naming.VariableCase: lower_case
+  readability-identifier-naming.GlobalConstantCase: UPPER_CASE
