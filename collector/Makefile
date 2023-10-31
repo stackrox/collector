@@ -31,7 +31,7 @@ cmake-build/collector: cmake-configure/collector $(COLLECTOR_BUILD_DEPS)
 	docker exec $(COLLECTOR_BUILDER_NAME) \
 		cmake --build $(CMAKE_DIR) -- -j $(NPROCS)
 	docker exec $(COLLECTOR_BUILDER_NAME) \
-		bash -c "[ $(CMAKE_BUILD_TYPE) == Release ] && strip --strip-unneeded $(COLLECTOR_BIN_DIR)/collector $(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so"
+		bash -c "[ $(CMAKE_BUILD_TYPE) == Release ] && strip --strip-unneeded $(COLLECTOR_BIN_DIR)/collector"
 
 container/bin/collector: cmake-build/collector
 	mkdir -p container/bin
@@ -42,7 +42,6 @@ container/bin/collector: cmake-build/collector
 collector: container/bin/collector txt-files
 	mkdir -p container/libs
 	docker cp $(COLLECTOR_BUILDER_NAME):/THIRD_PARTY_NOTICES/ container/
-	cp "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so" container/libs/libsinsp-wrapper.so
 
 .PHONY: build-connscrape-test
 build-connscrape-test:
@@ -51,7 +50,6 @@ build-connscrape-test:
 connscrape: build-connscrape-test
 	docker rm -fv collector_connscrape || true
 	docker run --rm --platform ${PLATFORM} --name collector_connscrape \
-		-v "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
 		connscrape-test "$(SRC_MOUNT_DIR)/collector/connscrape-test/connscrape-test.sh"
 

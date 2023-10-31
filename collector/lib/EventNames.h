@@ -13,7 +13,7 @@ namespace collector {
 
 class EventNames {
  public:
-  using EventIDVector = std::vector<ppm_event_type>;
+  using EventIDVector = std::vector<ppm_event_code>;
 
   static const EventNames& GetInstance();
 
