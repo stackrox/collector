@@ -123,8 +123,8 @@ func TestDuplicateEndpoints(t *testing.T) {
 	suite.Run(t, new(suites.DuplicateEndpointsTestSuite))
 }
 
-func TestChangeProcessName1(t *testing.T) {
-	changeProcessName := &suites.ChangeProcessNameTestSuite{
+func TestProcessesAndEndpoints1(t *testing.T) {
+	processesAndEndpoints := &suites.ProcessesAndEndpointsTestSuite{
 		Executable:    "./change-process-name",
 		ContainerName: "change-process-name",
 		ExpectedEndpoints: []types.EndpointInfo{
@@ -151,11 +151,11 @@ func TestChangeProcessName1(t *testing.T) {
 			},
 		},
 	}
-	suite.Run(t, changeProcessName)
+	suite.Run(t, processesAndEndpoints)
 }
 
-func TestChangeProcessName2(t *testing.T) {
-	changeProcessName := &suites.ChangeProcessNameTestSuite{
+func TestProcessesAndEndpoints2(t *testing.T) {
+	processesAndEndpoints := &suites.ProcessesAndEndpointsTestSuite{
 		Executable:    "./change-executable-file-path",
 		ContainerName: "change-executable-file-path",
 		ExpectedEndpoints: []types.EndpointInfo{
@@ -182,11 +182,11 @@ func TestChangeProcessName2(t *testing.T) {
 			},
 		},
 	}
-	suite.Run(t, changeProcessName)
+	suite.Run(t, processesAndEndpoints)
 }
 
-func TestChangeProcessNameChildProcess(t *testing.T) {
-	changeProcessName := &suites.ChangeProcessNameTestSuite{
+func TestProcessesAndEndpointsChildProcess(t *testing.T) {
+	processesAndEndpoints := &suites.ProcessesAndEndpointsTestSuite{
 		Executable:    "./listening-endpoint-child-process",
 		ContainerName: "listening-endpoint-child-process",
 		ExpectedEndpoints: []types.EndpointInfo{
@@ -218,11 +218,11 @@ func TestChangeProcessNameChildProcess(t *testing.T) {
 			},
 		},
 	}
-	suite.Run(t, changeProcessName)
+	suite.Run(t, processesAndEndpoints)
 }
 
-func TestChangeProcessNameChildProcessNoExec(t *testing.T) {
-	changeProcessName := &suites.ChangeProcessNameTestSuite{
+func TestProcessesAndEndpointsChildProcessNoExec(t *testing.T) {
+	processesAndEndpoints := &suites.ProcessesAndEndpointsTestSuite{
 		Executable:    "./listening-endpoint-child-process-no-exec",
 		ContainerName: "listening-endpoint-child-process-no-exec",
 		ExpectedEndpoints: []types.EndpointInfo{
@@ -249,11 +249,11 @@ func TestChangeProcessNameChildProcessNoExec(t *testing.T) {
 			},
 		},
 	}
-	suite.Run(t, changeProcessName)
+	suite.Run(t, processesAndEndpoints)
 }
 
-func TestChangeProcessNameChildProcessNoFork(t *testing.T) {
-	changeProcessName := &suites.ChangeProcessNameTestSuite{
+func TestProcessesAndEndpointsChildProcessNoFork(t *testing.T) {
+	processesAndEndpoints := &suites.ProcessesAndEndpointsTestSuite{
 		Executable:    "./listening-endpoint-child-process-no-fork",
 		ContainerName: "listening-endpoint-child-process-no-fork",
 		ExpectedEndpoints: []types.EndpointInfo{
@@ -283,11 +283,11 @@ func TestChangeProcessNameChildProcessNoFork(t *testing.T) {
 			},
 		},
 	}
-	suite.Run(t, changeProcessName)
+	suite.Run(t, processesAndEndpoints)
 }
 
-func TestChangeProcessNameChildProcessNoForkDelay(t *testing.T) {
-	changeProcessName := &suites.ChangeProcessNameTestSuite{
+func TestProcessesAndEndpointsChildProcessNoForkDelay(t *testing.T) {
+	processesAndEndpoints := &suites.ProcessesAndEndpointsTestSuite{
 		Executable:    "./listening-endpoint-child-process-no-fork",
 		Args:          []string{"5"},
 		ContainerName: "listening-endpoint-child-process-no-fork",
@@ -320,7 +320,7 @@ func TestChangeProcessNameChildProcessNoForkDelay(t *testing.T) {
 			},
 		},
 	}
-	suite.Run(t, changeProcessName)
+	suite.Run(t, processesAndEndpoints)
 }
 
 func TestConnectionsAndEndpointsNormal(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type ChangeProcessNameTestSuite struct {
+type ProcessesAndEndpointsTestSuite struct {
 	IntegrationTestSuiteBase
 	container         string
 	Executable        string
@@ -19,7 +19,7 @@ type ChangeProcessNameTestSuite struct {
 	ContainerName     string
 }
 
-func (s *ChangeProcessNameTestSuite) SetupSuite() {
+func (s *ProcessesAndEndpointsTestSuite) SetupSuite() {
 
 	collector := s.Collector()
 
@@ -39,13 +39,13 @@ func (s *ChangeProcessNameTestSuite) SetupSuite() {
 	time.Sleep(20 * time.Second)
 }
 
-func (s *ChangeProcessNameTestSuite) TearDownSuite() {
+func (s *ProcessesAndEndpointsTestSuite) TearDownSuite() {
 	s.StopCollector()
 	s.cleanupContainer([]string{"collector"})
 	s.cleanupContainer([]string{s.ContainerName})
 }
 
-func (s *ChangeProcessNameTestSuite) TestChangeProcessName() {
+func (s *ProcessesAndEndpointsTestSuite) TestProcessesAndEndpoints() {
 	processes := s.Sensor().Processes(s.container)
 	endpoints := s.Sensor().Endpoints(s.container)
 
