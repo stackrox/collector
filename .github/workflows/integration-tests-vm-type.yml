@@ -61,6 +61,7 @@ jobs:
       VM_TYPE: "${{ inputs.vm_type }}"
       COLLECTOR_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
       COLLECTOR_QA_TAG: ${{ inputs.collector-qa-tag }}
+      TEST_IMAGE: quay.io/rhacs-eng/qa-multi-arch:collector-tests-${{ inputs.collector-tag }}
     steps:
       - uses: actions/checkout@v3
 
@@ -193,5 +194,4 @@ jobs:
           name: ${{ inputs.vm_type }}-logs
           path: |
             ${{ github.workspace }}/integration-tests/container-logs/**/*
-            ${{ github.workspace }}/integration-tests/perf.json
             ${{ github.workspace }}/integration-tests/performance-logs/**/*

@@ -23,6 +23,7 @@
 
 - set_fact:
     collector_image: "{{ lookup('env', 'COLLECTOR_IMAGE', default='quay.io/rhacs-eng/collector:' +  collector_tag_result.stdout) }}"
+    integration_tests_image: "{{ lookup('env', 'TEST_IMAGE', default='quay.io/rhacs-eng/qa-multi-arch:collector-tests-' + collector_tag_result.stdout) }}"
 
 - set_fact:
     run_args: -test.run {{ collector_test }} -test.timeout 60m -test.count=1
@@ -32,19 +33,55 @@
     run_args: -test.timeout 120m -test.short
   when: collector_test == "ci-integration-tests"
 
+- name: Make logs directory
+  file:
+    path: "{{ remote_log_mount }}"
+    state: directory
+    mode: '0777'
+
+- name: Copy podman auth
+  become: "{{ runtime_as_root }}"
+  shell:
+    cmd: |
+      if [[ -f "/run/containers/0/auth.json" ]]; then
+        mkdir -p ~/.docker/
+        cp "/run/containers/0/auth.json" ~/.docker/config.json
+      fi
+    creates: ~/.docker/config.json
+  when: runtime_command == "podman"
+
 - block:
+
+    # Some considerations for running the test container:
+    #   1. the runtime auth must be mounted to allow the tests
+    #      to pull images. (~/.docker/config.json)
+    #   2. /tmp is mounted to allow a common mount point for
+    #      communication between containers (see listening ports test for
+    #      an example.
+    #
+    # One or both of these should be improved in the future. Letting the
+    # container authenticate itself would solve (1) and better defined
+    # inter-container comms would solve (2)
   - name: Run integration tests
+    become: "{{ runtime_as_root }}"
     shell: |
-      {{ remote_tests_binary }} {{ run_args }} -test.v 2>&1
-    args:
-      chdir: "{{ remote_tests_root }}"
+      {{ runtime_command }} run -it --rm \
+        -v {{ remote_log_mount }}:{{ container_logs_root }} \
+        -v ~/.docker:/root/.docker \
+        -v /tmp/:/tmp \
+        -v {{ runtime_socket }}:/var/run/docker.sock \
+        --network=host \
+        -e COLLECTION_METHOD \
+        -e VM_CONFIG \
+        -e IMAGE_FAMILY \
+        -e COLLECTOR_IMAGE \
+        -e COLLECTOR_QA_TAG \
+        {{ integration_tests_image }} \
+        {{ run_args }} -test.v 2>&1
     environment:
       COLLECTION_METHOD: "{{ collection_method }}"
       VM_CONFIG: "{{ vm_config }}"
       IMAGE_FAMILY: "{{ vm_image_family }}"
-      RUNTIME_COMMAND: "{{ runtime_command }}"
-      RUNTIME_AS_ROOT: "{{ runtime_as_root }}"
-      RUNTIME_SOCKET: "{{ runtime_socket }}"
       COLLECTOR_IMAGE: "{{ collector_image }}"
       COLLECTOR_QA_TAG: "{{ lookup('env', 'COLLECTOR_QA_TAG', default=lookup('file', integration_tests_root + '/container/QA_TAG')) }}"
     register: test_result
@@ -70,7 +107,7 @@
 
     - name: Get log files
       find:
-        paths: "{{ remote_logs_root }}/{{ vm_config }}/{{ collection_method }}/"
+        paths: "{{ remote_log_mount }}/{{ vm_config }}/{{ collection_method }}/"
       register: remote_log_files
 
     - name: Fetch log files
@@ -81,13 +118,6 @@
       loop: "{{ remote_log_files.files | map(attribute='path') | list }}"
       loop_control:
         loop_var: remote_log_path
-
-    - name: Download perf JSON
-      fetch:
-        src: "{{ remote_tests_root }}/perf.json"
-        dest: "{{ integration_tests_root }}/"
-        flat: true
-        fail_on_missing: false
 
     - name: Write integration test log
       copy:
