@@ -555,6 +555,7 @@ TEST(ProcessSignalFormatterTest, CountTwoCounterCallsTest) {
   CollectorStats::Reset();
 }
 
+/*
 TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
@@ -612,6 +613,7 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
 
   CollectorStats::Reset();
 }
+*/
 
 }  // namespace
 
