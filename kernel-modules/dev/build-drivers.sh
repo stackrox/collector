@@ -30,6 +30,9 @@ cmake -S ${DRIVER_DIR} \
     -DBUILD_LIBSCAP_MODERN_BPF=ON \
     -DMODERN_BPF_EXCLUDE_PROGS='^(openat2|ppoll|setsockopt|getsockopt|clone3|io_uring_setup|nanosleep)$' \
     -B ${DRIVER_DIR}/build
+
+cp "${DRIVER_DIR}/build/driver/src/driver_config.h" "${DRIVER_DIR}/driver/driver_config.h"
+
 make -C ${PROBE_DIR} FALCO_DIR="${DRIVER_DIR}/driver/bpf"
 
 mkdir -p "${OUTPUT_DIR}"
