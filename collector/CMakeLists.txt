@@ -6,7 +6,7 @@ find_package(CURL REQUIRED)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall --std=c++17 -pthread -Wno-deprecated-declarations -fno-omit-frame-pointer -rdynamic")
 
-set(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb -D_DEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-strict-aliasing -DNDEBUG")
 
 if(NOT DEFINED ENV{DISABLE_PROFILING})
@@ -45,6 +45,8 @@ include_directories(/usr/local/include/prometheus)
 set(DRIVER_HEADERS ${FALCO_DIR}/driver/ppm_events_public.h ${FALCO_DIR}/driver/ppm_fillers.h)
 
 add_definitions(-DUSE_PROTO_ARENAS)
+
+add_definitions(-DASSERT_TO_LOG)
 
 file(GLOB COLLECTOR_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/lib/*.cpp)
 add_library(collector_lib ${DRIVER_HEADERS} ${COLLECTOR_LIB_SRC_FILES})
