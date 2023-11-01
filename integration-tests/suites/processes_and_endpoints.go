@@ -20,18 +20,24 @@ type ProcessesAndEndpointsTestSuite struct {
 }
 
 func (s *ProcessesAndEndpointsTestSuite) SetupSuite() {
+	s.RegisterCleanup(s.ContainerName)
+	s.StartContainerStats()
 
-	collector := s.Collector()
+	collectorOptions := common.CollectorStartupOptions{
+		Env: map[string]string{
+			"ROX_PROCESSES_LISTENING_ON_PORT": "true",
+		},
+		Config: map[string]any{
+			"turnOffScrape": false,
+		},
+	}
 
-	collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
-	collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
-
-	s.StartCollector(false)
+	s.StartCollector(false, &collectorOptions)
 
 	image := config.Images().QaImageByKey("qa-plop")
-	cmd := []string{s.ContainerName, "--entrypoint", s.Executable, image}
+	cmd := []string{"--entrypoint", s.Executable, image}
 	cmd = append(cmd, s.Args...)
-	containerID, err := s.launchContainer(cmd...)
+	containerID, err := s.launchContainer(s.ContainerName, cmd...)
 
 	s.Require().NoError(err)
 	s.container = common.ContainerShortID(containerID)
@@ -41,8 +47,8 @@ func (s *ProcessesAndEndpointsTestSuite) SetupSuite() {
 
 func (s *ProcessesAndEndpointsTestSuite) TearDownSuite() {
 	s.StopCollector()
-	s.cleanupContainer([]string{"collector"})
-	s.cleanupContainer([]string{s.ContainerName})
+	s.cleanupContainers(s.ContainerName)
+	s.WritePerfResults()
 }
 
 func (s *ProcessesAndEndpointsTestSuite) TestProcessesAndEndpoints() {
