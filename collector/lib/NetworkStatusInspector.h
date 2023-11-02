@@ -2,6 +2,8 @@
 #define COLLECTOR_NETWORKSTATUSINSPECTOR_H
 
 #include <memory>
+#include <optional>
+#include <unordered_map>
 
 #include <json/json.h>
 
@@ -27,8 +29,14 @@ class NetworkStatusInspector : public CivetHandler {
   const std::shared_ptr<ConnectionTracker> conntracker_;
   Json::StreamWriterBuilder jsonStreamWriterBuilder_;
 
-  bool handleGetEndpoints(struct mg_connection* conn);
-  bool handleGetConnections(struct mg_connection* conn);
+  typedef std::unordered_map<std::string, std::string> QueryParams;
+
+  static const std::string kQueryParam_container;  // = "container"
+  static QueryParams parseParameters(const char* queryString);
+  static std::optional<std::string> getParameter(const QueryParams& params, const std::string paramName);
+
+  bool handleGetEndpoints(struct mg_connection* conn, const QueryParams& queryParams);
+  bool handleGetConnections(struct mg_connection* conn, const QueryParams& queryParams);
 
   bool ServerError(struct mg_connection* conn, const char* err);
   bool ClientError(struct mg_connection* conn, const char* err);

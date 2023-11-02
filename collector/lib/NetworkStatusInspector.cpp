@@ -14,6 +14,8 @@ const std::string NetworkStatusInspector::kBaseRoute = "/state/network";
 const std::string NetworkStatusInspector::kEndpointRoute = kBaseRoute + "/endpoint";
 const std::string NetworkStatusInspector::kConnectionRoute = kBaseRoute + "/connection";
 
+const std::string NetworkStatusInspector::kQueryParam_container = "container";
+
 NetworkStatusInspector::NetworkStatusInspector(const std::shared_ptr<ConnectionTracker> conntracker) : conntracker_(conntracker) {
 }
 
@@ -66,14 +68,17 @@ static void SerializeEndpoint(const Endpoint& ep, Json::Value& node) {
   node["port"] = ep.port();
 }
 
-bool NetworkStatusInspector::handleGetEndpoints(struct mg_connection* conn) {
+bool NetworkStatusInspector::handleGetEndpoints(struct mg_connection* conn, const QueryParams& queryParams) {
   collector::AdvertisedEndpointMap endpointStates = conntracker_->FetchEndpointState(true, false);
   Json::Value bodyRoot(Json::objectValue);
 
   std::unordered_map<std::string, std::forward_list<collector::ContainerEndpointMap::value_type*>> byContainer;
 
+  std::optional<std::string> containerFilter = getParameter(queryParams, kQueryParam_container);
+
   for (auto& endpointState : endpointStates) {
-    byContainer[endpointState.first.container()].push_front(&endpointState);
+    if (!containerFilter || *containerFilter == endpointState.first.container())
+      byContainer[endpointState.first.container()].push_front(&endpointState);
   }
 
   for (auto& container : byContainer) {
@@ -109,14 +114,17 @@ bool NetworkStatusInspector::handleGetEndpoints(struct mg_connection* conn) {
   return true;
 }
 
-bool NetworkStatusInspector::handleGetConnections(struct mg_connection* conn) {
+bool NetworkStatusInspector::handleGetConnections(struct mg_connection* conn, const QueryParams& queryParams) {
   collector::ConnMap connectionStates = conntracker_->FetchConnState(true, false);
   Json::Value bodyRoot(Json::objectValue);
 
   std::unordered_map<std::string, std::forward_list<collector::ConnMap::value_type*>> byContainer;
 
+  std::optional<std::string> containerFilter = getParameter(queryParams, kQueryParam_container);
+
   for (auto& connectionState : connectionStates) {
-    byContainer[connectionState.first.container()].push_front(&connectionState);
+    if (!containerFilter || *containerFilter == connectionState.first.container())
+      byContainer[connectionState.first.container()].push_front(&connectionState);
   }
 
   for (auto& container : byContainer) {
@@ -157,16 +165,44 @@ bool NetworkStatusInspector::handleGetConnections(struct mg_connection* conn) {
   return true;
 }
 
+NetworkStatusInspector::QueryParams NetworkStatusInspector::parseParameters(const char* queryString) {
+  std::stringstream query_stringstream(queryString);
+  QueryParams params = QueryParams();
+
+  while (query_stringstream.good()) {
+    std::string statement;
+
+    std::getline(query_stringstream, statement, '&');
+
+    size_t equal = statement.find('=');
+
+    if (equal != std::string::npos) {
+      params[statement.substr(0, equal)] = statement.substr(equal + 1);
+    }
+  }
+
+  return params;
+}
+
+std::optional<std::string> NetworkStatusInspector::getParameter(const QueryParams& params, const std::string paramName) {
+  auto match = params.find(paramName);
+
+  return match == params.end() ? std::nullopt : std::optional<std::string>(match->second);
+}
+
 bool NetworkStatusInspector::handleGet(CivetServer* server, struct mg_connection* conn) {
   const mg_request_info* req_info = mg_get_request_info(conn);
+
   if (req_info == nullptr) {
     return ServerError(conn, "unable to read request");
   }
+
   std::string uri = req_info->local_uri;
+  auto parameters = parseParameters(req_info->query_string);
   if (uri == kEndpointRoute) {
-    return handleGetEndpoints(conn);
+    return handleGetEndpoints(conn, parameters);
   } else if (uri == kConnectionRoute) {
-    return handleGetConnections((conn));
+    return handleGetConnections(conn, parameters);
   }
   return ClientError(conn, "unknown route");
 }
