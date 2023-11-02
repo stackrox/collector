@@ -6,8 +6,10 @@ COPY change-executable-file-path.c /change-executable-file-path.c
 COPY listening-endpoint-child-process.c /listening-endpoint-child-process.c 
 COPY listening-endpoint-child-process-no-exec.c /listening-endpoint-child-process-no-exec.c
 COPY listening-endpoint-child-process-no-fork.c /listening-endpoint-child-process-no-fork.c
+COPY so_reuseport.py /so_reuseport.py
+COPY so_reuseport.sh /so_reuseport.sh
 
-RUN apt update -y && apt install gcc lsof net-tools -y
+RUN apt update -y && apt install gcc lsof net-tools python3 -y
 RUN gcc process-listening-on-ports.c -o process-listening-on-ports
 RUN gcc change-process-name.c -o change-process-name
 RUN gcc change-executable-file-path.c -o change-executable-file-path

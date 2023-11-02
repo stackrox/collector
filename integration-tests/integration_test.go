@@ -323,7 +323,7 @@ func TestProcessesAndEndpointsChildProcessNoForkDelay(t *testing.T) {
 	suite.Run(t, processesAndEndpoints)
 }
 
-func TestProcessesAndEndpointsChildProcessNoFork(t *testing.T) {
+func TestProcessesAndEndpointsReuseport(t *testing.T) {
 	processesAndEndpoints := &suites.ProcessesAndEndpointsTestSuite{
 		Executable:    "./so_reuseport.sh",
 		ContainerName: "listening-endpoint-so-reuseport",
@@ -333,24 +333,37 @@ func TestProcessesAndEndpointsChildProcessNoFork(t *testing.T) {
 				CloseTimestamp: types.NilTimestamp,
 				Address: &types.ListenAddress{
 					AddressData: "\x00\x00\x00\x00",
-					Port:        8082,
+					Port:        8080,
 					IpNetwork:   "\x00\x00\x00\x00 ",
 				},
 				Originator: &types.ProcessOriginator{
-					ProcessName:         "listening-endpo",
-					ProcessExecFilePath: "/listening-endpoint-child-process-no-fork",
+					ProcessName:         "so_ruseport.py",
+					ProcessExecFilePath: "/so_ruseport.py",
+				},
+			},
+			{
+				Protocol:       "L4_PROTOCOL_TCP",
+				CloseTimestamp: types.NilTimestamp,
+				Address: &types.ListenAddress{
+					AddressData: "\x00\x00\x00\x00",
+					Port:        8080,
+					IpNetwork:   "\x00\x00\x00\x00 ",
+				},
+				Originator: &types.ProcessOriginator{
+					ProcessName:         "so_ruseport.py",
+					ProcessExecFilePath: "/so_ruseport.py",
+					ProcessArgs:         "meaningless_argument",
 				},
 			},
 		},
 		ExpectedProcesses: []types.ProcessInfo{
 			{
-				Name:    "listening-endpo",
-				ExePath: "/listening-endpoint-child-process-no-fork",
+				Name:    "so_ruseport.sh",
+				ExePath: "/so_ruseport.sh",
 			},
 			{
-				Name:    "listening-endpo",
-				ExePath: "/listening-endpoint-child-process-no-fork",
-				Args:    "3",
+				Name:    "so_ruseport.sh",
+				ExePath: "/so_ruseport.sh",
 			},
 		},
 	}
