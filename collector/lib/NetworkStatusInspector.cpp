@@ -68,20 +68,36 @@ static void SerializeEndpoint(const Endpoint& ep, Json::Value& node) {
 
 bool NetworkStatusInspector::handleGetEndpoints(struct mg_connection* conn) {
   collector::AdvertisedEndpointMap endpointStates = conntracker_->FetchEndpointState(true, false);
-  Json::Value bodyRoot(Json::arrayValue);
+  Json::Value bodyRoot(Json::objectValue);
 
-  for (auto endpointState : endpointStates) {
-    Json::Value endpointNode(Json::objectValue);
+  std::unordered_map<std::string, std::forward_list<collector::ContainerEndpointMap::value_type*>> byContainer;
 
-    endpointNode["active"] = endpointState.second.IsActive();
-    endpointNode["container"] = endpointState.first.container();
+  for (auto& endpointState : endpointStates) {
+    byContainer[endpointState.first.container()].push_front(&endpointState);
+  }
 
-    endpointNode["l4proto"] = Proto2str(endpointState.first.l4proto());
+  for (auto& container : byContainer) {
+    const std::string& containerId = container.first;
 
-    endpointNode["endpoint"] = Json::objectValue;
-    SerializeEndpoint(endpointState.first.endpoint(), endpointNode["endpoint"]);
+    Json::Value containerArray(Json::arrayValue);
 
-    bodyRoot.append(endpointNode);
+    for (auto endpointState : container.second) {
+      const collector::ContainerEndpoint& endpoint = endpointState->first;
+      const collector::ConnStatus& status = endpointState->second;
+
+      Json::Value endpointNode(Json::objectValue);
+
+      endpointNode["active"] = status.IsActive();
+
+      endpointNode["l4proto"] = Proto2str(endpoint.l4proto());
+
+      endpointNode["endpoint"] = Json::objectValue;
+      SerializeEndpoint(endpoint.endpoint(), endpointNode["endpoint"]);
+
+      containerArray.append(endpointNode);
+    }
+
+    bodyRoot[containerId] = containerArray;
   }
 
   std::string buffer = Json::writeString(jsonStreamWriterBuilder_, bodyRoot);
