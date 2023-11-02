@@ -119,6 +119,7 @@ jobs:
     needs:
     - init
     - build-collector-full
+    - build-test-containers
     secrets: inherit
 
   # Isolating multi-arch testing temporarily while fixes are found for ppc64le
