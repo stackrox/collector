@@ -80,6 +80,7 @@ jobs:
       drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
       arch-drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
       skip-built-drivers: ${{ needs.build-drivers.outputs.parallel-jobs == 0 }}
+      archs: amd64 ppc64le s390x arm64
     secrets: inherit
     needs:
     - init

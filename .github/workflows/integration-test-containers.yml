@@ -80,7 +80,7 @@ jobs:
       matrix:
         directory: ${{ fromJSON(needs.common-variables.outputs.build-dirs) }}
     env:
-      PLATFORM: linux/amd64,linux/s390x,linux/ppc64le
+      PLATFORM: linux/amd64,linux/s390x,linux/ppc64le,linux/arm64
       COLLECTOR_QA_TAG: ${{ inputs.collector-qa-tag }}
 
     steps:

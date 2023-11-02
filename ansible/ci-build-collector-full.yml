@@ -16,29 +16,44 @@
         pull:
           platform: "linux/{{ arch }}"
 
-    - name: Calculate required layers
-      shell:
-        cmd: "{{ context_path }}/required-layers.py -m 300 {{ context_path }}/kernel-modules"
-      register: required_layers
+    - name: Build full image
+      when:
+        - build_full_image
+        - arch != 'arm64'
+      block:
+        - name: Calculate required layers
+          shell:
+            cmd: "{{ context_path }}/required-layers.py -m 300 {{ context_path }}/kernel-modules"
+          register: required_layers
 
-    - set_fact:
-        required_layers: "{{ required_layers.stdout }}"
+        - set_fact:
+            required_layers: "{{ required_layers.stdout }}"
 
-    - name: Build the collector full image
-      community.docker.docker_image:
-        name: "{{ collector_image }}-{{ arch }}"
-        build:
-          platform: "linux/{{ arch }}"
-          target: "probe-layer-{{ required_layers }}"
-          args:
-            collector_repo: quay.io/stackrox-io/collector
-            collector_version: "{{ collector_tag }}-{{ arch }}"
-            module_version: "{{ driver_version }}"
-            max_layer_size: 300
-            required_layers: "{{ required_layers }}"
-          path: "{{ context_path }}"
-        push: true
-        source: build
+        - name: Build the collector full image
+          community.docker.docker_image:
+            name: "{{ collector_image }}-{{ arch }}"
+            build:
+              platform: "linux/{{ arch }}"
+              target: "probe-layer-{{ required_layers }}"
+              args:
+                collector_repo: quay.io/stackrox-io/collector
+                collector_version: "{{ collector_tag }}-{{ arch }}"
+                module_version: "{{ driver_version }}"
+                max_layer_size: 300
+                required_layers: "{{ required_layers }}"
+              path: "{{ context_path }}"
+            push: true
+            source: build
+
+    - name: Retag slim image
+      when: not build_full_image or arch == 'arm64'
+      block:
+        - name: Retag slim image
+          community.docker.docker_image:
+            name: "{{ collector_image }}-{{ arch }}-slim"
+            repository: "{{ collector_image }}-{{ arch }}"
+            push: true
+            source: local
 
     - name: Retag and push stackrox-io -latest
       community.docker.docker_image:
