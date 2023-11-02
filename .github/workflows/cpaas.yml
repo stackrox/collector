@@ -88,6 +88,16 @@ jobs:
     - build-collector-slim
     - sync-drivers-and-support-packages
 
+  build-test-containers:
+    uses: ./.github/workflows/integration-test-containers.yml
+    needs:
+    - init
+    with:
+      collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
+      collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
+      rebuild-qa-containers: ${{ needs.init.outputs.rebuild-qa-containers == 'true' }}
+    secrets: inherit
+
   integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
