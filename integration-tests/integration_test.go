@@ -123,7 +123,7 @@ func TestDuplicateEndpoints(t *testing.T) {
 	suite.Run(t, new(suites.DuplicateEndpointsTestSuite))
 }
 
-func TestProcessesAndEndpoints1(t *testing.T) {
+func TestProcessesAndEndpointsChangeProcessName(t *testing.T) {
 	processesAndEndpoints := &suites.ProcessesAndEndpointsTestSuite{
 		Executable:    "./change-process-name",
 		ContainerName: "change-process-name",
@@ -154,7 +154,7 @@ func TestProcessesAndEndpoints1(t *testing.T) {
 	suite.Run(t, processesAndEndpoints)
 }
 
-func TestProcessesAndEndpoints2(t *testing.T) {
+func TestProcessesAndEndpointsChangeExecFilePath(t *testing.T) {
 	processesAndEndpoints := &suites.ProcessesAndEndpointsTestSuite{
 		Executable:    "./change-executable-file-path",
 		ContainerName: "change-executable-file-path",
@@ -317,6 +317,40 @@ func TestProcessesAndEndpointsChildProcessNoForkDelay(t *testing.T) {
 				Name:    "listening-endpo",
 				ExePath: "/listening-endpoint-child-process-no-fork",
 				Args:    "5 3",
+			},
+		},
+	}
+	suite.Run(t, processesAndEndpoints)
+}
+
+func TestProcessesAndEndpointsChildProcessNoFork(t *testing.T) {
+	processesAndEndpoints := &suites.ProcessesAndEndpointsTestSuite{
+		Executable:    "./so_reuseport.sh",
+		ContainerName: "listening-endpoint-so-reuseport",
+		ExpectedEndpoints: []types.EndpointInfo{
+			{
+				Protocol:       "L4_PROTOCOL_TCP",
+				CloseTimestamp: types.NilTimestamp,
+				Address: &types.ListenAddress{
+					AddressData: "\x00\x00\x00\x00",
+					Port:        8082,
+					IpNetwork:   "\x00\x00\x00\x00 ",
+				},
+				Originator: &types.ProcessOriginator{
+					ProcessName:         "listening-endpo",
+					ProcessExecFilePath: "/listening-endpoint-child-process-no-fork",
+				},
+			},
+		},
+		ExpectedProcesses: []types.ProcessInfo{
+			{
+				Name:    "listening-endpo",
+				ExePath: "/listening-endpoint-child-process-no-fork",
+			},
+			{
+				Name:    "listening-endpo",
+				ExePath: "/listening-endpoint-child-process-no-fork",
+				Args:    "3",
 			},
 		},
 	}
