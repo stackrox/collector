@@ -24,3 +24,12 @@ func QuoteArgs(args []string) []string {
 	}
 	return quotedArgs
 }
+
+// Returns the min of two integers.
+// Strangely there is no such built in or function in math
+func Min(x int, y int) int {
+	if x < y {
+		return x
+	}
+	return y
+}

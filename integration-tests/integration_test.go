@@ -123,6 +123,206 @@ func TestDuplicateEndpoints(t *testing.T) {
 	suite.Run(t, new(suites.DuplicateEndpointsTestSuite))
 }
 
+func TestProcessesAndEndpoints1(t *testing.T) {
+	processesAndEndpoints := &suites.ProcessesAndEndpointsTestSuite{
+		Executable:    "./change-process-name",
+		ContainerName: "change-process-name",
+		ExpectedEndpoints: []types.EndpointInfo{
+			{
+				Protocol:       "L4_PROTOCOL_TCP",
+				CloseTimestamp: types.NilTimestamp,
+				Address: &types.ListenAddress{
+					AddressData: "\x00\x00\x00\x00",
+					Port:        8082,
+					IpNetwork:   "\x00\x00\x00\x00 ",
+				},
+				Originator: &types.ProcessOriginator{
+					ProcessName:         "change-process-",
+					ProcessExecFilePath: "/change-process-name",
+					ProcessArgs:         "",
+				},
+			},
+		},
+		ExpectedProcesses: []types.ProcessInfo{
+			{
+				Name:    "change-process-",
+				ExePath: "/change-process-name",
+				Args:    "",
+			},
+		},
+	}
+	suite.Run(t, processesAndEndpoints)
+}
+
+func TestProcessesAndEndpoints2(t *testing.T) {
+	processesAndEndpoints := &suites.ProcessesAndEndpointsTestSuite{
+		Executable:    "./change-executable-file-path",
+		ContainerName: "change-executable-file-path",
+		ExpectedEndpoints: []types.EndpointInfo{
+			{
+				Protocol:       "L4_PROTOCOL_TCP",
+				CloseTimestamp: types.NilTimestamp,
+				Address: &types.ListenAddress{
+					AddressData: "\x00\x00\x00\x00",
+					Port:        8082,
+					IpNetwork:   "\x00\x00\x00\x00 ",
+				},
+				Originator: &types.ProcessOriginator{
+					ProcessName:         "change-executab",
+					ProcessExecFilePath: "/change-executable-file-path",
+					ProcessArgs:         "",
+				},
+			},
+		},
+		ExpectedProcesses: []types.ProcessInfo{
+			{
+				Name:    "change-executab",
+				ExePath: "/change-executable-file-path",
+				Args:    "",
+			},
+		},
+	}
+	suite.Run(t, processesAndEndpoints)
+}
+
+func TestProcessesAndEndpointsChildProcess(t *testing.T) {
+	processesAndEndpoints := &suites.ProcessesAndEndpointsTestSuite{
+		Executable:    "./listening-endpoint-child-process",
+		ContainerName: "listening-endpoint-child-process",
+		ExpectedEndpoints: []types.EndpointInfo{
+			{
+				Protocol:       "L4_PROTOCOL_TCP",
+				CloseTimestamp: types.NilTimestamp,
+				Address: &types.ListenAddress{
+					AddressData: "\x00\x00\x00\x00",
+					Port:        8082,
+					IpNetwork:   "\x00\x00\x00\x00 ",
+				},
+				Originator: &types.ProcessOriginator{
+					ProcessName:         "listening-endpo",
+					ProcessExecFilePath: "/listening-endpoint-child-process",
+					ProcessArgs:         "",
+				},
+			},
+		},
+		ExpectedProcesses: []types.ProcessInfo{
+			{
+				Name:    "listening-endpo",
+				ExePath: "/listening-endpoint-child-process",
+				Args:    "3",
+			},
+			{
+				Name:    "listening-endpo",
+				ExePath: "/listening-endpoint-child-process",
+				Args:    "",
+			},
+		},
+	}
+	suite.Run(t, processesAndEndpoints)
+}
+
+func TestProcessesAndEndpointsChildProcessNoExec(t *testing.T) {
+	processesAndEndpoints := &suites.ProcessesAndEndpointsTestSuite{
+		Executable:    "./listening-endpoint-child-process-no-exec",
+		ContainerName: "listening-endpoint-child-process-no-exec",
+		ExpectedEndpoints: []types.EndpointInfo{
+			{
+				Protocol:       "L4_PROTOCOL_TCP",
+				CloseTimestamp: types.NilTimestamp,
+				Address: &types.ListenAddress{
+					AddressData: "\x00\x00\x00\x00",
+					Port:        8082,
+					IpNetwork:   "\x00\x00\x00\x00 ",
+				},
+				Originator: &types.ProcessOriginator{
+					ProcessName:         "listening-endpo",
+					ProcessExecFilePath: "/listening-endpoint-child-process-no-exec",
+					ProcessArgs:         "",
+				},
+			},
+		},
+		ExpectedProcesses: []types.ProcessInfo{
+			{
+				Name:    "listening-endpo",
+				ExePath: "/listening-endpoint-child-process-no-exec",
+				Args:    "",
+			},
+		},
+	}
+	suite.Run(t, processesAndEndpoints)
+}
+
+func TestProcessesAndEndpointsChildProcessNoFork(t *testing.T) {
+	processesAndEndpoints := &suites.ProcessesAndEndpointsTestSuite{
+		Executable:    "./listening-endpoint-child-process-no-fork",
+		ContainerName: "listening-endpoint-child-process-no-fork",
+		ExpectedEndpoints: []types.EndpointInfo{
+			{
+				Protocol:       "L4_PROTOCOL_TCP",
+				CloseTimestamp: types.NilTimestamp,
+				Address: &types.ListenAddress{
+					AddressData: "\x00\x00\x00\x00",
+					Port:        8082,
+					IpNetwork:   "\x00\x00\x00\x00 ",
+				},
+				Originator: &types.ProcessOriginator{
+					ProcessName:         "listening-endpo",
+					ProcessExecFilePath: "/listening-endpoint-child-process-no-fork",
+				},
+			},
+		},
+		ExpectedProcesses: []types.ProcessInfo{
+			{
+				Name:    "listening-endpo",
+				ExePath: "/listening-endpoint-child-process-no-fork",
+			},
+			{
+				Name:    "listening-endpo",
+				ExePath: "/listening-endpoint-child-process-no-fork",
+				Args:    "3",
+			},
+		},
+	}
+	suite.Run(t, processesAndEndpoints)
+}
+
+func TestProcessesAndEndpointsChildProcessNoForkDelay(t *testing.T) {
+	processesAndEndpoints := &suites.ProcessesAndEndpointsTestSuite{
+		Executable:    "./listening-endpoint-child-process-no-fork",
+		Args:          []string{"5"},
+		ContainerName: "listening-endpoint-child-process-no-fork",
+		ExpectedEndpoints: []types.EndpointInfo{
+			{
+				Protocol:       "L4_PROTOCOL_TCP",
+				CloseTimestamp: types.NilTimestamp,
+				Address: &types.ListenAddress{
+					AddressData: "\x00\x00\x00\x00",
+					Port:        8082,
+					IpNetwork:   "\x00\x00\x00\x00 ",
+				},
+				Originator: &types.ProcessOriginator{
+					ProcessName:         "listening-endpo",
+					ProcessExecFilePath: "/listening-endpoint-child-process-no-fork",
+					ProcessArgs:         "5",
+				},
+			},
+		},
+		ExpectedProcesses: []types.ProcessInfo{
+			{
+				Name:    "listening-endpo",
+				ExePath: "/listening-endpoint-child-process-no-fork",
+				Args:    "5",
+			},
+			{
+				Name:    "listening-endpo",
+				ExePath: "/listening-endpoint-child-process-no-fork",
+				Args:    "5 3",
+			},
+		},
+	}
+	suite.Run(t, processesAndEndpoints)
+}
+
 func TestConnectionsAndEndpointsNormal(t *testing.T) {
 	// Server uses a normal port. Client is assigned a port in the ephemeral range in the normal way
 	normalPorts := &suites.ConnectionsAndEndpointsTestSuite{
