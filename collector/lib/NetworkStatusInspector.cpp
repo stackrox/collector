@@ -166,21 +166,23 @@ bool NetworkStatusInspector::handleGetConnections(struct mg_connection* conn, co
 }
 
 NetworkStatusInspector::QueryParams NetworkStatusInspector::parseParameters(const char* queryString) {
-  std::stringstream query_stringstream(queryString);
-  QueryParams params = QueryParams();
+  QueryParams params;
 
-  while (query_stringstream.good()) {
-    std::string statement;
+  if (queryString != NULL) {
+    std::stringstream query_stringstream(queryString);
 
-    std::getline(query_stringstream, statement, '&');
+    while (query_stringstream.good()) {
+      std::string statement;
 
-    size_t equal = statement.find('=');
+      std::getline(query_stringstream, statement, '&');
 
-    if (equal != std::string::npos) {
-      params[statement.substr(0, equal)] = statement.substr(equal + 1);
+      size_t equal = statement.find('=');
+
+      if (equal != std::string::npos) {
+        params[statement.substr(0, equal)] = statement.substr(equal + 1);
+      }
     }
   }
-
   return params;
 }
 
