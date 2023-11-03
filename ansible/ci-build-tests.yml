@@ -3,7 +3,7 @@
   hosts: all
 
   environment:
-    PLATFORMS: "linux/amd64,linux/ppc64le,linux/s390x"
+    PLATFORMS: "linux/amd64,linux/ppc64le,linux/s390x,linux/arm64"
 
   tasks:
     - set_fact:
