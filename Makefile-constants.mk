@@ -19,13 +19,6 @@ PLATFORM ?= linux/amd64
 TRACE_SINSP_EVENTS ?= false
 
 COLLECTOR_BUILD_CONTEXT = collector/
-
-
-ifeq ($(USE_HELGRIND),true)
-	COLLECTOR_PRE_ARGUMENTS := valgrind --tool=helgrind
-	USE_VALGRIND := true
-else ifeq ($(USE_VALGRIND),true)
-	COLLECTOR_PRE_ARGUMENTS := valgrind --leak-check=full
-endif
+COLLECTOR_BUILDER_NAME ?= collector_builder
 
 export COLLECTOR_PRE_ARGUMENTS

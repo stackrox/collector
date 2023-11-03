@@ -39,7 +39,7 @@ else
 	docker pull --platform ${PLATFORM} quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
 endif
 
-collector: builder
+collector: check-builder
 	make -C collector collector
 
 .PHONY: connscrape
@@ -108,20 +108,25 @@ ifeq (,$(wildcard $(DEV_SSH_SERVER_KEY)))
 	ssh-keygen -t ed25519 -N '' -f $(DEV_SSH_SERVER_KEY) < /dev/null
 endif
 
-.PHONY: start-dev
-start-dev: builder teardown-dev $(DEV_SSH_SERVER_KEY)
-	docker run -d \
-		--name collector_remote_dev \
-		--cap-add sys_ptrace -p127.0.0.1:$(LOCAL_SSH_PORT):22 \
-		-v $(DEV_SSH_SERVER_KEY):/etc/sshkeys/ssh_host_ed25519_key:ro \
+.PHONY: start-builder
+start-builder: builder teardown-builder
+	docker run -id --entrypoint /bin/sh \
+		--name $(COLLECTOR_BUILDER_NAME) \
+		-v $(CURDIR):$(CURDIR) \
+		-w $(CURDIR) \
+		--cap-add sys_ptrace \
 		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
 
-.PHONY: teardown-dev
-teardown-dev:
-	-docker rm -fv collector_remote_dev
+.PHONY: check-builder
+check-builder:
+	$(shell $(CURDIR)/utilities/check-builder.sh $(COLLECTOR_BUILDER_NAME))
+
+.PHONY: teardown-builder
+teardown-builder:
+	docker rm -fv $(COLLECTOR_BUILDER_NAME)
 
 .PHONY: clean
-clean: teardown-dev
+clean:
 	rm -rf cmake-build/
 	make -C collector clean
 
