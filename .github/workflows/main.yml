@@ -114,12 +114,15 @@ jobs:
         with:
           submodules: true
 
-      - name: Run unit tests with ASAN
+      - name: Build collector
         run: |
           cmake -S . -B cmake-build \
             ${{ matrix.config-args }} \
             -DCMAKE_BUILD_TYPE=Debug
           make -C cmake-build "-j$(nproc)"
+
+      - name: Run unit tests
+        run: |
           ctest -V --test-dir cmake-build
 
   integration-tests:
