@@ -12,11 +12,6 @@
   set_fact:
     success: true
 
-- name: Build tests
-  include_tasks: build-tests.yml
-  vars:
-    arch: "{{ arch_info }}"
-
 - name: Pull test images
   include_tasks: pull-images.yml
   # only pull all images when we're running all tests.

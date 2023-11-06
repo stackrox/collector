@@ -22,8 +22,10 @@
     keys:
       - "{{ s390x.ssh_key_id }}"
     primary_network_interface:
-     - subnet: "{{ s390x.subnet_id }}"
+      - subnet: "{{ s390x.subnet_id }}"
     zone: "{{ s390x.zone }}"
+    boot_volume:
+      - size: "{{ s390x.disk_size }}"
   register: vsi
 
 - name: Check for existing Floating IP
@@ -60,6 +62,7 @@
     vm_config: "{{ vm_config }}"
     vm_image_family: "{{ vm_family }}"
     vm_collection_method: "{{ vm_collection_method }}"
+    vm_arch: "{{ vm_arch }}"
     ibm_cloud_vm: true
 
 - name: generate provisioner inventory file

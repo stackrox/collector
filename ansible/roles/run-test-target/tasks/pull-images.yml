@@ -3,7 +3,7 @@
 - name: Load image info
   set_fact:
     images: "{{ lookup('file', collector_root + '/integration-tests/images.yml') | from_yaml }}"
-    qa_tag: "{{ lookup('file', collector_root + '/integration-tests/container/QA_TAG') }}"
+    qa_tag: "{{ lookup('env', 'COLLECTOR_QA_TAG', default=lookup('file', collector_root + '/integration-tests/container/QA_TAG')) }}"
   delegate_to: localhost
 
 - name: Pull QA images

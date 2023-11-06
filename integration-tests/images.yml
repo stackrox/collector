@@ -11,6 +11,7 @@ qa:
   qa-plop: quay.io/rhacs-eng/qa-multi-arch:collector-processes-listening-on-ports
   qa-schedule-curls: quay.io/rhacs-eng/qa-multi-arch:collector-schedule-curls
   qa-alpine-curl: quay.io/rhacs-eng/qa-multi-arch:alpine-curl
+  qa-perf-event-open: quay.io/rhacs-eng/qa-multi-arch:collector-perf-event-open
 
 non_qa:
   nginx: nginx:1.14-alpine

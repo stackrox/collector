@@ -12,4 +12,5 @@
     vm_collection_method: "{{ collection_method | default('any') | replace('-', '_') }}"
     vm_available_zones: "{{ gcp_available_zones }}"
     vm_ignition: "{{ item.0.value.ignition | default({}) }}"
-
+    vm_arch: "{{ item.0.value.arch | default('amd64') }}"
+    vm_machine_type: "{{ item.0.value.machine_type | default('e2-standard-2') }}"

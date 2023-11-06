@@ -15,6 +15,9 @@ keyed_groups:
 
   - prefix: platform
     key: labels.platform
+
+  - prefix: vm_arch
+    key: labels.vm_arch
 auth_kind: serviceaccount
 service_account_file: /tmp/secret/stackrox-collector-e2e-tests/GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT
 hostnames:
@@ -32,3 +35,4 @@ compose:
   vm_image_family: labels.vm_image_family
   vm_collection_method: labels.vm_collection_method
   vm_ip_address: networkInterfaces[0].accessConfigs[0].natIP
+  vm_arch: labels.vm_arch

@@ -11,6 +11,10 @@ on:
       - opened
       - reopened
 
+concurrency:
+  group: cpaas-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   should-run:
     outputs:
@@ -82,13 +86,22 @@ jobs:
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
       arch-drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
       skip-built-drivers: true
-      build-full-image: true
-      max-layer-depth: "1"
+      archs: amd64 ppc64le s390x
     secrets: inherit
     needs:
     - init
     - build-collector-slim
     - sync-drivers-and-support-packages
+
+  build-test-containers:
+    uses: ./.github/workflows/integration-test-containers.yml
+    needs:
+    - init
+    with:
+      collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
+      collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
+      rebuild-qa-containers: ${{ needs.init.outputs.rebuild-qa-containers == 'true' }}
+    secrets: inherit
 
   integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
@@ -101,17 +114,20 @@ jobs:
         vm_type:
           - rhel
           - rhel-sap
+          - rhel-s390x
     with:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
+      collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
       offline-mode: true
       job-tag: cpaas
     needs:
     - init
     - build-collector-full
+    - build-test-containers
     secrets: inherit
 
-  # Isolating multi-arch testing temporarily while fixes are found for s390x
+  # Isolating multi-arch testing temporarily while fixes are found for ppc64le
   multiarch-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') &&
@@ -122,11 +138,11 @@ jobs:
       fail-fast: false
       matrix:
         vm_type:
-          - rhel-s390x
           - rhel-ppc64le
     with:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
+      collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
       offline-mode: true
       job-tag: cpaas
     needs:

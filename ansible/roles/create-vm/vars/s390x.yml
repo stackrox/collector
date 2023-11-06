@@ -15,3 +15,4 @@ s390x:
   ssh_key_id: r038-fb0260c7-c01d-45c8-8026-7d50042943b9
   # vsi_resource_group: stackrox-ci-resource-group
   vsi_resource_group_id: 1a33a6a9bd6e498f8115e9b1064bfa97
+  disk_size: "{{ ibm_disk_size }}"

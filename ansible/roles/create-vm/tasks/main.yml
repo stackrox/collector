@@ -31,20 +31,21 @@
       vm_config: "{{ vm_config }}"
       vm_image_family: "{{ vm_family }}"
       vm_collection_method: "{{ vm_collection_method }}"
+      vm_arch: "{{ vm_arch }}"
 
 - name: Create IBM Z VM
   include_tasks: create-s390x-vm.yml
   vars:
     vsi_name: "{{ vm_name }}"
-  when: arch_info == "s390x" and [vm_family, vm_collection_method] not in excluded_pairs
+  when: vm_arch == "s390x" and [vm_family, vm_collection_method] not in excluded_pairs
 
 - name: Create IBM POWER VM
   include_tasks: create-ppc64le-vm.yml
   vars:
     pi_name: "{{ vm_name }}"
-  when: arch_info == "ppc64le" and [vm_family, vm_collection_method] not in excluded_pairs
+  when: vm_arch == "ppc64le" and [vm_family, vm_collection_method] not in excluded_pairs
 
-- name: Create X86 VM
+- name: Create GCP VM
   google.cloud.gcp_compute_instance:
     name: "{{ vm_name }}"
     project: "{{ gcp_project }}"
@@ -77,7 +78,7 @@
     loop_var: gcp_zone
   register: instance_result
   when: >
-    arch_info == "amd64" and not condition and [vm_family, vm_collection_method] not in excluded_pairs
+    (vm_arch == "amd64" or vm_arch == "arm64") and not condition and [vm_family, vm_collection_method] not in excluded_pairs
   vars:
     condition: "{{ (instance_result | default({'changed': false})).changed }}"
 

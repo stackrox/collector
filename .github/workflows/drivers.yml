@@ -27,6 +27,9 @@ env:
 jobs:
   split-tasks:
     runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push' && github.ref_name == 'master') ||
+      github.event_name == 'pull_request'
     outputs:
       parallel-jobs: ${{ steps.set-parallel.outputs.parallel-jobs }}
       parallel-array: ${{ steps.set-parallel.outputs.parallel-array }}

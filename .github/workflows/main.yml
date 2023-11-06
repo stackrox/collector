@@ -80,7 +80,7 @@ jobs:
       drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
       arch-drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
       skip-built-drivers: ${{ needs.build-drivers.outputs.parallel-jobs == 0 }}
-      build-full-image: ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'build-full-images') }}
+      archs: amd64 ppc64le s390x arm64
     secrets: inherit
     needs:
     - init
@@ -89,12 +89,19 @@ jobs:
 
   build-test-containers:
     uses: ./.github/workflows/integration-test-containers.yml
+    needs:
+    - init
+    with:
+      collector-tag: ${{ needs.init.outputs.collector-tag }}
+      collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
+      rebuild-qa-containers: ${{ needs.init.outputs.rebuild-qa-containers == 'true' }}
     secrets: inherit
 
   integration-tests:
     uses: ./.github/workflows/integration-tests.yml
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
+      collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     needs:
     - init
@@ -107,7 +114,10 @@ jobs:
     uses: ./.github/workflows/benchmarks.yml
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
+      collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
+    # Temporarily disable benchmarks due to baseline calculation
+    # inconsistencies. This will be fixed and re-enabled in the future.
+    if: false # ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     needs:
     - init
     - build-collector-slim
@@ -126,7 +136,8 @@ jobs:
       public-support-packages-bucket: ${{ needs.init.outputs.public-support-packages-bucket }}
     if: |
       always() &&
-      (github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'test-support-packages'))
+      ((github.event_name == 'push' && github.ref_name == 'master') ||
+      contains(github.event.pull_request.labels.*.name, 'test-support-packages'))
     needs:
     - init
     - build-drivers

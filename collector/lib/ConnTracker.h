@@ -138,6 +138,21 @@ class ConnectionTracker {
   // recent than the stored one.
   void EmplaceOrUpdateNoLock(const ContainerEndpoint& ep, ConnStatus status);
 
+  //
+  // Statistics on the number of stored connections and their rate creation.
+  //
+  struct Stats {
+    struct {
+      unsigned int public_;
+      unsigned int private_;
+    } inbound, outbound;
+  };
+  // Retrieve the number of connections currently stored in ConnTracker, indexed by in/out and public/private nature.
+  Stats GetConnectionStats_StoredConnections();
+  // Retrieve the value of the ever-increasing counters of new connection insertion, indexed by in/out and public/private nature.
+  // Those counters are updated as new connections are reported by the system.
+  Stats GetConnectionStats_NewConnectionCounters();
+
  private:
   // NormalizeConnection transforms a connection into a normalized form.
   Connection NormalizeConnectionNoLock(const Connection& conn) const;
@@ -171,6 +186,8 @@ class ConnectionTracker {
     return !IsIgnoredL4ProtoPortPair(L4ProtoPortPair(cep.l4proto(), cep.endpoint().port()));
   }
 
+  inline void IncrementConnectionStats(Connection conn, ConnectionTracker::Stats& stats) const;
+
   std::mutex mutex_;
   ConnMap conn_state_;
   ContainerEndpointMap endpoint_state_;
@@ -180,6 +197,8 @@ class ConnectionTracker {
   bool enable_external_ips_ = false;
   UnorderedMap<Address::Family, bool> known_private_networks_exists_;
   UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
+
+  Stats inserted_connections_counters_ = {};
 };
 
 /* static */

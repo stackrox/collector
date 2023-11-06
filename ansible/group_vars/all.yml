@@ -5,11 +5,10 @@ ibmcloud_ssh_key_file: "{{ lookup('env', 'IBMCLOUD_SSH_KEY_FILE', default='~/.ss
 
 current_user: "{{ lookup('env', 'USER') }}"
 test_platform: "{{ lookup('env', 'VM_TYPE', default='rhel') }}"
-arch_info: "{{ 's390x' if 's390x' in test_platform else 'ppc64le' if 'ppc64le' in test_platform else 'amd64'}}"
 collector_root: "{{ playbook_dir }}/.."
 collector_repo: "quay.io/stackrox-io"
 
-ansible_ssh_private_key_file: "{{ ibmcloud_ssh_key_file if arch_info != 'amd64' else gcp_ssh_key_file }}"
+ansible_ssh_private_key_file: "{{ virtual_machines[test_platform].ssh_key_file | default(gcp_ssh_key_file) }}"
 
 # These control the container runtime used on the VMs.
 # They can be overridden in platform-specific group_vars files
@@ -26,6 +25,12 @@ excluded_pairs:
   - [ 'rhel-8-6-s390x', 'ebpf' ]
   # Also exclude Power & core_bpf, since it is currently unsupported
   - [ 'p', 'core_bpf' ]
+  # No ebpf support for arm... Yet...?
+  - [ 'rhel-9-arm64', 'ebpf' ]
+  - [ 'ubuntu-2004-lts-arm64', 'ebpf' ]
+  - [ 'ubuntu-2204-lts-arm64', 'ebpf' ]
+  - [ 'sles-15-arm64', 'ebpf' ]
+  - [ 'fedora-coreos-stable-arm64', 'ebpf' ]
 
 virtual_machines:
   rhel:
@@ -34,8 +39,17 @@ virtual_machines:
       - rhel-8
       - rhel-9
 
+  rhel-arm64:
+    project: rhel-cloud
+    arch: arm64
+    machine_type: t2a-standard-2
+    families:
+      - rhel-9-arm64
+
   rhel-s390x:
     project: rhel-s390x-cloud
+    arch: s390x
+    ssh_key_file: "{{ ibmcloud_ssh_key_file }}"
     families:
       - rhel-8-6-s390x
 
@@ -43,6 +57,8 @@ virtual_machines:
   # in ibm cloud (56 chars max)
   rhel-ppc64le:
     project: rhel-ppc64le-cloud
+    arch: ppc64le
+    ssh_key_file: "{{ ibmcloud_ssh_key_file }}"
     families:
       - p
 
@@ -54,7 +70,6 @@ virtual_machines:
 
   rhcos:
     project: rhcos-cloud
-    username: core
     images:
       - rhcos-412-86-202303211731-0-gcp-x86-64
       - rhcos-413-86-202303151429-0-gcp-x86-64
@@ -65,7 +80,7 @@ virtual_machines:
         users:
           - name: core
             sshAuthorizedKeys:
-              - "{{ lookup('file', gcp_ssh_key_file + '.pub') }}"
+              - "{{ lookup('file', gcp_ssh_key_file + '.pub', errors='ignore') }}"
 
   cos:
     project: cos-cloud
@@ -83,11 +98,26 @@ virtual_machines:
       #- sles-12
       - sles-15
 
+  sles-arm64:
+    project: suse-cloud
+    arch: arm64
+    machine_type: t2a-standard-2
+    families:
+      - sles-15-arm64
+
   ubuntu-os:
     project: ubuntu-os-cloud
     families:
       - ubuntu-2004-lts
       - ubuntu-2204-lts
+
+  ubuntu-os-arm64:
+    project: ubuntu-os-cloud
+    arch: arm64
+    machine_type: t2a-standard-2
+    families:
+      - ubuntu-2004-lts-arm64
+      - ubuntu-2204-lts-arm64
 
   ubuntu-os-pro:
     project: ubuntu-os-pro-cloud
@@ -96,15 +126,22 @@ virtual_machines:
 
   flatcar:
     project: kinvolk-public
-    username: core
     families:
       - flatcar-stable
 
   fedora-coreos:
     project: fedora-coreos-cloud
-    username: core
     families:
       - fedora-coreos-stable
+
+  # This should be 'fedora-coreos-arm64', but because of
+  # GCP VM name length restrictions, we need it to be shorter
+  fcarm:
+    project: fedora-coreos-cloud
+    arch: arm64
+    machine_type: t2a-standard-2
+    families:
+      - fedora-coreos-stable-arm64
 
   garden-linux:
     project: sap-se-gcp-gardenlinux
