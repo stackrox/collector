@@ -97,12 +97,18 @@ jobs:
       rebuild-qa-containers: ${{ needs.init.outputs.rebuild-qa-containers == 'true' }}
     secrets: inherit
 
-  address-sanitizer-unit-tests:
+  memory-checked-unit-tests:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/collector-builder:${{ needs.build-builder-image.outputs.collector-builder-tag }}
     needs:
       - build-builder-image
+    strategy:
+      fail-fast: false
+      matrix:
+        config-args:
+        - -DDISABLE_PROFILING=ON -DADDRESS_SANITIZER=ON
+        - -DDISABLE_PROFILING=ON -DUSE_VALGRIND=ON
     steps:
       - uses: actions/checkout@v3
         with:
@@ -111,8 +117,7 @@ jobs:
       - name: Run unit tests with ASAN
         run: |
           cmake -S . -B cmake-build \
-            -DDISABLE_PROFILING=ON \
-            -DADDRESS_SANITIZER=ON \
+            ${{ matrix.config-args }} \
             -DCMAKE_BUILD_TYPE=Debug
           make -C cmake-build "-j$(nproc)"
           ctest -V --test-dir cmake-build
