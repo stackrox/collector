@@ -4,15 +4,15 @@ ARG CMAKE_BUILD_DIR=${SRC_ROOT_DIR}/cmake-build
 ARG USE_VALGRIND=false
 ARG ADDRESS_SANITIZER=false
 
-# TODO: follow tags
-# TODO: use entitled RHEL/ubi to access cmake and other devel tools
+# TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 # FROM registry.access.redhat.com/ubi8/ubi:latest AS builder
+# TODO(ROX-20651): Use RHEL/ubi base image when entitlement is solved.
 FROM quay.io/centos/centos:stream8 AS builder
 
-# TODO: reduce COPY scope
+# TODO: reduce COPY scope?
 COPY . .
 
-# TODO: prefetch dependencies for hermetic builds
+# TODO(ROX-20234): use hermetic builds when installing/updating RPMs becomes hermetic.
 RUN dnf -y update && \
     dnf -y install \
         make \
@@ -32,10 +32,11 @@ RUN dnf -y update && \
         git \
         elfutils-libelf-devel \
         tbb-devel \
-        # jq-devel # TODO: if entitlement/RHEL base image is solved, this can be installed from default repository \
+        # TODO(ROX-20651): if entitlement/RHEL base image is solved, this can be installed from default repository \
+        # jq-devel
         c-ares-devel \
     && \
-      # TODO: if entitlement/RHEL base image is solved, this can be installed from default repository \
+      # TODO(ROX-20651): if entitlement/RHEL base image is solved, this can be installed from default repository \
       dnf --enablerepo=powertools -y install jq-devel \
     && \
     dnf clean all
@@ -68,33 +69,33 @@ RUN cp -a /kernel-modules/MODULE_VERSION kernel-modules/MODULE_VERSION
 RUN cp -a /CMakeLists.txt CMakeLists.txt
 
 ENV DISABLE_PROFILING=true
-# TODO: this is an old comment, understand it...
-# # TODO: Remove this variable once upstream is fully merged
-ENV WITH_RHEL8_RPMS=true
 ENV WITH_RHEL_RPMS=true
 RUN ./builder/install/install-dependencies.sh && \
     ./builder/build/build-collector.sh && \
     "${CMAKE_BUILD_DIR}/collector/runUnitTests"
 
-# TODO: use entitled RHEL/ubi to access tbb and other devel tools
+# TODO(ROX-20651): use entitled RHEL/ubi to access tbb and other devel tools
 # FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 FROM quay.io/centos/centos:stream8
 
 WORKDIR /
 
-# TODO: set labels
 LABEL \
     com.redhat.component="rhacs-collector-slim-container" \
-    name="rhacs-collector-slim-rhel8" \
+    com.redhat.license_terms="https://www.redhat.com/agreements" \
+    description="This image supports runtime data collection in the StackRox Kubernetes Security Platform" \
+    io.k8s.description="This image supports runtime data collection in the StackRox Kubernetes Security Platform" \
+    io.k8s.display-name="collector-slim" \
+    io.openshift.tags="rhacs,collector,stackrox" \
     maintainer="Red Hat, Inc." \
-    version="${CI_VERSION}" \
-    "git-commit:stackrox/collector"="${CI_COLLECTOR_UPSTREAM_COMMIT}" \
-    "git-branch:stackrox/collector"="${CI_COLLECTOR_UPSTREAM_BRANCH}" \
-    "git-tag:stackrox/collector"="${CI_COLLECTOR_UPSTREAM_TAG}"
-
-# TODO: set label
-ARG COLLECTOR_VERSION=0.0.1-todo
-LABEL collector_version="${COLLECTOR_VERSION}"
+    name="rhacs-collector-slim-rhel8" \
+    source-location="https://github.com/stackrox/collector" \
+    summary="Runtime data collection for the StackRox Kubernetes Security Platform" \
+    url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
+    # We must set version label to prevent inheriting value set in the base stage.
+    # TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
+    version="0.0.1-todo" \
+    collector_version="0.0.1-collector_version"
 
 ARG BUILD_DIR
 ARG CMAKE_BUILD_DIR
@@ -106,7 +107,7 @@ COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
 COPY --from=builder ${BUILD_DIR}/collector/container/scripts /
 
-# TODO: use microdnf if we go back to ubi-minimal image
+# TODO(ROX-20651): use microdnf if we go back to ubi-minimal image after RHEL entitlement is solved
 RUN mv /collector-wrapper.sh /usr/local/bin/ && \
     chmod 700 bootstrap.sh && \
     echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
