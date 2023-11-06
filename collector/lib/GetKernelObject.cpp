@@ -133,7 +133,7 @@ std::string Sha256HashStream(std::istream& stream) {
   unsigned char hash[SHA256_DIGEST_LENGTH];
   char buffer[4096];
   SHA256_CTX sha256;
-  char output[64];
+  char output[65];
 
   SHA256_Init(&sha256);
   while (stream) {
