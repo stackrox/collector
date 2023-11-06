@@ -1,0 +1,12 @@
+{
+    <falco-re2>
+    Memcheck:Value8
+    ...
+    fun:_Z41__static_initialization_and_destruction_0ii.constprop.0
+}
+{
+    <falco-re2>
+    Memcheck:Cond
+    ...
+    fun:_Z41__static_initialization_and_destruction_0ii.constprop.0
+}
