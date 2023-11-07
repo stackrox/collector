@@ -32,6 +32,9 @@ if(TRACE_SINSP_EVENTS)
 endif()
 
 set(FALCO_DIR ${PROJECT_SOURCE_DIR}/../falcosecurity-libs)
+set(CUSTOM_CORE_BPF_DIR ${PROJECT_SOURCE_DIR}/../kernel-modules/probe/core-bpf)
+
+list(APPEND CMAKE_MODULE_PATH ${FALCO_DIR}/cmake/modules)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/proto)
 
@@ -43,6 +46,7 @@ include_directories(${FALCO_DIR}/userspace/libsinsp)
 include_directories(${FALCO_DIR}/userspace/chisel)
 include_directories(${FALCO_DIR}/userspace/common)
 include_directories(${PROJECT_BINARY_DIR}/EXCLUDE_FROM_DEFAULT_BUILD/common)
+include_directories(${PROJECT_BINARY_DIR}/../skel_dir)
 include_directories(/usr/local/include)
 include_directories(/usr/local/include/tbb)
 include_directories(/usr/local/include/jsoncpp)
@@ -126,5 +130,10 @@ set(SCAP_HOST_ROOT_ENV_VAR_NAME "COLLECTOR_HOST_ROOT" CACHE STRING "Host root en
 set(BUILD_LIBSCAP_MODERN_BPF ON CACHE BOOL "Enable modern bpf engine" FORCE)
 
 set(MODERN_BPF_EXCLUDE_PROGS "^(openat2|ppoll|setsockopt|clone3|io_uring_setup|nanosleep)$" CACHE STRING "Set of syscalls to exclude from modern bpf engine " FORCE)
+
+set(USE_BUNDLED_MODERN_BPF OFF CACHE BOOL "Disable Falco's core-bpf driver" FORCE)
+set(MODERN_BPF_SKEL_DIR "${CMAKE_CURRENT_BINARY_DIR}/custom-core-bpf")
+
+add_subdirectory(${CUSTOM_CORE_BPF_DIR} custom-core-bpf)
 
 add_subdirectory(${FALCO_DIR} falco)

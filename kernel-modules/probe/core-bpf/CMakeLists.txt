@@ -1,6 +1,8 @@
 option(MODERN_BPF_DEBUG_MODE "Enable BPF debug prints" OFF)
 option(MODERN_BPF_EXCLUDE_PROGS "Regex to exclude tail-called programs" "")
 
+set(UNIQUE_BPF_O_FILE_NAME bpf_probe)
+
 # ##############################################################################
 # Debug mode
 # ##############################################################################
@@ -26,9 +28,10 @@ if(RESULT STREQUAL NOTFOUND)
       "${MODERN_BPF_LOG_PREFIX} problem with compute_versions.cmake in ${CMAKE_MODULE_PATH}"
   )
 endif()
-compute_versions(../API_VERSION ../SCHEMA_VERSION)
-configure_file(../driver_config.h.in
-               ${CMAKE_CURRENT_SOURCE_DIR}/../driver_config.h)
+compute_versions(${FALCO_DIR}/driver/API_VERSION
+                 ${FALCO_DIR}/driver/SCHEMA_VERSION)
+configure_file(${FALCO_DIR}/driver/driver_config.h.in
+               ${FALCO_DIR}/driver/driver_config.h)
 
 # ##############################################################################
 # Check clang version.
@@ -230,11 +233,11 @@ endif()
 # ##############################################################################
 
 # Get modern probe include.
-set(MODERN_PROBE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR})
+set(MODERN_PROBE_INCLUDE ${FALCO_DIR}/driver/modern_bpf)
 
 # Note here we use the libs root directory since we want to avoid conflicts
 # between the `bpf` folder inside `driver` and the `libbpf` includes.
-set(PPM_INCLUDE ${LIBSCAP_DIR})
+set(PPM_INCLUDE ${FALCO_DIR})
 
 # Set CLANG FLAGS
 set(CLANG_FLAGS "")
@@ -256,8 +259,43 @@ list(
 # Search all bpf includes files. (we can use bpf.h files)
 file(GLOB_RECURSE BPF_H_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 
-# Search all bpf.c files
-file(GLOB_RECURSE BPF_C_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.bpf.c)
+set(SYSCALL_ROOT_DIR
+    "${FALCO_DIR}/driver/modern_bpf/programs/tail_called/events/syscall_dispatched_events"
+)
+
+set(ATTACHED_EVENTS_ROOT_DIR
+    ${FALCO_DIR}/driver/modern_bpf/programs/attached/events)
+
+set(BPF_C_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/collector_probe.bpf.c
+    ${SYSCALL_ROOT_DIR}/accept.bpf.c
+    ${SYSCALL_ROOT_DIR}/accept4.bpf.c
+    ${SYSCALL_ROOT_DIR}/bind.bpf.c
+    ${SYSCALL_ROOT_DIR}/chdir.bpf.c
+    ${SYSCALL_ROOT_DIR}/clone.bpf.c
+    ${SYSCALL_ROOT_DIR}/clone3.bpf.c
+    ${SYSCALL_ROOT_DIR}/close.bpf.c
+    ${SYSCALL_ROOT_DIR}/connect.bpf.c
+    ${SYSCALL_ROOT_DIR}/execve.bpf.c
+    ${SYSCALL_ROOT_DIR}/execveat.bpf.c
+    ${SYSCALL_ROOT_DIR}/getsockopt.bpf.c
+    ${SYSCALL_ROOT_DIR}/setresuid.bpf.c
+    ${SYSCALL_ROOT_DIR}/setresgid.bpf.c
+    ${SYSCALL_ROOT_DIR}/shutdown.bpf.c
+    ${SYSCALL_ROOT_DIR}/socket.bpf.c
+    ${SYSCALL_ROOT_DIR}/fchdir.bpf.c
+    ${SYSCALL_ROOT_DIR}/fork.bpf.c
+    ${SYSCALL_ROOT_DIR}/vfork.bpf.c
+    ${ATTACHED_EVENTS_ROOT_DIR}/page_fault_kernel.bpf.c
+    ${ATTACHED_EVENTS_ROOT_DIR}/page_fault_user.bpf.c
+    ${ATTACHED_EVENTS_ROOT_DIR}/sched_process_exec.bpf.c
+    ${ATTACHED_EVENTS_ROOT_DIR}/sched_process_exit.bpf.c
+    ${ATTACHED_EVENTS_ROOT_DIR}/sched_process_fork.bpf.c
+    ${ATTACHED_EVENTS_ROOT_DIR}/sched_process_fork.bpf.c
+    ${ATTACHED_EVENTS_ROOT_DIR}/sched_switch.bpf.c
+    ${ATTACHED_EVENTS_ROOT_DIR}/signal_deliver.bpf.c)
+# Search all bpf.c files file(GLOB_RECURSE BPF_C_FILES
+# ${CMAKE_CURRENT_SOURCE_DIR}/*.bpf.c)
 
 # ##############################################################################
 # Generate an `bpf.o` file for every `bpf.c`
