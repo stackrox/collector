@@ -21,6 +21,9 @@ jobs:
   build-test-image:
     name: Build the integration test image
     runs-on: ubuntu-latest
+    if: |
+      github.event_name != 'pull_request' ||
+      !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests')
 
     steps:
       - uses: actions/checkout@v3
