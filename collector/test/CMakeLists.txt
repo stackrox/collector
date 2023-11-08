@@ -28,6 +28,6 @@ foreach(test_file ${TEST_SRC_FILES})
             continue()
         endif()
 
-        add_test(NAME memcheck_${test_name} COMMAND valgrind --suppressions=${CMAKE_SOURCE_DIR}/collector/test/valgrind.supp -q --leak-check=full $<TARGET_FILE:${test_name}>)
+        add_test(NAME memcheck_${test_name} COMMAND valgrind -q --leak-check=full $<TARGET_FILE:${test_name}>)
     endif()
 endforeach()
