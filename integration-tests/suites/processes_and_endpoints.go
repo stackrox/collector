@@ -41,8 +41,6 @@ func (s *ProcessesAndEndpointsTestSuite) SetupSuite() {
 
 	s.Require().NoError(err)
 	s.container = common.ContainerShortID(containerID)
-
-	time.Sleep(20 * time.Second)
 }
 
 func (s *ProcessesAndEndpointsTestSuite) TearDownSuite() {
@@ -52,8 +50,8 @@ func (s *ProcessesAndEndpointsTestSuite) TearDownSuite() {
 }
 
 func (s *ProcessesAndEndpointsTestSuite) TestProcessesAndEndpoints() {
-	processes := s.Sensor().Processes(s.container)
-	endpoints := s.Sensor().Endpoints(s.container)
+	processes := s.Sensor().ExpectProcessesN(s.T(), s.container, 20*time.Second, len(s.ExpectedProcesses))
+	endpoints := s.Sensor().ExpectEndpointsN(s.T(), s.container, 20*time.Second, len(s.ExpectedEndpoints))
 
 	assert.Equal(s.T(), len(s.ExpectedEndpoints), len(endpoints))
 	assert.Equal(s.T(), len(s.ExpectedProcesses), len(processes))
@@ -73,11 +71,5 @@ func (s *ProcessesAndEndpointsTestSuite) TestProcessesAndEndpoints() {
 		assert.Equal(s.T(), s.ExpectedEndpoints[idx].Originator.ProcessArgs, endpoints[idx].Originator.ProcessArgs)
 	}
 
-	minProcesses := common.Min(len(s.ExpectedProcesses), len(processes))
-
-	for idx := 0; idx < minProcesses; idx++ {
-		assert.Equal(s.T(), s.ExpectedProcesses[idx].Name, processes[idx].Name)
-		assert.Equal(s.T(), s.ExpectedProcesses[idx].ExePath, processes[idx].ExePath)
-		assert.Equal(s.T(), s.ExpectedProcesses[idx].Args, processes[idx].Args)
-	}
+	assert.ElementsMatch(s.T(), s.ExpectedProcesses, processes)
 }
