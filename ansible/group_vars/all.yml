@@ -31,6 +31,8 @@ excluded_pairs:
   - [ 'ubuntu-2204-lts-arm64', 'ebpf' ]
   - [ 'sles-15-arm64', 'ebpf' ]
   - [ 'fedora-coreos-stable-arm64', 'ebpf' ]
+  # eBPF on Garden Linux is not supported.
+  - [ 'garden-linux', 'ebpf' ]
 
 virtual_machines:
   rhel:
