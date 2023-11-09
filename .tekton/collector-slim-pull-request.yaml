@@ -1,14 +1,16 @@
-apiVersion: tekton.dev/v1
+apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
+
 metadata:
   annotations:
     build.appstudio.openshift.io/repo: https://github.com/stackrox/collector?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
-    pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch
-      == "tm/rhtap-onboarding"
+    pipelinesascode.tekton.dev/max-keep-runs: "500"
+    pipelinesascode.tekton.dev/on-event: '[pull_request]'
+    # TODO: change to '[*]'
+    pipelinesascode.tekton.dev/on-target-branch: '[tm/rhtap-onboarding]'
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: acs
@@ -16,21 +18,49 @@ metadata:
     pipelines.appstudio.openshift.io/type: build
   name: collector-slim-on-pull-request
   namespace: rh-acs-tenant
+
 spec:
+
   params:
   - name: dockerfile
     value: rhtap.Dockerfile
   - name: git-url
     value: '{{repo_url}}'
   - name: image-expires-after
-    value: 5d
+    value: '13w'
   - name: output-image
     value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/collector-slim:on-pr-{{revision}}
   - name: path-context
     value: .
   - name: revision
     value: '{{revision}}'
+  - name: rebuild
+    value: 'true'
+  # TODO(ROX-20234): Enable hermetic builds
+  # - name: hermetic
+  #   value: "true"
+  # TODO(ROX-20482): Enable dependencies prefetch
+  # - name: prefetch-input
+  #   value: '{"type": "gomod", "path": "."}'
+
+  workspaces:
+  - name: workspace
+    volumeClaimTemplate:
+      metadata:
+        creationTimestamp: null
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi
+      status: { }
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
+
   pipelineSpec:
+
     finally:
     - name: show-sbom
       params:
@@ -64,6 +94,7 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+
     params:
     - description: Source Repository URL
       name: git-url
@@ -93,10 +124,6 @@ spec:
       description: Skip checks against built image
       name: skip-checks
       type: string
-    - default: "true"
-      description: Skip optional checks, set false if you want to run optional checks
-      name: skip-optional
-      type: string
     - default: "false"
       description: Execute the build with network isolation
       name: hermetic
@@ -113,11 +140,7 @@ spec:
       description: Image tag expiration time, time values could be something like
         1h, 2d, 3w for hours, days, and weeks, respectively.
       name: image-expires-after
-      type: string
-    - default: "false"
-      description: Build a source image.
-      name: build-source-image
-      type: string
+
     results:
     - description: ""
       name: IMAGE_URL
@@ -134,17 +157,19 @@ spec:
     - description: ""
       name: JAVA_COMMUNITY_DEPENDENCIES
       value: $(tasks.build-container.results.JAVA_COMMUNITY_DEPENDENCIES)
+
+    workspaces:
+    - name: workspace
+    - name: git-auth
+
     tasks:
+
     - name: init
       params:
       - name: image-url
         value: $(params.output-image)
       - name: rebuild
         value: $(params.rebuild)
-      - name: skip-checks
-        value: $(params.skip-checks)
-      - name: skip-optional
-        value: $(params.skip-optional)
       - name: pipelinerun-name
         value: $(context.pipelineRun.name)
       - name: pipelinerun-uid
@@ -158,6 +183,7 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+
     - name: clone-repository
       params:
       - name: url
@@ -178,13 +204,13 @@ spec:
       when:
       - input: $(tasks.init.results.build)
         operator: in
-        values:
-        - "true"
+        values: [ "true" ]
       workspaces:
       - name: output
         workspace: workspace
       - name: basic-auth
         workspace: git-auth
+
     - name: prefetch-dependencies
       params:
       - name: input
@@ -203,11 +229,11 @@ spec:
       when:
       - input: $(params.hermetic)
         operator: in
-        values:
-        - "true"
+        values: [ "true" ]
       workspaces:
       - name: source
         workspace: workspace
+
     - name: build-container
       params:
       - name: IMAGE
@@ -238,60 +264,54 @@ spec:
       when:
       - input: $(tasks.init.results.build)
         operator: in
-        values:
-        - "true"
+        values: [ "true" ]
       workspaces:
       - name: source
         workspace: workspace
-    - name: build-source-image
+
+    - name: inspect-image
       params:
-      - name: BINARY_IMAGE
-        value: $(params.output-image)
-      - name: BASE_IMAGES
-        value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
+      - name: IMAGE_URL
+        value: $(tasks.build-container.results.IMAGE_URL)
+      - name: IMAGE_DIGEST
+        value: $(tasks.build-container.results.IMAGE_DIGEST)
       runAfter:
       - build-container
       taskRef:
         params:
         - name: name
-          value: source-build
+          value: inspect-image
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-source-build:0.1@sha256:e751a76622743cf51b35ba230768be9886535b7cf51491c2b8513979e7a577d8
-        - name: kind
-          value: task
-        resolver: bundles
-      when:
-      - input: $(tasks.init.results.build)
-        operator: in
-        values:
-        - "true"
-      - input: $(params.build-source-image)
-        operator: in
-        values:
-        - "true"
-      workspaces:
-      - name: workspace
-        workspace: workspace
-    - name: deprecated-base-image-check
-      params:
-      - name: BASE_IMAGES_DIGESTS
-        value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
-      runAfter:
-      - build-container
-      taskRef:
-        params:
-        - name: name
-          value: deprecated-image-check
-        - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-deprecated-image-check:0.3@sha256:f23d0cca3c02a78fb2b2760d0fba28a3196fa7bcc106da35f45ef95d1f8e7065
+          value: quay.io/redhat-appstudio-tekton-catalog/task-inspect-image:0.1@sha256:3a5d3f611240eb5b7b12799c2be22a71803df80dbc12cce2e1e2a252ab543423
         - name: kind
           value: task
         resolver: bundles
       when:
       - input: $(params.skip-checks)
         operator: in
-        values:
-        - "false"
+        values: [ "false" ]
+      workspaces:
+      - name: source
+        workspace: workspace
+
+    - name: deprecated-base-image-check
+      params:
+      - name: BASE_IMAGES_DIGESTS
+        value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
+      taskRef:
+        params:
+        - name: name
+          value: deprecated-image-check
+        - name: bundle
+          value: quay.io/redhat-appstudio-tekton-catalog/task-deprecated-image-check:0.3@sha256:43e226dba9b1230cd271219f33d29dece3e9b2fd6f824aa33beeb5e285f15324
+        - name: kind
+          value: task
+        resolver: bundles
+      when:
+      - input: $(params.skip-checks)
+        operator: in
+        values: [ "false" ]
+
     - name: clair-scan
       params:
       - name: image-digest
@@ -312,8 +332,8 @@ spec:
       when:
       - input: $(params.skip-checks)
         operator: in
-        values:
-        - "false"
+        values: [ "false" ]
+
     - name: sast-snyk-check
       runAfter:
       - clone-repository
@@ -322,18 +342,18 @@ spec:
         - name: name
           value: sast-snyk-check
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-sast-snyk-check:0.1@sha256:f57c69cfedf37a46dd61285b5b9b4805ff196facaad2d7cdeded496c77d31bec
+          value: quay.io/redhat-appstudio-tekton-catalog/task-sast-snyk-check:0.1@sha256:edd4ba638b71de52c2662abd3e93fd876e6e75cd07b162d13fae014d3a1a1fac
         - name: kind
           value: task
         resolver: bundles
       when:
       - input: $(params.skip-checks)
         operator: in
-        values:
-        - "false"
+        values: [ "false" ]
       workspaces:
       - name: workspace
         workspace: workspace
+
     - name: clamav-scan
       params:
       - name: image-digest
@@ -354,8 +374,8 @@ spec:
       when:
       - input: $(params.skip-checks)
         operator: in
-        values:
-        - "false"
+        values: [ "false" ]
+
     - name: sbom-json-check
       params:
       - name: IMAGE_URL
@@ -376,26 +396,6 @@ spec:
       when:
       - input: $(params.skip-checks)
         operator: in
-        values:
-        - "false"
-    workspaces:
-    - name: workspace
-    - name: git-auth
-      optional: true
-  taskRunTemplate: {}
-  workspaces:
-  - name: workspace
-    volumeClaimTemplate:
-      metadata:
-        creationTimestamp: null
-      spec:
-        accessModes:
-        - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi
-      status: {}
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
-status: {}
+        values: [ "false" ]
+
+status: { }
