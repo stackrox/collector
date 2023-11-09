@@ -2,7 +2,7 @@
 
 plugin: gcp_compute
 projects:
-  - stackrox-dev
+  - acs-team-sandbox
 filters:
   - name = collector-dev-*
 keyed_groups:
