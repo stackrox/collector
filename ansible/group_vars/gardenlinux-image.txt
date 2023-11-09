@@ -1,1 +1,1 @@
-gardenlinux-gcp-gardener-prod-amd64-934-9-54c63e5
+gardenlinux-gcp-gardener-prod-amd64-934-11-75132b8
