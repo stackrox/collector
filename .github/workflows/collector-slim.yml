@@ -81,6 +81,7 @@ jobs:
             --limit localhost \
             -e collector_image='${{ inputs.collector-image }}' \
             -e arch='${{ matrix.arch }}' \
+            -e disable_profiling="${{ matrix.arch != 'amd64' && matrix.arch != 'arm64' }}" \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-collector.yml
         env:
