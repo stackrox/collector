@@ -5,8 +5,13 @@ ARG USE_VALGRIND=false
 ARG ADDRESS_SANITIZER=false
 
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
-# FROM registry.access.redhat.com/ubi8/ubi:latest AS builder
 # TODO(ROX-20651): Use RHEL/ubi base image when entitlement is solved.
+# RPMs requiring entitlement: bpftool, cmake-3.18.2-9.el8, elfutils-libelf-devel, tbb-devel, c-ares-devel, jq-devel
+# Even when getting as many dependencies as possible through the WITH_RHEL_RPMS=false approve, with an unentitled ubi image,
+# bpftool cmake-3.18.2-9.el8 elfutils-libelf-devel are still missing.
+# FROM registry.access.redhat.com/ubi8/ubi:latest AS builder
+
+# Can not use stream9, because cmake-3.18.2 is not available.
 FROM quay.io/centos/centos:stream8 AS builder
 
 # TODO: reduce COPY scope?
@@ -54,7 +59,8 @@ ENV CMAKE_BUILD_DIR=${CMAKE_BUILD_DIR}
 ARG CMAKE_BUILD_TYPE=Release
 ENV CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 
-# TODO: what does this do?
+# Appends an argument to the driver download URL that is used for filtering alerts on missing kernels.
+# TODO: This needs to be true on PRs only.
 ARG COLLECTOR_APPEND_CID=false
 ENV COLLECTOR_APPEND_CID=${COLLECTOR_APPEND_CID}
 
@@ -69,6 +75,9 @@ RUN cp -a /kernel-modules/MODULE_VERSION kernel-modules/MODULE_VERSION
 RUN cp -a /CMakeLists.txt CMakeLists.txt
 
 ENV DISABLE_PROFILING=true
+# WITH_RHEL_RPMS controls for dependency installation if they were already installed as RPMs.
+# Setting the value to 'false' will cause dependencies to be downloaded (as archives or from repositories) and compiled.
+# That is not possible with hermetic builds.
 ENV WITH_RHEL_RPMS=true
 RUN ./builder/install/install-dependencies.sh && \
     ./builder/build/build-collector.sh && \
