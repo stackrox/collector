@@ -119,7 +119,7 @@ start-builder: builder teardown-builder
 
 .PHONY: check-builder
 check-builder:
-	$(shell $(CURDIR)/utilities/check-builder.sh $(COLLECTOR_BUILDER_NAME))
+	$(CURDIR)/utilities/check-builder.sh $(COLLECTOR_BUILDER_NAME)
 
 .PHONY: teardown-builder
 teardown-builder:

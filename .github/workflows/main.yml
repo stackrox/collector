@@ -107,8 +107,8 @@ jobs:
       fail-fast: false
       matrix:
         config-args:
-        - -DDISABLE_PROFILING=ON -DADDRESS_SANITIZER=ON
-        - -DDISABLE_PROFILING=ON -DUSE_VALGRIND=ON
+        - -DADDRESS_SANITIZER=ON
+        - -DUSE_VALGRIND=ON
     steps:
       - uses: actions/checkout@v3
         with:

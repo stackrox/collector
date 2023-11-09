@@ -7,7 +7,7 @@ foreach(test_file ${TEST_SRC_FILES})
     get_filename_component(test_name ${test_file} NAME_WE)
     add_executable("${test_name}" "${test_file}")
 
-    if(NOT DISABLE_PROFILING AND NOT USE_VALGRIND)
+    if(NOT DISABLE_PROFILING)
         target_link_libraries(${test_name} profiler tcmalloc)
     endif()
 
@@ -28,6 +28,6 @@ foreach(test_file ${TEST_SRC_FILES})
             continue()
         endif()
 
-        add_test(NAME memcheck_${test_name} COMMAND valgrind -q --leak-check=full $<TARGET_FILE:${test_name}>)
+        add_test(NAME memcheck_${test_name} COMMAND valgrind -q --leak-check=full --trace-children=yes $<TARGET_FILE:${test_name}>)
     endif()
 endforeach()
