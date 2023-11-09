@@ -26,6 +26,8 @@ jobs:
   init:
     uses: ./.github/workflows/init.yml
     secrets: inherit
+    with:
+      cpaas-workflow: false
 
   build-drivers:
     uses: ./.github/workflows/drivers.yml
