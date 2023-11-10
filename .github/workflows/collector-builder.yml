@@ -22,7 +22,7 @@ jobs:
     name: Determine if builder image needs to be built
     runs-on: ubuntu-latest
     outputs:
-      build-image: "false"
+      build-image: ${{ steps.changed.outputs.builder-changed }}
 
     steps:
       - uses: actions/checkout@v3
