@@ -8,6 +8,11 @@
     COLLECTOR_TAG: "{{ ansible_env.COLLECTOR_TAG }}"
 
   tasks:
+    - name: Run the builder image
+      community.general.make:
+        chdir: "{{ lookup('env', 'GITHUB_WORKSPACE') }}"
+        target: start-builder
+
     - name: Build the collector image
       community.general.make:
         chdir: "{{ lookup('env', 'GITHUB_WORKSPACE') }}"
