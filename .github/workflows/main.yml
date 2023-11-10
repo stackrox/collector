@@ -102,7 +102,7 @@ jobs:
   memory-checked-unit-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/collector-builder:${{ needs.build-builder-image.outputs.collector-builder-tag }}
+      image: quay.io/stackrox-io/collector-builder:${{ needs.build-builder-image.outputs.collector-builder-tag || 'master' }}
     needs:
       - build-builder-image
     strategy:
