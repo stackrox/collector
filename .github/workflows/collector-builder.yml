@@ -11,7 +11,7 @@ on:
     outputs:
       collector-builder-tag:
         description: The builder tag used by the build
-        value: ${{ jobs.build-builder-image.outputs.collector-builder-tag }}
+        value: ${{ jobs.build-builder-image.outputs.collector-builder-tag || 'master' }}
 
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
