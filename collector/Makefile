@@ -74,6 +74,7 @@ scan-build: scan-build/configure
 		scan-build --exclude falcosecurity-libs \
 			--exclude cmake-build/skel_dir \
 			--status-bugs \
+			-no-failure-reports \
 			-maxloop 50 \
 			-o cmake-build/scan-build \
 			make -C cmake-build/ -j"$(nproc)" collector connscrape
