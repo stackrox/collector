@@ -267,7 +267,6 @@ set(ATTACHED_EVENTS_ROOT_DIR
     ${FALCO_DIR}/driver/modern_bpf/programs/attached/events)
 
 set(BPF_C_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/collector_probe.bpf.c
     ${FALCO_DIR}/driver/modern_bpf/license/license.bpf.c
     ${SYSCALL_ROOT_DIR}/accept.bpf.c
     ${SYSCALL_ROOT_DIR}/accept4.bpf.c
@@ -293,7 +292,8 @@ set(BPF_C_FILES
     ${ATTACHED_EVENTS_ROOT_DIR}/sched_process_exit.bpf.c
     ${ATTACHED_EVENTS_ROOT_DIR}/sched_process_fork.bpf.c
     ${ATTACHED_EVENTS_ROOT_DIR}/sched_process_fork.bpf.c
-    ${ATTACHED_EVENTS_ROOT_DIR}/sched_switch.bpf.c)
+    ${ATTACHED_EVENTS_ROOT_DIR}/sched_switch.bpf.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/collector_probe.bpf.c)
 # Search all bpf.c files file(GLOB_RECURSE BPF_C_FILES
 # ${CMAKE_CURRENT_SOURCE_DIR}/*.bpf.c)
 
