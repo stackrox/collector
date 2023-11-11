@@ -9,12 +9,18 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall --std=c++17 -pthread -Wno-de
 set(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-strict-aliasing -DNDEBUG")
 
-if(NOT DEFINED ENV{DISABLE_PROFILING})
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCOLLECTOR_PROFILING")
+if(ADDRESS_SANITIZER)
+	set(DISABLE_PROFILING ON)
+	set(USE_VALGRIND OFF)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fsanitize=undefined -DGRPC_ASAN_SUPRESSED")
 endif()
 
-if(ADDRESS_SANITIZER)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+if(USE_VALGRIND)
+	set(DISABLE_PROFILING ON)
+endif()
+
+if(NOT DISABLE_PROFILING)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCOLLECTOR_PROFILING")
 endif()
 
 if(COLLECTOR_APPEND_CID)
@@ -22,7 +28,7 @@ if(COLLECTOR_APPEND_CID)
 endif()
 
 if(TRACE_SINSP_EVENTS)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTRACE_SINSP_EVENTS")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTRACE_SINSP_EVENTS")
 endif()
 
 set(FALCO_DIR ${PROJECT_SOURCE_DIR}/../falcosecurity-libs)
@@ -35,6 +41,7 @@ include_directories(${FALCO_DIR}/userspace)
 include_directories(${FALCO_DIR}/userspace/libscap)
 include_directories(${FALCO_DIR}/userspace/libsinsp)
 include_directories(${FALCO_DIR}/userspace/chisel)
+include_directories(${FALCO_DIR}/userspace/common)
 include_directories(${PROJECT_BINARY_DIR}/EXCLUDE_FROM_DEFAULT_BUILD/common)
 include_directories(/usr/local/include)
 include_directories(/usr/local/include/tbb)
@@ -68,7 +75,7 @@ target_link_libraries(collector_lib z ssl crypto CURL::libcurl bpf)
 add_executable(collector collector.cpp)
 target_link_libraries(collector collector_lib)
 
-if(NOT DEFINED ENV{DISABLE_PROFILING})
+if(NOT DISABLE_PROFILING)
 	target_link_libraries(collector profiler tcmalloc)
 endif()
 
@@ -80,26 +87,7 @@ target_link_libraries(connscrape collector_lib)
 
 add_executable(self-checks self-checks.cpp)
 
-# Setup testing
-enable_testing()
-
-# Unit Tests
-file(GLOB TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/test/*.cpp)
-add_executable(runUnitTests ${TEST_SRC_FILES})
-
-if(NOT DEFINED ENV{DISABLE_PROFILING} AND (NOT DEFINED ENV{USE_VALGRIND} OR NOT "$ENV{USE_VALGRIND}"))
-	target_link_libraries(runUnitTests profiler tcmalloc)
-endif()
-
-target_link_libraries(runUnitTests collector_lib)
-
-if(DEFINED ENV{WITH_RHEL_RPMS})
-	target_link_libraries(runUnitTests gtest gtest_main gmock gmock_main)
-else()
-	target_link_libraries(runUnitTests libgtest.a libgtest_main.a libgmock.a libgmock_main.a)
-endif()
-
-add_test(collector-tests runUnitTests)
+add_subdirectory(test)
 
 # Falco Wrapper Library
 set(BUILD_DRIVER OFF CACHE BOOL "Build the driver on Linux" FORCE)

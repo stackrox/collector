@@ -21,7 +21,7 @@ on:
         default: ""
 
 jobs:
-  required-integration-tests:
+  amd64-required-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
     strategy:
       # ensure that if one part of the matrix fails, the
@@ -38,7 +38,7 @@ jobs:
       job-tag: ${{ inputs.job-tag }}
     secrets: inherit
 
-  all-integration-tests:
+  amd64-all-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
     if: contains(github.event.pull_request.labels.*.name, 'all-integration-tests') || github.event_name == 'push'
     strategy:
@@ -63,12 +63,34 @@ jobs:
       job-tag: ${{ inputs.job-tag }}
     secrets: inherit
 
+  arm64-integration-tests:
+    uses: ./.github/workflows/integration-tests-vm-type.yml
+    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
+    strategy:
+      # ensure that if one part of the matrix fails, the
+      # rest will continue
+      fail-fast: false
+      matrix:
+        vm_type:
+          - rhel-arm64
+          - ubuntu-os-arm64
+          - sles-arm64
+          - fcarm
+
+    with:
+      vm_type: ${{ matrix.vm_type }}
+      collector-tag: ${{ inputs.collector-tag }}
+      collector-qa-tag: ${{ inputs.collector-qa-tag }}
+      job-tag: ${{ inputs.job-tag }}
+    secrets: inherit
+
   notify:
     runs-on: ubuntu-latest
     if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name == 'push'
     needs:
-      - required-integration-tests
-      - all-integration-tests
+      - amd64-required-integration-tests
+      - amd64-all-integration-tests
+      - arm64-integration-tests
     steps:
       - name: Slack notification
         uses: rtCamp/action-slack-notify@v2

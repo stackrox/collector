@@ -13,6 +13,14 @@ ifeq ($(COLLECTOR_QA_TAG),)
 COLLECTOR_QA_TAG=$(shell cat container/QA_TAG | tr -d '\n')
 endif
 
+ifeq ($(COLLECTOR_TESTS_REPO),)
+COLLECTOR_TESTS_REPO=quay.io/rhacs-eng/qa-multi-arch
+endif
+
+ifeq ($(COLLECTOR_TESTS_IMAGE),)
+COLLECTOR_TESTS_IMAGE=$(COLLECTOR_TESTS_REPO):collector-tests-$(COLLECTOR_TAG)
+endif
+
 SHELL=/bin/bash
 
 # Environment variable COLLECTOR_IMAGE is used by integration-tests
@@ -39,6 +47,12 @@ $(foreach element,$(ALL_TESTS),$(eval $(call make-test-target,$(element))))
 build:
 	mkdir -p bin
 	go test -tags bench -c -o bin/collector-tests
+
+.PHONY: build-image
+build-image:
+	docker build --platform $(PLATFORM) -t $(COLLECTOR_TESTS_IMAGE) \
+		--build-arg QA_TAG=$(shell cat container/QA_TAG) \
+		$(CURDIR)
 
 # Run everything on CI, rather than specific tests.
 .PHONY: ci-integration-tests

@@ -26,6 +26,8 @@ jobs:
   init:
     uses: ./.github/workflows/init.yml
     secrets: inherit
+    with:
+      cpaas-workflow: false
 
   build-drivers:
     uses: ./.github/workflows/drivers.yml
@@ -80,6 +82,7 @@ jobs:
       drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
       arch-drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
       skip-built-drivers: ${{ needs.build-drivers.outputs.parallel-jobs == 0 }}
+      archs: amd64 ppc64le s390x arm64
     secrets: inherit
     needs:
     - init
@@ -95,6 +98,34 @@ jobs:
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
       rebuild-qa-containers: ${{ needs.init.outputs.rebuild-qa-containers == 'true' }}
     secrets: inherit
+
+  memory-checked-unit-tests:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/collector-builder:${{ needs.build-builder-image.outputs.collector-builder-tag }}
+    needs:
+      - build-builder-image
+    strategy:
+      fail-fast: false
+      matrix:
+        config-args:
+        - -DADDRESS_SANITIZER=ON
+        - -DUSE_VALGRIND=ON
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Build collector
+        run: |
+          cmake -S . -B cmake-build \
+            ${{ matrix.config-args }} \
+            -DCMAKE_BUILD_TYPE=Debug
+          make -C cmake-build "-j$(nproc)"
+
+      - name: Run unit tests
+        run: |
+          ctest -V --test-dir cmake-build
 
   integration-tests:
     uses: ./.github/workflows/integration-tests.yml
@@ -114,7 +145,9 @@ jobs:
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
+    # Temporarily disable benchmarks due to baseline calculation
+    # inconsistencies. This will be fixed and re-enabled in the future.
+    if: false # ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     needs:
     - init
     - build-collector-slim
@@ -133,7 +166,8 @@ jobs:
       public-support-packages-bucket: ${{ needs.init.outputs.public-support-packages-bucket }}
     if: |
       always() &&
-      (github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'test-support-packages'))
+      ((github.event_name == 'push' && github.ref_name == 'master') ||
+      contains(github.event.pull_request.labels.*.name, 'test-support-packages'))
     needs:
     - init
     - build-drivers

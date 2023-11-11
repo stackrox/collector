@@ -11,6 +11,10 @@ on:
       - opened
       - reopened
 
+concurrency:
+  group: cpaas-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   should-run:
     outputs:
@@ -27,6 +31,8 @@ jobs:
     - should-run
     if: needs.should-run.outputs.should-run == 'true'
     uses: ./.github/workflows/init.yml
+    with:
+      cpaas-workflow: true
 
   sync-drivers-and-support-packages:
     uses: ./.github/workflows/cpaas-sync-drivers.yml
@@ -82,11 +88,22 @@ jobs:
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
       arch-drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
       skip-built-drivers: true
+      archs: amd64 ppc64le s390x
     secrets: inherit
     needs:
     - init
     - build-collector-slim
     - sync-drivers-and-support-packages
+
+  build-test-containers:
+    uses: ./.github/workflows/integration-test-containers.yml
+    needs:
+    - init
+    with:
+      collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
+      collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
+      rebuild-qa-containers: ${{ needs.init.outputs.rebuild-qa-containers == 'true' }}
+    secrets: inherit
 
   integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
@@ -109,6 +126,7 @@ jobs:
     needs:
     - init
     - build-collector-full
+    - build-test-containers
     secrets: inherit
 
   # Isolating multi-arch testing temporarily while fixes are found for ppc64le

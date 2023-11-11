@@ -22,8 +22,10 @@
     keys:
       - "{{ s390x.ssh_key_id }}"
     primary_network_interface:
-     - subnet: "{{ s390x.subnet_id }}"
+      - subnet: "{{ s390x.subnet_id }}"
     zone: "{{ s390x.zone }}"
+    boot_volume:
+      - size: "{{ s390x.disk_size }}"
   register: vsi
 
 - name: Check for existing Floating IP

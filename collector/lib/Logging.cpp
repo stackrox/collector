@@ -48,7 +48,7 @@ void SetLogLevel(LogLevel level) {
 }
 
 bool CheckLogLevel(LogLevel level) {
-  return level >= GetLogLevel();
+  return level <= GetLogLevel();
 }
 
 const char* GetLogLevelName(LogLevel level) {
@@ -98,6 +98,11 @@ bool ParseLogLevelName(std::string name, LogLevel* level) {
   }
   *level = it->second;
   return true;
+}
+
+void InspectorLogCallback(std::string&& msg, sinsp_logger::severity severity) {
+  auto collector_severity = (LogLevel)severity;
+  collector::logging::LogMessage(__FILE__, __LINE__, false, collector_severity) << msg;
 }
 
 const char* GetGlobalLogPrefix() {

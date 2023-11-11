@@ -25,6 +25,14 @@ excluded_pairs:
   - [ 'rhel-8-6-s390x', 'ebpf' ]
   # Also exclude Power & core_bpf, since it is currently unsupported
   - [ 'p', 'core_bpf' ]
+  # No ebpf support for arm... Yet...?
+  - [ 'rhel-9-arm64', 'ebpf' ]
+  - [ 'ubuntu-2004-lts-arm64', 'ebpf' ]
+  - [ 'ubuntu-2204-lts-arm64', 'ebpf' ]
+  - [ 'sles-15-arm64', 'ebpf' ]
+  - [ 'fedora-coreos-stable-arm64', 'ebpf' ]
+  # eBPF on Garden Linux is not supported.
+  - [ 'garden-linux', 'ebpf' ]
 
 virtual_machines:
   rhel:
@@ -32,6 +40,13 @@ virtual_machines:
     families:
       - rhel-8
       - rhel-9
+
+  rhel-arm64:
+    project: rhel-cloud
+    arch: arm64
+    machine_type: t2a-standard-2
+    families:
+      - rhel-9-arm64
 
   rhel-s390x:
     project: rhel-s390x-cloud
@@ -85,11 +100,26 @@ virtual_machines:
       #- sles-12
       - sles-15
 
+  sles-arm64:
+    project: suse-cloud
+    arch: arm64
+    machine_type: t2a-standard-2
+    families:
+      - sles-15-arm64
+
   ubuntu-os:
     project: ubuntu-os-cloud
     families:
       - ubuntu-2004-lts
       - ubuntu-2204-lts
+
+  ubuntu-os-arm64:
+    project: ubuntu-os-cloud
+    arch: arm64
+    machine_type: t2a-standard-2
+    families:
+      - ubuntu-2004-lts-arm64
+      - ubuntu-2204-lts-arm64
 
   ubuntu-os-pro:
     project: ubuntu-os-pro-cloud
@@ -105,6 +135,15 @@ virtual_machines:
     project: fedora-coreos-cloud
     families:
       - fedora-coreos-stable
+
+  # This should be 'fedora-coreos-arm64', but because of
+  # GCP VM name length restrictions, we need it to be shorter
+  fcarm:
+    project: fedora-coreos-cloud
+    arch: arm64
+    machine_type: t2a-standard-2
+    families:
+      - fedora-coreos-stable-arm64
 
   garden-linux:
     project: sap-se-gcp-gardenlinux

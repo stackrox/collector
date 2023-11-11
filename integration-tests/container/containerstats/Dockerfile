@@ -15,6 +15,10 @@ FROM base AS base-amd64
 
 RUN yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 
+FROM base AS base-arm64
+
+RUN yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
 FROM base-${TARGETARCH} as final
 
 RUN yum install -y docker-ce docker-ce-cli && \

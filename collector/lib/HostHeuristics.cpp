@@ -23,9 +23,15 @@ class CollectionHeuristic : public Heuristic {
                   << " does not support eBPF, which is a requirement for Collector.";
     }
 
+    auto kernel = host.GetKernelVersion();
     // If we're configured to use eBPF with BTF, we try to be conservative
     // and fail instead of falling-back to ebpf.
     if (config.GetCollectionMethod() == CollectionMethod::CORE_BPF) {
+      if (kernel.machine == "ppc64le") {
+        CLOG(FATAL) << "CORE_BPF collection method is not supported on ppc64le. "
+                    << "HINT: Change collection method to eBPF with collector.collectionMethod=EBPF.";
+      }
+
       if (!host.HasBTFSymbols()) {
         CLOG(FATAL) << "Missing BTF symbols, core_bpf is not available. "
                     << "They can be provided by the kernel when configured with DEBUG_INFO_BTF, "
@@ -36,8 +42,7 @@ class CollectionHeuristic : public Heuristic {
 
       if (!host.HasBPFRingBufferSupport()) {
         CLOG(FATAL) << "Missing RingBuffer support, core_bpf is not available. "
-                    << "HINT: You may alternatively want to use eBPF based collection "
-                    << "with collector.collectionMethod=EBPF.";
+                    << "HINT: Change collection method to eBPF with collector.collectionMethod=EBPF.";
       }
 
       if (!host.HasBPFTracingSupport()) {
@@ -49,7 +54,8 @@ class CollectionHeuristic : public Heuristic {
     if (config.GetCollectionMethod() == CollectionMethod::EBPF) {
       if (host.HasBTFSymbols() &&
           host.HasBPFRingBufferSupport() &&
-          host.HasBPFTracingSupport()) {
+          host.HasBPFTracingSupport() &&
+          kernel.machine != "ppc64le") {
         CLOG(INFO) << "CORE_BPF collection method is available. "
                    << "Check the documentation to compare features of "
                    << "available collection methods.";
@@ -87,10 +93,23 @@ class S390XHeuristic : public Heuristic {
   }
 };
 
+class ARM64Heuristic : public Heuristic {
+ public:
+  void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
+    auto kernel = host.GetKernelVersion();
+
+    if (kernel.machine == "aarch64" && config.GetCollectionMethod() == CollectionMethod::EBPF) {
+      CLOG(WARNING) << "eBPF collection method is not supported on ARM, switching to CO-RE BPF collection method.";
+      hconfig->SetCollectionMethod(CollectionMethod::CORE_BPF);
+    }
+  }
+};
+
 const std::unique_ptr<Heuristic> g_host_heuristics[] = {
     std::unique_ptr<Heuristic>(new CollectionHeuristic),
     std::unique_ptr<Heuristic>(new DockerDesktopHeuristic),
     std::unique_ptr<Heuristic>(new S390XHeuristic),
+    std::unique_ptr<Heuristic>(new ARM64Heuristic),
 };
 
 }  // namespace

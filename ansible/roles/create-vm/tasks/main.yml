@@ -45,7 +45,7 @@
     pi_name: "{{ vm_name }}"
   when: vm_arch == "ppc64le" and [vm_family, vm_collection_method] not in excluded_pairs
 
-- name: Create X86 VM
+- name: Create GCP VM
   google.cloud.gcp_compute_instance:
     name: "{{ vm_name }}"
     project: "{{ gcp_project }}"
@@ -78,7 +78,7 @@
     loop_var: gcp_zone
   register: instance_result
   when: >
-    vm_arch == "amd64" and not condition and [vm_family, vm_collection_method] not in excluded_pairs
+    (vm_arch == "amd64" or vm_arch == "arm64") and not condition and [vm_family, vm_collection_method] not in excluded_pairs
   vars:
     condition: "{{ (instance_result | default({'changed': false})).changed }}"
 
