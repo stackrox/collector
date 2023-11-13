@@ -318,7 +318,7 @@ foreach(BPF_C_FILE ${BPF_C_FILES})
   if(USE_BUNDLED_LIBBPF)
     add_custom_command(
       OUTPUT ${BPF_O_FILE}
-      COMMAND ${MODERN_CLANG_EXE} ${CLANG_FLAGS} ${CLANG_SYSTEM_INCLUDES} -c
+      COMMAND ${MODERN_CLANG_EXE} ${CLANG_FLAGS} ${CLANG_SYSTEM_INCLUDES} -I ${FALCO_DIR}/driver/modern_bpf -c
               ${BPF_C_FILE} -o ${BPF_O_FILE}
       VERBATIM
       DEPENDS libbpf
@@ -327,7 +327,7 @@ foreach(BPF_C_FILE ${BPF_C_FILES})
   else()
     add_custom_command(
       OUTPUT ${BPF_O_FILE}
-      COMMAND ${MODERN_CLANG_EXE} ${CLANG_FLAGS} ${CLANG_SYSTEM_INCLUDES} -c
+      COMMAND ${MODERN_CLANG_EXE} ${CLANG_FLAGS} ${CLANG_SYSTEM_INCLUDES} -I ${FALCO_DIR}/driver/modern_bpf -c
               ${BPF_C_FILE} -o ${BPF_O_FILE}
       VERBATIM
       DEPENDS ${BPF_C_FILE} ${BPF_H_FILES}
