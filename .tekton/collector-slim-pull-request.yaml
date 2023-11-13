@@ -9,8 +9,7 @@ metadata:
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
     pipelinesascode.tekton.dev/on-event: '[pull_request]'
-    # TODO: change to '[*]'
-    pipelinesascode.tekton.dev/on-target-branch: '[tm/rhtap-onboarding]'
+    pipelinesascode.tekton.dev/on-target-branch: '[*]'
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: acs
