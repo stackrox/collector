@@ -1,0 +1,6 @@
+*.ll
+*.o
+.Module.symvers.cmd
+.modules.order.cmd
+Module.symvers
+modules.order
