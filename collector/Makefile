@@ -17,19 +17,21 @@ COLLECTOR_BUILD_DEPS := $(HDRS) $(SRCS) $(shell find falcosecurity-libs -name '*
 
 .SUFFIXES:
 
-cmake-build/collector: $(COLLECTOR_BUILD_DEPS)
-	docker rm -fv build_collector || true
-	docker run --rm --platform ${PLATFORM} --name build_collector \
-		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
-		-e NPROCS=$(NPROCS) \
-		-e SRC_ROOT_DIR="$(SRC_MOUNT_DIR)" \
-		-e CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
-		-e USE_VALGRIND=$(USE_VALGRIND) \
-		-e TRACE_SINSP_EVENTS=$(TRACE_SINSP_EVENTS) \
-		-e ADDRESS_SANITIZER=$(ADDRESS_SANITIZER) \
-		-e COLLECTOR_APPEND_CID=$(COLLECTOR_APPEND_CID) \
-		-e DISABLE_PROFILING="true" \
-		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) "$(SRC_MOUNT_DIR)/builder/build/build-collector.sh"
+cmake-configure/collector:
+	docker exec $(COLLECTOR_BUILDER_NAME) \
+		cmake -S $(BASE_PATH) -B $(CMAKE_DIR) \
+			-DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
+			-DDISABLE_PROFILING=$(DISABLE_PROFILING) \
+			-DUSE_VALGRIND=$(USE_VALGRIND) \
+			-DADDRESS_SANITIZER=$(ADDRESS_SANITIZER) \
+			-DTRACE_SINSP_EVENTS=$(TRACE_SINSP_EVENTS) \
+			-DCOLLECTOR_APPEND_CID=$(COLLECTOR_APPEND_CID)
+
+cmake-build/collector: cmake-configure/collector $(COLLECTOR_BUILD_DEPS)
+	docker exec $(COLLECTOR_BUILDER_NAME) \
+		cmake --build $(CMAKE_DIR) -- -j $(NPROCS)
+	docker exec $(COLLECTOR_BUILDER_NAME) \
+		bash -c "[ $(CMAKE_BUILD_TYPE) == Release ] && strip --strip-unneeded $(COLLECTOR_BIN_DIR)/collector $(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so"
 
 container/bin/collector: cmake-build/collector
 	mkdir -p container/bin
@@ -39,7 +41,7 @@ container/bin/collector: cmake-build/collector
 .PHONY: collector
 collector: container/bin/collector txt-files
 	mkdir -p container/libs
-	cp -r "$(CMAKE_DIR)"/THIRD_PARTY_NOTICES/* container/THIRD_PARTY_NOTICES/
+	docker cp $(COLLECTOR_BUILDER_NAME):/THIRD_PARTY_NOTICES/ container/
 	cp "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so" container/libs/libsinsp-wrapper.so
 
 .PHONY: build-connscrape-test
@@ -54,11 +56,8 @@ connscrape: build-connscrape-test
 		connscrape-test "$(SRC_MOUNT_DIR)/collector/connscrape-test/connscrape-test.sh"
 
 unittest: collector
-	docker rm -fv collector_unittest || true
-	docker run --rm --platform ${PLATFORM} --name collector_unittest \
-		-v "$(LIBSINSP_BIN_DIR)/libsinsp-wrapper.so:/usr/local/lib/libsinsp-wrapper.so:ro" \
-		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
-		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) $(COLLECTOR_PRE_ARGUMENTS) "$(SRC_MOUNT_DIR)/$(CMAKE_BASE_DIR)/collector/runUnitTests"
+	docker exec $(COLLECTOR_BUILDER_NAME) \
+		ctest -V --test-dir $(CMAKE_DIR)
 
 .PHONY: txt-files
 txt-files:

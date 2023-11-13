@@ -26,6 +26,8 @@ jobs:
   init:
     uses: ./.github/workflows/init.yml
     secrets: inherit
+    with:
+      cpaas-workflow: false
 
   build-drivers:
     uses: ./.github/workflows/drivers.yml
@@ -96,6 +98,34 @@ jobs:
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
       rebuild-qa-containers: ${{ needs.init.outputs.rebuild-qa-containers == 'true' }}
     secrets: inherit
+
+  memory-checked-unit-tests:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/collector-builder:${{ needs.build-builder-image.outputs.collector-builder-tag }}
+    needs:
+      - build-builder-image
+    strategy:
+      fail-fast: false
+      matrix:
+        config-args:
+        - -DADDRESS_SANITIZER=ON
+        - -DUSE_VALGRIND=ON
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Build collector
+        run: |
+          cmake -S . -B cmake-build \
+            ${{ matrix.config-args }} \
+            -DCMAKE_BUILD_TYPE=Debug
+          make -C cmake-build "-j$(nproc)"
+
+      - name: Run unit tests
+        run: |
+          ctest -V --test-dir cmake-build
 
   integration-tests:
     uses: ./.github/workflows/integration-tests.yml

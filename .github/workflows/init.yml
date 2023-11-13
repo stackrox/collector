@@ -2,6 +2,11 @@ name: Run global initialization of CI
 
 on:
   workflow_call:
+    inputs:
+      cpaas-workflow:
+        description: true if running from the CPaaS workflow
+        type: boolean
+        required: true
     outputs:
       collector-tag:
         description: The tag used when building collector
@@ -153,7 +158,8 @@ jobs:
               echo "push-drivers-bucket=${STAGING_DRIVER_BUCKET}"
               echo "merged-drivers-bucket=${STAGING_MERGED_DRIVER_BUCKET}"
               echo "support-packages-bucket=${STAGING_SUPPORT_PACKAGES_BUCKET}"
-              if [[ ${{ contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps') }} == "true" ]]; then
+              if [[ "${{ inputs.cpaas-workflow }}" == "true" &&
+                    "${{ contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps') }}" == "true" ]]; then
                   echo "cpaas-drivers-bucket=${CPAAS_STAGING_DRIVERS_BUCKET}"
                   echo "cpaas-all-archs-drivers-bucket=${CPAAS_STAGING_ALL_ARCHS_DRIVERS_BUCKET}"
                   echo "cpaas-support-packages-bucket=${CPAAS_STAGING_SUPPORT_PACKAGES_BUCKET}"

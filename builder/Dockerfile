@@ -29,6 +29,7 @@ RUN dnf -y update \
         git \
         glibc-devel \
         libasan \
+        libubsan \
         libcap-ng-devel \
         libcurl-devel \
         libtool \
