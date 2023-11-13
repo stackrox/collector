@@ -18,18 +18,18 @@ struct sys_exit_args {
 static int enter_probe(long id, struct sys_enter_args* ctx);
 static int exit_probe(long id, struct sys_exit_args* ctx);
 
-#define PROBE_SIGNATURE(prefix, event) \
-  SEC("tp_btf/" #event)                \
+#define PROBE_SIGNATURE(event) \
+  SEC("tp/" #event)            \
   int BPF_PROG(event)
 
 #define _COLLECTOR_ENTER_PROBE(name, syscall_id)               \
-  PROBE_SIGNATURE("syscalls/", sys_enter_##name) {             \
+  PROBE_SIGNATURE(sys_enter_##name) {                          \
     struct sys_enter_args* args = (struct sys_enter_args*)ctx; \
     return enter_probe(syscall_id, args);                      \
   }
 
 #define _COLLECTOR_EXIT_PROBE(name, syscall_id)              \
-  PROBE_SIGNATURE("syscalls/", sys_exit_##name) {            \
+  PROBE_SIGNATURE(sys_exit_##name) {                         \
     struct sys_exit_args* args = (struct sys_exit_args*)ctx; \
     return exit_probe(syscall_id, ctx);                      \
   }
