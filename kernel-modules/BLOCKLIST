@@ -84,3 +84,8 @@
 # These builds are broken but we no longer support kmods
 # See: https://github.com/falcosecurity/libs/pull/1174
 ~.*\.el9_[3-9]\..* * mod
+# Block kernel modules for RHEL 8.9
+# Those have backported the change which was already an issue here:
+# https://github.com/falcosecurity/libs/issues/918
+# Since kmods are not supported anyway, block these combination
+~.*\.el8_9\..* * mod
