@@ -16,10 +16,6 @@ on:
         type: boolean
         required: true
         description: Whether the QA containers should be rebuilt
-      build-multi-arch:
-        type: boolean
-        required: true
-        description: Whether to build multi-arch containers
 
 jobs:
   build-test-image:
