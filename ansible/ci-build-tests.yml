@@ -7,11 +7,11 @@
   tasks:
     - set_fact:
         platforms: "linux/amd64,linux/ppc64le,linux/s390x,linux/arm64"
-      when: bool(build_multi_arch)
+      when: build_multi_arch|bool
 
     - set_fact:
         platforms: "linux/amd64"
-      when: not bool(build_multi_arch)
+      when: not (build_multi_arch|bool)
 
     - set_fact:
         collector_root: "{{ lookup('env', 'GITHUB_WORKSPACE') }}"
