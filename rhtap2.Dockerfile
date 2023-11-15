@@ -109,13 +109,22 @@ ENV COLLECTOR_VERSION="${COLLECTOR_VERSION}"
 ENV MODULE_VERSION="${MODULE_VERSION}"
 ENV COLLECTOR_HOST_ROOT=/host
 
-LABEL name="collector" \
-      vendor="StackRox" \
-      maintainer="support@stackrox.com" \
-      summary="Runtime data collection for the StackRox Kubernetes Security Platform" \
-      description="This image supports runtime data collection in the StackRox Kubernetes Security Platform." \
-      io.stackrox.collector.module-version="${MODULE_VERSION}" \
-      io.stackrox.collector.version="${COLLECTOR_VERSION}"
+LABEL \
+    com.redhat.component="rhacs-collector-slim-container" \
+    com.redhat.license_terms="https://www.redhat.com/agreements" \
+    description="This image supports runtime data collection in the StackRox Kubernetes Security Platform" \
+    io.k8s.description="This image supports runtime data collection in the StackRox Kubernetes Security Platform" \
+    io.k8s.display-name="collector-slim" \
+    io.openshift.tags="rhacs,collector,stackrox" \
+    maintainer="Red Hat, Inc." \
+    name="rhacs-collector-slim-rhel8" \
+    source-location="https://github.com/stackrox/collector" \
+    summary="Runtime data collection for the StackRox Kubernetes Security Platform" \
+    url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
+    # We must set version label to prevent inheriting value set in the base stage.
+    # TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
+    version="0.0.1-todo" \
+    collector_version="0.0.1-collector_version"
 
 WORKDIR /
 
