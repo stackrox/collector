@@ -16,6 +16,10 @@ on:
         type: boolean
         required: true
         description: Whether the QA containers should be rebuilt
+      build-multi-arch:
+        type: boolean
+        required: true
+        description: Whether to build multi-arch containers
 
 jobs:
   build-test-image:
@@ -49,6 +53,7 @@ jobs:
           ansible-playbook \
             --connection local -i localhost, --limit localhost \
             -e test_image='quay.io/rhacs-eng/qa-multi-arch:collector-tests-${{ inputs.collector-tag }}' \
+            -e build_multi_arch="${{ contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') }}" \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-tests.yml
 
