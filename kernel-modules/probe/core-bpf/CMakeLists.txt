@@ -251,16 +251,19 @@ list(
   -D__${DEBUG}__
   -D__TARGET_ARCH_${ARCH} # Match libbpf usage in `/libbpf/src/bpf_tracing.h`
   -D__USE_VMLINUX__ # Used to compile without kernel headers.
+  -DPRIMARY_SECTION_TYPE="tp"
   -I${LIBBPF_INCLUDE}
   -I${MODERN_PROBE_INCLUDE}
   -I${PPM_INCLUDE}
+  -I${FALCO_DIR}/driver/modern_bpf
+  -I${CMAKE_CURRENT_SOURCE_DIR}/include
   -isystem)
 
 # Search all bpf includes files. (we can use bpf.h files)
 file(GLOB_RECURSE BPF_H_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 
 set(SYSCALL_ROOT_DIR
-    "${FALCO_DIR}/driver/modern_bpf/programs/tail_called/events/syscall_dispatched_events"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tail-called"
 )
 
 set(ATTACHED_EVENTS_ROOT_DIR
@@ -270,10 +273,9 @@ set(BPF_C_FILES
     ${FALCO_DIR}/driver/modern_bpf/license/license.bpf.c
     ${SYSCALL_ROOT_DIR}/accept.bpf.c
     ${SYSCALL_ROOT_DIR}/accept4.bpf.c
-    ${SYSCALL_ROOT_DIR}/bind.bpf.c
     ${SYSCALL_ROOT_DIR}/chdir.bpf.c
     ${SYSCALL_ROOT_DIR}/clone.bpf.c
-    ${SYSCALL_ROOT_DIR}/clone3.bpf.c
+    #${SYSCALL_ROOT_DIR}/clone3.bpf.c
     ${SYSCALL_ROOT_DIR}/close.bpf.c
     ${SYSCALL_ROOT_DIR}/connect.bpf.c
     ${SYSCALL_ROOT_DIR}/execve.bpf.c
@@ -281,6 +283,8 @@ set(BPF_C_FILES
     ${SYSCALL_ROOT_DIR}/getsockopt.bpf.c
     ${SYSCALL_ROOT_DIR}/setresuid.bpf.c
     ${SYSCALL_ROOT_DIR}/setresgid.bpf.c
+    ${SYSCALL_ROOT_DIR}/setuid.bpf.c
+    ${SYSCALL_ROOT_DIR}/setgid.bpf.c
     ${SYSCALL_ROOT_DIR}/shutdown.bpf.c
     ${SYSCALL_ROOT_DIR}/socket.bpf.c
     ${SYSCALL_ROOT_DIR}/fchdir.bpf.c
@@ -318,7 +322,7 @@ foreach(BPF_C_FILE ${BPF_C_FILES})
   if(USE_BUNDLED_LIBBPF)
     add_custom_command(
       OUTPUT ${BPF_O_FILE}
-      COMMAND ${MODERN_CLANG_EXE} ${CLANG_FLAGS} ${CLANG_SYSTEM_INCLUDES} -I ${FALCO_DIR}/driver/modern_bpf -c
+      COMMAND ${MODERN_CLANG_EXE} ${CLANG_FLAGS} ${CLANG_SYSTEM_INCLUDES} -c
               ${BPF_C_FILE} -o ${BPF_O_FILE}
       VERBATIM
       DEPENDS libbpf
@@ -327,7 +331,7 @@ foreach(BPF_C_FILE ${BPF_C_FILES})
   else()
     add_custom_command(
       OUTPUT ${BPF_O_FILE}
-      COMMAND ${MODERN_CLANG_EXE} ${CLANG_FLAGS} ${CLANG_SYSTEM_INCLUDES} -I ${FALCO_DIR}/driver/modern_bpf -c
+      COMMAND ${MODERN_CLANG_EXE} ${CLANG_FLAGS} ${CLANG_SYSTEM_INCLUDES} -c
               ${BPF_C_FILE} -o ${BPF_O_FILE}
       VERBATIM
       DEPENDS ${BPF_C_FILE} ${BPF_H_FILES}

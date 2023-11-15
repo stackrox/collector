@@ -31,38 +31,38 @@ static int exit_probe(long id, struct sys_exit_args* ctx);
 #define _COLLECTOR_EXIT_PROBE(name, syscall_id)              \
   PROBE_SIGNATURE(sys_exit_##name) {                         \
     struct sys_exit_args* args = (struct sys_exit_args*)ctx; \
-    return exit_probe(syscall_id, ctx);                      \
+    return exit_probe(syscall_id, args);                     \
   }
 
 #define COLLECTOR_PROBE(name, syscall_id) \
   _COLLECTOR_EXIT_PROBE(name, syscall_id) \
   _COLLECTOR_ENTER_PROBE(name, syscall_id)
 
-COLLECTOR_PROBE(chdir, __NR_chdir);
+// COLLECTOR_PROBE(chdir, __NR_chdir);
 #ifdef __NR_accept
-COLLECTOR_PROBE(accept, __NR_accept);
+// COLLECTOR_PROBE(accept, __NR_accept);
 #endif
-COLLECTOR_PROBE(accept4, __NR_accept4);
-COLLECTOR_PROBE(clone, __NR_clone);
-COLLECTOR_PROBE(close, __NR_close);
-COLLECTOR_PROBE(connect, __NR_connect);
-COLLECTOR_PROBE(execve, __NR_execve);
-COLLECTOR_PROBE(getsockopt, __NR_getsockopt);
-COLLECTOR_PROBE(setresgid, __NR_setresgid);
-COLLECTOR_PROBE(setresuid, __NR_setresuid);
-COLLECTOR_PROBE(setgid, __NR_setgid);
-COLLECTOR_PROBE(setuid, __NR_setuid);
-COLLECTOR_PROBE(shutdown, __NR_shutdown);
-COLLECTOR_PROBE(socket, __NR_socket);
-#ifdef CAPTURE_SOCKETCALL
-// The socketcall handling in driver/bpf/plumbing_helpers.h will filter
-// socket calls based on those mentioned here.  Therefore, updates to
-// socket calls needs to be synchronized.
-COLLECTOR_PROBE(socketcall, __NR_socketcall)
-#endif
-COLLECTOR_PROBE(fchdir, __NR_fchdir);
-COLLECTOR_PROBE(fork, __NR_fork);
-COLLECTOR_PROBE(vfork, __NR_vfork);
+// COLLECTOR_PROBE(accept4, __NR_accept4);
+// COLLECTOR_PROBE(clone, __NR_clone);
+// COLLECTOR_PROBE(close, __NR_close);
+// COLLECTOR_PROBE(connect, __NR_connect);
+// COLLECTOR_PROBE(execve, __NR_execve);
+// COLLECTOR_PROBE(getsockopt, __NR_getsockopt);
+// COLLECTOR_PROBE(setresgid, __NR_setresgid);
+// COLLECTOR_PROBE(setresuid, __NR_setresuid);
+// COLLECTOR_PROBE(setgid, __NR_setgid);
+// COLLECTOR_PROBE(setuid, __NR_setuid);
+// COLLECTOR_PROBE(shutdown, __NR_shutdown);
+// COLLECTOR_PROBE(socket, __NR_socket);
+// #ifdef CAPTURE_SOCKETCALL
+// // The socketcall handling in driver/bpf/plumbing_helpers.h will filter
+// // socket calls based on those mentioned here.  Therefore, updates to
+// // socket calls needs to be synchronized.
+// COLLECTOR_PROBE(socketcall, __NR_socketcall)
+// #endif
+// COLLECTOR_PROBE(fchdir, __NR_fchdir);
+// COLLECTOR_PROBE(fork, __NR_fork);
+// COLLECTOR_PROBE(vfork, __NR_vfork);
 
 int enter_probe(long id, struct sys_enter_args* ctx) {
   if (!syscalls_dispatcher__64bit_interesting_syscall(id)) {
