@@ -3,9 +3,16 @@
   hosts: all
 
   environment:
-    PLATFORMS: "linux/amd64,linux/ppc64le,linux/s390x,linux/arm64"
 
   tasks:
+    - set_fact:
+        platforms: "linux/amd64,linux/ppc64le,linux/s390x,linux/arm64"
+      when: build_multi_arch|bool
+
+    - set_fact:
+        platforms: "linux/amd64"
+      when: not (build_multi_arch|bool)
+
     - set_fact:
         collector_root: "{{ lookup('env', 'GITHUB_WORKSPACE') }}"
 
@@ -24,7 +31,7 @@
         #   - we can push the images and manifest in a single command. The make
         #     target can be used for local development and testing.
         docker buildx build --push \
-          --platform "${PLATFORMS}" \
+          --platform "{{ platforms }}" \
           -t '{{ test_image }}' \
           {{ collector_root }}/integration-tests
       register: build_result
