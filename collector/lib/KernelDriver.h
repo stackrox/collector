@@ -45,6 +45,12 @@ class IKernelDriver {
       }
     }
 
+    /*
+     * Earlier version of Falco used to include procexit by default, now we
+     * have to explicitly add it alongside with the required syscalls.
+     * procexit is essential for keeping threadinfo cache under control.
+     */
+    ppm_sc.insert((ppm_sc_code)PPM_SC_SCHED_PROCESS_EXIT);
     return ppm_sc;
   }
 };
