@@ -37,7 +37,7 @@ on:
           and overwrite any colliding drivers.
       max-layer-depth:
         type: string
-        default: "5"
+        default: "6"
         description: |
           Max layer the drivers will be split into
 
