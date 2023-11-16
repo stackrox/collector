@@ -7,45 +7,53 @@ ARG ADDRESS_SANITIZER=false
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 # TODO(ROX-20651): Use RHEL/ubi base image when entitlement is solved.
 # RPMs requiring entitlement: bpftool, cmake-3.18.2-9.el8, elfutils-libelf-devel, tbb-devel, c-ares-devel, jq-devel
-# Even when getting as many dependencies as possible through the WITH_RHEL_RPMS=false approve, with an unentitled ubi image,
-# bpftool cmake-3.18.2-9.el8 elfutils-libelf-devel are still missing.
 # FROM registry.access.redhat.com/ubi8/ubi:latest AS builder
-
-# Can not use stream9, because cmake-3.18.2 is not available.
-FROM quay.io/centos/centos:stream8 AS builder
+FROM quay.io/centos/centos:stream9 AS builder
 
 # TODO: reduce COPY scope?
 COPY . .
 
 # TODO(ROX-20234): use hermetic builds when installing/updating RPMs becomes hermetic.
-RUN dnf -y update && \
-    dnf -y install \
-        make \
-        wget \
-        unzip \
-        clang \
-        bpftool \
-        cmake-3.18.2-9.el8 \
-        gcc-c++ \
-        openssl-devel \
-        ncurses-devel \
-        curl-devel \
-        libuuid-devel \
-        libcap-ng-devel \
+RUN dnf -y update \
+    && dnf -y install --nobest \
         autoconf \
-        libtool \
-        git \
+        automake \
+        binutils-devel \
+        bison \
+        ca-certificates \
+        clang-15.0.7 \
+        cmake \
+        cracklib-dicts \
+        diffutils \
         elfutils-libelf-devel \
-        # tbb-devel \
-        tbb \
-        # TODO(ROX-20651): if entitlement/RHEL base image is solved, this can be installed from default repository \
-        # jq-devel
-        c-ares-devel \
-    && \
-      # TODO(ROX-20651): if entitlement/RHEL base image is solved, this can be installed from default repository \
-      dnf --enablerepo=powertools -y install jq-devel \
-    && \
-    dnf clean all
+        file \
+        flex \
+        gcc \
+        gcc-c++ \
+        gdb \
+        gettext \
+        git \
+        glibc-devel \
+        libasan \
+        libubsan \
+        libcap-ng-devel \
+        libcurl-devel \
+        libtool \
+        libuuid-devel \
+        make \
+        openssh-server \
+        openssl-devel \
+        patchutils \
+        passwd \
+        pkgconfig \
+        rsync \
+        tar \
+        unzip \
+        valgrind \
+        wget \
+        which \
+        bpftool \
+    && dnf clean all
 
 ARG BUILD_DIR
 ENV BUILD_DIR=${BUILD_DIR}
@@ -77,7 +85,8 @@ RUN cp -a /builder builder \
 # WITH_RHEL_RPMS controls for dependency installation if they were already installed as RPMs.
 # Setting the value to 'false' will cause dependencies to be downloaded (as archives or from repositories) and compiled.
 # That is not possible with hermetic builds.
-ENV WITH_RHEL_RPMS=true
+#
+ENV WITH_RHEL_RPMS=false
 RUN ./builder/install/install-dependencies.sh && \
     cmake -DDISABLE_PROFILING=ON -S "${SRC_ROOT_DIR}" -B "${CMAKE_BUILD_DIR}" && \
     cmake --build "${CMAKE_BUILD_DIR}" --target all -- -j "$(nproc)" && \
@@ -96,63 +105,63 @@ RUN mkdir -p /container/bin \
     && mkdir -p /container/libs/ \
     && cp "${COLLECTOR_BIN_DIR}/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so" /container/libs/libsinsp-wrapper.so
 
-# FROM registry.access.redhat.com/ubi9/ubi-minimal:9.2
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.2
 
-# ARG BUILD_TYPE=rhel
-# ARG ROOT_DIR=.
-# ARG COLLECTOR_VERSION
-# ARG MODULE_VERSION
+ARG BUILD_TYPE=rhel
+ARG ROOT_DIR=.
+ARG COLLECTOR_VERSION
+ARG MODULE_VERSION
 
-# ENV ROOT_DIR=$ROOT_DIR
-# ENV COLLECTOR_VERSION="${COLLECTOR_VERSION}"
+ENV ROOT_DIR=$ROOT_DIR
+ENV COLLECTOR_VERSION="${COLLECTOR_VERSION}"
 
-# # TODO: must be set, propagated to /kernel-modules/MODULE_VERSION.txt, also coming from kernel-modules/MODULE_VERSION.txt, so what's the point?
-# ENV MODULE_VERSION="${MODULE_VERSION}"
-# ENV COLLECTOR_HOST_ROOT=/host
+# TODO: must be set, propagated to /kernel-modules/MODULE_VERSION.txt, also coming from kernel-modules/MODULE_VERSION.txt, so what's the point?
+ENV MODULE_VERSION="${MODULE_VERSION}"
+ENV COLLECTOR_HOST_ROOT=/host
 
-# LABEL \
-#     com.redhat.component="rhacs-collector-slim-container" \
-#     com.redhat.license_terms="https://www.redhat.com/agreements" \
-#     description="This image supports runtime data collection in the StackRox Kubernetes Security Platform" \
-#     io.k8s.description="This image supports runtime data collection in the StackRox Kubernetes Security Platform" \
-#     io.k8s.display-name="collector-slim" \
-#     io.openshift.tags="rhacs,collector,stackrox" \
-#     maintainer="Red Hat, Inc." \
-#     name="rhacs-collector-slim-rhel8" \
-#     source-location="https://github.com/stackrox/collector" \
-#     summary="Runtime data collection for the StackRox Kubernetes Security Platform" \
-#     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
-#     # We must set version label to prevent inheriting value set in the base stage.
-#     # TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
-#     version="0.0.1-todo" \
-#     collector_version="0.0.1-collector_version"
-#     # These two labels only exist on upstream
-#     # io.stackrox.collector.module-version="${MODULE_VERSION}" \
-#     # io.stackrox.collector.version="${COLLECTOR_VERSION}"
+LABEL \
+    com.redhat.component="rhacs-collector-slim-container" \
+    com.redhat.license_terms="https://www.redhat.com/agreements" \
+    description="This image supports runtime data collection in the StackRox Kubernetes Security Platform" \
+    io.k8s.description="This image supports runtime data collection in the StackRox Kubernetes Security Platform" \
+    io.k8s.display-name="collector-slim" \
+    io.openshift.tags="rhacs,collector,stackrox" \
+    maintainer="Red Hat, Inc." \
+    name="rhacs-collector-slim-rhel8" \
+    source-location="https://github.com/stackrox/collector" \
+    summary="Runtime data collection for the StackRox Kubernetes Security Platform" \
+    url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
+    # We must set version label to prevent inheriting value set in the base stage.
+    # TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
+    version="0.0.1-todo" \
+    collector_version="0.0.1-collector_version"
+    # These two labels only exist on upstream
+    # io.stackrox.collector.module-version="${MODULE_VERSION}" \
+    # io.stackrox.collector.version="${COLLECTOR_VERSION}"
 
-# WORKDIR /
+WORKDIR /
 
-# COPY collector/container/${BUILD_TYPE}/install.sh /
-# RUN ./install.sh && rm -f install.sh
+COPY collector/container/${BUILD_TYPE}/install.sh /
+RUN ./install.sh && rm -f install.sh
 
-# COPY collector/container/scripts/collector-wrapper.sh /usr/local/bin
-# COPY collector/container/scripts/bootstrap.sh /
-# COPY collector/LICENSE-kernel-modules.txt /kernel-modules/LICENSE
-# COPY --from=builder /container/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
-# COPY --from=builder /container/libs/libsinsp-wrapper.so /usr/local/lib/
-# COPY --from=builder /container/bin/collector /usr/local/bin/collector
-# COPY --from=builder /container/bin/self-checks /usr/local/bin/self-checks
+COPY collector/container/scripts/collector-wrapper.sh /usr/local/bin
+COPY collector/container/scripts/bootstrap.sh /
+COPY collector/LICENSE-kernel-modules.txt /kernel-modules/LICENSE
+COPY --from=builder /container/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
+COPY --from=builder /container/libs/libsinsp-wrapper.so /usr/local/lib/
+COPY --from=builder /container/bin/collector /usr/local/bin/collector
+COPY --from=builder /container/bin/self-checks /usr/local/bin/self-checks
 
-# RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
-#     ldconfig && \
-#     echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt && \
-#     chmod 700 bootstrap.sh
+RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
+    ldconfig && \
+    echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt && \
+    chmod 700 bootstrap.sh
 
-# EXPOSE 8080 9090
+EXPOSE 8080 9090
 
-# ENTRYPOINT ["/bootstrap.sh"]
+ENTRYPOINT ["/bootstrap.sh"]
 
-# CMD collector-wrapper.sh \
-#     --collector-config=$COLLECTOR_CONFIG \
-#     --collection-method=$COLLECTION_METHOD \
-#     --grpc-server=$GRPC_SERVER
+CMD collector-wrapper.sh \
+    --collector-config=$COLLECTOR_CONFIG \
+    --collection-method=$COLLECTION_METHOD \
+    --grpc-server=$GRPC_SERVER
