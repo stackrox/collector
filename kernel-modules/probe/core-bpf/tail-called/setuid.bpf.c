@@ -4,6 +4,7 @@
  * This file is dual licensed under either the MIT or GPL 2. See MIT.txt
  * or GPL2.txt for full copies of the license.
  */
+#include <preamble.h>
 
 #include <helpers/interfaces/fixed_size_event.h>
 
@@ -11,6 +12,10 @@
 
 SEC("ksyscall/setuid")
 int BPF_KSYSCALL(sys_enter_setuid) {
+  if (!preamble(__NR_setuid)) {
+    return 0;
+  }
+
   struct ringbuf_struct ringbuf;
   if (!ringbuf__reserve_space(&ringbuf, SETUID_E_SIZE)) {
     return 0;
@@ -37,6 +42,10 @@ int BPF_KSYSCALL(sys_enter_setuid) {
 
 SEC("kretsyscall/setuid")
 int BPF_KSYSCALL(sys_exit_setuid, long ret) {
+  if (!preamble(__NR_setuid)) {
+    return 0;
+  }
+
   struct ringbuf_struct ringbuf;
   if (!ringbuf__reserve_space(&ringbuf, SETUID_X_SIZE)) {
     return 0;

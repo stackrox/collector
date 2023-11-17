@@ -5,6 +5,8 @@
  * or GPL2.txt for full copies of the license.
  */
 
+#include <preamble.h>
+
 #include <helpers/interfaces/fixed_size_event.h>
 #include <helpers/interfaces/variable_size_event.h>
 
@@ -12,6 +14,10 @@
 
 SEC("ksyscall/fork")
 int BPF_KSYSCALL(sys_enter_fork) {
+  if (!preamble(__NR_fork)) {
+    return 0;
+  }
+
   struct ringbuf_struct ringbuf;
   if (!ringbuf__reserve_space(&ringbuf, FORK_E_SIZE)) {
     return 0;
@@ -36,6 +42,10 @@ int BPF_KSYSCALL(sys_enter_fork) {
 
 SEC("kretsyscall/fork")
 int BPF_KSYSCALL(sys_exit_fork, long ret) {
+  if (!preamble(__NR_fork)) {
+    return 0;
+  }
+
 /* We already catch the fork child event with our `sched_process_fork` tracepoint,
  * for this reason we don't need also this instrumentation. Please note that we use
  * the aforementioned tracepoint only for the child event but we need to catch also

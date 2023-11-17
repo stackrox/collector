@@ -5,12 +5,18 @@
  * or GPL2.txt for full copies of the license.
  */
 
+#include <preamble.h>
+
 #include <helpers/interfaces/fixed_size_event.h>
 
 /*=============================== ENTER EVENT ===========================*/
 
 SEC("ksyscall/close")
 int BPF_KSYSCALL(sys_enter_close) {
+  if (!preamble(__NR_close)) {
+    return 0;
+  }
+
   struct ringbuf_struct ringbuf;
   if (!ringbuf__reserve_space(&ringbuf, CLOSE_E_SIZE)) {
     return 0;
@@ -37,6 +43,12 @@ int BPF_KSYSCALL(sys_enter_close) {
 
 SEC("kretsyscall/close")
 int BPF_KSYSCALL(sys_exit_close, long ret) {
+  if (!preamble(__NR_close)) {
+    return 0;
+  }
+
+  bpf_printk("ret: %d", ret);
+
   struct ringbuf_struct ringbuf;
   if (!ringbuf__reserve_space(&ringbuf, CLOSE_X_SIZE)) {
     return 0;

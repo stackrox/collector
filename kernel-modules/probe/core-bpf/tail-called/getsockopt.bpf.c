@@ -4,6 +4,7 @@
  * This file is dual licensed under either the MIT or GPL 2. See MIT.txt
  * or GPL2.txt for full copies of the license.
  */
+#include <preamble.h>
 
 #include <helpers/interfaces/fixed_size_event.h>
 #include <helpers/interfaces/variable_size_event.h>
@@ -12,6 +13,10 @@
 
 SEC("ksyscall/getsockopt")
 int BPF_KSYSCALL(sys_enter_getsockopt) {
+  if (!preamble(__NR_getsockopt)) {
+    return 0;
+  }
+
   struct ringbuf_struct ringbuf;
   if (!ringbuf__reserve_space(&ringbuf, GETSOCKOPT_E_SIZE)) {
     return 0;
@@ -36,6 +41,10 @@ int BPF_KSYSCALL(sys_enter_getsockopt) {
 
 SEC("kretsyscall/getsockopt")
 int BPF_KSYSCALL(sys_exit_getsockopt, long ret) {
+  if (!preamble(__NR_getsockopt)) {
+    return 0;
+  }
+
   struct auxiliary_map* auxmap = auxmap__get();
   if (!auxmap) {
     return 0;

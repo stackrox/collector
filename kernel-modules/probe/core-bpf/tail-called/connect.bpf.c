@@ -5,6 +5,8 @@
  * or GPL2.txt for full copies of the license.
  */
 
+#include <preamble.h>
+
 #include <asm-generic/errno.h>
 #include <helpers/interfaces/variable_size_event.h>
 
@@ -12,6 +14,10 @@
 
 SEC("ksyscall/connect")
 int BPF_KSYSCALL(sys_enter_connect) {
+  if (!preamble(__NR_connect)) {
+    return 0;
+  }
+
   struct auxiliary_map* auxmap = auxmap__get();
   if (!auxmap) {
     return 0;
@@ -47,6 +53,10 @@ int BPF_KSYSCALL(sys_enter_connect) {
 
 SEC("kretsyscall/connect")
 int BPF_KSYSCALL(sys_exit_connect, long ret) {
+  if (!preamble(__NR_connect)) {
+    return 0;
+  }
+
   struct auxiliary_map* auxmap = auxmap__get();
   if (!auxmap) {
     return 0;

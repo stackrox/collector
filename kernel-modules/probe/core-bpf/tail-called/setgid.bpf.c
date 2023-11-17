@@ -4,6 +4,7 @@
  * This file is dual licensed under either the MIT or GPL 2. See MIT.txt
  * or GPL2.txt for full copies of the license.
  */
+#include <preamble.h>
 
 #include <helpers/interfaces/fixed_size_event.h>
 
@@ -11,6 +12,10 @@
 
 SEC("ksyscall/setgid")
 int BPF_KSYSCALL(sys_enter_setgid) {
+  if (!preamble(__NR_setgid)) {
+    return 0;
+  }
+
   struct ringbuf_struct ringbuf;
   if (!ringbuf__reserve_space(&ringbuf, SETGID_E_SIZE)) {
     return 0;
@@ -22,6 +27,7 @@ int BPF_KSYSCALL(sys_enter_setgid) {
 
   /* Parameter 1: gid (type: PT_GID) */
   u32 gid = (u32)extract__syscall_argument(ctx, 0);
+  bpf_printk("gid: %d", gid);
   ringbuf__store_u32(&ringbuf, gid);
 
   /*=============================== COLLECT PARAMETERS  ===========================*/
@@ -37,6 +43,10 @@ int BPF_KSYSCALL(sys_enter_setgid) {
 
 SEC("kretsyscall/setgid")
 int BPF_KSYSCALL(sys_exit_setgid, long ret) {
+  if (!preamble(__NR_setgid)) {
+    return 0;
+  }
+
   struct ringbuf_struct ringbuf;
   if (!ringbuf__reserve_space(&ringbuf, SETGID_X_SIZE)) {
     return 0;

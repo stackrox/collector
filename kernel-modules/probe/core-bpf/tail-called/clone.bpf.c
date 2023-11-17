@@ -5,6 +5,8 @@
  * or GPL2.txt for full copies of the license.
  */
 
+#include <preamble.h>
+
 #include <helpers/interfaces/fixed_size_event.h>
 #include <helpers/interfaces/variable_size_event.h>
 
@@ -12,6 +14,10 @@
 
 SEC("ksyscall/clone")
 int BPF_KSYSCALL(sys_enter_clone) {
+  if (!preamble(__NR_clone)) {
+    return 0;
+  }
+
   struct ringbuf_struct ringbuf;
   if (!ringbuf__reserve_space(&ringbuf, CLONE_E_SIZE)) {
     return 0;
@@ -36,11 +42,15 @@ int BPF_KSYSCALL(sys_enter_clone) {
 
 SEC("kretsyscall/clone")
 int BPF_KSYSCALL(sys_exit_clone, long ret) {
-/* We already catch the clone child event with our `sched_process_fork` tracepoint,
- * for this reason we don't need also this instrumentation. Please note that we use
- * the aforementioned tracepoint only for the child event but we need to catch also
- * the father event or the failure case, for this reason we check the `ret==0`
- */
+  /* We already catch the clone child event with our `sched_process_fork` tracepoint,
+   * for this reason we don't need also this instrumentation. Please note that we use
+   * the aforementioned tracepoint only for the child event but we need to catch also
+   * the father event or the failure case, for this reason we check the `ret==0`
+   */
+  if (!preamble(__NR_clone)) {
+    return 0;
+  }
+
 #ifdef CAPTURE_SCHED_PROC_FORK
   if (ret == 0) {
     return 0;
@@ -159,7 +169,7 @@ int BPF_KSYSCALL(sys_exit_clone, long ret) {
 }
 
 SEC("kretsyscall/clone")
-int BPF_PROG(t1_clone_x, long ret) {
+int BPF_KSYSCALL(t1_clone_x, long ret) {
   struct auxiliary_map* auxmap = auxmap__get();
   if (!auxmap) {
     return 0;
@@ -215,7 +225,7 @@ int BPF_PROG(t1_clone_x, long ret) {
 }
 
 SEC("kretsyscall/clone")
-int BPF_PROG(t2_clone_x, long ret) {
+int BPF_KSYSCALL(t2_clone_x, long ret) {
   struct auxiliary_map* auxmap = auxmap__get();
   if (!auxmap) {
     return 0;

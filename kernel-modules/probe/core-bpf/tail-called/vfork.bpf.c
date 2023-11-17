@@ -4,6 +4,7 @@
  * This file is dual licensed under either the MIT or GPL 2. See MIT.txt
  * or GPL2.txt for full copies of the license.
  */
+#include <preamble.h>
 
 #include <helpers/interfaces/fixed_size_event.h>
 #include <helpers/interfaces/variable_size_event.h>
@@ -12,6 +13,10 @@
 
 SEC("ksyscall/vfork")
 int BPF_KSYSCALL(sys_enter_vfork) {
+  if (!preamble(__NR_vfork)) {
+    return 0;
+  }
+
   struct ringbuf_struct ringbuf;
   if (!ringbuf__reserve_space(&ringbuf, VFORK_E_SIZE)) {
     return 0;
@@ -36,6 +41,10 @@ int BPF_KSYSCALL(sys_enter_vfork) {
 
 SEC("kretsyscall/vfork")
 int BPF_KSYSCALL(sys_exit_vfork, long ret) {
+  if (!preamble(__NR_vfork)) {
+    return 0;
+  }
+
 /* We already catch the vfork child event with our `sched_process_fork` tracepoint,
  * for this reason we don't need also this instrumentation. Please note that we use
  * the aforementioned tracepoint only for the child event but we need to catch also

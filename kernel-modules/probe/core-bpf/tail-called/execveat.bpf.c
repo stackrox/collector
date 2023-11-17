@@ -4,6 +4,7 @@
  * This file is dual licensed under either the MIT or GPL 2. See MIT.txt
  * or GPL2.txt for full copies of the license.
  */
+#include <preamble.h>
 
 #include <helpers/interfaces/variable_size_event.h>
 
@@ -11,6 +12,10 @@
 
 SEC("ksyscall/execveat")
 int BPF_KSYSCALL(sys_enter_execveat) {
+  if (!preamble(__NR_execveat)) {
+    return 0;
+  }
+
   struct auxiliary_map* auxmap = auxmap__get();
   if (!auxmap) {
     return 0;
@@ -53,7 +58,9 @@ int BPF_KSYSCALL(sys_enter_execveat) {
  */
 SEC("kretsyscall/execveat")
 int BPF_KSYSCALL(sys_exit_execveat, long ret) {
-  struct sys_exit_args* exit = (struct sys_exit_args*)ctx;
+  if (!preamble(__NR_execveat)) {
+    return 0;
+  }
 
 /* On some recent kernels the execve/execveat issue is solved:
  * https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/?h=linux-5.15.y&id=42eede3ae05bbf32cb0d87940b466ec5a76aca3f

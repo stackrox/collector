@@ -4,6 +4,7 @@
  * This file is dual licensed under either the MIT or GPL 2. See MIT.txt
  * or GPL2.txt for full copies of the license.
  */
+#include <preamble.h>
 
 #include <helpers/interfaces/variable_size_event.h>
 
@@ -11,6 +12,10 @@
 
 SEC("ksyscall/execve")
 int BPF_KSYSCALL(sys_enter_execve) {
+  if (!preamble(__NR_execve)) {
+    return 0;
+  }
+
   struct auxiliary_map* auxmap = auxmap__get();
   if (!auxmap) {
     return 0;
@@ -37,6 +42,10 @@ int BPF_KSYSCALL(sys_enter_execve) {
 
 SEC("kretsyscall/execve")
 int BPF_KSYSCALL(sys_exit_execve, long ret) {
+  if (!preamble(__NR_execve)) {
+    return 0;
+  }
+
 /* On some recent kernels the execve/execveat issue is solved:
  * https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/?h=linux-5.15.y&id=42eede3ae05bbf32cb0d87940b466ec5a76aca3f
  * BTW we already catch the event with our `sched_process_exec` tracepoint, for this reason we don't need also this instrumentation.
