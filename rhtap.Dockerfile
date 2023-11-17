@@ -7,44 +7,53 @@ ARG ADDRESS_SANITIZER=false
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 # TODO(ROX-20651): Use RHEL/ubi base image when entitlement is solved.
 # RPMs requiring entitlement: bpftool, cmake-3.18.2-9.el8, elfutils-libelf-devel, tbb-devel, c-ares-devel, jq-devel
-# Even when getting as many dependencies as possible through the WITH_RHEL_RPMS=false approve, with an unentitled ubi image,
-# bpftool cmake-3.18.2-9.el8 elfutils-libelf-devel are still missing.
 # FROM registry.access.redhat.com/ubi8/ubi:latest AS builder
-
-# Can not use stream9, because cmake-3.18.2 is not available.
-FROM quay.io/centos/centos:stream8 AS builder
+FROM quay.io/centos/centos:stream9 AS builder
 
 # TODO: reduce COPY scope?
 COPY . .
 
 # TODO(ROX-20234): use hermetic builds when installing/updating RPMs becomes hermetic.
-RUN dnf -y update && \
-    dnf -y install \
-        make \
-        wget \
-        unzip \
-        clang \
-        bpftool \
-        cmake-3.18.2-9.el8 \
-        gcc-c++ \
-        openssl-devel \
-        ncurses-devel \
-        curl-devel \
-        libuuid-devel \
-        libcap-ng-devel \
+RUN dnf -y update \
+    && dnf -y install --nobest \
         autoconf \
-        libtool \
-        git \
+        automake \
+        binutils-devel \
+        bison \
+        ca-certificates \
+        clang-15.0.7 \
+        cmake \
+        cracklib-dicts \
+        diffutils \
         elfutils-libelf-devel \
-        tbb-devel \
-        # TODO(ROX-20651): if entitlement/RHEL base image is solved, this can be installed from default repository \
-        # jq-devel
-        c-ares-devel \
-    && \
-      # TODO(ROX-20651): if entitlement/RHEL base image is solved, this can be installed from default repository \
-      dnf --enablerepo=powertools -y install jq-devel \
-    && \
-    dnf clean all
+        file \
+        flex \
+        gcc \
+        gcc-c++ \
+        gdb \
+        gettext \
+        git \
+        glibc-devel \
+        libasan \
+        libubsan \
+        libcap-ng-devel \
+        libcurl-devel \
+        libtool \
+        libuuid-devel \
+        make \
+        openssh-server \
+        openssl-devel \
+        patchutils \
+        passwd \
+        pkgconfig \
+        rsync \
+        tar \
+        unzip \
+        valgrind \
+        wget \
+        which \
+        bpftool \
+    && dnf clean all
 
 ARG BUILD_DIR
 ENV BUILD_DIR=${BUILD_DIR}
@@ -64,31 +73,50 @@ ENV CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 ARG COLLECTOR_APPEND_CID=false
 ENV COLLECTOR_APPEND_CID=${COLLECTOR_APPEND_CID}
 
-RUN mkdir -p ${BUILD_DIR}
 WORKDIR ${BUILD_DIR}
-RUN cp -a /builder builder
-RUN cp -a /collector collector
-RUN cp -a /falcosecurity-libs falcosecurity-libs
-RUN cp -a /builder/third_party third_party
-RUN mkdir kernel-modules
-RUN cp -a /kernel-modules/MODULE_VERSION kernel-modules/MODULE_VERSION
-RUN cp -a /CMakeLists.txt CMakeLists.txt
+RUN cp -a /builder builder \
+    && cp -a /collector collector \
+    && cp -a /falcosecurity-libs falcosecurity-libs \
+    && cp -a /builder/third_party third_party \
+    && mkdir kernel-modules \
+    && cp -a /kernel-modules/MODULE_VERSION kernel-modules/MODULE_VERSION \
+    && cp -a /CMakeLists.txt CMakeLists.txt
 
 # WITH_RHEL_RPMS controls for dependency installation if they were already installed as RPMs.
-# Setting the value to 'false' will cause dependencies to be downloaded (as archives or from repositories) and compiled.
+# Setting the value to empty will cause dependencies to be downloaded (as archives or from repositories) and compiled.
 # That is not possible with hermetic builds.
-ENV WITH_RHEL_RPMS=true
-RUN ./builder/install/install-dependencies.sh && \
-    cmake -DDISABLE_PROFILING=ON -S "${SRC_ROOT_DIR}" -B "${CMAKE_BUILD_DIR}" && \
-    cmake --build "${CMAKE_BUILD_DIR}" --target all -- -j "$(nproc)" && \
-    (cd ${CMAKE_BUILD_DIR} && ctest -V) && \
-    strip --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector" "${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so"
+# ENV WITH_RHEL_RPMS=true
+RUN ./builder/install/install-dependencies.sh \
+    && cmake -DDISABLE_PROFILING=ON -S "${SRC_ROOT_DIR}" -B "${CMAKE_BUILD_DIR}" \
+    && cmake --build "${CMAKE_BUILD_DIR}" --target all -- -j "$(nproc)" \
+    && (cd ${CMAKE_BUILD_DIR} && ctest -V) \
+    && strip --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector" "${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so"
 
-# TODO(ROX-20651): use entitled RHEL/ubi to access tbb and other devel tools
-# FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
-FROM quay.io/centos/centos:stream8
+ENV COLLECTOR_BIN_DIR=${CMAKE_BUILD_DIR}/collector
 
-WORKDIR /
+# Collect things for second stage
+RUN mkdir -p /container/bin \
+	&& cp "${COLLECTOR_BIN_DIR}/collector" /container/bin/collector \
+	&& cp "${COLLECTOR_BIN_DIR}/self-checks" /container/bin/self-checks \
+    && cp -r /THIRD_PARTY_NOTICES/ /container/ \
+	&& cp /collector/NOTICE-sysdig.txt /container/THIRD_PARTY_NOTICES/sysdig \
+	&& cp /collector/LICENSE-kernel-modules.txt /container/ \
+    && mkdir -p /container/libs/ \
+    && cp "${COLLECTOR_BIN_DIR}/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so" /container/libs/libsinsp-wrapper.so
+
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.2
+
+ARG BUILD_TYPE=rhel
+ARG ROOT_DIR=.
+ARG COLLECTOR_VERSION
+ARG MODULE_VERSION
+
+ENV ROOT_DIR=$ROOT_DIR
+ENV COLLECTOR_VERSION="${COLLECTOR_VERSION}"
+
+# TODO: must be set, propagated to /kernel-modules/MODULE_VERSION.txt, also coming from kernel-modules/MODULE_VERSION.txt, so what's the point?
+ENV MODULE_VERSION="${MODULE_VERSION}"
+ENV COLLECTOR_HOST_ROOT=/host
 
 LABEL \
     com.redhat.component="rhacs-collector-slim-container" \
@@ -106,40 +134,32 @@ LABEL \
     # TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
     version="0.0.1-todo" \
     collector_version="0.0.1-collector_version"
+    # These two labels only exist on upstream
+    # io.stackrox.collector.module-version="${MODULE_VERSION}" \
+    # io.stackrox.collector.version="${COLLECTOR_VERSION}"
 
-ARG BUILD_DIR
-ARG CMAKE_BUILD_DIR
+WORKDIR /
 
-ENV COLLECTOR_HOST_ROOT=/host
+COPY collector/container/${BUILD_TYPE}/install.sh /
+RUN ./install.sh && rm -f install.sh
 
-COPY --from=builder ${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so /usr/local/lib/
-COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
-COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
-COPY --from=builder ${BUILD_DIR}/collector/container/scripts /
+COPY collector/container/scripts/collector-wrapper.sh /usr/local/bin
+COPY collector/container/scripts/bootstrap.sh /
+COPY collector/LICENSE-kernel-modules.txt /kernel-modules/LICENSE
+COPY --from=builder /container/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
+COPY --from=builder /container/libs/libsinsp-wrapper.so /usr/local/lib/
+COPY --from=builder /container/bin/collector /usr/local/bin/collector
+COPY --from=builder /container/bin/self-checks /usr/local/bin/self-checks
 
-# TODO(ROX-20651): use microdnf if we go back to ubi-minimal image after RHEL entitlement is solved
-RUN mv /collector-wrapper.sh /usr/local/bin/ && \
-    chmod 700 bootstrap.sh && \
-    echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
+RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
     ldconfig && \
-    mkdir /kernel-modules && \
-    dnf upgrade -y --nobest && \
-    dnf install -y \
-      kmod \
-      tbb \
-      jq \
-      c-ares && \
-    dnf clean all && \
-    rpm --verbose -e --nodeps $(rpm -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf /var/cache/dnf /var/cache/yum
-
-COPY --from=builder ${BUILD_DIR}/kernel-modules/MODULE_VERSION /kernel-modules/MODULE_VERSION.txt
+    echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt && \
+    chmod 700 bootstrap.sh
 
 EXPOSE 8080 9090
 
 ENTRYPOINT ["/bootstrap.sh"]
 
-# hadolint ignore=DL3025
 CMD collector-wrapper.sh \
     --collector-config=$COLLECTOR_CONFIG \
     --collection-method=$COLLECTION_METHOD \
