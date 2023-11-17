@@ -83,15 +83,14 @@ RUN cp -a /builder builder \
     && cp -a /CMakeLists.txt CMakeLists.txt
 
 # WITH_RHEL_RPMS controls for dependency installation if they were already installed as RPMs.
-# Setting the value to 'false' will cause dependencies to be downloaded (as archives or from repositories) and compiled.
+# Setting the value to empty will cause dependencies to be downloaded (as archives or from repositories) and compiled.
 # That is not possible with hermetic builds.
-#
-ENV WITH_RHEL_RPMS=false
-RUN ./builder/install/install-dependencies.sh && \
-    cmake -DDISABLE_PROFILING=ON -S "${SRC_ROOT_DIR}" -B "${CMAKE_BUILD_DIR}" && \
-    cmake --build "${CMAKE_BUILD_DIR}" --target all -- -j "$(nproc)" && \
-    (cd ${CMAKE_BUILD_DIR} && ctest -V) && \
-    strip --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector" "${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so"
+# ENV WITH_RHEL_RPMS=true
+RUN ./builder/install/install-dependencies.sh \
+    && cmake -DDISABLE_PROFILING=ON -S "${SRC_ROOT_DIR}" -B "${CMAKE_BUILD_DIR}" \
+    && cmake --build "${CMAKE_BUILD_DIR}" --target all -- -j "$(nproc)" \
+    && (cd ${CMAKE_BUILD_DIR} && ctest -V) \
+    && strip --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector" "${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so"
 
 ENV COLLECTOR_BIN_DIR=${CMAKE_BUILD_DIR}/collector
 
