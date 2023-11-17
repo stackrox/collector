@@ -92,18 +92,6 @@ RUN ./builder/install/install-dependencies.sh \
     && (cd ${CMAKE_BUILD_DIR} && ctest -V) \
     && strip --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector" "${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so"
 
-ENV COLLECTOR_BIN_DIR=${CMAKE_BUILD_DIR}/collector
-
-# Collect things for second stage
-RUN mkdir -p /container/bin \
-	&& cp "${COLLECTOR_BIN_DIR}/collector" /container/bin/collector \
-	&& cp "${COLLECTOR_BIN_DIR}/self-checks" /container/bin/self-checks \
-    && cp -r /THIRD_PARTY_NOTICES/ /container/ \
-	&& cp /collector/NOTICE-sysdig.txt /container/THIRD_PARTY_NOTICES/sysdig \
-	&& cp /collector/LICENSE-kernel-modules.txt /container/ \
-    && mkdir -p /container/libs/ \
-    && cp "${COLLECTOR_BIN_DIR}/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so" /container/libs/libsinsp-wrapper.so
-
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.2
 
 ARG BUILD_TYPE=rhel
@@ -132,8 +120,8 @@ LABEL \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
     # We must set version label to prevent inheriting value set in the base stage.
     # TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
-    version="0.0.1-todo" \
-    collector_version="0.0.1-collector_version"
+    version=${COLLECTOR_VERSION} \
+    collector_version=${COLLECTOR_VERSION}
     # These two labels only exist on upstream
     # io.stackrox.collector.module-version="${MODULE_VERSION}" \
     # io.stackrox.collector.version="${COLLECTOR_VERSION}"
@@ -146,14 +134,15 @@ RUN ./install.sh && rm -f install.sh
 COPY collector/container/scripts/collector-wrapper.sh /usr/local/bin
 COPY collector/container/scripts/bootstrap.sh /
 COPY collector/LICENSE-kernel-modules.txt /kernel-modules/LICENSE
-COPY --from=builder /container/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
-COPY --from=builder /container/libs/libsinsp-wrapper.so /usr/local/lib/
-COPY --from=builder /container/bin/collector /usr/local/bin/collector
-COPY --from=builder /container/bin/self-checks /usr/local/bin/self-checks
+COPY kernel-modules/MODULE_VERSION /kernel-modules/MODULE_VERSION.txt
+COPY --from=builder /build/cmake-build/collector/collector /usr/local/bin/collector
+COPY --from=builder /build/cmake-build/collector/self-checks /usr/local/bin/self-checks
+COPY --from=builder /THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
+COPY --from=builder /collector/NOTICE-sysdig.txt /THIRD_PARTY_NOTICES/sysdig
+COPY --from=builder /build/cmake-build/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so /usr/local/lib/
 
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
     ldconfig && \
-    echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt && \
     chmod 700 bootstrap.sh
 
 EXPOSE 8080 9090
