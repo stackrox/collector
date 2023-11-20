@@ -96,14 +96,13 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal:9.2
 
 ARG BUILD_TYPE=rhel
 ARG ROOT_DIR=.
-ARG COLLECTOR_VERSION
+ARG COLLECTOR_VERSION=0.0.1-todo
+# TODO: must be set for the label below
 ARG MODULE_VERSION
 
 ENV ROOT_DIR=$ROOT_DIR
 ENV COLLECTOR_VERSION="${COLLECTOR_VERSION}"
 
-# TODO: must be set, propagated to /kernel-modules/MODULE_VERSION.txt, also coming from kernel-modules/MODULE_VERSION.txt, so what's the point?
-ENV MODULE_VERSION="${MODULE_VERSION}"
 ENV COLLECTOR_HOST_ROOT=/host
 
 LABEL \
@@ -122,7 +121,7 @@ LABEL \
     # TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
     version=${COLLECTOR_VERSION} \
     collector_version=${COLLECTOR_VERSION}
-    # These two labels only exist on upstream
+    # These two labels only exist on upstream, keep or remove?
     # io.stackrox.collector.module-version="${MODULE_VERSION}" \
     # io.stackrox.collector.version="${COLLECTOR_VERSION}"
 

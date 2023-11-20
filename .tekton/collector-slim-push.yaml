@@ -21,7 +21,7 @@ spec:
 
   params:
   - name: dockerfile
-    value: rhtap.Dockerfile
+    value: collector/container/rhtap.Dockerfile
   - name: git-url
     value: '{{repo_url}}'
   - name: image-expires-after
