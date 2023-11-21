@@ -46,9 +46,13 @@ jobs:
         run: |
           ansible-galaxy install -r ansible/requirements.yml
 
+          BUILD_MULTI_ARCH="${{ contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') || github.event_name == 'push' }}"
+
+          # build_multi_arch passed in as json to ensure boolean type
           ansible-playbook \
             --connection local -i localhost, --limit localhost \
             -e test_image='quay.io/rhacs-eng/qa-multi-arch:collector-tests-${{ inputs.collector-tag }}' \
+            -e "{\"build_multi_arch\": $BUILD_MULTI_ARCH}" \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-tests.yml
 
