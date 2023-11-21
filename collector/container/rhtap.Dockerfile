@@ -91,6 +91,56 @@ RUN ./builder/install/install-dependencies.sh \
     && (cd ${CMAKE_BUILD_DIR} && ctest -V) \
     && strip --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector" "${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so"
 
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS support-packages-downloader
+
+WORKDIR /staging
+
+COPY kernel-modules/MODULE_VERSION kernel-modules/MODULE_VERSION
+COPY collector/container/scripts/download-support-package.sh download-support-package.sh
+
+RUN ./download-support-package.sh
+
+# Do NOT use follow_tag here, as we do not need or want collector to be rebuilt
+# with each drivers build (which may become very frequent)
+FROM brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:0.1.0 AS drivers-build
+# FROM registry-proxy.engineering.redhat.com/rh-osbs/rhacs-drivers-build-rhel8:0.1.0 AS drivers-build
+
+# TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS unpacker
+
+RUN microdnf install -y unzip findutils
+WORKDIR /staging
+
+COPY --from=support-packages-downloader /staging/support-pkg.zip /staging/
+COPY kernel-modules/MODULE_VERSION MODULE_VERSION.txt
+# Creating this directory ensures the scratch build with dummy support-pkg.zip will not fail.
+RUN mkdir -p "/staging/kernel-modules/$(cat MODULE_VERSION.txt)"
+# First, unpack upstream support package, only on x86_64
+RUN if [[ "$(uname -m)" == x86_64 ]]; then unzip support-pkg.zip ; fi
+# Fail non-scratch build if there were no drivers matching the module version.
+RUN if [[ "$(uname -m)" == x86_64 && "$(ls -A /staging/kernel-modules/$(cat MODULE_VERSION.txt))" == "" && "$(unzip -Z1 support-pkg.zip)" != "dummy-support-pkg" ]] ; then \
+      >&2 echo "Did not find any kernel drivers for the module version $(cat MODULE_VERSION.txt) in the support package"; \
+      exit 1; \
+    fi
+
+# Next, import modules from downstream build, which take priority over upstream, on non-x86 architectures
+# TODO(ROX-13563): find a way to not have to separately pull in the support package and downstream-built drivers.
+COPY --from=drivers-build /kernel-modules /staging/downstream
+RUN if [[ "$(uname -m)" != x86_64 ]]; then \
+      cp -r /staging/downstream/. /staging/kernel-modules/ ; \
+    fi
+
+# Create destination for drivers.
+RUN mkdir /kernel-modules
+# Move files for the current version to /kernel-modules
+RUN find "/staging/kernel-modules/$(cat MODULE_VERSION.txt)/" -type f -exec mv -t /kernel-modules {} +
+# Fail the build if at the end there were no drivers matching the module version.
+RUN if [[ "$(ls -A /kernel-modules)" == "" && \
+        !("$(uname -m)" == x86_64 && "$(unzip -Z1 support-pkg.zip)" == "dummy-support-pkg") ]]; then \
+        >&2 echo "Did not find any kernel drivers for the module version $(cat MODULE_VERSION.txt)."; \
+        exit 1; \
+    fi
+
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.2
 
 ARG BUILD_TYPE=rhel
@@ -131,6 +181,7 @@ COPY collector/container/scripts/collector-wrapper.sh /usr/local/bin
 COPY collector/container/scripts/bootstrap.sh /
 COPY collector/LICENSE-kernel-modules.txt /kernel-modules/LICENSE
 COPY kernel-modules/MODULE_VERSION /kernel-modules/MODULE_VERSION.txt
+COPY --from=unpacker /kernel-modules /kernel-modules
 COPY --from=builder /build/cmake-build/collector/collector /usr/local/bin/collector
 COPY --from=builder /build/cmake-build/collector/self-checks /usr/local/bin/self-checks
 COPY --from=builder /THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
