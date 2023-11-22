@@ -31,7 +31,7 @@ cmake-build/collector: cmake-configure/collector $(COLLECTOR_BUILD_DEPS)
 	docker exec $(COLLECTOR_BUILDER_NAME) \
 		cmake --build $(CMAKE_DIR) -- -j $(NPROCS)
 	docker exec $(COLLECTOR_BUILDER_NAME) \
-		bash -c "[ $(CMAKE_BUILD_TYPE) == Release ] && strip --strip-unneeded $(COLLECTOR_BIN_DIR)/collector"
+		bash -c "[ $(CMAKE_BUILD_TYPE) == Release ] && strip --strip-unneeded $(COLLECTOR_BIN_DIR)/collector || exit 0"
 
 container/bin/collector: cmake-build/collector
 	mkdir -p container/bin
