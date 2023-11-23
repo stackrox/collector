@@ -16,8 +16,8 @@ ifndef FALCO_DIR
 $(error FALCO_DIR must be set)
 endif
 
-# DEBUG = -DBPF_DEBUG
-# BPF_DEBUG_SYMBOLS = -g
+DEBUG = -DBPF_DEBUG
+BPF_DEBUG_SYMBOLS = -g
 
 #
 # https://chromium.googlesource.com/chromiumos/third_party/kernel/+/096925a44076ba5c52faa84d255a847130ff341e%5E%21/#F2
