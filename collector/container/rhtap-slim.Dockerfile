@@ -8,12 +8,12 @@ ARG ADDRESS_SANITIZER=false
 # TODO(ROX-20651): Use RHEL/ubi base image when entitlement is solved.
 # RPMs requiring entitlement: bpftool, cmake-3.18.2-9.el8, elfutils-libelf-devel, tbb-devel, c-ares-devel, jq-devel
 # FROM registry.access.redhat.com/ubi8/ubi:latest AS builder
-FROM quay.io/centos/centos:stream9 AS builder
+FROM quay.io/centos/centos:stream8 AS builder
 
 COPY . .
 
 # TODO(ROX-20234): use hermetic builds when installing/updating RPMs becomes hermetic.
-RUN dnf -y update \
+RUN dnf upgrade -y --nobest \
     && dnf -y install --nobest \
         autoconf \
         automake \
@@ -86,12 +86,12 @@ RUN mkdir kernel-modules \
 # Setting the value to empty will cause dependencies to be downloaded from repositories or accessed in submodules and compiled.
 # TODO(ROX-20651): Set ENV WITH_RHEL_RPMS=true when RHEL RPMs can be installed to enable hermetic builds.
 RUN ./builder/install/install-dependencies.sh \
-    && cmake -DDISABLE_PROFILING=ON -S "${SRC_ROOT_DIR}" -B "${CMAKE_BUILD_DIR}" \
+    && cmake -DDISABLE_PROFILING=true -S "${SRC_ROOT_DIR}" -B "${CMAKE_BUILD_DIR}" \
     && cmake --build "${CMAKE_BUILD_DIR}" --target all -- -j "$(nproc)" \
     && (cd ${CMAKE_BUILD_DIR} && ctest -V) \
     && strip --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector" "${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so"
 
-FROM registry.access.redhat.com/ubi9/ubi-minimal:9.2
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
 ARG BUILD_TYPE=rhel
 ARG ROOT_DIR=.
@@ -116,15 +116,11 @@ LABEL \
     source-location="https://github.com/stackrox/collector" \
     summary="Runtime data collection for the StackRox Kubernetes Security Platform" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
-    version=${COLLECTOR_VERSION} \
-    collector_version=${COLLECTOR_VERSION}
-    # TODO: These two labels only exist on upstream, keep or remove?
-    # io.stackrox.collector.module-version="${MODULE_VERSION}" \
-    # io.stackrox.collector.version="${COLLECTOR_VERSION}"
+    version=${COLLECTOR_VERSION}
 
 WORKDIR /
 
-COPY collector/container/${BUILD_TYPE}/install.sh /
+COPY collector/container/rhel/install.sh /
 RUN ./install.sh && rm -f install.sh
 
 COPY collector/container/scripts/collector-wrapper.sh /usr/local/bin

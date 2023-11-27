@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
-microdnf upgrade -y
+microdnf -y upgrade --nobest
 microdnf install -y kmod findutils elfutils-libelf
 
 microdnf clean all
