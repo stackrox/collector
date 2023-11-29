@@ -16,7 +16,7 @@ WORKDIR /kernel-modules
 # the outcome
 RUN /partition-probes.py "0" "${max_layer_size}" "." "/layers" && \
   for i in "/layers"/*; do \
-    [[ -e "$i" && -s "$i" ]] || continue \
+    [[ -e "$i" && -s "$i" ]] || continue; \
     mkdir -p "$(basename "$i")"; \
     xargs -a "$i" mv -t "$(basename "$i")" ; \
   done
