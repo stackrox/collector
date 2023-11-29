@@ -6,6 +6,7 @@
     COLLECTOR_BUILDER_TAG: "{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
     PLATFORM: "{{ ansible_env.PLATFORM }}"
     COLLECTOR_TAG: "{{ ansible_env.COLLECTOR_TAG }}"
+    DISABLE_PROFILING: "{{ disable_profiling }}"
 
   tasks:
     - name: Run the builder image
