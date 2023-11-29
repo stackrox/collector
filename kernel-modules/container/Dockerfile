@@ -16,35 +16,35 @@ WORKDIR /kernel-modules
 # the outcome
 RUN /partition-probes.py "0" "${max_layer_size}" "." "/layers" && \
   for i in "/layers"/*; do \
-    [[ -e "$i" && -s "$i" ]] || continue; \
     mkdir -p "$(basename "$i")"; \
+    [ -s "$i" ] || continue; \
     xargs -a "$i" mv -t "$(basename "$i")" ; \
   done
 
 # Probes are split across multiple layers to limit blob size
 FROM ${base_image} AS probe-layer-1
-COPY --from=kernel-modules /kernel-modules/0* /kernel-modules/
+COPY --from=kernel-modules /kernel-modules/0 /kernel-modules/
 
 FROM probe-layer-1 AS probe-layer-2
-COPY --from=kernel-modules /kernel-modules/1* /kernel-modules/
+COPY --from=kernel-modules /kernel-modules/1 /kernel-modules/
 
 FROM probe-layer-2 AS probe-layer-3
-COPY --from=kernel-modules /kernel-modules/2* /kernel-modules/
+COPY --from=kernel-modules /kernel-modules/2 /kernel-modules/
 
 FROM probe-layer-3 AS probe-layer-4
-COPY --from=kernel-modules /kernel-modules/3* /kernel-modules/
+COPY --from=kernel-modules /kernel-modules/3 /kernel-modules/
 
 FROM probe-layer-4 AS probe-layer-5
-COPY --from=kernel-modules /kernel-modules/4* /kernel-modules/
+COPY --from=kernel-modules /kernel-modules/4 /kernel-modules/
 
 FROM probe-layer-5 AS probe-layer-6
-COPY --from=kernel-modules /kernel-modules/5* /kernel-modules/
+COPY --from=kernel-modules /kernel-modules/5 /kernel-modules/
 
 FROM probe-layer-6 AS probe-layer-7
-COPY --from=kernel-modules /kernel-modules/6* /kernel-modules/
+COPY --from=kernel-modules /kernel-modules/6 /kernel-modules/
 
 FROM probe-layer-7 AS probe-layer-8
-COPY --from=kernel-modules /kernel-modules/7* /kernel-modules/
+COPY --from=kernel-modules /kernel-modules/7 /kernel-modules/
 
 FROM probe-layer-8 AS probe-layer-9
-COPY --from=kernel-modules /kernel-modules/8* /kernel-modules/
+COPY --from=kernel-modules /kernel-modules/8 /kernel-modules/
