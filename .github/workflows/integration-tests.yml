@@ -94,6 +94,16 @@ jobs:
       job-tag: ${{ inputs.job-tag }}
     secrets: inherit
 
+  ppc64le-integration-tests:
+    uses: ./.github/workflows/integration-tests-vm-type.yml
+    if: contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') || github.event_name == 'push'
+    with:
+      vm_type: rhel-ppc64le
+      collector-tag: ${{ inputs.collector-tag }}
+      collector-qa-tag: ${{ inputs.collector-qa-tag }}
+      job-tag: ${{ inputs.job-tag }}
+    secrets: inherit
+
   notify:
     runs-on: ubuntu-latest
     if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name == 'push'

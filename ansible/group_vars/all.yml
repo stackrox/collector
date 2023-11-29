@@ -23,8 +23,6 @@ excluded_pairs:
   # e.g. - ['ubuntu-1804-lts', 'core_bpf']
   # This can be removed once we have downloadable s390x eBPF drivers
   - [ 'rhel-8-6-s390x', 'ebpf' ]
-  # Also exclude Power & core_bpf, since it is currently unsupported
-  - [ 'p', 'core_bpf' ]
   # No ebpf support for arm... Yet...?
   - [ 'rhel-9-arm64', 'ebpf' ]
   - [ 'ubuntu-2004-lts-arm64', 'ebpf' ]
