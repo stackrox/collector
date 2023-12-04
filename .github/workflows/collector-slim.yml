@@ -57,7 +57,7 @@ jobs:
             fi
           fi
 
-      - name: Create secrets.yml
+      - name: Create Ansible Vars (inc. secrets)
         run: |
           {
             echo "---"
@@ -66,6 +66,10 @@ jobs:
             echo "rhacs_eng_username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}"
             echo "rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}"
           } > ${{ github.workspace }}/ansible/secrets.yml
+
+          if [[ "${RUNNER_DEBUG}" == "1" ]]; then
+            echo "ANSIBLE_STDOUT_CALLBACK=debug" >> "${GITHUB_ENV}"
+          fi
 
       - name: Build images
         if: |

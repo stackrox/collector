@@ -84,7 +84,7 @@ jobs:
           echo "COLLECTOR_BUILDER_TAG=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_ENV"
           echo "collector-builder-tag=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_OUTPUT"
 
-      - name: Create secrets.yml
+      - name: Create Ansible Vars (inc. secrets)
         run: |
           {
             echo "---"
@@ -94,6 +94,10 @@ jobs:
             echo "rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}"
           } > ${{ github.workspace }}/ansible/secrets.yml
 
+          if [[ "${RUNNER_DEBUG}" == "1" ]]; then
+            echo "ANSIBLE_STDOUT_CALLBACK=debug" >> "${GITHUB_ENV}"
+          fi
+
       - name: Build images
         if: |
           github.event_name == 'push' ||
@@ -102,6 +106,7 @@ jobs:
         timeout-minutes: 480
         run: |
           ansible-galaxy install -r ansible/requirements.yml
+
           ansible-playbook \
             --connection local \
             -i localhost, \
