@@ -93,13 +93,10 @@ RUN ./builder/install/install-dependencies.sh \
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
-ARG BUILD_TYPE=rhel
-ARG ROOT_DIR=.
 # TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
 ARG COLLECTOR_VERSION=0.0.1-todo
 ARG MODULE_VERSION=0.0.1-todo
 
-ENV ROOT_DIR=$ROOT_DIR
 ENV COLLECTOR_VERSION="${COLLECTOR_VERSION}"
 
 ENV COLLECTOR_HOST_ROOT=/host
