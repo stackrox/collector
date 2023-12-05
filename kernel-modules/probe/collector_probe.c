@@ -301,6 +301,8 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx) {
   int drop_flags = UF_ALWAYS_DROP;
   long mapped_id = id;
 
+  struct sys_exit_args stack_ctx = {.id = id, .ret = _READ(ctx->ret)};
+
   if (bpf_in_ia32_syscall()) {
     return 0;
   }
@@ -327,7 +329,7 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx) {
 
   // the fillers contain syscall specific processing logic, so we simply
   // call into those and let the rest of falco deal with the event.
-  call_filler(ctx, ctx, evt_type, drop_flags);
+  call_filler(ctx, &stack_ctx, evt_type, drop_flags);
   return 0;
 }
 
