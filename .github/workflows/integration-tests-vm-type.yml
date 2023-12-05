@@ -148,8 +148,13 @@ jobs:
               echo "REDHAT_PASSWORD=${{ secrets.REDHAT_PASSWORD }}"
             } >> "${GITHUB_ENV}"
           fi
-      #Added workaround for ssh connection issue with power vm from ubuntu machine.
-      #Changing mtu works in resolving the issue
+
+          if [[ "${RUNNER_DEBUG}" == "1" ]]; then
+            echo "ANSIBLE_STDOUT_CALLBACK=debug" >> "${GITHUB_ENV}"
+          fi
+
+      # Workaround for ssh connection issue with power vm from ubuntu machine.
+      # Changing mtu works in resolving the issue
       - name: Set MTU for Power VMs
         if: ${{ contains(inputs.vm_type, 'ppc64le') }}
         run: sudo ifconfig eth0 mtu 1000 up
