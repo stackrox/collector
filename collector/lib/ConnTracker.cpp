@@ -92,7 +92,7 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
   }
 
   if (enable_external_ips_) {
-    return IPNet(address, address.length() * 8, true);
+    return IPNet(address, address.length() * 8);
   }
 
   // Otherwise, associate it to "rest of the internet".
