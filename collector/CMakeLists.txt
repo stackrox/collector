@@ -131,9 +131,10 @@ set(BUILD_LIBSCAP_MODERN_BPF ON CACHE BOOL "Enable modern bpf engine" FORCE)
 
 set(MODERN_BPF_EXCLUDE_PROGS "^(openat2|ppoll|setsockopt|clone3|io_uring_setup|nanosleep)$" CACHE STRING "Set of syscalls to exclude from modern bpf engine " FORCE)
 
-set(USE_BUNDLED_MODERN_BPF OFF CACHE BOOL "Disable Falco's core-bpf driver" FORCE)
-set(MODERN_BPF_SKEL_DIR "${CMAKE_CURRENT_BINARY_DIR}/custom-core-bpf")
+#set(MODERN_BPF_SKEL_DIR "${CMAKE_CURRENT_BINARY_DIR}/custom-core-bpf")
 
-add_subdirectory(${CUSTOM_CORE_BPF_DIR} custom-core-bpf)
+if (NOT ${USE_BUNDLED_MODERN_BPF})
+    add_subdirectory(${CUSTOM_CORE_BPF_DIR} custom-core-bpf)
+endif()
 
 add_subdirectory(${FALCO_DIR} falco)
