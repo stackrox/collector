@@ -32,6 +32,9 @@ excluded_pairs:
   # eBPF on Garden Linux is not supported.
   - [ 'garden-linux', 'ebpf' ]
 
+  - [ 'p', 'ebpf' ]
+  - [ 'rhel-8-6-s390x', 'ebpf' ]
+
 virtual_machines:
   rhel:
     project: rhel-cloud

@@ -15,11 +15,7 @@ WORKDIR /kernel-modules
 # passing 0 as max_layer_depth because we have pre-calculated and pre-validated
 # the outcome
 RUN /partition-probes.py "0" "${max_layer_size}" "." "/layers" && \
-  for i in "/layers"/*; do \
-    mkdir -p "$(basename "$i")"; \
-    [ -s "$i" ] || continue; \
-    xargs -a "$i" mv -t "$(basename "$i")" ; \
-  done
+  for i in "/layers"/*; do mkdir -p "$(basename "$i")"; xargs -a "$i" mv -t "$(basename "$i")" ; done
 
 # Probes are split across multiple layers to limit blob size
 FROM ${base_image} AS probe-layer-1
