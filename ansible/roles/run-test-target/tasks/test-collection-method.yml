@@ -76,6 +76,7 @@
         -e IMAGE_FAMILY \
         -e COLLECTOR_IMAGE \
         -e COLLECTOR_QA_TAG \
+        -e COLLECTOR_LOG_LEVEL \
         {{ integration_tests_image }} \
         {{ run_args }} -test.v 2>&1
     environment:
@@ -84,6 +85,7 @@
       IMAGE_FAMILY: "{{ vm_image_family }}"
       COLLECTOR_IMAGE: "{{ collector_image }}"
       COLLECTOR_QA_TAG: "{{ lookup('env', 'COLLECTOR_QA_TAG', default=lookup('file', integration_tests_root + '/container/QA_TAG')) }}"
+      COLLECTOR_LOG_LEVEL: "{{ lookup('env', COLLECTOR_LOG_LEVEL', default='info') }}"
     register: test_result
     # ensure that this is printed
     tags: [print_action]
