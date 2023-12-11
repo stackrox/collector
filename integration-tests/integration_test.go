@@ -463,3 +463,7 @@ func TestCollectorStartup(t *testing.T) {
 func TestPerfEvent(t *testing.T) {
 	suite.Run(t, new(suites.PerfEventOpenTestSuite))
 }
+
+func TestGperftools(t *testing.T) {
+	suite.Run(t, new(suites.GperftoolsTestSuite))
+}
