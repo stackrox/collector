@@ -1,31 +1,19 @@
 package suites
 
 import (
-	"bytes"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
-	"golang.org/x/sys/unix"
+	"github.com/stackrox/collector/integration-tests/suites/common"
 )
 
 type GperftoolsTestSuite struct {
 	IntegrationTestSuiteBase
 }
 
-// IsArchSupported: at the moment only x86_64 builds have gperftools
-func (s *GperftoolsTestSuite) IsArchSupported() (bool, string) {
-	u := unix.Utsname{}
-	unix.Uname(&u)
-
-	// Exclude null bytes from comparison
-	arch := string(bytes.Trim(u.Machine[:], "\x00"))
-	return arch == "x86_64", arch
-}
-
 func (s *GperftoolsTestSuite) SetupSuite() {
-	if ok, _ := s.IsArchSupported(); !ok {
+	if ok, _ := common.ArchSupported("x86_64"); !ok {
 		return
 	}
 
@@ -33,7 +21,7 @@ func (s *GperftoolsTestSuite) SetupSuite() {
 }
 
 func (s *GperftoolsTestSuite) TearDownSuite() {
-	if ok, _ := s.IsArchSupported(); !ok {
+	if ok, _ := common.ArchSupported("x86_64"); !ok {
 		return
 	}
 
@@ -45,21 +33,20 @@ func (s *GperftoolsTestSuite) TearDownSuite() {
 // * turn heap profiling off
 // * fetch the profile
 //
-// NOTE: The test will only be performed on supported architectures, as defined
-// by IsArchSupported.
+// NOTE: The test will only be performed on supported architectures (only
+// x86_64 at the moment).
 func (s *GperftoolsTestSuite) TestFetchHeapProfile() {
-	heap_api_url := "http://localhost:8080/profile/heap"
-	data_type := "application/x-www-form-urlencoded"
-
-	if ok, arch := s.IsArchSupported(); !ok {
-		fmt.Printf("[WARNING]: Skip GperftoolsTestSuite on %s\n", arch)
-		return
+	if ok, arch := common.ArchSupported("x86_64"); !ok {
+		s.T().Skip("[WARNING]: skip GperftoolsTestSuite on ", arch)
 	}
 
 	var (
 		response *http.Response
 		err      error
 	)
+
+	heap_api_url := "http://localhost:8080/profile/heap"
+	data_type := "application/x-www-form-urlencoded"
 
 	response, err = http.Post(heap_api_url, data_type, strings.NewReader("on"))
 	s.Require().NoError(err)
