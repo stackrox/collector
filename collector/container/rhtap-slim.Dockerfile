@@ -106,7 +106,6 @@ ARG CMAKE_BUILD_DIR
 
 # TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
 ARG COLLECTOR_VERSION=0.0.1-todo
-ARG MODULE_VERSION=0.0.1-todo
 
 ENV COLLECTOR_HOST_ROOT=/host
 
