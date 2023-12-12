@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
-microdnf -y upgrade --nobest
-microdnf install -y kmod findutils elfutils-libelf
+microdnf upgrade --nobest
+microdnf install kmod findutils elfutils-libelf
 
 microdnf clean all
 rpm --query --all 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'findutils' | xargs -t rpm -e --nodeps
