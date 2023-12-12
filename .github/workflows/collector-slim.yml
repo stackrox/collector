@@ -51,6 +51,7 @@ jobs:
         run: |
           if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
             echo "COLLECTOR_APPEND_CID=true" >> "$GITHUB_ENV"
+            echo "TRACE_SINSP_EVENTS=1" >> "$GITHUB_ENV"
 
             if [[ "${{ contains(github.event.pull_request.labels.*.name, 'address-sanitizer') }}" == "true" ]]; then
               echo "ADDRESS_SANITIZER=true" >> "$GITHUB_ENV"
